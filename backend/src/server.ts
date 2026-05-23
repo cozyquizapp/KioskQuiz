@@ -8876,6 +8876,183 @@ app.get('/api/qq/drafts/:id', async (req, res) => {
   res.json(draft);
 });
 
+/**
+ * 2026-05-20: Per-Draft Translate-Endpoint. Wolf-Idee: nur Fragen IM Draft
+ * uebersetzen (statt blind alle 694 EN-only Library-Items) = spart DeepL-
+ * Kontingent erheblich.
+ *
+ * Bidirektional: ergaenzt fehlende DE aus EN (oder umgekehrt). Idempotent —
+ * schon-uebersetzte Felder werden geskippt. Throttle 60ms wie Library-Sync.
+ *
+ * Felder: text, answer, options[], unit (bei Schaetzchen). Bei BunteTuete-
+ * Subkinds: answers[]/answersEn[] (Top5), items[]/itemsEn[] (Order),
+ * hints[]/hintsEn[] (OnlyConnect).
+ */
+async function translateQQDraftQuestions(questions: any[]): Promise<{ updated: any[]; translatedFields: number }> {
+  let translatedFields = 0;
+  const updated: any[] = [];
+  for (const q of questions) {
+    const out: any = { ...q };
+    const translatePair = async (deField: string, enField: string) => {
+      const de = (out[deField] ?? '').trim();
+      const en = (out[enField] ?? '').trim();
+      if (!de && en) {
+        const t = await translateText(en, 'EN', 'DE');
+        if (t && t !== en) { out[deField] = t; translatedFields++; }
+        await new Promise(r => setTimeout(r, 60));
+      } else if (de && !en) {
+        const t = await translateText(de, 'DE', 'EN');
+        if (t && t !== de) { out[enField] = t; translatedFields++; }
+        await new Promise(r => setTimeout(r, 60));
+      }
+    };
+    const translateArrayPair = async (deKey: string, enKey: string, parent: any = out) => {
+      const deArr: string[] = Array.isArray(parent[deKey]) ? parent[deKey] : [];
+      const enArr: string[] = Array.isArray(parent[enKey]) ? parent[enKey] : [];
+      const len = Math.max(deArr.length, enArr.length);
+      if (len === 0) return;
+      const outDe = [...deArr];
+      const outEn = [...enArr];
+      for (let i = 0; i < len; i++) {
+        const d = (outDe[i] ?? '').trim();
+        const e = (outEn[i] ?? '').trim();
+        if (!d && e) {
+          const t = await translateText(e, 'EN', 'DE');
+          if (t && t !== e) { outDe[i] = t; translatedFields++; }
+          await new Promise(r => setTimeout(r, 60));
+        } else if (d && !e) {
+          const t = await translateText(d, 'DE', 'EN');
+          if (t && t !== d) { outEn[i] = t; translatedFields++; }
+          await new Promise(r => setTimeout(r, 60));
+        }
+      }
+      parent[deKey] = outDe;
+      parent[enKey] = outEn;
+    };
+
+    await translatePair('text', 'textEn');
+    await translatePair('answer', 'answerEn');
+    await translatePair('unit', 'unitEn');
+    await translatePair('customQuestion', 'customQuestionEn');
+    await translateArrayPair('options', 'optionsEn');
+
+    // BunteTuete-Subkinds — pro Mechanik andere Felder
+    if (out.bunteTuete && typeof out.bunteTuete === 'object') {
+      const bt = { ...out.bunteTuete };
+      const kind = bt.kind;
+      if (kind === 'top5') {
+        await translateArrayPair('answers', 'answersEn', bt);
+      } else if (kind === 'order') {
+        await translateArrayPair('items', 'itemsEn', bt);
+      } else if (kind === 'onlyConnect') {
+        await translateArrayPair('hints', 'hintsEn', bt);
+        await translateArrayPair('acceptedAnswers', 'acceptedAnswersEn', bt);
+        // single answer
+        const de = (bt.answer ?? '').trim();
+        const en = (bt.answerEn ?? '').trim();
+        if (!de && en) {
+          const t = await translateText(en, 'EN', 'DE');
+          if (t && t !== en) { bt.answer = t; translatedFields++; }
+          await new Promise(r => setTimeout(r, 60));
+        } else if (de && !en) {
+          const t = await translateText(de, 'DE', 'EN');
+          if (t && t !== de) { bt.answerEn = t; translatedFields++; }
+          await new Promise(r => setTimeout(r, 60));
+        }
+      } else if (kind === 'oneOfEight') {
+        await translateArrayPair('truths', 'truthsEn', bt);
+        const de = (bt.lie ?? '').trim();
+        const en = (bt.lieEn ?? '').trim();
+        if (!de && en) {
+          const t = await translateText(en, 'EN', 'DE');
+          if (t && t !== en) { bt.lie = t; translatedFields++; }
+        } else if (de && !en) {
+          const t = await translateText(de, 'DE', 'EN');
+          if (t && t !== de) { bt.lieEn = t; translatedFields++; }
+        }
+        await new Promise(r => setTimeout(r, 60));
+      }
+      out.bunteTuete = bt;
+    }
+
+    updated.push(out);
+  }
+  return { updated, translatedFields };
+}
+
+/** Counter: wieviele Frage-Felder brauchen Uebersetzung? Hilft Frontend-Button
+ *  einen sinnvollen Counter zu zeigen ('🌐 Uebersetzen (12 fehlend)'). */
+function countMissingTranslations(questions: any[]): number {
+  let missing = 0;
+  const pair = (a?: string, b?: string) => {
+    const aT = (a ?? '').trim();
+    const bT = (b ?? '').trim();
+    if ((aT && !bT) || (!aT && bT)) missing++;
+  };
+  const arrPair = (a?: string[], b?: string[]) => {
+    const aArr = Array.isArray(a) ? a : [];
+    const bArr = Array.isArray(b) ? b : [];
+    const len = Math.max(aArr.length, bArr.length);
+    for (let i = 0; i < len; i++) {
+      const aV = (aArr[i] ?? '').trim();
+      const bV = (bArr[i] ?? '').trim();
+      if ((aV && !bV) || (!aV && bV)) missing++;
+    }
+  };
+  for (const q of questions) {
+    pair(q.text, q.textEn);
+    pair(q.answer, q.answerEn);
+    pair(q.unit, q.unitEn);
+    pair(q.customQuestion, q.customQuestionEn);
+    arrPair(q.options, q.optionsEn);
+    const bt = q.bunteTuete;
+    if (bt && typeof bt === 'object') {
+      if (bt.kind === 'top5')        arrPair(bt.answers, bt.answersEn);
+      if (bt.kind === 'order')       arrPair(bt.items, bt.itemsEn);
+      if (bt.kind === 'onlyConnect') {
+        arrPair(bt.hints, bt.hintsEn);
+        arrPair(bt.acceptedAnswers, bt.acceptedAnswersEn);
+        pair(bt.answer, bt.answerEn);
+      }
+      if (bt.kind === 'oneOfEight') {
+        arrPair(bt.truths, bt.truthsEn);
+        pair(bt.lie, bt.lieEn);
+      }
+    }
+  }
+  return missing;
+}
+
+app.post('/api/qq/drafts/:id/translate', async (req, res) => {
+  const { pin } = req.body as { pin?: string };
+  if (!pin || pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  if (!process.env.DEEPL_API_KEY) return res.status(503).json({ error: 'DEEPL_API_KEY nicht gesetzt' });
+  let draft: any = null;
+  if (await ensureDraftDbConnection()) {
+    try { draft = await getQQDraftFromDB(req.params.id); } catch { /* fall through */ }
+  }
+  if (!draft) {
+    draft = qqDrafts.find(d => d.id === req.params.id);
+  }
+  if (!draft) return res.status(404).json({ error: 'Draft nicht gefunden' });
+  if (!Array.isArray(draft.questions)) return res.status(400).json({ error: 'Draft hat keine Fragen' });
+  const { updated, translatedFields } = await translateQQDraftQuestions(draft.questions);
+  const newDraft = { ...draft, questions: updated, updatedAt: Date.now() };
+  if (await ensureDraftDbConnection()) {
+    try {
+      const saved = await saveQQDraftToDB(newDraft);
+      cache.del('qqDrafts');
+      return res.json({ ok: true, translatedFields, draft: saved });
+    } catch { /* fall through */ }
+  }
+  const idx = qqDrafts.findIndex(d => d.id === req.params.id);
+  if (idx >= 0) qqDrafts[idx] = newDraft;
+  else qqDrafts.unshift(newDraft);
+  persistQQDrafts();
+  cache.del('qqDrafts');
+  res.json({ ok: true, translatedFields, draft: newDraft });
+});
+
 app.put('/api/qq/drafts/:id', async (req, res) => {
   const body = req.body;
   if (!body || typeof body.title !== 'string' || body.title.length > 200) return res.status(400).json({ error: 'Ungültiger Titel' });

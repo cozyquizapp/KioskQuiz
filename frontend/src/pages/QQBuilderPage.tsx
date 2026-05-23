@@ -196,6 +196,63 @@ function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
 
+// ── DeepL-PIN-Cache (2026-05-20) ────────────────────────────────────────────
+// Pendant zu QQModeratorPage:getDevPin — localStorage-Cache fuer Admin-PIN
+// damit Wolf nicht bei jedem DeepL-Klick neu tippen muss.
+const DEEPL_PIN_KEY = 'qq-admin-pin';
+function getDevPin(): string | null {
+  let p = localStorage.getItem(DEEPL_PIN_KEY);
+  if (p) return p;
+  p = window.prompt('Admin-PIN für DeepL-Übersetzung:');
+  if (!p) return null;
+  localStorage.setItem(DEEPL_PIN_KEY, p);
+  return p;
+}
+function clearDevPin(): void {
+  localStorage.removeItem(DEEPL_PIN_KEY);
+}
+
+// ── Translation-Counter (2026-05-20) ────────────────────────────────────────
+// Zaehlt wieviele Frage-Felder DE↔EN-Pair fehlt (zeigt im Button-Label an).
+function countMissingTranslations(questions: any[] | undefined): number {
+  if (!Array.isArray(questions)) return 0;
+  let m = 0;
+  const pair = (a?: string, b?: string) => {
+    const aT = (a ?? '').trim(); const bT = (b ?? '').trim();
+    if ((aT && !bT) || (!aT && bT)) m++;
+  };
+  const arrPair = (a?: string[], b?: string[]) => {
+    const aArr = Array.isArray(a) ? a : []; const bArr = Array.isArray(b) ? b : [];
+    const len = Math.max(aArr.length, bArr.length);
+    for (let i = 0; i < len; i++) {
+      const aV = (aArr[i] ?? '').trim(); const bV = (bArr[i] ?? '').trim();
+      if ((aV && !bV) || (!aV && bV)) m++;
+    }
+  };
+  for (const q of questions) {
+    pair(q.text, q.textEn);
+    pair(q.answer, q.answerEn);
+    pair(q.unit, q.unitEn);
+    pair(q.customQuestion, q.customQuestionEn);
+    arrPair(q.options, q.optionsEn);
+    const bt = q.bunteTuete;
+    if (bt && typeof bt === 'object') {
+      if (bt.kind === 'top5')        arrPair(bt.answers, bt.answersEn);
+      if (bt.kind === 'order')       arrPair(bt.items, bt.itemsEn);
+      if (bt.kind === 'onlyConnect') {
+        arrPair(bt.hints, bt.hintsEn);
+        arrPair(bt.acceptedAnswers, bt.acceptedAnswersEn);
+        pair(bt.answer, bt.answerEn);
+      }
+      if (bt.kind === 'oneOfEight') {
+        arrPair(bt.truths, bt.truthsEn);
+        pair(bt.lie, bt.lieEn);
+      }
+    }
+  }
+  return m;
+}
+
 // ── Helpers ────────────────────────────────────────────────────────────────────
 function makeEmptyQuestion(phaseIndex: number, questionIndexInPhase: number, category: QQCategory, draftId: string): QQQuestion {
   const base = {
@@ -419,6 +476,53 @@ export default function QQBuilderPage() {
     return () => { if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current); };
   }, [activeDraft]);
 
+  // ── 2026-05-20: External-Change-Detection (Race-Fix bei Library-Import) ──
+  // Wolf-Pain: Builder offen + Library-Import → Builder ueberschreibt beim
+  // naechsten Save den Import-State. Polling alle 15s checkt server.updatedAt
+  // gegen lokal.updatedAt. Bei diff:
+  //  - lokal sauber (nichts geändert seit letztem Save) → silent reload
+  //  - lokal dirty → window.confirm vor Reload
+  useEffect(() => {
+    if (!activeDraft?.id) return;
+    let cancelled = false;
+    const poll = window.setInterval(async () => {
+      if (cancelled) return;
+      try {
+        const res = await fetch(`/api/qq/drafts/${activeDraft.id}`);
+        if (!res.ok) return;
+        const serverDraft = await res.json();
+        const serverTs = serverDraft.updatedAt ?? 0;
+        const localTs = activeDraft.updatedAt ?? 0;
+        // Sicherheits-Schwelle 2s: ignoriert eigene PUTs die gerade zurueckkommen.
+        if (serverTs <= localTs + 2000) return;
+        // Heuristik fuer dirty: localStorage-Backup neuer als activeDraft.updatedAt.
+        const backupRaw = localStorage.getItem(`qq-draft-backup-${activeDraft.id}`);
+        let isDirty = false;
+        try {
+          if (backupRaw) {
+            const b = JSON.parse(backupRaw);
+            isDirty = (b?.savedAt ?? 0) > localTs;
+          }
+        } catch { /* ignore */ }
+        if (isDirty) {
+          const msg = '🔄 Draft wurde extern geändert (z.B. durch Library-Import).\n\n'
+            + 'Du hast ungespeicherte Änderungen im Builder.\n\n'
+            + 'OK = Server-Version laden (deine lokalen Edits gehen verloren)\n'
+            + 'Abbrechen = lokal behalten (beim Speichern überschreibst du den Server-State)';
+          if (window.confirm(msg)) {
+            setActiveDraft(serverDraft);
+            setDrafts(prev => prev.map(d => d.id === serverDraft.id ? serverDraft : d));
+          }
+        } else {
+          setActiveDraft(serverDraft);
+          setDrafts(prev => prev.map(d => d.id === serverDraft.id ? serverDraft : d));
+        }
+      } catch { /* Network-Error, naechster Tick versucht's wieder */ }
+    }, 15000);
+    return () => { cancelled = true; window.clearInterval(poll); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeDraft?.id, activeDraft?.updatedAt]);
+
   // 2026-05-10 CozyBuilder Pack B #9: globaler Paste-Handler. Strg+V
   // Bild-aus-Clipboard auf aktiven Slot upen wenn nicht in Text-Input
   // fokussiert (sonst stört es normales Text-Paste).
@@ -605,6 +709,39 @@ export default function QQBuilderPage() {
     }
     await saveDraftRaw(draft);
   }
+  /**
+   * 2026-05-20: Per-Draft DeepL-Translate (bidirektional, nur fehlende Felder).
+   * Spart DeepL-Kontingent gegenueber dem Library-weiten Re-Translate, weil
+   * NUR Fragen im aktuellen Draft uebersetzt werden. PIN via localStorage-Cache.
+   */
+  async function translateDraftMissing() {
+    if (!activeDraft || translating) return;
+    const pin = getDevPin();
+    if (!pin) return;
+    setTranslating(true);
+    try {
+      const res = await fetch(`/api/qq/drafts/${activeDraft.id}/translate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin }),
+      });
+      const data = await res.json();
+      if (res.status === 403) {
+        clearDevPin();
+        alert('PIN falsch — beim nächsten Klick erneut eingeben.');
+        return;
+      }
+      if (!res.ok) {
+        alert(`Fehler: ${data.error ?? 'unbekannt'}`);
+        return;
+      }
+      if (data.draft) {
+        setActiveDraft(data.draft);
+        setDrafts(prev => prev.map(d => d.id === data.draft.id ? data.draft : d));
+      }
+      alert(`✓ ${data.translatedFields ?? 0} Felder übersetzt`);
+    } finally { setTranslating(false); }
+  }
+
   async function translateAllToEnglish() {
     if (!activeDraft || translating) return;
     // 2026-05-05 (Wolf-Bug 'felder werden nicht automatisch uebersetzt die
@@ -1159,6 +1296,24 @@ export default function QQBuilderPage() {
               >🪅 CozyGames {activeDraft.cozyGamesEnabled ? `✓ (${(activeDraft.cozyGamesPool ?? []).length})` : ''}</button>
               <button onClick={() => exportHostCheatsheet(activeDraft)} style={btnStyle('#F59E0B')} title="Druckbares Host-Sheet mit allen Fragen, Antworten & Moderator-Tipps">📄 Host-Sheet</button>
               <button onClick={translateAllToEnglish} style={btnStyle('#0EA5E9')} disabled={translating || saving}>{translating ? '⏳ Übersetze…' : '🌐 EN befüllen'}</button>
+              {/* 2026-05-20 (Wolf-Wunsch): Per-Draft DeepL-Translate, nur
+                  fehlende Felder. Counter im Label zeigt direkt wieviele
+                  Felder noch ohne Pair sind. Bidirektional. */}
+              {(() => {
+                const missing = countMissingTranslations(activeDraft.questions);
+                return (
+                  <button
+                    onClick={translateDraftMissing}
+                    style={btnStyle('#22C55E')}
+                    disabled={translating || saving || missing === 0}
+                    title={missing > 0
+                      ? `${missing} Felder ohne DE↔EN-Übersetzung — DeepL ergänzt sie bidirektional`
+                      : 'Alle Felder vollständig übersetzt'}
+                  >
+                    {translating ? '⏳ DeepL…' : missing > 0 ? `🌐 DeepL (${missing})` : '✓ Übersetzt'}
+                  </button>
+                );
+              })()}
             </>
           )}
           {/* 2026-05-05 (Wolf 'editor useless geworden'): Folien-Editor-Button

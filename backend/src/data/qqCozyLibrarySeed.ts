@@ -497,6 +497,12 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: '88', targetValue: 88, unit: 'Tasten', unitEn: 'keys',
     funFact: '52 weiße + 36 schwarze. Davor experimentierte man mit bis zu 97 Tasten — aber das menschliche Ohr unterscheidet die extremen Frequenzen kaum noch. Steinway etablierte 88 um 1880 als Standard.',
   }),
+  item('bmth-founded', 'SCHAETZCHEN', 'Musik', {
+    text: 'In welchem Jahr wurde die Band Bring Me The Horizon gegründet?',
+    textEn: 'In what year was the band Bring Me The Horizon founded?',
+    answer: '2004', targetValue: 2004, unit: '', unitEn: '',
+    funFact: 'Bring Me The Horizon gründete sich 2004 in Sheffield (UK) um Frontmann Oli Sykes — damals war er 17. Stilistisch wanderten sie von Deathcore über Metalcore (Sempiternal, 2013) zu Stadion-Rock (That\'s The Spirit, 2015) bis zu Pop/Synth-Sound auf „POST HUMAN: NeX GEn" (2024). Wenige Bands haben so radikal das Genre gewechselt — und ihre Fans mitgenommen.',
+  }),
   item('mona-lisa-eyebrows', 'CHEESE', 'Kunst', {
     text: 'Welches berühmte Porträt hat keine Augenbrauen?',
     textEn: 'Which famous portrait has no eyebrows?',
@@ -619,14 +625,25 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     funFact: 'Kapitän James Cook brachte das Wort 1769 von Tahiti mit nach Europa. Vorher gab es im Englischen nur „pricking" oder „staining". Im Deutschen wurde es als „Tätowierung" eingedeutscht — die ursprüngliche Klopf-Lautmalerei steckt noch drin.',
   }),
 
-  item('robyn-fenty', 'MUCHO', 'Popkultur', {
-    text: 'Wer ist Robyn Fenty?',
-    textEn: 'Who is Robyn Fenty?',
-    answer: 'Rihanna',
-    options: ['Rihanna', 'Lady Gaga', 'Beyoncé', 'Adele'],
-    optionsEn: ['Rihanna', 'Lady Gaga', 'Beyoncé', 'Adele'],
-    correctOptionIndex: 0,
-    funFact: 'Robyn Rihanna Fenty, geboren 1988 in Barbados. „Fenty Beauty" + „Savage X Fenty" sind ihre Make-up- und Wäsche-Marken — die haben sie 2021 zur jüngsten weiblichen Self-Made-Milliardärin Amerikas gemacht (Vermögen $1,7 Mrd.).',
+  item('singer-real-names', 'ZEHN_VON_ZEHN', 'Popkultur', {
+    text: 'Eine dieser Personen ist KEINE bekannte Sängerin — welche? Die gebürtigen Namen lauten:',
+    textEn: 'One of these people is NOT a famous singer — which one? Their birth names are:',
+    answer: 'Mark Sinclair Vincent (= Vin Diesel)',
+    answerEn: 'Mark Sinclair Vincent (= Vin Diesel)',
+    options: [
+      'Robyn Rajad Fenty',
+      'Ashley Nicolette Frangipane',
+      'Stefani Joanne Germanotta',
+      'Mark Sinclair Vincent',
+    ],
+    optionsEn: [
+      'Robyn Rajad Fenty',
+      'Ashley Nicolette Frangipane',
+      'Stefani Joanne Germanotta',
+      'Mark Sinclair Vincent',
+    ],
+    correctOptionIndex: 3,
+    funFact: 'Auflösung: Robyn Rajad Fenty = Rihanna · Ashley Nicolette Frangipane = Halsey · Stefani Joanne Germanotta = Lady Gaga · Mark Sinclair Vincent = Vin Diesel (Schauspieler, kein Sänger). Halseys Künstlername ist übrigens ein Anagramm ihres Vornamens „Ashley".',
   }),
 
   item('vegan-top5-countries', 'BUNTE_TUETE', 'Essen & Trinken', {

@@ -71,6 +71,10 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   // beim Runden-Intro (R2/R3) als Überraschung enthüllt (3D-Card-Flip mit
   // NEU-Badge), Wolf erklärt sie dann live.
   return [
+    // 2026-05-23 (Wolf-Live-Test #P): Grid-Preview auf Slide 1 ergaenzt
+    // damit Teams sich von Anfang an etwas darunter vorstellen koennen.
+    // Wolf-Feedback: „Rules waren viel zu lang" — daher hier nur die
+    // visuelle Aha-Wirkung, Slide 2 bleibt fuer das Flow-Detail.
     {
       icon: '🏆',
       title: t('rules.slide1.title', 'Das Ziel'),
@@ -78,16 +82,18 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide1.line1', 'Größtes zusammenhängendes Gebiet gewinnt'),
       ],
-    },
-    {
-      icon: '⚡',
-      title: t('rules.slide2.title', 'So läuft\'s'),
-      color: RULES_SLIDE_COLOR,
-      lines: [
-        t('rules.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
-        t('rules.slide2.line2', 'Richtige Antwort → Feld setzen'),
-        t('rules.slide2.line3', 'Schnellste richtige Antwort setzt zuerst'),
-      ],
+      grid: {
+        // Beispiel-Brett: blaues Team hat 5 zusammenhaengende Felder = die
+        // groesste Region. Teams sehen sofort visuell was "verbunden" heisst.
+        cells: [
+          ['A', 'A', 'A', null],
+          ['A', 'A', null, null],
+          [null, null, null, null],
+          [null, null, null, null],
+        ],
+        colorA: '#3B82F6', colorB: '#EF4444',
+        label: 'Beispiel: 5 verbundene Felder = größte Region',
+      },
     },
     {
       icon: '🗺',
@@ -195,6 +201,8 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
   // 2026-05-09 (Wolf): New-Abilities slide removed — Steal/Stack revealed
   // as a surprise at the round-intro (3D card-flip with NEW badge).
   return [
+    // 2026-05-23 (Wolf-Live-Test #P): Grid-preview on slide 1 so teams can
+    // visualize the goal from the start — Wolf-feedback "rules waren zu lang".
     {
       icon: '🏆',
       title: t('rules.slide1.title', 'The Goal'),
@@ -202,6 +210,16 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       lines: [
         t('rules.slide1.line1', 'Largest connected area wins'),
       ],
+      grid: {
+        cells: [
+          ['A', 'A', 'A', null],
+          ['A', 'A', null, null],
+          [null, null, null, null],
+          [null, null, null, null],
+        ],
+        colorA: '#3B82F6', colorB: '#EF4444',
+        label: 'Example: 5 connected cells = largest region',
+      },
     },
     {
       icon: '⚡',

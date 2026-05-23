@@ -710,4 +710,10 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     answer: 'Atomium', answerEn: 'Atomium',
     funFact: 'Gebaut für die Weltausstellung 1958 in Brüssel — eine Eisen-Kristallstruktur, 165 Milliarden Mal vergrößert. Ursprünglich nur als 6-Monate-Provisorium gedacht, wurde es zu Belgiens Wahrzeichen. 102 m hoch, 2.400 Tonnen Stahl, 9 begehbare Kugeln verbunden durch Rolltreppen-Röhren.',
   }),
+  item('alysa-liu-sport', 'CHEESE', 'Sport', {
+    text: 'In welcher Sportart hat diese Olympiasiegerin Gold gewonnen?',
+    textEn: 'In which sport did this Olympic champion win gold?',
+    answer: 'Eiskunstlauf', answerEn: 'Figure Skating',
+    funFact: 'Alysa Liu (USA, *2005) holte bei den Olympischen Winterspielen 2026 in Mailand-Cortina Gold im Eiskunstlauf. Mit 13 wurde sie 2019 jüngste US-Meisterin der Geschichte — pausierte 2022 ihre Karriere und kam 2024 stärker zurück. Sie widerspricht vielen Klassik-Klischees des Eiskunstlaufs: kurze Haare, asiatisch-amerikanisch, vegan, sehr fokussiert auf Athletik statt Glamour.',
+  }),
 ];

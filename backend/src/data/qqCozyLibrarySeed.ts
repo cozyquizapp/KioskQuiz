@@ -644,23 +644,14 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     correctOptionIndex: 1,
     funFact: 'Schneewittchen (1937) war der allererste abendfüllende Disney-Trickfilm überhaupt. Pinocchio folgte 1940, Bambi 1942. Schneewittchen wurde intern als „Disney\'s Folly" verspottet, weil niemand glaubte, dass Erwachsene 83 Minuten Zeichentrick anschauen würden — wurde dann der bis dahin erfolgreichste Tonfilm überhaupt.',
   }),
-  item('google-logo-color-order', 'ZEHN_VON_ZEHN', 'Technologie', {
-    text: 'In welcher Reihenfolge erscheinen die Farben im Google-Logo (Buchstaben G-o-o-g-l-e von links nach rechts)?',
-    textEn: 'In which order do the colors appear in the Google logo (letters G-o-o-g-l-e, left to right)?',
-    answer: 'Blau, Rot, Gelb, Blau, Grün, Rot',
-    answerEn: 'Blue, Red, Yellow, Blue, Green, Red',
-    options: [
-      'Blau, Rot, Gelb, Blau, Grün, Rot',
-      'Blau, Gelb, Rot, Blau, Grün, Rot',
-      'Rot, Gelb, Blau, Grün, Blau, Rot',
-    ],
-    optionsEn: [
-      'Blue, Red, Yellow, Blue, Green, Red',
-      'Blue, Yellow, Red, Blue, Green, Red',
-      'Red, Yellow, Blue, Green, Blue, Red',
-    ],
-    correctOptionIndex: 0,
-    funFact: 'Die korrekte Reihenfolge ist Blau-Rot-Gelb-Blau-Grün-Rot. Die meisten erkennen die 4 Primärfarben (Blau, Rot, Gelb, Grün), aber niemand merkt sich die exakte Permutation. Das aktuelle Logo („Product Sans") gibt es seit 2015 — die Farbreihenfolge hat sich seit dem Original von 1998 nicht geändert.',
+  item('nbc-peacock-logo', 'ZEHN_VON_ZEHN', 'Popkultur', {
+    text: 'Welches Tier ist im NBC-Logo zu sehen?',
+    textEn: 'Which animal appears in the NBC logo?',
+    answer: 'Pfau', answerEn: 'Peacock',
+    options: ['Adler', 'Pfau', 'Phönix'],
+    optionsEn: ['Eagle', 'Peacock', 'Phoenix'],
+    correctOptionIndex: 1,
+    funFact: 'NBC führte den Pfau 1956 ein, um sein neues Farbfernseh-Programm zu bewerben — der bunte Vogel symbolisierte den Wechsel von Schwarz-Weiß auf Farbe. Ursprünglich 11 Federn, seit dem Redesign 1986 in der heutigen Form mit 6 Federn (gelb, orange, rot, lila, blau, grün). Daher der alte Slogan: „NBC — Proud as a Peacock".',
   }),
   item('singer-real-names', 'ZEHN_VON_ZEHN', 'Popkultur', {
     text: 'Eine dieser Personen ist KEINE bekannte Sängerin — welche?',

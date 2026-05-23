@@ -7,7 +7,7 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-13 (Refactor Phase 4).
  * 2 externe Importer (QQBuiltinSlide + BetTestPage).
  */
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -21,14 +21,11 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   const submittedCount = submittedIds.length;
 
   // 2026-05-24 (Wolf-Live-Test): Erklärslide direkt vor Bets als „Introseite".
-  // Final-Tipp-Slide ist aus Rules raus (zu lang) und wird stattdessen hier
-  // automatisch fuer 7 Sekunden gezeigt, dann fadet die normale Betting-View
-  // ein. Mod muss nichts klicken — Auto-Choreo.
-  const [introDone, setIntroDone] = useState(false);
-  useEffect(() => {
-    const t = window.setTimeout(() => setIntroDone(true), 7000);
-    return () => window.clearTimeout(t);
-  }, []);
+  // Mod-Space dismissed (NICHT Auto-Timer — Wolf will den normalen Space-Flow).
+  // Backend-Flag s.finalBettingIntroDone wird in qqStartFinalBetting auf false
+  // gesetzt und durch qqFinishFinalBettingIntro (qq:finishFinalBettingIntro-Event)
+  // auf true gesetzt. Default true für alte Spiele ohne das Feld.
+  const introDone = (s as any).finalBettingIntroDone !== false;
 
   // 2026-05-19 (Wolf-Audit P0.1 'place your tip ist ohne sound'):
   // Phase-Entry-Fanfare beim Mount + sanfter Tick pro neu eingegangenem Tipp.

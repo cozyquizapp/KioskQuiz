@@ -51,7 +51,7 @@ import {
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
-  qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqResolveFinalBets,
+  qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqFinishFinalBettingIntro, qqResolveFinalBets,
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
@@ -3093,6 +3093,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqFinishFinalBetting(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-24 (Wolf-Live-Test): Mod-Space dismissed Final-Tipp-Intro-Slide.
+    socket.on('qq:finishFinalBettingIntro', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqFinishFinalBettingIntro(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

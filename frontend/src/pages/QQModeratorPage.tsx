@@ -631,6 +631,13 @@ export default function QQModeratorPage() {
         break;
       }
       case 'FINAL_BETTING': {
+        // 2026-05-24 (Wolf-Live-Test): wenn Intro-Slide noch nicht dismissed,
+        // Space → Intro weg, dann zur Betting-View.
+        if ((s as any).finalBettingIntroDone === false) {
+          delayMs = 0;
+          action = () => emit('qq:finishFinalBettingIntro', { roomCode });
+          break;
+        }
         // Auto-Advance nur wenn alle Teams gesetzt haben — sonst auf Mod
         // warten (er will evtl noch warten oder manuell triggern).
         // 2026-05-09 (Wolf 'bet-phase wurde übersprungen'): Lese-Pause auf
@@ -999,8 +1006,15 @@ export default function QQModeratorPage() {
       // Start der Bet-Phase ist explizit Mod-Button — Space würde sonst
       // zwischen Phase 3 und 4 immer Bet-Phase einleiten, auch wenn nicht
       // gewünscht. FINAL_BETTING + FINAL_REVEAL haben dann normalen Space-Flow.
-      else if (s.phase === 'FINAL_BETTING')
-        emitRef.current('qq:finishFinalBetting', { roomCode });
+      // 2026-05-24 (Wolf-Live-Test): wenn Intro-Slide noch nicht dismissed,
+      // Space → Intro weg statt finishFinalBetting.
+      else if (s.phase === 'FINAL_BETTING') {
+        if ((s as any).finalBettingIntroDone === false) {
+          emitRef.current('qq:finishFinalBettingIntro', { roomCode });
+        } else {
+          emitRef.current('qq:finishFinalBetting', { roomCode });
+        }
+      }
       else if (s.phase === 'FINAL_REVEAL')
         emitRef.current('qq:nextQuestion', { roomCode });
       else if (s.phase === 'GAME_OVER')

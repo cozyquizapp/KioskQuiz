@@ -5524,11 +5524,23 @@ export function qqStartFinalBetting(room: QQRoomState): void {
   for (const id of Object.keys(room.teams)) room.finalPhaseWins[id] = 0;
   room.finalRoundWinners = null;
   room.finalBetResolution = null;
+  // 2026-05-24 (Wolf-Live-Test): Intro-Slide vor Bets. Mod-Space dismissed.
+  (room as any).finalBettingIntroDone = false;
   // Score-Snapshot: Anzahl Cells pro Team JETZT festhalten — wird beim Wechsel
   // in die nächste Final-Frage als Delta-Basis genutzt (Per-Frage-Win-Tracking).
   const initialSnapshot = countCellsByTeam(room);
   room.finalRoundScoreSnapshot = initialSnapshot;
   room.finalLastSnapshot = { ...initialSnapshot };
+  room.lastActivityAt = Date.now();
+}
+
+/** 2026-05-24 (Wolf-Live-Test): Mod dismissed die Intro-Slide vor Bets via
+ *  Space. Setzt nur ein UI-Flag, keine Phase/Mechanik-Aenderung. */
+export function qqFinishFinalBettingIntro(room: QQRoomState): void {
+  if (room.phase !== 'FINAL_BETTING') {
+    throw new QQError('WRONG_PHASE', 'Intro-Dismiss nur waehrend FINAL_BETTING.');
+  }
+  (room as any).finalBettingIntroDone = true;
   room.lastActivityAt = Date.now();
 }
 

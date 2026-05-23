@@ -227,13 +227,17 @@ function ActionCardReveal({ cardData, iconNode, iconSize, cardCount, lang, delay
     // Grid abspielen. Detection via emoji-Marker (📍 Place, ⚡ Steal, 🏯 Stack).
     // 2026-05-17 v2 (Wolf 'doppel sound place'): Beim SLAM (Card landet
     // face-down auf dem Tisch) zusätzlich ein Card-Slam-Thump (playWoodKnock)
-    // ~150ms in den Slam — das ersetzt den vorherigen Cascade-Action-Sound,
-    // der inkonsistent mit dem Flip-Sound war. Beats: Thump → Settle → Flip-Sound.
+    // — Beats: Thump → Settle → Flip-Sound.
+    // 2026-05-23 v3 (Wolf 'place sound asynchron'): Thump auf 770ms (= 55%
+    // SLAM_DUR) verschoben — das ist der visuelle Impact-Moment im
+    // qqActionCardSlam-Keyframe (translateY -90cqh → 8%, erstes Aufschlagen).
+    // Vorher feuerte er bei 150ms (Card noch in der Luft) → ~620ms zu früh.
+    const SLAM_IMPACT_MS = 770;
     const t1 = window.setTimeout(() => {
       setPhase('slamming');
       window.setTimeout(() => {
         try { playWoodKnock(); } catch { /* ignore */ }
-      }, 150);
+      }, SLAM_IMPACT_MS);
     }, startDelayMs);
     const t2 = window.setTimeout(() => {
       setPhase('flipping');

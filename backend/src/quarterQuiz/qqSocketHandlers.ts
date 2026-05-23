@@ -169,7 +169,11 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   // bei qqStartGame zurueckgesetzt damit das naechste Spiel sauber laeuft.
   if ((room as any)._gameResultPersisted) return;
   (room as any)._gameResultPersisted = true;
-  const teamList = Object.values(room.teams);
+  // 2026-05-23 (Live-Test-Bug #C): Bot/Dummy-Teams aus Summary-Persistierung
+  // filtern. Vorher landeten _dummy-Teams in der Summary-Page neben den echten
+  // Teams → verwirrend nach echtem Quiz. Die Dummies bleiben im Room-State
+  // (z.B. fuer Beamer-Render), nur beim DB-Save fuer Summary werden sie raus.
+  const teamList = Object.values(room.teams).filter((t: any) => !t._dummy);
   // QQ-Score = largestConnected (verbundene Felder). teamPhaseStats hat KEIN
   // totalScore-Feld — die alte Variante hat deshalb immer 0 gespeichert und
   // damit Highscore/ClosestGame/Leaderboard kaputt gemacht (Winner war oft

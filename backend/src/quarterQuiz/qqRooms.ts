@@ -1051,6 +1051,10 @@ export function qqFlushQuestionToHistory(room: QQRoomState): void {
     answers,
     correctTeamId: room.correctTeamId,
     correctTeamIds: uniqueIds,
+    // 2026-05-23 (Live-Test-Bug #F): Question-Start-Timestamp für Speedy-Calc.
+    // Vorher hatte das schnellste Team immer 0,0s Reaktionszeit (relativ zum
+    // ersten Submit). Jetzt: relativ zum Question-Start.
+    startedAt: (room as any)._currentQuestionStartedAt ?? null,
   } as any);
 }
 
@@ -1125,6 +1129,10 @@ export function qqActivateQuestion(
   // Accumulate previous question's answers into history before clearing
   qqFlushQuestionToHistory(room);
   room.phase          = 'QUESTION_ACTIVE';
+  // 2026-05-23 (Live-Test-Bug #F): Track question-start für Speedy-Award.
+  // Vorher wurde Reaktionszeit relativ zum ersten Submit gemessen → das
+  // schnellste Team hatte immer 0,0s. Jetzt: relativ zu QUESTION_ACTIVE-Start.
+  (room as any)._currentQuestionStartedAt = Date.now();
   // 2026-05-11: CozyLibrary-Usage-Tracking. Fire-and-forget — Doppelaktivierung
   // wird im Schema-Helper innerhalb von 5min dedupliziert (Mod-Doppelklick etc.).
   {
@@ -5673,11 +5681,16 @@ export function qqResolveFinalBets(room: QQRoomState): void {
   for (const h of room.questionHistory) {
     const answers = (h as any).answers as Array<{ teamId: string; submittedAt: number }> | undefined;
     if (!answers || answers.length === 0) continue;
-    const first = Math.min(...answers.map(a => a.submittedAt));
+    // 2026-05-23 (Live-Test-Bug #F): Baseline ist Question-Start (gespeichert
+    // in h.startedAt seit Live-Test), Fallback auf min(submittedAt) für alte
+    // Spiele ohne startedAt. Vorher hatte das schnellste Team immer 0,0s
+    // weil es als Baseline für alle anderen diente — jetzt zeigt es seine
+    // ECHTE Reaktionszeit gegen den Question-Start an.
+    const baseline = (h as any).startedAt ?? Math.min(...answers.map(a => a.submittedAt));
     const correctSet = new Set([...((h as any).correctTeamIds ?? []), ...(h.correctTeamId ? [h.correctTeamId] : [])]);
     for (const a of answers) {
       if (!correctSet.has(a.teamId)) continue;
-      speedSum[a.teamId] = (speedSum[a.teamId] ?? 0) + Math.max(0, a.submittedAt - first);
+      speedSum[a.teamId] = (speedSum[a.teamId] ?? 0) + Math.max(0, a.submittedAt - baseline);
       speedCount[a.teamId] = (speedCount[a.teamId] ?? 0) + 1;
     }
   }

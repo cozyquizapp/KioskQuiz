@@ -915,9 +915,13 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Per-Team Largest-Region-Cells. Matched backend (qqBfs.ts computeTerritories):
-  // 4-Nachbarschaft, stuck-cells zählen 2 Punkte. Wir behalten die Cells der
-  // höchstwertigen Komponente pro Team → die kommen visuell „nach vorne".
+  // Per-Team Largest-Region-Cells. Matched backend (qqRooms.ts updateTerritories):
+  // 4-Nachbarschaft, stuck-cells +1 Bonus, stackBonus zaehlt voll dazu.
+  // 2026-05-23 (Live-Test-Bug #A Wolf-`!!!!`): vorher fehlte cell.stackBonus
+  // im Frontend-Score-Calc — Double-Stack-Cells wurden nicht mitgewertet,
+  // dadurch wurde im End-Grid eine kleinere Region als "groesste" markiert.
+  // Backend hat trotzdem korrekt gerechnet (largestConnected stimmte), aber
+  // die Visualisierung passte nicht zum Score → Sieger-Highlight verwirrend.
   const largestRegionCells = useMemo(() => {
     const N = s.gridSize;
     const visited: boolean[][] = Array.from({ length: N }, () => Array(N).fill(false));
@@ -931,7 +935,9 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
       while (queue.length > 0) {
         const [r, c] = queue.shift()!;
         cells.add(`${r}-${c}`);
-        score += s.grid[r][c].stuck ? 2 : 1;
+        const cell = s.grid[r][c];
+        // Base 1 + Stuck-Bonus 1 + Stack-Bonus N — matcht updateTerritories.
+        score += 1 + (cell.stuck ? 1 : 0) + (cell.stackBonus ?? 0);
         const n: [number, number][] = [[r - 1, c], [r + 1, c], [r, c - 1], [r, c + 1]];
         for (const [nr, nc] of n) {
           if (nr < 0 || nr >= N || nc < 0 || nc >= N) continue;

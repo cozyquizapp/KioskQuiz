@@ -136,11 +136,15 @@ export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, sub
 }
 
 // ── Submitted state ───────────────────────────────────────────────────────────
-export function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingTeams, myRank }: {
+export function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingTeams, myRank, onRevoke }: {
   text: string; lang?: 'de' | 'en';
   answeredCount?: number; totalTeams?: number;
   pendingTeams?: Array<{ id: string; name: string; color: string; avatarId: string; emoji?: string }>;
   myRank?: number; // 1-based Reihenfolge des Abschickens
+  /** 2026-05-23 (Wolf-Live-Test #O): Optional Revoke-Callback. Wenn gesetzt,
+   *  zeigt ein „Antwort ändern"-Button. Backend cleared dann die Submission,
+   *  Frontend zeigt wieder Input. Nur waehrend QUESTION_ACTIVE + Timer laeuft. */
+  onRevoke?: () => void;
 }) {
   return (
     <div style={{
@@ -226,6 +230,24 @@ export function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, p
         <div style={{ fontSize: 13, fontWeight: 900, color: '#4ade80' }}>
           <QQEmojiIcon emoji="✅"/> {lang === 'de' ? 'Alle Teams fertig!' : 'All teams done!'}
         </div>
+      )}
+      {/* 2026-05-23 (Wolf-Live-Test #O): Antwort-Revoke-Button — Wunsch der
+          Teilnehmenden. Nur sichtbar wenn onRevoke gesetzt + Timer noch laeuft. */}
+      {onRevoke && (
+        <button
+          onClick={onRevoke}
+          style={{
+            marginTop: 4,
+            padding: '8px 14px', minHeight: 36, borderRadius: 10,
+            background: 'rgba(15,23,42,0.55)',
+            border: '1px solid rgba(148,163,184,0.35)',
+            color: '#cbd5e1', fontFamily: 'inherit',
+            fontSize: 12, fontWeight: 800, letterSpacing: 0.3,
+            cursor: 'pointer',
+          }}
+        >
+          ↩ {lang === 'de' ? 'Antwort ändern' : 'Change answer'}
+        </button>
       )}
     </div>
   );

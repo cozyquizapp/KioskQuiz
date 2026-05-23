@@ -82,5 +82,16 @@ export const similarityScore = (a: string, b: string): number => {
     if (sA === sB && sA.length >= 3) return 0.92;
   }
   const distance = levenshteinDistance(normalizedA, normalizedB);
-  return Math.max(0, 1 - distance / maxLen);
+  const rawScore = Math.max(0, 1 - distance / maxLen);
+  // 2026-05-23 (Wolf-Live-Test #G): "Iceland" ↔ "Ireland" hatten distance=1
+  // / maxLen=7 → 0.857 → ueber 0.8-Threshold = falsch-positiv. Heuristik:
+  // bei sehr kurzen Strings (≤8 chars) ist ein Buchstabe Unterschied oft
+  // ein anderes Wort (iceland/ireland, italien/italian, sweden/sverige).
+  // Daher bei maxLen ≤ 8 + distance ≥ 1 → kein Fuzzy-Match, exact-only.
+  // Bei laengeren Strings bleibt Fuzzy-Toleranz erhalten (Tippfehler in
+  // "deutschland", "weihnachten", "Liechtenstein" werden weiterhin akzeptiert).
+  if (maxLen <= 8 && distance >= 1) {
+    return Math.min(rawScore, 0.5);
+  }
+  return rawScore;
 };

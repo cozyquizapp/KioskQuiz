@@ -132,6 +132,18 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     // E1: Rang = Position der eigenen Antwort in submit-order (1-based).
     const sortedAnswers = [...s.answers].sort((a, b) => a.submittedAt - b.submittedAt);
     const myRank = sortedAnswers.findIndex(a => a.teamId === myTeamId) + 1;
+    // 2026-05-23 (Wolf-Live-Test #O): Revoke nur waehrend QUESTION_ACTIVE +
+    // Timer noch nicht abgelaufen + nicht HotPotato (eigene UX-Flow).
+    // Bei Map-Submits ist Revoke unkritisch, bei OnlyConnect/Bluff/Imposter
+    // ist die Submission tiefer in der Mechanik verzahnt — fuer die wenigsten
+    // Teams ein use-case, also nur fuer „normale" Submits (Mucho/Schaetzchen/
+    // Cheese/ZvZ/Top5/Order/Map) anbieten.
+    const subKind = (q?.bunteTuete as any)?.kind;
+    const isComplexBT = q?.category === 'BUNTE_TUETE'
+      && (subKind === 'bluff' || subKind === 'onlyConnect' || subKind === 'oneOfEight' || subKind === 'hotPotato');
+    const canRevoke = s.phase === 'QUESTION_ACTIVE'
+      && !(s as any).timerExpired
+      && !isComplexBT;
     return <SubmittedBadge
       text={displayText}
       lang={lang}
@@ -139,6 +151,10 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
       totalTeams={s.teams.length}
       pendingTeams={pendingTeams}
       myRank={myRank > 0 ? myRank : undefined}
+      onRevoke={canRevoke ? () => {
+        if (navigator.vibrate) navigator.vibrate(20);
+        safeEmit(emit, 'qq:revokeAnswer', { roomCode, teamId: myTeamId });
+      } : undefined}
     />;
   }
   if (!q) return null;

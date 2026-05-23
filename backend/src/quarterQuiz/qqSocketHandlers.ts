@@ -2283,6 +2283,28 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // ── Revoke Answer (2026-05-23 Wolf-Live-Test #O) ──────────────────────
+    // Team-Wunsch: eingegebene Antwort widerrufen solange Timer noch laeuft.
+    // Cleanere Variante als Frontend-Hide, weil das Backend dann konsistent
+    // ist und ein nachfolgender Submit nicht "Update" sondern "Neu" wirkt.
+    socket.on('qq:revokeAnswer', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
+      try {
+        assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:revokeAnswer', 3);
+        const room = ensureQQRoom(payload.roomCode);
+        if (room.phase !== 'QUESTION_ACTIVE') {
+          throw new QQError('WRONG_PHASE', 'Revoke nur bei aktiver Frage moeglich.');
+        }
+        if ((room as any).timerExpired) {
+          throw new QQError('TIMER_EXPIRED', 'Zu spaet — Timer ist abgelaufen.');
+        }
+        room.answers = room.answers.filter(a => a.teamId !== payload.teamId);
+        room.lastActivityAt = Date.now();
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // ── Buzz in (teams, for Hot Potato) ───────────────────────────────────
     socket.on('qq:buzzIn', (payload: QQBuzzInPayload, ack?: unknown) => {
       try {

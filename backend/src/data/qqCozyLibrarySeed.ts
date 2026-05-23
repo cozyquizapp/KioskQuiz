@@ -670,4 +670,44 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
     },
     funFact: 'Tatort läuft seit 1970 — über 1200 Folgen. Polizeiruf 110 startete 1971 als DDR-Antwort und läuft bis heute weiter — bisher älteste durchgehende deutsche Krimi-Reihe.',
   }),
+
+  // ═══ WOLF-BATCH 2026-05-23 — CHEESE-BILDFRAGEN ═══════════════════════════════
+  // Bild ergänzt Wolf beim Import im Builder. Text + Antwort sind generisch
+  // gehalten („Welches X ist auf dem Bild zu sehen?") — das Bild trägt die Frage.
+  item('saffron', 'CHEESE', 'Essen & Trinken', {
+    text: 'Welches Gewürz ist auf dem Bild zu sehen?',
+    textEn: 'Which spice is shown in the picture?',
+    answer: 'Safran', answerEn: 'Saffron',
+    funFact: 'Safran besteht aus den getrockneten Narben der Krokusblüte — pro Blüte nur 3 Stück. Für 1 kg braucht es etwa 200.000 Blüten und ~400 Stunden Handarbeit, daher der Preis von 5.000-10.000 €/kg. Iran produziert rund 90% des Welt-Safrans.',
+  }),
+  item('handpan', 'CHEESE', 'Musik', {
+    text: 'Welches Instrument ist auf dem Bild zu sehen?',
+    textEn: 'Which instrument is shown in the picture?',
+    answer: 'Handpan', answerEn: 'Handpan',
+    funFact: 'Erfunden im Jahr 2000 in Bern von PANArt (Felix Rohner + Sabina Schärer) als „Hang" — Berndeutsch für „Hand". Das UFO-förmige Stahlinstrument hat 8-9 gestimmte Töne und wird mit den Händen gespielt. „Handpan" ist heute der Gattungsbegriff, weil PANArt den Original-Namen markenrechtlich geschützt hat.',
+  }),
+  item('okapi', 'CHEESE', 'Natur & Tiere', {
+    text: 'Welches Tier ist auf dem Bild zu sehen?',
+    textEn: 'Which animal is shown in the picture?',
+    answer: 'Okapi', answerEn: 'Okapi',
+    funFact: 'Erst 1901 wissenschaftlich beschrieben — davor hielten Europäer es für einen Mythos („African Unicorn"). Das Okapi ist der einzige lebende Verwandte der Giraffe. Es hat eine 30 cm lange blau-graue Zunge, mit der es sich auch die Ohren putzen kann. Lebt ausschließlich im Ituri-Regenwald (DR Kongo).',
+  }),
+  item('wasabi-plant', 'CHEESE', 'Natur & Tiere', {
+    text: 'Welche Pflanze ist auf dem Bild zu sehen?',
+    textEn: 'Which plant is shown in the picture?',
+    answer: 'Wasabi', answerEn: 'Wasabi',
+    funFact: 'Echtes Wasabi (Wasabia japonica) wächst nur in bestimmten Bach-Schatten-Lagen Japans und ist eine der schwierigsten Nutzpflanzen der Welt im Anbau. Rund 95% des „Wasabi" weltweit ist eingefärbter Meerrettich + Senf — sogar in Japan! Das echte Rhizom kostet ~150 €/kg.',
+  }),
+  item('paraguay-flag', 'CHEESE', 'Geographie', {
+    text: 'Welches Land hat diese Flagge?',
+    textEn: 'Which country has this flag?',
+    answer: 'Paraguay', answerEn: 'Paraguay',
+    funFact: 'Paraguay hat die einzige Nationalflagge der Welt mit unterschiedlichen Vor- und Rückseiten: vorn das Staatswappen mit Stern, hinten das Schatzkammer-Siegel mit Löwe und der Aufschrift „Paz y Justicia". Eingeführt 1842, heutige Form seit 2013.',
+  }),
+  item('atomium', 'CHEESE', 'Geographie', {
+    text: 'Welches Bauwerk ist auf dem Bild zu sehen?',
+    textEn: 'Which structure is shown in the picture?',
+    answer: 'Atomium', answerEn: 'Atomium',
+    funFact: 'Gebaut für die Weltausstellung 1958 in Brüssel — eine Eisen-Kristallstruktur, 165 Milliarden Mal vergrößert. Ursprünglich nur als 6-Monate-Provisorium gedacht, wurde es zu Belgiens Wahrzeichen. 102 m hoch, 2.400 Tonnen Stahl, 9 begehbare Kugeln verbunden durch Rolltreppen-Röhren.',
+  }),
 ];

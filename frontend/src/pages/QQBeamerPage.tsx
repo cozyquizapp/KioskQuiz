@@ -55,14 +55,14 @@ import { QuestionView } from '../components/CozyQuizQuestionView';
 import { PhaseIntroView, RoundMiniTree } from '../components/CozyQuizPhaseIntroView';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
-  playGridReveal, playAvatarCascadeNote, playActionMenuReveal, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
+  playGridReveal, playAvatarCascadeNote, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
   playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
-  startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal, playGameOver,
+  startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal,
   playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
   startLobbyLoop, stopLobbyLoop, startFinaleLoop, startComebackLoop, startGameOverLoop,
   playStapelStamp, playTeamJoin,
-  playCorrectFor, playWrongFor, playRevealFor, playQuestionStartFor,
+  playWrongFor, playRevealFor, playQuestionStartFor,
   playWolfHowl, playAvatarJingle, startCampfireLoop, stopCampfireLoop,
   playWoodKnock, playWinnerCardReveal,
   preloadSoundDefaults,

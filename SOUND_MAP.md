@@ -128,19 +128,17 @@
 
 ---
 
-## 🔍 Nicht-im-React-Code-referenzierte Sounds
+## 🔍 Entfernte / nicht-im-React-Code-referenzierte Sounds
 
-**Wichtig:** Diese Slot-Keys sind in der QQSoundConfig vorhanden, aber die `play*()`-Funktionen werden im React-Code NICHT aufgerufen. Das heißt:
-- Wenn du eine MP3 in den Slot hochgeladen hast, wird sie nie automatisch abgespielt
-- ABER: nicht löschen! Die Slot-Definition + dein Upload bleiben, falls du den `play*()`-Call später in den Code ziehen willst
+**2026-05-23 Update:** 4 nicht aufgerufene `play*()`-Funktionen wurden aus `sounds.ts` entfernt (Dead Code). Die Slot-Keys in `QQSoundConfig` bleiben erhalten — Wolfs eventuelle MP3-Uploads sind sicher und werden beim späteren Wire-Up wieder benutzt.
 
 | Sound | Slot | Status |
 |---|---|---|
-| `playLobbyWelcome` | `lobbyWelcome` | Funktion existiert, kein Call. Kandidat für: bei Lobby-Mount abspielen |
-| `playGameOver` | `gameOver` | Funktion existiert, kein Call. Kandidat für: GameOverView-Mount |
-| `playActionMenuReveal` | `actionMenuReveal` | Funktion existiert, kein Call. Kandidat für: vor Action-Card-Slam |
-| `playCorrectFor` | `correct{Cat}` | Kategorie-spez. fällt zurück auf generic `correct` — wird also indirekt genutzt |
-| `playRaceLoop` | `raceLoop` | Wird intern via `startRaceLoop()` getriggert — nicht direkt |
+| ~~`playLobbyWelcome`~~ | `lobbyWelcome` | Funktion 2026-05-23 entfernt. Slot bleibt. Wiederbeleben: Funktion + Call bei Lobby-Mount ergänzen. |
+| ~~`playGameOver`~~ | `gameOver` | Funktion 2026-05-23 entfernt (`startGameOverLoop` übernimmt schon). Slot bleibt. |
+| ~~`playActionMenuReveal`~~ | `actionMenuReveal` | Funktion 2026-05-23 entfernt. Heute übernehmen `playWoodKnock` + `playFieldPlaced/Steal/StapelStamp`. Slot bleibt. |
+| ~~`playCorrectFor`~~ | `correct{Cat}` | Funktion 2026-05-23 entfernt. Generic `playCorrect` reicht. Kategorie-Slots bleiben (falls Wolf später per-Cat-Sound will, neuer Wrapper). |
+| `playRaceLoop` | `raceLoop` | Bleibt — wird intern via `startRaceLoop()` getriggert. Slot wird befüllt sobald MP3 da ist. |
 
 ---
 

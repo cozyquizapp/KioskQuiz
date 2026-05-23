@@ -27,7 +27,7 @@ import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
 import { ActionCard, type ActionCardData } from './CozyQuizActionCard';
 import QQProgressTree from './QQProgressTree';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
-import { playActionMenuReveal, playRevealHighlight, playTick } from '../utils/sounds';
+import { playRevealHighlight, playTick } from '../utils/sounds';
 
 export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor: string }) {
   const schedule = s.schedule ?? [];

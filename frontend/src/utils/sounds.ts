@@ -879,7 +879,9 @@ export function playReveal()       { playWithDuck('reveal',  1500); }
 export function playFieldPlaced()  { playSlotOneShot('fieldPlaced'); }
 export function playTeamReveal()   { playSlotOneShot('teamReveal'); }
 export function playSteal()        { playSlotOneShot('steal'); }
-export function playLobbyWelcome() { playSlotOneShot('lobbyWelcome'); }
+// 2026-05-23 (Wolf): playLobbyWelcome entfernt — wurde nirgends im React-Code
+// aufgerufen. Slot 'lobbyWelcome' bleibt in QQSoundConfig erhalten, falls
+// in Zukunft wieder gewollt + Wolfs etwaige MP3-Uploads bleiben sicher.
 
 /** Spielt einen One-Shot-SFX und ducked Music-Loops für die geschätzte
  *  Sound-Dauer + 500ms Fade-In/Out (siehe setMusicDucked).
@@ -915,7 +917,8 @@ function playSlotForCategoryOrFallback(baseSlot: QQSoundSlot, category?: string 
   }
   playSlotOneShot(baseSlot);
 }
-export function playCorrectFor(category?: string | null)       { playSlotForCategoryOrFallback('correct', category); }
+// 2026-05-23 (Wolf): playCorrectFor entfernt — nirgends aufgerufen. Generic
+// playCorrect() reicht. Kategorie-Slots correct{Cat} bleiben erhalten.
 export function playWrongFor(category?: string | null)         { playSlotForCategoryOrFallback('wrong', category); }
 export function playRevealFor(category?: string | null)        { playSlotForCategoryOrFallback('reveal', category); }
 export function playQuestionStartFor(category?: string | null) { playSlotForCategoryOrFallback('questionStart', category); }
@@ -1309,7 +1312,8 @@ export function playCozyGameStart(): void {
   tone(784, 'sine',     t + 0.16, 0.14, 0.26, 0.008, 0.14, ac); // G5 (sine = bell-tail)
 }
 // BC-2: Music-Ducking fuer Game-Over-Cue (laut + dramatisch).
-export function playGameOver()      { playWithDuck('gameOver', 2500); }
+// 2026-05-23 (Wolf): playGameOver entfernt — nirgends aufgerufen (startGameOverLoop
+// im Music-Effect übernimmt die GameOver-Beschallung). Slot 'gameOver' bleibt.
 
 // ── Aktions-Sounds (Trinity: Place/Steal/Stapel) ──────────────────────────
 // Alle mit Synth-Fallback, damit sie ohne Custom-Upload funktionieren.
@@ -1357,16 +1361,22 @@ export function playAvatarCascadeNote(rank: number, total: number): void {
   // 2026-05-07 (Wolf 'cascade klingt rhythmisch off, cleane tonleiter?'):
   // Vorher wurde die Skala auf die Team-Anzahl SKALIERT — bei 3 Teams sprang
   // sie C4 → A4 → E5 (riesige unmusikalische Spruenge). Jetzt linear: rank 0
-  // = C4, rank 1 = D4, ... bis 8. Bei <8 Teams kuerzer aber clean aufsteigend.
-  // total-Param wird nicht mehr fuer die Skala-Spreizung genutzt, bleibt fuer
-  // API-Kompatibilitaet als Hinweis fuer kuenftige Variationen.
+  // = C4, rank 1 = D4, ... bis 8.
+  // 2026-05-23 (Wolf 'wenn synth muss es nice sein'): Polish-Pass.
+  // - Release 60ms → 140ms = smootherer Tail zwischen Teams
+  // - Tail-Layer (zweite Sine 80ms später, 35% vol, lowpass-charakter via
+  //   Triangle) = dezenter Reverb-Wash für Beamer-Speakers, ohne FX-Chain
+  // - Octav-Sparkle leicht später (5ms → 15ms) = klingt weniger metallisch
   void total;
   const safeRank = Math.max(0, Math.min(rank, scale.length - 1));
   const freq = scale[safeRank];
   const t = ac.currentTime;
-  // Warmer Sine-Tone mit kurzer Bell-Note-Form.
-  tone(freq, 'sine',     t,         0.18, 0.18, 0.005, 0.06, ac);
-  tone(freq * 2, 'sine', t + 0.005, 0.06, 0.10, 0.003, 0.04, ac); // Oktav-Sparkle obenauf
+  // Warmer Bell-Note (Sine-Grundton, längerer Release).
+  tone(freq, 'sine',     t,         0.18, 0.18, 0.005, 0.14, ac);
+  // Oktav-Sparkle obenauf (leicht verzögert für natürliche Bell-Stack-Optik).
+  tone(freq * 2, 'sine', t + 0.015, 0.06, 0.10, 0.003, 0.08, ac);
+  // Reverb-Wash-Layer: gedämpfte Triangle ~80ms später, klingt wie Raum-Echo.
+  tone(freq, 'triangle', t + 0.08,  0.06, 0.22, 0.012, 0.18, ac);
 }
 
 /** 2026-04-30: Sieger-Card erscheint unten — warmer Krönungs-Akkord
@@ -1485,25 +1495,9 @@ export function playClimaxFinish() {
   tone(1568.0, 'sine',     t + 0.30,  0.14, 1.40, 0.01, 0.40, ac); // G6
 }
 
-/** 2026-04-30 v2/v3: Action-Card erscheint („eure aktion diese runde…") —
- *  Bell-Triade, klar hoerbar damit User es ueber Hintergrund-Musik wahrnimmt.
- *  v3: Volumes 0.20-0.22 → 0.34-0.40, Decay laenger fuer praesentere Bell.
- *  Dreiklang aufwaerts mit Sparkle obenauf — feiert das Tactical-Moment. */
-export function playActionMenuReveal() {
-  if (!isSlotEnabled('actionMenuReveal')) return;
-  const url = resolveSlotUrl('actionMenuReveal');
-  if (url) { playUrlOneShot(url); return; }
-  const ac = getCtx();
-  if (!ac) return;
-  const t = ac.currentTime;
-  // Aufsteigender Mini-Triade D5-F#5-A5 (D-Dur), Bell-artig — boosted.
-  tone(587.33, 'triangle', t,         0.36, 0.35, 0.008, 0.14, ac);
-  tone(739.99, 'sine',     t + 0.07,  0.36, 0.40, 0.008, 0.16, ac);
-  tone(880.00, 'sine',     t + 0.14,  0.40, 0.55, 0.008, 0.20, ac);
-  // Sparkle-Top
-  tone(1760,   'sine',     t + 0.18,  0.22, 0.40, 0.005, 0.12, ac);
-  tone(2349.32,'sine',     t + 0.24,  0.16, 0.55, 0.005, 0.18, ac);
-}
+// 2026-05-23 (Wolf): playActionMenuReveal entfernt — nirgends aufgerufen.
+// Action-Card-Reveal nutzt heute playWoodKnock (Slam) + playFieldPlaced/
+// playSteal/playStapelStamp (Flip). Slot 'actionMenuReveal' bleibt.
 
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden.
  *  2026-05-12 (Sound-Audit P0 #1+#3): vorher `new Audio(url)` jedes Mal frisch
@@ -1571,11 +1565,17 @@ export function playWoodKnock(): void {
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Dumpfer Burst (low-freq sine + noise)
-  tone(160, 'sine', t, 0.04, 0.18, 0.001, 0.04, ac);
-  tone(280, 'triangle', t + 0.005, 0.05, 0.10, 0.001, 0.04, ac);
-  // Schneller Noise-Burst für „Klack"-Anschlag
-  const buf = ac.createBuffer(1, ac.sampleRate * 0.05, ac.sampleRate);
+  // 2026-05-23 (Wolf 'wenn synth muss es nice sein'): Polish-Pass.
+  // - Body-Tones länger (40/50ms → 80/70ms) + Pitch-Drop für „echtes Holz"-Feel
+  // - Noise stärker (0.06 → 0.11) + Lowpass wärmer (800Hz → 580Hz)
+  // - Mini Mid-Tap (sine 220Hz) für mehr „Card-meets-Holz"-Charakter
+  // Dumpfer Burst (low-freq sine + triangle) — basis-Hit.
+  tone(160, 'sine',     t,         0.05, 0.25, 0.001, 0.08, ac);
+  tone(280, 'triangle', t + 0.005, 0.06, 0.18, 0.001, 0.07, ac);
+  // Mid-Tap: zusätzlicher 220Hz-Akzent ~10ms später = mehr Card-Snap.
+  tone(220, 'sine',     t + 0.012, 0.04, 0.10, 0.001, 0.05, ac);
+  // Noise-Burst für „Klack"-Anschlag — voller + wärmer als vorher.
+  const buf = ac.createBuffer(1, ac.sampleRate * 0.06, ac.sampleRate);
   const data = buf.getChannelData(0);
   for (let i = 0; i < data.length; i++) {
     data[i] = (Math.random() * 2 - 1) * Math.max(0, 1 - i / data.length);
@@ -1583,14 +1583,14 @@ export function playWoodKnock(): void {
   const noise = ac.createBufferSource();
   noise.buffer = buf;
   const noiseGain = ac.createGain();
-  noiseGain.gain.value = 0.06 * masterVolume;
-  // Lowpass für Holz-Charakter
+  noiseGain.gain.value = 0.11 * masterVolume;
+  // Lowpass für warmen Holz-Charakter (580Hz statt 800Hz = weniger Klack, mehr Body).
   const lp = ac.createBiquadFilter();
   lp.type = 'lowpass';
-  lp.frequency.value = 800;
+  lp.frequency.value = 580;
   noise.connect(lp).connect(noiseGain).connect(ac.destination);
   noise.start(t);
-  noise.stop(t + 0.05);
+  noise.stop(t + 0.06);
 }
 
 /** Pro Avatar ein eigenes Mini-Jingle beim Joinen — ~0.6-0.9s.

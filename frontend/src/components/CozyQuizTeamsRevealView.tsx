@@ -14,7 +14,7 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
-import { playAvatarCascadeNote, playGoodLuckFanfare, playFanfare, playWoodKnock } from '../utils/sounds';
+import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
@@ -90,12 +90,17 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
       }, delay));
     }
-    // VIEL GLUECK: eigener Sound-Slot + Fallback-Fanfare
+    // VIEL GLUECK: eigener Sound-Slot. playGoodLuckFanfare hat schon einen
+    // vollständigen 8-Layer-C-Dur-Synth-Fallback (Akkord + Bass + Bells) wenn
+    // kein MP3 hochgeladen ist.
+    // 2026-05-23 (Wolf 'überprüfe ob nochmal akkord-crash'): parallel laufendes
+    // playFanfare() entfernt — feuerte simultan mit playGoodLuckFanfare und
+    // konnte je nach MP3/Synth-Mix in unterschiedlichen Tonarten clashen
+    // (selbes Pattern wie Schätzchen-Reveal RevealHighlight+ClimaxFinish-Bug).
     const goodLuckFireAt = anchor + goodLuckDelay;
     const goodLuckMs = Math.max(0, goodLuckFireAt - Date.now());
     timers.push(window.setTimeout(() => {
       try { playGoodLuckFanfare(); } catch {}
-      try { playFanfare(); } catch {}
     }, goodLuckMs));
     return () => { timers.forEach(t => window.clearTimeout(t)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps

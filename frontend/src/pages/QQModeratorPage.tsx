@@ -5074,7 +5074,7 @@ function SetupView({
             ⚙ Erweiterte Optionen
             {!advancedOpen && (
               <span style={{ fontSize: 10, color: '#6b6555', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
-                · Spielmechanik · Reihenfolge · Bluffs · Avatar-Set · Sound-Volume · Bestenliste-Reset
+                · Spielmechanik · Reihenfolge · Avatar-Set · Sound-Volume · Bestenliste-Reset
               </span>
             )}
           </span>
@@ -5129,18 +5129,11 @@ function SetupView({
           </span>
         </div>
 
-        {/* Bluff — 2026-05-20 (Setup-Audit P1): Label-Klartext „Bluff-Check"
-            war zu vage. Jetzt: „Bluffs vorab pruefen". */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🎭 Bluffs vorab prüfen</span>
-          <div style={segGroup}>
-            <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: false })} style={segPill(!s.bluffModeratorReview)}>Aus</button>
-            <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: true })} style={segPill(!!s.bluffModeratorReview, QQ_COLORS.brandPinkMid)}>An</button>
-          </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {s.bluffModeratorReview ? 'Moderator filtert Bluffs vor dem Voting' : 'Bluffs gehen direkt ins Voting'}
-          </span>
-        </div>
+        {/* 2026-05-25 (Wolf 'bluff ist ja raus, also bluff vorab pruefen auch
+            aktuell unnoetig?'): Bluff-Toggle entfernt. Bluff-Fragen sind seit
+            2026-05-24 aus aktiven Drafts raus (siehe scripts/fix-tonight-draft.mjs).
+            Toggle hatte ohne Bluff-Fragen keinen Effekt. Backend-Handler
+            qq:bluffSettings bleibt fuer Reaktivierung erhalten. */}
 
         {/* 2026-05-04 — Avatar-Theme (Phase 1: nur State-Propagation) */}
         {/* 2026-05-07 — Pill-Row → Dropdown (Wolf-Wunsch: kompakter, weniger visueller Lärm). */}

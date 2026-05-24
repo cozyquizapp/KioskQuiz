@@ -1224,11 +1224,21 @@ export default function QQModeratorPage() {
     }
 
     // 2026-05-24 (Wolf-Live-Test #7): Universal Undo-Last-Action.
-    // Ctrl+Z oder Shift+Space — macht den letzten Place/Steal rückgängig.
+    // Ctrl+Z — macht den letzten Place/Steal rückgängig.
     // Backend speichert den Snapshot vor jeder Aktion automatisch.
     if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
       e.preventDefault(); playHotkeyFeedback();
       emitRef.current('qq:undoLastAction', { roomCode });
+      return;
+    }
+
+    // 2026-05-24 (Wolf-Wunsch 'Back-Button als Gegensatz zum Weiter-Button'):
+    // Shift+Space oder Backspace — Slide zurueck in slide-basierten Phasen
+    // (RULES, PHASE_INTRO, FINAL_REVEAL, QUESTION_REVEAL-Steps, COMEBACK_INTRO).
+    // Funktioniert nicht in PLACEMENT/QUESTION_ACTIVE (dort gilt Ctrl+Z fuer Undo).
+    if ((e.code === 'Space' && e.shiftKey) || e.code === 'Backspace') {
+      e.preventDefault(); playHotkeyFeedback();
+      emitRef.current('qq:goBackSlide', { roomCode });
       return;
     }
 
@@ -1360,6 +1370,22 @@ export default function QQModeratorPage() {
                 boxShadow: 'var(--qm-depth-sm)',
               }}
             >{autoplayPaused ? '▶ Autoplay' : '⏸ Autoplay'}</button>
+          )}
+          {/* 2026-05-24 (Wolf-Bug 'Bots laufen weiter wenn Autoplay pausiert'):
+              Server-side Bot-Pause. Sichtbar wenn _dummy-Teams im Raum sind. */}
+          {joined && state && state.teams?.some((t: any) => t._dummy) && state.phase !== 'LOBBY' && state.phase !== 'GAME_OVER' && state.phase !== 'THANKS' && (
+            <button
+              onClick={() => emit('qq:setBotsPaused', { roomCode, paused: !((state as any).botsPaused) })}
+              title={(state as any).botsPaused ? 'Bot-Aktionen fortsetzen' : 'Bot-Aktionen serverseitig stoppen'}
+              style={{
+                padding: '6px 14px', borderRadius: 8,
+                border: `1px solid ${(state as any).botsPaused ? 'rgba(251,191,36,0.5)' : 'rgba(148,163,184,0.4)'}`,
+                background: (state as any).botsPaused ? 'rgba(251,191,36,0.18)' : 'rgba(148,163,184,0.10)',
+                color: (state as any).botsPaused ? '#FDE68A' : '#cbd5e1', cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
+                boxShadow: 'var(--qm-depth-sm)',
+              }}
+            >{(state as any).botsPaused ? '▶ Bots' : '⏸ Bots'}</button>
           )}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}

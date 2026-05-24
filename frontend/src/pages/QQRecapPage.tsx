@@ -159,7 +159,12 @@ export default function QQRecapPage() {
             ...(qh.correctTeamIds ?? []),
             ...(qh.correctTeamId ? [qh.correctTeamId] : []),
           ]);
-          const baseline = qh.startedAt ?? Math.min(...(qh.answers ?? []).map(a => a.submittedAt));
+          // 2026-05-24 (Härtung 0.0s-Bug): nimm das frueheste von startedAt
+          // und allen submittedAt, statt nur Fallback auf min(submittedAt).
+          const baseline = Math.min(
+            qh.startedAt ?? Number.POSITIVE_INFINITY,
+            ...(qh.answers ?? []).map(a => a.submittedAt),
+          );
           return (
             <div key={idx} style={{
               padding: '12px 16px', borderRadius: 8,

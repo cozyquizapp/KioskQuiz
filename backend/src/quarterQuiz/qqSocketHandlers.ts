@@ -52,6 +52,7 @@ import {
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
   qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqFinishFinalBettingIntro, qqResolveFinalBets, qqUndoLastAction,
+  qqGoBackSlide,
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
@@ -1198,6 +1199,11 @@ export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): 
   if (!room) return;
   if (room.phase !== 'QUESTION_ACTIVE') return;
   if (!hasDummyTeams(room)) return;
+  // 2026-05-24 (Wolf-Bug 'Bots laufen weiter wenn Autoplay pausiert'):
+  // Bot-Submits gucken jetzt auf room.botsPaused. Vorher war "Autoplay" rein
+  // Mod-frontend-localStorage und steuerte nur die automatischen Mod-Spaces.
+  // Bots liefen serverseitig immer durch → Wolf konnte die App nicht stoppen.
+  if ((room as any).botsPaused) return;
   const q = room.currentQuestion;
   if (!q) return;
 
@@ -1262,6 +1268,7 @@ export function maybeAutoComebackChoice(io: SocketIOServer, roomCode: string): v
   const room = getQQRoom(roomCode);
   if (!room) return;
   if (room.phase !== 'COMEBACK_CHOICE') return;
+  if ((room as any).botsPaused) return;
   const teamId = room.pendingFor;
   if (!teamId) return;
   const team = (room.teams as any)[teamId];
@@ -1292,6 +1299,7 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   if (room.phase !== 'PLACEMENT') return;
+  if ((room as any).botsPaused) return;
   const teamId = room.pendingFor;
   if (!teamId) return;
   const team = (room.teams as any)[teamId];
@@ -3062,6 +3070,39 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         room.language = payload.language;
         broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-24 (Wolf-Wunsch 'Back-Button als Gegensatz zum Weiter-Button'):
+    // Slide zurueck (Shift+Space / Backspace) — decrementiert den passenden
+    // Step-Counter je nach Phase. Min ist 0 (bzw. -2 fuer Rules wegen
+    // Willkommen/Intro-Folien). Nur fuer slide-basierte Phasen, fuer
+    // PLACEMENT/QUESTION_ACTIVE bleibt Ctrl+Z (qqUndoLastAction) zustaendig.
+    socket.on('qq:goBackSlide', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqGoBackSlide(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-24 (Wolf-Bug 'Bots laufen weiter wenn Autoplay pausiert'):
+    // Server-State-Flag das Bot-Submits + Bot-Placements ueber alle
+    // maybeAuto*-Helper guards. Frontend-Autoplay-Toggle ist davon entkoppelt
+    // (lokales localStorage). Toggle ist idempotent (sendet target=true/false).
+    socket.on('qq:setBotsPaused', (payload: { roomCode: string; paused: boolean }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        (room as any).botsPaused = !!payload.paused;
+        broadcast(io, payload.roomCode);
+        // Wenn unpaused + Phase erlaubt Bot-Action: gleich starten.
+        if (!payload.paused) {
+          if (room.phase === 'QUESTION_ACTIVE') maybeAutoSimulateAnswers(io, payload.roomCode);
+          else if (room.phase === 'PLACEMENT') maybeAutoPlace(io, payload.roomCode);
+          else if (room.phase === 'COMEBACK_CHOICE') maybeAutoComebackChoice(io, payload.roomCode);
+        }
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

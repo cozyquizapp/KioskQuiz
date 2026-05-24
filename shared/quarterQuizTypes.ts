@@ -971,6 +971,10 @@ export interface QQStateUpdate {
    *  desc → totalCells desc → join-Order. Frontend-Views sollen diese nutzen
    *  statt eigene Sortierung — sonst Drift zwischen Mod, Beamer, Team-View. */
   sortedTeamIds?: string[];
+  /** 2026-05-24 (Wolf-Bug Bot-Pause): Wenn true, fuehren Backend-Helper
+   *  (maybeAutoSimulateAnswers, maybeAutoPlace, maybeAutoComebackChoice)
+   *  keine Bot-Aktionen mehr aus. Mod-Toggle ueber qq:setBotsPaused. */
+  botsPaused?: boolean;
   teamPhaseStats: Record<string, QQTeamPhaseStats>;
   currentQuestion: QQQuestion | null;
   revealedAnswer: string | null;

@@ -4081,6 +4081,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     grid:             room.grid,
     teams:            Object.values(room.teams),
     sortedTeamIds:    qqSortedTeamIds(room),
+    botsPaused:       (room as any).botsPaused ?? false,
     teamPhaseStats:   room.teamPhaseStats,
     currentQuestion:  room.currentQuestion,
     revealedAnswer:   room.revealedAnswer,
@@ -5820,7 +5821,14 @@ export function qqResolveFinalBets(room: QQRoomState): void {
   for (const h of room.questionHistory) {
     const answers = (h as any).answers as Array<{ teamId: string; submittedAt: number }> | undefined;
     if (!answers || answers.length === 0) continue;
-    const baseline = (h as any).startedAt ?? Math.min(...answers.map(a => a.submittedAt));
+    // 2026-05-24 (Härtung 0.0s-Bug): Vorher fiel der Fallback auf
+    // Math.min(submittedAt) zurueck wenn startedAt fehlte → erstes Team hatte
+    // 0,0s Reaktionszeit. Jetzt: nimm das frueheste von beiden, sodass auch
+    // bei null-startedAt das Baseline-Min unter dem ersten Submit liegen kann.
+    const baseline = Math.min(
+      (h as any).startedAt ?? Number.POSITIVE_INFINITY,
+      ...answers.map(a => a.submittedAt),
+    );
     const correctSet = new Set([...((h as any).correctTeamIds ?? []), ...(h.correctTeamId ? [h.correctTeamId] : [])]);
     // Avg-Reaction-Stats (Tie-Break + FunFact).
     for (const a of answers) {
@@ -6240,6 +6248,50 @@ export function qqCozyGameCancel(room: QQRoomState): void {
   // 2026-05-19 (Reliability-Audit R2): Phase-Reset zu PAUSED — sonst bleibt
   // room.phase='COZY_GAME' haengen ohne CG-State → Beamer rendert nichts.
   if (room.phase === 'COZY_GAME') room.phase = 'PAUSED';
+  room.lastActivityAt = Date.now();
+}
+
+/** 2026-05-24 (Wolf-Wunsch 'Back-Button als Gegensatz zum Weiter-Button'):
+ *  Decrementiert den passenden Step-Counter je nach Phase. Funktioniert fuer
+ *  alle slide-basierten Phasen — fuer PLACEMENT/QUESTION_ACTIVE etc. macht
+ *  es nichts (da gibt's keine Slide-Reihenfolge; Undo-Hotkey ist Ctrl+Z).
+ *  Hotkey: Shift+Space oder Backspace im Mod-Page-handleKey.
+ *  Min ist 0 fuer alle Counter — kein Negative-Step. */
+export function qqGoBackSlide(room: QQRoomState): void {
+  const dec = (cur: number | undefined | null, min = 0): number =>
+    Math.max(min, (cur ?? 0) - 1);
+  switch (room.phase) {
+    case 'RULES':
+      // -2 = Willkommen, -1 = Regel-Intro, 0+ = Folien. Min ist -2.
+      room.rulesSlideIndex = Math.max(-2, (room.rulesSlideIndex ?? 0) - 1);
+      break;
+    case 'PHASE_INTRO':
+      room.introStep = dec(room.introStep);
+      break;
+    case 'COMEBACK_CHOICE':
+      // comebackIntroStep ist Sub-Step der COMEBACK_CHOICE-Phase.
+      if ((room.comebackIntroStep ?? 0) > 0) {
+        room.comebackIntroStep = dec(room.comebackIntroStep);
+      }
+      break;
+    case 'FINAL_REVEAL':
+      room.finalRevealStep = dec(room.finalRevealStep);
+      break;
+    case 'QUESTION_REVEAL': {
+      const q = room.currentQuestion;
+      if (!q) return;
+      if (q.category === 'MUCHO')         room.muchoRevealStep    = dec(room.muchoRevealStep);
+      else if (q.category === 'ZEHN_VON_ZEHN') room.zvzRevealStep = dec(room.zvzRevealStep);
+      else if (q.category === 'CHEESE')   room.cheeseRevealStep   = dec(room.cheeseRevealStep);
+      else if (q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
+        room.mapRevealStep = dec(room.mapRevealStep);
+      }
+      break;
+    }
+    default:
+      // Andere Phasen haben keine Slide-Reihenfolge — no-op.
+      return;
+  }
   room.lastActivityAt = Date.now();
 }
 

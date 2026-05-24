@@ -20,6 +20,7 @@ import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
+import { QQEmojiIcon } from './QQIcon';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 import {
   startFinaleLoop, stopLobbyLoop,
@@ -607,12 +608,44 @@ function FinalLeaderboard({
       return a.team.name.localeCompare(b.team.name);
     });
 
-  const ROW_H = 56; // px, bestimmt translateY-Step
+  // 2026-05-24 (Wolf 'tabelle gleich machen wie in-game ScoreBar neben Grid'):
+  // Layout-Anlehnung an CozyQuizScoreBar.tsx — gross Avatar (Crown-Overlay
+  // fuer Leader), team-color Name, Medal-Slot mit Tie-'='-Badge, prominente
+  // TOTAL-Zahl + 'Punkte'-Unit. Brett/Award/Tipp-Breakdown als kleine
+  // Subtitle unter dem Namen (nur wenn Bonus > 0). FLIP-Reorder-Animation
+  // bleibt erhalten (translateY-Trick).
+  const dense = rows.length >= 6;
+  const avatarSize = dense ? 52 : 64;
+  const avatarBox = dense ? 60 : 74;
+  const nameFs = dense ? 24 : 30;
+  const valFs = dense ? 36 : 46;
+  const unitFs = dense ? 14 : 17;
+  const ROW_H = dense ? 76 : 92;
+  const topTotal = rows.length > 0 ? rows[0].total : 0;
+  const isTieAtTop = rows.length > 1 && topTotal > 0 && rows[1].total === topTotal;
+  const tiedWithOther = new Set<string>();
+  for (let i = 0; i < rows.length; i++) {
+    for (let j = 0; j < rows.length; j++) {
+      if (i !== j && rows[i].total === rows[j].total) tiedWithOther.add(rows[i].team.id);
+    }
+  }
+  const medalFor = (i: number, total: number, teamId: string): string | null => {
+    if (total === 0) return null;
+    if (isTieAtTop && total === topTotal) return '👑';
+    if (i === 0) return '🥇';
+    if (i === 1 && rows[1].total < rows[0].total) return '🥈';
+    if (i === 2 && rows[2] && rows[2].total < (rows[1]?.total ?? 0)) return '🥉';
+    if (tiedWithOther.has(teamId)) {
+      if (total === rows[1]?.total) return '🥈';
+      if (total === rows[2]?.total) return '🥉';
+    }
+    return null;
+  };
   return (
     <div style={{
       width: '100%', height: '100%',
       padding: 'clamp(14px, 1.8cqh, 22px) clamp(18px, 2cqw, 28px)',
-      display: 'flex', flexDirection: 'column', gap: 6,
+      display: 'flex', flexDirection: 'column', gap: 8,
       borderRadius: 18,
       background: 'rgba(255,255,255,0.04)',
       border: '1.5px solid rgba(255,255,255,0.1)',
@@ -620,22 +653,18 @@ function FinalLeaderboard({
       minHeight: 0,
     }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 800,
         color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.16em',
         marginBottom: 4,
-      }}>
-        <span>{de ? 'Aktueller Stand' : 'Current standings'}</span>
-        <span style={{ display: 'flex', gap: 18 }}>
-          <span style={{ color: QQ_COLORS.slate400 }}>{de ? 'Brett' : 'Grid'}</span>
-          <span style={{ color: QQ_COLORS.amber400 }}>{de ? 'Awards' : 'Awards'}</span>
-          <span style={{ color: QQ_COLORS.green500 }}>{de ? 'Tipp' : 'Bet'}</span>
-          <span style={{ color: QQ_COLORS.slate100 }}>{de ? 'Total' : 'Total'}</span>
-        </span>
-      </div>
-      <div style={{ position: 'relative', height: rows.length * ROW_H }}>
+      }}>{de ? 'Aktueller Stand' : 'Current standings'}</div>
+      <div style={{ position: 'relative', height: rows.length * ROW_H, flex: 1 }}>
         {rows.map((r, idx) => {
           const isFocus = r.team.id === focusTeamId;
+          const isLeader = idx === 0 && r.total > 0;
+          const medal = medalFor(idx, r.total, r.team.id);
+          const isTopTie = isTieAtTop && r.total === topTotal;
+          const tColor = r.team.color;
+          const hasBonus = r.awards > 0 || r.bet > 0;
           return (
             <div
               key={r.team.id}
@@ -643,43 +672,117 @@ function FinalLeaderboard({
                 position: 'absolute', top: 0, left: 0, right: 0, height: ROW_H,
                 transform: `translateY(${idx * ROW_H}px)`,
                 transition: 'transform 0.7s cubic-bezier(0.34, 1.36, 0.64, 1)',
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '0 14px',
-                borderRadius: 12,
+                display: 'flex', alignItems: 'center', gap: dense ? 12 : 16,
+                padding: dense ? '6px 12px' : '8px 14px',
+                borderRadius: 16,
                 background: isFocus
-                  ? `linear-gradient(135deg, ${r.team.color}33, ${r.team.color}10)`
-                  : 'rgba(255,255,255,0.03)',
-                border: isFocus
-                  ? `2px solid ${r.team.color}`
-                  : '1px solid rgba(255,255,255,0.06)',
-                boxShadow: isFocus ? `0 0 28px ${r.team.color}55` : 'none',
+                  ? `linear-gradient(135deg, ${tColor}22, ${tColor}08)`
+                  : 'transparent',
+                border: isFocus ? `2px solid ${tColor}` : '2px solid transparent',
+                boxShadow: isFocus
+                  ? `0 0 28px ${tColor}55, 0 0 60px ${tColor}22, inset 0 0 12px ${tColor}18`
+                  : 'none',
               }}
             >
-              <div style={{
-                fontSize: 18, fontWeight: 900,
-                color: idx === 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate400,
-                minWidth: 28, textAlign: 'center',
-              }}>{idx + 1}</div>
-              <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={36} />
-              <div style={{
-                flex: 1, fontSize: 18, fontWeight: 800, color: r.team.color,
-              }}>{r.team.name}</div>
-              <div style={{
-                display: 'flex', gap: 18, alignItems: 'center',
-                fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-              }}>
-                <span style={{ color: QQ_COLORS.slate400, minWidth: 24, textAlign: 'right' }}>{r.base}</span>
-                <span style={{ color: QQ_COLORS.amber400, minWidth: 24, textAlign: 'right' }}>
-                  {r.awards > 0 ? `+${r.awards}` : ''}
+              {/* Avatar-Slot mit Crown-Overlay fuer Leader (analog ScoreBar). */}
+              <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0, position: 'relative' }}>
+                <span style={{ position: 'relative', display: 'inline-block', borderRadius: '50%' }}>
+                  <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={avatarSize} />
+                  {isLeader && (
+                    <span style={{
+                      position: 'absolute',
+                      top: dense ? -10 : -14,
+                      left: '50%',
+                      transform: 'translateX(-50%) rotate(-14deg)',
+                      fontSize: dense ? 22 : 28,
+                      pointerEvents: 'none',
+                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                    }}>👑</span>
+                  )}
                 </span>
-                <span style={{ color: QQ_COLORS.green500, minWidth: 32, textAlign: 'right' }}>
-                  {r.bet > 0 ? `+${r.bet}` : ''}
+              </div>
+              {/* Name + optional Bonus-Breakdown-Subtitle. */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                <TeamNameLabel
+                  name={r.team.name}
+                  maxLines={1}
+                  shrinkAfter={14}
+                  fontSize={nameFs}
+                  color={tColor}
+                  fontWeight={900}
+                  style={{ textShadow: isFocus ? `0 0 16px ${tColor}55` : 'none' }}
+                />
+                {hasBonus && (
+                  <div style={{
+                    display: 'flex', gap: 8, alignItems: 'center',
+                    fontSize: dense ? 12 : 14, fontWeight: 800,
+                    fontVariantNumeric: 'tabular-nums', opacity: 0.85,
+                  }}>
+                    <span style={{ color: QQ_COLORS.slate400 }}>{r.base}</span>
+                    {r.awards > 0 && (
+                      <span style={{ color: QQ_COLORS.amber400 }}>+{r.awards}🏅</span>
+                    )}
+                    {r.bet > 0 && (
+                      <span style={{ color: QQ_COLORS.green500 }}>+{r.bet}🎯</span>
+                    )}
+                  </div>
+                )}
+              </div>
+              {/* Medal-Slot + grosse TOTAL-Zahl + 'Punkte'-Unit (analog ScoreBar). */}
+              <div style={{
+                position: 'relative', display: 'flex', alignItems: 'baseline',
+                gap: 8, flexShrink: 0,
+              }}>
+                <span style={{
+                  width: dense ? 28 : 34,
+                  flexShrink: 0,
+                  textAlign: 'center',
+                  fontSize: dense ? 20 : 26, lineHeight: 1,
+                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  position: 'relative',
+                }}>
+                  {medal ? <QQEmojiIcon emoji={medal}/> : null}
+                  {tiedWithOther.has(r.team.id) && !isTopTie && (
+                    <span
+                      aria-label="gleichauf"
+                      title={de ? 'Gleichauf mit anderem Team' : 'Tied with another team'}
+                      style={{
+                        position: 'absolute',
+                        top: -4, right: -6,
+                        fontSize: dense ? 10 : 12, fontWeight: 900,
+                        padding: '1px 5px', borderRadius: 4,
+                        background: 'rgba(251,191,36,0.22)',
+                        border: '1px solid rgba(251,191,36,0.55)',
+                        color: '#FCD34D',
+                        lineHeight: 1,
+                        pointerEvents: 'none',
+                      }}
+                    >=</span>
+                  )}
                 </span>
                 <span style={{
-                  color: isFocus ? r.team.color : QQ_COLORS.slate100,
-                  minWidth: 36, textAlign: 'right',
-                  fontSize: 20, fontWeight: 900,
+                  fontSize: valFs,
+                  color: isLeader ? QQ_COLORS.brandPink : QQ_COLORS.slate100,
+                  fontWeight: 900,
+                  textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
+                  fontVariantNumeric: 'tabular-nums',
+                  lineHeight: 1,
+                  minWidth: dense ? 44 : 56,
+                  textAlign: 'right',
+                  flexShrink: 0,
+                  transition: 'color 0.3s ease',
                 }}>{r.total}</span>
+                <span style={{
+                  opacity: 0.5, fontSize: unitFs, fontWeight: 700,
+                  color: QQ_COLORS.slate400,
+                  flexShrink: 0,
+                  textAlign: 'left',
+                  fontVariantNumeric: 'tabular-nums',
+                }}>
+                  {de
+                    ? (r.total === 1 ? 'Punkt' : 'Punkte')
+                    : (r.total === 1 ? 'pt' : 'pts')}
+                </span>
               </div>
             </div>
           );

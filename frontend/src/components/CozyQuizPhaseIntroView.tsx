@@ -1162,6 +1162,70 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
 
+              {/* 2026-05-24 (Wolf-Live-Test #8): ZvZ Visual-Beispiel.
+                  Wolfs Feedback: „die erste mit punkten verteilen war nicht
+                  sofort klar". Mini-Mockup mit Beispiel-Verteilung 7/2/1
+                  damit Teams sofort die Idee „10 Punkte gewichten" greifen. */}
+              {cat === 'ZEHN_VON_ZEHN' && (
+                <div style={{
+                  marginTop: 32, position: 'relative', zIndex: 5,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                  animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.9s both',
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 800,
+                    color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase',
+                  }}>
+                    {lang === 'en' ? 'Example' : 'Beispiel'}
+                  </div>
+                  <div style={{
+                    display: 'flex', gap: 16, alignItems: 'center',
+                    flexWrap: 'wrap', justifyContent: 'center',
+                  }}>
+                    {[
+                      { label: 'A', pts: 7, color: '#3B82F6' },
+                      { label: 'B', pts: 2, color: '#22C55E' },
+                      { label: 'C', pts: 1, color: '#EF4444' },
+                    ].map((opt, idx) => (
+                      <div key={opt.label} style={{
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                        padding: 'clamp(12px, 1.5cqw, 22px) clamp(18px, 2.2cqw, 32px)',
+                        borderRadius: 14,
+                        background: `${opt.color}22`,
+                        border: `2px solid ${opt.color}66`,
+                        boxShadow: `0 0 22px ${opt.color}33`,
+                        minWidth: 'clamp(80px, 9cqw, 130px)',
+                        animation: `phasePop 0.5s var(--qq-ease-bounce) ${1.0 + idx * 0.12}s both`,
+                      }}>
+                        <span style={{
+                          fontSize: 'clamp(20px, 2cqw, 32px)', fontWeight: 900,
+                          color: opt.color, letterSpacing: '0.04em',
+                        }}>{opt.label}</span>
+                        <span style={{
+                          fontSize: 'clamp(28px, 3.2cqw, 50px)', fontWeight: 900,
+                          color: '#F1F5F9', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                        }}>{opt.pts}</span>
+                        <span style={{
+                          fontSize: 'clamp(11px, 1.1cqw, 15px)', fontWeight: 700,
+                          color: '#94a3b8',
+                        }}>
+                          {lang === 'en' ? 'pts' : 'Pkt'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.4cqw, 20px)', color: '#cbd5e1',
+                    fontStyle: 'italic', textAlign: 'center', maxWidth: 700, lineHeight: 1.4,
+                    animation: 'phasePop 0.6s var(--qq-ease-bounce) 1.4s both',
+                  }}>
+                    {lang === 'en'
+                      ? 'Hoch wenn ihr sicher seid · gleichmäßig wenn unsicher'.replace('Hoch wenn ihr sicher seid · gleichmäßig wenn unsicher', 'High bet if you\'re sure · spread if unsure')
+                      : 'Hoch wenn ihr sicher seid · gleichmäßig wenn unsicher'}
+                  </div>
+                </div>
+              )}
+
               {/* User-Wunsch 2026-04-28: 'Antwort auf dem Handy' Hint überall
                   raus — auf dem Beamer redundant, auf dem Handy doppelt. */}
             </>

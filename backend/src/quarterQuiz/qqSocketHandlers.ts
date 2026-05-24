@@ -67,6 +67,10 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 import { pickDummyAction, DummyActionChoice, DummyActionKind } from './qqDummyAI';
+import {
+  bluffWriteTimeout, bluffVoteTimeout,
+  maybeAutoBluffWrite, maybeAutoBluffVote,
+} from './qqBluffAI';
 
 type AckFn = (payload: QQAck) => void;
 
@@ -720,133 +724,9 @@ export function maybeAutoImposter(io: SocketIOServer, roomCode: string): void {
  * in write-Phase — Mod kann manuell skippen (qq:revealAnswer hat eigenen
  * silent-no-op-Schutz). Verhindert vorzeitiges Reveal mit nur 'real'-Option.
  */
-function bluffWriteTimeout(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room || room.bluffPhase !== 'write') return;
-  const hasSubmit = Object.values(room.bluffSubmissions ?? {}).some(t => t?.trim());
-  if (!hasSubmit) {
-    // Niemand hat geblufft — nicht advancen. Nur broadcast (Phase bleibt write).
-    broadcast(io, roomCode);
-    return;
-  }
-  qqBluffAdvanceFromWrite(room, () => bluffVoteTimeout(io, roomCode));
-  broadcast(io, roomCode);
-  // Nach Mutation: TS-narrow refresh durch Re-Read
-  if ((room.bluffPhase as string) === 'vote') {
-    maybeAutoBluffVote(io, roomCode);
-  }
-}
-
-/**
- * Bluff: Vote-Timer-Timeout-Handler. Erzwingt Übergang zu reveal.
- * Wird auch aufgerufen wenn alle Teams voted haben.
- *
- * B3 (2026-04-29): 0-Vote-Gate auch im Auto-Timer. Wenn niemand gevotet
- * hat, bleibt vote offen — Mod kann manuell skippen.
- */
-function bluffVoteTimeout(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room || room.bluffPhase !== 'vote') return;
-  const hasVote = Object.keys(room.bluffVotes ?? {}).length > 0;
-  if (!hasVote) {
-    broadcast(io, roomCode);
-    return;
-  }
-  qqBluffAdvanceFromVote(room);
-  broadcast(io, roomCode);
-}
-
-/**
- * Bluff Dummy-AI während write-Phase: nach 3-8s tippt jeder Dummy einen
- * plausibel klingenden Bluff. Aktuell sehr simpel: random year / fake answer.
- */
-function maybeAutoBluffWrite(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room || room.bluffPhase !== 'write') return;
-  for (const teamId of room.joinOrder) {
-    if (!isDummy(room, teamId)) continue;
-    if (room.bluffSubmissions[teamId]) continue;
-    const delay = 3000 + Math.random() * 5000;
-    const localTeamId = teamId;
-    setTimeout(() => {
-      const live = getQQRoom(roomCode);
-      if (!live || live.bluffPhase !== 'write') return;
-      if (live.bluffSubmissions[localTeamId]) return;
-      // Bluff generieren — kontextabhängig falls die echte Antwort eine Zahl ist
-      const q = live.currentQuestion;
-      const real = q?.bunteTuete?.kind === 'bluff' ? q.bunteTuete.realAnswer ?? '' : '';
-      const fakeAnswer = generateDummyBluff(real);
-      qqBluffSubmit(live, localTeamId, fakeAnswer);
-      // Wenn jetzt alle eingereicht haben → früher zur Review/Vote-Phase
-      if (qqBluffAllSubmitted(live)) {
-        qqBluffAdvanceFromWrite(live, () => bluffVoteTimeout(io, roomCode));
-        broadcast(io, roomCode);
-        if ((live.bluffPhase as string) === 'vote') maybeAutoBluffVote(io, roomCode);
-      } else {
-        broadcast(io, roomCode);
-      }
-    }, delay);
-  }
-}
-
-/**
- * Bluff Dummy-AI während vote-Phase: nach 4-9s wählt jeder Dummy zufällig
- * (kann sein eigener Bluff nicht — Server filtert Doppel-Vote eh).
- */
-function maybeAutoBluffVote(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room || room.bluffPhase !== 'vote') return;
-  for (const teamId of room.joinOrder) {
-    if (!isDummy(room, teamId)) continue;
-    if (room.bluffVotes[teamId]) continue;
-    const localTeamId = teamId;
-    const delay = 4000 + Math.random() * 5000;
-    setTimeout(() => {
-      const live = getQQRoom(roomCode);
-      if (!live || live.bluffPhase !== 'vote') return;
-      if (live.bluffVotes[localTeamId]) return;
-      // Verfügbare Optionen: aus dem Team-eigenen Subset (real + 3 random)
-      const teamOpts = live.bluffOptionsByTeam[localTeamId] ?? live.bluffOptions;
-      const candidates = teamOpts.filter(o => {
-        if (o.source === 'team' && o.contributors.includes(localTeamId)) return false;
-        return true;
-      });
-      if (candidates.length === 0) return;
-      // Skill: 40% Chance den echten Bluff zu wählen, sonst zufällig.
-      const real = candidates.find(o => o.source === 'real');
-      const beCorrect = Math.random() < 0.4;
-      const choice = (beCorrect && real) ? real : candidates[Math.floor(Math.random() * candidates.length)];
-      qqBluffVote(live, localTeamId, choice.id);
-      if (qqBluffAllVoted(live)) {
-        qqBluffAdvanceFromVote(live);
-        broadcast(io, roomCode);
-      } else {
-        broadcast(io, roomCode);
-      }
-    }, delay);
-  }
-}
-
-/** Helper: zufälliger Bluff-Text. Bei Zahl-Antworten: ähnliche Zahl. */
-function generateDummyBluff(real: string): string {
-  const trimmed = (real ?? '').trim();
-  // Reine Zahl?
-  const num = Number(trimmed.replace(/\./g, '').replace(/,/g, '.'));
-  if (Number.isFinite(num) && /\d/.test(trimmed)) {
-    // Zahl ±10-30% verändern, gerundet
-    const sign = Math.random() < 0.5 ? -1 : 1;
-    const factor = 1 + sign * (0.1 + Math.random() * 0.2);
-    const rounded = Math.round(num * factor);
-    return String(rounded);
-  }
-  // Generischer Text-Bluff (für nicht-Zahl-Antworten)
-  const fillers = [
-    'Theodor Wagner', 'Bertha Schmidt', 'Otto Hansen',
-    'In den 1920er-Jahren', '1888', '1956', '1974',
-    'Albert Lichtblick', 'Henry Watson', 'Eleanora Blanche',
-  ];
-  return fillers[Math.floor(Math.random() * fillers.length)];
-}
+// 2026-05-24 (Refactor #3): Bluff-AI ist jetzt in qqBluffAI.ts.
+// bluffWriteTimeout, bluffVoteTimeout, maybeAutoBluffWrite, maybeAutoBluffVote,
+// generateDummyBluff — siehe ./qqBluffAI.ts.
 
 /** Pro Raum + Team max ein laufender Connections-AI-Timer. Verhindert,
  *  dass mehrere maybeAutoConnections-Aufrufe Timer für dasselbe Team stapeln. */

@@ -1323,47 +1323,98 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   lang: 'de' | 'en';
   eurovisionMode?: boolean;
 }) {
+  // 2026-05-24 v3 (Wolf 'gleiches Format wie Award-Cards'): Drumroll-Flip
+  // analog AwardFlipCard. BG = Team-Avatar + 'tippt auf ???', Front = full
+  // Card (Team + Target + Bonus). Mount → 900ms drumroll → flip.
+  const [isFlipped, setIsFlipped] = useState(false);
+  useEffect(() => {
+    if (!team) return;
+    setIsFlipped(false);
+    try { playTeamReveal(); } catch {}
+    const t = window.setTimeout(() => setIsFlipped(true), 900);
+    return () => window.clearTimeout(t);
+  }, [team?.id]);
+
   if (!team) return null;
   const de = lang === 'de';
-  // 2026-05-10 (Audit-P0 Eurovision): Sympathie-Bonus-Text in ESC-Lila statt
-  // hardcoded Hot-Pink wenn Eurovision-Edition aktiv ist.
   const sympathyColor = eurovisionMode ? '#C084FC' : QQ_COLORS.brandPinkMid;
   const targetTeam = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
   const isMutual = !!resolution?.mutualWith;
   const totalBonus = resolution?.totalBonus ?? 0;
   const isZero = totalBonus === 0;
 
-  // 2026-05-13 (Wolf 'kein sound bei tippte auf, animation sieht komisch aus —
-  // aktuell kommt nur von oben, vorgaenger-card wird einfach ersetzt'): Sound
-  // bei jedem Team-Mount in der Bid-Reveal-Sequenz. playTeamReveal ist der
-  // "Team-Slam"-Sound aus TeamsRevealView — passender Cue fuer den naechsten
-  // Bid-Team-Reveal.
-  useEffect(() => {
-    if (!team) return;
-    try { playTeamReveal(); } catch {}
-  }, [team?.id]);
-
-  // 2026-05-09 v3 (Wolf 'Card minimal größer + per-Team-Cascade'): Card etwas
-  // großzügiger gepolstert + Avatar bumped. Innen-Cascade per animation-delay:
-  // Team-Card sofort, dann Tipp-Team bei +0.55s, Punkte/Sympathie bei +1.1s.
+  // 3D-Flip-Card wie AwardFlipCard. BG (drumroll, '???') ← rotateY → Front
+  // (Team + Tipp-Target + Bonus). Front-Side ist die ehemals direkt gerenderte
+  // Card-Composition.
+  const cardCommonStyle: React.CSSProperties = {
+    position: 'absolute', inset: 0,
+    backfaceVisibility: 'hidden',
+    WebkitBackfaceVisibility: 'hidden',
+    borderRadius: 32,
+    display: 'flex', alignItems: 'center',
+    boxSizing: 'border-box',
+    overflow: 'hidden',
+  };
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: '100%',
+      width: '100%', minHeight: 0,
     }}>
       <div style={{
-        display: 'flex', alignItems: 'center', gap: 'clamp(48px, 5.5cqw, 96px)',
-        padding: 'clamp(44px, 5cqh, 76px) clamp(56px, 6cqw, 96px)',
-        borderRadius: 32,
-        background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
-        border: `3px solid ${team.color}`,
-        boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
-        // 2026-05-17 P11 (Wolf 'animation von tip reveal cards gefällt mir
-        // nicht'): qqFRTitleIn (scale + blur) durch cleane fade-up ersetzt.
-        // opacity 0→1 + translateY 16→0 in 0.5s ease-out. Ruhig, lesbar,
-        // kein Scale-Bounce.
-        animation: 'qqBetCardFadeUp 0.5s ease-out both',
+        width: '100%', maxWidth: 'clamp(360px, 42cqw, 560px)',
+        perspective: '1800px',
+        filter: `drop-shadow(0 0 28px ${team.color}66)`,
       }}>
+        <div style={{
+          position: 'relative', width: '100%',
+          minHeight: 'clamp(360px, 44cqh, 540px)',
+          transformStyle: 'preserve-3d',
+          WebkitTransformStyle: 'preserve-3d',
+          transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
+          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+        }}>
+          {/* BG — Team-Avatar + Tipp ??? + Drumroll */}
+          <div style={{
+            ...cardCommonStyle,
+            flexDirection: 'column', justifyContent: 'center', gap: 18,
+            padding: 'clamp(24px, 3cqh, 40px)',
+            background: `linear-gradient(160deg, ${team.color}28, ${team.color}10)`,
+            border: `3px solid ${team.color}`,
+            boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+          }}>
+            <div style={{
+              fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
+              color: team.color, textTransform: 'uppercase', letterSpacing: '0.18em',
+            }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
+            <QQTeamAvatar
+              avatarId={team.avatarId} teamEmoji={team.emoji}
+              size={'clamp(100px, 11cqw, 170px)'}
+            />
+            <div style={{
+              fontSize: 'clamp(24px, 2.6cqw, 40px)', fontWeight: 900,
+              color: team.color, textAlign: 'center', letterSpacing: '-0.01em',
+              animation: !isFlipped ? 'qqFRDrumroll 0.6s ease-in-out infinite' : 'none',
+            }}>{team.name}</div>
+            <div style={{
+              fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
+              color: QQ_COLORS.slate400, fontStyle: 'italic',
+            }}>{de ? 'tippt auf …' : 'tipped on …'}</div>
+            <div style={{
+              fontSize: 'clamp(40px, 4.5cqw, 64px)', fontWeight: 900,
+              color: QQ_COLORS.slate400, letterSpacing: '0.4em',
+            }}>???</div>
+          </div>
+          {/* Front — Team + Tipp-Target + Bonus (existing content) */}
+          <div style={{
+            ...cardCommonStyle,
+            transform: 'rotateY(180deg)',
+            flexDirection: 'column', justifyContent: 'center',
+            gap: 'clamp(14px, 1.8cqh, 22px)',
+            padding: 'clamp(24px, 3cqh, 44px) clamp(28px, 3cqw, 48px)',
+            background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
+            border: `3px solid ${team.color}`,
+            boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+          }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
           <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} />
           <div style={{
@@ -1456,6 +1507,8 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               )}
             </>
           )}
+        </div>
+          </div>
         </div>
       </div>
     </div>

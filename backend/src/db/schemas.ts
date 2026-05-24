@@ -422,8 +422,21 @@ export async function saveQQGameResult(result: any): Promise<void> {
   try {
     const doc = new QQGameResultModel({ ...result, id: result.id ?? `qqr-${Date.now().toString(36)}` });
     await doc.save();
+    // 2026-05-24 (Wolf-Bug 'Spiel von gestern abend fehlt im Recap'): explicit
+    // success-Log damit man im Coolify-Log sehen kann ob Save lief. Kombiniert
+    // mit DB-Down-Detection im catch.
+    console.log(`[QQGameResult] saved ${result.id ?? 'unknown'} (room=${result.roomCode}, title="${result.draftTitle}", playedAt=${new Date(result.playedAt ?? Date.now()).toISOString()})`);
   } catch (err) {
-    console.error('Fehler beim Speichern des QQ Spielergebnisses:', err);
+    console.error('[QQGameResult] SAVE FAILED:', err);
+    // Try Sentry capture if available (fail-safe).
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const Sentry = require('@sentry/node');
+      Sentry?.captureException?.(err, {
+        tags: { feature: 'qq-game-result-save', roomCode: result?.roomCode ?? 'unknown' },
+        extra: { resultId: result?.id, draftTitle: result?.draftTitle, playedAt: result?.playedAt },
+      });
+    } catch { /* Sentry not loaded / no-op */ }
   }
 }
 

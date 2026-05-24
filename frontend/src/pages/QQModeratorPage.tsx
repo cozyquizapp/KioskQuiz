@@ -692,11 +692,12 @@ export default function QQModeratorPage() {
           const isZeroSlot = zeroExists && slotIdx === 0;
           delayMs = isZeroSlot ? 4500 : 3000;
         } else {
-          // race-final (step === 3 + betSlotsCount). RaceFinalSlide-Choreo:
-          // countdown 3.5s + race-hold 5s + (N-1)×2s falls + p1-solo 4s +
-          // drift 1.5s + anticipation 2s + podium-rises 2.5s + slowmo 1.5s
-          // = 20 + 2N Sekunden bis 'finish'-Phase + 4s Konfetti-Hold.
-          delayMs = (20 + 2 * N + 4) * 1000;
+          // race-final (step === 3 + betSlotsCount). 2026-05-24 (Race-out):
+          // Race-Choreo durch FinalEurovisionFinale ersetzt — Hero-Standings +
+          // Konfetti, viel kuerzer als die alte 20+2N s Race. 12s reichen fuer
+          // Konfetti-Hold + Sieger-Beobachtung, dann Mod weiter zu THANKS.
+          void N;
+          delayMs = 12_000;
         }
         action = () => emit('qq:nextQuestion', { roomCode });
         break;

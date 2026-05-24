@@ -783,7 +783,11 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           state={s} lang={lang}
         />
       )}
-      {phase.kind === 'race-final' && <RaceFinalSlide finalRanking={finalRanking} lang={lang} />}
+      {/* 2026-05-24 (Wolf-Entscheidung): Race-Final ist deaktiviert, ersetzt
+          durch FinalEurovisionFinale (Hero-Standings + Konfetti). RaceFinalSlide
+          bleibt als Dead-Code im File darunter — Verweis für spätere KIs falls
+          die Race-Choreo wieder aktiviert werden soll. */}
+      {phase.kind === 'race-final' && <FinalEurovisionFinale finalRanking={finalRanking} lang={lang} />}
     </div>
   );
 }
@@ -1908,6 +1912,156 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
   );
 }
 
+// ─── FinalEurovisionFinale ──────────────────────────────────────────────────
+// 2026-05-24 (Wolf-Entscheidung Race-Redesign): RaceFinalSlide ist deaktiviert
+// und durch diese Eurovision-Style-Final-Slide ersetzt. Volle Standings-Tabelle
+// als Hero, Top-1 mit Krone + Konfetti + Climax-Sound. RaceFinalSlide bleibt
+// im File darunter — fuer spaetere KIs als Referenz / falls Wolf wieder
+// zurueckwechseln will.
+function FinalEurovisionFinale({ finalRanking, lang }: {
+  finalRanking: RankingEntry[]; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const p1 = finalRanking[0];
+
+  // Mount-Sound: Fanfare-Auftakt → bei ~700ms Climax-Akkord fuer den finalen
+  // "wir-haben-einen-Sieger"-Moment. Kein Race-Music-Loop mehr.
+  useEffect(() => {
+    try { playFanfare(); } catch {}
+    const t = window.setTimeout(() => { try { playClimaxFinish(); } catch {} }, 700);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  return (
+    <div style={{
+      flex: 1, width: '100%', height: '100%',
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(20px, 2.4cqh, 36px)',
+      padding: 'clamp(24px, 3cqh, 44px) clamp(32px, 4cqw, 64px)',
+      position: 'relative', overflow: 'hidden',
+    }}>
+      {/* Konfetti fuer den Sieger-Moment */}
+      <ConfettiOverlay />
+
+      {/* Hero-Titel */}
+      <div style={{
+        fontSize: 'clamp(28px, 3cqw, 48px)', fontWeight: 900,
+        color: '#FBCFE8', letterSpacing: '0.08em', textTransform: 'uppercase',
+        animation: 'qqFRTitleIn 0.8s ease-out both',
+        textShadow: '0 0 30px rgba(236,72,153,0.55)',
+      }}>
+        🏆 {de ? 'Endstand' : 'Final Standings'}
+      </div>
+
+      {/* Sieger-Spot: groß + Krone */}
+      {p1 && (
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+          padding: 'clamp(20px, 2.4cqh, 36px) clamp(36px, 4cqw, 72px)',
+          borderRadius: 32,
+          background: `linear-gradient(135deg, ${p1.team.color}33, ${p1.team.color}10)`,
+          border: `3px solid ${p1.team.color}`,
+          boxShadow: `0 0 80px ${p1.team.color}66, 0 16px 48px rgba(0,0,0,0.5)`,
+          animation: 'qqFRTitleIn 1s cubic-bezier(0.34, 1.46, 0.64, 1) 0.3s both',
+        }}>
+          <div style={{
+            fontSize: 'clamp(48px, 6cqw, 96px)', lineHeight: 1,
+            animation: 'celebShake 0.8s ease 1.0s both',
+          }}>👑</div>
+          <QQTeamAvatar
+            avatarId={p1.team.avatarId}
+            teamEmoji={p1.team.emoji}
+            size={'clamp(120px, 14cqw, 220px)'}
+            style={{ boxShadow: `0 0 32px ${p1.team.color}88` }}
+          />
+          <TeamNameLabel
+            name={p1.team.name}
+            withTeamPrefix
+            maxLines={2}
+            fontSize="clamp(32px, 3.5cqw, 56px)"
+            color={p1.team.color}
+            fontWeight={900}
+            style={{ textAlign: 'center', lineHeight: 1.1 }}
+          />
+          <div style={{
+            fontSize: 'clamp(20px, 2cqw, 30px)', fontWeight: 900,
+            color: '#F1F5F9',
+            fontVariantNumeric: 'tabular-nums',
+          }}>
+            {p1.total} {de ? 'Punkte' : 'points'}
+          </div>
+        </div>
+      )}
+
+      {/* Full-Standings-Tabelle */}
+      <div style={{
+        width: '100%', maxWidth: 980,
+        display: 'flex', flexDirection: 'column', gap: 6,
+        animation: 'qqFRTitleIn 0.8s ease 0.6s both',
+      }}>
+        {finalRanking.map((r, idx) => (
+          <div
+            key={r.team.id}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 14,
+              padding: '10px 18px',
+              borderRadius: 12,
+              background: idx === 0
+                ? `linear-gradient(135deg, ${r.team.color}26, ${r.team.color}08)`
+                : 'rgba(255,255,255,0.04)',
+              border: idx === 0 ? `2px solid ${r.team.color}` : '1px solid rgba(255,255,255,0.08)',
+              animation: `qqFRTitleIn 0.5s ease ${0.7 + idx * 0.12}s both`,
+            }}
+          >
+            <div style={{
+              fontSize: 22, fontWeight: 900,
+              color: idx === 0 ? '#FBBF24' : '#94A3B8',
+              minWidth: 32, textAlign: 'center',
+            }}>{idx + 1}</div>
+            <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={44} />
+            <div style={{
+              flex: 1, fontSize: 20, fontWeight: 800, color: r.team.color,
+            }}>{r.team.name}</div>
+            <div style={{
+              display: 'flex', gap: 16, alignItems: 'center',
+              fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+              color: '#CBD5E1',
+            }}>
+              <span style={{ color: '#94A3B8', minWidth: 28, textAlign: 'right' }}>{r.score}</span>
+              <span style={{ color: '#FBBF24', minWidth: 28, textAlign: 'right' }}>
+                {r.awards > 0 ? `+${r.awards}` : '·'}
+              </span>
+              <span style={{ color: '#22C55E', minWidth: 32, textAlign: 'right' }}>
+                {r.bonus > 0 ? `+${r.bonus}` : '·'}
+              </span>
+              <span style={{
+                color: idx === 0 ? r.team.color : '#F1F5F9',
+                minWidth: 44, textAlign: 'right',
+                fontSize: 22, fontWeight: 900,
+              }}>{r.total}</span>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── RaceFinalSlide [DEPRECATED 2026-05-24] ─────────────────────────────────
+// Auto-Rennen-Choreo mit Speed-Lines, fallenden Verlierern, Solo-P1-Drift,
+// Podium-Aufbau und Konfetti. Wolf-Entscheidung 2026-05-24: durch
+// FinalEurovisionFinale ersetzt (Hero-Standings + Konfetti, kein Race).
+// Code bleibt aus zwei Gruenden:
+//   1. Spaetere KIs koennen sehen wie die Race aufgebaut war, falls Wolf
+//      eine Variante zurueckholen will (z.B. Spezial-Event-Theme).
+//   2. RaceTeamUnit / RaceSpeedLines / RaceStarryBackground /
+//      RaceCountdownOverlay / PodiumStepFinal sind Hilfs-Components die
+//      teils wiederverwendbare Animations-Patterns enthalten.
+// AKTUELL NICHT GERENDERT — siehe FinalRevealView phase.kind === 'race-final'.
+// Falls re-aktivieren: einfach den Render-Call in FinalRevealView von
+// <FinalEurovisionFinale ...> zurueck auf <RaceFinalSlide ...> aendern.
 function RaceFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {

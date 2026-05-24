@@ -16,7 +16,7 @@ const cozyQuizLinks: LinkItem[] = [
   { path: '/cozygames',   label: 'CozyGames-Editor',   emoji: '🎲', note: 'Mini-Spiele-Katalog für analoge CozyGame-Slots im Quiz' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
   { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
-  { path: '/stats',       label: 'Recap & Stats',      emoji: '📊', note: 'Pro Spiel: Q-by-Q-History, Team-Stats, Awards (📊 Recap-Button)' },
+  { path: '/recap',       label: 'Recap-Übersicht',    emoji: '📊', note: 'Alle gespielten Quizze auf einen Blick — klick auf Spiel → Q-by-Q-History, Team-Stats, Awards, Funny-Answers' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -43,8 +43,7 @@ const extrasLinks: LinkItem[] = [
   { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
   { path: '/rules-editor',        label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise anpassen (lokal)' },
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
-  // Stats / Recap-Index ist jetzt oben unter Live-Spiel-Elementen verlinkt
-  // (📊 Recap-Button pro Spiel) — hier kein duplicate Eintrag mehr.
+  { path: '/stats',           label: 'Stats & Leaderboard', emoji: '📈', note: 'AllTime-Stats, Frage-Verteilungen, Funny-Answers (Recap = pro Spiel, oben verlinkt)' },
   { path: '/katalog',         label: 'Fragenkatalog',      emoji: '📚', note: 'Frage-Datenbank durchsuchen & verwalten' },
   { path: '/intro',           label: 'Intro-Slides',       emoji: '📖', note: 'Pre-Show Slides editieren' },
   { path: '/fragen',          label: 'Fragen-Editor',      emoji: '✏️', note: 'Einzelne Fragen bearbeiten' },

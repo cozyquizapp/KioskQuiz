@@ -1260,11 +1260,28 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
     // oder Rating ≥ 4 reicht ein Quick-Submit ohne Freitext — die Sterne
     // sind die Aussage. Bug/Idee/negativ-Feedback brauchen weiterhin Text.
     const allowEmpty = type === 'praise' || (rating !== null && rating >= 4);
-    if (!text.trim() && !allowEmpty) { setErr(tr('fbErrEmpty', lang)); return; }
+    if (!text.trim() && !allowEmpty) {
+      setErr(tr('fbErrEmpty', lang));
+      // 2026-05-24 (Kate-Bug Audit #3): Error war oben am Button — wenn Mobile-
+      // Keyboard offen war, hat Kate ihn vermutlich nicht gesehen. Scroll ihn
+      // ins Sichtbare + kurze Vibrate als Cue.
+      try {
+        (navigator as any).vibrate?.(80);
+        window.requestAnimationFrame(() => {
+          document.querySelector('[data-fb-error]')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        });
+      } catch {}
+      return;
+    }
     setSending(true); setErr(null);
+    // 2026-05-24 (Kate-Bug Audit #3): AbortController mit 10s-Timeout. Vorher
+    // hing fetch() unbegrenzt → sending=true blieb → Button disabled forever.
+    const ctrl = new AbortController();
+    const timeoutHandle = window.setTimeout(() => ctrl.abort(), 10_000);
     try {
       const res = await fetch(`${API_BASE}/qq/feedback`, {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
+        signal: ctrl.signal,
         body: JSON.stringify({
           roomCode, teamName, rating, text, contact,
           type, playAgain, favoriteCategory, lengthFeel,
@@ -1272,11 +1289,33 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           contactIntent: contactIntent.length ? contactIntent : null,
         }),
       });
-      if (!res.ok) throw new Error(tr('fbErrServer', lang));
+      if (!res.ok) {
+        // HTTP-Status in den Error damit Sentry was Konkretes sieht.
+        const bodyText = await res.text().catch(() => '');
+        const err = new Error(`${tr('fbErrServer', lang)} (HTTP ${res.status}${bodyText ? ' · ' + bodyText.slice(0, 200) : ''})`);
+        (err as any).status = res.status;
+        throw err;
+      }
       setSent(true);
     } catch (e) {
-      setErr(e instanceof Error ? e.message : tr('fbErrSend', lang));
-    } finally { setSending(false); }
+      const msg = e instanceof Error
+        ? (e.name === 'AbortError' ? (lang === 'en' ? 'Connection timed out. Please try again.' : 'Verbindung zu langsam. Bitte nochmal versuchen.') : e.message)
+        : tr('fbErrSend', lang);
+      setErr(msg);
+      // 2026-05-24 (Kate-Bug Audit #3): Sentry-Capture damit wir beim naechsten
+      // Test sehen WARUM Submit fehlschlug (war vorher blind: nur generic
+      // Error im UI, kein Diag-Signal nach aussen).
+      try {
+        const Sentry = (window as any).Sentry;
+        Sentry?.captureException?.(e, {
+          tags: { feature: 'qq-feedback-submit', roomCode: roomCode ?? 'none', teamName: teamName ?? 'none' },
+          extra: { type, hasText: !!text.trim(), hasRating: rating !== null },
+        });
+      } catch {}
+    } finally {
+      window.clearTimeout(timeoutHandle);
+      setSending(false);
+    }
   }
 
   if (sent) {
@@ -1507,7 +1546,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           )}
         </div>
 
-        {err && <div style={{ fontSize: 12, color: '#fca5a5' }}>⚠️ {err}</div>}
+        {err && <div data-fb-error style={{ fontSize: 13, color: '#fca5a5', fontWeight: 700, padding: '8px 12px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 8 }}>⚠️ {err}</div>}
 
         <button type="button" onClick={submit} disabled={sending}
           style={{

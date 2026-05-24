@@ -61,6 +61,16 @@ tonight.questions = tonight.questions.map(q => {
       optionsEn: ['Eagle', 'Peacock', 'Phoenix'],
     };
   }
+  if (q.id === 'tonight-p3-q2') {
+    // Flags-without-red: Liste erweitert um 14 Laender die haeufig vergessen werden.
+    return {
+      ...q,
+      answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan, Guatemala, Honduras, Nigeria, Jamaika, Lesotho, Salomonen, Mikronesien, Palau, St. Lucia, St. Vincent und die Grenadinen, Vatikanstadt, Marshallinseln, Zypern, Somalia',
+      answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan, Guatemala, Honduras, Nigeria, Jamaica, Lesotho, Solomon Islands, Micronesia, Palau, Saint Lucia, Saint Vincent and the Grenadines, Vatican City, Marshall Islands, Cyprus, Somalia',
+      bunteTuete: { kind: 'hotPotato' },
+      funFact: 'Rund 75% aller Nationalflaggen enthalten Rot. Orange zählt NICHT als Rot (Irland, Niger, Indien). Inselstaaten im Pazifik haben oft Hellblau (Mikronesien, Palau, Salomonen). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz, Türkei, China, Japan — alle haben Rot.',
+    };
+  }
   if (q.id === 'tonight-p4-q3') {
     // EU-Euro: Frage umkehren auf "noch nicht Euro" — Bulgarien hat seit
     // 1.1.2026 Euro, daher hatten Kroatien + Bulgarien beide richtige Antworten.

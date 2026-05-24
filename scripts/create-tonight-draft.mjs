@@ -127,10 +127,10 @@ const draft = {
       id: 'tonight-p3-q2', phaseIndex: 3, questionIndexInPhase: 2, category: 'BUNTE_TUETE',
       text: 'Nenne ein Land, dessen Nationalflagge ohne die Farbe Rot auskommt!',
       textEn: 'Name a country whose national flag contains no red!',
-      answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan',
-      answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan',
+      answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan, Guatemala, Honduras, Nigeria, Jamaika, Lesotho, Salomonen, Mikronesien, Palau, St. Lucia, St. Vincent und die Grenadinen, Vatikanstadt, Marshallinseln, Zypern, Somalia',
+      answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan, Guatemala, Honduras, Nigeria, Jamaica, Lesotho, Solomon Islands, Micronesia, Palau, Saint Lucia, Saint Vincent and the Grenadines, Vatican City, Marshall Islands, Cyprus, Somalia',
       bunteTuete: { kind: 'hotPotato' },
-      funFact: 'Rund 75% aller Nationalflaggen enthalten Rot. Orange zählt NICHT als Rot. Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz — alle haben Rot.',
+      funFact: 'Rund 75% aller Nationalflaggen enthalten Rot. Orange zählt NICHT als Rot (Irland, Niger, Indien). Inselstaaten im Pazifik haben oft Hellblau (Mikronesien, Palau, Salomonen). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz, Türkei, China, Japan — alle haben Rot.',
     },
     {
       id: 'tonight-p3-q3', phaseIndex: 3, questionIndexInPhase: 3, category: 'ZEHN_VON_ZEHN',

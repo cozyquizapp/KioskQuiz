@@ -824,9 +824,9 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
   item('flags-no-red', 'BUNTE_TUETE', 'Geographie', {
     text: 'Nenne ein Land, dessen Nationalflagge ohne die Farbe Rot auskommt!',
     textEn: 'Name a country whose national flag contains no red!',
-    answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan, Guatemala, Honduras, Nigeria, Jamaika',
-    answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan, Guatemala, Honduras, Nigeria, Jamaica',
+    answer: 'Argentinien, Brasilien, Irland, Indien, Niger, Côte d\'Ivoire, Schweden, Finnland, Griechenland, Ukraine, Israel, Saudi-Arabien, Bhutan, Pakistan, Estland, Botswana, Bahamas, Kasachstan, Guatemala, Honduras, Nigeria, Jamaika, Lesotho, Salomonen, Mikronesien, Palau, St. Lucia, St. Vincent und die Grenadinen, Vatikanstadt, Marshallinseln, Zypern, Somalia',
+    answerEn: 'Argentina, Brazil, Ireland, India, Niger, Côte d\'Ivoire, Sweden, Finland, Greece, Ukraine, Israel, Saudi Arabia, Bhutan, Pakistan, Estonia, Botswana, Bahamas, Kazakhstan, Guatemala, Honduras, Nigeria, Jamaica, Lesotho, Solomon Islands, Micronesia, Palau, Saint Lucia, Saint Vincent and the Grenadines, Vatican City, Marshall Islands, Cyprus, Somalia',
     bunteTuete: { kind: 'hotPotato' },
-    funFact: 'Rund 75% aller Nationalflaggen enthalten Rot — eine der häufigsten Farben weltweit. Orange zählt NICHT als Rot (Irland, Niger, Indien, Bhutan ok). Mittelamerika hat viele blau-weiß-Flaggen (Argentinien, Guatemala, Honduras, El Salvador). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz — alle haben Rot drin, auch wenn man sie mit Grün oder Orange assoziiert.',
+    funFact: 'Rund 75% aller Nationalflaggen enthalten Rot — eine der häufigsten Farben weltweit. Orange zählt NICHT als Rot (Irland, Niger, Indien, Bhutan ok). Mittelamerika hat viele blau-weiß-Flaggen (Argentinien, Guatemala, Honduras, El Salvador). Inselstaaten im Pazifik haben oft Hellblau (Mikronesien, Palau, Salomonen, Marshallinseln). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz, Türkei, China, Japan — alle haben Rot drin.',
   }),
 ];

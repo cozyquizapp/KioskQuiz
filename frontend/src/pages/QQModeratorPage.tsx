@@ -1378,34 +1378,65 @@ export default function QQModeratorPage() {
               }}
             >{(state as any).botsPaused ? '▶ Bots' : '⏸ Bots'}</button>
           )}
-          {/* 2026-05-24 (Wolf-Wunsch 'Back-Button sichtbar machen'): kleiner
-              persistenter Hint im Header der zeigt wenn Slide-Zurück moeglich
-              ist. Hotkey selbst (Shift+Space / Backspace) bleibt aktiv via
-              handleKey unabhaengig vom Hint. */}
-          {joined && state && (
-            state.phase === 'RULES'
-            || state.phase === 'PHASE_INTRO'
-            || state.phase === 'FINAL_REVEAL'
-            || state.phase === 'QUESTION_REVEAL'
-            || (state.phase === 'COMEBACK_CHOICE' && ((state as any).comebackIntroStep ?? 0) > 0)
-          ) && (
-            <button
-              onClick={() => emit('qq:goBackSlide', { roomCode })}
-              title="Slide zurück (Shift+Space / Backspace)"
-              style={{
-                padding: '6px 12px', borderRadius: 8,
-                border: '1px solid rgba(148,163,184,0.35)',
-                background: 'rgba(148,163,184,0.08)',
-                color: QQ_COLORS.slate300, cursor: 'pointer',
-                fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
-                display: 'inline-flex', alignItems: 'center', gap: 6,
-                boxShadow: 'var(--qm-depth-sm)',
-              }}
-            >
-              <span style={{ fontSize: 15 }}>↩</span>
-              <span className="qm-kbd qm-kbd-sm" style={{ fontSize: 10 }}>⇧Space</span>
-            </button>
-          )}
+          {/* 2026-05-24 (Wolf 'A — persistente Forward + Back Pills'): Beide
+              Buttons dauerhaft im Header sichtbar (sobald ein Spiel laeuft),
+              mit disabled-Look wenn die aktuelle Phase keine Aktion erlaubt.
+              Klick dispatched einen synthetic Keyboard-Event → laeuft durch
+              den existierenden handleKey (alle Phase-Sub-Logik dort).
+              Vorher: Forward war pro Phase im unteren Toolbar verstreut,
+              Back nur conditional im Header — Wolf am Streamdeck sah ständig
+              springende/verschwindende Buttons. */}
+          {joined && state && state.phase !== 'LOBBY' && (() => {
+            const canBack = (
+              state.phase === 'RULES'
+              || state.phase === 'PHASE_INTRO'
+              || state.phase === 'FINAL_REVEAL'
+              || state.phase === 'QUESTION_REVEAL'
+              || (state.phase === 'COMEBACK_CHOICE' && ((state as any).comebackIntroStep ?? 0) > 0)
+            );
+            const canFwd = state.phase !== 'GAME_OVER' && state.phase !== 'THANKS';
+            const fireKey = (code: string, shift: boolean) => {
+              window.dispatchEvent(new KeyboardEvent('keydown', { code, shiftKey: shift, bubbles: true }));
+            };
+            const pillBase: React.CSSProperties = {
+              padding: '6px 12px', borderRadius: 8,
+              border: '1px solid rgba(148,163,184,0.35)',
+              background: 'rgba(148,163,184,0.08)',
+              color: QQ_COLORS.slate300, cursor: 'pointer',
+              fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
+              display: 'inline-flex', alignItems: 'center', gap: 6,
+              boxShadow: 'var(--qm-depth-sm)',
+            };
+            const pillDisabled: React.CSSProperties = {
+              ...pillBase,
+              opacity: 0.32, cursor: 'not-allowed',
+              background: 'rgba(148,163,184,0.04)',
+            };
+            return (
+              <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+                <button
+                  onClick={(e) => { e.currentTarget.blur(); if (canBack) fireKey('Space', true); }}
+                  disabled={!canBack}
+                  title={canBack ? 'Slide zurück (Shift+Space / Backspace)' : 'In dieser Phase kein Zurück'}
+                  style={canBack ? pillBase : pillDisabled}
+                >
+                  <span style={{ fontSize: 15 }}>↩</span>
+                  <span className="qm-kbd qm-kbd-sm" style={{ fontSize: 10 }}>⇧Space</span>
+                </button>
+                <button
+                  onClick={(e) => { e.currentTarget.blur(); if (canFwd) fireKey('Space', false); }}
+                  disabled={!canFwd}
+                  title={canFwd ? 'Weiter (Space)' : 'Spiel-Ende — kein Weiter'}
+                  style={canFwd
+                    ? { ...pillBase, borderColor: 'rgba(34,197,94,0.45)', background: 'rgba(34,197,94,0.12)', color: QQ_COLORS.green300 }
+                    : pillDisabled}
+                >
+                  <span style={{ fontSize: 15 }}>▶</span>
+                  <span className="qm-kbd qm-kbd-sm" style={{ fontSize: 10 }}>Space</span>
+                </button>
+              </div>
+            );
+          })()}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"

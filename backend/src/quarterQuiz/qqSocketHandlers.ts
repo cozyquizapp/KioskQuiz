@@ -2263,6 +2263,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqFinishFinalBettingIntro(room);
         broadcast(io, payload.roomCode);
+        // 2026-05-24 (Wolf-Bug 'bots betten nicht 0/8'): zusaetzliche
+        // Sicherheits-Trigger fuer Bot-Bets. Falls qqStartFinalBetting den
+        // Auto-Trigger verpasst hat (Race-Condition mit qqBeginPhase-Pfad),
+        // wird er hier nachgeholt sobald Intro durch ist.
+        maybeAutoFinalBets(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

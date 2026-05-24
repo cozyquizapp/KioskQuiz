@@ -1389,6 +1389,34 @@ export default function QQModeratorPage() {
               }}
             >{(state as any).botsPaused ? '▶ Bots' : '⏸ Bots'}</button>
           )}
+          {/* 2026-05-24 (Wolf-Wunsch 'Back-Button sichtbar machen'): kleiner
+              persistenter Hint im Header der zeigt wenn Slide-Zurück moeglich
+              ist. Hotkey selbst (Shift+Space / Backspace) bleibt aktiv via
+              handleKey unabhaengig vom Hint. */}
+          {joined && state && (
+            state.phase === 'RULES'
+            || state.phase === 'PHASE_INTRO'
+            || state.phase === 'FINAL_REVEAL'
+            || state.phase === 'QUESTION_REVEAL'
+            || (state.phase === 'COMEBACK_CHOICE' && ((state as any).comebackIntroStep ?? 0) > 0)
+          ) && (
+            <button
+              onClick={() => emit('qq:goBackSlide', { roomCode })}
+              title="Slide zurück (Shift+Space / Backspace)"
+              style={{
+                padding: '6px 12px', borderRadius: 8,
+                border: '1px solid rgba(148,163,184,0.35)',
+                background: 'rgba(148,163,184,0.08)',
+                color: QQ_COLORS.slate300, cursor: 'pointer',
+                fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                boxShadow: 'var(--qm-depth-sm)',
+              }}
+            >
+              <span style={{ fontSize: 15 }}>↩</span>
+              <span className="qm-kbd qm-kbd-sm" style={{ fontSize: 10 }}>⇧Space</span>
+            </button>
+          )}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"
@@ -2172,6 +2200,52 @@ export default function QQModeratorPage() {
                 {s.phase === 'CONNECTIONS_4X4' && (
                   <ConnectionsControls state={s} roomCode={roomCode} emit={emit} />
                 )}
+
+                {/* ── FINAL_BETTING ── 2026-05-24 (Wolf-Bug 'Space-Button
+                    fehlt sichtbar bei Place-Your-Bet'): expliziter PrimaryBtn
+                    in der Toolbar. Drei Sub-Phases:
+                     1. Intro-Slide aktiv (finalBettingIntroDone===false) →
+                        'Bet-Phase starten' (= ehem. Final-Tipp-Erklär-Slide
+                        aus Rules, jetzt als Mod-Flow vor Betting).
+                     2. Submissions laufen, nicht alle eingereicht → Status-
+                        Anzeige + 'Reveal starten' (Mod kann anyway weiter).
+                     3. Alle Submissions da → 'Reveal starten' grün. */}
+                {s.phase === 'FINAL_BETTING' && (() => {
+                  const introActive = (s as any).finalBettingIntroDone === false;
+                  const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
+                  const total = s.teams.length;
+                  const allIn = submitted >= total;
+                  if (introActive) {
+                    return (
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
+                        <div style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>
+                          🎰 Final-Tipp-Erklärung
+                        </div>
+                        <PrimaryBtn
+                          color={QQ_COLORS.brandPinkMid}
+                          onClick={() => emit('qq:finishFinalBettingIntro', { roomCode })}
+                          hotkey="Space"
+                        >
+                          ▶ Bet-Phase starten
+                        </PrimaryBtn>
+                      </div>
+                    );
+                  }
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
+                      <div style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>
+                        🪙 Wetten: {submitted}/{total}
+                      </div>
+                      <PrimaryBtn
+                        color={allIn ? QQ_COLORS.green500 : QQ_COLORS.amber400}
+                        onClick={() => emit('qq:finishFinalBetting', { roomCode })}
+                        hotkey="Space"
+                      >
+                        {allIn ? '▶ Auflösung starten' : '▶ Trotzdem auflösen'}
+                      </PrimaryBtn>
+                    </div>
+                  );
+                })()}
 
                 {/* ── GAME OVER ── */}
                 {s.phase === 'GAME_OVER' && (() => {
@@ -3915,7 +3989,27 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
   // (oder wenn hl gar nicht existiert) sind die Buttons sinnvoll.
   const hlPhase = s.comebackHL?.phase;
   const inHLGame = hlPhase === 'question' || hlPhase === 'reveal' || hlPhase === 'steal';
-  if (inHLGame) return null;
+  if (inHLGame) {
+    // 2026-05-24 (Wolf-Bug 'Space-Button fehlt bei Comeback'): waehrend
+    // HL-Mini-Game laeuft das Spiel automatisch durch — kein Mod-Space.
+    // Trotzdem einen Status-Hint anzeigen damit Wolf sieht was passiert.
+    const labels = {
+      question: '⏳ H/L-Frage läuft (Bots/Teams antworten)',
+      reveal:   '⏳ H/L-Auflösung läuft (auto)',
+      steal:    '⏳ Steal läuft (auto)',
+    } as const;
+    return (
+      <div style={{
+        display: 'flex', gap: 8, alignItems: 'center',
+        padding: '6px 12px', borderRadius: 8,
+        background: 'rgba(167,139,250,0.10)',
+        border: '1px solid rgba(167,139,250,0.30)',
+        fontSize: 12, fontWeight: 700, color: QQ_COLORS.violet400,
+      }}>
+        <span>{labels[hlPhase as keyof typeof labels] ?? `⏳ ${hlPhase}`}</span>
+      </div>
+    );
+  }
   const step = s.comebackIntroStep ?? 0;
   // 2 Intro-Steps insgesamt (0 + 1), danach startet das H/L-Mini-Game.
   const labels = [

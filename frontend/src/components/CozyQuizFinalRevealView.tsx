@@ -374,14 +374,10 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 //                 Mitte-Treppchen + Konfetti + Climax-Sound
 //   max = N+7 → THANKS
 
-// 2026-05-24 (Wolf Race-Redesign Eurovision-Style): Grid-Reveal komplett
-// raus, Awards kommen VOR Bets, Bet-Slides mit persistenter Tabelle dahinter.
-type FinalStep =
-  | { kind: 'title' }
-  | { kind: 'awards-overview' }        // alle 3 BG-Cards mit Erklärung
-  | { kind: 'awards-reveal' }          // Auto-Choreo: 3 Cards gestaffelt flippen
-  | { kind: 'bet'; slotIndex: number } // Index in betSlots-Array
-  | { kind: 'race-final' };
+// 2026-05-24 (Refactor #1 Drift-Killer): Step-Decode lebt jetzt in
+// shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
+// (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
+import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalReveal';
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.
@@ -400,16 +396,8 @@ type RankingEntry = {
 // betSlotsCount statt N. Teams mit 0-Bonus → 1 Group-Slide zuerst,
 // danach einzelne Positiv-Teams aufsteigend. Teams ohne Bet komplett
 // übersprungen. Backend qqFinalRevealMaxStep hat dieselbe Logik.
-function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
-  // 2026-05-24 (Wolf Race-Redesign): NEW order = title → awards-overview →
-  // awards-reveal → bet-slots (mit persistenter Tabelle) → race-final.
-  // Grid-Reveal als eigene Step-Slide ist raus.
-  if (step <= 0) return { kind: 'title' };
-  if (step === 1) return { kind: 'awards-overview' };
-  if (step === 2) return { kind: 'awards-reveal' };
-  if (step <= 2 + betSlotsCount) return { kind: 'bet', slotIndex: step - 3 };
-  return { kind: 'race-final' };
-}
+// decodeFinalStep ist jetzt in shared/qqFinalReveal.ts (Import oben).
+// Vorher hier lokal dupliziert → Drift bei Race-Redesigns.
 
 // 2026-05-12 (Slide-Boundary-System Regel #3): generischer Slot-Transition-
 // Wrapper. Wenn `slotKey` wechselt, rendert er den vorherigen Slot kurz mit

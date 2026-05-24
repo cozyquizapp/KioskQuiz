@@ -4390,6 +4390,12 @@ function Btn({ children, color, onClick, outline = false, small = false }: {
 function PrimaryBtn({ children, color, onClick, hotkey, pulse = false }: {
   children: React.ReactNode; color: string; onClick: () => void; hotkey?: string; pulse?: boolean;
 }) {
+  // 2026-05-25 (Wolf 'buttons doppelt — space oben rechts + unten links'):
+  // Space-Keycap auf Phase-Buttons unterdrueckt — die persistente Header-
+  // Pill ist Single-Source fuer den Space-Hotkey-Hint. Label-Text + Action
+  // bleiben (Context-Anchor 'was kommt als Naechstes'). Andere Hotkeys
+  // (P, ArrowRight, …) bleiben sichtbar, da nicht doppelt im Header.
+  const showHotkey = hotkey && hotkey !== 'Space';
   return (
     <button
       onClick={onClick}
@@ -4398,7 +4404,7 @@ function PrimaryBtn({ children, color, onClick, hotkey, pulse = false }: {
       style={{ ['--qm-btn-color' as any]: color }}
     >
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>{children}</span>
-      {hotkey && <span className="qm-kbd qm-kbd-sm">{hotkey}</span>}
+      {showHotkey && <span className="qm-kbd qm-kbd-sm">{hotkey}</span>}
     </button>
   );
 }

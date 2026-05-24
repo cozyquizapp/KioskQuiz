@@ -76,6 +76,9 @@ import {
 } from './qqHotPotatoAI';
 import { maybeAutoConnections, stopConnectionsAiTimers } from './qqConnectionsAI';
 import { maybeAutoOnlyConnect, stopOnlyConnectAiTimers } from './qqOnlyConnectAI';
+import {
+  maybeAutoComebackChoice, scheduleHLAutoReveal, clearHLAutoReveal, maybeDummyAnswerHL,
+} from './qqComebackHLAI';
 
 type AckFn = (payload: QQAck) => void;
 
@@ -648,32 +651,8 @@ export function maybeAutoSimulateAnswers(io: SocketIOServer, roomCode: string): 
   });
 }
 
-/**
- * Wenn COMEBACK_CHOICE + pendingFor ist ein Dummy, starte automatisch die
- * Klau-Aktion (fix vom Führenden) nach kurzer Verzögerung. Keine Wahl mehr
- * zwischen PLACE_2/STEAL_1/SWAP_2 – einheitlich Steal.
- */
-export function maybeAutoComebackChoice(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room) return;
-  if (room.phase !== 'COMEBACK_CHOICE') return;
-  if ((room as any).botsPaused) return;
-  const teamId = room.pendingFor;
-  if (!teamId) return;
-  const team = (room.teams as any)[teamId];
-  if (!team || !team._dummy) return;
+// 2026-05-24 (Refactor #3.5): maybeAutoComebackChoice in qqComebackHLAI.ts
 
-  setTimeout(() => {
-    const live = getQQRoom(roomCode);
-    if (!live || live.phase !== 'COMEBACK_CHOICE') return;
-    if (live.pendingFor !== teamId) return;
-    try {
-      qqComebackAutoApplySteal(live);
-      broadcastQQ(io, roomCode);
-      maybeAutoPlace(io, roomCode);
-    } catch { /* skip */ }
-  }, 1500);
-}
 
 /**
  * Wenn PLACEMENT + pendingFor ist ein Dummy, setze/klau/spezial automatisch.
@@ -987,71 +966,7 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
   }, 1200);
 }
 
-/** Scheduled Auto-Reveal fuer das Comeback-H/L-Mini-Game. Wird nach jedem
- *  Rundenstart aufgerufen — wenn der Timer ablaeuft und nicht alle geantwortet
- *  haben, triggert automatisch den Reveal. Fehlende Antworten zaehlen als falsch. */
-export function scheduleHLAutoReveal(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room || !room.comebackHL) return;
-  if (room.comebackHL.phase !== 'question') return;
-  // Alte Handle clearen
-  if (room._comebackHLTimerHandle) {
-    clearTimeout(room._comebackHLTimerHandle);
-    room._comebackHLTimerHandle = null;
-  }
-  const endsAt = room.comebackHL.timerEndsAt;
-  if (endsAt == null) return;
-  // Kleiner Puffer (400ms), damit Client-Timer visuell erst auf 0 zeigt.
-  const ms = Math.max(0, endsAt - Date.now()) + 400;
-  room._comebackHLTimerHandle = setTimeout(() => {
-    const live = getQQRoom(roomCode);
-    if (!live || !live.comebackHL) return;
-    live._comebackHLTimerHandle = null;
-    if (live.comebackHL.phase !== 'question') return;
-    try {
-      qqComebackHLReveal(live);
-      broadcastQQ(io, roomCode);
-    } catch { /* ignore */ }
-  }, ms);
-}
-
-/** Clear Auto-Reveal Timer (bei manueller Reveal, Pause, Spielende). */
-function clearHLAutoReveal(room: { _comebackHLTimerHandle: ReturnType<typeof setTimeout> | null }): void {
-  if (room._comebackHLTimerHandle) {
-    clearTimeout(room._comebackHLTimerHandle);
-    room._comebackHLTimerHandle = null;
-  }
-}
-
-/** Comeback-Mini-Game: Dummy-Teams antworten automatisch auf die Higher/Lower-
- *  Frage (50/50 zufällig, damit der Kampf nicht immer identisch ausgeht).
- *  Wird nach jedem Rundenstart aufgerufen. */
-export function maybeDummyAnswerHL(io: SocketIOServer, roomCode: string): void {
-  const room = getQQRoom(roomCode);
-  if (!room || !room.comebackHL) return;
-  const hl = room.comebackHL;
-  if (hl.phase !== 'question') return;
-  const dummies = hl.teamIds.filter(id => {
-    const t = (room.teams as any)[id];
-    return t && t._dummy && hl.answers[id] == null;
-  });
-  if (dummies.length === 0) return;
-  // Staggered Antwort-Zeitpunkte (800ms-2500ms), damit es nicht synchron aussieht.
-  dummies.forEach((teamId, i) => {
-    const delay = 800 + i * 400 + Math.floor(Math.random() * 900);
-    setTimeout(() => {
-      const live = getQQRoom(roomCode);
-      if (!live || !live.comebackHL) return;
-      if (live.comebackHL.phase !== 'question') return;
-      if (live.comebackHL.answers[teamId] != null) return;
-      const choice: 'higher' | 'lower' = Math.random() < 0.5 ? 'higher' : 'lower';
-      try {
-        qqComebackHLSubmitAnswer(live, teamId, choice);
-        broadcastQQ(io, roomCode);
-      } catch { /* ignore */ }
-    }, delay);
-  });
-}
+// 2026-05-24 (Refactor #3.5): scheduleHLAutoReveal + clearHLAutoReveal + maybeDummyAnswerHL in qqComebackHLAI.ts
 
 /** Hilfs-Dispatcher: aus FREE-Wahl erst chooseFreeAction, dann Follow-up. */
 /** True wenn aktuelle Phase eine Placement-Action erlaubt (PLACEMENT oder

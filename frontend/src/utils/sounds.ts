@@ -152,7 +152,14 @@ export function preloadSoundDefaults() {
 }
 
 /** Play a one-shot audio file. Resets to start if already playing. */
-function playAudioFile(url: string) {
+// 2026-05-25 (Wolf-Sound-Audit): Diagnose-Log + Fallback-Callback. Vorher
+// schluckte el.play().catch() jeden Fehler silent — Custom-Upload mit 404
+// URL fuehrte zu kompletter Stille ohne jeden Hinweis (Mod sah nichts in
+// der Console, kein Fallback-Synth lief, Action war stumm).
+// Jetzt: ein einmaliger console.warn pro fehlerhafter URL (Dedupe via
+// loggedFileErrors-Set) + optional onError-Callback fuer Synth-Fallback.
+const loggedFileErrors = new Set<string>();
+function playAudioFile(url: string, onError?: () => void) {
   const now = Date.now();
   const last = lastPlayAt.get(url) ?? 0;
   if (now - last < PLAY_COOLDOWN_MS) return; // spam-guard
@@ -161,7 +168,22 @@ function playAudioFile(url: string) {
   el.volume = masterVolume;
   el.currentTime = 0;
   el.loop = false;
-  el.play().catch(() => {/* autoplay blocked — needs user gesture first */});
+  const handleError = (reason: string) => {
+    if (!loggedFileErrors.has(url)) {
+      loggedFileErrors.add(url);
+      console.warn(`[Sound] Custom URL failed (${reason}): ${url} — falling back to synth.`);
+    }
+    if (onError) onError();
+  };
+  // play()-Failure (z.B. autoplay-blocked oder URL-fehler) UND element-level
+  // 'error'-Event (z.B. MEDIA_ERR_NETWORK / 404) beide abfangen.
+  el.play().catch((err) => {
+    // Autoplay-blocked ist kein „echter" Fehler — der Browser braucht eine
+    // User-Gesture. NotAllowedError = autoplay-block, kein Fallback noetig.
+    if (err?.name === 'NotAllowedError') return;
+    handleError(err?.name ?? 'play-rejected');
+  });
+  el.addEventListener('error', () => handleError('media-error'), { once: true });
 }
 
 // ── Synth helpers ─────────────────────────────────────────────────────────────
@@ -830,9 +852,20 @@ export const SYNTH_PRESETS: Partial<Record<QQSoundSlot, SlotPresets>> = {
 function playSlotOneShot(slot: QQSoundSlot) {
   if (_sfxMuted) return;
   if (!isSlotEnabled(slot)) return;
+  // 2026-05-25 (Wolf-Sound-Audit Fix #1+#4): Fallback-Helper. Wenn Custom-
+  // URL oder Default-URL fehlt/404, faellt der Slot auf den klassischen
+  // Synth-Preset zurueck statt stumm zu sein.
+  const playSynthFallback = () => {
+    const presets = SYNTH_PRESETS[slot];
+    const variant = presets?.classic ?? (presets ? Object.values(presets)[0] : null);
+    if (!variant) return;
+    const ac = getCtx();
+    if (!ac) return;
+    variant.play(ac, ac.currentTime);
+  };
   const custom = soundConfig[slot];
   if (typeof custom === 'string' && custom.length > 0) {
-    playAudioFile(custom);
+    playAudioFile(custom, playSynthFallback);
     return;
   }
   const presetKey = soundConfig.preset?.[slot];
@@ -845,14 +878,10 @@ function playSlotOneShot(slot: QQSoundSlot) {
   }
   const defUrl = QQ_SOUND_DEFAULT_URLS[slot];
   if (defUrl && defUrl.length > 0) {
-    playAudioFile(defUrl);
+    playAudioFile(defUrl, playSynthFallback);
     return;
   }
-  if (presets?.classic) {
-    const ac = getCtx();
-    if (!ac) return;
-    presets.classic.play(ac, ac.currentTime);
-  }
+  playSynthFallback();
 }
 
 /** Einmalig einen bestimmten Preset direkt abspielen (für Live-Preview im Panel). */
@@ -1221,8 +1250,14 @@ export function playSpecialAwardReveal(): void {
  *  war playWinnerCardReveal (Coronation-Akkord) — kollidierte mit dem
  *  Winner-Sound 1.5s spaeter (playRaceWinner → playFanfare). Jetzt
  *  dedicated Synth: rising whoosh ohne Bell-Charakter, fuegt sich als
- *  Animations-Akzent statt als Doppel-Sieger-Fanfare ein. */
+ *  Animations-Akzent statt als Doppel-Sieger-Fanfare ein.
+ *
+ *  2026-05-24 (Wolf): Race-Final ist seit Eurovision-Refactor deaktiviert
+ *  — diese Funktion ist Dead-Code, bleibt fuer Restore-Pfad.
+ *  2026-05-25 (Wolf-Sound-Audit Fix #2): _sfxMuted-Gate ergaenzt, sonst
+ *  spielte der Synth-Fallback selbst bei SFX-Mute (tone() prueft Flag nicht). */
 export function playRacePodium(): void {
+  if (_sfxMuted) return;
   if (!isSlotEnabled('racePodium')) return;
   const url = resolveSlotUrl('racePodium');
   if (url) { playUrlOneShot(url); return; }
@@ -1656,7 +1691,13 @@ export function playAvatarJingle(avatarId: string): void {
 /** Sanfter Lagerfeuer-Knister-Loop als Atmosphäre-Layer.
  *  Brown-Noise-basiert mit sporadischen Pop-Bursts. Sehr leise (~0.04
  *  master volume). Idempotent: Doppel-Start startet nicht zweimal.
- *  Wird in Lobby/Pause/Phase-Intro mitlaufen — komplementär zu lobbyLoop. */
+ *  Wird in Lobby/Pause/Phase-Intro mitlaufen — komplementär zu lobbyLoop.
+ *
+ *  2026-05-25 (Wolf-Sound-Audit): DEAD CODE. startCampfireLoop wird nirgendwo
+ *  im React-Code aufgerufen (nur stopCampfireLoop defensiv beim Mount in
+ *  QQBeamerPage:1015). Funktion bleibt fuer ggf. Reaktivierung als
+ *  Lobby/Pause-Atmosphaere — Wolf-Entscheidung steht aus ob es zurueckkommt
+ *  oder ganz raus kann. Bis dahin: Music-Duck-Refactor unnoetig. */
 let campfireActive = false;
 let campfireSource: AudioBufferSourceNode | null = null;
 let campfireGain: GainNode | null = null;

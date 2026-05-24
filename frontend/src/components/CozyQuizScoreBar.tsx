@@ -203,12 +203,16 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
       paddingTop: dense ? 4 : 8, paddingBottom: dense ? 4 : 8,
     }}>
       {sorted.map((t, i) => {
-        const isLeader = i === 0 && t.largestConnected > 0;
+        // 2026-05-25 (Wolf 'krone rechts haben alle gleichplatzierten 1.,
+        // aber auf dem avatar nur der erste — konsistent waere wenn alle'):
+        // isLeader greift jetzt auch fuer alle Tied-Top-Teams (vorher nur
+        // i === 0 → erster im sorted-Array). Medal-Spalte (medalFor) gibt
+        // bereits seit dem Tie-Fix '👑' an alle Top-Tied → Avatar-Crown
+        // jetzt analog.
+        const isTopTie = isTieAtTop && t.largestConnected === topScore;
+        const isLeader = (i === 0 && t.largestConnected > 0) || isTopTie;
         const isActive = t.id === activeTeamId;
         const medal = medalFor(i, t.largestConnected, t.id);
-        // Tie an der Spitze: kleines "="-Badge entfaellt, weil 👑 bereits den
-        // Gleichstand kommuniziert. Bei niedrigeren Tie-Rangen bleibt das Badge.
-        const isTopTie = isTieAtTop && t.largestConnected === topScore;
         // 2026-05-05 (Wolf 'team color = team id'): t.color ist seit dem
         // Backend-Fix automatisch die Brett-Palette-Farbe → identisch zu
         // qqGetBoardColor. tColor-Local-Var bleibt fuer Klarheit.

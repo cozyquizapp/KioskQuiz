@@ -31,6 +31,18 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   lang?: 'de' | 'en';
 }) {
   const sorted = [...teams].sort((a, b) => b.largestConnected - a.largestConnected);
+  // 2026-05-24 (Wolf-Live-Test #6): Tie-Detection pro Team. Wenn 2+ Teams
+  // dieselbe largestConnected haben, bekommen sie ein „="-Badge an der
+  // Rang-Position, damit der visuelle Gleichstand klar ist (statt Nr.1/Nr.2
+  // wirkt's „1. = 2. ist eigentlich gleichauf").
+  const tiedWithOther = new Set<string>();
+  for (let i = 0; i < sorted.length; i++) {
+    for (let j = 0; j < sorted.length; j++) {
+      if (i !== j && sorted[i].largestConnected === sorted[j].largestConnected) {
+        tiedWithOther.add(sorted[i].id);
+      }
+    }
+  }
   const prevScores = useRef<Record<string, number>>({});
   const prevJokers = useRef<Record<string, number>>({});
   const prevRanks = useRef<Record<string, number>>({});
@@ -312,14 +324,36 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             flexShrink: 0,
           }}>
             {/* Medal-Slot mit fixer Breite — ohne Medaille trotzdem Platzhalter,
-                damit die Zahlen-Spalte rechts fuer ALLE Teams gleich ausgerichtet ist. */}
+                damit die Zahlen-Spalte rechts fuer ALLE Teams gleich ausgerichtet ist.
+                2026-05-24 (Wolf-Live-Test #6): Tie-Badge ("=") oben rechts wenn
+                Team mit anderem gleichauf bei largestConnected. */}
             <span style={{
               width: dense ? 32 : 38,
               flexShrink: 0,
               textAlign: 'center',
               fontSize: dense ? 22 : 28, lineHeight: 1,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            }}>{medal ? <QQEmojiIcon emoji={medal}/> : null}</span>
+              position: 'relative',
+            }}>
+              {medal ? <QQEmojiIcon emoji={medal}/> : null}
+              {tiedWithOther.has(t.id) && (
+                <span
+                  aria-label="gleichauf"
+                  title={lang === 'en' ? 'Tied with another team' : 'Gleichauf mit anderem Team'}
+                  style={{
+                    position: 'absolute',
+                    top: -4, right: -8,
+                    fontSize: dense ? 11 : 13, fontWeight: 900,
+                    padding: '1px 5px', borderRadius: 4,
+                    background: 'rgba(251,191,36,0.22)',
+                    border: '1px solid rgba(251,191,36,0.55)',
+                    color: '#FCD34D',
+                    lineHeight: 1,
+                    pointerEvents: 'none',
+                  }}
+                >=</span>
+              )}
+            </span>
             <span style={{
               fontSize: valFs, color: isLeader ? '#EC4899' : '#F1F5F9', fontWeight: 900,
               textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',

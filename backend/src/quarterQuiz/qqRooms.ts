@@ -3832,7 +3832,12 @@ function updateTerritories(room: QQRoomState): void {
   for (const id of room.joinOrder) {
     const r = results[id] ?? { total: 0, largest: 0 };
     const bonus = bonusByTeam[id] ?? 0;
-    room.teams[id].totalCells       = r.total;
+    // 2026-05-24 (Wolf-Live-Test #6): totalCells inkludiert jetzt auch
+    // stack-/stuck-Bonus, damit die Anzeige zu der visuellen Avatar-Anzahl
+    // auf gestapelten Cells passt (2 Avatare = 2 Punkte). Vorher war
+    // totalCells nur Cell-Count ohne Bonus → wirkte zu klein bei Teams
+    // mit vielen Stacks.
+    room.teams[id].totalCells       = r.total + bonus;
     room.teams[id].largestConnected = r.largest + bonus;
   }
 }

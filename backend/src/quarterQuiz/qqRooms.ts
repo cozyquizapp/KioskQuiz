@@ -1532,11 +1532,21 @@ function evalTop5(
 ): QQEvalResult {
   // B11 (2026-04-29): Fuzzy-Match via similarityScore (>=0.8) — toleriert
   // Tippfehler bei den 5 Antworten ('leonardo dicaprio' → 'leonardo di caprio').
-  const correctAll = ([...(bt.answers ?? []), ...(bt.answersEn ?? [])])
-    .map(s => s.trim())
-    .filter(Boolean);
+  // 2026-05-24 (Wolf-Live-Test #2b): Aliases pro Antwort. Submitted-Text matched
+  // wenn er gegen answers[i] ODER answersEn[i] ODER aliases[i][j] fuzzy-passt.
+  // Wichtig: matchedCorrect indexiert auf answers (DE), nicht auf correctAll —
+  // sonst koennten DE+EN-Variante als 2 separate Treffer gelten.
+  const n = (bt.answers ?? []).length;
+  const candidatesPerSlot: string[][] = [];
+  for (let i = 0; i < n; i++) {
+    const list: string[] = [];
+    if (bt.answers?.[i]) list.push(bt.answers[i].trim());
+    if (bt.answersEn?.[i]) list.push(bt.answersEn[i].trim());
+    if (bt.aliases?.[i]) list.push(...bt.aliases[i].map(s => s.trim()).filter(Boolean));
+    candidatesPerSlot.push(list.filter(Boolean));
+  }
 
-  if (correctAll.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  if (n === 0) return { winnerTeamIds: [], earnedPoints: {} };
 
   let maxScore = 0;
   const scores: Array<{ teamId: string; score: number }> = [];
@@ -1547,11 +1557,11 @@ function evalTop5(
     let score = 0;
     const matchedCorrect = new Set<number>();
     for (const s of submitted) {
-      // Find first correct answer that fuzzy-matches and isn't already counted —
-      // verhindert dass eine einzige Eingabe mehrere richtige Antworten claimt.
-      for (let i = 0; i < correctAll.length; i++) {
+      // Find first slot that fuzzy-matches and isn't already counted.
+      for (let i = 0; i < n; i++) {
         if (matchedCorrect.has(i)) continue;
-        if (similarityScore(s, correctAll[i]) >= 0.8) {
+        const hit = candidatesPerSlot[i].some(c => similarityScore(s, c) >= 0.8);
+        if (hit) {
           matchedCorrect.add(i);
           score++;
           break;

@@ -735,6 +735,14 @@ export const COZY_LIBRARY_SEED: LibraryItem[] = [
       kind: 'top5',
       answers: ['Israel', 'Großbritannien', 'Schweden', 'Deutschland', 'Österreich'],
       answersEn: ['Israel', 'United Kingdom', 'Sweden', 'Germany', 'Austria'],
+      // 2026-05-24 (Wolf-Live-Test #2b): Aliases pro Slot, sprachübergreifend.
+      aliases: [
+        [], // Israel — keine alternativen Bezeichnungen
+        ['UK', 'GB', 'Britain', 'Great Britain', 'England', 'Vereinigtes Königreich', 'United Kingdom'],
+        [], // Schweden / Sweden
+        ['Germany', 'DE', 'BRD'],
+        ['Austria', 'AT'],
+      ],
     },
     funFact: 'Israel ist seit Jahren weltweit führend (~5% Veganer:innen) — Tel Aviv gilt als „vegane Hauptstadt der Welt". Deutschland hat den größten veganen Produktmarkt Europas (~3 Mrd. €/Jahr), trotz „nur" 2-3% Veganer-Anteil.',
   }),

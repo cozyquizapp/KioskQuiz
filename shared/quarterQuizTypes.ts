@@ -136,6 +136,11 @@ export interface QQBunteTueteTop5 {
   kind: 'top5';
   answers: string[];      // up to 5 correct answers (DE)
   answersEn?: string[];   // EN versions
+  // 2026-05-24 (Wolf-Live-Test): pro-Antwort optionale Alias-Liste.
+  // aliases[i] gilt fuer answers[i] UND answersEn[i] (sprachübergreifend).
+  // Beispiel: answers[1]='Großbritannien' → aliases[1]=['UK', 'GB', 'Britain'].
+  // Backend matched submitted-Text gegen answer + answerEn + alle Aliases.
+  aliases?: string[][];
 }
 
 export interface QQBunteTueteOneOfEight {

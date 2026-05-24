@@ -682,10 +682,12 @@ export default function QQModeratorPage() {
           const isZeroSlot = zeroExists && slotIdx === 0;
           delayMs = isZeroSlot ? 4500 : 3000;
         } else {
-          // race-final (step === 4 + betSlotsCount). FinalEurovisionFinale —
-          // Hero-Standings + Konfetti, 12s Hold bevor Mod zu THANKS weiter.
+          // race-final (step === 4 + betSlotsCount). FinalEurovisionFinale
+          // Crescendo-Choreo: worst → 2nd place mit 600ms-Stagger + 1.2s
+          // Anticipation-Hold → Sieger-Explosion. Bei N=8 ~6s bis Sieger-
+          // Reveal + ~7s Hold/Konfetti = 13s Auto-Delay.
           void N;
-          delayMs = 12_000;
+          delayMs = 13_000;
         }
         action = () => emit('qq:nextQuestion', { roomCode });
         break;

@@ -2095,126 +2095,184 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
 }
 
 // ─── FinalEurovisionFinale ──────────────────────────────────────────────────
-// 2026-05-24 (Wolf-Entscheidung Race-Redesign): RaceFinalSlide ist deaktiviert
-// und durch diese Eurovision-Style-Final-Slide ersetzt. Volle Standings-Tabelle
-// als Hero, Top-1 mit Krone + Konfetti + Climax-Sound. RaceFinalSlide bleibt
-// im File darunter — fuer spaetere KIs als Referenz / falls Wolf wieder
-// zurueckwechseln will.
+// 2026-05-24 v2 (Wolf 'Option B Crescendo'): Cascade-Reveal vom schlechtesten
+// Team aufwaerts zum Sieger. Worst-row slammt aus von unten, dann naechst-
+// schlechter, ..., bis zum vorletzten Platz. Vor dem Sieger-Reveal ein
+// 1.2s Anticipation-Hold (Drumroll-Tick), dann SIEGER explodiert als grosse
+// Hero-Row (Avatar 2x, Krone von oben, Konfetti, Fanfare + Climax-Akkord).
+// Trade-off ggue. „Sieger-Hero solo": alle Teams sehen ihren finalen Rang,
+// Spannungsbogen wird statt punktuell durchgehend ueber ~6-9s aufgebaut.
 function FinalEurovisionFinale({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
-  const p1 = finalRanking[0];
+  const N = finalRanking.length;
+  // revealedCount zählt von unten (worst-first). 0 = nichts sichtbar,
+  // N-1 = alle ausser Sieger, N = Sieger reveal-done.
+  const [revealedCount, setRevealedCount] = useState(0);
+  const [winnerRevealed, setWinnerRevealed] = useState(false);
 
-  // Mount-Sound: Fanfare-Auftakt → bei ~700ms Climax-Akkord fuer den finalen
-  // "wir-haben-einen-Sieger"-Moment. Kein Race-Music-Loop mehr.
   useEffect(() => {
-    try { playFanfare(); } catch {}
-    const t = window.setTimeout(() => { try { playClimaxFinish(); } catch {} }, 700);
-    return () => window.clearTimeout(t);
+    const timers: number[] = [];
+    const START = 400;         // erste Row erscheint
+    const STAGGER = 600;       // Pause pro Row
+    const ANTICIPATION = 1200; // extra Hold vor Sieger (Drumroll-Spannung)
+
+    // Rows N-1 → 1 (worst → 2nd place) erscheinen mit STAGGER
+    for (let i = 0; i < N - 1; i++) {
+      timers.push(window.setTimeout(() => {
+        setRevealedCount(i + 1);
+        try { playTick(); } catch {}
+      }, START + i * STAGGER));
+    }
+    // Sieger zuletzt, nach extra Anticipation-Hold
+    const winnerAt = START + Math.max(0, N - 1) * STAGGER + ANTICIPATION;
+    timers.push(window.setTimeout(() => {
+      setRevealedCount(N);
+      setWinnerRevealed(true);
+      try { playFanfare(); } catch {}
+    }, winnerAt));
+    timers.push(window.setTimeout(() => {
+      try { playClimaxFinish(); } catch {}
+    }, winnerAt + 700));
+
+    return () => timers.forEach(t => window.clearTimeout(t));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [N]);
 
   return (
     <div style={{
       flex: 1, width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      gap: 'clamp(20px, 2.4cqh, 36px)',
-      padding: 'clamp(24px, 3cqh, 44px) clamp(32px, 4cqw, 64px)',
+      gap: 'clamp(16px, 2cqh, 28px)',
+      padding: 'clamp(20px, 2.4cqh, 36px) clamp(28px, 3.5cqw, 56px)',
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Konfetti fuer den Sieger-Moment */}
-      <ConfettiOverlay />
+      {winnerRevealed && <ConfettiOverlay />}
 
       {/* Hero-Titel */}
       <div style={{
-        fontSize: 'clamp(28px, 3cqw, 48px)', fontWeight: 900,
+        fontSize: 'clamp(26px, 2.8cqw, 44px)', fontWeight: 900,
         color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.08em', textTransform: 'uppercase',
         animation: 'qqFRTitleIn 0.8s ease-out both',
         textShadow: '0 0 30px rgba(236,72,153,0.55)',
+        flexShrink: 0,
       }}>
         🏆 {de ? 'Endstand' : 'Final Standings'}
       </div>
 
-      {/* Sieger-Spot: groß + Krone */}
-      {p1 && (
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-          padding: 'clamp(20px, 2.4cqh, 36px) clamp(36px, 4cqw, 72px)',
-          borderRadius: 32,
-          background: `linear-gradient(135deg, ${p1.team.color}33, ${p1.team.color}10)`,
-          border: `3px solid ${p1.team.color}`,
-          boxShadow: `0 0 80px ${p1.team.color}66, 0 16px 48px rgba(0,0,0,0.5)`,
-          animation: 'qqFRTitleIn 1s cubic-bezier(0.34, 1.46, 0.64, 1) 0.3s both',
-        }}>
-          <div style={{
-            fontSize: 'clamp(48px, 6cqw, 96px)', lineHeight: 1,
-            animation: 'celebShake 0.8s ease 1.0s both',
-          }}>👑</div>
-          <QQTeamAvatar
-            avatarId={p1.team.avatarId}
-            teamEmoji={p1.team.emoji}
-            size={'clamp(120px, 14cqw, 220px)'}
-            style={{ boxShadow: `0 0 32px ${p1.team.color}88` }}
-          />
-          <TeamNameLabel
-            name={p1.team.name}
-            withTeamPrefix
-            maxLines={2}
-            fontSize="clamp(32px, 3.5cqw, 56px)"
-            color={p1.team.color}
-            fontWeight={900}
-            style={{ textAlign: 'center', lineHeight: 1.1 }}
-          />
-          <div style={{
-            fontSize: 'clamp(20px, 2cqw, 30px)', fontWeight: 900,
-            color: QQ_COLORS.slate100,
-            fontVariantNumeric: 'tabular-nums',
-          }}>
-            {p1.total} {de ? 'Punkte' : 'points'}
-          </div>
-        </div>
-      )}
-
-      {/* 2026-05-24 (Wolf-Feedback 'Endstand doppelt'): Full-Standings-Tabelle
-          raus aus Eurovision-Finale — die Tabelle war waehrend Awards + Bet-
-          Slots schon sichtbar (FinalLeaderboard). Hier nur noch Sieger-Hero
-          + Top-3-Podium als Krönung. */}
+      {/* Cascade-Tabelle. Reihenfolge im DOM: top = Sieger, bottom = worst.
+          Reveal-Order: bottom-first (worst zuerst), winner zuletzt mit
+          Anticipation-Hold + Hero-Skalierung. */}
       <div style={{
-        width: '100%', maxWidth: 980,
-        display: 'flex', flexDirection: 'row', justifyContent: 'center',
-        alignItems: 'flex-end', gap: 'clamp(20px, 2.5cqw, 36px)',
-        animation: 'qqFRTitleIn 0.8s ease 0.6s both',
+        flex: 1, width: '100%', maxWidth: 'min(85cqw, 1000px)',
+        display: 'flex', flexDirection: 'column',
+        gap: 'clamp(8px, 1cqh, 14px)',
+        justifyContent: 'center',
+        minHeight: 0,
       }}>
-        {finalRanking.slice(1, 3).map((r, i) => {
-          const place = i + 2; // 2 = silber, 3 = bronze
+        {finalRanking.map((r, idx) => {
+          const rank = idx + 1;
+          const isWinner = rank === 1;
+          // Reveal-Index 0 = worst (last DOM row). Winner-Row hat revealIdx = N-1
+          // → wird zuletzt sichtbar wenn revealedCount === N.
+          const revealIdx = N - 1 - idx;
+          const isVisible = revealedCount > revealIdx;
+          const tColor = r.team.color;
+          const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+          const medalColor = rank === 1 ? '#FBBF24' : rank === 2 ? '#E2E8F0' : rank === 3 ? '#F97316' : QQ_COLORS.slate400;
+
           return (
             <div key={r.team.id} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
-              padding: 'clamp(14px, 1.6cqh, 22px) clamp(20px, 2.2cqw, 36px)',
-              borderRadius: 18,
-              background: `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}06)`,
-              border: `2px solid ${r.team.color}88`,
-              boxShadow: `0 0 28px ${r.team.color}33`,
-              animation: `qqFRTitleIn 0.6s ease ${0.7 + i * 0.18}s both`,
+              opacity: isVisible ? 1 : 0,
+              transform: isVisible
+                ? (isWinner ? 'translateY(0) scale(1.05)' : 'translateY(0) scale(1)')
+                : 'translateY(36px) scale(0.92)',
+              transition: 'opacity 0.45s ease, transform 0.7s cubic-bezier(0.34, 1.46, 0.64, 1)',
+              transformOrigin: 'center',
+              display: 'flex', alignItems: 'center',
+              gap: isWinner ? 'clamp(16px, 2cqw, 28px)' : 'clamp(12px, 1.4cqw, 20px)',
+              padding: isWinner
+                ? 'clamp(16px, 2cqh, 28px) clamp(24px, 2.6cqw, 40px)'
+                : 'clamp(10px, 1.2cqh, 18px) clamp(16px, 2cqw, 28px)',
+              borderRadius: isWinner ? 24 : 16,
+              background: isWinner
+                ? `linear-gradient(135deg, ${tColor}40, ${tColor}12)`
+                : 'rgba(255,255,255,0.04)',
+              border: isWinner
+                ? `3px solid ${tColor}`
+                : '1.5px solid rgba(255,255,255,0.08)',
+              boxShadow: isWinner && isVisible
+                ? `0 0 60px ${tColor}88, 0 0 120px ${tColor}44, inset 0 0 20px ${tColor}22`
+                : 'none',
+              position: 'relative',
+              minHeight: isWinner ? 'clamp(100px, 12cqh, 160px)' : undefined,
             }}>
+              {/* Krone explodiert oberhalb des Sieger-Rows */}
+              {isWinner && isVisible && (
+                <span style={{
+                  position: 'absolute',
+                  top: 'clamp(-44px, -3.5cqh, -32px)',
+                  left: '50%',
+                  transform: 'translateX(-50%) rotate(-10deg)',
+                  fontSize: 'clamp(44px, 5cqw, 80px)',
+                  filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.7))',
+                  animation: 'celebShake 0.9s ease 0.25s both',
+                  pointerEvents: 'none',
+                  zIndex: 2,
+                }}>👑</span>
+              )}
+              {/* Rang / Medal */}
               <div style={{
-                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
-                color: place === 2 ? '#E2E8F0' : '#F97316',
-              }}>{place === 2 ? '🥈' : '🥉'}</div>
-              <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={'clamp(70px, 8cqw, 110px)'} />
-              <div style={{
-                fontSize: 'clamp(15px, 1.7cqw, 22px)', fontWeight: 800,
-                color: r.team.color, textAlign: 'center',
-                maxWidth: 'clamp(120px, 14cqw, 200px)',
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{r.team.name}</div>
-              <div style={{
-                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
-                color: QQ_COLORS.slate100,
+                width: isWinner ? 'clamp(56px, 6cqw, 88px)' : 'clamp(40px, 4cqw, 56px)',
+                textAlign: 'center',
+                fontSize: isWinner ? 'clamp(32px, 3.6cqw, 56px)' : 'clamp(20px, 2.2cqw, 32px)',
+                fontWeight: 900,
+                color: medalColor,
+                lineHeight: 1,
+                flexShrink: 0,
+              }}>
+                {medal ?? `#${rank}`}
+              </div>
+              <QQTeamAvatar
+                avatarId={r.team.avatarId}
+                teamEmoji={r.team.emoji}
+                size={isWinner ? 'clamp(80px, 9cqw, 140px)' : 'clamp(48px, 5cqw, 76px)'}
+              />
+              <TeamNameLabel
+                name={r.team.name}
+                fontSize={isWinner ? 'clamp(28px, 3.2cqw, 52px)' : 'clamp(18px, 1.9cqw, 28px)'}
+                color={tColor}
+                fontWeight={900}
+                maxLines={1}
+                shrinkAfter={14}
+                style={{
+                  flex: 1, minWidth: 0,
+                  textShadow: isWinner ? `0 0 18px ${tColor}66` : 'none',
+                }}
+              />
+              <span style={{
+                fontSize: isWinner ? 'clamp(38px, 4.2cqw, 68px)' : 'clamp(24px, 2.4cqw, 36px)',
+                fontWeight: 900,
+                color: isWinner ? QQ_COLORS.brandPink : QQ_COLORS.slate100,
+                textShadow: isWinner ? '0 0 24px rgba(236,72,153,0.65)' : 'none',
                 fontVariantNumeric: 'tabular-nums',
-              }}>{r.total}</div>
+                minWidth: isWinner ? 90 : 64,
+                textAlign: 'right',
+                flexShrink: 0,
+                lineHeight: 1,
+              }}>{r.total}</span>
+              <span style={{
+                fontSize: isWinner ? 'clamp(15px, 1.5cqw, 22px)' : 'clamp(12px, 1.2cqw, 16px)',
+                color: QQ_COLORS.slate400, opacity: 0.55, fontWeight: 700,
+                minWidth: isWinner ? 70 : 50, textAlign: 'left',
+                flexShrink: 0,
+              }}>
+                {de
+                  ? (r.total === 1 ? 'Punkt' : 'Punkte')
+                  : (r.total === 1 ? 'pt' : 'pts')}
+              </span>
             </div>
           );
         })}

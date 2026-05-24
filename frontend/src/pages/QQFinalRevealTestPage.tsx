@@ -1,18 +1,22 @@
 import { useState, useEffect } from 'react';
-import { FinalRevealView } from './QQBeamerPage';
+import { FinalRevealView, FinalBettingView } from './QQBeamerPage';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
- * QQFinalRevealTestPage — Standalone-Vorschau der FinalReveal-Choreografie.
- * Slider zum manuellen Step-Steuern (0..N+4), Team-Count + Award-Set Toggle.
+ * QQFinalRevealTestPage — Standalone-Vorschau des kompletten Final-Flows:
+ * Bet-Intro → Bet-Active → FinalReveal-Choreo. Phase-Toggle + Step-Slider.
  *
- * Akt-Mapping (siehe decodeFinalStep) — v8 (2026-05-10):
- *   0       = title
- *   1       = grid
- *   2..N+1  = bet (1 pro Team, aufsteigend nach Bonus)
- *   N+2     = awards-overview (alle 3 BG-Cards mit Erklärung)
- *   N+3     = awards-reveal (Auto-Choreo: 3 Flips gestaffelt, ~8s)
- *   N+4     = race-final (Auto-Choreo ~33s mit Treppchen-Rise)
+ * 2026-05-24 (Race-Redesign Step-Mapping):
+ *   0                      = title
+ *   1                      = awards-overview
+ *   2                      = awards-reveal (Split-Layout + Live-Tabelle)
+ *   3..2+betSlotsCount     = bet-slots (Split + Live-Tabelle)
+ *   betSlotsCount+3        = race-final (Eurovision-Finale Hero-Standings)
+ *
+ * Flow-Phasen:
+ *   'bet-intro'  → FinalBettingView mit introDone=false (Mod-Space dismissed)
+ *   'bet-active' → FinalBettingView mit Submission-Counter
+ *   'reveal'     → FinalRevealView mit Step-Slider
  */
 
 const TEAMS_5 = [
@@ -56,24 +60,27 @@ const STEP_LABELS: Record<number, string> = {
 };
 
 function getStepLabel(step: number, betSlotsCount: number): string {
+  // 2026-05-24 (Race-Redesign): grid raus, awards vor bets.
   if (step <= 0) return '0 · Title';
-  if (step === 1) return '1 · Grid-Reveal';
-  if (step <= 1 + betSlotsCount) {
-    const slotIdx = step - 2;
-    return `${step} · Bet-Slot ${slotIdx + 1}/${betSlotsCount}`;
+  if (step === 1) return '1 · Awards: Overview (3 BG-Cards)';
+  if (step === 2) return '2 · Awards: Reveal (Split + Live-Tabelle)';
+  if (step <= 2 + betSlotsCount) {
+    const slotIdx = step - 3;
+    return `${step} · Bet-Slot ${slotIdx + 1}/${betSlotsCount} (Split + Climb)`;
   }
-  const ab = step - (1 + betSlotsCount);
-  if (ab === 1) return `${step} · Awards: Overview (alle BG)`;
-  if (ab === 2) return `${step} · Awards: Auto-Reveal (3× Flip ~8s)`;
-  if (ab === 3) return `${step} · 🏁 RACE-FINAL (Auto-Choreo ~33s)`;
-  return `${step} · (max ${betSlotsCount + 4})`;
+  return `${step} · 🏁 Eurovision-Finale (Hero-Standings)`;
 }
+
+type FlowPhase = 'bet-intro' | 'bet-active' | 'reveal';
 
 export default function QQFinalRevealTestPage() {
   const [lang, setLang] = useState<'de' | 'en'>('de');
   const [teamCount, setTeamCount] = useState<3 | 5 | 8>(5);
-  // Default: race-final Step (N+4) bei N=5 → 9
-  const [step, setStep] = useState<number>(9);
+  // 2026-05-24 (Wolf-Wunsch Full-Flow-Test): Phase-Toggle vor dem Step-Slider.
+  const [flowPhase, setFlowPhase] = useState<FlowPhase>('bet-intro');
+  const [betSubmittedCount, setBetSubmittedCount] = useState<number>(0);
+  // Default: race-final Step bei N=5 mit betSlots=5 → 8 (race-final)
+  const [step, setStep] = useState<number>(8);
   // Replay-Counter: erhöht sich bei „Replay"-Klick → erzwingt Re-Mount
   // damit die Race-Auto-Choreo neu startet ohne Step-Wechsel.
   const [replayKey, setReplayKey] = useState<number>(0);
@@ -135,9 +142,19 @@ export default function QQFinalRevealTestPage() {
     setStep(maxStep); // wird beim re-render durch neuen betSlotsCount korrigiert
   };
 
+  // Build finalBettingSubmitted-Record fuer bet-active Phase.
+  const finalBettingSubmitted: Record<string, boolean> = {};
+  const effectiveSubmitted = Math.min(betSubmittedCount, N);
+  for (let i = 0; i < effectiveSubmitted; i++) {
+    finalBettingSubmitted[teams[i].id] = true;
+  }
+
+  const mockPhase = flowPhase === 'reveal' ? 'FINAL_REVEAL' : 'FINAL_BETTING';
+  const mockFinalBettingIntroDone = flowPhase === 'bet-active';
+
   const mockState = {
     roomCode: 'DEMO',
-    phase: 'FINAL_REVEAL',
+    phase: mockPhase,
     setupDone: true,
     gamePhaseIndex: 4,
     questionIndex: 24,
@@ -191,7 +208,8 @@ export default function QQFinalRevealTestPage() {
     zvzRevealStep: 0,
     cheeseRevealStep: 0,
     finalBets: {},
-    finalBettingSubmitted: {},
+    finalBettingSubmitted,
+    finalBettingIntroDone: mockFinalBettingIntroDone,
     finalPhaseWins: {},
     finalLastSnapshot: null,
     finalRecapStep: 0,
@@ -257,7 +275,7 @@ export default function QQFinalRevealTestPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ fontSize: 11, color: '#94A3B8', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
-            🎬 FinalReveal-Test
+            🎬 Final-Flow-Test
           </div>
           <button
             onClick={() => setPanelVisible(false)}
@@ -281,6 +299,32 @@ export default function QQFinalRevealTestPage() {
           <button style={teamCount === 8 ? btnActive : btnStyle} onClick={() => handleTeamCountChange(8)}>8T</button>
         </div>
 
+        {/* Flow-Phase-Toggle (2026-05-24 Wolf-Wunsch: kompletter Final-Flow) */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+          <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Phase</div>
+          <div style={{ display: 'flex', gap: 4 }}>
+            <button style={flowPhase === 'bet-intro' ? btnActive : btnStyle} onClick={() => setFlowPhase('bet-intro')}>🎰 Bet-Intro</button>
+            <button style={flowPhase === 'bet-active' ? btnActive : btnStyle} onClick={() => setFlowPhase('bet-active')}>🪙 Bet-Active</button>
+            <button style={flowPhase === 'reveal' ? btnActive : btnStyle} onClick={() => setFlowPhase('reveal')}>🎬 Reveal</button>
+          </div>
+          {flowPhase === 'bet-active' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 4 }}>
+              <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 700 }}>
+                Submissions: <span style={{ color: '#FBBF24', fontWeight: 900 }}>{effectiveSubmitted}</span> / {N}
+              </div>
+              <input
+                type="range"
+                min={0} max={N} value={betSubmittedCount}
+                onChange={(e) => setBetSubmittedCount(parseInt(e.target.value, 10))}
+                style={{ width: '100%' }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Step-Slider — nur in Reveal-Phase relevant */}
+        {flowPhase === 'reveal' && (
+        <>
         {/* Step-Slider */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 700 }}>
@@ -297,17 +341,16 @@ export default function QQFinalRevealTestPage() {
           </div>
         </div>
 
-        {/* Quick-Jumps zu den Hauptphasen */}
+        {/* Quick-Jumps zu den Reveal-Hauptphasen — 2026-05-24 Race-Redesign */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Quick-Jump</div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <button style={step === 0 ? btnActive : btnStyle} onClick={() => setStep(0)}>Title</button>
-            <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>Grid</button>
-            <button style={step === betSlotsCount + 2 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 2)}>Awards BG</button>
-            <button style={step === betSlotsCount + 3 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 3)}>Awards Reveal</button>
-            <button style={step === betSlotsCount + 4 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 4)}>🏁 Race</button>
+            <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>Awards BG</button>
+            <button style={step === 2 ? btnActive : btnStyle} onClick={() => setStep(2)}>🏅 Awards Reveal</button>
+            <button style={step === 3 ? btnActive : btnStyle} onClick={() => setStep(3)}>🪙 Bet-Slot 1</button>
+            <button style={step === maxStep ? btnActive : btnStyle} onClick={() => setStep(maxStep)}>🏁 Finale</button>
           </div>
-          {/* Replay Race: gleicher Step + force re-mount via key in render */}
         </div>
 
         {/* Step-Buttons (Prev / Next / Replay) */}
@@ -317,16 +360,21 @@ export default function QQFinalRevealTestPage() {
           <button
             style={{ ...btnStyle, background: 'rgba(251,191,36,0.18)', borderColor: 'rgba(251,191,36,0.5)' }}
             onClick={() => setReplayKey(k => k + 1)}
-            title="Race-Choreo neu starten"
+            title="Choreo neu starten"
           >🔁 Replay</button>
         </div>
+        </>
+        )}
       </div>
       )}
 
-      {/* FinalRevealView mit aktuellem Step — key includes replayKey damit
-          Replay-Button ein force-Re-Mount auslöst (Auto-Choreo fängt von vorn an). */}
-      <div key={`${teamCount}-${step}-${replayKey}`} style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
-        <FinalRevealView state={mockState} />
+      {/* Render je nach Flow-Phase. key includes replayKey + flowPhase damit
+          jeder Wechsel ein force-Re-Mount auslöst (Auto-Choreo fängt von vorn an). */}
+      <div key={`${teamCount}-${step}-${flowPhase}-${effectiveSubmitted}-${replayKey}`} style={{ flex: 1, display: 'flex', overflow: 'hidden', minHeight: 0 }}>
+        {flowPhase === 'reveal'
+          ? <FinalRevealView state={mockState} />
+          : <FinalBettingView state={mockState} />
+        }
       </div>
     </div>
   );

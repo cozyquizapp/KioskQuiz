@@ -16,6 +16,7 @@ const cozyQuizLinks: LinkItem[] = [
   { path: '/cozygames',   label: 'CozyGames-Editor',   emoji: '🎲', note: 'Mini-Spiele-Katalog für analoge CozyGame-Slots im Quiz' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
   { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
+  { path: '/stats',       label: 'Recap & Stats',      emoji: '📊', note: 'Pro Spiel: Q-by-Q-History, Team-Stats, Awards (📊 Recap-Button)' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -24,7 +25,7 @@ const cozyQuizLinks: LinkItem[] = [
 // ─────────────────────────────────────────────────────────────────────────
 const cozyQuizTestLinks: LinkItem[] = [
   { path: '/thanks-test',      label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
-  { path: '/finalreveal-test', label: 'Treppchen Test',     emoji: '🎬', note: 'Endgame-Choreografie scrubben — Step-Slider 0..N+8 + Quick-Jumps zu Crescendo-Akten (Stage/Fill/Drop 🏆)' },
+  { path: '/finalreveal-test', label: 'Final-Flow Test',    emoji: '🎬', note: 'Kompletter End-Flow: Bet-Intro → Bet-Active → Awards-Reveal (Split+Tabelle) → Bet-Cards (Climb) → Eurovision-Finale. Phase-Toggle + Step-Slider.' },
   { path: '/bet-test',         label: 'Bet-Page Test',      emoji: '🎰', note: 'Final-Wager-Beamer-View — 3/5/8 Teams, Submit-Count Slider, Sprache' },
   { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — 1-5 Teams, Frage/Reveal-Phasen, Higher/Lower-Choice, 4 Pair-Beispiele' },
   { path: '/cozygame-test',    label: 'CozyGame-Wheel Test',emoji: '🪅', note: 'Standalone-Test: Glücksrad-Spin + alle 5 Sub-Phasen, Slice-Slider 3-8, Auto-Demo-Button' },
@@ -42,7 +43,8 @@ const extrasLinks: LinkItem[] = [
   { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
   { path: '/rules-editor',        label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise anpassen (lokal)' },
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
-  { path: '/stats',           label: 'Stats & Leaderboard', emoji: '📊', note: 'Letzte Runs & Frage-Verteilungen' },
+  // Stats / Recap-Index ist jetzt oben unter Live-Spiel-Elementen verlinkt
+  // (📊 Recap-Button pro Spiel) — hier kein duplicate Eintrag mehr.
   { path: '/katalog',         label: 'Fragenkatalog',      emoji: '📚', note: 'Frage-Datenbank durchsuchen & verwalten' },
   { path: '/intro',           label: 'Intro-Slides',       emoji: '📖', note: 'Pre-Show Slides editieren' },
   { path: '/fragen',          label: 'Fragen-Editor',      emoji: '✏️', note: 'Einzelne Fragen bearbeiten' },

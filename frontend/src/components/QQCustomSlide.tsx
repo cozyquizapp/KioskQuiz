@@ -8,6 +8,7 @@ import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG as CAT_BADGE_BG, QQ_CAT_ACCENT as CAT_AC
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { getServerNow } from '../utils/serverTime';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = QQ_BEAMER_CSS;
@@ -103,8 +104,8 @@ function elementLoopAnimation(el: QQSlideElement): React.CSSProperties | undefin
 // ── Default mock state ────────────────────────────────────────────────────────
 
 const MOCK_TEAMS: QQStateUpdate['teams'] = [
-  { id: 't1', name: 'Team Adler', color: '#3B82F6', avatarId: 'eagle', connected: true, totalCells: 5, largestConnected: 4 },
-  { id: 't2', name: 'Team Fuchs', color: '#EF4444', avatarId: 'fox', connected: true, totalCells: 3, largestConnected: 3 },
+  { id: 't1', name: 'Team Adler', color: QQ_COLORS.blue500, avatarId: 'eagle', connected: true, totalCells: 5, largestConnected: 4 },
+  { id: 't2', name: 'Team Fuchs', color: QQ_COLORS.red500, avatarId: 'fox', connected: true, totalCells: 3, largestConnected: 3 },
 ];
 
 const MOCK_GRID_SIZE = 5;
@@ -335,7 +336,7 @@ function BeamerTimer({ endsAt, durationSec, accent }: { endsAt: number; duration
   }, [endsAt]);
 
   const pct = Math.min(100, (remaining / durationSec) * 100);
-  const color = urgent ? '#EF4444' : accent;
+  const color = urgent ? QQ_COLORS.red500 : accent;
   const secs = Math.ceil(remaining);
 
   return (
@@ -364,7 +365,7 @@ function GridDisplay({ state: s, maxSize = 320 }: { state: QQStateUpdate; maxSiz
 
   return (
     <div>
-      <div style={{ fontSize: 11, fontWeight: 800, color: '#1e293b', textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
+      <div style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate800, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 8 }}>
         {s.gridSize}×{s.gridSize} Quartier
       </div>
       <div style={{
@@ -416,7 +417,7 @@ function ScoreBar({ teams }: { teams: QQStateUpdate['teams'] }) {
           <div style={{ flex: 1 }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4 }}>
               <span style={{ fontSize: 14, fontWeight: 900, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 13, color: '#64748b', fontWeight: 700 }}>
+              <span style={{ fontSize: 13, color: QQ_COLORS.slate500, fontWeight: 700 }}>
                 {t.largestConnected}<span style={{ opacity: 0.5 }}> / {t.totalCells}</span>
               </span>
             </div>
@@ -448,7 +449,7 @@ function CustomSlideElement({
   isPreview?: boolean;
 }) {
   const cardBg = s.theme?.cardBg ?? '#1B1510';
-  const themeAccent = s.theme?.accentColor ?? '#EAB308';
+  const themeAccent = s.theme?.accentColor ?? QQ_COLORS.yellow500;
   const baseStyle: React.CSSProperties = {
     position: 'absolute',
     left:   `${el.x}%`,
@@ -464,7 +465,7 @@ function CustomSlideElement({
 
   const q = s.currentQuestion;
   const cat = q?.category;
-  const accent = cat ? (CAT_ACCENT[cat] ?? '#e2e8f0') : '#e2e8f0';
+  const accent = cat ? (CAT_ACCENT[cat] ?? QQ_COLORS.slate200) : QQ_COLORS.slate200;
 
   switch (el.type) {
     case 'text': {
@@ -476,7 +477,7 @@ function CustomSlideElement({
           fontWeight:    el.fontWeight ?? 700,
           fontFamily:    el.fontFamily ?? undefined,
           fontStyle:     el.fontStyle ?? undefined,
-          color:         el.color ?? '#e2e8f0',
+          color:         el.color ?? QQ_COLORS.slate200,
           textAlign:     el.textAlign ?? 'left',
           letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : undefined,
           lineHeight:    el.lineHeight ?? 1.3,
@@ -537,7 +538,7 @@ function CustomSlideElement({
           ...baseStyle,
           fontSize:   `${(el.fontSize ?? 3) * canvasW / 100}px`,
           fontWeight: el.fontWeight ?? 900,
-          color:      el.color ?? '#F1F5F9',
+          color:      el.color ?? QQ_COLORS.slate100,
           textAlign:  el.textAlign ?? 'left',
           lineHeight: el.lineHeight ?? 1.22,
           display:    'flex', alignItems: 'center',
@@ -598,7 +599,7 @@ function CustomSlideElement({
           ...baseStyle,
           fontSize:   `${(el.fontSize ?? 2.5) * canvasW / 100}px`,
           fontWeight: el.fontWeight ?? 900,
-          color:      el.color ?? '#4ade80',
+          color:      el.color ?? QQ_COLORS.green400,
           textAlign:  el.textAlign ?? 'left',
           display:    'flex', alignItems: 'center',
           padding:    '8px 16px',
@@ -633,7 +634,7 @@ function CustomSlideElement({
           ...baseStyle,
           fontSize:   `${(el.fontSize ?? 8) * canvasW / 100}px`,
           fontWeight: el.fontWeight ?? 900,
-          color:      el.color ?? '#e2e8f0',
+          color:      el.color ?? QQ_COLORS.slate200,
           textAlign:  el.textAlign ?? 'center',
           display:    'flex', alignItems: 'center', justifyContent: 'center',
         }}>
@@ -666,7 +667,7 @@ function CustomSlideElement({
           ...baseStyle,
           fontSize:      `${(el.fontSize ?? 2) * canvasW / 100}px`,
           fontWeight:    el.fontWeight ?? 900,
-          color:         el.color ?? '#e2e8f0',
+          color:         el.color ?? QQ_COLORS.slate200,
           textAlign:     el.textAlign ?? 'center',
           letterSpacing: el.letterSpacing ? `${el.letterSpacing}em` : '0.06em',
           display:       'flex', alignItems: 'center', justifyContent: 'center',
@@ -698,11 +699,11 @@ function CustomSlideElement({
           <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
             {ranked.map((a, i) => (
               <div key={a.teamId} style={rowStyle(i === 0)}>
-                <span style={{ fontSize: fs, fontWeight: 900, color: i === 0 ? themeAccent : '#475569', width: fs * 2 }}>#{i + 1}</span>
+                <span style={{ fontSize: fs, fontWeight: 900, color: i === 0 ? themeAccent : QQ_COLORS.slate600, width: fs * 2 }}>#{i + 1}</span>
                 {a.team && <QQTeamAvatar avatarId={a.team.avatarId} size={fs * 1.4} />}
-                <span style={{ fontWeight: 800, color: a.team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{a.team?.name ?? a.teamId}</span>
-                <span style={{ fontSize: fs * 1.2, fontWeight: 900, color: '#e2e8f0' }}>{a.text}</span>
-                <span style={{ fontSize: fs * 0.85, color: '#64748b' }}>
+                <span style={{ fontWeight: 800, color: a.team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: fs }}>{a.team?.name ?? a.teamId}</span>
+                <span style={{ fontSize: fs * 1.2, fontWeight: 900, color: QQ_COLORS.slate200 }}>{a.text}</span>
+                <span style={{ fontSize: fs * 0.85, color: QQ_COLORS.slate500 }}>
                   {Number.isFinite(a.distance) ? `Δ ${a.distance.toLocaleString()}` : '—'}
                 </span>
               </div>
@@ -721,11 +722,11 @@ function CustomSlideElement({
               const isWinner = a.teamId === s.correctTeamId;
               return (
                 <div key={a.teamId} style={rowStyle(isWinner)}>
-                  <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
+                  <span style={{ fontSize: fs, fontWeight: 900, color: QQ_COLORS.slate600, width: fs * 2 }}>#{i + 1}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.4} />}
-                  <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
-                  <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: '#e2e8f0' }}>{a.text}</span>
-                  {isWinner && <span style={{ fontSize: fs, color: '#4ade80' }}>✓</span>}
+                  <span style={{ fontWeight: 800, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: fs }}>{team?.name}</span>
+                  <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: QQ_COLORS.slate200 }}>{a.text}</span>
+                  {isWinner && <span style={{ fontSize: fs, color: QQ_COLORS.green400 }}>✓</span>}
                 </div>
               );
             })}
@@ -752,16 +753,16 @@ function CustomSlideElement({
               return (
                 <div key={a.teamId} style={{ ...rowStyle(isWinner), flexDirection: 'column', alignItems: 'stretch', gap: fs * 0.3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: fs * 0.6 }}>
-                    <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: QQ_COLORS.slate600, width: fs * 2 }}>#{i + 1}</span>
                     {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.3} />}
-                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
-                    <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.hits}/{correctDE.length || 5}</span>
+                    <span style={{ fontWeight: 800, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: fs }}>{team?.name}</span>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate600 }}>{a.hits}/{correctDE.length || 5}</span>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: fs * 0.3, paddingLeft: fs * 2.5 }}>
                     {a.parts.map((p: string, pi: number) => {
                       const hit = [...allCorrect].some(c => c && (p.toLowerCase() === c || p.toLowerCase().includes(c) || c.includes(p.toLowerCase())));
                       return (
-                        <span key={pi} style={{ padding: `${fs * 0.15}px ${fs * 0.5}px`, borderRadius: fs * 0.4, fontSize: fs * 0.85, fontWeight: 700, background: hit ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', color: hit ? '#4ade80' : '#64748b', border: hit ? '1px solid rgba(34,197,94,0.3)' : '1px solid transparent' }}>
+                        <span key={pi} style={{ padding: `${fs * 0.15}px ${fs * 0.5}px`, borderRadius: fs * 0.4, fontSize: fs * 0.85, fontWeight: 700, background: hit ? 'rgba(34,197,94,0.15)' : 'rgba(255,255,255,0.05)', color: hit ? QQ_COLORS.green400 : QQ_COLORS.slate500, border: hit ? '1px solid rgba(34,197,94,0.3)' : '1px solid transparent' }}>
                           {hit ? '✓ ' : ''}{p}
                         </span>
                       );
@@ -793,17 +794,17 @@ function CustomSlideElement({
               return (
                 <div key={a.teamId} style={{ ...rowStyle(isWinner), flexDirection: 'column', alignItems: 'stretch', gap: fs * 0.3 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: fs * 0.6 }}>
-                    <span style={{ fontSize: fs, fontWeight: 900, color: '#475569', width: fs * 2 }}>#{i + 1}</span>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: QQ_COLORS.slate600, width: fs * 2 }}>#{i + 1}</span>
                     {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.3} />}
-                    <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
-                    <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569' }}>{a.score}/{correctSeq.length}</span>
+                    <span style={{ fontWeight: 800, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: fs }}>{team?.name}</span>
+                    <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate600 }}>{a.score}/{correctSeq.length}</span>
                   </div>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: fs * 0.3, paddingLeft: fs * 2.5 }}>
                     {a.parts.map((p: string, pi: number) => {
                       const correct = p === correctSeq[pi];
                       return (
-                        <span key={pi} style={{ padding: `${fs * 0.15}px ${fs * 0.5}px`, borderRadius: fs * 0.4, fontSize: fs * 0.85, fontWeight: 700, background: correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.1)', color: correct ? '#4ade80' : '#f87171', border: `1px solid ${correct ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.2)'}` }}>
-                          <span style={{ color: '#475569', fontSize: fs * 0.7 }}>{pi + 1}.</span> {p}
+                        <span key={pi} style={{ padding: `${fs * 0.15}px ${fs * 0.5}px`, borderRadius: fs * 0.4, fontSize: fs * 0.85, fontWeight: 700, background: correct ? 'rgba(34,197,94,0.15)' : 'rgba(239,68,68,0.1)', color: correct ? QQ_COLORS.green400 : '#f87171', border: `1px solid ${correct ? 'rgba(34,197,94,0.3)' : 'rgba(239,68,68,0.2)'}` }}>
+                          <span style={{ color: QQ_COLORS.slate600, fontSize: fs * 0.7 }}>{pi + 1}.</span> {p}
                         </span>
                       );
                     })}
@@ -838,10 +839,10 @@ function CustomSlideElement({
               const distStr = a.distKm === null ? '—' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
               return (
                 <div key={a.teamId} style={rowStyle(isWinner)}>
-                  <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? '#4ade80' : '#475569', width: fs * 2 }}>#{i + 1}</span>
+                  <span style={{ fontSize: fs, fontWeight: 900, color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate600, width: fs * 2 }}>#{i + 1}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.4} />}
-                  <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
-                  <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: '#e2e8f0' }}>{distStr}</span>
+                  <span style={{ fontWeight: 800, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: fs }}>{team?.name}</span>
+                  <span style={{ fontSize: fs * 1.1, fontWeight: 800, color: QQ_COLORS.slate200 }}>{distStr}</span>
                 </div>
               );
             })}
@@ -853,7 +854,7 @@ function CustomSlideElement({
       if (cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN') {
         if (!q.options) return null;
         const muchoLabels = ['A', 'B', 'C', 'D'];
-        const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+        const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.amber500, QQ_COLORS.green500];
         return (
           <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
             {q.options.map((_, optIdx) => {
@@ -863,7 +864,7 @@ function CustomSlideElement({
                 .filter(Boolean);
               if (!voters.length) return null;
               const isCorrect = optIdx === q.correctOptionIndex;
-              const optColor = cat === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? '#22C55E' : '#475569');
+              const optColor = cat === 'MUCHO' ? MUCHO_COLORS[optIdx] : (isCorrect ? QQ_COLORS.green500 : QQ_COLORS.slate600);
               return (
                 <div key={optIdx} style={rowStyle(isCorrect)}>
                   <span style={{ width: fs * 1.5, height: fs * 1.5, borderRadius: fs * 0.4, background: optColor, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: fs * 0.8, fontWeight: 900, color: '#fff', flexShrink: 0 }}>
@@ -890,8 +891,8 @@ function CustomSlideElement({
             return (
               <div key={a.teamId} style={rowStyle(a.teamId === s.correctTeamId)}>
                 {team && <QQTeamAvatar avatarId={team.avatarId} size={fs * 1.3} />}
-                <span style={{ fontWeight: 800, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: fs }}>{team?.name}</span>
-                <span style={{ fontSize: fs, color: '#e2e8f0' }}>{a.text}</span>
+                <span style={{ fontWeight: 800, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: fs }}>{team?.name}</span>
+                <span style={{ fontSize: fs, color: QQ_COLORS.slate200 }}>{a.text}</span>
               </div>
             );
           })}
@@ -902,7 +903,7 @@ function CustomSlideElement({
     case 'ph_options': {
       if (!q?.options) return null;
       const muchoLabels  = ['A', 'B', 'C', 'D'];
-      const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#F59E0B', '#22C55E'];
+      const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.amber500, QQ_COLORS.green500];
       const defaultCols = cat === 'MUCHO' ? 2 : 3;
       const cols = el.columns ?? defaultCols;
       const tileRadius = el.optionRadius ?? 14;
@@ -951,14 +952,14 @@ function CustomSlideElement({
                 <div style={{ position: 'relative', zIndex: 1, display: 'flex', alignItems: 'center', gap: 10 }}>
                   <div style={{
                     width: 30, height: 30, borderRadius: 8,
-                    background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
+                    background: isCorrect ? QQ_COLORS.green500 : isWrong ? '#374151' : optColor,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 15, fontWeight: 900, color: '#fff', flexShrink: 0,
                     transition: 'background 0.3s ease',
                   }}>{isCorrect ? '✓' : label}</div>
                   <div style={{
                     fontSize: `${(el.fontSize ?? 1.6) * canvasW / 100}px`,
-                    fontWeight: 800, color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
+                    fontWeight: 800, color: isWrong ? QQ_COLORS.slate600 : QQ_COLORS.slate100, lineHeight: 1.3,
                     transition: 'color 0.3s ease',
                   }}>{optText}</div>
                 </div>
@@ -1139,16 +1140,16 @@ function CustomSlideElement({
         return (
           <div style={{
             ...baseStyle, display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: fs * 1.4, fontWeight: 900, color: '#e2e8f0',
+            fontSize: fs * 1.4, fontWeight: 900, color: QQ_COLORS.slate200,
           }}>
             {labels[s.comebackAction] ?? s.comebackAction}
           </div>
         );
       }
       const cards = [
-        { icon: '📍', label: '2 Felder setzen', desc: 'Platziere 2 freie Felder deiner Wahl', color: '#22C55E' },
-        { icon: '⚡', label: '1 Feld klauen', desc: 'Nimm ein fremdes Feld', color: '#EF4444' },
-        { icon: '🔄', label: '2 Felder tauschen', desc: 'Tausche je ein Feld von zwei Gegnern', color: '#8B5CF6' },
+        { icon: '📍', label: '2 Felder setzen', desc: 'Platziere 2 freie Felder deiner Wahl', color: QQ_COLORS.green500 },
+        { icon: '⚡', label: '1 Feld klauen', desc: 'Nimm ein fremdes Feld', color: QQ_COLORS.red500 },
+        { icon: '🔄', label: '2 Felder tauschen', desc: 'Tausche je ein Feld von zwei Gegnern', color: QQ_COLORS.violet500 },
       ];
       return (
         <div style={{ ...baseStyle, display: 'flex', flexDirection: 'column', gap: fs * 0.7 }}>
@@ -1168,7 +1169,7 @@ function CustomSlideElement({
               <span style={{ fontSize: fs * 1.4, lineHeight: 1 }}>{c.icon}</span>
               <div>
                 <div style={{ fontWeight: 900, color: c.color, fontSize: fs }}>{c.label}</div>
-                <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 0.8, color: '#64748b', marginTop: 2 }}>{c.desc}</div>
+                <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 0.8, color: QQ_COLORS.slate500, marginTop: 2 }}>{c.desc}</div>
               </div>
             </div>
           ))}
@@ -1199,7 +1200,7 @@ function CustomSlideElement({
               <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs * 1.2, color: i === 0 ? themeAccent : 'rgba(255,255,255,0.5)', fontWeight: 700 }}>
                 {t.largestConnected} verbunden
               </div>
-              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs, color: '#475569', fontWeight: 600, minWidth: fs * 5, textAlign: 'right' as const }}>
+              <div style={{ fontFamily: "'Caveat', cursive", fontSize: fs, color: QQ_COLORS.slate600, fontWeight: 600, minWidth: fs * 5, textAlign: 'right' as const }}>
                 {t.totalCells} gesamt
               </div>
             </div>
@@ -1217,8 +1218,8 @@ function CustomSlideElement({
             <QRCodeSVG value={joinUrl} size={Math.max(80, qrSize)} bgColor="#ffffff" fgColor="#0D0A06" level="M" />
           </div>
           <div style={{ textAlign: 'center' as const }}>
-            <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#94a3b8', fontWeight: 700, marginBottom: 4 }}>Jetzt mitspielen</div>
-            <div style={{ fontSize: Math.max(9, canvasW * 0.007), color: '#475569', fontFamily: 'monospace', background: cardBg, padding: '4px 12px', borderRadius: 8 }}>
+            <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: QQ_COLORS.slate400, fontWeight: 700, marginBottom: 4 }}>Jetzt mitspielen</div>
+            <div style={{ fontSize: Math.max(9, canvasW * 0.007), color: QQ_COLORS.slate600, fontFamily: 'monospace', background: cardBg, padding: '4px 12px', borderRadius: 8 }}>
               {joinUrl.replace(/^https?:\/\//, '')}
             </div>
           </div>
@@ -1285,14 +1286,14 @@ function CustomSlideElement({
           boxShadow: `0 0 28px ${activeTeam.color}44`,
           padding: 12,
         }}>
-          <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#64748b', fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 6 }}>
+          <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: QQ_COLORS.slate500, fontWeight: 800, textTransform: 'uppercase' as const, letterSpacing: '0.1em', marginBottom: 6 }}>
             🕵️ Imposter — wählt eine Aussage
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
             <QQTeamAvatar avatarId={activeTeam.avatarId} size={(el.fontSize ?? 2) * canvasW / 100} />
             <span style={{ fontWeight: 900, fontSize: `${(el.fontSize ?? 2) * canvasW / 100 * 0.75}px`, color: activeTeam.color }}>{activeTeam.name}</span>
           </div>
-          <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: '#64748b', marginTop: 6 }}>
+          <div style={{ fontSize: Math.max(10, canvasW * 0.008), color: QQ_COLORS.slate500, marginTop: 6 }}>
             {remaining} Aussage{remaining !== 1 ? 'n' : ''} übrig
             {s.imposterEliminated.length > 0 && (
               <span> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</span>
@@ -1313,7 +1314,7 @@ function CustomSlideElement({
           background: cardBg, border: '1px solid rgba(255,255,255,0.07)',
           borderRadius: 12, padding: `${dotSize * 0.8}px ${dotSize * 1.5}px`,
         }}>
-          <span style={{ fontSize: dotSize * 1.4, color: '#64748b', fontWeight: 700 }}>Antworten:</span>
+          <span style={{ fontSize: dotSize * 1.4, color: QQ_COLORS.slate500, fontWeight: 700 }}>Antworten:</span>
           {s.teams.map(t => {
             const answered = s.answers.some(a => a.teamId === t.id);
             return (
@@ -1381,7 +1382,7 @@ function CustomSlideElement({
             }}>
               <QQTeamAvatar avatarId={t.avatarId} size={1.4 * canvasW / 100} />
               <span style={{ fontWeight: 800, color: t.color, fontSize: `${0.9 * canvasW / 100}px` }}>{t.name}</span>
-              <span style={{ color: '#64748b', fontSize: `${0.75 * canvasW / 100}px`, fontWeight: 700 }}>{t.largestConnected} Felder</span>
+              <span style={{ color: QQ_COLORS.slate500, fontSize: `${0.75 * canvasW / 100}px`, fontWeight: 700 }}>{t.largestConnected} Felder</span>
             </div>
           ))}
         </div>
@@ -1416,7 +1417,7 @@ function CustomSlideElement({
           <span style={{
             fontSize: `${0.85 * canvasW / 100}px`, fontWeight: 900,
             textTransform: 'uppercase', letterSpacing: '0.12em',
-            color: '#475569',
+            color: QQ_COLORS.slate600,
           }}>
             {actionVerb(s.pendingAction)}
           </span>
@@ -1424,7 +1425,7 @@ function CustomSlideElement({
             <>
               <QQTeamAvatar avatarId={team.avatarId} size={2 * canvasW / 100} />
               <span style={{ fontWeight: 900, fontSize: `${1.8 * canvasW / 100}px`, color: team.color }}>{team.name}</span>
-              <span style={{ color: '#475569', fontSize: `${0.9 * canvasW / 100}px`, fontWeight: 700 }}>
+              <span style={{ color: QQ_COLORS.slate600, fontSize: `${0.9 * canvasW / 100}px`, fontWeight: 700 }}>
                 {actionDesc(s.pendingAction, s.teamPhaseStats[team.id])}
               </span>
             </>
@@ -1437,7 +1438,7 @@ function CustomSlideElement({
               background: 'rgba(34,197,94,0.08)',
               border: '1px solid rgba(34,197,94,0.2)',
               fontSize: `${0.9 * canvasW / 100}px`,
-              color: '#4ade80', fontWeight: 700,
+              color: QQ_COLORS.green400, fontWeight: 700,
             }}>
               ✓ {s.revealedAnswer}
             </div>

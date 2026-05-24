@@ -21,19 +21,19 @@ interface TemplateSpec {
 }
 
 const TEMPLATE_SPECS: TemplateSpec[] = [
-  { type: 'LOBBY',                label: 'Lobby',          icon: '🏠', color: '#3B82F6', group: 'Start' },
-  { type: 'PHASE_INTRO_1',        label: 'Runde 1 Intro',  icon: '1️⃣', color: '#3B82F6', group: 'Phasen' },
-  { type: 'PHASE_INTRO_2',        label: 'Runde 2 Intro',  icon: '2️⃣', color: '#F59E0B', group: 'Phasen' },
-  { type: 'PHASE_INTRO_3',        label: 'Finale Intro',   icon: '3️⃣', color: '#EF4444', group: 'Phasen' },
-  { type: 'QUESTION_SCHAETZCHEN', label: 'Schätzchen',     icon: '🎯', color: '#F59E0B', group: 'Fragen' },
-  { type: 'QUESTION_MUCHO',       label: 'Mu-Cho',         icon: '🅰️', color: '#3B82F6', group: 'Fragen' },
-  { type: 'QUESTION_BUNTE_TUETE', label: 'Bunte Tüte',    icon: '🎁', color: '#EF4444', group: 'Fragen' },
-  { type: 'QUESTION_ZEHN',        label: 'All In',         icon: '🎰', color: '#22C55E', group: 'Fragen' },
-  { type: 'QUESTION_CHEESE',      label: 'Picture This',   icon: '📸', color: '#8B5CF6', group: 'Fragen' },
-  { type: 'REVEAL',               label: 'Auflösung',      icon: '✅', color: '#22C55E', group: 'Ablauf' },
+  { type: 'LOBBY',                label: 'Lobby',          icon: '🏠', color: QQ_COLORS.blue500, group: 'Start' },
+  { type: 'PHASE_INTRO_1',        label: 'Runde 1 Intro',  icon: '1️⃣', color: QQ_COLORS.blue500, group: 'Phasen' },
+  { type: 'PHASE_INTRO_2',        label: 'Runde 2 Intro',  icon: '2️⃣', color: QQ_COLORS.amber500, group: 'Phasen' },
+  { type: 'PHASE_INTRO_3',        label: 'Finale Intro',   icon: '3️⃣', color: QQ_COLORS.red500, group: 'Phasen' },
+  { type: 'QUESTION_SCHAETZCHEN', label: 'Schätzchen',     icon: '🎯', color: QQ_COLORS.amber500, group: 'Fragen' },
+  { type: 'QUESTION_MUCHO',       label: 'Mu-Cho',         icon: '🅰️', color: QQ_COLORS.blue500, group: 'Fragen' },
+  { type: 'QUESTION_BUNTE_TUETE', label: 'Bunte Tüte',    icon: '🎁', color: QQ_COLORS.red500, group: 'Fragen' },
+  { type: 'QUESTION_ZEHN',        label: 'All In',         icon: '🎰', color: QQ_COLORS.green500, group: 'Fragen' },
+  { type: 'QUESTION_CHEESE',      label: 'Picture This',   icon: '📸', color: QQ_COLORS.violet500, group: 'Fragen' },
+  { type: 'REVEAL',               label: 'Auflösung',      icon: '✅', color: QQ_COLORS.green500, group: 'Ablauf' },
   { type: 'PLACEMENT',            label: 'Platzierung',    icon: '🗺️',  color: '#6366F1', group: 'Ablauf' },
   { type: 'COMEBACK_CHOICE',      label: 'Comeback',       icon: '⚡', color: '#F97316', group: 'Ablauf' },
-  { type: 'GAME_OVER',            label: 'Spielende',      icon: '🏆', color: '#F59E0B', group: 'Ablauf' },
+  { type: 'GAME_OVER',            label: 'Spielende',      icon: '🏆', color: QQ_COLORS.amber500, group: 'Ablauf' },
 ];
 
 const PH_LABELS: Partial<Record<QQSlideElementType, string>> = {
@@ -109,31 +109,31 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
       type, background: bg,
       elements: [
         { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: 'radial-gradient(ellipse at 50% 100%, rgba(245,158,11,0.15) 0%, transparent 65%)', zIndex: 0 },
-        { id: eid(), type: 'text', x: 15, y: 8, w: 70, h: 20, text: 'COZYQUIZ', fontSize: 7, fontWeight: 900, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.1 },
-        { id: eid(), type: 'text', x: 20, y: 27, w: 60, h: 7, text: 'Warte auf alle Teams…', fontSize: 2.2, fontWeight: 700, color: '#64748b', textAlign: 'center', zIndex: 2 },
+        { id: eid(), type: 'text', x: 15, y: 8, w: 70, h: 20, text: 'COZYQUIZ', fontSize: 7, fontWeight: 900, color: QQ_COLORS.amber500, textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.1 },
+        { id: eid(), type: 'text', x: 20, y: 27, w: 60, h: 7, text: 'Warte auf alle Teams…', fontSize: 2.2, fontWeight: 700, color: QQ_COLORS.slate500, textAlign: 'center', zIndex: 2 },
         { id: eid(), type: 'ph_room_code', x: 28, y: 35, w: 44, h: 12, fontSize: 4.5, fontWeight: 900, color: '#ffffff', textAlign: 'center', background: 'rgba(255,255,255,0.06)', borderRadius: 14, zIndex: 2 },
         { id: eid(), type: 'ph_teams', x: 5, y: 51, w: 58, h: 44, zIndex: 2 },
         { id: eid(), type: 'ph_qr_code', x: 68, y: 51, w: 28, h: 44, zIndex: 2 },
       ],
     };
-    case 'PHASE_INTRO_1': return phaseIntro(type, '#3B82F6', 'Runde 1');
-    case 'PHASE_INTRO_2': return phaseIntro(type, '#F59E0B', 'Runde 2');
-    case 'PHASE_INTRO_3': return phaseIntro(type, '#EF4444', 'Runde 3');
+    case 'PHASE_INTRO_1': return phaseIntro(type, QQ_COLORS.blue500, 'Runde 1');
+    case 'PHASE_INTRO_2': return phaseIntro(type, QQ_COLORS.amber500, 'Runde 2');
+    case 'PHASE_INTRO_3': return phaseIntro(type, QQ_COLORS.red500, 'Runde 3');
     case 'PHASE_INTRO_4': return phaseIntro(type, '#10B981', 'Finale');
-    case 'QUESTION_SCHAETZCHEN': return questionTpl(type, '#F59E0B', false, 'SCHAETZCHEN');
-    case 'QUESTION_MUCHO':       return questionTpl(type, '#3B82F6', true,  'MUCHO');
-    case 'QUESTION_BUNTE_TUETE': return questionTpl(type, '#EF4444', false, 'BUNTE_TUETE');
-    case 'QUESTION_ZEHN':        return questionTpl(type, '#22C55E', true,  'ZEHN_VON_ZEHN');
-    case 'QUESTION_CHEESE':      return questionTpl(type, '#8B5CF6', false, 'CHEESE');
+    case 'QUESTION_SCHAETZCHEN': return questionTpl(type, QQ_COLORS.amber500, false, 'SCHAETZCHEN');
+    case 'QUESTION_MUCHO':       return questionTpl(type, QQ_COLORS.blue500, true,  'MUCHO');
+    case 'QUESTION_BUNTE_TUETE': return questionTpl(type, QQ_COLORS.red500, false, 'BUNTE_TUETE');
+    case 'QUESTION_ZEHN':        return questionTpl(type, QQ_COLORS.green500, true,  'ZEHN_VON_ZEHN');
+    case 'QUESTION_CHEESE':      return questionTpl(type, QQ_COLORS.violet500, false, 'CHEESE');
     case 'REVEAL': return {
       type, background: bg,
       elements: [
         { id: eid(), type: 'ph_category', x: 2, y: 2, w: 24, h: 10, zIndex: 2 },
-        { id: eid(), type: 'ph_question', x: 4, y: 14, w: 92, h: 16, fontSize: 2.8, fontWeight: 900, color: '#94a3b8', textAlign: 'center', zIndex: 2 },
+        { id: eid(), type: 'ph_question', x: 4, y: 14, w: 92, h: 16, fontSize: 2.8, fontWeight: 900, color: QQ_COLORS.slate400, textAlign: 'center', zIndex: 2 },
         { id: eid(), type: 'ph_question_image', x: 70, y: 14, w: 26, h: 16, zIndex: 1, opacity: 0.85 },
-        { id: eid(), type: 'ph_answer', x: 8, y: 34, w: 84, h: 24, fontSize: 5.5, fontWeight: 900, color: '#22C55E', textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.3 },
+        { id: eid(), type: 'ph_answer', x: 8, y: 34, w: 84, h: 24, fontSize: 5.5, fontWeight: 900, color: QQ_COLORS.green500, textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.3 },
         { id: eid(), type: 'ph_team_answers', x: 4, y: 60, w: 92, h: 30, fontSize: 1.2, zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
-        { id: eid(), type: 'ph_winner', x: 8, y: 63, w: 84, h: 14, fontSize: 3, fontWeight: 800, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
+        { id: eid(), type: 'ph_winner', x: 8, y: 63, w: 84, h: 14, fontSize: 3, fontWeight: 800, color: QQ_COLORS.amber500, textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.5 },
       ],
     };
     case 'PLACEMENT': return {
@@ -158,7 +158,7 @@ function makeDefault(type: QQSlideTemplateType): QQSlideTemplate {
       type, background: bg,
       elements: [
         { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: 'radial-gradient(ellipse at 50% 30%, rgba(245,158,11,0.25) 0%, transparent 55%)', zIndex: 0 },
-        { id: eid(), type: 'text', x: 10, y: 4, w: 80, h: 16, text: '🏆 Spielende!', fontSize: 7.5, fontWeight: 900, color: '#F59E0B', textAlign: 'center', zIndex: 2, animIn: 'pop' },
+        { id: eid(), type: 'text', x: 10, y: 4, w: 80, h: 16, text: '🏆 Spielende!', fontSize: 7.5, fontWeight: 900, color: QQ_COLORS.amber500, textAlign: 'center', zIndex: 2, animIn: 'pop' },
         { id: eid(), type: 'ph_game_rankings', x: 3, y: 22, w: 55, h: 74, fontSize: 1.4, zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
         { id: eid(), type: 'ph_grid', x: 58, y: 22, w: 40, h: 54, zIndex: 2, animIn: 'fadeIn', animDelay: 0.5 },
         { id: eid(), type: 'ph_teams', x: 58, y: 78, w: 40, h: 18, zIndex: 2 },
@@ -175,8 +175,8 @@ function phaseIntro(type: QQSlideTemplateType, color: string, label: string): QQ
       { id: eid(), type: 'rect', x: 0, y: 0, w: 100, h: 100, background: `radial-gradient(ellipse at 50% 50%, ${color}33 0%, transparent 65%)`, zIndex: 0 },
       { id: eid(), type: 'text', x: 10, y: 10, w: 80, h: 10, text: `Phase`, fontSize: 1.8, fontWeight: 700, color: `${color}99`, textAlign: 'center', letterSpacing: 0.14, zIndex: 2, animIn: 'fadeIn', animDelay: 0.1 },
       { id: eid(), type: 'text', x: 10, y: 16, w: 80, h: 24, text: label, fontSize: 11, fontWeight: 900, color, textAlign: 'center', zIndex: 2, animIn: 'pop', animDelay: 0.2 },
-      { id: eid(), type: 'ph_phase_name', x: 10, y: 44, w: 80, h: 10, fontSize: 3.2, fontWeight: 800, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
-      { id: eid(), type: 'ph_phase_desc', x: 15, y: 55, w: 70, h: 7, fontSize: 2, fontWeight: 600, color: '#64748b', textAlign: 'center', zIndex: 2, animIn: 'fadeIn', animDelay: 0.5 },
+      { id: eid(), type: 'ph_phase_name', x: 10, y: 44, w: 80, h: 10, fontSize: 3.2, fontWeight: 800, color: QQ_COLORS.slate200, textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.3 },
+      { id: eid(), type: 'ph_phase_desc', x: 15, y: 55, w: 70, h: 7, fontSize: 2, fontWeight: 600, color: QQ_COLORS.slate500, textAlign: 'center', zIndex: 2, animIn: 'fadeIn', animDelay: 0.5 },
       { id: eid(), type: 'ph_mini_grid', x: 35, y: 66, w: 30, h: 18, zIndex: 2, opacity: 0.5, animIn: 'fadeIn', animDelay: 0.9 },
       { id: eid(), type: 'ph_phase_scores', x: 10, y: 86, w: 80, h: 10, zIndex: 2, animIn: 'fadeIn', animDelay: 1.1 },
     ],
@@ -219,7 +219,7 @@ function questionTpl(type: QQSlideTemplateType, color: string, hasOptions = fals
       { id: eid(), type: 'ph_category',       x: 2,  y: 2,  w: 24,  h: 10,  zIndex: 2 },
       { id: eid(), type: 'ph_counter',        x: 30, y: 2,  w: 22,  h: 8,   fontSize: 1.5, color: 'rgba(255,255,255,0.3)', textAlign: 'center', zIndex: 2 },
       { id: eid(), type: 'ph_timer',          x: 76, y: 2,  w: 22,  h: 10,  zIndex: 2 },
-      { id: eid(), type: 'ph_question',       x: 5,  y: 13, w: 90,  h: hasOptions ? 26 : 34, fontSize: hasOptions ? 3.6 : 4.5, fontWeight: 900, color: '#e2e8f0', textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
+      { id: eid(), type: 'ph_question',       x: 5,  y: 13, w: 90,  h: hasOptions ? 26 : 34, fontSize: hasOptions ? 3.6 : 4.5, fontWeight: 900, color: QQ_COLORS.slate200, textAlign: 'center', zIndex: 2, animIn: 'fadeUp', animDelay: 0.2 },
       { id: eid(), type: 'ph_question_image', x: 60, y: 13, w: 36,  h: hasOptions ? 26 : 34, zIndex: 1, opacity: 0.9 },
       { id: eid(), type: 'ph_options',        x: 4,  y: hasOptions ? 43 : 52, w: 92, h: hasOptions ? 48 : 38, zIndex: 2 },
       { id: eid(), type: 'ph_answer_count',   x: 4,  y: 93, w: 30, h: 6,   zIndex: 2 },
@@ -265,8 +265,8 @@ const DESIGN_PRESETS: DesignPreset[] = [
     label: 'Dark Classic',
     icon: '🌑',
     bg: '#0D0A06',
-    accent: '#F59E0B',
-    textColor: '#e2e8f0',
+    accent: QQ_COLORS.amber500,
+    textColor: QQ_COLORS.slate200,
     cardBg: '#1B1510',
     animIn: 'fadeUp',
   },
@@ -316,7 +316,7 @@ const DESIGN_PRESETS: DesignPreset[] = [
     label: 'Forest Night',
     icon: '🌲',
     bg: 'linear-gradient(180deg, #0a1408 0%, #0f2010 100%)',
-    accent: '#4ADE80',
+    accent: QQ_COLORS.green400,
     textColor: '#dcfce7',
     cardBg: '#0d1f0d',
     animIn: 'swingIn',
@@ -336,7 +336,7 @@ function applyDesignPreset(template: QQSlideTemplate, preset: DesignPreset): QQS
     }
     // Recolor text elements that use white/default colors
     if (el.type === 'text') {
-      if (!el.color || el.color === '#e2e8f0' || el.color === '#ffffff') {
+      if (!el.color || el.color === QQ_COLORS.slate200 || el.color === '#ffffff') {
         base.color = preset.textColor;
       }
       // Accent color: elements with yellow/orange/primary color get the new accent
@@ -374,12 +374,12 @@ function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor
     { id: 'editor',  label: '🎨 Design',  path: `/slides?draft=${draftId}` },
   ] as const;
   return (
-    <div style={{ display: 'flex', gap: 2, background: '#0f172a', borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
+    <div style={{ display: 'flex', gap: 2, background: QQ_COLORS.slate900, borderBottom: '1px solid rgba(255,255,255,0.06)', padding: '0 16px', flexShrink: 0 }}>
       {tabs.map(t => {
         const isActive = t.id === active;
         return (
           <button key={t.id} onClick={() => { if (!isActive) { onSave?.(); navigate(t.path); } }}
-            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', background: 'transparent', color: isActive ? '#e2e8f0' : '#475569', fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
+            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? '2px solid #3B82F6' : '2px solid transparent', background: 'transparent', color: isActive ? QQ_COLORS.slate200 : QQ_COLORS.slate600, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
             {t.label}
           </button>
         );
@@ -585,9 +585,9 @@ export default function QQSlideEditorPage() {
     if (!draft) return [];
     const steps: StepItem[] = [];
     // Lobby uses built-in view (stats/leaderboard) — not editable via slide editor
-    // steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: '#3B82F6' });
+    // steps.push({ key: 'lobby', label: 'Lobby', type: 'LOBBY', icon: '🏠', color: QQ_COLORS.blue500 });
     for (let p = 1; p <= draft.phases; p++) {
-      const phaseColor = p === 1 ? '#3B82F6' : p === 2 ? '#F59E0B' : p === 3 ? '#EF4444' : '#10B981';
+      const phaseColor = p === 1 ? QQ_COLORS.blue500 : p === 2 ? QQ_COLORS.amber500 : p === 3 ? QQ_COLORS.red500 : '#10B981';
       steps.push({ key: `phase-intro-${p}`, label: `Runde ${p} Intro`, type: `PHASE_INTRO_${p}` as QQSlideTemplateType, icon: `${p}️⃣`, color: phaseColor, phase: p });
       const qs = draft.questions.filter(q => q.phaseIndex === p);
       // Group questions by category-template so each template appears only once per phase
@@ -603,12 +603,12 @@ export default function QQSlideEditorPage() {
       }
       // REVEAL and PLACEMENT are shared templates — show once per phase, not per question
       if (qs.length > 0) {
-        steps.push({ key: `reveal-phase-${p}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: '#22C55E', phase: p });
+        steps.push({ key: `reveal-phase-${p}`, label: 'Auflösung', type: 'REVEAL', icon: '✅', color: QQ_COLORS.green500, phase: p });
         steps.push({ key: `placement-phase-${p}`, label: 'Platzierung', type: 'PLACEMENT', icon: '🗺️', color: '#6366F1', phase: p });
       }
       if (p === 2) steps.push({ key: 'comeback', label: 'Comeback', type: 'COMEBACK_CHOICE', icon: '⚡', color: '#F97316', phase: p });
     }
-    steps.push({ key: 'game-over', label: 'Spielende', type: 'GAME_OVER', icon: '🏆', color: '#F59E0B' });
+    steps.push({ key: 'game-over', label: 'Spielende', type: 'GAME_OVER', icon: '🏆', color: QQ_COLORS.amber500 });
     return steps;
   }, [draft, getQTemplateType]);
 
@@ -762,17 +762,17 @@ export default function QQSlideEditorPage() {
   const selectedEl = (activeTemplate.elements ?? []).find(e => e.id === selectedId) ?? null;
 
   if (loading) return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: "'Nunito', sans-serif", fontSize: 18, fontWeight: 800 }}>Lädt…</div>
+    <div style={{ minHeight: '100vh', background: QQ_COLORS.slate900, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontFamily: "'Nunito', sans-serif", fontSize: 18, fontWeight: 800 }}>Lädt…</div>
   );
   if (!draftId || !draft) return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: "'Nunito', sans-serif", color: '#e2e8f0' }}>
+    <div style={{ minHeight: '100vh', background: QQ_COLORS.slate900, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, fontFamily: "'Nunito', sans-serif", color: QQ_COLORS.slate200 }}>
       <div style={{ fontSize: 18, fontWeight: 800 }}>Kein Fragensatz ausgewählt</div>
-      <button onClick={() => navigate('/builder')} style={btn('#3B82F6')}>← CozyBuilder</button>
+      <button onClick={() => navigate('/builder')} style={btn(QQ_COLORS.blue500)}>← CozyBuilder</button>
     </div>
   );
 
   return (
-    <div style={{ height: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+    <div style={{ height: '100vh', background: QQ_COLORS.slate900, color: QQ_COLORS.slate200, fontFamily: "'Nunito', system-ui, sans-serif", display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
       <style>{`
         .qqse-elem:hover { outline: 1px solid rgba(59,130,246,0.5) !important; }
         .qqse-handle { position: absolute; width: 9px; height: 9px; background: #3B82F6; border: 2px solid #fff; border-radius: 2px; z-index: 9999; }
@@ -793,7 +793,7 @@ export default function QQSlideEditorPage() {
         {/* Left: slide list — collapsible */}
         <div style={{ width: leftOpen ? 180 : 0, flexShrink: 0, borderRight: leftOpen ? '1px solid rgba(255,255,255,0.07)' : 'none', background: '#080c14', overflowY: leftOpen ? 'auto' : 'hidden', overflowX: 'hidden', transition: 'width 0.2s ease', position: 'relative' }}>
           <div style={{ width: 180 }}>
-            <div style={{ padding: '8px 10px 4px', fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
+            <div style={{ padding: '8px 10px 4px', fontSize: 9, fontWeight: 900, color: QQ_COLORS.slate700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>Ablauf</div>
             {gameSteps.map((step) => {
               const isActive = editingKey === step.type || (step.question && editingKey === `q-${step.question.id}`);
               const hasIndividual = step.question ? Boolean(templates[`q-${step.question.id}`]?.elements?.length) : false;
@@ -811,15 +811,15 @@ export default function QQSlideEditorPage() {
                     const newEls = (templates[key]?.elements ?? makeDefault(step.type).elements) || [];
                     setSelectedIds(newEls.length > 0 ? [newEls[0].id] : []);
                   }}
-                  style={{ width: '100%', padding: '6px 8px', background: isActive ? (step.color || '#64748b') + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || '#64748b') : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, fontFamily: 'inherit', textAlign: 'left' }}>
+                  style={{ width: '100%', padding: '6px 8px', background: isActive ? (step.color || QQ_COLORS.slate500) + '18' : 'transparent', border: 'none', borderLeft: `3px solid ${isActive ? (step.color || QQ_COLORS.slate500) : 'transparent'}`, cursor: 'pointer', display: 'flex', flexDirection: 'column', gap: 4, fontFamily: 'inherit', textAlign: 'left' }}>
                   <SlidePreview template={previewTpl} />
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
                     <span style={{ fontSize: 12, flexShrink: 0 }}>{step.icon}</span>
                     <div style={{ minWidth: 0, flex: 1 }}>
-                      <div style={{ fontSize: 10, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || '#64748b') : '#64748b', lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.label}</div>
+                      <div style={{ fontSize: 10, fontWeight: isActive ? 900 : 600, color: isActive ? (step.color || QQ_COLORS.slate500) : QQ_COLORS.slate500, lineHeight: 1.2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{step.label}</div>
                     </div>
                     {hasIndividual && (
-                      <div style={{ fontSize: 8, fontWeight: 900, color: '#A78BFA', background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '1px 4px', flexShrink: 0 }}>✦</div>
+                      <div style={{ fontSize: 8, fontWeight: 900, color: QQ_COLORS.violet400, background: 'rgba(139,92,246,0.15)', border: '1px solid rgba(139,92,246,0.3)', borderRadius: 4, padding: '1px 4px', flexShrink: 0 }}>✦</div>
                     )}
                   </div>
                 </button>
@@ -842,32 +842,32 @@ export default function QQSlideEditorPage() {
               {/* Left-sidebar toggle */}
               <button onClick={() => setLeftOpen(p => !p)}
                 title={leftOpen ? 'Sidebar ausblenden' : 'Sidebar einblenden'}
-                style={{ pointerEvents: 'all', padding: '4px 7px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13,17,23,0.85)', color: '#475569', cursor: 'pointer', fontSize: 11, lineHeight: 1, fontFamily: 'inherit', fontWeight: 900, backdropFilter: 'blur(6px)' }}>
+                style={{ pointerEvents: 'all', padding: '4px 7px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13,17,23,0.85)', color: QQ_COLORS.slate600, cursor: 'pointer', fontSize: 11, lineHeight: 1, fontFamily: 'inherit', fontWeight: 900, backdropFilter: 'blur(6px)' }}>
                 {leftOpen ? '◀' : '▶'}
               </button>
               {/* Back + title */}
               <button onClick={() => navigate('/builder')}
-                style={{ pointerEvents: 'all', padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,17,23,0.85)', color: '#64748b', cursor: 'pointer', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', backdropFilter: 'blur(6px)', whiteSpace: 'nowrap' }}>
+                style={{ pointerEvents: 'all', padding: '4px 10px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(13,17,23,0.85)', color: QQ_COLORS.slate500, cursor: 'pointer', fontSize: 11, fontWeight: 800, fontFamily: 'inherit', backdropFilter: 'blur(6px)', whiteSpace: 'nowrap' }}>
                 ← Builder
               </button>
-              <div style={{ padding: '4px 10px', borderRadius: 7, background: 'rgba(13,17,23,0.7)', fontSize: 12, fontWeight: 900, color: '#e2e8f0', backdropFilter: 'blur(6px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
+              <div style={{ padding: '4px 10px', borderRadius: 7, background: 'rgba(13,17,23,0.7)', fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate200, backdropFilter: 'blur(6px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: 200 }}>
                 {draft.title}
               </div>
               <div style={{ flex: 1 }} />
               {/* Action buttons */}
               {(() => {
-                const ab: React.CSSProperties = { pointerEvents: 'all', padding: '4px 8px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13,17,23,0.85)', color: '#94a3b8', cursor: 'pointer', fontSize: 13, fontWeight: 900, fontFamily: 'inherit', backdropFilter: 'blur(6px)', lineHeight: 1 };
+                const ab: React.CSSProperties = { pointerEvents: 'all', padding: '4px 8px', borderRadius: 7, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(13,17,23,0.85)', color: QQ_COLORS.slate400, cursor: 'pointer', fontSize: 13, fontWeight: 900, fontFamily: 'inherit', backdropFilter: 'blur(6px)', lineHeight: 1 };
                 return (<>
                   {previewQuestion && (isIndividual
-                    ? <button onClick={resetToCategory} title="Zurück zum Kategorie-Standard" style={{ ...ab, color: '#A78BFA', fontSize: 11, whiteSpace: 'nowrap' }}>✦ ×Reset</button>
-                    : <button onClick={individualizeQuestion} title="Eigenes Design für diese Frage" style={{ ...ab, color: '#A78BFA', fontSize: 11, whiteSpace: 'nowrap' }}>✦ Individuell</button>
+                    ? <button onClick={resetToCategory} title="Zurück zum Kategorie-Standard" style={{ ...ab, color: QQ_COLORS.violet400, fontSize: 11, whiteSpace: 'nowrap' }}>✦ ×Reset</button>
+                    : <button onClick={individualizeQuestion} title="Eigenes Design für diese Frage" style={{ ...ab, color: QQ_COLORS.violet400, fontSize: 11, whiteSpace: 'nowrap' }}>✦ Individuell</button>
                   )}
                   <button onClick={undo} disabled={histIdxRef.current <= 0} title="Rückgängig (Ctrl+Z)" style={{ ...ab, opacity: histIdxRef.current <= 0 ? 0.3 : 1 }}>↩</button>
                   <button onClick={redo} disabled={histIdxRef.current >= historyRef.current.length - 1} title="Wiederholen (Ctrl+Y)" style={{ ...ab, opacity: histIdxRef.current >= historyRef.current.length - 1 ? 0.3 : 1 }}>↪</button>
                   <button onClick={resetTemplate} title="Zurücksetzen" style={ab}>↺</button>
                   <button onClick={duplicateSelected} disabled={selectedIds.length === 0} title="Duplizieren (Ctrl+D)" style={{ ...ab, opacity: selectedIds.length === 0 ? 0.3 : 1, color: '#818cf8' }}>⎘</button>
                   <button onClick={deleteSelected} disabled={selectedIds.length === 0} title="Löschen (Entf)" style={{ ...ab, opacity: selectedIds.length === 0 ? 0.3 : 1, color: '#f87171' }}>🗑</button>
-                  <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={{ ...ab, background: saving ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.2)', color: '#4ade80', border: '1px solid rgba(34,197,94,0.3)' }}>{saving ? '…' : '💾'}</button>
+                  <button onClick={save} disabled={saving} title="Speichern (Ctrl+S)" style={{ ...ab, background: saving ? 'rgba(34,197,94,0.15)' : 'rgba(34,197,94,0.2)', color: QQ_COLORS.green400, border: '1px solid rgba(34,197,94,0.3)' }}>{saving ? '…' : '💾'}</button>
                 </>);
               })()}
             </div>
@@ -880,16 +880,16 @@ export default function QQSlideEditorPage() {
               border: '1px solid rgba(255,255,255,0.08)', backdropFilter: 'blur(8px)',
               pointerEvents: 'all',
             }}>
-              <button onClick={() => setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1)))} style={{ padding: '2px 8px', borderRadius: 5, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>−</button>
-              <button onClick={() => setZoom(1)} style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: '#94a3b8', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, minWidth: 42, textAlign: 'center' }}>{Math.round(zoom * 100)}%</button>
-              <button onClick={() => setZoom(z => Math.min(2, +(z + 0.1).toFixed(1)))} style={{ padding: '2px 8px', borderRadius: 5, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>+</button>
-              <button onClick={() => setZoom(0.5)} style={{ padding: '2px 7px', borderRadius: 5, border: 'none', background: 'transparent', color: '#475569', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>Fit</button>
+              <button onClick={() => setZoom(z => Math.max(0.3, +(z - 0.1).toFixed(1)))} style={{ padding: '2px 8px', borderRadius: 5, border: 'none', background: 'transparent', color: QQ_COLORS.slate500, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>−</button>
+              <button onClick={() => setZoom(1)} style={{ padding: '2px 8px', borderRadius: 5, border: '1px solid rgba(255,255,255,0.08)', background: 'rgba(255,255,255,0.04)', color: QQ_COLORS.slate400, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800, minWidth: 42, textAlign: 'center' }}>{Math.round(zoom * 100)}%</button>
+              <button onClick={() => setZoom(z => Math.min(2, +(z + 0.1).toFixed(1)))} style={{ padding: '2px 8px', borderRadius: 5, border: 'none', background: 'transparent', color: QQ_COLORS.slate500, cursor: 'pointer', fontFamily: 'inherit', fontSize: 14, fontWeight: 900 }}>+</button>
+              <button onClick={() => setZoom(0.5)} style={{ padding: '2px 7px', borderRadius: 5, border: 'none', background: 'transparent', color: QQ_COLORS.slate600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 800 }}>Fit</button>
               <div style={{ width: 1, height: 16, background: 'rgba(255,255,255,0.1)', margin: '0 3px' }} />
-              <button onClick={() => setPreviewMode(p => !p)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: previewMode ? 'rgba(251,191,36,0.18)' : 'transparent', color: previewMode ? '#FBBF24' : '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
+              <button onClick={() => setPreviewMode(p => !p)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: previewMode ? 'rgba(251,191,36,0.18)' : 'transparent', color: previewMode ? QQ_COLORS.amber400 : QQ_COLORS.slate500, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>
                 {previewMode ? '🖉 Edit' : '👁 Preview'}
               </button>
               {previewMode && (
-                <button onClick={() => setFullscreenPreview(true)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: 'transparent', color: '#64748b', cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>⛶</button>
+                <button onClick={() => setFullscreenPreview(true)} style={{ padding: '3px 10px', borderRadius: 6, border: 'none', background: 'transparent', color: QQ_COLORS.slate500, cursor: 'pointer', fontFamily: 'inherit', fontSize: 11, fontWeight: 800 }}>⛶</button>
               )}
             </div>
 
@@ -916,7 +916,7 @@ export default function QQSlideEditorPage() {
               onClick={() => setSelectedIds([])}>
               <div style={{ transform: `scale(${zoom})`, transformOrigin: 'top center', width: 1280, height: 720, flexShrink: 0, position: 'relative' }}>
               {previewMode ? (
-                <div style={{ width: 1280, height: 720, position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0', boxShadow: '0 8px 64px rgba(0,0,0,0.8)' }}>
+                <div style={{ width: 1280, height: 720, position: 'relative', background: activeTemplate.background || '#0D0A06', borderRadius: 10, overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: QQ_COLORS.slate200, boxShadow: '0 8px 64px rgba(0,0,0,0.8)' }}>
                   <Fireflies />
                   <div style={{
                     position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9990,
@@ -983,15 +983,15 @@ export default function QQSlideEditorPage() {
             onKeyDown={e => { if (e.key === 'Escape') setFullscreenPreview(false); }} tabIndex={0}>
             <div style={{ position: 'absolute', top: 12, right: 16, zIndex: 100, display: 'flex', gap: 8 }}>
               <button onClick={() => goStep(-1)} disabled={currentStepIdx <= 0}
-                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', cursor: currentStepIdx <= 0 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.12)', color: currentStepIdx <= 0 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>◀</button>
-              <span style={{ padding: '6px 12px', fontSize: 12, color: '#64748b', fontWeight: 700, alignSelf: 'center' }}>{currentStepIdx + 1} / {gameSteps.length}</span>
+                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', cursor: currentStepIdx <= 0 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.12)', color: currentStepIdx <= 0 ? QQ_COLORS.slate700 : QQ_COLORS.slate200, fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>◀</button>
+              <span style={{ padding: '6px 12px', fontSize: 12, color: QQ_COLORS.slate500, fontWeight: 700, alignSelf: 'center' }}>{currentStepIdx + 1} / {gameSteps.length}</span>
               <button onClick={() => goStep(1)} disabled={currentStepIdx >= gameSteps.length - 1}
-                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', cursor: currentStepIdx >= gameSteps.length - 1 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.12)', color: currentStepIdx >= gameSteps.length - 1 ? '#334155' : '#e2e8f0', fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>▶</button>
+                style={{ padding: '6px 16px', borderRadius: 8, border: 'none', cursor: currentStepIdx >= gameSteps.length - 1 ? 'not-allowed' : 'pointer', background: 'rgba(255,255,255,0.12)', color: currentStepIdx >= gameSteps.length - 1 ? QQ_COLORS.slate700 : QQ_COLORS.slate200, fontWeight: 800, fontSize: 14, fontFamily: 'inherit' }}>▶</button>
               <button onClick={() => setFullscreenPreview(false)}
-                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(239,68,68,0.15)', color: '#EF4444', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>✕ Schließen</button>
+                style={{ padding: '6px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(239,68,68,0.15)', color: QQ_COLORS.red500, fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>✕ Schließen</button>
             </div>
             <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '100vw', height: '56.25vw', maxHeight: '100vh', maxWidth: '177.78vh', position: 'relative', background: activeTemplate.background || '#0D0A06', overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: '#e2e8f0' }}>
+              <div style={{ width: '100vw', height: '56.25vw', maxHeight: '100vh', maxWidth: '177.78vh', position: 'relative', background: activeTemplate.background || '#0D0A06', overflow: 'hidden', fontFamily: "'Nunito', system-ui, sans-serif", color: QQ_COLORS.slate200 }}>
                 <Fireflies />
                 <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 9990,
                   backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='250' height='250'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='250' height='250' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E")`,
@@ -1015,15 +1015,15 @@ export default function QQSlideEditorPage() {
               animation: 'qqse-panel-in 0.15s ease both',
             }}>
               {/* Panel header */}
-              <div style={{ padding: '8px 10px 8px 12px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
-                <span style={{ fontSize: 11, fontWeight: 900, color: '#e2e8f0' }}>
+              <div style={{ padding: '8px 10px 8px 12px', background: QQ_COLORS.slate800, borderBottom: '1px solid rgba(255,255,255,0.07)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexShrink: 0 }}>
+                <span style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate200 }}>
                   {({
                     add: '+ Hinzufügen', props: '⚙ Eigenschaften', layers: '⬡ Ebenen',
                     presets: '✨ Presets', sounds: '🔊 Sounds', slide: '🎬 Folie', theme: '🎨 Theme', timeline: '⏱ Animations-Timeline',
                   } as Record<string, string>)[rightSection!]}
                 </span>
                 <button onClick={() => setRightSection(null)}
-                  style={{ background: 'transparent', border: 'none', color: '#475569', cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px', fontFamily: 'inherit' }}>✕</button>
+                  style={{ background: 'transparent', border: 'none', color: QQ_COLORS.slate600, cursor: 'pointer', fontSize: 16, lineHeight: 1, padding: '0 2px', fontFamily: 'inherit' }}>✕</button>
               </div>
 
               {/* Panel content */}
@@ -1036,15 +1036,15 @@ export default function QQSlideEditorPage() {
                         onSetAsBackground={url => patchTemplate({ ...activeTemplate, background: `url(${url}) center/cover no-repeat` })}
                         animPreviewKey={elAnimPreviewKey}
                         onAnimPreview={() => setElAnimPreviewKey(k => k + 1)} />
-                    : <div style={{ padding: 16, fontSize: 12, color: '#334155', fontWeight: 700, textAlign: 'center', marginTop: 24 }}>
+                    : <div style={{ padding: 16, fontSize: 12, color: QQ_COLORS.slate700, fontWeight: 700, textAlign: 'center', marginTop: 24 }}>
                         Kein Element ausgewählt.<br />
-                        <span style={{ fontSize: 11, color: '#1e293b' }}>Element auf der Folie anklicken.</span>
+                        <span style={{ fontSize: 11, color: QQ_COLORS.slate800 }}>Element auf der Folie anklicken.</span>
                       </div>
                 )}
 
                 {rightSection === 'presets' && (
                   <div style={{ padding: '10px 10px 16px' }}>
-                    <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
+                    <div style={{ fontSize: 11, color: QQ_COLORS.slate600, fontWeight: 600, marginBottom: 12, lineHeight: 1.5 }}>
                       Wähle ein fertiges Design als Startpunkt. Nur Farben &amp; Hintergrund werden angepasst.
                     </div>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -1063,13 +1063,13 @@ export default function QQSlideEditorPage() {
                             <div style={{ width: 16, height: 4, borderRadius: 2, background: preset.accent, opacity: 0.9 }} />
                           </div>
                           <div>
-                            <div style={{ fontSize: 12, fontWeight: 800, color: '#e2e8f0' }}>{preset.icon} {preset.label}</div>
-                            <div style={{ fontSize: 10, color: '#475569', fontWeight: 600 }}>Eingang: {preset.animIn}{preset.animLoop ? ` · Schleife: ${preset.animLoop}` : ''}</div>
+                            <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.slate200 }}>{preset.icon} {preset.label}</div>
+                            <div style={{ fontSize: 10, color: QQ_COLORS.slate600, fontWeight: 600 }}>Eingang: {preset.animIn}{preset.animLoop ? ` · Schleife: ${preset.animLoop}` : ''}</div>
                           </div>
                         </button>
                       ))}
                     </div>
-                    <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: '#A78BFA', fontWeight: 600, lineHeight: 1.5 }}>
+                    <div style={{ marginTop: 12, padding: '8px 10px', borderRadius: 8, background: 'rgba(139,92,246,0.08)', border: '1px solid rgba(139,92,246,0.2)', fontSize: 11, color: QQ_COLORS.violet400, fontWeight: 600, lineHeight: 1.5 }}>
                       Tipp: Nach dem Anwenden kannst du alles im Eigenschaften-Tab weiter anpassen.
                     </div>
                   </div>
@@ -1077,7 +1077,7 @@ export default function QQSlideEditorPage() {
 
                 {rightSection === 'layers' && (
                   <div style={{ padding: '6px 6px 8px', display: 'flex', flexDirection: 'column', gap: 1 }}>
-                    <div style={{ padding: '4px 8px 6px', fontSize: 9, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', justifyContent: 'space-between' }}>
+                    <div style={{ padding: '4px 8px 6px', fontSize: 9, fontWeight: 900, color: QQ_COLORS.slate700, textTransform: 'uppercase', letterSpacing: '0.08em', display: 'flex', justifyContent: 'space-between' }}>
                       <span>Ebenen</span>
                       <span style={{ color: '#1e3a5f' }}>{activeTemplate.elements.length}</span>
                     </div>
@@ -1092,12 +1092,12 @@ export default function QQSlideEditorPage() {
                           <div key={el.id} className={`qqse-layer-row${isSelected ? ' selected' : ''}`}
                             onClick={() => { setSelectedIds([el.id]); setRightSection('props'); }}>
                             <span style={{ fontSize: 11, flexShrink: 0 }}>{icon}</span>
-                            <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93C5FD' : '#64748b', fontWeight: isSelected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-                            <span style={{ fontSize: 9, color: '#334155', fontWeight: 700, flexShrink: 0, marginRight: 2 }}>{el.zIndex ?? 1}</span>
+                            <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93C5FD' : QQ_COLORS.slate500, fontWeight: isSelected ? 800 : 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                            <span style={{ fontSize: 9, color: QQ_COLORS.slate700, fontWeight: 700, flexShrink: 0, marginRight: 2 }}>{el.zIndex ?? 1}</span>
                             <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'up'); }} title="Vorne"
-                              style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↑</button>
+                              style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: QQ_COLORS.slate600, cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↑</button>
                             <button onClick={e => { e.stopPropagation(); changeZ(el.id, 'down'); }} title="Hinten"
-                              style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: '#475569', cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↓</button>
+                              style={{ padding: '1px 4px', borderRadius: 4, border: '1px solid rgba(255,255,255,0.08)', background: 'transparent', color: QQ_COLORS.slate600, cursor: 'pointer', fontSize: 10, fontFamily: 'inherit', lineHeight: 1 }}>↓</button>
                           </div>
                         );
                       })}
@@ -1119,7 +1119,7 @@ export default function QQSlideEditorPage() {
                     <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}>
                         <span style={{ fontSize: 20 }}>{spec?.icon}</span>
-                        <span style={{ fontWeight: 900, fontSize: 13, color: spec?.color ?? '#e2e8f0' }}>{spec?.label}</span>
+                        <span style={{ fontWeight: 900, fontSize: 13, color: spec?.color ?? QQ_COLORS.slate200 }}>{spec?.label}</span>
                       </div>
                       <Field label="Hintergrund">
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
@@ -1151,7 +1151,7 @@ export default function QQSlideEditorPage() {
                         const cur = activeTemplate.transitionIn || '';
                         return (
                           <>
-                            <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700, marginBottom: 2 }}>Übergang</div>
+                            <div style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700, marginBottom: 2 }}>Übergang</div>
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 5 }}>
                               {TRANS_OPTIONS.map(opt => {
                                 const active = cur === opt.value;
@@ -1164,7 +1164,7 @@ export default function QQSlideEditorPage() {
                                     padding: '7px 4px', borderRadius: 8, border: 'none', cursor: 'pointer',
                                     background: active ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
                                     outline: active ? '1.5px solid #3B82F6' : '1.5px solid transparent',
-                                    color: active ? '#93c5fd' : '#94a3b8',
+                                    color: active ? '#93c5fd' : QQ_COLORS.slate400,
                                     transition: 'all 0.12s',
                                   }}>
                                     <span style={{ fontSize: 16 }}>{opt.icon}</span>
@@ -1189,9 +1189,9 @@ export default function QQSlideEditorPage() {
                               return (
                                 <div style={{ marginTop: 6 }}>
                                   <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 5 }}>
-                                    <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Vorschau</span>
+                                    <span style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700 }}>Vorschau</span>
                                     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                                      <label style={{ fontSize: 10, color: '#64748b' }}>
+                                      <label style={{ fontSize: 10, color: QQ_COLORS.slate500 }}>
                                         Dauer&nbsp;
                                         <input type="number" min={0.1} max={2} step={0.1} value={dur}
                                           onChange={e => patchTemplate({ ...activeTemplate, transitionDuration: parseFloat(e.target.value) || 0.5 })}
@@ -1199,7 +1199,7 @@ export default function QQSlideEditorPage() {
                                         &nbsp;s
                                       </label>
                                       <button onClick={() => setTransPreviewKey(k => k + 1)}
-                                        style={{ ...btn('#3B82F6', true), padding: '3px 9px', fontSize: 11 }}>
+                                        style={{ ...btn(QQ_COLORS.blue500, true), padding: '3px 9px', fontSize: 11 }}>
                                         ▶ Nochmal
                                       </button>
                                     </div>
@@ -1239,18 +1239,18 @@ export default function QQSlideEditorPage() {
                   const maxTime = Math.max(2, ...els.map(e => (e.animDelay ?? 0) + (e.animDuration ?? 0.5)));
                   const EL_ICONS: Record<string, string> = { text: '📝', image: '🖼', rect: '⬛', animatedAvatar: '🕺', emojiStack: '🎭' };
                   const ANIM_COLORS: Record<string, string> = {
-                    fadeIn: '#3B82F6', fadeUp: '#6366F1', pop: '#EC4899',
-                    slideLeft: '#F59E0B', slideRight: '#F97316',
-                    cardFlip: '#8B5CF6', bounceIn: '#22C55E', slotDrop: '#14B8A6',
-                    swingIn: '#EF4444', typewriter: '#64748b',
+                    fadeIn: QQ_COLORS.blue500, fadeUp: '#6366F1', pop: QQ_COLORS.brandPink,
+                    slideLeft: QQ_COLORS.amber500, slideRight: '#F97316',
+                    cardFlip: QQ_COLORS.violet500, bounceIn: QQ_COLORS.green500, slotDrop: '#14B8A6',
+                    swingIn: QQ_COLORS.red500, typewriter: QQ_COLORS.slate500,
                   };
                   return (
                     <div style={{ padding: 12, display: 'flex', flexDirection: 'column', gap: 10 }}>
                       {/* Play all preview */}
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Alle Animationen</span>
+                        <span style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700 }}>Alle Animationen</span>
                         <button onClick={() => setTimelinePreviewKey(k => k + 1)}
-                          style={{ background: '#3B82F6', border: 'none', borderRadius: 7, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit' }}>
+                          style={{ background: QQ_COLORS.blue500, border: 'none', borderRadius: 7, color: '#fff', cursor: 'pointer', padding: '4px 10px', fontSize: 11, fontWeight: 800, fontFamily: 'inherit' }}>
                           ▶ Abspielen
                         </button>
                       </div>
@@ -1271,7 +1271,7 @@ export default function QQSlideEditorPage() {
                       </div>
 
                       {/* Timeline */}
-                      <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginTop: 4 }}>Reihenfolge &amp; Timing</div>
+                      <div style={{ fontSize: 10, color: QQ_COLORS.slate500, fontWeight: 700, marginTop: 4 }}>Reihenfolge &amp; Timing</div>
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                         {els.map(el => {
                           const isPh = el.type.startsWith('ph_');
@@ -1283,7 +1283,7 @@ export default function QQSlideEditorPage() {
                           const delay = el.animDelay ?? 0;
                           const dur = el.animDuration ?? 0.5;
                           const animIn = el.animIn ?? 'none';
-                          const barColor = animIn !== 'none' ? (ANIM_COLORS[animIn] ?? '#3B82F6') : '#334155';
+                          const barColor = animIn !== 'none' ? (ANIM_COLORS[animIn] ?? QQ_COLORS.blue500) : QQ_COLORS.slate700;
                           const isSelected = selectedIds.includes(el.id);
                           return (
                             <div key={el.id} style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
@@ -1294,7 +1294,7 @@ export default function QQSlideEditorPage() {
                                 cursor: 'pointer',
                               }} onClick={() => { setSelectedIds([el.id]); setRightSection('props'); }}>
                                 <span style={{ fontSize: 12, flexShrink: 0 }}>{icon}</span>
-                                <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93c5fd' : '#94a3b8', fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
+                                <span style={{ flex: 1, fontSize: 10, color: isSelected ? '#93c5fd' : QQ_COLORS.slate400, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
                                 <span style={{ fontSize: 9, color: barColor, fontWeight: 800, flexShrink: 0 }}>{animIn !== 'none' ? animIn : '—'}</span>
                               </div>
                               {/* Timeline bar */}
@@ -1320,17 +1320,17 @@ export default function QQSlideEditorPage() {
                               {/* Inline delay/dur editors only for selected */}
                               {isSelected && animIn !== 'none' && (
                                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4, margin: '0 4px 4px' }}>
-                                  <label style={{ fontSize: 9, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <label style={{ fontSize: 9, color: QQ_COLORS.slate500, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     Delay (s)
                                     <input type="number" value={delay} step={0.1} min={0}
                                       onChange={e => patchElement({ animDelay: Number(e.target.value) })}
-                                      style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, color: '#e2e8f0', padding: '3px 6px', fontSize: 11, fontFamily: 'inherit' }} />
+                                      style={{ background: QQ_COLORS.slate800, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, color: QQ_COLORS.slate200, padding: '3px 6px', fontSize: 11, fontFamily: 'inherit' }} />
                                   </label>
-                                  <label style={{ fontSize: 9, color: '#64748b', display: 'flex', flexDirection: 'column', gap: 2 }}>
+                                  <label style={{ fontSize: 9, color: QQ_COLORS.slate500, display: 'flex', flexDirection: 'column', gap: 2 }}>
                                     Dauer (s)
                                     <input type="number" value={dur} step={0.1} min={0.1}
                                       onChange={e => patchElement({ animDuration: Number(e.target.value) })}
-                                      style={{ background: '#1e293b', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, color: '#e2e8f0', padding: '3px 6px', fontSize: 11, fontFamily: 'inherit' }} />
+                                      style={{ background: QQ_COLORS.slate800, border: '1px solid rgba(255,255,255,0.1)', borderRadius: 5, color: QQ_COLORS.slate200, padding: '3px 6px', fontSize: 11, fontFamily: 'inherit' }} />
                                   </label>
                                 </div>
                               )}
@@ -1339,7 +1339,7 @@ export default function QQSlideEditorPage() {
                         })}
                       </div>
                       {/* Time ruler */}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '0 4px', fontSize: 8, color: '#334155', fontWeight: 700 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', margin: '0 4px', fontSize: 8, color: QQ_COLORS.slate700, fontWeight: 700 }}>
                         {Array.from({ length: Math.ceil(maxTime) + 1 }, (_, i) => (
                           <span key={i}>{i}s</span>
                         ))}
@@ -1350,7 +1350,7 @@ export default function QQSlideEditorPage() {
 
                 {rightSection === 'theme' && (
                   <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
-                    <div style={{ fontSize: 11, color: '#475569', fontWeight: 600, marginBottom: 2 }}>Quiz-Theme (gilt für alle Folien)</div>
+                    <div style={{ fontSize: 11, color: QQ_COLORS.slate600, fontWeight: 600, marginBottom: 2 }}>Quiz-Theme (gilt für alle Folien)</div>
                     {/* Preset swatches */}
                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
                       {(Object.keys(QQ_THEME_PRESETS) as Exclude<QQThemePreset, 'custom'>[]).map(t => {
@@ -1380,8 +1380,8 @@ export default function QQSlideEditorPage() {
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         {([
                           { key: 'bgColor',     label: 'Hintergrund', fallback: '#0D0A06' },
-                          { key: 'accentColor', label: 'Akzent',      fallback: '#F59E0B' },
-                          { key: 'textColor',   label: 'Text',        fallback: '#e2e8f0' },
+                          { key: 'accentColor', label: 'Akzent',      fallback: QQ_COLORS.amber500 },
+                          { key: 'textColor',   label: 'Text',        fallback: QQ_COLORS.slate200 },
                           { key: 'cardBg',      label: 'Karte',       fallback: '#1B1510' },
                         ] as const).map(({ key, label, fallback }) => (
                           <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -1389,7 +1389,7 @@ export default function QQSlideEditorPage() {
                               value={(draft.theme as any)?.[key] ?? fallback}
                               onChange={e => setDraft({ ...draft, theme: { ...(draft.theme ?? { preset: 'custom' as const }), preset: 'custom' as const, [key]: e.target.value }, updatedAt: Date.now() })}
                               style={{ width: 28, height: 24, border: 'none', borderRadius: 5, cursor: 'pointer', background: 'transparent', padding: 0, flexShrink: 0 }} />
-                            <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{label}</span>
+                            <span style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700 }}>{label}</span>
                           </div>
                         ))}
                       </div>
@@ -1419,13 +1419,13 @@ export default function QQSlideEditorPage() {
                   style={{
                     width: 36, height: 36, borderRadius: 8, border: 'none', cursor: 'pointer',
                     background: isActive ? 'rgba(59,130,246,0.2)' : 'transparent',
-                    color: isActive ? '#93C5FD' : '#475569',
+                    color: isActive ? '#93C5FD' : QQ_COLORS.slate600,
                     fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     transition: 'all 0.15s', fontFamily: 'inherit',
                     outline: isActive ? '1px solid rgba(59,130,246,0.4)' : 'none',
                   }}
-                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = '#e2e8f0'; }}
-                  onMouseLeave={e => { e.currentTarget.style.background = isActive ? 'rgba(59,130,246,0.2)' : 'transparent'; e.currentTarget.style.color = isActive ? '#93C5FD' : '#475569'; }}
+                  onMouseEnter={e => { if (!isActive) e.currentTarget.style.background = 'rgba(255,255,255,0.06)'; e.currentTarget.style.color = QQ_COLORS.slate200; }}
+                  onMouseLeave={e => { e.currentTarget.style.background = isActive ? 'rgba(59,130,246,0.2)' : 'transparent'; e.currentTarget.style.color = isActive ? '#93C5FD' : QQ_COLORS.slate600; }}
                 >
                   {icon}
                 </button>
@@ -1658,10 +1658,10 @@ function SlideCanvas({ template, templateType, bgColor, questions, previewQuesti
 
       {/* Snap lines */}
       {snapLines.x !== undefined && (
-        <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${snapLines.x}%`, width: 1, background: '#3B82F6', opacity: 0.7, pointerEvents: 'none', zIndex: 99998 }} />
+        <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${snapLines.x}%`, width: 1, background: QQ_COLORS.blue500, opacity: 0.7, pointerEvents: 'none', zIndex: 99998 }} />
       )}
       {snapLines.y !== undefined && (
-        <div style={{ position: 'absolute', left: 0, right: 0, top: `${snapLines.y}%`, height: 1, background: '#3B82F6', opacity: 0.7, pointerEvents: 'none', zIndex: 99998 }} />
+        <div style={{ position: 'absolute', left: 0, right: 0, top: `${snapLines.y}%`, height: 1, background: QQ_COLORS.blue500, opacity: 0.7, pointerEvents: 'none', zIndex: 99998 }} />
       )}
     </div>
   );
@@ -1767,7 +1767,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
 
       {/* Selected label */}
       {selected && (
-        <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: '#3B82F6', fontWeight: 700, whiteSpace: 'nowrap', background: '#0f172a', padding: '1px 4px', borderRadius: 3 }}>
+        <div style={{ position: 'absolute', bottom: '-18px', left: 0, fontSize: 9, color: QQ_COLORS.blue500, fontWeight: 700, whiteSpace: 'nowrap', background: QQ_COLORS.slate900, padding: '1px 4px', borderRadius: 3 }}>
           {label} · {Math.round(el.x)},{Math.round(el.y)} · {Math.round(el.w)}×{Math.round(el.h)}
         </div>
       )}
@@ -1776,7 +1776,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
       {ctxMenu && (
         <div style={{
           position: 'fixed', left: ctxMenu.x, top: ctxMenu.y, zIndex: 999999,
-          background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
+          background: QQ_COLORS.slate800, border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8,
           boxShadow: '0 8px 32px rgba(0,0,0,0.6)', padding: '4px 0', minWidth: 150,
           fontFamily: "'Nunito', sans-serif",
         }} onClick={e => e.stopPropagation()}>
@@ -1786,7 +1786,7 @@ function CanvasElement({ el, canvasW, selected, editing, onSelect, onDragStart, 
           ].map(item => (
             <button key={item.label} onClick={item.action} style={{
               display: 'block', width: '100%', padding: '7px 14px', background: 'transparent',
-              border: 'none', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 12,
+              border: 'none', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 12,
               fontWeight: 700, textAlign: 'left', cursor: 'pointer',
             }}
               onMouseEnter={e => (e.currentTarget.style.background = 'rgba(59,130,246,0.15)')}
@@ -1822,6 +1822,7 @@ const ANIM_LOOP_OPTIONS: Array<{ value: QQSlideElement['animLoop']; label: strin
   { value: 'float',  label: 'Schweben' },
 ];
 import { FONT_OPTIONS, loadAllFonts, loadGoogleFont } from '../utils/fonts';
+import { QQ_COLORS } from '../../../shared/qqColors';
 // Avatar/Animation options for animatedAvatar
 const AVATAR_OPTIONS = [
   { id: 'avatar1', label: 'Avatar 1', icon: '🧑' },
@@ -1876,11 +1877,11 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
     <div style={{ padding: 14, display: 'flex', flexDirection: 'column', gap: 10 }}>
       {/* Header */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
-        <div style={{ flex: 1, fontSize: 12, fontWeight: 900, color: isPh ? '#A78BFA' : '#93C5FD' }}>
+        <div style={{ flex: 1, fontSize: 12, fontWeight: 900, color: isPh ? QQ_COLORS.violet400 : '#93C5FD' }}>
           {isPh ? `[${PH_LABELS[el.type]}]` : el.type === 'text' ? '📝 Text' : el.type === 'image' ? '🖼 Bild' : el.type === 'animatedAvatar' ? '🕺 Avatar' : el.type === 'emojiStack' ? '🎭 Emoji-Kompositor' : '⬛ Form'}
         </div>
         <button onClick={onDuplicate} style={{ ...btn('#6366F1', true), padding: '2px 7px', fontSize: 11 }}>⎘</button>
-        <button onClick={onDelete} style={{ ...btn('#EF4444', true), padding: '2px 7px', fontSize: 11 }}>✕</button>
+        <button onClick={onDelete} style={{ ...btn(QQ_COLORS.red500, true), padding: '2px 7px', fontSize: 11 }}>✕</button>
       </div>
 
       {/* Animated Avatar Eigenschaften */}
@@ -1890,8 +1891,8 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.04)', marginBottom: 4 }}>
             <span style={{ fontSize: 36, lineHeight: 1 }}>{el.text ?? '✨'}</span>
             <div>
-              <div style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>Aktueller Avatar</div>
-              <div style={{ fontSize: 11, color: '#94a3b8' }}>Klick auf Figur zum Wechseln</div>
+              <div style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700 }}>Aktueller Avatar</div>
+              <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>Klick auf Figur zum Wechseln</div>
             </div>
           </div>
           <AvatarLibrary current={el.text ?? ''} onPick={emoji => onChange({ text: emoji })} />
@@ -1923,14 +1924,14 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
               {/* Header row */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                 <span style={{ fontSize: 22, lineHeight: 1 }}>{layer.emoji}</span>
-                <span style={{ flex: 1, fontSize: 11, color: '#94a3b8', fontWeight: 700 }}>Ebene {i + 1}</span>
+                <span style={{ flex: 1, fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>Ebene {i + 1}</span>
                 <button
                   onClick={() => {
                     const layers = [...(el.emojiLayers ?? [])];
                     layers.splice(i, 1);
                     onChange({ emojiLayers: layers });
                   }}
-                  style={{ ...btn('#EF4444', true), padding: '2px 7px', fontSize: 11 }}>✕</button>
+                  style={{ ...btn(QQ_COLORS.red500, true), padding: '2px 7px', fontSize: 11 }}>✕</button>
               </div>
               {/* Emoji text + picker */}
               <Field label="Emoji">
@@ -1998,7 +1999,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
               layers.push({ emoji: '✨', offsetX: 0, offsetY: 0, scale: 1, rotation: 0, animType: 'none' });
               onChange({ emojiLayers: layers });
             }}
-            style={{ ...btn('#3B82F6', true), width: '100%', padding: '6px 10px', fontSize: 12, textAlign: 'center' }}>
+            style={{ ...btn(QQ_COLORS.blue500, true), width: '100%', padding: '6px 10px', fontSize: 12, textAlign: 'center' }}>
             ＋ Emoji-Ebene hinzufügen
           </button>
         </Section>
@@ -2068,14 +2069,14 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
               {fontDropOpen && (
                 <div style={{
                   position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 9999,
-                  background: '#1e293b', border: '1px solid rgba(255,255,255,0.12)',
+                  background: QQ_COLORS.slate800, border: '1px solid rgba(255,255,255,0.12)',
                   borderRadius: 8, marginTop: 3, maxHeight: 260, overflowY: 'auto',
                   boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
                 }}>
                   {/* "Standard" option */}
                   <button type="button" onClick={() => { onChange({ fontFamily: undefined }); setFontDropOpen(false); }} style={{
                     width: '100%', padding: '7px 12px', background: fontFamily === '' ? 'rgba(59,130,246,0.2)' : 'transparent',
-                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', color: '#e2e8f0',
+                    border: 'none', borderBottom: '1px solid rgba(255,255,255,0.06)', color: QQ_COLORS.slate200,
                     cursor: 'pointer', textAlign: 'left', fontFamily: "'Nunito', sans-serif", fontSize: 13,
                   }}>
                     Standard (Nunito)
@@ -2087,7 +2088,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
                         width: '100%', padding: '7px 12px',
                         background: fontFamily === o.value ? 'rgba(59,130,246,0.2)' : 'transparent',
                         border: 'none', borderBottom: '1px solid rgba(255,255,255,0.04)',
-                        color: fontFamily === o.value ? '#93c5fd' : '#e2e8f0',
+                        color: fontFamily === o.value ? '#93c5fd' : QQ_COLORS.slate200,
                         cursor: 'pointer', textAlign: 'left',
                         fontFamily: o.value, fontSize: 15, fontWeight: 700,
                       }}>
@@ -2107,11 +2108,11 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           <Field label="Ausrichtung">
             <div style={{ display: 'flex', gap: 4 }}>
               {(['left', 'center', 'right'] as const).map(a => (
-                <button key={a} onClick={() => onChange({ textAlign: a })} style={{ flex: 1, padding: '5px', borderRadius: 6, border: 'none', cursor: 'pointer', background: el.textAlign === a ? '#3B82F6' : 'rgba(255,255,255,0.06)', color: el.textAlign === a ? '#fff' : '#64748b', fontFamily: 'inherit', fontSize: 13, fontWeight: 800 }}>
+                <button key={a} onClick={() => onChange({ textAlign: a })} style={{ flex: 1, padding: '5px', borderRadius: 6, border: 'none', cursor: 'pointer', background: el.textAlign === a ? QQ_COLORS.blue500 : 'rgba(255,255,255,0.06)', color: el.textAlign === a ? '#fff' : QQ_COLORS.slate500, fontFamily: 'inherit', fontSize: 13, fontWeight: 800 }}>
                   {a === 'left' ? '⬅' : a === 'center' ? '↔' : '➡'}
                 </button>
               ))}
-              <button onClick={() => onChange({ fontStyle: el.fontStyle === 'italic' ? 'normal' : 'italic' })} style={{ padding: '5px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: el.fontStyle === 'italic' ? '#3B82F6' : 'rgba(255,255,255,0.06)', color: el.fontStyle === 'italic' ? '#fff' : '#64748b', fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 800, fontStyle: 'italic' }}>
+              <button onClick={() => onChange({ fontStyle: el.fontStyle === 'italic' ? 'normal' : 'italic' })} style={{ padding: '5px 8px', borderRadius: 6, border: 'none', cursor: 'pointer', background: el.fontStyle === 'italic' ? QQ_COLORS.blue500 : 'rgba(255,255,255,0.06)', color: el.fontStyle === 'italic' ? '#fff' : QQ_COLORS.slate500, fontFamily: 'Georgia, serif', fontSize: 13, fontWeight: 800, fontStyle: 'italic' }}>
                 I
               </button>
             </div>
@@ -2133,7 +2134,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           <Field label="CSS-Farbe / Gradient">
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {(el.background ?? '').startsWith('#') && (
-                <input type="color" value={el.background ?? '#1e293b'} onChange={e => onChange({ background: e.target.value })} style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
+                <input type="color" value={el.background ?? QQ_COLORS.slate800} onChange={e => onChange({ background: e.target.value })} style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
               )}
               <input value={el.background ?? ''} onChange={e => onChange({ background: e.target.value })} style={{ ...input, flex: 1, padding: '4px 7px', fontFamily: 'monospace', fontSize: 11 }} placeholder="#1e293b oder gradient…" />
             </div>
@@ -2170,8 +2171,8 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           {(el.optionColorScheme === 'mono') && (
             <Field label="Akzentfarbe">
               <div style={{ display: 'flex', gap: 6 }}>
-                <input type="color" value={el.color ?? '#3B82F6'} onChange={e => onChange({ color: e.target.value })} style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
-                <input value={el.color ?? '#3B82F6'} onChange={e => onChange({ color: e.target.value })} style={{ ...input, flex: 1, padding: '4px 7px', fontFamily: 'monospace', fontSize: 12 }} />
+                <input type="color" value={el.color ?? QQ_COLORS.blue500} onChange={e => onChange({ color: e.target.value })} style={{ width: 30, height: 28, borderRadius: 5, border: 'none', cursor: 'pointer', padding: 0, flexShrink: 0 }} />
+                <input value={el.color ?? QQ_COLORS.blue500} onChange={e => onChange({ color: e.target.value })} style={{ ...input, flex: 1, padding: '4px 7px', fontFamily: 'monospace', fontSize: 12 }} />
               </div>
             </Field>
           )}
@@ -2189,7 +2190,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
               <button
                 onClick={() => uploadRef.current?.click()}
                 disabled={uploading}
-                style={{ ...btn('#3B82F6', true), padding: '5px 10px', fontSize: 11 }}>
+                style={{ ...btn(QQ_COLORS.blue500, true), padding: '5px 10px', fontSize: 11 }}>
                 {uploading ? '⏳ Lädt…' : '📤 Hochladen'}
               </button>
               <input
@@ -2207,13 +2208,13 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
           <Field label="Darstellung">
             <div style={{ display: 'flex', gap: 4 }}>
               {(['cover', 'contain'] as const).map(f => (
-                <button key={f} onClick={() => onChange({ objectFit: f })} style={{ flex: 1, padding: '5px', borderRadius: 6, border: 'none', cursor: 'pointer', background: (el.objectFit ?? 'contain') === f ? '#3B82F6' : 'rgba(255,255,255,0.06)', color: (el.objectFit ?? 'contain') === f ? '#fff' : '#64748b', fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }}>{f}</button>
+                <button key={f} onClick={() => onChange({ objectFit: f })} style={{ flex: 1, padding: '5px', borderRadius: 6, border: 'none', cursor: 'pointer', background: (el.objectFit ?? 'contain') === f ? QQ_COLORS.blue500 : 'rgba(255,255,255,0.06)', color: (el.objectFit ?? 'contain') === f ? '#fff' : QQ_COLORS.slate500, fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }}>{f}</button>
               ))}
             </div>
           </Field>
           {el.imageUrl && onSetAsBackground && (
             <button onClick={() => onSetAsBackground(el.imageUrl!)}
-              style={{ ...btn('#475569', true), width: '100%', fontSize: 11, padding: '5px 10px', textAlign: 'center' }}>
+              style={{ ...btn(QQ_COLORS.slate600, true), width: '100%', fontSize: 11, padding: '5px 10px', textAlign: 'center' }}>
               🖼 Als Folienhintergrund setzen
             </button>
           )}
@@ -2223,7 +2224,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
       {/* Animation & Effekte */}
       <Section label="Animation & Effekte">
         {/* Eingangs-Animation chips */}
-        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginBottom: 5 }}>Eingang</div>
+        <div style={{ fontSize: 10, color: QQ_COLORS.slate500, fontWeight: 700, marginBottom: 5 }}>Eingang</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 4 }}>
           {ANIM_IN_OPTIONS.map(opt => {
             const active = (el.animIn ?? 'none') === opt.value;
@@ -2236,7 +2237,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
                 padding: '6px 3px', borderRadius: 7, border: 'none', cursor: 'pointer',
                 background: active ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
                 outline: active ? '1.5px solid #3B82F6' : '1.5px solid transparent',
-                color: active ? '#93c5fd' : '#94a3b8',
+                color: active ? '#93c5fd' : QQ_COLORS.slate400,
                 transition: 'all 0.12s',
               }}>
                 <span style={{ fontSize: 15 }}>{opt.icon}</span>
@@ -2263,8 +2264,8 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
             </div>
             {/* Inline element preview */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-              <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>Vorschau</span>
-              <button onClick={onAnimPreview} style={{ ...btn('#3B82F6', true), padding: '2px 8px', fontSize: 10 }}>▶ Nochmal</button>
+              <span style={{ fontSize: 10, color: QQ_COLORS.slate500, fontWeight: 700 }}>Vorschau</span>
+              <button onClick={onAnimPreview} style={{ ...btn(QQ_COLORS.blue500, true), padding: '2px 8px', fontSize: 10 }}>▶ Nochmal</button>
             </div>
             <div style={{
               position: 'relative', width: '100%', paddingBottom: '56.25%',
@@ -2300,7 +2301,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
                     })(),
                     padding: '8px 14px', borderRadius: 8,
                     background: 'rgba(255,255,255,0.06)',
-                    fontSize: 18, fontWeight: 800, color: el.color ?? '#e2e8f0',
+                    fontSize: 18, fontWeight: 800, color: el.color ?? QQ_COLORS.slate200,
                     fontFamily: el.fontFamily || "'Nunito', sans-serif",
                     maxWidth: '80%', textAlign: 'center',
                     overflow: el.animIn === 'typewriter' ? 'hidden' : undefined,
@@ -2319,7 +2320,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
         )}
 
         {/* Loop animation */}
-        <div style={{ fontSize: 10, color: '#64748b', fontWeight: 700, marginTop: 8, marginBottom: 5 }}>Endlosschleife</div>
+        <div style={{ fontSize: 10, color: QQ_COLORS.slate500, fontWeight: 700, marginTop: 8, marginBottom: 5 }}>Endlosschleife</div>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 4 }}>
           {ANIM_LOOP_OPTIONS.map(opt => {
             const active = (el.animLoop ?? 'none') === opt.value;
@@ -2330,7 +2331,7 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
                 padding: '6px 3px', borderRadius: 7, border: 'none', cursor: 'pointer',
                 background: active ? 'rgba(59,130,246,0.25)' : 'rgba(255,255,255,0.04)',
                 outline: active ? '1.5px solid #3B82F6' : '1.5px solid transparent',
-                color: active ? '#93c5fd' : '#94a3b8',
+                color: active ? '#93c5fd' : QQ_COLORS.slate400,
                 transition: 'all 0.12s',
               }}>
                 <span style={{ fontSize: 15 }}>{LOOP_ICONS[String(opt.value)] ?? '?'}</span>
@@ -2355,25 +2356,25 @@ function PropertiesPanel({ element: el, onChange, onDelete, onDuplicate, onSetAs
 function EmptyProperties({ onAdd }: { onAdd: (t: QQSlideElementType) => void }) {
   return (
     <div style={{ padding: 16 }}>
-      <div style={{ fontSize: 10, fontWeight: 900, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Element hinzufügen</div>
-      <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, fontWeight: 700 }}>Statische Elemente:</div>
+      <div style={{ fontSize: 10, fontWeight: 900, color: QQ_COLORS.slate700, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>Element hinzufügen</div>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate600, marginBottom: 8, fontWeight: 700 }}>Statische Elemente:</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5, marginBottom: 14 }}>
           {([['text', '📝 Text — statischer Text'], ['image', '🖼 Bild — URL oder hochladen'], ['rect', '⬛ Form — Hintergrund, Overlay'], ['animatedAvatar', '🕺 Avatar — animiert'], ['emojiStack', '🎭 Emoji-Kompositor — mehrere Emojis stapeln']] as const).map(([t, label]) => (
           <button key={t} onClick={() => onAdd(t)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(59,130,246,0.3)', background: 'rgba(59,130,246,0.06)', color: '#93C5FD', cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 700, textAlign: 'left' }}>{label}</button>
         ))}
       </div>
-      <div style={{ fontSize: 11, color: '#475569', marginBottom: 8, fontWeight: 700 }}>Dynamische Platzhalter (Live-Daten):</div>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate600, marginBottom: 8, fontWeight: 700 }}>Dynamische Platzhalter (Live-Daten):</div>
       <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 5 }}>
         {(Object.entries(PH_LABELS) as [QQSlideElementType, string][]).map(([t, label]) => (
-          <button key={t} onClick={() => onAdd(t)} style={{ padding: '6px 8px', borderRadius: 7, border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.06)', color: '#A78BFA', cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 700, textAlign: 'left' }}>+ {label}</button>
+          <button key={t} onClick={() => onAdd(t)} style={{ padding: '6px 8px', borderRadius: 7, border: '1px solid rgba(139,92,246,0.3)', background: 'rgba(139,92,246,0.06)', color: QQ_COLORS.violet400, cursor: 'pointer', fontFamily: 'inherit', fontSize: 10, fontWeight: 700, textAlign: 'left' }}>+ {label}</button>
         ))}
       </div>
-      <div style={{ marginTop: 14, padding: '10px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 11, color: '#334155', lineHeight: 1.6 }}>
+      <div style={{ marginTop: 14, padding: '10px', borderRadius: 8, background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)', fontSize: 11, color: QQ_COLORS.slate700, lineHeight: 1.6 }}>
         Klicke auf ein Element zum Bearbeiten.<br />
         Shift+Klick = Mehrfachauswahl · Drag leer = Marquee<br />
         Drag = verschieben · Ecken = Größe ändern<br />
         Doppelklick auf Text = direkt bearbeiten<br />
-        <strong style={{ color: '#475569' }}>Tastatur:</strong> Entf = löschen · Pfeile = nudgen · Shift+Pfeile = groß nudgen<br />
+        <strong style={{ color: QQ_COLORS.slate600 }}>Tastatur:</strong> Entf = löschen · Pfeile = nudgen · Shift+Pfeile = groß nudgen<br />
         Ctrl+Z/Y = Undo/Redo · Ctrl+D = duplizieren · Ctrl+S = speichern<br />
         Ctrl+C/V = Kopieren/Einfügen
       </div>
@@ -2385,7 +2386,7 @@ function EmptyProperties({ onAdd }: { onAdd: (t: QQSlideElementType) => void }) 
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div style={{ borderTop: '1px solid rgba(255,255,255,0.05)', paddingTop: 10 }}>
-      <div style={{ fontSize: 10, fontWeight: 900, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
+      <div style={{ fontSize: 10, fontWeight: 900, color: QQ_COLORS.slate600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 8 }}>{label}</div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>{children}</div>
     </div>
   );
@@ -2393,7 +2394,7 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div>
-      <div style={{ fontSize: 10, color: '#475569', fontWeight: 700, marginBottom: 3 }}>{label}</div>
+      <div style={{ fontSize: 10, color: QQ_COLORS.slate600, fontWeight: 700, marginBottom: 3 }}>{label}</div>
       {children}
     </div>
   );
@@ -2425,8 +2426,8 @@ function AvatarLibrary({ current, onPick }: { current: string; onPick: (emoji: s
         {AVATAR_LIBRARY.map((c, i) => (
           <button key={i} type="button" onClick={() => setCat(i)} style={{
             fontSize: 11, padding: '2px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',
-            background: cat === i ? '#3B82F6' : 'rgba(255,255,255,0.07)',
-            color: cat === i ? '#fff' : '#94a3b8', fontFamily: 'inherit', fontWeight: 700,
+            background: cat === i ? QQ_COLORS.blue500 : 'rgba(255,255,255,0.07)',
+            color: cat === i ? '#fff' : QQ_COLORS.slate400, fontFamily: 'inherit', fontWeight: 700,
           }}>
             {c.label.split(' ')[0]}
           </button>
@@ -2475,7 +2476,7 @@ function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
-        style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: open ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.05)', color: '#a78bfa', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}
+        style={{ fontSize: 12, padding: '3px 10px', borderRadius: 6, border: '1px solid rgba(255,255,255,0.12)', background: open ? 'rgba(139,92,246,0.18)' : 'rgba(255,255,255,0.05)', color: QQ_COLORS.violet400, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 700 }}
       >
         😊 Emoji einfügen {open ? '▲' : '▼'}
       </button>
@@ -2491,8 +2492,8 @@ function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
             {EMOJI_CATEGORIES.map((c, i) => (
               <button key={i} type="button" onClick={() => setCat(i)} style={{
                 fontSize: 11, padding: '2px 7px', borderRadius: 5, border: 'none', cursor: 'pointer',
-                background: cat === i ? '#8B5CF6' : 'rgba(255,255,255,0.07)',
-                color: cat === i ? '#fff' : '#94a3b8', fontFamily: 'inherit', fontWeight: 700,
+                background: cat === i ? QQ_COLORS.violet500 : 'rgba(255,255,255,0.07)',
+                color: cat === i ? '#fff' : QQ_COLORS.slate400, fontFamily: 'inherit', fontWeight: 700,
               }}>
                 {c.label.split(' ')[0]}
               </button>
@@ -2523,4 +2524,4 @@ function EmojiPicker({ onPick }: { onPick: (emoji: string) => void }) {
 function btn(color: string, outline = false): React.CSSProperties {
   return { padding: '6px 13px', borderRadius: 7, border: outline ? `1px solid ${color}44` : 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, background: outline ? 'transparent' : color, color: outline ? color : '#fff', fontFamily: 'inherit' };
 }
-const input: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 10px', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, boxSizing: 'border-box' };
+const input: React.CSSProperties = { width: '100%', background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, padding: '7px 10px', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13, boxSizing: 'border-box' };

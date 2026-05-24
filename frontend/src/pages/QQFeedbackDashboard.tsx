@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { API_BASE } from '../api';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type FeedbackType = 'feedback' | 'bug' | 'idea' | 'praise';
@@ -25,9 +26,9 @@ type FeedbackEntry = {
 
 // ── Static option tables (kept in sync with the form on QQSummaryPage) ──────
 const TYPE_META: Record<FeedbackType, { emoji: string; label: string; color: string }> = {
-  feedback: { emoji: '💬', label: 'Feedback', color: '#60a5fa' },
+  feedback: { emoji: '💬', label: 'Feedback', color: QQ_COLORS.blue400 },
   bug:      { emoji: '🐛', label: 'Bug',      color: '#f87171' },
-  idea:     { emoji: '💡', label: 'Idee',     color: '#fbbf24' },
+  idea:     { emoji: '💡', label: 'Idee',     color: QQ_COLORS.amber400 },
   praise:   { emoji: '❤️', label: 'Lob',      color: '#f0abfc' },
 };
 
@@ -286,8 +287,8 @@ export default function QQFeedbackDashboard() {
     <div style={shell}>
       <header style={headerBar}>
         <div>
-          <div style={{ fontSize: 12, color: '#64748b', letterSpacing: '0.15em', fontWeight: 800 }}>COZYQUIZ · STAFF</div>
-          <h1 style={{ margin: '2px 0 0', fontSize: 26, fontWeight: 900, color: '#e2e8f0' }}>Feedback-Dashboard</h1>
+          <div style={{ fontSize: 12, color: QQ_COLORS.slate500, letterSpacing: '0.15em', fontWeight: 800 }}>COZYQUIZ · STAFF</div>
+          <h1 style={{ margin: '2px 0 0', fontSize: 26, fontWeight: 900, color: QQ_COLORS.slate200 }}>Feedback-Dashboard</h1>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
           <button type="button" onClick={onExportCSV} disabled={!filtered.length} style={btnGhost}>📄 CSV exportieren</button>
@@ -295,7 +296,7 @@ export default function QQFeedbackDashboard() {
         </div>
       </header>
 
-      {loading && <div style={{ padding: 40, textAlign: 'center', color: '#94a3b8' }}>Lade Feedback…</div>}
+      {loading && <div style={{ padding: 40, textAlign: 'center', color: QQ_COLORS.slate400 }}>Lade Feedback…</div>}
       {err && <div style={{ padding: 20, color: '#f87171' }}>Fehler: {err}</div>}
 
       {!loading && !err && (
@@ -311,7 +312,7 @@ export default function QQFeedbackDashboard() {
               label="Trend 7 Tg"
               value={stats.delta >= 0 ? `+${stats.delta}` : String(stats.delta)}
               hint={stats.delta > 0 ? '📈 mehr als Vorwoche' : stats.delta < 0 ? '📉 weniger als Vorwoche' : 'gleich'}
-              accent={stats.delta > 0 ? '#22c55e' : stats.delta < 0 ? '#f87171' : undefined}
+              accent={stats.delta > 0 ? QQ_COLORS.green500 : stats.delta < 0 ? '#f87171' : undefined}
             />
             <StatCard
               label="Top-Kategorie"
@@ -364,13 +365,13 @@ export default function QQFeedbackDashboard() {
             />
           </section>
 
-          <div style={{ padding: '6px 20px', color: '#64748b', fontSize: 13 }}>
+          <div style={{ padding: '6px 20px', color: QQ_COLORS.slate500, fontSize: 13 }}>
             {filtered.length} von {entries.length} Einträgen
           </div>
 
           <section style={{ display: 'flex', flexDirection: 'column', gap: 14, padding: '0 20px 60px' }}>
             {filtered.length === 0 && (
-              <div style={{ padding: 40, textAlign: 'center', color: '#64748b', background: '#0f1522', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ padding: 40, textAlign: 'center', color: QQ_COLORS.slate500, background: '#0f1522', borderRadius: 14, border: '1px solid rgba(255,255,255,0.05)' }}>
                 Keine Einträge mit diesen Filtern.
               </div>
             )}
@@ -402,15 +403,15 @@ function StatCard({ label, value, hint, accent }: { label: string; value: string
       display: 'flex', flexDirection: 'column', gap: 4,
       minWidth: 0,
     }}>
-      <div style={{ fontSize: 11, color: '#64748b', fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 900, color: accent ?? '#e2e8f0', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
-      {hint && <div style={{ fontSize: 12, color: '#94a3b8' }}>{hint}</div>}
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase' }}>{label}</div>
+      <div style={{ fontSize: 22, fontWeight: 900, color: accent ?? QQ_COLORS.slate200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{value}</div>
+      {hint && <div style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>{hint}</div>}
     </div>
   );
 }
 
 function FilterChip({ children, active, onClick, color }: { children: React.ReactNode; active: boolean; onClick: () => void; color?: string }) {
-  const accent = color ?? '#3b82f6';
+  const accent = color ?? QQ_COLORS.blue500;
   return (
     <button
       type="button"
@@ -420,7 +421,7 @@ function FilterChip({ children, active, onClick, color }: { children: React.Reac
         borderRadius: 999,
         border: `1px solid ${active ? accent : 'rgba(255,255,255,0.1)'}`,
         background: active ? `${accent}22` : 'transparent',
-        color: active ? '#e2e8f0' : '#94a3b8',
+        color: active ? QQ_COLORS.slate200 : QQ_COLORS.slate400,
         fontSize: 13,
         fontWeight: 700,
         cursor: 'pointer',
@@ -454,12 +455,12 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
           {meta.emoji} {meta.label}
         </span>
         {entry.rating !== null && (
-          <span style={{ ...pill, background: 'rgba(251,191,36,0.12)', color: '#fbbf24', border: '1px solid rgba(251,191,36,0.35)' }}>
+          <span style={{ ...pill, background: 'rgba(251,191,36,0.12)', color: QQ_COLORS.amber400, border: '1px solid rgba(251,191,36,0.35)' }}>
             {'⭐'.repeat(entry.rating)}
           </span>
         )}
         {isCritical && (
-          <span style={{ ...pill, background: 'rgba(248,113,113,0.15)', color: '#fca5a5', border: '1px solid rgba(248,113,113,0.4)' }}>
+          <span style={{ ...pill, background: 'rgba(248,113,113,0.15)', color: QQ_COLORS.red300, border: '1px solid rgba(248,113,113,0.4)' }}>
             🚨 Kritisch
           </span>
         )}
@@ -469,7 +470,7 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
           </span>
         )}
         <span style={{ flex: 1 }} />
-        <span title={absTime(entry.submittedAt)} style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>
+        <span title={absTime(entry.submittedAt)} style={{ fontSize: 12, color: QQ_COLORS.slate500, fontWeight: 700 }}>
           {relTime(entry.submittedAt)}
         </span>
       </div>
@@ -477,9 +478,9 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
       {/* Row 2: context (room, team, category, length, play again) */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13 }}>
         {(entry.roomCode || entry.teamName) && (
-          <span style={{ color: '#94a3b8' }}>
-            {entry.teamName ? <strong style={{ color: '#e2e8f0' }}>{entry.teamName}</strong> : <em>kein Team</em>}
-            {entry.roomCode && <span style={{ color: '#64748b' }}> · Room {entry.roomCode}</span>}
+          <span style={{ color: QQ_COLORS.slate400 }}>
+            {entry.teamName ? <strong style={{ color: QQ_COLORS.slate200 }}>{entry.teamName}</strong> : <em>kein Team</em>}
+            {entry.roomCode && <span style={{ color: QQ_COLORS.slate500 }}> · Room {entry.roomCode}</span>}
           </span>
         )}
         {entry.favoriteCategory && CATEGORY_META[entry.favoriteCategory] && (
@@ -496,7 +497,7 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
       </div>
 
       {/* Row 3: text */}
-      <div style={{ color: '#e2e8f0', fontSize: 15, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{entry.text}</div>
+      <div style={{ color: QQ_COLORS.slate200, fontSize: 15, lineHeight: 1.55, whiteSpace: 'pre-wrap' }}>{entry.text}</div>
 
       {/* Row 4: surprise */}
       {entry.surprise && (
@@ -506,7 +507,7 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
           borderRadius: 10,
           padding: '8px 12px',
           fontSize: 13,
-          color: '#fde68a',
+          color: QQ_COLORS.yellow300,
         }}>
           💫 Überraschung: {entry.surprise}
         </div>
@@ -515,8 +516,8 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
       {/* Row 5: contact + intent */}
       {entry.contact && (
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', fontSize: 13 }}>
-          <span style={{ color: '#94a3b8' }}>💌 Kontakt:</span>
-          <code style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 6, color: '#e2e8f0', fontSize: 13 }}>{entry.contact}</code>
+          <span style={{ color: QQ_COLORS.slate400 }}>💌 Kontakt:</span>
+          <code style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 6, color: QQ_COLORS.slate200, fontSize: 13 }}>{entry.contact}</code>
           {entry.contactIntent?.map(i => (
             <span key={i} style={tag}>{INTENT_META[i].emoji} {INTENT_META[i].label}</span>
           ))}
@@ -528,7 +529,7 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
         <button type="button" onClick={onCopyMd} style={btnGhostSm}>
           {copied ? '✓ kopiert' : '📋 Markdown'}
         </button>
-        <button type="button" onClick={onDelete} style={{ ...btnGhostSm, color: '#fca5a5', borderColor: 'rgba(248,113,113,0.3)' }}>
+        <button type="button" onClick={onDelete} style={{ ...btnGhostSm, color: QQ_COLORS.red300, borderColor: 'rgba(248,113,113,0.3)' }}>
           🗑 Löschen
         </button>
       </div>
@@ -540,7 +541,7 @@ function FeedbackCard({ entry, onDelete, onCopyMd, copied }: { entry: FeedbackEn
 const shell: React.CSSProperties = {
   minHeight: '100vh',
   background: '#0b0d14',
-  color: '#e2e8f0',
+  color: QQ_COLORS.slate200,
   fontFamily: "'Nunito', 'Geist', system-ui, sans-serif",
 };
 
@@ -581,7 +582,7 @@ const searchInput: React.CSSProperties = {
   borderRadius: 999,
   border: '1px solid rgba(255,255,255,0.12)',
   background: '#0f1522',
-  color: '#e2e8f0',
+  color: QQ_COLORS.slate200,
   fontSize: 14,
   fontFamily: 'inherit',
   outline: 'none',
@@ -601,7 +602,7 @@ const tag: React.CSSProperties = {
   borderRadius: 999,
   background: 'rgba(255,255,255,0.05)',
   border: '1px solid rgba(255,255,255,0.1)',
-  color: '#cbd5e1',
+  color: QQ_COLORS.slate300,
   fontSize: 12,
   fontWeight: 700,
   whiteSpace: 'nowrap',
@@ -612,7 +613,7 @@ const btnGhost: React.CSSProperties = {
   borderRadius: 10,
   border: '1px solid rgba(255,255,255,0.12)',
   background: 'rgba(255,255,255,0.04)',
-  color: '#e2e8f0',
+  color: QQ_COLORS.slate200,
   fontSize: 14,
   fontWeight: 800,
   cursor: 'pointer',
@@ -624,7 +625,7 @@ const btnGhostSm: React.CSSProperties = {
   borderRadius: 8,
   border: '1px solid rgba(255,255,255,0.12)',
   background: 'rgba(255,255,255,0.04)',
-  color: '#e2e8f0',
+  color: QQ_COLORS.slate200,
   fontSize: 12,
   fontWeight: 800,
   cursor: 'pointer',

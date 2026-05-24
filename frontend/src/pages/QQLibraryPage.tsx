@@ -6,6 +6,7 @@ import {
   QQBunteTueteKind, QQ_BUNTE_TUETE_LABELS,
   QQ_TOPICS,
 } from '../../../shared/quarterQuizTypes';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 type DraftStatus = 'all' | 'draft' | 'complete' | 'incomplete';
@@ -604,7 +605,7 @@ export default function QQLibraryPage() {
   const poolCount = poolTotal || poolItems.length;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0f172a', color: '#e2e8f0', fontFamily: "'Nunito', system-ui, sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: QQ_COLORS.slate900, color: QQ_COLORS.slate200, fontFamily: "'Nunito', system-ui, sans-serif" }}>
       {/* 2026-05-11 (Audit P0): Floating Action Bar bei Multi-Select aktiv.
           Bottom-zentriert, zeigt Anzahl + Bulk-Copy + Auswahl-Reset. */}
       {selectedIds.size > 0 && (
@@ -619,9 +620,9 @@ export default function QQLibraryPage() {
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           zIndex: 1000,
-          fontSize: 13, fontWeight: 800, color: '#F1F5F9', fontFamily: 'inherit',
+          fontSize: 13, fontWeight: 800, color: QQ_COLORS.slate100, fontFamily: 'inherit',
         }}>
-          <span style={{ color: '#60a5fa' }}>✓ {selectedIds.size} Fragen ausgewählt</span>
+          <span style={{ color: QQ_COLORS.blue400 }}>✓ {selectedIds.size} Fragen ausgewählt</span>
           <button
             onClick={bulkCopyToDraft}
             disabled={!targetDraftId}
@@ -630,8 +631,8 @@ export default function QQLibraryPage() {
               padding: '8px 16px', borderRadius: 8, border: 'none',
               cursor: targetDraftId ? 'pointer' : 'not-allowed',
               fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
-              background: targetDraftId ? '#3B82F6' : 'rgba(255,255,255,0.06)',
-              color: targetDraftId ? '#fff' : '#475569',
+              background: targetDraftId ? QQ_COLORS.blue500 : 'rgba(255,255,255,0.06)',
+              color: targetDraftId ? '#fff' : QQ_COLORS.slate600,
             }}
           >📋 In Draft kopieren</button>
           <button
@@ -639,7 +640,7 @@ export default function QQLibraryPage() {
             style={{
               padding: '8px 12px', borderRadius: 8, border: 'none',
               cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
-              background: 'rgba(255,255,255,0.06)', color: '#94a3b8',
+              background: 'rgba(255,255,255,0.06)', color: QQ_COLORS.slate400,
             }}
           >✕ Auswahl löschen</button>
         </div>
@@ -649,7 +650,7 @@ export default function QQLibraryPage() {
       {toast && (
         <div style={{
           position: 'fixed', bottom: 24, left: '50%', transform: 'translateX(-50%)',
-          background: '#22C55E', color: '#fff', fontWeight: 800, fontSize: 14,
+          background: QQ_COLORS.green500, color: '#fff', fontWeight: 800, fontSize: 14,
           padding: '10px 24px', borderRadius: 10, zIndex: 9999,
           boxShadow: '0 4px 16px rgba(0,0,0,0.4)', pointerEvents: 'none',
         }}>
@@ -658,21 +659,21 @@ export default function QQLibraryPage() {
       )}
 
       {/* Header */}
-      <div style={{ padding: '20px 24px', background: '#1e293b', borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
+      <div style={{ padding: '20px 24px', background: QQ_COLORS.slate800, borderBottom: '1px solid rgba(255,255,255,0.07)' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }}>
-          <button onClick={() => navigate('/menu')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>← Menü</button>
+          <button onClick={() => navigate('/menu')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(255,255,255,0.07)', color: QQ_COLORS.slate400 }}>← Menü</button>
           <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>📚 CozyLibrary</h1>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
             <button onClick={() => setShowImportPanel(p => !p)} style={{
               padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
               fontWeight: 700, fontSize: 13,
-              background: showImportPanel ? '#A78BFA' : 'rgba(168,139,250,0.18)',
-              color: showImportPanel ? '#fff' : '#A78BFA',
+              background: showImportPanel ? QQ_COLORS.violet400 : 'rgba(168,139,250,0.18)',
+              color: showImportPanel ? '#fff' : QQ_COLORS.violet400,
             }}>
               ⬇️ Pool erweitern (TriviaDB)
             </button>
-            <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#3B82F6', color: '#fff' }}>📥 Draft importieren</button>
-            <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: '#22C55E', color: '#fff' }}>+ Neuer Fragensatz</button>
+            <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: QQ_COLORS.blue500, color: '#fff' }}>📥 Draft importieren</button>
+            <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: QQ_COLORS.green500, color: '#fff' }}>+ Neuer Fragensatz</button>
           </div>
         </div>
 
@@ -689,21 +690,21 @@ export default function QQLibraryPage() {
 
         {/* Stats */}
         <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap' }}>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#e2e8f0', fontSize: 18 }}>{totalDrafts}</span> Fragensätze</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#22C55E', fontSize: 18 }}>{completeDrafts}</span> komplett</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#3B82F6', fontSize: 18 }}>{totalQuestions}</span> in meinen Quizzen</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#A78BFA', fontSize: 18 }}>{poolCount}</span> 📚 Pool-Fragen</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#EC4899', fontSize: 18 }}>{playedQuestions}</span> schon gespielt</div>
-          <div style={{ fontSize: 13, color: '#64748b' }}><span style={{ fontWeight: 900, color: '#F59E0B', fontSize: 18 }}>{unusedQuestions}</span> noch frisch</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.slate200, fontSize: 18 }}>{totalDrafts}</span> Fragensätze</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.green500, fontSize: 18 }}>{completeDrafts}</span> komplett</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.blue500, fontSize: 18 }}>{totalQuestions}</span> in meinen Quizzen</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.violet400, fontSize: 18 }}>{poolCount}</span> 📚 Pool-Fragen</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.brandPink, fontSize: 18 }}>{playedQuestions}</span> schon gespielt</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.amber500, fontSize: 18 }}>{unusedQuestions}</span> noch frisch</div>
         </div>
 
         {/* Ziel-Draft Selektor */}
         <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#94a3b8' }}>📋 In Draft kopieren:</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate400 }}>📋 In Draft kopieren:</span>
           <select
             value={targetDraftId ?? ''}
             onChange={e => setTargetDraftId(e.target.value || null)}
-            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, minWidth: 220 }}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13, minWidth: 220 }}
           >
             <option value="">Ziel-Draft wählen…</option>
             {drafts.map(d => (
@@ -711,7 +712,7 @@ export default function QQLibraryPage() {
             ))}
           </select>
           {targetDraftId && (
-            <span style={{ fontSize: 12, color: '#64748b' }}>Klick auf 📋 Kopieren bei einer Frage unten</span>
+            <span style={{ fontSize: 12, color: QQ_COLORS.slate500 }}>Klick auf 📋 Kopieren bei einer Frage unten</span>
           )}
         </div>
       </div>
@@ -723,8 +724,8 @@ export default function QQLibraryPage() {
             <button key={v} onClick={() => setViewMode(v)} style={{
               padding: '6px 16px', borderRadius: 6, border: 'none', cursor: 'pointer',
               fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
-              background: viewMode === v ? '#3B82F6' : 'transparent',
-              color: viewMode === v ? '#fff' : '#64748b',
+              background: viewMode === v ? QQ_COLORS.blue500 : 'transparent',
+              color: viewMode === v ? '#fff' : QQ_COLORS.slate500,
             }}>{label}</button>
           ))}
         </div>
@@ -734,14 +735,14 @@ export default function QQLibraryPage() {
             jede Filter-Reihe einzeln zurücksetzen. */}
         {viewMode === 'questions' && (sourceFilter !== 'all' || useFilter !== 'all' || topicFilter !== 'all' || catFilter !== 'all' || phaseFilter !== 'all' || mechFilter !== 'all' || search.trim() !== '') && (
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', padding: '6px 10px', borderRadius: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)' }}>
-            <span style={{ fontSize: 11, fontWeight: 800, color: '#60A5FA', letterSpacing: '0.05em' }}>AKTIV:</span>
-            {search.trim() && <span style={{ fontSize: 11, color: '#cbd5e1' }}>„{search.trim()}"</span>}
-            {sourceFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{sourceFilter === 'mine' ? '📋 Meine' : '📚 Pool'}</span>}
-            {useFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{useFilter}</span>}
-            {topicFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{topicFilter}</span>}
-            {catFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{catFilter}</span>}
-            {phaseFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>R{phaseFilter}</span>}
-            {mechFilter !== 'all' && <span style={{ fontSize: 11, color: '#cbd5e1' }}>{mechFilter}</span>}
+            <span style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.blue400, letterSpacing: '0.05em' }}>AKTIV:</span>
+            {search.trim() && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>„{search.trim()}"</span>}
+            {sourceFilter !== 'all' && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>{sourceFilter === 'mine' ? '📋 Meine' : '📚 Pool'}</span>}
+            {useFilter !== 'all' && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>{useFilter}</span>}
+            {topicFilter !== 'all' && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>{topicFilter}</span>}
+            {catFilter !== 'all' && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>{catFilter}</span>}
+            {phaseFilter !== 'all' && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>R{phaseFilter}</span>}
+            {mechFilter !== 'all' && <span style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>{mechFilter}</span>}
             <button
               onClick={() => {
                 setSearch(''); setSourceFilter('all'); setUseFilter('all');
@@ -749,7 +750,7 @@ export default function QQLibraryPage() {
               }}
               style={{
                 marginLeft: 'auto', padding: '4px 10px', borderRadius: 6, border: 'none',
-                background: 'rgba(239,68,68,0.18)', color: '#fca5a5',
+                background: 'rgba(239,68,68,0.18)', color: QQ_COLORS.red300,
                 fontSize: 11, fontWeight: 800, cursor: 'pointer', fontFamily: 'inherit',
               }}
             >✕ Filter zurücksetzen</button>
@@ -762,22 +763,22 @@ export default function QQLibraryPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder={viewMode === 'drafts' ? '🔍 Suchen (Titel, Frage, Antwort)…' : '🔍 Frage, Antwort, Topic, Quiz-Titel (auch EN)…'}
-            style={{ flex: 1, minWidth: 200, padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 14 }}
+            style={{ flex: 1, minWidth: 200, padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 14 }}
           />
           {viewMode === 'drafts' && (
             <>
-              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as DraftStatus)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
+              <select value={statusFilter} onChange={e => setStatusFilter(e.target.value as DraftStatus)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13 }}>
                 <option value="all">Alle Status</option>
                 <option value="complete">✅ Komplett</option>
                 <option value="incomplete">⏳ In Arbeit</option>
               </select>
-              <select value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
+              <select value={sortBy} onChange={e => setSortBy(e.target.value as SortKey)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13 }}>
                 {SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
               </select>
             </>
           )}
           {viewMode === 'questions' && (
-            <select value={qSortBy} onChange={e => setQSortBy(e.target.value as QSortKey)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}>
+            <select value={qSortBy} onChange={e => setQSortBy(e.target.value as QSortKey)} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)', background: 'rgba(255,255,255,0.05)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13 }}>
               {Q_SORT_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
             </select>
           )}
@@ -788,11 +789,11 @@ export default function QQLibraryPage() {
           <>
             {/* Source-Filter (Hauptdimension für Wolf "meine Fragen vs. Pool") */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Quelle:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Quelle:</span>
               {([
-                ['all',  'Alle',                '#475569'],
-                ['mine', '📋 Meine Quizze',     '#3B82F6'],
-                ['pool', '📚 CozyLibrary Pool', '#A78BFA'],
+                ['all',  'Alle',                QQ_COLORS.slate600],
+                ['mine', '📋 Meine Quizze',     QQ_COLORS.blue500],
+                ['pool', '📚 CozyLibrary Pool', QQ_COLORS.violet400],
               ] as const).map(([v, label, color]) => {
                 const active = sourceFilter === v;
                 return (
@@ -800,7 +801,7 @@ export default function QQLibraryPage() {
                     padding: '4px 12px', borderRadius: 6, border: `1px solid ${active ? color : 'transparent'}`,
                     cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
                     background: active ? color + '22' : 'rgba(255,255,255,0.05)',
-                    color: active ? color : '#94a3b8',
+                    color: active ? color : QQ_COLORS.slate400,
                   }}>{label}</button>
                 );
               })}
@@ -808,12 +809,12 @@ export default function QQLibraryPage() {
 
             {/* Use-Filter (Hauptdimension für Wolf "was hab ich noch nicht gespielt") */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Häufigkeit:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Häufigkeit:</span>
               {([
-                ['all',    'Alle',          '#475569'],
-                ['unused', 'Nie gespielt',  '#F59E0B'],
-                ['rare',   '1–2× gespielt', '#A78BFA'],
-                ['recent', 'In letzten 30 T', '#EC4899'],
+                ['all',    'Alle',          QQ_COLORS.slate600],
+                ['unused', 'Nie gespielt',  QQ_COLORS.amber500],
+                ['rare',   '1–2× gespielt', QQ_COLORS.violet400],
+                ['recent', 'In letzten 30 T', QQ_COLORS.brandPink],
               ] as const).map(([v, label, color]) => {
                 const active = useFilter === v;
                 return (
@@ -821,7 +822,7 @@ export default function QQLibraryPage() {
                     padding: '4px 12px', borderRadius: 6, border: `1px solid ${active ? color : 'transparent'}`,
                     cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
                     background: active ? color + '22' : 'rgba(255,255,255,0.05)',
-                    color: active ? color : '#94a3b8',
+                    color: active ? color : QQ_COLORS.slate400,
                   }}>{label}</button>
                 );
               })}
@@ -829,12 +830,12 @@ export default function QQLibraryPage() {
 
             {/* Topic-Filter */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Topic:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Topic:</span>
               <button onClick={() => setTopicFilter('all')} style={{
                 padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                 fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
-                background: topicFilter === 'all' ? '#475569' : 'rgba(255,255,255,0.05)',
-                color: topicFilter === 'all' ? '#fff' : '#64748b',
+                background: topicFilter === 'all' ? QQ_COLORS.slate600 : 'rgba(255,255,255,0.05)',
+                color: topicFilter === 'all' ? '#fff' : QQ_COLORS.slate500,
               }}>Alle</button>
               {availableTopics.map(t => {
                 const active = topicFilter === t;
@@ -843,7 +844,7 @@ export default function QQLibraryPage() {
                     padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
                     fontWeight: 700, fontSize: 11, fontFamily: 'inherit',
                     background: active ? '#0EA5E9' + '22' : 'rgba(255,255,255,0.04)',
-                    color: active ? '#7DD3FC' : '#94a3b8',
+                    color: active ? '#7DD3FC' : QQ_COLORS.slate400,
                   }}>{t}</button>
                 );
               })}
@@ -851,12 +852,12 @@ export default function QQLibraryPage() {
 
             {/* Kategorie + Phase + Mechanik */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
-              <span style={{ fontSize: 11, fontWeight: 800, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Mechanik:</span>
+              <span style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>Mechanik:</span>
               <button onClick={() => setCatFilter('all')} style={{
                 padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
                 fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
-                background: catFilter === 'all' ? '#475569' : 'rgba(255,255,255,0.05)',
-                color: catFilter === 'all' ? '#fff' : '#64748b',
+                background: catFilter === 'all' ? QQ_COLORS.slate600 : 'rgba(255,255,255,0.05)',
+                color: catFilter === 'all' ? '#fff' : QQ_COLORS.slate500,
               }}>Alle</button>
               {(['SCHAETZCHEN', 'MUCHO', 'BUNTE_TUETE', 'ZEHN_VON_ZEHN', 'CHEESE'] as QQCategory[]).map(cat => {
                 const l = QQ_CATEGORY_LABELS[cat];
@@ -867,7 +868,7 @@ export default function QQLibraryPage() {
                     padding: '4px 12px', borderRadius: 6, border: `1px solid ${active ? c : 'transparent'}`,
                     cursor: 'pointer', fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
                     background: active ? c + '22' : 'rgba(255,255,255,0.05)',
-                    color: active ? c : '#94a3b8',
+                    color: active ? c : QQ_COLORS.slate400,
                   }}>{l.emoji} {l.de}</button>
                 );
               })}
@@ -877,7 +878,7 @@ export default function QQLibraryPage() {
                   padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
                   fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
                   background: phaseFilter === p ? '#6366F1' + '33' : 'rgba(255,255,255,0.05)',
-                  color: phaseFilter === p ? '#818CF8' : '#64748b',
+                  color: phaseFilter === p ? '#818CF8' : QQ_COLORS.slate500,
                 }}>R{p}</button>
               ))}
               {(catFilter === 'BUNTE_TUETE' || catFilter === 'all') && (
@@ -890,14 +891,14 @@ export default function QQLibraryPage() {
                       <button key={mk} onClick={() => setMechFilter(active ? 'all' : mk)} style={{
                         padding: '4px 10px', borderRadius: 6, border: 'none', cursor: 'pointer',
                         fontWeight: 700, fontSize: 11, fontFamily: 'inherit',
-                        background: active ? '#EF4444' + '22' : 'rgba(255,255,255,0.04)',
-                        color: active ? '#F87171' : '#475569',
+                        background: active ? QQ_COLORS.red500 + '22' : 'rgba(255,255,255,0.04)',
+                        color: active ? '#F87171' : QQ_COLORS.slate600,
                       }}>{ml.emoji} {ml.de}</button>
                     );
                   })}
                 </>
               )}
-              <div style={{ marginLeft: 'auto', fontSize: 12, color: '#64748b', fontWeight: 700 }}>
+              <div style={{ marginLeft: 'auto', fontSize: 12, color: QQ_COLORS.slate500, fontWeight: 700 }}>
                 {flatQuestions.length} Frage{flatQuestions.length !== 1 ? 'n' : ''}
               </div>
             </div>
@@ -908,9 +909,9 @@ export default function QQLibraryPage() {
       {/* ═══ DRAFTS VIEW ═══ */}
       {viewMode === 'drafts' && (
       <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 12 }}>
-        {loading && <div style={{ textAlign: 'center', padding: 40, color: '#475569' }}>Lade…</div>}
+        {loading && <div style={{ textAlign: 'center', padding: 40, color: QQ_COLORS.slate600 }}>Lade…</div>}
         {!loading && filtered.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>
+          <div style={{ textAlign: 'center', padding: 60, color: QQ_COLORS.slate600 }}>
             {search || statusFilter !== 'all' ? 'Keine Ergebnisse' : 'Noch keine Fragensätze vorhanden'}
           </div>
         )}
@@ -920,20 +921,20 @@ export default function QQLibraryPage() {
           const isExpanded = expandedId === d.id;
           const progress = stats.total > 0 ? stats.filled / stats.total : 0;
           return (
-            <div key={d.id} style={{ background: '#1e293b', borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', transition: 'all 0.15s' }}>
+            <div key={d.id} style={{ background: QQ_COLORS.slate800, borderRadius: 12, border: '1px solid rgba(255,255,255,0.07)', overflow: 'hidden', transition: 'all 0.15s' }}>
               <div onClick={() => setExpandedId(isExpanded ? null : d.id)} style={{ padding: '16px 20px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
                 <div style={{ fontSize: 24 }}>{status === 'complete' ? '✅' : '📝'}</div>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 900, fontSize: 16, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{d.title || 'Ohne Titel'}</div>
-                  <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: QQ_COLORS.slate500, marginTop: 2 }}>
                     {d.phases} Runden · {stats.filled}/{stats.total} Fragen · {d.language.toUpperCase()} · {new Date(d.updatedAt).toLocaleDateString('de-DE')}
                   </div>
                 </div>
                 <div style={{ width: 100, height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.06)' }}>
-                  <div style={{ width: `${progress * 100}%`, height: '100%', borderRadius: 3, background: progress >= 1 ? '#22C55E' : '#3B82F6', transition: 'width 0.3s' }} />
+                  <div style={{ width: `${progress * 100}%`, height: '100%', borderRadius: 3, background: progress >= 1 ? QQ_COLORS.green500 : QQ_COLORS.blue500, transition: 'width 0.3s' }} />
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 800, color: progress >= 1 ? '#22C55E' : '#64748b', minWidth: 40, textAlign: 'right' }}>{Math.round(progress * 100)}%</div>
-                <div style={{ fontSize: 16, color: '#475569', transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</div>
+                <div style={{ fontSize: 13, fontWeight: 800, color: progress >= 1 ? QQ_COLORS.green500 : QQ_COLORS.slate500, minWidth: 40, textAlign: 'right' }}>{Math.round(progress * 100)}%</div>
+                <div style={{ fontSize: 16, color: QQ_COLORS.slate600, transform: isExpanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▼</div>
               </div>
               {isExpanded && (
                 <div style={{ padding: '0 20px 16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
@@ -949,7 +950,7 @@ export default function QQLibraryPage() {
                       );
                     })}
                     {stats.withImage > 0 && (
-                      <div style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 700, color: '#94a3b8' }}>
+                      <div style={{ padding: '4px 10px', borderRadius: 6, background: 'rgba(255,255,255,0.05)', fontSize: 11, fontWeight: 700, color: QQ_COLORS.slate400 }}>
                         🖼 {stats.withImage} Bilder
                       </div>
                     )}
@@ -960,26 +961,26 @@ export default function QQLibraryPage() {
                       return (
                         <div key={q.id} style={{ padding: '6px 0', borderBottom: '1px solid rgba(255,255,255,0.03)', display: 'flex', gap: 8, fontSize: 12, alignItems: 'center' }}>
                           <span style={{ color: QQ_CATEGORY_COLORS[q.category], fontWeight: 800, minWidth: 20 }}>{QQ_CATEGORY_LABELS[q.category].emoji}</span>
-                          <span style={{ color: '#94a3b8', flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{q.text}</span>
+                          <span style={{ color: QQ_COLORS.slate400, flex: 1, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }}>{q.text}</span>
                           {usage && usage.usageCount > 0 && (
-                            <span title={`Zuletzt: ${formatRelative(usage.lastUsedAt)}`} style={{ padding: '1px 6px', borderRadius: 4, background: 'rgba(236,72,153,0.15)', fontSize: 10, fontWeight: 800, color: '#F472B6' }}>{usage.usageCount}×</span>
+                            <span title={`Zuletzt: ${formatRelative(usage.lastUsedAt)}`} style={{ padding: '1px 6px', borderRadius: 4, background: 'rgba(236,72,153,0.15)', fontSize: 10, fontWeight: 800, color: QQ_COLORS.brandPinkMid }}>{usage.usageCount}×</span>
                           )}
-                          <span style={{ color: '#22C55E', fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: 150 }}>{q.answer}</span>
+                          <span style={{ color: QQ_COLORS.green500, fontWeight: 700, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', maxWidth: 150 }}>{q.answer}</span>
                           <button onClick={(e) => { e.stopPropagation(); copyQuestionToDraft(q); }} disabled={!targetDraftId} title={targetDraftId ? 'In Ziel-Draft kopieren' : 'Erst Ziel-Draft auswählen'} style={{
                             padding: '3px 10px', borderRadius: 6, border: 'none', cursor: targetDraftId ? 'pointer' : 'not-allowed',
                             fontWeight: 700, fontSize: 11, flexShrink: 0,
                             background: targetDraftId ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
-                            color: targetDraftId ? '#60a5fa' : '#475569', fontFamily: 'inherit',
+                            color: targetDraftId ? QQ_COLORS.blue400 : QQ_COLORS.slate600, fontFamily: 'inherit',
                           }}>📋 Kopieren</button>
                         </div>
                       );
                     })}
                   </div>
                   <div style={{ display: 'flex', gap: 8, marginTop: 14, flexWrap: 'wrap' }}>
-                    <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: '#3B82F6', color: '#fff' }}>✏️ Bearbeiten</button>
-                    <button onClick={() => duplicateDraft(d)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>📋 Duplizieren</button>
-                    <button onClick={() => exportDraft(d)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(255,255,255,0.07)', color: '#94a3b8' }}>📤 Export JSON</button>
-                    <button onClick={() => deleteDraft(d.id)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(239,68,68,0.15)', color: '#EF4444' }}>🗑 Löschen</button>
+                    <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: QQ_COLORS.blue500, color: '#fff' }}>✏️ Bearbeiten</button>
+                    <button onClick={() => duplicateDraft(d)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(255,255,255,0.07)', color: QQ_COLORS.slate400 }}>📋 Duplizieren</button>
+                    <button onClick={() => exportDraft(d)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(255,255,255,0.07)', color: QQ_COLORS.slate400 }}>📤 Export JSON</button>
+                    <button onClick={() => deleteDraft(d.id)} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 12, background: 'rgba(239,68,68,0.15)', color: QQ_COLORS.red500 }}>🗑 Löschen</button>
                   </div>
                 </div>
               )}
@@ -992,18 +993,18 @@ export default function QQLibraryPage() {
       {/* ═══ FLAT QUESTIONS VIEW ═══ */}
       {viewMode === 'questions' && (
       <div style={{ padding: '0 24px 24px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-        {loading && <div style={{ textAlign: 'center', padding: 40, color: '#475569' }}>Lade…</div>}
+        {loading && <div style={{ textAlign: 'center', padding: 40, color: QQ_COLORS.slate600 }}>Lade…</div>}
         {!loading && flatQuestions.length === 0 && (
-          <div style={{ textAlign: 'center', padding: 60, color: '#475569' }}>Keine Fragen gefunden</div>
+          <div style={{ textAlign: 'center', padding: 60, color: QQ_COLORS.slate600 }}>Keine Fragen gefunden</div>
         )}
         {flatQuestions.slice(0, visibleCount).map((q, i) => {
           const isExp = expandedQuestionId === q.id;
           const uc = q.usage.usageCount;
-          const usedColor = uc === 0 ? '#F59E0B' : uc <= 2 ? '#A78BFA' : uc <= 5 ? '#EC4899' : '#EF4444';
+          const usedColor = uc === 0 ? QQ_COLORS.amber500 : uc <= 2 ? QQ_COLORS.violet400 : uc <= 5 ? QQ_COLORS.brandPink : QQ_COLORS.red500;
           const isSelected = selectedIds.has(q.id);
           return (
             <div key={`${q.draftId}-${q.id}`} style={{
-              background: isSelected ? 'rgba(59,130,246,0.15)' : i % 2 === 0 ? '#1e293b' : '#1a2332',
+              background: isSelected ? 'rgba(59,130,246,0.15)' : i % 2 === 0 ? QQ_COLORS.slate800 : '#1a2332',
               borderRadius: 8, padding: '8px 14px',
               display: 'flex', flexDirection: 'column', gap: 6, fontSize: 12,
               border: isSelected ? '1px solid rgba(59,130,246,0.5)' : '1px solid rgba(255,255,255,0.04)',
@@ -1016,7 +1017,7 @@ export default function QQLibraryPage() {
                   checked={isSelected}
                   onChange={() => toggleSelect(q.id)}
                   title="Auswählen für Bulk-Kopie"
-                  style={{ width: 16, height: 16, cursor: 'pointer', accentColor: '#3B82F6', flexShrink: 0 }}
+                  style={{ width: 16, height: 16, cursor: 'pointer', accentColor: QQ_COLORS.blue500, flexShrink: 0 }}
                 />
                 <span style={{ color: QQ_CATEGORY_COLORS[q.category], fontWeight: 800, fontSize: 16, minWidth: 22 }}>
                   {QQ_CATEGORY_LABELS[q.category].emoji}
@@ -1027,14 +1028,14 @@ export default function QQLibraryPage() {
                       rechts Platz fraßen. Jetzt darf Frage 2 Zeilen brechen — Wolf
                       kann tatsächlich lesen was er ranzieht. */}
                   <div style={{
-                    color: '#e2e8f0', fontWeight: 600,
+                    color: QQ_COLORS.slate200, fontWeight: 600,
                     display: '-webkit-box',
                     WebkitLineClamp: 2,
                     WebkitBoxOrient: 'vertical' as const,
                     overflow: 'hidden',
                     lineHeight: 1.3,
                   }}>{q.text}</div>
-                  <div style={{ color: '#22C55E', fontSize: 11, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginTop: 2 }}>✓ {q.answer}</div>
+                  <div style={{ color: QQ_COLORS.green500, fontSize: 11, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', marginTop: 2 }}>✓ {q.answer}</div>
                 </div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
                   {/* Topic-Badge */}
@@ -1057,13 +1058,13 @@ export default function QQLibraryPage() {
                     {uc === 0 ? '✨ NEU' : `${uc}×`}
                   </button>
                   {q.usage.lastUsedAt > 0 && (
-                    <span style={{ fontSize: 10, color: '#64748b', minWidth: 60 }}>{formatRelative(q.usage.lastUsedAt)}</span>
+                    <span style={{ fontSize: 10, color: QQ_COLORS.slate500, minWidth: 60 }}>{formatRelative(q.usage.lastUsedAt)}</span>
                   )}
                   {q.source === 'mine' && (
-                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 800, color: '#64748b' }}>R{q.phaseIndex}</span>
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(255,255,255,0.06)', fontSize: 10, fontWeight: 800, color: QQ_COLORS.slate500 }}>R{q.phaseIndex}</span>
                   )}
                   {q.source === 'pool' && (
-                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,139,250,0.15)', fontSize: 10, fontWeight: 800, color: '#A78BFA' }}>📚 Pool</span>
+                    <span style={{ padding: '2px 7px', borderRadius: 4, background: 'rgba(168,139,250,0.15)', fontSize: 10, fontWeight: 800, color: QQ_COLORS.violet400 }}>📚 Pool</span>
                   )}
                   {/* EN-Badge wenn Frage nur englischen Text hat (TriviaDB ohne DeepL-Quota) */}
                   {(q as any)._onlyEn && (
@@ -1074,14 +1075,14 @@ export default function QQLibraryPage() {
                       {QQ_BUNTE_TUETE_LABELS[q.bunteTuete.kind]?.emoji}
                     </span>
                   )}
-                  <span style={{ fontSize: 10, color: '#475569', maxWidth: 110, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }} title={q.draftTitle}>
+                  <span style={{ fontSize: 10, color: QQ_COLORS.slate600, maxWidth: 110, overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis' }} title={q.draftTitle}>
                     📄 {q.draftTitle}
                   </span>
                   <button onClick={() => copyQuestionToDraft(q)} disabled={!targetDraftId} title={targetDraftId ? 'In Ziel-Draft kopieren' : 'Erst Ziel-Draft auswählen'} style={{
                     padding: '3px 10px', borderRadius: 6, border: 'none', cursor: targetDraftId ? 'pointer' : 'not-allowed',
                     fontWeight: 700, fontSize: 11, flexShrink: 0,
                     background: targetDraftId ? 'rgba(59,130,246,0.18)' : 'rgba(255,255,255,0.04)',
-                    color: targetDraftId ? '#60a5fa' : '#475569', fontFamily: 'inherit',
+                    color: targetDraftId ? QQ_COLORS.blue400 : QQ_COLORS.slate600, fontFamily: 'inherit',
                   }}>📋</button>
                 </div>
               </div>
@@ -1090,21 +1091,21 @@ export default function QQLibraryPage() {
               {isExp && (
                 <div style={{ paddingLeft: 32, marginTop: 4, display: 'flex', flexDirection: 'column', gap: 6 }}>
                   {(q as any).funFact && (
-                    <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.5, padding: '8px 12px', borderRadius: 6, background: 'rgba(168,139,250,0.08)', border: '1px solid rgba(168,139,250,0.2)' }}>
-                      <span style={{ fontWeight: 800, color: '#A78BFA', marginRight: 6 }}>💡 Fun-Fact:</span>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate300, lineHeight: 1.5, padding: '8px 12px', borderRadius: 6, background: 'rgba(168,139,250,0.08)', border: '1px solid rgba(168,139,250,0.2)' }}>
+                      <span style={{ fontWeight: 800, color: QQ_COLORS.violet400, marginRight: 6 }}>💡 Fun-Fact:</span>
                       {(q as any).funFact}
                     </div>
                   )}
                   {q.usage.recentUses.length > 0 && (
                     <>
-                      <div style={{ fontSize: 10, fontWeight: 800, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
+                      <div style={{ fontSize: 10, fontWeight: 800, color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.05em', marginTop: 4 }}>
                         Letzte {Math.min(q.usage.recentUses.length, 10)} Einsätze:
                       </div>
                       {q.usage.recentUses.slice(-10).reverse().map((u, idx) => (
-                        <div key={idx} style={{ fontSize: 11, color: '#64748b', display: 'flex', gap: 8 }}>
+                        <div key={idx} style={{ fontSize: 11, color: QQ_COLORS.slate500, display: 'flex', gap: 8 }}>
                           <span style={{ minWidth: 80 }}>{new Date(u.playedAt).toLocaleString('de-DE', { dateStyle: 'short', timeStyle: 'short' })}</span>
-                          <span style={{ color: '#94a3b8' }}>{u.draftTitle || '(unbekanntes Quiz)'}</span>
-                          {u.roomCode && <span style={{ color: '#475569' }}>· Room {u.roomCode}</span>}
+                          <span style={{ color: QQ_COLORS.slate400 }}>{u.draftTitle || '(unbekanntes Quiz)'}</span>
+                          {u.roomCode && <span style={{ color: QQ_COLORS.slate600 }}>· Room {u.roomCode}</span>}
                         </div>
                       ))}
                     </>
@@ -1121,7 +1122,7 @@ export default function QQLibraryPage() {
         {!loading && flatQuestions.length > visibleCount && (
           <button onClick={() => setVisibleCount(c => c + PAGE_SIZE)} style={{
             margin: '12px auto 0', padding: '8px 24px', borderRadius: 8, border: 'none',
-            background: '#3B82F6', color: '#fff', fontWeight: 800, fontSize: 13,
+            background: QQ_COLORS.blue500, color: '#fff', fontWeight: 800, fontSize: 13,
             cursor: 'pointer', fontFamily: 'inherit',
           }}>
             +{Math.min(PAGE_SIZE, flatQuestions.length - visibleCount)} weitere Fragen anzeigen
@@ -1130,7 +1131,7 @@ export default function QQLibraryPage() {
         {!loading && poolItems.length < poolTotal && sourceFilter !== 'mine' && (
           <button onClick={loadMorePool} style={{
             margin: '6px auto', padding: '8px 24px', borderRadius: 8, border: 'none',
-            background: 'rgba(168,139,250,0.18)', color: '#A78BFA',
+            background: 'rgba(168,139,250,0.18)', color: QQ_COLORS.violet400,
             fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
           }}>
             📚 {poolTotal - poolItems.length} Pool-Fragen vom Server nachladen
@@ -1171,8 +1172,8 @@ function ImportPanel({
       background: 'rgba(168,139,250,0.08)', border: '1px solid rgba(168,139,250,0.25)',
     }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8, flexWrap: 'wrap' }}>
-        <span style={{ fontSize: 14, fontWeight: 800, color: '#A78BFA' }}>📚 Pool erweitern — OpenTriviaDB-Import</span>
-        <span style={{ fontSize: 11, color: '#64748b' }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: QQ_COLORS.violet400 }}>📚 Pool erweitern — OpenTriviaDB-Import</span>
+        <span style={{ fontSize: 11, color: QQ_COLORS.slate500 }}>
           Lädt frei lizenzierte Trivia-Fragen (CC BY-SA), übersetzt via DeepL
         </span>
       </div>
@@ -1180,14 +1181,14 @@ function ImportPanel({
       {/* Translation-Stats */}
       {translationStats && translationStats.total > 0 && (
         <div style={{ marginBottom: 10, padding: '8px 12px', borderRadius: 6, background: 'rgba(0,0,0,0.2)', fontSize: 12, display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center' }}>
-          <span style={{ color: '#64748b' }}>TriviaDB-Items:</span>
-          <span><b style={{ color: '#A78BFA' }}>{translationStats.total}</b> gesamt</span>
-          <span><b style={{ color: '#22C55E' }}>{translationStats.withDe}</b> DE übersetzt</span>
+          <span style={{ color: QQ_COLORS.slate500 }}>TriviaDB-Items:</span>
+          <span><b style={{ color: QQ_COLORS.violet400 }}>{translationStats.total}</b> gesamt</span>
+          <span><b style={{ color: QQ_COLORS.green500 }}>{translationStats.withDe}</b> DE übersetzt</span>
           <span><b style={{ color: '#FB923C' }}>{translationStats.withoutDe}</b> 🌐 nur EN</span>
-          <span style={{ marginLeft: 'auto', color: '#64748b' }}>
+          <span style={{ marginLeft: 'auto', color: QQ_COLORS.slate500 }}>
             DeepL-Key: {translationStats.deeplKeyPresent
-              ? <b style={{ color: translationStats.deeplKeyType === 'pro' ? '#0EA5E9' : '#A78BFA' }}>{translationStats.deeplKeyType.toUpperCase()}</b>
-              : <b style={{ color: '#EF4444' }}>FEHLT</b>}
+              ? <b style={{ color: translationStats.deeplKeyType === 'pro' ? '#0EA5E9' : QQ_COLORS.violet400 }}>{translationStats.deeplKeyType.toUpperCase()}</b>
+              : <b style={{ color: QQ_COLORS.red500 }}>FEHLT</b>}
           </span>
         </div>
       )}
@@ -1199,12 +1200,12 @@ function ImportPanel({
             value={pin}
             onChange={e => setPin(e.target.value)}
             placeholder="Admin-PIN"
-            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13, width: 140 }}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13, width: 140 }}
           />
           <select
             value={targetCount}
             onChange={e => setTargetCount(parseInt(e.target.value, 10))}
-            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}
+            style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13 }}
           >
             <option value={500}>500 Fragen (~5 Min)</option>
             <option value={1000}>1.000 Fragen (~10 Min)</option>
@@ -1218,8 +1219,8 @@ function ImportPanel({
               padding: '7px 16px', borderRadius: 8, border: 'none',
               cursor: pin ? 'pointer' : 'not-allowed',
               fontWeight: 800, fontSize: 13, fontFamily: 'inherit',
-              background: pin ? '#A78BFA' : 'rgba(255,255,255,0.04)',
-              color: pin ? '#fff' : '#475569',
+              background: pin ? QQ_COLORS.violet400 : 'rgba(255,255,255,0.04)',
+              color: pin ? '#fff' : QQ_COLORS.slate600,
             }}
           >
             ⬇️ Import starten
@@ -1233,7 +1234,7 @@ function ImportPanel({
               cursor: pin ? 'pointer' : 'not-allowed',
               fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
               background: pin ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.04)',
-              color: pin ? '#F59E0B' : '#475569',
+              color: pin ? QQ_COLORS.amber500 : QQ_COLORS.slate600,
             }}
           >
             🔄 Re-kategorisieren (Schätzchen erkennen)
@@ -1247,7 +1248,7 @@ function ImportPanel({
               cursor: pin ? 'pointer' : 'not-allowed',
               fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
               background: pin ? 'rgba(14,165,233,0.18)' : 'rgba(255,255,255,0.04)',
-              color: pin ? '#0EA5E9' : '#475569',
+              color: pin ? '#0EA5E9' : QQ_COLORS.slate600,
             }}
           >
             🩺 DeepL-Test
@@ -1261,13 +1262,13 @@ function ImportPanel({
               cursor: pin ? 'pointer' : 'not-allowed',
               fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
               background: pin ? 'rgba(34,197,94,0.18)' : 'rgba(255,255,255,0.04)',
-              color: pin ? '#22C55E' : '#475569',
+              color: pin ? QQ_COLORS.green500 : QQ_COLORS.slate600,
             }}
           >
             🌐 Re-Translate (DeepL)
           </button>
           {status?.finishedAt && (
-            <span style={{ fontSize: 11, color: '#64748b' }}>
+            <span style={{ fontSize: 11, color: QQ_COLORS.slate500 }}>
               Letzter Lauf: {status.importedTotal} importiert, {status.translatedTotal} übersetzt
               {status.errors.length > 0 && ` · ${status.errors.length} Fehler`}
             </span>
@@ -1278,15 +1279,15 @@ function ImportPanel({
       {running && status && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 12 }}>
-            <span style={{ fontWeight: 800, color: '#A78BFA' }}>
+            <span style={{ fontWeight: 800, color: QQ_COLORS.violet400 }}>
               ⏳ Läuft… {status.importedTotal} / {status.targetTotal} importiert ({progressPct}%)
             </span>
-            <span style={{ color: '#64748b' }}>
+            <span style={{ color: QQ_COLORS.slate500 }}>
               {status.translatedTotal} übersetzt · Batch: {status.lastBatch} · seit {Math.round((Date.now() - status.startedAt) / 1000)}s
             </span>
           </div>
           <div style={{ width: '100%', height: 8, borderRadius: 4, background: 'rgba(255,255,255,0.06)' }}>
-            <div style={{ width: `${progressPct}%`, height: '100%', borderRadius: 4, background: '#A78BFA', transition: 'width 0.5s' }} />
+            <div style={{ width: `${progressPct}%`, height: '100%', borderRadius: 4, background: QQ_COLORS.violet400, transition: 'width 0.5s' }} />
           </div>
           {status.errors.length > 0 && (
             <div style={{ fontSize: 11, color: '#F87171' }}>

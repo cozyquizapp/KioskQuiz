@@ -116,7 +116,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       {/* Title */}
       <div style={{
         fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900,
-        color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.18em',
+        color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.18em',
         opacity: 0.92, marginBottom: 10,
         animation: 'qqRecapTitleLetter 0.6s cubic-bezier(0.16, 1.2, 0.3, 1) 0.05s both',
       }}>
@@ -124,7 +124,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       </div>
       <div style={{
         fontSize: 'clamp(32px, 4.2cqw, 72px)', fontWeight: 900,
-        color: '#F1F5F9', letterSpacing: '-0.025em', textAlign: 'center',
+        color: QQ_COLORS.slate100, letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 'clamp(20px, 2.5cqh, 40px)',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
       }}>
@@ -214,7 +214,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                 />
                 <span style={{
                   fontSize: `clamp(14px, 1.5cqw, ${Math.round(rowH * 0.32)}px)`,
-                  color: '#94A3B8',
+                  color: QQ_COLORS.slate400,
                 }}>🏆</span>
               </div>
             </div>
@@ -246,7 +246,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
     // Initial-Setup: from-Wert sichtbar, Delta hidden.
     if (valRef.current) {
       valRef.current.textContent = String(from);
-      valRef.current.style.color = from > 0 ? '#FBBF24' : '#475569';
+      valRef.current.style.color = from > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600;
       valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
     }
     if (deltaRef.current) deltaRef.current.style.opacity = '0';
@@ -261,7 +261,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
         lastVal = val;
         if (valRef.current) {
           valRef.current.textContent = String(val);
-          valRef.current.style.color = val > 0 ? '#FBBF24' : '#475569';
+          valRef.current.style.color = val > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600;
           valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
         }
         if (deltaRef.current) {
@@ -280,12 +280,12 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
     <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
       <span ref={deltaRef} style={{
         fontSize: `clamp(11px, 1.1cqw, ${Math.round(rowH * 0.22)}px)`,
-        color: '#22C55E', fontWeight: 900,
+        color: QQ_COLORS.green500, fontWeight: 900,
         opacity: 0, transition: 'opacity 0.1s linear',
       }}>+{to - from}</span>
       <span ref={valRef} style={{
         fontSize: `clamp(34px, 4cqw, ${Math.round(rowH * 0.66)}px)`,
-        color: from > 0 ? '#FBBF24' : '#475569',
+        color: from > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600,
         textShadow: from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
       }}>{from}</span>
@@ -325,11 +325,11 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
     }}>
       <div style={{
         fontSize: 'clamp(10px, 0.9cqw, 13px)', fontWeight: 900,
-        color: '#F472B6', textTransform: 'uppercase', letterSpacing: '0.14em',
+        color: QQ_COLORS.brandPinkMid, textTransform: 'uppercase', letterSpacing: '0.14em',
         marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 14,
       }}>
         <span>🏆 Finale</span>
-        <span style={{ color: '#94A3B8' }}>{remaining} Kats übrig</span>
+        <span style={{ color: QQ_COLORS.slate400 }}>{remaining} Kats übrig</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {s.teams.map(t => {
@@ -345,7 +345,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
               </span>
               <span style={{
                 fontSize: 'clamp(13px, 1.1cqw, 17px)', fontWeight: 900,
-                color: w > 0 ? '#FBBF24' : '#475569',
+                color: w > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600,
                 minWidth: 22, textAlign: 'right',
               }}>
                 {w > 0 ? `${w}🏆` : '–'}
@@ -378,6 +378,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 // shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
 // (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
 import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalReveal';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.
@@ -588,15 +589,15 @@ function FinalLeaderboard({
       <div style={{
         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
         fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 800,
-        color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.16em',
+        color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.16em',
         marginBottom: 4,
       }}>
         <span>{de ? 'Aktueller Stand' : 'Current standings'}</span>
         <span style={{ display: 'flex', gap: 18 }}>
-          <span style={{ color: '#94A3B8' }}>{de ? 'Brett' : 'Grid'}</span>
-          <span style={{ color: '#FBBF24' }}>{de ? 'Awards' : 'Awards'}</span>
-          <span style={{ color: '#22C55E' }}>{de ? 'Tipp' : 'Bet'}</span>
-          <span style={{ color: '#F1F5F9' }}>{de ? 'Total' : 'Total'}</span>
+          <span style={{ color: QQ_COLORS.slate400 }}>{de ? 'Brett' : 'Grid'}</span>
+          <span style={{ color: QQ_COLORS.amber400 }}>{de ? 'Awards' : 'Awards'}</span>
+          <span style={{ color: QQ_COLORS.green500 }}>{de ? 'Tipp' : 'Bet'}</span>
+          <span style={{ color: QQ_COLORS.slate100 }}>{de ? 'Total' : 'Total'}</span>
         </span>
       </div>
       <div style={{ position: 'relative', height: rows.length * ROW_H }}>
@@ -623,7 +624,7 @@ function FinalLeaderboard({
             >
               <div style={{
                 fontSize: 18, fontWeight: 900,
-                color: idx === 0 ? '#FBBF24' : '#94A3B8',
+                color: idx === 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate400,
                 minWidth: 28, textAlign: 'center',
               }}>{idx + 1}</div>
               <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={36} />
@@ -634,15 +635,15 @@ function FinalLeaderboard({
                 display: 'flex', gap: 18, alignItems: 'center',
                 fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
               }}>
-                <span style={{ color: '#94A3B8', minWidth: 24, textAlign: 'right' }}>{r.base}</span>
-                <span style={{ color: '#FBBF24', minWidth: 24, textAlign: 'right' }}>
+                <span style={{ color: QQ_COLORS.slate400, minWidth: 24, textAlign: 'right' }}>{r.base}</span>
+                <span style={{ color: QQ_COLORS.amber400, minWidth: 24, textAlign: 'right' }}>
                   {r.awards > 0 ? `+${r.awards}` : '·'}
                 </span>
-                <span style={{ color: '#22C55E', minWidth: 32, textAlign: 'right' }}>
+                <span style={{ color: QQ_COLORS.green500, minWidth: 32, textAlign: 'right' }}>
                   {r.bet > 0 ? `+${r.bet}` : '·'}
                 </span>
                 <span style={{
-                  color: isFocus ? r.team.color : '#F1F5F9',
+                  color: isFocus ? r.team.color : QQ_COLORS.slate100,
                   minWidth: 36, textAlign: 'right',
                   fontSize: 20, fontWeight: 900,
                 }}>{r.total}</span>
@@ -1020,7 +1021,7 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       <div style={{ fontSize: 'clamp(72px, 10cqw, 180px)', lineHeight: 1 }}>🏆</div>
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
-        color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
       }}>{de ? 'Die Auflösung' : 'The reveal'}</div>
     </div>
@@ -1204,7 +1205,7 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
       }}>
         <div style={{
           fontSize: 'clamp(14px, 1.35cqw, 22px)', fontWeight: 900,
-          color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.16em',
+          color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.16em',
           marginBottom: 2,
         }}>{de ? '🏆 Größtes Gebiet' : '🏆 Largest area'}</div>
         {ranking.map((t, i) => {
@@ -1222,10 +1223,10 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
                 <span style={{
                   fontSize: 'clamp(22px, 2.4cqw, 34px)', fontWeight: 900,
-                  color: isLeader ? '#FBBF24' : '#E2E8F0',
+                  color: isLeader ? QQ_COLORS.amber400 : QQ_COLORS.slate200,
                   fontVariantNumeric: 'tabular-nums',
                 }}>{t.largestConnected ?? 0}</span>
-                <span style={{ fontSize: 11, color: '#64748B', marginTop: 4 }}>
+                <span style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 4 }}>
                   · {cellsByTeam[t.id] ?? 0} {de ? 'ges.' : 'total'}
                 </span>
               </div>
@@ -1236,7 +1237,7 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
           marginTop: 10, padding: '10px 14px', borderRadius: 12,
           background: 'rgba(236,72,153,0.10)',
           border: '1px solid rgba(236,72,153,0.30)',
-          fontSize: 12, fontWeight: 700, color: '#F472B6',
+          fontSize: 12, fontWeight: 700, color: QQ_COLORS.brandPinkMid,
           textAlign: 'center', letterSpacing: '0.04em',
         }}>
           {de ? '📌 Brett-Stand fixiert — jetzt kommen die Boni' : '📌 Board locked — now the bonuses'}
@@ -1258,7 +1259,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   const de = lang === 'de';
   // 2026-05-10 (Audit-P0 Eurovision): Sympathie-Bonus-Text in ESC-Lila statt
   // hardcoded Hot-Pink wenn Eurovision-Edition aktiv ist.
-  const sympathyColor = eurovisionMode ? '#C084FC' : '#F472B6';
+  const sympathyColor = eurovisionMode ? '#C084FC' : QQ_COLORS.brandPinkMid;
   const targetTeam = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
   const isMutual = !!resolution?.mutualWith;
   const totalBonus = resolution?.totalBonus ?? 0;
@@ -1315,11 +1316,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               <div style={{ fontSize: 'clamp(44px, 5cqw, 72px)', lineHeight: 1, opacity: 0.5 }}>—</div>
               <div style={{
                 fontSize: 'clamp(20px, 2cqw, 30px)', fontWeight: 800,
-                color: '#94A3B8', textAlign: 'center',
+                color: QQ_COLORS.slate400, textAlign: 'center',
               }}>{de ? 'Kein Tipp abgegeben' : 'No tip submitted'}</div>
               <div style={{
                 fontSize: 'clamp(15px, 1.4cqw, 20px)', fontWeight: 700,
-                color: '#64748B', fontStyle: 'italic',
+                color: QQ_COLORS.slate500, fontStyle: 'italic',
               }}>{de ? '0 Bonus-Punkte' : '0 bonus points'}</div>
             </div>
           ) : (
@@ -1327,7 +1328,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               {/* Sub-step 1: "tippte auf" + Tipp-Team — kommt nach Team-Slam mit Delay */}
               <div style={{
                 fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
-                color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.18em',
+                color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.18em',
                 animation: 'qqFRTitleIn 0.5s ease 0.55s both',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
               <div style={{
@@ -1365,11 +1366,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                   }}>🥲</div>
                   <div style={{
                     fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900,
-                    color: '#94A3B8', textAlign: 'center', fontStyle: 'italic',
+                    color: QQ_COLORS.slate400, textAlign: 'center', fontStyle: 'italic',
                   }}>oooh …</div>
                   <div style={{
                     fontSize: 'clamp(16px, 1.5cqw, 24px)', fontWeight: 700,
-                    color: '#64748B',
+                    color: QQ_COLORS.slate500,
                   }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
                 </div>
               ) : (
@@ -1379,7 +1380,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                   border: '3px solid rgba(34,197,94,0.65)',
                   boxShadow: '0 0 36px rgba(34,197,94,0.35)',
                   fontSize: 'clamp(56px, 6.2cqw, 100px)', fontWeight: 900,
-                  color: '#22C55E', letterSpacing: '-0.02em',
+                  color: QQ_COLORS.green500, letterSpacing: '-0.02em',
                   animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 1.1s both',
                 }}>
                   + {totalBonus}
@@ -1397,7 +1398,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
 const AWARD_DEFS = [
   { emoji: '🐢', titleDe: 'Underdog-Trostpreis', titleEn: 'Underdog prize',  descDe: 'Niedrigster Score',     descEn: 'Lowest score',      accent: '#10B981' },
   { emoji: '🦝', titleDe: 'Meisterklauer',       titleEn: 'Master thief',    descDe: 'Meiste Klaus',          descEn: 'Most steals',       accent: '#A855F7' },
-  { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: '#F472B6' },
+  { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: QQ_COLORS.brandPinkMid },
 ];
 
 // 2026-05-09 v3 (Wolf-Refactor): Awards-Overview-Slide. Alle 3 Cards
@@ -1458,12 +1459,12 @@ function AwardsOverviewSlide({ revealMode, state: s, lang }: {
     }}>
       <div style={{
         fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
-        color: '#FBBF24', textTransform: 'uppercase', letterSpacing: '0.18em',
+        color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.18em',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       }}>{de ? '🏅 Special Awards' : '🏅 Special Awards'}</div>
       <div style={{
         fontSize: 'clamp(34px, 4cqw, 60px)', fontWeight: 900,
-        color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 36px rgba(251,191,36,0.45)',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
       }}>{de ? 'Drei besondere Auszeichnungen' : 'Three special awards'}</div>
@@ -1520,12 +1521,12 @@ function BetZeroGroupSlide({ teams, lang }: {
     }}>
       <div style={{
         fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
-        color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.18em',
+        color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.18em',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       }}>{de ? '🎯 Tipps abgegeben' : '🎯 Tips placed'}</div>
       <div style={{
         fontSize: 'clamp(30px, 3.6cqw, 56px)', fontWeight: 900,
-        color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.02em',
+        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 28px rgba(236,72,153,0.35)',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
         maxWidth: '92cqw',
@@ -1556,7 +1557,7 @@ function BetZeroGroupSlide({ teams, lang }: {
         ))}
       </div>
       <div style={{
-        fontSize: 'clamp(15px, 1.5cqw, 22px)', color: '#94A3B8',
+        fontSize: 'clamp(15px, 1.5cqw, 22px)', color: QQ_COLORS.slate400,
         fontStyle: 'italic', textAlign: 'center',
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
@@ -1642,7 +1643,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           }}>{a.emoji}</div>
           <div style={{
             fontSize: 'clamp(22px, 2.4cqw, 38px)', fontWeight: 900,
-            color: '#F1F5F9', textAlign: 'center', letterSpacing: '-0.01em',
+            color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.01em',
           }}>{de ? a.titleDe : a.titleEn}</div>
           <div style={{
             fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
@@ -1650,7 +1651,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           }}>{de ? a.descDe : a.descEn}</div>
           <div style={{
             fontSize: 'clamp(28px, 3cqw, 48px)', fontWeight: 900,
-            color: '#94A3B8', letterSpacing: '0.4em',
+            color: QQ_COLORS.slate400, letterSpacing: '0.4em',
           }}>???</div>
         </div>
 
@@ -1683,7 +1684,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
                   position: 'absolute', left: '50%', top: 0,
                   transform: 'translate(-50%, -10px)',
                   fontSize: 'clamp(40px, 4.4cqw, 70px)', fontWeight: 900,
-                  color: '#22C55E',
+                  color: QQ_COLORS.green500,
                   textShadow: '0 0 28px rgba(34,197,94,0.7)',
                   animation: isFlipped ? 'qqFRPlusOne 2.2s ease-out 0.6s both' : 'none',
                   pointerEvents: 'none',
@@ -1712,7 +1713,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
               {metric && (
                 <div style={{
                   fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
-                  color: '#CBD5E1', fontStyle: 'italic',
+                  color: QQ_COLORS.slate300, fontStyle: 'italic',
                 }}>{metric}</div>
               )}
               <div style={{
@@ -1720,11 +1721,11 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
                 background: 'rgba(34,197,94,0.18)',
                 border: '2px solid rgba(34,197,94,0.55)',
                 fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,
-                color: '#22C55E',
+                color: QQ_COLORS.green500,
               }}>{de ? '+ 1 Bonus' : '+ 1 bonus'}</div>
             </>
           ) : (
-            <div style={{ fontSize: 'clamp(16px, 1.6cqw, 22px)', color: '#475569', fontStyle: 'italic' }}>
+            <div style={{ fontSize: 'clamp(16px, 1.6cqw, 22px)', color: QQ_COLORS.slate600, fontStyle: 'italic' }}>
               {de ? '(kein Sieger)' : '(no winner)'}
             </div>
           )}
@@ -1822,7 +1823,7 @@ function getOrderedRanks(N: number): number[] {
 //   3. Headline-Banner („SIEGER: {Name}") gold/pink, slide-down
 // Greift NUR bei isFinish — kein Conflict mit der Race-Choreo davor.
 function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' }) {
-  const pennantColors = ['#EC4899', '#FBBF24', '#A21247', '#FDE68A', '#EC4899', '#FBBF24', '#A21247', '#FDE68A', '#EC4899'];
+  const pennantColors = [QQ_COLORS.brandPink, QQ_COLORS.amber400, '#A21247', QQ_COLORS.yellow300, QQ_COLORS.brandPink, QQ_COLORS.amber400, '#A21247', QQ_COLORS.yellow300, QQ_COLORS.brandPink];
   return (
     <>
       {/* Layer 1 — Spotlight-Cone (z hinter Banner, vor BG) */}
@@ -1885,7 +1886,7 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
         <div style={{
           fontSize: 'clamp(14px, 1.4cqw, 22px)',
           fontWeight: 900,
-          color: '#FBBF24',
+          color: QQ_COLORS.amber400,
           letterSpacing: '0.25em',
           textTransform: 'uppercase',
           textShadow: '0 0 14px rgba(251,191,36,0.8), 0 2px 6px rgba(0,0,0,0.7)',
@@ -1948,7 +1949,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
       {/* Hero-Titel */}
       <div style={{
         fontSize: 'clamp(28px, 3cqw, 48px)', fontWeight: 900,
-        color: '#FBCFE8', letterSpacing: '0.08em', textTransform: 'uppercase',
+        color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.08em', textTransform: 'uppercase',
         animation: 'qqFRTitleIn 0.8s ease-out both',
         textShadow: '0 0 30px rgba(236,72,153,0.55)',
       }}>
@@ -1987,7 +1988,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
           />
           <div style={{
             fontSize: 'clamp(20px, 2cqw, 30px)', fontWeight: 900,
-            color: '#F1F5F9',
+            color: QQ_COLORS.slate100,
             fontVariantNumeric: 'tabular-nums',
           }}>
             {p1.total} {de ? 'Punkte' : 'points'}
@@ -2017,7 +2018,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
           >
             <div style={{
               fontSize: 22, fontWeight: 900,
-              color: idx === 0 ? '#FBBF24' : '#94A3B8',
+              color: idx === 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate400,
               minWidth: 32, textAlign: 'center',
             }}>{idx + 1}</div>
             <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={44} />
@@ -2027,17 +2028,17 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
             <div style={{
               display: 'flex', gap: 16, alignItems: 'center',
               fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-              color: '#CBD5E1',
+              color: QQ_COLORS.slate300,
             }}>
-              <span style={{ color: '#94A3B8', minWidth: 28, textAlign: 'right' }}>{r.score}</span>
-              <span style={{ color: '#FBBF24', minWidth: 28, textAlign: 'right' }}>
+              <span style={{ color: QQ_COLORS.slate400, minWidth: 28, textAlign: 'right' }}>{r.score}</span>
+              <span style={{ color: QQ_COLORS.amber400, minWidth: 28, textAlign: 'right' }}>
                 {r.awards > 0 ? `+${r.awards}` : '·'}
               </span>
-              <span style={{ color: '#22C55E', minWidth: 32, textAlign: 'right' }}>
+              <span style={{ color: QQ_COLORS.green500, minWidth: 32, textAlign: 'right' }}>
                 {r.bonus > 0 ? `+${r.bonus}` : '·'}
               </span>
               <span style={{
-                color: idx === 0 ? r.team.color : '#F1F5F9',
+                color: idx === 0 ? r.team.color : QQ_COLORS.slate100,
                 minWidth: 44, textAlign: 'right',
                 fontSize: 22, fontWeight: 900,
               }}>{r.total}</span>
@@ -2523,7 +2524,7 @@ function RaceFinalSlide({ finalRanking, lang }: {
                 left: '-28%',
                 fontSize: compactWolf ? 'clamp(14px, 1.6cqw, 26px)' : 'clamp(20px, 2.6cqw, 44px)',
                 fontWeight: 900,
-                color: '#FBBF24',
+                color: QQ_COLORS.amber400,
                 textShadow: '0 0 14px rgba(251,191,36,0.85), 0 4px 10px rgba(0,0,0,0.7), 0 0 2px #0A0814',
                 letterSpacing: '0.04em',
                 fontFamily: 'var(--font-game, system-ui)',
@@ -2758,11 +2759,11 @@ function RaceCountdownOverlay() {
   }, []);
 
   const labels: { text: string; color: string; size: string; glow: string }[] = [
-    { text: 'BEREIT?', color: '#FBBF24', size: 'clamp(50px, 6cqw, 110px)', glow: 'rgba(251,191,36,0.7)' },
-    { text: '3',       color: '#FBBF24', size: 'clamp(140px, 18cqw, 320px)', glow: 'rgba(251,191,36,0.85)' },
-    { text: '2',       color: '#F59E0B', size: 'clamp(140px, 18cqw, 320px)', glow: 'rgba(245,158,11,0.85)' },
-    { text: '1',       color: '#EF4444', size: 'clamp(140px, 18cqw, 320px)', glow: 'rgba(239,68,68,0.85)' },
-    { text: 'GO!',     color: '#22C55E', size: 'clamp(160px, 20cqw, 360px)', glow: 'rgba(34,197,94,0.95)' },
+    { text: 'BEREIT?', color: QQ_COLORS.amber400, size: 'clamp(50px, 6cqw, 110px)', glow: 'rgba(251,191,36,0.7)' },
+    { text: '3',       color: QQ_COLORS.amber400, size: 'clamp(140px, 18cqw, 320px)', glow: 'rgba(251,191,36,0.85)' },
+    { text: '2',       color: QQ_COLORS.amber500, size: 'clamp(140px, 18cqw, 320px)', glow: 'rgba(245,158,11,0.85)' },
+    { text: '1',       color: QQ_COLORS.red500, size: 'clamp(140px, 18cqw, 320px)', glow: 'rgba(239,68,68,0.85)' },
+    { text: 'GO!',     color: QQ_COLORS.green500, size: 'clamp(160px, 20cqw, 360px)', glow: 'rgba(34,197,94,0.95)' },
   ];
   const current = labels[step];
 
@@ -2821,7 +2822,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
   fontSize?: string;
   rankFontSize?: string;
 }) {
-  const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#475569';
+  const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : QQ_COLORS.slate600;
   const isMinor = rank >= 4;
   const effectiveSlotWidth = slotWidth ?? 'clamp(120px, 12cqw, 170px)';
   const effectiveFontSize = fontSize ?? 'clamp(13px, 1.3cqw, 19px)';
@@ -2867,7 +2868,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
         borderBottom: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: effectiveRankFontSize, fontWeight: 900,
-        color: isMinor ? '#E2E8F0' : '#0A0814',
+        color: isMinor ? QQ_COLORS.slate200 : '#0A0814',
         boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 -4px 16px ${podiumColor}55`,
       }}>{rank}</div>
     </div>

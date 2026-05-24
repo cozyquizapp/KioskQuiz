@@ -4,6 +4,7 @@
 // Auto-Cycle + manuelle Nav. Keine echte Game-Logik, keine Sockets — nur
 // pure Visual-Layer. Standard-CozyQuiz bleibt komplett unbeeinflusst.
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ─── Google-Fonts laden (one-shot, alle 5 Designs) ────────────────────────────
 // 2026-05-08: Lab auf 5 Aurora-Varianten umgebaut — Brand-Tweak (Pink+Navy
@@ -28,13 +29,13 @@ const GEIST_FONT_HREF = 'https://cdn.jsdelivr.net/npm/geist@1/dist/geist.css';
 // ─── Realistic Dummy-Data ────────────────────────────────────────────────────
 type MockTeam = { id: string; name: string; emoji: string; color: string; cells: number; connected: boolean };
 const MOCK_TEAMS: MockTeam[] = [
-  { id: 't1', name: 'Schlawiner-Squad',     emoji: '🦊', color: '#F59E0B', cells: 7, connected: true  },
-  { id: 't2', name: 'Quiz-Banditen',        emoji: '🐻', color: '#EF4444', cells: 6, connected: true  },
+  { id: 't1', name: 'Schlawiner-Squad',     emoji: '🦊', color: QQ_COLORS.amber500, cells: 7, connected: true  },
+  { id: 't2', name: 'Quiz-Banditen',        emoji: '🐻', color: QQ_COLORS.red500, cells: 6, connected: true  },
   { id: 't3', name: 'Couchpotatoes',        emoji: '🥔', color: '#10B981', cells: 5, connected: true  },
   { id: 't4', name: 'Kekskrümel-Kommando',  emoji: '🍪', color: '#F97316', cells: 5, connected: true  },
-  { id: 't5', name: 'Saalrocker',           emoji: '🎸', color: '#8B5CF6', cells: 4, connected: true  },
-  { id: 't6', name: 'Wissens-Wölfe',        emoji: '🐺', color: '#3B82F6', cells: 3, connected: true  },
-  { id: 't7', name: 'Schon-Wieder-Falsch',  emoji: '🤡', color: '#EC4899', cells: 2, connected: false },
+  { id: 't5', name: 'Saalrocker',           emoji: '🎸', color: QQ_COLORS.violet500, cells: 4, connected: true  },
+  { id: 't6', name: 'Wissens-Wölfe',        emoji: '🐺', color: QQ_COLORS.blue500, cells: 3, connected: true  },
+  { id: 't7', name: 'Schon-Wieder-Falsch',  emoji: '🤡', color: QQ_COLORS.brandPink, cells: 2, connected: false },
   { id: 't8', name: 'Genie-Gang',           emoji: '🧠', color: '#14B8A6', cells: 2, connected: true  },
 ];
 
@@ -100,13 +101,13 @@ const DESIGNS: DesignConfig[] = [
     fonts: { display: "'Outfit', system-ui, sans-serif", body: "'Plus Jakarta Sans', system-ui, sans-serif" },
     palette: [
       { name: 'Void',     hex: '#08090E' },
-      { name: 'Navy',     hex: '#0F172A' },
+      { name: 'Navy',     hex: QQ_COLORS.slate900 },
       { name: 'Surface',  hex: '#111827' },
       { name: 'Magenta',  hex: '#E879F9' },
       { name: 'Cyan',     hex: '#22D3EE' },
       { name: 'Lime',     hex: '#A3E635' },
-      { name: 'Bone',     hex: '#F1F5F9' },
-      { name: 'Muted',    hex: '#94A3B8' },
+      { name: 'Bone',     hex: QQ_COLORS.slate100 },
+      { name: 'Muted',    hex: QQ_COLORS.slate400 },
     ],
     bgBase: '#08090E',
     // Mesh-Gradient: 4 grosse weiche radial-blobs in unterschiedlichen Farben
@@ -125,11 +126,11 @@ const DESIGNS: DesignConfig[] = [
       '0 24px 64px rgba(0,0,0,0.55), ' +
       '0 0 32px rgba(232,121,249,0.10)',
     cardRadius: 20,
-    textPrimary: '#F1F5F9',
-    textSecondary: '#94A3B8',
+    textPrimary: QQ_COLORS.slate100,
+    textSecondary: QQ_COLORS.slate400,
     accent: '#E879F9',
     categoryColors: {
-      SCHAETZCHEN: '#FBBF24', MUCHO: '#22D3EE', BUNTE_TUETE: '#FB7185',
+      SCHAETZCHEN: QQ_COLORS.amber400, MUCHO: '#22D3EE', BUNTE_TUETE: '#FB7185',
       ZEHN_VON_ZEHN: '#A3E635', CHEESE: '#C084FC',
     },
     fireflyColor: 'rgba(232, 121, 249, 0.85)',
@@ -148,11 +149,11 @@ const DESIGNS: DesignConfig[] = [
       { name: 'Void',       hex: '#0A0B14' },
       { name: 'Hoodie',     hex: '#1E2A5A' }, // Wolf-Hoodie
       { name: 'Surface',    hex: '#161A2E' },
-      { name: 'Wolf-Pink',  hex: '#EC4899' }, // Wolf-Body
+      { name: 'Wolf-Pink',  hex: QQ_COLORS.brandPink }, // Wolf-Body
       { name: 'Magenta',    hex: '#A21247' }, // Logo-Ring
-      { name: 'Bone',       hex: '#F1F5F9' },
+      { name: 'Bone',       hex: QQ_COLORS.slate100 },
       { name: 'Mint',       hex: '#67E8C9' }, // sparsamer Spannungs-Akzent
-      { name: 'Muted',      hex: '#94A3B8' },
+      { name: 'Muted',      hex: QQ_COLORS.slate400 },
     ],
     bgBase: '#0A0B14',
     bgLayers:
@@ -168,11 +169,11 @@ const DESIGNS: DesignConfig[] = [
       '0 24px 64px rgba(0,0,0,0.55), ' +
       '0 0 32px rgba(236,72,153,0.10)',
     cardRadius: 20,
-    textPrimary: '#F1F5F9',
-    textSecondary: '#94A3B8',
-    accent: '#EC4899',
+    textPrimary: QQ_COLORS.slate100,
+    textSecondary: QQ_COLORS.slate400,
+    accent: QQ_COLORS.brandPink,
     categoryColors: {
-      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#EC4899',
+      SCHAETZCHEN: QQ_COLORS.amber400, MUCHO: QQ_COLORS.violet400, BUNTE_TUETE: QQ_COLORS.brandPink,
       ZEHN_VON_ZEHN: '#67E8C9', CHEESE: '#F0ABFC',
     },
     fireflyColor: 'rgba(236, 72, 153, 0.85)',
@@ -191,8 +192,8 @@ const DESIGNS: DesignConfig[] = [
       { name: 'Void',         hex: '#0A0814' },
       { name: 'Hoodie',       hex: '#1E2A5A' },
       { name: 'Card',         hex: '#1A1525' },
-      { name: 'Wolf-Pink',    hex: '#EC4899' },
-      { name: 'Hot Pink',     hex: '#F472B6' },
+      { name: 'Wolf-Pink',    hex: QQ_COLORS.brandPink },
+      { name: 'Hot Pink',     hex: QQ_COLORS.brandPinkMid },
       { name: 'Magenta',      hex: '#BE185D' },
       { name: 'Bone',         hex: '#FAFAF7' },
       { name: 'Mid',          hex: '#9CA3AF' },
@@ -217,10 +218,10 @@ const DESIGNS: DesignConfig[] = [
     cardRadius: 18,
     textPrimary: '#FAFAF7',
     textSecondary: '#9CA3AF',
-    accent: '#EC4899',
+    accent: QQ_COLORS.brandPink,
     categoryColors: {
-      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#F472B6',
-      ZEHN_VON_ZEHN: '#34D399', CHEESE: '#F472B6',
+      SCHAETZCHEN: QQ_COLORS.amber400, MUCHO: QQ_COLORS.violet400, BUNTE_TUETE: QQ_COLORS.brandPinkMid,
+      ZEHN_VON_ZEHN: QQ_COLORS.emerald500, CHEESE: QQ_COLORS.brandPinkMid,
     },
     fireflyColor: 'rgba(236, 72, 153, 0.95)',
     wordmark: { text: 'CozyQuiz', weight: 700, tracking: '-0.03em' },
@@ -238,11 +239,11 @@ const DESIGNS: DesignConfig[] = [
       { name: 'Deep',        hex: '#0C0E1C' },
       { name: 'Hoodie',      hex: '#1E2A5A' },
       { name: 'Surface',     hex: '#15182A' },
-      { name: 'Wolf-Pink',   hex: '#EC4899' },
+      { name: 'Wolf-Pink',   hex: QQ_COLORS.brandPink },
       { name: 'Pink-Soft',   hex: '#F9A8D4' },
       { name: 'Bone',        hex: '#F8FAFC' },
-      { name: 'Mid',         hex: '#94A3B8' },
-      { name: 'Caveat',      hex: '#FBBF24' },
+      { name: 'Mid',         hex: QQ_COLORS.slate400 },
+      { name: 'Caveat',      hex: QQ_COLORS.amber400 },
     ],
     bgBase: '#0C0E1C',
     bgLayers:
@@ -256,10 +257,10 @@ const DESIGNS: DesignConfig[] = [
       '0 18px 56px rgba(0,0,0,0.45)',
     cardRadius: 16,
     textPrimary: '#F8FAFC',
-    textSecondary: '#94A3B8',
-    accent: '#EC4899',
+    textSecondary: QQ_COLORS.slate400,
+    accent: QQ_COLORS.brandPink,
     categoryColors: {
-      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#F9A8D4',
+      SCHAETZCHEN: QQ_COLORS.amber400, MUCHO: QQ_COLORS.violet400, BUNTE_TUETE: '#F9A8D4',
       ZEHN_VON_ZEHN: '#67E8C9', CHEESE: '#F0ABFC',
     },
     fireflyColor: 'rgba(249, 168, 212, 0.80)',
@@ -278,11 +279,11 @@ const DESIGNS: DesignConfig[] = [
       { name: 'Hoodie-Deep', hex: '#0F1530' },
       { name: 'Hoodie',      hex: '#1E2A5A' },
       { name: 'Hoodie-Mid',  hex: '#2A3870' },
-      { name: 'Wolf-Pink',   hex: '#EC4899' },
+      { name: 'Wolf-Pink',   hex: QQ_COLORS.brandPink },
       { name: 'Magenta',     hex: '#A21247' },
-      { name: 'Hot Pink',    hex: '#F472B6' },
+      { name: 'Hot Pink',    hex: QQ_COLORS.brandPinkMid },
       { name: 'Bone',        hex: '#FAFAF7' },
-      { name: 'Mid',         hex: '#94A3B8' },
+      { name: 'Mid',         hex: QQ_COLORS.slate400 },
     ],
     bgBase: '#0F1530',
     bgLayers:
@@ -299,10 +300,10 @@ const DESIGNS: DesignConfig[] = [
       '0 0 36px rgba(236,72,153,0.30)',
     cardRadius: 14,
     textPrimary: '#FAFAF7',
-    textSecondary: '#94A3B8',
-    accent: '#EC4899',
+    textSecondary: QQ_COLORS.slate400,
+    accent: QQ_COLORS.brandPink,
     categoryColors: {
-      SCHAETZCHEN: '#FBBF24', MUCHO: '#A78BFA', BUNTE_TUETE: '#F472B6',
+      SCHAETZCHEN: QQ_COLORS.amber400, MUCHO: QQ_COLORS.violet400, BUNTE_TUETE: QQ_COLORS.brandPinkMid,
       ZEHN_VON_ZEHN: '#67E8C9', CHEESE: '#F0ABFC',
     },
     fireflyColor: 'rgba(244, 114, 182, 0.95)',
@@ -618,7 +619,7 @@ function MockLobby({ d }: { d: DesignConfig }) {
                       color: t.color, lineHeight: 1.1,
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{t.name}</div>
-                    <div style={{ fontSize: 12, fontWeight: 600, color: t.connected ? '#22C55E' : d.textSecondary, marginTop: 4 }}>
+                    <div style={{ fontSize: 12, fontWeight: 600, color: t.connected ? QQ_COLORS.green500 : d.textSecondary, marginTop: 4 }}>
                       {isPulsing ? '● tippt…' : (t.connected ? '● bereit' : '○ offline')}
                     </div>
                   </div>
@@ -627,7 +628,7 @@ function MockLobby({ d }: { d: DesignConfig }) {
               })}
             </div>
             <div style={{
-              fontSize: 18, fontWeight: 800, textAlign: 'center', color: '#22C55E',
+              fontSize: 18, fontWeight: 800, textAlign: 'center', color: QQ_COLORS.green500,
               fontFamily: d.fonts.display,
             }}>
               🔥 8 teams are in!
@@ -897,8 +898,8 @@ function PaletteStrip({ palette }: { palette: ColorSwatch[] }) {
             flexShrink: 0,
           }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 12, fontWeight: 700, color: '#e2e8f0', lineHeight: 1.1 }}>{c.name}</div>
-            <div style={{ fontSize: 10, color: '#94a3b8', fontFamily: 'monospace' }}>{c.hex}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate200, lineHeight: 1.1 }}>{c.name}</div>
+            <div style={{ fontSize: 10, color: QQ_COLORS.slate400, fontFamily: 'monospace' }}>{c.hex}</div>
           </div>
         </div>
       ))}
@@ -966,7 +967,7 @@ export default function DesignLabPage() {
     <div style={{
       position: 'fixed', inset: 0,
       background: '#0a0a0a',
-      color: '#e2e8f0',
+      color: QQ_COLORS.slate200,
       fontFamily: "'Inter', system-ui, sans-serif",
       overflow: 'hidden',
       display: 'grid',
@@ -1007,7 +1008,7 @@ export default function DesignLabPage() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ fontSize: 18 }}>🍳</span>
           <span style={{ fontSize: 14, fontWeight: 800, letterSpacing: '0.05em' }}>CozyQuiz Design Lab</span>
-          <span style={{ fontSize: 11, color: '#64748b', fontFamily: 'monospace' }}>/gekocht</span>
+          <span style={{ fontSize: 11, color: QQ_COLORS.slate500, fontFamily: 'monospace' }}>/gekocht</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {DESIGNS.map((dd, i) => (
@@ -1017,7 +1018,7 @@ export default function DesignLabPage() {
                 padding: '6px 14px', borderRadius: 8,
                 border: i === designIdx ? `2px solid ${dd.accent}` : '1px solid rgba(255,255,255,0.12)',
                 background: i === designIdx ? `${dd.accent}22` : 'transparent',
-                color: i === designIdx ? dd.accent : '#cbd5e1',
+                color: i === designIdx ? dd.accent : QQ_COLORS.slate300,
                 fontSize: 12, fontWeight: 700, cursor: 'pointer',
                 transition: 'all 0.2s ease',
               }}
@@ -1032,7 +1033,7 @@ export default function DesignLabPage() {
               padding: '6px 12px', borderRadius: 8,
               border: '1px solid rgba(255,255,255,0.18)',
               background: showThumbs ? 'rgba(245,158,11,0.18)' : 'transparent',
-              color: '#e2e8f0', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              color: QQ_COLORS.slate200, fontSize: 12, fontWeight: 700, cursor: 'pointer',
             }}
             title="Grid view (G)"
           >▦ Grid</button>
@@ -1041,7 +1042,7 @@ export default function DesignLabPage() {
               padding: '6px 12px', borderRadius: 8,
               border: '1px solid rgba(255,255,255,0.18)',
               background: autoCycle ? 'rgba(34,197,94,0.20)' : 'transparent',
-              color: autoCycle ? '#4ade80' : '#e2e8f0', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+              color: autoCycle ? QQ_COLORS.green400 : QQ_COLORS.slate200, fontSize: 12, fontWeight: 700, cursor: 'pointer',
             }}
             title="Auto-cycle (Space)"
           >{autoCycle ? '⏸ Auto' : '▶ Auto'}</button>
@@ -1058,36 +1059,36 @@ export default function DesignLabPage() {
         display: 'flex', flexDirection: 'column', gap: 14,
       }}>
         <div>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
+          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
             Vibe
           </div>
-          <div style={{ fontSize: 12, color: '#cbd5e1', lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, color: QQ_COLORS.slate300, lineHeight: 1.4 }}>
             {d.vibe}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
+          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
             Fonts
           </div>
-          <div style={{ fontSize: 12, color: '#cbd5e1' }}>
-            <div><span style={{ color: '#64748b' }}>Display:</span> {d.fonts.display.split(',')[0].replace(/['"]/g, '')}</div>
-            <div><span style={{ color: '#64748b' }}>Body:</span> {d.fonts.body.split(',')[0].replace(/['"]/g, '')}</div>
+          <div style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>
+            <div><span style={{ color: QQ_COLORS.slate500 }}>Display:</span> {d.fonts.display.split(',')[0].replace(/['"]/g, '')}</div>
+            <div><span style={{ color: QQ_COLORS.slate500 }}>Body:</span> {d.fonts.body.split(',')[0].replace(/['"]/g, '')}</div>
           </div>
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
+          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
             Palette
           </div>
           <PaletteStrip palette={d.palette} />
         </div>
         <div>
-          <div style={{ fontSize: 11, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
+          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 6, fontWeight: 800 }}>
             Kategorien
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
             {CATEGORIES.map(c => (
               <div key={c.key} style={{
-                display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: '#cbd5e1',
+                display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, color: QQ_COLORS.slate300,
               }}>
                 <div style={{
                   width: 14, height: 14, borderRadius: 4,
@@ -1101,12 +1102,12 @@ export default function DesignLabPage() {
         </div>
         <div style={{
           marginTop: 'auto',
-          fontSize: 10, color: '#64748b', lineHeight: 1.4,
+          fontSize: 10, color: QQ_COLORS.slate500, lineHeight: 1.4,
           padding: 10, borderRadius: 6,
           background: 'rgba(255,255,255,0.03)',
           border: '1px solid rgba(255,255,255,0.06)',
         }}>
-          <div style={{ fontWeight: 700, marginBottom: 4, color: '#94a3b8' }}>Keyboard:</div>
+          <div style={{ fontWeight: 700, marginBottom: 4, color: QQ_COLORS.slate400 }}>Keyboard:</div>
           ←/→ Design · ↑/↓ View<br />
           Space: Auto · G: Grid · Esc: Close
         </div>
@@ -1137,7 +1138,7 @@ export default function DesignLabPage() {
               padding: '8px 18px', borderRadius: 8,
               border: i === viewIdx ? `2px solid ${d.accent}` : '1px solid rgba(255,255,255,0.12)',
               background: i === viewIdx ? `${d.accent}22` : 'transparent',
-              color: i === viewIdx ? d.accent : '#cbd5e1',
+              color: i === viewIdx ? d.accent : QQ_COLORS.slate300,
               fontSize: 13, fontWeight: 700, cursor: 'pointer',
               display: 'inline-flex', alignItems: 'center', gap: 8,
             }}
@@ -1166,7 +1167,7 @@ export default function DesignLabPage() {
               style={{
                 padding: '6px 14px', borderRadius: 8,
                 border: '1px solid rgba(255,255,255,0.18)',
-                background: 'transparent', color: '#e2e8f0',
+                background: 'transparent', color: QQ_COLORS.slate200,
                 fontSize: 13, fontWeight: 700, cursor: 'pointer',
               }}
             >✕ Close</button>
@@ -1199,7 +1200,7 @@ export default function DesignLabPage() {
                   <span style={{ fontWeight: 800, color: dd.accent, fontSize: 13 }}>
                     {i + 1}. {dd.name}
                   </span>
-                  <span style={{ fontSize: 11, color: '#94a3b8' }}>{dd.vibe.split('·')[0].trim()}</span>
+                  <span style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>{dd.vibe.split('·')[0].trim()}</span>
                 </div>
               </div>
             ))}

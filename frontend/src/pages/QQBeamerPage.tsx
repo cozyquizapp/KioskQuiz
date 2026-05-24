@@ -102,9 +102,9 @@ export function getBrandColors(eurovisionMode?: boolean) {
         gradientPill: 'linear-gradient(135deg, #FF2D7B 0%, #C084FC 50%, #6D28D9 100%)',
       }
     : {
-        accentHex:  '#EC4899',          // Brand-Pink
+        accentHex:  QQ_COLORS.brandPink,          // Brand-Pink
         accentRgb:  '236,72,153',
-        accentSoft: '#FBCFE8',
+        accentSoft: QQ_COLORS.brandPinkSoft,
         accentWarm: '#F9A8D4',
         magenta:    '#A21247',
         gradientPill: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
@@ -137,6 +137,7 @@ import {
   CAT_BG, CAT_GLOW, CAT_CUTOUTS,
   COZY_CARD_BG as _COZY_CARD_BG_SHARED,
 } from '../cozyQuizShared';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 export const BEAMER_CSS = QQ_BEAMER_CSS;
 export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
@@ -472,7 +473,7 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
       }}>
         <div style={{
           fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-          color: '#EC4899', letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: QQ_COLORS.brandPink, letterSpacing: '0.1em', textTransform: 'uppercase',
           textAlign: 'center', marginBottom: 14,
           textShadow: '0 0 18px rgba(236,72,153,0.55)',
         }}>
@@ -485,8 +486,8 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
         }}>
           {entries.map((e, i) => {
             const team = e.winnerId ? state.teams.find(t => t.id === e.winnerId) : null;
-            const teamColor = team?.color ?? '#475569';
-            const catColor = QQ_CAT_ACCENT[e.category] ?? '#94a3b8';
+            const teamColor = team?.color ?? QQ_COLORS.slate600;
+            const catColor = QQ_CAT_ACCENT[e.category] ?? QQ_COLORS.slate400;
             const wasSteal = team
               ? Array.from(recordedSteals).some(key => key.endsWith(`-${team.id}`))
               : false;
@@ -501,7 +502,7 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
                   ? `linear-gradient(135deg, ${teamColor}88, ${teamColor}33)`
                   : 'rgba(255,255,255,0.04)',
                 border: shown
-                  ? `2px solid ${team ? teamColor : '#475569'}`
+                  ? `2px solid ${team ? teamColor : QQ_COLORS.slate600}`
                   : '1px solid rgba(255,255,255,0.08)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: 4,
@@ -543,7 +544,7 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
         position: 'fixed', top: 14, right: 14, zIndex: 99999,
         padding: '8px 14px', borderRadius: 8,
         border: '1px solid rgba(236,72,153,0.5)',
-        background: 'rgba(20,16,31,0.85)', color: '#EC4899',
+        background: 'rgba(20,16,31,0.85)', color: QQ_COLORS.brandPink,
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontWeight: 900, fontSize: 13, cursor: 'pointer',
         boxShadow: '0 6px 18px rgba(0,0,0,0.4)',
@@ -699,8 +700,8 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       ].join(',')
     : null;
   const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0A0814') : '#0A0814');
-  const textCol = s.theme?.textColor ?? '#e2e8f0';
-  const accent = s.theme?.accentColor ?? '#EC4899';
+  const textCol = s.theme?.textColor ?? QQ_COLORS.slate200;
+  const accent = s.theme?.accentColor ?? QQ_COLORS.brandPink;
   // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy.
   // PreGame/Paused nutzen denselben Default wie In-Game (COZY_CARD_BG),
   // damit der ganze Beamer eine konsistente Card-Optik hat.
@@ -2055,7 +2056,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           <div style={{
             fontFamily: fontFam,
             fontSize: 'clamp(18px, 1.8cqw, 26px)', fontWeight: 900,
-            color: '#EC4899', letterSpacing: '0.32em', textTransform: 'uppercase',
+            color: QQ_COLORS.brandPink, letterSpacing: '0.32em', textTransform: 'uppercase',
             textShadow: '0 0 18px rgba(236,72,153,0.6)',
             animation: 'qqGetReadyEyebrow 0.6s ease 0.1s both',
             display: 'inline-flex', alignItems: 'center', gap: 12, justifyContent: 'center',
@@ -2100,7 +2101,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           <div style={{
             fontFamily: fontFam,
             fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
-            color: '#cbd5e1', letterSpacing: '0.04em',
+            color: QQ_COLORS.slate300, letterSpacing: '0.04em',
             animation: 'qqGetReadyEyebrow 0.6s ease 0.3s both',
           }}>
             {getReady.reason === 'start'
@@ -2265,7 +2266,7 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
         </span>
         <span style={{
           fontSize: 'clamp(22px, 2.4cqw, 34px)', fontWeight: 900,
-          color: '#fde68a', letterSpacing: 0.4, textTransform: 'uppercase',
+          color: QQ_COLORS.yellow300, letterSpacing: 0.4, textTransform: 'uppercase',
         }}>
           {lang === 'en' ? 'Who starts?' : 'Wer fängt an?'}
         </span>
@@ -2326,7 +2327,7 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
               <span title={t.name} style={{
                 fontSize: 'clamp(13px, 1.3cqw, 18px)',
                 fontWeight: 800,
-                color: active || isWinner ? t.color : '#cbd5e1',
+                color: active || isWinner ? t.color : QQ_COLORS.slate300,
                 maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
               }}>
@@ -2446,7 +2447,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
         flex: '0 0 auto',
         padding: '8px 18px', borderRadius: 999,
         background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
-        color: '#94a3b8', fontSize: 15, fontWeight: 700,
+        color: QQ_COLORS.slate400, fontSize: 15, fontWeight: 700,
       }}>
         <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Waiting for start…' : 'Bereit für Start…'}
       </div>
@@ -2599,7 +2600,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, lineHeight: 1.05 }}>
                     <span style={{
                       fontSize: 11, fontWeight: 700, letterSpacing: 1.2,
-                      textTransform: 'uppercase', color: '#94a3b8',
+                      textTransform: 'uppercase', color: QQ_COLORS.slate400,
                     }}>
                       <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
                     </span>
@@ -2615,8 +2616,8 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                     <div style={{
                       padding: '6px 18px', borderRadius: 999,
                       background: urgent ? 'rgba(239,68,68,0.25)' : 'rgba(15,23,42,0.5)',
-                      border: `2px solid ${urgent ? '#EF4444' : '#475569'}`,
-                      color: urgent ? '#fca5a5' : '#e2e8f0',
+                      border: `2px solid ${urgent ? QQ_COLORS.red500 : QQ_COLORS.slate600}`,
+                      color: urgent ? QQ_COLORS.red300 : QQ_COLORS.slate200,
                       fontSize: 'clamp(20px, 2.4cqw, 30px)', fontWeight: 900,
                       minWidth: 76, textAlign: 'center',
                       animation: urgent ? 'qqHpTimerGlow 0.6s ease infinite alternate' : 'none',
@@ -2767,7 +2768,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
               background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.10))',
               border: `${chipStyles.border}px solid rgba(34,197,94,0.55)`,
               boxShadow: `0 4px 14px rgba(34,197,94,${chipStyles.shadowAlpha})`,
-              color: '#86efac', fontSize: chipStyles.fontSize, fontWeight: 900,
+              color: QQ_COLORS.green300, fontSize: chipStyles.fontSize, fontWeight: 900,
               letterSpacing: 0.2,
               animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
             }}>
@@ -2796,7 +2797,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
           flex: '0 0 auto',
           display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
           gap: 'clamp(10px, 1.4cqw, 18px)',
-          fontSize: 'clamp(18px, 2cqw, 28px)', color: '#94a3b8', fontWeight: 900,
+          fontSize: 'clamp(18px, 2cqw, 28px)', color: QQ_COLORS.slate400, fontWeight: 900,
         }}>
           <span style={{ fontSize: 'clamp(20px, 2.2cqw, 30px)' }}>
             <QQEmojiIcon emoji="❌"/> {lang === 'en' ? 'Out:' : 'Raus:'}
@@ -3490,7 +3491,7 @@ export function MuchoOptionsReveal({
 
   const showLock = locked;
   const akt3On = locked;
-  const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#EC4899', '#22C55E'];
+  const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.brandPink, QQ_COLORS.green500];
   // 2026-05-09 (Wolf): Negative-Squared-Latin-Emojis statt Plain-Text.
   // 2026-05-09 v2 (Wolf): zurück auf Plain Text — Emoji-Version 🅰🅱🅲🅳
   // wurde auf Mac/iPhone als blaue OS-Squares mit weißem Buchstaben gerendert,
@@ -3526,7 +3527,7 @@ export function MuchoOptionsReveal({
         const optImg = optionImages?.[i];
         const isCorrect = showLock && i === correctOptionIndex;
         const isWrong = showLock && i !== correctOptionIndex;
-        const optColor = MUCHO_COLORS[i] ?? '#64748B';
+        const optColor = MUCHO_COLORS[i] ?? QQ_COLORS.slate500;
         const optText = lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt;
         const voterShow = shownVoterSet.has(i);
         // Voter pro Option vorberechnen — wir brauchen sie ausserhalb der Card
@@ -3586,7 +3587,7 @@ export function MuchoOptionsReveal({
               <div style={{
                 position: 'relative', zIndex: 1,
                 width: 56, height: 56, borderRadius: 16,
-                background: isCorrect ? '#22C55E' : isWrong ? '#374151' : optColor,
+                background: isCorrect ? QQ_COLORS.green500 : isWrong ? '#374151' : optColor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
                 boxShadow: isCorrect
@@ -3598,7 +3599,7 @@ export function MuchoOptionsReveal({
                 position: 'relative', zIndex: 1,
                 flex: 1, minWidth: 0,
                 fontSize: 'clamp(26px, 3.2cqw, 44px)', fontWeight: 900,
-                color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.3,
+                color: isWrong ? QQ_COLORS.slate600 : QQ_COLORS.slate100, lineHeight: 1.3,
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
@@ -3663,7 +3664,7 @@ export function MuchoOptionsReveal({
                             padding: '2px 9px', borderRadius: 999,
                             background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
                             border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
-                            color: isFastest ? '#0A0814' : '#e2e8f0',
+                            color: isFastest ? '#0A0814' : QQ_COLORS.slate200,
                             fontWeight: 900,
                             fontSize: 'clamp(11px, 1.2cqw, 15px)',
                             whiteSpace: 'nowrap',
@@ -3722,9 +3723,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
   // 2026-05-08 (Aurora-Vivid): Standard-Accent jetzt Brand-Pink (#EC4899)
   // statt Amber-Gold (#EC4899). Eurovision behaelt sein Hot-Pink (#FF2D7B).
   // accentSoft/accentWarm sind Pink-Spektrum statt Gold-Spektrum.
-  const accentHex     = eurovisionMode ? '#FF2D7B' : '#EC4899';
+  const accentHex     = eurovisionMode ? '#FF2D7B' : QQ_COLORS.brandPink;
   const accentRgb     = eurovisionMode ? '255,45,123' : '236,72,153';
-  const accentSoftHex = eurovisionMode ? '#fde6f0' : '#FBCFE8';
+  const accentSoftHex = eurovisionMode ? '#fde6f0' : QQ_COLORS.brandPinkSoft;
   const accentWarmHex = eurovisionMode ? '#C084FC' : '#F9A8D4'; // accent-2 fuer Fireflies-Variation
   // Wolf 2026-05-05 'episch aber professionell': Phasen-Choreographie:
   //   0.0–0.9s  Subtitle „HERZLICH WILLKOMMEN ZUM" letter-cascade aus weitem
@@ -4014,7 +4015,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               fontWeight: 400,
               letterSpacing: '0.04em',
               lineHeight: 0.96,
-              color: eurovisionMode ? accentHex : '#EC4899',
+              color: eurovisionMode ? accentHex : QQ_COLORS.brandPink,
               // 2026-05-13 Kontrast-Audit ESC: Dark-Halo davor, Pink-Glow
               // reduziert (Welcome-Video-BG kann hellpink-Frames haben).
               textShadow: eurovisionMode
@@ -4133,7 +4134,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               background: 'linear-gradient(135deg, rgba(236,72,153,0.32), rgba(168,85,247,0.24))',
               border: '2px solid rgba(236,72,153,0.65)',
               fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 900,
-              color: '#fde68a', letterSpacing: '0.22em', textTransform: 'uppercase',
+              color: QQ_COLORS.yellow300, letterSpacing: '0.22em', textTransform: 'uppercase',
               boxShadow: '0 0 30px rgba(236,72,153,0.45), 0 4px 14px rgba(0,0,0,0.4)',
               animation: 'qqIntroEurovisionPop 0.7s var(--qq-ease-bounce) 2.6s both',
               opacity: 0,
@@ -4171,7 +4172,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             WebkitBackdropFilter: 'blur(8px)',
             border: `2px solid rgba(${accentRgb},0.55)`,
             boxShadow: `0 10px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(${accentRgb},0.12), inset 0 1px 0 rgba(255,255,255,0.06)`,
-            color: '#f1f5f9',
+            color: QQ_COLORS.slate100,
             fontSize: 'clamp(18px, 2cqw, 30px)', fontWeight: 900,
             maxWidth: '60cqw',
             lineHeight: 1.28,
@@ -4438,7 +4439,7 @@ function RulesIntroOverlay({ language, visible, eurovisionMode }: {
         <div style={{
           fontSize: 'clamp(22px,3cqw,40px)', fontWeight: 700,
           letterSpacing: '0.05em',
-          color: '#e2e8f0',
+          color: QQ_COLORS.slate200,
           textShadow: '0 2px 12px rgba(0,0,0,0.4)',
           animation: visible ? 'qqRulesIntroSub 0.8s cubic-bezier(0.2,0.8,0.4,1) 0.95s both' : 'none',
         }}>{sub}</div>
@@ -4812,7 +4813,7 @@ export function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSi
         fontWeight: 800,
         lineHeight: 1.25,
         letterSpacing: '0.005em',
-        color: eurovisionMode ? '#fde6f0' : '#FBCFE8',
+        color: eurovisionMode ? '#fde6f0' : QQ_COLORS.brandPinkSoft,
         textAlign: 'center',
         // Soft inner highlight + ambient glow
         // 2026-05-06 v5: backdrop-filter raus — beim Bounce-In skaliert die
@@ -5008,7 +5009,7 @@ function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string
       <span style={{ fontSize: 48, lineHeight: 1 }}><QQEmojiIcon emoji={icon}/></span>
       <div>
         <div style={{ fontWeight: 900, color, fontSize: 'clamp(22px, 2.5cqw, 30px)' }}>{label}</div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(17px, 1.8cqw, 22px)', color: '#94a3b8', marginTop: 4 }}>{desc}</div>
+        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(17px, 1.8cqw, 22px)', color: QQ_COLORS.slate400, marginTop: 4 }}>{desc}</div>
       </div>
     </div>
   );
@@ -5019,7 +5020,7 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
     <div style={{
       minHeight: '100cqh', background: '#0A0814',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: '#e2e8f0',
+      fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: QQ_COLORS.slate200,
     }}>
       <style>{BEAMER_CSS}</style>
       <Fireflies />
@@ -5032,7 +5033,7 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         }}>
           CozyQuiz
         </div>
-        <div style={{ color: '#334155', marginBottom: 20, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
+        <div style={{ color: QQ_COLORS.slate700, marginBottom: 20, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
         {/* 2026-05-04 (Wolf #10): Spinner + besserer Wakeup-Hint statt nur Text. */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
@@ -5040,10 +5041,10 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
             border: '3px solid rgba(236,72,153,0.18)',
-            borderTopColor: '#EC4899',
+            borderTopColor: QQ_COLORS.brandPink,
             animation: 'spin 0.9s linear infinite',
           }} />
-          <div style={{ fontSize: 13, color: connected ? '#22C55E' : '#EC4899', fontWeight: 700 }}>
+          <div style={{ fontSize: 13, color: connected ? QQ_COLORS.green500 : QQ_COLORS.brandPink, fontWeight: 700 }}>
             {connected
               ? bt.loading.waiting.de
               : 'Server wird wach gemacht — gleich geht’s los'}

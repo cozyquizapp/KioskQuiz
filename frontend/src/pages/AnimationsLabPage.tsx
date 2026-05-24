@@ -6,6 +6,7 @@
 //             Groessere Sandboxes, echte Card-Kontexte aus dem Beamer.
 import React, { useEffect, useRef, useState } from 'react';
 import { flushSync } from 'react-dom';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ─── Demo-Card-Wrapper ──────────────────────────────────────────────────────
 function DemoCard({
@@ -46,23 +47,23 @@ function DemoCard({
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 10 }}>
           <span style={{
             fontSize: 24, fontWeight: 900,
-            color: '#94a3b8', fontFamily: 'monospace',
+            color: QQ_COLORS.slate400, fontFamily: 'monospace',
             letterSpacing: '-0.02em',
           }}>{String(num).padStart(2, '0')}</span>
-          <h3 style={{ fontSize: 18, fontWeight: 800, color: '#f1f5f9', margin: 0, letterSpacing: '-0.01em' }}>{title}</h3>
+          <h3 style={{ fontSize: 18, fontWeight: 800, color: QQ_COLORS.slate100, margin: 0, letterSpacing: '-0.01em' }}>{title}</h3>
         </div>
         <button onClick={onReplay} style={{
           padding: '6px 14px', borderRadius: 8,
           border: '1px solid rgba(245,158,11,0.4)',
           background: 'rgba(245,158,11,0.10)',
-          color: '#fbbf24', fontSize: 12, fontWeight: 800, cursor: 'pointer',
+          color: QQ_COLORS.amber400, fontSize: 12, fontWeight: 800, cursor: 'pointer',
           transition: 'all 0.18s ease',
         }}
         onMouseEnter={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.22)'; }}
         onMouseLeave={e => { e.currentTarget.style.background = 'rgba(245,158,11,0.10)'; }}
         >{replayLabel}</button>
       </div>
-      <div style={{ fontSize: 13, color: '#94a3b8', lineHeight: 1.4 }}>{blurb}</div>
+      <div style={{ fontSize: 13, color: QQ_COLORS.slate400, lineHeight: 1.4 }}>{blurb}</div>
       <div key={innerKey} style={{
         marginTop: 'auto',
         flex: 1,
@@ -94,7 +95,7 @@ function SlideOffPushDemo({ replay }: { replay: number }) {
           ? 'slideOutLeft 0.35s cubic-bezier(0.4, 0, 0.2, 1) both'
           : 'slideInLeft 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both',
       }}>
-        <Card title="❓ Frage" tint="#3B82F6">
+        <Card title="❓ Frage" tint={QQ_COLORS.blue500}>
           Wie viele Bundesländer hat Deutschland?
         </Card>
       </div>
@@ -105,7 +106,7 @@ function SlideOffPushDemo({ replay }: { replay: number }) {
           ? 'slideInRight 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.2s both'
           : 'slideOutRight 0.35s cubic-bezier(0.4, 0, 0.2, 1) both',
       }}>
-        <Card title="✓ Antwort" tint="#22C55E">
+        <Card title="✓ Antwort" tint={QQ_COLORS.green500}>
           16 Bundesländer
         </Card>
       </div>
@@ -122,7 +123,7 @@ function Card({ title, tint, children }: { title: string; tint: string; children
       maxWidth: 320, textAlign: 'center',
     }}>
       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase', color: tint, marginBottom: 6 }}>{title}</div>
-      <div style={{ fontSize: 16, fontWeight: 700, color: '#f1f5f9' }}>{children}</div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: QQ_COLORS.slate100 }}>{children}</div>
     </div>
   );
 }
@@ -144,7 +145,7 @@ function LineMaskRevealDemo() {
           justifyContent: 'center',
         }}>
           <div style={{
-            fontSize: 18, fontWeight: 700, color: '#f1f5f9',
+            fontSize: 18, fontWeight: 700, color: QQ_COLORS.slate100,
             transform: 'translateY(100%)',
             animation: `lineReveal 0.55s cubic-bezier(0.16, 1, 0.3, 1) ${0.08 * i}s both`,
           }}>{line}</div>
@@ -167,7 +168,7 @@ function SpringPopScaleDemo() {
     }}>
       <div style={{ fontSize: 32, lineHeight: 1, marginBottom: 8 }}>🎯</div>
       <div style={{ fontSize: 14, fontWeight: 800, color: '#fff' }}>Card erschienen</div>
-      <div style={{ fontSize: 12, color: '#cbd5e1', marginTop: 4 }}>scale 0.85 → 1.02 → 1</div>
+      <div style={{ fontSize: 12, color: QQ_COLORS.slate300, marginTop: 4 }}>scale 0.85 → 1.02 → 1</div>
     </div>
   );
 }
@@ -180,7 +181,7 @@ function SlotMachineDemo({ replay }: { replay: number }) {
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
       <div style={{
-        fontSize: 13, fontWeight: 800, color: '#94a3b8',
+        fontSize: 13, fontWeight: 800, color: QQ_COLORS.slate400,
         letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>Punkte</div>
       <div style={{
@@ -194,19 +195,19 @@ function SlotMachineDemo({ replay }: { replay: number }) {
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 38, fontWeight: 900, color: '#fbbf24',
+          fontSize: 38, fontWeight: 900, color: QQ_COLORS.amber400,
           fontFamily: 'monospace',
           animation: 'slotOut 0.35s cubic-bezier(0.4, 0, 0.6, 1) both',
         }}>{prev}</div>
         <div style={{
           position: 'absolute', inset: 0,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 38, fontWeight: 900, color: '#fbbf24',
+          fontSize: 38, fontWeight: 900, color: QQ_COLORS.amber400,
           fontFamily: 'monospace',
           animation: 'slotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) 0.25s both',
         }}>{target}</div>
       </div>
-      <div style={{ fontSize: 11, color: '#64748b', maxWidth: 100 }}>3D-Walze rotiert in Y-Achse</div>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate500, maxWidth: 100 }}>3D-Walze rotiert in Y-Achse</div>
     </div>
   );
 }
@@ -254,13 +255,13 @@ function ViewTransitionsDemo({ replay }: { replay: number }) {
         }}
       >Runde {round}</div>
       <div style={{
-        fontSize: 11, color: supports ? '#22C55E' : '#EF4444',
+        fontSize: 11, color: supports ? QQ_COLORS.green500 : QQ_COLORS.red500,
         textAlign: 'center', fontWeight: 700,
       }}>
         {supports ? '✓ Browser unterstützt View Transitions API' : '✗ Browser unterstützt kein View Transitions (Fallback aktiv)'}
       </div>
       <div style={{
-        fontSize: 10, color: '#64748b',
+        fontSize: 10, color: QQ_COLORS.slate500,
         textAlign: 'center', maxWidth: 240,
       }}>
         Klick mehrfach auf Replay → Pill wechselt mit Cross-Fade + Scale via nativer Browser-API
@@ -275,7 +276,7 @@ function WordStaggerDemo() {
   const words = sentence.split(' ');
   return (
     <div style={{
-      fontSize: 16, fontWeight: 600, color: '#f1f5f9',
+      fontSize: 16, fontWeight: 600, color: QQ_COLORS.slate100,
       lineHeight: 1.5, textAlign: 'center', maxWidth: '90%',
     }}>
       {words.map((w, i) => (
@@ -314,7 +315,7 @@ function CardFlipDemo({ replay }: { replay: number }) {
           fontSize: 36,
         }}>
           🎴
-          <div style={{ fontSize: 13, color: '#cbd5e1', marginTop: 6, fontWeight: 700 }}>Vorderseite</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate300, marginTop: 6, fontWeight: 700 }}>Vorderseite</div>
         </div>
         <div style={{
           position: 'absolute', inset: 0,
@@ -410,7 +411,7 @@ function MuchoRevealDemo({ replay }: { replay: number }) {
             fontSize: 9, fontWeight: 800, letterSpacing: '0.14em', color: '#c4b5fd',
             marginBottom: 6,
           }}>🎼 MUCHO</div>
-          <div style={{ fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
+          <div style={{ fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate100 }}>
             Wer komponierte die 9. Symphonie?
           </div>
         </div>
@@ -438,10 +439,10 @@ function MuchoRevealDemo({ replay }: { replay: number }) {
               }}>
                 <div style={{ display: 'flex', alignItems: 'baseline', gap: 8 }}>
                   <span style={{
-                    fontSize: 11, fontWeight: 800, color: '#94a3b8',
+                    fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate400,
                     fontFamily: 'monospace', letterSpacing: '0.05em',
                   }}>{opt.id}</span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#f1f5f9' }}>{opt.text}</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate100 }}>{opt.text}</span>
                 </div>
                 {/* Voter-Strip */}
                 <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
@@ -465,7 +466,7 @@ function MuchoRevealDemo({ replay }: { replay: number }) {
           })}
         </div>
       </div>
-      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textAlign: 'center' }}>
         Voter-Hops 700 ms/Option · Lock-Doppelblink @ 3.0 s · Winner-Pop @ 3.8 s (Beethoven = korrekt)
       </div>
     </div>
@@ -489,14 +490,14 @@ interface FlowQuestion {
   correct: number;
 }
 const FLOW_Q1: FlowQuestion = {
-  category: 'GEOGRAPHIE', catColor: '#22C55E', catEmoji: '🌍',
+  category: 'GEOGRAPHIE', catColor: QQ_COLORS.green500, catEmoji: '🌍',
   round: 1,
   text: 'Wie viele Bundesländer hat Deutschland?',
   options: ['14', '15', '16', '17'],
   correct: 2,
 };
 const FLOW_Q2: FlowQuestion = {
-  category: 'GESCHICHTE', catColor: '#F59E0B', catEmoji: '🏛️',
+  category: 'GESCHICHTE', catColor: QQ_COLORS.amber500, catEmoji: '🏛️',
   round: 1,
   text: 'In welchem Jahr fiel die Berliner Mauer?',
   options: ['1987', '1989', '1991', '1993'],
@@ -541,12 +542,12 @@ function FlowQuestionCard({ q, slideState, revealed }: {
           color: q.catColor,
         }}>{q.catEmoji} {q.category}</div>
         <div style={{
-          fontSize: 10, fontWeight: 700, color: '#94a3b8', letterSpacing: '0.10em',
+          fontSize: 10, fontWeight: 700, color: QQ_COLORS.slate400, letterSpacing: '0.10em',
         }}>RUNDE {q.round}</div>
       </div>
       {/* Frage */}
       <div style={{
-        fontSize: 17, fontWeight: 700, color: '#f1f5f9',
+        fontSize: 17, fontWeight: 700, color: QQ_COLORS.slate100,
         textAlign: 'center', lineHeight: 1.3,
         padding: '4px 8px',
       }}>{q.text}</div>
@@ -568,7 +569,7 @@ function FlowQuestionCard({ q, slideState, revealed }: {
                 ? '2px solid #22C55E'
                 : '1px solid rgba(255,255,255,0.10)',
               fontSize: 13, fontWeight: 700,
-              color: dim ? '#64748b' : '#f1f5f9',
+              color: dim ? QQ_COLORS.slate500 : QQ_COLORS.slate100,
               opacity: dim ? 0.5 : 1,
               boxShadow: revealed && isCorrect ? '0 0 24px rgba(34,197,94,0.45)' : 'none',
               transform: revealed && isCorrect ? 'scale(1.02)' : 'scale(1)',
@@ -579,7 +580,7 @@ function FlowQuestionCard({ q, slideState, revealed }: {
               <span>{opt}</span>
               {revealed && isCorrect && (
                 <span style={{
-                  fontSize: 10, fontWeight: 800, color: '#22C55E',
+                  fontSize: 10, fontWeight: 800, color: QQ_COLORS.green500,
                   letterSpacing: '0.08em',
                   animation: 'flowCorrectBadge 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both',
                 }}>✓ +10</span>
@@ -590,7 +591,7 @@ function FlowQuestionCard({ q, slideState, revealed }: {
       </div>
       {/* Mock-Timer */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 'auto' }}>
-        <div style={{ fontSize: 9, fontWeight: 800, color: '#94a3b8', letterSpacing: '0.10em' }}>TIMER</div>
+        <div style={{ fontSize: 9, fontWeight: 800, color: QQ_COLORS.slate400, letterSpacing: '0.10em' }}>TIMER</div>
         <div style={{
           flex: 1, height: 6, borderRadius: 999,
           background: 'rgba(255,255,255,0.08)',
@@ -603,7 +604,7 @@ function FlowQuestionCard({ q, slideState, revealed }: {
             transition: 'width 2.4s linear',
           }} />
         </div>
-        <div style={{ fontSize: 11, fontWeight: 800, color: '#fbbf24', fontFamily: 'monospace', minWidth: 28, textAlign: 'right' }}>
+        <div style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.amber400, fontFamily: 'monospace', minWidth: 28, textAlign: 'right' }}>
           {revealed ? '0s' : '24s'}
         </div>
       </div>
@@ -640,7 +641,7 @@ function QRevealNextDemo({ replay }: { replay: number }) {
         <div style={{
           position: 'absolute', top: 8, left: '50%', transform: 'translateX(-50%)',
           fontSize: 10, fontWeight: 800, letterSpacing: '0.16em',
-          color: '#fbbf24', opacity: 0.7, zIndex: 5,
+          color: QQ_COLORS.amber400, opacity: 0.7, zIndex: 5,
           padding: '3px 12px', borderRadius: 999,
           background: 'rgba(0,0,0,0.6)', border: '1px solid rgba(251,191,36,0.3)',
         }}>{phaseLabel}</div>
@@ -650,7 +651,7 @@ function QRevealNextDemo({ replay }: { replay: number }) {
           <FlowQuestionCard q={FLOW_Q2} slideState={q2Slide} revealed={false} />
         </div>
       </div>
-      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textAlign: 'center' }}>
         Auto-Loop 2.8 s + 2.6 s + 2.6 s · Slide-Out left + Slide-In right · Reveal-Highlight 450 ms Spring
       </div>
     </div>
@@ -695,9 +696,9 @@ function ScoreTickup({ from, to, delayMs, durationMs }: {
   return (
     <div style={{ display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 84, justifyContent: 'flex-end' }}>
       {showDelta && (
-        <span style={{ fontSize: 10, color: '#22C55E', fontWeight: 800 }}>+{to - from}</span>
+        <span style={{ fontSize: 10, color: QQ_COLORS.green500, fontWeight: 800 }}>+{to - from}</span>
       )}
-      <span style={{ fontSize: 18, fontWeight: 900, color: '#fbbf24', fontFamily: 'monospace' }}>{val}</span>
+      <span style={{ fontSize: 18, fontWeight: 900, color: QQ_COLORS.amber400, fontFamily: 'monospace' }}>{val}</span>
     </div>
   );
 }
@@ -754,14 +755,14 @@ function ScoreCascadeDemo({ replay }: { replay: number }) {
                   fontSize: 12, fontWeight: 800, color: '#fff',
                   flexShrink: 0,
                 }}>{beforeRank + 1}</div>
-                <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: '#f1f5f9', letterSpacing: '-0.005em' }}>{t.name}</div>
+                <div style={{ flex: 1, fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate100, letterSpacing: '-0.005em' }}>{t.name}</div>
                 <ScoreTickup from={t.before} to={t.before + t.delta} delayMs={tickupDelay} durationMs={TICKUP_MS} />
               </div>
             );
           })}
         </div>
       </div>
-      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textAlign: 'center' }}>
         Stagger 200 ms · Tickup 600 ms · Position-Swap 800 ms · Kraken springt #4→#1 mit +28
       </div>
     </div>
@@ -847,7 +848,7 @@ function CheeseWinnerCascadeDemo({ replay }: { replay: number }) {
                 </div>
                 <div style={{
                   position: 'absolute', top: 60, left: '50%', transform: 'translateX(-50%)',
-                  fontSize: 10, fontWeight: 800, color: '#f1f5f9',
+                  fontSize: 10, fontWeight: 800, color: QQ_COLORS.slate100,
                   whiteSpace: 'nowrap',
                   textShadow: '0 2px 6px rgba(0,0,0,0.8)',
                   opacity: 0,
@@ -858,7 +859,7 @@ function CheeseWinnerCascadeDemo({ replay }: { replay: number }) {
           })}
         </div>
       </div>
-      <div style={{ fontSize: 11, color: '#64748b', textAlign: 'center' }}>
+      <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textAlign: 'center' }}>
         4 Teams richtig · Stagger 850 ms · letzter Avatar = Climax-Glow-Pulse
       </div>
     </div>
@@ -927,12 +928,12 @@ function BgLayerShowcaseDemo({ replay }: { replay: number }) {
           background: 'linear-gradient(180deg, #1f1610, #150e08)',
           border: '1px solid rgba(245,158,11,0.30)',
           boxShadow: '0 16px 48px rgba(0,0,0,0.55), inset 0 1px 0 rgba(245,158,11,0.18)',
-          color: '#f1f5f9',
+          color: QQ_COLORS.slate100,
           textAlign: 'center', maxWidth: '72%',
           animation: layers.heartbeat ? 'showCardHeartbeat 3.2s ease-in-out infinite' : 'none',
           willChange: 'transform',
         }}>
-          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.16em', color: '#fbbf24', marginBottom: 8 }}>STANDARD-THEME PREVIEW</div>
+          <div style={{ fontSize: 10, fontWeight: 800, letterSpacing: '0.16em', color: QQ_COLORS.amber400, marginBottom: 8 }}>STANDARD-THEME PREVIEW</div>
           <div style={{ fontSize: 16, fontWeight: 700 }}>Welche Layer kommen ins echte /beamer?</div>
         </div>
       </div>
@@ -943,7 +944,7 @@ function BgLayerShowcaseDemo({ replay }: { replay: number }) {
             padding: '5px 11px', borderRadius: 999,
             border: layers[k] ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.10)',
             background: layers[k] ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.04)',
-            color: layers[k] ? '#fbbf24' : '#64748b',
+            color: layers[k] ? QQ_COLORS.amber400 : QQ_COLORS.slate500,
             fontSize: 11, fontWeight: 700, cursor: 'pointer',
             textTransform: 'capitalize',
             transition: 'all 0.18s ease',
@@ -1034,8 +1035,8 @@ function WolfIdleShowcase() {
                 }}
               />
             </div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#fbbf24' }}>{v.label}</div>
-            <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center', lineHeight: 1.3 }}>{v.blurb}</div>
+            <div style={{ fontSize: 13, fontWeight: 800, color: QQ_COLORS.amber400 }}>{v.label}</div>
+            <div style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center', lineHeight: 1.3 }}>{v.blurb}</div>
           </div>
         ))}
       </div>
@@ -1043,9 +1044,9 @@ function WolfIdleShowcase() {
         padding: '10px 14px', borderRadius: 10,
         background: 'rgba(34,197,94,0.08)',
         border: '1px solid rgba(34,197,94,0.25)',
-        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+        color: QQ_COLORS.slate300, fontSize: 12, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#86efac' }}>✓ 2-Layer-Setup live:</strong> Ring kommt jetzt als CSS-Border drum rum
+        <strong style={{ color: QQ_COLORS.green300 }}>✓ 2-Layer-Setup live:</strong> Ring kommt jetzt als CSS-Border drum rum
         (Brand-Magenta <code style={{ color: '#f9a8d4' }}>#A21247</code>), Wolf-SVG ist inner und animiert
         unabhängig. Für die echte App-Integration brauche ich noch die übrigen Posen ohne Ring (winken,
         jubel, daumen, etc.) — dann kann das ganze CozyWolf-System auf 2-Layer migrieren.
@@ -1083,7 +1084,7 @@ function WolfWinkShowcase() {
             padding: '6px 14px', borderRadius: 999,
             border: speedIdx === i ? '1px solid rgba(245,158,11,0.5)' : '1px solid rgba(255,255,255,0.10)',
             background: speedIdx === i ? 'rgba(245,158,11,0.18)' : 'rgba(255,255,255,0.04)',
-            color: speedIdx === i ? '#fbbf24' : '#94a3b8',
+            color: speedIdx === i ? QQ_COLORS.amber400 : QQ_COLORS.slate400,
             fontSize: 11, fontWeight: 700, cursor: 'pointer',
             fontFamily: 'inherit',
             transition: 'all 0.15s ease',
@@ -1133,7 +1134,7 @@ function WolfWinkShowcase() {
                   }}
                 />
               </div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: '#94a3b8', textAlign: 'center', lineHeight: 1.3 }}>{v.label}</div>
+              <div style={{ fontSize: 11, fontWeight: 700, color: QQ_COLORS.slate400, textAlign: 'center', lineHeight: 1.3 }}>{v.label}</div>
             </div>
           );
         })}
@@ -1143,9 +1144,9 @@ function WolfWinkShowcase() {
         padding: '10px 14px', borderRadius: 10,
         background: 'rgba(34,197,94,0.08)',
         border: '1px solid rgba(34,197,94,0.25)',
-        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+        color: QQ_COLORS.slate300, fontSize: 12, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#86efac' }}>✓ Frame-Animation live:</strong> CSS <code style={{ color: '#fbbf24' }}>steps(2)</code> wechselt zwischen
+        <strong style={{ color: QQ_COLORS.green300 }}>✓ Frame-Animation live:</strong> CSS <code style={{ color: QQ_COLORS.amber400 }}>steps(2)</code> wechselt zwischen
         wink1 (Hand oben) und wink2 (Hand unten). Default-Speed Medium (0.6s = ~100 Wave/Min, fühlt
         sich natürlich an). Geile Mischvarianten: Augen-zu+Mund-zu = ruhiges Hallo · Augen-auf+Mund-auf = enthusiastisches Winken.
         Empfehlung für Eurovision: <strong>Augen-auf · Mund-auf, Medium</strong> als Lobby-Default.
@@ -1159,10 +1160,10 @@ function WolfWinkShowcase() {
 // jede Card via Y-Rotation 180° und enthüllt Avatar + Name. Stagger 350 ms.
 function TeamRevealFlipDemo({ replay }: { replay: number }) {
   const teams = [
-    { name: 'Wolfsrudel',     emoji: '🐉', color: '#22C55E' },
+    { name: 'Wolfsrudel',     emoji: '🐉', color: QQ_COLORS.green500 },
     { name: 'Fuchsbande',     emoji: '🦊', color: '#F97316' },
     { name: 'Kraken-Krew',    emoji: '🐙', color: '#A855F7' },
-    { name: 'Eulenmagier',    emoji: '🦉', color: '#EAB308' },
+    { name: 'Eulenmagier',    emoji: '🦉', color: QQ_COLORS.yellow500 },
     { name: 'Pingu-Patrol',   emoji: '🐧', color: '#0EA5E9' },
     { name: 'Bären-Brigade',  emoji: '🐻', color: '#E11D48' },
   ];
@@ -1189,7 +1190,7 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
     }}>
       {/* Title */}
       <div style={{
-        fontSize: 22, fontWeight: 900, color: '#f1f5f9',
+        fontSize: 22, fontWeight: 900, color: QQ_COLORS.slate100,
         letterSpacing: '-0.02em', textAlign: 'center',
         textShadow: '0 0 20px rgba(236,72,153,0.45)',
       }}>HEUTE SPIELEN</div>
@@ -1262,7 +1263,7 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
                   <div style={{
                     fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
                     fontSize: 22, fontWeight: 900,
-                    color: '#FBCFE8',
+                    color: QQ_COLORS.brandPinkSoft,
                     letterSpacing: '0.02em',
                     textShadow: '0 0 12px rgba(236,72,153,0.7), 0 0 4px rgba(236,72,153,0.4)',
                     lineHeight: 1,
@@ -1305,7 +1306,7 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
         })}
       </div>
       <div style={{
-        fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8,
+        fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', marginTop: 8,
       }}>
         Stagger 600 ms · Flip-Easing cubic-bezier(0.34, 1.46, 0.64, 1) · 1.15 s pro Card
       </div>
@@ -1319,10 +1320,10 @@ function TeamRevealFlipDemo({ replay }: { replay: number }) {
 // damit beide Transforms unabhängig laufen.
 function TeamRevealSlamFlipDemo({ replay }: { replay: number }) {
   const teams = [
-    { name: 'Wolfsrudel',     emoji: '🐉', color: '#22C55E' },
+    { name: 'Wolfsrudel',     emoji: '🐉', color: QQ_COLORS.green500 },
     { name: 'Fuchsbande',     emoji: '🦊', color: '#F97316' },
     { name: 'Kraken-Krew',    emoji: '🐙', color: '#A855F7' },
-    { name: 'Eulenmagier',    emoji: '🦉', color: '#EAB308' },
+    { name: 'Eulenmagier',    emoji: '🦉', color: QQ_COLORS.yellow500 },
     { name: 'Pingu-Patrol',   emoji: '🐧', color: '#0EA5E9' },
     { name: 'Bären-Brigade',  emoji: '🐻', color: '#E11D48' },
   ];
@@ -1361,7 +1362,7 @@ function TeamRevealSlamFlipDemo({ replay }: { replay: number }) {
       `}</style>
 
       <div style={{
-        fontSize: 22, fontWeight: 900, color: '#f1f5f9',
+        fontSize: 22, fontWeight: 900, color: QQ_COLORS.slate100,
         letterSpacing: '-0.02em', textAlign: 'center',
         textShadow: '0 0 20px rgba(236,72,153,0.45)',
       }}>HEUTE SPIELEN</div>
@@ -1438,7 +1439,7 @@ function TeamRevealSlamFlipDemo({ replay }: { replay: number }) {
         })}
       </div>
       <div style={{
-        fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8,
+        fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', marginTop: 8,
       }}>
         Stagger 700 ms · Slam 1.4 s · Settle-Pause 0.2 s · Flip 1.15 s
       </div>
@@ -1453,10 +1454,10 @@ function TeamRevealSlamFlipDemo({ replay }: { replay: number }) {
 // Bei 6 Teams ~22 s total mit Title-Vorlauf.
 function TeamRevealGameShowDemo({ replay }: { replay: number }) {
   const teams = [
-    { name: 'Wolfsrudel',     emoji: '🐉', color: '#22C55E' },
+    { name: 'Wolfsrudel',     emoji: '🐉', color: QQ_COLORS.green500 },
     { name: 'Fuchsbande',     emoji: '🦊', color: '#F97316' },
     { name: 'Kraken-Krew',    emoji: '🐙', color: '#A855F7' },
-    { name: 'Eulenmagier',    emoji: '🦉', color: '#EAB308' },
+    { name: 'Eulenmagier',    emoji: '🦉', color: QQ_COLORS.yellow500 },
     { name: 'Pingu-Patrol',   emoji: '🐧', color: '#0EA5E9' },
     { name: 'Bären-Brigade',  emoji: '🐻', color: '#E11D48' },
   ];
@@ -1498,7 +1499,7 @@ function TeamRevealGameShowDemo({ replay }: { replay: number }) {
 
       <div style={{
         fontSize: titleEmphasized ? 32 : 22,
-        fontWeight: 900, color: '#f1f5f9',
+        fontWeight: 900, color: QQ_COLORS.slate100,
         letterSpacing: '-0.02em', textAlign: 'center',
         textShadow: titleEmphasized
           ? '0 0 32px rgba(236,72,153,0.65)'
@@ -1609,7 +1610,7 @@ function TeamRevealGameShowDemo({ replay }: { replay: number }) {
         })}
       </div>
       <div style={{
-        fontSize: 12, color: '#94a3b8', textAlign: 'center', marginTop: 8,
+        fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', marginTop: 8,
       }}>
         Sequenziell · 3.6 s pro Team · Title 1.2 s + 6 Teams = ~23 s · Spotlight-Glow auf Hold
       </div>
@@ -1647,12 +1648,12 @@ function SparkOnCardShowcase() {
       {/* Card-Content */}
       <div style={{ fontSize: 38, lineHeight: 1 }}>🎰</div>
       <div style={{
-        fontSize: 13, fontWeight: 900, color: '#FBCFE8',
+        fontSize: 13, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
         letterSpacing: '0.04em', textAlign: 'center', padding: '0 14px',
         textShadow: '0 0 12px rgba(236,72,153,0.5)',
       }}>{title}</div>
       <div style={{
-        fontSize: 10, color: '#94A3B8', fontWeight: 700,
+        fontSize: 10, color: QQ_COLORS.slate400, fontWeight: 700,
         letterSpacing: '0.12em', textTransform: 'uppercase',
       }}>Important</div>
       {/* Sparks — Orbit + Twinkle (zwei parallele Animationen) */}
@@ -1708,8 +1709,8 @@ function SparkOnCardShowcase() {
               { size: 9, delay: 0, dur: 2.0, opacity: 1, twinkleDur: 0.65 },
             ]}
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Twinkle · 2.0 s</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.amber400 }}>Twinkle · 2.0 s</div>
+          <div style={{ fontSize: 10, color: QQ_COLORS.slate400, textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
             1 Spark mit Funkel-Pulse — schnell + subtil
           </div>
         </div>
@@ -1723,8 +1724,8 @@ function SparkOnCardShowcase() {
               { size: 8, delay: 0, dur: 1.8, opacity: 1, twinkleDur: 0.55, twinkleOffset: 0.3, reverse: true },
             ]}
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Double · 1.8 s gegenläufig</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.amber400 }}>Double · 1.8 s gegenläufig</div>
+          <div style={{ fontSize: 10, color: QQ_COLORS.slate400, textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
             2 Sparks twinklen versetzt — punchy aber kein Trail
           </div>
         </div>
@@ -1740,8 +1741,8 @@ function SparkOnCardShowcase() {
               { size: 5, delay: -1.2, dur: 1.6, opacity: 0.55, twinkleDur: 0.4,  twinkleOffset: 0.45 },
             ]}
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Sparkle · 4 Sparks rotating</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.amber400 }}>Sparkle · 4 Sparks rotating</div>
+          <div style={{ fontSize: 10, color: QQ_COLORS.slate400, textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
             4 Sparks unterschiedlicher Größen, gestaffelt + twinkle — Sparkle-Storm
           </div>
         </div>
@@ -1751,10 +1752,10 @@ function SparkOnCardShowcase() {
         padding: '10px 14px', borderRadius: 10,
         background: 'rgba(34,197,94,0.08)',
         border: '1px solid rgba(34,197,94,0.25)',
-        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+        color: QQ_COLORS.slate300, fontSize: 12, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#86efac' }}>Tech:</strong> CSS Motion Path
-        (<code style={{ color: '#fbbf24' }}>offset-path</code> + <code style={{ color: '#fbbf24' }}>offset-distance</code>)
+        <strong style={{ color: QQ_COLORS.green300 }}>Tech:</strong> CSS Motion Path
+        (<code style={{ color: QQ_COLORS.amber400 }}>offset-path</code> + <code style={{ color: QQ_COLORS.amber400 }}>offset-distance</code>)
         folgt einem <code>rect(0 100% 100% 0 round 18px)</code>-Pfad, der exakt
         dem Card-Border entspricht. Browser-Support seit 2023 (Chrome/FF/Safari).
         Pure CSS, kein JS-Tick → 60 fps stabil. Spark-Glow via <code>radial-gradient</code> +
@@ -1805,12 +1806,12 @@ function StarBorderShowcase() {
       }}>
         <div style={{ fontSize: 38, lineHeight: 1 }}>⭐</div>
         <div style={{
-          fontSize: 13, fontWeight: 900, color: '#FBCFE8',
+          fontSize: 13, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
           letterSpacing: '0.04em', textAlign: 'center', padding: '0 14px',
           textShadow: '0 0 12px rgba(236,72,153,0.5)',
         }}>{title}</div>
         <div style={{
-          fontSize: 10, color: '#94A3B8', fontWeight: 700,
+          fontSize: 10, color: QQ_COLORS.slate400, fontWeight: 700,
           letterSpacing: '0.12em', textTransform: 'uppercase',
         }}>Important</div>
       </div>
@@ -1835,8 +1836,8 @@ function StarBorderShowcase() {
             gradient="conic-gradient(from 0deg, transparent 0% 70%, rgba(236,72,153,0.9) 80%, transparent 90% 100%)"
             dur="4.5s"
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Pink · 4.5 s</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.amber400 }}>Pink · 4.5 s</div>
+          <div style={{ fontSize: 10, color: QQ_COLORS.slate400, textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
             1 Pink-Strahl, langsam — subtilster Look
           </div>
         </div>
@@ -1847,8 +1848,8 @@ function StarBorderShowcase() {
             gradient="conic-gradient(from 0deg, transparent 0% 60%, rgba(244,114,182,0.95) 70%, #EC4899 80%, rgba(244,114,182,0.95) 90%, transparent 100%)"
             dur="2.5s"
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Pink · 2.5 s</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.amber400 }}>Pink · 2.5 s</div>
+          <div style={{ fontSize: 10, color: QQ_COLORS.slate400, textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
             Breiterer Pink-Strahl, schneller — punchy
           </div>
         </div>
@@ -1859,8 +1860,8 @@ function StarBorderShowcase() {
             gradient="conic-gradient(from 0deg, transparent 0% 50%, #EC4899 60%, #FBCFE8 70%, #A21247 80%, transparent 90% 100%)"
             dur="3.2s"
           />
-          <div style={{ fontSize: 12, fontWeight: 800, color: '#fbbf24' }}>Multi-Color · 3.2 s</div>
-          <div style={{ fontSize: 10, color: '#94a3b8', textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: QQ_COLORS.amber400 }}>Multi-Color · 3.2 s</div>
+          <div style={{ fontSize: 10, color: QQ_COLORS.slate400, textAlign: 'center', maxWidth: 180, lineHeight: 1.4 }}>
             Pink + Hellpink + Magenta — kräftiger Brand-Sweep
           </div>
         </div>
@@ -1870,10 +1871,10 @@ function StarBorderShowcase() {
         padding: '10px 14px', borderRadius: 10,
         background: 'rgba(34,197,94,0.08)',
         border: '1px solid rgba(34,197,94,0.25)',
-        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+        color: QQ_COLORS.slate300, fontSize: 12, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#86efac' }}>Tech:</strong> conic-gradient mit transparent-Sektoren rotiert hinter
-        einer dunklen Inner-Card. <code style={{ color: '#fbbf24' }}>overflow:hidden</code> + <code>border-radius</code>
+        <strong style={{ color: QQ_COLORS.green300 }}>Tech:</strong> conic-gradient mit transparent-Sektoren rotiert hinter
+        einer dunklen Inner-Card. <code style={{ color: QQ_COLORS.amber400 }}>overflow:hidden</code> + <code>border-radius</code>
         am Outer-Wrapper sorgt für sauber abgeschnittene Border-Form. Pure CSS, kein JS, GPU-accelerated.
         Conic-Gradient ist breit-supported (Chrome 69+/FF 83+/Safari 12.1+).
       </div>
@@ -1889,10 +1890,10 @@ function StarBorderShowcase() {
 // grau + slidet aus der Reihe nach 1.2s. Kartoffel überspringt das Team.
 function FlyingPotatoDemo({ replay }: { replay: number }) {
   const initialTeams = [
-    { emoji: '🐉', color: '#22C55E', name: 'Wolfsrudel' },
+    { emoji: '🐉', color: QQ_COLORS.green500, name: 'Wolfsrudel' },
     { emoji: '🦊', color: '#F97316', name: 'Fuchsbande' },
     { emoji: '🐙', color: '#A855F7', name: 'Kraken-Krew' },
-    { emoji: '🦉', color: '#EAB308', name: 'Eulenmagier' },
+    { emoji: '🦉', color: QQ_COLORS.yellow500, name: 'Eulenmagier' },
   ];
   // Sequenz: zu welchem Team + ob das Team danach eliminiert wird
   const sequence: Array<{ to: number; eliminate?: boolean }> = [
@@ -2151,7 +2152,7 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
           position: 'absolute', top: 10, left: '50%', transform: 'translateX(-50%)',
           padding: '4px 12px', borderRadius: 999,
           background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.45)',
-          fontSize: 11, fontWeight: 900, color: '#FCA5A5',
+          fontSize: 11, fontWeight: 900, color: QQ_COLORS.red300,
           letterSpacing: '0.08em', textTransform: 'uppercase',
         }}>🥔 Hot Potato</div>
       </div>
@@ -2159,9 +2160,9 @@ function FlyingPotatoDemo({ replay }: { replay: number }) {
         padding: '10px 14px', borderRadius: 10,
         background: 'rgba(239,68,68,0.06)',
         border: '1px solid rgba(239,68,68,0.20)',
-        color: '#cbd5e1', fontSize: 12, lineHeight: 1.5,
+        color: QQ_COLORS.slate300, fontSize: 12, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#FCA5A5' }}>Pro Team-Turn:</strong> Hold (60%) → Kartoffel bounct + dreht
+        <strong style={{ color: QQ_COLORS.red300 }}>Pro Team-Turn:</strong> Hold (60%) → Kartoffel bounct + dreht
         sich beim Avatar (4 Bounces × 2 Umdrehungen). Letzte 10% Hold: Avatar red-blinkt wenn Elimination
         ansteht (Warnung). Wurf (35%) → Bogen mit Smoke-Trail. Bei Elimination: <strong>Click-Spark-Burst</strong>
         (12 Sparks radial in Pink-Gold-Rot, fade + scale-out 600 ms). Avatar wird grau, nach 1.2 s rutscht
@@ -2187,11 +2188,11 @@ type RecapItem = {
 };
 
 const RECAP_MOCK: RecapItem[] = [
-  { catLabel: 'MUCHO',      catEmoji: '🅰', question: 'Wer war der zweite James Bond?',  answer: 'Roger Moore', winnerName: 'Wolfsrudel',       winnerEmoji: '🐺', winnerColor: '#EC4899' },
+  { catLabel: 'MUCHO',      catEmoji: '🅰', question: 'Wer war der zweite James Bond?',  answer: 'Roger Moore', winnerName: 'Wolfsrudel',       winnerEmoji: '🐺', winnerColor: QQ_COLORS.brandPink },
   { catLabel: 'Hot Potato', catEmoji: '🥔', question: 'Länder mit Rot in der Flagge',    answer: 'China',       winnerName: 'Eulen-Spiegel',     winnerEmoji: '🦉', winnerColor: '#F97316' },
-  { catLabel: 'Schätzchen', catEmoji: '🎯', question: 'Höhe des Eiffelturms in Metern?', answer: '330',         winnerName: 'Brain-Trust',       winnerEmoji: '🧠', winnerColor: '#22C55E' },
+  { catLabel: 'Schätzchen', catEmoji: '🎯', question: 'Höhe des Eiffelturms in Metern?', answer: '330',         winnerName: 'Brain-Trust',       winnerEmoji: '🧠', winnerColor: QQ_COLORS.green500 },
   { catLabel: '4 gewinnt',  catEmoji: '🧩', question: 'In welchem Jahr fiel die Mauer?', answer: '1989',        winnerName: 'Cozy Cats',         winnerEmoji: '🐱', winnerColor: '#A855F7' },
-  { catLabel: 'Bunte Tüte', catEmoji: '🎁', question: 'Schwerstes Tier der Welt?',       answer: 'Blauwal',     winnerName: 'Wolfsrudel',        winnerEmoji: '🐺', winnerColor: '#EC4899' },
+  { catLabel: 'Bunte Tüte', catEmoji: '🎁', question: 'Schwerstes Tier der Welt?',       answer: 'Blauwal',     winnerName: 'Wolfsrudel',        winnerEmoji: '🐺', winnerColor: QQ_COLORS.brandPink },
 ];
 
 // Vereinfachte Thanks-Card als Frame für alle Varianten — zeigt Wolf das volle
@@ -2214,14 +2215,14 @@ function ThanksCardMock({ compact }: { compact?: boolean } = {}) {
     }}>
       <div style={{
         fontSize: compact ? 'clamp(24px, 3vw, 36px)' : 'clamp(32px, 4vw, 52px)',
-        fontWeight: 900, color: '#EC4899', textAlign: 'center', lineHeight: 1.1,
+        fontWeight: 900, color: QQ_COLORS.brandPink, textAlign: 'center', lineHeight: 1.1,
         textShadow: '0 0 40px rgba(236,72,153,0.42)',
       }}>
         🎉 Wir hoffen, ihr hattet Spaß!
       </div>
       <div style={{
         fontSize: compact ? 13 : 16, fontWeight: 700,
-        color: '#cbd5e1', textAlign: 'center', lineHeight: 1.45, maxWidth: 460,
+        color: QQ_COLORS.slate300, textAlign: 'center', lineHeight: 1.45, maxWidth: 460,
       }}>
         📣 Erzählt euren Freunden vom CozyQuiz — und scannt den Code für eure Team-Stats 🎁
       </div>
@@ -2240,7 +2241,7 @@ function ThanksCardMock({ compact }: { compact?: boolean } = {}) {
         border: '1.5px solid rgba(236,72,153,0.40)',
       }}>
         <span style={{ fontSize: 22 }}>🐺</span>
-        <span style={{ fontSize: 13, fontWeight: 900, color: '#cbd5e1', letterSpacing: '0.04em' }}>
+        <span style={{ fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate300, letterSpacing: '0.04em' }}>
           CozyQuiz · cozywolf.de
         </span>
       </div>
@@ -2459,7 +2460,7 @@ function ThanksRecapVariantR() {
                 fontSize: 18,
               }}>{cur.winnerEmoji}</span>
               <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', fontWeight: 800, color: cur.winnerColor }}>{cur.winnerName}</span>
-              <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: '#cbd5e1' }}>→ {cur.answer}</span>
+              <span style={{ fontSize: 'clamp(13px, 1.4vw, 18px)', color: QQ_COLORS.slate300 }}>→ {cur.answer}</span>
             </div>
           </div>
         </div>
@@ -2525,7 +2526,7 @@ function ThanksRecapVariantS() {
                 }}>{item.catLabel}</span>
               </div>
               <div style={{
-                fontSize: 12, fontWeight: 700, color: '#cbd5e1',
+                fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate300,
                 lineHeight: 1.3, overflow: 'hidden',
                 display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
               }}>{item.question}</div>
@@ -2540,7 +2541,7 @@ function ThanksRecapVariantS() {
                 <span style={{ fontSize: 11, fontWeight: 800, color: item.winnerColor, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                   {item.winnerName}
                 </span>
-                <span style={{ fontSize: 10, color: '#94A3B8', marginLeft: 'auto' }}>→ {item.answer}</span>
+                <span style={{ fontSize: 10, color: QQ_COLORS.slate400, marginLeft: 'auto' }}>→ {item.answer}</span>
               </div>
             </div>
           ))}
@@ -2571,7 +2572,7 @@ function ThanksRecapVariantS() {
 // Mock-Daten für die Thanks-Varianten
 const THANKS_MOCK = {
   winnerName: 'Käpt\'n Kluk',
-  winnerColor: '#22C55E',
+  winnerColor: QQ_COLORS.green500,
   winnerEmoji: '🦝',
   awards: [
     { emoji: '🐢', label: 'Underdog' },
@@ -2602,7 +2603,7 @@ function ThanksVariantT() {
         <span key={i} aria-hidden style={{
           position: 'absolute', top: 0, left: `${(i * 11) % 100}%`,
           width: 6, height: 9, borderRadius: 1,
-          background: ['#EC4899','#FBBF24','#22C55E','#A855F7','#3B82F6'][i % 5],
+          background: [QQ_COLORS.brandPink,QQ_COLORS.amber400,QQ_COLORS.green500,'#A855F7',QQ_COLORS.blue500][i % 5],
           animation: `thanksTConfetti ${3 + (i % 4) * 0.5}s ease-in ${(i * 0.2) % 2}s infinite`,
         }} />
       ))}
@@ -2630,7 +2631,7 @@ function ThanksVariantT() {
           textShadow: `0 0 20px ${THANKS_MOCK.winnerColor}88`,
           marginTop: 18, letterSpacing: '-0.01em',
         }}>{THANKS_MOCK.winnerName}</div>
-        <div style={{ fontSize: 18, fontWeight: 700, color: '#F1F5F9', marginTop: 4 }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: QQ_COLORS.slate100, marginTop: 4 }}>
           haben gewonnen
         </div>
       </div>
@@ -2638,8 +2639,8 @@ function ThanksVariantT() {
       {/* Footer-Row: cozywolf links · QR rechts (beide kleiner) */}
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', gap: 24, marginTop: 'auto' }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4 }}>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#EC4899', letterSpacing: '0.04em', opacity: 0.75 }}>cozywolf</div>
-          <div style={{ fontSize: 13, color: '#94A3B8' }}>cozywolf.de · @cozywolf.events</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em', opacity: 0.75 }}>cozywolf</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>cozywolf.de · @cozywolf.events</div>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
           <div style={{
@@ -2647,7 +2648,7 @@ function ThanksVariantT() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: 22, color: '#0A0814',
           }}>📱 QR</div>
-          <div style={{ fontSize: 11, fontWeight: 900, color: '#EC4899', letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75 }}>scan mich</div>
+          <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.18em', textTransform: 'uppercase', opacity: 0.75 }}>scan mich</div>
         </div>
       </div>
     </div>
@@ -2706,7 +2707,7 @@ function ThanksVariantU() {
               {p.content === 'wolf' && (
                 <>
                   <span style={{ fontSize: 90, lineHeight: 1 }}>🐺</span>
-                  <div style={{ fontSize: 13, color: '#EC4899', fontWeight: 900, letterSpacing: '0.04em' }}>cozywolf</div>
+                  <div style={{ fontSize: 13, color: QQ_COLORS.brandPink, fontWeight: 900, letterSpacing: '0.04em' }}>cozywolf</div>
                 </>
               )}
               {p.content === 'qr' && (
@@ -2765,7 +2766,7 @@ function ThanksVariantV() {
         <div style={{ height: 24 }} />
         <div style={{ fontSize: 14, color: '#888', letterSpacing: '0.4em', textTransform: 'uppercase' }}>Special Awards</div>
         {THANKS_MOCK.awards.map((a, i) => (
-          <div key={i} style={{ fontSize: 22, color: '#cbd5e1', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div key={i} style={{ fontSize: 22, color: QQ_COLORS.slate300, display: 'flex', alignItems: 'center', gap: 10 }}>
             <span style={{ fontSize: 28 }}>{a.emoji}</span>{a.label}
           </div>
         ))}
@@ -2774,7 +2775,7 @@ function ThanksVariantV() {
         <div style={{ fontSize: 14, color: '#888', letterSpacing: '0.4em', textTransform: 'uppercase' }}>Ein Quiz von</div>
         <div style={{
           fontFamily: "'Stinger Fit', 'Bricolage Grotesque', system-ui, sans-serif",
-          fontSize: 48, fontWeight: 900, color: '#EC4899',
+          fontSize: 48, fontWeight: 900, color: QQ_COLORS.brandPink,
           letterSpacing: '0.04em', textTransform: 'uppercase',
           textShadow: '0 0 24px rgba(236,72,153,0.5)',
         }}>cozywolf</div>
@@ -2916,7 +2917,7 @@ function ThanksVariantX() {
             }}>{THANKS_MOCK.winnerName}</div>
             <div style={{
               fontSize: 13, fontWeight: 800,
-              color: '#94A3B8', letterSpacing: '0.18em', textTransform: 'uppercase',
+              color: QQ_COLORS.slate400, letterSpacing: '0.18em', textTransform: 'uppercase',
             }}>haben gewonnen</div>
           </div>
 
@@ -2939,7 +2940,7 @@ function ThanksVariantX() {
               <span style={{
                 fontFamily: "'Stinger Fit', 'Bricolage Grotesque', system-ui, sans-serif",
                 fontSize: 17, fontWeight: 900,
-                color: '#FBCFE8', letterSpacing: '0.04em',
+                color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.04em',
                 textTransform: 'uppercase',
               }}>cozywolf</span>
             </div>
@@ -2957,7 +2958,7 @@ function ThanksVariantX() {
               }}>📱 QR</div>
               <div style={{
                 fontSize: 9, fontWeight: 900,
-                color: '#FBCFE8', letterSpacing: '0.18em', textTransform: 'uppercase',
+                color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.18em', textTransform: 'uppercase',
               }}>scan mich</div>
             </div>
           </div>
@@ -3031,20 +3032,20 @@ function ThanksVariantW() {
 
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', gap: 16 }}>
           <div>
-            <div style={{ fontSize: 11, color: '#EC4899', fontWeight: 900, letterSpacing: '0.18em' }}>★ GEWONNEN</div>
+            <div style={{ fontSize: 11, color: QQ_COLORS.brandPink, fontWeight: 900, letterSpacing: '0.18em' }}>★ GEWONNEN</div>
             <div style={{ fontSize: 38, fontWeight: 900, color: '#0A0814', lineHeight: 1, letterSpacing: '-0.02em' }}>
               {THANKS_MOCK.winnerName}
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: '#EC4899', fontWeight: 900, letterSpacing: '0.18em' }}>★ NEXT EVENT</div>
+            <div style={{ fontSize: 11, color: QQ_COLORS.brandPink, fontWeight: 900, letterSpacing: '0.18em' }}>★ NEXT EVENT</div>
             <div style={{ fontSize: 18, color: '#0A0814', fontWeight: 700, lineHeight: 1.2 }}>
               cozywolf.de/events<br/>
               <span style={{ fontSize: 14, color: '#666' }}>+ @cozywolf.events folgen</span>
             </div>
           </div>
           <div>
-            <div style={{ fontSize: 11, color: '#EC4899', fontWeight: 900, letterSpacing: '0.18em' }}>★ TEAM-STATS</div>
+            <div style={{ fontSize: 11, color: QQ_COLORS.brandPink, fontWeight: 900, letterSpacing: '0.18em' }}>★ TEAM-STATS</div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <div style={{ width: 90, height: 90, background: '#0A0814', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 24, color: '#fff' }}>📱</div>
               <div style={{ fontSize: 14, color: '#0A0814', fontWeight: 700 }}>SCAN MICH<br/><span style={{ fontSize: 12, fontWeight: 400, color: '#666' }}>holt euch eure Stats</span></div>
@@ -3231,7 +3232,7 @@ export default function AnimationsLabPage() {
         'radial-gradient(ellipse 60% 50% at 20% 10%, rgba(245,158,11,0.10), transparent 60%),' +
         'radial-gradient(ellipse 60% 50% at 80% 90%, rgba(168,85,247,0.10), transparent 60%),' +
         '#0a0a10',
-      color: '#f1f5f9',
+      color: QQ_COLORS.slate100,
       fontFamily: "'Nunito', system-ui, sans-serif",
       padding: '32px 28px 48px',
     }}>
@@ -3413,9 +3414,9 @@ export default function AnimationsLabPage() {
           <h1 style={{ fontSize: 32, fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
             🎬 Animation Demos
           </h1>
-          <span style={{ fontSize: 13, color: '#64748b', fontFamily: 'monospace' }}>/animations</span>
+          <span style={{ fontSize: 13, color: QQ_COLORS.slate500, fontFamily: 'monospace' }}>/animations</span>
         </div>
-        <p style={{ fontSize: 14, color: '#94a3b8', marginTop: 8, maxWidth: 820, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 14, color: QQ_COLORS.slate400, marginTop: 8, maxWidth: 820, lineHeight: 1.5 }}>
           Oben: 6 Top-Patterns aus der Animations-Recherche + Bonus 3D Card-Flip — isolierte Stanzen zum Pattern-Vergleich.
           Unten: 5 Quiz-Realistic Showreels (D · C · B · A · H) im echten Beamer-Card-Kontext —
           hier triffst du die Auswahl was tatsaechlich ins Live-Quiz uebernommen wird.
@@ -3453,9 +3454,9 @@ export default function AnimationsLabPage() {
           <h2 style={{ fontSize: 26, fontWeight: 900, margin: 0, letterSpacing: '-0.02em' }}>
             🎯 Quiz-Realistic Showreels
           </h2>
-          <span style={{ fontSize: 12, color: '#64748b', fontFamily: 'monospace' }}>echtes Card-Format</span>
+          <span style={{ fontSize: 12, color: QQ_COLORS.slate500, fontFamily: 'monospace' }}>echtes Card-Format</span>
         </div>
-        <p style={{ fontSize: 14, color: '#94a3b8', marginTop: 12, maxWidth: 820, lineHeight: 1.5 }}>
+        <p style={{ fontSize: 14, color: QQ_COLORS.slate400, marginTop: 12, maxWidth: 820, lineHeight: 1.5 }}>
           Im Gegensatz zu den Pattern-Stanzen oben zeigen diese Demos die Patterns im
           echten Beamer-Card-/View-Kontext. Hier triffst du die Auswahl was tatsaechlich
           ins Live-Quiz uebernommen wird — picken statt raten.
@@ -3490,9 +3491,9 @@ export default function AnimationsLabPage() {
         background: 'rgba(245,158,11,0.06)',
         border: '1px solid rgba(245,158,11,0.18)',
         borderRadius: 12,
-        fontSize: 13, color: '#cbd5e1', lineHeight: 1.5,
+        fontSize: 13, color: QQ_COLORS.slate300, lineHeight: 1.5,
       }}>
-        <strong style={{ color: '#fbbf24' }}>💡 Pro-Tipp:</strong> klick mehrere Replays nacheinander um zu sehen wie die Animation in echter Quiz-Frequenz wirkt
+        <strong style={{ color: QQ_COLORS.amber400 }}>💡 Pro-Tipp:</strong> klick mehrere Replays nacheinander um zu sehen wie die Animation in echter Quiz-Frequenz wirkt
         (alle ~3-5 s eine neue Frage). Die Slide-Off-Push und Slot-Machine-Demos togglen zwischen zwei States — du
         siehst sowohl Eingang als auch Ausgang. View Transitions ist nur in modernen Browsern unterstützt — Demo zeigt Status oben.
       </div>

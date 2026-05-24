@@ -17,7 +17,7 @@
  * Spam in JSX-Style-Objekten.
  */
 
-export const QQ_COLORS = {
+export const QQ_COLORS: Record<string, string> = {
   // ── Slate-Skala (Greys) — am haeufigsten genutzt ─────────────────────────
   /** Slate-50 — fast weiss, fuer Hero-Text. */
   slate50:  '#f8fafc',
@@ -103,7 +103,4 @@ export const QQ_COLORS = {
   orange500: '#f97316',
   /** Orange-700 — Bronze-Medaille. */
   orange700: '#b45309',
-} as const;
-
-/** Type fuer alle Token-Keys. */
-export type QQColorKey = keyof typeof QQ_COLORS;
+};

@@ -19,6 +19,7 @@ import { playHotkeyFeedback } from '../utils/sounds';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { API_BASE } from '../api';
 import './qqModeratorTheme.css';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 const QQ_ROOM = 'default';
 
@@ -80,7 +81,7 @@ export default function QQModeratorPage() {
   type Toast = { id: number; msg: string; emoji: string; accent: string };
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastIdRef = useRef(0);
-  const pushToast = (msg: string, emoji: string, accent = '#3B82F6') => {
+  const pushToast = (msg: string, emoji: string, accent = QQ_COLORS.blue500) => {
     const id = ++toastIdRef.current;
     setToasts(ts => [...ts, { id, msg, emoji, accent }]);
     setTimeout(() => setToasts(ts => ts.filter(t => t.id !== id)), 3000);
@@ -94,12 +95,12 @@ export default function QQModeratorPage() {
     const prev = prevModPhaseRef.current;
     prevModPhaseRef.current = state.phase;
     if (!prev || prev === state.phase) return;
-    if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage laeuft — Teams antworten', '⏱', '#22C55E');
-    else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', '#EC4899');
-    else if (state.phase === 'PLACEMENT')      pushToast('Platzierungs-Phase', '📍', '#EF4444');
-    else if (state.phase === 'PHASE_INTRO')    pushToast(`Runde ${state.gamePhaseIndex} startet`, '🎬', '#8B5CF6');
-    else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', '#EC4899');
-    else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', '#EC4899');
+    if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage laeuft — Teams antworten', '⏱', QQ_COLORS.green500);
+    else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', QQ_COLORS.brandPink);
+    else if (state.phase === 'PLACEMENT')      pushToast('Platzierungs-Phase', '📍', QQ_COLORS.red500);
+    else if (state.phase === 'PHASE_INTRO')    pushToast(`Runde ${state.gamePhaseIndex} startet`, '🎬', QQ_COLORS.violet500);
+    else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', QQ_COLORS.brandPink);
+    else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', QQ_COLORS.brandPink);
     else if (state.phase === 'TEAMS_REVEAL')   pushToast('Team-Vorstellung laeuft', '🎭', '#F97316');
   }, [state?.phase, state?.gamePhaseIndex]);
 
@@ -560,7 +561,7 @@ export default function QQModeratorPage() {
             // Entscheidung).
             delayMs = 25000;
             action = () => {
-              try { pushToast(`${pendingTeam.name}: wartet auf Setzen/Klauen — F18 = Skip`, '⏳', '#F59E0B'); } catch {}
+              try { pushToast(`${pendingTeam.name}: wartet auf Setzen/Klauen — F18 = Skip`, '⏳', QQ_COLORS.amber500); } catch {}
             };
           }
         }
@@ -1289,24 +1290,24 @@ export default function QQModeratorPage() {
     const answeredCount = s.answers.length;
     const connectedTeams = s.teams.filter(t => t.connected).length;
     switch (s.phase) {
-      case 'LOBBY': return { text: 'LOBBY', color: '#475569', sub: `${s.teams.length} Teams` };
+      case 'LOBBY': return { text: 'LOBBY', color: QQ_COLORS.slate600, sub: `${s.teams.length} Teams` };
       case 'RULES': {
         const r = s.rulesSlideIndex ?? 0;
         const sub = r === -2 ? 'Willkommen' : r === -1 ? 'Regel-Intro' : `Slide ${r + 1}`;
         return { text: 'REGELN', color: '#6366f1', sub };
       }
       case 'TEAMS_REVEAL': return { text: 'TEAM-REVEAL', color: '#F97316', sub: 'Epische Vorstellung läuft' };
-      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: '#3B82F6', sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
-      case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: '#22C55E', sub: `${answeredCount}/${connectedTeams} Teams` };
-      case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: '#EC4899', sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
-      case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: '#EF4444', sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
-      case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: '#8B5CF6' };
-      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: '#EC4899', sub: s.connections?.phase ?? '' };
+      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: QQ_COLORS.blue500, sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
+      case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: QQ_COLORS.green500, sub: `${answeredCount}/${connectedTeams} Teams` };
+      case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: QQ_COLORS.brandPink, sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
+      case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: QQ_COLORS.red500, sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
+      case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: QQ_COLORS.violet500 };
+      case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: QQ_COLORS.brandPink, sub: s.connections?.phase ?? '' };
       case 'FINAL_BETTING': {
         const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
-        return { text: '🪙 FINAL-WETTEN', color: '#F472B6', sub: `${submitted}/${s.teams.length} Teams gesetzt` };
+        return { text: '🪙 FINAL-WETTEN', color: QQ_COLORS.brandPinkMid, sub: `${submitted}/${s.teams.length} Teams gesetzt` };
       }
-      case 'FINAL_REVEAL': return { text: '🏆 FINAL-AUFLÖSUNG', color: '#FBBF24', sub: 'Score-Cascade am Beamer' };
+      case 'FINAL_REVEAL': return { text: '🏆 FINAL-AUFLÖSUNG', color: QQ_COLORS.amber400, sub: 'Score-Cascade am Beamer' };
       case 'COZY_GAME': {
         // 2026-05-19 (Wolf 'cozygames werden im moderator noch nicht beruecksichtigt'):
         // Pro Sub-Phase eigener Sub-Text damit das Mod-Panel den aktuellen
@@ -1320,12 +1321,12 @@ export default function QQModeratorPage() {
           'GAME_ACTIVE':   cg?.playMode === 'sequence' ? '⏱ Sequenz-Modus · Team-Turn läuft' : '⏱ Alle Teams parallel · Timer läuft',
           'WINNER_SELECT': '🏆 Sieger auswählen',
         };
-        return { text: '🪅 COZY-GAME', color: '#F472B6', sub: subMap[subPhase] ?? subPhase };
+        return { text: '🪅 COZY-GAME', color: QQ_COLORS.brandPinkMid, sub: subMap[subPhase] ?? subPhase };
       }
-      case 'PAUSED': return { text: '⏸ PAUSE', color: '#EC4899' };
-      case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: '#64748b' };
-      case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: '#EC4899', sub: 'QR-Code für Summary' };
-      default: return { text: s.phase, color: '#475569' };
+      case 'PAUSED': return { text: '⏸ PAUSE', color: QQ_COLORS.brandPink };
+      case 'GAME_OVER': return { text: '🏆 SPIEL BEENDET', color: QQ_COLORS.slate500 };
+      case 'THANKS': return { text: '🙏 DANKE-FOLIE', color: QQ_COLORS.brandPink, sub: 'QR-Code für Summary' };
+      default: return { text: s.phase, color: QQ_COLORS.slate600 };
     }
   }
 
@@ -1353,7 +1354,7 @@ export default function QQModeratorPage() {
               title="Zurück zum Setup (Fragenset, Runden, Timer)"
             >⚙ Setup</button>
           )}
-          <span style={badgeStyle('#3B82F6')}>COZYQUIZ</span>
+          <span style={badgeStyle(QQ_COLORS.blue500)}>COZYQUIZ</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -1366,7 +1367,7 @@ export default function QQModeratorPage() {
                 padding: '6px 14px', borderRadius: 8,
                 border: `1px solid ${autoplayPaused ? 'rgba(236,72,153,0.5)' : 'rgba(34,197,94,0.5)'}`,
                 background: autoplayPaused ? 'rgba(236,72,153,0.18)' : 'rgba(34,197,94,0.14)',
-                color: autoplayPaused ? '#FBCFE8' : '#86efac', cursor: 'pointer',
+                color: autoplayPaused ? QQ_COLORS.brandPinkSoft : QQ_COLORS.green300, cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
                 boxShadow: 'var(--qm-depth-sm)',
               }}
@@ -1382,7 +1383,7 @@ export default function QQModeratorPage() {
                 padding: '6px 14px', borderRadius: 8,
                 border: `1px solid ${(state as any).botsPaused ? 'rgba(251,191,36,0.5)' : 'rgba(148,163,184,0.4)'}`,
                 background: (state as any).botsPaused ? 'rgba(251,191,36,0.18)' : 'rgba(148,163,184,0.10)',
-                color: (state as any).botsPaused ? '#FDE68A' : '#cbd5e1', cursor: 'pointer',
+                color: (state as any).botsPaused ? QQ_COLORS.yellow300 : QQ_COLORS.slate300, cursor: 'pointer',
                 fontFamily: 'inherit', fontWeight: 900, fontSize: 13, lineHeight: 1,
                 boxShadow: 'var(--qm-depth-sm)',
               }}
@@ -1406,7 +1407,7 @@ export default function QQModeratorPage() {
               padding: '4px 10px', borderRadius: 999,
               background: 'rgba(239,68,68,0.18)',
               border: '1.5px solid rgba(239,68,68,0.6)',
-              color: '#FCA5A5', fontWeight: 900, fontSize: 12,
+              color: QQ_COLORS.red300, fontWeight: 900, fontSize: 12,
               letterSpacing: '0.04em',
             }} title="Globaler Mute aktiv (M zum Aufheben)">
               🔇 Stumm
@@ -1453,7 +1454,7 @@ export default function QQModeratorPage() {
       {joined && state && <IdleHint state={state} />}
 
       {!joined && connected && (
-        <div style={card}><div style={{ color: '#64748b', fontSize: 14 }}>Verbinde als Moderator…</div></div>
+        <div style={card}><div style={{ color: QQ_COLORS.slate500, fontSize: 14 }}>Verbinde als Moderator…</div></div>
       )}
 
       {!connected && (
@@ -1585,7 +1586,7 @@ export default function QQModeratorPage() {
                       im Mod-Panel während THANKS/GAME_OVER/Final-Phasen. */}
                   {(s.phase === 'PHASE_INTRO' || s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE') && (
                     <>
-                      <Pill label={`Runde ${s.gamePhaseIndex}/${s.totalPhases}`} color="#3B82F6" />
+                      <Pill label={`Runde ${s.gamePhaseIndex}/${s.totalPhases}`} color={QQ_COLORS.blue500} />
                       <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
                     </>
                   )}
@@ -1646,11 +1647,11 @@ export default function QQModeratorPage() {
                   const isLast = step >= max;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
-                      <div style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
+                      <div style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>
                         🏆 Auflösung · Step {step}/{max}
                       </div>
                       <PrimaryBtn
-                        color={isLast ? '#22C55E' : '#FBBF24'}
+                        color={isLast ? QQ_COLORS.green500 : QQ_COLORS.amber400}
                         onClick={() => emit('qq:nextQuestion', { roomCode })}
                         hotkey="Space"
                       >
@@ -1663,10 +1664,10 @@ export default function QQModeratorPage() {
                 {/* ── TEAMS REVEAL ── */}
                 {s.phase === 'TEAMS_REVEAL' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center' }}>
                       🎬 Epische Team-Vorstellung läuft auf dem Beamer…
                     </div>
-                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:teamsRevealFinish', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:teamsRevealFinish', { roomCode })} hotkey="Space">
                       ▶ Los geht's (Phase 1)
                     </PrimaryBtn>
                   </div>
@@ -1682,7 +1683,7 @@ export default function QQModeratorPage() {
                   else if (s.introStep === catRevealStep && s.categoryIsNew) label = '💡 Kategorie erklären';
                   else if (s.categoryIsNew) label = '▶ Frage aktivieren';
                   return (
-                    <PrimaryBtn color="#22C55E" onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }} hotkey="Space">
+                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => { if (startingRef.current) return; emit('qq:activateQuestion', { roomCode }); }} hotkey="Space">
                       {label}
                     </PrimaryBtn>
                   );
@@ -1698,7 +1699,7 @@ export default function QQModeratorPage() {
                   && !(s.currentQuestion?.bunteTuete?.kind === 'hotPotato'
                        && ((s as any).hotPotatoSlotState === 'rolling'
                            || (s as any).hotPotatoSlotState === 'landed')) && (
-                  <PrimaryBtn color="#EC4899" onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="Space">
+                  <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:revealAnswer', { roomCode })} hotkey="Space">
                     👁 Antwort aufdecken
                   </PrimaryBtn>
                 )}
@@ -1707,7 +1708,7 @@ export default function QQModeratorPage() {
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'oneOfEight' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {!s.imposterActiveTeamId ? (
-                      <Btn color="#8B5CF6" onClick={() => emit('qq:imposterStart', { roomCode })}>
+                      <Btn color={QQ_COLORS.violet500} onClick={() => emit('qq:imposterStart', { roomCode })}>
                         <QQEmojiIcon emoji="🕵️"/> Imposter starten
                       </Btn>
                     ) : (
@@ -1715,7 +1716,7 @@ export default function QQModeratorPage() {
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.imposterActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🕵️"/> {s.teams.find(t => t.id === s.imposterActiveTeamId)?.name ?? '?'} wählt
                         </div>
-                        <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                        <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
                           {((s.currentQuestion?.bunteTuete as any)?.statements?.length ?? 8) - s.imposterChosenIndices.length} Aussagen übrig
                           {s.imposterEliminated.length > 0 && (
                             <> · Raus: {s.imposterEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}</>
@@ -1751,20 +1752,20 @@ export default function QQModeratorPage() {
                 {s.phase === 'QUESTION_ACTIVE' && s.currentQuestion?.bunteTuete?.kind === 'hotPotato' && (
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     {!s.hotPotatoActiveTeamId ? (
-                      <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoStart', { roomCode })}>
+                      <Btn color={QQ_COLORS.red500} onClick={() => emit('qq:hotPotatoStart', { roomCode })}>
                         🎁 Hot Potato starten
                       </Btn>
                     ) : (s as any).hotPotatoSlotState === 'rolling' ? (
                       // 2026-05-06: Slot-Machine dreht — Mod kann via Space (oder
                       // Button) den Roll stoppen → State 'landed' (kein Timer noch).
                       <>
-                        <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center', fontWeight: 700 }}>
+                        <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700 }}>
                           🎰 Slot dreht — Space stoppt
                         </div>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
-                        <Btn color="#EC4899" onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
+                        <Btn color={QQ_COLORS.brandPink} onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
                           🎯 Sieger anzeigen (Space)
                         </Btn>
                       </>
@@ -1772,13 +1773,13 @@ export default function QQModeratorPage() {
                       // 2026-05-07 (Wolf '3-Phasen-Flow'): Sieger steht, Mod
                       // announciert muendlich, naechstes Space startet Timer.
                       <>
-                        <div style={{ fontSize: 12, color: '#fde68a', textAlign: 'center', fontWeight: 700 }}>
+                        <div style={{ fontSize: 12, color: QQ_COLORS.yellow300, textAlign: 'center', fontWeight: 700 }}>
                           🎯 Sieger steht — Space startet Timer
                         </div>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
                         </div>
-                        <Btn color="#22C55E" onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
+                        <Btn color={QQ_COLORS.green500} onClick={() => { if (canFire('hp')) emit('qq:hotPotatoFinishSlot', { roomCode }); }}>
                           ▶ Los geht's (Space)
                         </Btn>
                       </>
@@ -1788,7 +1789,7 @@ export default function QQModeratorPage() {
                             fehlt eine Zwischenbeschreibung wie Frage gestartet'):
                             Status-Header zeigt jetzt klar an dass die Frage
                             laeuft + Space-Hint zum Reveal. */}
-                        <div style={{ fontSize: 12, color: '#86efac', textAlign: 'center', fontWeight: 700 }}>
+                        <div style={{ fontSize: 12, color: QQ_COLORS.green300, textAlign: 'center', fontWeight: 700 }}>
                           ▶ Frage laeuft — Space deckt Antwort auf
                         </div>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
@@ -1796,32 +1797,32 @@ export default function QQModeratorPage() {
                         </div>
                         {s.hotPotatoLastAnswer ? (
                           <>
-                            <div style={{ fontSize: 15, fontWeight: 700, color: '#F1F5F9', padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)' }}>
+                            <div style={{ fontSize: 15, fontWeight: 700, color: QQ_COLORS.slate100, padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.08)', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)' }}>
                               „{s.hotPotatoLastAnswer}"
                             </div>
                             <div style={{ display: 'flex', gap: 6 }}>
-                              <Btn color="#22C55E" onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
+                              <Btn color={QQ_COLORS.green500} onClick={() => emit('qq:hotPotatoCorrect', { roomCode })}>
                                 ✓ Richtig
                               </Btn>
-                              <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
+                              <Btn color={QQ_COLORS.red500} onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
                                 ✗ Falsch
                               </Btn>
                             </div>
                           </>
                         ) : (
                           <div style={{ display: 'flex', gap: 6 }}>
-                            <Btn color="#EF4444" onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
+                            <Btn color={QQ_COLORS.red500} onClick={() => emit('qq:hotPotatoWrong', { roomCode })}>
                               ✗ Falsch / Zu langsam
                             </Btn>
                           </div>
                         )}
                         {s.hotPotatoEliminated.length > 0 && (
-                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                          <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
                             Raus: {s.hotPotatoEliminated.map(id => s.teams.find(t => t.id === id)?.name).filter(Boolean).join(', ')}
                           </div>
                         )}
                         {s.hotPotatoUsedAnswers && s.hotPotatoUsedAnswers.length > 0 && (
-                          <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                          <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
                             Genannt: {s.hotPotatoUsedAnswers.join(', ')}
                           </div>
                         )}
@@ -1863,7 +1864,7 @@ export default function QQModeratorPage() {
                   const maxIdx = indicesArr.length > 0 ? Math.max(...indicesArr) : 0;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                      <div style={{ fontSize: 13, color: '#fff', background: '#A78BFA',
+                      <div style={{ fontSize: 13, color: '#fff', background: QQ_COLORS.violet400,
                         padding: '4px 10px', borderRadius: 8, textAlign: 'center', fontWeight: 900,
                       }}>
                         🧩 Hinweise (Beamer) {Math.max(1, minIdx + 1)} / 4
@@ -1895,10 +1896,10 @@ export default function QQModeratorPage() {
                           alt, da steht hinweise aufdecken'): Button-Text auf
                           modernes Modell — Teams schalten selbst frei, Mod
                           beendet die Frage hier nur insgesamt. */}
-                      <Btn color="#EC4899" outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
+                      <Btn color={QQ_COLORS.brandPink} outline onClick={() => emit('qq:onlyConnectRevealAll', { roomCode })}>
                         ⏩ Auflösen (Frage beenden)
                       </Btn>
-                      <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                      <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
                         Teams schalten Hinweise selbst auf /team frei. Beamer zeigt MIN-Index.
                       </div>
                     </div>
@@ -1915,7 +1916,7 @@ export default function QQModeratorPage() {
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                       <div style={{
-                        fontSize: 13, color: '#fff', background: '#F472B6',
+                        fontSize: 13, color: '#fff', background: QQ_COLORS.brandPinkMid,
                         padding: '4px 10px', borderRadius: 8, textAlign: 'center', fontWeight: 900,
                       }}>
                         🎭 Bluff · {bp ?? '—'}
@@ -1923,13 +1924,13 @@ export default function QQModeratorPage() {
                         {bp === 'vote' && ` · ${voteCount}/${totalActive} gevotet`}
                       </div>
                       {bp === 'write' && (
-                        <PrimaryBtn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceWrite', { roomCode })} hotkey="Space">
+                        <PrimaryBtn color={QQ_COLORS.brandPinkMid} onClick={() => emit('qq:bluffForceAdvanceWrite', { roomCode })} hotkey="Space">
                           ⏹ Schreib-Phase beenden →
                         </PrimaryBtn>
                       )}
                       {bp === 'review' && (
                         <>
-                          <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 2 }}>
+                          <div style={{ fontSize: 11, color: QQ_COLORS.slate400, marginBottom: 2 }}>
                             👮 Bluffs prüfen — ✕ klicken um zu zensieren
                           </div>
                           {/* 2026-05-19 (Cockpit-Audit MC2): bei vielen Submissions
@@ -1952,11 +1953,11 @@ export default function QQModeratorPage() {
                                 border: `1px solid ${rejected ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
                                 opacity: rejected ? 0.55 : 1,
                               }}>
-                                <span style={{ fontSize: 11, fontWeight: 900, color: tm?.color ?? '#94a3b8', minWidth: 56 }}>
+                                <span style={{ fontSize: 11, fontWeight: 900, color: tm?.color ?? QQ_COLORS.slate400, minWidth: 56 }}>
                                   {tm?.name ?? teamId}
                                 </span>
                                 <span style={{
-                                  flex: 1, fontSize: 12, color: rejected ? '#FCA5A5' : '#e2e8f0',
+                                  flex: 1, fontSize: 12, color: rejected ? QQ_COLORS.red300 : QQ_COLORS.slate200,
                                   textDecoration: rejected ? 'line-through' : undefined,
                                   wordBreak: 'break-word',
                                 }}>{text}</span>
@@ -1964,7 +1965,7 @@ export default function QQModeratorPage() {
                                   style={{
                                     padding: '2px 8px', borderRadius: 6, cursor: 'pointer',
                                     border: '1px solid rgba(239,68,68,0.4)', background: rejected ? 'rgba(239,68,68,0.18)' : 'transparent',
-                                    color: rejected ? '#fff' : '#FCA5A5', fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
+                                    color: rejected ? '#fff' : QQ_COLORS.red300, fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
                                   }}>
                                   {rejected ? '↺' : '✕'}
                                 </button>
@@ -1972,18 +1973,18 @@ export default function QQModeratorPage() {
                             );
                           })}
                           </div>
-                          <PrimaryBtn color="#22C55E" onClick={() => emit('qq:bluffFinishReview', { roomCode })} hotkey="Space">
+                          <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:bluffFinishReview', { roomCode })} hotkey="Space">
                             ▶ Voting starten
                           </PrimaryBtn>
                         </>
                       )}
                       {bp === 'vote' && (
-                        <PrimaryBtn color="#F472B6" onClick={() => emit('qq:bluffForceAdvanceVote', { roomCode })} hotkey="Space">
+                        <PrimaryBtn color={QQ_COLORS.brandPinkMid} onClick={() => emit('qq:bluffForceAdvanceVote', { roomCode })} hotkey="Space">
                           ⏹ Voting beenden →
                         </PrimaryBtn>
                       )}
                       {bp === 'reveal' && (
-                        <div style={{ fontSize: 12, color: '#86EFAC' }}>✓ Reveal läuft — Space → nächste Frage</div>
+                        <div style={{ fontSize: 12, color: QQ_COLORS.green300 }}>✓ Reveal läuft — Space → nächste Frage</div>
                       )}
                     </div>
                   );
@@ -2025,10 +2026,10 @@ export default function QQModeratorPage() {
                         : `Voter-Gruppe ${muchoStep}/${muchoNonEmpty} gezeigt`;
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:muchoRevealStep', { roomCode })} hotkey="Space">
+                        <PrimaryBtn color={QQ_COLORS.blue500} onClick={() => emit('qq:muchoRevealStep', { roomCode })} hotkey="Space">
                           {label}
                         </PrimaryBtn>
-                        <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>
+                        <span style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>{helper}</span>
                       </div>
                     );
                   }
@@ -2043,10 +2044,10 @@ export default function QQModeratorPage() {
                       : 'Doppelblink auf richtige Option (~1.1 s)';
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                        <PrimaryBtn color="#3B82F6" onClick={() => emit('qq:zvzRevealStep', { roomCode })} hotkey="Space">
+                        <PrimaryBtn color={QQ_COLORS.blue500} onClick={() => emit('qq:zvzRevealStep', { roomCode })} hotkey="Space">
                           {label}
                         </PrimaryBtn>
-                        <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>{helper}</span>
+                        <span style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>{helper}</span>
                       </div>
                     );
                   }
@@ -2068,14 +2069,14 @@ export default function QQModeratorPage() {
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <PrimaryBtn
-                          color={isAutoPhase ? '#64748b' : '#EC4899'}
+                          color={isAutoPhase ? QQ_COLORS.slate500 : QQ_COLORS.brandPink}
                           onClick={() => emit('qq:mapRevealStep', { roomCode })}
                           hotkey="Space"
                         >
                           {label}
                         </PrimaryBtn>
                         {isAutoPhase && (
-                          <span style={{ fontSize: 11, color: '#94a3b8', textAlign: 'center' }}>
+                          <span style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>
                             Klicken überspringt den nächsten Pin
                           </span>
                         )}
@@ -2088,10 +2089,10 @@ export default function QQModeratorPage() {
                     return (
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
-                          <PrimaryBtn color="#22C55E" onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
+                          <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
                             <QQEmojiIcon emoji="📍"/> Felder setzen
                           </PrimaryBtn>
-                          <Btn small color="#475569" onClick={() => {
+                          <Btn small color={QQ_COLORS.slate600} onClick={() => {
                             if (confirm(`Gewinner ${winnerTeam?.name ?? 'Team'} zurücknehmen?`)) {
                               emit('qq:undoMarkCorrect', { roomCode });
                             }
@@ -2126,8 +2127,8 @@ export default function QQModeratorPage() {
                   }
                   return (
                     <>
-                      <span style={{ fontSize: 12, color: '#475569' }}>Kein Gewinner</span>
-                      <Btn color="#64748b" onClick={() => emit('qq:startPlacement', { roomCode })}>
+                      <span style={{ fontSize: 12, color: QQ_COLORS.slate600 }}>Kein Gewinner</span>
+                      <Btn color={QQ_COLORS.slate500} onClick={() => emit('qq:startPlacement', { roomCode })}>
                         → Überspringen
                       </Btn>
                     </>
@@ -2156,7 +2157,7 @@ export default function QQModeratorPage() {
                           ? `→ Runde ${s.gamePhaseIndex + 1}`
                           : '→ Nächste Frage';
                   return (
-                    <PrimaryBtn color={goesToConnections ? '#EC4899' : '#22C55E'} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={goesToConnections ? QQ_COLORS.brandPink : QQ_COLORS.green500} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                       {label}
                     </PrimaryBtn>
                   );
@@ -2179,7 +2180,7 @@ export default function QQModeratorPage() {
                   const tieActive = tieCands.length >= 2 && !tieResolved;
                   return (
                     <>
-                      <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 900 }}><QQEmojiIcon emoji="🏆"/> Spiel beendet</div>
+                      <div style={{ fontSize: 15, color: QQ_COLORS.slate400, fontWeight: 900 }}><QQEmojiIcon emoji="🏆"/> Spiel beendet</div>
                       {tieActive && (
                         <div style={{
                           display: 'flex', flexDirection: 'column', gap: 6,
@@ -2187,10 +2188,10 @@ export default function QQModeratorPage() {
                           border: '1.5px solid #EC489988',
                           background: 'rgba(236,72,153,0.10)',
                         }}>
-                          <div style={{ fontSize: 12, fontWeight: 900, color: '#EC4899', letterSpacing: '0.04em' }}>
+                          <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em' }}>
                             ⚠ STECHFRAGE — gleicher Endstand bei {tieCands.length} Teams
                           </div>
-                          <div style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, lineHeight: 1.35 }}>
+                          <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700, lineHeight: 1.35 }}>
                             Stell den Teams eine Schaetz-/Stichfrage. Sieger anklicken — er rueckt im Ranking auf Platz 1.
                           </div>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
@@ -2219,20 +2220,20 @@ export default function QQModeratorPage() {
                       )}
                       {tieResolved && (
                         <div style={{
-                          fontSize: 12, fontWeight: 900, color: '#EC4899',
+                          fontSize: 12, fontWeight: 900, color: QQ_COLORS.brandPink,
                           padding: '4px 10px', borderRadius: 8,
                           background: 'rgba(236,72,153,0.10)',
                         }}>
                           ✓ Stechfrage aufgeloest — {s.teams.find(t => t.id === s.tieBreakerWinnerId)?.name}
                         </div>
                       )}
-                      <PrimaryBtn color="#EC4899" onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
+                      <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
                         ▶ Danke-Folie & QR
                       </PrimaryBtn>
                       {/* 2026-05-02 (Event-Manager-Audit): Endstand exportieren.
                           Pub-Wirt will die Wochen-Tafel updaten — heute musste
                           er den Beamer abfotografieren. */}
-                      <Btn small color="#94A3B8" onClick={() => downloadEndstandCSV(s, roomCode)}>
+                      <Btn small color={QQ_COLORS.slate400} onClick={() => downloadEndstandCSV(s, roomCode)}>
                         📄 Endstand CSV
                       </Btn>
 
@@ -2248,7 +2249,7 @@ export default function QQModeratorPage() {
                         width: '100%',
                       }}>
                         <div style={{
-                          fontSize: 11, fontWeight: 900, color: '#94a3b8',
+                          fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400,
                           letterSpacing: '0.1em', textTransform: 'uppercase',
                           marginBottom: 2,
                         }}>
@@ -2274,19 +2275,19 @@ export default function QQModeratorPage() {
                                 }}>
                                   <span style={{
                                     minWidth: 22, textAlign: 'center',
-                                    color: rank === 1 ? '#EC4899' : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : '#94a3b8',
+                                    color: rank === 1 ? QQ_COLORS.brandPink : rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : QQ_COLORS.slate400,
                                   }}>{rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : `#${rank}`}</span>
                                   <span style={{
                                     flex: 1, color: tm.color, lineHeight: 1.1,
                                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                                   }}>{tm.name}</span>
                                   <span style={{
-                                    fontSize: 11, color: '#FBCFE8', fontWeight: 900,
+                                    fontSize: 11, color: QQ_COLORS.brandPinkSoft, fontWeight: 900,
                                     fontVariantNumeric: 'tabular-nums',
                                   }}>{tm.largestConnected} F</span>
                                 </div>
                                 {highlights.length === 0 ? (
-                                  <div style={{ fontSize: 10, color: '#64748b', fontStyle: 'italic' }}>
+                                  <div style={{ fontSize: 10, color: QQ_COLORS.slate500, fontStyle: 'italic' }}>
                                     keine besonderen Highlights
                                   </div>
                                 ) : (
@@ -2297,10 +2298,10 @@ export default function QQModeratorPage() {
                                         fontSize: 11, lineHeight: 1.3,
                                       }}>
                                         <span style={{ flexShrink: 0, fontSize: 13 }}>{h.icon}</span>
-                                        <span style={{ flexShrink: 0, fontWeight: 900, color: '#cbd5e1' }}>
+                                        <span style={{ flexShrink: 0, fontWeight: 900, color: QQ_COLORS.slate300 }}>
                                           {h.label}:
                                         </span>
-                                        <span style={{ color: '#94a3b8' }}>{h.value}</span>
+                                        <span style={{ color: QQ_COLORS.slate400 }}>{h.value}</span>
                                       </div>
                                     ))}
                                   </div>
@@ -2315,20 +2316,20 @@ export default function QQModeratorPage() {
 
                 {/* ── THANKS ── */}
                 {s.phase === 'THANKS' && (
-                  <div style={{ fontSize: 15, color: '#94a3b8', fontWeight: 900 }}>🙏 Danke-Folie läuft</div>
+                  <div style={{ fontSize: 15, color: QQ_COLORS.slate400, fontWeight: 900 }}>🙏 Danke-Folie läuft</div>
                 )}
 
                 {/* ── PAUSED ── */}
                 {s.phase === 'PAUSED' && (
                   <>
-                    <PrimaryBtn color="#22C55E" onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
                       ▶ Weiter
                     </PrimaryBtn>
                     {/* 2026-05-17 (P0): Auto-Flow triggert CozyGame nach Frage 5
                         automatisch. Manueller Start nur als Override (z.B. wenn
                         Mod mitten in Pause noch ein CG einschieben will). */}
                     {(s as any).cozyGamesEnabled && Array.isArray((s as any).cozyGamesPool) && (s as any).cozyGamesPool.length > 0 && (
-                      <Btn color="#EC4899" outline onClick={() => emit('qq:cozyGameStart', { roomCode, slotKind: 'roundPause' })}>
+                      <Btn color={QQ_COLORS.brandPink} outline onClick={() => emit('qq:cozyGameStart', { roomCode, slotKind: 'roundPause' })}>
                         🪅 CG einschieben
                       </Btn>
                     )}
@@ -2344,21 +2345,21 @@ export default function QQModeratorPage() {
                   const cg = (s as any).cozyGame;
                   if (cg.phase === 'INTRO') {
                     return (
-                      <PrimaryBtn color="#EC4899" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                      <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
                         🎯 Rad drehen
                       </PrimaryBtn>
                     );
                   }
                   if (cg.phase === 'WHEEL_SPIN') {
                     return (
-                      <div style={{ padding: '8px 16px', color: '#94a3b8', fontSize: 13, fontWeight: 700 }}>
+                      <div style={{ padding: '8px 16px', color: QQ_COLORS.slate400, fontSize: 13, fontWeight: 700 }}>
                         🌀 Rad dreht …
                       </div>
                     );
                   }
                   if (cg.phase === 'WHEEL_RESULT') {
                     return (
-                      <PrimaryBtn color="#22C55E" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                      <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
                         ▶ Spiel starten (60s)
                       </PrimaryBtn>
                     );
@@ -2377,41 +2378,41 @@ export default function QQModeratorPage() {
                         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                           {isSequence ? (
                             <PrimaryBtn
-                              color="#22C55E"
+                              color={QQ_COLORS.green500}
                               onClick={() => emit('qq:cozyGameNextSequenceTeam', { roomCode })}
                               hotkey="Space"
                             >
                               {isLastTeam ? '▶ Sieger wählen' : `▶ Nächstes Team (${curIdx + 1}/${order.length})`}
                             </PrimaryBtn>
                           ) : (
-                            <PrimaryBtn color="#EF4444" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                            <PrimaryBtn color={QQ_COLORS.red500} onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
                               ⏹ Stop & Sieger wählen
                             </PrimaryBtn>
                           )}
                         </div>
                         {/* Timer-Controls: Pause/Resume/Reset/±10s */}
                         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center', fontSize: 12 }}>
-                          <span style={{ color: '#94a3b8', fontWeight: 700, marginRight: 4 }}>Timer:</span>
+                          <span style={{ color: QQ_COLORS.slate400, fontWeight: 700, marginRight: 4 }}>Timer:</span>
                           {isPaused ? (
-                            <Btn color="#22C55E" outline onClick={() => emit('qq:cozyGameTimerResume', { roomCode })}>
+                            <Btn color={QQ_COLORS.green500} outline onClick={() => emit('qq:cozyGameTimerResume', { roomCode })}>
                               ▶ Resume
                             </Btn>
                           ) : (
-                            <Btn color="#F59E0B" outline onClick={() => emit('qq:cozyGameTimerPause', { roomCode })}>
+                            <Btn color={QQ_COLORS.amber500} outline onClick={() => emit('qq:cozyGameTimerPause', { roomCode })}>
                               ⏸ Pause
                             </Btn>
                           )}
-                          <Btn color="#94A3B8" outline onClick={() => emit('qq:cozyGameTimerReset', { roomCode })}>
+                          <Btn color={QQ_COLORS.slate400} outline onClick={() => emit('qq:cozyGameTimerReset', { roomCode })}>
                             ↻ Reset
                           </Btn>
-                          <Btn color="#94A3B8" outline onClick={() => emit('qq:cozyGameTimerAdjust', { roomCode, deltaSec: -10 })}>
+                          <Btn color={QQ_COLORS.slate400} outline onClick={() => emit('qq:cozyGameTimerAdjust', { roomCode, deltaSec: -10 })}>
                             −10s
                           </Btn>
-                          <Btn color="#94A3B8" outline onClick={() => emit('qq:cozyGameTimerAdjust', { roomCode, deltaSec: +10 })}>
+                          <Btn color={QQ_COLORS.slate400} outline onClick={() => emit('qq:cozyGameTimerAdjust', { roomCode, deltaSec: +10 })}>
                             +10s
                           </Btn>
                           {isSequence && !isLastTeam && (
-                            <Btn color="#94A3B8" outline onClick={() => {
+                            <Btn color={QQ_COLORS.slate400} outline onClick={() => {
                               if (!window.confirm('Alle übrigen Teams überspringen und direkt zum Sieger-Pick?')) return;
                               emit('qq:cozyGameAdvance', { roomCode });
                             }}>
@@ -2430,7 +2431,7 @@ export default function QQModeratorPage() {
                     const winnerIds: string[] = cg.winnerTeamIds ?? [];
                     if (winnerIds.length > 0) {
                       return (
-                        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
+                        <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
                           ▶ Weiter zum Grid
                         </PrimaryBtn>
                       );
@@ -2447,7 +2448,7 @@ export default function QQModeratorPage() {
 
                 {/* ── COZY_GAME Cancel-Option ── */}
                 {s.phase === 'COZY_GAME' && (
-                  <Btn color="#94a3b8" outline onClick={() => {
+                  <Btn color={QQ_COLORS.slate400} outline onClick={() => {
                     if (!window.confirm('CozyGame abbrechen? Spiel zählt nicht als gespielt.')) return;
                     emit('qq:cozyGameCancel', { roomCode });
                   }}>
@@ -2460,7 +2461,7 @@ export default function QQModeratorPage() {
 
                 {/* ── Secondary: Pause ── */}
                 {!['LOBBY', 'PAUSED', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase) && (
-                  <Btn color="#EC4899" outline onClick={() => emit('qq:pause', { roomCode })}>
+                  <Btn color={QQ_COLORS.brandPink} outline onClick={() => emit('qq:pause', { roomCode })}>
                     ⏸ Pause <span style={{ fontSize: 10, opacity: 0.6 }}>P</span>
                   </Btn>
                 )}
@@ -2500,7 +2501,7 @@ export default function QQModeratorPage() {
                         background: i === 0 ? `${team.color}30` : 'rgba(255,255,255,0.04)',
                         border: `2px solid ${i === 0 ? team.color : 'rgba(255,255,255,0.1)'}`,
                       }}>
-                        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 900 }}>#{i + 1}</span>
+                        <span style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 900 }}>#{i + 1}</span>
                         <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={30} />
                         <span style={{ fontWeight: 900, color: team.color, fontSize: 14 }}>{team.name}</span>
                       </div>
@@ -2527,21 +2528,21 @@ export default function QQModeratorPage() {
                   }}>
                     {QQ_CATEGORY_LABELS[s.currentQuestion.category].emoji} {QQ_CATEGORY_LABELS[s.currentQuestion.category].de}
                   </span>
-                  <span style={{ fontSize: 11, color: '#64748b' }}>
+                  <span style={{ fontSize: 11, color: QQ_COLORS.slate500 }}>
                     Phase {s.currentQuestion.phaseIndex} · #{s.currentQuestion.questionIndexInPhase + 1}
                   </span>
                 </div>
-                <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6, color: '#e2e8f0' }}>
+                <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6, color: QQ_COLORS.slate200 }}>
                   {s.currentQuestion.text}
                 </div>
                 {s.currentQuestion.textEn && (
-                  <div style={{ color: '#64748b', fontSize: 13, marginBottom: 8 }}>{s.currentQuestion.textEn}</div>
+                  <div style={{ color: QQ_COLORS.slate500, fontSize: 13, marginBottom: 8 }}>{s.currentQuestion.textEn}</div>
                 )}
                 {s.revealedAnswer && (
                   <div style={{
                     marginTop: 8, padding: '8px 12px', borderRadius: 8,
                     background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
-                    color: '#4ade80', fontWeight: 900,
+                    color: QQ_COLORS.green400, fontWeight: 900,
                   }}>
                     ✓ {s.revealedAnswer}
                   </div>
@@ -2569,7 +2570,7 @@ export default function QQModeratorPage() {
             <div style={card}>
               <div style={sectionLabel}>Teams ({teamList.length})</div>
               {teamList.length === 0 && (
-                <div style={{ color: '#475569', fontSize: 13 }}>Noch keine Teams beigetreten</div>
+                <div style={{ color: QQ_COLORS.slate600, fontSize: 13 }}>Noch keine Teams beigetreten</div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {teamList.map((t, i) => {
@@ -2591,7 +2592,7 @@ export default function QQModeratorPage() {
                     <div key={t.id} style={{
                       padding: '10px 12px', borderRadius: 8,
                       border: `2px solid ${
-                        showPendingHighlight && isOffline ? '#EF4444'
+                        showPendingHighlight && isOffline ? QQ_COLORS.red500
                           : showPendingHighlight ? t.color
                           : isOffline ? 'rgba(239,68,68,0.5)'
                           : showCorrectHighlight ? `${t.color}88`
@@ -2603,7 +2604,7 @@ export default function QQModeratorPage() {
                       opacity: isOffline ? 0.85 : 1,
                     }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 11, color: '#475569', fontWeight: 900, width: 16 }}>{i + 1}</span>
+                        <span style={{ fontSize: 11, color: QQ_COLORS.slate600, fontWeight: 900, width: 16 }}>{i + 1}</span>
                         <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
@@ -2611,16 +2612,16 @@ export default function QQModeratorPage() {
                             {isOffline ? (
                               <span style={{
                                 fontSize: 10, fontWeight: 900, color: '#fff',
-                                background: '#EF4444', padding: '1px 7px', borderRadius: 999,
+                                background: QQ_COLORS.red500, padding: '1px 7px', borderRadius: 999,
                                 letterSpacing: 0.3,
                               }}>⚠ OFFLINE</span>
                             ) : (
-                              <span style={{ fontSize: 11, color: '#22C55E' }}>●</span>
+                              <span style={{ fontSize: 11, color: QQ_COLORS.green500 }}>●</span>
                             )}
-                            {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: '#4ade80' }}>✓ richtig</span>}
-                            {answer && <span style={{ fontSize: 11, color: '#EC4899' }}>✎ abgegeben</span>}
+                            {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: QQ_COLORS.green400 }}>✓ richtig</span>}
+                            {answer && <span style={{ fontSize: 11, color: QQ_COLORS.brandPink }}>✎ abgegeben</span>}
                           </div>
-                          <div style={{ fontSize: 11, color: '#64748b', marginTop: 1 }}>
+                          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 1 }}>
                             {t.largestConnected} verbunden · {t.totalCells} Felder
                             {stats?.stealsUsed > 0 && ` · ⚡${stats.stealsUsed}/2`}
                             {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
@@ -2640,7 +2641,7 @@ export default function QQModeratorPage() {
                           style={{
                             padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
                             border: '1px solid rgba(148,163,184,0.3)', background: 'transparent',
-                            color: '#94a3b8', fontSize: 11, fontFamily: 'inherit',
+                            color: QQ_COLORS.slate400, fontSize: 11, fontFamily: 'inherit',
                           }}>✎</button>
                         {/* Kick button */}
                         <button
@@ -2652,7 +2653,7 @@ export default function QQModeratorPage() {
                           style={{
                             padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
                             border: '1px solid rgba(239,68,68,0.3)', background: 'transparent',
-                            color: '#64748b', fontSize: 11, fontFamily: 'inherit',
+                            color: QQ_COLORS.slate500, fontSize: 11, fontFamily: 'inherit',
                           }}>✕</button>
                       </div>
                       {/* Live answer — hide for Schätzchen (shown in ranking above) */}
@@ -2660,7 +2661,7 @@ export default function QQModeratorPage() {
                         <div style={{
                           marginTop: 8, padding: '6px 10px', borderRadius: 8,
                           background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                          fontSize: 14, fontWeight: 700, color: '#e2e8f0',
+                          fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate200,
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                         }}>
                           <span>„{(() => {
@@ -2708,7 +2709,7 @@ export default function QQModeratorPage() {
               {/* Niemand-Button wenn alle geantwortet haben */}
               {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.currentQuestion?.category !== 'SCHAETZCHEN' && (
                 <div style={{ marginTop: 8 }}>
-                  <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
+                  <Btn color={QQ_COLORS.slate600} onClick={() => emit('qq:markWrong', { roomCode })}>
                     ✗ Niemand korrekt
                   </Btn>
                 </div>
@@ -2746,14 +2747,14 @@ export default function QQModeratorPage() {
 
               {/* Timer */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>⏱ Timer</div>
+                <div style={{ fontSize: 12, color: QQ_COLORS.slate500, marginBottom: 6 }}>⏱ Timer</div>
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                   {[15, 30, 45, 60, 90].map(t => (
                     <button key={t} onClick={() => { setTimerInput(t); emit('qq:setTimer', { roomCode, durationSec: t }); }}
                       style={{
-                        padding: '6px 12px', borderRadius: 6, border: `1px solid ${s.timerDurationSec === t ? '#3B82F6' : 'rgba(255,255,255,0.1)'}`,
+                        padding: '6px 12px', borderRadius: 6, border: `1px solid ${s.timerDurationSec === t ? QQ_COLORS.blue500 : 'rgba(255,255,255,0.1)'}`,
                         background: s.timerDurationSec === t ? 'rgba(59,130,246,0.2)' : 'transparent',
-                        color: s.timerDurationSec === t ? '#3B82F6' : '#64748b',
+                        color: s.timerDurationSec === t ? QQ_COLORS.blue500 : QQ_COLORS.slate500,
                         cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 900,
                       }}>{t}s</button>
                   ))}
@@ -2765,20 +2766,20 @@ export default function QQModeratorPage() {
                     placeholder="…s"
                     style={{ ...inputStyle, width: 58, textAlign: 'center' }}
                   />
-                  <Btn small color="#3B82F6" onClick={applyTimer}>Setzen</Btn>
+                  <Btn small color={QQ_COLORS.blue500} onClick={applyTimer}>Setzen</Btn>
                 </div>
               </div>
 
               {/* Language */}
               <div style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🌐 Sprache</div>
+                <div style={{ fontSize: 12, color: QQ_COLORS.slate500, marginBottom: 6 }}>🌐 Sprache</div>
                 <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                   <button
                     onClick={() => emit('qq:setLanguage', { roomCode, language: 'de' })}
                     style={{
                       border: s.language === 'de' ? '2px solid #3B82F6' : '1px solid #475569',
                       background: s.language === 'de' ? '#3B82F622' : 'transparent',
-                      color: '#e2e8f0', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      color: QQ_COLORS.slate200, fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
                       opacity: s.language === 'de' ? 1 : 0.7,
                       transition: 'all 0.15s',
                     }}
@@ -2789,7 +2790,7 @@ export default function QQModeratorPage() {
                     style={{
                       border: s.language === 'en' ? '2px solid #3B82F6' : '1px solid #475569',
                       background: s.language === 'en' ? '#3B82F622' : 'transparent',
-                      color: '#e2e8f0', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      color: QQ_COLORS.slate200, fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
                       opacity: s.language === 'en' ? 1 : 0.7,
                       transition: 'all 0.15s',
                     }}
@@ -2800,7 +2801,7 @@ export default function QQModeratorPage() {
                     style={{
                       border: s.language === 'both' ? '2px solid #3B82F6' : '1px solid #475569',
                       background: s.language === 'both' ? '#3B82F622' : 'transparent',
-                      color: '#e2e8f0', fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
+                      color: QQ_COLORS.slate200, fontSize: 22, borderRadius: 8, padding: '2px 10px', cursor: 'pointer', fontWeight: 900,
                       opacity: s.language === 'both' ? 1 : 0.7,
                       transition: 'all 0.15s',
                     }}
@@ -2811,7 +2812,7 @@ export default function QQModeratorPage() {
 
               {/* Sound — mute buttons + volume + upload panel */}
               <div style={{ marginTop: 14 }}>
-                <div style={{ fontSize: 12, color: '#64748b', marginBottom: 6 }}>🔊 Sound</div>
+                <div style={{ fontSize: 12, color: QQ_COLORS.slate500, marginBottom: 6 }}>🔊 Sound</div>
 
                 {/* Row 1: Mute toggles + volume */}
                 <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
@@ -2821,9 +2822,9 @@ export default function QQModeratorPage() {
                     style={{
                       padding: '5px 11px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
                       fontWeight: 900, fontSize: 12,
-                      border: `1px solid ${s.musicMuted ? '#EF4444' : '#22C55E'}`,
+                      border: `1px solid ${s.musicMuted ? QQ_COLORS.red500 : QQ_COLORS.green500}`,
                       background: s.musicMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
-                      color: s.musicMuted ? '#EF4444' : '#22C55E',
+                      color: s.musicMuted ? QQ_COLORS.red500 : QQ_COLORS.green500,
                     }}>
                     {s.musicMuted ? '🔇 Musik' : '🎵 Musik'}
                   </button>
@@ -2833,9 +2834,9 @@ export default function QQModeratorPage() {
                     style={{
                       padding: '5px 11px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
                       fontWeight: 900, fontSize: 12,
-                      border: `1px solid ${s.sfxMuted ? '#EF4444' : '#22C55E'}`,
+                      border: `1px solid ${s.sfxMuted ? QQ_COLORS.red500 : QQ_COLORS.green500}`,
                       background: s.sfxMuted ? 'rgba(239,68,68,0.15)' : 'rgba(34,197,94,0.15)',
-                      color: s.sfxMuted ? '#EF4444' : '#22C55E',
+                      color: s.sfxMuted ? QQ_COLORS.red500 : QQ_COLORS.green500,
                     }}>
                     {s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}
                   </button>
@@ -2844,9 +2845,9 @@ export default function QQModeratorPage() {
                     type="range" min={0} max={100} step={5}
                     value={Math.round((s.volume ?? 0.8) * 100)}
                     onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
-                    style={{ flex: 1, maxWidth: 100, accentColor: '#3B82F6' }}
+                    style={{ flex: 1, maxWidth: 100, accentColor: QQ_COLORS.blue500 }}
                   />
-                  <span style={{ fontSize: 11, color: '#475569', minWidth: 28 }}>
+                  <span style={{ fontSize: 11, color: QQ_COLORS.slate600, minWidth: 28 }}>
                     {Math.round((s.volume ?? 0.8) * 100)}%
                   </span>
                 </div>
@@ -2859,11 +2860,11 @@ export default function QQModeratorPage() {
                     fontWeight: 900, fontSize: 11,
                     border: '1px solid rgba(255,255,255,0.1)',
                     background: showSoundPanel ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
-                    color: showSoundPanel ? '#93c5fd' : '#64748b',
+                    color: showSoundPanel ? '#93c5fd' : QQ_COLORS.slate500,
                   }}>
                   🎵 Custom Sounds {showSoundPanel ? '▲' : '▼'}
                 </button>
-                <div style={{ fontSize: 10, color: '#475569', marginTop: 3 }}>M-Taste = alles muten</div>
+                <div style={{ fontSize: 10, color: QQ_COLORS.slate600, marginTop: 3 }}>M-Taste = alles muten</div>
 
                 {/* Sound upload panel */}
                 {showSoundPanel && (
@@ -2984,7 +2985,7 @@ function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
         WebkitBackdropFilter: 'blur(10px)',
       }}>
         <div style={{
-          fontSize: 10, fontWeight: 900, color: '#94A3B8',
+          fontSize: 10, fontWeight: 900, color: QQ_COLORS.slate400,
           textTransform: 'uppercase', letterSpacing: '0.12em',
         }}>Dran:</div>
         <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={36} />
@@ -2993,14 +2994,14 @@ function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
             fontSize: 18, fontWeight: 900, color: pendingTeam.color,
             overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis',
           }}>{pendingTeam.name}</div>
-          <div style={{ fontSize: 12, color: '#94A3B8', fontWeight: 700 }}>
+          <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
             {action}{offline ? ' · ⚠ offline' : ''}
           </div>
         </div>
         <div style={{
           padding: '4px 10px', borderRadius: 8,
           background: 'rgba(239,68,68,0.18)', border: '1px solid rgba(239,68,68,0.4)',
-          fontSize: 11, fontWeight: 900, color: '#fca5a5',
+          fontSize: 11, fontWeight: 900, color: QQ_COLORS.red300,
           letterSpacing: '0.06em',
         }}>F18 = Skip</div>
       </div>
@@ -3023,7 +3024,7 @@ function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
         flexWrap: 'wrap',
       }}>
         <div style={{
-          fontSize: 10, fontWeight: 900, color: '#94A3B8',
+          fontSize: 10, fontWeight: 900, color: QQ_COLORS.slate400,
           textTransform: 'uppercase', letterSpacing: '0.12em', marginRight: 4,
         }}>{isReveal ? 'Antworten' : 'Status'}:</div>
         {teamList.map((t, i) => {
@@ -3049,12 +3050,12 @@ function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={22} />
               <span style={{
                 fontSize: 11, fontWeight: 800,
-                color: isCorrect ? t.color : answered ? '#86EFAC' : '#94A3B8',
+                color: isCorrect ? t.color : answered ? QQ_COLORS.green300 : QQ_COLORS.slate400,
               }}>{i + 1}</span>
             </div>
           );
         })}
-        <div style={{ marginLeft: 'auto', fontSize: 11, color: '#64748B', fontWeight: 700 }}>
+        <div style={{ marginLeft: 'auto', fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700 }}>
           {answeredIds.size}/{teamList.length}
         </div>
       </div>
@@ -3108,7 +3109,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
         fontWeight: 900,
         letterSpacing: 0.8,
         textTransform: 'uppercase',
-        color: '#EC4899',
+        color: QQ_COLORS.brandPink,
         marginBottom: collapsed ? 0 : 4,
         display: 'flex',
         alignItems: 'center',
@@ -3127,7 +3128,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
           color: '#fef3c7',
           fontStyle: 'italic',
         }}>
-          <span style={{ fontWeight: 900, fontStyle: 'normal', color: '#EC4899' }}>Frage-Notiz: </span>
+          <span style={{ fontWeight: 900, fontStyle: 'normal', color: QQ_COLORS.brandPink }}>Frage-Notiz: </span>
           {customNote}
         </div>
       )}
@@ -3202,12 +3203,12 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
           width: '100%', padding: '8px 12px', borderRadius: 8,
           border: '1px solid rgba(255,255,255,0.1)',
           background: 'rgba(255,255,255,0.04)',
-          color: '#cbd5e1', fontWeight: 900, fontSize: 13,
+          color: QQ_COLORS.slate300, fontWeight: 900, fontSize: 13,
           cursor: 'pointer', fontFamily: 'inherit',
         }}
       >
         <span>{toggleLabel}</span>
-        <span style={{ fontSize: 11, color: '#64748b', fontWeight: 700 }}>{summary}</span>
+        <span style={{ fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700 }}>{summary}</span>
       </button>
       {open && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -3219,7 +3220,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
               border: '1px solid rgba(59,130,246,0.25)',
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 900, color: '#60A5FA',
+                fontSize: 11, fontWeight: 900, color: QQ_COLORS.blue400,
                 letterSpacing: '0.04em', textTransform: 'uppercase',
                 marginBottom: 8,
               }}>
@@ -3260,7 +3261,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
               border: '1px solid rgba(34,197,94,0.25)',
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 900, color: '#4ADE80',
+                fontSize: 11, fontWeight: 900, color: QQ_COLORS.green400,
                 letterSpacing: '0.04em', textTransform: 'uppercase',
                 marginBottom: 8,
               }}>
@@ -3297,7 +3298,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
               border: '1px solid rgba(34,197,94,0.45)',
             }}>
               <div style={{
-                fontSize: 11, fontWeight: 900, color: '#22C55E',
+                fontSize: 11, fontWeight: 900, color: QQ_COLORS.green500,
                 letterSpacing: '0.04em', textTransform: 'uppercase',
                 marginBottom: 8,
               }}>
@@ -3420,7 +3421,7 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       marginBottom: 12,
     }}>
       <div style={{
-        fontSize: 11, fontWeight: 900, color: '#F472B6',
+        fontSize: 11, fontWeight: 900, color: QQ_COLORS.brandPinkMid,
         textTransform: 'uppercase', letterSpacing: '0.12em',
         marginBottom: 10,
       }}>🪙 Final-Wetten {s.phase === 'FINAL_BETTING' ? '· Bet-Phase' : '· Auflösung'}</div>
@@ -3434,8 +3435,8 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
             fontSize: 13,
             marginBottom: 10,
           }}>
-            <span style={{ color: '#94A3B8', fontWeight: 700 }}>Wetten gesetzt · Space → weiter</span>
-            <span style={{ color: '#F472B6', fontWeight: 900, fontSize: 16 }}>
+            <span style={{ color: QQ_COLORS.slate400, fontWeight: 700 }}>Wetten gesetzt · Space → weiter</span>
+            <span style={{ color: QQ_COLORS.brandPinkMid, fontWeight: 900, fontSize: 16 }}>
               {submittedCount} / {totalTeams}
             </span>
           </div>
@@ -3461,8 +3462,8 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
                   <span style={{ fontWeight: 800, color: t.color, minWidth: 90 }}>{t.name}</span>
                   {submitted ? (
                     <>
-                      <span style={{ color: '#86EFAC', fontWeight: 900 }}>✓</span>
-                      <span style={{ color: '#94A3B8', fontSize: 11 }}>→</span>
+                      <span style={{ color: QQ_COLORS.green300, fontWeight: 900 }}>✓</span>
+                      <span style={{ color: QQ_COLORS.slate400, fontSize: 11 }}>→</span>
                       {targetTeam ? (
                         <>
                           <span style={{ fontSize: 14 }}>{(targetTeam as any).emoji ?? '🎯'}</span>
@@ -3470,11 +3471,11 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
                           {isMutual && <span title="Mutual-Pick (Sympathie-Bonus)">💞</span>}
                         </>
                       ) : (
-                        <span style={{ color: '#64748B', fontStyle: 'italic' }}>kein Tipp</span>
+                        <span style={{ color: QQ_COLORS.slate500, fontStyle: 'italic' }}>kein Tipp</span>
                       )}
                     </>
                   ) : (
-                    <span style={{ color: '#64748B', fontWeight: 700, marginLeft: 'auto' }}>⏳ wartet</span>
+                    <span style={{ color: QQ_COLORS.slate500, fontWeight: 700, marginLeft: 'auto' }}>⏳ wartet</span>
                   )}
                 </div>
               );
@@ -3510,7 +3511,7 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
           <div style={{
             padding: '10px 12px', borderRadius: 8,
             background: 'rgba(251,191,36,0.10)',
-            color: '#FBBF24', fontSize: 12, fontWeight: 700,
+            color: QQ_COLORS.amber400, fontSize: 12, fontWeight: 700,
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
             <div>🏆 Final-Reveal · Step {step}/{max}</div>
@@ -3627,7 +3628,7 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
         }}>
           {q.category}{subKind ? ` · ${subKindLabel[subKind] ?? subKind}` : ''}
         </span>
-        <span style={{ fontSize: 10, color: '#64748b', fontWeight: 700 }}>
+        <span style={{ fontSize: 10, color: QQ_COLORS.slate500, fontWeight: 700 }}>
           Q {s.questionIndex + 1}
         </span>
       </div>
@@ -3637,7 +3638,7 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
           Lebensader-Info des Panels (Pub-Live: Mod kuckt schnell hin zwischen
           Patter). 14px war zu klein fuer Tablet-Distanz. */}
       <div style={{
-        fontSize: 17, fontWeight: 900, color: '#F1F5F9', lineHeight: 1.35,
+        fontSize: 17, fontWeight: 900, color: QQ_COLORS.slate100, lineHeight: 1.35,
         marginBottom: 10,
       }}>
         {text}
@@ -3652,7 +3653,7 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
         marginBottom: extras.length > 0 ? 8 : 0,
       }}>
         <div style={{
-          fontSize: 10, fontWeight: 900, color: '#22C55E',
+          fontSize: 10, fontWeight: 900, color: QQ_COLORS.green500,
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4,
         }}>
           ✓ Antwort
@@ -3667,10 +3668,10 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
           {extras.map((e, i) => (
             <div key={i} style={{
-              fontSize: 11, lineHeight: 1.4, color: '#cbd5e1',
+              fontSize: 11, lineHeight: 1.4, color: QQ_COLORS.slate300,
               display: 'grid', gridTemplateColumns: '90px 1fr', gap: 8,
             }}>
-              <span style={{ color: '#64748b', fontWeight: 700, textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.04em', alignSelf: 'start', paddingTop: 2 }}>
+              <span style={{ color: QQ_COLORS.slate500, fontWeight: 700, textTransform: 'uppercase', fontSize: 9, letterSpacing: '0.04em', alignSelf: 'start', paddingTop: 2 }}>
                 {e.label}
               </span>
               <span style={{ color: '#e5e7eb', fontWeight: 700 }}>
@@ -3703,8 +3704,8 @@ function TimerPill({ endsAt }: { endsAt: number }) {
     <div style={{
       padding: '4px 14px', borderRadius: 999, fontWeight: 900, fontSize: 14,
       background: urgent ? 'rgba(239,68,68,0.2)' : 'rgba(236,72,153,0.15)',
-      border: `1px solid ${urgent ? '#EF4444' : '#EC4899'}`,
-      color: urgent ? '#EF4444' : '#EC4899',
+      border: `1px solid ${urgent ? QQ_COLORS.red500 : QQ_COLORS.brandPink}`,
+      color: urgent ? QQ_COLORS.red500 : QQ_COLORS.brandPink,
       minWidth: 52, textAlign: 'center',
       animation: urgent ? 'pulse 0.5s ease infinite alternate' : 'none',
     }}>
@@ -3739,14 +3740,14 @@ function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phas
   return (
     <div style={{ ...card, borderColor: 'rgba(236,72,153,0.35)' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: '#EC4899', fontWeight: 900 }}>{fmtNum(targetValue)}</span></div>
+        <div style={sectionLabel}>🍯 Schätzchen — Zielwert: <span style={{ color: QQ_COLORS.brandPink, fontWeight: 900 }}>{fmtNum(targetValue)}</span></div>
         {phase === 'QUESTION_REVEAL' && !correctTeamId && autoWinnerId && (
-          <span style={{ fontSize: 11, color: '#64748b' }}>Auto-Auswertung aktiv</span>
+          <span style={{ fontSize: 11, color: QQ_COLORS.slate500 }}>Auto-Auswertung aktiv</span>
         )}
       </div>
 
       {ranked.length === 0 && (
-        <div style={{ color: '#475569', fontSize: 13 }}>Noch keine Antworten eingegangen…</div>
+        <div style={{ color: QQ_COLORS.slate600, fontSize: 13 }}>Noch keine Antworten eingegangen…</div>
       )}
 
       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
@@ -3756,35 +3757,35 @@ function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phas
           return (
             <div key={r.teamId} style={{
               padding: '8px 12px', borderRadius: 8,
-              border: `2px solid ${isWinner ? (r.team?.color ?? '#EC4899') : 'rgba(255,255,255,0.07)'}`,
-              background: isWinner ? `${r.team?.color ?? '#EC4899'}14` : 'rgba(255,255,255,0.03)',
+              border: `2px solid ${isWinner ? (r.team?.color ?? QQ_COLORS.brandPink) : 'rgba(255,255,255,0.07)'}`,
+              background: isWinner ? `${r.team?.color ?? QQ_COLORS.brandPink}14` : 'rgba(255,255,255,0.03)',
               position: 'relative', overflow: 'hidden',
             }}>
               {/* Distance bar */}
               <div style={{
                 position: 'absolute', bottom: 0, left: 0, height: 2,
                 width: `${barWidth}%`,
-                background: isWinner ? (r.team?.color ?? '#EC4899') : 'rgba(255,255,255,0.12)',
+                background: isWinner ? (r.team?.color ?? QQ_COLORS.brandPink) : 'rgba(255,255,255,0.12)',
                 transition: 'width 0.4s ease',
               }} />
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? '#EC4899' : '#475569', width: 18 }}>
+                <span style={{ fontSize: 13, fontWeight: 900, color: i === 0 ? QQ_COLORS.brandPink : QQ_COLORS.slate600, width: 18 }}>
                   {i === 0 ? <QQEmojiIcon emoji="🥇"/> : `#${i + 1}`}
                 </span>
                 <QQTeamAvatar avatarId={r.team?.avatarId ?? 'fox'} teamEmoji={r.team?.emoji} size={26} />
                 <div style={{ flex: 1 }}>
-                  <span style={{ fontWeight: 900, color: r.team?.color ?? '#94a3b8' }}>{r.team?.name ?? r.teamId}</span>
-                  <span style={{ marginLeft: 10, fontSize: 15, fontWeight: 900, color: '#e2e8f0' }}>
+                  <span style={{ fontWeight: 900, color: r.team?.color ?? QQ_COLORS.slate400 }}>{r.team?.name ?? r.teamId}</span>
+                  <span style={{ marginLeft: 10, fontSize: 15, fontWeight: 900, color: QQ_COLORS.slate200 }}>
                     {r.parsed !== Infinity && !Number.isNaN(r.parsed) ? fmtNum(r.parsed) : r.text}
                   </span>
                 </div>
                 <div style={{ textAlign: 'right' }}>
                   {r.distance !== Infinity ? (
-                    <span style={{ fontSize: 12, color: isWinner ? '#4ade80' : '#64748b', fontWeight: 700 }}>
+                    <span style={{ fontSize: 12, color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate500, fontWeight: 700 }}>
                       {r.distance === 0 ? '✓ Exakt' : `±${fmtNum(r.distance)}`}
                     </span>
                   ) : (
-                    <span style={{ fontSize: 11, color: '#475569' }}>—</span>
+                    <span style={{ fontSize: 11, color: QQ_COLORS.slate600 }}>—</span>
                   )}
                 </div>
                 {phase === 'QUESTION_REVEAL' && !correctTeamId && r.team && (
@@ -3800,7 +3801,7 @@ function SchaetzRanking({ answers, teams, targetValue, unit, correctTeamId, phas
 
       {phase === 'QUESTION_REVEAL' && !correctTeamId && (
         <div style={{ marginTop: 8 }}>
-          <Btn color="#475569" onClick={() => emit('qq:markWrong', { roomCode })}>
+          <Btn color={QQ_COLORS.slate600} onClick={() => emit('qq:markWrong', { roomCode })}>
             ✗ Niemand korrekt
           </Btn>
         </div>
@@ -3822,19 +3823,19 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       boxShadow: offline ? '0 0 0 3px rgba(239,68,68,0.35)' : undefined,
     }}>
       <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={26} />
-      <span style={{ fontWeight: 900, color: offline ? '#FCA5A5' : team.color }}>
+      <span style={{ fontWeight: 900, color: offline ? QQ_COLORS.red300 : team.color }}>
         {team.name}
       </span>
       {offline && (
         <span style={{
           fontSize: 11, fontWeight: 900, color: '#fff',
-          background: '#EF4444', padding: '2px 8px', borderRadius: 999,
+          background: QQ_COLORS.red500, padding: '2px 8px', borderRadius: 999,
           letterSpacing: 0.4,
         }}>
           ⚠ OFFLINE — bitte Skip
         </span>
       )}
-      <span style={{ fontSize: 12, color: '#94a3b8' }}>{actionLabel(s.pendingAction, s.teamPhaseStats[team.id])}</span>
+      <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>{actionLabel(s.pendingAction, s.teamPhaseStats[team.id])}</span>
       {s.pendingAction === 'FREE' && (() => {
         // 2026-05-11 (Wolf-Bug 'wenn Grid voll, biete Mod kein Setzen-Btn an'):
         // PLACE fliegt im Backend mit NO_FREE_CELL — Frontend muss den
@@ -3843,18 +3844,18 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
         return (
           <>
             {!gridFull && (
-              <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
+              <Btn small color={QQ_COLORS.blue500} onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
                 <QQEmojiIcon emoji="📍"/> Setzen
               </Btn>
             )}
-            <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
+            <Btn small color={QQ_COLORS.red500} onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
               <QQEmojiIcon emoji="⚡"/> Klauen
             </Btn>
           </>
         );
       })()}
       {s.gamePhaseIndex === 2 && s.pendingAction === 'PLACE_2' && (
-        <Btn small color="#EF4444" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
+        <Btn small color={QQ_COLORS.red500} onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
           → Klauen
         </Btn>
       )}
@@ -3863,7 +3864,7 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
         // Wenn Grid voll ist, gibt es nichts zu "setzen" — nur Klauen oder Skip.
         if (gridFull) return null;
         return (
-          <Btn small color="#3B82F6" onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
+          <Btn small color={QQ_COLORS.blue500} onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'PLACE' })}>
             → Setzen
           </Btn>
         );
@@ -3871,7 +3872,7 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       {s.pendingAction === 'COMEBACK' && (
         <Btn
           small
-          color="#8B5CF6"
+          color={QQ_COLORS.violet500}
           onClick={() => {
             if (confirm('Comeback-Klau zurücknehmen? Alle bereits geklauten Felder gehen zurück.')) {
               emit('qq:comebackUndo', { roomCode, teamId: team.id });
@@ -3888,7 +3889,7 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
       <span title={offline ? 'Team offline — direkter Skip' : 'Wenn Team nichts setzen/klauen kann oder will'}>
         <Btn
           small
-          color={offline ? '#EF4444' : '#64748b'}
+          color={offline ? QQ_COLORS.red500 : QQ_COLORS.slate500}
           onClick={() => {
             // 2026-05-11 (Audit P0): kein Browser-confirm-Dialog mehr —
             // blockt Live-Flow im lauten Pub. Stattdessen sofort skippen
@@ -3926,10 +3927,10 @@ function ComebackControls({ state: s, roomCode, emit }: any) {
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
       <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={26} />
       <span style={{ fontWeight: 900, color: team.color }}>{team.name}</span>
-      <span style={{ fontSize: 13, fontWeight: 900, color: '#8B5CF6' }}>
+      <span style={{ fontSize: 13, fontWeight: 900, color: QQ_COLORS.violet500 }}>
         📖 Schritt {Math.min(step + 1, 2)}/2
       </span>
-      <PrimaryBtn color="#8B5CF6" onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
+      <PrimaryBtn color={QQ_COLORS.violet500} onClick={() => emit('qq:comebackIntroStep', { roomCode })} hotkey="Space">
         {labels[Math.min(step, 2)]}
       </PrimaryBtn>
     </div>
@@ -3949,36 +3950,36 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13, fontWeight: 900, color: '#EC4899', letterSpacing: 0.4, textTransform: 'uppercase' }}>
+      <span style={{ fontSize: 13, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: 0.4, textTransform: 'uppercase' }}>
         🔗 4×4 · {phase}
       </span>
       {phase === 'intro' && (
-        <PrimaryBtn color="#EC4899" onClick={() => emit('qq:connectionsBegin', { roomCode })} hotkey="Space">
+        <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:connectionsBegin', { roomCode })} hotkey="Space">
           ▶ Spielzeit starten ({c.durationSec}s)
         </PrimaryBtn>
       )}
       {phase === 'active' && (
         <>
-          <span style={{ fontSize: 12, color: '#94a3b8' }}>
+          <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>
             {finished}/{totalTeams} fertig
           </span>
-          <PrimaryBtn color="#EC4899" onClick={() => emit('qq:connectionsForceReveal', { roomCode })}>
+          <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:connectionsForceReveal', { roomCode })}>
             ⏹ Auflösen
           </PrimaryBtn>
         </>
       )}
       {phase === 'reveal' && (
-        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:connectionsToPlacement', { roomCode })} hotkey="Space">
+        <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:connectionsToPlacement', { roomCode })} hotkey="Space">
           ▶ Setzen starten
         </PrimaryBtn>
       )}
       {phase === 'placement' && (
-        <span style={{ fontSize: 12, color: '#94a3b8' }}>
+        <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>
           Setzen läuft — Cursor #{(c.placementCursor ?? 0) + 1}/{(c.placementOrder ?? []).length}, ×{c.placementRemaining}
         </span>
       )}
       {phase === 'done' && (
-        <PrimaryBtn color="#22C55E" onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+        <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
           🏆 Spielende
         </PrimaryBtn>
       )}
@@ -3992,7 +3993,7 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
           }
         }} style={{
           padding: '6px 12px', borderRadius: 8, border: '1px solid rgba(239,68,68,0.4)',
-          background: 'transparent', color: '#FCA5A5', fontSize: 12, fontWeight: 700, cursor: 'pointer',
+          background: 'transparent', color: QQ_COLORS.red300, fontSize: 12, fontWeight: 700, cursor: 'pointer',
           marginLeft: 'auto',
         }} title="4×4 überspringen → Game Over">
           ⏭ Skip → Spielende
@@ -4042,13 +4043,13 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
                   maxLines={1}
                   shrinkAfter={14}
                   fontSize={12}
-                  color="#e2e8f0"
+                  color={QQ_COLORS.slate200}
                   fontWeight={800}
                   style={{ flex: 1 }}
                 />
-                {isPlacing && <span style={{ fontSize: 10, fontWeight: 900, color: '#86efac' }}>SETZT</span>}
-                {locked && <span style={{ fontSize: 10, fontWeight: 900, color: '#FCA5A5' }}>RAUS</span>}
-                {finished && !locked && <span style={{ fontSize: 10, fontWeight: 900, color: '#EC4899' }}>FERTIG</span>}
+                {isPlacing && <span style={{ fontSize: 10, fontWeight: 900, color: QQ_COLORS.green300 }}>SETZT</span>}
+                {locked && <span style={{ fontSize: 10, fontWeight: 900, color: QQ_COLORS.red300 }}>RAUS</span>}
+                {finished && !locked && <span style={{ fontSize: 10, fontWeight: 900, color: QQ_COLORS.brandPink }}>FERTIG</span>}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11 }}>
                 {/* Found-Groups als 4 Dots */}
@@ -4056,15 +4057,15 @@ function ConnectionsControls({ state: s, roomCode, emit }: any) {
                   {[0, 1, 2, 3].map(i => (
                     <span key={i} style={{
                       width: 8, height: 8, borderRadius: 2,
-                      background: i < foundCount ? '#22C55E' : 'rgba(255,255,255,0.10)',
+                      background: i < foundCount ? QQ_COLORS.green500 : 'rgba(255,255,255,0.10)',
                       border: i < foundCount ? '1px solid #16A34A' : '1px solid rgba(255,255,255,0.18)',
                     }} />
                   ))}
                 </div>
-                <span style={{ color: '#94a3b8' }}>· Gruppen {foundCount}/4</span>
-                {fails > 0 && <span style={{ color: '#FCA5A5', marginLeft: 'auto' }}>✕ {fails}/{c.maxFailedAttempts}</span>}
+                <span style={{ color: QQ_COLORS.slate400 }}>· Gruppen {foundCount}/4</span>
+                {fails > 0 && <span style={{ color: QQ_COLORS.red300, marginLeft: 'auto' }}>✕ {fails}/{c.maxFailedAttempts}</span>}
                 {phase === 'placement' && tp && tp.placementRemaining != null && tp.placementRemaining > 0 && (
-                  <span style={{ color: '#86efac', marginLeft: 'auto' }}>×{tp.placementRemaining}</span>
+                  <span style={{ color: QQ_COLORS.green300, marginLeft: 'auto' }}>×{tp.placementRemaining}</span>
                 )}
               </div>
             </div>
@@ -4100,7 +4101,7 @@ function IdleHint({ state }: { state: QQStateUpdate }) {
       background: 'rgba(15,12,9,0.88)',
       border: '1.5px solid rgba(236,72,153,0.5)',
       boxShadow: '0 6px 20px rgba(0,0,0,0.45), 0 0 18px rgba(236,72,153,0.25)',
-      fontSize: 13, fontWeight: 900, color: '#FBCFE8',
+      fontSize: 13, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
       display: 'flex', alignItems: 'center', gap: 10,
       animation: 'idleHintPulse 1.8s ease-in-out infinite',
     }}>
@@ -4154,22 +4155,22 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
       : `📖 ${slideTitles[idx] ?? `Folie ${idx + 1}`}  (${idx + 1}/${totalSlides})`;
   return (
     <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-      <span style={{ fontSize: 13, fontWeight: 900, color: '#8B5CF6' }}>
+      <span style={{ fontSize: 13, fontWeight: 900, color: QQ_COLORS.violet500 }}>
         {label}
       </span>
-      <Btn small color="#64748b" onClick={() => emit('qq:rulesPrev', { roomCode })} outline={isFirst}>
+      <Btn small color={QQ_COLORS.slate500} onClick={() => emit('qq:rulesPrev', { roomCode })} outline={isFirst}>
         ◀ Zurück
       </Btn>
       {!isLast ? (
-        <Btn small color="#8B5CF6" onClick={() => emit('qq:rulesNext', { roomCode })}>
+        <Btn small color={QQ_COLORS.violet500} onClick={() => emit('qq:rulesNext', { roomCode })}>
           Weiter ▶
         </Btn>
       ) : (
-        <Btn small color="#22C55E" onClick={() => emit('qq:rulesFinish', { roomCode })}>
+        <Btn small color={QQ_COLORS.green500} onClick={() => emit('qq:rulesFinish', { roomCode })}>
           ▶ Runde 1 starten
         </Btn>
       )}
-      <Btn small color="#EF4444" outline onClick={() => emit('qq:rulesFinish', { roomCode })}>
+      <Btn small color={QQ_COLORS.red500} outline onClick={() => emit('qq:rulesFinish', { roomCode })}>
         ⏭ Überspringen
       </Btn>
     </div>
@@ -4201,25 +4202,25 @@ function CollapsibleRanking({ teams, phase }: { teams: QQStateUpdate['teams']; p
         style={{
           width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer',
-          color: '#94a3b8', fontFamily: 'inherit',
+          color: QQ_COLORS.slate400, fontFamily: 'inherit',
         }}
       >
         <span style={sectionLabel}>Rangliste</span>
         {!open && leader && (
-          <span style={{ fontSize: 11, color: '#94a3b8', fontWeight: 700, marginLeft: 'auto', marginRight: 8 }}>
+          <span style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700, marginLeft: 'auto', marginRight: 8 }}>
             #{1} <span style={{ color: leader.color }}>{leader.name}</span> · {leader.largestConnected}
           </span>
         )}
-        <span style={{ fontSize: 15, color: '#475569' }}>{open ? '−' : '+'}</span>
+        <span style={{ fontSize: 15, color: QQ_COLORS.slate600 }}>{open ? '−' : '+'}</span>
       </button>
       {open && (
         <div style={{ padding: '0 14px 14px' }}>
           {sorted.map((t, i) => (
             <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
-              <span style={{ fontSize: 12, color: '#475569', width: 16 }}>#{i + 1}</span>
+              <span style={{ fontSize: 12, color: QQ_COLORS.slate600, width: 16 }}>#{i + 1}</span>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
               <span style={{ flex: 1, fontWeight: 900, color: t.color, fontSize: 13 }}>{t.name}</span>
-              <span style={{ fontSize: 13, fontWeight: 900, color: '#94a3b8' }}>{t.largestConnected}</span>
+              <span style={{ fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate400 }}>{t.largestConnected}</span>
             </div>
           ))}
         </div>
@@ -4238,11 +4239,11 @@ function CollapsibleGrid({ state: s }: { state: QQStateUpdate }) {
         style={{
           width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           padding: '10px 14px', background: 'transparent', border: 'none', cursor: 'pointer',
-          color: '#94a3b8', fontFamily: 'inherit',
+          color: QQ_COLORS.slate400, fontFamily: 'inherit',
         }}
       >
         <span style={sectionLabel}>Grid {s.gridSize}×{s.gridSize}</span>
-        <span style={{ fontSize: 15, color: '#475569' }}>{open ? '−' : '+'}</span>
+        <span style={{ fontSize: 15, color: QQ_COLORS.slate600 }}>{open ? '−' : '+'}</span>
       </button>
       {open && (
         <div style={{ padding: '0 14px 14px' }}>
@@ -4405,11 +4406,11 @@ function actionLabel(action: string, stats: any): string {
 
 function phasePillStyle(phase: string): React.CSSProperties {
   const colors: Record<string, string> = {
-    LOBBY: '#475569', RULES: '#6366f1', PHASE_INTRO: '#3B82F6', QUESTION_ACTIVE: '#22C55E',
-    QUESTION_REVEAL: '#EC4899', PLACEMENT: '#EF4444',
-    COMEBACK_CHOICE: '#8B5CF6', PAUSED: '#EC4899', GAME_OVER: '#64748b',
+    LOBBY: QQ_COLORS.slate600, RULES: '#6366f1', PHASE_INTRO: QQ_COLORS.blue500, QUESTION_ACTIVE: QQ_COLORS.green500,
+    QUESTION_REVEAL: QQ_COLORS.brandPink, PLACEMENT: QQ_COLORS.red500,
+    COMEBACK_CHOICE: QQ_COLORS.violet500, PAUSED: QQ_COLORS.brandPink, GAME_OVER: QQ_COLORS.slate500,
   };
-  const c = colors[phase] ?? '#475569';
+  const c = colors[phase] ?? QQ_COLORS.slate600;
   return {
     padding: '3px 10px', borderRadius: 999,
     background: `${c}22`, border: `1px solid ${c}44`,
@@ -4517,7 +4518,7 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
         style={{
           padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
           border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)',
-          color: '#EF4444', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+          color: QQ_COLORS.red500, fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
         }}
         title="Reset-Aktionen"
       >⋯ Reset</button>
@@ -4530,33 +4531,33 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
         }}>
           <button
             onClick={() => { setOpen(false); onRestart(); }}
-            style={menuItemStyle('#EC4899')}
+            style={menuItemStyle(QQ_COLORS.brandPink)}
           >↺ Quiz neustarten
-            <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Punkte & Grid reset, Teams bleiben</span>
+            <span style={{ fontSize: 10, color: QQ_COLORS.slate500, display: 'block' }}>Punkte & Grid reset, Teams bleiben</span>
           </button>
           <button
             onClick={() => { setOpen(false); onBackToSetup(); }}
-            style={menuItemStyle('#EF4444')}
+            style={menuItemStyle(QQ_COLORS.red500)}
           >⎌ Zurück zum Setup
-            <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>Teams kicken, Einstellungen neu</span>
+            <span style={{ fontSize: 10, color: QQ_COLORS.slate500, display: 'block' }}>Teams kicken, Einstellungen neu</span>
           </button>
           {devEnabled && (
             <>
               <div style={{
                 marginTop: 6, padding: '4px 10px',
-                fontSize: 9, color: '#64748b', fontWeight: 900, letterSpacing: '0.1em',
+                fontSize: 9, color: QQ_COLORS.slate500, fontWeight: 900, letterSpacing: '0.1em',
                 textTransform: 'uppercase', borderTop: '1px solid rgba(255,255,255,0.05)',
               }}>🧪 Dev</div>
               <button
                 disabled={phase !== 'LOBBY' || busy !== null}
                 onClick={() => devFillTeams()}
                 style={{
-                  ...menuItemStyle('#22C55E'),
+                  ...menuItemStyle(QQ_COLORS.green500),
                   opacity: phase !== 'LOBBY' || busy !== null ? 0.4 : 1,
                   cursor: phase !== 'LOBBY' || busy !== null ? 'not-allowed' : 'pointer',
                 }}
               >{busy === 'fill' ? '…' : '👥'} 8 Dummy-Teams
-                <span style={{ fontSize: 10, color: '#64748b', display: 'block' }}>
+                <span style={{ fontSize: 10, color: QQ_COLORS.slate500, display: 'block' }}>
                   {phase === 'LOBBY' ? 'Antworten + Platzieren passieren automatisch' : 'Nur in Lobby verfügbar'}
                 </span>
               </button>
@@ -4713,7 +4714,7 @@ function SetupView({
   const selectedDraft = drafts.find(d => d.id === selectedDraftId);
 
   // ── Farb-Tokens für Setup (wärmer als der Live-Modus) ─────────────────────
-  const GOLD = '#EC4899';
+  const GOLD = QQ_COLORS.brandPink;
   const GOLD_SOFT = 'rgba(236,72,153,0.15)';
   const GOLD_BORDER = 'rgba(236,72,153,0.45)';
 
@@ -4729,13 +4730,13 @@ function SetupView({
   };
 
   const sectionTitle: React.CSSProperties = {
-    fontSize: 13, fontWeight: 900, color: '#e2e8f0',
+    fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate200,
     marginBottom: 14, display: 'flex', alignItems: 'center', gap: 8,
     letterSpacing: '0.04em',
   };
 
   const fieldLabel: React.CSSProperties = {
-    fontSize: 10, fontWeight: 900, color: '#64748b',
+    fontSize: 10, fontWeight: 900, color: QQ_COLORS.slate500,
     marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.1em',
   };
 
@@ -4744,17 +4745,17 @@ function SetupView({
     padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
     fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
     background: active ? GOLD : 'rgba(255,255,255,0.05)',
-    color: active ? '#1a1206' : '#94a3b8',
+    color: active ? '#1a1206' : QQ_COLORS.slate400,
     boxShadow: active ? '0 3px 10px rgba(236,72,153,0.35)' : 'none',
     transition: 'all 0.15s',
   });
 
-  const toggleBtn = (active: boolean, activeColor = '#22C55E'): React.CSSProperties => ({
+  const toggleBtn = (active: boolean, activeColor = QQ_COLORS.green500): React.CSSProperties => ({
     padding: '9px 14px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
     fontWeight: 900, fontSize: 13, width: '100%', textAlign: 'left' as const,
     border: `1px solid ${active ? activeColor : 'rgba(255,255,255,0.09)'}`,
     background: active ? `${activeColor}1a` : 'rgba(255,255,255,0.03)',
-    color: active ? activeColor : '#94a3b8',
+    color: active ? activeColor : QQ_COLORS.slate400,
     transition: 'all 0.15s',
   });
 
@@ -4851,7 +4852,7 @@ function SetupView({
                   }}>
                   <div style={{
                     fontSize: 14, fontWeight: 900, lineHeight: 1.2,
-                    color: sel ? '#fef3c7' : '#e2e8f0',
+                    color: sel ? '#fef3c7' : QQ_COLORS.slate200,
                   }}>{d.title}</div>
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
@@ -4863,7 +4864,7 @@ function SetupView({
                       padding: '1px 8px', borderRadius: 999,
                       background: draftFit ? 'rgba(34,197,94,0.14)' : 'rgba(236,72,153,0.14)',
                       border: `1px solid ${draftFit ? 'rgba(34,197,94,0.32)' : 'rgba(236,72,153,0.32)'}`,
-                      color: draftFit ? '#86efac' : '#fde68a',
+                      color: draftFit ? QQ_COLORS.green300 : QQ_COLORS.yellow300,
                       fontWeight: 900,
                     }}>{draftFit ? `✓ ${phases} Rd.` : `⚠ ${Math.floor(d.questionCount / 5)} Rd.`}</span>
                   </div>
@@ -4874,7 +4875,7 @@ function SetupView({
         )}
         {selectedDraft && fitTruncate && (
           <div style={{
-            marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fde68a',
+            marginTop: 10, fontSize: 11, fontWeight: 700, color: QQ_COLORS.yellow300,
             padding: '6px 12px', borderRadius: 8,
             background: 'rgba(236,72,153,0.10)',
             border: '1px solid rgba(236,72,153,0.25)',
@@ -4956,12 +4957,12 @@ function SetupView({
           <div style={segGroup}>
             <button
               onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
-              style={segPill(!s.musicMuted, '#22C55E')}
+              style={segPill(!s.musicMuted, QQ_COLORS.green500)}
               title="Musik an/aus"
             >{s.musicMuted ? '🔇 Musik' : '🎵 Musik'}</button>
             <button
               onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
-              style={segPill(!s.sfxMuted, '#22C55E')}
+              style={segPill(!s.sfxMuted, QQ_COLORS.green500)}
               title="SFX an/aus"
             >{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
           </div>
@@ -5007,7 +5008,7 @@ function SetupView({
           <div style={settingRow}>
             <span style={settingLabel}>🔗 Finale (4×4)</span>
             <div style={segGroup}>
-              <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, '#EC4899')}>An</button>
+              <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, QQ_COLORS.brandPink)}>An</button>
               <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
             </div>
             <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
@@ -5022,7 +5023,7 @@ function SetupView({
         <div style={settingRow}>
           <span style={settingLabel}>🪙 Final-Wetten</span>
           <div style={segGroup}>
-            <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: true })} style={segPill(!!s.finalWagerEnabled, '#F472B6')}>An</button>
+            <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: true })} style={segPill(!!s.finalWagerEnabled, QQ_COLORS.brandPinkMid)}>An</button>
             <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: false })} style={segPill(!s.finalWagerEnabled)}>Aus</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
@@ -5036,7 +5037,7 @@ function SetupView({
         <div style={settingRow}>
           <span style={settingLabel}>🔄 Comeback (Mehr-oder-Weniger)</span>
           <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: true })} style={segPill((s as any).comebackEnabled !== false, '#F472B6')}>An</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: true })} style={segPill((s as any).comebackEnabled !== false, QQ_COLORS.brandPinkMid)}>An</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: false })} style={segPill((s as any).comebackEnabled === false)}>Aus</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
@@ -5051,7 +5052,7 @@ function SetupView({
         <div style={settingRow}>
           <span style={settingLabel}>🪅 CozyGames</span>
           <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: true })} style={segPill(!!(s as any).cozyGamesEnabled, '#EC4899')}>An</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: true })} style={segPill(!!(s as any).cozyGamesEnabled, QQ_COLORS.brandPink)}>An</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: false })} style={segPill(!(s as any).cozyGamesEnabled)}>Aus</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
@@ -5065,7 +5066,7 @@ function SetupView({
         <div style={settingRow}>
           <span style={settingLabel}>🔀 Reihenfolge</span>
           <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: true })} style={segPill(s.shuffleQuestionsInRound !== false, '#A78BFA')}>Zufällig</button>
+            <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: true })} style={segPill(s.shuffleQuestionsInRound !== false, QQ_COLORS.violet400)}>Zufällig</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: false })} style={segPill(s.shuffleQuestionsInRound === false)}>Aus Draft</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
@@ -5079,7 +5080,7 @@ function SetupView({
           <span style={settingLabel}>🎭 Bluffs vorab prüfen</span>
           <div style={segGroup}>
             <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: false })} style={segPill(!s.bluffModeratorReview)}>Aus</button>
-            <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: true })} style={segPill(!!s.bluffModeratorReview, '#F472B6')}>An</button>
+            <button onClick={() => emit('qq:bluffSettings', { roomCode, modReview: true })} style={segPill(!!s.bluffModeratorReview, QQ_COLORS.brandPinkMid)}>An</button>
           </div>
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
             {s.bluffModeratorReview ? 'Moderator filtert Bluffs vor dem Voting' : 'Bluffs gehen direkt ins Voting'}
@@ -5236,7 +5237,7 @@ function SetupView({
                       padding: '7px 14px', borderRadius: 8, cursor: savingSound ? 'wait' : 'pointer',
                       border: '1px solid rgba(248,113,113,0.45)',
                       background: 'rgba(248,113,113,0.10)',
-                      color: '#fca5a5', fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
+                      color: QQ_COLORS.red300, fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
                     }}
                     title="Lobby/Pause-Musik aus allen Fragensätzen entfernen — Standard-Pool springt wieder ein"
                   >🔄 Lobby-Sound aus allen Sätzen entfernen</button>
@@ -5267,7 +5268,7 @@ function SetupView({
                   fontWeight: 900, fontSize: 12, cursor: 'pointer',
                   border: '1px solid rgba(239,68,68,0.4)',
                   background: 'rgba(239,68,68,0.08)',
-                  color: '#fca5a5',
+                  color: QQ_COLORS.red300,
                 }}
                 title="Alle Spiel-Ergebnisse aus der Datenbank loeschen (Bestenliste-Reset)"
               >
@@ -5296,15 +5297,15 @@ function SetupView({
             padding: '10px 16px', borderRadius: 16,
             background: 'rgba(236,72,153,0.06)',
             border: '1px solid rgba(236,72,153,0.25)',
-            marginBottom: 4, fontSize: 12, fontWeight: 700, color: '#fde68a',
+            marginBottom: 4, fontSize: 12, fontWeight: 700, color: QQ_COLORS.yellow300,
             display: 'flex', flexDirection: 'column', gap: 4,
           }}>
-            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#EC4899', marginBottom: 2 }}>
+            <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase', color: QQ_COLORS.brandPink, marginBottom: 2 }}>
               Vor dem Start
             </div>
             {issues.map((iss, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'flex-start', gap: 6 }}>
-                <span style={{ color: '#EC4899' }}>•</span>
+                <span style={{ color: QQ_COLORS.brandPink }}>•</span>
                 <span>{iss}</span>
               </div>
             ))}
@@ -5333,7 +5334,7 @@ function SetupView({
               background: selectedDraftId
                 ? 'linear-gradient(180deg, #22C55E, #15803D)'
                 : 'rgba(255,255,255,0.05)',
-              color: selectedDraftId ? '#fff' : '#475569',
+              color: selectedDraftId ? '#fff' : QQ_COLORS.slate600,
               boxShadow: selectedDraftId
                 ? '0 10px 30px rgba(34,197,94,0.4), 0 0 0 1px rgba(255,255,255,0.1) inset'
                 : 'none',
@@ -5349,7 +5350,7 @@ function SetupView({
             }}>SPACE</span>
           </button>
         </div>
-        <div style={{ textAlign: 'center', fontSize: 11, color: '#475569', marginTop: 10, pointerEvents: 'none' }}>
+        <div style={{ textAlign: 'center', fontSize: 11, color: QQ_COLORS.slate600, marginTop: 10, pointerEvents: 'none' }}>
           Danach öffnet sich die Lobby — Teams joinen per QR, du startest das Quiz.
         </div>
       </div>
@@ -5406,7 +5407,7 @@ function SchedulePreview({ draftId, phases }: { draftId: string; phases: 3 | 4 }
           return (
             <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <div style={{
-                fontSize: 11, fontWeight: 900, color: '#fde68a',
+                fontSize: 11, fontWeight: 900, color: QQ_COLORS.yellow300,
                 minWidth: 70, letterSpacing: '0.04em',
               }}>Runde {p}</div>
               <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -5455,19 +5456,19 @@ function LobbyView({
   startGame: () => void;
   backToSetup: () => void;
 }) {
-  const GOLD = '#EC4899';
+  const GOLD = QQ_COLORS.brandPink;
   const lobbyCard: React.CSSProperties = {
     background: 'rgba(255,255,255,0.04)',
     border: '1px solid rgba(255,255,255,0.09)',
     borderRadius: 16, padding: 20, marginBottom: 14,
   };
   const sectionTitle: React.CSSProperties = {
-    fontSize: 13, fontWeight: 900, color: '#e2e8f0', marginBottom: 12,
+    fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 12,
     letterSpacing: '0.04em', textTransform: 'uppercase',
     display: 'flex', alignItems: 'center', gap: 8,
   };
   const fieldLabel: React.CSSProperties = {
-    fontSize: 10, fontWeight: 900, color: '#94a3b8',
+    fontSize: 10, fontWeight: 900, color: QQ_COLORS.slate400,
     letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
   };
 
@@ -5495,8 +5496,8 @@ function LobbyView({
         <h1 style={{
           margin: '12px 0 6px', fontSize: 28, fontWeight: 900, color: '#fff',
         }}>Bereit zum Start</h1>
-        <div style={{ fontSize: 13, color: '#94a3b8' }}>
-          Sobald alle Teams dabei sind: <strong style={{ color: '#22C55E' }}>Quiz starten</strong> drücken (oder Space).
+        <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>
+          Sobald alle Teams dabei sind: <strong style={{ color: QQ_COLORS.green500 }}>Quiz starten</strong> drücken (oder Space).
         </div>
       </div>
 
@@ -5514,7 +5515,7 @@ function LobbyView({
           style={{
             padding: '8px 14px', borderRadius: 8, fontSize: 12, fontWeight: 900,
             border: '1px solid rgba(239,68,68,0.25)', background: 'rgba(239,68,68,0.06)',
-            color: '#EF4444', cursor: 'pointer', fontFamily: 'inherit',
+            color: QQ_COLORS.red500, cursor: 'pointer', fontFamily: 'inherit',
           }}
           title="Zurück ins Setup"
         >⎌ Zurück zum Setup</button>
@@ -5526,7 +5527,7 @@ function LobbyView({
           <span>👥 Verbundene Teams</span>
           <span style={{
             marginLeft: 'auto', fontSize: 12, fontWeight: 900,
-            color: connected > 0 ? '#22C55E' : '#64748b',
+            color: connected > 0 ? QQ_COLORS.green500 : QQ_COLORS.slate500,
           }}>
             {connected}/{total} verbunden
           </span>
@@ -5551,7 +5552,7 @@ function LobbyView({
             <div style={fieldLabel}>Teams</div>
             {total === 0 ? (
               <div style={{
-                fontSize: 14, color: '#64748b', fontStyle: 'italic',
+                fontSize: 14, color: QQ_COLORS.slate500, fontStyle: 'italic',
                 padding: '16px 12px', borderRadius: 8,
                 background: 'rgba(255,255,255,0.02)', border: '1px dashed rgba(255,255,255,0.1)',
               }}>
@@ -5579,12 +5580,12 @@ function LobbyView({
                           maxLines={1}
                           shrinkAfter={14}
                           fontSize={13}
-                          color={t.connected ? '#e2e8f0' : '#64748b'}
+                          color={t.connected ? QQ_COLORS.slate200 : QQ_COLORS.slate500}
                           fontWeight={900}
                         />
                         <div style={{
                           fontSize: 10, fontWeight: 700,
-                          color: t.connected ? '#22C55E' : '#EF4444',
+                          color: t.connected ? QQ_COLORS.green500 : QQ_COLORS.red500,
                         }}>
                           {t.connected ? '● bereit' : '○ offline'}
                         </div>
@@ -5602,7 +5603,7 @@ function LobbyView({
                           width: 22, height: 22, borderRadius: '50%',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           border: '1px solid rgba(148,163,184,0.35)',
-                          background: 'rgba(148,163,184,0.08)', color: '#cbd5e1',
+                          background: 'rgba(148,163,184,0.08)', color: QQ_COLORS.slate300,
                           fontSize: 11, fontWeight: 900, cursor: 'pointer',
                           fontFamily: 'inherit',
                         }}
@@ -5617,7 +5618,7 @@ function LobbyView({
                           width: 22, height: 22, borderRadius: '50%',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                           border: '1px solid rgba(239,68,68,0.35)',
-                          background: 'rgba(239,68,68,0.08)', color: '#EF4444',
+                          background: 'rgba(239,68,68,0.08)', color: QQ_COLORS.red500,
                           fontSize: 11, fontWeight: 900, cursor: 'pointer',
                           padding: 0, lineHeight: 1, fontFamily: 'inherit', flexShrink: 0,
                         }}
@@ -5638,7 +5639,7 @@ function LobbyView({
                 border: '1px dashed rgba(236,72,153,0.35)',
                 display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               }}>
-                <span style={{ fontSize: 10, color: '#EC4899', fontWeight: 900, letterSpacing: '0.1em' }}>
+                <span style={{ fontSize: 10, color: QQ_COLORS.brandPink, fontWeight: 900, letterSpacing: '0.1em' }}>
                   🧪 TEST
                 </span>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
@@ -5671,7 +5672,7 @@ function LobbyView({
                       style={{
                         padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
                         border: '1px solid rgba(236,72,153,0.4)', background: 'rgba(236,72,153,0.15)',
-                        color: '#EC4899', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+                        color: QQ_COLORS.brandPink, fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
                       }}
                     >+ {n} {n === 1 ? 'Dummy' : 'Dummies'}</button>
                   ))}
@@ -5688,7 +5689,7 @@ function LobbyView({
                       style={{
                         padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
                         border: '1px solid rgba(239,68,68,0.45)', background: 'rgba(239,68,68,0.15)',
-                        color: '#EF4444', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+                        color: QQ_COLORS.red500, fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
                       }}
                       title={`${dummyCount} Bots kicken`}
                     >🚪 Bots raus ({dummyCount})</button>
@@ -5741,10 +5742,10 @@ function ConfigChip({ label, value }: { label: string; value: string }) {
       background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.1)',
       display: 'flex', alignItems: 'center', gap: 8, fontSize: 12,
     }}>
-      <span style={{ color: '#64748b', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10 }}>
+      <span style={{ color: QQ_COLORS.slate500, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em', fontSize: 10 }}>
         {label}
       </span>
-      <span style={{ color: '#e2e8f0', fontWeight: 900 }}>{value}</span>
+      <span style={{ color: QQ_COLORS.slate200, fontWeight: 900 }}>{value}</span>
     </div>
   );
 }

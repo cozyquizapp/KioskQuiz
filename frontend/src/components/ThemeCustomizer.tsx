@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 export interface ThemeConfig {
   id: string;
@@ -27,15 +28,15 @@ export const THEME_PRESETS: Record<string, ThemeConfig> = {
     label: '☀️ Light',
     colors: {
       primary: '#0891b2',
-      secondary: '#8b5cf6',
-      accent: '#ec4899',
+      secondary: QQ_COLORS.violet500,
+      accent: QQ_COLORS.brandPink,
       background: '#f8fafc',
       surface: '#ffffff',
-      text: '#0f172a',
-      textMuted: '#64748b',
-      success: '#22c55e',
-      error: '#ef4444',
-      warning: '#f59e0b',
+      text: QQ_COLORS.slate900,
+      textMuted: QQ_COLORS.slate500,
+      success: QQ_COLORS.green500,
+      error: QQ_COLORS.red500,
+      warning: QQ_COLORS.amber500,
       border: 'rgba(15, 23, 42, 0.08)'
     }
   },
@@ -45,15 +46,15 @@ export const THEME_PRESETS: Record<string, ThemeConfig> = {
     label: '🌙 Dark',
     colors: {
       primary: '#06b6d4',
-      secondary: '#a78bfa',
+      secondary: QQ_COLORS.violet400,
       accent: '#ff79c6',
-      background: '#0f172a',
-      surface: '#1e293b',
-      text: '#f1f5f9',
-      textMuted: '#94a3b8',
-      success: '#4ade80',
+      background: QQ_COLORS.slate900,
+      surface: QQ_COLORS.slate800,
+      text: QQ_COLORS.slate100,
+      textMuted: QQ_COLORS.slate400,
+      success: QQ_COLORS.green400,
       error: '#f87171',
-      warning: '#fbbf24',
+      warning: QQ_COLORS.amber400,
       border: 'rgba(255, 255, 255, 0.08)'
     }
   },
@@ -81,15 +82,15 @@ export const THEME_PRESETS: Record<string, ThemeConfig> = {
     label: '🎨 Custom',
     colors: {
       primary: '#06b6d4',
-      secondary: '#a78bfa',
+      secondary: QQ_COLORS.violet400,
       accent: '#ff79c6',
-      background: '#0f172a',
-      surface: '#1e293b',
-      text: '#f1f5f9',
-      textMuted: '#94a3b8',
-      success: '#4ade80',
+      background: QQ_COLORS.slate900,
+      surface: QQ_COLORS.slate800,
+      text: QQ_COLORS.slate100,
+      textMuted: QQ_COLORS.slate400,
+      success: QQ_COLORS.green400,
       error: '#f87171',
-      warning: '#fbbf24',
+      warning: QQ_COLORS.amber400,
       border: 'rgba(255, 255, 255, 0.08)'
     }
   }
@@ -162,9 +163,9 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
   };
 
   return (
-    <div style={{ padding: '16px', color: '#f1f5f9' }}>
+    <div style={{ padding: '16px', color: QQ_COLORS.slate100 }}>
       <div style={{ marginBottom: 20 }}>
-        <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 700, color: '#f1f5f9' }}>
+        <h3 style={{ margin: '0 0 12px 0', fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate100 }}>
           🎨 Theme Selector
         </h3>
 
@@ -178,7 +179,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
                 borderRadius: 10,
                 border: selectedTheme === preset.id ? '2px solid #06b6d4' : '1px solid rgba(255,255,255,0.12)',
                 background: selectedTheme === preset.id ? 'rgba(6,182,212,0.15)' : 'rgba(15,23,42,0.6)',
-                color: '#f1f5f9',
+                color: QQ_COLORS.slate100,
                 cursor: 'pointer',
                 fontSize: 13,
                 fontWeight: 600,
@@ -209,7 +210,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
 
       {/* Color Preview */}
       <div style={{ marginBottom: 20 }}>
-        <h4 style={{ margin: '0 0 10px 0', fontSize: 12, fontWeight: 700, color: '#cbd5e1', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <h4 style={{ margin: '0 0 10px 0', fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate300, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Color Palette
         </h4>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(100px, 1fr))', gap: 8 }}>
@@ -233,7 +234,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
                   border: `1px solid rgba(255,255,255,0.2)`
                 }}
               />
-              <div style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500 }}>
+              <div style={{ fontSize: 11, color: QQ_COLORS.slate300, fontWeight: 500 }}>
                 {key}
               </div>
             </div>
@@ -251,7 +252,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
             borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.12)',
             background: 'rgba(15,23,42,0.6)',
-            color: '#cbd5e1',
+            color: QQ_COLORS.slate300,
             cursor: 'pointer',
             fontSize: 13,
             fontWeight: 600,
@@ -278,7 +279,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
             overflowY: 'auto'
           }}
         >
-          <h4 style={{ margin: '0 0 12px 0', fontSize: 12, fontWeight: 700, color: '#a78bfa' }}>
+          <h4 style={{ margin: '0 0 12px 0', fontSize: 12, fontWeight: 700, color: QQ_COLORS.violet400 }}>
             🎨 Custom Colors
           </h4>
 
@@ -287,7 +288,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
               <div key={key} style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <label
                   htmlFor={`color-${key}`}
-                  style={{ fontSize: 11, color: '#cbd5e1', fontWeight: 500, textTransform: 'capitalize' }}
+                  style={{ fontSize: 11, color: QQ_COLORS.slate300, fontWeight: 500, textTransform: 'capitalize' }}
                 >
                   {key.replace(/([A-Z])/g, ' $1').trim()}
                 </label>
@@ -315,7 +316,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
                       borderRadius: 6,
                       border: '1px solid rgba(255,255,255,0.1)',
                       background: 'rgba(15,23,42,0.7)',
-                      color: '#f1f5f9',
+                      color: QQ_COLORS.slate100,
                       fontSize: 11,
                       fontFamily: 'monospace'
                     }}
@@ -334,7 +335,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
                   borderRadius: 6,
                   border: '1px solid rgba(255,255,255,0.12)',
                   background: 'rgba(15,23,42,0.6)',
-                  color: '#cbd5e1',
+                  color: QQ_COLORS.slate300,
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 600
@@ -349,7 +350,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
                   borderRadius: 6,
                   border: '1px solid rgba(255,255,255,0.12)',
                   background: 'rgba(15,23,42,0.6)',
-                  color: '#cbd5e1',
+                  color: QQ_COLORS.slate300,
                   cursor: 'pointer',
                   fontSize: 12,
                   fontWeight: 600
@@ -377,7 +378,7 @@ export const ThemeCustomizer: React.FC<ThemeCustomizerProps> = ({ onThemeChange 
         ✓ Current Theme: <strong>{currentTheme.name}</strong>
         <br />
         {currentTheme.id === 'custom' && (
-          <span style={{ fontSize: 11, color: '#86efac', marginTop: 4, display: 'block' }}>
+          <span style={{ fontSize: 11, color: QQ_COLORS.green300, marginTop: 4, display: 'block' }}>
             💾 Saved to localStorage
           </span>
         )}

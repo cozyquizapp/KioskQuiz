@@ -27,6 +27,7 @@ import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
   playWoodKnock, playWinnerCardReveal, playFanfare, playTick,
 } from '../../utils/sounds';
+import { QQ_COLORS } from '../../../../shared/qqColors';
 
 // BluffBeamerView — Top-Level-Router fuer die 3 Phasen + Reveal:
 //   write:  Frage + "Teams schreiben Bluffs" + Submission-Counter + Avatare ✓
@@ -40,7 +41,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
   const q = s.currentQuestion!;
   const bt = q.bunteTuete as import('../../../../shared/quarterQuizTypes').QQBunteTueteBluff;
   const phase = s.bluffPhase;
-  const accent = '#F472B6'; // pink
+  const accent = QQ_COLORS.brandPinkMid; // pink
   // realText 2026-05-05 entfernt — die Echte-Antwort wird in der neuen
   // Bluff-Tabelle als gruene Real-Card mit ✓ echt-Pille gezeigt, separate
   // Hero-Card war redundant.
@@ -112,7 +113,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
             <div style={{
               padding: '8px 16px', borderRadius: 999,
               background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
-              fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900, color: '#cbd5e1',
+              fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900, color: QQ_COLORS.slate300,
             }}>
               {/* 2026-05-05 (Wolf 'emojis vom style nicht passend, schwarz-weiss'):
                   📝 → ✍️ (bunte writing hand), 🗳 → 🎯 (bullseye, „triff
@@ -139,7 +140,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
             ? 'clamp(22px, 2.4cqw, 38px)'
             : 'clamp(34px, 4cqw, 64px)',
           fontWeight: 900,
-          color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
+          color: QQ_COLORS.slate100, lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
           transition: 'font-size 0.5s ease',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : q.text}
@@ -241,13 +242,13 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
             padding: '5px 16px', borderRadius: 999,
             background: 'rgba(34,197,94,0.35)', border: '1.5px solid #22C55E',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
-            color: '#86EFAC', letterSpacing: '0.12em', textTransform: 'uppercase',
+            color: QQ_COLORS.green300, letterSpacing: '0.12em', textTransform: 'uppercase',
           }}>
             ✓ {lang === 'de' ? 'Echte Antwort' : 'Real answer'}
           </div>
           <div style={{
             fontSize: 'clamp(36px, 5.6cqw, 88px)', fontWeight: 900,
-            color: '#86EFAC', textAlign: 'center', lineHeight: 1.12,
+            color: QQ_COLORS.green300, textAlign: 'center', lineHeight: 1.12,
             textShadow: '0 0 32px rgba(34,197,94,0.55)',
             letterSpacing: '-0.01em', maxWidth: '100%', wordBreak: 'break-word',
           }}>
@@ -327,7 +328,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                 <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
                   padding: '4px 10px', borderRadius: 999,
                   background: b.bg,
-                  fontSize: 'clamp(13px, 1.4cqw, 17px)', fontWeight: 900, color: '#f1f5f9',
+                  fontSize: 'clamp(13px, 1.4cqw, 17px)', fontWeight: 900, color: QQ_COLORS.slate100,
                   whiteSpace: 'nowrap',
                 }}>
                   {b.icon} {b.n}
@@ -347,7 +348,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
-            color: '#94a3b8', letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: QQ_COLORS.slate400, letterSpacing: '0.14em', textTransform: 'uppercase',
             opacity: 0.75,
           }}>
             🎭 {lang === 'de' ? 'Die Bluffs' : 'The bluffs'}
@@ -362,7 +363,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
               const authorTeam = contribIds[0] ? s.teams.find(t => t.id === contribIds[0]) : null;
               const extraAuthors = contribIds.length > 1 ? contribIds.length - 1 : 0;
               const voters = votersByOption[opt.id] ?? [];
-              const cardColor = authorTeam?.color ?? '#64748b';
+              const cardColor = authorTeam?.color ?? QQ_COLORS.slate500;
               return (
                 <div key={opt.id} style={{
                   display: 'inline-flex', alignItems: 'center',
@@ -402,7 +403,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                   {/* Bluff-Text */}
                   <span style={{
                     fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 800,
-                    color: '#F1F5F9', overflow: 'hidden',
+                    color: QQ_COLORS.slate100, overflow: 'hidden',
                     textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     minWidth: 0, flex: 1,
                   }}>{opt.text}</span>
@@ -434,7 +435,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                       {voters.length > 4 && (
                         <span style={{
                           marginLeft: 4,
-                          fontSize: 11, fontWeight: 900, color: '#cbd5e1',
+                          fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate300,
                         }}>+{voters.length - 4}</span>
                       )}
                     </div>
@@ -462,9 +463,9 @@ export function BluffTimer({ endsAt, accent }: { endsAt: number; accent: string 
     <div style={{
       padding: '8px 18px', borderRadius: 999,
       background: urgent ? 'rgba(239,68,68,0.22)' : `${accent}22`,
-      border: `2px solid ${urgent ? '#EF4444' : `${accent}55`}`,
+      border: `2px solid ${urgent ? QQ_COLORS.red500 : `${accent}55`}`,
       fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
-      color: urgent ? '#FCA5A5' : '#F8FAFC', fontVariantNumeric: 'tabular-nums',
+      color: urgent ? QQ_COLORS.red300 : '#F8FAFC', fontVariantNumeric: 'tabular-nums',
       animation: urgent ? 'pulse 0.8s ease-in-out infinite alternate' : undefined,
     }}>
       ⏱ {sec}s
@@ -487,7 +488,7 @@ export function BluffWriteScreen({ state: s, accent, lang }: {
       }}>✍️</div>
       <div style={{
         fontSize: 'clamp(22px, 2.4cqw, 34px)', fontWeight: 900,
-        color: '#fde68a', textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
+        color: QQ_COLORS.yellow300, textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
       }}>
         {lang === 'de'
           ? 'Erfindet eine plausible Falsch-Antwort auf eurem Handy!'
@@ -548,7 +549,7 @@ export function BluffReviewScreen({ state: s, accent, lang }: {
     }}>
       <div style={{
         fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
-        color: '#94a3b8', textAlign: 'center',
+        color: QQ_COLORS.slate400, textAlign: 'center',
       }}>
         {lang === 'de'
           ? '🕵️ Moderator prüft die Bluffs… Bluffs werden für die Spieler nicht angezeigt.'
@@ -572,18 +573,18 @@ export function BluffReviewScreen({ state: s, accent, lang }: {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                 {tm && <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={20} />}
                 <span style={{
-                  fontSize: 11, fontWeight: 900, color: tm?.color ?? '#94a3b8',
+                  fontSize: 11, fontWeight: 900, color: tm?.color ?? QQ_COLORS.slate400,
                   letterSpacing: '0.04em', textTransform: 'uppercase',
                 }}>{tm?.name ?? teamId}</span>
                 {rejected && (
-                  <span style={{ marginLeft: 'auto', fontSize: 10, color: '#FCA5A5', fontWeight: 900 }}>
+                  <span style={{ marginLeft: 'auto', fontSize: 10, color: QQ_COLORS.red300, fontWeight: 900 }}>
                     {lang === 'de' ? 'abgelehnt' : 'rejected'}
                   </span>
                 )}
               </div>
               <div style={{
                 fontSize: 14, fontWeight: 700,
-                color: rejected ? '#FCA5A5' : '#F1F5F9',
+                color: rejected ? QQ_COLORS.red300 : QQ_COLORS.slate100,
                 textDecoration: rejected ? 'line-through' : undefined,
                 wordBreak: 'break-word',
               }}>{text}</div>
@@ -617,7 +618,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       }}>🎯</div>
       <div style={{
         fontSize: 'clamp(22px, 2.4cqw, 34px)', fontWeight: 900,
-        color: '#fde68a', textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
+        color: QQ_COLORS.yellow300, textAlign: 'center', lineHeight: 1.3, maxWidth: 1000,
       }}>
         {lang === 'de'
           ? 'Welche Antwort ist die echte? Tippt auf eurem Handy!'
@@ -626,7 +627,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       <div style={{
         padding: '8px 22px', borderRadius: 999,
         background: `${accent}22`, border: `2px solid ${accent}55`,
-        fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900, color: '#fbcfe8',
+        fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
       }}>
         {lang === 'de' ? `${voted} / ${totalActive} Teams haben gewählt` : `${voted} / ${totalActive} teams voted`}
       </div>
@@ -661,7 +662,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       </div>
       <div style={{
         fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 700,
-        color: '#94a3b8', textAlign: 'center', marginTop: 8, opacity: 0.8,
+        color: QQ_COLORS.slate400, textAlign: 'center', marginTop: 8, opacity: 0.8,
         maxWidth: 700, lineHeight: 1.5,
       }}>
         {lang === 'de'
@@ -716,7 +717,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
           const extraAuthors = !isReal && contribIds.length > 1
             ? contribIds.length - 1
             : 0;
-          const cardColor = isReal ? '#22C55E' : (authorTeam?.color ?? '#64748b');
+          const cardColor = isReal ? QQ_COLORS.green500 : (authorTeam?.color ?? QQ_COLORS.slate500);
           return (
             <div key={opt.id} style={{
               position: 'relative',
@@ -784,7 +785,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 <span style={{
                   flex: 1, minWidth: 0,
                   fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
-                  color: isReal ? '#86efac' : '#F8FAFC',
+                  color: isReal ? QQ_COLORS.green300 : '#F8FAFC',
                   wordBreak: 'break-word', lineHeight: 1.18,
                   textShadow: isReal
                     ? '0 0 14px rgba(34,197,94,0.4)'
@@ -795,7 +796,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                   <span style={{
                     padding: '4px 12px', borderRadius: 999,
                     background: 'rgba(34,197,94,0.3)', border: '1.5px solid #22C55E',
-                    fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: '#86EFAC',
+                    fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.green300,
                     whiteSpace: 'nowrap', flexShrink: 0,
                   }}>
                     ✓ {lang === 'de' ? 'echt' : 'real'}
@@ -835,7 +836,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                       // 2026-05-05 (Wolf 'Wählten/keine Stimmen etwas groesser'):
                       // 10-12px → 14-19px. Aus Pub-Distanz lesbar.
                       fontSize: 'clamp(14px, 1.4cqw, 19px)', fontWeight: 900,
-                      color: '#cbd5e1', letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: QQ_COLORS.slate300, letterSpacing: '0.08em', textTransform: 'uppercase',
                       marginRight: 6,
                     }}>
                       {lang === 'de' ? 'Wählten' : 'Voted'}
@@ -862,7 +863,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                             <span aria-hidden style={{
                               position: 'absolute', top: -5, right: -5,
                               width: 18, height: 18, borderRadius: '50%',
-                              background: '#22C55E', border: '2px solid #0A0814',
+                              background: QQ_COLORS.green500, border: '2px solid #0A0814',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1,
                             }}>✓</span>
@@ -914,19 +915,19 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
               <span style={{
                 width: 28, height: 28, borderRadius: '50%',
                 background: 'rgba(255,255,255,0.08)',
-                color: '#94a3b8',
+                color: QQ_COLORS.slate400,
                 fontSize: 13, fontWeight: 900,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>{String.fromCharCode(65 + i)}</span>
               <span style={{
                 flex: 1, fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
-                color: '#F1F5F9', wordBreak: 'break-word',
+                color: QQ_COLORS.slate100, wordBreak: 'break-word',
               }}>{opt.text}</span>
             </div>
             {voters.length > 0 && (
               <div style={{
-                fontSize: 11, fontWeight: 900, color: '#94a3b8',
+                fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400,
                 letterSpacing: '0.04em',
               }}>
                 {voters.length} {lang === 'de' ? 'Stimme(n)' : 'vote(s)'}

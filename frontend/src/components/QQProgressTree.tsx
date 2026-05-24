@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -401,8 +402,8 @@ export default function QQProgressTree({
   const wolfDotIdxForColor = Math.max(0, Math.min(showcaseMode ? showcaseWolfIdx : displayIdx, dotCenters.length - 1));
   const currentScheduleEntry = schedule[wolfDotIdxForColor];
   const progressColor = wolfOnFinale
-    ? '#A78BFA'
-    : (currentScheduleEntry ? getRoundColor(currentScheduleEntry.phase, totalPhases) : '#EC4899');
+    ? QQ_COLORS.violet400
+    : (currentScheduleEntry ? getRoundColor(currentScheduleEntry.phase, totalPhases) : QQ_COLORS.brandPink);
   const progressColorEnd = progressColor;
 
   // 2026-05-05 (Wolf 'progress tree mit rundenfarbe + glow'): inline + hero
@@ -432,7 +433,7 @@ export default function QQProgressTree({
       : useRoundAccent
         ? `0 0 36px ${roundColor}55, 0 0 14px ${roundColor}33, 0 10px 32px rgba(15,23,42,0.18)`
         : '0 10px 32px rgba(15,23,42,0.18)';
-  const wrapperColor = (isMini || variant === 'inline' || isShowcase) ? '#f8fafc' : '#0f172a';
+  const wrapperColor = (isMini || variant === 'inline' || isShowcase) ? '#f8fafc' : QQ_COLORS.slate900;
 
   return (
     <div
@@ -491,8 +492,8 @@ export default function QQProgressTree({
             const items: React.ReactNode[] = [];
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const biddingLabelColor = isBiddingActive
-              ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
-              : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
+              ? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247')
+              : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500);
             phases.forEach((p, pi) => {
               // 2026-05-17 (Wolf v3): CG-Label IMMER als Spacer-Slot — in
               // Rules-Showcase UND im Live-Tree. Bug "COZYGAMBIETEN"-Verschmelzung
@@ -536,8 +537,8 @@ export default function QQProgressTree({
                     fontSize: phaseNameSize,
                     fontWeight: 900,
                     color: isCurrentPhase
-                      ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
-                      : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b'),
+                      ? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247')
+                      : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500),
                     letterSpacing: 0.4,
                     textTransform: 'uppercase',
                     flexShrink: 0,
@@ -560,8 +561,8 @@ export default function QQProgressTree({
           {showFinale && (() => {
             const isFinaleActive = state.phase === 'CONNECTIONS_4X4' || showcaseOnFinale;
             const finaleLabelColor = isFinaleActive
-              ? (isShowcase ? '#EC4899' : variant === 'inline' ? '#EC4899' : '#A21247')
-              : (isShowcase ? '#6b6555' : variant === 'inline' ? '#94a3b8' : '#64748b');
+              ? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247')
+              : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500);
             return (
               <div style={{
                 width: finaleDotSize,
@@ -638,13 +639,13 @@ export default function QQProgressTree({
               : Array(DEFAULT_DOTS_PER_PHASE).fill(null);
             // Vor letzter Phase: Bieten-Knoten einschieben.
             const insertBiddingHere = showBidding && pi === phases.length - 1 && pi > 0;
-            const biddingColor = '#EC4899';
+            const biddingColor = QQ_COLORS.brandPink;
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
             // CozyGame-Knoten — vor jedem pi >= 1 (= zwischen Runde N-1 und N).
             // Wolf-Spec: nach JEDER Runde ein CG (außer der letzten = Final).
             const insertCozyGameHere = showCozyGames && pi >= 1;
-            const cozyGameColor = '#EC4899';
+            const cozyGameColor = QQ_COLORS.brandPink;
             // Active = state.phase=COZY_GAME UND der Slot zwischen aktueller
             // Phase und nächster (= pi === state.gamePhaseIndex).
             // 2026-05-17 (Option B): auch im Showcase aktivieren wenn Wolf auf
@@ -768,13 +769,13 @@ export default function QQProgressTree({
                           : isShowcasedPhase
                             ? `${color}33`
                             : isPast
-                              ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.18)' : '#e2e8f0')
-                              : ((variant === 'inline' || isMini || isShowcase) ? 'rgba(30,41,59,0.85)' : '#f1f5f9'),
+                              ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.18)' : QQ_COLORS.slate200)
+                              : ((variant === 'inline' || isMini || isShowcase) ? 'rgba(30,41,59,0.85)' : QQ_COLORS.slate100),
                         color: isShowcasedPhase
                           ? '#fef3c7'
                           : isPast
-                            ? ((variant === 'inline' || isMini) ? '#94a3b8' : '#94a3b8')
-                            : ((variant === 'inline' || isMini || isShowcase) ? '#cbd5e1' : '#64748b'),
+                            ? ((variant === 'inline' || isMini) ? QQ_COLORS.slate400 : QQ_COLORS.slate400)
+                            : ((variant === 'inline' || isMini || isShowcase) ? QQ_COLORS.slate300 : QQ_COLORS.slate500),
                         border: isCurrent
                           ? 'none'
                           : isShowcasedPhase
@@ -815,7 +816,7 @@ export default function QQProgressTree({
               unter dem 'FINALE'-Label. */}
           {state.connectionsEnabled === true && (() => {
             const finaleSize = Math.round(dotSize * 1.35);
-            const finaleColor = '#A78BFA';
+            const finaleColor = QQ_COLORS.violet400;
             // Aktiv = real während CONNECTIONS_4X4 ODER Showcase-Last-Step.
             const isFinaleActive = state.phase === 'CONNECTIONS_4X4' || showcaseOnFinale;
             const isFinalePast = state.phase === 'GAME_OVER' || state.phase === 'THANKS';
@@ -871,7 +872,7 @@ export default function QQProgressTree({
           {dotCenters.length > 0 && (() => {
             const currentSchedule = schedule[wolfDotIdx];
             // 2026-05-09: Phasen-Farbe statt Kategorie-Farbe (Brand-konsistent).
-            const wolfColor = currentSchedule ? getRoundColor(currentSchedule.phase, totalPhases) : '#EC4899';
+            const wolfColor = currentSchedule ? getRoundColor(currentSchedule.phase, totalPhases) : QQ_COLORS.brandPink;
             const wolfSize = Math.round(dotSize * 1.35);
             return (
               <div style={{

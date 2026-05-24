@@ -12,6 +12,7 @@ import {
 } from '../api';
 import { categoryColors } from '../categoryColors';
 import { categoryIcons } from '../categoryAssets';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 const catList: QuizCategory[] = ['Schaetzchen', 'Mu-Cho', 'Stimmts', 'Cheese', 'GemischteTuete'];
 const catLabel: Record<QuizCategory, string> = {
@@ -34,7 +35,7 @@ const badge = (color: string, inverted?: boolean): React.CSSProperties => ({
   textTransform: 'uppercase',
   background: inverted ? 'rgba(255,255,255,0.08)' : `${color}22`,
   border: `1px solid ${inverted ? 'rgba(255,255,255,0.25)' : `${color}55`}`,
-  color: inverted ? '#e2e8f0' : '#0d0f14'
+  color: inverted ? QQ_COLORS.slate200 : '#0d0f14'
 });
 
 const IMAGE_POLICY_HINT = 'Tipp: Nutze bevorzugt Bild-Links; Upload nur fuer eigene Spezialbilder.';
@@ -225,7 +226,7 @@ const QuestionEditorPage: React.FC = () => {
       style={{
         minHeight: '100vh',
         background: 'var(--bg)',
-        color: '#e2e8f0',
+        color: QQ_COLORS.slate200,
         padding: '24px',
         fontFamily: 'var(--font)'
       }}
@@ -241,14 +242,14 @@ const QuestionEditorPage: React.FC = () => {
         <div style={{ marginBottom: 16 }}>
           <div style={badge('#7c8cff', true)}>Question Editor</div>
           <h2 style={{ margin: '10px 0 4px' }}>Fragen verwalten</h2>
-          <div style={{ color: '#94a3b8' }}>
+          <div style={{ color: QQ_COLORS.slate400 }}>
             Mixed-Mechanik fuer Gemischte Tuete setzen und Bilder fuer Cheese/Bildfragen verwalten.
           </div>
         </div>
         <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
           <span style={{ ...badge('#7c8cff', true) }}>Gesamt: {totalCount}</span>
-          <span style={{ ...badge('#22c55e', true) }}>Gefiltert: {filteredCount}</span>
-          <span style={{ ...badge('#fbbf24', true) }}>Custom: {customCount}</span>
+          <span style={{ ...badge(QQ_COLORS.green500, true) }}>Gefiltert: {filteredCount}</span>
+          <span style={{ ...badge(QQ_COLORS.amber400, true) }}>Custom: {customCount}</span>
         </div>
         <div style={{ display: 'grid', gap: 12, marginBottom: 14 }}>
           <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -262,8 +263,8 @@ const QuestionEditorPage: React.FC = () => {
                 padding: 10,
                 borderRadius: 10,
                 border: '1px solid #2d3748',
-                background: '#0f172a',
-                color: '#e2e8f0'
+                background: QQ_COLORS.slate900,
+                color: QQ_COLORS.slate200
               }}
             />
             <button
@@ -294,7 +295,7 @@ const QuestionEditorPage: React.FC = () => {
                   borderRadius: 12,
                   border: filterCat === cat ? '1px solid #7c8cff' : '1px solid rgba(255,255,255,0.16)',
                   background: filterCat === cat ? 'rgba(124,140,255,0.12)' : 'rgba(255,255,255,0.04)',
-                  color: '#e2e8f0',
+                  color: QQ_COLORS.slate200,
                   textAlign: 'left',
                   cursor: 'pointer',
                   display: 'flex',
@@ -315,7 +316,7 @@ const QuestionEditorPage: React.FC = () => {
                 borderRadius: 12,
                 border: filterCatalog === 'ALL' ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.16)',
                 background: filterCatalog === 'ALL' ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-                color: '#e2e8f0',
+                color: QQ_COLORS.slate200,
                 textAlign: 'left',
                 cursor: 'pointer'
               }}
@@ -331,7 +332,7 @@ const QuestionEditorPage: React.FC = () => {
                   borderRadius: 12,
                   border: filterCatalog === c ? '1px solid #22c55e' : '1px solid rgba(255,255,255,0.16)',
                   background: filterCatalog === c ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-                  color: '#e2e8f0',
+                  color: QQ_COLORS.slate200,
                   textAlign: 'left',
                   cursor: 'pointer'
                 }}
@@ -344,7 +345,7 @@ const QuestionEditorPage: React.FC = () => {
             <button
               onClick={() => setFilterCustomOnly((v) => !v)}
               style={{
-                ...badge(filterCustomOnly ? '#fbbf24' : '#ffffff', true),
+                ...badge(filterCustomOnly ? QQ_COLORS.amber400 : '#ffffff', true),
                 border: filterCustomOnly ? '1px solid #fbbf24' : '1px solid rgba(255,255,255,0.2)',
                 cursor: 'pointer'
               }}
@@ -366,13 +367,13 @@ const QuestionEditorPage: React.FC = () => {
                     padding: 10,
                     borderRadius: 10,
                     border: '1px solid #2d3748',
-                    background: '#0f172a',
-                    color: '#e2e8f0',
+                    background: QQ_COLORS.slate900,
+                    color: QQ_COLORS.slate200,
                     minWidth: 200
                   }}
                 />
                 <button
-                  style={{ ...badge('#22c55e', true), cursor: 'pointer' }}
+                  style={{ ...badge(QQ_COLORS.green500, true), cursor: 'pointer' }}
                   onClick={async () => {
                     const catalogId = (catalogDrafts['__bulk__'] ?? '').trim() || 'default';
                     try {
@@ -452,7 +453,7 @@ const QuestionEditorPage: React.FC = () => {
                     )}
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                    <div style={{ fontSize: 12, color: '#94a3b8' }}>ID: {q.id}</div>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>ID: {q.id}</div>
                     <button
                       onClick={() =>
                         setBulkSelection((prev) => {
@@ -462,7 +463,7 @@ const QuestionEditorPage: React.FC = () => {
                         })
                       }
                       style={{
-                        ...badge(bulkSelection.has(q.id) ? '#22c55e' : '#ffffff', true),
+                        ...badge(bulkSelection.has(q.id) ? QQ_COLORS.green500 : '#ffffff', true),
                         cursor: 'pointer'
                       }}
                     >
@@ -472,7 +473,7 @@ const QuestionEditorPage: React.FC = () => {
                 </div>
                 <div style={{ marginTop: 10, fontWeight: 800, fontSize: 18 }}>{q.question}</div>
                 <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>Loesung:</label>
+                  <label style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>Loesung:</label>
                   <input
                     type="text"
                     value={answerDrafts[q.id] ?? (q as any).answer ?? ''}
@@ -497,7 +498,7 @@ const QuestionEditorPage: React.FC = () => {
                   >
                     Loesung speichern
                   </button>
-                  <label style={{ fontSize: 12, color: '#cbd5e1' }}>Katalog:</label>
+                  <label style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>Katalog:</label>
                   <input
                     type="text"
                     value={catalogDrafts[q.id] ?? (q as any).catalogId ?? 'default'}
@@ -512,12 +513,12 @@ const QuestionEditorPage: React.FC = () => {
                       padding: 8,
                       borderRadius: 8,
                       border: '1px solid #2d3748',
-                      background: '#0f172a',
-                      color: '#e2e8f0'
+                      background: QQ_COLORS.slate900,
+                      color: QQ_COLORS.slate200
                     }}
                   />
                   <button
-                    style={{ ...badge('#22c55e', true), cursor: 'pointer' }}
+                    style={{ ...badge(QQ_COLORS.green500, true), cursor: 'pointer' }}
                     onClick={async () => {
                       const catalogId = (catalogDrafts[q.id] ?? (q as any).catalogId ?? 'default').trim() || 'default';
                       try {
@@ -532,13 +533,13 @@ const QuestionEditorPage: React.FC = () => {
                     Katalog speichern
                   </button>
                   {(q as any).answer && (
-                    <span style={{ fontSize: 12, color: '#94a3b8' }}>Aktuell: {(q as any).answer}</span>
+                    <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>Aktuell: {(q as any).answer}</span>
                   )}
-                  {q.mediaSlots && <span style={{ fontSize: 12, color: '#94a3b8' }}>Media-Slots: {q.mediaSlots.count}</span>}
+                  {q.mediaSlots && <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>Media-Slots: {q.mediaSlots.count}</span>}
                 </div>
                 {hasImage && (
                   <div style={{ marginTop: 8, display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <div style={{ fontSize: 12, color: '#cbd5e1' }}>Bild:</div>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>Bild:</div>
                     <img
                       src={(q as any).imageUrl || q.media?.url}
                       alt="Preview"
@@ -580,7 +581,7 @@ const QuestionEditorPage: React.FC = () => {
                         <option value="three-clue-race">Drei Hinweise</option>
                         <option value="vier-woerter-eins">Vier Woerter - eins</option>
                       </select>
-                      <label style={{ fontSize: 12, color: '#cbd5e1' }}>Media-Slots (1-6):</label>
+                      <label style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>Media-Slots (1-6):</label>
                       <input
                         type="number"
                         min={1}
@@ -597,12 +598,12 @@ const QuestionEditorPage: React.FC = () => {
                           padding: 8,
                           borderRadius: 8,
                           border: '1px solid #2d3748',
-                          background: '#0f172a',
-                          color: '#e2e8f0'
+                          background: QQ_COLORS.slate900,
+                          color: QQ_COLORS.slate200
                         }}
                       />
                       <button
-                        style={{ ...badge('#22c55e', true), cursor: 'pointer' }}
+                        style={{ ...badge(QQ_COLORS.green500, true), cursor: 'pointer' }}
                         onClick={async () => {
                           const count = mediaSlotsDrafts[q.id] ?? q.mediaSlots?.count ?? 0;
                           try {
@@ -635,7 +636,7 @@ const QuestionEditorPage: React.FC = () => {
                     Im Wizard Ã¶ffnen
                   </a>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-                    <div style={{ fontSize: 12, color: '#cbd5e1' }}>Bild-Offset (X/Y)</div>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>Bild-Offset (X/Y)</div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <input
                         type="range"
@@ -652,7 +653,7 @@ const QuestionEditorPage: React.FC = () => {
                         onChange={(e) => handleLayoutChange(q.id, 'imageOffsetY', Number(e.target.value))}
                       />
                     </div>
-                    <div style={{ fontSize: 12, color: '#cbd5e1' }}>Logo-Offset (X/Y)</div>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate300 }}>Logo-Offset (X/Y)</div>
                     <div style={{ display: 'flex', gap: 6 }}>
                       <input
                         type="range"
@@ -674,7 +675,7 @@ const QuestionEditorPage: React.FC = () => {
               </div>
             );
           })}
-          {filtered.length === 0 && !loading && <div style={{ color: '#94a3b8' }}>Keine Fragen gefunden.</div>}
+          {filtered.length === 0 && !loading && <div style={{ color: QQ_COLORS.slate400 }}>Keine Fragen gefunden.</div>}
         </div>
       </div>
     </div>

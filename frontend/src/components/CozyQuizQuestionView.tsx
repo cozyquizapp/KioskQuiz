@@ -56,6 +56,7 @@ import {
   BluffBeamerView, BluffRevealHero, BluffTimer,
   BluffWriteScreen, BluffReviewScreen, BluffVoteWaitingScreen, BluffVoteScreen,
 } from './reveals/Bluff';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
   s: QQStateUpdate; q: NonNullable<QQStateUpdate['currentQuestion']>;
@@ -100,11 +101,11 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <span style={{ fontSize: 'clamp(22px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="🎯"/></span>
               <span style={{
                 fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-                color: '#FBCFE8', letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>{lang === 'en' ? 'Target' : 'Lösung'}</span>
               <span style={{
                 fontSize: 'clamp(30px, 4cqw, 56px)', fontWeight: 900,
-                color: '#EC4899',
+                color: QQ_COLORS.brandPink,
                 textShadow: '0 2px 12px rgba(236,72,153,0.45)',
               }}>
                 {targetStr}{unitStr ? ` ${unitStr}` : ''}
@@ -137,7 +138,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         width: `${100 - pct}%`,
                         background: isWinner
                           ? 'linear-gradient(90deg, rgba(34,197,94,0.22), rgba(34,197,94,0.04))'
-                          : `linear-gradient(90deg, ${a.team?.color ?? '#64748b'}30, transparent)`,
+                          : `linear-gradient(90deg, ${a.team?.color ?? QQ_COLORS.slate500}30, transparent)`,
                         transition: 'width 0.8s var(--qq-ease-out-cubic)',
                       }} />
                     )}
@@ -157,12 +158,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       )}
                       <span style={{
                         fontWeight: 900, fontSize: 'clamp(14px, 1.5cqw, 20px)',
-                        color: a.team?.color ?? '#e2e8f0', flex: '0 1 auto',
+                        color: a.team?.color ?? QQ_COLORS.slate200, flex: '0 1 auto',
                       }}>{a.team?.name ?? a.teamId}</span>
                       <span style={{
                         flex: 1, textAlign: 'right',
                         fontSize: 'clamp(18px, 2.2cqw, 30px)', fontWeight: 900,
-                        color: isWinner ? '#4ade80' : '#e2e8f0',
+                        color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate200,
                       }}>
                         {a.text}{unitStr ? ` ${unitStr}` : ''}
                       </span>
@@ -170,7 +171,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         minWidth: 'clamp(64px, 8cqw, 110px)', textAlign: 'right',
                         fontFamily: "'Caveat', cursive",
                         fontSize: 'clamp(14px, 1.5cqw, 20px)',
-                        color: isWinner ? '#86efac' : '#64748b', fontWeight: 700,
+                        color: isWinner ? QQ_COLORS.green300 : QQ_COLORS.slate500, fontWeight: 700,
                       }}>
                         {distStr}
                       </span>
@@ -194,7 +195,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
         const speedRank: Record<string, number> = {};
         correctVoters.forEach((a, i) => { speedRank[a.teamId] = i + 1; });
         const t0 = s.timerEndsAt ? s.timerEndsAt - (s.timerDurationSec * 1000) : (correctVoters[0]?.submittedAt ?? 0);
-        const MUCHO_COLORS = ['#3B82F6', '#EF4444', '#EC4899', '#22C55E'];
+        const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.brandPink, QQ_COLORS.green500];
 
         return (
           <div style={{ animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -205,7 +206,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 .map(a => ({ team: s.teams.find(t => t.id === a.teamId), answer: a }))
                 .filter((v): v is { team: NonNullable<typeof v.team>; answer: typeof v.answer } => !!v.team);
               const isCorrect = optIdx === q.correctOptionIndex;
-              const optColor = MUCHO_COLORS[optIdx] ?? '#475569';
+              const optColor = MUCHO_COLORS[optIdx] ?? QQ_COLORS.slate600;
               return (
                 <div key={optIdx} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
@@ -230,7 +231,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   }}>
                     <span style={{
                       fontSize: 'clamp(14px, 1.6cqw, 20px)', fontWeight: 900,
-                      color: isCorrect ? '#86efac' : '#cbd5e1',
+                      color: isCorrect ? QQ_COLORS.green300 : QQ_COLORS.slate300,
                       minWidth: 0, flex: '0 1 auto',
                     }}>
                       {optText}
@@ -267,7 +268,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               }}>
                 <span style={{
                   fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 900,
-                  color: '#EC4899', letterSpacing: '0.04em', textTransform: 'uppercase',
+                  color: QQ_COLORS.brandPink, letterSpacing: '0.04em', textTransform: 'uppercase',
                 }}><QQEmojiIcon emoji="⚡"/> Schnellster zuerst</span>
                 {correctVoters.map((a, i) => {
                   const tm = s.teams.find(t => t.id === a.teamId);
@@ -283,12 +284,12 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     }}>
                       <span style={{
                         fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 900,
-                        color: rank === 1 ? '#EC4899' : '#cbd5e1',
+                        color: rank === 1 ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                       }}>#{rank}</span>
                       <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(16px, 1.9cqw, 22px)'} />
                       <span style={{ fontSize: 'clamp(12px, 1.3cqw, 16px)', fontWeight: 900, color: tm.color }}>{tm.name}</span>
                       {timeSec && (
-                        <span style={{ fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 700, color: '#94a3b8' }}>{timeSec}s</span>
+                        <span style={{ fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 700, color: QQ_COLORS.slate400 }}>{timeSec}s</span>
                       )}
                     </div>
                   );
@@ -301,7 +302,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
 
       {/* ZEHN_VON_ZEHN (All-In): stacked bar per option — who put how many points */}
       {q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
-        const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
+        const ALLIN_COLORS = [QQ_COLORS.blue500,QQ_COLORS.green500,QQ_COLORS.red500];
         // Parse each answer to per-option point arrays
         const parsed = s.answers.map(a => {
           const pts = String(a.text ?? '').split(',').map(x => parseInt(x.trim(), 10));
@@ -347,23 +348,23 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 <QQTeamAvatar avatarId={winner.team.avatarId} teamEmoji={winner.team.emoji} size={'clamp(44px, 4.5cqw, 60px)'} style={{ flexShrink: 0, boxShadow: `0 0 20px ${winner.team.color}55` }} />
                 <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <div style={{
-                    fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: '#94a3b8',
+                    fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.slate400,
                     letterSpacing: '0.1em', textTransform: 'uppercase',
                   }}>
                     <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Round winner' : 'Rundensieger'}
                   </div>
                   <div style={{
                     fontSize: 'clamp(16px, 1.9cqw, 26px)', fontWeight: 900,
-                    color: '#F1F5F9', lineHeight: 1.2,
+                    color: QQ_COLORS.slate100, lineHeight: 1.2,
                   }}>
                     <span style={{ color: winner.team.color }}>{winner.team.name}</span>{' '}
                     {winner.hasTie
                       ? (lang === 'en'
-                          ? <>has the most points on <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span> and was fastest.</>
-                          : <>hat die meisten Punkte auf <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span> und war am schnellsten.</>)
+                          ? <>has the most points on <b>{winner.correctOptText}</b> <span style={{ color: QQ_COLORS.green400 }}>(+{winner.pts})</span> and was fastest.</>
+                          : <>hat die meisten Punkte auf <b>{winner.correctOptText}</b> <span style={{ color: QQ_COLORS.green400 }}>(+{winner.pts})</span> und war am schnellsten.</>)
                       : (lang === 'en'
-                          ? <>has the most points on <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span>.</>
-                          : <>hat die meisten Punkte auf <b>{winner.correctOptText}</b> <span style={{ color: '#4ade80' }}>(+{winner.pts})</span>.</>)}
+                          ? <>has the most points on <b>{winner.correctOptText}</b> <span style={{ color: QQ_COLORS.green400 }}>(+{winner.pts})</span>.</>
+                          : <>hat die meisten Punkte auf <b>{winner.correctOptText}</b> <span style={{ color: QQ_COLORS.green400 }}>(+{winner.pts})</span>.</>)}
                   </div>
                 </div>
               </div>
@@ -372,7 +373,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               const isCorrectLocked = optIdx === q.correctOptionIndex;
               const isHunterHere = false;
               const showGreen = isCorrectLocked || isHunterHere;
-              const color = showGreen ? '#22C55E' : (ALLIN_COLORS[optIdx] ?? '#64748b');
+              const color = showGreen ? QQ_COLORS.green500 : (ALLIN_COLORS[optIdx] ?? QQ_COLORS.slate500);
               const highestTeamIds = new Set<string>();
               const highestHidden = false;
               // Team contributions on this option (only teams with >0 pts), sorted desc
@@ -420,13 +421,13 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{
                       flex: 1,
                       fontSize: 'clamp(15px, 1.7cqw, 22px)', fontWeight: 900,
-                      color: isCorrectLocked ? '#86efac' : '#e2e8f0',
+                      color: isCorrectLocked ? QQ_COLORS.green300 : QQ_COLORS.slate200,
                     }}>
                       {optText}
                     </span>
                     <span style={{
                       fontSize: 'clamp(18px, 2.2cqw, 30px)', fontWeight: 900,
-                      color: isCorrectLocked ? '#4ade80' : color,
+                      color: isCorrectLocked ? QQ_COLORS.green400 : color,
                       minWidth: 56, textAlign: 'right',
                       transition: 'color 0.3s ease',
                     }}>
@@ -481,7 +482,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + q.options!.length * 0.08 + 0.1}s both`,
               }}>
                 <span style={{
-                  fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 900, color: '#64748b',
+                  fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 900, color: QQ_COLORS.slate500,
                   letterSpacing: '0.04em', textTransform: 'uppercase',
                 }}>Teams</span>
                 {s.teams.map(tm => {
@@ -498,7 +499,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       <span style={{ fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: tm.color }}>{tm.name}</span>
                       <span style={{
                         fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
-                        color: earned > 0 ? '#4ade80' : '#64748b',
+                        color: earned > 0 ? QQ_COLORS.green400 : QQ_COLORS.slate500,
                       }}>+{earned}</span>
                     </div>
                   );
@@ -597,7 +598,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{
                       flex: 1,
                       fontSize: 'clamp(18px, 2.4cqw, 32px)', fontWeight: 900,
-                      color: greenOn ? '#86efac' : '#e2e8f0',
+                      color: greenOn ? QQ_COLORS.green300 : QQ_COLORS.slate200,
                       lineHeight: 1.2,
                       transition: 'color 0.35s ease',
                     }}>
@@ -609,7 +610,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         background: i === 0 && isWinner ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.28)',
                         border: i === 0 && isWinner ? '1.5px solid rgba(236,72,153,0.6)' : '1px solid rgba(255,255,255,0.1)',
                         fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
-                        color: i === 0 && isWinner ? '#EC4899' : '#94a3b8',
+                        color: i === 0 && isWinner ? QQ_COLORS.brandPink : QQ_COLORS.slate400,
                         whiteSpace: 'nowrap',
                         animation: `contentReveal 0.3s var(--qq-ease-pop-fast) ${avatarDelay + 0.2}s both`,
                       }}>
@@ -618,7 +619,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     )}
                     {greenOn && (
                       <span style={{
-                        fontSize: 'clamp(20px, 2.4cqw, 30px)', color: '#4ade80', fontWeight: 900,
+                        fontSize: 'clamp(20px, 2.4cqw, 30px)', color: QQ_COLORS.green400, fontWeight: 900,
                         animation: 'revealCorrectPop 0.45s var(--qq-ease-bounce) both',
                       }}>✓</span>
                     )}
@@ -686,7 +687,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   <span style={{
                     flex: 1,
                     fontSize: 'clamp(16px, 1.9cqw, 26px)', fontWeight: 900,
-                    color: '#F1F5F9',
+                    color: QQ_COLORS.slate100,
                   }}>
                     {correct}
                   </span>
@@ -706,7 +707,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       ))}
                     </div>
                   ) : (
-                    <span style={{ fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 700, color: '#64748b', fontStyle: 'italic' }}>
+                    <span style={{ fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 700, color: QQ_COLORS.slate500, fontStyle: 'italic' }}>
                       {lang === 'en' ? 'nobody' : 'niemand'}
                     </span>
                   )}
@@ -723,7 +724,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + correctList.length * 0.08 + 0.1}s both`,
             }}>
               <span style={{
-                fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 900, color: '#64748b',
+                fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 900, color: QQ_COLORS.slate500,
                 letterSpacing: '0.04em', textTransform: 'uppercase',
               }}><QQEmojiIcon emoji="🏆"/> Treffer</span>
               {teamScore.map(ts => {
@@ -741,7 +742,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{ fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: tm.color }}>{tm.name}</span>
                     <span style={{
                       fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 900,
-                      color: isWinner ? '#4ade80' : '#cbd5e1',
+                      color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate300,
                     }}>{ts.hits}/{correctList.length}</span>
                   </div>
                 );
@@ -806,7 +807,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{
                       flex: 1,
                       fontSize: 'clamp(16px, 1.9cqw, 26px)', fontWeight: 900,
-                      color: '#F1F5F9',
+                      color: QQ_COLORS.slate100,
                     }}>
                       {item}
                     </span>
@@ -825,7 +826,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{
                       minWidth: 44, textAlign: 'right',
                       fontSize: 'clamp(13px, 1.4cqw, 17px)', fontWeight: 900,
-                      color: allRight ? '#4ade80' : noneRight ? '#f87171' : '#94a3b8',
+                      color: allRight ? QQ_COLORS.green400 : noneRight ? '#f87171' : QQ_COLORS.slate400,
                     }}>
                       {hitters.length}/{total}
                     </span>
@@ -843,7 +844,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + correctSeq.length * 0.08 + 0.1}s both`,
             }}>
               <span style={{
-                fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 900, color: '#64748b',
+                fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 900, color: QQ_COLORS.slate500,
                 letterSpacing: '0.04em', textTransform: 'uppercase',
               }}><QQEmojiIcon emoji="🎯"/> Richtige Positionen</span>
               {teamScores.map(ts => {
@@ -861,7 +862,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{ fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: tm.color }}>{tm.name}</span>
                     <span style={{
                       fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 900,
-                      color: isWinner ? '#4ade80' : '#cbd5e1',
+                      color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate300,
                     }}>{ts.score}/{correctSeq.length}</span>
                   </div>
                 );
@@ -897,10 +898,10 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
             }}>
-              <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? '#60A5FA' : '#475569', width: 20 }}>#{i + 1}</span>
+              <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? QQ_COLORS.blue400 : QQ_COLORS.slate600, width: 20 }}>#{i + 1}</span>
               {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
-              <span style={{ fontWeight: 900, color: team?.color ?? '#e2e8f0', flex: 1, fontSize: 13 }}>{team?.name}</span>
-              <span style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: isWinner ? '#4ade80' : '#64748b' }}><QQEmojiIcon emoji="📍"/> {distStr}</span>
+              <span style={{ fontWeight: 900, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: 13 }}>{team?.name}</span>
+              <span style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: isWinner ? QQ_COLORS.green400 : QQ_COLORS.slate500 }}><QQEmojiIcon emoji="📍"/> {distStr}</span>
             </div>
           );
         });
@@ -931,7 +932,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   if (!q) return null;
   const cat = q.category as QQCategory;
   const catLabel = QQ_CATEGORY_LABELS[cat];
-  const accent = CAT_ACCENT[cat] ?? '#e2e8f0';
+  const accent = CAT_ACCENT[cat] ?? QQ_COLORS.slate200;
   const badgeBg = CAT_BADGE_BG[cat] ?? '#374151';
   const glow = CAT_GLOW[cat] ?? 'transparent';
   // Dekorative Corner-Emojis pro Kategorie — aktuell ausgeblendet (Tester fanden sie
@@ -1312,7 +1313,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           }}>📸</div>
           <div style={{
             fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-            color: '#a78bfa', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.55,
+            color: QQ_COLORS.violet400, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.55,
           }}>
             {lang === 'de' ? 'Bild fehlt — Frage trotzdem spielbar' : 'No image — question still playable'}
           </div>
@@ -1573,7 +1574,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               if (!earliest) return null;
               return s.teams.find(t => t.id === earliest.teamId)?.color ?? null;
             })();
-            const revealGlowColor = fastestColor ?? '#22C55E';
+            const revealGlowColor = fastestColor ?? QQ_COLORS.green500;
             return (
           <div style={{
             position: 'relative',
@@ -1657,7 +1658,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 ? 'clamp(20px, 2.6cqw, 36px)'
                 : (qText.length > 120 ? 'clamp(32px, 4cqw, 60px)' : 'clamp(42px, 5.8cqw, 84px)'),
               fontWeight: 900, lineHeight: 1.22,
-              color: '#F1F5F9',
+              color: QQ_COLORS.slate100,
               marginBottom: isCheeseReveal ? 8 : 0,
               animation: 'langFadeIn 0.4s ease both',
               opacity: isCheeseReveal ? 0.55 : 1,
@@ -1675,7 +1676,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               <div style={{
                 position: 'relative', overflow: 'hidden',
                 fontSize: 'clamp(28px, 3.8cqw, 56px)', fontWeight: 900,
-                color: '#4ADE80',
+                color: QQ_COLORS.green400,
                 animation: 'langFadeIn 0.5s var(--qq-ease-out-cubic) 0.15s both',
                 textShadow: '0 0 30px rgba(34,197,94,0.4)',
                 marginBottom: 6,
@@ -1704,7 +1705,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     marginTop: 14,
                     fontSize: 'clamp(16px, 1.9cqw, 24px)', fontWeight: 900,
-                    color: '#94a3b8',
+                    color: QQ_COLORS.slate400,
                     animation: 'revealWinnerIn 0.5s ease 0.4s both',
                   }}>
                     {lang === 'en' ? 'No team got it right.' : 'Kein Team hatte die richtige Antwort.'}
@@ -1764,7 +1765,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           padding: '3px 10px', borderRadius: 999,
                           background: isFastest ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.55)',
                           border: isFastest ? '1.5px solid rgba(236,72,153,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                          color: isFastest ? '#EC4899' : '#cbd5e1',
+                          color: isFastest ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
                           whiteSpace: 'nowrap',
@@ -1845,7 +1846,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 </div>
                 <div style={{
                   fontSize: 'clamp(15px, 1.6cqw, 22px)', fontWeight: 800,
-                  color: '#cbd5e1', lineHeight: 1.2,
+                  color: QQ_COLORS.slate300, lineHeight: 1.2,
                 }}>
                   {winMsg}
                 </div>
@@ -2120,7 +2121,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div key={`${lang}-${cardFontSize}`} style={{
                     fontSize: cardFontSize,
                     fontWeight: 900, lineHeight: 1.22,
-                    color: '#F1F5F9',
+                    color: QQ_COLORS.slate100,
                     animation: 'langFadeIn 0.4s ease both',
                   }}>
                     {qText}
@@ -2154,7 +2155,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 {criteria && (
                   <div style={{
                     fontSize: 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
-                    color: '#EC4899', letterSpacing: '0.1em', textTransform: 'uppercase',
+                    color: QQ_COLORS.brandPink, letterSpacing: '0.1em', textTransform: 'uppercase',
                     textAlign: 'center',
                   }}>
                     {lang === 'en' ? `Sort ${criteria}` : `Sortiert ${criteria}`}
@@ -2172,7 +2173,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       border: '2px solid rgba(236,72,153,0.4)',
                       boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.04)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(20px, 2.4cqw, 34px)', fontWeight: 900, color: '#F1F5F9',
+                      fontSize: 'clamp(20px, 2.4cqw, 34px)', fontWeight: 900, color: QQ_COLORS.slate100,
                       textAlign: 'center', lineHeight: 1.25,
                       minHeight: 80,
                       animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.06}s both`,
@@ -2322,7 +2323,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 'clamp(72px, 8cqw, 124px)', fontWeight: 900, flexShrink: 0,
                         lineHeight: 1,
-                        color: isCorrect ? '#22C55E' : isWrong ? '#475569' : optColor,
+                        color: isCorrect ? QQ_COLORS.green500 : isWrong ? QQ_COLORS.slate600 : optColor,
                         textShadow: isCorrect
                           ? '0 0 28px rgba(34,197,94,0.75), 0 0 60px rgba(34,197,94,0.35)'
                           : `0 0 22px ${optColor}88, 0 0 50px ${optColor}44`,
@@ -2333,7 +2334,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         position: 'relative', zIndex: 1,
                         flex: 1, minWidth: 0,
                         fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900,
-                        color: isWrong ? '#475569' : '#F1F5F9', lineHeight: 1.25,
+                        color: isWrong ? QQ_COLORS.slate600 : QQ_COLORS.slate100, lineHeight: 1.25,
                         textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                         transition: 'color 0.3s ease',
                       }}>{optText}</div>
@@ -2414,7 +2415,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   padding: '2px 9px', borderRadius: 999,
                                   background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
                                   border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
-                                  color: isFastest ? '#0A0814' : '#e2e8f0',
+                                  color: isFastest ? '#0A0814' : QQ_COLORS.slate200,
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2cqw, 15px)',
                                   whiteSpace: 'nowrap',
@@ -2471,7 +2472,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     minHeight: 'clamp(40px, 5cqw, 56px)',
                   }}>
                     {otherBets.length === 0 ? (
-                      <span style={{ fontSize: 'clamp(13px, 1.4cqw, 18px)', color: '#475569', fontStyle: 'italic' }}>—</span>
+                      <span style={{ fontSize: 'clamp(13px, 1.4cqw, 18px)', color: QQ_COLORS.slate600, fontStyle: 'italic' }}>—</span>
                     ) : otherBets.map(({ team: tm, pts }) => (
                       <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                         display: 'flex', alignItems: 'center', gap: 6,
@@ -2553,7 +2554,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     pointerEvents: 'none',
                   }} />
                   <span style={{
-                    fontSize: 'clamp(28px, 4cqw, 64px)', fontWeight: 900, color: '#4ade80',
+                    fontSize: 'clamp(28px, 4cqw, 64px)', fontWeight: 900, color: QQ_COLORS.green400,
                     flexShrink: 1, minWidth: 0,
                     overflow: 'hidden', textOverflow: 'ellipsis',
                     position: 'relative', zIndex: 1,
@@ -2603,7 +2604,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 padding: '3px 10px', borderRadius: 999,
                                 background: isFastest ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.55)',
                                 border: isFastest ? '1.5px solid rgba(236,72,153,0.7)' : '1px solid rgba(255,255,255,0.15)',
-                                color: isFastest ? '#EC4899' : '#cbd5e1',
+                                color: isFastest ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                                 fontWeight: 900,
                                 fontSize: 'clamp(15px, 1.6cqw, 20px)',
                                 whiteSpace: 'nowrap',
@@ -2685,7 +2686,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }}>
                 <div style={{
                   fontSize: tierStyles.headerFs, fontWeight: 900,
-                  color: '#86efac', letterSpacing: 0.5,
+                  color: QQ_COLORS.green300, letterSpacing: 0.5,
                 }}>
                   <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'All possible answers' : 'Alle möglichen Antworten'}
                   <span style={{ marginLeft: 8, fontSize: '0.7em', opacity: 0.7 }}>· {N}</span>
@@ -2724,8 +2725,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         borderRadius: 999,
                         fontSize: tierStyles.fontSize, fontWeight: 900,
                         background: named ? 'rgba(34,197,94,0.22)' : 'rgba(15,23,42,0.5)',
-                        border: `${tier === 'xs' ? 1 : 2}px solid ${authorTeam ? authorTeam.color : (named ? '#22C55E' : 'rgba(148,163,184,0.25)')}`,
-                        color: named ? '#86efac' : '#94a3b8',
+                        border: `${tier === 'xs' ? 1 : 2}px solid ${authorTeam ? authorTeam.color : (named ? QQ_COLORS.green500 : 'rgba(148,163,184,0.25)')}`,
+                        color: named ? QQ_COLORS.green300 : QQ_COLORS.slate400,
                         animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.2 + i * tierStyles.stagger}s both`,
                         boxShadow: authorTeam && tier !== 'xs' ? `0 0 8px ${authorTeam.color}44` : 'none',
                       }}>
@@ -2955,11 +2956,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {/* Axis endpoints labels */}
                   <div style={{
                     position: 'absolute', left: 0, top: 'calc(50% + 22px)',
-                    fontSize: 'clamp(18px, 1.8cqw, 26px)', color: '#94a3b8', fontWeight: 900,
+                    fontSize: 'clamp(18px, 1.8cqw, 26px)', color: QQ_COLORS.slate400, fontWeight: 900,
                   }}>{fmt(axMin)}</div>
                   <div style={{
                     position: 'absolute', right: 0, top: 'calc(50% + 22px)',
-                    fontSize: 'clamp(18px, 1.8cqw, 26px)', color: '#94a3b8', fontWeight: 900,
+                    fontSize: 'clamp(18px, 1.8cqw, 26px)', color: QQ_COLORS.slate400, fontWeight: 900,
                   }}>{fmt(axMax)}</div>
 
                   {/* Target marker — kompakte Pille direkt AUF der Rail.
@@ -3155,7 +3156,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: tColor, lineHeight: 1.1,
                   }}>{w.team.name}</span>
                   <span style={{
-                    color: '#cbd5e1', fontSize: 'clamp(19px, 2.1cqw, 28px)', fontWeight: 700, lineHeight: 1.1,
+                    color: QQ_COLORS.slate300, fontSize: 'clamp(19px, 2.1cqw, 28px)', fontWeight: 700, lineHeight: 1.1,
                   }}>
                     {distanceTied
                       ? (lang === 'en' ? 'was closest — and fastest! ⚡' : 'war am nächsten dran — und am schnellsten! ⚡')
@@ -3331,7 +3332,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   </div>
                   {/* Zeile 2: Message — eigene Zeile, immer zentriert */}
                   <div style={{
-                    color: '#86efac', fontSize: 'clamp(14px, 1.7cqw, 22px)', fontWeight: 900, lineHeight: 1.2,
+                    color: QQ_COLORS.green300, fontSize: 'clamp(14px, 1.7cqw, 22px)', fontWeight: 900, lineHeight: 1.2,
                     textAlign: 'center',
                   }}>
                     {hpMsg}
@@ -3370,7 +3371,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ))}
                   </div>
                   <div style={{
-                    color: '#EC4899', fontSize: 'clamp(18px, 2.4cqw, 30px)', fontWeight: 900, lineHeight: 1.2,
+                    color: QQ_COLORS.brandPink, fontSize: 'clamp(18px, 2.4cqw, 30px)', fontWeight: 900, lineHeight: 1.2,
                   }}>
                     {coMsg}
                   </div>
@@ -3415,7 +3416,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     }}
                   />
                   <div style={{
-                    color: '#cbd5e1', fontSize: 'clamp(17px, 2.4cqw, 30px)', fontWeight: 900, marginTop: 4, lineHeight: 1.2,
+                    color: QQ_COLORS.slate300, fontSize: 'clamp(17px, 2.4cqw, 30px)', fontWeight: 900, marginTop: 4, lineHeight: 1.2,
                   }}>
                     {winMsg}
                   </div>
@@ -3449,7 +3450,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </span>
               <div style={{
                 fontSize: 'clamp(24px, 3.5cqw, 48px)', fontWeight: 900,
-                color: s.answers.length === 0 ? '#94a3b8' : '#f87171',
+                color: s.answers.length === 0 ? QQ_COLORS.slate400 : '#f87171',
               }}>
                 {s.answers.length === 0
                   ? (lang === 'en' ? 'No answers!' : 'Keine Antworten!')
@@ -3468,7 +3469,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {!s.allAnswered && (
                 <div style={{
                   fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-                  color: '#64748b',
+                  color: QQ_COLORS.slate500,
                 }}>
                   {`${s.answers.length}/${s.teams.length} Teams`}
                 </div>

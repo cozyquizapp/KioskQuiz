@@ -61,6 +61,7 @@ import { haptic } from '../utils/haptics';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode, parseStammCodeToTeamId } from '../utils/qqStammCode';
 import type { QQAck } from '../../../shared/quarterQuizTypes';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 // safeEmit + ACK_ERROR_MESSAGES_* + broadcastAckError jetzt in '../utils/qqTeamAckBus'.
 
@@ -633,7 +634,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   // (Kategorie-spezifischer BG) uebernimmt TC_CAT_BG. Glow-Lagen subtil
   // gemischt damit Page nicht 'monochrom' wirkt.
   const slot = QQ_AVATARS.find(a => a.id === avatarId);
-  const slotColor = slot?.color ?? '#EC4899';
+  const slotColor = slot?.color ?? QQ_COLORS.brandPink;
   const teamTintBg =
     `radial-gradient(ellipse at 50% -10%, ${slotColor}28, transparent 55%), ` +
     `radial-gradient(ellipse at 85% 110%, ${slotColor}14, transparent 55%), ` +
@@ -687,7 +688,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>
             <span style={{
               fontSize: 10, fontWeight: 900,
-              color: '#cbd5e1', letterSpacing: '0.18em',
+              color: QQ_COLORS.slate300, letterSpacing: '0.18em',
               textTransform: 'uppercase',
             }}>cozywolf</span>
             <span style={{
@@ -696,11 +697,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             }} />
             <span style={{
               fontSize: 10, fontWeight: 700,
-              color: '#94a3b8', letterSpacing: '0.16em',
+              color: QQ_COLORS.slate400, letterSpacing: '0.16em',
               textTransform: 'uppercase',
             }}>live quiz</span>
           </div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: '#F1F5F9', letterSpacing: '-0.02em' }}>
+          <div style={{ fontSize: 38, fontWeight: 900, color: QQ_COLORS.slate100, letterSpacing: '-0.02em' }}>
             {t.header[lang]}
           </div>
           {/* Always show language flag in setup/lobby.
@@ -750,11 +751,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 { label: lang === 'de' ? '3. Los'    : '3. Go',     active: false,        past: false      },
               ];
               return items.map((s, i) => {
-                const color = s.active ? '#EC4899' : (s.past ? '#A78BFA' : '#475569');
+                const color = s.active ? QQ_COLORS.brandPink : (s.past ? QQ_COLORS.violet400 : QQ_COLORS.slate600);
                 return (
                   <React.Fragment key={i}>
                     {i > 0 && (
-                      <div style={{ width: 18, height: 2, background: '#334155', borderRadius: 1 }} />
+                      <div style={{ width: 18, height: 2, background: QQ_COLORS.slate700, borderRadius: 1 }} />
                     )}
                     <span style={{ color, transition: 'color 200ms ease' }}>{s.label}</span>
                   </React.Fragment>
@@ -793,7 +794,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         {/* 2026-05-04 (Wolf): Stammcode-Block ist nach UNTER den Avatar-Editor
             verschoben (war vorher zu prominent oben). Siehe weiter unten. */}
         {resumeTeam && (
-          <CozyCard anim borderColor={resumeTeam.color || '#EC4899'}>
+          <CozyCard anim borderColor={resumeTeam.color || QQ_COLORS.brandPink}>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '6px 0 14px',
@@ -803,24 +804,24 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 filter: `drop-shadow(0 0 12px ${resumeTeam.color}55)`,
               }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
                   {lang === 'de' ? 'Du warst dabei' : 'You were here'}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: resumeTeam.color || '#F1F5F9', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: resumeTeam.color || QQ_COLORS.slate100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {resumeTeam.name}
                 </div>
               </div>
             </div>
-            <CozyBtn color={resumeTeam.color || '#EC4899'} onClick={onResume}>
+            <CozyBtn color={resumeTeam.color || QQ_COLORS.brandPink} onClick={onResume}>
               {lang === 'de' ? `Wieder dabei als ${resumeTeam.name}` : `Resume as ${resumeTeam.name}`}
             </CozyBtn>
-            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: '#64748B' }}>
+            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: QQ_COLORS.slate500 }}>
               {lang === 'de' ? 'oder unten neues Team anlegen' : 'or set up a new team below'}
             </div>
           </CozyCard>
         )}
         {step === 'COLOR' && (
-          <CozyCard anim borderColor="#EC4899">
+          <CozyCard anim borderColor={QQ_COLORS.brandPink}>
             {/* 2026-05-04 (Wolf): Karussell-Avatar-Editor — Slot via Swipe/Pfeile,
                 Emoji via Tap auf Hero (Bottom-Sheet), Lobby-voll-Empty-State. */}
             <AvatarKarussellEditor
@@ -884,13 +885,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   padding: '0 14px', borderRadius: 8,
                   background: 'rgba(234,179,8,0.18)',
                   border: '1px solid rgba(234,179,8,0.4)',
-                  color: '#FBCFE8', fontSize: 18,
+                  color: QQ_COLORS.brandPinkSoft, fontSize: 18,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >🎲</button>
             </div>
             <div style={{
-              fontSize: 11, color: '#64748b', fontWeight: 700,
+              fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700,
               marginBottom: 12, letterSpacing: '0.02em',
             }}>
               {lang === 'de'
@@ -924,7 +925,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               const needsEmoji = !isPng && pool.length > 0;
               const canJoin = !allSlotsTaken && !!avatarId && (!needsEmoji || !!chosenEmoji) && !!teamName.trim() && !nameTaken;
               return (
-                <CozyBtn color="#22C55E" onClick={onJoin} disabled={!canJoin}>
+                <CozyBtn color={QQ_COLORS.green500} onClick={onJoin} disabled={!canJoin}>
                   {t.setup.join[lang]}
                 </CozyBtn>
               );
@@ -952,7 +953,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   onClick={() => setStammExpanded(true)}
                   style={{
                     background: 'transparent', border: 'none',
-                    color: '#94a3b8', fontSize: 12, fontWeight: 700,
+                    color: QQ_COLORS.slate400, fontSize: 12, fontWeight: 700,
                     textDecoration: 'underline', textDecorationStyle: 'dotted',
                     textDecorationColor: 'rgba(236,72,153,0.4)',
                     cursor: 'pointer', fontFamily: 'inherit',
@@ -966,7 +967,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           }
           // Wiederkehrer ODER Erstgast hat „expandiert" geklickt → CozyCard rendern
           return (
-          <CozyCard borderColor="#EC4899">
+          <CozyCard borderColor={QQ_COLORS.brandPink}>
             {!stammExpanded && !stammResult && (
               <button
                 onClick={() => setStammExpanded(true)}
@@ -974,7 +975,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   width: '100%', padding: '10px 14px', borderRadius: 8,
                   border: '1px dashed rgba(236,72,153,0.45)',
                   background: 'rgba(236,72,153,0.06)',
-                  color: '#FBCFE8', fontWeight: 900, fontSize: 13,
+                  color: QQ_COLORS.brandPinkSoft, fontWeight: 900, fontSize: 13,
                   cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
@@ -985,7 +986,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             )}
             {stammExpanded && !stammResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: '#EC4899', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   🔖 {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
@@ -997,7 +998,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     style={{
                       flex: 1, padding: '10px 12px', borderRadius: 8,
                       border: '1px solid rgba(236,72,153,0.4)',
-                      background: 'rgba(0,0,0,0.3)', color: '#FBCFE8',
+                      background: 'rgba(0,0,0,0.3)', color: QQ_COLORS.brandPinkSoft,
                       fontFamily: 'monospace', fontSize: 16, fontWeight: 700,
                       letterSpacing: '0.04em',
                     }}
@@ -1011,7 +1012,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     style={{
                       padding: '10px 16px', borderRadius: 8,
                       border: 'none',
-                      background: stammStatus === 'searching' ? '#475569' : '#EC4899',
+                      background: stammStatus === 'searching' ? QQ_COLORS.slate600 : QQ_COLORS.brandPink,
                       color: '#0A0814', fontWeight: 900, fontSize: 13,
                       cursor: stammStatus === 'searching' ? 'wait' : 'pointer',
                       fontFamily: 'inherit',
@@ -1022,14 +1023,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   </button>
                 </div>
                 {stammStatus === 'notfound' && (
-                  <div style={{ fontSize: 11, color: '#EF4444', fontWeight: 700 }}>
+                  <div style={{ fontSize: 11, color: QQ_COLORS.red500, fontWeight: 700 }}>
                     {lang === 'de' ? 'Code nicht gefunden — neu spielen geht trotzdem.' : 'Code not found — you can still play normally.'}
                   </div>
                 )}
                 <button
                   onClick={() => { setStammExpanded(false); setStammInput(''); }}
                   style={{
-                    background: 'none', border: 'none', color: '#64748b',
+                    background: 'none', border: 'none', color: QQ_COLORS.slate500,
                     fontSize: 11, fontWeight: 700, cursor: 'pointer',
                     fontFamily: 'inherit', alignSelf: 'flex-start',
                   }}
@@ -1040,23 +1041,23 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             )}
             {stammResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: '#22C55E', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.green500, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   ✓ {lang === 'de' ? 'Stamm-Team gefunden' : 'Regular team found'}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <QQTeamAvatar avatarId={stammResult.avatarId} size={48} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: '#FBCFE8' }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: QQ_COLORS.brandPinkSoft }}>
                       {stammResult.teamName || '—'}
                     </div>
-                    <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>
+                    <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
                       {lang === 'de'
                         ? `${stammResult.wins} Sieg${stammResult.wins === 1 ? '' : 'e'} · ${stammResult.gamesPlayed} Spiel${stammResult.gamesPlayed === 1 ? '' : 'e'}`
                         : `${stammResult.wins} win${stammResult.wins === 1 ? '' : 's'} · ${stammResult.gamesPlayed} game${stammResult.gamesPlayed === 1 ? '' : 's'}`}
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: '#94a3b8' }}>
+                <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
                   {lang === 'de' ? 'Avatar + Name sind eingestellt. Klick auf "Weiter".' : 'Avatar + name set. Click "Next".'}
                 </div>
               </div>
@@ -1077,29 +1078,29 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           if (isPng) {
             // Beim ersten Mount auto-skip
             return (
-              <CozyCard anim borderColor="#EC4899">
+              <CozyCard anim borderColor={QQ_COLORS.brandPink}>
                 <StepLabel>{lang === 'de' ? 'Avatar' : 'Avatar'}</StepLabel>
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <QQTeamAvatar avatarId={avatarId} size={120} />
-                  <div style={{ marginTop: 14, fontSize: 14, color: '#94A3B8', fontWeight: 700 }}>
+                  <div style={{ marginTop: 14, fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 700 }}>
                     {lang === 'de' ? 'CozyCast-Avatar — fix zur Farbe' : 'CozyCast avatar — fixed to color'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <CozyBtn color="#94A3B8" onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
-                  <CozyBtn color="#EC4899" onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
+                  <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+                  <CozyBtn color={QQ_COLORS.brandPink} onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
                 </div>
               </CozyCard>
             );
           }
           return (
-            <CozyCard anim borderColor="#EC4899">
+            <CozyCard anim borderColor={QQ_COLORS.brandPink}>
               <StepLabel>{lang === 'de' ? 'Wähle einen Avatar' : 'Pick an avatar'}</StepLabel>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
                 {pool.map((em, i) => {
                   const taken = takenEmojis.includes(em);
                   const sel = chosenEmoji === em;
-                  const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EC4899';
+                  const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? QQ_COLORS.brandPink;
                   return (
                     <button
                       key={`${em}-${i}`}
@@ -1128,9 +1129,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 })}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <CozyBtn color="#94A3B8" onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+                <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
                 <CozyBtn
-                  color="#EC4899"
+                  color={QQ_COLORS.brandPink}
                   onClick={() => setStep('NAME')}
                   disabled={!chosenEmoji}
                 >
@@ -1141,7 +1142,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           );
         })()}
         {step === 'NAME' && (
-          <CozyCard anim borderColor="#EC4899">
+          <CozyCard anim borderColor={QQ_COLORS.brandPink}>
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <QQTeamAvatar avatarId={avatarId} teamEmoji={chosenEmoji} size={64} style={{
                 margin: '0 auto',
@@ -1186,13 +1187,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   padding: '0 14px', borderRadius: 8,
                   background: 'rgba(234,179,8,0.18)',
                   border: '1px solid rgba(234,179,8,0.4)',
-                  color: '#FBCFE8', fontSize: 18,
+                  color: QQ_COLORS.brandPinkSoft, fontSize: 18,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >🎲</button>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-              <CozyBtn color="#94A3B8" onClick={() => setStep('AVATAR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+              <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('AVATAR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
             </div>
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, marginTop: 4, fontWeight: 700 }}>
@@ -1204,7 +1205,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             {error && !nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
             )}
-            <CozyBtn color="#22C55E" onClick={onJoin} disabled={!teamName.trim() || nameTaken}>
+            <CozyBtn color={QQ_COLORS.green500} onClick={onJoin} disabled={!teamName.trim() || nameTaken}>
               {t.setup.join[lang]}
             </CozyBtn>
           </CozyCard>
@@ -1238,7 +1239,7 @@ function TeamGameView({
   // Primary comebackTeamId = Anzeige-Team, comebackHL.teamIds = alle Spieler.
   const isComebackTeam = s.comebackTeamId === myTeamId
     || (s.comebackHL?.teamIds ?? []).includes(myTeamId);
-  const teamColor     = myTeam?.color ?? '#3B82F6';
+  const teamColor     = myTeam?.color ?? QQ_COLORS.blue500;
 
   // ── Team sounds ──
   // 2026-05-04 (Wolf): /team-Sounds standardmaessig STUMM. Beamer-Sounds sind
@@ -1409,7 +1410,7 @@ function TeamGameView({
   const LOBBY_PINK = '#F9A8D4';
   const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catAccent
     : s.phase === 'PLACEMENT' ? catAccent
-    : s.phase === 'GAME_OVER' ? '#EC4899'
+    : s.phase === 'GAME_OVER' ? QQ_COLORS.brandPink
     : LOBBY_PINK;
 
   // Firefly color — uses accent for vibrant glow matching beamer
@@ -1437,7 +1438,7 @@ function TeamGameView({
   // 2026-05-04 (Wolf): vor Quiz-Start (Lobby/Pre-Game) BG in Team-Farbe
   // statt fixer goldbrauner Mix. Sobald Kategorie aktiv ist, uebernimmt
   // TC_CAT_BG. GAME_OVER bleibt im Gold-Spotlight.
-  const myTeamColor = myTeam?.color ?? '#EC4899';
+  const myTeamColor = myTeam?.color ?? QQ_COLORS.brandPink;
   const teamTintBg =
     `radial-gradient(ellipse at 50% -10%, ${myTeamColor}28, transparent 55%), ` +
     `radial-gradient(ellipse at 85% 110%, ${myTeamColor}14, transparent 55%), ` +
@@ -1581,7 +1582,7 @@ function TeamGameView({
                 width: 44, height: 44, borderRadius: 14,
                 border: '1px solid rgba(255,255,255,0.10)',
                 background: 'rgba(255,255,255,0.04)',
-                color: '#E2E8F0', cursor: 'pointer',
+                color: QQ_COLORS.slate200, cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s, transform 0.15s',
                 fontFamily: 'inherit',
@@ -1638,7 +1639,7 @@ function TeamGameView({
         {!connected && (
           <div role="alert" style={{
             padding: '12px 16px', borderRadius: 16, marginBottom: 12, textAlign: 'center',
-            background: '#7F1D1D', border: '1px solid #EF4444', color: '#FCA5A5',
+            background: '#7F1D1D', border: '1px solid #EF4444', color: QQ_COLORS.red300,
             fontWeight: 900, fontSize: 13,
           }}>
             <div style={{ marginBottom: 8, animation: 'tcpulse 2s infinite' }}>
@@ -1651,7 +1652,7 @@ function TeamGameView({
               padding: '12px 22px', minHeight: 44, borderRadius: 8, fontFamily: 'inherit',
               fontWeight: 900, fontSize: 14, cursor: 'pointer',
               background: 'rgba(239,68,68,0.25)', border: '1px solid #EF4444',
-              color: '#FCA5A5', animation: 'tcbtnpop 0.3s ease both',
+              color: QQ_COLORS.red300, animation: 'tcbtnpop 0.3s ease both',
             }}>
               {lang === 'de' ? '🔄 Jetzt neu verbinden' : '🔄 Reconnect now'}
             </button>
@@ -1730,7 +1731,7 @@ function TeamGameView({
         {myTeam && s.teamPhaseStats[myTeamId] && (
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', marginTop: 4 }}>
             {s.teamPhaseStats[myTeamId].stealsUsed > 0 && (
-              <StatChip label={`⚡ ${s.teamPhaseStats[myTeamId].stealsUsed} ${t.stats.stolen[lang]}`} color="#EF4444" />
+              <StatChip label={`⚡ ${s.teamPhaseStats[myTeamId].stealsUsed} ${t.stats.stolen[lang]}`} color={QQ_COLORS.red500} />
             )}
             {/* Joker count moved to header as 2 star slots */}
           </div>
@@ -1752,7 +1753,7 @@ function TeamGameView({
           />
           <span style={{
             fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-            color: '#94a3b8', textTransform: 'uppercase',
+            color: QQ_COLORS.slate400, textTransform: 'uppercase',
           }}>
             CozyWolf · © 2026
           </span>
@@ -1835,7 +1836,7 @@ function TeamGameView({
 const cozyInput: React.CSSProperties = {
   width: '100%', padding: '14px 16px', borderRadius: 16, marginBottom: 12,
   border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)',
-  color: '#F1F5F9', fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
+  color: QQ_COLORS.slate100, fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
   boxSizing: 'border-box',
   // 2026-05-04 (UI-Audit P0-2): outline:none entfernt — Browser-Default-Outline
   // bleibt beim Focus sichtbar (Tab-Navigation lesbar). focusring im /team-CSS

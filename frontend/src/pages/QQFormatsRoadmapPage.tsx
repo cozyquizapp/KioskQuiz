@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 /**
  * CozyWolf — Format-Roadmap / Vision-Page
@@ -45,7 +46,7 @@ const FORMATS: Format[] = [
       'Soundscape, Reactions, Replay-Modus',
     ],
     link: '/moderator',
-    accent: '#3B82F6',
+    accent: QQ_COLORS.blue500,
   },
   {
     id: 'tisch',
@@ -65,7 +66,7 @@ const FORMATS: Format[] = [
       'Tisch-Krone für Sieger',
       'Optional: Wedding-Question-Pack („wer kennt Brautpaar besser?")',
     ],
-    accent: '#EC4899',
+    accent: QQ_COLORS.brandPink,
   },
   {
     id: 'turnier',
@@ -105,7 +106,7 @@ const FORMATS: Format[] = [
       'Power-up-Shop (Joker 30, Hint 20, Steal 50, Zeit 15)',
       'Beamer: wachsende Coin-Stapel pro Tisch',
     ],
-    accent: '#F59E0B',
+    accent: QQ_COLORS.amber500,
   },
   {
     id: 'garden',
@@ -151,14 +152,14 @@ const FORMATS: Format[] = [
 ];
 
 const MARKET_PRIO = [
-  { num: 1, label: 'Pub / Kiosk', color: '#3B82F6', detail: 'Standard reicht · jetzt akquirieren' },
+  { num: 1, label: 'Pub / Kiosk', color: QQ_COLORS.blue500, detail: 'Standard reicht · jetzt akquirieren' },
   { num: 2, label: 'Corporate', color: '#A855F7', detail: '2 erfolgreiche Refs · CozyCoins als Premium' },
-  { num: 3, label: 'Events / Hochzeiten', color: '#EC4899', detail: 'Tisch-Quiz nötig · saisonal Mai–Sept' },
+  { num: 3, label: 'Events / Hochzeiten', color: QQ_COLORS.brandPink, detail: 'Tisch-Quiz nötig · saisonal Mai–Sept' },
   { num: 4, label: 'Schule', color: '#06B6D4', detail: 'Langfristig · Wolfs Fachgebiet' },
 ];
 
 const STATUS_META: Record<Status, { label: string; color: string; bg: string }> = {
-  live:  { label: '✓ Live im Einsatz', color: '#86EFAC', bg: 'rgba(34,197,94,0.15)' },
+  live:  { label: '✓ Live im Einsatz', color: QQ_COLORS.green300, bg: 'rgba(34,197,94,0.15)' },
   pitch: { label: '🎨 Pitch-Demo verfügbar', color: '#C4B5FD', bg: 'rgba(168,85,247,0.15)' },
   idea:  { label: '💭 Konzept · Backlog', color: '#FCD34D', bg: 'rgba(245,158,11,0.12)' },
 };
@@ -168,7 +169,7 @@ export default function QQFormatsRoadmapPage() {
     <div style={{
       minHeight: '100vh',
       background: 'radial-gradient(ellipse at top, #1A1330 0%, #060A12 70%)',
-      color: '#F1F5F9',
+      color: QQ_COLORS.slate100,
       fontFamily: 'Nunito, system-ui, sans-serif',
       padding: '40px 20px 80px',
     }}>
@@ -196,7 +197,7 @@ export default function QQFormatsRoadmapPage() {
             CozyWolf · Spielformate
           </h1>
           <p style={{
-            fontSize: 'clamp(15px, 1.5vw, 19px)', color: '#94A3B8', margin: '0 auto', maxWidth: 720,
+            fontSize: 'clamp(15px, 1.5vw, 19px)', color: QQ_COLORS.slate400, margin: '0 auto', maxWidth: 720,
             lineHeight: 1.5,
           }}>
             Alle aktuellen + geplanten Spielmodi auf einen Blick. Mit Capacity, Zielgruppe,
@@ -234,9 +235,9 @@ export default function QQFormatsRoadmapPage() {
               }}>
                 CozyQuiz Standard zu 100% fertigstellen
               </div>
-              <div style={{ fontSize: 14, color: '#CBD5E1', lineHeight: 1.5 }}>
+              <div style={{ fontSize: 14, color: QQ_COLORS.slate300, lineHeight: 1.5 }}>
                 Alle weiteren Formate (Tisch-Quiz, Turnier, CozyCoins, Garden, Schule) sind
-                Konzepte und werden <b style={{ color: '#FDE68A' }}>erst on demand gebaut</b> —
+                Konzepte und werden <b style={{ color: QQ_COLORS.yellow300 }}>erst on demand gebaut</b> —
                 wenn ein konkreter Auftrag aus Prio 2/3 reinkommt. Bis dahin: Backlog.
               </div>
             </div>
@@ -247,7 +248,7 @@ export default function QQFormatsRoadmapPage() {
         <div style={{ marginBottom: 36, animation: 'formatFadeIn 0.6s ease 0.15s both' }}>
           <h2 style={{
             fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 900,
-            margin: '0 0 14px', color: '#F1F5F9', letterSpacing: '-0.01em',
+            margin: '0 0 14px', color: QQ_COLORS.slate100, letterSpacing: '-0.01em',
           }}>📈 Markt-Reihenfolge</h2>
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10,
@@ -261,10 +262,10 @@ export default function QQFormatsRoadmapPage() {
                   fontSize: 11, fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase',
                   color: p.color, marginBottom: 4,
                 }}>Prio {p.num}</div>
-                <div style={{ fontSize: 17, fontWeight: 900, color: '#F1F5F9', marginBottom: 3 }}>
+                <div style={{ fontSize: 17, fontWeight: 900, color: QQ_COLORS.slate100, marginBottom: 3 }}>
                   {p.label}
                 </div>
-                <div style={{ fontSize: 12, color: '#94A3B8', lineHeight: 1.4 }}>{p.detail}</div>
+                <div style={{ fontSize: 12, color: QQ_COLORS.slate400, lineHeight: 1.4 }}>{p.detail}</div>
               </div>
             ))}
           </div>
@@ -274,7 +275,7 @@ export default function QQFormatsRoadmapPage() {
         <div style={{ marginBottom: 36 }}>
           <h2 style={{
             fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 900,
-            margin: '0 0 14px', color: '#F1F5F9', letterSpacing: '-0.01em',
+            margin: '0 0 14px', color: QQ_COLORS.slate100, letterSpacing: '-0.01em',
           }}>🎮 Alle Spielformate</h2>
           <div style={{ display: 'grid', gap: 14 }}>
             {FORMATS.map((f, i) => (
@@ -287,7 +288,7 @@ export default function QQFormatsRoadmapPage() {
         <div style={{ marginBottom: 36, animation: 'formatFadeIn 0.6s ease 0.55s both' }}>
           <h2 style={{
             fontSize: 'clamp(20px, 2vw, 28px)', fontWeight: 900,
-            margin: '0 0 14px', color: '#F1F5F9', letterSpacing: '-0.01em',
+            margin: '0 0 14px', color: QQ_COLORS.slate100, letterSpacing: '-0.01em',
           }}>📊 Capacity-Vergleich</h2>
           <div style={{
             background: 'rgba(255,255,255,0.03)', borderRadius: 16,
@@ -307,7 +308,7 @@ export default function QQFormatsRoadmapPage() {
                   <tr key={f.id} style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
                     <td style={tdStyle}>
                       <span style={{ fontSize: 18, marginRight: 8 }}>{f.emoji}</span>
-                      <b style={{ color: '#F1F5F9' }}>{f.name}</b>
+                      <b style={{ color: QQ_COLORS.slate100 }}>{f.name}</b>
                     </td>
                     <td style={tdStyle}>{f.capacity}</td>
                     <td style={tdStyle}>{f.bestFor}</td>
@@ -335,13 +336,13 @@ export default function QQFormatsRoadmapPage() {
         }}>
           <div style={{
             fontSize: 14, fontWeight: 800, letterSpacing: '0.16em',
-            color: '#94A3B8', textTransform: 'uppercase', marginBottom: 8,
+            color: QQ_COLORS.slate400, textTransform: 'uppercase', marginBottom: 8,
           }}>
             Nächste Schritte
           </div>
-          <div style={{ fontSize: 16, color: '#cbd5e1', lineHeight: 1.6, maxWidth: 720, margin: '0 auto' }}>
+          <div style={{ fontSize: 16, color: QQ_COLORS.slate300, lineHeight: 1.6, maxWidth: 720, margin: '0 auto' }}>
             Pub-Akquise startet · 2 Corporate-Cases dokumentieren · Standard-Quiz weiter polishen.{' '}
-            <b style={{ color: '#FDE68A' }}>Erst wenn das läuft</b>, kommt Format Nummer 2.
+            <b style={{ color: QQ_COLORS.yellow300 }}>Erst wenn das läuft</b>, kommt Format Nummer 2.
           </div>
         </div>
       </div>
@@ -352,10 +353,10 @@ export default function QQFormatsRoadmapPage() {
 const thStyle: React.CSSProperties = {
   padding: '12px 16px', textAlign: 'left',
   fontSize: 11, fontWeight: 800, letterSpacing: '0.1em', textTransform: 'uppercase',
-  color: '#94A3B8',
+  color: QQ_COLORS.slate400,
 };
 const tdStyle: React.CSSProperties = {
-  padding: '12px 16px', fontSize: 13, color: '#CBD5E1', verticalAlign: 'top',
+  padding: '12px 16px', fontSize: 13, color: QQ_COLORS.slate300, verticalAlign: 'top',
 };
 
 function FormatCard({ format, delay }: { format: Format; delay: string }) {
@@ -393,7 +394,7 @@ function FormatCard({ format, delay }: { format: Format; delay: string }) {
               fontSize: 11, fontWeight: 800, letterSpacing: '0.06em',
             }}>{meta.label}</span>
           </div>
-          <div style={{ fontSize: 14, color: '#CBD5E1', lineHeight: 1.45 }}>{format.tagline}</div>
+          <div style={{ fontSize: 14, color: QQ_COLORS.slate300, lineHeight: 1.45 }}>{format.tagline}</div>
         </div>
         {format.link && (
           <Link
@@ -422,12 +423,12 @@ function FormatCard({ format, delay }: { format: Format; delay: string }) {
       </div>
 
       <div style={{ padding: '16px 22px 18px' }}>
-        <div style={{ fontSize: 14, color: '#CBD5E1', lineHeight: 1.55, marginBottom: 12 }}>
+        <div style={{ fontSize: 14, color: QQ_COLORS.slate300, lineHeight: 1.55, marginBottom: 12 }}>
           {format.description}
         </div>
         <div style={{
           fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
-          color: '#94A3B8', marginBottom: 8,
+          color: QQ_COLORS.slate400, marginBottom: 8,
         }}>
           Mechaniken
         </div>
@@ -437,7 +438,7 @@ function FormatCard({ format, delay }: { format: Format; delay: string }) {
         }}>
           {format.mechanics.map((m, i) => (
             <li key={i} style={{
-              fontSize: 13, color: '#CBD5E1', lineHeight: 1.5,
+              fontSize: 13, color: QQ_COLORS.slate300, lineHeight: 1.5,
               paddingLeft: 16, position: 'relative',
             }}>
               <span style={{ position: 'absolute', left: 0, color: format.accent, fontWeight: 900 }}>•</span>
@@ -457,7 +458,7 @@ function Stat({ label, value, accent }: { label: string; value: string; accent: 
         fontSize: 10, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase',
         color: accent, marginBottom: 3,
       }}>{label}</div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: '#F1F5F9', lineHeight: 1.4 }}>{value}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate100, lineHeight: 1.4 }}>{value}</div>
     </div>
   );
 }

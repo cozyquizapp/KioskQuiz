@@ -362,20 +362,9 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// FINAL REVEAL — Multi-Step End-Flow (Wolf 2026-05-09 v5 Race)
+// FINAL REVEAL — Multi-Step End-Flow
 // ═══════════════════════════════════════════════════════════════════════════════
-// Step-Mapping für N Teams (v5 — Race-Metapher als 1 Auto-Choreo):
-//   0           = Title-Hold "Die Auflösung"
-//   1           = Grid-Reveal (Cluster-Highlight Top-1)
-//   2..N+1      = Bet-Reveal pro Team (aufsteigend nach Bonus, auch 0-Bonus)
-//   N+2..N+5    = awards-overview (Overview + 3 Flips)
-//   N+6         = race-final (Auto-Choreo 12-15s): alle racen on-the-spot
-//                 mit Speed-Lines + async Wackeln → Verlierer fallen
-//                 gestaffelt nach unten raus → Platz 3 lande auf Treppchen
-//                 → finaler Race P1 vs P2 → Platz 2 lande auf Treppchen
-//                 → Sieger schwebt Slow-Mo über Ziellinie → Snap auf
-//                 Mitte-Treppchen + Konfetti + Climax-Sound
-//   max = N+7 → THANKS
+// Step-Mapping siehe shared/qqFinalReveal.ts (Single-Source-of-Truth).
 
 // 2026-05-24 (Refactor #1 Drift-Killer): Step-Decode lebt jetzt in
 // shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
@@ -866,13 +855,11 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 
   // 2026-05-13 (Wolf '7. Rahmen-Fix + End-Page-Cutoff'): Outer-padding +
   // COZY_CARD_BG-Gradient erzeugten einen sichtbaren lila „Rahmen" um Race-
-  // Slide und schnitten gleichzeitig das Sieger-Treppchen seitlich ab (8%
-  // weniger Width = Side-Teams overflow → clipped).
-  // Phasen die die volle Stage brauchen (race-final, awards-overview, grid)
-  // bekommen padding:0 + transparente BG (Inner-Slide rendert eigene BG).
-  // Phasen mit Card-Layouts (title, bet) behalten die safe-margin.
-  const fullBleed = phase.kind === 'race-final'
-    || phase.kind === 'awards-overview';
+  // Slide und schnitten gleichzeitig das Sieger-Treppchen seitlich ab.
+  // Phasen die die volle Stage brauchen (race-final) bekommen padding:0 +
+  // transparente BG (Inner-Slide rendert eigene BG). Phasen mit Card-Layouts
+  // (title, award, bet) behalten die safe-margin.
+  const fullBleed = phase.kind === 'race-final';
 
   return (
     <div style={{
@@ -914,11 +901,8 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           />
         </div>
       )}
-      {/* Awards-Overview (alle 3 BG-Cards). Wolf-Wunsch 2026-05-24: nur Intro-
-          Slide, kein Reveal — der erfolgt einzeln pro Award-Slot. */}
-      {phase.kind === 'awards-overview' && (
-        <AwardsOverviewSlide state={s} lang={lang} />
-      )}
+      {/* 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
+          Awards-Overview-Slide entfernt. Title geht direkt zu Award-Slot 0. */}
       {/* 2026-05-24 (Wolf-Wunsch 'awards einzeln nacheinander, gleiches Format
           wie bet cards'): Award-Slot-Rendering analog BetSlotTransition. Links
           Card mit drumroll + Reveal, rechts Live-Tabelle die progressive Awards
@@ -1625,69 +1609,8 @@ const AWARD_DEFS = [
   { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: QQ_COLORS.brandPinkMid },
 ];
 
-// 2026-05-09 v3 (Wolf-Refactor): Awards-Overview-Slide. Alle 3 Cards
-// nebeneinander, immer gleich groß (BG + Front identisch dimensioniert), Space
-// flippt links → mitte → rechts via revealedCount. Kein Spring weil isFlipped
-// als CSS-Transition läuft, BG bleibt Slot identisch breit. Flip-Choreo wie
-// /animations Slot 07 "🎴 Bonus: 3D Card-Flip". Title & Subtitle bleiben oben
-// dauerhaft sichtbar — die Cards selbst sind das Drama.
-// 2026-05-10 (Wolf '2 Steps statt 4 — alle zeigen, dann alle automatisch
-// aufdecken mit Zeit zwischen einzelnen'):
-// - revealMode='closed': alle 3 BG-Cards (Drumroll-Animation), kein Flip
-// - revealMode='auto-reveal': interner Stagger flippt Card 1 → 2 → 3
-//   automatisch mit 2s Pause zwischen jedem Reveal (Wolf moderiert)
-// 2026-05-24 v2 (Wolf-Wunsch 'awards einzeln'): Awards-Overview = nur die
-// Intro-Slide. Alle 3 Cards horizontal nebeneinander BG. Mod-Space advanced
-// zu award-slot 0. Kein Auto-Reveal mehr hier — das passiert pro Award-Slot.
-function AwardsOverviewSlide({ state: s, lang }: {
-  state: QQStateUpdate; lang: 'de' | 'en';
-}) {
-  const de = lang === 'de';
-  const awards = s.endAwards;
-  return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', gap: 'clamp(28px, 3.5cqh, 48px)',
-      width: '100%',
-      padding: 'clamp(20px, 2cqh, 36px) clamp(24px, 3cqw, 48px)',
-    }}>
-      <div style={{
-        fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
-        color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.18em',
-        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
-      }}>{de ? '🏅 Special Awards' : '🏅 Special Awards'}</div>
-      <div style={{
-        fontSize: 'clamp(34px, 4cqw, 60px)', fontWeight: 900,
-        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
-        textShadow: '0 0 36px rgba(251,191,36,0.45)',
-        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
-      }}>{de ? 'Drei besondere Auszeichnungen' : 'Three special awards'}</div>
-      <div style={{
-        display: 'flex', alignItems: 'stretch', justifyContent: 'center',
-        gap: 'clamp(20px, 2.5cqw, 44px)',
-        width: '100%', maxWidth: 'min(96cqw, 1400px)',
-      }}>
-        {[0, 1, 2].map(i => {
-          const winnerId = !awards ? null
-            : i === 0 ? awards.underdog
-            : i === 1 ? awards.meisterklauer
-            : awards.speedy;
-          const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
-          return (
-            <AwardFlipCard
-              key={i}
-              awardIndex={i as 0 | 1 | 2}
-              isFlipped={false}
-              winner={winner}
-              awards={awards}
-              lang={lang}
-            />
-          );
-        })}
-      </div>
-    </div>
-  );
-}
+// 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
+// AwardsOverviewSlide gestrichen — title geht direkt zu award-slot 0.
 
 // 2026-05-24 v2 (Wolf-Wunsch 'awards einzeln, gleiches Format wie bet cards'):
 // Award-Slot-Transition rendert pro Step EINEN Award als Hero-Card (analog

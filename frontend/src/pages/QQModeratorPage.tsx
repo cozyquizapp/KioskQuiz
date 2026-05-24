@@ -658,20 +658,8 @@ export default function QQModeratorPage() {
         break;
       }
       case 'FINAL_REVEAL': {
-        // 2026-05-10 (L11 Fix 1): Mapping ALIGNED mit qqFinalRevealMaxStep
-        // (qqRooms.ts:5367+) — Race-Final-Refactor `559888f0` hatte backend
-        // auf `betSlotsCount + 5` umgestellt, Mod hing noch auf altem `2N+8`.
-        // Folge: Race-Final-Step (~30s Auto-Choreo, RaceFinalSlide intern)
-        // bekam 3.2s Ranking-Delay und wurde mittendrin abgebrochen → Wolf
-        // sah nur Sieger-Slide für 1-2s.
-        //
-        // 2026-05-24 (Wolf Race-Redesign Eurovision-Style):
-        //   step 0           → title          (1.5s)
-        //   step 1           → awards-overview (2.5s)
-        //   step 2           → awards-reveal  (Mod-manuell, kein Auto)
-        //   step 3..B+2      → bet            (3s, Zero-Group-Slot 4.5s)
-        //   step B+3         → race-final     (~20+2N s Choreo + 4s Hold)
-        // Wobei B = betSlotsCount (Zero-Group = 1 Slot, sonst pro Positiv-Team).
+        // Step-Mapping siehe shared/qqFinalReveal.ts (Single-Source-of-Truth).
+        // Delays pro Phase sind unten im if-else definiert.
         const N = s.teams.length;
         const step = (s as any).finalRevealStep ?? 0;
         const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
@@ -679,27 +667,22 @@ export default function QQModeratorPage() {
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
 
-        // 2026-05-24 v2 (Wolf 'awards einzeln, gleiches Tempo wie bet-cards'):
+        // 2026-05-24 v3 (Wolf 'awards-overview-Zwischenschritt raus'):
         //   step 0       = title (1.5s)
-        //   step 1       = awards-overview (Mod-manuell, kein Auto)
-        //   step 2/3/4   = award-slot 0/1/2 (3s pro Slot wie Bet-Cards)
-        //   step 5..B+4  = bet-slots (Zero-Group 4.5s, sonst 3s)
-        //   step B+5     = race-final (12s Konfetti-Hold)
+        //   step 1/2/3   = award-slot 0/1/2 (3s pro Slot wie Bet-Cards)
+        //   step 4..B+3  = bet-slots (Zero-Group 4.5s, sonst 3s)
+        //   step B+4     = race-final (12s Konfetti-Hold)
         if (step <= 0) {
           delayMs = 1500;
-        } else if (step === 1) {
-          // awards-overview: Mod moderiert manuell wie bei Awards selbst.
-          delayMs = 0;
-          break;
-        } else if (step <= 4) {
+        } else if (step <= 3) {
           // award-slot 0/1/2: gleicher Rhythmus wie Bet-Slots.
           delayMs = 3000;
-        } else if (step <= 4 + betSlotsCount) {
-          const slotIdx = step - 5;
+        } else if (step <= 3 + betSlotsCount) {
+          const slotIdx = step - 4;
           const isZeroSlot = zeroExists && slotIdx === 0;
           delayMs = isZeroSlot ? 4500 : 3000;
         } else {
-          // race-final (step === 5 + betSlotsCount). FinalEurovisionFinale —
+          // race-final (step === 4 + betSlotsCount). FinalEurovisionFinale —
           // Hero-Standings + Konfetti, 12s Hold bevor Mod zu THANKS weiter.
           void N;
           delayMs = 12_000;
@@ -1669,14 +1652,14 @@ export default function QQModeratorPage() {
                     Mod-Button, nur das Info-Panel weiter unten. Space wurde global
                     durch line 992 emittiert, war aber visuell unsichtbar. */}
                 {s.phase === 'FINAL_REVEAL' && (() => {
-                  // 2026-05-24 v2 (Wolf 'awards einzeln'): max = betSlotsCount + 5
-                  // (title + awards-overview + 3 award-slots + bet-slots + race-final).
+                  // 2026-05-24 v3 (Wolf 'awards-overview raus'): max = betSlotsCount + 4
+                  // (title + 3 award-slots + bet-slots + race-final).
                   const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
                   const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
                   const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
                   const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
                   const step = (s as any).finalRevealStep ?? 0;
-                  const max = betSlotsCount + 5;
+                  const max = betSlotsCount + 4;
                   const isLast = step >= max;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
@@ -3564,8 +3547,8 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       )}
 
       {s.phase === 'FINAL_REVEAL' && (() => {
-        // 2026-05-24 v2 (Wolf 'awards einzeln, gleich wie bet'):
-        // title → awards-overview → award-0/1/2 (je Mod-Space) → bet-slots → race-final.
+        // 2026-05-24 v3 (Wolf 'awards-overview raus'):
+        // title → award-0/1/2 (je Mod-Space) → bet-slots → race-final.
         const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
@@ -3573,19 +3556,18 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
         const step = s.finalRevealStep ?? 0;
         const labelFor = (st: number): string => {
           if (st <= 0) return '0 · Title-Hold „Die Auflösung"';
-          if (st === 1) return '1 · 🏅 Awards Overview (3 BG-Cards)';
-          if (st === 2) return '2 · 🐢 Underdog-Reveal (Drumroll + Tabelle)';
-          if (st === 3) return '3 · 🦝 Meisterklauer-Reveal (Drumroll + Tabelle)';
-          if (st === 4) return '4 · ⚡ Speedy-Reveal (Drumroll + Tabelle)';
-          if (st <= 4 + betSlotsCount) {
-            const slotIdx = st - 5;
+          if (st === 1) return '1 · 🐢 Underdog-Reveal (Drumroll + Tabelle)';
+          if (st === 2) return '2 · 🦝 Meisterklauer-Reveal (Drumroll + Tabelle)';
+          if (st === 3) return '3 · ⚡ Speedy-Reveal (Drumroll + Tabelle)';
+          if (st <= 3 + betSlotsCount) {
+            const slotIdx = st - 4;
             const isZeroFirst = zeroExists && slotIdx === 0;
             if (isZeroFirst) return `${st} · 🎰 Bet-Zero-Group (0-Bonus-Tipps)`;
             return `${st} · 🎰 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Tabelle climbing)`;
           }
           return `${st} · 🏁 Eurovision-Finale (Sieger-Hero + Podium)`;
         };
-        const max = betSlotsCount + 5;
+        const max = betSlotsCount + 4;
         const isLast = step >= max;
         const next = isLast ? '→ THANKS' : labelFor(step + 1);
         return (

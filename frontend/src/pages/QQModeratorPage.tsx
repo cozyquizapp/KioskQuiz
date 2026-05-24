@@ -2334,18 +2334,9 @@ export default function QQModeratorPage() {
                   </>
                 )}
 
-                {/* ── Live-Toggle für CozyGames (P1 #4): nach LOBBY sichtbar in
-                    aktiven Phasen, damit Mod das Feature bei Bedarf abschalten
-                    kann ohne Settings-Card zu öffnen. */}
-                {!['LOBBY', 'RULES', 'TEAMS_REVEAL', 'GAME_OVER', 'THANKS', 'COZY_GAME', 'FINAL_REVEAL'].includes(s.phase) && (
-                  <Btn
-                    color={(s as any).cozyGamesEnabled ? '#EC4899' : '#64748B'}
-                    outline
-                    onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: !(s as any).cozyGamesEnabled })}
-                  >
-                    🎲 {(s as any).cozyGamesEnabled ? `An (${((s as any).cozyGamesPool ?? []).length})` : 'Aus'}
-                  </Btn>
-                )}
+                {/* 2026-05-24 (Wolf-Wunsch): CozyGames An/Aus-Toggle aus der
+                    Mod-Toolbar raus — Wolf braucht das nur im Setup, dort ist
+                    es schon. Reduziert Toolbar-Noise. */}
 
                 {/* ── COZY_GAME (Mini-Game-Phase, 2026-05-17) ── */}
                 {s.phase === 'COZY_GAME' && (s as any).cozyGame && (() => {
@@ -4955,6 +4946,59 @@ function SetupView({
           </div>
         </div>
 
+
+        {/* Sound — 2026-05-20 (Setup-Audit P0.3): nur Musik+SFX-Toggles in
+            Quick-Settings. Volume-Slider in Advanced verlegt (90% der Mods
+            nutzen 100% oder 0%, fein-tuning ist Edge-Case). */}
+        <div style={settingRow}>
+          <span style={settingLabel}>🔊 Sound</span>
+          <div style={segGroup}>
+            <button
+              onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
+              style={segPill(!s.musicMuted, '#22C55E')}
+              title="Musik an/aus"
+            >{s.musicMuted ? '🔇 Musik' : '🎵 Musik'}</button>
+            <button
+              onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
+              style={segPill(!s.sfxMuted, '#22C55E')}
+              title="SFX an/aus"
+            >{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
+          </div>
+        </div>
+      </div>
+
+      {/* ── ERWEITERTE OPTIONEN — collapsible ───────────────────────────── */}
+      <div style={{
+        borderRadius: 16,
+        background: 'linear-gradient(180deg, rgba(255,235,200,0.025), rgba(255,235,200,0.008))',
+        border: '1px solid rgba(255,220,180,0.08)',
+      }}>
+        <button
+          onClick={() => setAdvancedOpen(v => !v)}
+          style={{
+            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+            padding: '12px 18px', borderRadius: 16,
+            border: 'none', background: 'transparent',
+            color: '#a8a395', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
+          }}
+        >
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
+            <span style={{
+              display: 'inline-block', transition: 'transform 0.25s ease',
+              transform: advancedOpen ? 'rotate(90deg)' : 'rotate(0deg)',
+            }}>▶</span>
+            ⚙ Erweiterte Optionen
+            {!advancedOpen && (
+              <span style={{ fontSize: 10, color: '#6b6555', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
+                · Finale 4×4 · Final-Wetten · Comeback · CozyGames · Reihenfolge · Bluffs · Avatar-Set · Sound-Volume · Bestenliste-Reset
+              </span>
+            )}
+          </span>
+        </button>
+
+        {advancedOpen && (
+          <div style={{ padding: '4px 18px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
         {/* Finalrunde 4×4 Connections — 2026-05-20 (Setup-Audit P1):
             nur bei phases===4 zeigen. Bei 3-Runden-Quizzes ist Connections
             irrelevant (kein „nach Runde 4"). */}
@@ -5096,59 +5140,6 @@ function SetupView({
             })()}
           </span>
         </div>
-
-        {/* Sound — 2026-05-20 (Setup-Audit P0.3): nur Musik+SFX-Toggles in
-            Quick-Settings. Volume-Slider in Advanced verlegt (90% der Mods
-            nutzen 100% oder 0%, fein-tuning ist Edge-Case). */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🔊 Sound</span>
-          <div style={segGroup}>
-            <button
-              onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
-              style={segPill(!s.musicMuted, '#22C55E')}
-              title="Musik an/aus"
-            >{s.musicMuted ? '🔇 Musik' : '🎵 Musik'}</button>
-            <button
-              onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
-              style={segPill(!s.sfxMuted, '#22C55E')}
-              title="SFX an/aus"
-            >{s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}</button>
-          </div>
-        </div>
-      </div>
-
-      {/* ── ERWEITERTE OPTIONEN — collapsible ───────────────────────────── */}
-      <div style={{
-        borderRadius: 16,
-        background: 'linear-gradient(180deg, rgba(255,235,200,0.025), rgba(255,235,200,0.008))',
-        border: '1px solid rgba(255,220,180,0.08)',
-      }}>
-        <button
-          onClick={() => setAdvancedOpen(v => !v)}
-          style={{
-            width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            padding: '12px 18px', borderRadius: 16,
-            border: 'none', background: 'transparent',
-            color: '#a8a395', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
-            letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
-          }}
-        >
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 10 }}>
-            <span style={{
-              display: 'inline-block', transition: 'transform 0.25s ease',
-              transform: advancedOpen ? 'rotate(90deg)' : 'rotate(0deg)',
-            }}>▶</span>
-            ⚙ Erweiterte Optionen
-            {!advancedOpen && (
-              <span style={{ fontSize: 10, color: '#6b6555', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
-                · Comeback-Timer · Custom Sounds · Bestenliste-Reset
-              </span>
-            )}
-          </span>
-        </button>
-
-        {advancedOpen && (
-          <div style={{ padding: '4px 18px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
 
             {/* Volume-Slider — 2026-05-20 (Setup-Audit P0.3): aus Quick-
                 Settings hierhin verlegt. Fein-Tuning ist Edge-Case, die

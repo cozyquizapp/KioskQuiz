@@ -2,6 +2,9 @@
 // 1. P3-ZvZ Singer-Real-Names: "Robyn Rajad Fenty" → "Robyn Fenty"
 // 2. P2-Schätzchen Monopoly funFact: 3 → 2 Steuerfelder
 // 3. P3-Mucho Aristoteles → Brüder Montgolfier
+// 4. (2026-05-24) P1-Q3 NBC: optionsEn explizit auf Phoenix setzen
+// 5. (2026-05-24) P4-Q3 EU-Euro: Frage umformuliert weil Bulgarien
+//    seit 1. Januar 2026 auch Euro hat → vorher 2 richtige Antworten.
 
 const BACKEND = 'https://backend.cozyquiz.app';
 
@@ -48,6 +51,29 @@ tonight.questions = tonight.questions.map(q => {
       optionsEn: ['Montgolfier brothers', 'Lumière brothers', 'Wright brothers', 'Lilienthal brothers'],
       correctOptionIndex: 0,
       funFact: 'Joseph-Michel + Jacques-Étienne Montgolfier (Papierfabrikanten aus Annonay/Frankreich) ließen am 4. Juni 1783 den ersten unbemannten Heißluftballon steigen. Ursprünglich dachten sie, es sei "elektrischer Rauch", der den Sack hebt — sie verstanden nicht, dass es einfach erhitzte Luft war. Erste bemannte Fahrt: 21. November 1783 in Paris vor König Ludwig XVI. — mit einem Schaf, einer Ente und einem Hahn an Bord für den Testflug zuvor. Distraktoren: Brüder Lumière = Kino (1895), Brüder Wright = Motorflug (1903), Brüder Lilienthal = Gleitflug (1890er).',
+    };
+  }
+  if (q.id === 'tonight-p1-q3') {
+    // NBC-Logo: optionsEn[2] muss "Phoenix" sein, nicht "Phönix" (DeepL-Drift).
+    return {
+      ...q,
+      options: ['Adler', 'Pfau', 'Phönix'],
+      optionsEn: ['Eagle', 'Peacock', 'Phoenix'],
+    };
+  }
+  if (q.id === 'tonight-p4-q3') {
+    // EU-Euro: Frage umkehren auf "noch nicht Euro" — Bulgarien hat seit
+    // 1.1.2026 Euro, daher hatten Kroatien + Bulgarien beide richtige Antworten.
+    return {
+      ...q,
+      text: 'Welches dieser EU-Länder hat den Euro NOCH NICHT als offizielle Währung?',
+      textEn: 'Which of these EU countries has NOT yet adopted the Euro?',
+      answer: 'Rumänien',
+      answerEn: 'Romania',
+      options: ['Rumänien', 'Bulgarien', 'Kroatien'],
+      optionsEn: ['Romania', 'Bulgaria', 'Croatia'],
+      correctOptionIndex: 0,
+      funFact: 'Stand Mai 2026: Kroatien (seit 1.1.2023) und Bulgarien (seit 1.1.2026 als 21. Eurozone-Mitglied) haben den Euro. Rumänien hat den Euro-Beitritt geplant, aber noch nicht vollzogen — Zielzeitraum verschoben mehrfach, aktuell ohne festes Datum.',
     };
   }
   return q;

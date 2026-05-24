@@ -164,11 +164,25 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   const unitFs = dense ? 18 : 22;
 
   // Medaillen-Style für Top 3 (nur wenn Wert > 0 und eindeutig).
-  const medalFor = (i: number, val: number): string | null => {
+  // 2026-05-24 (Wolf-Feedback): Bei Tie an der Spitze bekommen ALLE
+  // gleichauf-Teams 👑 Krönchen statt einer 🥇 + andere ohne. Vermeidet die
+  // Hierarchie-Illusion "1.+2." bei reinem Gleichstand. Tied-Plätze unter
+  // dem ersten Platz behalten ihre Medaille (→ #2-Tie bleibt 🥈+🥈).
+  const topScore = sorted.length > 0 ? sorted[0].largestConnected : 0;
+  const isTieAtTop = sorted.length > 1
+    && sorted[0].largestConnected > 0
+    && sorted[1].largestConnected === sorted[0].largestConnected;
+  const medalFor = (i: number, val: number, teamId: string): string | null => {
     if (val === 0) return null;
+    if (isTieAtTop && val === topScore) return '👑';
     if (i === 0) return '🥇';
     if (i === 1 && sorted[1].largestConnected < sorted[0].largestConnected) return '🥈';
     if (i === 2 && sorted[2].largestConnected < (sorted[1]?.largestConnected ?? 0)) return '🥉';
+    // Tied-Plätze auf 2. oder 3. → gleiche Medaille wie ihr Tied-Partner.
+    if (tiedWithOther.has(teamId)) {
+      if (val === sorted[1]?.largestConnected) return '🥈';
+      if (val === sorted[2]?.largestConnected) return '🥉';
+    }
     return null;
   };
 
@@ -190,7 +204,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
       {sorted.map((t, i) => {
         const isLeader = i === 0 && t.largestConnected > 0;
         const isActive = t.id === activeTeamId;
-        const medal = medalFor(i, t.largestConnected);
+        const medal = medalFor(i, t.largestConnected, t.id);
+        // Tie an der Spitze: kleines "="-Badge entfaellt, weil 👑 bereits den
+        // Gleichstand kommuniziert. Bei niedrigeren Tie-Rangen bleibt das Badge.
+        const isTopTie = isTieAtTop && t.largestConnected === topScore;
         // 2026-05-05 (Wolf 'team color = team id'): t.color ist seit dem
         // Backend-Fix automatisch die Brett-Palette-Farbe → identisch zu
         // qqGetBoardColor. tColor-Local-Var bleibt fuer Klarheit.
@@ -336,7 +353,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               position: 'relative',
             }}>
               {medal ? <QQEmojiIcon emoji={medal}/> : null}
-              {tiedWithOther.has(t.id) && (
+              {tiedWithOther.has(t.id) && !isTopTie && (
                 <span
                   aria-label="gleichauf"
                   title={lang === 'en' ? 'Tied with another team' : 'Gleichauf mit anderem Team'}

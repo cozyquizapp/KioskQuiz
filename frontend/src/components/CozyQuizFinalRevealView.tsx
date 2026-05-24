@@ -295,6 +295,8 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
 
 // 2026-05-09 (Legacy/Backup): permanenter Tracker. Aktuell deaktiviert
 // zugunsten von FinalRoundRecapSlide. Bleibt im Code falls Wolf zurückwill.
+// ⚠ TODO bei Re-Aktivierung: Strings i18n nachruesten ('🏆 Finale' /
+// '{n} Kats übrig' aktuell hardcoded DE, brauchen lang === 'en'-Branch).
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
   const wins = s.finalPhaseWins ?? {};

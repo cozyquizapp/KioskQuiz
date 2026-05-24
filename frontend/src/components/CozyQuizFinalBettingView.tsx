@@ -46,7 +46,11 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   }, [submittedCount, s.sfxMuted]);
 
   // 2026-05-24: Intro-Slide (Erklär-Phase) vor der eigentlichen Betting-View.
+  // 2026-05-24 v2 (Wolf 'passt nicht zum rest der app'): Hero-Emoji bobbt mit
+  // qqCatNameWave wie in PhaseIntroView, Title bekommt per-letter Wave-Stagger,
+  // 'Gleich seid ihr dran'-Bottom-Hint raus.
   if (!introDone) {
+    const titleText = de ? 'So funktioniert\'s' : 'How it works';
     return (
       <div style={{
         width: '100%', height: '100%',
@@ -64,20 +68,31 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.1s both',
         }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
 
-        {/* Großer Hero-Title */}
+        {/* Hero-Emoji mit Bob-Animation (analog PhaseIntroView Category-Icon) */}
         <div style={{
           fontSize: 'clamp(72px, 8cqw, 160px)', lineHeight: 1,
           textAlign: 'center',
-          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both',
+          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
         }}>🎰</div>
 
+        {/* Title mit per-letter Wave (analog PhaseIntroView Cat-Name) */}
         <div style={{
           fontSize: 'clamp(40px, 5cqw, 84px)', fontWeight: 900, color: '#F1F5F9',
           lineHeight: 1.05, letterSpacing: '-0.025em', textAlign: 'center',
           textShadow: '0 0 36px rgba(236,72,153,0.45)',
           animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
         }}>
-          {de ? 'So funktioniert\'s' : 'How it works'}
+          {Array.from(titleText).map((ch, i) => (
+            <span
+              key={i}
+              style={{
+                display: 'inline-block',
+                whiteSpace: ch === ' ' ? 'pre' : undefined,
+                animation: 'qqCatNameWave 2.8s ease-in-out infinite',
+                animationDelay: `${1.4 + i * 0.07}s`,
+              }}
+            >{ch}</span>
+          ))}
         </div>
 
         {/* Erklär-Lines (gleiche Struktur wie Rules-Slides) */}
@@ -103,16 +118,6 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
               ? '🎯 Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'
               : '🎯 Per final-category win of your tip = +1 bonus'}
           </div>
-        </div>
-
-        {/* Hinweis dass es gleich losgeht */}
-        <div style={{
-          fontSize: 'clamp(13px, 1.2cqw, 18px)', color: '#94a3b8', fontWeight: 700,
-          letterSpacing: '0.12em', textTransform: 'uppercase', marginTop: 'auto',
-          animation: 'tcpulse 1.5s ease-in-out infinite, phasePop 0.6s var(--qq-ease-bounce) 1.5s both',
-          paddingTop: '4cqh',
-        }}>
-          {de ? '↓ Gleich seid ihr dran ↓' : '↓ Your turn in a sec ↓'}
         </div>
       </div>
     );

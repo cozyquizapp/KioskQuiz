@@ -469,17 +469,15 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
     : "Gleich geht's los — das Glücksrad entscheidet, welches Spiel ihr spielt.";
   return (
     <FullScreenLayout width={width} height={height}>
-      <style>{`
-        @keyframes cozyGamePinataHover {
-          0%, 100% { transform: translateY(0) rotate(-3deg); }
-          50%      { transform: translateY(-14px) rotate(3deg); }
-        }
-      `}</style>
+      {/* 2026-05-24 (Wolf-Audit Bob-Konsistenz P1): vorher eigene
+          cozyGamePinataHover-Keyframe (3s, translate + rotate). Jetzt
+          qqCatNameWave (2.8s pure Bob) wie ueberall in Quiz-Hero-Slides
+          → konsistente Motion-Sprache. */}
       <div style={{
         fontSize: 'clamp(80px, 12vw, 200px)',
         lineHeight: 1,
         filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))',
-        animation: 'cozyGamePinataHover 3s ease-in-out infinite',
+        animation: 'qqCatNameWave 2.8s ease-in-out infinite',
       }}>🪅</div>
       <div style={{
         fontSize: 'clamp(48px, 6vw, 96px)',

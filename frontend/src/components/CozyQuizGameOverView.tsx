@@ -213,30 +213,42 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               />
             </div>
 
-            {/* Team-Name riesig.
-                2026-05-05 (Wolf 'farbiges Rechteck hinter Schrift'): textShadow
-                40px-Glow erzeugte einen rechteck-foermigen Glow-Halo der wie
-                eine Box hinterm Namen wirkte. Stattdessen filter:drop-shadow
-                auf dem Wrapper — folgt der Text-Silhouette und wirkt nicht
-                mehr rechteckig. */}
-            <div style={{
-              filter: `drop-shadow(0 0 18px ${teamColor}55)`,
-              animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
-              textAlign: 'center',
-            }}>
-              <TeamNameLabel
-                name={team.name}
-                maxLines={2}
-                shrinkAfter={14}
-                color={teamColor}
-                fontWeight={900}
-                fontSize="clamp(40px, 5.5cqw, 88px)"
-                style={{
-                  lineHeight: 1.05,
+            {/* Team-Name riesig mit per-letter Wave-Stagger (Wolf-Audit 2026-
+                05-24: konsistent zu PhaseIntroView Cat-Title). Bei Namen > 14
+                Zeichen automatisch 85% Schrift (analog TeamNameLabel-Shrink),
+                flex-wrap erlaubt Multi-Line ohne harte Ellipsis. */}
+            {(() => {
+              const isLong = team.name.length > 14;
+              const baseFs = isLong ? 'clamp(34px, 4.7cqw, 75px)' : 'clamp(40px, 5.5cqw, 88px)';
+              return (
+                <div style={{
+                  filter: `drop-shadow(0 0 18px ${teamColor}55)`,
+                  animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
                   textAlign: 'center',
-                }}
-              />
-            </div>
+                  display: 'flex', flexWrap: 'wrap',
+                  justifyContent: 'center', alignItems: 'baseline',
+                  gap: '0',
+                  maxWidth: '100%',
+                  fontSize: baseFs,
+                  color: teamColor,
+                  fontWeight: 900,
+                  lineHeight: 1.05,
+                  wordBreak: 'break-word',
+                }} title={team.name}>
+                  {Array.from(team.name).map((ch, i) => (
+                    <span
+                      key={i}
+                      style={{
+                        display: 'inline-block',
+                        whiteSpace: ch === ' ' ? 'pre' : undefined,
+                        animation: 'qqCatNameWave 2.8s ease-in-out infinite',
+                        animationDelay: `${1.1 + i * 0.07}s`,
+                      }}
+                    >{ch}</span>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* Score riesig */}
             <div style={{

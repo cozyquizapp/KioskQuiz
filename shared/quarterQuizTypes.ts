@@ -966,6 +966,11 @@ export interface QQStateUpdate {
   gridSize: number;
   grid: QQGrid;
   teams: QQTeam[];
+  /** 2026-05-24 (Refactor #2 Drift-Killer): kanonische Ranking-Sortierung pro
+   *  State-Update. Sortiert nach tieBreakerWinnerId-Override → largestConnected
+   *  desc → totalCells desc → join-Order. Frontend-Views sollen diese nutzen
+   *  statt eigene Sortierung — sonst Drift zwischen Mod, Beamer, Team-View. */
+  sortedTeamIds?: string[];
   teamPhaseStats: Record<string, QQTeamPhaseStats>;
   currentQuestion: QQQuestion | null;
   revealedAnswer: string | null;

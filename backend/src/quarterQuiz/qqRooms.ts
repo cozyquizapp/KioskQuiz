@@ -4038,6 +4038,36 @@ function finishPlacement(room: QQRoomState): void {
 }
 
 // ── Broadcast payload builder ─────────────────────────────────────────────────
+/** 2026-05-24 (Refactor #2): Kanonische Ranking-Sortierung. Wird ins
+ *  State-Update mit-broadcastet damit Mod/Beamer/Team identisch sortieren —
+ *  vorher hatten 3 verschiedene Frontend-Views je eigene Sortier-Logik
+ *  (Drift bei Ties → Mod-Leaderboard zeigte andere Reihenfolge als Beamer).
+ *  Sortier-Reihenfolge:
+ *   1. tieBreakerWinnerId-Override (Mod hat Stechfrage manuell aufgeloest)
+ *   2. largestConnected desc (Hauptscore — groesstes Gebiet)
+ *   3. totalCells desc (Sub-Sort fuer Tie)
+ *   4. joinOrder (stabil, falls alles gleich) */
+export function qqSortedTeamIds(room: QQRoomState): string[] {
+  const tieWinnerId = room.tieBreakerWinnerId ?? null;
+  const joinOrderMap = new Map<string, number>(
+    (room.joinOrder ?? []).map((id, idx) => [id, idx])
+  );
+  return Object.values(room.teams)
+    .slice()
+    .sort((a, b) => {
+      if (tieWinnerId) {
+        if (a.id === tieWinnerId && b.id !== tieWinnerId) return -1;
+        if (b.id === tieWinnerId && a.id !== tieWinnerId) return 1;
+      }
+      const lcDiff = (b.largestConnected ?? 0) - (a.largestConnected ?? 0);
+      if (lcDiff !== 0) return lcDiff;
+      const tcDiff = (b.totalCells ?? 0) - (a.totalCells ?? 0);
+      if (tcDiff !== 0) return tcDiff;
+      return (joinOrderMap.get(a.id) ?? 999) - (joinOrderMap.get(b.id) ?? 999);
+    })
+    .map(t => t.id);
+}
+
 export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
   return {
     // 2026-05-19 (Wolf 'beamer-timer +6s'): Server-Clock-Stempel pro Update.
@@ -4050,6 +4080,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     gridSize:         room.gridSize,
     grid:             room.grid,
     teams:            Object.values(room.teams),
+    sortedTeamIds:    qqSortedTeamIds(room),
     teamPhaseStats:   room.teamPhaseStats,
     currentQuestion:  room.currentQuestion,
     revealedAnswer:   room.revealedAnswer,

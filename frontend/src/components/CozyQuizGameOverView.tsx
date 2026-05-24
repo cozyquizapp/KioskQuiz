@@ -12,6 +12,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, COZY_CARD_BG } from '../cozyQuizShared';
+import { qqSortedTeams } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { GridDisplay } from './CozyQuizGridDisplay';
@@ -30,19 +31,11 @@ import {
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
-  // 2026-05-02: Tie-Breaker. Wenn `tieBreakerWinnerId` gesetzt ist, kommt
-  // dieses Team vor allen anderen Tie-Kandidaten in der Sort-Reihenfolge.
-  // Sonst: Standard-Sortierung largestConnected → totalCells; Array-Order
-  // stabil bei Voll-Gleichstand (Mod muss dann via UI resolven).
-  const tieWinnerId = s.tieBreakerWinnerId ?? null;
-  const sorted = [...s.teams].sort((a, b) => {
-    if (tieWinnerId) {
-      if (a.id === tieWinnerId && b.id !== tieWinnerId) return -1;
-      if (b.id === tieWinnerId && a.id !== tieWinnerId) return 1;
-    }
-    return b.largestConnected - a.largestConnected
-      || b.totalCells - a.totalCells;
-  });
+  // 2026-05-24 (Refactor #2): nutzt jetzt qqSortedTeams() statt eigener
+  // Sortierung. Backend liefert kanonische sortedTeamIds; bei Tie wird
+  // tieBreakerWinnerId nach vorne gezogen. Vorher 3 verschiedene Sort-
+  // Stellen im Frontend (Drift bei Ties zwischen Mod, Beamer, Team-View).
+  const sorted = qqSortedTeams(s);
   const winner = sorted[0];
   const winnerColor = winner?.color ?? '#EC4899';
 

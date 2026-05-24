@@ -13,6 +13,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
+import { qqSortedTeams } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -362,14 +363,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  // Current game standings — Sortierung IDENTISCH zu GameOverView:
-  // largestConnected primary, totalCells als Tie-Breaker. Sonst kann das
-  // Pause-Ranking != End-Ranking sein und verwirrt Zuschauer.
-  // Bei >=5 Teams 2-spaltig, damit nichts ueberlaeuft.
-  const sortedTeams = [...s.teams].sort((a, b) =>
-    b.largestConnected - a.largestConnected
-    || b.totalCells - a.totalCells
-  );
+  // 2026-05-24 (Refactor #2): qqSortedTeams nutzt Backend-sortedTeamIds —
+  // identisch zu GameOverView. Vorher 3 verschiedene Sort-Stellen im Frontend.
+  const sortedTeams = qqSortedTeams(s);
   if (sortedTeams.length > 0) {
     const twoCol = sortedTeams.length >= 5;
     const rankSize = twoCol ? 'clamp(22px, 2.4cqw, 32px)' : 'clamp(28px, 3.2cqw, 42px)';

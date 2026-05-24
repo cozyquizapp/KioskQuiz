@@ -1,5 +1,36 @@
 // ── Shared Quarter Quiz constants (used by BeamerPage + CustomSlide) ──────────
 
+import type { QQStateUpdate, QQTeam } from '@shared/quarterQuizTypes';
+
+/**
+ * 2026-05-24 (Refactor #2): Kanonische Team-Sortierung. Backend schickt seit
+ * heute `sortedTeamIds` mit jedem State-Update — Views sollen das nutzen
+ * statt lokal zu sortieren (vorher 3 verschiedene Sort-Stellen in GameOver,
+ * Paused, Mod-Leaderboard → Drift bei Ties).
+ *
+ * Fallback (Backwards-Compat): falls sortedTeamIds fehlt (alter Backend,
+ * stale State), fällt es auf lokale Sortierung mit demselben Algo zurück.
+ */
+export function qqSortedTeams(s: QQStateUpdate): QQTeam[] {
+  const ids = (s as any).sortedTeamIds as string[] | undefined;
+  if (Array.isArray(ids) && ids.length > 0) {
+    const byId = new Map(s.teams.map(t => [t.id, t]));
+    const ordered = ids.map(id => byId.get(id)).filter((t): t is QQTeam => !!t);
+    const extras = s.teams.filter(t => !ids.includes(t.id));
+    return [...ordered, ...extras];
+  }
+  // Fallback: lokale Sortierung wie backend qqSortedTeamIds.
+  const tieWinnerId = s.tieBreakerWinnerId ?? null;
+  return [...s.teams].sort((a, b) => {
+    if (tieWinnerId) {
+      if (a.id === tieWinnerId && b.id !== tieWinnerId) return -1;
+      if (b.id === tieWinnerId && a.id !== tieWinnerId) return 1;
+    }
+    return (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
+        || (b.totalCells ?? 0) - (a.totalCells ?? 0);
+  });
+}
+
 /**
  * 2026-05-17 P6 (Wolf 'team-namen wrap: Pub-quatscher statt Pubquatsch-er'):
  * Style-Set für mehrzeilige Team-Namen mit smart-break. Inline-spread'bar:

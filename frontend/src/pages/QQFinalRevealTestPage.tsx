@@ -60,15 +60,17 @@ const STEP_LABELS: Record<number, string> = {
 };
 
 function getStepLabel(step: number, betSlotsCount: number): string {
-  // 2026-05-24 (Race-Redesign): grid raus, awards vor bets.
+  // 2026-05-24 v2 (Wolf 'awards einzeln'): 3 separate award-slot Steps.
   if (step <= 0) return '0 · Title';
   if (step === 1) return '1 · Awards: Overview (3 BG-Cards)';
-  if (step === 2) return '2 · Awards: Reveal (Split + Live-Tabelle)';
-  if (step <= 2 + betSlotsCount) {
-    const slotIdx = step - 3;
+  if (step === 2) return '2 · 🐢 Underdog-Reveal (Drumroll + Tabelle climbing)';
+  if (step === 3) return '3 · 🦝 Meisterklauer-Reveal (Drumroll + Tabelle climbing)';
+  if (step === 4) return '4 · ⚡ Speedy-Reveal (Drumroll + Tabelle climbing)';
+  if (step <= 4 + betSlotsCount) {
+    const slotIdx = step - 5;
     return `${step} · Bet-Slot ${slotIdx + 1}/${betSlotsCount} (Split + Climb)`;
   }
-  return `${step} · 🏁 Eurovision-Finale (Hero-Standings)`;
+  return `${step} · 🏁 Eurovision-Finale (Sieger-Hero + Podium)`;
 }
 
 type FlowPhase = 'bet-intro' | 'bet-active' | 'reveal';
@@ -134,7 +136,7 @@ export default function QQFinalRevealTestPage() {
   const zeroExists = betted.some(t => (finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
   const positiveCount = betted.filter(t => (finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
   const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
-  const maxStep = betSlotsCount + 4; // race-final ist letzter Step
+  const maxStep = betSlotsCount + 5; // race-final ist letzter Step
 
   // Default: bei Team-Count-Wechsel auf race-final springen
   const handleTeamCountChange = (n: 3 | 5 | 8) => {
@@ -347,8 +349,10 @@ export default function QQFinalRevealTestPage() {
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <button style={step === 0 ? btnActive : btnStyle} onClick={() => setStep(0)}>Title</button>
             <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>Awards BG</button>
-            <button style={step === 2 ? btnActive : btnStyle} onClick={() => setStep(2)}>🏅 Awards Reveal</button>
-            <button style={step === 3 ? btnActive : btnStyle} onClick={() => setStep(3)}>🪙 Bet-Slot 1</button>
+            <button style={step === 2 ? btnActive : btnStyle} onClick={() => setStep(2)}>🐢 Underdog</button>
+            <button style={step === 3 ? btnActive : btnStyle} onClick={() => setStep(3)}>🦝 Meisterklauer</button>
+            <button style={step === 4 ? btnActive : btnStyle} onClick={() => setStep(4)}>⚡ Speedy</button>
+            <button style={step === 5 ? btnActive : btnStyle} onClick={() => setStep(5)}>🪙 Bet-Slot 1</button>
             <button style={step === maxStep ? btnActive : btnStyle} onClick={() => setStep(maxStep)}>🏁 Finale</button>
           </div>
         </div>

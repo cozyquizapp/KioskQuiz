@@ -537,7 +537,8 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
 // Wenn ein neuer Bet-Slot enthuellt wird, animiert sich die betroffene Zeile
 // in ihre neue Position (FLIP-style via CSS transition auf transform).
 function FinalLeaderboard({
-  teams, awardPoints, betSlots, revealedSlotIndex, lang,
+  teams, awardPoints, betSlots, revealedSlotIndex, revealedAwardCount = 3,
+  awards, lang,
 }: {
   teams: QQTeam[];
   awardPoints: Record<string, number>;
@@ -545,10 +546,28 @@ function FinalLeaderboard({
     | { kind: 'zero-group'; teams: QQTeam[] }
     | { kind: 'positive'; team: QQTeam; bonus: number }
   >;
+  /** Slot-Index das gerade enthuellt wird. -1 = kein Bet-Slot aktiv (Awards-Phase). */
   revealedSlotIndex: number;
+  /** Wie viele Awards bereits enthuellt sind (0..3). Default 3 = alle (Bet-Phase). */
+  revealedAwardCount?: 0 | 1 | 2 | 3;
+  /** s.endAwards — wird gebraucht um den Focus-Team-Highlight beim aktiven
+   *  Award-Reveal zu setzen. */
+  awards?: { underdog: string | null; meisterklauer: string | null; speedy: string | null };
   lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
+
+  // Progressive Award-Points basierend auf revealedAwardCount.
+  const progressiveAwardPoints: Record<string, number> = {};
+  for (const t of teams) progressiveAwardPoints[t.id] = 0;
+  if (awards) {
+    if (revealedAwardCount >= 1 && awards.underdog) progressiveAwardPoints[awards.underdog] = (progressiveAwardPoints[awards.underdog] ?? 0) + 1;
+    if (revealedAwardCount >= 2 && awards.meisterklauer) progressiveAwardPoints[awards.meisterklauer] = (progressiveAwardPoints[awards.meisterklauer] ?? 0) + 1;
+    if (revealedAwardCount >= 3 && awards.speedy) progressiveAwardPoints[awards.speedy] = (progressiveAwardPoints[awards.speedy] ?? 0) + 1;
+  } else {
+    // Backwards-compat: wenn awards-prop nicht gesetzt, voll-revealed gemäß awardPoints.
+    for (const t of teams) progressiveAwardPoints[t.id] = awardPoints[t.id] ?? 0;
+  }
 
   // Per-Team kumulative Bet-Bonus aus Slots [0..revealedSlotIndex].
   const revealedBetBonus: Record<string, number> = {};
@@ -562,18 +581,26 @@ function FinalLeaderboard({
     // zero-group veraendert keine Punkte.
   }
 
-  // Welches Team wird in *diesem* Slot enthuellt? Highlight + Glow.
+  // Welches Team wird in *diesem* Slot/Award enthuellt? Highlight + Glow.
+  let focusTeamId: string | null = null;
   const focusSlot = betSlots[revealedSlotIndex];
-  const focusTeamId = focusSlot?.kind === 'positive' ? focusSlot.team.id : null;
+  if (focusSlot?.kind === 'positive') {
+    focusTeamId = focusSlot.team.id;
+  } else if (awards && revealedAwardCount > 0 && revealedAwardCount <= 3) {
+    // Award-Phase: focus auf gerade enthuelltes Award-Team.
+    focusTeamId = revealedAwardCount === 1 ? awards.underdog
+                : revealedAwardCount === 2 ? awards.meisterklauer
+                : awards.speedy;
+  }
 
   // Sortierte Reihenfolge (current standings).
   const rows = teams
     .map(t => ({
       team: t,
       base: t.largestConnected ?? 0,
-      awards: awardPoints[t.id] ?? 0,
+      awards: progressiveAwardPoints[t.id] ?? 0,
       bet: revealedBetBonus[t.id] ?? 0,
-      total: (t.largestConnected ?? 0) + (awardPoints[t.id] ?? 0) + (revealedBetBonus[t.id] ?? 0),
+      total: (t.largestConnected ?? 0) + (progressiveAwardPoints[t.id] ?? 0) + (revealedBetBonus[t.id] ?? 0),
     }))
     .sort((a, b) => {
       if (b.total !== a.total) return b.total - a.total;
@@ -742,8 +769,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   // bekommen padding:0 + transparente BG (Inner-Slide rendert eigene BG).
   // Phasen mit Card-Layouts (title, bet) behalten die safe-margin.
   const fullBleed = phase.kind === 'race-final'
-    || phase.kind === 'awards-overview'
-    || phase.kind === 'awards-reveal';
+    || phase.kind === 'awards-overview';
 
   return (
     <div style={{
@@ -779,21 +805,45 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             awardPoints={awardPoints}
             betSlots={betSlots}
             revealedSlotIndex={phase.slotIndex}
+            revealedAwardCount={3}
+            awards={s.endAwards ?? undefined}
             lang={lang}
           />
         </div>
       )}
-      {/* 2026-05-19 (Wolf 'special awards kommen rein und dann direkt nochmal'):
-          Vorher 2 separate JSX-Mounts (closed vs auto-reveal) → bei Phase-
-          Wechsel hat React den AwardsOverviewSlide unmounted + neu gemounted,
-          Mount-Animationen + useEffect liefen 2x. Jetzt EIN Mount der ueber
-          beide Phasen lebt; revealMode wechselt als Prop, useEffect sieht
-          den dep-change und startet die Reveal-Choreo genau einmal. */}
-      {(phase.kind === 'awards-overview' || phase.kind === 'awards-reveal') && (
-        <AwardsOverviewSlide
-          revealMode={phase.kind === 'awards-reveal' ? 'auto-reveal' : 'closed'}
-          state={s} lang={lang}
-        />
+      {/* Awards-Overview (alle 3 BG-Cards). Wolf-Wunsch 2026-05-24: nur Intro-
+          Slide, kein Reveal — der erfolgt einzeln pro Award-Slot. */}
+      {phase.kind === 'awards-overview' && (
+        <AwardsOverviewSlide state={s} lang={lang} />
+      )}
+      {/* 2026-05-24 (Wolf-Wunsch 'awards einzeln nacheinander, gleiches Format
+          wie bet cards'): Award-Slot-Rendering analog BetSlotTransition. Links
+          Card mit drumroll + Reveal, rechts Live-Tabelle die progressive Awards
+          bekommt + climbing-animiert. */}
+      {phase.kind === 'award' && (
+        <div style={{
+          flex: 1, width: '100%', minHeight: 0,
+          padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
+          display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
+          gap: 'clamp(20px, 2.5cqw, 40px)',
+        }}>
+          <div style={{ display: 'flex', minHeight: 0 }}>
+            <AwardSlotTransition
+              awardIndex={phase.awardIndex}
+              state={s}
+              lang={lang}
+            />
+          </div>
+          <FinalLeaderboard
+            teams={s.teams}
+            awardPoints={awardPoints}
+            betSlots={betSlots}
+            revealedSlotIndex={-1}
+            revealedAwardCount={(phase.awardIndex + 1) as 1 | 2 | 3}
+            awards={s.endAwards ?? undefined}
+            lang={lang}
+          />
+        </div>
       )}
       {/* 2026-05-24 (Wolf-Entscheidung): Race-Final ist deaktiviert, ersetzt
           durch FinalEurovisionFinale (Hero-Standings + Konfetti). RaceFinalSlide
@@ -1430,217 +1480,177 @@ const AWARD_DEFS = [
 // - revealMode='closed': alle 3 BG-Cards (Drumroll-Animation), kein Flip
 // - revealMode='auto-reveal': interner Stagger flippt Card 1 → 2 → 3
 //   automatisch mit 2s Pause zwischen jedem Reveal (Wolf moderiert)
-// 2026-05-24 (Wolf-Wunsch Reveal-Choreo): Split-Layout. Links: Award-Cards
-// stacked-vertikal mit Drumroll+Flip. Rechts: persistente Live-Standings-Tabelle
-// die mit jedem revealten Award +1 fuer den Gewinner-Slot bekommt und re-
-// sortiert via FLIP-translate-Animation. Mod kann mit Space die Auto-Choreo
-// abkuerzen (qq:nextQuestion advanced zur Bet-Phase).
-function AwardsOverviewSlide({ revealMode, state: s, lang }: {
-  revealMode: 'closed' | 'auto-reveal'; state: QQStateUpdate; lang: 'de' | 'en';
+// 2026-05-24 v2 (Wolf-Wunsch 'awards einzeln'): Awards-Overview = nur die
+// Intro-Slide. Alle 3 Cards horizontal nebeneinander BG. Mod-Space advanced
+// zu award-slot 0. Kein Auto-Reveal mehr hier — das passiert pro Award-Slot.
+function AwardsOverviewSlide({ state: s, lang }: {
+  state: QQStateUpdate; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
   const awards = s.endAwards;
-  const [revealedCount, setRevealedCount] = useState<0 | 1 | 2 | 3>(0);
-
-  useEffect(() => {
-    if (revealMode !== 'auto-reveal') {
-      setRevealedCount(0);
-      return;
-    }
-    // Stagger: 0.8s → Card 1 (Drumroll → Flip → Tabellen-Climb 1s) → next
-    const REVEAL_1 = 800;
-    const REVEAL_2 = 800 + 1100 + 2500;
-    const REVEAL_3 = 800 + 1100 + 2500 + 1100 + 2500;
-    const DRUMROLL_LEAD = 900;
-    const handles: number[] = [];
-    handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_1 - DRUMROLL_LEAD)));
-    handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_2 - DRUMROLL_LEAD)));
-    handles.push(window.setTimeout(() => { try { playSpecialAwardReveal(); } catch {} }, Math.max(0, REVEAL_3 - DRUMROLL_LEAD)));
-    handles.push(window.setTimeout(() => setRevealedCount(1), REVEAL_1));
-    handles.push(window.setTimeout(() => setRevealedCount(2), REVEAL_2));
-    handles.push(window.setTimeout(() => setRevealedCount(3), REVEAL_3));
-    return () => handles.forEach(h => window.clearTimeout(h));
-  }, [revealMode]);
-
-  // Progressive Award-Points basierend auf revealedCount.
-  const revealedAwardPoints: Record<string, number> = {};
-  for (const t of s.teams) revealedAwardPoints[t.id] = 0;
-  if (revealedCount >= 1 && awards?.underdog) revealedAwardPoints[awards.underdog] = (revealedAwardPoints[awards.underdog] ?? 0) + 1;
-  if (revealedCount >= 2 && awards?.meisterklauer) revealedAwardPoints[awards.meisterklauer] = (revealedAwardPoints[awards.meisterklauer] ?? 0) + 1;
-  if (revealedCount >= 3 && awards?.speedy) revealedAwardPoints[awards.speedy] = (revealedAwardPoints[awards.speedy] ?? 0) + 1;
-
-  // Focus-Team = das gerade enthuellte Award-Winning-Team (highlight in Standings).
-  const focusTeamId = revealedCount === 1 ? awards?.underdog
-                    : revealedCount === 2 ? awards?.meisterklauer
-                    : revealedCount === 3 ? awards?.speedy
-                    : null;
-
   return (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      width: '100%', minHeight: 0,
-      padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
-      gap: 'clamp(14px, 1.6cqh, 22px)',
+      flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
+      justifyContent: 'center', gap: 'clamp(28px, 3.5cqh, 48px)',
+      width: '100%',
+      padding: 'clamp(20px, 2cqh, 36px) clamp(24px, 3cqw, 48px)',
     }}>
-      {/* Title-Bar oben (compact) */}
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-      }}>
-        <div style={{
-          fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
-          color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.18em',
-          animation: 'qqFRTitleIn 0.6s cubic-bezier(0.2, 0.85, 0.3, 1) both',
-        }}>{de ? '🏅 Special Awards' : '🏅 Special Awards'}</div>
-        <div style={{
-          fontSize: 'clamp(22px, 2.6cqw, 40px)', fontWeight: 900,
-          color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.01em',
-          textShadow: '0 0 28px rgba(251,191,36,0.4)',
-          animation: 'qqFRTitleIn 0.6s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
-        }}>{de ? 'Drei besondere Auszeichnungen' : 'Three special awards'}</div>
-      </div>
-
-      {/* Split: links Award-Stack, rechts Live-Standings */}
+        fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
+        color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.18em',
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+      }}>{de ? '🏅 Special Awards' : '🏅 Special Awards'}</div>
       <div style={{
-        flex: 1, display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) minmax(0, 1.1fr)',
-        gap: 'clamp(20px, 2.5cqw, 40px)', minHeight: 0,
+        fontSize: 'clamp(34px, 4cqw, 60px)', fontWeight: 900,
+        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
+        textShadow: '0 0 36px rgba(251,191,36,0.45)',
+        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
+      }}>{de ? 'Drei besondere Auszeichnungen' : 'Three special awards'}</div>
+      <div style={{
+        display: 'flex', alignItems: 'stretch', justifyContent: 'center',
+        gap: 'clamp(20px, 2.5cqw, 44px)',
+        width: '100%', maxWidth: 'min(96cqw, 1400px)',
       }}>
-        {/* LINKS: 3 Award-Cards vertikal gestackt */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 'clamp(10px, 1.4cqh, 18px)',
-          minHeight: 0,
-        }}>
-          {[0, 1, 2].map(i => {
-            const winnerId = !awards ? null
-              : i === 0 ? awards.underdog
-              : i === 1 ? awards.meisterklauer
-              : awards.speedy;
-            const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
-            return (
-              <AwardFlipCard
-                key={i}
-                awardIndex={i as 0 | 1 | 2}
-                isFlipped={revealedCount > i}
-                winner={winner}
-                awards={awards}
-                lang={lang}
-              />
-            );
-          })}
-        </div>
-
-        {/* RECHTS: Live-Standings-Tabelle die mit jedem Award-Reveal +1 bekommt */}
-        <AwardsLiveStandings
-          teams={s.teams}
-          revealedAwardPoints={revealedAwardPoints}
-          focusTeamId={focusTeamId ?? null}
-          lang={lang}
-        />
+        {[0, 1, 2].map(i => {
+          const winnerId = !awards ? null
+            : i === 0 ? awards.underdog
+            : i === 1 ? awards.meisterklauer
+            : awards.speedy;
+          const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
+          return (
+            <AwardFlipCard
+              key={i}
+              awardIndex={i as 0 | 1 | 2}
+              isFlipped={false}
+              winner={winner}
+              awards={awards}
+              lang={lang}
+            />
+          );
+        })}
       </div>
     </div>
   );
 }
 
-// 2026-05-24 (Wolf-Wunsch Reveal-Choreo): Live-Standings die parallel zur
-// Awards-Card-Reveal-Animation laeuft. Jeder revealte Award gibt dem Winning-
-// Team +1, Tabelle re-sortiert mit translateY-FLIP-Animation, Focus-Team
-// blinkt kurz auf wenn sein Award reveal'd wurde.
-function AwardsLiveStandings({ teams, revealedAwardPoints, focusTeamId, lang }: {
-  teams: QQTeam[]; revealedAwardPoints: Record<string, number>;
-  focusTeamId: string | null; lang: 'de' | 'en';
+// 2026-05-24 v2 (Wolf-Wunsch 'awards einzeln, gleiches Format wie bet cards'):
+// Award-Slot-Transition rendert pro Step EINEN Award als Hero-Card (analog
+// BetRevealSlide). Drumroll → Reveal beim Mount, Mod-Space advanced zum
+// nächsten Award oder zur Bet-Phase.
+function AwardSlotTransition({ awardIndex, state: s, lang }: {
+  awardIndex: 0 | 1 | 2; state: QQStateUpdate; lang: 'de' | 'en';
+}) {
+  return (
+    <SlotTransition
+      slotKey={`award-${awardIndex}`}
+      exitAnimation="qqFRSlamOutDown 0.35s ease both"
+      exitMs={350}
+    >
+      <AwardHeroSlide awardIndex={awardIndex} state={s} lang={lang} />
+    </SlotTransition>
+  );
+}
+
+function AwardHeroSlide({ awardIndex, state: s, lang }: {
+  awardIndex: 0 | 1 | 2; state: QQStateUpdate; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
-  const rows = teams
-    .map(t => ({
-      team: t,
-      base: t.largestConnected ?? 0,
-      awards: revealedAwardPoints[t.id] ?? 0,
-      total: (t.largestConnected ?? 0) + (revealedAwardPoints[t.id] ?? 0),
-    }))
-    .sort((a, b) => {
-      if (b.total !== a.total) return b.total - a.total;
-      return a.team.name.localeCompare(b.team.name);
-    });
+  const awards = s.endAwards;
+  const def = AWARD_DEFS[awardIndex];
+  const winnerId = !awards ? null
+    : awardIndex === 0 ? awards.underdog
+    : awardIndex === 1 ? awards.meisterklauer
+    : awards.speedy;
+  const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
+  const [revealed, setRevealed] = useState(false);
 
-  const ROW_H = 56;
+  useEffect(() => {
+    // Drumroll → Reveal beim Mount (analog Bet-Cards).
+    const DRUMROLL_MS = 900;
+    const t1 = window.setTimeout(() => {
+      try { playSpecialAwardReveal(); } catch {}
+    }, 100);
+    const t2 = window.setTimeout(() => setRevealed(true), DRUMROLL_MS);
+    return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const title = de ? def.titleDe : def.titleEn;
+  const desc = de ? def.descDe : def.descEn;
+  const accent = def.accent;
+
   return (
     <div style={{
-      display: 'flex', flexDirection: 'column', gap: 6,
-      padding: 'clamp(14px, 1.8cqh, 22px) clamp(18px, 2cqw, 28px)',
-      borderRadius: 18,
-      background: 'rgba(255,255,255,0.04)',
-      border: '1.5px solid rgba(255,255,255,0.1)',
-      boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
-      minHeight: 0,
+      flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
+      width: '100%',
     }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-        fontSize: 'clamp(10px, 1cqw, 14px)', fontWeight: 800,
-        color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.14em',
-        marginBottom: 4,
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        gap: 'clamp(20px, 2.4cqh, 32px)',
+        padding: 'clamp(36px, 4cqh, 60px) clamp(40px, 4.5cqw, 80px)',
+        borderRadius: 32,
+        background: `linear-gradient(135deg, ${accent}22, ${accent}08)`,
+        border: `3px solid ${accent}`,
+        boxShadow: `0 0 80px ${accent}55, 0 16px 48px rgba(0,0,0,0.5)`,
+        animation: 'qqBetCardFadeUp 0.5s ease-out both',
+        minWidth: 'clamp(320px, 36cqw, 540px)',
       }}>
-        <span>{de ? 'Aktueller Stand' : 'Current standings'}</span>
-        <span style={{ display: 'flex', gap: 18 }}>
-          <span style={{ color: QQ_COLORS.slate400 }}>{de ? 'Brett' : 'Grid'}</span>
-          <span style={{ color: QQ_COLORS.amber400 }}>{de ? 'Awards' : 'Awards'}</span>
-          <span style={{ color: QQ_COLORS.slate100 }}>{de ? 'Total' : 'Total'}</span>
-        </span>
-      </div>
-      <div style={{ position: 'relative', height: rows.length * ROW_H, flex: 1 }}>
-        {rows.map((r, idx) => {
-          const isFocus = r.team.id === focusTeamId;
-          return (
-            <div
-              key={r.team.id}
-              style={{
-                position: 'absolute', top: 0, left: 0, right: 0, height: ROW_H,
-                transform: `translateY(${idx * ROW_H}px)`,
-                transition: 'transform 0.8s cubic-bezier(0.34, 1.36, 0.64, 1)',
-                display: 'flex', alignItems: 'center', gap: 12,
-                padding: '0 14px',
-                borderRadius: 12,
-                background: isFocus
-                  ? `linear-gradient(135deg, ${r.team.color}44, ${r.team.color}15)`
-                  : 'rgba(255,255,255,0.03)',
-                border: isFocus
-                  ? `2px solid ${r.team.color}`
-                  : '1px solid rgba(255,255,255,0.06)',
-                boxShadow: isFocus ? `0 0 36px ${r.team.color}66` : 'none',
-                animation: isFocus ? 'qqAwardRowFlash 0.7s ease' : undefined,
-              }}
-            >
-              <div style={{
-                fontSize: 22, fontWeight: 900,
-                color: idx === 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate400,
-                minWidth: 30, textAlign: 'center',
-              }}>{idx + 1}</div>
-              <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={40} />
-              <div style={{
-                flex: 1, fontSize: 19, fontWeight: 800, color: r.team.color,
-                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-              }}>{r.team.name}</div>
-              <div style={{
-                display: 'flex', gap: 18, alignItems: 'center',
-                fontSize: 17, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-              }}>
-                <span style={{ color: QQ_COLORS.slate400, minWidth: 24, textAlign: 'right' }}>{r.base}</span>
-                <span style={{
-                  color: QQ_COLORS.amber400, minWidth: 28, textAlign: 'right',
-                  transition: 'transform 0.4s cubic-bezier(0.34, 1.7, 0.5, 1)',
-                  transform: r.awards > 0 ? 'scale(1)' : 'scale(0.85)',
-                  opacity: r.awards > 0 ? 1 : 0.3,
-                }}>
-                  {r.awards > 0 ? `+${r.awards}` : ''}
-                </span>
-                <span style={{
-                  color: isFocus ? r.team.color : QQ_COLORS.slate100,
-                  minWidth: 40, textAlign: 'right',
-                  fontSize: 22, fontWeight: 900,
-                }}>{r.total}</span>
-              </div>
-            </div>
-          );
-        })}
+        {/* Emoji + Award-Titel oben (immer sichtbar) */}
+        <div style={{
+          fontSize: 'clamp(72px, 8cqw, 140px)', lineHeight: 1,
+          animation: !revealed ? 'qqFRDrumroll 0.18s ease-in-out infinite' : 'celebShake 0.6s ease both',
+        }}>{def.emoji}</div>
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+        }}>
+          <div style={{
+            fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
+            color: accent, textAlign: 'center', letterSpacing: '0.02em',
+          }}>{title}</div>
+          <div style={{
+            fontSize: 'clamp(13px, 1.3cqw, 18px)', fontWeight: 700,
+            color: QQ_COLORS.slate400, textAlign: 'center',
+          }}>{desc}</div>
+        </div>
+
+        {/* Winner-Reveal nach Drumroll (analog Bet-Card-Sub-Step) */}
+        {!revealed ? (
+          <div style={{
+            fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 800,
+            color: QQ_COLORS.slate400, fontStyle: 'italic',
+            animation: 'qqFRTitleIn 0.4s ease both',
+          }}>{de ? 'Trommelwirbel …' : 'Drumroll …'}</div>
+        ) : winner ? (
+          <div style={{
+            display: 'flex', alignItems: 'center', gap: 16,
+            padding: '14px 26px', borderRadius: 999,
+            background: `${winner.color}1a`,
+            border: `2.5px solid ${winner.color}`,
+            animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) both',
+          }}>
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(60px, 6.5cqw, 96px)'} />
+            <TeamNameLabel
+              name={winner.name}
+              fontSize="clamp(24px, 2.6cqw, 40px)"
+              color={winner.color}
+              fontWeight={900}
+              maxLines={1}
+            />
+            <div style={{
+              padding: '8px 20px', borderRadius: 16,
+              background: 'rgba(34,197,94,0.18)',
+              border: '2px solid rgba(34,197,94,0.6)',
+              fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
+              color: QQ_COLORS.green500,
+              animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.25s both',
+            }}>+1</div>
+          </div>
+        ) : (
+          <div style={{
+            fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 800,
+            color: QQ_COLORS.slate500, fontStyle: 'italic',
+          }}>{de ? 'kein Gewinner' : 'no winner'}</div>
+        )}
       </div>
     </div>
   );
@@ -2146,55 +2156,47 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
         </div>
       )}
 
-      {/* Full-Standings-Tabelle */}
+      {/* 2026-05-24 (Wolf-Feedback 'Endstand doppelt'): Full-Standings-Tabelle
+          raus aus Eurovision-Finale — die Tabelle war waehrend Awards + Bet-
+          Slots schon sichtbar (FinalLeaderboard). Hier nur noch Sieger-Hero
+          + Top-3-Podium als Krönung. */}
       <div style={{
         width: '100%', maxWidth: 980,
-        display: 'flex', flexDirection: 'column', gap: 6,
+        display: 'flex', flexDirection: 'row', justifyContent: 'center',
+        alignItems: 'flex-end', gap: 'clamp(20px, 2.5cqw, 36px)',
         animation: 'qqFRTitleIn 0.8s ease 0.6s both',
       }}>
-        {finalRanking.map((r, idx) => (
-          <div
-            key={r.team.id}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 14,
-              padding: '10px 18px',
-              borderRadius: 12,
-              background: idx === 0
-                ? `linear-gradient(135deg, ${r.team.color}26, ${r.team.color}08)`
-                : 'rgba(255,255,255,0.04)',
-              border: idx === 0 ? `2px solid ${r.team.color}` : '1px solid rgba(255,255,255,0.08)',
-              animation: `qqFRTitleIn 0.5s ease ${0.7 + idx * 0.12}s both`,
-            }}
-          >
-            <div style={{
-              fontSize: 22, fontWeight: 900,
-              color: idx === 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate400,
-              minWidth: 32, textAlign: 'center',
-            }}>{idx + 1}</div>
-            <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={44} />
-            <div style={{
-              flex: 1, fontSize: 20, fontWeight: 800, color: r.team.color,
-            }}>{r.team.name}</div>
-            <div style={{
-              display: 'flex', gap: 16, alignItems: 'center',
-              fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
-              color: QQ_COLORS.slate300,
+        {finalRanking.slice(1, 3).map((r, i) => {
+          const place = i + 2; // 2 = silber, 3 = bronze
+          return (
+            <div key={r.team.id} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+              padding: 'clamp(14px, 1.6cqh, 22px) clamp(20px, 2.2cqw, 36px)',
+              borderRadius: 18,
+              background: `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}06)`,
+              border: `2px solid ${r.team.color}88`,
+              boxShadow: `0 0 28px ${r.team.color}33`,
+              animation: `qqFRTitleIn 0.6s ease ${0.7 + i * 0.18}s both`,
             }}>
-              <span style={{ color: QQ_COLORS.slate400, minWidth: 28, textAlign: 'right' }}>{r.score}</span>
-              <span style={{ color: QQ_COLORS.amber400, minWidth: 28, textAlign: 'right' }}>
-                {r.awards > 0 ? `+${r.awards}` : '·'}
-              </span>
-              <span style={{ color: QQ_COLORS.green500, minWidth: 32, textAlign: 'right' }}>
-                {r.bonus > 0 ? `+${r.bonus}` : '·'}
-              </span>
-              <span style={{
-                color: idx === 0 ? r.team.color : QQ_COLORS.slate100,
-                minWidth: 44, textAlign: 'right',
-                fontSize: 22, fontWeight: 900,
-              }}>{r.total}</span>
+              <div style={{
+                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
+                color: place === 2 ? '#E2E8F0' : '#F97316',
+              }}>{place === 2 ? '🥈' : '🥉'}</div>
+              <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={'clamp(70px, 8cqw, 110px)'} />
+              <div style={{
+                fontSize: 'clamp(15px, 1.7cqw, 22px)', fontWeight: 800,
+                color: r.team.color, textAlign: 'center',
+                maxWidth: 'clamp(120px, 14cqw, 200px)',
+                overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              }}>{r.team.name}</div>
+              <div style={{
+                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
+                color: QQ_COLORS.slate100,
+                fontVariantNumeric: 'tabular-nums',
+              }}>{r.total}</div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
     </div>
   );

@@ -679,24 +679,28 @@ export default function QQModeratorPage() {
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
 
+        // 2026-05-24 v2 (Wolf 'awards einzeln, gleiches Tempo wie bet-cards'):
+        //   step 0       = title (1.5s)
+        //   step 1       = awards-overview (Mod-manuell, kein Auto)
+        //   step 2/3/4   = award-slot 0/1/2 (3s pro Slot wie Bet-Cards)
+        //   step 5..B+4  = bet-slots (Zero-Group 4.5s, sonst 3s)
+        //   step B+5     = race-final (12s Konfetti-Hold)
         if (step <= 0) {
           delayMs = 1500;
         } else if (step === 1) {
-          delayMs = 2500; // awards-overview
-        } else if (step === 2) {
-          // awards-reveal: Wolf moderiert manuell (Live-Test 2026-05-19).
+          // awards-overview: Mod moderiert manuell wie bei Awards selbst.
           delayMs = 0;
           break;
-        } else if (step <= 2 + betSlotsCount) {
-          // Bet-Slot. Zero-Group (falls vorhanden) ist der erste.
-          const slotIdx = step - 3;
+        } else if (step <= 4) {
+          // award-slot 0/1/2: gleicher Rhythmus wie Bet-Slots.
+          delayMs = 3000;
+        } else if (step <= 4 + betSlotsCount) {
+          const slotIdx = step - 5;
           const isZeroSlot = zeroExists && slotIdx === 0;
           delayMs = isZeroSlot ? 4500 : 3000;
         } else {
-          // race-final (step === 3 + betSlotsCount). 2026-05-24 (Race-out):
-          // Race-Choreo durch FinalEurovisionFinale ersetzt — Hero-Standings +
-          // Konfetti, viel kuerzer als die alte 20+2N s Race. 12s reichen fuer
-          // Konfetti-Hold + Sieger-Beobachtung, dann Mod weiter zu THANKS.
+          // race-final (step === 5 + betSlotsCount). FinalEurovisionFinale —
+          // Hero-Standings + Konfetti, 12s Hold bevor Mod zu THANKS weiter.
           void N;
           delayMs = 12_000;
         }
@@ -1665,13 +1669,14 @@ export default function QQModeratorPage() {
                     Mod-Button, nur das Info-Panel weiter unten. Space wurde global
                     durch line 992 emittiert, war aber visuell unsichtbar. */}
                 {s.phase === 'FINAL_REVEAL' && (() => {
-                  // 2026-05-24 Race-Redesign: max = betSlotsCount + 4.
+                  // 2026-05-24 v2 (Wolf 'awards einzeln'): max = betSlotsCount + 5
+                  // (title + awards-overview + 3 award-slots + bet-slots + race-final).
                   const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
                   const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
                   const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
                   const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
                   const step = (s as any).finalRevealStep ?? 0;
-                  const max = betSlotsCount + 4;
+                  const max = betSlotsCount + 5;
                   const isLast = step >= max;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
@@ -3559,8 +3564,8 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       )}
 
       {s.phase === 'FINAL_REVEAL' && (() => {
-        // 2026-05-24 (Wolf Race-Redesign): Mapping = title → awards-overview →
-        // awards-reveal → bet-slots → race-final. Grid-Step raus.
+        // 2026-05-24 v2 (Wolf 'awards einzeln, gleich wie bet'):
+        // title → awards-overview → award-0/1/2 (je Mod-Space) → bet-slots → race-final.
         const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
@@ -3568,17 +3573,19 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
         const step = s.finalRevealStep ?? 0;
         const labelFor = (st: number): string => {
           if (st <= 0) return '0 · Title-Hold „Die Auflösung"';
-          if (st === 1) return '1 · 🏅 Special Awards Overview (3 Cards)';
-          if (st === 2) return '2 · 🏅 Awards Reveal (Mod-manuell, 3 Flips)';
-          if (st <= 2 + betSlotsCount) {
-            const slotIdx = st - 3;
+          if (st === 1) return '1 · 🏅 Awards Overview (3 BG-Cards)';
+          if (st === 2) return '2 · 🐢 Underdog-Reveal (Drumroll + Tabelle)';
+          if (st === 3) return '3 · 🦝 Meisterklauer-Reveal (Drumroll + Tabelle)';
+          if (st === 4) return '4 · ⚡ Speedy-Reveal (Drumroll + Tabelle)';
+          if (st <= 4 + betSlotsCount) {
+            const slotIdx = st - 5;
             const isZeroFirst = zeroExists && slotIdx === 0;
             if (isZeroFirst) return `${st} · 🎰 Bet-Zero-Group (0-Bonus-Tipps)`;
             return `${st} · 🎰 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Tabelle climbing)`;
           }
-          return `${st} · 🏁 Race-Final + Podium`;
+          return `${st} · 🏁 Eurovision-Finale (Sieger-Hero + Podium)`;
         };
-        const max = betSlotsCount + 4;
+        const max = betSlotsCount + 5;
         const isLast = step >= max;
         const next = isLast ? '→ THANKS' : labelFor(step + 1);
         return (

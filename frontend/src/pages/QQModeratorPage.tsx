@@ -1227,6 +1227,15 @@ export default function QQModeratorPage() {
       return;
     }
 
+    // 2026-05-24 (Wolf-Live-Test #7): Universal Undo-Last-Action.
+    // Ctrl+Z oder Shift+Space — macht den letzten Place/Steal rückgängig.
+    // Backend speichert den Snapshot vor jeder Aktion automatisch.
+    if (e.code === 'KeyZ' && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault(); playHotkeyFeedback();
+      emitRef.current('qq:undoLastAction', { roomCode });
+      return;
+    }
+
     // F20 — Reset-Notfall (Wolf 2026-05-19, Cockpit-Audit M1):
     // direkter Streamdeck-Hotkey für qq:resetRoom. Mit window.confirm
     // damit kein Streamdeck-Bounce versehentlich das ganze Spiel killt.

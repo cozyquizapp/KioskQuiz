@@ -2408,6 +2408,51 @@ export function qqChooseFreeAction(
   room.lastActivityAt = Date.now();
 }
 
+// ── Undo-Snapshot (Mod-Fallback) ──────────────────────────────────────────────
+// 2026-05-24 (Wolf-Live-Test #7): Universal Undo-Button. Vor jeder Action
+// (place/steal/stack) wird ein Snapshot gespeichert. Mod kann via Hotkey
+// das letzte Setzen zurücknehmen — speziell hilfreich bei Mis-Clicks oder
+// falsch markierten Antworten.
+export function qqSnapshotForUndo(room: QQRoomState): void {
+  (room as any)._undoSnapshot = {
+    grid: JSON.parse(JSON.stringify(room.grid)),
+    teamStats: JSON.parse(JSON.stringify(room.teamPhaseStats)),
+    teamTotals: room.joinOrder.map(id => ({
+      id,
+      totalCells: room.teams[id].totalCells,
+      largestConnected: room.teams[id].largestConnected,
+    })),
+    pendingFor: room.pendingFor,
+    pendingAction: room.pendingAction,
+    correctTeamId: room.correctTeamId,
+    lastPlacedCell: room.lastPlacedCell ? { ...room.lastPlacedCell } : null,
+    teamTotalSteals: { ...(room.teamTotalSteals ?? {}) },
+    capturedAt: Date.now(),
+  };
+}
+
+export function qqUndoLastAction(room: QQRoomState): void {
+  const snap = (room as any)._undoSnapshot;
+  if (!snap) {
+    throw new QQError('NO_UNDO', 'Keine Aktion zum Rückgängig-Machen.');
+  }
+  room.grid = snap.grid;
+  room.teamPhaseStats = snap.teamStats;
+  for (const t of snap.teamTotals) {
+    if (room.teams[t.id]) {
+      room.teams[t.id].totalCells = t.totalCells;
+      room.teams[t.id].largestConnected = t.largestConnected;
+    }
+  }
+  room.pendingFor = snap.pendingFor;
+  room.pendingAction = snap.pendingAction;
+  room.correctTeamId = snap.correctTeamId;
+  room.lastPlacedCell = snap.lastPlacedCell;
+  room.teamTotalSteals = snap.teamTotalSteals;
+  delete (room as any)._undoSnapshot;
+  room.lastActivityAt = Date.now();
+}
+
 // ── Cell placement ────────────────────────────────────────────────────────────
 export function qqPlaceCell(
   room: QQRoomState,
@@ -2428,6 +2473,9 @@ export function qqPlaceCell(
   if (cell.sandLockTtl && cell.sandLockTtl > 0) {
     throw new QQError('SAND_LOCKED', 'Feld ist gebannt.');
   }
+
+  // 2026-05-24 (#7): Snapshot vor der Action für Undo.
+  qqSnapshotForUndo(room);
 
   const action = room.pendingAction;
   if (action !== 'PLACE_1' && action !== 'PLACE_2' && action !== 'FREE' && action !== 'COMEBACK') {
@@ -2522,6 +2570,9 @@ export function qqStealCell(
   if (cell.shielded) {
     throw new QQError('SHIELDED_CELL', 'Dieses Feld ist geschützt und kann nicht geklaut werden.');
   }
+
+  // 2026-05-24 (#7): Snapshot vor der Action für Undo.
+  qqSnapshotForUndo(room);
 
   const action = room.pendingAction;
   if (action !== 'STEAL_1' && action !== 'FREE' && action !== 'COMEBACK') {

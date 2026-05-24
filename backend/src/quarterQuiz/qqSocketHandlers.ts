@@ -51,7 +51,7 @@ import {
   qqBluffStartWrite, qqBluffSubmit, qqBluffAllSubmitted, qqBluffAdvanceFromWrite,
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
-  qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqFinishFinalBettingIntro, qqResolveFinalBets,
+  qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqFinishFinalBettingIntro, qqResolveFinalBets, qqUndoLastAction,
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
@@ -2278,6 +2278,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         qqSubmitAnswer(room, payload.teamId, payload.answer);
         // No auto-reveal — moderator controls when to reveal
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Undo Last Action (Mod-Fallback, 2026-05-24 Wolf-Live-Test #7) ─────
+    socket.on('qq:undoLastAction', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqUndoLastAction(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

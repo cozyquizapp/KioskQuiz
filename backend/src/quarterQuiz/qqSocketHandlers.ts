@@ -102,6 +102,16 @@ export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
+  // 2026-05-25 (Wolf-Bug 'bots setzen nicht 0/8'): wenn qqBeginPhase via
+  // Auto-Flow nach FINAL_BETTING gewechselt hat, _pendingAutoFinalBets ist
+  // gesetzt → maybeAutoFinalBets triggern. Vorher feuerten Bot-Bets nur wenn
+  // der Mod manuell qq:startFinalBetting/qq:finishFinalBettingIntro emittierte
+  // — der Standard-Flow (letzte Quiz-Frage → Auto-Phase-Wechsel) wurde
+  // uebersprungen.
+  if ((room as any)._pendingAutoFinalBets) {
+    (room as any)._pendingAutoFinalBets = false;
+    maybeAutoFinalBets(io, roomCode);
+  }
   // 2026-05-24 (Wolf 'spiel von gestern war nicht im recap'): Final-Wager-Pfad
   // (qqAdvanceFinalReveal) wechselt direkt FINAL_REVEAL → THANKS und ueberspringt
   // GAME_OVER. Vorher: persist nur bei GAME_OVER → alle Final-Wager-Spiele (=

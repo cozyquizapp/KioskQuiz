@@ -1170,6 +1170,10 @@ export interface QQStateUpdate {
   // KEIN Verlust mehr — niedrigster Bonus = 0, kein Cell-Removal, keine Strafe.
   finalBets: Record<string, QQFinalBet | null>;       // teamId → 1 Tipp oder null
   finalBettingSubmitted: Record<string, boolean>;     // teamId → has-submitted-flag
+  /** 2026-05-24: Intro-Slide-Flag vor der eigentlichen Bet-Phase. false beim
+   *  Start, true sobald Mod via Space dismissed. Default true für Backwards-
+   *  Compat (alte Saves ohne Feld → kein Intro). */
+  finalBettingIntroDone?: boolean;
   /** Lifetime-Steal-Counter pro Team (kumulativ über alle Phasen) — fließt
    *  in den „Meisterklauer"-End-Award am Ende des Spiels ein. Backend-Source:
    *  room.teamTotalSteals (increment in qqStealCell). */

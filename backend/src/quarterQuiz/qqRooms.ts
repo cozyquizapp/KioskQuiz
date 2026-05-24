@@ -3489,6 +3489,11 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
     room.swapFirstCell   = null;
     // qqStartFinalBetting setzt phase + snapshot, ist sicher.
     qqStartFinalBetting(room);
+    // 2026-05-25 (Wolf-Bug 'bots setzen nicht 0/8'): Pending-Flag fuer den
+    // Auto-Phase-Flow → broadcastQQ in qqSocketHandlers ruft maybeAutoFinalBets
+    // sobald das Flag gesetzt ist. Existierende Socket-Trigger (qq:startFinalBetting
+    // + qq:finishFinalBettingIntro) bleiben als Defensive erhalten.
+    (room as any)._pendingAutoFinalBets = true;
     return;
   }
   room.phase          = 'PHASE_INTRO';
@@ -4211,6 +4216,10 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     // geteilte Links auch nach dem nächsten Spiel stabil bleiben.
     lastGameResultId:      (room as any).lastGameResultId ?? null,
     finalWagerEnabled:     room.finalWagerEnabled ?? true,
+    // 2026-05-25 (Wolf 'kein intro vor final tip'): Flag wurde im Backend
+    // gesetzt aber nie propagiert → Frontend sah undefined → !== false →
+    // Intro wurde übersprungen.
+    finalBettingIntroDone: (room as any).finalBettingIntroDone ?? true,
     // 2026-05-09 v2 (Wolf-Bug 'Thanks-Ticker stuck dreifach'): questionHistory
     // war bisher nur im Summary-Save-Payload, nicht im Live-State. Frontend-
     // Ticker bekam undefined → strip = 3× Sonja-Card → Loop optisch stuck.

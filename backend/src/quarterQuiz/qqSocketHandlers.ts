@@ -102,7 +102,14 @@ export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
-  if (room.phase === 'GAME_OVER') persistGameResult(room);
+  // 2026-05-24 (Wolf 'spiel von gestern war nicht im recap'): Final-Wager-Pfad
+  // (qqAdvanceFinalReveal) wechselt direkt FINAL_REVEAL → THANKS und ueberspringt
+  // GAME_OVER. Vorher: persist nur bei GAME_OVER → alle Final-Wager-Spiele (=
+  // /teams-Default) wurden nie persistiert. Jetzt: auch THANKS triggert persist.
+  // Idempotenz-Guard in persistGameResult (_gameResultPersisted) verhindert
+  // Doppel-Saves wenn der Pfad sowohl GAME_OVER als auch THANKS durchlaeuft
+  // (Connections-Pfad: GAME_OVER → ... → THANKS).
+  if (room.phase === 'GAME_OVER' || room.phase === 'THANKS') persistGameResult(room);
   // Autosave (debounced). Nach GAME_OVER zusaetzlich Snapshot loeschen, damit der
   // naechste Serverstart nicht wieder im Danke-Screen landet.
   if (room.phase === 'GAME_OVER' || room.phase === 'THANKS') {

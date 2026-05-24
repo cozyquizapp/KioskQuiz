@@ -79,8 +79,12 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🏆',
       title: t('rules.slide1.title', 'Das Ziel'),
       color: RULES_SLIDE_COLOR,
+      // 2026-05-24 (Wolf): Mechanik-Bullet 'richtig → 1 Feld setzen' direkt
+      // aufs Goal-Slide gezogen, damit How-It-Works keine eigene Slide mehr
+      // braucht.
       lines: [
         t('rules.slide1.line1', 'Größtes zusammenhängendes Gebiet gewinnt'),
+        t('rules.slide1.line2', 'Frage richtig → 1 Feld setzen'),
       ],
       grid: {
         // Beispiel-Brett: blaues Team hat 5 zusammenhaengende Felder = die
@@ -99,7 +103,10 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🗺',
       title: t('rules.slide3.title', 'Dein Weg durchs Quiz'),
       color: RULES_SLIDE_COLOR,
-      lines: [],
+      // 2026-05-24 (Wolf): '4 Runden · 5 Kategorien' aufs Roadmap-Slide gezogen.
+      lines: [
+        t('rules.slide3.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
+      ],
       treeShowcase: true,
     },
     {
@@ -179,8 +186,10 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       icon: '🏆',
       title: t('rules.slide1.title', 'The Goal'),
       color: RULES_SLIDE_COLOR,
+      // 2026-05-24 (Wolf): consolidated How-It-Works bullet into Goal slide.
       lines: [
         t('rules.slide1.line1', 'Largest connected area wins'),
+        t('rules.slide1.line2', 'Right answer → place 1 cell'),
       ],
       grid: {
         cells: [
@@ -194,20 +203,13 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       },
     },
     {
-      icon: '⚡',
-      title: t('rules.slide2.title', 'How It Works'),
-      color: RULES_SLIDE_COLOR,
-      lines: [
-        t('rules.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
-        t('rules.slide2.line2', 'Right answer → place a cell'),
-        t('rules.slide2.line3', 'Fastest correct answer places first'),
-      ],
-    },
-    {
       icon: '🗺',
       title: t('rules.slide3.title', 'Your Quiz Roadmap'),
       color: RULES_SLIDE_COLOR,
-      lines: [],
+      // 2026-05-24 (Wolf): rounds + categories info pulled onto roadmap slide.
+      lines: [
+        t('rules.slide3.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
+      ],
       treeShowcase: true,
     },
     {

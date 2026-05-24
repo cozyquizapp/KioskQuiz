@@ -853,6 +853,47 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 
   const phase = decodeFinalStep(step, betSlots.length);
 
+  // 2026-05-24 (Wolf 'Tabelle spoilert vor dem Reveal'): die FLIP-Tabelle
+  // rechts darf erst die +Punkte zeigen NACHDEM die Card links geflippt ist.
+  // Vorher bekam sie sofort beim Step-Wechsel das neue revealedSlotIdx/
+  // revealedAwardCount und re-sortierte → Audience sah den Sieger noch
+  // bevor die Drumroll-BG umgedreht war. Delay = Card-Drumroll-Dauer (900ms)
+  // — exakt der Moment in dem der CSS-Flip startet, FLIP-Climbing läuft
+  // dann synchron zur Card-Drehung.
+  const [effRevealedSlotIdx, setEffRevealedSlotIdx] = useState(-1);
+  const [effRevealedAwardCount, setEffRevealedAwardCount] = useState<0 | 1 | 2 | 3>(0);
+  useEffect(() => {
+    const REVEAL_DELAY = 900;
+    if (phase.kind === 'bet') {
+      // Vor Reveal: nur vorherige Slots zählen, current noch nicht.
+      setEffRevealedSlotIdx(phase.slotIndex - 1);
+      setEffRevealedAwardCount(3);
+      const t = window.setTimeout(() => setEffRevealedSlotIdx(phase.slotIndex), REVEAL_DELAY);
+      return () => window.clearTimeout(t);
+    }
+    if (phase.kind === 'award') {
+      // Vor Reveal: nur vorherige Awards zählen, current noch nicht.
+      setEffRevealedSlotIdx(-1);
+      setEffRevealedAwardCount(phase.awardIndex as 0 | 1 | 2);
+      const t = window.setTimeout(
+        () => setEffRevealedAwardCount((phase.awardIndex + 1) as 1 | 2 | 3),
+        REVEAL_DELAY,
+      );
+      return () => window.clearTimeout(t);
+    }
+    if (phase.kind === 'race-final') {
+      // Race-final: alles längst revealed.
+      setEffRevealedSlotIdx(betSlots.length - 1);
+      setEffRevealedAwardCount(3);
+      return;
+    }
+    // title: nichts revealed
+    setEffRevealedSlotIdx(-1);
+    setEffRevealedAwardCount(0);
+    return;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, phase.kind, betSlots.length]);
+
   // 2026-05-13 (Wolf '7. Rahmen-Fix + End-Page-Cutoff'): Outer-padding +
   // COZY_CARD_BG-Gradient erzeugten einen sichtbaren lila „Rahmen" um Race-
   // Slide und schnitten gleichzeitig das Sieger-Treppchen seitlich ab.
@@ -894,8 +935,8 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             teams={s.teams}
             awardPoints={awardPoints}
             betSlots={betSlots}
-            revealedSlotIndex={phase.slotIndex}
-            revealedAwardCount={3}
+            revealedSlotIndex={effRevealedSlotIdx}
+            revealedAwardCount={effRevealedAwardCount}
             awards={s.endAwards ?? undefined}
             lang={lang}
           />
@@ -926,7 +967,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             awardPoints={awardPoints}
             betSlots={betSlots}
             revealedSlotIndex={-1}
-            revealedAwardCount={(phase.awardIndex + 1) as 1 | 2 | 3}
+            revealedAwardCount={effRevealedAwardCount}
             awards={s.endAwards ?? undefined}
             lang={lang}
           />
@@ -1478,10 +1519,19 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               size={'clamp(100px, 11cqw, 170px)'}
             />
             <div style={{
-              fontSize: 'clamp(24px, 2.6cqw, 40px)', fontWeight: 900,
-              color: team.color, textAlign: 'center', letterSpacing: '-0.01em',
+              width: '100%',
               animation: !isFlipped ? 'qqFRDrumroll 0.6s ease-in-out infinite' : 'none',
-            }}>{team.name}</div>
+            }}>
+              <TeamNameLabel
+                name={team.name}
+                fontSize="clamp(24px, 2.6cqw, 40px)"
+                color={team.color}
+                fontWeight={900}
+                maxLines={2}
+                shrinkAfter={14}
+                style={{ textAlign: 'center', letterSpacing: '-0.01em' }}
+              />
+            </div>
             <div style={{
               fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
               color: QQ_COLORS.slate400, fontStyle: 'italic',
@@ -1502,14 +1552,21 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             border: `3px solid ${team.color}`,
             boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
           <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} />
-          <div style={{
-            fontSize: 'clamp(32px, 3.4cqw, 56px)', fontWeight: 900,
-            color: team.color, textAlign: 'center', letterSpacing: '-0.01em',
-          }}>{team.name}</div>
+          <div style={{ width: '100%' }}>
+            <TeamNameLabel
+              name={team.name}
+              fontSize="clamp(32px, 3.4cqw, 56px)"
+              color={team.color}
+              fontWeight={900}
+              maxLines={2}
+              shrinkAfter={14}
+              style={{ textAlign: 'center', letterSpacing: '-0.01em' }}
+            />
+          </div>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, minWidth: 420 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
           {/* Disconnect-Fall: kein Tipp, neutraler Hinweis. */}
           {!targetTeam ? (
             <div style={{
@@ -1543,12 +1600,19 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 background: `${targetTeam.color}1a`,
                 border: `2.5px solid ${targetTeam.color}`,
                 animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
+                maxWidth: '100%', minWidth: 0,
               }}>
                 <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} />
-                <span style={{
-                  fontSize: 'clamp(26px, 2.6cqw, 40px)', fontWeight: 900,
-                  color: targetTeam.color,
-                }}>{targetTeam.name}</span>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <TeamNameLabel
+                    name={targetTeam.name}
+                    fontSize="clamp(26px, 2.6cqw, 40px)"
+                    color={targetTeam.color}
+                    fontWeight={900}
+                    maxLines={1}
+                    shrinkAfter={14}
+                  />
+                </div>
               </div>
               {isMutual && (
                 <div style={{

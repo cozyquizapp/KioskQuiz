@@ -18,6 +18,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useExpiry } from '../hooks/useExpiry';
 import { StandardInput, SubmitBtn } from './CozyQuizTeamInputs';
+import { qqCapOption } from '../cozyQuizShared';
 
 // ── Text input (Schaetzchen + Picture This fallback) ──────────────────────────
 export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnly, lang = 'de', timerEndsAt }: {
@@ -113,7 +114,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
       {opts.map((opt: string, i: number) => {
         const color = MUCHO_COLORS[i] ?? catColor;
         const isSelected = selected === i;
-        const label = lang === 'en' && optsEn[i] ? optsEn[i] : opt;
+        const label = qqCapOption(lang === 'en' && optsEn[i] ? optsEn[i] : opt);
         return (
           <button
             key={i}
@@ -222,7 +223,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
 
       {opts.map((opt: string, i: number) => {
         const color = ALLIN_COLORS[i] ?? catColor;
-        const label = lang === 'en' && optsEn[i] ? optsEn[i] : opt;
+        const label = qqCapOption(lang === 'en' && optsEn[i] ? optsEn[i] : opt);
         const pts = bets[i];
         return (
           <div key={i} style={{

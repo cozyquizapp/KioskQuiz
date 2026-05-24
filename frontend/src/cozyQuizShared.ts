@@ -18,6 +18,23 @@ import { QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from './qqShared';
 // ── Card-Theme ───────────────────────────────────────────────────────────────
 export const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
 
+// ── Quiz-Option-Normalisierung ───────────────────────────────────────────────
+/**
+ * Quiz-Drafts haben oft inkonsistente Capitalization in den Antworten
+ * (Wolf-Bug 2026-05-25: "Cricket / basketball / Hockey / tennis" gemischt).
+ * Erster Buchstabe wird auf Render-Zeit auf Großbuchstaben normalisiert.
+ *
+ * Edge-Cases: "iPhone", "pH-Wert", Emoji-Prefixes bleiben unverändert wenn
+ * der erste Buchstabe schon ein Großbuchstabe oder kein Buchstabe ist
+ * (z.B. Zahl, Emoji, Sonderzeichen).
+ */
+export function qqCapOption(text: string | undefined | null): string {
+  if (!text || text.length === 0) return text ?? '';
+  const first = text.charAt(0);
+  if (first === first.toUpperCase()) return text; // bereits groß / kein Buchstabe
+  return first.toUpperCase() + text.slice(1);
+}
+
 // ── Re-exports aus qqShared (zentraler Import-Pfad) ─────────────────────────
 export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
 export const CAT_ACCENT = QQ_CAT_ACCENT;

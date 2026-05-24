@@ -35,6 +35,7 @@ import {
 } from './CozyQuizTeamEmitInputs';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { qqCapOption } from '../cozyQuizShared';
 
 // Kleine Hash-Helper-Funktion (nur fuer deterministische Trost-Message-Auswahl, kein Crypto).
 function hashString(s: string): number {
@@ -106,7 +107,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     if (q && q.category === 'MUCHO' && q.options) {
       const idx = parseInt(myAnswer.text, 10);
       if (!isNaN(idx) && q.options[idx]) {
-        const optText = lang === 'en' && q.optionsEn?.[idx] ? q.optionsEn[idx] : q.options[idx];
+        const optText = qqCapOption(lang === 'en' && q.optionsEn?.[idx] ? q.optionsEn[idx] : q.options[idx]);
         displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
       }
     }
@@ -484,7 +485,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         if (q.category === 'MUCHO' && q.options) {
           const idx = parseInt(myAns.text, 10);
           if (!isNaN(idx) && q.options[idx]) {
-            const optText = lang === 'en' && q.optionsEn?.[idx] ? q.optionsEn[idx] : q.options[idx];
+            const optText = qqCapOption(lang === 'en' && q.optionsEn?.[idx] ? q.optionsEn[idx] : q.options[idx]);
             displayText = `${['A','B','C','D'][idx] ?? idx + 1}. ${optText}`;
           }
           isCorrect = q.correctOptionIndex != null && myAns.text === String(q.correctOptionIndex);
@@ -618,7 +619,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                       {isCorrect ? '✓' : ''}
                     </span>
                     <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: isCorrect ? QQ_COLORS.green400 : QQ_COLORS.slate200 }}>
-                      {opt}
+                      {qqCapOption(opt)}
                     </span>
                     <span style={{
                       fontWeight: 900, fontSize: 14,

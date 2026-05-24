@@ -29,6 +29,7 @@ import { getAvatarDisplay } from '../avatarSets';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
   CAT_ACCENT, CAT_BADGE_BG, CAT_GLOW, CAT_CUTOUTS, COZY_CARD_BG,
+  qqCapOption,
 } from '../cozyQuizShared';
 import { Fireflies } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -2254,7 +2255,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 // Option-Color statt Box+Keycap-Emoji.
                 const label = `${i + 1}`;
                 const optColor = accent;
-                const optText = lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt;
+                const optText = qqCapOption(lang === 'en' && q.optionsEn?.[i] ? q.optionsEn[i] : opt);
                 const highestForOpt = zvzHighestPerOption[i];
                 const highestIdsForOpt = new Set(highestForOpt?.teamIds ?? []);
                 // Top-Bets inkl. submittedAt fuer Tiebreaker-Anzeige

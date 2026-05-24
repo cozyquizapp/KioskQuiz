@@ -136,6 +136,7 @@ import {
   imgAnim, imgFilter, formatRevealedAnswer,
   CAT_BG, CAT_GLOW, CAT_CUTOUTS,
   COZY_CARD_BG as _COZY_CARD_BG_SHARED,
+  qqCapOption,
 } from '../cozyQuizShared';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
@@ -3528,7 +3529,7 @@ export function MuchoOptionsReveal({
         const isCorrect = showLock && i === correctOptionIndex;
         const isWrong = showLock && i !== correctOptionIndex;
         const optColor = MUCHO_COLORS[i] ?? QQ_COLORS.slate500;
-        const optText = lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt;
+        const optText = qqCapOption(lang === 'en' && optionsEn?.[i] ? optionsEn[i] : opt);
         const voterShow = shownVoterSet.has(i);
         // Voter pro Option vorberechnen — wir brauchen sie ausserhalb der Card
         const voters = answers

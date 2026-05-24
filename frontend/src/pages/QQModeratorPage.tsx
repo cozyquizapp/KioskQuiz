@@ -350,7 +350,8 @@ export default function QQModeratorPage() {
           && !!s.theme?.welcomeVideoUrl;
         delayMs = rIdx === 2 ? 16500 : escWelcomeWithVideo ? 18000 : 8000;
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 4 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        // 2026-05-24 (Wolf 'connections raus'): Connections-Rules-Slide entfaellt.
+        const totalSlides = 4 + ((s as any).cozyGamesEnabled ? 1 : 0);
         action = () => {
           if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emit('qq:rulesFinish', { roomCode });
           else emit('qq:rulesNext', { roomCode });
@@ -920,7 +921,8 @@ export default function QQModeratorPage() {
       if (s.phase === 'RULES') {
         // 2026-05-09 (Audit): 9 oder 10 Folien je nach connectionsEnabled.
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 4 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        // 2026-05-24 (Wolf 'connections raus'): Connections-Rules-Slide entfaellt.
+        const totalSlides = 4 + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) {
           emitRef.current('qq:rulesFinish', { roomCode });
         } else {
@@ -1097,7 +1099,8 @@ export default function QQModeratorPage() {
       playHotkeyFeedback();
       if (s.phase === 'RULES') {
         // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → 9 statt 10 / 8 statt 9.
-        const totalSlides = 4 + (s.connectionsEnabled !== false ? 1 : 0) + ((s as any).cozyGamesEnabled ? 1 : 0);
+        // 2026-05-24 (Wolf 'connections raus'): Connections-Rules-Slide entfaellt.
+        const totalSlides = 4 + ((s as any).cozyGamesEnabled ? 1 : 0);
         if ((s.rulesSlideIndex ?? 0) >= totalSlides - 1) emitRef.current('qq:rulesFinish', { roomCode });
         else emitRef.current('qq:rulesNext', { roomCode });
         return;
@@ -2194,19 +2197,17 @@ export default function QQModeratorPage() {
                   const QPP = 5;
                   const isEndOfPhase = nextIdx >= s.gamePhaseIndex * QPP;
                   const isLastPhase = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
-                  const goesToConnections = isLastPhase && s.connectionsEnabled !== false;
                   const isBeforeFinal = isEndOfPhase && (s.gamePhaseIndex + 1) === s.totalPhases;
-                  const label = goesToConnections
-                    ? '🔗 4×4 Finale starten'
-                    : isLastPhase
-                      ? '🏆 Spielende'
-                      : isBeforeFinal
-                        ? '⚡ Comeback-Phase'
-                        : isEndOfPhase
-                          ? `→ Runde ${s.gamePhaseIndex + 1}`
-                          : '→ Nächste Frage';
+                  // 2026-05-24 (Wolf 'connections raus'): kein 4×4-Branch mehr.
+                  const label = isLastPhase
+                    ? '🏆 Spielende'
+                    : isBeforeFinal
+                      ? '⚡ Comeback-Phase'
+                      : isEndOfPhase
+                        ? `→ Runde ${s.gamePhaseIndex + 1}`
+                        : '→ Nächste Frage';
                   return (
-                    <PrimaryBtn color={goesToConnections ? QQ_COLORS.brandPink : QQ_COLORS.green500} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                       {label}
                     </PrimaryBtn>
                   );
@@ -4236,18 +4237,13 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
 }) {
   // 2026-05-09 (Rules-Audit): 2 neue Slides ergänzt (Final-Tipp + Fair Play).
   // 2026-05-09 (Wolf): Neue-Fähigkeiten-Slide raus → R2/R3-Abilities werden
-  // beim Runden-Intro als Überraschung enthüllt. Slide-Count: 9 mit Finale, 8 ohne.
-  const hasFinale = s.connectionsEnabled !== false;
+  // beim Runden-Intro als Überraschung enthüllt.
+  // 2026-05-24 (Wolf 'connections raus'): hasFinale entfaellt, kein 4×4-Slide.
   const hasCozyGames = !!(s as any).cozyGamesEnabled;
-  // 2026-05-24 (Wolf-Live-Test): Comeback-Slide raus aus Rules (in-game
-  // erklaert). hasComeback bleibt fuer andere Mod-Logik, aber nicht mehr
-  // im Slide-Count.
-  const hasComeback = (s as any).comebackEnabled !== false;
-  void hasComeback;
   // 2026-05-24 (Wolf): 'So lauefts'-Slide raus — Inhalt in Ziel + Roadmap
   // konsolidiert (Mechanik-Bullet 'richtig → 1 Feld' auf Ziel, '4 Runden ·
   // 5 Kategorien' auf Roadmap). Base = 4 (Ziel/Roadmap/Joker/Fairplay).
-  const totalSlides = 4 + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
+  const totalSlides = 4 + (hasCozyGames ? 1 : 0);
   const idx = s.rulesSlideIndex ?? 0;
   const isWelcome = idx === -2;
   const isRulesIntro = idx === -1;
@@ -4261,7 +4257,6 @@ function RulesControls({ state: s, roomCode, emit, onStartGame }: {
     '⭐ Joker-Bonus',
     ...(hasCozyGames ? ['🪅 CozyGame'] : []),
     '🤝 Fair Play',
-    ...(hasFinale ? ['🧩 Großes Finale'] : []),
   ];
   const label = isWelcome
     ? '🎬 Willkommen'
@@ -5108,7 +5103,7 @@ function SetupView({
             ⚙ Erweiterte Optionen
             {!advancedOpen && (
               <span style={{ fontSize: 10, color: '#6b6555', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
-                · Finale 4×4 · Final-Wetten · Comeback · CozyGames · Reihenfolge · Bluffs · Avatar-Set · Sound-Volume · Bestenliste-Reset
+                · Spielmechanik · Reihenfolge · Bluffs · Avatar-Set · Sound-Volume · Bestenliste-Reset
               </span>
             )}
           </span>
@@ -5116,65 +5111,39 @@ function SetupView({
 
         {advancedOpen && (
           <div style={{ padding: '4px 18px 18px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        {/* Finalrunde 4×4 Connections — 2026-05-20 (Setup-Audit P1):
-            nur bei phases===4 zeigen. Bei 3-Runden-Quizzes ist Connections
-            irrelevant (kein „nach Runde 4"). */}
-        {phases === 4 && (
-          <div style={settingRow}>
-            <span style={settingLabel}>🔗 Finale (4×4)</span>
-            <div style={segGroup}>
-              <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: true })} style={segPill(s.connectionsEnabled !== false, QQ_COLORS.brandPink)}>An</button>
-              <button onClick={() => emit('qq:setQuizOptions', { roomCode, connectionsEnabled: false })} style={segPill(s.connectionsEnabled === false)}>Aus</button>
-            </div>
-            <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-              {s.connectionsEnabled !== false ? '4×4 nach Runde 4' : 'Direkt zu Game Over nach Runde 4'}
-            </span>
-          </div>
-        )}
+        {/* 2026-05-24 (Wolf 'connections nutze ich nicht mehr, kann raus'):
+            Connections-4×4-Toggle entfernt. Backend ignoriert connectionsEnabled
+            auch wenn aus altem Draft true (qqRooms.ts End-of-Phase-Logik). */}
 
-        {/* Final-Wetten (Wolf 2026-05-09): vor letzter Runde tippen Teams Felder
-            auf andere Teams. Bonus-Coins beim Final-Reveal. Toggle live nur im
-            Setup änderbar — danach läuft Backend automatisch via Space. */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🪙 Final-Wetten</span>
-          <div style={segGroup}>
-            <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: true })} style={segPill(!!s.finalWagerEnabled, QQ_COLORS.brandPinkMid)}>An</button>
-            <button onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: false })} style={segPill(!s.finalWagerEnabled)}>Aus</button>
+        {/* 2026-05-24 (Wolf 'verdichten'): 3 Spielmechanik-Toggles (Final-
+            Wetten, Comeback, CozyGames) in EINER Pill-Row statt 3 × 80px-
+            Blocks. Tooltip per Hover zeigt die Erklaerung. Spart ~190px
+            Vertikal-Hoehe im Advanced-Drawer. */}
+        <div style={{ ...settingRow, alignItems: 'flex-start' }}>
+          <span style={settingLabel}>🎲 Spielmechanik</span>
+          <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <button
+              onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: !s.finalWagerEnabled })}
+              style={segPill(!!s.finalWagerEnabled, QQ_COLORS.brandPinkMid)}
+              title={s.finalWagerEnabled
+                ? '🪙 Final-Wetten AN — Wager-Phase vor Final-Runde.\nKlick zum Deaktivieren.'
+                : '🪙 Final-Wetten AUS.\nKlick zum Aktivieren: Wager-Phase vor Final-Runde.'}
+            >🪙 Wager</button>
+            <button
+              onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: !((s as any).comebackEnabled !== false) })}
+              style={segPill((s as any).comebackEnabled !== false, QQ_COLORS.brandPinkMid)}
+              title={(s as any).comebackEnabled !== false
+                ? '🔄 Comeback AN — letztes Team kann via Mehr-oder-Weniger Felder klauen.\nKlick zum Deaktivieren.'
+                : '🔄 Comeback AUS — direkt zur Final-Runde.\nKlick zum Aktivieren.'}
+            >🔄 Comeback</button>
+            <button
+              onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: !(s as any).cozyGamesEnabled })}
+              style={segPill(!!(s as any).cozyGamesEnabled, QQ_COLORS.brandPink)}
+              title={(s as any).cozyGamesEnabled
+                ? `🪅 CozyGames AN — ${((s as any).cozyGamesPool ?? []).length} Spiele im Rad, manueller Trigger via Pause-Button.\nKlick zum Deaktivieren.`
+                : '🪅 CozyGames AUS.\nKlick zum Aktivieren: analoge Mini-Spiele zwischen Runden.'}
+            >🪅 CozyGames</button>
           </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {s.finalWagerEnabled ? 'Wager-Phase vor Final-Runde' : 'Spiel ohne Final-Wetten'}
-          </span>
-        </div>
-
-        {/* Comeback — 2026-05-20 (Setup-Audit P0.5): Label-Klartext statt
-            kryptisches „H/L". Letztes Team holt auf via Mehr-oder-Weniger-
-            Mini-Game vor Final-Runde. */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🔄 Comeback (Mehr-oder-Weniger)</span>
-          <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: true })} style={segPill((s as any).comebackEnabled !== false, QQ_COLORS.brandPinkMid)}>An</button>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: false })} style={segPill((s as any).comebackEnabled === false)}>Aus</button>
-          </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {(s as any).comebackEnabled !== false
-              ? 'Letztes Team kann via Mehr-oder-Weniger Felder klauen'
-              : 'Kein Comeback — direkt zur Final-Runde'}
-          </span>
-        </div>
-
-        {/* CozyGames (Wolf 2026-05-17): analoge Mini-Spiele nach Runde 1 +
-            Final-Slot. Pool wird im Builder gesetzt, hier nur Live-On/Off-Toggle. */}
-        <div style={settingRow}>
-          <span style={settingLabel}>🪅 CozyGames</span>
-          <div style={segGroup}>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: true })} style={segPill(!!(s as any).cozyGamesEnabled, QQ_COLORS.brandPink)}>An</button>
-            <button onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: false })} style={segPill(!(s as any).cozyGamesEnabled)}>Aus</button>
-          </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
-            {(s as any).cozyGamesEnabled
-              ? `${((s as any).cozyGamesPool ?? []).length} Spiele im Rad — manueller Trigger via Pause-Button`
-              : 'Quiz ohne CozyGames'}
-          </span>
         </div>
 
         {/* Reihenfolge der Fragen innerhalb der Runde */}

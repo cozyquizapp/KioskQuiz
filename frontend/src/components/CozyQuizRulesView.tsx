@@ -370,13 +370,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   useRuleOverridesVersion();
   const totalPhases = (s.totalPhases ?? 4) as 3 | 4;
   const allSlides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
-  // 2026-05-09 (Wolf): Slides mit requiresConnections (z.B. 4×4-Finale) nur
-  // zeigen wenn der Mod das Connections-Feature aktiviert hat. Comeback bleibt.
-  // 2026-05-17: Analog für requiresCozyGames.
+  // 2026-05-24 (Wolf 'connections raus'): requiresConnections-Slides werden
+  // ueberall ausgeblendet (Feature deaktiviert). Comeback + CozyGames bleiben.
   const cgEnabled = !!(s as any).cozyGamesEnabled;
   const cbEnabled = (s as any).comebackEnabled !== false;
   const slides = allSlides.filter(sl => {
-    if (sl.requiresConnections && s.connectionsEnabled === false) return false;
+    if (sl.requiresConnections) return false;
     if (sl.requiresCozyGames && !cgEnabled) return false;
     if (sl.requiresComeback && !cbEnabled) return false;
     return true;

@@ -3702,14 +3702,12 @@ export function qqNextQuestion(room: QQRoomState): void {
       // separate Mechanik, soll ggf. in Bunte-Tüte wandern).
       if (room.finalWagerEnabled && room.finalRoundScoreSnapshot !== null && !room.finalBetResolution) {
         qqResolveFinalBets(room);
-      } else if (room.connectionsEnabled) {
-        // 2026-05-05 (Wolf-Builder): wenn Draft custom Connections hat, nutzen.
-        const payload = room.connectionsPayload ?? QQ_CONNECTIONS_FALLBACK_PAYLOAD;
-        qqConnectionsStart(room, payload, {
-          durationSec: room.connectionsTimerSec,
-          maxFailedAttempts: room.connectionsMaxFails,
-        });
       } else {
+        // 2026-05-24 (Wolf 'connections nutze ich nicht mehr, kann raus'):
+        // Connections-4×4-Branch deaktiviert. connectionsEnabled-Flag im
+        // State + connectionsPayload bleiben fuer alte Drafts existent, werden
+        // aber ignoriert. qqConnectionsStart/AI/Phasen-Code rottet als Dead-
+        // Code; spaeter komplett schlachtbar.
         detectTieBreakerCandidates(room);
         room.phase = 'GAME_OVER';
       }
@@ -4255,16 +4253,12 @@ export function qqStartRules(room: QQRoomState): void {
 export function qqRulesNext(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
   // 2026-05-10 (Audit-P0 State-Race): Max-Index-Clamp.
-  // 2026-05-17 (Wolf-Bug 'finaltipp slide hängt'): cozyGamesEnabled hat
-  // eine eigene Rules-Slide → Slide-Count entsprechend +1 wenn aktiv.
-  // Vorher wurde max-Index zu niedrig berechnet → Backend silent no-op bei
-  // Final-Tipp wenn CG an + Connections aus.
-  const hasFinale = (room as any).connectionsEnabled !== false;
+  // 2026-05-24 (Wolf 'connections raus'): hasFinale entfaellt — kein 4×4-Slide.
   const hasCozyGames = !!(room as any).cozyGamesEnabled;
   // 2026-05-17: Comeback-Slide ausblenden wenn Toggle aus.
   const hasComeback = (room as any).comebackEnabled !== false;
   // Base 7 (war 8 inkl. Comeback) + jeweils +1 für aktive Module
-  const totalSlides = 7 + (hasComeback ? 1 : 0) + (hasFinale ? 1 : 0) + (hasCozyGames ? 1 : 0);
+  const totalSlides = 7 + (hasComeback ? 1 : 0) + (hasCozyGames ? 1 : 0);
   const maxIndex = totalSlides - 1;
   if (room.rulesSlideIndex >= maxIndex) return; // silent no-op statt unendlich
   room.rulesSlideIndex += 1;

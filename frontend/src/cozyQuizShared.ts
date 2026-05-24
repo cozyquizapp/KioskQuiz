@@ -32,13 +32,12 @@ export const CAT_BG: Record<string, string> = {
 };
 
 // ── Category-Glow (Question-Card Halo pro Kategorie) ────────────────────────
-export const CAT_GLOW: Record<string, string> = {
-  SCHAETZCHEN:   'rgba(234,179,8,0.45)',
-  MUCHO:         'rgba(37,99,235,0.45)',
-  BUNTE_TUETE:   'rgba(220,38,38,0.45)',
-  ZEHN_VON_ZEHN: 'rgba(5,150,105,0.42)',
-  CHEESE:        'rgba(124,58,237,0.45)',
-};
+// 2026-05-24 (Refactor #4): derived aus shared/qqCategoryTheme.ts.
+import { QQ_CATEGORY_THEME } from '@shared/qqCategoryTheme';
+export const CAT_GLOW: Record<string, string> = Object.fromEntries(
+  (Object.keys(QQ_CATEGORY_THEME) as Array<keyof typeof QQ_CATEGORY_THEME>)
+    .map(cat => [cat, QQ_CATEGORY_THEME[cat].glow])
+);
 
 // ── Decorative Corner-Emojis pro Kategorie ──────────────────────────────────
 // Positions avoid the top-right timer (at top:16px right:48px) and top-left

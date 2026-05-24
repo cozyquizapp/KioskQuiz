@@ -6,6 +6,7 @@ import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig,
 } from '../../../shared/quarterQuizTypes';
+import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -3519,17 +3520,11 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
   const text = (lang === 'en' && q.textEn) ? q.textEn : q.text;
   const answer = (lang === 'en' && q.answerEn) ? q.answerEn : q.answer;
 
-  // Kategorie-Badge-Farbe
-  const catColor: Record<string, string> = {
-    SCHAETZCHEN: '#3B82F6',
-    MUCHO: '#22C55E',
-    ZEHN_VON_ZEHN: '#A855F7',
-    CHEESE: '#EC4899',
-    BUNTE_TUETE: '#EF4444',
-    BUZZER: '#F97316',
-    PICTURE_THIS: '#06B6D4',
-  };
-  const accent = catColor[q.category] ?? '#94A3B8';
+  // 2026-05-24 (Refactor #4): kanonische Kategorie-Farben aus
+  // shared/qqCategoryTheme.ts. Vorher inline-Map mit komplett anderen Farben
+  // (SCHAETZCHEN war hier blau, ueberall sonst gold) → Mod sah andere Farbe
+  // als Beamer fuer dieselbe Frage.
+  const accent = qqCategoryAccent(q.category);
 
   // Kategorie-Spezifik
   const extras: { label: string; value: string }[] = [];

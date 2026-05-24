@@ -1027,18 +1027,16 @@ export const QQ_BEAMER_CSS = `
   }
 `;
 
-export const QQ_CAT_BADGE_BG: Record<string, string> = {
-  SCHAETZCHEN:   'linear-gradient(135deg, #A16207, #EAB308)',
-  MUCHO:         'linear-gradient(135deg, #1E3A8A, #2563EB)',
-  BUNTE_TUETE:   'linear-gradient(135deg, #991B1B, #DC2626)',
-  ZEHN_VON_ZEHN: 'linear-gradient(135deg, #065F46, #059669)',
-  CHEESE:        'linear-gradient(135deg, #4C1D95, #7C3AED)',
-};
+// 2026-05-24 (Refactor #4): Maps derived aus shared/qqCategoryTheme.ts
+// (Single-Source-of-Truth). Bei neuer Kategorie: nur das Theme-File anfassen.
+import { QQ_CATEGORY_THEME, qqCategoryBadgeGradient } from '@shared/qqCategoryTheme';
 
-export const QQ_CAT_ACCENT: Record<string, string> = {
-  SCHAETZCHEN:   '#EAB308',
-  MUCHO:         '#60A5FA',
-  BUNTE_TUETE:   '#F87171',
-  ZEHN_VON_ZEHN: '#34D399',
-  CHEESE:        '#A78BFA',
-};
+export const QQ_CAT_BADGE_BG: Record<string, string> = Object.fromEntries(
+  (Object.keys(QQ_CATEGORY_THEME) as Array<keyof typeof QQ_CATEGORY_THEME>)
+    .map(cat => [cat, qqCategoryBadgeGradient(cat)])
+);
+
+export const QQ_CAT_ACCENT: Record<string, string> = Object.fromEntries(
+  (Object.keys(QQ_CATEGORY_THEME) as Array<keyof typeof QQ_CATEGORY_THEME>)
+    .map(cat => [cat, QQ_CATEGORY_THEME[cat].accent])
+);

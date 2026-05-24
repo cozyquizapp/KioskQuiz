@@ -5838,29 +5838,27 @@ export function qqResolveFinalBets(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
-/** 2026-05-09 (Wolf End-Flow): Berechnet die Anzahl der End-Flow-Steps in
- *  FINAL_REVEAL für N Teams.
- *  - 1 Step: Title-Hold (0)
- *  - 1 Step: Grid-Reveal (1)
- *  - N Steps: Bet-Reveal pro Team (2..N+1)
- *  - 6 Steps: 3 Awards × 2 (Card → Avatar+Punkt) (N+2..N+7)
- *  - N Steps: Ranking-Slides last→first (N+8..2N+7)
- *  - Plus 1 final step der zur THANKS-Phase wechselt (2N+8)
- *  Total = 2N + 9 (inkl. Final-Step der Phase wechselt). */
+/** 2026-05-24 (Wolf Race-Redesign Eurovision-Style): Step-Mapping ueberarbeitet.
+ *  Grid-Reveal-Slide raus, Awards kommen VOR Bets, Bet-Slides bekommen eine
+ *  persistente Tabelle dahinter (Eurovision-12-Points-Feel).
+ *  NEW Mapping:
+ *   - 0 = title
+ *   - 1 = awards-overview
+ *   - 2 = awards-reveal
+ *   - 3..betSlotsCount+2 = bet-slots (mit persistenter Leaderboard)
+ *   - betSlotsCount+3 = race-final
+ *   - betSlotsCount+4 = → THANKS
+ *  Total = betSlotsCount + 4.
+ *  Frontend FinalRevealView (decodeFinalStep) muss dieselbe Reihenfolge haben.
+ */
 export function qqFinalRevealMaxStep(room: QQRoomState): number {
-  // 2026-05-10 (Wolf 'BetReveal Variante D — Anti-Shaming'):
-  // betSlotsCount statt N. Teams ohne Bet werden komplett übersprungen,
-  // 0-Bonus-Teams sammeln in 1 Group-Slide. Frontend FinalRevealView muss
-  // dieselbe Logik haben (siehe useMemo betSlots in QQBeamerPage.tsx).
   const teams = Object.values(room.teams);
   const res = room.finalBetResolution ?? {};
   const betted = teams.filter(t => res[t.id]?.targetTeamId);
   const zeroExists = betted.some(t => (res[t.id]?.totalBonus ?? 0) === 0);
   const positiveCount = betted.filter(t => (res[t.id]?.totalBonus ?? 0) > 0).length;
   const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
-  // Mapping: 0=title, 1=grid, 2..betSlotsCount+1=bet, +2=awards-overview,
-  // +3=awards-reveal, +4=race-final, max = betSlotsCount+5 → THANKS.
-  return betSlotsCount + 5;
+  return betSlotsCount + 4;
 }
 
 // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ──────────────────────────────

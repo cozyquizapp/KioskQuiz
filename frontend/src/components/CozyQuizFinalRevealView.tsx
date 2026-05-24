@@ -374,12 +374,13 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 //                 Mitte-Treppchen + Konfetti + Climax-Sound
 //   max = N+7 → THANKS
 
+// 2026-05-24 (Wolf Race-Redesign Eurovision-Style): Grid-Reveal komplett
+// raus, Awards kommen VOR Bets, Bet-Slides mit persistenter Tabelle dahinter.
 type FinalStep =
   | { kind: 'title' }
-  | { kind: 'grid' }
-  | { kind: 'bet'; slotIndex: number } // Index in betSlots-Array
   | { kind: 'awards-overview' }        // alle 3 BG-Cards mit Erklärung
   | { kind: 'awards-reveal' }          // Auto-Choreo: 3 Cards gestaffelt flippen
+  | { kind: 'bet'; slotIndex: number } // Index in betSlots-Array
   | { kind: 'race-final' };
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
@@ -400,12 +401,13 @@ type RankingEntry = {
 // danach einzelne Positiv-Teams aufsteigend. Teams ohne Bet komplett
 // übersprungen. Backend qqFinalRevealMaxStep hat dieselbe Logik.
 function decodeFinalStep(step: number, betSlotsCount: number): FinalStep {
+  // 2026-05-24 (Wolf Race-Redesign): NEW order = title → awards-overview →
+  // awards-reveal → bet-slots (mit persistenter Tabelle) → race-final.
+  // Grid-Reveal als eigene Step-Slide ist raus.
   if (step <= 0) return { kind: 'title' };
-  if (step === 1) return { kind: 'grid' };
-  if (step <= 1 + betSlotsCount) return { kind: 'bet', slotIndex: step - 2 };
-  const afterBets = step - (1 + betSlotsCount);
-  if (afterBets === 1) return { kind: 'awards-overview' };
-  if (afterBets === 2) return { kind: 'awards-reveal' };
+  if (step === 1) return { kind: 'awards-overview' };
+  if (step === 2) return { kind: 'awards-reveal' };
+  if (step <= 2 + betSlotsCount) return { kind: 'bet', slotIndex: step - 3 };
   return { kind: 'race-final' };
 }
 
@@ -537,6 +539,134 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
   );
 }
 
+// ─── FinalLeaderboard ───────────────────────────────────────────────────────
+// 2026-05-24 (Wolf Race-Redesign Eurovision-Style): persistente Tabelle die
+// waehrend der Bet-Phase unter der zentrierten Bet-Card mitlaeuft. Jede Zeile
+// = ein Team mit current-total (Grid + Awards + bereits enthuellte Bet-Slots).
+// Wenn ein neuer Bet-Slot enthuellt wird, animiert sich die betroffene Zeile
+// in ihre neue Position (FLIP-style via CSS transition auf transform).
+function FinalLeaderboard({
+  teams, awardPoints, betSlots, revealedSlotIndex, lang,
+}: {
+  teams: QQTeam[];
+  awardPoints: Record<string, number>;
+  betSlots: Array<
+    | { kind: 'zero-group'; teams: QQTeam[] }
+    | { kind: 'positive'; team: QQTeam; bonus: number }
+  >;
+  revealedSlotIndex: number;
+  lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+
+  // Per-Team kumulative Bet-Bonus aus Slots [0..revealedSlotIndex].
+  const revealedBetBonus: Record<string, number> = {};
+  for (const t of teams) revealedBetBonus[t.id] = 0;
+  for (let i = 0; i <= revealedSlotIndex; i++) {
+    const slot = betSlots[i];
+    if (!slot) continue;
+    if (slot.kind === 'positive') {
+      revealedBetBonus[slot.team.id] = (revealedBetBonus[slot.team.id] ?? 0) + slot.bonus;
+    }
+    // zero-group veraendert keine Punkte.
+  }
+
+  // Welches Team wird in *diesem* Slot enthuellt? Highlight + Glow.
+  const focusSlot = betSlots[revealedSlotIndex];
+  const focusTeamId = focusSlot?.kind === 'positive' ? focusSlot.team.id : null;
+
+  // Sortierte Reihenfolge (current standings).
+  const rows = teams
+    .map(t => ({
+      team: t,
+      base: t.largestConnected ?? 0,
+      awards: awardPoints[t.id] ?? 0,
+      bet: revealedBetBonus[t.id] ?? 0,
+      total: (t.largestConnected ?? 0) + (awardPoints[t.id] ?? 0) + (revealedBetBonus[t.id] ?? 0),
+    }))
+    .sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      return a.team.name.localeCompare(b.team.name);
+    });
+
+  const ROW_H = 56; // px, bestimmt translateY-Step
+  return (
+    <div style={{
+      width: '100%', maxWidth: 1100, margin: '0 auto',
+      padding: 'clamp(12px, 1.4cqh, 20px) clamp(16px, 2cqw, 32px)',
+      display: 'flex', flexDirection: 'column', gap: 6,
+      borderTop: '1px solid rgba(255,255,255,0.08)',
+    }}>
+      <div style={{
+        display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+        fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 800,
+        color: '#94A3B8', textTransform: 'uppercase', letterSpacing: '0.16em',
+        marginBottom: 4,
+      }}>
+        <span>{de ? 'Aktueller Stand' : 'Current standings'}</span>
+        <span style={{ display: 'flex', gap: 18 }}>
+          <span style={{ color: '#94A3B8' }}>{de ? 'Brett' : 'Grid'}</span>
+          <span style={{ color: '#FBBF24' }}>{de ? 'Awards' : 'Awards'}</span>
+          <span style={{ color: '#22C55E' }}>{de ? 'Tipp' : 'Bet'}</span>
+          <span style={{ color: '#F1F5F9' }}>{de ? 'Total' : 'Total'}</span>
+        </span>
+      </div>
+      <div style={{ position: 'relative', height: rows.length * ROW_H }}>
+        {rows.map((r, idx) => {
+          const isFocus = r.team.id === focusTeamId;
+          return (
+            <div
+              key={r.team.id}
+              style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: ROW_H,
+                transform: `translateY(${idx * ROW_H}px)`,
+                transition: 'transform 0.7s cubic-bezier(0.34, 1.36, 0.64, 1)',
+                display: 'flex', alignItems: 'center', gap: 12,
+                padding: '0 14px',
+                borderRadius: 12,
+                background: isFocus
+                  ? `linear-gradient(135deg, ${r.team.color}33, ${r.team.color}10)`
+                  : 'rgba(255,255,255,0.03)',
+                border: isFocus
+                  ? `2px solid ${r.team.color}`
+                  : '1px solid rgba(255,255,255,0.06)',
+                boxShadow: isFocus ? `0 0 28px ${r.team.color}55` : 'none',
+              }}
+            >
+              <div style={{
+                fontSize: 18, fontWeight: 900,
+                color: idx === 0 ? '#FBBF24' : '#94A3B8',
+                minWidth: 28, textAlign: 'center',
+              }}>{idx + 1}</div>
+              <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={36} />
+              <div style={{
+                flex: 1, fontSize: 18, fontWeight: 800, color: r.team.color,
+              }}>{r.team.name}</div>
+              <div style={{
+                display: 'flex', gap: 18, alignItems: 'center',
+                fontSize: 16, fontWeight: 800, fontVariantNumeric: 'tabular-nums',
+              }}>
+                <span style={{ color: '#94A3B8', minWidth: 24, textAlign: 'right' }}>{r.base}</span>
+                <span style={{ color: '#FBBF24', minWidth: 24, textAlign: 'right' }}>
+                  {r.awards > 0 ? `+${r.awards}` : '·'}
+                </span>
+                <span style={{ color: '#22C55E', minWidth: 32, textAlign: 'right' }}>
+                  {r.bet > 0 ? `+${r.bet}` : '·'}
+                </span>
+                <span style={{
+                  color: isFocus ? r.team.color : '#F1F5F9',
+                  minWidth: 36, textAlign: 'right',
+                  fontSize: 20, fontWeight: 900,
+                }}>{r.total}</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const step = s.finalRevealStep ?? 0;
@@ -603,8 +733,9 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 
     return { betSlots, cellsByTeam, awardPoints, finalRanking };
   }, [s.teams, s.grid, s.finalBetResolution, s.endAwards]);
-  // awardPoints currently unused outside useMemo — bleibt drin für Future-Use
-  void awardPoints;
+  // cellsByTeam war fuer GridRevealSlide, das nach Race-Redesign 2026-05-24
+  // raus ist. awardPoints jetzt fuer FinalLeaderboard waehrend Bet-Phase.
+  void cellsByTeam;
 
   const phase = decodeFinalStep(step, betSlots.length);
 
@@ -617,8 +748,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   // Phasen mit Card-Layouts (title, bet) behalten die safe-margin.
   const fullBleed = phase.kind === 'race-final'
     || phase.kind === 'awards-overview'
-    || phase.kind === 'awards-reveal'
-    || phase.kind === 'grid';
+    || phase.kind === 'awards-reveal';
 
   return (
     <div style={{
@@ -631,14 +761,27 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <FinalRevealSharedKeyframes />
       {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
-      {phase.kind === 'grid' && <GridRevealSlide state={s} cellsByTeam={cellsByTeam} lang={lang} />}
       {phase.kind === 'bet' && (
-        <BetSlotTransition
-          slotIndex={phase.slotIndex}
-          slot={betSlots[phase.slotIndex]}
-          state={s}
-          lang={lang}
-        />
+        <div style={{
+          flex: 1, width: '100%',
+          display: 'flex', flexDirection: 'column', minHeight: 0,
+        }}>
+          <div style={{ flex: 1, display: 'flex', minHeight: 0 }}>
+            <BetSlotTransition
+              slotIndex={phase.slotIndex}
+              slot={betSlots[phase.slotIndex]}
+              state={s}
+              lang={lang}
+            />
+          </div>
+          <FinalLeaderboard
+            teams={s.teams}
+            awardPoints={awardPoints}
+            betSlots={betSlots}
+            revealedSlotIndex={phase.slotIndex}
+            lang={lang}
+          />
+        </div>
       )}
       {/* 2026-05-19 (Wolf 'special awards kommen rein und dann direkt nochmal'):
           Vorher 2 separate JSX-Mounts (closed vs auto-reveal) → bei Phase-

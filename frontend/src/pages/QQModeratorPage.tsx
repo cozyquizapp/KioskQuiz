@@ -663,13 +663,12 @@ export default function QQModeratorPage() {
         // bekam 3.2s Ranking-Delay und wurde mittendrin abgebrochen → Wolf
         // sah nur Sieger-Slide für 1-2s.
         //
-        // Schema:
+        // 2026-05-24 (Wolf Race-Redesign Eurovision-Style):
         //   step 0           → title          (1.5s)
-        //   step 1           → grid           (5.5s, Größtes-Gebiet-Reveal)
-        //   step 2..B+1      → bet            (3s, Zero-Group-Slot 4.5s)
-        //   step B+2         → awards-overview (2.5s)
-        //   step B+3         → awards-reveal  (8.5s, 3-Card-Cascade)
-        //   step B+4         → race-final     (~20+2N s Choreo + 4s Hold)
+        //   step 1           → awards-overview (2.5s)
+        //   step 2           → awards-reveal  (Mod-manuell, kein Auto)
+        //   step 3..B+2      → bet            (3s, Zero-Group-Slot 4.5s)
+        //   step B+3         → race-final     (~20+2N s Choreo + 4s Hold)
         // Wobei B = betSlotsCount (Zero-Group = 1 Slot, sonst pro Positiv-Team).
         const N = s.teams.length;
         const step = (s as any).finalRevealStep ?? 0;
@@ -681,22 +680,18 @@ export default function QQModeratorPage() {
         if (step <= 0) {
           delayMs = 1500;
         } else if (step === 1) {
-          delayMs = 5500;
-        } else if (step <= 1 + betSlotsCount) {
-          // Zero-Group ist (falls vorhanden) der erste Bet-Slot.
-          const slotIdx = step - 2;
-          const isZeroSlot = zeroExists && slotIdx === 0;
-          delayMs = isZeroSlot ? 4500 : 3000;
-        } else if (step === 2 + betSlotsCount) {
           delayMs = 2500; // awards-overview
-        } else if (step === 3 + betSlotsCount) {
-          // 2026-05-19 (Wolf 'special awards werden sehr schnell weitergeskippt'):
-          // Autoplay deaktiviert (delayMs=0 + null action = kein Auto-Advance).
-          // Wolf moderiert die 3 Awards manuell mit Space — kein Time-Pressure.
+        } else if (step === 2) {
+          // awards-reveal: Wolf moderiert manuell (Live-Test 2026-05-19).
           delayMs = 0;
           break;
+        } else if (step <= 2 + betSlotsCount) {
+          // Bet-Slot. Zero-Group (falls vorhanden) ist der erste.
+          const slotIdx = step - 3;
+          const isZeroSlot = zeroExists && slotIdx === 0;
+          delayMs = isZeroSlot ? 4500 : 3000;
         } else {
-          // race-final (step === 4 + betSlotsCount). RaceFinalSlide-Choreo:
+          // race-final (step === 3 + betSlotsCount). RaceFinalSlide-Choreo:
           // countdown 3.5s + race-hold 5s + (N-1)×2s falls + p1-solo 4s +
           // drift 1.5s + anticipation 2s + podium-rises 2.5s + slowmo 1.5s
           // = 20 + 2N Sekunden bis 'finish'-Phase + 4s Konfetti-Hold.
@@ -1613,9 +1608,13 @@ export default function QQModeratorPage() {
                     Mod-Button, nur das Info-Panel weiter unten. Space wurde global
                     durch line 992 emittiert, war aber visuell unsichtbar. */}
                 {s.phase === 'FINAL_REVEAL' && (() => {
-                  const N = s.teams.length;
+                  // 2026-05-24 Race-Redesign: max = betSlotsCount + 4.
+                  const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
+                  const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
+                  const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
+                  const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
                   const step = (s as any).finalRevealStep ?? 0;
-                  const max = 2 * N + 8;
+                  const max = betSlotsCount + 4;
                   const isLast = step >= max;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
@@ -3466,29 +3465,26 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       )}
 
       {s.phase === 'FINAL_REVEAL' && (() => {
-        // 2026-05-09 (Wolf-End-Flow): Multi-Step-Choreo. Status zeigt aktuellen
-        // Step + Vorschau auf nächsten. N Teams = 2N+8 max steps.
-        const N = s.teams.length;
+        // 2026-05-24 (Wolf Race-Redesign): Mapping = title → awards-overview →
+        // awards-reveal → bet-slots → race-final. Grid-Step raus.
+        const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
+        const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
+        const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
+        const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
         const step = s.finalRevealStep ?? 0;
         const labelFor = (st: number): string => {
           if (st <= 0) return '0 · Title-Hold „Die Auflösung"';
-          if (st === 1) return '1 · Grid-Reveal (größtes Cluster Highlight)';
-          if (st <= 1 + N) {
-            const ti = st - 2;
-            return `${st} · Bet-Reveal Team ${ti + 1}/${N} (aufsteigend nach Bonus)`;
+          if (st === 1) return '1 · 🏅 Special Awards Overview (3 Cards)';
+          if (st === 2) return '2 · 🏅 Awards Reveal (Mod-manuell, 3 Flips)';
+          if (st <= 2 + betSlotsCount) {
+            const slotIdx = st - 3;
+            const isZeroFirst = zeroExists && slotIdx === 0;
+            if (isZeroFirst) return `${st} · 🎰 Bet-Zero-Group (0-Bonus-Tipps)`;
+            return `${st} · 🎰 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Tabelle climbing)`;
           }
-          const ab = st - (1 + N);
-          if (ab === 1) return `${st} · 🐢 Underdog Card (Trommelwirbel)`;
-          if (ab === 2) return `${st} · 🐢 Underdog Reveal (+1)`;
-          if (ab === 3) return `${st} · 🦝 Meisterklauer Card`;
-          if (ab === 4) return `${st} · 🦝 Meisterklauer Reveal (+1)`;
-          if (ab === 5) return `${st} · ⚡ Speedy Card`;
-          if (ab === 6) return `${st} · ⚡ Speedy Reveal (+1)`;
-          const rk = ab - 7;
-          const place = N - rk;
-          return `${st} · Ranking #${place} (${rk === 0 ? 'last' : rk === N - 1 ? '🥇 Sieger' : ''})`;
+          return `${st} · 🏁 Race-Final + Podium`;
         };
-        const max = 2 * N + 8;
+        const max = betSlotsCount + 4;
         const isLast = step >= max;
         const next = isLast ? '→ THANKS' : labelFor(step + 1);
         return (

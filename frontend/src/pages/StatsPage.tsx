@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { fetchLeaderboard, fetchQuestionStat } from '../api';
 
 type RunEntry = { quizId: string; date: string; winners: string[]; scores?: Record<string, number> };
@@ -236,11 +237,29 @@ const StatsPage: React.FC = () => {
                               {new Date(r.playedAt).toLocaleString('de-DE')} · Raum {r.roomCode} · {r.phases} Runden · {r.language}
                             </div>
                           </div>
-                          {r.winner && (
-                            <div style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, color: '#F59E0B', whiteSpace: 'nowrap' }}>
-                              🏆 {r.winner}
-                            </div>
-                          )}
+                          <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
+                            {r.winner && (
+                              <div style={{ background: 'rgba(245,158,11,0.15)', border: '1px solid rgba(245,158,11,0.3)', borderRadius: 8, padding: '4px 10px', fontSize: 12, fontWeight: 800, color: '#F59E0B', whiteSpace: 'nowrap' }}>
+                                🏆 {r.winner}
+                              </div>
+                            )}
+                            <Link
+                              to={`/recap/${r.id}`}
+                              style={{
+                                background: 'rgba(167,139,250,0.15)',
+                                border: '1px solid rgba(167,139,250,0.4)',
+                                borderRadius: 8,
+                                padding: '4px 10px',
+                                fontSize: 12,
+                                fontWeight: 800,
+                                color: '#A78BFA',
+                                whiteSpace: 'nowrap',
+                                textDecoration: 'none',
+                              }}
+                            >
+                              📊 Recap
+                            </Link>
+                          </div>
                         </div>
                         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
                           {sorted.map((t, i) => (

@@ -9702,6 +9702,39 @@ app.get('/api/qq/summary/by-id/:gameId', async (req, res) => {
   }
 });
 
+// ── QQ Recap (Mod-only Detail-View, 2026-05-24 Wolf-Live-Test #9) ────────────
+// Liefert ALLES was im Game-Result steckt: questionHistory, full grid,
+// teamStats. Mod-Reflexions-Tool, nicht für Spieler gedacht.
+app.get('/api/qq/recap/:gameId', async (req, res) => {
+  try {
+    const { gameId } = req.params;
+    const results = await getQQGameResults(200);
+    const hit: any = results.find((r: any) => r.id === gameId);
+    if (!hit) return res.status(404).json({ error: 'Kein Spiel mit dieser ID gefunden.' });
+    res.json({
+      id: hit.id,
+      roomCode: hit.roomCode,
+      playedAt: hit.playedAt,
+      draftTitle: hit.draftTitle,
+      winner: hit.winner,
+      phases: hit.phases,
+      language: hit.language ?? 'both',
+      teams: hit.teams ?? [],
+      funnyAnswers: hit.funnyAnswers ?? [],
+      avatarSetId: hit.avatarSetId ?? 'all',
+      avatarSetEmojis: hit.avatarSetEmojis ?? null,
+      grid: hit.grid ?? null,
+      gridSize: Array.isArray(hit.grid) ? hit.grid.length : 0,
+      questionHistory: hit.questionHistory ?? [],
+      endAwards: hit.endAwards ?? null,
+      eurovisionMode: !!hit.eurovisionMode,
+    });
+  } catch (err) {
+    console.error('QQ recap error:', err);
+    res.status(500).json({ error: 'Fehler beim Laden des Recaps.' });
+  }
+});
+
 // ── QQ Feedback ───────────────────────────────────────────────────────────────
 // Spieler-Feedback von der Summary-Seite — persistent in MongoDB
 // (Render Free Tier hat kein stabiles Filesystem).

@@ -642,8 +642,12 @@ export default function QQModeratorPage() {
       case 'FINAL_BETTING': {
         // 2026-05-24 (Wolf-Live-Test): wenn Intro-Slide noch nicht dismissed,
         // Space → Intro weg, dann zur Betting-View.
+        // 2026-05-25 (Wolf 'final tip info vor bet nicht gesehen'): delayMs
+        // war 0 → Autoplay dismissed das Intro instant, niemand konnte
+        // lesen. Jetzt 6s Lese-Pause (~3s Wave-Stagger + Lese-Zeit), Mod
+        // kann manuell mit Space frueher dismissen.
         if ((s as any).finalBettingIntroDone === false) {
-          delayMs = 0;
+          delayMs = 6000;
           action = () => emit('qq:finishFinalBettingIntro', { roomCode });
           break;
         }

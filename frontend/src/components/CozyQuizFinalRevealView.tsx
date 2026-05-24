@@ -1554,103 +1554,45 @@ function AwardSlotTransition({ awardIndex, state: s, lang }: {
 function AwardHeroSlide({ awardIndex, state: s, lang }: {
   awardIndex: 0 | 1 | 2; state: QQStateUpdate; lang: 'de' | 'en';
 }) {
-  const de = lang === 'de';
   const awards = s.endAwards;
-  const def = AWARD_DEFS[awardIndex];
   const winnerId = !awards ? null
     : awardIndex === 0 ? awards.underdog
     : awardIndex === 1 ? awards.meisterklauer
     : awards.speedy;
   const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
-  const [revealed, setRevealed] = useState(false);
+  const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
-    // Drumroll → Reveal beim Mount (analog Bet-Cards).
+    // Drumroll → Flip beim Mount (analog Bet-Cards). 900ms Drumroll-Build-up.
     const DRUMROLL_MS = 900;
     const t1 = window.setTimeout(() => {
       try { playSpecialAwardReveal(); } catch {}
     }, 100);
-    const t2 = window.setTimeout(() => setRevealed(true), DRUMROLL_MS);
+    const t2 = window.setTimeout(() => setIsFlipped(true), DRUMROLL_MS);
     return () => { window.clearTimeout(t1); window.clearTimeout(t2); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const title = de ? def.titleDe : def.titleEn;
-  const desc = de ? def.descDe : def.descEn;
-  const accent = def.accent;
-
+  // 2026-05-24 v3 (Wolf-Feedback 'Cards sahen frueher anders aus'):
+  // Wiederverwendung der existierenden AwardFlipCard-Komponente — 3D-Flip mit
+  // BG (Drumroll/???-Card) → Front (Sieger-Avatar + +1-Badge). Wrap nur damit
+  // sie zentriert in der linken Split-Spalte sitzt.
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: '100%',
+      width: '100%', minHeight: 0,
     }}>
       <div style={{
-        display: 'flex', flexDirection: 'column', alignItems: 'center',
-        gap: 'clamp(20px, 2.4cqh, 32px)',
-        padding: 'clamp(36px, 4cqh, 60px) clamp(40px, 4.5cqw, 80px)',
-        borderRadius: 32,
-        background: `linear-gradient(135deg, ${accent}22, ${accent}08)`,
-        border: `3px solid ${accent}`,
-        boxShadow: `0 0 80px ${accent}55, 0 16px 48px rgba(0,0,0,0.5)`,
-        animation: 'qqBetCardFadeUp 0.5s ease-out both',
-        minWidth: 'clamp(320px, 36cqw, 540px)',
+        width: 'clamp(280px, 38cqw, 480px)',
+        display: 'flex', alignItems: 'stretch',
       }}>
-        {/* Emoji + Award-Titel oben (immer sichtbar) */}
-        <div style={{
-          fontSize: 'clamp(72px, 8cqw, 140px)', lineHeight: 1,
-          animation: !revealed ? 'qqFRDrumroll 0.18s ease-in-out infinite' : 'celebShake 0.6s ease both',
-        }}>{def.emoji}</div>
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        }}>
-          <div style={{
-            fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
-            color: accent, textAlign: 'center', letterSpacing: '0.02em',
-          }}>{title}</div>
-          <div style={{
-            fontSize: 'clamp(13px, 1.3cqw, 18px)', fontWeight: 700,
-            color: QQ_COLORS.slate400, textAlign: 'center',
-          }}>{desc}</div>
-        </div>
-
-        {/* Winner-Reveal nach Drumroll (analog Bet-Card-Sub-Step) */}
-        {!revealed ? (
-          <div style={{
-            fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 800,
-            color: QQ_COLORS.slate400, fontStyle: 'italic',
-            animation: 'qqFRTitleIn 0.4s ease both',
-          }}>{de ? 'Trommelwirbel …' : 'Drumroll …'}</div>
-        ) : winner ? (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 16,
-            padding: '14px 26px', borderRadius: 999,
-            background: `${winner.color}1a`,
-            border: `2.5px solid ${winner.color}`,
-            animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) both',
-          }}>
-            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(60px, 6.5cqw, 96px)'} />
-            <TeamNameLabel
-              name={winner.name}
-              fontSize="clamp(24px, 2.6cqw, 40px)"
-              color={winner.color}
-              fontWeight={900}
-              maxLines={1}
-            />
-            <div style={{
-              padding: '8px 20px', borderRadius: 16,
-              background: 'rgba(34,197,94,0.18)',
-              border: '2px solid rgba(34,197,94,0.6)',
-              fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
-              color: QQ_COLORS.green500,
-              animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.25s both',
-            }}>+1</div>
-          </div>
-        ) : (
-          <div style={{
-            fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 800,
-            color: QQ_COLORS.slate500, fontStyle: 'italic',
-          }}>{de ? 'kein Gewinner' : 'no winner'}</div>
-        )}
+        <AwardFlipCard
+          awardIndex={awardIndex}
+          isFlipped={isFlipped}
+          winner={winner}
+          awards={awards}
+          lang={lang}
+        />
       </div>
     </div>
   );

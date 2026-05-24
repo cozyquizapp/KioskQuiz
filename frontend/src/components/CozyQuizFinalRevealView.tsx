@@ -497,10 +497,15 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
   const renderSlot = (sl: BetSlotType) => {
     if (!sl) return null;
     if (sl.kind === 'zero-group') {
-      return <BetZeroGroupSlide teams={sl.teams} lang={lang} />;
+      return <BetZeroGroupSlide key="zero-group" teams={sl.teams} lang={lang} />;
     }
+    // 2026-05-25 (Wolf-Bug 'cards flippen nicht im live'): key={team.id}
+    // erzwingt frischen Mount pro Bet-Card. Ohne key reuste React die
+    // Instance zwischen Slots — isFlipped blieb true vom letzten Run,
+    // Drumroll-Flip lief nur fuer die 1. Card.
     return (
       <BetRevealSlide
+        key={sl.team.id}
         team={sl.team}
         resolution={s.finalBetResolution?.[sl.team.id] ?? null}
         allTeams={s.teams}
@@ -597,19 +602,18 @@ function FinalLeaderboard({
       return a.team.name.localeCompare(b.team.name);
     });
 
-  // 2026-05-24 (Wolf 'tabelle gleich machen wie in-game ScoreBar neben Grid'):
-  // Layout-Anlehnung an CozyQuizScoreBar.tsx — gross Avatar (Crown-Overlay
-  // fuer Leader), team-color Name, Medal-Slot mit Tie-'='-Badge, prominente
-  // TOTAL-Zahl + 'Punkte'-Unit. Brett/Award/Tipp-Breakdown als kleine
-  // Subtitle unter dem Namen (nur wenn Bonus > 0). FLIP-Reorder-Animation
-  // bleibt erhalten (translateY-Trick).
+  // 2026-05-25 (Wolf 'tabelle sieht nicht aus wie main game neben grid'):
+  // Sizes 1:1 von CozyQuizScoreBar uebernommen (avatar 64/78, name 34/42,
+  // value 42/54, unit 18/22). Breakdown-Subtitle entfernt — die ScoreBar
+  // zeigt auch keine, und die Zahl-Aenderung + FLIP-Climbing kommunizieren
+  // den Reveal-Effekt schon stark genug. '='-Tie-Badge raus.
   const dense = rows.length >= 6;
-  const avatarSize = dense ? 52 : 64;
-  const avatarBox = dense ? 60 : 74;
-  const nameFs = dense ? 24 : 30;
-  const valFs = dense ? 36 : 46;
-  const unitFs = dense ? 14 : 17;
-  const ROW_H = dense ? 76 : 92;
+  const avatarSize = dense ? 64 : 78;
+  const avatarBox = dense ? 76 : 92;
+  const nameFs = dense ? 34 : 42;
+  const valFs = dense ? 42 : 54;
+  const unitFs = dense ? 18 : 22;
+  const ROW_H = dense ? 92 : 110;
   const topTotal = rows.length > 0 ? rows[0].total : 0;
   const isTieAtTop = rows.length > 1 && topTotal > 0 && rows[1].total === topTotal;
   const tiedWithOther = new Set<string>();
@@ -649,11 +653,12 @@ function FinalLeaderboard({
       <div style={{ position: 'relative', height: rows.length * ROW_H, flex: 1 }}>
         {rows.map((r, idx) => {
           const isFocus = r.team.id === focusTeamId;
-          const isLeader = idx === 0 && r.total > 0;
-          const medal = medalFor(idx, r.total, r.team.id);
+          // 2026-05-25 (Wolf 'krone konsistent auch fuer tied-top'): analog
+          // ScoreBar — alle Top-Tied bekommen Crown-Overlay.
           const isTopTie = isTieAtTop && r.total === topTotal;
+          const isLeader = (idx === 0 && r.total > 0) || isTopTie;
+          const medal = medalFor(idx, r.total, r.team.id);
           const tColor = r.team.color;
-          const hasBonus = r.awards > 0 || r.bet > 0;
           return (
             <div
               key={r.team.id}
@@ -690,64 +695,31 @@ function FinalLeaderboard({
                   )}
                 </span>
               </div>
-              {/* Name + optional Bonus-Breakdown-Subtitle. */}
-              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {/* Name (1:1 ScoreBar — kein Subtitle, kein Breakdown) */}
+              <div style={{ flex: 1, minWidth: 0 }}>
                 <TeamNameLabel
                   name={r.team.name}
-                  maxLines={1}
+                  maxLines={2}
                   shrinkAfter={14}
                   fontSize={nameFs}
                   color={tColor}
                   fontWeight={900}
                   style={{ textShadow: isFocus ? `0 0 16px ${tColor}55` : 'none' }}
                 />
-                {hasBonus && (
-                  <div style={{
-                    display: 'flex', gap: 8, alignItems: 'center',
-                    fontSize: dense ? 12 : 14, fontWeight: 800,
-                    fontVariantNumeric: 'tabular-nums', opacity: 0.85,
-                  }}>
-                    <span style={{ color: QQ_COLORS.slate400 }}>{r.base}</span>
-                    {r.awards > 0 && (
-                      <span style={{ color: QQ_COLORS.amber400 }}>+{r.awards}🏅</span>
-                    )}
-                    {r.bet > 0 && (
-                      <span style={{ color: QQ_COLORS.green500 }}>+{r.bet}🎯</span>
-                    )}
-                  </div>
-                )}
               </div>
-              {/* Medal-Slot + grosse TOTAL-Zahl + 'Punkte'-Unit (analog ScoreBar). */}
+              {/* Medal-Slot + grosse TOTAL-Zahl + 'Punkte'-Unit (1:1 ScoreBar). */}
               <div style={{
                 position: 'relative', display: 'flex', alignItems: 'baseline',
-                gap: 8, flexShrink: 0,
+                gap: 10, flexShrink: 0,
               }}>
                 <span style={{
-                  width: dense ? 28 : 34,
+                  width: dense ? 32 : 38,
                   flexShrink: 0,
                   textAlign: 'center',
-                  fontSize: dense ? 20 : 26, lineHeight: 1,
+                  fontSize: dense ? 22 : 28, lineHeight: 1,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                  position: 'relative',
                 }}>
                   {medal ? <QQEmojiIcon emoji={medal}/> : null}
-                  {tiedWithOther.has(r.team.id) && !isTopTie && (
-                    <span
-                      aria-label="gleichauf"
-                      title={de ? 'Gleichauf mit anderem Team' : 'Tied with another team'}
-                      style={{
-                        position: 'absolute',
-                        top: -4, right: -6,
-                        fontSize: dense ? 10 : 12, fontWeight: 900,
-                        padding: '1px 5px', borderRadius: 4,
-                        background: 'rgba(251,191,36,0.22)',
-                        border: '1px solid rgba(251,191,36,0.55)',
-                        color: '#FCD34D',
-                        lineHeight: 1,
-                        pointerEvents: 'none',
-                      }}
-                    >=</span>
-                  )}
                 </span>
                 <span style={{
                   fontSize: valFs,
@@ -756,7 +728,7 @@ function FinalLeaderboard({
                   textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1,
-                  minWidth: dense ? 44 : 56,
+                  width: dense ? 56 : 72,
                   textAlign: 'right',
                   flexShrink: 0,
                   transition: 'color 0.3s ease',
@@ -765,6 +737,7 @@ function FinalLeaderboard({
                   opacity: 0.5, fontSize: unitFs, fontWeight: 700,
                   color: QQ_COLORS.slate400,
                   flexShrink: 0,
+                  minWidth: dense ? 62 : 78,
                   textAlign: 'left',
                   fontVariantNumeric: 'tabular-nums',
                 }}>
@@ -1689,7 +1662,12 @@ function AwardSlotTransition({ awardIndex, state: s, lang }: {
       exitAnimation="qqFRSlamOutDown 0.35s ease both"
       exitMs={350}
     >
-      <AwardHeroSlide awardIndex={awardIndex} state={s} lang={lang} />
+      {/* 2026-05-25 (Wolf-Bug 'cards flippen nicht im live'): key={awardIndex}
+          erzwingt frischen Mount pro Award. Ohne key reuste React die
+          Instance — useEffect mit [] lief nur beim allerersten Mount,
+          isFlipped blieb true von der 1. Card → kein Drumroll mehr fuer
+          Award 2/3. */}
+      <AwardHeroSlide key={awardIndex} awardIndex={awardIndex} state={s} lang={lang} />
     </SlotTransition>
   );
 }

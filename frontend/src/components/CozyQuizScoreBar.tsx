@@ -347,8 +347,9 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           }}>
             {/* Medal-Slot mit fixer Breite — ohne Medaille trotzdem Platzhalter,
                 damit die Zahlen-Spalte rechts fuer ALLE Teams gleich ausgerichtet ist.
-                2026-05-24 (Wolf-Live-Test #6): Tie-Badge ("=") oben rechts wenn
-                Team mit anderem gleichauf bei largestConnected. */}
+                2026-05-25 (Wolf 'ich sehe immernoch ein = in der grid tabelle'):
+                '='-Tie-Badge entfernt. Tied-Top-Teams bekommen 👑 (medalFor),
+                der Rest hat keinen extra Marker mehr. */}
             <span style={{
               width: dense ? 32 : 38,
               flexShrink: 0,
@@ -358,23 +359,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               position: 'relative',
             }}>
               {medal ? <QQEmojiIcon emoji={medal}/> : null}
-              {tiedWithOther.has(t.id) && !isTopTie && (
-                <span
-                  aria-label="gleichauf"
-                  title={lang === 'en' ? 'Tied with another team' : 'Gleichauf mit anderem Team'}
-                  style={{
-                    position: 'absolute',
-                    top: -4, right: -8,
-                    fontSize: dense ? 11 : 13, fontWeight: 900,
-                    padding: '1px 5px', borderRadius: 4,
-                    background: 'rgba(251,191,36,0.22)',
-                    border: '1px solid rgba(251,191,36,0.55)',
-                    color: '#FCD34D',
-                    lineHeight: 1,
-                    pointerEvents: 'none',
-                  }}
-                >=</span>
-              )}
             </span>
             <span style={{
               fontSize: valFs, color: isLeader ? QQ_COLORS.brandPink : QQ_COLORS.slate100, fontWeight: 900,

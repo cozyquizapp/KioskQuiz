@@ -639,10 +639,10 @@ function FinalLeaderboard({
               }}>
                 <span style={{ color: QQ_COLORS.slate400, minWidth: 24, textAlign: 'right' }}>{r.base}</span>
                 <span style={{ color: QQ_COLORS.amber400, minWidth: 24, textAlign: 'right' }}>
-                  {r.awards > 0 ? `+${r.awards}` : '·'}
+                  {r.awards > 0 ? `+${r.awards}` : ''}
                 </span>
                 <span style={{ color: QQ_COLORS.green500, minWidth: 32, textAlign: 'right' }}>
-                  {r.bet > 0 ? `+${r.bet}` : '·'}
+                  {r.bet > 0 ? `+${r.bet}` : ''}
                 </span>
                 <span style={{
                   color: isFocus ? r.team.color : QQ_COLORS.slate100,

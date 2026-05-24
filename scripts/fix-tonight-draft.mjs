@@ -71,6 +71,30 @@ tonight.questions = tonight.questions.map(q => {
       funFact: 'Rund 75% aller Nationalflaggen enthalten Rot. Orange zählt NICHT als Rot (Irland, Niger, Indien). Inselstaaten im Pazifik haben oft Hellblau (Mikronesien, Palau, Salomonen). Häufige Trugschlüsse: Italien, Mexiko, Niederlande, Belgien, Schweiz, Türkei, China, Japan — alle haben Rot.',
     };
   }
+  if (q.id === 'tonight-p4-q2') {
+    // Wolf-Decision 2026-05-24: Bluff komplett aus aktiven Drafts raus.
+    // Albert-II-Frage zu HotPotato konvertiert — passt thematisch (Reihum
+    // 'Tiere im Weltall' nennen, viele richtige Antworten moeglich).
+    return {
+      ...q,
+      text: 'Nenne ein Tier, das schon im Weltall war (über der Kármán-Linie, 100 km)!',
+      textEn: 'Name an animal that has been in space (above the Kármán line, 100 km)!',
+      answer: 'Albert II (Rhesusaffe), Laika (Hund), Ham (Schimpanse), Belka (Hund), Strelka (Hund), Félicette (Katze), Fruchtfliegen, Spinnen, Mäuse, Frösche, Hasen, Schildkröten',
+      answerEn: 'Albert II (Rhesus monkey), Laika (dog), Ham (chimpanzee), Belka (dog), Strelka (dog), Félicette (cat), Fruit flies, Spiders, Mice, Frogs, Rabbits, Tortoises',
+      bunteTuete: { kind: 'hotPotato' },
+      funFact: 'Erstes Säugetier: Albert II (Rhesusaffe, 1949, US-V-2-Rakete, ~134 km). Erstes Tier im Orbit: Laika (Hund, Sputnik 2, 1957). Erstes Tier im All überhaupt: Fruchtfliegen (1947). Die einzige Katze im All: Félicette (Frankreich, 1963).',
+    };
+  }
+  if (q.id === 'tonight-p4-q1') {
+    // Sportart-Frage: Wolf sah Capitalization-Inkonsistenz auf EN (manche
+    // Optionen Title-Case, andere klein). Sicherheitshalber alle EN-Options
+    // auf Title-Case normalisieren.
+    return {
+      ...q,
+      options: ['Cricket', 'Basketball', 'Hockey', 'Tennis'],
+      optionsEn: ['Cricket', 'Basketball', 'Field Hockey', 'Tennis'],
+    };
+  }
   if (q.id === 'tonight-p4-q3') {
     // EU-Euro: Frage umkehren auf "noch nicht Euro" — Bulgarien hat seit
     // 1.1.2026 Euro, daher hatten Kroatien + Bulgarien beide richtige Antworten.

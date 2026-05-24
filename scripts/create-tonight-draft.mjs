@@ -171,15 +171,12 @@ const draft = {
     },
     {
       id: 'tonight-p4-q2', phaseIndex: 4, questionIndexInPhase: 2, category: 'BUNTE_TUETE',
-      text: 'Welches Tier war das erste Säugetier im Weltall (über der Kármán-Linie, 100 km)?',
-      textEn: 'Which animal was the first mammal in space (above the Kármán line, 100 km)?',
-      answer: 'Albert II (Rhesusaffe)', answerEn: 'Albert II (Rhesus monkey)',
-      bunteTuete: {
-        kind: 'bluff',
-        realAnswer: 'Albert II (Rhesusaffe)',
-        realAnswerEn: 'Albert II (Rhesus monkey)',
-      },
-      funFact: 'Am 14. Juni 1949 erreichte der Rhesusaffe Albert II in einer US-V-2-Rakete eine Höhe von ~134 km. Häufige Falle: Laika kam erst 1957 in die Erdumlaufbahn. Die ersten Tiere überhaupt im All (1947) waren Fruchtfliegen.',
+      text: 'Nenne ein Tier, das schon im Weltall war (über der Kármán-Linie, 100 km)!',
+      textEn: 'Name an animal that has been in space (above the Kármán line, 100 km)!',
+      answer: 'Albert II (Rhesusaffe), Laika (Hund), Ham (Schimpanse), Belka (Hund), Strelka (Hund), Félicette (Katze), Fruchtfliegen, Spinnen, Mäuse, Frösche, Hasen, Schildkröten',
+      answerEn: 'Albert II (Rhesus monkey), Laika (dog), Ham (chimpanzee), Belka (dog), Strelka (dog), Félicette (cat), Fruit flies, Spiders, Mice, Frogs, Rabbits, Tortoises',
+      bunteTuete: { kind: 'hotPotato' },
+      funFact: 'Erstes Säugetier: Albert II (Rhesusaffe, 1949, US-V-2-Rakete, ~134 km). Erstes Tier im Orbit: Laika (Hund, Sputnik 2, 1957). Erstes Tier im All überhaupt: Fruchtfliegen (1947). Die einzige Katze im All: Félicette (Frankreich, 1963).',
     },
     {
       id: 'tonight-p4-q3', phaseIndex: 4, questionIndexInPhase: 3, category: 'ZEHN_VON_ZEHN',

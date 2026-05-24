@@ -17,6 +17,7 @@ import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { QQEmojiIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, eurovisionMode, lang }: {
   teams: QQStateUpdate['teams'];
@@ -308,7 +309,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   right: dense ? -18 : -22,
                   transform: 'translateY(-50%)',
                   fontSize: dense ? 18 : 22, fontWeight: 900,
-                  color: rankChanges[t.id] === 'up' ? '#22C55E' : '#EF4444',
+                  color: rankChanges[t.id] === 'up' ? QQ_COLORS.green500 : QQ_COLORS.red500,
                   pointerEvents: 'none',
                   filter: `drop-shadow(0 0 6px ${rankChanges[t.id] === 'up' ? 'rgba(34,197,94,0.8)' : 'rgba(239,68,68,0.7)'})`,
                   animation: 'voterSlotDrop 1.2s var(--qq-ease-bounce) both',
@@ -372,7 +373,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               )}
             </span>
             <span style={{
-              fontSize: valFs, color: isLeader ? '#EC4899' : '#F1F5F9', fontWeight: 900,
+              fontSize: valFs, color: isLeader ? QQ_COLORS.brandPink : QQ_COLORS.slate100, fontWeight: 900,
               textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
@@ -391,7 +392,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 starten beide an derselben linken Kante. Ohne das wackelt die
                 Zahlen-Spalte rechts bei 1 Feld vs. 6 Felder. */}
             <span style={{
-              opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: '#94a3b8',
+              opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: QQ_COLORS.slate400,
               flexShrink: 0,
               minWidth: dense ? 62 : 78,
               textAlign: 'left',

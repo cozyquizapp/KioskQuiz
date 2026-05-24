@@ -8,6 +8,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQ_COLORS } from '../../../shared/qqColors';
 
 type Answer = {
   teamId: string;
@@ -75,26 +76,26 @@ export default function QQRecapPage() {
       .catch(err => setError(String(err)));
   }, [gameId]);
 
-  if (error) return <div style={{ padding: 32, color: '#FCA5A5', fontFamily: 'Inter, sans-serif' }}>Fehler: {error}</div>;
-  if (!recap) return <div style={{ padding: 32, color: '#94a3b8', fontFamily: 'Inter, sans-serif' }}>⏳ Lade Recap…</div>;
+  if (error) return <div style={{ padding: 32, color: QQ_COLORS.red300, fontFamily: 'Inter, sans-serif' }}>Fehler: {error}</div>;
+  if (!recap) return <div style={{ padding: 32, color: QQ_COLORS.slate400, fontFamily: 'Inter, sans-serif' }}>⏳ Lade Recap…</div>;
 
   const teamMap = new Map(recap.teams.map(t => [t.id, t]));
   const dateStr = new Date(recap.playedAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0f172a', color: '#F1F5F9',
+      minHeight: '100vh', background: QQ_COLORS.slate900, color: QQ_COLORS.slate100,
       fontFamily: 'Inter, "Nunito", system-ui, sans-serif',
       padding: '32px 24px', maxWidth: 1200, margin: '0 auto',
     }}>
       {/* Header */}
       <div style={{ marginBottom: 32 }}>
-        <Link to="/admin" style={{ color: '#A78BFA', fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>← Admin</Link>
+        <Link to="/admin" style={{ color: QQ_COLORS.violet400, fontSize: 12, fontWeight: 800, textDecoration: 'none' }}>← Admin</Link>
         <h1 style={{ fontSize: 32, fontWeight: 900, marginTop: 8, marginBottom: 4 }}>📊 Recap — {recap.draftTitle}</h1>
-        <div style={{ fontSize: 14, color: '#94a3b8' }}>
-          {dateStr} · Room <code style={{ background: '#1e293b', padding: '2px 6px', borderRadius: 4 }}>{recap.roomCode}</code>
+        <div style={{ fontSize: 14, color: QQ_COLORS.slate400 }}>
+          {dateStr} · Room <code style={{ background: QQ_COLORS.slate800, padding: '2px 6px', borderRadius: 4 }}>{recap.roomCode}</code>
           {' · '}{recap.phases} Phasen
-          {recap.winner && <> · 🏆 Sieger: <strong style={{ color: '#FBCFE8' }}>{recap.winner}</strong></>}
+          {recap.winner && <> · 🏆 Sieger: <strong style={{ color: QQ_COLORS.brandPinkSoft }}>{recap.winner}</strong></>}
         </div>
       </div>
 
@@ -114,10 +115,10 @@ export default function QQRecapPage() {
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={36} />
               <div style={{ fontSize: 16, fontWeight: 900, color: t.color }}>{t.name}</div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: '#cbd5e1' }}>
-              <div>Score: <strong style={{ color: '#F1F5F9' }}>{t.largestConnected ?? 0}</strong></div>
-              <div>Total: <strong style={{ color: '#F1F5F9' }}>{t.totalCells ?? 0}</strong></div>
-              <div>Korrekt: <strong style={{ color: '#86EFAC' }}>{t.correct ?? 0}/{t.answered ?? 0}</strong></div>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: QQ_COLORS.slate300 }}>
+              <div>Score: <strong style={{ color: QQ_COLORS.slate100 }}>{t.largestConnected ?? 0}</strong></div>
+              <div>Total: <strong style={{ color: QQ_COLORS.slate100 }}>{t.totalCells ?? 0}</strong></div>
+              <div>Korrekt: <strong style={{ color: QQ_COLORS.green300 }}>{t.correct ?? 0}/{t.answered ?? 0}</strong></div>
               <div>Joker: <strong style={{ color: '#FCD34D' }}>{t.jokersEarned ?? 0}</strong></div>
               <div>Klau: <strong style={{ color: '#F87171' }}>{t.stealsUsed ?? 0}</strong></div>
             </div>
@@ -131,17 +132,17 @@ export default function QQRecapPage() {
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#F9A8D4' }}>🏅 End-Awards</h2>
           <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
             {recap.endAwards.underdog && (
-              <div style={{ padding: '10px 14px', background: '#1e293b', borderRadius: 8, fontSize: 13 }}>
+              <div style={{ padding: '10px 14px', background: QQ_COLORS.slate800, borderRadius: 8, fontSize: 13 }}>
                 🐺 <strong>Underdog:</strong> {teamMap.get(recap.endAwards.underdog)?.name ?? recap.endAwards.underdog}
               </div>
             )}
             {recap.endAwards.meisterklauer && (
-              <div style={{ padding: '10px 14px', background: '#1e293b', borderRadius: 8, fontSize: 13 }}>
+              <div style={{ padding: '10px 14px', background: QQ_COLORS.slate800, borderRadius: 8, fontSize: 13 }}>
                 🦝 <strong>Meisterklauer:</strong> {teamMap.get(recap.endAwards.meisterklauer)?.name ?? recap.endAwards.meisterklauer}
               </div>
             )}
             {recap.endAwards.speedy && (
-              <div style={{ padding: '10px 14px', background: '#1e293b', borderRadius: 8, fontSize: 13 }}>
+              <div style={{ padding: '10px 14px', background: QQ_COLORS.slate800, borderRadius: 8, fontSize: 13 }}>
                 ⚡ <strong>Speedy Gonzales:</strong> {teamMap.get(recap.endAwards.speedy)?.name ?? recap.endAwards.speedy}
               </div>
             )}
@@ -168,19 +169,19 @@ export default function QQRecapPage() {
           return (
             <div key={idx} style={{
               padding: '12px 16px', borderRadius: 8,
-              background: '#1e293b', border: '1px solid #334155',
+              background: QQ_COLORS.slate800, border: '1px solid #334155',
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                <div style={{ fontWeight: 800, fontSize: 14, color: '#F1F5F9' }}>
+                <div style={{ fontWeight: 800, fontSize: 14, color: QQ_COLORS.slate100 }}>
                   {qh.category && CAT_LABELS[qh.category]} · Q{(qh._qIndex ?? idx) + 1}
-                  {qh.bunteTueteKind && <span style={{ marginLeft: 6, color: '#94a3b8' }}>· {qh.bunteTueteKind}</span>}
+                  {qh.bunteTueteKind && <span style={{ marginLeft: 6, color: QQ_COLORS.slate400 }}>· {qh.bunteTueteKind}</span>}
                 </div>
-                <div style={{ fontSize: 11, color: '#64748b' }}>
+                <div style={{ fontSize: 11, color: QQ_COLORS.slate500 }}>
                   {qh.answers?.length ?? 0} Antworten
                 </div>
               </div>
               {qh.questionText && (
-                <div style={{ fontSize: 13, color: '#cbd5e1', marginBottom: 8, fontStyle: 'italic' }}>
+                <div style={{ fontSize: 13, color: QQ_COLORS.slate300, marginBottom: 8, fontStyle: 'italic' }}>
                   → {qh.questionText}
                 </div>
               )}
@@ -195,16 +196,16 @@ export default function QQRecapPage() {
                       padding: '4px 8px', borderRadius: 4,
                       background: isCorrect ? 'rgba(34,197,94,0.12)' : 'transparent',
                     }}>
-                      <span style={{ color: isCorrect ? '#86EFAC' : '#64748b', fontWeight: 800, minWidth: 16 }}>
+                      <span style={{ color: isCorrect ? QQ_COLORS.green300 : QQ_COLORS.slate500, fontWeight: 800, minWidth: 16 }}>
                         {isCorrect ? '✓' : '·'}
                       </span>
-                      <span style={{ color: team?.color ?? '#94a3b8', fontWeight: 700, minWidth: 100 }}>
+                      <span style={{ color: team?.color ?? QQ_COLORS.slate400, fontWeight: 700, minWidth: 100 }}>
                         {team?.name ?? a.teamId}
                       </span>
-                      <span style={{ flex: 1, color: '#cbd5e1', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      <span style={{ flex: 1, color: QQ_COLORS.slate300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {a.text}
                       </span>
-                      <span style={{ color: '#64748b', fontSize: 10, fontVariantNumeric: 'tabular-nums' }}>
+                      <span style={{ color: QQ_COLORS.slate500, fontSize: 10, fontVariantNumeric: 'tabular-nums' }}>
                         +{(deltaMs / 1000).toFixed(1)}s
                       </span>
                     </div>
@@ -224,10 +225,10 @@ export default function QQRecapPage() {
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 32 }}>
             {recap.funnyAnswers.map((fa, i) => (
-              <div key={i} style={{ padding: '8px 12px', background: '#1e293b', borderRadius: 6, fontSize: 13 }}>
-                <strong style={{ color: '#FBCFE8' }}>{fa.teamName ?? '?'}</strong>
-                {fa.category && <span style={{ color: '#64748b', marginLeft: 6 }}>· {fa.category}</span>}
-                <span style={{ marginLeft: 8, color: '#cbd5e1' }}>„{fa.text}"</span>
+              <div key={i} style={{ padding: '8px 12px', background: QQ_COLORS.slate800, borderRadius: 6, fontSize: 13 }}>
+                <strong style={{ color: QQ_COLORS.brandPinkSoft }}>{fa.teamName ?? '?'}</strong>
+                {fa.category && <span style={{ color: QQ_COLORS.slate500, marginLeft: 6 }}>· {fa.category}</span>}
+                <span style={{ marginLeft: 8, color: QQ_COLORS.slate300 }}>„{fa.text}"</span>
               </div>
             ))}
           </div>

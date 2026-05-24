@@ -18,6 +18,7 @@ import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
+import { QQ_COLORS } from '../../../../shared/qqColors';
 
 export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
@@ -133,14 +134,14 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
         flexShrink: 0, overflow: 'hidden',
       }}>
         <div style={{
-          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: '#EAB308',
+          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.yellow500,
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
         }}>
           <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 120 ? 'clamp(26px, 2.6cqw, 40px)' : 'clamp(30px, 3.2cqw, 52px)',
-          fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+          fontWeight: 900, lineHeight: 1.18, color: QQ_COLORS.slate100,
           textAlign: 'center', minWidth: 0,
           animation: 'langFadeIn 0.4s ease both',
         }}>
@@ -182,7 +183,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               pointerEvents: 'none',
             }} />
             <div style={{
-              fontSize: 'clamp(12px, 1.2cqw, 18px)', fontWeight: 900, color: '#86efac',
+              fontSize: 'clamp(12px, 1.2cqw, 18px)', fontWeight: 900, color: QQ_COLORS.green300,
               letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.82,
               position: 'relative', zIndex: 1,
             }}>
@@ -190,7 +191,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             </div>
             <div style={{
               fontSize: 'clamp(64px, 8cqw, 140px)',
-              fontWeight: 900, color: '#86efac', lineHeight: 1,
+              fontWeight: 900, color: QQ_COLORS.green300, lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
               textShadow: '0 0 40px rgba(34,197,94,0.5)',
               position: 'relative', zIndex: 1,
@@ -272,7 +273,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   background: winner.delta === 0 ? 'rgba(34,197,94,0.22)' : `${winner.team.color}22`,
                   border: winner.delta === 0 ? '2px solid rgba(34,197,94,0.6)' : `2px solid ${winner.team.color}55`,
                   fontSize: 'clamp(16px, 1.7cqw, 26px)', fontWeight: 900,
-                  color: winner.delta === 0 ? '#86efac' : '#e2e8f0',
+                  color: winner.delta === 0 ? QQ_COLORS.green300 : QQ_COLORS.slate200,
                   fontVariantNumeric: 'tabular-nums',
                   letterSpacing: '0.04em',
                 }}>
@@ -369,7 +370,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   }}>
                     <span style={{
                       fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 900,
-                      color: isTop || isInRangeWinner ? r.team.color : '#cbd5e1',
+                      color: isTop || isInRangeWinner ? r.team.color : QQ_COLORS.slate300,
                       lineHeight: 1.1,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{r.team.name}</span>
@@ -389,7 +390,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   </div>
                   <div style={{
                     fontSize: 'clamp(24px, 2.6cqw, 40px)', fontWeight: 900,
-                    color: isTop ? '#FBCFE8' : '#f1f5f9', marginTop: 4,
+                    color: isTop ? QQ_COLORS.brandPinkSoft : QQ_COLORS.slate100, marginTop: 4,
                     lineHeight: 1,
                     fontVariantNumeric: 'tabular-nums',
                     textShadow: isTop ? '0 0 16px rgba(236,72,153,0.35)' : 'none',
@@ -405,7 +406,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
                     border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                     fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
-                    color: isTop ? '#FBCFE8' : '#e2e8f0',
+                    color: isTop ? QQ_COLORS.brandPinkSoft : QQ_COLORS.slate200,
                     fontVariantNumeric: 'tabular-nums',
                     animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
                   }}>
@@ -426,7 +427,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                         padding: '2px 8px', borderRadius: 999,
                         background: deltaMs === 0 ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.18)',
                         border: deltaMs === 0 ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(148,163,184,0.35)',
-                        color: deltaMs === 0 ? '#86EFAC' : '#cbd5e1',
+                        color: deltaMs === 0 ? QQ_COLORS.green300 : QQ_COLORS.slate300,
                         whiteSpace: 'nowrap',
                       }}>{label}</span>
                     );
@@ -438,7 +439,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           {top5.length === 0 && (
             <div style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#64748b', fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
+              color: QQ_COLORS.slate500, fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
             }}>
               {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
             </div>

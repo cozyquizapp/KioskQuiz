@@ -14,6 +14,7 @@ import { TeamNameLabel } from '../TeamNameLabel';
 import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
 } from '../../utils/sounds';
+import { QQ_COLORS } from '../../../../shared/qqColors';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OrderReveal — Bunte-Tüte "order" reveal, Top5-Style mit 2-Spalten-Layout
@@ -142,14 +143,14 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
         flexShrink: 0,
       }}>
         <div style={{
-          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: '#EC4899',
+          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.brandPink,
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
         }}>
           🎁 {lang === 'en' ? 'Lucky Bag — Order' : 'Bunte Tüte — Reihenfolge'}
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 120 ? 'clamp(26px, 2.7cqw, 40px)' : 'clamp(30px, 3.2cqw, 52px)',
-          fontWeight: 900, lineHeight: 1.18, color: '#F1F5F9',
+          fontWeight: 900, lineHeight: 1.18, color: QQ_COLORS.slate100,
           animation: 'langFadeIn 0.4s ease both',
         }}>
           {qText}
@@ -157,7 +158,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
         {criteriaTxt && (
           <div style={{
             marginTop: 8, fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 700,
-            color: '#FBCFE8', fontStyle: 'italic',
+            color: QQ_COLORS.brandPinkSoft, fontStyle: 'italic',
           }}>
             ↕ {criteriaTxt}
           </div>
@@ -235,7 +236,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                 }}>
                   <div style={{
                     fontSize: 'clamp(20px, 2.3cqw, 34px)', fontWeight: 900,
-                    color: hasHits ? '#86efac' : '#cbd5e1',
+                    color: hasHits ? QQ_COLORS.green300 : QQ_COLORS.slate300,
                     lineHeight: 1.2,
                     minWidth: 0, wordBreak: 'break-word',
                   }}>
@@ -247,7 +248,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                       padding: '3px 12px', borderRadius: 999,
                       background: hasHits ? 'rgba(34,197,94,0.22)' : 'rgba(148,163,184,0.16)',
                       border: hasHits ? '1.5px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
-                      color: hasHits ? '#86efac' : '#cbd5e1',
+                      color: hasHits ? QQ_COLORS.green300 : QQ_COLORS.slate300,
                       fontWeight: 900,
                       fontSize: 'clamp(14px, 1.5cqw, 22px)',
                       whiteSpace: 'nowrap',
@@ -284,7 +285,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                       background: 'rgba(148,163,184,0.15)',
                       border: '2px dashed rgba(148,163,184,0.4)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(20px, 2.2cqw, 28px)', fontWeight: 900, color: '#94a3b8',
+                      fontSize: 'clamp(20px, 2.2cqw, 28px)', fontWeight: 900, color: QQ_COLORS.slate400,
                       animation: isVisible
                         ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + rowDelay}s both`
                         : 'none',
@@ -323,7 +324,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
             borderRight: '2px solid rgba(255,255,255,0.08)',
           }}>
             <div style={{
-              fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: '#EC4899',
+              fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.brandPink,
               letterSpacing: '0.1em', textTransform: 'uppercase',
               whiteSpace: 'nowrap',
             }}>
@@ -333,7 +334,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
             </div>
             {winners.length > 0 && (
               <div style={{
-                fontSize: 'clamp(13px, 1.2cqw, 18px)', fontWeight: 900, color: '#cbd5e1',
+                fontSize: 'clamp(13px, 1.2cqw, 18px)', fontWeight: 900, color: QQ_COLORS.slate300,
                 whiteSpace: 'nowrap',
               }}>
                 {winners[0].hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}

@@ -39,7 +39,9 @@ export default function QQModeratorPage() {
   const [timerInput, setTimerInput] = useState(30);
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string>('');
-  const [showSoundPanel, setShowSoundPanel] = useState(false);
+  // 2026-05-24 (Wolf-Audit Cleanup): showSoundPanel + localSoundConfig waren
+  // fuer Live-Sound-Card, ist jetzt nur im Setup/Advanced. localSoundConfig
+  // bleibt fuer SetupView-Param-Signatur.
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
   const startingRef = useRef(false); // prevent double-fire on startGame
 
@@ -1664,13 +1666,21 @@ export default function QQModeratorPage() {
           {/* ── Left column ── */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
-            {/* ══ SHOW CONTROLS — primary actions ══ */}
+            {/* ══ SHOW CONTROLS — primary actions ══
+                2026-05-24 (Wolf 'buttons springen, space-button wird größer/
+                kleiner und verändert position'): Container bekommt festes
+                min-height (62px = PrimaryBtn-Höhe inkl. 4px box-shadow-bottom)
+                damit der Slot nicht zwischen Phasen kollabiert/wächst. Die
+                PrimaryBtn bekommt min-width via CSS damit der Text-Inhalt
+                die Buttonbreite nicht mehr diktiert (gleiche Position im Slot
+                über alle Phasen). */}
             <div style={{
               ...card,
               border: '1px solid rgba(255,255,255,0.12)',
               padding: '12px 16px',
+              minHeight: 86, // 62 (Btn) + 24 (padding)
             }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', minHeight: 56 }}>
 
                 {/* ── RULES ── */}
                 {s.phase === 'RULES' && (
@@ -2552,8 +2562,8 @@ export default function QQModeratorPage() {
                   </Btn>
                 )}
 
-                {/* ── Separator ── */}
-                <div style={{ width: 1, height: 28, background: 'rgba(255,255,255,0.08)', margin: '0 4px' }} />
+                {/* 2026-05-24 (Wolf-Audit Cleanup): Separator-Line entfernt —
+                    flex-gap reicht als visuelle Trennung. */}
 
                 {/* ── Secondary: Pause ── */}
                 {!['LOBBY', 'PAUSED', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase) && (
@@ -2830,7 +2840,12 @@ export default function QQModeratorPage() {
                 In QUESTION_REVEAL/PLACEMENT der letzten Phase: Resolve-Button. */}
             <FinalWagerControls state={s} emit={emit} roomCode={roomCode} />
 
-            {/* Settings — collapsible */}
+            {/* 2026-05-24 (Wolf-Audit Setup-Cleanup):
+                - Live-Settings-Card wird nur in Non-LOBBY-Phasen gemountet
+                  (outer Bedingung Z. 1593 `s.phase !== 'LOBBY'`).
+                - Volume-Slider raus (Setup/Advanced hat ihn, M-Taste for Mute).
+                - Custom-Sounds-Panel raus (Setup hat Batch-Actions).
+                Nur Timer + Sprache + Music/SFX-Mute bleiben fuer Live-Quiz. */}
             <div style={card}>
               <div
                 onClick={() => setSettingsOpen(v => !v)}
@@ -2906,13 +2921,10 @@ export default function QQModeratorPage() {
                 </div>
               </div>
 
-              {/* Sound — mute buttons + volume + upload panel */}
+              {/* Sound — nur Mute-Toggles (Volume + Custom-Sounds-Panel ist im Setup/Advanced) */}
               <div style={{ marginTop: 14 }}>
                 <div style={{ fontSize: 12, color: QQ_COLORS.slate500, marginBottom: 6 }}>🔊 Sound</div>
-
-                {/* Row 1: Mute toggles + volume */}
-                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
-                  {/* Musik mute */}
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                   <button
                     onClick={() => emit('qq:setMusicMuted', { roomCode, muted: !s.musicMuted })}
                     style={{
@@ -2924,7 +2936,6 @@ export default function QQModeratorPage() {
                     }}>
                     {s.musicMuted ? '🔇 Musik' : '🎵 Musik'}
                   </button>
-                  {/* SFX mute */}
                   <button
                     onClick={() => emit('qq:setSfxMuted', { roomCode, muted: !s.sfxMuted })}
                     style={{
@@ -2936,48 +2947,8 @@ export default function QQModeratorPage() {
                     }}>
                     {s.sfxMuted ? '🔇 SFX' : '🔉 SFX'}
                   </button>
-                  {/* Volume slider */}
-                  <input
-                    type="range" min={0} max={100} step={5}
-                    value={Math.round((s.volume ?? 0.8) * 100)}
-                    onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
-                    style={{ flex: 1, maxWidth: 100, accentColor: QQ_COLORS.blue500 }}
-                  />
-                  <span style={{ fontSize: 11, color: QQ_COLORS.slate600, minWidth: 28 }}>
-                    {Math.round((s.volume ?? 0.8) * 100)}%
-                  </span>
                 </div>
-
-                {/* Row 2: Sound upload toggle */}
-                <button
-                  onClick={() => setShowSoundPanel(v => !v)}
-                  style={{
-                    padding: '4px 10px', borderRadius: 7, cursor: 'pointer', fontFamily: 'inherit',
-                    fontWeight: 900, fontSize: 11,
-                    border: '1px solid rgba(255,255,255,0.1)',
-                    background: showSoundPanel ? 'rgba(59,130,246,0.15)' : 'rgba(255,255,255,0.04)',
-                    color: showSoundPanel ? '#93c5fd' : QQ_COLORS.slate500,
-                  }}>
-                  🎵 Custom Sounds {showSoundPanel ? '▲' : '▼'}
-                </button>
-                <div style={{ fontSize: 10, color: QQ_COLORS.slate600, marginTop: 3 }}>M-Taste = alles muten</div>
-
-                {/* Sound upload panel */}
-                {showSoundPanel && (
-                  <div style={{
-                    marginTop: 8, padding: 10,
-                    background: 'rgba(0,0,0,0.25)', borderRadius: 8,
-                    border: '1px solid rgba(255,255,255,0.07)',
-                  }}>
-                    <QQSoundPanel
-                      config={localSoundConfig}
-                      onChange={cfg => {
-                        setLocalSoundConfig(cfg);
-                        emit('qq:updateSoundConfig', { roomCode, soundConfig: cfg });
-                      }}
-                    />
-                  </div>
-                )}
+                <div style={{ fontSize: 10, color: QQ_COLORS.slate600, marginTop: 6 }}>M-Taste = alles muten</div>
               </div>
               </>}
             </div>

@@ -186,6 +186,15 @@
 }
 
 .qm-primary {
+  /* 2026-05-24 (Wolf 'space-button springt zwischen Phasen, wird größer/kleiner
+     und verändert position'): min-width fixiert damit der Button-Slot konstante
+     Breite hat, egal ob der Text 6 oder 22 Zeichen lang ist. justify-content
+     center sorgt dass der Inhalt mittig sitzt, nicht links angeschlagen.
+     min-height + box-sizing damit Höhe ebenfalls stabil ist über Texte hinweg. */
+  min-width: 240px;
+  min-height: 50px;
+  box-sizing: border-box;
+  justify-content: center;
   display: inline-flex;
   align-items: center;
   gap: 10px;

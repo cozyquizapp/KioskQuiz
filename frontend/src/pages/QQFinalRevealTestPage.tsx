@@ -107,6 +107,18 @@ export default function QQFinalRevealTestPage() {
   const N = teams.length;
   const grid = buildMockGrid(teams);
 
+  // 2026-05-25 (Welle 2): Story-Stamps mocken — pro past-Step die korrespondierenden
+  // Stamps auf eine eigene Cell des Award/Bet-Teams legen. Spiegelt Live-Verhalten,
+  // damit Leaderboard-Stamp-Badges im Test sichtbar sind.
+  const addStamp = (teamId: string | null, kind: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy') => {
+    if (!teamId) return;
+    const ownCell = grid.flat().find(c => c.ownerId === teamId);
+    if (!ownCell) return;
+    const anyCell = ownCell as any;
+    if (!anyCell.revealStamps) anyCell.revealStamps = [];
+    anyCell.revealStamps.push({ kind, teamId });
+  };
+
   // Mock endAwards (alle 3 vergeben)
   const endAwards = {
     underdog: teams[teams.length - 1]?.id ?? null,
@@ -153,6 +165,42 @@ export default function QQFinalRevealTestPage() {
 
   const mockPhase = flowPhase === 'reveal' ? 'FINAL_REVEAL' : 'FINAL_BETTING';
   const mockFinalBettingIntroDone = flowPhase === 'bet-active';
+
+  // Stamps fuer alle bereits passierten Steps applizieren (1..currentStep-1).
+  // Spiegelt Live: Bot-Auto-Place flusht beim Advance den vorigen Step.
+  if (flowPhase === 'reveal' && finalBetResolution) {
+    const positiveTeams = teams.filter(t => finalBetResolution[t.id]?.targetTeamId && (finalBetResolution[t.id]?.totalBonus ?? 0) > 0)
+      .sort((a, b) => {
+        const ba = finalBetResolution[a.id]!.totalBonus;
+        const bb = finalBetResolution[b.id]!.totalBonus;
+        if (ba !== bb) return ba - bb;
+        return a.name.localeCompare(b.name);
+      });
+    const zeroExists2 = teams.some(t => finalBetResolution[t.id]?.targetTeamId && (finalBetResolution[t.id]?.totalBonus ?? 0) === 0);
+    // step=1..betSlotsCount → bet-slots. Stamps werden GESETZT wenn step > slot
+    // (also der Slot ist bereits past — sein Stamp ist gelandet).
+    for (let s = 1; s <= step && s <= betSlotsCount; s++) {
+      let slotIdx = s - 1;
+      if (zeroExists2) {
+        if (slotIdx === 0) continue; // zero-group hat keine Stacks
+        slotIdx -= 1;
+      }
+      const tm = positiveTeams[slotIdx];
+      if (!tm) continue;
+      const res = finalBetResolution[tm.id]!;
+      const wins = res.targetWins ?? Math.max(0, (res.totalBonus ?? 0) - (res.sympathyBonus ?? 0));
+      const symp = res.sympathyBonus ?? 0;
+      // Stamps werden NUR fuer past steps gesetzt (s < step), NICHT fuer current step.
+      if (s < step) {
+        for (let i = 0; i < wins; i++) addStamp(tm.id, 'bet');
+        for (let i = 0; i < symp; i++) addStamp(tm.id, 'sympathy');
+      }
+    }
+    // award-steps (B+1 .. B+3)
+    if (step > betSlotsCount + 1) addStamp(endAwards.speedy ?? null, 'speedy');
+    if (step > betSlotsCount + 2) addStamp(endAwards.meisterklauer ?? null, 'meisterklauer');
+    if (step > betSlotsCount + 3) { addStamp(endAwards.underdog ?? null, 'underdog'); addStamp(endAwards.underdog ?? null, 'underdog'); }
+  }
 
   const mockState = {
     roomCode: 'DEMO',

@@ -846,6 +846,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       hlAnsweredCount,
       s.answers?.length ?? 0,
       (s as any).finalRevealStep ?? 0, // 2026-05-09: Step in fireKey, sonst dedup blockt
+      (s as any).finalRecapStep ?? 0,  // 2026-05-25 (Wolf-Bug 'hier hängts'): Recap-Step 0→1 muss neu fire'n
+      s.finalBettingSubmitted ? Object.values(s.finalBettingSubmitted).filter(Boolean).length : 0,
     ].join(':');
     if (autoplayLastFireKeyRef.current === fireKey) return;
     // 2026-05-09 v2 (Wolf-Bug 'autoplay langsam'): ref-stabiler Timer.

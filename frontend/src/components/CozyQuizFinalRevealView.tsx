@@ -778,6 +778,123 @@ function FinalLeaderboard({
   );
 }
 
+// ─── GridSnapshot ───────────────────────────────────────────────────────────
+// 2026-05-25 (Wolf 'tabelle weg, grid links als story-snapshot'): Live-Grid
+// waehrend Bet/Award-Reveals. Zeigt alle Team-Cells in Team-Farbe + emoji,
+// revealStamps werden als Mini-Emojis auf der Cell sichtbar (gestapelt).
+// Focus-Team-Cells bekommen Pulse-Glow im aktuellen Reveal-Step.
+function GridSnapshot({ state: s, focusTeamId, focusKind }: {
+  state: QQStateUpdate;
+  focusTeamId: string | null;
+  focusKind?: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy' | null;
+}) {
+  const STAMP_EMOJI = {
+    underdog: '🐢', speedy: '⚡', meisterklauer: '🦝', bet: '🪙', sympathy: '💞',
+  } as const;
+  const N = s.gridSize;
+  // Cell-Size berechnen — passt sich an Container an.
+  const cellSize = `min(calc((85cqh - 80px) / ${N}), calc((48cqw - 80px) / ${N}))`;
+  const gap = 4;
+  return (
+    <div style={{
+      width: '100%', height: '100%',
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      padding: 'clamp(8px, 1cqh, 16px)',
+    }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${N}, ${cellSize})`,
+        gridTemplateRows: `repeat(${N}, ${cellSize})`,
+        gap, padding: 12, borderRadius: 18,
+        background: 'rgba(255,255,255,0.03)',
+        border: '2.5px solid rgba(255,255,255,0.06)',
+        boxShadow: '0 0 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
+      }}>
+        {s.grid.map((row, r) => row.map((cell, c) => {
+          const key = `${r}-${c}`;
+          if (!cell.ownerId) {
+            return (
+              <div key={key} style={{
+                borderRadius: 8,
+                background: 'rgba(255,255,255,0.03)',
+                border: '1px solid rgba(255,255,255,0.06)',
+                opacity: 0.45,
+              }} />
+            );
+          }
+          const owner = s.teams.find(t => t.id === cell.ownerId);
+          if (!owner) return null;
+          const isFocus = owner.id === focusTeamId;
+          const color = owner.color;
+          const bgA = isFocus ? 'ff' : 'aa';
+          const bgB = isFocus ? 'cc' : '55';
+          const stamps = cell.revealStamps ?? [];
+          return (
+            <div key={key} style={{
+              position: 'relative', borderRadius: 8,
+              background: `linear-gradient(135deg, ${color}${bgA}, ${color}${bgB})`,
+              border: isFocus ? `2px solid ${color}` : `1px solid ${color}55`,
+              boxShadow: isFocus
+                ? `0 0 16px ${color}cc, 0 0 32px ${color}66, inset 0 0 10px ${color}44`
+                : 'inset 0 0 4px rgba(0,0,0,0.25)',
+              animation: isFocus ? 'qqFRClusterPulse 2.4s ease-in-out infinite' : undefined,
+              opacity: isFocus ? 1 : 0.78,
+              transition: 'opacity 0.4s ease, box-shadow 0.4s ease',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              ['--c-color' as any]: `${color}aa`,
+            }}>
+              {owner.emoji && (
+                <CountryFlagOrEmoji
+                  emoji={owner.emoji}
+                  fontSize={`calc(${cellSize} * 0.42)`}
+                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))', opacity: stamps.length > 0 ? 0.55 : 1 }}
+                />
+              )}
+              {/* Stamps stacked oben links als Mini-Emoji */}
+              {stamps.length > 0 && (
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', flexWrap: 'wrap',
+                  alignItems: 'center', justifyContent: 'center',
+                  gap: 2,
+                  pointerEvents: 'none',
+                  padding: 4,
+                }}>
+                  {stamps.map((st, i) => (
+                    <span key={i} style={{
+                      fontSize: `calc(${cellSize} * ${stamps.length > 4 ? 0.28 : stamps.length > 2 ? 0.34 : 0.42})`,
+                      lineHeight: 1,
+                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))',
+                      animation: i === stamps.length - 1
+                        ? 'qqFRStampDrop 0.5s cubic-bezier(0.34,1.56,0.64,1) both'
+                        : undefined,
+                    }}>{STAMP_EMOJI[st.kind] ?? '🪙'}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        }))}
+      </div>
+      {/* Focus-Kind Hint unten als kleine Pille */}
+      {focusTeamId && focusKind && (
+        <div style={{
+          position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
+          padding: '8px 16px', borderRadius: 999,
+          background: 'rgba(15,8,23,0.85)',
+          border: '1.5px solid rgba(255,255,255,0.15)',
+          fontSize: 'clamp(14px, 1.4cqw, 22px)', fontWeight: 800, color: '#F1F5F9',
+          letterSpacing: '0.04em',
+          backdropFilter: 'blur(8px)',
+          opacity: 0.85,
+        }}>
+          {STAMP_EMOJI[focusKind]} {(s.teams.find(t => t.id === focusTeamId)?.name) ?? ''}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const step = s.finalRevealStep ?? 0;
@@ -923,15 +1040,24 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       <FinalRevealSharedKeyframes />
       {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
       {phase.kind === 'bet' && (
-        // 2026-05-24 (Wolf-Wunsch Reveal-Choreo): Split-Layout — Bet-Card LINKS,
-        // Standings-Tabelle RECHTS die parallel zur Card-Reveal +Punkte bekommt
-        // und re-sortiert (Climbing). Vorher: Card oben centered + Tabelle drunter.
+        // 2026-05-25 (Wolf 'links grid, rechts cards, tabelle erst am ende'):
+        // GridSnapshot LINKS (Story-Stamps landen darauf live), Bet-Card RECHTS.
+        // Tabelle ist komplett aus — kommt erst beim Eurovision-Endstand zurueck.
         <div style={{
           flex: 1, width: '100%', minHeight: 0,
           padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
           display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
           gap: 'clamp(20px, 2.5cqw, 40px)',
+          position: 'relative',
         }}>
+          <GridSnapshot
+            state={s}
+            focusTeamId={(() => {
+              const fs = betSlots[phase.slotIndex];
+              return fs?.kind === 'positive' ? fs.team.id : null;
+            })()}
+            focusKind="bet"
+          />
           <div style={{ display: 'flex', minHeight: 0 }}>
             <BetSlotTransition
               slotIndex={phase.slotIndex}
@@ -940,16 +1066,6 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
               lang={lang}
             />
           </div>
-          <FinalLeaderboard
-            teams={s.teams}
-            awardPoints={awardPoints}
-            betSlots={betSlots}
-            revealedSlotIndex={effRevealedSlotIdx}
-            revealedAwardCount={effRevealedAwardCount}
-            awards={s.endAwards ?? undefined}
-            lang={lang}
-            stampsByTeam={stampsByTeam}
-          />
         </div>
       )}
       {/* 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
@@ -964,7 +1080,19 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
           display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
           gap: 'clamp(20px, 2.5cqw, 40px)',
+          position: 'relative',
         }}>
+          <GridSnapshot
+            state={s}
+            focusTeamId={(() => {
+              const a = s.endAwards;
+              if (!a) return null;
+              return phase.awardIndex === 0 ? a.speedy
+                : phase.awardIndex === 1 ? a.meisterklauer
+                : a.underdog;
+            })()}
+            focusKind={phase.awardIndex === 0 ? 'speedy' : phase.awardIndex === 1 ? 'meisterklauer' : 'underdog'}
+          />
           <div style={{ display: 'flex', minHeight: 0 }}>
             <AwardSlotTransition
               awardIndex={phase.awardIndex}
@@ -972,16 +1100,6 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
               lang={lang}
             />
           </div>
-          <FinalLeaderboard
-            teams={s.teams}
-            awardPoints={awardPoints}
-            betSlots={betSlots}
-            revealedSlotIndex={-1}
-            revealedAwardCount={effRevealedAwardCount}
-            awards={s.endAwards ?? undefined}
-            lang={lang}
-            stampsByTeam={stampsByTeam}
-          />
         </div>
       )}
       {/* 2026-05-24 (Wolf-Entscheidung): Race-Final ist deaktiviert, ersetzt
@@ -999,6 +1117,12 @@ function FinalRevealSharedKeyframes() {
       @keyframes qqFRTitleIn {
         0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(8px); }
         100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }
+      }
+      /* 2026-05-25 (Wolf Welle 2): Stamp landet von oben auf der Cell — bounce-Drop. */
+      @keyframes qqFRStampDrop {
+        0%   { opacity: 0; transform: translateY(-40px) scale(1.6); filter: blur(4px); }
+        60%  { opacity: 1; transform: translateY(2px)   scale(1.15); filter: blur(0); }
+        100% { opacity: 1; transform: translateY(0)     scale(1);   }
       }
       /* 2026-05-17 P11 (Wolf 'animation von tip reveal cards gefällt mir
          nicht — clean fade-up'): subtile fade + translateY für Bet-Reveal-

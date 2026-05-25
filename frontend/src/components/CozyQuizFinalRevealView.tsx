@@ -2330,19 +2330,36 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
 
   useEffect(() => {
     const timers: number[] = [];
-    const START = 400;         // erste Row erscheint
-    const STAGGER = 600;       // Pause pro Row
-    const ANTICIPATION = 1200; // extra Hold vor Sieger (Drumroll-Spannung)
+    const START = 400; // erste Row erscheint
+    // 2026-05-25 (Wolf 'progressive slowdown ab platz 3, drumroll vor sieger'):
+    // Stagger steigt fuer Top-Plaetze — mehr Spannung beim Endspurt.
+    // Sound-Tick wird auch hoeher fuer Top-3 (Pitch via webaudio nicht trivial,
+    // bleibt erstmal gleich).
+    const staggerForRank = (rank: number): number => {
+      if (rank === 3) return 1100; // bisschen langsamer
+      if (rank === 2) return 1700; // deutlich langsamer
+      return 600;                  // normal für rank 4+
+    };
+    const ANTICIPATION_BEFORE_WINNER = 2400; // Drumroll-Hold vor Platz 1
 
-    // Rows N-1 → 1 (worst → 2nd place) erscheinen mit STAGGER
+    // Reveal-Schleife: i=0 zeigt rank N (worst), i=N-2 zeigt rank 2.
+    // Cumulative cursor — jeder Reveal addiert seinen eigenen Stagger.
+    let cursor = START;
     for (let i = 0; i < N - 1; i++) {
+      if (i > 0) {
+        // Stagger zum vorigen Reveal: definiert durch den RANG der jetzt enthuellt wird.
+        const rankBeingRevealed = N - i;
+        cursor += staggerForRank(rankBeingRevealed);
+      }
+      const fireAt = cursor;
       timers.push(window.setTimeout(() => {
         setRevealedCount(i + 1);
         try { playTick(); } catch {}
-      }, START + i * STAGGER));
+      }, fireAt));
     }
-    // Sieger zuletzt, nach extra Anticipation-Hold
-    const winnerAt = START + Math.max(0, N - 1) * STAGGER + ANTICIPATION;
+    // Sieger zuletzt mit Drumroll-Anticipation.
+    cursor += ANTICIPATION_BEFORE_WINNER;
+    const winnerAt = cursor;
     timers.push(window.setTimeout(() => {
       setRevealedCount(N);
       setWinnerRevealed(true);

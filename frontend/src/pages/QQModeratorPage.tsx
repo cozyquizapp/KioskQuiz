@@ -771,7 +771,16 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           action = () => emit('qq:nextQuestion', { roomCode });
         } else if (step === maxStep) {
           // Race-Final → Eurovision-Endstand. Cascade + Celebration → THANKS.
-          const cascadeMs = 2300 + Math.max(0, N - 1) * 600;
+          // 2026-05-25 (Wolf 'progressive slowdown ab platz 3'): Cascade-Timing
+          // angepasst — Top-3 reveals langsamer, vor Sieger 2.4s Drumroll.
+          // Formula matched FinalEurovisionFinale staggerForRank-Logik:
+          //   400 (start) + max(0,N-4)*600 (rank 4+) + 1100 (rank 3) + 1700 (rank 2)
+          //   + 2400 (Drumroll vor Winner)
+          const cascadeMs = 400
+            + Math.max(0, N - 4) * 600
+            + (N >= 3 ? 1100 : 0)
+            + (N >= 2 ? 1700 : 0)
+            + 2400;
           delayMs = cascadeMs + 7000;
           action = () => emit('qq:nextQuestion', { roomCode });
         }

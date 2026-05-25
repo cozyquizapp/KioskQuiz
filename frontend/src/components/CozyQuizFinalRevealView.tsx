@@ -19,6 +19,7 @@ import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
+import { GridDisplay } from './CozyQuizGridDisplay';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
@@ -778,118 +779,49 @@ function FinalLeaderboard({
   );
 }
 
-// ─── GridSnapshot ───────────────────────────────────────────────────────────
-// 2026-05-25 (Wolf 'tabelle weg, grid links als story-snapshot'): Live-Grid
-// waehrend Bet/Award-Reveals. Zeigt alle Team-Cells in Team-Farbe + emoji,
-// revealStamps werden als Mini-Emojis auf der Cell sichtbar (gestapelt).
-// Focus-Team-Cells bekommen Pulse-Glow im aktuellen Reveal-Step.
-function GridSnapshot({ state: s, focusTeamId, focusKind }: {
+// ─── FinalRevealGridSlot ────────────────────────────────────────────────────
+// 2026-05-25 (Wolf 'das ist nicht das normale grid aus der app'): wir nutzen
+// jetzt das echte App-GridDisplay (mit Team-Avataren, Territorium-Fusion,
+// Stack-Avataren). Stamps wurden direkt in GridDisplay integriert (slots ab
+// baseCopies rendern Stamp-Emoji statt Team-Avatar).
+function FinalRevealGridSlot({ state: s, focusTeamId }: {
   state: QQStateUpdate;
   focusTeamId: string | null;
-  focusKind?: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy' | null;
 }) {
-  const STAMP_EMOJI = {
-    underdog: '🐢', speedy: '⚡', meisterklauer: '🦝', bet: '🪙', sympathy: '💞',
-  } as const;
-  const N = s.gridSize;
-  // Cell-Size berechnen — passt sich an Container an.
-  const cellSize = `min(calc((85cqh - 80px) / ${N}), calc((48cqw - 80px) / ${N}))`;
-  const gap = 4;
+  const wrapRef = useRef<HTMLDivElement | null>(null);
+  const [box, setBox] = useState<number>(640);
+  useEffect(() => {
+    const update = () => {
+      if (!wrapRef.current) return;
+      const r = wrapRef.current.getBoundingClientRect();
+      const side = Math.max(160, Math.floor(Math.min(r.width, r.height) - 16));
+      setBox(side);
+    };
+    update();
+    const ro = new ResizeObserver(update);
+    if (wrapRef.current) ro.observe(wrapRef.current);
+    window.addEventListener('resize', update);
+    return () => { ro.disconnect(); window.removeEventListener('resize', update); };
+  }, []);
+  const focusName = focusTeamId ? s.teams.find(t => t.id === focusTeamId)?.name : null;
   return (
-    <div style={{
+    <div ref={wrapRef} style={{
       width: '100%', height: '100%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      padding: 'clamp(8px, 1cqh, 16px)',
+      position: 'relative', minHeight: 0,
     }}>
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: `repeat(${N}, ${cellSize})`,
-        gridTemplateRows: `repeat(${N}, ${cellSize})`,
-        gap, padding: 12, borderRadius: 18,
-        background: 'rgba(255,255,255,0.03)',
-        border: '2.5px solid rgba(255,255,255,0.06)',
-        boxShadow: '0 0 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
-      }}>
-        {s.grid.map((row, r) => row.map((cell, c) => {
-          const key = `${r}-${c}`;
-          if (!cell.ownerId) {
-            return (
-              <div key={key} style={{
-                borderRadius: 8,
-                background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
-                opacity: 0.45,
-              }} />
-            );
-          }
-          const owner = s.teams.find(t => t.id === cell.ownerId);
-          if (!owner) return null;
-          const isFocus = owner.id === focusTeamId;
-          const color = owner.color;
-          const bgA = isFocus ? 'ff' : 'aa';
-          const bgB = isFocus ? 'cc' : '55';
-          const stamps = cell.revealStamps ?? [];
-          return (
-            <div key={key} style={{
-              position: 'relative', borderRadius: 8,
-              background: `linear-gradient(135deg, ${color}${bgA}, ${color}${bgB})`,
-              border: isFocus ? `2px solid ${color}` : `1px solid ${color}55`,
-              boxShadow: isFocus
-                ? `0 0 16px ${color}cc, 0 0 32px ${color}66, inset 0 0 10px ${color}44`
-                : 'inset 0 0 4px rgba(0,0,0,0.25)',
-              animation: isFocus ? 'qqFRClusterPulse 2.4s ease-in-out infinite' : undefined,
-              opacity: isFocus ? 1 : 0.78,
-              transition: 'opacity 0.4s ease, box-shadow 0.4s ease',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              ['--c-color' as any]: `${color}aa`,
-            }}>
-              {owner.emoji && (
-                <CountryFlagOrEmoji
-                  emoji={owner.emoji}
-                  fontSize={`calc(${cellSize} * 0.42)`}
-                  style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.5))', opacity: stamps.length > 0 ? 0.55 : 1 }}
-                />
-              )}
-              {/* Stamps stacked oben links als Mini-Emoji */}
-              {stamps.length > 0 && (
-                <div style={{
-                  position: 'absolute', inset: 0,
-                  display: 'flex', flexWrap: 'wrap',
-                  alignItems: 'center', justifyContent: 'center',
-                  gap: 2,
-                  pointerEvents: 'none',
-                  padding: 4,
-                }}>
-                  {stamps.map((st, i) => (
-                    <span key={i} style={{
-                      fontSize: `calc(${cellSize} * ${stamps.length > 4 ? 0.28 : stamps.length > 2 ? 0.34 : 0.42})`,
-                      lineHeight: 1,
-                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))',
-                      animation: i === stamps.length - 1
-                        ? 'qqFRStampDrop 0.5s cubic-bezier(0.34,1.56,0.64,1) both'
-                        : undefined,
-                    }}>{STAMP_EMOJI[st.kind] ?? '🪙'}</span>
-                  ))}
-                </div>
-              )}
-            </div>
-          );
-        }))}
-      </div>
-      {/* Focus-Kind Hint unten als kleine Pille */}
-      {focusTeamId && focusKind && (
+      <GridDisplay state={s} maxSize={box} highlightTeam={focusTeamId} showJoker={false} />
+      {focusName && (
         <div style={{
-          position: 'absolute', bottom: 16, left: '50%', transform: 'translateX(-50%)',
-          padding: '8px 16px', borderRadius: 999,
+          position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)',
+          padding: '6px 14px', borderRadius: 999,
           background: 'rgba(15,8,23,0.85)',
           border: '1.5px solid rgba(255,255,255,0.15)',
-          fontSize: 'clamp(14px, 1.4cqw, 22px)', fontWeight: 800, color: '#F1F5F9',
+          fontSize: 'clamp(13px, 1.2cqw, 18px)', fontWeight: 800, color: '#F1F5F9',
           letterSpacing: '0.04em',
           backdropFilter: 'blur(8px)',
-          opacity: 0.85,
-        }}>
-          {STAMP_EMOJI[focusKind]} {(s.teams.find(t => t.id === focusTeamId)?.name) ?? ''}
-        </div>
+          opacity: 0.9,
+        }}>{focusName}</div>
       )}
     </div>
   );
@@ -1050,13 +982,12 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           gap: 'clamp(20px, 2.5cqw, 40px)',
           position: 'relative',
         }}>
-          <GridSnapshot
+          <FinalRevealGridSlot
             state={s}
             focusTeamId={(() => {
               const fs = betSlots[phase.slotIndex];
               return fs?.kind === 'positive' ? fs.team.id : null;
             })()}
-            focusKind="bet"
           />
           <div style={{ display: 'flex', minHeight: 0 }}>
             <BetSlotTransition
@@ -1082,7 +1013,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           gap: 'clamp(20px, 2.5cqw, 40px)',
           position: 'relative',
         }}>
-          <GridSnapshot
+          <FinalRevealGridSlot
             state={s}
             focusTeamId={(() => {
               const a = s.endAwards;
@@ -1091,7 +1022,6 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
                 : phase.awardIndex === 1 ? a.meisterklauer
                 : a.underdog;
             })()}
-            focusKind={phase.awardIndex === 0 ? 'speedy' : phase.awardIndex === 1 ? 'meisterklauer' : 'underdog'}
           />
           <div style={{ display: 'flex', minHeight: 0 }}>
             <AwardSlotTransition
@@ -1645,17 +1575,19 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
     }}>
       <div style={{
         width: '100%', maxWidth: 'clamp(360px, 42cqw, 560px)',
+        height: '100%',
         perspective: '1800px',
         filter: `drop-shadow(0 0 28px ${team.color}66)`,
+        display: 'flex',
       }}>
         <div style={{
           position: 'relative', width: '100%',
-          // 2026-05-25 (Wolf 'card sonst etwas höher, +Bonus wird abgeschnitten'):
-          // min/max-Höhe erhöht (44cqh → 56cqh, max 540 → 640) damit der Inhalt
-          // (Avatar + Name + 'tippte auf' + Target-Pill + +N) bei langen Texten /
-          // Sympathie-Bonus nicht unten rausläuft (cardCommonStyle hat
-          // overflow:hidden für sauberen 3D-Flip).
-          minHeight: 'clamp(440px, 56cqh, 640px)',
+          // 2026-05-25 v3 (Wolf 'cards rechts immernoch abgeschnitten'):
+          // minHeight raus, height: 100% — die Card folgt der Column-Hoehe,
+          // damit der Inhalt (+N) immer rein passt. cardCommonStyle hat
+          // weiterhin overflow:hidden fuer den 3D-Flip-Backside-Cut.
+          height: '100%',
+          minHeight: 'clamp(440px, 56cqh, 720px)',
           transformStyle: 'preserve-3d',
           WebkitTransformStyle: 'preserve-3d',
           transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
@@ -1805,12 +1737,16 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 </div>
               ) : (
                 <div style={{
-                  padding: '20px 38px', borderRadius: 24,
+                  // 2026-05-25 v3 (Wolf 'card abgeschnitten'): padding + fontSize
+                  // kleiner damit +N sicher unten reinpasst auch bei engerer Spalte.
+                  padding: 'clamp(12px, 1.6cqh, 20px) clamp(22px, 3cqw, 38px)',
+                  borderRadius: 24,
                   background: 'rgba(34,197,94,0.18)',
                   border: '3px solid rgba(34,197,94,0.65)',
                   boxShadow: '0 0 36px rgba(34,197,94,0.35)',
-                  fontSize: 'clamp(56px, 6.2cqw, 100px)', fontWeight: 900,
+                  fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
                   color: QQ_COLORS.green500, letterSpacing: '-0.02em',
+                  lineHeight: 1,
                   animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 1.1s both',
                 }}>
                   + {totalBonus}
@@ -1893,10 +1829,11 @@ function AwardHeroSlide({ awardIndex, state: s, lang }: {
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-      width: '100%', minHeight: 0,
+      width: '100%', height: '100%', minHeight: 0,
     }}>
       <div style={{
         width: 'clamp(280px, 38cqw, 480px)',
+        height: '100%',
         display: 'flex', alignItems: 'stretch',
       }}>
         <AwardFlipCard
@@ -2027,14 +1964,16 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
       perspective: '1600px',
       animation: 'qqFRSlamDown 0.9s cubic-bezier(0.34, 1.46, 0.64, 1) both',
       filter: `drop-shadow(0 0 28px ${a.accent}88)`,
+      height: '100%', display: 'flex',
     }}>
       <div style={{
         position: 'relative',
         width: '100%',
-        // Feste Höhe damit BG + Front identische Box haben (Wolf: alle 3 Cards
-        // immer gleich groß). aspectRatio würde mit flex-1 schwanken, also
-        // expliziter min-height über vh.
-        minHeight: 'clamp(360px, 44cqh, 540px)',
+        // 2026-05-25 v3 (Wolf 'cards rechts abgeschnitten, +1 weg'):
+        // height: 100% statt fester minHeight — Card folgt der Column-Hoehe,
+        // damit der Sieger-Avatar + +N-Badge sicher reinpassen.
+        height: '100%',
+        minHeight: 'clamp(360px, 44cqh, 620px)',
         transformStyle: 'preserve-3d',
         WebkitTransformStyle: 'preserve-3d',
         transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',

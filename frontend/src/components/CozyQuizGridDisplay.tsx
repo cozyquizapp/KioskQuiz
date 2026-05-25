@@ -563,7 +563,20 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     //  stackCount 0 → 1 Avatar zentriert (normales Feld)
                     //  stackCount 1 → 2 Avatare diagonal, getrennt
                     //  stackCount 2+ → 3 Avatare im Dreieck, getrennt
-                    const copies = stackCount >= 2 ? 3 : stackCount === 1 ? 2 : 1;
+                    // 2026-05-25 (Wolf Final-Wager v4): revealStamps erweitern
+                    // den Stack-Slot-Count und ersetzen Team-Avatare durch
+                    // Stamp-Emojis ab Slot baseCopies. Beispiele:
+                    //  - 0 stack + 1 stamp  → 2 Slots (team TL, stamp BR)
+                    //  - 0 stack + 2 stamps → 3 Slots (team apex, 2 stamps basis)
+                    //  - 1 stack + 1 stamp  → 3 Slots (team, team, stamp)
+                    const STAMP_EMOJI_MAP: Record<string, string> = {
+                      underdog: '🐢', speedy: '⚡', meisterklauer: '🦝', bet: '🪙', sympathy: '💞',
+                    };
+                    const stamps = cell.revealStamps ?? [];
+                    const stampCount = stamps.length;
+                    const baseCopies = stackCount + 1; // wie viele Team-Avatare normalerweise
+                    const totalSlots = Math.min(3, baseCopies + stampCount); // cap at 3
+                    const copies = totalSlots;
                     // 2026-05-13 v5 (Wolf 13. Versuch: 'mach sie etwas groesser
                     // mach einen dritten diagonal dazu, dann nimm den in der
                     // mitte raus'):
@@ -621,6 +634,12 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           // dann offset-translate vom Center weg.
                           const txPx = off.tx * cellSize / 100;
                           const tyPx = off.ty * cellSize / 100;
+                          // 2026-05-25 Welle 2: Slots i < baseCopies zeigen Team-
+                          // Avatar wie bisher. Slots ab baseCopies zeigen das
+                          // Stamp-Emoji aus revealStamps in Reihenfolge.
+                          const isStampSlot = i >= baseCopies;
+                          const stampKind = isStampSlot ? stamps[i - baseCopies]?.kind : undefined;
+                          const stampEmoji = stampKind ? STAMP_EMOJI_MAP[stampKind] : null;
                           return (
                             <div key={i} style={{
                               position: 'absolute',
@@ -635,7 +654,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                               zIndex: i + 1,
                               animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
                             }}>
-                              <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
+                              {isStampSlot && stampEmoji ? (
+                                <span style={{
+                                  fontSize: avSize * 0.78, lineHeight: 1,
+                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
+                                }}>{stampEmoji}</span>
+                              ) : (
+                                <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
+                              )}
                             </div>
                           );
                         })}

@@ -154,6 +154,7 @@ import {
   getQQLibraryTopics,
 } from './db/schemas';
 import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
+import { QQ_ORDER_LIBRARY_SEED } from './data/qqOrderQuestionsSeed';
 import { COZY_GAME_V1_SEED } from '../../shared/cozyGameTypes';
 import {
   runTriviaDbImport, getImportStatus, recategorizeTriviaDbItems,
@@ -7719,6 +7720,14 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
             if (seedCount > 0) console.log(`✓ CozyLibrary Seed: ${seedCount} Items upserted`);
           } catch (err) {
             console.warn('CozyLibrary Seed fehlgeschlagen:', err);
+          }
+          // 2026-05-25 (Wolf 'order-fragen auto-seed'): 50 Bunte-Tuete-Order-
+          // Fragen idempotent upserten. Quelle: backend/src/data/qqOrderQuestionsSeed.ts
+          try {
+            const orderCount = await bulkUpsertQQLibrarySeed(QQ_ORDER_LIBRARY_SEED);
+            if (orderCount > 0) console.log(`✓ CozyLibrary Order-Seed: ${orderCount} Items upserted`);
+          } catch (err) {
+            console.warn('CozyLibrary Order-Seed fehlgeschlagen:', err);
           }
           // 2026-05-17: CozyGames V1-Seed (12 Spiele). Idempotent — nur Spiele die
           // noch nicht in der DB sind werden eingefügt. Wolf-Edits bleiben unangetastet.

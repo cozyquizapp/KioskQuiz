@@ -533,7 +533,7 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
 // in ihre neue Position (FLIP-style via CSS transition auf transform).
 function FinalLeaderboard({
   teams, awardPoints, betSlots, revealedSlotIndex, revealedAwardCount = 3,
-  awards, lang,
+  awards, lang, stampsByTeam,
 }: {
   teams: QQTeam[];
   awardPoints: Record<string, number>;
@@ -549,6 +549,9 @@ function FinalLeaderboard({
    *  Award-Reveal zu setzen. */
   awards?: { underdog: string | null; meisterklauer: string | null; speedy: string | null };
   lang: 'de' | 'en';
+  /** 2026-05-25 v4: gestempelte Story-Stamps pro Team aus dem Grid aggregiert.
+   *  Erscheinen als kleine Emoji-Reihe ueber dem Team-Namen. */
+  stampsByTeam?: Record<string, Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'>>;
 }) {
   const de = lang === 'de';
 
@@ -698,8 +701,9 @@ function FinalLeaderboard({
                   )}
                 </span>
               </div>
-              {/* Name (1:1 ScoreBar — kein Subtitle, kein Breakdown) */}
-              <div style={{ flex: 1, minWidth: 0 }}>
+              {/* Name + Story-Stamps. Stamps stapeln sich live waehrend Bet/
+                  Award-Reveals — jedes Team picked die Stamps via /team-Phone. */}
+              <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <TeamNameLabel
                   name={r.team.name}
                   maxLines={2}
@@ -709,6 +713,23 @@ function FinalLeaderboard({
                   fontWeight={900}
                   style={{ textShadow: isFocus ? `0 0 16px ${tColor}55` : 'none' }}
                 />
+                {stampsByTeam?.[r.team.id]?.length ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, fontSize: dense ? 16 : 20, lineHeight: 1 }}>
+                    {stampsByTeam[r.team.id].map((k, i) => (
+                      <span key={i} style={{
+                        animation: 'qqFRTitleIn 0.4s ease both',
+                        animationDelay: `${i * 0.05}s`,
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
+                      }}>
+                        {k === 'underdog' ? '🐢'
+                          : k === 'speedy' ? '⚡'
+                          : k === 'meisterklauer' ? '🦝'
+                          : k === 'sympathy' ? '💞'
+                          : '🪙'}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
               </div>
               {/* Medal-Slot + grosse TOTAL-Zahl + 'Punkte'-Unit (1:1 ScoreBar). */}
               <div style={{
@@ -769,7 +790,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   // 2026-05-10 (Wolf 'BetReveal Variante D'): betSlots ersetzt betSorted —
   // 0-Bonus-Teams als 1 Group-Slide, Positiv-Teams einzeln aufsteigend,
   // No-Bet-Teams komplett übersprungen.
-  const { betSlots, cellsByTeam, awardPoints, finalRanking } = useMemo(() => {
+  const { betSlots, cellsByTeam, awardPoints, finalRanking, stampsByTeam } = useMemo(() => {
     type BetSlot =
       | { kind: 'zero-group'; teams: QQTeam[] }
       | { kind: 'positive'; team: QQTeam; bonus: number };
@@ -822,7 +843,18 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       }))
       .sort((a, b) => b.total - a.total);
 
-    return { betSlots, cellsByTeam, awardPoints, finalRanking };
+    // 2026-05-25 v4: Story-Stamps pro Team aus Grid aggregieren (live Update
+    // waehrend Teams ihre Stacks setzen).
+    const stampsByTeam: Record<string, Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'>> = {};
+    for (const t of s.teams) stampsByTeam[t.id] = [];
+    for (const row of s.grid) for (const cell of row) {
+      if (!cell.revealStamps) continue;
+      for (const st of cell.revealStamps) {
+        if (stampsByTeam[st.teamId]) stampsByTeam[st.teamId].push(st.kind);
+      }
+    }
+
+    return { betSlots, cellsByTeam, awardPoints, finalRanking, stampsByTeam };
   }, [s.teams, s.grid, s.finalBetResolution, s.endAwards]);
   // cellsByTeam war fuer GridRevealSlide, das nach Race-Redesign 2026-05-24
   // raus ist. awardPoints jetzt fuer FinalLeaderboard waehrend Bet-Phase.
@@ -916,6 +948,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             revealedAwardCount={effRevealedAwardCount}
             awards={s.endAwards ?? undefined}
             lang={lang}
+            stampsByTeam={stampsByTeam}
           />
         </div>
       )}
@@ -947,6 +980,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             revealedAwardCount={effRevealedAwardCount}
             awards={s.endAwards ?? undefined}
             lang={lang}
+            stampsByTeam={stampsByTeam}
           />
         </div>
       )}

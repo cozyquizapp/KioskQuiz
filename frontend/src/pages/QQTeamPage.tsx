@@ -40,6 +40,7 @@ import {
 import {
   LobbyCard, RulesCard, TeamsRevealCard, PhaseIntroCard,
   PausedCard, FinalBettingCard, FinalRecapHintCard, FinalRevealCard,
+  FinalRevealStackPlacementCard,
   GameOverCard, CozyGameCard,
 } from '../components/CozyQuizTeamPhaseCards';
 import { QuestionCard } from '../components/CozyQuizTeamQuestionCard';
@@ -1707,7 +1708,9 @@ function TeamGameView({
           <FinalBettingCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
         )}
         {s.phase === 'FINAL_REVEAL' && (
-          <FinalRevealCard state={s} myTeamId={myTeamId} lang={lang} />
+          s.finalRevealPendingStacks?.teamId === myTeamId && (s.finalRevealPendingStacks?.kinds.length ?? 0) > 0
+            ? <FinalRevealStackPlacementCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
+            : <FinalRevealCard state={s} myTeamId={myTeamId} lang={lang} />
         )}
         {s.phase === 'COZY_GAME' && (
           <CozyGameCard state={s} myTeamId={myTeamId} lang={lang} />

@@ -126,6 +126,14 @@ export interface QQCell {
                            //   cleared when 0 — cell becomes a normal empty cell)
   stackBonus?: number;     // Connections-Finale Stapel-Bonus: jeder Stack +1 Pkt zur Team-Score.
                            //   Multi-Stack erlaubt (gleiche Cell mehrfach). Implizit auch stuck=true.
+  /** 2026-05-25 (Wolf Final-Wager v4): Story-Stamps die in der FINAL_REVEAL-Phase
+   *  auf eigene Cells gelegt werden — Bonus-Punkte aus Awards/Bets/Sympathie als
+   *  visuelle Marker (🐢/⚡/🦝/🪙/💞). Pro Stamp +1 zum largestConnected (kein
+   *  Multiplier — linear). Stack-Cap der normalen Phase gilt hier nicht. */
+  revealStamps?: Array<{
+    kind: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy';
+    teamId: string;
+  }>;
 }
 
 export type QQGrid = QQCell[][];  // [row][col]
@@ -1203,6 +1211,13 @@ export interface QQStateUpdate {
    *  Avatar-Punkt), N+8..2N+7 = Ranking-Slides last→first (single bis #4,
    *  Treppchen ab #3), 2N+8 = → Thanks. Mod-Space increments. */
   finalRevealStep: number;
+  /** 2026-05-25 (Wolf Final-Wager v4): Pending Stack-Placement waehrend
+   *  FINAL_REVEAL. Wird beim Step-Advance gesetzt, vom Team via
+   *  qq:finalRevealPlaceStack abgearbeitet. null = kein pending Placement. */
+  finalRevealPendingStacks?: {
+    teamId: string;
+    kinds: Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'>;
+  } | null;
   finalRoundWinners: string[] | null;                 // Legacy/optional: bei Tie alle gemeinsam — UI-Hinweis nur
   finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus
   /** Setup-Toggle: aktiviert die Final-Wager-Mechanik. Wenn true, lösen Space-

@@ -726,6 +726,145 @@ export function FinalRecapHintCard({
   );
 }
 
+// ── FinalRevealStackPlacementCard ────────────────────────────────────────────
+// 2026-05-25 (Wolf Final-Wager v4): Wenn der Reveal-Step Bonus-Stacks fuer das
+// eigene Team vergibt, picked das Team eigene Cells fuer Story-Stamps. Mini-
+// Grid mit Tap-to-Place. Pro Tap 1 Stamp aus der pending-Queue.
+const STAMP_EMOJI: Record<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy', string> = {
+  underdog: '🐢',
+  speedy: '⚡',
+  meisterklauer: '🦝',
+  bet: '🪙',
+  sympathy: '💞',
+};
+
+export function FinalRevealStackPlacementCard({
+  state: s, myTeamId, emit, roomCode, lang,
+}: {
+  state: QQStateUpdate;
+  myTeamId: string;
+  emit: (event: string, payload: any, ack?: (res: any) => void) => void;
+  roomCode: string;
+  lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const myTeam = s.teams.find(t => t.id === myTeamId);
+  const myColor = myTeam?.color ?? '#EC4899';
+  const pending = s.finalRevealPendingStacks;
+  if (!pending || pending.teamId !== myTeamId || pending.kinds.length === 0) return null;
+
+  const nextKind = pending.kinds[0];
+  const nextEmoji = STAMP_EMOJI[nextKind];
+  const remaining = pending.kinds.length;
+  const total = remaining; // headcount der Queue zum Render-Zeitpunkt
+  const titleDe = nextKind === 'underdog' ? '🐢 Trostpreis verteilen!'
+    : nextKind === 'speedy' ? '⚡ Speedy-Bonus setzen!'
+    : nextKind === 'meisterklauer' ? '🦝 Klauer-Bonus setzen!'
+    : nextKind === 'sympathy' ? '💞 Sympathie-Bonus setzen!'
+    : '🪙 Tipp-Bonus setzen!';
+  const titleEn = nextKind === 'underdog' ? '🐢 Place underdog bonus!'
+    : nextKind === 'speedy' ? '⚡ Place speedy bonus!'
+    : nextKind === 'meisterklauer' ? '🦝 Place steal bonus!'
+    : nextKind === 'sympathy' ? '💞 Place sympathy bonus!'
+    : '🪙 Place tip bonus!';
+
+  const onPick = (row: number, col: number) => {
+    const cell = s.grid[row]?.[col];
+    if (!cell || cell.ownerId !== myTeamId) return;
+    emit('qq:finalRevealPlaceStack', { roomCode, teamId: myTeamId, row, col });
+  };
+
+  const N = s.gridSize;
+  // Cell-Stamp-Count fuer visuelle Overlap-Anzeige.
+  const stampCountAt = (row: number, col: number): number => {
+    const cell = s.grid[row]?.[col];
+    return cell?.revealStamps?.length ?? 0;
+  };
+
+  return (
+    <CozyCard borderColor={myColor}>
+      <div style={{ textAlign: 'center', padding: '8px 0' }}>
+        <div style={{ fontSize: 36, marginBottom: 6, animation: 'tcwinBounce 0.7s ease both' }}>{nextEmoji}</div>
+        <div style={{
+          fontSize: 11, fontWeight: 900, color: '#94A3B8',
+          textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4,
+        }}>
+          {de ? 'Bonus verteilen' : 'Place bonus'}
+        </div>
+        <div style={{ fontSize: 19, fontWeight: 900, color: myColor, marginBottom: 4 }}>
+          {de ? titleDe : titleEn}
+        </div>
+        <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 12 }}>
+          {de
+            ? `Tippe ein eigenes Feld — ${remaining} ${remaining === 1 ? 'Stempel' : 'Stempel'} übrig`
+            : `Tap an own field — ${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} left`}
+        </div>
+        {/* Queue-Pills */}
+        {total > 1 && (
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 12 }}>
+            {pending.kinds.map((k, i) => (
+              <span key={i} style={{
+                fontSize: 18, padding: '4px 8px',
+                borderRadius: 10,
+                background: i === 0 ? `${myColor}33` : 'rgba(255,255,255,0.06)',
+                border: i === 0 ? `1.5px solid ${myColor}` : '1px solid rgba(255,255,255,0.10)',
+                opacity: i === 0 ? 1 : 0.55,
+              }}>{STAMP_EMOJI[k]}</span>
+            ))}
+          </div>
+        )}
+        {/* Mini-Grid */}
+        <div style={{
+          display: 'grid', gridTemplateColumns: `repeat(${N}, 1fr)`,
+          gap: 4, padding: 8, borderRadius: 12,
+          background: 'rgba(0,0,0,0.30)',
+          border: '1px solid rgba(255,255,255,0.06)',
+        }}>
+          {s.grid.flatMap((row, r) => row.map((cell, c) => {
+            const isOwn = cell.ownerId === myTeamId;
+            const stampN = stampCountAt(r, c);
+            const owner = cell.ownerId ? s.teams.find(t => t.id === cell.ownerId) : null;
+            return (
+              <button
+                key={`${r}-${c}`}
+                onClick={() => isOwn && onPick(r, c)}
+                disabled={!isOwn}
+                style={{
+                  aspectRatio: '1 / 1',
+                  border: isOwn ? `1.5px solid ${myColor}` : '1px solid rgba(255,255,255,0.08)',
+                  borderRadius: 6,
+                  background: isOwn ? `${myColor}26` : owner ? `${owner.color}14` : 'rgba(255,255,255,0.04)',
+                  color: '#F1F5F9',
+                  fontSize: 10, fontWeight: 800,
+                  cursor: isOwn ? 'pointer' : 'default',
+                  opacity: isOwn ? 1 : 0.55,
+                  position: 'relative',
+                  padding: 0, lineHeight: 1,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  transition: 'transform 0.15s ease',
+                }}
+                onTouchStart={e => { if (isOwn) (e.currentTarget as HTMLButtonElement).style.transform = 'scale(0.92)'; }}
+                onTouchEnd={e => { (e.currentTarget as HTMLButtonElement).style.transform = ''; }}
+              >
+                {stampN > 0 ? (
+                  <span style={{ fontSize: stampN > 2 ? 9 : 13, lineHeight: 1 }}>
+                    {stampN > 2 ? `${stampN}×` : '★'.repeat(Math.min(stampN, 2))}
+                  </span>
+                ) : isOwn ? (
+                  <span style={{ fontSize: 14, opacity: 0.85 }}>+</span>
+                ) : null}
+              </button>
+            );
+          }))}
+        </div>
+        <div style={{ marginTop: 10, fontSize: 11, color: '#94A3B8' }}>
+          {de ? 'Eigene Felder leuchten in deiner Farbe.' : 'Your own fields glow in your color.'}
+        </div>
+      </div>
+    </CozyCard>
+  );
+}
+
 // ── FinalRevealCard ──────────────────────────────────────────────────────────
 // 2026-05-09 (Final-Wager Refactor): Tipp-Variante. Zeigt mein Tipp-Ergebnis:
 // targetTeam · N Wins · Sympathie-Bonus · Total-Bonus.

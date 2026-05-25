@@ -22,7 +22,7 @@ import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
 import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 import { recordQQQuestionUsage } from '../db/schemas';
-import { qqFinalMaxStep as qqSharedFinalMaxStep } from '../../../shared/qqFinalReveal';
+import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep } from '../../../shared/qqFinalReveal';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -282,6 +282,16 @@ export interface QQRoomState {
   finalRecapJustWon: string[] | null;
   /** End-Flow Step in FINAL_REVEAL-Phase (0..N), Mod-Space increments. */
   finalRevealStep: number;
+  /** 2026-05-25 (Wolf Final-Wager v4): Pending Stack-Placement waehrend
+   *  FINAL_REVEAL. Wird beim Eintritt in einen Bet-/Award-Step gesetzt, vom
+   *  Team via qq:finalRevealPlaceStack abgearbeitet, beim Step-Advance ggf.
+   *  per Bot-Heuristik auf Cluster-Schwerpunkt aufgefuellt. null = kein
+   *  pending Placement. `kinds` ist eine Queue der noch zu setzenden Stamp-
+   *  Arten (Head wird bei jedem Place konsumiert). */
+  finalRevealPendingStacks: {
+    teamId: string;
+    kinds: Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'>;
+  } | null;
   /** Legacy/optional: Sieger-Liste (Top-Win-Team(s)) — UI-Hinweis only. */
   finalRoundWinners: string[] | null;
   /** Score-Snapshot beim Start der Final-Phase. */
@@ -469,6 +479,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalRecapStep: 0,
       finalRecapJustWon: null,
       finalRevealStep: 0,
+      finalRevealPendingStacks: null,
       finalRoundWinners: null,
       finalBetResolution: null,
       endAwards: null,
@@ -859,6 +870,7 @@ export function qqStartGame(
   room.finalRecapStep = 0;
   (room as any).finalRecapJustWon = null;
   room.finalRevealStep = 0;
+  room.finalRevealPendingStacks = null;
   room.finalRoundWinners = null;
   room.finalRoundScoreSnapshot = null;
   room.finalBetResolution = null;
@@ -3885,6 +3897,11 @@ export function updateTerritories(room: QQRoomState): void {
       if (!cell.ownerId) continue;
       if (cell.stuck)      bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + 1;
       if (cell.stackBonus) bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + cell.stackBonus;
+      // 2026-05-25 (Wolf Final-Wager v4): Story-Stamps zaehlen linear zur
+      // largestConnected — 1 Stamp = +1 Punkt (kein Multiplier).
+      if (cell.revealStamps && cell.revealStamps.length > 0) {
+        bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + cell.revealStamps.length;
+      }
     }
   }
   for (const id of room.joinOrder) {
@@ -4210,6 +4227,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalRecapStep:        room.finalRecapStep ?? 0,
     finalRecapJustWon:     room.finalRecapJustWon ?? null,
     finalRevealStep:       room.finalRevealStep ?? 0,
+    finalRevealPendingStacks: room.finalRevealPendingStacks ?? null,
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
@@ -5652,6 +5670,7 @@ export function qqStartFinalBetting(room: QQRoomState): void {
   for (const id of Object.keys(room.teams)) room.finalPhaseWins[id] = 0;
   room.finalRoundWinners = null;
   room.finalBetResolution = null;
+  room.finalRevealPendingStacks = null;
   // 2026-05-24 (Wolf-Live-Test): Intro-Slide vor Bets. Mod-Space dismissed.
   (room as any).finalBettingIntroDone = false;
   // Score-Snapshot: Anzahl Cells pro Team JETZT festhalten — wird beim Wechsel
@@ -5887,6 +5906,7 @@ export function qqResolveFinalBets(room: QQRoomState): void {
   // Step 0 = Title-Hold, Mod-Space increments (siehe qqAdvanceFinalReveal).
   room.phase = 'FINAL_REVEAL';
   room.finalRevealStep = 0;
+  room.finalRevealPendingStacks = null; // Title hat keine Stacks.
   room.lastActivityAt = Date.now();
 }
 
@@ -6288,6 +6308,9 @@ export function qqGoBackSlide(room: QQRoomState): void {
       break;
     case 'FINAL_REVEAL':
       room.finalRevealStep = dec(room.finalRevealStep);
+      // 2026-05-25: pending Stacks fuer den neuen Step neu setzen (Stamps die
+      // bereits gelegt wurden bleiben — Back-Step ist visual-rewind, kein Undo).
+      room.finalRevealPendingStacks = qqFinalRevealPendingForStep(room, room.finalRevealStep);
       break;
     case 'QUESTION_REVEAL': {
       const q = room.currentQuestion;
@@ -6307,16 +6330,187 @@ export function qqGoBackSlide(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
+/** 2026-05-25 (Wolf Final-Wager v4): Welche Stack-Stamps stehen fuer den gegebenen
+ *  finalRevealStep an? Liefert teamId + kinds-Queue oder null wenn der Step
+ *  keine Stacks vergibt (title / race-final / zero-group). Logik spiegelt das
+ *  Frontend-Slot-Mapping wider (positiveTeams aufsteigend nach totalBonus). */
+export function qqFinalRevealPendingForStep(
+  room: QQRoomState,
+  step: number,
+): { teamId: string; kinds: Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'> } | null {
+  const betSlotsCount = qqBetSlotsCount(room);
+  const decoded = qqSharedDecodeFinalStep(step, betSlotsCount);
+  if (decoded.kind === 'title' || decoded.kind === 'race-final') return null;
+
+  if (decoded.kind === 'bet') {
+    const teams = Object.values(room.teams);
+    const res = room.finalBetResolution ?? {};
+    const betted = teams.filter(t => res[t.id]?.targetTeamId);
+    const zeroTeams = betted.filter(t => (res[t.id]?.totalBonus ?? 0) === 0);
+    const positiveTeams = betted
+      .filter(t => (res[t.id]?.totalBonus ?? 0) > 0)
+      .sort((a, b) => {
+        const ba = res[a.id]!.totalBonus;
+        const bb = res[b.id]!.totalBonus;
+        if (ba !== bb) return ba - bb;
+        return a.name.localeCompare(b.name);
+      });
+    let slotIdx = decoded.slotIndex;
+    // 0-Group hat keine Stacks → ueberspringen, ohne Slot zu konsumieren.
+    if (zeroTeams.length > 0) {
+      if (slotIdx === 0) return null;
+      slotIdx -= 1;
+    }
+    const team = positiveTeams[slotIdx];
+    if (!team) return null;
+    const resolved = res[team.id]!;
+    const wins = resolved.targetWins ?? 0;
+    const sympathy = resolved.sympathyBonus ?? 0;
+    const kinds: Array<'bet' | 'sympathy'> = [];
+    for (let i = 0; i < wins; i++) kinds.push('bet');
+    for (let i = 0; i < sympathy; i++) kinds.push('sympathy');
+    if (kinds.length === 0) return null;
+    return { teamId: team.id, kinds };
+  }
+
+  if (decoded.kind === 'award') {
+    const awards = room.endAwards;
+    if (!awards) return null;
+    if (decoded.awardIndex === 0 && awards.speedy) {
+      return { teamId: awards.speedy, kinds: ['speedy'] };
+    }
+    if (decoded.awardIndex === 1 && awards.meisterklauer) {
+      return { teamId: awards.meisterklauer, kinds: ['meisterklauer'] };
+    }
+    if (decoded.awardIndex === 2 && awards.underdog) {
+      return { teamId: awards.underdog, kinds: ['underdog', 'underdog'] };
+    }
+    return null;
+  }
+  return null;
+}
+
+/** Team picked auf eigene Cell und legt 1 Stamp aus der pending-Queue. */
+export function qqFinalRevealPlaceStack(
+  room: QQRoomState,
+  teamId: string,
+  row: number,
+  col: number,
+): void {
+  if (room.phase !== 'FINAL_REVEAL') {
+    throw new QQError('WRONG_PHASE', 'Stack-Placement nur in der Final-Reveal-Phase.');
+  }
+  const pending = room.finalRevealPendingStacks;
+  if (!pending || pending.teamId !== teamId || pending.kinds.length === 0) {
+    throw new QQError('NO_PENDING', 'Kein Stack-Placement faellig.');
+  }
+  assertValidCoord(room, row, col);
+  const cell = room.grid[row][col];
+  if (cell.ownerId !== teamId) {
+    throw new QQError('NOT_OWN_CELL', 'Nur eigene Felder koennen gestempelt werden.');
+  }
+  // Stack-Cap-Override: in FINAL_REVEAL gilt KEIN normales Cap. Multi-Stack ok.
+  const kind = pending.kinds.shift()!;
+  if (!cell.revealStamps) cell.revealStamps = [];
+  cell.revealStamps.push({ kind, teamId });
+  if (pending.kinds.length === 0) {
+    room.finalRevealPendingStacks = null;
+  }
+  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
+  updateTerritories(room);
+  room.lastActivityAt = Date.now();
+}
+
+/** Bot-Auto-Place: Cluster-Schwerpunkt der groessten eigenen Region.
+ *  Heuristik:
+ *   1. BFS finde groesste verbundene Region des Teams.
+ *   2. Centroid (mittlere row, col) der Region berechnen.
+ *   3. Cell der Region naechst-zum-Centroid waehlen (Manhattan).
+ *   4. Fallback: irgendeine eigene Cell. */
+function qqPickAutoPlaceCell(room: QQRoomState, teamId: string): { row: number; col: number } | null {
+  const N = room.gridSize;
+  const ownCells: Array<{ row: number; col: number }> = [];
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      if (room.grid[r][c].ownerId === teamId) ownCells.push({ row: r, col: c });
+    }
+  }
+  if (ownCells.length === 0) return null;
+  // BFS-Cluster.
+  const visited = new Set<string>();
+  const key = (r: number, c: number) => `${r},${c}`;
+  let bestCluster: Array<{ row: number; col: number }> = [];
+  for (const start of ownCells) {
+    if (visited.has(key(start.row, start.col))) continue;
+    const queue: Array<{ row: number; col: number }> = [start];
+    const cluster: Array<{ row: number; col: number }> = [];
+    visited.add(key(start.row, start.col));
+    while (queue.length > 0) {
+      const cur = queue.shift()!;
+      cluster.push(cur);
+      const neigh = [
+        { row: cur.row - 1, col: cur.col },
+        { row: cur.row + 1, col: cur.col },
+        { row: cur.row, col: cur.col - 1 },
+        { row: cur.row, col: cur.col + 1 },
+      ];
+      for (const n of neigh) {
+        if (n.row < 0 || n.row >= N || n.col < 0 || n.col >= N) continue;
+        if (visited.has(key(n.row, n.col))) continue;
+        if (room.grid[n.row][n.col].ownerId !== teamId) continue;
+        visited.add(key(n.row, n.col));
+        queue.push(n);
+      }
+    }
+    if (cluster.length > bestCluster.length) bestCluster = cluster;
+  }
+  const pool = bestCluster.length > 0 ? bestCluster : ownCells;
+  const cr = pool.reduce((a, c) => a + c.row, 0) / pool.length;
+  const cc = pool.reduce((a, c) => a + c.col, 0) / pool.length;
+  return pool.slice().sort((a, b) => {
+    const da = Math.abs(a.row - cr) + Math.abs(a.col - cc);
+    const db = Math.abs(b.row - cr) + Math.abs(b.col - cc);
+    return da - db;
+  })[0];
+}
+
+/** Spuele alle restlichen pending-Stacks: vom Team unerledigt → Bot-Auto-Place. */
+function qqFlushPendingStacks(room: QQRoomState): void {
+  const pending = room.finalRevealPendingStacks;
+  if (!pending || pending.kinds.length === 0) {
+    room.finalRevealPendingStacks = null;
+    return;
+  }
+  const target = qqPickAutoPlaceCell(room, pending.teamId);
+  if (!target) {
+    room.finalRevealPendingStacks = null;
+    return;
+  }
+  const cell = room.grid[target.row][target.col];
+  if (!cell.revealStamps) cell.revealStamps = [];
+  for (const kind of pending.kinds) {
+    cell.revealStamps.push({ kind, teamId: pending.teamId });
+  }
+  pending.kinds.length = 0;
+  room.finalRevealPendingStacks = null;
+  updateTerritories(room);
+}
+
 /** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */
 export function qqAdvanceFinalReveal(room: QQRoomState): void {
   if (room.phase !== 'FINAL_REVEAL') return;
+  // Vor dem Advance: Restliche pending Stacks auto-flushen (Bot-Heuristik).
+  qqFlushPendingStacks(room);
   const max = qqFinalRevealMaxStep(room);
   const next = (room.finalRevealStep ?? 0) + 1;
   if (next > max) {
     room.phase = 'THANKS';
     room.finalRevealStep = 0;
+    room.finalRevealPendingStacks = null;
   } else {
     room.finalRevealStep = next;
+    // Pending Stacks fuer den neuen Step initialisieren.
+    room.finalRevealPendingStacks = qqFinalRevealPendingForStep(room, next);
   }
   room.lastActivityAt = Date.now();
 }

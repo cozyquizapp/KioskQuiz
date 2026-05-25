@@ -52,6 +52,7 @@ import {
   qqBluffFinishReview, qqBluffRejectSubmission, qqBluffUnrejectSubmission,
   qqBluffVote, qqBluffAllVoted, qqBluffAdvanceFromVote, qqBluffReset,
   qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqFinishFinalBettingIntro, qqResolveFinalBets, qqUndoLastAction,
+  qqFinalRevealPlaceStack,
   qqGoBackSlide,
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
@@ -2110,6 +2111,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
           maybeAutoConnections(io, payload.roomCode);
         }
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-05-25 (Wolf Final-Wager v4): Team picked eigene Cell waehrend
+    // FINAL_REVEAL, legt 1 Stamp aus der pending-Queue. Server-validated.
+    socket.on('qq:finalRevealPlaceStack', (payload: { roomCode: string; teamId: string; row: number; col: number }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqFinalRevealPlaceStack(room, payload.teamId, payload.row, payload.col);
+        broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

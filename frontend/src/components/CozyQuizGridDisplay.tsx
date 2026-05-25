@@ -614,36 +614,37 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    // 2026-05-25 v3 (Wolf 'beim 2. stapel überlappen 2. und 3. emoji'):
-                    // Triangle-Basis weiter auseinander (±22 → ±28), avFactor leicht
-                    // kleiner (0.34 → 0.30) für klare Trennung der 3 Triangle-Emojis.
-                    const avFactor = copies === 3 ? 0.30 : copies === 2 ? 0.54 : 0.86;
-                    const avSize = Math.max(8, cellSize * avFactor);
-                    const offsets: Array<{ tx: number; ty: number }> = copies === 3
+                    // 2026-05-25 v4 (Wolf 'triangle ist kein richtiges dreieck'):
+                    // Layout absolut deterministisch — feste Pixel-Offsets statt
+                    // %-basierte Berechnung (sicherer gegen Rounding/CSS-Quirks).
+                    // avFactor leicht kleiner, Triangle klar gespreizt mit
+                    // großzügigem Abstand zwischen Basis-Emojis.
+                    const avFactor = copies === 3 ? 0.32 : copies === 2 ? 0.54 : 0.86;
+                    const avSize = Math.max(8, Math.round(cellSize * avFactor));
+                    // Offsets in Pixeln statt %, basierend auf cellSize.
+                    // Triangle (copies=3): equilateral mit Side ~50% cellSize.
+                    //  apex y = -0.30*cellSize, basis y = +0.18*cellSize,
+                    //  basis x = ±0.30*cellSize → klar getrennt, niemals overlap.
+                    const offsetsPx: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
-                          { tx:   0, ty: -30 },  // Apex oben-mitte
-                          { tx: -28, ty:  18 },  // Basis-Left
-                          { tx:  28, ty:  18 },  // Basis-Right
+                          { tx: 0,                              ty: Math.round(-0.30 * cellSize) }, // Apex
+                          { tx: Math.round(-0.30 * cellSize),    ty: Math.round( 0.18 * cellSize) }, // Basis-Left
+                          { tx: Math.round( 0.30 * cellSize),    ty: Math.round( 0.18 * cellSize) }, // Basis-Right
                         ]
                       : copies === 2
-                        ? [{ tx: -23, ty: -23 }, { tx: 23, ty: 23 }]
+                        ? [
+                            { tx: Math.round(-0.23 * cellSize), ty: Math.round(-0.23 * cellSize) },
+                            { tx: Math.round( 0.23 * cellSize), ty: Math.round( 0.23 * cellSize) },
+                          ]
                         : [{ tx: 0, ty: 0 }];
                     return (
                       <div style={{
                         position: 'absolute', inset: 0,
                       }}>
-                        {offsets.map((off, i) => {
-                          // 2026-05-13 v6 (Wolf 15. Versuch): inset:0 + margin:auto
-                          // funktioniert NICHT zuverlaessig wenn der parent flex-
-                          // Container mit alignItems:center ist (Outer-Wrapper
-                          // Z.537 hat genau das). Browser-Quirk: abs-positioned
-                          // children sollten zwar aus flex-flow raus, aber das
-                          // margin-auto-centering kollidierte. Jetzt: hyperexplizit
-                          // via top:50% + left:50% + translate(-50%, -50%) — der
-                          // Wrapper-Center sitzt 100% sicher beim Cell-Center,
-                          // dann offset-translate vom Center weg.
-                          const txPx = off.tx * cellSize / 100;
-                          const tyPx = off.ty * cellSize / 100;
+                        {offsetsPx.map((off, i) => {
+                          // 2026-05-25 v4: direct pixel-offsets (kein %-Math mehr).
+                          const txPx = off.tx;
+                          const tyPx = off.ty;
                           // 2026-05-25 Welle 2: Slots i < baseCopies zeigen Team-
                           // Avatar wie bisher. Slots ab baseCopies zeigen das
                           // Stamp-Emoji aus revealStamps in Reihenfolge.

@@ -354,8 +354,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     if (!autoplayEnabled || autoplayPaused) return;
     const s = state;
     if (!s) return;
-    // Game-Over → Autoplay aus, Loop nicht endlos.
-    if (s.phase === 'GAME_OVER' || s.phase === 'THANKS' || s.phase === 'LOBBY') return;
+    // 2026-05-25 v2 (Wolf 'außer lobby, pause und thanks immer ohne space'):
+    // Halt-Punkte sind LOBBY (Mod startet manuell), PAUSED (Mod resumed manuell),
+    // THANKS (Spiel-Ende, kein Auto-Loop). GAME_OVER war frueher mit drin —
+    // jetzt soll Autoplay automatisch zu THANKS weitergehen (Connections-Flow).
+    if (s.phase === 'THANKS' || s.phase === 'LOBBY' || s.phase === 'PAUSED') return;
     // 2026-05-09 v2 (Wolf-Klärung 'soll durchlaufen, kein Stop'): Final-Recap
     // (zwischen Final-Fragen) blockiert Autoplay NICHT mehr. Längerer Delay
     // im PLACEMENT-Case unten (siehe finalRecapStep-Branch) lässt die Score-
@@ -643,9 +646,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         }
         break;
       }
-      case 'PAUSED':
-        // Bei Pause-Phase nichts tun (Moderator muss aktiv resumen).
-        break;
+      // 'PAUSED' wird in der Early-Return-Liste oben gehandhabt (Halt-Punkt).
       case 'COZY_GAME': {
         // 2026-05-17 Autoplay-Handler für CozyGame-Sub-Phasen:
         // INTRO (1.8s) → Rad drehen
@@ -802,6 +803,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           action = () => emit('qq:nextQuestion', { roomCode });
         }
         // active / placement: kein Auto-Klick, läuft selbst-getrieben
+        break;
+      }
+      case 'GAME_OVER': {
+        // 2026-05-25 (Wolf 'autoplay soll immer durchlaufen außer lobby/pause/
+        // thanks'): GAME_OVER war Halt-Punkt → jetzt auto-advance zu THANKS
+        // nach Celebration-Hold (~12s fuer Sieger-Anim + Konfetti + Lese-Pause).
+        delayMs = 12000;
+        action = () => emit('qq:showThanks', { roomCode });
         break;
       }
     }

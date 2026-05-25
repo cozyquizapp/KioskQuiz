@@ -1583,25 +1583,37 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
         }}>
           {/* BG — Team-Avatar + Tipp ??? + Drumroll
-              2026-05-25 (Wolf-Vote A): Vollton-Card matched Grid-Cells +
-              Vollton-Avatare. */}
+              2026-05-25 (Wolf-Vote A): Vollton-Card matched Grid-Cells.
+              2026-05-25 v2 (Wolf 'glow zu dominant'): Outer-Glow 80px → 40px. */}
           <div style={{
             ...cardCommonStyle,
             flexDirection: 'column', justifyContent: 'center', gap: 18,
             padding: 'clamp(24px, 3cqh, 40px)',
             background: `linear-gradient(160deg, ${team.color}ff, ${team.color}d9)`,
             border: `3px solid ${team.color}`,
-            boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+            boxShadow: `0 0 40px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
             <div style={{
               fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
               color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.18em',
             }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
-            <QQTeamAvatar
-              avatarId={team.avatarId} teamEmoji={team.emoji}
-              size={'clamp(100px, 11cqw, 170px)'}
-              flat
-            />
+            {/* 2026-05-25 v2 (Wolf 'avatar nackt, braucht definition'):
+                weiße Sub-Disc 15% Alpha hinter dem flat Avatar — Glyph sitzt auf
+                etwas, Vollton-Card-Optik bleibt erhalten. */}
+            <div style={{
+              width: 'clamp(100px, 11cqw, 170px)',
+              height: 'clamp(100px, 11cqw, 170px)',
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.15)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              boxShadow: 'inset 0 0 12px rgba(0,0,0,0.18)',
+            }}>
+              <QQTeamAvatar
+                avatarId={team.avatarId} teamEmoji={team.emoji}
+                size={'clamp(100px, 11cqw, 170px)'}
+                flat
+              />
+            </div>
             <div style={{
               width: '100%',
               animation: !isFlipped ? 'qqFRDrumroll 0.6s ease-in-out infinite' : 'none',
@@ -1627,8 +1639,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             }}>???</div>
           </div>
           {/* Front — Team + Tipp-Target + Bonus
-              2026-05-25 (Wolf-Vote A): Vollton-BG in team.color statt glassy.
-              Matched Grid-Cells + Vollton-Avatare. */}
+              2026-05-25 v2 (Wolf 'glow zu dominant'): Outer-Glow 80→40px. */}
           <div style={{
             ...cardCommonStyle,
             transform: 'rotateY(180deg)',
@@ -1637,10 +1648,19 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             padding: 'clamp(24px, 3cqh, 44px) clamp(28px, 3cqw, 48px)',
             background: `linear-gradient(135deg, ${team.color}ff, ${team.color}d9)`,
             border: `3px solid ${team.color}`,
-            boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+            boxShadow: `0 0 40px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
-          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} flat />
+          <div style={{
+            width: 'clamp(140px, 15cqw, 240px)',
+            height: 'clamp(140px, 15cqw, 240px)',
+            borderRadius: '50%',
+            background: 'rgba(255,255,255,0.15)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            boxShadow: 'inset 0 0 14px rgba(0,0,0,0.18)',
+          }}>
+            <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} flat />
+          </div>
           <div style={{ width: '100%' }}>
             <TeamNameLabel
               name={team.name}
@@ -1734,16 +1754,17 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 </div>
               ) : (
                 <div style={{
-                  // 2026-05-25 v3 (Wolf 'card abgeschnitten'): padding + fontSize
-                  // kleiner damit +N sicher unten reinpasst auch bei engerer Spalte.
+                  // 2026-05-25 v4 (Wolf 'badge wirkt blass auf vollton-card'):
+                  // Vollton-Grün BG statt 0.18 alpha, weisser Text fuer Kontrast.
                   padding: 'clamp(12px, 1.6cqh, 20px) clamp(22px, 3cqw, 38px)',
                   borderRadius: 24,
-                  background: 'rgba(34,197,94,0.18)',
-                  border: '3px solid rgba(34,197,94,0.65)',
-                  boxShadow: '0 0 36px rgba(34,197,94,0.35)',
+                  background: '#22C55E',
+                  border: '3px solid rgba(255,255,255,0.55)',
+                  boxShadow: '0 0 24px rgba(34,197,94,0.5), 0 4px 16px rgba(0,0,0,0.4)',
                   fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
-                  color: QQ_COLORS.green500, letterSpacing: '-0.02em',
+                  color: '#ffffff', letterSpacing: '-0.02em',
                   lineHeight: 1,
+                  textShadow: '0 2px 8px rgba(0,0,0,0.35)',
                   animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 1.1s both',
                 }}>
                   + {totalBonus}

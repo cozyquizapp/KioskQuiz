@@ -428,6 +428,7 @@ function SlotTransition({
   slotKey,
   exitAnimation,
   exitMs = 550,
+  enterAnimation,
   containerStyle,
   children,
 }: {
@@ -437,16 +438,22 @@ function SlotTransition({
   exitAnimation: string;
   /** Duration the previous slot stays mounted (must match exitAnimation dur). */
   exitMs?: number;
+  /** Optional CSS animation for the entering slot. Wenn gesetzt, ueberlagert
+   *  diese den natuerlichen Mount damit der neue Slot klar als "Neue Card"
+   *  hereinkommt waehrend der alte exitet. */
+  enterAnimation?: string;
   /** Optional container style overrides. Default: flex:1 width:100% position:relative. */
   containerStyle?: React.CSSProperties;
   children: React.ReactNode;
 }) {
   const [exitingNode, setExitingNode] = useState<React.ReactNode | null>(null);
+  const [enterTick, setEnterTick] = useState(0);
   const prevKeyRef = useRef(slotKey);
   const prevChildrenRef = useRef(children);
   useEffect(() => {
     if (slotKey !== prevKeyRef.current) {
       setExitingNode(prevChildrenRef.current);
+      setEnterTick(t => t + 1);
       prevKeyRef.current = slotKey;
       prevChildrenRef.current = children;
       const t = window.setTimeout(() => setExitingNode(null), exitMs);
@@ -467,14 +474,17 @@ function SlotTransition({
           animation: exitAnimation,
           pointerEvents: 'none',
           willChange: 'transform, opacity',
+          zIndex: 1,
         }}>
           {exitingNode}
         </div>
       )}
-      <div style={{
+      <div key={enterTick} style={{
         position: 'relative', flex: 1,
         display: 'flex', flexDirection: 'column',
         willChange: 'transform, opacity',
+        animation: enterAnimation,
+        zIndex: 2,
       }}>
         {children}
       </div>
@@ -518,8 +528,9 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
   return (
     <SlotTransition
       slotKey={String(slotIndex)}
-      exitAnimation="qqFRSlamOutDown 0.35s ease both"
-      exitMs={350}
+      exitAnimation="qqFRSlamOutDown 0.22s cubic-bezier(0.4, 0, 0.7, 0.3) both"
+      exitMs={220}
+      enterAnimation="qqFRSlotEnter 0.35s cubic-bezier(0.34, 1.36, 0.64, 1) 0.10s both"
     >
       {renderSlot(slot)}
     </SlotTransition>
@@ -1056,13 +1067,20 @@ function FinalRevealSharedKeyframes() {
         75%  { transform: translateY(-2%) scale(0.98) rotate(0deg); }
         100% { transform: translateY(0)    scale(1)    rotate(0deg); }
       }
-      /* 2026-05-13 (Wolf 'Bet-Card-Aufloese-Anim nach unten rausschieben sieht
-         nicht nice'): sanfter Fade + leichter Scale-Down, kein translateY/
-         rotate/blur mehr. Name aus Kompatibilitaet beibehalten — das in/out-
-         Pattern bleibt logisch gleich, nur visuell entspannter. */
+      /* 2026-05-25 v2 (Wolf 'alte card noch sichtbar wenn neue reinkommt'):
+         Exit-Anim deutlich schneller (0.35→0.20s) + dramatic scale-down
+         + blur, damit die alte Card schnell unsichtbar wird bevor die neue
+         ihre Drumroll startet. */
       @keyframes qqFRSlamOutDown {
-        0%   { opacity: 1; transform: scale(1); filter: blur(0); }
-        100% { opacity: 0; transform: scale(0.94); filter: blur(0); }
+        0%   { opacity: 1; transform: scale(1)    translateY(0);   filter: blur(0); }
+        100% { opacity: 0; transform: scale(0.82) translateY(-8%); filter: blur(4px); }
+      }
+      /* 2026-05-25: Crossfade-Entry fuer die neue Card waehrend die alte
+         exitet. Subtile Pop-In animation ueberlagert die noch nicht ganz
+         verschwundene Alte mit klarer „Neue Card kommt"-Geste. */
+      @keyframes qqFRSlotEnter {
+        0%   { opacity: 0; transform: scale(0.94) translateY(6%); }
+        100% { opacity: 1; transform: scale(1)    translateY(0); }
       }
       @keyframes qqFRSlamFromTop {
         0%   { opacity: 0; transform: translateY(-90cqh) scale(0.7); filter: blur(7px); }
@@ -1779,8 +1797,9 @@ function AwardSlotTransition({ awardIndex, state: s, lang }: {
   return (
     <SlotTransition
       slotKey={`award-${awardIndex}`}
-      exitAnimation="qqFRSlamOutDown 0.35s ease both"
-      exitMs={350}
+      exitAnimation="qqFRSlamOutDown 0.22s cubic-bezier(0.4, 0, 0.7, 0.3) both"
+      exitMs={220}
+      enterAnimation="qqFRSlotEnter 0.35s cubic-bezier(0.34, 1.36, 0.64, 1) 0.10s both"
     >
       {/* 2026-05-25 (Wolf-Bug 'cards flippen nicht im live'): key={awardIndex}
           erzwingt frischen Mount pro Award. Ohne key reuste React die

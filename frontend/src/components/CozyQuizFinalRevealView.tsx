@@ -1972,7 +1972,31 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
       animation: 'qqFRSlamDown 0.9s cubic-bezier(0.34, 1.46, 0.64, 1) both',
       filter: `drop-shadow(0 0 28px ${a.accent}88)`,
       height: '100%', display: 'flex',
+      position: 'relative',  // damit das +1-Badge absolute-positioniert werden kann
     }}>
+      {/* 2026-05-25 v4 (Wolf '+1 wird abgeschnitten oben'): +1-Badge raus
+          aus der Front-Face (die hat overflow:hidden für den 3D-Flip).
+          Jetzt am OUTER perspective-Wrapper, der kein overflow-clipping hat
+          → Badge kann frei nach oben translaten ohne geclippt zu werden. */}
+      {winner && isFlipped && (
+        <span aria-hidden style={{
+          position: 'absolute',
+          top: 'clamp(12px, 1.4cqh, 22px)',
+          right: 'clamp(12px, 1.4cqw, 22px)',
+          padding: '6px 14px',
+          borderRadius: 18,
+          background: 'rgba(34,197,94,0.22)',
+          border: '2.5px solid rgba(34,197,94,0.75)',
+          boxShadow: '0 0 28px rgba(34,197,94,0.55)',
+          fontSize: 'clamp(28px, 3.2cqw, 52px)', fontWeight: 900,
+          color: QQ_COLORS.green500,
+          textShadow: '0 0 14px rgba(34,197,94,0.7)',
+          animation: 'qqFRPlusOne 2.2s ease-out 0.6s both',
+          pointerEvents: 'none',
+          lineHeight: 1,
+          zIndex: 10,
+        }}>+1</span>
+      )}
       <div style={{
         position: 'relative',
         width: '100%',
@@ -2028,29 +2052,9 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
             ? `0 0 100px ${winner.color}88, 0 16px 48px rgba(0,0,0,0.5)`
             : `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
         }}>
-          {/* 2026-05-25 (Wolf '+1 manchmal nicht so gut erkennbar, vlt
-              außerhalb anzeigen'): grosser +1-Badge weg vom Avatar-Overlay
-              in die Top-Right-Corner der Front-Card. Eigene Animation,
-              ueberdeckt nichts. Die '+1 Bonus'-Pill unten bleibt als
-              Sub-Info. */}
-          {winner && (
-            <span aria-hidden style={{
-              position: 'absolute',
-              top: 'clamp(12px, 1.4cqh, 22px)',
-              right: 'clamp(12px, 1.4cqw, 22px)',
-              padding: '6px 14px',
-              borderRadius: 18,
-              background: 'rgba(34,197,94,0.22)',
-              border: '2.5px solid rgba(34,197,94,0.75)',
-              boxShadow: '0 0 28px rgba(34,197,94,0.55)',
-              fontSize: 'clamp(28px, 3.2cqw, 52px)', fontWeight: 900,
-              color: QQ_COLORS.green500,
-              textShadow: '0 0 14px rgba(34,197,94,0.7)',
-              animation: isFlipped ? 'qqFRPlusOne 2.2s ease-out 0.6s both' : 'none',
-              pointerEvents: 'none',
-              lineHeight: 1,
-            }}>+1</span>
-          )}
+          {/* 2026-05-25 v4: +1-Badge wurde auf den outer perspective-Wrapper
+              verschoben (siehe AwardFlipCard outer div) — drinnen blockierte
+              overflow:hidden die Float-Up-Animation. */}
           <div style={{
             fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
             color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',

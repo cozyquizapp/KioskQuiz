@@ -107,23 +107,25 @@ export default function QQFinalRevealTestPage() {
   const N = teams.length;
   const grid = buildMockGrid(teams);
 
-  // 2026-05-25 v2 (Welle 2 + Wolf 'gestackt clean diagonal'): Story-Stamps
-  // mocken mit LRU-Spread auf mehrere eigene Cells, statt alle auf 1 Cell zu
-  // stapeln. Spiegelt das Live-Bot-Auto-Place-Verhalten.
+  // 2026-05-25 v3 (Wolf 'bei 2 stapel als triangle, nicht aufteilen'):
+  // Fill-before-overflow statt LRU-Spread. Underdog [+2] landet auf 1 Cell.
+  const MAX_STAMPS_PER_CELL = 2;
   const addStamp = (teamId: string | null, kind: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy') => {
     if (!teamId) return;
-    const ownCells = grid.flat().filter(c => c.ownerId === teamId);
+    const ownCells: any[] = grid.flat().filter(c => c.ownerId === teamId);
     if (ownCells.length === 0) return;
-    // Pick die Cell mit wenigsten Stamps (LRU-Spread).
-    let bestCell: any = ownCells[0];
-    let minStamps = ((bestCell as any).revealStamps?.length ?? 0);
-    for (const c of ownCells) {
-      const anyC = c as any;
-      const sc = anyC.revealStamps?.length ?? 0;
-      if (sc < minStamps) { bestCell = anyC; minStamps = sc; }
+    const stampCount = (c: any) => c.revealStamps?.length ?? 0;
+    // 1. fill-up: Cell mit Stamps aber nicht voll
+    let target: any = ownCells.find(c => stampCount(c) > 0 && stampCount(c) < MAX_STAMPS_PER_CELL);
+    // 2. fresh: leere Cell
+    if (!target) target = ownCells.find(c => stampCount(c) === 0);
+    // 3. overflow: wenigste Stamps
+    if (!target) {
+      target = ownCells[0];
+      for (const c of ownCells) if (stampCount(c) < stampCount(target)) target = c;
     }
-    if (!bestCell.revealStamps) bestCell.revealStamps = [];
-    bestCell.revealStamps.push({ kind, teamId });
+    if (!target.revealStamps) target.revealStamps = [];
+    target.revealStamps.push({ kind, teamId });
   };
 
   // Mock endAwards (alle 3 vergeben)

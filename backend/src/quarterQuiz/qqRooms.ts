@@ -6475,18 +6475,22 @@ function qqPickAutoPlaceCell(room: QQRoomState, teamId: string): { row: number; 
 }
 
 /** Spuele alle restlichen pending-Stacks: vom Team unerledigt → Bot-Auto-Place. */
+/** Max Stamps pro Cell — 1 Team + 2 Stamps = Triangle, 3. Stamp overflowt. */
+const MAX_STAMPS_PER_CELL = 2;
+
 function qqFlushPendingStacks(room: QQRoomState): void {
   const pending = room.finalRevealPendingStacks;
   if (!pending || pending.kinds.length === 0) {
     room.finalRevealPendingStacks = null;
     return;
   }
-  // 2026-05-25 v2 (Wolf 'gestackt soll clean diagonal sein, alle stamps sichtbar'):
-  // Stamps werden auf MEHRERE eigene Cells verteilt (vorher: alle auf 1 Cell →
-  // 4 Stamps unsichtbar wegen 3-Slot-Cap). Strategie: starte beim Cluster-
-  // Schwerpunkt, fuer jeden Stamp picke die Cell mit den WENIGSTEN bisherigen
-  // Stamps (LRU-Spread). Damit verteilen sich die 4-5 Stamps eines Teams auf
-  // 4-5 Cells statt sich auf 1 zu stapeln.
+  // 2026-05-25 v3 (Wolf 'bei 2 stapel sollen 3 emojis als dreieck sein,
+  // nicht aufteilen'): Fill-before-overflow statt LRU-Spread:
+  //   1. Prefer Cell die schon Stamps hat aber noch < MAX_STAMPS_PER_CELL
+  //      (= triangle vollmachen)
+  //   2. Sonst frische Cell, zentroid-nah
+  //   3. Sonst overflow auf zentroid-Cell
+  // Damit landen Underdog [+2] zusammen auf 1 Cell als Dreieck.
   const N = room.gridSize;
   const ownCells: Array<{ row: number; col: number }> = [];
   for (let r = 0; r < N; r++) {
@@ -6498,10 +6502,9 @@ function qqFlushPendingStacks(room: QQRoomState): void {
     room.finalRevealPendingStacks = null;
     return;
   }
-  // Centroid-Cell zuerst (= bevorzugter Spread-Startpunkt).
+  // Cluster-Centroid an Index 0 fuer stabile Priorisierung.
   const centroidPick = qqPickAutoPlaceCell(room, pending.teamId);
   if (centroidPick) {
-    // Move centroid to front of array fuer Stable-Round-Robin
     const idx = ownCells.findIndex(c => c.row === centroidPick.row && c.col === centroidPick.col);
     if (idx > 0) {
       const [centroid] = ownCells.splice(idx, 1);
@@ -6509,17 +6512,25 @@ function qqFlushPendingStacks(room: QQRoomState): void {
     }
   }
   for (const kind of pending.kinds) {
-    // Picke die Cell mit aktuell den wenigsten Stamps (LRU-Spread).
-    let bestCell = ownCells[0];
-    let minStamps = (room.grid[bestCell.row][bestCell.col].revealStamps?.length ?? 0);
-    for (const oc of ownCells) {
-      const sc = room.grid[oc.row][oc.col].revealStamps?.length ?? 0;
-      if (sc < minStamps) {
-        bestCell = oc;
-        minStamps = sc;
+    const stampsAt = (oc: { row: number; col: number }) =>
+      room.grid[oc.row][oc.col].revealStamps?.length ?? 0;
+    // 1. Pref: Cell mit existing Stamps aber noch nicht voll → fill-up
+    let target = ownCells.find(oc => {
+      const sc = stampsAt(oc);
+      return sc > 0 && sc < MAX_STAMPS_PER_CELL;
+    });
+    // 2. Pref: fresh Cell, zentroid-nah (= ownCells[0] wenn frisch)
+    if (!target) target = ownCells.find(oc => stampsAt(oc) === 0);
+    // 3. Overflow: Cell mit den wenigsten Stamps (vermeidet 4+ auf 1 Cell)
+    if (!target) {
+      target = ownCells[0];
+      let minStamps = stampsAt(target);
+      for (const oc of ownCells) {
+        const sc = stampsAt(oc);
+        if (sc < minStamps) { target = oc; minStamps = sc; }
       }
     }
-    const cell = room.grid[bestCell.row][bestCell.col];
+    const cell = room.grid[target.row][target.col];
     if (!cell.revealStamps) cell.revealStamps = [];
     cell.revealStamps.push({ kind, teamId: pending.teamId });
   }

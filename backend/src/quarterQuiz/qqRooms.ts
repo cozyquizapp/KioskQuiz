@@ -6481,14 +6481,46 @@ function qqFlushPendingStacks(room: QQRoomState): void {
     room.finalRevealPendingStacks = null;
     return;
   }
-  const target = qqPickAutoPlaceCell(room, pending.teamId);
-  if (!target) {
+  // 2026-05-25 v2 (Wolf 'gestackt soll clean diagonal sein, alle stamps sichtbar'):
+  // Stamps werden auf MEHRERE eigene Cells verteilt (vorher: alle auf 1 Cell →
+  // 4 Stamps unsichtbar wegen 3-Slot-Cap). Strategie: starte beim Cluster-
+  // Schwerpunkt, fuer jeden Stamp picke die Cell mit den WENIGSTEN bisherigen
+  // Stamps (LRU-Spread). Damit verteilen sich die 4-5 Stamps eines Teams auf
+  // 4-5 Cells statt sich auf 1 zu stapeln.
+  const N = room.gridSize;
+  const ownCells: Array<{ row: number; col: number }> = [];
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      if (room.grid[r][c].ownerId === pending.teamId) ownCells.push({ row: r, col: c });
+    }
+  }
+  if (ownCells.length === 0) {
     room.finalRevealPendingStacks = null;
     return;
   }
-  const cell = room.grid[target.row][target.col];
-  if (!cell.revealStamps) cell.revealStamps = [];
+  // Centroid-Cell zuerst (= bevorzugter Spread-Startpunkt).
+  const centroidPick = qqPickAutoPlaceCell(room, pending.teamId);
+  if (centroidPick) {
+    // Move centroid to front of array fuer Stable-Round-Robin
+    const idx = ownCells.findIndex(c => c.row === centroidPick.row && c.col === centroidPick.col);
+    if (idx > 0) {
+      const [centroid] = ownCells.splice(idx, 1);
+      ownCells.unshift(centroid);
+    }
+  }
   for (const kind of pending.kinds) {
+    // Picke die Cell mit aktuell den wenigsten Stamps (LRU-Spread).
+    let bestCell = ownCells[0];
+    let minStamps = (room.grid[bestCell.row][bestCell.col].revealStamps?.length ?? 0);
+    for (const oc of ownCells) {
+      const sc = room.grid[oc.row][oc.col].revealStamps?.length ?? 0;
+      if (sc < minStamps) {
+        bestCell = oc;
+        minStamps = sc;
+      }
+    }
+    const cell = room.grid[bestCell.row][bestCell.col];
+    if (!cell.revealStamps) cell.revealStamps = [];
     cell.revealStamps.push({ kind, teamId: pending.teamId });
   }
   pending.kinds.length = 0;

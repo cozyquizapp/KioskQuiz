@@ -663,7 +663,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                             }}>
                               {isStampSlot && stampEmoji ? (
                                 <span style={{
-                                  fontSize: avSize * 0.78, lineHeight: 1,
+                                  // 2026-05-25 v2 (Wolf 'münze viel größer als avatar'):
+                                  // gleiche Größe wie das Team-Avatar-Emoji (size * 0.6).
+                                  fontSize: avSize * 0.6, lineHeight: 1,
                                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
                                 }}>{stampEmoji}</span>
                               ) : (

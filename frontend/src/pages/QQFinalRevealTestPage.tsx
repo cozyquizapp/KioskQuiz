@@ -107,16 +107,23 @@ export default function QQFinalRevealTestPage() {
   const N = teams.length;
   const grid = buildMockGrid(teams);
 
-  // 2026-05-25 (Welle 2): Story-Stamps mocken — pro past-Step die korrespondierenden
-  // Stamps auf eine eigene Cell des Award/Bet-Teams legen. Spiegelt Live-Verhalten,
-  // damit Leaderboard-Stamp-Badges im Test sichtbar sind.
+  // 2026-05-25 v2 (Welle 2 + Wolf 'gestackt clean diagonal'): Story-Stamps
+  // mocken mit LRU-Spread auf mehrere eigene Cells, statt alle auf 1 Cell zu
+  // stapeln. Spiegelt das Live-Bot-Auto-Place-Verhalten.
   const addStamp = (teamId: string | null, kind: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy') => {
     if (!teamId) return;
-    const ownCell = grid.flat().find(c => c.ownerId === teamId);
-    if (!ownCell) return;
-    const anyCell = ownCell as any;
-    if (!anyCell.revealStamps) anyCell.revealStamps = [];
-    anyCell.revealStamps.push({ kind, teamId });
+    const ownCells = grid.flat().filter(c => c.ownerId === teamId);
+    if (ownCells.length === 0) return;
+    // Pick die Cell mit wenigsten Stamps (LRU-Spread).
+    let bestCell: any = ownCells[0];
+    let minStamps = ((bestCell as any).revealStamps?.length ?? 0);
+    for (const c of ownCells) {
+      const anyC = c as any;
+      const sc = anyC.revealStamps?.length ?? 0;
+      if (sc < minStamps) { bestCell = anyC; minStamps = sc; }
+    }
+    if (!bestCell.revealStamps) bestCell.revealStamps = [];
+    bestCell.revealStamps.push({ kind, teamId });
   };
 
   // Mock endAwards (alle 3 vergeben)

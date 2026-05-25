@@ -7729,6 +7729,48 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
           } catch (err) {
             console.warn('CozyLibrary Order-Seed fehlgeschlagen:', err);
           }
+          // 2026-05-25 (Wolf 'alle bluff durch fix-it außer eurovision'):
+          // One-time-Migration ueber alle Drafts. Pro Bluff-Question wird eine
+          // zufaellige Order-Frage aus QQ_ORDER_LIBRARY_SEED kopiert (text,
+          // answer, bunteTuete-Payload). Idempotent: nach Migration ist keine
+          // bluff-Question mehr da → nichts mehr zu tun.
+          try {
+            const drafts = await getAllQQDraftsFromDB();
+            const orderPool = QQ_ORDER_LIBRARY_SEED;
+            let migratedDrafts = 0;
+            let migratedQuestions = 0;
+            for (const draft of drafts) {
+              const title = String(draft.title ?? '').toLowerCase();
+              if (title.includes('eurovision') || title.includes('esc')) continue;
+              const questions = Array.isArray(draft.questions) ? draft.questions : [];
+              let dirty = false;
+              const newQuestions = questions.map((q: any) => {
+                if (q?.bunteTuete?.kind !== 'bluff') return q;
+                const pick = orderPool[Math.floor(Math.random() * orderPool.length)] as any;
+                dirty = true;
+                migratedQuestions++;
+                return {
+                  ...q,
+                  text: pick.text,
+                  textEn: pick.textEn,
+                  answer: pick.answer,
+                  answerEn: pick.answerEn,
+                  funFact: pick.funFact,
+                  funFactEn: pick.funFactEn,
+                  bunteTuete: pick.bunteTuete,
+                };
+              });
+              if (dirty) {
+                migratedDrafts++;
+                await saveQQDraftToDB({ ...draft, questions: newQuestions });
+              }
+            }
+            if (migratedDrafts > 0) {
+              console.log(`✓ Bluff→Fix-It Migration: ${migratedQuestions} Fragen in ${migratedDrafts} Drafts ersetzt (Eurovision-Drafts skipped)`);
+            }
+          } catch (err) {
+            console.warn('Bluff→Fix-It Migration fehlgeschlagen:', err);
+          }
           // 2026-05-17: CozyGames V1-Seed (12 Spiele). Idempotent — nur Spiele die
           // noch nicht in der DB sind werden eingefügt. Wolf-Edits bleiben unangetastet.
           try {

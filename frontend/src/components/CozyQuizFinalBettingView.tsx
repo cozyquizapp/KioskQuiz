@@ -63,12 +63,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         minHeight: 0, overflow: 'hidden',
         gap: 'clamp(14px, 2cqh, 28px)',
       }}>
-        {/* Top-Label (gleiche Pille-Optik wie 'Runde X' im PhaseIntro). */}
-        <div style={{
-          fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
-          color: `${PINK}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
-          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.1s both',
-        }}>{de ? 'Vor dem Finale' : 'Before the finale'}</div>
+        {/* 2026-05-25 (Wolf 'vor dem finale kann weg'): Top-Label entfernt —
+            der Hero-Title 'Final-Tipp' traegt die Kategorie-Info selbst. */}
 
         {/* Hero-Icon — gleiche Sizes wie PhaseIntro-Cat-Icon (120-240px). */}
         <div style={{

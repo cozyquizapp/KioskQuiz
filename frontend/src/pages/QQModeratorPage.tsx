@@ -143,22 +143,35 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     if (state?.phase !== 'LOBBY') return;
     testSetupTriggeredRef.current = true;
     (async () => {
+      // 2026-05-25 (Wolf-Bug 'bots waren nicht da'): /dev/fillTeams braucht
+      // ADMIN_PIN in production. Erstes Mal wird PIN per Prompt geholt, dann
+      // localStorage-cached. Ohne PIN → 403 → keine Bots → confirm-Dialog.
+      const pin = getDevPin();
+      if (!pin) {
+        alert('Test-Modus braucht den Admin-PIN. Bitte Page neu laden + PIN eingeben.');
+        return;
+      }
       // Autoplay an damit Test-Quizze durchlaufen ohne Mod-Space
       setAutoplayEnabled(true);
       // Test-Mode-Flag setzen → Backend skipt persistGameResult
       try { await emit('qq:setTestMode', { roomCode, value: true }); } catch {}
       // 1. Bots spawnen (5 reichen für realistische Streuung)
       try {
-        await fetch(`/api/qq/${roomCode}/dev/fillTeams`, {
+        const r = await fetch(`/api/qq/${roomCode}/dev/fillTeams`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ count: 5 }),
+          body: JSON.stringify({ count: 5, pin }),
         });
+        if (r.status === 403) {
+          clearDevPin();
+          alert('Admin-PIN falsch. Page neu laden + PIN eingeben.');
+          return;
+        }
       } catch {}
-      await new Promise(r => setTimeout(r, 400));
+      await new Promise(r => setTimeout(r, 600));
       // 2. Setup als done markieren
       try { await emit('qq:setSetupDone', { roomCode, value: true }); } catch {}
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 300));
       // 3. Spiel starten
       try { await startGameRef.current(); } catch {}
     })();
@@ -1425,11 +1438,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <button
                     key={target}
                     onClick={async () => {
-                      await fetch(`/api/qq/${roomCode}/dev/skipTo`, {
+                      const pin = getDevPin();
+                      if (!pin) return;
+                      const r = await fetch(`/api/qq/${roomCode}/dev/skipTo`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ target }),
+                        body: JSON.stringify({ target, pin }),
                       });
+                      if (r.status === 403) {
+                        clearDevPin();
+                        alert('Admin-PIN falsch.');
+                      } else if (!r.ok) {
+                        const data = await r.json().catch(() => ({}));
+                        alert(`Skip-Fehler: ${data.error ?? r.status}`);
+                      }
                     }}
                     title={`Test-Skip: ${target}`}
                     style={{

@@ -488,30 +488,38 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
         const isActiveTeam = isPlacement && c.placementOrder[c.placementCursor] === tm.id;
         // Dim wenn weder Aktivität noch fertig
         const dim = !hasActivity && !finished;
+        // 2026-05-25 (Wolf 'green-ring pattern wie final-betting'): Wrapper-
+        // Padding-Pattern statt direct boxShadow am Avatar — Gap-Separator
+        // zwischen Team-Color und Aussen-Ring (klappt auch bei gruenen Teams).
+        const greenActive = !locked && hasActivity;
         return (
           <div key={tm.id} title={tm.name} style={{
             position: 'relative',
+            padding: 6, borderRadius: '50%',
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             flexShrink: 0,
             opacity: dim ? 0.55 : 1,
             filter: dim ? 'grayscale(0.4)' : (locked ? 'grayscale(0.2)' : 'none'),
-            transition: 'opacity 0.4s ease, filter 0.4s ease',
+            // Ring-Logic: Winner=Pink, hasActivity=Green, ActiveTeam=TeamColor-strong, default=TeamColor-soft
+            background: greenActive ? 'rgba(34,197,94,0.18)' : isWinner ? 'rgba(236,72,153,0.18)' : 'transparent',
+            border: isWinner
+              ? '3px solid #EC4899'
+              : greenActive
+                ? '3px solid #22C55E'
+                : isActiveTeam
+                  ? `3px solid ${tm.color}`
+                  : `3px solid ${tm.color}55`,
+            boxShadow: isWinner
+              ? '0 0 18px #EC489977, 0 0 32px #EC489944, 0 4px 10px rgba(0,0,0,0.55)'
+              : greenActive
+                ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)'
+                : isActiveTeam
+                  ? `0 0 16px ${tm.color}aa`
+                  : '0 4px 10px rgba(0,0,0,0.55)',
+            transition: 'all 0.45s ease',
             animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
           }}>
-            <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6cqw, 84px)'} style={{
-              background: '#0A0814',
-              // 2026-05-05 (Wolf 'in der ganzen App konsistent gruener Glow'):
-              // hasActivity (= Team hat schon getippt) → green-Ring + Glow
-              // statt ✓-Badge unten rechts. Winner=Gold-Ring, locked=Default.
-              boxShadow: isWinner
-                ? '0 0 0 3px #EC4899, 0 0 18px #EC489977, 0 4px 10px rgba(0,0,0,0.55)'
-                : !locked && hasActivity
-                  ? `0 0 0 3px #22C55E, 0 0 18px rgba(34,197,94,0.55), 0 4px 10px rgba(0,0,0,0.55)`
-                  : isActiveTeam
-                    ? `0 0 0 2px ${tm.color}, 0 0 16px ${tm.color}aa`
-                    : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
-              transition: 'box-shadow 0.45s ease',
-            }} />
+            <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6cqw, 84px)'} />
             {/* Status-Badge unten rechts — nur Winner und Locked. */}
             {isWinner && (
               <div style={{

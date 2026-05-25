@@ -510,21 +510,22 @@ export function BluffWriteScreen({ state: s, accent, lang }: {
           }}>
             {s.teams.map(tm => {
               const submitted = !!(s.bluffSubmissions ?? {})[tm.id]?.trim();
+              // 2026-05-25 (Wolf 'green-ring pattern wie final-betting'):
+              // Wrapper-Div mit 6px gap + light-green BG → dezenter dunkler
+              // Separator zwischen Team-Farbe und Aussen-Ring (klappt auch bei
+              // gruenen Teams). Aus boxShadow 0 0 0 3px migrate.
               return (
                 <div key={tm.id} title={tm.name} style={{
-                  position: 'relative',
-                  display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                  width: av + 12, height: av + 12, borderRadius: '50%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: submitted ? 'rgba(34,197,94,0.18)' : 'transparent',
+                  border: submitted ? '3px solid #22C55E' : `3px solid ${tm.color}55`,
+                  boxShadow: submitted ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : '0 4px 10px rgba(0,0,0,0.55)',
                   opacity: submitted ? 1 : 0.55,
                   filter: submitted ? 'none' : 'grayscale(0.4)',
-                  transition: 'opacity 0.4s ease, filter 0.4s ease',
+                  transition: 'all 0.45s ease',
                 }}>
-                  <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} style={{
-                    background: '#0A0814',
-                    boxShadow: submitted
-                      ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
-                      : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
-                    transition: 'box-shadow 0.45s ease',
-                  }} />
+                  <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
                 </div>
               );
             })}
@@ -638,24 +639,22 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       }}>
         {s.teams.map(tm => {
           const voted = !!(s.bluffVotes ?? {})[tm.id];
+          // 2026-05-25 (Wolf 'green-ring pattern wie final-betting'):
+          // Wrapper-Pattern statt direct boxShadow, fuer konsistentem
+          // Gap-Separator zwischen Team-Color und green Ring.
+          const avSize = 'clamp(56px, 6cqw, 84px)';
           return (
             <div key={tm.id} title={tm.name} style={{
-              position: 'relative',
+              padding: 6, borderRadius: '50%',
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              background: voted ? 'rgba(34,197,94,0.18)' : 'transparent',
+              border: voted ? '3px solid #22C55E' : `3px solid ${tm.color}55`,
+              boxShadow: voted ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : '0 4px 10px rgba(0,0,0,0.55)',
               opacity: voted ? 1 : 0.55,
-              // 2026-05-05 (Wolf): green-glow statt ✓-Badge fuer Submit-Status.
-              filter: voted
-                ? 'drop-shadow(0 0 10px rgba(34,197,94,0.55)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
-                : 'grayscale(0.4)',
-              transition: 'opacity 0.4s ease, filter 0.4s ease',
+              filter: voted ? 'none' : 'grayscale(0.4)',
+              transition: 'all 0.45s ease',
             }}>
-              <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px, 6cqw, 84px)'} style={{
-                background: '#0A0814',
-                boxShadow: voted
-                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
-                  : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
-                transition: 'box-shadow 0.45s ease',
-              }} />
+              <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avSize} />
             </div>
           );
         })}

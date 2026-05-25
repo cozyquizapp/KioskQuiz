@@ -1582,23 +1582,25 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
           transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
           transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
         }}>
-          {/* BG — Team-Avatar + Tipp ??? + Drumroll */}
+          {/* BG — Team-Avatar + Tipp ??? + Drumroll
+              2026-05-25 (Wolf-Vote A): Vollton-Card matched Grid-Cells +
+              Vollton-Avatare. */}
           <div style={{
             ...cardCommonStyle,
             flexDirection: 'column', justifyContent: 'center', gap: 18,
             padding: 'clamp(24px, 3cqh, 40px)',
-            background: `linear-gradient(160deg, ${team.color}28, ${team.color}10)`,
+            background: `linear-gradient(160deg, ${team.color}ff, ${team.color}d9)`,
             border: `3px solid ${team.color}`,
             boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
             <div style={{
               fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
-              color: team.color, textTransform: 'uppercase', letterSpacing: '0.18em',
+              color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.18em',
             }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
             <QQTeamAvatar
               avatarId={team.avatarId} teamEmoji={team.emoji}
               size={'clamp(100px, 11cqw, 170px)'}
-              bgColor={team.color}
+              flat
             />
             <div style={{
               width: '100%',
@@ -1607,44 +1609,47 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               <TeamNameLabel
                 name={team.name}
                 fontSize="clamp(24px, 2.6cqw, 40px)"
-                color={team.color}
+                color="#ffffff"
                 fontWeight={900}
                 maxLines={2}
                 shrinkAfter={14}
-                style={{ textAlign: 'center', letterSpacing: '-0.01em' }}
+                style={{ textAlign: 'center', letterSpacing: '-0.01em', textShadow: '0 2px 8px rgba(0,0,0,0.45)' }}
               />
             </div>
             <div style={{
               fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
-              color: QQ_COLORS.slate400, fontStyle: 'italic',
+              color: 'rgba(255,255,255,0.75)', fontStyle: 'italic',
             }}>{de ? 'tippt auf …' : 'tipped on …'}</div>
             <div style={{
               fontSize: 'clamp(40px, 4.5cqw, 64px)', fontWeight: 900,
-              color: QQ_COLORS.slate400, letterSpacing: '0.4em',
+              color: 'rgba(255,255,255,0.85)', letterSpacing: '0.4em',
+              textShadow: '0 2px 8px rgba(0,0,0,0.45)',
             }}>???</div>
           </div>
-          {/* Front — Team + Tipp-Target + Bonus (existing content) */}
+          {/* Front — Team + Tipp-Target + Bonus
+              2026-05-25 (Wolf-Vote A): Vollton-BG in team.color statt glassy.
+              Matched Grid-Cells + Vollton-Avatare. */}
           <div style={{
             ...cardCommonStyle,
             transform: 'rotateY(180deg)',
             flexDirection: 'column', justifyContent: 'center',
             gap: 'clamp(14px, 1.8cqh, 22px)',
             padding: 'clamp(24px, 3cqh, 44px) clamp(28px, 3cqw, 48px)',
-            background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
+            background: `linear-gradient(135deg, ${team.color}ff, ${team.color}d9)`,
             border: `3px solid ${team.color}`,
             boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
-          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} bgColor={team.color} />
+          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} flat />
           <div style={{ width: '100%' }}>
             <TeamNameLabel
               name={team.name}
               fontSize="clamp(32px, 3.4cqw, 56px)"
-              color={team.color}
+              color="#ffffff"
               fontWeight={900}
               maxLines={2}
               shrinkAfter={14}
-              style={{ textAlign: 'center', letterSpacing: '-0.01em' }}
+              style={{ textAlign: 'center', letterSpacing: '-0.01em', textShadow: '0 2px 12px rgba(0,0,0,0.55)' }}
             />
           </div>
         </div>
@@ -1673,26 +1678,28 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               {/* Sub-step 1: "tippte auf" + Tipp-Team — kommt nach Team-Slam mit Delay */}
               <div style={{
                 fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
-                color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.18em',
+                color: 'rgba(255,255,255,0.85)', textTransform: 'uppercase', letterSpacing: '0.18em',
                 animation: 'qqFRTitleIn 0.5s ease 0.55s both',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 16,
                 padding: '14px 26px', borderRadius: 999,
-                background: `${targetTeam.color}1a`,
-                border: `2.5px solid ${targetTeam.color}`,
+                background: `${targetTeam.color}`,
+                border: `2.5px solid rgba(255,255,255,0.5)`,
+                boxShadow: `0 4px 16px rgba(0,0,0,0.4)`,
                 animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
                 maxWidth: '100%', minWidth: 0,
               }}>
-                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} bgColor={targetTeam.color} />
+                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} flat />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <TeamNameLabel
                     name={targetTeam.name}
                     fontSize="clamp(26px, 2.6cqw, 40px)"
-                    color={targetTeam.color}
+                    color="#ffffff"
                     fontWeight={900}
                     maxLines={2}
                     shrinkAfter={14}
+                    style={{ textShadow: '0 2px 8px rgba(0,0,0,0.5)' }}
                   />
                 </div>
               </div>

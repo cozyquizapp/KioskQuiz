@@ -1217,12 +1217,10 @@ function FinalRevealSharedKeyframes() {
 // ─── TitleHoldSlide ─────────────────────────────────────────────────────────
 // 2026-05-10 (Wolf 'Drück Space soll nicht stehen — Mod-Hint im Live-Feed
 // fehl am Platz'): Subtitle entfernt. Nur Pokal + Titel.
+// 2026-05-25 v2 (Wolf 'pokal war besser als wolf'): zurueck zum statischen
+// 🏆-Emoji mit phasePop + qqCatNameWave-Bob. AnimatedCozyWolf revertiert.
 function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
   const de = lang === 'de';
-  // 2026-05-25 (Wolf 'reveal intro mit space + avatar bouncen'): statt
-  // statischem 🏆-Emoji jetzt AnimatedCozyWolf zentriert mit qqCatNameWave-
-  // Bob (analog Final-Tipp-Intro). Title bekommt per-letter Wave-Stagger
-  // (gleiches Pattern wie PhaseIntroView).
   const titleText = de ? 'Die Auflösung' : 'The reveal';
   return (
     <div style={{
@@ -1231,11 +1229,10 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       animation: 'qqFRTitleIn 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) both',
     }}>
       <div style={{
-        width: 'clamp(180px, 20cqw, 320px)',
+        fontSize: 'clamp(120px, 14cqw, 240px)', lineHeight: 1, textAlign: 'center',
+        filter: 'drop-shadow(0 8px 24px rgba(251,191,36,0.45))',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
-      }}>
-        <AnimatedCozyWolf widthCss="100%" speaking={false} />
-      </div>
+      }}>🏆</div>
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
         color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',

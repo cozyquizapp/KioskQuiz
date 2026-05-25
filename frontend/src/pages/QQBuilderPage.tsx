@@ -2728,7 +2728,26 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
             <div key={i} style={{ display: 'flex', gap: 6, alignItems: 'center', marginBottom: 5 }}>
               <div style={{ width: 22, flexShrink: 0, fontSize: 12, fontWeight: 900, color: QQ_COLORS.blue500, textAlign: 'center' }}>#{i + 1}</div>
               <div style={{ flex: 1 }}>
-                <input value={item} onChange={e => { const it = [...items]; it[i] = e.target.value; patchOrder(it, correctOrder); onChange({ ...q, answer: it.filter(Boolean).join(' → ') }); }}
+                <input value={item} onChange={e => {
+                  // 2026-05-25 (Wolf-Bug 'kann nicht ins DE Feld eintragen'):
+                  // vorher 2 onChange-Calls hintereinander — der 2. nutzte
+                  // q aus Closure (alte items) → ueberschrieb den 1. Call.
+                  // DE-Feld blieb leer trotz Tippen. Jetzt 1 gebuendelter Call.
+                  const it = [...items]; it[i] = e.target.value;
+                  onChange({
+                    ...q,
+                    answer: it.filter(Boolean).join(' → '),
+                    bunteTuete: {
+                      kind: 'order' as const,
+                      items: it,
+                      correctOrder,
+                      itemsEn,
+                      criteria: btCriteria,
+                      criteriaEn: btCriteriaEn,
+                      itemValues,
+                    },
+                  });
+                }}
                   style={inputStyle} placeholder={`Element ${i + 1} (DE)…`} />
                 <input value={itemsEn[i] ?? ''} onChange={e => { const it = [...itemsEn]; it[i] = e.target.value; patchOrder(items, correctOrder, it); }}
                   style={{ ...inputStyle, marginTop: 4, fontSize: 12, opacity: 0.7 }} placeholder={`Element ${i + 1} (EN, opt.)…`} />

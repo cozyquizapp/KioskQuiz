@@ -10084,6 +10084,22 @@ app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
     const idx = Math.max(1, Math.min(room.totalPhases ?? 4, phaseIdx));
     const skippedPhases = idx - 1;
     fillGrid(skippedPhases);
+    // 2026-05-25 (Wolf-Bug 'münzen mitten in der finalen runde'): wenn der
+    // Mod im Test-Modus von FINAL_REVEAL zurueck auf phase-X springt, blieben
+    // revealStamps auf den Cells haengen → Coins/Stamps tauchten in Phase 4
+    // auf. Bei einem Zurueck-Sprung clearen wir alle Reveal-State.
+    for (const row of room.grid) {
+      for (const cell of row) {
+        if (cell.revealStamps) cell.revealStamps = [];
+      }
+    }
+    room.finalRevealPendingStacks = null;
+    room.finalRevealStep = 0;
+    room.finalBetResolution = null;
+    room.finalBets = {};
+    room.finalBettingSubmitted = {};
+    room.finalPhaseWins = {};
+    room.endAwards = null;
     updateTerritories(room);
     room.phase = 'PHASE_INTRO';
     room.gamePhaseIndex = idx as any;

@@ -703,15 +703,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           action = () => emit('qq:finishFinalBettingIntro', { roomCode });
           break;
         }
-        // Auto-Advance nur wenn alle Teams gesetzt haben — sonst auf Mod
-        // warten (er will evtl noch warten oder manuell triggern).
+        // Auto-Advance wenn alle Teams gesetzt haben — Lese-Pause 4.5s.
         // 2026-05-09 (Wolf 'bet-phase wurde übersprungen'): Lese-Pause auf
         // 4.5s erhöht (war 2.2s) — bei 4 Bots die in 0.5-2.5s submitten
         // ist die Phase sonst nach ~3s vorbei und wirkt geskippt.
+        // 2026-05-25 v2 (Wolf 'autoplay soll nie hängen bleiben'): Fallback-
+        // Timeout 30s wenn nicht alle submitten — Bot-Disconnect-Schutz.
+        // qqFinishFinalBetting setzt nicht-submitted-Teams auf null = kein Tipp.
         const submitted = Object.values(s.finalBettingSubmitted ?? {}).filter(Boolean).length;
         const total = s.teams.length;
         if (total > 0 && submitted >= total) {
           delayMs = 4500;
+          action = () => emit('qq:finishFinalBetting', { roomCode });
+        } else if (total > 0 && submitted < total) {
+          // Bot-Disconnect-Fallback — nach 30s auto-finish auch ohne alle Bets.
+          delayMs = 30000;
           action = () => emit('qq:finishFinalBetting', { roomCode });
         }
         break;
@@ -725,20 +731,49 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
         const maxStep = betSlotsCount + 4;
-        // 2026-05-25 (Wolf 'bei den standings ist kein autoplay'):
-        // Bet/Award-Slots bleiben manuell (Mod-Tempo). Nur der Eurovision-
-        // Endstand (race-final = maxStep) wechselt automatisch zu THANKS,
-        // nachdem die Cascade + Sieger-Anim + Celebration durch ist.
-        // Cascade-Timing: 400ms Start + (N-1)*600 Stagger + 1200 Anticipation
-        // + 700 Climax = ~2.3s + (N-1)*0.6s. Plus ~7s Celebration-Hold.
-        if (step === maxStep) {
+        // 2026-05-25 v2 (Wolf 'autoplay soll überall durchlaufen, nicht hängen'):
+        // Auto-Advance fuer ALLE Steps wenn Autoplay aktiv:
+        //  - Title (step 0)        → ~3.5s (Wolf-Bouncer + 'Die Auflösung'-Lese)
+        //  - Bet-Slot (1..B)       → ~6s (Drumroll 0.9s + Flip 1.1s + Sub-Step-
+        //                              Stagger 0.55+1.1 + Read ~2.3s) plus
+        //                              ~1.2s extra wenn Sympathie-Bonus visible.
+        //  - Award-Slot (B+1..B+3) → ~5.5s (gleicher Drumroll-Flip + +N badge);
+        //                              Underdog (B+3) +0.8s weil +2 Stacks.
+        //  - Race-Final (maxStep)  → Cascade-Timing + ~7s Celebration.
+        // qqAdvanceFinalReveal flusht pending Stacks auto-place per Bot-Heuristik.
+        if (step === 0) {
+          delayMs = 3500;
+          action = () => emit('qq:nextQuestion', { roomCode });
+        } else if (step >= 1 && step <= betSlotsCount) {
+          // Bet-Slot — Mutual-Pair = sympathy = extra Time.
+          const slotIdx = step - 1;
+          const isZeroGroupAtSlot0 = zeroExists && slotIdx === 0;
+          const positiveSlotIdx = isZeroGroupAtSlot0 ? -1 : (zeroExists ? slotIdx - 1 : slotIdx);
+          const positiveTeams = betted
+            .filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0)
+            .sort((a, b) => {
+              const ba = s.finalBetResolution![a.id].totalBonus;
+              const bb = s.finalBetResolution![b.id].totalBonus;
+              if (ba !== bb) return ba - bb;
+              return a.name.localeCompare(b.name);
+            });
+            const teamAtSlot = positiveSlotIdx >= 0 ? positiveTeams[positiveSlotIdx] : null;
+          const hasSympathy = teamAtSlot
+            ? !!s.finalBetResolution?.[teamAtSlot.id]?.mutualWith
+            : false;
+          delayMs = isZeroGroupAtSlot0 ? 5500 : (hasSympathy ? 7200 : 6000);
+          action = () => emit('qq:nextQuestion', { roomCode });
+        } else if (step >= betSlotsCount + 1 && step <= betSlotsCount + 3) {
+          // Award-Slot — Underdog (B+3) bekommt mehr Zeit fuer 2 Stacks.
+          const isUnderdog = step === betSlotsCount + 3;
+          delayMs = isUnderdog ? 6500 : 5500;
+          action = () => emit('qq:nextQuestion', { roomCode });
+        } else if (step === maxStep) {
+          // Race-Final → Eurovision-Endstand. Cascade + Celebration → THANKS.
           const cascadeMs = 2300 + Math.max(0, N - 1) * 600;
           delayMs = cascadeMs + 7000;
-          // FINAL_REVEAL nutzt qq:nextQuestion (in qqNextQuestion ist die
-          // Phase-Branch fuer FINAL_REVEAL die qqAdvanceFinalReveal aufruft).
           action = () => emit('qq:nextQuestion', { roomCode });
         }
-        void zeroExists;
         break;
       }
       case 'CONNECTIONS_4X4': {

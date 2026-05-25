@@ -718,19 +718,27 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       }
       case 'FINAL_REVEAL': {
         // Step-Mapping siehe shared/qqFinalReveal.ts (Single-Source-of-Truth).
-        // Delays pro Phase sind unten im if-else definiert.
         const N = s.teams.length;
         const step = (s as any).finalRevealStep ?? 0;
         const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
-
-        // 2026-05-25 (Wolf 'special awards und bet cards immer mit space —
-        // tempo entscheidet der mod'): FINAL_REVEAL komplett manuell. Kein
-        // Auto-Advance fuer Title, Award-Slots, Bet-Slots oder Eurovision.
-        // action bleibt undefined → Autoplay-Branch returnt bei Z. 783.
-        void N; void step; void betSlotsCount; void zeroExists;
+        const maxStep = betSlotsCount + 4;
+        // 2026-05-25 (Wolf 'bei den standings ist kein autoplay'):
+        // Bet/Award-Slots bleiben manuell (Mod-Tempo). Nur der Eurovision-
+        // Endstand (race-final = maxStep) wechselt automatisch zu THANKS,
+        // nachdem die Cascade + Sieger-Anim + Celebration durch ist.
+        // Cascade-Timing: 400ms Start + (N-1)*600 Stagger + 1200 Anticipation
+        // + 700 Climax = ~2.3s + (N-1)*0.6s. Plus ~7s Celebration-Hold.
+        if (step === maxStep) {
+          const cascadeMs = 2300 + Math.max(0, N - 1) * 600;
+          delayMs = cascadeMs + 7000;
+          // FINAL_REVEAL nutzt qq:nextQuestion (in qqNextQuestion ist die
+          // Phase-Branch fuer FINAL_REVEAL die qqAdvanceFinalReveal aufruft).
+          action = () => emit('qq:nextQuestion', { roomCode });
+        }
+        void zeroExists;
         break;
       }
       case 'CONNECTIONS_4X4': {

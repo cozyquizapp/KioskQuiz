@@ -108,7 +108,11 @@ export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   // der Mod manuell qq:startFinalBetting/qq:finishFinalBettingIntro emittierte
   // — der Standard-Flow (letzte Quiz-Frage → Auto-Phase-Wechsel) wurde
   // uebersprungen.
-  if ((room as any)._pendingAutoFinalBets) {
+  // 2026-05-25 v2 (Wolf 'bots geben bets ab während des intros'): Bots
+  // warten bis Intro-Slide dismissed ist. Pending-Flag bleibt gesetzt
+  // wenn intro noch nicht durch — der naechste Broadcast nach
+  // qqFinishFinalBettingIntro triggert dann die Bots.
+  if ((room as any)._pendingAutoFinalBets && (room as any).finalBettingIntroDone === true) {
     (room as any)._pendingAutoFinalBets = false;
     maybeAutoFinalBets(io, roomCode);
   }

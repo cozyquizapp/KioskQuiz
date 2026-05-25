@@ -10110,12 +10110,27 @@ app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
     // Full skip bis FINAL_REVEAL Step 0
     goToPhaseIntro(room.totalPhases ?? 4);
     try { qqStartFinalBetting(room); } catch {}
+    // Intro sofort durch (qqSubmitFinalBet blockt sonst — siehe Z. 5677)
+    (room as any).finalBettingIntroDone = true;
     // Bots zufällige Bets setzen
     const teamIds = allTeamIds;
     for (const id of teamIds) {
       const others = teamIds.filter(t => t !== id);
-      const target = others[Math.floor(Math.random() * others.length)] ?? id;
-      try { qqSubmitFinalBet(room, id, { targetTeamId: target }); } catch {}
+      const tgt = others[Math.floor(Math.random() * others.length)] ?? id;
+      try { qqSubmitFinalBet(room, id, { targetTeamId: tgt }); } catch {}
+    }
+    // 2026-05-25 (Wolf-Bug 'betting phase wird nicht simuliert, keiner
+    // bekommt punkte vom betting'): finalPhaseWins ist 0 fuer alle weil
+    // die Final-Phase nicht gespielt wurde → qqResolveFinalBets liefert
+    // totalBonus=0 fuer alle. Fix: 5 Final-Fragen mock-simulieren mit
+    // 80%-Chance-pro-Frage einen random Winner. Resultiert in 0-3 wins
+    // pro Team, was realistische Bet-Bonus-Streuung erzeugt.
+    for (const id of teamIds) room.finalPhaseWins[id] = 0;
+    for (let i = 0; i < 5; i++) {
+      if (Math.random() < 0.8) {
+        const winner = teamIds[Math.floor(Math.random() * teamIds.length)];
+        room.finalPhaseWins[winner] = (room.finalPhaseWins[winner] ?? 0) + 1;
+      }
     }
     // Final-Wager auflösen → setzt phase=FINAL_REVEAL, step=0
     try { qqResolveFinalBets(room); } catch {}

@@ -5683,6 +5683,12 @@ export function qqSubmitFinalBet(
   if (room.phase !== 'FINAL_BETTING') {
     throw new Error('NOT_IN_FINAL_BETTING');
   }
+  // 2026-05-25 (Wolf 'bots geben bets während intros ab — könnten /team-spieler
+  // auch'): Intro-Slide muss erst dismissed sein bevor Bets angenommen werden.
+  // Gilt für Bots UND echte Spieler (selber Backend-Pfad).
+  if ((room as any).finalBettingIntroDone === false) {
+    throw new Error('INTRO_NOT_DONE');
+  }
   if (!room.teams[teamId]) {
     throw new Error('TEAM_UNKNOWN');
   }

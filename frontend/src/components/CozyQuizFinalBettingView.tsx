@@ -111,8 +111,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.65s both',
         }}>
           {de
-            ? 'Pro gewonnene Final-Frage eures Tipps = +1 Bonus'
-            : 'Per final-question win of your tip = +1 bonus'}
+            ? 'Jede Final-Frage, die euer Tipp-Team gewinnt = +1 Bonus'
+            : 'Each final question your tip-team wins = +1 bonus'}
         </div>
       </div>
     );

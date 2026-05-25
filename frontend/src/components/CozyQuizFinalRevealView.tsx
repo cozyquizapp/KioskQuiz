@@ -803,26 +803,15 @@ function FinalRevealGridSlot({ state: s, focusTeamId }: {
     window.addEventListener('resize', update);
     return () => { ro.disconnect(); window.removeEventListener('resize', update); };
   }, []);
-  const focusName = focusTeamId ? s.teams.find(t => t.id === focusTeamId)?.name : null;
   return (
     <div ref={wrapRef} style={{
       width: '100%', height: '100%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative', minHeight: 0,
     }}>
+      {/* 2026-05-25 (Wolf 'teamname unter grid kann weg'): Focus-Name-Pille
+          entfernt — die Card rechts zeigt den Team-Namen schon prominent. */}
       <GridDisplay state={s} maxSize={box} highlightTeam={focusTeamId} showJoker={false} />
-      {focusName && (
-        <div style={{
-          position: 'absolute', bottom: 4, left: '50%', transform: 'translateX(-50%)',
-          padding: '6px 14px', borderRadius: 999,
-          background: 'rgba(15,8,23,0.85)',
-          border: '1.5px solid rgba(255,255,255,0.15)',
-          fontSize: 'clamp(13px, 1.2cqw, 18px)', fontWeight: 800, color: '#F1F5F9',
-          letterSpacing: '0.04em',
-          backdropFilter: 'blur(8px)',
-          opacity: 0.9,
-        }}>{focusName}</div>
-      )}
     </div>
   );
 }

@@ -1181,18 +1181,41 @@ function FinalRevealSharedKeyframes() {
 // fehl am Platz'): Subtitle entfernt. Nur Pokal + Titel.
 function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
   const de = lang === 'de';
+  // 2026-05-25 (Wolf 'reveal intro mit space + avatar bouncen'): statt
+  // statischem 🏆-Emoji jetzt AnimatedCozyWolf zentriert mit qqCatNameWave-
+  // Bob (analog Final-Tipp-Intro). Title bekommt per-letter Wave-Stagger
+  // (gleiches Pattern wie PhaseIntroView).
+  const titleText = de ? 'Die Auflösung' : 'The reveal';
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center', gap: 24,
+      alignItems: 'center', justifyContent: 'center', gap: 'clamp(20px, 3cqh, 40px)',
       animation: 'qqFRTitleIn 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) both',
     }}>
-      <div style={{ fontSize: 'clamp(72px, 10cqw, 180px)', lineHeight: 1 }}>🏆</div>
+      <div style={{
+        width: 'clamp(180px, 20cqw, 320px)',
+        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
+      }}>
+        <AnimatedCozyWolf widthCss="100%" speaking={false} />
+      </div>
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
         color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
-      }}>{de ? 'Die Auflösung' : 'The reveal'}</div>
+        animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
+      }}>
+        {Array.from(titleText).map((ch, i) => (
+          <span
+            key={i}
+            style={{
+              display: 'inline-block',
+              whiteSpace: ch === ' ' ? 'pre' : undefined,
+              animation: 'qqCatNameWave 2.8s ease-in-out infinite',
+              animationDelay: `${1.4 + i * 0.07}s`,
+            }}
+          >{ch}</span>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1468,7 +1491,12 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
       }}>
         <div style={{
           position: 'relative', width: '100%',
-          minHeight: 'clamp(360px, 44cqh, 540px)',
+          // 2026-05-25 (Wolf 'card sonst etwas höher, +Bonus wird abgeschnitten'):
+          // min/max-Höhe erhöht (44cqh → 56cqh, max 540 → 640) damit der Inhalt
+          // (Avatar + Name + 'tippte auf' + Target-Pill + +N) bei langen Texten /
+          // Sympathie-Bonus nicht unten rausläuft (cardCommonStyle hat
+          // overflow:hidden für sauberen 3D-Flip).
+          minHeight: 'clamp(440px, 56cqh, 640px)',
           transformStyle: 'preserve-3d',
           WebkitTransformStyle: 'preserve-3d',
           transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
@@ -1890,6 +1918,29 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
             ? `0 0 100px ${winner.color}88, 0 16px 48px rgba(0,0,0,0.5)`
             : `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
         }}>
+          {/* 2026-05-25 (Wolf '+1 manchmal nicht so gut erkennbar, vlt
+              außerhalb anzeigen'): grosser +1-Badge weg vom Avatar-Overlay
+              in die Top-Right-Corner der Front-Card. Eigene Animation,
+              ueberdeckt nichts. Die '+1 Bonus'-Pill unten bleibt als
+              Sub-Info. */}
+          {winner && (
+            <span aria-hidden style={{
+              position: 'absolute',
+              top: 'clamp(12px, 1.4cqh, 22px)',
+              right: 'clamp(12px, 1.4cqw, 22px)',
+              padding: '6px 14px',
+              borderRadius: 18,
+              background: 'rgba(34,197,94,0.22)',
+              border: '2.5px solid rgba(34,197,94,0.75)',
+              boxShadow: '0 0 28px rgba(34,197,94,0.55)',
+              fontSize: 'clamp(28px, 3.2cqw, 52px)', fontWeight: 900,
+              color: QQ_COLORS.green500,
+              textShadow: '0 0 14px rgba(34,197,94,0.7)',
+              animation: isFlipped ? 'qqFRPlusOne 2.2s ease-out 0.6s both' : 'none',
+              pointerEvents: 'none',
+              lineHeight: 1,
+            }}>+1</span>
+          )}
           <div style={{
             fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
             color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
@@ -1900,19 +1951,8 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           </div>
           {winner ? (
             <>
-              <div style={{ position: 'relative' }}>
-                <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji}
-                  size={'clamp(110px, 12cqw, 170px)'} />
-                <span aria-hidden style={{
-                  position: 'absolute', left: '50%', top: 0,
-                  transform: 'translate(-50%, -10px)',
-                  fontSize: 'clamp(40px, 4.4cqw, 70px)', fontWeight: 900,
-                  color: QQ_COLORS.green500,
-                  textShadow: '0 0 28px rgba(34,197,94,0.7)',
-                  animation: isFlipped ? 'qqFRPlusOne 2.2s ease-out 0.6s both' : 'none',
-                  pointerEvents: 'none',
-                }}>+1</span>
-              </div>
+              <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji}
+                size={'clamp(110px, 12cqw, 170px)'} />
               {/* 2026-05-09 v3 (Wolf-Bug 'Award-Card team-name truncated'):
                   Wrap auf 2 Zeilen statt nowrap-ellipsis. Bei langen Namen
                   kleinere FontSize (clamp 22-36 statt 28-48) damit's reinpasst.

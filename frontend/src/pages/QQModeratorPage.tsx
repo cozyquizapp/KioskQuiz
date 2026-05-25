@@ -726,29 +726,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
 
-        // 2026-05-24 v3 (Wolf 'awards-overview-Zwischenschritt raus'):
-        //   step 0       = title (1.5s)
-        //   step 1/2/3   = award-slot 0/1/2 (3s pro Slot wie Bet-Cards)
-        //   step 4..B+3  = bet-slots (Zero-Group 4.5s, sonst 3s)
-        //   step B+4     = race-final (12s Konfetti-Hold)
-        if (step <= 0) {
-          delayMs = 1500;
-        } else if (step <= 3) {
-          // award-slot 0/1/2: gleicher Rhythmus wie Bet-Slots.
-          delayMs = 3000;
-        } else if (step <= 3 + betSlotsCount) {
-          const slotIdx = step - 4;
-          const isZeroSlot = zeroExists && slotIdx === 0;
-          delayMs = isZeroSlot ? 4500 : 3000;
-        } else {
-          // race-final (step === 4 + betSlotsCount). FinalEurovisionFinale
-          // Crescendo-Choreo: worst → 2nd place mit 600ms-Stagger + 1.2s
-          // Anticipation-Hold → Sieger-Explosion. Bei N=8 ~6s bis Sieger-
-          // Reveal + ~7s Hold/Konfetti = 13s Auto-Delay.
-          void N;
-          delayMs = 13_000;
-        }
-        action = () => emit('qq:nextQuestion', { roomCode });
+        // 2026-05-25 (Wolf 'special awards und bet cards immer mit space —
+        // tempo entscheidet der mod'): FINAL_REVEAL komplett manuell. Kein
+        // Auto-Advance fuer Title, Award-Slots, Bet-Slots oder Eurovision.
+        // action bleibt undefined → Autoplay-Branch returnt bei Z. 783.
+        void N; void step; void betSlotsCount; void zeroExists;
         break;
       }
       case 'CONNECTIONS_4X4': {

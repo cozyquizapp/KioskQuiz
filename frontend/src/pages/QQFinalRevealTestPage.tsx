@@ -107,22 +107,19 @@ export default function QQFinalRevealTestPage() {
   const N = teams.length;
   const grid = buildMockGrid(teams);
 
-  // 2026-05-25 v3 (Wolf 'bei 2 stapel als triangle, nicht aufteilen'):
-  // Fill-before-overflow statt LRU-Spread. Underdog [+2] landet auf 1 Cell.
-  const MAX_STAMPS_PER_CELL = 2;
+  // 2026-05-25 v4 (Wolf 'grid zu voll, max 1 stamp pro cell'):
+  // LRU-Spread — pro Stamp die Cell mit wenigsten Stamps picken. Verteilt
+  // 4-5 Stamps auf 4-5 Cells, jede Cell hat nur 1 Stamp diagonal zum Avatar.
   const addStamp = (teamId: string | null, kind: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy') => {
     if (!teamId) return;
     const ownCells: any[] = grid.flat().filter(c => c.ownerId === teamId);
     if (ownCells.length === 0) return;
     const stampCount = (c: any) => c.revealStamps?.length ?? 0;
-    // 1. fill-up: Cell mit Stamps aber nicht voll
-    let target: any = ownCells.find(c => stampCount(c) > 0 && stampCount(c) < MAX_STAMPS_PER_CELL);
-    // 2. fresh: leere Cell
-    if (!target) target = ownCells.find(c => stampCount(c) === 0);
-    // 3. overflow: wenigste Stamps
-    if (!target) {
-      target = ownCells[0];
-      for (const c of ownCells) if (stampCount(c) < stampCount(target)) target = c;
+    let target: any = ownCells[0];
+    let minStamps = stampCount(target);
+    for (const c of ownCells) {
+      const sc = stampCount(c);
+      if (sc < minStamps) { target = c; minStamps = sc; }
     }
     if (!target.revealStamps) target.revealStamps = [];
     target.revealStamps.push({ kind, teamId });

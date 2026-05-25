@@ -580,10 +580,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       || s.phase === 'GAME_OVER'
                       || s.phase === 'THANKS';
                     const stamps = isStampVisible ? (cell.revealStamps ?? []) : [];
-                    const stampCount = stamps.length;
-                    const baseCopies = stackCount + 1; // wie viele Team-Avatare normalerweise
-                    const totalSlots = Math.min(3, baseCopies + stampCount); // cap at 3
-                    const copies = totalSlots;
+                    // 2026-05-25 v4 (Wolf 'grid zu voll, max 1 stamp pro cell'):
+                    // copies hart auf 2 gecappt. Logik:
+                    //  - 0 stack + 0 stamp → copies=1 (centered avatar)
+                    //  - 1 stack + 0 stamp → copies=2 (2 avatars diagonal, Phase-4 look)
+                    //  - 0 stack + 1+ stamp → copies=2 (avatar + 1 stamp diagonal)
+                    //  - 1 stack + 1+ stamp → copies=2 (avatar + 1 stamp, stamp wins
+                    //    over duplicate avatar). LRU-Spread sorgt eh dafuer
+                    //    dass Stamps auf separate Cells gehen.
+                    // Restliche Stamps (>1 pro Cell) sind unsichtbar — sollte selten
+                    // vorkommen weil LRU-Spread Stamps auf mehrere Cells verteilt.
+                    const hasStamp = stamps.length > 0;
+                    const copies = hasStamp ? 2 : Math.min(2, stackCount + 1);
+                    // baseCopies = wie viele Slots am Anfang sind Team-Avatare.
+                    // Mit Stamp: baseCopies=1 (Avatar slot 0), stamp slot 1.
+                    // Ohne Stamp: baseCopies = copies (alle slots sind Avatare).
+                    const baseCopies = hasStamp ? 1 : copies;
                     // 2026-05-13 v5 (Wolf 13. Versuch: 'mach sie etwas groesser
                     // mach einen dritten diagonal dazu, dann nimm den in der
                     // mitte raus'):
@@ -614,45 +626,24 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    // 2026-05-25 v5 (Wolf 'triangle ueberlappt nach pixel-offset
-                    // immer noch'): komplett deterministisches Layout via top/left
-                    // Pixel-Positionen statt transform-Tricks. Pre-berechnete
-                    // absolute Cell-Koordinaten — kein CSS-Quirk mehr moeglich.
-                    // copies=2 (diagonal) nutzt 0.54 wie bisher, copies=3
-                    // (triangle) nutzt 0.32 + spread-Layout.
-                    const avFactor = copies === 3 ? 0.32 : copies === 2 ? 0.54 : 0.86;
+                    // 2026-05-25 v6 (Wolf 'max 1 stamp pro cell'): copies hart
+                    // auf max 2 gecappt. Nur 2 Layouts noetig: centered (1
+                    // Emoji) und diagonal (2 Emojis). Triangle weg.
+                    const avFactor = copies === 2 ? 0.54 : 0.86;
                     const avSize = Math.max(8, Math.round(cellSize * avFactor));
                     const half = avSize / 2;
                     const center = cellSize / 2;
-                    // Absolute top/left fuer jeden Slot (Wrapper-Top-Left-Corner).
-                    // Layout-Konzept:
-                    //  copies=3: gleichseitiges Dreieck, Apex oben-mitte, Basis
-                    //   ueber 60% Breite gespreizt (klar getrennt).
-                    //  copies=2: Diagonal TL/BR (~46% Spreizung).
-                    //  copies=1: zentriert.
-                    const slotPositionsPx: Array<{ left: number; top: number }> = copies === 3
+                    const slotPositionsPx: Array<{ left: number; top: number }> = copies === 2
                       ? [
-                          // Apex: zentriert horizontal, 18% von oben
-                          { left: Math.round(center - half),
-                            top:  Math.round(0.18 * cellSize - half) },
-                          // Basis-L: 18% von links, 70% von oben
-                          { left: Math.round(0.18 * cellSize - half),
-                            top:  Math.round(0.70 * cellSize - half) },
-                          // Basis-R: 82% von links, 70% von oben
-                          { left: Math.round(0.82 * cellSize - half),
-                            top:  Math.round(0.70 * cellSize - half) },
+                          { left: Math.round(0.27 * cellSize - half),
+                            top:  Math.round(0.27 * cellSize - half) },
+                          { left: Math.round(0.73 * cellSize - half),
+                            top:  Math.round(0.73 * cellSize - half) },
                         ]
-                      : copies === 2
-                        ? [
-                            { left: Math.round(0.27 * cellSize - half),
-                              top:  Math.round(0.27 * cellSize - half) },
-                            { left: Math.round(0.73 * cellSize - half),
-                              top:  Math.round(0.73 * cellSize - half) },
-                          ]
-                        : [
-                            { left: Math.round(center - half),
-                              top:  Math.round(center - half) },
-                          ];
+                      : [
+                          { left: Math.round(center - half),
+                            top:  Math.round(center - half) },
+                        ];
                     return (
                       <div style={{
                         position: 'absolute', inset: 0,

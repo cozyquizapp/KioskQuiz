@@ -1961,15 +1961,16 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
 }) {
   const a = AWARD_DEFS[awardIndex];
   const de = lang === 'de';
+  // 2026-05-25 v4 (Wolf 'underdog hat 3× first, das ist Speedy!'):
+  // Award-Order in v4: 0=Speedy, 1=Meisterklauer, 2=Underdog.
+  // Alter Code hatte awardIndex===2 fuer Speedy stehen — Migration-Drift.
   const metric = !winner ? null
+    : awardIndex === 0 && (awards as any)?.speedyFirstCount
+      ? (de ? `${(awards as any).speedyFirstCount}× zuerst` : `${(awards as any).speedyFirstCount}× first`)
+    : awardIndex === 0 && awards?.speedyAvgMs
+      ? `Ø + ${(awards.speedyAvgMs / 1000).toFixed(1)}s`
     : awardIndex === 1 && awards?.meisterklauerCount
       ? (de ? `${awards.meisterklauerCount}× geklaut` : `${awards.meisterklauerCount}× stolen`)
-    // 2026-05-23 (Wolf-Live-Test #N): Speedy-Gonzales jetzt count-basiert
-    // ("am öftesten zuerst"). speedyFirstCount > 0 = neu, sonst Fallback
-    // auf alten avgMs-Look fuer Pre-2026-05-23-Spiele.
-    : awardIndex === 2 && (awards as any)?.speedyFirstCount
-      ? (de ? `${(awards as any).speedyFirstCount}× zuerst` : `${(awards as any).speedyFirstCount}× first`)
-    : awardIndex === 2 && awards?.speedyAvgMs ? `Ø + ${(awards.speedyAvgMs / 1000).toFixed(1)}s`
     : null;
 
   const cardCommonStyle: React.CSSProperties = {

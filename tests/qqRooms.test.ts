@@ -52,40 +52,42 @@ function makeRoom(overrides: Record<string, any> = {}): any {
 // qqDecodeFinalStep + qqFinalMaxStep (shared/qqFinalReveal.ts)
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('qqDecodeFinalStep — Award-Slots-Variante (2026-05-24 v3, awards-overview raus)', () => {
+describe('qqDecodeFinalStep — v4 (2026-05-25, Wolf: bets vor awards, awards-last als climax)', () => {
   it('step 0 → title', () => {
     expect(qqDecodeFinalStep(0, 0).kind).toBe('title');
     expect(qqDecodeFinalStep(-5, 0).kind).toBe('title');
   });
 
-  it('steps 1/2/3 → award-slots 0/1/2 (Underdog/Meisterklauer/Speedy)', () => {
-    const a0 = qqDecodeFinalStep(1, 3);
-    expect(a0.kind).toBe('award');
-    if (a0.kind === 'award') expect(a0.awardIndex).toBe(0);
-    const a1 = qqDecodeFinalStep(2, 3);
-    expect(a1.kind).toBe('award');
-    if (a1.kind === 'award') expect(a1.awardIndex).toBe(1);
-    const a2 = qqDecodeFinalStep(3, 3);
-    expect(a2.kind).toBe('award');
-    if (a2.kind === 'award') expect(a2.awardIndex).toBe(2);
-  });
-
-  it('steps 4..3+betSlotsCount → bet slots', () => {
-    const slot0 = qqDecodeFinalStep(4, 3);
+  it('steps 1..B → bet slots (B = betSlotsCount)', () => {
+    const slot0 = qqDecodeFinalStep(1, 3);
     expect(slot0.kind).toBe('bet');
     if (slot0.kind === 'bet') expect(slot0.slotIndex).toBe(0);
 
-    const slot2 = qqDecodeFinalStep(6, 3);
+    const slot2 = qqDecodeFinalStep(3, 3);
     expect(slot2.kind).toBe('bet');
     if (slot2.kind === 'bet') expect(slot2.slotIndex).toBe(2);
   });
 
-  it('step > 3+betSlotsCount → race-final (== Eurovision-Finale)', () => {
+  it('steps B+1..B+3 → award slots (Speedy/Meisterklauer/Underdog)', () => {
+    const a0 = qqDecodeFinalStep(4, 3);
+    expect(a0.kind).toBe('award');
+    if (a0.kind === 'award') expect(a0.awardIndex).toBe(0);
+    const a1 = qqDecodeFinalStep(5, 3);
+    expect(a1.kind).toBe('award');
+    if (a1.kind === 'award') expect(a1.awardIndex).toBe(1);
+    const a2 = qqDecodeFinalStep(6, 3);
+    expect(a2.kind).toBe('award');
+    if (a2.kind === 'award') expect(a2.awardIndex).toBe(2);
+  });
+
+  it('step > B+3 → race-final (== Eurovision-Endstand)', () => {
     expect(qqDecodeFinalStep(7, 3).kind).toBe('race-final');
     expect(qqDecodeFinalStep(100, 3).kind).toBe('race-final');
   });
 
-  it('mit 0 Bet-Slots: 4 → race-final direkt (kein bet-Slot)', () => {
+  it('mit 0 Bet-Slots: 1/2/3 → awards, 4 → race-final', () => {
+    expect(qqDecodeFinalStep(1, 0).kind).toBe('award');
+    expect(qqDecodeFinalStep(3, 0).kind).toBe('award');
     expect(qqDecodeFinalStep(4, 0).kind).toBe('race-final');
   });
 });

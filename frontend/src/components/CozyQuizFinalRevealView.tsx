@@ -556,9 +556,11 @@ function FinalLeaderboard({
   const progressiveAwardPoints: Record<string, number> = {};
   for (const t of teams) progressiveAwardPoints[t.id] = 0;
   if (awards) {
-    if (revealedAwardCount >= 1 && awards.underdog) progressiveAwardPoints[awards.underdog] = (progressiveAwardPoints[awards.underdog] ?? 0) + 1;
+    // 2026-05-25 v4: Award-Reveal-Order Speedy(1) → Meisterklauer(2) → Underdog(3).
+    // Underdog mit stackCount=2, andere 1 Stack — Underdog ist der dramatic climax.
+    if (revealedAwardCount >= 1 && awards.speedy) progressiveAwardPoints[awards.speedy] = (progressiveAwardPoints[awards.speedy] ?? 0) + 1;
     if (revealedAwardCount >= 2 && awards.meisterklauer) progressiveAwardPoints[awards.meisterklauer] = (progressiveAwardPoints[awards.meisterklauer] ?? 0) + 1;
-    if (revealedAwardCount >= 3 && awards.speedy) progressiveAwardPoints[awards.speedy] = (progressiveAwardPoints[awards.speedy] ?? 0) + 1;
+    if (revealedAwardCount >= 3 && awards.underdog) progressiveAwardPoints[awards.underdog] = (progressiveAwardPoints[awards.underdog] ?? 0) + 2;
   } else {
     // Backwards-compat: wenn awards-prop nicht gesetzt, voll-revealed gemäß awardPoints.
     for (const t of teams) progressiveAwardPoints[t.id] = awardPoints[t.id] ?? 0;
@@ -583,9 +585,10 @@ function FinalLeaderboard({
     focusTeamId = focusSlot.team.id;
   } else if (awards && revealedAwardCount > 0 && revealedAwardCount <= 3) {
     // Award-Phase: focus auf gerade enthuelltes Award-Team.
-    focusTeamId = revealedAwardCount === 1 ? awards.underdog
+    // v4: Order Speedy → Meisterklauer → Underdog
+    focusTeamId = revealedAwardCount === 1 ? awards.speedy
                 : revealedAwardCount === 2 ? awards.meisterklauer
-                : awards.speedy;
+                : awards.underdog;
   }
 
   // Sortierte Reihenfolge (current standings).
@@ -794,7 +797,8 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     const awards = s.endAwards;
     const awardPoints: Record<string, number> = {};
     for (const t of s.teams) awardPoints[t.id] = 0;
-    if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
+    // 2026-05-25 v4: Underdog = +2 Stacks, Speedy/Meisterklauer = +1
+    if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 2;
     if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
     if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
 
@@ -1668,10 +1672,14 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
 }
 
 // ─── AwardCardSlide / AwardRevealSlide ──────────────────────────────────────
+// 2026-05-25 (Wolf 'awards-last, underdog als climax'): Reihenfolge intern
+// Speedy → Meisterklauer → Underdog. Underdog ist der Drama-Spike (+2 Stacks)
+// und kommt zuletzt im Reveal-Flow. stackCount per award fuer Reveal-Stack-
+// Mechanik (Speedy=1, Meisterklauer=1, Underdog=2).
 const AWARD_DEFS = [
-  { emoji: '🐢', titleDe: 'Underdog-Trostpreis', titleEn: 'Underdog prize',  descDe: 'Niedrigster Score',     descEn: 'Lowest score',      accent: '#10B981' },
-  { emoji: '🦝', titleDe: 'Meisterklauer',       titleEn: 'Master thief',    descDe: 'Meiste Klaus',          descEn: 'Most steals',       accent: '#A855F7' },
-  { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: QQ_COLORS.brandPinkMid },
+  { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: QQ_COLORS.brandPinkMid, stackCount: 1 },
+  { emoji: '🦝', titleDe: 'Meisterklauer',       titleEn: 'Master thief',    descDe: 'Meiste Klaus',          descEn: 'Most steals',       accent: '#A855F7',              stackCount: 1 },
+  { emoji: '🐢', titleDe: 'Underdog-Trostpreis', titleEn: 'Underdog prize',  descDe: 'Niedrigster Score',     descEn: 'Lowest score',      accent: '#10B981',              stackCount: 2 },
 ];
 
 // 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
@@ -1705,9 +1713,10 @@ function AwardHeroSlide({ awardIndex, state: s, lang }: {
 }) {
   const awards = s.endAwards;
   const winnerId = !awards ? null
-    : awardIndex === 0 ? awards.underdog
+    // v4: Speedy(0) → Meisterklauer(1) → Underdog(2)
+    : awardIndex === 0 ? awards.speedy
     : awardIndex === 1 ? awards.meisterklauer
-    : awards.speedy;
+    : awards.underdog;
   const winner = winnerId ? s.teams.find(t => t.id === winnerId) ?? null : null;
   const [isFlipped, setIsFlipped] = useState(false);
 

@@ -1,28 +1,24 @@
 /**
  * Final-Reveal Step-Decode — Single Source of Truth.
  *
- * 2026-05-24 (Refactor #1 von 5 — Struktur-Audit-Beschleuniger): Vorher war
- * dieselbe Decode-Logik in 3 Stellen dupliziert (qqRooms.ts qqFinalRevealMaxStep,
- * CozyQuizFinalRevealView.tsx decodeFinalStep, QQFinalRevealTestPage.tsx).
- * Jeder Race-Redesign musste 3× manuell synced werden → Drift-Bugs.
+ * Step-Mapping (Stand 2026-05-25 v4 — Wolf 'awards nach bets als climax'):
+ *   0                       = title (Wolf-Bouncer + 'Die Auflösung')
+ *   1..betSlotsCount        = bet-slot 0..B-1 (1 Stack-Action pro Bonus-Punkt,
+ *                              Team picked Cell auf Phone)
+ *   B+1..B+3                = award-slot 0/1/2 (Speedy/Meisterklauer/Underdog)
+ *                              Underdog last weil +2 Stacks = dramatic climax
+ *   B+4                     = race-final (Eurovision-Endstand mit Crescendo)
+ *   B+5                     = → THANKS (Mod-Space triggert Phase-Wechsel)
  *
- * Step-Mapping (Stand 2026-05-24 v3 — awards-overview entfernt):
- *   0                       = title
- *   1..3                    = award-slot 0/1/2 (Underdog / Meisterklauer / Speedy)
- *                              jeweils mit Card-Reveal + Tabellen-Climb,
- *                              Mod-Space pro Award.
- *   4..3+betSlotsCount      = bet-slot (mit persistenter Tabelle)
- *   betSlotsCount+4         = race-final (Eurovision-Finale Hero)
- *   betSlotsCount+5         = → THANKS (Mod-Space triggert Phase-Wechsel)
- *
- * 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
- * Awards-Overview-Slide raus — Title geht direkt zu Award-Slot 0.
+ * Reihenfolge-Refactor (Wolf 'awards-last als plot-twist'): Bets kommen jetzt
+ * VOR Awards. Awards (3 Cards) als emotionaler Climax kurz vorm Race-Final.
+ * Underdog (+2 Stacks) als letzter Award = größter Drama-Spike.
  */
 
 export type QQFinalStep =
   | { kind: 'title' }
-  | { kind: 'award'; awardIndex: 0 | 1 | 2 }
   | { kind: 'bet'; slotIndex: number }
+  | { kind: 'award'; awardIndex: 0 | 1 | 2 }
   | { kind: 'race-final' };
 
 const AWARD_COUNT = 3;
@@ -30,11 +26,11 @@ const AWARD_COUNT = 3;
 /** Decode the current step index into a typed phase + sub-info. */
 export function qqDecodeFinalStep(step: number, betSlotsCount: number): QQFinalStep {
   if (step <= 0) return { kind: 'title' };
-  if (step <= AWARD_COUNT) {
-    return { kind: 'award', awardIndex: (step - 1) as 0 | 1 | 2 };
+  if (step <= betSlotsCount) {
+    return { kind: 'bet', slotIndex: step - 1 };
   }
-  if (step <= AWARD_COUNT + betSlotsCount) {
-    return { kind: 'bet', slotIndex: step - 1 - AWARD_COUNT };
+  if (step <= betSlotsCount + AWARD_COUNT) {
+    return { kind: 'award', awardIndex: (step - 1 - betSlotsCount) as 0 | 1 | 2 };
   }
   return { kind: 'race-final' };
 }

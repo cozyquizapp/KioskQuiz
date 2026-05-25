@@ -68,12 +68,14 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.1s both',
         }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
 
-        {/* Hero-Emoji mit Bob-Animation (analog PhaseIntroView Category-Icon) */}
+        {/* Hero-Emoji mit Bob-Animation (analog PhaseIntroView Category-Icon).
+            2026-05-25 (Wolf '🎰 ist schon ZehnVonZehn, Münze konsistent für
+            Bet'): 🎰 → 🪙 damit Bet-Symbol nicht mit ZvZ-Slot-Machine kollidiert. */}
         <div style={{
           fontSize: 'clamp(72px, 8cqw, 160px)', lineHeight: 1,
           textAlign: 'center',
           animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
-        }}>🎰</div>
+        }}>🪙</div>
 
         {/* Title mit per-letter Wave (analog PhaseIntroView Cat-Name) */}
         <div style={{

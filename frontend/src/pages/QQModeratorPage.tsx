@@ -3648,8 +3648,9 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       )}
 
       {s.phase === 'FINAL_REVEAL' && (() => {
-        // 2026-05-24 v3 (Wolf 'awards-overview raus'):
-        // title → award-0/1/2 (je Mod-Space) → bet-slots → race-final.
+        // 2026-05-25 v4 (Wolf 'bets vor awards, awards-last als climax'):
+        // title → bet-slots (B) → award-0/1/2 (Speedy/Meisterklauer/Underdog
+        // als +2-Climax) → race-final.
         const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
@@ -3657,16 +3658,17 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
         const step = s.finalRevealStep ?? 0;
         const labelFor = (st: number): string => {
           if (st <= 0) return '0 · Title-Hold „Die Auflösung"';
-          if (st === 1) return '1 · 🐢 Underdog-Reveal (Drumroll + Tabelle)';
-          if (st === 2) return '2 · 🦝 Meisterklauer-Reveal (Drumroll + Tabelle)';
-          if (st === 3) return '3 · ⚡ Speedy-Reveal (Drumroll + Tabelle)';
-          if (st <= 3 + betSlotsCount) {
-            const slotIdx = st - 4;
+          if (st <= betSlotsCount) {
+            const slotIdx = st - 1;
             const isZeroFirst = zeroExists && slotIdx === 0;
-            if (isZeroFirst) return `${st} · 🎰 Bet-Zero-Group (0-Bonus-Tipps)`;
-            return `${st} · 🎰 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Tabelle climbing)`;
+            if (isZeroFirst) return `${st} · 🪙 Bet-Zero-Group (0-Bonus-Tipps)`;
+            return `${st} · 🪙 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Stack-Placement)`;
           }
-          return `${st} · 🏁 Eurovision-Finale (Sieger-Hero + Podium)`;
+          const awardOffset = st - betSlotsCount;
+          if (awardOffset === 1) return `${st} · ⚡ Speedy-Award (+1 Stack)`;
+          if (awardOffset === 2) return `${st} · 🦝 Meisterklauer-Award (+1 Stack)`;
+          if (awardOffset === 3) return `${st} · 🐢 Underdog-Award (+2 Stacks — Climax)`;
+          return `${st} · 🏁 Eurovision-Endstand`;
         };
         const max = betSlotsCount + 4;
         const isLast = step >= max;

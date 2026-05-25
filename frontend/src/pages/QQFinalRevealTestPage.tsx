@@ -59,16 +59,18 @@ const STEP_LABELS: Record<number, string> = {
 };
 
 function getStepLabel(step: number, betSlotsCount: number): string {
-  // 2026-05-24 v3 (Wolf 'awards-overview raus'): title → award-0/1/2 → bets → race.
+  // 2026-05-25 v4 (Wolf 'bets vor awards, awards-last als climax'):
+  // title → bet-slots → award-slots (Speedy/Meisterklauer/Underdog) → race.
   if (step <= 0) return '0 · Title';
-  if (step === 1) return '1 · 🐢 Underdog-Reveal (Drumroll + Tabelle climbing)';
-  if (step === 2) return '2 · 🦝 Meisterklauer-Reveal (Drumroll + Tabelle climbing)';
-  if (step === 3) return '3 · ⚡ Speedy-Reveal (Drumroll + Tabelle climbing)';
-  if (step <= 3 + betSlotsCount) {
-    const slotIdx = step - 4;
-    return `${step} · Bet-Slot ${slotIdx + 1}/${betSlotsCount} (Split + Climb)`;
+  if (step <= betSlotsCount) {
+    const slotIdx = step - 1;
+    return `${step} · 🪙 Bet-Slot ${slotIdx + 1}/${betSlotsCount} (Stack-Placement)`;
   }
-  return `${step} · 🏁 Eurovision-Finale (Sieger-Hero + Podium)`;
+  const awardOffset = step - betSlotsCount;
+  if (awardOffset === 1) return `${step} · ⚡ Speedy-Award (+1 Stack)`;
+  if (awardOffset === 2) return `${step} · 🦝 Meisterklauer-Award (+1 Stack)`;
+  if (awardOffset === 3) return `${step} · 🐢 Underdog-Award (+2 Stacks — Climax)`;
+  return `${step} · 🏁 Eurovision-Endstand`;
 }
 
 type FlowPhase = 'bet-intro' | 'bet-active' | 'reveal';
@@ -346,10 +348,12 @@ export default function QQFinalRevealTestPage() {
           <div style={{ fontSize: 10, color: '#94A3B8', fontWeight: 700, textTransform: 'uppercase' }}>Quick-Jump</div>
           <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
             <button style={step === 0 ? btnActive : btnStyle} onClick={() => setStep(0)}>Title</button>
-            <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>🐢 Underdog</button>
-            <button style={step === 2 ? btnActive : btnStyle} onClick={() => setStep(2)}>🦝 Meisterklauer</button>
-            <button style={step === 3 ? btnActive : btnStyle} onClick={() => setStep(3)}>⚡ Speedy</button>
-            <button style={step === 4 ? btnActive : btnStyle} onClick={() => setStep(4)}>🪙 Bet-Slot 1</button>
+            {/* v4: Bets vor Awards. Award-Buttons sind dynamisch (Position
+                hängt von betSlotsCount ab). Quick-Jump zu Bet-Slot 1 = step 1. */}
+            <button style={step === 1 ? btnActive : btnStyle} onClick={() => setStep(1)}>🪙 Bet-Slot 1</button>
+            <button style={step === betSlotsCount + 1 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 1)}>⚡ Speedy</button>
+            <button style={step === betSlotsCount + 2 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 2)}>🦝 Meisterklauer</button>
+            <button style={step === betSlotsCount + 3 ? btnActive : btnStyle} onClick={() => setStep(betSlotsCount + 3)}>🐢 Underdog</button>
             <button style={step === maxStep ? btnActive : btnStyle} onClick={() => setStep(maxStep)}>🏁 Finale</button>
           </div>
         </div>

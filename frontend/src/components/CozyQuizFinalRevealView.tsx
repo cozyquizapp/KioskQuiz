@@ -1598,6 +1598,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             <QQTeamAvatar
               avatarId={team.avatarId} teamEmoji={team.emoji}
               size={'clamp(100px, 11cqw, 170px)'}
+              flat
             />
             <div style={{
               width: '100%',
@@ -1634,7 +1635,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
-          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} />
+          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} flat />
           <div style={{ width: '100%' }}>
             <TeamNameLabel
               name={team.name}
@@ -1683,14 +1684,14 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
                 maxWidth: '100%', minWidth: 0,
               }}>
-                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} />
+                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} flat />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <TeamNameLabel
                     name={targetTeam.name}
                     fontSize="clamp(26px, 2.6cqw, 40px)"
                     color={targetTeam.color}
                     fontWeight={900}
-                    maxLines={1}
+                    maxLines={2}
                     shrinkAfter={14}
                   />
                 </div>
@@ -1886,25 +1887,29 @@ function BetZeroGroupSlide({ teams, lang }: {
             animation: `qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.25 + i * 0.10}s both`,
             opacity: 0,
           }}>
-            {/* 2026-05-25 (Wolf 'farbige umrandung in team-farbe wie sonst auch'):
-                Team-Ring um den Avatar — gleicher Look wie bei TeamReveal / Bet-Card-
-                BG. Vorher floated der Invader/Pumpkin nackt im Dark, jetzt mit
-                Team-Color-Ring + softem Glow. */}
+            {/* 2026-05-25 v2 (Wolf 'bg vollfarbig, nicht kohärent mit app'):
+                Ring transparent, kein Inner-Fill, nur dezenter Outer-Glow.
+                Vorher 1a alpha + inset-glow → wirkte zu saturiert gegen Dark-BG. */}
             <div style={{
               padding: 6, borderRadius: '50%',
               border: `3px solid ${t.color}`,
-              background: `${t.color}1a`,
-              boxShadow: `0 0 24px ${t.color}66, inset 0 0 12px ${t.color}33`,
+              background: 'transparent',
+              boxShadow: `0 0 18px ${t.color}33`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} flat />
             </div>
+            {/* 2026-05-25 (Wolf 'teamnamen ausgeschrieben, nicht abgeschnitten'):
+                maxWidth + ellipsis raus, dafuer 2-zeilig erlauben + leicht
+                kleiner skalieren bei langen Namen. */}
             <div style={{
-              fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 900,
+              fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
               color: t.color,
               textShadow: `0 0 12px ${t.color}55`,
-              maxWidth: avatarSize, textAlign: 'center',
-              overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+              textAlign: 'center',
+              maxWidth: 'min(220px, 22cqw)',
+              lineHeight: 1.15,
+              wordBreak: 'break-word',
             }}>{t.name}</div>
           </div>
         ))}

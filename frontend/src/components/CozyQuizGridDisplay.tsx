@@ -614,13 +614,16 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    const avFactor = copies === 3 ? 0.34 : copies === 2 ? 0.54 : 0.86;
+                    // 2026-05-25 v3 (Wolf 'beim 2. stapel überlappen 2. und 3. emoji'):
+                    // Triangle-Basis weiter auseinander (±22 → ±28), avFactor leicht
+                    // kleiner (0.34 → 0.30) für klare Trennung der 3 Triangle-Emojis.
+                    const avFactor = copies === 3 ? 0.30 : copies === 2 ? 0.54 : 0.86;
                     const avSize = Math.max(8, cellSize * avFactor);
                     const offsets: Array<{ tx: number; ty: number }> = copies === 3
                       ? [
-                          { tx:   0, ty: -28 },  // Apex oben-mitte
-                          { tx: -22, ty:  15 },  // Basis-Left
-                          { tx:  22, ty:  15 },  // Basis-Right
+                          { tx:   0, ty: -30 },  // Apex oben-mitte
+                          { tx: -28, ty:  18 },  // Basis-Left
+                          { tx:  28, ty:  18 },  // Basis-Right
                         ]
                       : copies === 2
                         ? [{ tx: -23, ty: -23 }, { tx: 23, ty: 23 }]

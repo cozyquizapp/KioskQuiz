@@ -14,7 +14,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "optimize:images": "node optimize-images.js"
+    "optimize:images": "node optimize-images.js",
+    "seed:order": "node scripts/seed-order-questions.mjs",
+    "seed:order:local": "node scripts/seed-order-questions.mjs http://localhost:3000"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.2",

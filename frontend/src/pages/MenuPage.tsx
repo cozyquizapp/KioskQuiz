@@ -26,6 +26,7 @@ const cozyQuizLinks: LinkItem[] = [
 const cozyQuizTestLinks: LinkItem[] = [
   { path: '/thanks-test',      label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
   { path: '/finalreveal-test', label: 'Final-Flow Test',    emoji: '🎬', note: 'Kompletter End-Flow: Bet-Intro → Bet-Active → Awards-Reveal (Split+Tabelle) → Bet-Cards (Climb) → Eurovision-Finale. Phase-Toggle + Step-Slider.' },
+  { path: '/moderator-test',   label: 'Mod-Test-Modus',     emoji: '🧪', note: 'Mod-Page mit Setup-Skip, 5 Bots auto-gespawnt, Skip-Buttons (→ Runde 2/3/4, FinalBet, FinalReveal). Kein DB-Save. Für schnelles Reveal-Choreo-Testen.' },
   { path: '/bet-test',         label: 'Bet-Page Test',      emoji: '🎰', note: 'Final-Wager-Beamer-View — 3/5/8 Teams, Submit-Count Slider, Sprache' },
   { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — 1-5 Teams, Frage/Reveal-Phasen, Higher/Lower-Choice, 4 Pair-Beispiele' },
   { path: '/cozygame-test',    label: 'CozyGame-Wheel Test',emoji: '🪅', note: 'Standalone-Test: Glücksrad-Spin + alle 5 Sub-Phasen, Slice-Slider 3-8, Auto-Demo-Button' },

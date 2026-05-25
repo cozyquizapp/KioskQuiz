@@ -164,6 +164,10 @@ function App() {
           <Route path="/team"       element={<QQErrorBoundary source="team"><QQTeamPage /></QQErrorBoundary>} />
           <Route path="/beamer"     element={<QQErrorBoundary source="beamer"><QQBeamerPage /></QQErrorBoundary>} />
           <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
+          {/* 2026-05-25 (Wolf 'test-modus zum reveal-testen'): selbe Mod-Komponente
+              mit testMode-prop → Setup uebersprungen, 5 Bots auto-gespawnt,
+              Skip-Buttons im Header, DB-Save deaktiviert. */}
+          <Route path="/moderator-test" element={<PinGate><QQErrorBoundary source="moderator-test"><QQModeratorPage testMode /></QQErrorBoundary></PinGate>} />
           <Route path="/mopo"       element={<PinGate><QQErrorBoundary source="mopo"><QQModPortablePage /></QQErrorBoundary></PinGate>} />
           <Route path="/builder"    element={<PinGate><QQBuilderPage /></PinGate>} />
           <Route path="/library"    element={<PinGate><QQLibraryPage /></PinGate>} />

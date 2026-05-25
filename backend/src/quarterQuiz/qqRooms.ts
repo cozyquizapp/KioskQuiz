@@ -3864,7 +3864,10 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
 }
 
 // ── Territory update ──────────────────────────────────────────────────────────
-function updateTerritories(room: QQRoomState): void {
+// 2026-05-25 (Wolf 'mod-test-modus skip-endpoint braucht territories-refresh'):
+// updateTerritories ist exportiert damit server.ts es nach skipTo-State-
+// Manipulation aufrufen kann (largestConnected/totalCells werden neu berechnet).
+export function updateTerritories(room: QQRoomState): void {
   const results = computeTerritories(room.grid, room.gridSize);
   // 2026-05-05 (Wolf-Konzept Stapel-Bonus): Connections-Finale-Stacks addieren
   // sich auf largestConnected. Wir summen pro Team alle cell.stackBonus auf.

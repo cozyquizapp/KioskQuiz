@@ -32,7 +32,7 @@ interface DraftSummary {
   phases?: 3 | 4;
 }
 
-export default function QQModeratorPage() {
+export default function QQModeratorPage({ testMode = false }: { testMode?: boolean } = {}) {
   const roomCode = QQ_ROOM;
   const [phases, setPhases] = useState<3 | 4>(4);
   const [joined, setJoined]     = useState(false);
@@ -125,6 +125,45 @@ export default function QQModeratorPage() {
       if (ack.ok) setJoined(true);
     });
   }, [connected]);
+
+  // 2026-05-25 (Wolf 'mod-test-modus zum reveal-testen'): Auto-Setup im
+  // Test-Modus. Beim ersten Mount sobald LOBBY + Drafts geladen:
+  //   1. 5 Bots via /dev/fillTeams spawnen
+  //   2. Setup als done markieren
+  //   3. Spiel starten
+  // Damit landet Wolf direkt in PHASE_INTRO Runde 1 mit gefüllter Lobby,
+  // ohne durch den Setup-Flow klicken zu muessen. Autoplay defaultet auf
+  // AN im Test-Modus (kein Klick nötig um durchzulaufen).
+  const testSetupTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (!testMode) return;
+    if (testSetupTriggeredRef.current) return;
+    if (!connected || !joined) return;
+    if (drafts.length === 0 || !selectedDraftId) return;
+    if (state?.phase !== 'LOBBY') return;
+    testSetupTriggeredRef.current = true;
+    (async () => {
+      // Autoplay an damit Test-Quizze durchlaufen ohne Mod-Space
+      setAutoplayEnabled(true);
+      // Test-Mode-Flag setzen → Backend skipt persistGameResult
+      try { await emit('qq:setTestMode', { roomCode, value: true }); } catch {}
+      // 1. Bots spawnen (5 reichen für realistische Streuung)
+      try {
+        await fetch(`/api/qq/${roomCode}/dev/fillTeams`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ count: 5 }),
+        });
+      } catch {}
+      await new Promise(r => setTimeout(r, 400));
+      // 2. Setup als done markieren
+      try { await emit('qq:setSetupDone', { roomCode, value: true }); } catch {}
+      await new Promise(r => setTimeout(r, 200));
+      // 3. Spiel starten
+      try { await startGameRef.current(); } catch {}
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testMode, connected, joined, drafts.length, selectedDraftId, state?.phase]);
 
   // Sync timer input from state
   useEffect(() => {
@@ -1354,8 +1393,57 @@ export default function QQModeratorPage() {
           )}
           <span style={badgeStyle(QQ_COLORS.blue500)}>COZYQUIZ</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
+          {/* 2026-05-25 (Wolf 'mod-test-modus'): roter Banner damit Wolf nie
+              verwechselt ob er Live oder Test ist. */}
+          {testMode && (
+            <span style={{
+              padding: '4px 12px', borderRadius: 999,
+              background: 'rgba(239,68,68,0.18)',
+              border: '1.5px solid rgba(239,68,68,0.55)',
+              color: '#FCA5A5', fontWeight: 900, fontSize: 12,
+              letterSpacing: '0.08em', textTransform: 'uppercase',
+              animation: 'pulse 2.4s ease-in-out infinite',
+            }}>🧪 Test-Modus · keine echten Daten</span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {/* 2026-05-25 (Wolf 'mod-test-modus skip-buttons'): nur im Test-Modus
+              sichtbar. POST /api/qq/:room/dev/skipTo manipuliert State direkt:
+              Grid teilweise gefuellt, phase = PHASE_INTRO/FINAL_BETTING/FINAL_REVEAL.
+              Autoplay laeuft dann ab der gesprungenen Position weiter. */}
+          {testMode && joined && state && state.phase !== 'LOBBY' && (
+            <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
+              {(['phase-2', 'phase-3', 'phase-4', 'final-bet', 'final-reveal'] as const).map(target => {
+                const labels: Record<typeof target, string> = {
+                  'phase-2': '→ R2',
+                  'phase-3': '→ R3',
+                  'phase-4': '→ R4',
+                  'final-bet': '→ Bet',
+                  'final-reveal': '→ Reveal',
+                };
+                return (
+                  <button
+                    key={target}
+                    onClick={async () => {
+                      await fetch(`/api/qq/${roomCode}/dev/skipTo`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ target }),
+                      });
+                    }}
+                    title={`Test-Skip: ${target}`}
+                    style={{
+                      padding: '5px 10px', borderRadius: 6,
+                      border: '1px solid rgba(239,68,68,0.45)',
+                      background: 'rgba(239,68,68,0.12)',
+                      color: '#FCA5A5', cursor: 'pointer',
+                      fontFamily: 'inherit', fontWeight: 900, fontSize: 11, lineHeight: 1,
+                    }}
+                  >{labels[target]}</button>
+                );
+              })}
+            </div>
+          )}
           {/* Autoplay Pause/Resume — sichtbar nur wenn aktiv und im Spiel */}
           {autoplayEnabled && joined && state && state.phase !== 'LOBBY' && state.phase !== 'GAME_OVER' && state.phase !== 'THANKS' && (
             <button

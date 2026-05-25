@@ -189,6 +189,10 @@ const ALLOWED_REACTION_EMOJIS = new Set(['👏', '🔥', '😱', '😢', '🎉',
 
 function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   if (!room) return;
+  // 2026-05-25 (Wolf 'mod-test-modus, kein db-save'): Test-Modus-Bypass.
+  // Frontend setzt (room as any)._testMode = true ueber qq:setTestMode, damit
+  // Test-Spiele nicht im Recap landen.
+  if ((room as any)._testMode) return;
   // 2026-05-12 (Wolf 'summary zeigt falsche teams + falsche avatare'):
   // Idempotenz-Guard. Vorher fired persistGameResult auf JEDEN broadcast
   // mit phase=GAME_OVER → mehrere DB-Eintraege pro Spiel, jeder mit eigener
@@ -2217,6 +2221,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Server-State-Flag das Bot-Submits + Bot-Placements ueber alle
     // maybeAuto*-Helper guards. Frontend-Autoplay-Toggle ist davon entkoppelt
     // (lokales localStorage). Toggle ist idempotent (sendet target=true/false).
+    // 2026-05-25 (Wolf 'mod-test-modus'): Test-Mode-Flag. Wenn true, wird
+    // persistGameResult uebersprungen (kein Recap-Eintrag von Test-Spielen).
+    socket.on('qq:setTestMode', (payload: { roomCode: string; value: boolean }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        (room as any)._testMode = !!payload.value;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     socket.on('qq:setBotsPaused', (payload: { roomCode: string; paused: boolean }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);

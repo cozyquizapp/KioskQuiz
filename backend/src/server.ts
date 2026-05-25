@@ -91,7 +91,7 @@ import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
-import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell } from './quarterQuiz/qqRooms';
+import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
 import { QQ_AVATARS, getRandomFunnyNames } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
@@ -10032,6 +10032,99 @@ app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {
   }
   broadcastQQ(io, roomCode);
   res.json({ mode, target, team: teamId });
+});
+
+// 2026-05-25 (Wolf 'mod-test-modus mit skip-buttons'): Skip-Endpoint fuer
+// Test-Modus. Setzt den Game-State direkt auf eine spaetere Phase, ohne
+// die Quiz-Fragen durchzuspielen. Grid wird teilweise mit Random-Owner
+// gefuellt damit Scores realistisch streuen.
+//
+// target-Werte:
+//   'phase-2' | 'phase-3' | 'phase-4'  → PHASE_INTRO der Ziel-Phase
+//   'final-bet'                         → FINAL_BETTING (Intro-Slide aktiv)
+//   'final-reveal'                      → FINAL_REVEAL Step 0 (Title-Hold)
+//
+// KEIN DB-Save — TestMode disabled persistGameResult via separatem Flag.
+app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
+  if (!assertDevAccess(req, res)) return;
+  const { roomCode } = req.params;
+  const room = getQQRoom(roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  if (room.phase === 'LOBBY') return res.status(400).json({ error: 'Spiel noch nicht gestartet' });
+
+  const target = String(req.body?.target ?? '');
+  const allTeamIds = Object.keys(room.teams);
+  if (allTeamIds.length === 0) return res.status(400).json({ error: 'Keine Teams' });
+
+  // Helper: Grid randomly mit ownerIds fuellen (pro skipped Phase ~3 Cells pro Team)
+  const fillGrid = (skippedPhases: number) => {
+    const cellsPerTeam = Math.max(1, skippedPhases * 3);
+    const gridSize = room.grid.length;
+    const allCells: Array<{ r: number; c: number }> = [];
+    for (let r = 0; r < gridSize; r++) {
+      for (let c = 0; c < gridSize; c++) {
+        if (room.grid[r][c].ownerId === null) allCells.push({ r, c });
+      }
+    }
+    // Shuffle
+    for (let i = allCells.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [allCells[i], allCells[j]] = [allCells[j], allCells[i]];
+    }
+    const total = Math.min(allCells.length, allTeamIds.length * cellsPerTeam);
+    for (let k = 0; k < total; k++) {
+      const { r, c } = allCells[k];
+      const ownerId = allTeamIds[k % allTeamIds.length];
+      room.grid[r][c].ownerId = ownerId;
+    }
+  };
+
+  // Helper: Phase-Wechsel ohne qqBeginPhase-Side-Effects
+  const goToPhaseIntro = (phaseIdx: number) => {
+    const idx = Math.max(1, Math.min(room.totalPhases ?? 4, phaseIdx));
+    const skippedPhases = idx - 1;
+    fillGrid(skippedPhases);
+    updateTerritories(room);
+    room.phase = 'PHASE_INTRO';
+    room.gamePhaseIndex = idx as any;
+    room.introStep = 0;
+    room.questionIndex = (idx - 1) * 5;
+    room.currentQuestion = room.questions?.[room.questionIndex] ?? null;
+    room.revealedAnswer = null;
+    room.correctTeamId = null;
+    room.pendingFor = null;
+    room.pendingAction = null;
+    room.answers = [];
+  };
+
+  if (target === 'phase-2' || target === 'phase-3' || target === 'phase-4') {
+    const idx = Number(target.slice(-1));
+    goToPhaseIntro(idx);
+  } else if (target === 'final-bet') {
+    // Erst alle Vor-Phasen simulieren (Grid füllen bis kurz vor Final)
+    goToPhaseIntro(room.totalPhases ?? 4);
+    // Dann FINAL_BETTING starten (qqStartFinalBetting cleart Grid nicht, nur Bet-State)
+    try { qqStartFinalBetting(room); } catch {}
+    (room as any)._pendingAutoFinalBets = true;
+  } else if (target === 'final-reveal') {
+    // Full skip bis FINAL_REVEAL Step 0
+    goToPhaseIntro(room.totalPhases ?? 4);
+    try { qqStartFinalBetting(room); } catch {}
+    // Bots zufällige Bets setzen
+    const teamIds = allTeamIds;
+    for (const id of teamIds) {
+      const others = teamIds.filter(t => t !== id);
+      const target = others[Math.floor(Math.random() * others.length)] ?? id;
+      try { qqSubmitFinalBet(room, id, { targetTeamId: target }); } catch {}
+    }
+    // Final-Wager auflösen → setzt phase=FINAL_REVEAL, step=0
+    try { qqResolveFinalBets(room); } catch {}
+  } else {
+    return res.status(400).json({ error: `Unbekanntes target: ${target}` });
+  }
+
+  broadcastQQ(io, roomCode);
+  res.json({ ok: true, target, phase: room.phase, gamePhaseIndex: room.gamePhaseIndex });
 });
 
 app.post('/api/qq/feedback', async (req, res) => {

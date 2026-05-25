@@ -580,22 +580,18 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       || s.phase === 'GAME_OVER'
                       || s.phase === 'THANKS';
                     const stamps = isStampVisible ? (cell.revealStamps ?? []) : [];
-                    // 2026-05-25 v4 (Wolf 'grid zu voll, max 1 stamp pro cell'):
-                    // copies hart auf 2 gecappt. Logik:
-                    //  - 0 stack + 0 stamp → copies=1 (centered avatar)
-                    //  - 1 stack + 0 stamp → copies=2 (2 avatars diagonal, Phase-4 look)
-                    //  - 0 stack + 1+ stamp → copies=2 (avatar + 1 stamp diagonal)
-                    //  - 1 stack + 1+ stamp → copies=2 (avatar + 1 stamp, stamp wins
-                    //    over duplicate avatar). LRU-Spread sorgt eh dafuer
-                    //    dass Stamps auf separate Cells gehen.
-                    // Restliche Stamps (>1 pro Cell) sind unsichtbar — sollte selten
-                    // vorkommen weil LRU-Spread Stamps auf mehrere Cells verteilt.
-                    const hasStamp = stamps.length > 0;
-                    const copies = hasStamp ? 2 : Math.min(2, stackCount + 1);
-                    // baseCopies = wie viele Slots am Anfang sind Team-Avatare.
-                    // Mit Stamp: baseCopies=1 (Avatar slot 0), stamp slot 1.
-                    // Ohne Stamp: baseCopies = copies (alle slots sind Avatare).
-                    const baseCopies = hasStamp ? 1 : copies;
+                    // 2026-05-25 v5 (Wolf '4-corner statt triangle bei 3+ emojis'):
+                    // Layout:
+                    //  copies=1: 1 avatar centered (0.86)
+                    //  copies=2: 2 emojis diagonal TL+BR (0.54) — UNVERAENDERT
+                    //  copies=3: 3 emojis TL+BR+TR (0.46) — 4-corner ohne BL
+                    //  copies=4: 4 emojis alle corners (0.46) — dice-4-pattern
+                    // baseCopies bestimmt wie viele slots Team-Avatare sind:
+                    //  - mit Stamp(s): slot 0 = team-avatar, ab slot 1 = stamps
+                    //  - ohne Stamps (Phase-4 stuck): alle slots = team-avatare
+                    const baseCopies = stamps.length > 0 ? 1 : (stackCount + 1);
+                    const totalSlots = baseCopies + stamps.length;
+                    const copies = Math.min(4, totalSlots);
                     // 2026-05-13 v5 (Wolf 13. Versuch: 'mach sie etwas groesser
                     // mach einen dritten diagonal dazu, dann nimm den in der
                     // mitte raus'):
@@ -626,24 +622,31 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    // 2026-05-25 v6 (Wolf 'max 1 stamp pro cell'): copies hart
-                    // auf max 2 gecappt. Nur 2 Layouts noetig: centered (1
-                    // Emoji) und diagonal (2 Emojis). Triangle weg.
-                    const avFactor = copies === 2 ? 0.54 : 0.86;
+                    // 2026-05-25 v5 (Wolf '4-corner-pattern'): 1-2 emojis behalten
+                    // current size+pos, 3-4 emojis nutzen 0.46 mit 4-corner layout.
+                    const avFactor = copies >= 3 ? 0.46 : copies === 2 ? 0.54 : 0.86;
                     const avSize = Math.max(8, Math.round(cellSize * avFactor));
                     const half = avSize / 2;
                     const center = cellSize / 2;
-                    const slotPositionsPx: Array<{ left: number; top: number }> = copies === 2
-                      ? [
-                          { left: Math.round(0.27 * cellSize - half),
-                            top:  Math.round(0.27 * cellSize - half) },
-                          { left: Math.round(0.73 * cellSize - half),
-                            top:  Math.round(0.73 * cellSize - half) },
-                        ]
-                      : [
-                          { left: Math.round(center - half),
-                            top:  Math.round(center - half) },
-                        ];
+                    // Corner-Positionen: TL/BR (current diagonal) + TR/BL.
+                    // Slot-Reihenfolge: 0=TL, 1=BR (diagonal), 2=TR, 3=BL.
+                    // → Bei copies=3 fehlt BL, bei copies=4 alle.
+                    const cornerTL = { left: Math.round(0.27 * cellSize - half),
+                                       top:  Math.round(0.27 * cellSize - half) };
+                    const cornerBR = { left: Math.round(0.73 * cellSize - half),
+                                       top:  Math.round(0.73 * cellSize - half) };
+                    const cornerTR = { left: Math.round(0.73 * cellSize - half),
+                                       top:  Math.round(0.27 * cellSize - half) };
+                    const cornerBL = { left: Math.round(0.27 * cellSize - half),
+                                       top:  Math.round(0.73 * cellSize - half) };
+                    const slotPositionsPx: Array<{ left: number; top: number }> = copies >= 4
+                      ? [cornerTL, cornerBR, cornerTR, cornerBL]
+                      : copies === 3
+                        ? [cornerTL, cornerBR, cornerTR]
+                        : copies === 2
+                          ? [cornerTL, cornerBR]
+                          : [{ left: Math.round(center - half),
+                              top:  Math.round(center - half) }];
                     return (
                       <div style={{
                         position: 'absolute', inset: 0,

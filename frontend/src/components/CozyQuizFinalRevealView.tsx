@@ -1993,15 +1993,15 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
       height: '100%', display: 'flex',
       position: 'relative',  // damit das +1-Badge absolute-positioniert werden kann
     }}>
-      {/* 2026-05-25 v4 (Wolf '+1 wird abgeschnitten oben'): +1-Badge raus
-          aus der Front-Face (die hat overflow:hidden für den 3D-Flip).
-          Jetzt am OUTER perspective-Wrapper, der kein overflow-clipping hat
-          → Badge kann frei nach oben translaten ohne geclippt zu werden. */}
+      {/* 2026-05-25 v5 (Wolf 'einfach weiter runter setzen, dann kein
+          Rand-Overlap'): Badge weiter unten platziert (top ~9% statt corner),
+          float-up Animation hat jetzt Luft nach oben ohne mit dem Card-Rand
+          zu kollidieren. */}
       {winner && isFlipped && (
         <span aria-hidden style={{
           position: 'absolute',
-          top: 'clamp(12px, 1.4cqh, 22px)',
-          right: 'clamp(12px, 1.4cqw, 22px)',
+          top: 'clamp(70px, 9cqh, 110px)',
+          right: 'clamp(14px, 1.6cqw, 26px)',
           padding: '6px 14px',
           borderRadius: 18,
           background: 'rgba(34,197,94,0.22)',

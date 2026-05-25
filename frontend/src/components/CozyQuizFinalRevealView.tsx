@@ -1897,7 +1897,19 @@ function BetZeroGroupSlide({ teams, lang }: {
             animation: `qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.25 + i * 0.10}s both`,
             opacity: 0,
           }}>
-            <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} flat />
+            {/* 2026-05-25 (Wolf 'farbige umrandung in team-farbe wie sonst auch'):
+                Team-Ring um den Avatar — gleicher Look wie bei TeamReveal / Bet-Card-
+                BG. Vorher floated der Invader/Pumpkin nackt im Dark, jetzt mit
+                Team-Color-Ring + softem Glow. */}
+            <div style={{
+              padding: 6, borderRadius: '50%',
+              border: `3px solid ${t.color}`,
+              background: `${t.color}1a`,
+              boxShadow: `0 0 24px ${t.color}66, inset 0 0 12px ${t.color}33`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} flat />
+            </div>
             <div style={{
               fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 900,
               color: t.color,
@@ -1914,8 +1926,8 @@ function BetZeroGroupSlide({ teams, lang }: {
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
       }}>{de
-        ? 'Der Tipp ist heute nicht aufgegangen 🤞'
-        : 'Today’s tip didn’t quite hit 🤞'}
+        ? 'Schade — der Tipp ging daneben 🤞'
+        : 'Tough luck — the tip went sideways 🤞'}
       </div>
     </div>
   );

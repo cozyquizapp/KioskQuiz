@@ -6,7 +6,10 @@ export const COZY_SLOT_TEMPLATE: CozyQuestionSlotTemplate[] = [
   { index: 2, segmentIndex: 0, type: 'STIMMTS', defaultPoints: 1, label: 'Slot 3 - Stimmts / 10 Punkte verteilen' },
   { index: 3, segmentIndex: 0, type: 'CHEESE', defaultPoints: 1, label: 'Slot 4 - Cheese (Bildfrage)' },
   { index: 4, segmentIndex: 0, type: 'BUNTE_TUETE', defaultPoints: 1, label: 'Slot 5 - Bunte Tuete Top 5', bunteKind: 'top5' },
-  { index: 5, segmentIndex: 0, type: 'BUNTE_TUETE', defaultPoints: 1, label: 'Slot 6 - Bunte Tuete 8 Dinge, 1 falsch', bunteKind: 'oneOfEight' },
+  // 2026-05-25 (Wolf 'imposter ausgeblendet'): Slot 6 von 'oneOfEight' auf
+  // zweites 'order' umgestellt — Imposter ist UI-deaktiviert, neuer Draft
+  // soll keinen Imposter-Slot mehr default-en.
+  { index: 5, segmentIndex: 0, type: 'BUNTE_TUETE', defaultPoints: 1, label: 'Slot 6 - Bunte Tuete Ordnen (2)', bunteKind: 'order' },
   { index: 6, segmentIndex: 0, type: 'BUNTE_TUETE', defaultPoints: 1, label: 'Slot 7 - Bunte Tuete Ordnen', bunteKind: 'order' },
   { index: 7, segmentIndex: 0, type: 'CHEESE', defaultPoints: 1, label: 'Slot 8 - Cheese (Bildfrage)' },
   { index: 8, segmentIndex: 0, type: 'MU_CHO', defaultPoints: 1, label: 'Slot 9 - Multiple Choice' },

@@ -68,11 +68,13 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
   'none': 'Keine', 'float': 'Schweben', 'zoom-in': 'Zoom',
   'reveal': 'Aufdecken', 'slide-in': 'Einfahren',
 };
-// 2026-05-23 (Wolf-Live-Test-Decision): 'bluff' temporär raus aus dem
-// Builder-Dropdown — 1 Phone pro Team macht's schwierig. Bluff-Mechanik
-// bleibt im Code, alte Drafts mit Bluff funktionieren weiter.
-// Reaktivieren: 'bluff' wieder in die Liste aufnehmen.
-const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'oneOfEight', 'order', 'map', 'onlyConnect'];
+// 2026-05-25 (Wolf 'bluff und imposter ausgeblendet, Code bleibt fuer
+// spaeter-Reaktivierung'): Beide UI-unsichtbar. Bluff war seit 2026-05-23
+// schon raus (1 Phone pro Team macht's schwierig). Imposter (oneOfEight)
+// kommt jetzt auch raus — Wolf will den Sub-Kind spaeter in anderer Form
+// revivem. Code-Pfade in Backend + Render-Komponenten bleiben.
+// Reaktivieren: gewuenschten Kind wieder in die Liste aufnehmen.
+const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'order', 'map', 'onlyConnect'];
 
 // 2026-05-11 (Wolf-Wunsch): Wizard-Sub-Steps. Statt langer Scroll-Liste klickt
 // Wolf sich pro Frage durch wenige Felder-Blöcke. Pro Kategorie eigenes Schema.

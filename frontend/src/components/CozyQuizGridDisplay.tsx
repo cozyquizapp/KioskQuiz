@@ -572,7 +572,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     const STAMP_EMOJI_MAP: Record<string, string> = {
                       underdog: '🐢', speedy: '⚡', meisterklauer: '🦝', bet: '🪙', sympathy: '💞',
                     };
-                    const stamps = cell.revealStamps ?? [];
+                    // 2026-05-25 (Wolf-Bug 'münze vor reveal-phase'): Stamps nur
+                    // rendern wenn wir tatsaechlich in der Reveal-Phase oder
+                    // danach sind. Backjump im Test-Modus oder stale State
+                    // sollte sie nicht zeigen.
+                    const isStampVisible = s.phase === 'FINAL_REVEAL'
+                      || s.phase === 'GAME_OVER'
+                      || s.phase === 'THANKS';
+                    const stamps = isStampVisible ? (cell.revealStamps ?? []) : [];
                     const stampCount = stamps.length;
                     const baseCopies = stackCount + 1; // wie viele Team-Avatare normalerweise
                     const totalSlots = Math.min(3, baseCopies + stampCount); // cap at 3

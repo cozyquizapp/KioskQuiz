@@ -614,54 +614,61 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // - 3-Stack: TRIANGLE bleibt wie v3 (Wolf hat das nicht
                     //   beanstandet). Apex (50,22) + Basis (28,65)/(72,65),
                     //   avFactor 0.34.
-                    // 2026-05-25 v4 (Wolf 'triangle ist kein richtiges dreieck'):
-                    // Layout absolut deterministisch — feste Pixel-Offsets statt
-                    // %-basierte Berechnung (sicherer gegen Rounding/CSS-Quirks).
-                    // avFactor leicht kleiner, Triangle klar gespreizt mit
-                    // großzügigem Abstand zwischen Basis-Emojis.
+                    // 2026-05-25 v5 (Wolf 'triangle ueberlappt nach pixel-offset
+                    // immer noch'): komplett deterministisches Layout via top/left
+                    // Pixel-Positionen statt transform-Tricks. Pre-berechnete
+                    // absolute Cell-Koordinaten — kein CSS-Quirk mehr moeglich.
+                    // copies=2 (diagonal) nutzt 0.54 wie bisher, copies=3
+                    // (triangle) nutzt 0.32 + spread-Layout.
                     const avFactor = copies === 3 ? 0.32 : copies === 2 ? 0.54 : 0.86;
                     const avSize = Math.max(8, Math.round(cellSize * avFactor));
-                    // Offsets in Pixeln statt %, basierend auf cellSize.
-                    // Triangle (copies=3): equilateral mit Side ~50% cellSize.
-                    //  apex y = -0.30*cellSize, basis y = +0.18*cellSize,
-                    //  basis x = ±0.30*cellSize → klar getrennt, niemals overlap.
-                    const offsetsPx: Array<{ tx: number; ty: number }> = copies === 3
+                    const half = avSize / 2;
+                    const center = cellSize / 2;
+                    // Absolute top/left fuer jeden Slot (Wrapper-Top-Left-Corner).
+                    // Layout-Konzept:
+                    //  copies=3: gleichseitiges Dreieck, Apex oben-mitte, Basis
+                    //   ueber 60% Breite gespreizt (klar getrennt).
+                    //  copies=2: Diagonal TL/BR (~46% Spreizung).
+                    //  copies=1: zentriert.
+                    const slotPositionsPx: Array<{ left: number; top: number }> = copies === 3
                       ? [
-                          { tx: 0,                              ty: Math.round(-0.30 * cellSize) }, // Apex
-                          { tx: Math.round(-0.30 * cellSize),    ty: Math.round( 0.18 * cellSize) }, // Basis-Left
-                          { tx: Math.round( 0.30 * cellSize),    ty: Math.round( 0.18 * cellSize) }, // Basis-Right
+                          // Apex: zentriert horizontal, 18% von oben
+                          { left: Math.round(center - half),
+                            top:  Math.round(0.18 * cellSize - half) },
+                          // Basis-L: 18% von links, 70% von oben
+                          { left: Math.round(0.18 * cellSize - half),
+                            top:  Math.round(0.70 * cellSize - half) },
+                          // Basis-R: 82% von links, 70% von oben
+                          { left: Math.round(0.82 * cellSize - half),
+                            top:  Math.round(0.70 * cellSize - half) },
                         ]
                       : copies === 2
                         ? [
-                            { tx: Math.round(-0.23 * cellSize), ty: Math.round(-0.23 * cellSize) },
-                            { tx: Math.round( 0.23 * cellSize), ty: Math.round( 0.23 * cellSize) },
+                            { left: Math.round(0.27 * cellSize - half),
+                              top:  Math.round(0.27 * cellSize - half) },
+                            { left: Math.round(0.73 * cellSize - half),
+                              top:  Math.round(0.73 * cellSize - half) },
                           ]
-                        : [{ tx: 0, ty: 0 }];
+                        : [
+                            { left: Math.round(center - half),
+                              top:  Math.round(center - half) },
+                          ];
                     return (
                       <div style={{
                         position: 'absolute', inset: 0,
                       }}>
-                        {offsetsPx.map((off, i) => {
-                          // 2026-05-25 v4: direct pixel-offsets (kein %-Math mehr).
-                          const txPx = off.tx;
-                          const tyPx = off.ty;
-                          // 2026-05-25 Welle 2: Slots i < baseCopies zeigen Team-
-                          // Avatar wie bisher. Slots ab baseCopies zeigen das
-                          // Stamp-Emoji aus revealStamps in Reihenfolge.
+                        {slotPositionsPx.map((pos, i) => {
+                          // 2026-05-25 v5: direkte top/left Pixel-Positionierung,
+                          // kein transform-Trick mehr.
                           const isStampSlot = i >= baseCopies;
                           const stampKind = isStampSlot ? stamps[i - baseCopies]?.kind : undefined;
                           const stampEmoji = stampKind ? STAMP_EMOJI_MAP[stampKind] : null;
                           return (
                             <div key={i} style={{
                               position: 'absolute',
-                              top: '50%', left: '50%',
+                              left: pos.left, top: pos.top,
                               width: avSize, height: avSize, borderRadius: '50%',
-                              // translate(-50%,-50%) zentriert den Wrapper auf
-                              // seinen eigenen Mittelpunkt (Cell-Center). Dann
-                              // verschiebt translate(txPx,tyPx) zum Stack-Slot.
-                              transform: `translate(-50%, -50%) translate(${txPx}px, ${tyPx}px)`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              // Z-Order: spaeter gerendert = vorne (Stapel-Look).
                               zIndex: i + 1,
                               animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
                             }}>

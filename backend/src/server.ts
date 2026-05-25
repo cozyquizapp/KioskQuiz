@@ -7729,26 +7729,35 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
           } catch (err) {
             console.warn('CozyLibrary Order-Seed fehlgeschlagen:', err);
           }
-          // 2026-05-25 (Wolf 'alle bluff durch fix-it außer eurovision'):
-          // One-time-Migration ueber alle Drafts. Pro Bluff-Question wird eine
-          // zufaellige Order-Frage aus QQ_ORDER_LIBRARY_SEED kopiert (text,
-          // answer, bunteTuete-Payload). Idempotent: nach Migration ist keine
-          // bluff-Question mehr da → nichts mehr zu tun.
+          // 2026-05-25 (Wolf 'alle bluff durch fix-it außer eurovision' +
+          // 'leere fix-it kategorie fixen'):
+          // One-time-Migration ueber alle Drafts:
+          //  1. bunteTuete.kind === 'bluff' → swap zu random Order-Frage
+          //  2. bunteTuete.kind === 'order' MIT < 2 Items (broken snapshot)
+          //     → swap zu random Order-Frage
+          // Quelle: QQ_ORDER_LIBRARY_SEED (in-memory, immer aktuell)
+          // Eurovision-Drafts werden komplett skipped.
           try {
             const drafts = await getAllQQDraftsFromDB();
             const orderPool = QQ_ORDER_LIBRARY_SEED;
             let migratedDrafts = 0;
-            let migratedQuestions = 0;
+            let migratedBluff = 0;
+            let migratedBrokenOrder = 0;
             for (const draft of drafts) {
               const title = String(draft.title ?? '').toLowerCase();
               if (title.includes('eurovision') || title.includes('esc')) continue;
               const questions = Array.isArray(draft.questions) ? draft.questions : [];
               let dirty = false;
               const newQuestions = questions.map((q: any) => {
-                if (q?.bunteTuete?.kind !== 'bluff') return q;
+                const bt = q?.bunteTuete;
+                const isBluff = bt?.kind === 'bluff';
+                const isBrokenOrder = bt?.kind === 'order'
+                  && (!Array.isArray(bt.items) || bt.items.length < 2);
+                if (!isBluff && !isBrokenOrder) return q;
                 const pick = orderPool[Math.floor(Math.random() * orderPool.length)] as any;
                 dirty = true;
-                migratedQuestions++;
+                if (isBluff) migratedBluff++;
+                else migratedBrokenOrder++;
                 return {
                   ...q,
                   text: pick.text,
@@ -7766,10 +7775,10 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
               }
             }
             if (migratedDrafts > 0) {
-              console.log(`✓ Bluff→Fix-It Migration: ${migratedQuestions} Fragen in ${migratedDrafts} Drafts ersetzt (Eurovision-Drafts skipped)`);
+              console.log(`✓ Bunte-Tuete Migration: ${migratedBluff} Bluff + ${migratedBrokenOrder} broken-Order in ${migratedDrafts} Drafts ersetzt (Eurovision-Drafts skipped)`);
             }
           } catch (err) {
-            console.warn('Bluff→Fix-It Migration fehlgeschlagen:', err);
+            console.warn('Bunte-Tuete Migration fehlgeschlagen:', err);
           }
           // 2026-05-17: CozyGames V1-Seed (12 Spiele). Idempotent — nur Spiele die
           // noch nicht in der DB sind werden eingefügt. Wolf-Edits bleiben unangetastet.

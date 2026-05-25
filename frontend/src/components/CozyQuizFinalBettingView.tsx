@@ -45,12 +45,14 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
     prevSubmittedRef.current = submittedCount;
   }, [submittedCount, s.sfxMuted]);
 
-  // 2026-05-24: Intro-Slide (Erklär-Phase) vor der eigentlichen Betting-View.
-  // 2026-05-24 v2 (Wolf 'passt nicht zum rest der app'): Hero-Emoji bobbt mit
-  // qqCatNameWave wie in PhaseIntroView, Title bekommt per-letter Wave-Stagger,
-  // 'Gleich seid ihr dran'-Bottom-Hint raus.
+  // 2026-05-25 v3 (Wolf 'passt nicht zum design der anderen intro pages'):
+  // Layout 1:1 an PhaseIntroView Cat-Branch angelehnt — Top-Label klein, Hero-
+  // Icon gross + bob, Hero-Title (statt Meta-'So funktioniert's') als per-letter-
+  // Wave, EINE Erklaer-Zeile. Damit verschwindet das Doppel-Heading + 2 Sub-
+  // Zeilen-Stack der vorigen Variante.
+  const PINK = '#EC4899';
   if (!introDone) {
-    const titleText = de ? 'So funktioniert\'s' : 'How it works';
+    const titleText = de ? 'Final-Tipp' : 'Final tip';
     return (
       <div style={{
         width: '100%', height: '100%',
@@ -59,30 +61,31 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         background: COZY_CARD_BG,
         position: 'relative',
         minHeight: 0, overflow: 'hidden',
-        gap: 'clamp(28px, 4cqh, 56px)',
+        gap: 'clamp(14px, 2cqh, 28px)',
       }}>
-        {/* Top-Label */}
+        {/* Top-Label (gleiche Pille-Optik wie 'Runde X' im PhaseIntro). */}
         <div style={{
-          fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: '#F9A8D4',
-          textTransform: 'uppercase', letterSpacing: '0.18em', opacity: 0.85,
+          fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
+          color: `${PINK}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
           animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.1s both',
-        }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
+        }}>{de ? 'Vor dem Finale' : 'Before the finale'}</div>
 
-        {/* Hero-Emoji mit Bob-Animation (analog PhaseIntroView Category-Icon).
-            2026-05-25 (Wolf '🎰 ist schon ZehnVonZehn, Münze konsistent für
-            Bet'): 🎰 → 🪙 damit Bet-Symbol nicht mit ZvZ-Slot-Machine kollidiert. */}
+        {/* Hero-Icon — gleiche Sizes wie PhaseIntro-Cat-Icon (120-240px). */}
         <div style={{
-          fontSize: 'clamp(72px, 8cqw, 160px)', lineHeight: 1,
+          fontSize: 'clamp(120px, 18cqw, 240px)', lineHeight: 1,
           textAlign: 'center',
-          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
+          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.25s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
+          filter: `drop-shadow(0 8px 24px ${PINK}55)`,
         }}>🪙</div>
 
-        {/* Title mit per-letter Wave (analog PhaseIntroView Cat-Name) */}
+        {/* Hero-Title — analog Cat-Name, gross + per-letter Wave + Pink-Glow. */}
         <div style={{
-          fontSize: 'clamp(40px, 5cqw, 84px)', fontWeight: 900, color: '#F1F5F9',
-          lineHeight: 1.05, letterSpacing: '-0.025em', textAlign: 'center',
-          textShadow: '0 0 36px rgba(236,72,153,0.45)',
-          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
+          fontSize: 'clamp(68px, 13cqw, 200px)', fontWeight: 900, lineHeight: 1,
+          color: PINK,
+          textShadow: `0 0 80px ${PINK}44`,
+          letterSpacing: '-0.02em',
+          textAlign: 'center',
+          animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.4s both',
         }}>
           {Array.from(titleText).map((ch, i) => (
             <span
@@ -91,35 +94,25 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
                 display: 'inline-block',
                 whiteSpace: ch === ' ' ? 'pre' : undefined,
                 animation: 'qqCatNameWave 2.8s ease-in-out infinite',
-                animationDelay: `${1.4 + i * 0.07}s`,
+                animationDelay: `${1.3 + i * 0.07}s`,
               }}
             >{ch}</span>
           ))}
         </div>
 
-        {/* Erklär-Lines (gleiche Struktur wie Rules-Slides) */}
+        {/* Single Explain-Line — analog Cat-Explain, eine kurze Zeile. */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(16px, 2cqh, 28px)',
-          maxWidth: 1200,
+          fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 700,
+          color: `${PINK}cc`,
+          letterSpacing: '0.02em',
+          marginTop: 'clamp(8px, 1cqh, 14px)',
+          textAlign: 'center',
+          maxWidth: 1100,
+          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.65s both',
         }}>
-          <div style={{
-            fontSize: 'clamp(22px, 2.4cqw, 38px)', color: '#CBD5E1', fontWeight: 700,
-            textAlign: 'center', lineHeight: 1.4,
-            animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.55s both',
-          }}>
-            {de
-              ? 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team'
-              : 'Before the finale every team tips on another (or own) team'}
-          </div>
-          <div style={{
-            fontSize: 'clamp(22px, 2.4cqw, 38px)', color: '#FBCFE8', fontWeight: 900,
-            textAlign: 'center', lineHeight: 1.4,
-            animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.75s both',
-          }}>
-            {de
-              ? '🎯 Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus'
-              : '🎯 Per final-category win of your tip = +1 bonus'}
-          </div>
+          {de
+            ? 'Pro gewonnene Final-Frage eures Tipps = +1 Bonus'
+            : 'Per final-question win of your tip = +1 bonus'}
         </div>
       </div>
     );

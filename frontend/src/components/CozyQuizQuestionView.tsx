@@ -1914,25 +1914,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 )}
                 {s.teams.map(tm => {
                   const answered = s.answers.some(a => a.teamId === tm.id);
+                  // 2026-05-25 (Wolf 'gap-separator zwischen team farbe und
+                  // grün, wie bei final betting'): Wrapper-Padding mit
+                  // light-green BG statt direct boxShadow am Avatar — klappt
+                  // auch bei gruenen Teams sauber.
                   return (
                     <div key={tm.id} style={{
                       position: 'relative',
+                      padding: 5, borderRadius: '50%',
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
+                      background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
+                      border: answered ? '3px solid #22C55E' : '3px solid transparent',
+                      boxShadow: answered ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
                       opacity: answered ? 1 : 0.55,
-                      filter: answered
-                        ? 'drop-shadow(0 0 10px rgba(34,197,94,0.6)) drop-shadow(0 0 3px rgba(34,197,94,0.4))'
-                        : 'grayscale(0.4)',
-                      transition: 'opacity 0.4s ease, filter 0.4s ease',
+                      filter: answered ? 'none' : 'grayscale(0.4)',
+                      transition: 'all 0.45s ease',
                     }}>
-                      <div style={{
-                        borderRadius: '50%',
-                        boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
-                        transition: 'box-shadow 0.45s ease',
-                        display: 'inline-flex',
-                      }}>
-                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
-                      </div>
+                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
                     </div>
                   );
                 })}

@@ -1598,7 +1598,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             <QQTeamAvatar
               avatarId={team.avatarId} teamEmoji={team.emoji}
               size={'clamp(100px, 11cqw, 170px)'}
-              flat
+              bgColor={team.color}
             />
             <div style={{
               width: '100%',
@@ -1635,7 +1635,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             boxShadow: `0 0 80px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
           }}>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
-          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} flat />
+          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} bgColor={team.color} />
           <div style={{ width: '100%' }}>
             <TeamNameLabel
               name={team.name}
@@ -1684,7 +1684,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
                 maxWidth: '100%', minWidth: 0,
               }}>
-                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} flat />
+                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} bgColor={targetTeam.color} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <TeamNameLabel
                     name={targetTeam.name}
@@ -1887,18 +1887,16 @@ function BetZeroGroupSlide({ teams, lang }: {
             animation: `qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.25 + i * 0.10}s both`,
             opacity: 0,
           }}>
-            {/* 2026-05-25 v2 (Wolf 'bg vollfarbig, nicht kohärent mit app'):
-                Ring transparent, kein Inner-Fill, nur dezenter Outer-Glow.
-                Vorher 1a alpha + inset-glow → wirkte zu saturiert gegen Dark-BG. */}
-            <div style={{
-              padding: 6, borderRadius: '50%',
-              border: `3px solid ${t.color}`,
-              background: 'transparent',
-              boxShadow: `0 0 18px ${t.color}33`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-            }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} flat />
-            </div>
+            {/* 2026-05-25 v3 (Wolf 'so ist die zugehörigkeit nicht eindeutig'):
+                Outer-Ring raus — der Avatar selbst bekommt jetzt team.color
+                als Disc-BG (bgColor-Override), damit das Vollton-Orange klar
+                die Team-Zugehoerigkeit zeigt — wie auf dem Grid. */}
+            <QQTeamAvatar
+              avatarId={t.avatarId}
+              teamEmoji={t.emoji}
+              size={avatarSize}
+              bgColor={t.color}
+            />
             {/* 2026-05-25 (Wolf 'teamnamen ausgeschrieben, nicht abgeschnitten'):
                 maxWidth + ellipsis raus, dafuer 2-zeilig erlauben + leicht
                 kleiner skalieren bei langen Namen. */}

@@ -11,7 +11,7 @@ import { useState, useEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
-import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
+import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
@@ -508,6 +508,21 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 den Disc voll füllen — die solid Team-Color wird
                                 durch die PNG-Border + Outer-Disc-Border ohnehin
                                 sichtbar). */}
+                            {/* 2026-05-28 (Wolf 'avatar viel zu klein im kreis'
+                                Round 3): emoji-fontSize MUSS auf dem Disc-Div
+                                selbst sitzen (1:1 wie Slot M Showreel), nicht
+                                auf einem inline-block Wrapper-Span. Der bisherige
+                                Pfad via CountryFlagOrEmoji renderte das Emoji in
+                                einem `<span style="display:inline-block; fontSize:
+                                clamp(...)">` — Edge/Chromium hat die clamp-fontSize
+                                auf inline-block-Flex-Children teilweise auf den
+                                geerbten Body-Default (16px) heruntergerechnet,
+                                wodurch das Emoji winzig blieb.
+                                Slot M setzt fontSize direkt auf den Flex-Parent
+                                und rendert das Emoji als Text-Child — das
+                                funktioniert robust. Country-Flag-Sonderpfad
+                                (Twemoji-IMG fuer DE/GR/etc auf Windows) wurde
+                                inline herausgezogen. */}
                             <div style={{
                               width: avatarSize, height: avatarSize,
                               borderRadius: '50%',
@@ -517,20 +532,24 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               flexShrink: 0,
                               overflow: 'hidden',
+                              fontSize: emojiFontSize,
+                              lineHeight: 1,
                               animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
                             }}>
                               {t.emoji ? (
-                                // Emoji-Avatar (Standard-Set): Emoji direkt als
-                                // großer Text — wie Slot M Showreel.
-                                // 2026-05-10 (Wolf 'Eurovision-Flaggen inkonsistent —
-                                // bei heute spielen DE/GR als Text'): CountryFlagOrEmoji
-                                // rendert Country-Flag-Codepoints als Twemoji-Image
-                                // statt nativem Glyph (Windows Edge zeigt sonst nur
-                                // Regional-Indicator-Letters DE/GR etc).
-                                <CountryFlagOrEmoji
-                                  emoji={t.emoji}
-                                  fontSize={emojiFontSize}
-                                />
+                                isCountryFlagGlyph(t.emoji) ? (
+                                  <img
+                                    src={getCountryFlagUrl(t.emoji)}
+                                    alt={t.emoji}
+                                    draggable={false}
+                                    style={{
+                                      width: '1.3em', height: '1em',
+                                      objectFit: 'contain',
+                                    }}
+                                  />
+                                ) : (
+                                  t.emoji
+                                )
                               ) : (
                                 // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern.
                                 // 100% damit die PNG-Border (eigener Tier-Ring) den

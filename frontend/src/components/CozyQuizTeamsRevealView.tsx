@@ -364,6 +364,13 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         const avatarSize = multiRow
           ? 'clamp(82px, 8cqw, 130px)'
           : many ? 'clamp(96px, 9.5cqw, 160px)' : 'clamp(118px, 12cqw, 196px)';
+        // 2026-05-28 (Wolf 'avatar viel zu klein im kreis' Round 2): Edge/Chromium
+        // rendert `calc(clamp(...) * 0.78)` teilweise auf 0 — nested clamp-in-calc
+        // mit Multiplikation ist fragil. Daher Emoji-Size als eigene Clamp
+        // (~78% des Avatar-Clamps) statt calc-Multiplikation.
+        const emojiFontSize = multiRow
+          ? 'clamp(64px, 6.2cqw, 101px)'
+          : many ? 'clamp(75px, 7.4cqw, 125px)' : 'clamp(92px, 9.4cqw, 153px)';
         const nameFont = multiRow ? 'clamp(16px, 1.7cqw, 24px)' : 'clamp(18px, 1.9cqw, 28px)';
         let cursor = 0;
         return (
@@ -522,7 +529,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 // Regional-Indicator-Letters DE/GR etc).
                                 <CountryFlagOrEmoji
                                   emoji={t.emoji}
-                                  fontSize={`calc(${typeof avatarSize === 'string' ? avatarSize : `${avatarSize}px`} * 0.78)`}
+                                  fontSize={emojiFontSize}
                                 />
                               ) : (
                                 // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern.

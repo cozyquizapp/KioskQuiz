@@ -489,11 +489,18 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                           }}>
                             {/* Avatar — 1:1 wie Slot M Showreel: Color-Tinted-
                                 Circle mit großem Emoji DIREKT (nicht via
-                                QQTeamAvatar). emoji-fontSize ~54% des Wrappers,
-                                damit's wie im Showreel kraftvoll wirkt.
+                                QQTeamAvatar).
                                 2026-05-23 (Wolf): BG solid statt 20%-glassy —
                                 matcht den Avatar-Kreis-BG aus QQTeamAvatar
-                                (background: color) im Rest der App. */}
+                                (background: color) im Rest der App.
+                                2026-05-28 (Wolf 'avatar viel zu klein im kreis'):
+                                Mit dem solid-BG wirkte der Disc visuell schwerer
+                                und der Avatar drin zu klein. Emoji 0.54→0.78 (näher
+                                am Standard-QQTeamAvatar 0.6, plus Showreel-Bump);
+                                PNG 86%→100% (Cozy-Cast-PNG hat eigene Border, darf
+                                den Disc voll füllen — die solid Team-Color wird
+                                durch die PNG-Border + Outer-Disc-Border ohnehin
+                                sichtbar). */}
                             <div style={{
                               width: avatarSize, height: avatarSize,
                               borderRadius: '50%',
@@ -515,11 +522,14 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 // Regional-Indicator-Letters DE/GR etc).
                                 <CountryFlagOrEmoji
                                   emoji={t.emoji}
-                                  fontSize={`calc(${typeof avatarSize === 'string' ? avatarSize : `${avatarSize}px`} * 0.54)`}
+                                  fontSize={`calc(${typeof avatarSize === 'string' ? avatarSize : `${avatarSize}px`} * 0.78)`}
                                 />
                               ) : (
-                                // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern
-                                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="86%" />
+                                // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern.
+                                // 100% damit die PNG-Border (eigener Tier-Ring) den
+                                // gesamten Disc füllt — sonst entsteht ein toter
+                                // Solid-Color-Moat zwischen PNG und Outer-Border.
+                                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />
                               )}
                             </div>
                             {/* Name als Text in Team-Color — Showreel-style.

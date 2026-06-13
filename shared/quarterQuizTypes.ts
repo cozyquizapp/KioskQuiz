@@ -956,6 +956,10 @@ export interface QQDraft {
    *  Wenn false: kein Comeback-Step, Rules-Slide ausblenden, Phase wechselt
    *  direkt von vorletzter zur Final-Runde. */
   comebackEnabled?: boolean;
+  /** 2026-06-13 (Show-Prep-Wizard): Vorgeplante Default-Timerdauer pro Quiz.
+   *  Wird beim Raum-Setup angewandt, damit „vorausplanen → Venue nur Start"
+   *  funktioniert (Timer ist sonst nur pro-Raum). undefined → 30s-Default. */
+  defaultTimerSec?: number;
   createdAt: number;
   updatedAt: number;
 }

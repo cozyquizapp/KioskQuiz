@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import QQShowPrepWizard from './QQShowPrepWizard';
 import { useQQSocket } from '../hooks/useQQSocket';
 import { useActionLock } from '../hooks/useActionLock';
 import {
@@ -43,6 +44,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // fuer Live-Sound-Card, ist jetzt nur im Setup/Advanced. localSoundConfig
   // bleibt fuer SetupView-Param-Signatur.
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
+  // 2026-06-13: Opt-in Show-Prep-Wizard (Quiz vorab planen → Venue nur Start).
+  const [showPrep, setShowPrep] = useState(false);
   const startingRef = useRef(false); // prevent double-fire on startGame
 
   // ── Autoplay-Mode (lokaler Test-Modus, kein Backend-State) ────────────────
@@ -1718,21 +1721,43 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       )}
 
       {joined && s && s.phase === 'LOBBY' && !setupDone && (
-        <SetupView
-          s={s}
-          drafts={drafts}
-          selectedDraftId={selectedDraftId}
-          setSelectedDraftId={setSelectedDraftId}
-          phases={phases}
-          setPhases={setPhases}
-          timerInput={timerInput}
-          setTimerInput={setTimerInput}
-          applyTimer={applyTimer}
-          localSoundConfig={localSoundConfig}
-          setLocalSoundConfig={setLocalSoundConfig}
+        <>
+          {/* Opt-in: geführte Vorab-Planung. Steht NEBEN dem Schnell-Setup —
+              wer schnell hochfahren will, ignoriert den Button. */}
+          <button
+            onClick={() => setShowPrep(true)}
+            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '13px 18px', borderRadius: 14, border: '1px solid rgba(236,72,153,0.5)', background: 'linear-gradient(90deg,rgba(236,72,153,0.18),rgba(162,18,71,0.18))', color: '#e2e8f0', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
+          >
+            🎬 Show planen — geführt vorbereiten (Material, Druck, Briefing, Technik)
+          </button>
+          <SetupView
+            s={s}
+            drafts={drafts}
+            selectedDraftId={selectedDraftId}
+            setSelectedDraftId={setSelectedDraftId}
+            phases={phases}
+            setPhases={setPhases}
+            timerInput={timerInput}
+            setTimerInput={setTimerInput}
+            applyTimer={applyTimer}
+            localSoundConfig={localSoundConfig}
+            setLocalSoundConfig={setLocalSoundConfig}
+            roomCode={roomCode}
+            emit={emit}
+            finishSetup={() => setSetupDone(true)}
+          />
+        </>
+      )}
+
+      {showPrep && s && (
+        <QQShowPrepWizard
           roomCode={roomCode}
+          state={s}
+          selectedDraftId={selectedDraftId}
+          drafts={drafts}
           emit={emit}
-          finishSetup={() => setSetupDone(true)}
+          onClose={() => setShowPrep(false)}
+          onFinish={() => setSetupDone(true)}
         />
       )}
 
@@ -4869,6 +4894,12 @@ function SetupView({
       .then(d => {
         if (cancelled || !d) return;
         setDraftSoundConfig(d.soundConfig ?? {});
+        // 2026-06-13 (Show-Prep): vorgeplante Default-Timerdauer anwenden, damit
+        // „vorausplanen → Venue nur Start" auch mit frischem Raum greift.
+        if (typeof d.defaultTimerSec === 'number' && d.defaultTimerSec > 0 && d.defaultTimerSec !== s.timerDurationSec) {
+          setTimerInput(d.defaultTimerSec);
+          emit('qq:setTimer', { roomCode, durationSec: d.defaultTimerSec });
+        }
         // 2026-05-07: Auto-Avatar-Set per Draft-Praeferenz. Fallback: bei
         // theme.eurovisionMode auch ohne explizites preferredAvatarSetId
         // auf 'esc' wechseln — deckt alte Demo-Drafts ab die VOR meinem

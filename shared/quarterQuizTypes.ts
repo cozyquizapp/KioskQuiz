@@ -1316,7 +1316,7 @@ export type QQPendingAction =
   | 'COMEBACK';  // before final phase: comeback team acts
 
 // ── Socket event payloads (client → server) ───────────────────────────────────
-export interface QQJoinModeratorPayload  { roomCode: string; }
+export interface QQJoinModeratorPayload  { roomCode: string; pin?: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 

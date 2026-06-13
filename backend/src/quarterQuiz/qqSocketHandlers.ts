@@ -99,6 +99,39 @@ function fail(ack: unknown, error: unknown): void {
   }
 }
 
+// ── Moderator-Auth (Security-Audit 2026-06-13) ──────────────────────────────
+// Mod-Socket-Events waren bisher server-seitig UNGESCHUETZT: jeder mit dem
+// Raumcode (steht auf dem Beamer) konnte via DevTools qq:startGame/nextQuestion/
+// kickTeam/... feuern und das Spiel uebernehmen. Der ADMIN_PIN wurde nur auf den
+// REST-Routen geprueft, nie auf einem Socket-Event.
+// Fix: ein socket.use-Gate (siehe registerQQHandlers) laesst nur PUBLIC/Team-
+// Events fuer nicht-authentifizierte Sockets durch; alles andere braucht
+// socket.data.qqIsMod (gesetzt in qq:joinModerator bei korrektem PIN).
+const QQ_ADMIN_PIN = process.env.ADMIN_PIN || '2506';
+
+// Events, die JEDER Client (Team-Phone, Beamer, noch-nicht-Mod) senden darf.
+// Quelle: alle assertOwnTeam-Events + alle qq:-Events, die die Team-Seite
+// (QQTeamPage + CozyQuizTeam*-Komponenten) emittiert + Handshake. Der Beamer
+// emittiert NUR joinBeamer. ALLES HIER NICHT GELISTETE ist Mod-only.
+// ⚠️ Bei neuen TEAM-Events hier eintragen, sonst werden sie fuer Teams blockiert.
+const QQ_PUBLIC_EVENTS = new Set<string>([
+  // Handshake / Join
+  'qq:ping', 'qq:joinTeam', 'qq:joinBeamer', 'qq:joinModerator', 'qq:lookupRegularTeam',
+  // Team-Eingaben (Antwort / Buzzer / Reaktion)
+  'qq:submitAnswer', 'qq:revokeAnswer', 'qq:buzzIn', 'qq:reaction',
+  // Team-Grid-Aktionen (CozyQuizTeamActionCards)
+  'qq:placeCell', 'qq:stealCell', 'qq:chooseFreeAction',
+  'qq:sandLockCell', 'qq:shieldCell', 'qq:shieldCluster', 'qq:stapelCell',
+  'qq:swapCells', 'qq:swapOneCell', 'qq:freezeCell', 'qq:finalRevealPlaceStack',
+  // Minispiele (Team spielt aktiv mit)
+  'qq:hotPotatoAnswer', 'qq:imposterChoose',
+  'qq:comebackChoice', 'qq:comebackHLAnswer', 'qq:comebackUndo',
+  'qq:connectionsSelectItem', 'qq:connectionsSubmit',
+  'qq:onlyConnectGuess', 'qq:bluffSubmit', 'qq:bluffVote',
+  // Final-Wager (Team tippt)
+  'qq:submitFinalBet',
+]);
+
 export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
@@ -975,6 +1008,25 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
   io.on('connection', (socket) => {
 
+    // ── Mod-Auth-Gate (Security-Audit 2026-06-13) ───────────────────────────
+    // Zentraler Choke-Point VOR allen Handlern: Mod-only qq:-Events werden fuer
+    // Sockets ohne qqIsMod blockiert. PUBLIC/Team-Events (QQ_PUBLIC_EVENTS) und
+    // alle nicht-qq:-Events laufen ungehindert durch. So muss nicht jeder der
+    // ~80 Mod-Handler einzeln geguarded werden (fehleranfaellig).
+    socket.use((packet, next) => {
+      const event = packet[0];
+      if (typeof event !== 'string' || !event.startsWith('qq:')) return next();
+      if (QQ_PUBLIC_EVENTS.has(event)) return next();
+      if (socket.data?.qqIsMod) return next();
+      // Nicht autorisiert → Event NICHT an den Handler durchreichen. Falls ein
+      // Ack-Callback dabei ist, sauber ablehnen, damit emitWithAck nicht haengt.
+      const maybeAck = packet[packet.length - 1];
+      if (typeof maybeAck === 'function') {
+        (maybeAck as AckFn)({ ok: false, error: 'Moderator-PIN erforderlich.', code: 'NOT_AUTHORIZED' });
+      }
+      // bewusst kein next() → Handler wird nicht ausgefuehrt
+    });
+
     // ── Heartbeat ──────────────────────────────────────────────────────────
     // Client-Heartbeat (alle 20s). Hält die WS-Verbindung gegen Render-Proxy-
     // Timeout (~100s Idle) und Browser-Tab-Throttling warm. Noop-Handler.
@@ -983,6 +1035,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // ── Join ────────────────────────────────────────────────────────────────
     socket.on('qq:joinModerator', (payload: QQJoinModeratorPayload, ack?: unknown) => {
       try {
+        // Mod-Auth: NUR korrekter PIN → Mod-Rechte. Bewusst KEINE NODE_ENV-Valve
+        // (waere unsicher, falls Coolify NODE_ENV nicht auf 'production' setzt).
+        // Im Dev greift der ADMIN_PIN-Fallback '2506', den PinGate ohnehin abfragt
+        // und in sessionStorage legt → joinModerator schickt ihn mit, matcht.
+        // Sonst joint der Socket read-only (sieht State wie ein Beamer, aber das
+        // Gate oben blockt alle Mod-Events). Re-join bei Reconnect setzt das Flag
+        // erneut, da das Frontend den PIN jedes Mal mitschickt.
+        if (payload?.pin && payload.pin === QQ_ADMIN_PIN) {
+          socket.data.qqIsMod = true;
+        }
         const room = ensureQQRoom(payload.roomCode);
         socket.join(payload.roomCode);
         socket.emit('qq:stateUpdate', buildQQStateUpdate(room));

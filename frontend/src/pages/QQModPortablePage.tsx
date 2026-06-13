@@ -23,9 +23,12 @@ export default function QQModPortablePage() {
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
 
-  // Join als Moderator
+  // Join als Moderator — PIN aus der PinGate-Session mitschicken (Security-Audit
+  // 2026-06-13), sonst joint die Portable-Mod-Page read-only und Mod-Events
+  // werden server-seitig blockiert.
   useEffect(() => {
-    emit('qq:joinModerator', { roomCode });
+    const adminPin = sessionStorage.getItem('qq_admin_pin') ?? undefined;
+    emit('qq:joinModerator', { roomCode, pin: adminPin });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 

@@ -330,6 +330,12 @@ const qqRooms = new Map<string, QQRoomState>();
 
 const QQ_ROOM_TTL_MS = 4 * 60 * 60 * 1000; // 4 hours
 
+// Security-Audit 2026-06-13: Cap gegen unbounded Room-Creation. Ein Fremder
+// koennte sonst joinBeamer/joinTeam mit tausenden Zufallscodes spammen → je ein
+// Room-Objekt mit 4h-TTL → langsame Memory-Erschoepfung. 500 ist weit ueber
+// jedem realen Bedarf (Wolf fährt ein Quiz zur Zeit), blockt aber den DoS.
+const QQ_MAX_ROOMS = 500;
+
 /** Periodically clean up stale QQ rooms (no activity for 4 hours). */
 setInterval(() => {
   const now = Date.now();
@@ -360,6 +366,15 @@ export function getAllQQRooms(): QQRoomState[] {
 export function ensureQQRoom(roomCode: string): QQRoomState {
   let room = qqRooms.get(roomCode);
   if (!room) {
+    // Security-Audit 2026-06-13: bevor ein neuer Room entsteht — Code-Format
+    // validieren (kein 10KB-Garbage-Key) + globalen Cap erzwingen. Restore beim
+    // Boot laeuft ueber insertQQRoom, ist also nicht betroffen.
+    if (typeof roomCode !== 'string' || !/^[A-Za-z0-9_-]{1,32}$/.test(roomCode)) {
+      throw new QQError('INVALID_ROOM_CODE', 'Ungültiger Raumcode.');
+    }
+    if (qqRooms.size >= QQ_MAX_ROOMS) {
+      throw new QQError('TOO_MANY_ROOMS', 'Zu viele aktive Räume — bitte später erneut versuchen.');
+    }
     room = {
       roomCode,
       phase: 'LOBBY',

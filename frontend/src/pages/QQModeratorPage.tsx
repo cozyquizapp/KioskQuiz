@@ -121,7 +121,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   useEffect(() => {
     if (!connected) { setJoined(false); return; }
     if (joined) return;
-    emit('qq:joinModerator', { roomCode }).then(ack => {
+    // PIN aus der PinGate-Session mitschicken → Backend setzt Mod-Rechte
+    // (Security-Audit 2026-06-13). Ohne korrekten PIN joint man read-only.
+    const adminPin = sessionStorage.getItem('qq_admin_pin') ?? undefined;
+    emit('qq:joinModerator', { roomCode, pin: adminPin }).then(ack => {
       if (ack.ok) setJoined(true);
     });
   }, [connected]);

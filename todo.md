@@ -48,13 +48,13 @@ Verifiziert **erledigt/obsolet** und daher entfernt: Host-Notes-Toast (jetzt def
 in Frage-Phasen) · Teams-List Compact-View (Compact-Mode bei >5 Teams) · Show-Controls/
 Settings (Mod-Cockpit-Compact + Live-Settings-Cleanup) · Shift+Space→QUESTION_ACTIVE-Sprung
 (obsolet — Shift+Space ist jetzt „Slide zurück") · Treppchen-Confetti-Storm (durch Eurovision-
-Finale-Redesign überholt).
+Finale-Redesign überholt) · **Autoplay-Failsafe für Custom-Pipelines** (kein echtes Todo:
+HotPotato ist timer-getrieben — `qqArmHotPotatoTimer` Turn-Timeout + Pause/Resume + Validierungs-
+Guard gegen Solo-Hang; OnlyConnect ist deaktiviert; nur Bluff braucht wegen manuellem Mod-Review
+einen Watchdog, der existiert `_bluffReviewWatchdog`).
 
 Genuin offen (alle niedrige Prio, live-test-getrieben):
 
-- **Autoplay-Failsafe für Custom-Pipelines** — **Bluff** hat einen 3-Min-Watchdog
-  (`qqRooms.ts:5389` `_bluffReviewWatchdog`). **OnlyConnect/HotPotato** haben KEINEN —
-  prüfen, ob sie bei ausbleibendem Backend-Event hängen können, ggf. analogen Watchdog ergänzen.
 - **Streamdeck-Action-Toast bei Hotkey-Press** — nicht umgesetzt; optional. Streamdeck ist
   sonst voll verdrahtet (F13–F19, Bounce-Locks), Skip-Toast existiert → geringer Mehrwert.
 - **Mikro-Polish** (4 Animation-Easings · Layout-Cap-Bumps · justifyContent-Lücken) —

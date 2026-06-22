@@ -109,6 +109,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     else if (state.phase === 'TEAMS_REVEAL')   pushToast('Team-Vorstellung laeuft', '🎭', '#F97316');
   }, [state?.phase, state?.gamePhaseIndex]);
 
+  // Hebel 3 — Host-Runtime-HUD: Game-Start client-seitig tracken (localStorage,
+  // reload-/reconnect-fest, Reset bei LOBBY). Date.now() reicht — wir vergleichen
+  // nur Client gegen Client; serverTime-Sync ist nur fuer Server-Timer noetig.
+  useEffect(() => {
+    if (!state) return;
+    const key = `qq_runtime_start_${state.roomCode}`;
+    if (state.phase === 'LOBBY') {
+      localStorage.removeItem(key);
+    } else if (!localStorage.getItem(key)) {
+      localStorage.setItem(key, String(Date.now()));
+    }
+  }, [state?.phase, state?.roomCode]);
+
   // Winner-Mark als Toast quittieren.
   useEffect(() => {
     if (!state) return;
@@ -1831,6 +1844,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     </>
                   )}
                   {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
+                  <RuntimePill state={s} />
                 </div>
               </div>
             );
@@ -3968,6 +3982,45 @@ function TimerPill({ endsAt }: { endsAt: number }) {
     }}>
       ⏱ {remaining}s
     </div>
+  );
+}
+
+// Hebel 3 — Host-Runtime-HUD: verstrichene Spielzeit + grobe, selbst-kalibrierende
+// ETA (nur die Fragerunden; die Final-Phase ist nicht erfasst → bewusst „ca."/„⏳").
+// Self-gating: rendert nichts, solange kein Game-Start getrackt ist (= LOBBY).
+function RuntimePill({ state }: { state: QQStateUpdate }) {
+  const [, tick] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => tick(t => t + 1), 1000);
+    return () => clearInterval(id);
+  }, []);
+  const startRaw = typeof localStorage !== 'undefined'
+    ? localStorage.getItem(`qq_runtime_start_${state.roomCode}`)
+    : null;
+  const startMs = startRaw ? Number(startRaw) : null;
+  if (!startMs || !Number.isFinite(startMs)) return null;
+
+  const elapsedSec = Math.max(0, Math.floor((Date.now() - startMs) / 1000));
+  const mm = Math.floor(elapsedSec / 60);
+  const ss = elapsedSec % 60;
+  const elapsedLabel = `${mm}:${String(ss).padStart(2, '0')}`;
+
+  // ETA grob, selbst-kalibrierend: Ø-Zeit pro abgeschlossener Frage × verbleibende.
+  const QPP = 5;
+  const totalQuestions = state.totalPhases * QPP;
+  const done = Math.min(Math.max(0, state.questionIndex), totalQuestions);
+  const remaining = Math.max(0, totalQuestions - state.questionIndex);
+  let etaLabel: string | null = null;
+  if (done >= 1 && remaining > 0) {
+    const avgSec = elapsedSec / done;
+    const etaMin = Math.max(1, Math.round((avgSec * remaining) / 60));
+    etaLabel = `~${etaMin} Min`;
+  }
+  return (
+    <>
+      <Pill label={`🕐 ${elapsedLabel}`} color="#64748b" />
+      {etaLabel && <Pill label={`⏳ ${etaLabel}`} color="#64748b" />}
+    </>
   );
 }
 

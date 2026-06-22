@@ -2,6 +2,11 @@
 
 Chronologisches Protokoll von Arbeits-Sessions. Trigger: Wolf sagt „log das", dann hängt Claude einen Eintrag an. Append-only, nie überschreiben.
 
+> ⚠️ **Dies ist KEIN Todo-Tracker.** „Offen"-Abschnitte in alten Einträgen sind
+> historisch (= was an dem Tag offen war) und oft längst erledigt. Die einzige
+> aktuelle Liste offener Punkte ist **`todo.md`**. Hier nichts abhaken, nichts als
+> „noch offen" weiterführen — nur Verlauf festhalten.
+
 ---
 
 ## 2026-05-11 — CozyBuilder Total-Refactor + Live-Test-Fixes + EN-i18n + Spacing-Audit

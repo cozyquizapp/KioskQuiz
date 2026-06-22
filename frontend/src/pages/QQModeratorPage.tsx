@@ -1184,7 +1184,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // Sieger markiert hat. Nur in QUESTION_REVEAL aktiv und nur wenn ein
     // correctTeamId gesetzt ist (sonst nichts zum Rückgängigmachen). Backend
     // setzt zurück auf 'kein Sieger', Mod kann dann neu markieren.
-    if (e.code === 'KeyZ') {
+    // 2026-06-22 (Mod-Review): NUR bare Z (ohne Ctrl/Meta) → undoMarkCorrect.
+    // Vorher fing `e.code === 'KeyZ'` AUCH Strg+Z ab und returnte → der
+    // Strg+Z-Handler (undoLastAction, Place/Steal) weiter unten war per
+    // Tastatur tot. Mit dem Guard faellt Strg+Z jetzt korrekt durch.
+    if (e.code === 'KeyZ' && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
       if (s.phase === 'QUESTION_REVEAL' && s.correctTeamId) {
         playHotkeyFeedback();
@@ -6171,6 +6175,30 @@ function HotkeyCheatsheet({ onClose }: { onClose: () => void }) {
             </div>
           ))}
         </div>
+        {/* 2026-06-22 (Hebel 4 solo): Notfall-Guide — Panik-Netz fuer den Live-
+            Abend. Bewusst hier im ?-Cheatsheet (= ein Griff im Stress). */}
+        <div style={{
+          marginTop: 22, padding: '14px 16px', borderRadius: 14,
+          background: 'rgba(239,68,68,0.08)',
+          border: '1px solid rgba(239,68,68,0.35)',
+        }}>
+          <div className="qm-eyebrow qm-eyebrow-bright" style={{ marginBottom: 8, color: QQ_COLORS.red500 }}>🆘 Notfall</div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 8 }}>
+            {([
+              ['Beamer eingefroren / Browser zu', '/beamer neu laden (F5). Spielstand läuft serverseitig weiter — nichts geht verloren.'],
+              ['Du bist offline', 'Reconnect läuft automatisch (+ „Jetzt neu verbinden"). Spiel läuft weiter.'],
+              ['Team-Handy weg', 'Einfach warten — verbindet sich selbst neu und kann weiter antworten. Kein Eingriff nötig.'],
+              ['Phase hängt', 'Space = weiter · Shift+Space = zurück. Im Zweifel /beamer neu laden.'],
+              ['Falsch markiert', 'Z = Markierung zurück · Strg+Z = letzte Place/Steal-Aktion zurück.'],
+            ] as [string, string][]).map(([t, d]) => (
+              <div key={t} style={{ fontSize: 12.5, lineHeight: 1.35 }}>
+                <span style={{ fontWeight: 900, color: 'var(--qm-text-warm)' }}>{t}: </span>
+                <span style={{ color: 'var(--qm-text-muted)' }}>{d}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div style={{ marginTop: 18, fontSize: 12, color: 'var(--qm-text-faint)', textAlign: 'center' }}>
           StreamDeck: F13–F17 spiegeln Space / #1 / R / Esc / N
         </div>

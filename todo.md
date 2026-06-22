@@ -42,20 +42,24 @@ Kein Fix ohne Snapshot — beim nächsten Live-Vorkommen DevTools-Network `qq:st
 - **NBC-Phönix Auto-Translate-Quirk** — DeepL lässt Eigennamen manchmal unübersetzt.
   Aktuell: nach Auto-Translate manuell prüfen. Optional später: Eigennamen-Schutz im Translate-Flow.
 
-## 🔧 Vor Umsetzung gegen aktuellen Code prüfen (evtl. durch Mai-Refactors überholt)
+## 🔧 Rest-Backlog (2026-06-22 gegen Code verifiziert)
 
-Alte Audit-/Backlog-Notizen. Vor dem Anfassen **re-grepen** — vieles wurde durch die großen
-Mai-Refactors (Mod-Cockpit-Compact, Live-Settings-Cleanup, Eurovision-Finale-Redesign,
-Autoplay-„durchlaufen-überall") vermutlich schon erledigt oder obsolet.
+Verifiziert **erledigt/obsolet** und daher entfernt: Host-Notes-Toast (jetzt default collapsed
+in Frage-Phasen) · Teams-List Compact-View (Compact-Mode bei >5 Teams) · Show-Controls/
+Settings (Mod-Cockpit-Compact + Live-Settings-Cleanup) · Shift+Space→QUESTION_ACTIVE-Sprung
+(obsolet — Shift+Space ist jetzt „Slide zurück") · Treppchen-Confetti-Storm (durch Eurovision-
+Finale-Redesign überholt).
 
-- **Autoplay Failsafe-Timer (~60s)** für Custom-Pipelines (OnlyConnect/Bluff/HotPotato
-  „warte-auf-Backend") — im Mod-Page-Code nicht gefunden, daher wahrscheinlich noch offen.
-- **Mod-Page UI-Backlog**: Settings-Dropdown-Refactor · Shift+Space→QUESTION_ACTIVE-Sprung ·
-  Streamdeck-Action-Toast bei Hotkey · Show-Controls phasenkontextuelles Hide statt grey-out ·
-  Host-Notes als Toast · Teams-List Compact-View während Spielzeit.
-- **Polish**: Treppchen-Confetti-Storm (evtl. durch Eurovision-Finale überholt) · 4 Animation-
-  Easings (ComebackHL/HotPotato/Bluff/Standard) · Layout-Cap-Bumps · justifyContent-Lücken.
-  Memory-Zeilennummern sind veraltet → vor Fix re-grepen.
+Genuin offen (alle niedrige Prio, live-test-getrieben):
+
+- **Autoplay-Failsafe für Custom-Pipelines** — **Bluff** hat einen 3-Min-Watchdog
+  (`qqRooms.ts:5389` `_bluffReviewWatchdog`). **OnlyConnect/HotPotato** haben KEINEN —
+  prüfen, ob sie bei ausbleibendem Backend-Event hängen können, ggf. analogen Watchdog ergänzen.
+- **Streamdeck-Action-Toast bei Hotkey-Press** — nicht umgesetzt; optional. Streamdeck ist
+  sonst voll verdrahtet (F13–F19, Bounce-Locks), Skip-Toast existiert → geringer Mehrwert.
+- **Mikro-Polish** (4 Animation-Easings · Layout-Cap-Bumps · justifyContent-Lücken) —
+  speculative Audit-Notizen, Zeilennummern veraltet. Nur anfassen, wenn Wolf die Stelle
+  konkret im Live-Test bemängelt; vor Fix re-grepen.
 
 ---
 

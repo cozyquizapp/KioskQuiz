@@ -29,6 +29,7 @@ const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQRecapPage         = React.lazy(() => import('./pages/QQRecapPage'));
 const QQRecapIndexPage    = React.lazy(() => import('./pages/QQRecapIndexPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
+const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
 const QQAvatarGeneratorPage = React.lazy(() => import('./pages/QQAvatarGeneratorPage'));
@@ -163,6 +164,8 @@ function App() {
           <Route path="/" element={<QQLandingPage />} />
           <Route path="/team"       element={<QQErrorBoundary source="team"><QQTeamPage /></QQErrorBoundary>} />
           <Route path="/beamer"     element={<QQErrorBoundary source="beamer"><QQBeamerPage /></QQErrorBoundary>} />
+          {/* Öffentlicher Showroom-Trailer (QR-Landing „was ist CozyQuiz") — nicht PIN-gegated. */}
+          <Route path="/showroom"   element={<QQShowroomPage />} />
           <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
           {/* 2026-05-25 (Wolf 'test-modus zum reveal-testen'): selbe Mod-Komponente
               mit testMode-prop → Setup uebersprungen, 5 Bots auto-gespawnt,

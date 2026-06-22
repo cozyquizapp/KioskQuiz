@@ -9,6 +9,7 @@
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
+import { cozyCard } from '../qqStyleTokens';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -355,15 +356,10 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             Card-Glow + soft Border reichen. Keyframe bleibt in qqShared.ts. */}
         <div style={{
           position: 'relative', zIndex: 1,
-          background: cardBg,
-          borderRadius: 24,
+          // Hebel 1 (Style-Tokens): kanonisches Card-Muster via cozyCard() —
+          // byte-identisch zum vorherigen Inline-Block (bg/radius/border/shadow).
+          ...cozyCard({ bg: cardBg, accentHex: brand.accentHex, accentRgb: brand.accentRgb }),
           padding: 'clamp(32px, 4cqw, 56px)',
-          border: `1px solid rgba(${brand.accentRgb},0.42)`,
-          boxShadow:
-            `0 14px 48px rgba(0,0,0,0.55),` +
-            `0 0 64px rgba(${brand.accentRgb},0.28),` +
-            `0 0 0 1px rgba(255,235,200,0.04) inset,` +
-            `0 -3px 0 ${brand.accentHex} inset`,
           height: 'clamp(460px, 60cqh, 660px)',
           animation: 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',
           overflow: 'hidden',

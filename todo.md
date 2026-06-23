@@ -68,14 +68,28 @@ Genuin offen (alle niedrige Prio, live-test-getrieben):
 **Update 2026-06-23 (Commit `03106c88`):** Wolf-Klarstellung — es geht NICHT um
 Event-Kostüme (Weihnachten/Halloween), sondern um **subtile Grunddesigns je
 Location/Setting** (Café · Bar · Corporate · Glass), per Klick umschaltbar.
-Gebaut: `qqTheme.ts` (ResolvedTheme + QQ_THEMES cozy/glass + Runtime), `getBrandColors`
-delegiert ans aktive Theme (cozy = unverändert, zero-visual-change live), und ein
-**Cozy↔Glass-Umschalter im `/showroom`** über den echten Beamer-Views (Proof).
-- **Offen / als Nächstes:** (1) Wolf testet den Showroom-Flip am iPhone → Richtung ok?
-  (2) Frosted-Glass-**Flächen** (cardBg/heroBorder als `surface`-Tokens schon definiert)
-  an die Hauptscreens verdrahten — bisher flippt nur die Palette über getBrandColors.
-  (3) Die 4 Skins ausarbeiten: **Glass · Café/Kiosk · Bar/Night · Corporate**.
-  (4) Theme-Picker für den Mod (pro Event wählen) + State-Persistenz.
+Gebaut: `qqTheme.ts` (ResolvedTheme + QQ_THEMES cozy/glass + Runtime + `applyThemeVars`),
+**Cozy↔Glass-Umschalter im `/showroom`** über den echten Beamer-Views.
+
+**Wichtiger Befund (Commit `4d2acd1f`):** `getBrandColors` ist NICHT der breite
+Chokepoint — die Views hardcoden Pink direkt (131× `#ec4899`, 391× `rgba(236,72,153)`).
+→ Echte Foundation = **CSS-Custom-Properties** `--qq-accent*` (main.css :root, Default
+= Pink = zero-visual-change). `applyThemeVars` schreibt die Skin-Akzente per Wechsel
+auf `:root`. **3 Views migriert** (QuestionView/TeamsRevealView/GameOverView, 65 Stellen)
+→ Showroom-Flip wechselt Frage/Reveal/Teams/Treppchen sichtbar Pink↔Indigo.
+
+**Status: Mechanik bewiesen & von Wolf abgenommen, danach PAUSIERT (2026-06-23).**
+Wiederaufnahme = reine Fleißarbeit mit demselben Muster:
+- (1) **App-weit ausrollen**: restliche ~47 Dateien (inkl. Thanks/QQBeamerPage) per
+  `#ec4899`→`var(--qq-accent)` / `rgba(236,72,153)`→`rgba(var(--qq-accent-rgb)` /
+  `#a21247`→`var(--qq-accent-magenta)` / `#f472b6`→`var(--qq-accent-light)` migrieren.
+  **VORSICHT:** vorher pro Datei prüfen, ob Pink an Canvas/Confetti/Farb-Mathe geht
+  (dort kein `var()`!) — bei den 3 migrierten Views war es sauber Inline-CSS.
+- (2) **Glass als echtes Skin**: frosted Flächen (cardBg/heroBorder als `surface`-Tokens
+  schon in qqTheme definiert, aber noch nicht an Views verdrahtet) + kühler BG.
+- (3) Die 4 Skins ausarbeiten: **Glass · Café/Kiosk · Bar/Night · Corporate**.
+  (Café = Terracotta/Creme matt, Bar = Electric auf Schwarz+Glow, Corporate = Navy+1 Akzent.)
+- (4) Theme-Picker für den Mod (pro Event wählen) + State-Persistenz.
 
 ---
 

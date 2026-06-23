@@ -78,18 +78,43 @@ Chokepoint — die Views hardcoden Pink direkt (131× `#ec4899`, 391× `rgba(236
 auf `:root`. **3 Views migriert** (QuestionView/TeamsRevealView/GameOverView, 65 Stellen)
 → Showroom-Flip wechselt Frage/Reveal/Teams/Treppchen sichtbar Pink↔Indigo.
 
-**Status: Mechanik bewiesen & von Wolf abgenommen, danach PAUSIERT (2026-06-23).**
-Wiederaufnahme = reine Fleißarbeit mit demselben Muster:
-- (1) **App-weit ausrollen**: restliche ~47 Dateien (inkl. Thanks/QQBeamerPage) per
-  `#ec4899`→`var(--qq-accent)` / `rgba(236,72,153)`→`rgba(var(--qq-accent-rgb)` /
-  `#a21247`→`var(--qq-accent-magenta)` / `#f472b6`→`var(--qq-accent-light)` migrieren.
-  **VORSICHT:** vorher pro Datei prüfen, ob Pink an Canvas/Confetti/Farb-Mathe geht
-  (dort kein `var()`!) — bei den 3 migrierten Views war es sauber Inline-CSS.
-- (2) **Glass als echtes Skin**: frosted Flächen (cardBg/heroBorder als `surface`-Tokens
-  schon in qqTheme definiert, aber noch nicht an Views verdrahtet) + kühler BG.
-- (3) Die 4 Skins ausarbeiten: **Glass · Café/Kiosk · Bar/Night · Corporate**.
-  (Café = Terracotta/Creme matt, Bar = Electric auf Schwarz+Glow, Corporate = Navy+1 Akzent.)
-- (4) Theme-Picker für den Mod (pro Event wählen) + State-Persistenz.
+### ▶ AKTUELLER PLAN (2026-06-23) — 3 Skins, Beamer-only, Flagship zuerst
+
+**Designziele festgelegt (Vorschau live auf `/skins`, `QQSkinsPage.tsx`):**
+1. **Studio Mono** — editorial, heller BG (#F3F2EC), weiße Karten, 2px schwarzer Rand,
+   6px Hard-Shadow, Lime-Akzent (#C9F227), Display-Bold. (markenneutral, Akzent=Kundenfarbe)
+2. **Soft Pop** — warm-heller BG, bunte runde Pillen (Gelb/Rosé/Mint/Blau), weiche Schatten,
+   keine Ränder, Konfetti, Nunito-Bold. (Team-Building/Schule)
+3. **Neo-Brutalism** — lila Verlauf-BG, weiße Karten + 3px schwarzer Rand + 6px Hard-Shadow,
+   Selected = Electric-Blau (#2D4BFF), eckige Badges, Sterne-Deko. (modern/bold)
+
+**🔒 HARTE REGEL Nr. 1 (Wolf): Grundgerüst bleibt IMMER gleich.** Layout, Positionen,
+Größen, Abstände, Schriftgrößen — alles eingefroren. Ein Skin ändert NUR: Farbe · BG/Flächen ·
+Ränder · Schatten · Radius · Schrift-**Family** · Deko-Overlay. **Kein Re-Layout, kein
+Element wandert.** Heißt technisch: CSS-Vars aufs *bestehende* Markup, Layout unangetastet.
+
+**Scope:** **Beamer-only** zuerst (Team-Handy später). **Start:** Flagship = **Frage + Reveal**
+(`CozyQuizQuestionView.tsx`) end-to-end in allen 3 Skins, live beurteilen, dann restliche
+~13 Screens (Lobby/Regeln/Phasen-Intro/Placement/Comeback/Finale/Treppchen/Thanks/Summary/…).
+
+**Token-Architektur (CSS-Vars, main.css :root = cozy-Default = zero-visual-change):**
+- Akzent (existiert schon): `--qq-accent · -rgb · -soft · -light · -magenta`
+- NEU: `--qq-bg · --qq-text · --qq-text-muted · --qq-card-bg · --qq-card-border ·
+  --qq-card-radius · --qq-card-shadow · --qq-font`
+- **WICHTIG `--qq-card-text` getrennt von `--qq-text`:** Neo-Brutalism hat WEISSEN Text auf
+  lila BG **und** DUNKLEN Text auf weißen Karten → ein einzelnes Text-Token reicht nicht.
+- `applyThemeVars` (qqTheme.ts) schreibt den ganzen Satz auf :root beim Skin-Wechsel.
+
+**⚠️ ALL-OR-NOTHING bei hellen Skins:** 2 von 3 Skins sind hell. In `CozyQuizQuestionView`
+(3585 Z.) ~**44 helle Textfarben** (#fff/rgba(255)) + **62 slate** (#e2e8f0/#94a3b8…) +
+**54 dunkle BG/Card** auf Tokens umstellen. Jede vergessene weiße Textstelle = unsichtbar auf
+hell → der Flagship-Screen muss **vollständig** migriert sein, bevor man helle Skins zeigt.
+Vorsicht (wie bei Pink): Farben, die an Canvas/Confetti/Farb-Mathe gehen, NICHT auf `var()`.
+
+**Reihenfolge:** (1) Token-Fundament main.css + qqTheme (3 Skins voll spezifiziert).
+(2) QuestionView komplett auf Tokens (Flagship). (3) Showroom-Umschalter auf die 3 Skins →
+Wolf beurteilt am echten Screen. (4) restliche Screens nachziehen. (5) Mod-Theme-Picker +
+Room-State-Feld + Broadcast (Per-Event-Wahl, Persistenz).
 
 ---
 

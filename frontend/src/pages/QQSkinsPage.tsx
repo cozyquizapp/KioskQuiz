@@ -5,8 +5,8 @@
 import { QRCodeSVG } from 'qrcode.react';
 import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 
-type OptionStyle = 'glass' | 'editorial' | 'soft' | 'neon' | 'pop';
-type TimerStyle = 'ring' | 'plain' | 'starburst';
+type OptionStyle = 'glass' | 'editorial' | 'soft' | 'neon' | 'pop' | 'brutal';
+type TimerStyle = 'ring' | 'plain' | 'starburst' | 'brutal';
 
 type Skin = {
   id: string;
@@ -17,6 +17,7 @@ type Skin = {
   font: string;
   titleWeight: number;
   titleSerif?: boolean;
+  upper?: boolean;       // Titel/Optionen in GROSSBUCHSTABEN
   // Farben
   bg: string;
   text: string;
@@ -40,17 +41,6 @@ type Skin = {
 
 const SKINS: Skin[] = [
   {
-    id: 'aurora', name: 'Aurora Glass', tagline: 'Premium · frosted · ruhig',
-    bestFor: 'Firmenfeier · Konferenz · Hotel-Event',
-    font: "'Inter', system-ui, sans-serif", titleWeight: 800,
-    bg: 'radial-gradient(120% 90% at 50% -10%, #20294F 0%, #0E1430 55%, #080B1E 100%)',
-    text: '#EAF0FF', muted: 'rgba(234,240,255,0.55)',
-    accent: '#7C9BFF', accent2: '#22D3EE',
-    cardBg: 'rgba(255,255,255,0.06)', cardBorder: '1px solid rgba(255,255,255,0.14)',
-    cardRadius: 18, cardShadow: '0 14px 44px rgba(0,0,0,0.45)', cardBlur: 'blur(14px) saturate(120%)',
-    optionStyle: 'glass', timerStyle: 'ring', deco: 'glow', chrome: 'dark',
-  },
-  {
     id: 'mono', name: 'Studio Mono', tagline: 'Editorial · scharf · markenneutral',
     bestFor: 'Tech-Firmen · gebrandete Events (Akzent = Kundenfarbe)',
     font: "'Bricolage Grotesque', 'Inter', sans-serif", titleWeight: 800,
@@ -60,28 +50,6 @@ const SKINS: Skin[] = [
     cardBg: '#FFFFFF', cardBorder: '2px solid #111111',
     cardRadius: 4, cardShadow: '6px 6px 0 #111111',
     optionStyle: 'editorial', timerStyle: 'plain', deco: 'none', chrome: 'light',
-  },
-  {
-    id: 'cozy', name: 'Warm Cozy', tagline: 'Gemütlich · warm · einladend',
-    bestFor: 'Pub-Quiz · Café · lockere Runden',
-    font: "'Nunito', system-ui, sans-serif", titleWeight: 900,
-    bg: 'radial-gradient(120% 90% at 50% -10%, #FBF1E0 0%, #F6E7CF 60%, #EFD9B8 100%)',
-    text: '#2A2440', muted: '#8A7F73',
-    accent: '#EC4899', accent2: '#1E2A5A',
-    cardBg: '#FFFDF8', cardBorder: '1px solid rgba(42,36,64,0.10)',
-    cardRadius: 20, cardShadow: '0 10px 26px rgba(120,90,60,0.18)',
-    optionStyle: 'soft', timerStyle: 'ring', deco: 'none', chrome: 'light',
-  },
-  {
-    id: 'neon', name: 'Neon Arcade', tagline: 'Energie · Glow · Nightlife',
-    bestFor: 'Bar · Party · junges Publikum',
-    font: "'Bricolage Grotesque', 'Inter', sans-serif", titleWeight: 800,
-    bg: 'radial-gradient(90% 70% at 20% 0%, #2A0B4A 0%, rgba(11,1,24,0) 55%), radial-gradient(90% 70% at 90% 30%, #06304A 0%, rgba(11,1,24,0) 50%), #0B0118',
-    text: '#F2ECFF', muted: 'rgba(242,236,255,0.5)',
-    accent: '#22D3EE', accent2: '#E635A0',
-    cardBg: 'rgba(124,58,237,0.10)', cardBorder: '1.5px solid rgba(124,58,237,0.7)',
-    cardRadius: 14, cardShadow: '0 0 22px rgba(124,58,237,0.35)',
-    optionStyle: 'neon', timerStyle: 'ring', deco: 'tri', chrome: 'dark',
   },
   {
     id: 'pop', name: 'Soft Pop', tagline: 'Verspielt · bunt · zugänglich',
@@ -94,6 +62,17 @@ const SKINS: Skin[] = [
     cardRadius: 26, cardShadow: '0 8px 0 rgba(59,46,126,0.14)',
     optionStyle: 'pop', timerStyle: 'starburst', deco: 'confetti', chrome: 'light',
     popColors: ['#FBBF24', '#F472A0', '#34D399', '#60A5FA'],
+  },
+  {
+    id: 'brutal', name: 'Brutalism', tagline: 'Roh · laut · kompromisslos',
+    bestFor: 'Indie · Kreativ-Events · Statement-Brands',
+    font: "'Space Mono', 'Courier New', monospace", titleWeight: 700, upper: true,
+    bg: '#FFE14D',
+    text: '#0A0A0A', muted: '#3A3528',
+    accent: '#1F1FFF', accent2: '#FF4D4D',
+    cardBg: '#FFFFFF', cardBorder: '3px solid #000000',
+    cardRadius: 0, cardShadow: '8px 8px 0 #000000',
+    optionStyle: 'brutal', timerStyle: 'brutal', deco: 'none', chrome: 'light',
   },
 ];
 
@@ -113,8 +92,14 @@ function QuestionPreview({ skin }: { skin: Skin }) {
   const isNeon = skin.optionStyle === 'neon';
   const isEditorial = skin.optionStyle === 'editorial';
   const isGlass = skin.optionStyle === 'glass';
+  const isBrutal = skin.optionStyle === 'brutal';
 
   const letterBadge = (i: number, on: boolean): CSSProperties => {
+    if (isBrutal) return {
+      background: on ? skin.accent : '#000000', color: '#fff',
+      width: 46, height: 46, borderRadius: 0, border: '3px solid #000',
+      display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 22, flexShrink: 0,
+    };
     if (isPop) return {
       background: skin.accent, color: '#fff',
       width: 46, height: 46, borderRadius: '50%',
@@ -142,6 +127,11 @@ function QuestionPreview({ skin }: { skin: Skin }) {
       display: 'flex', alignItems: 'center', gap: 16, padding: '0 22px',
       height: 78, color: skin.text, fontWeight: isPop ? 900 : 700, fontSize: 25,
     };
+    if (isBrutal) {
+      return { ...base, background: on ? skin.accent : skin.cardBg,
+        color: on ? '#fff' : skin.text, border: skin.cardBorder, borderRadius: 0,
+        boxShadow: skin.cardShadow, textTransform: 'uppercase', fontWeight: 700 };
+    }
     if (isPop) {
       const c = skin.popColors![i];
       return { ...base, background: c, borderRadius: skin.cardRadius,
@@ -199,6 +189,7 @@ function QuestionPreview({ skin }: { skin: Skin }) {
         <div style={{
           fontSize: 38, fontWeight: skin.titleWeight, lineHeight: 1.15,
           fontFamily: skin.titleSerif ? "'Georgia', 'Times New Roman', serif" : skin.font,
+          textTransform: skin.upper ? 'uppercase' : undefined,
         }}>
           Welche Stadt ist die Hauptstadt von Australien?
         </div>
@@ -241,6 +232,20 @@ function QuestionPreview({ skin }: { skin: Skin }) {
 }
 
 function TimerWidget({ skin }: { skin: Skin }) {
+  if (skin.timerStyle === 'brutal') {
+    return (
+      <div style={{
+        width: 124, height: 124, display: 'grid', placeItems: 'center',
+        background: skin.accent, color: '#fff', border: '3px solid #000',
+        boxShadow: '8px 8px 0 #000', fontFamily: skin.font,
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ fontSize: 48, fontWeight: 700, lineHeight: 1 }}>18</div>
+          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em' }}>SEK</div>
+        </div>
+      </div>
+    );
+  }
   if (skin.timerStyle === 'starburst') {
     return (
       <div style={{ position: 'relative', width: 130, height: 130, display: 'grid', placeItems: 'center' }}>

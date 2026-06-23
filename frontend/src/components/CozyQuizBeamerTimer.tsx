@@ -15,6 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { getServerNow } from '../utils/serverTime';
+import { useActiveThemeId } from '../qqTheme';
 
 export function BeamerTimer({
   endsAt, durationSec, accent, expireNow,
@@ -54,6 +55,7 @@ export function BeamerTimer({
 
   const pct = Math.min(100, (remaining / durationSec) * 100);
   const secs = Math.ceil(remaining);
+  const skinId = useActiveThemeId();
 
   // Urgency levels
   const isAlert   = remaining <= 10 && remaining > 5;
@@ -81,6 +83,50 @@ export function BeamerTimer({
   // Outro hat Vorrang vor Pulse — wenn Zeit um, fade+pop statt weiter pulsen.
   // forwards laesst den End-State (opacity 0) erhalten bis Component unmountet.
   const outroAnim = expired ? 'qqTimerOutro 0.85s var(--qq-ease-bounce) forwards' : undefined;
+
+  // 2026-06-23 (Skin): pro Skin eigene Timer-Form (wie /skins-Mockups), gleiche
+  // Position/Groesse (sz). Urgency-Farbe bleibt semantisch erhalten. Cozy = Ring.
+  if (skinId !== 'cozy') {
+    const numFs = isCritical ? 'clamp(40px, 5.2cqw, 64px)' : 'clamp(34px, 4.6cqw, 56px)';
+    const numBox = (
+      <div style={{ textAlign: 'center', lineHeight: 1, fontFamily: 'var(--qq-font)' }}>
+        <div style={{ fontSize: numFs, fontWeight: 900, fontVariantNumeric: 'tabular-nums' }}>{secs}</div>
+        <div style={{ fontSize: 'clamp(10px, 1cqw, 14px)', fontWeight: 800, letterSpacing: '0.12em' }}>SEK</div>
+      </div>
+    );
+    let inner;
+    if (skinId === 'neoBrutal') {
+      inner = (
+        <div style={{
+          width: sz * 0.62, height: sz * 0.62, display: 'grid', placeItems: 'center',
+          background: color, color: '#fff', border: '3px solid #16121F',
+          boxShadow: '6px 6px 0 #16121F', borderRadius: 8,
+        }}>{numBox}</div>
+      );
+    } else if (skinId === 'softPop') {
+      inner = (
+        <div style={{ position: 'relative', width: sz * 0.72, height: sz * 0.72, display: 'grid', placeItems: 'center' }}>
+          <div style={{
+            position: 'absolute', inset: 0, background: 'var(--qq-accent-light)',
+            clipPath: 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)',
+            filter: 'drop-shadow(0 6px 0 rgba(0,0,0,0.12))',
+          }} />
+          <div style={{ position: 'relative', color: 'var(--qq-card-text)' }}>{numBox}</div>
+        </div>
+      );
+    } else {
+      // studioMono: nackte grosse Zahl (editorial)
+      inner = <div style={{ color: 'var(--qq-text)' }}>{numBox}</div>;
+    }
+    return (
+      <div style={{
+        position: 'relative', width: sz, height: sz, animation: outroAnim ?? pulseAnim,
+        pointerEvents: expired ? 'none' : 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center',
+      }}>
+        {inner}
+      </div>
+    );
+  }
 
   return (
     <div style={{

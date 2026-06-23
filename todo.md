@@ -63,4 +63,39 @@ Genuin offen (alle niedrige Prio, live-test-getrieben):
 
 ---
 
+## 🎨 Geplante Initiative: Theme-System generalisieren (Stand 2026-06-22)
+
+**Ziel (Wolf):** Design pro **Event/Setting** umschaltbar — aber **komplett einheitlich**
+über alle audience-facing Pages (Beamer · Team · Summary · Thanks · Showroom). Ein Theme
+wählen → alles folgt. Moderator-Page bleibt neutral (Cockpit, kein Bühnenbild).
+
+**Ist-Stand:** Skelett existiert, aber **3 konkurrierende Quellen** → nie vollständig:
+1. `QQ_THEME_PRESETS` (`shared/quarterQuizTypes.ts:602`) — `default/dark/neon/retro/nature`
+   (bg/card/accent). Theme fließt via `s.theme` schon zu Beamer+Team.
+2. `getBrandColors(eurovisionMode)` (`QQBeamerPage.tsx:94`) — **binärer** Zweig (Eurovision
+   vs. Default), liefert den Pink-Akzent in den meisten Views, liest aber **NICHT**
+   `theme.accentColor`. → Eurovision und Preset sind getrennte Systeme.
+3. **~124× hardcoded `#ec4899`** (+ weitere Inline-Brand-Werte) direkt in Views → reagieren
+   auf gar kein Theme. (Grund für die Memory-Regel „Brand-Refresh — alle Pages mit-checken".)
+
+**Plan:**
+1. **Ein Resolver:** `resolveTheme(theme?)` → vollständiges `ResolvedTheme` (accent/accentRgb/
+   accentSoft/gradient · bg · cardBg · font · **+ die `qqStyleTokens`** radius/shadow/spacing/
+   motion · Kategorie-Palette · Ambient an/aus · Logo). `getBrandColors` wird dünner Wrapper
+   darauf — **Eurovision = nur EIN Preset**, kein Sonderzweig. State-lose Seiten:
+   `resolveTheme(undefined)` = Default.
+2. **Alles liest daraus** — die ~124 Pinks + Inline-Brand-Werte page-by-page auf
+   `theme.accentHex` etc. umstellen.
+3. **Theme-Picker pro Event** — Presets zu sauberem Dropdown generalisieren.
+
+**Kosten (ehrlich):** Fundament (Resolver + Eurovision-als-Preset + 1–2 neue volle Presets +
+`getBrandColors` delegiert + 1 Fläche als Proof, am besten Showroom) = ~½ Tag. „Komplett
+einheitlich über ALLE Pages" = Langschwanz, **graduell** migrieren (gezielter Sweep ODER beim
+nächsten Anfassen, wie bei der Farb-Tokenisierung). Kein Wochenend-Projekt.
+
+**Entscheidung offen:** Fundament bauen? Wenn ja: welche **Event-Themes zuerst** (Weihnachten /
+Firmenfeier / Geburtstag / Halloween)? → die als erste echte Presets anlegen.
+
+---
+
 *Erledigte Punkte stehen in der Git-History (`git log --oneline`), nicht hier.*

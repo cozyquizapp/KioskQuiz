@@ -63,7 +63,23 @@ Genuin offen (alle niedrige Prio, live-test-getrieben):
 
 ---
 
-## 🎨 Geplante Initiative: Theme-System generalisieren (Stand 2026-06-22)
+## 🎨 Theme-System (Skins je Location) — Foundation + Proof LIVE (2026-06-23)
+
+**Update 2026-06-23 (Commit `03106c88`):** Wolf-Klarstellung — es geht NICHT um
+Event-Kostüme (Weihnachten/Halloween), sondern um **subtile Grunddesigns je
+Location/Setting** (Café · Bar · Corporate · Glass), per Klick umschaltbar.
+Gebaut: `qqTheme.ts` (ResolvedTheme + QQ_THEMES cozy/glass + Runtime), `getBrandColors`
+delegiert ans aktive Theme (cozy = unverändert, zero-visual-change live), und ein
+**Cozy↔Glass-Umschalter im `/showroom`** über den echten Beamer-Views (Proof).
+- **Offen / als Nächstes:** (1) Wolf testet den Showroom-Flip am iPhone → Richtung ok?
+  (2) Frosted-Glass-**Flächen** (cardBg/heroBorder als `surface`-Tokens schon definiert)
+  an die Hauptscreens verdrahten — bisher flippt nur die Palette über getBrandColors.
+  (3) Die 4 Skins ausarbeiten: **Glass · Café/Kiosk · Bar/Night · Corporate**.
+  (4) Theme-Picker für den Mod (pro Event wählen) + State-Persistenz.
+
+---
+
+## 🎨 Geplante Initiative: Theme-System generalisieren (Stand 2026-06-22, teils überholt)
 
 **Ziel (Wolf):** Design pro **Event/Setting** umschaltbar — aber **komplett einheitlich**
 über alle audience-facing Pages (Beamer · Team · Summary · Thanks · Showroom). Ein Theme

@@ -245,7 +245,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                           <div key={tm.id} style={{
                             display: 'flex', alignItems: 'center', gap: 6,
                             padding: '4px 10px 4px 4px', borderRadius: 999,
-                            background: 'rgba(0,0,0,0.28)',
+                            background: 'var(--qq-overlay)',
                             border: `1.5px solid ${tm.color}`,
                             animation: `contentReveal 0.3s var(--qq-ease-pop-fast) ${vi * 0.08}s both`,
                           }}>
@@ -441,7 +441,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   <div style={{
                     height: 28, position: 'relative', margin: '0 14px 10px',
                     borderRadius: 8, overflow: 'hidden',
-                    background: 'rgba(0,0,0,0.35)',
+                    background: 'var(--qq-overlay)',
                     width: `${barPct}%`,
                     transition: 'width 0.7s var(--qq-ease-out-cubic)',
                     display: 'flex',
@@ -479,7 +479,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {parsed.length > 0 && (
               <div style={{
                 marginTop: 2, padding: '8px 14px', borderRadius: 8,
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--qq-surface)',
                 border: '1px solid var(--qq-hairline)',
                 display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
                 animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + q.options!.length * 0.08 + 0.1}s both`,
@@ -495,7 +495,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '3px 10px', borderRadius: 999,
-                      background: 'rgba(0,0,0,0.28)',
+                      background: 'var(--qq-overlay)',
                       border: `1.5px solid ${tm.color}`,
                     }}>
                       <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={22} />
@@ -584,7 +584,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         <span style={{
                           width: 'clamp(22px, 2.6cqw, 34px)', height: 'clamp(22px, 2.6cqw, 34px)',
                           borderRadius: '50%',
-                          background: 'rgba(255,255,255,0.08)',
+                          background: 'var(--qq-surface)',
                           border: '1.5px dashed rgba(255,255,255,0.22)',
                         }} />
                       )
@@ -700,7 +700,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         <div key={tm.id} style={{
                           display: 'flex', alignItems: 'center', gap: 5,
                           padding: '3px 10px 3px 3px', borderRadius: 999,
-                          background: 'rgba(0,0,0,0.28)',
+                          background: 'var(--qq-overlay)',
                           border: `1.5px solid ${tm.color}`,
                           animation: `contentReveal 0.3s var(--qq-ease-pop-fast) ${0.2 + i * 0.08 + hi * 0.05}s both`,
                         }}>
@@ -721,7 +721,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {/* Team score summary */}
             <div style={{
               marginTop: 4, padding: '8px 14px', borderRadius: 8,
-              background: 'rgba(255,255,255,0.03)',
+              background: 'var(--qq-surface)',
               border: '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + correctList.length * 0.08 + 0.1}s both`,
@@ -841,7 +841,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {/* Team summary bar */}
             <div style={{
               marginTop: 4, padding: '8px 14px', borderRadius: 8,
-              background: 'rgba(255,255,255,0.03)',
+              background: 'var(--qq-surface)',
               border: '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + correctSeq.length * 0.08 + 0.1}s both`,
@@ -2398,7 +2398,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // ragen — visuell "abgeschnitten" am border-radius:999.
                               padding: `6px ${padR}px 6px 2px`,
                               borderRadius: 999,
-                              background: 'rgba(0,0,0,0.7)',
+                              background: 'var(--qq-overlay)',
                               border: isFastest ? '3px solid var(--qq-accent)' : `2px solid ${tm.color}`,
                               boxShadow: isFastest
                                 ? '0 0 22px rgba(var(--qq-accent-rgb),0.55), 0 6px 14px rgba(0,0,0,0.55)'
@@ -2488,7 +2488,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '3px 12px 3px 3px',
                         borderRadius: 999,
-                        background: 'rgba(0,0,0,0.55)',
+                        background: 'var(--qq-overlay)',
                         border: `2px solid ${tm.color}`,
                         boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
                       }}>
@@ -2946,7 +2946,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 padding: '235px clamp(24px, 3cqw, 48px) 235px',
                 marginBottom: 'clamp(8px, 1cqh, 16px)',
                 position: 'relative',
-                background: 'rgba(255,255,255,0.03)',
+                background: 'var(--qq-surface)',
                 border: '1.5px solid var(--qq-hairline)',
                 borderRadius: 24,
                 boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
@@ -3108,7 +3108,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 // Padding entsprechend hoch.
                                 padding: isWinner ? '11px 26px' : '9px 22px',
                                 borderRadius: 16,
-                                background: 'rgba(0,0,0,0.88)',
+                                background: 'var(--qq-overlay)',
                                 border: `2px solid ${tColor}`,
                                 color: 'var(--qq-card-text)', fontWeight: 900,
                                 fontSize: isWinner ? 'clamp(38px, 4cqw, 56px)' : 'clamp(30px, 3.2cqw, 44px)',

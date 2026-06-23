@@ -42,6 +42,8 @@ export type ThemeSurface = {
   cardRadius: string; // --qq-card-radius
   cardShadow: string; // --qq-card-shadow
   hairline: string;   // --qq-hairline  (dezente Linien/Divider)
+  surface: string;    // --qq-surface  (Sub-Karten/Chips)
+  overlay: string;    // --qq-overlay  (dunkle Inset-Overlays)
   font: string;       // --qq-font
 };
 
@@ -75,7 +77,7 @@ const COZY: ResolvedTheme = {
     cardBorder: '1px solid rgba(255,255,255,0.10)',
     cardRadius: '20px',
     cardShadow: '0 16px 50px rgba(0,0,0,0.45)',
-    hairline: 'rgba(255,255,255,0.10)',
+    hairline: 'rgba(255,255,255,0.10)', surface: 'rgba(255,255,255,0.04)', overlay: 'rgba(0,0,0,0.28)',
     font: "'Nunito', 'Geist', system-ui, sans-serif",
   },
 };
@@ -91,7 +93,7 @@ const STUDIO_MONO: ResolvedTheme = {
   surface: {
     pageBg: '#F3F2EC', text: '#0B0B0B', textMuted: '#6B6B66', cardText: '#0B0B0B',
     cardBg: '#FFFFFF', cardBorder: '2px solid #111111', cardRadius: '4px',
-    cardShadow: '6px 6px 0 #111111', hairline: 'rgba(0,0,0,0.12)',
+    cardShadow: '6px 6px 0 #111111', hairline: 'rgba(0,0,0,0.12)', surface: 'rgba(0,0,0,0.035)', overlay: 'rgba(0,0,0,0.05)',
     font: "'Bricolage Grotesque', 'Inter', sans-serif",
   },
 };
@@ -108,7 +110,7 @@ const SOFT_POP: ResolvedTheme = {
     pageBg: 'radial-gradient(120% 90% at 50% -10%, #FFFBF4 0%, #FFF1E6 55%, #FFE6D3 100%)',
     text: '#2D2A55', textMuted: '#9B8E84', cardText: '#2D2A55',
     cardBg: '#FFFFFF', cardBorder: '1px solid rgba(45,42,85,0.10)', cardRadius: '26px',
-    cardShadow: '0 8px 0 rgba(59,46,126,0.14)', hairline: 'rgba(45,42,85,0.10)',
+    cardShadow: '0 8px 0 rgba(59,46,126,0.14)', hairline: 'rgba(45,42,85,0.10)', surface: 'rgba(45,42,85,0.04)', overlay: 'rgba(45,42,85,0.05)',
     font: "'Nunito', system-ui, sans-serif",
   },
 };
@@ -125,7 +127,7 @@ const NEO_BRUTAL: ResolvedTheme = {
     pageBg: 'linear-gradient(155deg, #9B6DFF 0%, #7C3AED 55%, #6D28D9 100%)',
     text: '#FFFFFF', textMuted: 'rgba(255,255,255,0.78)', cardText: '#16121F',
     cardBg: '#FFFFFF', cardBorder: '3px solid #16121F', cardRadius: '18px',
-    cardShadow: '6px 6px 0 #16121F', hairline: 'rgba(22,18,31,0.16)',
+    cardShadow: '6px 6px 0 #16121F', hairline: 'rgba(22,18,31,0.16)', surface: 'rgba(255,255,255,0.16)', overlay: 'rgba(22,18,31,0.07)',
     font: "'Nunito', system-ui, sans-serif",
   },
 };
@@ -174,6 +176,8 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   r.setProperty('--qq-card-radius', s.cardRadius);
   r.setProperty('--qq-card-shadow', s.cardShadow);
   r.setProperty('--qq-hairline', s.hairline);
+  r.setProperty('--qq-surface', s.surface);
+  r.setProperty('--qq-overlay', s.overlay);
   r.setProperty('--qq-font', s.font);
 }
 

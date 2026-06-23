@@ -124,8 +124,8 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     }}>
       {/* ── Zeile 1: Frage über ganze Breite (Top-5-Style) ── */}
       <div style={{
-        background: 'rgba(255,255,255,0.04)',
-        border: '2px solid rgba(255,255,255,0.08)',
+        background: 'var(--qq-surface)',
+        border: '2px solid var(--qq-hairline)',
         borderRadius: 24,
         padding: 'clamp(14px, 1.8cqh, 22px) clamp(22px, 2.6cqw, 42px)',
         boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
@@ -141,7 +141,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 120 ? 'clamp(26px, 2.6cqw, 40px)' : 'clamp(30px, 3.2cqw, 52px)',
-          fontWeight: 900, lineHeight: 1.18, color: QQ_COLORS.slate100,
+          fontWeight: 900, lineHeight: 1.18, color: 'var(--qq-card-text)',
           textAlign: 'center', minWidth: 0,
           animation: 'langFadeIn 0.4s ease both',
         }}>
@@ -351,7 +351,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   borderRadius: 16,
                   background: rankGradient,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900, color: '#fff',
+                  fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900, color: 'var(--qq-card-text)',
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                   animation: isVisible ? 'top5RankPop 0.55s var(--qq-ease-bounce) 0.1s both' : 'none',
@@ -439,7 +439,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           {top5.length === 0 && (
             <div style={{
               flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: QQ_COLORS.slate500, fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
+              color: 'var(--qq-text-muted)', fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
             }}>
               {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
             </div>

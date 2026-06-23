@@ -112,8 +112,8 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
           {!revealed && phase && (
             <div style={{
               padding: '8px 16px', borderRadius: 999,
-              background: 'rgba(255,255,255,0.05)', border: '1.5px solid rgba(255,255,255,0.12)',
-              fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900, color: QQ_COLORS.slate300,
+              background: 'var(--qq-surface)', border: '1.5px solid var(--qq-hairline)',
+              fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900, color: 'var(--qq-text-muted)',
             }}>
               {/* 2026-05-05 (Wolf 'emojis vom style nicht passend, schwarz-weiss'):
                   📝 → ✍️ (bunte writing hand), 🗳 → 🎯 (bullseye, „triff
@@ -140,7 +140,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
             ? 'clamp(22px, 2.4cqw, 38px)'
             : 'clamp(34px, 4cqw, 64px)',
           fontWeight: 900,
-          color: QQ_COLORS.slate100, lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
+          color: 'var(--qq-card-text)', lineHeight: 1.2, maxWidth: 1100, margin: '0 auto',
           transition: 'font-size 0.5s ease',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : q.text}
@@ -328,7 +328,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                 <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
                   padding: '4px 10px', borderRadius: 999,
                   background: b.bg,
-                  fontSize: 'clamp(13px, 1.4cqw, 17px)', fontWeight: 900, color: QQ_COLORS.slate100,
+                  fontSize: 'clamp(13px, 1.4cqw, 17px)', fontWeight: 900, color: 'var(--qq-card-text)',
                   whiteSpace: 'nowrap',
                 }}>
                   {b.icon} {b.n}
@@ -348,7 +348,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
-            color: QQ_COLORS.slate400, letterSpacing: '0.14em', textTransform: 'uppercase',
+            color: 'var(--qq-text-muted)', letterSpacing: '0.14em', textTransform: 'uppercase',
             opacity: 0.75,
           }}>
             🎭 {lang === 'de' ? 'Die Bluffs' : 'The bluffs'}
@@ -403,7 +403,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                   {/* Bluff-Text */}
                   <span style={{
                     fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 800,
-                    color: QQ_COLORS.slate100, overflow: 'hidden',
+                    color: 'var(--qq-card-text)', overflow: 'hidden',
                     textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     minWidth: 0, flex: 1,
                   }}>{opt.text}</span>
@@ -435,7 +435,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                       {voters.length > 4 && (
                         <span style={{
                           marginLeft: 4,
-                          fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate300,
+                          fontSize: 11, fontWeight: 900, color: 'var(--qq-text-muted)',
                         }}>+{voters.length - 4}</span>
                       )}
                     </div>
@@ -550,7 +550,7 @@ export function BluffReviewScreen({ state: s, accent, lang }: {
     }}>
       <div style={{
         fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
-        color: QQ_COLORS.slate400, textAlign: 'center',
+        color: 'var(--qq-text-muted)', textAlign: 'center',
       }}>
         {lang === 'de'
           ? '🕵️ Moderator prüft die Bluffs… Bluffs werden für die Spieler nicht angezeigt.'
@@ -628,7 +628,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       <div style={{
         padding: '8px 22px', borderRadius: 999,
         background: `${accent}22`, border: `2px solid ${accent}55`,
-        fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
+        fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900, color: 'var(--qq-accent-soft)',
       }}>
         {lang === 'de' ? `${voted} / ${totalActive} Teams haben gewählt` : `${voted} / ${totalActive} teams voted`}
       </div>
@@ -661,7 +661,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
       </div>
       <div style={{
         fontSize: 'clamp(11px, 1cqw, 13px)', fontWeight: 700,
-        color: QQ_COLORS.slate400, textAlign: 'center', marginTop: 8, opacity: 0.8,
+        color: 'var(--qq-text-muted)', textAlign: 'center', marginTop: 8, opacity: 0.8,
         maxWidth: 700, lineHeight: 1.5,
       }}>
         {lang === 'de'
@@ -835,7 +835,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                       // 2026-05-05 (Wolf 'Wählten/keine Stimmen etwas groesser'):
                       // 10-12px → 14-19px. Aus Pub-Distanz lesbar.
                       fontSize: 'clamp(14px, 1.4cqw, 19px)', fontWeight: 900,
-                      color: QQ_COLORS.slate300, letterSpacing: '0.08em', textTransform: 'uppercase',
+                      color: 'var(--qq-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase',
                       marginRight: 6,
                     }}>
                       {lang === 'de' ? 'Wählten' : 'Voted'}
@@ -864,7 +864,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                               width: 18, height: 18, borderRadius: '50%',
                               background: QQ_COLORS.green500, border: '2px solid #0A0814',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              fontSize: 10, fontWeight: 900, color: '#fff', lineHeight: 1,
+                              fontSize: 10, fontWeight: 900, color: 'var(--qq-card-text)', lineHeight: 1,
                             }}>✓</span>
                           )}
                         </div>
@@ -906,27 +906,27 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
           <div key={opt.id} style={{
             padding: 'clamp(12px, 1.4cqh, 18px) clamp(14px, 1.6cqw, 22px)',
             borderRadius: 16,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1.5px solid rgba(255,255,255,0.10)',
+            background: 'var(--qq-surface)',
+            border: '1.5px solid var(--qq-hairline)',
             display: 'flex', flexDirection: 'column', gap: 8,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <span style={{
                 width: 28, height: 28, borderRadius: '50%',
-                background: 'rgba(255,255,255,0.08)',
-                color: QQ_COLORS.slate400,
+                background: 'var(--qq-surface)',
+                color: 'var(--qq-text-muted)',
                 fontSize: 13, fontWeight: 900,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>{String.fromCharCode(65 + i)}</span>
               <span style={{
                 flex: 1, fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
-                color: QQ_COLORS.slate100, wordBreak: 'break-word',
+                color: 'var(--qq-card-text)', wordBreak: 'break-word',
               }}>{opt.text}</span>
             </div>
             {voters.length > 0 && (
               <div style={{
-                fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400,
+                fontSize: 11, fontWeight: 900, color: 'var(--qq-text-muted)',
                 letterSpacing: '0.04em',
               }}>
                 {voters.length} {lang === 'de' ? 'Stimme(n)' : 'vote(s)'}

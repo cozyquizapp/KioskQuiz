@@ -94,7 +94,20 @@ sonst „sehen sie gar nicht aus wie die Skins". NUR die **Positionen** bleiben 
 heute (nicht zum Mockup-Layout umarrangieren). Also: volles Skin-Aussehen, kein Re-Arrangieren.
 Technik: Treatment-Tokens + `isThemed()`-Switch (Cozy bleibt exakt) + Deko-Overlay (`SkinDeco`).
 **Fortschritt QuestionView:** Text-Farben ✓ · Font ✓ · Haupt-Card-Treatment ✓ · Deko ✓ ·
-OFFEN: Sub-Flächen/Overlays/Borders/Timer/Badges/Team-Chips + Haupt-BG, dann Teams/Treppchen/Thanks.
+Sub-Flächen/Overlays/Borders ✓ · Timer-Track ✓. Reveals (Schätzchen/Bluff/Order/Top5) ✓.
+
+**🎯 ZIEL präzisiert (Wolf 2026-06-23): die GANZE `/beamer`-View in 4 Designs** (Cozy +
+Studio Mono + Soft Pop + Neo-Brutalism) — **alle Phasen-Screens**, nicht nur die 3
+Showroom-Szenen. Der `/showroom`-Umschalter ist NUR ein Vorschau-Tool; echtes Ziel = `/beamer`.
+Noch zu migrieren (selbes Token+`isThemed`+`SkinDeco`-Muster): Lobby · Rules · PhaseIntro ·
+Placement · Comeback · FinalReveal · GameOver(Treppchen) · Thanks · TeamsReveal · Summary ·
+Paused + restliche Reveals (CozyGuessr/OnlyConnect) + QQBeamerPage-Rahmen/BG.
+
+**🔀 SKIN-WAHL = beim Quiz-EINRICHTEN, nicht in-game** (Wolf): KEIN Ecken-Toggle im Spiel
+(das ist nur der Showroom). Skin wird wie `avatarSetId` vorher im Mod-Setup gewählt →
+`room.themeId` (Backend-State, Whitelist + Default 'cozy') → Broadcast → Beamer ruft
+`applyThemeVars(resolveTheme(state.themeId))` bei jedem stateUpdate. Picker analog zum
+bestehenden Avatar-Set-Picker (`qq:setAvatarSet` → neues `qq:setTheme`).
 
 **Scope:** **Beamer-only** zuerst (Team-Handy später). **Start:** Flagship = **Frage + Reveal**
 (`CozyQuizQuestionView.tsx`) end-to-end in allen 3 Skins, live beurteilen, dann restliche

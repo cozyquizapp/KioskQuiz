@@ -36,28 +36,28 @@ type Skin = {
   // optionale Pop-Farben (eine pro Antwort)
   popColors?: [string, string, string, string];
   // Deko-Layer (absolute Elemente)
-  deco?: 'tri' | 'corners' | 'confetti' | 'glow' | 'none';
+  deco?: 'tri' | 'corners' | 'confetti' | 'glow' | 'stars' | 'none';
   chrome: 'light' | 'dark'; // fuer QR-Kontrast etc.
 };
 
 const SKINS: Skin[] = [
   {
-    id: 'mono', name: 'Studio Mono', tagline: 'Editorial · scharf · markenneutral',
+    id: 'mono', name: 'Studio Mono', tagline: 'Minimal · editorial · viel Weißraum',
     bestFor: 'Tech-Firmen · gebrandete Events (Akzent = Kundenfarbe)',
     font: "'Bricolage Grotesque', 'Inter', sans-serif", titleWeight: 800,
-    bg: '#F3F2EC',
-    text: '#0B0B0B', muted: '#6B6B66',
-    accent: '#111111', accent2: '#C9F227',
-    cardBg: '#FFFFFF', cardBorder: '2px solid #111111',
-    cardRadius: 4, cardShadow: '6px 6px 0 #111111',
+    bg: '#F6F5F0',
+    text: '#0B0B0B', muted: '#9A968C',
+    accent: '#111111', accent2: '#0B0B0B',
+    cardBg: 'transparent', cardBorder: '1px solid #DAD7CC',
+    cardRadius: 0, cardShadow: 'none',
     optionStyle: 'editorial', timerStyle: 'plain', deco: 'none', chrome: 'light',
   },
   {
     id: 'pop', name: 'Soft Pop', tagline: 'Verspielt · bunt · zugänglich',
     bestFor: 'Team-Building · Schule · Familie',
     font: "'Nunito', system-ui, sans-serif", titleWeight: 900,
-    bg: 'radial-gradient(120% 90% at 50% -10%, #EFE7FF 0%, #E6DBFF 60%, #DCCBFF 100%)',
-    text: '#2D2A55', muted: '#7A75A0',
+    bg: 'radial-gradient(120% 90% at 50% -10%, #FFFBF4 0%, #FFF1E6 55%, #FFE6D3 100%)',
+    text: '#2D2A55', muted: '#9B8E84',
     accent: '#3B2E7E', accent2: '#FBBF24',
     cardBg: '#FFFFFF', cardBorder: 'none',
     cardRadius: 26, cardShadow: '0 8px 0 rgba(59,46,126,0.14)',
@@ -73,8 +73,7 @@ const SKINS: Skin[] = [
     accent: '#FDE047', accent2: '#FB7185',
     cardBg: '#FFFFFF', cardBorder: '3px solid #16121F',
     cardRadius: 18, cardShadow: '6px 6px 0 #16121F',
-    optionStyle: 'brutal', timerStyle: 'brutal', deco: 'confetti', chrome: 'light',
-    popColors: ['#FDE047', '#FDA4AF', '#A7F3D0', '#BFDBFE'],
+    optionStyle: 'brutal', timerStyle: 'brutal', deco: 'stars', chrome: 'light',
   },
 ];
 
@@ -98,8 +97,8 @@ function QuestionPreview({ skin }: { skin: Skin }) {
 
   const letterBadge = (i: number, on: boolean): CSSProperties => {
     if (isBrutal) return {
-      background: '#16121F', color: '#fff',
-      width: 46, height: 46, borderRadius: '50%', border: '3px solid #16121F',
+      background: on ? '#fff' : '#16121F', color: on ? '#2D4BFF' : '#fff',
+      width: 46, height: 46, borderRadius: 6, border: '3px solid #16121F',
       display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 22, flexShrink: 0,
     };
     if (isPop) return {
@@ -108,8 +107,8 @@ function QuestionPreview({ skin }: { skin: Skin }) {
       display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 22, flexShrink: 0,
     };
     if (isEditorial) return {
-      background: on ? skin.accent2 : 'transparent', color: '#111',
-      width: 40, height: 40, borderRadius: 3, border: '2px solid #111',
+      background: on ? '#fff' : 'transparent', color: on ? '#0B0B0B' : skin.text,
+      width: 40, height: 40, borderRadius: 0, border: on ? 'none' : '1px solid #0B0B0B',
       display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 20, flexShrink: 0,
     };
     // glass / neon / soft → gefärbter Buchstabe
@@ -130,8 +129,7 @@ function QuestionPreview({ skin }: { skin: Skin }) {
       height: 78, color: skin.text, fontWeight: isPop ? 900 : 700, fontSize: 25,
     };
     if (isBrutal) {
-      const c = skin.popColors![i];
-      return { ...base, background: on ? skin.accent : c, color: '#16121F',
+      return { ...base, background: on ? '#2D4BFF' : '#fff', color: on ? '#fff' : '#16121F',
         border: skin.cardBorder, borderRadius: skin.cardRadius,
         boxShadow: skin.cardShadow, fontWeight: 800 };
     }
@@ -141,9 +139,9 @@ function QuestionPreview({ skin }: { skin: Skin }) {
         boxShadow: '0 7px 0 rgba(0,0,0,0.12)', color: '#23204A' };
     }
     if (isEditorial) {
-      return { ...base, background: on ? '#fff' : '#FBFBF8',
-        border: skin.cardBorder, borderRadius: skin.cardRadius,
-        boxShadow: on ? skin.cardShadow : '3px 3px 0 #111' };
+      return { ...base, background: on ? '#0B0B0B' : 'transparent',
+        color: on ? '#fff' : skin.text,
+        border: on ? '1px solid #0B0B0B' : skin.cardBorder, borderRadius: 0, boxShadow: 'none' };
     }
     if (isNeon) {
       return { ...base, background: skin.cardBg, borderRadius: skin.cardRadius,
@@ -319,6 +317,24 @@ function DecoLayer({ skin }: { skin: Skin }) {
           <div key={i} style={{
             position: 'absolute', left: x, top: y, width: 26, height: 10, borderRadius: 6,
             background: c as string, transform: `rotate(${i * 35}deg)`, opacity: 0.8, zIndex: 1,
+          }} />
+        ))}
+      </>
+    );
+  }
+  if (skin.deco === 'stars') {
+    const pts: [string, string, string, number][] = [
+      ['7%', '20%', '#FDE047', 34], ['91%', '12%', '#FB7185', 26],
+      ['87%', '70%', '#FDE047', 30], ['10%', '74%', '#34D399', 24],
+    ];
+    return (
+      <>
+        {pts.map(([x, y, c, s], i) => (
+          <div key={i} style={{
+            position: 'absolute', left: x, top: y, width: s, height: s, zIndex: 1,
+            background: c,
+            clipPath: 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)',
+            filter: 'drop-shadow(2px 2px 0 #16121F)',
           }} />
         ))}
       </>

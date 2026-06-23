@@ -100,9 +100,10 @@ export function BeamerTimer({
       {/* SVG ring */}
       <svg width={sz} height={sz}
         style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
-        {/* Background ring */}
+        {/* Background ring — 2026-06-23: Skin-sichtbar via Hairline-Token
+            (rgba(255,255,255,..) waere auf hellen Skins unsichtbar). */}
         <circle cx={sz / 2} cy={sz / 2} r={radius}
-          fill="none" stroke="rgba(255,255,255,0.06)" strokeWidth={stroke} />
+          fill="none" style={{ stroke: 'var(--qq-hairline)' }} strokeWidth={stroke} />
         {/* Progress ring */}
         <circle cx={sz / 2} cy={sz / 2} r={radius}
           fill="none" stroke={color} strokeWidth={stroke}

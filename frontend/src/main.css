@@ -86,6 +86,21 @@
   --qq-accent-soft: #fce7f3;     /* heller Glow */
   --qq-accent-light: #f472b6;    /* helle Akzent-Variante (Gradient-Start) */
   --qq-accent-magenta: #a21247;  /* dunkler 2. Akzent (Gradient-Ende) */
+  /* ── Skin-Flaechen-Tokens (2026-06-23) ─────────────────────────────────
+     „Grundgeruest bleibt gleich, nur Lackierung aendert sich" (Wolf-Regel):
+     Layout NIE ueber diese Tokens steuern — nur Farbe/Flaeche/Rand/Schrift.
+     Defaults = aktueller Cozy-Look → zero-visual-change. qqTheme.applyThemeVars
+     ueberschreibt sie pro Skin. WICHTIG: --qq-card-text getrennt von --qq-text,
+     weil ein Skin hellen Text auf BG UND dunklen Text auf Karten haben kann. */
+  --qq-text: #ffffff;            /* Primaertext auf dem Hintergrund */
+  --qq-text-muted: #94a3b8;      /* gedaempfter Text (Labels) */
+  --qq-card-text: #ffffff;       /* Text AUF Karten */
+  --qq-card-bg: linear-gradient(180deg, #1F1A2E, #14101F);
+  --qq-card-border: 1px solid rgba(255,255,255,0.10);
+  --qq-card-radius: 20px;
+  --qq-card-shadow: 0 16px 50px rgba(0,0,0,0.45);
+  --qq-hairline: rgba(255,255,255,0.10);  /* dezente Linien/Divider */
+  --qq-font: 'Nunito', 'Geist', system-ui, sans-serif;
   /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
      Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
   --qq-ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);

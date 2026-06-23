@@ -27,6 +27,7 @@ import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes
 import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed } from '../qqTheme';
+import { SkinDeco } from './SkinDeco';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
   CAT_ACCENT, CAT_BADGE_BG, CAT_GLOW, CAT_CUTOUTS, COZY_CARD_BG,
@@ -1298,6 +1299,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       // faengt sie sauber am echten Bildschirmrand.
       overflow: 'visible',
     }}>
+      <SkinDeco />
       {/* I1 Kategorie-Partikel (fliegende Zahlen/Buchstaben) entfernt —
           lenkten vom Fragentext ab. Stattdessen faerben wir die Fireflies
           weiter unten in der Kategorie-Farbe. */}

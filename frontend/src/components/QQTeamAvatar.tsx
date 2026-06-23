@@ -308,11 +308,12 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 }
 
 // ─── cozy3d Bild-Avatar (3D-Tier auf Slot-Farb-Disc) ──────────────────────
-// Zentraler Zoom-Knopf: Anteil des Disc-Durchmessers, den das Avatar-Bild
-// (laengste Kante) einnimmt. 1.0 = Bild beruehrt den Disc-Rand. >1 laesst das
-// Bild leicht ueber die (ohnehin abgeschnittenen) Disc-Ecken bluten → wirkt
-// groesser. Bei „Koerper-Avatare wirken zu klein" hier hochdrehen.
-export const COZY3D_DISC_FILL = 1.06;
+// Zentraler Rand-/Zoom-Knopf: Anteil des Disc-Durchmessers, den das (quadratisch
+// normalisierte) Avatar-Bild einnimmt. Da alle Avatare auf eine quadratische
+// Leinwand zentriert sind (scripts/process-cozy3d.mjs), fuellt jede laengste
+// Kante exakt diesen Anteil → einheitliche Groesse + gleichmaessiger Rand.
+// 0.9 = 5 % Rand pro Seite. Groesser/kleiner hier in einer Zahl drehen.
+export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
   src, color, size, baseStyle, className, title, square, flat,

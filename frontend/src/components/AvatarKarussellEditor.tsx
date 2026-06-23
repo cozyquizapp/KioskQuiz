@@ -11,7 +11,7 @@
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
-import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 
 type Props = {
   avatarId: string;
@@ -266,11 +266,11 @@ export function AvatarKarussellEditor({
             position: 'relative',
           }}>
             {needsEmoji && chosenEmoji ? (
-              <span style={{
-                fontSize: 'clamp(72px, 19vw, 96px)',
-                lineHeight: 1,
-                filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
-              }}>{chosenEmoji}</span>
+              <CountryFlagOrEmoji
+                emoji={chosenEmoji}
+                fontSize={'clamp(72px, 19vw, 96px)'}
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
+              />
             ) : (
               <QQTeamAvatar avatarId={avatarId} size={'clamp(120px, 33vw, 160px)'} />
             )}
@@ -380,7 +380,13 @@ export function AvatarKarussellEditor({
               >✕</button>
             </div>
             {/* Emoji-Grid */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8 }}>
+            <div style={{
+              display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8,
+              // cozy3d-Pool ist gross (80) → Scroll-Container im Bottom-Sheet.
+              maxHeight: availableEmojis.length > 16 ? '52vh' : undefined,
+              overflowY: availableEmojis.length > 16 ? 'auto' : undefined,
+              paddingRight: availableEmojis.length > 16 ? 4 : undefined,
+            }}>
               {availableEmojis.map((em, i) => {
                 const sel = chosenEmoji === em;
                 return (
@@ -401,9 +407,10 @@ export function AvatarKarussellEditor({
                       fontFamily: 'inherit',
                       transition: 'all 0.18s',
                       boxShadow: sel ? `0 0 14px ${myColor}55` : 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}
                   >
-                    {em}
+                    <CountryFlagOrEmoji emoji={em} fontSize={32} />
                   </button>
                 );
               })}

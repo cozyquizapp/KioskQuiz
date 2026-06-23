@@ -17,8 +17,7 @@ import path from 'path';
 
 const DEST = 'frontend/public/avatars/cozy3d';
 const SRC = process.argv[2] || DEST;
-const MAX = 480;            // Ziel-Kantenlänge (Source ist 500 → kein Upscale)
-const PAD = 0.04;           // 4 % transparenter Sicherheitsrand nach Trim
+const SIZE = 480;           // quadratische Ziel-Leinwand (Source ist 500)
 
 function slugify(name) {
   return name
@@ -53,22 +52,20 @@ for (const file of files) {
   // Trim transparente Ränder, dann in MAX-Box einpassen (kein Upscale),
   // mit kleinem transparenten Pad damit der Avatar nicht hart an der Disc klebt.
   const img = sharp(srcPath).ensureAlpha();
+  // 1. Trim transparente Ränder → reine Bounding-Box des Tieres.
   const trimmed = await img.clone().trim({ threshold: 1 }).toBuffer({ resolveWithObject: true })
     .catch(() => null);
   const body = trimmed ? sharp(trimmed.data) : sharp(srcPath);
 
-  const meta = trimmed ? trimmed.info : await sharp(srcPath).metadata();
-  const longSide = Math.max(meta.width, meta.height);
-  const target = Math.min(MAX, longSide);
-  const padPx = Math.round(target * PAD);
-
+  // 2. In eine QUADRATISCHE Leinwand zentrieren (fit:contain → längste Kante
+  //    des Tieres füllt die Leinwand, zentriert, transparent gepaddet).
+  //    Ergebnis: alle 80 PNGs sind SIZE×SIZE → in der runden Disc füllt jede
+  //    längste Kante denselben Anteil → einheitliche Größe + gleicher Rand.
   const out = await body
-    .resize(target - padPx * 2, target - padPx * 2, {
-      fit: 'inside',
-      withoutEnlargement: false,
+    .resize(SIZE, SIZE, {
+      fit: 'contain',
+      background: { r: 0, g: 0, b: 0, alpha: 0 },
     })
-    .extend({ top: padPx, bottom: padPx, left: padPx, right: padPx,
-              background: { r: 0, g: 0, b: 0, alpha: 0 } })
     .png({ quality: 86, compressionLevel: 9, palette: true, effort: 8 })
     .toBuffer({ resolveWithObject: true });
 

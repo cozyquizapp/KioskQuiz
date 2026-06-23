@@ -18,6 +18,7 @@ type Skin = {
   titleWeight: number;
   titleSerif?: boolean;
   upper?: boolean;       // Titel/Optionen in GROSSBUCHSTABEN
+  titleCard?: boolean;   // Frage-Titel in einer weissen Karte (statt frei)
   // Farben
   bg: string;
   text: string;
@@ -64,15 +65,16 @@ const SKINS: Skin[] = [
     popColors: ['#FBBF24', '#F472A0', '#34D399', '#60A5FA'],
   },
   {
-    id: 'brutal', name: 'Brutalism', tagline: 'Roh · laut · kompromisslos',
-    bestFor: 'Indie · Kreativ-Events · Statement-Brands',
-    font: "'Space Mono', 'Courier New', monospace", titleWeight: 700, upper: true,
-    bg: '#FFE14D',
-    text: '#0A0A0A', muted: '#3A3528',
-    accent: '#1F1FFF', accent2: '#FF4D4D',
-    cardBg: '#FFFFFF', cardBorder: '3px solid #000000',
-    cardRadius: 0, cardShadow: '8px 8px 0 #000000',
-    optionStyle: 'brutal', timerStyle: 'brutal', deco: 'none', chrome: 'light',
+    id: 'brutal', name: 'Neo-Brutalism', tagline: 'Modern · bold · verspielt-kantig',
+    bestFor: 'Moderne Brands · Tech · junge Events',
+    font: "'Nunito', system-ui, sans-serif", titleWeight: 900, titleCard: true,
+    bg: 'linear-gradient(155deg, #9B6DFF 0%, #7C3AED 55%, #6D28D9 100%)',
+    text: '#FFFFFF', muted: 'rgba(255,255,255,0.78)',
+    accent: '#FDE047', accent2: '#FB7185',
+    cardBg: '#FFFFFF', cardBorder: '3px solid #16121F',
+    cardRadius: 18, cardShadow: '6px 6px 0 #16121F',
+    optionStyle: 'brutal', timerStyle: 'brutal', deco: 'confetti', chrome: 'light',
+    popColors: ['#FDE047', '#FDA4AF', '#A7F3D0', '#BFDBFE'],
   },
 ];
 
@@ -96,9 +98,9 @@ function QuestionPreview({ skin }: { skin: Skin }) {
 
   const letterBadge = (i: number, on: boolean): CSSProperties => {
     if (isBrutal) return {
-      background: on ? skin.accent : '#000000', color: '#fff',
-      width: 46, height: 46, borderRadius: 0, border: '3px solid #000',
-      display: 'grid', placeItems: 'center', fontWeight: 700, fontSize: 22, flexShrink: 0,
+      background: '#16121F', color: '#fff',
+      width: 46, height: 46, borderRadius: '50%', border: '3px solid #16121F',
+      display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 22, flexShrink: 0,
     };
     if (isPop) return {
       background: skin.accent, color: '#fff',
@@ -128,9 +130,10 @@ function QuestionPreview({ skin }: { skin: Skin }) {
       height: 78, color: skin.text, fontWeight: isPop ? 900 : 700, fontSize: 25,
     };
     if (isBrutal) {
-      return { ...base, background: on ? skin.accent : skin.cardBg,
-        color: on ? '#fff' : skin.text, border: skin.cardBorder, borderRadius: 0,
-        boxShadow: skin.cardShadow, textTransform: 'uppercase', fontWeight: 700 };
+      const c = skin.popColors![i];
+      return { ...base, background: on ? skin.accent : c, color: '#16121F',
+        border: skin.cardBorder, borderRadius: skin.cardRadius,
+        boxShadow: skin.cardShadow, fontWeight: 800 };
     }
     if (isPop) {
       const c = skin.popColors![i];
@@ -181,13 +184,15 @@ function QuestionPreview({ skin }: { skin: Skin }) {
       {/* Frage-Titel */}
       <div style={{
         position: 'relative', zIndex: 2, textAlign: 'center', margin: '14px 0 22px',
-        ...(isPop ? {
-          background: '#fff', color: '#2D2A55', borderRadius: 26, padding: '16px 30px',
-          boxShadow: '0 8px 0 rgba(59,46,126,0.12)', alignSelf: 'center', maxWidth: '78%',
+        ...(skin.titleCard ? {
+          background: '#fff', borderRadius: skin.cardRadius, padding: '16px 30px',
+          border: skin.cardBorder, boxShadow: skin.cardShadow,
+          alignSelf: 'center', maxWidth: '80%',
         } : {}),
       }}>
         <div style={{
           fontSize: 38, fontWeight: skin.titleWeight, lineHeight: 1.15,
+          color: skin.titleCard ? '#1F1B2E' : undefined,
           fontFamily: skin.titleSerif ? "'Georgia', 'Times New Roman', serif" : skin.font,
           textTransform: skin.upper ? 'uppercase' : undefined,
         }}>
@@ -204,7 +209,8 @@ function QuestionPreview({ skin }: { skin: Skin }) {
           </div>
           <div style={{ fontSize: 13, fontWeight: 800, color: skin.muted }}>Scanne & mach mit</div>
           <div style={{
-            fontSize: 14, fontWeight: 900, color: skin.chrome === 'light' ? skin.text : '#fff',
+            fontSize: 14, fontWeight: 900,
+            color: skin.id === 'brutal' ? '#16121F' : (skin.chrome === 'light' ? skin.text : '#fff'),
             background: skin.accent, padding: '4px 14px', borderRadius: 999,
           }}>PIN 4827</div>
         </div>
@@ -235,13 +241,13 @@ function TimerWidget({ skin }: { skin: Skin }) {
   if (skin.timerStyle === 'brutal') {
     return (
       <div style={{
-        width: 124, height: 124, display: 'grid', placeItems: 'center',
-        background: skin.accent, color: '#fff', border: '3px solid #000',
-        boxShadow: '8px 8px 0 #000', fontFamily: skin.font,
+        width: 124, height: 124, borderRadius: '50%', display: 'grid', placeItems: 'center',
+        background: skin.accent, color: '#16121F', border: '3px solid #16121F',
+        boxShadow: '6px 6px 0 #16121F', fontFamily: skin.font,
       }}>
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 48, fontWeight: 700, lineHeight: 1 }}>18</div>
-          <div style={{ fontSize: 11, fontWeight: 700, letterSpacing: '0.1em' }}>SEK</div>
+          <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1 }}>18</div>
+          <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: '0.08em' }}>SEK</div>
         </div>
       </div>
     );

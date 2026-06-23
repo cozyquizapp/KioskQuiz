@@ -42,14 +42,14 @@ type Skin = {
 
 const SKINS: Skin[] = [
   {
-    id: 'mono', name: 'Studio Mono', tagline: 'Minimal · editorial · viel Weißraum',
+    id: 'mono', name: 'Studio Mono', tagline: 'Editorial · scharf · markenneutral',
     bestFor: 'Tech-Firmen · gebrandete Events (Akzent = Kundenfarbe)',
     font: "'Bricolage Grotesque', 'Inter', sans-serif", titleWeight: 800,
-    bg: '#F6F5F0',
-    text: '#0B0B0B', muted: '#9A968C',
-    accent: '#111111', accent2: '#0B0B0B',
-    cardBg: 'transparent', cardBorder: '1px solid #DAD7CC',
-    cardRadius: 0, cardShadow: 'none',
+    bg: '#F3F2EC',
+    text: '#0B0B0B', muted: '#6B6B66',
+    accent: '#111111', accent2: '#C9F227',
+    cardBg: '#FFFFFF', cardBorder: '2px solid #111111',
+    cardRadius: 4, cardShadow: '6px 6px 0 #111111',
     optionStyle: 'editorial', timerStyle: 'plain', deco: 'none', chrome: 'light',
   },
   {
@@ -107,8 +107,8 @@ function QuestionPreview({ skin }: { skin: Skin }) {
       display: 'grid', placeItems: 'center', fontWeight: 900, fontSize: 22, flexShrink: 0,
     };
     if (isEditorial) return {
-      background: on ? '#fff' : 'transparent', color: on ? '#0B0B0B' : skin.text,
-      width: 40, height: 40, borderRadius: 0, border: on ? 'none' : '1px solid #0B0B0B',
+      background: on ? skin.accent2 : 'transparent', color: '#111',
+      width: 40, height: 40, borderRadius: 3, border: '2px solid #111',
       display: 'grid', placeItems: 'center', fontWeight: 800, fontSize: 20, flexShrink: 0,
     };
     // glass / neon / soft → gefärbter Buchstabe
@@ -139,9 +139,9 @@ function QuestionPreview({ skin }: { skin: Skin }) {
         boxShadow: '0 7px 0 rgba(0,0,0,0.12)', color: '#23204A' };
     }
     if (isEditorial) {
-      return { ...base, background: on ? '#0B0B0B' : 'transparent',
-        color: on ? '#fff' : skin.text,
-        border: on ? '1px solid #0B0B0B' : skin.cardBorder, borderRadius: 0, boxShadow: 'none' };
+      return { ...base, background: on ? '#fff' : '#FBFBF8',
+        border: skin.cardBorder, borderRadius: skin.cardRadius,
+        boxShadow: on ? skin.cardShadow : '3px 3px 0 #111' };
     }
     if (isNeon) {
       return { ...base, background: skin.cardBg, borderRadius: skin.cardRadius,

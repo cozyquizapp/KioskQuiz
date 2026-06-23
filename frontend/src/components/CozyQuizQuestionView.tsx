@@ -149,7 +149,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         borderRadius: 8,
                         background: isWinner ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'rgba(100,116,139,0.25)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        fontSize: 'clamp(12px, 1.3cqw, 16px)', fontWeight: 900, color: '#fff',
+                        fontSize: 'clamp(12px, 1.3cqw, 16px)', fontWeight: 900, color: 'var(--qq-card-text)',
                         flexShrink: 0,
                       }}>
                         {isWinner ? <QQEmojiIcon emoji="🥇"/> : `#${i + 1}`}
@@ -221,7 +221,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   <div style={{
                     width: 'clamp(44px, 5cqw, 64px)', background: optColor,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 'clamp(18px, 2.2cqw, 28px)', fontWeight: 900, color: '#fff',
+                    fontSize: 'clamp(18px, 2.2cqw, 28px)', fontWeight: 900, color: 'var(--qq-card-text)',
                     flexShrink: 0,
                   }}>
                     {['A','B','C','D'][optIdx] ?? optIdx + 1}
@@ -412,7 +412,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       width: 'clamp(36px, 4cqw, 52px)', height: 'clamp(36px, 4cqw, 52px)',
                       borderRadius: 8, background: color,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(16px, 1.9cqw, 24px)', fontWeight: 900, color: '#fff',
+                      fontSize: 'clamp(16px, 1.9cqw, 24px)', fontWeight: 900, color: 'var(--qq-card-text)',
                       flexShrink: 0,
                       boxShadow: showGreen ? '0 0 16px rgba(34,197,94,0.6)' : 'none',
                       transition: 'background 0.3s ease, box-shadow 0.3s ease',
@@ -457,7 +457,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                           borderRight: ci < contribs.length - 1 ? '2px solid rgba(0,0,0,0.4)' : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           gap: 4, minWidth: 0, overflow: 'hidden',
-                          fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: '#fff',
+                          fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: 'var(--qq-card-text)',
                           textShadow: '0 1px 2px rgba(0,0,0,0.6)',
                           animation: justRevealed
                             ? 'muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) both'
@@ -680,7 +680,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     borderRadius: 8,
                     background: hitters.length > 0 ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'rgba(100,116,139,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: '#fff',
+                    fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: 'var(--qq-card-text)',
                     flexShrink: 0,
                   }}>
                     #{i + 1}
@@ -800,7 +800,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       borderRadius: 8,
                       background: 'linear-gradient(135deg,var(--qq-accent),#EA580C)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: '#fff',
+                      fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: 'var(--qq-card-text)',
                       flexShrink: 0,
                     }}>
                       {pi + 1}
@@ -2984,7 +2984,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       fontSize: 'clamp(16px, 1.7cqw, 22px)', lineHeight: 1,
                     }}><QQEmojiIcon emoji="🎯"/></span>
                     <span style={{
-                      color: '#fff', fontWeight: 900,
+                      color: 'var(--qq-card-text)', fontWeight: 900,
                       fontSize: 'clamp(14px, 1.6cqw, 20px)', lineHeight: 1,
                       textShadow: '0 1px 3px rgba(0,0,0,0.3)',
                     }}>{fmt(target)}</span>
@@ -3100,7 +3100,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 borderRadius: 16,
                                 background: 'rgba(0,0,0,0.88)',
                                 border: `2px solid ${tColor}`,
-                                color: '#fff', fontWeight: 900,
+                                color: 'var(--qq-card-text)', fontWeight: 900,
                                 fontSize: isWinner ? 'clamp(38px, 4cqw, 56px)' : 'clamp(30px, 3.2cqw, 44px)',
                                 whiteSpace: 'nowrap',
                                 boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,

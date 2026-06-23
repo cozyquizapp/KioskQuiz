@@ -16,7 +16,9 @@ import { useState, useEffect } from 'react';
 import { QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from './qqShared';
 
 // ── Card-Theme ───────────────────────────────────────────────────────────────
-export const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
+// 2026-06-23: tokenisiert → Skins koennen die Card-Flaeche umstellen.
+// Default-Token (main.css --qq-card-bg) = exakt dieser Gradient → Cozy unveraendert.
+export const COZY_CARD_BG = 'var(--qq-card-bg)';
 
 // ── Quiz-Option-Normalisierung ───────────────────────────────────────────────
 /**

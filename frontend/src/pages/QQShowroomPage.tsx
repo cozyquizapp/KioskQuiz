@@ -14,10 +14,7 @@
  */
 import { Component, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { TeamsRevealView } from '../components/CozyQuizTeamsRevealView';
 import { QuestionView } from '../components/CozyQuizQuestionView';
-import { GameOverView } from '../components/CozyQuizGameOverView';
-import { ThanksView } from './QQBeamerPage';
 import { useActiveThemeId, setActiveThemeId, getActiveTheme, QQ_THEMES } from '../qqTheme';
 
 const PINK = '#ec4899';
@@ -82,26 +79,17 @@ function baseState(): QQStateUpdate {
 // ── Szenen: echte Beamer-View + Phase-Override ──────────────────────────────
 type Scene = { key: string; ms: number; render: (s: QQStateUpdate) => ReactNode };
 
+// 2026-06-23 (Theme-Repaint): vorerst nur die Flagship-Szenen (Frage + Reveal),
+// solange nur die QuestionView auf Skin-Tokens migriert ist. Teams/Treppchen/
+// Thanks kommen zurueck, sobald sie ebenfalls umgestellt sind.
 const SCENES: Scene[] = [
   {
-    key: 'teams', ms: 5200,
-    render: (s) => <TeamsRevealView state={{ ...s, phase: 'TEAMS_REVEAL', teamsRevealStartedAt: s.serverTime - 9000 } as QQStateUpdate} />,
-  },
-  {
-    key: 'frage', ms: 4600,
+    key: 'frage', ms: 5200,
     render: (s) => <QuestionView state={{ ...s, phase: 'QUESTION_ACTIVE', currentQuestion: MOCK_QUESTION, timerEndsAt: s.serverTime + 18000 } as QQStateUpdate} revealed={false} />,
   },
   {
-    key: 'reveal', ms: 4800,
+    key: 'reveal', ms: 5200,
     render: (s) => <QuestionView state={{ ...s, phase: 'QUESTION_REVEAL', currentQuestion: MOCK_QUESTION, revealedAnswer: '330 m', correctTeamId: 't1' } as QQStateUpdate} revealed={true} />,
-  },
-  {
-    key: 'treppchen', ms: 6000,
-    render: (s) => <GameOverView state={{ ...s, phase: 'GAME_OVER' } as QQStateUpdate} />,
-  },
-  {
-    key: 'thanks', ms: 5400,
-    render: (s) => <ThanksView state={{ ...s, phase: 'THANKS' } as QQStateUpdate} roomCode="DEMO" />,
   },
 ];
 

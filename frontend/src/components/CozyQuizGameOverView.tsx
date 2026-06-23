@@ -37,7 +37,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
   // Stellen im Frontend (Drift bei Ties zwischen Mod, Beamer, Team-View).
   const sorted = qqSortedTeams(s);
   const winner = sorted[0];
-  const winnerColor = winner?.color ?? '#EC4899';
+  const winnerColor = winner?.color ?? 'var(--qq-accent)';
 
   // 2026-05-05 (Wolf-Wahl 4C): Score-Spotlight-Sequence vor der Recap-Tabelle.
   // Letzter Platz zuerst (revealIdx 0 = sorted[last]), dann aufsteigend bis
@@ -123,7 +123,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     const rank = sorted.length - revealIdx;
     const isWinner = rank === 1;
     const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
-    const teamColor = team?.color ?? '#EC4899';
+    const teamColor = team?.color ?? 'var(--qq-accent)';
     return (
       <div style={{
         flex: 1, display: 'flex', flexDirection: 'column',
@@ -159,7 +159,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           {paused && (
             <div style={{
               padding: '4px 12px', borderRadius: 999,
-              background: 'rgba(236,72,153,0.18)', border: '1.5px solid rgba(236,72,153,0.55)',
+              background: 'rgba(var(--qq-accent-rgb),0.18)', border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
               fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900, color: '#FBCFE8',
               animation: 'pulse 1.4s ease-in-out infinite',
             }}>
@@ -207,7 +207,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 size={'clamp(140px, 18cqw, 260px)'}
                 style={{
                   boxShadow: isWinner
-                    ? `0 0 0 4px #EC4899, 0 0 60px rgba(236,72,153,0.7), 0 12px 40px rgba(0,0,0,0.5)`
+                    ? `0 0 0 4px var(--qq-accent), 0 0 60px rgba(var(--qq-accent-rgb),0.7), 0 12px 40px rgba(0,0,0,0.5)`
                     : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa, 0 12px 36px rgba(0,0,0,0.5)`,
                 }}
               />
@@ -259,7 +259,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 fontSize: 'clamp(80px, 11cqw, 180px)', fontWeight: 900,
                 color: '#FBCFE8',
                 fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                textShadow: '0 0 40px rgba(236,72,153,0.55)',
+                textShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.55)',
               }}>{team.largestConnected}</span>
               <span style={{
                 fontSize: 'clamp(20px, 2.4cqw, 36px)', fontWeight: 700,
@@ -403,7 +403,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 width: sp.size, height: sp.size,
                 fontSize: sp.size,
                 lineHeight: 1,
-                color: '#EC4899',
+                color: 'var(--qq-accent)',
                 textShadow: `0 0 12px ${winnerColor}, 0 0 4px rgba(255,255,255,0.6)`,
                 animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sparkleStartDelay + sp.delay}s infinite`,
                 pointerEvents: 'none',

@@ -93,9 +93,9 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {/* Target banner */}
             <div style={{
               padding: '14px 20px', borderRadius: 16,
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(236,72,153,0.10))',
-              border: '2px solid rgba(236,72,153,0.55)',
-              boxShadow: '0 0 0 3px rgba(236,72,153,0.12), 0 8px 24px rgba(0,0,0,0.3)',
+              background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.22), rgba(var(--qq-accent-rgb),0.10))',
+              border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
+              boxShadow: '0 0 0 3px rgba(var(--qq-accent-rgb),0.12), 0 8px 24px rgba(0,0,0,0.3)',
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14,
               animation: 'revealAnswerBam 0.55s var(--qq-ease-out-cubic) both',
             }}>
@@ -107,7 +107,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <span style={{
                 fontSize: 'clamp(30px, 4cqw, 56px)', fontWeight: 900,
                 color: QQ_COLORS.brandPink,
-                textShadow: '0 2px 12px rgba(236,72,153,0.45)',
+                textShadow: '0 2px 12px rgba(var(--qq-accent-rgb),0.45)',
               }}>
                 {targetStr}{unitStr ? ` ${unitStr}` : ''}
               </span>
@@ -147,7 +147,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       <span style={{
                         width: 'clamp(26px, 2.8cqw, 34px)', height: 'clamp(26px, 2.8cqw, 34px)',
                         borderRadius: 8,
-                        background: isWinner ? 'linear-gradient(135deg,#EC4899,#EC4899)' : 'rgba(100,116,139,0.25)',
+                        background: isWinner ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'rgba(100,116,139,0.25)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 'clamp(12px, 1.3cqw, 16px)', fontWeight: 900, color: '#fff',
                         flexShrink: 0,
@@ -262,8 +262,8 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {showSpeedRank && (
               <div style={{
                 marginTop: 6, padding: '10px 14px', borderRadius: 16,
-                background: 'linear-gradient(135deg, rgba(236,72,153,0.12), rgba(234,179,8,0.06))',
-                border: '1.5px solid rgba(236,72,153,0.35)',
+                background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.12), rgba(234,179,8,0.06))',
+                border: '1.5px solid rgba(var(--qq-accent-rgb),0.35)',
                 display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
                 animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + q.options!.length * 0.07 + 0.1}s both`,
               }}>
@@ -280,8 +280,8 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: 6,
                       padding: '4px 10px', borderRadius: 999,
-                      background: rank === 1 ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.28)',
-                      border: rank === 1 ? '1.5px solid rgba(236,72,153,0.6)' : `1.5px solid ${tm.color}`,
+                      background: rank === 1 ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.28)',
+                      border: rank === 1 ? '1.5px solid rgba(var(--qq-accent-rgb),0.6)' : `1.5px solid ${tm.color}`,
                     }}>
                       <span style={{
                         fontSize: 'clamp(12px, 1.2cqw, 15px)', fontWeight: 900,
@@ -608,8 +608,8 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     {hasTie && timeSec && avatarsOn && (
                       <span style={{
                         padding: '4px 10px', borderRadius: 999,
-                        background: i === 0 && isWinner ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.28)',
-                        border: i === 0 && isWinner ? '1.5px solid rgba(236,72,153,0.6)' : '1px solid rgba(255,255,255,0.1)',
+                        background: i === 0 && isWinner ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.28)',
+                        border: i === 0 && isWinner ? '1.5px solid rgba(var(--qq-accent-rgb),0.6)' : '1px solid rgba(255,255,255,0.1)',
                         fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
                         color: i === 0 && isWinner ? QQ_COLORS.brandPink : QQ_COLORS.slate400,
                         whiteSpace: 'nowrap',
@@ -678,7 +678,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   <span style={{
                     width: 'clamp(32px, 3.5cqw, 44px)', height: 'clamp(32px, 3.5cqw, 44px)',
                     borderRadius: 8,
-                    background: hitters.length > 0 ? 'linear-gradient(135deg,#EC4899,#EC4899)' : 'rgba(100,116,139,0.3)',
+                    background: hitters.length > 0 ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'rgba(100,116,139,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: '#fff',
                     flexShrink: 0,
@@ -798,7 +798,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <span style={{
                       width: 'clamp(32px, 3.5cqw, 44px)', height: 'clamp(32px, 3.5cqw, 44px)',
                       borderRadius: 8,
-                      background: 'linear-gradient(135deg,#EC4899,#EA580C)',
+                      background: 'linear-gradient(135deg,var(--qq-accent),#EA580C)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: '#fff',
                       flexShrink: 0,
@@ -1755,17 +1755,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             // 2026-04-29: Avatare bei Reveal etwas kleiner — Card flacher.
                             size={isFastest ? 'clamp(60px, 6.8cqw, 92px)' : 'clamp(46px, 5.2cqw, 70px)'}
                             style={{
-                              border: isFastest ? '4px solid #EC4899' : 'none',
+                              border: isFastest ? '4px solid var(--qq-accent)' : 'none',
                               boxShadow: isFastest
-                                ? '0 0 28px rgba(236,72,153,0.65), 0 4px 14px rgba(0,0,0,0.45)'
+                                ? '0 0 28px rgba(var(--qq-accent-rgb),0.65), 0 4px 14px rgba(0,0,0,0.45)'
                                 : '0 4px 12px rgba(0,0,0,0.4)',
                             }}
                           />
                         </div>
                         <span style={{
                           padding: '3px 10px', borderRadius: 999,
-                          background: isFastest ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.55)',
-                          border: isFastest ? '1.5px solid rgba(236,72,153,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                          background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
+                          border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid rgba(255,255,255,0.15)',
                           color: isFastest ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
@@ -2170,7 +2170,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     <div key={i} style={{
                       borderRadius: 16, padding: '22px 24px',
                       background: cardBg,
-                      border: '2px solid rgba(236,72,153,0.4)',
+                      border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
                       boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.04)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(20px, 2.4cqw, 34px)', fontWeight: 900, color: QQ_COLORS.slate100,
@@ -2389,9 +2389,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               padding: `6px ${padR}px 6px 2px`,
                               borderRadius: 999,
                               background: 'rgba(0,0,0,0.7)',
-                              border: isFastest ? '3px solid #EC4899' : `2px solid ${tm.color}`,
+                              border: isFastest ? '3px solid var(--qq-accent)' : `2px solid ${tm.color}`,
                               boxShadow: isFastest
-                                ? '0 0 22px rgba(236,72,153,0.55), 0 6px 14px rgba(0,0,0,0.55)'
+                                ? '0 0 22px rgba(var(--qq-accent-rgb),0.55), 0 6px 14px rgba(0,0,0,0.55)'
                                 : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`,
                               animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
                             }}>
@@ -2404,7 +2404,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 // dass font-ascent/descent die Pill-Hoehe sprengt.
                                 lineHeight: 1,
                                 color: tm.color, fontVariantNumeric: 'tabular-nums',
-                                textShadow: '0 0 12px rgba(236,72,153,0.45), 0 1px 2px rgba(0,0,0,0.6)',
+                                textShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.45), 0 1px 2px rgba(0,0,0,0.6)',
                               }}>{pts}</span>
                               {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
@@ -2413,8 +2413,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   left: '50%', bottom: -8,
                                   transform: 'translate(-50%, 50%)',
                                   padding: '2px 9px', borderRadius: 999,
-                                  background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
-                                  border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
+                                  background: isFastest ? 'rgba(var(--qq-accent-rgb),0.95)' : 'rgba(15,23,42,0.95)',
+                                  border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),1)' : `1.5px solid ${tm.color}`,
                                   color: isFastest ? '#0A0814' : QQ_COLORS.slate200,
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2cqw, 15px)',
@@ -2487,7 +2487,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           fontSize: 'clamp(14px, 1.6cqw, 22px)',
                           fontWeight: 900,
                           color: tm.color, fontVariantNumeric: 'tabular-nums',
-                          textShadow: '0 0 10px rgba(236,72,153,0.4), 0 1px 2px rgba(0,0,0,0.6)',
+                          textShadow: '0 0 10px rgba(var(--qq-accent-rgb),0.4), 0 1px 2px rgba(0,0,0,0.6)',
                         }}>{pts}</span>
                       </div>
                     ))}
@@ -2592,9 +2592,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 avatarId={ct.team.avatarId}
                                 size={isFastest ? 'clamp(78px, 8.6cqw, 116px)' : 'clamp(58px, 6.4cqw, 88px)'}
                                 style={{
-                                  border: isFastest ? '4px solid #EC4899' : 'none',
+                                  border: isFastest ? '4px solid var(--qq-accent)' : 'none',
                                   boxShadow: isFastest
-                                    ? `0 0 28px rgba(236,72,153,0.65), 0 4px 14px rgba(0,0,0,0.45)`
+                                    ? `0 0 28px rgba(var(--qq-accent-rgb),0.65), 0 4px 14px rgba(0,0,0,0.45)`
                                     : '0 4px 12px rgba(0,0,0,0.4)',
                                 }}
                               />
@@ -2602,8 +2602,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             {timeSec != null && (
                               <span style={{
                                 padding: '3px 10px', borderRadius: 999,
-                                background: isFastest ? 'rgba(236,72,153,0.22)' : 'rgba(0,0,0,0.55)',
-                                border: isFastest ? '1.5px solid rgba(236,72,153,0.7)' : '1px solid rgba(255,255,255,0.15)',
+                                background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
+                                border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid rgba(255,255,255,0.15)',
                                 color: isFastest ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                                 fontWeight: 900,
                                 fontSize: 'clamp(15px, 1.6cqw, 20px)',
@@ -3049,9 +3049,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <QQTeamAvatar avatarId={p.team!.avatarId} teamEmoji={p.team!.emoji} size={isWinner ? 'clamp(72px, 7cqw, 96px)' : 'clamp(60px, 6cqw, 82px)'} style={{
                           position: 'absolute', left: '50%', top: 0,
                           transform: 'translate(-50%, -50%)',
-                          border: isWinner ? '3px solid #EC4899' : 'none',
+                          border: isWinner ? '3px solid var(--qq-accent)' : 'none',
                           boxShadow: isWinner
-                            ? `0 0 24px ${tColor}aa, 0 0 44px rgba(236,72,153,0.5)`
+                            ? `0 0 24px ${tColor}aa, 0 0 44px rgba(var(--qq-accent-rgb),0.5)`
                             : `0 4px 12px rgba(0,0,0,0.5)`,
                         }} />
                         {/* Value-Chip mit DYNAMISCHER Kollisionsvermeidung.
@@ -3351,9 +3351,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
                   padding: '22px 38px', borderRadius: 24,
                   width: '100%', maxWidth: 1400, flexWrap: 'wrap',
-                  background: 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05))',
-                  border: '2px solid rgba(236,72,153,0.55)',
-                  boxShadow: '0 0 60px rgba(236,72,153,0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.15), rgba(var(--qq-accent-rgb),0.05))',
+                  border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
+                  boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.25), 0 8px 24px rgba(0,0,0,0.4)',
                   animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>

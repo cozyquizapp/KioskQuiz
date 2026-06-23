@@ -77,6 +77,15 @@
      max 32→52. Mehr Atem zur Slide-Kante. Cards die das Token konsumieren
      bekommen sofort mehr Rand. */
   --qq-safe-margin: clamp(32px, 3vh, 52px);
+  /* ── Theme-Akzent-Tokens (2026-06-23) ──────────────────────────────────
+     Umschaltbare Grunddesigns (Skins). Default = Cozy-Brand-Pink → die
+     Migration der hardcoded #ec4899 auf diese Vars ist zero-visual-change.
+     qqTheme.ts ueberschreibt sie per Skin-Wechsel auf document.documentElement. */
+  --qq-accent: #ec4899;          /* Haupt-Akzent (Brand-Pink) */
+  --qq-accent-rgb: 236,72,153;   /* fuer rgba(var(--qq-accent-rgb), x) */
+  --qq-accent-soft: #fce7f3;     /* heller Glow */
+  --qq-accent-light: #f472b6;    /* helle Akzent-Variante (Gradient-Start) */
+  --qq-accent-magenta: #a21247;  /* dunkler 2. Akzent (Gradient-Ende) */
   /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
      Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
   --qq-ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);

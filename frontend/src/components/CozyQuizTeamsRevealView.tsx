@@ -119,11 +119,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg, Dark-Halo first auf BG-Image.
   const titleShadow = isEsc
     ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
-    : '0 4px 20px rgba(236,72,153,0.25)';
-  const goodLuckColor = isEsc ? '#FF2D7B' : '#EC4899';
+    : '0 4px 20px rgba(var(--qq-accent-rgb),0.25)';
+  const goodLuckColor = isEsc ? '#FF2D7B' : 'var(--qq-accent)';
   const goodLuckShadow = isEsc
     ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
-    : '0 4px 24px rgba(236,72,153,0.5)';
+    : '0 4px 24px rgba(var(--qq-accent-rgb),0.5)';
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative',
@@ -137,7 +137,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         ? 'radial-gradient(ellipse at 50% 30%, rgba(255,45,123,0.18), transparent 55%),' +
           'radial-gradient(ellipse at 85% 110%, rgba(167,139,250,0.10), transparent 55%),' +
           'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.06), transparent 50%)'
-        : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.16), transparent 55%),' +
+        : 'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.16), transparent 55%),' +
           'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%),' +
           'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -240,7 +240,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         position: 'absolute', inset: 0,
         background: isEsc
           ? 'radial-gradient(circle at 50% 40%, rgba(255,45,123,0.16) 0%, transparent 55%)'
-          : 'radial-gradient(circle at 50% 40%, rgba(236,72,153,0.12) 0%, transparent 55%)',
+          : 'radial-gradient(circle at 50% 40%, rgba(var(--qq-accent-rgb),0.12) 0%, transparent 55%)',
         pointerEvents: 'none',
         zIndex: 1,
       }} />
@@ -260,7 +260,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
             style={{
               height: 'clamp(48px, 6cqh, 92px)',
               width: 'auto',
-              filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+              filter: 'drop-shadow(0 0 18px rgba(var(--qq-accent-rgb),0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
               animation: 'qqStingerHover 4.2s ease-in-out 1.2s infinite',
             }}
           />
@@ -318,11 +318,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
             width: 'clamp(220px, 35cqw, 480px)', height: 3, borderRadius: 999,
             background: isEsc
               ? 'linear-gradient(90deg, transparent 0%, rgba(255,45,123,0.7) 25%, #FF2D7B 50%, rgba(255,45,123,0.7) 75%, transparent 100%)'
-              : 'linear-gradient(90deg, transparent 0%, rgba(236,72,153,0.7) 25%, #EC4899 50%, rgba(236,72,153,0.7) 75%, transparent 100%)',
+              : 'linear-gradient(90deg, transparent 0%, rgba(var(--qq-accent-rgb),0.7) 25%, var(--qq-accent) 50%, rgba(var(--qq-accent-rgb),0.7) 75%, transparent 100%)',
             backgroundSize: '200% 100%',
             boxShadow: isEsc
               ? '0 0 14px rgba(255,45,123,0.55)'
-              : '0 0 14px rgba(236,72,153,0.55)',
+              : '0 0 14px rgba(var(--qq-accent-rgb),0.55)',
             transformOrigin: 'center',
             opacity: 0,
             animation:
@@ -422,11 +422,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             WebkitBackfaceVisibility: 'hidden',
                             borderRadius: 'clamp(14px, 1.4cqw, 22px)',
                             background:
-                              'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+                              'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.32) 0%, transparent 60%),' +
                               'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
                               'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-                            border: '2px solid rgba(236,72,153,0.55)',
-                            boxShadow: '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+                            border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
+                            boxShadow: '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(var(--qq-accent-rgb),0.18)',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             gap: 12, padding: 'clamp(14px, 1.6cqw, 22px)',
                             overflow: 'hidden',
@@ -434,8 +434,8 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             <div aria-hidden style={{
                               position: 'absolute', inset: 0,
                               backgroundImage:
-                                'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
-                                'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+                                'repeating-linear-gradient(45deg, rgba(var(--qq-accent-rgb),0.06) 0 2px, transparent 2px 22px),' +
+                                'repeating-linear-gradient(-45deg, rgba(var(--qq-accent-rgb),0.04) 0 2px, transparent 2px 22px)',
                               pointerEvents: 'none',
                             }} />
                             {/* 2026-05-09 (Wolf-Wunsch): Pink-Wolf-PNG (transparent)
@@ -444,9 +444,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                                 Avatar-Inner-Size). */}
                             <div style={{
                               width: avatarSize, height: avatarSize, borderRadius: '50%',
-                              background: 'rgba(236,72,153,0.33)',
-                              border: '2.5px solid #EC4899',
-                              boxShadow: '0 0 28px rgba(236,72,153,0.99)',
+                              background: 'rgba(var(--qq-accent-rgb),0.33)',
+                              border: '2.5px solid var(--qq-accent)',
+                              boxShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.99)',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               flexShrink: 0,
                               overflow: 'hidden',
@@ -469,7 +469,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               fontWeight: 900,
                               color: '#FBCFE8',
                               letterSpacing: '0.02em',
-                              textShadow: '0 0 14px rgba(236,72,153,0.7), 0 0 4px rgba(236,72,153,0.4)',
+                              textShadow: '0 0 14px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(var(--qq-accent-rgb),0.4)',
                               lineHeight: 1,
                               position: 'relative',
                               textTransform: 'uppercase',

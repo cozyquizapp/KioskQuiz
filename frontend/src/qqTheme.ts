@@ -120,9 +120,23 @@ export function getActiveTheme(): ResolvedTheme {
   return QQ_THEMES[_activeId] ?? COZY;
 }
 
+/** Schreibt die Akzent-CSS-Vars des Themes auf :root → alle auf
+ *  `var(--qq-accent*)` migrierten Flaechen ziehen sofort mit. */
+export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
+  if (typeof document === 'undefined') return;
+  const r = document.documentElement.style;
+  const b = theme.brand;
+  r.setProperty('--qq-accent', b.accentHex);
+  r.setProperty('--qq-accent-rgb', b.accentRgb);
+  r.setProperty('--qq-accent-soft', b.accentSoft);
+  r.setProperty('--qq-accent-light', b.accentWarm);
+  r.setProperty('--qq-accent-magenta', b.magenta);
+}
+
 export function setActiveThemeId(id: string): void {
   if (!QQ_THEMES[id] || id === _activeId) return;
   _activeId = id;
+  applyThemeVars(QQ_THEMES[id]);
   _listeners.forEach((l) => l());
 }
 

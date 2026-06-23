@@ -473,10 +473,9 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       sfxMuted: false,
       volume: 0.8,
       setupDone: false,
-      avatarSetId: 'all',
-      // bei Default-Set 'all' direkt 8 Slot-Emojis wuerfeln, damit Renderer
-      // ab dem ersten Frame zufaelligen Mix zeigt. Wird beim Set-Wechsel auf
-      // 'all' neu gewuerfelt; bei anderen Sets ungenutzt.
+      avatarSetId: 'cozy3d',   // 2026-06-23: cozy3d-3D-Tiere sind der neue Default-Look
+      // avatarSetEmojis wird nur vom 'all'-Set genutzt (Server-gewuerfelter
+      // Emoji-Mix). Bleibt fuer den Fall, dass der Mod auf 'all' wechselt.
       avatarSetEmojis: getRandomDummyEmojis(8),
       enable3DTransition: false,
       rulesSlideIndex: 0,

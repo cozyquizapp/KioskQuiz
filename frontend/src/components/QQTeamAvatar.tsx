@@ -1,6 +1,7 @@
 import { useMemo, useState, type CSSProperties } from 'react';
 import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
+import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 
 type Props = {
   avatarId: string;
@@ -82,6 +83,22 @@ export function QQTeamAvatar({
     borderRadius: square ? 0 : '50%',
     ...style,
   };
+
+  // ── cozy3d Bild-Modus (3D-Avatar auf Farb-Disc) ─────────────────────────
+  if (display.kind === 'image') {
+    return (
+      <ImageAvatar
+        src={display.src}
+        color={bgColor ?? display.color}
+        size={size}
+        baseStyle={base}
+        className={className}
+        title={labelText}
+        square={square}
+        flat={flat}
+      />
+    );
+  }
 
   // ── EMOJI-Modus ────────────────────────────────────────────────────────
   if (display.kind === 'emoji') {
@@ -243,6 +260,25 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
   style?: CSSProperties;
 }) {
   const fontSizeStr = typeof fontSize === 'number' ? `${fontSize}px` : fontSize;
+  // cozy3d: „Emoji" ist in Wahrheit ein Avatar-Slug → 3D-Bild rendern.
+  if (isCozy3dSlug(emoji)) {
+    return (
+      <img
+        src={cozy3dSrc(emoji)}
+        alt={cozy3dLabel(emoji)}
+        draggable={false}
+        style={{
+          width: '1.15em',
+          height: '1.15em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
   if (isCountryFlagGlyph(emoji)) {
     return (
       <img
@@ -268,6 +304,71 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
       display: 'inline-block',
       ...style,
     }}>{emoji}</span>
+  );
+}
+
+// ─── cozy3d Bild-Avatar (3D-Tier auf Slot-Farb-Disc) ──────────────────────
+// Zentraler Zoom-Knopf: Anteil des Disc-Durchmessers, den das Avatar-Bild
+// (laengste Kante) einnimmt. 1.0 = Bild beruehrt den Disc-Rand. >1 laesst das
+// Bild leicht ueber die (ohnehin abgeschnittenen) Disc-Ecken bluten → wirkt
+// groesser. Bei „Koerper-Avatare wirken zu klein" hier hochdrehen.
+export const COZY3D_DISC_FILL = 1.06;
+
+function ImageAvatar({
+  src, color, size, baseStyle, className, title, square, flat,
+}: {
+  src: string; color: string; size: number | string;
+  baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  const flatStyle: CSSProperties = flat
+    ? { background: 'transparent', boxShadow: 'none' }
+    : {
+        background: `
+          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
+          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
+          ${color}
+        `,
+        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
+      };
+
+  const fillPct = `${(COZY3D_DISC_FILL * 100).toFixed(0)}%`;
+
+  return (
+    <span
+      className={className}
+      title={title}
+      style={{
+        ...baseStyle,
+        ...flatStyle,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'hidden',
+        borderRadius: square ? 0 : '50%',
+      }}
+    >
+      {failed ? (
+        // Fallback: neutraler Punkt (kein potenziell falsches Tier-Emoji).
+        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
+      ) : (
+        <img
+          src={src}
+          alt={title}
+          onError={() => setFailed(true)}
+          draggable={false}
+          style={{
+            width: fillPct,
+            height: fillPct,
+            objectFit: 'contain',
+            // 3D-Avatare haben ihren eigenen Look — leichter Schlagschatten
+            // hebt sie von der Disc ab.
+            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))',
+          }}
+        />
+      )}
+    </span>
   );
 }
 

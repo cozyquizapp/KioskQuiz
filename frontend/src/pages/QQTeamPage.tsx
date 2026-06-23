@@ -12,7 +12,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { getRoundColor } from '../qqDesignTokens';
-import { QQTeamAvatar } from '../components/QQTeamAvatar';
+import { QQTeamAvatar, CountryFlagOrEmoji } from '../components/QQTeamAvatar';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
 import { JokerIcon } from '../components/JokerIcon';
@@ -1097,7 +1097,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           return (
             <CozyCard anim borderColor={QQ_COLORS.brandPink}>
               <StepLabel>{lang === 'de' ? 'Wähle einen Avatar' : 'Pick an avatar'}</StepLabel>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16 }}>
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16,
+                // cozy3d-Pool ist gross (80) → Scroll-Container, damit „Weiter" erreichbar bleibt.
+                maxHeight: pool.length > 16 ? '46vh' : undefined,
+                overflowY: pool.length > 16 ? 'auto' : undefined,
+                paddingRight: pool.length > 16 ? 4 : undefined,
+              }}>
                 {pool.map((em, i) => {
                   const taken = takenEmojis.includes(em);
                   const sel = chosenEmoji === em;
@@ -1122,9 +1128,10 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         transition: 'all 0.18s',
                         boxShadow: sel ? `0 0 18px ${myColor}55` : 'none',
                         textDecoration: taken ? 'line-through' : 'none',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                     >
-                      {em}
+                      <CountryFlagOrEmoji emoji={em} fontSize={36} />
                     </button>
                   );
                 })}

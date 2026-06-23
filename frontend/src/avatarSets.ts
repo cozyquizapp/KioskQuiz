@@ -7,6 +7,7 @@
 // rendern ist (PNG-Pfad oder Emoji + Hintergrund-Farbe).
 
 import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
+import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvatars';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -78,6 +79,20 @@ export const ESC_FLAG_POOL: string[] = [
 ];
 
 export const AVATAR_SETS: AvatarSet[] = [
+  // 2026-06-23 (Wolf): cozy3d — 80 handgemachte 3D-Fluent-Tier-Avatare,
+  // der neue Standard-Look. source 'emoji' (reuse der Plumbing), aber die
+  // „avatars"-Eintraege sind cozy3d-Slugs statt Unicode → der Renderer
+  // erkennt sie via isCozy3dSlug und zeigt das PNG auf der Slot-Farb-Disc.
+  // Die ersten 8 Slugs = Default-Belegung der 8 Farb-Slots.
+  {
+    id: 'cozy3d',
+    label: 'Cozy 3D',
+    tint: '#EC4899',
+    leadEmoji: '🦊',
+    preview: ['🐼', '🐧', '🦒'],
+    source: 'emoji',
+    avatars: COZY3D_SLUGS,
+  },
   {
     id: 'all',
     label: 'Alle',
@@ -189,7 +204,7 @@ export const AVATAR_SETS: AvatarSet[] = [
 export const AVATAR_SET_IDS = AVATAR_SETS.map(s => s.id);
 
 export const ALL_SET_ID = 'all';
-export const DEFAULT_SET_ID = 'all';   // <- der globale System-Default
+export const DEFAULT_SET_ID = 'cozy3d';   // <- 2026-06-23: cozy3d-Tiere sind der neue System-Default
 
 export function getSet(id: string | undefined): AvatarSet {
   if (!id) return AVATAR_SETS[0];
@@ -204,6 +219,7 @@ export function getSet(id: string | undefined): AvatarSet {
 
 export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
+  | { kind: 'image'; src: string;     color: string; label: string }   // cozy3d 3D-Avatar
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
 export function getAvatarDisplay(
@@ -244,6 +260,17 @@ export function getAvatarDisplay(
     slot.emoji,
   ];
   const emoji = candidates.find((e): e is string => typeof e === 'string' && e.length > 0) ?? slot.emoji;
+
+  // cozy3d: der „Emoji"-Kandidat ist in Wahrheit ein Avatar-Slug → Bild rendern.
+  if (isCozy3dSlug(emoji)) {
+    return {
+      kind: 'image',
+      src: cozy3dSrc(emoji),
+      color: slot.color,
+      label: cozy3dLabel(emoji),
+    };
+  }
+
   return {
     kind: 'emoji',
     emoji,

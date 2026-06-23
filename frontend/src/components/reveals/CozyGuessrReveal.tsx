@@ -184,7 +184,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // drauf (Emoji-Mode: Emoji-Glyph; PNG-Mode: cozyCast-PNG). Schaft = sauberer
   // schwarzer CSS-Cone (kein 📍-Emoji mehr — sah „basteln" aus, war Wolfs
   // Beschwerde 'pin köpfe sollen die avatare mit rundem bg sein').
-  const makeTeamIcon = (color: string, mode: 'png' | 'emoji', srcOrEmoji: string, emojiFallback: string) => L.divIcon({
+  const makeTeamIcon = (color: string, mode: 'png' | 'image' | 'emoji', srcOrEmoji: string, emojiFallback: string) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
       position: relative; width: 56px; height: 84px;
@@ -213,10 +213,10 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         overflow: hidden;
         z-index: 2;
       ">
-        ${mode === 'png' ? `
+        ${mode === 'png' || mode === 'image' ? `
         <img src="${srcOrEmoji}" alt="" draggable="false"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-          style="width:100%;height:100%;object-fit:cover;display:block;border-radius:50%;" />
+          style="width:${mode === 'image' ? '94%' : '100%'};height:${mode === 'image' ? '94%' : '100%'};object-fit:${mode === 'image' ? 'contain' : 'cover'};display:block;border-radius:50%;" />
         <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;line-height:1;">${emojiFallback}</span>
         ` : `
         <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:30px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">${srcOrEmoji}</span>
@@ -307,6 +307,9 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                   const display = getAvatarDisplay(team.avatarId, s.avatarSetId, s.avatarSetEmojis, team.emoji);
                   if (display.kind === 'png') {
                     return makeTeamIcon(team.color, 'png', display.pngBase, team.emoji ?? qqGetAvatar(team.avatarId).emoji);
+                  }
+                  if (display.kind === 'image') {
+                    return makeTeamIcon(team.color, 'image', display.src, qqGetAvatar(team.avatarId).emoji);
                   }
                   return makeTeamIcon(team.color, 'emoji', display.emoji, display.emoji);
                 })()}

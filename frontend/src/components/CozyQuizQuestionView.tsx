@@ -130,7 +130,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     background: isWinner
                       ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
                       : 'rgba(255,255,255,0.035)',
-                    border: isWinner ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                    border: isWinner ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                     boxShadow: isWinner ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                     animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.2 + i * 0.08}s both`,
                   }}>
@@ -215,7 +215,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   display: 'flex', alignItems: 'stretch', gap: 0,
                   borderRadius: 16, overflow: 'hidden',
                   background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.035)',
-                  border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                  border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                   boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                   animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + optIdx * 0.07}s both`,
                   minHeight: 54,
@@ -398,7 +398,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   background: isCorrectLocked ? 'rgba(34,197,94,0.22)'
                     : isHunterHere ? 'rgba(34,197,94,0.14)'
                     : 'rgba(255,255,255,0.035)',
-                  border: showGreen ? '2px solid #22C55E' : '1.5px solid rgba(255,255,255,0.08)',
+                  border: showGreen ? '2px solid #22C55E' : '1.5px solid var(--qq-hairline)',
                   boxShadow: isCorrectLocked ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
                     : isHunterHere ? '0 0 28px rgba(34,197,94,0.45)'
                     : 'none',
@@ -480,7 +480,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <div style={{
                 marginTop: 2, padding: '8px 14px', borderRadius: 8,
                 background: 'rgba(255,255,255,0.03)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                border: '1px solid var(--qq-hairline)',
                 display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
                 animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + q.options!.length * 0.08 + 0.1}s both`,
               }}>
@@ -551,7 +551,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   display: 'flex', alignItems: 'stretch', gap: 0,
                   borderRadius: 16, overflow: 'hidden',
                   background: greenOn ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.035)',
-                  border: greenOn ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(255,255,255,0.08)',
+                  border: greenOn ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                   boxShadow: greenOn ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
                   minHeight: 60,
@@ -611,7 +611,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       <span style={{
                         padding: '4px 10px', borderRadius: 999,
                         background: i === 0 && isWinner ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.28)',
-                        border: i === 0 && isWinner ? '1.5px solid rgba(var(--qq-accent-rgb),0.6)' : '1px solid rgba(255,255,255,0.1)',
+                        border: i === 0 && isWinner ? '1.5px solid rgba(var(--qq-accent-rgb),0.6)' : '1px solid var(--qq-hairline)',
                         fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
                         color: i === 0 && isWinner ? QQ_COLORS.brandPink : QQ_COLORS.slate400,
                         whiteSpace: 'nowrap',
@@ -674,7 +674,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   background: hitters.length > 0
                     ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(22,163,74,0.06))'
                     : 'rgba(255,255,255,0.035)',
-                  border: hitters.length > 0 ? '1.5px solid rgba(34,197,94,0.4)' : '1.5px solid rgba(255,255,255,0.08)',
+                  border: hitters.length > 0 ? '1.5px solid rgba(34,197,94,0.4)' : '1.5px solid var(--qq-hairline)',
                   animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
                 }}>
                   <span style={{
@@ -722,7 +722,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             <div style={{
               marginTop: 4, padding: '8px 14px', borderRadius: 8,
               background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + correctList.length * 0.08 + 0.1}s both`,
             }}>
@@ -794,7 +794,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       : noneRight ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
                     border: allRight
                       ? '1.5px solid rgba(34,197,94,0.55)'
-                      : noneRight ? '1.5px solid rgba(239,68,68,0.3)' : '1.5px solid rgba(255,255,255,0.08)',
+                      : noneRight ? '1.5px solid rgba(239,68,68,0.3)' : '1.5px solid var(--qq-hairline)',
                     animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + pi * 0.08}s both`,
                   }}>
                     <span style={{
@@ -842,7 +842,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             <div style={{
               marginTop: 4, padding: '8px 14px', borderRadius: 8,
               background: 'rgba(255,255,255,0.03)',
-              border: '1px solid rgba(255,255,255,0.06)',
+              border: '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + correctSeq.length * 0.08 + 0.1}s both`,
             }}>
@@ -898,7 +898,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '7px 12px', borderRadius: 8, marginBottom: 4,
               background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
-              border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid rgba(255,255,255,0.05)',
+              border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid var(--qq-hairline)',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
             }}>
               <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? QQ_COLORS.blue400 : QQ_COLORS.slate600, width: 20 }}>#{i + 1}</span>
@@ -1771,7 +1771,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <span style={{
                           padding: '3px 10px', borderRadius: 999,
                           background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
-                          border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid rgba(255,255,255,0.15)',
+                          border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
                           color: isFastest ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
@@ -2298,7 +2298,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       boxSizing: 'border-box',
                       borderRadius: 24, padding: '20px 24px',
                       background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
-                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `3px solid rgba(255,255,255,0.06)` : `3px solid ${optColor}55`,
+                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `3px solid var(--qq-hairline)` : `3px solid ${optColor}55`,
                       boxShadow: isCorrect
                         ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
                         : `0 4px 16px rgba(0,0,0,0.3)`,
@@ -2613,7 +2613,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               <span style={{
                                 padding: '3px 10px', borderRadius: 999,
                                 background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
-                                border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid rgba(255,255,255,0.15)',
+                                border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
                                 color: isFastest ? QQ_COLORS.brandPink : QQ_COLORS.slate300,
                                 fontWeight: 900,
                                 fontSize: 'clamp(15px, 1.6cqw, 20px)',
@@ -2947,7 +2947,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 marginBottom: 'clamp(8px, 1cqh, 16px)',
                 position: 'relative',
                 background: 'rgba(255,255,255,0.03)',
-                border: '1.5px solid rgba(255,255,255,0.08)',
+                border: '1.5px solid var(--qq-hairline)',
                 borderRadius: 24,
                 boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.3s both',
@@ -2983,7 +2983,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     borderRadius: 999,
                     background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                     boxShadow: '0 0 14px rgba(34,197,94,0.55), 0 2px 8px rgba(0,0,0,0.38)',
-                    border: '2px solid rgba(255,255,255,0.9)',
+                    border: '2px solid var(--qq-hairline)',
                     animation: 'pinRevealIn 0.55s var(--qq-ease-bounce) 0.5s both',
                     ['--pin-x' as any]: '0px',
                     ['--pin-y' as any]: '0px',

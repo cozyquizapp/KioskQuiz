@@ -88,10 +88,13 @@ auf `:root`. **3 Views migriert** (QuestionView/TeamsRevealView/GameOverView, 65
 3. **Neo-Brutalism** — lila Verlauf-BG, weiße Karten + 3px schwarzer Rand + 6px Hard-Shadow,
    Selected = Electric-Blau (#2D4BFF), eckige Badges, Sterne-Deko. (modern/bold)
 
-**🔒 HARTE REGEL Nr. 1 (Wolf): Grundgerüst bleibt IMMER gleich.** Layout, Positionen,
-Größen, Abstände, Schriftgrößen — alles eingefroren. Ein Skin ändert NUR: Farbe · BG/Flächen ·
-Ränder · Schatten · Radius · Schrift-**Family** · Deko-Overlay. **Kein Re-Layout, kein
-Element wandert.** Heißt technisch: CSS-Vars aufs *bestehende* Markup, Layout unangetastet.
+**🔒 REGEL (Wolf, 2026-06-23 präzisiert): Endergebnis sieht VOM DESIGN aus wie die
+`/skins`-Mockups** — Farben, Ränder, Schatten, Formen, Badges, Schrift, Deko voll übernehmen,
+sonst „sehen sie gar nicht aus wie die Skins". NUR die **Positionen** bleiben ungefähr wie
+heute (nicht zum Mockup-Layout umarrangieren). Also: volles Skin-Aussehen, kein Re-Arrangieren.
+Technik: Treatment-Tokens + `isThemed()`-Switch (Cozy bleibt exakt) + Deko-Overlay (`SkinDeco`).
+**Fortschritt QuestionView:** Text-Farben ✓ · Font ✓ · Haupt-Card-Treatment ✓ · Deko ✓ ·
+OFFEN: Sub-Flächen/Overlays/Borders/Timer/Badges/Team-Chips + Haupt-BG, dann Teams/Treppchen/Thanks.
 
 **Scope:** **Beamer-only** zuerst (Team-Handy später). **Start:** Flagship = **Frage + Reveal**
 (`CozyQuizQuestionView.tsx`) end-to-end in allen 3 Skins, live beurteilen, dann restliche

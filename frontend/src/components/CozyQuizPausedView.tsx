@@ -64,14 +64,14 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '4px 12px',
           borderRadius: 999,
-          background: 'rgba(255,255,255,0.04)',
-          border: '1px solid rgba(255,255,255,0.10)',
+          background: 'var(--qq-surface)',
+          border: '1px solid var(--qq-hairline)',
           alignSelf: 'flex-start',
         }}>
           <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>
           <span style={{
             fontSize: 'clamp(10px, 1cqw, 13px)', fontWeight: 900,
-            color: QQ_COLORS.slate300, letterSpacing: '0.18em',
+            color: 'var(--qq-text-muted)', letterSpacing: '0.18em',
             textTransform: 'uppercase',
           }}>cozywolf</span>
           <span style={{
@@ -80,7 +80,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
           }} />
           <span style={{
             fontSize: 'clamp(10px, 1cqw, 13px)', fontWeight: 700,
-            color: QQ_COLORS.brandPink, letterSpacing: '0.16em',
+            color: 'var(--qq-accent)', letterSpacing: '0.16em',
             textTransform: 'uppercase',
           }}>{de ? 'präsentiert' : 'presents'}</span>
         </div>
@@ -134,7 +134,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // beide Modi auf ESC-Pink (#FF2D7B) — trifft Card-Border, Shimmer, Inner-Glow,
   // Round-Pille, Pause-Dot etc. Hoechster Hebel mit einer Variable.
   const isEsc = !!s.theme?.eurovisionMode;
-  const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? QQ_COLORS.brandPink : QQ_COLORS.violet400);
+  const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? 'var(--qq-accent)' : QQ_COLORS.violet400);
   const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(236,72,153,0.38)' : 'rgba(167,139,250,0.42)');
   const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(236,72,153,0.28)' : 'rgba(167,139,250,0.28)');
   // 2026-04-30: Sprache aus Server-State (s.language) statt lokalem Auto-Flip.
@@ -196,7 +196,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // schrift einfach drueber, plus eigene Joker-Grafik'): Panel margin 0
       // auto. JokerIcon (Spiel-Asset) statt 🃏 Emoji.
       <div style={{ width: 'min(100%, 900px)', margin: '0 auto' }}>
-        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>📖</span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
         </div>
@@ -227,8 +227,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <span style={{ fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
                 )}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: QQ_COLORS.brandPink, marginBottom: 6 }}>{it.title}</div>
-                  <div style={{ fontSize: 'clamp(18px, 2cqw, 26px)', color: QQ_COLORS.slate300, lineHeight: 1.35 }}>{it.desc}</div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-accent)', marginBottom: 6 }}>{it.title}</div>
+                  <div style={{ fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-text-muted)', lineHeight: 1.35 }}>{it.desc}</div>
                 </div>
               </div>
             );
@@ -252,7 +252,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const questionInPhase = (s.questionIndex % 5) + 1;
     panels.push({ key: 'progress', node: (
       <div>
-        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
           {de ? 'Wo sind wir?' : 'Where are we?'}
         </div>
@@ -281,7 +281,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               </span>
               <span style={{
                 fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
-                color: QQ_COLORS.slate200,
+                color: 'var(--qq-card-text)',
               }}>
                 {de ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
               </span>
@@ -305,7 +305,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // Grid + Spalte(n) als Block horizontal mittig.
     panels.push({ key: 'currentGrid', node: (
       <div>
-        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
           {de ? 'Aktuelles Brett' : 'Current Board'}
         </div>
@@ -377,7 +377,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const unitSize = twoCol ? 'clamp(12px, 1.3cqw, 16px)' : 'clamp(14px, 1.6cqw, 20px)';
     panels.push({ key: 'standings', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="📊"/></span> {de ? 'Aktueller Stand' : 'Current Standings'}
         </div>
         <div style={{
@@ -391,7 +391,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             return (
               <div key={t.id} style={{
                 display: 'flex', alignItems: 'center', gap: twoCol ? 12 : 18, padding: twoCol ? '8px 0' : '12px 0',
-                borderBottom: nextInCol ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                borderBottom: nextInCol ? '1px solid var(--qq-hairline)' : 'none',
                 minWidth: 0,
               }}>
                 <span style={{ fontSize: rankSize, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0 }}>
@@ -408,8 +408,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   display: 'inline-flex', alignItems: 'baseline', gap: 5, flexShrink: 0,
                   fontVariantNumeric: 'tabular-nums',
                 }}>
-                  <span style={{ fontSize: valSize, fontWeight: 900, color: QQ_COLORS.brandPinkSoft }}>{t.largestConnected}</span>
-                  <span style={{ fontSize: unitSize, color: QQ_COLORS.slate400, fontWeight: 700 }}>· {t.totalCells}</span>
+                  <span style={{ fontSize: valSize, fontWeight: 900, color: 'var(--qq-accent-soft)' }}>{t.largestConnected}</span>
+                  <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 700 }}>· {t.totalCells}</span>
                 </span>
               </div>
             );
@@ -427,13 +427,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const maxWins = Math.max(...realLeaderboard.slice(0, 5).map(e => e.wins));
     panels.push({ key: 'leaderboard', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏆"/></span> {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', fontWeight: 700, color: QQ_COLORS.slate600 }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+          {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', fontWeight: 700, color: 'var(--qq-text-muted)' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
-          const teamColor = sessionTeam?.color ?? (i === 0 ? QQ_COLORS.brandPink : i === 1 ? QQ_COLORS.slate300 : i === 2 ? '#F97316' : QQ_COLORS.slate400);
+          const teamColor = sessionTeam?.color ?? (i === 0 ? 'var(--qq-accent)' : i === 1 ? 'var(--qq-text-muted)' : i === 2 ? '#F97316' : 'var(--qq-text-muted)');
           const shown = Math.min(entry.wins, maxVisibleWins);
           const overflow = entry.wins - shown;
           // 2026-04-28: Avatar primär aus Session-Team, sonst aus Backend-
@@ -447,7 +447,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           return (
           <div key={entry.name} style={{
             display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0',
-            borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none',
+            borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? '1px solid var(--qq-hairline)' : 'none',
           }}>
             <span style={{ fontSize: 'clamp(26px, 3cqw, 38px)', width: 46, textAlign: 'center', flexShrink: 0 }}>
               {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
@@ -479,7 +479,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               />
               {lastPlayedLabel && (
                 <span style={{
-                  fontSize: 'clamp(11px, 1.1cqw, 14px)', color: QQ_COLORS.slate500,
+                  fontSize: 'clamp(11px, 1.1cqw, 14px)', color: 'var(--qq-text-muted)',
                   fontWeight: 700, letterSpacing: '0.04em',
                 }}>
                   {de ? `zuletzt: ${lastPlayedLabel} · ${entry.games} Spiele` : `last: ${lastPlayedLabel} · ${entry.games} games`}
@@ -548,7 +548,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   );
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
-    const c = color ?? meta.color ?? QQ_COLORS.brandPink;
+    const c = color ?? meta.color ?? 'var(--qq-accent)';
     const av = avatarId ?? meta.avatarId;
     return (
       // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
@@ -582,8 +582,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="hs" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: QQ_COLORS.slate200 }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: QQ_COLORS.slate400, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.highestScore.teamName)} — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
             </div>
           </div>
@@ -595,8 +595,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="cg" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}>⚔️</span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: QQ_COLORS.slate200 }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: QQ_COLORS.slate400, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
             </div>
           </div>
@@ -608,8 +608,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="ws" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: QQ_COLORS.slate200 }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: QQ_COLORS.slate400, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.winStreak.teamName)} — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
             </div>
           </div>
@@ -622,8 +622,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div key="fa" style={{ display: 'flex', alignItems: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: QQ_COLORS.slate200 }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: QQ_COLORS.slate400, display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.fastestAnswer.teamName)} — {secs}s {de ? 'Vorsprung' : 'ahead'}
             </div>
           </div>
@@ -633,7 +633,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (records.length > 0) {
       panels.push({ key: 'records', node: (
         <div>
-          <div style={{ fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 24, display: 'flex', alignItems: 'center', gap: 18 }}>
+          <div style={{ fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 18 }}>
             <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🏅</span> {de ? 'Rekorde' : 'Records'}
           </div>
           {records}
@@ -649,7 +649,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   const statTitle = (icon: string, titleDe: string, titleEn: string, accentColor?: string) => (
     <div style={{
       fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900,
-      color: accentColor ?? QQ_COLORS.slate200,
+      color: accentColor ?? 'var(--qq-card-text)',
       marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
     }}>
       <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji={icon}/></span>
@@ -664,12 +664,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       padding: '12px 24px', borderRadius: 999,
       background: 'linear-gradient(180deg, #241a10, #1a120a)',
       border: `1.5px solid ${accent}55`,
-      color: '#fff',
+      color: 'var(--qq-card-text)',
       fontSize: 'clamp(22px, 2.4cqw, 32px)', fontWeight: 900,
       boxShadow: `0 0 18px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
     }}>
       <span style={{ color: accent, fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1 }}>{value}</span>
-      <span style={{ color: QQ_COLORS.slate300, fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+      <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
     </span>
   );
 
@@ -689,7 +689,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             {teamLine(leader.name, leader.color, leader.avatarId)}
             <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
               {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
-              <span style={{ color: QQ_COLORS.slate400, fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
+              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
                 {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
               </span>
             </div>
@@ -720,7 +720,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.comebackKing.teamName)}
         <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
           {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
-          <span style={{ color: QQ_COLORS.slate400, fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
+          <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
             {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
           </span>
         </div>
@@ -750,7 +750,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
           {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
           {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
-          <span style={{ color: QQ_COLORS.slate400, fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
+          <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
             {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
           </span>
         </div>
@@ -765,7 +765,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('👑', 'Kategorie-Meister', 'Category Masters', QQ_COLORS.brandPink)}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {funStats.categoryMasters.map((cm, i) => {
-            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: QQ_COLORS.brandPink, emoji: '🎯', label: cm.category, labelEn: cm.category };
+            const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: 'var(--qq-accent)', emoji: '🎯', label: cm.category, labelEn: cm.category };
             const team = s.teams.find(t => t.name === cm.teamName);
             const catLabel = de ? catMeta.label : catMeta.labelEn;
             return (
@@ -777,7 +777,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 <span style={{ fontSize: 'clamp(28px, 3cqw, 40px)', lineHeight: 1 }}>{catMeta.emoji}</span>
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 4cqw, 52px)'} style={{ flexShrink: 0 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: team?.color ?? QQ_COLORS.slate200 }}>{cm.teamName}</div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: team?.color ?? 'var(--qq-card-text)' }}>{cm.teamName}</div>
                   <div style={{ fontSize: 'clamp(13px, 1.4cqw, 18px)', color: catMeta.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{catLabel}</div>
                 </div>
                 {statPill(cm.count, de ? 'richtig' : 'correct', catMeta.color)}
@@ -805,9 +805,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               }}>
                 <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="✨"/></span>
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(34px, 3.6cqw, 46px)'} />}
-                <span style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: team?.color ?? QQ_COLORS.slate200 }}>{pr.teamName}</span>
+                <span style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: team?.color ?? 'var(--qq-card-text)' }}>{pr.teamName}</span>
                 {pr.draftTitle && (
-                  <span style={{ marginLeft: 'auto', color: QQ_COLORS.slate500, fontSize: 'clamp(13px, 1.5cqw, 18px)', fontStyle: 'italic' }}>„{pr.draftTitle}"</span>
+                  <span style={{ marginLeft: 'auto', color: 'var(--qq-text-muted)', fontSize: 'clamp(13px, 1.5cqw, 18px)', fontStyle: 'italic' }}>„{pr.draftTitle}"</span>
                 )}
               </div>
             );
@@ -825,7 +825,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.speedDemon.teamName)}
         <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
           {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
-          <span style={{ color: QQ_COLORS.slate400, fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
+          <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
             {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
           </span>
         </div>
@@ -858,10 +858,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}>🏅</span>
               <div>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: QQ_COLORS.slate200 }}>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-card-text)' }}>
                   {funStats.todayStats.topScore.teamName}
                 </div>
-                <div style={{ fontSize: 'clamp(14px, 1.6cqw, 20px)', color: QQ_COLORS.slate400 }}>
+                <div style={{ fontSize: 'clamp(14px, 1.6cqw, 20px)', color: 'var(--qq-text-muted)' }}>
                   {funStats.todayStats.topScore.score} {de ? 'Punkte' : 'points'}
                 </div>
               </div>
@@ -871,10 +871,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
               <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="🔥"/></span>
               <div>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: QQ_COLORS.slate200 }}>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-card-text)' }}>
                   {funStats.todayStats.topWinner.teamName}
                 </div>
-                <div style={{ fontSize: 'clamp(14px, 1.6cqw, 20px)', color: QQ_COLORS.slate400 }}>
+                <div style={{ fontSize: 'clamp(14px, 1.6cqw, 20px)', color: 'var(--qq-text-muted)' }}>
                   {funStats.todayStats.topWinner.wins}× {de ? 'heute gewonnen' : 'wins today'}
                 </div>
               </div>
@@ -900,7 +900,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           {rivalTeam && <QQTeamAvatar avatarId={rivalTeam.avatarId} teamEmoji={rivalTeam?.emoji} size={'clamp(50px, 5.5cqw, 72px)'} />}
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: rivalTeam?.color ?? QQ_COLORS.brandPinkMid }}>{rivalName}</div>
-            <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: QQ_COLORS.slate400 }}>
+            <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: 'var(--qq-text-muted)' }}>
               {de ? `hat schon ${rival.wins}× gewonnen — wer dreht heute das Spiel?` : `already won ${rival.wins}× — who flips the script today?`}
             </div>
           </div>
@@ -913,13 +913,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
     panels.push({ key: 'funny', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: QQ_COLORS.slate200, marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>😂</span> {de ? 'Lustigste Antworten' : 'Funniest Answers'}
         </div>
         {funStats.funnyAnswers.map((fa, i) => (
-          <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid rgba(255,255,255,0.06)' : 'none' }}>
-            <div style={{ fontSize: 'clamp(22px, 2.6cqw, 30px)', fontWeight: 700, color: QQ_COLORS.brandPink }}>„{fa.text}"</div>
-            <div style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', color: QQ_COLORS.slate500, marginTop: 4 }}>— {fa.teamName}</div>
+          <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid var(--qq-hairline)' : 'none' }}>
+            <div style={{ fontSize: 'clamp(22px, 2.6cqw, 30px)', fontWeight: 700, color: 'var(--qq-accent)' }}>„{fa.text}"</div>
+            <div style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', color: 'var(--qq-text-muted)', marginTop: 4 }}>— {fa.teamName}</div>
           </div>
         ))}
       </div>
@@ -1048,7 +1048,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 position: 'absolute',
                 top: '-5%', left: `${left}%`,
                 width: size, height: size, borderRadius: '50%',
-                background: i % 2 ? QQ_COLORS.brandPink : QQ_COLORS.brandPinkSoft,
+                background: i % 2 ? 'var(--qq-accent)' : 'var(--qq-accent-soft)',
                 boxShadow: '0 0 12px rgba(236,72,153,0.7), 0 0 4px rgba(255,255,255,0.5)',
                 opacity: 0,
                 animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
@@ -1169,7 +1169,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               fontSize: 'clamp(56px, 7cqw, 112px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
-              color: QQ_COLORS.brandPink,
+              color: 'var(--qq-accent)',
               textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',

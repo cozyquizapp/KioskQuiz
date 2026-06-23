@@ -573,14 +573,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
           <div style={{ textAlign: 'center' }}>
             <div style={{
-              fontSize: 'clamp(18px, 2cqw, 28px)', color: '#e2e8f0', fontWeight: 900, marginBottom: 4,
+              fontSize: 'clamp(18px, 2cqw, 28px)', color: 'var(--qq-card-text)', fontWeight: 900, marginBottom: 4,
             }}>
               {de ? 'Scannen & mitspielen!' : 'Scan & join!'}
             </div>
             <div style={{
-              fontSize: 'clamp(13px, 1.4cqw, 18px)', color: '#94a3b8', fontFamily: 'monospace',
+              fontSize: 'clamp(13px, 1.4cqw, 18px)', color: 'var(--qq-text-muted)', fontFamily: 'monospace',
               background: cardBg, padding: '6px 16px', borderRadius: 8,
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid var(--qq-hairline)',
               display: 'inline-block',
             }}>
               {joinUrl.replace('https://', '').replace('http://', '')}
@@ -623,7 +623,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <div style={{
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-            color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
             textAlign: 'center', opacity: 0.7,
           }}>
             {de ? 'Angemeldete Teams' : 'Joined Teams'} · {teamCount}
@@ -659,7 +659,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 </span>
                 <span style={{
                   fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 700,
-                  color: '#94a3b8', letterSpacing: '0.06em',
+                  color: 'var(--qq-text-muted)', letterSpacing: '0.06em',
                 }}>
                   {de ? 'Eure Teams erscheinen hier.' : 'Teams appear here.'}
                 </span>

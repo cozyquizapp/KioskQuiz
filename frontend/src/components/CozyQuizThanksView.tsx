@@ -445,7 +445,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   }}>
                     <div style={{
                       fontSize: 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
-                      color: '#94A3B8',
+                      color: 'var(--qq-text-muted)',
                       letterSpacing: '0.22em', textTransform: 'uppercase',
                     }}>{de ? 'Team' : 'Team'}</div>
                     <div style={{

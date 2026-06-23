@@ -68,7 +68,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
 
   if (!c) {
     return (
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#94a3b8' }}>
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--qq-text-muted)' }}>
         {lang === 'de' ? '4×4 wird vorbereitet…' : '4×4 is loading…'}
       </div>
     );
@@ -289,9 +289,9 @@ function ConnectionsRulePill({ emoji, text }: { emoji: string; text: string }) {
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '12px 22px', borderRadius: 999,
-      background: 'rgba(255,255,255,0.04)',
+      background: 'var(--qq-surface)',
       border: '1.5px solid rgba(236,72,153,0.32)',
-      fontSize: 'clamp(16px, 1.7cqw, 22px)', fontWeight: 900, color: '#e2e8f0',
+      fontSize: 'clamp(16px, 1.7cqw, 22px)', fontWeight: 900, color: 'var(--qq-card-text)',
     }}>
       <span style={{ fontSize: 'clamp(20px, 2cqw, 28px)' }}>{emoji}</span>
       <span>{text}</span>
@@ -349,7 +349,7 @@ function ConnectionsGrid({ state: s }: {
               : 'rgba(255,255,255,0.05)',
             border: showColored && grp
               ? `2.5px solid ${grp.color}`
-              : '2px solid rgba(255,255,255,0.10)',
+              : '2px solid var(--qq-hairline)',
             color: showColored && grp ? '#fff' : '#e2e8f0',
             boxShadow: showColored && grp ? `0 0 24px ${grp.color}44` : 'none',
             minHeight: 'clamp(80px, 10cqh, 130px)',
@@ -414,7 +414,7 @@ function ConnectionsGrid({ state: s }: {
                   padding: '10px 14px 14px', borderRadius: 16,
                   background: `${color}22`,
                   border: `1.5px solid ${color}`,
-                  color: '#fff', fontWeight: 900, fontSize: 'clamp(13px, 1.3cqw, 18px)',
+                  color: 'var(--qq-card-text)', fontWeight: 900, fontSize: 'clamp(13px, 1.3cqw, 18px)',
                   textAlign: 'center',
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
                   animation: `contentReveal 0.5s var(--qq-ease-pop-fast) ${i * 0.06}s both`,
@@ -538,7 +538,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
                 minWidth: 28, height: 28, padding: '0 6px', borderRadius: 16,
                 background: '#EF4444', border: '2px solid #0A0814',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 12, fontWeight: 900, color: '#fff', lineHeight: 1,
+                fontSize: 12, fontWeight: 900, color: 'var(--qq-card-text)', lineHeight: 1,
                 animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',
               }}>✕{fails}</div>
             )}

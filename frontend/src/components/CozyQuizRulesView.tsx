@@ -326,7 +326,7 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
               width: cellSz, height: cellSz,
               borderRadius: Math.max(4, cellSz * 0.18),
               background: bg,
-              border: filled ? `2px solid ${borderColor}` : '1px solid rgba(255,255,255,0.08)',
+              border: filled ? `2px solid ${borderColor}` : '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: cellSz * 0.5,
               boxShadow: filled ? `0 0 12px ${glowColor}` : 'none',
@@ -567,7 +567,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <span style={{
                   fontSize: 'clamp(22px,3cqw,40px)', fontWeight: 700,
-                  color: '#e2e8f0', lineHeight: 1.3,
+                  color: 'var(--qq-card-text)', lineHeight: 1.3,
                 }}>{line}</span>
               </div>
             ))}

@@ -146,7 +146,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
     prevFlipRectsRef.current = newRects;
   });
   const team = s.teams.find(tm => tm.id === s.comebackTeamId);
-  const teamColor = team?.color ?? QQ_COLORS.brandPink;
+  const teamColor = team?.color ?? 'var(--qq-accent)';
   const step = s.comebackIntroStep ?? 0;
 
   // 2026-05-19 (Wolf-Audit P1.4 'comeback hat keinen eigenen cue'):
@@ -269,7 +269,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               padding: 'clamp(8px, 1cqh, 12px) clamp(20px, 2.2cqw, 32px)', borderRadius: 999,
               background: 'rgba(236,72,153,0.16)',
               border: '2px solid rgba(236,72,153,0.5)',
-              color: QQ_COLORS.brandPinkSoft,
+              color: 'var(--qq-accent-soft)',
               fontWeight: 900,
               fontSize: 'clamp(14px, 1.4cqw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
@@ -344,7 +344,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               textShadow: '0 0 28px rgba(34,197,94,0.35)',
             }}>{fmtHL(pair.anchorValue)}</div>
             <div style={{
-              fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 700, color: QQ_COLORS.slate300, opacity: 0.7,
+              fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 700, color: 'var(--qq-text-muted)', opacity: 0.7,
             }}>{pUnit}</div>
           </div>
 
@@ -407,7 +407,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
 
                 const renderPille = (dir: 'higher' | 'lower', row: number, idx: number) => {
                   const isHigher = dir === 'higher';
-                  const accentCol = isHigher ? QQ_COLORS.green500 : QQ_COLORS.brandPink;
+                  const accentCol = isHigher ? QQ_COLORS.green500 : 'var(--qq-accent)';
                   const correctTextLight = isHigher ? QQ_COLORS.green300 : '#F9A8D4';
                   const isCorrect = isReveal && correctChoice === dir;
                   const isWrong = isReveal && correctChoice !== dir;
@@ -465,7 +465,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                       const slotGlow = choice === 'higher'
                         ? QQ_COLORS.green500
                         : choice === 'lower'
-                          ? QQ_COLORS.brandPink
+                          ? 'var(--qq-accent)'
                           : tm.color;
                       const correct = correctIds.has(tm.id);
                       const dim = isReveal && !correct;
@@ -524,7 +524,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             <div style={{
               fontSize: 'clamp(14px, 1.6cqw, 22px)', fontWeight: 900,
-              color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: 'var(--qq-accent-soft)', letterSpacing: '0.1em', textTransform: 'uppercase',
               opacity: 0.9,
             }}>{pSubject}</div>
             <div style={{
@@ -559,7 +559,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                     Spans sind absolut → Card-Layout bleibt 100 % stabil. */}
                 <span style={{
                   position: 'absolute',
-                  fontSize: 'clamp(44px, 6cqw, 92px)', fontWeight: 900, color: QQ_COLORS.brandPink,
+                  fontSize: 'clamp(44px, 6cqw, 92px)', fontWeight: 900, color: 'var(--qq-accent)',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                   textShadow: '0 0 28px rgba(236,72,153,0.45), 0 0 60px rgba(236,72,153,0.25)',
                   animation: isReveal
@@ -569,7 +569,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 }}>???</span>
                 <span style={{
                   position: 'absolute',
-                  fontSize: 'clamp(44px, 6cqw, 92px)', fontWeight: 900, color: QQ_COLORS.brandPink,
+                  fontSize: 'clamp(44px, 6cqw, 92px)', fontWeight: 900, color: 'var(--qq-accent)',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                   textShadow: '0 0 32px rgba(236,72,153,0.55)',
                   animation: isReveal
@@ -582,7 +582,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               </div>
             </div>
             <div style={{
-              fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 700, color: QQ_COLORS.slate300, opacity: 0.7,
+              fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 700, color: 'var(--qq-text-muted)', opacity: 0.7,
             }}>{pUnit}</div>
           </div>
         </div>
@@ -662,7 +662,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         // aus 8m Beamer-Distanz gut lesbar, statt mickrig in der Mitte.
         fontSize: bamActive ? 'clamp(68px, 9cqw, 128px)' : 'clamp(56px, 6.5cqw, 104px)',
         fontWeight: 900,
-        color: QQ_COLORS.brandPink, textAlign: 'center',
+        color: 'var(--qq-accent)', textAlign: 'center',
         textShadow: '0 0 50px rgba(234,179,8,0.55)',
         letterSpacing: bamActive ? '0.04em' : 'normal',
         animation: bamActive
@@ -731,7 +731,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               <span style={{ color: QQ_COLORS.green500, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
                 <span>↑</span><span>{lang === 'en' ? 'HIGHER' : 'MEHR'}</span>
               </span>
-              <span style={{ color: QQ_COLORS.slate400, fontWeight: 700, fontSize: '0.6em' }}>
+              <span style={{ color: 'var(--qq-text-muted)', fontWeight: 700, fontSize: '0.6em' }}>
                 {lang === 'en' ? 'or' : 'oder'}
               </span>
               <span style={{ color: QQ_COLORS.red500, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
@@ -748,7 +748,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             </div>
             <div style={{
               fontSize: 'clamp(15px, 1.6cqw, 22px)', fontWeight: 700,
-              color: QQ_COLORS.slate300, opacity: 0.85, lineHeight: 1.5,
+              color: 'var(--qq-text-muted)', opacity: 0.85, lineHeight: 1.5,
             }}>
               {lang === 'en'
                 ? 'Up to 3 rounds — each correct answer steals 1 cell from the leader.'
@@ -893,7 +893,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <span style={{
                   fontSize: 'clamp(18px, 1.9cqw, 26px)', fontWeight: 900,
-                  color: QQ_COLORS.slate400, letterSpacing: '0.08em', textTransform: 'uppercase',
+                  color: 'var(--qq-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase',
                 }}>
                   {leaderTeams.length === 1
                     ? (lang === 'en' ? 'Leader:' : 'Klauen bei:')

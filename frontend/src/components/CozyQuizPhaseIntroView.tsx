@@ -941,7 +941,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                           <div style={{
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             fontSize: 'clamp(15px, 1.6cqw, 22px)',
-                            fontWeight: 900, color: '#94a3b8',
+                            fontWeight: 900, color: 'var(--qq-text-muted)',
                             letterSpacing: '0.1em', textTransform: 'uppercase',
                             flex: '0 0 auto',
                             animation: `phasePop 0.4s var(--qq-ease-bounce) ${sepDelayMs / 1000}s both`,
@@ -1174,7 +1174,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 }}>
                   <div style={{
                     fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 800,
-                    color: '#94a3b8', letterSpacing: '0.12em', textTransform: 'uppercase',
+                    color: 'var(--qq-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase',
                   }}>
                     {lang === 'en' ? 'Example' : 'Beispiel'}
                   </div>
@@ -1207,7 +1207,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         }}>{opt.pts}</span>
                         <span style={{
                           fontSize: 'clamp(11px, 1.1cqw, 15px)', fontWeight: 700,
-                          color: '#94a3b8',
+                          color: 'var(--qq-text-muted)',
                         }}>
                           {lang === 'en' ? 'pts' : 'Pkt'}
                         </span>

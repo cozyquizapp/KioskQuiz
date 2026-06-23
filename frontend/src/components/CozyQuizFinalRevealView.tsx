@@ -126,7 +126,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       </div>
       <div style={{
         fontSize: 'clamp(32px, 4.2cqw, 72px)', fontWeight: 900,
-        color: QQ_COLORS.slate100, letterSpacing: '-0.025em', textAlign: 'center',
+        color: 'var(--qq-card-text)', letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 'clamp(20px, 2.5cqh, 40px)',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
       }}>
@@ -188,7 +188,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                 : 'rgba(255,255,255,0.04)',
               border: isJust
                 ? '2px solid rgba(251,191,36,0.7)'
-                : '1.5px solid rgba(255,255,255,0.10)',
+                : '1.5px solid var(--qq-hairline)',
               boxSizing: 'border-box',
             }}>
               <div style={{
@@ -216,7 +216,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                 />
                 <span style={{
                   fontSize: `clamp(14px, 1.5cqw, ${Math.round(rowH * 0.32)}px)`,
-                  color: QQ_COLORS.slate400,
+                  color: 'var(--qq-text-muted)',
                 }}>🏆</span>
               </div>
             </div>
@@ -248,7 +248,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
     // Initial-Setup: from-Wert sichtbar, Delta hidden.
     if (valRef.current) {
       valRef.current.textContent = String(from);
-      valRef.current.style.color = from > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600;
+      valRef.current.style.color = from > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)';
       valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
     }
     if (deltaRef.current) deltaRef.current.style.opacity = '0';
@@ -263,7 +263,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
         lastVal = val;
         if (valRef.current) {
           valRef.current.textContent = String(val);
-          valRef.current.style.color = val > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600;
+          valRef.current.style.color = val > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)';
           valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
         }
         if (deltaRef.current) {
@@ -287,7 +287,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
       }}>+{to - from}</span>
       <span ref={valRef} style={{
         fontSize: `clamp(34px, 4cqw, ${Math.round(rowH * 0.66)}px)`,
-        color: from > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600,
+        color: from > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)',
         textShadow: from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
       }}>{from}</span>
@@ -333,7 +333,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
         marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 14,
       }}>
         <span>🏆 Finale</span>
-        <span style={{ color: QQ_COLORS.slate400 }}>{remaining} Kats übrig</span>
+        <span style={{ color: 'var(--qq-text-muted)' }}>{remaining} Kats übrig</span>
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
         {s.teams.map(t => {
@@ -349,7 +349,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
               </span>
               <span style={{
                 fontSize: 'clamp(13px, 1.1cqw, 17px)', fontWeight: 900,
-                color: w > 0 ? QQ_COLORS.amber400 : QQ_COLORS.slate600,
+                color: w > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)',
                 minWidth: 22, textAlign: 'right',
               }}>
                 {w > 0 ? `${w}🏆` : '–'}
@@ -658,14 +658,14 @@ function FinalLeaderboard({
       padding: 'clamp(14px, 1.8cqh, 22px) clamp(18px, 2cqw, 28px)',
       display: 'flex', flexDirection: 'column', gap: 8,
       borderRadius: 18,
-      background: 'rgba(255,255,255,0.04)',
-      border: '1.5px solid rgba(255,255,255,0.1)',
+      background: 'var(--qq-surface)',
+      border: '1.5px solid var(--qq-hairline)',
       boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
       minHeight: 0,
     }}>
       <div style={{
         fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 800,
-        color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.16em',
+        color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.16em',
         marginBottom: 4,
       }}>{de ? 'Aktueller Stand' : 'Current standings'}</div>
       <div style={{ position: 'relative', height: rows.length * ROW_H, flex: 1 }}>
@@ -759,7 +759,7 @@ function FinalLeaderboard({
                 </span>
                 <span style={{
                   fontSize: valFs,
-                  color: isLeader ? QQ_COLORS.brandPink : QQ_COLORS.slate100,
+                  color: isLeader ? 'var(--qq-accent)' : 'var(--qq-card-text)',
                   fontWeight: 900,
                   textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
                   fontVariantNumeric: 'tabular-nums',
@@ -771,7 +771,7 @@ function FinalLeaderboard({
                 }}>{r.total}</span>
                 <span style={{
                   opacity: 0.5, fontSize: unitFs, fontWeight: 700,
-                  color: QQ_COLORS.slate400,
+                  color: 'var(--qq-text-muted)',
                   flexShrink: 0,
                   minWidth: dense ? 62 : 78,
                   textAlign: 'left',
@@ -1296,7 +1296,7 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       }}>🏆</div>
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
-        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
+        color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 36px rgba(236,72,153,0.45)',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
       }}>
@@ -1426,8 +1426,8 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
           gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
           gridTemplateRows: `repeat(${s.gridSize}, ${cellSize}px)`,
           gap, padding: 12, borderRadius: 18,
-          background: 'rgba(255,255,255,0.03)',
-          border: '3px solid rgba(255,255,255,0.06)',
+          background: 'var(--qq-surface)',
+          border: '3px solid var(--qq-hairline)',
           boxShadow: '0 0 60px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.04)',
         }}>
           {s.grid.map((row, r) => row.map((cell, c) => {
@@ -1436,8 +1436,8 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
               return (
                 <div key={key} style={{
                   width: cellSize, height: cellSize, borderRadius: cellRadius,
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: 'var(--qq-surface)',
+                  border: '1px solid var(--qq-hairline)',
                   opacity: 0.45,
                 }} />
               );
@@ -1503,7 +1503,7 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '12px 16px', borderRadius: 16,
               background: isLeader ? `${t.color}22` : 'rgba(255,255,255,0.04)',
-              border: isLeader ? `2px solid ${t.color}` : '1px solid rgba(255,255,255,0.08)',
+              border: isLeader ? `2px solid ${t.color}` : '1px solid var(--qq-hairline)',
               boxShadow: isLeader ? `0 0 24px ${t.color}55` : 'none',
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={isLeader ? 48 : 40} />
@@ -1511,10 +1511,10 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1 }}>
                 <span style={{
                   fontSize: 'clamp(22px, 2.4cqw, 34px)', fontWeight: 900,
-                  color: isLeader ? QQ_COLORS.amber400 : QQ_COLORS.slate200,
+                  color: isLeader ? QQ_COLORS.amber400 : 'var(--qq-card-text)',
                   fontVariantNumeric: 'tabular-nums',
                 }}>{t.largestConnected ?? 0}</span>
-                <span style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 4 }}>
+                <span style={{ fontSize: 11, color: 'var(--qq-text-muted)', marginTop: 4 }}>
                   · {cellsByTeam[t.id] ?? 0} {de ? 'ges.' : 'total'}
                 </span>
               </div>
@@ -1636,11 +1636,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             </div>
             <div style={{
               fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
-              color: QQ_COLORS.slate400, fontStyle: 'italic',
+              color: 'var(--qq-text-muted)', fontStyle: 'italic',
             }}>{de ? 'tippt auf …' : 'tipped on …'}</div>
             <div style={{
               fontSize: 'clamp(40px, 4.5cqw, 64px)', fontWeight: 900,
-              color: QQ_COLORS.slate400, letterSpacing: '0.4em',
+              color: 'var(--qq-text-muted)', letterSpacing: '0.4em',
             }}>???</div>
           </div>
           {/* Front — Team + Tipp-Target + Bonus
@@ -1675,18 +1675,18 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
               padding: '22px 36px', borderRadius: 18,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1.5px solid rgba(255,255,255,0.12)',
+              background: 'var(--qq-surface)',
+              border: '1.5px solid var(--qq-hairline)',
               animation: 'qqFRTitleIn 0.6s ease 0.55s both',
             }}>
               <div style={{ fontSize: 'clamp(44px, 5cqw, 72px)', lineHeight: 1, opacity: 0.5 }}>—</div>
               <div style={{
                 fontSize: 'clamp(20px, 2cqw, 30px)', fontWeight: 800,
-                color: QQ_COLORS.slate400, textAlign: 'center',
+                color: 'var(--qq-text-muted)', textAlign: 'center',
               }}>{de ? 'Kein Tipp abgegeben' : 'No tip submitted'}</div>
               <div style={{
                 fontSize: 'clamp(15px, 1.4cqw, 20px)', fontWeight: 700,
-                color: QQ_COLORS.slate500, fontStyle: 'italic',
+                color: 'var(--qq-text-muted)', fontStyle: 'italic',
               }}>{de ? '0 Bonus-Punkte' : '0 bonus points'}</div>
             </div>
           ) : (
@@ -1694,7 +1694,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               {/* Sub-step 1: "tippte auf" + Tipp-Team — kommt nach Team-Slam mit Delay */}
               <div style={{
                 fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
-                color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.18em',
+                color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
                 animation: 'qqFRTitleIn 0.5s ease 0.55s both',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
               <div style={{
@@ -1739,11 +1739,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                   }}>🥲</div>
                   <div style={{
                     fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900,
-                    color: QQ_COLORS.slate400, textAlign: 'center', fontStyle: 'italic',
+                    color: 'var(--qq-text-muted)', textAlign: 'center', fontStyle: 'italic',
                   }}>oooh …</div>
                   <div style={{
                     fontSize: 'clamp(16px, 1.5cqw, 24px)', fontWeight: 700,
-                    color: QQ_COLORS.slate500,
+                    color: 'var(--qq-text-muted)',
                   }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
                 </div>
               ) : (
@@ -1885,12 +1885,12 @@ function BetZeroGroupSlide({ teams, lang }: {
     }}>
       <div style={{
         fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
-        color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.18em',
+        color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       }}>{de ? '🎯 Tipps abgegeben' : '🎯 Tips placed'}</div>
       <div style={{
         fontSize: 'clamp(30px, 3.6cqw, 56px)', fontWeight: 900,
-        color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.02em',
+        color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: '0 0 28px rgba(236,72,153,0.35)',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
         maxWidth: '92cqw',
@@ -1935,7 +1935,7 @@ function BetZeroGroupSlide({ teams, lang }: {
         ))}
       </div>
       <div style={{
-        fontSize: 'clamp(15px, 1.5cqw, 22px)', color: QQ_COLORS.slate400,
+        fontSize: 'clamp(15px, 1.5cqw, 22px)', color: 'var(--qq-text-muted)',
         fontStyle: 'italic', textAlign: 'center',
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
@@ -2048,7 +2048,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           }}>{a.emoji}</div>
           <div style={{
             fontSize: 'clamp(22px, 2.4cqw, 38px)', fontWeight: 900,
-            color: QQ_COLORS.slate100, textAlign: 'center', letterSpacing: '-0.01em',
+            color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.01em',
           }}>{de ? a.titleDe : a.titleEn}</div>
           <div style={{
             fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
@@ -2056,7 +2056,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           }}>{de ? a.descDe : a.descEn}</div>
           <div style={{
             fontSize: 'clamp(28px, 3cqw, 48px)', fontWeight: 900,
-            color: QQ_COLORS.slate400, letterSpacing: '0.4em',
+            color: 'var(--qq-text-muted)', letterSpacing: '0.4em',
           }}>???</div>
         </div>
 
@@ -2110,7 +2110,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
               {metric && (
                 <div style={{
                   fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
-                  color: QQ_COLORS.slate300, fontStyle: 'italic',
+                  color: 'var(--qq-text-muted)', fontStyle: 'italic',
                 }}>{metric}</div>
               )}
               <div style={{
@@ -2122,7 +2122,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
               }}>{de ? '+ 1 Bonus' : '+ 1 bonus'}</div>
             </>
           ) : (
-            <div style={{ fontSize: 'clamp(16px, 1.6cqw, 22px)', color: QQ_COLORS.slate600, fontStyle: 'italic' }}>
+            <div style={{ fontSize: 'clamp(16px, 1.6cqw, 22px)', color: 'var(--qq-text-muted)', fontStyle: 'italic' }}>
               {de ? '(kein Sieger)' : '(no winner)'}
             </div>
           )}
@@ -2387,7 +2387,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
       {/* Hero-Titel */}
       <div style={{
         fontSize: 'clamp(26px, 2.8cqw, 44px)', fontWeight: 900,
-        color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.08em', textTransform: 'uppercase',
+        color: 'var(--qq-accent-soft)', letterSpacing: '0.08em', textTransform: 'uppercase',
         animation: 'qqFRTitleIn 0.8s ease-out both',
         textShadow: '0 0 30px rgba(236,72,153,0.55)',
         flexShrink: 0,
@@ -2414,7 +2414,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
           const isVisible = revealedCount > revealIdx;
           const tColor = r.team.color;
           const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
-          const medalColor = rank === 1 ? '#FBBF24' : rank === 2 ? '#E2E8F0' : rank === 3 ? '#F97316' : QQ_COLORS.slate400;
+          const medalColor = rank === 1 ? '#FBBF24' : rank === 2 ? '#E2E8F0' : rank === 3 ? '#F97316' : 'var(--qq-text-muted)';
 
           return (
             <div key={r.team.id} style={{
@@ -2435,7 +2435,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
                 : 'rgba(255,255,255,0.04)',
               border: isWinner
                 ? `3px solid ${tColor}`
-                : '1.5px solid rgba(255,255,255,0.08)',
+                : '1.5px solid var(--qq-hairline)',
               boxShadow: isWinner && isVisible
                 ? `0 0 60px ${tColor}88, 0 0 120px ${tColor}44, inset 0 0 20px ${tColor}22`
                 : 'none',
@@ -2488,7 +2488,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
               <span style={{
                 fontSize: isWinner ? 'clamp(38px, 4.2cqw, 68px)' : 'clamp(24px, 2.4cqw, 36px)',
                 fontWeight: 900,
-                color: isWinner ? QQ_COLORS.brandPink : QQ_COLORS.slate100,
+                color: isWinner ? 'var(--qq-accent)' : 'var(--qq-card-text)',
                 textShadow: isWinner ? '0 0 24px rgba(236,72,153,0.65)' : 'none',
                 fontVariantNumeric: 'tabular-nums',
                 minWidth: isWinner ? 90 : 64,
@@ -2498,7 +2498,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
               }}>{r.total}</span>
               <span style={{
                 fontSize: isWinner ? 'clamp(15px, 1.5cqw, 22px)' : 'clamp(12px, 1.2cqw, 16px)',
-                color: QQ_COLORS.slate400, opacity: 0.55, fontWeight: 700,
+                color: 'var(--qq-text-muted)', opacity: 0.55, fontWeight: 700,
                 minWidth: isWinner ? 70 : 50, textAlign: 'left',
                 flexShrink: 0,
               }}>
@@ -3286,7 +3286,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
   fontSize?: string;
   rankFontSize?: string;
 }) {
-  const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : QQ_COLORS.slate600;
+  const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : 'var(--qq-text-muted)';
   const isMinor = rank >= 4;
   const effectiveSlotWidth = slotWidth ?? 'clamp(120px, 12cqw, 170px)';
   const effectiveFontSize = fontSize ?? 'clamp(13px, 1.3cqw, 19px)';
@@ -3332,7 +3332,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
         borderBottom: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: effectiveRankFontSize, fontWeight: 900,
-        color: isMinor ? QQ_COLORS.slate200 : '#0A0814',
+        color: isMinor ? 'var(--qq-card-text)' : '#0A0814',
         boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 -4px 16px ${podiumColor}55`,
       }}>{rank}</div>
     </div>

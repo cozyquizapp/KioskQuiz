@@ -160,7 +160,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         boxShadow: '0 24px 64px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
       }}>
         <div style={{
-          fontSize: 'clamp(14px, 1.1cqw, 20px)', fontWeight: 900, color: '#94A3B8',
+          fontSize: 'clamp(14px, 1.1cqw, 20px)', fontWeight: 900, color: 'var(--qq-text-muted)',
           textTransform: 'uppercase', letterSpacing: '0.15em',
         }}>{de ? 'Tipps abgegeben' : 'Tips submitted'}</div>
         <div style={{
@@ -183,7 +183,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
                 borderRadius: '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: done ? 'rgba(34,197,94,0.18)' : 'transparent',
-                border: done ? '3px solid #22C55E' : '3px solid rgba(255,255,255,0.10)',
+                border: done ? '3px solid #22C55E' : '3px solid var(--qq-hairline)',
                 boxShadow: done ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : 'none',
                 opacity: done ? 1 : 0.45,
                 transition: 'all 0.45s ease',

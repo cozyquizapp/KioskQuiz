@@ -273,7 +273,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   background: winner.delta === 0 ? 'rgba(34,197,94,0.22)' : `${winner.team.color}22`,
                   border: winner.delta === 0 ? '2px solid rgba(34,197,94,0.6)' : `2px solid ${winner.team.color}55`,
                   fontSize: 'clamp(16px, 1.7cqw, 26px)', fontWeight: 900,
-                  color: winner.delta === 0 ? QQ_COLORS.green300 : QQ_COLORS.slate200,
+                  color: winner.delta === 0 ? QQ_COLORS.green300 : 'var(--qq-card-text)',
                   fontVariantNumeric: 'tabular-nums',
                   letterSpacing: '0.04em',
                 }}>
@@ -370,7 +370,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   }}>
                     <span style={{
                       fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 900,
-                      color: isTop || isInRangeWinner ? r.team.color : QQ_COLORS.slate300,
+                      color: isTop || isInRangeWinner ? r.team.color : 'var(--qq-text-muted)',
                       lineHeight: 1.1,
                       overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>{r.team.name}</span>
@@ -390,7 +390,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   </div>
                   <div style={{
                     fontSize: 'clamp(24px, 2.6cqw, 40px)', fontWeight: 900,
-                    color: isTop ? QQ_COLORS.brandPinkSoft : QQ_COLORS.slate100, marginTop: 4,
+                    color: isTop ? QQ_COLORS.brandPinkSoft : 'var(--qq-card-text)', marginTop: 4,
                     lineHeight: 1,
                     fontVariantNumeric: 'tabular-nums',
                     textShadow: isTop ? '0 0 16px rgba(236,72,153,0.35)' : 'none',
@@ -406,7 +406,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
                     border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                     fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
-                    color: isTop ? QQ_COLORS.brandPinkSoft : QQ_COLORS.slate200,
+                    color: isTop ? QQ_COLORS.brandPinkSoft : 'var(--qq-card-text)',
                     fontVariantNumeric: 'tabular-nums',
                     animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
                   }}>
@@ -427,7 +427,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                         padding: '2px 8px', borderRadius: 999,
                         background: deltaMs === 0 ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.18)',
                         border: deltaMs === 0 ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(148,163,184,0.35)',
-                        color: deltaMs === 0 ? QQ_COLORS.green300 : QQ_COLORS.slate300,
+                        color: deltaMs === 0 ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
                         whiteSpace: 'nowrap',
                       }}>{label}</span>
                     );

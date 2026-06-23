@@ -336,7 +336,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               {/* Answer text */}
               <div style={{
                 fontSize: 'clamp(20px, 2.3cqw, 34px)', fontWeight: 900,
-                color: hasHits ? QQ_COLORS.green300 : QQ_COLORS.slate300,
+                color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
                 lineHeight: 1.2,
                 minWidth: 0, wordBreak: 'break-word',
               }}>

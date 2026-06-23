@@ -236,7 +236,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                 }}>
                   <div style={{
                     fontSize: 'clamp(20px, 2.3cqw, 34px)', fontWeight: 900,
-                    color: hasHits ? QQ_COLORS.green300 : QQ_COLORS.slate300,
+                    color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
                     lineHeight: 1.2,
                     minWidth: 0, wordBreak: 'break-word',
                   }}>
@@ -248,7 +248,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                       padding: '3px 12px', borderRadius: 999,
                       background: hasHits ? 'rgba(34,197,94,0.22)' : 'rgba(148,163,184,0.16)',
                       border: hasHits ? '1.5px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
-                      color: hasHits ? QQ_COLORS.green300 : QQ_COLORS.slate300,
+                      color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
                       fontWeight: 900,
                       fontSize: 'clamp(14px, 1.5cqw, 22px)',
                       whiteSpace: 'nowrap',

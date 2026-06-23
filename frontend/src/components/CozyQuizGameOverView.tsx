@@ -152,7 +152,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         }}>
           <div style={{
             fontSize: 'clamp(18px, 1.8cqw, 26px)', fontWeight: 900,
-            color: '#94a3b8', letterSpacing: '0.16em', textTransform: 'uppercase',
+            color: 'var(--qq-text-muted)', letterSpacing: '0.16em', textTransform: 'uppercase',
           }}>
             {lang === 'en' ? 'Final Standings' : 'Spielende'}
           </div>
@@ -192,7 +192,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               {medal ? <QQEmojiIcon emoji={medal}/> : (
                 <span style={{
                   fontSize: 'clamp(32px, 4cqw, 60px)', fontWeight: 900,
-                  color: '#94a3b8', letterSpacing: '-0.02em',
+                  color: 'var(--qq-text-muted)', letterSpacing: '-0.02em',
                 }}>#{rank}</span>
               )}
             </div>
@@ -263,7 +263,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               }}>{team.largestConnected}</span>
               <span style={{
                 fontSize: 'clamp(20px, 2.4cqw, 36px)', fontWeight: 700,
-                color: '#94a3b8',
+                color: 'var(--qq-text-muted)',
               }}>
                 {team.largestConnected === 1
                   ? (lang === 'en' ? 'cell' : 'Feld')
@@ -313,7 +313,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       }}>
         <div style={{
           padding: 16, borderRadius: 24,
-          background: 'rgba(255,255,255,0.03)',
+          background: 'var(--qq-surface)',
           border: `2px solid ${winnerColor}55`,
           boxShadow: `0 0 60px ${winnerColor}33, 0 12px 40px rgba(0,0,0,0.5)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -343,7 +343,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         {/* Title — klein, oben */}
         <div style={{
           fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-          color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase',
+          color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
           animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) both',
         }}>
           {lang === 'en' ? 'Game Over' : 'Spielende'}
@@ -447,7 +447,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             {/* v3 round 9: totalCells als Tie-Break-Hint immer mit anzeigen */}
             <span style={{
               fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 700,
-              color: '#94a3b8',
+              color: 'var(--qq-text-muted)',
             }}>
               {winner.totalCells} {lang === 'de' ? 'Felder gesamt' : 'total fields'}
             </span>
@@ -554,7 +554,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                     }}>
                       <span style={{ fontSize: scoreFs, color: '#FBCFE8' }}>{tm.largestConnected}</span>
                       <span style={{
-                        fontSize: 'clamp(13px, 1.3cqw, 17px)', color: '#94a3b8', fontWeight: 700,
+                        fontSize: 'clamp(13px, 1.3cqw, 17px)', color: 'var(--qq-text-muted)', fontWeight: 700,
                       }}>· {tm.totalCells}</span>
                     </span>
                   </div>

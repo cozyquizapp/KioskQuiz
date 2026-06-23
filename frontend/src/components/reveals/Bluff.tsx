@@ -585,7 +585,7 @@ export function BluffReviewScreen({ state: s, accent, lang }: {
               </div>
               <div style={{
                 fontSize: 14, fontWeight: 700,
-                color: rejected ? QQ_COLORS.red300 : QQ_COLORS.slate100,
+                color: rejected ? QQ_COLORS.red300 : 'var(--qq-card-text)',
                 textDecoration: rejected ? 'line-through' : undefined,
                 wordBreak: 'break-word',
               }}>{text}</div>

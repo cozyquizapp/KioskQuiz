@@ -26,6 +26,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
+import { isThemed } from '../qqTheme';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
   CAT_ACCENT, CAT_BADGE_BG, CAT_GLOW, CAT_CUTOUTS, COZY_CARD_BG,
@@ -1288,6 +1289,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   return (
     <div style={{
       flex: 1, display: 'flex', position: 'relative',
+      // 2026-06-23 (Skin): Schrift-Family vom aktiven Skin — vererbt sich auf
+      // alle Texte der View. Layout-neutral (nur Glyph-Form, fixe Schriftgrössen).
+      fontFamily: 'var(--qq-font)',
       // 2026-05-12 (Glow-Audit): hidden → visible. Frage-Card + Option-Cards
       // haben dicke Glows (boxShadow 0 0 36-48px) — die wurden hier am
       // QuestionView-Rand abgeschnitten. SlideStage outer clipMargin (120px)
@@ -2097,11 +2101,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }}>
                 <div style={{
                   background: cardBg,
-                  border: `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
-                  borderRadius: 24,
-                  boxShadow: revealed
-                    ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
-                    : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+                  // Skin: Treatment-Tokens (dicker Rand/harter Schatten etc.).
+                  // Cozy (isThemed=false): unveraendert der kategorie-gefaerbte Glow.
+                  border: isThemed() ? 'var(--qq-card-border)' : `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+                  boxShadow: isThemed()
+                    ? 'var(--qq-card-shadow)'
+                    : (revealed
+                      ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
+                      : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`),
                   padding: cardPadding,
                   marginBottom: cardMarginBottom,
                   width: '100%',

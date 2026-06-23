@@ -18,6 +18,7 @@ import { TeamsRevealView } from '../components/CozyQuizTeamsRevealView';
 import { QuestionView } from '../components/CozyQuizQuestionView';
 import { GameOverView } from '../components/CozyQuizGameOverView';
 import { ThanksView } from './QQBeamerPage';
+import { useActiveThemeId, setActiveThemeId, getActiveTheme, QQ_THEMES } from '../qqTheme';
 
 const PINK = '#ec4899';
 
@@ -111,17 +112,58 @@ export default function QQShowroomPage() {
   const advance = () => setScene(i => (i + 1) % SCENES.length);
   const cur = SCENES[scene];
 
+  // 2026-06-23 (Theme-Proof): aktive Skin abonnieren → Wechsel re-rendert die
+  // echten Beamer-Views, die ueber getBrandColors die neue Palette ziehen.
+  const themeId = useActiveThemeId();
+  const theme = getActiveTheme();
+  const accent = theme.brand.accentHex;
+
   return (
     <div
       onClick={() => setPaused(p => !p)}
       style={{
         position: 'fixed', inset: 0, overflow: 'hidden',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: '#0A0814', cursor: 'pointer', userSelect: 'none',
+        background: theme.surface.pageBg, cursor: 'pointer', userSelect: 'none',
+        transition: 'background 0.5s ease',
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       }}
     >
       <style>{`@keyframes srBar { from { width: 0%; } to { width: 100%; } }`}</style>
+
+      {/* Theme-Umschalter (Proof: Cozy ↔ Glass) — tippen wechselt die Skin,
+          ohne die Pause auszuloesen (stopPropagation). */}
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{
+          position: 'absolute', top: 'max(26px, calc(env(safe-area-inset-top) + 16px))',
+          right: 12, zIndex: 30, display: 'flex', gap: 6,
+          padding: 4, borderRadius: 999,
+          background: 'rgba(0,0,0,0.35)', backdropFilter: 'blur(8px)',
+          border: '1px solid rgba(255,255,255,0.12)',
+        }}
+      >
+        {Object.values(QQ_THEMES).map(t => {
+          const on = t.id === themeId;
+          return (
+            <button
+              key={t.id}
+              onClick={() => setActiveThemeId(t.id)}
+              style={{
+                padding: '6px 14px', borderRadius: 999, cursor: 'pointer',
+                fontFamily: 'inherit', fontSize: 12, fontWeight: 800, letterSpacing: '0.02em',
+                border: 'none',
+                background: on ? t.brand.accentHex : 'transparent',
+                color: on ? '#fff' : 'rgba(255,255,255,0.7)',
+                boxShadow: on ? `0 2px 12px ${t.brand.accentHex}66` : 'none',
+                transition: 'all 0.2s',
+              }}
+            >
+              {t.label}
+            </button>
+          );
+        })}
+      </div>
 
       {/* 16:9-Bühne, auf den Mobile-Screen gefittet (wie der echte SlideStage). */}
       <MiniStage>
@@ -141,7 +183,7 @@ export default function QQShowroomPage() {
               key={`${i}-${scene}`}
               onAnimationEnd={i === scene ? advance : undefined}
               style={{
-                height: '100%', borderRadius: 999, background: PINK,
+                height: '100%', borderRadius: 999, background: accent,
                 width: i < scene ? '100%' : '0%',
                 animation: i === scene ? `srBar ${sc.ms}ms linear forwards` : 'none',
                 animationPlayState: paused ? 'paused' : 'running',
@@ -185,7 +227,7 @@ function MiniStage({ children }: { children: ReactNode }) {
   return (
     <div ref={ref} style={{
       width: 'min(100vw, 177.78vh)', height: 'min(100vh, 56.25vw)',
-      position: 'relative', overflow: 'clip', background: '#0F0817',
+      position: 'relative', overflow: 'clip', background: getActiveTheme().surface.pageBg,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
     }}>
       <div style={{

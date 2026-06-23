@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
+import { isThemed, getActiveTheme } from '../qqTheme';
 import {
   QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
@@ -92,6 +93,10 @@ export const COZY_CARD_BG = _COZY_CARD_BG_SHARED;
 // Jetzt: 1× import, alle Stellen lesen `eurovisionMode` aus s.theme.
 // Pure function (kein Hook), damit auch in nicht-Component-Helpers nutzbar.
 export function getBrandColors(eurovisionMode?: boolean) {
+  // 2026-06-23 (Theme-System): wenn ein anderes Grunddesign als 'cozy' aktiv
+  // ist, liefert das Theme-Runtime die Palette. Bei 'cozy' (Default) bleibt
+  // das alte Verhalten inkl. Eurovision-Zweig → zero-visual-change live.
+  if (isThemed()) return getActiveTheme().brand;
   return eurovisionMode
     ? {
         accentHex:  '#FF2D7B',          // ESC-Pink-Hauptakzent

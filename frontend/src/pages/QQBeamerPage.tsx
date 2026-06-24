@@ -3742,10 +3742,14 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
   // 2026-05-08 (Aurora-Vivid): Standard-Accent jetzt Brand-Pink (#EC4899)
   // statt Amber-Gold (#EC4899). Eurovision behaelt sein Hot-Pink (#FF2D7B).
   // accentSoft/accentWarm sind Pink-Spektrum statt Gold-Spektrum.
-  const accentHex     = eurovisionMode ? '#FF2D7B' : QQ_COLORS.brandPink;
-  const accentRgb     = eurovisionMode ? '255,45,123' : '236,72,153';
-  const accentSoftHex = eurovisionMode ? '#fde6f0' : QQ_COLORS.brandPinkSoft;
-  const accentWarmHex = eurovisionMode ? '#C084FC' : '#F9A8D4'; // accent-2 fuer Fireflies-Variation
+  // 2026-06-24 (Skin): Welcome-Hero zieht bei aktivem Skin Akzent/Titel aus den
+  // Tokens; titleHex = --qq-title (Mono=Schwarz, Neo=Gelb) fuer COZYQUIZ + Subtitle.
+  const themed = isThemed();
+  const accentHex     = eurovisionMode ? '#FF2D7B' : themed ? 'var(--qq-accent)' : QQ_COLORS.brandPink;
+  const accentRgb     = eurovisionMode ? '255,45,123' : themed ? 'var(--qq-accent-rgb)' : '236,72,153';
+  const accentSoftHex = eurovisionMode ? '#fde6f0' : themed ? 'var(--qq-accent-soft)' : QQ_COLORS.brandPinkSoft;
+  const accentWarmHex = eurovisionMode ? '#C084FC' : themed ? 'var(--qq-accent-light)' : '#F9A8D4'; // accent-2 fuer Fireflies-Variation
+  const titleHex      = eurovisionMode ? '#FF2D7B' : themed ? 'var(--qq-title)' : QQ_COLORS.brandPink;
   // Wolf 2026-05-05 'episch aber professionell': Phasen-Choreographie:
   //   0.0–0.9s  Subtitle „HERZLICH WILLKOMMEN ZUM" letter-cascade aus weitem
   //             letter-spacing zoomt auf normal, gold-glow.
@@ -3778,7 +3782,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
       // Wolf 2026-05-05 'sehe da aktuell nichts': Mount-Anim deutlich
       // dramatischer — Folie zoomt aus 1.18 → 1 (war 1.04, kaum sichtbar).
       hiddenScale={1.18}
-      background="radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)"
+      background={themed ? 'var(--qq-bg)' : 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)'}
     >
       {/* 2026-05-07 (Wolf-ESC 'wie geil waere ein 10sec intro video — video
           ist drin'): Welcome-Video laeuft als BG-Layer hinter allen anderen
@@ -3941,8 +3945,9 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           position: 'relative',
           padding: 'clamp(28px, 4.5cqh, 60px) clamp(36px, 6.5cqw, 100px)',
           borderRadius: 'clamp(20px, 2.4cqw, 32px)',
-          background:
-            'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.28) 0%, transparent 60%),' +
+          background: themed
+            ? 'var(--qq-card-bg)'
+            : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.28) 0%, transparent 60%),' +
             'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.22) 0%, transparent 55%),' +
             'linear-gradient(135deg, rgba(31,26,46,0.92) 0%, rgba(20,16,31,0.92) 60%, rgba(15,8,23,0.92) 100%)',
           border: `2.5px solid rgba(${accentRgb},0.65)`,
@@ -3971,7 +3976,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           display: 'inline-flex',
           fontSize: 'clamp(15px, 1.6cqw, 24px)', fontWeight: 900,
           letterSpacing: '0.32em', textTransform: 'uppercase',
-          color: accentHex,
+          color: titleHex,
           opacity: 0.92,
           // 2026-05-07 v12 (Wolf 'kontrast teilweise unleserlich'): zusaetzlich
           // dunkler Halo (rgba(0,0,0,0.55) Drop-Shadow) zur Lesbarkeit auf
@@ -4034,10 +4039,12 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
               fontWeight: 400,
               letterSpacing: '0.04em',
               lineHeight: 0.96,
-              color: eurovisionMode ? accentHex : QQ_COLORS.brandPink,
+              color: eurovisionMode ? accentHex : titleHex,
               // 2026-05-13 Kontrast-Audit ESC: Dark-Halo davor, Pink-Glow
               // reduziert (Welcome-Video-BG kann hellpink-Frames haben).
-              textShadow: eurovisionMode
+              textShadow: themed
+                ? 'none'
+                : eurovisionMode
                 ? `0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7), 0 0 32px rgba(${accentRgb},0.35)`
                 : '0 0 28px rgba(236,72,153,0.65), 0 0 72px rgba(236,72,153,0.28)',
               position: 'relative', zIndex: 1,

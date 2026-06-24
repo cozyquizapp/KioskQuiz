@@ -438,6 +438,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // 2026-05-07: prevColor auch ESC-Pink, damit waehrend Round-Transition
   // kein Farbwechsel stattfindet (Phase-Color cycelt nicht im ESC-Mode).
   const prevColor = isEsc ? '#FF2D7B' : getRoundColor(Math.max(1, prevIdx), s.totalPhases ?? 4);
+  // 2026-06-24 (Wolf 'schrift auch schwarz?'): Hero-„Runde N" auf dem Seiten-BG
+  // → var(--qq-title) (Mono=Schwarz etc.) bei Skin. Cozy/ESC = Runden-Farbe.
+  const titleColor = isThemed() ? 'var(--qq-title)' : color;
+  const prevTitleColor = isThemed() ? 'var(--qq-title)' : prevColor;
   const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
   const prevPhaseDesc = prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx];
 
@@ -548,15 +552,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             padding: '8px 24px', borderRadius: 999,
             background: isEsc
               ? 'linear-gradient(135deg, rgba(255,45,123,0.20) 0%, rgba(59,130,246,0.20) 100%)'
-              : `${displayColor}18`,
+              : isThemed() ? 'var(--qq-surface)' : `${displayColor}18`,
             border: isEsc
               ? '2px solid rgba(255,45,123,0.55)'
-              : `2px solid ${displayColor}44`,
+              : isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${displayColor}44`,
             fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900,
             // 2026-05-13 Kontrast-Audit: #fde6f0 auf der hellen Seite des
             // Pink/Blau-Gradient-Pill-BG matschte. #FFFFFF + Dark-Halo trennt
             // den Round-Counter klar vom Pill-BG ohne den Look zu opfern.
-            color: isEsc ? '#FFFFFF' : `${displayColor}cc`,
+            color: isEsc ? '#FFFFFF' : isThemed() ? 'var(--qq-text-muted)' : `${displayColor}cc`,
             textShadow: isEsc ? '0 1px 4px rgba(0,0,0,0.5)' : 'none',
             letterSpacing: '0.1em',
             marginBottom: 28,
@@ -643,7 +647,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     transition. Wort + Neuer Digit fluten IMMER synchron. */}
                 <span style={{
                   display: 'inline-block',
-                  color: colorTransitioning ? prevColor : color,
+                  color: colorTransitioning ? prevTitleColor : titleColor,
                   transition: 'color 820ms ease',
                 }}>{titleWord}</span>
                 {/* Ziffern-Flip-Container — startet NACH dem Wolf-Hop (Hop landet ~1100ms).
@@ -658,7 +662,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   // Roll-In (1650-2470ms). colorTransitioning endet jetzt bei
                   // 1650ms, danach 820ms transition → bei 2470ms voll in neuer
                   // Farbe. Gleiches Timing wie Word "Runde" → kein Mismatch.
-                  color: colorTransitioning ? prevColor : color,
+                  color: colorTransitioning ? prevTitleColor : titleColor,
                   transition: 'color 820ms ease',
                 }}>
                   {/* Unsichtbarer Sizer — trägt die Baseline + Breite des neuen Digits */}
@@ -680,10 +684,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(100px, 18cqw, 260px)', fontWeight: 900, lineHeight: 0.9,
-                color,
+                color: titleColor,
                 // 2026-05-07 v12 (Wolf 'kontrast unleserlich'): bei ESC-Pink-
                 // Title auf Pink/Lila/Heart-BG dunkler Halo dazu fuer Lesbarkeit.
-                textShadow: isEsc
+                textShadow: isThemed()
+                  ? 'none'
+                  : isEsc
                   ? `0 4px 22px rgba(0,0,0,0.7), 0 0 120px ${color}44`
                   : `0 0 120px ${color}44`,
                 textAlign: 'center',
@@ -760,8 +766,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             <div style={{
               fontFamily: fontFam,
               fontSize: 'clamp(36px, 5cqw, 68px)', fontWeight: 900,
-              color: `${displayColor}dd`,
-              textShadow: `0 0 30px ${displayColor}33`,
+              color: isThemed() ? 'var(--qq-title)' : `${displayColor}dd`,
+              textShadow: isThemed() ? 'none' : `0 0 30px ${displayColor}33`,
               animation: 'subtitleSlide 0.55s var(--qq-ease-bounce) 0.7s both',
               transition: 'color 500ms ease, text-shadow 500ms ease',
               position: 'relative', zIndex: 5,

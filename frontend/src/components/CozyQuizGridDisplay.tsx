@@ -25,6 +25,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { isThemed } from '../qqTheme';
 import { JokerIcon } from './JokerIcon';
 import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -139,12 +140,15 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         display: 'grid',
         gridTemplateColumns: `repeat(${s.gridSize}, ${cellSize}px)`,
         gap,
-        background: 'rgba(255,255,255,0.03)',
+        // 2026-06-24 (Wolf 'rahmen verschwindet beim grid-design'): weiss-transparente
+        // Container-Flaeche/Rahmen sind auf hellen Skins unsichtbar → Skin-Tokens.
+        // Highlight-Rahmen (Team-Farbe) bleibt unangetastet (Spielsignal).
+        background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.03)',
         padding: 10, borderRadius: 16,
-        border: `3px solid ${highlightTeam ? `${activeColor}cc` : 'rgba(255,255,255,0.06)'}`,
+        border: `3px solid ${highlightTeam ? `${activeColor}cc` : (isThemed() ? 'var(--qq-hairline)' : 'rgba(255,255,255,0.06)')}`,
         boxShadow: highlightTeam
           ? `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(255,255,255,0.04)`
-          : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)',
+          : (isThemed() ? 'var(--qq-card-shadow)' : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)'),
         animation: highlightTeam
           ? 'gridActiveTeamGlow 2.4s ease-in-out infinite'
           : 'gridIdle 4s ease-in-out infinite',
@@ -211,8 +215,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{
                   position: 'absolute', inset: 0, borderRadius: cellRadius,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.06)',
+                  background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.04)',
+                  border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,255,255,0.06)',
                   animation: !team && idleCells.has(`${r}-${c}`) ? 'cellIdlePulse 2.5s ease-in-out both' : undefined,
                 }} />
                 {/* Team color layer — ink fill for new cells, dim non-active teams */}

@@ -3,6 +3,7 @@ import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { isThemed } from '../qqTheme';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -412,8 +413,11 @@ export default function QQProgressTree({
   const roundColor = getRoundColor(state.gamePhaseIndex ?? 1, totalPhases);
   const useRoundAccent = variant === 'inline' || variant === 'hero';
 
+  // 2026-06-24 (Skin): dunkler Navy-Balken auf hellen Skins → Skin-Card.
   const wrapperBg = isShowcase
     ? 'transparent'
+    : isThemed()
+      ? 'var(--qq-card-bg)'
     : isMini
       ? 'rgba(15,23,42,0.55)'
       : variant === 'inline'
@@ -433,7 +437,9 @@ export default function QQProgressTree({
       : useRoundAccent
         ? `0 0 36px ${roundColor}55, 0 0 14px ${roundColor}33, 0 10px 32px rgba(15,23,42,0.18)`
         : '0 10px 32px rgba(15,23,42,0.18)';
-  const wrapperColor = (isMini || variant === 'inline' || isShowcase) ? '#f8fafc' : QQ_COLORS.slate900;
+  const wrapperColor = isThemed()
+    ? 'var(--qq-card-text)'
+    : (isMini || variant === 'inline' || isShowcase) ? '#f8fafc' : QQ_COLORS.slate900;
 
   return (
     <div

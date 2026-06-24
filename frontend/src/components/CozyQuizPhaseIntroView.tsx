@@ -20,6 +20,7 @@ import {
   QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt } from '../cozyQuizShared';
+import { isThemed } from '../qqTheme';
 import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -1203,7 +1204,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         }}>{opt.label}</span>
                         <span style={{
                           fontSize: 'clamp(28px, 3.2cqw, 50px)', fontWeight: 900,
-                          color: '#F1F5F9', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                          color: isThemed() ? 'var(--qq-text)' : '#F1F5F9', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
                         }}>{opt.pts}</span>
                         <span style={{
                           fontSize: 'clamp(11px, 1.1cqw, 15px)', fontWeight: 700,
@@ -1215,7 +1216,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     ))}
                   </div>
                   <div style={{
-                    fontSize: 'clamp(14px, 1.4cqw, 20px)', color: '#cbd5e1',
+                    fontSize: 'clamp(14px, 1.4cqw, 20px)', color: isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1',
                     fontStyle: 'italic', textAlign: 'center', maxWidth: 700, lineHeight: 1.4,
                     animation: 'phasePop 0.6s var(--qq-ease-bounce) 1.4s both',
                   }}>

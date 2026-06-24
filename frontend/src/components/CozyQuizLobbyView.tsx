@@ -606,7 +606,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             />
             <span style={{
               fontSize: 'clamp(12px, 1.1cqw, 15px)', fontWeight: 900,
-              color: '#cbd5e1', letterSpacing: '0.04em',
+              color: isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1', letterSpacing: '0.04em',
             }}>
               {de ? 'präsentiert von' : 'presented by'}
             </span>

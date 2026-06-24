@@ -349,7 +349,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         <div style={{
           marginTop: 10,
           fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 700,
-          color: '#CBD5E1', fontStyle: 'italic',
+          color: themed ? 'var(--qq-text-muted)' : '#CBD5E1', fontStyle: 'italic',
           textAlign: 'center', lineHeight: 1.3,
           animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.55s both',
         }}>{de
@@ -476,7 +476,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     <div style={{
                       marginTop: 4,
                       fontSize: 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
-                      color: '#CBD5E1',
+                      color: themed ? 'var(--qq-text-muted)' : '#CBD5E1',
                       letterSpacing: '0.04em',
                     }}>{de ? 'hat heute gewonnen' : 'won today'}</div>
                   </div>

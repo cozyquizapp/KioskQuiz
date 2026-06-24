@@ -392,7 +392,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // Gold sonst. Standard-CozyQuiz-Mode unveraendert.
           background: s.theme?.eurovisionMode
             ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.18) 0%, rgba(255,45,123,0.06) 45%, transparent 70%)'
-            : 'radial-gradient(ellipse at center, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.06) 45%, transparent 70%)',
+            : isThemed()
+              ? 'radial-gradient(ellipse at center, rgba(var(--qq-accent-rgb),0.18) 0%, rgba(var(--qq-accent-rgb),0.06) 45%, transparent 70%)'
+              : 'radial-gradient(ellipse at center, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.06) 45%, transparent 70%)',
           filter: 'blur(20px)',
           pointerEvents: 'none',
           zIndex: -1,
@@ -525,11 +527,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 fontWeight: 400,
                 letterSpacing: '0.04em',
                 fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5cqw, 100px)' : 'clamp(56px, 9cqw, 140px)',
-                color: s.theme?.eurovisionMode ? '#FF2D7B' : '#EC4899',
+                // Skin: Wortmark-Farbe folgt dem Skin (--qq-title), Font/Groesse
+                // bleiben = Wiedererkennung. ESC behaelt Hot-Pink.
+                color: s.theme?.eurovisionMode ? '#FF2D7B' : isThemed() ? 'var(--qq-title)' : '#EC4899',
                 // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg ueber 5.png-BG.
                 textShadow: s.theme?.eurovisionMode
                   ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
-                  : '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.40)',
+                  : isThemed()
+                    ? 'none'
+                    : '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.40)',
               }}
               aria-label={wordmark}
             >
@@ -595,9 +601,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '8px 18px', borderRadius: 999,
-            background: 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(236,72,153,0.10))',
-            border: '1.5px solid rgba(236,72,153,0.35)',
-            boxShadow: '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(236,72,153,0.12)',
+            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(236,72,153,0.10))',
+            border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(236,72,153,0.35)',
+            boxShadow: isThemed() ? 'none' : '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(236,72,153,0.12)',
           }}>
             <img
               src="/logo.png"
@@ -612,8 +618,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             </span>
             <span style={{
               fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-              color: '#EC4899', letterSpacing: '0.04em',
-              textShadow: '0 1px 2px rgba(0,0,0,0.6)',
+              color: isThemed() ? 'var(--qq-accent)' : '#EC4899', letterSpacing: '0.04em',
+              textShadow: isThemed() ? 'none' : '0 1px 2px rgba(0,0,0,0.6)',
             }}>
               CozyWolf
             </span>
@@ -791,7 +797,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           {/* Dynamic status */}
           <div style={{
             fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900, textAlign: 'center',
-            color: teamCount < 2 ? '#EC4899' : '#22C55E',
+            color: teamCount < 2 ? (isThemed() ? 'var(--qq-accent)' : '#EC4899') : '#22C55E',
             animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
           }}>
             {teamCount === 0

@@ -136,8 +136,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Round-Pille, Pause-Dot etc. Hoechster Hebel mit einer Variable.
   const isEsc = !!s.theme?.eurovisionMode;
   const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? 'var(--qq-accent)' : QQ_COLORS.violet400);
-  const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(236,72,153,0.38)' : 'rgba(167,139,250,0.42)');
-  const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(236,72,153,0.28)' : 'rgba(167,139,250,0.28)');
+  // preGame-Dim/Glow ziehen den Skin-Akzent (accent-rgb-Default = altes Pink → cozy gleich).
+  const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(var(--qq-accent-rgb),0.38)' : 'rgba(167,139,250,0.42)');
+  const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(var(--qq-accent-rgb),0.28)' : 'rgba(167,139,250,0.28)');
   // 2026-04-30: Sprache aus Server-State (s.language) statt lokalem Auto-Flip.
   // Vorher floppte 'de' alle 8s automatisch unabhaengig vom Mod-Schalter.
   // Jetzt: 'de' sticky bei DE, 'en' sticky bei EN, 'both' flippt alle 12s
@@ -586,7 +587,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.highestScore.teamName)} — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
             </div>
           </div>
@@ -599,7 +600,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}>⚔️</span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
             </div>
           </div>
@@ -612,7 +613,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.winStreak.teamName)} — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
             </div>
           </div>
@@ -626,7 +627,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               {teamInline(funStats.fastestAnswer.teamName)} — {secs}s {de ? 'Vorsprung' : 'ahead'}
             </div>
           </div>
@@ -1054,7 +1055,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 top: '-5%', left: `${left}%`,
                 width: size, height: size, borderRadius: '50%',
                 background: i % 2 ? 'var(--qq-accent)' : 'var(--qq-accent-soft)',
-                boxShadow: '0 0 12px rgba(236,72,153,0.7), 0 0 4px rgba(255,255,255,0.5)',
+                boxShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(255,255,255,0.5)',
                 opacity: 0,
                 animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
                 pointerEvents: 'none', zIndex: 3,
@@ -1413,9 +1414,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                     width: isActive ? 32 : 10,
                     height: 10,
                     borderRadius: 999,
+                    // Aktiv: solid modeAccent (Gradient `${var}aa` war ungueltige
+                    // CSS -> Balken unsichtbar). Inaktiv: Skin-Hairline statt
+                    // cream-weiss (war auf hellen Skins unsichtbar).
                     background: isActive
-                      ? `linear-gradient(90deg, ${modeAccent}, ${modeAccent}aa)`
-                      : 'rgba(255,235,200,0.16)',
+                      ? modeAccent
+                      : (isThemed() ? 'var(--qq-hairline)' : 'rgba(255,235,200,0.16)'),
                     boxShadow: isActive ? `0 0 10px ${modeGlow}` : 'none',
                     transition: 'all 0.4s var(--qq-ease-out-cubic)',
                   }} />

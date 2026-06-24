@@ -16,6 +16,7 @@ import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
 } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
+import { isThemed } from '../../qqTheme';
 
 /**
  * Top-5 Reveal: zweispaltige Show-Seite.
@@ -124,11 +125,11 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
     }}>
       {/* ── Top row: Full-width question card ─────────────────── */}
       <div style={{
-        background: 'var(--qq-surface)',
-        border: '2px solid var(--qq-hairline)',
-        borderRadius: 24,
+        background: isThemed() ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
+        border: isThemed() ? 'var(--qq-card-border)' : '2px solid var(--qq-hairline)',
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: 'clamp(16px, 2cqh, 26px) clamp(24px, 2.8cqw, 42px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
         animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
         flexShrink: 0,
       }}>

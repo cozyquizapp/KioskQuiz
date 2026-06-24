@@ -2634,9 +2634,9 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   {remaining !== null && (
                     <div style={{
                       padding: '6px 18px', borderRadius: 'var(--qq-pill-radius)',
-                      background: urgent ? 'rgba(239,68,68,0.25)' : 'rgba(15,23,42,0.5)',
-                      border: `2px solid ${urgent ? QQ_COLORS.red500 : QQ_COLORS.slate600}`,
-                      color: urgent ? QQ_COLORS.red300 : QQ_COLORS.slate200,
+                      background: urgent ? 'rgba(239,68,68,0.25)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(15,23,42,0.5)'),
+                      border: urgent ? `2px solid ${QQ_COLORS.red500}` : (isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${QQ_COLORS.slate600}`),
+                      color: urgent ? QQ_COLORS.red300 : (isThemed() ? 'var(--qq-card-text)' : QQ_COLORS.slate200),
                       fontSize: 'clamp(20px, 2.4cqw, 30px)', fontWeight: 900,
                       minWidth: 76, textAlign: 'center',
                       animation: urgent ? 'qqHpTimerGlow 0.6s ease infinite alternate' : 'none',
@@ -2787,7 +2787,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
               background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.10))',
               border: `${chipStyles.border}px solid rgba(34,197,94,0.55)`,
               boxShadow: `0 4px 14px rgba(34,197,94,${chipStyles.shadowAlpha})`,
-              color: QQ_COLORS.green300, fontSize: chipStyles.fontSize, fontWeight: 900,
+              color: isThemed() ? '#15803D' : QQ_COLORS.green300, fontSize: chipStyles.fontSize, fontWeight: 900,
               letterSpacing: 0.2,
               animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
             }}>

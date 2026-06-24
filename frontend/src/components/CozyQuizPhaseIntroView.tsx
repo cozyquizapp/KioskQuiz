@@ -799,9 +799,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           {/* Round pill — smaller context */}
           <div style={{
             padding: '6px 20px', borderRadius: 'var(--qq-pill-radius)',
-            background: `${color}15`, border: `1.5px solid ${color}33`,
+            background: isThemed() ? 'var(--qq-surface)' : `${color}15`,
+            border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${color}33`,
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-            color: `${color}aa`, letterSpacing: '0.04em',
+            color: isThemed() ? 'var(--qq-accent)' : `${color}aa`, letterSpacing: '0.04em',
             marginBottom: 24,
             animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
             position: 'relative', zIndex: 5,
@@ -828,9 +829,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '6px 22px', borderRadius: 'var(--qq-pill-radius)',
-              background: `${color}25`, border: `2px solid ${color}55`,
+              background: isThemed() ? 'var(--qq-surface)' : `${color}25`,
+              border: isThemed() ? '2px solid var(--qq-accent)' : `2px solid ${color}55`,
               fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
-              color, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.1em', textTransform: 'uppercase',
               marginTop: 20, marginBottom: 8,
               animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.3s both',
               position: 'relative', zIndex: 5,
@@ -850,7 +852,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {/* Schlankes Label statt riesiger Regel-Texte */}
             <div style={{
               fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,
-              color: `${color}cc`, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: isThemed() ? 'var(--qq-accent)' : `${color}cc`, letterSpacing: '0.1em', textTransform: 'uppercase',
               textAlign: 'center',
               animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.4s both',
             }}>

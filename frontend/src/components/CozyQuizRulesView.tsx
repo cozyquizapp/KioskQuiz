@@ -16,7 +16,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveTheme } from '../qqTheme';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon } from './QQIcon';
 import { JokerIcon } from './JokerIcon';
@@ -302,21 +302,25 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
           const isStar = cell === '⭐';
           const isPin = cell === '🏯';
           const filled = isTeamA || isTeamAP || isStar || isPin;
+          // Skin: Beispiel-Grid monochrom im Akzent (blau/Joker-bunt wirkte
+          // fehl am Platz auf Mono — Wolf). Cozy = Original-Farben.
+          const accentHex = isThemed() ? getActiveTheme().brand.accentHex : null;
+          const cellCol = accentHex ?? grid.colorA;
           const bg = isStar
-            ? `linear-gradient(135deg, ${grid.colorA}cc, #EC4899cc)`
+            ? (accentHex ? `${accentHex}cc` : `linear-gradient(135deg, ${grid.colorA}cc, #EC4899cc)`)
             : isPin
-              ? `linear-gradient(135deg, ${grid.colorA}cc, #10B981cc)`
+              ? (accentHex ? `${accentHex}cc` : `linear-gradient(135deg, ${grid.colorA}cc, #10B981cc)`)
               : (isTeamA || isTeamAP)
-                ? `${grid.colorA}aa`
-                : 'rgba(255,255,255,0.06)';
-          const borderColor = isStar ? '#EC4899'
-            : isPin ? '#10B981'
-            : isTeamAP ? '#FBBF24'   // Gold-Border für Pattern-Zellen
-            : grid.colorA;
-          const glowColor = isStar ? '#EC489988'
-            : isPin ? '#10B98144'
-            : isTeamAP ? '#FBBF2477'  // Gold-Glow für Pattern-Zellen
-            : grid.colorA + '44';
+                ? `${cellCol}aa`
+                : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.06)');
+          const borderColor = isStar ? (accentHex ?? '#EC4899')
+            : isPin ? (accentHex ?? '#10B981')
+            : isTeamAP ? (accentHex ?? '#FBBF24')   // Gold-Border für Pattern-Zellen
+            : cellCol;
+          const glowColor = isStar ? (accentHex ? `${accentHex}88` : '#EC489988')
+            : isPin ? (accentHex ? `${accentHex}44` : '#10B98144')
+            : isTeamAP ? (accentHex ? `${accentHex}77` : '#FBBF2477')  // Gold-Glow für Pattern-Zellen
+            : cellCol + '44';
           // 2026-05-09 (Wolf-Wunsch): Joker-Cells nutzen die echten Joker-PNGs
           // (boy/girl alternierend per row+col-index) statt 🃏-Emoji + Wiggle-
           // Animation für „der Joker leuchtet auf, wenn das Pattern gebildet ist".
@@ -325,7 +329,8 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
           return (
             <div key={`${r}-${c}`} style={{
               width: cellSz, height: cellSz,
-              borderRadius: Math.max(4, cellSz * 0.18),
+              // Skin: Zell-Ecken folgen der Karten-Form (Mono eckig).
+              borderRadius: isThemed() ? 'var(--qq-card-radius)' : Math.max(4, cellSz * 0.18),
               background: bg,
               border: filled ? `2px solid ${borderColor}` : '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',

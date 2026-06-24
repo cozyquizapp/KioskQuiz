@@ -19,6 +19,7 @@
  * Akzent-Flächen ab.
  */
 import { useSyncExternalStore } from 'react';
+import type { CSSProperties } from 'react';
 import { QQ_COLORS } from '../../shared/qqColors';
 
 /** Exakt das Shape, das getBrandColors zurückgibt. */
@@ -252,4 +253,52 @@ export function getEmptyCardStyle(): StatusCardStyle {
     default: // cozy — heutige Werte, visual-neutral
       return { bg: 'transparent', border: '2px solid rgba(239,68,68,0.4)', radius: 24, shadow: 'none', fg: '#f87171' };
   }
+}
+
+// ── Generische Skin-Helper (DRY-Layer für „immer mehr Designs einbauen") ─────
+// Zweck (Wolf 2026-06-24): NICHT mehr jedes „Fenster" einzeln mit
+// `isThemed() ? 'var(--qq-card-bg)' : …` von Hand theme'n. Stattdessen EIN
+// Helper, der im Skin IMMER die Skin-Card-Tokens liefert → Radius/Rand/Schatten
+// sind über ALLE Fenster garantiert einheitlich (keine „manche rund, manche
+// eckig"-Drift mehr). Bei cozy gibt der Helper `null` zurück → der Caller
+// behält seinen heutigen Look (byte-identisch).
+//
+// Pattern am Call-Site:
+//   style={{ ...layout, ...cozyLook, ...(themedWindow({ emphasis }) ?? {}) }}
+// Cozy-Werte stehen normal da; im Skin überschreibt der Spread bg/border/
+// radius/shadow/color in einem Rutsch. Neues Fenster = eine Zeile mehr.
+// Neues Design = NUR ein Theme-Objekt in QQ_THEMES (kein Touch an Komponenten).
+
+export interface ThemedWindowOpts {
+  /** Akzent-Rand statt neutralem Card-Rand (z.B. Sieger/Top-Row). */
+  emphasis?: boolean;
+  /** Grüner „richtig/Treffer"-Rand (semantisches Spielsignal, skin-unabhängig). */
+  ok?: boolean;
+}
+
+/** Skin-Card-Frame für ein „Fenster" (Card/Panel/Listen-Row). `null` bei cozy. */
+export function themedWindow(opts: ThemedWindowOpts = {}): CSSProperties | null {
+  if (!isThemed()) return null;
+  const border = opts.ok
+    ? '2px solid #22C55E'
+    : opts.emphasis
+      ? '2px solid var(--qq-accent)'
+      : 'var(--qq-card-border)';
+  return {
+    background: 'var(--qq-card-bg)',
+    border,
+    borderRadius: 'var(--qq-card-radius)',
+    boxShadow: 'var(--qq-card-shadow)',
+    color: 'var(--qq-card-text)',
+  };
+}
+
+/** Skin-Chip/Pill (Sub-Element auf BG/Card). `null` bei cozy. */
+export function themedChip(opts: { emphasis?: boolean } = {}): CSSProperties | null {
+  if (!isThemed()) return null;
+  return {
+    background: 'var(--qq-surface)',
+    border: opts.emphasis ? '1.5px solid var(--qq-accent)' : '1.5px solid var(--qq-hairline)',
+    color: 'var(--qq-card-text)',
+  };
 }

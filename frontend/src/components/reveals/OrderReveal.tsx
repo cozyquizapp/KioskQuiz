@@ -15,7 +15,7 @@ import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
 } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed } from '../../qqTheme';
+import { isThemed, themedWindow } from '../../qqTheme';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // OrderReveal — Bunte-Tüte "order" reveal, Top5-Style mit 2-Spalten-Layout
@@ -202,26 +202,21 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                   alignItems: 'center',
                   gap: 'clamp(10px, 1.2cqw, 18px)',
                   padding: 'clamp(10px, 1.4cqh, 18px) clamp(14px, 1.6cqw, 22px)',
-                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-                  // Skin: jede Row = Skin-„Fenster" (Mono=weisse Karte + schwarzer
-                  // Rand + Hard-Shadow); hasHits behaelt gruenen Rand (Spielsignal).
-                  background: isThemed()
-                    ? 'var(--qq-card-bg)'
-                    : hasHits
-                      ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
-                      : 'rgba(148,163,184,0.06)',
-                  border: isThemed()
-                    ? (hasHits ? '2px solid #22C55E' : 'var(--qq-card-border)')
-                    : hasHits
-                      ? '2px solid rgba(34,197,94,0.4)'
-                      : '2px solid rgba(148,163,184,0.15)',
-                  boxShadow: isThemed() ? 'var(--qq-card-shadow)' : undefined,
+                  // Cozy-Look (hasHits=gruen). Im Skin einheitlicher Frame via Helper.
+                  borderRadius: 16,
+                  background: hasHits
+                    ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
+                    : 'rgba(148,163,184,0.06)',
+                  border: hasHits
+                    ? '2px solid rgba(34,197,94,0.4)'
+                    : '2px solid rgba(148,163,184,0.15)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
                     ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) ${rowDelay}s both, top5RowGlow 1.2s ease ${0.3 + rowDelay}s both`
                     : 'none',
                   flex: 1,
                   minHeight: 'clamp(64px, 8cqh, 92px)',
+                  ...(themedWindow({ ok: hasHits }) ?? {}),
                 }}
               >
                 <div style={{
@@ -311,24 +306,20 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
         <div style={{
           marginTop: 'clamp(10px, 1.4cqh, 18px)',
           padding: 'clamp(10px, 1.4cqh, 16px) clamp(14px, 1.8cqw, 24px)',
-          borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-          background: isThemed()
-            ? 'var(--qq-card-bg)'
-            : winners.length > 0
-              ? 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(236,72,153,0.04))'
-              : 'rgba(148,163,184,0.06)',
-          border: isThemed()
-            ? (winners.length > 0 ? '2px solid var(--qq-accent)' : 'var(--qq-card-border)')
-            : winners.length > 0
-              ? '2px solid rgba(236,72,153,0.35)'
-              : '2px solid rgba(148,163,184,0.15)',
-          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : undefined,
+          borderRadius: 16,
+          background: winners.length > 0
+            ? 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(236,72,153,0.04))'
+            : 'rgba(148,163,184,0.06)',
+          border: winners.length > 0
+            ? '2px solid rgba(236,72,153,0.35)'
+            : '2px solid rgba(148,163,184,0.15)',
           display: 'flex', alignItems: 'center',
           gap: 'clamp(12px, 1.6cqw, 22px)',
           flexShrink: 0, minHeight: 0,
           opacity: revealedMinIdx === 0 ? 1 : 0.18,
           filter: revealedMinIdx === 0 ? 'none' : 'blur(8px) saturate(0.4)',
           transition: 'opacity 0.6s ease, filter 0.6s ease',
+          ...(themedWindow({ emphasis: winners.length > 0 }) ?? {}),
         }}>
           <div style={{
             display: 'flex', flexDirection: 'column', gap: 2,

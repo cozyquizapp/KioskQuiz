@@ -525,10 +525,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                     alignItems: 'center',
                     gap: 12,
                     padding: cardPad,
-                    borderRadius: 16,
-                    background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
-                    border: `1.5px solid ${tm.color}55`,
-                    boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
+                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                    // Skin: Standings-Row = Skin-„Fenster" (Mono-Frame); Team-Farbe
+                    // bleibt in Name + Avatar sichtbar.
+                    background: isThemed() ? 'var(--qq-card-bg)' : `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
+                    border: isThemed() ? 'var(--qq-card-border)' : `1.5px solid ${tm.color}55`,
+                    boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 4px 14px rgba(0,0,0,0.35)`,
                     animation: `finaleRank 0.55s var(--qq-ease-bounce) ${revealDelay}s both`,
                   }}>
                     <span style={{

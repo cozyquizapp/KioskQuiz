@@ -333,26 +333,35 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   alignItems: 'center',
                   gap: 'clamp(10px, 1.2cqw, 18px)',
                   padding: 'clamp(10px, 1.4cqh, 18px) clamp(14px, 1.6cqw, 22px)',
-                  borderRadius: 16,
-                  background: isTop
-                    ? `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}08)`
-                    : isInRangeWinner
-                      ? `linear-gradient(135deg, ${r.team.color}1a, ${r.team.color}05)`
-                      : (themed ? 'var(--qq-surface)' : 'rgba(148,163,184,0.06)'),
-                  border: isTop
-                    ? `2px solid ${r.team.color}55`
-                    : isInRangeWinner
+                  borderRadius: themed ? 'var(--qq-card-radius)' : 16,
+                  // Skin: jede Row ist ein Skin-„Fenster" (Mono=weisse Karte +
+                  // schwarzer Rand + Hard-Shadow). Emphasis (#1/in-range) ueber
+                  // Akzent-Rand statt Team-Tint. Cozy unveraendert.
+                  background: themed
+                    ? 'var(--qq-card-bg)'
+                    : isTop
+                      ? `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}08)`
+                      : isInRangeWinner
+                        ? `linear-gradient(135deg, ${r.team.color}1a, ${r.team.color}05)`
+                        : 'rgba(148,163,184,0.06)',
+                  border: themed
+                    ? ((isTop || isInRangeWinner) ? '2px solid var(--qq-accent)' : 'var(--qq-card-border)')
+                    : isTop
                       ? `2px solid ${r.team.color}55`
-                      : (themed ? '2px solid var(--qq-hairline)' : '2px solid rgba(148,163,184,0.15)'),
+                      : isInRangeWinner
+                        ? `2px solid ${r.team.color}55`
+                        : '2px solid rgba(148,163,184,0.15)',
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
                     ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
                     : 'none',
                   flex: 1,
                   minHeight: 'clamp(72px, 9cqh, 110px)',
-                  boxShadow: isTop
-                    ? `0 0 28px ${r.team.color}33`
-                    : isInRangeWinner ? `0 0 18px ${r.team.color}22` : 'none',
+                  boxShadow: themed
+                    ? 'var(--qq-card-shadow)'
+                    : isTop
+                      ? `0 0 28px ${r.team.color}33`
+                      : isInRangeWinner ? `0 0 18px ${r.team.color}22` : 'none',
                 }}
               >
                 <div style={{

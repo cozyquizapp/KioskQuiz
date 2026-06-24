@@ -304,13 +304,20 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 alignItems: 'center',
                 gap: 'clamp(10px, 1.2cqw, 18px)',
                 padding: 'clamp(10px, 1.4cqh, 18px) clamp(14px, 1.6cqw, 22px)',
-                borderRadius: 16,
-                background: hasHits
-                  ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
-                  : 'rgba(148,163,184,0.06)',
-                border: hasHits
-                  ? '2px solid rgba(34,197,94,0.4)'
-                  : '2px solid rgba(148,163,184,0.15)',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                // Skin: jede Row = Skin-„Fenster" (Mono=weisse Karte + schwarzer
+                // Rand + Hard-Shadow); hasHits behaelt gruenen Rand (Spielsignal).
+                background: isThemed()
+                  ? 'var(--qq-card-bg)'
+                  : hasHits
+                    ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
+                    : 'rgba(148,163,184,0.06)',
+                border: isThemed()
+                  ? (hasHits ? '2px solid #22C55E' : 'var(--qq-card-border)')
+                  : hasHits
+                    ? '2px solid rgba(34,197,94,0.4)'
+                    : '2px solid rgba(148,163,184,0.15)',
+                boxShadow: isThemed() ? 'var(--qq-card-shadow)' : undefined,
                 visibility: isVisible ? 'visible' : 'hidden',
                 animation: isVisible
                   ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) ${rowDelay}s both, top5RowGlow 1.2s ease ${0.3 + rowDelay}s both`

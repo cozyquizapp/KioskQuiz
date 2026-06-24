@@ -4386,12 +4386,13 @@ function RulesIntroOverlay({ language, visible, eurovisionMode }: {
   const sub = lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!';
   // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): accent themed via getBrandColors.
   const accent = getBrandColors(eurovisionMode).accentHex;
+  const themed = isThemed();
   return (
     <BeamerOverlay
       visible={visible}
       zIndex={9988}
       hiddenScale={0.98}
-      background="radial-gradient(ellipse at center, rgba(31,26,46,0.96) 0%, rgba(20,16,31,0.98) 55%, rgba(10,8,20,1) 100%)"
+      background={themed ? 'var(--qq-bg)' : 'radial-gradient(ellipse at center, rgba(31,26,46,0.96) 0%, rgba(20,16,31,0.98) 55%, rgba(10,8,20,1) 100%)'}
     >
       {/* Hintergrund-Glow — Brand-Pink (Eurovision: ESC-Pink) */}
       <div style={{
@@ -4407,11 +4408,11 @@ function RulesIntroOverlay({ language, visible, eurovisionMode }: {
       <div style={{
         position: 'relative', zIndex: 5,
         maxWidth: 1200, width: '94%',
-        background: 'rgba(15,12,9,0.85)',
-        border: `2px solid ${accent}44`,
-        borderRadius: 24,
+        background: themed ? 'var(--qq-card-bg)' : 'rgba(15,12,9,0.85)',
+        border: themed ? 'var(--qq-card-border)' : `2px solid ${accent}44`,
+        borderRadius: themed ? 'var(--qq-card-radius)' : 24,
         padding: 'clamp(40px, 6cqh, 80px) clamp(40px, 6cqw, 96px)',
-        boxShadow: `0 0 120px ${accent}22, 0 16px 48px rgba(0,0,0,0.6)`,
+        boxShadow: themed ? 'var(--qq-card-shadow)' : `0 0 120px ${accent}22, 0 16px 48px rgba(0,0,0,0.6)`,
         backdropFilter: 'blur(10px)',
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         gap: 'clamp(14px, 2cqh, 24px)', textAlign: 'center',
@@ -4440,8 +4441,8 @@ function RulesIntroOverlay({ language, visible, eurovisionMode }: {
             display: 'inline-flex',
             fontSize: 'clamp(44px, 7cqw, 88px)', fontWeight: 900,
             lineHeight: 1.05, letterSpacing: '-0.01em',
-            color: accent,
-            textShadow: `0 0 60px ${accent}44`,
+            color: themed ? 'var(--qq-card-text)' : accent,
+            textShadow: themed ? 'none' : `0 0 60px ${accent}44`,
           }}
         >
           {Array.from(headline).map((char, i) => (
@@ -4467,8 +4468,8 @@ function RulesIntroOverlay({ language, visible, eurovisionMode }: {
         <div style={{
           fontSize: 'clamp(22px,3cqw,40px)', fontWeight: 700,
           letterSpacing: '0.05em',
-          color: QQ_COLORS.slate200,
-          textShadow: '0 2px 12px rgba(0,0,0,0.4)',
+          color: themed ? 'var(--qq-card-text)' : QQ_COLORS.slate200,
+          textShadow: themed ? 'none' : '0 2px 12px rgba(0,0,0,0.4)',
           animation: visible ? 'qqRulesIntroSub 0.8s cubic-bezier(0.2,0.8,0.4,1) 0.95s both' : 'none',
         }}>{sub}</div>
       </div>

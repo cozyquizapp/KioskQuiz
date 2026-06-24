@@ -11,6 +11,7 @@ import { Fireflies } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 import { useLangFlip } from '../cozyQuizShared';
+import { isThemed } from '../qqTheme';
 
 /** Helper: lang-aware Spiel-Name + Beschreibung mit Fallback. */
 function cgName(game: CozyGame | null, lang: 'de' | 'en'): string {
@@ -63,6 +64,8 @@ const SLICE_PALETTE_DARK = [
 // hochgezogen (50/30 statt 30/1A) damit Slice-Color noch sichtbar bleibt
 // trotz dunklerem Grund.
 function darkBgWithAccent(accent: string): { backgroundColor: string; backgroundImage: string } {
+  // 2026-06-24 (Skin): bei aktivem Skin flacher Skin-BG statt Brand-Dunkel+Glow.
+  if (isThemed()) return { backgroundColor: 'var(--qq-bg)', backgroundImage: 'none' };
   return {
     backgroundColor: '#0A0814',
     backgroundImage:
@@ -224,7 +227,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
   if (loading) {
     return (
       <FullScreenLayout width={width} height={height}>
-        <div style={{ color: '#94a3b8', fontSize: 24 }}>
+        <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8'), fontSize: 24 }}>
           {lang === 'en' ? 'Loading mini-games…' : 'Lade Mini-Spiele…'}
         </div>
       </FullScreenLayout>
@@ -333,7 +336,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
     default:
       phaseContent = (
         <FullScreenLayout width={width} height={height}>
-          <div style={{ color: '#94a3b8' }}>
+          <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8') }}>
             {lang === 'en' ? 'Unknown CozyGame phase: ' : 'Unbekannte CozyGame-Phase: '}{round.phase}
           </div>
         </FullScreenLayout>
@@ -449,7 +452,7 @@ function FullScreenLayout({ children, width, height, accent = COZY_PINK, solid }
       ...bgStyle,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 24,
-      color: '#fff', fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
       overflow: 'hidden',
       position: 'relative',
     }}>
@@ -491,13 +494,13 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
       </div>
       <div style={{
         fontSize: 'clamp(20px, 2vw, 32px)',
-        color: '#cbd5e1', marginTop: -8, fontWeight: 600,
+        color: (isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1'), marginTop: -8, fontWeight: 600,
       }}>
         {subtitle}
       </div>
       <div style={{
         marginTop: 32,
-        fontSize: 'clamp(14px, 1.3vw, 22px)', color: '#64748b', fontStyle: 'italic',
+        fontSize: 'clamp(14px, 1.3vw, 22px)', color: (isThemed() ? 'var(--qq-text-muted)' : '#64748b'), fontStyle: 'italic',
       }}>
         {hint}
       </div>
@@ -530,7 +533,7 @@ function WheelView({
         {!spinning && revealedGame && (
           <div style={{
             padding: '40px 60px',
-            background: 'rgba(255,255,255,0.06)',
+            background: (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.06)'),
             border: `3px solid ${COZY_PINK}`,
             borderRadius: 24,
             display: 'flex', alignItems: 'center', gap: 24,
@@ -540,13 +543,13 @@ function WheelView({
             <span style={{ fontSize: 96 }}>{revealedGame.emoji}</span>
             <div>
               <div style={{ fontSize: 'clamp(36px, 4vw, 72px)', fontWeight: 900 }}>{cgName(revealedGame, lang)}</div>
-              <div style={{ fontSize: 'clamp(16px, 1.4vw, 26px)', color: '#cbd5e1', marginTop: 8, maxWidth: 700 }}>
+              <div style={{ fontSize: 'clamp(16px, 1.4vw, 26px)', color: (isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1'), marginTop: 8, maxWidth: 700 }}>
                 {cgDesc(revealedGame, lang)}
               </div>
             </div>
           </div>
         )}
-        <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: '#64748b', fontStyle: 'italic', marginTop: 24 }}>
+        <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: (isThemed() ? 'var(--qq-text-muted)' : '#64748b'), fontStyle: 'italic', marginTop: 24 }}>
           {spinning ? (lang === 'en' ? `Choosing from ${slices.length} games …` : `Wählt aus ${slices.length} Spielen …`) : ''}
         </div>
       </FullScreenLayout>
@@ -735,7 +738,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
 }) {
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
+      <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8') }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
     </FullScreenLayout>;
   }
   return (
@@ -744,10 +747,10 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
       // 2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe aus slice
       // bis zum öffnen des grids'): Solid dark Slice-Color als BG, kein Radial-
       // Tint mehr. Konsistente Farbe von WHEEL_RESULT bis WINNER_SELECT.
-      backgroundColor: darkAccentColor,
+      backgroundColor: isThemed() ? 'var(--qq-bg)' : darkAccentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
-      color: '#fff', fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',
@@ -836,12 +839,12 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
           {game.materialTags.map(t => (
             <span key={t} style={{
               padding: '4px 12px',
-              background: 'rgba(0,0,0,0.25)',
+              background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
               border: '1.5px solid rgba(255,255,255,0.35)',
               borderRadius: 999,
               fontSize: 'clamp(12px, 1vw, 16px)',
               fontWeight: 700,
-              color: '#fff',
+              color: (isThemed() ? 'var(--qq-text)' : '#fff'),
             }}>{t}</span>
           ))}
         </div>
@@ -890,7 +893,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
 }) {
   if (!game || !gameEndsAt) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>Kein aktives Spiel</div>
+      <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8') }}>Kein aktives Spiel</div>
     </FullScreenLayout>;
   }
   return (
@@ -899,7 +902,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
       background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 28,
-      color: '#fff', fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
       overflow: 'hidden',
     }}>
       {/* 2026-05-17 v7 (Wolf 'timer + card sollen animation haben'):
@@ -919,7 +922,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 24,
         padding: '20px 40px',
-        background: 'rgba(0,0,0,0.25)',
+        background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
         border: '2px solid rgba(255,255,255,0.18)',
         borderRadius: 24,
         opacity: 0,
@@ -977,7 +980,7 @@ function SequenceGameView({
 }) {
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
+      <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8') }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
     </FullScreenLayout>;
   }
   const teamById = new Map(teams.map(t => [t.id, t]));
@@ -987,9 +990,9 @@ function SequenceGameView({
   return (
     <div style={{
       width, height,
-      backgroundColor: darkAccentColor,
+      backgroundColor: isThemed() ? 'var(--qq-bg)' : darkAccentColor,
       display: 'flex', flexDirection: 'column',
-      color: '#fff', fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',
@@ -1025,7 +1028,7 @@ function SequenceGameView({
         gap: 'clamp(20px, 3vw, 56px)',
         alignItems: 'center',
         padding: 'clamp(20px, 2.5vh, 40px) clamp(20px, 3vw, 56px)',
-        background: 'rgba(0,0,0,0.25)',
+        background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
         borderRadius: 24,
         border: '2px solid rgba(255,255,255,0.18)',
       }}>
@@ -1070,7 +1073,7 @@ function SequenceGameView({
               </div>
             </>
           ) : (
-            <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'No team' : 'Kein Team'}</div>
+            <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8') }}>{lang === 'en' ? 'No team' : 'Kein Team'}</div>
           )}
         </div>
 
@@ -1157,7 +1160,7 @@ function SequenceGameView({
         display: 'flex', flexWrap: 'wrap', gap: 'clamp(8px, 1vw, 16px)',
         justifyContent: 'center', alignItems: 'center',
         padding: 'clamp(12px, 1.5vh, 20px)',
-        background: 'rgba(0,0,0,0.20)',
+        background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.20)'),
         borderRadius: 16,
         animation: 'cozyGameSeqQueueIn 0.5s ease-out 0.3s both',
       }}>
@@ -1238,7 +1241,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
 
   if (!game) {
     return <FullScreenLayout width={width} height={height}>
-      <div style={{ color: '#94a3b8' }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
+      <div style={{ color: (isThemed() ? 'var(--qq-text-muted)' : '#94a3b8') }}>{lang === 'en' ? 'Loading game details…' : 'Lade Spiel-Details…'}</div>
     </FullScreenLayout>;
   }
   const winners = winnerTeamIds
@@ -1250,10 +1253,10 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
       width, height,
       // 2026-05-17 v17: Solid dark Slice-Color als BG, matched GameDetailView
       // → seamless Übergang von Game-Active zu Winner-Reveal.
-      backgroundColor: darkAccentColor,
+      backgroundColor: isThemed() ? 'var(--qq-bg)' : darkAccentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
-      color: '#fff', fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',
@@ -1388,7 +1391,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
           }}>
             <div style={{
               padding: '14px 28px',
-              background: 'rgba(0,0,0,0.3)',
+              background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.3)'),
               border: '2px solid rgba(255,255,255,0.4)',
               borderRadius: 16,
               textAlign: 'center',

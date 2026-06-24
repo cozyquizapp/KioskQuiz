@@ -329,6 +329,7 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     phases: room.totalPhases,
     language: room.language,
     avatarSetId: room.avatarSetId ?? 'all',   // 2026-05-04: Phase 2 - Set fuer Summary-Render
+    themeId: room.themeId ?? 'cozy',           // 2026-06-24: Buehnen-Skin
     // 2026-05-07: Server-gewuerfelte Slot-Emojis fuer 'all'-Set (sonst zeigt
     // die Summary die falschen Slot-Defaults bei reload).
     avatarSetEmojis: (room as any).avatarSetEmojis ?? null,
@@ -1965,6 +1966,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (newId === 'all' && !wasAll) {
           room.avatarSetEmojis = getRandomDummyEmojis(8);
         }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // ── Buehnen-Skin (Theme) waehlen — analog qq:setAvatarSet ─────────────────
+    // 2026-06-24: Mod waehlt beim Einrichten das Design. State-Propagation →
+    // Beamer + /team rufen applyThemeVars(resolveTheme(themeId)). Default 'cozy'.
+    socket.on('qq:setTheme', (payload: { roomCode: string; themeId: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const id = String(payload.themeId ?? 'cozy');
+        const allowed = ['cozy', 'studioMono', 'softPop', 'neoBrutal'];
+        room.themeId = allowed.includes(id) ? id : 'cozy';
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

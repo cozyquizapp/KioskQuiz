@@ -227,6 +227,9 @@ export interface QQRoomState {
   // Mod-Setup: gewaehltes Avatar-Theme fuer dieses Quiz. Optional, default 'cozyAnimals'.
   // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
   avatarSetId?: string;
+  // 2026-06-24: gewaehltes Bühnen-Design (Skin) fuer dieses Quiz. Default 'cozy'
+  // (= heutiger Look). Beamer + /team rufen applyThemeVars(resolveTheme(themeId)).
+  themeId?: string;
   // 2026-05-04 Phase 2: bei Set 'all' wuerfelt Server 8 Slot-Emojis quer durch
   // alle Themen, damit's nicht immer Cozy-Tiere sind. Konsistent ueber alle
   // Clients via State. Bei anderen Sets ungenutzt (Renderer nimmt Set-eigene Emojis).
@@ -474,6 +477,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       setupDone: false,
       avatarSetId: 'cozy3d',   // 2026-06-23: cozy3d-3D-Tiere sind der neue Default-Look
+      themeId: 'cozy',         // 2026-06-24: Buehnen-Design (Skin), Default = heutiger Look
       // avatarSetEmojis wird nur vom 'all'-Set genutzt (Server-gewuerfelter
       // Emoji-Mix). Bleibt fuer den Fall, dass der Mod auf 'all' wechselt.
       avatarSetEmojis: getRandomDummyEmojis(8),
@@ -4219,6 +4223,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
     avatarSetId:      room.avatarSetId ?? 'all',
+    themeId:          room.themeId ?? 'cozy',
     // Lazy-Init fuer Bestands-Rooms: wenn Set 'all' aber noch keine Emojis
     // gewuerfelt sind (z.B. weil Room vor 2026-05-04 erstellt), jetzt einmal
     // wuerfeln und festhalten. Ohne diesen Schritt wuerden alle Slots auf

@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
-import { isThemed, getActiveTheme } from '../qqTheme';
+import { isThemed, getActiveTheme, setActiveThemeId } from '../qqTheme';
 import {
   QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
@@ -205,6 +205,14 @@ export default function QQBeamerPage() {
   useEffect(() => {
     try { preloadSoundDefaults(); } catch { /* ignore */ }
   }, []);
+
+  // 2026-06-24 (B-Wiring): Bühnen-Skin aus dem Room-State anwenden. Mod waehlt
+  // ihn beim Setup (qq:setTheme → room.themeId), Server broadcastet ihn im State.
+  // setActiveThemeId schreibt die CSS-Tokens (applyThemeVars) + triggert Re-Render
+  // aller skin-abhaengigen Views. No-op wenn unveraendert. Default 'cozy'.
+  useEffect(() => {
+    setActiveThemeId(state?.themeId ?? 'cozy');
+  }, [state?.themeId]);
 
   // 2026-05-05 (Wolf-Bug 'Scrollbar darf NIE auf /beamer'): body + html overflow
   // hart auf hidden — egal was Inhalts-Container-CSS macht, der Browser zeigt

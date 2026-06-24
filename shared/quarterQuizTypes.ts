@@ -1157,6 +1157,8 @@ export interface QQStateUpdate {
   // Werte: 'all' | 'cozyAnimals' | 'cozyCast' | 'halloween' | 'christmas' |
   //        'pub' | 'scifi' | 'sport' | 'tropical' | 'fantasy'
   avatarSetId?: string;
+  // 2026-06-24: gewaehltes Buehnen-Design (Skin) — 'cozy'|'studioMono'|'softPop'|'neoBrutal'.
+  themeId?: string;
   // Bei Set 'all' wuerfelt der Server 8 Slot-Emojis quer durch alle Themen,
   // damit's nicht immer Cozy-Tiere sind. Bei anderen Sets ungenutzt
   // (Renderer nimmt Set-eigene Emojis aus avatarSets.ts).

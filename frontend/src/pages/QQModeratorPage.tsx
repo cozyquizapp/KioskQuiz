@@ -13,6 +13,7 @@ import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
+import { QQ_THEMES } from '../qqTheme';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { JokerIcon } from '../components/JokerIcon';
@@ -5445,6 +5446,64 @@ function SetupView({
               if (id === 'cozyAnimals') return 'Cozy Animals · Tier-Emojis als Theme';
               const set = AVATAR_SETS.find(x => x.id === id);
               return set ? `${set.label}-Set · Spieler-Picker zeigt Theme-Emojis` : '';
+            })()}
+          </span>
+        </div>
+
+        {/* 2026-06-24 — Bühnen-Design (Skin). Setzt room.themeId; Beamer + /team
+            wenden den Skin live an. Default 'cozy' (= heutiger Look). */}
+        <div style={{ ...settingRow, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+          <span style={{ ...settingLabel, marginTop: 6 }}>🎨 Design</span>
+          {(() => {
+            const THEME_TINT: Record<string, string> = {
+              cozy: '#ec4899', studioMono: '#111111', softPop: '#f472a0', neoBrutal: '#7c3aed',
+            };
+            const activeId = s.themeId ?? 'cozy';
+            const tint = THEME_TINT[activeId] ?? '#ec4899';
+            return (
+              <select
+                value={activeId}
+                onChange={e => emit('qq:setTheme', { roomCode, themeId: e.target.value })}
+                style={{
+                  flex: 1,
+                  padding: '7px 30px 7px 12px',
+                  borderRadius: 8,
+                  border: 'none',
+                  cursor: 'pointer',
+                  fontWeight: 900,
+                  fontSize: 13,
+                  fontFamily: 'inherit',
+                  background:
+                    `linear-gradient(135deg, ${tint}26, ${tint}0d) ` +
+                    `no-repeat, rgba(0,0,0,0.32)`,
+                  color: '#fff',
+                  boxShadow: `0 0 0 1.5px ${tint}, 0 0 14px ${tint}40`,
+                  appearance: 'none',
+                  WebkitAppearance: 'none',
+                  MozAppearance: 'none',
+                  backgroundImage:
+                    `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'><path fill='%23fff' d='M0 0l5 6 5-6z'/></svg>")`,
+                  backgroundRepeat: 'no-repeat',
+                  backgroundPosition: 'right 10px center',
+                  backgroundSize: '10px 6px',
+                }}
+              >
+                {Object.values(QQ_THEMES).map(t => (
+                  <option key={t.id} value={t.id} style={{ background: '#1f1610', color: '#fff' }}>
+                    {t.label}
+                  </option>
+                ))}
+              </select>
+            );
+          })()}
+          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
+            {(() => {
+              const id = s.themeId ?? 'cozy';
+              if (id === 'cozy')       return 'Cozy · der Standard-Look (Pink/Navy)';
+              if (id === 'studioMono') return 'Studio Mono · editorial, hell, Hard-Shadow — ideal für Corporate/Team-Events';
+              if (id === 'softPop')    return 'Soft Pop · warm, pastellig, freundlich';
+              if (id === 'neoBrutal')  return 'Neo-Brutalism · lila, dicke Ränder, knallig (kreativ/jung)';
+              return '';
             })()}
           </span>
         </div>

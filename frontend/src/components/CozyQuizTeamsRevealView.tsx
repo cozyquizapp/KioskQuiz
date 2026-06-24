@@ -15,10 +15,15 @@ import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAva
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
+import { isThemed } from '../qqTheme';
+import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
+  const themed = isThemed();
+  const fontFam = themed
+    ? 'var(--qq-font)'
+    : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const teams = s.teams.filter(t => t.connected).length > 0
     ? s.teams.filter(t => t.connected)
     : s.teams;
@@ -115,7 +120,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const isEsc = !!s.theme?.eurovisionMode;
   const escBgUrl = isEsc ? s.theme?.lobbyBackgroundUrl : null;
   const escLogoUrl = isEsc ? s.theme?.logoUrl : null;
-  const titleColor = isEsc ? '#FF2D7B' : '#f8fafc';
+  const titleColor = isEsc ? '#FF2D7B' : themed ? 'var(--qq-text)' : '#f8fafc';
   // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg, Dark-Halo first auf BG-Image.
   const titleShadow = isEsc
     ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
@@ -132,8 +137,12 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       // (#1e293b/#0f172a/#020617), das wirkte fremd zwischen den anderen
       // dunklen Pink-Tint-Slides. Jetzt #0A0814 Base + Pink-Radial-Glow analog
       // PausedView/ComebackView/QuestionView. ESC-Variante behält Lila-Glow.
-      backgroundColor: '#0A0814',
-      backgroundImage: isEsc
+      // 2026-06-23 (Skin): bei aktivem Skin flacher Skin-BG (var(--qq-bg)) statt
+      // dem dunklen Pink-Glow-Untergrund — sonst bleibt diese Slide dunkel
+      // waehrend der Rest hell lackiert ist.
+      backgroundColor: themed ? undefined : '#0A0814',
+      background: themed ? 'var(--qq-bg)' : undefined,
+      backgroundImage: themed ? undefined : isEsc
         ? 'radial-gradient(ellipse at 50% 30%, rgba(255,45,123,0.18), transparent 55%),' +
           'radial-gradient(ellipse at 85% 110%, rgba(167,139,250,0.10), transparent 55%),' +
           'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.06), transparent 50%)'
@@ -420,13 +429,14 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             position: 'absolute', inset: 0,
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
-                            borderRadius: 'clamp(14px, 1.4cqw, 22px)',
-                            background:
-                              'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.32) 0%, transparent 60%),' +
+                            borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(14px, 1.4cqw, 22px)',
+                            background: themed
+                              ? 'var(--qq-card-bg)'
+                              : 'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.32) 0%, transparent 60%),' +
                               'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
                               'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-                            border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
-                            boxShadow: '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(var(--qq-accent-rgb),0.18)',
+                            border: themed ? 'var(--qq-card-border)' : '2px solid rgba(var(--qq-accent-rgb),0.55)',
+                            boxShadow: themed ? 'var(--qq-card-shadow)' : '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(var(--qq-accent-rgb),0.18)',
                             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                             gap: 12, padding: 'clamp(14px, 1.6cqw, 22px)',
                             overflow: 'hidden',
@@ -467,9 +477,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
                               fontSize: multiRow ? 'clamp(20px, 2.2cqw, 32px)' : 'clamp(24px, 2.6cqw, 40px)',
                               fontWeight: 900,
-                              color: '#FBCFE8',
+                              color: themed ? 'var(--qq-card-text)' : '#FBCFE8',
                               letterSpacing: '0.02em',
-                              textShadow: '0 0 14px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(var(--qq-accent-rgb),0.4)',
+                              textShadow: themed ? 'none' : '0 0 14px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(var(--qq-accent-rgb),0.4)',
                               lineHeight: 1,
                               position: 'relative',
                               textTransform: 'uppercase',
@@ -536,20 +546,34 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               lineHeight: 1,
                               animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
                             }}>
-                              {t.emoji ? (
-                                isCountryFlagGlyph(t.emoji) ? (
-                                  <img
-                                    src={getCountryFlagUrl(t.emoji)}
-                                    alt={t.emoji}
-                                    draggable={false}
-                                    style={{
-                                      width: '1.3em', height: '1em',
-                                      objectFit: 'contain',
-                                    }}
-                                  />
-                                ) : (
-                                  t.emoji
-                                )
+                              {t.emoji && isCountryFlagGlyph(t.emoji) ? (
+                                <img
+                                  src={getCountryFlagUrl(t.emoji)}
+                                  alt={t.emoji}
+                                  draggable={false}
+                                  style={{
+                                    width: '1.3em', height: '1em',
+                                    objectFit: 'contain',
+                                  }}
+                                />
+                              ) : isCozy3dSlug(t.emoji) ? (
+                                // 2026-06-24 (Wolf-Bug 'heute spielen avatare nicht
+                                // verdrahtet'): team.emoji haelt jetzt einen cozy3d-
+                                // Slug. Vorher wurde der Slug als ROHTEXT in den Disc
+                                // gerendert (man sah Wort-Fragmente wie 'ngl'/'od').
+                                // Jetzt das PNG laden — Fill identisch zu ImageAvatar
+                                // (COZY3D_DISC_FILL 90%) auf der soliden Team-Color-Disc.
+                                <img
+                                  src={cozy3dSrc(t.emoji)}
+                                  alt={cozy3dLabel(t.emoji)}
+                                  draggable={false}
+                                  style={{
+                                    width: '90%', height: '90%', objectFit: 'contain',
+                                    filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))',
+                                  }}
+                                />
+                              ) : t.emoji ? (
+                                t.emoji
                               ) : (
                                 // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern.
                                 // 100% damit die PNG-Border (eigener Tier-Ring) den

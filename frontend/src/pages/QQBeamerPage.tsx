@@ -639,7 +639,9 @@ function SlideStage({ children }: { children: React.ReactNode }) {
       // duenne Rahmen-Linie sichtbar. Jetzt auf #0F0817 angeglichen — matched
       // den RaceFinalSlide-Aussenring + bleibt fuer andere Views (BG dort
       // i.d.R. auch sehr dunkles Lila) praktisch unsichtbar.
-      background: '#0F0817',
+      // 2026-06-23 (Skin): bei aktivem Skin der Aussenring = Skin-BG, sonst
+      // erscheint ein dunkler Rahmen um die hell-lackierte Stage.
+      background: isThemed() ? 'var(--qq-bg)' : '#0F0817',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>
@@ -1857,9 +1859,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   return (
     <div style={{
       height: '100cqh', width: '100cqw',
-      background: activeTemplate ? (activeTemplate.background || bg) : bg,
-      fontFamily: fontFam,
-      color: textCol, display: 'flex', flexDirection: 'column',
+      // 2026-06-23 (Skin): aktiver Skin lackiert den Phase-Root — Seiten-BG,
+      // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen
+      // eigenen BG malen). Cozy bleibt 1:1 (Kategorie-BG/Template-BG/fontFam).
+      background: isThemed() ? 'var(--qq-bg)' : (activeTemplate ? (activeTemplate.background || bg) : bg),
+      fontFamily: isThemed() ? 'var(--qq-font)' : fontFam,
+      color: isThemed() ? 'var(--qq-text)' : textCol, display: 'flex', flexDirection: 'column',
       // 2026-05-12 (Glow-Audit): overflow 'hidden' → 'visible'. Body-Scroll
       // ist bereits durch SlideStage outer (overflow:clip + 120px clipMargin)
       // UND html/body in main.css (overflow:hidden) doppelt verhindert. Dieser

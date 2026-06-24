@@ -19,6 +19,7 @@ import { formatRevealedAnswer } from '../../cozyQuizShared';
 import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
 } from '../../utils/sounds';
+import { isThemed } from '../../qqTheme';
 
 // ── Leaflet-Map Helpers ─────────────────────────────────────────────────────
 // Vorher inline in CozyQuizQuestionView.tsx — beim Extract mit hierher gewandert,
@@ -230,7 +231,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
 
   return (
-    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: '#0A0814' }}>
+    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: isThemed() ? 'var(--qq-bg)' : '#0A0814' }}>
       {/* Karte */}
       <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s var(--qq-ease-smooth)' }}>
         <MapContainer

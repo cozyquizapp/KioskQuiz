@@ -18,6 +18,7 @@ import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
   playTick, playWinnerCardReveal,
 } from '../../utils/sounds';
+import { isThemed } from '../../qqTheme';
 
 // 2026-05-09 v2 (Wolf-Reform): Connect 4 — alle 4 Hints sofort sichtbar,
 // 1 Tipp pro Team, Reveal mit Lösung + Winner-Card wie CHEESE.
@@ -105,7 +106,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
       }}>
         <div style={{
           fontSize: 'clamp(26px, 3cqw, 44px)', fontWeight: 900,
-          color: '#F1F5F9', lineHeight: 1.2, maxWidth: 1400, margin: '0 auto',
+          color: isThemed() ? 'var(--qq-text)' : '#F1F5F9', lineHeight: 1.2, maxWidth: 1400, margin: '0 auto',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : (q.text || (lang === 'de' ? 'Was verbindet diese Hinweise?' : 'What connects these clues?'))}
         </div>
@@ -146,7 +147,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 }}>{lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}</div>
                 <div style={{
                   fontSize: 'clamp(24px, 2.8cqw, 44px)', fontWeight: 900,
-                  color: '#F1F5F9', lineHeight: 1.15,
+                  color: isThemed() ? 'var(--qq-text)' : '#F1F5F9', lineHeight: 1.15,
                 }}>{hintText}</div>
               </div>
             );

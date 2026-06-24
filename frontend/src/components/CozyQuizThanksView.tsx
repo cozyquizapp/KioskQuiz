@@ -20,9 +20,11 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { WolfHeadIcon } from './WolfHeadIcon';
 import { CozyWolfImage } from './CozyWolfImage';
 import { AnimatedCozyWolf, WolfCoModerator, getBrandColors } from '../pages/QQBeamerPage';
+import { isThemed } from '../qqTheme';
 
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
+  const themed = isThemed();
   // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): brand-themed colors via Helper.
   const brand = getBrandColors(!!s.theme?.eurovisionMode);
   // 2026-05-10 (Wolf-Bug 'geteilter Spieler-Link wird beim nächsten Spiel
@@ -72,7 +74,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const cardBg = s.theme?.eurovisionMode
     ? 'linear-gradient(180deg, rgba(45,22,68,0.72) 0%, rgba(31,15,61,0.62) 100%)'
     : (s.theme?.cardBg ?? COZY_CARD_BG);
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
+  const fontFam = themed
+    ? 'var(--qq-font)'
+    : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const isEsc = !!s.theme?.eurovisionMode;
   const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
   // 2026-05-16: winnerCells/winnerBonus waren Dead-Code (nirgendwo verwendet),
@@ -88,8 +92,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       gap: 28,
       minHeight: 0,
       // BG identisch zu PausedView/PreGameView (Setup-Look).
-      background:
-        `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +
+      // 2026-06-24 (Skin): bei aktivem Skin flacher Skin-BG statt dunklem
+      // Pink-Glow-Untergrund.
+      background: themed
+        ? 'var(--qq-bg)'
+        : `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         `radial-gradient(ellipse at 15% 80%, rgba(${brand.accentRgb},0.05), transparent 50%), ` +
         '#0A0814',

@@ -15,16 +15,21 @@
 import { Component, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { QuestionView } from '../components/CozyQuizQuestionView';
+import { TeamsRevealView } from '../components/CozyQuizTeamsRevealView';
+import { GameOverView } from '../components/CozyQuizGameOverView';
+import { ThanksView } from '../components/CozyQuizThanksView';
 import { useActiveThemeId, setActiveThemeId, getActiveTheme, QQ_THEMES } from '../qqTheme';
 
 const PINK = '#ec4899';
 
 // ── Mock-Daten (aus dem bewährten Thanks-Test-Muster) ───────────────────────
+// 2026-06-24: emoji haelt cozy3d-Slugs (= echter Default-Look), damit der
+// Showroom die neuen 3D-Tier-Avatare zeigt statt OS-Emoji.
 const TEAMS = [
-  { id: 't1', name: 'Die Pinguine', color: '#3B82F6', avatarId: 'penguin', emoji: '🐧', connected: true, totalCells: 9, largestConnected: 6 },
-  { id: 't2', name: 'Wolfsrudel',   color: '#EC4899', avatarId: 'wolf',    emoji: '🐺', connected: true, totalCells: 6, largestConnected: 4 },
-  { id: 't3', name: 'Koala Krew',   color: '#22C55E', avatarId: 'koala',   emoji: '🐨', connected: true, totalCells: 6, largestConnected: 3 },
-  { id: 't4', name: 'Eulen-Crew',   color: '#A855F7', avatarId: 'owl',     emoji: '🦉', connected: true, totalCells: 4, largestConnected: 2 },
+  { id: 't1', name: 'Die Pinguine', color: '#3B82F6', avatarId: 'penguin', emoji: 'pinguin', connected: true, totalCells: 9, largestConnected: 6 },
+  { id: 't2', name: 'Wolfsrudel',   color: '#EC4899', avatarId: 'wolf',    emoji: 'fuchs',   connected: true, totalCells: 6, largestConnected: 4 },
+  { id: 't3', name: 'Koala Krew',   color: '#22C55E', avatarId: 'koala',   emoji: 'koala',   connected: true, totalCells: 6, largestConnected: 3 },
+  { id: 't4', name: 'Eulen-Crew',   color: '#A855F7', avatarId: 'owl',     emoji: 'eule',    connected: true, totalCells: 4, largestConnected: 2 },
 ] as unknown as QQStateUpdate['teams'];
 
 function buildGrid(): QQStateUpdate['grid'] {
@@ -79,10 +84,17 @@ function baseState(): QQStateUpdate {
 // ── Szenen: echte Beamer-View + Phase-Override ──────────────────────────────
 type Scene = { key: string; ms: number; render: (s: QQStateUpdate) => ReactNode };
 
-// 2026-06-23 (Theme-Repaint): vorerst nur die Flagship-Szenen (Frage + Reveal),
-// solange nur die QuestionView auf Skin-Tokens migriert ist. Teams/Treppchen/
-// Thanks kommen zurueck, sobald sie ebenfalls umgestellt sind.
+// 2026-06-24 (Skin-A-Feinschliff): volle Trailer-Sequenz wieder aktiv, jetzt
+// dass Teams/Treppchen/Thanks ebenfalls auf Skin-Tokens migriert sind. So
+// kann pro Design die ganze Bandbreite reviewed werden (nicht nur Frage+Reveal).
 const SCENES: Scene[] = [
+  {
+    key: 'teams', ms: 5600,
+    // teamsRevealStartedAt weit in der Vergangenheit → Slot-Machine-Reveal ist
+    // durchgelaufen, alle Karten geflippt + „Viel Glück" sichtbar (sauberes
+    // Standbild fuer den Avatar-Review statt mitten in der Slam-Animation).
+    render: (s) => <TeamsRevealView state={{ ...s, phase: 'TEAMS_REVEAL', teamsRevealStartedAt: s.serverTime - 14000 } as QQStateUpdate} />,
+  },
   {
     key: 'frage', ms: 5200,
     render: (s) => <QuestionView state={{ ...s, phase: 'QUESTION_ACTIVE', currentQuestion: MOCK_QUESTION, timerEndsAt: s.serverTime + 18000 } as QQStateUpdate} revealed={false} />,
@@ -90,6 +102,14 @@ const SCENES: Scene[] = [
   {
     key: 'reveal', ms: 5200,
     render: (s) => <QuestionView state={{ ...s, phase: 'QUESTION_REVEAL', currentQuestion: MOCK_QUESTION, revealedAnswer: '330 m', correctTeamId: 't1' } as QQStateUpdate} revealed={true} />,
+  },
+  {
+    key: 'treppchen', ms: 6000,
+    render: (s) => <GameOverView state={{ ...s, phase: 'GAME_OVER' } as QQStateUpdate} roomCode="DEMO" />,
+  },
+  {
+    key: 'thanks', ms: 5200,
+    render: (s) => <ThanksView state={{ ...s, phase: 'THANKS' } as QQStateUpdate} roomCode="DEMO" />,
   },
 ];
 
@@ -105,6 +125,12 @@ export default function QQShowroomPage() {
   const themeId = useActiveThemeId();
   const theme = getActiveTheme();
   const accent = theme.brand.accentHex;
+  // 2026-06-24: Skin-Font auch im Showroom (mirror isThemed) — damit Views ohne
+  // eigene fontFamily (GameOver) das Skin-Gewand erben. Cozy bleibt Bricolage
+  // (= echter Beamer-Default), Skins ziehen var(--qq-font).
+  const stageFont = themeId === 'cozy'
+    ? "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif"
+    : 'var(--qq-font)';
 
   return (
     <div
@@ -114,7 +140,7 @@ export default function QQShowroomPage() {
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         background: theme.surface.pageBg, cursor: 'pointer', userSelect: 'none',
         transition: 'background 0.5s ease',
-        fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+        fontFamily: stageFont,
       }}
     >
       <style>{`@keyframes srBar { from { width: 0%; } to { width: 100%; } }`}</style>

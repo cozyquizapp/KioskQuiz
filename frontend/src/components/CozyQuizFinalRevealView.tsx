@@ -87,7 +87,8 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       // im vordergrund'): kein absolute-overlay mehr, sondern reguläre full-
       // page View — flex 1, full size, padding gibt angenehmen Rand.
       flex: 1, width: '100%', height: '100%',
-      background: 'radial-gradient(ellipse at center, rgba(31,16,46,0.94) 0%, rgba(15,8,23,0.98) 70%, #0d0716 100%)',
+      // 2026-06-24 (Skin): aktiver Skin → flacher Skin-BG statt Lila-Dunkel.
+      background: isThemed() ? 'var(--qq-bg)' : 'radial-gradient(ellipse at center, rgba(31,16,46,0.94) 0%, rgba(15,8,23,0.98) 70%, #0d0716 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       padding: 'clamp(40px, 5cqh, 80px) clamp(48px, 6cqw, 120px)',
       animation: 'qqFinalRecapIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1) both',
@@ -372,6 +373,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
 // (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
 import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalReveal';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { isThemed } from '../qqTheme';
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.
@@ -2763,7 +2765,13 @@ function RaceFinalSlide({ finalRanking, lang }: {
       position: 'relative',
       overflow: 'hidden',
       // BG-Shift bei Finish: goldenes Radial-Pulse
-      background: isFinish
+      // 2026-06-24 (Skin): bei Skin flacher Skin-BG; das Finish-Gold bleibt als
+      // Akzent-Glow ueber dem Skin-BG erhalten (Sieger-Crescendo).
+      background: isThemed()
+        ? (isFinish
+            ? 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.30) 0%, transparent 60%), var(--qq-bg)'
+            : 'var(--qq-bg)')
+        : isFinish
         ? 'radial-gradient(ellipse at 50% 60%, rgba(251,191,36,0.30) 0%, rgba(217,119,6,0.18) 35%, rgba(15,8,23,0.95) 80%)'
         : 'radial-gradient(ellipse at 50% 50%, rgba(31,16,46,0.95) 0%, rgba(15,8,23,0.98) 80%)',
       transition: 'background 0.8s ease',

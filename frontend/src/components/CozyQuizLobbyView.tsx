@@ -15,6 +15,7 @@ import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { AnimatedCozyWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
+import { isThemed } from '../qqTheme';
 
 // WolfLobbyGreeter — kleiner Wolf top-right in der Lobby, winkt hereinkommende
 // Teams herein. Idle: 'QR-Code scannen!' / 'Genau den da!' / etc. Wenn Parent
@@ -181,7 +182,9 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
 }
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
-  const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
+  const fontFam = isThemed()
+    ? 'var(--qq-font)'
+    : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const joinUrl = `${window.location.origin}/team`;
   // 2026-05-07 (Wolf-Bug 'trotz only GB englisch im moderator werden einige
   // texte in der lobby nicht uebersetzt'): vorher lokaler de-State mit 8s-
@@ -256,8 +259,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       // Cozy-warmer Hintergrund (User-Wunsch 2026-04-28: nicht so schwarz, an
       // Setup-Look angleichen). Doppelter Radial-Gradient: oben-mitte amber-Glow,
       // unten-rechts indigo-Glow auf #0A0814-Base — exakt wie QQModeratorPage.
-      background:
-        'radial-gradient(ellipse at 50% -10%, rgba(236,72,153,0.10), transparent 55%), ' +
+      // 2026-06-24 (Skin): aktiver Skin → flacher Skin-BG statt Pink-Glow-Dunkel.
+      background: isThemed()
+        ? 'var(--qq-bg)'
+        : 'radial-gradient(ellipse at 50% -10%, rgba(236,72,153,0.10), transparent 55%), ' +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
         '#0A0814',

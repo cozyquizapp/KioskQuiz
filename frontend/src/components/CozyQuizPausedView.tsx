@@ -26,6 +26,7 @@ import {
 } from '../pages/QQBeamerPage';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { isThemed } from '../qqTheme';
 
 function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   const [idx, setIdx] = useState(0);
@@ -963,8 +964,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // Cozy-warmer Hintergrund (User-Wunsch 2026-04-28: PreGame/Pause weniger
       // schwarz, an Setup-Look angleichen). Mode-Akzent ergänzt das mit dem
       // großen Glow-Ring weiter unten.
-      background:
-        `radial-gradient(ellipse at 50% -10%, ${modeAccent}1A, transparent 55%), ` +
+      // 2026-06-24 (Skin): aktiver Skin → flacher Skin-BG statt Pink-Glow-Dunkel.
+      background: isThemed()
+        ? 'var(--qq-bg)'
+        : `radial-gradient(ellipse at 50% -10%, ${modeAccent}1A, transparent 55%), ` +
         `radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ` +
         `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ` +
         '#0A0814',

@@ -503,7 +503,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             backfaceVisibility: 'hidden',
                             WebkitBackfaceVisibility: 'hidden',
                             transform: 'rotateY(180deg)',
-                            borderRadius: 'clamp(14px, 1.4cqw, 22px)',
+                            borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(14px, 1.4cqw, 22px)',
                             background: `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
                             border: `2px solid ${t.color}`,
                             boxShadow: `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 28px ${t.color}66`,

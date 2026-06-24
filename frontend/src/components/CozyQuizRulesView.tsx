@@ -618,7 +618,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Extra callout — zentriert */}
         {slide.extra && (
           <div style={{
-            marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: 16,
+            marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
             background: isThemed() ? 'var(--qq-surface)' : `${slide.color}15`,
             border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${slide.color}33`,
             fontSize: 'clamp(18px,2.4cqw,34px)', fontWeight: 900,

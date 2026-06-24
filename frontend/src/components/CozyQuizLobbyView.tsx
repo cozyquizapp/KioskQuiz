@@ -323,7 +323,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           transform: 'translate(-50%, -50%)',
           zIndex: 50,
           padding: 'clamp(32px, 4cqh, 60px) clamp(56px, 7cqw, 120px)',
-          borderRadius: 24,
+          borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
           background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.98))',
           border: `4px solid ${welcomedTeam.color}`,
           boxShadow: `0 0 80px ${welcomedTeam.color}aa, 0 18px 60px rgba(0,0,0,0.7)`,
@@ -573,7 +573,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
         }}>
           <div style={{
-            background: '#ffffff', borderRadius: 24, padding: 'clamp(14px, 2cqh, 24px)',
+            background: '#ffffff', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: 'clamp(14px, 2cqh, 24px)',
             // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
             animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
             boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
@@ -590,7 +590,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             </div>
             <div style={{
               fontSize: 'clamp(13px, 1.4cqw, 18px)', color: 'var(--qq-text-muted)', fontFamily: 'monospace',
-              background: cardBg, padding: '6px 16px', borderRadius: 8,
+              background: cardBg, padding: '6px 16px', borderRadius: 'var(--qq-pill-radius)',
               border: '1px solid var(--qq-hairline)',
               display: 'inline-block',
             }}>
@@ -650,7 +650,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(14px, 2cqw, 26px)',
               padding: 'clamp(28px, 4cqh, 56px) clamp(20px, 3cqw, 40px)',
-              border: '2px dashed rgba(var(--qq-accent-rgb),0.4)', borderRadius: 16,
+              border: '2px dashed rgba(var(--qq-accent-rgb),0.4)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
               background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.06), rgba(var(--qq-accent-rgb),0.04))',
               boxShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.12)',
             }}>
@@ -702,7 +702,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     padding: compact
                       ? 'clamp(16px, 2cqh, 24px) clamp(20px, 2.2cqw, 28px)'
                       : 'clamp(18px, 2.2cqh, 26px) clamp(22px, 2.4cqw, 30px)',
-                    borderRadius: compact ? 18 : 22,
+                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : (compact ? 18 : 22),
                     background: cardBg,
                     border: `2px solid ${isFreshJoin ? t.color : t.color + '55'}`,
                     boxShadow: isFreshJoin

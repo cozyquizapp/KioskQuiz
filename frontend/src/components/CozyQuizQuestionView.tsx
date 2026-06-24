@@ -94,7 +94,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both' }}>
             {/* Target banner */}
             <div style={{
-              padding: '14px 20px', borderRadius: 16,
+              padding: '14px 20px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
               background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.22), rgba(var(--qq-accent-rgb),0.10))',
               border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
               boxShadow: '0 0 0 3px rgba(var(--qq-accent-rgb),0.12), 0 8px 24px rgba(0,0,0,0.3)',
@@ -126,7 +126,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 return (
                   <div key={a.teamId} style={{
                     position: 'relative', overflow: 'hidden',
-                    padding: '10px 14px', borderRadius: 16,
+                    padding: '10px 14px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                     background: isWinner
                       ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
                       : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
@@ -148,7 +148,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     <div style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: 12 }}>
                       <span style={{
                         width: 'clamp(26px, 2.8cqw, 34px)', height: 'clamp(26px, 2.8cqw, 34px)',
-                        borderRadius: 8,
+                        borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8,
                         background: isWinner ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'rgba(100,116,139,0.25)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 'clamp(12px, 1.3cqw, 16px)', fontWeight: 900, color: 'var(--qq-card-text)',
@@ -213,7 +213,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               return (
                 <div key={optIdx} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
-                  borderRadius: 16, overflow: 'hidden',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, overflow: 'hidden',
                   background: isCorrect ? 'rgba(34,197,94,0.12)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                   border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                   boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
@@ -265,7 +265,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {/* Speed ranking row for correct voters (ties) */}
             {showSpeedRank && (
               <div style={{
-                marginTop: 6, padding: '10px 14px', borderRadius: 16,
+                marginTop: 6, padding: '10px 14px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                 background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.12), rgba(234,179,8,0.06))',
                 border: '1.5px solid rgba(var(--qq-accent-rgb),0.35)',
                 display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
@@ -344,7 +344,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 14,
                 padding: 'clamp(10px, 1.2cqh, 16px) clamp(14px, 1.6cqw, 22px)',
-                borderRadius: 16,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                 background: `linear-gradient(135deg, ${winner.team.color}22, rgba(34,197,94,0.18))`,
                 border: `2px solid ${winner.team.color}55`,
                 boxShadow: `0 0 0 3px ${winner.team.color}22`,
@@ -396,7 +396,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               const barPct = (displayTotal / globalMax) * 100;
               return (
                 <div key={optIdx} style={{
-                  borderRadius: 16, overflow: 'hidden',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, overflow: 'hidden',
                   background: isCorrectLocked ? 'rgba(34,197,94,0.22)'
                     : isHunterHere ? 'rgba(34,197,94,0.14)'
                     : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
@@ -414,7 +414,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px' }}>
                     <span style={{
                       width: 'clamp(36px, 4cqw, 52px)', height: 'clamp(36px, 4cqw, 52px)',
-                      borderRadius: 8, background: color,
+                      borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8, background: color,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(16px, 1.9cqw, 24px)', fontWeight: 900, color: 'var(--qq-card-text)',
                       flexShrink: 0,
@@ -442,7 +442,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   {/* Row 2: stacked bar — each segment = one team's contribution */}
                   <div style={{
                     height: 28, position: 'relative', margin: '0 14px 10px',
-                    borderRadius: 8, overflow: 'hidden',
+                    borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8, overflow: 'hidden',
                     background: 'var(--qq-overlay)',
                     width: `${barPct}%`,
                     transition: 'width 0.7s var(--qq-ease-out-cubic)',
@@ -480,7 +480,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             {/* Legend: teams */}
             {parsed.length > 0 && (
               <div style={{
-                marginTop: 2, padding: '8px 14px', borderRadius: 8,
+                marginTop: 2, padding: '8px 14px', borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8,
                 background: 'var(--qq-surface)',
                 border: '1px solid var(--qq-hairline)',
                 display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap',
@@ -551,7 +551,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               return (
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
-                  borderRadius: 16, overflow: 'hidden',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, overflow: 'hidden',
                   background: greenOn ? 'rgba(34,197,94,0.14)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                   border: greenOn ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                   boxShadow: greenOn ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
@@ -672,7 +672,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               {perAnswer.map(({ correct, hitters }, i) => (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
-                  padding: '10px 14px', borderRadius: 16,
+                  padding: '10px 14px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                   background: hitters.length > 0
                     ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(22,163,74,0.06))'
                     : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
@@ -681,7 +681,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 }}>
                   <span style={{
                     width: 'clamp(32px, 3.5cqw, 44px)', height: 'clamp(32px, 3.5cqw, 44px)',
-                    borderRadius: 8,
+                    borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8,
                     background: hitters.length > 0 ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'rgba(100,116,139,0.3)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: 'var(--qq-card-text)',
@@ -722,7 +722,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
 
             {/* Team score summary */}
             <div style={{
-              marginTop: 4, padding: '8px 14px', borderRadius: 8,
+              marginTop: 4, padding: '8px 14px', borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8,
               background: 'var(--qq-surface)',
               border: '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
@@ -790,7 +790,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 return (
                   <div key={pi} style={{
                     display: 'flex', alignItems: 'center', gap: 12,
-                    padding: '10px 14px', borderRadius: 16,
+                    padding: '10px 14px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                     background: allRight
                       ? 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.08))'
                       : noneRight ? 'rgba(239,68,68,0.08)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.04)'),
@@ -801,7 +801,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   }}>
                     <span style={{
                       width: 'clamp(32px, 3.5cqw, 44px)', height: 'clamp(32px, 3.5cqw, 44px)',
-                      borderRadius: 8,
+                      borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8,
                       background: 'linear-gradient(135deg,var(--qq-accent),#EA580C)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(15px, 1.6cqw, 20px)', fontWeight: 900, color: 'var(--qq-card-text)',
@@ -842,7 +842,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
 
             {/* Team summary bar */}
             <div style={{
-              marginTop: 4, padding: '8px 14px', borderRadius: 8,
+              marginTop: 4, padding: '8px 14px', borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8,
               background: 'var(--qq-surface)',
               border: '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
@@ -898,7 +898,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
           return (
             <div key={a.teamId} style={{
               display: 'flex', alignItems: 'center', gap: 10,
-              padding: '7px 12px', borderRadius: 8, marginBottom: 4,
+              padding: '7px 12px', borderRadius: isThemed() ? 'var(--qq-pill-radius)' : 8, marginBottom: 4,
               background: isWinner ? 'rgba(34,197,94,0.08)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.03)'),
               border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid var(--qq-hairline)',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
@@ -1385,7 +1385,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
                 : 'clamp(12px, 1.6cqw, 28px)',
               zIndex: 50,
-              borderRadius: 22,
+              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
               overflow: 'hidden',
               clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
               animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) both',
@@ -1463,7 +1463,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               right: isCheesePortrait
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
                 : 'clamp(12px, 1.6cqw, 28px)',
-              borderRadius: 22,
+              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
               border: `4px solid ${accent}`,
               boxShadow: `0 0 32px ${accent}55, inset 0 0 0 2px rgba(0,0,0,0.45), inset 0 0 20px rgba(0,0,0,0.35)`,
               pointerEvents: 'none',
@@ -1616,7 +1616,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // 2026-04-28: 'bei cheese darf die frage vor reveal umrandet sein
             // von kategorie farben glow wie bei anderen').
             border: `${isCheeseReveal ? 3 : 2.5}px solid ${isCheeseReveal ? `${revealGlowColor}cc` : `${accent}88`}`,
-            borderRadius: 24,
+            borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
             // Reveal-Padding kompakter (20 statt 28) damit das Bild oben mehr Platz behaelt.
             padding: isCheeseReveal ? '20px 48px' : '36px 56px',
             boxShadow: isCheeseReveal
@@ -2180,7 +2180,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 }}>
                   {items.map((item, i) => (
                     <div key={i} style={{
-                      borderRadius: 16, padding: '22px 24px',
+                      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, padding: '22px 24px',
                       background: cardBg,
                       border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
                       boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.04)',
@@ -2298,7 +2298,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       // Sieger-Card kommt (war 2/3/2 = +2px höher → andere Cards
                       // schoben mit).
                       boxSizing: 'border-box',
-                      borderRadius: 24, padding: '20px 24px',
+                      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: '20px 24px',
                       background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
                       // 2026-06-24 (Wolf 'option-rahmen auch schwarz'): bei Skin die
                       // Card-Behandlung (Mono=schwarzer Rand+Hard-Shadow) statt Akzent-Rand.
@@ -2541,7 +2541,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return (
                 <div style={{
                   position: 'relative', overflow: 'hidden',
-                  padding: 'clamp(16px, 2cqh, 32px) clamp(24px, 3cqw, 52px)', borderRadius: 24,
+                  padding: 'clamp(16px, 2cqh, 32px) clamp(24px, 3cqw, 52px)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
                   background: cheeseHideContent ? 'rgba(34,197,94,0.06)' : 'rgba(34,197,94,0.12)',
                   border: cheeseHideContent ? '3px dashed rgba(34,197,94,0.22)' : '3px solid rgba(34,197,94,0.50)',
                   boxShadow: cheeseHideContent ? 'none' : '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
@@ -2708,7 +2708,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 <div style={{
                   display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
                   gap: tierStyles.gap,
-                  padding: tierStyles.containerPad, borderRadius: 24,
+                  padding: tierStyles.containerPad, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
                   background: 'rgba(34,197,94,0.08)',
                   border: '2px solid rgba(34,197,94,0.3)',
                   // 2026-05-12 v2 (Audit-A): 58cqh → 52cqh. Survivor-Card
@@ -2952,7 +2952,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 position: 'relative',
                 background: 'var(--qq-surface)',
                 border: '1.5px solid var(--qq-hairline)',
-                borderRadius: 24,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
                 boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
                 animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.3s both',
               }}>
@@ -3111,7 +3111,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 // Loser-Bet 24-34 → 30-44, Winner-Bet 32-46 → 38-56.
                                 // Padding entsprechend hoch.
                                 padding: isWinner ? '11px 26px' : '9px 22px',
-                                borderRadius: 16,
+                                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                                 background: 'var(--qq-overlay)',
                                 border: `2px solid ${tColor}`,
                                 color: 'var(--qq-card-text)', fontWeight: 900,
@@ -3310,7 +3310,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   // passt sie auch wenn Answer-Grid voll ist.
                   gap: 'clamp(6px, 0.8cqh, 12px)',
                   padding: 'clamp(10px, 1.2cqh, 18px) clamp(18px, 2.4cqw, 36px)',
-                  borderRadius: 20,
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 20,
                   width: '100%', maxWidth: 1400,
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
@@ -3363,7 +3363,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               return (
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
-                  padding: '22px 38px', borderRadius: 24,
+                  padding: '22px 38px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
                   width: '100%', maxWidth: 1400, flexWrap: 'wrap',
                   background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.15), rgba(var(--qq-accent-rgb),0.05))',
                   border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
@@ -3405,7 +3405,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 gap: 'clamp(16px, 2cqw, 30px)',
                 padding: 'clamp(12px, 1.6cqh, 22px) clamp(20px, 2.6cqw, 36px)',
                 width: '100%', maxWidth: 1400,
-                borderRadius: 22,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
                 background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: `3px solid ${team!.color}88`,
                 boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
@@ -3452,7 +3452,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {revealed && !s.correctTeamId && (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
-              padding: '24px 44px', borderRadius: 24, marginBottom: 12,
+              padding: '24px 44px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, marginBottom: 12,
               width: '100%', maxWidth: 1400,
               background: 'rgba(239,68,68,0.08)',
               border: '2px solid rgba(239,68,68,0.30)',
@@ -3585,7 +3585,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {!img.bgRemovedUrl && (
               <div style={{
                 position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none',
-                borderRadius: 24,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
                 background: 'radial-gradient(ellipse at center, transparent 55%, rgba(13,10,6,0.7) 100%)',
               }} />
             )}

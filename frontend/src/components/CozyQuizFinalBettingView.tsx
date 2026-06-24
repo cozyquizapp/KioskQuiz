@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
+import { isThemed } from '../qqTheme';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { playGoodLuckFanfare, playTeamJoin } from '../utils/sounds';
 
@@ -58,7 +59,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         width: '100%', height: '100%',
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         padding: 'max(var(--qq-safe-margin), 8cqh) max(var(--qq-safe-margin), 6cqw)',
-        background: COZY_CARD_BG,
+        background: isThemed() ? 'var(--qq-bg)' : COZY_CARD_BG,
         position: 'relative',
         minHeight: 0, overflow: 'hidden',
         gap: 'clamp(14px, 2cqh, 28px)',
@@ -77,8 +78,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         {/* Hero-Title — analog Cat-Name, gross + per-letter Wave + Pink-Glow. */}
         <div style={{
           fontSize: 'clamp(68px, 13cqw, 200px)', fontWeight: 900, lineHeight: 1,
-          color: PINK,
-          textShadow: `0 0 80px ${PINK}44`,
+          color: isThemed() ? 'var(--qq-text)' : PINK,
+          textShadow: isThemed() ? 'none' : `0 0 80px ${PINK}44`,
           letterSpacing: '-0.02em',
           textAlign: 'center',
           animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.4s both',
@@ -99,7 +100,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         {/* Single Explain-Line — analog Cat-Explain, eine kurze Zeile. */}
         <div style={{
           fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 700,
-          color: `${PINK}cc`,
+          color: isThemed() ? 'var(--qq-text-muted)' : `${PINK}cc`,
           letterSpacing: '0.02em',
           marginTop: 'clamp(8px, 1cqh, 14px)',
           textAlign: 'center',
@@ -120,7 +121,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
       padding: 'max(var(--qq-safe-margin), 8cqh) max(var(--qq-safe-margin), 6cqw)',
-      background: COZY_CARD_BG,
+      background: isThemed() ? 'var(--qq-bg)' : COZY_CARD_BG,
       position: 'relative',
       minHeight: 0, overflow: 'hidden',
     }}>
@@ -128,19 +129,19 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           Tipp-Variante. Vorher: alte Cell-Picker-Beschreibung (irreführend).
           Jetzt: 3 prominente Bullets + großes Submit-Status. */}
       <div style={{
-        fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: '#F9A8D4',
+        fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: isThemed() ? 'var(--qq-text-muted)' : '#F9A8D4',
         textTransform: 'uppercase', letterSpacing: '0.18em',
         marginBottom: 18, opacity: 0.85,
       }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
 
       <div style={{
-        fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: '#F1F5F9',
+        fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: isThemed() ? 'var(--qq-text)' : '#F1F5F9',
         lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 12,
       }}>{de ? 'Tippt jetzt!' : 'Place your tip!'}</div>
 
       <div style={{
-        fontSize: 'clamp(22px, 2.4cqw, 38px)', color: '#CBD5E1', fontWeight: 700,
+        fontSize: 'clamp(22px, 2.4cqw, 38px)', color: isThemed() ? 'var(--qq-text-muted)' : '#CBD5E1', fontWeight: 700,
         textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 40,
       }}>
         {de
@@ -155,8 +156,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
         padding: 'clamp(28px, 4cqh, 48px) clamp(40px, 5cqw, 72px)',
         borderRadius: 32,
-        background: 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(162,18,71,0.06))',
-        border: '2px solid rgba(236,72,153,0.32)',
+        background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(162,18,71,0.06))',
+        border: '2px solid rgba(var(--qq-accent-rgb),0.32)',
         boxShadow: '0 24px 64px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
       }}>
         <div style={{
@@ -167,7 +168,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           fontSize: 'clamp(64px, 8cqw, 150px)', fontWeight: 900,
           color: submittedCount === totalTeams ? '#22C55E' : '#F472B6',
           letterSpacing: '-0.04em', lineHeight: 1,
-          textShadow: `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(236,72,153,0.45)'}`,
+          textShadow: `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(var(--qq-accent-rgb),0.45)'}`,
         }}>
           {submittedCount} / {totalTeams}
         </div>

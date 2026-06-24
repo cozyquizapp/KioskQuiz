@@ -16,6 +16,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
+import { isThemed } from '../qqTheme';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon } from './QQIcon';
 import { JokerIcon } from './JokerIcon';
@@ -424,11 +425,15 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       <div key={idx} style={{
         position: 'relative', zIndex: 5,
         maxWidth: 1200, width: '94%', maxHeight: '92cqh', overflow: 'hidden',
-        background: 'rgba(15,12,9,0.85)',
+        // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
+        // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
+        // Slide-Color-Rand bleibt als Kategorie-Akzent.
+        background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(15,12,9,0.85)',
+        color: isThemed() ? 'var(--qq-card-text)' : undefined,
         border: `2px solid ${slide.color}44`,
-        borderRadius: 24,
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
-        boxShadow: `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
         animation: `${slideInAnim} 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both`,
         backdropFilter: 'blur(10px)',
         willChange: 'transform, opacity',

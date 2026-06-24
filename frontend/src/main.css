@@ -103,6 +103,7 @@
   --qq-surface: rgba(255,255,255,0.04);   /* Sub-Karten/Chips auf BG */
   --qq-overlay: rgba(0,0,0,0.28);         /* dunkle Inset-Overlays */
   --qq-font: 'Nunito', 'Geist', system-ui, sans-serif;
+  --qq-title: #ec4899;                    /* Hero-/Wortmark-Farbe auf BG (cozy: pink) */
   /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
      Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
   --qq-ease-bounce:      cubic-bezier(0.34, 1.56, 0.64, 1);

@@ -257,7 +257,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               // 2026-06-24 (Lesbarkeit): grosser Text AUF dem Seiten-BG nutzt
               // var(--qq-text) (kontrast-korrekt je Skin), nicht den Akzent —
               // sonst z.B. Neo-Brutal blau-auf-lila. Cozy behält den Pink-Akzent.
-              color: themed ? 'var(--qq-text)' : brand.accentHex,
+              color: themed ? 'var(--qq-title)' : brand.accentHex,
               // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + Outline.
               textShadow: themed ? 'none' : '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
               WebkitTextStroke: themed ? 'none' : '1px rgba(0,0,0,0.4)',
@@ -318,7 +318,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 fontSize: 'clamp(48px, 6.4cqw, 96px)', fontWeight: 900,
                 // 2026-06-24 (Lesbarkeit): Hero-Titel auf Seiten-BG → var(--qq-text)
                 // (kontrast-korrekt je Skin) statt Akzent. Cozy = Pink wie gehabt.
-                color: themed ? 'var(--qq-text)' : brand.accentHex,
+                color: themed ? 'var(--qq-title)' : brand.accentHex,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,
                 // 2026-05-13 Kontrast-Audit: Pink-Glow weg im ESC-Mode (war

@@ -658,7 +658,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   fontSize: 'clamp(20px, 2.4cqw, 32px)', fontWeight: 900,
                   // 2026-06-24 (Lesbarkeit): CTA-Text auf Seiten-BG → var(--qq-text)
                   // (sonst Akzent-blau auf Lila bei Neo-Brutal). Box-Tint = Akzent.
-                  color: isThemed() ? 'var(--qq-text)' : '#EC4899', letterSpacing: '0.02em',
+                  color: isThemed() ? 'var(--qq-title)' : '#EC4899', letterSpacing: '0.02em',
                   textShadow: isThemed() ? 'none' : '0 2px 12px rgba(236,72,153,0.3)',
                   animation: 'lobbyPulse 2.5s ease-in-out infinite',
                 }}>

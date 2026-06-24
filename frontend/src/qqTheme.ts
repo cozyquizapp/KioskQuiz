@@ -45,6 +45,7 @@ export type ThemeSurface = {
   surface: string;    // --qq-surface  (Sub-Karten/Chips)
   overlay: string;    // --qq-overlay  (dunkle Inset-Overlays)
   font: string;       // --qq-font
+  title: string;      // --qq-title  (Hero-/Wortmark-Farbe AUF dem BG, kontrast+brand)
 };
 
 export type ResolvedTheme = {
@@ -79,6 +80,7 @@ const COZY: ResolvedTheme = {
     cardShadow: '0 16px 50px rgba(0,0,0,0.45)',
     hairline: 'rgba(255,255,255,0.10)', surface: 'rgba(255,255,255,0.04)', overlay: 'rgba(0,0,0,0.28)',
     font: "'Nunito', 'Geist', system-ui, sans-serif",
+    title: QQ_COLORS.brandPink, // (cozy nutzt eigenen Branch — Fallback)
   },
 };
 
@@ -95,6 +97,7 @@ const STUDIO_MONO: ResolvedTheme = {
     cardBg: '#FFFFFF', cardBorder: '2px solid #111111', cardRadius: '4px',
     cardShadow: '6px 6px 0 #111111', hairline: 'rgba(0,0,0,0.12)', surface: 'rgba(0,0,0,0.035)', overlay: 'rgba(0,0,0,0.05)',
     font: "'Bricolage Grotesque', 'Inter', sans-serif",
+    title: '#0B0B0B', // editorial: schwarze Hero-Titel
   },
 };
 
@@ -112,6 +115,7 @@ const SOFT_POP: ResolvedTheme = {
     cardBg: '#FFFFFF', cardBorder: '1px solid rgba(45,42,85,0.10)', cardRadius: '26px',
     cardShadow: '0 8px 0 rgba(59,46,126,0.14)', hairline: 'rgba(45,42,85,0.10)', surface: 'rgba(45,42,85,0.04)', overlay: 'rgba(45,42,85,0.05)',
     font: "'Nunito', system-ui, sans-serif",
+    title: '#2D2A55', // dunkles Indigo (= Primärtext), gut auf warmem BG
   },
 };
 
@@ -129,6 +133,7 @@ const NEO_BRUTAL: ResolvedTheme = {
     cardBg: '#FFFFFF', cardBorder: '3px solid #16121F', cardRadius: '18px',
     cardShadow: '6px 6px 0 #16121F', hairline: 'rgba(22,18,31,0.16)', surface: 'rgba(255,255,255,0.16)', overlay: 'rgba(22,18,31,0.07)',
     font: "'Nunito', system-ui, sans-serif",
+    title: '#FDE047', // Gelb — knallt auf Lila, sehr „neo" (Wolf-Wunsch)
   },
 };
 
@@ -179,6 +184,7 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   r.setProperty('--qq-surface', s.surface);
   r.setProperty('--qq-overlay', s.overlay);
   r.setProperty('--qq-font', s.font);
+  r.setProperty('--qq-title', s.title);
 }
 
 export function setActiveThemeId(id: string): void {

@@ -1301,9 +1301,9 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       }}>🏆</div>
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
-        // 2026-06-24 (Lesbarkeit): Titel sitzt auf dem Seiten-BG → var(--qq-text)
-        // (nicht card-text: das waere auf Neo-Brutal dunkel-auf-lila).
-        color: 'var(--qq-text)', textAlign: 'center', letterSpacing: '-0.02em',
+        // 2026-06-24 (Lesbarkeit+Brand): Hero-Titel auf Seiten-BG → var(--qq-title)
+        // (Neo=Gelb, Mono=Schwarz, …). Cozy behält card-text (weiss auf Backdrop).
+        color: isThemed() ? 'var(--qq-title)' : 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
         textShadow: isThemed() ? 'none' : '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
       }}>

@@ -78,7 +78,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         {/* Hero-Title — analog Cat-Name, gross + per-letter Wave + Pink-Glow. */}
         <div style={{
           fontSize: 'clamp(68px, 13cqw, 200px)', fontWeight: 900, lineHeight: 1,
-          color: isThemed() ? 'var(--qq-text)' : PINK,
+          color: isThemed() ? 'var(--qq-title)' : PINK,
           textShadow: isThemed() ? 'none' : `0 0 80px ${PINK}44`,
           letterSpacing: '-0.02em',
           textAlign: 'center',
@@ -135,7 +135,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
       }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
 
       <div style={{
-        fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: isThemed() ? 'var(--qq-text)' : '#F1F5F9',
+        fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: isThemed() ? 'var(--qq-title)' : '#F1F5F9',
         lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 12,
       }}>{de ? 'Tippt jetzt!' : 'Place your tip!'}</div>

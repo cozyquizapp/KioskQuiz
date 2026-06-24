@@ -19,6 +19,7 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
+import { isThemed } from '../../qqTheme';
 
 export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
@@ -113,6 +114,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
+  const themed = isThemed();
 
   return (
     <div style={{
@@ -124,17 +126,17 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     }}>
       {/* ── Zeile 1: Frage über ganze Breite (Top-5-Style) ── */}
       <div style={{
-        background: 'var(--qq-surface)',
-        border: '2px solid var(--qq-hairline)',
-        borderRadius: 24,
+        background: themed ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
+        border: themed ? 'var(--qq-card-border)' : '2px solid var(--qq-hairline)',
+        borderRadius: themed ? 'var(--qq-card-radius)' : 24,
         padding: 'clamp(14px, 1.8cqh, 22px) clamp(22px, 2.6cqw, 42px)',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+        boxShadow: themed ? 'var(--qq-card-shadow)' : '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
         animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
         display: 'flex', flexDirection: 'column', justifyContent: 'center',
         flexShrink: 0, overflow: 'hidden',
       }}>
         <div style={{
-          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.yellow500,
+          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: themed ? 'var(--qq-accent)' : QQ_COLORS.yellow500,
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
         }}>
           <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
@@ -309,12 +311,12 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             const isTop = rank === 1;
             const isInRangeWinner = !isTop && (s.currentQuestionWinners ?? []).includes(r.teamId);
             const rankGradient = rank === 1
-              ? 'linear-gradient(135deg,#EC4899,#EC4899)'
+              ? (themed ? 'linear-gradient(135deg,var(--qq-accent),var(--qq-accent))' : 'linear-gradient(135deg,#EC4899,#EC4899)')
               : rank === 2
                 ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
                 : rank === 3
                   ? 'linear-gradient(135deg,#F97316,#B45309)'
-                  : 'linear-gradient(135deg,#475569,#334155)';
+                  : (themed ? 'var(--qq-surface)' : 'linear-gradient(135deg,#475569,#334155)');
             return (
               <div
                 key={r.teamId}
@@ -329,12 +331,12 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     ? `linear-gradient(135deg, ${r.team.color}22, ${r.team.color}08)`
                     : isInRangeWinner
                       ? `linear-gradient(135deg, ${r.team.color}1a, ${r.team.color}05)`
-                      : 'rgba(148,163,184,0.06)',
+                      : (themed ? 'var(--qq-surface)' : 'rgba(148,163,184,0.06)'),
                   border: isTop
                     ? `2px solid ${r.team.color}55`
                     : isInRangeWinner
                       ? `2px solid ${r.team.color}55`
-                      : '2px solid rgba(148,163,184,0.15)',
+                      : (themed ? '2px solid var(--qq-hairline)' : '2px solid rgba(148,163,184,0.15)'),
                   visibility: isVisible ? 'visible' : 'hidden',
                   animation: isVisible
                     ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) both, top5RowGlow 1.2s ease 0.3s both`
@@ -351,11 +353,14 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   borderRadius: 16,
                   background: rankGradient,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900, color: 'var(--qq-card-text)',
+                  fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900,
+                  // rank1 themed: weiss auf Akzent (lesbar fuer alle Akzent-Farben);
+                  // sonst card-text (cozy=weiss; themed rank4/5 dunkel auf heller Surface).
+                  color: rank === 1 && themed ? '#fff' : 'var(--qq-card-text)',
                   flexShrink: 0,
                   textShadow: '0 2px 4px rgba(0,0,0,0.3)',
                   animation: isVisible ? 'top5RankPop 0.55s var(--qq-ease-bounce) 0.1s both' : 'none',
-                  boxShadow: rank === 1 ? '0 0 20px rgba(236,72,153,0.5)' : 'none',
+                  boxShadow: rank === 1 ? (themed ? '0 0 20px rgba(var(--qq-accent-rgb),0.5)' : '0 0 20px rgba(236,72,153,0.5)') : 'none',
                 }}>
                   #{rank}
                 </div>
@@ -390,10 +395,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   </div>
                   <div style={{
                     fontSize: 'clamp(24px, 2.6cqw, 40px)', fontWeight: 900,
-                    color: isTop ? QQ_COLORS.brandPinkSoft : 'var(--qq-card-text)', marginTop: 4,
+                    color: isTop ? (themed ? 'var(--qq-accent)' : QQ_COLORS.brandPinkSoft) : 'var(--qq-card-text)', marginTop: 4,
                     lineHeight: 1,
                     fontVariantNumeric: 'tabular-nums',
-                    textShadow: isTop ? '0 0 16px rgba(236,72,153,0.35)' : 'none',
+                    textShadow: isTop ? (themed ? 'none' : '0 0 16px rgba(236,72,153,0.35)') : 'none',
                   }}>
                     {fmt(r.num)}
                   </div>
@@ -403,10 +408,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 }}>
                   <div style={{
                     padding: '8px 18px', borderRadius: 999,
-                    background: isTop ? 'rgba(250,204,21,0.22)' : 'rgba(15,23,42,0.7)',
+                    background: isTop ? 'rgba(250,204,21,0.22)' : (themed ? 'var(--qq-surface)' : 'rgba(15,23,42,0.7)'),
                     border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                     fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
-                    color: isTop ? QQ_COLORS.brandPinkSoft : 'var(--qq-card-text)',
+                    color: isTop ? (themed ? 'var(--qq-accent)' : QQ_COLORS.brandPinkSoft) : 'var(--qq-card-text)',
                     fontVariantNumeric: 'tabular-nums',
                     animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) 0.45s both` : 'none',
                   }}>

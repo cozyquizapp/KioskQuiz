@@ -346,7 +346,14 @@ function ImageAvatar({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'hidden',
+        // 2026-06-24 (Wolf 'avatare teilweise am kreisrand abgeschnitten'):
+        // Die 3D-PNGs sind randlos getrimmt (Motiv fuellt das Quadrat bis in die
+        // Ecken). Eine runde overflow:hidden-Disc beschnitt darum die Ecken von
+        // Motiven, die breit in die Ecken laufen (Fluegel/Beine) — runde Motive
+        // (transparente Ecken) waren nie betroffen → daher nur 'teilweise'.
+        // overflow sichtbar laesst das Motiv ungeschnitten; die farbige Disc +
+        // Ring bleiben rund (border-radius wirkt weiter auf BG/Border).
+        overflow: square ? 'hidden' : 'visible',
         borderRadius: square ? 0 : '50%',
       }}
     >

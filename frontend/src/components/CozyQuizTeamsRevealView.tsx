@@ -541,7 +541,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               boxShadow: `0 0 28px ${t.color}99`,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               flexShrink: 0,
-                              overflow: 'hidden',
+                              // 2026-06-24: cozy3d-PNGs nicht am Kreisrand beschneiden
+                              // (Ecken-Motive wie Fluegel) — Flags/Emoji bleiben geclippt.
+                              overflow: isCozy3dSlug(t.emoji) ? 'visible' : 'hidden',
                               fontSize: emojiFontSize,
                               lineHeight: 1,
                               animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',

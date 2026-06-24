@@ -254,10 +254,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               fontSize: 'clamp(42px, 5.5cqw, 82px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
-              color: brand.accentHex,
+              // 2026-06-24 (Lesbarkeit): grosser Text AUF dem Seiten-BG nutzt
+              // var(--qq-text) (kontrast-korrekt je Skin), nicht den Akzent —
+              // sonst z.B. Neo-Brutal blau-auf-lila. Cozy behält den Pink-Akzent.
+              color: themed ? 'var(--qq-text)' : brand.accentHex,
               // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + Outline.
-              textShadow: '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
-              WebkitTextStroke: '1px rgba(0,0,0,0.4)',
+              textShadow: themed ? 'none' : '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
+              WebkitTextStroke: themed ? 'none' : '1px rgba(0,0,0,0.4)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
             }}>COZYQUIZ</span>
@@ -313,12 +316,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               aria-label={titleText}
               style={{
                 fontSize: 'clamp(48px, 6.4cqw, 96px)', fontWeight: 900,
-                color: brand.accentHex,
+                // 2026-06-24 (Lesbarkeit): Hero-Titel auf Seiten-BG → var(--qq-text)
+                // (kontrast-korrekt je Skin) statt Akzent. Cozy = Pink wie gehabt.
+                color: themed ? 'var(--qq-text)' : brand.accentHex,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,
                 // 2026-05-13 Kontrast-Audit: Pink-Glow weg im ESC-Mode (war
                 // kontraproduktiv ueber 5.png Pink-Gradient). Dark-Halo first.
-                textShadow: isEsc
+                textShadow: themed
+                  ? 'none'
+                  : isEsc
                   ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
                   : `0 0 24px rgba(${brand.accentRgb},0.28), 0 0 56px rgba(${brand.accentRgb},0.28)`,
                 whiteSpace: 'nowrap',

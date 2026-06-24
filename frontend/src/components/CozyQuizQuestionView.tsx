@@ -585,7 +585,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                           width: 'clamp(22px, 2.6cqw, 34px)', height: 'clamp(22px, 2.6cqw, 34px)',
                           borderRadius: '50%',
                           background: 'var(--qq-surface)',
-                          border: '1.5px dashed rgba(255,255,255,0.22)',
+                          border: isThemed() ? '1.5px dashed var(--qq-hairline)' : '1.5px dashed rgba(255,255,255,0.22)',
                         }} />
                       )
                     }

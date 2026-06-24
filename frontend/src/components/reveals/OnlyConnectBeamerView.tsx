@@ -262,7 +262,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}
                           size={avatarSize}
                           style={{
-                            border: isFastest ? '4px solid #EC4899' : 'none',
+                            border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
                             boxShadow: isFastest
                               ? `0 0 0 3px ${tm.color}, 0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)`
                               : `0 0 0 3px ${tm.color}, 0 0 14px ${tm.color}88, 0 6px 14px rgba(0,0,0,0.55)`,
@@ -277,7 +277,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                             transform: 'translate(-50%, 50%)',
                             padding: '3px 11px', borderRadius: 999,
                             background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
-                            border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
+                            border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(236,72,153,1)') : `1.5px solid ${tm.color}`,
                             color: isFastest ? '#0A0814' : '#e2e8f0',
                             fontWeight: 900,
                             fontSize: 'clamp(12px, 1.3cqw, 17px)',

@@ -841,7 +841,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
             <span key={t} style={{
               padding: '4px 12px',
               background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
-              border: '1.5px solid rgba(255,255,255,0.35)',
+              border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(255,255,255,0.35)',
               borderRadius: 999,
               fontSize: 'clamp(12px, 1vw, 16px)',
               fontWeight: 700,
@@ -924,7 +924,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
         display: 'flex', alignItems: 'center', gap: 24,
         padding: '20px 40px',
         background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
-        border: '2px solid rgba(255,255,255,0.18)',
+        border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(255,255,255,0.18)',
         borderRadius: 24,
         opacity: 0,
         animation: 'cozyGameActiveCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both',
@@ -1031,7 +1031,7 @@ function SequenceGameView({
         padding: 'clamp(20px, 2.5vh, 40px) clamp(20px, 3vw, 56px)',
         background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
         borderRadius: 24,
-        border: '2px solid rgba(255,255,255,0.18)',
+        border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(255,255,255,0.18)',
       }}>
         {/* Team-Bereich (links) */}
         <div
@@ -1093,7 +1093,7 @@ function SequenceGameView({
               fontSize: 'clamp(48px, 6vw, 96px)',
               fontWeight: 900,
               padding: '20px 36px',
-              border: '4px solid rgba(255,255,255,0.6)',
+              border: isThemed() ? '4px solid var(--qq-hairline)' : '4px solid rgba(255,255,255,0.6)',
               borderRadius: '50%',
               minWidth: 'clamp(140px, 16vw, 220px)',
               minHeight: 'clamp(140px, 16vw, 220px)',
@@ -1107,7 +1107,7 @@ function SequenceGameView({
               fontSize: 'clamp(28px, 3vw, 48px)',
               fontWeight: 900,
               padding: '20px 36px',
-              border: '4px solid rgba(255,255,255,0.4)',
+              border: isThemed() ? '4px solid var(--qq-hairline)' : '4px solid rgba(255,255,255,0.4)',
               borderRadius: '50%',
               minWidth: 'clamp(140px, 16vw, 220px)',
               minHeight: 'clamp(140px, 16vw, 220px)',
@@ -1393,7 +1393,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             <div style={{
               padding: '14px 28px',
               background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.3)'),
-              border: '2px solid rgba(255,255,255,0.4)',
+              border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(255,255,255,0.4)',
               borderRadius: 16,
               textAlign: 'center',
               animation: 'cozyGameTimerSlotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',

@@ -1241,11 +1241,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         ) : (
           <div style={{
             padding: '6px 22px', borderRadius: 999,
-            background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18))',
-            border: '2px solid rgba(236,72,153,0.55)',
+            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18))',
+            border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(236,72,153,0.55)',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
-            color: QQ_COLORS.yellow300, letterSpacing: '0.18em', textTransform: 'uppercase',
-            boxShadow: '0 0 24px rgba(236,72,153,0.35)',
+            color: isThemed() ? 'var(--qq-accent)' : QQ_COLORS.yellow300, letterSpacing: '0.18em', textTransform: 'uppercase',
+            boxShadow: isThemed() ? 'none' : '0 0 24px rgba(236,72,153,0.35)',
             marginBottom: 6,
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>

@@ -15,6 +15,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
+import { isThemed } from '../qqTheme';
 import { Fireflies } from './CozyQuizAmbient';
 import { PlacementView } from './CozyQuizPlacementView';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -25,7 +26,7 @@ import { playGoodLuckFanfare, playWinnerCardReveal } from '../utils/sounds';
 // 4×4 CONNECTIONS — Finalrunde (Beamer)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const CONNECTIONS_GROUP_COLORS = ['#EC4899', '#22C55E', '#60A5FA', '#A78BFA']; // gelb, grün, blau, lila
+const CONNECTIONS_GROUP_COLORS = ['var(--qq-accent)', '#22C55E', '#60A5FA', '#A78BFA']; // gelb, grün, blau, lila
 
 export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
@@ -109,7 +110,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
       padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
       position: 'relative',
     }}>
-      <Fireflies color="rgba(236,72,153,0.30)" />
+      <Fireflies color="rgba(var(--qq-accent-rgb),0.30)" />
       <ConnectionsHeader state={s} />
       {c.phase === 'intro' && <ConnectionsIntro state={s} />}
       {showBoard && (
@@ -132,7 +133,7 @@ export function ConnectionsBeamerView({ state: s }: { state: QQStateUpdate }) {
 function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const c = s.connections!;
-  const accent = '#EC4899';
+  const accent = 'var(--qq-accent)';
   // Event-Wording — kurz und groß auf der Bühne. „Großes Finale" griffig
   // genug für Live-Quiz, vermeidet das technische „4×4 Connections".
   const labelDe = 'Großes Finale';
@@ -206,11 +207,11 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
       borderRadius: 16,
       background: urgent
         ? 'linear-gradient(135deg, rgba(239,68,68,0.28), rgba(239,68,68,0.12))'
-        : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(236,72,153,0.08))',
-      border: `2.5px solid ${urgent ? '#EF4444' : 'rgba(236,72,153,0.55)'}`,
+        : 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.22), rgba(var(--qq-accent-rgb),0.08))',
+      border: `2.5px solid ${urgent ? '#EF4444' : 'rgba(var(--qq-accent-rgb),0.55)'}`,
       boxShadow: urgent
         ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
-        : '0 0 16px rgba(236,72,153,0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
+        : '0 0 16px rgba(var(--qq-accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
       fontSize: 'clamp(28px, 3cqw, 44px)', fontWeight: 900,
       color: urgent ? '#FCA5A5' : '#FBCFE8',
       fontVariantNumeric: 'tabular-nums',
@@ -239,18 +240,20 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         fontSize: 'clamp(72px, 12cqw, 140px)', lineHeight: 1,
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, cfloat 4s ease-in-out 1s infinite',
-        filter: 'drop-shadow(0 4px 18px rgba(236,72,153,0.45))',
+        filter: 'drop-shadow(0 4px 18px rgba(var(--qq-accent-rgb),0.45))',
       }}>🧩</div>
       <div style={{
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontSize: 'clamp(56px, 10cqw, 160px)', fontWeight: 900, lineHeight: 1,
-        color: '#EC4899',
+        // Hero-Titel auf Seiten-BG → var(--qq-title) (Neo=Gelb etc.).
+        color: isThemed() ? 'var(--qq-title)' : 'var(--qq-accent)',
         textAlign: 'center',
         letterSpacing: '-0.005em',
-        textShadow:
-          '0 0 14px rgba(236,72,153,0.65), ' +
-          '0 0 40px rgba(236,72,153,0.45), ' +
-          '0 0 96px rgba(236,72,153,0.25), ' +
+        textShadow: isThemed()
+          ? '0 5px 0 rgba(0,0,0,0.18)'
+          : '0 0 14px rgba(var(--qq-accent-rgb),0.65), ' +
+          '0 0 40px rgba(var(--qq-accent-rgb),0.45), ' +
+          '0 0 96px rgba(var(--qq-accent-rgb),0.25), ' +
           '0 5px 0 rgba(0,0,0,0.45), ' +
           '0 14px 28px rgba(0,0,0,0.55)',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.3s both, qqCatTitleBreathe 4.5s ease-in-out 1.2s infinite',
@@ -263,8 +266,8 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
         // „Großes Finale"-Title oben skaliert bis 160px Schrift, daneben die
         // 1100-Pills wirkten zentriert-eng. Die Connections-Cards unten leben
         // bei 1500 — Subtitle/Pills jetzt im selben Visual-Frame.
-        color: '#fde68aee', textAlign: 'center', lineHeight: 1.3, maxWidth: 1400,
-        textShadow: '0 0 22px rgba(236,72,153,0.3)',
+        color: isThemed() ? 'var(--qq-text-muted)' : '#fde68aee', textAlign: 'center', lineHeight: 1.3, maxWidth: 1400,
+        textShadow: isThemed() ? 'none' : '0 0 22px rgba(var(--qq-accent-rgb),0.3)',
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.5s both',
       }}>
         {lang === 'de'
@@ -290,7 +293,7 @@ function ConnectionsRulePill({ emoji, text }: { emoji: string; text: string }) {
       display: 'flex', alignItems: 'center', gap: 12,
       padding: '12px 22px', borderRadius: 999,
       background: 'var(--qq-surface)',
-      border: '1.5px solid rgba(236,72,153,0.32)',
+      border: '1.5px solid rgba(var(--qq-accent-rgb),0.32)',
       fontSize: 'clamp(16px, 1.7cqw, 22px)', fontWeight: 900, color: 'var(--qq-card-text)',
     }}>
       <span style={{ fontSize: 'clamp(20px, 2cqw, 28px)' }}>{emoji}</span>
@@ -501,16 +504,16 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
             opacity: dim ? 0.55 : 1,
             filter: dim ? 'grayscale(0.4)' : (locked ? 'grayscale(0.2)' : 'none'),
             // Ring-Logic: Winner=Pink, hasActivity=Green, ActiveTeam=TeamColor-strong, default=TeamColor-soft
-            background: greenActive ? 'rgba(34,197,94,0.18)' : isWinner ? 'rgba(236,72,153,0.18)' : 'transparent',
+            background: greenActive ? 'rgba(34,197,94,0.18)' : isWinner ? 'rgba(var(--qq-accent-rgb),0.18)' : 'transparent',
             border: isWinner
-              ? '3px solid #EC4899'
+              ? '3px solid var(--qq-accent)'
               : greenActive
                 ? '3px solid #22C55E'
                 : isActiveTeam
                   ? `3px solid ${tm.color}`
                   : `3px solid ${tm.color}55`,
             boxShadow: isWinner
-              ? '0 0 18px #EC489977, 0 0 32px #EC489944, 0 4px 10px rgba(0,0,0,0.55)'
+              ? '0 0 18px var(--qq-accent)77, 0 0 32px var(--qq-accent)44, 0 4px 10px rgba(0,0,0,0.55)'
               : greenActive
                 ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)'
                 : isActiveTeam
@@ -525,10 +528,10 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
                 width: 28, height: 28, borderRadius: '50%',
-                background: '#EC4899', border: '2px solid #0A0814',
+                background: 'var(--qq-accent)', border: '2px solid #0A0814',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, fontWeight: 900, lineHeight: 1,
-                boxShadow: '0 0 14px rgba(236,72,153,0.55)',
+                boxShadow: '0 0 14px rgba(var(--qq-accent-rgb),0.55)',
                 animation: 'bAnswerCheck 0.4s var(--qq-ease-bounce) both',
               }}>🏁</div>
             )}

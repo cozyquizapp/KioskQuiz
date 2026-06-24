@@ -129,7 +129,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     padding: '10px 14px', borderRadius: 16,
                     background: isWinner
                       ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
-                      : 'rgba(255,255,255,0.035)',
+                      : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                     border: isWinner ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                     boxShadow: isWinner ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                     animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.2 + i * 0.08}s both`,
@@ -214,7 +214,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 <div key={optIdx} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
                   borderRadius: 16, overflow: 'hidden',
-                  background: isCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.035)',
+                  background: isCorrect ? 'rgba(34,197,94,0.12)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                   border: isCorrect ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                   boxShadow: isCorrect ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                   animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + optIdx * 0.07}s both`,
@@ -397,7 +397,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   borderRadius: 16, overflow: 'hidden',
                   background: isCorrectLocked ? 'rgba(34,197,94,0.22)'
                     : isHunterHere ? 'rgba(34,197,94,0.14)'
-                    : 'rgba(255,255,255,0.035)',
+                    : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                   border: showGreen ? '2px solid #22C55E' : '1.5px solid var(--qq-hairline)',
                   boxShadow: isCorrectLocked ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
                     : isHunterHere ? '0 0 28px rgba(34,197,94,0.45)'
@@ -550,7 +550,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'stretch', gap: 0,
                   borderRadius: 16, overflow: 'hidden',
-                  background: greenOn ? 'rgba(34,197,94,0.14)' : 'rgba(255,255,255,0.035)',
+                  background: greenOn ? 'rgba(34,197,94,0.14)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                   border: greenOn ? '2px solid rgba(34,197,94,0.55)' : '1.5px solid var(--qq-hairline)',
                   boxShadow: greenOn ? '0 0 0 3px rgba(34,197,94,0.12)' : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
@@ -673,7 +673,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   padding: '10px 14px', borderRadius: 16,
                   background: hitters.length > 0
                     ? 'linear-gradient(135deg, rgba(34,197,94,0.12), rgba(22,163,74,0.06))'
-                    : 'rgba(255,255,255,0.035)',
+                    : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.035)'),
                   border: hitters.length > 0 ? '1.5px solid rgba(34,197,94,0.4)' : '1.5px solid var(--qq-hairline)',
                   animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
                 }}>
@@ -791,7 +791,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     padding: '10px 14px', borderRadius: 16,
                     background: allRight
                       ? 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(22,163,74,0.08))'
-                      : noneRight ? 'rgba(239,68,68,0.08)' : 'rgba(255,255,255,0.04)',
+                      : noneRight ? 'rgba(239,68,68,0.08)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.04)'),
                     border: allRight
                       ? '1.5px solid rgba(34,197,94,0.55)'
                       : noneRight ? '1.5px solid rgba(239,68,68,0.3)' : '1.5px solid var(--qq-hairline)',
@@ -897,7 +897,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
             <div key={a.teamId} style={{
               display: 'flex', alignItems: 'center', gap: 10,
               padding: '7px 12px', borderRadius: 8, marginBottom: 4,
-              background: isWinner ? 'rgba(34,197,94,0.08)' : 'rgba(255,255,255,0.03)',
+              background: isWinner ? 'rgba(34,197,94,0.08)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.03)'),
               border: isWinner ? '1px solid rgba(34,197,94,0.2)' : '1px solid var(--qq-hairline)',
               animation: `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
             }}>

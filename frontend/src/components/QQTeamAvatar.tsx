@@ -1,32 +1,20 @@
-import { useMemo, useState, useEffect, type CSSProperties } from 'react';
+import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dOpenSrc, cozy3dHasBlink } from '../cozy3dAvatars';
+import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 
-// ─── Blink-Hook (Prototyp) ────────────────────────────────────────────────
-// Drop-in: nimmt den aufgeloesten cozy3d-Bildpfad und gibt — NUR wenn der Slug
-// in COZY3D_BLINK_SLUGS steht — abwechselnd open/closed zurueck (Ruhe = open,
-// kurzer Blink = closed). Fuer alle anderen Avatare 1:1 derselbe `src` (no-op,
-// kein Timer). So ist die Mechanik live, sobald Wolf EIN `<slug>-open.png` legt.
-export function useCozy3dBlinkSrc(src: string): string {
+// ─── Augen-auf-Hook (Event-getrieben, Wolf-Idee) ──────────────────────────
+// Ruhe = geschlossene Augen (= heutiger Look). NUR wenn der Slug ein open-Asset
+// hat (COZY3D_BLINK_SLUGS) UND das Tier gerade „wach" ist (wakeAllAvatars /
+// wakeTeamAvatar bei Teams-Vorstellung / Punkt / richtig), zeigt es die offenen
+// Augen (<slug>-open.png). Sonst 1:1 derselbe `src` → no-op fuer alle anderen.
+export function useCozy3dEyeSrc(src: string, teamId?: string): string {
   const slug = /\/avatars\/cozy3d\/([^/]+)\.png$/.exec(src)?.[1];
-  const hasBlink = cozy3dHasBlink(slug);
-  const [blink, setBlink] = useState(false);
-  useEffect(() => {
-    if (!hasBlink) return;
-    let tOpen = 0, tClose = 0;
-    const loop = () => {
-      // 2.5–6 s offen, dann ~140 ms Blink (geschlossen), randomisiert.
-      tOpen = window.setTimeout(() => {
-        setBlink(true);
-        tClose = window.setTimeout(() => { setBlink(false); loop(); }, 140);
-      }, 2500 + Math.random() * 3500);
-    };
-    loop();
-    return () => { clearTimeout(tOpen); clearTimeout(tClose); };
-  }, [hasBlink]);
-  if (!hasBlink || !slug) return src;
-  return blink ? cozy3dSrc(slug) : cozy3dOpenSrc(slug);
+  const hasOpen = cozy3dHasBlink(slug);
+  const awake = useSyncExternalStore(subscribeAwake, () => isAvatarAwake(teamId));
+  if (!hasOpen || !slug) return src;
+  return awake ? cozy3dOpenSrc(slug) : src; // geschlossen = Default, offen wenn wach
 }
 
 type Props = {
@@ -287,7 +275,7 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 }) {
   const fontSizeStr = typeof fontSize === 'number' ? `${fontSize}px` : fontSize;
   // Blink-Hook unbedingt aufrufen (Hooks-Regel); no-op fuer Nicht-cozy3d.
-  const cozyBlinkSrc = useCozy3dBlinkSrc(isCozy3dSlug(emoji) ? cozy3dSrc(emoji) : '');
+  const cozyBlinkSrc = useCozy3dEyeSrc(isCozy3dSlug(emoji) ? cozy3dSrc(emoji) : '');
   // cozy3d: „Emoji" ist in Wahrheit ein Avatar-Slug → 3D-Bild rendern.
   if (isCozy3dSlug(emoji)) {
     return (
@@ -350,7 +338,7 @@ function ImageAvatar({
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const displaySrc = useCozy3dBlinkSrc(src);
+  const displaySrc = useCozy3dEyeSrc(src);
 
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }

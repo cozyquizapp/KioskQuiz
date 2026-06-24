@@ -17,6 +17,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
 import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
+import { wakeAllAvatars } from '../avatarAwake';
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
@@ -35,6 +36,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
     return () => clearInterval(id);
   }, []);
   void tick;
+  // Augen-auf bei der Teams-Vorstellung (Wolf-Idee): alle cozy3d-Tiere mit
+  // open-Asset oeffnen die Augen fuer die Dauer des Reveals. No-op ohne Asset.
+  useEffect(() => { wakeAllAvatars(9000); }, []);
   const elapsed = Date.now() - anchor;
 
   // 2026-05-09 v3: WELCOME-Hero + Subtitle + Teams-Parallel.

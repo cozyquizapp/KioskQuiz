@@ -430,7 +430,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         // Slide-Color-Rand bleibt als Kategorie-Akzent.
         background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(15,12,9,0.85)',
         color: isThemed() ? 'var(--qq-card-text)' : undefined,
-        border: `2px solid ${slide.color}44`,
+        border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${slide.color}44`,
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
@@ -544,7 +544,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <span style={{
                   display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                  background: '#EC4899', boxShadow: '0 0 12px rgba(236,72,153,0.65)',
+                  background: isThemed() ? 'var(--qq-accent)' : '#EC4899',
+                  boxShadow: isThemed() ? '0 0 12px rgba(var(--qq-accent-rgb),0.65)' : '0 0 12px rgba(236,72,153,0.65)',
                   animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
                 }} />
                 {getRuleText('rules.slide3.hint', lang, lang === 'de'

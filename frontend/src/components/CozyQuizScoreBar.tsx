@@ -259,7 +259,11 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               {isLeader && (
                 <span style={{
                   position: 'absolute',
-                  top: dense ? -12 : -16,
+                  // 2026-06-24 (Wolf 'Krone naeher am Kopf'): Offset reduziert
+                  // (-16/-12 -> -8/-6) damit die Kronenbasis auf der Disc-Oberkante
+                  // = auf dem Kopf sitzt statt darueber zu schweben. Moderat, damit
+                  // hohe cozy3d-Ohren/Huete nicht kollidieren.
+                  top: dense ? -6 : -8,
                   left: '50%',
                   transform: 'translateX(-50%) rotate(-14deg)',
                   fontSize: dense ? 24 : 30,

@@ -509,7 +509,7 @@ export default function QQProgressTree({
             const items: React.ReactNode[] = [];
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const biddingLabelColor = isBiddingActive
-              ? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247')
+              ? (skinAccentHex ?? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247'))
               : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500);
             phases.forEach((p, pi) => {
               // 2026-05-17 (Wolf v3): CG-Label IMMER als Spacer-Slot — in
@@ -534,7 +534,7 @@ export default function QQProgressTree({
                     textTransform: 'uppercase',
                     flexShrink: 0,
                     padding: 0,
-                    textShadow: (isShowcase && isBiddingActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                    textShadow: (!isThemed() && isShowcase && isBiddingActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
                     transform: (isShowcase && isBiddingActive) ? 'translateY(-2px)' : 'translateY(0)',
                     transition: 'all 0.4s var(--qq-ease-out-cubic)',
                   }}>
@@ -554,12 +554,12 @@ export default function QQProgressTree({
                     fontSize: phaseNameSize,
                     fontWeight: 900,
                     color: isCurrentPhase
-                      ? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247')
+                      ? (skinAccentHex ?? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247'))
                       : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500),
                     letterSpacing: 0.4,
                     textTransform: 'uppercase',
                     flexShrink: 0,
-                    textShadow: (isShowcase && isCurrentPhase) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                    textShadow: (!isThemed() && isShowcase && isCurrentPhase) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
                     transform: (isShowcase && isCurrentPhase) ? 'translateY(-2px)' : 'translateY(0)',
                     transition: 'all 0.4s var(--qq-ease-out-cubic)',
                   }}
@@ -578,7 +578,7 @@ export default function QQProgressTree({
           {showFinale && (() => {
             const isFinaleActive = state.phase === 'CONNECTIONS_4X4' || showcaseOnFinale;
             const finaleLabelColor = isFinaleActive
-              ? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247')
+              ? (skinAccentHex ?? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247'))
               : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500);
             return (
               <div style={{
@@ -590,7 +590,7 @@ export default function QQProgressTree({
                 letterSpacing: 0.4,
                 textTransform: 'uppercase',
                 flexShrink: 0,
-                textShadow: (isShowcase && isFinaleActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
+                textShadow: (!isThemed() && isShowcase && isFinaleActive) ? '0 0 18px rgba(236,72,153,0.6)' : 'none',
                 transform: (isShowcase && isFinaleActive) ? 'translateY(-2px)' : 'translateY(0)',
                 transition: 'all 0.4s var(--qq-ease-out-cubic)',
               }}>
@@ -656,13 +656,13 @@ export default function QQProgressTree({
               : Array(DEFAULT_DOTS_PER_PHASE).fill(null);
             // Vor letzter Phase: Bieten-Knoten einschieben.
             const insertBiddingHere = showBidding && pi === phases.length - 1 && pi > 0;
-            const biddingColor = QQ_COLORS.brandPink;
+            const biddingColor = skinAccentHex ?? QQ_COLORS.brandPink;
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
             const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
             // CozyGame-Knoten — vor jedem pi >= 1 (= zwischen Runde N-1 und N).
             // Wolf-Spec: nach JEDER Runde ein CG (außer der letzten = Final).
             const insertCozyGameHere = showCozyGames && pi >= 1;
-            const cozyGameColor = QQ_COLORS.brandPink;
+            const cozyGameColor = skinAccentHex ?? QQ_COLORS.brandPink;
             // Active = state.phase=COZY_GAME UND der Slot zwischen aktueller
             // Phase und nächster (= pi === state.gamePhaseIndex).
             // 2026-05-17 (Option B): auch im Showcase aktivieren wenn Wolf auf

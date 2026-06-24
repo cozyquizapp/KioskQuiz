@@ -221,7 +221,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
               >
                 <div style={{
                   width: 'clamp(52px, 5cqw, 72px)', height: 'clamp(52px, 5cqw, 72px)',
-                  borderRadius: 16,
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                   background: rankGradient,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900, color: 'var(--qq-card-text)',

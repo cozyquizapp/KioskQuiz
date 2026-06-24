@@ -486,9 +486,10 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
         fontSize: 'clamp(48px, 6vw, 96px)',
         fontWeight: 900,
         letterSpacing: '-0.02em',
-        background: `linear-gradient(90deg, ${COZY_PINK} 0%, #A21247 100%)`,
-        WebkitBackgroundClip: 'text',
-        WebkitTextFillColor: 'transparent',
+        background: isThemed() ? 'none' : `linear-gradient(90deg, ${COZY_PINK} 0%, #A21247 100%)`,
+        WebkitBackgroundClip: isThemed() ? undefined : 'text',
+        WebkitTextFillColor: isThemed() ? 'var(--qq-title)' : 'transparent',
+        color: isThemed() ? 'var(--qq-title)' : undefined,
       }}>
         CozyGame
       </div>

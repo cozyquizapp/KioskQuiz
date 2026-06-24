@@ -330,7 +330,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
     }}>
       <div style={{
         fontSize: 'clamp(10px, 0.9cqw, 13px)', fontWeight: 900,
-        color: QQ_COLORS.brandPinkMid, textTransform: 'uppercase', letterSpacing: '0.14em',
+        color: isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPinkMid, textTransform: 'uppercase', letterSpacing: '0.14em',
         marginBottom: 8, display: 'flex', justifyContent: 'space-between', gap: 14,
       }}>
         <span>🏆 Finale</span>
@@ -1532,7 +1532,7 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
           marginTop: 10, padding: '10px 14px', borderRadius: 12,
           background: 'rgba(var(--qq-accent-rgb),0.10)',
           border: '1px solid rgba(var(--qq-accent-rgb),0.30)',
-          fontSize: 12, fontWeight: 700, color: QQ_COLORS.brandPinkMid,
+          fontSize: 12, fontWeight: 700, color: isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPinkMid,
           textAlign: 'center', letterSpacing: '0.04em',
         }}>
           {de ? '📌 Brett-Stand fixiert — jetzt kommen die Boni' : '📌 Board locked — now the bonuses'}

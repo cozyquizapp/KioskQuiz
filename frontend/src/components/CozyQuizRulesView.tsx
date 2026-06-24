@@ -359,7 +359,7 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
       {grid.label && (
         <div style={{
           fontSize: 'clamp(18px,2.2cqw,30px)', fontWeight: 900,
-          color: slideColor, letterSpacing: '0.04em',
+          color: isThemed() ? 'var(--qq-accent)' : slideColor, letterSpacing: '0.04em',
         }}>{grid.label}</div>
       )}
     </div>
@@ -473,14 +473,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           )}
           <div style={{
             fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: `${slide.color}88`,
+            textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : `${slide.color}88`,
           }}>
             {getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
           </div>
           <div style={{
             fontSize: 'clamp(44px,7cqw,88px)', fontWeight: 900, lineHeight: 1.05,
-            color: slide.color,
-            textShadow: `0 0 60px ${slide.color}44`,
+            color: isThemed() ? 'var(--qq-title)' : slide.color,
+            textShadow: isThemed() ? 'none' : `0 0 60px ${slide.color}44`,
           }}>
             {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
                 Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.
@@ -505,11 +505,13 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             sprechen). */}
         <div style={{
           width: '100%', height: 3, borderRadius: 2,
-          background: `linear-gradient(90deg, transparent, ${slide.color}cc 50%, transparent)`,
+          background: isThemed()
+            ? 'linear-gradient(90deg, transparent, var(--qq-accent) 50%, transparent)'
+            : `linear-gradient(90deg, transparent, ${slide.color}cc 50%, transparent)`,
           backgroundSize: '200% 100%',
           marginBottom: 'clamp(16px, 2.5cqh, 32px)',
           animation: 'lineShimmer 3s linear infinite',
-          boxShadow: `0 0 18px ${slide.color}44`,
+          boxShadow: isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${slide.color}44`,
         }} />
 
         {/* Content: text left, grid right (if grid exists) */}
@@ -611,11 +613,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {slide.extra && (
           <div style={{
             marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: 16,
-            background: `${slide.color}15`, border: `2px solid ${slide.color}33`,
+            background: isThemed() ? 'var(--qq-surface)' : `${slide.color}15`,
+            border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${slide.color}33`,
             fontSize: 'clamp(18px,2.4cqw,34px)', fontWeight: 900,
-            color: slide.color,
+            color: isThemed() ? 'var(--qq-accent)' : slide.color,
             animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
-            textShadow: `0 0 24px ${slide.color}33`,
+            textShadow: isThemed() ? 'none' : `0 0 24px ${slide.color}33`,
             textAlign: 'center',
           }}>
             {slide.extra}
@@ -627,9 +630,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             marginTop: 'clamp(16px, 2.5cqh, 32px)', textAlign: 'center',
             fontSize: 'clamp(20px,2.8cqw,36px)', fontWeight: 900,
-            color: slide.color,
+            color: isThemed() ? 'var(--qq-accent)' : slide.color,
             animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.6s both',
-            textShadow: `0 0 24px ${slide.color}33`,
+            textShadow: isThemed() ? 'none' : `0 0 24px ${slide.color}33`,
           }}>
             {getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')}
           </div>

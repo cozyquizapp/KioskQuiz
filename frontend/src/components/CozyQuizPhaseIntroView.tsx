@@ -619,14 +619,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {/* FINALE rollt von oben – mit Gold-Gradient */}
                 <span style={{
                   position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
-                  backgroundImage: 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 45%, #D97706 100%)',
-                  WebkitBackgroundClip: 'text',
-                  backgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  color: 'transparent',
+                  // Skin: solider Hero-Titel statt Pink-Amber-Gradient
+                  backgroundImage: isThemed() ? 'none' : 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 45%, #D97706 100%)',
+                  WebkitBackgroundClip: isThemed() ? undefined : 'text',
+                  backgroundClip: isThemed() ? undefined : 'text',
+                  WebkitTextFillColor: isThemed() ? 'var(--qq-title)' : 'transparent',
+                  color: isThemed() ? 'var(--qq-title)' : 'transparent',
                   letterSpacing: '0.04em',
-                  textShadow: `0 0 80px #EC489955`,
-                  filter: 'drop-shadow(0 12px 0 rgba(180,83,9,0.35))',
+                  textShadow: isThemed() ? 'none' : `0 0 80px #EC489955`,
+                  filter: isThemed() ? undefined : 'drop-shadow(0 12px 0 rgba(180,83,9,0.35))',
                   animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
                 }}>{finaleWord}</span>
               </div>

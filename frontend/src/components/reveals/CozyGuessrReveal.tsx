@@ -327,7 +327,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           <div style={{
             position: 'absolute', top: 88, left: '50%', transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
-            padding: '8px 16px', borderRadius: 999,
+            padding: '8px 16px', borderRadius: 'var(--qq-pill-radius)',
             background: 'rgba(13,10,6,0.85)',
             border: '1.5px solid rgba(236,72,153,0.35)',
             zIndex: 1000, maxWidth: 'calc(100% - 80px)', justifyContent: 'center',
@@ -344,7 +344,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
               return (
                 <span key={p.teamId} style={{
                   display: 'inline-flex', alignItems: 'center', gap: 6,
-                  padding: '4px 10px 4px 4px', borderRadius: 999,
+                  padding: '4px 10px 4px 4px', borderRadius: 'var(--qq-pill-radius)',
                   background: 'rgba(15,23,42,0.6)',
                   border: `1.5px solid ${team.color}55`,
                 }}>
@@ -364,7 +364,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         {/* Title-Overlay oben */}
         <div style={{
           position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)',
-          padding: '12px 28px', borderRadius: 999,
+          padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
           background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(236,72,153,0.4)',
           color: '#FBCFE8', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(236,72,153,0.25)',
@@ -434,7 +434,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                   {timeLabel && (
                     <span style={{
                       fontWeight: 900, fontSize: 'clamp(14px, 1.3cqw, 18px)',
-                      padding: '3px 10px', borderRadius: 999,
+                      padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                       background: deltaMs === 0 ? 'rgba(250,204,21,0.18)' : 'rgba(148,163,184,0.12)',
                       color: deltaMs === 0 ? '#FBCFE8' : '#94a3b8',
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,

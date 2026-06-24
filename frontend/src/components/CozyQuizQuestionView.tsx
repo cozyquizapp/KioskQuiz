@@ -246,7 +246,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                         {voters.map(({ team: tm }, vi) => (
                           <div key={tm.id} style={{
                             display: 'flex', alignItems: 'center', gap: 6,
-                            padding: '4px 10px 4px 4px', borderRadius: 999,
+                            padding: '4px 10px 4px 4px', borderRadius: 'var(--qq-pill-radius)',
                             background: 'var(--qq-overlay)',
                             border: `1.5px solid ${tm.color}`,
                             animation: `contentReveal 0.3s var(--qq-ease-pop-fast) ${vi * 0.08}s both`,
@@ -283,7 +283,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   return (
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '4px 10px', borderRadius: 999,
+                      padding: '4px 10px', borderRadius: 'var(--qq-pill-radius)',
                       background: rank === 1 ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.28)',
                       border: rank === 1 ? '1.5px solid rgba(var(--qq-accent-rgb),0.6)' : `1.5px solid ${tm.color}`,
                     }}>
@@ -496,7 +496,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   return (
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: 6,
-                      padding: '3px 10px', borderRadius: 999,
+                      padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                       background: 'var(--qq-overlay)',
                       border: `1.5px solid ${tm.color}`,
                     }}>
@@ -611,7 +611,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                     </span>
                     {hasTie && timeSec && avatarsOn && (
                       <span style={{
-                        padding: '4px 10px', borderRadius: 999,
+                        padding: '4px 10px', borderRadius: 'var(--qq-pill-radius)',
                         background: i === 0 && isWinner ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.28)',
                         border: i === 0 && isWinner ? '1.5px solid rgba(var(--qq-accent-rgb),0.6)' : '1px solid var(--qq-hairline)',
                         fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
@@ -701,7 +701,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       {hitters.map((tm, hi) => (
                         <div key={tm.id} style={{
                           display: 'flex', alignItems: 'center', gap: 5,
-                          padding: '3px 10px 3px 3px', borderRadius: 999,
+                          padding: '3px 10px 3px 3px', borderRadius: 'var(--qq-pill-radius)',
                           background: 'var(--qq-overlay)',
                           border: `1.5px solid ${tm.color}`,
                           animation: `contentReveal 0.3s var(--qq-ease-pop-fast) ${0.2 + i * 0.08 + hi * 0.05}s both`,
@@ -739,7 +739,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 return (
                   <div key={tm.id} style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '3px 10px', borderRadius: 999,
+                    padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                     background: isWinner ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.28)',
                     border: isWinner ? '1.5px solid rgba(34,197,94,0.6)' : `1.5px solid ${tm.color}`,
                   }}>
@@ -859,7 +859,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                 return (
                   <div key={tm.id} style={{
                     display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '3px 10px', borderRadius: 999,
+                    padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                     background: isWinner ? 'rgba(34,197,94,0.18)' : 'rgba(0,0,0,0.28)',
                     border: isWinner ? '1.5px solid rgba(34,197,94,0.6)' : `1.5px solid ${tm.color}`,
                   }}>
@@ -1771,7 +1771,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           />
                         </div>
                         <span style={{
-                          padding: '3px 10px', borderRadius: 999,
+                          padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                           background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
                           border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
                           color: isFastest ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
@@ -1827,7 +1827,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 display: 'inline-flex', alignItems: 'center',
                 gap: 'clamp(12px, 1.6cqw, 20px)',
                 padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
-                borderRadius: 999,
+                borderRadius: 'var(--qq-pill-radius)',
                 background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
                 border: `2.5px solid ${winnerTeam.color}aa`,
                 boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
@@ -2401,7 +2401,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // line-height normal ~1.2) unten in den Pill-Rand
                               // ragen — visuell "abgeschnitten" am border-radius:999.
                               padding: `6px ${padR}px 6px 2px`,
-                              borderRadius: 999,
+                              borderRadius: 'var(--qq-pill-radius)',
                               background: 'var(--qq-overlay)',
                               border: isFastest ? '3px solid var(--qq-accent)' : `2px solid ${tm.color}`,
                               boxShadow: isFastest
@@ -2426,7 +2426,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   position: 'absolute',
                                   left: '50%', bottom: -8,
                                   transform: 'translate(-50%, 50%)',
-                                  padding: '2px 9px', borderRadius: 999,
+                                  padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
                                   background: isFastest ? 'rgba(var(--qq-accent-rgb),0.95)' : 'rgba(15,23,42,0.95)',
                                   border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),1)' : `1.5px solid ${tm.color}`,
                                   color: isFastest ? '#0A0814' : 'var(--qq-card-text)',
@@ -2491,7 +2491,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       <div key={tm.id} title={`${tm.name}: ${pts}`} style={{
                         display: 'flex', alignItems: 'center', gap: 6,
                         padding: '3px 12px 3px 3px',
-                        borderRadius: 999,
+                        borderRadius: 'var(--qq-pill-radius)',
                         background: 'var(--qq-overlay)',
                         border: `2px solid ${tm.color}`,
                         boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
@@ -2615,7 +2615,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             </div>
                             {timeSec != null && (
                               <span style={{
-                                padding: '3px 10px', borderRadius: 999,
+                                padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                                 background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
                                 border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
                                 color: isFastest ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
@@ -2736,7 +2736,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       <div key={a} style={{
                         display: 'inline-flex', alignItems: 'center', gap: tier === 'xxl' ? 14 : tier === 'xl' ? 12 : tier === 'lg' ? 8 : 4,
                         padding: showAvatar ? tierStyles.padAvatar : tierStyles.pad,
-                        borderRadius: 999,
+                        borderRadius: 'var(--qq-pill-radius)',
                         fontSize: tierStyles.fontSize, fontWeight: 900,
                         background: named ? 'rgba(34,197,94,0.22)' : 'rgba(15,23,42,0.5)',
                         border: `${tier === 'xs' ? 1 : 2}px solid ${authorTeam ? authorTeam.color : (named ? QQ_COLORS.green500 : 'rgba(148,163,184,0.25)')}`,
@@ -2984,7 +2984,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     transform: 'translate(-50%, -50%)',
                     display: 'flex', alignItems: 'center', gap: 5,
                     padding: '4px 11px 4px 7px',
-                    borderRadius: 999,
+                    borderRadius: 'var(--qq-pill-radius)',
                     background: 'linear-gradient(135deg, #22C55E, #16A34A)',
                     boxShadow: '0 0 14px rgba(34,197,94,0.55), 0 2px 8px rgba(0,0,0,0.38)',
                     border: '2px solid var(--qq-hairline)',
@@ -3159,7 +3159,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }}>
                 <div style={{
                   display: 'inline-flex', alignItems: 'center', gap: 18,
-                  padding: '14px 30px', borderRadius: 999,
+                  padding: '14px 30px', borderRadius: 'var(--qq-pill-radius)',
                   background: `linear-gradient(135deg, ${tColor}2a, ${tColor}0a)`,
                   border: `2px solid ${tColor}55`,
                   boxShadow: `0 0 32px ${tColor}44`,

@@ -326,7 +326,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         const underlineDelay = baseSec + letterCount * 0.05 + 0.1;
         return (
           <div style={{
-            width: 'clamp(220px, 35cqw, 480px)', height: 3, borderRadius: 999,
+            width: 'clamp(220px, 35cqw, 480px)', height: 3, borderRadius: 'var(--qq-pill-radius)',
             background: isEsc
               ? 'linear-gradient(90deg, transparent 0%, rgba(255,45,123,0.7) 25%, #FF2D7B 50%, rgba(255,45,123,0.7) 75%, transparent 100%)'
               : 'linear-gradient(90deg, transparent 0%, rgba(var(--qq-accent-rgb),0.7) 25%, var(--qq-accent) 50%, rgba(var(--qq-accent-rgb),0.7) 75%, transparent 100%)',

@@ -146,7 +146,7 @@ function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
       {/* Kategorie-Pill links — gleiche Optik wie bei den anderen Fragen */}
       <div style={{
         display: 'inline-flex', alignItems: 'center', gap: 10,
-        padding: '8px 22px', borderRadius: 999,
+        padding: '8px 22px', borderRadius: 'var(--qq-pill-radius)',
         background: `${accent}22`, border: `2px solid ${accent}44`,
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
@@ -171,7 +171,7 @@ function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
         {c.phase === 'active' && <ConnectionsTimer endsAt={c.endsAt} />}
         {c.phase === 'placement' && (
           <div style={{
-            padding: '8px 18px', borderRadius: 999,
+            padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
             background: 'rgba(34,197,94,0.18)', border: '2px solid rgba(34,197,94,0.5)',
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900, color: '#86EFAC',
             letterSpacing: '0.04em',
@@ -291,7 +291,7 @@ function ConnectionsRulePill({ emoji, text }: { emoji: string; text: string }) {
   return (
     <div style={{
       display: 'flex', alignItems: 'center', gap: 12,
-      padding: '12px 22px', borderRadius: 999,
+      padding: '12px 22px', borderRadius: 'var(--qq-pill-radius)',
       background: 'var(--qq-surface)',
       border: '1.5px solid rgba(var(--qq-accent-rgb),0.32)',
       fontSize: 'clamp(16px, 1.7cqw, 22px)', fontWeight: 900, color: 'var(--qq-card-text)',
@@ -550,7 +550,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', top: -10, left: '50%',
                 transform: 'translateX(-50%)',
-                padding: '2px 8px', borderRadius: 999,
+                padding: '2px 8px', borderRadius: 'var(--qq-pill-radius)',
                 background: '#22C55E', color: '#0a1f0d',
                 fontSize: 11, fontWeight: 900, letterSpacing: 0.4,
                 whiteSpace: 'nowrap',

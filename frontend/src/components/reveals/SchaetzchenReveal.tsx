@@ -276,7 +276,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 <div style={{
                   display: 'inline-flex', alignItems: 'baseline', gap: 6,
                   padding: '6px 16px',
-                  borderRadius: 999,
+                  borderRadius: 'var(--qq-pill-radius)',
                   background: winner.delta === 0 ? 'rgba(34,197,94,0.22)' : `${winner.team.color}22`,
                   border: winner.delta === 0 ? '2px solid rgba(34,197,94,0.6)' : `2px solid ${winner.team.color}55`,
                   fontSize: 'clamp(16px, 1.7cqw, 26px)', fontWeight: 900,
@@ -392,7 +392,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     {isInRangeWinner && (
                       <span style={{
                         display: 'inline-flex', alignItems: 'center', gap: 4,
-                        padding: '2px 8px', borderRadius: 999,
+                        padding: '2px 8px', borderRadius: 'var(--qq-pill-radius)',
                         background: `${r.team.color}26`,
                         border: `1.5px solid ${r.team.color}55`,
                         fontSize: 'clamp(11px, 1.1cqw, 15px)', fontWeight: 900,
@@ -417,7 +417,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 4, flexShrink: 0,
                 }}>
                   <div style={{
-                    padding: '8px 18px', borderRadius: 999,
+                    padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
                     background: isTop ? 'rgba(250,204,21,0.22)' : (themed ? 'var(--qq-surface)' : 'rgba(15,23,42,0.7)'),
                     border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                     fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
@@ -439,7 +439,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     return (
                       <span style={{
                         fontWeight: 900, fontSize: 'clamp(11px, 1.05cqw, 14px)',
-                        padding: '2px 8px', borderRadius: 999,
+                        padding: '2px 8px', borderRadius: 'var(--qq-pill-radius)',
                         background: deltaMs === 0 ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.18)',
                         border: deltaMs === 0 ? '1px solid rgba(34,197,94,0.5)' : '1px solid rgba(148,163,184,0.35)',
                         color: deltaMs === 0 ? QQ_COLORS.green300 : 'var(--qq-text-muted)',

@@ -159,7 +159,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           </div>
           {paused && (
             <div style={{
-              padding: '4px 12px', borderRadius: 999,
+              padding: '4px 12px', borderRadius: 'var(--qq-pill-radius)',
               background: 'rgba(var(--qq-accent-rgb),0.18)', border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
               fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900, color: isThemed() ? 'var(--qq-accent)' : '#FBCFE8',
               animation: 'pulse 1.4s ease-in-out infinite',

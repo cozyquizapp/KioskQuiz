@@ -80,7 +80,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
       }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 10,
-          padding: '8px 22px', borderRadius: 999,
+          padding: '8px 22px', borderRadius: 'var(--qq-pill-radius)',
           background: `${accent}22`, border: `2px solid ${accent}44`,
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
           animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
@@ -275,7 +275,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                             position: 'absolute',
                             left: '50%', bottom: -8,
                             transform: 'translate(-50%, 50%)',
-                            padding: '3px 11px', borderRadius: 999,
+                            padding: '3px 11px', borderRadius: 'var(--qq-pill-radius)',
                             background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
                             border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(236,72,153,1)') : `1.5px solid ${tm.color}`,
                             color: isFastest ? '#0A0814' : '#e2e8f0',

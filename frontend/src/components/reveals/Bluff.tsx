@@ -97,7 +97,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
       }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 10,
-          padding: '8px 22px', borderRadius: 999,
+          padding: '8px 22px', borderRadius: 'var(--qq-pill-radius)',
           background: `${accent}22`, border: `2px solid ${accent}44`,
           backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
           animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
@@ -111,7 +111,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {!revealed && phase && (
             <div style={{
-              padding: '8px 16px', borderRadius: 999,
+              padding: '8px 16px', borderRadius: 'var(--qq-pill-radius)',
               background: 'var(--qq-surface)', border: '1.5px solid var(--qq-hairline)',
               fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900, color: 'var(--qq-text-muted)',
             }}>
@@ -239,7 +239,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
         }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '5px 16px', borderRadius: 999,
+            padding: '5px 16px', borderRadius: 'var(--qq-pill-radius)',
             background: 'rgba(34,197,94,0.35)', border: '1.5px solid #22C55E',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
             color: QQ_COLORS.green300, letterSpacing: '0.12em', textTransform: 'uppercase',
@@ -263,7 +263,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
           maxWidth: 'min(1100px, 90cqw)',
           display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.8cqw, 24px)',
           padding: 'clamp(10px, 1.4cqh, 18px) clamp(20px, 2.4cqw, 36px)',
-          borderRadius: 999,
+          borderRadius: 'var(--qq-pill-radius)',
           background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}0d)`,
           border: `2.5px solid ${winnerTeam.color}cc`,
           boxShadow: `0 0 36px ${winnerTeam.color}66, 0 6px 18px rgba(0,0,0,0.5)`,
@@ -271,7 +271,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
           flexWrap: 'wrap', justifyContent: 'center',
         }}>
           <span style={{
-            padding: '4px 12px', borderRadius: 999,
+            padding: '4px 12px', borderRadius: 'var(--qq-pill-radius)',
             background: `linear-gradient(135deg, ${winnerTeam.color}, ${winnerTeam.color}dd)`,
             fontSize: 'clamp(11px, 1.2cqw, 15px)', fontWeight: 900,
             color: '#0a1f0d', letterSpacing: '0.12em', textTransform: 'uppercase',
@@ -326,7 +326,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               {breakdown.map((b, i) => (
                 <span key={i} title={`${b.n} × ${b.label[lang]}`} style={{
-                  padding: '4px 10px', borderRadius: 999,
+                  padding: '4px 10px', borderRadius: 'var(--qq-pill-radius)',
                   background: b.bg,
                   fontSize: 'clamp(13px, 1.4cqw, 17px)', fontWeight: 900, color: 'var(--qq-card-text)',
                   whiteSpace: 'nowrap',
@@ -369,7 +369,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                   display: 'inline-flex', alignItems: 'center',
                   gap: 'clamp(8px, 1cqw, 14px)',
                   padding: '8px 16px 8px 10px',
-                  borderRadius: 999,
+                  borderRadius: 'var(--qq-pill-radius)',
                   background: `${cardColor}1a`,
                   border: `1.5px solid ${cardColor}66`,
                   boxShadow: `0 4px 12px rgba(0,0,0,0.35), 0 0 12px ${cardColor}22`,
@@ -393,7 +393,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                         <span style={{
                           position: 'absolute', right: -6, bottom: -4,
                           background: '#0A0814', border: `1.5px solid ${authorTeam.color}`,
-                          borderRadius: 999, padding: '1px 5px',
+                          borderRadius: 'var(--qq-pill-radius)', padding: '1px 5px',
                           fontSize: 9, fontWeight: 900, color: authorTeam.color,
                           lineHeight: 1.1,
                         }}>+{extraAuthors}</span>
@@ -461,7 +461,7 @@ export function BluffTimer({ endsAt, accent }: { endsAt: number; accent: string 
   const urgent = sec <= 10;
   return (
     <div style={{
-      padding: '8px 18px', borderRadius: 999,
+      padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
       background: urgent ? 'rgba(239,68,68,0.22)' : `${accent}22`,
       border: `2px solid ${urgent ? QQ_COLORS.red500 : `${accent}55`}`,
       fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
@@ -626,7 +626,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
           : 'Which answer is real? Tap on your phone!'}
       </div>
       <div style={{
-        padding: '8px 22px', borderRadius: 999,
+        padding: '8px 22px', borderRadius: 'var(--qq-pill-radius)',
         background: `${accent}22`, border: `2px solid ${accent}55`,
         fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900, color: 'var(--qq-accent-soft)',
       }}>
@@ -793,7 +793,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
 
                 {isReal ? (
                   <span style={{
-                    padding: '4px 12px', borderRadius: 999,
+                    padding: '4px 12px', borderRadius: 'var(--qq-pill-radius)',
                     background: 'rgba(34,197,94,0.3)', border: '1.5px solid #22C55E',
                     fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900, color: QQ_COLORS.green300,
                     whiteSpace: 'nowrap', flexShrink: 0,
@@ -802,7 +802,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                   </span>
                 ) : authorTeam ? (
                   <span style={{
-                    padding: '4px 12px', borderRadius: 999,
+                    padding: '4px 12px', borderRadius: 'var(--qq-pill-radius)',
                     background: `${authorTeam.color}28`, border: `1.5px solid ${authorTeam.color}aa`,
                     fontSize: 'clamp(10px, 1.05cqw, 13px)', fontWeight: 900, color: authorTeam.color,
                     whiteSpace: 'nowrap', flexShrink: 0,

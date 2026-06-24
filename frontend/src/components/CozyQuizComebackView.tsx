@@ -267,7 +267,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
           }}>
             <div style={{
-              padding: 'clamp(8px, 1cqh, 12px) clamp(20px, 2.2cqw, 32px)', borderRadius: 999,
+              padding: 'clamp(8px, 1cqh, 12px) clamp(20px, 2.2cqw, 32px)', borderRadius: 'var(--qq-pill-radius)',
               background: 'rgba(var(--qq-accent-rgb),0.16)',
               border: '2px solid rgba(var(--qq-accent-rgb),0.5)',
               color: 'var(--qq-accent-soft)',
@@ -420,7 +420,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                       <div style={{
                         display: 'inline-flex', alignItems: 'center', gap: 12,
                         padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
-                        borderRadius: 999,
+                        borderRadius: 'var(--qq-pill-radius)',
                         background: isCorrect ? `${accentCol}33` : `${accentCol}14`,
                         border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
                         boxShadow: isCorrect
@@ -697,7 +697,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 10,
-            padding: '6px 18px', borderRadius: 999,
+            padding: '6px 18px', borderRadius: 'var(--qq-pill-radius)',
             background: 'rgba(var(--qq-accent-rgb),0.18)', border: '2px solid rgba(var(--qq-accent-rgb),0.5)',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
             color: QQ_COLORS.yellow300, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -903,7 +903,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                 {leaderTeams.map(lt => (
                   <div key={lt.id} style={{
                     display: 'inline-flex', alignItems: 'center', gap: 12,
-                    padding: '10px 20px', borderRadius: 999,
+                    padding: '10px 20px', borderRadius: 'var(--qq-pill-radius)',
                     background: `${lt.color}18`, border: `2px solid ${lt.color}55`,
                   }}>
                     <QQTeamAvatar avatarId={lt.avatarId} teamEmoji={lt.emoji} size={48} />

@@ -2274,7 +2274,7 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
     }}>
       <div style={{
         display: 'flex', alignItems: 'center', gap: 18,
-        padding: '10px 28px', borderRadius: 999,
+        padding: '10px 28px', borderRadius: 'var(--qq-pill-radius)',
         background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(217,119,6,0.10))',
         border: isThemed() ? '2px solid var(--qq-accent)' : '2px solid rgba(236,72,153,0.55)',
         boxShadow: isThemed() ? 'none' : '0 0 36px rgba(236,72,153,0.35)',
@@ -2368,7 +2368,7 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
         {chosen && (
           <div style={{
             display: 'flex', alignItems: 'center', gap: 16,
-            padding: '12px 28px', borderRadius: 999,
+            padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
             background: `linear-gradient(135deg, ${chosen.color}44, ${chosen.color}1a)`,
             border: `2.5px solid ${chosen.color}`,
             boxShadow: landed ? `0 0 48px ${chosen.color}88` : 'none',
@@ -2464,7 +2464,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
     return (
       <div style={{
         flex: '0 0 auto',
-        padding: '8px 18px', borderRadius: 999,
+        padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
         background: 'rgba(15,23,42,0.5)', border: '1px solid rgba(148,163,184,0.25)',
         color: QQ_COLORS.slate400, fontSize: 15, fontWeight: 700,
       }}>
@@ -2633,7 +2633,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   </div>
                   {remaining !== null && (
                     <div style={{
-                      padding: '6px 18px', borderRadius: 999,
+                      padding: '6px 18px', borderRadius: 'var(--qq-pill-radius)',
                       background: urgent ? 'rgba(239,68,68,0.25)' : 'rgba(15,23,42,0.5)',
                       border: `2px solid ${urgent ? QQ_COLORS.red500 : QQ_COLORS.slate600}`,
                       color: urgent ? QQ_COLORS.red300 : QQ_COLORS.slate200,
@@ -2783,7 +2783,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
           {used.map((a, i) => (
             <div key={`${a}-${i}`} style={{
               padding: chipStyles.padding,
-              borderRadius: 999,
+              borderRadius: 'var(--qq-pill-radius)',
               background: 'linear-gradient(135deg, rgba(34,197,94,0.22), rgba(22,163,74,0.10))',
               border: `${chipStyles.border}px solid rgba(34,197,94,0.55)`,
               boxShadow: `0 4px 14px rgba(34,197,94,${chipStyles.shadowAlpha})`,
@@ -3688,7 +3688,7 @@ export function MuchoOptionsReveal({
                             position: 'absolute',
                             left: '50%', bottom: -8,
                             transform: 'translate(-50%, 50%)',
-                            padding: '2px 9px', borderRadius: 999,
+                            padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
                             background: isFastest ? (isThemed() ? 'var(--qq-accent)' : 'rgba(236,72,153,0.95)') : 'rgba(15,23,42,0.95)',
                             border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(236,72,153,1)') : `1.5px solid ${tm.color}`,
                             color: isFastest ? (isThemed() ? '#fff' : '#0A0814') : QQ_COLORS.slate200,
@@ -4009,7 +4009,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         }}>
           {/* Goldlinie OBEN — zieht sich von Mitte nach außen aus (0.9s delay). */}
           <div style={{
-            width: 'clamp(380px, 50cqw, 760px)', height: 2, borderRadius: 999,
+            width: 'clamp(380px, 50cqw, 760px)', height: 2, borderRadius: 'var(--qq-pill-radius)',
             background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.6) 25%, ${accentHex} 50%, rgba(${accentRgb},0.6) 75%, transparent 100%)`,
             backgroundSize: '200% 100%',
             boxShadow: `0 0 14px rgba(${accentRgb},0.55)`,
@@ -4148,7 +4148,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
 
           {/* Goldlinie UNTEN — symmetrisch zur oberen, gleiches expand */}
           <div style={{
-            width: 'clamp(380px, 50cqw, 760px)', height: 2, borderRadius: 999,
+            width: 'clamp(380px, 50cqw, 760px)', height: 2, borderRadius: 'var(--qq-pill-radius)',
             background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.6) 25%, ${accentHex} 50%, rgba(${accentRgb},0.6) 75%, transparent 100%)`,
             backgroundSize: '200% 100%',
             boxShadow: `0 0 14px rgba(${accentRgb},0.55)`,
@@ -4164,7 +4164,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           {eurovisionMode && !logoUrl && (
             <div style={{
               marginTop: 'clamp(8px, 1.4cqh, 20px)',
-              padding: '8px 28px', borderRadius: 999,
+              padding: '8px 28px', borderRadius: 'var(--qq-pill-radius)',
               background: 'linear-gradient(135deg, rgba(236,72,153,0.32), rgba(168,85,247,0.24))',
               border: '2px solid rgba(236,72,153,0.65)',
               fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 900,

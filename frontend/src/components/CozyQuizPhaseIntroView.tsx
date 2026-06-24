@@ -549,7 +549,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               2026-05-07 (Wolf 'mehr Pink+Blau, Set F'): im ESC-Mode Pille mit
               Pink→Blau-Gradient-BG + zweifarbiger Border statt monochrom. */}
           <div style={{
-            padding: '8px 24px', borderRadius: 999,
+            padding: '8px 24px', borderRadius: 'var(--qq-pill-radius)',
             background: isEsc
               ? 'linear-gradient(135deg, rgba(255,45,123,0.20) 0%, rgba(59,130,246,0.20) 100%)'
               : isThemed() ? 'var(--qq-surface)' : `${displayColor}18`,
@@ -798,7 +798,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         <>
           {/* Round pill — smaller context */}
           <div style={{
-            padding: '6px 20px', borderRadius: 999,
+            padding: '6px 20px', borderRadius: 'var(--qq-pill-radius)',
             background: `${color}15`, border: `1.5px solid ${color}33`,
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
             color: `${color}aa`, letterSpacing: '0.04em',
@@ -827,7 +827,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           {s.gamePhaseIndex > 1 && (
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '6px 22px', borderRadius: 999,
+              padding: '6px 22px', borderRadius: 'var(--qq-pill-radius)',
               background: `${color}25`, border: `2px solid ${color}55`,
               fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
               color, letterSpacing: '0.1em', textTransform: 'uppercase',

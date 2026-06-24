@@ -248,7 +248,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                   {itemValues[correctIdx] && (
                     <span style={{
                       display: 'inline-flex', alignItems: 'center',
-                      padding: '3px 12px', borderRadius: 999,
+                      padding: '3px 12px', borderRadius: 'var(--qq-pill-radius)',
                       background: hasHits ? 'rgba(34,197,94,0.22)' : 'rgba(148,163,184,0.16)',
                       border: hasHits ? '1.5px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                       color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
@@ -377,7 +377,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                     <div key={tm.id} style={{
                       display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.8cqw, 12px)',
                       padding: 'clamp(4px, 0.6cqh, 8px) clamp(10px, 1.1cqw, 16px) clamp(4px, 0.6cqh, 8px) clamp(4px, 0.5cqh, 6px)',
-                      borderRadius: 999,
+                      borderRadius: 'var(--qq-pill-radius)',
                       background: `linear-gradient(135deg, ${tm.color}26, ${tm.color}0a)`,
                       border: `2px solid ${tm.color}55`,
                       animation: revealedMinIdx === 0

@@ -600,7 +600,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           {/* CozyWolf Branding — prominent unterhalb des QR-Codes */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 18px', borderRadius: 999,
+            padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
             background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(236,72,153,0.10))',
             border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(236,72,153,0.35)',
             boxShadow: isThemed() ? 'none' : '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(236,72,153,0.12)',
@@ -770,7 +770,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         <div style={{
                           marginTop: 4,
                           display: 'inline-flex', alignItems: 'center', gap: 6,
-                          padding: '3px 10px', borderRadius: 999,
+                          padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                           background: `${t.color}1c`,
                           border: `1px solid ${t.color}55`,
                           fontSize: compact ? 'clamp(11px, 1cqw, 14px)' : 'clamp(12px, 1.1cqw, 16px)',

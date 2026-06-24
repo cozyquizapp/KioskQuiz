@@ -1706,7 +1706,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 16,
-                padding: '14px 26px', borderRadius: 999,
+                padding: '14px 26px', borderRadius: 'var(--qq-pill-radius)',
                 background: `${targetTeam.color}1a`,
                 border: `2.5px solid ${targetTeam.color}`,
                 animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
@@ -2121,7 +2121,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
                 }}>{metric}</div>
               )}
               <div style={{
-                padding: '8px 18px', borderRadius: 999,
+                padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
                 background: 'rgba(34,197,94,0.18)',
                 border: '2px solid rgba(34,197,94,0.55)',
                 fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,

@@ -98,6 +98,7 @@
   --qq-card-bg: linear-gradient(180deg, #1F1A2E, #14101F);
   --qq-card-border: 1px solid rgba(255,255,255,0.10);
   --qq-card-radius: 20px;
+  --qq-pill-radius: 999px;             /* Pills/Badges/Chips (Mono ueberschreibt auf eckig) */
   --qq-card-shadow: 0 16px 50px rgba(0,0,0,0.45);
   --qq-hairline: rgba(255,255,255,0.10);  /* dezente Linien/Divider */
   --qq-surface: rgba(255,255,255,0.04);   /* Sub-Karten/Chips auf BG */

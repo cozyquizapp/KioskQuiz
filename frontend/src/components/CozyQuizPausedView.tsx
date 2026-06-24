@@ -64,7 +64,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '4px 12px',
-          borderRadius: 999,
+          borderRadius: 'var(--qq-pill-radius)',
           background: 'var(--qq-surface)',
           border: '1px solid var(--qq-hairline)',
           alignSelf: 'flex-start',
@@ -266,7 +266,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           {/* Big Round Pill */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 14,
-            padding: '14px 32px', borderRadius: 999,
+            padding: '14px 32px', borderRadius: 'var(--qq-pill-radius)',
             background: `${roundColor}20`,
             border: `2.5px solid ${roundColor}`,
             boxShadow: `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
@@ -318,7 +318,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           const renderPill = (t: typeof sortedByCells[number]) => (
             <div key={t.id} style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '6px 12px', borderRadius: 999,
+              padding: '6px 12px', borderRadius: 'var(--qq-pill-radius)',
               background: `${t.color}15`,
               border: `1.5px solid ${t.color}55`,
               flexShrink: 0,
@@ -507,7 +507,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             </div>
             {/* Dark-Pill mit Siegen */}
             <span style={{
-              padding: '4px 12px', borderRadius: 999,
+              padding: '4px 12px', borderRadius: 'var(--qq-pill-radius)',
               background: 'linear-gradient(180deg, #241a10, #1a120a)',
               border: `1.5px solid ${teamColor}55`,
               color: teamColor, fontWeight: 900, fontSize: 'clamp(15px, 1.7cqw, 21px)',
@@ -665,7 +665,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 12,
-      padding: '12px 24px', borderRadius: 999,
+      padding: '12px 24px', borderRadius: 'var(--qq-pill-radius)',
       background: 'linear-gradient(180deg, #241a10, #1a120a)',
       border: `1.5px solid ${accent}55`,
       color: 'var(--qq-card-text)',
@@ -1241,7 +1241,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           </div>
         ) : (
           <div style={{
-            padding: '6px 22px', borderRadius: 999,
+            padding: '6px 22px', borderRadius: 'var(--qq-pill-radius)',
             background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18))',
             border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(236,72,153,0.55)',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
@@ -1413,7 +1413,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <div key={i} style={{
                     width: isActive ? 32 : 10,
                     height: 10,
-                    borderRadius: 999,
+                    borderRadius: 'var(--qq-pill-radius)',
                     // Aktiv: solid modeAccent (Gradient `${var}aa` war ungueltige
                     // CSS -> Balken unsichtbar). Inaktiv: Skin-Hairline statt
                     // cream-weiss (war auf hellen Skins unsichtbar).

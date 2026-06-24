@@ -206,3 +206,44 @@ export function useActiveThemeId(): string {
 export function isThemed(): boolean {
   return _activeId !== 'cozy';
 }
+
+// ── Semantische „Status"-Karten pro Skin ────────────────────────────────────
+// Direction A (Wolf 2026-06-24): grün=Lösung / rot=Leer bleiben als Semantik,
+// werden aber in der Karten-Sprache des aktiven Skins gerendert (Mono: Hard-
+// Shadow, Soft Pop: weicher Bottom-Shadow, Neo: flacher Block + schwarzer Rand)
+// — statt überall dieselbe Cozy-Glow-Box. Zentral hier, damit alle Reveals
+// (Schätzchen, OnlyConnect, …) dieselbe „Lösung"-Optik teilen (drift-sicher).
+export type StatusCardStyle = { bg: string; border: string; radius: string | number; shadow: string; fg: string };
+
+/** „Lösung/richtig"-Card (grüne Semantik) im Karten-Stil des aktiven Skins. */
+export function getSolveCardStyle(): StatusCardStyle {
+  switch (_activeId) {
+    case 'studioMono':
+      return { bg: '#F1FBF4', border: '2px solid #15803D', radius: 4, shadow: '6px 6px 0 #15803D', fg: '#15803D' };
+    case 'softPop':
+      return { bg: '#EAF9EF', border: '1px solid rgba(22,163,74,0.30)', radius: 26, shadow: '0 8px 0 rgba(22,163,74,0.18)', fg: '#15803D' };
+    case 'neoBrutal':
+      return { bg: '#34D399', border: '3px solid #16121F', radius: 18, shadow: '6px 6px 0 #16121F', fg: '#0A2E1C' };
+    default: // cozy — heutige Werte, visual-neutral
+      return {
+        bg: 'radial-gradient(circle at 50% 35%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
+        border: '3px solid rgba(34,197,94,0.6)', radius: 24,
+        shadow: '0 0 50px rgba(34,197,94,0.25), inset 0 0 26px rgba(34,197,94,0.08)',
+        fg: '#86efac',
+      };
+  }
+}
+
+/** „Leer/kein Treffer"-Card (rote Semantik) im Karten-Stil des aktiven Skins. */
+export function getEmptyCardStyle(): StatusCardStyle {
+  switch (_activeId) {
+    case 'studioMono':
+      return { bg: '#FBF2F2', border: '2px solid #DC2626', radius: 4, shadow: '6px 6px 0 #DC2626', fg: '#B91C1C' };
+    case 'softPop':
+      return { bg: '#FDEEF0', border: '1px solid rgba(220,38,38,0.28)', radius: 26, shadow: '0 8px 0 rgba(220,38,38,0.16)', fg: '#DC2626' };
+    case 'neoBrutal':
+      return { bg: '#FB7185', border: '3px solid #16121F', radius: 18, shadow: '6px 6px 0 #16121F', fg: '#3A0A12' };
+    default: // cozy — heutige Werte, visual-neutral
+      return { bg: 'transparent', border: '2px solid rgba(239,68,68,0.4)', radius: 24, shadow: 'none', fg: '#f87171' };
+  }
+}

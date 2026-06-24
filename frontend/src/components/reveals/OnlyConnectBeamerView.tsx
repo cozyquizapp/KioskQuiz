@@ -18,7 +18,7 @@ import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
   playTick, playWinnerCardReveal,
 } from '../../utils/sounds';
-import { isThemed } from '../../qqTheme';
+import { isThemed, useActiveThemeId, getSolveCardStyle } from '../../qqTheme';
 
 // 2026-05-09 v2 (Wolf-Reform): Connect 4 — alle 4 Hints sofort sichtbar,
 // 1 Tipp pro Team, Reveal mit Lösung + Winner-Card wie CHEESE.
@@ -31,6 +31,8 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
   const answer = formatRevealedAnswer(lang, bt.answer, bt.answerEn);
   const lockedSet = new Set(s.onlyConnectLockedTeams ?? []);
   const accent = '#F87171';
+  useActiveThemeId(); // Re-render bei Skin-Wechsel (Showroom)
+  const solve = getSolveCardStyle();
   // 2026-05-09 v2: alle Hints sofort sichtbar; correctSorted nach submittedAt
   // (= Speed) — Reihenfolge der Action-Vergabe analog Standard-Mechaniken.
   const correctSorted = (s.onlyConnectGuesses ?? [])
@@ -195,16 +197,16 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               justifyContent: 'center',
               padding: 'clamp(16px, 2cqh, 28px)',
-              borderRadius: 24,
+              borderRadius: solve.radius,
               minHeight: 'clamp(140px, 18cqh, 220px)',
-              background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
-              border: '2.5px solid rgba(34,197,94,0.55)',
-              boxShadow: '0 0 40px rgba(34,197,94,0.25), inset 0 1px 0 rgba(255,255,255,0.05)',
+              background: solve.bg,
+              border: solve.border,
+              boxShadow: solve.shadow,
               animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY}s both` : undefined,
             }}>
               <div style={{
                 fontSize: 'clamp(36px, 4.4cqw, 72px)', fontWeight: 900,
-                color: '#86efac', textShadow: '0 0 30px rgba(34,197,94,0.45)',
+                color: solve.fg, textShadow: isThemed() ? 'none' : '0 0 30px rgba(34,197,94,0.45)',
                 textAlign: 'center', lineHeight: 1.1,
               }}>
                 {answer}

@@ -19,7 +19,7 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed } from '../../qqTheme';
+import { isThemed, useActiveThemeId, getSolveCardStyle, getEmptyCardStyle } from '../../qqTheme';
 
 export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
@@ -114,7 +114,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
+  useActiveThemeId(); // Re-render bei Skin-Wechsel (Showroom-Preview)
   const themed = isThemed();
+  const solve = getSolveCardStyle();
+  const empty = getEmptyCardStyle();
 
   return (
     <div style={{
@@ -165,13 +168,15 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           gap: 'clamp(10px, 1.4cqh, 18px)',
           minHeight: 0, minWidth: 0,
         }}>
-          {/* Loesung — obere Card, gruen umrandet */}
+          {/* Loesung — obere Card. Grün als Semantik, aber im Karten-Stil des
+              aktiven Skins (getSolveCardStyle: Cozy-Glow / Mono-Hard-Shadow /
+              Soft-Pop-soft / Neo-Block). */}
           <div style={{
             flex: '1 1 0', minHeight: 0,
-            borderRadius: 24,
-            background: 'radial-gradient(circle at 50% 35%, rgba(34,197,94,0.18), rgba(22,163,74,0.04) 70%)',
-            border: '3px solid rgba(34,197,94,0.6)',
-            boxShadow: '0 0 50px rgba(34,197,94,0.25), inset 0 0 26px rgba(34,197,94,0.08)',
+            borderRadius: solve.radius,
+            background: solve.bg,
+            border: solve.border,
+            boxShadow: solve.shadow,
             animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) 0.2s both',
             padding: 'clamp(14px, 1.8cqh, 24px) clamp(18px, 2cqw, 30px)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 10,
@@ -185,7 +190,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               pointerEvents: 'none',
             }} />
             <div style={{
-              fontSize: 'clamp(12px, 1.2cqw, 18px)', fontWeight: 900, color: QQ_COLORS.green300,
+              fontSize: 'clamp(12px, 1.2cqw, 18px)', fontWeight: 900, color: solve.fg,
               letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.82,
               position: 'relative', zIndex: 1,
             }}>
@@ -193,9 +198,9 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             </div>
             <div style={{
               fontSize: 'clamp(64px, 8cqw, 140px)',
-              fontWeight: 900, color: QQ_COLORS.green300, lineHeight: 1,
+              fontWeight: 900, color: solve.fg, lineHeight: 1,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: '0 0 40px rgba(34,197,94,0.5)',
+              textShadow: themed ? 'none' : '0 0 40px rgba(34,197,94,0.5)',
               position: 'relative', zIndex: 1,
             }}>
               {fmt(target)}
@@ -289,11 +294,13 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           {!winner && (
             <div style={{
               flex: '1 1 0', minHeight: 0,
-              borderRadius: 24,
-              border: '2px solid rgba(239,68,68,0.4)',
+              borderRadius: empty.radius,
+              background: empty.bg,
+              border: empty.border,
+              boxShadow: empty.shadow,
               padding: 'clamp(14px, 1.8cqh, 24px) clamp(18px, 2.2cqw, 32px)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900, color: '#f87171',
+              fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900, color: empty.fg,
             }}>
               {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
             </div>

@@ -215,7 +215,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
   const breakdown: Array<{ icon: string; n: number; label: { de: string; en: string }; bg: string }> = [];
   if ((wPts?.foundReal ?? 0) > 0) breakdown.push({ icon: '✅', n: wPts!.foundReal, label: { de: 'echt', en: 'real' }, bg: 'rgba(34,197,94,0.20)' });
   if ((wPts?.blufferBonus ?? 0) > 0) breakdown.push({ icon: '🎭', n: wPts!.blufferBonus, label: { de: 'Reinfälle', en: 'fooled' }, bg: 'rgba(244,114,182,0.20)' });
-  if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(236,72,153,0.22)' });
+  if ((wPts?.truthAccident ?? 0) > 0) breakdown.push({ icon: '✨', n: wPts!.truthAccident, label: { de: 'Glück', en: 'lucky' }, bg: 'rgba(var(--qq-accent-rgb),0.22)' });
 
   return (
     <div style={{

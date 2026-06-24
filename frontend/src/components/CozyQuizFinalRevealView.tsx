@@ -129,7 +129,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         fontSize: 'clamp(32px, 4.2cqw, 72px)', fontWeight: 900,
         color: 'var(--qq-card-text)', letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 'clamp(20px, 2.5cqh, 40px)',
-        textShadow: '0 0 36px rgba(236,72,153,0.45)',
+        textShadow: '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
       }}>
         {(() => {
           const t = isLastFinalQuestion
@@ -320,8 +320,8 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
       padding: 'clamp(10px, 1.4cqh, 16px) clamp(14px, 1.6cqw, 22px)',
       borderRadius: 18,
       background: 'linear-gradient(135deg, rgba(31,26,46,0.92), rgba(20,16,31,0.88))',
-      border: '1.5px solid rgba(236,72,153,0.55)',
-      boxShadow: '0 12px 36px rgba(0,0,0,0.55), 0 0 32px rgba(236,72,153,0.30)',
+      border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
+      boxShadow: '0 12px 36px rgba(0,0,0,0.55), 0 0 32px rgba(var(--qq-accent-rgb),0.30)',
       backdropFilter: 'blur(12px) saturate(160%)',
       WebkitBackdropFilter: 'blur(12px) saturate(160%)',
       animation: 'qqFinalRowIn 0.6s cubic-bezier(0.34,1.4,0.5,1) both',
@@ -659,10 +659,11 @@ function FinalLeaderboard({
       width: '100%', height: '100%',
       padding: 'clamp(14px, 1.8cqh, 22px) clamp(18px, 2cqw, 28px)',
       display: 'flex', flexDirection: 'column', gap: 8,
-      borderRadius: 18,
-      background: 'var(--qq-surface)',
-      border: '1.5px solid var(--qq-hairline)',
-      boxShadow: '0 12px 32px rgba(0,0,0,0.35)',
+      // 2026-06-24 (Skin P1): Standings-Board traegt bei Skin die Card-Behandlung.
+      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 18,
+      background: isThemed() ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
+      border: isThemed() ? 'var(--qq-card-border)' : '1.5px solid var(--qq-hairline)',
+      boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 12px 32px rgba(0,0,0,0.35)',
       minHeight: 0,
     }}>
       <div style={{
@@ -763,7 +764,7 @@ function FinalLeaderboard({
                   fontSize: valFs,
                   color: isLeader ? 'var(--qq-accent)' : 'var(--qq-card-text)',
                   fontWeight: 900,
-                  textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
+                  textShadow: isLeader ? '0 0 18px rgba(var(--qq-accent-rgb),0.55)' : 'none',
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1,
                   width: dense ? 56 : 72,
@@ -1299,7 +1300,7 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
         color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
-        textShadow: '0 0 36px rgba(236,72,153,0.45)',
+        textShadow: '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
       }}>
         {Array.from(titleText).map((ch, i) => (
@@ -1525,8 +1526,8 @@ function GridRevealSlide({ state: s, cellsByTeam, lang }: {
         })}
         <div style={{
           marginTop: 10, padding: '10px 14px', borderRadius: 12,
-          background: 'rgba(236,72,153,0.10)',
-          border: '1px solid rgba(236,72,153,0.30)',
+          background: 'rgba(var(--qq-accent-rgb),0.10)',
+          border: '1px solid rgba(var(--qq-accent-rgb),0.30)',
           fontSize: 12, fontWeight: 700, color: QQ_COLORS.brandPinkMid,
           textAlign: 'center', letterSpacing: '0.04em',
         }}>
@@ -1893,7 +1894,7 @@ function BetZeroGroupSlide({ teams, lang }: {
       <div style={{
         fontSize: 'clamp(30px, 3.6cqw, 56px)', fontWeight: 900,
         color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
-        textShadow: '0 0 28px rgba(236,72,153,0.35)',
+        textShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.35)',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
         maxWidth: '92cqw',
       }}>{de
@@ -2230,7 +2231,7 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
         position: 'absolute', top: 0, left: '50%',
         transform: 'translateX(-50%)',
         width: 'min(800px, 60cqw)', height: '100%',
-        background: `conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(251,191,36,0.18) 6deg, rgba(251,191,36,0.32) 10deg, rgba(236,72,153,0.22) 14deg, transparent 20deg)`,
+        background: `conic-gradient(from 180deg at 50% 0%, transparent 0deg, rgba(251,191,36,0.18) 6deg, rgba(251,191,36,0.32) 10deg, rgba(var(--qq-accent-rgb),0.22) 14deg, transparent 20deg)`,
         opacity: 0.85,
         pointerEvents: 'none',
         zIndex: 1,
@@ -2391,7 +2392,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
         fontSize: 'clamp(26px, 2.8cqw, 44px)', fontWeight: 900,
         color: 'var(--qq-accent-soft)', letterSpacing: '0.08em', textTransform: 'uppercase',
         animation: 'qqFRTitleIn 0.8s ease-out both',
-        textShadow: '0 0 30px rgba(236,72,153,0.55)',
+        textShadow: '0 0 30px rgba(var(--qq-accent-rgb),0.55)',
         flexShrink: 0,
       }}>
         🏆 {de ? 'Endstand' : 'Final Standings'}
@@ -2491,7 +2492,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
                 fontSize: isWinner ? 'clamp(38px, 4.2cqw, 68px)' : 'clamp(24px, 2.4cqw, 36px)',
                 fontWeight: 900,
                 color: isWinner ? 'var(--qq-accent)' : 'var(--qq-card-text)',
-                textShadow: isWinner ? '0 0 24px rgba(236,72,153,0.65)' : 'none',
+                textShadow: isWinner ? '0 0 24px rgba(var(--qq-accent-rgb),0.65)' : 'none',
                 fontVariantNumeric: 'tabular-nums',
                 minWidth: isWinner ? 90 : 64,
                 textAlign: 'right',

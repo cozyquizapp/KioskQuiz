@@ -24,6 +24,7 @@ import { WolfUeberraschtWithBubble } from '../pages/QQBeamerPage';
 import { playClimaxFinish, playGoodLuckFanfare } from '../utils/sounds';
 import { getServerNow } from '../utils/serverTime';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { isThemed } from '../qqTheme';
 
 function SlotMachineNumber({ value, fontSize, color, glow, isYear }: {
   value: number;
@@ -267,8 +268,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           }}>
             <div style={{
               padding: 'clamp(8px, 1cqh, 12px) clamp(20px, 2.2cqw, 32px)', borderRadius: 999,
-              background: 'rgba(236,72,153,0.16)',
-              border: '2px solid rgba(236,72,153,0.5)',
+              background: 'rgba(var(--qq-accent-rgb),0.16)',
+              border: '2px solid rgba(var(--qq-accent-rgb),0.5)',
               color: 'var(--qq-accent-soft)',
               fontWeight: 900,
               fontSize: 'clamp(14px, 1.4cqw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -289,10 +290,10 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           // Avatare laufen aber im Pillen-Stack-Grid, nicht durch den Spalt —
           // Layout darf jetzt natuerlich zentriert sitzen.
           padding: 'clamp(18px, 2.6cqh, 36px) clamp(28px, 3.5cqw, 56px)',
-          borderRadius: 24,
-          background: 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',
-          border: '2px solid rgba(236,72,153,0.32)',
-          boxShadow: '0 4px 0 rgba(236,72,153,0.18), 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+          borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+          background: isThemed() ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',
+          border: isThemed() ? 'var(--qq-card-border)' : '2px solid rgba(var(--qq-accent-rgb),0.32)',
+          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 4px 0 rgba(var(--qq-accent-rgb),0.18), 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
           minHeight: 'clamp(96px, 12cqh, 168px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.08s both',
@@ -300,9 +301,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           <div
             key={`hlq-${hl.round}`}
             style={{
-              fontSize: 'clamp(32px, 4.5cqw, 72px)', fontWeight: 900, color: '#F8FAFC',
+              fontSize: 'clamp(32px, 4.5cqw, 72px)', fontWeight: 900, color: isThemed() ? 'var(--qq-card-text)' : '#F8FAFC',
               textAlign: 'center', lineHeight: 1.18,
-              textShadow: '0 2px 18px rgba(0,0,0,0.4)',
+              textShadow: isThemed() ? 'none' : '0 2px 18px rgba(0,0,0,0.4)',
               animation: 'qqHlQuestionFade 0.6s ease both',
             }}
           >
@@ -516,9 +517,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             flex: '1 1 0', maxWidth: 560, minWidth: 260,
             padding: 'clamp(60px, 7cqh, 100px) clamp(22px, 3cqw, 40px)', borderRadius: 24,
             minHeight: 'clamp(280px, 34cqh, 400px)',
-            background: 'linear-gradient(135deg, rgba(236,72,153,0.18), rgba(236,72,153,0.05))',
-            border: '3px solid rgba(236,72,153,0.7)',
-            boxShadow: '0 0 44px rgba(236,72,153,0.28), 0 8px 28px rgba(0,0,0,0.4)',
+            background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.18), rgba(var(--qq-accent-rgb),0.05))',
+            border: '3px solid rgba(var(--qq-accent-rgb),0.7)',
+            boxShadow: '0 0 44px rgba(var(--qq-accent-rgb),0.28), 0 8px 28px rgba(0,0,0,0.4)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 14, justifyContent: 'center',
           }}>
@@ -561,7 +562,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   position: 'absolute',
                   fontSize: 'clamp(44px, 6cqw, 92px)', fontWeight: 900, color: 'var(--qq-accent)',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  textShadow: '0 0 28px rgba(236,72,153,0.45), 0 0 60px rgba(236,72,153,0.25)',
+                  textShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.45), 0 0 60px rgba(var(--qq-accent-rgb),0.25)',
                   animation: isReveal
                     ? 'hlSlotOut 0.4s cubic-bezier(0.4, 0, 0.6, 1) both'
                     : 'hlQuestionMarkPulse 1.6s ease-in-out infinite',
@@ -571,7 +572,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                   position: 'absolute',
                   fontSize: 'clamp(44px, 6cqw, 92px)', fontWeight: 900, color: 'var(--qq-accent)',
                   fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                  textShadow: '0 0 32px rgba(236,72,153,0.55)',
+                  textShadow: '0 0 32px rgba(var(--qq-accent-rgb),0.55)',
                   animation: isReveal
                     ? 'hlSlotIn 0.55s var(--qq-ease-bounce) 0.28s both'
                     : undefined,
@@ -626,7 +627,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
       {bamActive && (
         <div aria-hidden style={{
           position: 'absolute', inset: 0,
-          background: 'radial-gradient(ellipse at center, rgba(255,247,220,0.95) 0%, rgba(236,72,153,0.55) 45%, transparent 80%)',
+          background: 'radial-gradient(ellipse at center, rgba(255,247,220,0.95) 0%, rgba(var(--qq-accent-rgb),0.55) 45%, transparent 80%)',
           animation: 'comebackFlash 0.6s ease-out both',
           pointerEvents: 'none', zIndex: 20,
         }} />
@@ -645,7 +646,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           position: 'absolute', left: b.left, top: 0,
           fontSize: b.size, lineHeight: 1,
           color: '#FDE047',
-          filter: `drop-shadow(0 0 14px rgba(253,224,71,0.9)) drop-shadow(0 0 28px rgba(236,72,153,0.6))`,
+          filter: `drop-shadow(0 0 14px rgba(253,224,71,0.9)) drop-shadow(0 0 28px rgba(var(--qq-accent-rgb),0.6))`,
           ['--bolt-rot' as string]: `${b.rot}deg`,
           animation: `comebackBoltFall 1.1s var(--qq-ease-smooth-out) ${b.delay}s both`,
           pointerEvents: 'none', zIndex: 6,
@@ -697,7 +698,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 10,
             padding: '6px 18px', borderRadius: 999,
-            background: 'rgba(236,72,153,0.18)', border: '2px solid rgba(236,72,153,0.5)',
+            background: 'rgba(var(--qq-accent-rgb),0.18)', border: '2px solid rgba(var(--qq-accent-rgb),0.5)',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
             color: QQ_COLORS.yellow300, letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
@@ -710,13 +711,13 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             // Normaler Mode behaelt den warmen Gold-Glass-Look.
             background: s.theme?.eurovisionMode
               ? 'linear-gradient(135deg, rgba(45,22,68,0.72), rgba(31,15,61,0.62))'
-              : 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(236,72,153,0.03))',
+              : 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(var(--qq-accent-rgb),0.03))',
             border: s.theme?.eurovisionMode
               ? '2px solid rgba(255,45,123,0.55)'
-              : '2px solid rgba(236,72,153,0.4)',
+              : '2px solid rgba(var(--qq-accent-rgb),0.4)',
             boxShadow: s.theme?.eurovisionMode
               ? '0 0 32px rgba(255,45,123,0.22), 0 6px 18px rgba(0,0,0,0.4)'
-              : '0 0 32px rgba(236,72,153,0.18), 0 6px 18px rgba(0,0,0,0.4)',
+              : '0 0 32px rgba(var(--qq-accent-rgb),0.18), 0 6px 18px rgba(0,0,0,0.4)',
             textAlign: 'center',
             // 2026-05-07 (Layout-Audit): 900 → 1100, sonst sitzt die Mechanik-Card
             // schmaler als der COMEBACK-Title darüber → wirkt zentriert-zu-eng.
@@ -762,9 +763,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         <div key="intro0-legacy" style={{
           maxWidth: 1100, textAlign: 'center',
           padding: '36px 48px', borderRadius: 24,
-          background: 'rgba(236,72,153,0.08)',
-          border: '2px solid rgba(236,72,153,0.35)',
-          boxShadow: '0 0 60px rgba(236,72,153,0.15), 0 8px 32px rgba(0,0,0,0.4)',
+          background: 'rgba(var(--qq-accent-rgb),0.08)',
+          border: '2px solid rgba(var(--qq-accent-rgb),0.35)',
+          boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.15), 0 8px 32px rgba(0,0,0,0.4)',
           animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
           position: 'relative', zIndex: 5,
         }}>
@@ -869,9 +870,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             padding: 'clamp(18px, 2.2cqh, 28px) clamp(28px, 3.2cqw, 48px)', borderRadius: 22,
             textAlign: 'center',
             background: cardBg,
-            border: hl ? '2.5px solid rgba(236,72,153,0.55)' : `2.5px solid #EF444455`,
+            border: hl ? '2.5px solid rgba(var(--qq-accent-rgb),0.55)' : `2.5px solid #EF444455`,
             boxShadow: hl
-              ? '0 0 44px rgba(236,72,153,0.25), 0 8px 22px rgba(0,0,0,0.4)'
+              ? '0 0 44px rgba(var(--qq-accent-rgb),0.25), 0 8px 22px rgba(0,0,0,0.4)'
               : `0 0 44px rgba(239,68,68,0.22), 0 8px 22px rgba(0,0,0,0.4)`,
             fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 900,
             color: hl ? QQ_COLORS.yellow300 : '#fecaca',

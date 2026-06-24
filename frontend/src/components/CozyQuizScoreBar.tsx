@@ -18,6 +18,7 @@ import { QQEmojiIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { isThemed } from '../qqTheme';
 
 export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, eurovisionMode, lang }: {
   teams: QQStateUpdate['teams'];
@@ -361,8 +362,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               {medal ? <QQEmojiIcon emoji={medal}/> : null}
             </span>
             <span style={{
-              fontSize: valFs, color: isLeader ? QQ_COLORS.brandPink : QQ_COLORS.slate100, fontWeight: 900,
-              textShadow: isLeader ? '0 0 18px rgba(236,72,153,0.55)' : 'none',
+              // 2026-06-24 (Skin): Leader-Wert in Akzent (pop), Rest in Primaertext.
+              // War brandPink/slate100 → auf hellen Skins washed bzw. unsichtbar.
+              fontSize: valFs, color: isLeader ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : (isThemed() ? 'var(--qq-text)' : QQ_COLORS.slate100), fontWeight: 900,
+              textShadow: isLeader ? (isThemed() ? 'none' : '0 0 18px rgba(236,72,153,0.55)') : 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
               // Zahlen-Spalte breit genug fuer 2-stellige Werte (10+) — vorher
@@ -380,7 +383,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 starten beide an derselben linken Kante. Ohne das wackelt die
                 Zahlen-Spalte rechts bei 1 Feld vs. 6 Felder. */}
             <span style={{
-              opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: QQ_COLORS.slate400,
+              opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate400,
               flexShrink: 0,
               minWidth: dense ? 62 : 78,
               textAlign: 'left',

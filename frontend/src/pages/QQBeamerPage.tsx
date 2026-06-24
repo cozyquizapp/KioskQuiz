@@ -3577,11 +3577,13 @@ export function MuchoOptionsReveal({
               // Transparent damit visuell nichts da ist, Höhe aber konstant.
               boxSizing: 'border-box',
               background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
+              // 2026-06-24 (Wolf 'option-rahmen auch schwarz'): bei Skin Card-Behandlung
+              // (Mono=schwarzer Rand+Hard-Shadow) statt Akzent-Rand.
               border: isCorrect ? '3px solid #22C55E'
-                : isWrong ? '3px solid rgba(255,255,255,0.06)'
-                : `3px solid ${optColor}55`,
+                : isWrong ? (isThemed() ? '3px solid var(--qq-hairline)' : '3px solid rgba(255,255,255,0.06)')
+                : (isThemed() ? 'var(--qq-card-border)' : `3px solid ${optColor}55`),
               boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
-                : '0 4px 16px rgba(0,0,0,0.3)',
+                : (isThemed() ? 'var(--qq-card-shadow)' : '0 4px 16px rgba(0,0,0,0.3)'),
               display: 'flex', alignItems: 'center', gap: 16,
               transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
               animation: isCorrect

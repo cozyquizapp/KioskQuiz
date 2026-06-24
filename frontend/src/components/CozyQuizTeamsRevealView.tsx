@@ -125,7 +125,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const titleShadow = isEsc
     ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
     : '0 4px 20px rgba(var(--qq-accent-rgb),0.25)';
-  const goodLuckColor = isEsc ? '#FF2D7B' : 'var(--qq-accent)';
+  // 2026-06-24 (Lesbarkeit): „Viel Glück" auf Seiten-BG → var(--qq-text) bei Skin
+  // (Akzent waere auf Neo-Brutal blau-auf-lila). Cozy = Pink-Akzent.
+  const goodLuckColor = isEsc ? '#FF2D7B' : themed ? 'var(--qq-text)' : 'var(--qq-accent)';
   const goodLuckShadow = isEsc
     ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
     : '0 4px 24px rgba(var(--qq-accent-rgb),0.5)';

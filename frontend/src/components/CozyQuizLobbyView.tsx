@@ -644,9 +644,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(14px, 2cqw, 26px)',
               padding: 'clamp(28px, 4cqh, 56px) clamp(20px, 3cqw, 40px)',
-              border: '2px dashed rgba(236,72,153,0.4)', borderRadius: 16,
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.06), rgba(236,72,153,0.04))',
-              boxShadow: '0 0 40px rgba(236,72,153,0.12)',
+              border: '2px dashed rgba(var(--qq-accent-rgb),0.4)', borderRadius: 16,
+              background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.06), rgba(var(--qq-accent-rgb),0.04))',
+              boxShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.12)',
             }}>
               <span style={{
                 fontSize: 'clamp(36px, 5cqw, 64px)', lineHeight: 1,
@@ -656,8 +656,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
                 <span style={{
                   fontSize: 'clamp(20px, 2.4cqw, 32px)', fontWeight: 900,
-                  color: '#EC4899', letterSpacing: '0.02em',
-                  textShadow: '0 2px 12px rgba(236,72,153,0.3)',
+                  // 2026-06-24 (Lesbarkeit): CTA-Text auf Seiten-BG → var(--qq-text)
+                  // (sonst Akzent-blau auf Lila bei Neo-Brutal). Box-Tint = Akzent.
+                  color: isThemed() ? 'var(--qq-text)' : '#EC4899', letterSpacing: '0.02em',
+                  textShadow: isThemed() ? 'none' : '0 2px 12px rgba(236,72,153,0.3)',
                   animation: 'lobbyPulse 2.5s ease-in-out infinite',
                 }}>
                   {de ? 'Scannt den QR-Code!' : 'Scan the QR code!'}

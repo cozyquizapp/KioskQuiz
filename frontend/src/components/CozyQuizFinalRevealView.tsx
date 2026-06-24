@@ -1301,8 +1301,10 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       }}>🏆</div>
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
-        color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
-        textShadow: '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
+        // 2026-06-24 (Lesbarkeit): Titel sitzt auf dem Seiten-BG → var(--qq-text)
+        // (nicht card-text: das waere auf Neo-Brutal dunkel-auf-lila).
+        color: 'var(--qq-text)', textAlign: 'center', letterSpacing: '-0.02em',
+        textShadow: isThemed() ? 'none' : '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.35s both',
       }}>
         {Array.from(titleText).map((ch, i) => (

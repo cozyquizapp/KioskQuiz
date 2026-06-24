@@ -215,8 +215,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 display: 'flex', alignItems: 'flex-start', gap: 14,
                 padding: '15px 18px',
                 borderRadius: 16,
-                background: 'rgba(255,235,200,0.04)',
-                border: '1px solid rgba(255,235,200,0.10)',
+                // 2026-06-24 (Lesbarkeit): Skin → echte Surface-Chip statt der
+                // fast transparenten Warm-Fläche, damit der Akzent-Titel Kontrast hat.
+                background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',
+                border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,235,200,0.10)',
                 boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
                 animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
               }}>

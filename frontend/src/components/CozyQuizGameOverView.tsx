@@ -28,6 +28,7 @@ import {
 import {
   playAvatarCascadeNote, playClimaxFinish, playWolfHowl, playFanfare,
 } from '../utils/sounds';
+import { isThemed } from '../qqTheme';
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
@@ -311,11 +312,15 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         animation: 'finaleWinner 0.9s var(--qq-ease-out-cubic) 0.6s both',
         minWidth: 0,
       }}>
+        {/* 2026-06-24 (Wolf 'mono-rahmen auch ums grid'): Grid-Rahmen traegt bei
+            aktivem Skin die volle Card-Behandlung (z.B. Studio-Mono schwarzer
+            Rand + Hard-Shadow) statt des Cozy-Sieger-Glows. Cozy unveraendert. */}
         <div style={{
-          padding: 16, borderRadius: 24,
-          background: 'var(--qq-surface)',
-          border: `2px solid ${winnerColor}55`,
-          boxShadow: `0 0 60px ${winnerColor}33, 0 12px 40px rgba(0,0,0,0.5)`,
+          padding: 16,
+          borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+          background: isThemed() ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
+          border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${winnerColor}55`,
+          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 60px ${winnerColor}33, 0 12px 40px rgba(0,0,0,0.5)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <GridDisplay

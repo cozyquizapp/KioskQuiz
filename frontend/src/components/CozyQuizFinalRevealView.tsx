@@ -968,7 +968,9 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: fullBleed ? 0 : 'max(var(--qq-safe-margin), 4cqh) max(var(--qq-safe-margin), 4cqw)',
-      background: fullBleed ? 'transparent' : COZY_CARD_BG,
+      // 2026-06-24 (Skin): Seiten-BG = Skin-BG (nicht card-bg, sonst Karte-auf-
+      // Karte ohne Kontrast). Cozy behält den COZY_CARD_BG-Backdrop.
+      background: fullBleed ? 'transparent' : (isThemed() ? 'var(--qq-bg)' : COZY_CARD_BG),
       position: 'relative', overflow: 'hidden',
       minHeight: 0,
     }}>

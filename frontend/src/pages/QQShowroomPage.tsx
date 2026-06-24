@@ -18,6 +18,7 @@ import { QuestionView } from '../components/CozyQuizQuestionView';
 import { TeamsRevealView } from '../components/CozyQuizTeamsRevealView';
 import { GameOverView } from '../components/CozyQuizGameOverView';
 import { ThanksView } from '../components/CozyQuizThanksView';
+import { FinalRevealView } from '../components/CozyQuizFinalRevealView';
 import { useActiveThemeId, setActiveThemeId, getActiveTheme, QQ_THEMES } from '../qqTheme';
 
 const PINK = '#ec4899';
@@ -102,6 +103,17 @@ const SCENES: Scene[] = [
   {
     key: 'reveal', ms: 5200,
     render: (s) => <QuestionView state={{ ...s, phase: 'QUESTION_REVEAL', currentQuestion: MOCK_QUESTION, revealedAnswer: '330 m', correctTeamId: 't1' } as QQStateUpdate} revealed={true} />,
+  },
+  {
+    key: 'final-awards', ms: 5600,
+    // finalRevealStep 5 = erster Award-Slot (Grid links + Award-Card rechts +
+    // themed Standings-Board). betSlots=4 (1 zero-group + 3 positiv) → Awards 5..7.
+    render: (s) => <FinalRevealView state={{ ...s, phase: 'FINAL_REVEAL', finalRevealStep: 5 } as QQStateUpdate} />,
+  },
+  {
+    key: 'final-race', ms: 5600,
+    // Step 8 = race-final (Eurovision-Endstand-Hero mit Konfetti).
+    render: (s) => <FinalRevealView state={{ ...s, phase: 'FINAL_REVEAL', finalRevealStep: 8 } as QQStateUpdate} />,
   },
   {
     key: 'treppchen', ms: 6000,

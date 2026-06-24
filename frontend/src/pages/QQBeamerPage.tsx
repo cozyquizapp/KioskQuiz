@@ -2275,9 +2275,9 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 18,
         padding: '10px 28px', borderRadius: 999,
-        background: 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(217,119,6,0.10))',
-        border: '2px solid rgba(236,72,153,0.55)',
-        boxShadow: '0 0 36px rgba(236,72,153,0.35)',
+        background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(217,119,6,0.10))',
+        border: isThemed() ? '2px solid var(--qq-accent)' : '2px solid rgba(236,72,153,0.55)',
+        boxShadow: isThemed() ? 'none' : '0 0 36px rgba(236,72,153,0.35)',
         animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
       }}>
         <span style={{ fontSize: 'clamp(28px, 3cqw, 44px)' }}>
@@ -2306,10 +2306,10 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
         justifyItems: 'center',
         gap: 'clamp(14px, 1.6cqw, 26px)',
         padding: 'clamp(20px, 2.5cqh, 32px) clamp(24px, 2.5cqw, 40px)',
-        borderRadius: 28,
-        background: 'linear-gradient(180deg, rgba(15,23,42,0.55), rgba(15,23,42,0.30))',
-        border: '2px solid rgba(255,255,255,0.08)',
-        boxShadow: '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 28,
+        background: isThemed() ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, rgba(15,23,42,0.55), rgba(15,23,42,0.30))',
+        border: isThemed() ? 'var(--qq-card-border)' : '2px solid rgba(255,255,255,0.08)',
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
       }}>
         {teams.map((t, i) => {
           const active = i === cursor;
@@ -3673,9 +3673,11 @@ export function MuchoOptionsReveal({
                             // Kein Doppel-Rand mehr: das Avatar-Artwork hat eh
                             // einen farbigen Kapuzen-/Kreis-Rim. Nur der schnellste
                             // Voter bekommt den Gold-Ring als Winner-Indikator.
-                            border: isFastest ? '4px solid #EC4899' : 'none',
+                            border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
                             boxShadow: isFastest
-                              ? '0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)'
+                              ? (isThemed()
+                                  ? '0 0 22px rgba(var(--qq-accent-rgb),0.6), 0 6px 14px rgba(0,0,0,0.55)'
+                                  : '0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)')
                               : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${tm.color}55`,
                             background: '#0A0814',
                           }}
@@ -3687,9 +3689,9 @@ export function MuchoOptionsReveal({
                             left: '50%', bottom: -8,
                             transform: 'translate(-50%, 50%)',
                             padding: '2px 9px', borderRadius: 999,
-                            background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
-                            border: isFastest ? '1.5px solid rgba(236,72,153,1)' : `1.5px solid ${tm.color}`,
-                            color: isFastest ? '#0A0814' : QQ_COLORS.slate200,
+                            background: isFastest ? (isThemed() ? 'var(--qq-accent)' : 'rgba(236,72,153,0.95)') : 'rgba(15,23,42,0.95)',
+                            border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(236,72,153,1)') : `1.5px solid ${tm.color}`,
+                            color: isFastest ? (isThemed() ? '#fff' : '#0A0814') : QQ_COLORS.slate200,
                             fontWeight: 900,
                             fontSize: 'clamp(11px, 1.2cqw, 15px)',
                             whiteSpace: 'nowrap',

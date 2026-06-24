@@ -213,7 +213,7 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
         ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
         : '0 0 16px rgba(var(--qq-accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
       fontSize: 'clamp(28px, 3cqw, 44px)', fontWeight: 900,
-      color: urgent ? '#FCA5A5' : '#FBCFE8',
+      color: urgent ? '#FCA5A5' : (isThemed() ? 'var(--qq-card-text)' : '#FBCFE8'),
       fontVariantNumeric: 'tabular-nums',
       letterSpacing: '0.04em',
       animation: urgent ? 'bTimerPulse 0.8s ease-in-out infinite' : undefined,

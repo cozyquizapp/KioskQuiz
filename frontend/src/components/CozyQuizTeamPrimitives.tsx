@@ -16,6 +16,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, CSSProperties } from 'react';
+import { isThemed } from '../qqTheme';
 
 /** Frosted-Glass-Surface fuer Team-View Cards. Premium-Mobile-Look (opacity
  *  0.62 + saturate 160%, lesbar). backdrop-filter mit -webkit-Fallback fuer
@@ -28,14 +29,22 @@ export function CozyCard({
   borderColor?: string;
   pulse?: boolean;
 }) {
+  const themed = isThemed();
   return (
     <div style={{
-      background: 'rgba(31, 26, 46, 0.62)',
-      backdropFilter: 'blur(20px) saturate(160%)',
-      WebkitBackdropFilter: 'blur(20px) saturate(160%)',
-      border: `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
-      borderRadius: 22, padding: '22px 20px', marginBottom: 14,
-      boxShadow: `0 12px 36px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.06)${borderColor ? `, 0 0 24px ${borderColor}22` : ''}`,
+      // Skin: opake Karten-Flaeche/Rand/Schatten + card-text. Cozy behaelt
+      // das dunkle Frosted-Glass (borderColor-Tint = Team-Farbe bleibt sichtbar).
+      background: themed ? 'var(--qq-card-bg)' : 'rgba(31, 26, 46, 0.62)',
+      backdropFilter: themed ? undefined : 'blur(20px) saturate(160%)',
+      WebkitBackdropFilter: themed ? undefined : 'blur(20px) saturate(160%)',
+      color: themed ? 'var(--qq-card-text)' : undefined,
+      border: themed
+        ? (borderColor ? `2px solid ${borderColor}` : 'var(--qq-card-border)')
+        : `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
+      borderRadius: themed ? 'var(--qq-card-radius)' : 22, padding: '22px 20px', marginBottom: 14,
+      boxShadow: themed
+        ? `var(--qq-card-shadow)${borderColor ? `, 0 0 24px ${borderColor}22` : ''}`
+        : `0 12px 36px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.06)${borderColor ? `, 0 0 24px ${borderColor}22` : ''}`,
       animation: anim ? 'tcreveal 0.4s ease both' : pulse ? `tcpulse 2.5s ease-in-out infinite` : undefined,
       ['--c' as string]: borderColor ? `${borderColor}33` : undefined,
       transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
@@ -135,9 +144,9 @@ export function CopyButton({ text, lang }: { text: string; lang: 'de' | 'en' }) 
       onClick={copy}
       style={{
         padding: '4px 10px', borderRadius: 8,
-        border: `1.5px solid ${copied ? '#22C55E' : '#EC4899'}55`,
-        background: copied ? 'rgba(34,197,94,0.15)' : 'rgba(236,72,153,0.10)',
-        color: copied ? '#86efac' : '#FBCFE8',
+        border: `1.5px solid ${copied ? '#22C55E' : (isThemed() ? 'var(--qq-accent)' : '#EC4899')}55`,
+        background: copied ? 'rgba(34,197,94,0.15)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(236,72,153,0.10)'),
+        color: copied ? '#86efac' : (isThemed() ? 'var(--qq-card-text)' : '#FBCFE8'),
         fontFamily: 'inherit', fontWeight: 900, fontSize: 11,
         cursor: 'pointer',
         letterSpacing: 0.4,

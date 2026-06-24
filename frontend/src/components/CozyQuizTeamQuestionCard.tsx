@@ -36,6 +36,7 @@ import {
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqCapOption } from '../cozyQuizShared';
+import { isThemed } from '../qqTheme';
 
 // Kleine Hash-Helper-Funktion (nur fuer deterministische Trost-Message-Auswahl, kein Crypto).
 function hashString(s: string): number {
@@ -333,7 +334,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Question text */}
       <div style={{
         fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 900, lineHeight: 1.3,
-        color: '#F8FAFC', marginBottom: 14,
+        color: isThemed() ? 'var(--qq-card-text)' : '#F8FAFC', marginBottom: 14,
       }}>
         {lang === 'en' && q.textEn ? q.textEn : q.text}
       </div>

@@ -710,11 +710,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 Transition garantiert sichtbar. */}
           <div style={{
             width: 'clamp(240px, 35cqw, 500px)', height: 5, borderRadius: 3,
-            background: `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
+            background: isThemed()
+              ? 'linear-gradient(90deg, transparent, var(--qq-accent), transparent)'
+              : `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
             marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
             animation: 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both',
-            boxShadow: `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
+            boxShadow: isThemed()
+              ? '0 0 20px rgba(var(--qq-accent-rgb),0.33), 0 0 40px rgba(var(--qq-accent-rgb),0.13)'
+              : `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
             transition: 'box-shadow 500ms ease',
             position: 'relative', zIndex: 5,
             overflow: 'hidden',
@@ -737,7 +741,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             <div style={{
               fontFamily: fontFam,
               fontSize: 'clamp(36px, 5cqw, 68px)', fontWeight: 900,
-              textShadow: `0 0 30px ${color}33`,
+              textShadow: isThemed() ? 'none' : `0 0 30px ${color}33`,
               position: 'relative', zIndex: 5,
               textAlign: 'center',
               display: 'inline-block',
@@ -749,15 +753,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {/* Alter Subtitle fällt — synchron zur alten Ziffer */}
               <span style={{
                 position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
-                color: `${prevColor}dd`,
+                color: isThemed() ? 'var(--qq-title)' : `${prevColor}dd`,
                 animation: 'roundDigitFall 760ms var(--qq-ease-smooth-out) 1150ms both',
               }}>{prevPhaseDesc}</span>
               {/* Neuer Subtitle rollt von oben — synchron zur neuen Ziffer.
                   Farbe folgt dem Wolf-Avatar (colorTransitioning), genau wie
-                  der Outer-Digit-Span. */}
+                  der Outer-Digit-Span — im Skin aber Hero-Titel-Farbe. */}
               <span style={{
                 position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
-                color: colorTransitioning ? `${prevColor}dd` : `${color}dd`,
+                color: isThemed() ? 'var(--qq-title)' : (colorTransitioning ? `${prevColor}dd` : `${color}dd`),
                 transition: 'color 600ms ease',
                 animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
               }}>{phaseDesc}</span>

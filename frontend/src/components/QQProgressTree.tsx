@@ -3,7 +3,7 @@ import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveTheme } from '../qqTheme';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -402,15 +402,18 @@ export default function QQProgressTree({
   // Dot). Finale-Dot bleibt Lila als Highlight.
   const wolfDotIdxForColor = Math.max(0, Math.min(showcaseMode ? showcaseWolfIdx : displayIdx, dotCenters.length - 1));
   const currentScheduleEntry = schedule[wolfDotIdxForColor];
-  const progressColor = wolfOnFinale
+  // Skin: alle Runden-Palette-Farben (Linie/Dots/Wolf-Ring) ziehen den Skin-
+  // Akzent-Hex (Hex noetig, weil im Baum ueberall Alpha angehaengt wird: ${c}99).
+  const skinAccentHex = isThemed() ? getActiveTheme().brand.accentHex : null;
+  const progressColor = skinAccentHex ?? (wolfOnFinale
     ? QQ_COLORS.violet400
-    : (currentScheduleEntry ? getRoundColor(currentScheduleEntry.phase, totalPhases) : QQ_COLORS.brandPink);
+    : (currentScheduleEntry ? getRoundColor(currentScheduleEntry.phase, totalPhases) : QQ_COLORS.brandPink));
   const progressColorEnd = progressColor;
 
   // 2026-05-05 (Wolf 'progress tree mit rundenfarbe + glow'): inline + hero
   // Varianten bekommen Border + Glow in der aktuellen Runden-Farbe (gleicher
   // Token wie das 'Runde N'-Label oben), 3-Cycle damit Runde 4 = Runde 1-Farbe.
-  const roundColor = getRoundColor(state.gamePhaseIndex ?? 1, totalPhases);
+  const roundColor = skinAccentHex ?? getRoundColor(state.gamePhaseIndex ?? 1, totalPhases);
   const useRoundAccent = variant === 'inline' || variant === 'hero';
 
   // 2026-06-24 (Skin): dunkler Navy-Balken auf hellen Skins → Skin-Card.
@@ -423,10 +426,14 @@ export default function QQProgressTree({
       : variant === 'inline'
         ? 'linear-gradient(180deg, rgba(15,23,42,0.92), rgba(15,23,42,0.82))'
         : 'linear-gradient(180deg, rgba(255,255,255,0.96), rgba(248,250,252,0.92))';
+  // Skin: Runden-Akzent-Rahmen/Glow nutzt den Skin-Akzent statt Pink
+  // (sonst rosa Rand auf Mono/SoftPop/Neo). Mini/Showcase unveraendert.
   const wrapperBorder = isShowcase
     ? 'none'
     : isMini
       ? '1px solid rgba(148,163,184,0.18)'
+      : isThemed()
+        ? (useRoundAccent ? '2px solid var(--qq-accent)' : 'var(--qq-card-border)')
       : useRoundAccent
         ? `2px solid ${roundColor}aa`
         : '2px solid #e2e8f0';
@@ -434,6 +441,10 @@ export default function QQProgressTree({
     ? 'none'
     : isMini
       ? '0 4px 12px rgba(0,0,0,0.35)'
+      : isThemed()
+        ? (useRoundAccent
+            ? '0 0 36px rgba(var(--qq-accent-rgb),0.33), 0 0 14px rgba(var(--qq-accent-rgb),0.20), var(--qq-card-shadow)'
+            : 'var(--qq-card-shadow)')
       : useRoundAccent
         ? `0 0 36px ${roundColor}55, 0 0 14px ${roundColor}33, 0 10px 32px rgba(15,23,42,0.18)`
         : '0 10px 32px rgba(15,23,42,0.18)';
@@ -750,7 +761,7 @@ export default function QQProgressTree({
                   const isPast = !showcaseMode && globalIdx >= 0 && globalIdx < displayIdx;
                   const isCurrent = globalIdx >= 0 && globalIdx === effectiveDisplayIdx;
                   // 2026-05-09 (Wolf 'tree noch bunt'): Phasen-Farbe statt Kategorie-Farbe
-                  const color = getRoundColor(p, totalPhases);
+                  const color = skinAccentHex ?? getRoundColor(p, totalPhases);
                   // Bei Placeholder (e=null): graues Dot ohne Emoji
                   const label = e ? QQ_CATEGORY_LABELS[e.category] : null;
                   const emoji = e
@@ -878,7 +889,7 @@ export default function QQProgressTree({
           {dotCenters.length > 0 && (() => {
             const currentSchedule = schedule[wolfDotIdx];
             // 2026-05-09: Phasen-Farbe statt Kategorie-Farbe (Brand-konsistent).
-            const wolfColor = currentSchedule ? getRoundColor(currentSchedule.phase, totalPhases) : QQ_COLORS.brandPink;
+            const wolfColor = skinAccentHex ?? (currentSchedule ? getRoundColor(currentSchedule.phase, totalPhases) : QQ_COLORS.brandPink);
             const wolfSize = Math.round(dotSize * 1.35);
             return (
               <div style={{
@@ -925,8 +936,8 @@ export default function QQProgressTree({
 
       <style>{`
         @keyframes qqTreePulse {
-          0%, 100% { box-shadow: 0 0 0 4px rgba(236,72,153,0.35), 0 6px 14px rgba(0,0,0,0.2); }
-          50%      { box-shadow: 0 0 0 10px rgba(236,72,153,0.10), 0 6px 14px rgba(0,0,0,0.2); }
+          0%, 100% { box-shadow: 0 0 0 4px rgba(var(--qq-accent-rgb),0.35), 0 6px 14px rgba(0,0,0,0.2); }
+          50%      { box-shadow: 0 0 0 10px rgba(var(--qq-accent-rgb),0.10), 0 6px 14px rgba(0,0,0,0.2); }
         }
         /* Bogen-Sprung des Wolf bei Phase-/Block-Wechsel im Showcase-Sweep
            (Option B 2026-05-17). Wolf-Circle wird per key-Remount neu-getriggert,

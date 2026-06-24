@@ -205,7 +205,11 @@ export const TEAM_CSS = `
 // 2026-05-08 (Aurora-Vivid): Card-BG aufs Beamer-Niveau angeglichen
 // (#1F1A2E → #14101F = Indigo-Hoodie-Gradient). Fuehlt sich auf Phone
 // genauso premium-vivid an wie der Beamer.
-export const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
+// 2026-06-24 (Skin-System): zeigt jetzt auf --qq-card-bg. Der :root-Default
+// in main.css IST exakt dieser Gradient → cozy byte-identisch, Skins ziehen
+// automatisch ihre Karten-Flaeche (auch ohne isThemed-Ternaere, weil der
+// Token immer aufgeloest ist). /team erbt damit die Beamer-Karten-Optik.
+export const COZY_CARD_BG = 'var(--qq-card-bg)';
 
 export const darkPage: React.CSSProperties = {
   minHeight: '100vh', background: '#0A0814', color: '#e2e8f0',

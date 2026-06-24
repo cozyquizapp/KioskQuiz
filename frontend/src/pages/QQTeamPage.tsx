@@ -63,6 +63,7 @@ import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode, parseStammCodeToTeamId } from '../utils/qqStammCode';
 import type { QQAck } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { setActiveThemeId, isThemed } from '../qqTheme';
 
 // safeEmit + ACK_ERROR_MESSAGES_* + broadcastAckError jetzt in '../utils/qqTeamAckBus'.
 
@@ -258,6 +259,13 @@ export default function QQTeamPage() {
     document.body.classList.add('qq-active');
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
+
+  // Skin/Theme: room.themeId vom Beamer-Setup uebernehmen (Default cozy →
+  // byte-identisch). Tokens landen auf documentElement, /team-Komponenten
+  // ziehen ueber var(--qq-*) mit. Re-Render via state-Update.
+  useEffect(() => {
+    setActiveThemeId(state?.themeId ?? 'cozy');
+  }, [state?.themeId]);
 
   // Reset joined on disconnect so auto-rejoin fires on reconnect
   useEffect(() => {
@@ -654,7 +662,10 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   return (
     <div style={{
       ...darkPage,
-      background: setupPageBg,
+      // Skin uebernimmt die Flaeche (wie Beamer-Buehne); cozy behaelt die
+      // Team-Tint-Personalisierung. ESC bleibt immer ESC.
+      background: isThemed() && !eurovisionMode ? 'var(--qq-bg)' : setupPageBg,
+      color: isThemed() ? 'var(--qq-text)' : darkPage.color,
       transition: 'background 800ms ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
@@ -1474,7 +1485,12 @@ function TeamGameView({
   const finalPageBg = isEsc ? escPageBg : pageBg;
 
   return (
-    <div style={{ ...darkPage, background: finalPageBg, transition: 'background 0.8s ease' }} className="qq-team-page">
+    <div style={{
+      ...darkPage,
+      background: isThemed() && !isEsc ? 'var(--qq-bg)' : finalPageBg,
+      color: isThemed() ? 'var(--qq-text)' : darkPage.color,
+      transition: 'background 0.8s ease',
+    }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
       <AckErrorToast />
       {/* 2026-05-07 (Wolf-ESC): Optional BG-Bild als zusaetzliche Atmosphaere-

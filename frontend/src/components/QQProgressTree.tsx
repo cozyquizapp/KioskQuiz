@@ -692,13 +692,13 @@ export default function QQProgressTree({
                     background: isCozyGameActive
                       ? cozyGameColor
                       : isCozyGamePast
-                        ? 'rgba(148,163,184,0.18)'
-                        : 'rgba(30,41,59,0.85)',
+                        ? (isThemed() ? 'var(--qq-surface)' : 'rgba(148,163,184,0.18)')
+                        : (isThemed() ? 'var(--qq-surface)' : 'rgba(30,41,59,0.85)'),
                     border: isCozyGameActive
                       ? '2.5px solid #fff'
                       : isCozyGamePast
                         ? 'none'
-                        : '1.5px solid rgba(148,163,184,0.35)',
+                        : (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)'),
                     boxShadow: isCozyGameActive
                       ? `0 0 0 4px ${cozyGameColor}55, 0 6px 14px ${cozyGameColor}88, 0 0 28px ${cozyGameColor}aa`
                       : 'none',
@@ -736,13 +736,13 @@ export default function QQProgressTree({
                     background: isBiddingActive
                       ? biddingColor
                       : isBiddingPast
-                        ? 'rgba(148,163,184,0.18)'
-                        : 'rgba(30,41,59,0.85)',
+                        ? (isThemed() ? 'var(--qq-surface)' : 'rgba(148,163,184,0.18)')
+                        : (isThemed() ? 'var(--qq-surface)' : 'rgba(30,41,59,0.85)'),
                     border: isBiddingActive
                       ? '2.5px solid #fff'
                       : isBiddingPast
                         ? 'none'
-                        : '1.5px solid rgba(148,163,184,0.35)',
+                        : (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)'),
                     boxShadow: isBiddingActive
                       ? `0 0 0 4px ${biddingColor}55, 0 6px 14px ${biddingColor}88, 0 0 28px ${biddingColor}aa`
                       : 'none',
@@ -781,25 +781,28 @@ export default function QQProgressTree({
                         justifyContent: 'center',
                         fontSize: Math.round(dotSize * 0.55),
                         fontWeight: 800,
+                        // Skin: inaktive/zukuenftige Dots nutzen Skin-Surface +
+                        // Hairline statt Dunkel-Navy (sah auf hellen Skins wie
+                        // schwere graue Kloetze aus — Wolf 2026-06-24).
                         background: isCurrent
                           ? 'transparent'
                           : isShowcasedPhase
                             ? `${color}33`
                             : isPast
-                              ? ((variant === 'inline' || isMini) ? 'rgba(148,163,184,0.18)' : QQ_COLORS.slate200)
-                              : ((variant === 'inline' || isMini || isShowcase) ? 'rgba(30,41,59,0.85)' : QQ_COLORS.slate100),
+                              ? ((variant === 'inline' || isMini) ? (isThemed() ? 'var(--qq-surface)' : 'rgba(148,163,184,0.18)') : QQ_COLORS.slate200)
+                              : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? 'var(--qq-surface)' : 'rgba(30,41,59,0.85)') : QQ_COLORS.slate100),
                         color: isShowcasedPhase
                           ? '#fef3c7'
                           : isPast
-                            ? ((variant === 'inline' || isMini) ? QQ_COLORS.slate400 : QQ_COLORS.slate400)
-                            : ((variant === 'inline' || isMini || isShowcase) ? QQ_COLORS.slate300 : QQ_COLORS.slate500),
+                            ? QQ_COLORS.slate400
+                            : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate300) : QQ_COLORS.slate500),
                         border: isCurrent
                           ? 'none'
                           : isShowcasedPhase
                             ? `2px solid ${color}`
                             : isPast
                               ? 'none'
-                              : ((variant === 'inline' || isMini || isShowcase) ? '1.5px solid rgba(148,163,184,0.35)' : '2px solid #e2e8f0'),
+                              : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)') : '2px solid #e2e8f0'),
                         boxShadow: isShowcasedPhase
                           ? `0 0 18px ${color}88, 0 0 36px ${color}44`
                           : 'none',

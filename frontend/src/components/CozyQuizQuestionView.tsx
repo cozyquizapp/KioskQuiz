@@ -234,7 +234,9 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                   }}>
                     <span style={{
                       fontSize: 'clamp(14px, 1.6cqw, 20px)', fontWeight: 900,
-                      color: isCorrect ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
+                      // Option-Label = primaerer Inhalt. Skin: card-text (auf hellen
+                      // Skins lesbar; text-muted war zu hellgrau). Cozy unveraendert.
+                      color: isCorrect ? QQ_COLORS.green300 : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
                       minWidth: 0, flex: '0 1 auto',
                     }}>
                       {optText}

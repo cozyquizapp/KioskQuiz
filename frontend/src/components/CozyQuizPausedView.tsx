@@ -10,7 +10,8 @@
  * Mit-extrahiert: BrandLoopPanel + PAUSE_CAT_ACCENT (Local-Helpers).
  * NICHT extern importiert (nur intern via Phase-Router).
  */
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, cloneElement, isValidElement } from 'react';
+import type { ReactElement } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { qqSortedTeams } from '../qqShared';
@@ -825,7 +826,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {teamLine(leader.name, leader.color, leader.avatarId)}
             {isQuietMotion()
-              ? <div style={{ marginTop: 'clamp(8px,1.5cqh,24px)' }}>{statHero(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`)}</div>
+              ? <div style={{ marginTop: 0 }}>{statHero(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`)}</div>
               : <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
                   {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
                   <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
@@ -845,7 +846,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('🃏', 'Joker-König', 'Joker King', '#A855F7')}
         {teamLine(funStats.jokerKing.teamName)}
         {isQuietMotion()
-          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
+          ? <div style={{ marginTop: 0 }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
           : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
               {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
             </div>}
@@ -860,7 +861,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('🦅', 'Comeback-King', 'Comeback King', '#38BDF8')}
         {teamLine(funStats.comebackKing.teamName)}
         {isQuietMotion()
-          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
+          ? <div style={{ marginTop: 0 }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
           : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
               {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
               <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
@@ -878,7 +879,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('🗡️', 'Steal-Master', 'Steal Master', QQ_COLORS.red500)}
         {teamLine(funStats.stealMaster.teamName)}
         {isQuietMotion()
-          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
+          ? <div style={{ marginTop: 0 }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
           : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
               {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
             </div>}
@@ -893,7 +894,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('🐺', 'Underdog', 'Underdog', '#22D3EE')}
         {teamLine(funStats.underdog.teamName)}
         {isQuietMotion()
-          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
+          ? <div style={{ marginTop: 0 }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
           : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
               {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
               {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
@@ -975,7 +976,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('⚡', 'Schnellste Minute', 'Speed Demon', '#FACC15')}
         {teamLine(funStats.speedDemon.teamName)}
         {isQuietMotion()
-          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
+          ? <div style={{ marginTop: 0 }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
           : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
               {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
               <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
@@ -994,7 +995,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {statTitle('🥔', 'Bunte-Tüte-Boss', 'Lucky Bag Boss', btColor)}
         {teamLine(funStats.potatoBoss.teamName)}
         {isQuietMotion()
-          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
+          ? <div style={{ marginTop: 0 }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
           : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
               {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
             </div>}
@@ -1557,7 +1558,20 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 animation: 'qqPanelContentFade 0.7s var(--qq-ease-out-cubic) both',
               }}
             >
-              {activePanel.node}
+              {/* Mono (Wolf 2026-06-25 'platz besser verteilen'): den Panel-Node
+                  auf volle Kartenhöhe ziehen + Inhalt gleichmässig verteilen
+                  (space-evenly), statt als kleinen Cluster mittig zu zentrieren.
+                  Zentral via cloneElement → gilt für ALLE Setup-Slides ohne jeden
+                  einzeln umzubauen. Cozy/SoftPop/Neo unverändert. */}
+              {isQuietMotion() && isValidElement(activePanel.node)
+                ? cloneElement(activePanel.node as ReactElement<{ style?: React.CSSProperties }>, {
+                    style: {
+                      ...((activePanel.node as ReactElement<{ style?: React.CSSProperties }>).props.style || {}),
+                      height: '100%', width: '100%', boxSizing: 'border-box',
+                      display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly',
+                    },
+                  })
+                : activePanel.node}
             </div>
           </div>
           {panels.length > 1 && (

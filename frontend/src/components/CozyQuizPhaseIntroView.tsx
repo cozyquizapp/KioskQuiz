@@ -20,7 +20,7 @@ import {
   QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt } from '../cozyQuizShared';
-import { isThemed } from '../qqTheme';
+import { isThemed, isQuietMotion } from '../qqTheme';
 import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -580,10 +580,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               Bei aktiver Transition: spaeteres Delay damit's nicht mit dem
               Digit-Flip kollidiert. */}
           <div style={{ position: 'relative', zIndex: 5 }}>
-            {/* Shockwave-Ring (cozy-Effekt) — in Themes (Mono/SoftPop/Neo)
-                ausgeblendet: der pinke Wellen-Ring wirkt im editorialen Mono-Look
-                fehl am Platz. */}
-            {!isThemed() && <div style={{
+            {/* Shockwave-Ring (cozy-Effekt) — nur in Quiet-Motion (Mono)
+                ausgeblendet: der Wellen-Ring wirkt im editorialen Look fehl am
+                Platz. SoftPop/Neo behalten ihn (verspielt genug). */}
+            {!isQuietMotion() && <div style={{
               position: 'absolute', top: '50%', left: '50%',
               width: 200, height: 200, marginLeft: -100, marginTop: -100,
               borderRadius: '50%',
@@ -719,23 +719,27 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               : `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
             marginTop: 28, marginBottom: 28,
             transformOrigin: 'center',
-            animation: 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both',
-            boxShadow: isThemed()
-              ? '0 0 20px rgba(var(--qq-accent-rgb),0.33), 0 0 40px rgba(var(--qq-accent-rgb),0.13)'
-              : `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
+            // Quiet Motion (Mono): statische editoriale Linie — kein Bounce-In,
+            // kein Glow, kein Shimmer-Sweep.
+            animation: isQuietMotion() ? undefined : 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both',
+            boxShadow: isQuietMotion()
+              ? 'none'
+              : isThemed()
+                ? '0 0 20px rgba(var(--qq-accent-rgb),0.33), 0 0 40px rgba(var(--qq-accent-rgb),0.13)'
+                : `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
             transition: 'box-shadow 500ms ease',
             position: 'relative', zIndex: 5,
             overflow: 'hidden',
           }}>
             {/* Heller White-Shimmer-Sweep — laeuft kontinuierlich von links
-                nach rechts, garantiert sichtbar in allen Runden. */}
-            <div style={{
+                nach rechts. In Quiet Motion (Mono) aus (Wolfs „Hin-und-Her"). */}
+            {!isQuietMotion() && <div style={{
               position: 'absolute', inset: 0,
               background: 'linear-gradient(90deg, transparent 0%, transparent 30%, rgba(255,255,255,0.85) 50%, transparent 70%, transparent 100%)',
               backgroundSize: '200% 100%',
               animation: 'lineShimmer 1.8s linear 0.6s infinite',
               pointerEvents: 'none',
-            }} />
+            }} />}
           </div>
 
           {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer).

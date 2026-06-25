@@ -217,6 +217,16 @@ export function isThemed(): boolean {
   return _activeId !== 'cozy';
 }
 
+// ── Bewegungs-Sprache pro Skin ──────────────────────────────────────────────
+// 2026-06-25 (Wolf): cozy-Effekte (Title-Wave, Shimmer-Balken, Schockwellen-
+// Ringe, Wobble/Bounce) wirken im editorialen Studio-Mono fehl am Platz. In
+// „Quiet Motion"-Skins werden dekorative Spiel-Animationen durch ruhige Fades
+// ersetzt; funktionale Bewegung (Reveal-Reihenfolge, Timer-Dringlichkeit)
+// bleibt. Aktuell NUR Mono — SoftPop/Neo behalten die verspielte cozy-Motion.
+export function isQuietMotion(): boolean {
+  return _activeId === 'studioMono';
+}
+
 // ── Semantische „Status"-Karten pro Skin ────────────────────────────────────
 // Direction A (Wolf 2026-06-24): grün=Lösung / rot=Leer bleiben als Semantik,
 // werden aber in der Karten-Sprache des aktiven Skins gerendert (Mono: Hard-

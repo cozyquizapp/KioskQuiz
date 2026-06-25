@@ -190,7 +190,7 @@ export interface QQRoomState {
   _timerOnExpire: (() => void) | null;
   // Settings
   avatarsEnabled: boolean;
-  totalPhases: 3 | 4;
+  totalPhases: 2 | 3 | 4;
   theme?: import('../../../shared/quarterQuizTypes').QQTheme;
   draftId?: string;
   draftTitle?: string;
@@ -654,7 +654,7 @@ export function qqStartGame(
   room: QQRoomState,
   questions: QQQuestion[],
   language: QQLanguage,
-  phases: 3 | 4 = 3,
+  phases: 2 | 3 | 4 = 3,
   theme?: import('../../../shared/quarterQuizTypes').QQTheme,
   draftId?: string,
   draftTitle?: string,
@@ -2314,6 +2314,10 @@ function pendingActionForPhase(
     return 'PLACE_1';
   }
   if (room.gamePhaseIndex === 2) {
+    // 2-Runden-Showcase: R2 ist die LETZTE Runde → volles FREE-Menü
+    // (Setzen/Klauen/Stapeln), genau wie sonst ab Phase 3. Bei 3/4-Runden-
+    // Spielen bleibt R2 unverändert (PLACE_2 mit optionalem STEAL).
+    if (room.totalPhases === 2) return 'FREE';
     if (!hasFreeCell) return 'STEAL_1';
     return 'PLACE_2'; // team may switch to STEAL_1
   }
@@ -2342,7 +2346,9 @@ export function qqChooseFreeAction(
   // gewaehlt hat (= pendingAction != Default-fuer-Phase), kein Wechsel
   // mehr zugelassen. Default in Phase 2 ist PLACE_2, in Phase 3+ FREE.
   const isPhase2DefaultPlace = room.gamePhaseIndex === 2 && room.pendingAction === 'PLACE_2';
-  const isPhase3PlusDefault = room.gamePhaseIndex >= 3 && room.pendingAction === 'FREE';
+  // 2-Runden-Showcase: R2 nutzt das FREE-Menü (s. pendingActionForPhase) →
+  // als Initial-Wahl behandeln wie eine reguläre Phase-3+-FREE-Runde.
+  const isPhase3PlusDefault = (room.gamePhaseIndex >= 3 || (room.totalPhases === 2 && room.gamePhaseIndex === 2)) && room.pendingAction === 'FREE';
   const isInitialChoice = isPhase2DefaultPlace || isPhase3PlusDefault;
   if (!isInitialChoice) {
     throw new QQError('ACTION_LOCKED', 'Aktion bereits gewählt — pro Frage nur 1 Aktion.');
@@ -2425,7 +2431,9 @@ export function qqChooseFreeAction(
     room.swapFirstCell = null;
 
   } else if (action === 'STAPEL') {
-    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Runde 3.');
+    // Stapeln: ab Runde 3 — ODER in der letzten Runde eines 2-Runden-Showcase-Spiels.
+    const stackUnlocked = room.gamePhaseIndex >= 3 || (room.totalPhases === 2 && room.gamePhaseIndex === 2);
+    if (!stackUnlocked) throw new QQError('WRONG_PHASE', 'Stapeln erst ab Runde 3.');
     const stats = room.teamPhaseStats[teamId];
     if ((stats.stapelsUsed ?? 0) >= QQ_MAX_STAPELS_PER_GAME) {
       throw new QQError('STAPEL_LIMIT', `Bereits ${QQ_MAX_STAPELS_PER_GAME} Stapel verbraucht.`);

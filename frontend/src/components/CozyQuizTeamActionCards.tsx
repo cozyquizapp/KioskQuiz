@@ -607,7 +607,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           </CozyBtn>
           {/* Bann + Schild + Tauschen entfernt — Trinity Place/Steal/Stapel
               ist die finale Mechanik-Auswahl. */}
-          {phase >= 3 && hasStapable && stapelsLeft > 0 && (
+          {(phase >= 3 || (phase === 2 && s.totalPhases === 2)) && hasStapable && stapelsLeft > 0 && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('STAPEL')}>
               {lang === 'de'
                 ? `🏯 Stapeln (+1 Punkt · ${stapelsLeft}/3 übrig)`

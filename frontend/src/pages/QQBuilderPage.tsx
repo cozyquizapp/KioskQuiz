@@ -384,7 +384,7 @@ function makeSampleDraft(): QQDraft {
   return { id, title: '🗺️ Hamburg Probekatalog', phases: 3, language: 'both', questions, createdAt: Date.now(), updatedAt: Date.now() };
 }
 
-function makeEmptyDraft(phases: 3 | 4, existingCount = 0): QQDraft {
+function makeEmptyDraft(phases: 2 | 3 | 4, existingCount = 0): QQDraft {
   const id = `qq-draft-${Date.now().toString(36)}`;
   const questions: QQQuestion[] = [];
   for (let p = 1; p <= phases; p++) {
@@ -674,7 +674,7 @@ export default function QQBuilderPage() {
     return { ...draft, questions: qs, updatedAt: Date.now() };
   }
 
-  async function createDraft(phases: 3 | 4) {
+  async function createDraft(phases: 2 | 3 | 4) {
     // existingCount = nur Wolfs eigene Quiz-#-Drafts, nicht Demo-Packs
     // (qq-vol-*/qq-sample-*/qq-esc/qq-eurovision sind nicht „Quiz #N").
     const wolfDrafts = drafts.filter(d => /^Quiz #\d+/.test(d.title));
@@ -1276,7 +1276,7 @@ export default function QQBuilderPage() {
               style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 8, padding: '6px 14px', color: '#fff', fontWeight: 800, fontSize: 16, fontFamily: 'inherit', minWidth: 220 }} />
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <span style={{ fontSize: 12, color: QQ_COLORS.slate500, fontWeight: 700 }}>Runden:</span>
-              {([3, 4] as const).map(n => (
+              {([2, 3, 4] as const).map(n => (
                 <button key={n} onClick={() => {
                   if (n === activeDraft.phases) return;
                   if (!confirm(`Zu ${n} Runden wechseln?`)) return;
@@ -2892,7 +2892,7 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
 }
 
 // ── Draft list screen ─────────────────────────────────────────────────────────
-function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEurovision, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 3 | 4) => void; onCreateSample: () => void; onCreateEurovision: () => void; onDelete: (id: string) => void }) {
+function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEurovision, onDelete }: { drafts: QQDraft[]; onOpen: (d: QQDraft) => void; onCreate: (phases: 2 | 3 | 4) => void; onCreateSample: () => void; onCreateEurovision: () => void; onDelete: (id: string) => void }) {
   // 2026-05-10 CozyBuilder Pack A #2: Wolf-Greeting + Random-Spruch.
   const greetings = [
     'Was bauen wir heute, Wolf?',

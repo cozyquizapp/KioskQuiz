@@ -8027,7 +8027,7 @@ app.get('/api/qq/questions/from-draft/:draftId', async (req, res) => {
 // ── Quarter Quiz Builder — Draft CRUD ──────────────────────────────────────────
 const qqDraftsPath = path.join(__dirname, 'data', 'qqDrafts.json');
 let qqDrafts: Array<{
-  id: string; title: string; phases: 3 | 4; language: string;
+  id: string; title: string; phases: 2 | 3 | 4; language: string;
   questions: any[]; createdAt: number; updatedAt: number;
 }> = [];
 
@@ -8812,7 +8812,7 @@ app.get('/api/qq/drafts', async (_req, res) => {
 app.post('/api/qq/drafts', async (req, res) => {
   const body = req.body;
   if (!body || typeof body.title !== 'string' || body.title.length > 200) return res.status(400).json({ error: 'Ungültiger Titel' });
-  if (body.phases !== 3 && body.phases !== 4) return res.status(400).json({ error: 'Phasen muss 3 oder 4 sein' });
+  if (body.phases !== 2 && body.phases !== 3 && body.phases !== 4) return res.status(400).json({ error: 'Phasen muss 2, 3 oder 4 sein' });
   if (!Array.isArray(body.questions) || body.questions.length > 50) return res.status(400).json({ error: 'Ungültige Fragen' });
   const draft = { ...body, id: body.id || `qq-draft-${Date.now().toString(36)}`, createdAt: Date.now(), updatedAt: Date.now() };
   if (await ensureDraftDbConnection()) {

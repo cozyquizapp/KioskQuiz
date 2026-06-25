@@ -932,7 +932,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
 export interface QQDraft {
   id: string;
   title: string;
-  phases: 3 | 4;
+  phases: 2 | 3 | 4;
   language: QQLanguage;
   questions: QQQuestion[];
   /** 2026-05-05 (Wolf-Wunsch): Connections-Finale-Set pro Draft.
@@ -1139,7 +1139,7 @@ export interface QQStateUpdate {
   cheeseRevealStep: number;
   // Settings
   avatarsEnabled: boolean;
-  totalPhases: 3 | 4;
+  totalPhases: 2 | 3 | 4;
   theme?: QQTheme;
   // Draft reference (for slide template lookup on beamer)
   draftId?: string;
@@ -1326,7 +1326,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; pin?: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 2 | 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

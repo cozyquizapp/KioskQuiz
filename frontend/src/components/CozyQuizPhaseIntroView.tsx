@@ -382,7 +382,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
            getRuleText('round.4.line2_nofin', 'en', 'Quiz buddy points — everything stays available!')],
     },
   };
-  const roundRules = ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3];
+  // 2-Runden-Showcase: R2 ist die letzte Runde und schaltet Klauen UND Stapeln
+  // gleichzeitig frei → kombinierte Ansage statt nur „Klauen jetzt möglich".
+  const roundRules = (s.totalPhases === 2 && s.gamePhaseIndex === 2)
+    ? {
+        emoji: '⚔️',
+        de: [getRuleText('round.2.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
+             'Klauen UND Stapeln freigeschaltet!'],
+        en: [getRuleText('round.2.line1', 'en', 'Per correct answer choose one action:'),
+             'Steal AND stack unlocked!'],
+      }
+    : (ROUND_RULES[s.gamePhaseIndex] ?? ROUND_RULES[3]);
 
   // ── Round Self-Transition ──
   // 2026-05-12 (Audit P0 #4 — Timeline-Sync): Alle Timing-Konstanten dieser

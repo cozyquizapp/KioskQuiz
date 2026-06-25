@@ -7,6 +7,9 @@ import { useState } from 'react';
 import { cozy3dSrc, cozy3dBlinkSrc } from '../cozy3dAvatars';
 
 const SLUGS = ['fuchs', 'eule', 'katze', 'hund'];
+// Tiere mit Transplant-Vergleich (echte Lid-Scheibe aus dem zu-Bild).
+const TRANSPLANT = new Set(['fuchs', 'eule']);
+const transplantSrc = (slug: string) => `/avatars/cozy3d/${slug}-transplant.png`;
 
 function Disc({ children, label }: { children: React.ReactNode; label: string }) {
   return (
@@ -57,13 +60,28 @@ export default function QQBlinkTestPage() {
                 <img src={cozy3dBlinkSrc(slug)} width={200} height={200} draggable={false}
                   style={{ display: 'block', objectFit: 'contain' }} />
               </Disc>
-              <Disc label="live-blinzeln">
+              {TRANSPLANT.has(slug) && (
+                <Disc label="zu (transplant ✨)">
+                  <img src={transplantSrc(slug)} width={200} height={200} draggable={false}
+                    style={{ display: 'block', objectFit: 'contain' }} />
+                </Disc>
+              )}
+              <Disc label="live-blinzeln (gezeichnet)">
                 <img src={cozy3dSrc(slug)} width={200} height={200} draggable={false}
                   style={{ position: 'absolute', inset: 0, display: 'block', objectFit: 'contain' }} />
                 <img src={cozy3dBlinkSrc(slug)} width={200} height={200} draggable={false} aria-hidden
                   style={{ position: 'absolute', inset: 0, display: 'block', objectFit: 'contain', opacity: 0,
                     animation: `blinkTestSwap ${speed}s ease-in-out ${(-si * 0.7).toFixed(2)}s infinite` }} />
               </Disc>
+              {TRANSPLANT.has(slug) && (
+                <Disc label="live (transplant ✨)">
+                  <img src={cozy3dSrc(slug)} width={200} height={200} draggable={false}
+                    style={{ position: 'absolute', inset: 0, display: 'block', objectFit: 'contain' }} />
+                  <img src={transplantSrc(slug)} width={200} height={200} draggable={false} aria-hidden
+                    style={{ position: 'absolute', inset: 0, display: 'block', objectFit: 'contain', opacity: 0,
+                      animation: `blinkTestSwap ${speed}s ease-in-out ${(-si * 0.7).toFixed(2)}s infinite` }} />
+                </Disc>
+              )}
             </div>
           </div>
         ))}

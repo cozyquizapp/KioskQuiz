@@ -791,6 +791,25 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     );
   };
 
+  // Mono-Hero-Stat: die Kennzahl RIESIG rausgespielt (Magazin-Stil), damit der
+  // Slide die ganze Karte füllt statt als kleiner Cluster in der Mitte zu kleben
+  // (Wolf 2026-06-25 'platz nicht gut genutzt'). Nur Studio Mono. Höhe via cqh,
+  // damit sie sich an die Karte (clamp 460–660px) anpasst.
+  const statHero = (value: React.ReactNode, label: string, sub?: React.ReactNode) => (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(4px,0.8cqh,12px)', width: '100%' }}>
+      <span style={{
+        fontSize: 'clamp(110px, min(20cqw, 34cqh), 300px)', fontWeight: 900,
+        color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '-0.05em', lineHeight: 0.78,
+      }}>{value}</span>
+      <span style={{
+        fontSize: 'clamp(16px, 2.1cqw, 34px)', fontWeight: 900, letterSpacing: '0.14em',
+        textTransform: 'uppercase', color: 'var(--qq-text-muted)',
+      }}>{label}</span>
+      {sub && <span style={{ fontSize: 'clamp(15px, 1.7cqw, 24px)', color: 'var(--qq-text-muted)', fontWeight: 700, marginTop: 'clamp(4px,0.6cqh,10px)' }}>{sub}</span>}
+    </div>
+  );
+
   // Big-Team-Line: Avatar + Name (farblich akzentuiert)
   // (helpers moved up — see findTeamMeta / teamLine / teamInline above)
 
@@ -805,12 +824,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           {statTitle('🔥', 'Heiße Phase', 'Hot Streak', '#F97316')}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
             {teamLine(leader.name, leader.color, leader.avatarId)}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-              {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
-              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
-                {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
-              </span>
-            </div>
+            {isQuietMotion()
+              ? <div style={{ marginTop: 'clamp(8px,1.5cqh,24px)' }}>{statHero(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`)}</div>
+              : <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+                  {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
+                  <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
+                    {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
+                  </span>
+                </div>}
           </div>
         </div>
       )});
@@ -823,9 +844,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🃏', 'Joker-König', 'Joker King', '#A855F7')}
         {teamLine(funStats.jokerKing.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
-        </div>
+        {isQuietMotion()
+          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
+          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
+            </div>}
       </div>
     )});
   }
@@ -836,12 +859,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🦅', 'Comeback-King', 'Comeback King', '#38BDF8')}
         {teamLine(funStats.comebackKing.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-          {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
-          <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
-            {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
-          </span>
-        </div>
+        {isQuietMotion()
+          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
+          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+              {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
+              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
+                {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
+              </span>
+            </div>}
       </div>
     )});
   }
@@ -852,9 +877,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🗡️', 'Steal-Master', 'Steal Master', QQ_COLORS.red500)}
         {teamLine(funStats.stealMaster.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
-        </div>
+        {isQuietMotion()
+          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
+          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
+            </div>}
       </div>
     )});
   }
@@ -865,13 +892,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🐺', 'Underdog', 'Underdog', '#22D3EE')}
         {teamLine(funStats.underdog.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
-          {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
-          <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
-            {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
-          </span>
-        </div>
+        {isQuietMotion()
+          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
+          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
+              {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
+              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
+                {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
+              </span>
+            </div>}
       </div>
     )});
   }
@@ -945,12 +974,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('⚡', 'Schnellste Minute', 'Speed Demon', '#FACC15')}
         {teamLine(funStats.speedDemon.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-          {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
-          <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
-            {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
-          </span>
-        </div>
+        {isQuietMotion()
+          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
+          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+              {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
+              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
+                {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
+              </span>
+            </div>}
       </div>
     )});
   }
@@ -962,9 +993,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       <div>
         {statTitle('🥔', 'Bunte-Tüte-Boss', 'Lucky Bag Boss', btColor)}
         {teamLine(funStats.potatoBoss.teamName)}
-        <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
-          {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
-        </div>
+        {isQuietMotion()
+          ? <div style={{ marginTop: 'clamp(16px,2.5cqh,40px)' }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
+          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+              {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
+            </div>}
       </div>
     )});
   }

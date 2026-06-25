@@ -2591,7 +2591,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   gap: 10,
                   padding: '14px 24px 18px',
-                  borderRadius: 22,
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
                   background: `linear-gradient(180deg, ${t.color}33, ${t.color}11)`,
                   border: `2.5px solid ${t.color}`,
                   boxShadow: `0 0 48px ${t.color}66, 0 12px 28px rgba(0,0,0,0.5)`,

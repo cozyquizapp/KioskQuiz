@@ -3,6 +3,7 @@ import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dOpenSrc, cozy3dHasBlink } from '../cozy3dAvatars';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
+import { isThemed } from '../qqTheme';
 
 // ─── Augen-auf-Hook (Event-getrieben, Wolf-Idee) ──────────────────────────
 // Ruhe = geschlossene Augen (= heutiger Look). NUR wenn der Slug ein open-Asset
@@ -23,7 +24,9 @@ type Props = {
   style?: CSSProperties;
   className?: string;
   title?: string;
-  /** wenn true → kein border-radius (PNG ist eh rund, aber manche Wrapper wollen quadratisch). */
+  /** wenn true → Avatar folgt der Skin-Form: cozy bleibt rund (byte-identisch),
+   *  in Themes (Mono/SoftPop/Neo) wird der Disc-Radius = var(--qq-card-radius)
+   *  (Mono eckig, SoftPop rund). Für „eckige Avatare im jeweiligen Design". */
   square?: boolean;
   /** Sprache für automatisch generierte title/alt-Texte (Tier-Name). */
   lang?: 'de' | 'en';
@@ -94,7 +97,7 @@ export function QQTeamAvatar({
     height: size,
     flexShrink: 0,
     display: 'block',
-    borderRadius: square ? 0 : '50%',
+    borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
     ...style,
   };
 
@@ -196,7 +199,7 @@ function PngAvatar({
 
   const inner: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',
-    borderRadius: square ? 0 : '50%',
+    borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
     display: 'block', pointerEvents: 'none',
   };
 
@@ -371,7 +374,7 @@ function ImageAvatar({
         // overflow sichtbar laesst das Motiv ungeschnitten; die farbige Disc +
         // Ring bleiben rund (border-radius wirkt weiter auf BG/Border).
         overflow: square ? 'hidden' : 'visible',
-        borderRadius: square ? 0 : '50%',
+        borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
       }}
     >
       {failed ? (
@@ -436,7 +439,7 @@ function EmojiAvatar({
         fontSize: emojiFontSize,
         lineHeight: 1,
         userSelect: 'none',
-        borderRadius: square ? 0 : '50%',
+        borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
       }}
     >
       <span style={{

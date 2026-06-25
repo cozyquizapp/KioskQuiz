@@ -232,7 +232,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           // justify-content:center verschob sich sichtbar. Jetzt: Box bleibt
           // konstant, nur Farben/Glow flippen beim Active-Wechsel.
           padding: dense ? '6px 10px' : '8px 14px',
-          borderRadius: 16,
+          borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
           background: isActive ? `linear-gradient(135deg, ${tColor}22, ${tColor}08)` : 'transparent',
           border: isActive ? `2px solid ${tColor}` : '2px solid transparent',
           boxShadow: isActive ? `0 0 28px ${tColor}55, 0 0 60px ${tColor}22, inset 0 0 12px ${tColor}18` : 'none',

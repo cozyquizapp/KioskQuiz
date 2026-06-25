@@ -25,7 +25,7 @@
  */
 import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveTheme } from '../qqTheme';
 import { JokerIcon } from './JokerIcon';
 import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -144,7 +144,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         // Container-Flaeche/Rahmen sind auf hellen Skins unsichtbar → Skin-Tokens.
         // Highlight-Rahmen (Team-Farbe) bleibt unangetastet (Spielsignal).
         background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.03)',
-        padding: 10, borderRadius: 16,
+        padding: 10, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
         border: `3px solid ${highlightTeam ? `${activeColor}cc` : (isThemed() ? 'var(--qq-hairline)' : 'rgba(255,255,255,0.06)')}`,
         boxShadow: highlightTeam
           ? `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(255,255,255,0.04)`
@@ -173,7 +173,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const isShielded = !!cell.shielded && !cell.stuck;
             const sandTtl = cell.sandLockTtl ?? 0;
             const isSandLocked = sandTtl > 0;
-            const cellRadius = Math.max(4, cellSize * 0.16);
+            // Skin-abhängiger Zell-Radius: in Themes folgt die Zelle der Design-Sprache
+            // (Mono 4px = eckig, SoftPop 26px = rund). Numerisch bleiben, weil unten
+            // cellRadius + N für Glow-/Bridge-Insets gerechnet wird.
+            const themeCellRadius = isThemed()
+              ? (parseInt(getActiveTheme().surface.cardRadius, 10) || 4)
+              : null;
+            const cellRadius = themeCellRadius != null ? themeCellRadius : Math.max(4, cellSize * 0.16);
             // 2026-05-13 (Wolf 'gestapelte emojis sehen nicht aus wie skizziert,
             // 8. Anfrage' + 'oben 1x stapeln unten 2x stapeln'): Root-Cause der
             // wiederholten Beschwerde. Connections-Stapel (qqStapelBonusCell)
@@ -429,7 +435,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       minWidth: Math.max(16, cellSize * 0.32),
                       height: Math.max(16, cellSize * 0.32),
                       padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
-                      borderRadius: '999px',
+                      borderRadius: 'var(--qq-pill-radius)',
                       background: 'linear-gradient(135deg, #A855F7, #6B21A8)',
                       border: '2px solid #2E1065',
                       color: '#FFFFFF',

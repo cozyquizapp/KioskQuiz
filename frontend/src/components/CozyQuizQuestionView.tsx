@@ -1929,7 +1929,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   return (
                     <div key={tm.id} style={{
                       position: 'relative',
-                      padding: 5, borderRadius: '50%',
+                      padding: 5, borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
                       background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
@@ -1939,7 +1939,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       filter: answered ? 'none' : 'grayscale(0.4)',
                       transition: 'all 0.45s ease',
                     }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
+                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} square />
                     </div>
                   );
                 })}

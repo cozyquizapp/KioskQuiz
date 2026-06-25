@@ -65,6 +65,19 @@ Genuin offen (alle niedrige Prio, live-test-getrieben):
 
 ## 🎨 Theme-System (Skins je Location) — Foundation + Proof LIVE (2026-06-23)
 
+**STAND 2026-06-25 (Mono live-reviewed & poliert):** Über mehrere Sessions die ganze
+`/beamer` in **Studio Mono** durchgeklickt + gefixt: Shape-Tokens (`--qq-card-radius` +
+`--qq-pill-radius`, Mono pill=3px), alle Fenster/Cards/Badges eckig (inkl. systemischer
+`cozyCard()`-Hebel), Farben skin-konform (kein Rest-Pink/unlesbarer Text), **Cheese-Mono-
+Redesign** (solide weiße Cards statt dunkel-frosted), **Avatare bleiben bewusst RUND**
+(Editorial-Kontrast, Wolf-Entscheid), **Quiet-Motion** (Mono = ruhig: Shockwave/Shimmer/
+Title-Waves aus via `isQuietMotion()` + `data-quiet-motion`-CSS-Hebel). Volle Detail-Doku:
+Memory `project-theme-skin-system`.
+**NOCH OFFEN:** (1) **Mod-Theme-Picker + `room.themeId`-Backend-Wiring** (Theme im echten
+Spiel wählbar, bisher nur Showroom). (2) **SoftPop + Neo-Brutal** noch NICHT am Live-Screen
+durchgesehen (Struktur greift via `isThemed()`, aber Ästhetik un-eyeballed). (3) Wolf-
+Sprechblase im Logo ist oval (Marken-Logo — vor Änderung fragen).
+
 **Update 2026-06-23 (Commit `03106c88`):** Wolf-Klarstellung — es geht NICHT um
 Event-Kostüme (Weihnachten/Halloween), sondern um **subtile Grunddesigns je
 Location/Setting** (Café · Bar · Corporate · Glass), per Klick umschaltbar.

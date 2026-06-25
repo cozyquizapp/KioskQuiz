@@ -95,6 +95,12 @@ verdrahtet: Beamer/Team/Summary). (2) **Comeback**-View in Mono noch am Screen b
 Neo-Brutal** noch NICHT am Live-Screen durchgesehen — kommen lt. Wolf **erst wenn Mono perfekt**
 (Mono hat Prio, am ehesten für Corporate). (5) Wolf-Sprechblase im Logo ist oval (vor Änderung fragen).
 
+**Marketing-Seiten (2026-06-25, LIVE):** `/about` (A4-One-Pager, PNG/PDF-Download via
+html2canvas+jsPDF) + `/trailer` (9:16 IG-Trailer). Doku: Memory `project-marketing-pages`.
+Optionale Follow-ups: (a) `/about` 1-Seiten-Fit am Druck verifizieren, (b) optionaler
+MediaRecorder→WebM-Download-Button im Trailer, (c) Trailer-Tempo/Tiere nach Wolf-Review.
+**Wichtig:** Bei Mechanik-Änderungen beide Seiten mitziehen (Inhalt ist aus den Regeln abgeleitet).
+
 **Update 2026-06-23 (Commit `03106c88`):** Wolf-Klarstellung — es geht NICHT um
 Event-Kostüme (Weihnachten/Halloween), sondern um **subtile Grunddesigns je
 Location/Setting** (Café · Bar · Corporate · Glass), per Klick umschaltbar.

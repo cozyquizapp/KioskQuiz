@@ -8,25 +8,29 @@
  * nichts Erfundenes. Route /trailer, öffentlich.
  */
 import { useEffect, useRef, useState } from 'react';
+import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
-const PINK_SOFT = '#fbcfe8';
 const MAGENTA = '#a21247';
-const NAVY = '#1E2A5A';
 const DISPLAY = "'Bricolage Grotesque', 'Inter', system-ui, sans-serif";
 const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 
+// Cozy-Bühnen-BG (1:1 aus dem Cozy-Theme, qqTheme.ts COZY.surface.pageBg).
+const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)';
+
 const cz = (slug: string) => `/avatars/cozy3d/${slug}.png`;
 
+// 5 Teams = die echten Default-Avatare mit den echten App-Farben (QQ_TEAM_PALETTE).
 const TEAMS = [
-  { slug: 'pinguin', color: '#3B82F6' },
-  { slug: 'fuchs',   color: PINK },
-  { slug: 'koala',   color: '#22C55E' },
-  { slug: 'eule',    color: '#A855F7' },
-  { slug: 'baer',    color: '#F59E0B' },
+  { slug: 'hund',     color: QQ_TEAM_PALETTE[0] }, // #FA507F
+  { slug: 'faultier', color: QQ_TEAM_PALETTE[1] }, // #9DCB2F
+  { slug: 'pinguin',  color: QQ_TEAM_PALETTE[2] }, // #266FD3
+  { slug: 'koala',    color: QQ_TEAM_PALETTE[3] }, // #9A65D5
+  { slug: 'giraffe',  color: QQ_TEAM_PALETTE[4] }, // #FEC814
 ];
-// 5×5-Gebiete (Team-Index je Zelle) + Avatar-Anker.
+const HERO = { slug: 'fuchs', color: QQ_TEAM_PALETTE[0] };
+// 5×5-Gebiete (Team-Index je Zelle) — jede Zelle trägt den Team-Avatar (wie im echten Brett).
 const MINI_GRID = [
   [0, 0, 1, 1, 2],
   [0, 0, 1, 2, 2],
@@ -34,7 +38,6 @@ const MINI_GRID = [
   [3, 3, 3, 4, 2],
   [3, 3, 4, 4, 4],
 ];
-const AVATAR_CELLS: Record<string, number> = { '1-1': 0, '1-2': 1, '1-4': 2, '3-1': 3, '4-3': 4 };
 
 const CATEGORIES = [
   { emoji: '🎯', name: 'Schätzchen', desc: 'Am nächsten dran' },
@@ -57,7 +60,7 @@ const SCENES: Scene[] = [
   { key: 'board',  dur: 5200 },
   { key: 'cats',   dur: 5600 },
   { key: 'twists', dur: 4800 },
-  { key: 'finale', dur: 3600 },
+  { key: 'bets',   dur: 4400 },
   { key: 'cta',    dur: 4600 },
 ];
 
@@ -90,7 +93,7 @@ export default function QQTrailerPage() {
         maxWidth: '100vw', borderRadius: 22, overflow: 'hidden',
         containerType: 'size',
         boxShadow: '0 24px 70px rgba(0,0,0,0.6)',
-        background: `radial-gradient(130% 90% at 50% -10%, ${MAGENTA} 0%, #2a0f22 45%, #14101f 100%)`,
+        background: COZY_BG,
         cursor: 'pointer',
       }} onClick={() => setPaused(p => !p)}>
         {/* Stories-Fortschrittsbalken */}
@@ -144,7 +147,7 @@ function renderScene(key: string) {
     case 'title':
       return (
         <>
-          <PetDisc slug="fuchs" color={PINK} sizeCqw={34} anim="popIn 0.7s var(--eb) both" />
+          <PetDisc slug={HERO.slug} color={HERO.color} sizeCqw={34} anim="popIn 0.7s var(--eb) both" />
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', letterSpacing: '0.3em', opacity: 0.9, marginTop: '4cqh', animation: 'fadeUp 0.6s ease 0.15s both' }}>
             DAS LIVE-QUIZ FÜR TEAMS
           </div>
@@ -167,11 +170,11 @@ function renderScene(key: string) {
           <div style={{ position: 'relative', width: '34cqw', height: '34cqw', margin: '5cqh 0', animation: 'fadeUp 0.6s ease 0.3s both' }}>
             <div style={{
               position: 'absolute', inset: 0, borderRadius: '4cqw',
-              background: `linear-gradient(135deg, ${PINK_MID}, ${PINK})`,
-              boxShadow: `0 0 0 0.8cqw rgba(255,255,255,0.85), 0 1.5cqh 4cqh ${PINK}88`,
+              background: `linear-gradient(135deg, ${HERO.color}, ${HERO.color}cc)`,
+              boxShadow: `0 0 0 0.8cqw rgba(255,255,255,0.85), 0 1.5cqh 4cqh ${HERO.color}88`,
               animation: 'cellPulse 1.6s ease 0.9s infinite',
             }} />
-            <img src={cz('fuchs')} alt="" style={{
+            <img src={cz(HERO.slug)} alt="" style={{
               position: 'absolute', inset: '8%', width: '84%', height: '84%', objectFit: 'contain',
               filter: 'drop-shadow(0 0.6cqh 0.8cqh rgba(0,0,0,0.4))',
               animation: 'dropIn 0.7s var(--eb) 0.75s both',
@@ -195,24 +198,18 @@ function renderScene(key: string) {
             width: '74cqw',
           }}>
             {MINI_GRID.flat().map((region, i) => {
-              const r = Math.floor(i / 5), c = i % 5;
               const team = TEAMS[region];
-              const avIdx = AVATAR_CELLS[`${r}-${c}`];
-              const hasAv = avIdx !== undefined;
               return (
                 <div key={i} style={{
                   aspectRatio: '1', borderRadius: '2cqw', position: 'relative',
                   background: `linear-gradient(135deg, ${team.color}, ${team.color}cc)`,
-                  boxShadow: hasAv ? 'inset 0 0 0 0.6cqw #fff' : `inset 0 0 0 0.3cqw ${team.color}`,
-                  animation: `cellIn 0.45s var(--eb) ${0.2 + i * 0.05}s both`,
-                  zIndex: hasAv ? 1 : undefined,
+                  boxShadow: 'inset 0 0 0 0.3cqw rgba(255,255,255,0.28)',
+                  animation: `cellIn 0.4s var(--eb) ${0.2 + i * 0.045}s both`,
                 }}>
-                  {hasAv && (
-                    <img src={cz(TEAMS[avIdx].slug)} alt="" style={{
-                      position: 'absolute', inset: '6%', width: '88%', height: '88%', objectFit: 'contain',
-                      filter: 'drop-shadow(0 0.4cqh 0.5cqh rgba(0,0,0,0.4))',
-                    }} />
-                  )}
+                  <img src={cz(team.slug)} alt="" style={{
+                    position: 'absolute', inset: '8%', width: '84%', height: '84%', objectFit: 'contain',
+                    filter: 'drop-shadow(0 0.3cqh 0.4cqh rgba(0,0,0,0.42))',
+                  }} />
                 </div>
               );
             })}
@@ -267,15 +264,26 @@ function renderScene(key: string) {
         </>
       );
 
-    case 'finale':
+    case 'bets':
       return (
         <>
-          <div style={{ fontSize: '20cqw', animation: 'popIn 0.7s var(--eb) both' }}>🏆</div>
-          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1, marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
-            Großes Finale
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', letterSpacing: '0.28em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+            DAS GROSSE FINALE
           </div>
-          <div style={{ fontWeight: 800, fontSize: '5.4cqw', marginTop: '3cqh', opacity: 0.95, animation: 'fadeUp 0.6s ease 0.5s both' }}>
-            16 Begriffe · 4 versteckte Gruppen<br />entscheiden die letzten Punkte.
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', lineHeight: 1, marginTop: '0.5cqh', animation: 'popIn 0.7s var(--eb) 0.15s both' }}>
+            Final-Bets
+          </div>
+          {/* Tipp: Team A → Team B */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '4cqw', margin: '5cqh 0', animation: 'fadeUp 0.6s ease 0.35s both' }}>
+            <PetDisc slug={TEAMS[2].slug} color={TEAMS[2].color} sizeCqw={20} />
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5cqh' }}>
+              <span style={{ fontSize: '3.4cqw', fontWeight: 900, letterSpacing: '0.15em', opacity: 0.85 }}>TIPPT AUF</span>
+              <span style={{ fontSize: '9cqw', lineHeight: 1, animation: 'cellPulse 1.4s ease 0.6s infinite' }}>🎯</span>
+            </div>
+            <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={20} />
+          </div>
+          <div style={{ fontWeight: 800, fontSize: '5.2cqw', opacity: 0.96, animation: 'fadeUp 0.6s ease 0.6s both' }}>
+            Liegt euer Tipp vorn → <span style={{ color: PINK_MID }}>Bonus-Punkte.</span>
           </div>
         </>
       );
@@ -283,7 +291,7 @@ function renderScene(key: string) {
     case 'cta':
       return (
         <>
-          <PetDisc slug="fuchs" color={PINK} sizeCqw={32} anim="popIn 0.7s var(--eb) both" />
+          <PetDisc slug={HERO.slug} color={HERO.color} sizeCqw={32} anim="popIn 0.7s var(--eb) both" />
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
             Bock auf ein<br />CozyQuiz?
           </div>

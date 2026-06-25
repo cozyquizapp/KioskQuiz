@@ -10,6 +10,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { cozy3dSrc } from '../cozy3dAvatars';
+import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
@@ -35,7 +36,7 @@ const STEPS = [
   { n: '1', title: 'Team & Handy', text: 'Bildet Teams und tretet per Handy bei. Gespielt wird auf der großen Leinwand.' },
   { n: '2', title: 'Antworten & erobern', text: '4 Runden, 5 Kategorien pro Runde. Richtig — und schnell — geantwortet, und ihr setzt ein Feld aufs Spielbrett.' },
   { n: '3', title: 'Verbinden & tricksen', text: 'Felder clever verbinden gibt Joker-Bonus. Ab Runde 2 dürft ihr Felder klauen, ab Runde 3 dauerhaft sichern.' },
-  { n: '4', title: 'Comeback & Finale', text: 'Das letzte Team bekommt eine Aufhol-Chance. Im großen Finale entscheiden versteckte Gruppen über die letzten Punkte.' },
+  { n: '4', title: 'Comeback & Final-Bets', text: 'Das letzte Team bekommt eine Aufhol-Chance. Im Finale tippt jedes Team auf ein Team — pro gewonnene Final-Kategorie eures Tipps gibt es Bonus-Punkte.' },
 ];
 
 const SELLING = [
@@ -45,16 +46,16 @@ const SELLING = [
   { emoji: '🐺', text: 'Moderiert & locker: kein Googeln, kein Vorwissen-Stress — Spaß vor Punkten.' },
 ];
 
-// 5 Teams mit echten cozy3d-Game-Avataren + Brett-Farben (wie im Spiel).
+// 5 Teams = echte Default-cozy3d-Avatare mit den echten App-Farben (QQ_TEAM_PALETTE).
 const TEAMS = [
-  { slug: 'pinguin', color: '#3B82F6' },
-  { slug: 'fuchs',   color: PINK },
-  { slug: 'koala',   color: '#22C55E' },
-  { slug: 'eule',    color: '#A855F7' },
-  { slug: 'baer',    color: '#F59E0B' },
+  { slug: 'hund',     color: QQ_TEAM_PALETTE[0] }, // #FA507F
+  { slug: 'faultier', color: QQ_TEAM_PALETTE[1] }, // #9DCB2F
+  { slug: 'pinguin',  color: QQ_TEAM_PALETTE[2] }, // #266FD3
+  { slug: 'koala',    color: QQ_TEAM_PALETTE[3] }, // #9A65D5
+  { slug: 'giraffe',  color: QQ_TEAM_PALETTE[4] }, // #FEC814
 ];
-// Kleines 5×5-Beispiel-Brett (das echte Spielbrett ist 5×5) als Deko-Illustration.
-// Zahl = Team-Index (Gebiet/Farbe).
+// Kleines 5×5-Beispiel-Brett (das echte Spielbrett ist 5×5). Zahl = Team-Index;
+// JEDE Zelle trägt den Team-Avatar (wie im echten Brett).
 const MINI_GRID = [
   [0, 0, 1, 1, 2],
   [0, 0, 1, 2, 2],
@@ -62,10 +63,6 @@ const MINI_GRID = [
   [3, 3, 3, 4, 2],
   [3, 3, 4, 4, 4],
 ];
-// Auf diesen Zellen sitzt der Team-Avatar (je ein „Anker" pro Gebiet).
-const AVATAR_CELLS: Record<string, number> = {
-  '1-1': 0, '1-2': 1, '1-4': 2, '3-1': 3, '4-3': 4,
-};
 
 export default function QQAboutPage() {
   const posterRef = useRef<HTMLDivElement>(null);
@@ -273,27 +270,19 @@ export default function QQAboutPage() {
               border: '2px solid #e4e1ee', boxShadow: '0 6px 18px rgba(30,42,90,0.10)',
             }}>
               {MINI_GRID.flat().map((region, i) => {
-                const r = Math.floor(i / 5), c = i % 5;
                 const team = TEAMS[region];
-                const avIdx = AVATAR_CELLS[`${r}-${c}`];
-                const hasAv = avIdx !== undefined;
                 return (
                   <div key={i} style={{
                     width: 36, height: 36, borderRadius: 9, position: 'relative',
                     background: `linear-gradient(135deg, ${team.color}, ${team.color}cc)`,
-                    boxShadow: hasAv
-                      ? `inset 0 0 0 2.5px #fff, 0 3px 9px ${team.color}77`
-                      : `inset 0 0 0 1.5px ${team.color}`,
-                    zIndex: hasAv ? 1 : undefined,
+                    boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.32)',
                   }}>
-                    {hasAv && (
-                      <img src={cozy3dSrc(TEAMS[avIdx].slug)} alt="" draggable={false}
-                        style={{
-                          position: 'absolute', inset: 0, width: '100%', height: '100%',
-                          objectFit: 'contain', padding: 2,
-                          filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.38))',
-                        }} />
-                    )}
+                    <img src={cozy3dSrc(team.slug)} alt="" draggable={false}
+                      style={{
+                        position: 'absolute', inset: 0, width: '100%', height: '100%',
+                        objectFit: 'contain', padding: 3,
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.42))',
+                      }} />
                   </div>
                 );
               })}

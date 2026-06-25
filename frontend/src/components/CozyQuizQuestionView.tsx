@@ -26,7 +26,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
-import { isThemed } from '../qqTheme';
+import { isThemed, isQuietMotion } from '../qqTheme';
 import { SkinDeco } from './SkinDeco';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
@@ -1549,11 +1549,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               position: 'fixed', top: 'var(--qq-safe-margin)', right: 'var(--qq-safe-margin)', zIndex: 70,
               animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.3s both',
               pointerEvents: revealed ? 'none' : 'auto',
-              padding: 12, borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
-              backdropFilter: 'blur(8px)',
-              WebkitBackdropFilter: 'blur(8px)',
-              boxShadow: `0 4px 22px rgba(0,0,0,0.45)`,
+              // Mono/Themes: solider weißer Backdrop mit Card-Rahmen (statt dunklem
+              // Kreis) — der Timer liest sich sonst schwarz-auf-dunkel unlesbar.
+              padding: 12, borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
+              background: isThemed() ? 'var(--qq-card-bg)' : 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
+              border: isThemed() ? 'var(--qq-card-border)' : undefined,
+              backdropFilter: isThemed() ? 'none' : 'blur(8px)',
+              WebkitBackdropFilter: isThemed() ? 'none' : 'blur(8px)',
+              boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 4px 22px rgba(0,0,0,0.45)`,
             }}>
               <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
             </div>
@@ -1609,17 +1612,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             minHeight: revealed
               ? (hasImg ? 'clamp(240px, 30cqh, 360px)' : 'clamp(180px, 22cqh, 260px)')
               : (hasImg ? 'clamp(120px, 16cqh, 200px)' : 'clamp(110px, 14cqh, 170px)'),
-            background: 'rgba(13,10,6,0.38)',
-            backdropFilter: 'blur(18px) saturate(1.25)',
-            WebkitBackdropFilter: 'blur(18px) saturate(1.25)',
+            // Mono/Themes: solide weiße Card (card-bg) statt dunkel-frosted —
+            // sonst liest sich der schwarze card-text unsichtbar. Reveal behält
+            // den Team-Farb-Rahmen als Sieger-Signal (Farb-Pop auf weiß).
+            background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(13,10,6,0.38)',
+            backdropFilter: isThemed() ? 'none' : 'blur(18px) saturate(1.25)',
+            WebkitBackdropFilter: isThemed() ? 'none' : 'blur(18px) saturate(1.25)',
             // Vor Reveal: kräftiger Kategorie-Glow wie bei MUCHO/ZvZ. (User-Wunsch
             // 2026-04-28: 'bei cheese darf die frage vor reveal umrandet sein
             // von kategorie farben glow wie bei anderen').
-            border: `${isCheeseReveal ? 3 : 2.5}px solid ${isCheeseReveal ? `${revealGlowColor}cc` : `${accent}88`}`,
+            border: isCheeseReveal
+              ? `3px solid ${revealGlowColor}cc`
+              : (isThemed() ? 'var(--qq-card-border)' : `2.5px solid ${accent}88`),
             borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
             // Reveal-Padding kompakter (20 statt 28) damit das Bild oben mehr Platz behaelt.
             padding: isCheeseReveal ? '20px 48px' : '36px 56px',
-            boxShadow: isCheeseReveal
+            boxShadow: isThemed()
+              ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}, var(--qq-card-shadow)` : 'var(--qq-card-shadow)')
+              : isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
               : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
             // 2026-05-05 (Wolf 'Cheese-Reveal-Card wiggelt beim Auftauchen,
@@ -1632,7 +1642,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // ease-bounce sprangen ueber — die min-height-Aenderung
             // (~+120px beim Reveal) mit Bounce hat die Card sichtbar
             // wackeln lassen. Beide auf ease-smooth.
-            animation: cheeseWithQuestion ? 'bQuestionIn 0.5s var(--qq-ease-bounce) 0.1s both' : 'none',
+            animation: cheeseWithQuestion ? (isQuietMotion() ? 'langFadeIn 0.4s ease both' : 'bQuestionIn 0.5s var(--qq-ease-bounce) 0.1s both') : 'none',
             transform: revealed ? 'scale(1)' : 'scale(0.985)',
             transformOrigin: 'center',
             transition: 'padding 0.7s var(--qq-ease-smooth), border-color 0.55s ease, min-height 0.7s var(--qq-ease-smooth), transform 0.7s var(--qq-ease-smooth), width 0.7s var(--qq-ease-smooth), min-width 0.7s var(--qq-ease-smooth), max-width 0.7s var(--qq-ease-smooth)',

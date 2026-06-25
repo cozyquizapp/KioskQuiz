@@ -27,6 +27,10 @@ const EYE_COORDS = {
 };
 
 const px = (data, W, x, y) => { x = Math.round(x); y = Math.round(y); const i = (y * W + x) * 4; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
+const medianCol = (samples) => {
+  const ch = [0, 1, 2].map(c => { const v = samples.map(s => s[c]).sort((a, b) => a - b); return v[Math.floor(v.length / 2)] ?? 180; });
+  return `rgb(${ch[0]},${ch[1]},${ch[2]})`;
+};
 
 async function bake(slug, eyes) {
   const open = path.join(DIR, `${slug}.png`);
@@ -35,19 +39,19 @@ async function bake(slug, eyes) {
   const W = info.width;
   let defs = '', parts = '';
   eyes.forEach((e, idx) => {
-    // 3 Punkte an der Aussen-Schläfe, hellsten (= sauberes Fell, kein Schatten) nehmen.
-    const cand = [
-      [e.cx + e.side * e.rx * 1.7, e.cy - e.ry * 0.5],
-      [e.cx + e.side * e.rx * 1.9, e.cy],
-      [e.cx + e.side * e.rx * 1.7, e.cy + e.ry * 0.5],
-    ].map(([x, y]) => px(data, W, x, y)).filter(s => s[3] > 200);
-    cand.sort((a, b) => (b[0] + b[1] + b[2]) - (a[0] + a[1] + a[2]));
-    const m = cand[0] || [200, 150, 120, 255];
-    const fur = `rgb(${m[0]},${m[1]},${m[2]})`;
-    defs += `<filter id="b${idx}" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur stdDeviation="3.5"/></filter>`;
-    parts += `<ellipse cx="${e.cx}" cy="${e.cy}" rx="${e.rx * 1.12}" ry="${e.ry * 1.12}" fill="${fur}" filter="url(#b${idx})"/>`;
-    const lr = e.rx * 0.9;
-    parts += `<path d="M ${e.cx - lr} ${e.cy - 1} Q ${e.cx} ${e.cy + e.ry * 0.75} ${e.cx + lr} ${e.cy - 1}" fill="none" stroke="#3a2a20" stroke-width="${Math.max(5, e.ry * 0.24).toFixed(1)}" stroke-linecap="round"/>`;
+    // Ring aus 12 Punkten knapp AUSSERHALB des Auges (1.35×). Median = lokale
+    // Fellfarbe, robust gegen die dunklen Augen-Schatten (helle UND dunkle Felle).
+    // Pro-Tier-Overrides moeglich: fillScale, lineCurve, lineLift, furShift.
+    const ring = [];
+    for (let a = 0; a < 12; a++) { const ang = a / 12 * Math.PI * 2; ring.push(px(data, W, e.cx + Math.cos(ang) * e.rx * 1.35, e.cy + Math.sin(ang) * e.ry * 1.35)); }
+    const fur = medianCol(ring.filter(s => s[3] > 200));
+    const fs = e.fillScale ?? 1.06;     // Ellipsen-Größe relativ zum Auge
+    const curve = e.lineCurve ?? 0.5;   // ‿-Kurventiefe (0=flach, 1=tief)
+    const lift = e.lineLift ?? 3;       // Linie nach oben versetzen
+    defs += `<filter id="b${idx}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>`;
+    parts += `<ellipse cx="${e.cx}" cy="${e.cy}" rx="${(e.rx * fs).toFixed(1)}" ry="${(e.ry * (fs + 0.02)).toFixed(1)}" fill="${fur}" filter="url(#b${idx})"/>`;
+    const lr = e.rx * 0.85;
+    parts += `<path d="M ${e.cx - lr} ${e.cy - lift} Q ${e.cx} ${e.cy + e.ry * curve} ${e.cx + lr} ${e.cy - lift}" fill="none" stroke="#3a2a20" stroke-width="${Math.max(5, e.ry * 0.22).toFixed(1)}" stroke-linecap="round"/>`;
   });
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480"><defs>${defs}</defs>${parts}</svg>`;
   const out = await sharp(base).composite([{ input: Buffer.from(svg), top: 0, left: 0 }])

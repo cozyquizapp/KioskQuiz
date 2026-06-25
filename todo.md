@@ -89,11 +89,18 @@ Memory `project-theme-skin-system`.
   Laden; `--sum-*`-Var-Rampe + theme-aware `summaryBrand` (Cozy byte-identisch). Offen als
   Polish: Mono-Ästhetik **eckig + Hard-Shadow** (Radius/Schatten noch rund/weich).
 
-**NOCH OFFEN:** (1) ~~Mod-Theme-Picker~~ **erledigt — Skin ist im Setup pickbar** (`room.themeId`
-verdrahtet: Beamer/Team/Summary). (2) **Comeback**-View in Mono noch am Screen begutachten
-(Code wirkt fertig). (3) Summary-Mono-Ästhetik eckig+Hard-Shadow (Polish). (4) **SoftPop +
-Neo-Brutal** noch NICHT am Live-Screen durchgesehen — kommen lt. Wolf **erst wenn Mono perfekt**
-(Mono hat Prio, am ehesten für Corporate). (5) Wolf-Sprechblase im Logo ist oval (vor Änderung fragen).
+**NOCH OFFEN (gegen Code verifiziert 2026-06-25):**
+- **Summary-Mono-Ästhetik eckig + Hard-Shadow** — einziger echter Code-Task hier. Farb-Rampe
+  (`--sum-*` via `isThemed()`) ist drin, aber Form noch rund/weich: `QQSummaryPage.tsx` nutzt
+  **kein** `isQuietMotion()` (noch 43× `borderRadius`). Shape-Tokens analog Beamer nachziehen.
+- **SoftPop + Neo-Brutal** noch NICHT am Live-Screen durchgesehen — kommen lt. Wolf **erst wenn
+  Mono perfekt** (Mono hat Prio, am ehesten für Corporate).
+- **Comeback-View in Mono** — nur noch **Augen-Review** am Screen (Code ist migriert: 56 themed-
+  Tokens in `CozyQuizComebackView.tsx`, kein Code-Task mehr).
+- Wolf-Sprechblase im Logo ist oval (vor Änderung fragen).
+
+Verifiziert **erledigt** (raus): ~~Mod-Theme-Picker~~ (Skin im Setup pickbar, `room.themeId`
+verdrahtet Beamer/Team/Summary) · ~~Comeback-Mono-Migration~~ (Code fertig, s.o.).
 
 **Marketing-Seiten (2026-06-25, LIVE):** `/about` (A4-One-Pager, PNG/PDF-Download via
 html2canvas+jsPDF) + `/trailer` (9:16 IG-Trailer). Doku: Memory `project-marketing-pages`.

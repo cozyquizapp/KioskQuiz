@@ -431,9 +431,18 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const maxWins = Math.max(...realLeaderboard.slice(0, 5).map(e => e.wins));
     panels.push({ key: 'leaderboard', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
+        <div style={{
+          fontSize: isThemed() ? 'clamp(30px, 3.6cqw, 50px)' : 'clamp(24px, 2.8cqw, 36px)',
+          fontWeight: 900, color: 'var(--qq-card-text)',
+          marginBottom: isThemed() ? 'clamp(14px,1.8cqh,24px)' : 20,
+          display: 'flex', alignItems: 'center', gap: 14,
+          textTransform: isThemed() ? 'uppercase' : undefined,
+          letterSpacing: isThemed() ? '-0.01em' : undefined,
+          borderBottom: isThemed() ? '3px solid var(--qq-card-text)' : undefined,
+          paddingBottom: isThemed() ? 'clamp(10px,1.2cqh,16px)' : undefined,
+        }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏆"/></span> {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', fontWeight: 700, color: 'var(--qq-text-muted)' }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+          {totalGames > 0 && <span style={{ fontSize: isThemed() ? 'clamp(15px, 1.7cqw, 22px)' : 'clamp(16px, 1.8cqw, 22px)', fontWeight: isThemed() ? 900 : 700, color: 'var(--qq-text-muted)', letterSpacing: isThemed() ? '0.08em' : undefined, marginLeft: isThemed() ? 'auto' : undefined }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
@@ -448,6 +457,58 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           const lastPlayedLabel = entry.lastPlayedAt
             ? new Date(entry.lastPlayedAt).toLocaleDateString(de ? 'de-DE' : 'en-US', { day: '2-digit', month: '2-digit', year: '2-digit' })
             : null;
+          // Skin (Mono etc.): Editorial-Chart — grosse Rang-Ziffer 01/02/03, #1
+          // in einer Lime-Karte (var(--qq-accent-light)) mit Hard-Shadow, Siege
+          // als grosse Zahl rechts statt der Dunkel-Pille. Wolf-Wunsch
+          // 2026-06-25 (Pre-Game in Mono zu „langweilig" + Badge dunkel-auf-dunkel).
+          if (isThemed()) {
+            const isFirst = i === 0;
+            const lastCount = Math.min(realLeaderboard.length, 5);
+            return (
+              <div key={entry.name} style={{
+                display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.5cqw, 20px)',
+                padding: isFirst
+                  ? 'clamp(12px,1.6cqh,18px) clamp(16px,1.8cqw,24px)'
+                  : 'clamp(10px,1.3cqh,15px) clamp(4px,0.6cqw,10px)',
+                marginBottom: isFirst ? 'clamp(12px,1.6cqh,20px)' : 0,
+                background: isFirst ? 'var(--qq-accent-light)' : 'transparent',
+                border: isFirst ? '2px solid var(--qq-card-text)' : 'none',
+                borderRadius: isFirst ? 'var(--qq-card-radius)' : 0,
+                boxShadow: isFirst ? '6px 6px 0 var(--qq-card-text)' : 'none',
+                borderBottom: !isFirst && i < lastCount - 1 ? '1px solid var(--qq-hairline)' : 'none',
+              }}>
+                {/* Editorial-Rangziffer */}
+                <span style={{
+                  fontSize: 'clamp(32px, 4cqw, 56px)', fontWeight: 900, lineHeight: 1,
+                  color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
+                  width: 'clamp(46px, 5cqw, 74px)', flexShrink: 0, letterSpacing: '-0.03em',
+                }}>{String(i + 1).padStart(2, '0')}</span>
+                {avatarId
+                  ? <QQTeamAvatar avatarId={avatarId} size={'clamp(40px, 4.4cqw, 58px)'} style={{ flexShrink: 0 }} />
+                  : <div style={{
+                      width: 'clamp(40px,4.4cqw,58px)', height: 'clamp(40px,4.4cqw,58px)', borderRadius: '50%',
+                      background: 'var(--qq-surface)', border: '2px solid var(--qq-card-text)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                      color: 'var(--qq-card-text)', fontSize: 'clamp(18px,2cqw,26px)', fontWeight: 900,
+                    }}>?</div>}
+                <div style={{ flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
+                  <TeamNameLabel name={entry.name} withTeamPrefix maxLines={2} shrinkAfter={16}
+                    fontSize="clamp(22px, 2.6cqw, 32px)" color={'var(--qq-card-text)'} fontWeight={800} />
+                  {lastPlayedLabel && (
+                    <span style={{
+                      fontSize: 'clamp(12px, 1.3cqw, 16px)', color: 'var(--qq-text-muted)',
+                      fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase',
+                    }}>{de ? `zuletzt ${lastPlayedLabel} · ${entry.games} Spiele` : `last ${lastPlayedLabel} · ${entry.games} games`}</span>
+                  )}
+                </div>
+                {/* Siege als grosse Editorial-Zahl statt Dunkel-Pille */}
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', flexShrink: 0, lineHeight: 0.9, minWidth: 'clamp(48px,5cqw,72px)' }}>
+                  <span style={{ fontSize: 'clamp(34px, 4.4cqw, 62px)', fontWeight: 900, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>{entry.wins}</span>
+                  <span style={{ fontSize: 'clamp(10px, 1.1cqw, 14px)', fontWeight: 900, letterSpacing: '0.14em', color: 'var(--qq-text-muted)', textTransform: 'uppercase', marginTop: 2 }}>{de ? 'Siege' : 'wins'}</span>
+                </div>
+              </div>
+            );
+          }
           return (
           <div key={entry.name} style={{
             display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0',
@@ -661,21 +722,27 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     </div>
   );
 
-  // Dark-Pill im Cozy-Header-Style (warmer card-bg + Akzent-Border)
-  const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => (
+  // Stat-Pille. Cozy: warmer Dark-Card-bg + Akzent-Border. Skin (Mono etc.):
+  // eckiger Hard-Shadow-Chip mit schwarzem Wert (kein Cyan/Pink-Leak, lesbar
+  // auf hellem BG) — passt zum Editorial-Look der Bestenliste.
+  const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => {
+    const themed = isThemed();
+    return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 12,
-      padding: '12px 24px', borderRadius: 'var(--qq-pill-radius)',
-      background: 'linear-gradient(180deg, #241a10, #1a120a)',
-      border: `1.5px solid ${accent}55`,
+      padding: '12px 24px',
+      borderRadius: themed ? 'var(--qq-card-radius)' : 'var(--qq-pill-radius)',
+      background: themed ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, #241a10, #1a120a)',
+      border: themed ? '2px solid var(--qq-card-text)' : `1.5px solid ${accent}55`,
       color: 'var(--qq-card-text)',
       fontSize: 'clamp(22px, 2.4cqw, 32px)', fontWeight: 900,
-      boxShadow: `0 0 18px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
+      boxShadow: themed ? '4px 4px 0 var(--qq-card-text)' : `0 0 18px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
     }}>
-      <span style={{ color: accent, fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1 }}>{value}</span>
+      <span style={{ color: themed ? 'var(--qq-card-text)' : accent, fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1 }}>{value}</span>
       <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
     </span>
-  );
+    );
+  };
 
   // Big-Team-Line: Avatar + Name (farblich akzentuiert)
   // (helpers moved up — see findTeamMeta / teamLine / teamInline above)

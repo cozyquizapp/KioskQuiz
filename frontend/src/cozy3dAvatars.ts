@@ -122,22 +122,16 @@ export function cozy3dLabel(slug: string): string {
 }
 
 // ─── Blinzeln (2026-06-25) ────────────────────────────────────────────────
-// Wolf hat optimierte Augen-auf/zu-Paare geliefert. Mechanik = 2-Frame-Swap:
-//   - Ruhezustand = OFFENE Augen  → /avatars/cozy3d/<slug>.png        (neu optimiert)
-//   - Blink-Frame  = GESCHLOSSENE Augen → /avatars/cozy3d/<slug>-blink.png
-// Beide Frames stammen aus demselben optimierten Set + werden identisch
-// getrimmt (scripts/process-cozy3d-blink.mjs) → kein Versatz beim Blinzeln.
-// Ein Tier blinzelt NUR, wenn sein Slug hier steht (= ein -blink-Asset existiert).
-// Die restlichen Tiere bleiben statisch (offen), bis Wolf die Paare nachliefert.
-// → neue Paare verarbeiten: node scripts/process-cozy3d-blink.mjs "<zip-ordner>"
-//   und die ausgegebene Slug-Liste hier ergaenzen.
+// Mechanik = 2-Frame-Swap: Ruhe = OFFENE Augen (<slug>.png), Blink = GESCHLOSSEN
+// (<slug>-blink.png). Der geschlossene Frame wird NICHT separat gemalt (die
+// ChatGPT-Paare waren oft nicht deckungsgleich), sondern AUS dem offenen Bild
+// erzeugt: scripts/generate-cozy3d-blink.mjs malt die lokale Fellfarbe übers Auge
+// + eine schwarze ‿-Linie → garantiert deckungsgleich.
+// Ein Tier blinzelt NUR, wenn sein Slug hier steht. Aktuell nur die 4 Test-Tiere
+// (Look-Review auf /blinktest). Danach: Augen-Koords aller Tiere in EYE_COORDS
+// (im Skript) eintragen, Skript laufen, Slugs hier ergaenzen.
 export const COZY3D_BLINK_SLUGS = new Set<string>([
-  'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
-  'chamaeleon', 'clownfisch', 'dachs', 'delfin', 'dino', 'dodo', 'drache',
-  'eichhoernchen', 'einhorn', 'elch', 'elefant', 'ente', 'eule', 'faultier',
-  'flamingo', 'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn',
-  'hai', 'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel',
-  'katze', 'koala', 'krabbe', 'kueken', 'kuh',
+  'fuchs', 'eule', 'katze', 'hund',
 ]);
 
 /** Pfad zum GESCHLOSSENE-Augen-PNG (Blink-Frame). */

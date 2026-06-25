@@ -17,6 +17,8 @@
     "@sentry/browser": "^7.57.0",
     "@sentry/react": "^7.57.0",
     "@types/leaflet": "^1.9.21",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^4.2.1",
     "leaflet": "^1.9.4",
     "qrcode.react": "^4.2.0",
     "quiz-monorepo": "file:..",

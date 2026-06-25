@@ -7,7 +7,7 @@
  * Erfundenes. Export: Browser-Druck → „Als PDF speichern" (A4-exakt via @page,
  * print-color-adjust:exact für die Brand-Flächen). Route /about, nicht PIN-gegated.
  */
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { cozy3dSrc } from '../cozy3dAvatars';
 
@@ -68,9 +68,73 @@ const AVATAR_CELLS: Record<string, number> = {
 };
 
 export default function QQAboutPage() {
+  const posterRef = useRef<HTMLDivElement>(null);
+  const [busy, setBusy] = useState<null | 'png' | 'pdf'>(null);
+
   useEffect(() => {
     document.title = 'CozyQuiz — Was ist das?';
   }, []);
+
+  // Poster → Canvas (hochauflösend). Wartet auf geladene Fonts/Bilder, damit
+  // der Export nicht mit Fallback-Schrift oder fehlenden Avataren rendert.
+  async function renderCanvas(): Promise<HTMLCanvasElement> {
+    const node = posterRef.current!;
+    try { if ((document as any).fonts?.ready) await (document as any).fonts.ready; } catch { /* ignore */ }
+    const html2canvas = (await import('html2canvas')).default;
+    return html2canvas(node, {
+      scale: Math.min(3, (window.devicePixelRatio || 1) * 2),
+      backgroundColor: '#ffffff',
+      useCORS: true,
+      logging: false,
+      windowWidth: node.scrollWidth,
+      windowHeight: node.scrollHeight,
+    });
+  }
+
+  function triggerDownload(dataUrl: string, filename: string) {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  async function downloadPng() {
+    if (busy) return;
+    setBusy('png');
+    try {
+      const canvas = await renderCanvas();
+      triggerDownload(canvas.toDataURL('image/png'), 'CozyQuiz.png');
+    } catch (e) {
+      console.error('PNG-Export fehlgeschlagen', e);
+      alert('Ups — der Bild-Export hat nicht geklappt. Bitte nochmal versuchen.');
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function downloadPdf() {
+    if (busy) return;
+    setBusy('pdf');
+    try {
+      const canvas = await renderCanvas();
+      const { jsPDF } = await import('jspdf');
+      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
+      const pageW = 210, pageH = 297;
+      const ratio = canvas.width / canvas.height;
+      let w = pageW, h = pageW / ratio;
+      if (h > pageH) { h = pageH; w = pageH * ratio; }
+      const x = (pageW - w) / 2, y = (pageH - h) / 2;
+      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, w, h, undefined, 'FAST');
+      pdf.save('CozyQuiz.pdf');
+    } catch (e) {
+      console.error('PDF-Export fehlgeschlagen', e);
+      alert('Ups — der PDF-Export hat nicht geklappt. Bitte nochmal versuchen.');
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div style={{ minHeight: '100vh', background: '#e9e7ef', padding: '24px 16px 60px', fontFamily: BODY }}>
@@ -90,23 +154,36 @@ export default function QQAboutPage() {
         maxWidth: '210mm', margin: '0 auto 18px', display: 'flex', gap: 12,
         alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap',
       }}>
-        <div style={{ fontFamily: BODY, color: '#4b475e', fontSize: 14, fontWeight: 700, maxWidth: 520 }}>
-          One-Pager „Was ist CozyQuiz?" · Tipp: <b>„Als PDF speichern"</b> klicken (im Druckdialog Ziel = PDF).
-          Für ein JPG einfach die Seite screenshotten oder das PDF exportieren.
+        <div style={{ fontFamily: BODY, color: '#4b475e', fontSize: 14, fontWeight: 700, maxWidth: 460 }}>
+          One-Pager „Was ist CozyQuiz?" — direkt als Bild oder PDF herunterladen.
         </div>
-        <button
-          onClick={() => window.print()}
-          style={{
-            background: `linear-gradient(135deg, ${PINK_MID}, ${PINK} 55%, ${MAGENTA})`,
-            color: '#fff', border: 'none', borderRadius: 999, padding: '12px 26px',
-            fontFamily: DISPLAY, fontWeight: 800, fontSize: 16, cursor: 'pointer',
-            boxShadow: '0 8px 22px rgba(162,18,71,0.32)', whiteSpace: 'nowrap',
-          }}
-        >📄 Als PDF speichern</button>
+        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+          <button
+            onClick={downloadPdf}
+            disabled={!!busy}
+            style={{
+              background: `linear-gradient(135deg, ${PINK_MID}, ${PINK} 55%, ${MAGENTA})`,
+              color: '#fff', border: 'none', borderRadius: 999, padding: '12px 24px',
+              fontFamily: DISPLAY, fontWeight: 800, fontSize: 15.5,
+              cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'pdf' ? 0.55 : 1,
+              boxShadow: '0 8px 22px rgba(162,18,71,0.32)', whiteSpace: 'nowrap',
+            }}
+          >{busy === 'pdf' ? '⏳ Erstelle PDF…' : '📄 PDF herunterladen'}</button>
+          <button
+            onClick={downloadPng}
+            disabled={!!busy}
+            style={{
+              background: '#fff', color: MAGENTA, border: `2px solid ${PINK}`, borderRadius: 999,
+              padding: '12px 24px', fontFamily: DISPLAY, fontWeight: 800, fontSize: 15.5,
+              cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'png' ? 0.55 : 1,
+              whiteSpace: 'nowrap',
+            }}
+          >{busy === 'png' ? '⏳ Erstelle Bild…' : '🖼️ Als Bild (PNG)'}</button>
+        </div>
       </div>
 
       {/* A4-Poster */}
-      <div className="qq-about-page" style={{
+      <div ref={posterRef} className="qq-about-page" style={{
         width: '210mm', minHeight: '297mm', margin: '0 auto', background: '#fff',
         boxShadow: '0 16px 50px rgba(30,42,90,0.22)', overflow: 'hidden',
         display: 'flex', flexDirection: 'column', color: INK,

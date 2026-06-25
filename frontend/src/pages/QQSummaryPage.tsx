@@ -12,6 +12,7 @@ import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { setActiveThemeId, isThemed } from '../qqTheme';
 
 type Lang = 'de' | 'en';
 
@@ -40,6 +41,8 @@ type Summary = {
   phases: number;
   /** 2026-05-04 — gewaehltes Avatar-Theme zum Zeitpunkt des Spiels (Phase 2). */
   avatarSetId?: string;
+  /** 2026-06-25 — Bühnen-Skin (Mono/SoftPop/Neo/cozy) zum Spielzeitpunkt. */
+  themeId?: string;
   /** 2026-05-07 — Server-gewuerfelte Slot-Emojis bei 'all'-Set (8 Eintraege). */
   avatarSetEmojis?: string[] | null;
   teams: SummaryTeam[];
@@ -66,18 +69,32 @@ type Summary = {
 // QQBeamerPage.getBrandColors. Sorgt dafür dass Summary die richtige Pink-
 // Variante (Standard #EC4899 vs ESC #FF2D7B) zieht statt Amber/Gold.
 function summaryBrand(eurovisionMode?: boolean) {
+  // 2026-06-25 (Wolf): Skin-aware. Bei aktivem Skin (Mono etc.) ziehen die
+  // Akzente auf die --qq-Tokens → Pink wird z.B. Mono-Schwarz. Cozy (kein
+  // Skin) bleibt byte-identisch zu den heutigen Werten.
+  if (isThemed()) {
+    return {
+      pink:     'var(--qq-accent)',
+      pinkRgb:  'var(--qq-accent-rgb)',
+      pinkSoft: 'var(--qq-accent-soft)',
+      magenta:  'var(--qq-accent)',
+      themed:   true,
+    };
+  }
   return eurovisionMode
     ? {
         pink:     '#FF2D7B',
         pinkRgb:  '255,45,123',
         pinkSoft: '#fde6f0',
         magenta:  '#C084FC',
+        themed:   false,
       }
     : {
         pink:     QQ_COLORS.brandPink,
         pinkRgb:  '236,72,153',
         pinkSoft: QQ_COLORS.brandPinkSoft,
         magenta:  '#A21247',
+        themed:   false,
       };
 }
 
@@ -300,7 +317,7 @@ function SummaryStammCode({ teamId, lang, brand }: {
           {copied ? (lang === 'de' ? '✓ Kopiert' : '✓ Copied') : (lang === 'de' ? '📋 Kopieren' : '📋 Copy')}
         </button>
       </div>
-      <div style={{ fontSize: 12, color: QQ_COLORS.slate400, lineHeight: 1.4 }}>
+      <div style={{ fontSize: 12, color: 'var(--sum-muted)', lineHeight: 1.4 }}>
         {lang === 'de'
           ? 'Beim nächsten Quiz auf /team eingeben — deine Sieg-Streak zählt mit.'
           : 'Enter on /team next time — your win streak carries over.'}
@@ -349,8 +366,8 @@ function ShareButton({ team, place, lang, brand }: {
         padding: '10px 18px', borderRadius: 999,
         background: `linear-gradient(135deg, ${brand.pink}, ${brand.magenta})`,
         color: '#fff',
-        border: '1.5px solid rgba(255,255,255,0.18)',
-        boxShadow: `0 6px 18px rgba(${brand.pinkRgb},0.45), inset 0 1px 0 rgba(255,255,255,0.22)`,
+        border: '1.5px solid var(--sum-line-2)',
+        boxShadow: `0 6px 18px rgba(${brand.pinkRgb},0.45), inset 0 1px 0 var(--sum-line-2)`,
         fontFamily: 'inherit', fontWeight: 900, fontSize: 13,
         cursor: 'pointer', letterSpacing: 0.3,
       }}
@@ -422,6 +439,9 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         }
         const s: Summary = await sRes.json();
         if (!cancelled) {
+          // Bühnen-Skin anwenden (analog Beamer): schreibt die --qq-Tokens auf
+          // :root + macht isThemed() wahr → Summary trägt dieselbe Lackierung.
+          setActiveThemeId(s.themeId ?? 'cozy');
           setSummary(s);
           // 2026-05-11 (Wolf-Idee): wenn auf diesem Phone ein qq_teamId im
           // localStorage liegt UND dieses Team ist in der Summary, direkt zur
@@ -448,7 +468,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   }, [roomCode, gameId, mockSummary]);
 
   // Eurovision-Mode-aware Brand-Tokens (Audit-P2). Default null bei Loading.
-  const brand = useMemo(() => summaryBrand(summary?.eurovisionMode), [summary?.eurovisionMode]);
+  const brand = useMemo(() => summaryBrand(summary?.eurovisionMode), [summary?.eurovisionMode, summary?.themeId]);
   const error = errorKey ? tr(errorKey, lang) : null;
 
   const selectedTeam = useMemo(
@@ -473,7 +493,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         <div style={{ textAlign: 'center', padding: '40px 20px' }}>
           <div style={{ fontSize: 48, marginBottom: 16 }}>🤷</div>
           <h2 style={{ margin: 0, marginBottom: 8 }}>{tr('notFoundTitle', lang)}</h2>
-          <p style={{ color: QQ_COLORS.slate400 }}>{error ?? tr('unknownError', lang)}</p>
+          <p style={{ color: 'var(--sum-muted)' }}>{error ?? tr('unknownError', lang)}</p>
         </div>
       </Shell>
     );
@@ -507,7 +527,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
                   }}>
                   <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
                   <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
-                  <div style={{ fontSize: 11, color: QQ_COLORS.slate300 }}>
+                  <div style={{ fontSize: 11, color: 'var(--sum-muted)' }}>
                     {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {lang === 'de' ? 'Pkt' : 'pts'}
                   </div>
                 </button>
@@ -548,12 +568,12 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         <div style={{ fontSize: 13, fontWeight: 900, color: brand.pink, letterSpacing: 0.3, textTransform: 'uppercase' }}>
           {placeLabel}
         </div>
-        <div style={{ fontSize: 28, fontWeight: 900, color: '#f8fafc' }}>{selectedTeam.name}</div>
+        <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--sum-text)' }}>{selectedTeam.name}</div>
         <ShareButton team={selectedTeam} place={place} lang={lang} brand={brand} />
         <button onClick={() => setSelectedTeamId(null)}
           style={{
-            marginTop: 6, fontSize: 12, color: QQ_COLORS.slate400, background: 'transparent',
-            border: '1px solid rgba(255,255,255,0.15)', borderRadius: 999,
+            marginTop: 6, fontSize: 12, color: 'var(--sum-muted)', background: 'transparent',
+            border: '1px solid var(--sum-line-2)', borderRadius: 999,
             padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit',
           }}>{tr('pickOther', lang)}</button>
       </div>
@@ -598,10 +618,10 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
             <div style={{ fontSize: 11, color: brand.pink, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 }}>
               {tr('funnyAnswer', lang)}
             </div>
-            <div style={{ fontSize: 14, color: '#f8fafc', fontWeight: 700, marginBottom: 4 }}>
+            <div style={{ fontSize: 14, color: 'var(--sum-text)', fontWeight: 700, marginBottom: 4 }}>
               „{myFunny.text}"
             </div>
-            <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
+            <div style={{ fontSize: 11, color: 'var(--sum-muted)' }}>
               {tr('question', lang)}: {myFunny.questionText}
             </div>
           </div>
@@ -616,13 +636,13 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
               <div key={t.id} style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '8px 12px', borderRadius: 10,
-                background: isMe ? t.color + '22' : 'rgba(255,255,255,0.03)',
-                border: `1px solid ${isMe ? t.color : 'rgba(255,255,255,0.06)'}`,
+                background: isMe ? t.color + '22' : 'var(--sum-soft)',
+                border: `1px solid ${isMe ? t.color : 'var(--sum-card-2)'}`,
               }}>
-                <span style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, width: 22 }}>{i + 1}.</span>
+                <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--sum-muted)', width: 22 }}>{i + 1}.</span>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : QQ_COLORS.slate200 }}>{teamDisplayName(t.name, true)}</span>
-                <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : 'var(--sum-text)' }}>{teamDisplayName(t.name, true)}</span>
+                <span style={{ fontSize: 12, color: 'var(--sum-muted)' }}>
                   {t.largestConnected} <span style={{ fontSize: 10 }}>{lang === 'de' ? 'Pkt' : 'pts'}</span>
                 </span>
               </div>
@@ -657,19 +677,38 @@ function Shell({ children, lang, onLang, brand }: {
   onLang: (l: Lang) => void;
   brand: ReturnType<typeof summaryBrand>;
 }) {
+  // 2026-06-25 (Wolf): Skin-Migration. Lokale --sum-*-Rampe — Cozy-Default ist
+  // exakt der bisherige Wert (byte-identisch), bei aktivem Skin ziehen sie auf
+  // die --qq-Tokens. So flippen Text/Flächen/Linien überall ohne `brand` in
+  // jede Helper-Funktion zu fädeln (Literale wurden auf var(--sum-*) umgestellt).
+  const themed = brand.themed;
+  const sumVars: Record<string, string> = {
+    '--sum-text':    themed ? 'var(--qq-text)'        : 'var(--sum-text)',
+    '--sum-muted':   themed ? 'var(--qq-text-muted)'  : 'var(--sum-muted)',
+    '--sum-dim':     themed ? 'var(--qq-text-muted)'  : 'var(--sum-dim)',
+    '--sum-card':    themed ? 'var(--qq-card-bg)'     : 'var(--sum-card)',
+    '--sum-card-2':  themed ? 'var(--qq-surface)'     : 'var(--sum-card-2)',
+    '--sum-soft':    themed ? 'var(--qq-surface)'     : 'var(--sum-soft)',
+    '--sum-line':    themed ? 'var(--qq-hairline)'    : 'var(--sum-line)',
+    '--sum-line-2':  themed ? 'var(--qq-hairline)'    : 'var(--sum-line-2)',
+    '--sum-on-accent': themed ? '#ffffff'             : '#0A0814',
+  };
   return (
     <div style={{
       minHeight: '100vh',
+      ...sumVars,
       // 2026-05-08 (Aurora-Vivid-Refresh): Brand-Pink-Mesh statt blau-grauem
       // Slate. 2026-05-10: brand.pinkRgb statt hardcoded fuer ESC-Awareness.
-      background:
-        `radial-gradient(ellipse at 22% 28%, rgba(${brand.pinkRgb},0.20) 0%, transparent 55%),` +
-        'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.24) 0%, transparent 55%),' +
-        'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
-      color: QQ_COLORS.slate200,
-      fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+      // Skin: heller Bühnen-BG aus dem Token (Mono = cremeweiß).
+      background: themed
+        ? 'var(--qq-bg)'
+        : `radial-gradient(ellipse at 22% 28%, rgba(${brand.pinkRgb},0.20) 0%, transparent 55%),` +
+          'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.24) 0%, transparent 55%),' +
+          'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
+      color: 'var(--sum-text)',
+      fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       padding: '20px 16px 40px',
-    }}>
+    } as React.CSSProperties}>
       <div style={{ maxWidth: 520, margin: '0 auto' }}>
         <TopBar lang={lang} onLang={onLang} brand={brand} />
         {children}
@@ -703,7 +742,7 @@ function TopBar({ lang, onLang, brand }: {
           fontSize: 12, fontWeight: 900, fontFamily: 'inherit',
           letterSpacing: 0.3,
           boxShadow: '0 4px 14px rgba(220,39,67,0.45), 0 0 18px rgba(188,24,136,0.4)',
-          border: '1px solid rgba(255,255,255,0.18)',
+          border: '1px solid var(--sum-line-2)',
         }}
         title="@cozywolf.events auf Instagram"
       >
@@ -712,7 +751,7 @@ function TopBar({ lang, onLang, brand }: {
       </a>
       <div style={{
         display: 'inline-flex', borderRadius: 999,
-        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
+        background: 'var(--sum-card)', border: '1px solid var(--sum-line)',
         padding: 2,
       }}>
         {(['de', 'en'] as const).map(l => {
@@ -723,7 +762,7 @@ function TopBar({ lang, onLang, brand }: {
                 padding: '4px 12px', borderRadius: 999,
                 fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
                 background: active ? brand.pink : 'transparent',
-                color: active ? '#0A0814' : QQ_COLORS.slate400,
+                color: active ? 'var(--sum-on-accent)' : 'var(--sum-muted)',
                 border: 'none', cursor: 'pointer',
                 letterSpacing: 0.4,
               }}>{l.toUpperCase()}</button>
@@ -753,16 +792,18 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand }: {
     <div style={{
       position: 'relative',
       padding: '32px 20px 26px', borderRadius: 22, marginBottom: 18, textAlign: 'center',
-      background: `radial-gradient(ellipse at top, ${winner.color}26 0%, rgba(15,23,42,0) 65%), linear-gradient(180deg, rgba(15,23,42,0.4), rgba(15,23,42,0))`,
+      background: brand.themed
+        ? `radial-gradient(ellipse at top, ${winner.color}22 0%, transparent 65%), var(--sum-card)`
+        : `radial-gradient(ellipse at top, ${winner.color}26 0%, rgba(15,23,42,0) 65%), linear-gradient(180deg, rgba(15,23,42,0.4), rgba(15,23,42,0))`,
       border: `1.5px solid ${winner.color}55`,
-      boxShadow: `0 12px 32px ${winner.color}33, inset 0 1px 0 rgba(255,255,255,0.04)`,
+      boxShadow: `0 12px 32px ${winner.color}33, inset 0 1px 0 var(--sum-card)`,
       overflow: 'hidden',
     }}>
       {/* Eyebrow */}
-      <div style={{ fontSize: 11, letterSpacing: 0.3, color: QQ_COLORS.slate400, fontWeight: 800, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 11, letterSpacing: 0.3, color: 'var(--sum-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
         CozyQuiz · {date}
       </div>
-      <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate300, marginTop: 2 }}>{draftTitle}</div>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--sum-muted)', marginTop: 2 }}>{draftTitle}</div>
 
       {/* Sieger-Hero */}
       <div style={{ position: 'relative', display: 'inline-block', marginTop: 18 }}>
@@ -803,7 +844,7 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand }: {
       }}>
         {winner.name}
       </div>
-      <div style={{ marginTop: 4, fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+      <div style={{ marginTop: 4, fontSize: 12, color: 'var(--sum-muted)', fontWeight: 700 }}>
         {winner.largestConnected} {lang === 'de' ? 'Punkte · größtes Gebiet' : 'pts · largest area'}
       </div>
 
@@ -833,10 +874,10 @@ function Hero({ draftTitle, winner, playedAt, lang, brand }: {
       background: `radial-gradient(ellipse at top, rgba(${brand.pinkRgb},0.15), transparent 70%)`,
       border: `1px solid rgba(${brand.pinkRgb},0.20)`,
     }}>
-      <div style={{ fontSize: 11, letterSpacing: 0.3, color: QQ_COLORS.slate400, fontWeight: 800, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: 11, letterSpacing: 0.3, color: 'var(--sum-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
         CozyQuiz · {date}
       </div>
-      <div style={{ fontSize: 22, fontWeight: 900, color: '#f8fafc', marginTop: 4 }}>{draftTitle}</div>
+      <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--sum-text)', marginTop: 4 }}>{draftTitle}</div>
       {winner && (
         <div style={{ marginTop: 10, fontSize: 14, color: brand.pink, fontWeight: 800 }}>
           <QQEmojiIcon emoji="🏆"/> {tr('champion', lang)}: {winner}
@@ -863,8 +904,8 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
     <Section title={lang === 'de' ? 'Endbrett' : 'Final board'}>
       <style>{`
         @keyframes summaryBoardPulse {
-          0%, 100% { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18); }
-          50%      { box-shadow: inset 0 0 0 1px rgba(255,255,255,0.18), 0 0 12px var(--c-color); }
+          0%, 100% { box-shadow: inset 0 0 0 1px var(--sum-line-2); }
+          50%      { box-shadow: inset 0 0 0 1px var(--sum-line-2), 0 0 12px var(--c-color); }
         }
       `}</style>
       <div style={{
@@ -882,8 +923,8 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
               return (
                 <div key={`${r}-${c}`} style={{
                   width: cellSize, height: cellSize, borderRadius: 4,
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
+                  background: 'var(--sum-card)',
+                  border: '1px solid var(--sum-line)',
                 }} />
               );
             }
@@ -910,7 +951,7 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
         {/* Mini-Legende: Top-Team highlighten */}
         {topTeam && (
           <div style={{
-            fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700,
+            fontSize: 12, color: 'var(--sum-muted)', fontWeight: 700,
             display: 'flex', alignItems: 'center', gap: 6,
           }}>
             <span style={{
@@ -928,7 +969,7 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <section style={{ marginBottom: 20 }}>
-      <h3 style={{ fontSize: 13, color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: 0.3, margin: '0 0 10px', fontWeight: 900 }}>
+      <h3 style={{ fontSize: 13, color: 'var(--sum-muted)', textTransform: 'uppercase', letterSpacing: 0.3, margin: '0 0 10px', fontWeight: 900 }}>
         {title}
       </h3>
       {children}
@@ -1009,12 +1050,12 @@ function Stat({ label, value, suffix, accent, staggerIdx = 0 }: { label: string;
   const animated = useCountUp(value, 720, staggerIdx * 80);
   return (
     <div style={{
-      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+      background: 'var(--sum-soft)', border: '1px solid var(--sum-card-2)',
       borderRadius: 12, padding: '10px 12px',
     }}>
-      <div style={{ fontSize: 10, fontWeight: 800, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
+      <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--sum-dim)', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
-        {animated} {suffix && <span style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>{suffix}</span>}
+        {animated} {suffix && <span style={{ fontSize: 11, color: 'var(--sum-muted)', fontWeight: 700 }}>{suffix}</span>}
       </div>
     </div>
   );
@@ -1122,7 +1163,7 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
                 <span style={{
                   position: 'absolute', top: -8, right: -8,
                   padding: '2px 8px', borderRadius: 999,
-                  background: brand.pink, color: '#0A0814',
+                  background: brand.pink, color: 'var(--sum-on-accent)',
                   fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
                   boxShadow: `0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(${brand.pinkRgb},0.6)`,
                 }}>{lang === 'de' ? 'DAS SEID IHR' : "THAT'S YOU"}</span>
@@ -1145,13 +1186,13 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
                     color={title.winner.color}
                     fontWeight={900}
                   />
-                  <span style={{ fontSize: 10, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                  <span style={{ fontSize: 10, color: 'var(--sum-muted)', fontWeight: 700 }}>
                     {lang === 'de' ? title.descDe : title.descEn}
                   </span>
                 </div>
               </div>
               <div style={{
-                fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate200,
+                fontSize: 13, fontWeight: 900, color: 'var(--sum-text)',
                 padding: '3px 8px', borderRadius: 6,
                 background: 'rgba(0,0,0,0.3)',
                 alignSelf: 'flex-start',
@@ -1174,20 +1215,20 @@ function Loading({ lang }: { lang: Lang }) {
       {/* Hero-Skeleton */}
       <div style={{
         padding: '24px 20px', borderRadius: 20, marginBottom: 18, textAlign: 'center',
-        background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)',
+        background: 'var(--sum-card)', border: '1px solid var(--sum-card-2)',
         animation: 'qqSkPulse 1.4s ease-in-out infinite',
       }}>
-        <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'rgba(255,255,255,0.06)', margin: '0 auto 12px' }} />
-        <div style={{ width: '40%', height: 16, borderRadius: 6, background: 'rgba(255,255,255,0.06)', margin: '6px auto' }} />
-        <div style={{ width: '60%', height: 24, borderRadius: 6, background: 'rgba(255,255,255,0.08)', margin: '6px auto' }} />
+        <div style={{ width: 120, height: 120, borderRadius: '50%', background: 'var(--sum-card-2)', margin: '0 auto 12px' }} />
+        <div style={{ width: '40%', height: 16, borderRadius: 6, background: 'var(--sum-card-2)', margin: '6px auto' }} />
+        <div style={{ width: '60%', height: 24, borderRadius: 6, background: 'var(--sum-line)', margin: '6px auto' }} />
       </div>
       {/* Stats-Skeleton */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 18 }}>
         {[0, 1, 2, 3, 4, 5].map(i => (
           <div key={i} style={{
             height: 64, borderRadius: 12,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'var(--sum-card)',
+            border: '1px solid var(--sum-card-2)',
             animation: `qqSkPulse 1.4s ease-in-out ${i * 0.1}s infinite`,
           }} />
         ))}
@@ -1330,7 +1371,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           <div style={{ fontSize: 15, fontWeight: 900, color: QQ_COLORS.green300, marginBottom: 4 }}>
             {tr('thanksTitle', lang)}
           </div>
-          <div style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>
+          <div style={{ fontSize: 12, color: 'var(--sum-muted)' }}>
             {type === 'bug' ? tr('thanksBugSub', lang) : tr('thanksGenSub', lang)}
           </div>
         </div>
@@ -1341,7 +1382,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
   return (
     <Section title={tr('feedbackTitle', lang)}>
       <div style={{
-        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)',
+        background: 'var(--sum-soft)', border: '1px solid var(--sum-card-2)',
         borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 14,
       }}>
 
@@ -1355,9 +1396,9 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                 <button key={opt.id} type="button" onClick={() => setType(opt.id)}
                   style={{
                     padding: '10px 4px', borderRadius: 10,
-                    background: active ? `${opt.color}22` : 'rgba(255,255,255,0.04)',
-                    border: `1.5px solid ${active ? opt.color : 'rgba(255,255,255,0.08)'}`,
-                    color: active ? opt.color : QQ_COLORS.slate300,
+                    background: active ? `${opt.color}22` : 'var(--sum-card)',
+                    border: `1.5px solid ${active ? opt.color : 'var(--sum-line)'}`,
+                    color: active ? opt.color : 'var(--sum-muted)',
                     fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
                     cursor: 'pointer',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -1386,9 +1427,9 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                     onClick={() => setPlayAgain(active ? null : opt.id)}
                     style={{
                       padding: '8px 4px', borderRadius: 10,
-                      background: active ? 'rgba(251,191,36,0.15)' : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${active ? 'rgba(251,191,36,0.5)' : 'rgba(255,255,255,0.08)'}`,
-                      color: active ? QQ_COLORS.amber400 : QQ_COLORS.slate300,
+                      background: active ? 'rgba(251,191,36,0.15)' : 'var(--sum-card)',
+                      border: `1.5px solid ${active ? 'rgba(251,191,36,0.5)' : 'var(--sum-line)'}`,
+                      color: active ? QQ_COLORS.amber400 : 'var(--sum-muted)',
                       fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -1415,9 +1456,9 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                     style={{
                       flex: '1 1 calc(33% - 4px)', minWidth: 0,
                       padding: '8px 6px', borderRadius: 999,
-                      background: active ? 'rgba(99,102,241,0.18)' : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${active ? 'rgba(99,102,241,0.55)' : 'rgba(255,255,255,0.08)'}`,
-                      color: active ? '#a5b4fc' : QQ_COLORS.slate300,
+                      background: active ? 'rgba(99,102,241,0.18)' : 'var(--sum-card)',
+                      border: `1.5px solid ${active ? 'rgba(99,102,241,0.55)' : 'var(--sum-line)'}`,
+                      color: active ? '#a5b4fc' : 'var(--sum-muted)',
                       fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
                       cursor: 'pointer',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
@@ -1448,9 +1489,9 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                     onClick={() => setLengthFeel(active ? null : opt.id)}
                     style={{
                       padding: '8px 4px', borderRadius: 10,
-                      background: active ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-                      border: `1.5px solid ${active ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.08)'}`,
-                      color: active ? QQ_COLORS.green300 : QQ_COLORS.slate300,
+                      background: active ? 'rgba(34,197,94,0.12)' : 'var(--sum-card)',
+                      border: `1.5px solid ${active ? 'rgba(34,197,94,0.45)' : 'var(--sum-line)'}`,
+                      color: active ? QQ_COLORS.green300 : 'var(--sum-muted)',
                       fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
                       cursor: 'pointer',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
@@ -1473,8 +1514,8 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                 <button key={n} type="button" onClick={() => setRating(rating === n ? null : n)}
                   style={{
                     flex: 1, padding: '10px 0', borderRadius: 8,
-                    background: rating && rating >= n ? QQ_COLORS.amber400 : 'rgba(255,255,255,0.06)',
-                    color: rating && rating >= n ? QQ_COLORS.slate800 : QQ_COLORS.slate400,
+                    background: rating && rating >= n ? QQ_COLORS.amber400 : 'var(--sum-card-2)',
+                    color: rating && rating >= n ? QQ_COLORS.slate800 : 'var(--sum-muted)',
                     border: 'none', cursor: 'pointer', fontSize: 20, fontFamily: 'inherit',
                   }}>★</button>
               ))}
@@ -1485,13 +1526,13 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
         {/* 6. Überraschung (nicht bei Bug) */}
         {type !== 'bug' && (
           <div>
-            <Caption>{tr('fbSurprise', lang)} <span style={{ color: QQ_COLORS.slate500, fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
+            <Caption>{tr('fbSurprise', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
             <input value={surprise} onChange={e => setSurprise(e.target.value)} maxLength={500}
               placeholder={tr('fbSurprisePh', lang)}
               style={{
                 width: '100%', boxSizing: 'border-box',
-                background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)',
-                borderRadius: 8, padding: '8px 10px', color: QQ_COLORS.slate200,
+                background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
+                borderRadius: 8, padding: '8px 10px', color: 'var(--sum-text)',
                 fontSize: 13, fontFamily: 'inherit',
               }} />
           </div>
@@ -1504,21 +1545,21 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
             placeholder={textPlaceholder}
             style={{
               width: '100%', boxSizing: 'border-box',
-              background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8, padding: '10px 12px', color: QQ_COLORS.slate200,
+              background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
+              borderRadius: 8, padding: '10px 12px', color: 'var(--sum-text)',
               fontSize: 14, fontFamily: 'inherit', resize: 'vertical',
             }} />
         </div>
 
         {/* 8. Kontakt + Intent */}
         <div>
-          <Caption>{tr('fbContact', lang)} <span style={{ color: QQ_COLORS.slate500, fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
+          <Caption>{tr('fbContact', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
           <input value={contact} onChange={e => setContact(e.target.value)} maxLength={200}
             placeholder={tr('fbContactPh', lang)}
             style={{
               width: '100%', boxSizing: 'border-box',
-              background: 'rgba(0,0,0,0.25)', border: '1px solid rgba(255,255,255,0.1)',
-              borderRadius: 8, padding: '8px 10px', color: QQ_COLORS.slate200,
+              background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
+              borderRadius: 8, padding: '8px 10px', color: 'var(--sum-text)',
               fontSize: 13, fontFamily: 'inherit',
             }} />
           {contact.trim() && (
@@ -1533,9 +1574,9 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                   <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)}
                     style={{
                       padding: '5px 10px', borderRadius: 999,
-                      background: active ? 'rgba(236,72,153,0.18)' : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${active ? 'rgba(236,72,153,0.5)' : 'rgba(255,255,255,0.1)'}`,
-                      color: active ? '#f0abfc' : QQ_COLORS.slate400,
+                      background: active ? 'rgba(236,72,153,0.18)' : 'var(--sum-card)',
+                      border: `1px solid ${active ? 'rgba(236,72,153,0.5)' : 'var(--sum-line-2)'}`,
+                      color: active ? '#f0abfc' : 'var(--sum-muted)',
                       fontFamily: 'inherit', fontWeight: 700, fontSize: 11,
                       cursor: 'pointer',
                     }}>
@@ -1566,7 +1607,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
 
 function Caption({ children }: { children: React.ReactNode }) {
   return (
-    <div style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate400, letterSpacing: 0.3,
+    <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--sum-muted)', letterSpacing: 0.3,
       textTransform: 'uppercase', marginBottom: 6 }}>
       {children}
     </div>
@@ -1590,24 +1631,24 @@ function UpcomingEvents({ events, lang, brand }: {
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
                 padding: '10px 14px', borderRadius: 12,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.08)',
-                color: QQ_COLORS.slate200, textDecoration: 'none',
+                background: 'var(--sum-card)',
+                border: '1px solid var(--sum-line)',
+                color: 'var(--sum-text)', textDecoration: 'none',
               }}>
               <div style={{
                 width: 52, textAlign: 'center',
                 fontSize: 12, fontWeight: 900, color: brand.pink,
                 lineHeight: 1.2,
-              }}>{d}{e.time && <div style={{ fontSize: 10, color: QQ_COLORS.slate400, marginTop: 2 }}>{e.time}</div>}</div>
+              }}>{d}{e.time && <div style={{ fontSize: 10, color: 'var(--sum-muted)', marginTop: 2 }}>{e.time}</div>}</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 900 }}>{e.location}</div>
                 {(e.city || e.note) && (
-                  <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
+                  <div style={{ fontSize: 11, color: 'var(--sum-muted)' }}>
                     {[e.city, e.note].filter(Boolean).join(' · ')}
                   </div>
                 )}
               </div>
-              {e.link && <div style={{ fontSize: 16, color: QQ_COLORS.slate400 }}>→</div>}
+              {e.link && <div style={{ fontSize: 16, color: 'var(--sum-muted)' }}>→</div>}
             </a>
           );
         })}
@@ -1630,11 +1671,11 @@ function PartnerCTA({ lang, brand }: {
         <div style={{ fontSize: 15, fontWeight: 900, color: brand.pink, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
           {tr('partnerHead', lang)}
         </div>
-        <div style={{ fontSize: 13, color: QQ_COLORS.slate300, lineHeight: 1.5, marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: 'var(--sum-muted)', lineHeight: 1.5, marginBottom: 12 }}>
           {tr('partnerBody', lang)}
         </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
-          <a href="mailto:hallo@cozywolf.de" style={ctaButton(brand.pink, '#0A0814')}>
+          <a href="mailto:hallo@cozywolf.de" style={ctaButton(brand.pink, 'var(--sum-on-accent)')}>
             {tr('partnerMail', lang)}
           </a>
           <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={ctaButton(`rgba(${brand.pinkRgb},0.15)`, brand.pink, `rgba(${brand.pinkRgb},0.40)`)}>
@@ -1661,14 +1702,14 @@ function ctaButton(bg: string, color: string, border?: string): React.CSSPropert
 }
 
 function Footer() {
-  const linkStyle: React.CSSProperties = { color: QQ_COLORS.slate400, textDecoration: 'none' };
+  const linkStyle: React.CSSProperties = { color: 'var(--sum-muted)', textDecoration: 'none' };
   return (
     <div style={{
       marginTop: 28, paddingTop: 18,
-      borderTop: '1px solid rgba(255,255,255,0.06)',
-      textAlign: 'center', fontSize: 11, color: QQ_COLORS.slate500,
+      borderTop: '1px solid var(--sum-card-2)',
+      textAlign: 'center', fontSize: 11, color: 'var(--sum-dim)',
     }}>
-      <div>CozyQuiz by <b style={{ color: QQ_COLORS.slate400 }}>cozywolf</b></div>
+      <div>CozyQuiz by <b style={{ color: 'var(--sum-muted)' }}>cozywolf</b></div>
       <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
         <a href="https://play.cozyquiz.app" style={linkStyle}>play.cozyquiz.app</a>
         <span style={{ opacity: 0.4 }}>·</span>

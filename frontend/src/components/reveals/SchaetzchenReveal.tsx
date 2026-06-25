@@ -211,7 +211,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           {winner && (
             <div style={{
               flex: '1 1 0', minHeight: 0,
-              borderRadius: 24,
+              borderRadius: themed ? 'var(--qq-card-radius)' : 24,
               border: `3px solid ${winner.team.color}`,
               background: `linear-gradient(180deg, ${winner.team.color}26, ${winner.team.color}08)`,
               boxShadow: `0 0 44px ${winner.team.color}44, inset 0 0 26px ${winner.team.color}11`,
@@ -255,7 +255,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 }} />
                 <div style={{
                   padding: 'clamp(6px, 0.9cqh, 10px) clamp(14px, 1.8cqw, 22px)',
-                  borderRadius: 16,
+                  borderRadius: themed ? 'var(--qq-card-radius)' : 16,
                   background: `${winner.team.color}22`,
                   border: `2px solid ${winner.team.color}66`,
                   boxShadow: `0 0 18px ${winner.team.color}33`,

@@ -14,6 +14,7 @@
  */
 import { useEffect, useState } from 'react';
 import { playFieldPlaced, playSteal, playStapelStamp, playWoodKnock } from '../utils/sounds';
+import { isThemed } from '../qqTheme';
 
 export type ActionCardData = {
   count: number;
@@ -91,10 +92,10 @@ function FrontFace({
           }
         : { flex: 1, width: '100%' }),
       boxSizing: 'border-box',
-      borderRadius: 24,
-      background: `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
-      border: `3px solid ${c.accent}aa`,
-      boxShadow: `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
+      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+      background: isThemed() ? 'var(--qq-card-bg)' : `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
+      border: isThemed() ? 'var(--qq-card-border)' : `3px solid ${c.accent}aa`,
+      boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'space-between',
       padding: 'clamp(20px, 2.4cqh, 36px) clamp(20px, 2cqw, 32px)',
@@ -108,7 +109,7 @@ function FrontFace({
       }}>
         <div style={{
           fontSize: iconSize, lineHeight: 1,
-          filter: `drop-shadow(0 6px 18px ${c.accent}55)`,
+          filter: isThemed() ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.16))' : `drop-shadow(0 6px 18px ${c.accent}55)`,
         }}>{iconNode}</div>
         <div style={{
           display: 'flex', alignItems: 'baseline',
@@ -118,17 +119,17 @@ function FrontFace({
         }}>
           <span style={{
             fontSize: 'clamp(36px, 4.2cqw, 64px)',
-            color: c.accent, fontVariantNumeric: 'tabular-nums',
-            textShadow: `0 0 22px ${c.accent}88`,
+            color: isThemed() ? 'var(--qq-accent)' : c.accent, fontVariantNumeric: 'tabular-nums',
+            textShadow: isThemed() ? 'none' : `0 0 22px ${c.accent}88`,
           }}>{c.count}x</span>
           <span style={{
             fontSize: 'clamp(28px, 3.2cqw, 48px)',
-            color: '#F1F5F9', letterSpacing: '0.01em',
+            color: isThemed() ? 'var(--qq-card-text)' : '#F1F5F9', letterSpacing: '0.01em',
           }}>{c.label}</span>
         </div>
         <div style={{
           fontSize: 'clamp(13px, 1.4cqw, 19px)',
-          fontWeight: 700, color: '#cbd5e1',
+          fontWeight: 700, color: isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1',
           textAlign: 'center', lineHeight: 1.25, opacity: 0.85,
         }}>{lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}</div>
       </div>
@@ -142,13 +143,13 @@ function FrontFace({
       }}>
         {c.limit && (
           <div style={{
-            padding: '5px 14px', borderRadius: 999,
-            background: 'rgba(15,23,42,0.6)',
-            border: `1.5px solid ${c.accent}55`,
+            padding: '5px 14px', borderRadius: 'var(--qq-pill-radius)',
+            background: isThemed() ? 'var(--qq-surface)' : 'rgba(15,23,42,0.6)',
+            border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${c.accent}55`,
             fontSize: 'clamp(11px, 1.15cqw, 15px)',
-            fontWeight: 900, color: '#e2e8f0',
+            fontWeight: 900, color: isThemed() ? 'var(--qq-card-text)' : '#e2e8f0',
             whiteSpace: 'nowrap',
-            boxShadow: `0 2px 8px ${c.accent}22`,
+            boxShadow: isThemed() ? 'none' : `0 2px 8px ${c.accent}22`,
           }}>{c.limit}</div>
         )}
       </div>
@@ -164,13 +165,13 @@ function BackFace({ lang }: { lang: 'de' | 'en' }) {
       boxSizing: 'border-box',
       backfaceVisibility: 'hidden',
       WebkitBackfaceVisibility: 'hidden',
-      borderRadius: 24,
+      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
       background:
         'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
         'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
         'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-      border: '3px solid rgba(236,72,153,0.65)',
-      boxShadow: '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+      border: isThemed() ? 'var(--qq-card-border)' : '3px solid rgba(236,72,153,0.65)',
+      boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       gap: 14,

@@ -686,7 +686,7 @@ export default function QQProgressTree({
                   style={{
                     width: cozyGameDotSize,
                     height: cozyGameDotSize,
-                    borderRadius: '50%',
+                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.round(cozyGameDotSize * 0.55),
                     background: isCozyGameActive
@@ -725,7 +725,7 @@ export default function QQProgressTree({
                   style={{
                     width: biddingDotSize,
                     height: biddingDotSize,
-                    borderRadius: '50%',
+                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.round(biddingDotSize * 0.55),
                     // 2026-05-13 (Wolf-Bug 'pinke Umrandung dauerhaft auf Bieten'):
@@ -775,7 +775,7 @@ export default function QQProgressTree({
                       style={{
                         width: dotSize,
                         height: dotSize,
-                        borderRadius: '50%',
+                        borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
@@ -855,7 +855,7 @@ export default function QQProgressTree({
                   style={{
                     width: finaleSize,
                     height: finaleSize,
-                    borderRadius: '50%',
+                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.round(finaleSize * 0.55),
                     background: isFinaleActive
@@ -911,7 +911,7 @@ export default function QQProgressTree({
                   style={{
                     width: '100%',
                     height: '100%',
-                    borderRadius: '50%',
+                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                     background: 'transparent',
                     border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
                     boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,

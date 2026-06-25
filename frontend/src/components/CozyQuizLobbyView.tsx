@@ -332,7 +332,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           display: 'flex', alignItems: 'center', gap: 'clamp(24px, 3cqw, 44px)',
           maxWidth: '90cqw',
         }}>
-          <QQTeamAvatar avatarId={welcomedTeam.avatarId} teamEmoji={welcomedTeam.emoji} size={'clamp(120px, 14cqw, 200px)'} square style={{
+          <QQTeamAvatar avatarId={welcomedTeam.avatarId} teamEmoji={welcomedTeam.emoji} size={'clamp(120px, 14cqw, 200px)'} style={{
             boxShadow: `0 0 32px ${welcomedTeam.color}aa`,
             flexShrink: 0,
           }} />
@@ -723,7 +723,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     minWidth: 0,
                     position: 'relative',
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} square style={{ flexShrink: 0 }} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
                     {isFreshJoin && (
                       <span aria-hidden style={{
                         position: 'absolute', top: -16, right: -10,

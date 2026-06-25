@@ -24,9 +24,10 @@ type Props = {
   style?: CSSProperties;
   className?: string;
   title?: string;
-  /** wenn true → Avatar folgt der Skin-Form: cozy bleibt rund (byte-identisch),
-   *  in Themes (Mono/SoftPop/Neo) wird der Disc-Radius = var(--qq-card-radius)
-   *  (Mono eckig, SoftPop rund). Für „eckige Avatare im jeweiligen Design". */
+  /** Avatare squaren in Themes (Mono/SoftPop/Neo) GENERELL automatisch auf
+   *  var(--qq-card-radius) — `square` wird dafür NICHT gebraucht. Diese Prop
+   *  erzwingt zusätzlich eckige Ecken auch im cozy-Default (radius 0); aktuell
+   *  ungenutzt, bleibt für Sonderfälle erhalten. */
   square?: boolean;
   /** Sprache für automatisch generierte title/alt-Texte (Tier-Name). */
   lang?: 'de' | 'en';
@@ -97,7 +98,7 @@ export function QQTeamAvatar({
     height: size,
     flexShrink: 0,
     display: 'block',
-    borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
+    borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
     ...style,
   };
 
@@ -199,7 +200,7 @@ function PngAvatar({
 
   const inner: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',
-    borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
+    borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
     display: 'block', pointerEvents: 'none',
   };
 
@@ -374,7 +375,7 @@ function ImageAvatar({
         // overflow sichtbar laesst das Motiv ungeschnitten; die farbige Disc +
         // Ring bleiben rund (border-radius wirkt weiter auf BG/Border).
         overflow: square ? 'hidden' : 'visible',
-        borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
       }}
     >
       {failed ? (
@@ -439,7 +440,7 @@ function EmojiAvatar({
         fontSize: emojiFontSize,
         lineHeight: 1,
         userSelect: 'none',
-        borderRadius: square ? (isThemed() ? 'var(--qq-card-radius)' : '50%') : '50%',
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
       }}
     >
       <span style={{

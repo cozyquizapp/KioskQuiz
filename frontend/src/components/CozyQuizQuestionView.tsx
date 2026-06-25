@@ -1939,7 +1939,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       filter: answered ? 'none' : 'grayscale(0.4)',
                       transition: 'all 0.45s ease',
                     }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} square />
+                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
                     </div>
                   );
                 })}

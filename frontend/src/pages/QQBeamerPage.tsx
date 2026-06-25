@@ -3569,7 +3569,7 @@ export function MuchoOptionsReveal({
             <div style={{
               flex: 1,
               position: 'relative', overflow: 'hidden',
-              borderRadius: 24, padding: '24px 28px',
+              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: '24px 28px',
               // 2026-05-09 (Wolf 'Mini-Sprung in Reihe wenn Sieger-Card kommt'):
               // Border einheitlich 3px ausgeführt (vorher 2/3/2) + box-sizing
               // border-box, sonst wuchs die korrekte Card 2px höher und alle
@@ -3607,7 +3607,7 @@ export function MuchoOptionsReveal({
               )}
               <div style={{
                 position: 'relative', zIndex: 1,
-                width: 56, height: 56, borderRadius: 16,
+                width: 56, height: 56, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                 background: isCorrect ? QQ_COLORS.green500 : isWrong ? '#374151' : optColor,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,

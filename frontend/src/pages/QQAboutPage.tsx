@@ -9,6 +9,7 @@
  */
 import { useEffect } from 'react';
 import type { CSSProperties } from 'react';
+import { cozy3dSrc } from '../cozy3dAvatars';
 
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
@@ -44,7 +45,16 @@ const SELLING = [
   { emoji: '🐺', text: 'Moderiert & locker: kein Googeln, kein Vorwissen-Stress — Spaß vor Punkten.' },
 ];
 
+// 5 Teams mit echten cozy3d-Game-Avataren + Brett-Farben (wie im Spiel).
+const TEAMS = [
+  { slug: 'pinguin', color: '#3B82F6' },
+  { slug: 'fuchs',   color: PINK },
+  { slug: 'koala',   color: '#22C55E' },
+  { slug: 'eule',    color: '#A855F7' },
+  { slug: 'baer',    color: '#F59E0B' },
+];
 // Kleines 5×5-Beispiel-Brett (das echte Spielbrett ist 5×5) als Deko-Illustration.
+// Zahl = Team-Index (Gebiet/Farbe).
 const MINI_GRID = [
   [0, 0, 1, 1, 2],
   [0, 0, 1, 2, 2],
@@ -52,7 +62,10 @@ const MINI_GRID = [
   [3, 3, 3, 4, 2],
   [3, 3, 4, 4, 4],
 ];
-const GRID_COLORS = ['#3B82F6', PINK, '#22C55E', '#A855F7', '#F59E0B'];
+// Auf diesen Zellen sitzt der Team-Avatar (je ein „Anker" pro Gebiet).
+const AVATAR_CELLS: Record<string, number> = {
+  '1-1': 0, '1-2': 1, '1-4': 2, '3-1': 3, '4-3': 4,
+};
 
 export default function QQAboutPage() {
   useEffect(() => {
@@ -127,8 +140,26 @@ export default function QQAboutPage() {
           </div>
         </header>
 
+        {/* ── Team-Avatar-Leiste (die echten Game-Tiere + Farben) ── */}
+        <div style={{
+          display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16,
+          padding: '16px 30px 2px',
+        }}>
+          {TEAMS.map(t => (
+            <div key={t.slug} style={{
+              width: 50, height: 50, borderRadius: '50%', flexShrink: 0,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.25), rgba(255,255,255,0) 50%), ${t.color}`,
+              boxShadow: `0 4px 12px ${t.color}55, inset 0 -6px 12px rgba(0,0,0,0.22)`,
+            }}>
+              <img src={cozy3dSrc(t.slug)} alt="" draggable={false}
+                style={{ width: '86%', height: '86%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }} />
+            </div>
+          ))}
+        </div>
+
         {/* ── Hook ── */}
-        <section style={{ padding: '22px 30px 6px' }}>
+        <section style={{ padding: '14px 30px 6px' }}>
           <p style={{ margin: 0, fontSize: 16.5, lineHeight: 1.5, color: '#33304a', fontWeight: 600 }}>
             Ein <b>moderiertes Quiz für Teams</b> — gespielt auf der großen Leinwand, beantwortet per Handy.
             Aber kein gewöhnliches Pub-Quiz: <b style={{ color: MAGENTA }}>Jede richtige Antwort erobert euch ein Feld
@@ -157,19 +188,38 @@ export default function QQAboutPage() {
             </div>
           </div>
 
-          {/* Mini-Brett-Illustration */}
-          <div style={{ flexShrink: 0, width: 196, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, paddingTop: 6 }}>
+          {/* Mini-Brett-Illustration mit echten Game-Avataren + Brett-Farben */}
+          <div style={{ flexShrink: 0, width: 214, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, paddingTop: 4 }}>
             <div style={{
-              display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 4,
-              padding: 10, background: '#f4f3f8', borderRadius: 16, border: '2px solid #e4e1ee',
+              display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5,
+              padding: 11, background: '#f4f3f8', borderRadius: 18,
+              border: '2px solid #e4e1ee', boxShadow: '0 6px 18px rgba(30,42,90,0.10)',
             }}>
-              {MINI_GRID.flat().map((c, i) => (
-                <div key={i} style={{
-                  width: 30, height: 30, borderRadius: 7,
-                  background: `linear-gradient(135deg, ${GRID_COLORS[c]}, ${GRID_COLORS[c]}cc)`,
-                  boxShadow: `inset 0 0 0 1.5px ${GRID_COLORS[c]}`,
-                }} />
-              ))}
+              {MINI_GRID.flat().map((region, i) => {
+                const r = Math.floor(i / 5), c = i % 5;
+                const team = TEAMS[region];
+                const avIdx = AVATAR_CELLS[`${r}-${c}`];
+                const hasAv = avIdx !== undefined;
+                return (
+                  <div key={i} style={{
+                    width: 36, height: 36, borderRadius: 9, position: 'relative',
+                    background: `linear-gradient(135deg, ${team.color}, ${team.color}cc)`,
+                    boxShadow: hasAv
+                      ? `inset 0 0 0 2.5px #fff, 0 3px 9px ${team.color}77`
+                      : `inset 0 0 0 1.5px ${team.color}`,
+                    zIndex: hasAv ? 1 : undefined,
+                  }}>
+                    {hasAv && (
+                      <img src={cozy3dSrc(TEAMS[avIdx].slug)} alt="" draggable={false}
+                        style={{
+                          position: 'absolute', inset: 0, width: '100%', height: '100%',
+                          objectFit: 'contain', padding: 2,
+                          filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.38))',
+                        }} />
+                    )}
+                  </div>
+                );
+              })}
             </div>
             <div style={{ fontSize: 12.5, fontWeight: 800, color: '#6b6786', textAlign: 'center', lineHeight: 1.3 }}>
               5×5-Spielbrett — jedes Team<br />kämpft um sein Gebiet

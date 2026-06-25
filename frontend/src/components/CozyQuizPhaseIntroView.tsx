@@ -71,6 +71,12 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
   const wolfLeft = displayIdx * (DOT + GAP) + DOT / 2;
   const progressWidth = displayIdx === 0 ? 0 : displayIdx * (DOT + GAP);
 
+  // Skin: Discs bleiben RUND (Wolf-Entscheid 2026-06-25 — Editorial-Kontrast wie
+  // die Avatare), aber die Kategorie-Farbe (catColor) der Linie/des Wolf-Rings
+  // weicht im Skin dem neutralen Akzent-Token (Mono: schwarz statt lila).
+  const themed = isThemed();
+  const lineCol = themed ? 'var(--qq-accent)' : catColor;
+
   return (
     <div style={{
       position: 'relative', width: totalWidth, height: WOLF + 4,
@@ -89,9 +95,9 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
           width: progressWidth, height: 3,
           // 2026-05-04 (Wolf): Strich nimmt aktuelle Kategorie-Farbe (catColor)
           // statt immer Gold. Auf Cat-Seiten matcht er damit den Wolf-Avatar.
-          background: `linear-gradient(90deg, ${catColor}, ${catColor})`,
+          background: themed ? lineCol : `linear-gradient(90deg, ${catColor}, ${catColor})`,
           transform: 'translateY(-50%)', borderRadius: 2,
-          boxShadow: `0 0 10px ${catColor}99`,
+          boxShadow: themed ? '0 0 10px rgba(var(--qq-accent-rgb),0.4)' : `0 0 10px ${catColor}99`,
           transition: 'width 540ms var(--qq-ease-smooth), background 400ms ease, box-shadow 400ms ease',
         }} />
       )}
@@ -142,8 +148,10 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
         position: 'absolute', top: '50%', left: wolfLeft,
         width: WOLF, height: WOLF, borderRadius: '50%',
         background: 'transparent',
-        border: `3px solid ${catColor}`,
-        boxShadow: `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
+        border: themed ? '3px solid var(--qq-accent)' : `3px solid ${catColor}`,
+        boxShadow: themed
+          ? '0 0 0 4px rgba(var(--qq-accent-rgb),0.18), 0 6px 14px rgba(var(--qq-accent-rgb),0.28)'
+          : `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
         transform: 'translate(-50%, -50%)',
         transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
         zIndex: 2,
@@ -1080,9 +1088,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {/* Category pill — zwei Zeilen: Runde + Fragen-Fortschritt */}
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '8px 22px', borderRadius: 16,
-                background: `${catColor}15`, border: `1.5px solid ${catColor}33`,
-                color: `${catColor}aa`, letterSpacing: '0.04em',
+                padding: '8px 22px',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                background: isThemed() ? 'var(--qq-surface)' : `${catColor}15`,
+                border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${catColor}33`,
+                color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}aa`, letterSpacing: '0.04em',
                 marginBottom: 16,
                 animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
                 position: 'relative', zIndex: 5,
@@ -1135,13 +1145,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(56px, 10cqw, 160px)', fontWeight: 900, lineHeight: 1,
-                color: catColor,
-                textShadow:
-                  `0 0 14px ${catColor}99, ` +
-                  `0 0 40px ${catColor}55, ` +
-                  `0 0 96px ${catColor}33, ` +
-                  `0 5px 0 rgba(0,0,0,0.45), ` +
-                  `0 14px 28px rgba(0,0,0,0.55)`,
+                color: isThemed() ? 'var(--qq-title)' : catColor,
+                textShadow: isThemed()
+                  ? 'none'
+                  : `0 0 14px ${catColor}99, ` +
+                    `0 0 40px ${catColor}55, ` +
+                    `0 0 96px ${catColor}33, ` +
+                    `0 5px 0 rgba(0,0,0,0.45), ` +
+                    `0 14px 28px rgba(0,0,0,0.55)`,
                 marginTop: 12,
                 animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.3s both',
                 position: 'relative', zIndex: 5,
@@ -1174,7 +1185,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   <div key={i} style={{
                     fontSize: i === 0 ? 'clamp(26px, 3.5cqw, 48px)' : 'clamp(20px, 2.5cqw, 36px)',
                     fontWeight: i === 0 ? 800 : 600,
-                    color: i === 0 ? '#F1F5F9' : `${catColor}99`,
+                    color: isThemed()
+                      ? (i === 0 ? 'var(--qq-text)' : 'var(--qq-text-muted)')
+                      : (i === 0 ? '#F1F5F9' : `${catColor}99`),
                     textAlign: 'center',
                     animation: `phasePop 0.6s var(--qq-ease-bounce) ${0.5 + i * 0.15}s both`,
                   }}>
@@ -1267,13 +1280,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             }}>
               <div style={{
                 fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
-                color: `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>
                 {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
               </div>
               <div style={{
                 fontSize: 'clamp(22px, 2.8cqw, 36px)', fontWeight: 900,
-                color: catColor, letterSpacing: '0.1em',
+                color: isThemed() ? 'var(--qq-title)' : catColor, letterSpacing: '0.1em',
               }}>
                 {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
               </div>
@@ -1308,8 +1321,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 fontFamily: fontFam,
                 fontSize: 'clamp(68px, 13cqw, 200px)', fontWeight: 900, lineHeight: 1,
-                color: catColor,
-                textShadow: `0 0 80px ${catColor}44`,
+                color: isThemed() ? 'var(--qq-title)' : catColor,
+                textShadow: isThemed() ? 'none' : `0 0 80px ${catColor}44`,
                 marginTop: 12,
                 animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.4s both',
                 position: 'relative', zIndex: 5,
@@ -1335,7 +1348,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {catExplain && (
                 <div style={{
                   fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 700,
-                  color: `${catColor}cc`,
+                  color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}cc`,
                   letterSpacing: '0.02em',
                   marginTop: 14,
                   animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.65s both',

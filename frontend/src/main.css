@@ -4482,9 +4482,17 @@ body[data-cinematic="true"] *[style*="cfloat,"] {
 /* Quiet Motion (Studio Mono): editoriale Ruhe — die dekorative per-Letter-
    Dauer-Wave auf Hero-Titeln (qqCatNameWave) wird komplett entfernt, der Text
    sitzt still an seiner Endposition. Gesetzt via data-quiet-motion am <html>
-   in applyThemeVars(). SoftPop/Neo behalten die verspielte cozy-Motion. */
+   in applyThemeVars(). SoftPop/Neo behalten die verspielte cozy-Motion.
+   2026-06-25 (Wolf 'Regelslides ohne sichtbare Überschrift'): viele Hero-Titel
+   kombinieren eine ENTRANCE-Animation (qqRulesTitleLetter/phasePop, `both`-Fill
+   aus inline `opacity:0`) MIT der Dauer-Wave im selben animation-Shorthand. Der
+   Substring-Match killt beide → die Entrance, die die Sichtbarkeit herstellt,
+   fällt mit weg → Titel bleibt auf opacity:0 = unsichtbar. Darum hier zusätzlich
+   `opacity: 1` erzwingen: Elemente mit Dauer-Wave sollen ohnehin sichtbar sein,
+   nur die Bewegung entfällt (genau die gewünschte Mono-Ruhe). */
 html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   animation: none !important;
+  opacity: 1 !important;
 }
 
 /* 2026-05-13 (Wolf 'rechteckige farbige Schatten hinter Texten weg, global'):

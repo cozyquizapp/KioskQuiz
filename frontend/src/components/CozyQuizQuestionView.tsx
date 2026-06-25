@@ -1310,19 +1310,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position:absolute (NICHT fixed) — fixed wird durch BeamerFrame-Transform-Stacking-Context geclippt. */}
       {isCheese && !hasImg && (
         <div style={{
+          // Mono/Themes (Wolf 2026-06-25): wo KEIN Bild liegt, eine solide weiße
+          // Card-Fläche statt dunkel-lila — damit Timer + Frage (eigene weiße
+          // Cards) auf einheitlichem Weiß sitzen statt auf dunklem Placeholder.
           position: 'absolute', inset: 0, zIndex: 1,
-          background: 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0A0814',
+          background: isThemed()
+            ? 'var(--qq-card-bg)'
+            : 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0A0814',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', gap: 14,
           pointerEvents: 'none',
         }}>
           <div style={{
-            fontSize: 'clamp(120px, 18cqw, 240px)', opacity: 0.18,
+            fontSize: 'clamp(120px, 18cqw, 240px)', opacity: isThemed() ? 0.12 : 0.18,
             animation: 'cfloat 4s ease-in-out infinite',
           }}>📸</div>
           <div style={{
             fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-            color: QQ_COLORS.violet400, letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.55,
+            color: isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.violet400,
+            letterSpacing: '0.1em', textTransform: 'uppercase', opacity: isThemed() ? 0.8 : 0.55,
           }}>
             {lang === 'de' ? 'Bild fehlt — Frage trotzdem spielbar' : 'No image — question still playable'}
           </div>
@@ -1782,9 +1788,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         </div>
                         <span style={{
                           padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
-                          background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
+                          background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)'),
                           border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
-                          color: isFastest ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
+                          // Mono: kein brandPink (Pink-Leak) — Akzent-Token; non-fastest dunkler Text auf hellem Chip.
+                          color: isFastest ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
                           whiteSpace: 'nowrap',
@@ -1920,14 +1927,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 {/* Mini-Progress-Text "X/Y TEAMS" zwischen Card-Unterkante und
                     Avataren — nur sichtbar solange nicht alle dran sind. */}
                 {!s.allAnswered && (
-                  <div style={{
-                    width: '100%', textAlign: 'center',
-                    fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
-                    color: 'rgba(226,232,240,0.85)',
-                    letterSpacing: '0.04em', textTransform: 'uppercase',
-                    marginBottom: -2,
-                  }}>
-                    {`${s.answers.length}/${s.teams.length} Teams`}
+                  <div style={{ width: '100%', textAlign: 'center', marginBottom: -2 }}>
+                    <span style={{
+                      display: 'inline-block',
+                      fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
+                      letterSpacing: '0.04em', textTransform: 'uppercase',
+                      // Mono/Themes (Wolf 2026-06-25 'zahl der teams grau auf weiß'):
+                      // als solider Chip rendern → lesbar auf weißer Card UND auf Bild.
+                      // Cozy bleibt der nackte helle Text auf dunklem Foto.
+                      ...(isThemed()
+                        ? {
+                            padding: '2px 12px', borderRadius: 'var(--qq-pill-radius)',
+                            background: 'var(--qq-card-bg)', border: '1.5px solid var(--qq-hairline)',
+                            color: 'var(--qq-card-text)',
+                          }
+                        : { color: 'rgba(226,232,240,0.85)' }),
+                    }}>
+                      {`${s.answers.length}/${s.teams.length} Teams`}
+                    </span>
                   </div>
                 )}
                 {s.teams.map(tm => {

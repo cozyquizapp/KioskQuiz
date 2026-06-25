@@ -24,10 +24,10 @@ type Props = {
   style?: CSSProperties;
   className?: string;
   title?: string;
-  /** Avatare squaren in Themes (Mono/SoftPop/Neo) GENERELL automatisch auf
-   *  var(--qq-card-radius) — `square` wird dafür NICHT gebraucht. Diese Prop
-   *  erzwingt zusätzlich eckige Ecken auch im cozy-Default (radius 0); aktuell
-   *  ungenutzt, bleibt für Sonderfälle erhalten. */
+  /** Avatare sind IMMER rund (auch in Themes) — die cozy3d-3D-Portraits sind für
+   *  die runde Disc komponiert und sehen so am besten aus; runde Portraits in
+   *  eckigen Skin-Cards = bewusster Editorial-Kontrast (Wolf-Entscheidung
+   *  2026-06-25). `square` erzwingt eckige Ecken (radius 0); aktuell ungenutzt. */
   square?: boolean;
   /** Sprache für automatisch generierte title/alt-Texte (Tier-Name). */
   lang?: 'de' | 'en';
@@ -98,7 +98,7 @@ export function QQTeamAvatar({
     height: size,
     flexShrink: 0,
     display: 'block',
-    borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
+    borderRadius: square ? 0 : '50%',
     ...style,
   };
 
@@ -200,7 +200,7 @@ function PngAvatar({
 
   const inner: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',
-    borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
+    borderRadius: square ? 0 : '50%',
     display: 'block', pointerEvents: 'none',
   };
 
@@ -375,7 +375,7 @@ function ImageAvatar({
         // overflow sichtbar laesst das Motiv ungeschnitten; die farbige Disc +
         // Ring bleiben rund (border-radius wirkt weiter auf BG/Border).
         overflow: square ? 'hidden' : 'visible',
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
+        borderRadius: square ? 0 : '50%',
       }}
     >
       {failed ? (
@@ -440,7 +440,7 @@ function EmojiAvatar({
         fontSize: emojiFontSize,
         lineHeight: 1,
         userSelect: 'none',
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : (square ? 0 : '50%'),
+        borderRadius: square ? 0 : '50%',
       }}
     >
       <span style={{

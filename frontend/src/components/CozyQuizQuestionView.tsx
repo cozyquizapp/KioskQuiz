@@ -1939,7 +1939,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   return (
                     <div key={tm.id} style={{
                       position: 'relative',
-                      padding: 5, borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
+                      padding: 5, borderRadius: '50%',
                       display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                       flexShrink: 0,
                       background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
@@ -3526,7 +3526,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           filter: answered ? 'none' : 'grayscale(0.5)',
                         }}>
                           <div style={{
-                            borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
+                            borderRadius: '50%',
                             boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
                             transition: 'box-shadow 0.45s ease',
                             display: 'inline-flex',

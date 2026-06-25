@@ -98,6 +98,15 @@ function summaryBrand(eurovisionMode?: boolean) {
       };
 }
 
+// 2026-06-25 (Wolf): Shape-Tokens für Skins. Bei aktivem Skin ziehen Card-Radius,
+// Pill-Radius und Card-Shadow auf die --qq-Tokens (Mono = eckig 4px + Hard-Shadow
+// 6px 6px 0). Cozy/kein Skin behält EXAKT den bisherigen Literal-Wert (byte-
+// identisch). Avatare (borderRadius '50%') werden bewusst NICHT angefasst —
+// bleiben rund (Editorial-Kontrast, Wolf-Entscheid, s. todo.md Theme-Block).
+const sumR    = (cozy: number | string) => (isThemed() ? 'var(--qq-card-radius)' : cozy);
+const sumPill = (cozy: number | string) => (isThemed() ? 'var(--qq-pill-radius)' : cozy);
+const sumSh   = (cozy: string) => (isThemed() ? 'var(--qq-card-shadow)' : cozy);
+
 type UpcomingEvent = {
   id: string;
   date: string;
@@ -281,7 +290,7 @@ function SummaryStammCode({ teamId, lang, brand }: {
   }
   return (
     <div style={{
-      marginBottom: 18, padding: '14px 16px', borderRadius: 14,
+      marginBottom: 18, padding: '14px 16px', borderRadius: sumR(14),
       background: `rgba(${brand.pinkRgb},0.08)`,
       border: `1px solid rgba(${brand.pinkRgb},0.30)`,
       textAlign: 'center',
@@ -306,7 +315,7 @@ function SummaryStammCode({ teamId, lang, brand }: {
         <button
           onClick={copy}
           style={{
-            padding: '6px 12px', borderRadius: 8,
+            padding: '6px 12px', borderRadius: sumPill(8),
             border: `1.5px solid ${copied ? QQ_COLORS.green500 : brand.pink}66`,
             background: copied ? 'rgba(34,197,94,0.15)' : `rgba(${brand.pinkRgb},0.10)`,
             color: copied ? QQ_COLORS.green300 : brand.pinkSoft,
@@ -363,7 +372,7 @@ function ShareButton({ team, place, lang, brand }: {
       onClick={share}
       style={{
         marginTop: 8,
-        padding: '10px 18px', borderRadius: 999,
+        padding: '10px 18px', borderRadius: sumPill(999),
         background: `linear-gradient(135deg, ${brand.pink}, ${brand.magenta})`,
         color: '#fff',
         border: '1.5px solid var(--sum-line-2)',
@@ -520,7 +529,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
             {ranking.map((t, i) => (
                 <button key={t.id} onClick={() => setSelectedTeamId(t.id)}
                   style={{
-                    padding: 14, borderRadius: 16,
+                    padding: 14, borderRadius: sumR(16),
                     background: t.color + '22', border: `2px solid ${t.color}`,
                     cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
@@ -554,8 +563,9 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
     <Shell lang={lang} onLang={changeLang} brand={brand}>
       <div style={{
         background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
-        padding: '28px 20px 22px', borderRadius: 20, marginBottom: 18,
+        padding: '28px 20px 22px', borderRadius: sumR(20), marginBottom: 18,
         border: `1px solid ${selectedTeam.color}55`,
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : undefined,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center',
       }}>
         <div style={{
@@ -573,7 +583,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         <button onClick={() => setSelectedTeamId(null)}
           style={{
             marginTop: 6, fontSize: 12, color: 'var(--sum-muted)', background: 'transparent',
-            border: '1px solid var(--sum-line-2)', borderRadius: 999,
+            border: '1px solid var(--sum-line-2)', borderRadius: sumPill(999),
             padding: '4px 12px', cursor: 'pointer', fontFamily: 'inherit',
           }}>{tr('pickOther', lang)}</button>
       </div>
@@ -613,7 +623,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           <div style={{
             background: `rgba(${brand.pinkRgb},0.08)`,
             border: `1px solid rgba(${brand.pinkRgb},0.30)`,
-            borderRadius: 12, padding: '12px 14px',
+            borderRadius: sumR(12), padding: '12px 14px',
           }}>
             <div style={{ fontSize: 11, color: brand.pink, fontWeight: 800, textTransform: 'uppercase', letterSpacing: 0.3, marginBottom: 4 }}>
               {tr('funnyAnswer', lang)}
@@ -635,7 +645,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
             return (
               <div key={t.id} style={{
                 display: 'flex', alignItems: 'center', gap: 10,
-                padding: '8px 12px', borderRadius: 10,
+                padding: '8px 12px', borderRadius: sumPill(10),
                 background: isMe ? t.color + '22' : 'var(--sum-soft)',
                 border: `1px solid ${isMe ? t.color : 'var(--sum-card-2)'}`,
               }}>
@@ -736,7 +746,7 @@ function TopBar({ lang, onLang, brand }: {
         rel="noreferrer"
         style={{
           display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '6px 14px', borderRadius: 999,
+          padding: '6px 14px', borderRadius: sumPill(999),
           background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
           color: '#fff', textDecoration: 'none',
           fontSize: 12, fontWeight: 900, fontFamily: 'inherit',
@@ -750,7 +760,7 @@ function TopBar({ lang, onLang, brand }: {
         @cozywolf.events
       </a>
       <div style={{
-        display: 'inline-flex', borderRadius: 999,
+        display: 'inline-flex', borderRadius: sumPill(999),
         background: 'var(--sum-card)', border: '1px solid var(--sum-line)',
         padding: 2,
       }}>
@@ -759,7 +769,7 @@ function TopBar({ lang, onLang, brand }: {
           return (
             <button key={l} type="button" onClick={() => onLang(l)}
               style={{
-                padding: '4px 12px', borderRadius: 999,
+                padding: '4px 12px', borderRadius: sumPill(999),
                 fontSize: 11, fontWeight: 900, fontFamily: 'inherit',
                 background: active ? brand.pink : 'transparent',
                 color: active ? 'var(--sum-on-accent)' : 'var(--sum-muted)',
@@ -791,12 +801,12 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand }: {
   return (
     <div style={{
       position: 'relative',
-      padding: '32px 20px 26px', borderRadius: 22, marginBottom: 18, textAlign: 'center',
+      padding: '32px 20px 26px', borderRadius: sumR(22), marginBottom: 18, textAlign: 'center',
       background: brand.themed
         ? `radial-gradient(ellipse at top, ${winner.color}22 0%, transparent 65%), var(--sum-card)`
         : `radial-gradient(ellipse at top, ${winner.color}26 0%, rgba(15,23,42,0) 65%), linear-gradient(180deg, rgba(15,23,42,0.4), rgba(15,23,42,0))`,
       border: `1.5px solid ${winner.color}55`,
-      boxShadow: `0 12px 32px ${winner.color}33, inset 0 1px 0 var(--sum-card)`,
+      boxShadow: sumSh(`0 12px 32px ${winner.color}33, inset 0 1px 0 var(--sum-card)`),
       overflow: 'hidden',
     }}>
       {/* Eyebrow */}
@@ -870,9 +880,10 @@ function Hero({ draftTitle, winner, playedAt, lang, brand }: {
   const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   return (
     <div style={{
-      padding: '24px 20px', borderRadius: 20, marginBottom: 18, textAlign: 'center',
+      padding: '24px 20px', borderRadius: sumR(20), marginBottom: 18, textAlign: 'center',
       background: `radial-gradient(ellipse at top, rgba(${brand.pinkRgb},0.15), transparent 70%)`,
       border: `1px solid rgba(${brand.pinkRgb},0.20)`,
+      boxShadow: isThemed() ? 'var(--qq-card-shadow)' : undefined,
     }}>
       <div style={{ fontSize: 11, letterSpacing: 0.3, color: 'var(--sum-muted)', fontWeight: 800, textTransform: 'uppercase' }}>
         CozyQuiz · {date}
@@ -1051,7 +1062,7 @@ function Stat({ label, value, suffix, accent, staggerIdx = 0 }: { label: string;
   return (
     <div style={{
       background: 'var(--sum-soft)', border: '1px solid var(--sum-card-2)',
-      borderRadius: 12, padding: '10px 12px',
+      borderRadius: sumR(12), padding: '10px 12px',
     }}>
       <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--sum-dim)', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
       <div style={{ fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
@@ -1152,17 +1163,17 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
           const isMe = title.winner.id === selectedId;
           return (
             <div key={`${title.titleDe}-${i}`} style={{
-              padding: '12px 14px', borderRadius: 14,
+              padding: '12px 14px', borderRadius: sumR(14),
               background: `linear-gradient(135deg, ${title.accent}22, ${title.accent}08)`,
               border: `1.5px solid ${title.accent}66`,
-              boxShadow: `0 4px 14px ${title.accent}22`,
+              boxShadow: sumSh(`0 4px 14px ${title.accent}22`),
               display: 'flex', flexDirection: 'column', gap: 8,
               position: 'relative',
             }}>
               {isMe && (
                 <span style={{
                   position: 'absolute', top: -8, right: -8,
-                  padding: '2px 8px', borderRadius: 999,
+                  padding: '2px 8px', borderRadius: sumPill(999),
                   background: brand.pink, color: 'var(--sum-on-accent)',
                   fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
                   boxShadow: `0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(${brand.pinkRgb},0.6)`,
@@ -1214,7 +1225,7 @@ function Loading({ lang }: { lang: Lang }) {
     <>
       {/* Hero-Skeleton */}
       <div style={{
-        padding: '24px 20px', borderRadius: 20, marginBottom: 18, textAlign: 'center',
+        padding: '24px 20px', borderRadius: sumR(20), marginBottom: 18, textAlign: 'center',
         background: 'var(--sum-card)', border: '1px solid var(--sum-card-2)',
         animation: 'qqSkPulse 1.4s ease-in-out infinite',
       }}>
@@ -1226,7 +1237,7 @@ function Loading({ lang }: { lang: Lang }) {
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10, marginBottom: 18 }}>
         {[0, 1, 2, 3, 4, 5].map(i => (
           <div key={i} style={{
-            height: 64, borderRadius: 12,
+            height: 64, borderRadius: sumR(12),
             background: 'var(--sum-card)',
             border: '1px solid var(--sum-card-2)',
             animation: `qqSkPulse 1.4s ease-in-out ${i * 0.1}s infinite`,
@@ -1365,7 +1376,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
       <Section title={tr('feedbackTitle', lang)}>
         <div style={{
           background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
-          borderRadius: 12, padding: '16px', textAlign: 'center',
+          borderRadius: sumR(12), padding: '16px', textAlign: 'center',
         }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}><QQEmojiIcon emoji="🎉"/></div>
           <div style={{ fontSize: 15, fontWeight: 900, color: QQ_COLORS.green300, marginBottom: 4 }}>
@@ -1383,7 +1394,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
     <Section title={tr('feedbackTitle', lang)}>
       <div style={{
         background: 'var(--sum-soft)', border: '1px solid var(--sum-card-2)',
-        borderRadius: 14, padding: 14, display: 'flex', flexDirection: 'column', gap: 14,
+        borderRadius: sumR(14), padding: 14, display: 'flex', flexDirection: 'column', gap: 14,
       }}>
 
         {/* 1. Typ-Chips */}
@@ -1395,7 +1406,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
               return (
                 <button key={opt.id} type="button" onClick={() => setType(opt.id)}
                   style={{
-                    padding: '10px 4px', borderRadius: 10,
+                    padding: '10px 4px', borderRadius: sumPill(10),
                     background: active ? `${opt.color}22` : 'var(--sum-card)',
                     border: `1.5px solid ${active ? opt.color : 'var(--sum-line)'}`,
                     color: active ? opt.color : 'var(--sum-muted)',
@@ -1426,7 +1437,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                   <button key={opt.id} type="button"
                     onClick={() => setPlayAgain(active ? null : opt.id)}
                     style={{
-                      padding: '8px 4px', borderRadius: 10,
+                      padding: '8px 4px', borderRadius: sumPill(10),
                       background: active ? 'rgba(251,191,36,0.15)' : 'var(--sum-card)',
                       border: `1.5px solid ${active ? 'rgba(251,191,36,0.5)' : 'var(--sum-line)'}`,
                       color: active ? QQ_COLORS.amber400 : 'var(--sum-muted)',
@@ -1455,7 +1466,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                     onClick={() => setFavoriteCategory(active ? null : opt.id)}
                     style={{
                       flex: '1 1 calc(33% - 4px)', minWidth: 0,
-                      padding: '8px 6px', borderRadius: 999,
+                      padding: '8px 6px', borderRadius: sumPill(999),
                       background: active ? 'rgba(99,102,241,0.18)' : 'var(--sum-card)',
                       border: `1.5px solid ${active ? 'rgba(99,102,241,0.55)' : 'var(--sum-line)'}`,
                       color: active ? '#a5b4fc' : 'var(--sum-muted)',
@@ -1488,7 +1499,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                   <button key={opt.id} type="button"
                     onClick={() => setLengthFeel(active ? null : opt.id)}
                     style={{
-                      padding: '8px 4px', borderRadius: 10,
+                      padding: '8px 4px', borderRadius: sumPill(10),
                       background: active ? 'rgba(34,197,94,0.12)' : 'var(--sum-card)',
                       border: `1.5px solid ${active ? 'rgba(34,197,94,0.45)' : 'var(--sum-line)'}`,
                       color: active ? QQ_COLORS.green300 : 'var(--sum-muted)',
@@ -1513,7 +1524,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
               {[1, 2, 3, 4, 5].map(n => (
                 <button key={n} type="button" onClick={() => setRating(rating === n ? null : n)}
                   style={{
-                    flex: 1, padding: '10px 0', borderRadius: 8,
+                    flex: 1, padding: '10px 0', borderRadius: sumPill(8),
                     background: rating && rating >= n ? QQ_COLORS.amber400 : 'var(--sum-card-2)',
                     color: rating && rating >= n ? QQ_COLORS.slate800 : 'var(--sum-muted)',
                     border: 'none', cursor: 'pointer', fontSize: 20, fontFamily: 'inherit',
@@ -1532,7 +1543,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
               style={{
                 width: '100%', boxSizing: 'border-box',
                 background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
-                borderRadius: 8, padding: '8px 10px', color: 'var(--sum-text)',
+                borderRadius: sumPill(8), padding: '8px 10px', color: 'var(--sum-text)',
                 fontSize: 13, fontFamily: 'inherit',
               }} />
           </div>
@@ -1546,7 +1557,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
             style={{
               width: '100%', boxSizing: 'border-box',
               background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
-              borderRadius: 8, padding: '10px 12px', color: 'var(--sum-text)',
+              borderRadius: sumPill(8), padding: '10px 12px', color: 'var(--sum-text)',
               fontSize: 14, fontFamily: 'inherit', resize: 'vertical',
             }} />
         </div>
@@ -1559,7 +1570,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
             style={{
               width: '100%', boxSizing: 'border-box',
               background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
-              borderRadius: 8, padding: '8px 10px', color: 'var(--sum-text)',
+              borderRadius: sumPill(8), padding: '8px 10px', color: 'var(--sum-text)',
               fontSize: 13, fontFamily: 'inherit',
             }} />
           {contact.trim() && (
@@ -1573,7 +1584,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                 return (
                   <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)}
                     style={{
-                      padding: '5px 10px', borderRadius: 999,
+                      padding: '5px 10px', borderRadius: sumPill(999),
                       background: active ? 'rgba(236,72,153,0.18)' : 'var(--sum-card)',
                       border: `1px solid ${active ? 'rgba(236,72,153,0.5)' : 'var(--sum-line-2)'}`,
                       color: active ? '#f0abfc' : 'var(--sum-muted)',
@@ -1588,14 +1599,14 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           )}
         </div>
 
-        {err && <div data-fb-error style={{ fontSize: 13, color: QQ_COLORS.red300, fontWeight: 700, padding: '8px 12px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: 8 }}>⚠️ {err}</div>}
+        {err && <div data-fb-error style={{ fontSize: 13, color: QQ_COLORS.red300, fontWeight: 700, padding: '8px 12px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: sumPill(8) }}>⚠️ {err}</div>}
 
         <button type="button" onClick={submit} disabled={sending}
           style={{
             width: '100%', padding: '12px',
             background: type === 'bug' ? QQ_COLORS.red500 : QQ_COLORS.green500,
             color: type === 'bug' ? '#fff' : QQ_COLORS.slate900, fontWeight: 900,
-            border: 'none', borderRadius: 10, fontSize: 15, fontFamily: 'inherit',
+            border: 'none', borderRadius: sumPill(10), fontSize: 15, fontFamily: 'inherit',
             cursor: sending ? 'default' : 'pointer', opacity: sending ? 0.6 : 1,
           }}>
           {sending ? tr('fbSubmitting', lang) : type === 'bug' ? tr('fbReportBug', lang) : tr('fbSend', lang)}
@@ -1630,7 +1641,7 @@ function UpcomingEvents({ events, lang, brand }: {
               onClick={ev => { if (!e.link) ev.preventDefault(); }}
               style={{
                 display: 'flex', alignItems: 'center', gap: 12,
-                padding: '10px 14px', borderRadius: 12,
+                padding: '10px 14px', borderRadius: sumR(12),
                 background: 'var(--sum-card)',
                 border: '1px solid var(--sum-line)',
                 color: 'var(--sum-text)', textDecoration: 'none',
@@ -1666,7 +1677,7 @@ function PartnerCTA({ lang, brand }: {
       <div style={{
         background: `linear-gradient(135deg, rgba(${brand.pinkRgb},0.18), rgba(${brand.pinkRgb},0.06))`,
         border: `1px solid rgba(${brand.pinkRgb},0.35)`,
-        borderRadius: 14, padding: '16px 16px 14px',
+        borderRadius: sumR(14), padding: '16px 16px 14px',
       }}>
         <div style={{ fontSize: 15, fontWeight: 900, color: brand.pink, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
           {tr('partnerHead', lang)}
@@ -1693,7 +1704,7 @@ function PartnerCTA({ lang, brand }: {
 function ctaButton(bg: string, color: string, border?: string): React.CSSProperties {
   return {
     display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-    padding: '10px 12px', borderRadius: 10,
+    padding: '10px 12px', borderRadius: sumPill(10),
     background: bg, color,
     fontSize: 13, fontWeight: 900, fontFamily: 'inherit',
     textDecoration: 'none',

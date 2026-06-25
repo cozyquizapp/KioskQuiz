@@ -1434,7 +1434,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       {mode === 'pause' && (
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 10,
-          fontSize: 'clamp(15px, 1.6cqw, 22px)', color: '#a8a395', fontWeight: 700,
+          fontSize: 'clamp(15px, 1.6cqw, 22px)', color: isThemed() ? 'var(--qq-text-muted)' : '#a8a395', fontWeight: 700,
           position: 'relative', zIndex: 5,
           letterSpacing: '0.04em',
         }}>

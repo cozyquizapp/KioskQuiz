@@ -73,10 +73,27 @@ Redesign** (solide weiße Cards statt dunkel-frosted), **Avatare bleiben bewusst
 (Editorial-Kontrast, Wolf-Entscheid), **Quiet-Motion** (Mono = ruhig: Shockwave/Shimmer/
 Title-Waves aus via `isQuietMotion()` + `data-quiet-motion`-CSS-Hebel). Volle Detail-Doku:
 Memory `project-theme-skin-system`.
-**NOCH OFFEN:** (1) **Mod-Theme-Picker + `room.themeId`-Backend-Wiring** (Theme im echten
-Spiel wählbar, bisher nur Showroom). (2) **SoftPop + Neo-Brutal** noch NICHT am Live-Screen
-durchgesehen (Struktur greift via `isThemed()`, aber Ästhetik un-eyeballed). (3) Wolf-
-Sprechblase im Logo ist oval (Marken-Logo — vor Änderung fragen).
+
+**Update 2026-06-25 (späte Session):** Weitere Mono-Fixes:
+- **Regel-/Hero-Titel sichtbar:** Quiet-Motion-CSS killte per Substring-Match auch die
+  Entrance-Animation (opacity:0→1) → Titel unsichtbar. Fix: Regel zusätzlich `opacity:1`
+  erzwingen (main.css `data-quiet-motion`). Deckt Rules/Paused/Thanks/Beamer-Rules + phasePop.
+- **Phase-Intro „Schau mal" / Kategorie-Intro** (beide Branches in CozyQuizPhaseIntroView)
+  war un-gethemt → lila Titel/unsichtbarer Untertitel/rundes Window gefixt; **Progress-Tree-
+  Discs bleiben RUND** (wie Avatare), Linie/Ring auf Accent.
+- **Cheese:** ohne Bild weiße Card-Fläche statt dunkel-lila (Mono); „X/Y Teams"-Zähler als
+  lesbarer Chip; Pink-Leak im schnellsten Zeit-Pill raus.
+- **Ambient in Mono AUS** (Wolf-Entscheid): Fireflies (zentral in CozyQuizAmbient),
+  Placement-Sweep, Paused-preGame Glow/Spotlight/Partikel — via `isQuietMotion()`. CozyWolf bleibt.
+- **Summary skin-aware migriert:** Backend reicht `themeId` durch, `setActiveThemeId` beim
+  Laden; `--sum-*`-Var-Rampe + theme-aware `summaryBrand` (Cozy byte-identisch). Offen als
+  Polish: Mono-Ästhetik **eckig + Hard-Shadow** (Radius/Schatten noch rund/weich).
+
+**NOCH OFFEN:** (1) ~~Mod-Theme-Picker~~ **erledigt — Skin ist im Setup pickbar** (`room.themeId`
+verdrahtet: Beamer/Team/Summary). (2) **Comeback**-View in Mono noch am Screen begutachten
+(Code wirkt fertig). (3) Summary-Mono-Ästhetik eckig+Hard-Shadow (Polish). (4) **SoftPop +
+Neo-Brutal** noch NICHT am Live-Screen durchgesehen — kommen lt. Wolf **erst wenn Mono perfekt**
+(Mono hat Prio, am ehesten für Corporate). (5) Wolf-Sprechblase im Logo ist oval (vor Änderung fragen).
 
 **Update 2026-06-23 (Commit `03106c88`):** Wolf-Klarstellung — es geht NICHT um
 Event-Kostüme (Weihnachten/Halloween), sondern um **subtile Grunddesigns je

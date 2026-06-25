@@ -4479,6 +4479,14 @@ body[data-cinematic="true"] *[style*="cfloat,"] {
   animation-play-state: paused !important;
 }
 
+/* Quiet Motion (Studio Mono): editoriale Ruhe — die dekorative per-Letter-
+   Dauer-Wave auf Hero-Titeln (qqCatNameWave) wird komplett entfernt, der Text
+   sitzt still an seiner Endposition. Gesetzt via data-quiet-motion am <html>
+   in applyThemeVars(). SoftPop/Neo behalten die verspielte cozy-Motion. */
+html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
+  animation: none !important;
+}
+
 /* 2026-05-13 (Wolf 'rechteckige farbige Schatten hinter Texten weg, global'):
    Audit-Erkenntnis — 130+ inline `textShadow` mit farbigen Glow-Werten
    (z.B. `0 0 32px ${color}cc`) erzeugten rechteckige Halo-Boxen hinter Text,

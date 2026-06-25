@@ -189,6 +189,10 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   r.setProperty('--qq-overlay', s.overlay);
   r.setProperty('--qq-font', s.font);
   r.setProperty('--qq-title', s.title);
+  // Quiet Motion (Mono): data-Attribut am <html> → eine zentrale CSS-Regel killt
+  // die dekorativen Dauer-Waves (qqCatNameWave) auf allen Hero-Titeln zugleich,
+  // ohne jede Stelle einzeln zu gaten. SoftPop/Neo behalten die cozy-Motion.
+  document.documentElement.setAttribute('data-quiet-motion', theme.id === 'studioMono' ? 'true' : 'false');
 }
 
 export function setActiveThemeId(id: string): void {

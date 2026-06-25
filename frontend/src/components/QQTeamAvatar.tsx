@@ -1,21 +1,13 @@
 import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
 import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
-import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dOpenSrc, cozy3dHasBlink } from '../cozy3dAvatars';
+import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
 
-// ─── Augen-auf-Hook (Event-getrieben, Wolf-Idee) ──────────────────────────
-// Ruhe = geschlossene Augen (= heutiger Look). NUR wenn der Slug ein open-Asset
-// hat (COZY3D_BLINK_SLUGS) UND das Tier gerade „wach" ist (wakeAllAvatars /
-// wakeTeamAvatar bei Teams-Vorstellung / Punkt / richtig), zeigt es die offenen
-// Augen (<slug>-open.png). Sonst 1:1 derselbe `src` → no-op fuer alle anderen.
-export function useCozy3dEyeSrc(src: string, teamId?: string): string {
-  const slug = /\/avatars\/cozy3d\/([^/]+)\.png$/.exec(src)?.[1];
-  const hasOpen = cozy3dHasBlink(slug);
-  const awake = useSyncExternalStore(subscribeAwake, () => isAvatarAwake(teamId));
-  if (!hasOpen || !slug) return src;
-  return awake ? cozy3dOpenSrc(slug) : src; // geschlossen = Default, offen wenn wach
+// Slug aus einem cozy3d-Bildpfad ziehen (/avatars/cozy3d/<slug>.png).
+function cozy3dSlugFromSrc(src: string): string | undefined {
+  return /\/avatars\/cozy3d\/([^/]+)\.png$/.exec(src)?.[1];
 }
 
 type Props = {
@@ -114,6 +106,7 @@ export function QQTeamAvatar({
         title={labelText}
         square={square}
         flat={flat}
+        blink={blink}
       />
     );
   }
@@ -278,13 +271,12 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
   style?: CSSProperties;
 }) {
   const fontSizeStr = typeof fontSize === 'number' ? `${fontSize}px` : fontSize;
-  // Blink-Hook unbedingt aufrufen (Hooks-Regel); no-op fuer Nicht-cozy3d.
-  const cozyBlinkSrc = useCozy3dEyeSrc(isCozy3dSlug(emoji) ? cozy3dSrc(emoji) : '');
-  // cozy3d: „Emoji" ist in Wahrheit ein Avatar-Slug → 3D-Bild rendern.
+  // cozy3d: „Emoji" ist in Wahrheit ein Avatar-Slug → 3D-Bild (statisch, Ruhe=offen).
+  // Blinzeln laeuft nur ueber QQTeamAvatar (grosse Avatare); Inline-Render bleibt ruhig.
   if (isCozy3dSlug(emoji)) {
     return (
       <img
-        src={cozyBlinkSrc}
+        src={cozy3dSrc(emoji)}
         alt={cozy3dLabel(emoji)}
         draggable={false}
         style={{
@@ -336,13 +328,22 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, color, size, baseStyle, className, title, square, flat,
+  src, color, size, baseStyle, className, title, square, flat, blink = true,
 }: {
   src: string; color: string; size: number | string;
-  baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
+  baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  const displaySrc = useCozy3dEyeSrc(src);
+  const [blinkFailed, setBlinkFailed] = useState(false);
+  // Blinzeln nur auf GROSSEN Avataren (flat = Grid-Cell → statisch, Wolf 2026-06-25)
+  // und nur wenn fuer den Slug ein -blink-Asset existiert.
+  const slug = cozy3dSlugFromSrc(src);
+  const canBlink = blink && !flat && !blinkFailed && cozy3dHasBlink(slug);
+  // Zufaelliger Phasenversatz → Avatare blinzeln asynchron statt im Gleichtakt.
+  const blinkDelay = useMemo(() => -Math.random() * 5.4, []);
+  // Hybrid: bei einem Spiel-Event (wakeAllAvatars, z.B. Teams-Vorstellung)
+  // blinzeln alle kurz schneller = sichtbare Reaktion. Sonst ruhiges Idle.
+  const awake = useSyncExternalStore(subscribeAwake, () => isAvatarAwake());
 
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }
@@ -356,6 +357,7 @@ function ImageAvatar({
       };
 
   const fillPct = `${(COZY3D_DISC_FILL * 100).toFixed(0)}%`;
+  const imgFilter = 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))';
 
   return (
     <span
@@ -368,12 +370,7 @@ function ImageAvatar({
         alignItems: 'center',
         justifyContent: 'center',
         // 2026-06-24 (Wolf 'avatare teilweise am kreisrand abgeschnitten'):
-        // Die 3D-PNGs sind randlos getrimmt (Motiv fuellt das Quadrat bis in die
-        // Ecken). Eine runde overflow:hidden-Disc beschnitt darum die Ecken von
-        // Motiven, die breit in die Ecken laufen (Fluegel/Beine) — runde Motive
-        // (transparente Ecken) waren nie betroffen → daher nur 'teilweise'.
-        // overflow sichtbar laesst das Motiv ungeschnitten; die farbige Disc +
-        // Ring bleiben rund (border-radius wirkt weiter auf BG/Border).
+        // overflow sichtbar laesst das Motiv ungeschnitten; Disc + Ring bleiben rund.
         overflow: square ? 'hidden' : 'visible',
         borderRadius: square ? 0 : '50%',
       }}
@@ -381,20 +378,43 @@ function ImageAvatar({
       {failed ? (
         // Fallback: neutraler Punkt (kein potenziell falsches Tier-Emoji).
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
+      ) : canBlink && slug ? (
+        // Zwei gestapelte Frames: offen (Ruhe) + geschlossen (kurz eingeblendet).
+        <span style={{ position: 'relative', width: fillPct, height: fillPct, display: 'block' }}>
+          <style>{`
+            @keyframes qqCozy3dBlink {
+              0%, 91%, 100% { opacity: 0; }
+              93.5%, 95.5%  { opacity: 1; }
+            }
+          `}</style>
+          <img
+            src={src}
+            alt={title}
+            onError={() => setFailed(true)}
+            draggable={false}
+            style={{ width: '100%', height: '100%', objectFit: 'contain', filter: imgFilter, display: 'block' }}
+          />
+          <img
+            src={cozy3dBlinkSrc(slug)}
+            alt=""
+            aria-hidden="true"
+            onError={() => setBlinkFailed(true)}
+            draggable={false}
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'contain', filter: imgFilter, opacity: 0,
+              // awake = schnelleres Blinzeln (Event-Reaktion), sonst ruhiges Idle.
+              animation: `qqCozy3dBlink ${awake ? '1s' : '5.4s'} ease-in-out ${blinkDelay}s infinite`,
+            }}
+          />
+        </span>
       ) : (
         <img
-          src={displaySrc}
+          src={src}
           alt={title}
           onError={() => setFailed(true)}
           draggable={false}
-          style={{
-            width: fillPct,
-            height: fillPct,
-            objectFit: 'contain',
-            // 3D-Avatare haben ihren eigenen Look — leichter Schlagschatten
-            // hebt sie von der Disc ab.
-            filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))',
-          }}
+          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter }}
         />
       )}
     </span>

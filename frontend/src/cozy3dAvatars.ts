@@ -121,23 +121,31 @@ export function cozy3dLabel(slug: string): string {
   return LABEL_BY_SLUG.get(slug) ?? slug;
 }
 
-// ─── Blinzeln (Prototyp 2026-06-24) ───────────────────────────────────────
-// Wolf-Idee: cozy3d-Tiere blinzeln. Mechanik = 2-Frame-Swap:
-//   - Ruhezustand = OFFENE Augen  → /avatars/cozy3d/<slug>-open.png (NEU, von Wolf)
-//   - Blink-Frame  = geschlossene Augen → das bestehende <slug>.png
-// Ein Tier blinzelt NUR, wenn sein Slug in COZY3D_BLINK_SLUGS steht (= ein
-// open-Asset existiert). Alle anderen 79 bleiben unveraendert (geschlossen).
-// → Drop EIN Test-PNG (`<slug>-open.png`) + Slug hier eintragen = live testbar.
+// ─── Blinzeln (2026-06-25) ────────────────────────────────────────────────
+// Wolf hat optimierte Augen-auf/zu-Paare geliefert. Mechanik = 2-Frame-Swap:
+//   - Ruhezustand = OFFENE Augen  → /avatars/cozy3d/<slug>.png        (neu optimiert)
+//   - Blink-Frame  = GESCHLOSSENE Augen → /avatars/cozy3d/<slug>-blink.png
+// Beide Frames stammen aus demselben optimierten Set + werden identisch
+// getrimmt (scripts/process-cozy3d-blink.mjs) → kein Versatz beim Blinzeln.
+// Ein Tier blinzelt NUR, wenn sein Slug hier steht (= ein -blink-Asset existiert).
+// Die restlichen Tiere bleiben statisch (offen), bis Wolf die Paare nachliefert.
+// → neue Paare verarbeiten: node scripts/process-cozy3d-blink.mjs "<zip-ordner>"
+//   und die ausgegebene Slug-Liste hier ergaenzen.
 export const COZY3D_BLINK_SLUGS = new Set<string>([
-  // z.B. 'fuchs'  ← Wolf: Test-Slug eintragen, sobald <slug>-open.png liegt
+  'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
+  'chamaeleon', 'clownfisch', 'dachs', 'delfin', 'dino', 'dodo', 'drache',
+  'eichhoernchen', 'einhorn', 'elch', 'elefant', 'ente', 'eule', 'faultier',
+  'flamingo', 'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn',
+  'hai', 'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel',
+  'katze', 'koala', 'krabbe', 'kueken', 'kuh',
 ]);
 
-/** Pfad zum OFFENE-Augen-PNG (Ruhe-Frame beim Blinzeln). */
-export function cozy3dOpenSrc(slug: string): string {
-  return `/avatars/cozy3d/${slug}-open.png`;
+/** Pfad zum GESCHLOSSENE-Augen-PNG (Blink-Frame). */
+export function cozy3dBlinkSrc(slug: string): string {
+  return `/avatars/cozy3d/${slug}-blink.png`;
 }
 
-/** Hat dieser Slug ein open-Asset → soll blinzeln? */
+/** Hat dieser Slug ein -blink-Asset → soll blinzeln? */
 export function cozy3dHasBlink(slug: string | undefined | null): boolean {
   return !!slug && COZY3D_BLINK_SLUGS.has(slug);
 }

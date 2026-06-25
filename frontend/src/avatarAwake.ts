@@ -1,15 +1,15 @@
-// avatarAwake — Event-getriebenes „Augen auf" für cozy3d-Avatare (Wolf-Idee).
+// avatarAwake — Event-„Reaktion" für cozy3d-Avatare (Wolf-Idee).
 //
-// Modell (besser als Random-Blink): Ruhezustand = GESCHLOSSENE Augen (schläfrig,
-// = der heutige Cozy-Look). Bei einem Spiel-Event „weckt" man Avatare → sie
-// zeigen kurz die OFFENEN Augen (<slug>-open.png) und schlafen dann wieder ein.
+// Modell (2026-06-25, Hybrid-Blinzeln): Ruhezustand = OFFENE Augen mit ruhigem
+// Idle-Blinzeln (QQTeamAvatar/ImageAvatar). Bei einem Spiel-Event „weckt" man die
+// Avatare → sie blinzeln kurz SCHNELLER (sichtbare Reaktion), danach wieder Idle.
 //
 // Zwei Ebenen:
-//   - wakeAllAvatars()        → alle Tiere öffnen die Augen (z.B. Teams-Vorstellung)
+//   - wakeAllAvatars()        → alle Tiere reagieren (z.B. Teams-Vorstellung)
 //   - wakeTeamAvatar(teamId)  → nur ein Team (z.B. „hat einen Punkt / richtig")
 //
-// Komponenten abonnieren via useAvatarAwake(teamId). Greift visuell nur, wenn
-// für den Slug ein open-Asset existiert (COZY3D_BLINK_SLUGS) — sonst no-op.
+// QQTeamAvatar liest aktuell das GLOBALE Wake-Fenster (isAvatarAwake()) für den
+// Speedup. Greift visuell nur bei Slugs mit -blink-Asset (COZY3D_BLINK_SLUGS).
 
 const WAKE_MS = 2200; // wie lange die Augen offen bleiben pro Event
 

@@ -215,7 +215,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               <div key={i} style={{
                 display: 'flex', alignItems: 'flex-start', gap: 14,
                 padding: '15px 18px',
-                borderRadius: 16,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                 // 2026-06-24 (Lesbarkeit): Skin → echte Surface-Chip statt der
                 // fast transparenten Warm-Fläche, damit der Akzent-Titel Kontrast hat.
                 background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',
@@ -775,7 +775,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px',
-                borderRadius: 16, background: `${catMeta.color}12`,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, background: `${catMeta.color}12`,
                 border: `1.5px solid ${catMeta.color}44`,
               }}>
                 <span style={{ fontSize: 'clamp(28px, 3cqw, 40px)', lineHeight: 1 }}>{catMeta.emoji}</span>
@@ -804,7 +804,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
-                borderRadius: 16, background: 'rgba(34,197,94,0.08)',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, background: 'rgba(34,197,94,0.08)',
                 border: '1px solid rgba(34,197,94,0.3)',
               }}>
                 <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="✨"/></span>
@@ -1328,7 +1328,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         // Effekt aus (eigene Show-Identität).
         <div style={{
           width: '100%', maxWidth: 'min(94cqw, 1500px)', position: 'relative', zIndex: 5,
-          borderRadius: 26,
+          borderRadius: isThemed() ? 'var(--qq-card-radius)' : 26,
           isolation: 'isolate',
           // 2026-05-09 v5 (Wolf 'unter der card durch'): wrapper bekommt
           // EXPLIZITE Höhe matching inner-card (clamp 460-660). Vorher hatte
@@ -1344,7 +1344,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div style={{
             position: 'relative', zIndex: 1,
             background: cardBg,
-            borderRadius: 24,
+            borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
             padding: 'clamp(32px, 4cqw, 56px)',
             border: `1px solid ${modeAccentDim}`,
             boxShadow:

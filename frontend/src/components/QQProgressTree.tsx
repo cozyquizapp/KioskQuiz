@@ -634,7 +634,7 @@ export default function QQProgressTree({
             background: `linear-gradient(90deg, ${progressColor}, ${progressColorEnd})`,
             borderRadius: 2,
             transform: 'translateY(-50%)',
-            boxShadow: `0 0 10px ${progressColor}99`,
+            boxShadow: isThemed() ? 'none' : `0 0 10px ${progressColor}99`,
             transition: 'width 600ms var(--qq-ease-smooth), background 500ms ease, box-shadow 500ms ease',
             zIndex: 1,
           }} />
@@ -692,8 +692,8 @@ export default function QQProgressTree({
                     background: isCozyGameActive
                       ? cozyGameColor
                       : isCozyGamePast
-                        ? (isThemed() ? 'var(--qq-surface)' : 'rgba(148,163,184,0.18)')
-                        : (isThemed() ? 'var(--qq-surface)' : 'rgba(30,41,59,0.85)'),
+                        ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(148,163,184,0.18)')
+                        : (isThemed() ? 'var(--qq-card-bg)' : 'rgba(30,41,59,0.85)'),
                     border: isCozyGameActive
                       ? '2.5px solid #fff'
                       : isCozyGamePast
@@ -736,8 +736,8 @@ export default function QQProgressTree({
                     background: isBiddingActive
                       ? biddingColor
                       : isBiddingPast
-                        ? (isThemed() ? 'var(--qq-surface)' : 'rgba(148,163,184,0.18)')
-                        : (isThemed() ? 'var(--qq-surface)' : 'rgba(30,41,59,0.85)'),
+                        ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(148,163,184,0.18)')
+                        : (isThemed() ? 'var(--qq-card-bg)' : 'rgba(30,41,59,0.85)'),
                     border: isBiddingActive
                       ? '2.5px solid #fff'
                       : isBiddingPast
@@ -789,8 +789,8 @@ export default function QQProgressTree({
                           : isShowcasedPhase
                             ? `${color}33`
                             : isPast
-                              ? ((variant === 'inline' || isMini) ? (isThemed() ? 'var(--qq-surface)' : 'rgba(148,163,184,0.18)') : QQ_COLORS.slate200)
-                              : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? 'var(--qq-surface)' : 'rgba(30,41,59,0.85)') : QQ_COLORS.slate100),
+                              ? ((variant === 'inline' || isMini) ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(148,163,184,0.18)') : QQ_COLORS.slate200)
+                              : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(30,41,59,0.85)') : QQ_COLORS.slate100),
                         color: isShowcasedPhase
                           ? '#fef3c7'
                           : isPast

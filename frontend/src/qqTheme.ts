@@ -97,7 +97,7 @@ const STUDIO_MONO: ResolvedTheme = {
   },
   surface: {
     pageBg: '#F3F2EC', text: '#0B0B0B', textMuted: '#6B6B66', cardText: '#0B0B0B',
-    cardBg: '#FFFFFF', cardBorder: '2px solid #111111', cardRadius: '4px', pillRadius: '6px',
+    cardBg: '#FFFFFF', cardBorder: '2px solid #111111', cardRadius: '4px', pillRadius: '3px',
     cardShadow: '6px 6px 0 #111111', hairline: 'rgba(0,0,0,0.12)', surface: 'rgba(0,0,0,0.035)', overlay: 'rgba(0,0,0,0.05)',
     font: "'Bricolage Grotesque', 'Inter', sans-serif",
     title: '#0B0B0B', // editorial: schwarze Hero-Titel

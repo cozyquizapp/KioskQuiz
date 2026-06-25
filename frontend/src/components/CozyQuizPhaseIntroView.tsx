@@ -580,7 +580,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               Bei aktiver Transition: spaeteres Delay damit's nicht mit dem
               Digit-Flip kollidiert. */}
           <div style={{ position: 'relative', zIndex: 5 }}>
-            <div style={{
+            {/* Shockwave-Ring (cozy-Effekt) — in Themes (Mono/SoftPop/Neo)
+                ausgeblendet: der pinke Wellen-Ring wirkt im editorialen Mono-Look
+                fehl am Platz. */}
+            {!isThemed() && <div style={{
               position: 'absolute', top: '50%', left: '50%',
               width: 200, height: 200, marginLeft: -100, marginTop: -100,
               borderRadius: '50%',
@@ -589,7 +592,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ? 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 2.4s both'
                 : 'roundShockwave 0.8s cubic-bezier(0,0,0.2,1) 0.2s both',
               pointerEvents: 'none',
-            }} />
+            }} />}
             {/* Round name — Ziffer-Flip / Finale-Wort-Roll / BAM.
                 overflow:hidden nur waehrend der Transition, sonst bleibt
                 ein sichtbares Clip-Rechteck um das FINALE-Wort stehen. */}

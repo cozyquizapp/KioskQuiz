@@ -3516,7 +3516,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           filter: answered ? 'none' : 'grayscale(0.5)',
                         }}>
                           <div style={{
-                            borderRadius: '50%',
+                            borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                             boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
                             transition: 'box-shadow 0.45s ease',
                             display: 'inline-flex',

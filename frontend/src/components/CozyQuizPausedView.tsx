@@ -263,23 +263,25 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
         }}>
-          {/* Big Round Pill */}
+          {/* Big Round Pill — Mono: eckige Lime-Karte mit Hard-Shadow, kein Glow */}
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 14,
-            padding: '14px 32px', borderRadius: 'var(--qq-pill-radius)',
-            background: `${roundColor}20`,
-            border: `2.5px solid ${roundColor}`,
-            boxShadow: `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+            padding: '14px 32px',
+            borderRadius: isQuietMotion() ? 'var(--qq-card-radius)' : 'var(--qq-pill-radius)',
+            background: isQuietMotion() ? 'var(--qq-accent-light)' : `${roundColor}20`,
+            border: isQuietMotion() ? '2px solid var(--qq-card-text)' : `2.5px solid ${roundColor}`,
+            boxShadow: isQuietMotion() ? '5px 5px 0 var(--qq-card-text)' : `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
           }}>
             <span style={{
               fontSize: 'clamp(36px, 4.5cqw, 64px)', fontWeight: 900,
-              color: roundColor, lineHeight: 1,
-              textShadow: `0 0 16px ${roundColor}88`,
+              color: isQuietMotion() ? 'var(--qq-card-text)' : roundColor, lineHeight: 1,
+              textShadow: isQuietMotion() ? 'none' : `0 0 16px ${roundColor}88`,
+              fontVariantNumeric: 'tabular-nums', letterSpacing: isQuietMotion() ? '-0.03em' : undefined,
             }}>{s.gamePhaseIndex}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1.1 }}>
               <span style={{
                 fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900,
-                color: `${roundColor}cc`, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: isQuietMotion() ? 'var(--qq-card-text)' : `${roundColor}cc`, letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>
                 {de ? `Runde ${s.gamePhaseIndex} von ${s.totalPhases}` : `Round ${s.gamePhaseIndex} of ${s.totalPhases}`}
               </span>
@@ -392,6 +394,38 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           {sortedTeams.map((t, i) => {
             // Border-bottom nur wenn es innerhalb der Spalte noch einen Nachfolger gibt
             const nextInCol = twoCol ? (i + 2 < sortedTeams.length) : (i < sortedTeams.length - 1);
+            // Mono: Editorial-Chart (grosse Rang-Ziffer, #1 in Lime-Karte, grosse Zahl).
+            if (isQuietMotion()) {
+              const isFirst = i === 0;
+              return (
+                <div key={t.id} style={{
+                  display: 'flex', alignItems: 'center', gap: twoCol ? 12 : 16,
+                  padding: isFirst ? 'clamp(8px,1.1cqh,14px) clamp(12px,1.4cqw,18px)' : (twoCol ? '8px 6px' : '11px 6px'),
+                  marginBottom: isFirst ? 'clamp(8px,1cqh,14px)' : 0,
+                  background: isFirst ? 'var(--qq-accent-light)' : 'transparent',
+                  border: isFirst ? '2px solid var(--qq-card-text)' : 'none',
+                  borderRadius: isFirst ? 'var(--qq-card-radius)' : 0,
+                  boxShadow: isFirst ? '5px 5px 0 var(--qq-card-text)' : 'none',
+                  borderBottom: !isFirst && nextInCol ? '1px solid var(--qq-hairline)' : 'none',
+                  minWidth: 0,
+                }}>
+                  <span style={{
+                    fontSize: twoCol ? 'clamp(22px,2.6cqw,36px)' : 'clamp(28px,3.2cqw,46px)', fontWeight: 900,
+                    color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                    width: twoCol ? 38 : 52, flexShrink: 0, letterSpacing: '-0.03em',
+                  }}>{String(i + 1).padStart(2, '0')}</span>
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avSize} style={{ flexShrink: 0 }} />
+                  <span style={{
+                    flex: 1, fontWeight: 900, fontSize: nameSize, color: 'var(--qq-card-text)',
+                    overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
+                  }}>{t.name}</span>
+                  <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
+                    <span style={{ fontSize: twoCol ? 'clamp(22px,2.6cqw,36px)' : 'clamp(28px,3.2cqw,46px)', fontWeight: 900, color: 'var(--qq-card-text)', letterSpacing: '-0.02em' }}>{t.largestConnected}</span>
+                    <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 800 }}>· {t.totalCells}</span>
+                  </span>
+                </div>
+              );
+            }
             return (
               <div key={t.id} style={{
                 display: 'flex', alignItems: 'center', gap: twoCol ? 12 : 18, padding: twoCol ? '8px 0' : '12px 0',
@@ -432,17 +466,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'leaderboard', node: (
       <div>
         <div style={{
-          fontSize: isThemed() ? 'clamp(30px, 3.6cqw, 50px)' : 'clamp(24px, 2.8cqw, 36px)',
+          fontSize: isQuietMotion() ? 'clamp(30px, 3.6cqw, 50px)' : 'clamp(24px, 2.8cqw, 36px)',
           fontWeight: 900, color: 'var(--qq-card-text)',
-          marginBottom: isThemed() ? 'clamp(14px,1.8cqh,24px)' : 20,
+          marginBottom: isQuietMotion() ? 'clamp(14px,1.8cqh,24px)' : 20,
           display: 'flex', alignItems: 'center', gap: 14,
-          textTransform: isThemed() ? 'uppercase' : undefined,
-          letterSpacing: isThemed() ? '-0.01em' : undefined,
-          borderBottom: isThemed() ? '3px solid var(--qq-card-text)' : undefined,
-          paddingBottom: isThemed() ? 'clamp(10px,1.2cqh,16px)' : undefined,
+          textTransform: isQuietMotion() ? 'uppercase' : undefined,
+          letterSpacing: isQuietMotion() ? '-0.01em' : undefined,
+          borderBottom: isQuietMotion() ? '3px solid var(--qq-card-text)' : undefined,
+          paddingBottom: isQuietMotion() ? 'clamp(10px,1.2cqh,16px)' : undefined,
         }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏆"/></span> {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: isThemed() ? 'clamp(15px, 1.7cqw, 22px)' : 'clamp(16px, 1.8cqw, 22px)', fontWeight: isThemed() ? 900 : 700, color: 'var(--qq-text-muted)', letterSpacing: isThemed() ? '0.08em' : undefined, marginLeft: isThemed() ? 'auto' : undefined }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+          {totalGames > 0 && <span style={{ fontSize: isQuietMotion() ? 'clamp(15px, 1.7cqw, 22px)' : 'clamp(16px, 1.8cqw, 22px)', fontWeight: isQuietMotion() ? 900 : 700, color: 'var(--qq-text-muted)', letterSpacing: isQuietMotion() ? '0.08em' : undefined, marginLeft: isQuietMotion() ? 'auto' : undefined }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
@@ -461,7 +495,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           // in einer Lime-Karte (var(--qq-accent-light)) mit Hard-Shadow, Siege
           // als grosse Zahl rechts statt der Dunkel-Pille. Wolf-Wunsch
           // 2026-06-25 (Pre-Game in Mono zu „langweilig" + Badge dunkel-auf-dunkel).
-          if (isThemed()) {
+          // NUR Studio Mono (isQuietMotion) — Cozy unverändert, SoftPop/Neo kriegen
+          // später ihren eigenen Look (Per-Skin-Philosophie, Wolf-Vorgabe).
+          if (isQuietMotion()) {
             const isFirst = i === 0;
             const lastCount = Math.min(realLeaderboard.length, 5);
             return (
@@ -598,30 +634,34 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Avatar wird IMMER gerendert, auch wenn avatarId unbekannt. Fallback ist
   // ein farbiger Kreis mit ❓ Glyph — gleicher visueller Footprint wie ein
   // echtes Avatar, garantiert konsistentes Layout aller Stats-Zeilen.
-  const fallbackAvatarCircle = (sizeCss: string, c: string) => (
+  const fallbackAvatarCircle = (sizeCss: string, c: string) => {
+    const mono = isQuietMotion();
+    return (
     <div style={{
       width: sizeCss, height: sizeCss, borderRadius: '50%',
-      background: `linear-gradient(135deg, ${c}22, ${c}10)`,
-      border: `2px solid ${c}55`,
-      boxShadow: `0 0 14px ${c}33`,
+      background: mono ? 'var(--qq-surface)' : `linear-gradient(135deg, ${c}22, ${c}10)`,
+      border: mono ? '2px solid var(--qq-card-text)' : `2px solid ${c}55`,
+      boxShadow: mono ? 'none' : `0 0 14px ${c}33`,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexShrink: 0,
-      color: `${c}aa`,
+      color: mono ? 'var(--qq-card-text)' : `${c}aa`,
       fontSize: `calc(${sizeCss} * 0.5)`,
       fontWeight: 900,
     }}>?</div>
-  );
+    );
+  };
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
     const c = color ?? meta.color ?? 'var(--qq-accent)';
     const av = avatarId ?? meta.avatarId;
+    const mono = isQuietMotion(); // Mono: editorial — kein Glow, schwarzer Name
     return (
       // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
         {av
-          ? <QQTeamAvatar avatarId={av} size={'clamp(64px, 7cqw, 100px)'} style={{ flexShrink: 0, boxShadow: `0 0 28px ${c}55` }} />
+          ? <QQTeamAvatar avatarId={av} size={'clamp(64px, 7cqw, 100px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 28px ${c}55` }} />
           : fallbackAvatarCircle('clamp(64px, 7cqw, 100px)', c)}
-        <span style={{ fontWeight: 900, fontSize: 'clamp(36px, 4.2cqw, 64px)', color: c, textShadow: `0 0 22px ${c}44` }}>{name}</span>
+        <span style={{ fontWeight: 900, fontSize: 'clamp(36px, 4.2cqw, 64px)', color: mono ? 'var(--qq-card-text)' : c, textShadow: mono ? 'none' : `0 0 22px ${c}44` }}>{name}</span>
       </div>
     );
   };
@@ -629,12 +669,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   const teamInline = (name: string, accentFallback = QQ_COLORS.brandPink) => {
     const meta = findTeamMeta(name);
     const c = meta.color ?? accentFallback;
+    const mono = isQuietMotion();
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, verticalAlign: 'middle' }}>
         {meta.avatarId
-          ? <QQTeamAvatar avatarId={meta.avatarId} size={'clamp(28px, 2.8cqw, 36px)'} style={{ flexShrink: 0, boxShadow: `0 0 10px ${c}55` }} />
+          ? <QQTeamAvatar avatarId={meta.avatarId} size={'clamp(28px, 2.8cqw, 36px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 10px ${c}55` }} />
           : fallbackAvatarCircle('clamp(28px, 2.8cqw, 36px)', c)}
-        <strong style={{ color: c }}>{name}</strong>
+        <strong style={{ color: mono ? 'var(--qq-card-text)' : c }}>{name}</strong>
       </span>
     );
   };
@@ -711,22 +752,28 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // 2026-05-07 (Wolf 'mach die Schrift in den Lobby-Slides gerne teilweise
   // groesser, die Textfelder wirken etwas verloren in dem riesen Kasten'):
   // Title 36→52, Pill-Wert 30→44, Pill-Label 17→22.
-  const statTitle = (icon: string, titleDe: string, titleEn: string, accentColor?: string) => (
+  const statTitle = (icon: string, titleDe: string, titleEn: string, accentColor?: string) => {
+    // Mono: editorial — schwarzer Titel (kein Akzent-Farb-Leak), uppercase.
+    const mono = isQuietMotion();
+    return (
     <div style={{
-      fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900,
-      color: accentColor ?? 'var(--qq-card-text)',
+      fontSize: mono ? 'clamp(34px, 3.8cqw, 56px)' : 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900,
+      color: mono ? 'var(--qq-card-text)' : (accentColor ?? 'var(--qq-card-text)'),
       marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
+      textTransform: mono ? 'uppercase' : undefined,
+      letterSpacing: mono ? '-0.01em' : undefined,
     }}>
       <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji={icon}/></span>
       {de ? titleDe : titleEn}
     </div>
-  );
+    );
+  };
 
   // Stat-Pille. Cozy: warmer Dark-Card-bg + Akzent-Border. Skin (Mono etc.):
   // eckiger Hard-Shadow-Chip mit schwarzem Wert (kein Cyan/Pink-Leak, lesbar
   // auf hellem BG) — passt zum Editorial-Look der Bestenliste.
   const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => {
-    const themed = isThemed();
+    const themed = isQuietMotion(); // Editorial-Chip NUR in Mono; Cozy/SoftPop/Neo = Original
     return (
     <span style={{
       display: 'inline-flex', alignItems: 'center', gap: 12,
@@ -842,14 +889,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px',
-                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, background: `${catMeta.color}12`,
-                border: `1.5px solid ${catMeta.color}44`,
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                background: isQuietMotion() ? 'var(--qq-card-bg)' : `${catMeta.color}12`,
+                border: isQuietMotion() ? '2px solid var(--qq-card-text)' : `1.5px solid ${catMeta.color}44`,
+                boxShadow: isQuietMotion() ? '4px 4px 0 var(--qq-card-text)' : undefined,
               }}>
                 <span style={{ fontSize: 'clamp(28px, 3cqw, 40px)', lineHeight: 1 }}>{catMeta.emoji}</span>
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 4cqw, 52px)'} style={{ flexShrink: 0 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: team?.color ?? 'var(--qq-card-text)' }}>{cm.teamName}</div>
-                  <div style={{ fontSize: 'clamp(13px, 1.4cqw, 18px)', color: catMeta.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{catLabel}</div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (team?.color ?? 'var(--qq-card-text)') }}>{cm.teamName}</div>
+                  <div style={{ fontSize: 'clamp(13px, 1.4cqw, 18px)', color: isQuietMotion() ? 'var(--qq-text-muted)' : catMeta.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{catLabel}</div>
                 </div>
                 {statPill(cm.count, de ? 'richtig' : 'correct', catMeta.color)}
               </div>
@@ -871,12 +920,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             return (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
-                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, background: 'rgba(34,197,94,0.08)',
-                border: '1px solid rgba(34,197,94,0.3)',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                background: isQuietMotion() ? 'var(--qq-card-bg)' : 'rgba(34,197,94,0.08)',
+                border: isQuietMotion() ? '2px solid var(--qq-card-text)' : '1px solid rgba(34,197,94,0.3)',
+                boxShadow: isQuietMotion() ? '4px 4px 0 var(--qq-card-text)' : undefined,
               }}>
                 <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="✨"/></span>
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(34px, 3.6cqw, 46px)'} />}
-                <span style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: team?.color ?? 'var(--qq-card-text)' }}>{pr.teamName}</span>
+                <span style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (team?.color ?? 'var(--qq-card-text)') }}>{pr.teamName}</span>
                 {pr.draftTitle && (
                   <span style={{ marginLeft: 'auto', color: 'var(--qq-text-muted)', fontSize: 'clamp(13px, 1.5cqw, 18px)', fontStyle: 'italic' }}>„{pr.draftTitle}"</span>
                 )}
@@ -970,7 +1021,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap' }}>
           {rivalTeam && <QQTeamAvatar avatarId={rivalTeam.avatarId} teamEmoji={rivalTeam?.emoji} size={'clamp(50px, 5.5cqw, 72px)'} />}
           <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: rivalTeam?.color ?? QQ_COLORS.brandPinkMid }}>{rivalName}</div>
+            <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (rivalTeam?.color ?? QQ_COLORS.brandPinkMid) }}>{rivalName}</div>
             <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: 'var(--qq-text-muted)' }}>
               {de ? `hat schon ${rival.wins}× gewonnen — wer dreht heute das Spiel?` : `already won ${rival.wins}× — who flips the script today?`}
             </div>

@@ -16,6 +16,7 @@
  * EurovisionHearts gemounted (gehoert zu nur dieser Component).
  */
 import { memo } from 'react';
+import { isQuietMotion } from '../qqTheme';
 
 // ── Static firefly positions ───────────────────────────────────────────────
 // 8 vorgenerierte Positionen + Animations-Offsets. Vorher inline in
@@ -33,6 +34,9 @@ export const FF = [
 ];
 
 export const Fireflies = memo(function Fireflies({ color }: { color?: string } = {}) {
+  // Quiet Motion (Studio Mono): editoriale Ruhe — keine schwebenden Ambient-
+  // Partikel (Wolf 2026-06-25). Single-Point-Gate deckt alle 17+ Verwendungen.
+  if (isQuietMotion()) return null;
   const c = color ?? '#FEF08A';
   return (
     <>

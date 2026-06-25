@@ -26,7 +26,7 @@ import {
 } from '../pages/QQBeamerPage';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed } from '../qqTheme';
+import { isThemed, isQuietMotion } from '../qqTheme';
 
 function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   const [idx, setIdx] = useState(0);
@@ -1019,6 +1019,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           + Animierter CozyWolf rechts unten als Co-Moderator. */}
       {mode === 'preGame' && (
         <>
+          {/* Ambient-WOW (Glow/Spotlight/Fall-Partikel): in Quiet Motion (Mono)
+              aus (Wolf 2026-06-25) — der CozyWolf-Co-Moderator bleibt. */}
+          {!isQuietMotion() && (<>
           {/* (5) Atmender Hintergrund-Glow — sehr subtil, langsam pulsierend.
               Liegt UNTER dem Ring-Light, wirkt wie 'Buehne laedt Energie'. */}
           <div aria-hidden style={{
@@ -1062,6 +1065,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               }} />
             );
           })}
+          </>)}
 
           {/* Wolf-Co-Moderator unten LINKS — winkt + blinzelt + hat ab und zu
               eine Sprechblase mit Pre-Game-Sprueche.

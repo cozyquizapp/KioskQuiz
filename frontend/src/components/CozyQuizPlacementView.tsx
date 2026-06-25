@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
+import { isQuietMotion } from '../qqTheme';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { ScoreBar } from './CozyQuizScoreBar';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -147,7 +148,9 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
       <Fireflies color={`${teamColor}88`} />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
-      {/* G2 Placement-Sweep — weicher Licht-Streak nach Phase-Entry. */}
+      {/* G2 Placement-Sweep — weicher Licht-Streak nach Phase-Entry.
+          Quiet Motion (Mono): aus — editoriale Ruhe + auf hellem BG eh unsichtbar. */}
+      {!isQuietMotion() && (
       <div key={`sweep-${s.questionIndex}`} aria-hidden style={{
         position: 'absolute', top: 12, left: 0, right: 0, bottom: 0,
         pointerEvents: 'none', zIndex: 4, overflow: 'hidden',
@@ -159,6 +162,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           animation: 'placementSweep 1.1s var(--qq-ease-smooth) 0.15s both',
         }} />
       </div>
+      )}
 
       {/* Top banner — schrumpft auf 0 wenn Team aktiv. Das aktive Team wird
           stattdessen rechts in der ScoreBar prominent markiert (inkl. Aktions-Pill).

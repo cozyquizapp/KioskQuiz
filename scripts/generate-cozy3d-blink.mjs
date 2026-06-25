@@ -23,7 +23,7 @@ const EYE_COORDS = {
   fuchs: [{ cx: 160, cy: 270, rx: 38, ry: 30, side: -1 }, { cx: 320, cy: 270, rx: 38, ry: 30, side: 1 }],
   eule:  [{ cx: 165, cy: 255, rx: 42, ry: 42, side: -1 }, { cx: 320, cy: 255, rx: 42, ry: 42, side: 1 }],
   katze: [{ cx: 150, cy: 237, rx: 40, ry: 36, side: -1 }, { cx: 320, cy: 237, rx: 40, ry: 36, side: 1 }],
-  hund:  [{ cx: 163, cy: 265, rx: 37, ry: 36, side: -1 }, { cx: 312, cy: 265, rx: 37, ry: 36, side: 1 }],
+  hund:  [{ cx: 163, cy: 265, rx: 37, ry: 36, side: -1 }, { cx: 312, cy: 265, rx: 37, ry: 36, side: 1, fill: 'rgb(150,95,55)' }],
 };
 
 const px = (data, W, x, y) => { x = Math.round(x); y = Math.round(y); const i = (y * W + x) * 4; return [data[i], data[i + 1], data[i + 2], data[i + 3]]; };
@@ -44,10 +44,18 @@ async function bake(slug, eyes) {
     // Pro-Tier-Overrides moeglich: fillScale, lineCurve, lineLift, furShift.
     const ring = [];
     for (let a = 0; a < 12; a++) { const ang = a / 12 * Math.PI * 2; ring.push(px(data, W, e.cx + Math.cos(ang) * e.rx * 1.35, e.cy + Math.sin(ang) * e.ry * 1.35)); }
-    const fur = medianCol(ring.filter(s => s[3] > 200));
-    const fs = e.fillScale ?? 1.06;     // Ellipsen-Größe relativ zum Auge
+    // Pro-Auge-Override `fill` fuer Zwei-Ton-Tiere (z.B. Hund-Fleck, Panda): das
+    // Auge sitzt auf einer Farbgrenze → Median mittelt falsch → Farbe vorgeben.
+    const fur = e.fill ?? medianCol(ring.filter(s => s[3] > 200));
+    const fs = e.fillScale ?? 1.12;     // Ellipsen-Größe relativ zum Auge
     const curve = e.lineCurve ?? 0.5;   // ‿-Kurventiefe (0=flach, 1=tief)
     const lift = e.lineLift ?? 3;       // Linie nach oben versetzen
+    const halo = e.halo ?? 1.35;        // weicher Halo dahinter, schließt Rand-Lücken
+    // 1) weicher Halo (stark verwischt) → deckt Augen-Kontur/Ecken die aus der
+    //    Hauptellipse rauslugen, ohne Wimpern/Brauen hart zu überdecken.
+    defs += `<filter id="h${idx}" x="-70%" y="-70%" width="240%" height="240%"><feGaussianBlur stdDeviation="9"/></filter>`;
+    parts += `<ellipse cx="${e.cx}" cy="${e.cy}" rx="${(e.rx * halo).toFixed(1)}" ry="${(e.ry * halo).toFixed(1)}" fill="${fur}" filter="url(#h${idx})"/>`;
+    // 2) Hauptellipse (deckend)
     defs += `<filter id="b${idx}" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="5"/></filter>`;
     parts += `<ellipse cx="${e.cx}" cy="${e.cy}" rx="${(e.rx * fs).toFixed(1)}" ry="${(e.ry * (fs + 0.02)).toFixed(1)}" fill="${fur}" filter="url(#b${idx})"/>`;
     const lr = e.rx * 0.85;

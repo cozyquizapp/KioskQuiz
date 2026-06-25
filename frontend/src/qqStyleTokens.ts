@@ -18,6 +18,7 @@
  *   <div style={{ ...cozyCard({ bg, accentHex, accentRgb }), padding: 40 }} />
  */
 import type { CSSProperties } from 'react';
+import { isThemed } from './qqTheme';
 
 /** Eck-Radien (px). pill = voll rund. */
 export const QQ_RADIUS = {
@@ -80,6 +81,17 @@ export function cozyCard(opts: {
   accentRgb: string;
   radius?: number;
 }): CSSProperties {
+  // In Themes (Mono/SoftPop/Neo) folgt JEDE cozyCard-Fläche der Skin-Card-Sprache
+  // (eckig + Skin-Rahmen/Shadow) — systemischer Hebel: alle Fenster, die diesen
+  // Helper nutzen (Thanks, PausedView-Hero, …), werden zentral mit-getheme't.
+  if (isThemed()) {
+    return {
+      background: 'var(--qq-card-bg)',
+      borderRadius: 'var(--qq-card-radius)',
+      border: 'var(--qq-card-border)',
+      boxShadow: 'var(--qq-card-shadow)',
+    };
+  }
   return {
     background: opts.bg,
     borderRadius: opts.radius ?? QQ_RADIUS.card,

@@ -20,7 +20,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { WolfHeadIcon } from './WolfHeadIcon';
 import { CozyWolfImage } from './CozyWolfImage';
 import { AnimatedCozyWolf, WolfCoModerator, getBrandColors } from '../pages/QQBeamerPage';
-import { isThemed } from '../qqTheme';
+import { isThemed, isQuietMotion } from '../qqTheme';
 
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
@@ -362,7 +362,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           Inhalt: 3-col Events · Sieger · Insta+QR. ── */}
       <div style={{
         width: '100%', maxWidth: 'min(94cqw, 1500px)', position: 'relative', zIndex: 5,
-        borderRadius: 26,
+        borderRadius: themed ? 'var(--qq-card-radius)' : 26,
         isolation: 'isolate',
         height: 'clamp(460px, 60cqh, 660px)',
       }}>
@@ -380,12 +380,12 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           display: 'flex', flexDirection: 'column',
         }}>
           {/* Akzent-Streifen oben (animated shimmer) */}
-          <div style={{
+          {!isQuietMotion() && <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: 3,
             background: `linear-gradient(90deg, transparent, ${brand.accentHex}, transparent)`,
             animation: 'qqPauseShimmer 6s linear infinite',
             backgroundSize: '200% 100%',
-          }} />
+          }} />}
           {/* Subtle Inner-Glow oben-rechts */}
           <div style={{
             position: 'absolute', top: -120, right: -120, width: 320, height: 320,
@@ -499,11 +499,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               }}>
                 <div style={{
                   padding: 'clamp(10px, 1.2cqw, 16px)',
-                  borderRadius: 18,
+                  borderRadius: themed ? 'var(--qq-card-radius)' : 18,
                   background: '#fff',
-                  border: `3px solid rgba(${brand.accentRgb},0.75)`,
-                  boxShadow: `0 0 28px rgba(${brand.accentRgb},0.55), 0 6px 18px rgba(0,0,0,0.5)`,
-                  animation: 'qqThanksQrPulse 2.4s ease-in-out infinite',
+                  border: themed ? 'var(--qq-card-border)' : `3px solid rgba(${brand.accentRgb},0.75)`,
+                  boxShadow: themed ? 'var(--qq-card-shadow)' : `0 0 28px rgba(${brand.accentRgb},0.55), 0 6px 18px rgba(0,0,0,0.5)`,
+                  animation: isQuietMotion() ? undefined : 'qqThanksQrPulse 2.4s ease-in-out infinite',
                 }}>
                   <QRCodeSVG
                     value={summaryUrl}

@@ -3952,7 +3952,7 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         <div style={{
           position: 'relative',
           padding: 'clamp(28px, 4.5cqh, 60px) clamp(36px, 6.5cqw, 100px)',
-          borderRadius: 'clamp(20px, 2.4cqw, 32px)',
+          borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(20px, 2.4cqw, 32px)',
           background: themed
             ? 'var(--qq-card-bg)'
             : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.28) 0%, transparent 60%),' +

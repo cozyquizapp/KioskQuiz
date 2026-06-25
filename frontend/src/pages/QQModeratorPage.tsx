@@ -31,12 +31,12 @@ interface DraftSummary {
   date: string | null;
   updatedAt: number;
   questionCount: number;
-  phases?: 3 | 4;
+  phases?: 2 | 3 | 4;
 }
 
 export default function QQModeratorPage({ testMode = false }: { testMode?: boolean } = {}) {
   const roomCode = QQ_ROOM;
-  const [phases, setPhases] = useState<3 | 4>(4);
+  const [phases, setPhases] = useState<2 | 3 | 4>(4);
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
@@ -220,7 +220,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     const d = drafts.find(x => x.id === selectedDraftId);
     if (!d) return;
     const draftMaxPhases = d.phases ?? (d.questionCount >= 20 ? 4 : d.questionCount >= 15 ? 3 : null);
-    if (draftMaxPhases === 3 && phases === 4) setPhases(3);
+    // Auto-Downgrade auf die Rundenzahl des Drafts (z.B. 2-Runden-Showcase →
+    // phases 2), sonst würde der Preflight scheitern.
+    if (typeof draftMaxPhases === 'number' && phases > draftMaxPhases) setPhases(draftMaxPhases as 2 | 3 | 4);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDraftId, drafts]);
 
@@ -234,14 +236,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // `phases` auf 3 gemappt → User wählte 4 Runden, useEffect-Auto-
             // Downgrade fiel sofort auf 3 zurück → Display zeigte 'Runde X/3'.
             // Jetzt: explizites phases respektieren, sonst aus Question-Count.
-            const phases = d.phases === 3 ? 3 : d.phases === 4 ? 4 : (qCount >= 20 ? 4 : 3);
+            const phases = d.phases === 2 ? 2 : d.phases === 3 ? 3 : d.phases === 4 ? 4 : (qCount >= 20 ? 4 : 3);
             return {
               id: `qq:${d.id}`,
               title: `🎯 ${d.title}`,
               date: null,
               updatedAt: d.updatedAt ?? 0,
               questionCount: qCount,
-              phases: phases as 3 | 4,
+              phases: phases as 2 | 3 | 4,
             };
           })
         : [];
@@ -4921,8 +4923,8 @@ function SetupView({
   drafts: DraftSummary[];
   selectedDraftId: string;
   setSelectedDraftId: (v: string) => void;
-  phases: 3 | 4;
-  setPhases: (v: 3 | 4) => void;
+  phases: 2 | 3 | 4;
+  setPhases: (v: 2 | 3 | 4) => void;
   timerInput: number;
   setTimerInput: (v: number) => void;
   applyTimer: () => void;
@@ -5249,7 +5251,7 @@ function SetupView({
         <div style={settingRow}>
           <span style={settingLabel}>🎮 Runden</span>
           <div style={segGroup}>
-            {([3, 4] as const).map(n => (
+            {([2, 3, 4] as const).map(n => (
               <button key={n} onClick={() => setPhases(n)} style={segPill(phases === n)}>{n}</button>
             ))}
           </div>
@@ -5727,7 +5729,7 @@ function SetupView({
 // ── Schedule-Vorschau im Setup ──
 // Zeigt pro Runde die Kategorien-Sequenz aus dem aktuell gewählten Draft.
 // Hilft dem Mod schon vor dem Start zu sehen ob's gut verteilt ist.
-function SchedulePreview({ draftId, phases }: { draftId: string; phases: 3 | 4 }) {
+function SchedulePreview({ draftId, phases }: { draftId: string; phases: 2 | 3 | 4 }) {
   const [questions, setQuestions] = useState<any[] | null>(null);
   useEffect(() => {
     if (!draftId) return;
@@ -5814,7 +5816,7 @@ function LobbyView({
   s: QQStateUpdate;
   drafts: DraftSummary[];
   selectedDraftId: string;
-  phases: 3 | 4;
+  phases: 2 | 3 | 4;
   timerInput: number;
   roomCode: string;
   emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;

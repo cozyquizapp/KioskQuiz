@@ -31,6 +31,7 @@ const QQRecapIndexPage    = React.lazy(() => import('./pages/QQRecapIndexPage'))
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQSkinsPage         = React.lazy(() => import('./pages/QQSkinsPage'));
+const QQAboutPage         = React.lazy(() => import('./pages/QQAboutPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
 const QQAvatarGeneratorPage = React.lazy(() => import('./pages/QQAvatarGeneratorPage'));
@@ -168,6 +169,8 @@ function App() {
           {/* Öffentlicher Showroom-Trailer (QR-Landing „was ist CozyQuiz") — nicht PIN-gegated. */}
           <Route path="/showroom"   element={<QQShowroomPage />} />
           <Route path="/skins"      element={<QQSkinsPage />} />
+          <Route path="/about"      element={<QQAboutPage />} />
+          <Route path="/was-ist-cozyquiz" element={<QQAboutPage />} />
           <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
           {/* 2026-05-25 (Wolf 'test-modus zum reveal-testen'): selbe Mod-Komponente
               mit testMode-prop → Setup uebersprungen, 5 Bots auto-gespawnt,

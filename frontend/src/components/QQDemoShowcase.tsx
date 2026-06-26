@@ -169,10 +169,26 @@ function buildBeats(): Beat[] {
   ];
 }
 
+// Filmische Körnung (feines Rauschen) als Daten-URI — gibt dem projizierten
+// Bild den „auf eine Wand geworfen"-Look statt steriler Pixel.
+const GRAIN = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='140' height='140'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/></filter><rect width='100%' height='100%' filter='url(%23n)'/></svg>\")";
+
+// „Projiziert"-Overlay: weicher Bloom-Hotspot oben-mittig + Vignette + Körnung.
+// Liegt UNSKALIERT ueber dem Screen (deckt echte Pixel, nicht die Logik-Leinwand).
+function ProjectedFX({ radius }: { radius: number }) {
+  return (
+    <>
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: radius, background: 'radial-gradient(130% 90% at 50% 14%, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 38%, transparent 62%)', mixBlendMode: 'screen' }} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: radius, boxShadow: 'inset 0 0 110px rgba(4,6,14,0.55), inset 0 0 28px rgba(4,6,14,0.4)' }} />
+      <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: radius, backgroundImage: GRAIN, backgroundSize: '140px 140px', opacity: 0.05, mixBlendMode: 'overlay' }} />
+    </>
+  );
+}
+
 // ── Scaled-Device: rendert children in logischer Aufloesung + skaliert ins Frame
-function ScaledScreen({ logicalW, logicalH, radius, fit, children, style }: {
+function ScaledScreen({ logicalW, logicalH, radius, fit, children, overlay, style }: {
   logicalW: number; logicalH: number; radius: number;
-  fit: 'width' | 'height'; children: ReactNode; style?: CSSProperties;
+  fit: 'width' | 'height'; children: ReactNode; overlay?: ReactNode; style?: CSSProperties;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [w, setW] = useState(0);
@@ -192,6 +208,7 @@ function ScaledScreen({ logicalW, logicalH, radius, fit, children, style }: {
       <div style={{ position: 'absolute', top: 0, left: 0, width: logicalW, height: logicalH, transform: `scale(${scale})`, transformOrigin: 'top left' }}>
         {children}
       </div>
+      {overlay}
     </div>
   );
 }
@@ -387,56 +404,74 @@ export function QQDemoShowcase() {
         <div ref={stageRef}
           onMouseEnter={() => setPaused(true)} onMouseMove={onMove} onMouseLeave={onLeave}
           style={{
-            position: 'relative', width: '100%',
-            display: 'flex', flexWrap: 'wrap', gap: 'clamp(20px, 4vw, 56px)',
-            justifyContent: 'center', alignItems: 'flex-end',
-            perspective: 1700, perspectiveOrigin: '50% 45%', padding: '14px 0 8px',
+            position: 'relative', width: '100%', borderRadius: 28, overflow: 'hidden',
+            padding: 'clamp(36px,6vw,76px) clamp(16px,3vw,40px) clamp(46px,7vw,84px)',
+            background: 'radial-gradient(125% 95% at 50% 2%, #0b1020 0%, #06080f 55%, #04050b 100%)',
+            boxShadow: 'inset 0 0 150px rgba(0,0,0,0.88), inset 0 1px 0 rgba(255,255,255,0.04)',
+            perspective: 1700, perspectiveOrigin: '50% 42%',
           }}>
-          {/* Brand-Glow hinter den Geraeten */}
+          {/* Boden-Lichtpfuetze unter den schwebenden Geraeten */}
           <div aria-hidden style={{
-            position: 'absolute', inset: '-6% 4% 10%', pointerEvents: 'none', zIndex: 0,
-            background: 'radial-gradient(ellipse 60% 70% at 38% 50%, rgba(236,72,153,0.20), transparent 65%), radial-gradient(ellipse 50% 60% at 78% 55%, rgba(99,102,241,0.16), transparent 65%)',
-            filter: 'blur(14px)', animation: 'demoGlow 6s ease-in-out infinite',
+            position: 'absolute', left: '6%', right: '6%', bottom: '5%', height: '32%', pointerEvents: 'none', zIndex: 0,
+            background: 'radial-gradient(ellipse 58% 100% at 42% 0%, rgba(120,140,230,0.15), transparent 70%), radial-gradient(ellipse 30% 100% at 78% 0%, rgba(236,72,153,0.11), transparent 70%)',
+            filter: 'blur(28px)',
           }} />
 
-          {/* ── Beamer / TV ── */}
-          <figure style={{
-            margin: 0, position: 'relative', zIndex: 1, width: 'min(92vw, 560px)',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y - 4}deg)`,
-            transformStyle: 'preserve-3d', transition: 'transform 0.25s ease-out',
+          <div style={{
+            position: 'relative', zIndex: 1,
+            display: 'flex', flexWrap: 'wrap', gap: 'clamp(22px,4vw,60px)',
+            justifyContent: 'center', alignItems: 'center',
           }}>
-            <ScaledScreen logicalW={BEAMER.w} logicalH={BEAMER.h} radius={16} fit="width" style={{
-              border: '2px solid rgba(255,255,255,0.10)',
-              boxShadow: '0 44px 90px -20px rgba(0,0,0,0.72), 0 0 0 7px #0c1020, 0 0 0 8px rgba(255,255,255,0.06)',
+            {/* ── schwebender Beamer-Screen (projiziert) ── */}
+            <figure style={{
+              margin: 0, position: 'relative', width: 'min(92vw, 560px)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+              transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y - 3}deg)`,
+              transformStyle: 'preserve-3d', transition: 'transform 0.3s ease-out',
             }}>
-              <BeamerScene beat={cur} />
-            </ScaledScreen>
-            <div style={{ width: '20%', height: 12, borderRadius: '0 0 8px 8px', background: 'linear-gradient(180deg,#1a2036,#0c1020)' }} />
-            <div style={{ width: '34%', height: 6, borderRadius: 99, background: '#0c1020', marginTop: -4 }} />
-            <figcaption style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginTop: 2 }}>📺 Beamer / TV</figcaption>
-          </figure>
-
-          {/* ── Handy ── */}
-          <figure style={{
-            margin: 0, position: 'relative', zIndex: 1,
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-            transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y + 6}deg)`,
-            transformStyle: 'preserve-3d', transition: 'transform 0.25s ease-out',
-          }}>
-            <div style={{
-              height: 'min(64vh, 420px)', display: 'inline-flex', padding: 9, borderRadius: 40,
-              background: 'linear-gradient(160deg,#23283a,#0b0e18)', position: 'relative',
-              border: '1px solid rgba(255,255,255,0.12)',
-              boxShadow: '0 44px 90px -20px rgba(0,0,0,0.78), inset 0 0 0 2px rgba(0,0,0,0.6)',
-            }}>
-              <div style={{ position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', width: 86, height: 22, borderRadius: 99, background: '#05070d', zIndex: 5 }} />
-              <ScaledScreen logicalW={PHONE.w} logicalH={PHONE.h} radius={31} fit="height">
-                <PhoneScene beat={cur} />
+              {/* Bloom-Halo hinter dem Screen */}
+              <div aria-hidden style={{
+                position: 'absolute', inset: '-16% -10% 8%', pointerEvents: 'none', zIndex: -1,
+                background: 'radial-gradient(ellipse 60% 60% at 50% 42%, rgba(99,102,241,0.28), rgba(236,72,153,0.12) 46%, transparent 72%)',
+                filter: 'blur(36px)', animation: 'demoGlow 6s ease-in-out infinite',
+              }} />
+              <ScaledScreen logicalW={BEAMER.w} logicalH={BEAMER.h} radius={14} fit="width"
+                overlay={<ProjectedFX radius={14} />}
+                style={{
+                  border: '1px solid rgba(255,255,255,0.10)',
+                  boxShadow: '0 50px 110px -28px rgba(0,0,0,0.82), 0 0 80px rgba(99,102,241,0.22), 0 0 0 1px rgba(255,255,255,0.07), inset 0 1px 0 rgba(255,255,255,0.08)',
+                }}>
+                <BeamerScene beat={cur} />
               </ScaledScreen>
-            </div>
-            <figcaption style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>📱 Dein Handy</figcaption>
-          </figure>
+              <span style={{ fontSize: 11, color: '#5b6780', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase' }}>Beamer</span>
+            </figure>
+
+            {/* ── schwebendes Handy (echtes Display, crisp) ── */}
+            <figure style={{
+              margin: 0, position: 'relative',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+              transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y + 5}deg) translateY(6px)`,
+              transformStyle: 'preserve-3d', transition: 'transform 0.3s ease-out',
+            }}>
+              <div aria-hidden style={{
+                position: 'absolute', inset: '-14% -24% 4%', pointerEvents: 'none', zIndex: -1,
+                background: 'radial-gradient(ellipse 55% 60% at 50% 45%, rgba(236,72,153,0.22), transparent 70%)',
+                filter: 'blur(32px)', animation: 'demoGlow 6s ease-in-out infinite 1.5s',
+              }} />
+              <div style={{
+                height: 'min(62vh, 430px)', display: 'inline-flex', padding: 8, borderRadius: 42,
+                background: 'linear-gradient(155deg,#262b3d 0%,#0c0f1a 70%)', position: 'relative',
+                border: '1px solid rgba(255,255,255,0.14)',
+                boxShadow: '0 50px 110px -28px rgba(0,0,0,0.86), 0 0 50px rgba(236,72,153,0.18), inset 0 0 0 2px rgba(0,0,0,0.55)',
+              }}>
+                <div style={{ position: 'absolute', top: 15, left: '50%', transform: 'translateX(-50%)', width: 84, height: 21, borderRadius: 99, background: '#05070d', zIndex: 5 }} />
+                <ScaledScreen logicalW={PHONE.w} logicalH={PHONE.h} radius={34} fit="height">
+                  <PhoneScene beat={cur} />
+                </ScaledScreen>
+              </div>
+              <span style={{ fontSize: 11, color: '#5b6780', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase' }}>Dein Handy</span>
+            </figure>
+          </div>
         </div>
 
         {/* Beat-Punkte */}

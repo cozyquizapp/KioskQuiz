@@ -27,7 +27,6 @@ export const COZY3D_AVATARS: Cozy3dAvatar[] = [
   { slug: 'alligator', label: 'Alligator' },
   { slug: 'axolotl', label: 'Axolotl' },
   { slug: 'baer', label: 'Bär' },
-  { slug: 'biber', label: 'Biber' },
   { slug: 'biene', label: 'Biene' },
   { slug: 'bison', label: 'Bison' },
   { slug: 'chamaeleon', label: 'Chamäleon' },
@@ -134,7 +133,8 @@ export function cozy3dLabel(slug: string): string {
 // nur an den Augen stimmen. Seitenprofil/1-Auge-Tiere werden geflaggt (manuell).
 // Ein Tier blinzelt NUR, wenn sein Slug hier steht. Alternativ-Methode (gezeichnetes
 // ‿-Lid ohne zu-Bild): scripts/generate-cozy3d-blink.mjs. Review: /blinktest.
-// 2026-06-26 Charge 3: kompletter Roster außer `biber` (kein Paar geliefert).
+// 2026-06-26 Charge 3: kompletter Roster, alle blinzeln. `biber` wurde aus dem
+// Roster genommen (Wolf, kein auf/zu-Paar) — biber.png bleibt für späteres Comeback.
 // chamaeleon = Farbwechsel-Gag (auf/zu unterschiedlich gefärbt). „Affe"=orang-utan,
 // „Alpaka"=lama, „HIER-Orca"=orca, Triceratops=trizeratops, Seekuh=seehkuh (Overrides
 // im Skript). Neue Tiere leopard/schaf/schildkroete sind NICHT im Roster → ausgelassen.

@@ -31,6 +31,13 @@ const SLUG_OVERRIDE = {
 };
 const toSlug = (b) => { const s = slugify(b); return SLUG_OVERRIDE[s] ?? s; };
 
+// Manuelle Augen-Zentren (480er-Raum) für Tiere, bei denen der Auto-Diff das
+// falsche symmetrische Paar wählt (kleine Augen + größere symmetrische andere
+// Features). Pro Slug { eyes: [[cx,cy],[cx,cy]], r? }.
+const EYE_OVERRIDE = {
+  wildschwein: { eyes: [[340, 255], [139, 256]], r: 48 }, // sonst landet das Lid auf den Nüstern
+};
+
 const proc = (p) => sharp(p).ensureAlpha().trim({ threshold: 1 })
   .resize(SIZE, SIZE, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
 const raw = async (buf) => { const { data, info } = await sharp(buf).ensureAlpha().raw().toBuffer({ resolveWithObject: true }); return { data, W: info.width, H: info.height }; };
@@ -87,7 +94,21 @@ async function bakePair(slug, aufPath, zuPath) {
   else { eyes = all.slice(0, 2); warn.push('kein symmetrisches Augenpaar — Fallback: 2 größte Blobs'); }
   if (eyes.length < 2) warn.push('weniger als 2 Diff-Blobs');
 
-  const eyeMask = new Uint8Array(N); for (const comp of eyes) for (const p of comp) eyeMask[p] = 1;
+  const eyeMask = new Uint8Array(N);
+  const ov = EYE_OVERRIDE[slug];
+  if (ov) {
+    // Manuelle Augen-Koords für Tiere, bei denen der Auto-Diff das falsche
+    // symmetrische Paar nimmt (z.B. Wildschwein-Nüstern „rümpft nur die Nase").
+    // Zwei gefüllte Kreise an den vorgegebenen Augenzentren.
+    const r = ov.r ?? 48;
+    for (const [cx, cy] of ov.eyes) {
+      for (let y = Math.max(0, cy - r); y < Math.min(H, cy + r); y++)
+        for (let x = Math.max(0, cx - r); x < Math.min(W, cx + r); x++)
+          if ((x - cx) ** 2 + (y - cy) ** 2 <= r * r) eyeMask[y * W + x] = 1;
+    }
+  } else {
+    for (const comp of eyes) for (const p of comp) eyeMask[p] = 1;
+  }
   // Dilatation
   const R = 6; const dil = new Uint8Array(eyeMask);
   for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) { if (!eyeMask[y * W + x]) continue;

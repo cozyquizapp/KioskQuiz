@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import QQScrollConquest from '../components/QQScrollConquest';
+import { QQDemoShowcase } from '../components/QQDemoShowcase';
 
 const SLOGANS = [
   'Das Quiz für den Kiosk um die Ecke',
@@ -104,9 +104,10 @@ export default function QQLandingPage() {
           </div>
         </section>
 
-        {/* ── Scroll-Eroberung: das echte Brett fuellt sich Feld fuer Feld beim
-              Scrollen, mit echten Views (GridDisplay + Team-QuestionCard). ── */}
-        <QQScrollConquest />
+        {/* ── Auto-Demo: grosser, synchroner Beamer+Handy-Durchlauf des echten
+              Quiz-Ablaufs (Lobby → Kategorien → Fragen → Auflösung → Brett →
+              Taktik → Sieger), gerendert mit den echten App-Views. ── */}
+        <QQDemoShowcase />
 
         {/* ── Marketing-Text: vorerst ausgeblendet (SHOW_MARKETING=false) ── */}
         {SHOW_MARKETING && <>

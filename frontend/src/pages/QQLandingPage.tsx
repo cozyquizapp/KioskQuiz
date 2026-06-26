@@ -8,6 +8,12 @@ const SLOGANS = [
   'Wissen, Glück und ein bisschen Chaos.',
 ];
 
+// 2026-06-26 (Wolf): Marketing-Text auf der Landing vorerst ausgeblendet
+// (nicht geloescht) — die Landing ist jetzt ein cleaner Startup-Hero mit der
+// Live-Doppel-Demo. Auf `true` setzen, um die Beschreibungs-/Kontakt-Sektionen
+// wieder einzublenden.
+const SHOW_MARKETING = false;
+
 export default function QQLandingPage() {
   const [slogan, setSlogan] = useState(SLOGANS[0]);
 
@@ -23,13 +29,13 @@ export default function QQLandingPage() {
       fontFamily: "'Nunito', system-ui, sans-serif",
       position: 'relative', overflow: 'hidden',
     }}>
-      {/* Subtle glow dots */}
+      {/* Brand-Aurora-Glow (Pink/Magenta/Indigo) */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
         background:
-          'radial-gradient(circle at 20% 30%, rgba(245,158,11,0.12) 0%, transparent 35%),' +
-          'radial-gradient(circle at 80% 70%, rgba(59,130,246,0.10) 0%, transparent 35%),' +
-          'radial-gradient(circle at 50% 90%, rgba(234,88,12,0.08) 0%, transparent 40%)',
+          'radial-gradient(circle at 18% 24%, rgba(236,72,153,0.16) 0%, transparent 38%),' +
+          'radial-gradient(circle at 82% 60%, rgba(99,102,241,0.13) 0%, transparent 38%),' +
+          'radial-gradient(circle at 50% 96%, rgba(162,18,71,0.12) 0%, transparent 42%)',
       }} />
 
       <div style={{
@@ -48,7 +54,7 @@ export default function QQLandingPage() {
           <img
             src="/logo.png"
             alt="CozyWolf"
-            style={{ width: 128, height: 128, objectFit: 'contain', filter: 'drop-shadow(0 8px 20px rgba(245,158,11,0.3))' }}
+            style={{ width: 128, height: 128, objectFit: 'contain', filter: 'drop-shadow(0 8px 24px rgba(236,72,153,0.35))' }}
           />
 
           <div>
@@ -57,7 +63,7 @@ export default function QQLandingPage() {
               fontSize: 'clamp(42px, 7vw, 72px)',
               fontWeight: 900,
               lineHeight: 1.05,
-              background: 'linear-gradient(135deg, #F59E0B 0%, #EAB308 50%, #F97316 100%)',
+              background: 'linear-gradient(135deg, #F472B6 0%, #EC4899 45%, #A21247 100%)',
               WebkitBackgroundClip: 'text',
               WebkitTextFillColor: 'transparent',
               letterSpacing: '-0.02em',
@@ -98,17 +104,13 @@ export default function QQLandingPage() {
           </div>
         </section>
 
-        {/* ── Live-Demo: Beamer + Handy synchron (echtes Quiz-Design, Mock-Daten) ── */}
+        {/* ── Live-Demo: Beamer + Handy synchron, gerendert mit den ECHTEN
+              App-Views (GridDisplay + Team-QuestionCard), gefuettert mit
+              Trailer-Inhalten. Das IST jetzt der Trailer. ── */}
         <QQDemoShowcase />
-        <div style={{ textAlign: 'center', marginTop: -4 }}>
-          <a href="/trailer" target="_blank" rel="noopener" style={{
-            fontSize: 14, color: '#94a3b8', fontWeight: 700, textDecoration: 'none',
-            borderBottom: '1px dashed rgba(148,163,184,0.5)', paddingBottom: 1,
-          }}>
-            🎬 Trailer ansehen →
-          </a>
-        </div>
 
+        {/* ── Marketing-Text: vorerst ausgeblendet (SHOW_MARKETING=false) ── */}
+        {SHOW_MARKETING && <>
         {/* ── What is it / For Partners ── */}
         <section style={cardStyle}>
           <SectionTitle>🎤 Für Veranstalter &amp; Partner</SectionTitle>
@@ -198,6 +200,7 @@ export default function QQLandingPage() {
           Teams, die auf einer laufenden Veranstaltung spielen, erhalten den
           Beitritts-Link direkt vom Moderator.
         </div>
+        </>}
       </div>
 
       <style>{`

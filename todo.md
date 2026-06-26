@@ -23,11 +23,10 @@ weil Geräte-Test / Verhaltensänderung nötig:
 - **Disconnect-Flackern**: bei 1–2 s WLAN-Aussetzer springt der Spieler kurz zur
   Rejoin-Ansicht vor Auto-Rejoin. Fix: `joined` erst nach ~1,5 s zurücksetzen (QQTeamPage ~271).
 
-**Landing-Trailer / Mockup-Demo** (Wolf 2026-06-26): Trailer ist auf `/` im Handy-
-Rahmen eingebettet (Commit `4349723c`). Wolf: Handy-Mockup mit Trailer wirkt komisch,
-weil es nicht wie die echte Team-View aussieht. **Plan:** echte Team-View mit Bot-/Mock-
-Daten als Standalone-Demo (phasen-Screens sind prop-getrieben) in den Mockup, Trailer
-bleibt über den „Vollbild ansehen"-Link erreichbar. Bauen sobald Wolf OK gibt.
+**Landing-Demo — ERLEDIGT** (Commit `b813911c`): Trailer-iframe ersetzt durch
+`QQDemoShowcase` (synchrone Beamer+Handy-Live-Demo, 4 Beats, echtes Design + Mock-Daten).
+Trailer bleibt per Link. — Optional später: faithful Mini-Brett durch echte `GridDisplay`
+ersetzen, wenn Wolf pixel-exakt will.
 
 **Brand-Farb-Sweep:** Amber/Gold taucht entgegen der Pink/Magenta-Marke wieder auf
 (Landing-Page `QQLandingPage`, `FinalRecapHintCard` amber400). Bei Gelegenheit angleichen.

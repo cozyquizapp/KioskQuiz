@@ -21,8 +21,12 @@ const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0
 
 // Projektor-Position + Screen-Mittelpunkt (Weltkoordinaten) — der Lichtkegel
 // spannt sich dazwischen.
-const PROJ = new THREE.Vector3(0.25, -1.85, 2.9);
-const SCREEN = new THREE.Vector3(-1.2, 0.5, -0.02);
+const PROJ = new THREE.Vector3(0.3, -1.9, 2.6);
+const SCREEN = new THREE.Vector3(-1.25, 0.45, -0.02);
+// drei <Html transform>: 1024px-Screen * 0.06 ≈ 3 Weltbreite-Einheiten (aus
+// Screenshot-Eichung: scale 0.0034 ergab nur ~0.16 Einheiten → ~18× zu klein).
+const BEAMER_SCALE = 0.06;
+const PHONE_SCALE = 0.058;
 
 // ── Raum (dunkle Wand + Boden, dezent angeleuchtet) ──────────────────────────
 function Room() {
@@ -79,7 +83,7 @@ function Beam() {
     for (let i = 0; i < n; i++) {
       const ly = (Math.random() - 0.5) * len;
       const frac = ly / len + 0.5;            // 0 = Projektor … 1 = Screen
-      const r = (0.05 + frac * 1.5) * Math.sqrt(Math.random());
+      const r = (0.05 + frac * 1.2) * Math.sqrt(Math.random());
       const a = Math.random() * Math.PI * 2;
       pos[i * 3] = Math.cos(a) * r;
       pos[i * 3 + 1] = ly;
@@ -98,17 +102,17 @@ function Beam() {
     <group position={position} quaternion={quaternion}>
       {/* aeusserer weicher Kegel */}
       <mesh>
-        <cylinderGeometry args={[1.7, 0.06, len, 48, 1, true]} />
-        <meshBasicMaterial color="#a9c5ff" transparent opacity={0.06} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+        <cylinderGeometry args={[1.35, 0.05, len, 48, 1, true]} />
+        <meshBasicMaterial color="#a9c5ff" transparent opacity={0.04} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
       {/* heller Kern */}
       <mesh>
-        <cylinderGeometry args={[0.95, 0.04, len, 40, 1, true]} />
-        <meshBasicMaterial color="#dbe8ff" transparent opacity={0.05} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
+        <cylinderGeometry args={[0.7, 0.035, len, 40, 1, true]} />
+        <meshBasicMaterial color="#dbe8ff" transparent opacity={0.03} blending={THREE.AdditiveBlending} depthWrite={false} side={THREE.DoubleSide} toneMapped={false} />
       </mesh>
       <group ref={motesRef}>
         <points geometry={motes}>
-          <pointsMaterial color="#cfe0ff" size={0.035} sizeAttenuation transparent opacity={0.7} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
+          <pointsMaterial color="#cfe0ff" size={0.03} sizeAttenuation transparent opacity={0.6} blending={THREE.AdditiveBlending} depthWrite={false} toneMapped={false} />
         </points>
       </group>
     </group>
@@ -130,7 +134,7 @@ function CameraRig() {
 // ── Die echten Views als DOM im 3D-Raum ──────────────────────────────────────
 function BeamerHtml({ beat }: { beat: Beat }) {
   return (
-    <Html transform position={[SCREEN.x, SCREEN.y, SCREEN.z]} rotation={[0, 0.04, 0]} scale={0.0034} zIndexRange={[10, 0]}>
+    <Html transform position={[SCREEN.x, SCREEN.y, SCREEN.z]} rotation={[0, 0.05, 0]} scale={BEAMER_SCALE} zIndexRange={[10, 0]}>
       <AvatarSetProvider value="cozy3d">
         <div style={{
           width: BEAMER.w, height: BEAMER.h, position: 'relative', overflow: 'hidden',
@@ -147,7 +151,7 @@ function BeamerHtml({ beat }: { beat: Beat }) {
 
 function PhoneHtml({ beat }: { beat: Beat }) {
   return (
-    <Html transform position={[2.05, -0.3, 1.3]} rotation={[0, -0.36, 0.02]} scale={0.0034} zIndexRange={[10, 0]}>
+    <Html transform position={[2.15, -0.05, 0.5]} rotation={[0, -0.3, 0.02]} scale={PHONE_SCALE} zIndexRange={[10, 0]}>
       <AvatarSetProvider value="cozy3d">
         <div style={{
           width: PHONE.w + 18, height: PHONE.h + 18, position: 'relative', padding: 9,
@@ -169,7 +173,7 @@ function PhoneHtml({ beat }: { beat: Beat }) {
 function Effects() {
   return (
     <EffectComposer>
-      <Bloom intensity={0.9} luminanceThreshold={0.16} luminanceSmoothing={0.4} mipmapBlur radius={0.7} />
+      <Bloom intensity={0.7} luminanceThreshold={0.22} luminanceSmoothing={0.4} mipmapBlur radius={0.6} />
       <Vignette offset={0.26} darkness={0.92} eskil={false} />
     </EffectComposer>
   );
@@ -228,7 +232,7 @@ export default function QQDemoShowcase3D() {
             background: 'radial-gradient(125% 95% at 50% 0%, #0b1020 0%, #05060d 60%, #04050b 100%)',
             boxShadow: 'inset 0 0 160px rgba(0,0,0,0.9)', cursor: 'grab',
           }}>
-          <Canvas dpr={[1, 1.6]} gl={{ antialias: true, alpha: false }} camera={{ position: [0, 0.25, 6.6], fov: 42 }}>
+          <Canvas dpr={[1, 1.6]} gl={{ antialias: true, alpha: false }} camera={{ position: [0, 0.3, 6.9], fov: 42 }}>
             <Scene beat={cur} />
           </Canvas>
         </div>

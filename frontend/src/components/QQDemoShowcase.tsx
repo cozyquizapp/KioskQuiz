@@ -25,8 +25,24 @@ const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0
 const MUCHO_ACCENT = '#60A5FA';
 
 // Logische Geraete-Aufloesungen (px), in denen die echten Views rendern.
-const BEAMER = { w: 1024, h: 576 };
-const PHONE = { w: 360, h: 780 };
+export const BEAMER = { w: 1024, h: 576 };
+export const PHONE = { w: 360, h: 780 };
+
+// Keyframe-Injektion (echte Beamer-Grid- + Team-Card-Animationen + Demo-eigene).
+// Global → gilt auch fuer drei-<Html>-Portale im 3D-Hero.
+export function DemoKeyframes() {
+  return (
+    <>
+      <style>{QQ_BEAMER_CSS}</style>
+      <style>{TEAM_CSS}</style>
+      <style>{`
+        @keyframes demoIn { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
+        @keyframes demoPop { 0%{opacity:0;transform:scale(0.7)} 60%{transform:scale(1.06)} 100%{opacity:1;transform:scale(1)} }
+        @keyframes demoGlow { 0%,100%{opacity:0.5} 50%{opacity:0.85} }
+      `}</style>
+    </>
+  );
+}
 
 // ── Teams (echte Avatar-Slots: avatarId = Farb-Slot, emoji = cozy3d-Slug) ────
 type DemoTeam = { id: string; name: string; avatarId: string; emoji: string; color: string };
@@ -132,7 +148,7 @@ function buildState(args: {
 }
 
 // ── Beat-Timeline (Trailer-Story, gerendert in echten Views) ─────────────────
-type Beat = {
+export type Beat = {
   ms: number;
   caption: string;
   beamer: 'lobby' | 'question' | 'board' | 'winner';
@@ -146,7 +162,7 @@ const ALL_ANSWERS = [
   { teamId: 't2', text: '0' }, { teamId: 't3', text: '2' },
 ];
 
-function buildBeats(): Beat[] {
+export function buildBeats(): Beat[] {
   return [
     { ms: 4200, caption: 'Teams joinen per QR-Code — gespielt wird mit dem eigenen Handy.',
       beamer: 'lobby', phone: 'lobby',
@@ -175,7 +191,7 @@ const GRAIN = "url(\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/
 
 // „Projiziert"-Overlay: weicher Bloom-Hotspot oben-mittig + Vignette + Körnung.
 // Liegt UNSKALIERT ueber dem Screen (deckt echte Pixel, nicht die Logik-Leinwand).
-function ProjectedFX({ radius }: { radius: number }) {
+export function ProjectedFX({ radius }: { radius: number }) {
   return (
     <>
       <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', borderRadius: radius, background: 'radial-gradient(130% 90% at 50% 14%, rgba(255,255,255,0.12), rgba(255,255,255,0.03) 38%, transparent 62%)', mixBlendMode: 'screen' }} />
@@ -283,7 +299,7 @@ function DemoBoard({ beat }: { beat: Beat }) {
   );
 }
 
-function BeamerScene({ beat }: { beat: Beat }) {
+export function BeamerScene({ beat }: { beat: Beat }) {
   if (beat.beamer === 'lobby') return <BeamerLobby />;
   if (beat.beamer === 'question') return <BeamerQuestionBanner />;
   if (beat.beamer === 'winner') return <BeamerWinner beat={beat} />;
@@ -336,7 +352,7 @@ function PhoneWinner() {
   );
 }
 
-function PhoneScene({ beat }: { beat: Beat }) {
+export function PhoneScene({ beat }: { beat: Beat }) {
   const wrap: CSSProperties = { position: 'absolute', inset: 0, padding: '64px 18px 22px', overflow: 'hidden', display: 'flex', flexDirection: 'column', fontFamily: "'Nunito','Inter',sans-serif" };
   if (beat.phone === 'question') {
     return (
@@ -384,13 +400,7 @@ export function QQDemoShowcase() {
 
   return (
     <AvatarSetProvider value="cozy3d">
-      <style>{QQ_BEAMER_CSS}</style>
-      <style>{TEAM_CSS}</style>
-      <style>{`
-        @keyframes demoIn { from { opacity:0; transform:translateY(10px) } to { opacity:1; transform:translateY(0) } }
-        @keyframes demoPop { 0%{opacity:0;transform:scale(0.7)} 60%{transform:scale(1.06)} 100%{opacity:1;transform:scale(1)} }
-        @keyframes demoGlow { 0%,100%{opacity:0.5} 50%{opacity:0.85} }
-      `}</style>
+      <DemoKeyframes />
 
       <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, width: '100%' }}>
         <div key={`cap-${beat}`} style={{

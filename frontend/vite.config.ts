@@ -113,6 +113,15 @@ export default defineConfig({
             if (id.includes('html2canvas')) return 'vendor-canvas';
             if (id.includes('qrcode')) return 'vendor-qrcode';
             if (id.includes('react-router')) return 'vendor-router';
+            // 2026-06-26: Three.js-Stack (3D-Landing-Hero) in eigenen Chunk —
+            // MUSS vor der react-Regel stehen, sonst landet @react-three/* (enthaelt
+            // "react") in vendor-react und wuerde auf JEDER Seite eager geladen.
+            // Eigener Chunk → laedt nur lazy mit QQDemoShowcase3D.
+            if (
+              id.includes('three') || id.includes('@react-three') || id.includes('postprocessing') ||
+              id.includes('react-reconciler') || id.includes('its-fine') || id.includes('suspend-react') ||
+              id.includes('react-use-measure') || id.includes('zustand') || id.includes('maath')
+            ) return 'vendor-three';
             if (id.includes('react') || id.includes('react-dom')) return 'vendor-react';
           }
           if (id.includes('/admin/')) return 'admin';

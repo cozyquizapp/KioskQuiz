@@ -10,6 +10,7 @@
       "@shared/*": ["../shared/*"]
     },
     "strict": true,
+    "skipLibCheck": true,
     "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,

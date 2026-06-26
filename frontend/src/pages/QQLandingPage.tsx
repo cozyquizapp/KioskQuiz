@@ -1,5 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense, lazy, Component, type ReactNode } from 'react';
 import { QQDemoShowcase } from '../components/QQDemoShowcase';
+
+// 3D-Hero (Three.js) nur bei Bedarf laden — haelt das Landing-Bundle schlank.
+const QQDemoShowcase3D = lazy(() => import('../components/QQDemoShowcase3D'));
+
+// Faellt bei WebGL-Fehler sauber auf die 2D-Demo zurueck (alte Geraete/Treiber).
+class HeroBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
+  state = { failed: false };
+  static getDerivedStateFromError() { return { failed: true }; }
+  render() { return this.state.failed ? this.props.fallback : this.props.children; }
+}
 
 const SLOGANS = [
   'Das Quiz für den Kiosk um die Ecke',
@@ -104,10 +114,14 @@ export default function QQLandingPage() {
           </div>
         </section>
 
-        {/* ── Live-Demo: Beamer + Handy synchron, gerendert mit den ECHTEN
-              App-Views (GridDisplay + Team-QuestionCard), gefuettert mit
-              Trailer-Inhalten. Das IST jetzt der Trailer. ── */}
-        <QQDemoShowcase />
+        {/* ── Live-Demo als 3D-Hero (WebGL): echte App-Views (GridDisplay +
+              Team-QuestionCard) eingebettet in eine Three.js-Szene mit Projektor +
+              Lichtkegel + Bloom. Faellt auf die 2D-Demo zurueck. ── */}
+        <HeroBoundary fallback={<QQDemoShowcase />}>
+          <Suspense fallback={<QQDemoShowcase />}>
+            <QQDemoShowcase3D />
+          </Suspense>
+        </HeroBoundary>
 
         {/* ── Marketing-Text: vorerst ausgeblendet (SHOW_MARKETING=false) ── */}
         {SHOW_MARKETING && <>

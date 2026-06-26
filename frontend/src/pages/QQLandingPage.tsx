@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { QQDemoShowcase } from '../components/QQDemoShowcase';
 
 const SLOGANS = [
   'Das Quiz für den Kiosk um die Ecke',
@@ -97,36 +98,16 @@ export default function QQLandingPage() {
           </div>
         </section>
 
-        {/* ── Trailer (Phone-Mockup, zeigt sofort „wie sieht das aus?") ── */}
-        <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
-          <div style={{
-            fontSize: 'clamp(15px, 1.9vw, 19px)', color: '#cbd5e1', fontWeight: 700,
-            letterSpacing: '0.04em', textAlign: 'center',
-          }}>
-            👀 So sieht ein CozyQuiz aus
-          </div>
-          {/* Handy-Rahmen mit Loop-Trailer (9:16). Höhe-getrieben → wird nie zu hoch. */}
-          <div style={{
-            position: 'relative', height: 'min(68vh, 600px)', aspectRatio: '9 / 16',
-            borderRadius: 38, padding: 9, background: 'linear-gradient(160deg, #1b2030, #0b0e18)',
-            border: '2px solid rgba(255,255,255,0.10)',
-            boxShadow: '0 30px 70px rgba(0,0,0,0.55), 0 0 0 1px rgba(0,0,0,0.4) inset',
-          }}>
-            <iframe
-              src="/trailer"
-              title="CozyQuiz Trailer"
-              loading="lazy"
-              scrolling="no"
-              style={{ width: '100%', height: '100%', border: 0, borderRadius: 30, display: 'block', background: '#0A0E22' }}
-            />
-          </div>
+        {/* ── Live-Demo: Beamer + Handy synchron (echtes Quiz-Design, Mock-Daten) ── */}
+        <QQDemoShowcase />
+        <div style={{ textAlign: 'center', marginTop: -4 }}>
           <a href="/trailer" target="_blank" rel="noopener" style={{
             fontSize: 14, color: '#94a3b8', fontWeight: 700, textDecoration: 'none',
             borderBottom: '1px dashed rgba(148,163,184,0.5)', paddingBottom: 1,
           }}>
-            Trailer im Vollbild ansehen →
+            🎬 Trailer ansehen →
           </a>
-        </section>
+        </div>
 
         {/* ── What is it / For Partners ── */}
         <section style={cardStyle}>

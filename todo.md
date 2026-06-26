@@ -23,10 +23,17 @@ weil Geräte-Test / Verhaltensänderung nötig:
 - **Disconnect-Flackern**: bei 1–2 s WLAN-Aussetzer springt der Spieler kurz zur
   Rejoin-Ansicht vor Auto-Rejoin. Fix: `joined` erst nach ~1,5 s zurücksetzen (QQTeamPage ~271).
 
-**Landing-Demo — ERLEDIGT** (Commit `b813911c`): Trailer-iframe ersetzt durch
-`QQDemoShowcase` (synchrone Beamer+Handy-Live-Demo, 4 Beats, echtes Design + Mock-Daten).
-Trailer bleibt per Link. — Optional später: faithful Mini-Brett durch echte `GridDisplay`
-ersetzen, wenn Wolf pixel-exakt will.
+**Landing-Demo — NACHARBEIT NÖTIG (Wolf 2026-06-26):** `QQDemoShowcase` (synchrone
+Beamer+Handy-Demo, 4 Beats) steht auf `/` (Commit `b813911c`), ABER aktuell als
+**faithful Nachbildung** — Wolf: „das ist doch nicht tatsächlich aus dem Quiz?". Er will
+die **ECHTEN Quiz-Komponenten** mit gemocktem `QQStateUpdate`:
+- Beamer-Seite: echte `GridDisplay` (props: state/maxSize/highlightTeam — clean), echte
+  `CozyQuizQuestionView` / Lobby / GameOver wo prop-getrieben; ggf. `AvatarSetProvider value="cozy3d"` + Theme drumherum.
+- Handy-Seite: echte Team-Card-Komponenten (LobbyCard, Frage-Card, Placement) aus QQTeamPage.
+- Knackpunkt: vollständig genug gemockten `QQStateUpdate` bauen (grid/teams/gridSize/phase/
+  currentQuestion/…) + die Komponenten brauchen evtl. Context/Callbacks (no-op stubben).
+- Mock-State + Beat-Timer aus `QQDemoShowcase` wiederverwenden, nur die Render-Teile durch
+  echte Komponenten ersetzen. Trailer bleibt per Link.
 
 **Brand-Farb-Sweep:** Amber/Gold taucht entgegen der Pink/Magenta-Marke wieder auf
 (Landing-Page `QQLandingPage`, `FinalRecapHintCard` amber400). Bei Gelegenheit angleichen.

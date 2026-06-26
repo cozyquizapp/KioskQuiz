@@ -194,7 +194,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
     if (expired) return;
     setBets(prev => {
       const next = [...prev];
-      const newVal = Math.max(0, Math.min(prev[i] + delta, prev[i] + remaining + (delta < 0 ? 0 : 0)));
+      const newVal = Math.max(0, Math.min(prev[i] + delta, prev[i] + remaining));
       if (delta > 0 && remaining <= 0) return prev;
       next[i] = newVal;
       return next;

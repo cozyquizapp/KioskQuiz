@@ -387,7 +387,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
 
-  useEffect(() => { if (!alreadyAnswered) ref.current?.focus(); }, [alreadyAnswered]);
+  useEffect(() => { if (!alreadyAnswered) ref.current?.focus({ preventScroll: true }); }, [alreadyAnswered]);
 
   const expired = useExpiry(s.timerEndsAt ?? null);
   const valRef = useRef(val); valRef.current = val;

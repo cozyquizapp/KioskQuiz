@@ -227,7 +227,10 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
 
   async function handleCell(r: number, c: number) {
     if (!isMyTurn || !selecting) return;
-    const cell = s.grid[r][c];
+    // Null-Guard: bei einem stateUpdate mitten im Phasen-/Grid-Resize kann das
+    // Grid kurz kürzer als gridSize sein → ein Tap würde sonst hart crashen.
+    const cell = s.grid[r]?.[c];
+    if (!cell) return;
     const cellKey = `${r}-${c}`;
     setTappedCell(cellKey);
     setTimeout(() => setTappedCell(null), 300);
@@ -246,8 +249,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
       if (!swapFirst) { setSwapFirst({ r, c }); return; }
       if (r === swapFirst.r && c === swapFirst.c) return;
-      const firstCell = s.grid[swapFirst.r][swapFirst.c];
-      if (firstCell.ownerId === cell.ownerId) return;
+      const firstCell = s.grid[swapFirst.r]?.[swapFirst.c];
+      if (!firstCell || firstCell.ownerId === cell.ownerId) return;
       await safeEmit(emit, 'qq:swapCells', { roomCode, teamId: myTeamId, rowA: swapFirst.r, colA: swapFirst.c, rowB: r, colB: c });
       if (navigator.vibrate) navigator.vibrate([50, 30, 50, 30, 50]);
       setSelecting(false); setSwapFirst(null); return;
@@ -341,12 +344,12 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   function hasAdjacentStreak(r: number, c: number, ownerId: string | null): boolean {
     if (!ownerId) return false;
     let hCount = 1;
-    for (let cc = c - 1; cc >= 0 && s.grid[r][cc].ownerId === ownerId; cc--) hCount++;
-    for (let cc = c + 1; cc < s.gridSize && s.grid[r][cc].ownerId === ownerId; cc++) hCount++;
+    for (let cc = c - 1; cc >= 0 && s.grid[r]?.[cc]?.ownerId === ownerId; cc--) hCount++;
+    for (let cc = c + 1; cc < s.gridSize && s.grid[r]?.[cc]?.ownerId === ownerId; cc++) hCount++;
     if (hCount >= 2) return true;
     let vCount = 1;
-    for (let rr = r - 1; rr >= 0 && s.grid[rr][c].ownerId === ownerId; rr--) vCount++;
-    for (let rr = r + 1; rr < s.gridSize && s.grid[rr][c].ownerId === ownerId; rr++) vCount++;
+    for (let rr = r - 1; rr >= 0 && s.grid[rr]?.[c]?.ownerId === ownerId; rr--) vCount++;
+    for (let rr = r + 1; rr < s.gridSize && s.grid[rr]?.[c]?.ownerId === ownerId; rr++) vCount++;
     return vCount >= 2;
   }
 

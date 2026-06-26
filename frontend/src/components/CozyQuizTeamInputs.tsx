@@ -18,7 +18,7 @@
  *
  * Extrahiert aus QQTeamPage.tsx 2026-05-13 (Refactor Phase 1.3).
  */
-import { forwardRef } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -97,9 +97,22 @@ export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, sub
 }) {
   const defaultLabel = lang === 'de' ? 'Jetzt antworten!' : 'Answer now!';
   const defaultSubmittedLabel = lang === 'de' ? 'Abgegeben' : 'Submitted';
-  const bg = submitted ? '#16a34a' : canSubmit ? `${catColor}30` : 'rgba(255,255,255,0.04)';
-  const border = submitted ? '#16a34a' : canSubmit ? catColor : 'rgba(255,255,255,0.08)';
-  const color = submitted ? '#fff' : canSubmit ? '#F1F5F9' : '#334155';
+  // Doppel-Tap-Schutz: nach dem Klick SOFORT optimistisch sperren (sonst feuert
+  // ein schneller Doppel-Tap qq:submitAnswer 2× im Latenz-Fenster bis zum
+  // stateUpdate — gerade auf Pub-WLAN). Falls kein Update kommt (Submit
+  // fehlgeschlagen), nach kurzer Zeit wieder freigeben. Reset pro Frage via
+  // key-Remount des Inputs (s.currentQuestion.id).
+  const [clicked, setClicked] = useState(false);
+  useEffect(() => {
+    if (!clicked) return;
+    const t = setTimeout(() => setClicked(false), 2500);
+    return () => clearTimeout(t);
+  }, [clicked]);
+  const locked = submitted || clicked;
+  const handle = () => { if (!canSubmit || locked) return; setClicked(true); onSubmit(); };
+  const bg = locked ? '#16a34a' : canSubmit ? `${catColor}30` : 'rgba(255,255,255,0.04)';
+  const border = locked ? '#16a34a' : canSubmit ? catColor : 'rgba(255,255,255,0.08)';
+  const color = locked ? '#fff' : canSubmit ? '#F1F5F9' : '#334155';
   return (
     <div style={{
       position: 'sticky',
@@ -109,8 +122,8 @@ export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, sub
     }}>
       <button
         className="qq-team-submit-btn"
-        onClick={onSubmit}
-        disabled={!canSubmit || submitted}
+        onClick={handle}
+        disabled={!canSubmit || locked}
         style={{
           // 2026-05-02 (App-Designer-Audit P2): Padding+Schrift fix halten —
           // sonst ruckelt der Button-Layout 4-6px hoch wenn canSubmit togglet,
@@ -119,15 +132,15 @@ export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, sub
           borderColor: border,
           background: bg,
           color,
-          cursor: canSubmit && !submitted ? 'pointer' : 'default',
+          cursor: canSubmit && !locked ? 'pointer' : 'default',
           fontSize: 18,
           width: '100%',
-          opacity: canSubmit || submitted ? 1 : 0.6,
-          boxShadow: canSubmit && !submitted ? `0 4px 0 ${catColor}55, 0 0 24px ${catColor}33` : submitted ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
-          animation: submitted ? 'tcsuccess 0.45s var(--qq-ease-bounce) both' : canSubmit ? 'tcbtnpop 0.35s var(--qq-ease-bounce) both' : 'none',
+          opacity: canSubmit || locked ? 1 : 0.6,
+          boxShadow: canSubmit && !locked ? `0 4px 0 ${catColor}55, 0 0 24px ${catColor}33` : locked ? '0 4px 0 #15803d, 0 0 16px rgba(34,197,94,0.25)' : 'none',
+          animation: locked ? 'tcsuccess 0.45s var(--qq-ease-bounce) both' : canSubmit ? 'tcbtnpop 0.35s var(--qq-ease-bounce) both' : 'none',
         }}
       >
-        {submitted
+        {locked
           ? <><span style={{ animation: 'tccheckpop 0.4s var(--qq-ease-bounce) both', display: 'inline-block', fontSize: 20 }}>✓</span> {submittedLabel ?? defaultSubmittedLabel}</>
           : label ?? defaultLabel}
       </button>

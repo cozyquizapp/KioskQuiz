@@ -60,19 +60,29 @@ async function bakePair(slug, aufPath, zuPath) {
     const d = Math.abs(o.data[i] - c.data[i]) + Math.abs(o.data[i + 1] - c.data[i + 1]) + Math.abs(o.data[i + 2] - c.data[i + 2]);
     if (d > 70) mask[p] = 1;
   }
-  // 3) groesste 2 Blobs = Augen
-  const comps = components(mask, W, H).sort((a, b) => b.length - a.length);
-  const eyes = comps.slice(0, 2);
-  // Sanity: 2 Blobs, plausible Groesse, obere Gesichtshaelfte, horizontal getrennt
-  const warn = [];
-  if (eyes.length < 2) warn.push('weniger als 2 Diff-Blobs');
-  else {
-    const [a, b] = eyes; const [ax, ay] = centroid(a, W), [bx, by] = centroid(b, W);
-    if (a.length < 250 || a.length > 14000 || b.length < 250 || b.length > 14000) warn.push(`Blob-Groessen ${a.length}/${b.length}`);
-    if (ay > H * 0.72 || by > H * 0.72) warn.push('Blob(s) zu tief im Gesicht');
-    if (Math.abs(ax - bx) < W * 0.12) warn.push('Blobs horizontal zu nah');
-    if (a.length > b.length * 3) warn.push('Blobs sehr ungleich gross');
+  // 3) Augen = bestes SYMMETRISCHES Blob-Paar — NICHT einfach die 2 größten,
+  //    sonst klaut ein Mund-/Nasen-Diff in der Gesichtsmitte einen Augen-Slot
+  //    → „Zwinkern" (ein Auge bleibt offen). Augenpaar = gegenüberliegende
+  //    Seiten, ähnliche Höhe + Größe, in der oberen Gesichtshälfte.
+  const all = components(mask, W, H).filter(c => c.length >= 200).sort((a, b) => b.length - a.length);
+  const cand = all.slice(0, 8).map(c => ({ c, n: c.length, ctr: centroid(c, W) }));
+  const cx0 = W / 2;
+  let pair = null, best = -1;
+  for (let i = 0; i < cand.length; i++) for (let j = i + 1; j < cand.length; j++) {
+    const A = cand[i], B = cand[j]; const [ax, ay] = A.ctr, [bx, by] = B.ctr;
+    if ((ax - cx0) * (bx - cx0) >= 0) continue;       // gleiche Seite → kein Augenpaar
+    if (ay > H * 0.72 || by > H * 0.72) continue;       // zu tief (Mund/Kinn)
+    const sep = Math.abs(ax - bx); if (sep < W * 0.12 || sep > W * 0.78) continue;
+    const sizeRatio = Math.min(A.n, B.n) / Math.max(A.n, B.n);
+    const yClose = 1 - Math.min(1, Math.abs(ay - by) / (H * 0.22));
+    const score = sizeRatio * 0.55 + yClose * 0.45;
+    if (score > best) { best = score; pair = [A.c, B.c]; }
   }
+  const warn = [];
+  let eyes;
+  if (pair) eyes = pair;
+  else { eyes = all.slice(0, 2); warn.push('kein symmetrisches Augenpaar — Fallback: 2 größte Blobs'); }
+  if (eyes.length < 2) warn.push('weniger als 2 Diff-Blobs');
 
   const eyeMask = new Uint8Array(N); for (const comp of eyes) for (const p of comp) eyeMask[p] = 1;
   // Dilatation

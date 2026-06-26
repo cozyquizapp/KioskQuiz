@@ -2367,7 +2367,9 @@ export function qqChooseFreeAction(
   const hasFreeCell = room.grid.some(row => row.some(cell => cell.ownerId === null));
 
   if (action === 'STEAL') {
-    if (room.gamePhaseIndex === 2) {
+    // Steal-Cap gilt nur in der klassischen Phase-2-„Setzen-oder-Klauen"-Runde,
+    // NICHT im 2-Runden-Showcase-R2 (dort = letzte Runde, Klauen frei wie Phase 3).
+    if (room.gamePhaseIndex === 2 && room.totalPhases !== 2) {
       const stats = room.teamPhaseStats[teamId];
       if (stats.stealsUsed >= QQ_MAX_STEALS_PER_PHASE) {
         throw new QQError('STEAL_LIMIT', 'Bereits 2× geklaut in dieser Phase.');
@@ -2618,8 +2620,8 @@ export function qqStealCell(
     throw new QQError('WRONG_ACTION', 'Kein Klau-Modus aktiv.');
   }
 
-  // Phase 2 steal limit check
-  if (room.gamePhaseIndex === 2 && action === 'STEAL_1') {
+  // Phase 2 steal limit check — nur klassische Phase-2-Runde, nicht 2-Runden-R2.
+  if (room.gamePhaseIndex === 2 && room.totalPhases !== 2 && action === 'STEAL_1') {
     const stats = room.teamPhaseStats[teamId];
     if (stats.stealsUsed >= QQ_MAX_STEALS_PER_PHASE) {
       throw new QQError('STEAL_LIMIT', 'Bereits 2× geklaut in dieser Phase.');
@@ -4051,11 +4053,16 @@ function finishPlacement(room: QQRoomState): void {
     if (next) {
       room.correctTeamId = next;
       room.pendingFor    = next;
-      const action = pendingActionForPhase(room, next);
-      room.pendingAction = action;
+      let action = pendingActionForPhase(room, next);
       if (action === 'PLACE_2') {
-        room.teamPhaseStats[next].placementsLeft = 2;
+        // Auto-Degrade auf PLACE_1 wenn nur noch ≤1 freies Feld — sonst stuckt das
+        // Game bei Co-Winnern via Queue (selbe Härtung wie qqStartPlacement /
+        // qqChooseFreeAction / Cozy-Game-Resolve; hier hatte sie gefehlt).
+        const free = room.grid.reduce((s, r) => s + r.filter(c => c.ownerId === null).length, 0);
+        if (free <= 1) { action = 'PLACE_1'; room.teamPhaseStats[next].placementsLeft = 0; }
+        else { room.teamPhaseStats[next].placementsLeft = 2; }
       }
+      room.pendingAction = action;
       room.phase = 'PLACEMENT';
       room.lastActivityAt = Date.now();
       return;

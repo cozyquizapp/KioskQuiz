@@ -692,15 +692,18 @@ function Shell({ children, lang, onLang, brand }: {
   // die --qq-Tokens. So flippen Text/Flächen/Linien überall ohne `brand` in
   // jede Helper-Funktion zu fädeln (Literale wurden auf var(--sum-*) umgestellt).
   const themed = brand.themed;
+  // ⚠️ Cozy-Zweig MUSS die Original-Literale liefern, NICHT var(--sum-*) (das
+  // wäre selbst-referenziell → zyklisch → undefined → Text einfarbig + Karten
+  // transparent auf der Default-Summary). Nur der themed-Zweig zieht auf --qq-*.
   const sumVars: Record<string, string> = {
-    '--sum-text':    themed ? 'var(--qq-text)'        : 'var(--sum-text)',
-    '--sum-muted':   themed ? 'var(--qq-text-muted)'  : 'var(--sum-muted)',
-    '--sum-dim':     themed ? 'var(--qq-text-muted)'  : 'var(--sum-dim)',
-    '--sum-card':    themed ? 'var(--qq-card-bg)'     : 'var(--sum-card)',
-    '--sum-card-2':  themed ? 'var(--qq-surface)'     : 'var(--sum-card-2)',
-    '--sum-soft':    themed ? 'var(--qq-surface)'     : 'var(--sum-soft)',
-    '--sum-line':    themed ? 'var(--qq-hairline)'    : 'var(--sum-line)',
-    '--sum-line-2':  themed ? 'var(--qq-hairline)'    : 'var(--sum-line-2)',
+    '--sum-text':    themed ? 'var(--qq-text)'        : '#e2e8f0',
+    '--sum-muted':   themed ? 'var(--qq-text-muted)'  : '#94a3b8',
+    '--sum-dim':     themed ? 'var(--qq-text-muted)'  : '#64748b',
+    '--sum-card':    themed ? 'var(--qq-card-bg)'     : 'rgba(255,255,255,0.04)',
+    '--sum-card-2':  themed ? 'var(--qq-surface)'     : 'rgba(255,255,255,0.08)',
+    '--sum-soft':    themed ? 'var(--qq-surface)'     : 'rgba(255,255,255,0.03)',
+    '--sum-line':    themed ? 'var(--qq-hairline)'    : 'rgba(255,255,255,0.10)',
+    '--sum-line-2':  themed ? 'var(--qq-hairline)'    : 'rgba(255,255,255,0.18)',
     '--sum-on-accent': themed ? '#ffffff'             : '#0A0814',
   };
   return (

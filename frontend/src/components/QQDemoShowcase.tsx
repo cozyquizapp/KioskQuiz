@@ -46,19 +46,19 @@ export function DemoKeyframes() {
 
 // ── Teams (echte Avatar-Slots: avatarId = Farb-Slot, emoji = cozy3d-Slug) ────
 type DemoTeam = { id: string; name: string; avatarId: string; emoji: string; color: string };
-const TEAMS: DemoTeam[] = [
+export const TEAMS: DemoTeam[] = [
   { id: 't0', name: 'Füchse', avatarId: 'fox',     emoji: 'fuchs', color: '#F97316' },
   { id: 't1', name: 'Eulen',  avatarId: 'panda',   emoji: 'eule',  color: '#14B8A6' },
   { id: 't2', name: 'Katzen', avatarId: 'rabbit',  emoji: 'katze', color: '#A855F7' },
   { id: 't3', name: 'Bären',  avatarId: 'cow',     emoji: 'baer',  color: '#EC4899' },
 ];
-const ME = TEAMS[0];
+export const ME = TEAMS[0];
 
-const GRID = 5;
+export const GRID = 5;
 const QUESTION_TEXT = 'Welche Stadt hat die meisten Brücken?';
 const OPTIONS = ['Hamburg', 'Venedig', 'Amsterdam', 'Berlin'];
 
-const QUESTION: QQQuestion = {
+export const QUESTION: QQQuestion = {
   id: 'demo-q',
   category: 'MUCHO',
   phaseIndex: 1,
@@ -70,7 +70,7 @@ const QUESTION: QQQuestion = {
 };
 
 // ── Brett-Progression je Beat (Owner-Index pro Zelle, -1 = leer) ─────────────
-type Board = number[][];
+export type Board = number[][];
 const B_EMPTY: Board = Array.from({ length: GRID }, () => Array(GRID).fill(-1));
 const B_FIRST: Board = [
   [0, -1, -1, -1, -1],
@@ -118,7 +118,7 @@ function teamsForBoard(board: Board): QQTeam[] {
   });
 }
 
-function buildState(args: {
+export function buildState(args: {
   board: Board;
   phase: QQStateUpdate['phase'];
   question: QQQuestion | null;
@@ -202,7 +202,7 @@ export function ProjectedFX({ radius }: { radius: number }) {
 }
 
 // ── Scaled-Device: rendert children in logischer Aufloesung + skaliert ins Frame
-function ScaledScreen({ logicalW, logicalH, radius, fit, children, overlay, style }: {
+export function ScaledScreen({ logicalW, logicalH, radius, fit, children, overlay, style }: {
   logicalW: number; logicalH: number; radius: number;
   fit: 'width' | 'height'; children: ReactNode; overlay?: ReactNode; style?: CSSProperties;
 }) {

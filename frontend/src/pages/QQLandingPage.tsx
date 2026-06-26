@@ -1,15 +1,5 @@
-import { useEffect, useState, Suspense, lazy, Component, type ReactNode } from 'react';
-import { QQDemoShowcase } from '../components/QQDemoShowcase';
-
-// 3D-Hero (Three.js) nur bei Bedarf laden — haelt das Landing-Bundle schlank.
-const QQDemoShowcase3D = lazy(() => import('../components/QQDemoShowcase3D'));
-
-// Faellt bei WebGL-Fehler sauber auf die 2D-Demo zurueck (alte Geraete/Treiber).
-class HeroBoundary extends Component<{ fallback: ReactNode; children: ReactNode }, { failed: boolean }> {
-  state = { failed: false };
-  static getDerivedStateFromError() { return { failed: true }; }
-  render() { return this.state.failed ? this.props.fallback : this.props.children; }
-}
+import { useEffect, useState } from 'react';
+import QQScrollConquest from '../components/QQScrollConquest';
 
 const SLOGANS = [
   'Das Quiz für den Kiosk um die Ecke',
@@ -37,7 +27,7 @@ export default function QQLandingPage() {
       background: 'radial-gradient(ellipse at 50% 0%, #1e293b 0%, #0b0d14 55%, #050712 100%)',
       color: '#e2e8f0',
       fontFamily: "'Nunito', system-ui, sans-serif",
-      position: 'relative', overflow: 'hidden',
+      position: 'relative',
     }}>
       {/* Brand-Aurora-Glow (Pink/Magenta/Indigo) */}
       <div style={{
@@ -114,14 +104,9 @@ export default function QQLandingPage() {
           </div>
         </section>
 
-        {/* ── Live-Demo als 3D-Hero (WebGL): echte App-Views (GridDisplay +
-              Team-QuestionCard) eingebettet in eine Three.js-Szene mit Projektor +
-              Lichtkegel + Bloom. Faellt auf die 2D-Demo zurueck. ── */}
-        <HeroBoundary fallback={<QQDemoShowcase />}>
-          <Suspense fallback={<QQDemoShowcase />}>
-            <QQDemoShowcase3D />
-          </Suspense>
-        </HeroBoundary>
+        {/* ── Scroll-Eroberung: das echte Brett fuellt sich Feld fuer Feld beim
+              Scrollen, mit echten Views (GridDisplay + Team-QuestionCard). ── */}
+        <QQScrollConquest />
 
         {/* ── Marketing-Text: vorerst ausgeblendet (SHOW_MARKETING=false) ── */}
         {SHOW_MARKETING && <>

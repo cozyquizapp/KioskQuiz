@@ -684,7 +684,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
                                 }}>{stampEmoji}</span>
                               ) : (
-                                <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat />
+                                <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat
+                                  eyes={team.id === highlightTeam ? 'open' : 'closed'} />
                               )}
                             </div>
                           );

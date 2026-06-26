@@ -25,6 +25,10 @@ type Props = {
   lang?: 'de' | 'en';
   /** Blinzel-Animation bei PNG-Modus (default: true). */
   blink?: boolean;
+  /** Augen-Zustand (cozy3d): 'auto' = Ruhe offen + Idle-Blinzeln; 'open'/'closed'
+   *  = State-gesteuert (z.B. Grid: zu wenn nicht dran, auf wenn Team „dran";
+   *  Reveal: auf wenn richtig). Weicher Crossfade beim Wechsel. */
+  eyes?: 'auto' | 'open' | 'closed';
   /**
    * Optionales Override fuer das Avatar-Set. Wenn nicht gesetzt,
    * wird der aktive Set-Wert aus AvatarSetContext gelesen.
@@ -71,7 +75,7 @@ type Props = {
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
 export function QQTeamAvatar({
-  avatarId, size, style, className, title, square, lang, blink = true, avatarSetId, teamEmoji, flat, bgColor,
+  avatarId, size, style, className, title, square, lang, blink = true, eyes = 'auto', avatarSetId, teamEmoji, flat, bgColor,
 }: Props) {
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
@@ -107,6 +111,7 @@ export function QQTeamAvatar({
         square={square}
         flat={flat}
         blink={blink}
+        eyes={eyes}
       />
     );
   }
@@ -328,17 +333,24 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, color, size, baseStyle, className, title, square, flat, blink = true,
+  src, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto',
 }: {
   src: string; color: string; size: number | string;
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
+  /** Augen-Zustand: 'auto' = Ruhe offen + Idle-Blinzeln (große Avatare);
+   *  'open'/'closed' = State-gesteuert (z.B. Grid: zu wenn nicht dran, auf wenn
+   *  Team „dran"). Weicher Crossfade beim Wechsel (Aufwachen/Einschlafen). */
+  eyes?: 'auto' | 'open' | 'closed';
 }) {
   const [failed, setFailed] = useState(false);
   const [blinkFailed, setBlinkFailed] = useState(false);
-  // Blinzeln nur auf GROSSEN Avataren (flat = Grid-Cell → statisch, Wolf 2026-06-25)
-  // und nur wenn fuer den Slug ein -blink-Asset existiert.
   const slug = cozy3dSlugFromSrc(src);
-  const canBlink = blink && !flat && !blinkFailed && cozy3dHasBlink(slug);
+  const has = !!slug && !blinkFailed && cozy3dHasBlink(slug);
+  // Idle-Blinzeln (Ruhe offen, kurz zu) nur auf GROSSEN Avataren (flat=Grid → statisch).
+  const idleBlink = eyes === 'auto' && blink && !flat && has;
+  // 'open'/'closed' = explizit State-gesteuert (Crossfade), auch auf flat (Grid).
+  const explicit = eyes === 'open' || eyes === 'closed';
+  const useStack = has && (idleBlink || explicit);
   // Zufaelliger Phasenversatz → Avatare blinzeln asynchron statt im Gleichtakt.
   const blinkDelay = useMemo(() => -Math.random() * 5.4, []);
   // Hybrid: bei einem Spiel-Event (wakeAllAvatars, z.B. Teams-Vorstellung)
@@ -378,8 +390,10 @@ function ImageAvatar({
       {failed ? (
         // Fallback: neutraler Punkt (kein potenziell falsches Tier-Emoji).
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
-      ) : canBlink && slug ? (
-        // Zwei gestapelte Frames: offen (Ruhe) + geschlossen (kurz eingeblendet).
+      ) : useStack && slug ? (
+        // Zwei gestapelte Frames: offen (Basis) + geschlossen (Overlay).
+        // idle → Overlay blinzelt per Keyframe; explicit → Overlay-Opacity per
+        // State mit weichem Crossfade (Aufwachen/Einschlafen).
         <span style={{ position: 'relative', width: fillPct, height: fillPct, display: 'block' }}>
           <style>{`
             @keyframes qqCozy3dBlink {
@@ -402,9 +416,12 @@ function ImageAvatar({
             draggable={false}
             style={{
               position: 'absolute', inset: 0, width: '100%', height: '100%',
-              objectFit: 'contain', filter: imgFilter, opacity: 0,
-              // awake = schnelleres Blinzeln (Event-Reaktion), sonst ruhiges Idle.
-              animation: `qqCozy3dBlink ${awake ? '1s' : '5.4s'} ease-in-out ${blinkDelay}s infinite`,
+              objectFit: 'contain', filter: imgFilter,
+              ...(explicit
+                // State-gesteuert: zu = Overlay sichtbar, auf = unsichtbar; weicher Crossfade.
+                ? { opacity: eyes === 'closed' ? 1 : 0, transition: 'opacity 0.3s ease' }
+                // Idle-Blinzeln: awake = schneller (Event-Reaktion), sonst ruhig.
+                : { opacity: 0, animation: `qqCozy3dBlink ${awake ? '1s' : '5.4s'} ease-in-out ${blinkDelay}s infinite` }),
             }}
           />
         </span>

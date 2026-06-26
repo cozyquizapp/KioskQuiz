@@ -59,7 +59,8 @@ describe('detectNewJokers', () => {
   it('detects 2x2 block', () => {
     const g = makeGrid(4, [[0, 0, 'A'], [0, 1, 'A'], [1, 0, 'A'], [1, 1, 'A']]);
     const j = detectNewJokers(g, 4, 'A');
-    expect(j).toEqual([{ r: 0, c: 0 }]);
+    // detectNewJokers gibt jetzt JokerBlock[] ({kind, cells}) statt {r,c}-Ecken.
+    expect(j).toEqual([{ kind: '2x2', cells: [{ r: 0, c: 0 }, { r: 0, c: 1 }, { r: 1, c: 0 }, { r: 1, c: 1 }] }]);
   });
 
   it('does not detect incomplete block', () => {
@@ -69,7 +70,8 @@ describe('detectNewJokers', () => {
 
   it('ignores already-formed jokers', () => {
     const g = makeGrid(4, [[0, 0, 'A'], [0, 1, 'A'], [1, 0, 'A'], [1, 1, 'A']]);
-    markJokerCells(g, 0, 0);
+    // markJokerCells nimmt jetzt die cells-Liste (nicht r,c) und setzt jokerCounted.
+    markJokerCells(g, [{ r: 0, c: 0 }, { r: 0, c: 1 }, { r: 1, c: 0 }, { r: 1, c: 1 }]);
     expect(detectNewJokers(g, 4, 'A')).toEqual([]);
   });
 

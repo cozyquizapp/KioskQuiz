@@ -26,7 +26,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { isThemed, getActiveTheme } from '../qqTheme';
-import { wakeTeamAvatar, isAvatarAwake, subscribeAwake } from '../avatarAwake';
+import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { JokerIcon } from './JokerIcon';
 import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -50,18 +50,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const activeColor = activeTeam ? bc(activeTeam.id) : '#fff';
 
   // ── Augen-Reaktion ──────────────────────────────────────────────────────
-  // Re-render bei jeder Wake-Änderung (sonst sieht der Grid die per-Team-Wakes nicht).
+  // Re-render bei jeder Wake-Änderung (per-Team-Wakes, z.B. Lobby-Hallo / künftige
+  // Events). Kein eigener Reveal-Puls hier: das „dran"-Team (highlightTeam) deckt
+  // das Aufwachen der richtigen Teams beim Platzieren ab — ein correctTeamId-Effekt
+  // feuerte beim Grid-Remount (shake-key) fälschlich erneut für ein altes Team.
   const [, setAwakeTick] = useState(0);
   useEffect(() => subscribeAwake(() => setAwakeTick(t => t + 1)), []);
-  // Reveal-Puls: das beim Reveal als richtig markierte Team macht kurz die Augen
-  // auf (die übrigen richtigen Teams wachen ohnehin auf, wenn sie platzieren =
-  // highlightTeam). QQStateUpdate hat nur correctTeamId (einzeln).
-  const correctKey = s.correctTeamId ?? '';
-  useEffect(() => {
-    if (s.correctTeamId) wakeTeamAvatar(s.correctTeamId);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [correctKey]);
-  // Auge auf, wenn Team „dran" (platziert) ODER gerade geweckt (richtig/Aktion).
+  // Auge auf, wenn Team „dran" (platziert) ODER gerade geweckt.
   const eyesFor = (teamId: string): 'open' | 'closed' =>
     (teamId === highlightTeam || isAvatarAwake(teamId)) ? 'open' : 'closed';
 

@@ -21,13 +21,17 @@ let _timer: ReturnType<typeof setTimeout> | null = null;
 function _notify() { _listeners.forEach((l) => l()); }
 
 function _scheduleSleep() {
-  if (_timer) clearTimeout(_timer);
-  // Nach dem längsten aktiven Wake-Fenster ein Re-Render auslösen (→ Augen zu).
+  if (_timer) { clearTimeout(_timer); _timer = null; }
+  // Auf die NÄCHSTE (früheste) noch offene Ablaufzeit planen — nicht die
+  // späteste. Sonst werden Zwischen-Ablaufzeiten verschluckt und einzelne
+  // Avatare gehen zu spät wieder zu. Beim Feuern neu planen (Kaskade).
   const now = Date.now();
-  let maxUntil = _globalUntil;
-  _teamUntil.forEach((t) => { if (t > maxUntil) maxUntil = t; });
-  const delay = Math.max(0, maxUntil - now) + 30;
-  _timer = setTimeout(_notify, delay);
+  const futures: number[] = [];
+  if (_globalUntil > now) futures.push(_globalUntil);
+  _teamUntil.forEach((t, id) => { if (t > now) futures.push(t); else _teamUntil.delete(id); });
+  if (!futures.length) return;
+  const nextExpiry = Math.min(...futures);
+  _timer = setTimeout(() => { _timer = null; _notify(); _scheduleSleep(); }, Math.max(0, nextExpiry - now) + 30);
 }
 
 /** Alle Avatare wecken (z.B. wenn die Teams vorgestellt werden). */

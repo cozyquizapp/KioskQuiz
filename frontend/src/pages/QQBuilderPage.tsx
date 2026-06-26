@@ -2910,6 +2910,7 @@ function DraftListScreen({ drafts, onOpen, onCreate, onCreateSample, onCreateEur
           <div style={{ fontSize: 40, fontWeight: 900, marginBottom: 10, color: '#F8FAFC', letterSpacing: '-0.01em' }}>Fragensätze</div>
           <div style={{ fontSize: 14, color: QQ_COLORS.slate300, marginBottom: 24, opacity: 0.85 }}>Erstelle einen neuen leeren Fragensatz oder lade einen Demo-Pack als Startpunkt.</div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <button onClick={() => onCreate(2)} style={brandCreateBtn()}>+ Leer (2 Runden)</button>
             <button onClick={() => onCreate(3)} style={brandCreateBtn()}>+ Leer (3 Runden)</button>
             <button onClick={() => onCreate(4)} style={brandCreateBtn()}>+ Leer (4 Runden)</button>
             <button onClick={onCreateSample} style={{ ...brandCreateBtn(true), display: 'flex', alignItems: 'center', gap: 6 }}>🗺️ Hamburg Probekatalog</button>

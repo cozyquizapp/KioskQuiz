@@ -4495,6 +4495,17 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   opacity: 1 !important;
 }
 
+/* cozy3d-Avatar-Blinzeln (global statt per-Instanz-<style> — auf dem Brett gibt
+   es bis zu ~64 Avatare, ein <style> je Instanz war DOM-Bloat). */
+@keyframes qqCozy3dBlink {
+  0%, 91%, 100% { opacity: 0; }
+  93.5%, 95.5%  { opacity: 1; }
+}
+@keyframes qqAvatarBlink {
+  0%, 94%, 100% { opacity: 0; }
+  96%, 98%      { opacity: 1; }
+}
+
 /* 2026-05-13 (Wolf 'rechteckige farbige Schatten hinter Texten weg, global'):
    Audit-Erkenntnis — 130+ inline `textShadow` mit farbigen Glow-Werten
    (z.B. `0 0 32px ${color}cc`) erzeugten rechteckige Halo-Boxen hinter Text,

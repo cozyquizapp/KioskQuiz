@@ -211,12 +211,7 @@ function PngAvatar({
       title={title}
       style={{ ...baseStyle, position: 'relative', overflow: 'hidden' }}
     >
-      <style>{`
-        @keyframes qqAvatarBlink {
-          0%, 94%, 100% { opacity: 0; }
-          96%, 98%      { opacity: 1; }
-        }
-      `}</style>
+      {/* @keyframes qqAvatarBlink ist global in main.css. */}
       <img
         src={pngBase}
         alt={title}
@@ -400,12 +395,7 @@ function ImageAvatar({
         // idle → Overlay blinzelt per Keyframe; explicit → Overlay-Opacity per
         // State mit weichem Crossfade (Aufwachen/Einschlafen).
         <span style={{ position: 'relative', width: fillPct, height: fillPct, display: 'block' }}>
-          <style>{`
-            @keyframes qqCozy3dBlink {
-              0%, 91%, 100% { opacity: 0; }
-              93.5%, 95.5%  { opacity: 1; }
-            }
-          `}</style>
+          {/* @keyframes qqCozy3dBlink ist global in main.css (kein per-Instanz-<style>). */}
           <img
             src={src}
             alt={title}

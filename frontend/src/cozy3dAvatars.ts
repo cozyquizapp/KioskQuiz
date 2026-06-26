@@ -138,7 +138,9 @@ export const COZY3D_BLINK_SLUGS = new Set<string>([
   'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn', 'hai',
   'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel', 'katze',
   'koala', 'krabbe', 'kueken', 'kuh',
-  // delfin „zwinkert" (Diff fand nur 1 Auge) — bewusst drin, Wolf prüft Einzelbilder.
+  // 2026-06-26 Charge 2 (geprüft): Affe+Oktopus fehlgeschlagen (auf/zu schlecht
+  // ausgerichtet), Alpaka gut aber neues Tier (nicht im Roster) → ausgelassen.
+  'loewe', 'marienkaefer', 'maulwurf', 'maus', 'muschel', 'nashorn', 'nilpferd',
 ]);
 
 /** Pfad zum GESCHLOSSENE-Augen-PNG (Blink-Frame). */

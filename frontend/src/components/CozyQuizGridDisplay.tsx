@@ -26,6 +26,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { isThemed, getActiveTheme } from '../qqTheme';
+import { wakeTeamAvatar, isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { JokerIcon } from './JokerIcon';
 import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -47,6 +48,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const bc = (teamId: string): string => s.teams.find(t => t.id === teamId)?.color ?? '#94a3b8';
   const activeTeam = s.teams.find(t => t.id === highlightTeam);
   const activeColor = activeTeam ? bc(activeTeam.id) : '#fff';
+
+  // ── Augen-Reaktion ──────────────────────────────────────────────────────
+  // Re-render bei jeder Wake-Änderung (sonst sieht der Grid die per-Team-Wakes nicht).
+  const [, setAwakeTick] = useState(0);
+  useEffect(() => subscribeAwake(() => setAwakeTick(t => t + 1)), []);
+  // Reveal-Puls: das beim Reveal als richtig markierte Team macht kurz die Augen
+  // auf (die übrigen richtigen Teams wachen ohnehin auf, wenn sie platzieren =
+  // highlightTeam). QQStateUpdate hat nur correctTeamId (einzeln).
+  const correctKey = s.correctTeamId ?? '';
+  useEffect(() => {
+    if (s.correctTeamId) wakeTeamAvatar(s.correctTeamId);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [correctKey]);
+  // Auge auf, wenn Team „dran" (platziert) ODER gerade geweckt (richtig/Aktion).
+  const eyesFor = (teamId: string): 'open' | 'closed' =>
+    (teamId === highlightTeam || isAvatarAwake(teamId)) ? 'open' : 'closed';
 
   // Track newly placed cells for pop animation (#5) + stolen cells + neighbor reactions + board shake
   const gridKey = s.grid.flatMap(row => row.map(c => `${c.ownerId ?? ''}`)).join(',');
@@ -685,7 +702,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                                 }}>{stampEmoji}</span>
                               ) : (
                                 <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat
-                                  eyes={team.id === highlightTeam ? 'open' : 'closed'} />
+                                  teamId={team.id} eyes={eyesFor(team.id)} />
                               )}
                             </div>
                           );

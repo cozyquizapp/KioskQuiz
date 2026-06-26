@@ -29,6 +29,8 @@ type Props = {
    *  = State-gesteuert (z.B. Grid: zu wenn nicht dran, auf wenn Team „dran";
    *  Reveal: auf wenn richtig). Weicher Crossfade beim Wechsel. */
   eyes?: 'auto' | 'open' | 'closed';
+  /** Team-ID → per-Team-Wake (wakeTeamAvatar) lässt genau dieses Tier reagieren. */
+  teamId?: string;
   /**
    * Optionales Override fuer das Avatar-Set. Wenn nicht gesetzt,
    * wird der aktive Set-Wert aus AvatarSetContext gelesen.
@@ -75,7 +77,7 @@ type Props = {
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
 export function QQTeamAvatar({
-  avatarId, size, style, className, title, square, lang, blink = true, eyes = 'auto', avatarSetId, teamEmoji, flat, bgColor,
+  avatarId, size, style, className, title, square, lang, blink = true, eyes = 'auto', teamId, avatarSetId, teamEmoji, flat, bgColor,
 }: Props) {
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
@@ -112,6 +114,7 @@ export function QQTeamAvatar({
         flat={flat}
         blink={blink}
         eyes={eyes}
+        teamId={teamId}
       />
     );
   }
@@ -333,7 +336,7 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto',
+  src, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId,
 }: {
   src: string; color: string; size: number | string;
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
@@ -341,6 +344,8 @@ function ImageAvatar({
    *  'open'/'closed' = State-gesteuert (z.B. Grid: zu wenn nicht dran, auf wenn
    *  Team „dran"). Weicher Crossfade beim Wechsel (Aufwachen/Einschlafen). */
   eyes?: 'auto' | 'open' | 'closed';
+  /** Team-ID → per-Team-Wake (wakeTeamAvatar) lässt genau dieses Tier reagieren. */
+  teamId?: string;
 }) {
   const [failed, setFailed] = useState(false);
   const [blinkFailed, setBlinkFailed] = useState(false);
@@ -353,9 +358,9 @@ function ImageAvatar({
   const useStack = has && (idleBlink || explicit);
   // Zufaelliger Phasenversatz → Avatare blinzeln asynchron statt im Gleichtakt.
   const blinkDelay = useMemo(() => -Math.random() * 5.4, []);
-  // Hybrid: bei einem Spiel-Event (wakeAllAvatars, z.B. Teams-Vorstellung)
-  // blinzeln alle kurz schneller = sichtbare Reaktion. Sonst ruhiges Idle.
-  const awake = useSyncExternalStore(subscribeAwake, () => isAvatarAwake());
+  // Hybrid: bei einem Spiel-Event (wakeAllAvatars global ODER wakeTeamAvatar für
+  // genau dieses Team) blinzeln Avatare kurz schneller = sichtbare Reaktion.
+  const awake = useSyncExternalStore(subscribeAwake, () => isAvatarAwake(teamId));
 
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }

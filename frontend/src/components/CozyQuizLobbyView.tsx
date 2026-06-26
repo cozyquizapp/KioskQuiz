@@ -14,6 +14,7 @@ import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed } from '../qqTheme';
 
@@ -213,6 +214,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     for (const id of curIds) if (!prev.has(id)) newJoins.push(id);
     prevTeamIdsRef.current = curIds;
     if (newJoins.length > 0 && prev.size > 0) {
+      // Augen-„Hallo": neu gejointe Tiere machen kurz die Augen auf.
+      for (const id of newJoins) wakeTeamAvatar(id, 3200);
       // Nur als „wave" markieren wenn Lobby schon bestand (sonst sind alle
       // initialen Teams „neu" und der Glow-Burst waere ueberfluessig).
       setWaveIds(new Set(newJoins));
@@ -332,7 +335,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           display: 'flex', alignItems: 'center', gap: 'clamp(24px, 3cqw, 44px)',
           maxWidth: '90cqw',
         }}>
-          <QQTeamAvatar avatarId={welcomedTeam.avatarId} teamEmoji={welcomedTeam.emoji} size={'clamp(120px, 14cqw, 200px)'} style={{
+          <QQTeamAvatar avatarId={welcomedTeam.avatarId} teamEmoji={welcomedTeam.emoji} teamId={welcomedTeam.id} size={'clamp(120px, 14cqw, 200px)'} style={{
             boxShadow: `0 0 32px ${welcomedTeam.color}aa`,
             flexShrink: 0,
           }} />
@@ -723,7 +726,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     minWidth: 0,
                     position: 'relative',
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
                     {isFreshJoin && (
                       <span aria-hidden style={{
                         position: 'absolute', top: -16, right: -10,

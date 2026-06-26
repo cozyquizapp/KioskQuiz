@@ -132,6 +132,7 @@ export function cozy3dLabel(slug: string): string {
 // ‿-Lid ohne zu-Bild): scripts/generate-cozy3d-blink.mjs. Review: /blinktest.
 export const COZY3D_BLINK_SLUGS = new Set<string>([
   'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
+  'chamaeleon', // Gag: wechselt beim Blinzeln die Farbe (auf/zu unterschiedlich gefärbt)
   'clownfisch', 'dachs', 'dino', 'drache', 'eichhoernchen', 'einhorn', 'elch',
   'elefant', 'ente', 'eule', 'faultier', 'fledermaus', 'fuchs', 'gecko',
   'giraffe', 'gorilla', 'hahn', 'hai', 'hamster', 'hase', 'hummer', 'hund',

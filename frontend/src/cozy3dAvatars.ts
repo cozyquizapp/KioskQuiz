@@ -121,17 +121,21 @@ export function cozy3dLabel(slug: string): string {
   return LABEL_BY_SLUG.get(slug) ?? slug;
 }
 
-// ─── Blinzeln (2026-06-25) ────────────────────────────────────────────────
+// ─── Blinzeln (2026-06-26) ────────────────────────────────────────────────
 // Mechanik = 2-Frame-Swap: Ruhe = OFFENE Augen (<slug>.png), Blink = GESCHLOSSEN
-// (<slug>-blink.png). Der geschlossene Frame wird NICHT separat gemalt (die
-// ChatGPT-Paare waren oft nicht deckungsgleich), sondern AUS dem offenen Bild
-// erzeugt: scripts/generate-cozy3d-blink.mjs malt die lokale Fellfarbe übers Auge
-// + eine schwarze ‿-Linie → garantiert deckungsgleich.
-// Ein Tier blinzelt NUR, wenn sein Slug hier steht. Aktuell nur die 4 Test-Tiere
-// (Look-Review auf /blinktest). Danach: Augen-Koords aller Tiere in EYE_COORDS
-// (im Skript) eintragen, Skript laufen, Slugs hier ergaenzen.
+// (<slug>-blink.png). Der geschlossene Frame entsteht per AUTO-DIFF-TRANSPLANT
+// aus Wolfs auf/zu-Paar (scripts/transplant-cozy3d-blink.mjs): auf+zu diffen →
+// die 2 größten Unterschiede = Augen → echte Lid-Scheibe (mit Wimpern) weich
+// aufs offene Bild transplantieren. Kein Matchen/keine Koords nötig; zu-Bild muss
+// nur an den Augen stimmen. Seitenprofil/1-Auge-Tiere werden geflaggt (manuell).
+// Ein Tier blinzelt NUR, wenn sein Slug hier steht. Alternativ-Methode (gezeichnetes
+// ‿-Lid ohne zu-Bild): scripts/generate-cozy3d-blink.mjs. Review: /blinktest.
 export const COZY3D_BLINK_SLUGS = new Set<string>([
-  'fuchs', 'eule', 'katze', 'hund',
+  'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
+  'clownfisch', 'dachs', 'dino', 'drache', 'eichhoernchen', 'einhorn', 'elch',
+  'elefant', 'ente', 'eule', 'faultier', 'fledermaus', 'fuchs', 'gecko',
+  'giraffe', 'gorilla', 'hahn', 'hai', 'hamster', 'hase', 'hummer', 'hund',
+  'igel', 'kamel', 'katze', 'koala', 'krabbe', 'kueken', 'kuh',
 ]);
 
 /** Pfad zum GESCHLOSSENE-Augen-PNG (Blink-Frame). */

@@ -15,7 +15,7 @@ const ALL = [
   'katze', 'koala', 'krabbe', 'kueken', 'kuh',
 ];
 // Von der Heuristik markiert (Seitenprofil / ungleiche Augen / Schieflage) → genauer prüfen.
-const FLAGGED = new Set(['delfin', 'dodo', 'flamingo', 'kaenguruh']);
+const FLAGGED = new Set<string>([]); // alle abgenommen (delfin zwinkert noch — Wolf prüft Einzelbilder)
 
 export default function QQBlinkTestPage() {
   const [speed, setSpeed] = useState(5.2);

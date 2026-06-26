@@ -133,10 +133,12 @@ export function cozy3dLabel(slug: string): string {
 export const COZY3D_BLINK_SLUGS = new Set<string>([
   'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
   'chamaeleon', // Gag: wechselt beim Blinzeln die Farbe (auf/zu unterschiedlich gefärbt)
-  'clownfisch', 'dachs', 'dino', 'drache', 'eichhoernchen', 'einhorn', 'elch',
-  'elefant', 'ente', 'eule', 'faultier', 'fledermaus', 'fuchs', 'gecko',
-  'giraffe', 'gorilla', 'hahn', 'hai', 'hamster', 'hase', 'hummer', 'hund',
-  'igel', 'kamel', 'katze', 'koala', 'krabbe', 'kueken', 'kuh',
+  'clownfisch', 'dachs', 'delfin', 'dino', 'dodo', 'drache', 'eichhoernchen',
+  'einhorn', 'elch', 'elefant', 'ente', 'eule', 'faultier', 'flamingo',
+  'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn', 'hai',
+  'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel', 'katze',
+  'koala', 'krabbe', 'kueken', 'kuh',
+  // delfin „zwinkert" (Diff fand nur 1 Auge) — bewusst drin, Wolf prüft Einzelbilder.
 ]);
 
 /** Pfad zum GESCHLOSSENE-Augen-PNG (Blink-Frame). */

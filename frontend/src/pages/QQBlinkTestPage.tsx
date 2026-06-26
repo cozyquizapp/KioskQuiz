@@ -3,21 +3,11 @@
 // per Auto-Diff-Transplant (scripts/transplant-cozy3d-blink.mjs): auf+zu Bild
 // diffen → die 2 größten Unterschiede = Augen → echte Lid-Scheibe transplantieren.
 import { useState } from 'react';
-import { cozy3dSrc, cozy3dBlinkSrc, cozy3dLabel } from '../cozy3dAvatars';
+import { cozy3dSrc, cozy3dBlinkSrc, cozy3dLabel, COZY3D_BLINK_SLUGS } from '../cozy3dAvatars';
 
-// Alle aus den 41 Paaren erzeugten Blink-Frames.
-const ALL = [
-  'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
-  'chamaeleon', 'clownfisch', 'dachs', 'delfin', 'dino', 'dodo', 'drache',
-  'eichhoernchen', 'einhorn', 'elch', 'elefant', 'ente', 'eule', 'faultier',
-  'flamingo', 'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn',
-  'hai', 'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel',
-  'katze', 'koala', 'krabbe', 'kueken', 'kuh',
-  'loewe', 'marienkaefer', 'maulwurf', 'maus', 'muschel', 'nashorn', 'nilpferd',
-  'lama',
-];
-// Von der Heuristik markiert (Seitenprofil / ungleiche Augen / Schieflage) → genauer prüfen.
-const FLAGGED = new Set<string>([]); // alle abgenommen (delfin zwinkert noch — Wolf prüft Einzelbilder)
+// Alle Tiere mit Blink-Frame (bleibt automatisch in Sync mit COZY3D_BLINK_SLUGS).
+const ALL = [...COZY3D_BLINK_SLUGS].sort();
+const FLAGGED = new Set<string>([]);
 
 export default function QQBlinkTestPage() {
   const [speed, setSpeed] = useState(5.2);

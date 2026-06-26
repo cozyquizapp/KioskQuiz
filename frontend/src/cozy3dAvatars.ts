@@ -95,6 +95,10 @@ export const COZY3D_AVATARS: Cozy3dAvatar[] = [
   { slug: 'wildschwein', label: 'Wildschwein' },
   { slug: 'zebra', label: 'Zebra' },
   { slug: 'ziege', label: 'Ziege' },
+  // 2026-06-26 Charge 3 — neue Tiere (Wolf):
+  { slug: 'leopard', label: 'Leopard' },
+  { slug: 'schaf', label: 'Schaf' },
+  { slug: 'schildkroete', label: 'Schildkröte' },
 ];
 
 /** Alle Slugs als String-Array (= Picker-Pool + Set-`avatars`). */
@@ -130,18 +134,24 @@ export function cozy3dLabel(slug: string): string {
 // nur an den Augen stimmen. Seitenprofil/1-Auge-Tiere werden geflaggt (manuell).
 // Ein Tier blinzelt NUR, wenn sein Slug hier steht. Alternativ-Methode (gezeichnetes
 // ‿-Lid ohne zu-Bild): scripts/generate-cozy3d-blink.mjs. Review: /blinktest.
+// 2026-06-26 Charge 3: kompletter Roster außer `biber` (kein Paar geliefert).
+// chamaeleon = Farbwechsel-Gag (auf/zu unterschiedlich gefärbt). „Affe"=orang-utan,
+// „Alpaka"=lama, „HIER-Orca"=orca, Triceratops=trizeratops, Seekuh=seehkuh (Overrides
+// im Skript). Neue Tiere leopard/schaf/schildkroete sind NICHT im Roster → ausgelassen.
 export const COZY3D_BLINK_SLUGS = new Set<string>([
   'adler', 'alligator', 'axolotl', 'baer', 'biene', 'bison', 'capybara',
-  'chamaeleon', // Gag: wechselt beim Blinzeln die Farbe (auf/zu unterschiedlich gefärbt)
-  'clownfisch', 'dachs', 'delfin', 'dino', 'dodo', 'drache', 'eichhoernchen',
-  'einhorn', 'elch', 'elefant', 'ente', 'eule', 'faultier', 'flamingo',
-  'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn', 'hai',
-  'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel', 'katze',
-  'koala', 'krabbe', 'kueken', 'kuh',
-  // 2026-06-26 Charge 2 (geprüft): „Affe"=orang-utan + Oktopus fehlgeschlagen
-  // (auf/zu schlecht ausgerichtet → Augen offen). „Alpaka"=lama klappt.
-  'loewe', 'marienkaefer', 'maulwurf', 'maus', 'muschel', 'nashorn', 'nilpferd',
-  'lama',
+  'chamaeleon', 'clownfisch', 'dachs', 'delfin', 'dino', 'dodo', 'drache',
+  'eichhoernchen', 'einhorn', 'elch', 'elefant', 'ente', 'eule', 'faultier',
+  'flamingo', 'fledermaus', 'fuchs', 'gecko', 'giraffe', 'gorilla', 'hahn',
+  'hai', 'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel',
+  'katze', 'koala', 'krabbe', 'kueken', 'kuh', 'lama', 'loewe', 'marienkaefer',
+  'maulwurf', 'maus', 'muschel', 'nashorn', 'nilpferd', 'oktopus', 'orang-utan',
+  'orca', 'otter', 'panda', 'papagei', 'pfau', 'pferd', 'phoenix', 'pinguin',
+  'platypus', 'pufffisch', 'qualle', 'red-panda', 'robbe', 'schlange',
+  'schmetterling', 'schwan', 'seehkuh', 'spinne', 'stinktier', 'tiger',
+  'trizeratops', 'wal', 'walross', 'waschbaer', 'wasserbueffel', 'wildschwein',
+  'zebra', 'ziege',
+  'leopard', 'schaf', 'schildkroete', // neue Tiere (Charge 3)
 ]);
 
 /** Pfad zum GESCHLOSSENE-Augen-PNG (Blink-Frame). */

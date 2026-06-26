@@ -25,7 +25,10 @@ function slugify(name) {
     .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
     .replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 }
-const SLUG_OVERRIDE = { eulen: 'eule', hirsch: 'elch', affe: 'orang-utan', alpaka: 'lama' };
+const SLUG_OVERRIDE = {
+  eulen: 'eule', hirsch: 'elch', affe: 'orang-utan', alpaka: 'lama',
+  'hier-orca': 'orca', triceratops: 'trizeratops', seekuh: 'seehkuh',
+};
 const toSlug = (b) => { const s = slugify(b); return SLUG_OVERRIDE[s] ?? s; };
 
 const proc = (p) => sharp(p).ensureAlpha().trim({ threshold: 1 })

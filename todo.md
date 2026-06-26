@@ -13,6 +13,25 @@
 
 ---
 
+## 🆕 Offene Follow-ups (2026-06-26)
+
+**Team-View-Audit** (P0 + 2 billige P1 schon gefixt — Commit `f08414da`). Noch offen,
+weil Geräte-Test / Verhaltensänderung nötig:
+- **Tastatur verdeckt Eingabefeld** auf kleinen Phones (iPhone SE). Fix-Kandidat:
+  `scrollIntoView({block:'center'})` nach Fokus — aber Vorsicht, `preventScroll:true`
+  wurde bewusst gegen Header-Springen gesetzt. Erst am echten Gerät testen.
+- **Disconnect-Flackern**: bei 1–2 s WLAN-Aussetzer springt der Spieler kurz zur
+  Rejoin-Ansicht vor Auto-Rejoin. Fix: `joined` erst nach ~1,5 s zurücksetzen (QQTeamPage ~271).
+
+**Landing-Trailer / Mockup-Demo** (Wolf 2026-06-26): Trailer ist auf `/` im Handy-
+Rahmen eingebettet (Commit `4349723c`). Wolf: Handy-Mockup mit Trailer wirkt komisch,
+weil es nicht wie die echte Team-View aussieht. **Plan:** echte Team-View mit Bot-/Mock-
+Daten als Standalone-Demo (phasen-Screens sind prop-getrieben) in den Mockup, Trailer
+bleibt über den „Vollbild ansehen"-Link erreichbar. Bauen sobald Wolf OK gibt.
+
+**Brand-Farb-Sweep:** Amber/Gold taucht entgegen der Pink/Magenta-Marke wieder auf
+(Landing-Page `QQLandingPage`, `FinalRecapHintCard` amber400). Bei Gelegenheit angleichen.
+
 ## 🐛 Beobachten — Bugs ohne Repro (warten aufs nächste Auftreten)
 
 Kein Fix ohne Snapshot — beim nächsten Live-Vorkommen DevTools-Network `qq:stateUpdate`-Payload ziehen.

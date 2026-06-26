@@ -14,6 +14,7 @@ const ALL = [
   'hai', 'hamster', 'hase', 'hummer', 'hund', 'igel', 'kaenguruh', 'kamel',
   'katze', 'koala', 'krabbe', 'kueken', 'kuh',
   'loewe', 'marienkaefer', 'maulwurf', 'maus', 'muschel', 'nashorn', 'nilpferd',
+  'lama',
 ];
 // Von der Heuristik markiert (Seitenprofil / ungleiche Augen / Schieflage) → genauer prüfen.
 const FLAGGED = new Set<string>([]); // alle abgenommen (delfin zwinkert noch — Wolf prüft Einzelbilder)

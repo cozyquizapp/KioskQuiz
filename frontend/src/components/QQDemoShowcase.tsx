@@ -391,11 +391,131 @@ export function PhoneScene({ beat }: { beat: Beat }) {
   );
 }
 
-// ── Haupt-Komponente (auto-play, gross, synchron) ────────────────────────────
+// ── Viewport-Hook (Desktop vs. Mobile getrennt optimierbar) ──────────────────
+function useIsMobile(bp = 760): boolean {
+  const [m, setM] = useState(false);
+  useEffect(() => {
+    const mq = window.matchMedia(`(max-width: ${bp}px)`);
+    const on = () => setM(mq.matches);
+    on();
+    mq.addEventListener('change', on);
+    return () => mq.removeEventListener('change', on);
+  }, [bp]);
+  return m;
+}
+
+const LABEL: CSSProperties = { fontSize: 11, color: '#5b6780', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase' };
+
+// ── Desktop-Bühne: Beamer + Handy nebeneinander, Maus-Parallax ───────────────
+function DesktopStage({ cur, setPaused }: { cur: Beat; setPaused: (b: boolean) => void }) {
+  const stageRef = useRef<HTMLDivElement>(null);
+  const [tilt, setTilt] = useState({ x: 0, y: 0 });
+  const onMove = (e: React.MouseEvent) => {
+    const el = stageRef.current; if (!el) return;
+    const r = el.getBoundingClientRect();
+    setTilt({ x: -(((e.clientY - r.top) / r.height) - 0.5) * 4, y: (((e.clientX - r.left) / r.width) - 0.5) * 5 });
+  };
+  return (
+    <div ref={stageRef}
+      onMouseEnter={() => setPaused(true)} onMouseMove={onMove}
+      onMouseLeave={() => { setTilt({ x: 0, y: 0 }); setPaused(false); }}
+      style={{
+        position: 'relative', width: '100%', borderRadius: 28, overflow: 'hidden',
+        padding: 'clamp(32px,5vw,64px) clamp(14px,2.5vw,36px) clamp(40px,6vw,72px)',
+        background: 'radial-gradient(125% 95% at 50% 2%, #0b1020 0%, #06080f 55%, #04050b 100%)',
+        boxShadow: 'inset 0 0 150px rgba(0,0,0,0.88)', perspective: 1800, perspectiveOrigin: '50% 42%',
+      }}>
+      <div aria-hidden style={{
+        position: 'absolute', left: '4%', right: '4%', bottom: '4%', height: '34%', pointerEvents: 'none', zIndex: 0,
+        background: 'radial-gradient(ellipse 58% 100% at 40% 0%, rgba(120,140,230,0.16), transparent 70%), radial-gradient(ellipse 30% 100% at 80% 0%, rgba(236,72,153,0.12), transparent 70%)',
+        filter: 'blur(30px)',
+      }} />
+      <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: 'clamp(24px,4vw,64px)', justifyContent: 'center', alignItems: 'center' }}>
+        <figure style={{
+          margin: 0, position: 'relative', width: 'min(94vw, 720px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y - 3}deg)`, transformStyle: 'preserve-3d', transition: 'transform 0.3s ease-out',
+        }}>
+          <div aria-hidden style={{ position: 'absolute', inset: '-14% -8% 8%', pointerEvents: 'none', zIndex: -1, background: 'radial-gradient(ellipse 60% 60% at 50% 42%, rgba(99,102,241,0.26), rgba(236,72,153,0.10) 46%, transparent 72%)', filter: 'blur(36px)', animation: 'demoGlow 6s ease-in-out infinite' }} />
+          <ScaledScreen logicalW={BEAMER.w} logicalH={BEAMER.h} radius={16} fit="width" overlay={<ProjectedFX radius={16} />}
+            style={{ border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 50px 110px -28px rgba(0,0,0,0.82), 0 0 80px rgba(99,102,241,0.20), 0 0 0 1px rgba(255,255,255,0.07)' }}>
+            <BeamerScene beat={cur} />
+          </ScaledScreen>
+          <span style={LABEL}>Beamer</span>
+        </figure>
+
+        <figure style={{
+          margin: 0, position: 'relative',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+          transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y + 5}deg) translateY(6px)`, transformStyle: 'preserve-3d', transition: 'transform 0.3s ease-out',
+        }}>
+          <div aria-hidden style={{ position: 'absolute', inset: '-12% -22% 4%', pointerEvents: 'none', zIndex: -1, background: 'radial-gradient(ellipse 55% 60% at 50% 45%, rgba(236,72,153,0.20), transparent 70%)', filter: 'blur(32px)', animation: 'demoGlow 6s ease-in-out infinite 1.5s' }} />
+          <div style={{
+            height: 'min(66vh, 500px)', display: 'inline-flex', padding: 9, borderRadius: 44, position: 'relative',
+            background: 'linear-gradient(155deg,#262b3d 0%,#0c0f1a 70%)', border: '1px solid rgba(255,255,255,0.14)',
+            boxShadow: '0 50px 110px -28px rgba(0,0,0,0.86), 0 0 50px rgba(236,72,153,0.16)',
+          }}>
+            <div style={{ position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', width: 90, height: 23, borderRadius: 99, background: '#05070d', zIndex: 5 }} />
+            <ScaledScreen logicalW={PHONE.w} logicalH={PHONE.h} radius={36} fit="height">
+              <PhoneScene beat={cur} />
+            </ScaledScreen>
+          </div>
+          <span style={LABEL}>Dein Handy</span>
+        </figure>
+      </div>
+    </div>
+  );
+}
+
+// ── Mobile-Bühne: EIN Gerät pro Szene, gross & lesbar. Frage-Momente → Handy
+//    (du-Perspektive), sonst → grosser Screen. Komplett getrennt vom Desktop. ─
+function MobileStage({ cur, setPaused }: { cur: Beat; setPaused: (b: boolean) => void }) {
+  const phoneLead = cur.phone === 'question' || cur.phone === 'correct';
+  return (
+    <div
+      onTouchStart={() => setPaused(true)} onTouchEnd={() => setPaused(false)}
+      style={{
+        position: 'relative', width: '100%', borderRadius: 22, overflow: 'hidden',
+        padding: '22px 10px 28px', minHeight: '62vh',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: 'radial-gradient(125% 95% at 50% 2%, #0b1020 0%, #06080f 60%, #04050b 100%)',
+        boxShadow: 'inset 0 0 110px rgba(0,0,0,0.85)',
+      }}>
+      <div key={`m-${phoneLead ? 'p' : 'b'}-${cur.caption}`} style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: '100%', animation: 'demoIn 0.45s ease both' }}>
+        {phoneLead ? (
+          <>
+            <div style={{
+              height: 'min(64vh, 460px)', display: 'inline-flex', padding: 8, borderRadius: 40, position: 'relative',
+              background: 'linear-gradient(155deg,#262b3d 0%,#0c0f1a 70%)', border: '1px solid rgba(255,255,255,0.14)',
+              boxShadow: '0 30px 70px -24px rgba(0,0,0,0.82), 0 0 44px rgba(236,72,153,0.18)',
+            }}>
+              <div style={{ position: 'absolute', top: 14, left: '50%', transform: 'translateX(-50%)', width: 82, height: 21, borderRadius: 99, background: '#05070d', zIndex: 5 }} />
+              <ScaledScreen logicalW={PHONE.w} logicalH={PHONE.h} radius={33} fit="height">
+                <PhoneScene beat={cur} />
+              </ScaledScreen>
+            </div>
+            <span style={LABEL}>📱 Dein Handy</span>
+          </>
+        ) : (
+          <>
+            <ScaledScreen logicalW={BEAMER.w} logicalH={BEAMER.h} radius={14} fit="width" overlay={<ProjectedFX radius={14} />}
+              style={{ width: '100%', border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 30px 70px -24px rgba(0,0,0,0.82), 0 0 50px rgba(99,102,241,0.18)' }}>
+              <BeamerScene beat={cur} />
+            </ScaledScreen>
+            <span style={LABEL}>📺 Auf dem großen Screen</span>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ── Haupt-Komponente (auto-play, synchron; Desktop + Mobile getrennt) ────────
 export function QQDemoShowcase() {
   const beats = useMemo(buildBeats, []);
   const [beat, setBeat] = useState(0);
   const [paused, setPaused] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     if (paused) return;
@@ -409,78 +529,19 @@ export function QQDemoShowcase() {
     if (cur.highlightTeam) wakeTeamAvatar(cur.highlightTeam, 2600);
   }, [beat, cur]);
 
-  const stageRef = useRef<HTMLDivElement>(null);
-  const [tilt, setTilt] = useState({ x: 0, y: 0 });
-  const onMove = (e: React.MouseEvent) => {
-    const el = stageRef.current; if (!el) return;
-    const r = el.getBoundingClientRect();
-    setTilt({ x: -(((e.clientY - r.top) / r.height) - 0.5) * 4, y: (((e.clientX - r.left) / r.width) - 0.5) * 5 });
-  };
-  const onLeave = () => { setTilt({ x: 0, y: 0 }); setPaused(false); };
-
   return (
     <AvatarSetProvider value="cozy3d">
       <DemoKeyframes />
-      <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, width: '100%' }}>
+      <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, width: '100%' }}>
         <div key={`cap-${beat}`} style={{
           fontSize: 'clamp(16px, 2.2vw, 24px)', color: '#f1f5f9', fontWeight: 800,
-          textAlign: 'center', maxWidth: 760, minHeight: 60, lineHeight: 1.3,
+          textAlign: 'center', maxWidth: 760, minHeight: 58, lineHeight: 1.3,
           animation: 'demoIn 0.5s ease both', textShadow: '0 2px 18px rgba(0,0,0,0.4)',
         }}>
           {cur.caption}
         </div>
 
-        <div ref={stageRef}
-          onMouseEnter={() => setPaused(true)} onMouseMove={onMove} onMouseLeave={onLeave}
-          style={{
-            position: 'relative', width: '100%', borderRadius: 28, overflow: 'hidden',
-            padding: 'clamp(32px,5vw,64px) clamp(14px,2.5vw,36px) clamp(40px,6vw,72px)',
-            background: 'radial-gradient(125% 95% at 50% 2%, #0b1020 0%, #06080f 55%, #04050b 100%)',
-            boxShadow: 'inset 0 0 150px rgba(0,0,0,0.88)',
-            perspective: 1800, perspectiveOrigin: '50% 42%',
-          }}>
-          <div aria-hidden style={{
-            position: 'absolute', left: '4%', right: '4%', bottom: '4%', height: '34%', pointerEvents: 'none', zIndex: 0,
-            background: 'radial-gradient(ellipse 58% 100% at 40% 0%, rgba(120,140,230,0.16), transparent 70%), radial-gradient(ellipse 30% 100% at 80% 0%, rgba(236,72,153,0.12), transparent 70%)',
-            filter: 'blur(30px)',
-          }} />
-
-          <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexWrap: 'wrap', gap: 'clamp(24px,4vw,64px)', justifyContent: 'center', alignItems: 'center' }}>
-            {/* Beamer */}
-            <figure style={{
-              margin: 0, position: 'relative', width: 'min(94vw, 720px)',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-              transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y - 3}deg)`, transformStyle: 'preserve-3d', transition: 'transform 0.3s ease-out',
-            }}>
-              <div aria-hidden style={{ position: 'absolute', inset: '-14% -8% 8%', pointerEvents: 'none', zIndex: -1, background: 'radial-gradient(ellipse 60% 60% at 50% 42%, rgba(99,102,241,0.26), rgba(236,72,153,0.10) 46%, transparent 72%)', filter: 'blur(36px)', animation: 'demoGlow 6s ease-in-out infinite' }} />
-              <ScaledScreen logicalW={BEAMER.w} logicalH={BEAMER.h} radius={16} fit="width" overlay={<ProjectedFX radius={16} />}
-                style={{ border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 50px 110px -28px rgba(0,0,0,0.82), 0 0 80px rgba(99,102,241,0.20), 0 0 0 1px rgba(255,255,255,0.07)' }}>
-                <BeamerScene beat={cur} />
-              </ScaledScreen>
-              <span style={{ fontSize: 11, color: '#5b6780', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase' }}>Beamer</span>
-            </figure>
-
-            {/* Handy */}
-            <figure style={{
-              margin: 0, position: 'relative',
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-              transform: `rotateX(${tilt.x}deg) rotateY(${tilt.y + 5}deg) translateY(6px)`, transformStyle: 'preserve-3d', transition: 'transform 0.3s ease-out',
-            }}>
-              <div aria-hidden style={{ position: 'absolute', inset: '-12% -22% 4%', pointerEvents: 'none', zIndex: -1, background: 'radial-gradient(ellipse 55% 60% at 50% 45%, rgba(236,72,153,0.20), transparent 70%)', filter: 'blur(32px)', animation: 'demoGlow 6s ease-in-out infinite 1.5s' }} />
-              <div style={{
-                height: 'min(66vh, 500px)', display: 'inline-flex', padding: 9, borderRadius: 44, position: 'relative',
-                background: 'linear-gradient(155deg,#262b3d 0%,#0c0f1a 70%)', border: '1px solid rgba(255,255,255,0.14)',
-                boxShadow: '0 50px 110px -28px rgba(0,0,0,0.86), 0 0 50px rgba(236,72,153,0.16)',
-              }}>
-                <div style={{ position: 'absolute', top: 16, left: '50%', transform: 'translateX(-50%)', width: 90, height: 23, borderRadius: 99, background: '#05070d', zIndex: 5 }} />
-                <ScaledScreen logicalW={PHONE.w} logicalH={PHONE.h} radius={36} fit="height">
-                  <PhoneScene beat={cur} />
-                </ScaledScreen>
-              </div>
-              <span style={{ fontSize: 11, color: '#5b6780', fontWeight: 800, letterSpacing: '0.22em', textTransform: 'uppercase' }}>Dein Handy</span>
-            </figure>
-          </div>
-        </div>
+        {isMobile ? <MobileStage cur={cur} setPaused={setPaused} /> : <DesktopStage cur={cur} setPaused={setPaused} />}
 
         <div style={{ display: 'flex', gap: 8 }}>
           {beats.map((_, i) => (

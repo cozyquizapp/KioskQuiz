@@ -111,15 +111,9 @@ export const AVATAR_SETS: AvatarSet[] = [
     source: 'emoji',
     avatars: COZY_ANIMALS_EMOJI,
   },
-  {
-    id: 'cozyCast',
-    label: 'CozyCast (PNG)',
-    tint: '#FA507F',
-    leadEmoji: '🐕',
-    preview: ['🦥', '🐧', '🐨'],
-    source: 'png',
-    avatars: [],   // PNGs kommen via QQ_AVATARS direkt
-  },
+  // 2026-06-27: 'cozyCast' (alte PNG-Avatare) entfernt — Wolf: nicht mehr genutzt.
+  // Assets nach _archive/public-avatars/cozy-cast/. PngAvatar-Codepfad bleibt (tot,
+  // harmlos); getSet() fällt auf Default zurück, falls irgendwo noch 'cozyCast' ankommt.
   {
     id: 'halloween',
     label: 'Halloween',

@@ -22,6 +22,21 @@ Ein anderer Build-Lauf hatte sich aus Versehen diese alten Avatare gezogen → a
 **Alt-Assets** (`_archive/public-avatars/…`, nur von `config/avatars.ts` referenziert):
 - `blauwal, eichhoernchen, giraffe, igel, katze, pandabaer, pferd, wolf` (~37 MB SVG/Video)
 
+## 2026-06-27 — Tote Icons + cozyCast-Set
+**`_archive/icons/`** — 19 ungenutzte Icon-PNGs (kein lebender Render; nur Typ-Union/
+Fallback in QQIcon.tsx): paralleler `fx-cat-*` (5), `fx-sub-*` (4), `fx-marker-*` (4)
+Satz (Doubletten zu den aktiven `cat-*`/`sub-*`/`marker-*`), `fx-mucho-alt-*` (2),
+`fx-zvz-alt-*` (2), `fx-lightning`, `fx-stack` (aus EMOJI_TO_SLUG auskommentiert).
+Aktiv geblieben: `cat-*`, `sub-*`, `marker-*` + 19 via Emoji erreichbare `fx-*`.
+
+> ⚠️ **Bonus-Fund dabei:** 13 **aktive** Icons (`cat-*`/`sub-*`/`marker-*`) waren im
+> Arbeitsverzeichnis **versehentlich gelöscht** (nicht von diesem Cleanup — Working-Tree-
+> Deletion, vmtl. vom Landing-Build). Aus git HEAD wiederhergestellt.
+
+**`_archive/public-avatars/cozy-cast/`** — altes PNG-Avatar-Set „CozyCast". `cozyCast`-
+Eintrag aus `avatarSets.ts` `AVATAR_SETS` entfernt (nicht mehr im /team-Picker). Der
+PngAvatar-Codepfad bleibt (toter, harmloser Zweig); `getSet()` fällt auf Default zurück.
+
 ### Zurückholen (falls doch nochmal gebraucht)
 ```bash
 # Beispiel: einen Asset-Ordner zurück

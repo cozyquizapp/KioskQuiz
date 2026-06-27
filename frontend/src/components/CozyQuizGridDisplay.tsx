@@ -27,6 +27,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
+import { cozy3dSrc } from '../cozy3dAvatars';
 import { JokerIcon } from './JokerIcon';
 import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -594,6 +595,12 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     const STAMP_EMOJI_MAP: Record<string, string> = {
                       underdog: '🐢', speedy: '⚡', meisterklauer: '🦝', bet: '🪙', sympathy: '💞',
                     };
+                    // 2026-06-27 (Wolf): Underdog/Meisterklauer als vorhandene cozy3d-Tiere
+                    // (Schildkröte/Waschbär) statt Emoji — stil-konsistent zu den Team-Avataren.
+                    // Speedy/Bet/Sympathy bleiben vorerst Emoji (eigene Icons folgen).
+                    const STAMP_COZY3D_MAP: Record<string, string> = {
+                      underdog: 'schildkroete', meisterklauer: 'waschbaer',
+                    };
                     // 2026-05-25 (Wolf-Bug 'münze vor reveal-phase'): Stamps nur
                     // rendern wenn wir tatsaechlich in der Reveal-Phase oder
                     // danach sind. Backjump im Test-Modus oder stale State
@@ -679,6 +686,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           const isStampSlot = i >= baseCopies;
                           const stampKind = isStampSlot ? stamps[i - baseCopies]?.kind : undefined;
                           const stampEmoji = stampKind ? STAMP_EMOJI_MAP[stampKind] : null;
+                          const stampCozy = stampKind ? STAMP_COZY3D_MAP[stampKind] : null;
                           return (
                             <div key={i} style={{
                               position: 'absolute',
@@ -688,7 +696,12 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                               zIndex: i + 1,
                               animation: i > 0 ? `phasePop 0.45s var(--qq-ease-bounce) ${0.05 * i}s both` : undefined,
                             }}>
-                              {isStampSlot && stampEmoji ? (
+                              {isStampSlot && stampCozy ? (
+                                <img src={cozy3dSrc(stampCozy)} alt="" draggable={false} style={{
+                                  width: '92%', height: '92%', objectFit: 'contain',
+                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                                }} />
+                              ) : isStampSlot && stampEmoji ? (
                                 <span style={{
                                   // 2026-05-25 v2 (Wolf 'münze viel größer als avatar'):
                                   // gleiche Größe wie das Team-Avatar-Emoji (size * 0.6).

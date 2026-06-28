@@ -560,6 +560,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         }
       `}</style>
 
+      {/* 2026-06-28 (Beamer-Review „Round Zoom Journey"): Kamera-Stage. Bei jedem
+          Moderator-Klick (introStep- bzw. Phasen-Wechsel) remountet diese Stage
+          via key und zoomt rein + rastet ein (qqZoomJourney, ~0.9s,
+          cubic-bezier(.66,0,.34,1)). Progressive Disclosure ist inhärent — immer
+          nur die aktuelle Station sichtbar. Die Stationen (Roadmap → Runde+Aktion
+          → Kategorie → Frage) behalten ihre bestehenden Designs; die Kamera ist
+          nur die Verbindung. */}
+      <div key={`qq-zoomstage-${s.gamePhaseIndex}-${s.introStep}`} style={{
+        flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
+        alignItems: 'center', justifyContent: 'center',
+        animation: 'qqZoomJourney 0.9s cubic-bezier(0.66, 0, 0.34, 1) both',
+        willChange: 'transform, opacity',
+      }}>
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
         <>
@@ -1382,6 +1395,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           )}
         </>
       )}
+      </div>
     </div>
   );
 }

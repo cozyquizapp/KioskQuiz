@@ -7,7 +7,7 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-13 (Refactor Phase 5).
  * NICHT extern importiert (nur intern via Phase-Router).
  */
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -27,97 +27,113 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const teams = s.teams.filter(t => t.connected).length > 0
     ? s.teams.filter(t => t.connected)
     : s.teams;
-  // Animation start anchor. 2026-06-28 (Wolf 'die Karten drehen sich nicht'):
-  // Fallback war `Date.now()` INLINE → bei jedem Render neu berechnet, also blieb
-  // `elapsed` ~0 und die zeitgesteuerten Card-Flips feuerten nie (man sah nur die
-  // Rückseiten). Jetzt ein STABILER Mount-Anker via Ref, falls das Backend-Feld
-  // fehlt → der gestaffelte Flip läuft garantiert.
-  const mountAnchorRef = useRef(Date.now());
-  const anchor = s.teamsRevealStartedAt ?? mountAnchorRef.current;
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    const id = setInterval(() => setTick(t => t + 1), 250);
-    return () => clearInterval(id);
-  }, []);
-  void tick;
-  // Augen-auf bei der Teams-Vorstellung (Wolf-Idee): alle cozy3d-Tiere mit
-  // open-Asset oeffnen die Augen fuer die Dauer des Reveals. No-op ohne Asset.
-  useEffect(() => { wakeAllAvatars(9000); }, []);
-  const elapsed = Date.now() - anchor;
-
-  // 2026-05-09 v3: WELCOME-Hero + Subtitle + Teams-Parallel.
-  // 2026-05-11 (Wolf-Bug 'kurzer Herzlich-Willkommen-Flash vor Heute spielen
-  // weg'): WELCOME-Hero deaktiviert — Welcome lebt im Pre-Rules-Overlay.
-  // 2026-05-19 (Wolf 'lange pause am anfang, animation wirkt langweilig'):
-  // Slam von 1400→850ms, Settle 300→150ms, Stagger 280→180ms. Pro Team jetzt
-  // ~1.9s statt ~2.6s. Bei 8 Teams: 3.2s statt 4.6s bis Good-Luck — mehr
-  // Energie, weniger Dead-Time vor dem ersten Reveal.
+  // ── Teams Roll-Call (Claude-Design-Handoff #3) ──────────────────────────
+  // Ein Team nach dem anderen „aufrufen": ein zentrales Spotlight (großer Avatar
+  // in Team-Farbe) zoomt rein, hält kurz, fliegt per FLIP in den Karten-Slot →
+  // die Karte zündet (Glow + Avatar-Pop + Name blur→scharf + Unterstrich-Sweep).
+  // Ersetzt den früheren Slam+rotateY-Flip (Wolf-Entscheidung 2026-06-29). FLIP
+  // misst die Live-Rects → robust gegen Grid-Umbruch (4+3 etc., N≠7 ok).
   const titleDelay = 0;
-  const titleDur = 800;
-  const WELCOME_DUR = 0;
-  const WELCOME_FADE = 0;
-  const TITLE_HOLD = 0;
-  const SLAM_DUR = 850;
-  const SETTLE = 150;
-  const FLIP_DUR = 900;
-  const TEAM_STAGGER = 180;
-  const PER_TEAM_TOTAL = SLAM_DUR + SETTLE + FLIP_DUR; // 1900 für ein Team
-  const teamStart = (i: number) => TITLE_HOLD + i * TEAM_STAGGER;
-  const flipStartFor = (i: number) => teamStart(i) + SLAM_DUR + SETTLE;
-  const holdEndFor = (i: number) => flipStartFor(i) + FLIP_DUR;
-  const goodLuckDelay = TITLE_HOLD + (teams.length - 1) * TEAM_STAGGER + PER_TEAM_TOTAL + 400;
-  const showGoodLuck = elapsed >= goodLuckDelay;
-  const showWelcome = elapsed < WELCOME_DUR + WELCOME_FADE;
-  const showSubtitle = elapsed >= WELCOME_DUR;
-  // revealedCount obsolet — pro Team direkt berechnet. Compat-Stub falls abgegriffen.
-  const revealedCount = Math.max(0, Math.min(teams.length,
-    elapsed < TITLE_HOLD ? 0 : Math.floor((elapsed - TITLE_HOLD) / TEAM_STAGGER) + 1));
+  const showSubtitle = true;
+  const reducedMotion = useRef(
+    typeof window !== 'undefined' && !!window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
+  ).current;
+  const stageRef = useRef<HTMLDivElement | null>(null);
+  const spotRef = useRef<HTMLDivElement | null>(null);
+  const spotDiscRef = useRef<HTMLDivElement | null>(null);
+  const cardDiscRefs = useRef<(HTMLDivElement | null)[]>([]);
+  // sfxMuted via Ref lesen → Mute-Toggle startet die Sequenz nicht neu.
+  const sfxMutedRef = useRef(s.sfxMuted);
+  sfxMutedRef.current = s.sfxMuted;
+  const [spotIdx, setSpotIdx] = useState(-1);
+  const [revealedSet, setRevealedSet] = useState<Set<number>>(() => new Set());
+  const [allRevealed, setAllRevealed] = useState(false);
+  const showGoodLuck = allRevealed;
 
-  // 2026-04-30 v3 round 6 (User-Bug 'sound trifft avatar-erscheinen nicht'):
-  // Statt per 250ms-Tick auf revealedCount zu pollen (= Sound bis zu 250ms
-  // verspaetet), pre-scheduln wir alle Sounds via setTimeout am EXAKTEN
-  // ms-Anchor. So feuert der Cascade-Ton synchron zum Slam-Down.
-  // Nur 1× pro mount: wenn anchor neu gesetzt wird, Timer-Cleanup.
-  // v3 round 9 (User-Bug 'konstanter ton stoert hinter der cascade'):
-  // playTeamReveal (Slam-Sound, gleiche Pitch pro Team) entfernt — nur noch
-  // die aufsteigende Pentatonik-Cascade. Sauberer, kein Doppel-Layer mehr.
-  useEffect(() => {
-    if (s.sfxMuted) return;
-    const cascadeTotal = teams.length + 1;
-    const timers: number[] = [];
-    for (let i = 0; i < teams.length; i++) {
-      // 2026-05-19 (Wolf 'sounds wirken langweilig'): Slam-Thud beim Card-
-      // Impact (55% des Slam-Keyframes = ~467ms nach Slam-Start). WoodKnock
-      // ist dezent + brand-fitting; layered nicht mit der CascadeNote, weil
-      // die erst beim Flip-Reveal (~1.0s spaeter) feuert.
-      const slamImpactAt = anchor + teamStart(i) + Math.round(SLAM_DUR * 0.55);
-      const slamDelay = Math.max(0, slamImpactAt - Date.now());
-      timers.push(window.setTimeout(() => {
-        try { playWoodKnock(); } catch {}
-      }, slamDelay));
-      // 2026-05-09 (Game-Show-Reveal): Cascade-Note feuert beim FLIP-Start
-      // (= Avatar wird sichtbar). Sync zum visuellen Reveal-Moment.
-      const fireAt = anchor + flipStartFor(i);
-      const delay = Math.max(0, fireAt - Date.now());
-      timers.push(window.setTimeout(() => {
-        try { playAvatarCascadeNote(i, cascadeTotal); } catch {}
-      }, delay));
+  // Augen-auf bei der Vorstellung: alle cozy3d-Tiere mit open-Asset.
+  useEffect(() => { wakeAllAvatars(12000); }, []);
+
+  // Spotlight VOR dem ersten Paint verstecken (kein Flash am Mittelpunkt).
+  useLayoutEffect(() => {
+    const spot = spotRef.current;
+    if (spot) {
+      spot.style.transform = 'translate(-50%,-50%) scale(0.55)';
+      spot.style.opacity = '0';
     }
-    // VIEL GLUECK: eigener Sound-Slot. playGoodLuckFanfare hat schon einen
-    // vollständigen 8-Layer-C-Dur-Synth-Fallback (Akkord + Bass + Bells) wenn
-    // kein MP3 hochgeladen ist.
-    // 2026-05-23 (Wolf 'überprüfe ob nochmal akkord-crash'): parallel laufendes
-    // playFanfare() entfernt — feuerte simultan mit playGoodLuckFanfare und
-    // konnte je nach MP3/Synth-Mix in unterschiedlichen Tonarten clashen
-    // (selbes Pattern wie Schätzchen-Reveal RevealHighlight+ClimaxFinish-Bug).
-    const goodLuckFireAt = anchor + goodLuckDelay;
-    const goodLuckMs = Math.max(0, goodLuckFireAt - Date.now());
-    timers.push(window.setTimeout(() => {
-      try { playGoodLuckFanfare(); } catch {}
-    }, goodLuckMs));
-    return () => { timers.forEach(t => window.clearTimeout(t)); };
+  }, []);
+
+  // Roll-Call-Sequenz: imperative Timeout-Kette, EIN Spotlight wird pro Team
+  // recyclet. FLIP-Delta aus Live-getBoundingClientRect (Spotlight-Disc-Breite
+  // gemessen → responsive-safe, kein fixer 330px-Wert).
+  useEffect(() => {
+    const n = teams.length;
+    if (reducedMotion || n === 0) {
+      setRevealedSet(new Set(teams.map((_, i) => i)));
+      setAllRevealed(true);
+      return;
+    }
+    let cancelled = false;
+    const timers: number[] = [];
+    const T = (fn: () => void, ms: number) => {
+      const id = window.setTimeout(() => { if (!cancelled) fn(); }, ms);
+      timers.push(id); return id;
+    };
+    const step = (i: number) => {
+      if (cancelled) return;
+      const spot = spotRef.current;
+      if (i >= n) {
+        // Alle aufgerufen → Spotlight ausblenden, „Viel Glück" + Fanfare.
+        if (spot) { spot.style.transition = 'opacity 0.4s ease'; spot.style.opacity = '0'; }
+        T(() => {
+          setAllRevealed(true);
+          if (!sfxMutedRef.current) { try { playGoodLuckFanfare(); } catch {} }
+        }, 220);
+        return;
+      }
+      setSpotIdx(i);
+      if (spot) {
+        spot.style.transition = 'none';
+        spot.style.transform = 'translate(-50%,-50%) scale(0.55)';
+        spot.style.opacity = '0';
+      }
+      // Zoom-in (zentral)
+      requestAnimationFrame(() => {
+        if (cancelled) return;
+        const sp = spotRef.current;
+        if (sp) {
+          sp.style.transition = 'transform 0.46s cubic-bezier(0.34,1.5,0.5,1), opacity 0.36s ease';
+          sp.style.transform = 'translate(-50%,-50%) scale(1)';
+          sp.style.opacity = '1';
+        }
+        if (!sfxMutedRef.current) { try { playWoodKnock(); } catch {} }
+      });
+      // Hold (~0.66s) → Fly in den Karten-Slot
+      T(() => {
+        const sp = spotRef.current, stage = stageRef.current, disc = cardDiscRefs.current[i];
+        if (sp && stage && disc) {
+          const sr = stage.getBoundingClientRect();
+          const dr = disc.getBoundingClientRect();
+          const spotW = spotDiscRef.current?.getBoundingClientRect().width || dr.width;
+          const dx = (dr.left + dr.width / 2) - (sr.left + sr.width * 0.5);
+          const dy = (dr.top + dr.height / 2) - (sr.top + sr.height * 0.48);
+          const sc = dr.width / spotW;
+          sp.style.transition = 'transform 0.62s cubic-bezier(0.5,0,0.18,1), opacity 0.3s ease 0.4s';
+          sp.style.transform = `translate(-50%,-50%) translate(${dx}px,${dy}px) scale(${sc})`;
+          sp.style.opacity = '0';
+        }
+        // Ankunft (~0.52s nach Fly-Start): Karte zündet.
+        T(() => {
+          setRevealedSet(prev => { const nx = new Set(prev); nx.add(i); return nx; });
+          if (!sfxMutedRef.current) { try { playAvatarCascadeNote(i, n + 1); } catch {} }
+        }, 520);
+        // Nächstes Team
+        T(() => step(i + 1), 880);
+      }, 660);
+    };
+    T(() => step(0), 280);
+    return () => { cancelled = true; timers.forEach(t => window.clearTimeout(t)); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [anchor, teams.length, s.sfxMuted]);
+  }, [teams.length]);
 
   // 2026-05-07 v18 (Wolf 'die seite wo die teams vorgestellt werden, darf
   // auch mehr nach eurovision aussehen, also bg von eurovision und vlt text
@@ -391,13 +407,31 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           ? 'clamp(64px, 6.2cqw, 101px)'
           : many ? 'clamp(75px, 7.4cqw, 125px)' : 'clamp(92px, 9.4cqw, 153px)';
         const nameFont = multiRow ? 'clamp(16px, 1.7cqw, 24px)' : 'clamp(18px, 1.9cqw, 28px)';
+        // Größen-agnostischer Avatar-Inhalt (Flag-IMG / cozy3d-IMG / Emoji-Text /
+        // cozyCast-PNG). Wiederverwendet von Karten-Disc UND Spotlight-Disc —
+        // %/em/inherit-basiert, skaliert also mit der jeweiligen Disc-Größe.
+        const avatarInner = (t: (typeof teams)[number]) => {
+          if (t.emoji && isCountryFlagGlyph(t.emoji)) {
+            return <img src={getCountryFlagUrl(t.emoji)} alt={t.emoji} draggable={false}
+              style={{ width: '1.3em', height: '1em', objectFit: 'contain' }} />;
+          }
+          if (isCozy3dSlug(t.emoji)) {
+            return <img src={cozy3dSrc(t.emoji)} alt={cozy3dLabel(t.emoji)} draggable={false}
+              style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+          }
+          if (t.emoji) return <>{t.emoji}</>;
+          return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;
+        };
+        const spotTeam = spotIdx >= 0 ? teams[spotIdx] : teams[0];
+        const spotColor = spotTeam?.color ?? '#EC4899';
         let cursor = 0;
         return (
-          <div style={{
+          <div ref={stageRef} style={{
             display: 'flex', flexDirection: 'column',
             gap: 'clamp(18px, 2.4cqw, 36px)',
             alignItems: 'center', maxWidth: '92cqw',
             position: 'relative', zIndex: 2,
+            animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
           }}>
             {rowSizes.map((size, rIdx) => {
               const slice = teams.slice(cursor, cursor + size);
@@ -410,219 +444,86 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                 }}>
                   {slice.map((t, j) => {
                     const i = startI + j;
-                    const startMs = teamStart(i);
-                    const flipMs = flipStartFor(i);
-                    const holdEndMs = holdEndFor(i);
-                    const isVisible = elapsed >= startMs;
-                    const isFlipped = elapsed >= flipMs;
-                    const isInSpotlight = elapsed >= flipMs && elapsed < holdEndMs;
+                    const revealed = revealedSet.has(i);
                     return (
                       <div key={t.id} style={{
                         width: cardWidth,
                         aspectRatio: '3 / 4',
-                        perspective: '1200px',
-                        opacity: isVisible ? 1 : 0,
-                        animation: isVisible
-                          ? `qqGsTeamSlam ${SLAM_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1) both`
+                        borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(14px, 1.4cqw, 22px)',
+                        // Card-Stil bleibt exakt wie zuvor (Team-Tint 40%/20%),
+                        // nur opacity .24 (gedämpft) → 1 beim Aufruf.
+                        background: `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
+                        border: revealed ? `2px solid ${t.color}` : '1.5px solid rgba(255,255,255,0.07)',
+                        boxShadow: revealed
+                          ? `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
                           : 'none',
-                        filter: isInSpotlight ? `drop-shadow(0 0 38px ${t.color}cc)` : 'none',
-                        transition: 'filter 0.6s ease',
+                        opacity: revealed ? 1 : 0.24,
+                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        gap: 'clamp(10px, 1.2cqw, 18px)', padding: 'clamp(16px, 1.8cqw, 26px)',
+                        transition: 'opacity 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease',
                       }}>
-                        <div style={{
-                          position: 'relative', width: '100%', height: '100%',
-                          transformStyle: 'preserve-3d',
-                          transition: `transform ${FLIP_DUR}ms cubic-bezier(0.34, 1.46, 0.64, 1)`,
-                          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+                        {/* Avatar-Disc = FLIP-Mess-Anker. Vor dem Aufruf gedämpft
+                            (transparent + dashed), beim Zünden Team-Farbe + Glow.
+                            Slot-M-Pattern: fontSize sitzt auf dem Flex-Parent. */}
+                        <div ref={el => { cardDiscRefs.current[i] = el; }} style={{
+                          width: avatarSize, height: avatarSize, borderRadius: '50%',
+                          background: revealed ? t.color : 'transparent',
+                          border: revealed ? `2.5px solid ${t.color}` : '2.5px dashed rgba(255,255,255,0.18)',
+                          boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          flexShrink: 0,
+                          overflow: isCozy3dSlug(t.emoji) ? 'visible' : 'hidden',
+                          fontSize: emojiFontSize, lineHeight: 1,
+                          transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>
-                          {/* Rückseite — generischer CozyQuiz-Card-Back */}
                           <div style={{
-                            position: 'absolute', inset: 0,
-                            backfaceVisibility: 'hidden',
-                            WebkitBackfaceVisibility: 'hidden',
-                            borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(14px, 1.4cqw, 22px)',
-                            background: themed
-                              ? 'var(--qq-card-bg)'
-                              : 'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.32) 0%, transparent 60%),' +
-                              'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
-                              'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-                            border: themed ? 'var(--qq-card-border)' : '2px solid rgba(var(--qq-accent-rgb),0.55)',
-                            boxShadow: themed ? 'var(--qq-card-shadow)' : '0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(var(--qq-accent-rgb),0.18)',
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            gap: 12, padding: 'clamp(14px, 1.6cqw, 22px)',
-                            overflow: 'hidden',
+                            width: '100%', height: '100%',
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            fontSize: 'inherit', lineHeight: 1,
+                            opacity: revealed ? 1 : 0,
+                            transform: revealed ? 'scale(1)' : 'scale(0.4)',
+                            transition: 'opacity 0.4s ease, transform 0.55s cubic-bezier(0.34,1.6,0.5,1)',
                           }}>
-                            <div aria-hidden style={{
-                              position: 'absolute', inset: 0,
-                              backgroundImage:
-                                'repeating-linear-gradient(45deg, rgba(var(--qq-accent-rgb),0.06) 0 2px, transparent 2px 22px),' +
-                                'repeating-linear-gradient(-45deg, rgba(var(--qq-accent-rgb),0.04) 0 2px, transparent 2px 22px)',
-                              pointerEvents: 'none',
-                            }} />
-                            {/* 2026-05-09 (Wolf-Wunsch): Pink-Wolf-PNG (transparent)
-                                ersetzt idle.svg auf der Card-Back. Platzierung
-                                identisch zur Vorderseite (color-circle + 54%
-                                Avatar-Inner-Size). */}
-                            <div style={{
-                              width: avatarSize, height: avatarSize, borderRadius: '50%',
-                              background: 'rgba(var(--qq-accent-rgb),0.33)',
-                              border: '2.5px solid var(--qq-accent)',
-                              boxShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.99)',
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0,
-                              overflow: 'hidden',
-                              position: 'relative',
-                            }}>
-                              <img
-                                src="/avatars/cozywolf/pink.png"
-                                alt=""
-                                draggable={false}
-                                style={{
-                                  width: '90%', height: '90%', objectFit: 'contain',
-                                  filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55)) drop-shadow(0 0 1px rgba(0,0,0,0.5))',
-                                }}
-                              />
-                            </div>
-                            {/* CozyQuiz-Wordmark in Stinger Fit, Brand-Pink */}
-                            <div style={{
-                              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', system-ui, sans-serif",
-                              fontSize: multiRow ? 'clamp(20px, 2.2cqw, 32px)' : 'clamp(24px, 2.6cqw, 40px)',
-                              fontWeight: 900,
-                              color: themed ? 'var(--qq-card-text)' : '#FBCFE8',
-                              letterSpacing: '0.02em',
-                              textShadow: themed ? 'none' : '0 0 14px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(var(--qq-accent-rgb),0.4)',
-                              lineHeight: 1,
-                              position: 'relative',
-                              textTransform: 'uppercase',
-                            }}>COZYQUIZ</div>
+                            {avatarInner(t)}
                           </div>
-                          {/* Vorderseite — Avatar im Color-Glow-Kreis + Name
-                              als Text in Team-Color (matcht Slot M Showreel)
-                              2026-05-13 (Wolf 'cards bei tonight teams crashen
-                              bisschen das design, glassy durchsichtig, farbe
-                              prominenter'): BG-Tint von 13%/6% auf 40%/20%
-                              hochgezogen — Team-Color liest sich jetzt klar,
-                              ohne den Reveal-Card-Charakter zu opfern. */}
+                        </div>
+                        {/* Name zündet leicht versetzt (blur→scharf + translateY),
+                            danach Unterstrich-Sweep in Team-Farbe. */}
+                        <div style={{
+                          display: 'flex', flexDirection: 'column', alignItems: 'center',
+                          gap: 'clamp(8px, 1cqw, 12px)', width: '100%',
+                        }}>
                           <div style={{
-                            position: 'absolute', inset: 0,
-                            backfaceVisibility: 'hidden',
-                            WebkitBackfaceVisibility: 'hidden',
-                            transform: 'rotateY(180deg)',
-                            borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(14px, 1.4cqw, 22px)',
-                            background: `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
-                            border: `2px solid ${t.color}`,
-                            boxShadow: `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 28px ${t.color}66`,
-                            display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                            gap: 'clamp(10px, 1.2cqw, 18px)', padding: 'clamp(16px, 1.8cqw, 26px)',
+                            width: '100%',
+                            opacity: revealed ? 1 : 0,
+                            transform: revealed ? 'translateY(0)' : 'translateY(16px)',
+                            filter: revealed ? 'blur(0)' : 'blur(7px)',
+                            transition: 'opacity 0.4s ease 0.18s, transform 0.46s cubic-bezier(0.3,1.4,0.5,1) 0.18s, filter 0.4s ease 0.18s',
                           }}>
-                            {/* Avatar — 1:1 wie Slot M Showreel: Color-Tinted-
-                                Circle mit großem Emoji DIREKT (nicht via
-                                QQTeamAvatar).
-                                2026-05-23 (Wolf): BG solid statt 20%-glassy —
-                                matcht den Avatar-Kreis-BG aus QQTeamAvatar
-                                (background: color) im Rest der App.
-                                2026-05-28 (Wolf 'avatar viel zu klein im kreis'):
-                                Mit dem solid-BG wirkte der Disc visuell schwerer
-                                und der Avatar drin zu klein. Emoji 0.54→0.78 (näher
-                                am Standard-QQTeamAvatar 0.6, plus Showreel-Bump);
-                                PNG 86%→100% (Cozy-Cast-PNG hat eigene Border, darf
-                                den Disc voll füllen — die solid Team-Color wird
-                                durch die PNG-Border + Outer-Disc-Border ohnehin
-                                sichtbar). */}
-                            {/* 2026-05-28 (Wolf 'avatar viel zu klein im kreis'
-                                Round 3): emoji-fontSize MUSS auf dem Disc-Div
-                                selbst sitzen (1:1 wie Slot M Showreel), nicht
-                                auf einem inline-block Wrapper-Span. Der bisherige
-                                Pfad via CountryFlagOrEmoji renderte das Emoji in
-                                einem `<span style="display:inline-block; fontSize:
-                                clamp(...)">` — Edge/Chromium hat die clamp-fontSize
-                                auf inline-block-Flex-Children teilweise auf den
-                                geerbten Body-Default (16px) heruntergerechnet,
-                                wodurch das Emoji winzig blieb.
-                                Slot M setzt fontSize direkt auf den Flex-Parent
-                                und rendert das Emoji als Text-Child — das
-                                funktioniert robust. Country-Flag-Sonderpfad
-                                (Twemoji-IMG fuer DE/GR/etc auf Windows) wurde
-                                inline herausgezogen. */}
-                            <div style={{
-                              width: avatarSize, height: avatarSize,
-                              borderRadius: '50%',
-                              background: t.color,
-                              border: `2.5px solid ${t.color}`,
-                              boxShadow: `0 0 28px ${t.color}99`,
-                              display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              flexShrink: 0,
-                              // 2026-06-24: cozy3d-PNGs nicht am Kreisrand beschneiden
-                              // (Ecken-Motive wie Fluegel) — Flags/Emoji bleiben geclippt.
-                              overflow: isCozy3dSlug(t.emoji) ? 'visible' : 'hidden',
-                              fontSize: emojiFontSize,
-                              lineHeight: 1,
-                              animation: isInSpotlight ? 'qqTrPulse 2.2s ease-in-out infinite' : 'none',
-                            }}>
-                              {t.emoji && isCountryFlagGlyph(t.emoji) ? (
-                                <img
-                                  src={getCountryFlagUrl(t.emoji)}
-                                  alt={t.emoji}
-                                  draggable={false}
-                                  style={{
-                                    width: '1.3em', height: '1em',
-                                    objectFit: 'contain',
-                                  }}
-                                />
-                              ) : isCozy3dSlug(t.emoji) ? (
-                                // 2026-06-24 (Wolf-Bug 'heute spielen avatare nicht
-                                // verdrahtet'): team.emoji haelt jetzt einen cozy3d-
-                                // Slug. Vorher wurde der Slug als ROHTEXT in den Disc
-                                // gerendert (man sah Wort-Fragmente wie 'ngl'/'od').
-                                // Jetzt das PNG laden — Fill identisch zu ImageAvatar
-                                // (COZY3D_DISC_FILL 90%) auf der soliden Team-Color-Disc.
-                                <img
-                                  src={cozy3dSrc(t.emoji)}
-                                  alt={cozy3dLabel(t.emoji)}
-                                  draggable={false}
-                                  style={{
-                                    width: '90%', height: '90%', objectFit: 'contain',
-                                    filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))',
-                                  }}
-                                />
-                              ) : t.emoji ? (
-                                t.emoji
-                              ) : (
-                                // PNG-Avatar (cozyCast Set): über QQTeamAvatar rendern.
-                                // 100% damit die PNG-Border (eigener Tier-Ring) den
-                                // gesamten Disc füllt — sonst entsteht ein toter
-                                // Solid-Color-Moat zwischen PNG und Outer-Border.
-                                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />
-                              )}
-                            </div>
-                            {/* Name als Text in Team-Color — Showreel-style.
-                                2026-05-12 (Wolf 'pubquatscher 2. Reihe fuers r'):
-                                shrinkAfter 14 → 11. 12-char Namen wie
-                                'Pubquatscher' fallen jetzt rechtzeitig auf die
-                                kleinere Long-Font-Variante (~85%) — vermeidet
-                                den Single-Letter-Wrap. */}
                             <TeamNameLabel
                               name={t.name}
                               maxLines={2}
                               shrinkAfter={11}
-                              // 2026-06-28 (Beamer-Review P0): Team-Namen weiß
-                              // statt in Team-Farbe — bessere Lesbarkeit aus
-                              // Distanz, Color-on-Color (Name auf getöntem Card-BG)
-                              // vermieden. Dark-Halo-Shadow unten bleibt.
+                              // 2026-06-28 (Beamer-Review P0): Team-Namen weiß für
+                              // bessere Distanz-Lesbarkeit. Dark-Halo-Shadow bleibt.
                               color={themed ? 'var(--qq-card-text)' : '#ffffff'}
                               fontWeight={900}
                               fontSize={nameFont}
                               style={{
                                 textAlign: 'center',
                                 letterSpacing: '-0.01em',
-                                // 2026-05-13: bei 40%-getintetem BG braucht der
-                                // Team-Color-Text einen dunklen Halo, damit Color-
-                                // on-Color nicht matscht. Pink-Glow durch Dark-
-                                // Halo ersetzt (gleiches Pattern wie Audit-Fix).
                                 textShadow: '0 2px 8px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.55)',
                                 maxWidth: '95%',
                               }}
                             />
                           </div>
+                          <div style={{
+                            width: 'clamp(44px, 5cqw, 72px)', height: 4, borderRadius: 3,
+                            background: t.color, transformOrigin: 'center',
+                            opacity: revealed ? 1 : 0,
+                            transform: revealed ? 'scaleX(1)' : 'scaleX(0)',
+                            transition: 'transform 0.42s cubic-bezier(0.5,0,0.18,1) 0.26s, opacity 0.3s ease 0.26s',
+                          }} />
                         </div>
                       </div>
                     );
@@ -630,6 +531,42 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               );
             })}
+            {/* Spotlight-Overlay — EIN persistentes Element, pro Team recyclet.
+                Zoomt zentral rein, fliegt per FLIP in den jeweiligen Karten-Slot.
+                transform/opacity werden imperativ in der Sequenz gesetzt (NICHT
+                hier im JSX-style), damit React-Re-Renders sie nicht zurücksetzen. */}
+            <div ref={spotRef} aria-hidden style={{
+              position: 'absolute', left: '50%', top: '48%', zIndex: 30,
+              pointerEvents: 'none',
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              willChange: 'transform, opacity',
+            }}>
+              <div aria-hidden style={{
+                position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%)',
+                width: 'clamp(360px, 42cqw, 620px)', height: 'clamp(360px, 42cqw, 620px)',
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${spotColor}77 0%, transparent 65%)`,
+                filter: 'blur(12px)', pointerEvents: 'none',
+              }} />
+              <div ref={spotDiscRef} style={{
+                position: 'relative',
+                width: 'clamp(220px, 24cqw, 360px)', height: 'clamp(220px, 24cqw, 360px)',
+                borderRadius: '50%',
+                background: spotColor,
+                border: `3px solid ${spotColor}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                boxShadow: `0 24px 60px rgba(0,0,0,0.5), 0 0 44px ${spotColor}66`,
+                overflow: isCozy3dSlug(spotTeam?.emoji) ? 'visible' : 'hidden',
+                fontSize: 'clamp(150px, 17cqw, 252px)', lineHeight: 1,
+              }}>
+                {spotTeam && avatarInner(spotTeam)}
+              </div>
+              <div style={{
+                marginTop: 'clamp(14px, 1.8cqw, 30px)', fontWeight: 900,
+                fontSize: 'clamp(34px, 5cqw, 64px)', color: '#fff', textAlign: 'center',
+                textShadow: '0 4px 24px rgba(0,0,0,0.5)', whiteSpace: 'nowrap',
+              }}>{spotTeam?.name}</div>
+            </div>
           </div>
         );
       })()}

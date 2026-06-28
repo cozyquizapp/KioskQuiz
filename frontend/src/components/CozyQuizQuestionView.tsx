@@ -2261,6 +2261,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Avatare nicht in die nächste Reihe rutschen.
             const maxChips = Math.max(0, ...zvzHighestPerOption.map(h => h?.teamIds?.length ?? 0));
             const heavyChips = maxChips >= 4;
+            // Gewinner = höchster Einsatz auf der korrekten Option (Tie → schnellste
+            // Einreichung). Beat 5: Konfetti in Team-Farbe + Pink, sobald gelockt.
+            const zvzWinnerTeam = (zvzLocked && q.correctOptionIndex != null)
+              ? (() => {
+                  const ci = q.correctOptionIndex;
+                  const bets = s.answers
+                    .map(a => {
+                      const team = s.teams.find(t => t.id === a.teamId);
+                      const pts = (a.text.split(',').map(n => Number(n) || 0))[ci] ?? 0;
+                      return team && pts > 0 ? { team, pts, submittedAt: a.submittedAt } : null;
+                    })
+                    .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number; submittedAt: number } => !!x);
+                  if (bets.length === 0) return undefined;
+                  const maxPts = Math.max(...bets.map(b => b.pts));
+                  return bets.filter(b => b.pts === maxPts).sort((a, b) => a.submittedAt - b.submittedAt)[0]?.team;
+                })()
+              : undefined;
             return (
             <div style={{
               display: 'grid',
@@ -2415,6 +2432,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         {highestBets.map(({ team: tm, pts, submittedAt }, bi) => {
                           const timeSec = t0 ? Math.max(0, (submittedAt - t0) / 1000) : null;
                           const isFastest = showTimePills && bi === 0;
+                          // Sieger-Chip = höchster Bet auf korrekter Option (auch solo,
+                          // unabhängig vom Tie-Speed-Indikator) → bekommt die Krone.
+                          const isWinnerChip = isCorrect && bi === 0;
                           // Dim-Logik bewusst entfernt (User-Feedback): ZvZ-Voter-Chips
                           // bleiben voll opak auf allen Optionen, Falsch-Markierung
                           // laeuft nur ueber die Card selbst (Rand + Text gedimmt).
@@ -2436,6 +2456,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`,
                               animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
                             }}>
+                              {/* Beat 5 — Sieger-Krönung: Krone bouncet auf den
+                                  höchsten Bet der korrekten Option. */}
+                              {isWinnerChip && (
+                                <span aria-hidden style={{
+                                  position: 'absolute',
+                                  top: 0, left: 'clamp(10px, 1.4cqw, 20px)',
+                                  transform: 'translateY(-72%) rotate(-12deg)',
+                                  fontSize: 'clamp(22px, 2.6cqw, 38px)',
+                                  lineHeight: 1, pointerEvents: 'none', zIndex: 3,
+                                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
+                                  animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.3s both',
+                                }}>👑</span>
+                              )}
                               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avSz} />
                               <span style={{
                                 fontSize: ptsFs,
@@ -2475,6 +2508,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   </div>
                 );
               })}
+              {/* Beat 5 — Konfetti in Gewinner-Team-Farbe + Pink, sobald die
+                  korrekte Option lockt und es einen Sieger gibt. Fixed-Overlay
+                  (entkommt dem Grid), feuert genau einmal. */}
+              {zvzWinnerTeam && (
+                <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 60, overflow: 'hidden' }}>
+                  <ConfettiOverlay accent={zvzWinnerTeam.color} />
+                </div>
+              )}
             </div>
             );
           })()}

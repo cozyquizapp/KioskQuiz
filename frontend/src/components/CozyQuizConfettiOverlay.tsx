@@ -23,8 +23,13 @@ const CONFETTI_COLORS = ['#EC4899', '#EF4444', '#3B82F6', '#22C55E', '#A78BFA', 
 const CONFETTI_COLORS_ESC = ['#FF2D7B', '#3B82F6', '#A78BFA', '#EC4899', '#60A5FA', '#C084FC', '#F472B6', '#fde6f0'];
 const CONFETTI_COUNT = 110;
 
-export function ConfettiOverlay({ eurovisionMode }: { eurovisionMode?: boolean } = {}) {
-  const palette = eurovisionMode ? CONFETTI_COLORS_ESC : CONFETTI_COLORS;
+export function ConfettiOverlay({ eurovisionMode, accent }: { eurovisionMode?: boolean; accent?: string } = {}) {
+  // 2026-06-28 (Claude-Design-Handoff #2): optionaler accent (z.B. Gewinner-
+  // Team-Farbe) → Palette wird accent-lastig + Marken-Pink. „Konfetti in
+  // Team-Farbe + Pink" bei Gewinner-Reveals. Ohne accent: bestehende Palette.
+  const palette = accent
+    ? [accent, accent, accent, '#EC4899', '#F472B6', '#FFFFFF', '#A78BFA', accent]
+    : (eurovisionMode ? CONFETTI_COLORS_ESC : CONFETTI_COLORS);
   const [particles] = useState(() =>
     Array.from({ length: CONFETTI_COUNT }, (_, i) => ({
       id: i,

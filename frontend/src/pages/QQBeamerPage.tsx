@@ -3512,6 +3512,16 @@ export function MuchoOptionsReveal({
 
   const showLock = locked;
   const akt3On = locked;
+  // Gewinner = schnellster Korrekt-Antwortender (Beat 5: Krönung + Konfetti).
+  // Nur wenn ueberhaupt jemand richtig lag — sonst kein Sieger, kein Konfetti.
+  const winnerTeam = (akt3On && correctOptionIndex != null)
+    ? (() => {
+        const cv = answers
+          .filter(a => a.text === String(correctOptionIndex))
+          .sort((a, b) => a.submittedAt - b.submittedAt)[0];
+        return cv ? teams.find(t => t.id === cv.teamId) : undefined;
+      })()
+    : undefined;
   const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.brandPink, QQ_COLORS.green500];
   // 2026-05-09 (Wolf): Negative-Squared-Latin-Emojis statt Plain-Text.
   // 2026-05-09 v2 (Wolf): zurück auf Plain Text — Emoji-Version 🅰🅱🅲🅳
@@ -3607,6 +3617,19 @@ export function MuchoOptionsReveal({
               {optImg?.url && (
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
               )}
+              {/* Beat 3 — Check-Pop: gruener Haken bouncet oben rechts auf die
+                  richtige Karte, zusaetzlich zum Green-Glow + Doppelblink. */}
+              {isCorrect && (
+                <span aria-hidden style={{
+                  position: 'absolute', top: 10, right: 12, zIndex: 2,
+                  width: 'clamp(30px, 3cqw, 44px)', height: 'clamp(30px, 3cqw, 44px)',
+                  borderRadius: '50%', background: QQ_COLORS.green500,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900, color: '#fff',
+                  boxShadow: '0 0 20px rgba(34,197,94,0.7)',
+                  animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both',
+                }}>✓</span>
+              )}
               <div style={{
                 position: 'relative', zIndex: 1,
                 width: 56, height: 56, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
@@ -3668,6 +3691,19 @@ export function MuchoOptionsReveal({
                       transition: 'opacity 0.4s ease, filter 0.4s ease',
                     }}>
                       <div title={tm.name} style={{ position: 'relative', display: 'inline-block' }}>
+                        {/* Beat 5 — Sieger-Krönung: der schnellste Korrekt-
+                            Antwortende bekommt eine Krone, die von oben reinbounct. */}
+                        {isFastest && (
+                          <span aria-hidden style={{
+                            position: 'absolute',
+                            top: '-58%', left: '50%',
+                            transform: 'translateX(-50%) rotate(-12deg)',
+                            fontSize: 'clamp(28px, 3.4cqw, 48px)',
+                            lineHeight: 1, pointerEvents: 'none', zIndex: 3,
+                            filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
+                            animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
+                          }}>👑</span>
+                        )}
                         <QQTeamAvatar
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}
                           size={avatarSz}
@@ -3712,6 +3748,14 @@ export function MuchoOptionsReveal({
           </div>
         );
       })}
+      {/* Beat 5 — Konfetti in Gewinner-Team-Farbe + Pink, wenn die richtige
+          Option lockt und es einen Sieger gibt. Fixed-Overlay (entkommt dem
+          Grid-Layout), feuert genau einmal beim Lock. */}
+      {winnerTeam && (
+        <div style={{ position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 60, overflow: 'hidden' }}>
+          <ConfettiOverlay accent={winnerTeam.color} />
+        </div>
+      )}
     </div>
   );
 }

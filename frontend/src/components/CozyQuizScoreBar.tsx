@@ -14,19 +14,22 @@ import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { JokerIcon } from './JokerIcon';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
-import { QQEmojiIcon } from './QQIcon';
+import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed } from '../qqTheme';
 
-export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, eurovisionMode, lang }: {
+export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, activeActionSlug, eurovisionMode, lang }: {
   teams: QQStateUpdate['teams'];
   activeTeamId?: string | null;
   teamPhaseStats?: QQStateUpdate['teamPhaseStats'];
   correctTeamId?: string | null;
   activeActionLabel?: string;
   activeActionDesc?: string;
+  /** 2026-06-28 (Wolf): Aktions-Icon (place/steal/stack) am aktiven Team —
+      distanz-lesbar als Icon statt des frueher entfernten Text-Verbs. */
+  activeActionSlug?: QQIconSlug | null;
   /** 2026-05-07 (Wolf-ESC): wenn true, Joker-Pile nutzt EU-Star-Variante. */
   eurovisionMode?: boolean;
   /** 2026-05-23 (Live-Test #J): Lang fuer Feld/cell-Unit-Label. Default 'de'. */
@@ -292,6 +295,24 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                     zIndex: 10,
                   }}
                 ><JokerIcon i={i} size={dense ? 38 : 48} eurovisionMode={eurovisionMode}/></span>
+              )}
+              {/* 2026-06-28 (Wolf): Aktions-Icon am aktiven Team (place/steal/stack).
+                  Distanz-lesbares Icon statt des frueher (2026-05-05) entfernten
+                  Text-Verbs. Sitzt bottom-right am Avatar, mit Pop-In. */}
+              {isActive && activeActionSlug && (
+                <span aria-hidden style={{
+                  position: 'absolute',
+                  bottom: dense ? -8 : -10,
+                  right: dense ? -10 : -14,
+                  width: dense ? 34 : 44,
+                  height: dense ? 34 : 44,
+                  pointerEvents: 'none',
+                  filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))',
+                  animation: 'phasePop 0.45s var(--qq-ease-bounce) both',
+                  zIndex: 11,
+                }}>
+                  <QQIcon slug={activeActionSlug} size={dense ? 34 : 44} />
+                </span>
               )}
               {/* C2 Streak: Feuer-Emoji links oben ab 3 richtigen in Folge. */}
               {(streaks[t.id] ?? 0) >= 3 && (

@@ -601,6 +601,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     const STAMP_COZY3D_MAP: Record<string, string> = {
                       underdog: 'schildkroete', meisterklauer: 'waschbaer',
                     };
+                    // 2026-06-28 (Wolf): Speedy als eigenes cozy3d-Look-Icon
+                    // (Tacho, icons-v2 → /icons/stamp-speedy.png) statt ⚡-Emoji.
+                    const STAMP_ICON_MAP: Record<string, string> = {
+                      speedy: 'stamp-speedy',
+                    };
                     // 2026-05-25 (Wolf-Bug 'münze vor reveal-phase'): Stamps nur
                     // rendern wenn wir tatsaechlich in der Reveal-Phase oder
                     // danach sind. Backjump im Test-Modus oder stale State
@@ -687,6 +692,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                           const stampKind = isStampSlot ? stamps[i - baseCopies]?.kind : undefined;
                           const stampEmoji = stampKind ? STAMP_EMOJI_MAP[stampKind] : null;
                           const stampCozy = stampKind ? STAMP_COZY3D_MAP[stampKind] : null;
+                          const stampIcon = stampKind ? STAMP_ICON_MAP[stampKind] : null;
                           return (
                             <div key={i} style={{
                               position: 'absolute',
@@ -698,6 +704,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                             }}>
                               {isStampSlot && stampCozy ? (
                                 <img src={cozy3dSrc(stampCozy)} alt="" draggable={false} style={{
+                                  width: '92%', height: '92%', objectFit: 'contain',
+                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                                }} />
+                              ) : isStampSlot && stampIcon ? (
+                                <img src={`/icons/${stampIcon}.png`} alt="" draggable={false} style={{
                                   width: '92%', height: '92%', objectFit: 'contain',
                                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                                 }} />

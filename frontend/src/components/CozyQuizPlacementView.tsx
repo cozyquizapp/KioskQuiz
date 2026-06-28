@@ -14,6 +14,7 @@ import { useLangFlip } from '../cozyQuizShared';
 import { isQuietMotion } from '../qqTheme';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { ScoreBar } from './CozyQuizScoreBar';
+import type { QQIconSlug } from './QQIcon';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQ3DGrid } from './QQ3DGrid';
 
@@ -53,6 +54,18 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
     ?? (isComebackStealActive ? s.comebackTeamId : null);
   const team = s.teams.find(tm => tm.id === activeTeamId);
   const teamColor = team?.color ?? '#94a3b8';
+
+  // 2026-06-28 (Wolf): Aktions-Icon am aktiven Team — gespiegelt zur /team-Title-
+  // Logik (steal/stack/place). Bei FREE-Menue (noch keine Wahl getroffen) kein Icon.
+  const activeActionSlug: QQIconSlug | null = (() => {
+    const pa = s.pendingAction;
+    const ca = s.comebackAction;
+    if (isComebackStealActive) return 'action-steal';
+    if (pa === 'STEAL_1' || (pa === 'COMEBACK' && ca === 'STEAL_1')) return 'action-steal';
+    if (pa === 'STAPEL_1' || pa === 'STAPEL_BONUS') return 'action-stack';
+    if (pa === 'PLACE_1' || pa === 'PLACE_2' || (pa === 'COMEBACK' && ca === 'PLACE_2')) return 'action-place';
+    return null;
+  })();
 
   // 2026-04-30 v3 (User-Klaerung): playPlacementTurn entfernt — User meinte
   // mit 'platzieren page' die Action-Cards (PHASE_INTRO), nicht das Grid.
@@ -216,6 +229,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
             activeTeamId={activeTeamId}
             teamPhaseStats={s.teamPhaseStats}
             correctTeamId={s.correctTeamId}
+            activeActionSlug={activeActionSlug}
             eurovisionMode={!!s.theme?.eurovisionMode}
             lang={lang}
           />

@@ -21,6 +21,12 @@ export type QQIconSlug =
   | 'sub-top5'
   | 'sub-order'
   | 'sub-map'
+  // Brett-Aktionen (cozy3d-Look, icons-v2 2026-06-28)
+  | 'action-place'
+  | 'action-steal'
+  | 'action-stack'
+  // Final-Reveal-Stempel
+  | 'stamp-speedy'
   // Fluent Emoji 3D (Microsoft, MIT/CC-BY) — Ersatz fuer Inline-Emoji
   | 'fx-trophy'
   | 'fx-medal-gold'
@@ -78,6 +84,10 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'sub-top5':          '🏆',
   'sub-order':         '🔀',
   'sub-map':           '📍',
+  'action-place':      '📍',
+  'action-steal':      '⚡',
+  'action-stack':      '🏯',
+  'stamp-speedy':      '⚡',
   'fx-trophy':         '🏆',
   'fx-medal-gold':     '🥇',
   'fx-medal-silver':   '🥈',

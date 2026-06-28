@@ -15,7 +15,7 @@ import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate, QQAck } from '../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { JokerIcon } from './JokerIcon';
-import { QQIcon, QQEmojiIcon } from './QQIcon';
+import { QQIcon, QQEmojiIcon, type QQIconSlug } from './QQIcon';
 import { CozyCard, CozyBtn, AnimatedDots } from './CozyQuizTeamPrimitives';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { QQ_COLORS } from '../../../shared/qqColors';
@@ -504,7 +504,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   }
 
   const phaseLabel: React.ReactNode = (() => {
-    const wrap = (slug: 'marker-swap' | 'marker-shield' | 'marker-sanduhr', text: string) => (
+    const wrap = (slug: QQIconSlug, text: string) => (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
         <QQIcon slug={slug} size={22} alt={text} />
         {text}
@@ -512,12 +512,12 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     );
     if (isSwapComeback || isSwapOne) return wrap('marker-swap', lang === 'de' ? 'Tauschen' : 'Swap');
     if (isShield)   return wrap('marker-shield', lang === 'de' ? 'Schild' : 'Shield');
-    if (isStuck)    return lang === 'de' ? '🏯 Stapeln' : '🏯 Stack';
+    if (isStuck)    return wrap('action-stack', lang === 'de' ? 'Stapeln' : 'Stack');
     if (isSandLock) return wrap('marker-sanduhr', lang === 'de' ? 'Bann' : 'Ban');
-    if (isSteal)  return t.placement.titleSteal[lang];
+    if (isSteal)  return wrap('action-steal', lang === 'de' ? 'Klau ein fremdes Feld!' : 'Steal an opponent\'s field!');
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
     if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';
-    return t.placement.titlePlace[lang];
+    return wrap('action-place', lang === 'de' ? 'Wähle ein Feld!' : 'Choose a field!');
   })();
 
   const instructionText = (() => {
@@ -564,6 +564,14 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     return en;
   })();
 
+  // Button-Label mit Aktions-Icon (cozy3d-Look) statt Inline-Emoji.
+  const iconLabel = (slug: QQIconSlug, text: string) => (
+    <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+      <QQIcon slug={slug} size={22} alt={text} />
+      {text}
+    </span>
+  );
+
   return (
     <CozyCard borderColor={actionColor}>
       <div style={{ fontWeight: 900, fontSize: 18, color: actionColor, marginBottom: 12, textAlign: 'center' }}>
@@ -591,8 +599,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       {/* Phase 2: place 2 OR steal 1 */}
       {isPhase2Choice && !selecting && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-          <CozyBtn color={QQ_COLORS.green500} onClick={() => chooseFreeAction('PLACE')}>{t.placement.place2[lang]}</CozyBtn>
-          <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>{t.placement.steal1[lang]}</CozyBtn>
+          <CozyBtn color={QQ_COLORS.green500} onClick={() => chooseFreeAction('PLACE')}>{iconLabel('action-place', lang === 'de' ? '2 Felder setzen' : 'Place 2 fields')}</CozyBtn>
+          <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>{iconLabel('action-steal', lang === 'de' ? '1 Feld klauen' : 'Steal 1 field')}</CozyBtn>
         </div>
       )}
 
@@ -602,19 +610,19 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
           {hasFreeCell && (
             <CozyBtn color={QQ_COLORS.green500} onClick={() => chooseFreeAction('PLACE')}>
-              {lang === 'de' ? '📍 2 Felder setzen' : '📍 Place 2 cells'}
+              {iconLabel('action-place', lang === 'de' ? '2 Felder setzen' : 'Place 2 cells')}
             </CozyBtn>
           )}
           <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>
-            {lang === 'de' ? '⚡ Feld klauen' : '⚡ Steal a cell'}
+            {iconLabel('action-steal', lang === 'de' ? 'Feld klauen' : 'Steal a cell')}
           </CozyBtn>
           {/* Bann + Schild + Tauschen entfernt — Trinity Place/Steal/Stapel
               ist die finale Mechanik-Auswahl. */}
           {(phase >= 3 || (phase === 2 && s.totalPhases === 2)) && hasStapable && stapelsLeft > 0 && (
             <CozyBtn color="#06B6D4" onClick={() => chooseFreeAction('STAPEL')}>
-              {lang === 'de'
-                ? `🏯 Stapeln (+1 Punkt · ${stapelsLeft}/3 übrig)`
-                : `🏯 Stack (+1 point · ${stapelsLeft}/3 left)`}
+              {iconLabel('action-stack', lang === 'de'
+                ? `Stapeln (+1 Punkt · ${stapelsLeft}/3 übrig)`
+                : `Stack (+1 point · ${stapelsLeft}/3 left)`)}
             </CozyBtn>
           )}
         </div>
@@ -628,7 +636,12 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               <QQIcon slug="marker-swap" size={24} alt="Swap" />
               {lang === 'de' ? 'Felder wählen' : 'Choose fields'}
             </span>
-          ) : isStuck ? (lang === 'de' ? '🏯 Feld auswählen' : '🏯 Select cell to stack')
+          ) : isStuck ? (
+              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                <QQIcon slug="action-stack" size={24} alt="Stapeln" />
+                {lang === 'de' ? 'Feld auswählen' : 'Select cell to stack'}
+              </span>
+            )
             : isShield ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <QQIcon slug="marker-shield" size={24} alt="Schild" />
@@ -641,9 +654,9 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                 {lang === 'de' ? 'Feld zum Bannen wählen' : 'Select cell to ban'}
               </span>
             )
-            : isSteal    ? t.placement.confirmSteal[lang]
+            : isSteal    ? iconLabel('action-steal', lang === 'de' ? 'Klauen' : 'Steal')
             : isJoker    ? (lang === 'de' ? '⭐ Jokerfeld setzen' : '⭐ Place joker cell')
-            : t.placement.confirmPlace[lang]}
+            : iconLabel('action-place', lang === 'de' ? 'Feld wählen' : 'Choose field')}
         </CozyBtn>
       )}
 

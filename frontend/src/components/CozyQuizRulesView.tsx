@@ -39,6 +39,9 @@ type RulesSlide = {
   color: string;
   lines: string[];
   extra?: string;
+  /** 2026-06-28 (Wolf): überschreibt das „Spielregeln"-Eyebrow (z.B. Intro-Slide
+   *  „Vorbereitung"). Default bleibt rules.header. */
+  eyebrow?: string;
   /** Mini grid example: 2D array — 'A' = team A, 'B' = team B, '⭐' = joker star, '🏯' = stacked, null = empty */
   grid?: { cells: (string | null)[][]; colorA: string; colorB: string; label?: string };
   /** Rendert stattdessen den Fortschrittsbaum (Phasen + Fragen-Punkte). */
@@ -387,13 +390,24 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   });
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
-  // idx<0 = Overlay-Phase (Willkommen/Regel-Intro). Nichts rendern, damit der
-  // Crossfade der Overlays nicht die erste Regel-Folie im Hintergrund zeigt.
-  if (rawIdx < 0) return null;
-  const idx = Math.max(0, Math.min(rawIdx, totalSlides - 1));
-  const slide = slides[idx];
+  // rawIdx === -2 = Willkommen-Overlay (bleibt in QQBeamerPage) → hier nichts.
+  // rawIdx === -1 = Regel-Intro: 2026-06-28 (Wolf) jetzt als ERSTE Station IN
+  // dieser persistenten Bühne (vor „Das Ziel"), nicht mehr als separates Overlay.
+  if (rawIdx < -1) return null;
+  const isIntro = rawIdx === -1;
+  // Intro als synthetischer Slide → läuft durch denselben Render-Pfad wie die
+  // echten Regeln (konsistenter Bühnen-Look). Inhalt = vormaliger RulesIntroOverlay.
+  const introSlide: RulesSlide = {
+    icon: '📖',
+    title: lang === 'en' ? 'Now the rules' : 'Jetzt kommen die Regeln',
+    color: RULES_SLIDE_COLOR,
+    lines: [lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!'],
+    eyebrow: lang === 'en' ? 'Get ready' : 'Vorbereitung',
+  };
+  const idx = isIntro ? -1 : Math.max(0, Math.min(rawIdx, totalSlides - 1));
+  const slide = isIntro ? introSlide : slides[idx];
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
-  const isLast = idx === totalSlides - 1;
+  const isLast = !isIntro && idx === totalSlides - 1;
   const hasGrid = !!slide.grid;
 
   // 2026-06-28 (Beamer-Review): Stepper-Farben (persistente Bühne). Akzent ist
@@ -419,18 +433,25 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           Regeln, aktuelle aktiv. Steht AUSSERHALB des key={idx}-Fensters, bleibt
           also beim Regel-Wechsel stehen. Bei >5 Regeln nur die aktuelle mit
           Label (Rest Nummern), damit der Stepper einzeilig bleibt (kein Scroll). */}
-      {totalSlides > 1 && (() => {
-        const compact = totalSlides > 5;
+      {(() => {
+        // Intro-Pill (📖) als erste Station + die echten Regeln danach.
+        const stepList = [
+          { label: introSlide.title, glyph: '📖' as string },
+          ...slides.map((sl, i) => ({ label: sl.title, glyph: String(i + 1) })),
+        ];
+        const activeStep = isIntro ? 0 : idx + 1;
+        const compact = stepList.length > 5;
+        if (stepList.length <= 1) return null;
         return (
           <div style={{
             position: 'relative', zIndex: 6, flexShrink: 0,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             gap: 'clamp(6px, 0.8cqw, 12px)',
-            maxWidth: 1200, width: '94%', marginBottom: 'clamp(14px, 2cqh, 26px)',
+            maxWidth: 1280, width: '96%', marginBottom: 'clamp(14px, 2cqh, 26px)',
           }}>
-            {slides.map((sl, i) => {
-              const active = i === idx;
-              const done = i < idx;
+            {stepList.map((item, i) => {
+              const active = i === activeStep;
+              const done = i < activeStep;
               const showLabel = active || !compact;
               return (
                 <div key={i} style={{
@@ -447,14 +468,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                     borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
                     background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(255,255,255,0.08)',
                     color: active ? '#1a0a14' : done ? '#fff' : '#9a8fb5',
-                  }}>{i + 1}</span>
+                  }}>{item.glyph}</span>
                   {showLabel && (
                     <span style={{
                       fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
                       color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#7c7390',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       maxWidth: active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(70px, 10cqw, 170px)',
-                    }}>{sl.title}</span>
+                    }}>{item.label}</span>
                   )}
                 </div>
               );
@@ -467,7 +488,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           2026-05-08 (Wolf-Wunsch /animations Slot-1): Slide-In statt phasePop.
           Forward = von rechts, Backward = von links. Spring-Easing für sanftes
           Settle-Overshoot. */}
-      <div key={idx} style={{
+      <div key={isIntro ? 'rules-intro' : idx} style={{
         position: 'relative', zIndex: 5,
         maxWidth: 1200, width: '94%', maxHeight: '86cqh', overflow: 'hidden',
         // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
@@ -526,7 +547,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
             textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : `${slide.color}88`,
           }}>
-            {getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
+            {slide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
           </div>
           <div style={{
             fontSize: 'clamp(44px,7cqw,88px)', fontWeight: 900, lineHeight: 1.05,

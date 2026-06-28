@@ -2034,9 +2034,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Klarstellung — vorher fälschlich unter „L1 Welcome doppelt"
           entfernt. */}
       <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
-      {/* Regel-Intro-Overlay (rulesSlideIndex === -1). Crossfade zwischen
-          Willkommen und erster Regel-Folie. */}
-      <RulesIntroOverlay language={s.language} visible={rulesIntroActive} eurovisionMode={s.theme?.eurovisionMode} />
+      {/* Regel-Intro (rulesSlideIndex === -1): 2026-06-28 (Wolf) als ERSTE Station
+          in die persistente Regel-Bühne (RulesView) verlegt — kein separates
+          Overlay mehr, sonst doppelt. RulesIntroOverlay bleibt als toter Code
+          (falls je wieder gewünscht), wird aber nicht mehr gerendert. */}
+      {void rulesIntroActive}
 
       {/* C3 Timer-Urgency-Vignette: pulsierender roter Screen-Rand bei <=5s,
           zusaetzlich zum bestehenden Timer-Pill-Shake. */}

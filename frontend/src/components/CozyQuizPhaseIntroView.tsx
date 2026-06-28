@@ -14,7 +14,7 @@
  * Helpers — wurde durch fruehere Extraktionen schon verkleinert).
  * 4 externe Importer.
  */
-import { useState, useEffect, useMemo, useRef, Fragment } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, Fragment } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import {
   QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
@@ -502,6 +502,52 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Logo-BG hinter 'Halbfinale 1'). Fallback: lobbyBackgroundUrl.
   const phaseIntroBgUrl = s.theme?.phaseIntroBackgroundUrl ?? s.theme?.lobbyBackgroundUrl;
 
+  // ── Journey-Zoom: persistente Welt-Kamera (Claude-Design-Handoff #3, Kern) ──
+  // EIN persistenter Tree als „Welt", EINE Kamera-Transform, die per introStep
+  // ihr Ziel ändert und smooth einrastet (kein key-Remount). Stationen liegen
+  // weiter als Overlays darüber (werden in einer späteren Iteration verankert).
+  // Koordinaten kommen aus QQProgressTree.onLayout (Tree-eigener Pixel-Frame);
+  // PAD_* gleichen das Outer-Padding des Tree-Wrappers aus (tunebar).
+  const PAD_L = 24, PAD_T = 16;
+  const [treeMetrics, setTreeMetrics] = useState<{
+    phaseCenters: number[]; dotCenters: number[]; phaseWidths: number[];
+    totalWidth: number; dotRowHeight: number;
+  } | null>(null);
+  const camViewportRef = useRef<HTMLDivElement | null>(null);
+  const [camVp, setCamVp] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
+  useLayoutEffect(() => {
+    const el = camViewportRef.current;
+    if (!el) return;
+    const measure = () => setCamVp({ w: el.clientWidth, h: el.clientHeight });
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  // Kamera-Ziel pro introStep: 0 = ganzer Tree, 1 = aktueller Runden-Cluster,
+  // >=2 = aktuelle Kategorie-Kachel. Vertikal im unteren Drittel verankert,
+  // damit oben Platz für die Stations-Titel bleibt.
+  const camWorldStyle = useMemo(() => {
+    if (!treeMetrics || camVp.w === 0) return { transform: 'translate(0px,0px) scale(1)' };
+    const { phaseCenters, dotCenters, phaseWidths, totalWidth, dotRowHeight } = treeMetrics;
+    const step = s.introStep ?? 0;
+    const pi = Math.max(0, (displayGpi ?? 1) - 1);
+    const ty = dotRowHeight / 2 + PAD_T;
+    let tx = totalWidth / 2 + PAD_L;
+    let S = 1;
+    if (step >= 1) {
+      tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
+      S = Math.min(2.4, Math.max(1.4, (camVp.w * 0.78) / (phaseWidths[pi] || camVp.w)));
+    }
+    if (step >= 2) {
+      tx = (dotCenters[s.questionIndex] ?? tx) + PAD_L;
+      S = 3.4;
+    }
+    const camTx = camVp.w / 2 - tx * S;
+    const camTy = camVp.h * 0.62 - ty * S;
+    return { transform: `translate(${camTx}px, ${camTy}px) scale(${S})` };
+  }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi]);
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -558,20 +604,44 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           0%, 100% { transform: translate(-50%, 0); }
           50%      { transform: translate(-50%, -6px); }
         }
+        /* Journey-Zoom-Kern: die Station selbst zoomt NICHT mehr (sonst doppelt
+           es mit der Welt-Kamera) — sie fadet nur sanft ein. */
+        @keyframes qqStationFade {
+          0%   { opacity: 0; transform: translateY(10px); }
+          100% { opacity: 1; transform: translateY(0); }
+        }
       `}</style>
 
-      {/* 2026-06-28 (Beamer-Review „Round Zoom Journey"): Kamera-Stage. Bei jedem
-          Moderator-Klick (introStep- bzw. Phasen-Wechsel) remountet diese Stage
-          via key und zoomt rein + rastet ein (qqZoomJourney, ~0.9s,
-          cubic-bezier(.66,0,.34,1)). Progressive Disclosure ist inhärent — immer
-          nur die aktuelle Station sichtbar. Die Stationen (Roadmap → Runde+Aktion
-          → Kategorie → Frage) behalten ihre bestehenden Designs; die Kamera ist
-          nur die Verbindung. */}
+      {/* 2026-06-29 (Journey-Zoom KERN): persistente Welt-Kamera als Backdrop.
+          EIN Tree = die Welt, EINE Kamera (camWorldStyle) zoomt per introStep
+          (Tree → Runden-Cluster → Kategorie-Kachel) und rastet smooth ein —
+          kein key-Remount mehr, also bleiben Wolf-Hop + Digit-Flip intakt.
+          Stationen liegen als Overlays (zIndex 2) darüber; deren Verankerung in
+          der Welt folgt in der nächsten Iteration. */}
+      <div ref={camViewportRef} aria-hidden style={{
+        position: 'absolute', inset: 0, overflow: 'hidden',
+        zIndex: 1, pointerEvents: 'none',
+      }}>
+        <div style={{
+          position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
+          transition: 'transform 0.9s cubic-bezier(0.66,0,0.34,1)',
+          willChange: 'transform',
+          ...camWorldStyle,
+        }}>
+          <QQProgressTree state={displayTreeState} variant="inline" bigIcons onLayout={setTreeMetrics} />
+        </div>
+      </div>
+
+      {/* Stations-Overlays (Roadmap-Titel → Runde+Aktion → Kategorie → Frage).
+          Liegen über der Welt-Kamera; Inhalt wechselt weiterhin per introStep.
+          Das Crossfade-Remount bleibt vorerst (key) — nur die Welt dahinter ist
+          jetzt die durchgehende Kamerafahrt. */}
       <div key={`qq-zoomstage-${s.gamePhaseIndex}-${s.introStep}`} style={{
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
-        animation: 'qqZoomJourney 0.9s cubic-bezier(0.66, 0, 0.34, 1) both',
-        willChange: 'transform, opacity',
+        position: 'relative', zIndex: 2,
+        animation: 'qqStationFade 0.55s ease both',
+        willChange: 'opacity, transform',
       }}>
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
@@ -820,16 +890,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
 
-          {/* Fortschrittsbaum — während Transition zeigt er den letzten Dot der
-              vorherigen Runde, nach ~450ms swappt er auf die neue Runde →
-              Amber-Linie wächst smooth zum ersten Dot rüber. */}
-          <div style={{
-            marginTop: 36,
-            animation: hasRoundTransition ? undefined : 'contentReveal 0.6s var(--qq-ease-pop-fast) 1.0s both',
-            position: 'relative', zIndex: 5,
-          }}>
-            <QQProgressTree state={displayTreeState} variant="inline" bigIcons />
-          </div>
+          {/* Fortschrittsbaum (Step-0-Roadmap) wandert in den persistenten
+              Welt-Backdrop oben (Journey-Zoom-Kern, 2026-06-29) — der zeigt
+              denselben displayTreeState inkl. Hop, nur als zoomende Welt statt
+              als statischer Inline-Tree hier. Spacer hält die vertikale Balance,
+              damit der Titel nicht in die Welt-Mitte rutscht. */}
+          <div style={{ height: 'clamp(120px, 18cqh, 240px)' }} aria-hidden />
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (
         /* ── Step 1: Rule reminder (what's new this round) ── */

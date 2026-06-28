@@ -20,6 +20,16 @@ interface Props {
    *  der aktuellen Runde. Nur für die Round-Intro-Roadmap (inline) gedacht —
    *  isoliert, damit der schmale Rules-Inline-Tree unverändert bleibt. */
   bigIcons?: boolean;
+  /** 2026-06-29 (Journey-Zoom): liefert die internen Layout-Koordinaten nach
+   *  außen (Tree-eigener Pixel-Frame), damit die PhaseIntro-Kamera ihre Ziele
+   *  (Runden-Cluster / Kategorie-Dot) ohne DOM-Messung berechnen kann. */
+  onLayout?: (m: {
+    phaseCenters: number[];
+    dotCenters: number[];
+    phaseWidths: number[];
+    totalWidth: number;
+    dotRowHeight: number;
+  }) => void;
 }
 
 // Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
@@ -44,6 +54,7 @@ export default function QQProgressTree({
   showcaseMode = false,
   showcaseStepMs = 2200,
   bigIcons = false,
+  onLayout,
 }: Props) {
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
@@ -301,6 +312,15 @@ export default function QQProgressTree({
   }
   const totalWidth = cursor;
   const treeCenter = totalWidth / 2;
+  const dotRowHeight = Math.round(dotSize * 1.3);
+
+  // Journey-Zoom: Layout-Koordinaten nach außen geben (für die PhaseIntro-Kamera).
+  // Key = die formenden Zahlen, damit's nur bei echter Layout-Änderung feuert.
+  const layoutKey = `${totalWidth}|${phaseCenters.join(',')}|${dotCenters.join(',')}|${dotRowHeight}`;
+  useEffect(() => {
+    onLayout?.({ phaseCenters, dotCenters, phaseWidths, totalWidth, dotRowHeight });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [layoutKey]);
 
   // Showcase-Pan: bringt die hervorgehobene Phase (oder Bieten/Finale) ins
   // Viewport-Zentrum. -1 (Pause-Step) zeigt erstmal Phase 0 zentriert.

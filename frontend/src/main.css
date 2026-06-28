@@ -4580,3 +4580,11 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   45%  { transform: scale(1.4); }
   100% { transform: scale(1); }
 }
+
+/* qqRulesWindowRefresh — Beamer-Review 2026-06-28: persistente Regel-Bühne, das
+   Fenster swappt seinen Inhalt mit dezentem Refresh (opacity .35->1 + leichter
+   Scale) statt Full-Screen-Slide. Stepper oben bleibt stehen. */
+@keyframes qqRulesWindowRefresh {
+  0%   { opacity: 0.35; transform: scale(0.992); }
+  100% { opacity: 1;    transform: scale(1); }
+}

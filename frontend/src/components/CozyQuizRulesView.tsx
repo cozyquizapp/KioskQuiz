@@ -13,7 +13,6 @@
  *
  * 1 externer Importer (QQBuiltinSlide).
  */
-import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
@@ -397,17 +396,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const isLast = idx === totalSlides - 1;
   const hasGrid = !!slide.grid;
 
-  // 2026-05-08 (Wolf-Wunsch 'regelslides mit /animations Slot-1 animieren'):
-  // Direction-Tracking — bei Slide N→N+1 slidet die neue Card von rechts rein
-  // (forward), bei N→N-1 von links (backward). Vorher: phasePop-Mount (subtle
-  // scale 0.94→1). Pragma-Variante ohne Dual-Render — alte Slide unmountet
-  // via React-key-Wechsel sofort, neue Slide kommt dramatisch rein.
-  const prevIdxRef = useRef(idx);
-  const direction = idx > prevIdxRef.current ? 'forward'
-                  : idx < prevIdxRef.current ? 'backward'
-                  : 'forward';
-  useEffect(() => { prevIdxRef.current = idx; }, [idx]);
-  const slideInAnim = direction === 'forward' ? 'qqStageSlideInRight' : 'qqStageSlideInLeft';
+  // 2026-06-28 (Beamer-Review): Stepper-Farben (persistente Bühne). Akzent ist
+  // im Skin der Theme-Akzent, sonst Marken-Pink.
+  const aHex = isThemed() ? 'var(--qq-accent)' : '#EC4899';
+  const aRGB = isThemed() ? 'var(--qq-accent-rgb)' : '236,72,153';
 
   return (
     <div style={{
@@ -423,13 +415,61 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
+      {/* 2026-06-28 (Beamer-Review): persistenter Stepper — Übersicht aller
+          Regeln, aktuelle aktiv. Steht AUSSERHALB des key={idx}-Fensters, bleibt
+          also beim Regel-Wechsel stehen. Bei >5 Regeln nur die aktuelle mit
+          Label (Rest Nummern), damit der Stepper einzeilig bleibt (kein Scroll). */}
+      {totalSlides > 1 && (() => {
+        const compact = totalSlides > 5;
+        return (
+          <div style={{
+            position: 'relative', zIndex: 6, flexShrink: 0,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            gap: 'clamp(6px, 0.8cqw, 12px)',
+            maxWidth: 1200, width: '94%', marginBottom: 'clamp(14px, 2cqh, 26px)',
+          }}>
+            {slides.map((sl, i) => {
+              const active = i === idx;
+              const done = i < idx;
+              const showLabel = active || !compact;
+              return (
+                <div key={i} style={{
+                  display: 'flex', alignItems: 'center', gap: 'clamp(5px, 0.6cqw, 10px)',
+                  padding: 'clamp(5px,0.7cqh,9px) clamp(9px,1cqw,15px)',
+                  borderRadius: 999, minWidth: 0,
+                  background: active ? `rgba(${aRGB},0.18)` : 'rgba(255,255,255,0.03)',
+                  border: active ? `1.5px solid rgba(${aRGB},0.6)` : '1.5px solid rgba(255,255,255,0.08)',
+                  transition: 'all 0.4s ease',
+                }}>
+                  <span style={{
+                    flexShrink: 0, display: 'grid', placeItems: 'center',
+                    width: 'clamp(20px,1.9cqw,28px)', height: 'clamp(20px,1.9cqw,28px)',
+                    borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
+                    background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(255,255,255,0.08)',
+                    color: active ? '#1a0a14' : done ? '#fff' : '#9a8fb5',
+                  }}>{i + 1}</span>
+                  {showLabel && (
+                    <span style={{
+                      fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
+                      color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#7c7390',
+                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      maxWidth: active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(70px, 10cqw, 170px)',
+                    }}>{sl.title}</span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* Main card — full-width for beamer readability.
           2026-05-08 (Wolf-Wunsch /animations Slot-1): Slide-In statt phasePop.
           Forward = von rechts, Backward = von links. Spring-Easing für sanftes
           Settle-Overshoot. */}
       <div key={idx} style={{
         position: 'relative', zIndex: 5,
-        maxWidth: 1200, width: '94%', maxHeight: '92cqh', overflow: 'hidden',
+        maxWidth: 1200, width: '94%', maxHeight: '86cqh', overflow: 'hidden',
         // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
         // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
         // Slide-Color-Rand bleibt als Kategorie-Akzent.
@@ -439,9 +479,15 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        animation: `${slideInAnim} 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both`,
-        backdropFilter: 'blur(10px)',
-        willChange: 'transform, opacity',
+        // 2026-06-28 (Beamer-Review): persistente Bühne — das Fenster swappt nur
+        // seinen Inhalt mit einem dezenten Refresh (opacity .35→1 + scale .992→1,
+        // 480ms), KEIN Full-Screen-Slide mehr. Der Stepper oben bleibt stehen.
+        animation: 'qqRulesWindowRefresh 0.48s cubic-bezier(0.16, 1, 0.3, 1) both',
+        // Stabile Fenstergröße: auf den größten Inhalt (Tree-Showcase) dimensioniert,
+        // damit der Rahmen beim Regel-Wechsel nicht springt. Kürzere Regeln zentrieren.
+        minHeight: 'min(68cqh, 640px)',
+        justifyContent: 'center',
+        display: 'flex', flexDirection: 'column',
       }}>
         {/* Icon + title — beides zentriert, Icon über Titel. Klassischer
             Stage-Look statt links-rechts-Layout. */}

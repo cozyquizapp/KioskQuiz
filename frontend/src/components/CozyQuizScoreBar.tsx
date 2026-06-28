@@ -16,6 +16,7 @@ import { JokerIcon } from './JokerIcon';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { cozy3dCrownTopPx } from '../cozy3dAvatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed } from '../qqTheme';
@@ -264,9 +265,14 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   position: 'absolute',
                   // 2026-06-24 (Wolf 'Krone naeher am Kopf'): Offset reduziert
                   // (-16/-12 -> -8/-6) damit die Kronenbasis auf der Disc-Oberkante
-                  // = auf dem Kopf sitzt statt darueber zu schweben. Moderat, damit
-                  // hohe cozy3d-Ohren/Huete nicht kollidieren.
-                  top: dense ? -6 : -8,
+                  // = auf dem Kopf sitzt statt darueber zu schweben.
+                  // 2026-06-28 (Wolf 'Krone sitzt bei einigen Tieren nicht auf
+                  // dem Kopf'): statt fix jetzt pro-Avatar berechnet — die
+                  // gemessene Kopf-Oberkante (cozy3dCrownTopPx) verschiebt die
+                  // Krone bei tief sitzenden Koepfen (Krabbe, Delfin, Wal, Orca,
+                  // Fledermaus …) entsprechend runter. Front-Portraits bleiben
+                  // praktisch unveraendert (frac 0 → ~-8/-6).
+                  top: cozy3dCrownTopPx(t.emoji, avatarSize),
                   left: '50%',
                   transform: 'translateX(-50%) rotate(-14deg)',
                   fontSize: dense ? 24 : 30,

@@ -124,6 +124,46 @@ export function cozy3dLabel(slug: string): string {
   return LABEL_BY_SLUG.get(slug) ?? slug;
 }
 
+// ─── Kronen-Position (2026-06-28) ─────────────────────────────────────────
+// Wolf: „die Krone sitzt bei einigen Tieren neben dem Grid nicht wirklich auf
+// dem Kopf". Ursache: alle Avatare sind quadratisch zentriert (contain-Fit),
+// aber der Kopf sitzt je nach Motiv unterschiedlich hoch. Bei Front-Portraits
+// (Bär, Eule, Capybara …) füllt der Kopf die Disc-Oberkante → eine fixe Krone
+// knapp über der Disc passt. Bei Wasser-/Flachtieren (Krabbe, Fledermaus,
+// Delfin, Wal, Orca …) sitzt der Kopf tiefer → die fixe Krone schwebt über
+// Leerraum.
+//
+// Lösung: pro Avatar die Kopf-Oberkante im ZENTRALEN Band messen (da wo die
+// Krone horizontal sitzt, x∈[34%,66%], erste Zeile mit ≥4 Alpha-Pixeln), als
+// Anteil der Bildhöhe. 0 = Inhalt berührt die Disc-Oberkante. Höhere Werte →
+// Krone rutscht entsprechend runter auf den Kopf. Nur Einträge ≥0.06 gelistet;
+// der Rest nutzt den Default (0 → bisheriges Verhalten). Werte aus
+// scripts-Messung (siehe Commit). Bei neuen Avataren ggf. neu messen.
+const COZY3D_CROWN_FRAC: Record<string, number> = {
+  krabbe: 0.36, hummer: 0.30, fledermaus: 0.29, axolotl: 0.26, kaenguruh: 0.23,
+  wasserbueffel: 0.21, fuchs: 0.19, biene: 0.18, eichhoernchen: 0.18, elch: 0.18,
+  maus: 0.17, spinne: 0.17, waschbaer: 0.17, biber: 0.16, hund: 0.16, orca: 0.16,
+  seehkuh: 0.16, hase: 0.15, koala: 0.15, nashorn: 0.15, 'red-panda': 0.15,
+  schmetterling: 0.15, clownfisch: 0.14, gecko: 0.14, pfau: 0.14, alligator: 0.13,
+  elefant: 0.13, eule: 0.13, katze: 0.13, maulwurf: 0.13, bison: 0.12, kuh: 0.12,
+  panda: 0.11, wal: 0.11, marienkaefer: 0.10, oktopus: 0.10, tiger: 0.10,
+  trizeratops: 0.10, baer: 0.09, dachs: 0.09, delfin: 0.09, drache: 0.09, hai: 0.09,
+  pufffisch: 0.09, lama: 0.08, 'orang-utan': 0.08, walross: 0.08, chamaeleon: 0.07,
+  giraffe: 0.07, schaf: 0.07, ziege: 0.07, dino: 0.06, gorilla: 0.06, hahn: 0.06,
+};
+
+/**
+ * Vertikale Krone-Position (CSS `top` in px, relativ zur Avatar-Span-Oberkante)
+ * so dass die Kronenbasis auf der gemessenen Kopf-Oberkante sitzt — statt fix
+ * über der Disc zu schweben. Formel kalibriert: frac 0 → ≈ -0.104·size (= das
+ * bisherige -8 bei size 78 / -6 bei size 64). Für Nicht-cozy3d-Avatare (Emoji/
+ * Flagge, kein Slug) greift der Default. `slug` = team.emoji.
+ */
+export function cozy3dCrownTopPx(slug: string | undefined | null, avatarSize: number): number {
+  const frac = (slug && COZY3D_CROWN_FRAC[slug]) || 0;
+  return Math.round(avatarSize * (0.9 * frac - 0.104));
+}
+
 // ─── Blinzeln (2026-06-26) ────────────────────────────────────────────────
 // Mechanik = 2-Frame-Swap: Ruhe = OFFENE Augen (<slug>.png), Blink = GESCHLOSSEN
 // (<slug>-blink.png). Der geschlossene Frame entsteht per AUTO-DIFF-TRANSPLANT

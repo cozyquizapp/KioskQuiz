@@ -4,6 +4,7 @@ import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '.
 import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed, getActiveTheme } from '../qqTheme';
+import { QQIcon, qqCatSlug, qqSubSlug } from './QQIcon';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -767,6 +768,13 @@ export default function QQProgressTree({
                   const emoji = e
                     ? (e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label!.emoji)
                     : '';
+                  // 2026-06-28 (Wolf 'progress tree hat noch alte avatare'): die
+                  // Dots zeigten rohe OS-Kategorie-Emoji statt der neuen cozy3d-
+                  // Kategorie-Icons (PNG). Slug holen (Sub-Mechanik bevorzugt),
+                  // Fallback = Emoji wenn kein Icon existiert (z.B. deaktivierte Subs).
+                  const catSlug = e
+                    ? (e.bunteTueteKind ? qqSubSlug(e.bunteTueteKind) : qqCatSlug(e.category))
+                    : null;
                   const isPlaceholder = e === null;
                   return (
                     <div
@@ -812,7 +820,9 @@ export default function QQProgressTree({
                         transition: 'all 0.45s var(--qq-ease-out-cubic)',
                       }}
                     >
-                      {emoji}
+                      {catSlug
+                        ? <QQIcon slug={catSlug} size={Math.round(dotSize * 0.62)} alt={label ? label[lang] : undefined} />
+                        : emoji}
                     </div>
                   );
                 })}

@@ -4594,7 +4594,9 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
    Frage) rein und rastet ein. Sanftes Approach (von leicht kleiner auf 1) mit
    der Kamera-Easing cubic-bezier(.66,0,.34,1). Kein Loop. */
 @keyframes qqZoomJourney {
-  0%   { opacity: 0; transform: scale(0.86); }
-  60%  { opacity: 1; }
+  /* 2026-06-28 (Wolf 'ich sehe keinen zoom journey'): deutlich sichtbarer —
+     die Kamera nähert sich von weiter weg (scale .55) und dockt an (1). */
+  0%   { opacity: 0; transform: scale(0.55); }
+  45%  { opacity: 1; }
   100% { opacity: 1; transform: scale(1); }
 }

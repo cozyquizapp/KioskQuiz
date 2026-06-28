@@ -7,7 +7,7 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-13 (Refactor Phase 5).
  * NICHT extern importiert (nur intern via Phase-Router).
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -27,8 +27,13 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const teams = s.teams.filter(t => t.connected).length > 0
     ? s.teams.filter(t => t.connected)
     : s.teams;
-  // Animation start anchor — fallback auf "jetzt" falls Backend-Feld fehlt
-  const anchor = s.teamsRevealStartedAt ?? Date.now();
+  // Animation start anchor. 2026-06-28 (Wolf 'die Karten drehen sich nicht'):
+  // Fallback war `Date.now()` INLINE → bei jedem Render neu berechnet, also blieb
+  // `elapsed` ~0 und die zeitgesteuerten Card-Flips feuerten nie (man sah nur die
+  // Rückseiten). Jetzt ein STABILER Mount-Anker via Ref, falls das Backend-Feld
+  // fehlt → der gestaffelte Flip läuft garantiert.
+  const mountAnchorRef = useRef(Date.now());
+  const anchor = s.teamsRevealStartedAt ?? mountAnchorRef.current;
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick(t => t + 1), 250);

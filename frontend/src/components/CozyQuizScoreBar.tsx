@@ -1,18 +1,20 @@
 /**
- * CozyQuizScoreBar — Standings-Liste pro Team mit Score, Joker-Pile, Rank-Tracking.
+ * CozyQuizScoreBar — Standings-Liste pro Team mit Score + Rank-Tracking.
  *
  * Sortiert nach largestConnected (Quartier-Groesse). Score-Aenderungen feuern
- * Pop-Floater („+1"-Bubble), Rank-Aenderungen feuern Up/Down-Pfeil + FLIP-
- * Reorder-Animation (smooth row-swap statt Snap).
+ * Pop-Floater („+1"-Bubble), Rank-Aenderungen feuern FLIP-Reorder-Animation
+ * (smooth row-swap statt Snap).
  *
- * Joker-Pile rechts pro Row: pro Joker ein gestapelter Star/EU-Heart.
+ * 2026-06-28 (Claude-Design-Handoff #2): Joker komplett aus dem Scoreboard
+ * raus (Stern-Flug + Impact-Pulse). „Der Joker ist ein Grid-Moment, kein
+ * Scoreboard-Stat" — die Tabelle zeigt nur Rang + Team + Punkte. Joker bekommt
+ * seinen Jackpot-Moment jetzt im Grid (CozyQuizGridDisplay).
  *
  * Extrahiert aus QQBeamerPage.tsx 2026-05-12 (Refactor Phase 2).
  * 2+ interne Caller (PlacementView, ggf. ConnectionsBeamerView).
  */
 import { useState, useEffect, useRef, useLayoutEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { JokerIcon } from './JokerIcon';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -50,7 +52,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
     }
   }
   const prevScores = useRef<Record<string, number>>({});
-  const prevJokers = useRef<Record<string, number>>({});
   const prevRanks = useRef<Record<string, number>>({});
   const [poppedIds, setPoppedIds] = useState<Set<string>>(new Set());
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
@@ -99,8 +100,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
       setTimeout(() => setRankChanges({}), 1200);
     }
   }, [sorted.map(t => t.id).join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
-  // B2: Teams mit gerade verdientem Joker — triggert Stern-Flug-Animation
-  const [jokerEarners, setJokerEarners] = useState<Set<string>>(new Set());
   // C2: Streak-Counter pro Team (wie oft hintereinander correctTeamId).
   // Wechselt der correctTeamId auf ein neues nicht-null Team: dessen Counter++
   // und alle anderen → 0. Null (niemand richtig) tastet keine Counter.
@@ -136,29 +135,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
       setTimeout(() => setFloaters(f => f.filter(fl => !newFloaters.includes(fl))), 1200);
     }
   }, [teams]);
-
-  // B2: jokersEarned tracking pro Team. Beim Anstieg: Stern fliegt auf Avatar.
-  // 2026-05-19 (Wolf 'gedrehter joker taucht beim grid oeffnen auf'):
-  // Beim ersten Mount-Run war prevJokers leer → before=0, now>0 fuer alle
-  // Teams die in vorigen Runden Joker verdient hatten → falscher Stern-Flug
-  // bei jedem ScoreBar-Remount (z.B. Grid-Reopen). isFirstRunRef skippt die
-  // Animation beim allerersten Snapshot.
-  const isFirstJokerRunRef = useRef(true);
-  useEffect(() => {
-    if (!teamPhaseStats) return;
-    const newEarners = new Set<string>();
-    for (const t of teams) {
-      const now = teamPhaseStats[t.id]?.jokersEarned ?? 0;
-      const before = prevJokers.current[t.id] ?? 0;
-      if (!isFirstJokerRunRef.current && now > before) newEarners.add(t.id);
-      prevJokers.current[t.id] = now;
-    }
-    isFirstJokerRunRef.current = false;
-    if (newEarners.size > 0) {
-      setJokerEarners(newEarners);
-      setTimeout(() => setJokerEarners(new Set()), 1600);
-    }
-  }, [teams, teamPhaseStats]);
 
   // Bei vielen Teams (≥6) kompakter, sonst passen 8 Zeilen nicht nebeneinander.
   // Balken ist raus — Info steckt in der Zahl. Dafür Name + Wert deutlich größer.
@@ -253,10 +229,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
               position: 'relative', display: 'inline-block',
-              // B2 Impact-Pulse: wenn Team gerade Joker verdient hat, Avatar pulsiert 1x
-              animation: jokerEarners.has(t.id)
-                ? 'jokerImpactPulse 0.7s var(--qq-ease-bounce) 0.85s both'
-                : undefined,
               borderRadius: '50%',
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} />
@@ -280,28 +252,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
                 }}>👑</span>
               )}
-              {/* 2026-05-05 (Wolf-Bug): Joker-Slots waren als absolute Overlay
-                  am Avatar (bottom-right). Verdeckten den Avatar + waren zu klein
-                  zu erkennen. Jetzt ausgelagert in eine eigene Tabellen-Spalte
-                  rechts neben den Felder-Werten — siehe weiter unten in dieser Row. */}
-              {/* B2 Stern-Flug: fliegt von oben rein auf Avatar wenn gerade verdient */}
-              {jokerEarners.has(t.id) && (
-                <span
-                  aria-hidden
-                  style={{
-                    position: 'absolute',
-                    top: 0, left: '50%',
-                    transform: 'translate(-50%, -30px)',
-                    lineHeight: 1,
-                    pointerEvents: 'none',
-                    filter: 'drop-shadow(0 0 12px rgba(236,72,153,0.9)) drop-shadow(0 0 24px rgba(236,72,153,0.5))',
-                    ['--jk-dx' as string]: '0px',
-                    ['--jk-dy' as string]: '40px',
-                    animation: 'jokerStarFly 0.9s cubic-bezier(0.34,1.5,0.64,1) both',
-                    zIndex: 10,
-                  }}
-                ><JokerIcon i={i} size={dense ? 38 : 48} eurovisionMode={eurovisionMode}/></span>
-              )}
+              {/* Joker komplett aus der ScoreBar raus (2026-06-28, Claude-Design-
+                  Handoff #2): kein Stern-Flug, kein Impact-Pulse, keine statische
+                  Spalte. „Der Joker ist ein Grid-Moment, kein Scoreboard-Stat" —
+                  der Joker-Jackpot lebt jetzt im Grid (CozyQuizGridDisplay). */}
               {/* 2026-06-28 (Wolf): Aktions-Icon am aktiven Team (place/steal/stack).
                   Distanz-lesbares Icon statt des frueher (2026-05-05) entfernten
                   Text-Verbs. Sitzt bottom-right am Avatar, mit Pop-In. */}
@@ -435,15 +389,6 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               }}>+{f.diff}</div>
             ))}
           </div>
-          {/* Joker-Spalte — 2026-05-05 (Wolf 'die 2 Joker als Spalte statt
-              auf dem Avatar'). Pro Team 2 Slots: verfuegbare leuchten gold,
-              verbrauchte sind grayscale + opacity 0.32. Komplett verbraucht
-              → keine Spalte mehr (saved space). */}
-          {/* Joker-Spalte komplett entfernt 2026-05-05 (Wolf-Wahl 2E):
-              statische Joker-Anzeige in der Tabelle wirkte aus Beamer-Distanz
-              klein/unklar. Joker werden jetzt NUR noch als Burst-Animation
-              sichtbar wenn verdient (jokerStarFly fliegt auf den Avatar) —
-              siehe weiter unten in dieser Row. Tabelle bleibt aufgeraeumt. */}
         </div>
         );
       })}

@@ -89,11 +89,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const neighborCellsRef = useRef<Set<string>>(new Set());
   // Connect-Welle: cellKey → Verzögerung (ms) für die gestaffelte Glow-Welle.
   const waveDelayRef = useRef<Map<string, number>>(new Map());
+  // Steal Stufe B: cellKey → prevOwner-TeamId (für den rausgerissenen Geist-Avatar).
+  const stolenPrevRef = useRef<Map<string, string>>(new Map());
   const [shakeTick, setShakeTick] = useState(0);
   if (gridKey !== prevGridRef.current) {
     const newSet = new Set<string>();
     const stolenSet = new Set<string>();
     const neighborSet = new Set<string>();
+    const stolenPrev = new Map<string, string>();
     const prevOwners = prevGridRef.current.split(',');
     s.grid.forEach((row, r) => row.forEach((cell, c) => {
       const prevOwner = prevOwners[(r * s.gridSize) + c];
@@ -101,7 +104,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
       // Snapshot diese Zelle gar nicht → kein echtes „neu gesetzt").
       if (prevOwner === undefined) return;
       if (cell.ownerId && prevOwner === '') newSet.add(`${r}-${c}`);
-      else if (cell.ownerId && prevOwner && prevOwner !== cell.ownerId) stolenSet.add(`${r}-${c}`);
+      else if (cell.ownerId && prevOwner && prevOwner !== cell.ownerId) {
+        stolenSet.add(`${r}-${c}`);
+        stolenPrev.set(`${r}-${c}`, prevOwner);
+      }
     }));
     // Collect 4-neighbors of any changed cell
     const changed = new Set<string>([...newSet, ...stolenSet]);
@@ -141,6 +147,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     newCellsRef.current = newSet;
     stolenCellsRef.current = stolenSet;
     neighborCellsRef.current = neighborSet;
+    stolenPrevRef.current = stolenPrev;
     prevGridRef.current = gridKey;
     if (newSet.size > 0 || stolenSet.size > 0) {
       setShakeTick(t => t + 1);
@@ -149,6 +156,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         stolenCellsRef.current = new Set();
         neighborCellsRef.current = new Set();
         waveDelayRef.current = new Map();
+        stolenPrevRef.current = new Map();
       }, 1200);
     }
   }
@@ -601,6 +609,24 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     Stack-Bonus-+N-Badge entfernt — die konzentrischen Inner-
                     Layer zeigen die Stack-Anzahl visuell, Zahl daneben war
                     redundant und visuell ueberladen. */}
+                {/* Steal Stufe B: alter Avatar des beklauten Teams wird mit
+                    Trail rausgerissen, bevor die neue Farbe wischt (zIndex 9
+                    über dem neuen, slammenden Avatar). */}
+                {isStolen && stolenPrevRef.current.has(`${r}-${c}`) && (() => {
+                  const oldTeam = s.teams.find(t => t.id === stolenPrevRef.current.get(`${r}-${c}`));
+                  if (!oldTeam) return null;
+                  return (
+                    <div style={{
+                      position: 'absolute', inset: 0, zIndex: 9,
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      animation: 'cellStealYank 0.5s cubic-bezier(.45,0,.7,.35) both',
+                      pointerEvents: 'none',
+                    }}>
+                      <QQTeamAvatar avatarId={oldTeam.avatarId} teamEmoji={oldTeam.emoji}
+                        size={Math.round(cellSize * 0.78)} flat teamId={oldTeam.id} />
+                    </div>
+                  );
+                })()}
                 {/* Emoji / star content */}
                 {/* 2026-05-05 (Wolf-Skizze Stack): zIndex 8 damit Avatar ueber
                     allen Inner-Stack-Layern (zIndex 2..N) liegt. */}

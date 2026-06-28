@@ -4548,3 +4548,9 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   78%  { transform: scale(1.08); }
   100% { transform: scale(1); opacity: 1; }
 }
+
+/* ── Steal-Ruck Stufe B: alter Avatar wird rausgerissen ──────────────── */
+@keyframes cellStealYank {
+  0%   { transform: translate(0,0) scale(1) rotate(0); opacity: 1; }
+  100% { transform: translate(-22%, -26%) scale(0.3) rotate(-180deg); opacity: 0; }
+}

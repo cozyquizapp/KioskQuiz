@@ -216,7 +216,10 @@ export function QQEmojiIcon({ emoji, size = '1em', style, className, title, alt 
 // Slug-Alias: bestehende cat-*/sub-*/marker-*-Referenzen laden transparent die
 // Fluent-Version — ein Flag-Toggle genuegt, um zwischen Custom-Stil und Fluent
 // hin und her zu schalten.
-const USE_FLUENT_FOR_CUSTOM = true;
+// 2026-06-28: AUS — die fx-cat-*/fx-sub-* liegen im _archive/, und cat-*/sub-*
+// sind jetzt Wolfs neue cozy3d-Look-Icons (icons-v2). cat-*/sub-* laden also
+// direkt ihre eigenen, echten PNGs.
+const USE_FLUENT_FOR_CUSTOM = false;
 const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = USE_FLUENT_FOR_CUSTOM ? {
   'cat-schaetzchen':   'fx-cat-schaetzchen',
   'cat-mucho':         'fx-cat-mucho',

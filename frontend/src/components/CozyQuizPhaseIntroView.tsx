@@ -24,7 +24,7 @@ import { isThemed, isQuietMotion } from '../qqTheme';
 import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
-import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
+import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug, type QQIconSlug } from './QQIcon';
 import { ActionCard, type ActionCardData } from './CozyQuizActionCard';
 import QQProgressTree from './QQProgressTree';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
@@ -967,8 +967,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 }}>
                   {cards.map((c, i) => {
                     const iconSize = 'clamp(72px, 8.5cqw, 132px)';
+                    // 2026-06-28 (Wolf): Platzieren/Klauen/Stapeln auf den Action-
+                    // Cards nutzen jetzt die neuen cozy3d-Aktions-Icons (PNG) statt
+                    // der OS-Emoji 📍/⚡/🏯. Das emoji-Feld bleibt fuer die Sound-
+                    // Erkennung in ActionCardReveal erhalten.
+                    const ACTION_SLUG: Record<string, QQIconSlug> = {
+                      '📍': 'action-place', '⚡': 'action-steal', '🏯': 'action-stack',
+                    };
+                    const actionSlug = c.emoji ? ACTION_SLUG[c.emoji] : undefined;
                     const iconNode = c.slug
                       ? <QQIcon slug={c.slug} size={iconSize} alt={c.label} />
+                      : actionSlug
+                      ? <QQIcon slug={actionSlug} size={iconSize} alt={c.label} />
                       : <QQEmojiIcon emoji={c.emoji ?? '?'} />;
                     // Base-Delay pro Card-Position. Build-up fuer isNew (+600ms)
                     // wird intern in ActionCardReveal addiert.

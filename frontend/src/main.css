@@ -4554,3 +4554,11 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   0%   { transform: translate(0,0) scale(1) rotate(0); opacity: 1; }
   100% { transform: translate(-22%, -26%) scale(0.3) rotate(-180deg); opacity: 0; }
 }
+
+/* qqTrSpark — Marken-Sparkle-Glyph (Teams-Reveal "Viel Glueck", Beamer-Review
+   2026-06-28): dezenter Puls + leichte Skalierung des clip-path-Sterns. Ersetzt
+   das frühere OS-Emoji ✨. rotate(45deg) haelt den Stern in Rauten-Lage. */
+@keyframes qqTrSpark {
+  0%, 100% { opacity: 0.45; transform: rotate(45deg) scale(0.82); }
+  50%      { opacity: 1;    transform: rotate(45deg) scale(1.2); }
+}

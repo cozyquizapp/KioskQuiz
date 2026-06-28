@@ -12,7 +12,6 @@ import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
-import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
 import { isThemed } from '../qqTheme';
@@ -306,7 +305,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
         display: 'inline-flex', flexWrap: 'nowrap',
       }}>
         {(() => {
-          const titleText = lang === 'en' ? '🎬 Tonight\u2019s teams\u2026' : '🎬 Heute spielen\u2026';
+          const titleText = lang === 'en' ? 'Tonight\u2019s teams\u2026' : 'Heute spielen\u2026';
           const letters = Array.from(titleText);
           const letterStagger = 0.05;
           const baseSec = titleDelay / 1000;
@@ -324,7 +323,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       </div>
       {/* Pink-Underline — expandiert von center, dann shimmer-loop */}
       {(() => {
-        const titleText = lang === 'en' ? '🎬 Tonights teams' : '🎬 Heute spielen';
+        const titleText = lang === 'en' ? 'Tonights teams' : 'Heute spielen';
         const letterCount = Array.from(titleText).length;
         const baseSec = titleDelay / 1000;
         const underlineDelay = baseSec + letterCount * 0.05 + 0.1;
@@ -600,7 +599,11 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                               name={t.name}
                               maxLines={2}
                               shrinkAfter={11}
-                              color={t.color}
+                              // 2026-06-28 (Beamer-Review P0): Team-Namen weiß
+                              // statt in Team-Farbe — bessere Lesbarkeit aus
+                              // Distanz, Color-on-Color (Name auf getöntem Card-BG)
+                              // vermieden. Dark-Halo-Shadow unten bleibt.
+                              color={themed ? 'var(--qq-card-text)' : '#ffffff'}
                               fontWeight={900}
                               fontSize={nameFont}
                               style={{
@@ -641,7 +644,25 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
           transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
           animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
         }}>
-          <QQEmojiIcon emoji="✨"/> {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} <QQEmojiIcon emoji="✨"/>
+          {/* 2026-06-28 (Beamer-Review P2): OS-Emoji ✨ → Marken-Sparkle
+              (CSS clip-path-Stern in Akzentfarbe, dezenter Puls). */}
+          <span aria-hidden style={{
+            display: 'inline-block', width: '0.46em', height: '0.46em',
+            marginRight: '0.34em', verticalAlign: '0.08em',
+            background: goodLuckColor,
+            clipPath: 'polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%)',
+            filter: 'drop-shadow(0 0 10px rgba(var(--qq-accent-rgb),0.6))',
+            animation: 'qqTrSpark 2.4s ease-in-out infinite',
+          }} />
+          {lang === 'en' ? 'Good luck!' : 'Viel Glück!'}
+          <span aria-hidden style={{
+            display: 'inline-block', width: '0.46em', height: '0.46em',
+            marginLeft: '0.34em', verticalAlign: '0.08em',
+            background: goodLuckColor,
+            clipPath: 'polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%)',
+            filter: 'drop-shadow(0 0 10px rgba(var(--qq-accent-rgb),0.6))',
+            animation: 'qqTrSpark 2.4s ease-in-out infinite 0.8s',
+          }} />
         </div>
       </div>
 

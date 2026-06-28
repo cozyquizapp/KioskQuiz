@@ -16,6 +16,10 @@ interface Props {
   showcaseMode?: boolean;
   /** Sweep-Geschwindigkeit pro Phase in ms (default 2200). */
   showcaseStepMs?: number;
+  /** 2026-06-28 (Beamer-Review): größere 3D-Kategorie-Icons + Puls-Marker an
+   *  der aktuellen Runde. Nur für die Round-Intro-Roadmap (inline) gedacht —
+   *  isoliert, damit der schmale Rules-Inline-Tree unverändert bleibt. */
+  bigIcons?: boolean;
 }
 
 // Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
@@ -39,6 +43,7 @@ export default function QQProgressTree({
   title,
   showcaseMode = false,
   showcaseStepMs = 2200,
+  bigIcons = false,
 }: Props) {
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
@@ -93,7 +98,9 @@ export default function QQProgressTree({
     : 0.95;
   const titleSize = isShowcase ? 44 : variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
   const phaseNameSize = isShowcase ? 34 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
-  const dotSize = Math.round(34 * scale);
+  // bigIcons (Round-Intro-Roadmap): Dots ~1.3× größer → die 3D-Kategorie-Icons
+  // lesen sich aus Distanz deutlich besser (Beamer-Review 54px-Tiles vs. 34px).
+  const dotSize = Math.round(34 * scale * (bigIcons ? 1.3 : 1));
   const dotGap = isMini ? 4 : Math.round(12 * scale);
   const phaseGap = isMini ? 14 : Math.round(40 * scale);
   const showLabels = !isMini;
@@ -565,6 +572,18 @@ export default function QQProgressTree({
                     transition: 'all 0.4s var(--qq-ease-out-cubic)',
                   }}
                 >
+                  {/* 2026-06-28 (Beamer-Review): Puls-Marker vor dem Label der
+                      aktuellen Runde (nur Round-Intro-Roadmap). */}
+                  {bigIcons && isCurrentPhase && (
+                    <span style={{
+                      display: 'inline-block', verticalAlign: 'middle',
+                      width: Math.round(phaseNameSize * 0.55), height: Math.round(phaseNameSize * 0.55),
+                      borderRadius: '50%', marginRight: 7,
+                      background: skinAccentHex ?? QQ_COLORS.brandPink,
+                      boxShadow: `0 0 9px ${skinAccentHex ?? QQ_COLORS.brandPink}`,
+                      animation: 'qqTreePulse 1.5s ease-in-out infinite',
+                    }} />
+                  )}
                   {phaseLabels[p]}
                 </div>
               );
@@ -752,7 +771,20 @@ export default function QQProgressTree({
                     animation: isBiddingActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
                     transition: 'all 0.45s var(--qq-ease-out-cubic)',
                   }}
-                >🪙</div>
+                >
+                  {/* 2026-06-28 (Beamer-Review): Bieten = Marken-Magenta-Münze
+                      statt Gold-Emoji 🪙 („kein Gold"). Magenta-Radial + €. */}
+                  <div style={{
+                    width: Math.round(biddingDotSize * 0.66),
+                    height: Math.round(biddingDotSize * 0.66),
+                    borderRadius: '50%',
+                    display: 'grid', placeItems: 'center',
+                    background: 'radial-gradient(circle at 50% 38%, #f472b6, #A21247)',
+                    color: '#fff', fontWeight: 900,
+                    fontSize: Math.round(biddingDotSize * 0.4), lineHeight: 1,
+                    boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.4), 0 1px 3px rgba(0,0,0,0.3)',
+                  }}>€</div>
+                </div>
               </div>
             ) : null;
             const phaseElem = (
@@ -821,7 +853,7 @@ export default function QQProgressTree({
                       }}
                     >
                       {catSlug
-                        ? <QQIcon slug={catSlug} size={Math.round(dotSize * 0.62)} alt={label ? label[lang] : undefined} />
+                        ? <QQIcon slug={catSlug} size={Math.round(dotSize * (bigIcons ? 0.82 : 0.62))} alt={label ? label[lang] : undefined} />
                         : emoji}
                     </div>
                   );

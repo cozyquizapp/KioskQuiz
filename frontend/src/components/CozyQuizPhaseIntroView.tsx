@@ -815,7 +815,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             animation: hasRoundTransition ? undefined : 'contentReveal 0.6s var(--qq-ease-pop-fast) 1.0s both',
             position: 'relative', zIndex: 5,
           }}>
-            <QQProgressTree state={displayTreeState} variant="inline" />
+            <QQProgressTree state={displayTreeState} variant="inline" bigIcons />
           </div>
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (

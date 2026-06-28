@@ -4524,3 +4524,27 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
 *:not([style*="rgba(0,0"]):not([style*="0,0,0"]) {
   text-shadow: none !important;
 }
+
+/* ── Connect-Welle (CozyQuizGridDisplay) ─────────────────────────────── */
+@keyframes cellConnectWave {
+  0%   { opacity: 0;    transform: scale(0.92); }
+  35%  { opacity: 0.85; transform: scale(1.06); }
+  100% { opacity: 0;    transform: scale(1); }
+}
+@keyframes bridgeConnectFlash {
+  0%   { filter: brightness(1); }
+  40%  { filter: brightness(2.4) saturate(1.25); }
+  100% { filter: brightness(1); }
+}
+
+/* ── Steal-Ruck Stufe A (CozyQuizGridDisplay) ────────────────────────── */
+@keyframes cellStealWipe {
+  0%   { clip-path: circle(0% at 16% 16%); }
+  100% { clip-path: circle(170% at 16% 16%); }
+}
+@keyframes cellStealSlam {
+  0%   { transform: scale(1.7); opacity: 0; }
+  55%  { transform: scale(0.9); opacity: 1; }
+  78%  { transform: scale(1.08); }
+  100% { transform: scale(1); opacity: 1; }
+}

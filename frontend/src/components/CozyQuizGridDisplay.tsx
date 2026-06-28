@@ -87,6 +87,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const newCellsRef = useRef<Set<string>>(new Set());
   const stolenCellsRef = useRef<Set<string>>(new Set());
   const neighborCellsRef = useRef<Set<string>>(new Set());
+  // Connect-Welle: cellKey → Verzögerung (ms) für die gestaffelte Glow-Welle.
+  const waveDelayRef = useRef<Map<string, number>>(new Map());
   const [shakeTick, setShakeTick] = useState(0);
   if (gridKey !== prevGridRef.current) {
     const newSet = new Set<string>();
@@ -111,6 +113,31 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         }
       });
     }
+    // ── Connect-Welle: BFS über das verbundene Gebiet jedes neuen Feldes ──
+    const waveDelays = new Map<string, number>();
+    const STEP_MS = 140;          // Abstand zwischen den Wellen-Ringen
+    const ownerAt = (r: number, c: number): string | null => {
+      if (r < 0 || c < 0 || r >= s.gridSize || c >= s.gridSize) return null;
+      return s.grid[r][c].ownerId ?? null;
+    };
+    newSet.forEach(key => {
+      const [sr, sc] = key.split('-').map(Number);
+      const owner = ownerAt(sr, sc);
+      if (!owner) return;
+      // BFS nur über gleichfarbige, verbundene Felder
+      const seen = new Set<string>([key]);
+      const queue: Array<[number, number, number]> = [[sr, sc, 0]];
+      while (queue.length) {
+        const [r, c, d] = queue.shift()!;
+        const prev = waveDelays.get(`${r}-${c}`);
+        if (prev === undefined || d * STEP_MS < prev) waveDelays.set(`${r}-${c}`, d * STEP_MS);
+        for (const [nr, nc] of [[r-1,c],[r+1,c],[r,c-1],[r,c+1]] as const) {
+          const k = `${nr}-${nc}`;
+          if (!seen.has(k) && ownerAt(nr, nc) === owner) { seen.add(k); queue.push([nr, nc, d + 1]); }
+        }
+      }
+    });
+    waveDelayRef.current = waveDelays;
     newCellsRef.current = newSet;
     stolenCellsRef.current = stolenSet;
     neighborCellsRef.current = neighborSet;
@@ -121,6 +148,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         newCellsRef.current = new Set();
         stolenCellsRef.current = new Set();
         neighborCellsRef.current = new Set();
+        waveDelayRef.current = new Map();
       }, 1200);
     }
   }
@@ -332,10 +360,23 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                             borderBottom: stdBorderBottom,
                             borderLeft: stdBorderLeft,
                           }),
-                    animation: (isNew || isStolen) ? 'cellInkFill 0.9s var(--qq-ease-out-cubic) both' : undefined,
+                    animation: isStolen
+                      ? 'cellStealWipe 0.6s var(--qq-ease-out-cubic) both'
+                      : isNew
+                        ? 'cellInkFill 0.9s var(--qq-ease-out-cubic) both'
+                        : undefined,
                     boxShadow: stdBoxShadow,
                     transition: 'box-shadow 0.4s ease, background 0.4s ease, border-color 0.4s ease',
                   }} />
+                  {/* Connect-Welle Glow-Overlay (nur während Welle aktiv) */}
+                  {waveDelayRef.current.has(`${r}-${c}`) && (
+                    <div style={{
+                      position: 'absolute', inset: -2, borderRadius: fusedRadius,
+                      background: `radial-gradient(circle, ${tColor}cc 0%, transparent 70%)`,
+                      animation: `cellConnectWave 0.6s ease-out ${waveDelayRef.current.get(`${r}-${c}`)}ms both`,
+                      pointerEvents: 'none', zIndex: 4,
+                    }} />
+                  )}
                   {/* Territorium-Bridges: füllen den Grid-Gap zu gleichfarbigen
                       Nachbarn, damit „verbundene Felder" als eine Fläche wirken. */}
                   {nRight && (
@@ -345,6 +386,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       width: gap + 2, height: bridgeSpan,
                       background: bridgeBg,
                       zIndex: 2, pointerEvents: 'none',
+                      animation: waveDelayRef.current.has(`${r}-${c}`)
+                        ? `bridgeConnectFlash 0.44s ease-out ${waveDelayRef.current.get(`${r}-${c}`)}ms both`
+                        : undefined,
                     }} />
                   )}
                   {nBottom && (
@@ -354,6 +398,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       height: gap + 2, width: bridgeSpan,
                       background: bridgeBg,
                       zIndex: 2, pointerEvents: 'none',
+                      animation: waveDelayRef.current.has(`${r}-${c}`)
+                        ? `bridgeConnectFlash 0.44s ease-out ${waveDelayRef.current.get(`${r}-${c}`)}ms both`
+                        : undefined,
                     }} />
                   )}
                   </>
@@ -569,7 +616,11 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   // centering klappt wieder.
                   position: 'absolute', inset: 0, zIndex: 8,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  animation: (isNew || isStolen) ? 'cellEmojiDrop 0.6s var(--qq-ease-bounce) 0.3s both' : undefined,
+                  animation: isStolen
+                    ? 'cellStealSlam 0.5s var(--qq-ease-bounce) 0.18s both'
+                    : isNew
+                      ? 'cellEmojiDrop 0.6s var(--qq-ease-bounce) 0.3s both'
+                      : undefined,
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>

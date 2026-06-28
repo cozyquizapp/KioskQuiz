@@ -772,18 +772,9 @@ export default function QQProgressTree({
                     transition: 'all 0.45s var(--qq-ease-out-cubic)',
                   }}
                 >
-                  {/* 2026-06-28 (Beamer-Review): Bieten = Marken-Magenta-Münze
-                      statt Gold-Emoji 🪙 („kein Gold"). Magenta-Radial + €. */}
-                  <div style={{
-                    width: Math.round(biddingDotSize * 0.66),
-                    height: Math.round(biddingDotSize * 0.66),
-                    borderRadius: '50%',
-                    display: 'grid', placeItems: 'center',
-                    background: 'radial-gradient(circle at 50% 38%, #f472b6, #A21247)',
-                    color: '#fff', fontWeight: 900,
-                    fontSize: Math.round(biddingDotSize * 0.4), lineHeight: 1,
-                    boxShadow: 'inset 0 1px 4px rgba(255,255,255,0.4), 0 1px 3px rgba(0,0,0,0.3)',
-                  }}>€</div>
+                  {/* 2026-06-28 (Wolf): Bieten = Auktionshammer-Icon (bieten.png,
+                      cozy3d-Look) statt Gold-Emoji 🪙. */}
+                  <QQIcon slug="bieten" size={Math.round(biddingDotSize * 0.82)} alt={lang === 'de' ? 'Bieten' : 'Bid'} />
                 </div>
               </div>
             ) : null;

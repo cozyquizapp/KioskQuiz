@@ -27,6 +27,8 @@ export type QQIconSlug =
   | 'action-stack'
   // Final-Reveal-Stempel
   | 'stamp-speedy'
+  // Bieten / Final-Tipp (Auktionshammer, cozy3d-Look)
+  | 'bieten'
   // Fluent Emoji 3D (Microsoft, MIT/CC-BY) — Ersatz fuer Inline-Emoji
   | 'fx-trophy'
   | 'fx-medal-gold'
@@ -88,6 +90,7 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'action-steal':      '⚡',
   'action-stack':      '🏯',
   'stamp-speedy':      '⚡',
+  'bieten':            '🪙',
   'fx-trophy':         '🏆',
   'fx-medal-gold':     '🥇',
   'fx-medal-silver':   '🥈',

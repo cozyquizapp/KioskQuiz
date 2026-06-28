@@ -12,6 +12,7 @@ import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { isThemed } from '../qqTheme';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQIcon } from './QQIcon';
 import { playGoodLuckFanfare, playTeamJoin } from '../utils/sounds';
 
 export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
@@ -67,13 +68,13 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         {/* 2026-05-25 (Wolf 'vor dem finale kann weg'): Top-Label entfernt —
             der Hero-Title 'Final-Tipp' traegt die Kategorie-Info selbst. */}
 
-        {/* Hero-Icon — gleiche Sizes wie PhaseIntro-Cat-Icon (120-240px). */}
+        {/* Hero-Icon — Bieten-Hammer (cozy3d), gleiche Sizes wie PhaseIntro-Cat-Icon.
+            2026-06-28 (Wolf): 🪙 → bieten-PNG. */}
         <div style={{
-          fontSize: 'clamp(120px, 18cqw, 240px)', lineHeight: 1,
-          textAlign: 'center',
+          lineHeight: 1, textAlign: 'center',
           animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.25s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
           filter: `drop-shadow(0 8px 24px ${PINK}55)`,
-        }}>🪙</div>
+        }}><QQIcon slug="bieten" size={'clamp(120px, 18cqw, 240px)'} /></div>
 
         {/* Hero-Title — analog Cat-Name, gross + per-letter Wave + Pink-Glow. */}
         <div style={{
@@ -132,7 +133,11 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: isThemed() ? 'var(--qq-text-muted)' : '#F9A8D4',
         textTransform: 'uppercase', letterSpacing: '0.18em',
         marginBottom: 18, opacity: 0.85,
-      }}>{de ? '🪙 Final-Tipp' : '🪙 Final tip'}</div>
+        display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center',
+      }}>
+        <QQIcon slug="bieten" size={'1.4em'} />
+        {de ? 'Final-Tipp' : 'Final tip'}
+      </div>
 
       <div style={{
         fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: isThemed() ? 'var(--qq-title)' : '#F1F5F9',

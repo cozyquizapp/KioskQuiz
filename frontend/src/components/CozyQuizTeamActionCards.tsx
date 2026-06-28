@@ -1351,7 +1351,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
     return (
       <CozyCard borderColor={QQ_COLORS.brandPink}>
         <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
-          <div style={{ fontSize: 48 }}>🧩</div>
+          <QQIcon slug="connect" size={56} />
           {/* Synchron mit Beamer-Header: 'Großes Finale' / 'Grand Finale'. */}
           <div style={{ fontSize: 26, fontWeight: 900, color: QQ_COLORS.brandPinkSoft, textShadow: '0 0 20px rgba(236,72,153,0.4)' }}>
             {de ? 'Großes Finale' : 'Grand Finale'}

@@ -19,6 +19,7 @@ import { isThemed } from '../qqTheme';
 import { Fireflies } from './CozyQuizAmbient';
 import { PlacementView } from './CozyQuizPlacementView';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQIcon } from './QQIcon';
 import { getServerNow } from '../utils/serverTime';
 import { playGoodLuckFanfare, playWinnerCardReveal } from '../utils/sounds';
 
@@ -152,7 +153,7 @@ function ConnectionsHeader({ state: s }: { state: QQStateUpdate }) {
         WebkitBackdropFilter: 'blur(8px)',
         animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
       }}>
-        <span style={{ fontSize: 'clamp(20px, 2.2cqw, 30px)', lineHeight: 1 }}>🔗</span>
+        <QQIcon slug="connect" size={'clamp(20px, 2.2cqw, 30px)'} />
         <span style={{
           fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
           color: accent, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -237,11 +238,10 @@ function ConnectionsIntro({ state: s }: { state: QQStateUpdate }) {
       padding: 'clamp(12px, 2cqh, 24px) clamp(16px, 3cqw, 40px)',
       animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.15s both',
     }}>
-      <div style={{
-        fontSize: 'clamp(72px, 12cqw, 140px)', lineHeight: 1,
+      <QQIcon slug="connect" size={'clamp(72px, 12cqw, 140px)'} style={{
         animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, cfloat 4s ease-in-out 1s infinite',
         filter: 'drop-shadow(0 4px 18px rgba(var(--qq-accent-rgb),0.45))',
-      }}>🧩</div>
+      }} />
       <div style={{
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontSize: 'clamp(56px, 10cqw, 160px)', fontWeight: 900, lineHeight: 1,

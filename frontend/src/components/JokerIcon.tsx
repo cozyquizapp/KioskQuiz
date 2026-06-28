@@ -1,9 +1,10 @@
-// 2026-05-05 (Wolf-Wunsch): Joker-Indikatoren als PNGs (m/w im Wechsel)
-// statt 🃏-Emoji. PNGs liegen in /images/jokers/1.png + 2.png.
+// 2026-05-05 (Wolf-Wunsch): Joker-Indikatoren als PNGs statt 🃏-Emoji.
 //
-// Wechsel-Logik: i % 2 — bei Joker-Pile (mehrere Slots) wird je nach
-// Position alterniert; bei Einzel-Joker pro Team oder Cell bestimmt
-// die uebergebene Index-Zahl die Variante.
+// 2026-06-28 (Wolf): einheitlicher CozyWolf-Joker — pinker Wolf im Joker-
+// Kostüm (/images/jokers/wolf.png) für ALLE Slots. Ersetzt die alten m/w-
+// Emoji-Jester (1.png/2.png, liegen noch ungenutzt im Ordner). Der i-Index
+// wechselt im Standard-Modus nichts mehr durch, bleibt aber in der Signatur
+// für Caller-Kompatibilität (+ ESC-Mode unten).
 //
 // 2026-05-07 (Wolf-ESC 'EU-Stars als Joker im Eurovision-Quiz'):
 // eurovisionMode + square props. ESC-Mode nutzt 'eu 1.png' (rund, fuer
@@ -29,16 +30,16 @@ type Props = {
 
 export function JokerIcon({ i = 0, size = 24, alt = 'Joker', className, style, title, eurovisionMode, square }: Props) {
   let src: string;
-  // Asset-Mismatch: 1.png (Boy-Joker) ist enger gecropped als 2.png (Girl-Joker
-  // mit wider Hat+Hair-Span). Bei objectFit:contain wirkt der Boy ~10% kleiner.
-  // Visueller Ausgleich via inner scale, layout bleibt identisch (size-Box).
-  let visualScale = 1;
+  const visualScale = 1;
   if (eurovisionMode) {
     src = square ? '/images/jokers/eu%202.png' : '/images/jokers/eu%201.png';
   } else {
-    const variant = (i % 2 === 0) ? 1 : 2;
-    src = `/images/jokers/${variant}.png`;
-    if (variant === 1) visualScale = 1.1;
+    // 2026-06-28 (Wolf): einheitlicher CozyWolf-Joker (pinker Wolf im Joker-
+    // Kostüm) statt der alten m/w-Emoji-Jester (1.png/2.png). Ein Asset für
+    // alle Slots — der i-Index wechselt nichts mehr durch (bleibt in der
+    // Signatur für Caller-Kompat).
+    void i;
+    src = '/images/jokers/wolf.png';
   }
   return (
     <img

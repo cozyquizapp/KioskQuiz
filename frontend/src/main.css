@@ -4562,3 +4562,21 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   0%, 100% { opacity: 0.45; transform: rotate(45deg) scale(0.82); }
   50%      { opacity: 1;    transform: rotate(45deg) scale(1.2); }
 }
+
+/* qqLobbyJoinPop — Lobby Join-Feedback (Beamer-Review 2026-06-28): frisch
+   beigetretene Team-Karte poppt rein (scale .82 -> 1.04 -> 1) mit kurzem
+   Glow-Flash in Teamfarbe (var(--gc) auf der Karte gesetzt). Ersetzt die
+   fruehere Wink-Hand-Animation. */
+@keyframes qqLobbyJoinPop {
+  0%   { opacity: 0; transform: scale(0.82) translateY(12px); box-shadow: 0 8px 22px rgba(0,0,0,0.28); }
+  55%  { opacity: 1; transform: scale(1.04) translateY(0);    box-shadow: 0 0 34px var(--gc, transparent), 0 8px 22px rgba(0,0,0,0.28); }
+  100% { opacity: 1; transform: scale(1) translateY(0);       box-shadow: 0 8px 22px rgba(0,0,0,0.28); }
+}
+
+/* qqCountTick — Lobby „Angemeldete Teams"-Count-Chip tickt bei jedem neuen Team
+   (key-Remount feuert die Animation neu). Beamer-Review 2026-06-28. */
+@keyframes qqCountTick {
+  0%   { transform: scale(1); }
+  45%  { transform: scale(1.4); }
+  100% { transform: scale(1); }
+}

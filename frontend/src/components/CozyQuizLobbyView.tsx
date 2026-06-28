@@ -59,6 +59,9 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
           ])
     : (lang === 'de'
         ? [
+            // 2026-06-28 (Beamer-Review): Wolf-Copy „Scannt euch rein!" als
+            // Leit-Begrüßung zuerst.
+            { text: 'Scannt euch rein!', mouths: 4 },
             { text: 'QR-Code scannen!', mouths: 4 },
             { text: 'Genau den da!', mouths: 3 },
             { text: 'Bereit zu joinen?', mouths: 4 },
@@ -66,6 +69,7 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
             { text: 'Jeder kann mitspielen', mouths: 5 },
           ]
         : [
+            { text: 'Scan to join!', mouths: 3 },
             { text: 'Scan the QR!', mouths: 3 },
             { text: 'That one over there!', mouths: 4 },
             { text: 'Ready to join?', mouths: 3 },
@@ -345,7 +349,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               color: welcomedTeam.color, letterSpacing: '0.22em', textTransform: 'uppercase',
               textShadow: `0 0 18px ${welcomedTeam.color}88`,
             }}>
-              {de ? '✨ Willkommen' : '✨ Welcome'}
+              {de ? 'Willkommen' : 'Welcome'}
             </div>
             <div style={{
               fontFamily: fontFam,
@@ -635,12 +639,23 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5cqh, 18px)',
           alignItems: 'stretch', justifyContent: 'center',
         }}>
+          {/* 2026-06-28 (Beamer-Review): einmaliger Count als Pink-Chip; tickt
+              per key-Remount bei jedem neuen Team (Count-Tick). */}
           <div style={{
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
-            textAlign: 'center', opacity: 0.7,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
           }}>
-            {de ? 'Angemeldete Teams' : 'Joined Teams'} · {teamCount}
+            <span style={{ opacity: 0.7 }}>{de ? 'Angemeldete Teams' : 'Joined Teams'}</span>
+            <span key={teamCount} style={{
+              display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+              minWidth: 'clamp(28px, 2.4cqw, 42px)', height: 'clamp(28px, 2.4cqw, 42px)',
+              padding: '0 clamp(6px, 0.7cqw, 12px)', borderRadius: 11,
+              background: isThemed() ? 'var(--qq-accent)' : '#EC4899',
+              color: isThemed() ? '#ffffff' : '#1a0a14',
+              fontSize: 'clamp(16px, 1.7cqw, 24px)', fontVariantNumeric: 'tabular-nums',
+              animation: 'qqCountTick 0.4s cubic-bezier(0.34,1.56,0.64,1)',
+            }}>{teamCount}</span>
           </div>
 
           {teamCount === 0 ? (
@@ -657,11 +672,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.06), rgba(var(--qq-accent-rgb),0.04))',
               boxShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.12)',
             }}>
+              {/* 2026-06-28 (Beamer-Review 'kein Emoji'): OS-Hand 👈 → schlichter
+                  Marken-Pfeil in Akzentfarbe (zeigt zum QR links). */}
               <span style={{
-                fontSize: 'clamp(36px, 5cqw, 64px)', lineHeight: 1,
+                fontSize: 'clamp(40px, 5.4cqw, 72px)', lineHeight: 1, fontWeight: 900,
+                color: isThemed() ? 'var(--qq-accent)' : '#EC4899',
                 animation: 'qqEmptyArrowNudge 1.6s ease-in-out infinite',
                 display: 'inline-block', flexShrink: 0,
-              }} aria-hidden>👈</span>
+              }} aria-hidden>←</span>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
                 <span style={{
                   fontSize: 'clamp(20px, 2.4cqw, 32px)', fontWeight: 900,
@@ -706,19 +724,23 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       ? 'clamp(16px, 2cqh, 24px) clamp(20px, 2.2cqw, 28px)'
                       : 'clamp(18px, 2.2cqh, 26px) clamp(22px, 2.4cqw, 30px)',
                     borderRadius: isThemed() ? 'var(--qq-card-radius)' : (compact ? 18 : 22),
-                    background: cardBg,
-                    border: `2px solid ${isFreshJoin ? t.color : t.color + '55'}`,
-                    boxShadow: isFreshJoin
-                      ? `0 8px 28px rgba(0,0,0,0.4), 0 0 60px ${t.color}99, 0 0 30px ${t.color}55`
-                      : `0 8px 28px rgba(0,0,0,0.4), 0 0 24px ${t.color}22`,
+                    // 2026-06-28 (Beamer-Review): einheitliche, ruhige Karte mit
+                    // 4px-Farb-Akzent LINKS statt voll-bunter Rahmen. Team-Farbe
+                    // lebt nur noch im Akzent + Avatar-Disc → weniger Color-Noise,
+                    // Namen lesen sich auf neutralem BG besser.
+                    background: isThemed() ? cardBg : 'rgba(255,255,255,0.04)',
+                    border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
+                    borderLeft: `4px solid ${t.color}`,
+                    boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
+                    // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).
+                    ['--gc' as string]: `${t.color}99`,
                     display: 'flex', alignItems: 'center',
                     gap: compact ? 'clamp(14px, 1.5cqw, 20px)' : 'clamp(14px, 1.6cqw, 20px)',
-                    // F1: frisch joinende Teams kriegen wink-Shake + Glow-Burst.
-                    // Bereits gesehene Teams (wasSeen) bekommen KEINE Animation
-                    // mehr — sonst spielt teamCardIn nach Wave-Ende erneut und
-                    // die Karte flackert (out → in).
+                    // Join-Feedback: frische Teams poppen rein (scale .82→1.04→1 +
+                    // Glow-Flash, 0.52s). Bereits gesehene Teams: keine Animation
+                    // (sonst Flacker beim Re-Render). Erst-Render: sanfter Stagger.
                     animation: isFreshJoin
-                      ? 'teamJoinWave 1.2s var(--qq-ease-bounce) both'
+                      ? 'qqLobbyJoinPop 0.52s cubic-bezier(0.34,1.56,0.64,1) both'
                       : wasSeen
                         ? undefined
                         : `teamCardIn 0.5s var(--qq-ease-bounce) ${0.4 + i * 0.06}s both`,
@@ -727,14 +749,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     position: 'relative',
                   }}>
                     <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
-                    {isFreshJoin && (
-                      <span aria-hidden style={{
-                        position: 'absolute', top: -16, right: -10,
-                        fontSize: 30, lineHeight: 1,
-                        animation: 'teamJoinHi 1.1s cubic-bezier(0.34,1.5,0.64,1) both',
-                        filter: `drop-shadow(0 0 8px ${t.color}cc)`,
-                      }}>👋</span>
-                    )}
+                    {/* 2026-06-28 (Beamer-Review 'kein Emoji'): Wink-Hand 👋 raus —
+                        das Join-Feedback trägt jetzt der Card-Pop + Glow-Flash. */}
                     <div style={{ minWidth: 0, flex: 1 }}>
                       <div style={{
                         fontWeight: 900,
@@ -749,7 +765,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         fontSize: t.name.length > 16
                           ? (compact ? 'clamp(16px, 1.65cqw, 22px)' : 'clamp(17px, 1.8cqw, 25px)')
                           : (compact ? 'clamp(18px, 1.9cqw, 26px)' : 'clamp(20px, 2.1cqw, 30px)'),
-                        color: t.color,
+                        // 2026-06-28 (Beamer-Review): Team-Name weiß statt Team-Farbe
+                        // (Lesbarkeit; Farbe lebt im Card-Akzent + Avatar).
+                        color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
                         lineHeight: 1.15,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -784,7 +802,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         }} title={de
                           ? `${t.gamesPlayed} Spiele · ${t.wins ?? 0} Siege`
                           : `${t.gamesPlayed} games · ${t.wins ?? 0} wins`}>
-                          <span aria-hidden>👋</span>
+                          {/* 2026-06-28 (Beamer-Review 'kein Emoji'): 👋 raus. */}
                           {de
                             ? `Willkommen zurück — ${t.gamesPlayed}. Mal dabei`
                             : `Welcome back — visit #${t.gamesPlayed}`}
@@ -797,21 +815,29 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
 
-          {/* Dynamic status */}
+          {/* Dynamic status — 2026-06-28 (Beamer-Review): kein Emoji, KEINE
+              zweite Zahl (der Count lebt einmalig im „Angemeldete Teams"-Header).
+              Stattdessen grüner Puls-Punkt + Readiness-Text wenn genug Teams da. */}
           <div style={{
             fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900, textAlign: 'center',
             color: teamCount < 2 ? (isThemed() ? 'var(--qq-accent)' : '#EC4899') : '#22C55E',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
           }}>
+            {teamCount >= 2 && (
+              <span style={{
+                width: 11, height: 11, borderRadius: '50%', flexShrink: 0,
+                background: '#22C55E', boxShadow: '0 0 9px #22C55E',
+                animation: 'qqTreePulse 1.6s ease-in-out infinite',
+              }} />
+            )}
             {teamCount === 0
-              ? (de ? '📱 Scannt den Code um beizutreten' : '📱 Scan to join')
+              ? (de ? 'Scannt den Code um beizutreten' : 'Scan to join')
               : teamCount < 2
-                ? (de ? '⏳ Noch 1 Team fehlt!' : '⏳ 1 more team needed!')
-                : teamCount >= 5
-                  ? (de ? `🔥 ${teamCount} Teams sind dabei!` : `🔥 ${teamCount} teams are in!`)
-                  : connectedCount === teamCount
-                    ? (de ? `🚀 Gleich geht's los!` : `🚀 Let's go!`)
-                    : (de ? `${connectedCount}/${teamCount} verbunden` : `${connectedCount}/${teamCount} connected`)}
+                ? (de ? 'Noch 1 Team fehlt!' : '1 more team needed!')
+                : connectedCount === teamCount
+                  ? (de ? "Alle bereit · gleich geht's los!" : "All set · here we go!")
+                  : (de ? "Gleich geht's los!" : 'Almost ready!')}
           </div>
         </div>
       </div>

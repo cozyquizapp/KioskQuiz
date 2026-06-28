@@ -31,6 +31,7 @@ import { cozy3dSrc } from '../cozy3dAvatars';
 import { JokerIcon } from './JokerIcon';
 import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true, flashCellKey }: {
   state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean; flashCellKey?: string | null;
@@ -68,6 +69,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   const jokerKey = s.grid.flatMap(row => row.map(c => c.jokerFormed ? '1' : '0')).join('');
   const prevJokerKeyRef = useRef<string>(jokerKey);
   const justFormedJokerRef = useRef<Set<string>>(new Set());
+  // Stagger pro frisch geformter Joker-Zelle (ms) → die 4 Zellen „stampfen"
+  // gestaffelt als Welle statt synchron (Claude-Design-Handoff #2).
+  const jokerStaggerRef = useRef<Map<string, number>>(new Map());
   if (jokerKey !== prevJokerKeyRef.current) {
     const fresh = new Set<string>();
     s.grid.forEach((row, r) => row.forEach((cell, c) => {
@@ -77,10 +81,53 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     }));
     if (fresh.size > 0) {
       justFormedJokerRef.current = fresh;
+      const stagger = new Map<string, number>();
+      let n = 0;
+      // Grid-Reihenfolge (oben-links → unten-rechts) ergibt einen sauberen
+      // diagonalen Wellen-Versatz über den 2x2-Block.
+      s.grid.forEach((row, r) => row.forEach((_cell, c) => {
+        const k = `${r}-${c}`;
+        if (fresh.has(k)) stagger.set(k, (n++) * 130);
+      }));
+      jokerStaggerRef.current = stagger;
       setTimeout(() => { justFormedJokerRef.current = new Set(); }, 2200);
     }
     prevJokerKeyRef.current = jokerKey;
   }
+
+  // ── Joker-Jackpot-Overlay (Claude-Design-Handoff #2) ──────────────────────
+  // Wenn ein Joker (2x2-Block) GERADE geformt wird: Vollbild-Celebratory-Layer
+  // auf dem Beamer — Flash → Shockwave-Ring → rotierender Strahlenkranz →
+  // Callout-Slam + Screen-Shake + Konfetti. Trigger via eigenem Diff-Ref
+  // (unabhängig vom render-phase justFormedJokerRef, damit kein State-Set im
+  // Render passiert). Gated auf showJoker.
+  const [jokerBurst, setJokerBurst] = useState<{ key: number; color: string } | null>(null);
+  const burstPrevJokerKeyRef = useRef<string>(jokerKey);
+  const burstTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  useEffect(() => {
+    const prev = burstPrevJokerKeyRef.current;
+    if (jokerKey === prev) return;
+    let formed = false;
+    let color = '#EC4899';
+    s.grid.forEach((row, r) => row.forEach((cell, c) => {
+      const idx = r * s.gridSize + c;
+      if (cell.jokerFormed && prev[idx] !== '1') {
+        formed = true;
+        const t = s.teams.find(tt => tt.id === cell.ownerId);
+        if (t?.color) color = t.color;
+      }
+    }));
+    burstPrevJokerKeyRef.current = jokerKey;
+    if (formed && showJoker) {
+      setShakeTick(x => x + 1);               // Screen-Shake (boardShake) wiederverwenden
+      setJokerBurst({ key: Date.now(), color });
+      clearTimeout(burstTimerRef.current);
+      // 4.6s: Flash/Ring/Strahlen/Callout sind nach ~2.8s durch (halten auf
+      // opacity 0), das Konfetti darf in Ruhe ausfallen statt hart abzureissen.
+      burstTimerRef.current = setTimeout(() => setJokerBurst(null), 4600);
+    }
+  }, [jokerKey]); // eslint-disable-line react-hooks/exhaustive-deps
+  useEffect(() => () => clearTimeout(burstTimerRef.current), []);
   // Initial-Snapshot = aktueller Stand, damit beim Mount KEIN Diff feuert
   // (sonst wuerde Zelle (0,0) als „neu" erkannt, weil ''.split(',') nur ein Element ergibt).
   const prevGridRef = useRef<string>(gridKey);
@@ -266,6 +313,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 animation: isJustFormedJoker
                   ? 'jokerCellPulse 2.2s var(--qq-ease-smooth) both'
                   : isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
+                // Stagger: die 4 frischen Joker-Zellen stampfen gestaffelt als Welle.
+                animationDelay: isJustFormedJoker
+                  ? `${jokerStaggerRef.current.get(`${r}-${c}`) ?? 0}ms`
+                  : undefined,
               }}>
                 {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{
@@ -812,6 +863,66 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
           })
         )}
       </div>
+
+      {/* ── Joker-Jackpot-Overlay (Claude-Design-Handoff #2) ──────────────────
+          Vollbild-Celebratory-Layer auf dem Beamer wenn der Joker geformt wird.
+          Flash -> Shockwave-Ring(e) -> rotierender Strahlenkranz -> Callout-Slam.
+          Screen-Shake laeuft ueber boardShake am Root (setShakeTick), Konfetti
+          via wiederverwendetem ConfettiOverlay. Pink/Magenta, kein Gold.
+          position:fixed -> braucht keinen positionierten Vorfahren; pointer-
+          events:none -> stoert die Moderation nicht. */}
+      {jokerBurst && (
+        <div key={jokerBurst.key} style={{
+          position: 'fixed', inset: 0, zIndex: 9999,
+          pointerEvents: 'none', overflow: 'hidden',
+        }}>
+          {/* Flash */}
+          <div style={{
+            position: 'absolute', inset: 0, background: '#fff', opacity: 0,
+            animation: 'qqJokerFlash 0.5s ease both',
+          }} />
+          {/* Rotierender Strahlenkranz */}
+          <div style={{
+            position: 'absolute', left: '50%', top: '50%',
+            width: '150vmax', height: '150vmax',
+            transform: 'translate(-50%,-50%)', borderRadius: '50%', opacity: 0,
+            background: 'repeating-conic-gradient(from 0deg, rgba(236,72,153,0.16) 0deg 7deg, transparent 7deg 22deg)',
+            WebkitMaskImage: 'radial-gradient(circle, transparent 220px, #000 300px, #000 56%, transparent 70%)',
+            maskImage: 'radial-gradient(circle, transparent 220px, #000 300px, #000 56%, transparent 70%)',
+            animation: 'qqJokerRays 16s linear infinite, qqJokerRaysFade 2.8s ease both',
+          }} />
+          {/* Shockwave-Ring (Pink) */}
+          <div style={{
+            position: 'absolute', left: '50%', top: '50%', width: 560, height: 560,
+            transform: 'translate(-50%,-50%) scale(0.32)', borderRadius: '50%',
+            border: '6px solid rgba(236,72,153,0.6)',
+            animation: 'qqJokerRing 0.9s cubic-bezier(.2,.6,.3,1) both',
+          }} />
+          {/* Shockwave-Ring (Team-Farbe, leichter Versatz) */}
+          <div style={{
+            position: 'absolute', left: '50%', top: '50%', width: 560, height: 560,
+            transform: 'translate(-50%,-50%) scale(0.32)', borderRadius: '50%',
+            border: `4px solid ${jokerBurst.color}99`,
+            animation: 'qqJokerRing 1.05s cubic-bezier(.2,.6,.3,1) 0.12s both',
+          }} />
+          {/* Callout-Banner */}
+          <div style={{
+            position: 'absolute', left: '50%', top: '16%', transform: 'translate(-50%,0)',
+            display: 'flex', alignItems: 'center', gap: 'clamp(12px,1.6vw,22px)',
+            padding: 'clamp(14px,1.6vw,22px) clamp(28px,3.4vw,52px)', borderRadius: 999,
+            background: 'linear-gradient(120deg, rgba(236,72,153,0.22), rgba(162,18,71,0.14))',
+            border: '2px solid #EC4899', boxShadow: '0 0 50px rgba(236,72,153,0.45)',
+            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+            whiteSpace: 'nowrap',
+            animation: 'qqJokerCallout 2.6s cubic-bezier(.34,1.5,.5,1) both',
+          }}>
+            <span style={{ fontWeight: 900, fontSize: 'clamp(34px,4.6vw,64px)', letterSpacing: '0.04em', color: '#EC4899', textShadow: '0 0 30px rgba(236,72,153,0.6)' }}>✦ JOKER!</span>
+            <span style={{ fontWeight: 900, fontSize: 'clamp(22px,2.8vw,40px)', color: '#fff' }}>+1 Bonus-Feld</span>
+          </div>
+          {/* Konfetti (wiederverwendet) */}
+          <ConfettiOverlay eurovisionMode={!!s.theme?.eurovisionMode} />
+        </div>
+      )}
     </div>
   );
 }

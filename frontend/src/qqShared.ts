@@ -705,12 +705,44 @@ export const QQ_BEAMER_CSS = `
   }
   /* Joker-Cell-Pulse — wenn ein Team gerade ein 2×2 oder 4×1 geformt hat,
      leuchten die beteiligten Zellen 2.2s gold auf. */
+  /* 2026-06-28 (Claude-Design-Handoff #2): von Gold auf Marken-Pink umpalettiert
+     — der Joker ist jetzt ein Pink/Magenta-Jackpot, kein Gold mehr. */
   @keyframes jokerCellPulse {
-    0%   { box-shadow: 0 0 0 0 rgba(251,191,36,0.0), 0 0 0 0 rgba(251,191,36,0.0); }
-    20%  { box-shadow: 0 0 0 4px rgba(251,191,36,0.95), 0 0 28px 8px rgba(251,191,36,0.85); }
-    50%  { box-shadow: 0 0 0 6px rgba(251,191,36,0.7), 0 0 40px 14px rgba(251,191,36,0.6); }
-    80%  { box-shadow: 0 0 0 3px rgba(251,191,36,0.45), 0 0 22px 6px rgba(251,191,36,0.35); }
-    100% { box-shadow: 0 0 0 0 rgba(251,191,36,0.0), 0 0 0 0 rgba(251,191,36,0.0); }
+    0%   { box-shadow: 0 0 0 0 rgba(236,72,153,0.0), 0 0 0 0 rgba(236,72,153,0.0); }
+    20%  { box-shadow: 0 0 0 4px rgba(236,72,153,0.95), 0 0 28px 8px rgba(236,72,153,0.85); }
+    50%  { box-shadow: 0 0 0 6px rgba(236,72,153,0.7), 0 0 40px 14px rgba(162,18,71,0.6); }
+    80%  { box-shadow: 0 0 0 3px rgba(236,72,153,0.45), 0 0 22px 6px rgba(236,72,153,0.35); }
+    100% { box-shadow: 0 0 0 0 rgba(236,72,153,0.0), 0 0 0 0 rgba(236,72,153,0.0); }
+  }
+  /* ── Joker-Jackpot-Overlay (Claude-Design-Handoff #2) ─────────────────────
+     Vollbild-Celebratory-Layer auf dem Beamer wenn ein Joker (2x2-Block)
+     geformt wird: Flash -> Shockwave-Ring -> rotierender Strahlenkranz ->
+     Callout-Slam. Pink/Magenta, kein Gold. */
+  @keyframes qqJokerFlash {
+    0%   { opacity: 0; }
+    14%  { opacity: 0.48; }
+    100% { opacity: 0; }
+  }
+  @keyframes qqJokerRing {
+    0%   { transform: translate(-50%,-50%) scale(0.32); opacity: 0.85; }
+    100% { transform: translate(-50%,-50%) scale(2.7); opacity: 0; }
+  }
+  @keyframes qqJokerRays {
+    from { transform: translate(-50%,-50%) rotate(0deg); }
+    to   { transform: translate(-50%,-50%) rotate(360deg); }
+  }
+  @keyframes qqJokerRaysFade {
+    0%   { opacity: 0; }
+    18%  { opacity: 1; }
+    74%  { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  @keyframes qqJokerCallout {
+    0%   { opacity: 0; transform: translate(-50%,-32px) scale(0.78); }
+    52%  { opacity: 1; transform: translate(-50%,0) scale(1.07); }
+    66%  { transform: translate(-50%,0) scale(0.97); }
+    80%  { transform: translate(-50%,0) scale(1); opacity: 1; }
+    100% { opacity: 0; transform: translate(-50%,-14px) scale(0.96); }
   }
   /* Grid-Border-Glow wenn ein Team gerade dran ist (PLACEMENT-Phase) —
      pulsiert sanft mit der Team-Farbe (CSS-Var --active-team-color). */

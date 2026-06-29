@@ -1300,6 +1300,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       // QuestionView-Rand abgeschnitten. SlideStage outer clipMargin (120px)
       // faengt sie sauber am echten Bildschirmrand.
       overflow: 'visible',
+      // Journey-Endbeat (Claude-Design-Handoff #3): die Frage materialisiert beim
+      // Mount aus der Bildmitte (scale .28→1 + Fade) — sie „kommt aus dem
+      // Kategorie-Emoji". Kein fill-mode → endet ohne Rest-Transform (kein
+      // Stacking-Risiko für fixed/absolute Children danach).
+      transformOrigin: 'center',
+      animation: 'qqQuestionMaterialize 0.55s cubic-bezier(0.34, 1.3, 0.5, 1)',
+      willChange: 'transform, opacity',
     }}>
       <SkinDeco />
       {/* I1 Kategorie-Partikel (fliegende Zahlen/Buchstaben) entfernt —

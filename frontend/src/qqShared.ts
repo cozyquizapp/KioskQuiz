@@ -737,6 +737,15 @@ export const QQ_BEAMER_CSS = `
     74%  { opacity: 1; }
     100% { opacity: 0; }
   }
+  /* Journey-Endbeat (Claude-Design-Handoff #3): die aktive Frage materialisiert
+     aus dem Kategorie-Emoji heraus — wächst aus der Bildmitte (scale .28→1) +
+     Fade. Kein fill-mode → endet im natürlichen Zustand (kein Rest-Transform,
+     keine Stacking-Probleme für fixed/absolute Children danach). */
+  @keyframes qqQuestionMaterialize {
+    0%   { opacity: 0; transform: scale(0.28); }
+    60%  { opacity: 1; }
+    100% { opacity: 1; transform: scale(1); }
+  }
   @keyframes qqJokerCallout {
     0%   { opacity: 0; transform: translate(-50%,-32px) scale(0.78); }
     52%  { opacity: 1; transform: translate(-50%,0) scale(1.07); }

@@ -586,9 +586,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // unten drum herum, daher kollidieren sie nicht mit dem Cluster/der Kachel.
     // Step 0 (Gesamt-Tree) etwas tiefer, dort ist die Station noch klassisch
     // zentriert (Titel oben, Subtitle unter dem Tree).
-    // Step 0 (Übersicht): Tree etwas tiefer (~Spacer-Mitte), damit der Wolf-Pin
-    // (sitzt ÜBER der Linie) den großen „Runde N"-Titel nicht touchiert.
-    let vAnchor = 0.58;
+    // Step 0 (Übersicht): Tree tiefer (~Spacer-Mitte), damit der Wolf-Pin (sitzt
+    // ÜBER der Linie) + der Titel-Glow den großen „Runde N"-Titel nicht mehr
+    // touchieren (Wolf 2026-06-30 'Unterschrift hängt im Tree').
+    let vAnchor = 0.62;
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster (~68% Breite); Nachbar-Runden
       // faden via focusPhaseIdx. Leicht über Mitte → Aktions-Karte hat unten Platz.
@@ -596,12 +597,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       S = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
       // 2026-06-29 (Wolf 'überlappt auf allen bildern'): phaseCenters[pi] IST
       // die Mitte der 5-Dot-Gruppe (= 3. Kategorie) → horizontal exakt mittig.
-      // Vertikal NICHT 0.50: der Aktions-Block (NEU + Label + große Cards) ist
-      // hoch und floatet bis zur Mitte hoch → das Label landete sonst genau auf
-      // der Dot-Reihe. Tree daher ins obere Band (Titel ist nur eine kleine
-      // Pille), Aktions-Block füllt darunter. Kompromiss „nah an Mitte" ohne
-      // Kollision.
-      vAnchor = 0.38;
+      // Vertikal NICHT zentriert: der Aktions-Block (NEU + Label + große Cards)
+      // ist hoch und floatet hoch → Tree muss klar darüber liegen, sonst
+      // touchiert die NEU-Pille/das Label die Dot-Reihe (Wolf 2026-06-30 'in
+      // Runde 2 überlappt wieder einiges'). Titel ist in Step 1 nur eine kleine
+      // Pille oben → Tree darf ins obere Band.
+      vAnchor = 0.30;
     }
     // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
     // Der Dot-Zoom schleifte Linie + Nachbar-Kacheln + Ring ins Bild und das
@@ -1347,37 +1348,37 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               </div>
 
-              {/* HERO: Kategorie-Emoji exakt zentriert — „Lift & Center"
-                  (Wolf 2026-06-29). Quelle = identisch zu den Tree-Dots
-                  (heroIconSlug, Emoji-Fallback). Tree fadet zeitgleich aus. */}
+              {/* Zentrierte Spalte: Hero-Emoji + Name + Erklärung (+ ZvZ-
+                  Beispiel). 2026-06-30 (Wolf 'überlappt bei allen Kategorien'):
+                  Hero + Texte als EINE zentrierte Flex-Spalte statt absolut
+                  positioniertem Hero + bottom-angepinntem Text — lange Inhalte
+                  (ZvZ-Beispiel) floaten so nie ins Emoji. Tree fadet ohnehin aus. */}
               <div style={{
-                position: 'absolute', top: '42%', left: '50%',
-                zIndex: 4, pointerEvents: 'none',
-                filter: isThemed()
-                  ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
-                  : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
-                animation: 'qqCatLiftCenter 0.75s cubic-bezier(0.16,1,0.3,1) 0.05s both, qqCatHeroFloat 4.5s ease-in-out 0.95s infinite',
-                willChange: 'transform',
-              }}>
-                {heroIconSlug
-                  ? <QQIcon slug={heroIconSlug} size="clamp(170px, 22cqw, 340px)" alt={info.title[lang]} />
-                  : <div style={{ fontSize: 'clamp(150px, 19cqw, 300px)', lineHeight: 1 }}>{info.emoji}</div>}
-              </div>
-
-              {/* BOTTOM: Name + Erklärung (+ ggf. ZvZ-Beispiel) unten angepinnt */}
-              <div style={{
-                position: 'absolute', bottom: 'clamp(24px, 5cqh, 76px)', left: 0, right: 0,
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                zIndex: 5, paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
-                animation: 'qqStationFade 0.5s ease 0.3s both',
+                gap: 'clamp(6px, 1.2cqh, 16px)',
+                width: '100%', maxWidth: 1500,
+                paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
+                animation: 'qqStationFade 0.5s ease 0.2s both',
               }}>
+                {/* HERO — Kategorie-Emoji (Quelle = Tree-Dots, Emoji-Fallback) */}
+                <div style={{
+                  filter: isThemed()
+                    ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
+                    : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
+                  animation: 'qqCatZoomIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both',
+                  lineHeight: 0,
+                }}>
+                  {heroIconSlug
+                    ? <QQIcon slug={heroIconSlug} size="clamp(120px, 15cqw, 240px)" alt={info.title[lang]} />
+                    : <div style={{ fontSize: 'clamp(110px, 14cqw, 220px)', lineHeight: 1 }}>{info.emoji}</div>}
+                </div>
               {/* Category/mechanic name — 3D-Stack-Look + smoothe per-Buchstabe
                   Wave (Wolf-Wunsch 2026-05-04). Wave statt qqCatTitleBreathe-
                   scale: einzelne Buchstaben in Span-Wrappern, 0.07s Stagger
                   ergibt die klassische Ocean-Wave-Geste. */}
               <div style={{
                 fontFamily: fontFam,
-                fontSize: 'clamp(56px, 10cqw, 160px)', fontWeight: 900, lineHeight: 1,
+                fontSize: 'clamp(48px, 8.5cqw, 130px)', fontWeight: 900, lineHeight: 1,
                 color: isThemed() ? 'var(--qq-title)' : catColor,
                 textShadow: isThemed()
                   ? 'none'
@@ -1386,7 +1387,6 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     `0 0 96px ${catColor}33, ` +
                     `0 5px 0 rgba(0,0,0,0.45), ` +
                     `0 14px 28px rgba(0,0,0,0.55)`,
-                marginTop: 12,
                 animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.3s both',
                 position: 'relative', zIndex: 5,
                 textAlign: 'center',
@@ -1435,8 +1435,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   damit Teams sofort die Idee „10 Punkte gewichten" greifen. */}
               {cat === 'ZEHN_VON_ZEHN' && (
                 <div style={{
-                  marginTop: 32, position: 'relative', zIndex: 5,
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+                  marginTop: 'clamp(4px, 0.8cqh, 14px)', position: 'relative', zIndex: 5,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                   animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.9s both',
                 }}>
                   <div style={{
@@ -1524,33 +1524,33 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           </div>
 
-          {/* HERO: Kategorie-Emoji exakt zentriert — „Lift & Center"
-              (Wolf 2026-06-29). Quelle identisch zu den Tree-Dots. */}
-          <div style={{
-            position: 'absolute', top: '44%', left: '50%',
-            zIndex: 4, pointerEvents: 'none',
-            filter: isThemed()
-              ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
-              : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
-            animation: 'qqCatLiftCenter 0.75s cubic-bezier(0.16,1,0.3,1) 0.05s both, qqCatHeroFloat 4.5s ease-in-out 0.95s infinite',
-            willChange: 'transform',
-          }}>
-            {heroIconSlug
-              ? <QQIcon slug={heroIconSlug} size="clamp(180px, 23cqw, 360px)" alt={catLabel} />
-              : <div style={{ fontSize: 'clamp(150px, 19cqw, 300px)', lineHeight: 1 }}>{catEmoji}</div>}
-          </div>
+          {/* Zentrierte Spalte: Hero-Emoji + Name + Satz. 2026-06-30 (Wolf
+              'überlappt bei allen Kategorien'): EINE zentrierte Flex-Spalte
+              statt absolutem Hero + bottom-Text → keine Kollision. */}
           {cat && (
-            /* BOTTOM: Name + Erklärung unten angepinnt */
             <div style={{
-              position: 'absolute', bottom: 'clamp(24px, 5cqh, 76px)', left: 0, right: 0,
               display: 'flex', flexDirection: 'column', alignItems: 'center',
-              zIndex: 5, paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
-              animation: 'qqStationFade 0.5s ease 0.3s both',
+              gap: 'clamp(8px, 1.4cqh, 20px)',
+              width: '100%', maxWidth: 1500,
+              paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
+              animation: 'qqStationFade 0.5s ease 0.2s both',
             }}>
+              {/* HERO — Kategorie-Emoji (Quelle = Tree-Dots, Emoji-Fallback) */}
+              <div style={{
+                filter: isThemed()
+                  ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
+                  : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
+                animation: 'qqCatZoomIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both',
+                lineHeight: 0,
+              }}>
+                {heroIconSlug
+                  ? <QQIcon slug={heroIconSlug} size="clamp(140px, 17cqw, 280px)" alt={catLabel} />
+                  : <div style={{ fontSize: 'clamp(130px, 16cqw, 260px)', lineHeight: 1 }}>{catEmoji}</div>}
+              </div>
               {/* Category name — per-Buchstabe Wave */}
               <div style={{
                 fontFamily: fontFam,
-                fontSize: 'clamp(56px, 10cqw, 150px)', fontWeight: 900, lineHeight: 1,
+                fontSize: 'clamp(52px, 9cqw, 140px)', fontWeight: 900, lineHeight: 1,
                 color: isThemed() ? 'var(--qq-title)' : catColor,
                 textShadow: isThemed() ? 'none' : `0 0 80px ${catColor}44`,
                 textAlign: 'center',

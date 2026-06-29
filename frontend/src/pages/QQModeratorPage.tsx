@@ -1619,7 +1619,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   title={canBack ? 'Slide zurück (Shift+Space / Backspace)' : 'In dieser Phase kein Zurück'}
                   style={canBack ? pillBase : pillDisabled}
                 >
+                  {/* 2026-06-29 (MODERATOR_OPTIMIZATION P2 'zwei Space entwirren'):
+                      Text-Label „Zurück"/„Weiter" führt, Tasten-Badge sekundär —
+                      vorher waren beide nur mit „Space" beschriftet = verwechselbar. */}
                   <span style={{ fontSize: 15 }}>↩</span>
+                  <span style={{ fontWeight: 900 }}>Zurück</span>
                   <span className="qm-kbd qm-kbd-sm" style={{ fontSize: 10 }}>⇧Space</span>
                 </button>
                 <button
@@ -1631,6 +1635,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     : pillDisabled}
                 >
                   <span style={{ fontSize: 15 }}>▶</span>
+                  <span style={{ fontWeight: 900 }}>Weiter</span>
                   <span className="qm-kbd qm-kbd-sm" style={{ fontSize: 10 }}>Space</span>
                 </button>
               </div>
@@ -2951,14 +2956,30 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                             )}
                             {s.correctTeamId === t.id && <span style={{ fontSize: 11, color: QQ_COLORS.green400 }}>✓ richtig</span>}
                             {answer && <span style={{ fontSize: 11, color: QQ_COLORS.brandPink }}>✎ abgegeben</span>}
+                            {/* 2026-06-29 (MODERATOR_OPTIMIZATION P1): wartende
+                                Teams klar auszeichnen (vorher nur am Punkt erkennbar). */}
+                            {isActive && !answer && !isOffline && (
+                              <span style={{
+                                fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700,
+                                opacity: 0.85, animation: 'qmPulseSoft 1.8s ease-in-out infinite',
+                              }}>⏳ wartet…</span>
+                            )}
                           </div>
                           <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 1 }}>
-                            {t.largestConnected} verbunden · {t.totalCells} Felder
+                            {/* 'verbunden' raus — steht jetzt als beschriftete
+                                Großzahl rechts (MODERATOR_OPTIMIZATION P1). */}
+                            {t.totalCells} Felder
                             {stats?.stealsUsed > 0 && ` · ⚡${stats.stealsUsed}/2`}
                             {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
                           </div>
                         </div>
-                        <div style={{ fontSize: 20, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
+                        {/* Großzahl = größte verbundene Gruppe (In-Game-Ranking-
+                            Metrik) — jetzt mit Mini-Label, damit die Semantik klar
+                            ist (vorher unbeschriftet neben „X Felder"). */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1, flex: 'none' }} title="Größte verbundene Gruppe (Spielstand)">
+                          <div style={{ fontSize: 20, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
+                          <div style={{ fontSize: 9, fontWeight: 800, color: QQ_COLORS.slate500, letterSpacing: '0.04em', marginTop: 1 }}>🔗 verb.</div>
+                        </div>
                         {/* Rename */}
                         <button
                           onClick={() => {
@@ -2988,13 +3009,32 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                           }}>✕</button>
                       </div>
                       {/* Live answer — hide for Schätzchen (shown in ranking above) */}
-                      {isActive && answer && !isSchaetz && (
+                      {isActive && answer && !isSchaetz && (() => {
+                        // 2026-06-29 (MODERATOR_OPTIMIZATION P0 'Auto-Match'): nach
+                        // dem Aufdecken die Abgabe gegen die Lösung matchen und
+                        // grün/rot auszeichnen (nur bei deterministischer Lösung —
+                        // sonst neutral, kein False-Signal). Vorher neutral.
+                        const verdict = s.phase === 'QUESTION_REVEAL'
+                          ? submissionVerdict(s.currentQuestion, answer.text, s.language === 'en' ? 'en' : 'de')
+                          : null;
+                        const boxBg = verdict === true ? 'rgba(34,197,94,0.14)'
+                          : verdict === false ? 'rgba(239,68,68,0.12)'
+                          : 'rgba(255,255,255,0.06)';
+                        const boxBorder = verdict === true ? '1px solid rgba(34,197,94,0.5)'
+                          : verdict === false ? '1px solid rgba(239,68,68,0.45)'
+                          : '1px solid rgba(255,255,255,0.1)';
+                        return (
                         <div style={{
                           marginTop: 8, padding: '6px 10px', borderRadius: 8,
-                          background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)',
-                          fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate200,
+                          background: boxBg, border: boxBorder,
+                          fontSize: 14, fontWeight: 700,
+                          color: verdict === false ? QQ_COLORS.slate400 : QQ_COLORS.slate200,
+                          opacity: verdict === false ? 0.85 : 1,
                           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
                         }}>
+                          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
+                            {verdict === true && <span style={{ color: QQ_COLORS.green400, fontWeight: 900, flex: 'none' }}>✓</span>}
+                            {verdict === false && <span style={{ color: QQ_COLORS.red500, fontWeight: 900, flex: 'none' }}>✕</span>}
                           <span>„{(() => {
                             const q = s.currentQuestion;
                             if (!q) return answer.text;
@@ -3015,6 +3055,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                             }
                             return answer.text;
                           })()}"</span>
+                          </span>
                           {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && (
                             <Btn small color={t.color} onClick={() => emit('qq:markCorrect', { roomCode, teamId: t.id })}>
                               ✓ Richtig
@@ -3031,7 +3072,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                               }}>😂</button>
                           )}
                         </div>
-                      )}
+                        );
+                      })()}
                     </div>
                   );
                 })}
@@ -3339,6 +3381,16 @@ function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
                   : '1px solid rgba(255,255,255,0.10)',
               opacity: offline ? 0.45 : 1,
             }}>
+              {/* 2026-06-29 (MODERATOR_OPTIMIZATION P1): expliziter Tracker-Punkt
+                  — gefüllt = abgegeben, hohl = offen (1-Blick-Fortschritt). */}
+              {!isReveal && (
+                <span aria-hidden style={{
+                  width: 8, height: 8, borderRadius: '50%', flex: 'none',
+                  background: answered ? '#22C55E' : 'transparent',
+                  border: answered ? 'none' : '1.5px solid rgba(148,163,184,0.5)',
+                  boxShadow: answered ? '0 0 6px rgba(34,197,94,0.7)' : 'none',
+                }} />
+              )}
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={22} />
               <span style={{
                 fontSize: 11, fontWeight: 800,
@@ -3823,6 +3875,48 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
   );
 }
 
+// 2026-06-29 (MODERATOR_OPTIMIZATION P0): Antwort-Normalisierung für Auto-Match
+// gegen die Lösung + Entdopplung. trim, lowercase, Trenner (| → , ; /) → Tokens,
+// Mehrfach-Whitespace kollabieren.
+function normalizeAnswerTokens(raw: string): string[] {
+  return (raw || '')
+    .toLowerCase()
+    .split(/[|→,;/]+|\s+→\s+/)
+    .map(t => t.replace(/\s+/g, ' ').trim())
+    .filter(Boolean);
+}
+function normalizeAnswer(raw: string): string {
+  return normalizeAnswerTokens(raw).join(' | ');
+}
+// Vergleicht eine Team-Abgabe gegen die Lösung. ordered=true → exakte Sequenz
+// (Reihenfolge-Typ); false → ungeordnete Menge (Set-Typ). null wenn keiner da.
+function submissionMatches(submission: string, solution: string, ordered: boolean): boolean | null {
+  const sub = normalizeAnswerTokens(submission);
+  const sol = normalizeAnswerTokens(solution);
+  if (sub.length === 0 || sol.length === 0) return null;
+  if (ordered) return normalizeAnswer(submission) === normalizeAnswer(solution);
+  const a = [...sub].sort().join('|');
+  const b = [...sol].sort().join('|');
+  return a === b;
+}
+// Liefert nur dort ein binäres Urteil, wo die Lösung DETERMINISTISCH ist
+// (MUCHO-Option, Reihenfolge-Sequenz). Bei fuzzy/closest/Bet-Typen → null
+// (kein False-Signal — der Mod entscheidet dort weiter selbst).
+function submissionVerdict(q: any, submissionText: string, lang: 'de' | 'en'): boolean | null {
+  if (!q || !submissionText) return null;
+  if (q.category === 'MUCHO' && q.correctOptionIndex != null) {
+    const idx = parseInt(submissionText, 10);
+    return Number.isFinite(idx) ? idx === q.correctOptionIndex : null;
+  }
+  const bt = q.bunteTuete;
+  if (bt?.kind === 'order' && Array.isArray(bt.correctOrder)) {
+    const items = (lang === 'en' && bt.itemsEn) ? bt.itemsEn : bt.items;
+    const sorted = bt.correctOrder.map((i: number) => items[i]).join(' → ');
+    return submissionMatches(submissionText, sorted, true);
+  }
+  return null;
+}
+
 // 2026-05-02 (Event-Manager-Audit + App-Designer-Audit): Im Pub steht der
 // Beamer hinter dem Mod — er kann die laufende Frage und die erwartete Antwort
 // nicht ablesen. Dieses Panel zeigt sie ihm im Mod-Tablet/Laptop an, plus
@@ -3875,9 +3969,13 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
     if (bt.kind === 'order') {
       const items = (lang === 'en' && bt.itemsEn) ? bt.itemsEn : bt.items;
       const sorted = bt.correctOrder.map(i => items[i]).join(' → ');
-      extras.push({ label: 'Reihenfolge', value: sorted });
+      // 2026-06-29 (MODERATOR_OPTIMIZATION P0 'entdoppeln'): Reihenfolge nur
+      // zeigen, wenn sie nicht wörtlich die grüne Antwort wiederholt.
+      if (normalizeAnswer(sorted) !== normalizeAnswer(answer || '')) {
+        extras.push({ label: 'Reihenfolge', value: sorted });
+      }
       const crit = (lang === 'en' && bt.criteriaEn) ? bt.criteriaEn : bt.criteria;
-      if (crit) extras.push({ label: 'Kriterium', value: crit });
+      if (crit) extras.push({ label: 'Kriterium', value: crit });  // neue Info → behalten
     }
     if (bt.kind === 'oneOfEight') {
       const stmts = (lang === 'en' && bt.statementsEn) ? bt.statementsEn : bt.statements;
@@ -3932,18 +4030,17 @@ function ModQuestionPanel({ state: s }: { state: QQStateUpdate }) {
         </span>
       </div>
 
-      {/* Frage-Text */}
-      {/* 2026-05-02 (App-Designer-Audit M3): Schrift hochgezogen — das ist die
-          Lebensader-Info des Panels (Pub-Live: Mod kuckt schnell hin zwischen
-          Patter). 14px war zu klein fuer Tablet-Distanz. */}
+      {/* 2026-06-29 (MODERATOR_OPTIMIZATION P0 'entdoppeln'): Die Frage steht voll
+          mittig in der Team-Sicht — hier nur eine dünne 1-Zeilen-Referenz, das
+          Panel führt visuell mit der großen grünen Antwort. */}
       <div style={{
-        fontSize: 17, fontWeight: 900, color: QQ_COLORS.slate100, lineHeight: 1.35,
-        marginBottom: 10,
-      }}>
+        fontSize: 12, fontWeight: 600, color: QQ_COLORS.slate400, lineHeight: 1.3,
+        marginBottom: 8, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+      }} title={text}>
         {text}
       </div>
 
-      {/* Antwort */}
+      {/* Antwort (führt das Panel) */}
       <div style={{
         padding: '10px 12px', borderRadius: 8,
         background: 'rgba(34,197,94,0.12)',

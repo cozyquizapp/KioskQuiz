@@ -245,6 +245,12 @@
   50%      { box-shadow: 0 4px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%), 0 0 38px color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 36%, transparent), inset 0 1px 0 rgba(255,255,255,0.18); }
 }
 
+/* 2026-06-29 (MODERATOR_OPTIMIZATION P1): leiser Puls für wartende Teams. */
+@keyframes qmPulseSoft {
+  0%, 100% { opacity: 0.5; }
+  50%      { opacity: 0.95; }
+}
+
 /* ----- Keycap (hotkey badge) ------------------------------------ */
 
 .qm-kbd {

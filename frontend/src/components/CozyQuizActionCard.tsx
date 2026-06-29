@@ -199,12 +199,13 @@ function BackFace({ lang }: { lang: 'de' | 'en' }) {
   );
 }
 
-/** Plain-Variant — Card erscheint via phasePop (subtle scale 0.94→1 bounce). */
+/** Plain-Variant — Card schießt energisch von unten rein (qqActionCardPop) mit
+ *  Overshoot + leichtem Rotate (Wolf 2026-06-29: phasePop war zu langweilig). */
 function ActionCardPlain({ cardData, iconNode, iconSize, cardCount, lang, delayMs }: CommonProps) {
   return (
     <SlotOuter
       cardCount={cardCount}
-      animation={`phasePop 0.6s var(--qq-ease-bounce) ${delayMs / 1000}s both`}
+      animation={`qqActionCardPop 0.72s cubic-bezier(0.34, 1.5, 0.5, 1) ${delayMs / 1000}s both`}
     >
       <FrontFace cardData={cardData} iconNode={iconNode} iconSize={iconSize} lang={lang} mode="plain" />
     </SlotOuter>

@@ -746,6 +746,15 @@ export const QQ_BEAMER_CSS = `
     60%  { opacity: 1; }
     100% { opacity: 1; transform: scale(1); }
   }
+  /* Action-Card Plain-Entrance mit mehr Wow (Wolf 2026-06-29: „erscheint sehr
+     langweilig"): kommt von unten rein, schießt über (scale 1.08) und federt
+     ein — statt des subtilen phasePop. */
+  @keyframes qqActionCardPop {
+    0%   { opacity: 0; transform: scale(0.4) translateY(46px) rotate(-3deg); }
+    55%  { opacity: 1; transform: scale(1.08) translateY(0) rotate(1deg); }
+    72%  { transform: scale(0.96) rotate(0deg); }
+    100% { opacity: 1; transform: scale(1) translateY(0) rotate(0deg); }
+  }
   @keyframes qqJokerCallout {
     0%   { opacity: 0; transform: translate(-50%,-32px) scale(0.78); }
     52%  { opacity: 1; transform: translate(-50%,0) scale(1.07); }

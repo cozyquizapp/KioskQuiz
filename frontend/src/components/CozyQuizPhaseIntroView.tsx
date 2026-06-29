@@ -551,12 +551,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     if (step >= 1) {
       // Step 1: Runden-Cluster füllt ~85% Breite → Nachbar-Runden werden
       // abgeschnitten; das Fokus-Dimming im Tree blendet den Rest zusätzlich aus.
-      // vAnchor auf ~0.42 = ungefähr die Höhe, auf der die RoundMiniTree
-      // erscheint → der Voll-Tree fadet beim Reinzoomen GENAU dort aus, es
-      // wirkt wie ein echter Zoom in den Haupt-Tree (Wolf 2026-06-29).
+      // vAnchor ~0.30 = exakte Höhe, auf der die RoundMiniTree-Dots erscheinen
+      // (per Screenshot vermessen) → der Voll-Tree zoomt GENAU dorthin und fadet
+      // dort aus, sodass man sieht: man zoomt in den Runden-Tree (Wolf 2026-06-29).
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
       S = Math.min(3.4, Math.max(1.6, (camVp.w * 0.85) / (phaseWidths[pi] || camVp.w)));
-      vAnchor = 0.42;
+      vAnchor = 0.30;
     }
     if (step >= 2) {
       // Step 2: auf die aktuelle Kategorie-Kachel (Dot) ziehen, Emoji groß.
@@ -657,8 +657,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
            aus der Mitte), damit der Übergang Mini-Tree → Kategorie-Emoji ein
            sichtbarer Reinzoom ist statt nur ein Einblenden. */
         @keyframes qqCatZoomIn {
-          0%   { opacity: 0; transform: scale(0.42); }
-          60%  { opacity: 1; }
+          0%   { opacity: 0; transform: scale(0.30); }
+          55%  { opacity: 1; }
           100% { opacity: 1; transform: scale(1); }
         }
       `}</style>

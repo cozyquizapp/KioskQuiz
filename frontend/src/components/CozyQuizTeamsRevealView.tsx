@@ -541,22 +541,26 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               willChange: 'transform, opacity',
             }}>
+              {/* 2026-06-29 (Wolf): Während Zoom/Flug NUR das Tier zeigen — kein
+                  farbiger Disc, kein Team-Farb-Halo. Die Team-Farbe erscheint
+                  erst beim „Stempeln" auf der Karte (cardDisc füllt sich beim
+                  Zünden). Soft-Glow neutral-weiß für etwas Präsenz auf dunklem BG. */}
               <div aria-hidden style={{
                 position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%)',
                 width: 'clamp(360px, 42cqw, 620px)', height: 'clamp(360px, 42cqw, 620px)',
                 borderRadius: '50%',
-                background: `radial-gradient(circle, ${spotColor}77 0%, transparent 65%)`,
+                background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 62%)',
                 filter: 'blur(12px)', pointerEvents: 'none',
               }} />
               <div ref={spotDiscRef} style={{
                 position: 'relative',
                 width: 'clamp(220px, 24cqw, 360px)', height: 'clamp(220px, 24cqw, 360px)',
                 borderRadius: '50%',
-                background: spotColor,
-                border: `3px solid ${spotColor}`,
+                background: 'transparent',
+                border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                boxShadow: `0 24px 60px rgba(0,0,0,0.5), 0 0 44px ${spotColor}66`,
-                overflow: isCozy3dSlug(spotTeam?.emoji) ? 'visible' : 'hidden',
+                filter: 'drop-shadow(0 18px 34px rgba(0,0,0,0.55))',
+                overflow: 'visible',
                 fontSize: 'clamp(150px, 17cqw, 252px)', lineHeight: 1,
               }}>
                 {spotTeam && avatarInner(spotTeam)}

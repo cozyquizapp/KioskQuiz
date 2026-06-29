@@ -530,21 +530,34 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const camWorldStyle = useMemo(() => {
     if (!treeMetrics || camVp.w === 0) return { transform: 'translate(0px,0px) scale(1)' };
     const { phaseCenters, dotCenters, phaseWidths, totalWidth, dotRowHeight } = treeMetrics;
+    const dotSize = dotRowHeight / 1.3;
     const step = s.introStep ?? 0;
     const pi = Math.max(0, (displayGpi ?? 1) - 1);
     const ty = dotRowHeight / 2 + PAD_T;
     let tx = totalWidth / 2 + PAD_L;
     let S = 1;
+    // Vertikal-Anker: ganzer Tree + Runde liegen im unteren Drittel (Platz oben
+    // für Titel/Aktion); beim Kategorie-Emoji-Zoom schön zentriert.
+    let vAnchor = 0.62;
     if (step >= 1) {
+      // Step 1: Runden-Cluster füllt ~85% Breite → Nachbar-Runden werden
+      // abgeschnitten; das Fokus-Dimming im Tree blendet den Rest zusätzlich aus.
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
-      S = Math.min(2.4, Math.max(1.4, (camVp.w * 0.78) / (phaseWidths[pi] || camVp.w)));
+      S = Math.min(3.4, Math.max(1.6, (camVp.w * 0.85) / (phaseWidths[pi] || camVp.w)));
     }
     if (step >= 2) {
+      // Step 2: auf die aktuelle Kategorie-Kachel (Dot) ziehen, Emoji groß.
       tx = (dotCenters[s.questionIndex] ?? tx) + PAD_L;
-      S = 3.4;
+      S = (camVp.w * 0.32) / Math.max(1, dotSize);
+      vAnchor = 0.5;
+    }
+    if (step >= 3) {
+      // Step 3: ganz ins Kategorie-Emoji rein (nur noch das Emoji, zentriert).
+      S = (camVp.w * 0.52) / Math.max(1, dotSize);
+      vAnchor = 0.5;
     }
     const camTx = camVp.w / 2 - tx * S;
-    const camTy = camVp.h * 0.62 - ty * S;
+    const camTy = camVp.h * vAnchor - ty * S;
     return { transform: `translate(${camTx}px, ${camTy}px) scale(${S})` };
   }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi]);
 
@@ -610,6 +623,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           0%   { opacity: 0; transform: translateY(10px); }
           100% { opacity: 1; transform: translateY(0); }
         }
+        /* Step 3 (tiefster Kategorie-Zoom): Station fadet aus, damit nur noch das
+           gezoomte Kategorie-Emoji im Welt-Backdrop steht. */
+        @keyframes qqStationFadeOut {
+          0%   { opacity: 1; }
+          55%  { opacity: 1; }
+          100% { opacity: 0; }
+        }
       `}</style>
 
       {/* 2026-06-29 (Journey-Zoom KERN): persistente Welt-Kamera als Backdrop.
@@ -628,7 +648,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           willChange: 'transform',
           ...camWorldStyle,
         }}>
-          <QQProgressTree state={displayTreeState} variant="inline" bigIcons onLayout={setTreeMetrics} />
+          <QQProgressTree
+            state={displayTreeState}
+            variant="inline"
+            bigIcons
+            onLayout={setTreeMetrics}
+            wolfAbove
+            focusPhaseIdx={(s.introStep ?? 0) >= 1 ? Math.max(0, (displayGpi ?? 1) - 1) : null}
+          />
         </div>
       </div>
 
@@ -640,7 +667,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
-        animation: 'qqStationFade 0.55s ease both',
+        // Step 3 (tiefster Kategorie-Zoom): Station fadet aus → nur noch das
+        // Emoji im Welt-Backdrop. Sonst sanftes Einfaden.
+        animation: (s.introStep ?? 0) >= 3
+          ? 'qqStationFadeOut 0.95s ease both'
+          : 'qqStationFade 0.55s ease both',
         willChange: 'opacity, transform',
       }}>
       {isFirstOfRound && s.introStep === 0 ? (
@@ -843,6 +874,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             }} />}
           </div>
 
+          {/* Tree-Zone-Spacer: reserviert den vertikalen Raum, in dem der
+              persistente Welt-Backdrop-Tree liegt (~62% Höhe). Der Subtitle
+              kommt DANACH → er steht unter dem Tree (Wolf 2026-06-29). */}
+          <div style={{ height: 'clamp(150px, 22cqh, 300px)' }} aria-hidden />
+
           {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer).
               overflow:hidden nur waehrend der Transition, sonst bleibt ein
               Clip-Rechteck um den Subtitle stehen. */}
@@ -890,12 +926,6 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
 
-          {/* Fortschrittsbaum (Step-0-Roadmap) wandert in den persistenten
-              Welt-Backdrop oben (Journey-Zoom-Kern, 2026-06-29) — der zeigt
-              denselben displayTreeState inkl. Hop, nur als zoomende Welt statt
-              als statischer Inline-Tree hier. Spacer hält die vertikale Balance,
-              damit der Titel nicht in die Welt-Mitte rutscht. */}
-          <div style={{ height: 'clamp(120px, 18cqh, 240px)' }} aria-hidden />
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (
         /* ── Step 1: Rule reminder (what's new this round) ── */
@@ -1091,6 +1121,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             })()}
             {/* (per-Runde Card-Bloecke entfernt — werden durch unified IIFE oben generiert) */}
           </div>
+          {/* Tree-Zone-Spacer: schiebt Label + Aktions-Karte nach OBEN, damit sie
+              über dem gezoomten Runden-Cluster (Welt-Backdrop ~62%) liegen statt
+              ihn zu überlappen (Wolf 2026-06-29: „Aktion oben über dem Cluster"). */}
+          <div style={{ height: 'clamp(170px, 26cqh, 340px)' }} aria-hidden />
         </>
       ) : s.categoryIsNew ? (
         /* ── Category explanation (first time this category/mechanic appears) ── */
@@ -1209,14 +1243,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               </div>
 
-              {/* Runden-Mini-Tree mit Wolf-Hop — zeigt Position innerhalb der aktuellen Runde */}
-              <div style={{
-                marginBottom: 20,
-                animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.12s both',
-                position: 'relative', zIndex: 5,
-              }}>
-                <RoundMiniTree state={s} catColor={catColor} />
-              </div>
+              {/* Runden-Mini-Tree entfernt (Journey-Zoom 2026-06-29): die
+                  Position in der Runde zeigt jetzt der zoomende Welt-Backdrop
+                  oben — kein doppelter Mini-Tree mehr in der Kategorie-Station. */}
 
               {/* Big emoji/icon — bevorzugt PNG, sonst Emoji-Fallback */}
               <div style={{
@@ -1390,7 +1419,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
               </div>
             </div>
-            <RoundMiniTree state={s} catColor={catColor} />
+            {/* Runden-Mini-Tree entfernt (Journey-Zoom 2026-06-29) — Welt-Backdrop
+                oben zeigt die Position bereits. */}
           </div>
 
           {cat && (

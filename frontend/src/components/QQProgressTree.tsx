@@ -30,6 +30,14 @@ interface Props {
     totalWidth: number;
     dotRowHeight: number;
   }) => void;
+  /** 2026-06-29 (Journey-Zoom, Wolf): Wolf läuft ÜBER der Dot-Linie statt drauf
+   *  zu sitzen → das Kategorie-Emoji im Dot bleibt beim Reinzoomen frei. Nur für
+   *  die PhaseIntro-Welt gedacht; Live-Tree bleibt unverändert (default false). */
+  wolfAbove?: boolean;
+  /** 2026-06-29 (Journey-Zoom, Progressive Disclosure): 0-basierter Phasen-Index,
+   *  der allein voll sichtbar ist; alle anderen Cluster faden auf ~0.1. null =
+   *  alle voll (Default). */
+  focusPhaseIdx?: number | null;
 }
 
 // Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
@@ -55,6 +63,8 @@ export default function QQProgressTree({
   showcaseStepMs = 2200,
   bigIcons = false,
   onLayout,
+  wolfAbove = false,
+  focusPhaseIdx = null,
 }: Props) {
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
@@ -798,8 +808,16 @@ export default function QQProgressTree({
                 </div>
               </div>
             ) : null;
+            const phaseDimmed = focusPhaseIdx != null && pi !== focusPhaseIdx;
             const phaseElem = (
-              <div key={p} style={{ display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2 }}>
+              <div key={p} style={{
+                display: 'flex', gap: dotGap, alignItems: 'center', position: 'relative', zIndex: 2,
+                // Progressive Disclosure (Journey-Zoom): nur der fokussierte
+                // Runden-Cluster bleibt voll, der Rest fadet smooth weg.
+                opacity: phaseDimmed ? 0.08 : 1,
+                filter: phaseDimmed ? 'blur(2px)' : undefined,
+                transition: 'opacity 0.7s ease, filter 0.7s ease',
+              }}>
                 {renderEntries.map((e, i) => {
                   const globalIdx = phaseStartIdx >= 0 ? phaseStartIdx + i : -1;
                   const isPast = !showcaseMode && globalIdx >= 0 && globalIdx < displayIdx;
@@ -954,8 +972,10 @@ export default function QQProgressTree({
                 left: currentCenter,
                 width: wolfSize,
                 height: wolfSize,
-                transform: 'translate(-50%, -50%)',
-                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1)',
+                // wolfAbove: über die Dot-Linie heben, damit das Dot-Emoji frei
+                // bleibt (Journey-Zoom Kategorie-Reinzoom). Sonst zentriert.
+                transform: wolfAbove ? 'translate(-50%, -142%)' : 'translate(-50%, -50%)',
+                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), transform 520ms cubic-bezier(0.34, 1.25, 0.64, 1)',
                 zIndex: 3,
                 pointerEvents: 'none',
               }}>

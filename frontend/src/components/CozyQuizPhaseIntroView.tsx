@@ -551,11 +551,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     if (step >= 1) {
       // Step 1: Runden-Cluster füllt ~85% Breite → Nachbar-Runden werden
       // abgeschnitten; das Fokus-Dimming im Tree blendet den Rest zusätzlich aus.
-      // Cluster liegt als Band tief unten, damit Label + Aktions-Karte klar
-      // DARÜBER Platz haben (Wolf: „Aktion oben über dem Cluster").
+      // vAnchor auf ~0.42 = ungefähr die Höhe, auf der die RoundMiniTree
+      // erscheint → der Voll-Tree fadet beim Reinzoomen GENAU dort aus, es
+      // wirkt wie ein echter Zoom in den Haupt-Tree (Wolf 2026-06-29).
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
       S = Math.min(3.4, Math.max(1.6, (camVp.w * 0.85) / (phaseWidths[pi] || camVp.w)));
-      vAnchor = 0.82;
+      vAnchor = 0.42;
     }
     if (step >= 2) {
       // Step 2: auf die aktuelle Kategorie-Kachel (Dot) ziehen, Emoji groß.
@@ -652,6 +653,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           55%  { opacity: 1; }
           100% { opacity: 0; }
         }
+        /* Beat 2 (Wolf 2026-06-29): die Kategorie-Ansicht ZOOMT rein (scale-up
+           aus der Mitte), damit der Übergang Mini-Tree → Kategorie-Emoji ein
+           sichtbarer Reinzoom ist statt nur ein Einblenden. */
+        @keyframes qqCatZoomIn {
+          0%   { opacity: 0; transform: scale(0.42); }
+          60%  { opacity: 1; }
+          100% { opacity: 1; transform: scale(1); }
+        }
       `}</style>
 
       {/* 2026-06-29 (Journey-Zoom KERN): persistente Welt-Kamera als Backdrop.
@@ -693,7 +702,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
-        animation: 'qqStationFade 0.55s ease both',
+        // Beat 2/3 (Kategorie): die Station zoomt rein (qqCatZoomIn) → sichtbarer
+        // Reinzoom vom Mini-Tree aufs Kategorie-Emoji. Sonst sanftes Fade.
+        animation: (s.introStep ?? 0) >= 2
+          ? 'qqCatZoomIn 0.7s cubic-bezier(0.34, 1.2, 0.5, 1) both'
+          : 'qqStationFade 0.55s ease both',
         willChange: 'opacity, transform',
       }}>
       {isFirstOfRound && s.introStep === 0 ? (

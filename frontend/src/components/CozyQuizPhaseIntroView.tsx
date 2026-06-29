@@ -524,6 +524,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+  // Entry: der Tree fliegt einmalig von LINKS rein (gleiche Höhe wie Endpunkt,
+  // nicht diagonal von links-oben). Erst auf left-Start ohne Transition setzen,
+  // dann per rAF auf das Ziel transitionen.
+  const [worldEntered, setWorldEntered] = useState(false);
+  useEffect(() => {
+    if (!treeMetrics || camVp.w === 0 || worldEntered) return;
+    const id = requestAnimationFrame(() => requestAnimationFrame(() => setWorldEntered(true)));
+    return () => cancelAnimationFrame(id);
+  }, [treeMetrics, camVp.w, worldEntered]);
   // Kamera-Ziel pro introStep: 0 = ganzer Tree, 1 = aktueller Runden-Cluster,
   // >=2 = aktuelle Kategorie-Kachel. Vertikal im unteren Drittel verankert,
   // damit oben Platz für die Stations-Titel bleibt.
@@ -561,8 +570,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     }
     const camTx = camVp.w / 2 - tx * S;
     const camTy = camVp.h * vAnchor - ty * S;
-    return { transform: `translate(${camTx}px, ${camTy}px) scale(${S})` };
-  }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi]);
+    if (!worldEntered) {
+      // Start: links daneben, SELBE Höhe (camTy) → reiner Horizontal-Einflug.
+      return {
+        transform: `translate(${camTx - camVp.w * 0.55}px, ${camTy}px) scale(${S})`,
+        transition: 'none',
+      };
+    }
+    return {
+      transform: `translate(${camTx}px, ${camTy}px) scale(${S})`,
+      transition: 'transform 0.9s cubic-bezier(0.66,0,0.34,1)',
+    };
+  }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi, worldEntered]);
 
   return (
     <div style={{
@@ -647,7 +666,6 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
-          transition: 'transform 0.9s cubic-bezier(0.66,0,0.34,1)',
           willChange: 'transform',
           ...camWorldStyle,
         }}>
@@ -670,11 +688,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
-        // Step 3 (tiefster Kategorie-Zoom): Station fadet aus → nur noch das
-        // Emoji im Welt-Backdrop. Sonst sanftes Einfaden.
-        animation: (s.introStep ?? 0) >= 3
-          ? 'qqStationFadeOut 0.95s ease both'
-          : 'qqStationFade 0.55s ease both',
+        animation: 'qqStationFade 0.55s ease both',
         willChange: 'opacity, transform',
       }}>
       {isFirstOfRound && s.introStep === 0 ? (

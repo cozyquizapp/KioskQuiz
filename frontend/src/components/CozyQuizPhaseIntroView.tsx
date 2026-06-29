@@ -533,6 +533,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     const id = requestAnimationFrame(() => requestAnimationFrame(() => setWorldEntered(true)));
     return () => cancelAnimationFrame(id);
   }, [treeMetrics, camVp.w, worldEntered]);
+  // 2026-06-29 v3 (Wolf 'sieht nicht wie ein Zoom aus' + 'Wolf verdeckt das
+  // Ziel-Badge'): Statt die Welt als dauerhaften (überladenen) Backdrop zu
+  // zeigen, blitzt sie nur WÄHREND des Zoom-Übergangs auf und fadet danach weg —
+  // man SIEHT die Kamerafahrt, landet aber auf einem cleanen Settled-Screen
+  // (RoundMiniTree bzw. Kategorie-Seite). `flying` = true direkt nach jedem
+  // introStep-Wechsel, ~850ms lang (Dauer der Kamerafahrt).
+  const [flying, setFlying] = useState(false);
+  const flyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    setFlying(true);
+    if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
+    flyTimerRef.current = setTimeout(() => setFlying(false), 850);
+    return () => { if (flyTimerRef.current) clearTimeout(flyTimerRef.current); };
+  }, [s.introStep]);
   // Kamera-Ziel pro introStep: 0 = ganzer Tree, 1 = aktueller Runden-Cluster,
   // >=2 = aktuelle Kategorie-Kachel. Vertikal im unteren Drittel verankert,
   // damit oben Platz für die Stations-Titel bleibt.
@@ -675,13 +689,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       <div ref={camViewportRef} aria-hidden style={{
         position: 'absolute', inset: 0, overflow: 'hidden',
         zIndex: 1, pointerEvents: 'none',
-        // 2026-06-29 (Wolf 'sieht nicht wie ein Zoom aus'): Welt bleibt durch
-        // Beat 0→1→2 SICHTBAR und zoomt durchgehend (eine echte Kamerafahrt, KEIN
-        // Crossfade). Sie fadet erst NACH der ~0.9s-Flugzeit in die Kategorie-
-        // Kachel (Step 2) aus → man SIEHT erst den Zoom, dann übernimmt die saubere
-        // Kategorie-Station. transitionDelay 0.82s = nach Ende der Kamerafahrt.
-        opacity: (s.introStep ?? 0) >= 2 ? 0 : 1,
-        transition: 'opacity 0.5s ease 0.82s',
+        // 2026-06-29 v3: Welt nur am Start (Step 0 = ganzer Tree) ODER während
+        // einer Kamerafahrt (`flying`) sichtbar — man SIEHT den Zoom, danach fadet
+        // sie weg und der saubere Settled-Screen (RoundMiniTree / Kategorie)
+        // übernimmt. Fade raus schnell (0.4s), rein quasi sofort beim Flugstart.
+        opacity: ((s.introStep ?? 0) === 0 || flying) ? 1 : 0,
+        transition: 'opacity 0.4s ease',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
@@ -693,7 +706,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             variant="inline"
             bigIcons
             onLayout={setTreeMetrics}
-            wolfHidden={(s.introStep ?? 0) >= 2}
+            wolfHidden={(s.introStep ?? 0) >= 1}
             focusPhaseIdx={(s.introStep ?? 0) >= 1 ? Math.max(0, (displayGpi ?? 1) - 1) : null}
           />
         </div>
@@ -707,11 +720,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
-        // 2026-06-29 v2: Station zoomt NICHT mehr selbst (qqCatZoomIn raus) — den
-        // Zoom macht jetzt die durchgehend sichtbare Welt-Kamera dahinter. Die
-        // Station fadet nur sanft ein; bei Kategorie (Step≥2) leicht verzögert,
-        // damit sie erst erscheint, wenn die Kamera in der Kachel angekommen ist.
-        animation: (s.introStep ?? 0) >= 2
+        // 2026-06-29 v3: Station zoomt NICHT selbst (qqCatZoomIn raus) — den Zoom
+        // macht die aufblitzende Welt-Kamera. Ab Step 1 fadet die Station leicht
+        // verzögert ein (0.5s), damit sie erst erscheint, wenn die Kamerafahrt
+        // angekommen ist → man sieht erst den Zoom, dann den cleanen Screen.
+        animation: (s.introStep ?? 0) >= 1
           ? 'qqStationFade 0.5s ease 0.5s both'
           : 'qqStationFade 0.55s ease both',
         willChange: 'opacity, transform',
@@ -986,12 +999,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseName}
           </div>
 
-          {/* Beat 1 (Wolf 2026-06-29 v2): KEINE separate RoundMiniTree mehr — der
-              Welt-Backdrop bleibt jetzt sichtbar und zeigt durchgehend den
-              gezoomten Runden-Cluster (echter Zoom aus dem ganzen Tree statt
-              Crossfade auf eine Mini-Kopie). Der Spacer hält den oberen Raum frei,
-              damit der Welt-Cluster nicht von den Aktions-Karten überdeckt wird. */}
-          <div aria-hidden style={{ height: 'clamp(96px, 16cqh, 200px)', flex: '0 0 auto' }} />
+          {/* Beat 1 (Wolf 2026-06-29 v3): saubere RoundMiniTree als Settled-Screen.
+              Die Welt-Kamera blitzt den Zoom aus dem ganzen Tree nur während des
+              Übergangs auf und fadet dann weg → hier landet man auf der cleanen
+              Runden-Ansicht (kein überladener Voll-Tree, kein Wolf der das
+              Ziel-Badge verdeckt), darunter die Aktions-Karte. */}
+          <div style={{
+            marginBottom: 28,
+            animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.55s both',
+            position: 'relative', zIndex: 5,
+          }}>
+            <RoundMiniTree state={s} catColor={catColor} />
+          </div>
 
           {/* "NEU" badge (skip for round 1) */}
           {s.gamePhaseIndex > 1 && (

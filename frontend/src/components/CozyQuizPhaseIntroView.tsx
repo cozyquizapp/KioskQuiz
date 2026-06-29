@@ -350,6 +350,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     ? bunteSub[lang].explain
     : (cat ? (CAT_EXPLAIN[cat]?.[lang] ?? '') : '');
 
+  // Kategorie-Hero-Icon (Lift & Center, Wolf 2026-06-29): EXAKT dieselbe Quelle
+  // wie die Tree-Dots — Bunte-Tüte-Sub bevorzugt (qqSubSlug, kann null sein →
+  // dann Emoji-Fallback), sonst die Quiz-Kategorie (qqCatSlug). Wird in beiden
+  // Step-2-Branches als zentriertes Hero-Overlay gerendert (catEmoji = Fallback).
+  const heroIconSlug: QQIconSlug | null = bunteKind
+    ? qqSubSlug(bunteKind)
+    : (cat ? qqCatSlug(cat) : null);
+
   // ── Rule reminders per round ──
   // Subtitle ueber den Action-Cards. Beschreibt knapp wie die Wahl funktioniert,
   // die exakte Anzahl pro Aktion steht direkt auf den Cards (× N).
@@ -590,19 +598,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       // (unten) sind absolut gepinnt, kollidieren also nicht.
       vAnchor = 0.50;
     }
-    if (step >= 2) {
-      // Step 2: weiter rein auf die aktuelle Kategorie-Kachel — das Emoji im Dot
-      // wird der Hero, drum herum faden Eyebrow (oben) + Name/Satz (unten) ein.
-      tx = (dotCenters[s.questionIndex] ?? tx) + PAD_L;
-      S = (camVp.w * 0.30) / Math.max(1, dotSize);
-      vAnchor = 0.46;
-    }
-    if (step >= 3) {
-      // Step 3: großer Dive ins Kategorie-Emoji (wächst über den Frame) — danach
-      // übernimmt der Phasenwechsel zur Frage (QuestionView materialisiert).
-      S = (camVp.w * 0.80) / Math.max(1, dotSize);
-      vAnchor = 0.46;
-    }
+    // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
+    // Der Dot-Zoom schleifte Linie + Nachbar-Kacheln + Ring ins Bild und das
+    // Emoji landete schief (Wolf 2026-06-29 'nur Kategorie-Emoji mittig').
+    // Stattdessen „Lift & Center": die Kamera HÄLT das Runden-Cluster-Framing
+    // (Step-1-Werte), der Welt-Tree fadet aus (opacity → 0 bei zoomStep>=2) und
+    // das Kategorie-Emoji wird als eigenes, exakt zentriertes Hero-Overlay
+    // gerendert (qqCatLiftCenter). dotSize bleibt referenziert für Layout-Hooks.
+    void dotSize;
     const camTx = camVp.w / 2 - tx * S;
     const camTy = camVp.h * vAnchor - ty * S;
     if (!worldEntered) {
@@ -699,6 +702,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           55%  { opacity: 1; }
           100% { opacity: 1; transform: scale(1); }
         }
+        /* „Lift & Center" (Wolf 2026-06-29): das Kategorie-Emoji löst sich aus
+           dem (gleichzeitig ausfadenden) Tree, hebt sich leicht an und wächst in
+           die exakte Bildmitte. Reines Hero-Overlay — kein Liniengewirr mehr. */
+        @keyframes qqCatLiftCenter {
+          0%   { opacity: 0; transform: translate(-50%, -34%) scale(0.32); }
+          60%  { opacity: 1; }
+          100% { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+        }
+        /* Sanftes Schweben des Hero-Emojis nachdem es eingerastet ist. */
+        @keyframes qqCatHeroFloat {
+          0%, 100% { transform: translate(-50%, -50%) translateY(0); }
+          50%      { transform: translate(-50%, -50%) translateY(-10px); }
+        }
       `}</style>
 
       {/* 2026-06-29 (Journey-Zoom KERN): persistente Welt-Kamera als Backdrop.
@@ -715,7 +731,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         // kein Container-BG, nur Symbole+Linie) + Fokus-Dimming sorgen für den
         // cleanen Look. Beim großen Dive (Step 3) fadet sie sanft, danach
         // übernimmt die Frage.
-        opacity: zoomStep >= 3 ? 0 : 1,
+        // 2026-06-29 (Lift & Center): Tree fadet schon bei Step 2 (Kategorie-
+        // Seite) aus — danach steht nur noch das zentrierte Hero-Emoji.
+        opacity: zoomStep >= 2 ? 0 : 1,
         transition: 'opacity 0.55s ease',
       }}>
         <div style={{
@@ -1324,8 +1342,22 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               </div>
 
-              {/* Eigenes Emoji entfernt — der zoomende Welt-Tile IST jetzt das
-                  Kategorie-Emoji (Hero in der Bildmitte). */}
+              {/* HERO: Kategorie-Emoji exakt zentriert — „Lift & Center"
+                  (Wolf 2026-06-29). Quelle = identisch zu den Tree-Dots
+                  (heroIconSlug, Emoji-Fallback). Tree fadet zeitgleich aus. */}
+              <div style={{
+                position: 'absolute', top: '42%', left: '50%',
+                zIndex: 4, pointerEvents: 'none',
+                filter: isThemed()
+                  ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
+                  : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
+                animation: 'qqCatLiftCenter 0.75s cubic-bezier(0.16,1,0.3,1) 0.05s both, qqCatHeroFloat 4.5s ease-in-out 0.95s infinite',
+                willChange: 'transform',
+              }}>
+                {heroIconSlug
+                  ? <QQIcon slug={heroIconSlug} size="clamp(170px, 22cqw, 340px)" alt={info.title[lang]} />
+                  : <div style={{ fontSize: 'clamp(150px, 19cqw, 300px)', lineHeight: 1 }}>{info.emoji}</div>}
+              </div>
 
               {/* BOTTOM: Name + Erklärung (+ ggf. ZvZ-Beispiel) unten angepinnt */}
               <div style={{
@@ -1487,8 +1519,21 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           </div>
 
-          {/* Eigenes Emoji entfernt — der zoomende Welt-Tile IST das Kategorie-
-              Emoji (Hero in der Bildmitte). */}
+          {/* HERO: Kategorie-Emoji exakt zentriert — „Lift & Center"
+              (Wolf 2026-06-29). Quelle identisch zu den Tree-Dots. */}
+          <div style={{
+            position: 'absolute', top: '44%', left: '50%',
+            zIndex: 4, pointerEvents: 'none',
+            filter: isThemed()
+              ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
+              : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
+            animation: 'qqCatLiftCenter 0.75s cubic-bezier(0.16,1,0.3,1) 0.05s both, qqCatHeroFloat 4.5s ease-in-out 0.95s infinite',
+            willChange: 'transform',
+          }}>
+            {heroIconSlug
+              ? <QQIcon slug={heroIconSlug} size="clamp(180px, 23cqw, 360px)" alt={catLabel} />
+              : <div style={{ fontSize: 'clamp(150px, 19cqw, 300px)', lineHeight: 1 }}>{catEmoji}</div>}
+          </div>
           {cat && (
             /* BOTTOM: Name + Erklärung unten angepinnt */
             <div style={{

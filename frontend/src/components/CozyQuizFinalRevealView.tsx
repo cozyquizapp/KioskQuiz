@@ -1671,22 +1671,27 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
 
-              {/* Slot-Machine-Chip — rattert durch die Teams, rastet auf dem
-                  Target ein (Farb-Burst + Emoji-Pop). */}
+              {/* Slot-Machine-Chip — 2026-06-30 (Wolf 'Position springt zu stark'):
+                  FESTE Breite + vertikales Layout (Avatar oben zentriert, Name im
+                  reservierten Slot darunter). So bewegt sich der Avatar beim Lock
+                  NICHT mehr horizontal und der Pill wächst nicht — nur Avatar
+                  swappt + Burst/Pop, Name fadet in den reservierten Slot. */}
               <div style={{
-                display: 'flex', alignItems: 'center', gap: 16,
-                padding: '14px 26px', borderRadius: 'var(--qq-pill-radius)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                gap: 'clamp(6px, 0.9cqh, 12px)',
+                padding: 'clamp(16px, 1.9cqh, 26px) clamp(18px, 2.4cqw, 36px)',
+                borderRadius: 28, boxSizing: 'border-box',
+                width: 'clamp(240px, 28cqw, 380px)', maxWidth: '100%',
                 background: `${chipColor}1a`,
                 border: `2.5px solid ${chipColor}`,
                 boxShadow: locked ? `0 0 30px ${chipColor}77` : 'none',
-                transition: 'background 0.16s ease, border-color 0.16s ease, box-shadow 0.35s ease',
-                maxWidth: '100%', minWidth: 0,
+                transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.35s ease',
               }}>
-                <div style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
+                <div style={{ position: 'relative', display: 'flex' }}>
                   {locked && (
                     <span aria-hidden style={{
                       position: 'absolute', left: '50%', top: '50%',
-                      width: 'clamp(54px, 5.5cqw, 76px)', height: 'clamp(54px, 5.5cqw, 76px)',
+                      width: 'clamp(76px, 7.4cqw, 108px)', height: 'clamp(76px, 7.4cqw, 108px)',
                       borderRadius: '50%', border: `3px solid ${chipColor}`,
                       animation: 'qqBetLockBurst 0.6s ease-out both', pointerEvents: 'none',
                     }} />
@@ -1694,73 +1699,85 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                   <QQTeamAvatar
                     key={(chipTeam ?? targetTeam).id}
                     avatarId={(chipTeam ?? targetTeam).avatarId} teamEmoji={(chipTeam ?? targetTeam).emoji}
-                    size={'clamp(54px, 5.5cqw, 76px)'} bgColor={chipColor}
+                    size={'clamp(76px, 7.4cqw, 108px)'} bgColor={chipColor}
                     style={{ animation: locked ? 'qqBetLockPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : undefined }}
                   />
                 </div>
-                <div style={{ minWidth: 0, flex: 1 }}>
+                {/* Name-Slot mit reservierter Höhe → kein Reflow beim Lock */}
+                <div style={{
+                  minHeight: 'clamp(38px, 4.4cqh, 68px)', width: '100%',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
                   {locked ? (
                     <TeamNameLabel
                       name={targetTeam.name}
-                      fontSize="clamp(26px, 2.6cqw, 40px)"
+                      fontSize="clamp(24px, 2.5cqw, 38px)"
                       color={targetTeam.color}
                       fontWeight={900}
                       maxLines={2}
-                      shrinkAfter={14}
+                      shrinkAfter={12}
+                      style={{ textAlign: 'center', animation: 'qqFRTitleIn 0.4s ease both' }}
                     />
                   ) : (
                     <div style={{
-                      fontSize: 'clamp(26px, 2.8cqw, 42px)', fontWeight: 900,
+                      fontSize: 'clamp(24px, 2.6cqw, 40px)', fontWeight: 900,
                       color: 'var(--qq-text-muted)', letterSpacing: '0.3em', lineHeight: 1,
                     }}>…</div>
                   )}
                 </div>
               </div>
 
-              {/* Nach dem Lock: Sympathie-Bonus + Punkte-Cascade */}
-              {locked && isMutual && (
-                <div style={{
-                  fontSize: 'clamp(17px, 1.7cqw, 26px)', fontWeight: 800,
-                  color: sympathyColor, display: 'flex', alignItems: 'center', gap: 8,
-                  animation: 'qqFRTitleIn 0.6s ease 0.28s both',
-                }}>
-                  <span style={{ fontSize: 'clamp(22px, 2.2cqw, 34px)' }}>💞</span>
-                  {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
-                </div>
-              )}
-              {locked && (isZero ? (
-                <div style={{
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                  animation: 'qqFRTitleIn 0.7s ease 0.5s both',
-                }}>
+              {/* Bonus-Bereich — reservierte Höhe, Inhalt fadet beim Lock ein
+                  (kein vertikaler Sprung der restlichen Karte). */}
+              <div style={{
+                minHeight: 'clamp(120px, 15cqh, 196px)', width: '100%',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'flex-start', gap: 'clamp(10px, 1.4cqh, 18px)',
+              }}>
+                {locked && isMutual && (
                   <div style={{
-                    fontSize: 'clamp(56px, 6.8cqw, 110px)', lineHeight: 1,
-                    animation: 'qqFROohBob 1.6s ease-in-out 0.5s infinite',
-                  }}>🥲</div>
+                    fontSize: 'clamp(17px, 1.7cqw, 26px)', fontWeight: 800,
+                    color: sympathyColor, display: 'flex', alignItems: 'center', gap: 8,
+                    animation: 'qqFRTitleIn 0.6s ease 0.28s both',
+                  }}>
+                    <span style={{ fontSize: 'clamp(22px, 2.2cqw, 34px)' }}>💞</span>
+                    {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
+                  </div>
+                )}
+                {locked && (isZero ? (
                   <div style={{
-                    fontSize: 'clamp(28px, 3cqw, 46px)', fontWeight: 900,
-                    color: 'var(--qq-text-muted)', textAlign: 'center', fontStyle: 'italic',
-                  }}>oooh …</div>
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                    animation: 'qqFRTitleIn 0.7s ease 0.5s both',
+                  }}>
+                    <div style={{
+                      fontSize: 'clamp(48px, 5.8cqw, 92px)', lineHeight: 1,
+                      animation: 'qqFROohBob 1.6s ease-in-out 0.5s infinite',
+                    }}>🥲</div>
+                    <div style={{
+                      fontSize: 'clamp(26px, 2.8cqw, 42px)', fontWeight: 900,
+                      color: 'var(--qq-text-muted)', textAlign: 'center', fontStyle: 'italic',
+                    }}>oooh …</div>
+                    <div style={{
+                      fontSize: 'clamp(14px, 1.3cqw, 20px)', fontWeight: 700,
+                      color: 'var(--qq-text-muted)', textAlign: 'center',
+                    }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
+                  </div>
+                ) : (
                   <div style={{
-                    fontSize: 'clamp(15px, 1.4cqw, 22px)', fontWeight: 700,
-                    color: 'var(--qq-text-muted)',
-                  }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
-                </div>
-              ) : (
-                <div style={{
-                  padding: 'clamp(12px, 1.6cqh, 20px) clamp(22px, 3cqw, 38px)',
-                  borderRadius: 24,
-                  background: 'rgba(34,197,94,0.18)',
-                  border: '3px solid rgba(34,197,94,0.65)',
-                  boxShadow: '0 0 36px rgba(34,197,94,0.35)',
-                  fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
-                  color: QQ_COLORS.green500, letterSpacing: '-0.02em',
-                  lineHeight: 1,
-                  animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 0.5s both',
-                }}>
-                  + {totalBonus}
-                </div>
-              ))}
+                    padding: 'clamp(12px, 1.6cqh, 20px) clamp(22px, 3cqw, 38px)',
+                    borderRadius: 24,
+                    background: 'rgba(34,197,94,0.18)',
+                    border: '3px solid rgba(34,197,94,0.65)',
+                    boxShadow: '0 0 36px rgba(34,197,94,0.35)',
+                    fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
+                    color: QQ_COLORS.green500, letterSpacing: '-0.02em',
+                    lineHeight: 1,
+                    animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 0.5s both',
+                  }}>
+                    + {totalBonus}
+                  </div>
+                ))}
+              </div>
             </div>
           )}
         </div>

@@ -947,19 +947,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseName}
           </div>
 
-          {/* Big emoji — R3+R4 zeigen Stapel-Pin als Highlight (Trinity-Mechanik) */}
-          <div style={{
-            fontSize: 'clamp(72px, 12cqw, 140px)',
-            animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, cfloat 4s ease-in-out 1s infinite',
-            position: 'relative', zIndex: 5,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            {(s.gamePhaseIndex === 3 || s.gamePhaseIndex === 4) ? (
-              <QQEmojiIcon emoji="🏯" />
-            ) : (
-              roundRules.emoji
-            )}
-          </div>
+          {/* Großes Runden-Emoji entfernt (Wolf 2026-06-29): redundant, die
+              Aktions-Karte unten zeigt das Aktions-Emoji (Place/Stack) bereits. */}
 
           {/* "NEU" badge (skip for round 1) */}
           {s.gamePhaseIndex > 1 && (

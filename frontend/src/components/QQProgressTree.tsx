@@ -42,6 +42,10 @@ interface Props {
    *  der allein voll sichtbar ist; alle anderen Cluster faden auf ~0.1. null =
    *  alle voll (Default). */
   focusPhaseIdx?: number | null;
+  /** 2026-06-29 (Journey-Zoom, Wolf-Idee): „nackter" Tree — kein Container-BG/
+   *  Border/Shadow/Padding und keine Phasen-Labels, nur Symbole + Linie + Wolf.
+   *  Für die durchgehende Kamerafahrt-Welt, die in die Kategorie zoomt. */
+  bare?: boolean;
 }
 
 // Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
@@ -70,6 +74,7 @@ export default function QQProgressTree({
   wolfAbove = false,
   wolfHidden = false,
   focusPhaseIdx = null,
+  bare = false,
 }: Props) {
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
@@ -129,7 +134,7 @@ export default function QQProgressTree({
   const dotSize = Math.round(34 * scale * (bigIcons ? 1.3 : 1));
   const dotGap = isMini ? 4 : Math.round(12 * scale);
   const phaseGap = isMini ? 14 : Math.round(40 * scale);
-  const showLabels = !isMini;
+  const showLabels = !isMini && !bare;
 
   const phases: QQGamePhaseIndex[] = [];
   for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
@@ -504,16 +509,17 @@ export default function QQProgressTree({
         gap: isShowcase ? 32 : variant === 'hero' ? 22 : isMini ? 0 : 14,
         // Showcase: kein horizontales Padding — der Pan-Container nimmt
         // die volle Breite ein und cliped durch overflow:hidden.
-        padding: isShowcase ? '20px 0'
+        padding: bare ? 0
+          : isShowcase ? '20px 0'
           : variant === 'hero' ? '28px 40px'
           : variant === 'inline' ? '20px 36px'
           : isMini ? '6px 14px'
           : '16px 24px',
         borderRadius: isMini ? 999 : 20,
-        background: wrapperBg,
+        background: bare ? 'transparent' : wrapperBg,
         color: wrapperColor,
-        boxShadow: wrapperBoxShadow,
-        border: wrapperBorder,
+        boxShadow: bare ? 'none' : wrapperBoxShadow,
+        border: bare ? 'none' : wrapperBorder,
         // Soft transition damit Runden-Farb-Wechsel (Phase 1→2→3→4) smooth durchfaerbt.
         transition: 'border-color 0.6s ease, box-shadow 0.6s ease',
         // Showcase: volle Container-Breite (Pan-Camera fliegt smooth durch).
@@ -979,7 +985,7 @@ export default function QQProgressTree({
                 height: wolfSize,
                 // wolfAbove: über die Dot-Linie heben (optional). wolfHidden:
                 // beim Kategorie-Emoji-Zoom sanft ausblenden → nur Emoji im Dot.
-                transform: wolfAbove ? 'translate(-50%, -142%)' : 'translate(-50%, -50%)',
+                transform: wolfAbove ? 'translate(-50%, -160%)' : 'translate(-50%, -50%)',
                 opacity: wolfHidden ? 0 : 1,
                 transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), transform 520ms cubic-bezier(0.34, 1.25, 0.64, 1), opacity 420ms ease',
                 zIndex: 3,
@@ -1010,6 +1016,22 @@ export default function QQProgressTree({
                     }}
                   />
                 </div>
+                {/* Pin-Spitze nach unten (nur wenn der Wolf ÜBER der Linie
+                    schwebt) → zeigt auf den aktuellen Dot, dessen Emoji frei
+                    bleibt. (Wolf 2026-06-29, wie RoundMiniTree.) */}
+                {wolfAbove && (() => {
+                  const ptr = Math.round(wolfSize * 0.16);
+                  return (
+                    <div aria-hidden style={{
+                      position: 'absolute', bottom: -ptr + 1, left: '50%',
+                      transform: 'translateX(-50%)', width: 0, height: 0,
+                      borderLeft: `${ptr}px solid transparent`,
+                      borderRight: `${ptr}px solid transparent`,
+                      borderTop: `${ptr}px solid ${wolfColor}`,
+                      filter: `drop-shadow(0 2px 4px ${wolfColor}66)`,
+                    }} />
+                  );
+                })()}
               </div>
             );
           })()}

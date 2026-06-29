@@ -554,58 +554,46 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     const id = requestAnimationFrame(() => requestAnimationFrame(() => setWorldEntered(true)));
     return () => cancelAnimationFrame(id);
   }, [treeMetrics, camVp.w, worldEntered]);
-  // 2026-06-29 v3 (Wolf 'sieht nicht wie ein Zoom aus' + 'Wolf verdeckt das
-  // Ziel-Badge'): Statt die Welt als dauerhaften (überladenen) Backdrop zu
-  // zeigen, blitzt sie nur WÄHREND des Zoom-Übergangs auf und fadet danach weg —
-  // man SIEHT die Kamerafahrt, landet aber auf einem cleanen Settled-Screen
-  // (RoundMiniTree bzw. Kategorie-Seite). `flying` = true direkt nach jedem
-  // introStep-Wechsel, ~850ms lang (Dauer der Kamerafahrt).
-  const [flying, setFlying] = useState(false);
-  const flyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  useEffect(() => {
-    setFlying(true);
-    if (flyTimerRef.current) clearTimeout(flyTimerRef.current);
-    flyTimerRef.current = setTimeout(() => setFlying(false), 850);
-    return () => { if (flyTimerRef.current) clearTimeout(flyTimerRef.current); };
-  }, [s.introStep]);
   // Kamera-Ziel pro introStep: 0 = ganzer Tree, 1 = aktueller Runden-Cluster,
-  // >=2 = aktuelle Kategorie-Kachel. Vertikal im unteren Drittel verankert,
-  // damit oben Platz für die Stations-Titel bleibt.
+  // >=2 = aktuelle Kategorie-Kachel. Welt bleibt durchgehend sichtbar (kein
+  // Crossfade), Kamera zoomt kontinuierlich rein.
   const camWorldStyle = useMemo(() => {
     if (!treeMetrics || camVp.w === 0) return { transform: 'translate(0px,0px) scale(1)' };
     const { phaseCenters, dotCenters, phaseWidths, totalWidth, dotRowHeight } = treeMetrics;
     const dotSize = dotRowHeight / 1.3;
-    const step = s.introStep ?? 0;
+    // Bei Fragen 2–5 (kein Runden-Intro) gibt es keine introStep-Reise → direkt
+    // auf die Kategorie-Kachel zoomen (Step 2) statt den ganzen Tree zu zeigen.
+    const step = isFirstOfRound ? (s.introStep ?? 0) : 2;
     const pi = Math.max(0, (displayGpi ?? 1) - 1);
     const ty = dotRowHeight / 2 + PAD_T;
     let tx = totalWidth / 2 + PAD_L;
     let S = 1;
-    // Vertikal-Anker: ganzer Tree + Runde liegen im unteren Drittel (Platz oben
-    // für Titel/Aktion); beim Kategorie-Emoji-Zoom schön zentriert.
-    let vAnchor = 0.62;
+    // 2026-06-29 v4 (Wolf-Idee = Claude-Design-Referenz): EINE Welt, durchgehend
+    // sichtbar, Kamera zoomt kontinuierlich rein (kein Crossfade). Fokussiertes
+    // Element vertikal ~mittig; die Text-Overlays liegen per space-between oben/
+    // unten drum herum, daher kollidieren sie nicht mit dem Cluster/der Kachel.
+    // Step 0 (Gesamt-Tree) etwas tiefer, dort ist die Station noch klassisch
+    // zentriert (Titel oben, Subtitle unter dem Tree).
+    let vAnchor = 0.56;
     if (step >= 1) {
-      // Step 1: Runden-Cluster füllt ~85% Breite → Nachbar-Runden werden
-      // abgeschnitten; das Fokus-Dimming im Tree blendet den Rest zusätzlich aus.
-      // vAnchor ~0.30 = exakte Höhe, auf der die RoundMiniTree-Dots erscheinen
-      // (per Screenshot vermessen) → der Voll-Tree zoomt GENAU dorthin und fadet
-      // dort aus, sodass man sieht: man zoomt in den Runden-Tree (Wolf 2026-06-29).
+      // Step 1: auf den aktuellen Runden-Cluster (~68% Breite); Nachbar-Runden
+      // faden via focusPhaseIdx. Leicht über Mitte → Aktions-Karte hat unten Platz.
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
-      S = Math.min(3.4, Math.max(1.6, (camVp.w * 0.85) / (phaseWidths[pi] || camVp.w)));
-      vAnchor = 0.30;
+      S = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
+      vAnchor = 0.46;
     }
     if (step >= 2) {
-      // Step 2: auf die aktuelle Kategorie-Kachel (Dot) ziehen, Emoji groß.
+      // Step 2: weiter rein auf die aktuelle Kategorie-Kachel — das Emoji im Dot
+      // wird der Hero, drum herum faden Eyebrow (oben) + Name/Satz (unten) ein.
       tx = (dotCenters[s.questionIndex] ?? tx) + PAD_L;
-      S = (camVp.w * 0.32) / Math.max(1, dotSize);
-      // vAnchor 0.36 ≈ vertikale Position des Stations-Emojis (oben-mittig) →
-      // die zoomende Welt-Kachel landet GENAU dort, wo gleich das Kategorie-Emoji
-      // der Station erscheint = sauberer Morph statt Mitte-Versatz.
-      vAnchor = 0.36;
+      S = (camVp.w * 0.30) / Math.max(1, dotSize);
+      vAnchor = 0.46;
     }
     if (step >= 3) {
-      // Step 3: ganz ins Kategorie-Emoji rein (nur noch das Emoji).
-      S = (camVp.w * 0.52) / Math.max(1, dotSize);
-      vAnchor = 0.36;
+      // Step 3: großer Dive ins Kategorie-Emoji (wächst über den Frame) — danach
+      // übernimmt der Phasenwechsel zur Frage (QuestionView materialisiert).
+      S = (camVp.w * 0.80) / Math.max(1, dotSize);
+      vAnchor = 0.46;
     }
     const camTx = camVp.w / 2 - tx * S;
     const camTy = camVp.h * vAnchor - ty * S;
@@ -620,7 +608,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       transform: `translate(${camTx}px, ${camTy}px) scale(${S})`,
       transition: 'transform 0.9s cubic-bezier(0.66,0,0.34,1)',
     };
-  }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi, worldEntered]);
+  }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi, worldEntered, isFirstOfRound]);
+
+  // Effektiver Zoom-Schritt für Welt-Opacity/Wolf/Fokus (s. camWorldStyle):
+  // Fragen 2–5 ohne Runden-Intro sind direkt auf Kategorie-Zoom (Step 2).
+  const zoomStep = isFirstOfRound ? (s.introStep ?? 0) : 2;
 
   return (
     <div style={{
@@ -710,12 +702,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       <div ref={camViewportRef} aria-hidden style={{
         position: 'absolute', inset: 0, overflow: 'hidden',
         zIndex: 1, pointerEvents: 'none',
-        // 2026-06-29 v3: Welt nur am Start (Step 0 = ganzer Tree) ODER während
-        // einer Kamerafahrt (`flying`) sichtbar — man SIEHT den Zoom, danach fadet
-        // sie weg und der saubere Settled-Screen (RoundMiniTree / Kategorie)
-        // übernimmt. Fade raus schnell (0.4s), rein quasi sofort beim Flugstart.
-        opacity: ((s.introStep ?? 0) === 0 || flying) ? 1 : 0,
-        transition: 'opacity 0.4s ease',
+        // 2026-06-29 v4 (Wolf-Idee): Welt bleibt durchgehend sichtbar — der Zoom
+        // ist eine echte Kamerafahrt, kein Crossfade. Der „nackte" Tree (bare:
+        // kein Container-BG, nur Symbole+Linie) + Fokus-Dimming sorgen für den
+        // cleanen Look. Beim großen Dive (Step 3) fadet sie sanft, danach
+        // übernimmt die Frage.
+        opacity: zoomStep >= 3 ? 0 : 1,
+        transition: 'opacity 0.55s ease',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
@@ -726,9 +719,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             state={displayTreeState}
             variant="inline"
             bigIcons
+            bare
             onLayout={setTreeMetrics}
-            wolfHidden={(s.introStep ?? 0) >= 1}
-            focusPhaseIdx={(s.introStep ?? 0) >= 1 ? Math.max(0, (displayGpi ?? 1) - 1) : null}
+            wolfAbove
+            wolfHidden={zoomStep >= 2}
+            focusPhaseIdx={zoomStep >= 1 ? Math.max(0, (displayGpi ?? 1) - 1) : null}
           />
         </div>
       </div>
@@ -741,13 +736,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
-        // 2026-06-29 v3: Station zoomt NICHT selbst (qqCatZoomIn raus) — den Zoom
-        // macht die aufblitzende Welt-Kamera. Ab Step 1 fadet die Station leicht
-        // verzögert ein (0.5s), damit sie erst erscheint, wenn die Kamerafahrt
-        // angekommen ist → man sieht erst den Zoom, dann den cleanen Screen.
-        animation: (s.introStep ?? 0) >= 1
-          ? 'qqStationFade 0.5s ease 0.5s both'
-          : 'qqStationFade 0.55s ease both',
+        // 2026-06-29 v4: Die Station ist nur noch Positionierungs-Kontext für die
+        // oben/unten angepinnten Overlays (Titel/Aktion/Kategorie-Name), die ihre
+        // eigene Einblendung mitbringen. Container selbst ohne Fade (sonst doppelt).
         willChange: 'opacity, transform',
       }}>
       {isFirstOfRound && s.introStep === 0 ? (
@@ -1004,35 +995,36 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (
-        /* ── Step 1: Rule reminder (what's new this round) ── */
+        /* ── Step 1: Rule reminder — space-between: Titel oben, Aktion unten,
+           der zoomende Welt-Cluster (Runde N, bare Tree) liegt mittig dahinter.
+           RoundMiniTree entfernt (Wolf-Idee 2026-06-29 v4): die durchgehend
+           sichtbare Welt-Kamera IST der Runden-Tree, kein separater Mini-Tree. */
         <>
-          {/* Round pill — smaller context */}
+          {/* TOP: Runden-Titel oben angepinnt */}
           <div style={{
-            padding: '6px 20px', borderRadius: 'var(--qq-pill-radius)',
-            background: isThemed() ? 'var(--qq-surface)' : `${color}15`,
-            border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${color}33`,
-            fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-            color: isThemed() ? 'var(--qq-accent)' : `${color}aa`, letterSpacing: '0.04em',
-            marginBottom: 24,
-            animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
-            position: 'relative', zIndex: 5,
+            position: 'absolute', top: 'clamp(34px, 6cqh, 84px)', left: 0, right: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+            zIndex: 5, pointerEvents: 'none',
+            animation: 'qqStationFade 0.5s ease 0.2s both',
           }}>
-            {phaseName}
+            <div style={{
+              padding: '6px 20px', borderRadius: 'var(--qq-pill-radius)',
+              background: isThemed() ? 'var(--qq-surface)' : `${color}15`,
+              border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${color}33`,
+              fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+              color: isThemed() ? 'var(--qq-accent)' : `${color}aa`, letterSpacing: '0.04em',
+            }}>
+              {phaseName}
+            </div>
           </div>
 
-          {/* Beat 1 (Wolf 2026-06-29 v3): saubere RoundMiniTree als Settled-Screen.
-              Die Welt-Kamera blitzt den Zoom aus dem ganzen Tree nur während des
-              Übergangs auf und fadet dann weg → hier landet man auf der cleanen
-              Runden-Ansicht (kein überladener Voll-Tree, kein Wolf der das
-              Ziel-Badge verdeckt), darunter die Aktions-Karte. */}
+          {/* BOTTOM: NEU-Badge + Aktion unten angepinnt */}
           <div style={{
-            marginBottom: 'clamp(28px, 4.5cqh, 60px)',
-            animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.55s both',
-            position: 'relative', zIndex: 5,
+            position: 'absolute', bottom: 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
+            zIndex: 5, boxSizing: 'border-box',
+            animation: 'qqStationFade 0.5s ease 0.3s both',
           }}>
-            <RoundMiniTree state={s} catColor={catColor} />
-          </div>
-
           {/* "NEU" badge (skip for round 1) */}
           {s.gamePhaseIndex > 1 && (
             <div style={{
@@ -1196,6 +1188,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             })()}
             {/* (per-Runde Card-Bloecke entfernt — werden durch unified IIFE oben generiert) */}
           </div>
+          </div>{/* /BOTTOM-Wrapper */}
         </>
       ) : s.categoryIsNew ? (
         /* ── Category explanation (first time this category/mechanic appears) ── */
@@ -1289,54 +1282,46 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
           return (
             <>
-              {/* Category pill — zwei Zeilen: Runde + Fragen-Fortschritt */}
+              {/* TOP: Runde/Frage-Pille oben angepinnt. Der Welt-Backdrop zoomt
+                  ins Kategorie-Emoji (= Hero in der Mitte), drum herum liegen
+                  Eyebrow oben + Name/Satz unten (Wolf-Idee 2026-06-29 v4). */}
               <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                padding: '8px 22px',
-                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-                background: isThemed() ? 'var(--qq-surface)' : `${catColor}15`,
-                border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${catColor}33`,
-                color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}aa`, letterSpacing: '0.04em',
-                marginBottom: 16,
-                animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
-                position: 'relative', zIndex: 5,
+                position: 'absolute', top: 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
+                display: 'flex', justifyContent: 'center', zIndex: 5, pointerEvents: 'none',
+                animation: 'qqStationFade 0.5s ease 0.15s both',
               }}>
                 <div style={{
-                  fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 900,
-                  opacity: 0.8, textTransform: 'uppercase',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  padding: '8px 22px',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                  background: isThemed() ? 'var(--qq-surface)' : `${catColor}15`,
+                  border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${catColor}33`,
+                  color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}aa`, letterSpacing: '0.04em',
                 }}>
-                  {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
-                </div>
-                <div style={{
-                  fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-                }}>
-                  {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                  <div style={{
+                    fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 900,
+                    opacity: 0.8, textTransform: 'uppercase',
+                  }}>
+                    {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
+                  </div>
+                  <div style={{
+                    fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+                  }}>
+                    {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                  </div>
                 </div>
               </div>
 
-              {/* Runden-Mini-Tree entfernt (Journey-Zoom 2026-06-29): die
-                  Position in der Runde zeigt jetzt der zoomende Welt-Backdrop
-                  oben — kein doppelter Mini-Tree mehr in der Kategorie-Station. */}
+              {/* Eigenes Emoji entfernt — der zoomende Welt-Tile IST jetzt das
+                  Kategorie-Emoji (Hero in der Bildmitte). */}
 
-              {/* Big emoji/icon — bevorzugt PNG, sonst Emoji-Fallback */}
+              {/* BOTTOM: Name + Erklärung (+ ggf. ZvZ-Beispiel) unten angepinnt */}
               <div style={{
-                fontSize: 'clamp(72px, 12cqw, 140px)', lineHeight: 1,
-                animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.15s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
-                position: 'relative', zIndex: 5,
+                position: 'absolute', bottom: 'clamp(24px, 5cqh, 76px)', left: 0, right: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                zIndex: 5, paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
+                animation: 'qqStationFade 0.5s ease 0.3s both',
               }}>
-                {(() => {
-                  const subSlug = btKind ? qqSubSlug(btKind) : null;
-                  const catSlug = cat ? qqCatSlug(cat as string) : null;
-                  // 2026-05-11 (Wolf): bei Bunte-Tüte-Subs ohne PNG NICHT auf
-                  // cat-bunte-tuete-PNG fallback (wäre 🎁), sondern Sub-Emoji
-                  // aus info.emoji rendern.
-                  const slug = btKind ? subSlug : catSlug;
-                  return slug
-                    ? <QQIcon slug={slug} size={'clamp(110px, 16cqw, 200px)'} alt={info.title.de} />
-                    : info.emoji;
-                })()}
-              </div>
-
               {/* Category/mechanic name — 3D-Stack-Look + smoothe per-Buchstabe
                   Wave (Wolf-Wunsch 2026-05-04). Wave statt qqCatTitleBreathe-
                   scale: einzelne Buchstaben in Span-Wrappern, 0.07s Stagger
@@ -1461,71 +1446,51 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
 
               {/* User-Wunsch 2026-04-28: 'Antwort auf dem Handy' Hint überall
                   raus — auf dem Beamer redundant, auf dem Handy doppelt. */}
+              </div>{/* /BOTTOM-Wrapper */}
             </>
           );
         })()
       ) : (
-        /* ── Category reveal (no explanation needed — already seen) ── */
+        /* ── Category reveal (no explanation needed — already seen) ──
+           space-between: Runde/Frage oben, Name+Satz unten, Welt-Emoji mittig. */
         <>
-          {/* Question progress: "Frage 2 von 5" + Runden-Mini-Tree mit Wolf */}
+          {/* TOP: Runde + Fragen-Fortschritt oben angepinnt */}
           <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-            marginBottom: 28,
-            animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.1s both',
-            position: 'relative', zIndex: 5,
+            position: 'absolute', top: 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+            zIndex: 5, pointerEvents: 'none',
+            animation: 'qqStationFade 0.5s ease 0.15s both',
           }}>
             <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+              fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
+              color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
-              <div style={{
-                fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
-                color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
-              }}>
-                {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
-              </div>
-              <div style={{
-                fontSize: 'clamp(22px, 2.8cqw, 36px)', fontWeight: 900,
-                color: isThemed() ? 'var(--qq-title)' : catColor, letterSpacing: '0.1em',
-              }}>
-                {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
-              </div>
+              {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
             </div>
-            {/* Runden-Mini-Tree entfernt (Journey-Zoom 2026-06-29) — Welt-Backdrop
-                oben zeigt die Position bereits. */}
+            <div style={{
+              fontSize: 'clamp(22px, 2.8cqw, 36px)', fontWeight: 900,
+              color: isThemed() ? 'var(--qq-title)' : catColor, letterSpacing: '0.1em',
+            }}>
+              {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+            </div>
           </div>
 
+          {/* Eigenes Emoji entfernt — der zoomende Welt-Tile IST das Kategorie-
+              Emoji (Hero in der Bildmitte). */}
           {cat && (
-            <>
-              {/* Emoji/Icon — float idle. Bei BUNTE_TUETE: Sub-Mechanik-Icon
-                  (sonst sähen 4 gewinnt, Bluff, Hot Potato … alle gleich aus). */}
-              {/* 2026-05-05 (Wolf 'Bounce sync zum Wave'): cfloat 4s → qqCatNameWave
-                  2.8s mit Delay 1.4s = Mitte der Title-Wave-Cascade. */}
-              <div style={{
-                fontSize: 'clamp(80px, 14cqw, 180px)', lineHeight: 1,
-                animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.25s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
-                position: 'relative', zIndex: 5,
-              }}>
-                {(() => {
-                  const subSlug = bunteKind ? qqSubSlug(bunteKind) : null;
-                  // 2026-05-11 (Wolf): bei Bunte-Tüte-Subs ohne PNG NICHT auf
-                  // cat-bunte-tuete-PNG fallback. catEmoji ist hier bereits
-                  // korrekt das Sub-Emoji (🧩/🎭/🕵️) via bunteSub.emoji.
-                  const slug = bunteKind ? subSlug : qqCatSlug(cat as string);
-                  if (slug) return <QQIcon slug={slug} size={'clamp(120px, 18cqw, 240px)'} alt={catLabel} />;
-                  return catEmoji;
-                })()}
-              </div>
-
-              {/* Category name — per-Buchstabe Wave (Wolf-Wunsch 2026-05-04:
-                  Wave bei ALLEN Cat-Branches, nicht nur cat-intro). */}
+            /* BOTTOM: Name + Erklärung unten angepinnt */
+            <div style={{
+              position: 'absolute', bottom: 'clamp(24px, 5cqh, 76px)', left: 0, right: 0,
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              zIndex: 5, paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
+              animation: 'qqStationFade 0.5s ease 0.3s both',
+            }}>
+              {/* Category name — per-Buchstabe Wave */}
               <div style={{
                 fontFamily: fontFam,
-                fontSize: 'clamp(68px, 13cqw, 200px)', fontWeight: 900, lineHeight: 1,
+                fontSize: 'clamp(56px, 10cqw, 150px)', fontWeight: 900, lineHeight: 1,
                 color: isThemed() ? 'var(--qq-title)' : catColor,
                 textShadow: isThemed() ? 'none' : `0 0 80px ${catColor}44`,
-                marginTop: 12,
-                animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.4s both',
-                position: 'relative', zIndex: 5,
                 textAlign: 'center',
               }}>
                 {Array.from(catLabel).map((ch, i) => (
@@ -1541,24 +1506,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
 
-              {/* Category explanation — 1 line.
-                  2026-05-05 (Wolf 'Schriftart komisch, an restl. App anpassen'):
-                  Caveat-Cursive raus → inherit (Nunito) für Konsistenz mit
-                  Rest der App. Size/Weight angepasst auf Standard-Sub-Headline. */}
+              {/* Category explanation — 1 line. */}
               {catExplain && (
                 <div style={{
                   fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 700,
                   color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}cc`,
                   letterSpacing: '0.02em',
                   marginTop: 14,
-                  animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.65s both',
-                  position: 'relative', zIndex: 5,
                   textAlign: 'center',
                 }}>
                   {catExplain}
                 </div>
               )}
-            </>
+            </div>
           )}
         </>
       )}

@@ -2462,6 +2462,10 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
   // Snap-Detection bleibt als Fallback für seltene Active-Wrap-Around-Fälle
   // (active=last → active=0 nach voller Runde).
   const prevSlotsRef = useRef<Map<string, number>>(new Map());
+  // Timer-Ring-Fraktion: der größte je gesehene `remaining`-Wert pro aktivem
+  // Team = die Zug-Gesamtzeit; Fraktion = remaining / max. Reset bei Active-
+  // Wechsel. (Mutation im Render ist hier idempotent.)
+  const ringRef = useRef<{ id: string | null; max: number }>({ id: null, max: 0 });
   if (!activeTeam) {
     return (
       <div style={{
@@ -2506,153 +2510,165 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
     prevSlotsRef.current = next;
   });
 
-  // Slot-Konfiguration (X-Offset, Y-Offset für Halbkreis-Bogen, Scale, Z-Index, Opacity)
-  // ACTIVE = vorne unten (Slot 0). Slot ±1 stehen leicht zurückgesetzt im Bogen.
-  // 2026-05-11 v2 (Wolf): nur noch ±1, also gibt's keine ±2-Config mehr. Side-
-  // Slots etwas weiter raus (320 statt 300) damit sie nicht mit der Active-Card
-  // kollidieren — wir haben jetzt mehr horizontalen Platz.
+  // Timer-Ring-Fraktion (0..1) — max gesehener `remaining` pro Active-Turn = Total.
+  let ringFraction = 1;
+  if (remaining != null) {
+    if (ringRef.current.id !== activeTeam.id) ringRef.current = { id: activeTeam.id, max: Math.max(1, remaining) };
+    else if (remaining > ringRef.current.max) ringRef.current.max = remaining;
+    ringFraction = Math.max(0, Math.min(1, remaining / ringRef.current.max));
+  }
+  const RING_CIRC = 276.46; // 2*π*44 (viewBox-Einheiten, r=44)
+
+  // 2026-06-30 (HOTPOTATO_SPEC, Wolf 'gemerged'): 3 feste Slots —
+  // Mitte = aktiv (großer Timer-Ring), links = nächstes, rechts = war dran.
+  // Slot 0 zentriert; Seiten flankieren auf Ring-Höhe. xSign: next(+1)→links,
+  // prev(-1)→rechts (Teams rutschen L→R durchs Bild beim Weiterreichen).
   const slotConfig = (slot: number) => {
-    const abs = Math.abs(slot);
-    if (abs === 0) return { x: 0,   y: 0,   scale: 1,    z: 5, opacity: 1    };
-    return                  { x: 320, y: -70, scale: 0.85, z: 3, opacity: 0.55 };
+    if (slot === 0) return { scale: 1,    z: 5, opacity: 1,    desat: false };
+    if (slot > 0)   return { scale: 0.66, z: 3, opacity: 0.92, desat: false }; // nächstes
+    return                 { scale: 0.62, z: 3, opacity: 0.6,  desat: true  }; // war dran
   };
 
   return (
     <div style={{
-      flex: '0 0 auto',
-      position: 'relative',
-      // 2026-05-11 (Wolf-Bug 'Antworten hängen in Team-Cards'): Container-Höhe
-      // von 22cqh auf 30cqh erhöht.
-      // 2026-05-12 (Wolf-Screenshot 'chips ueberlappen mit active-card'):
-      // 30cqh → 24cqh reduziert.
-      // 2026-05-12 v3 (Wolf-Bug 'chips uberlappen IMMER NOCH bei kleinem
-      // screen'): min von 210 → 260px erhöht. Die Active-Card mit Avatar
-      // (clamp 72-120px) + Name + Timer-Pill braucht ~230-250px PLUS 48px
-      // Glow-Spillover oben. Wenn Container nur 210px hoch ist, ragt der
-      // Glow-Halo in den Chips-Bereich → optischer Overlap. 260px puffert
-      // den Glow + Card-Border-Shadow sauber.
-      width: '100%', height: 'clamp(260px, 24cqh, 290px)',
+      flex: '0 0 auto', position: 'relative',
+      width: '100%', height: 'clamp(340px, 36cqh, 460px)',
       pointerEvents: 'none',
     }}>
-      {/* Backdrop-Glow hinter dem Active-Team — Spotlight-Effekt */}
+      {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent */}
       <div aria-hidden style={{
-        position: 'absolute',
-        left: '50%', bottom: 0,
-        transform: 'translateX(-50%)',
-        width: 'clamp(220px, 26cqw, 380px)',
-        height: 'clamp(220px, 26cqw, 380px)',
+        position: 'absolute', left: '50%', top: '50%',
+        transform: 'translate(-50%,-50%)',
+        width: 'clamp(360px, 40cqw, 620px)', height: 'clamp(280px, 30cqw, 440px)',
         borderRadius: '50%',
-        background: `radial-gradient(circle, ${activeTeam.color}33 0%, transparent 65%)`,
-        filter: 'blur(12px)',
-        zIndex: 0,
+        background: 'radial-gradient(circle, rgba(249,115,22,0.30) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
+        filter: 'blur(14px)', zIndex: 0,
       }} />
 
-      {/* Slot-Container — alle Avatare relativ zum Container-Center positioniert */}
-      <div style={{
-        position: 'absolute',
-        left: '50%', bottom: 0,
-        width: 0, height: 0,
-        zIndex: 2,
-      }}>
+      {/* Slot-Anker = Container-Mitte; Slots transformieren relativ dazu */}
+      <div style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, zIndex: 2 }}>
         {slotEntries.map(({ teamId, slot }) => {
           const t = s.teams.find((x: any) => x.id === teamId);
           if (!t) return null;
           const cfg = slotConfig(slot);
-          // 2026-05-12 (Wolf 'links = naechstes, rechts = war gerade'):
-          // xSign invertiert ggue. Slot-Sign. Slot +1 (next) bekommt
-          // xSign -1 (links), Slot -1 (prev) bekommt xSign +1 (rechts).
           const xSign = slot > 0 ? -1 : slot < 0 ? 1 : 0;
           const isActive = slot === 0;
-          // 2026-05-09 v3: Wrap-Detection — wenn Team-Slot um >1 sprang
-          // (modulo-wrap zwischen extremen Slots) → kein transform-transition,
-          // sondern Snap. Verhindert das "fly-across-the-stage" bei kleinen
-          // Lobbys.
           const prevSlot = prevSlotsRef.current.get(teamId);
           const wrapped = prevSlot !== undefined && Math.abs(slot - prevSlot) > 1;
+          // Seiten leicht angehoben → Avatar auf Ring-Mitte; aktiv exakt zentriert.
+          const ty = isActive ? '-50%' : 'calc(-50% - 4cqh)';
           return (
             <div
               key={teamId}
               style={{
-                position: 'absolute',
-                left: 0, bottom: 0,
-                transform: `translate(calc(${xSign * cfg.x}px - 50%), ${cfg.y}px) scale(${cfg.scale})`,
-                transformOrigin: 'center bottom',
-                zIndex: cfg.z,
-                opacity: cfg.opacity,
+                position: 'absolute', left: 0, top: 0,
+                transform: `translate(calc(${xSign} * clamp(220px, 23cqw, 380px) - 50%), ${ty}) scale(${cfg.scale})`,
+                transformOrigin: 'center center',
+                zIndex: cfg.z, opacity: cfg.opacity,
+                filter: cfg.desat ? 'saturate(0.7)' : 'none',
                 transition: wrapped
                   ? 'opacity 0.6s ease'
-                  : 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease',
+                  : 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease, filter 0.6s ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: isActive ? 10 : 6,
+                gap: isActive ? 'clamp(10px, 1.4cqh, 20px)' : 8,
               }}
             >
               {isActive ? (
-                // ACTIVE — Card mit Avatar, Name, Timer + Kartoffel SEITLICH daneben
-                <div style={{
-                  position: 'relative',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  gap: 10,
-                  padding: '14px 24px 18px',
-                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
-                  background: `linear-gradient(180deg, ${t.color}33, ${t.color}11)`,
-                  border: `2.5px solid ${t.color}`,
-                  boxShadow: `0 0 48px ${t.color}66, 0 12px 28px rgba(0,0,0,0.5)`,
-                  minWidth: 280,
-                }}>
-                  {/* 2026-05-09 v3 (Wolf 'kartoffel darf antworten nicht
-                      verdecken — nicht über card, nicht über timer, sondern
-                      NEBEN die card'): Kartoffel rechts ausserhalb der
-                      Active-Card platziert, vertikal mittig zur Card.
-                      Avatar/Name/Timer bleiben innerhalb der Card sichtbar. */}
-                  <span aria-hidden style={{
-                    position: 'absolute',
-                    right: 'clamp(-110px, -8cqw, -70px)',
-                    top: '50%',
-                    transform: 'translateY(-50%)',
-                    fontSize: 'clamp(70px, 7.5cqw, 110px)',
-                    lineHeight: 1, pointerEvents: 'none',
-                    filter: 'drop-shadow(0 6px 12px rgba(239,68,68,0.7)) drop-shadow(0 0 26px rgba(245,158,11,0.65))',
-                    animation: isThrowing
-                      ? 'qqHpPotatoThrow 0.85s cubic-bezier(0.4, 1.2, 0.6, 1) both'
-                      : 'qqHpPotatoSpin 1.4s ease-in-out infinite',
-                    zIndex: 6,
-                  }}>🥔</span>
-                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(72px, 8cqw, 120px)'} />
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2, lineHeight: 1.05 }}>
-                    <span style={{
-                      fontSize: 11, fontWeight: 700, letterSpacing: 1.2,
-                      textTransform: 'uppercase', color: QQ_COLORS.slate400,
+                <>
+                  {/* Timer-Ring + Avatar + Kartoffel + Countdown-Chip */}
+                  <div style={{
+                    position: 'relative',
+                    width: 'clamp(280px, 28cqw, 400px)', height: 'clamp(280px, 28cqw, 400px)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben) */}
+                    <svg viewBox="0 0 100 100" aria-hidden style={{
+                      position: 'absolute', inset: 0, width: '100%', height: '100%',
+                      transform: 'rotate(-90deg)',
                     }}>
-                      <QQEmojiIcon emoji="🥔"/> {lang === 'en' ? 'Hot Potato' : 'Heiße Kartoffel'}
+                      <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(148,163,184,0.16)" strokeWidth="5" />
+                      <circle
+                        cx="50" cy="50" r="44" fill="none"
+                        stroke={urgent ? '#EF4444' : '#F97316'} strokeWidth="5" strokeLinecap="round"
+                        strokeDasharray={RING_CIRC}
+                        strokeDashoffset={RING_CIRC * (1 - ringFraction)}
+                        style={{
+                          transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease',
+                          filter: `drop-shadow(0 0 9px ${urgent ? 'rgba(239,68,68,0.85)' : 'rgba(249,115,22,0.85)'})`,
+                        }}
+                      />
+                    </svg>
+                    {/* Avatar zentriert im Ring */}
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 15cqw, 220px)'} bgColor={t.color} />
+                    {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
+                    <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
+                      position: 'absolute', top: '2%', right: '0%',
+                      width: 'clamp(58px, 6cqw, 92px)', height: 'auto',
+                      filter: 'drop-shadow(0 6px 12px rgba(239,68,68,0.55)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
+                      transformOrigin: 'center center',
+                      animation: isThrowing
+                        ? 'qqHpRingPotatoThrow 0.85s cubic-bezier(0.4, 1.2, 0.6, 1) both'
+                        : 'qqHpRingPotatoWobble 1.6s ease-in-out infinite',
+                      zIndex: 6, pointerEvents: 'none',
+                    }} />
+                    {/* Countdown-Chip unten am Ring (pulsiert; urgent = rot) */}
+                    {remaining !== null && (
+                      <div style={{
+                        position: 'absolute', bottom: 'clamp(-14px, -1.4cqh, -8px)', left: '50%',
+                        padding: 'clamp(5px,0.7cqh,9px) clamp(16px,1.8cqw,26px)',
+                        borderRadius: 'var(--qq-pill-radius)',
+                        background: urgent ? '#EF4444' : '#F97316',
+                        color: '#1a0f00', fontWeight: 900,
+                        fontSize: 'clamp(20px, 2.4cqw, 32px)', lineHeight: 1,
+                        minWidth: 'clamp(56px, 6cqw, 88px)', textAlign: 'center',
+                        boxShadow: `0 6px 18px ${urgent ? 'rgba(239,68,68,0.5)' : 'rgba(249,115,22,0.5)'}`,
+                        animation: 'qqHpCountPulse 1s ease-in-out infinite',
+                      }}>
+                        {remaining}s
+                      </div>
+                    )}
+                  </div>
+                  {/* JETZT DRAN + Team-Name */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, lineHeight: 1.05 }}>
+                    <span style={{
+                      fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.16em',
+                      textTransform: 'uppercase', color: '#F97316',
+                    }}>
+                      {lang === 'en' ? 'Your turn' : 'Jetzt dran'}
                     </span>
                     <span title={t.name} style={{
-                      fontSize: 'clamp(22px, 2.6cqw, 34px)', fontWeight: 900, color: t.color,
-                      maxWidth: 360, overflow: 'hidden', textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
+                      fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900, color: t.color,
+                      maxWidth: 'min(80cqw, 560px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {truncName(t.name, 22)}
                     </span>
                   </div>
-                  {remaining !== null && (
-                    <div style={{
-                      padding: '6px 18px', borderRadius: 'var(--qq-pill-radius)',
-                      background: urgent ? 'rgba(239,68,68,0.25)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(15,23,42,0.5)'),
-                      border: urgent ? `2px solid ${QQ_COLORS.red500}` : (isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${QQ_COLORS.slate600}`),
-                      color: urgent ? QQ_COLORS.red300 : (isThemed() ? 'var(--qq-card-text)' : QQ_COLORS.slate200),
-                      fontSize: 'clamp(20px, 2.4cqw, 30px)', fontWeight: 900,
-                      minWidth: 76, textAlign: 'center',
-                      animation: urgent ? 'qqHpTimerGlow 0.6s ease infinite alternate' : 'none',
-                    }}>
-                      ⏱ {remaining}s
-                    </div>
-                  )}
-                </div>
+                </>
               ) : (
-                // SIDE-SLOT (±1 / ±2) — 2026-05-09 v3 (Wolf 'text unter
-                // avataren unlesbar, nimm den raus, links/rechts reichen
-                // avatare'): nur noch Avatar, kein Teamname, kein 'gespielt'/
-                // 'gleich dran'-Label. Wirkt visuell ruhiger.
-                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(54px, 6cqw, 90px)'} />
+                // SIDE-SLOT — Avatar + Name + Richtungs-Label
+                <>
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(84px, 9cqw, 138px)'} bgColor={t.color} />
+                  <span title={t.name} style={{
+                    fontSize: 'clamp(16px, 1.8cqw, 26px)', fontWeight: 900, color: t.color,
+                    maxWidth: 'clamp(120px, 16cqw, 240px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  }}>
+                    {truncName(t.name, 14)}
+                  </span>
+                  <span style={{
+                    fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 800, letterSpacing: '0.1em',
+                    textTransform: 'uppercase', color: QQ_COLORS.slate400,
+                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                  }}>
+                    {slot > 0 ? (
+                      <>
+                        <span aria-hidden style={{ display: 'inline-block', animation: 'qqHpNextArrow 1s ease-in-out infinite' }}>←</span>
+                        {lang === 'en' ? 'Up next' : 'Als Nächstes'}
+                      </>
+                    ) : (
+                      <>{lang === 'en' ? 'Done ✓' : 'War dran ✓'}</>
+                    )}
+                  </span>
+                </>
               )}
             </div>
           );

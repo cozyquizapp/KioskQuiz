@@ -189,6 +189,27 @@ export const QQ_BEAMER_CSS = `
     0%   { box-shadow: 0 0 0 rgba(239,68,68,0); }
     100% { box-shadow: 0 0 24px rgba(239,68,68,0.85); }
   }
+  /* Hot-Potato 3-Slot-Spec (2026-06-30): Kartoffel oben rechts am Timer-Ring.
+     Position via top/right → Transform = nur rotate/translateY (kein -50%). */
+  @keyframes qqHpRingPotatoWobble {
+    0%,100% { transform: rotate(-9deg) translateY(0); }
+    50%     { transform: rotate(9deg) translateY(-6px); }
+  }
+  @keyframes qqHpRingPotatoThrow {
+    0%   { transform: rotate(0deg) translateY(0) scale(1); }
+    45%  { transform: rotate(560deg) translateY(-72px) scale(1.14); }
+    100% { transform: rotate(1080deg) translateY(0) scale(1); }
+  }
+  /* Countdown-Chip unten am Ring pulsiert (dezent). */
+  @keyframes qqHpCountPulse {
+    0%,100% { transform: translateX(-50%) scale(1); }
+    50%     { transform: translateX(-50%) scale(1.08); }
+  }
+  /* „← als Nächstes"-Pfeil pulsiert horizontal. */
+  @keyframes qqHpNextArrow {
+    0%,100% { transform: translateX(0); opacity: 0.65; }
+    50%     { transform: translateX(-5px); opacity: 1; }
+  }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment
      ohne dass die Card bewegt wird. Begleitet qqSlideIn parallel. */

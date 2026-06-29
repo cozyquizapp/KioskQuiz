@@ -275,7 +275,12 @@ export function QQIcon({ slug, size, style, className, title, alt }: Props) {
           display: 'inline-flex',
           alignItems: 'center',
           justifyContent: 'center',
-          fontSize: typeof size === 'number' ? Math.round(size * 0.85) : '85%',
+          // 2026-06-30 (Wolf 'hot potato emoji viel zu klein'): bei String-Größen
+          // (clamp/cqw) war der Emoji-Fallback '85%' = 85% der GEERBTEN Font-Size
+          // (winzig), nicht 85% der gewünschten Icon-Größe. Fehlt ein PNG (z.B.
+          // sub-hotpotato.png existiert nicht), schrumpfte das Emoji auf Body-
+          // Default. Jetzt skaliert der Fallback mit der echten Größe.
+          fontSize: typeof size === 'number' ? Math.round(size * 0.85) : `calc(${size} * 0.85)`,
           lineHeight: 1,
         }}
       >

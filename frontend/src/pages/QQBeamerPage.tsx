@@ -3703,7 +3703,10 @@ export function MuchoOptionsReveal({
                           <span aria-hidden style={{
                             position: 'absolute', left: 0, right: 0, top: 0,
                             display: 'flex', justifyContent: 'center',
-                            transform: 'translateY(-80%)',
+                            // -58%: Krone sitzt mit der Basis leicht überlappend
+                            // AUF dem Kopf (Wolf 'krone sitzt nicht auf tier'),
+                            // nicht schwebend darüber. % = relativ zur Kronenhöhe.
+                            transform: 'translateY(-58%)',
                             pointerEvents: 'none', zIndex: 3,
                           }}>
                             <span style={{

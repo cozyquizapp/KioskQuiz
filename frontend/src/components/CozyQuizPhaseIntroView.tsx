@@ -223,6 +223,56 @@ const PHASE_INTRO_TIMING = {
   subtitleSlideDurMs: 550,
 } as const;
 
+// 2026-06-30 (Wolf 'Zoom von Progress-Tree auf Kategorie-Emoji sehe ich nicht'):
+// Der Kategorie-Hero soll sichtbar AUS dem Runden-Tree-Dot herauszoomen statt
+// nur generisch aus der Mitte aufzuploppen. FLIP: beim Mount (Step 2) wird der
+// Hero auf die Bildschirm-Position+Größe des fokussierten Tree-Dots gesetzt
+// (kein Transition) und dann smooth auf seine natürliche Spalten-Position
+// animiert. `dotScreen` = Dot-Position relativ zum Kamera-Viewport (vpRef).
+// Fallback (kein dotScreen, z.B. Fragen 2–5 ohne sichtbaren Tree): qqCatZoomIn.
+function CategoryHeroFlip({ dotScreen, vpRef, style, children }: {
+  dotScreen: { sx: number; sy: number; size: number } | null;
+  vpRef: React.RefObject<HTMLDivElement | null>;
+  style?: React.CSSProperties;
+  children: React.ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  useLayoutEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (!dotScreen || !vpRef.current) {
+      el.style.animation = 'qqCatZoomIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both';
+      return;
+    }
+    const vp = vpRef.current.getBoundingClientRect();
+    const r = el.getBoundingClientRect();
+    if (r.width === 0) {
+      el.style.animation = 'qqCatZoomIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both';
+      return;
+    }
+    const heroCx = r.left + r.width / 2;
+    const heroCy = r.top + r.height / 2;
+    const dotX = vp.left + dotScreen.sx;
+    const dotY = vp.top + dotScreen.sy;
+    const scale = Math.max(0.05, dotScreen.size / r.width);
+    const dx = dotX - heroCx;
+    const dy = dotY - heroCy;
+    el.style.transformOrigin = 'center center';
+    el.style.transition = 'none';
+    el.style.transform = `translate(${dx}px, ${dy}px) scale(${scale})`;
+    el.style.opacity = '0.9';
+    void el.offsetWidth; // reflow → Startzustand festschreiben
+    const id = requestAnimationFrame(() => {
+      el.style.transition = 'transform 0.9s cubic-bezier(0.66,0,0.34,1), opacity 0.45s ease';
+      el.style.transform = 'translate(0px, 0px) scale(1)';
+      el.style.opacity = '1';
+    });
+    return () => cancelAnimationFrame(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dotScreen]);
+  return <div ref={ref} style={{ lineHeight: 0, willChange: 'transform', ...style }}>{children}</div>;
+}
+
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   useRuleOverridesVersion();
   const lang = useLangFlip(s.language);
@@ -630,6 +680,23 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Effektiver Zoom-Schritt für Welt-Opacity/Wolf/Fokus (s. camWorldStyle):
   // Fragen 2–5 ohne Runden-Intro sind direkt auf Kategorie-Zoom (Step 2).
   const zoomStep = isFirstOfRound ? (s.introStep ?? 0) : 2;
+
+  // Bildschirm-Position+Größe des fokussierten Kategorie-Dots im Step-1-Framing
+  // (Runden-Cluster). Der Kategorie-Hero zoomt beim B→C-Übergang sichtbar aus
+  // genau diesem Dot heraus (CategoryHeroFlip). Nur im Runden-Intro-Pfad
+  // (isFirstOfRound) — bei Fragen 2–5 ist kein Tree sichtbar → null = Fallback.
+  const dotScreen = useMemo(() => {
+    if (!treeMetrics || camVp.w === 0 || !isFirstOfRound) return null;
+    const { phaseCenters, dotCenters, phaseWidths, dotRowHeight } = treeMetrics;
+    const pi = Math.max(0, (displayGpi ?? 1) - 1);
+    const qi = s.questionIndex;
+    if (dotCenters[qi] == null) return null;
+    const S1 = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
+    const dotSize = dotRowHeight / 1.3;
+    const sx = camVp.w / 2 + (dotCenters[qi] - (phaseCenters[pi] ?? 0)) * S1;
+    const sy = camVp.h * 0.30; // Step-1 vAnchor
+    return { sx, sy, size: dotSize * S1 };
+  }, [treeMetrics, camVp, displayGpi, s.questionIndex, isFirstOfRound]);
 
   return (
     <div style={{
@@ -1360,18 +1427,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
                 animation: 'qqStationFade 0.5s ease 0.2s both',
               }}>
-                {/* HERO — Kategorie-Emoji (Quelle = Tree-Dots, Emoji-Fallback) */}
-                <div style={{
+                {/* HERO — Kategorie-Emoji (Quelle = Tree-Dots, Emoji-Fallback).
+                    Zoomt sichtbar aus dem Runden-Tree-Dot heraus (CategoryHeroFlip). */}
+                <CategoryHeroFlip dotScreen={dotScreen} vpRef={camViewportRef} style={{
                   filter: isThemed()
                     ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
                     : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
-                  animation: 'qqCatZoomIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both',
-                  lineHeight: 0,
                 }}>
                   {heroIconSlug
                     ? <QQIcon slug={heroIconSlug} size="clamp(120px, 15cqw, 240px)" alt={info.title[lang]} />
                     : <div style={{ fontSize: 'clamp(110px, 14cqw, 220px)', lineHeight: 1 }}>{info.emoji}</div>}
-                </div>
+                </CategoryHeroFlip>
               {/* Category/mechanic name — 3D-Stack-Look + smoothe per-Buchstabe
                   Wave (Wolf-Wunsch 2026-05-04). Wave statt qqCatTitleBreathe-
                   scale: einzelne Buchstaben in Span-Wrappern, 0.07s Stagger
@@ -1535,18 +1601,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
               animation: 'qqStationFade 0.5s ease 0.2s both',
             }}>
-              {/* HERO — Kategorie-Emoji (Quelle = Tree-Dots, Emoji-Fallback) */}
-              <div style={{
+              {/* HERO — zoomt sichtbar aus dem Runden-Tree-Dot heraus. */}
+              <CategoryHeroFlip dotScreen={dotScreen} vpRef={camViewportRef} style={{
                 filter: isThemed()
                   ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
                   : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
-                animation: 'qqCatZoomIn 0.7s cubic-bezier(0.16,1,0.3,1) 0.05s both',
-                lineHeight: 0,
               }}>
                 {heroIconSlug
                   ? <QQIcon slug={heroIconSlug} size="clamp(140px, 17cqw, 280px)" alt={catLabel} />
                   : <div style={{ fontSize: 'clamp(130px, 16cqw, 260px)', lineHeight: 1 }}>{catEmoji}</div>}
-              </div>
+              </CategoryHeroFlip>
               {/* Category name — per-Buchstabe Wave */}
               <div style={{
                 fontFamily: fontFam,

@@ -562,12 +562,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       // Step 2: auf die aktuelle Kategorie-Kachel (Dot) ziehen, Emoji groß.
       tx = (dotCenters[s.questionIndex] ?? tx) + PAD_L;
       S = (camVp.w * 0.32) / Math.max(1, dotSize);
-      vAnchor = 0.5;
+      // vAnchor 0.36 ≈ vertikale Position des Stations-Emojis (oben-mittig) →
+      // die zoomende Welt-Kachel landet GENAU dort, wo gleich das Kategorie-Emoji
+      // der Station erscheint = sauberer Morph statt Mitte-Versatz.
+      vAnchor = 0.36;
     }
     if (step >= 3) {
-      // Step 3: ganz ins Kategorie-Emoji rein (nur noch das Emoji, zentriert).
+      // Step 3: ganz ins Kategorie-Emoji rein (nur noch das Emoji).
       S = (camVp.w * 0.52) / Math.max(1, dotSize);
-      vAnchor = 0.5;
+      vAnchor = 0.36;
     }
     const camTx = camVp.w / 2 - tx * S;
     const camTy = camVp.h * vAnchor - ty * S;
@@ -672,11 +675,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       <div ref={camViewportRef} aria-hidden style={{
         position: 'absolute', inset: 0, overflow: 'hidden',
         zIndex: 1, pointerEvents: 'none',
-        // Beat 0 = ganzer Tree. Ab Step 1 fadet der Voll-Tree aus WÄHREND die
-        // Kamera noch reinzoomt → Crossfade in die saubere RoundMiniTree (Beat 1).
-        // Kategorie-Ansicht (Beat 3) bleibt dadurch baum-frei.
-        opacity: (s.introStep ?? 0) >= 1 ? 0 : 1,
-        transition: 'opacity 0.9s ease',
+        // 2026-06-29 (Wolf 'sieht nicht wie ein Zoom aus'): Welt bleibt durch
+        // Beat 0→1→2 SICHTBAR und zoomt durchgehend (eine echte Kamerafahrt, KEIN
+        // Crossfade). Sie fadet erst NACH der ~0.9s-Flugzeit in die Kategorie-
+        // Kachel (Step 2) aus → man SIEHT erst den Zoom, dann übernimmt die saubere
+        // Kategorie-Station. transitionDelay 0.82s = nach Ende der Kamerafahrt.
+        opacity: (s.introStep ?? 0) >= 2 ? 0 : 1,
+        transition: 'opacity 0.5s ease 0.82s',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
@@ -702,10 +707,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         flex: 1, width: '100%', display: 'flex', flexDirection: 'column',
         alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
-        // Beat 2/3 (Kategorie): die Station zoomt rein (qqCatZoomIn) → sichtbarer
-        // Reinzoom vom Mini-Tree aufs Kategorie-Emoji. Sonst sanftes Fade.
+        // 2026-06-29 v2: Station zoomt NICHT mehr selbst (qqCatZoomIn raus) — den
+        // Zoom macht jetzt die durchgehend sichtbare Welt-Kamera dahinter. Die
+        // Station fadet nur sanft ein; bei Kategorie (Step≥2) leicht verzögert,
+        // damit sie erst erscheint, wenn die Kamera in der Kachel angekommen ist.
         animation: (s.introStep ?? 0) >= 2
-          ? 'qqCatZoomIn 0.7s cubic-bezier(0.34, 1.2, 0.5, 1) both'
+          ? 'qqStationFade 0.5s ease 0.5s both'
           : 'qqStationFade 0.55s ease both',
         willChange: 'opacity, transform',
       }}>
@@ -979,20 +986,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseName}
           </div>
 
-          {/* Beat 1 (Wolf 2026-06-29): saubere RoundMiniTree statt der gezoomten
-              Voll-Tree-Slice. Der Voll-Tree-Backdrop ist hier bereits ausgefadet
-              (Crossfade beim Reinzoomen) → man landet auf der cleanen Runden-
-              Ansicht, darunter die Aktions-Karte. */}
-          <div style={{
-            marginBottom: 28,
-            animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.12s both',
-            position: 'relative', zIndex: 5,
-          }}>
-            <RoundMiniTree state={s} catColor={catColor} />
-          </div>
-
-          {/* Großes Runden-Emoji entfernt (Wolf 2026-06-29): redundant, die
-              Aktions-Karte unten zeigt das Aktions-Emoji (Place/Stack) bereits. */}
+          {/* Beat 1 (Wolf 2026-06-29 v2): KEINE separate RoundMiniTree mehr — der
+              Welt-Backdrop bleibt jetzt sichtbar und zeigt durchgehend den
+              gezoomten Runden-Cluster (echter Zoom aus dem ganzen Tree statt
+              Crossfade auf eine Mini-Kopie). Der Spacer hält den oberen Raum frei,
+              damit der Welt-Cluster nicht von den Aktions-Karten überdeckt wird. */}
+          <div aria-hidden style={{ height: 'clamp(96px, 16cqh, 200px)', flex: '0 0 auto' }} />
 
           {/* "NEU" badge (skip for round 1) */}
           {s.gamePhaseIndex > 1 && (

@@ -595,7 +595,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           {/* Fortschrittsbaum (Inline-Variante in Abilities-Slide) */}
           {slide.showTree && (
             <div style={{ display: 'flex', justifyContent: 'center', animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.05s both' }}>
-              <QQProgressTree state={s} variant="inline" />
+              {/* 2026-06-29 (Wolf 'Wolf auch über den normalen Tree'): wolfAbove
+                  → Wolf schwebt über der Linie (Pin), aktuelle Kategorie bleibt
+                  sichtbar — konsistent mit dem Journey-Look. */}
+              <QQProgressTree state={s} variant="inline" wolfAbove />
             </div>
           )}
 

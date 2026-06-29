@@ -529,7 +529,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // weiter als Overlays darüber (werden in einer späteren Iteration verankert).
   // Koordinaten kommen aus QQProgressTree.onLayout (Tree-eigener Pixel-Frame);
   // PAD_* gleichen das Outer-Padding des Tree-Wrappers aus (tunebar).
-  const PAD_L = 24, PAD_T = 16;
+  // 2026-06-29 (Wolf 'progress tree nicht mittig'): der Welt-Tree läuft IMMER
+  // im `bare`-Modus → Wrapper-Padding = 0. Die alten 24/16 schoben jedes
+  // Zoom-Ziel um ~24px·S nach links + ~16px·S nach oben (3. Kategorie nicht
+  // exakt mittig). Daher hier 0.
+  const PAD_L = 0, PAD_T = 0;
   const [treeMetrics, setTreeMetrics] = useState<{
     phaseCenters: number[]; dotCenters: number[]; phaseWidths: number[];
     totalWidth: number; dotRowHeight: number;
@@ -574,13 +578,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // unten drum herum, daher kollidieren sie nicht mit dem Cluster/der Kachel.
     // Step 0 (Gesamt-Tree) etwas tiefer, dort ist die Station noch klassisch
     // zentriert (Titel oben, Subtitle unter dem Tree).
-    let vAnchor = 0.56;
+    let vAnchor = 0.53;
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster (~68% Breite); Nachbar-Runden
       // faden via focusPhaseIdx. Leicht über Mitte → Aktions-Karte hat unten Platz.
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
       S = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
-      vAnchor = 0.46;
+      // 2026-06-29 (Wolf 'mittlere Kategorie genau in die Mitte, vertikal+
+      // horizontal'): phaseCenters[pi] IST die Mitte der 5-Dot-Gruppe (= 3.
+      // Kategorie). Vertikal exakt zentriert; Titel (oben) + Aktions-Karte
+      // (unten) sind absolut gepinnt, kollidieren also nicht.
+      vAnchor = 0.50;
     }
     if (step >= 2) {
       // Step 2: weiter rein auf die aktuelle Kategorie-Kachel — das Emoji im Dot
@@ -942,9 +950,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           </div>
 
           {/* Tree-Zone-Spacer: reserviert den vertikalen Raum, in dem der
-              persistente Welt-Backdrop-Tree liegt (~62% Höhe). Der Subtitle
-              kommt DANACH → er steht unter dem Tree (Wolf 2026-06-29). */}
-          <div style={{ height: 'clamp(150px, 22cqh, 300px)' }} aria-hidden />
+              persistente Welt-Backdrop-Tree liegt. Der Subtitle kommt DANACH →
+              er steht unter dem Tree (Wolf 2026-06-29).
+              2026-06-29 (Wolf 'große Lücke nach unten zwischen Text und Tree'):
+              Spacer war bis 300px/22cqh → riesiger Void zwischen Tree und
+              Subtitle. Knapper reserviert (≈ Tree-Höhe inkl. Wolf-Pin), damit
+              der Subtitle den Tree hugged statt darunter abzudriften. */}
+          <div style={{ height: 'clamp(104px, 14cqh, 184px)' }} aria-hidden />
 
           {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer).
               overflow:hidden nur waehrend der Transition, sonst bleibt ein

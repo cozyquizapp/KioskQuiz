@@ -641,18 +641,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // touchieren (Wolf 2026-06-30 'Unterschrift hängt im Tree').
     let vAnchor = 0.62;
     if (step >= 1) {
-      // Step 1: auf den aktuellen Runden-Cluster (~68% Breite); Nachbar-Runden
-      // faden via focusPhaseIdx. Leicht über Mitte → Aktions-Karte hat unten Platz.
+      // Step 1: auf den aktuellen Runden-Cluster. tx = phaseCenters[pi] = Mitte
+      // der 5-Dot-Gruppe (horizontal mittig). 2026-06-30 (Wolf 'oben
+      // abgeschnitten'): KLEINERER Zoom als zuvor — der Wolf-Pin sitzt hoch über
+      // der Linie und wird mit S skaliert; bei starkem Zoom ragte er über den
+      // oberen Rand. vAnchor dynamisch: gerade so tief, dass die Pin-Oberkante
+      // ~9% vom Rand bleibt (`wolfClearVAnchor`), aber gedeckelt (≤0.44), damit
+      // der Aktions-Block (NEU+Label+Cards) unten nicht touchiert wird.
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
-      S = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
-      // 2026-06-29 (Wolf 'überlappt auf allen bildern'): phaseCenters[pi] IST
-      // die Mitte der 5-Dot-Gruppe (= 3. Kategorie) → horizontal exakt mittig.
-      // Vertikal NICHT zentriert: der Aktions-Block (NEU + Label + große Cards)
-      // ist hoch und floatet hoch → Tree muss klar darüber liegen, sonst
-      // touchiert die NEU-Pille/das Label die Dot-Reihe (Wolf 2026-06-30 'in
-      // Runde 2 überlappt wieder einiges'). Titel ist in Step 1 nur eine kleine
-      // Pille oben → Tree darf ins obere Band.
-      vAnchor = 0.30;
+      S = Math.min(2.3, Math.max(1.6, (camVp.w * 0.56) / (phaseWidths[pi] || camVp.w)));
+      const wolfClearVAnchor = 0.09 + (2.1 * dotSize * S) / camVp.h;
+      vAnchor = Math.min(0.44, Math.max(0.37, wolfClearVAnchor));
     }
     // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
     // Der Dot-Zoom schleifte Linie + Nachbar-Kacheln + Ring ins Bild und das
@@ -691,10 +690,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     const pi = Math.max(0, (displayGpi ?? 1) - 1);
     const qi = s.questionIndex;
     if (dotCenters[qi] == null) return null;
-    const S1 = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
+    const S1 = Math.min(2.3, Math.max(1.6, (camVp.w * 0.56) / (phaseWidths[pi] || camVp.w)));
     const dotSize = dotRowHeight / 1.3;
+    // gleiche dynamische vAnchor wie camWorldStyle Step 1 → FLIP startet exakt
+    // an der echten Dot-Position.
+    const wolfClearVAnchor = 0.09 + (2.1 * dotSize * S1) / camVp.h;
+    const vA = Math.min(0.44, Math.max(0.37, wolfClearVAnchor));
     const sx = camVp.w / 2 + (dotCenters[qi] - (phaseCenters[pi] ?? 0)) * S1;
-    const sy = camVp.h * 0.30; // Step-1 vAnchor
+    const sy = camVp.h * vA;
     return { sx, sy, size: dotSize * S1 };
   }, [treeMetrics, camVp, displayGpi, s.questionIndex, isFirstOfRound]);
 

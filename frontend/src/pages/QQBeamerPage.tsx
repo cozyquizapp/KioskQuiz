@@ -2589,12 +2589,12 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                       <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(148,163,184,0.16)" strokeWidth="5" />
                       <circle
                         cx="50" cy="50" r="44" fill="none"
-                        stroke={urgent ? '#EF4444' : '#F97316'} strokeWidth="5" strokeLinecap="round"
+                        stroke={urgent ? '#EF4444' : t.color} strokeWidth="5" strokeLinecap="round"
                         strokeDasharray={RING_CIRC}
                         strokeDashoffset={RING_CIRC * (1 - ringFraction)}
                         style={{
                           transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease',
-                          filter: `drop-shadow(0 0 9px ${urgent ? 'rgba(239,68,68,0.85)' : 'rgba(249,115,22,0.85)'})`,
+                          filter: `drop-shadow(0 0 9px ${urgent ? 'rgba(239,68,68,0.85)' : `${t.color}d9`})`,
                         }}
                       />
                     </svg>
@@ -2617,11 +2617,11 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         position: 'absolute', bottom: 'clamp(-14px, -1.4cqh, -8px)', left: '50%',
                         padding: 'clamp(5px,0.7cqh,9px) clamp(16px,1.8cqw,26px)',
                         borderRadius: 'var(--qq-pill-radius)',
-                        background: urgent ? '#EF4444' : '#F97316',
-                        color: '#1a0f00', fontWeight: 900,
+                        background: urgent ? '#EF4444' : t.color,
+                        color: '#fff', fontWeight: 900, textShadow: '0 1px 4px rgba(0,0,0,0.45)',
                         fontSize: 'clamp(20px, 2.4cqw, 32px)', lineHeight: 1,
                         minWidth: 'clamp(56px, 6cqw, 88px)', textAlign: 'center',
-                        boxShadow: `0 6px 18px ${urgent ? 'rgba(239,68,68,0.5)' : 'rgba(249,115,22,0.5)'}`,
+                        boxShadow: `0 6px 18px ${urgent ? 'rgba(239,68,68,0.5)' : `${t.color}80`}`,
                         animation: 'qqHpCountPulse 1s ease-in-out infinite',
                       }}>
                         {remaining}s
@@ -2632,7 +2632,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, lineHeight: 1.05 }}>
                     <span style={{
                       fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.16em',
-                      textTransform: 'uppercase', color: '#F97316',
+                      textTransform: 'uppercase', color: urgent ? '#EF4444' : t.color,
                     }}>
                       {lang === 'en' ? 'Your turn' : 'Jetzt dran'}
                     </span>

@@ -63,13 +63,19 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
   if (phaseEntries.length === 0 || firstIdx < 0) return null;
 
   // User-Wunsch 2026-04-28: Mini-Tree unter „Runde N" darf größer sein.
-  // 60→84 ergibt ~40% größere Dots, der Wolf wandert ebenfalls größer mit.
+  // 2026-06-29 (Wolf): Wolf wandert jetzt ÜBER der Linie (Pin nach unten) statt
+  // auf dem aktuellen Dot zu sitzen — so bleibt das Kategorie-Emoji sichtbar,
+  // in das als Nächstes gezoomt wird.
   const DOT = 84;
   const GAP = 32;
-  const WOLF = DOT + 14;
+  const WOLF = DOT - 4;        // Marker über der Linie (etwas kleiner als ein Dot)
+  const POINTER = 11;          // Pfeil-Spitze nach unten auf den aktuellen Dot
+  const VGAP = 6;              // Abstand Pfeil → Dot-Oberkante
+  const DOT_TOP = WOLF + POINTER + VGAP;          // Dot-Reihe sitzt unter der Wolf-Zone
   const totalWidth = phaseEntries.length * DOT + (phaseEntries.length - 1) * GAP;
   const wolfLeft = displayIdx * (DOT + GAP) + DOT / 2;
   const progressWidth = displayIdx === 0 ? 0 : displayIdx * (DOT + GAP);
+  const dotCenterY = DOT_TOP + DOT / 2;
 
   // Skin: Discs bleiben RUND (Wolf-Entscheid 2026-06-25 — Editorial-Kontrast wie
   // die Avatare), aber die Kategorie-Farbe (catColor) der Linie/des Wolf-Rings
@@ -79,19 +85,18 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
 
   return (
     <div style={{
-      position: 'relative', width: totalWidth, height: WOLF + 4,
-      display: 'flex', alignItems: 'center',
+      position: 'relative', width: totalWidth, height: DOT_TOP + DOT,
     }}>
-      {/* Track (grau) + Progress (amber) — auf Dot-Mittelhöhe */}
+      {/* Track (grau) + Progress — auf Dot-Mittelhöhe (unter der Wolf-Zone) */}
       <div style={{
-        position: 'absolute', top: '50%', left: DOT / 2,
+        position: 'absolute', top: dotCenterY, left: DOT / 2,
         width: totalWidth - DOT, height: 3,
         background: 'rgba(148,163,184,0.28)',
         transform: 'translateY(-50%)', borderRadius: 2,
       }} />
       {progressWidth > 0 && (
         <div style={{
-          position: 'absolute', top: '50%', left: DOT / 2,
+          position: 'absolute', top: dotCenterY, left: DOT / 2,
           width: progressWidth, height: 3,
           // 2026-05-04 (Wolf): Strich nimmt aktuelle Kategorie-Farbe (catColor)
           // statt immer Gold. Auf Cat-Seiten matcht er damit den Wolf-Avatar.
@@ -102,7 +107,8 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
         }} />
       )}
 
-      {/* Dots — bei current bleibt der Dot leer, der Wolf sitzt drauf */}
+      {/* Dots — aktueller Dot bleibt SICHTBAR (Emoji), bekommt nur einen
+          Highlight-Ring; der Wolf schwebt darüber statt drauf zu sitzen. */}
       {phaseEntries.map((e, i) => {
         const label = QQ_CATEGORY_LABELS[e.category];
         const subSlug = e.bunteTueteKind ? qqSubSlug(e.bunteTueteKind) : null;
@@ -120,18 +126,20 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
         const iconSize = Math.round(DOT * 0.78);
         return (
           <div key={i} style={{
-            position: 'absolute', top: '50%', left: dotLeft,
+            position: 'absolute', top: DOT_TOP, left: dotLeft,
             width: DOT, height: DOT, borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: Math.round(DOT * 0.55),
             background: isPast ? 'rgba(148,163,184,0.18)'
-              : isCurrent ? 'transparent'
+              : isCurrent ? (themed ? 'rgba(255,255,255,0.05)' : `${catColor}1f`)
               : 'rgba(30,41,59,0.55)',
-            border: isCurrent ? 'none' : '1.5px solid rgba(148,163,184,0.35)',
+            border: isCurrent ? `2.5px solid ${lineCol}` : '1.5px solid rgba(148,163,184,0.35)',
+            boxShadow: isCurrent
+              ? (themed ? '0 0 18px rgba(var(--qq-accent-rgb),0.5)' : `0 0 18px ${catColor}88`)
+              : 'none',
             filter: isPast ? 'grayscale(1)' : 'none',
-            opacity: isPast ? 0.55 : isCurrent ? 0 : 1,
-            transform: 'translateY(-50%)',
-            transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease',
+            opacity: isPast ? 0.55 : 1,
+            transition: 'opacity 320ms ease, filter 320ms ease, background 320ms ease, border-color 320ms ease, box-shadow 320ms ease',
             zIndex: 1,
           }}>
             {iconSlug
@@ -141,20 +149,33 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
         );
       })}
 
-      {/* Wolf-Avatar — sitzt fix auf der Linie, slidet horizontal zum nächsten
-          Dot. 2026-05-09 v2 (Wolf 'kreis darf nicht bouncen, linie ist fix'):
-          outer-Bounce/Hop entfernt; KOPF (innen) wackelt subtil. */}
+      {/* Pfeil-Spitze (zeigt vom Wolf nach unten auf den aktuellen Dot) — slidet
+          horizontal mit dem Wolf mit. */}
+      <div aria-hidden style={{
+        position: 'absolute', top: WOLF - 1, left: wolfLeft,
+        transform: 'translateX(-50%)',
+        width: 0, height: 0,
+        borderLeft: `${POINTER}px solid transparent`,
+        borderRight: `${POINTER}px solid transparent`,
+        borderTop: `${POINTER}px solid ${lineCol}`,
+        filter: themed ? 'none' : `drop-shadow(0 2px 4px ${catColor}66)`,
+        transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-top-color 400ms ease',
+        zIndex: 3,
+      }} />
+
+      {/* Wolf-Avatar — schwebt ÜBER der Linie und slidet horizontal zum nächsten
+          Dot (Pin-Kopf). Innen wackelt der Kopf subtil (qqWolfHeadBob). */}
       <div style={{
-        position: 'absolute', top: '50%', left: wolfLeft,
+        position: 'absolute', top: 0, left: wolfLeft,
         width: WOLF, height: WOLF, borderRadius: '50%',
-        background: 'transparent',
+        background: themed ? 'var(--qq-surface)' : 'rgba(20,16,31,0.92)',
         border: themed ? '3px solid var(--qq-accent)' : `3px solid ${catColor}`,
         boxShadow: themed
           ? '0 0 0 4px rgba(var(--qq-accent-rgb),0.18), 0 6px 14px rgba(var(--qq-accent-rgb),0.28)'
-          : `0 0 0 4px ${catColor}40, 0 6px 14px ${catColor}55`,
-        transform: 'translate(-50%, -50%)',
+          : `0 0 0 4px ${catColor}40, 0 6px 16px ${catColor}66`,
+        transform: 'translateX(-50%)',
         transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
-        zIndex: 2,
+        zIndex: 4,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'hidden',
       }}>
@@ -1005,7 +1026,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               Runden-Ansicht (kein überladener Voll-Tree, kein Wolf der das
               Ziel-Badge verdeckt), darunter die Aktions-Karte. */}
           <div style={{
-            marginBottom: 28,
+            marginBottom: 'clamp(28px, 4.5cqh, 60px)',
             animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.55s both',
             position: 'relative', zIndex: 5,
           }}>

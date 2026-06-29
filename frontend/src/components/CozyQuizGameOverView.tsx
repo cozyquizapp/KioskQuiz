@@ -374,10 +374,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
           animation: `finaleWinner 0.8s var(--qq-ease-out-cubic) ${winnerHeroDelay}s both`,
         }}>
-          <div style={{
-            fontSize: 'clamp(28px, 3cqw, 42px)',
+          {/* 2026-06-30 (Wolf-Lieferung fx-trophy.png): 3D-Pokal statt OS-Emoji. */}
+          <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{
+            width: 'clamp(46px, 4.8cqw, 70px)', height: 'auto',
             animation: `finaleStarBurst 0.5s ease ${trophyDelay}s both, finaleTrophyFloat 3.4s ease-in-out ${trophyDelay + 0.6}s infinite`,
-          }}><QQEmojiIcon emoji="🏆"/></div>
+          }} />
 
           {/* 2026-05-06 (Wolf 'hinter Gewinnerteam ist immernoch das Rechteck
               zu sehen'): boxShadow vom Avatar-style-prop wird intern von

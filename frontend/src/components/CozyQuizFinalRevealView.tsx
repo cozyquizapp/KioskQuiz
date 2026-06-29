@@ -1293,11 +1293,12 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       alignItems: 'center', justifyContent: 'center', gap: 'clamp(20px, 3cqh, 40px)',
       animation: 'qqFRTitleIn 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) both',
     }}>
-      <div style={{
-        fontSize: 'clamp(120px, 14cqw, 240px)', lineHeight: 1, textAlign: 'center',
+      {/* 2026-06-30 (Wolf-Lieferung fx-trophy.png): 3D-Pokal statt OS-Emoji. */}
+      <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{
+        width: 'clamp(140px, 16cqw, 280px)', height: 'auto',
         filter: 'drop-shadow(0 8px 24px rgba(251,191,36,0.45))',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
-      }}>🏆</div>
+      }} />
       <div style={{
         fontSize: 'clamp(40px, 5.5cqw, 96px)', fontWeight: 900,
         // 2026-06-24 (Lesbarkeit+Brand): Hero-Titel auf Seiten-BG → var(--qq-title)

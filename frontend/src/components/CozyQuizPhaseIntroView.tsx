@@ -1002,43 +1002,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             )}
           </div>
 
-          {/* Divider line with glow + shimmer.
-              2026-05-04 v4 (Wolf-Bug 'shimmer fehlt auch in Runde 3+4'):
-              Vorher 3s Cycle + 1.0s Delay → bei schnellem Mod-Clicken durch
-              Step-0 verpasste Wolf den Shimmer-Pass. Jetzt zwei-Layer-Ansatz:
-              - Base-Layer: farbiger Bar (immer sichtbar, kein Shimmer)
-              - Overlay-Layer (eigenes div): heller weisser Shimmer-Sweep, 1.8s
-                Cycle, no delay → mind. 1 Pass schon waehrend der 2.5s Round-
-                Transition garantiert sichtbar. */}
-          <div style={{
-            width: 'clamp(240px, 35cqw, 500px)', height: 5, borderRadius: 3,
-            background: isThemed()
-              ? 'linear-gradient(90deg, transparent, var(--qq-accent), transparent)'
-              : `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
-            marginTop: 28, marginBottom: 28,
-            transformOrigin: 'center',
-            // Quiet Motion (Mono): statische editoriale Linie — kein Bounce-In,
-            // kein Glow, kein Shimmer-Sweep.
-            animation: isQuietMotion() ? undefined : 'roundLineGlow 0.7s var(--qq-ease-bounce) 0.5s both',
-            boxShadow: isQuietMotion()
-              ? 'none'
-              : isThemed()
-                ? '0 0 20px rgba(var(--qq-accent-rgb),0.33), 0 0 40px rgba(var(--qq-accent-rgb),0.13)'
-                : `0 0 20px ${displayColor}55, 0 0 40px ${displayColor}22`,
-            transition: 'box-shadow 500ms ease',
-            position: 'relative', zIndex: 5,
-            overflow: 'hidden',
-          }}>
-            {/* Heller White-Shimmer-Sweep — laeuft kontinuierlich von links
-                nach rechts. In Quiet Motion (Mono) aus (Wolfs „Hin-und-Her"). */}
-            {!isQuietMotion() && <div style={{
-              position: 'absolute', inset: 0,
-              background: 'linear-gradient(90deg, transparent 0%, transparent 30%, rgba(255,255,255,0.85) 50%, transparent 70%, transparent 100%)',
-              backgroundSize: '200% 100%',
-              animation: 'lineShimmer 1.8s linear 0.6s infinite',
-              pointerEvents: 'none',
-            }} />}
-          </div>
+          {/* 2026-06-30 (Wolf 'der Unterstrich verdeckt'): Die glühende Divider-
+              Shimmer-Linie lag genau auf der Tree-Reihe (Wolf-Pin/Linie) und
+              verdeckte sie. Seit dem Journey-Redesign IST der Tree das Struktur-
+              Element unter dem Titel → Linie raus. Nur ein kleiner Atem-Abstand. */}
+          <div style={{ height: 'clamp(16px, 2.4cqh, 36px)' }} aria-hidden />
 
           {/* Tree-Zone-Spacer: reserviert den vertikalen Raum, in dem der
               persistente Welt-Backdrop-Tree liegt. Der Subtitle kommt DANACH →

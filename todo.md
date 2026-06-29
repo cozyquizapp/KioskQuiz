@@ -56,16 +56,8 @@ Kein Fix ohne Snapshot — beim nächsten Live-Vorkommen DevTools-Network `qq:st
 
 - **ThanksView „Nächstes Event"-Block** — wartet auf cozywolf.de-Buchungsflow. Layout-Skelett
   ist vorbereitet (`QQBeamerPage.tsx` ThanksView, Suchwort „LINKS: Platzhalter").
-- **`hallo@cozywolf.de`** — Mail tatsächlich einrichten (Frontend-Konstante existiert bereits).
 - **cozywolf.de Landing** — Impressum/Datenschutz dort ergänzen (App-seitig sind sie live).
   Siehe `COZYWOLF_LANDING.md`.
-
-## 💬 Braucht Wolf-Input
-
-- **EN-Casing-Audit** — Sentence- vs. Title-Case uneinheitlich (z.B. „Real answer" vs
-  „Top 5 — Reveal"). Für gezielte Fixes Screenshots der konkreten Stellen nötig.
-- **NBC-Phönix Auto-Translate-Quirk** — DeepL lässt Eigennamen manchmal unübersetzt.
-  Aktuell: nach Auto-Translate manuell prüfen. Optional später: Eigennamen-Schutz im Translate-Flow.
 
 ## 🔧 Rest-Backlog (2026-06-22 gegen Code verifiziert)
 

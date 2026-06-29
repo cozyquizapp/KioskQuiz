@@ -1549,17 +1549,44 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   lang: 'de' | 'en';
   eurovisionMode?: boolean;
 }) {
-  // 2026-05-24 v3 (Wolf 'gleiches Format wie Award-Cards'): Drumroll-Flip
-  // analog AwardFlipCard. BG = Team-Avatar + 'tippt auf ???', Front = full
-  // Card (Team + Target + Bonus). Mount → 900ms drumroll → flip.
-  const [isFlipped, setIsFlipped] = useState(false);
+  // 2026-06-29 (Wolf 'kein Flip mehr — Slot-Machine'): Die Karte steht von
+  // Anfang an (das tippende Team ist oben sofort sichtbar). Nur das GETIPPTE
+  // Team löst sich spannend auf: der Target-Chip rattert wie ein Spielautomat
+  // durch alle Team-Avatare+Farben, bremst ab und rastet auf dem echten Team
+  // ein (Farb-Burst + Emoji-Pop). targetTeam wird IM Effect aus den Props
+  // berechnet (steht erst nach dem Early-Return zur Verfügung).
+  const [spinTeam, setSpinTeam] = useState<QQTeam | null>(null);
+  const [locked, setLocked] = useState(false);
   useEffect(() => {
     if (!team) return;
-    setIsFlipped(false);
+    const tgt = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
+    if (!tgt) { setSpinTeam(null); setLocked(true); return; }
+    setLocked(false);
+    const pool = allTeams.filter(t => t.id !== team.id);
+    const ring = pool.length > 0 ? pool : [tgt];
+    // Deceleration: schnelle Ticks → immer langsamer → Lock auf das Target.
+    const delays = [70, 70, 70, 72, 76, 82, 92, 106, 126, 152, 188, 232, 292, 372, 472];
+    let i = 0;
+    let cancelled = false;
+    let timer = 0;
+    setSpinTeam(ring[0]);
     try { playTeamReveal(); } catch {}
-    const t = window.setTimeout(() => setIsFlipped(true), 900);
-    return () => window.clearTimeout(t);
-  }, [team?.id]);
+    const tick = () => {
+      if (cancelled) return;
+      if (i >= delays.length) {
+        setSpinTeam(tgt);
+        setLocked(true);
+        try { playTeamReveal(); } catch {}
+        return;
+      }
+      setSpinTeam(ring[(i * 3 + 1) % ring.length]);
+      timer = window.setTimeout(tick, delays[i]);
+      i++;
+    };
+    timer = window.setTimeout(tick, 0);
+    return () => { cancelled = true; window.clearTimeout(timer); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [team?.id, resolution?.targetTeamId]);
 
   if (!team) return null;
   const de = lang === 'de';
@@ -1569,70 +1596,46 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   const totalBonus = resolution?.totalBonus ?? 0;
   const isZero = totalBonus === 0;
 
-  // 3D-Flip-Card wie AwardFlipCard. BG (drumroll, '???') ← rotateY → Front
-  // (Team + Tipp-Target + Bonus). Front-Side ist die ehemals direkt gerenderte
-  // Card-Composition.
-  const cardCommonStyle: React.CSSProperties = {
-    position: 'absolute', inset: 0,
-    backfaceVisibility: 'hidden',
-    WebkitBackfaceVisibility: 'hidden',
-    borderRadius: 32,
-    display: 'flex', alignItems: 'center',
-    boxSizing: 'border-box',
-    overflow: 'hidden',
-  };
+  // Slot-Chip-Inhalt: während des Spins das aktuell durchrasselnde Team, nach
+  // dem Lock das echte Target. Farbe (Chip-BG/Border) folgt mit.
+  const chipTeam = locked ? targetTeam : (spinTeam ?? targetTeam);
+  const chipColor = chipTeam?.color ?? team.color;
+
   return (
     <div style={{
       flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center',
       width: '100%', minHeight: 0,
     }}>
+      <style>{`
+        @keyframes qqBetLockPop { 0% { transform: scale(1.34); } 58% { transform: scale(0.93); } 100% { transform: scale(1); } }
+        @keyframes qqBetLockBurst { 0% { opacity: 0.85; transform: translate(-50%,-50%) scale(0.42); } 100% { opacity: 0; transform: translate(-50%,-50%) scale(2.3); } }
+      `}</style>
       <div style={{
         width: '100%', maxWidth: 'clamp(360px, 42cqw, 560px)',
         height: '100%',
-        perspective: '1800px',
         filter: `drop-shadow(0 0 28px ${team.color}66)`,
         display: 'flex',
       }}>
+        {/* 2026-06-29 (Wolf): kein 3D-Flip mehr — die Karte steht von Anfang an,
+            nur der Slot-Chip unten löst das getippte Team auf. */}
         <div style={{
-          position: 'relative', width: '100%',
-          // 2026-05-25 v3 (Wolf 'cards rechts immernoch abgeschnitten'):
-          // minHeight raus, height: 100% — die Card folgt der Column-Hoehe,
-          // damit der Inhalt (+N) immer rein passt. cardCommonStyle hat
-          // weiterhin overflow:hidden fuer den 3D-Flip-Backside-Cut.
-          height: '100%',
+          position: 'relative', width: '100%', height: '100%',
           minHeight: 'clamp(440px, 56cqh, 720px)',
-          transformStyle: 'preserve-3d',
-          WebkitTransformStyle: 'preserve-3d',
-          transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
-          transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(14px, 1.8cqh, 22px)',
+          padding: 'clamp(24px, 3cqh, 44px) clamp(28px, 3cqw, 48px)',
+          borderRadius: 32, boxSizing: 'border-box',
+          background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
+          border: `3px solid ${team.color}`,
+          boxShadow: `0 0 40px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
         }}>
-          {/* BG — Team-Avatar + Tipp ??? + Drumroll
-              2026-05-25 v3 (Wolf revert 'glassy passt doch zum rest der app'):
-              transparente Card-BG, team-color Border + Outer-Halo. */}
-          <div style={{
-            ...cardCommonStyle,
-            flexDirection: 'column', justifyContent: 'center', gap: 18,
-            padding: 'clamp(24px, 3cqh, 40px)',
-            background: `linear-gradient(160deg, ${team.color}22, ${team.color}10)`,
-            border: `3px solid ${team.color}`,
-            boxShadow: `0 0 40px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
-          }}>
-            <div style={{
-              fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
-              color: team.color, textTransform: 'uppercase', letterSpacing: '0.18em',
-            }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
-            <QQTeamAvatar
-              avatarId={team.avatarId} teamEmoji={team.emoji}
-              size={'clamp(100px, 11cqw, 170px)'}
-              bgColor={team.color}
-            />
-            <div style={{
-              width: '100%',
-              animation: !isFlipped ? 'qqFRDrumroll 0.6s ease-in-out infinite' : 'none',
-            }}>
+          {/* Tippendes Team — sofort sichtbar (kein Geheimnis) */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
+            <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(120px, 13cqw, 200px)'} bgColor={team.color} />
+            <div style={{ width: '100%' }}>
               <TeamNameLabel
                 name={team.name}
-                fontSize="clamp(24px, 2.6cqw, 40px)"
+                fontSize="clamp(30px, 3.2cqw, 52px)"
                 color={team.color}
                 fontWeight={900}
                 maxLines={2}
@@ -1640,50 +1643,16 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 style={{ textAlign: 'center', letterSpacing: '-0.01em' }}
               />
             </div>
-            <div style={{
-              fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 700,
-              color: 'var(--qq-text-muted)', fontStyle: 'italic',
-            }}>{de ? 'tippt auf …' : 'tipped on …'}</div>
-            <div style={{
-              fontSize: 'clamp(40px, 4.5cqw, 64px)', fontWeight: 900,
-              color: 'var(--qq-text-muted)', letterSpacing: '0.4em',
-            }}>???</div>
           </div>
-          {/* Front — Team + Tipp-Target + Bonus
-              2026-05-25 v3 (Wolf revert 'glassy passt doch'): transparent BG. */}
-          <div style={{
-            ...cardCommonStyle,
-            transform: 'rotateY(180deg)',
-            flexDirection: 'column', justifyContent: 'center',
-            gap: 'clamp(14px, 1.8cqh, 22px)',
-            padding: 'clamp(24px, 3cqh, 44px) clamp(28px, 3cqw, 48px)',
-            background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
-            border: `3px solid ${team.color}`,
-            boxShadow: `0 0 40px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
-          }}>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
-          <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(140px, 15cqw, 240px)'} bgColor={team.color} />
-          <div style={{ width: '100%' }}>
-            <TeamNameLabel
-              name={team.name}
-              fontSize="clamp(32px, 3.4cqw, 56px)"
-              color={team.color}
-              fontWeight={900}
-              maxLines={2}
-              shrinkAfter={14}
-              style={{ textAlign: 'center', letterSpacing: '-0.01em' }}
-            />
-          </div>
-        </div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18, width: '100%' }}>
-          {/* Disconnect-Fall: kein Tipp, neutraler Hinweis. */}
+
           {!targetTeam ? (
+            /* Disconnect-Fall: kein Tipp, neutraler Hinweis. */
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
               padding: '22px 36px', borderRadius: 18,
               background: 'var(--qq-surface)',
               border: '1.5px solid var(--qq-hairline)',
-              animation: 'qqFRTitleIn 0.6s ease 0.55s both',
+              animation: 'qqFRTitleIn 0.6s ease 0.2s both',
             }}>
               <div style={{ fontSize: 'clamp(44px, 5cqw, 72px)', lineHeight: 1, opacity: 0.5 }}>—</div>
               <div style={{
@@ -1696,66 +1665,89 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               }}>{de ? '0 Bonus-Punkte' : '0 bonus points'}</div>
             </div>
           ) : (
-            <>
-              {/* Sub-step 1: "tippte auf" + Tipp-Team — kommt nach Team-Slam mit Delay */}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(12px, 1.6cqh, 20px)', width: '100%' }}>
               <div style={{
                 fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
                 color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
-                animation: 'qqFRTitleIn 0.5s ease 0.55s both',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
+
+              {/* Slot-Machine-Chip — rattert durch die Teams, rastet auf dem
+                  Target ein (Farb-Burst + Emoji-Pop). */}
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 16,
                 padding: '14px 26px', borderRadius: 'var(--qq-pill-radius)',
-                background: `${targetTeam.color}1a`,
-                border: `2.5px solid ${targetTeam.color}`,
-                animation: 'qqFRTitleIn 0.6s cubic-bezier(0.34, 1.46, 0.64, 1) 0.55s both',
+                background: `${chipColor}1a`,
+                border: `2.5px solid ${chipColor}`,
+                boxShadow: locked ? `0 0 30px ${chipColor}77` : 'none',
+                transition: 'background 0.16s ease, border-color 0.16s ease, box-shadow 0.35s ease',
                 maxWidth: '100%', minWidth: 0,
               }}>
-                <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={'clamp(54px, 5.5cqw, 76px)'} bgColor={targetTeam.color} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <TeamNameLabel
-                    name={targetTeam.name}
-                    fontSize="clamp(26px, 2.6cqw, 40px)"
-                    color={targetTeam.color}
-                    fontWeight={900}
-                    maxLines={2}
-                    shrinkAfter={14}
+                <div style={{ position: 'relative', flexShrink: 0, display: 'flex' }}>
+                  {locked && (
+                    <span aria-hidden style={{
+                      position: 'absolute', left: '50%', top: '50%',
+                      width: 'clamp(54px, 5.5cqw, 76px)', height: 'clamp(54px, 5.5cqw, 76px)',
+                      borderRadius: '50%', border: `3px solid ${chipColor}`,
+                      animation: 'qqBetLockBurst 0.6s ease-out both', pointerEvents: 'none',
+                    }} />
+                  )}
+                  <QQTeamAvatar
+                    key={(chipTeam ?? targetTeam).id}
+                    avatarId={(chipTeam ?? targetTeam).avatarId} teamEmoji={(chipTeam ?? targetTeam).emoji}
+                    size={'clamp(54px, 5.5cqw, 76px)'} bgColor={chipColor}
+                    style={{ animation: locked ? 'qqBetLockPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : undefined }}
                   />
                 </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  {locked ? (
+                    <TeamNameLabel
+                      name={targetTeam.name}
+                      fontSize="clamp(26px, 2.6cqw, 40px)"
+                      color={targetTeam.color}
+                      fontWeight={900}
+                      maxLines={2}
+                      shrinkAfter={14}
+                    />
+                  ) : (
+                    <div style={{
+                      fontSize: 'clamp(26px, 2.8cqw, 42px)', fontWeight: 900,
+                      color: 'var(--qq-text-muted)', letterSpacing: '0.3em', lineHeight: 1,
+                    }}>…</div>
+                  )}
+                </div>
               </div>
-              {isMutual && (
+
+              {/* Nach dem Lock: Sympathie-Bonus + Punkte-Cascade */}
+              {locked && isMutual && (
                 <div style={{
                   fontSize: 'clamp(17px, 1.7cqw, 26px)', fontWeight: 800,
                   color: sympathyColor, display: 'flex', alignItems: 'center', gap: 8,
-                  animation: 'qqFRTitleIn 0.6s ease 0.95s both',
+                  animation: 'qqFRTitleIn 0.6s ease 0.28s both',
                 }}>
                   <span style={{ fontSize: 'clamp(22px, 2.2cqw, 34px)' }}>💞</span>
                   {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
                 </div>
               )}
-              {/* Sub-step 2: Punkte-Cascade — kommt zuletzt mit weiterem Delay */}
-              {isZero ? (
+              {locked && (isZero ? (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                  animation: 'qqFRTitleIn 0.7s ease 1.1s both',
+                  animation: 'qqFRTitleIn 0.7s ease 0.5s both',
                 }}>
                   <div style={{
-                    fontSize: 'clamp(64px, 7.5cqw, 120px)', lineHeight: 1,
-                    animation: 'qqFROohBob 1.6s ease-in-out 1.1s infinite',
+                    fontSize: 'clamp(56px, 6.8cqw, 110px)', lineHeight: 1,
+                    animation: 'qqFROohBob 1.6s ease-in-out 0.5s infinite',
                   }}>🥲</div>
                   <div style={{
-                    fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900,
+                    fontSize: 'clamp(28px, 3cqw, 46px)', fontWeight: 900,
                     color: 'var(--qq-text-muted)', textAlign: 'center', fontStyle: 'italic',
                   }}>oooh …</div>
                   <div style={{
-                    fontSize: 'clamp(16px, 1.5cqw, 24px)', fontWeight: 700,
+                    fontSize: 'clamp(15px, 1.4cqw, 22px)', fontWeight: 700,
                     color: 'var(--qq-text-muted)',
                   }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
                 </div>
               ) : (
                 <div style={{
-                  // 2026-05-25 v5 (Wolf revert 'glassy passt doch'): zurueck auf
-                  // glassy-Grün-BG mit grünem Text — matched Quiz-Pause-Standings.
                   padding: 'clamp(12px, 1.6cqh, 20px) clamp(22px, 3cqw, 38px)',
                   borderRadius: 24,
                   background: 'rgba(34,197,94,0.18)',
@@ -1764,15 +1756,13 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                   fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
                   color: QQ_COLORS.green500, letterSpacing: '-0.02em',
                   lineHeight: 1,
-                  animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 1.1s both',
+                  animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 0.5s both',
                 }}>
                   + {totalBonus}
                 </div>
-              )}
-            </>
+              ))}
+            </div>
           )}
-        </div>
-          </div>
         </div>
       </div>
     </div>

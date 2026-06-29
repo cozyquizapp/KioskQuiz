@@ -663,6 +663,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       <div ref={camViewportRef} aria-hidden style={{
         position: 'absolute', inset: 0, overflow: 'hidden',
         zIndex: 1, pointerEvents: 'none',
+        // Beat 0 = ganzer Tree. Ab Step 1 fadet der Voll-Tree aus WÄHREND die
+        // Kamera noch reinzoomt → Crossfade in die saubere RoundMiniTree (Beat 1).
+        // Kategorie-Ansicht (Beat 3) bleibt dadurch baum-frei.
+        opacity: (s.introStep ?? 0) >= 1 ? 0 : 1,
+        transition: 'opacity 0.9s ease',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
@@ -961,6 +966,18 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {phaseName}
           </div>
 
+          {/* Beat 1 (Wolf 2026-06-29): saubere RoundMiniTree statt der gezoomten
+              Voll-Tree-Slice. Der Voll-Tree-Backdrop ist hier bereits ausgefadet
+              (Crossfade beim Reinzoomen) → man landet auf der cleanen Runden-
+              Ansicht, darunter die Aktions-Karte. */}
+          <div style={{
+            marginBottom: 28,
+            animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.12s both',
+            position: 'relative', zIndex: 5,
+          }}>
+            <RoundMiniTree state={s} catColor={catColor} />
+          </div>
+
           {/* Großes Runden-Emoji entfernt (Wolf 2026-06-29): redundant, die
               Aktions-Karte unten zeigt das Aktions-Emoji (Place/Stack) bereits. */}
 
@@ -1127,10 +1144,6 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             })()}
             {/* (per-Runde Card-Bloecke entfernt — werden durch unified IIFE oben generiert) */}
           </div>
-          {/* Tree-Zone-Spacer: schiebt Label + Aktions-Karte nach OBEN, damit sie
-              über dem gezoomten Runden-Cluster (Welt-Backdrop bei ~82% Höhe)
-              liegen statt ihn zu überlappen (Wolf 2026-06-29: „Aktion oben"). */}
-          <div style={{ height: 'clamp(110px, 16cqh, 240px)' }} aria-hidden />
         </>
       ) : s.categoryIsNew ? (
         /* ── Category explanation (first time this category/mechanic appears) ── */

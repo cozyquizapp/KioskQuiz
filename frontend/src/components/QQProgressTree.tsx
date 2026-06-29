@@ -865,7 +865,11 @@ export default function QQProgressTree({
                         // Hairline statt Dunkel-Navy (sah auf hellen Skins wie
                         // schwere graue Kloetze aus — Wolf 2026-06-24).
                         background: isCurrent
-                          ? 'transparent'
+                          // Wolf schwebt jetzt ÜBER der Linie (wolfAbove) → der
+                          // aktuelle Dot bleibt SICHTBAR mit Highlight statt leer
+                          // (sonst ist das Kategorie-Emoji unsichtbar). Legacy
+                          // (Wolf sitzt drauf): transparent + opacity 0.
+                          ? (wolfAbove ? (isThemed() ? 'rgba(255,255,255,0.05)' : `${color}22`) : 'transparent')
                           : isShowcasedPhase
                             ? `${color}33`
                             : isPast
@@ -877,7 +881,7 @@ export default function QQProgressTree({
                             ? QQ_COLORS.slate400
                             : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate300) : QQ_COLORS.slate500),
                         border: isCurrent
-                          ? 'none'
+                          ? (wolfAbove ? `2.5px solid ${skinAccentHex ?? color}` : 'none')
                           : isShowcasedPhase
                             ? `2px solid ${color}`
                             : isPast
@@ -885,8 +889,10 @@ export default function QQProgressTree({
                               : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)') : '2px solid #e2e8f0'),
                         boxShadow: isShowcasedPhase
                           ? `0 0 18px ${color}88, 0 0 36px ${color}44`
-                          : 'none',
-                        opacity: isCurrent ? 0 : isPast ? 0.55 : isPlaceholder ? 0.5 : 1,
+                          : (isCurrent && wolfAbove)
+                            ? `0 0 18px ${skinAccentHex ?? color}88`
+                            : 'none',
+                        opacity: isCurrent ? (wolfAbove ? 1 : 0) : isPast ? 0.55 : isPlaceholder ? 0.5 : 1,
                         filter: isPast ? 'grayscale(1)' : 'none',
                         transform: isShowcasedPhase ? 'scale(1.18)' : 'scale(1)',
                         transition: 'all 0.45s var(--qq-ease-out-cubic)',

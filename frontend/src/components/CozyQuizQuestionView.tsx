@@ -2466,15 +2466,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               {/* Beat 5 — Sieger-Krönung: Krone bouncet auf den
                                   höchsten Bet der korrekten Option. */}
                               {isWinnerChip && (
+                                /* 2026-06-29 (Wolf 'krone oft offset'): Lift in einen
+                                   statischen Wrapper — der muchoVoterDrop-100%-Frame
+                                   (transform reset, fill both) hatte sonst die
+                                   translateY(-72%)-Hebung gekillt → Krone fiel auf den
+                                   Chip. Glyph drinnen animiert, Wrapper hält den Lift. */
                                 <span aria-hidden style={{
-                                  position: 'absolute',
-                                  top: 0, left: 'clamp(10px, 1.4cqw, 20px)',
-                                  transform: 'translateY(-72%) rotate(-12deg)',
-                                  fontSize: 'clamp(22px, 2.6cqw, 38px)',
-                                  lineHeight: 1, pointerEvents: 'none', zIndex: 3,
-                                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
-                                  animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.3s both',
-                                }}>👑</span>
+                                  position: 'absolute', top: 0, left: 'clamp(10px, 1.4cqw, 20px)',
+                                  transform: 'translateY(-78%)',
+                                  pointerEvents: 'none', zIndex: 3,
+                                }}>
+                                  <span style={{
+                                    display: 'inline-block',
+                                    fontSize: 'clamp(22px, 2.6cqw, 38px)', lineHeight: 1,
+                                    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
+                                    animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.3s both',
+                                  }}>👑</span>
+                                </span>
                               )}
                               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avSz} />
                               <span style={{

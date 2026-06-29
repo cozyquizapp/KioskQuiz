@@ -3694,15 +3694,24 @@ export function MuchoOptionsReveal({
                         {/* Beat 5 — Sieger-Krönung: der schnellste Korrekt-
                             Antwortende bekommt eine Krone, die von oben reinbounct. */}
                         {isFastest && (
+                          /* 2026-06-29 (Wolf 'krone oft offset'): Zentrierung NICHT
+                             mehr per translateX(-50%) — die wurde vom muchoVoterDrop-
+                             100%-Frame (transform reset, fill both) überschrieben →
+                             Krone rutschte um halbe Breite nach rechts. Jetzt:
+                             Flex-Wrapper über voller Avatar-Breite zentriert (kein
+                             Transform), nur das Glyph drinnen animiert. */
                           <span aria-hidden style={{
-                            position: 'absolute',
-                            top: '-58%', left: '50%',
-                            transform: 'translateX(-50%) rotate(-12deg)',
-                            fontSize: 'clamp(28px, 3.4cqw, 48px)',
-                            lineHeight: 1, pointerEvents: 'none', zIndex: 3,
-                            filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
-                            animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
-                          }}>👑</span>
+                            position: 'absolute', left: 0, right: 0, top: 0,
+                            display: 'flex', justifyContent: 'center',
+                            transform: 'translateY(-80%)',
+                            pointerEvents: 'none', zIndex: 3,
+                          }}>
+                            <span style={{
+                              fontSize: 'clamp(28px, 3.4cqw, 48px)', lineHeight: 1,
+                              filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
+                              animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
+                            }}>👑</span>
+                          </span>
                         )}
                         <QQTeamAvatar
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}

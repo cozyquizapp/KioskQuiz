@@ -736,9 +736,8 @@ function FinalLeaderboard({
                         animationDelay: `${i * 0.05}s`,
                         filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))',
                       }}>
-                        {k === 'underdog' ? '🐢'
-                          : k === 'speedy' ? '⚡'
-                          : k === 'meisterklauer' ? '🦝'
+                        {(k === 'underdog' || k === 'speedy' || k === 'meisterklauer')
+                          ? <AwardStamp kind={k} fallback={k === 'underdog' ? '🐢' : k === 'speedy' ? '⚡' : '🦝'} sizeCss={dense ? '20px' : '26px'} />
                           : k === 'sympathy' ? '💞'
                           : '🪙'}
                       </span>
@@ -1786,10 +1785,21 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
 // und kommt zuletzt im Reveal-Flow. stackCount per award fuer Reveal-Stack-
 // Mechanik (Speedy=1, Meisterklauer=1, Underdog=2).
 const AWARD_DEFS = [
-  { emoji: '⚡', titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: QQ_COLORS.brandPinkMid, stackCount: 1 },
-  { emoji: '🦝', titleDe: 'Meisterklauer',       titleEn: 'Master thief',    descDe: 'Meiste Klaus',          descEn: 'Most steals',       accent: '#A855F7',              stackCount: 1 },
-  { emoji: '🐢', titleDe: 'Underdog-Trostpreis', titleEn: 'Underdog prize',  descDe: 'Niedrigster Score',     descEn: 'Lowest score',      accent: '#10B981',              stackCount: 2 },
+  { emoji: '⚡', slug: 'award-speedy',   titleDe: 'Speedy Gonzales',     titleEn: 'Speedy Gonzales', descDe: 'Schnellste Antworten', descEn: 'Fastest answers',   accent: QQ_COLORS.brandPinkMid, stackCount: 1 },
+  { emoji: '🦝', slug: 'award-thief',    titleDe: 'Meisterklauer',       titleEn: 'Master thief',    descDe: 'Meiste Klaus',          descEn: 'Most steals',       accent: '#A855F7',              stackCount: 1 },
+  { emoji: '🐢', slug: 'award-underdog', titleDe: 'Underdog-Trostpreis', titleEn: 'Underdog prize',  descDe: 'Niedrigster Score',     descEn: 'Lowest score',      accent: '#10B981',              stackCount: 2 },
 ];
+// 2026-06-29 (Wolf): Award-Stamps gibt es als 3D-Wolf-PNGs (Stirnband/Maske/
+// Pflaster) — Mapping kind → Datei. Fallback bleibt das Emoji.
+const AWARD_STAMP_SLUG: Record<string, string> = {
+  speedy: 'award-speedy', meisterklauer: 'award-thief', underdog: 'award-underdog',
+};
+function AwardStamp({ kind, fallback, sizeCss }: { kind: string; fallback: string; sizeCss: string }) {
+  const slug = AWARD_STAMP_SLUG[kind];
+  if (!slug) return <>{fallback}</>;
+  return <img src={`/icons/${slug}.png`} alt={kind} draggable={false}
+    style={{ width: sizeCss, height: sizeCss, objectFit: 'contain', verticalAlign: 'middle' }} />;
+}
 
 // 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
 // AwardsOverviewSlide gestrichen — title geht direkt zu award-slot 0.
@@ -2049,10 +2059,13 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
             color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
           }}>{de ? '🥁 Trommelwirbel …' : '🥁 Drumroll …'}</div>
           <div style={{
-            fontSize: 'clamp(76px, 9cqw, 140px)', lineHeight: 1,
+            lineHeight: 1,
             animation: !isFlipped ? 'qqFRDrumroll 0.6s ease-in-out infinite' : 'none',
             filter: `drop-shadow(0 0 22px ${a.accent}99)`,
-          }}>{a.emoji}</div>
+          }}>
+            <img src={`/icons/${a.slug}.png`} alt="" draggable={false}
+              style={{ width: 'clamp(110px, 12cqw, 180px)', height: 'auto', objectFit: 'contain', display: 'block' }} />
+          </div>
           <div style={{
             fontSize: 'clamp(22px, 2.4cqw, 38px)', fontWeight: 900,
             color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.01em',
@@ -2087,7 +2100,8 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
             color: a.accent, textTransform: 'uppercase', letterSpacing: '0.18em',
             display: 'flex', alignItems: 'center', gap: 8,
           }}>
-            <span style={{ fontSize: 'clamp(20px, 2.2cqw, 30px)' }}>{a.emoji}</span>
+            <img src={`/icons/${a.slug}.png`} alt="" draggable={false}
+              style={{ width: 'clamp(26px, 2.8cqw, 40px)', height: 'clamp(26px, 2.8cqw, 40px)', objectFit: 'contain' }} />
             {de ? a.titleDe : a.titleEn}
           </div>
           {winner ? (

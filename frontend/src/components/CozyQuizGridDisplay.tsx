@@ -723,16 +723,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     const STAMP_EMOJI_MAP: Record<string, string> = {
                       underdog: '🐢', speedy: '⚡', meisterklauer: '🦝', bet: '🪙', sympathy: '💞',
                     };
-                    // 2026-06-27 (Wolf): Underdog/Meisterklauer als vorhandene cozy3d-Tiere
-                    // (Schildkröte/Waschbär) statt Emoji — stil-konsistent zu den Team-Avataren.
-                    // Speedy/Bet/Sympathy bleiben vorerst Emoji (eigene Icons folgen).
-                    const STAMP_COZY3D_MAP: Record<string, string> = {
-                      underdog: 'schildkroete', meisterklauer: 'waschbaer',
-                    };
-                    // 2026-06-28 (Wolf): Speedy als eigenes cozy3d-Look-Icon
-                    // (Tacho, icons-v2 → /icons/stamp-speedy.png) statt ⚡-Emoji.
+                    // 2026-06-29 (Wolf): dedizierte Award-PNGs sind da („eigene Icons
+                    // folgen" eingelöst) — 3D-Wölfe mit Stirnband/Maske/Pflaster
+                    // ersetzen die Platzhalter-Tiere (Schildkröte/Waschbär) UND das
+                    // stamp-speedy-Icon. Einheitliches Award-Set über Hero-Card,
+                    // Stamps und Grid.
+                    const STAMP_COZY3D_MAP: Record<string, string> = {};
                     const STAMP_ICON_MAP: Record<string, string> = {
-                      speedy: 'stamp-speedy',
+                      speedy: 'award-speedy', meisterklauer: 'award-thief', underdog: 'award-underdog',
                     };
                     // 2026-05-25 (Wolf-Bug 'münze vor reveal-phase'): Stamps nur
                     // rendern wenn wir tatsaechlich in der Reveal-Phase oder

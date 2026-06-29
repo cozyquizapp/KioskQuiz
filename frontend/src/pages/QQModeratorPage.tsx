@@ -1537,6 +1537,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               })}
             </div>
           )}
+          {/* 2026-06-29 (Beamer-Review #4): Header-Gruppierung — „Ablauf"-
+              Controls (Autoplay/Bots/Nav) vs. Sekundär (Hotkeys/Status). Label
+              nur wenn ein Spiel läuft (sonst Ablauf-Gruppe leer). */}
+          {joined && state && state.phase !== 'LOBBY' && (
+            <span style={{
+              fontWeight: 800, fontSize: 11, color: QQ_COLORS.slate500,
+              letterSpacing: '0.1em', textTransform: 'uppercase', userSelect: 'none',
+            }}>Ablauf</span>
+          )}
           {/* Autoplay Pause/Resume — sichtbar nur wenn aktiv und im Spiel */}
           {autoplayEnabled && joined && state && state.phase !== 'LOBBY' && state.phase !== 'GAME_OVER' && state.phase !== 'THANKS' && (
             <button
@@ -1627,6 +1636,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </div>
             );
           })()}
+          {/* Trenner: Ablauf-Gruppe ↔ Sekundär (Hotkeys/Status). Nur im Spiel,
+              wenn links eine Ablauf-Gruppe steht (2026-06-29 Beamer-Review #4). */}
+          {joined && state && state.phase !== 'LOBBY' && (
+            <span aria-hidden style={{
+              width: 1, height: 22, background: 'rgba(255,255,255,0.12)',
+              margin: '0 2px', flex: 'none',
+            }} />
+          )}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"
@@ -3365,22 +3382,25 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
 
   return (
     <div style={{
-      background: 'linear-gradient(135deg, rgba(236,72,153,0.08), rgba(236,72,153,0.03))',
-      border: '1px solid rgba(236,72,153,0.35)',
-      borderLeft: '4px solid #EC4899',
-      borderRadius: 8,
-      padding: collapsed ? '6px 14px' : '10px 14px',
+      // 2026-06-29 (Beamer-Review #4 'Tipp-Bar prominenter'): stärkerer Akzent,
+      // Glow + kräftigerer Rand — bleibt aber kollabierbar (Höhe-bewusst).
+      background: 'linear-gradient(135deg, rgba(236,72,153,0.15), rgba(236,72,153,0.05))',
+      border: '1px solid rgba(236,72,153,0.5)',
+      borderLeft: '5px solid #EC4899',
+      borderRadius: 10,
+      padding: collapsed ? '8px 16px' : '12px 16px',
       marginBottom: 12,
-      fontSize: 13,
+      fontSize: 13.5,
       lineHeight: 1.5,
       color: '#e5e7eb',
       cursor: 'pointer',
+      boxShadow: '0 0 0 1px rgba(236,72,153,0.10), 0 4px 18px rgba(236,72,153,0.16)',
     }}
     onClick={() => setCollapsed(c => !c)}
     title={collapsed ? 'Tipp ausklappen' : 'Tipp einklappen'}
     >
       <div style={{
-        fontSize: 11,
+        fontSize: 12,
         fontWeight: 900,
         letterSpacing: 0.8,
         textTransform: 'uppercase',
@@ -3389,6 +3409,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
         display: 'flex',
         alignItems: 'center',
         gap: 8,
+        textShadow: '0 0 14px rgba(236,72,153,0.45)',
       }}>
         <span>🎙️ Moderator-Tipp</span>
         <span style={{ opacity: 0.6, fontWeight: 700 }}>· {baseNote.title}</span>
@@ -4839,7 +4860,11 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
     } finally { setBusy(null); }
   }
   return (
-    <div ref={ref} style={{ position: 'relative', marginLeft: 'auto' }}>
+    // 2026-06-29 (Beamer-Review #4 'Reset noch sicherer'): klar abgesetzt nach
+    // ganz rechts (marginLeft auto) + extra Trennabstand; Trigger optisch
+    // zurückgenommen/kleiner, damit er nicht zum Fehlklick einlädt. Aktion bleibt
+    // 2-stufig (Dropdown) + PIN-geschützt.
+    <div ref={ref} style={{ position: 'relative', marginLeft: 'auto', paddingLeft: 8 }}>
       <button
         onClick={() => {
           const willOpen = !open;
@@ -4851,12 +4876,15 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
           }
           setOpen(willOpen);
         }}
+        onMouseEnter={(e) => { e.currentTarget.style.opacity = '1'; e.currentTarget.style.background = 'rgba(239,68,68,0.12)'; }}
+        onMouseLeave={(e) => { e.currentTarget.style.opacity = '0.7'; e.currentTarget.style.background = 'rgba(239,68,68,0.05)'; }}
         style={{
-          padding: '6px 12px', borderRadius: 8, cursor: 'pointer',
-          border: '1px solid rgba(239,68,68,0.3)', background: 'rgba(239,68,68,0.08)',
-          color: QQ_COLORS.red500, fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+          padding: '5px 11px', borderRadius: 8, cursor: 'pointer',
+          border: '1px solid rgba(239,68,68,0.22)', background: 'rgba(239,68,68,0.05)',
+          color: QQ_COLORS.red500, fontFamily: 'inherit', fontWeight: 800, fontSize: 11.5,
+          opacity: 0.7, transition: 'opacity 140ms ease, background 140ms ease',
         }}
-        title="Reset-Aktionen"
+        title="Reset-Aktionen (2-stufig, PIN-geschützt)"
       >⋯ Reset</button>
       {open && (
         <div style={{

@@ -586,17 +586,22 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // unten drum herum, daher kollidieren sie nicht mit dem Cluster/der Kachel.
     // Step 0 (Gesamt-Tree) etwas tiefer, dort ist die Station noch klassisch
     // zentriert (Titel oben, Subtitle unter dem Tree).
-    let vAnchor = 0.53;
+    // Step 0 (Übersicht): Tree etwas tiefer (~Spacer-Mitte), damit der Wolf-Pin
+    // (sitzt ÜBER der Linie) den großen „Runde N"-Titel nicht touchiert.
+    let vAnchor = 0.58;
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster (~68% Breite); Nachbar-Runden
       // faden via focusPhaseIdx. Leicht über Mitte → Aktions-Karte hat unten Platz.
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
       S = Math.min(3.4, Math.max(1.8, (camVp.w * 0.68) / (phaseWidths[pi] || camVp.w)));
-      // 2026-06-29 (Wolf 'mittlere Kategorie genau in die Mitte, vertikal+
-      // horizontal'): phaseCenters[pi] IST die Mitte der 5-Dot-Gruppe (= 3.
-      // Kategorie). Vertikal exakt zentriert; Titel (oben) + Aktions-Karte
-      // (unten) sind absolut gepinnt, kollidieren also nicht.
-      vAnchor = 0.50;
+      // 2026-06-29 (Wolf 'überlappt auf allen bildern'): phaseCenters[pi] IST
+      // die Mitte der 5-Dot-Gruppe (= 3. Kategorie) → horizontal exakt mittig.
+      // Vertikal NICHT 0.50: der Aktions-Block (NEU + Label + große Cards) ist
+      // hoch und floatet bis zur Mitte hoch → das Label landete sonst genau auf
+      // der Dot-Reihe. Tree daher ins obere Band (Titel ist nur eine kleine
+      // Pille), Aktions-Block füllt darunter. Kompromiss „nah an Mitte" ohne
+      // Kollision.
+      vAnchor = 0.38;
     }
     // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
     // Der Dot-Zoom schleifte Linie + Nachbar-Kacheln + Ring ins Bild und das
@@ -1064,7 +1069,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               border: isThemed() ? '2px solid var(--qq-accent)' : `2px solid ${color}55`,
               fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginTop: 20, marginBottom: 8,
+              marginTop: 2, marginBottom: 4,
               animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.3s both',
               position: 'relative', zIndex: 5,
             }}>
@@ -1076,8 +1081,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               Vorher: zwei dicke Textzeilen mit redundanter Wiederholung der
               Action-Card-Subtexte. Jetzt: Cards sprechen fuer sich. */}
           <div style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
-            marginTop: s.gamePhaseIndex === 1 ? 24 : 12,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            marginTop: s.gamePhaseIndex === 1 ? 8 : 4,
             position: 'relative', zIndex: 5,
           }}>
             {/* Schlankes Label statt riesiger Regel-Texte */}
@@ -1156,7 +1161,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               return (
                 <div style={{
                   flex: 1, minHeight: 0,
-                  marginTop: 'clamp(20px, 3cqh, 40px)',
+                  marginTop: 'clamp(4px, 0.8cqh, 14px)',
                   display: 'flex', flexDirection: 'row', flexWrap: 'wrap',
                   alignItems: 'stretch', justifyContent: 'center',
                   gap: 'clamp(10px, 1.6cqw, 24px)',

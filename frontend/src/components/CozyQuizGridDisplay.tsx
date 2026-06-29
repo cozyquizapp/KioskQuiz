@@ -903,19 +903,28 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             border: `4px solid ${jokerBurst.color}99`,
             animation: 'qqJokerRing 1.05s cubic-bezier(.2,.6,.3,1) 0.12s both',
           }} />
-          {/* Callout-Banner */}
+          {/* Callout-Banner — 2026-06-29 (Wolf 'bonus textfeld fast nicht
+              lesbar'): „+1 Bonus-Feld"-Subtext raus (das +1 animiert eh in der
+              Rangliste). BG jetzt SOLID/opak statt translucent+blur, damit das
+              kurze „JOKER!" auch über dem busy Grid/Rangliste klar lesbar ist.
+              Etwas höher (top 9%) → liegt nicht mehr auf der ersten Standings-
+              Zeile. */}
           <div style={{
-            position: 'absolute', left: '50%', top: '16%', transform: 'translate(-50%,0)',
-            display: 'flex', alignItems: 'center', gap: 'clamp(12px,1.6vw,22px)',
-            padding: 'clamp(14px,1.6vw,22px) clamp(28px,3.4vw,52px)', borderRadius: 999,
-            background: 'linear-gradient(120deg, rgba(236,72,153,0.22), rgba(162,18,71,0.14))',
-            border: '2px solid #EC4899', boxShadow: '0 0 50px rgba(236,72,153,0.45)',
-            backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+            position: 'absolute', left: '50%', top: '9%', transform: 'translate(-50%,0)',
+            display: 'flex', alignItems: 'center', gap: 'clamp(10px,1.4vw,18px)',
+            padding: 'clamp(14px,1.6vw,22px) clamp(30px,3.6vw,56px)', borderRadius: 999,
+            background: 'linear-gradient(120deg, #2A0E22 0%, #3B0F2B 100%)',
+            border: '2.5px solid #EC4899',
+            boxShadow: '0 0 50px rgba(236,72,153,0.55), 0 14px 40px rgba(0,0,0,0.55)',
             whiteSpace: 'nowrap',
             animation: 'qqJokerCallout 2.6s cubic-bezier(.34,1.5,.5,1) both',
           }}>
-            <span style={{ fontWeight: 900, fontSize: 'clamp(34px,4.6vw,64px)', letterSpacing: '0.04em', color: '#EC4899', textShadow: '0 0 30px rgba(236,72,153,0.6)' }}>✦ JOKER!</span>
-            <span style={{ fontWeight: 900, fontSize: 'clamp(22px,2.8vw,40px)', color: '#fff' }}>+1 Bonus-Feld</span>
+            <span style={{ fontWeight: 900, fontSize: 'clamp(36px,5vw,72px)', letterSpacing: '0.04em', color: '#FF6FB3', textShadow: '0 0 30px rgba(236,72,153,0.7)' }}>✦ JOKER!</span>
+            <span style={{
+              fontWeight: 900, fontSize: 'clamp(18px,2.2vw,32px)', color: '#fff',
+              padding: 'clamp(4px,0.5vw,8px) clamp(12px,1.4vw,20px)', borderRadius: 999,
+              background: 'rgba(236,72,153,0.85)', whiteSpace: 'nowrap',
+            }}>+1</span>
           </div>
           {/* Konfetti (wiederverwendet) */}
           <ConfettiOverlay eurovisionMode={!!s.theme?.eurovisionMode} />

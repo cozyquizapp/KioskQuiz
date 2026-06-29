@@ -34,6 +34,10 @@ interface Props {
    *  zu sitzen → das Kategorie-Emoji im Dot bleibt beim Reinzoomen frei. Nur für
    *  die PhaseIntro-Welt gedacht; Live-Tree bleibt unverändert (default false). */
   wolfAbove?: boolean;
+  /** 2026-06-29 (Journey-Zoom, Wolf): Wolf sanft ausblenden — beim Kategorie-
+   *  Emoji-Zoom (Step ≥2) soll nur noch das Emoji im Dot stehen, nicht der Wolf
+   *  darauf. Default false. */
+  wolfHidden?: boolean;
   /** 2026-06-29 (Journey-Zoom, Progressive Disclosure): 0-basierter Phasen-Index,
    *  der allein voll sichtbar ist; alle anderen Cluster faden auf ~0.1. null =
    *  alle voll (Default). */
@@ -64,6 +68,7 @@ export default function QQProgressTree({
   bigIcons = false,
   onLayout,
   wolfAbove = false,
+  wolfHidden = false,
   focusPhaseIdx = null,
 }: Props) {
   const schedule = state.schedule ?? [];
@@ -972,10 +977,11 @@ export default function QQProgressTree({
                 left: currentCenter,
                 width: wolfSize,
                 height: wolfSize,
-                // wolfAbove: über die Dot-Linie heben, damit das Dot-Emoji frei
-                // bleibt (Journey-Zoom Kategorie-Reinzoom). Sonst zentriert.
+                // wolfAbove: über die Dot-Linie heben (optional). wolfHidden:
+                // beim Kategorie-Emoji-Zoom sanft ausblenden → nur Emoji im Dot.
                 transform: wolfAbove ? 'translate(-50%, -142%)' : 'translate(-50%, -50%)',
-                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), transform 520ms cubic-bezier(0.34, 1.25, 0.64, 1)',
+                opacity: wolfHidden ? 0 : 1,
+                transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), transform 520ms cubic-bezier(0.34, 1.25, 0.64, 1), opacity 420ms ease',
                 zIndex: 3,
                 pointerEvents: 'none',
               }}>

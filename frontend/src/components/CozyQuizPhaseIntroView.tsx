@@ -542,8 +542,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     if (step >= 1) {
       // Step 1: Runden-Cluster füllt ~85% Breite → Nachbar-Runden werden
       // abgeschnitten; das Fokus-Dimming im Tree blendet den Rest zusätzlich aus.
+      // Cluster liegt als Band tief unten, damit Label + Aktions-Karte klar
+      // DARÜBER Platz haben (Wolf: „Aktion oben über dem Cluster").
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
       S = Math.min(3.4, Math.max(1.6, (camVp.w * 0.85) / (phaseWidths[pi] || camVp.w)));
+      vAnchor = 0.82;
     }
     if (step >= 2) {
       // Step 2: auf die aktuelle Kategorie-Kachel (Dot) ziehen, Emoji groß.
@@ -653,7 +656,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             variant="inline"
             bigIcons
             onLayout={setTreeMetrics}
-            wolfAbove
+            wolfHidden={(s.introStep ?? 0) >= 2}
             focusPhaseIdx={(s.introStep ?? 0) >= 1 ? Math.max(0, (displayGpi ?? 1) - 1) : null}
           />
         </div>
@@ -1122,9 +1125,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {/* (per-Runde Card-Bloecke entfernt — werden durch unified IIFE oben generiert) */}
           </div>
           {/* Tree-Zone-Spacer: schiebt Label + Aktions-Karte nach OBEN, damit sie
-              über dem gezoomten Runden-Cluster (Welt-Backdrop ~62%) liegen statt
-              ihn zu überlappen (Wolf 2026-06-29: „Aktion oben über dem Cluster"). */}
-          <div style={{ height: 'clamp(170px, 26cqh, 340px)' }} aria-hidden />
+              über dem gezoomten Runden-Cluster (Welt-Backdrop bei ~82% Höhe)
+              liegen statt ihn zu überlappen (Wolf 2026-06-29: „Aktion oben"). */}
+          <div style={{ height: 'clamp(110px, 16cqh, 240px)' }} aria-hidden />
         </>
       ) : s.categoryIsNew ? (
         /* ── Category explanation (first time this category/mechanic appears) ── */

@@ -29,7 +29,7 @@ type FilterMode = 'aktiv' | 'archiviert' | 'alle';
 const ALL_SETTINGS: CozyGameSetting[] = ['tisch', 'steh', 'wand', 'boden'];
 const ALL_NOISE: CozyGameNoiseLevel[] = ['leise', 'mittel', 'laut'];
 const ALL_SCORING: CozyGameScoringType[] = [
-  'countIn60s', 'timeToFinish', 'distance', 'height', 'lastStanding',
+  'countIn60s', 'timeToFinish', 'distance', 'height', 'lastStanding', 'closestToTarget',
 ];
 
 function newGameDraft(): CozyGame {

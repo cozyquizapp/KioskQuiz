@@ -15,7 +15,8 @@ export type CozyGameScoringType =
   | 'timeToFinish'    // Schnellste Zeit bis Erfolgs-Bedingung — geringste Zeit gewinnt
   | 'distance'        // Distanz/Weite — größte Distanz gewinnt
   | 'height'          // Höhe/Türmchen — größte Höhe gewinnt
-  | 'lastStanding';   // Letzter der durchhält — längste Zeit gewinnt
+  | 'lastStanding'    // Letzter der durchhält — längste Zeit gewinnt
+  | 'closestToTarget';// Am nächsten am Zielwert (Schätzung/Abweichung) — kleinste Abweichung gewinnt
 
 export const COZY_GAME_SETTING_LABELS: Record<CozyGameSetting, { de: string; en: string; emoji: string }> = {
   tisch: { de: 'Tisch',       en: 'Table',       emoji: '🪑' },
@@ -33,9 +34,10 @@ export const COZY_GAME_NOISE_LABELS: Record<CozyGameNoiseLevel, { de: string; en
 export const COZY_GAME_SCORING_LABELS: Record<CozyGameScoringType, { de: string; en: string }> = {
   countIn60s:   { de: 'Anzahl in 60s',         en: 'Count in 60s' },
   timeToFinish: { de: 'Schnellste Zeit',       en: 'Fastest time' },
-  distance:     { de: 'Größte Distanz',        en: 'Largest distance' },
-  height:       { de: 'Größte Höhe',           en: 'Largest height' },
-  lastStanding: { de: 'Letzter durchhält',     en: 'Last standing' },
+  distance:       { de: 'Größte Distanz',      en: 'Largest distance' },
+  height:         { de: 'Größte Höhe',         en: 'Largest height' },
+  lastStanding:   { de: 'Letzter durchhält',   en: 'Last standing' },
+  closestToTarget:{ de: 'Am nächsten dran',    en: 'Closest guess' },
 };
 
 /** Globaler Material-Tag-Pool (V1). Editor kann via Tag-Editor erweitert werden. */
@@ -44,7 +46,7 @@ export const COZY_GAME_MATERIAL_TAGS_V1 = [
   'Spielzeugauto', 'Bierdeckel', 'Münzen', 'Pappbecher', 'Gummis',
   'Bausteine', 'Plastikbecher', 'Karten', 'Strohhalm', 'Süßigkeit',
   'Wäscheklammer', 'Wurfringe', 'Action-Sport-Set', 'Wattebausch',
-  'Flasche', 'Teller',
+  'Flasche', 'Teller', 'Glas', 'Waage', 'Schnur', 'Lineal', 'Papier',
 ] as const;
 
 /** Ein einzelnes CozyGame im Katalog. */
@@ -143,9 +145,10 @@ export interface CozyGameRoundState {
   timerDurationSec?: number;
 }
 
-// ── V1-Seed: 12 Spiele ───────────────────────────────────────────────────────
-// Diese werden beim ersten Backend-Start in die DB geschrieben (idempotent —
-// nur wenn DB leer). Wolf kann später via /cozygames-Editor archivieren.
+// ── V1-Seed: 15 Spiele ───────────────────────────────────────────────────────
+// seedCozyGamesIfMissing() fügt fehlende IDs bei jedem Backend-Start ein (nicht
+// nur bei leerer DB) — neue Seed-Einträge landen also nach Redeploy in der DB.
+// Wolf kann später via /cozygames-Editor archivieren.
 
 const SEED_TIMESTAMP = 1715900000000; // 2026-05-17 Wolf-Konzept-Date, fixed für Idempotenz
 
@@ -342,6 +345,57 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     noiseLevel: 'leise',
     scoringType: 'countIn60s',
     scoringNote: 'Serie endet bei Ball- oder Stein-Fall, sofort Neustart. Beste Serie = max. gleichzeitig gehaltene Steine.',
+    isSeed: true,
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
+  },
+
+  // ── Schätzen/Präzision (3) — 2026-07-01 Wolf ──
+  {
+    id: 'cg-mengen-schaetzen',
+    emoji: '🫙',
+    name: 'Mengen schätzen',
+    nameEn: 'Guess the Amount',
+    description: 'Ein gefüllter Behälter steht auf dem Tisch (Münzen/Süßigkeiten im Glas, gefüllte Flasche). Jedes Team schätzt Menge, Gewicht oder Volumen. Mod löst den echten Wert auf — wer am nächsten dran ist, gewinnt.',
+    descriptionEn: 'A filled container sits on the table (coins/candy in a jar, a filled bottle). Each team estimates the amount, weight or volume. The host reveals the real value — closest guess wins.',
+    materialTags: ['Glas', 'Münzen', 'Waage'],
+    setting: 'tisch',
+    noiseLevel: 'leise',
+    scoringType: 'closestToTarget',
+    scoringNote: 'Mod ermittelt den echten Wert vorab (zählen/wiegen/messen) und löst nach allen Schätzungen auf. Kleinste Abweichung gewinnt.',
+    isSeed: true,
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
+  },
+  {
+    id: 'cg-getraenk-halbieren',
+    emoji: '⚖️',
+    name: 'Getränk perfekt halbieren',
+    nameEn: 'Split the Drink Evenly',
+    description: 'Flasche oder Krug nach Augenmaß in zwei Gläser gießen — so gleich wie möglich. Mod wiegt beide Gläser. Kleinste Gewichts-Differenz gewinnt.',
+    descriptionEn: 'Pour a bottle or jug into two glasses by eye — as evenly as possible. The host weighs both glasses. Smallest weight difference wins.',
+    materialTags: ['Flasche', 'Glas', 'Waage'],
+    setting: 'tisch',
+    noiseLevel: 'leise',
+    scoringType: 'closestToTarget',
+    scoringNote: 'Ziel = 50/50. Abweichung = Gewichts-/Füllstands-Differenz der beiden Gläser. Kleinste gewinnt.',
+    parallel: false, // nur eine Waage → Teams nacheinander messen
+    isSeed: true,
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
+  },
+  {
+    id: 'cg-schnur-halbieren',
+    emoji: '✂️',
+    name: 'Genau in der Mitte teilen',
+    nameEn: 'Cut It Exactly in Half',
+    description: 'Schnur oder Papierstreifen ohne Messen genau in der Mitte durchtrennen. Danach beide Hälften nebeneinanderlegen, Mod misst die Abweichung mit dem Lineal. Kleinste Abweichung gewinnt.',
+    descriptionEn: 'Cut a string or paper strip exactly in half without measuring. Then lay both halves side by side; the host measures the deviation with a ruler. Smallest deviation wins.',
+    materialTags: ['Schnur', 'Papier', 'Lineal'],
+    setting: 'tisch',
+    noiseLevel: 'leise',
+    scoringType: 'closestToTarget',
+    scoringNote: 'Abweichung = Längendifferenz der beiden Hälften. Kleinste gewinnt.',
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,

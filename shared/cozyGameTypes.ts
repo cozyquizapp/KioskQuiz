@@ -2,7 +2,9 @@
 // Analoge Real-Life-Mini-Spiele die im Quiz als Brand-Differenziator gegen
 // klassisches Pubquiz eingebaut werden. Konzept-Doku: COZYGAMES.md im Repo-Root.
 //
-// Position im Quiz: nach Runde 1 + Final-Slot.
+// Position im Quiz: nach JEDER Nicht-Final-Runde (roundPause-Slot) + einmal
+//   vor FINAL_REVEAL (finalSlot, zaehlt als zusaetzlicher Final-Kat-Win).
+//   Auto-Flow: qqRooms.ts ~L3697. Kein Doppel-Trigger via cozyGamesPlayedAfterPhases.
 // Wertung: 1. Platz = 1 Aktion in der aktuellen Phase (wie Frage-Sieger).
 // Aktivierung: cozyGamesEnabled-Toggle pro QQDraft.
 

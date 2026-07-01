@@ -93,7 +93,7 @@ import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
 import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
-import { QQ_AVATARS, getRandomFunnyNames } from '../../shared/quarterQuizTypes';
+import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -9904,7 +9904,9 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   const room = getQQRoom(roomCode);
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
   if (room.phase !== 'LOBBY') return res.status(400).json({ error: 'Nur in Lobby möglich' });
-  const count = Math.min(8, Math.max(1, Number(req.body?.count) || 8));
+  // 2026-07-01: Groß-Modus erlaubt bis 25 Bots (sonst max 8).
+  const cap = room.largeGroupMode ? QQ_MAX_TEAMS_LARGE : 8;
+  const count = Math.min(cap, Math.max(1, Number(req.body?.count) || cap));
   const existing = Object.keys(room.teams).length;
   const toAdd = Math.max(0, count - existing);
   // 2026-05-04: random witzige Pub-Quiz-Namen statt fester DUMMY_NAMES.
@@ -9934,20 +9936,38 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   }
   let added = 0;
   const usedAvatars = new Set(Object.values(room.teams).map((t: any) => t.avatarId));
-  for (const av of QQ_AVATARS) {
-    if (added >= toAdd) break;
-    if (usedAvatars.has(av.id)) continue;
-    const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
-    const name = namePicks[added] ?? `Team ${av.label}`;
-    // Bot-Emoji aus Pool oder undefined-Fallback (= Set-Slot-Default).
-    const botEmoji = emojiPool[added] ?? undefined;
-    try {
-      qqJoinTeam(room, teamId, name, av.id, botEmoji);
-      // Dummies haben keinen Socket — connected-Flag explizit true lassen
-      // (markiert sie auch nach eventuellen Reconnect-Checks als „anwesend")
-      if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
-      added++;
-    } catch { /* skip on error (avatar taken etc.) */ }
+  if (room.largeGroupMode) {
+    // Groß-Modus: bis 25 Teams > 8 Avatar-Slots → Slots zyklisch wiederverwenden
+    // (qqJoinTeam-Exklusivität ist im Groß-Modus relaxed). Tier/Emoji aus Pool.
+    let guard = 0;
+    while (added < toAdd && guard < toAdd * 3 + 5) {
+      guard++;
+      const av = QQ_AVATARS[added % QQ_AVATARS.length];
+      const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
+      const name = namePicks[added] ?? `Team ${added + 1}`;
+      const botEmoji = emojiPool[added] ?? undefined;
+      try {
+        qqJoinTeam(room, teamId, name, av.id, botEmoji);
+        if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
+        added++;
+      } catch { added++; }
+    }
+  } else {
+    for (const av of QQ_AVATARS) {
+      if (added >= toAdd) break;
+      if (usedAvatars.has(av.id)) continue;
+      const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
+      const name = namePicks[added] ?? `Team ${av.label}`;
+      // Bot-Emoji aus Pool oder undefined-Fallback (= Set-Slot-Default).
+      const botEmoji = emojiPool[added] ?? undefined;
+      try {
+        qqJoinTeam(room, teamId, name, av.id, botEmoji);
+        // Dummies haben keinen Socket — connected-Flag explizit true lassen
+        // (markiert sie auch nach eventuellen Reconnect-Checks als „anwesend")
+        if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
+        added++;
+      } catch { /* skip on error (avatar taken etc.) */ }
+    }
   }
   // Auch bestehende Dummies sicher auf connected=true halten
   for (const t of Object.values(room.teams) as any[]) {

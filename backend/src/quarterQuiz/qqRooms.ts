@@ -564,9 +564,11 @@ export function qqJoinTeam(
   if (existingCount >= maxTeams) {
     throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${maxTeams}) erreicht.`);
   }
-  // Avatar exclusivity: each avatar (Color-Slot) can only be chosen by one team
+  // Avatar exclusivity: each avatar (Color-Slot) can only be chosen by one team.
+  // 2026-07-01: Im Groß-Modus (bis 25 Teams > 8 Avatar-Slots) Wiederverwendung
+  // erlaubt — Teams unterscheiden sich über Name + Tier, Farb-Kollision egal.
   const avatarTaken = Object.values(room.teams).some(t => t.avatarId === avatarId);
-  if (avatarTaken) {
+  if (avatarTaken && !room.largeGroupMode) {
     throw new QQError('AVATAR_TAKEN', 'Diese Farbe ist bereits vergeben.');
   }
   // Emoji exclusivity: bei explizitem Override darf der Emoji nicht schon von
@@ -832,6 +834,8 @@ export function qqStartGame(
   // hat also Vorrang vor Draft (siehe QQModeratorPage liveToggleOn-Logik).
   room.cozyGamesEnabled = cozyGamesEnabled === true;
   room.cozyGamesPool = Array.isArray(cozyGamesPool) ? cozyGamesPool.slice(0, 8) : [];
+  // 2026-07-01: Groß-Modus — CozyGames (grid-Add-on) default aus.
+  if (room.largeGroupMode) { room.cozyGamesEnabled = false; room.cozyGamesPool = []; }
   // Safety-Net: wenn Toggle an aber Pool leer → 8 random Seed-IDs aus dem
   // V1-Pool. Vermeidet "0 Spiele im Rad" wenn Migration noch nicht durch.
   if (room.cozyGamesEnabled && room.cozyGamesPool.length === 0) {

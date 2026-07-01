@@ -6142,7 +6142,7 @@ function LobbyView({
                   🧪 TEST
                 </span>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {([1, 3, 5, 7, 8] as const).map(n => (
+                  {((s as any).largeGroupMode ? [5, 10, 15, 20, 25] : [1, 3, 5, 7, 8]).map(n => (
                     <button
                       key={n}
                       onClick={async () => {

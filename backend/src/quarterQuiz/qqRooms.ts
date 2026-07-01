@@ -817,6 +817,16 @@ export function qqStartGame(
   room.comebackEnabled = comebackEnabled !== false;
   // 2026-07-01: Groß-Gruppen-Modus aus Draft. Default off.
   room.largeGroupMode = largeGroupMode === true;
+  // 2026-07-01: Groß-Modus deaktiviert grid-basierte End-Game-Mechaniken hart —
+  // kein Grid, also würden Comeback (Cell-Steal), Connections-4×4 und Final-Wager
+  // (wettet auf Grid-Punkte) crashen bzw. sinnlos laufen. Wolf-Entscheidung:
+  // grid-Add-ons im Groß-Modus ausblenden. CozyGames-Auto-Flow ist separat in
+  // qqNextQuestion auf !largeGroupMode gegated. Spielverlauf: Runden → GAME_OVER.
+  if (room.largeGroupMode) {
+    room.finalWagerEnabled  = false;
+    room.connectionsEnabled = false;
+    room.comebackEnabled    = false;
+  }
   // 2026-05-17: CozyGames-Setup aus Draft. Default off, leeren Pool.
   // Mod-Quick-Toggle-State wird vom Frontend in den startGame-Args mitgesendet,
   // hat also Vorrang vor Draft (siehe QQModeratorPage liveToggleOn-Logik).

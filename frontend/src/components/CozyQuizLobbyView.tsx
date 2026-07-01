@@ -11,6 +11,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -247,6 +248,24 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // 2026-07-01: Groß-Modus / viele Teams → dichtes Multi-Spalten-Grid mit
   // kompakten Chips (25 Teams passen nicht in 2 Spalten; Beamer scrollt nie).
   const veryMany = (s as any).largeGroupMode || teamCount > 12;
+  // 2026-07-01 (Wolf Idee 2): Genestet → Sub-Teams teilen sich einen avatarId
+  // (= Eltern-Team). In der Lobby als 8 Eltern-Karten mit „X/3 Sub-Teams"
+  // gruppieren, sonst sähen 3 gleiche Avatare wie ein Bug aus.
+  const nested = !!(s as any).nestedTeams;
+  const nestedGroups = useMemo(() => {
+    if (!nested) return [] as Array<{ avatarId: string; emoji?: string; color: string; label: string; subs: typeof s.teams }>;
+    const byAvatar = new Map<string, { avatarId: string; emoji?: string; color: string; label: string; subs: typeof s.teams }>();
+    for (const t of s.teams) {
+      let g = byAvatar.get(t.avatarId);
+      if (!g) {
+        const meta = QQ_AVATARS.find(a => a.id === t.avatarId);
+        g = { avatarId: t.avatarId, emoji: t.emoji, color: t.color, label: meta ? (de ? meta.label : meta.labelEn) : t.name, subs: [] };
+        byAvatar.set(t.avatarId, g);
+      }
+      g.subs.push(t);
+    }
+    return [...byAvatar.values()];
+  }, [nested, s.teams, de]);
 
   // QR size responsive to viewport height (avoid clipping on laptops)
   const qrSize = 'min(44cqh, 420px)';
@@ -706,6 +725,61 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   {de ? 'Eure Teams erscheinen hier.' : 'Teams appear here.'}
                 </span>
               </div>
+            </div>
+          ) : nested ? (
+            /* 2026-07-01 (Idee 2): Eltern-Karten. Jede zeigt Avatar + Label +
+               „X/3"-Pill + kleine Sub-Team-Namen-Chips. */
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(200px, 20cqw, 280px), 1fr))',
+              gap: 'clamp(8px, 1cqw, 14px)',
+            }}>
+              {nestedGroups.map((g, i) => (
+                <div key={g.avatarId} style={{
+                  padding: 'clamp(12px, 1.4cqh, 18px) clamp(14px, 1.5cqw, 20px)',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 20,
+                  background: isThemed() ? cardBg : 'rgba(255,255,255,0.04)',
+                  border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
+                  borderLeft: `4px solid ${g.color}`,
+                  boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
+                  display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.1cqw, 16px)',
+                  minWidth: 0, position: 'relative',
+                  animation: `teamCardIn 0.5s var(--qq-ease-bounce) ${0.35 + i * 0.06}s both`,
+                }}>
+                  <QQTeamAvatar avatarId={g.avatarId} teamEmoji={g.emoji} size={'clamp(48px, 4.6cqw, 66px)'} style={{ flexShrink: 0 }} />
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
+                    }}>
+                      <span style={{
+                        fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 23px)',
+                        color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
+                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      }} title={g.label}>{g.label}</span>
+                      <span style={{
+                        flexShrink: 0, marginLeft: 'auto',
+                        padding: '2px 9px', borderRadius: 999,
+                        background: `${g.color}22`, border: `1px solid ${g.color}66`,
+                        color: g.color, fontWeight: 900, fontSize: 'clamp(11px, 1.1cqw, 15px)',
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>{g.subs.length}/3</span>
+                    </div>
+                    <div style={{
+                      marginTop: 5, display: 'flex', flexWrap: 'wrap', gap: 5,
+                    }}>
+                      {g.subs.map(st => (
+                        <span key={st.id} style={{
+                          padding: '1px 8px', borderRadius: 999,
+                          background: 'rgba(255,255,255,0.06)',
+                          color: st.connected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
+                          fontWeight: 700, fontSize: 'clamp(10px, 1cqw, 13px)',
+                          maxWidth: 130, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        }} title={st.name}>{st.connected ? '● ' : '○ '}{st.name}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           ) : (
             <div style={{

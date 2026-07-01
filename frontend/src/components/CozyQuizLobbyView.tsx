@@ -244,6 +244,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // Dynamic status text
   const teamCount = s.teams.length;
   const connectedCount = s.teams.filter(t => t.connected).length;
+  // 2026-07-01: Groß-Modus / viele Teams → dichtes Multi-Spalten-Grid mit
+  // kompakten Chips (25 Teams passen nicht in 2 Spalten; Beamer scrollt nie).
+  const veryMany = (s as any).largeGroupMode || teamCount > 12;
 
   // QR size responsive to viewport height (avoid clipping on laptops)
   const qrSize = 'min(44cqh, 420px)';
@@ -702,14 +705,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           ) : (
             <div style={{
               display: 'grid',
-              // Immer 2-spaltig: 1-2 Teams = 2 Spalten (eine Zeile), 3-4 = 2×2,
-              // 5-8 = 2×3 / 2×4. Hält Karten schön breit statt quetschig-schmal.
-              gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-              // 2026-05-10 (Spacing-Audit P2): Compact-Gap von 6 auf 10 bumpt —
-              // bei 7-8 Teams verschmolzen die Cards auf 8 m Beamer-Distanz
-              // optisch zu einem Block. 10 px hält sichtbare Atmung ohne dass
-              // die Cards merklich schmaler werden.
-              gap: teamCount > 6 ? 10 : 'clamp(8px, 1.2cqw, 14px)',
+              // Standard 2-spaltig; Groß-Modus/viele Teams → auto-fill dichte
+              // Chips (25 Teams passen so in ~4-5 Spalten ohne Scroll).
+              gridTemplateColumns: veryMany
+                ? 'repeat(auto-fill, minmax(clamp(150px, 15cqw, 210px), 1fr))'
+                : 'repeat(2, minmax(0, 1fr))',
+              gap: veryMany ? 'clamp(6px, 0.7cqw, 10px)' : (teamCount > 6 ? 10 : 'clamp(8px, 1.2cqw, 14px)'),
             }}>
               {s.teams.map((t, i) => {
                 const compact = teamCount > 6;
@@ -720,9 +721,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 const wasSeen = seenTeamIdsRef.current.has(t.id);
                 return (
                   <div key={t.id} style={{
-                    padding: compact
-                      ? 'clamp(16px, 2cqh, 24px) clamp(20px, 2.2cqw, 28px)'
-                      : 'clamp(18px, 2.2cqh, 26px) clamp(22px, 2.4cqw, 30px)',
+                    padding: veryMany
+                      ? 'clamp(8px, 1cqh, 12px) clamp(10px, 1.1cqw, 15px)'
+                      : compact
+                        ? 'clamp(16px, 2cqh, 24px) clamp(20px, 2.2cqw, 28px)'
+                        : 'clamp(18px, 2.2cqh, 26px) clamp(22px, 2.4cqw, 30px)',
                     borderRadius: isThemed() ? 'var(--qq-card-radius)' : (compact ? 18 : 22),
                     // 2026-06-28 (Beamer-Review): einheitliche, ruhige Karte mit
                     // 4px-Farb-Akzent LINKS statt voll-bunter Rahmen. Team-Farbe
@@ -735,7 +738,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).
                     ['--gc' as string]: `${t.color}99`,
                     display: 'flex', alignItems: 'center',
-                    gap: compact ? 'clamp(14px, 1.5cqw, 20px)' : 'clamp(14px, 1.6cqw, 20px)',
+                    gap: veryMany ? 'clamp(8px, 0.9cqw, 12px)' : compact ? 'clamp(14px, 1.5cqw, 20px)' : 'clamp(14px, 1.6cqw, 20px)',
                     // Join-Feedback: frische Teams poppen rein (scale .82→1.04→1 +
                     // Glow-Flash, 0.52s). Bereits gesehene Teams: keine Animation
                     // (sonst Flacker beim Re-Render). Erst-Render: sanfter Stagger.
@@ -748,7 +751,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     minWidth: 0,
                     position: 'relative',
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={veryMany ? 'clamp(38px, 3.6cqw, 52px)' : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
                     {/* 2026-06-28 (Beamer-Review 'kein Emoji'): Wink-Hand 👋 raus —
                         das Join-Feedback trägt jetzt der Card-Pop + Glow-Flash. */}
                     <div style={{ minWidth: 0, flex: 1 }}>
@@ -762,9 +765,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         // 1-Buchstaben-Umbruch-Situation. Font fuer lange
                         // Namen wieder etwas hochgezogen (16-24 → 17-25) damit
                         // die Karten gleichmaessiger gross wirken.
-                        fontSize: t.name.length > 16
-                          ? (compact ? 'clamp(16px, 1.65cqw, 22px)' : 'clamp(17px, 1.8cqw, 25px)')
-                          : (compact ? 'clamp(18px, 1.9cqw, 26px)' : 'clamp(20px, 2.1cqw, 30px)'),
+                        fontSize: veryMany
+                          ? (t.name.length > 14 ? 'clamp(13px, 1.3cqw, 17px)' : 'clamp(15px, 1.5cqw, 20px)')
+                          : t.name.length > 16
+                            ? (compact ? 'clamp(16px, 1.65cqw, 22px)' : 'clamp(17px, 1.8cqw, 25px)')
+                            : (compact ? 'clamp(18px, 1.9cqw, 26px)' : 'clamp(20px, 2.1cqw, 30px)'),
                         // 2026-06-28 (Beamer-Review): Team-Name weiß statt Team-Farbe
                         // (Lesbarkeit; Farbe lebt im Card-Akzent + Avatar).
                         color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
@@ -775,19 +780,21 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       }} title={t.name}>
                         {t.name}
                       </div>
-                      <div style={{
-                        fontSize: compact ? 'clamp(13px, 1.2cqw, 16px)' : 'clamp(13px, 1.25cqw, 17px)',
-                        fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',
-                        marginTop: 4,
-                      }}>
-                        {t.connected ? (de ? '● bereit' : '● ready') : '○ offline'}
-                      </div>
+                      {!veryMany && (
+                        <div style={{
+                          fontSize: compact ? 'clamp(13px, 1.2cqw, 16px)' : 'clamp(13px, 1.25cqw, 17px)',
+                          fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',
+                          marginTop: 4,
+                        }}>
+                          {t.connected ? (de ? '● bereit' : '● ready') : '○ offline'}
+                        </div>
+                      )}
                       {/* 2026-05-06 (Wolf 'in der Lobby anzeigen wenn Team mit
                           Code eingeloggt ist zum X. Mal dabei, willkommen
                           zurueck'): Stamm-Code-Returner-Hint. gamesPlayed wird
                           von Backend async via getQQRegularTeam populiert
                           nach qq:joinTeam. */}
-                      {(t.gamesPlayed ?? 0) > 0 && (
+                      {!veryMany && (t.gamesPlayed ?? 0) > 0 && (
                         <div style={{
                           marginTop: 4,
                           display: 'inline-flex', alignItems: 'center', gap: 6,

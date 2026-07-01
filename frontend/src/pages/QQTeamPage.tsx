@@ -410,7 +410,9 @@ export default function QQTeamPage() {
   };
 
   const setId = state?.avatarSetId;
-  const takenAvatarIds = (state?.teams ?? []).map(t => t.avatarId);
+  // 2026-07-01: Groß-Modus (bis 25 Teams > 8 Avatar-Slots) → Slots wiederverwendbar,
+  // also keine „belegt"-Sperre. Teams unterscheiden sich über Name + Tier.
+  const takenAvatarIds = (state as any)?.largeGroupMode ? [] : (state?.teams ?? []).map(t => t.avatarId);
   const takenEmojis = (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
   // Doppelten Team-Namen blocken (case-insensitive, getrimmt). Wenn dasselbe
   // Wort in der Lobby zweimal vorkommt, kann der Mod (und am Ende beim Reveal

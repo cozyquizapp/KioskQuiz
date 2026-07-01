@@ -15,6 +15,7 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import { qqSortedTeams } from '../qqShared';
+import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 const SPEED_BONUS = [5, 4, 3, 2, 1];
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -165,6 +166,59 @@ function StandingsRow({ team, rank, maxVal, de }: { team: QQTeam; rank: number; 
   );
 }
 
+// ── GameOver: Sieger-Hero + Top-10-Standings (kein Grid, keine 25er-Kaskade) ──
+export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
+  const de = state.language !== 'en';
+  const sorted = qqSortedTeams(state);
+  const winner = sorted[0];
+  const shown = sorted.slice(0, 10);
+  const rest = sorted.length - shown.length;
+  const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
+  const wColor = winner?.color ?? '#EC4899';
+
+  return (
+    <div style={S.goWrap}>
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 50% 22%, ${wColor}33 0%, transparent 60%)` }} />
+      <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
+
+      <div style={S.goLabel}>{de ? 'Spielende' : 'Game Over'}</div>
+
+      {winner && (
+        <div style={S.goHero}>
+          <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ width: 'clamp(60px, 6cqw, 96px)', height: 'auto', animation: 'finaleTrophyFloat 3.4s ease-in-out infinite' }} />
+          <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 60px ${wColor}66, 0 0 120px ${wColor}40` }}>
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(110px, 11cqw, 170px)'} />
+          </div>
+          <TeamNameLabel name={winner.name} maxLines={1} shrinkAfter={12} color={wColor} fontWeight={900} fontSize="clamp(30px, 3.4cqw, 52px)" fontSizeLong="clamp(22px, 2.4cqw, 36px)" style={{ textAlign: 'center' }} />
+          <div style={{ ...S.goWinPts, color: wColor }}>{winner.largestConnected} {de ? 'Punkte' : 'points'}</div>
+        </div>
+      )}
+
+      <div style={{ position: 'relative', width: '100%', maxWidth: 1000, height: shown.length * 62, marginTop: 8 }}>
+        {shown.map((t, i) => {
+          const pct = (t.largestConnected / maxVal) * 100;
+          const medal = i < 3 && t.largestConnected > 0 ? MEDALS[i] : null;
+          return (
+            <div key={t.id} style={{ ...S.goRow, top: i * 62 }}>
+              <span style={S.goRank}>{i === 0 && t.largestConnected > 0 ? <QQEmojiIcon emoji="👑" /> : i + 1}</span>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={44} />
+              <div style={{ width: 220, minWidth: 0 }}>
+                <TeamNameLabel name={t.name} fontSize={24} color={t.color} fontWeight={900} maxLines={1} shrinkAfter={16} />
+              </div>
+              <div style={S.goBarTrack}>
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${t.color}, ${t.color}dd)`, borderRadius: 999 }} />
+              </div>
+              <span style={{ ...S.goVal, color: t.color }}>{t.largestConnected}</span>
+              <span style={S.goUnit}>{medal ? <QQEmojiIcon emoji={medal} /> : (de ? 'Pkt' : 'pts')}</span>
+            </div>
+          );
+        })}
+      </div>
+      {rest > 0 && <div style={S.goRest}>+ {rest} {de ? 'weitere Teams' : 'more teams'}</div>}
+    </div>
+  );
+}
+
 // ── Styles ───────────────────────────────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
   wrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 28, padding: '0 64px', color: '#f4f6ff' },
@@ -180,6 +234,16 @@ const S: Record<string, React.CSSProperties> = {
   alsoRow: { display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 },
   alsoChip: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
 
+  goWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 48px', color: '#f4f6ff', position: 'relative', overflow: 'hidden' },
+  goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800, position: 'relative', zIndex: 5 },
+  goHero: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative', zIndex: 5 },
+  goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)' },
+  goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 14, background: 'rgba(255,255,255,0.045)' },
+  goRank: { width: 48, textAlign: 'center', fontWeight: 900, fontSize: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
+  goBarTrack: { flex: 1, height: 22, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },
+  goVal: { width: 74, textAlign: 'right', fontWeight: 900, fontSize: 32, fontVariantNumeric: 'tabular-nums' },
+  goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
+  goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
   standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px', color: '#f4f6ff' },
   standLabel: { fontSize: 22, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800 },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },

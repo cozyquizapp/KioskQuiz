@@ -21,6 +21,7 @@ import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { CozyWolfImage } from './CozyWolfImage';
 import { WolfHeadIcon } from './WolfHeadIcon';
+import { LargeGroupGameOverView } from './CozyQuizLargeGroupView';
 import {
   AnimatedCozyWolf, WolfCoModerator, SpeechBubble,
   getBrandColors, getStandingAvatarSize, type Slogan,
@@ -117,6 +118,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     document.body.setAttribute('data-cinematic', 'true');
     return () => { document.body.removeAttribute('data-cinematic'); };
   }, [isRecap]);
+
+  // 2026-07-01: Groß-Modus — dedizierte kompakte GameOver-View (Sieger-Hero +
+  // Top-10-Bar-Race, kein Grid, keine 25er-Spotlight-Kaskade). Nach allen Hooks,
+  // damit Rules-of-Hooks gewahrt bleibt (largeGroupMode ist pro Spiel konstant).
+  if ((s as any).largeGroupMode) return <LargeGroupGameOverView state={s} />;
 
   // ── Spotlight-Stage: 1 Team riesig, vor der Recap-Tabelle ────────────────
   if (!isRecap) {

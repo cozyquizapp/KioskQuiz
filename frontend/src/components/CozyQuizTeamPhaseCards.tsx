@@ -964,7 +964,9 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
   const stammCode = formatStammCode(myTeamId);
   const wonLabel = lang === 'de' ? 'Gewonnen! 🎉' : 'You won! 🎉';
   const winsLabelTpl = lang === 'de' ? '{name} gewinnt!' : '{name} wins!';
-  const connectedLabel = lang === 'de' ? 'verbunden' : 'connected';
+  // 2026-07-01: Groß-Modus → Score ist Punkte, nicht Grid-Felder.
+  const largeMode = (s as any).largeGroupMode;
+  const connectedLabel = largeMode ? (lang === 'de' ? 'Punkte' : 'pts') : (lang === 'de' ? 'verbunden' : 'connected');
 
   return (
     <CozyCard borderColor={iWon ? QQ_COLORS.brandPink : undefined}>
@@ -1020,7 +1022,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
                   <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.yellow500 : QQ_COLORS.slate400 }}>
                     {tm.largestConnected} {connectedLabel}
                   </div>
-                  <div style={{ fontSize: 11, color: QQ_COLORS.slate600 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>
+                  {!largeMode && <div style={{ fontSize: 11, color: QQ_COLORS.slate600 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}
                 </div>
               </div>
             );

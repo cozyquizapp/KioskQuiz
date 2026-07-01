@@ -309,6 +309,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           absolute-positionierter Bubble innerhalb des Greeters (siehe
           WolfLobbyGreeter return) — Bubble waechst nach oben weg vom Wolf
           ohne den Wolf zu verschieben. */}
+      {/* 2026-07-01 (Wolf Mega-Event): bei vielen Teams füllt das Grid die
+          Fläche bis oben rechts → Wolf-Greeter würde die erste Karten-Reihe
+          überlappen. Im Groß-Modus daher ausgeblendet. */}
+      {!veryMany && (
       <div style={{
         position: 'absolute',
         right: 'clamp(20px, 2.5cqw, 48px)',
@@ -323,6 +327,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           eurovisionMode={s.theme?.eurovisionMode}
         />
       </div>
+      )}
 
       {/* Welcome-Team-Banner — overlayt zentral wenn neues Team joint.
           B8 (2026-04-29): User-Wunsch 'noch groesser, mittig'. top:50%,
@@ -733,7 +738,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     // Namen lesen sich auf neutralem BG besser.
                     background: isThemed() ? cardBg : 'rgba(255,255,255,0.04)',
                     border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
-                    borderLeft: `4px solid ${t.color}`,
+                    // 2026-07-01 (Wolf Mega-Event): bei vielen Teams wiederholen sich
+                    // die 8 Slot-Farben → Farb-Border wäre Noise. Neutral, nur der
+                    // Avatar trägt die Identität.
+                    borderLeft: veryMany
+                      ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)')
+                      : `4px solid ${t.color}`,
                     boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
                     // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).
                     ['--gc' as string]: `${t.color}99`,

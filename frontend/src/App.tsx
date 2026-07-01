@@ -45,6 +45,7 @@ const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const QQHigherLowerTestPage = React.lazy(() => import('./pages/QQHigherLowerTestPage'));
 const QQTerritoryTestPage = React.lazy(() => import('./pages/QQTerritoryTestPage'));
+const QQBarRaceTestPage = React.lazy(() => import('./pages/QQBarRaceTestPage'));
 const LegalPage = React.lazy(() => import('./pages/LegalPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -211,6 +212,7 @@ function App() {
           <Route path="/hl-test" element={<PinGate><QQHigherLowerTestPage /></PinGate>} />
           <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
           <Route path="/territory-test" element={<PinGate><QQTerritoryTestPage /></PinGate>} />
+          <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
           <Route path="/fragen"       element={<QuestionEditorPage />} />

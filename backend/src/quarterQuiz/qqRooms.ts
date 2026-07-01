@@ -2133,10 +2133,51 @@ export function qqImposterForceEliminate(room: QQRoomState, teamId: string): str
   return room.imposterActiveTeamId;
 }
 
+// ── Groß-Gruppen-Modus: Speed-Punkte statt Grid-Placement ──────────────────
+// Jede richtige Antwort +1 Basis, die 5 schnellsten Richtigen zusätzlich
+// +5/4/3/2/1 (nach submittedAt). Punkte akkumulieren auf totalCells UND
+// largestConnected (beide Felder), damit die bestehende Ranglisten-/Sortier-
+// Maschinerie (sortedTeamIds, ScoreBar, Bar-Race) unverändert funktioniert.
+const QQ_LARGE_GROUP_SPEED_BONUS = [5, 4, 3, 2, 1];
+export function qqLargeGroupAwardPoints(room: QQRoomState): void {
+  // Sieger defensiv sammeln (Snapshot + primärer Sieger + Placement-Queue),
+  // damit auch Auto-Eval-Kategorien (MUCHO/Schätzchen/…) abgedeckt sind.
+  const winnerSet = new Set<string>(room._currentQuestionWinners ?? []);
+  if (room.correctTeamId) winnerSet.add(room.correctTeamId);
+  for (const id of (room._placementQueue ?? [])) winnerSet.add(id);
+  const winners = Array.from(winnerSet);
+  if (winners.length === 0) return;
+  const sorted = winners.sort((a, b) => {
+    const aAt = room.answers.find(x => x.teamId === a)?.submittedAt ?? Infinity;
+    const bAt = room.answers.find(x => x.teamId === b)?.submittedAt ?? Infinity;
+    return aAt - bAt;
+  });
+  sorted.forEach((teamId, idx) => {
+    const team = room.teams[teamId];
+    if (!team) return;
+    const gain = 1 + (idx < 5 ? QQ_LARGE_GROUP_SPEED_BONUS[idx] : 0);
+    team.totalCells       += gain;
+    team.largestConnected += gain;
+  });
+  room.lastActivityAt = Date.now();
+}
+
 // Moderator transitions from QUESTION_REVEAL → PLACEMENT using the
 // correctTeamId that was already set by applyAutoEval during reveal.
 export function qqStartPlacement(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_REVEAL']);
+  // ── Groß-Gruppen-Modus: kein Grid. Speed-Punkte vergeben, dann Standings- ──
+  // Beat (Bar-Race) im PLACEMENT-Slot; Beamer rendert das gegated (Stufe 3).
+  // pendingFor/pendingAction bleiben null → qqNextQuestion schaltet per Mod-
+  // Space direkt weiter (kein Placement-Pending-Block).
+  if (room.largeGroupMode) {
+    qqLargeGroupAwardPoints(room);
+    room.pendingFor = null;
+    room.pendingAction = null;
+    room.phase = 'PLACEMENT';
+    room.lastActivityAt = Date.now();
+    return;
+  }
   if (!room.correctTeamId) {
     // No winner — skip placement, go to next question intro
     qqNextQuestion(room);
@@ -3710,6 +3751,7 @@ export function qqNextQuestion(room: QQRoomState): void {
   // Phase-Wechsel (zu Comeback / nächste Runde / FINAL_REVEAL).
   if (
     isEndOfPhase
+    && !room.largeGroupMode  // Groß-Modus: grid-basierte Add-ons deaktiviert
     && room.cozyGamesEnabled
     && Array.isArray(room.cozyGamesPool) && room.cozyGamesPool.length > 0
   ) {
@@ -3917,6 +3959,10 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
 // updateTerritories ist exportiert damit server.ts es nach skipTo-State-
 // Manipulation aufrufen kann (largestConnected/totalCells werden neu berechnet).
 export function updateTerritories(room: QQRoomState): void {
+  // Groß-Gruppen-Modus: kein Grid — totalCells/largestConnected werden per
+  // qqLargeGroupAwardPoints direkt als Punkte verwaltet. Ein Grid-Recompute
+  // würde sie auf 0 überschreiben, daher hier no-op.
+  if (room.largeGroupMode) return;
   const results = computeTerritories(room.grid, room.gridSize);
   // 2026-05-05 (Wolf-Konzept Stapel-Bonus): Connections-Finale-Stacks addieren
   // sich auf largestConnected. Wir summen pro Team alle cell.stackBonus auf.

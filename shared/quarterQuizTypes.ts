@@ -81,6 +81,7 @@ export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_GAME   = 2;
 export const QQ_MAX_STAPELS_PER_GAME  = 3;  // Stapel-Cap pro Team pro Spiel (verhindert Snowball-Effekt)
 export const QQ_MAX_TEAMS             = 8;
+export const QQ_MAX_TEAMS_LARGE       = 25; // Groß-Gruppen-Modus (largeGroupMode): Bar-Race statt Grid
 export const QQ_MIN_TEAMS             = 2;
 
 export function qqGridSize(teamCount: number): number {
@@ -1257,6 +1258,9 @@ export interface QQStateUpdate {
   cozyGamesPool?: string[];
   /** Setup-Toggle: aktiviert Comeback-Mechanik (H/L vor Final). Default true. */
   comebackEnabled?: boolean;
+  /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race-Score statt Grid,
+   *  Top-5-schnellste-Reveal statt Placement. Default false. */
+  largeGroupMode?: boolean;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).
@@ -1326,7 +1330,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; pin?: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 2 | 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 2 | 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

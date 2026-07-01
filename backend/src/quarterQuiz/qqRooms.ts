@@ -4,7 +4,7 @@ import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
-  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS,
+  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS, QQ_MAX_TEAMS_LARGE,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
   QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
@@ -307,6 +307,9 @@ export interface QQRoomState {
   finalWagerEnabled: boolean;
   /** Setup-Toggle: aktiviert Comeback (H/L-Mini-Game vor Final). Default true. */
   comebackEnabled: boolean;
+  /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race statt Grid,
+   *  Top-5-schnellste-Reveal statt Placement. Default false. */
+  largeGroupMode: boolean;
   // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ─────────────────────────────
   /** Setup-Toggle aus Draft: aktiviert CozyGames in diesem Run. Default false. */
   cozyGamesEnabled: boolean;
@@ -506,6 +509,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       finalWagerEnabled: true,
       // 2026-05-17 (Wolf): Comeback-Toggle, Default ON für Backward-Compat.
       comebackEnabled: true,
+      // 2026-07-01 (Wolf): Groß-Gruppen-Modus, default off.
+      largeGroupMode: false,
       // 2026-05-17 (CozyGames): default off, wird beim qqStartGame aus Draft gelesen.
       cozyGamesEnabled: false,
       cozyGamesPool: [],
@@ -555,8 +560,9 @@ export function qqJoinTeam(
     throw new QQError('GAME_STARTED', 'Das Spiel hat bereits begonnen.');
   }
   const existingCount = Object.keys(room.teams).length;
-  if (existingCount >= QQ_MAX_TEAMS) {
-    throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${QQ_MAX_TEAMS}) erreicht.`);
+  const maxTeams = room.largeGroupMode ? QQ_MAX_TEAMS_LARGE : QQ_MAX_TEAMS;
+  if (existingCount >= maxTeams) {
+    throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${maxTeams}) erreicht.`);
   }
   // Avatar exclusivity: each avatar (Color-Slot) can only be chosen by one team
   const avatarTaken = Object.values(room.teams).some(t => t.avatarId === avatarId);
@@ -666,6 +672,7 @@ export function qqStartGame(
   cozyGamesEnabled?: boolean,
   cozyGamesPool?: string[],
   comebackEnabled?: boolean,
+  largeGroupMode?: boolean,
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -808,6 +815,8 @@ export function qqStartGame(
   room.connectionsEnabled = false;
   // 2026-05-17: Comeback-Toggle aus Draft. Default true (Backward-Compat).
   room.comebackEnabled = comebackEnabled !== false;
+  // 2026-07-01: Groß-Gruppen-Modus aus Draft. Default off.
+  room.largeGroupMode = largeGroupMode === true;
   // 2026-05-17: CozyGames-Setup aus Draft. Default off, leeren Pool.
   // Mod-Quick-Toggle-State wird vom Frontend in den startGame-Args mitgesendet,
   // hat also Vorrang vor Draft (siehe QQModeratorPage liveToggleOn-Logik).
@@ -4162,6 +4171,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     cozyGamesPool:        room.cozyGamesPool ?? [],
     cozyGame:             room.cozyGame ?? null,
     comebackEnabled:      room.comebackEnabled !== false,
+    largeGroupMode:       room.largeGroupMode ?? false,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }

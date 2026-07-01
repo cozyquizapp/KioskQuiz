@@ -1,15 +1,18 @@
-// ── QQ Bar-Race Test — Score-Ansicht für große Gruppen ───────────────────────
-// Brainstorm-Prototyp 2026-07-01 (Wolf): Ersatz für das verworfene Territorium-
-// Modell. Kernkritik dort: „man weiß nicht wie viele Punkte man hat" + Farben ab
-// 10 Teams ununterscheidbar. Antwort hier:
-//   • Jedes Team hat sein EIGENES beschriftetes Objekt (Avatar+Name+Zahl) →
-//     Farb-Ähnlichkeit egal, Punkte immer lesbar.
-//   • Die Show entsteht durch BEWEGUNG: Balken wachsen, Zeilen überholen sich,
-//     Zahlen zählen hoch.
-//   • Zwei Ansichten: „Alle Teams" (voller Race) + „Beamer" (Top-5 groß + deine
-//     Zeile gepinnt, auch wenn Mittelfeld).
+// ── QQ Bar-Race Test — Groß-Gruppen-Score-Loop ───────────────────────────────
+// Brainstorm-Prototyp 2026-07-01 (Wolf). Ersatz für das verworfene Territorium-
+// Modell. Testet den Groß-Gruppen-Quiz-Loop (bis 100 Personen / 25 Teams):
 //
-// Route: /barrace-test (PinGate). Reiner Test — keine Socket-/Backend-Anbindung.
+//   Frage stellen → Teams tippen (Backend stempelt Reihenfolge, existiert schon)
+//     → Reveal zeigt TOP-5 schnellste Richtige (Avatar + Zeit + Punkte)
+//        + Rest aggregiert „+N weitere richtig"        ← löst die Auflösung (5 statt 25)
+//     → Punkte: jede Richtige +1 Basis, Top-5 zusätzlich +5/4/3/2/1
+//     → Bar-Race aktualisiert sich (Überholmomente)
+//     → nächste Frage                                  ← kein Placement = spart Schritte
+//
+// WICHTIG: reiner Prototyp. Der echte Quiz-Flow (Grid/Placement/Klauen) wird
+// NICHT angefasst — das wäre im echten Quiz ein gegateter Modus (Setup-Schalter).
+//
+// Route: /barrace-test (PinGate). Keine Socket-/Backend-Anbindung.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
@@ -32,20 +35,30 @@ const ANIMALS: { emoji: string; name: string }[] = [
 
 const THIN_ROW_H = 40;
 const BIG_ROW_H = 74;
+const BASE_POINT = 1;                    // jede richtige Antwort
+const SPEED_BONUS = [5, 4, 3, 2, 1];     // Top-5 schnellste zusätzlich
+const MEDALS = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
 
 function colorFor(i: number): string {
   if (i < QQ_TEAM_PALETTE.length) return QQ_TEAM_PALETTE[i];
   return `hsl(${((i * 137.508) % 360).toFixed(0)} 70% 56%)`;
 }
 
+type QResult = {
+  n: number;
+  correctCount: number;
+  top5: { team: number; time: number; points: number }[];
+};
+
 export default function QQBarRaceTestPage() {
   const [teamCount, setTeamCount] = useState(16);
-  const [maxPerRound, setMaxPerRound] = useState(20);
-  const [view, setView] = useState<'full' | 'beamer'>('full');
+  const [correctRate, setCorrectRate] = useState(0.65);
+  const [view, setView] = useState<'full' | 'beamer'>('beamer');
   const [autoPlay, setAutoPlay] = useState(false);
   const [round, setRound] = useState(0);
   const [yourTeam, setYourTeam] = useState(11);
   const [lastDelta, setLastDelta] = useState<number[]>(() => new Array(16).fill(0));
+  const [lastQ, setLastQ] = useState<QResult | null>(null);
 
   const targetRef = useRef<number[]>(new Array(16).fill(0));
   const [display, setDisplay] = useState<number[]>(() => new Array(16).fill(0));
@@ -62,12 +75,12 @@ export default function QQBarRaceTestPage() {
     targetRef.current = new Array(teamCount).fill(0);
     setDisplay(new Array(teamCount).fill(0));
     setLastDelta(new Array(teamCount).fill(0));
+    setLastQ(null);
     setRound(0);
     setYourTeam(y => Math.min(y, teamCount - 1));
   }, [teamCount]);
 
   // Dauer-rAF: easet Anzeige-Werte zu den Ziel-Werten (zählt hoch, Balken wächst).
-  // Bail-out (return prev) wenn alles ausgeruht → kein Re-Render im Leerlauf.
   useEffect(() => {
     let raf = 0;
     const tick = () => {
@@ -87,47 +100,58 @@ export default function QQBarRaceTestPage() {
     return () => cancelAnimationFrame(raf);
   }, []);
 
-  const addPoints = useCallback((surprise: boolean) => {
-    const delta = teams.map(() => {
-      if (surprise) {
-        // heavy-tailed: viele kleine, wenige riesige Sprünge → Überhol-Drama
-        const r = Math.random();
-        return Math.round(r * r * r * maxPerRound * 3);
-      }
-      return Math.round(Math.random() * maxPerRound);
+  // ── Eine Frage simulieren ────────────────────────────────────────────────
+  const askQuestion = useCallback(() => {
+    const results = teams.map((_, i) => {
+      const correct = Math.random() < correctRate;
+      return { team: i, correct, time: correct ? 1 + Math.random() * 13 : Infinity };
     });
-    targetRef.current = targetRef.current.map((v, i) => v + (delta[i] ?? 0));
-    setLastDelta(delta);
+    const correctSorted = results.filter(r => r.correct).sort((a, b) => a.time - b.time);
+    const top5 = correctSorted.slice(0, 5);
+
+    const gain = new Array(teamCount).fill(0);
+    for (const r of correctSorted) gain[r.team] += BASE_POINT;
+    top5.forEach((r, idx) => { gain[r.team] += SPEED_BONUS[idx]; });
+
+    targetRef.current = targetRef.current.map((v, i) => v + (gain[i] ?? 0));
+    setLastDelta(gain);
+    setLastQ({
+      n: round + 1,
+      correctCount: correctSorted.length,
+      top5: top5.map((r, idx) => ({ team: r.team, time: r.time, points: BASE_POINT + SPEED_BONUS[idx] })),
+    });
     setRound(r => r + 1);
-  }, [teams, maxPerRound]);
+  }, [teams, teamCount, correctRate, round]);
 
   const reset = useCallback(() => {
     targetRef.current = new Array(teamCount).fill(0);
     setDisplay(new Array(teamCount).fill(0));
     setLastDelta(new Array(teamCount).fill(0));
+    setLastQ(null);
     setRound(0);
     setAutoPlay(false);
   }, [teamCount]);
 
   useEffect(() => {
     if (!autoPlay) return;
-    const id = window.setInterval(() => addPoints(false), 1100);
+    const id = window.setInterval(askQuestion, 1600);
     return () => window.clearInterval(id);
-  }, [autoPlay, addPoints]);
+  }, [autoPlay, askQuestion]);
 
-  // Reihenfolge + Rang aus Anzeige-Werten (kontinuierlich → sanftes Überholen).
-  const { order, rankOf, maxVal } = useMemo(() => {
+  // Reihenfolge + Rang aus Anzeige-Werten.
+  const { rankOf, order, maxVal } = useMemo(() => {
     const idx = Array.from({ length: teamCount }, (_, i) => i);
     idx.sort((a, b) => (display[b] ?? 0) - (display[a] ?? 0));
     const rank = new Array<number>(teamCount).fill(0);
     idx.forEach((teamI, pos) => { rank[teamI] = pos; });
-    return { order: idx, rankOf: rank, maxVal: Math.max(1, ...display) };
+    return { rankOf: rank, order: idx, maxVal: Math.max(1, ...display) };
   }, [display, teamCount]);
 
   const yourRank = rankOf[yourTeam] ?? 0;
   const yourInTop5 = yourRank < 5;
+  const top5Standings = order.slice(0, 5);
 
-  // ── Row-Renderer ───────────────────────────────────────────────────────────
+  // ── Bar-Row ────────────────────────────────────────────────────────────────
   const renderRow = (teamI: number, top: number, rowH: number, big: boolean, pinnedRankLabel?: number) => {
     const t = teams[teamI];
     if (!t) return null;
@@ -147,8 +171,7 @@ export default function QQBarRaceTestPage() {
           display: 'flex', alignItems: 'center', gap: big ? 14 : 10,
           padding: big ? '0 16px' : '0 10px', borderRadius: big ? 16 : 10,
           background: isYou ? 'rgba(236,72,153,0.16)' : 'rgba(255,255,255,0.04)',
-          boxShadow: isYou ? '0 0 0 2px #EC4899' : 'none',
-          cursor: 'pointer',
+          boxShadow: isYou ? '0 0 0 2px #EC4899' : 'none', cursor: 'pointer',
         }}
       >
         <span style={{ width: big ? 40 : 26, textAlign: 'center', fontWeight: 900, fontSize: big ? 24 : 15, opacity: rank === 1 ? 1 : 0.55 }}>
@@ -161,8 +184,7 @@ export default function QQBarRaceTestPage() {
         <div style={{ flex: 1, height: big ? 30 : 18, background: 'rgba(255,255,255,0.06)', borderRadius: 999, overflow: 'hidden', position: 'relative' }}>
           <div style={{
             position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`,
-            background: `linear-gradient(90deg, ${t.color}, ${t.color}dd)`,
-            borderRadius: 999, boxShadow: `0 0 12px ${t.color}66`,
+            background: `linear-gradient(90deg, ${t.color}, ${t.color}dd)`, borderRadius: 999, boxShadow: `0 0 12px ${t.color}66`,
           }} />
         </div>
         <span style={{ width: big ? 84 : 58, textAlign: 'right', fontWeight: 900, fontSize: big ? 26 : 16, fontVariantNumeric: 'tabular-nums' }}>
@@ -175,30 +197,28 @@ export default function QQBarRaceTestPage() {
     );
   };
 
-  const top5 = order.slice(0, 5);
-
   return (
     <div style={S.page}>
       <div style={S.header}>
-        <h1 style={S.h1}>🏁 Bar-Race Score — Test</h1>
+        <h1 style={S.h1}>🏁 Groß-Gruppen-Loop — Test</h1>
         <p style={S.sub}>
-          Score-Ansicht für große Gruppen (bis 100 Personen / 25 Teams). Jede richtige Antwort =
-          Punkte, Balken wächst, Zeilen überholen sich. Immer lesbar: <b>Zahl + Rang</b>. Klick auf
-          eine Zeile markiert sie als „dein Team".
+          Bis 100 Personen / 25 Teams. Pro Frage werden nur die <b>Top-5 schnellsten Richtigen</b>{' '}
+          aufgedeckt (löst die Avatar-Auflösung), der Rest aggregiert. Punkte: jede Richtige <b>+1</b>,
+          Top-5 zusätzlich <b>+5/4/3/2/1</b>. Kein Placement → spart Schritte. Klick auf eine Zeile =
+          „dein Team".
         </p>
       </div>
 
       <div style={S.controls}>
         <div style={S.btnRow}>
-          <button style={S.btnPrimary} onClick={() => addPoints(false)}>▶ Runde</button>
-          <button style={S.btn} onClick={() => addPoints(true)}>🎲 Überraschungsrunde</button>
+          <button style={S.btnPrimary} onClick={askQuestion}>▶ Frage stellen</button>
           <button style={{ ...S.btn, ...(autoPlay ? S.btnActive : null) }} onClick={() => setAutoPlay(a => !a)}>
             {autoPlay ? '⏸ Auto stop' : '⏩ Auto-Play'}
           </button>
           <button style={S.btnGhost} onClick={reset}>↺ Reset</button>
           <div style={S.viewToggle}>
-            <button style={{ ...S.viewBtn, ...(view === 'full' ? S.viewBtnOn : null) }} onClick={() => setView('full')}>Alle Teams</button>
             <button style={{ ...S.viewBtn, ...(view === 'beamer' ? S.viewBtnOn : null) }} onClick={() => setView('beamer')}>Beamer</button>
+            <button style={{ ...S.viewBtn, ...(view === 'full' ? S.viewBtnOn : null) }} onClick={() => setView('full')}>Alle Teams</button>
           </div>
         </div>
         <div style={S.sliders}>
@@ -207,11 +227,45 @@ export default function QQBarRaceTestPage() {
             <input type="range" min={2} max={25} value={teamCount} onChange={e => setTeamCount(Number(e.target.value))} style={S.range} />
           </label>
           <label style={S.sliderRow}>
-            <span style={S.sliderLabel}>Max Punkte / Runde<b style={S.sliderVal}>{maxPerRound}</b></span>
-            <input type="range" min={5} max={40} value={maxPerRound} onChange={e => setMaxPerRound(Number(e.target.value))} style={S.range} />
+            <span style={S.sliderLabel}>Richtig-Quote<b style={S.sliderVal}>{Math.round(correctRate * 100)}%</b></span>
+            <input type="range" min={20} max={95} value={Math.round(correctRate * 100)} onChange={e => setCorrectRate(Number(e.target.value) / 100)} style={S.range} />
           </label>
-          <span style={S.roundBadge}>Runde {round}</span>
+          <span style={S.roundBadge}>Frage {round}</span>
         </div>
+      </div>
+
+      {/* Reveal-Panel: Top-5 schnellste Richtige der letzten Frage */}
+      <div style={S.reveal}>
+        {!lastQ ? (
+          <div style={S.revealHint}>Klick „Frage stellen" — hier erscheinen die 5 schnellsten richtigen Teams.</div>
+        ) : (
+          <>
+            <div style={S.revealHead}>
+              <span style={S.revealTitle}>Frage {lastQ.n} · richtig beantwortet</span>
+              <span style={S.revealCount}>{lastQ.correctCount} / {teamCount} richtig</span>
+            </div>
+            <div style={S.podium}>
+              {lastQ.top5.map((r, idx) => {
+                const t = teams[r.team];
+                if (!t) return null;
+                return (
+                  <div key={r.team} style={{ ...S.podRow, ...(r.team === yourTeam ? S.podRowYou : null) }}>
+                    <span style={S.podMedal}>{MEDALS[idx]}</span>
+                    <span style={S.podAvatar}>{t.emoji}</span>
+                    <span style={S.podName}>{t.name}</span>
+                    <span style={S.podTime}>{r.time.toFixed(1)}s</span>
+                    <span style={{ ...S.podPts, color: t.color }}>+{r.points}</span>
+                  </div>
+                );
+              })}
+            </div>
+            {lastQ.correctCount > lastQ.top5.length && (
+              <div style={S.revealRest}>
+                + {lastQ.correctCount - lastQ.top5.length} weitere Teams richtig · je +{BASE_POINT}
+              </div>
+            )}
+          </>
+        )}
       </div>
 
       {view === 'full' ? (
@@ -222,8 +276,9 @@ export default function QQBarRaceTestPage() {
         </div>
       ) : (
         <div style={S.beamerWrap}>
+          <div style={S.beamerLabel}>Gesamtwertung</div>
           <div style={{ position: 'relative', height: 5 * BIG_ROW_H }}>
-            {top5.map(teamI => renderRow(teamI, rankOf[teamI] * BIG_ROW_H, BIG_ROW_H, true))}
+            {top5Standings.map(teamI => renderRow(teamI, rankOf[teamI] * BIG_ROW_H, BIG_ROW_H, true))}
           </div>
           {!yourInTop5 && (
             <>
@@ -246,9 +301,9 @@ const S: Record<string, React.CSSProperties> = {
   },
   header: { maxWidth: 1000, margin: '0 auto 18px' },
   h1: { margin: '0 0 6px', fontSize: 28, fontWeight: 900, letterSpacing: -0.5 },
-  sub: { margin: 0, fontSize: 15, lineHeight: 1.5, opacity: 0.82, maxWidth: 780 },
+  sub: { margin: 0, fontSize: 15, lineHeight: 1.5, opacity: 0.82, maxWidth: 820 },
   controls: {
-    maxWidth: 1000, margin: '0 auto 20px', background: 'rgba(255,255,255,0.05)', borderRadius: 18,
+    maxWidth: 1000, margin: '0 auto 18px', background: 'rgba(255,255,255,0.05)', borderRadius: 18,
     padding: 16, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', flexDirection: 'column', gap: 14,
   },
   btnRow: { display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' },
@@ -265,6 +320,23 @@ const S: Record<string, React.CSSProperties> = {
   sliderVal: { color: '#EC4899', fontSize: 15 },
   range: { width: '100%', accentColor: '#EC4899' },
   roundBadge: { marginLeft: 'auto', fontSize: 14, fontWeight: 800, opacity: 0.7 },
+  reveal: {
+    maxWidth: 1000, margin: '0 auto 18px', background: 'linear-gradient(180deg, rgba(236,72,153,0.12), rgba(255,255,255,0.04))',
+    borderRadius: 18, padding: 16, border: '1px solid rgba(236,72,153,0.3)', minHeight: 120,
+  },
+  revealHint: { opacity: 0.6, fontSize: 15, textAlign: 'center', padding: '24px 0' },
+  revealHead: { display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: 12 },
+  revealTitle: { fontSize: 17, fontWeight: 900 },
+  revealCount: { fontSize: 14, fontWeight: 800, opacity: 0.7 },
+  podium: { display: 'flex', flexDirection: 'column', gap: 6 },
+  podRow: { display: 'flex', alignItems: 'center', gap: 12, padding: '7px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.05)' },
+  podRowYou: { boxShadow: '0 0 0 2px #EC4899', background: 'rgba(236,72,153,0.14)' },
+  podMedal: { fontSize: 22, width: 30, textAlign: 'center' },
+  podAvatar: { fontSize: 26, width: 34, textAlign: 'center' },
+  podName: { flex: 1, fontWeight: 800, fontSize: 16 },
+  podTime: { fontVariantNumeric: 'tabular-nums', fontSize: 14, fontWeight: 700, opacity: 0.6, width: 54, textAlign: 'right' },
+  podPts: { fontWeight: 900, fontSize: 18, width: 44, textAlign: 'right' },
+  revealRest: { marginTop: 10, fontSize: 13, fontWeight: 700, opacity: 0.6, textAlign: 'center' },
   raceWrap: {
     maxWidth: 1000, margin: '0 auto', background: 'rgba(255,255,255,0.03)', borderRadius: 18,
     padding: 14, border: '1px solid rgba(255,255,255,0.07)',
@@ -273,6 +345,7 @@ const S: Record<string, React.CSSProperties> = {
     maxWidth: 1000, margin: '0 auto', background: 'rgba(0,0,0,0.28)', borderRadius: 22,
     padding: 20, border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 24px 70px rgba(0,0,0,0.45)',
   },
+  beamerLabel: { fontSize: 12, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.5, fontWeight: 800, marginBottom: 12 },
   pinDivider: {
     display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '10px 0 8px',
     fontSize: 11, textTransform: 'uppercase', letterSpacing: 1.5, opacity: 0.5, fontWeight: 800,

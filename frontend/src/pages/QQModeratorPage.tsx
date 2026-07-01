@@ -328,7 +328,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
     const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
     const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool, comebackEnabled: draftComebackEnabled });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool, comebackEnabled: draftComebackEnabled, largeGroupMode: (state as any)?.largeGroupMode });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }
@@ -5500,6 +5500,13 @@ function SetupView({
                 ? `🪅 CozyGames AN — ${((s as any).cozyGamesPool ?? []).length} Spiele im Rad, manueller Trigger via Pause-Button.\nKlick zum Deaktivieren.`
                 : '🪅 CozyGames AUS.\nKlick zum Aktivieren: analoge Mini-Spiele zwischen Runden.'}
             >🪅 CozyGames</button>
+            <button
+              onClick={() => emit('qq:setQuizOptions', { roomCode, largeGroupMode: !(s as any).largeGroupMode })}
+              style={segPill(!!(s as any).largeGroupMode, QQ_COLORS.violet400)}
+              title={(s as any).largeGroupMode
+                ? '👥 Groß-Gruppen-Modus AN — bis 25 Teams, Bar-Race statt Grid, Top-5-schnellste-Reveal. Grid-Add-ons deaktiviert.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
+                : '👥 Groß-Gruppen-Modus AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: bis 25 Teams, Bar-Race-Wertung.'}
+            >👥 Groß-Gruppe</button>
           </div>
         </div>
 

@@ -1,6 +1,7 @@
 // ── Shared Quarter Quiz constants (used by BeamerPage + CustomSlide) ──────────
 
 import type { QQStateUpdate, QQTeam } from '@shared/quarterQuizTypes';
+import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 
 /**
  * 2026-05-24 (Refactor #2): Kanonische Team-Sortierung. Backend schickt seit
@@ -29,6 +30,47 @@ export function qqSortedTeams(s: QQStateUpdate): QQTeam[] {
     return (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
         || (b.totalCells ?? 0) - (a.totalCells ?? 0);
   });
+}
+
+/**
+ * 2026-07-01 (Wolf Idee 2 — nestedTeams): Genesteter Groß-Modus. Die realen
+ * Teams sind Sub-Teams (bis 3 pro Eltern-Team, je eigenes Handy) — sie teilen
+ * sich einen avatarId-Slot (= Eltern-Team-Identität). Für die Bar-Race-Anzeige
+ * werden sie nach avatarId gruppiert und ihre Punkte (largestConnected) summiert.
+ *
+ * Rückgabe = synthetische "Eltern-QQTeam"-Objekte (id `grp-<avatarId>`), damit
+ * die bestehenden Bar-Race-Rows (StandingsRow etc.) 1:1 wiederverwendbar sind:
+ * an den Render-Stellen nur qqSortedTeams → qqSortedGroups tauschen. Name+Farbe
+ * kommen aus QQ_AVATARS (Avatar = Identität, Wolf: "nur der Avatar sichtbar").
+ * Sub-Teams behalten ihre eigenen Namen im Akt-2-Reveal (ihr Moment).
+ */
+export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
+  const de = s.language !== 'en';
+  const byAvatar = new Map<string, QQTeam[]>();
+  for (const t of s.teams) {
+    const arr = byAvatar.get(t.avatarId);
+    if (arr) arr.push(t);
+    else byAvatar.set(t.avatarId, [t]);
+  }
+  const groups: QQTeam[] = [];
+  for (const [avatarId, members] of byAvatar) {
+    const meta = QQ_AVATARS.find(a => a.id === avatarId);
+    const rep = members[0];
+    const points = members.reduce((sum, m) => sum + (m.largestConnected ?? 0), 0);
+    groups.push({
+      id: `grp-${avatarId}`,
+      name: meta ? (de ? meta.label : meta.labelEn) : rep.name,
+      color: meta?.color ?? rep.color,
+      avatarId,
+      emoji: rep.emoji,
+      connected: true,
+      totalCells: points,
+      largestConnected: points,
+    });
+  }
+  return groups.sort((a, b) =>
+    (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
+    || (b.totalCells ?? 0) - (a.totalCells ?? 0));
 }
 
 /**

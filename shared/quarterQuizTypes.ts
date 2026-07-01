@@ -1261,6 +1261,11 @@ export interface QQStateUpdate {
   /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race-Score statt Grid,
    *  Top-5-schnellste-Reveal statt Placement. Default false. */
   largeGroupMode?: boolean;
+  /** Setup-Sub-Modus (2026-07-01, Wolf Idee 2): Genestete Teams — 8 Eltern-Teams
+   *  à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten), Punkte fließen
+   *  ins Eltern-Team. Impliziert largeGroupMode. Bar-Race gruppiert nach avatarId
+   *  (= Eltern-Team) → 8 Balken statt 24. Default false. */
+  nestedTeams?: boolean;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).
@@ -1330,7 +1335,7 @@ export interface QQJoinModeratorPayload  { roomCode: string; pin?: string; }
 export interface QQJoinBeamerPayload     { roomCode: string; }
 export interface QQJoinTeamPayload       { roomCode: string; teamId: string; teamName: string; avatarId: string; emoji?: string; }
 
-export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 2 | 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; }
+export interface QQStartGamePayload      { roomCode: string; questions: QQQuestion[]; language: QQLanguage; phases: 2 | 3 | 4; theme?: QQTheme; draftId?: string; draftTitle?: string; slideTemplates?: QQSlideTemplates; soundConfig?: QQSoundConfig; connections?: QQConnectionsPayload; connectionsDurationSec?: number; connectionsMaxFails?: number; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean; }
 export interface QQRevealAnswerPayload   { roomCode: string; }
 export interface QQShowImagePayload      { roomCode: string; }
 export interface QQMarkCorrectPayload    { roomCode: string; teamId: string; }

@@ -310,6 +310,11 @@ export interface QQRoomState {
   /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race statt Grid,
    *  Top-5-schnellste-Reveal statt Placement. Default false. */
   largeGroupMode: boolean;
+  /** Setup-Sub-Modus (2026-07-01, Idee 2): Genestete Teams — bis 8 Eltern-Teams
+   *  à bis zu 3 Sub-Teams (eigene Handys). Impliziert largeGroupMode. Scoring +
+   *  Kein-Grid erbt komplett von largeGroupMode; nested ändert NUR die
+   *  Bar-Race-Anzeige (Frontend gruppiert nach avatarId). Default false. */
+  nestedTeams: boolean;
   // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ─────────────────────────────
   /** Setup-Toggle aus Draft: aktiviert CozyGames in diesem Run. Default false. */
   cozyGamesEnabled: boolean;
@@ -511,6 +516,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       comebackEnabled: true,
       // 2026-07-01 (Wolf): Groß-Gruppen-Modus, default off.
       largeGroupMode: false,
+      // 2026-07-01 (Wolf Idee 2): Genestete Teams (8×3), default off.
+      nestedTeams: false,
       // 2026-05-17 (CozyGames): default off, wird beim qqStartGame aus Draft gelesen.
       cozyGamesEnabled: false,
       cozyGamesPool: [],
@@ -675,6 +682,7 @@ export function qqStartGame(
   cozyGamesPool?: string[],
   comebackEnabled?: boolean,
   largeGroupMode?: boolean,
+  nestedTeams?: boolean,
 ): void {
   const teamCount = Object.keys(room.teams).length;
   if (teamCount < 1) {
@@ -818,7 +826,9 @@ export function qqStartGame(
   // 2026-05-17: Comeback-Toggle aus Draft. Default true (Backward-Compat).
   room.comebackEnabled = comebackEnabled !== false;
   // 2026-07-01: Groß-Gruppen-Modus aus Draft. Default off.
-  room.largeGroupMode = largeGroupMode === true;
+  // 2026-07-01 (Idee 2): Genestet impliziert Groß-Modus (erbt Scoring/Kein-Grid).
+  room.nestedTeams = nestedTeams === true;
+  room.largeGroupMode = largeGroupMode === true || room.nestedTeams;
   // 2026-07-01: Groß-Modus deaktiviert grid-basierte End-Game-Mechaniken hart —
   // kein Grid, also würden Comeback (Cell-Steal), Connections-4×4 und Final-Wager
   // (wettet auf Grid-Punkte) crashen bzw. sinnlos laufen. Wolf-Entscheidung:
@@ -4232,6 +4242,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     cozyGame:             room.cozyGame ?? null,
     comebackEnabled:      room.comebackEnabled !== false,
     largeGroupMode:       room.largeGroupMode ?? false,
+    nestedTeams:          room.nestedTeams ?? false,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }

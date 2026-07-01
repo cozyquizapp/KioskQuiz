@@ -1121,7 +1121,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // Default 4 statt 3 — die Standard-Drafts (qq-vol-*) sind 4-Runden-Sets,
         // und ein silent-3 wenn frontend den Wert nicht sendet hat schon einmal
         // zu 'nur 3 Runden im Tree' geführt.
-        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails, (payload as any).cozyGamesEnabled, (payload as any).cozyGamesPool, (payload as any).comebackEnabled, (payload as any).largeGroupMode);
+        qqStartGame(room, payload.questions, payload.language, payload.phases ?? 4, payload.theme, payload.draftId, payload.draftTitle, payload.slideTemplates, payload.soundConfig, payload.connections, payload.connectionsDurationSec, payload.connectionsMaxFails, (payload as any).cozyGamesEnabled, (payload as any).cozyGamesPool, (payload as any).comebackEnabled, (payload as any).largeGroupMode, (payload as any).nestedTeams);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -3105,7 +3105,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
     socket.on('qq:setQuizOptions', async (
-      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean },
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean },
       ack?: unknown
     ) => {
       try {
@@ -3121,6 +3121,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         if (typeof payload.largeGroupMode === 'boolean') {
           room.largeGroupMode = payload.largeGroupMode;
+          // Groß-Modus aus → auch Nested aus (nested ⊂ large).
+          if (!payload.largeGroupMode) room.nestedTeams = false;
+        }
+        // 2026-07-01 (Idee 2): Genestet-Toggle. Nested an → Groß-Modus an (erbt
+        // Scoring/Kein-Grid). Nested aus lässt Groß-Modus (flach) unberührt.
+        if (typeof payload.nestedTeams === 'boolean') {
+          room.nestedTeams = payload.nestedTeams;
+          if (payload.nestedTeams) room.largeGroupMode = true;
         }
         // 2026-05-17 (CozyGames Live-Toggle im Mod-Setup): kann ohne Game-Restart
         // umgestellt werden. Pool ändern setzt cozyGame-Round-State nicht zurück

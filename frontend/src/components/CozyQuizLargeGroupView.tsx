@@ -14,7 +14,7 @@ import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
-import { qqSortedTeams } from '../qqShared';
+import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 const SPEED_BONUS = [5, 4, 3, 2, 1];
@@ -95,7 +95,9 @@ export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
 // ── Akt 3: Bar-Race-Gesamtwertung ────────────────────────────────────────────
 export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
-  const sorted = qqSortedTeams(state);
+  // Genestet (Idee 2): 8 Eltern-Team-Balken (nach avatarId gruppiert, Punkte
+  // summiert) statt bis zu 24 Sub-Team-Balken. Sonst: reale Teams.
+  const sorted = state.nestedTeams ? qqSortedGroups(state) : qqSortedTeams(state);
   const shown = sorted.slice(0, STANDINGS_MAX);
   const rest = sorted.length - shown.length;
   const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
@@ -169,7 +171,7 @@ function StandingsRow({ team, rank, maxVal, de }: { team: QQTeam; rank: number; 
 // ── GameOver: Sieger-Hero + Top-10-Standings (kein Grid, keine 25er-Kaskade) ──
 export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
-  const sorted = qqSortedTeams(state);
+  const sorted = state.nestedTeams ? qqSortedGroups(state) : qqSortedTeams(state);
   const winner = sorted[0];
   const shown = sorted.slice(0, 10);
   const rest = sorted.length - shown.length;

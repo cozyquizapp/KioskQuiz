@@ -328,7 +328,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
     const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
     const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
-    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool, comebackEnabled: draftComebackEnabled, largeGroupMode: (state as any)?.largeGroupMode });
+    const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool, comebackEnabled: draftComebackEnabled, largeGroupMode: (state as any)?.largeGroupMode, nestedTeams: (state as any)?.nestedTeams });
     if (!ack.ok) {
       alert(`Fehler beim Starten: ${ack.error ?? 'Unbekannt'}`);
     }
@@ -5507,6 +5507,18 @@ function SetupView({
                 ? '👥 Groß-Gruppen-Modus AN — bis 25 Teams, Bar-Race statt Grid, Top-5-schnellste-Reveal. Grid-Add-ons deaktiviert.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
                 : '👥 Groß-Gruppen-Modus AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: bis 25 Teams, Bar-Race-Wertung.'}
             >👥 Groß-Gruppe</button>
+            {/* 2026-07-01 (Wolf Idee 2): Nested-Sub-Toggle — nur sichtbar wenn
+                Groß-Modus an. Genestet = 8 Eltern-Teams à bis 3 Sub-Teams
+                (eigene Handys), Bar-Race gruppiert nach Avatar → 8 Balken. */}
+            {(s as any).largeGroupMode && (
+              <button
+                onClick={() => emit('qq:setQuizOptions', { roomCode, nestedTeams: !(s as any).nestedTeams })}
+                style={segPill(!!(s as any).nestedTeams, QQ_COLORS.violet400)}
+                title={(s as any).nestedTeams
+                  ? '🎯 Genestet AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten). Punkte fließen ins Eltern-Team, Bar-Race zeigt 8 Balken.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nKlick zum Deaktivieren (flacher Groß-Modus).'
+                  : '🎯 Genestet AUS — jedes Handy = eigenes Team (flacher Groß-Modus).\nKlick zum Aktivieren: 8×3-Struktur, bis 72 Personen, 8 Eltern-Balken.'}
+              >🎯 Genestet 8×3</button>
+            )}
           </div>
         </div>
 

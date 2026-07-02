@@ -3119,17 +3119,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (typeof payload.comebackEnabled === 'boolean') {
           room.comebackEnabled = payload.comebackEnabled;
         }
+        // 2026-07-02 (Wolf): Mega Event = IMMER genestet (flaches 25er verworfen).
+        // largeGroupMode und nestedTeams sind gekoppelt (large ⟺ nested).
         if (typeof payload.largeGroupMode === 'boolean') {
           room.largeGroupMode = payload.largeGroupMode;
-          // Groß-Modus aus → auch Nested aus (nested ⊂ large).
-          if (!payload.largeGroupMode) room.nestedTeams = false;
         }
-        // 2026-07-01 (Idee 2): Genestet-Toggle. Nested an → Groß-Modus an (erbt
-        // Scoring/Kein-Grid). Nested aus lässt Groß-Modus (flach) unberührt.
-        if (typeof payload.nestedTeams === 'boolean') {
-          room.nestedTeams = payload.nestedTeams;
-          if (payload.nestedTeams) room.largeGroupMode = true;
+        if (payload.nestedTeams === true) {
+          room.largeGroupMode = true;
         }
+        room.nestedTeams = room.largeGroupMode;
         // 2026-05-17 (CozyGames Live-Toggle im Mod-Setup): kann ohne Game-Restart
         // umgestellt werden. Pool ändern setzt cozyGame-Round-State nicht zurück
         // (falls gerade aktiv) — nur Setup-Defaults für neue Spiele.

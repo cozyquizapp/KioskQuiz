@@ -5500,25 +5500,19 @@ function SetupView({
                 ? `🪅 CozyGames AN — ${((s as any).cozyGamesPool ?? []).length} Spiele im Rad, manueller Trigger via Pause-Button.\nKlick zum Deaktivieren.`
                 : '🪅 CozyGames AUS.\nKlick zum Aktivieren: analoge Mini-Spiele zwischen Runden.'}
             >🪅 CozyGames</button>
+            {/* 2026-07-02 (Wolf): Mega Event = IMMER genestet (8 Eltern-Teams
+                à bis 3 Sub-Teams). Flaches 25er verworfen — der Toggle setzt
+                largeGroupMode + nestedTeams zusammen. */}
             <button
-              onClick={() => emit('qq:setQuizOptions', { roomCode, largeGroupMode: !(s as any).largeGroupMode })}
+              onClick={() => {
+                const on = !(s as any).largeGroupMode;
+                emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on });
+              }}
               style={segPill(!!(s as any).largeGroupMode, QQ_COLORS.violet400)}
               title={(s as any).largeGroupMode
-                ? '👥 Mega-Event-Modus AN — bis 25 Teams, Bar-Race statt Grid, Top-5-schnellste-Reveal. Grid-Add-ons deaktiviert.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
-                : '👥 Mega-Event-Modus AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: bis 25 Teams, Bar-Race-Wertung.'}
+                ? '👥 Mega Event AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten), bis 72 Personen. Bar-Race statt Grid, Top-5-schnellste-Reveal, 8 Eltern-Balken. Grid-Add-ons deaktiviert.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
+                : '👥 Mega Event AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: 8×3-Struktur (bis 72 Personen), Bar-Race-Wertung.'}
             >👥 Mega Event</button>
-            {/* 2026-07-01 (Wolf Idee 2): Nested-Sub-Toggle — nur sichtbar wenn
-                Groß-Modus an. Genestet = 8 Eltern-Teams à bis 3 Sub-Teams
-                (eigene Handys), Bar-Race gruppiert nach Avatar → 8 Balken. */}
-            {(s as any).largeGroupMode && (
-              <button
-                onClick={() => emit('qq:setQuizOptions', { roomCode, nestedTeams: !(s as any).nestedTeams })}
-                style={segPill(!!(s as any).nestedTeams, QQ_COLORS.violet400)}
-                title={(s as any).nestedTeams
-                  ? '🎯 Genestet AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten). Punkte fließen ins Eltern-Team, Bar-Race zeigt 8 Balken.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nKlick zum Deaktivieren (flaches Mega Event).'
-                  : '🎯 Genestet AUS — jedes Handy = eigenes Team (flaches Mega Event).\nKlick zum Aktivieren: 8×3-Struktur, bis 72 Personen, 8 Eltern-Balken.'}
-              >🎯 Genestet 8×3</button>
-            )}
           </div>
         </div>
 
@@ -6154,7 +6148,7 @@ function LobbyView({
                   🧪 TEST
                 </span>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {((s as any).nestedTeams ? [6, 9, 12, 18, 24] : (s as any).largeGroupMode ? [5, 10, 15, 20, 25] : [1, 3, 5, 7, 8]).map(n => (
+                  {((s as any).largeGroupMode ? [6, 9, 12, 18, 24] : [1, 3, 5, 7, 8]).map(n => (
                     <button
                       key={n}
                       onClick={async () => {

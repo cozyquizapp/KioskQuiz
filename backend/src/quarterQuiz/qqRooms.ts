@@ -826,9 +826,10 @@ export function qqStartGame(
   // 2026-05-17: Comeback-Toggle aus Draft. Default true (Backward-Compat).
   room.comebackEnabled = comebackEnabled !== false;
   // 2026-07-01: Groß-Gruppen-Modus aus Draft. Default off.
-  // 2026-07-01 (Idee 2): Genestet impliziert Groß-Modus (erbt Scoring/Kein-Grid).
-  room.nestedTeams = nestedTeams === true;
-  room.largeGroupMode = largeGroupMode === true || room.nestedTeams;
+  // 2026-07-02 (Wolf): Mega Event = IMMER genestet (flaches 25er verworfen) —
+  // largeGroupMode und nestedTeams sind gekoppelt (large ⟺ nested).
+  room.largeGroupMode = largeGroupMode === true || nestedTeams === true;
+  room.nestedTeams = room.largeGroupMode;
   // 2026-07-01: Groß-Modus deaktiviert grid-basierte End-Game-Mechaniken hart —
   // kein Grid, also würden Comeback (Cell-Steal), Connections-4×4 und Final-Wager
   // (wettet auf Grid-Punkte) crashen bzw. sinnlos laufen. Wolf-Entscheidung:

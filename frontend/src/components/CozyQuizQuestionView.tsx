@@ -60,6 +60,7 @@ import {
   BluffWriteScreen, BluffReviewScreen, BluffVoteWaitingScreen, BluffVoteScreen,
 } from './reveals/Bluff';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { qqFactionBuckets } from '../qqShared';
 
 function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
   s: QQStateUpdate; q: NonNullable<QQStateUpdate['currentQuestion']>;
@@ -1086,10 +1087,51 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Step 0: alle Chips sichtbar AUSSER höchste(r) Bet(s) pro Option; kein Grün, keine Winner-Card.
   // Step 1: höchste Bets kaskadieren pro Option (leere Optionen überspringen).
   // Step 2: Doppelblink auf korrekte Option → Grün + Winner-Card (analog MUCHO).
+  // ── Cozy Arena (Mega): 10v10-Reveal auf Fraktionen bündeln ────────────────
+  // Statt bis zu 24 Sub-Team-Bet-Pills zeigen wir 8 Fraktionen mit element-
+  // weise summierten Einsätzen. Wir bauen synthetische „Fraktions-Teams" +
+  // -Answers und schleusen sie NUR in die ZvZ-Pfade — alle bestehende Mechanik
+  // (Highest-per-Option, Winner, Top-/Sub-Bets, Zeit-Pillen) läuft unverändert.
+  // submittedAt = frühester Sub-Team-Submit (schnellstes Handy der Fraktion).
+  // Nicht-Mega: zvzAnswers/zvzTeams === s.answers/s.teams → byte-identisch.
+  const isMegaTeams = useMemo(
+    () => new Set(s.teams.map(t => t.avatarId)).size < s.teams.length,
+    [s.teams]
+  );
+  const zvzFactionAgg = useMemo(() => {
+    if (cat !== 'ZEHN_VON_ZEHN' || !isMegaTeams || !q.options) return null;
+    const nOpt = q.options.length;
+    const buckets = qqFactionBuckets(s.teams, lang !== 'en');
+    const answers: QQStateUpdate['answers'] = [];
+    const teams: QQStateUpdate['teams'] = [];
+    for (const b of buckets) {
+      const sum = new Array<number>(nOpt).fill(0);
+      let earliest = Infinity;
+      let seedAnswer: QQStateUpdate['answers'][number] | undefined;
+      for (const m of b.members) {
+        const a = s.answers.find(x => x.teamId === m.id);
+        if (!a) continue;
+        const pts = String(a.text ?? '').split(',').map(x => parseInt(x.trim(), 10));
+        if (pts.length !== nOpt || pts.some(Number.isNaN)) continue;
+        seedAnswer = seedAnswer ?? a;
+        for (let i = 0; i < nOpt; i++) sum[i] += pts[i] || 0;
+        if (a.submittedAt < earliest) earliest = a.submittedAt;
+      }
+      if (!seedAnswer) continue;
+      const synthId = `faction-${b.avatarId}`;
+      const rep = b.members[0];
+      teams.push({ ...rep, id: synthId, avatarId: b.avatarId, emoji: b.slug ?? rep.emoji, name: b.name, color: b.color });
+      answers.push({ ...seedAnswer, teamId: synthId, text: sum.join(','), submittedAt: earliest });
+    }
+    return { answers, teams };
+  }, [cat, isMegaTeams, q.options, s.teams, s.answers, lang]);
+  const zvzAnswers = zvzFactionAgg?.answers ?? s.answers;
+  const zvzTeams = zvzFactionAgg?.teams ?? s.teams;
+
   const zvzStep = s.zvzRevealStep ?? 0;
   const zvzHighestPerOption = useMemo(() => {
     if (cat !== 'ZEHN_VON_ZEHN' || !q.options) return [] as Array<{ maxPts: number; teamIds: string[]; isEmpty: boolean }>;
-    const parsed = s.answers
+    const parsed = zvzAnswers
       .map(a => ({ teamId: a.teamId, pts: String(a.text ?? '').split(',').map(x => parseInt(x.trim(), 10)) }))
       .filter(p => p.pts.length === q.options!.length && !p.pts.some(Number.isNaN));
     return q.options!.map((_, i) => {
@@ -1098,7 +1140,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       const maxPts = Math.max(...entries.map(e => e.pts));
       return { maxPts, teamIds: entries.filter(e => e.pts === maxPts).map(e => e.teamId), isEmpty: false };
     });
-  }, [cat, q.options, s.answers]);
+  }, [cat, q.options, zvzAnswers]);
   const zvzNonEmptyOptions = useMemo(() => zvzHighestPerOption.map((h, i) => (h.isEmpty ? -1 : i)).filter(i => i >= 0), [zvzHighestPerOption]);
   const [zvzRevealed, setZvzRevealed] = useState<Set<number>>(new Set());
   useEffect(() => {
@@ -2258,8 +2300,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {q.options && q.category === 'ZEHN_VON_ZEHN' && (() => {
             // Fallback auf frueheste submittedAt, weil timerEndsAt zum Reveal
             // bereits null ist → ohne Fallback keine Zeit-Anzeige.
-            const earliestSubmit = s.answers.length > 0
-              ? Math.min(...s.answers.map(a => a.submittedAt))
+            const earliestSubmit = zvzAnswers.length > 0
+              ? Math.min(...zvzAnswers.map(a => a.submittedAt))
               : null;
             const t0 = s.timerEndsAt && s.timerDurationSec
               ? s.timerEndsAt - s.timerDurationSec * 1000
@@ -2277,13 +2319,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const zvzWinnerTeam = (zvzLocked && q.correctOptionIndex != null)
               ? (() => {
                   const ci = q.correctOptionIndex;
-                  const bets = s.answers
+                  const bets = zvzAnswers
                     .map(a => {
-                      const team = s.teams.find(t => t.id === a.teamId);
+                      const team = zvzTeams.find(t => t.id === a.teamId);
                       const pts = (a.text.split(',').map(n => Number(n) || 0))[ci] ?? 0;
                       return team && pts > 0 ? { team, pts, submittedAt: a.submittedAt } : null;
                     })
-                    .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number; submittedAt: number } => !!x);
+                    .filter((x): x is { team: NonNullable<ReturnType<typeof zvzTeams.find>>; pts: number; submittedAt: number } => !!x);
                   if (bets.length === 0) return undefined;
                   const maxPts = Math.max(...bets.map(b => b.pts));
                   return bets.filter(b => b.pts === maxPts).sort((a, b) => a.submittedAt - b.submittedAt)[0]?.team;
@@ -2325,14 +2367,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 const highestForOpt = zvzHighestPerOption[i];
                 const highestIdsForOpt = new Set(highestForOpt?.teamIds ?? []);
                 // Top-Bets inkl. submittedAt fuer Tiebreaker-Anzeige
-                const highestBets = s.answers
+                const highestBets = zvzAnswers
                   .map(a => {
-                    const team = s.teams.find(t => t.id === a.teamId);
+                    const team = zvzTeams.find(t => t.id === a.teamId);
                     if (!team || !highestIdsForOpt.has(team.id)) return null;
                     const pts = (a.text.split(',').map(n => Number(n) || 0))[i] ?? 0;
                     return pts > 0 ? { team, pts, submittedAt: a.submittedAt } : null;
                   })
-                  .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; pts: number; submittedAt: number } => !!x)
+                  .filter((x): x is { team: NonNullable<ReturnType<typeof zvzTeams.find>>; pts: number; submittedAt: number } => !!x)
                   .sort((a, b) => a.submittedAt - b.submittedAt);
                 const highestVisibleOpt = zvzStep >= 1 && zvzRevealed.has(i);
                 // Blitz + Zeit NUR bei Tiebreak (mehrere Top-Bets mit gleichen Hoechstpunkten
@@ -2559,9 +2601,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               pointerEvents: zvzLocked ? 'none' : 'auto',
             }}>
               {q.options.map((_, i) => {
-                const bets = s.answers.map(a => {
+                const bets = zvzAnswers.map(a => {
                   const pts = a.text.split(',').map(n => Number(n) || 0);
-                  return { team: s.teams.find(t => t.id === a.teamId), pts: pts[i] ?? 0 };
+                  return { team: zvzTeams.find(t => t.id === a.teamId), pts: pts[i] ?? 0 };
                 }).filter((b): b is { team: NonNullable<typeof b.team>; pts: number } => !!b.team && b.pts > 0);
                 const highest = zvzHighestPerOption[i];
                 const highestIds = new Set(highest?.teamIds ?? []);
@@ -3310,7 +3352,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             } | null = null;
             if (cat === 'ZEHN_VON_ZEHN' && q.correctOptionIndex != null && q.options) {
               const correctIdx = q.correctOptionIndex;
-              const onCorrect = s.answers
+              const onCorrect = zvzAnswers
                 .map(a => {
                   const parts = a.text.split(',').map(n => parseInt(n.trim(), 10));
                   const pts = parts[correctIdx] ?? 0;
@@ -3330,8 +3372,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }
             }
 
+            // ZvZ nutzt zvzTeams (in Cozy Arena = Fraktions-Synth-Teams, sonst
+            // === s.teams) damit die speedTied-IDs (Fraktions-IDs) auflösbar sind.
             const coWinners = allInTie && allInTie.speedTied.length > 1
-              ? s.teams.filter(t => allInTie!.speedTied.includes(t.id))
+              ? (cat === 'ZEHN_VON_ZEHN' ? zvzTeams : s.teams).filter(t => allInTie!.speedTied.includes(t.id))
               : null;
 
             // Single-team Banner (Default-Fall)
@@ -3339,8 +3383,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // ersten Winner aus currentQuestionWinners — bei CHEESE ohne fastest
             // ist correctTeamId leer, aber wir haben trotzdem Sieger.
             const winnerIds = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
-            const team = s.teams.find(t => t.id === s.correctTeamId)
-              ?? s.teams.find(t => t.id === winnerIds[0]);
+            // Cozy Arena (ZvZ): Sieger = Fraktion mit dem höchsten summierten Einsatz
+            // auf der korrekten Option (allInTie.speedTied[0]) — konsistent mit der
+            // Krone auf den Karten. Sonst der Backend-Truth-Sieger (Sub-Team).
+            const team = (cat === 'ZEHN_VON_ZEHN' && isMegaTeams && allInTie?.speedTied.length)
+              ? zvzTeams.find(t => t.id === allInTie!.speedTied[0])
+              : (s.teams.find(t => t.id === s.correctTeamId)
+                  ?? s.teams.find(t => t.id === winnerIds[0]));
             if (!coWinners && !team) return null;
 
             const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null

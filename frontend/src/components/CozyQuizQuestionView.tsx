@@ -3568,7 +3568,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
                   color: 'var(--qq-text-muted)',
                 }}>
-                  {`${s.answers.length}/${s.teams.length} Teams`}
+                  {(s as any).nestedTeams
+                    ? `${s.answers.length}/${s.teams.length} ${lang === 'en' ? 'submitted' : 'Abgaben'}`
+                    : `${s.answers.length}/${s.teams.length} Teams`}
                 </div>
               )}
               {/* Avatar row.
@@ -3579,6 +3581,58 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   via boxShadow zeigt 'submitted' eindeutig, der Glow erzeugte
                   Bleed der bei dicht stehenden Avataren ueberlappte. */}
               {(() => {
+                // 2026-07-02 (Wolf Mega-Event): 24 Sub-Team-Avatare in einer Reihe =
+                // zu lang + unübersichtlich. Genestet → nach avatarId zu 8 Eltern-
+                // Avataren gruppieren, je mit x/n-Badge (wie viele Sub-Teams
+                // abgegeben haben). Grüner Ring = alle dran. Normal-Modus unverändert.
+                const nested = !!(s as any).nestedTeams;
+                if (nested) {
+                  const groups = new Map<string, { rep: typeof s.teams[number]; total: number; answered: number }>();
+                  const order: string[] = [];
+                  for (const tm of s.teams) {
+                    let g = groups.get(tm.avatarId);
+                    if (!g) { g = { rep: tm, total: 0, answered: 0 }; groups.set(tm.avatarId, g); order.push(tm.avatarId); }
+                    g.total++;
+                    if (s.answers.some(a => a.teamId === tm.id)) g.answered++;
+                  }
+                  const gc = order.length;
+                  const av = gc > 6 ? 84 : gc > 4 ? 92 : 100;
+                  const gap = gc > 6 ? 16 : 20;
+                  return (
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap, maxWidth: '100%' }}>
+                      {order.map(id => {
+                        const g = groups.get(id)!;
+                        const done = g.answered >= g.total;
+                        const some = g.answered > 0;
+                        return (
+                          <div key={id} style={{
+                            position: 'relative', flexShrink: 0,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            opacity: some ? 1 : 0.42, filter: some ? 'none' : 'grayscale(0.5)',
+                            transition: 'opacity 0.4s ease, filter 0.4s ease',
+                          }}>
+                            <div style={{
+                              borderRadius: '50%',
+                              boxShadow: done ? '0 0 0 3px #22C55E' : some ? '0 0 0 3px rgba(34,197,94,0.45)' : 'none',
+                              transition: 'box-shadow 0.45s ease', display: 'inline-flex',
+                            }}>
+                              <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={g.rep.emoji} size={av} />
+                            </div>
+                            <div style={{
+                              position: 'absolute', bottom: -4, right: -4,
+                              minWidth: 24, height: 24, padding: '0 6px', borderRadius: 999,
+                              background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
+                              border: '2px solid rgba(255,255,255,0.18)',
+                              color: '#fff', fontSize: 13, fontWeight: 900,
+                              display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                            }}>{g.answered}/{g.total}</div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                }
                 const tc = s.teams.length;
                 const av = tc > 6 ? 80 : tc > 4 ? 88 : 96;
                 const gap = tc > 6 ? 12 : tc > 4 ? 15 : 18;

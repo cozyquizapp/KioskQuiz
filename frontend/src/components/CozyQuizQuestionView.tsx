@@ -2007,7 +2007,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // (justifyContent: flex-start) damit unten Platz für den Chip-Block
           // bleibt. Chips skalieren ihrerseits in HotPotatoBeamerView.
           const isHotPotatoActive = q.category === 'BUNTE_TUETE'
-            && q.bunteTuete?.kind === 'hotPotato' && !revealed;
+            && q.bunteTuete?.kind === 'hotPotato' && !revealed
+            && !(s as any).largeGroupMode; // Mega Event: Hot Potato = normale Frage
           const hpUsedCount = (s.hotPotatoUsedAnswers?.length ?? 0);
           // 2026-04-30 v2 (User-Feedback): Trigger 12->16 fuer ruhigeres
           // mid-game-Layout (selteneres Snap-down). Transition wird in der
@@ -2065,7 +2066,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
                 per-Turn-Timer in HotPotatoBeamerView).
                 2026-05-12: Badge ist aus dieser Top-Bar raus (jetzt unten links). */}
-            {stickyTimer && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
+            {stickyTimer && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && !(s as any).largeGroupMode) && (
               <div style={{
                 pointerEvents: revealed ? 'none' : 'auto',
                 flexShrink: 0,
@@ -3557,7 +3558,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
 
           {/* Bottom: team answer progress — Hot Potato has its own indicator below */}
-          {!revealed && s.teams.length > 0 && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato') && (
+          {!revealed && s.teams.length > 0 && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && !(s as any).largeGroupMode) && (
             <div style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
               position: 'absolute', bottom: 16, left: 0, right: 0,
@@ -3670,7 +3671,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           )}
 
           {/* ── HOT POTATO: active team + turn timer + used answers ── */}
-          {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && (
+          {q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && !(s as any).largeGroupMode && (
             <HotPotatoBeamerView state={s} lang={lang} revealed={revealed} />
           )}
           </div>{/* /Inner-Content-Wrapper */}

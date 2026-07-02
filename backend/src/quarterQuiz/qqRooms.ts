@@ -1764,6 +1764,11 @@ function qqStartHotPotatoTurn(room: QQRoomState, onExpire: () => void): void {
  *  was am Beamer als wiederholte Slot-Animation sichtbar wird. */
 export function qqHotPotatoStart(room: QQRoomState, _onTurnExpire: () => void): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
+  // 2026-07-02 (Wolf): Hot Potato passt NICHT ins Mega Event (rundenbasiert, ein
+  // Team nach dem anderen — bei 8×3 sinnlos). Defensiv: Turn-Mechanik gar nicht
+  // starten. Frontend rendert die Frage dann als normale gleichzeitige Frage.
+  // Sauberer Weg bleibt: kuratierte Mega-Drafts ohne Hot Potato (Wizard-Filter).
+  if (room.largeGroupMode) return;
   // Bereits gestartet fuer diese Frage? Dann nicht nochmal wuerfeln.
   if (room.hotPotatoActiveTeamId && room.hotPotatoSlotState) return;
   room.hotPotatoEliminated = [];

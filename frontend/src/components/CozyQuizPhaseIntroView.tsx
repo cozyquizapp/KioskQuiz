@@ -468,9 +468,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // Einfache, einheitliche Punkte-Ansage für alle Runden.
     ? {
         emoji: '⚡',
-        de: ['Sammelt Punkte für eure Farbe!',
+        de: ['Sammelt Punkte für euer Team!',
              'Je mehr richtig — und je schneller — desto mehr Punkte!'],
-        en: ['Score points for your colour!',
+        en: ['Score points for your team!',
              'The more correct — and the faster — the more points!'],
       }
     : (s.totalPhases === 2 && s.gamePhaseIndex === 2)

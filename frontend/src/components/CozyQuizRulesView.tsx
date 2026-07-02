@@ -290,8 +290,8 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide1.title', 'Das Ziel'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.mega.slide1.line1', 'Sammelt als Farbe die meisten Punkte!'),
-        t('rules.mega.slide1.line2', 'Jedes Handy spielt für seine Farbe mit'),
+        t('rules.mega.slide1.line1', 'Sammelt als Team die meisten Punkte!'),
+        t('rules.mega.slide1.line2', 'Jedes Handy spielt für sein Team mit'),
       ],
     },
     {
@@ -308,8 +308,8 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Jede richtige Antwort zählt für deine Farbe'),
-        t('rules.mega.slide3.line2', 'Die 5 schnellsten Farben pro Frage: extra Punkte (5·4·3·2·1)'),
+        t('rules.mega.slide3.line1', 'Jede richtige Antwort zählt für dein Team'),
+        t('rules.mega.slide3.line2', 'Die 5 schnellsten Teams pro Frage: extra Punkte (5·4·3·2·1)'),
       ],
     },
     {
@@ -334,8 +334,8 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide1.title', 'The Goal'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.mega.slide1.line1', 'Score the most points as a colour!'),
-        t('rules.mega.slide1.line2', 'Every phone plays for its colour'),
+        t('rules.mega.slide1.line1', 'Score the most points as a team!'),
+        t('rules.mega.slide1.line2', 'Every phone plays for its team'),
       ],
     },
     {
@@ -352,8 +352,8 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'How to score'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Every correct answer counts for your colour'),
-        t('rules.mega.slide3.line2', 'The 5 fastest colours per question: bonus points (5·4·3·2·1)'),
+        t('rules.mega.slide3.line1', 'Every correct answer counts for your team'),
+        t('rules.mega.slide3.line2', 'The 5 fastest teams per question: bonus points (5·4·3·2·1)'),
       ],
     },
     {

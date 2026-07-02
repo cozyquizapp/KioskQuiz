@@ -547,28 +547,6 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             transform: revealed ? 'scaleX(1)' : 'scaleX(0)',
                             transition: 'transform 0.42s cubic-bezier(0.5,0,0.18,1) 0.26s, opacity 0.3s ease 0.26s',
                           }} />
-                          {/* Mega-Event: 2-3 Sub-Team-Namen als kleine Chips unter
-                              dem Eltern-Namen (zünden mit der Karte). */}
-                          {nested && t._subNames && t._subNames.length > 0 && (
-                            <div style={{
-                              opacity: revealed ? 1 : 0,
-                              transition: 'opacity 0.4s ease 0.34s',
-                              display: 'flex', flexWrap: 'wrap', gap: '4px 6px',
-                              justifyContent: 'center', maxWidth: '100%',
-                              marginTop: 'clamp(2px, 0.4cqw, 6px)',
-                            }}>
-                              {t._subNames.map((sn, k) => (
-                                <span key={k} title={sn} style={{
-                                  fontSize: multiRow ? 'clamp(9px, 0.95cqw, 13px)' : 'clamp(10px, 1.05cqw, 15px)',
-                                  fontWeight: 700,
-                                  color: themed ? 'var(--qq-card-text)' : 'rgba(255,255,255,0.82)',
-                                  padding: '1px 7px', borderRadius: 999,
-                                  background: 'rgba(255,255,255,0.1)',
-                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110,
-                                }}>{sn}</span>
-                              ))}
-                            </div>
-                          )}
                         </div>
                       </div>
                     );
@@ -613,25 +591,12 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 marginTop: 'clamp(14px, 1.8cqw, 30px)', fontWeight: 900,
                 fontSize: 'clamp(34px, 5cqw, 64px)', color: '#fff', textAlign: 'center',
-                textShadow: '0 4px 24px rgba(0,0,0,0.5)', whiteSpace: 'nowrap',
+                // 2026-07-02 (Wolf: Spotlight-Name schlecht lesbar/abgeschnitten):
+                // kräftigerer Dark-Halo für Kontrast + saubere Ellipsis statt Überlauf.
+                textShadow: '0 2px 6px rgba(0,0,0,0.85), 0 4px 24px rgba(0,0,0,0.6)',
+                whiteSpace: 'nowrap', maxWidth: 'min(80cqw, 640px)',
+                overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{spotTeam?.name}</div>
-              {/* Mega-Event: die 2-3 Sub-Teams des Eltern-Teams zusammen zeigen,
-                  bevor auf den 1 Eltern-Avatar zusammengefasst wird. */}
-              {nested && spotTeam?._subNames && spotTeam._subNames.length > 0 && (
-                <div style={{
-                  marginTop: 'clamp(6px, 0.8cqw, 12px)',
-                  display: 'flex', flexWrap: 'wrap', gap: '6px 12px', justifyContent: 'center',
-                  maxWidth: 'clamp(320px, 40cqw, 620px)',
-                }}>
-                  {spotTeam._subNames.map((sn, k) => (
-                    <span key={k} title={sn} style={{
-                      fontSize: 'clamp(16px, 2cqw, 30px)', fontWeight: 800, color: 'rgba(255,255,255,0.9)',
-                      padding: '3px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.12)',
-                      textShadow: '0 2px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap',
-                    }}>{sn}</span>
-                  ))}
-                </div>
-              )}
             </div>
           </div>
         );

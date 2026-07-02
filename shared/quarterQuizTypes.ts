@@ -1457,15 +1457,17 @@ export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed:
 // Display-Layer, nur largeGroupMode — Normal-Modus behält die Default-Avatare.
 // „Cozy Universe" (Wolf 2026-07-02): die 8 sind echte Fraktionen mit eigener
 // Identität — Tier + Farbe + Witz-Name + Motto (+ Wappen via <FactionCrest>).
+// Namen = reine Tiernamen (Wolf 2026-07-02: „tiernamen haben meinte ich" —
+// keine Wortwitz-Teamnamen). Motto bleibt als Flavor unter dem Wappen.
 export const QQ_MEGA_FACTIONS = [
-  { avatarId: 'fox',     slug: 'dachs',    nameDe: 'Denkfaule Dachse',   nameEn: 'Lazy-Brain Badgers',  mottoDe: 'Langsam, aber gründlich.',   mottoEn: 'Slow but thorough.' },
-  { avatarId: 'frog',    slug: 'otter',    nameDe: 'Oberschlaue Otter',  nameEn: 'Overly-Smart Otters', mottoDe: 'Immer eine Antwort parat.',  mottoEn: 'Always an answer ready.' },
-  { avatarId: 'panda',   slug: 'panda',    nameDe: 'Pfiffige Pandas',    nameEn: 'Sharp Pandas',        mottoDe: 'Charmant & clever.',         mottoEn: 'Charming & clever.' },
-  { avatarId: 'rabbit',  slug: 'koala',    nameDe: 'Kluge Koalas',       nameEn: 'Clever Koalas',       mottoDe: 'Ausgeschlafen zum Sieg.',    mottoEn: 'Well-rested for the win.' },
-  { avatarId: 'unicorn', slug: 'lama',     nameDe: 'Lässige Lamas',      nameEn: 'Laid-back Llamas',    mottoDe: 'Cool bleiben, Punkte machen.', mottoEn: 'Stay cool, score points.' },
-  { avatarId: 'raccoon', slug: 'gorilla',  nameDe: 'Grübelnde Gorillas', nameEn: 'Pondering Gorillas',  mottoDe: 'Erst denken, dann brüllen.', mottoEn: 'Think first, roar later.' },
-  { avatarId: 'cow',     slug: 'baer',     nameDe: 'Belesene Bären',     nameEn: 'Well-read Bears',     mottoDe: 'Wissen ist Honig.',          mottoEn: 'Knowledge is honey.' },
-  { avatarId: 'cat',     slug: 'capybara', nameDe: 'Clevere Capybaras',  nameEn: 'Clever Capybaras',    mottoDe: 'Ganz entspannt vorne.',      mottoEn: 'Chilled to the top.' },
+  { avatarId: 'fox',     slug: 'dachs',    nameDe: 'Dachse',     nameEn: 'Badgers',    mottoDe: 'Langsam, aber gründlich.',     mottoEn: 'Slow but thorough.' },
+  { avatarId: 'frog',    slug: 'otter',    nameDe: 'Otter',      nameEn: 'Otters',     mottoDe: 'Immer eine Antwort parat.',    mottoEn: 'Always an answer ready.' },
+  { avatarId: 'panda',   slug: 'panda',    nameDe: 'Pandas',     nameEn: 'Pandas',     mottoDe: 'Charmant & clever.',           mottoEn: 'Charming & clever.' },
+  { avatarId: 'rabbit',  slug: 'koala',    nameDe: 'Koalas',     nameEn: 'Koalas',     mottoDe: 'Ausgeschlafen zum Sieg.',      mottoEn: 'Well-rested for the win.' },
+  { avatarId: 'unicorn', slug: 'lama',     nameDe: 'Lamas',      nameEn: 'Llamas',     mottoDe: 'Cool bleiben, Punkte machen.', mottoEn: 'Stay cool, score points.' },
+  { avatarId: 'raccoon', slug: 'gorilla',  nameDe: 'Gorillas',   nameEn: 'Gorillas',   mottoDe: 'Erst denken, dann brüllen.',   mottoEn: 'Think first, roar later.' },
+  { avatarId: 'cow',     slug: 'baer',     nameDe: 'Bären',      nameEn: 'Bears',      mottoDe: 'Wissen ist Honig.',            mottoEn: 'Knowledge is honey.' },
+  { avatarId: 'cat',     slug: 'capybara', nameDe: 'Capybaras',  nameEn: 'Capybaras',  mottoDe: 'Ganz entspannt vorne.',        mottoEn: 'Chilled to the top.' },
 ] as const;
 
 export function qqMegaFaction(avatarId: string) {

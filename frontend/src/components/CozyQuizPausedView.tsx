@@ -292,7 +292,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   border: `1.5px solid ${isThemed() ? 'var(--qq-hairline)' : `${color}44`}`,
                   animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.06 * i}s both`,
                 }}>
-                  <FactionCrest avatarId={f.avatarId} width={'clamp(56px, 6cqw, 92px)'} showName showMotto de={de} />
+                  <FactionCrest avatarId={f.avatarId} width={'clamp(58px, 6.2cqw, 96px)'} showName showMotto de={de} />
                   {count > 0 && (
                     <div style={{ fontSize: 'clamp(11px, 1.2cqw, 15px)', color: 'var(--qq-text-muted)', fontWeight: 800 }}>
                       {count} {count === 1 ? 'Handy' : 'Handys'}

@@ -8,7 +8,7 @@
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
-import { qqGetAvatar } from '../../../../shared/quarterQuizTypes';
+import { qqGetAvatar, qqMegaFactionName, qqMegaFactionSlug } from '../../../../shared/quarterQuizTypes';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { QQTeamAvatar } from '../QQTeamAvatar';
@@ -84,6 +84,18 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
 
   const worstFirst = useMemo(() => [...scored].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scored]);
   const bestFirst  = useMemo(() => [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scored]);
+  // Cozy Arena: Ranking auf 1 Eintrag je Fraktion (bester = nächster Tipp)
+  // kollabieren. bestFirst ist schon sortiert → erster je avatarId = bester.
+  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  const bestFirstFinal = useMemo(() => {
+    if (!isMega) return bestFirst;
+    const byAvatar = new Map<string, typeof bestFirst[number]>();
+    for (const p of bestFirst) {
+      const tm = s.teams.find(t => t.id === p.teamId);
+      if (tm && !byAvatar.has(tm.avatarId)) byAvatar.set(tm.avatarId, p);
+    }
+    return [...byAvatar.values()].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0));
+  }, [bestFirst, isMega, s.teams]);
 
   // Pins werden EXAKT an der eingereichten Position dargestellt — kein
   // Cluster-Spread mehr. (User-Wunsch 2026-04-28: 'pins müssen exakt gesetzt
@@ -402,16 +414,20 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
               return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
             };
             const tieGroups: Record<string, number> = {};
-            bestFirst.forEach(p => { const k = bucket(p.distKm); tieGroups[k] = (tieGroups[k] ?? 0) + 1; });
+            bestFirstFinal.forEach(p => { const k = bucket(p.distKm); tieGroups[k] = (tieGroups[k] ?? 0) + 1; });
             const groupEarliest: Record<string, number> = {};
-            bestFirst.forEach(p => {
+            bestFirstFinal.forEach(p => {
               const k = bucket(p.distKm);
               const at = p.submittedAt ?? 0;
               if (groupEarliest[k] == null || at < groupEarliest[k]) groupEarliest[k] = at;
             });
-            return bestFirst.map((p, i) => {
-              const team = s.teams.find(t => t.id === p.teamId);
-              if (!team) return null;
+            return bestFirstFinal.map((p, i) => {
+              const rawTeam = s.teams.find(t => t.id === p.teamId);
+              if (!rawTeam) return null;
+              // Cozy Arena: Fraktions-Identität (Tiername + Tier-slug) statt Sub-Team.
+              const team = isMega
+                ? { ...rawTeam, name: qqMegaFactionName(rawTeam.avatarId, lang), emoji: qqMegaFactionSlug(rawTeam.avatarId) ?? rawTeam.emoji }
+                : rawTeam;
               const medal = i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i+1}`;
               const dist = p.distKm == null ? '—' : p.distKm < 1 ? `${Math.round(p.distKm * 1000)} m` : `${p.distKm.toFixed(1)} km`;
               const isTop = i === 0;

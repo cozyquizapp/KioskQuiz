@@ -589,7 +589,9 @@ export function qqJoinTeam(
   // Emoji exclusivity: bei explizitem Override darf der Emoji nicht schon von
   // einem anderen Team gewaehlt worden sein. Bei kein-Override wird der Default
   // aus dem Set genommen (Set-eigene Eindeutigkeit ueber Slot-Index).
-  if (emoji && emoji.trim()) {
+  // Mega Event: mehrere Sub-Teams teilen Faktion (Avatar/Emoji) + Faktions-Namen
+  // → Emoji-/Namens-Eindeutigkeit hier relaxen (Unterscheidung via „Handy N").
+  if (emoji && emoji.trim() && !room.largeGroupMode) {
     const emojiTaken = Object.values(room.teams).some(t => t.emoji === emoji);
     if (emojiTaken) {
       throw new QQError('EMOJI_TAKEN', 'Dieses Emoji ist bereits vergeben.');
@@ -598,7 +600,7 @@ export function qqJoinTeam(
   // Name exclusivity: gleiche Namen verwirren Mod + Reveals (case-insensitive,
   // getrimmt — „Wölfe" und „wölfe " gelten als identisch).
   const nameLower = (teamName ?? '').trim().toLowerCase();
-  if (nameLower) {
+  if (nameLower && !room.largeGroupMode) {
     const nameTaken = Object.values(room.teams).some(t => (t.name ?? '').trim().toLowerCase() === nameLower);
     if (nameTaken) {
       throw new QQError('NAME_TAKEN', 'Dieser Team-Name ist bereits vergeben.');
@@ -2274,8 +2276,13 @@ export function qqMegaEventScore(room: QQRoomState): void {
     }
   }
   const arr = [...groups.values()];
+  // 2026-07-02 (Wolf): normalisierte Wertung — Trefferquote (perf ÷ Sub-Teams)
+  // statt absoluter Trefferzahl, damit Faktionen mit 1/2/3 Handys fair sind
+  // (2/2 schlägt 2/3). Matcht die „X/Y richtig"-Anzeige im Reveal.
+  const ratio = (g: Grp) => (g.total > 0 ? g.perf / g.total : 0);
   arr.sort((a, b) => {
-    if (b.perf !== a.perf) return b.perf - a.perf;
+    const ra = ratio(a), rb = ratio(b);
+    if (rb !== ra) return rb - ra;
     if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;
     return a.bestSpeed - b.bestSpeed;
   });

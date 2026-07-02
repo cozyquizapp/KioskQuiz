@@ -5942,7 +5942,7 @@ function MegaFactionLobby({ teams, emit, roomCode }: {
             </div>
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {f.subs.map(sub => (
+            {f.subs.map((sub, idx) => (
               <div key={sub.id} style={{
                 display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 8,
                 background: 'rgba(255,255,255,0.04)',
@@ -5950,12 +5950,10 @@ function MegaFactionLobby({ teams, emit, roomCode }: {
                 opacity: sub.connected ? 1 : 0.5,
               }}>
                 <span style={{ width: 7, height: 7, borderRadius: '50%', background: sub.connected ? QQ_COLORS.green500 : QQ_COLORS.red500, flexShrink: 0 }} />
-                <span style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate200, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.name}</span>
-                <button title="Sub-Team umbenennen" style={miniBtn(false)}
-                  onClick={() => { const next = prompt(`Sub-Team „${sub.name}" umbenennen:`, sub.name); if (next == null) return; const tr = next.trim(); if (!tr || tr === sub.name) return; emit('qq:renameTeam', { roomCode, teamId: sub.id, name: tr }); }}
-                >✎</button>
-                <button title="Sub-Team entfernen" style={miniBtn(true)}
-                  onClick={() => { if (!window.confirm(`Sub-Team „${sub.name}" entfernen?`)) return; emit('qq:kickTeam', { roomCode, teamId: sub.id }); }}
+                {/* Faction-Modell: kein Fantasiename — Sub-Team = Handy N. */}
+                <span style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate200, whiteSpace: 'nowrap' }}>Handy {idx + 1}</span>
+                <button title="Handy entfernen" style={miniBtn(true)}
+                  onClick={() => { if (!window.confirm(`Handy ${idx + 1} von „${f.label}" entfernen?`)) return; emit('qq:kickTeam', { roomCode, teamId: sub.id }); }}
                 >✕</button>
               </div>
             ))}

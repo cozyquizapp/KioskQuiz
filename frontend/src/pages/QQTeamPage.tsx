@@ -8,7 +8,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/di
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
-  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, getFunnyTeamNames,
+  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, getFunnyTeamNames, qqMegaFactionName,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { getRoundColor } from '../qqDesignTokens';
@@ -530,6 +530,7 @@ export default function QQTeamPage() {
           teamName={teamName} setTeamName={setTeamName}
           connected={connected} error={error} onJoin={joinRoom}
           lang={lang} onFlagClick={handleFlagClick} flagFlip={flagFlip}
+          largeGroup={!!(state as any)?.largeGroupMode}
           takenAvatarIds={takenAvatarIds}
           takenEmojis={takenEmojis}
           takenTeamNamesLower={takenTeamNamesLower}
@@ -580,6 +581,7 @@ export default function QQTeamPage() {
 function SetupFlow({ step, setStep, avatarId, setAvatarId,
   chosenEmoji, setChosenEmoji,
   teamName, setTeamName, connected, error, onJoin, lang, onFlagClick, flagFlip,
+  largeGroup,
   takenAvatarIds, takenEmojis, takenTeamNamesLower, serverEmojis,
   resumeTeam, onResume, onStammLookup, stammResult, stammStatus,
   eurovisionMode, escBgUrl, autoSwitchToast }: {
@@ -587,6 +589,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   chosenEmoji: string | undefined; setChosenEmoji: (e: string | undefined) => void;
   teamName: string; setTeamName: (n: string) => void; connected: boolean; error: string | null;
   onJoin: () => void; lang: 'de' | 'en'; onFlagClick: () => void; flagFlip: boolean;
+  /** Mega Event: kein Team-Name-Schritt — Sub-Team = Faktion + Nummer. */
+  largeGroup?: boolean;
   takenAvatarIds: string[];
   takenEmojis: string[];
   takenTeamNamesLower: string[];
@@ -605,8 +609,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 }) {
   const [stammInput, setStammInput] = useState('');
   const [stammExpanded, setStammExpanded] = useState(false);
+  // Mega Event: kein Name-Schritt — Name automatisch = Faktions-Name (die
+  // konkrete „Handy N"-Kennung vergibt die Anzeige nach Beitritts-Reihenfolge).
+  useEffect(() => {
+    if (largeGroup && avatarId) setTeamName(qqMegaFactionName(avatarId, lang));
+  }, [largeGroup, avatarId]); // eslint-disable-line react-hooks/exhaustive-deps
   const trimmedNameLower = teamName.trim().toLowerCase();
-  const nameTaken = trimmedNameLower.length > 0 && takenTeamNamesLower.includes(trimmedNameLower);
+  // Mega Event: Sub-Teams teilen den Faktions-Namen → keine „Name vergeben"-Sperre.
+  const nameTaken = !largeGroup && trimmedNameLower.length > 0 && takenTeamNamesLower.includes(trimmedNameLower);
   // Track which avatar was just picked for the burst animation
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
@@ -850,7 +860,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               lang={lang}
             />
             {/* Name-Input direkt in derselben Card. Live-Strip „Team "-Prefix
-                verhindert „Team Team Regenbogen" beim spaeteren Display. */}
+                verhindert „Team Team Regenbogen" beim spaeteren Display.
+                Mega Event: ganzer Name-Schritt entfällt (Faktion + Nummer). */}
+            {!largeGroup && (<>
             <StepLabel>{t.setup.teamName[lang]}</StepLabel>
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <input
@@ -922,6 +934,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   : '⚠ Name already taken — tap 🎲 for a free name.'}
               </div>
             )}
+            </>)}
             {error && !nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>{t.setup.error[lang]}</div>
             )}

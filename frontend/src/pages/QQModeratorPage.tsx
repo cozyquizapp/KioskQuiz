@@ -6,7 +6,7 @@ import { useQQSocket } from '../hooks/useQQSocket';
 import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
-  QQStateUpdate, QQSoundConfig,
+  QQStateUpdate, QQSoundConfig, QQ_AVATARS,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { QQSoundPanel } from '../components/QQSoundPanel';
@@ -5907,6 +5907,65 @@ function SetupView({
 
 // ── Lobby View (nach "Setup abschließen" — Moderator wartet auf joinende Teams) ──
 
+// Mega Event: Mod-Lobby in 8 Faktions-Karten gruppieren (statt 24 flach) —
+// 1 Farbe + 1 Avatar pro Faktion, Sub-Teams als kleine Chips (Name nur hier fürs
+// Mod-Handling + auf dem eigenen /team-Handy; nie auf dem Beamer). 2026-07-02.
+function MegaFactionLobby({ teams, emit, roomCode }: {
+  teams: QQStateUpdate['teams'];
+  emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
+  roomCode: string;
+}) {
+  const byAv = new Map<string, QQStateUpdate['teams']>();
+  for (const t of teams) { if (!byAv.has(t.avatarId)) byAv.set(t.avatarId, []); byAv.get(t.avatarId)!.push(t); }
+  const factions = [...byAv.entries()].map(([avatarId, subs]) => ({
+    avatarId, subs,
+    ready: subs.filter(x => x.connected).length,
+    color: subs[0]?.color ?? '#EC4899',
+    label: QQ_AVATARS.find(a => a.id === avatarId)?.label ?? avatarId,
+  }));
+  const miniBtn = (red: boolean): React.CSSProperties => ({
+    width: 20, height: 20, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    border: `1px solid ${red ? 'rgba(239,68,68,0.35)' : 'rgba(148,163,184,0.35)'}`,
+    background: red ? 'rgba(239,68,68,0.08)' : 'rgba(148,163,184,0.08)',
+    color: red ? QQ_COLORS.red500 : QQ_COLORS.slate300,
+    fontSize: 10, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
+  });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+      {factions.map(f => (
+        <div key={f.avatarId} style={{ borderRadius: 12, border: `1px solid ${f.color}44`, background: `${f.color}12`, padding: '10px 12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
+            <QQTeamAvatar avatarId={f.avatarId} size={40} style={{ flexShrink: 0 }} />
+            <div style={{ fontWeight: 900, fontSize: 15, color: f.color, flex: 1 }}>{f.label}</div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: f.ready > 0 ? QQ_COLORS.green500 : QQ_COLORS.slate500 }}>
+              {f.ready}/{f.subs.length} bereit
+            </div>
+          </div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+            {f.subs.map(sub => (
+              <div key={sub.id} style={{
+                display: 'flex', alignItems: 'center', gap: 6, padding: '4px 8px', borderRadius: 8,
+                background: 'rgba(255,255,255,0.04)',
+                border: `1px solid ${sub.connected ? `${f.color}44` : 'rgba(255,255,255,0.08)'}`,
+                opacity: sub.connected ? 1 : 0.5,
+              }}>
+                <span style={{ width: 7, height: 7, borderRadius: '50%', background: sub.connected ? QQ_COLORS.green500 : QQ_COLORS.red500, flexShrink: 0 }} />
+                <span style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate200, maxWidth: 120, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{sub.name}</span>
+                <button title="Sub-Team umbenennen" style={miniBtn(false)}
+                  onClick={() => { const next = prompt(`Sub-Team „${sub.name}" umbenennen:`, sub.name); if (next == null) return; const tr = next.trim(); if (!tr || tr === sub.name) return; emit('qq:renameTeam', { roomCode, teamId: sub.id, name: tr }); }}
+                >✎</button>
+                <button title="Sub-Team entfernen" style={miniBtn(true)}
+                  onClick={() => { if (!window.confirm(`Sub-Team „${sub.name}" entfernen?`)) return; emit('qq:kickTeam', { roomCode, teamId: sub.id }); }}
+                >✕</button>
+              </div>
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function LobbyView({
   s, drafts, selectedDraftId, phases, timerInput,
   roomCode, emit, startGame, backToSetup,
@@ -6023,6 +6082,8 @@ function LobbyView({
               }}>
                 Noch keine Teams beigetreten. QR scannen lassen — du kannst auch ohne Teams starten.
               </div>
+            ) : (s as any).nestedTeams ? (
+              <MegaFactionLobby teams={s.teams} emit={emit} roomCode={roomCode} />
             ) : (
               <div style={{
                 display: 'grid',

@@ -166,7 +166,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                 active={!mega}
                 accent={ACCENT}
                 onClick={() => setMega(false)}
-                title="Normal"
+                title="Cozy Quiz"
                 sub="bis 8 Teams · Grid, Klauen & Stapeln"
                 note="Das klassische CozyQuiz-Erlebnis."
               />
@@ -174,8 +174,8 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                 active={mega}
                 accent={VIOLET}
                 onClick={() => setMega(true)}
-                title="Mega Event"
-                sub="8 Farben × bis 3 Handys · bis 72 Personen"
+                title="Cozy Arena"
+                sub="8 Faktionen × bis 3 Handys · bis 72 Personen"
                 note="Bar-Race statt Grid. Grid-Add-ons werden automatisch deaktiviert."
               />
             </div>
@@ -254,7 +254,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 560 }}>
               {mega && (
                 <div style={ov.megaNote}>
-                  Im Mega Event laufen Comeback, Final-Tipp & CozyGames nicht (grid-basiert) — automatisch aus.
+                  In der Cozy Arena laufen Comeback, Final-Tipp & CozyGames nicht (grid-basiert) — automatisch aus.
                 </div>
               )}
               <ToggleRow label="🔄 Comeback" desc="Letztes Team klaut via Mehr-oder-Weniger"
@@ -312,7 +312,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 640 }}>
                 {mega && (
                   <div style={ov.megaNote}>
-                    Mega Event: Drafts mit <strong>Hot Potato</strong> (rundenbasiert) sind {showUnsuitable ? 'eingeblendet' : 'automatisch ausgeblendet'} — für den saubersten Ablauf einen Draft ohne wählen.
+                    Cozy Arena: Drafts mit <strong>Hot Potato</strong> (rundenbasiert) sind {showUnsuitable ? 'eingeblendet' : 'automatisch ausgeblendet'} — für den saubersten Ablauf einen Draft ohne wählen.
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, maxHeight: 240, overflowY: 'auto' }}>
@@ -431,12 +431,12 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
 
           {cur.key === 'done' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 460 }}>
-              <SummaryRow label="Modus" value={mega ? '👥 Mega Event (8×3, Bar-Race)' : 'Normal (Grid)'} />
+              <SummaryRow label="Modus" value={mega ? '👥 Cozy Arena (8×3, Bar-Race)' : 'Cozy Quiz (Grid)'} />
               <SummaryRow label="Runden · Timer" value={`${phases} Runden · ${s?.timerDurationSec ?? 30}s`} />
               <SummaryRow label="Sprache" value={s?.language === 'de' ? 'Deutsch' : s?.language === 'en' ? 'English' : 'Beide'} />
               <SummaryRow label="Avatar-Set" value={(AVATAR_SETS.find(a => a.id === activeAvatarId)?.label) ?? 'Standard'} />
               <SummaryRow label="Fragensatz" value={selDraft?.title ?? '— noch keiner gewählt —'} />
-              <SummaryRow label="Add-ons" value={mega ? 'keine (Mega Event)' : [
+              <SummaryRow label="Add-ons" value={mega ? 'keine (Cozy Arena)' : [
                 (s?.comebackEnabled !== false) ? 'Comeback' : null,
                 s?.finalWagerEnabled ? 'Final-Tipp' : null,
                 s?.cozyGamesEnabled ? 'CozyGames' : null,
@@ -446,7 +446,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               {!selDraft && <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>Noch kein Fragensatz gewählt — zurück zu Schritt 5.</div>}
               {mega && selDraft && (selDraft.megaWarnCount ?? 0) > 0 && (
                 <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>
-                  🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft im Mega Event als normale Frage (nicht ideal).
+                  🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft in der Cozy Arena als normale Frage (nicht ideal).
                 </div>
               )}
               <div style={{ ...ov.hint, marginTop: 6 }}>

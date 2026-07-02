@@ -1794,7 +1794,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             onClick={() => setShowWizard(true)}
             style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '13px 18px', borderRadius: 14, border: '1px solid rgba(167,139,250,0.55)', background: 'linear-gradient(90deg,rgba(167,139,250,0.18),rgba(99,102,241,0.18))', color: '#e2e8f0', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
           >
-            🧙 Geführtes Setup — Schritt für Schritt einrichten (auch Mega Event)
+            🧙 Geführtes Setup — Schritt für Schritt einrichten (auch Cozy Arena)
           </button>
           <SetupView
             s={s}
@@ -5547,13 +5547,15 @@ function SetupView({
             <button
               onClick={() => {
                 const on = !(s as any).largeGroupMode;
-                emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on });
+                // formatSelected: true → Beamer verlässt den neutralen Welcome
+                // (analog Wizard-Schritt 0), auch wenn per Quick-Toggle gewählt.
+                emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on, formatSelected: true });
               }}
               style={segPill(!!(s as any).largeGroupMode, QQ_COLORS.violet400)}
               title={(s as any).largeGroupMode
-                ? '👥 Mega Event AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten), bis 72 Personen. Bar-Race statt Grid, Top-5-schnellste-Reveal, 8 Eltern-Balken. Grid-Add-ons deaktiviert.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
-                : '👥 Mega Event AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: 8×3-Struktur (bis 72 Personen), Bar-Race-Wertung.'}
-            >👥 Mega Event</button>
+                ? '👥 Cozy Arena AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten), bis 72 Personen. Bar-Race statt Grid, Top-5-schnellste-Reveal, 8 Eltern-Balken. Grid-Add-ons deaktiviert.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
+                : '👥 Cozy Arena AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: 8×3-Struktur (bis 72 Personen), Bar-Race-Wertung.'}
+            >👥 Cozy Arena</button>
           </div>
         </div>
 

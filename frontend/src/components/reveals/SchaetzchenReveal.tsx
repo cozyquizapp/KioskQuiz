@@ -14,6 +14,7 @@
 
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
+import { qqMegaFactionName, qqMegaFactionSlug } from '../../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
@@ -55,10 +56,25 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       .sort((a, b) => a.delta - b.delta || a.submittedAt - b.submittedAt);
   }, [s.answers, s.teams, target]);
 
-  // Max 5 Teams rechts; Bottom-up Enthüllung (#5 → #4 → … → #1).
-  const top5 = ranked.slice(0, 5);
+  // Cozy Arena: 1 Marker pro Fraktion = der BESTE (nächste) Tipp der Fraktion.
+  // Sub-Team → Fraktions-Rep (Tiername + Tier-slug, Farbe bleibt = Slot-Farbe).
+  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  const rankedFinal = useMemo(() => {
+    if (!isMega) return ranked;
+    const bestByAvatar = new Map<string, typeof ranked[number]>();
+    for (const r of ranked) {
+      const prev = bestByAvatar.get(r.team.avatarId);
+      if (!prev || r.delta < prev.delta) bestByAvatar.set(r.team.avatarId, r);
+    }
+    return [...bestByAvatar.values()]
+      .map(r => ({ ...r, team: { ...r.team, name: qqMegaFactionName(r.team.avatarId, lang), emoji: qqMegaFactionSlug(r.team.avatarId) ?? r.team.emoji } }))
+      .sort((a, b) => a.delta - b.delta || a.submittedAt - b.submittedAt);
+  }, [ranked, isMega, lang]);
+
+  // Max 5 Fraktionen/Teams rechts; Bottom-up Enthüllung (#5 → #4 → … → #1).
+  const top5 = rankedFinal.slice(0, 5);
   const n = top5.length;
-  const winner = ranked[0] ?? null;
+  const winner = rankedFinal[0] ?? null;
 
   // 2026-05-23 (Live-Test-Bug #E): Tie-Group-Logik wie bei CozyGuessrReveal —
   // bei gleichem Δ (z.B. 2002 vs 2004 für Target 2003) zeigt der schnellere
@@ -66,7 +82,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // 2.-Platz-Reveal als „verdient" wahrgenommen, obwohl's reiner Speed-Tiebreak war.
   const tieGroups: Record<string, number> = {};
   const tieEarliest: Record<string, number> = {};
-  ranked.forEach(r => {
+  rankedFinal.forEach(r => {
     const k = String(r.delta);
     tieGroups[k] = (tieGroups[k] ?? 0) + 1;
     if (tieEarliest[k] == null || r.submittedAt < tieEarliest[k]) tieEarliest[k] = r.submittedAt;

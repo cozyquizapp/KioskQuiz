@@ -9,6 +9,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 
 type Answer = {
   teamId: string;
@@ -82,6 +83,32 @@ export default function QQRecapPage() {
   const teamMap = new Map(recap.teams.map(t => [t.id, t]));
   const dateStr = new Date(recap.playedAt).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 
+  // Mega Event erkennen: mehrere Teams teilen sich denselben avatarId (Normal-
+  // Modus = Avatar exklusiv). Team-Stats dann auf 8 Farben aggregieren; die
+  // Q-by-Q-History bleibt bewusst pro Sub-Team (das will der Mod sehen).
+  const nested = (() => { const s = new Set<string>(); for (const t of recap.teams) { if (s.has(t.avatarId)) return true; s.add(t.avatarId); } return false; })();
+  const colorLabel = (avatarId: string) => QQ_AVATARS.find(a => a.id === avatarId)?.label ?? avatarId;
+  const colorHex = (avatarId: string, fb: string) => QQ_AVATARS.find(a => a.id === avatarId)?.color ?? fb;
+  const displayTeams: TeamX[] = nested ? (() => {
+    const groups = new Map<string, TeamX>();
+    for (const t of recap.teams) {
+      let g = groups.get(t.avatarId);
+      if (!g) { g = { id: `grp-${t.avatarId}`, name: colorLabel(t.avatarId), color: colorHex(t.avatarId, t.color), avatarId: t.avatarId, largestConnected: 0, totalCells: 0, correct: 0, answered: 0, jokersEarned: 0, stealsUsed: 0 }; groups.set(t.avatarId, g); }
+      g.largestConnected = (g.largestConnected ?? 0) + (t.largestConnected ?? 0);
+      g.totalCells = (g.totalCells ?? 0) + (t.totalCells ?? 0);
+      g.correct = (g.correct ?? 0) + (t.correct ?? 0);
+      g.answered = (g.answered ?? 0) + (t.answered ?? 0);
+    }
+    return [...groups.values()].sort((a, b) => (b.largestConnected ?? 0) - (a.largestConnected ?? 0));
+  })() : recap.teams;
+  // Award-Name: im Mega Event die Farbe statt eines einzelnen Sub-Teams.
+  const awardName = (id?: string | null) => {
+    if (!id) return '';
+    const t = teamMap.get(id);
+    if (nested && t) return colorLabel(t.avatarId);
+    return t?.name ?? id;
+  };
+
   return (
     <div style={{
       minHeight: '100vh', background: QQ_COLORS.slate900, color: QQ_COLORS.slate100,
@@ -105,7 +132,7 @@ export default function QQRecapPage() {
         display: 'grid', gap: 12, marginBottom: 32,
         gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))',
       }}>
-        {recap.teams.map(t => (
+        {displayTeams.map(t => (
           <div key={t.id} style={{
             padding: '14px 16px', borderRadius: 12,
             background: `linear-gradient(135deg, ${t.color}22, ${t.color}08)`,
@@ -116,11 +143,21 @@ export default function QQRecapPage() {
               <div style={{ fontSize: 16, fontWeight: 900, color: t.color }}>{t.name}</div>
             </div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, fontSize: 12, color: QQ_COLORS.slate300 }}>
-              <div>Score: <strong style={{ color: QQ_COLORS.slate100 }}>{t.largestConnected ?? 0}</strong></div>
-              <div>Total: <strong style={{ color: QQ_COLORS.slate100 }}>{t.totalCells ?? 0}</strong></div>
-              <div>Korrekt: <strong style={{ color: QQ_COLORS.green300 }}>{t.correct ?? 0}/{t.answered ?? 0}</strong></div>
-              <div>Joker: <strong style={{ color: '#FCD34D' }}>{t.jokersEarned ?? 0}</strong></div>
-              <div>Klau: <strong style={{ color: '#F87171' }}>{t.stealsUsed ?? 0}</strong></div>
+              {nested ? (
+                // Mega Event: kein Grid → nur Punkte + Treffer (Score==Total, kein Joker/Klau).
+                <>
+                  <div>Punkte: <strong style={{ color: QQ_COLORS.slate100 }}>{t.largestConnected ?? 0}</strong></div>
+                  <div>Korrekt: <strong style={{ color: QQ_COLORS.green300 }}>{t.correct ?? 0}/{t.answered ?? 0}</strong></div>
+                </>
+              ) : (
+                <>
+                  <div>Score: <strong style={{ color: QQ_COLORS.slate100 }}>{t.largestConnected ?? 0}</strong></div>
+                  <div>Total: <strong style={{ color: QQ_COLORS.slate100 }}>{t.totalCells ?? 0}</strong></div>
+                  <div>Korrekt: <strong style={{ color: QQ_COLORS.green300 }}>{t.correct ?? 0}/{t.answered ?? 0}</strong></div>
+                  <div>Joker: <strong style={{ color: '#FCD34D' }}>{t.jokersEarned ?? 0}</strong></div>
+                  <div>Klau: <strong style={{ color: '#F87171' }}>{t.stealsUsed ?? 0}</strong></div>
+                </>
+              )}
             </div>
           </div>
         ))}
@@ -133,17 +170,17 @@ export default function QQRecapPage() {
           <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>
             {recap.endAwards.underdog && (
               <div style={{ padding: '10px 14px', background: QQ_COLORS.slate800, borderRadius: 8, fontSize: 13 }}>
-                🐺 <strong>Underdog:</strong> {teamMap.get(recap.endAwards.underdog)?.name ?? recap.endAwards.underdog}
+                🐺 <strong>Underdog:</strong> {awardName(recap.endAwards.underdog)}
               </div>
             )}
             {recap.endAwards.meisterklauer && (
               <div style={{ padding: '10px 14px', background: QQ_COLORS.slate800, borderRadius: 8, fontSize: 13 }}>
-                🦝 <strong>Meisterklauer:</strong> {teamMap.get(recap.endAwards.meisterklauer)?.name ?? recap.endAwards.meisterklauer}
+                🦝 <strong>Meisterklauer:</strong> {awardName(recap.endAwards.meisterklauer)}
               </div>
             )}
             {recap.endAwards.speedy && (
               <div style={{ padding: '10px 14px', background: QQ_COLORS.slate800, borderRadius: 8, fontSize: 13 }}>
-                ⚡ <strong>Speedy Gonzales:</strong> {teamMap.get(recap.endAwards.speedy)?.name ?? recap.endAwards.speedy}
+                ⚡ <strong>Speedy Gonzales:</strong> {awardName(recap.endAwards.speedy)}
               </div>
             )}
           </div>

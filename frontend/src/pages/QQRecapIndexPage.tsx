@@ -8,6 +8,24 @@
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+
+// Mega Event erkennen: mehrere Teams teilen dieselbe Slot-Farbe (im Normal-Modus
+// ist jede Farbe exklusiv). Dann auf 8 Farben aggregieren (Name per Farb-Reverse-
+// Lookup aus QQ_AVATARS), sonst nach Score sortiert durchreichen.
+function groupPillsIfNested(teams: Array<{ id: string; name: string; color: string; score: number }>) {
+  const seen = new Set<string>();
+  let nested = false;
+  for (const t of teams) { if (seen.has(t.color)) { nested = true; break; } seen.add(t.color); }
+  if (!nested) return [...teams].sort((a, b) => b.score - a.score);
+  const groups = new Map<string, { id: string; name: string; color: string; score: number }>();
+  for (const t of teams) {
+    let g = groups.get(t.color);
+    if (!g) { g = { id: `grp-${t.color}`, name: QQ_AVATARS.find(a => a.color === t.color)?.label ?? t.name, color: t.color, score: 0 }; groups.set(t.color, g); }
+    g.score += t.score ?? 0;
+  }
+  return [...groups.values()].sort((a, b) => b.score - a.score);
+}
 
 type QQResult = {
   id: string;
@@ -90,7 +108,7 @@ export default function QQRecapIndexPage() {
       {/* Spiele-Liste */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {filtered.map(r => {
-          const sortedTeams = [...(r.teams ?? [])].sort((a, b) => b.score - a.score);
+          const sortedTeams = groupPillsIfNested(r.teams ?? []);
           return (
             <Link
               key={r.id}

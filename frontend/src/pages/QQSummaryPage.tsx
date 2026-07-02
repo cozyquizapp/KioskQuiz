@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { teamDisplayName } from '../../../shared/quarterQuizTypes';
+import { teamDisplayName, QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 import { API_BASE } from '../api';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -46,6 +46,8 @@ type Summary = {
   /** 2026-05-07 — Server-gewuerfelte Slot-Emojis bei 'all'-Set (8 Eintraege). */
   avatarSetEmojis?: string[] | null;
   teams: SummaryTeam[];
+  /** Mega Event: nach Farbe aggregiert (deriveMegaSummary). Grid-Stats/Brett aus. */
+  nested?: boolean;
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
   /** 2026-05-09 (Wolf): Final-Brett für Summary-Anzeige.
    *  cellOwners[r][c] = teamId | null. Kompakter Payload. */
@@ -339,6 +341,58 @@ function SummaryStammCode({ teamId, lang, brand }: {
 // navigator.share API mit Team-Stats; Fallback Clipboard-Copy. Spieler hat
 // gerade Stats offen — perfekter Moment fuer "Wir wurden 2. mit 47 Punkten"
 // in WhatsApp/Insta-Story.
+// Mega Event (nestedTeams) frontend-seitig erkennen + auf 8 Farben aggregieren.
+// Kennzeichen: mehrere Teams teilen sich denselben avatarId (im Normal-Modus ist
+// jeder Avatar exklusiv). Punkte pro Farbe summiert; Grid-Stats/Brett fallen weg.
+// So braucht die Summary kein Backend-Flag und keinen Redeploy.
+function deriveMegaSummary(raw: Summary | null, lang: Lang): Summary | null {
+  if (!raw) return raw;
+  const teams = raw.teams ?? [];
+  const seen = new Set<string>();
+  let nested = false;
+  for (const t of teams) { if (seen.has(t.avatarId)) { nested = true; break; } seen.add(t.avatarId); }
+  if (!nested) return raw;
+
+  const groups = new Map<string, SummaryTeam & { _ids: string[] }>();
+  for (const t of teams) {
+    let g = groups.get(t.avatarId);
+    if (!g) {
+      const ava = QQ_AVATARS.find(a => a.id === t.avatarId);
+      g = {
+        id: `grp-${t.avatarId}`,
+        name: ava ? (lang === 'en' ? ava.labelEn : ava.label) : t.name,
+        color: ava?.color ?? t.color,
+        avatarId: t.avatarId,
+        emoji: undefined,
+        score: 0, totalCells: 0, largestConnected: 0,
+        correct: 0, answered: 0, jokersEarned: 0, stealsUsed: 0,
+        _ids: [],
+      };
+      groups.set(t.avatarId, g);
+    }
+    g.score += t.score ?? 0;
+    g.totalCells += t.totalCells ?? 0;
+    g.largestConnected += t.largestConnected ?? 0;
+    g.correct += t.correct ?? 0;
+    g.answered += t.answered ?? 0;
+    g.jokersEarned += t.jokersEarned ?? 0;
+    g.stealsUsed += t.stealsUsed ?? 0;
+    g._ids.push(t.id);
+  }
+  const idToGroup = new Map<string, string>();
+  for (const g of groups.values()) for (const id of g._ids) idToGroup.set(id, g.id);
+  const groupedTeams: SummaryTeam[] = [...groups.values()].map(({ _ids, ...rest }) => rest);
+  const funnyAnswers = (raw.funnyAnswers ?? []).map(f => ({ ...f, teamId: idToGroup.get(f.teamId) ?? f.teamId }));
+  const remap = (id?: string | null) => (id ? (idToGroup.get(id) ?? id) : id);
+  const endAwards = raw.endAwards ? {
+    ...raw.endAwards,
+    underdog: remap(raw.endAwards.underdog),
+    meisterklauer: remap(raw.endAwards.meisterklauer),
+    speedy: remap(raw.endAwards.speedy),
+  } : raw.endAwards;
+  return { ...raw, teams: groupedTeams, funnyAnswers, endAwards, cellOwners: undefined, gridSize: 0, nested: true };
+}
+
 function ShareButton({ team, place, lang, brand }: {
   team: SummaryTeam;
   place: number;
@@ -397,7 +451,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   const { roomCode: paramRoomCode, gameId: paramGameId } = useParams<{ roomCode?: string; gameId?: string }>();
   const roomCode = mockSummary?.roomCode ?? paramRoomCode;
   const gameId   = paramGameId;
-  const [summary, setSummary] = useState<Summary | null>(mockSummary ?? null);
+  const [rawSummary, setSummary] = useState<Summary | null>(mockSummary ?? null);
   const [upcoming, setUpcoming] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(!mockSummary);
   // 2026-05-10 (Audit-P2 lang-stale-closure-Fix): error wird als Translation-
@@ -406,6 +460,9 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   const [errorKey, setErrorKey] = useState<'notFoundMsg' | 'loadError' | 'gameRunningMsg' | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
   const [lang, setLang] = useState<Lang>(detectInitialLang);
+  // Mega Event: rohe Summary auf 8 Farben aggregieren (sonst 24 Sub-Teams +
+  // Grid-Stats). Im Normal-Modus unverändert durchgereicht.
+  const summary = useMemo(() => deriveMegaSummary(rawSummary, lang), [rawSummary, lang]);
 
   function changeLang(next: Lang) {
     setLang(next);
@@ -523,6 +580,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           playedAt={summary.playedAt}
           lang={lang}
           brand={brand}
+          nested={summary.nested}
         />
         <Section title={tr('whichTeam', lang)}>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
@@ -591,16 +649,28 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
       {/* 2026-05-03 (Wolf-Wunsch): Stamm-Code auch hier auf der Summary-Seite,
           kopierbar — Spieler kommt oft erst hier nochmal her und kann sich
           den Code ohne Game-Over-Screen merken. */}
-      <SummaryStammCode teamId={selectedTeam.id} lang={lang} brand={brand} />
+      {/* Mega Event: kein Stamm-Code pro Farb-Gruppe (Gruppe ≠ echtes Team). */}
+      {!summary.nested && <SummaryStammCode teamId={selectedTeam.id} lang={lang} brand={brand} />}
 
       <Section title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-          <Stat staggerIdx={0} label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={lang === 'de' ? 'Punkte' : 'pts'} accent={selectedTeam.color} />
-          <Stat staggerIdx={1} label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
-          <Stat staggerIdx={2} label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent={QQ_COLORS.green500} />
-          <Stat staggerIdx={3} label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent={QQ_COLORS.green500} />
-          <Stat staggerIdx={4} label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent={brand.pink} />
-          <Stat staggerIdx={5} label={tr('stolen', lang)} value={selectedTeam.stealsUsed} suffix={tr('times', lang)} accent={QQ_COLORS.red500} />
+          {summary.nested ? (
+            // Mega Event: keine Grid-Stats (Felder/Joker/Klau) — nur Punkte + Treffer.
+            <>
+              <Stat staggerIdx={0} label={lang === 'de' ? 'Punkte' : 'Points'} value={selectedTeam.largestConnected} suffix={lang === 'de' ? 'Punkte' : 'pts'} accent={selectedTeam.color} />
+              <Stat staggerIdx={1} label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent={QQ_COLORS.green500} />
+              <Stat staggerIdx={2} label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent={QQ_COLORS.green500} />
+            </>
+          ) : (
+            <>
+              <Stat staggerIdx={0} label={tr('largestArea', lang)} value={selectedTeam.largestConnected} suffix={lang === 'de' ? 'Punkte' : 'pts'} accent={selectedTeam.color} />
+              <Stat staggerIdx={1} label={tr('fieldsTotal', lang)} value={selectedTeam.totalCells} suffix={tr('pieces', lang)} accent={selectedTeam.color} />
+              <Stat staggerIdx={2} label={tr('correct', lang)} value={selectedTeam.correct} suffix={`/ ${selectedTeam.answered}`} accent={QQ_COLORS.green500} />
+              <Stat staggerIdx={3} label={tr('accuracy', lang)} value={accuracy != null ? `${accuracy}%` : '—'} accent={QQ_COLORS.green500} />
+              <Stat staggerIdx={4} label={tr('jokersEarned', lang)} value={selectedTeam.jokersEarned} accent={brand.pink} />
+              <Stat staggerIdx={5} label={tr('stolen', lang)} value={selectedTeam.stealsUsed} suffix={tr('times', lang)} accent={QQ_COLORS.red500} />
+            </>
+          )}
         </div>
       </Section>
 
@@ -789,12 +859,13 @@ function TopBar({ lang, onLang, brand }: {
 // ── WinnerCelebrationHero — emotionaler Anker für die Auswahl-View ──────────
 // 2026-05-11 (Audit P0): Sieger groß mit Avatar + Crown + Glow statt nur
 // einem 14px-Pink-Text-Hinweis. Erste Begegnung nach QR-Scan = Wow-Moment.
-function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand }: {
+function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nested }: {
   winner: SummaryTeam | undefined;
   draftTitle: string;
   playedAt: number;
   lang: Lang;
   brand: ReturnType<typeof summaryBrand>;
+  nested?: boolean;
 }) {
   const locale = lang === 'de' ? 'de-DE' : 'en-GB';
   const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
@@ -858,7 +929,7 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand }: {
         {winner.name}
       </div>
       <div style={{ marginTop: 4, fontSize: 12, color: 'var(--sum-muted)', fontWeight: 700 }}>
-        {winner.largestConnected} {lang === 'de' ? 'Punkte · größtes Gebiet' : 'pts · largest area'}
+        {winner.largestConnected} {nested ? (lang === 'de' ? 'Punkte' : 'pts') : (lang === 'de' ? 'Punkte · größtes Gebiet' : 'pts · largest area')}
       </div>
 
       <style>{`

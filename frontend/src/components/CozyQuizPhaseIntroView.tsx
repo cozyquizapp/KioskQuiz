@@ -303,7 +303,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // gleichzeitig das Spielende ist, behält sie trotzdem ihren „Runde N"-Titel
   // (das echte Finale-Drama liegt bei der Connections-Phase).
   const phaseName = phaseNamesRaw[s.gamePhaseIndex];
-  const phaseDesc = phaseDescsRaw[s.gamePhaseIndex];
+  // 2026-07-02 (Wolf Mega): kein Grid → Mission-Subtitle nicht „Erobert das
+  // Spielfeld!"/„Klaut Felder!" (jede Runde), sondern grid-freie Punkte-Ansage.
+  const phaseDesc = (s as any).largeGroupMode
+    ? (lang === 'de' ? 'Sammelt Punkte für euer Team!' : 'Score points for your team!')
+    : phaseDescsRaw[s.gamePhaseIndex];
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -550,7 +554,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const titleColor = isThemed() ? 'var(--qq-title)' : color;
   const prevTitleColor = isThemed() ? 'var(--qq-title)' : prevColor;
   const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
-  const prevPhaseDesc = prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx];
+  // Mega: alle Runden nutzen denselben grid-freien Subtitle → auch beim
+  // Runden-Übergang keine „Klaut Felder!"-Zeile einblenden.
+  const prevPhaseDesc = (s as any).largeGroupMode ? phaseDesc : (prevIdx < 1 ? phaseDesc : phaseDescsRaw[prevIdx]);
 
   const displayColor = transitioning ? prevColor : color;
   const displayPhaseDesc = transitioning ? prevPhaseDesc : phaseDesc;
@@ -650,6 +656,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // ÜBER der Linie) + der Titel-Glow den großen „Runde N"-Titel nicht mehr
     // touchieren (Wolf 2026-06-30 'Unterschrift hängt im Tree').
     let vAnchor = 0.62;
+    // 2026-07-02 (Wolf Mega): im Groß-Modus fehlt der Aktions-Block unter dem
+    // Tree → viel Dead-Space bei Step 0. Tree etwas größer ziehen + vertikal
+    // mittiger anlegen, damit der Ausschnitt die Fläche besser füllt. Nur Mega
+    // + Step 0 (Normal-Journey bleibt exakt wie getunt).
+    if (step === 0 && (s as any).largeGroupMode) {
+      S = 1.14;
+      vAnchor = 0.52;
+    }
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster. tx = phaseCenters[pi] = Mitte
       // der 5-Dot-Gruppe (horizontal mittig). 2026-06-30 (Wolf 'oben

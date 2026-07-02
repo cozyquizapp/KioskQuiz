@@ -28,6 +28,8 @@ interface Props {
   setSelectedDraftId: (id: string) => void;
   drafts: DraftSummary[];
   onClose: () => void;
+  /** Setup abschließen (setSetupDone) → Teams können beitreten. Letzter Schritt. */
+  finishSetup?: () => void;
 }
 
 const STEPS = [
@@ -43,7 +45,7 @@ const STEPS = [
 const ACCENT = '#EC4899';
 const VIOLET = '#A78BFA';
 
-export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDraftId, setSelectedDraftId, drafts, onClose }: Props) {
+export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDraftId, setSelectedDraftId, drafts, onClose, finishSetup }: Props) {
   const [step, setStep] = useState(0);
   const mega = !!s?.largeGroupMode;
 
@@ -83,7 +85,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               }} title={st.title} />
             ))}
           </div>
-          <button onClick={onClose} style={ov.closeX} title="Wizard schließen">✕</button>
+          <button onClick={onClose} style={ov.closeX} title="Zum Schnell-Setup (Pills)">✕</button>
         </div>
 
         <div style={ov.stepTitle}>
@@ -222,7 +224,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               ].filter(Boolean).join(', ') || 'keine'} />
               <SummaryRow label="Design" value={(Object.values(QQ_THEMES).find((t: any) => t.id === (s?.themeId ?? 'cozy')) as any)?.label ?? 'Cozy'} />
               <div style={{ ...ov.hint, marginTop: 6 }}>
-                Alles gesetzt. Schließe den Wizard und starte das Quiz wie gewohnt.
+                Alles gesetzt. „Setup abschließen" → die Teams können beitreten, dann startest du wie gewohnt.
               </div>
             </div>
           )}
@@ -236,7 +238,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
             ← Zurück
           </button>
           {isLast ? (
-            <button onClick={onClose} style={{ ...ov.navBtn, ...ov.navPrimary }}>Fertig ✓</button>
+            <button onClick={() => { finishSetup?.(); onClose(); }} style={{ ...ov.navBtn, ...ov.navPrimary }}>Setup abschließen →</button>
           ) : (
             <button onClick={() => setStep(s2 => Math.min(STEPS.length - 1, s2 + 1))}
               style={{ ...ov.navBtn, ...ov.navPrimary }}>Weiter →</button>

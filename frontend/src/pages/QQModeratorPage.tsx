@@ -50,7 +50,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   const [showPrep, setShowPrep] = useState(false);
   // 2026-07-02 (Wolf): geführter Setup-Wizard (Gruppengröße→Runden→Sprache→
   // Add-ons→Draft→Theme). Setzt alles live über dieselben Kanäle wie die Pills.
-  const [showWizard, setShowWizard] = useState(false);
+  // Default OPEN — der Wizard IST das Standard-Setup (Wolf: „setup voll als wizard").
+  // ✕ schließt ihn → altes Pill-Schnell-Setup als Fallback.
+  const [showWizard, setShowWizard] = useState(true);
   const startingRef = useRef(false); // prevent double-fire on startGame
 
   // ── Autoplay-Mode (lokaler Test-Modus, kein Backend-State) ────────────────
@@ -1815,7 +1817,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         />
       )}
 
-      {showWizard && s && (
+      {showWizard && s && s.phase === 'LOBBY' && !setupDone && (
         <QQSetupWizard
           roomCode={roomCode}
           s={s}
@@ -1825,6 +1827,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           selectedDraftId={selectedDraftId}
           setSelectedDraftId={setSelectedDraftId}
           drafts={drafts}
+          finishSetup={() => setSetupDone(true)}
           onClose={() => setShowWizard(false)}
         />
       )}

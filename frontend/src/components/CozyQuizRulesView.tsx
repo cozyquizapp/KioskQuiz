@@ -277,6 +277,99 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
   ];
 }
 
+// ── Mega-Event-Regelset (kein Grid!) ─────────────────────────────────────────
+// Im Mega Event (largeGroupMode) gibt es kein Spielfeld/Klauen/Stapeln, sondern
+// ein Bar-Race: jede Farbe (Eltern-Team) sammelt Punkte, jede richtige Antwort
+// zählt, die 5 schnellsten Farben pro Frage bekommen extra Punkte. Eigene, kurze
+// Slides — Grid-Slides (Ziel-Gebiet, Joker-Muster, Finale-Feld) fallen weg.
+function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
+  const t = (k: string, fb: string) => getRuleText(k, 'de', fb);
+  return [
+    {
+      icon: '🏆',
+      title: t('rules.mega.slide1.title', 'Das Ziel'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.mega.slide1.line1', 'Sammelt als Farbe die meisten Punkte!'),
+        t('rules.mega.slide1.line2', 'Jedes Handy spielt für seine Farbe mit'),
+      ],
+    },
+    {
+      icon: '🗺',
+      title: t('rules.mega.slide2.title', 'Dein Weg durchs Quiz'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.mega.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
+      ],
+      treeShowcase: true,
+    },
+    {
+      icon: '⚡',
+      title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
+      color: '#EC4899',
+      lines: [
+        t('rules.mega.slide3.line1', 'Jede richtige Antwort zählt für deine Farbe'),
+        t('rules.mega.slide3.line2', 'Die 5 schnellsten Farben pro Frage: extra Punkte (5·4·3·2·1)'),
+      ],
+    },
+    {
+      icon: '🤝',
+      title: t('rules.slide_fairplay.title', 'Fair Play'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.slide_fairplay.line1', 'Kein Googeln · Handy nur fürs Antworten'),
+        t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
+        t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
+      ],
+      extra: t('rules.slide_fairplay.extra', 'Habt Spaß! Punkte sind nur Beilage.'),
+    },
+  ];
+}
+
+function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
+  const t = (k: string, fb: string) => getRuleText(k, 'en', fb);
+  return [
+    {
+      icon: '🏆',
+      title: t('rules.mega.slide1.title', 'The Goal'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.mega.slide1.line1', 'Score the most points as a colour!'),
+        t('rules.mega.slide1.line2', 'Every phone plays for its colour'),
+      ],
+    },
+    {
+      icon: '🗺',
+      title: t('rules.mega.slide2.title', 'Your journey'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.mega.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
+      ],
+      treeShowcase: true,
+    },
+    {
+      icon: '⚡',
+      title: t('rules.mega.slide3.title', 'How to score'),
+      color: '#EC4899',
+      lines: [
+        t('rules.mega.slide3.line1', 'Every correct answer counts for your colour'),
+        t('rules.mega.slide3.line2', 'The 5 fastest colours per question: bonus points (5·4·3·2·1)'),
+      ],
+    },
+    {
+      icon: '🤝',
+      title: t('rules.slide_fairplay.title', 'Fair Play'),
+      color: RULES_SLIDE_COLOR,
+      lines: [
+        t('rules.slide_fairplay.line1', 'No googling · phones only for answering'),
+        t('rules.slide_fairplay.line2', "Don't spoil answers between teams"),
+        t('rules.slide_fairplay.line3', 'When in doubt, the wolf decides 🐺'),
+      ],
+      extra: t('rules.slide_fairplay.extra', 'Have fun! Points are just the side dish.'),
+    },
+  ];
+}
+
 /** Mini grid example for rules slides */
 function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable<RulesSlide['grid']>; slideColor: string; eurovisionMode?: boolean }) {
   const rows = grid.cells.length;
@@ -377,7 +470,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
   useRuleOverridesVersion();
   const totalPhases = (s.totalPhases ?? 4) as 3 | 4;
-  const allSlides = lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases);
+  // Mega Event (largeGroupMode): eigenes Grid-freies Regelset (Bar-Race statt
+  // Spielfeld). Sonst das klassische Grid-Regelwerk.
+  const mega = !!(s as any).largeGroupMode;
+  const allSlides = mega
+    ? (lang === 'en' ? buildMegaRulesSlidesEn(totalPhases) : buildMegaRulesSlidesDe(totalPhases))
+    : (lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases));
   // 2026-05-24 (Wolf 'connections raus'): requiresConnections-Slides werden
   // ueberall ausgeblendet (Feature deaktiviert). Comeback + CozyGames bleiben.
   const cgEnabled = !!(s as any).cozyGamesEnabled;

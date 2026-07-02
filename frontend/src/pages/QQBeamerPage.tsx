@@ -2540,7 +2540,11 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
   return (
     <div style={{
       flex: '0 0 auto', position: 'relative',
-      width: '100%', height: 'clamp(340px, 36cqh, 460px)',
+      // 2026-07-02 (Wolf-Bug 'hot potato teamname abgeschnitten, immer'): Container
+      // etwas höher — die aktive Spalte (Ring + JETZT-DRAN + Name) war bei knapper
+      // Höhe länger als der Container, der Beamer-overflow:hidden schnitt die
+      // Namenszeile ab. Mehr Höhe + kompakterer Ring (s.u.) = Name passt rein.
+      width: '100%', height: 'clamp(360px, 39cqh, 500px)',
       pointerEvents: 'none',
     }}>
       {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent */}
@@ -2578,7 +2582,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   ? 'opacity 0.6s ease'
                   : 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease, filter 0.6s ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: isActive ? 'clamp(10px, 1.4cqh, 20px)' : 8,
+                gap: isActive ? 'clamp(6px, 0.9cqh, 12px)' : 8,
               }}
             >
               {isActive ? (
@@ -2586,7 +2590,9 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   {/* Timer-Ring + Avatar + Kartoffel + Countdown-Chip */}
                   <div style={{
                     position: 'relative',
-                    width: 'clamp(280px, 28cqw, 400px)', height: 'clamp(280px, 28cqw, 400px)',
+                    // 2026-07-02: Ring von 400→360 max reduziert → reclaimt Vertikal-
+                    // Raum für die Namenszeile darunter (Wolf-Bug 'name abgeschnitten').
+                    width: 'clamp(250px, 25cqw, 360px)', height: 'clamp(250px, 25cqw, 360px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben) */}
@@ -2607,7 +2613,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                       />
                     </svg>
                     {/* Avatar zentriert im Ring */}
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 15cqw, 220px)'} bgColor={t.color} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(134px, 13.4cqw, 196px)'} bgColor={t.color} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
                     <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
                       position: 'absolute', top: '2%', right: '0%',

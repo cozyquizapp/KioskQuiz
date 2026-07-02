@@ -6154,7 +6154,7 @@ function LobbyView({
                   🧪 TEST
                 </span>
                 <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
-                  {((s as any).largeGroupMode ? [5, 10, 15, 20, 25] : [1, 3, 5, 7, 8]).map(n => (
+                  {((s as any).nestedTeams ? [6, 9, 12, 18, 24] : (s as any).largeGroupMode ? [5, 10, 15, 20, 25] : [1, 3, 5, 7, 8]).map(n => (
                     <button
                       key={n}
                       onClick={async () => {

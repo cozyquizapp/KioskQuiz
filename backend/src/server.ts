@@ -9905,7 +9905,8 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
   if (room.phase !== 'LOBBY') return res.status(400).json({ error: 'Nur in Lobby möglich' });
   // 2026-07-01: Groß-Modus erlaubt bis 25 Bots (sonst max 8).
-  const cap = room.largeGroupMode ? QQ_MAX_TEAMS_LARGE : 8;
+  // 2026-07-02: Nested → max 24 (8 Eltern × 3 Sub-Teams).
+  const cap = room.nestedTeams ? 24 : (room.largeGroupMode ? QQ_MAX_TEAMS_LARGE : 8);
   const count = Math.min(cap, Math.max(1, Number(req.body?.count) || cap));
   const existing = Object.keys(room.teams).length;
   const toAdd = Math.max(0, count - existing);
@@ -9936,7 +9937,26 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   }
   let added = 0;
   const usedAvatars = new Set(Object.values(room.teams).map((t: any) => t.avatarId));
-  if (room.largeGroupMode) {
+  if (room.nestedTeams) {
+    // 2026-07-02 (Idee 2 Test ohne echte Handys): 3 Sub-Teams pro Avatar
+    // (= Eltern-Team). Emoji bewusst undefined → alle Sub-Teams eines Avatars
+    // zeigen denselben Slot-Default → Eltern-Avatar konsistent. Namen aus dem
+    // Funny-Pool (testet Reveal + Lobby-Chips mit variierenden Namen).
+    outer:
+    for (const av of QQ_AVATARS) {
+      for (let slot = 0; slot < 3; slot++) {
+        if (added >= toAdd) break outer;
+        const teamId = `dev-${av.id}-${slot}-${Math.random().toString(36).slice(2, 7)}`;
+        const label = botLang === 'en' ? av.labelEn : av.label;
+        const name = namePicks[added] ?? `${label} ${slot + 1}`;
+        try {
+          qqJoinTeam(room, teamId, name, av.id, undefined);
+          if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
+          added++;
+        } catch { added++; }
+      }
+    }
+  } else if (room.largeGroupMode) {
     // Groß-Modus: bis 25 Teams > 8 Avatar-Slots → Slots zyklisch wiederverwenden
     // (qqJoinTeam-Exklusivität ist im Groß-Modus relaxed). Tier/Emoji aus Pool.
     let guard = 0;

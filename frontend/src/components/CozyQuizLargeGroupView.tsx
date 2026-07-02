@@ -9,8 +9,9 @@
 // Top-5-schnellste zusätzlich +5/4/3/2/1. Reihenfolge aus currentQuestionWinners
 // (fastest zuerst). Score-Feld = largestConnected (= Punkte im Groß-Modus).
 
-import { useMemo, useRef, useLayoutEffect } from 'react';
+import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import type { QQStateUpdate, QQTeam, QQMegaRankEntry } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
@@ -29,7 +30,17 @@ function pointsForRank(idx: number): number {
 const KEYFRAMES = `
 @keyframes brPodIn { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: none; } }
 @keyframes brAlsoIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+@keyframes brRankIn { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+@keyframes brPtsPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes brFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes brBarGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 `;
+
+// Farbe/Label je avatarId (= Farb-Slot) aus dem kanonischen Avatar-Set.
+interface AvaMeta { label: string; labelEn: string; color: string }
+const AVA_BY_ID = new Map<string, AvaMeta>(
+  QQ_AVATARS.map(a => [a.id, { label: a.label, labelEn: a.labelEn, color: a.color }] as [string, AvaMeta]),
+);
 
 // ── Akt 2: Top-5-schnellste-Reveal ───────────────────────────────────────────
 export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
@@ -52,9 +63,22 @@ export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
       </div>
 
       {state.nestedTeams ? (
-        // Modell B: keine Sub-Team-Podium mehr — die Punkte-Verteilung pro Farbe
-        // kommt im nächsten Beat (Standings, Akt 3). Hier nur die Antwort + Weiter.
-        <div style={S.emptyReveal}>{de ? 'Weiter für die Wertung →' : 'Continue for scoring →'}</div>
+        // Modell B (Akt 2 = Auflösung): richtige Antwort + wie viele Handys
+        // richtig lagen. Die Punkte-Verteilung pro Farbe kommt im nächsten
+        // Beat (Standings, Akt 3) — hier bewusst nur die Auflösung.
+        <div style={S.megaReveal}>
+          <div style={S.megaRevealBig}>
+            <b style={{ color: '#EC4899' }}>{winners.length}</b> {de ? 'von' : 'of'} {state.teams.length} {de ? 'Handys richtig' : 'phones correct'}
+          </div>
+          <div style={S.megaRevealTrack}>
+            <div style={{
+              height: '100%', width: `${state.teams.length ? (winners.length / state.teams.length) * 100 : 0}%`,
+              background: 'linear-gradient(90deg, #EC4899, #F472B6)', borderRadius: 999,
+              boxShadow: '0 0 18px rgba(236,72,153,0.5)', transition: 'width 0.9s cubic-bezier(0.34,1.05,0.5,1)',
+            }} />
+          </div>
+          <div style={S.megaRevealHint}>{de ? 'Punkte gleich in der Wertung →' : 'Points up next in the scoring →'}</div>
+        </div>
       ) : top5.length === 0 ? (
         <div style={S.emptyReveal}>{de ? 'Niemand richtig — weiter geht’s!' : 'Nobody correct — moving on!'}</div>
       ) : (
@@ -96,9 +120,91 @@ export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
   );
 }
 
-// ── Akt 3: Bar-Race-Gesamtwertung ────────────────────────────────────────────
+// ── Akt 3: per-Frage-Wertung (Beat A) → Bar-Race-Gesamtwertung (Beat B) ───────
 export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
+  const ranking = state.megaQuestionRanking ?? [];
+  const hasRanking = !!state.nestedTeams && ranking.length > 0;
+
+  // 2-Beat-Reveal: zuerst „Wertung dieser Frage" (transparent, wer wie viele
+  // Handys richtig hatte → Punkte), dann Cross-Fade in den Gesamtstand.
+  // Remount pro Frage (key im Beamer) setzt den Beat sauber zurück.
+  const [beat, setBeat] = useState<'question' | 'standings'>(hasRanking ? 'question' : 'standings');
+  useEffect(() => {
+    if (!hasRanking) return;
+    const t = setTimeout(() => setBeat('standings'), 4200);
+    return () => clearTimeout(t);
+  }, [hasRanking]);
+
+  if (beat === 'question' && hasRanking) {
+    return <MegaQuestionRanking state={state} ranking={ranking} de={de} />;
+  }
+  return <CumulativeStandings state={state} de={de} />;
+}
+
+// ── Beat A: Punkte-Verteilung dieser Frage (Modell B, niedrigschwellig) ───────
+function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ranking: QQMegaRankEntry[]; de: boolean }) {
+  const rows = useMemo(() => [...ranking].sort((a, b) => a.rank - b.rank), [ranking]);
+  return (
+    <div style={S.qrWrap}>
+      <style>{KEYFRAMES}</style>
+      <div style={S.qrLabel}>{de ? 'Wertung dieser Frage' : 'This question’s scoring'}</div>
+      <div style={S.qrList}>
+        {rows.map((r, i) => {
+          const ava = AVA_BY_ID.get(r.avatarId);
+          const color = ava?.color ?? '#EC4899';
+          const name = de ? (ava?.label ?? r.avatarId) : (ava?.labelEn ?? ava?.label ?? r.avatarId);
+          const medal = i < 3 && r.points > 0 ? MEDALS[i] : null;
+          const scored = r.points > 0;
+          return (
+            <div key={r.avatarId} style={{ ...S.qrRow, animation: 'brRankIn 0.5s ease both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
+              <span style={S.qrRank}>{medal ? <QQEmojiIcon emoji={medal} /> : i + 1}</span>
+              <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={undefined} size={64} />
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 30, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                <Dots correct={r.correct} total={r.total} color={color} de={de} />
+              </div>
+              <span style={{
+                ...S.qrPts, color: scored ? color : 'rgba(255,255,255,0.4)',
+                animation: scored ? 'brPtsPop 0.5s ease both' : undefined, animationDelay: `${i * 0.32 + 0.25}s`,
+              }}>
+                {scored ? `+${r.points}` : '±0'}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={S.qrFoot}>{de ? '⚡ Je mehr Handys richtig — und je schneller — desto mehr Punkte' : '⚡ More phones correct — and faster — means more points'}</div>
+    </div>
+  );
+}
+
+// Punkte-Dots: gefüllt = richtige Sub-Teams, hohl = Rest. Bei >5 nur Zahl.
+function Dots({ correct, total, color, de }: { correct: number; total: number; color: string; de: boolean }) {
+  const showDots = total > 0 && total <= 5;
+  return (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
+      {showDots && (
+        <span style={{ display: 'inline-flex', gap: 5 }}>
+          {Array.from({ length: total }, (_, i) => (
+            <span key={i} style={{
+              width: 15, height: 15, borderRadius: '50%',
+              background: i < correct ? color : 'transparent',
+              border: `2px solid ${i < correct ? color : 'rgba(255,255,255,0.28)'}`,
+              boxShadow: i < correct ? `0 0 8px ${color}88` : 'none',
+            }} />
+          ))}
+        </span>
+      )}
+      <span style={{ fontSize: 17, fontWeight: 800, opacity: 0.7 }}>
+        {correct}/{total} {de ? 'Handys richtig' : 'phones correct'}
+      </span>
+    </div>
+  );
+}
+
+// ── Beat B: Bar-Race-Gesamtwertung ───────────────────────────────────────────
+function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean }) {
   // Genestet (Idee 2): 8 Eltern-Team-Balken (nach avatarId gruppiert, Punkte
   // summiert) statt bis zu 24 Sub-Team-Balken. Sonst: reale Teams.
   const sorted = state.nestedTeams ? qqSortedGroups(state) : qqSortedTeams(state);
@@ -121,7 +227,8 @@ export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
   }, [state.megaQuestionRanking]);
 
   return (
-    <div style={S.standWrap}>
+    <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
+      <style>{KEYFRAMES}</style>
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
       <div style={{ position: 'relative', height: shown.length * STANDINGS_ROW_H, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (
@@ -247,6 +354,21 @@ const S: Record<string, React.CSSProperties> = {
   correctBanner: { display: 'flex', alignItems: 'baseline', fontSize: 40, fontWeight: 800 },
   correctCount: { marginLeft: 'auto', fontSize: 26, fontWeight: 800, opacity: 0.6 },
   emptyReveal: { textAlign: 'center', fontSize: 40, fontWeight: 800, opacity: 0.7, padding: '60px 0' },
+
+  // Akt 2 nested „Auflösung"
+  megaReveal: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, padding: '30px 0 10px' },
+  megaRevealBig: { fontSize: 46, fontWeight: 900, textAlign: 'center' },
+  megaRevealTrack: { width: 'min(720px, 80%)', height: 26, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' },
+  megaRevealHint: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
+
+  // Akt 3 Beat A „Wertung dieser Frage"
+  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both' },
+  qrLabel: { fontSize: 24, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6, fontWeight: 900 },
+  qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
+  qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.05)' },
+  qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
+  qrPts: { fontWeight: 900, fontSize: 42, minWidth: 96, textAlign: 'right' },
+  qrFoot: { fontSize: 20, fontWeight: 700, opacity: 0.5, textAlign: 'center', marginTop: 4 },
   podium: { display: 'flex', flexDirection: 'column', gap: 14 },
   podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 18, background: 'rgba(255,255,255,0.05)' },
   podMedal: { fontSize: 44, width: 56, textAlign: 'center', fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },

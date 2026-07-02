@@ -1154,7 +1154,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const showMuchoWinner = cat !== 'MUCHO' || muchoAkt3Ready;
   const showZvzWinner = cat !== 'ZEHN_VON_ZEHN' || zvzAkt3Ready;
   const showCheeseWinner = cat !== 'CHEESE' || cheeseCascadeDone;
-  const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner;
+  // Mega Event: kein Einzel-Team-Gewinner-Banner — es zählt die Farbe, und die
+  // Punkte-Verteilung kommt in Akt 3 (Standings). Die Kategorie-Reveals (MUCHO-
+  // Optionen, 10v10-Verteilung, Schätzchen-Zahlenstrahl) laufen separat weiter.
+  const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner && !(s as any).largeGroupMode;
 
   // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
   // Synchron zur Animation: revealWinnerIn nutzt bannerDelay=0.7s, davor ist

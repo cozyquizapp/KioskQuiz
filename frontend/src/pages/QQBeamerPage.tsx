@@ -53,7 +53,7 @@ import {
   FinalRevealView, FinalRoundRecapSlide,
 } from '../components/CozyQuizFinalRevealView';
 import { QuestionView } from '../components/CozyQuizQuestionView';
-import { LargeGroupRevealView, LargeGroupStandingsView } from '../components/CozyQuizLargeGroupView';
+import { LargeGroupStandingsView } from '../components/CozyQuizLargeGroupView';
 import { PhaseIntroView, RoundMiniTree } from '../components/CozyQuizPhaseIntroView';
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
@@ -1992,14 +1992,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
               {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
               {renderState.phase === 'PHASE_INTRO'     && <PhaseIntroView state={renderState} />}
-              {/* Groß-Gruppen-Modus: Akt 1 = QuestionView (aktiv), Akt 2 = Top-5-Reveal,
-                  Akt 3 = Bar-Race-Standings. Normal-Flow (Grid) bleibt unberührt. */}
+              {/* Groß-Gruppen-Modus: Akt 1 = QuestionView (aktiv), Akt 2 = dieselbe
+                  reiche QuestionView-Reveal wie im Normal-Modus (Antwort-Enthüllung
+                  + Kategorie-Visuals: Schätzchen-Zahlenstrahl, MUCHO-Optionen,
+                  10v10-Verteilung). Akt 3 = Bar-Race-Standings mit Punkte-Verteilung.
+                  2026-07-02 (Wolf): karge LargeGroupRevealView raus — normale
+                  Reveal-Seiten fühlen sich viel wertiger an. */}
               {(renderState.phase === 'QUESTION_ACTIVE'
-                || (renderState.phase === 'QUESTION_REVEAL' && !renderState.largeGroupMode)) && !placementFlash && (
+                || renderState.phase === 'QUESTION_REVEAL') && !placementFlash && (
                 <QuestionView key={renderState.currentQuestion?.id} state={renderState} revealed={renderState.phase !== 'QUESTION_ACTIVE'} hideCutouts={false} />
-              )}
-              {renderState.phase === 'QUESTION_REVEAL' && renderState.largeGroupMode && !placementFlash && (
-                <LargeGroupRevealView state={renderState} />
               )}
               {renderState.phase === 'PLACEMENT' && !renderState.largeGroupMode && <PlacementView key={`place-${renderState.questionIndex}`} state={renderState} use3D={use3D} enable3DTransition={renderState.enable3DTransition} />}
               {renderState.phase === 'PLACEMENT' && renderState.largeGroupMode && <LargeGroupStandingsView key={`lg-stand-${renderState.questionIndex}`} state={renderState} />}

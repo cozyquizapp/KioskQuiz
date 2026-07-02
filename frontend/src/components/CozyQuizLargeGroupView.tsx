@@ -300,9 +300,9 @@ function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: 
 // aus QQ_AVATARS; Award-Icon als 3D-Fluent-PNG (fx-lightning/fx-target/fx-fire).
 export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: boolean }) {
   const items = ([
-    { slug: 'fx-lightning' as const, label: de ? 'Schnellstes Team' : 'Fastest team', av: awards.fastest },
-    { slug: 'fx-target' as const, label: de ? 'Treffsicherstes Team' : 'Sharpest team', av: awards.sharpshooter },
-    { slug: 'fx-fire' as const, label: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback },
+    { slug: 'award-speedy' as const, label: de ? 'Schnellstes Team' : 'Fastest team', av: awards.fastest },
+    { slug: 'award-sharpshooter' as const, label: de ? 'Treffsicherstes Team' : 'Sharpest team', av: awards.sharpshooter },
+    { slug: 'award-underdog' as const, label: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback },
   ]).filter(x => !!x.av);
   if (items.length === 0) return null;
   return (

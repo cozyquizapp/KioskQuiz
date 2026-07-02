@@ -27,6 +27,10 @@ export type QQIconSlug =
   | 'action-stack'
   // Final-Reveal-Stempel
   | 'stamp-speedy'
+  // Faktions-Awards (Mega Event) — Wolf-Award-PNGs
+  | 'award-speedy'
+  | 'award-underdog'
+  | 'award-sharpshooter'
   // Bieten / Final-Tipp (Auktionshammer, cozy3d-Look)
   | 'bieten'
   // Connections / Großes Finale (rotes 3D-Puzzle, cozy3d-Look)
@@ -92,6 +96,9 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'action-steal':      '⚡',
   'action-stack':      '🏯',
   'stamp-speedy':      '⚡',
+  'award-speedy':       '⚡',
+  'award-underdog':     '🔥',
+  'award-sharpshooter': '🎯',
   'bieten':            '🪙',
   'connect':           '🧩',
   'fx-trophy':         '🏆',

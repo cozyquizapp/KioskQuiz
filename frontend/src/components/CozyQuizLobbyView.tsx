@@ -764,17 +764,17 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         fontVariantNumeric: 'tabular-nums',
                       }}>{g.subs.length}/3</span>
                     </div>
-                    <div style={{
-                      marginTop: 5, display: 'flex', flexWrap: 'wrap', gap: 5,
-                    }}>
+                    {/* Faction-Modell (Wolf 2026-07-02): KEINE Sub-Team-Namen auf
+                        dem Beamer — nur anonyme Handy-Dots (verbunden = gefüllt).
+                        Die Sub-Team-Identität lebt auf dem eigenen /team-Handy. */}
+                    <div style={{ marginTop: 7, display: 'flex', gap: 7 }}>
                       {g.subs.map(st => (
                         <span key={st.id} style={{
-                          padding: '1px 8px', borderRadius: 999,
-                          background: 'rgba(255,255,255,0.06)',
-                          color: st.connected ? 'rgba(255,255,255,0.85)' : 'rgba(255,255,255,0.4)',
-                          fontWeight: 700, fontSize: 'clamp(10px, 1cqw, 13px)',
-                          maxWidth: 130, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                        }} title={st.name}>{st.connected ? '● ' : '○ '}{st.name}</span>
+                          width: 'clamp(10px, 1cqw, 14px)', height: 'clamp(10px, 1cqw, 14px)', borderRadius: '50%',
+                          background: st.connected ? g.color : 'transparent',
+                          border: `2px solid ${st.connected ? g.color : 'rgba(255,255,255,0.3)'}`,
+                          boxShadow: st.connected ? `0 0 8px ${g.color}88` : 'none',
+                        }} />
                       ))}
                     </div>
                   </div>

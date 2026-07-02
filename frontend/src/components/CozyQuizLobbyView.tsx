@@ -11,7 +11,9 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
+import { QQ_TEAM_NAME_WRAP } from '../qqShared';
+import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -738,8 +740,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                „X/3"-Pill + kleine Sub-Team-Namen-Chips. */
             <div style={{
               display: 'grid',
-              gridTemplateColumns: 'repeat(auto-fill, minmax(clamp(200px, 20cqw, 280px), 1fr))',
-              gap: 'clamp(8px, 1cqw, 14px)',
+              // 2026-07-02 (Wolf): festes 4×2-Raster für die 8 Gruppen (statt
+              // auto-fill 2×4) — 4 Spalten, 2 Reihen, breite Karten für volle Namen.
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 'clamp(10px, 1.2cqw, 18px)',
             }}>
               {nestedGroups.map((g, i) => (
                 <div key={g.avatarId} style={{
@@ -753,7 +757,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   minWidth: 0, position: 'relative',
                   animation: `teamCardIn 0.5s var(--qq-ease-bounce) ${0.35 + i * 0.06}s both`,
                 }}>
-                  <QQTeamAvatar avatarId={g.avatarId} teamEmoji={g.emoji} size={'clamp(48px, 4.6cqw, 66px)'} style={{ flexShrink: 0 }} />
+                  <FactionCrest avatarId={g.avatarId} width={'clamp(44px, 4.4cqw, 62px)'} style={{ flexShrink: 0 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
                       display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
@@ -761,7 +765,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       <span style={{
                         fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 23px)',
                         color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
-                        whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                        // 2026-07-02 (Wolf): Namen voll ausschreiben (kein Abschneiden) —
+                        // bei 4 breiten Spalten passt „Denkfaule Dachse" & Co. (ggf. 2 Zeilen).
+                        minWidth: 0, flex: 1, lineHeight: 1.15,
+                        ...QQ_TEAM_NAME_WRAP,
                       }} title={g.label}>{g.label}</span>
                       <span style={{
                         flexShrink: 0, marginLeft: 'auto',
@@ -771,6 +778,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         fontVariantNumeric: 'tabular-nums',
                       }}>{g.subs.length}/3</span>
                     </div>
+                    {/* Fraktions-Motto (Cozy Universe) */}
+                    <div style={{
+                      fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 700, fontStyle: 'italic',
+                      color: 'var(--qq-text-muted)', marginTop: 2, lineHeight: 1.15,
+                    }}>„{qqMegaFactionMotto(g.avatarId, de ? 'de' : 'en')}"</div>
                     {/* Faction-Modell (Wolf 2026-07-02): KEINE Sub-Team-Namen auf
                         dem Beamer — nur anonyme Handy-Dots (verbunden = gefüllt).
                         Die Sub-Team-Identität lebt auf dem eigenen /team-Handy. */}

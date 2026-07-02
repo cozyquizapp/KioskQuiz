@@ -380,7 +380,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
 
       {state.megaAwards && (
         <div style={{ marginTop: 18, position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <div style={S.goLabel}>{de ? 'Faktions-Awards' : 'Faction awards'}</div>
+          <div style={S.goLabel}>{de ? 'Fraktions-Awards' : 'Faction awards'}</div>
           <MegaAwardsStrip awards={state.megaAwards} de={de} />
         </div>
       )}

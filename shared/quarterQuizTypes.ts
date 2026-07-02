@@ -1455,19 +1455,26 @@ export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed:
 // cozy/schlaue Tiere mit alliterativen „Wortwitz"-Namen (statt „Team Hund").
 // slug = cozy3d-Avatar (via teamEmoji auf die Farb-Disc gerendert). Rein
 // Display-Layer, nur largeGroupMode — Normal-Modus behält die Default-Avatare.
+// „Cozy Universe" (Wolf 2026-07-02): die 8 sind echte Fraktionen mit eigener
+// Identität — Tier + Farbe + Witz-Name + Motto (+ Wappen via <FactionCrest>).
 export const QQ_MEGA_FACTIONS = [
-  { avatarId: 'fox',     slug: 'dachs',    nameDe: 'Denkfaule Dachse',   nameEn: 'Lazy-Brain Badgers' },
-  { avatarId: 'frog',    slug: 'otter',    nameDe: 'Oberschlaue Otter',  nameEn: 'Overly-Smart Otters' },
-  { avatarId: 'panda',   slug: 'panda',    nameDe: 'Pfiffige Pandas',    nameEn: 'Sharp Pandas' },
-  { avatarId: 'rabbit',  slug: 'koala',    nameDe: 'Kluge Koalas',       nameEn: 'Clever Koalas' },
-  { avatarId: 'unicorn', slug: 'lama',     nameDe: 'Lässige Lamas',      nameEn: 'Laid-back Llamas' },
-  { avatarId: 'raccoon', slug: 'gorilla',  nameDe: 'Grübelnde Gorillas', nameEn: 'Pondering Gorillas' },
-  { avatarId: 'cow',     slug: 'baer',     nameDe: 'Belesene Bären',     nameEn: 'Well-read Bears' },
-  { avatarId: 'cat',     slug: 'capybara', nameDe: 'Clevere Capybaras',  nameEn: 'Clever Capybaras' },
+  { avatarId: 'fox',     slug: 'dachs',    nameDe: 'Denkfaule Dachse',   nameEn: 'Lazy-Brain Badgers',  mottoDe: 'Langsam, aber gründlich.',   mottoEn: 'Slow but thorough.' },
+  { avatarId: 'frog',    slug: 'otter',    nameDe: 'Oberschlaue Otter',  nameEn: 'Overly-Smart Otters', mottoDe: 'Immer eine Antwort parat.',  mottoEn: 'Always an answer ready.' },
+  { avatarId: 'panda',   slug: 'panda',    nameDe: 'Pfiffige Pandas',    nameEn: 'Sharp Pandas',        mottoDe: 'Charmant & clever.',         mottoEn: 'Charming & clever.' },
+  { avatarId: 'rabbit',  slug: 'koala',    nameDe: 'Kluge Koalas',       nameEn: 'Clever Koalas',       mottoDe: 'Ausgeschlafen zum Sieg.',    mottoEn: 'Well-rested for the win.' },
+  { avatarId: 'unicorn', slug: 'lama',     nameDe: 'Lässige Lamas',      nameEn: 'Laid-back Llamas',    mottoDe: 'Cool bleiben, Punkte machen.', mottoEn: 'Stay cool, score points.' },
+  { avatarId: 'raccoon', slug: 'gorilla',  nameDe: 'Grübelnde Gorillas', nameEn: 'Pondering Gorillas',  mottoDe: 'Erst denken, dann brüllen.', mottoEn: 'Think first, roar later.' },
+  { avatarId: 'cow',     slug: 'baer',     nameDe: 'Belesene Bären',     nameEn: 'Well-read Bears',     mottoDe: 'Wissen ist Honig.',          mottoEn: 'Knowledge is honey.' },
+  { avatarId: 'cat',     slug: 'capybara', nameDe: 'Clevere Capybaras',  nameEn: 'Clever Capybaras',    mottoDe: 'Ganz entspannt vorne.',      mottoEn: 'Chilled to the top.' },
 ] as const;
 
 export function qqMegaFaction(avatarId: string) {
   return QQ_MEGA_FACTIONS.find(f => f.avatarId === avatarId);
+}
+/** Fraktions-Motto (Cozy Universe) — Einzeiler unter dem Wappen. */
+export function qqMegaFactionMotto(avatarId: string, lang: 'de' | 'en'): string {
+  const f = qqMegaFaction(avatarId);
+  return f ? (lang === 'en' ? f.mottoEn : f.mottoDe) : '';
 }
 export function qqMegaFactionName(avatarId: string, lang: 'de' | 'en'): string {
   const f = qqMegaFaction(avatarId);

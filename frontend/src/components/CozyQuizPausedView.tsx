@@ -13,12 +13,13 @@
 import { useState, useEffect, useRef, useMemo, cloneElement, isValidElement } from 'react';
 import type { ReactElement } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, QQ_MEGA_FACTIONS, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_MEGA_FACTIONS } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { FactionCrest } from './QQFactionCrest';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { JokerIcon } from './JokerIcon';
@@ -185,19 +186,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // mehr aktuell sind'): Texte auf aktuellen Stand gebracht — Joker-Pattern
     // (2x2 oder 4-in-a-row), Cap (max 2 pro Team, 1 pro Runde), Faehigkeiten
     // pro Runde (Klauen R2, Stapeln R3), Bunte Tuete als Surprise-Slot.
-    // 2026-07-02: Mega Event hat kein Brett/keine Joker — eigene 4 Mini-Cards
-    // (Faktionen, Punkte pro Team, Tempo/Trefferquote) statt der Grid-Regeln.
+    // 2026-07-02 (Cozy Universe): Cozy Arena hat kein Brett/keine Joker — eigene
+    // 4 Mini-Cards (Tier-Fraktionen mit Wappen, Punkte, Tempo/Trefferquote).
     const howItems = largeGroup
       ? (de
         ? [
-            { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Team spielt am eigenen Smartphone — mehrere Teams pro Faktion.' },
-            { icon: '🐾', title: 'Faktionen', desc: 'Ihr spielt in Tier-Faktionen. Alle Teams einer Faktion sammeln gemeinsam.' },
-            { icon: '🎯', title: 'Punkte sammeln', desc: 'Jede richtige Antwort bringt Punkte für eure Faktion. Kein Brett, keine Felder.' },
+            { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Handy spielt mit — mehrere Handys pro Fraktion.' },
+            { icon: '🛡️', title: 'Tier-Fraktionen', desc: 'Ihr gehört zu einer von 8 Fraktionen — mit eigenem Wappen & Motto.' },
+            { icon: '🎯', title: 'Punkte sammeln', desc: 'Jede richtige Antwort bringt Punkte für eure Fraktion. Kein Brett, keine Felder.' },
             { icon: '⚡', title: 'Tempo & Treffer', desc: 'Je schneller richtig, desto mehr Punkte. Die Trefferquote hält es fair.' },
           ]
         : [
-            { icon: '📱', title: 'On your phone', desc: 'Each team plays on their own phone — several teams per faction.' },
-            { icon: '🐾', title: 'Factions', desc: 'You play in animal factions. Every team in a faction scores together.' },
+            { icon: '📱', title: 'On your phone', desc: 'Every phone plays — several phones per faction.' },
+            { icon: '🛡️', title: 'Animal factions', desc: 'You belong to one of 8 factions — each with its own crest & motto.' },
             { icon: '🎯', title: 'Collect points', desc: 'Every correct answer scores points for your faction. No grid, no tiles.' },
             { icon: '⚡', title: 'Speed & accuracy', desc: 'Faster correct = more points. Hit-rate keeps it fair across factions.' },
           ])
@@ -268,15 +269,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       </div>
     )});
 
-    // 2026-07-02: Faktions-Roster — die 8 Tier-Faktionen als Identitäts-Screen
-    // (welchem Team gehöre ich an?). Zeigt live die Anzahl beigetretener Teams
-    // je Faktion. Ersetzt die Grid-lastige „Aktueller Stand"-Folie im Setup.
+    // 2026-07-02 (Cozy Universe): Fraktions-Roster — die 8 Tier-Fraktionen mit
+    // Wappen + Motto als Identitäts-Screen. Zeigt live die Anzahl beigetretener
+    // Handys je Fraktion. Ersetzt die Grid-lastige „Aktueller Stand"-Folie im Setup.
     if (largeGroup) {
       panels.push({ key: 'megaFactions', node: (
-        <div style={{ width: 'min(100%, 980px)', margin: '0 auto' }}>
+        <div style={{ width: 'min(100%, 1040px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🐾</span>
-            {de ? 'Die Faktionen' : 'The Factions'}
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🛡️</span>
+            {de ? 'Die Fraktionen' : 'The Factions'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
             {QQ_MEGA_FACTIONS.map((f, i) => {
@@ -291,13 +292,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   border: `1.5px solid ${isThemed() ? 'var(--qq-hairline)' : `${color}44`}`,
                   animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.06 * i}s both`,
                 }}>
-                  <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={'clamp(48px, 5.5cqw, 78px)'} />
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(15px, 1.7cqw, 22px)', color: isQuietMotion() ? 'var(--qq-card-text)' : color, textAlign: 'center', lineHeight: 1.15 }}>
-                    {de ? f.nameDe : f.nameEn}
-                  </div>
+                  <FactionCrest avatarId={f.avatarId} width={'clamp(56px, 6cqw, 92px)'} showName showMotto de={de} />
                   {count > 0 && (
                     <div style={{ fontSize: 'clamp(11px, 1.2cqw, 15px)', color: 'var(--qq-text-muted)', fontWeight: 800 }}>
-                      {count} {count === 1 ? (de ? 'Team' : 'team') : (de ? 'Teams' : 'teams')}
+                      {count} {count === 1 ? 'Handy' : 'Handys'}
                     </div>
                   )}
                 </div>

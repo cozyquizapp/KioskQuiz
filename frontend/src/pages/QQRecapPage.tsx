@@ -169,7 +169,7 @@ export default function QQRecapPage() {
       {/* Mega Event: 3 Faktions-Awards statt der Grid-End-Awards. */}
       {nested && recap.megaAwards && (
         <>
-          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#F9A8D4' }}>🏅 Faktions-Awards</h2>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#F9A8D4' }}>🏅 Fraktions-Awards</h2>
           <div style={{ marginBottom: 32 }}>
             <MegaAwardsStrip awards={recap.megaAwards} de={true} />
           </div>

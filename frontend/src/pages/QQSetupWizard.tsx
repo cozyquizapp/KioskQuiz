@@ -175,7 +175,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                 accent={VIOLET}
                 onClick={() => setMega(true)}
                 title="Cozy Arena"
-                sub="8 Faktionen × bis 3 Handys · bis 72 Personen"
+                sub="8 Fraktionen × bis 3 Handys · bis 72 Personen"
                 note="Bar-Race statt Grid. Grid-Add-ons werden automatisch deaktiviert."
               />
             </div>

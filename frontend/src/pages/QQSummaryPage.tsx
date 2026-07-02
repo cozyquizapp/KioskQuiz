@@ -692,7 +692,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
       {/* H3 Superlatives: narrative End-Game-Titel. Mega Event: stattdessen die
           3 Faktions-Awards (schnellstes/treffsicherstes/Aufholjagd). */}
       {summary.nested && summary.megaAwards ? (
-        <Section title={lang === 'de' ? 'Faktions-Awards' : 'Faction awards'}>
+        <Section title={lang === 'de' ? 'Fraktions-Awards' : 'Faction awards'}>
           <MegaAwardsStrip awards={summary.megaAwards} de={lang === 'de'} />
         </Section>
       ) : (

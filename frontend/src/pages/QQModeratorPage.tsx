@@ -34,6 +34,9 @@ interface DraftSummary {
   updatedAt: number;
   questionCount: number;
   phases?: 2 | 3 | 4;
+  /** Anzahl Fragen, die im Mega Event nicht ideal sind (aktuell: Hot Potato =
+      rundenbasiert statt gleichzeitig). Wizard filtert/warnt darüber. */
+  megaWarnCount?: number;
 }
 
 export default function QQModeratorPage({ testMode = false }: { testMode?: boolean } = {}) {
@@ -244,6 +247,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // Downgrade fiel sofort auf 3 zurück → Display zeigte 'Runde X/3'.
             // Jetzt: explizites phases respektieren, sonst aus Question-Count.
             const phases = d.phases === 2 ? 2 : d.phases === 3 ? 3 : d.phases === 4 ? 4 : (qCount >= 20 ? 4 : 3);
+            // Mega-Event-Eignung: Hot-Potato-Fragen sind rundenbasiert (ein Team
+            // nach dem anderen) statt gleichzeitig → im Mega Event nicht ideal.
+            const megaWarnCount = (d.questions ?? []).filter(
+              (q: any) => q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato',
+            ).length;
             return {
               id: `qq:${d.id}`,
               title: `🎯 ${d.title}`,
@@ -251,6 +259,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               updatedAt: d.updatedAt ?? 0,
               questionCount: qCount,
               phases: phases as 2 | 3 | 4,
+              megaWarnCount,
             };
           })
         : [];

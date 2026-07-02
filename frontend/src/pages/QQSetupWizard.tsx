@@ -27,7 +27,7 @@ import type { QQSoundConfig } from '../../../shared/quarterQuizTypes';
 
 type EmitFn = (event: string, payload: unknown) => Promise<{ ok: boolean; error?: string }>;
 
-interface DraftSummary { id: string; title: string; questionCount: number; phases?: number }
+interface DraftSummary { id: string; title: string; questionCount: number; phases?: number; megaWarnCount?: number }
 
 interface Props {
   roomCode: string;
@@ -95,6 +95,9 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
   const [draftSoundConfig, setDraftSoundConfig] = useState<QQSoundConfig>({});
   const [customSoundsOpen, setCustomSoundsOpen] = useState(false);
   const [maintOpen, setMaintOpen] = useState(false);
+  // Mega Event: Hot-Potato-Drafts standardmäßig ausblenden (Wolf-Wunsch:
+  // „drafts mit nicht passenden kategorien automatisch aussortieren").
+  const [showUnsuitable, setShowUnsuitable] = useState(false);
   const [savingSound, setSavingSound] = useState(false);
   useEffect(() => {
     if (!qqDraftId) { setDraftSoundConfig({}); return; }
@@ -293,35 +296,63 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
             </div>
           )}
 
-          {cur.key === 'draft' && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 640 }}>
-              {mega && (
-                <div style={ov.megaNote}>
-                  Tipp: Hot-Potato-Fragen laufen im Mega Event als normale Fragen. Für den saubersten Ablauf einen Draft ohne Hot Potato wählen.
+          {cur.key === 'draft' && (() => {
+            // Mega Event: „unpassende" Drafts = enthalten Hot Potato (rundenbasiert).
+            const isUnsuitable = (d: DraftSummary) => mega && (d.megaWarnCount ?? 0) > 0;
+            const hiddenCount = mega && !showUnsuitable
+              ? drafts.filter(d => isUnsuitable(d) && d.id !== selectedDraftId).length
+              : 0;
+            // Ausgeblendet werden unpassende Drafts — aber nie der aktuell gewählte.
+            const visible = (mega && !showUnsuitable)
+              ? drafts.filter(d => !isUnsuitable(d) || d.id === selectedDraftId)
+              : drafts;
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 640 }}>
+                {mega && (
+                  <div style={ov.megaNote}>
+                    Mega Event: Drafts mit <strong>Hot Potato</strong> (rundenbasiert) sind {showUnsuitable ? 'eingeblendet' : 'automatisch ausgeblendet'} — für den saubersten Ablauf einen Draft ohne wählen.
+                  </div>
+                )}
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, maxHeight: 240, overflowY: 'auto' }}>
+                  {drafts.length === 0 && <div style={ov.hint}>Keine Fragensätze gefunden.</div>}
+                  {visible.length === 0 && drafts.length > 0 && (
+                    <div style={ov.hint}>Kein Mega-tauglicher Fragensatz — blende die Hot-Potato-Sätze unten ein.</div>
+                  )}
+                  {visible.map(d => {
+                    const sel = d.id === selectedDraftId;
+                    const fit = d.questionCount >= phases * 5;
+                    const warn = isUnsuitable(d);
+                    return (
+                      <button key={d.id} onClick={() => setSelectedDraftId(d.id)}
+                        style={{ ...ov.draftCard, ...(sel ? ov.draftCardActive : {}), ...(warn ? { border: '1.5px solid rgba(245,158,11,0.6)' } : {}) }}>
+                        <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 4 }}>{d.title}</div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, opacity: 0.75 }}>
+                          <span>{d.questionCount} Fragen</span>
+                          <span style={{ color: fit ? '#22C55E' : '#F59E0B', fontWeight: 800 }}>
+                            {fit ? `✓ ${phases} Rd.` : `⚠ max ${Math.floor(d.questionCount / 5)} Rd.`}
+                          </span>
+                        </div>
+                        {warn && (
+                          <div style={{ marginTop: 6, fontSize: 11, fontWeight: 800, color: '#F59E0B' }}>
+                            🥔 {d.megaWarnCount}× Hot Potato — nicht ideal für Mega
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
                 </div>
-              )}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, maxHeight: 240, overflowY: 'auto' }}>
-                {drafts.length === 0 && <div style={ov.hint}>Keine Fragensätze gefunden.</div>}
-                {drafts.map(d => {
-                  const sel = d.id === selectedDraftId;
-                  const fit = d.questionCount >= phases * 5;
-                  return (
-                    <button key={d.id} onClick={() => setSelectedDraftId(d.id)}
-                      style={{ ...ov.draftCard, ...(sel ? ov.draftCardActive : {}) }}>
-                      <div style={{ fontWeight: 900, fontSize: 15, marginBottom: 4 }}>{d.title}</div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 12, opacity: 0.75 }}>
-                        <span>{d.questionCount} Fragen</span>
-                        <span style={{ color: fit ? '#22C55E' : '#F59E0B', fontWeight: 800 }}>
-                          {fit ? `✓ ${phases} Rd.` : `⚠ max ${Math.floor(d.questionCount / 5)} Rd.`}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
+                {mega && (hiddenCount > 0 || showUnsuitable) && (
+                  <button onClick={() => setShowUnsuitable(v => !v)}
+                    style={{ ...ov.collapseBtn, justifyContent: 'center', gap: 8 }}>
+                    {showUnsuitable
+                      ? '✓ Nur Mega-taugliche zeigen'
+                      : `⚠ ${hiddenCount} Hot-Potato-Satz${hiddenCount === 1 ? '' : 'e'} ausgeblendet — trotzdem zeigen`}
+                  </button>
+                )}
+                {selDraft && fitOK && <QQSchedulePreview draftId={qqDraftId} phases={phases} />}
               </div>
-              {selDraft && fitOK && <QQSchedulePreview draftId={qqDraftId} phases={phases} />}
-            </div>
-          )}
+            );
+          })()}
 
           {cur.key === 'theme' && (
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', maxWidth: 620 }}>
@@ -411,6 +442,11 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               <SummaryRow label="Design" value={(Object.values(QQ_THEMES).find((t: any) => t.id === (s?.themeId ?? 'cozy')) as any)?.label ?? 'Cozy'} />
               <SummaryRow label="Sound" value={[s?.musicMuted ? 'Musik aus' : 'Musik an', s?.sfxMuted ? 'SFX aus' : 'SFX an', `${Math.round((s?.volume ?? 0.8) * 100)}%`].join(' · ')} />
               {!selDraft && <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>Noch kein Fragensatz gewählt — zurück zu Schritt 5.</div>}
+              {mega && selDraft && (selDraft.megaWarnCount ?? 0) > 0 && (
+                <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>
+                  🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft im Mega Event als normale Frage (nicht ideal).
+                </div>
+              )}
               <div style={{ ...ov.hint, marginTop: 6 }}>
                 Alles gesetzt. „Setup abschließen" → die Teams können beitreten, dann startest du wie gewohnt.
               </div>

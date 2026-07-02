@@ -10,7 +10,7 @@
 // (fastest zuerst). Score-Feld = largestConnected (= Punkte im Groß-Modus).
 
 import { useMemo, useRef, useLayoutEffect } from 'react';
-import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
+import type { QQStateUpdate, QQTeam, QQMegaRankEntry } from '../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
@@ -51,7 +51,11 @@ export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
         </span>
       </div>
 
-      {top5.length === 0 ? (
+      {state.nestedTeams ? (
+        // Modell B: keine Sub-Team-Podium mehr — die Punkte-Verteilung pro Farbe
+        // kommt im nächsten Beat (Standings, Akt 3). Hier nur die Antwort + Weiter.
+        <div style={S.emptyReveal}>{de ? 'Weiter für die Wertung →' : 'Continue for scoring →'}</div>
+      ) : top5.length === 0 ? (
         <div style={S.emptyReveal}>{de ? 'Niemand richtig — weiter geht’s!' : 'Nobody correct — moving on!'}</div>
       ) : (
         <div style={S.podium}>
@@ -109,12 +113,19 @@ export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
     return m;
   }, [shown.map(t => t.id).join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Modell B: per-Frage-Ergebnis pro Farbe (avatarId) → +Punkte + ✓-Zahl an der Row.
+  const qByAvatar = useMemo(() => {
+    const m = new Map<string, QQMegaRankEntry>();
+    for (const r of (state.megaQuestionRanking ?? [])) m.set(r.avatarId, r);
+    return m;
+  }, [state.megaQuestionRanking]);
+
   return (
     <div style={S.standWrap}>
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
       <div style={{ position: 'relative', height: shown.length * STANDINGS_ROW_H, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (
-          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} maxVal={maxVal} de={de} />
+          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} />
         ))}
       </div>
       {rest > 0 && (
@@ -124,7 +135,7 @@ export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
   );
 }
 
-function StandingsRow({ team, rank, maxVal, de }: { team: QQTeam; rank: number; maxVal: number; de: boolean }) {
+function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const prevTop = useRef<number | null>(null);
   const targetTop = rank * STANDINGS_ROW_H;
@@ -154,6 +165,15 @@ function StandingsRow({ team, rank, maxVal, de }: { team: QQTeam; rank: number; 
       <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={62} />
       <div style={{ width: 260, minWidth: 0 }}>
         <TeamNameLabel name={team.name} fontSize={30} color={team.color} fontWeight={900} maxLines={1} shrinkAfter={16} />
+        {/* Modell B: was diese Farbe DIESE Frage geholt hat — +Punkte + ✓-Zahl. */}
+        {qEntry && (
+          <div style={{ marginTop: 2, fontSize: 17, fontWeight: 800, display: 'flex', alignItems: 'baseline', gap: 10 }}>
+            <span style={{ color: qEntry.points > 0 ? team.color : 'rgba(255,255,255,0.35)' }}>
+              {qEntry.points > 0 ? `+${qEntry.points}` : '±0'}
+            </span>
+            <span style={{ opacity: 0.55, fontSize: 15 }}>{qEntry.correct}/{qEntry.total} {de ? 'richtig' : 'correct'}</span>
+          </div>
+        )}
       </div>
       <div style={S.standBarTrack}>
         <div style={{

@@ -6,7 +6,7 @@ import { useQQSocket } from '../hooks/useQQSocket';
 import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
-  QQStateUpdate, QQSoundConfig, QQ_AVATARS,
+  QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { QQSoundPanel } from '../components/QQSoundPanel';
@@ -5921,7 +5921,7 @@ function MegaFactionLobby({ teams, emit, roomCode }: {
     avatarId, subs,
     ready: subs.filter(x => x.connected).length,
     color: subs[0]?.color ?? '#EC4899',
-    label: QQ_AVATARS.find(a => a.id === avatarId)?.label ?? avatarId,
+    label: qqMegaFactionName(avatarId, 'de'),
   }));
   const miniBtn = (red: boolean): React.CSSProperties => ({
     width: 20, height: 20, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -5935,7 +5935,7 @@ function MegaFactionLobby({ teams, emit, roomCode }: {
       {factions.map(f => (
         <div key={f.avatarId} style={{ borderRadius: 12, border: `1px solid ${f.color}44`, background: `${f.color}12`, padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>
-            <QQTeamAvatar avatarId={f.avatarId} size={40} style={{ flexShrink: 0 }} />
+            <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={40} style={{ flexShrink: 0 }} />
             <div style={{ fontWeight: 900, fontSize: 15, color: f.color, flex: 1 }}>{f.label}</div>
             <div style={{ fontSize: 12, fontWeight: 900, color: f.ready > 0 ? QQ_COLORS.green500 : QQ_COLORS.slate500 }}>
               {f.ready}/{f.subs.length} bereit

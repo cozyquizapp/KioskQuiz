@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
@@ -41,7 +41,8 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
       let g = byAvatar.get(t.avatarId);
       if (!g) {
         const meta = QQ_AVATARS.find(a => a.id === t.avatarId);
-        g = { ...t, id: `grp-${t.avatarId}`, name: meta ? (de ? meta.label : meta.labelEn) : t.name, color: meta?.color ?? t.color, _subNames: [] };
+        // Mega Event: Faktions-Name + Faktions-Tier (slug via emoji → cozy3d-Bild).
+        g = { ...t, id: `grp-${t.avatarId}`, emoji: qqMegaFactionSlug(t.avatarId) ?? t.emoji, name: qqMegaFactionName(t.avatarId, de ? 'de' : 'en') || (meta ? (de ? meta.label : meta.labelEn) : t.name), color: meta?.color ?? t.color, _subNames: [] };
         byAvatar.set(t.avatarId, g);
         order.push(t.avatarId);
       }

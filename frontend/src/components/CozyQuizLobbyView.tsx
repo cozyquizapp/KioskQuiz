@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -259,7 +259,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       let g = byAvatar.get(t.avatarId);
       if (!g) {
         const meta = QQ_AVATARS.find(a => a.id === t.avatarId);
-        g = { avatarId: t.avatarId, emoji: t.emoji, color: t.color, label: meta ? (de ? meta.label : meta.labelEn) : t.name, subs: [] };
+        // Mega Event: Faktions-Name + Faktions-Tier (slug); Fallback Default-Avatar.
+        g = {
+          avatarId: t.avatarId,
+          emoji: qqMegaFactionSlug(t.avatarId) ?? t.emoji,
+          color: t.color,
+          label: qqMegaFactionName(t.avatarId, de ? 'de' : 'en') || (meta ? (de ? meta.label : meta.labelEn) : t.name),
+          subs: [],
+        };
         byAvatar.set(t.avatarId, g);
       }
       g.subs.push(t);

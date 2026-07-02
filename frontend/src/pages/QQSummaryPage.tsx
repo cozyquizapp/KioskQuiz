@@ -4,7 +4,7 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { teamDisplayName, QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { teamDisplayName, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import type { QQMegaAwards } from '../../../shared/quarterQuizTypes';
 import { MegaAwardsStrip } from '../components/CozyQuizLargeGroupView';
 import { API_BASE } from '../api';
@@ -364,10 +364,10 @@ function deriveMegaSummary(raw: Summary | null, lang: Lang): Summary | null {
       const ava = QQ_AVATARS.find(a => a.id === t.avatarId);
       g = {
         id: `grp-${t.avatarId}`,
-        name: ava ? (lang === 'en' ? ava.labelEn : ava.label) : t.name,
+        name: qqMegaFactionName(t.avatarId, lang),
         color: ava?.color ?? t.color,
         avatarId: t.avatarId,
-        emoji: undefined,
+        emoji: qqMegaFactionSlug(t.avatarId),
         score: 0, totalCells: 0, largestConnected: 0,
         correct: 0, answered: 0, jokersEarned: 0, stealsUsed: 0,
         _ids: [],

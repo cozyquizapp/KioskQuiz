@@ -11,7 +11,7 @@
 
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
@@ -153,13 +153,13 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
         {rows.map((r, i) => {
           const ava = AVA_BY_ID.get(r.avatarId);
           const color = ava?.color ?? '#EC4899';
-          const name = de ? (ava?.label ?? r.avatarId) : (ava?.labelEn ?? ava?.label ?? r.avatarId);
+          const name = qqMegaFactionName(r.avatarId, de ? 'de' : 'en');
           const medal = i < 3 && r.points > 0 ? MEDALS[i] : null;
           const scored = r.points > 0;
           return (
             <div key={r.avatarId} style={{ ...S.qrRow, animation: 'brRankIn 0.5s ease both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
               <span style={S.qrRank}>{medal ? <QQEmojiIcon emoji={medal} /> : i + 1}</span>
-              <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={undefined} size={64} />
+              <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={64} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 30, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
                 <Dots correct={r.correct} total={r.total} color={color} de={de} />
@@ -310,14 +310,14 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
       {items.map((it, i) => {
         const ava = AVA_BY_ID.get(it.av!);
         const color = ava?.color ?? '#EC4899';
-        const name = de ? (ava?.label ?? it.av) : (ava?.labelEn ?? ava?.label ?? it.av);
+        const name = qqMegaFactionName(it.av!, de ? 'de' : 'en');
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: `1px solid ${color}44` }}>
             <QQIcon slug={it.slug} size={40} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{it.label}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
-                <QQTeamAvatar avatarId={it.av as QQTeam['avatarId']} teamEmoji={undefined} size={28} />
+                <QQTeamAvatar avatarId={it.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(it.av!)} size={28} />
                 <span style={{ fontSize: 18, fontWeight: 900, color }}>{name}</span>
               </div>
             </div>

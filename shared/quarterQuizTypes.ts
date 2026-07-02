@@ -1446,6 +1446,39 @@ export const QQ_AVATARS = [
 
 export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed: string };
 
+// ── Mega-Event-Faktionen (2026-07-02, Wolf) ──────────────────────────────────
+// Im Mega Event bekommen die 8 Farb-Slots eine eigene, charakterstarke Identität:
+// cozy/schlaue Tiere mit alliterativen „Wortwitz"-Namen (statt „Team Hund").
+// slug = cozy3d-Avatar (via teamEmoji auf die Farb-Disc gerendert). Rein
+// Display-Layer, nur largeGroupMode — Normal-Modus behält die Default-Avatare.
+export const QQ_MEGA_FACTIONS = [
+  { avatarId: 'fox',     slug: 'dachs',    nameDe: 'Denkfaule Dachse',   nameEn: 'Lazy-Brain Badgers' },
+  { avatarId: 'frog',    slug: 'otter',    nameDe: 'Oberschlaue Otter',  nameEn: 'Overly-Smart Otters' },
+  { avatarId: 'panda',   slug: 'panda',    nameDe: 'Pfiffige Pandas',    nameEn: 'Sharp Pandas' },
+  { avatarId: 'rabbit',  slug: 'koala',    nameDe: 'Kluge Koalas',       nameEn: 'Clever Koalas' },
+  { avatarId: 'unicorn', slug: 'lama',     nameDe: 'Lässige Lamas',      nameEn: 'Laid-back Llamas' },
+  { avatarId: 'raccoon', slug: 'gorilla',  nameDe: 'Grübelnde Gorillas', nameEn: 'Pondering Gorillas' },
+  { avatarId: 'cow',     slug: 'baer',     nameDe: 'Belesene Bären',     nameEn: 'Well-read Bears' },
+  { avatarId: 'cat',     slug: 'capybara', nameDe: 'Clevere Capybaras',  nameEn: 'Clever Capybaras' },
+] as const;
+
+export function qqMegaFaction(avatarId: string) {
+  return QQ_MEGA_FACTIONS.find(f => f.avatarId === avatarId);
+}
+export function qqMegaFactionName(avatarId: string, lang: 'de' | 'en'): string {
+  const f = qqMegaFaction(avatarId);
+  return f ? (lang === 'en' ? f.nameEn : f.nameDe) : avatarId;
+}
+/** Faktions-Avatar-Slug (cozy3d) je Farb-Slot — als teamEmoji an QQTeamAvatar. */
+export function qqMegaFactionSlug(avatarId: string): string | undefined {
+  return qqMegaFaction(avatarId)?.slug;
+}
+/** Reverse-Lookup über die Slot-Farbe (für Listen ohne avatarId, z.B. Recap-Index). */
+export function qqMegaFactionByColor(color: string) {
+  const av = QQ_AVATARS.find(a => a.color.toLowerCase() === color.toLowerCase());
+  return av ? qqMegaFaction(av.id) : undefined;
+}
+
 export function qqGetAvatar(avatarId: string): QQAvatar {
   const av = QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
   return {

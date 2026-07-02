@@ -9,7 +9,7 @@ import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import type { QQMegaAwards } from '../../../shared/quarterQuizTypes';
 import { MegaAwardsStrip } from '../components/CozyQuizLargeGroupView';
 
@@ -90,13 +90,13 @@ export default function QQRecapPage() {
   // Modus = Avatar exklusiv). Team-Stats dann auf 8 Farben aggregieren; die
   // Q-by-Q-History bleibt bewusst pro Sub-Team (das will der Mod sehen).
   const nested = (() => { const s = new Set<string>(); for (const t of recap.teams) { if (s.has(t.avatarId)) return true; s.add(t.avatarId); } return false; })();
-  const colorLabel = (avatarId: string) => QQ_AVATARS.find(a => a.id === avatarId)?.label ?? avatarId;
+  const colorLabel = (avatarId: string) => qqMegaFactionName(avatarId, 'de');
   const colorHex = (avatarId: string, fb: string) => QQ_AVATARS.find(a => a.id === avatarId)?.color ?? fb;
   const displayTeams: TeamX[] = nested ? (() => {
     const groups = new Map<string, TeamX>();
     for (const t of recap.teams) {
       let g = groups.get(t.avatarId);
-      if (!g) { g = { id: `grp-${t.avatarId}`, name: colorLabel(t.avatarId), color: colorHex(t.avatarId, t.color), avatarId: t.avatarId, largestConnected: 0, totalCells: 0, correct: 0, answered: 0, jokersEarned: 0, stealsUsed: 0 }; groups.set(t.avatarId, g); }
+      if (!g) { g = { id: `grp-${t.avatarId}`, name: colorLabel(t.avatarId), color: colorHex(t.avatarId, t.color), avatarId: t.avatarId, emoji: qqMegaFactionSlug(t.avatarId), largestConnected: 0, totalCells: 0, correct: 0, answered: 0, jokersEarned: 0, stealsUsed: 0 }; groups.set(t.avatarId, g); }
       g.largestConnected = (g.largestConnected ?? 0) + (t.largestConnected ?? 0);
       g.totalCells = (g.totalCells ?? 0) + (t.totalCells ?? 0);
       g.correct = (g.correct ?? 0) + (t.correct ?? 0);

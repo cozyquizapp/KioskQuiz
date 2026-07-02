@@ -1,7 +1,7 @@
 // ── Shared Quarter Quiz constants (used by BeamerPage + CustomSlide) ──────────
 
 import type { QQStateUpdate, QQTeam } from '@shared/quarterQuizTypes';
-import { QQ_AVATARS } from '@shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '@shared/quarterQuizTypes';
 
 /**
  * 2026-05-24 (Refactor #2): Kanonische Team-Sortierung. Backend schickt seit
@@ -57,12 +57,14 @@ export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
     const meta = QQ_AVATARS.find(a => a.id === avatarId);
     const rep = members[0];
     const points = members.reduce((sum, m) => sum + (m.largestConnected ?? 0), 0);
+    // Mega Event: Faktions-Name („Denkfaule Dachse") + Faktions-Tier (slug via
+    // emoji auf die Farb-Disc). Fallback: Default-Avatar-Label.
     groups.push({
       id: `grp-${avatarId}`,
-      name: meta ? (de ? meta.label : meta.labelEn) : rep.name,
+      name: qqMegaFactionName(avatarId, de ? 'de' : 'en'),
       color: meta?.color ?? rep.color,
       avatarId,
-      emoji: rep.emoji,
+      emoji: qqMegaFactionSlug(avatarId) ?? rep.emoji,
       connected: true,
       totalCells: points,
       largestConnected: points,

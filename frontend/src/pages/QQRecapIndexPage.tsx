@@ -8,7 +8,7 @@
  */
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { qqMegaFactionByColor } from '../../../shared/quarterQuizTypes';
 
 // Mega Event erkennen: mehrere Teams teilen dieselbe Slot-Farbe (im Normal-Modus
 // ist jede Farbe exklusiv). Dann auf 8 Farben aggregieren (Name per Farb-Reverse-
@@ -21,7 +21,7 @@ function groupPillsIfNested(teams: Array<{ id: string; name: string; color: stri
   const groups = new Map<string, { id: string; name: string; color: string; score: number }>();
   for (const t of teams) {
     let g = groups.get(t.color);
-    if (!g) { g = { id: `grp-${t.color}`, name: QQ_AVATARS.find(a => a.color === t.color)?.label ?? t.name, color: t.color, score: 0 }; groups.set(t.color, g); }
+    if (!g) { g = { id: `grp-${t.color}`, name: qqMegaFactionByColor(t.color)?.nameDe ?? t.name, color: t.color, score: 0 }; groups.set(t.color, g); }
     g.score += t.score ?? 0;
   }
   return [...groups.values()].sort((a, b) => b.score - a.score);

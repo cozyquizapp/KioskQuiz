@@ -13,8 +13,9 @@
 import { useState, useEffect, useRef, useMemo, cloneElement, isValidElement } from 'react';
 import type { ReactElement } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_MEGA_FACTIONS, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
-import { qqSortedTeams } from '../qqShared';
+import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -147,17 +148,26 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   const lang = useLangFlip(s.language);
   const de = lang === 'de';
 
+  // 2026-07-02 (Wolf 'extra setup screen für große Events'): Mega Event ist ein
+  // eigenständiges Format — die normalen Regeln (Brett/Joker) und die normalen
+  // All-Time-Stats (Bestenliste/Rekorde) passen dort nicht. Bei largeGroupMode
+  // rendert der Pre-Game/Pause-Screen stattdessen Faktions-Regeln + Faktions-Roster.
+  const largeGroup = !!(s as any).largeGroupMode;
+
   const [leaderboard, setLeaderboard] = useState<LeaderEntry[]>([]);
   const [totalGames, setTotalGames] = useState(0);
   const [funStats, setFunStats] = useState<FunStats | null>(null);
   useEffect(() => {
+    // Mega Event: keine Normal-Spiel-Stats laden — Bestenliste/Rekorde/Fun-Stats
+    // stammen aus dem Standard-Grid-Modus und wären für ein Groß-Event irreführend.
+    if (largeGroup) return;
     const API = (import.meta as any).env?.VITE_API_BASE ?? '/api';
     fetch(`${API}/qq/leaderboard`).then(r => r.json()).then(data => {
       if (data.leaderboard) setLeaderboard(data.leaderboard);
       if (data.totalGames) setTotalGames(data.totalGames);
       if (data.funStats) setFunStats(data.funStats);
     }).catch(() => {});
-  }, []);
+  }, [largeGroup]);
 
   // Build rotating panels
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
@@ -175,8 +185,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // mehr aktuell sind'): Texte auf aktuellen Stand gebracht — Joker-Pattern
     // (2x2 oder 4-in-a-row), Cap (max 2 pro Team, 1 pro Runde), Faehigkeiten
     // pro Runde (Klauen R2, Stapeln R3), Bunte Tuete als Surprise-Slot.
-    const howItems = de
-      ? [
+    // 2026-07-02: Mega Event hat kein Brett/keine Joker — eigene 4 Mini-Cards
+    // (Faktionen, Punkte pro Team, Tempo/Trefferquote) statt der Grid-Regeln.
+    const howItems = largeGroup
+      ? (de
+        ? [
+            { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Team spielt am eigenen Smartphone — mehrere Teams pro Faktion.' },
+            { icon: '🐾', title: 'Faktionen', desc: 'Ihr spielt in Tier-Faktionen. Alle Teams einer Faktion sammeln gemeinsam.' },
+            { icon: '🎯', title: 'Punkte sammeln', desc: 'Jede richtige Antwort bringt Punkte für eure Faktion. Kein Brett, keine Felder.' },
+            { icon: '⚡', title: 'Tempo & Treffer', desc: 'Je schneller richtig, desto mehr Punkte. Die Trefferquote hält es fair.' },
+          ]
+        : [
+            { icon: '📱', title: 'On your phone', desc: 'Each team plays on their own phone — several teams per faction.' },
+            { icon: '🐾', title: 'Factions', desc: 'You play in animal factions. Every team in a faction scores together.' },
+            { icon: '🎯', title: 'Collect points', desc: 'Every correct answer scores points for your faction. No grid, no tiles.' },
+            { icon: '⚡', title: 'Speed & accuracy', desc: 'Faster correct = more points. Hit-rate keeps it fair across factions.' },
+          ])
+      : (de
+        ? [
           { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Team spielt am eigenen Smartphone.' },
           { icon: '🎯', title: 'Brett erobern', desc: 'Frage richtig = ein Feld setzen. Größtes zusammenhängendes Gebiet gewinnt.' },
           { icon: '🃏', title: 'Joker', desc: '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld. Max. 2 pro Team, 1 pro Runde.' },
@@ -187,7 +213,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           { icon: '🎯', title: 'Conquer the grid', desc: 'Right answer = place a tile. Largest connected area wins.' },
           { icon: '🃏', title: 'Joker', desc: '2×2 block or 4 in a row = 1 bonus tile. Max 2 per team, 1 per round.' },
           { icon: '🎲', title: 'Each round adds', desc: 'Steal from R2, Stack from R3. Lucky Bag delivers a surprise every round.' },
-        ];
+        ]);
 
     // 2026-05-13 (Wolf 'in setup in der card ist text teilweise zu klein,
     // entweder groesser oder bei mehr inhalten 2-spaltig'): Container von
@@ -241,6 +267,46 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       </div>
     )});
+
+    // 2026-07-02: Faktions-Roster — die 8 Tier-Faktionen als Identitäts-Screen
+    // (welchem Team gehöre ich an?). Zeigt live die Anzahl beigetretener Teams
+    // je Faktion. Ersetzt die Grid-lastige „Aktueller Stand"-Folie im Setup.
+    if (largeGroup) {
+      panels.push({ key: 'megaFactions', node: (
+        <div style={{ width: 'min(100%, 980px)', margin: '0 auto' }}>
+          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🐾</span>
+            {de ? 'Die Faktionen' : 'The Factions'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
+            {QQ_MEGA_FACTIONS.map((f, i) => {
+              const count = s.teams.filter(t => t.avatarId === f.avatarId).length;
+              const color = QQ_AVATARS.find(a => a.id === f.avatarId)?.color ?? 'var(--qq-accent)';
+              return (
+                <div key={f.avatarId} style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  padding: '16px 10px',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                  background: isThemed() ? 'var(--qq-surface)' : `${color}12`,
+                  border: `1.5px solid ${isThemed() ? 'var(--qq-hairline)' : `${color}44`}`,
+                  animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.06 * i}s both`,
+                }}>
+                  <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={'clamp(48px, 5.5cqw, 78px)'} />
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(15px, 1.7cqw, 22px)', color: isQuietMotion() ? 'var(--qq-card-text)' : color, textAlign: 'center', lineHeight: 1.15 }}>
+                    {de ? f.nameDe : f.nameEn}
+                  </div>
+                  {count > 0 && (
+                    <div style={{ fontSize: 'clamp(11px, 1.2cqw, 15px)', color: 'var(--qq-text-muted)', fontWeight: 800 }}>
+                      {count} {count === 1 ? (de ? 'Team' : 'team') : (de ? 'Teams' : 'teams')}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )});
+    }
   }
 
   // 2026-05-06 (Wolf 'in der pause den trinkenden'): Pause-BrandLoopPanel mit
@@ -310,7 +376,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     //   ≥7 Teams → 2 Spalten (links + rechts), Split halbe-halbe
     //   1-6 Teams → nur rechts daneben
     // Grid + Spalte(n) als Block horizontal mittig.
-    panels.push({ key: 'currentGrid', node: (
+    if (!largeGroup) panels.push({ key: 'currentGrid', node: (
       <div>
         <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
@@ -374,7 +440,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // 2026-05-24 (Refactor #2): qqSortedTeams nutzt Backend-sortedTeamIds —
   // identisch zu GameOverView. Vorher 3 verschiedene Sort-Stellen im Frontend.
   const sortedTeams = qqSortedTeams(s);
-  if (sortedTeams.length > 0) {
+  // Mega Event: nach Faktion gruppieren (Punkte summiert) statt Sub-Teams einzeln.
+  // Im Setup (preGame) übernimmt der Faktions-Roster die Identität → Standings nur
+  // in der Pause zeigen (dann mit echten Punkten).
+  const standingsSource = largeGroup ? qqSortedGroups(s) : sortedTeams;
+  if (standingsSource.length > 0 && (!largeGroup || mode === 'pause')) {
+    const sortedTeams = standingsSource;
     const twoCol = sortedTeams.length >= 5;
     const rankSize = twoCol ? 'clamp(22px, 2.4cqw, 32px)' : 'clamp(28px, 3.2cqw, 42px)';
     // Avatar-Groesse via shared Helper - konsistent zu GameOverView
@@ -422,7 +493,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   }}>{t.name}</span>
                   <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 5, flexShrink: 0, fontVariantNumeric: 'tabular-nums' }}>
                     <span style={{ fontSize: twoCol ? 'clamp(22px,2.6cqw,36px)' : 'clamp(28px,3.2cqw,46px)', fontWeight: 900, color: 'var(--qq-card-text)', letterSpacing: '-0.02em' }}>{t.largestConnected}</span>
-                    <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 800 }}>· {t.totalCells}</span>
+                    <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 800 }}>{largeGroup ? (de ? 'Pkt' : 'pts') : `· ${t.totalCells}`}</span>
                   </span>
                 </div>
               );
@@ -448,7 +519,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   fontVariantNumeric: 'tabular-nums',
                 }}>
                   <span style={{ fontSize: valSize, fontWeight: 900, color: 'var(--qq-accent-soft)' }}>{t.largestConnected}</span>
-                  <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 700 }}>· {t.totalCells}</span>
+                  <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 700 }}>{largeGroup ? (de ? 'Pkt' : 'pts') : `· ${t.totalCells}`}</span>
                 </span>
               </div>
             );
@@ -815,7 +886,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // (helpers moved up — see findTeamMeta / teamLine / teamInline above)
 
   // #01 Hot-Streak live — aktueller Session-Leader + Abstand
-  if (sortedTeams.length >= 2 && mode === 'pause') {
+  // (Mega: „Felder Vorsprung" passt nicht — Faktions-Standings zeigen es bereits.)
+  if (sortedTeams.length >= 2 && mode === 'pause' && !largeGroup) {
     const leader = sortedTeams[0];
     const runnerUp = sortedTeams[1];
     const gap = leader.totalCells - runnerUp.totalCells;

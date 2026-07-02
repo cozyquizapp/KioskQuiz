@@ -57,6 +57,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // Default OPEN — der Wizard IST das Standard-Setup (Wolf: „setup voll als wizard").
   // ✕ schließt ihn → altes Pill-Schnell-Setup als Fallback.
   const [showWizard, setShowWizard] = useState(true);
+  // 2026-07-02 (Wolf „wizard als main setup, rest im hintergrund"): das alte
+  // Pill-Schnell-Setup (SetupView) versteckt sich hinter „⚙ Alle Einstellungen".
+  const [showAllSettings, setShowAllSettings] = useState(false);
   const startingRef = useRef(false); // prevent double-fire on startGame
 
   // ── Autoplay-Mode (lokaler Test-Modus, kein Backend-State) ────────────────
@@ -1788,30 +1791,42 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           >
             🎬 Show planen — geführt vorbereiten (Material, Druck, Briefing, Technik)
           </button>
-          {/* 2026-07-02 (Wolf): Geführter Setup-Wizard — chronologisch durch
-              Gruppengröße → Runden → Sprache → Add-ons → Draft → Theme. */}
+          {/* 2026-07-02 (Wolf): Geführter Setup-Wizard IST das Haupt-Setup —
+              chronologisch durch Format → Runden → Sprache → Add-ons → Draft →
+              Theme. Prominent, weil Standard-Weg. */}
           <button
             onClick={() => setShowWizard(true)}
-            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '13px 18px', borderRadius: 14, border: '1px solid rgba(167,139,250,0.55)', background: 'linear-gradient(90deg,rgba(167,139,250,0.18),rgba(99,102,241,0.18))', color: '#e2e8f0', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
+            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '15px 18px', borderRadius: 14, border: '2px solid rgba(167,139,250,0.7)', background: 'linear-gradient(90deg,rgba(167,139,250,0.26),rgba(99,102,241,0.24))', color: '#fff', fontWeight: 900, fontSize: 17, cursor: 'pointer', boxShadow: '0 6px 20px rgba(167,139,250,0.25)' }}
           >
-            🧙 Geführtes Setup — Schritt für Schritt einrichten (auch Cozy Arena)
+            🧙 Geführtes Setup öffnen — Schritt für Schritt (Cozy Quiz oder Cozy Arena)
           </button>
-          <SetupView
-            s={s}
-            drafts={drafts}
-            selectedDraftId={selectedDraftId}
-            setSelectedDraftId={setSelectedDraftId}
-            phases={phases}
-            setPhases={setPhases}
-            timerInput={timerInput}
-            setTimerInput={setTimerInput}
-            applyTimer={applyTimer}
-            localSoundConfig={localSoundConfig}
-            setLocalSoundConfig={setLocalSoundConfig}
-            roomCode={roomCode}
-            emit={emit}
-            finishSetup={() => setSetupDone(true)}
-          />
+          {/* Alte Pill-Setup-Ansicht: nur noch hinter „⚙ Alle Einstellungen"
+              (Wolf „rest im hintergrund ausblenden"). Der Wizard deckt alles ab;
+              diese Drawer ist für gezielte Einzel-Tweaks / Power-Use. */}
+          <button
+            onClick={() => setShowAllSettings(v => !v)}
+            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '11px 18px', borderRadius: 12, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
+          >
+            ⚙ Alle Einstellungen {showAllSettings ? '▲ ausblenden' : '▼ (Schnell-Pills, optional)'}
+          </button>
+          {showAllSettings && (
+            <SetupView
+              s={s}
+              drafts={drafts}
+              selectedDraftId={selectedDraftId}
+              setSelectedDraftId={setSelectedDraftId}
+              phases={phases}
+              setPhases={setPhases}
+              timerInput={timerInput}
+              setTimerInput={setTimerInput}
+              applyTimer={applyTimer}
+              localSoundConfig={localSoundConfig}
+              setLocalSoundConfig={setLocalSoundConfig}
+              roomCode={roomCode}
+              emit={emit}
+              finishSetup={() => setSetupDone(true)}
+            />
+          )}
         </>
       )}
 

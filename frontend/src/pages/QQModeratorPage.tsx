@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import QQShowPrepWizard from './QQShowPrepWizard';
+import { QQSetupWizard } from './QQSetupWizard';
 import { useQQSocket } from '../hooks/useQQSocket';
 import { useActionLock } from '../hooks/useActionLock';
 import {
@@ -47,6 +48,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   const [localSoundConfig, setLocalSoundConfig] = useState<QQSoundConfig>({});
   // 2026-06-13: Opt-in Show-Prep-Wizard (Quiz vorab planen → Venue nur Start).
   const [showPrep, setShowPrep] = useState(false);
+  // 2026-07-02 (Wolf): geführter Setup-Wizard (Gruppengröße→Runden→Sprache→
+  // Add-ons→Draft→Theme). Setzt alles live über dieselben Kanäle wie die Pills.
+  const [showWizard, setShowWizard] = useState(false);
   const startingRef = useRef(false); // prevent double-fire on startGame
 
   // ── Autoplay-Mode (lokaler Test-Modus, kein Backend-State) ────────────────
@@ -1772,6 +1776,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           >
             🎬 Show planen — geführt vorbereiten (Material, Druck, Briefing, Technik)
           </button>
+          {/* 2026-07-02 (Wolf): Geführter Setup-Wizard — chronologisch durch
+              Gruppengröße → Runden → Sprache → Add-ons → Draft → Theme. */}
+          <button
+            onClick={() => setShowWizard(true)}
+            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '13px 18px', borderRadius: 14, border: '1px solid rgba(167,139,250,0.55)', background: 'linear-gradient(90deg,rgba(167,139,250,0.18),rgba(99,102,241,0.18))', color: '#e2e8f0', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
+          >
+            🧙 Geführtes Setup — Schritt für Schritt einrichten (auch Mega Event)
+          </button>
           <SetupView
             s={s}
             drafts={drafts}
@@ -1800,6 +1812,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           emit={emit}
           onClose={() => setShowPrep(false)}
           onFinish={() => setSetupDone(true)}
+        />
+      )}
+
+      {showWizard && s && (
+        <QQSetupWizard
+          roomCode={roomCode}
+          s={s}
+          emit={emit}
+          phases={phases}
+          setPhases={setPhases}
+          selectedDraftId={selectedDraftId}
+          setSelectedDraftId={setSelectedDraftId}
+          drafts={drafts}
+          onClose={() => setShowWizard(false)}
         />
       )}
 

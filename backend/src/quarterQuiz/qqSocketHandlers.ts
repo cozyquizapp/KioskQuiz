@@ -340,6 +340,12 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     // Speedy) ins Save-Payload damit Summary-Page die gleichen Ehrentitel zeigt
     // wie der Recap-Strip am Ende des Spiels.
     endAwards: room.endAwards ?? null,
+    // 2026-07-02 (Mega Event): Modus-Flags + 3 Faktions-Awards persistieren,
+    // damit Summary/Recap den Groß-Modus sauber erkennen (statt Heuristik) und
+    // die Faktions-Awards zeigen können.
+    largeGroupMode: (room as any).largeGroupMode ?? false,
+    nestedTeams: (room as any).nestedTeams ?? false,
+    megaAwards: (room as any).megaAwards ?? null,
   };
   saveQQGameResult(result).catch(() => {/* fire and forget */});
 

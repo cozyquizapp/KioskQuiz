@@ -9714,6 +9714,10 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
       // 2026-05-09: 3 End-Awards (Underdog/Meisterklauer/Speedy) durchreichen
       // damit Summary-Page die gleichen Ehrentitel zeigt wie der Recap-Strip.
       endAwards: (hit as any).endAwards ?? null,
+      // 2026-07-02 (Mega Event): Modus-Flags + Faktions-Awards durchreichen.
+      largeGroupMode: !!(hit as any).largeGroupMode,
+      nestedTeams: !!(hit as any).nestedTeams,
+      megaAwards: (hit as any).megaAwards ?? null,
       // 2026-05-10 (Wolf-Audit P2): eurovisionMode durchreichen damit Summary
       // im ESC-Mode Hot-Pink (#FF2D7B) statt Standard-Brand-Pink (#EC4899) nutzt.
       eurovisionMode: !!(hit as any).eurovisionMode,
@@ -9757,6 +9761,9 @@ app.get('/api/qq/summary/by-id/:gameId', async (req, res) => {
       gridSize,
       cellOwners,
       endAwards: (hit as any).endAwards ?? null,
+      largeGroupMode: !!(hit as any).largeGroupMode,
+      nestedTeams: !!(hit as any).nestedTeams,
+      megaAwards: (hit as any).megaAwards ?? null,
       eurovisionMode: !!(hit as any).eurovisionMode,
       // 2026-06-25 (Wolf): Bühnen-Skin durchreichen damit Summary in Mono/etc.
       // dieselbe Lackierung zeigt wie der Beamer (applyThemeVars im Frontend).
@@ -9793,6 +9800,9 @@ app.get('/api/qq/recap/:gameId', async (req, res) => {
       gridSize: Array.isArray(hit.grid) ? hit.grid.length : 0,
       questionHistory: hit.questionHistory ?? [],
       endAwards: hit.endAwards ?? null,
+      largeGroupMode: !!hit.largeGroupMode,
+      nestedTeams: !!hit.nestedTeams,
+      megaAwards: hit.megaAwards ?? null,
       eurovisionMode: !!hit.eurovisionMode,
     });
   } catch (err) {

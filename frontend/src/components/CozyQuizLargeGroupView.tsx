@@ -10,11 +10,11 @@
 // (fastest zuerst). Score-Feld = largestConnected (= Punkte im Groß-Modus).
 
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
-import type { QQStateUpdate, QQTeam, QQMegaRankEntry } from '../../../shared/quarterQuizTypes';
+import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
-import { QQEmojiIcon } from './QQIcon';
+import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
@@ -295,6 +295,39 @@ function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: 
   );
 }
 
+// ── Mega-Faktions-Awards (Spielende): 3 Award-Chips (⚡🎯🔥) ───────────────────
+// Wiederverwendet in Beamer-GameOver + Summary + Recap. avatarId → Farbe/Label
+// aus QQ_AVATARS; Award-Icon als 3D-Fluent-PNG (fx-lightning/fx-target/fx-fire).
+export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: boolean }) {
+  const items = ([
+    { slug: 'fx-lightning' as const, label: de ? 'Schnellstes Team' : 'Fastest team', av: awards.fastest },
+    { slug: 'fx-target' as const, label: de ? 'Treffsicherstes Team' : 'Sharpest team', av: awards.sharpshooter },
+    { slug: 'fx-fire' as const, label: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback },
+  ]).filter(x => !!x.av);
+  if (items.length === 0) return null;
+  return (
+    <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
+      {items.map((it, i) => {
+        const ava = AVA_BY_ID.get(it.av!);
+        const color = ava?.color ?? '#EC4899';
+        const name = de ? (ava?.label ?? it.av) : (ava?.labelEn ?? ava?.label ?? it.av);
+        return (
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: `1px solid ${color}44` }}>
+            <QQIcon slug={it.slug} size={40} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{it.label}</div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 3 }}>
+                <QQTeamAvatar avatarId={it.av as QQTeam['avatarId']} teamEmoji={undefined} size={28} />
+                <span style={{ fontSize: 18, fontWeight: 900, color }}>{name}</span>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 // ── GameOver: Sieger-Hero + Top-10-Standings (kein Grid, keine 25er-Kaskade) ──
 export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
@@ -344,6 +377,13 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         })}
       </div>
       {rest > 0 && <div style={S.goRest}>+ {rest} {de ? 'weitere Teams' : 'more teams'}</div>}
+
+      {state.megaAwards && (
+        <div style={{ marginTop: 18, position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
+          <div style={S.goLabel}>{de ? 'Faktions-Awards' : 'Faction awards'}</div>
+          <MegaAwardsStrip awards={state.megaAwards} de={de} />
+        </div>
+      )}
     </div>
   );
 }

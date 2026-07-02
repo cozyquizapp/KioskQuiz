@@ -10,6 +10,8 @@ import { useParams, Link } from 'react-router-dom';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import type { QQMegaAwards } from '../../../shared/quarterQuizTypes';
+import { MegaAwardsStrip } from '../components/CozyQuizLargeGroupView';
 
 type Answer = {
   teamId: string;
@@ -54,6 +56,7 @@ type Recap = {
   questionHistory: QH[];
   funnyAnswers: Array<{ teamName?: string; text?: string; category?: string }>;
   endAwards: { underdog?: string | null; meisterklauer?: string | null; speedy?: string | null } | null;
+  megaAwards?: QQMegaAwards | null;
 };
 
 const CAT_LABELS: Record<string, string> = {
@@ -163,8 +166,18 @@ export default function QQRecapPage() {
         ))}
       </div>
 
-      {/* End-Awards */}
-      {recap.endAwards && (recap.endAwards.underdog || recap.endAwards.meisterklauer || recap.endAwards.speedy) && (
+      {/* Mega Event: 3 Faktions-Awards statt der Grid-End-Awards. */}
+      {nested && recap.megaAwards && (
+        <>
+          <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#F9A8D4' }}>🏅 Faktions-Awards</h2>
+          <div style={{ marginBottom: 32 }}>
+            <MegaAwardsStrip awards={recap.megaAwards} de={true} />
+          </div>
+        </>
+      )}
+
+      {/* End-Awards (Normal-Modus) */}
+      {!nested && recap.endAwards && (recap.endAwards.underdog || recap.endAwards.meisterklauer || recap.endAwards.speedy) && (
         <>
           <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 12, color: '#F9A8D4' }}>🏅 End-Awards</h2>
           <div style={{ display: 'flex', gap: 12, marginBottom: 32, flexWrap: 'wrap' }}>

@@ -205,6 +205,11 @@ export interface QQRoomState {
   // 2026-07-02 (Modell B): per-Frage-Ranking der Farben (Haupt-Teams) fürs
   // Mega-Event-Reveal. Gesetzt in qqStartPlacement, null bei neuer Frage.
   megaQuestionRanking?: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] | null;
+  // 2026-07-02: kumulierte Farb-Statistiken übers Spiel für die 3 Faktions-
+  // Awards (schnellstes/treffsicherstes/Aufholjagd). Wird in qqMegaEventScore
+  // pro Frage fortgeschrieben, am Spielende zu megaAwards verdichtet.
+  megaColorStats?: Record<string, { correct: number; answered: number; speedWins: number; firstRank: number | null; latestRank: number | null }>;
+  megaAwards?: import('../../../shared/quarterQuizTypes').QQMegaAwards | null;
   // 2026-05-02: Tie-Breaker am GAME_OVER. Wenn ≥2 Teams identische
   // (largestConnected, totalCells) haben, listet `tieBreakerCandidates` sie auf.
   // Mod resolved manuell via qqResolveTieBreaker → tieBreakerWinnerId, Frontend
@@ -931,6 +936,8 @@ export function qqStartGame(
   room.finalRoundScoreSnapshot = null;
   room.finalBetResolution = null;
   room.endAwards = null;
+  room.megaColorStats = {};  // Mega-Faktions-Award-Statistiken frisch
+  room.megaAwards = null;
   // ── Media/UI State (Spoiler-Prevention) ──
   (room as any).imageRevealed = false;
   (room as any).mapRevealStep = 0;
@@ -2286,7 +2293,51 @@ export function qqMegaEventScore(room: QQRoomState): void {
     ranking.push({ avatarId: g.avatarId, correct: g.correct, total: g.total, points: pts, rank: idx });
   });
   room.megaQuestionRanking = ranking;
+
+  // ── Faktions-Award-Statistiken fortschreiben (schnellste/treffsicherste/
+  //    Aufholjagd-Farbe). Wird am Spielende zu megaAwards verdichtet. ────────
+  if (!room.megaColorStats) room.megaColorStats = {};
+  const submittedByAv: Record<string, number> = {};
+  for (const a of room.answers) { const av = room.teams[a.teamId]?.avatarId; if (av) submittedByAv[av] = (submittedByAv[av] ?? 0) + 1; }
+  // Kumulative Rang-Reihenfolge NACH diesem Frage-Scoring (nach Gesamtpunkten).
+  const cumRank = new Map<string, number>();
+  [...groups.values()]
+    .map(g => ({ av: g.avatarId, score: room.teams[g.repId]?.largestConnected ?? 0 }))
+    .sort((a, b) => b.score - a.score)
+    .forEach((c, i) => cumRank.set(c.av, i));
+  // Schnellste richtige Farbe dieser Frage (kleinste bestSpeed unter perf>0).
+  let fastestAv: string | null = null; let fastestSpeed = Infinity;
+  for (const g of groups.values()) { if (g.perf > 0 && g.bestSpeed < fastestSpeed) { fastestSpeed = g.bestSpeed; fastestAv = g.avatarId; } }
+  for (const g of groups.values()) {
+    const st = room.megaColorStats[g.avatarId] ?? { correct: 0, answered: 0, speedWins: 0, firstRank: null, latestRank: null };
+    st.correct += g.correct;
+    st.answered += submittedByAv[g.avatarId] ?? 0;
+    if (g.avatarId === fastestAv) st.speedWins += 1;
+    const r = cumRank.get(g.avatarId) ?? null;
+    if (st.firstRank === null) st.firstRank = r;
+    st.latestRank = r;
+    room.megaColorStats[g.avatarId] = st;
+  }
+
   room.lastActivityAt = Date.now();
+}
+
+/** Verdichtet die kumulierten Farb-Statistiken zu den 3 Mega-Faktions-Awards.
+ *  Am Spielende aufgerufen (nur largeGroupMode). avatarId je Award (oder null). */
+export function qqComputeMegaAwards(room: QQRoomState): void {
+  const stats = room.megaColorStats ?? {};
+  const entries = Object.entries(stats);
+  if (entries.length === 0) { room.megaAwards = null; return; }
+  // ⚡ Schnellstes Team: am öftesten schnellste-richtige Farbe.
+  let fastest: string | null = null, fw = 0;
+  for (const [av, s] of entries) if (s.speedWins > fw) { fw = s.speedWins; fastest = av; }
+  // 🎯 Treffsicherstes Team: höchste Trefferquote (min. 3 Abgaben gegen Ausreißer).
+  let sharpshooter: string | null = null, sacc = -1;
+  for (const [av, s] of entries) { if (s.answered < 3) continue; const acc = s.correct / s.answered; if (acc > sacc) { sacc = acc; sharpshooter = av; } }
+  // 🔥 Beste Aufholjagd: größter Rang-Aufstieg vom ersten bis zum letzten Stand.
+  let comeback: string | null = null, cb = 0;
+  for (const [av, s] of entries) { if (s.firstRank == null || s.latestRank == null) continue; const d = s.firstRank - s.latestRank; if (d > cb) { cb = d; comeback = av; } }
+  room.megaAwards = { fastest, sharpshooter, comeback };
 }
 
 // Moderator transitions from QUESTION_REVEAL → PLACEMENT using the
@@ -3934,6 +3985,8 @@ export function qqNextQuestion(room: QQRoomState): void {
         // aber ignoriert. qqConnectionsStart/AI/Phasen-Code rottet als Dead-
         // Code; spaeter komplett schlachtbar.
         detectTieBreakerCandidates(room);
+        // Mega Event: 3 Faktions-Awards aus den kumulierten Farb-Statistiken.
+        if (room.largeGroupMode) qqComputeMegaAwards(room);
         room.phase = 'GAME_OVER';
       }
     } else if (next === room.totalPhases) {
@@ -4349,6 +4402,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     largeGroupMode:       room.largeGroupMode ?? false,
     nestedTeams:          room.nestedTeams ?? false,
     megaQuestionRanking:  room.megaQuestionRanking ?? null,
+    megaAwards:           room.megaAwards ?? null,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }

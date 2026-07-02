@@ -5,6 +5,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { teamDisplayName, QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import type { QQMegaAwards } from '../../../shared/quarterQuizTypes';
+import { MegaAwardsStrip } from '../components/CozyQuizLargeGroupView';
 import { API_BASE } from '../api';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
@@ -48,6 +50,8 @@ type Summary = {
   teams: SummaryTeam[];
   /** Mega Event: nach Farbe aggregiert (deriveMegaSummary). Grid-Stats/Brett aus. */
   nested?: boolean;
+  /** Mega Event: 3 Faktions-Awards (schnellstes/treffsicherstes/Aufholjagd). */
+  megaAwards?: QQMegaAwards | null;
   funnyAnswers: Array<{ teamId: string; teamName: string; text: string; questionText: string }>;
   /** 2026-05-09 (Wolf): Final-Brett für Summary-Anzeige.
    *  cellOwners[r][c] = teamId | null. Kompakter Payload. */
@@ -685,8 +689,15 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         />
       )}
 
-      {/* H3 Superlatives: narrative End-Game-Titel */}
-      <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
+      {/* H3 Superlatives: narrative End-Game-Titel. Mega Event: stattdessen die
+          3 Faktions-Awards (schnellstes/treffsicherstes/Aufholjagd). */}
+      {summary.nested && summary.megaAwards ? (
+        <Section title={lang === 'de' ? 'Faktions-Awards' : 'Faction awards'}>
+          <MegaAwardsStrip awards={summary.megaAwards} de={lang === 'de'} />
+        </Section>
+      ) : (
+        <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
+      )}
 
       {myFunny && (
         <Section title={tr('yourMoment', lang)}>

@@ -1270,6 +1270,19 @@ export interface QQStateUpdate {
    *  Mega-Event-Reveal. Vom Backend bei qqStartPlacement gesetzt, auf null bei
    *  neuer Frage. Sortiert nach Rang (0 = beste). */
   megaQuestionRanking?: QQMegaRankEntry[] | null;
+  /** Mega Event: 3 Faktions-Awards am Spielende (avatarId je Award, null wenn
+   *  keiner). Vom Backend am Spielende berechnet. */
+  megaAwards?: QQMegaAwards | null;
+}
+
+/** Mega-Event-Faktions-Awards (Spielende). avatarId = Gewinner-Farbe je Award. */
+export interface QQMegaAwards {
+  /** ⚡ Schnellstes Team — am öftesten die schnellste richtige Farbe. */
+  fastest: string | null;
+  /** 🎯 Treffsicherstes Team — höchste Trefferquote (richtig/abgegeben). */
+  sharpshooter: string | null;
+  /** 🔥 Beste Aufholjagd — größter Rang-Aufstieg vom Start bis zum Ende. */
+  comeback: string | null;
 }
 
 /** Modell B Mega-Event: Ergebnis EINER Farbe (Haupt-Team) für die aktuelle Frage.

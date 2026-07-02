@@ -68,7 +68,9 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
 
   // ── Setter (live, wie die Quick-Pills) ────────────────────────────────────
   const setMega = (on: boolean) => {
-    emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on });
+    // formatSelected: true → Beamer verlässt den neutralen Welcome und zeigt die
+    // format-spezifische Pre-Game-Ansicht (Cozy-Grid-Regeln bzw. Mega-Faktionen).
+    emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on, formatSelected: true });
     if (on) {
       // Mega Event: grid-basierte Add-ons hart aus (Backend erzwingt es beim
       // Start ohnehin — hier für einen sauberen, konsistenten UI-Zustand).
@@ -468,7 +470,14 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               Setup abschließen →
             </button>
           ) : (
-            <button onClick={() => setStep(s2 => Math.min(STEPS.length - 1, s2 + 1))}
+            <button onClick={() => {
+                // Schritt 0 verlassen ohne expliziten Klick = Default-Format (Normal)
+                // akzeptiert → Beamer verlässt den neutralen Welcome.
+                if (step === 0 && !s?.formatSelected) {
+                  emit('qq:setQuizOptions', { roomCode, largeGroupMode: mega, nestedTeams: mega, formatSelected: true });
+                }
+                setStep(s2 => Math.min(STEPS.length - 1, s2 + 1));
+              }}
               style={{ ...ov.navBtn, ...ov.navPrimary }}>Weiter →</button>
           )}
         </div>

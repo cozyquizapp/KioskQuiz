@@ -3111,7 +3111,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
     socket.on('qq:setQuizOptions', async (
-      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean },
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean; formatSelected?: boolean },
       ack?: unknown
     ) => {
       try {
@@ -3134,6 +3134,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
           room.largeGroupMode = true;
         }
         room.nestedTeams = room.largeGroupMode;
+        // 2026-07-02 (Wolf): Format im Wizard-Schritt 0 gewählt → Beamer verlässt
+        // den neutralen Welcome und zeigt die format-spezifische Pre-Game-Ansicht.
+        if (payload.formatSelected === true) {
+          room.formatSelected = true;
+        }
         // 2026-05-17 (CozyGames Live-Toggle im Mod-Setup): kann ohne Game-Restart
         // umgestellt werden. Pool ändern setzt cozyGame-Round-State nicht zurück
         // (falls gerade aktiv) — nur Setup-Defaults für neue Spiele.

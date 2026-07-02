@@ -1153,6 +1153,10 @@ export interface QQStateUpdate {
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   // Setup/Lobby-Zweiteilung: wenn false und phase === LOBBY, zeigt der Beamer den Pre-Game-Wartescreen (Leaderboard/Rekorde).
   setupDone: boolean;
+  // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
+  // false, zeigt der Beamer den neutralen Welcome (Brand, kein Grid/keine Faktion) —
+  // erst nach der Wahl kippt er auf die format-spezifische Pre-Game-Ansicht.
+  formatSelected?: boolean;
   // Mod waehlt im Setup ein Avatar-Theme fuer dieses Quiz. Default 'all'
   // (Emoji-Standard, freie Auswahl). 'cozyCast' = klassische PNG-Avatare.
   // Werte: 'all' | 'cozyAnimals' | 'cozyCast' | 'halloween' | 'christmas' |

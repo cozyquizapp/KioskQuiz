@@ -1987,7 +1987,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             <FinalRoundRecapSlide state={renderState} />
           ) : (
             <>
-              {renderState.phase === 'LOBBY' && !renderState.setupDone && <PausedView state={renderState} mode="preGame" />}
+              {/* 2026-07-02 (Wolf): vor der Format-Wahl (Wizard-Schritt 0) neutraler
+                  Welcome — kein Grid/keine Faktion. Nach der Wahl (formatSelected)
+                  die format-spezifische Pre-Game-Ansicht (Cozy-Regeln bzw. Mega). */}
+              {/* `=== false` (nicht `!…`) → altes Backend ohne formatSelected-Feld
+                  (undefined) verhält sich wie bisher (Pre-Game direkt), damit ein
+                  Frontend-Deploy vor dem Backend-Redeploy nichts kaputt macht. */}
+              {renderState.phase === 'LOBBY' && !renderState.setupDone && renderState.formatSelected === false && <NeutralWelcomeView state={renderState} />}
+              {renderState.phase === 'LOBBY' && !renderState.setupDone && renderState.formatSelected !== false && <PausedView state={renderState} mode="preGame" />}
               {renderState.phase === 'LOBBY' && renderState.setupDone  && <LobbyView state={renderState} />}
               {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
               {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
@@ -4731,6 +4738,84 @@ export type FunStats = {
 //  - speakDuration aus Slogan-Laenge berechnet (~80ms pro Zeichen, min 1.6s,
 //    max 4.5s) → wird als externes speaking-Gate an AnimatedCozyWolf
 //    durchgereicht.
+/**
+ * NeutralWelcomeView — format-agnostischer Pre-Game-Screen (Wolf 2026-07-02).
+ *
+ * Zeigt sich, solange im Setup-Wizard noch KEIN Format (Cozy vs. Mega) gewählt
+ * ist (`!formatSelected`). Bewusst minimal: nur Brand + Wolf + „Event wird
+ * vorbereitet", KEINE Regeln/Stats/QR — die format-spezifische Variante
+ * (Grid-Regeln bzw. Faktions-Roster) folgt, sobald der Mod das Format wählt.
+ *
+ * Der markierte PROMO-SLOT unten ist für spätere „Nächstes Event / Instagram"-
+ * Werbung reserviert (Wolf-Idee 2026-07-02, „vlt später"). Einfach dort eine
+ * Promo-Komponente einhängen — der Rest bleibt unangetastet.
+ */
+function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const de = lang === 'de';
+  const themed = isThemed();
+  const bgUrl = s.theme?.lobbyBackgroundUrl;
+  return (
+    <div style={{
+      flex: 1, display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      padding: '40px 64px 56px', position: 'relative', overflow: 'hidden', gap: 8,
+      background: themed
+        ? 'var(--qq-bg)'
+        : 'radial-gradient(ellipse at 50% -10%, rgba(var(--qq-accent-rgb),0.16), transparent 55%), '
+          + 'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), #0A0814',
+    }}>
+      {bgUrl && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, backgroundImage: `url(${bgUrl})`,
+          backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.5,
+          pointerEvents: 'none', zIndex: 0,
+        }} />
+      )}
+      {/* Brand-Hero mittig: Wolf + Wortmarke + „wird vorbereitet" */}
+      <div style={{
+        position: 'relative', zIndex: 5,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
+        textAlign: 'center',
+        animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
+      }}>
+        <AnimatedCozyWolf widthCss="clamp(170px, 18cqw, 300px)" speaking={false} />
+        <span style={{
+          fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+          fontSize: 'clamp(56px, 7cqw, 112px)', fontWeight: 400,
+          letterSpacing: '0.04em', color: 'var(--qq-accent)',
+          textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
+          lineHeight: 0.96, textTransform: 'uppercase', display: 'inline-block',
+          animation: 'qqNeutralFloat 4.2s ease-in-out 0.6s infinite',
+        }}>COZYQUIZ</span>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 12,
+          fontSize: 'clamp(22px, 2.6cqw, 40px)', fontWeight: 900,
+          color: 'var(--qq-text-muted)', letterSpacing: '0.01em',
+        }}>
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--qq-accent)', animation: 'qqNeutralDot 1.6s ease-in-out infinite' }} />
+          {de ? 'Das Event wird vorbereitet' : 'Setting up the event'}
+          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--qq-accent)', animation: 'qqNeutralDot 1.6s ease-in-out 0.3s infinite' }} />
+        </div>
+      </div>
+
+      {/* Self-contained Keyframes — NeutralWelcome kann rendern ohne dass
+          PausedView/Welcome (mit ihren globalen <style>-Blöcken) gemountet ist. */}
+      <style>{`
+        @keyframes qqNeutralFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+        @keyframes qqNeutralDot { 0%, 100% { opacity: 0.4; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.15); } }
+      `}</style>
+
+      {/* ── PROMO-SLOT (später: „Nächstes Event / Instagram", Wolf-Idee) ──────────
+          Reservierte Fläche unten. Hier künftig eine Promo-Komponente rendern:
+            <div style={{ position:'absolute', bottom:'var(--qq-safe-margin)', ... }}>
+              <NextEventPromo state={s} />
+            </div>
+          Bis dahin bewusst leer, damit der Screen ruhig bleibt. */}
+    </div>
+  );
+}
+
 type CoModeratorVariant = 'preGame' | 'pause';
 // Slogan + erwartete offene Mundbewegungen (Wolf-getunte Werte 2026-05-06).
 // Pace: speakMs = mouths × 440ms. Internal Wolf-Toggle 220ms → eine offene

@@ -232,6 +232,9 @@ export interface QQRoomState {
   volume: number; // 0–1
   // Setup/Lobby split — false means moderator is still in Setup; Beamer shows pre-game wait-screen.
   setupDone: boolean;
+  // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
+  // false → Beamer zeigt neutralen Welcome (kein Grid/keine Faktion).
+  formatSelected: boolean;
   // Mod-Setup: gewaehltes Avatar-Theme fuer dieses Quiz. Optional, default 'cozyAnimals'.
   // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
   avatarSetId?: string;
@@ -492,6 +495,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       sfxMuted: false,
       volume: 0.8,
       setupDone: false,
+      formatSelected: false,   // 2026-07-02: Format (Cozy/Mega) erst im Wizard-Schritt 0 gewählt
       avatarSetId: 'cozy3d',   // 2026-06-23: cozy3d-3D-Tiere sind der neue Default-Look
       themeId: 'cozy',         // 2026-06-24: Buehnen-Design (Skin), Default = heutiger Look
       // avatarSetEmojis wird nur vom 'all'-Set genutzt (Server-gewuerfelter
@@ -840,6 +844,7 @@ export function qqStartGame(
   // largeGroupMode und nestedTeams sind gekoppelt (large ⟺ nested).
   room.largeGroupMode = largeGroupMode === true || nestedTeams === true;
   room.nestedTeams = room.largeGroupMode;
+  room.formatSelected = true;  // 2026-07-02: Spielstart impliziert Format-Wahl (kein neutraler Welcome mehr)
   // 2026-07-01: Groß-Modus deaktiviert grid-basierte End-Game-Mechaniken hart —
   // kein Grid, also würden Comeback (Cell-Steal), Connections-4×4 und Final-Wager
   // (wettet auf Grid-Punkte) crashen bzw. sinnlos laufen. Wolf-Entscheidung:
@@ -4485,6 +4490,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     volume:           room.volume,
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
+    formatSelected:   room.formatSelected,
     avatarSetId:      room.avatarSetId ?? 'all',
     themeId:          room.themeId ?? 'cozy',
     // Lazy-Init fuer Bestands-Rooms: wenn Set 'all' aber noch keine Emojis
@@ -4793,6 +4799,7 @@ export function qqResetRoom(room: QQRoomState): void {
   const gs = room.gridSize;
   room.phase           = 'LOBBY';
   room.setupDone       = false;
+  room.formatSelected  = false;  // 2026-07-02: nach Restart wieder Format wählen (neutraler Welcome)
   room.gamePhaseIndex  = 1;
   room.questionIndex   = 0;
   room.grid            = buildEmptyGrid(gs);

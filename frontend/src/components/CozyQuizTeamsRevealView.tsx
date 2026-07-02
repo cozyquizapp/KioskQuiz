@@ -7,8 +7,9 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-13 (Refactor Phase 5).
  * NICHT extern importiert (nur intern via Phase-Router).
  */
-import { useState, useEffect, useRef, useLayoutEffect } from 'react';
-import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
+import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
@@ -24,9 +25,31 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
   const fontFam = themed
     ? 'var(--qq-font)'
     : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
-  const teams = s.teams.filter(t => t.connected).length > 0
-    ? s.teams.filter(t => t.connected)
-    : s.teams;
+  // 2026-07-02 (Wolf Mega-Event): 24 Sub-Teams einzeln vorstellen = viel zu lang
+  // (Seite zu hoch, Roll-Call ewig). Genestet → nach avatarId zu 8 Eltern-Teams
+  // gruppieren; ein Eltern-Avatar, darunter die 2-3 Sub-Team-Namen als Zeile
+  // (Sub-Teams werden vorgestellt, aber zusammengefasst). Länge = wie 8-Team-Spiel.
+  const nested = !!(s as any).nestedTeams;
+  const teams = useMemo<Array<QQTeam & { _subNames?: string[] }>>(() => {
+    const connected = s.teams.filter(t => t.connected);
+    const base = connected.length > 0 ? connected : s.teams;
+    if (!nested) return base;
+    const de = lang !== 'en';
+    const byAvatar = new Map<string, QQTeam & { _subNames: string[] }>();
+    const order: string[] = [];
+    for (const t of base) {
+      let g = byAvatar.get(t.avatarId);
+      if (!g) {
+        const meta = QQ_AVATARS.find(a => a.id === t.avatarId);
+        g = { ...t, id: `grp-${t.avatarId}`, name: meta ? (de ? meta.label : meta.labelEn) : t.name, color: meta?.color ?? t.color, _subNames: [] };
+        byAvatar.set(t.avatarId, g);
+        order.push(t.avatarId);
+      }
+      g._subNames.push(t.name);
+    }
+    return order.map(a => byAvatar.get(a)!);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [nested, s.teams, lang]);
   // ── Teams Roll-Call (Claude-Design-Handoff #3) ──────────────────────────
   // Ein Team nach dem anderen „aufrufen": ein zentrales Spotlight (großer Avatar
   // in Team-Farbe) zoomt rein, hält kurz, fliegt per FLIP in den Karten-Slot →
@@ -524,6 +547,28 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             transform: revealed ? 'scaleX(1)' : 'scaleX(0)',
                             transition: 'transform 0.42s cubic-bezier(0.5,0,0.18,1) 0.26s, opacity 0.3s ease 0.26s',
                           }} />
+                          {/* Mega-Event: 2-3 Sub-Team-Namen als kleine Chips unter
+                              dem Eltern-Namen (zünden mit der Karte). */}
+                          {nested && t._subNames && t._subNames.length > 0 && (
+                            <div style={{
+                              opacity: revealed ? 1 : 0,
+                              transition: 'opacity 0.4s ease 0.34s',
+                              display: 'flex', flexWrap: 'wrap', gap: '4px 6px',
+                              justifyContent: 'center', maxWidth: '100%',
+                              marginTop: 'clamp(2px, 0.4cqw, 6px)',
+                            }}>
+                              {t._subNames.map((sn, k) => (
+                                <span key={k} title={sn} style={{
+                                  fontSize: multiRow ? 'clamp(9px, 0.95cqw, 13px)' : 'clamp(10px, 1.05cqw, 15px)',
+                                  fontWeight: 700,
+                                  color: themed ? 'var(--qq-card-text)' : 'rgba(255,255,255,0.82)',
+                                  padding: '1px 7px', borderRadius: 999,
+                                  background: 'rgba(255,255,255,0.1)',
+                                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: 110,
+                                }}>{sn}</span>
+                              ))}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -570,6 +615,23 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                 fontSize: 'clamp(34px, 5cqw, 64px)', color: '#fff', textAlign: 'center',
                 textShadow: '0 4px 24px rgba(0,0,0,0.5)', whiteSpace: 'nowrap',
               }}>{spotTeam?.name}</div>
+              {/* Mega-Event: die 2-3 Sub-Teams des Eltern-Teams zusammen zeigen,
+                  bevor auf den 1 Eltern-Avatar zusammengefasst wird. */}
+              {nested && spotTeam?._subNames && spotTeam._subNames.length > 0 && (
+                <div style={{
+                  marginTop: 'clamp(6px, 0.8cqw, 12px)',
+                  display: 'flex', flexWrap: 'wrap', gap: '6px 12px', justifyContent: 'center',
+                  maxWidth: 'clamp(320px, 40cqw, 620px)',
+                }}>
+                  {spotTeam._subNames.map((sn, k) => (
+                    <span key={k} title={sn} style={{
+                      fontSize: 'clamp(16px, 2cqw, 30px)', fontWeight: 800, color: 'rgba(255,255,255,0.9)',
+                      padding: '3px 14px', borderRadius: 999, background: 'rgba(255,255,255,0.12)',
+                      textShadow: '0 2px 10px rgba(0,0,0,0.5)', whiteSpace: 'nowrap',
+                    }}>{sn}</span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         );

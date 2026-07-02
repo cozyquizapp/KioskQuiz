@@ -463,7 +463,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   };
   // 2-Runden-Showcase: R2 ist die letzte Runde und schaltet Klauen UND Stapeln
   // gleichzeitig frei → kombinierte Ansage statt nur „Klauen jetzt möglich".
-  const roundRules = (s.totalPhases === 2 && s.gamePhaseIndex === 2)
+  const roundRules = (s as any).largeGroupMode
+    // 2026-07-02 (Wolf Mega-Event): kein Grid → keine Aktions-/Feld-Regeln.
+    // Einfache, einheitliche Punkte-Ansage für alle Runden.
+    ? {
+        emoji: '⚡',
+        de: ['Sammelt Punkte für eure Farbe!',
+             'Je mehr richtig — und je schneller — desto mehr Punkte!'],
+        en: ['Score points for your colour!',
+             'The more correct — and the faster — the more points!'],
+      }
+    : (s.totalPhases === 2 && s.gamePhaseIndex === 2)
     ? {
         emoji: '⚔️',
         de: [getRuleText('round.2.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),

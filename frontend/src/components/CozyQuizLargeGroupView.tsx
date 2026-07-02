@@ -44,7 +44,7 @@ export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
     <div style={S.wrap}>
       <style>{KEYFRAMES}</style>
       <div style={S.correctBanner}>
-        <span style={{ color: '#9DCB2F' }}>✓ {de ? 'Richtig' : 'Correct'}:</span>
+        <span style={{ opacity: 0.6, fontWeight: 800 }}>{de ? 'Richtig' : 'Correct'}:</span>
         <b style={{ marginLeft: 12 }}>{answer}</b>
         <span style={S.correctCount}>
           {winners.length} / {state.teams.length} {de ? 'wussten’s' : 'knew it'}

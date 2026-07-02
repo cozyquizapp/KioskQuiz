@@ -266,7 +266,7 @@ export default function QQBarRaceTestPage() {
         {phase === 'idle' && (
           <div style={S.center}>
             <div style={{ fontSize: 64, marginBottom: 12 }}>🏁</div>
-            <div style={S.bigTitle}>Groß-Gruppen-Modus</div>
+            <div style={S.bigTitle}>Mega Event</div>
             <div style={S.dim}>„▶ Start" beginnt die Frage-Sequenz.</div>
           </div>
         )}

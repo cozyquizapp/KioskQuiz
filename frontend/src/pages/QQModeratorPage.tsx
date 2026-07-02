@@ -5504,9 +5504,9 @@ function SetupView({
               onClick={() => emit('qq:setQuizOptions', { roomCode, largeGroupMode: !(s as any).largeGroupMode })}
               style={segPill(!!(s as any).largeGroupMode, QQ_COLORS.violet400)}
               title={(s as any).largeGroupMode
-                ? '👥 Groß-Gruppen-Modus AN — bis 25 Teams, Bar-Race statt Grid, Top-5-schnellste-Reveal. Grid-Add-ons deaktiviert.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
-                : '👥 Groß-Gruppen-Modus AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: bis 25 Teams, Bar-Race-Wertung.'}
-            >👥 Groß-Gruppe</button>
+                ? '👥 Mega-Event-Modus AN — bis 25 Teams, Bar-Race statt Grid, Top-5-schnellste-Reveal. Grid-Add-ons deaktiviert.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
+                : '👥 Mega-Event-Modus AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: bis 25 Teams, Bar-Race-Wertung.'}
+            >👥 Mega Event</button>
             {/* 2026-07-01 (Wolf Idee 2): Nested-Sub-Toggle — nur sichtbar wenn
                 Groß-Modus an. Genestet = 8 Eltern-Teams à bis 3 Sub-Teams
                 (eigene Handys), Bar-Race gruppiert nach Avatar → 8 Balken. */}
@@ -5515,8 +5515,8 @@ function SetupView({
                 onClick={() => emit('qq:setQuizOptions', { roomCode, nestedTeams: !(s as any).nestedTeams })}
                 style={segPill(!!(s as any).nestedTeams, QQ_COLORS.violet400)}
                 title={(s as any).nestedTeams
-                  ? '🎯 Genestet AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten). Punkte fließen ins Eltern-Team, Bar-Race zeigt 8 Balken.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nKlick zum Deaktivieren (flacher Groß-Modus).'
-                  : '🎯 Genestet AUS — jedes Handy = eigenes Team (flacher Groß-Modus).\nKlick zum Aktivieren: 8×3-Struktur, bis 72 Personen, 8 Eltern-Balken.'}
+                  ? '🎯 Genestet AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten). Punkte fließen ins Eltern-Team, Bar-Race zeigt 8 Balken.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nKlick zum Deaktivieren (flaches Mega Event).'
+                  : '🎯 Genestet AUS — jedes Handy = eigenes Team (flaches Mega Event).\nKlick zum Aktivieren: 8×3-Struktur, bis 72 Personen, 8 Eltern-Balken.'}
               >🎯 Genestet 8×3</button>
             )}
           </div>

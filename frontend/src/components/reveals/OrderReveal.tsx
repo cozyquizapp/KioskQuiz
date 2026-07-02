@@ -9,6 +9,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from '../QQTeamAvatar';
+import { FactionCountAvatars } from '../QQFactionCrest';
 import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import {
@@ -22,6 +23,9 @@ import { isThemed, themedWindow } from '../../qqTheme';
 // ═══════════════════════════════════════════════════════════════════════════════
 export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
+  // Cozy Arena: mehrere Sub-Teams teilen einen avatarId → Cluster zu Fraktionen
+  // zusammenfassen (1 Tier + ×Anzahl) statt bis zu 24 Einzel-Avatare.
+  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const btt = q.bunteTuete as any;
   const itemsDE: string[] = (btt.items ?? []) as string[];
   const itemsEN: string[] = (btt.itemsEn ?? []) as string[];
@@ -267,7 +271,9 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                   flexShrink: 0,
                 }}>
                   {hasHits ? (
-                    hitters.map((tm, hi) => (
+                    isMega ? (
+                      <FactionCountAvatars teams={hitters} de={lang === 'de'} size={'clamp(36px, 3.8cqw, 54px)'} />
+                    ) : hitters.map((tm, hi) => (
                       <QQTeamAvatar
                         key={tm.id}
                         avatarId={tm.avatarId} teamEmoji={tm.emoji}
@@ -364,6 +370,16 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
               : wn <= 6 ? 'clamp(15px, 1.7cqw, 22px)'
               : 'clamp(14px, 1.5cqw, 19px)';
             const pillGap = wn <= 4 ? 'clamp(10px, 1.2cqw, 18px)' : 'clamp(8px, 0.9cqw, 12px)';
+            if (isMega) {
+              const winTeams = winners
+                .map(w => s.teams.find(t => t.id === w.teamId))
+                .filter((t): t is NonNullable<typeof t> => !!t);
+              return (
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <FactionCountAvatars teams={winTeams} de={lang === 'de'} size={avatarSize} showName />
+                </div>
+              );
+            }
             return (
               <div style={{
                 display: 'flex', alignItems: 'center', flexWrap: 'wrap',

@@ -10,6 +10,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from '../QQTeamAvatar';
+import { FactionCountAvatars } from '../QQFactionCrest';
 import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import {
@@ -25,6 +26,8 @@ import { isThemed, themedWindow } from '../../qqTheme';
  */
 export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
+  // Cozy Arena: Sub-Teams zu Fraktionen zusammenfassen (1 Tier + ×Anzahl).
+  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const btt = q.bunteTuete as any;
   const correctListDE: string[] = (btt.answers ?? []).map((x: string) => x.trim()).filter(Boolean);
   const correctListEN: string[] = (btt.answersEn ?? []).map((x: string) => x.trim()).filter(Boolean);
@@ -228,6 +231,12 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               : 'clamp(12px, 1.3cqw, 18px)';
             const rowGap = wn <= 2 ? 18 : wn === 3 ? 14 : wn === 4 ? 12 : 10;
             const itemGap = wn <= 2 ? 20 : wn === 3 ? 18 : wn === 4 ? 16 : twoCol ? 10 : 14;
+            if (isMega) {
+              const winTeams = winners
+                .map(w => s.teams.find(t => t.id === w.teamId))
+                .filter((t): t is NonNullable<typeof t> => !!t);
+              return <FactionCountAvatars teams={winTeams} de={lang === 'de'} size={avatarSize} showName />;
+            }
             return (
               <div style={{
                 display: 'grid',
@@ -352,7 +361,9 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 flexShrink: 0,
               }}>
                 {hasHits ? (
-                  hitters.map((tm, hi) => (
+                  isMega ? (
+                    <FactionCountAvatars teams={hitters} de={lang === 'de'} size={'clamp(52px, 5.4cqw, 78px)'} />
+                  ) : hitters.map((tm, hi) => (
                     <QQTeamAvatar
                       key={tm.id}
                       avatarId={tm.avatarId} teamEmoji={tm.emoji}

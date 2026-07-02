@@ -202,6 +202,9 @@ export interface QQRoomState {
   // BEVOR _placementQueue durch Platzierungen leergeshiftet wird). Quelle für die
   // Summary-Stats — nicht aus _placementQueue rekonstruieren.
   _currentQuestionWinners?: string[];
+  // 2026-07-02 (Modell B): per-Frage-Ranking der Farben (Haupt-Teams) fürs
+  // Mega-Event-Reveal. Gesetzt in qqStartPlacement, null bei neuer Frage.
+  megaQuestionRanking?: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] | null;
   // 2026-05-02: Tie-Breaker am GAME_OVER. Wenn ≥2 Teams identische
   // (largestConnected, totalCells) haben, listet `tieBreakerCandidates` sie auf.
   // Mod resolved manuell via qqResolveTieBreaker → tieBreakerWinnerId, Frontend
@@ -882,6 +885,7 @@ export function qqStartGame(
   // ── Placement & Winners ──
   (room as any)._placementQueue = [];
   (room as any)._currentQuestionWinners = [];
+  room.megaQuestionRanking = null; // Modell B: per-Frage-Ranking bei neuer Frage weg
   (room as any).tieBreakerCandidates = [];
   (room as any).tieBreakerWinnerId = null;
   // ── Hot Potato ──
@@ -2192,6 +2196,99 @@ export function qqLargeGroupAwardPoints(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
+// ── Modell B (2026-07-02): Mega-Event-Wertung nach Haupt-Team (Farbe) ────────
+// Genestet: bis zu 3 unabhängige Sub-Handys punkten für dieselbe Farbe (avatarId).
+// ADDITIV — jede richtige/nahe Antwort JEDES Subs zählt zur Farb-Leistung:
+//   MUCHO/Cheese/BunteTüte = # richtige Sub-Handys (+ frühester Submit als Tiebreak)
+//   10v10                  = SUMME aller Sub-Punkte auf der richtigen Option
+//   Schätzchen             = # Sub-Handys „nah genug" (≤ Range), nächstes bricht Tie
+// Dann Farben nach Leistung ranken → Top-5 kriegen 5/4/3/2/1, jede Farbe mit
+// Leistung>0 zusätzlich +1. Punkte auf den Repräsentanten-Sub (kleinste id)
+// schreiben, damit die Frontend-Gruppierung (qqSortedGroups) korrekt summiert.
+const QQ_MEGA_SPEED_BONUS = [5, 4, 3, 2, 1];
+function qqParseMuchoIndex(text: string): number | null {
+  const t = text.trim().toUpperCase();
+  const map: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
+  if (t in map) return map[t];
+  const n = parseInt(t, 10);
+  if (!Number.isNaN(n) && n >= 0 && n <= 3) return n;
+  return null;
+}
+export function qqMegaEventScore(room: QQRoomState): void {
+  const q = room.currentQuestion;
+  if (!q) return;
+  type Grp = { avatarId: string; repId: string; total: number; correct: number; perf: number; bestSpeed: number; bestDist: number };
+  const groups = new Map<string, Grp>();
+  for (const [id, t] of Object.entries(room.teams)) {
+    let g = groups.get(t.avatarId);
+    if (!g) { g = { avatarId: t.avatarId, repId: id, total: 0, correct: 0, perf: 0, bestSpeed: Infinity, bestDist: Infinity }; groups.set(t.avatarId, g); }
+    g.total++;
+    if (id < g.repId) g.repId = id; // deterministischer Repräsentant
+  }
+  const grpOf = (teamId: string): Grp | undefined => {
+    const av = room.teams[teamId]?.avatarId;
+    return av ? groups.get(av) : undefined;
+  };
+  const markCorrect = (g: Grp, submittedAt: number) => {
+    g.correct++; g.perf++;
+    if (submittedAt < g.bestSpeed) g.bestSpeed = submittedAt;
+  };
+  const cat = q.category;
+  if (cat === 'MUCHO') {
+    for (const a of room.answers) {
+      if (qqParseMuchoIndex(a.text) === q.correctOptionIndex) { const g = grpOf(a.teamId); if (g) markCorrect(g, a.submittedAt); }
+    }
+  } else if (cat === 'ZEHN_VON_ZEHN') {
+    const expectedLen = q.options?.length ?? 0;
+    const ci = q.correctOptionIndex ?? -1;
+    for (const a of room.answers) {
+      const parts = a.text.split(',').map(s => parseInt(s.trim(), 10));
+      if (expectedLen > 0 && parts.length !== expectedLen) continue;
+      if (parts.length < 2 || parts.some(Number.isNaN)) continue;
+      const earned = parts[ci] ?? 0;
+      const g = grpOf(a.teamId); if (!g) continue;
+      g.perf += earned; // Summe aller Sub-Punkte
+      if (earned > 0) { g.correct++; if (a.submittedAt < g.bestSpeed) g.bestSpeed = a.submittedAt; }
+    }
+  } else if (cat === 'SCHAETZCHEN' && q.targetValue != null) {
+    const rangeAbs = schaetzchenRangeAbs(q.targetValue, q.unit);
+    for (const a of room.answers) {
+      const parsed = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+      if (Number.isNaN(parsed)) continue;
+      const dist = Math.abs(parsed - q.targetValue);
+      const g = grpOf(a.teamId); if (!g) continue;
+      if (dist <= rangeAbs) { g.correct++; g.perf++; }
+      if (dist < g.bestDist) g.bestDist = dist;
+    }
+  } else {
+    // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners).
+    for (const tid of (room._currentQuestionWinners ?? [])) {
+      const g = grpOf(tid); if (g) markCorrect(g, room.answers.find(x => x.teamId === tid)?.submittedAt ?? Infinity);
+    }
+  }
+  const arr = [...groups.values()];
+  arr.sort((a, b) => {
+    if (b.perf !== a.perf) return b.perf - a.perf;
+    if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;
+    return a.bestSpeed - b.bestSpeed;
+  });
+  const ranking: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] = [];
+  arr.forEach((g, idx) => {
+    let pts = 0;
+    if (g.perf > 0) {
+      pts += 1;                                       // Basis für jede getroffene Farbe
+      if (idx < 5) pts += QQ_MEGA_SPEED_BONUS[idx];   // Top-5-Bonus
+    }
+    if (pts > 0) {
+      const rep = room.teams[g.repId];
+      if (rep) { rep.totalCells += pts; rep.largestConnected += pts; }
+    }
+    ranking.push({ avatarId: g.avatarId, correct: g.correct, total: g.total, points: pts, rank: idx });
+  });
+  room.megaQuestionRanking = ranking;
+  room.lastActivityAt = Date.now();
+}
+
 // Moderator transitions from QUESTION_REVEAL → PLACEMENT using the
 // correctTeamId that was already set by applyAutoEval during reveal.
 export function qqStartPlacement(room: QQRoomState): void {
@@ -2201,7 +2298,9 @@ export function qqStartPlacement(room: QQRoomState): void {
   // pendingFor/pendingAction bleiben null → qqNextQuestion schaltet per Mod-
   // Space direkt weiter (kein Placement-Pending-Block).
   if (room.largeGroupMode) {
-    qqLargeGroupAwardPoints(room);
+    // 2026-07-02 (Modell B): Wertung nach Farbe (Haupt-Team), additiv pro Sub-
+    // Handy, Top-5 = 5-4-3-2-1 + 1 Basis. Setzt megaQuestionRanking fürs Reveal.
+    qqMegaEventScore(room);
     room.pendingFor = null;
     room.pendingAction = null;
     room.phase = 'PLACEMENT';
@@ -4249,6 +4348,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackEnabled:      room.comebackEnabled !== false,
     largeGroupMode:       room.largeGroupMode ?? false,
     nestedTeams:          room.nestedTeams ?? false,
+    megaQuestionRanking:  room.megaQuestionRanking ?? null,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }

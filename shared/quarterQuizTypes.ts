@@ -1266,6 +1266,22 @@ export interface QQStateUpdate {
    *  ins Eltern-Team. Impliziert largeGroupMode. Bar-Race gruppiert nach avatarId
    *  (= Eltern-Team) → 8 Balken statt 24. Default false. */
   nestedTeams?: boolean;
+  /** Modell B (2026-07-02): per-Frage-Ranking der Haupt-Teams (Farben) fürs
+   *  Mega-Event-Reveal. Vom Backend bei qqStartPlacement gesetzt, auf null bei
+   *  neuer Frage. Sortiert nach Rang (0 = beste). */
+  megaQuestionRanking?: QQMegaRankEntry[] | null;
+}
+
+/** Modell B Mega-Event: Ergebnis EINER Farbe (Haupt-Team) für die aktuelle Frage.
+ *  correct = wie viele der Sub-Handys „getroffen" haben (richtig/nah/Punkte>0),
+ *  total = Anzahl Sub-Handys der Farbe, points = diese Frage vergebene Punkte
+ *  (Top-5: 5/4/3/2/1 + 1 Basis wenn correct>0), rank = 0-basiert. */
+export interface QQMegaRankEntry {
+  avatarId: string;
+  correct: number;
+  total: number;
+  points: number;
+  rank: number;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).

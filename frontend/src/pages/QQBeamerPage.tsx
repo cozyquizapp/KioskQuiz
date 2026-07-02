@@ -131,7 +131,7 @@ export const COZY_HERO_SHADOW =
 export const COZY_SUB_BORDER = '1px solid rgba(255,255,255,0.10)';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
-import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from '../qqShared';
+import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT, qqFactionBuckets } from '../qqShared';
 import { loadUsedFonts } from '../utils/fonts';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 // 2026-05-12 (Refactor): Helpers/Translations/Constants aus '../cozyQuizShared'.
@@ -3501,6 +3501,78 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
 //   Akt 2 (moderator-gesteuert, revealStep = nonEmpty+1): Doppelblink auf die
 //         richtige Option → permanent grün + Speedrun-Highlight (⚡ Goldrand).
 // ─────────────────────────────────────────────────────────────────────────────
+/**
+ * MegaMuchoVoterPills — Cozy-Arena-Ersatz für die Einzel-Voter-Avatare unter
+ * einer MuCho-Option. Fasst die Voter zu ihren Faktionen zusammen: EIN Faktions-
+ * Tier je Farbe + ×Anzahl-Badge (statt bis zu 24 gemischten Sub-Team-Avataren).
+ * Die Gewinner-Faktion (schnellste korrekte Antwort) behält die Krone.
+ */
+function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim }: {
+  teams: Array<{ id: string; name: string; avatarId: string; color?: string; emoji?: string }>;
+  winnerAvatarId?: string;
+  showCrown: boolean;
+  de: boolean;
+  dim: boolean;
+}) {
+  const buckets = qqFactionBuckets(teams as any, de);
+  const many = buckets.length > 4;
+  return (
+    <>
+      {buckets.map((b, bi) => {
+        const isWinner = showCrown && b.avatarId === winnerAvatarId;
+        const avatarSz = isWinner
+          ? (many ? 'clamp(56px, 6cqw, 80px)' : 'clamp(64px, 7cqw, 92px)')
+          : (many ? 'clamp(44px, 4.8cqw, 64px)' : 'clamp(52px, 5.6cqw, 76px)');
+        return (
+          <div key={b.avatarId} style={{
+            position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
+            animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${bi * 0.12}s both`,
+            opacity: dim ? 0.55 : 1, filter: dim ? 'grayscale(0.6)' : 'none',
+            transition: 'opacity 0.4s ease, filter 0.4s ease',
+          }}>
+            <div style={{ position: 'relative', display: 'inline-block' }}>
+              {isWinner && (
+                <span aria-hidden style={{
+                  position: 'absolute', left: 0, right: 0, top: 0,
+                  display: 'flex', justifyContent: 'center', transform: 'translateY(-58%)',
+                  pointerEvents: 'none', zIndex: 3,
+                }}>
+                  <span style={{
+                    fontSize: 'clamp(28px, 3.4cqw, 48px)', lineHeight: 1,
+                    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
+                    animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
+                  }}>👑</span>
+                </span>
+              )}
+              <QQTeamAvatar
+                avatarId={b.avatarId} teamEmoji={b.slug}
+                size={avatarSz}
+                style={{
+                  border: isWinner ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
+                  boxShadow: isWinner
+                    ? (isThemed()
+                        ? '0 0 22px rgba(var(--qq-accent-rgb),0.6), 0 6px 14px rgba(0,0,0,0.55)'
+                        : '0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)')
+                    : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${b.color}55`,
+                  background: '#0A0814',
+                }}
+              />
+              {/* ×Anzahl-Badge — direkt unter dem Kreis, wie die Zeit-Pille im Normal-Modus */}
+              <span style={{
+                position: 'absolute', left: '50%', bottom: -8, transform: 'translate(-50%, 50%)',
+                padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
+                background: 'rgba(15,23,42,0.95)', border: `1.5px solid ${b.color}`,
+                color: QQ_COLORS.slate100, fontWeight: 900, fontSize: 'clamp(11px, 1.2cqw, 15px)',
+                whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', lineHeight: 1.1,
+              }}>×{b.count}</span>
+            </div>
+          </div>
+        );
+      })}
+    </>
+  );
+}
+
 export function MuchoOptionsReveal({
   options, optionsEn, correctOptionIndex, optionImages, answers, teams, lang,
   cardBg, timerEndsAt, timerDurationSec, revealStep,
@@ -3518,6 +3590,10 @@ export function MuchoOptionsReveal({
   revealStep: number;
 }) {
   const N = options.length;
+  // Cozy Arena erkennen: mehrere Sub-Teams teilen sich einen avatarId-Slot
+  // (im Normal-Modus ist jeder Avatar exklusiv). Dann Voter zu 8 Faktionen
+  // zusammenfassen (1 Tier je Farbe + ×Anzahl) statt bis zu 24 Einzel-Avatare.
+  const isMega = useMemo(() => new Set(teams.map(t => t.avatarId)).size < teams.length, [teams]);
   // Nicht-leere Optionen in Reihenfolge (identisch zur Backend-Zählung).
   const nonEmptyOrdered = useMemo(() => {
     const res: number[] = [];
@@ -3706,7 +3782,15 @@ export function MuchoOptionsReveal({
                 gap: voters.length > 4 ? 6 : 10,
                 pointerEvents: 'none', zIndex: 5,
               }}>
-                {voters.map((v, vi) => {
+                {isMega ? (
+                  <MegaMuchoVoterPills
+                    teams={voters.map(v => v.team)}
+                    winnerAvatarId={winnerTeam?.avatarId}
+                    showCrown={akt3On && isCorrect}
+                    de={lang === 'de'}
+                    dim={isWrong}
+                  />
+                ) : voters.map((v, vi) => {
                   const tm = v.team;
                   const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
                   const isFastest = akt3On && isCorrect && vi === 0;

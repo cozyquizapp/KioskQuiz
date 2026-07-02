@@ -76,6 +76,43 @@ export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
 }
 
 /**
+ * 2026-07-02 (Wolf „Cozy Arena"): In-Game-Reveals fassen Sub-Teams zu ihren 8
+ * Faktionen zusammen — statt bis zu 24 Einzel-Avataren (mit gemischten Tieren
+ * je Farbe) EIN Faktions-Tier je Farbe + Anzahl-Badge. `qqFactionBuckets`
+ * gruppiert eine Team-Liste nach avatarId und liefert pro Faktion Farbe/Tier/
+ * Name/Count/Members (nach Count absteigend sortiert).
+ */
+export interface QQFactionBucket {
+  avatarId: string;
+  slug: string | undefined;   // Faktions-Tier (cozy3d-slug) → als teamEmoji an QQTeamAvatar
+  color: string;
+  name: string;               // „Denkfaule Dachse"
+  count: number;
+  members: QQTeam[];
+}
+export function qqFactionBuckets(teams: QQTeam[], de: boolean): QQFactionBucket[] {
+  const byAvatar = new Map<string, QQTeam[]>();
+  for (const t of teams) {
+    const arr = byAvatar.get(t.avatarId);
+    if (arr) arr.push(t);
+    else byAvatar.set(t.avatarId, [t]);
+  }
+  const out: QQFactionBucket[] = [];
+  for (const [avatarId, members] of byAvatar) {
+    const meta = QQ_AVATARS.find(a => a.id === avatarId);
+    out.push({
+      avatarId,
+      slug: qqMegaFactionSlug(avatarId),
+      color: meta?.color ?? members[0].color,
+      name: qqMegaFactionName(avatarId, de ? 'de' : 'en'),
+      count: members.length,
+      members,
+    });
+  }
+  return out.sort((a, b) => b.count - a.count);
+}
+
+/**
  * 2026-05-17 P6 (Wolf 'team-namen wrap: Pub-quatscher statt Pubquatsch-er'):
  * Style-Set für mehrzeilige Team-Namen mit smart-break. Inline-spread'bar:
  *   <div style={{ ...QQ_TEAM_NAME_WRAP, fontSize: '...' }}>

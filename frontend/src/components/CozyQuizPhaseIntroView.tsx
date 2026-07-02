@@ -1151,6 +1151,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 nach Runde dynamisch zusammengestellt — eine Wahl pro richtige
                 Antwort. Limits (max X pro Runde / Spiel) als Footer-Pill je Card. */}
             {(() => {
+              // Mega Event: kein Grid → keine Platzieren/Klauen/Stapeln-Action-
+              // Cards. Die Runden-Regel oben ist bereits auf „Punkte für eure
+              // Farbe" umgestellt (roundRules largeGroupMode-Zweig).
+              if ((s as any).largeGroupMode) return null;
               // ActionCardData-Typ aus '../components/QQActionCard' (s. Import oben).
               const ph = s.gamePhaseIndex;
               // 2026-04-28 (User-Wunsch): 'Platzieren'-Card nur anzeigen wenn

@@ -62,6 +62,55 @@ const t = {
 
 type FreeAction = 'PLACE' | 'STEAL' | 'SHIELD' | 'SWAP' | 'STAPEL' | 'SANDUHR';
 
+/**
+ * MegaScoringCard — Mega-Event-Ersatz für die grid-basierte PlacementCard.
+ * Im Mega Event gibt es keine „eure Aktion"/Grid-Auswahl; während der Beamer
+ * die Wertung zeigt, bekommt das Sub-Team-Handy hier transparent das
+ * Frage-Ergebnis seiner Farbe (aus megaQuestionRanking): +Punkte, Platz,
+ * wie viele Handys der Farbe richtig lagen. 2026-07-02 (Grid-Audit Mega Event).
+ */
+export function MegaScoringCard({ state: s, myTeamId, lang = 'de' }: {
+  state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en';
+}) {
+  const de = lang !== 'en';
+  const me = s.teams.find(t => t.id === myTeamId);
+  const color = me?.color ?? QQ_COLORS.brandPink;
+  const entry = (s.megaQuestionRanking ?? []).find(r => r.avatarId === me?.avatarId);
+  return (
+    <div style={{
+      background: COZY_CARD_BG, borderRadius: 24, padding: '30px 22px',
+      border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center',
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+    }}>
+      {me && <QQTeamAvatar avatarId={me.avatarId} teamEmoji={me.emoji} size={96} />}
+      <div style={{ fontSize: 14, fontWeight: 800, opacity: 0.55, letterSpacing: '0.08em', textTransform: 'uppercase' }}>
+        {de ? 'Wertung läuft' : 'Scoring'}
+      </div>
+      {entry && entry.points > 0 ? (
+        <>
+          <div style={{ fontSize: 56, fontWeight: 900, color, lineHeight: 1 }}>+{entry.points}</div>
+          <div style={{ fontSize: 16, fontWeight: 800, opacity: 0.8 }}>
+            {de ? `Platz ${entry.rank + 1} · ${entry.correct}/${entry.total} Handys richtig`
+                : `Rank ${entry.rank + 1} · ${entry.correct}/${entry.total} phones correct`}
+          </div>
+        </>
+      ) : entry ? (
+        <div style={{ fontSize: 18, fontWeight: 800, opacity: 0.75 }}>
+          {de ? `${entry.correct}/${entry.total} Handys richtig · diesmal keine Punkte`
+              : `${entry.correct}/${entry.total} phones correct · no points this time`}
+        </div>
+      ) : (
+        <div style={{ fontSize: 18, fontWeight: 800, opacity: 0.75 }}>
+          {de ? 'Schau auf den Beamer 📺' : 'Look at the screen 📺'}
+        </div>
+      )}
+      <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.45 }}>
+        {de ? 'Punkte für deine Farbe — gleich geht’s weiter!' : 'Points for your colour — next up soon!'}
+      </div>
+    </div>
+  );
+}
+
 export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'de' }: {
   state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
 }) {

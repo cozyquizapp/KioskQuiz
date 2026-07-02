@@ -45,7 +45,7 @@ import {
 } from '../components/CozyQuizTeamPhaseCards';
 import { QuestionCard } from '../components/CozyQuizTeamQuestionCard';
 import {
-  PlacementCard, ComebackCard, ConnectionsTeamCard,
+  PlacementCard, ComebackCard, ConnectionsTeamCard, MegaScoringCard,
 } from '../components/CozyQuizTeamActionCards';
 import { TeamBottomSheetMenu } from '../components/CozyQuizTeamBottomSheet';
 import {
@@ -1359,6 +1359,8 @@ function TeamGameView({
   const [stolenToast, setStolenToast] = useState<{ id: number; by: string } | null>(null);
   const prevMyOwnedRef = useRef<Set<string>>(new Set());
   useEffect(() => {
+    // Mega Event: kein Grid → kein Klau-Toast (Felder werden nie geklaut).
+    if ((s as any).largeGroupMode) return;
     const myOwned = new Set<string>();
     const grid = s.grid;
     for (let r = 0; r < grid.length; r++) {
@@ -1710,7 +1712,11 @@ function TeamGameView({
               <QuestionCard state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />
             )}
             {s.phase === 'PLACEMENT' && (
-              <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} lang={lang} />
+              // Mega Event: keine Grid-Aktion („eure Aktion" fällt weg) — statt
+              // der PlacementCard die transparente Farb-Wertung fürs Sub-Team.
+              (s as any).largeGroupMode
+                ? <MegaScoringCard state={s} myTeamId={myTeamId} lang={lang} />
+                : <PlacementCard state={s} myTeamId={myTeamId} isMyTurn={isMyTurn} emit={emit} roomCode={roomCode} lang={lang} />
             )}
           </>
         )}

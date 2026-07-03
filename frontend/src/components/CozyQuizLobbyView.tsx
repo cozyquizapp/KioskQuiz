@@ -12,7 +12,6 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
-import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -753,35 +752,36 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
                   borderLeft: `4px solid ${g.color}`,
                   boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
-                  display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.1cqw, 16px)',
-                  minWidth: 0, position: 'relative',
+                  display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.3cqw, 18px)',
+                  minWidth: 0, position: 'relative', minHeight: 'clamp(76px, 8.2cqh, 104px)',
                   animation: `teamCardIn 0.5s var(--qq-ease-bounce) ${0.35 + i * 0.06}s both`,
                 }}>
-                  <FactionCrest avatarId={g.avatarId} width={'clamp(44px, 4.4cqw, 62px)'} style={{ flexShrink: 0 }} />
+                  {/* „X/3"-Pill oben rechts — aus der Namenszeile raus, damit der
+                      Name die volle Kartenbreite bekommt (Wolf 2026-07-03:
+                      abgeschnittene/hyphenierte Namen). */}
+                  <span style={{
+                    position: 'absolute', top: 'clamp(8px, 1cqh, 12px)', right: 'clamp(10px, 1.1cqw, 14px)',
+                    padding: '2px 9px', borderRadius: 999,
+                    background: `${g.color}22`, border: `1px solid ${g.color}66`,
+                    color: g.color, fontWeight: 900, fontSize: 'clamp(11px, 1.1cqw, 15px)',
+                    fontVariantNumeric: 'tabular-nums',
+                  }}>{g.subs.length}/3</span>
+                  <FactionCrest avatarId={g.avatarId} width={'clamp(48px, 5cqw, 68px)'} style={{ flexShrink: 0 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
-                      display: 'flex', alignItems: 'center', gap: 8, minWidth: 0,
-                    }}>
-                      <span style={{
-                        fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 23px)',
-                        color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
-                        // 2026-07-02 (Wolf): Namen voll ausschreiben (kein Abschneiden) —
-                        // bei 4 breiten Spalten passt „Denkfaule Dachse" & Co. (ggf. 2 Zeilen).
-                        minWidth: 0, flex: 1, lineHeight: 1.15,
-                        ...QQ_TEAM_NAME_WRAP,
-                      }} title={g.label}>{g.label}</span>
-                      <span style={{
-                        flexShrink: 0, marginLeft: 'auto',
-                        padding: '2px 9px', borderRadius: 999,
-                        background: `${g.color}22`, border: `1px solid ${g.color}66`,
-                        color: g.color, fontWeight: 900, fontSize: 'clamp(11px, 1.1cqw, 15px)',
-                        fontVariantNumeric: 'tabular-nums',
-                      }}>{g.subs.length}/3</span>
-                    </div>
+                      fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 23px)',
+                      color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
+                      // Konzept-Namen sind kurz + bekannt → KEINE Silbentrennung
+                      // (kein QQ_TEAM_NAME_WRAP). Umbruch nur an Leerzeichen; die
+                      // erste Zeile hält Abstand zur „X/3"-Pill (paddingRight).
+                      lineHeight: 1.12, whiteSpace: 'normal', wordBreak: 'normal',
+                      overflowWrap: 'break-word', hyphens: 'none', WebkitHyphens: 'none',
+                      paddingRight: 'clamp(30px, 3.2cqw, 44px)',
+                    }} title={g.label}>{g.label}</div>
                     {/* Fraktions-Motto (Cozy Universe) */}
                     <div style={{
                       fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 700, fontStyle: 'italic',
-                      color: 'var(--qq-text-muted)', marginTop: 2, lineHeight: 1.15,
+                      color: 'var(--qq-text-muted)', marginTop: 3, lineHeight: 1.15,
                     }}>„{qqMegaFactionMotto(g.avatarId, de ? 'de' : 'en')}"</div>
                     {/* Faction-Modell (Wolf 2026-07-02): KEINE Sub-Team-Namen auf
                         dem Beamer — nur anonyme Handy-Dots (verbunden = gefüllt).

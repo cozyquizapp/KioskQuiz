@@ -475,14 +475,16 @@ function ImageAvatar({
   );
 }
 
-// ─── Cozy-Arena-Wappen-Avatar ─────────────────────────────────────────────
-// Zwei Modi:
-//   • normal (nicht-flat): das VOLLE Wappen-PNG (Schild + Farbe + Emblem
-//     komplett gebacken). KEINE Farb-Disc dahinter — das Wappen bringt seine
-//     eigene Form + Farbe mit. Füllt ~100 % (die PNG-Ränder liefern Padding).
-//   • flat (Grid-Cells / Kontext trägt schon die Fraktions-Farbe): nur das
-//     freigestellte cremefarbene EMBLEM (ohne Schild) mittig auf transparent —
-//     die Zelle liefert die Farbe. Emblem ~76 %, damit Rand bleibt.
+// ─── Cozy-Arena-Fraktions-Avatar ──────────────────────────────────────────
+// 2026-07-03 (Wolf-Entscheidung „rund + Puls-Aura überall, Wappen NUR in der
+// Auswahl"): CrestAvatar rendert IMMER das freigestellte EMBLEM auf einer
+// runden Fraktions-Farbscheibe (identische Disc wie cozy3d ImageAvatar) —
+// KEIN volles Schild mehr. Grund: Wappen AUF farbigem Kreis = doppelter Rahmen
+// (Schild-im-Kreis), unruhig. Das volle Wappen-PNG (`src`) lebt nur noch im
+// Fraktionsauswahl-Grid (AvatarKarussellEditor, umgeht QQTeamAvatar).
+//   • flat (Grid-Cells / Kontext trägt schon die Farbe): Emblem ~88 % auf
+//     transparent, keine eigene Disc.
+//   • normal (nicht-flat): Emblem ~78 % auf eigener Farb-Disc (rund).
 function CrestAvatar({
   slug, src, color, size, baseStyle, className, title, square, flat,
 }: {
@@ -490,26 +492,35 @@ function CrestAvatar({
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  void color;
-  const imgSrc = flat ? crestEmblemSrc(slug) : src;
-  // 2026-07-03 (Wolf „symbole etwas groesser"): flat 76% → 88% (Emblem-PNGs
-  // haben Innen-Padding, fuellt die Scheibe/Zelle satter).
-  const fillPct = flat ? '88%' : '100%';
+  void src; void size;
+  const imgSrc = crestEmblemSrc(slug);
+  const fillPct = flat ? '88%' : '78%';
   const imgFilter = flat
     ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))'
-    : 'drop-shadow(0 3px 5px rgba(0,0,0,0.28))';
+    : 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))';
+  // Runde Farb-Disc (nur non-flat) — 1:1 wie cozy3d, damit Fraktionen und Tiere
+  // im selben Kontext gleich „sitzen".
+  const discStyle: CSSProperties = flat
+    ? { background: 'transparent', boxShadow: 'none' }
+    : {
+        background: `
+          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
+          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
+          ${color}
+        `,
+        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
+      };
   return (
     <span
       className={className}
       title={title}
       style={{
         ...baseStyle,
-        background: 'transparent',
-        boxShadow: 'none',
+        ...discStyle,
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: 'visible',
+        overflow: square ? 'hidden' : 'visible',
         borderRadius: square ? 0 : '50%',
       }}
     >

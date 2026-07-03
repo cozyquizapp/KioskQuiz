@@ -169,15 +169,13 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   // gefundener Gruppe. (User-Wunsch: 'nach finale soll normale aktion sein,
   // nicht joker, 4 oberbegriffe = 4 aktionen'.)
   const isConnectionsPlacement = s.phase === 'CONNECTIONS_4X4';
-  // 2026-05-10 (Live-Test-Bug Wolf 2026-05-07: '/team zeigt Joker obwohl
-  // keiner gewonnen wurde'): Pragma-Patch — zusätzliche Gate auf
-  // myStats.jokersThisPhase > 0. Schließt false-positive aus (PLACE_1 ohne
-  // legitimen Joker → keine Joker-UI), blockiert aber den ersten Joker einer
-  // Runde NICHT (Backend setzt jokersThisPhase BEFORE pa=PLACE_1, also liest
-  // das Frontend bereits 1 wenn der pa-Switch ankommt). Vorher: rein
-  // pa-basiert, was bei timing-Edge-Cases falsch positiv wurde.
-  const myJokersThisPhase = (myStats as any)?.jokersThisPhase ?? 0;
-  const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement && myJokersThisPhase > 0; // Joker bonus placement
+  // 2026-07-04 (Bug-Audit): exaktes Backend-Signal `jokerBonusPending` statt des
+  // phasen-klebrigen `jokersThisPhase > 0`. Der alte Gate konnte den echten
+  // Bonus-PLACE_1 nicht vom FORTGESETZTEN regulären PLACE_1 (nach einem Joker in
+  // einer PLACE_2-Runde) unterscheiden — beide identisch in pa + jokersThisPhase.
+  // jokerBonusPending ist im Backend true NUR während der Bonus-Slot offen ist
+  // (self-resetting), daher hier präzise. (Ersetzt den 2026-05-10-Pragma-Patch.)
+  const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement && !!(myStats as any)?.jokerBonusPending; // Joker bonus placement
   const isShield    = pa === 'SHIELD_1' || (isFree && freeMode === 'SHIELD');
   const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
   // 2026-05-05 (Wolf-Konzept): STAPEL_BONUS = Connections-Finale-Stack-Mode.

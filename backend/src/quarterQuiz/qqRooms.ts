@@ -2771,6 +2771,12 @@ export function qqPlaceCell(
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
   const stats = room.teamPhaseStats[teamId];
+  // 2026-07-04 (Bug-Audit '/team Joker-False-Positive'): jokerBonusPending ist
+  // self-resetting — zu Beginn jeder Platz-Aktion löschen, nur beim Armen eines
+  // echten Joker-Bonus (unten) true setzen. Trennt den Bonus-PLACE_1 vom
+  // fortgesetzten regulären PLACE_1 (der sonst per jokersThisPhase>0 fälschlich
+  // die Joker-UI zeigte).
+  stats.jokerBonusPending = false;
 
   // Jede PLACE_2 / COMEBACK-PLACE_2 / PLACE_1-Joker-Bonus-Runde benutzt placementsLeft.
   const usesMultiSlot =
@@ -2801,6 +2807,7 @@ export function qqPlaceCell(
         stats.pendingMultiSlot = (stats.pendingMultiSlot ?? 0) + stats.placementsLeft;
       }
       stats.placementsLeft = jokersAwarded;
+      stats.jokerBonusPending = true; // echter Joker-Bonus-Slot ist jetzt offen
       room.pendingAction = jokerBonusAction(room);
       return { jokersAwarded };
     }
@@ -2813,6 +2820,7 @@ export function qqPlaceCell(
   const direct = usesMultiSlot ? 0 : jokersAwarded;
   if (direct > 0) {
     stats.placementsLeft = direct;
+    stats.jokerBonusPending = true; // direkter Joker-Bonus aus PLACE_1
     room.pendingAction = jokerBonusAction(room);
     return { jokersAwarded: direct };
   }
@@ -2895,14 +2903,26 @@ export function qqStealCell(
 
   const prevOwner = cell.ownerId;
   cell.ownerId = teamId;
-  // B5/B13 (2026-04-29): Owner-Wechsel raeumt Joker-Marker auf:
-  // - jokerCounted=false: Cell ist fuer neue Joker-Patterns frei
-  // - jokerFormed=false: Stern verschwindet (gehoerte zum Pattern des prev Owners)
-  cell.jokerCounted = false;
+  // Owner-Wechsel: Stern (jokerFormed) verschwindet — er gehoerte zum Pattern
+  // des vorherigen Owners.
+  // 2026-07-04 (Bug-Audit 'Joker-Re-Detection nach Steal-Roundtrip'):
+  // jokerCounted (permanentes Award-Tracking) wird BEWUSST NICHT mehr resettet.
+  // Vorher gab `cell.jokerCounted = false` beim Steal die Cell fuer detectNewJokers
+  // wieder frei → ein Roundtrip (Cell weg + zurueckgeklaut) liess `.some(isNeverCounted)`
+  // das ganze, bereits gezaehlte Pattern erneut als "neu" qualifizieren → doppelter
+  // Joker. Legit NEUE Joker per Steal bleiben moeglich: die uebrigen Pattern-Cells
+  // sind dann uncounted, `.some(isNeverCounted)` greift ueber sie. (Der reine
+  // "just-changed-cell"-Filter haette NICHT gereicht — die gestohlene Cell ist
+  // selbst Teil des Musters.) ⚠️ Aendert Live-Scoring → Redeploy + Gegentest.
   cell.jokerFormed = false;
   room.lastPlacedCell = { row, col, teamId, wasSteal: true };
   const jokersAwarded = handleJokerDetection(room, teamId);
   updateTerritories(room);
+  // 2026-07-04 (Bug-Audit): jokerBonusPending self-reset — auch beim Klauen (ein
+  // per PLACE_1-Joker gearmter STEAL_1-Bonus wird hier konsumiert und resumt zu
+  // PLACE_1). Steal-geformte Joker sind immer STEAL_1 (zeigen nie den PLACE-Stern),
+  // daher hier nur löschen, nicht setzen.
+  { const s0 = room.teamPhaseStats[teamId]; if (s0) s0.jokerBonusPending = false; }
 
   if (jokersAwarded > 0) {
     room.teamPhaseStats[teamId].placementsLeft = jokersAwarded;
@@ -3123,6 +3143,7 @@ export function qqStuckCell(
   // Stapel-Counter pro Spiel hochsetzen (Cap: QQ_MAX_STAPELS_PER_GAME).
   const stats = room.teamPhaseStats[teamId];
   stats.stapelsUsed = (stats.stapelsUsed ?? 0) + 1;
+  stats.jokerBonusPending = false; // 2026-07-04 (Bug-Audit): self-reset (s. qqPlaceCell) — ein FREE-Joker-Bonus kann via Stapeln konsumiert werden und resumt zu PLACE_1.
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);
   // B5 (2026-04-29): Wenn STAPEL als Joker-Bonus genutzt wurde, einen Slot
@@ -4226,6 +4247,7 @@ export function qqSkipCurrentPlacement(room: QQRoomState): void {
   if (stats) {
     stats.placementsLeft = 0;
     stats.pendingMultiSlot = 0;
+    stats.jokerBonusPending = false; // 2026-07-04 (Bug-Audit): Multi-Slot-Reset räumt auch den Joker-Bonus-Marker
   }
   // Bei Connections-Placement: alle restlichen Slots des aktuellen Teams
   // verwerfen + zum nächsten Team springen.

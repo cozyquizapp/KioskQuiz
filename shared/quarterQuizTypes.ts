@@ -286,6 +286,7 @@ export interface QQTeamPhaseStats {
   placementsLeft: number;   // Phase 2 "2 setzen": how many still pending
   pendingJokerBonus?: number; // legacy: joker bonus postponed until PLACE_2 finishes (no longer used, kept for state compatibility)
   pendingMultiSlot?: number;  // PLACE_2 slots deferred while a joker bonus is placed first
+  jokerBonusPending?: boolean; // 2026-07-04 (Bug-Audit): true NUR während der echte Joker-Bonus-Slot offen ist. Trennt den Bonus-PLACE_1 vom fortgesetzten regulären PLACE_1 (der sonst per jokersThisPhase>0 fälschlich die Joker-UI zeigte). Self-resetting: false zu Beginn jeder Platz-/Klau-Aktion, true nur beim Armen des Bonus.
   shieldsUsed?: number;       // Phase 3+: how many shields this team has used this game (max 2) — DEPRECATED, Schild gedroppt
   stapelsUsed?: number;       // Phase 3+: wie viele Stapel das Team in diesem Spiel verbraucht hat (max QQ_MAX_STAPELS_PER_GAME)
 }

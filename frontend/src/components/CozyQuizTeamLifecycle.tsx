@@ -313,8 +313,9 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
             />
           </div>
           <div style={{
-            fontSize: 34, fontWeight: 900, color: '#EC4899',
-            letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
+            fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+            fontSize: 40, fontWeight: 400, color: '#EC4899',
+            letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
             textShadow: '0 2px 12px rgba(0,0,0,0.55), 0 0 26px rgba(236,72,153,0.55)',
           }}>COZYQUIZ</div>
         </div>

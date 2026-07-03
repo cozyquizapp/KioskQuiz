@@ -6,15 +6,16 @@ import { Link, useLocation } from 'react-router-dom';
  * Eine Component, zwei Inhalte (via :doc-Param). Brand-themed Layout
  * (dark BG + Brand-Pink), Mobile-First, eine Spalte max 720px.
  *
- * Stand 2026-05-10: Placeholder-Modus aktiv — Wolf hat noch kein Gewerbe
- * angemeldet, daher Klar-Name + Anschrift als `{...}`-Slots. Der Banner
- * oben kommuniziert das transparent. Sobald Gewerbe steht: Placeholder
- * austauschen (siehe Code-Kommentare unten) und PLACEHOLDER_MODE = false.
+ * Stand 2026-07-03: Betrieb als Privatperson (wie wonky guess). Reale
+ * ladungsfähige Anschrift ist gesetzt, daher PLACEHOLDER_MODE = false und
+ * kein „im Aufbau"-Banner mehr. Identitätsdaten aus dem wonkyguess-Impressum
+ * übernommen; DDG-Fassung + CozyQuiz-spezifischer Datenschutz bleiben.
+ * Sobald ein Gewerbe angemeldet ist, ggf. Firmierung/USt-IdNr. ergänzen.
  */
 
-const PLACEHOLDER_MODE = true;
-const NAME_PLACEHOLDER = '{Vor- und Nachname folgt mit Gewerbe-Anmeldung}';
-const ADDRESS_PLACEHOLDER = '{Straße Hausnummer\nPLZ Stadt — folgt mit Gewerbe-Anmeldung}';
+const PLACEHOLDER_MODE = false;
+const LEGAL_NAME = 'Johannes Wolf';
+const LEGAL_ADDRESS = 'Mählstr. 9b\n22523 Hamburg\nDeutschland';
 const EMAIL = 'hallo@cozywolf.de';
 
 const BRAND = {
@@ -86,15 +87,21 @@ function Impressum() {
 
       <H2>Angaben gemäß § 5 DDG (Digitale-Dienste-Gesetz)</H2>
       <pre style={preStyle}>
-        {NAME_PLACEHOLDER}{'\n'}
-        {ADDRESS_PLACEHOLDER}
+        {LEGAL_NAME}{'\n'}
+        {LEGAL_ADDRESS}
       </pre>
 
       <H2>Kontakt</H2>
       <P>E-Mail: <A href={`mailto:${EMAIL}`}>{EMAIL}</A></P>
 
       <H2>Verantwortlich für den Inhalt nach § 18 Abs. 2 MStV</H2>
-      <P>{NAME_PLACEHOLDER}, Anschrift wie oben.</P>
+      <P>{LEGAL_NAME}, Anschrift wie oben.</P>
+
+      <H2>Marken</H2>
+      <P>
+        „cozywolf" ist eine eingetragene Wortmarke. Markeninhaber:{' '}
+        {LEGAL_NAME}. „CozyQuiz" wird unter der Dachmarke cozywolf betrieben.
+      </P>
 
       <H2>EU-Streitschlichtung</H2>
       <P>
@@ -157,8 +164,8 @@ function Datenschutz() {
 
       <H2>1. Verantwortlicher</H2>
       <pre style={preStyle}>
-        {NAME_PLACEHOLDER}{'\n'}
-        {ADDRESS_PLACEHOLDER}{'\n'}
+        {LEGAL_NAME}{'\n'}
+        {LEGAL_ADDRESS}{'\n'}
         E-Mail: {EMAIL}
       </pre>
 

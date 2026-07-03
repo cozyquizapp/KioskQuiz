@@ -82,20 +82,22 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
     }).filter(a => a.distKm !== null);
   }, [s.answers, tLat, tLng]);
 
-  const worstFirst = useMemo(() => [...scored].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scored]);
-  const bestFirst  = useMemo(() => [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scored]);
-  // Cozy Arena: Ranking auf 1 Eintrag je Fraktion (bester = nächster Tipp)
-  // kollabieren. bestFirst ist schon sortiert → erster je avatarId = bester.
+  // Cozy Arena: pro Fraktion nur den BESTEN (nächsten) Pin behalten — sonst
+  // klebt die Karte mit bis zu 24 Sub-Team-Pins zu (Wolf 2026-07-03 'nur der
+  // beste pin pro team'). Wirkt auf Karte, Cascade UND Ranking gleichermaßen.
   const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
-  const bestFirstFinal = useMemo(() => {
-    if (!isMega) return bestFirst;
-    const byAvatar = new Map<string, typeof bestFirst[number]>();
-    for (const p of bestFirst) {
+  const scoredEff = useMemo(() => {
+    if (!isMega) return scored;
+    const byAvatar = new Map<string, typeof scored[number]>();
+    for (const p of [...scored].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0))) {
       const tm = s.teams.find(t => t.id === p.teamId);
       if (tm && !byAvatar.has(tm.avatarId)) byAvatar.set(tm.avatarId, p);
     }
-    return [...byAvatar.values()].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0));
-  }, [bestFirst, isMega, s.teams]);
+    return [...byAvatar.values()];
+  }, [scored, isMega, s.teams]);
+
+  const worstFirst = useMemo(() => [...scoredEff].sort((a, b) => (b.distKm ?? 0) - (a.distKm ?? 0)), [scoredEff]);
+  const bestFirst  = useMemo(() => [...scoredEff].sort((a, b) => (a.distKm ?? 0) - (b.distKm ?? 0)), [scoredEff]);
 
   // Pins werden EXAKT an der eingereichten Position dargestellt — kein
   // Cluster-Spread mehr. (User-Wunsch 2026-04-28: 'pins müssen exakt gesetzt
@@ -104,18 +106,18 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // näher rein wenn alle Pins eng beieinander liegen.)
   const displayPos = useMemo(() => {
     const out = new Map<string, { lat: number; lng: number }>();
-    for (const p of scored) {
+    for (const p of scoredEff) {
       if (p.lat != null && p.lng != null) {
         out.set(p.teamId, { lat: p.lat, lng: p.lng });
       }
     }
     return out;
-  }, [scored]);
+  }, [scoredEff]);
 
   const showTarget  = step >= 1;
   const revealedCnt = Math.max(0, step - 1); // Step 2 = 1 Pin, Step 3 = 2 Pins, ...
   const revealedPins = worstFirst.slice(0, revealedCnt);
-  const validCount = scored.length;
+  const validCount = scoredEff.length;
   const showRanking = step >= (1 + validCount + 1);
 
   // FitBounds bounds — aber Cap auf max. 2500km Pin-Distanz vom Ziel. Sehr
@@ -407,6 +409,10 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
             <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
           {(() => {
+            // Top-5-Nächste anzeigen (Wolf 2026-07-03) — bei Cozy Arena schon je
+            // Fraktion kollabiert (scoredEff), sonst reale Teams. Kein Bloßstellen
+            // der hintersten (nur die besten 5 stehen in der Liste).
+            const rankList = bestFirst.slice(0, 5);
             // Tie-Erkennung: Teams mit (gerundet) gleicher Distanz — dann entscheidet Speed.
             // Gruppen nach Distanz-Bucket (auf Anzeige-Präzision, also ganze Meter bzw. 0.1 km).
             const bucket = (km: number | null): string => {
@@ -414,14 +420,14 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
               return km < 1 ? `${Math.round(km * 1000)}m` : `${km.toFixed(1)}km`;
             };
             const tieGroups: Record<string, number> = {};
-            bestFirstFinal.forEach(p => { const k = bucket(p.distKm); tieGroups[k] = (tieGroups[k] ?? 0) + 1; });
+            rankList.forEach(p => { const k = bucket(p.distKm); tieGroups[k] = (tieGroups[k] ?? 0) + 1; });
             const groupEarliest: Record<string, number> = {};
-            bestFirstFinal.forEach(p => {
+            rankList.forEach(p => {
               const k = bucket(p.distKm);
               const at = p.submittedAt ?? 0;
               if (groupEarliest[k] == null || at < groupEarliest[k]) groupEarliest[k] = at;
             });
-            return bestFirstFinal.map((p, i) => {
+            return rankList.map((p, i) => {
               const rawTeam = s.teams.find(t => t.id === p.teamId);
               if (!rawTeam) return null;
               // Cozy Arena: Fraktions-Identität (Tiername + Tier-slug) statt Sub-Team.

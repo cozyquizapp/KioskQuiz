@@ -407,10 +407,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
     const q = s.currentQuestion;
     const isMapReveal = q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'map';
-    const mapValidPinCount = s.answers?.filter((a: any) => {
+    const validPinAnswers = (s.answers ?? []).filter((a: any) => {
       const parts = String(a.text ?? '').split(',');
       return Number.isFinite(Number(parts[0])) && Number.isFinite(Number(parts[1]));
-    }).length ?? 0;
+    });
+    // 2026-07-03 (Wolf 'nur bester Pin pro Team'): In Cozy Arena kollabiert der
+    // CozyGuessr-Reveal auf 1 Pin je Fraktion → die Cascade-Schritte müssen
+    // ebenfalls auf die Fraktions-Anzahl zählen, sonst tickt der Autoplay durch
+    // ~24 Phantom-Pins statt der ~8 sichtbaren.
+    const mapValidPinCount = (s as any).largeGroupMode
+      ? new Set(validPinAnswers
+          .map((a: any) => s.teams.find(t => t.id === a.teamId)?.avatarId)
+          .filter(Boolean)).size
+      : validPinAnswers.length;
     const mapMaxStep = 1 + mapValidPinCount + 1;
     const mapRevealInProgress = isMapReveal && (s.mapRevealStep ?? 0) < mapMaxStep;
 

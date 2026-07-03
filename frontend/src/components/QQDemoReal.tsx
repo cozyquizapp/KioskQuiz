@@ -13,19 +13,38 @@ import { AvatarSetProvider } from '../avatarSetContext';
 import { QuestionView } from './CozyQuizQuestionView';
 import { QuestionCard } from './CozyQuizTeamQuestionCard';
 import {
-  DemoKeyframes, ScaledScreen, ProjectedFX, BEAMER, PHONE,
+  DemoKeyframes, ScaledScreen, ProjectedFX, PHONE,
   buildState, TEAMS, ME, QUESTION, QUESTION2, GRID,
 } from './QQDemoShowcase';
 
 const EMPTY_BOARD = Array.from({ length: GRID }, () => Array(GRID).fill(-1));
+
+// Der echte Beamer rendert in einem FESTEN 1920×1080-Canvas (QQBeamerPage
+// STAGE_DESIGN_WIDTH/HEIGHT) mit container-type:size. Das Preview-Frame MUSS
+// dieselbe logische Groesse haben, sonst loesen die cqw/cqh-Units + die px-Floor-
+// Clamps (z.B. answer-card minHeight 280px) gegen einen halb so hohen Rahmen auf
+// → Titel oben abgeschnitten, Footer unten abgeschnitten. ScaledScreen skaliert
+// den 1920×1080-Rahmen danach nur noch visuell herunter.
+const BEAMER_R = { w: 1920, h: 1080 };
 
 type RealBeat = { ms: number; caption: string; state: QQStateUpdate; revealed: boolean };
 
 function buildRealBeats(): RealBeat[] {
   const active = (q: QQQuestion, answers: { teamId: string; text: string }[]) =>
     buildState({ board: EMPTY_BOARD, phase: 'QUESTION_ACTIVE', question: q, answers, correctTeamId: null });
-  const reveal = (q: QQQuestion, correct: string) =>
-    buildState({ board: EMPTY_BOARD, phase: 'QUESTION_REVEAL', question: q, answers: TEAMS.map(t => ({ teamId: t.id, text: '0' })), correctTeamId: correct, muchoRevealStep: 9 });
+  // Realistische Antwortzeiten fuer die Speed-Badges: buildState stempelt alle
+  // submittedAt auf denselben `now` → Badge zeigt 0.0s. Wir setzen t0 (Fragen-
+  // Start) via Timer-Feldern und staffeln die Abgaben, damit "Schnellster zuerst"
+  // echte Sekunden zeigt (2.1s / 3.4s / …), wie im echten Reveal.
+  const STAGGER_MS = [2100, 3400, 4900, 6700];
+  const reveal = (q: QQQuestion, correct: string) => {
+    const st = buildState({ board: EMPTY_BOARD, phase: 'QUESTION_REVEAL', question: q, answers: TEAMS.map(t => ({ teamId: t.id, text: '0' })), correctTeamId: correct, muchoRevealStep: 9 });
+    const t0 = st.serverTime;
+    st.timerDurationSec = 20;
+    st.timerEndsAt = t0 + 20000; // t0 = timerEndsAt - dur*1000 → Fragen-Start
+    st.answers = st.answers.map((a, idx) => ({ ...a, submittedAt: t0 + (STAGGER_MS[idx] ?? 3000) }));
+    return st;
+  };
   return [
     { ms: 5200, caption: 'Echte Frage-Ansicht — Beamer & Handy, live aus dem Quiz.', revealed: false, state: active(QUESTION, [{ teamId: 't0', text: '0' }]) },
     { ms: 5200, caption: 'Aufgelöst: die richtige Antwort leuchtet auf.', revealed: true, state: reveal(QUESTION, 't0') },
@@ -67,7 +86,7 @@ export function QQDemoReal() {
         >
           {/* Beamer — echte QuestionView */}
           <figure style={{ margin: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12, width: 'min(94vw, 720px)' }}>
-            <ScaledScreen logicalW={BEAMER.w} logicalH={BEAMER.h} radius={16} fit="width" overlay={<ProjectedFX radius={16} />}
+            <ScaledScreen logicalW={BEAMER_R.w} logicalH={BEAMER_R.h} radius={16} fit="width" overlay={<ProjectedFX radius={16} />}
               style={{ border: '1px solid rgba(255,255,255,0.10)', boxShadow: '0 40px 90px -28px rgba(0,0,0,0.8)' }}>
               <div key={`bv-${i}`} style={{ ...CQ, display: 'flex', animation: 'demoIn 0.5s ease both' }}>
                 <QuestionView state={cur.state} revealed={cur.revealed} hideCutouts={false} />

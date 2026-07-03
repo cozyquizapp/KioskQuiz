@@ -9886,10 +9886,38 @@ app.post('/api/qq/crashReport', (req, res) => {
       userAgent: b.userAgent ? String(b.userAgent).slice(0, 500) : null,
     };
     console.warn('[QQ CRASH]', entry.source, entry.kind, entry.message, entry.roomCode ?? '');
+    // Stack + Component-Stack mitloggen (erste Frames) — sonst steht der eigentliche
+    // Crash-Ort nur in qqCrashes.json und nicht in den Coolify-Logs.
+    if (entry.stack) console.warn('[QQ CRASH stack]', String(entry.stack).split('\n').slice(0, 4).join(' | '));
+    if (entry.componentStack) console.warn('[QQ CRASH component]', String(entry.componentStack).split('\n').slice(0, 4).join(' | '));
     appendQQCrash(entry);
     res.json({ ok: true });
   } catch (err) {
     console.error('QQ crashReport error:', err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+// Admin-Abruf der letzten Client-Crashes (inkl. Stack/componentStack), damit
+// minifizierte Prod-Crashes ohne Sentry-Login diagnostizierbar sind.
+// GET /api/qq/crashes?pin=XXXX[&q=startsWith][&limit=30]
+app.get('/api/qq/crashes', (req, res) => {
+  const pin = (req.query.pin as string) ?? req.headers?.['x-admin-pin'];
+  if (!pin || pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
+  try {
+    let list: QQCrashEntry[] = [];
+    if (fs.existsSync(qqCrashPath)) {
+      try { list = JSON.parse(fs.readFileSync(qqCrashPath, 'utf-8')); } catch { list = []; }
+    }
+    const q = req.query.q ? String(req.query.q).toLowerCase() : '';
+    if (q) list = list.filter(e =>
+      (e.message || '').toLowerCase().includes(q) ||
+      (e.stack || '').toLowerCase().includes(q) ||
+      (e.componentStack || '').toLowerCase().includes(q));
+    const limit = Math.min(200, Math.max(1, parseInt(String(req.query.limit || '30'), 10) || 30));
+    res.json({ ok: true, total: list.length, entries: list.slice(-limit).reverse() });
+  } catch (err) {
+    console.error('QQ crashes read error:', err);
     res.status(500).json({ ok: false });
   }
 });

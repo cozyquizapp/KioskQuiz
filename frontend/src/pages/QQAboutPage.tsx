@@ -155,37 +155,32 @@ export default function QQAboutPage() {
         .qq-about-page { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       `}</style>
 
-      {/* Screen-only Toolbar */}
+      {/* Screen-only Toolbar — bewusst dezent (kleine Export-Buttons oben rechts),
+          damit ein geteilter Link „nur" das Poster zeigt, nicht die Werkzeuge. */}
       <div className="qq-about-screen-only" style={{
-        maxWidth: '210mm', margin: '0 auto 18px', display: 'flex', gap: 12,
-        alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap',
+        maxWidth: '210mm', margin: '0 auto 10px', display: 'flex', gap: 8,
+        alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap',
       }}>
-        <div style={{ fontFamily: BODY, color: '#4b475e', fontSize: 14, fontWeight: 700, maxWidth: 460 }}>
-          One-Pager „Was ist CozyQuiz?" — direkt als Bild oder PDF herunterladen.
-        </div>
-        <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-          <button
-            onClick={downloadPdf}
-            disabled={!!busy}
-            style={{
-              background: `linear-gradient(135deg, ${PINK_MID}, ${PINK} 55%, ${MAGENTA})`,
-              color: '#fff', border: 'none', borderRadius: 999, padding: '12px 24px',
-              fontFamily: DISPLAY, fontWeight: 800, fontSize: 15.5,
-              cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'pdf' ? 0.55 : 1,
-              boxShadow: '0 8px 22px rgba(162,18,71,0.32)', whiteSpace: 'nowrap',
-            }}
-          >{busy === 'pdf' ? '⏳ Erstelle PDF…' : '📄 PDF herunterladen'}</button>
-          <button
-            onClick={downloadPng}
-            disabled={!!busy}
-            style={{
-              background: '#fff', color: MAGENTA, border: `2px solid ${PINK}`, borderRadius: 999,
-              padding: '12px 24px', fontFamily: DISPLAY, fontWeight: 800, fontSize: 15.5,
-              cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'png' ? 0.55 : 1,
-              whiteSpace: 'nowrap',
-            }}
-          >{busy === 'png' ? '⏳ Erstelle Bild…' : '🖼️ Als Bild (PNG)'}</button>
-        </div>
+        <button
+          onClick={downloadPdf}
+          disabled={!!busy}
+          title="Als PDF herunterladen"
+          style={{
+            background: 'rgba(255,255,255,0.85)', color: MAGENTA, border: '1px solid rgba(162,18,71,0.22)',
+            borderRadius: 999, padding: '7px 15px', fontFamily: BODY, fontWeight: 700, fontSize: 13,
+            cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'pdf' ? 0.5 : 0.92, whiteSpace: 'nowrap',
+          }}
+        >{busy === 'pdf' ? '⏳ PDF…' : '📄 PDF'}</button>
+        <button
+          onClick={downloadPng}
+          disabled={!!busy}
+          title="Als Bild (PNG) herunterladen"
+          style={{
+            background: 'rgba(255,255,255,0.85)', color: MAGENTA, border: '1px solid rgba(162,18,71,0.22)',
+            borderRadius: 999, padding: '7px 15px', fontFamily: BODY, fontWeight: 700, fontSize: 13,
+            cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'png' ? 0.5 : 0.92, whiteSpace: 'nowrap',
+          }}
+        >{busy === 'png' ? '⏳ Bild…' : '🖼️ Bild'}</button>
       </div>
 
       {/* A4-Poster */}
@@ -205,16 +200,16 @@ export default function QQAboutPage() {
           display: 'flex', alignItems: 'center', gap: 26,
           borderRadius: '0 0 44px 44px', boxShadow: `0 12px 28px ${PINK}44`,
         }}>
-          {/* Wolf im runden Sticker + kleine Sprechblase */}
+          {/* Wolf (cozywolf-PNG ist selbst ein rundes Badge → KEIN Extra-Ring,
+              sonst Doppel-Ring; nur weicher Schatten für Tiefe) + Sprechblase */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
-              width: 134, height: 134, borderRadius: '50%',
-              background: 'rgba(255,255,255,0.18)', border: '4px solid rgba(255,255,255,0.68)',
-              display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
-              boxShadow: '0 12px 26px rgba(0,0,0,0.24)',
+              width: 138, height: 138,
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              filter: 'drop-shadow(0 12px 22px rgba(0,0,0,0.30))',
             }}>
               <img src="/avatars/cozywolf/augenauf.mundauf.winken.png" alt="CozyWolf"
-                style={{ width: '96%', height: '96%', objectFit: 'contain' }} draggable={false} />
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} draggable={false} />
             </div>
             <div style={{
               position: 'absolute', top: -8, right: -26,
@@ -380,13 +375,12 @@ export default function QQAboutPage() {
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
             <div style={{
-              width: 66, height: 66, borderRadius: '50%', flexShrink: 0,
-              background: `linear-gradient(135deg, ${PINK}, ${MAGENTA})`,
-              display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
-              border: '3px solid rgba(255,255,255,0.5)', boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+              width: 72, height: 72, flexShrink: 0,
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+              filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.35))',
             }}>
               <img src="/avatars/cozywolf/augenauf.mundauf.daumen.png" alt="" draggable={false}
-                style={{ width: '96%', height: '96%', objectFit: 'contain' }} />
+                style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
               <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 27, lineHeight: 1.04 }}>

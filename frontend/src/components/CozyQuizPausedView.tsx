@@ -187,18 +187,18 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // (2x2 oder 4-in-a-row), Cap (max 2 pro Team, 1 pro Runde), Faehigkeiten
     // pro Runde (Klauen R2, Stapeln R3), Bunte Tuete als Surprise-Slot.
     // 2026-07-02 (Cozy Universe): Cozy Arena hat kein Brett/keine Joker — eigene
-    // 4 Mini-Cards (Tier-Fraktionen mit Wappen, Punkte, Tempo/Trefferquote).
+    // 4 Mini-Cards (Konzept-Fraktionen mit Wappen, Punkte, Tempo/Trefferquote).
     const howItems = largeGroup
       ? (de
         ? [
             { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Handy spielt mit — mehrere Handys pro Fraktion.' },
-            { icon: '🛡️', title: 'Tier-Fraktionen', desc: 'Ihr gehört zu einer von 8 Fraktionen — mit eigenem Wappen & Motto.' },
+            { icon: '🛡️', title: 'Fraktionen', desc: 'Ihr gehört zu einer von 8 Fraktionen — mit eigenem Wappen & Motto.' },
             { icon: '🎯', title: 'Punkte sammeln', desc: 'Jede richtige Antwort bringt Punkte für eure Fraktion. Kein Brett, keine Felder.' },
             { icon: '⚡', title: 'Tempo & Treffer', desc: 'Je schneller richtig, desto mehr Punkte. Die Trefferquote hält es fair.' },
           ]
         : [
             { icon: '📱', title: 'On your phone', desc: 'Every phone plays — several phones per faction.' },
-            { icon: '🛡️', title: 'Animal factions', desc: 'You belong to one of 8 factions — each with its own crest & motto.' },
+            { icon: '🛡️', title: 'Factions', desc: 'You belong to one of 8 factions — each with its own crest & motto.' },
             { icon: '🎯', title: 'Collect points', desc: 'Every correct answer scores points for your faction. No grid, no tiles.' },
             { icon: '⚡', title: 'Speed & accuracy', desc: 'Faster correct = more points. Hit-rate keeps it fair across factions.' },
           ])

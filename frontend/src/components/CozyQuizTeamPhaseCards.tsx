@@ -23,7 +23,7 @@ import {
   QQStateUpdate, QQTeam, qqGetAvatar,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
-import { QQ_CAT_ACCENT } from '../qqShared';
+import { QQ_CAT_ACCENT, qqSortedGroups } from '../qqShared';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
@@ -288,8 +288,13 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   const isFirstOfRound = questionInPhase === 1;
   const showRules    = isFirstOfRound && s.introStep === 1;
   const showCategory = !isFirstOfRound || s.introStep >= 2;
+  // 2026-07-03 (Wolf-Audit): Cozy Arena hat kein Grid → keine „Erobert/Klaut/
+  // Stapelt"-Runden-Regel. Punkte-Copy statt Grid-Mechanik.
+  const largeMode = !!(s as any).largeGroupMode;
   const phaseName = names[lang][s.gamePhaseIndex];
-  const phaseDesc = descs[lang][s.gamePhaseIndex];
+  const phaseDesc = largeMode
+    ? (lang === 'de' ? 'Sammelt Punkte für eure Fraktion!' : 'Score points for your faction!')
+    : descs[lang][s.gamePhaseIndex];
 
   const cat = s.currentQuestion?.category;
   const catInfo = cat ? QQ_CATEGORY_LABELS[cat] : undefined;
@@ -333,14 +338,16 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
               3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock tile + 1 extra pt'] },
               4: { emoji: '🏯', de: ['Quiz-Buddy-Punkte', 'danach Stapel-Bonus im Finale'], en: ['Quiz buddy points', 'stack-bonus finale follows'] },
             };
-            const r = RULES[s.gamePhaseIndex] ?? RULES[3];
+            const r = largeMode
+              ? { emoji: '⚡', de: ['Schnell & richtig', 'Je mehr Handys richtig — und je schneller — desto mehr Punkte'], en: ['Fast & correct', 'More phones right — and faster — means more points'] }
+              : (RULES[s.gamePhaseIndex] ?? RULES[3]);
             return (
               <>
                 <div style={{ fontSize: 13, fontWeight: 900, color, letterSpacing: '0.04em', marginBottom: 6 }}>
                   {phaseName}
                 </div>
                 <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44 }}>
-                  {s.gamePhaseIndex === 3 ? (
+                  {largeMode ? r.emoji : s.gamePhaseIndex === 3 ? (
                     <QQIcon slug="marker-sanduhr" size={44} alt="Bann" />
                   ) : s.gamePhaseIndex === 4 ? (
                     <QQIcon slug="marker-swap" size={44} alt="Swap" />
@@ -465,9 +472,17 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
 // ── PausedCard ───────────────────────────────────────────────────────────────
 export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
   const de = lang === 'de';
-  const sorted = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
-  const myTeam = s.teams.find(t => t.id === myTeamId);
-  const myRank = sorted.findIndex(t => t.id === myTeamId) + 1;
+  // 2026-07-03 (Wolf-Audit): Cozy Arena zeigt Fraktions-Standings nach Punkten,
+  // nicht Grid-„Felder". qqSortedGroups summiert Sub-Teams je Fraktion.
+  const largeMode = !!(s as any).largeGroupMode;
+  const sorted = largeMode ? qqSortedGroups(s) : [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+  const myRaw = s.teams.find(t => t.id === myTeamId);
+  const myTeam = largeMode ? sorted.find(t => t.avatarId === myRaw?.avatarId) : myRaw;
+  const myRank = sorted.findIndex(t => t.id === myTeam?.id) + 1;
+  const scoreOf = (t: QQTeam) => largeMode ? (t.largestConnected ?? 0) : (t.totalCells ?? 0);
+  const unitLabel = (n: number) => largeMode
+    ? (de ? (n === 1 ? 'Punkt' : 'Punkte') : (n === 1 ? 'pt' : 'pts'))
+    : (de ? (n === 1 ? 'Feld' : 'Felder') : (n === 1 ? 'cell' : 'cells'));
 
   return (
     <CozyCard>
@@ -488,7 +503,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
               #{myRank}
             </div>
             <div style={{ fontSize: 16, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-              {myTeam.totalCells} {de ? (myTeam.totalCells === 1 ? 'Feld' : 'Felder') : (myTeam.totalCells === 1 ? 'cell' : 'cells')}
+              {scoreOf(myTeam)} {unitLabel(scoreOf(myTeam))}
             </div>
           </div>
         )}
@@ -504,7 +519,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
                 {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
               </span>
               <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: QQ_COLORS.brandPink }}>{t.totalCells}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: QQ_COLORS.brandPink }}>{scoreOf(t)}</span>
             </div>
           ))}
         </div>

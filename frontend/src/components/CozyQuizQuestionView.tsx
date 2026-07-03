@@ -1999,33 +1999,70 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           }
                         : { color: 'rgba(226,232,240,0.85)' }),
                     }}>
-                      {`${s.answers.length}/${s.teams.length} Teams`}
+                      {(s as any).nestedTeams
+                        ? `${s.answers.length}/${s.teams.length} Abgaben`
+                        : `${s.answers.length}/${s.teams.length} Teams`}
                     </span>
                   </div>
                 )}
-                {s.teams.map(tm => {
-                  const answered = s.answers.some(a => a.teamId === tm.id);
-                  // 2026-05-25 (Wolf 'gap-separator zwischen team farbe und
-                  // grün, wie bei final betting'): Wrapper-Padding mit
-                  // light-green BG statt direct boxShadow am Avatar — klappt
-                  // auch bei gruenen Teams sauber.
-                  return (
-                    <div key={tm.id} style={{
-                      position: 'relative',
-                      padding: 5, borderRadius: '50%',
-                      display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                      flexShrink: 0,
-                      background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
-                      border: answered ? '3px solid #22C55E' : '3px solid transparent',
-                      boxShadow: answered ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
-                      opacity: answered ? 1 : 0.55,
-                      filter: answered ? 'none' : 'grayscale(0.4)',
-                      transition: 'all 0.45s ease',
-                    }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
-                    </div>
-                  );
-                })}
+                {(() => {
+                  // 2026-07-03 (Wolf-Audit): In Cozy Arena (nestedTeams) NICHT 25
+                  // Sub-Team-Avatare zeigen — auf 8 Fraktions-Wappen mit x/n-Badge
+                  // gruppieren (wie die normale Footer-Reihe). Normal-Modus unverändert.
+                  const nested = !!(s as any).nestedTeams;
+                  if (nested) {
+                    const groups = new Map<string, { rep: typeof s.teams[number]; total: number; answered: number }>();
+                    const order: string[] = [];
+                    for (const tm of s.teams) {
+                      let g = groups.get(tm.avatarId);
+                      if (!g) { g = { rep: tm, total: 0, answered: 0 }; groups.set(tm.avatarId, g); order.push(tm.avatarId); }
+                      g.total++;
+                      if (s.answers.some(a => a.teamId === tm.id)) g.answered++;
+                    }
+                    return order.map(id => {
+                      const g = groups.get(id)!;
+                      const done = g.answered >= g.total;
+                      const some = g.answered > 0;
+                      return (
+                        <div key={id} style={{
+                          position: 'relative', padding: 5, borderRadius: '50%',
+                          display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+                          background: done ? 'rgba(34,197,94,0.18)' : 'transparent',
+                          border: done ? '3px solid #22C55E' : some ? '3px solid rgba(34,197,94,0.45)' : '3px solid transparent',
+                          opacity: some ? 1 : 0.55, filter: some ? 'none' : 'grayscale(0.4)',
+                          transition: 'all 0.45s ease',
+                        }}>
+                          <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={g.rep.emoji} size={av} />
+                          <div style={{
+                            position: 'absolute', bottom: -2, right: -2, minWidth: 22, height: 22, padding: '0 5px',
+                            borderRadius: 999, background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
+                            border: '2px solid rgba(255,255,255,0.18)', color: '#fff', fontSize: 12, fontWeight: 900,
+                            display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+                          }}>{g.answered}/{g.total}</div>
+                        </div>
+                      );
+                    });
+                  }
+                  return s.teams.map(tm => {
+                    const answered = s.answers.some(a => a.teamId === tm.id);
+                    return (
+                      <div key={tm.id} style={{
+                        position: 'relative',
+                        padding: 5, borderRadius: '50%',
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                        background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
+                        border: answered ? '3px solid #22C55E' : '3px solid transparent',
+                        boxShadow: answered ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
+                        opacity: answered ? 1 : 0.55,
+                        filter: answered ? 'none' : 'grayscale(0.4)',
+                        transition: 'all 0.45s ease',
+                      }}>
+                        <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
+                      </div>
+                    );
+                  });
+                })()}
               </div>
             );
           })()}

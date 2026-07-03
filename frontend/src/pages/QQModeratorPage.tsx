@@ -2523,7 +2523,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                       <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                         <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexWrap: 'wrap' }}>
                           <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:startPlacement', { roomCode })} hotkey="Space">
-                            <QQEmojiIcon emoji="📍"/> Felder setzen
+                            {(s as any).largeGroupMode
+                              ? <><QQEmojiIcon emoji="📊"/> Wertung &amp; Standings</>
+                              : <><QQEmojiIcon emoji="📍"/> Felder setzen</>}
                           </PrimaryBtn>
                           <Btn small color={QQ_COLORS.slate600} onClick={() => {
                             if (confirm(`Gewinner ${winnerTeam?.name ?? 'Team'} zurücknehmen?`)) {
@@ -3362,7 +3364,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </div>
 
             {/* Grid — collapsible */}
-            {s.grid && <CollapsibleGrid state={s} />}
+            {/* 2026-07-03 (Wolf-Audit): Backend baut room.grid immer → in Cozy Arena
+                zeigte die Mini-Grid ein bedeutungsloses Gitter. In Arena ausblenden. */}
+            {!(s as any).largeGroupMode && s.grid && <CollapsibleGrid state={s} />}
 
             {/* Rangliste — 2026-05-08: collapsible, default-collapsed während
                 QUESTION_ACTIVE/REVEAL (Mod sieht nur Header), default-offen

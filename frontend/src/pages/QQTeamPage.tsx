@@ -538,6 +538,24 @@ export default function QQTeamPage() {
   // setId ist oben schon deklariert; Provider-Branches nutzen ihn.
 
   if (!joined) {
+    // 2026-07-03 (Wolf 'hard reload zeigt ~1s cozy-animals'): solange der erste
+    // qq:stateUpdate noch nicht da ist, kennen wir das Format (largeGroupMode)
+    // NICHT → NICHT den Default-Avatar-Setup (cozy-animals) raten, sonst blitzt
+    // ~1s das falsche Set auf, bis Cozy Arena greift. Bis State da ist: neutraler
+    // Branded-Screen (zeigt auch den Verbindungs-Status beim Aufwachen).
+    if (!state) {
+      return (
+        <AvatarSetProvider value={setId}>
+          <PreparingScreen
+            roomCode={roomCode}
+            connected={connected}
+            lang={lang}
+            onFlagClick={handleFlagClick}
+            flagFlip={flagFlip}
+          />
+        </AvatarSetProvider>
+      );
+    }
     // 2026-05-06 (Wolf 'kannst du waehrend ein quiz laeuft die lobby in
     // team mit avatar editor und namensgebung ausstellen, sowas wie das
     // quiz laeuft schon — nur fuer reconnect die option mit wieder

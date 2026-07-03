@@ -2,7 +2,7 @@ import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'rea
 import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
-import { crestEmblemSrc } from '../cozyArenaCrests';
+import { isCrestSlug, crestEmblemSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
 
@@ -292,6 +292,28 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
   style?: CSSProperties;
 }) {
   const fontSizeStr = typeof fontSize === 'number' ? `${fontSize}px` : fontSize;
+  // Cozy-Arena-Wappen-Slug → freigestelltes Emblem (cremes Symbol). Inline
+  // sitzt es meist auf einer farbigen Disc → Emblem statt volles Wappen. Ohne
+  // diesen Zweig würde der Slug als Text-Glyph gerendert (Wolf 2026-07-03:
+  // „ovis"/„spr"/„sik" in den Discs = abgeschnittener Slug-Text).
+  if (isCrestSlug(emoji)) {
+    return (
+      <img
+        src={crestEmblemSrc(emoji)}
+        alt={crestLabel(emoji)}
+        draggable={false}
+        style={{
+          width: '1.05em',
+          height: '1.05em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
   // cozy3d: „Emoji" ist in Wahrheit ein Avatar-Slug → 3D-Bild (statisch, Ruhe=offen).
   // Blinzeln laeuft nur ueber QQTeamAvatar (grosse Avatare); Inline-Render bleibt ruhig.
   if (isCozy3dSlug(emoji)) {

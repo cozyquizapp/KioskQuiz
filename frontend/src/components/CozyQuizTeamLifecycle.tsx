@@ -261,6 +261,96 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
   );
 }
 
+// ── PreparingScreen ─────────────────────────────────────────────────────────
+// 2026-07-03 (Wolf): bevor der Moderator das Format wählt (formatSelected===false)
+// weiß /team noch nicht, ob es CozyQuiz (freie Avatar-Wahl) oder Cozy Arena
+// (feste Fraktionen/Wappen) wird — deshalb KEIN Avatar-Setup zeigen, sondern
+// „Quiz wird vorbereitet". Sobald der Mod wählt, schaltet /team automatisch
+// auf den passenden Join-Flow um (Re-Render über State-Update).
+export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick, flagFlip }: {
+  roomCode: string; connected: boolean; lang?: 'de' | 'en';
+  onFlagClick: () => void; flagFlip: boolean;
+}) {
+  return (
+    <div style={darkPage}>
+      <style>{TEAM_CSS}</style>
+      <div style={grainOverlay} />
+      <MobileFireflies color="#F9A8D444" />
+      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+        {/* Sprache-Flag oben rechts */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
+          <button
+            onClick={onFlagClick}
+            style={{
+              border: 'none', background: 'transparent', cursor: 'pointer',
+              fontSize: 28, padding: 6, borderRadius: 999,
+              transition: 'transform 0.2s ease',
+              transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0)',
+            }}
+            aria-label="language"
+            title={lang === 'de' ? 'Sprache wechseln' : 'Switch language'}
+          >
+            {lang === 'de' ? '🇩🇪' : '🇬🇧'}
+          </button>
+        </div>
+
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <div style={{ fontSize: 52, marginBottom: 10, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>✨</div>
+          <div style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9', letterSpacing: '0.04em' }}>COZYQUIZ</div>
+          <div style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: '#64748b', margin: '8px 0' }}>
+            {lang === 'de' ? 'Raum' : 'Room'}: {roomCode}
+          </div>
+        </div>
+
+        {/* „Wird vorbereitet"-Card */}
+        <div style={{
+          background: COZY_CARD_BG, borderRadius: 24, padding: '30px 22px',
+          border: '1px solid rgba(255,255,255,0.08)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
+        }}>
+          <div style={{ display: 'flex', gap: 7 }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{
+                width: 12, height: 12, borderRadius: '50%',
+                background: '#F9A8D4',
+                animation: `tcpulse 1.4s ease-in-out ${i * 0.2}s infinite`,
+              }} />
+            ))}
+          </div>
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#F1F5F9', textAlign: 'center', lineHeight: 1.2 }}>
+            {lang === 'de' ? 'Quiz wird vorbereitet …' : 'Preparing the quiz …'}
+          </div>
+          <div style={{ fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 1.5 }}>
+            {lang === 'de'
+              ? 'Gleich geht’s los! Sobald alles startklar ist, kannst du hier deinem Team beitreten. Bitte kurz warten.'
+              : 'Almost there! As soon as everything’s ready, you can join your team here. Please wait a moment.'}
+          </div>
+        </div>
+
+        {/* Verbindungs-Status */}
+        <div style={{
+          textAlign: 'center', marginTop: 20,
+          fontSize: 13, fontWeight: 700,
+          color: connected ? '#22C55E' : '#EF4444',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
+        }}>
+          <div style={{
+            width: 8, height: 8, borderRadius: '50%',
+            background: connected ? '#22C55E' : '#EF4444',
+            boxShadow: connected ? '0 0 6px #22C55E' : '0 0 6px #EF4444',
+            animation: 'tcpulse 1.5s infinite',
+          }} />
+          {connected
+            ? (lang === 'de' ? 'Verbunden' : 'Connected')
+            : (lang === 'de' ? 'Verbinde…' : 'Connecting…')}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── WaitingScreen ──────────────────────────────────────────────────────────
 // 2026-05-06 (Wolf 'kein autoconnect, leerer Screen'): nach 8s ohne State
 // bieten wir einen manuellen Reload-Button + Hinweis. Backend wacht aus dem

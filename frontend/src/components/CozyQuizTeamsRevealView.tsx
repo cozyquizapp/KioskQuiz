@@ -17,6 +17,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
 import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
+import { isCrestSlug, crestEmblemSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
@@ -443,6 +444,13 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
             return <img src={cozy3dSrc(t.emoji)} alt={cozy3dLabel(t.emoji)} draggable={false}
               style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
+          // Cozy-Arena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
+          // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case
+          // darunter → abgeschnittener Slug-Text in der Disc (Wolf 2026-07-03).
+          if (isCrestSlug(t.emoji)) {
+            return <img src={crestEmblemSrc(t.emoji)} alt={crestLabel(t.emoji)} draggable={false}
+              style={{ width: '78%', height: '78%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+          }
           if (t.emoji) return <>{t.emoji}</>;
           return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;
         };
@@ -496,7 +504,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          overflow: isCozy3dSlug(t.emoji) ? 'visible' : 'hidden',
+                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji)) ? 'visible' : 'hidden',
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>

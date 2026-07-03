@@ -739,9 +739,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                „X/3"-Pill + kleine Sub-Team-Namen-Chips. */
             <div style={{
               display: 'grid',
-              // 2026-07-02 (Wolf): festes 4×2-Raster für die 8 Gruppen (statt
-              // auto-fill 2×4) — 4 Spalten, 2 Reihen, breite Karten für volle Namen.
-              gridTemplateColumns: 'repeat(4, 1fr)',
+              // 2026-07-03 (Wolf): 2 Spalten × 4 Reihen (statt 4×2) — größere,
+              // breitere Karten, Namen sitzen mit viel Luft, Wappen prominenter.
+              gridTemplateColumns: 'repeat(2, 1fr)',
               gap: 'clamp(10px, 1.2cqw, 18px)',
             }}>
               {nestedGroups.map((g, i) => (

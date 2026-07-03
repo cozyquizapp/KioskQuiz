@@ -49,7 +49,7 @@ import {
 } from '../components/CozyQuizTeamActionCards';
 import { TeamBottomSheetMenu } from '../components/CozyQuizTeamBottomSheet';
 import {
-  IdentityBanner, YourTurnAlert, MidGameRejoinView, WaitingScreen,
+  IdentityBanner, YourTurnAlert, MidGameRejoinView, WaitingScreen, PreparingScreen,
 } from '../components/CozyQuizTeamLifecycle';
 import {
   TEAM_CSS, darkPage, grainOverlay, COZY_CARD_BG,
@@ -516,6 +516,24 @@ export default function QQTeamPage() {
             lang={lang}
             existingTeam={existingTeamInRoom}
             onResume={handleResume}
+            onFlagClick={handleFlagClick}
+            flagFlip={flagFlip}
+          />
+        </AvatarSetProvider>
+      );
+    }
+    // 2026-07-03 (Wolf): Vor der Format-Wahl (Mod hat CozyQuiz/Cozy Arena noch
+    // nicht gewählt → formatSelected===false) ist unklar, ob freie Avatare
+    // (CozyQuiz) oder feste Fraktionen/Wappen (Cozy Arena) gelten. Kein
+    // Avatar-Setup zeigen, sondern „wird vorbereitet". `=== false` explizit →
+    // Legacy-Backend (undefined) verhält sich unverändert (deploy-sicher).
+    if (state && (state as any).formatSelected === false) {
+      return (
+        <AvatarSetProvider value={setId} emojis={state.avatarSetEmojis}>
+          <PreparingScreen
+            roomCode={roomCode}
+            connected={connected}
+            lang={lang}
             onFlagClick={handleFlagClick}
             flagFlip={flagFlip}
           />

@@ -24,7 +24,7 @@
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
-import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName } from '../../../shared/quarterQuizTypes';
+import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion } from '../qqTheme';
 import { SkinDeco } from './SkinDeco';
@@ -2667,6 +2667,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const t0 = s.timerEndsAt && s.timerDurationSec
                 ? s.timerEndsAt - s.timerDurationSec * 1000
                 : correctTeams[0]?.submittedAt;
+              // Cozy Arena: bis zu 24 Sub-Team-Avatare → auf 8 Fraktionen bündeln.
+              // Vertreter je Fraktion = schnellstes richtiges Handy (correctTeams
+              // ist nach submittedAt sortiert → erster Treffer je avatarId), + ×Zähler.
+              // Optik (schnellster groß + Zeit-Pillen + Cascade) bleibt erhalten.
+              const correctDisplay: Array<{ team: (typeof correctTeams)[number]['team']; submittedAt: number; count: number }> =
+                isMegaTeams
+                  ? (() => {
+                      const byAv = new Map<string, { team: (typeof correctTeams)[number]['team']; submittedAt: number; count: number }>();
+                      for (const ct of correctTeams) {
+                        const ex = byAv.get(ct.team.avatarId);
+                        if (ex) ex.count++;
+                        else byAv.set(ct.team.avatarId, { team: ct.team, submittedAt: ct.submittedAt, count: 1 });
+                      }
+                      return [...byAv.values()].sort((a, b) => a.submittedAt - b.submittedAt);
+                    })()
+                  : correctTeams.map(ct => ({ team: ct.team, submittedAt: ct.submittedAt, count: 1 }));
               return (
                 <div style={{
                   position: 'relative', overflow: 'hidden',
@@ -2705,7 +2721,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   }}>
                     {formatRevealedAnswer(lang, s.revealedAnswer ?? q.answer, q.answerEn)}
                   </span>
-                  {correctTeams.length > 0 && (
+                  {correctDisplay.length > 0 && (
                     <div style={{
                       display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
                       gap: 12, flexWrap: 'wrap',
@@ -2714,7 +2730,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       // Bei CHEESE vor Step 2: Platz reserviert, Inhalt unsichtbar — verhindert Card-Dehnung
                       visibility: (q.category === 'CHEESE' && !cheeseShowAvatars) ? 'hidden' : 'visible',
                     }}>
-                      {correctTeams.map((ct, vi) => {
+                      {correctDisplay.map((ct, vi) => {
                         const timeSec = t0 ? Math.max(0, (ct.submittedAt - t0) / 1000) : null;
                         const isFastest = vi === 0;
                         // CHEESE: 850ms-Stagger pro Avatar synchron zur Pentatonik-
@@ -2725,6 +2741,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         const avatarAnim = isCheeseCascade
                           ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${cascadeDelay}s both`
                           : `revealAnswerBam 0.5s var(--qq-ease-bounce) ${cascadeDelay}s both`;
+                        const avSize = isFastest ? 'clamp(78px, 8.6cqw, 116px)' : 'clamp(58px, 6.4cqw, 88px)';
                         return (
                           <div key={ct.team.id} style={{
                             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
@@ -2733,7 +2750,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             <div style={{ position: 'relative', display: 'inline-block' }}>
                               <QQTeamAvatar
                                 avatarId={ct.team.avatarId}
-                                size={isFastest ? 'clamp(78px, 8.6cqw, 116px)' : 'clamp(58px, 6.4cqw, 88px)'}
+                                teamEmoji={isMegaTeams ? qqMegaFactionSlug(ct.team.avatarId) : undefined}
+                                size={avSize}
                                 style={{
                                   border: isFastest ? '4px solid var(--qq-accent)' : 'none',
                                   boxShadow: isFastest
@@ -2741,6 +2759,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                     : '0 4px 12px rgba(0,0,0,0.4)',
                                 }}
                               />
+                              {/* Cozy Arena: wie viele Handys dieser Fraktion richtig lagen */}
+                              {ct.count > 1 && (
+                                <span style={{
+                                  position: 'absolute', right: -6, bottom: -6, minWidth: 22, height: 22, padding: '0 5px',
+                                  borderRadius: 11, background: '#0A0814', border: `2px solid ${ct.team.color}`,
+                                  color: '#fff', fontSize: 13, fontWeight: 900, lineHeight: 1,
+                                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                  fontVariantNumeric: 'tabular-nums',
+                                }}>×{ct.count}</span>
+                              )}
                             </div>
                             {timeSec != null && (
                               <span style={{

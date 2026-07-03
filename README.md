@@ -15,6 +15,12 @@
 4. **Beim Code-Editieren**: nur `frontend/src/pages/QQ*.tsx` und `backend/src/quarterQuiz/` anfassen.
    Cozy 60 + Gouache + Lab-Pages wurden 2026-05-07 komplett geloescht (siehe „Cleanup" unten).
 
+### 📦 Wo die Quiz-Drafts liegen
+- **Repo-Quelle:** `backend/src/data/cozyQuizDrafts.json` (JSON-Array von Draft-Objekten).
+- **Seeding:** beim Backend-Start **idempotent** nach MongoDB via `seedRepoDraftsToDb()` (`backend/src/server.ts`) — vorhandene DB-Records werden NICHT überschrieben (Builder-Edits bleiben).
+- **⚠️ Repo ≠ Live-DB:** aus dem Code sieht man nur die Repo-Drafts (aktuell 2). Was im Builder live angelegt wurde, liegt nur in der Mongo. Enumerieren: `GET /api/studio/cozy60`.
+- **„Cozy Arena" ist kein Draft-Flag**, sondern die Raum-Einstellung `largeGroupMode`. Der Wizard blendet nur HotPotato-Drafts im Arena-Modus aus (HotPotato = für Arena gestrichen).
+
 ---
 
 ## Aktiver Block

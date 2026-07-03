@@ -272,6 +272,19 @@ export default function QQTeamPage() {
     if (!connected && joined) setJoined(false);
   }, [connected]);
 
+  // 2026-07-03 (Wolf 'bei beamer klappts, bei team nicht'): /team muss den Raum
+  // schon VOR dem Team-Join abonnieren — sonst kommt kein qq:stateUpdate an und
+  // `state` bleibt null. Folge: PreparingScreen-Gate (setupDone) und Fraktions-
+  // Bindung (largeGroupMode) feuern nie, weil beide `state` voraussetzen. Der
+  // Beamer subscribed genau so via qq:joinBeamer (read-only socket.join, setzt
+  // KEINE Team-Daten, ist bereits als Public-Event whitelisted). Idempotent zum
+  // späteren qq:joinTeam (socket.join im selben Raum). Rein Frontend, kein
+  // Backend-Redeploy nötig.
+  useEffect(() => {
+    if (!connected) return;
+    emit('qq:joinBeamer', { roomCode });
+  }, [connected]);
+
   // Auto-rejoin if we have a stored session — aber nicht wenn wir gerade
   // gekickt wurden (sonst rejoint man sich endlos selbst zurueck).
   useEffect(() => {

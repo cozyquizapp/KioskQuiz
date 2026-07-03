@@ -289,6 +289,22 @@ export default function QQTeamPage() {
   // gekickt wurden (sonst rejoint man sich endlos selbst zurueck).
   useEffect(() => {
     if (joined || !connected || kicked) return;
+    // Cozy Arena: Auto-Rejoin darf NICHT den stale Funny-Namen aus localStorage
+    // nehmen (Push „Willkommen Hirnsturm"). Name + Emoji sind an die Fraktion
+    // gebunden → erzwingen. Erst joinen wenn State da ist, damit largeGroupMode
+    // sicher bekannt ist (sonst Race: State noch null → Funny-Name).
+    const largeGroup = !!(state as any)?.largeGroupMode;
+    if (largeGroup) {
+      if (!state) return; // auf State warten
+      const storedName = localStorage.getItem('qq_teamName');
+      if (!storedName) return; // kein Rejoin-Kandidat → Fraktions-Grid zeigen
+      emit('qq:joinTeam', {
+        roomCode, teamId,
+        teamName: qqMegaFactionName(avatarId, lang),
+        avatarId, emoji: qqMegaFactionSlug(avatarId),
+      }).then((ack: any) => { if (ack.ok) setJoined(true); });
+      return;
+    }
     const storedName = localStorage.getItem('qq_teamName');
     if (storedName) {
       // 2026-05-04 (Wolf): Emoji bei Auto-Rejoin mitsenden — sonst zeigt
@@ -299,7 +315,7 @@ export default function QQTeamPage() {
         if (ack.ok) setJoined(true);
       });
     }
-  }, [connected, kicked]);
+  }, [connected, kicked, (state as any)?.largeGroupMode]);
 
   // 2026-05-04 (Wolf): Kick-Detection — wenn wir 'joined' waren und im
   // Lobby-State plötzlich nicht mehr in s.teams stehen, wurden wir gekickt.

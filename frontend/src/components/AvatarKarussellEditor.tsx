@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS, qqMegaFactionSlug, qqMegaFactionName, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
+import { crestSrc } from '../cozyArenaCrests';
 
 type Props = {
   avatarId: string;
@@ -143,6 +144,107 @@ export function AvatarKarussellEditor({
             : 'Join the next CozyQuiz! See you soon.'}
         </div>
       </div>
+    );
+  }
+
+  // ── Cozy Arena: Fraktions-Grid statt Karussell ─────────────────────────────
+  // Wolf 2026-07-03: „wäre es bei der Fraktionsauswahl besser alle auf einmal zu
+  // sehen?" — Ja. 8 feste Fraktionen = Roster, kein Blätter-Katalog. Alle Wappen
+  // auf einen Blick, Tap wählt, gewählte leuchtet + Slogan drunter. Wappen (Schild)
+  // ist hier goldrichtig — der eine Heraldik-Moment ohne konkurrierende Farbscheibe.
+  if (factionMode) {
+    const selName = qqMegaFactionName(avatarId, lang);
+    const selMotto = qqMegaFactionMotto(avatarId, lang);
+    return (
+      <>
+        <style>{`
+          @keyframes qqFacSel { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-3px); } }
+        `}</style>
+        <div style={{
+          display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10,
+          marginBottom: 14,
+        }}>
+          {QQ_AVATARS.map(av => {
+            const slug = qqMegaFactionSlug(av.id);
+            if (!slug) return null;
+            const sel = av.id === avatarId;
+            const col = av.color;
+            return (
+              <button
+                key={av.id}
+                type="button"
+                onClick={() => {
+                  if (av.id === avatarId) return;
+                  buzz();
+                  setAvatarId(av.id);
+                }}
+                aria-label={qqMegaFactionName(av.id, lang)}
+                aria-pressed={sel}
+                style={{
+                  position: 'relative',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                  padding: '14px 8px 12px',
+                  borderRadius: 18,
+                  cursor: 'pointer', fontFamily: 'inherit',
+                  background: sel
+                    ? `linear-gradient(160deg, ${col}2e, ${col}10)`
+                    : 'rgba(255,255,255,0.03)',
+                  border: `2px solid ${sel ? col : 'rgba(255,255,255,0.09)'}`,
+                  boxShadow: sel ? `0 0 20px ${col}55, 0 6px 16px rgba(0,0,0,0.35)` : 'none',
+                  transform: sel ? 'scale(1.03)' : 'scale(1)',
+                  transition: 'all 0.2s ease',
+                }}
+              >
+                <img
+                  src={crestSrc(slug)}
+                  alt={qqMegaFactionName(av.id, lang)}
+                  draggable={false}
+                  style={{
+                    width: 'clamp(64px, 20vw, 88px)',
+                    height: 'clamp(64px, 20vw, 88px)',
+                    objectFit: 'contain',
+                    filter: sel
+                      ? `drop-shadow(0 4px 10px ${col}66)`
+                      : 'drop-shadow(0 3px 6px rgba(0,0,0,0.35))',
+                    opacity: sel ? 1 : 0.82,
+                    animation: sel ? 'qqFacSel 3s ease-in-out infinite' : 'none',
+                    transition: 'opacity 0.2s ease',
+                  }}
+                />
+                <span style={{
+                  fontSize: 13, fontWeight: 900, lineHeight: 1.1, textAlign: 'center',
+                  color: sel ? col : '#cbd5e1',
+                  letterSpacing: '0.01em',
+                  transition: 'color 0.2s ease',
+                }}>
+                  {qqMegaFactionName(av.id, lang)}
+                </span>
+                {sel && (
+                  <span aria-hidden style={{
+                    position: 'absolute', top: 7, right: 7,
+                    width: 18, height: 18, borderRadius: '50%',
+                    background: col, color: '#fff',
+                    fontSize: 12, fontWeight: 900, lineHeight: '18px', textAlign: 'center',
+                    boxShadow: `0 0 0 2px rgba(255,255,255,0.35) inset`,
+                  }}>✓</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        {/* Gewählte Fraktion: Name + Slogan (aus dem Grid gespiegelt, größer) */}
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <div style={{
+            fontSize: 22, fontWeight: 900,
+            color: QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#EAB308',
+            lineHeight: 1.1,
+          }}>{selName}</div>
+          <div style={{
+            fontSize: 13, fontWeight: 700, color: '#94a3b8',
+            fontStyle: 'italic', marginTop: 3,
+          }}>„{selMotto}“</div>
+        </div>
+      </>
     );
   }
 
@@ -312,27 +414,6 @@ export function AvatarKarussellEditor({
           style={arrowBtnStyle}
         >›</button>
       </div>
-
-      {/* Cozy Arena: Fraktionsname + Slogan unter dem Karussell — wechselt beim
-          Durchswipen mit (Wolf: „der name sollte bei der fraktion dabei stehen"). */}
-      {factionMode && (
-        <div style={{ textAlign: 'center', marginBottom: 14 }}>
-          <div style={{
-            fontSize: 25, fontWeight: 900, color: myColor,
-            letterSpacing: '0.01em', lineHeight: 1.1,
-            textShadow: `0 2px 12px ${myColor}55`,
-            transition: 'color 0.45s ease',
-          }}>
-            {qqMegaFactionName(avatarId, lang)}
-          </div>
-          <div style={{
-            fontSize: 13, fontWeight: 700, color: '#94a3b8',
-            fontStyle: 'italic', marginTop: 3,
-          }}>
-            „{qqMegaFactionMotto(avatarId, lang)}“
-          </div>
-        </div>
-      )}
 
       {/* 🎲 Random-Farbe-Button */}
       <button

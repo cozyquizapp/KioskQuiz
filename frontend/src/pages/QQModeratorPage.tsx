@@ -22,11 +22,24 @@ import { JokerIcon } from '../components/JokerIcon';
 import { playHotkeyFeedback } from '../utils/sounds';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { qqSortedGroups } from '../qqShared';
+import { AnimatedCozyWolf } from './QQBeamerPage';
 import { API_BASE } from '../api';
 import './qqModeratorTheme.css';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
 const QQ_ROOM = 'default';
+
+// Spotlight-Buehne (Moderator-Start): der animierte CozyWolf IST das Logo.
+// Periodischer Speaking-Puls laesst den Mund natuerlich „reden", damit die
+// Sprechblase „Bereit fuer deine Show?" lebendig wirkt (nicht statisch/sad).
+function FormatHeroWolf() {
+  const [speak, setSpeak] = useState(false);
+  useEffect(() => {
+    const id = setInterval(() => setSpeak(v => !v), 1600);
+    return () => clearInterval(id);
+  }, []);
+  return <AnimatedCozyWolf widthCss="clamp(140px, 20vw, 210px)" mode="daumen" speaking={speak} wink mirror />;
+}
 
 interface DraftSummary {
   id: string;
@@ -1816,67 +1829,80 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               Format-Wahl IST jetzt die Seite (Hero-Karten) statt in einem Wizard
               versteckt, den man ins Leere wegklickt. Karte klicken = Format setzen
               + geführten Wizard beim nächsten Schritt öffnen. */}
-          <div style={{ maxWidth: 720, margin: '4px auto 16px', textAlign: 'center' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
-              <span style={{ width: 54, height: 54, borderRadius: '50%', border: '3px solid #EC4899', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 22px rgba(236,72,153,0.4)', flexShrink: 0 }}>
-                <img src="/avatars/cozywolf/pink.png" alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain' }} />
-              </span>
-              <span style={{ fontSize: 26, fontWeight: 900, color: '#fff' }}>Bereit für deine Show?</span>
-            </div>
-            <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 800, letterSpacing: '0.05em' }}>
-              Wähle dein Format — der Rest wird Schritt für Schritt geführt.
-            </div>
-          </div>
+          {/* Spotlight-Buehne: warmer Ambient-Glow (Navy->Magenta) statt
+              schwarzem Void + grosser animierter CozyWolf mit persistenter
+              Sprechblase als Brand-Zentrum. Karten + Status liegen ueber dem
+              Glow (zIndex). Ersetzt den flachen 3-Button-Stack (Wolf 'sad'). */}
+          <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto 16px', padding: '12px 10px 4px', borderRadius: 28, overflow: 'hidden' }}>
+            {/* Ambient-Glow oben (pink/magenta Spotlight) + unten (Navy-Boden) */}
+            <div aria-hidden style={{ position: 'absolute', top: '-32%', left: '-12%', right: '-12%', height: 400, pointerEvents: 'none', zIndex: 0,
+              background: 'radial-gradient(58% 100% at 50% 0%, rgba(236,72,153,0.34), rgba(162,18,71,0.16) 46%, transparent 73%)' }} />
+            <div aria-hidden style={{ position: 'absolute', left: '-20%', right: '-20%', bottom: '-42%', height: 320, pointerEvents: 'none', zIndex: 0,
+              background: 'radial-gradient(50% 100% at 50% 100%, rgba(30,42,90,0.55), transparent 70%)' }} />
 
-          {/* Zwei Format-Hero-Karten */}
-          <div style={{ display: 'flex', gap: 16, maxWidth: 720, margin: '0 auto 16px', flexWrap: 'wrap' }}>
-            {[
-              { key: 'quiz', arena: false, emoji: '🍺', title: 'Cozy Quiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], accent: '#EC4899' },
-              { key: 'arena', arena: true, emoji: '🏟️', title: 'Cozy Arena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], accent: '#A78BFA' },
-            ].map(f => {
-              const active = (!!(s as any).largeGroupMode === f.arena) && !!(s as any).formatSelected;
-              return (
-                <button
-                  key={f.key}
-                  onClick={() => { emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true }); setShowWizard(true); }}
-                  style={{
-                    flex: '1 1 260px', textAlign: 'left', padding: '20px 22px', borderRadius: 18, cursor: 'pointer',
-                    border: `2px solid ${f.accent}${active ? '' : '66'}`,
-                    background: `linear-gradient(160deg, ${f.accent}22, ${f.accent}0a)`,
-                    color: '#fff', boxShadow: active ? `0 0 24px ${f.accent}55` : '0 6px 18px rgba(0,0,0,0.3)',
-                    transition: 'box-shadow 200ms ease, border-color 200ms ease',
-                  }}
-                >
-                  <div style={{ fontSize: 34, marginBottom: 6 }}>{f.emoji}</div>
-                  <div style={{ fontSize: 22, fontWeight: 900 }}>{f.title}</div>
-                  <div style={{ fontSize: 13, fontWeight: 800, color: f.accent, marginBottom: 10 }}>{f.sub}</div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                    {f.lines.map(l => <span key={l} style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 700 }}>· {l}</span>)}
-                  </div>
-                  <div style={{ marginTop: 14, fontSize: 13, fontWeight: 900, color: f.accent }}>Wählen &amp; einrichten →</div>
-                </button>
-              );
-            })}
-          </div>
+            {/* Wolf-Zentrum mit persistenter Sprechblase */}
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
+              <div style={{ position: 'relative', background: '#fff', color: '#1E2A5A', fontWeight: 900, fontSize: 'clamp(16px, 2.4vw, 22px)', padding: '9px 20px', borderRadius: 16, marginBottom: 4, boxShadow: '0 12px 30px -8px rgba(236,72,153,0.55)', border: '2px solid rgba(236,72,153,0.4)' }}>
+                Bereit für deine Show? <span style={{ marginLeft: 2 }}>🎬</span>
+                <span aria-hidden style={{ position: 'absolute', bottom: -8, left: '50%', width: 15, height: 15, transform: 'translateX(-50%) rotate(45deg)', background: '#fff', borderRight: '2px solid rgba(236,72,153,0.4)', borderBottom: '2px solid rgba(236,72,153,0.4)' }} />
+              </div>
+              <FormatHeroWolf />
+              <div style={{ fontSize: 13, color: '#c7d2e8', fontWeight: 800, letterSpacing: '0.03em', marginTop: 2, textAlign: 'center' }}>
+                Wähle dein Format — der Rest wird Schritt für Schritt geführt.
+              </div>
+            </div>
 
-          {/* Status-Zeile: Raum · Teams · Draft · Sprache */}
-          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap', maxWidth: 720, margin: '0 auto 18px' }}>
-            {[
-              { label: `Raum ${roomCode}`, ok: true },
-              { label: `${s.teams.length} Teams`, ok: s.teams.length > 0 },
-              { label: selectedDraftId ? `Draft: ${drafts.find(d => d.id === selectedDraftId)?.title ?? '✓'}` : 'Draft: —', ok: !!selectedDraftId },
-              { label: `Sprache ${(s.language || 'de').toUpperCase()}`, ok: true },
-            ].map(chip => (
-              <span key={chip.label} style={{
-                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999,
-                fontSize: 12, fontWeight: 800, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                background: chip.ok ? 'rgba(34,197,94,0.12)' : 'rgba(148,163,184,0.1)',
-                border: `1px solid ${chip.ok ? 'rgba(34,197,94,0.4)' : 'rgba(148,163,184,0.25)'}`,
-                color: chip.ok ? '#86efac' : '#94a3b8',
-              }}>
-                {chip.ok ? '✓' : '○'} {chip.label}
-              </span>
-            ))}
+            {/* Zwei Format-Hero-Karten */}
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 16, margin: '18px auto 14px', flexWrap: 'wrap' }}>
+              {[
+                { key: 'quiz', arena: false, emoji: '🍺', title: 'Cozy Quiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], accent: '#EC4899' },
+                { key: 'arena', arena: true, emoji: '🏟️', title: 'Cozy Arena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], accent: '#A78BFA' },
+              ].map(f => {
+                const active = (!!(s as any).largeGroupMode === f.arena) && !!(s as any).formatSelected;
+                return (
+                  <button
+                    key={f.key}
+                    className="qm-format-card"
+                    onClick={() => { emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true }); setShowWizard(true); }}
+                    style={{
+                      flex: '1 1 260px', textAlign: 'left', padding: '20px 22px 18px', borderRadius: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                      border: `2px solid ${f.accent}${active ? '' : '55'}`,
+                      background: `linear-gradient(158deg, ${f.accent}30, ${f.accent}10 55%, rgba(15,19,38,0.72))`,
+                      color: '#fff', boxShadow: active ? `0 14px 36px -10px ${f.accent}99, inset 0 0 0 1px ${f.accent}55` : '0 10px 26px -12px rgba(0,0,0,0.55)',
+                    }}
+                  >
+                    <div style={{ width: 52, height: 52, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 12, background: `${f.accent}2e`, border: `1.5px solid ${f.accent}66`, boxShadow: `0 6px 18px -6px ${f.accent}99` }}>{f.emoji}</div>
+                    <div style={{ fontSize: 22, fontWeight: 900 }}>{f.title}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: f.accent, marginBottom: 12 }}>{f.sub}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      {f.lines.map(l => <span key={l} style={{ fontSize: 13, color: '#d3dcec', fontWeight: 700, display: 'flex', gap: 7, alignItems: 'center' }}><span style={{ color: f.accent, fontWeight: 900 }}>▸</span>{l}</span>)}
+                    </div>
+                    <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 900, color: '#fff', background: f.accent, padding: '8px 14px', borderRadius: 999, boxShadow: `0 8px 20px -6px ${f.accent}` }}>Wählen &amp; einrichten →</div>
+                    {active && <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 12, fontWeight: 900, color: '#fff', background: f.accent, borderRadius: 999, padding: '3px 10px' }}>✓ aktiv</div>}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Status-Zeile: Raum · Teams · Draft · Sprache */}
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap', margin: '0 auto 4px' }}>
+              {[
+                { label: `Raum ${roomCode}`, ok: true },
+                { label: `${s.teams.length} Teams`, ok: s.teams.length > 0 },
+                { label: selectedDraftId ? `Draft: ${drafts.find(d => d.id === selectedDraftId)?.title ?? '✓'}` : 'Draft: —', ok: !!selectedDraftId },
+                { label: `Sprache ${(s.language || 'de').toUpperCase()}`, ok: true },
+              ].map(chip => (
+                <span key={chip.label} style={{
+                  display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999,
+                  fontSize: 12, fontWeight: 800, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                  background: chip.ok ? 'rgba(34,197,94,0.14)' : 'rgba(148,163,184,0.1)',
+                  border: `1px solid ${chip.ok ? 'rgba(34,197,94,0.4)' : 'rgba(148,163,184,0.25)'}`,
+                  color: chip.ok ? '#86efac' : '#94a3b8',
+                }}>
+                  {chip.ok ? '✓' : '○'} {chip.label}
+                </span>
+              ))}
+            </div>
           </div>
 
           {/* Sekundär: geführte Vorab-Planung (Material/Druck/Briefing/Technik) */}

@@ -391,8 +391,22 @@
   color: #EC4899;
 }
 
+/* ----- Format-Hero-Karten (Spotlight-Buehne, Moderator-Start) ---- */
+.qm-format-card {
+  transition: transform 180ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 220ms ease, border-color 220ms ease;
+  will-change: transform;
+}
+.qm-format-card:hover {
+  transform: translateY(-5px);
+}
+.qm-format-card:active {
+  transform: translateY(-1px) scale(0.99);
+}
+
 /* ----- Reduced motion ------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
   .qm-primary[data-pulse="true"] { animation: none; }
+  .qm-format-card { transition: none; }
+  .qm-format-card:hover { transform: none; }
 }

@@ -9,7 +9,7 @@
 // Ersetzt den alten 4×2-Avatar-Grid + separaten Emoji-Picker.
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { QQ_AVATARS, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionSlug, qqMegaFactionName, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 
@@ -313,6 +313,27 @@ export function AvatarKarussellEditor({
         >›</button>
       </div>
 
+      {/* Cozy Arena: Fraktionsname + Slogan unter dem Karussell — wechselt beim
+          Durchswipen mit (Wolf: „der name sollte bei der fraktion dabei stehen"). */}
+      {factionMode && (
+        <div style={{ textAlign: 'center', marginBottom: 14 }}>
+          <div style={{
+            fontSize: 25, fontWeight: 900, color: myColor,
+            letterSpacing: '0.01em', lineHeight: 1.1,
+            textShadow: `0 2px 12px ${myColor}55`,
+            transition: 'color 0.45s ease',
+          }}>
+            {qqMegaFactionName(avatarId, lang)}
+          </div>
+          <div style={{
+            fontSize: 13, fontWeight: 700, color: '#94a3b8',
+            fontStyle: 'italic', marginTop: 3,
+          }}>
+            „{qqMegaFactionMotto(avatarId, lang)}“
+          </div>
+        </div>
+      )}
+
       {/* 🎲 Random-Farbe-Button */}
       <button
         type="button"
@@ -333,7 +354,9 @@ export function AvatarKarussellEditor({
         }}
         title={lang === 'de' ? 'Zufällige freie Farbe' : 'Random free color'}
       >
-        🎲 {lang === 'de' ? 'Zufalls-Farbe' : 'Random color'}
+        🎲 {factionMode
+          ? (lang === 'de' ? 'Zufalls-Fraktion' : 'Random faction')
+          : (lang === 'de' ? 'Zufalls-Farbe' : 'Random color')}
       </button>
 
       {/* Bottom-Sheet: Emoji-Auswahl */}

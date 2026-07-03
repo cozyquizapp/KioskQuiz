@@ -4,14 +4,19 @@
  * DAS Haupt-Setup („ich will den wizard als main setup, dafür muss aber alles
  * rein"). Führt Schritt für Schritt durch ALLE Einstellungen, die sonst im
  * Pill-/Advanced-Setup verstreut sind:
- *   1 Gruppengröße (Normal / Mega Event)
- *   2 Runden & Timer
- *   3 Sprache & Avatar-Set
- *   4 Add-ons (Comeback / Final-Tipp / CozyGames) + Reihenfolge + Comeback-Timer
- *   5 Fragensatz (+ Schedule-Vorschau)
- *   6 Design (Theme)
- *   7 Sound (Musik / SFX / Lautstärke / Custom-Sounds / Wartung)
- *   8 Fertig (Zusammenfassung)
+ *   1 Runden & Timer
+ *   2 Sprache & Avatar-Set
+ *   3 Add-ons (Comeback / Final-Tipp / CozyGames) + Reihenfolge + Comeback-Timer
+ *   4 Fragensatz (+ Schedule-Vorschau)
+ *   5 Design (Theme)
+ *   6 Sound (Musik / SFX / Lautstärke / Custom-Sounds / Wartung)
+ *   7 Fertig (Zusammenfassung)
+ *
+ * 2026-07-04 (Wolf „wenn ich cozyarena/cozyquiz gewählt habe brauche ich diese
+ * abfrage im wizard nicht noch einmal"): Die Format-Wahl (Gruppengröße) passiert
+ * jetzt VORHER auf der Spotlight-Bühne (Moderator-Start). Der Wizard wird nur
+ * noch NACH der Format-Wahl geöffnet → der frühere Schritt „Gruppengröße" ist
+ * hier raus. Der Modus wird im Schluss-Schritt nur noch angezeigt.
  *
  * Alle Einstellungen werden LIVE über dieselben Kanäle gesetzt, die auch die
  * Quick-Pills nutzen (emit qq:setQuizOptions/setLanguage/setTheme/setTimer/…,
@@ -48,7 +53,6 @@ interface Props {
 }
 
 const STEPS = [
-  { key: 'group', emoji: '👥', title: 'Gruppengröße' },
   { key: 'rounds', emoji: '🎮', title: 'Runden & Timer' },
   { key: 'lang', emoji: '🌐', title: 'Sprache & Avatare' },
   { key: 'addons', emoji: '🧩', title: 'Add-ons' },
@@ -67,17 +71,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
   const mega = !!s?.largeGroupMode;
 
   // ── Setter (live, wie die Quick-Pills) ────────────────────────────────────
-  const setMega = (on: boolean) => {
-    // formatSelected: true → Beamer verlässt den neutralen Welcome und zeigt die
-    // format-spezifische Pre-Game-Ansicht (Cozy-Grid-Regeln bzw. Mega-Faktionen).
-    emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on, formatSelected: true });
-    if (on) {
-      // Mega Event: grid-basierte Add-ons hart aus (Backend erzwingt es beim
-      // Start ohnehin — hier für einen sauberen, konsistenten UI-Zustand).
-      emit('qq:setQuizOptions', { roomCode, comebackEnabled: false, cozyGamesEnabled: false });
-      emit('qq:setFinalWagerEnabled', { roomCode, enabled: false });
-    }
-  };
+  // Format (Gruppengröße) wird VOR dem Wizard auf der Spotlight-Bühne gesetzt.
   const setLang = (lang: 'de' | 'en' | 'both') => emit('qq:setLanguage', { roomCode, language: lang });
   const setTheme = (themeId: string) => emit('qq:setTheme', { roomCode, themeId });
   const setComeback = (on: boolean) => emit('qq:setQuizOptions', { roomCode, comebackEnabled: on });
@@ -160,27 +154,6 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
 
         {/* ── Schritt-Inhalt ──────────────────────────────────────────────── */}
         <div style={ov.body}>
-          {cur.key === 'group' && (
-            <div style={ov.cardRow}>
-              <BigCard
-                active={!mega}
-                accent={ACCENT}
-                onClick={() => setMega(false)}
-                title="Cozy Quiz"
-                sub="bis 8 Teams · Grid, Klauen & Stapeln"
-                note="Das klassische CozyQuiz-Erlebnis."
-              />
-              <BigCard
-                active={mega}
-                accent={VIOLET}
-                onClick={() => setMega(true)}
-                title="Cozy Arena"
-                sub="8 Fraktionen × bis 3 Handys · bis 72 Personen"
-                note="Bar-Race statt Grid. Grid-Add-ons werden automatisch deaktiviert."
-              />
-            </div>
-          )}
-
           {cur.key === 'rounds' && (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, width: '100%' }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
@@ -470,14 +443,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               Setup abschließen →
             </button>
           ) : (
-            <button onClick={() => {
-                // Schritt 0 verlassen ohne expliziten Klick = Default-Format (Normal)
-                // akzeptiert → Beamer verlässt den neutralen Welcome.
-                if (step === 0 && !s?.formatSelected) {
-                  emit('qq:setQuizOptions', { roomCode, largeGroupMode: mega, nestedTeams: mega, formatSelected: true });
-                }
-                setStep(s2 => Math.min(STEPS.length - 1, s2 + 1));
-              }}
+            <button onClick={() => setStep(s2 => Math.min(STEPS.length - 1, s2 + 1))}
               style={{ ...ov.navBtn, ...ov.navPrimary }}>Weiter →</button>
           )}
         </div>

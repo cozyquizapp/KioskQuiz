@@ -68,9 +68,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   const [showPrep, setShowPrep] = useState(false);
   // 2026-07-02 (Wolf): geführter Setup-Wizard (Gruppengröße→Runden→Sprache→
   // Add-ons→Draft→Theme). Setzt alles live über dieselben Kanäle wie die Pills.
-  // Default OPEN — der Wizard IST das Standard-Setup (Wolf: „setup voll als wizard").
-  // ✕ schließt ihn → altes Pill-Schnell-Setup als Fallback.
-  const [showWizard, setShowWizard] = useState(true);
+  // 2026-07-04 (Wolf „das ist das erste was kommt wenn ich moderator lade, nicht
+  // die neue moderator seite"): Default ZU. Beim Laden zeigt zuerst die Spotlight-
+  // Bühne (Format-Wahl). Der Wizard öffnet erst, wenn Wolf dort ein Format wählt
+  // (Karte klick → setShowWizard(true)) und übernimmt dann den REST des Setups.
+  const [showWizard, setShowWizard] = useState(false);
   // 2026-07-02 (Wolf „wizard als main setup, rest im hintergrund"): das alte
   // Pill-Schnell-Setup (SetupView) versteckt sich hinter „⚙ Alle Einstellungen".
   const [showAllSettings, setShowAllSettings] = useState(false);

@@ -294,10 +294,29 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
           </button>
         </div>
 
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: 24 }}>
-          <div style={{ fontSize: 52, marginBottom: 10, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>✨</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9', letterSpacing: '0.04em' }}>COZYQUIZ</div>
+        {/* Header — Brand-Hero wie auf dem Beamer (NeutralWelcomeView):
+            CozyWolf-Logo im pinken Ring + Wortmarke in Akzent-Pink mit Glow.
+            Statisches pink.png statt AnimatedCozyWolf, damit das /team-Bundle
+            NICHT das 16k-Zeilen-QQBeamerPage-Modul mitzieht. */}
+        <div style={{ textAlign: 'center', marginBottom: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16 }}>
+          <div style={{
+            width: 132, height: 132, borderRadius: '50%',
+            display: 'grid', placeItems: 'center',
+            background: 'radial-gradient(circle at 50% 35%, rgba(236,72,153,0.20), rgba(236,72,153,0.04))',
+            border: '3px solid #EC4899',
+            boxShadow: '0 0 30px rgba(236,72,153,0.45), inset 0 0 22px rgba(236,72,153,0.15)',
+            animation: 'tcfloat 3.4s ease-in-out infinite',
+          }}>
+            <img
+              src="/avatars/cozywolf/pink.png" alt="CozyWolf"
+              style={{ width: 98, height: 98, objectFit: 'contain', filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.4))' }}
+            />
+          </div>
+          <div style={{
+            fontSize: 34, fontWeight: 900, color: '#EC4899',
+            letterSpacing: '0.06em', textTransform: 'uppercase', lineHeight: 1,
+            textShadow: '0 2px 12px rgba(0,0,0,0.55), 0 0 26px rgba(236,72,153,0.55)',
+          }}>COZYQUIZ</div>
         </div>
 
         {/* „Wird vorbereitet"-Card */}

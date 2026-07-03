@@ -15,7 +15,7 @@ export const introSlides: Record<'de' | 'en', IntroSlide[]> = {
     },
     {
       title: 'So läuft eine Frage ab',
-      subtitle: 'Frage sehen, Timer laeuft',
+      subtitle: 'Frage sehen, Timer läuft',
       body: 'Ihr seht die Frage, dann startet der Timer automatisch. Antwort eintippen, abschicken - danach wird ausgewertet.',
       badge: 'Ablauf'
     },

@@ -345,7 +345,7 @@ export function QuestionCatalog({
                       onInsertToNextFree(q);
                     }}
                     style={quickActionButtonStyle}
-                    title="In den naechsten passenden freien Slot einsetzen"
+                    title="In den nächsten passenden freien Slot einsetzen"
                   >
                     → Nächster frei
                   </button>

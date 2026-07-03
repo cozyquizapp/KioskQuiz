@@ -2301,10 +2301,10 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                   cursor: 'pointer',
                 }}
               >
-                <option value="auto" style={{ background: QQ_COLORS.slate900 }}>🅰️ Auto — laeuft Frage + Reveal (Standard)</option>
-                <option value="duringActive" style={{ background: QQ_COLORS.slate900 }}>⏱ Nur waehrend der Frage (stoppt beim Reveal)</option>
+                <option value="auto" style={{ background: QQ_COLORS.slate900 }}>🅰️ Auto — läuft Frage + Reveal (Standard)</option>
+                <option value="duringActive" style={{ background: QQ_COLORS.slate900 }}>⏱ Nur während der Frage (stoppt beim Reveal)</option>
                 <option value="revealOnly" style={{ background: QQ_COLORS.slate900 }}>🎉 Nur beim Reveal (Climax-Song)</option>
-                <option value="audioQuestion" style={{ background: QQ_COLORS.slate900 }}>🎧 Audio-Frage (Song = Frage, hoere genau hin)</option>
+                <option value="audioQuestion" style={{ background: QQ_COLORS.slate900 }}>🎧 Audio-Frage (Song = Frage, höre genau hin)</option>
               </select>
             </div>
           </div>

@@ -374,7 +374,7 @@ const KanbanBoard: React.FC<KanbanBoardProps> = ({ draft, onUpdate, onSlotFocus 
     });
 
     if (filled === 0) {
-      alert('Keine passenden Fragen fuer die leeren Slots gefunden.');
+      alert('Keine passenden Fragen für die leeren Slots gefunden.');
       return;
     }
 

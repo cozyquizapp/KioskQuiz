@@ -164,7 +164,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
             fontSize: 28, fontWeight: 900, color: '#F1F5F9',
             marginBottom: 4,
           }}>
-            {lang === 'de' ? 'Quiz laeuft schon!' : 'Quiz already running!'}
+            {lang === 'de' ? 'Quiz läuft schon!' : 'Quiz already running!'}
           </div>
           <div style={{ fontFamily: "'Caveat', cursive", fontSize: 16, color: '#94a3b8' }}>
             {lang === 'de' ? 'Raum' : 'Room'}: {roomCode}
@@ -251,7 +251,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
               fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 1.5,
             }}>
               {lang === 'de'
-                ? 'Das Quiz hat schon angefangen. Warte auf eine Pause oder die naechste Lobby — dann kannst du als neues Team einsteigen.'
+                ? 'Das Quiz hat schon angefangen. Warte auf eine Pause oder die nächste Lobby — dann kannst du als neues Team einsteigen.'
                 : 'The quiz has already started. Wait for a break or the next lobby — then you can join as a new team.'}
             </div>
           </div>

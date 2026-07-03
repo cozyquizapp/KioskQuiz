@@ -45,7 +45,7 @@ const decorations: DecorationKey[] = [
   'dice', 'questionBag', 'camera', 'filmStrip', 'lightbulb', 'book', 'stopwatch'
 ];
 
-const IMAGE_POLICY_HINT = 'Tipp: Wenn moeglich Bild-Links nutzen und Uploads fuer eigene Spezialbilder reservieren.';
+const IMAGE_POLICY_HINT = 'Tipp: Wenn möglich Bild-Links nutzen und Uploads für eigene Spezialbilder reservieren.';
 
 export function KanbanQuestionEditor({
   question,
@@ -119,7 +119,7 @@ export function KanbanQuestionEditor({
       const data = await response.json();
       setLocalQuestion(prev => ({ ...prev, imageUrl: data.imageUrl }));
       setImagePreview(data.imageUrl);
-      showNotification('success', '✅ Bild hochgeladen. Tipp: Fuer Standardbilder lieber stabile Bild-Links nutzen.');
+      showNotification('success', '✅ Bild hochgeladen. Tipp: Für Standardbilder lieber stabile Bild-Links nutzen.');
     } catch (err) {
       showNotification('error', `❌ Upload fehlgeschlagen: ${err instanceof Error ? err.message : 'Unbekannter Fehler'}`);
       // Revert preview on error

@@ -38,7 +38,7 @@ const badge = (color: string, inverted?: boolean): React.CSSProperties => ({
   color: inverted ? QQ_COLORS.slate200 : '#0d0f14'
 });
 
-const IMAGE_POLICY_HINT = 'Tipp: Nutze bevorzugt Bild-Links; Upload nur fuer eigene Spezialbilder.';
+const IMAGE_POLICY_HINT = 'Tipp: Nutze bevorzugt Bild-Links; Upload nur für eigene Spezialbilder.';
 
 const QuestionEditorPage: React.FC = () => {
   const [questions, setQuestions] = useState<AnyQuestion[]>([]);

@@ -65,7 +65,7 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
     );
   };
 
-  const uploadHint = 'Tipp: Fuer Standardbilder lieber URL eintragen, Upload nur fuer eigene Spezialbilder.';
+  const uploadHint = 'Tipp: Für Standardbilder lieber URL eintragen, Upload nur für eigene Spezialbilder.';
 
   return (
     <div style={{ padding: 20, maxWidth: 900, margin: '0 auto' }}>

@@ -132,13 +132,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     const prev = prevModPhaseRef.current;
     prevModPhaseRef.current = state.phase;
     if (!prev || prev === state.phase) return;
-    if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage laeuft — Teams antworten', '⏱', QQ_COLORS.green500);
+    if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage läuft — Teams antworten', '⏱', QQ_COLORS.green500);
     else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', QQ_COLORS.brandPink);
     else if (state.phase === 'PLACEMENT')      pushToast((state as any).largeGroupMode ? 'Wertung & Standings' : 'Platzierungs-Phase', (state as any).largeGroupMode ? '📊' : '📍', (state as any).largeGroupMode ? QQ_COLORS.violet500 : QQ_COLORS.red500);
     else if (state.phase === 'PHASE_INTRO')    pushToast(`Runde ${state.gamePhaseIndex} startet`, '🎬', QQ_COLORS.violet500);
     else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', QQ_COLORS.brandPink);
     else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', QQ_COLORS.brandPink);
-    else if (state.phase === 'TEAMS_REVEAL')   pushToast('Team-Vorstellung laeuft', '🎭', '#F97316');
+    else if (state.phase === 'TEAMS_REVEAL')   pushToast('Team-Vorstellung läuft', '🎭', '#F97316');
   }, [state?.phase, state?.gamePhaseIndex]);
 
   // Hebel 3 — Host-Runtime-HUD: Game-Start client-seitig tracken (localStorage,
@@ -2346,7 +2346,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                             Status-Header zeigt jetzt klar an dass die Frage
                             laeuft + Space-Hint zum Reveal. */}
                         <div style={{ fontSize: 12, color: QQ_COLORS.green300, textAlign: 'center', fontWeight: 700 }}>
-                          ▶ Frage laeuft — Space deckt Antwort auf
+                          ▶ Frage läuft — Space deckt Antwort auf
                         </div>
                         <div style={{ fontSize: 13, color: '#fff', background: s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.color ?? '#666', padding: '4px 10px', borderRadius: 8, textAlign: 'center' }}>
                           <QQEmojiIcon emoji="🥔"/> {s.teams.find(t => t.id === s.hotPotatoActiveTeamId)?.name ?? '?'}
@@ -4002,7 +4002,7 @@ function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
 
   const headers = largeMode
     ? ['Platz', 'Fraktion', 'Avatar', 'Punkte']
-    : ['Platz', 'Team', 'Avatar', 'Groesste Insel', 'Felder gesamt', 'Joker', 'Klau-Aktionen', 'Stapel', 'Tiebreak-Sieger'];
+    : ['Platz', 'Team', 'Avatar', 'Größte Insel', 'Felder gesamt', 'Joker', 'Klau-Aktionen', 'Stapel', 'Tiebreak-Sieger'];
 
   const rows = (largeMode ? qqSortedGroups(s) : sorted).map((t, idx) => {
     if (largeMode) {
@@ -5454,7 +5454,7 @@ function SetupView({
   // rotierend), weil startLobbyLoop bei leerem Custom-Url auf den Pool zurueck-
   // faellt.
   async function clearLobbySoundFromAllDrafts() {
-    if (!window.confirm(`Den 'Lobby/Pause-Musik'-Slot aus allen ${drafts.length} Fragensätzen entfernen? Andere Sounds bleiben unangetastet.\n\nDanach laeuft im Lobby-Modus wieder der Standard-4-Track-Pool (lobby-welcome-1..4 geshuffelt).`)) return;
+    if (!window.confirm(`Den 'Lobby/Pause-Musik'-Slot aus allen ${drafts.length} Fragensätzen entfernen? Andere Sounds bleiben unangetastet.\n\nDanach läuft im Lobby-Modus wieder der Standard-4-Track-Pool (lobby-welcome-1..4 geshuffelt).`)) return;
     setSavingSound(true);
     let touched = 0;
     try {
@@ -6083,12 +6083,12 @@ function SetupView({
                   background: 'rgba(239,68,68,0.08)',
                   color: QQ_COLORS.red300,
                 }}
-                title="Alle Spiel-Ergebnisse aus der Datenbank loeschen (Bestenliste-Reset)"
+                title="Alle Spiel-Ergebnisse aus der Datenbank löschen (Bestenliste-Reset)"
               >
                 Bestenliste leeren (Dummy-Daten weg)
               </button>
               <div style={{ fontSize: 10, color: '#6b6555', marginTop: 4 }}>
-                Loescht ALLE gespeicherten Spiele → Lobby-/Pause-Rotation zeigt danach keine Eintraege bis zum naechsten echten Spielende.
+                Löscht ALLE gespeicherten Spiele → Lobby-/Pause-Rotation zeigt danach keine Einträge bis zum nächsten echten Spielende.
               </div>
             </div>
           </div>

@@ -1628,12 +1628,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 animation: 'qqPanelContentFade 0.7s var(--qq-ease-out-cubic) both',
               }}
             >
-              {/* Mono (Wolf 2026-06-25 'platz besser verteilen'): den Panel-Node
+              {/* „Platz besser verteilen" (Wolf 2026-06-25 Mono, 2026-07-04 auf
+                  ALLE Skins erweitert — Wolf 'nutzt den Platz nicht smart, könnte
+                  im Einzelfall deutlich größer sein auf Beamer'): den Panel-Node
                   auf volle Kartenhöhe ziehen + Inhalt gleichmässig verteilen
                   (space-evenly), statt als kleinen Cluster mittig zu zentrieren.
-                  Zentral via cloneElement → gilt für ALLE Setup-Slides ohne jeden
-                  einzeln umzubauen. Cozy/SoftPop/Neo unverändert. */}
-              {isQuietMotion() && isValidElement(activePanel.node)
+                  So füllt z.B. eine 3-Zeilen-Bestenliste die ganze Card statt in
+                  der Mitte zu schweben. Zentral via cloneElement → gilt für ALLE
+                  Slides ohne jeden einzeln umzubauen. */}
+              {isValidElement(activePanel.node)
                 ? cloneElement(activePanel.node as ReactElement<{ style?: React.CSSProperties }>, {
                     style: {
                       ...((activePanel.node as ReactElement<{ style?: React.CSSProperties }>).props.style || {}),

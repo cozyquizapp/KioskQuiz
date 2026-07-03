@@ -321,7 +321,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                   if (display.kind === 'png') {
                     return makeTeamIcon(team.color, 'png', display.pngBase, team.emoji ?? qqGetAvatar(team.avatarId).emoji);
                   }
-                  if (display.kind === 'image') {
+                  if (display.kind === 'image' || display.kind === 'crest') {
                     return makeTeamIcon(team.color, 'image', display.src, qqGetAvatar(team.avatarId).emoji);
                   }
                   return makeTeamIcon(team.color, 'emoji', display.emoji, display.emoji);

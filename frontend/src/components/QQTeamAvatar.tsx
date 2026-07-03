@@ -2,6 +2,7 @@ import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'rea
 import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
+import { crestEmblemSrc } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
 
@@ -99,6 +100,23 @@ export function QQTeamAvatar({
     borderRadius: square ? 0 : '50%',
     ...style,
   };
+
+  // ── Cozy-Arena-Wappen (flaches Crest-Bild, eigene Schild-Form) ──────────
+  if (display.kind === 'crest') {
+    return (
+      <CrestAvatar
+        slug={display.slug}
+        src={display.src}
+        color={bgColor ?? display.color}
+        size={size}
+        baseStyle={base}
+        className={className}
+        title={labelText}
+        square={square}
+        flat={flat}
+      />
+    );
+  }
 
   // ── cozy3d Bild-Modus (3D-Avatar auf Farb-Disc) ─────────────────────────
   if (display.kind === 'image') {
@@ -423,6 +441,57 @@ function ImageAvatar({
       ) : (
         <img
           src={src}
+          alt={title}
+          onError={() => setFailed(true)}
+          draggable={false}
+          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter }}
+        />
+      )}
+    </span>
+  );
+}
+
+// ─── Cozy-Arena-Wappen-Avatar ─────────────────────────────────────────────
+// Zwei Modi:
+//   • normal (nicht-flat): das VOLLE Wappen-PNG (Schild + Farbe + Emblem
+//     komplett gebacken). KEINE Farb-Disc dahinter — das Wappen bringt seine
+//     eigene Form + Farbe mit. Füllt ~100 % (die PNG-Ränder liefern Padding).
+//   • flat (Grid-Cells / Kontext trägt schon die Fraktions-Farbe): nur das
+//     freigestellte cremefarbene EMBLEM (ohne Schild) mittig auf transparent —
+//     die Zelle liefert die Farbe. Emblem ~76 %, damit Rand bleibt.
+function CrestAvatar({
+  slug, src, color, size, baseStyle, className, title, square, flat,
+}: {
+  slug: string; src: string; color: string; size: number | string;
+  baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  void color;
+  const imgSrc = flat ? crestEmblemSrc(slug) : src;
+  const fillPct = flat ? '76%' : '100%';
+  const imgFilter = flat
+    ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))'
+    : 'drop-shadow(0 3px 5px rgba(0,0,0,0.28))';
+  return (
+    <span
+      className={className}
+      title={title}
+      style={{
+        ...baseStyle,
+        background: 'transparent',
+        boxShadow: 'none',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        overflow: 'visible',
+        borderRadius: square ? 0 : '50%',
+      }}
+    >
+      {failed ? (
+        <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
+      ) : (
+        <img
+          src={imgSrc}
           alt={title}
           onError={() => setFailed(true)}
           draggable={false}

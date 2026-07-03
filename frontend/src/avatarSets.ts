@@ -8,6 +8,7 @@
 
 import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
 import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvatars';
+import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -101,6 +102,20 @@ export const AVATAR_SETS: AvatarSet[] = [
     preview: ['🐨', '🎃', '🚀'],
     source: 'emoji',
     avatars: COZY_ANIMALS_EMOJI,    // bei 'all' nutzen wir die Cozy-Tiere als Default-Display
+  },
+  // 2026-07-03 (Wolf): Cozy Arena — 8 Fraktions-Wappen (Quiz-Archetypen). Die
+  // „avatars"-Einträge sind Crest-Slugs (isCrestSlug), gerendert als flaches
+  // Wappen-PNG (eigene Schild-Form+Farbe, KEINE Farb-Disc). Reihenfolge =
+  // QQ_AVATARS-Slots. Auch die Groß-Modus-Fraktionen (QQ_MEGA_FACTIONS.slug)
+  // ziehen diese Slugs → Wappen erscheinen in Lobby/Reveals unabhängig vom Set.
+  {
+    id: 'cozyArena',
+    label: 'Cozy Arena',
+    tint: '#EC4899',
+    leadEmoji: '🛡️',
+    preview: ['🏆', '🔥', '🍀'],
+    source: 'emoji',
+    avatars: COZY_ARENA_CREST_SLUGS,
   },
   {
     id: 'cozyAnimals',
@@ -214,6 +229,7 @@ export function getSet(id: string | undefined): AvatarSet {
 export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
   | { kind: 'image'; src: string;     color: string; label: string }   // cozy3d 3D-Avatar
+  | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // Cozy-Arena-Wappen (flach)
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
 export function getAvatarDisplay(
@@ -254,6 +270,17 @@ export function getAvatarDisplay(
     slot.emoji,
   ];
   const emoji = candidates.find((e): e is string => typeof e === 'string' && e.length > 0) ?? slot.emoji;
+
+  // Cozy Arena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
+  if (isCrestSlug(emoji)) {
+    return {
+      kind: 'crest',
+      slug: emoji,
+      src: crestSrc(emoji),
+      color: slot.color,
+      label: crestLabel(emoji),
+    };
+  }
 
   // cozy3d: der „Emoji"-Kandidat ist in Wahrheit ein Avatar-Slug → Bild rendern.
   if (isCozy3dSlug(emoji)) {

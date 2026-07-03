@@ -1459,15 +1459,18 @@ export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed:
 // Identität — Tier + Farbe + Witz-Name + Motto (+ Wappen via <FactionCrest>).
 // Namen = reine Tiernamen (Wolf 2026-07-02: „tiernamen haben meinte ich" —
 // keine Wortwitz-Teamnamen). Motto bleibt als Flavor unter dem Wappen.
+// 2026-07-03 (Wolf): Cozy-Universe-Fraktionen = Quiz-Archetypen (Konzept statt
+// Tier). slug = Wappen-PNG unter /avatars/cozyarena/<slug>.png (isCrestSlug).
+// Farb-Zuordnung per Bild-Messung verifiziert (Schild-Farbe == Slot-Token).
 export const QQ_MEGA_FACTIONS = [
-  { avatarId: 'fox',     slug: 'dachs',    nameDe: 'Dachse',     nameEn: 'Badgers',    mottoDe: 'Langsam, aber gründlich.',     mottoEn: 'Slow but thorough.' },
-  { avatarId: 'frog',    slug: 'otter',    nameDe: 'Otter',      nameEn: 'Otters',     mottoDe: 'Immer eine Antwort parat.',    mottoEn: 'Always an answer ready.' },
-  { avatarId: 'panda',   slug: 'panda',    nameDe: 'Pandas',     nameEn: 'Pandas',     mottoDe: 'Charmant & clever.',           mottoEn: 'Charming & clever.' },
-  { avatarId: 'rabbit',  slug: 'koala',    nameDe: 'Koalas',     nameEn: 'Koalas',     mottoDe: 'Ausgeschlafen zum Sieg.',      mottoEn: 'Well-rested for the win.' },
-  { avatarId: 'unicorn', slug: 'lama',     nameDe: 'Lamas',      nameEn: 'Llamas',     mottoDe: 'Cool bleiben, Punkte machen.', mottoEn: 'Stay cool, score points.' },
-  { avatarId: 'raccoon', slug: 'gorilla',  nameDe: 'Gorillas',   nameEn: 'Gorillas',   mottoDe: 'Erst denken, dann brüllen.',   mottoEn: 'Think first, roar later.' },
-  { avatarId: 'cow',     slug: 'baer',     nameDe: 'Bären',      nameEn: 'Bears',      mottoDe: 'Wissen ist Honig.',            mottoEn: 'Knowledge is honey.' },
-  { avatarId: 'cat',     slug: 'capybara', nameDe: 'Capybaras',  nameEn: 'Capybaras',  mottoDe: 'Ganz entspannt vorne.',        mottoEn: 'Chilled to the top.' },
+  { avatarId: 'fox',     slug: 'bauchgefuehl',  nameDe: 'Bauchgefühl',   nameEn: 'Gut Feeling', mottoDe: 'Das Gefühl trügt nie.', mottoEn: 'The gut never lies.' },
+  { avatarId: 'frog',    slug: 'glueckstreffer', nameDe: 'Glückstreffer', nameEn: 'Lucky Guess', mottoDe: 'Hauptsache richtig.',   mottoEn: 'Right is right.' },
+  { avatarId: 'panda',   slug: 'feierabend',    nameDe: 'Feierabend',    nameEn: 'Happy Hour',  mottoDe: 'Hauptsache dabei.',     mottoEn: 'Just here for fun.' },
+  { avatarId: 'rabbit',  slug: 'letztesekunde', nameDe: 'Letzte Sekunde', nameEn: 'Last Second', mottoDe: 'Kurz vor knapp.',      mottoEn: 'Just in time.' },
+  { avatarId: 'unicorn', slug: 'allwissen',     nameDe: 'Allwissen',     nameEn: 'Know-It-All', mottoDe: 'Wir wissen es einfach.', mottoEn: 'We just know.' },
+  { avatarId: 'raccoon', slug: 'improvisation', nameDe: 'Improvisation', nameEn: 'Wing It',     mottoDe: 'Läuft schon irgendwie.', mottoEn: "We'll figure it out." },
+  { avatarId: 'cow',     slug: 'einspruch',     nameDe: 'Einspruch',     nameEn: 'Objection',   mottoDe: 'Das zählt nicht!',      mottoEn: "That doesn't count!" },
+  { avatarId: 'cat',     slug: 'risiko',        nameDe: 'Risiko',        nameEn: 'All In',      mottoDe: 'Alles oder nichts.',    mottoEn: 'All or nothing.' },
 ] as const;
 
 export function qqMegaFaction(avatarId: string) {

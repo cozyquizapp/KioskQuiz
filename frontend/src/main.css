@@ -657,6 +657,14 @@ main[class*="cozy-beamer-shell"] {
   100% { opacity: 0; transform: translateY(-10px) scale(1); }
 }
 
+/* 2026-07-03 (Cozy Arena Roll-Call): Einzug-Stempel — beim Aufdecken einer
+   Fraktion schlaegt ein Ring in Fraktionsfarbe einmal nach aussen (Stamp-Pop). */
+@keyframes qqStampRing {
+  0%   { opacity: 0;   transform: scale(0.55); }
+  35%  { opacity: 0.8; }
+  100% { opacity: 0;   transform: scale(1.55); }
+}
+
 @keyframes pulse-timer {
   0%, 100% { 
     opacity: 1;

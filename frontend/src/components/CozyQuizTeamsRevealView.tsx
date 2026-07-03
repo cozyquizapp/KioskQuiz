@@ -498,6 +498,7 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                             (transparent + dashed), beim Zünden Team-Farbe + Glow.
                             Slot-M-Pattern: fontSize sitzt auf dem Flex-Parent. */}
                         <div ref={el => { cardDiscRefs.current[i] = el; }} style={{
+                          position: 'relative',
                           width: avatarSize, height: avatarSize, borderRadius: '50%',
                           background: revealed ? t.color : 'transparent',
                           border: revealed ? `2.5px solid ${t.color}` : '2.5px dashed rgba(255,255,255,0.18)',
@@ -508,6 +509,22 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>
+                          {/* Cozy Arena: Puls-Aura (atmend) + Einzug-Stempel (einmaliger
+                              Ring-Pop) beim Aufdecken — nur Fraktions-Wappen. */}
+                          {revealed && isCrestSlug(t.emoji) && (
+                            <>
+                              <span aria-hidden style={{
+                                position: 'absolute', inset: 0, borderRadius: '50%',
+                                boxShadow: `0 0 18px 5px ${t.color}`, pointerEvents: 'none',
+                                animation: 'qqCrestAura 3.2s ease-in-out infinite',
+                              }} />
+                              <span aria-hidden style={{
+                                position: 'absolute', inset: '-6px', borderRadius: '50%',
+                                border: `3px solid ${t.color}`, pointerEvents: 'none',
+                                animation: 'qqStampRing 0.7s ease-out both',
+                              }} />
+                            </>
+                          )}
                           <div style={{
                             width: '100%', height: '100%',
                             display: 'flex', alignItems: 'center', justifyContent: 'center',

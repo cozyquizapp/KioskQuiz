@@ -12,6 +12,7 @@
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { playArenaLeadChange } from '../utils/sounds';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
@@ -275,6 +276,9 @@ function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: 
     let t: ReturnType<typeof setTimeout> | undefined;
     if (prevRank.current != null && prevRank.current > 0 && rank === 0 && val > 0) {
       setLeadFlash(true);
+      // Ueberhol-Cue (ersetzbarer Slot 'arenaLeadChange', Fallback = scoreUp).
+      // Nur die eine Row die auf Rang 0 springt feuert → kein Doppel-Sound.
+      try { playArenaLeadChange(); } catch {}
       t = setTimeout(() => setLeadFlash(false), 1200);
     }
     prevRank.current = rank;

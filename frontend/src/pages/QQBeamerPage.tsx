@@ -58,7 +58,8 @@ import { PhaseIntroView, RoundMiniTree } from '../components/CozyQuizPhaseIntroV
 import {
   resumeAudio, setVolume, setSoundConfig, setSfxMuted, playFanfare, playReveal, playCorrect,
   playGridReveal, playAvatarCascadeNote, playClimaxFinish, playRevealHighlight, playGoodLuckFanfare,
-  playWrong, playTick, playUrgentTick, playTimesUp, playScoreUp,
+  playArenaStandings,
+  playWrong, playTick, playUrgentTick, playTimesUp,
   startTimerLoop, stopTimerLoop, playFieldPlaced, playSteal,
   playQuestionStart, playRoundStart,
   setMusicDucked, getMusicDuckFactor, fadeOutAudio,
@@ -919,7 +920,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // wenn das Grid sichtbar wird — unabhaengig davon ob jemand richtig lag.
       // Bei Wrong-Answer zusaetzlich playWrongFor (kategorie-spez. Wrong).
       const cat = s.currentQuestion?.category;
-      playGridReveal();
+      // Cozy Arena: PLACEMENT zeigt kein Grid, sondern die Bar-Race-Gesamtwertung
+      // → eigener (ersetzbarer) Cue statt des Grid-Slams. Fallback = gridReveal.
+      if ((s as any).largeGroupMode) playArenaStandings();
+      else playGridReveal();
       if (!s.correctTeamId) playWrongFor(cat);
     }
     if (s.phase === 'GAME_OVER' && prev !== 'GAME_OVER') {
@@ -1358,7 +1362,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // ── Sound: placement → score up (SFX) ──
   const prevCorrectRef = useRef(s.correctTeamId);
   useEffect(() => {
-    if (s.correctTeamId && !prevCorrectRef.current && !s.sfxMuted) playScoreUp();
+    // 2026-07-04 (Wolf Sound-Audit): Richtig-Cue nutzt jetzt den ersetzbaren
+    // `correct`-Slot (vorher Synth-only playScoreUp, nicht im Panel anpassbar) —
+    // symmetrisch zum Falsch-Cue (playWrongFor). Custom-Datei/Mute im Sound-Panel.
+    if (s.correctTeamId && !prevCorrectRef.current && !s.sfxMuted) playCorrect();
     prevCorrectRef.current = s.correctTeamId;
   }, [s.correctTeamId, s.sfxMuted]);
 

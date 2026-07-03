@@ -1219,6 +1219,28 @@ export function playRaceTeamFall(): void {
   playUrlOneShot(url);
 }
 
+/** Cozy Arena: Bar-Race/Gesamtwertung erscheint (PLACEMENT in largeGroupMode).
+ *  Leer = Fallback auf den bisherigen gridReveal-Cue; Moderator kann eine
+ *  eigene MP3 im Sound-Panel hinterlegen (Slot 'arenaStandings'). */
+export function playArenaStandings(): void {
+  if (_sfxMuted) return;
+  if (!isSlotEnabled('arenaStandings')) { playGridReveal(); return; }
+  const url = resolveSlotUrl('arenaStandings');
+  if (!url) { playGridReveal(); return; }
+  playUrlOneShot(url);
+}
+
+/** Cozy Arena: eine Fraktion ueberholt an die Spitze (Bar-Race-Ueberhol-Blitz).
+ *  Leer = Fallback auf den aufsteigenden scoreUp-Cue; ersetzbar via Slot
+ *  'arenaLeadChange'. */
+export function playArenaLeadChange(): void {
+  if (_sfxMuted) return;
+  if (!isSlotEnabled('arenaLeadChange')) { playScoreUp(); return; }
+  const url = resolveSlotUrl('arenaLeadChange');
+  if (!url) { playScoreUp(); return; }
+  playUrlOneShot(url);
+}
+
 /** Sound sobald der Sieger entschieden ist (= nach letztem Team-Fall, vor
  *  Treppchen-Aufstieg). Ersetzt die bisherige playFanfare-Stelle in der
  *  Winner-Slow-Mo-Phase. Fallback auf playFanfare wenn kein Custom-Upload. */
@@ -1553,6 +1575,7 @@ function playUrlOneShot(url: string): void {
 /** Wolf-Howl: warmer ansteigender Ton, leicht vibrato, lange Fading-Tail.
  *  Statt klassischer Fanfare beim Game-Over (oder als zusätzlicher Stinger). */
 export function playWolfHowl(): void {
+  if (_sfxMuted) return;
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -1597,6 +1620,7 @@ export function playWolfHowl(): void {
 /** Wood-Klick: warmer dumpfer „Klack" auf Holztisch — alternative für
  *  Field-Placed/Cell-Tap. Kürzer und wärmer als der bestehende Synth. */
 export function playWoodKnock(): void {
+  if (_sfxMuted) return;
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -1633,6 +1657,7 @@ export function playWoodKnock(): void {
  *  Unterscheidet sich vom generischen playTeamJoin (das bleibt für alle Teams).
  */
 export function playAvatarJingle(avatarId: string): void {
+  if (_sfxMuted) return;
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;

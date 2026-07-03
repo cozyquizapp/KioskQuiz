@@ -33,6 +33,7 @@ export function TeamBottomSheetMenu({
   const [helpOpen, setHelpOpen] = React.useState(false);
   const myTeam = state.teams.find(t => t.id === myTeamId);
   const myColor = myTeam?.color ?? '#EC4899';
+  const largeMode = !!(state as any).largeGroupMode;
 
   // 2026-05-11 (Wolf-Wunsch 'swipe-down zum Schließen wie iOS Bottom Sheet'):
   // Drag-Handle bekommt touch-gesture. Sheet bewegt sich mit dem Finger nach
@@ -365,7 +366,10 @@ export function TeamBottomSheetMenu({
           </span>
         </button>
 
-        {/* Joker-Counter — read-only Info, nicht klickbar */}
+        {/* Joker-Counter — read-only Info, nicht klickbar.
+            2026-07-03 (Wolf-Audit): In Cozy Arena gibt es keine Joker → jokersTotal=0
+            wird durchgereicht, dann Sektion komplett ausblenden (kein „0 von 0"). */}
+        {jokersTotal > 0 && (
         <div style={{
           ...itemBase,
           cursor: 'default',
@@ -402,6 +406,7 @@ export function TeamBottomSheetMenu({
             </span>
           </span>
         </div>
+        )}
 
         {/* Hilfe / Kurz-Regeln */}
         <button
@@ -466,7 +471,7 @@ export function TeamBottomSheetMenu({
       </div>
 
       {/* Hilfe-Overlay (innerhalb des Menüs gerendert, schliesst sich separat) */}
-      {helpOpen && <HelpModal lang={lang} onClose={() => setHelpOpen(false)} />}
+      {helpOpen && <HelpModal lang={lang} onClose={() => setHelpOpen(false)} largeMode={largeMode} />}
     </>
   );
 }

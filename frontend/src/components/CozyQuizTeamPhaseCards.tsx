@@ -36,7 +36,20 @@ import { QQ_COLORS } from '../../../shared/qqColors';
 // ── LobbyCard ────────────────────────────────────────────────────────────────
 export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
   const de = lang === 'de';
-  const opponents = s.teams.filter(t => t.id !== myTeam?.id);
+  // 2026-07-03 (Wolf-Audit): Cozy Arena — Gegner = die anderen FRAKTIONEN (nach
+  // avatarId dedupliziert), nicht bis zu 25 gleichnamige Sub-Teams.
+  const largeMode = !!(s as any).largeGroupMode;
+  const opponents = largeMode
+    ? (() => {
+        const seen = new Set<string>();
+        const out: QQTeam[] = [];
+        for (const t of s.teams) {
+          if (t.avatarId === myTeam?.avatarId || seen.has(t.avatarId)) continue;
+          seen.add(t.avatarId); out.push(t);
+        }
+        return out;
+      })()
+    : s.teams.filter(t => t.id !== myTeam?.id);
 
   // Pulsing ready dot
   const [pulse, setPulse] = useState(true);
@@ -55,7 +68,7 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
             {de ? 'Warteraum' : 'Waiting room'}
           </div>
           <div style={{ fontSize: 14, color: QQ_COLORS.slate500 }}>
-            {s.teams.length === 0 ? (de ? 'Noch keine Teams' : 'No teams yet') : `${s.teams.length} Teams`}
+            {s.teams.length === 0 ? (de ? 'Noch keine Teams' : 'No teams yet') : `${s.teams.length} ${largeMode ? 'Handys' : 'Teams'}`}
           </div>
         </div>
       </CozyCard>

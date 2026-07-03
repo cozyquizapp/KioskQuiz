@@ -1824,10 +1824,13 @@ function TeamGameView({
             )}
           </>
         )}
-        {s.phase === 'COMEBACK_CHOICE' && (
+        {/* 2026-07-03 (Wolf-Audit): Comeback + 4×4-Finale sind in Cozy Arena
+            backend-seitig deaktiviert → defensiv gaten, damit kein Grid/Steal/
+            Only-Connect-UI auf ein Arena-Handy gemalt werden kann. */}
+        {!(s as any).largeGroupMode && s.phase === 'COMEBACK_CHOICE' && (
           <ComebackCard state={s} myTeamId={myTeamId} isMine={isComebackTeam} emit={emit} roomCode={roomCode} lang={lang} />
         )}
-        {s.phase === 'CONNECTIONS_4X4' && (() => {
+        {!(s as any).largeGroupMode && s.phase === 'CONNECTIONS_4X4' && (() => {
           // 4×4-Finale Sub-Phasen:
           // - active/reveal: ConnectionsTeamCard zeigt das 16-Items-Grid bzw. die
           //   Status-Card.
@@ -1905,8 +1908,8 @@ function TeamGameView({
           setLang={setLang}
           onClose={() => setMenuOpen(false)}
           onLeaveRequest={() => { setMenuOpen(false); setLeaveConfirmOpen(true); }}
-          jokersAvailable={Math.max(0, 2 - (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0))}
-          jokersTotal={2}
+          jokersAvailable={(s as any).largeGroupMode ? 0 : Math.max(0, 2 - (s.teamPhaseStats[myTeamId]?.jokersEarned ?? 0))}
+          jokersTotal={(s as any).largeGroupMode ? 0 : 2}
           eurovisionMode={!!s.theme?.eurovisionMode}
           state={s}
           myTeamId={myTeamId}

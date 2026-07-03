@@ -636,6 +636,13 @@ main[class*="cozy-beamer-shell"] {
   50% { box-shadow: 0 0 0 8px rgba(251, 191, 36, 0); }
 }
 
+/* 2026-07-03 (Cozy Arena): Puls-Aura fuer runde Fraktions-Scheiben. Atmender
+   Glow-Ring (opacity+scale = GPU-freundlich), per-Instanz-Delay gegen Gleichtakt. */
+@keyframes qqCrestAura {
+  0%, 100% { opacity: 0.22; transform: scale(1); }
+  50%      { opacity: 0.62; transform: scale(1.07); }
+}
+
 @keyframes pulse-timer {
   0%, 100% { 
     opacity: 1;

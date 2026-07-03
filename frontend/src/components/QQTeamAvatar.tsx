@@ -494,6 +494,9 @@ function CrestAvatar({
   const [failed, setFailed] = useState(false);
   void src; void size;
   const imgSrc = crestEmblemSrc(slug);
+  // Puls-Aura (Wolf-Wahl): per-Instanz-Delay → Fraktionen atmen asynchron,
+  // nicht im Gleichtakt. Nur non-flat (runde Scheiben), Grid bleibt ruhig.
+  const auraDelay = useMemo(() => -Math.random() * 3.2, []);
   const fillPct = flat ? '88%' : '78%';
   const imgFilter = flat
     ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))'
@@ -517,6 +520,7 @@ function CrestAvatar({
       style={{
         ...baseStyle,
         ...discStyle,
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
@@ -524,6 +528,15 @@ function CrestAvatar({
         borderRadius: square ? 0 : '50%',
       }}
     >
+      {/* Puls-Aura — nur runde Scheiben (non-flat, nicht square). */}
+      {!flat && !square && !failed && (
+        <span aria-hidden style={{
+          position: 'absolute', inset: 0, borderRadius: '50%',
+          boxShadow: `0 0 16px 4px ${color}`,
+          pointerEvents: 'none',
+          animation: `qqCrestAura 3.2s ease-in-out ${auraDelay}s infinite`,
+        }} />
+      )}
       {failed ? (
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
       ) : (
@@ -532,7 +545,7 @@ function CrestAvatar({
           alt={title}
           onError={() => setFailed(true)}
           draggable={false}
-          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter }}
+          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter, position: 'relative' }}
         />
       )}
     </span>

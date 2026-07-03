@@ -1811,22 +1811,79 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
       {joined && s && s.phase === 'LOBBY' && !setupDone && (
         <>
-          {/* Opt-in: geführte Vorab-Planung. Steht NEBEN dem Schnell-Setup —
-              wer schnell hochfahren will, ignoriert den Button. */}
+          {/* 2026-07-03 (Wolf 'moderator-start sieht sehr traurig aus'): Die
+              Format-Wahl IST jetzt die Seite (Hero-Karten) statt in einem Wizard
+              versteckt, den man ins Leere wegklickt. Karte klicken = Format setzen
+              + geführten Wizard beim nächsten Schritt öffnen. */}
+          <div style={{ maxWidth: 720, margin: '4px auto 16px', textAlign: 'center' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: 14, marginBottom: 6 }}>
+              <span style={{ width: 54, height: 54, borderRadius: '50%', border: '3px solid #EC4899', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', boxShadow: '0 0 22px rgba(236,72,153,0.4)', flexShrink: 0 }}>
+                <img src="/avatars/cozywolf/pink.png" alt="" draggable={false} style={{ width: '92%', height: '92%', objectFit: 'contain' }} />
+              </span>
+              <span style={{ fontSize: 26, fontWeight: 900, color: '#fff' }}>Bereit für deine Show?</span>
+            </div>
+            <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 800, letterSpacing: '0.05em' }}>
+              Wähle dein Format — der Rest wird Schritt für Schritt geführt.
+            </div>
+          </div>
+
+          {/* Zwei Format-Hero-Karten */}
+          <div style={{ display: 'flex', gap: 16, maxWidth: 720, margin: '0 auto 16px', flexWrap: 'wrap' }}>
+            {[
+              { key: 'quiz', arena: false, emoji: '🍺', title: 'Cozy Quiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], accent: '#EC4899' },
+              { key: 'arena', arena: true, emoji: '🏟️', title: 'Cozy Arena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], accent: '#A78BFA' },
+            ].map(f => {
+              const active = (!!(s as any).largeGroupMode === f.arena) && !!(s as any).formatSelected;
+              return (
+                <button
+                  key={f.key}
+                  onClick={() => { emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true }); setShowWizard(true); }}
+                  style={{
+                    flex: '1 1 260px', textAlign: 'left', padding: '20px 22px', borderRadius: 18, cursor: 'pointer',
+                    border: `2px solid ${f.accent}${active ? '' : '66'}`,
+                    background: `linear-gradient(160deg, ${f.accent}22, ${f.accent}0a)`,
+                    color: '#fff', boxShadow: active ? `0 0 24px ${f.accent}55` : '0 6px 18px rgba(0,0,0,0.3)',
+                    transition: 'box-shadow 200ms ease, border-color 200ms ease',
+                  }}
+                >
+                  <div style={{ fontSize: 34, marginBottom: 6 }}>{f.emoji}</div>
+                  <div style={{ fontSize: 22, fontWeight: 900 }}>{f.title}</div>
+                  <div style={{ fontSize: 13, fontWeight: 800, color: f.accent, marginBottom: 10 }}>{f.sub}</div>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                    {f.lines.map(l => <span key={l} style={{ fontSize: 13, color: '#cbd5e1', fontWeight: 700 }}>· {l}</span>)}
+                  </div>
+                  <div style={{ marginTop: 14, fontSize: 13, fontWeight: 900, color: f.accent }}>Wählen &amp; einrichten →</div>
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Status-Zeile: Raum · Teams · Draft · Sprache */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap', maxWidth: 720, margin: '0 auto 18px' }}>
+            {[
+              { label: `Raum ${roomCode}`, ok: true },
+              { label: `${s.teams.length} Teams`, ok: s.teams.length > 0 },
+              { label: selectedDraftId ? `Draft: ${drafts.find(d => d.id === selectedDraftId)?.title ?? '✓'}` : 'Draft: —', ok: !!selectedDraftId },
+              { label: `Sprache ${(s.language || 'de').toUpperCase()}`, ok: true },
+            ].map(chip => (
+              <span key={chip.label} style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 12px', borderRadius: 999,
+                fontSize: 12, fontWeight: 800, maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                background: chip.ok ? 'rgba(34,197,94,0.12)' : 'rgba(148,163,184,0.1)',
+                border: `1px solid ${chip.ok ? 'rgba(34,197,94,0.4)' : 'rgba(148,163,184,0.25)'}`,
+                color: chip.ok ? '#86efac' : '#94a3b8',
+              }}>
+                {chip.ok ? '✓' : '○'} {chip.label}
+              </span>
+            ))}
+          </div>
+
+          {/* Sekundär: geführte Vorab-Planung (Material/Druck/Briefing/Technik) */}
           <button
             onClick={() => setShowPrep(true)}
-            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '13px 18px', borderRadius: 14, border: '1px solid rgba(236,72,153,0.5)', background: 'linear-gradient(90deg,rgba(236,72,153,0.18),rgba(162,18,71,0.18))', color: '#e2e8f0', fontWeight: 900, fontSize: 16, cursor: 'pointer' }}
+            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '12px 18px', borderRadius: 12, border: '1px solid rgba(236,72,153,0.4)', background: 'rgba(236,72,153,0.10)', color: '#e2e8f0', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
           >
             🎬 Show planen — geführt vorbereiten (Material, Druck, Briefing, Technik)
-          </button>
-          {/* 2026-07-02 (Wolf): Geführter Setup-Wizard IST das Haupt-Setup —
-              chronologisch durch Format → Runden → Sprache → Add-ons → Draft →
-              Theme. Prominent, weil Standard-Weg. */}
-          <button
-            onClick={() => setShowWizard(true)}
-            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '15px 18px', borderRadius: 14, border: '2px solid rgba(167,139,250,0.7)', background: 'linear-gradient(90deg,rgba(167,139,250,0.26),rgba(99,102,241,0.24))', color: '#fff', fontWeight: 900, fontSize: 17, cursor: 'pointer', boxShadow: '0 6px 20px rgba(167,139,250,0.25)' }}
-          >
-            🧙 Geführtes Setup öffnen — Schritt für Schritt (Cozy Quiz oder Cozy Arena)
           </button>
           {/* Alte Pill-Setup-Ansicht: nur noch hinter „⚙ Alle Einstellungen"
               (Wolf „rest im hintergrund ausblenden"). Der Wizard deckt alles ab;

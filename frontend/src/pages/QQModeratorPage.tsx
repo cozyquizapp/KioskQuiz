@@ -288,14 +288,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     });
   }, []);
 
-  async function startGame() {
+  async function startGame(draftIdOverride?: string) {
     if (startingRef.current) return;
-    if (!selectedDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
+    const effectiveDraftId = draftIdOverride ?? selectedDraftId;
+    if (!effectiveDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
     const teamCount = state?.teams.length ?? 0;
     if (teamCount === 0 && !window.confirm('Noch keine Teams verbunden — wirklich starten?')) return;
     // Preflight: prüfe ob Draft genug Fragen für die gewählte Rundenzahl hat.
     // Mehr Fragen als nötig (20q-Draft + 3 Runden) → wir kürzen client-seitig auf phases*5.
-    const summary = drafts.find(d => d.id === selectedDraftId);
+    const summary = drafts.find(d => d.id === effectiveDraftId);
     const needed = phases * 5;
     if (summary && summary.questionCount < needed) {
       alert(
@@ -310,7 +311,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     let slideTemplates: undefined | import('../../../shared/quarterQuizTypes').QQSlideTemplates;
     let soundConfig: undefined | import('../../../shared/quarterQuizTypes').QQSoundConfig;
     // QQ Builder draft — questions already in QQ format
-    const qqId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
+    const qqId = effectiveDraftId.startsWith('qq:') ? effectiveDraftId.slice(3) : effectiveDraftId;
     const res = await fetch(`/api/qq/drafts/${encodeURIComponent(qqId)}`);
     if (!res.ok) { alert('QQ-Draft nicht gefunden'); return; }
     const draft = await res.json();
@@ -361,7 +362,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // matched nie → draftTitle=undefined → Backend speichert 'Unbekannt'.
     // Fix: nutze selectedDraftId (mit Prefix) fuer find und strippe den
     // Builder-'🎯 '-Prefix vom title fuer saubere Anzeige.
-    const rawTitle = drafts.find(d => d.id === selectedDraftId)?.title;
+    const rawTitle = drafts.find(d => d.id === effectiveDraftId)?.title;
     const qqDraftTitle = rawTitle ? rawTitle.replace(/^🎯\s*/, '') : undefined;
     const ack = await emit('qq:startGame', { roomCode, questions, language: state?.language ?? 'both', phases, theme, draftId: qqDraftId, draftTitle: qqDraftTitle, slideTemplates, soundConfig, connections: draftConnections, connectionsDurationSec: draftConnectionsDuration, connectionsMaxFails: draftConnectionsMaxFails, cozyGamesEnabled: draftCozyGamesEnabled, cozyGamesPool: draftCozyGamesPool, comebackEnabled: draftComebackEnabled, largeGroupMode: (state as any)?.largeGroupMode, nestedTeams: (state as any)?.nestedTeams });
     if (!ack.ok) {
@@ -369,6 +370,41 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     }
     // Keep lock for 1.5s so Space doesn't immediately trigger activateQuestion
     setTimeout(() => { startingRef.current = false; }, 1500);
+  }
+
+  // 2026-07-04 (Wolf 'macht ein bots only durchgang wählbar im moderator sinn?
+  // zum testen' → 'Anzahl wählbar'): 1-Klick-Test-Durchlauf. Bündelt die schon
+  // vorhandenen Teile (dev/fillTeams-Bots + Autoplay + Setup-Abschluss + Start),
+  // die sonst nur über den Test-Route-Prop zusammenliefen. testMode-Flag setzt
+  // das Backend auf „nicht in die Bestenliste persistieren".
+  const [botsRunOpen, setBotsRunOpen] = useState(false);
+  async function runBotsTest(count: number) {
+    const pin = getDevPin();
+    if (!pin) { alert('Bots-Durchlauf braucht den Admin-PIN. Seite neu laden + PIN eingeben.'); return; }
+    const draftId = selectedDraftId ?? drafts[0]?.id ?? null;
+    if (!draftId) { alert('Kein Fragensatz vorhanden — bitte zuerst einen Draft anlegen/wählen.'); return; }
+    if (!selectedDraftId) setSelectedDraftId(draftId);
+    // Sicherheitsabfrage nur wenn echte (nicht-Bot) Teams im Raum sind.
+    const realTeams = (state?.teams ?? []).filter((t: any) => !t._dummy).length;
+    if (realTeams > 0 && !window.confirm(`${realTeams} echte Team(s) im Raum — trotzdem einen Bot-Testlauf starten? Das startet das Spiel sofort.`)) return;
+    // Bot-Avatare aus aktivem Set ableiten (Fraktions-Wappen in Cozy Arena).
+    const setId = state?.avatarSetId ?? 'all';
+    const set = AVATAR_SETS.find(a => a.id === setId);
+    const setAvatars: string[] = setId === 'all' ? MEGA_EMOJI_POOL : setId === 'esc' ? ESC_FLAG_POOL : (set?.avatars ?? []);
+    setAutoplayEnabled(true);
+    try { await emit('qq:setTestMode', { roomCode, value: true }); } catch {}
+    try {
+      const r = await fetch(`${API_BASE}/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ count, setAvatars, pin }),
+      });
+      if (r.status === 403) { clearDevPin(); alert('Admin-PIN falsch — Seite neu laden + PIN eingeben.'); return; }
+      if (!r.ok) { const d = await r.json().catch(() => ({})); alert(`Bots konnten nicht erstellt werden: ${d.error ?? 'unbekannt'}`); return; }
+    } catch { alert('Netzwerkfehler beim Erstellen der Bots.'); return; }
+    await new Promise(res => setTimeout(res, 600));
+    try { await emit('qq:setSetupDone', { roomCode, value: true }); } catch {}
+    await new Promise(res => setTimeout(res, 300));
+    try { await startGame(draftId); } catch {}
   }
 
   function applyTimer() {
@@ -1944,6 +1980,34 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               <input type="checkbox" checked={autoplayEnabled} onChange={e => setAutoplayEnabled(e.target.checked)} style={{ width: 15, height: 15, cursor: 'pointer' }} />
               🤖 Autoplay <span style={{ opacity: 0.6, fontWeight: 700, fontSize: 11 }}>(Test)</span>
             </label>
+            <span style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 900 }}>·</span>
+            {/* Bots-Durchlauf: 1 Klick füllt N Bots + Autoplay + startet → Spiel
+                läuft komplett allein durch (Test, nicht in Bestenliste). Anzahl
+                wählbar; Optionen richten sich nach Format (Wolf 2026-07-04). */}
+            <div style={{ position: 'relative' }}>
+              <button
+                onClick={() => setBotsRunOpen(v => !v)}
+                title="Füllt Bots + Autoplay + startet — das Spiel läuft komplett allein zum Testen (nicht in Bestenliste)"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.4)', background: 'rgba(52,211,153,0.10)', color: '#bbf7d0', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                🤖 Bots-Durchlauf {botsRunOpen ? '▲' : '▾'}
+              </button>
+              {botsRunOpen && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 14px', borderRadius: 12, background: '#171326', border: '1px solid rgba(52,211,153,0.4)', boxShadow: '0 14px 34px rgba(0,0,0,0.55)', minWidth: 190 }}>
+                  <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Wie viele Bots?</div>
+                  <div style={{ display: 'flex', gap: 8, justifyContent: 'center' }}>
+                    {((s as any).largeGroupMode ? [8, 16, 24] : [4, 6, 8]).map(n => (
+                      <button
+                        key={n}
+                        onClick={() => { setBotsRunOpen(false); runBotsTest(n); }}
+                        style={{ minWidth: 46, padding: '10px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.14)', color: '#dcfce7', fontWeight: 900, fontSize: 16, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >{n}</button>
+                    ))}
+                  </div>
+                  <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'center', lineHeight: 1.45 }}>füllt Bots · Autoplay an · startet sofort<br/>(Test — nicht in der Bestenliste)</div>
+                </div>
+              )}
+            </div>
           </div>
           {showAllSettings && (
             <SetupView

@@ -911,16 +911,20 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
           animation: 'qqWinnerCrownBob 2.4s ease-in-out infinite',
           zIndex: 2,
         }}>👑</span>
-        {/* Avatar-Disc mit Pulse */}
+        {/* Avatar-Disc mit Pulse. 2026-07-04 (Konsistenz mit ThanksView-Fix
+            a9235654 'glow komisch, wappen verschwommen'): Disc mit Tiefe
+            (radiale Lichter/Schatten) + hellem Rand, damit Avatar/Wappen als
+            scharfe Münze gegen den Glow steht statt im gleichfarbigen Halo zu
+            zerfließen. Glow zurückgenommen (siehe qqWinnerGlow). */}
         <div style={{
+          ['--wg' as string]: `${winner.color}99`,
           width: 120, height: 120, borderRadius: '50%',
-          background: winner.color,
-          border: `4px solid ${winner.color}`,
-          boxShadow: `0 0 40px ${winner.color}88, 0 0 0 6px ${winner.color}22`,
+          background: `radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 46%), ${winner.color}`,
+          border: `5px solid rgba(255,255,255,0.30)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'qqWinnerGlow 3.2s ease-in-out infinite',
-        }}>
-          <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={108} />
+        } as React.CSSProperties}>
+          <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={100} flat />
         </div>
       </div>
 
@@ -949,8 +953,8 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
           50%      { transform: translateX(-50%) translateY(-4px) rotate(3deg); }
         }
         @keyframes qqWinnerGlow {
-          0%, 100% { box-shadow: 0 0 32px ${winner.color}77, 0 0 0 6px ${winner.color}22; }
-          50%      { box-shadow: 0 0 48px ${winner.color}cc, 0 0 0 8px ${winner.color}33; }
+          0%, 100% { box-shadow: 0 0 30px var(--wg, rgba(255,255,255,0.4)), 0 0 60px rgba(251,191,36,0.12), 0 10px 26px rgba(0,0,0,0.5), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(255,255,255,0.12); }
+          50%      { box-shadow: 0 0 44px var(--wg, rgba(255,255,255,0.55)), 0 0 80px rgba(251,191,36,0.2), 0 10px 26px rgba(0,0,0,0.5), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(255,255,255,0.12); }
         }
       `}</style>
     </div>

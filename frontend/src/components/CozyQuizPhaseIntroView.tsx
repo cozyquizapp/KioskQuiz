@@ -661,8 +661,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // mittiger anlegen, damit der Ausschnitt die Fläche besser füllt. Nur Mega
     // + Step 0 (Normal-Journey bleibt exakt wie getunt).
     if (step === 0 && (s as any).largeGroupMode) {
-      S = 1.14;
-      vAnchor = 0.52;
+      // 2026-07-03 (Wolf 'Deadspace Bild 3'): stärkerer Zoom + vertikal mittig,
+      // damit die Journey die Fläche füllt statt klein zu schweben.
+      S = 1.32;
+      vAnchor = 0.5;
     }
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster. tx = phaseCenters[pi] = Mitte
@@ -676,6 +678,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       S = Math.min(2.3, Math.max(1.6, (camVp.w * 0.56) / (phaseWidths[pi] || camVp.w)));
       const wolfClearVAnchor = 0.09 + (2.1 * dotSize * S) / camVp.h;
       vAnchor = Math.min(0.44, Math.max(0.37, wolfClearVAnchor));
+      // 2026-07-03 (Wolf 'Deadspace Bild 4'): In Cozy Arena fehlt der Aktions-
+      // Block unter dem Tree → Cluster größer ziehen UND vertikal mittiger legen
+      // (0.4 → ~0.5), damit der leere Bereich unten verschwindet. Wolf-Pin bleibt
+      // dank des höheren vAnchor (Linie tiefer) trotzdem frei vom oberen Rand.
+      if ((s as any).largeGroupMode) {
+        S = Math.min(2.8, Math.max(1.9, (camVp.w * 0.66) / (phaseWidths[pi] || camVp.w)));
+        const megaClear = 0.09 + (2.1 * dotSize * S) / camVp.h;
+        vAnchor = Math.min(0.56, Math.max(0.5, megaClear));
+      }
     }
     // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
     // Der Dot-Zoom schleifte Linie + Nachbar-Kacheln + Ring ins Bild und das

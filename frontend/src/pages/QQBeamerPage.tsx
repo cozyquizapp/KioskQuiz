@@ -577,10 +577,14 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
 // transform:scale auf die echte Viewport-Groesse. Vorteil: jede Slide hat
 // einen bekannten Design-Raum, kein vh/vw-Geraetsel mehr fuer Layout-Mathe.
 //
-// SAFETY-FLAG: standardmaessig OFF. Aktivierung via URL-Param `?stage=1`
-// (oder ?stage=on/true). Wolf kann live testen und bei Problem URL ohne
-// Param oeffnen → exakt vorheriger Zustand. Kein Risiko fuer bestehendes
-// Verhalten.
+// 2026-07-04 (Wolf 'auf 100% ist die beamerview manchmal zu gross fuers
+// Fenster, kann man das automatisch anpassen?'): Stage-Fit ist jetzt DEFAULT
+// AN. Grund: der Content ist fuer 1920x1080 designt; in einem gefensterten
+// Browser (Chrome frisst Hoehe → <1080px) lief er sonst ueber, und Wolf
+// musste manuell auf 80% zoomen. SlideStage skaliert den Canvas passend in
+// jedes Fenster (= genau dieser 80%-Move, automatisch; Fullscreen = 1:1).
+// ESCAPE-LUKE bleibt: `?stage=off` (oder localStorage qq_useStage='0')
+// stellt den alten Direkt-Render sofort wieder her.
 //
 // Phase-1-Scope: nur der Phase-Render-Bereich wird gewrappt. Globale
 // Overlays (Grain, Confetti, Toasts) bleiben ausserhalb damit position:fixed
@@ -594,9 +598,11 @@ function isStageEnabled(): boolean {
     const v = url.get('stage');
     if (v === '1' || v === 'on' || v === 'true') return true;
     if (v === '0' || v === 'off' || v === 'false') return false;
-    return localStorage.getItem('qq_useStage') === '1';
+    // Persistente Escape-Luke: qq_useStage='0' → aus. Sonst Default AN.
+    if (localStorage.getItem('qq_useStage') === '0') return false;
+    return true;
   } catch {
-    return false;
+    return true;
   }
 }
 function SlideStage({ children }: { children: React.ReactNode }) {
@@ -2021,8 +2027,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               {renderState.phase === 'COZY_GAME'       && renderState.cozyGame && (
                 <CozyGameView
                   round={renderState.cozyGame}
-                  width={typeof window !== 'undefined' ? window.innerWidth : 1920}
-                  height={typeof window !== 'undefined' ? window.innerHeight : 1080}
+                  // Im Stage-Modus rendert die View im festen 1920x1080-Canvas
+                  // (per transform:scale skaliert) → Canvas-Dims nutzen, sonst
+                  // wuerde window.inner* gegen die Stage-Skalierung doppelt greifen.
+                  width={useStage ? STAGE_DESIGN_WIDTH : (typeof window !== 'undefined' ? window.innerWidth : 1920)}
+                  height={useStage ? STAGE_DESIGN_HEIGHT : (typeof window !== 'undefined' ? window.innerHeight : 1080)}
                   teams={renderState.teams}
                   language={renderState.language}
                 />

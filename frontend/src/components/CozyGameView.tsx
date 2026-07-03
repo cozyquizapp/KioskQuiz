@@ -41,16 +41,17 @@ const COZY_PINK = '#EC4899';
 // 2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe aus slice
 // bis zum öffnen des grids'): Modul-Level damit GameDetailView + WinnerSelectView
 // + WheelView denselben Lookup nutzen können.
-const SLICE_PALETTE_DARK = [
-  '#5F2139', // shiba (was #FA507F)
-  '#3D4C1D', // faultier (was #9DCB2F)
-  '#142C57', // pinguin (was #266FD3)
-  '#3C2958', // koala (was #9A65D5)
-  '#5F4B14', // giraffe (was #FEC814)
-  '#2B4447', // waschbaer (was #68B4A5)
-  '#602E18', // kuh (was #FF751F)
-  '#5D1D1A', // capybara (was #F84326)
-];
+// 2026-07-03 (Wolf „team farb swap"): jetzt zur Laufzeit aus QQ_TEAM_PALETTE
+// abgeleitet (35% bright + 65% #0A0814) statt hart kodiert — so bleibt die
+// Dunkel-Variante automatisch synchron, wenn sich die Team-Farben aendern.
+const mixToDark = (hex: string): string => {
+  const h = hex.replace('#', '');
+  const br = parseInt(h.slice(0, 2), 16), bg = parseInt(h.slice(2, 4), 16), bb = parseInt(h.slice(4, 6), 16);
+  const mix = (c: number, base: number) => Math.round(0.35 * c + 0.65 * base);
+  const to2 = (n: number) => n.toString(16).padStart(2, '0');
+  return `#${to2(mix(br, 10))}${to2(mix(bg, 8))}${to2(mix(bb, 20))}`;
+};
+const SLICE_PALETTE_DARK = QQ_TEAM_PALETTE.map(mixToDark);
 
 // 2026-05-17 v11 (Wolf 'CG-slides fallen aus dem raster, andere bgs sind dunkler
 // mit fireflies'): Standard-Brand-BG analog PausedView etc. — dunkler Grund

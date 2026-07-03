@@ -59,18 +59,23 @@ export const QQ_TOPICS = [
 ] as const;
 export type QQTopic = typeof QQ_TOPICS[number];
 
-// ── Team palette (derived from QQ_AVATARS, kept for legacy reference) ────────
-// Each avatar has its own signature color — teams pick an avatar+color pair.
-// Order matches QQ_AVATARS so fallback indexing stays in sync with avatar rings.
+// ── Team palette (SPIEGELT QQ_AVATARS[].color — EINE Farb-Quelle) ───────────
+// 2026-07-03 (Wolf „team farb swap"): Diese Palette war ein veralteter Zweit-
+// Satz (alte 8 Farben von vor dem 2026-05-05-Avatar-Recolor). Dadurch färbten
+// Cozy-Game-Rad-Slices + Demo-Avatare (/about, /trailer) „off-brand", weil die
+// echten Team-Farben (= avatar.color) laengst andere Hues hatten. Jetzt 1:1 aus
+// QQ_AVATARS gespiegelt (Reihenfolge fox→cat), damit es genau EINE Farb-Quelle
+// gibt. Werte hart gehalten (kein `.map`), weil QQ_AVATARS erst ~1400 Zeilen
+// spaeter deklariert wird (TDZ) und der Import breit gestreut ist.
 export const QQ_TEAM_PALETTE: string[] = [
-  '#FA507F', // shiba (label: Hund)
-  '#9DCB2F', // faultier
-  '#266FD3', // pinguin
-  '#9A65D5', // koala
-  '#FEC814', // giraffe
-  '#68B4A5', // waschbaer
-  '#FF751F', // kuh
-  '#F84326', // capybara
+  '#F97316', // fox / shiba (Hund)
+  '#22C55E', // frog / faultier
+  '#14B8A6', // panda / pinguin
+  '#A855F7', // rabbit / koala
+  '#FACC15', // unicorn / giraffe
+  '#3B82F6', // raccoon / waschbaer
+  '#EC4899', // cow / kuh
+  '#EF4444', // cat / capybara
 ];
 
 // ── Game constants ────────────────────────────────────────────────────────────

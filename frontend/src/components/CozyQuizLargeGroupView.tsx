@@ -236,7 +236,7 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
         ))}
       </div>
       {rest > 0 && (
-        <div style={S.standRest}>+ {rest} {de ? 'weitere Teams' : 'more teams'}</div>
+        <div style={S.standRest}>+ {rest} {de ? 'weitere Fraktionen' : 'more factions'}</div>
       )}
     </div>
   );
@@ -407,7 +407,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           );
         })}
       </div>
-      {rest > 0 && <div style={S.goRest}>+ {rest} {de ? 'weitere Teams' : 'more teams'}</div>}
+      {rest > 0 && <div style={S.goRest}>+ {rest} {de ? 'weitere Fraktionen' : 'more factions'}</div>}
 
       {state.megaAwards && (
         <div style={{ marginTop: 18, position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>

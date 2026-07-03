@@ -24,7 +24,7 @@
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
-import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion } from '../qqTheme';
 import { SkinDeco } from './SkinDeco';
@@ -3455,10 +3455,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Cozy Arena (ZvZ): Sieger = Fraktion mit dem höchsten summierten Einsatz
             // auf der korrekten Option (allInTie.speedTied[0]) — konsistent mit der
             // Krone auf den Karten. Sonst der Backend-Truth-Sieger (Sub-Team).
-            const team = (cat === 'ZEHN_VON_ZEHN' && isMegaTeams && allInTie?.speedTied.length)
+            const rawWinner = s.teams.find(t => t.id === s.correctTeamId)
+                  ?? s.teams.find(t => t.id === winnerIds[0]);
+            let team = (cat === 'ZEHN_VON_ZEHN' && isMegaTeams && allInTie?.speedTied.length)
               ? zvzTeams.find(t => t.id === allInTie!.speedTied[0])
-              : (s.teams.find(t => t.id === s.correctTeamId)
-                  ?? s.teams.find(t => t.id === winnerIds[0]));
+              : rawWinner;
+            // Cozy Arena (MUCHO/CHEESE/Bunte-Tüte): den Sub-Team-Sieger auf seine
+            // FRAKTION mappen (Name/Wappen), sonst nennt der Sieger-Hero ein
+            // einzelnes Sub-Team statt der Fraktion (Arena-Audit 2026-07-04).
+            // Farbe = Slot-Farbe des Reps bleibt (konsistent zur Avatar-Kaskade).
+            if (isMegaTeams && cat !== 'ZEHN_VON_ZEHN' && rawWinner) {
+              team = { ...rawWinner, name: qqMegaFactionName(rawWinner.avatarId, lang), emoji: qqMegaFactionSlug(rawWinner.avatarId) ?? rawWinner.emoji };
+            }
             if (!coWinners && !team) return null;
 
             const muchoSpeedWin = cat === 'MUCHO' && q.correctOptionIndex != null

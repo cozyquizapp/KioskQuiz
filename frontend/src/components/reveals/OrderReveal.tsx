@@ -25,7 +25,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
   const q = s.currentQuestion!;
   // Cozy Arena: mehrere Sub-Teams teilen einen avatarId → Cluster zu Fraktionen
   // zusammenfassen (1 Tier + ×Anzahl) statt bis zu 24 Einzel-Avatare.
-  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const btt = q.bunteTuete as any;
   const itemsDE: string[] = (btt.items ?? []) as string[];
   const itemsEN: string[] = (btt.itemsEn ?? []) as string[];

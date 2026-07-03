@@ -5780,6 +5780,10 @@ function SetupView({
         <div style={{ ...settingRow, alignItems: 'flex-start' }}>
           <span style={settingLabel}>🎲 Spielmechanik</span>
           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            {/* Grid-Mechanik-Pills nur im Cozy Quiz — in der Arena erzwingt der
+                Start comeback/wager/cozyGames=false (qqRooms.ts:856-864), daher
+                hier ausblenden statt irreführend leuchten zu lassen (Arena-Audit). */}
+            {!(s as any).largeGroupMode && (<>
             <button
               onClick={() => emit('qq:setFinalWagerEnabled', { roomCode, enabled: !s.finalWagerEnabled })}
               style={segPill(!!s.finalWagerEnabled, QQ_COLORS.brandPinkMid)}
@@ -5801,6 +5805,7 @@ function SetupView({
                 ? `🪅 CozyGames AN — ${((s as any).cozyGamesPool ?? []).length} Spiele im Rad, manueller Trigger via Pause-Button.\nKlick zum Deaktivieren.`
                 : '🪅 CozyGames AUS.\nKlick zum Aktivieren: analoge Mini-Spiele zwischen Runden.'}
             >🪅 CozyGames</button>
+            </>)}
             {/* 2026-07-02 (Wolf): Mega Event = IMMER genestet (8 Eltern-Teams
                 à bis 3 Sub-Teams). Flaches 25er verworfen — der Toggle setzt
                 largeGroupMode + nestedTeams zusammen. */}

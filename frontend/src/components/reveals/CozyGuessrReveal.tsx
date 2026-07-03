@@ -85,7 +85,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // Cozy Arena: pro Fraktion nur den BESTEN (nächsten) Pin behalten — sonst
   // klebt die Karte mit bis zu 24 Sub-Team-Pins zu (Wolf 2026-07-03 'nur der
   // beste pin pro team'). Wirkt auf Karte, Cascade UND Ranking gleichermaßen.
-  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const scoredEff = useMemo(() => {
     if (!isMega) return scored;
     const byAvatar = new Map<string, typeof scored[number]>();

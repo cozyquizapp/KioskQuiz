@@ -982,9 +982,14 @@ export function FinalRevealCard({
 
 // ── GameOverCard ─────────────────────────────────────────────────────────────
 export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en'; roomCode?: string }) {
-  const sorted  = [...s.teams].sort(compareTeamsForRanking);
-  const myRank  = sorted.findIndex(t => t.id === myTeamId) + 1;
-  const myTeam  = sorted.find(t => t.id === myTeamId);
+  // 2026-07-04 (Arena-Audit): Cozy Arena nach Fraktion gruppieren (qqSortedGroups
+  // summiert Sub-Teams je Fraktion) — sonst listet die Endkarte ~25 rohe Sub-Teams
+  // mit doppelten Fraktions-Namen + 0-Punkte-Phantomzeilen. Muster wie PausedCard.
+  const largeMode = !!(s as any).largeGroupMode;
+  const sorted  = largeMode ? qqSortedGroups(s) : [...s.teams].sort(compareTeamsForRanking);
+  const myRaw   = s.teams.find(t => t.id === myTeamId);
+  const myTeam  = largeMode ? sorted.find(t => t.avatarId === myRaw?.avatarId) : myRaw;
+  const myRank  = sorted.findIndex(t => t.id === myTeam?.id) + 1;
   const winner  = sorted[0];
   const iWon = myRank === 1;
   // 2026-05-02 (Stamm-Team-Code): teamId als lesbarer Code formatiert.
@@ -993,7 +998,6 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
   const wonLabel = lang === 'de' ? 'Gewonnen! 🎉' : 'You won! 🎉';
   const winsLabelTpl = lang === 'de' ? '{name} gewinnt!' : '{name} wins!';
   // 2026-07-01: Groß-Modus → Score ist Punkte, nicht Grid-Felder.
-  const largeMode = (s as any).largeGroupMode;
   const connectedLabel = largeMode ? (lang === 'de' ? 'Punkte' : 'pts') : (lang === 'de' ? 'verbunden' : 'connected');
 
   return (
@@ -1030,15 +1034,17 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
         {/* Rankings */}
         <div style={{ marginTop: 18, display: 'flex', flexDirection: 'column', gap: 6 }}>
           {sorted.map((tm, i) => {
-            const cellCount = s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
+            const cellCount = largeMode ? 0 : s.grid.flatMap(row => row.filter(c => c.ownerId === tm.id)).length;
             // 2026-05-05 (Wolf 'team color = team id'): tm.color ist seit
             // Backend-Fix automatisch die Brett-Palette-Farbe.
             const tmColor = tm.color;
+            // Arena: eigene Zeile = meine Fraktion (tm.id ist grp-…, nicht myTeamId).
+            const isMine = tm.id === myTeam?.id;
             return (
               <div key={tm.id} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 16,
-                background: tm.id === myTeamId ? `${tmColor}18` : 'rgba(255,255,255,0.03)',
-                border: tm.id === myTeamId ? `2px solid ${tmColor}44` : '1px solid rgba(255,255,255,0.06)',
+                background: isMine ? `${tmColor}18` : 'rgba(255,255,255,0.03)',
+                border: isMine ? `2px solid ${tmColor}44` : '1px solid rgba(255,255,255,0.06)',
                 animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
               }}>
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,

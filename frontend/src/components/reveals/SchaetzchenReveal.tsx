@@ -58,7 +58,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
 
   // Cozy Arena: 1 Marker pro Fraktion = der BESTE (nächste) Tipp der Fraktion.
   // Sub-Team → Fraktions-Rep (Tiername + Tier-slug, Farbe bleibt = Slot-Farbe).
-  const isMega = new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const rankedFinal = useMemo(() => {
     if (!isMega) return ranked;
     const bestByAvatar = new Map<string, typeof ranked[number]>();
@@ -280,7 +280,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 }}>
                   <TeamNameLabel
                     name={winner.team.name}
-                    withTeamPrefix
+                    withTeamPrefix={!isMega}
                     maxLines={2}
                     shrinkAfter={18}
                     fontSize="clamp(20px, 2.2cqw, 36px)"

@@ -102,6 +102,15 @@ export function TeamBottomSheetMenu({
   const myPosition = teamScores.findIndex(t => t.id === myTeamId) + 1;
   const myCellsCount = teamScores.find(t => t.id === myTeamId)?.count ?? 0;
   const totalTeams = state.teams.length;
+  // 2026-07-04 (Arena-Audit): in Cozy Arena hat ein Sub-Team keine Grid-Zellen.
+  // Fraktions-Punkte (Summe je avatarId) + Fraktions-Rang statt Sub-Team-Werte.
+  let myFactionPoints = 0, myFactionRank = 0;
+  if (largeMode && myTeam) {
+    const byFaction = new Map<string, number>();
+    for (const t of state.teams) byFaction.set(t.avatarId, (byFaction.get(t.avatarId) ?? 0) + (t.largestConnected ?? 0));
+    myFactionPoints = byFaction.get(myTeam.avatarId) ?? 0;
+    myFactionRank = [...byFaction.values()].filter(v => v > myFactionPoints).length + 1;
+  }
   const itemBase: React.CSSProperties = {
     width: '100%',
     display: 'flex', alignItems: 'center', gap: 14,
@@ -221,14 +230,22 @@ export function TeamBottomSheetMenu({
             },
             {
               label: lang === 'de' ? 'Position' : 'Position',
-              value: totalTeams > 0 ? `#${myPosition}` : '–',
+              value: largeMode
+                ? (myFactionRank > 0 ? `#${myFactionRank}` : '–')
+                : (totalTeams > 0 ? `#${myPosition}` : '–'),
               accent: myColor,
             },
-            {
-              label: lang === 'de' ? 'Zellen' : 'Cells',
-              value: String(myCellsCount),
-              accent: '#22C55E',
-            },
+            largeMode
+              ? {
+                  label: lang === 'de' ? 'Punkte' : 'Points',
+                  value: String(myFactionPoints),
+                  accent: '#22C55E',
+                }
+              : {
+                  label: lang === 'de' ? 'Zellen' : 'Cells',
+                  value: String(myCellsCount),
+                  accent: '#22C55E',
+                },
           ].map((stat) => (
             <div key={stat.label} style={{
               padding: '10px 8px', borderRadius: 14,
@@ -249,8 +266,10 @@ export function TeamBottomSheetMenu({
           ))}
         </div>
 
-        {/* MEIN BRETT — Mini-Grid mit eigenen Zellen highlighted */}
-        {state.gridSize > 0 && (
+        {/* MEIN BRETT — Mini-Grid mit eigenen Zellen highlighted.
+            Arena-Audit 2026-07-04: in Cozy Arena kein Brett (gridSize bleibt
+            backend-seitig ≠ 0, daher explizit auf !largeMode gaten). */}
+        {!largeMode && state.gridSize > 0 && (
           <div style={{
             padding: '12px 12px 14px',
             borderRadius: 14,

@@ -818,11 +818,18 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             {(() => {
               const isAvatarStep = step === 'COLOR' || step === 'AVATAR';
               const isNameStep = step === 'NAME';
-              const items = [
-                { label: lang === 'de' ? '1. Avatar' : '1. Avatar', active: isAvatarStep, past: isNameStep },
-                { label: lang === 'de' ? '2. Name'   : '2. Name',   active: isNameStep,   past: false      },
-                { label: lang === 'de' ? '3. Los'    : '3. Go',     active: false,        past: false      },
-              ];
+              // Cozy Arena: Name ist an die Fraktion gebunden (fix) → kein
+              // Name-Schritt. Stepper zeigt nur „Fraktion → Los".
+              const items = largeGroup
+                ? [
+                    { label: lang === 'de' ? '1. Fraktion' : '1. Faction', active: isAvatarStep, past: false },
+                    { label: lang === 'de' ? '2. Los'      : '2. Go',      active: false,        past: false },
+                  ]
+                : [
+                    { label: lang === 'de' ? '1. Avatar' : '1. Avatar', active: isAvatarStep, past: isNameStep },
+                    { label: lang === 'de' ? '2. Name'   : '2. Name',   active: isNameStep,   past: false      },
+                    { label: lang === 'de' ? '3. Los'    : '3. Go',     active: false,        past: false      },
+                  ];
               return items.map((s, i) => {
                 const color = s.active ? QQ_COLORS.brandPink : (s.past ? QQ_COLORS.violet400 : QQ_COLORS.slate600);
                 return (

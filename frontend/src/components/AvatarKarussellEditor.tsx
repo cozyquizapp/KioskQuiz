@@ -9,7 +9,7 @@
 // Ersetzt den alten 4×2-Avatar-Grid + separaten Emoji-Picker.
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { QQ_AVATARS } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 
@@ -270,7 +270,17 @@ export function AvatarKarussellEditor({
               : 'tcfloat 3.6s ease-in-out infinite',
             position: 'relative',
           }}>
-            {needsEmoji && chosenEmoji ? (
+            {/* Cozy Arena: Emblem DETERMINISTISCH aus avatarId ableiten (nicht
+                aus chosenEmoji). Sonst zeigt der erste Paint den stale cozy3d-
+                Slug aus localStorage (z.B. „dog") bis der Binding-Effekt greift
+                → sichtbarer Hund-Flash. So stimmt schon der erste Frame. */}
+            {factionMode && qqMegaFactionSlug(avatarId) ? (
+              <CountryFlagOrEmoji
+                emoji={qqMegaFactionSlug(avatarId)!}
+                fontSize={'clamp(72px, 19vw, 96px)'}
+                style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
+              />
+            ) : needsEmoji && chosenEmoji ? (
               <CountryFlagOrEmoji
                 emoji={chosenEmoji}
                 fontSize={'clamp(72px, 19vw, 96px)'}

@@ -292,7 +292,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
   async function startGame(draftIdOverride?: string) {
     if (startingRef.current) return;
-    const effectiveDraftId = draftIdOverride ?? selectedDraftId;
+    // 2026-07-04 (Crash-Fix „b.startsWith is not a function"): draftIdOverride
+    // NUR uebernehmen wenn es wirklich ein String ist. Sonst reicht ein
+    // onClick={startGame} das React-SyntheticEvent als Override durch → spaeter
+    // effectiveDraftId.startsWith(...) crasht (Event ist kein String).
+    const overrideId = typeof draftIdOverride === 'string' ? draftIdOverride : undefined;
+    const effectiveDraftId = overrideId ?? selectedDraftId;
     if (!effectiveDraftId) { alert('Bitte einen Fragensatz auswählen'); return; }
     const teamCount = state?.teams.length ?? 0;
     if (teamCount === 0 && !window.confirm('Noch keine Teams verbunden — wirklich starten?')) return;
@@ -6499,7 +6504,7 @@ function LobbyView({
         display: 'flex', justifyContent: 'center', marginTop: 20,
       }}>
         <button
-          onClick={startGame}
+          onClick={() => startGame()}
           style={{
             padding: '20px 64px', borderRadius: 16, border: 'none',
             fontFamily: 'inherit', fontWeight: 900, fontSize: 26,

@@ -1801,9 +1801,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         </div>
       )}
 
-      {/* Autoplay-Toggle — IMMER sichtbar in LOBBY (Setup + Lobby-Subphase),
-          damit der Test-Mode schon vor dem Setup-Abschluss aktivierbar ist. */}
-      {joined && s && s.phase === 'LOBBY' && (
+      {/* Autoplay-Toggle — standalone Banner NUR im echten Lobby (setupDone).
+          Im Setup-Screen (!setupDone) sitzt Autoplay in der Sekundär-Leiste
+          unter der Bühne (Wolf 2026-07-04 'random platziert' → gruppiert). */}
+      {joined && s && s.phase === 'LOBBY' && setupDone && (
         <div
           className="qm-autoplay-banner"
           data-on={autoplayEnabled ? 'true' : 'false'}
@@ -1907,22 +1908,43 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </div>
           </div>
 
-          {/* Sekundär: geführte Vorab-Planung (Material/Druck/Briefing/Technik) */}
-          <button
-            onClick={() => setShowPrep(true)}
-            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '12px 18px', borderRadius: 12, border: '1px solid rgba(236,72,153,0.4)', background: 'rgba(236,72,153,0.10)', color: '#e2e8f0', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
-          >
-            🎬 Show planen — geführt vorbereiten (Material, Druck, Briefing, Technik)
-          </button>
-          {/* Alte Pill-Setup-Ansicht: nur noch hinter „⚙ Alle Einstellungen"
-              (Wolf „rest im hintergrund ausblenden"). Der Wizard deckt alles ab;
-              diese Drawer ist für gezielte Einzel-Tweaks / Power-Use. */}
-          <button
-            onClick={() => setShowAllSettings(v => !v)}
-            style={{ display: 'block', width: '100%', maxWidth: 520, margin: '0 auto 14px', padding: '11px 18px', borderRadius: 12, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 14, cursor: 'pointer' }}
-          >
-            ⚙ Alle Einstellungen {showAllSettings ? '▲ ausblenden' : '▼ (Schnell-Pills, optional)'}
-          </button>
+          {/* Sekundär-Leiste: alle Neben-Steuerungen in EINER ruhigen Reihe
+              (Wolf 2026-07-04 'autoplay/show planen/einstellungen random
+              platziert' → gruppiert & bewusst platziert). Show planen (Prep-
+              Tool) · Alle Einstellungen (Power-Pills) · Autoplay (Test-Toggle).
+              Autoplay hier nur im Setup-Screen; im echten Lobby der Banner oben. */}
+          <div style={{
+            display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 10,
+            maxWidth: 620, margin: '2px auto 14px', padding: '10px 14px', borderRadius: 14,
+            background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.16)',
+          }}>
+            <button
+              onClick={() => setShowPrep(true)}
+              title="Geführt vorbereiten: Material, Druck, Briefing, Technik"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(236,72,153,0.4)', background: 'rgba(236,72,153,0.10)', color: '#f9d3e6', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              🎬 Show planen
+            </button>
+            <span style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 900 }}>·</span>
+            <button
+              onClick={() => setShowAllSettings(v => !v)}
+              title="Schnell-Pills für gezielte Einzel-Tweaks (Power-Use)"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              ⚙ Alle Einstellungen {showAllSettings ? '▲' : '▼'}
+            </button>
+            <span style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 900 }}>·</span>
+            <label style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit',
+              padding: '8px 12px', borderRadius: 10, fontSize: 13, fontWeight: 800,
+              color: autoplayEnabled ? '#d8b4fe' : '#94a3b8',
+              border: `1px solid ${autoplayEnabled ? 'rgba(192,132,252,0.5)' : 'rgba(148,163,184,0.25)'}`,
+              background: autoplayEnabled ? 'rgba(192,132,252,0.14)' : 'transparent',
+            }}>
+              <input type="checkbox" checked={autoplayEnabled} onChange={e => setAutoplayEnabled(e.target.checked)} style={{ width: 15, height: 15, cursor: 'pointer' }} />
+              🤖 Autoplay <span style={{ opacity: 0.6, fontWeight: 700, fontSize: 11 }}>(Test)</span>
+            </label>
+          </div>
           {showAllSettings && (
             <SetupView
               s={s}

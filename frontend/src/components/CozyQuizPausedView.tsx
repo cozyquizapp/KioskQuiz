@@ -755,7 +755,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const records: React.ReactNode[] = [];
     if (funStats.highestScore && funStats.highestScore.score > 0) {
       records.push(
-        <div key="hs" style={{ display: 'flex', alignItems: 'center', justifyContent: isQuietMotion() ? 'center' : 'flex-start', gap: 18, padding: '12px 0' }}>
+        <div key="hs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
@@ -768,7 +768,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     }
     if (funStats.closestGame && funStats.closestGame.gap > 0) {
       records.push(
-        <div key="cg" style={{ display: 'flex', alignItems: 'center', justifyContent: isQuietMotion() ? 'center' : 'flex-start', gap: 18, padding: '12px 0' }}>
+        <div key="cg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}>⚔️</span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
@@ -781,7 +781,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     }
     if (funStats.winStreak && funStats.winStreak.streak >= 2) {
       records.push(
-        <div key="ws" style={{ display: 'flex', alignItems: 'center', justifyContent: isQuietMotion() ? 'center' : 'flex-start', gap: 18, padding: '12px 0' }}>
+        <div key="ws" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
@@ -795,7 +795,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (funStats.fastestAnswer && funStats.fastestAnswer.ms >= 100) {
       const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
       records.push(
-        <div key="fa" style={{ display: 'flex', alignItems: 'center', justifyContent: isQuietMotion() ? 'center' : 'flex-start', gap: 18, padding: '12px 0' }}>
+        <div key="fa" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
           <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
@@ -809,7 +809,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (records.length > 0) {
       panels.push({ key: 'records', node: (
         <div>
-          <div style={{ fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: isQuietMotion() ? 'center' : 'flex-start', gap: 18, textTransform: isQuietMotion() ? 'uppercase' : undefined, letterSpacing: isQuietMotion() ? '-0.01em' : undefined }}>
+          <div style={{ fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, textTransform: isQuietMotion() ? 'uppercase' : undefined, letterSpacing: isQuietMotion() ? '-0.01em' : undefined }}>
             <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🏅</span> {de ? 'Rekorde' : 'Records'}
           </div>
           {records}

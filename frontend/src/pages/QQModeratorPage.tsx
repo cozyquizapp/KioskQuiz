@@ -38,7 +38,9 @@ function FormatHeroWolf() {
     const id = setInterval(() => setSpeak(v => !v), 1600);
     return () => clearInterval(id);
   }, []);
-  return <AnimatedCozyWolf widthCss="clamp(140px, 20vw, 210px)" mode="daumen" speaking={speak} wink mirror />;
+  // vh-relativ → schrumpft auf niedrigen Laptop-Viewports mit, damit die ganze
+  // Setup-Seite ohne Scrollen passt (Wolf: „ohne Maus, nicht scrollen müssen").
+  return <AnimatedCozyWolf widthCss="clamp(84px, 14vh, 150px)" mode="daumen" speaking={speak} wink mirror />;
 }
 
 interface DraftSummary {
@@ -1872,7 +1874,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               schwarzem Void + grosser animierter CozyWolf mit persistenter
               Sprechblase als Brand-Zentrum. Karten + Status liegen ueber dem
               Glow (zIndex). Ersetzt den flachen 3-Button-Stack (Wolf 'sad'). */}
-          <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto 16px', padding: '12px 10px 4px', borderRadius: 28, overflow: 'hidden' }}>
+          {/* Viewport-fit (Wolf 'ohne Maus, nicht scrollen müssen'): Bühne +
+              Sekundär-Leiste zentriert in der Fläche unter dem Header (Page-Pad
+              20 + Header ~78). vh-Clamps an Wolf/Karten lassen alles auf kurzen
+              Laptop-Screens mitschrumpfen → Neben-Einstellungen ohne Scrollen. */}
+          <div style={{ minHeight: 'calc(100dvh - 124px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(4px, 1vh, 12px)' }}>
+          <div style={{ position: 'relative', maxWidth: 760, margin: '0 auto', padding: '2px 10px', borderRadius: 28, overflow: 'hidden' }}>
             {/* Ambient-Glow oben (pink/magenta Spotlight) + unten (Navy-Boden) */}
             <div aria-hidden style={{ position: 'absolute', top: '-32%', left: '-12%', right: '-12%', height: 400, pointerEvents: 'none', zIndex: 0,
               background: 'radial-gradient(58% 100% at 50% 0%, rgba(236,72,153,0.34), rgba(162,18,71,0.16) 46%, transparent 73%)' }} />
@@ -1881,7 +1888,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
             {/* Wolf-Zentrum mit persistenter Sprechblase */}
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0 }}>
-              <div style={{ position: 'relative', background: '#fff', color: '#1E2A5A', fontWeight: 900, fontSize: 'clamp(16px, 2.4vw, 22px)', padding: '9px 20px', borderRadius: 16, marginBottom: 4, boxShadow: '0 12px 30px -8px rgba(236,72,153,0.55)', border: '2px solid rgba(236,72,153,0.4)' }}>
+              <div style={{ position: 'relative', background: '#fff', color: '#1E2A5A', fontWeight: 900, fontSize: 'clamp(15px, 2.2vw, 21px)', padding: 'clamp(6px, 0.9vh, 9px) 20px', borderRadius: 16, marginBottom: 4, boxShadow: '0 12px 30px -8px rgba(236,72,153,0.55)', border: '2px solid rgba(236,72,153,0.4)' }}>
                 Bereit für deine Show? <span style={{ marginLeft: 2 }}>🎬</span>
                 <span aria-hidden style={{ position: 'absolute', bottom: -8, left: '50%', width: 15, height: 15, transform: 'translateX(-50%) rotate(45deg)', background: '#fff', borderRight: '2px solid rgba(236,72,153,0.4)', borderBottom: '2px solid rgba(236,72,153,0.4)' }} />
               </div>
@@ -1892,7 +1899,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </div>
 
             {/* Zwei Format-Hero-Karten */}
-            <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 16, margin: '18px auto 14px', flexWrap: 'wrap' }}>
+            <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 16, margin: 'clamp(8px, 1.6vh, 16px) auto clamp(4px, 0.8vh, 10px)', flexWrap: 'wrap' }}>
               {[
                 { key: 'quiz', arena: false, emoji: '🍺', title: 'Cozy Quiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], accent: '#EC4899' },
                 { key: 'arena', arena: true, emoji: '🏟️', title: 'Cozy Arena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], accent: '#A78BFA' },
@@ -1904,19 +1911,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     className="qm-format-card"
                     onClick={() => { emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true }); setShowWizard(true); }}
                     style={{
-                      flex: '1 1 260px', textAlign: 'left', padding: '20px 22px 18px', borderRadius: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden',
+                      flex: '1 1 260px', textAlign: 'left', padding: 'clamp(12px, 1.8vh, 18px) 22px', borderRadius: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden',
                       border: `2px solid ${f.accent}${active ? '' : '55'}`,
                       background: `linear-gradient(158deg, ${f.accent}30, ${f.accent}10 55%, rgba(15,19,38,0.72))`,
                       color: '#fff', boxShadow: active ? `0 14px 36px -10px ${f.accent}99, inset 0 0 0 1px ${f.accent}55` : '0 10px 26px -12px rgba(0,0,0,0.55)',
                     }}
                   >
-                    <div style={{ width: 52, height: 52, borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 28, marginBottom: 12, background: `${f.accent}2e`, border: `1.5px solid ${f.accent}66`, boxShadow: `0 6px 18px -6px ${f.accent}99` }}>{f.emoji}</div>
-                    <div style={{ fontSize: 22, fontWeight: 900 }}>{f.title}</div>
-                    <div style={{ fontSize: 13, fontWeight: 800, color: f.accent, marginBottom: 12 }}>{f.sub}</div>
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <div style={{ width: 'clamp(40px, 5.2vh, 50px)', height: 'clamp(40px, 5.2vh, 50px)', borderRadius: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 'clamp(22px, 3vh, 27px)', marginBottom: 'clamp(6px, 1vh, 10px)', background: `${f.accent}2e`, border: `1.5px solid ${f.accent}66`, boxShadow: `0 6px 18px -6px ${f.accent}99` }}>{f.emoji}</div>
+                    <div style={{ fontSize: 'clamp(19px, 2.6vh, 22px)', fontWeight: 900 }}>{f.title}</div>
+                    <div style={{ fontSize: 13, fontWeight: 800, color: f.accent, marginBottom: 'clamp(6px, 1vh, 10px)' }}>{f.sub}</div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(2px, 0.5vh, 4px)' }}>
                       {f.lines.map(l => <span key={l} style={{ fontSize: 13, color: '#d3dcec', fontWeight: 700, display: 'flex', gap: 7, alignItems: 'center' }}><span style={{ color: f.accent, fontWeight: 900 }}>▸</span>{l}</span>)}
                     </div>
-                    <div style={{ marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 900, color: '#fff', background: f.accent, padding: '8px 14px', borderRadius: 999, boxShadow: `0 8px 20px -6px ${f.accent}` }}>Wählen &amp; einrichten →</div>
+                    <div style={{ marginTop: 'clamp(8px, 1.4vh, 14px)', display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, fontWeight: 900, color: '#fff', background: f.accent, padding: '8px 14px', borderRadius: 999, boxShadow: `0 8px 20px -6px ${f.accent}` }}>Wählen &amp; einrichten →</div>
                     {active && <div style={{ position: 'absolute', top: 12, right: 12, fontSize: 12, fontWeight: 900, color: '#fff', background: f.accent, borderRadius: 999, padding: '3px 10px' }}>✓ aktiv</div>}
                   </button>
                 );
@@ -1951,7 +1958,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               Autoplay hier nur im Setup-Screen; im echten Lobby der Banner oben. */}
           <div style={{
             display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center', gap: 10,
-            maxWidth: 620, margin: '2px auto 14px', padding: '10px 14px', borderRadius: 14,
+            maxWidth: 620, margin: '0 auto', padding: '9px 14px', borderRadius: 14,
             background: 'rgba(148,163,184,0.06)', border: '1px solid rgba(148,163,184,0.16)',
           }}>
             <button
@@ -2008,6 +2015,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 </div>
               )}
             </div>
+          </div>
           </div>
           {showAllSettings && (
             <SetupView

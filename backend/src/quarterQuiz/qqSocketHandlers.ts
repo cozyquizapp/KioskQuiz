@@ -3134,6 +3134,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
           room.largeGroupMode = true;
         }
         room.nestedTeams = room.largeGroupMode;
+        // Hinweis: Cozy Arena erzwingt KEIN Avatar-Set — die Fraktions-Wappen
+        // erscheinen, weil team.emoji auf den Wappen-Slug (qqMegaFactionSlug)
+        // gesetzt wird (höchste Prio in getAvatarDisplay). So bleibt Farbe⟷Wappen
+        // immer kohärent (kein „violetter Slot + rotes Wappen"-Mismatch).
         // 2026-07-02 (Wolf): Format im Wizard-Schritt 0 gewählt → Beamer verlässt
         // den neutralen Welcome und zeigt die format-spezifische Pre-Game-Ansicht.
         if (payload.formatSelected === true) {

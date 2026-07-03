@@ -23,6 +23,9 @@ type Props = {
   activeSetId: string;
   serverEmojis?: string[];
   lang: 'de' | 'en';
+  /** Cozy Arena: Emoji ist an die Fraktion (Farbe) gekoppelt → Emoji-Wechsel
+   *  sperren. Swipe (Fraktion wählen) bleibt aktiv. */
+  factionMode?: boolean;
 };
 
 const SPARKS = [
@@ -34,7 +37,7 @@ const SPARKS = [
 
 export function AvatarKarussellEditor({
   avatarId, setAvatarId, chosenEmoji, setChosenEmoji,
-  takenAvatarIds, takenEmojis, activeSetId, serverEmojis, lang,
+  takenAvatarIds, takenEmojis, activeSetId, serverEmojis, lang, factionMode,
 }: Props) {
   const [pickedId, setPickedId] = useState<string | null>(null);
   const [pickedGreeting, setPickedGreeting] = useState<string>('Hi!');
@@ -68,7 +71,9 @@ export function AvatarKarussellEditor({
   const myColor = currentSlot?.color ?? '#EAB308';
   const availableEmojis = emojiPool.filter(em => !takenEmojis.includes(em));
   const needsEmoji = !isPng && emojiPool.length > 0;
-  const canTapAvatar = needsEmoji && availableEmojis.length > 0;
+  // Cozy Arena: Emoji fest an die Fraktion → kein Tap-to-change (sonst könnte ein
+  // cozy3d-Tier das Wappen überschreiben). Swipe zum Fraktion-Wechsel bleibt.
+  const canTapAvatar = !factionMode && needsEmoji && availableEmojis.length > 0;
 
   const goToSlotIdx = (newIdx: number) => {
     if (availableSlots.length === 0) return;

@@ -8,7 +8,7 @@ L.Icon.Default.mergeOptions({ iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/di
 import { useQQSocket } from '../hooks/useQQSocket';
 import {
   QQ_AVATARS, QQStateUpdate, QQ_CATEGORY_COLORS, QQ_CATEGORY_LABELS,
-  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, getFunnyTeamNames, qqMegaFactionName,
+  QQTeam, qqGetAvatar, QQ_BUNTE_TUETE_LABELS, getFunnyTeamNames, qqMegaFactionName, qqMegaFactionSlug,
 } from '../../../shared/quarterQuizTypes';
 import { QQ_CAT_ACCENT } from '../qqShared';
 import { getRoundColor } from '../qqDesignTokens';
@@ -336,14 +336,19 @@ export default function QQTeamPage() {
   const [showIdentityBanner, setShowIdentityBanner] = useState(false);
 
   async function joinRoom() {
-    if (!teamName.trim()) return;
+    // Cozy Arena: der Sub-Team-Name IST der Fraktions-Name (avatarId → Fraktion),
+    // unabhängig vom Namensfeld/localStorage/Effect-Timing. Sonst blieb ein
+    // Alt-Wert („Koala 3") stehen (Wolf 2026-07-03).
+    const largeGroup = !!(state as any)?.largeGroupMode;
+    const finalName = largeGroup ? qqMegaFactionName(avatarId, lang) : teamName.trim();
+    if (!finalName) return;
     setError(null);
-    localStorage.setItem('qq_teamName', teamName.trim());
+    localStorage.setItem('qq_teamName', finalName);
     localStorage.setItem('qq_avatarId', avatarId);
     if (chosenEmoji) localStorage.setItem('qq_emoji', chosenEmoji);
     else localStorage.removeItem('qq_emoji');
     const ack = await safeEmit(emit, 'qq:joinTeam', {
-      roomCode, teamId, teamName: teamName.trim(), avatarId, emoji: chosenEmoji,
+      roomCode, teamId, teamName: finalName, avatarId, emoji: chosenEmoji,
     });
     if (ack.ok) {
       setJoined(true); setShowIdentityBanner(true);
@@ -413,7 +418,9 @@ export default function QQTeamPage() {
   // 2026-07-01: Groß-Modus (bis 25 Teams > 8 Avatar-Slots) → Slots wiederverwendbar,
   // also keine „belegt"-Sperre. Teams unterscheiden sich über Name + Tier.
   const takenAvatarIds = (state as any)?.largeGroupMode ? [] : (state?.teams ?? []).map(t => t.avatarId);
-  const takenEmojis = (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
+  // Cozy Arena: mehrere Handys teilen sich eine Fraktion (= gleiches Wappen/Emoji)
+  // → keine „belegt"-Sperre auf Emojis, sonst könnte nur 1 Handy pro Fraktion rein.
+  const takenEmojis = (state as any)?.largeGroupMode ? [] : (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
   // Doppelten Team-Namen blocken (case-insensitive, getrimmt). Wenn dasselbe
   // Wort in der Lobby zweimal vorkommt, kann der Mod (und am Ende beim Reveal
   // selbst) nicht mehr unterscheiden wer gemeint ist.
@@ -478,6 +485,9 @@ export default function QQTeamPage() {
   // aus dem Set-Pool (sobald Set + Pool da sind).
   useEffect(() => {
     if (joined) return;
+    // Cozy Arena: chosenEmoji ist an die Fraktion gebunden (Wappen-Slug, nicht im
+    // cozy3d-Pool) → dieser Set-Pool-Auto-Switch würde es fälschlich zurücksetzen.
+    if ((state as any)?.largeGroupMode) return;
     if (!setId) return;
     const set = AVATAR_SETS.find(s => s.id === setId);
     if (!set || set.source === 'png') return;
@@ -630,7 +640,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   // Mega Event: kein Name-Schritt — Name automatisch = Faktions-Name (die
   // konkrete „Handy N"-Kennung vergibt die Anzeige nach Beitritts-Reihenfolge).
   useEffect(() => {
-    if (largeGroup && avatarId) setTeamName(qqMegaFactionName(avatarId, lang));
+    if (largeGroup && avatarId) {
+      setTeamName(qqMegaFactionName(avatarId, lang));
+      // Cozy Arena: Wappen ist an die Fraktion (Farbe) gekoppelt — chosenEmoji
+      // fest auf den Fraktions-Wappen-Slug binden, damit Farbe⟷Wappen kohärent
+      // bleiben und keine cozy3d-Tier-Wahl reinrutscht.
+      setChosenEmoji(qqMegaFactionSlug(avatarId));
+    }
   }, [largeGroup, avatarId]); // eslint-disable-line react-hooks/exhaustive-deps
   const trimmedNameLower = teamName.trim().toLowerCase();
   // Mega Event: Sub-Teams teilen den Faktions-Namen → keine „Name vergeben"-Sperre.
@@ -876,6 +892,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               activeSetId={activeSetId}
               serverEmojis={serverEmojis}
               lang={lang}
+              factionMode={largeGroup}
             />
             {/* Name-Input direkt in derselben Card. Live-Strip „Team "-Prefix
                 verhindert „Team Team Regenbogen" beim spaeteren Display.

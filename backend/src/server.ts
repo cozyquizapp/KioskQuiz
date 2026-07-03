@@ -93,7 +93,7 @@ import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
 import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
-import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE } from '../../shared/quarterQuizTypes';
+import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName, qqMegaFactionSlug } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -9957,10 +9957,13 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
       for (let slot = 0; slot < 3; slot++) {
         if (added >= toAdd) break outer;
         const teamId = `dev-${av.id}-${slot}-${Math.random().toString(36).slice(2, 7)}`;
-        const label = botLang === 'en' ? av.labelEn : av.label;
-        const name = namePicks[added] ?? `${label} ${slot + 1}`;
+        // Cozy Arena: Sub-Teams heißen nach der FRAKTION (nicht Avatar-Label) —
+        // sonst „Koala 3" statt „Letzte Sekunde 3" (Wolf 2026-07-03).
+        const name = namePicks[added] ?? `${qqMegaFactionName(av.id, botLang === 'en' ? 'en' : 'de')} ${slot + 1}`;
         try {
-          qqJoinTeam(room, teamId, name, av.id, undefined);
+          // Emoji = Fraktions-Wappen-Slug → Bots zeigen das Wappen (wie echte Handys),
+          // nicht den cozy3d-Tier-Default.
+          qqJoinTeam(room, teamId, name, av.id, qqMegaFactionSlug(av.id));
           if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
           added++;
         } catch { added++; }

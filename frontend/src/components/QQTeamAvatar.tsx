@@ -303,8 +303,10 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
         alt={crestLabel(emoji)}
         draggable={false}
         style={{
-          width: '1.05em',
-          height: '1.05em',
+          // 2026-07-03 (Wolf „symbole etwas groesser"): 1.05em fuellte die Disc
+          // nur ~55% (Emblem-PNGs haben zusaetzlich Innen-Padding) → 1.45em.
+          width: '1.45em',
+          height: '1.45em',
           fontSize: fontSizeStr,
           objectFit: 'contain',
           display: 'inline-block',
@@ -490,7 +492,9 @@ function CrestAvatar({
   const [failed, setFailed] = useState(false);
   void color;
   const imgSrc = flat ? crestEmblemSrc(slug) : src;
-  const fillPct = flat ? '76%' : '100%';
+  // 2026-07-03 (Wolf „symbole etwas groesser"): flat 76% → 88% (Emblem-PNGs
+  // haben Innen-Padding, fuellt die Scheibe/Zelle satter).
+  const fillPct = flat ? '88%' : '100%';
   const imgFilter = flat
     ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))'
     : 'drop-shadow(0 3px 5px rgba(0,0,0,0.28))';

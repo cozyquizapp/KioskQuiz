@@ -661,10 +661,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // mittiger anlegen, damit der Ausschnitt die Fläche besser füllt. Nur Mega
     // + Step 0 (Normal-Journey bleibt exakt wie getunt).
     if (step === 0 && (s as any).largeGroupMode) {
-      // 2026-07-03 (Wolf 'Deadspace Bild 3'): stärkerer Zoom + vertikal mittig,
-      // damit die Journey die Fläche füllt statt klein zu schweben.
-      S = 1.32;
-      vAnchor = 0.5;
+      // 2026-07-03 (Wolf 'Deadspace Bild 3' → danach 'überlappt immernoch mit
+      // Schrift'): Der grosse „Runde N"-Titel steht flex-zentriert in der Mitte.
+      // vAnchor 0.5 legte die Journey-Linie GENAU durch den Titel. Journey daher
+      // in die untere Hälfte (klar UNTER den Titel) legen; moderater Zoom füllt
+      // die Fläche ohne die untere Tagline zu touchieren.
+      S = 1.18;
+      vAnchor = 0.72;
     }
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster. tx = phaseCenters[pi] = Mitte

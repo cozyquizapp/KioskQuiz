@@ -125,7 +125,9 @@ export default function QQRecapPage() {
         <div style={{ fontSize: 14, color: QQ_COLORS.slate400 }}>
           {dateStr} · Room <code style={{ background: QQ_COLORS.slate800, padding: '2px 6px', borderRadius: 4 }}>{recap.roomCode}</code>
           {' · '}{recap.phases} Phasen
-          {recap.winner && <> · 🏆 Sieger: <strong style={{ color: QQ_COLORS.brandPinkSoft }}>{recap.winner}</strong></>}
+          {/* 2026-07-03 (Wolf-Audit): persistierter recap.winner ist im Cozy-Arena-
+              Modus der Sub-Team-Name → stattdessen die Sieger-Fraktion (displayTeams[0]). */}
+          {recap.winner && <> · 🏆 Sieger: <strong style={{ color: QQ_COLORS.brandPinkSoft }}>{nested ? (displayTeams[0]?.name ?? recap.winner) : recap.winner}</strong></>}
         </div>
       </div>
 

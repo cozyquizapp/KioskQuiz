@@ -21,6 +21,7 @@ import { TeamNameLabel } from '../components/TeamNameLabel';
 import { JokerIcon } from '../components/JokerIcon';
 import { playHotkeyFeedback } from '../utils/sounds';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
+import { qqSortedGroups } from '../qqShared';
 import { API_BASE } from '../api';
 import './qqModeratorTheme.css';
 import { QQ_COLORS } from '../../../shared/qqColors';
@@ -2734,13 +2735,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                         }}>
                           📋 Team-Highlights (Spickzettel)
                         </div>
-                        {[...s.teams]
-                          .sort((a, b) =>
-                            b.largestConnected - a.largestConnected || b.totalCells - a.totalCells
-                          )
+                        {/* 2026-07-03 (Wolf-Audit): In Cozy Arena Fraktionen (summierte
+                            Punkte) statt Sub-Teams, keine Grid-Highlights (Joker/Klau/Stapel). */}
+                        {((s as any).largeGroupMode
+                          ? qqSortedGroups(s)
+                          : [...s.teams].sort((a, b) => b.largestConnected - a.largestConnected || b.totalCells - a.totalCells))
                           .map((tm, idx) => {
                             const rank = idx + 1;
-                            const highlights = computeTeamHighlights(s, tm.id);
+                            const highlights = (s as any).largeGroupMode ? [] : computeTeamHighlights(s, tm.id);
                             return (
                               <div key={tm.id} style={{
                                 padding: '8px 10px', borderRadius: 10,
@@ -2763,12 +2765,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                                   <span style={{
                                     fontSize: 11, color: QQ_COLORS.brandPinkSoft, fontWeight: 900,
                                     fontVariantNumeric: 'tabular-nums',
-                                  }}>{tm.largestConnected} F</span>
+                                  }}>{tm.largestConnected} {(s as any).largeGroupMode ? 'Pkt' : 'F'}</span>
                                 </div>
                                 {highlights.length === 0 ? (
-                                  <div style={{ fontSize: 10, color: QQ_COLORS.slate500, fontStyle: 'italic' }}>
-                                    keine besonderen Highlights
-                                  </div>
+                                  (s as any).largeGroupMode ? null : (
+                                    <div style={{ fontSize: 10, color: QQ_COLORS.slate500, fontStyle: 'italic' }}>
+                                      keine besonderen Highlights
+                                    </div>
+                                  )
                                 ) : (
                                   <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                                     {highlights.map((h, i) => (
@@ -3108,20 +3112,22 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                               }}>⏳ wartet…</span>
                             )}
                           </div>
-                          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 1 }}>
-                            {/* 'verbunden' raus — steht jetzt als beschriftete
-                                Großzahl rechts (MODERATOR_OPTIMIZATION P1). */}
-                            {t.totalCells} Felder
-                            {stats?.stealsUsed > 0 && ` · ⚡${stats.stealsUsed}/2`}
-                            {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
-                          </div>
+                          {/* 2026-07-03 (Wolf-Audit): Grid-Stats (Felder/Klau/Joker)
+                              existieren in Cozy Arena nicht → nur im Normal-Modus zeigen. */}
+                          {!(s as any).largeGroupMode && (
+                            <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 1 }}>
+                              {t.totalCells} Felder
+                              {stats?.stealsUsed > 0 && ` · ⚡${stats.stealsUsed}/2`}
+                              {stats?.jokersEarned > 0 && ` · ⭐${stats.jokersEarned}`}
+                            </div>
+                          )}
                         </div>
                         {/* Großzahl = größte verbundene Gruppe (In-Game-Ranking-
                             Metrik) — jetzt mit Mini-Label, damit die Semantik klar
                             ist (vorher unbeschriftet neben „X Felder"). */}
-                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1, flex: 'none' }} title="Größte verbundene Gruppe (Spielstand)">
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1, flex: 'none' }} title={(s as any).largeGroupMode ? 'Punkte (Spielstand)' : 'Größte verbundene Gruppe (Spielstand)'}>
                           <div style={{ fontSize: 20, fontWeight: 900, color: t.color }}>{t.largestConnected}</div>
-                          <div style={{ fontSize: 9, fontWeight: 800, color: QQ_COLORS.slate500, letterSpacing: '0.04em', marginTop: 1 }}>🔗 verb.</div>
+                          <div style={{ fontSize: 9, fontWeight: 800, color: QQ_COLORS.slate500, letterSpacing: '0.04em', marginTop: 1 }}>{(s as any).largeGroupMode ? 'Punkte' : '🔗 verb.'}</div>
                         </div>
                         {/* Rename */}
                         <button
@@ -3371,7 +3377,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             {/* Rangliste — 2026-05-08: collapsible, default-collapsed während
                 QUESTION_ACTIVE/REVEAL (Mod sieht nur Header), default-offen
                 in PAUSED/PLACEMENT/COMEBACK/GAME_OVER (wo Rang relevant ist). */}
-            <CollapsibleRanking teams={teamList} phase={s.phase} />
+            {/* 2026-07-03 (Wolf-Audit): In Cozy Arena die 8 Fraktionen (summierte
+                Punkte) ranken statt bis zu 25 Sub-Teams nach Grid-Metrik. */}
+            <CollapsibleRanking teams={(s as any).largeGroupMode ? qqSortedGroups(s) : teamList} phase={s.phase} />
           </div>
         </div>
         </>
@@ -3849,6 +3857,9 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
 }
 
 function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
+  // 2026-07-03 (Wolf-Audit): Cozy Arena hat kein Grid → Fraktions-CSV (Punkte)
+  // statt Grid-Spalten (Insel/Felder/Joker/Klau/Stapel).
+  const largeMode = !!(s as any).largeGroupMode;
   const tieWinnerId = s.tieBreakerWinnerId ?? null;
   const sorted = [...s.teams].sort((a, b) => {
     if (tieWinnerId) {
@@ -3867,11 +3878,14 @@ function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
     return str;
   };
 
-  const headers = [
-    'Platz', 'Team', 'Avatar', 'Groesste Insel', 'Felder gesamt', 'Joker', 'Klau-Aktionen', 'Stapel', 'Tiebreak-Sieger',
-  ];
+  const headers = largeMode
+    ? ['Platz', 'Fraktion', 'Avatar', 'Punkte']
+    : ['Platz', 'Team', 'Avatar', 'Groesste Insel', 'Felder gesamt', 'Joker', 'Klau-Aktionen', 'Stapel', 'Tiebreak-Sieger'];
 
-  const rows = sorted.map((t, idx) => {
+  const rows = (largeMode ? qqSortedGroups(s) : sorted).map((t, idx) => {
+    if (largeMode) {
+      return [idx + 1, t.name, t.avatarId, t.largestConnected].map(escape).join(',');
+    }
     const stats = s.teamPhaseStats[t.id];
     const isTieWinner = tieWinnerId === t.id;
     return [

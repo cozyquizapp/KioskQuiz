@@ -266,8 +266,39 @@ function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: 
   const pct = (val / maxVal) * 100;
   const medal = rank < 3 && val > 0 ? MEDALS[rank] : null;
 
+  // Führungswechsel-Blitz (Wolf-Idee „Bar-Race Führungswechsel = Glow-Blitz"):
+  // wenn eine Fraktion von Rang >0 auf Rang 0 (Krone) springt, kurz aufleuchten.
+  // Kein Flash beim ersten Mount (prevRank null) → nur echte Overtakes.
+  const prevRank = useRef<number | null>(null);
+  const [leadFlash, setLeadFlash] = useState(false);
+  useEffect(() => {
+    let t: ReturnType<typeof setTimeout> | undefined;
+    if (prevRank.current != null && prevRank.current > 0 && rank === 0 && val > 0) {
+      setLeadFlash(true);
+      t = setTimeout(() => setLeadFlash(false), 1200);
+    }
+    prevRank.current = rank;
+    return () => { if (t) clearTimeout(t); };
+  }, [rank, val]);
+
   return (
     <div ref={ref} style={{ ...S.standRow, top: targetTop }}>
+      {leadFlash && (
+        <>
+          <span aria-hidden style={{
+            position: 'absolute', inset: '-4px -8px', borderRadius: 18,
+            boxShadow: `0 0 26px 6px ${team.color}, inset 0 0 20px ${team.color}88`,
+            pointerEvents: 'none', animation: 'qqLeadFlash 1.2s ease-out both',
+          }} />
+          <span aria-hidden style={{
+            position: 'absolute', left: -6, top: -14, zIndex: 4,
+            fontSize: 22, fontWeight: 900, letterSpacing: '0.02em',
+            color: team.color, whiteSpace: 'nowrap',
+            textShadow: `0 2px 10px ${team.color}, 0 0 4px rgba(0,0,0,0.6)`,
+            pointerEvents: 'none', animation: 'qqLeadCallout 1.2s ease-out both',
+          }}>⚔️ {de ? 'Führung!' : 'Lead!'}</span>
+        </>
+      )}
       <span style={S.standRank}>{rank === 0 && val > 0 ? <QQEmojiIcon emoji="👑" /> : rank + 1}</span>
       <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={62} />
       <div style={{ width: 260, minWidth: 0 }}>

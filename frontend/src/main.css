@@ -643,6 +643,20 @@ main[class*="cozy-beamer-shell"] {
   50%      { opacity: 0.62; transform: scale(1.07); }
 }
 
+/* 2026-07-03 (Cozy Arena): Fuehrungswechsel-Blitz im Bar-Race — kurzer Glow +
+   ⚔️-Callout, wenn eine Fraktion die Krone (Rang 0) uebernimmt. */
+@keyframes qqLeadFlash {
+  0%   { opacity: 0; }
+  22%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+@keyframes qqLeadCallout {
+  0%   { opacity: 0; transform: translateY(6px) scale(0.82); }
+  22%  { opacity: 1; transform: translateY(0) scale(1.12); }
+  42%  { transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(1); }
+}
+
 @keyframes pulse-timer {
   0%, 100% { 
     opacity: 1;

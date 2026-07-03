@@ -18,6 +18,14 @@ const PINK_SOFT = '#fbcfe8';
 const MAGENTA = '#a21247';
 const NAVY = '#1E2A5A';
 const INK = '#1b1830';
+// Cozy-Poster-Warmtoene (2026-07-04): cremiges „Papier" + warme Karten/Schatten
+// statt flachem Weiss — Board-Game-Box-Gefuehl. Marke bleibt Pink/Magenta/Navy,
+// die Waerme kommt aus dem Creme-Grund (NICHT aus Amber/Gold — Brand-Regel).
+const CREAM = '#FAF3E7';
+const CREAM_DEEP = '#F3E9D6';
+const CARD = '#FFFFFF';
+const WARM_SHADOW = 'rgba(120, 78, 52, 0.13)';
+const INK_SOFT = '#544e63';
 
 const DISPLAY = "'Bricolage Grotesque', 'Inter', system-ui, sans-serif";
 const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
@@ -46,13 +54,14 @@ const SELLING = [
   { emoji: '🐺', text: 'Moderiert & locker: kein Googeln, kein Vorwissen-Stress — Spaß vor Punkten.' },
 ];
 
-// 5 Teams = echte Default-cozy3d-Avatare mit den echten App-Farben (QQ_TEAM_PALETTE).
+// 5 Teams = echte Default-cozy3d-Avatare mit den echten App-Farben (QQ_TEAM_PALETTE
+// spiegelt seit 2026-07-04 QQ_AVATARS[].color).
 const TEAMS = [
-  { slug: 'hund',     color: QQ_TEAM_PALETTE[0] }, // #FA507F
-  { slug: 'faultier', color: QQ_TEAM_PALETTE[1] }, // #9DCB2F
-  { slug: 'pinguin',  color: QQ_TEAM_PALETTE[2] }, // #266FD3
-  { slug: 'koala',    color: QQ_TEAM_PALETTE[3] }, // #9A65D5
-  { slug: 'giraffe',  color: QQ_TEAM_PALETTE[4] }, // #FEC814
+  { slug: 'hund',     color: QQ_TEAM_PALETTE[0] }, // #F97316 fox/shiba
+  { slug: 'faultier', color: QQ_TEAM_PALETTE[1] }, // #22C55E frog/faultier
+  { slug: 'pinguin',  color: QQ_TEAM_PALETTE[2] }, // #14B8A6 panda/pinguin
+  { slug: 'koala',    color: QQ_TEAM_PALETTE[3] }, // #A855F7 rabbit/koala
+  { slug: 'giraffe',  color: QQ_TEAM_PALETTE[4] }, // #FACC15 unicorn/giraffe
 ];
 // Kleines 5×5-Beispiel-Brett (das echte Spielbrett ist 5×5). Zahl = Team-Index;
 // JEDE Zelle trägt den Team-Avatar (wie im echten Brett).
@@ -134,7 +143,7 @@ export default function QQAboutPage() {
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#e9e7ef', padding: '24px 16px 60px', fontFamily: BODY }}>
+    <div style={{ minHeight: '100vh', background: '#e7ded0', padding: '24px 16px 60px', fontFamily: BODY }}>
       <style>{`
         @page { size: A4 portrait; margin: 0; }
         @media print {
@@ -181,93 +190,119 @@ export default function QQAboutPage() {
 
       {/* A4-Poster */}
       <div ref={posterRef} className="qq-about-page" style={{
-        width: '210mm', minHeight: '297mm', margin: '0 auto', background: '#fff',
-        boxShadow: '0 16px 50px rgba(30,42,90,0.22)', overflow: 'hidden',
+        width: '210mm', minHeight: '297mm', margin: '0 auto',
+        background: CREAM,
+        // warmer Papier-Grund: zwei sehr subtile Licht-Radials (kein flaches Weiss)
+        backgroundImage: `radial-gradient(120% 80% at 6% 0%, rgba(255,255,255,0.75), rgba(255,255,255,0) 46%), radial-gradient(90% 70% at 100% 102%, ${PINK_SOFT}33, rgba(255,255,255,0) 55%)`,
+        boxShadow: `0 22px 60px ${WARM_SHADOW}`, overflow: 'hidden',
         display: 'flex', flexDirection: 'column', color: INK,
         boxSizing: 'border-box',
       }}>
-        {/* ── Header-Band ── */}
+        {/* ── Header-Band (Wolf spricht = Logo) ── */}
         <header style={{
-          background: `radial-gradient(120% 140% at 15% -20%, ${PINK_MID} 0%, ${PINK} 42%, ${MAGENTA} 100%)`,
-          color: '#fff', padding: '26px 30px 24px', position: 'relative',
-          display: 'flex', alignItems: 'center', gap: 22,
+          background: `radial-gradient(130% 155% at 18% -30%, ${PINK_MID} 0%, ${PINK} 44%, ${MAGENTA} 100%)`,
+          color: '#fff', padding: '30px 34px 34px', position: 'relative',
+          display: 'flex', alignItems: 'center', gap: 26,
+          borderRadius: '0 0 44px 44px', boxShadow: `0 12px 28px ${PINK}44`,
         }}>
-          <div style={{
-            width: 118, height: 118, borderRadius: '50%', flexShrink: 0,
-            background: 'rgba(255,255,255,0.16)', border: '3px solid rgba(255,255,255,0.55)',
-            display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
-            boxShadow: '0 8px 20px rgba(0,0,0,0.18)',
-          }}>
-            <img src="/avatars/cozywolf/augenauf.mundauf.winken.png" alt="CozyWolf"
-              style={{ width: '94%', height: '94%', objectFit: 'contain' }} draggable={false} />
+          {/* Wolf im runden Sticker + kleine Sprechblase */}
+          <div style={{ position: 'relative', flexShrink: 0 }}>
+            <div style={{
+              width: 134, height: 134, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.18)', border: '4px solid rgba(255,255,255,0.68)',
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
+              boxShadow: '0 12px 26px rgba(0,0,0,0.24)',
+            }}>
+              <img src="/avatars/cozywolf/augenauf.mundauf.winken.png" alt="CozyWolf"
+                style={{ width: '96%', height: '96%', objectFit: 'contain' }} draggable={false} />
+            </div>
+            <div style={{
+              position: 'absolute', top: -8, right: -26,
+              background: '#fff', color: MAGENTA, fontFamily: DISPLAY, fontWeight: 800,
+              fontSize: 13.5, padding: '5px 13px', borderRadius: 14,
+              boxShadow: '0 6px 15px rgba(0,0,0,0.2)', whiteSpace: 'nowrap',
+            }}>Hallo! 🐺</div>
           </div>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 13, letterSpacing: '0.22em', opacity: 0.92, textTransform: 'uppercase' }}>
-              Live-Team-Quiz
+            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 13, letterSpacing: '0.24em', opacity: 0.94, textTransform: 'uppercase' }}>
+              Live-Team-Quiz zum Wohlfühlen
             </div>
-            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 62, lineHeight: 0.98, letterSpacing: '-0.01em', marginTop: 2 }}>
+            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 66, lineHeight: 0.96, letterSpacing: '-0.015em', marginTop: 4, textShadow: '0 3px 12px rgba(0,0,0,0.18)' }}>
               CozyQuiz
             </div>
-            <div style={{ fontFamily: BODY, fontWeight: 800, fontSize: 19, marginTop: 8, opacity: 0.97 }}>
-              Das Quiz, bei dem ihr euch das Spielbrett <span style={{ background: 'rgba(255,255,255,0.22)', borderRadius: 6, padding: '1px 8px' }}>erobert</span>.
+            <div style={{ fontFamily: BODY, fontWeight: 800, fontSize: 19, marginTop: 10, opacity: 0.98 }}>
+              Das Quiz, bei dem ihr euch das Spielbrett <span style={{ background: 'rgba(255,255,255,0.24)', borderRadius: 7, padding: '1px 9px' }}>erobert</span>.
             </div>
           </div>
         </header>
 
-        {/* ── Team-Avatar-Leiste (die echten Game-Tiere + Farben) ── */}
-        <div style={{
-          display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 16,
-          padding: '16px 30px 2px',
-        }}>
-          {TEAMS.map(t => (
-            <div key={t.slug} style={{
-              width: 50, height: 50, borderRadius: '50%', flexShrink: 0,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.25), rgba(255,255,255,0) 50%), ${t.color}`,
-              boxShadow: `0 4px 12px ${t.color}55, inset 0 -6px 12px rgba(0,0,0,0.22)`,
-            }}>
-              <img src={cozy3dSrc(t.slug)} alt="" draggable={false}
-                style={{ width: '86%', height: '86%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }} />
-            </div>
-          ))}
+        {/* ── Team-Avatar-Leiste (echte Game-Tiere + Farben) auf warmer Pill ── */}
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '22px 30px 2px' }}>
+          <div style={{
+            display: 'inline-flex', alignItems: 'center', gap: 15,
+            background: CARD, borderRadius: 999, padding: '11px 22px',
+            boxShadow: `0 10px 22px ${WARM_SHADOW}`, border: `2px solid ${CREAM_DEEP}`,
+          }}>
+            {TEAMS.map(t => (
+              <div key={t.slug} style={{
+                width: 52, height: 52, borderRadius: '50%', flexShrink: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.28), rgba(255,255,255,0) 52%), ${t.color}`,
+                boxShadow: `0 4px 12px ${t.color}55, inset 0 -6px 12px rgba(0,0,0,0.22)`,
+              }}>
+                <img src={cozy3dSrc(t.slug)} alt="" draggable={false}
+                  style={{ width: '86%', height: '86%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.3))' }} />
+              </div>
+            ))}
+          </div>
         </div>
 
         {/* ── Hook ── */}
-        <section style={{ padding: '14px 30px 6px' }}>
-          <p style={{ margin: 0, fontSize: 16.5, lineHeight: 1.5, color: '#33304a', fontWeight: 600 }}>
-            Ein <b>moderiertes Quiz für Teams</b> — gespielt auf der großen Leinwand, beantwortet per Handy.
-            Aber kein gewöhnliches Pub-Quiz: <b style={{ color: MAGENTA }}>Jede richtige Antwort erobert euch ein Feld
-            auf dem Spielbrett.</b> Wer am Ende das größte zusammenhängende Gebiet hält, gewinnt.
-          </p>
+        <section style={{ padding: '16px 34px 6px' }}>
+          <div style={{
+            background: CARD, borderRadius: 18, padding: '16px 20px',
+            boxShadow: `0 8px 20px ${WARM_SHADOW}`, borderLeft: `6px solid ${PINK}`,
+          }}>
+            <p style={{ margin: 0, fontSize: 16.5, lineHeight: 1.5, color: '#33304a', fontWeight: 600 }}>
+              Ein <b>moderiertes Quiz für Teams</b> — gespielt auf der großen Leinwand, beantwortet per Handy.
+              Aber kein gewöhnliches Pub-Quiz: <b style={{ color: MAGENTA }}>Jede richtige Antwort erobert euch ein Feld
+              auf dem Spielbrett.</b> Wer am Ende das größte zusammenhängende Gebiet hält, gewinnt.
+            </p>
+          </div>
         </section>
 
         {/* ── So funktioniert's + Mini-Brett ── */}
-        <section style={{ padding: '14px 30px 4px', display: 'flex', gap: 22 }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
+        <section style={{ padding: '16px 34px 4px', display: 'flex', gap: 20, alignItems: 'stretch' }}>
+          <div style={{ flex: 1, minWidth: 0, background: CARD, borderRadius: 18, padding: '16px 18px', boxShadow: `0 8px 20px ${WARM_SHADOW}` }}>
             <h2 style={sectionTitle()}>So funktioniert's</h2>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 11 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {STEPS.map(s => (
                 <div key={s.n} style={{ display: 'flex', gap: 13, alignItems: 'flex-start' }}>
                   <div style={{
-                    flexShrink: 0, width: 34, height: 34, borderRadius: 10,
-                    background: NAVY, color: '#fff', fontFamily: DISPLAY, fontWeight: 800,
-                    fontSize: 19, display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    flexShrink: 0, width: 36, height: 36, borderRadius: 12,
+                    background: `linear-gradient(135deg, ${PINK}, ${MAGENTA})`, color: '#fff',
+                    fontFamily: DISPLAY, fontWeight: 800, fontSize: 19,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    boxShadow: `0 4px 10px ${PINK}55`,
                   }}>{s.n}</div>
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 16.5, color: NAVY }}>{s.title}</div>
-                    <div style={{ fontSize: 14.5, lineHeight: 1.42, color: '#45415c' }}>{s.text}</div>
+                    <div style={{ fontSize: 14.5, lineHeight: 1.42, color: INK_SOFT }}>{s.text}</div>
                   </div>
                 </div>
               ))}
             </div>
           </div>
 
-          {/* Mini-Brett-Illustration mit echten Game-Avataren + Brett-Farben */}
-          <div style={{ flexShrink: 0, width: 214, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, paddingTop: 4 }}>
+          {/* Mini-Brett im warmen „Board-Box"-Rahmen mit echten Game-Avataren */}
+          <div style={{
+            flexShrink: 0, width: 224, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            background: CARD, borderRadius: 18, padding: '16px 12px', boxShadow: `0 8px 20px ${WARM_SHADOW}`,
+          }}>
             <div style={{
               display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 5,
-              padding: 11, background: '#f4f3f8', borderRadius: 18,
-              border: '2px solid #e4e1ee', boxShadow: '0 6px 18px rgba(30,42,90,0.10)',
+              padding: 12, background: CREAM_DEEP, borderRadius: 16,
+              border: `3px solid ${NAVY}`, boxShadow: 'inset 0 2px 6px rgba(0,0,0,0.12)',
             }}>
               {MINI_GRID.flat().map((region, i) => {
                 const team = TEAMS[region];
@@ -275,7 +310,7 @@ export default function QQAboutPage() {
                   <div key={i} style={{
                     width: 36, height: 36, borderRadius: 9, position: 'relative',
                     background: `linear-gradient(135deg, ${team.color}, ${team.color}cc)`,
-                    boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.32)',
+                    boxShadow: 'inset 0 0 0 1.5px rgba(255,255,255,0.34)',
                   }}>
                     <img src={cozy3dSrc(team.slug)} alt="" draggable={false}
                       style={{
@@ -287,26 +322,32 @@ export default function QQAboutPage() {
                 );
               })}
             </div>
-            <div style={{ fontSize: 12.5, fontWeight: 800, color: '#6b6786', textAlign: 'center', lineHeight: 1.3 }}>
+            <div style={{ fontSize: 12.5, fontWeight: 800, color: NAVY, textAlign: 'center', lineHeight: 1.3 }}>
               5×5-Spielbrett — jedes Team<br />kämpft um sein Gebiet
             </div>
           </div>
         </section>
 
-        {/* ── 5 Kategorien ── */}
-        <section style={{ padding: '14px 30px 4px' }}>
+        {/* ── 5 Kategorien (Sticker-Kacheln) ── */}
+        <section style={{ padding: '16px 34px 4px' }}>
           <h2 style={sectionTitle()}>5 Kategorien pro Runde</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 9 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
             {CATEGORIES.map((c, i) => (
               <div key={c.name} style={{
-                display: 'flex', gap: 11, alignItems: 'center', padding: '10px 13px',
-                borderRadius: 13, background: PINK_SOFT + '55', border: `1.5px solid ${PINK_SOFT}`,
+                display: 'flex', gap: 12, alignItems: 'center', padding: '11px 14px',
+                borderRadius: 15, background: CARD, boxShadow: `0 6px 16px ${WARM_SHADOW}`,
+                border: `2px solid ${CREAM_DEEP}`,
                 gridColumn: i === 4 ? '1 / -1' : undefined,
               }}>
-                <span style={{ fontSize: 27, lineHeight: 1, flexShrink: 0 }}>{c.emoji}</span>
+                <span style={{
+                  flexShrink: 0, width: 46, height: 46, borderRadius: '50%',
+                  background: `radial-gradient(circle at 34% 30%, #fff, ${PINK_SOFT}88)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 25, lineHeight: 1,
+                  boxShadow: `inset 0 0 0 2px ${PINK_SOFT}`,
+                }}>{c.emoji}</span>
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 15.5, color: MAGENTA }}>{c.name}</div>
-                  <div style={{ fontSize: 13.5, lineHeight: 1.35, color: '#45415c' }}>{c.desc}</div>
+                  <div style={{ fontSize: 13.5, lineHeight: 1.35, color: INK_SOFT }}>{c.desc}</div>
                 </div>
               </div>
             ))}
@@ -314,31 +355,46 @@ export default function QQAboutPage() {
         </section>
 
         {/* ── Warum es Spaß macht ── */}
-        <section style={{ padding: '14px 30px 6px' }}>
+        <section style={{ padding: '16px 34px 8px' }}>
           <h2 style={sectionTitle()}>Warum es Spaß macht</h2>
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '7px 22px' }}>
+          <div style={{
+            background: CARD, borderRadius: 18, padding: '15px 18px', boxShadow: `0 8px 20px ${WARM_SHADOW}`,
+            display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px 22px',
+          }}>
             {SELLING.map((s, i) => (
-              <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
-                <span style={{ fontSize: 19, lineHeight: 1.2, flexShrink: 0 }}>{s.emoji}</span>
+              <div key={i} style={{ display: 'flex', gap: 11, alignItems: 'flex-start' }}>
+                <span style={{ fontSize: 20, lineHeight: 1.2, flexShrink: 0 }}>{s.emoji}</span>
                 <span style={{ fontSize: 14, lineHeight: 1.4, color: '#3b3853', fontWeight: 600 }}>{s.text}</span>
               </div>
             ))}
           </div>
         </section>
 
-        <div style={{ flex: 1 }} />
+        <div style={{ flex: 1, minHeight: 12 }} />
 
-        {/* ── CTA-Footer-Band ── */}
+        {/* ── CTA-Footer-Band (Wolf lugt hervor) ── */}
         <footer style={{
-          marginTop: 14, background: NAVY, color: '#fff', padding: '20px 30px 22px',
+          marginTop: 16, background: `linear-gradient(115deg, ${NAVY} 0%, #243472 100%)`, color: '#fff',
+          padding: '22px 34px 24px', borderRadius: '40px 40px 0 0', position: 'relative',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18, flexWrap: 'wrap',
         }}>
-          <div>
-            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 26, lineHeight: 1.04 }}>
-              Bock auf ein CozyQuiz?
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, minWidth: 0 }}>
+            <div style={{
+              width: 66, height: 66, borderRadius: '50%', flexShrink: 0,
+              background: `linear-gradient(135deg, ${PINK}, ${MAGENTA})`,
+              display: 'flex', alignItems: 'flex-end', justifyContent: 'center', overflow: 'hidden',
+              border: '3px solid rgba(255,255,255,0.5)', boxShadow: '0 6px 16px rgba(0,0,0,0.3)',
+            }}>
+              <img src="/avatars/cozywolf/augenauf.mundauf.daumen.png" alt="" draggable={false}
+                style={{ width: '96%', height: '96%', objectFit: 'contain' }} />
             </div>
-            <div style={{ fontSize: 14.5, opacity: 0.85, marginTop: 4, fontWeight: 600 }}>
-              Für Bar, Café, Firmenfeier, Geburtstag oder Vereins-Event.
+            <div>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 27, lineHeight: 1.04 }}>
+                Bock auf ein CozyQuiz?
+              </div>
+              <div style={{ fontSize: 14.5, opacity: 0.86, marginTop: 5, fontWeight: 600 }}>
+                Für Bar, Café, Firmenfeier, Geburtstag oder Vereins-Event.
+              </div>
             </div>
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 5, fontSize: 14.5, fontWeight: 700, textAlign: 'right' }}>

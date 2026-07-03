@@ -116,7 +116,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     if (!prev || prev === state.phase) return;
     if (state.phase === 'QUESTION_ACTIVE')    pushToast('Frage laeuft — Teams antworten', '⏱', QQ_COLORS.green500);
     else if (state.phase === 'QUESTION_REVEAL') pushToast('Antworten aufgedeckt', '🔍', QQ_COLORS.brandPink);
-    else if (state.phase === 'PLACEMENT')      pushToast('Platzierungs-Phase', '📍', QQ_COLORS.red500);
+    else if (state.phase === 'PLACEMENT')      pushToast((state as any).largeGroupMode ? 'Wertung & Standings' : 'Platzierungs-Phase', (state as any).largeGroupMode ? '📊' : '📍', (state as any).largeGroupMode ? QQ_COLORS.violet500 : QQ_COLORS.red500);
     else if (state.phase === 'PHASE_INTRO')    pushToast(`Runde ${state.gamePhaseIndex} startet`, '🎬', QQ_COLORS.violet500);
     else if (state.phase === 'COMEBACK_CHOICE') pushToast('Comeback-Chance!', '⚡', QQ_COLORS.brandPink);
     else if (state.phase === 'GAME_OVER')      pushToast('Spiel beendet', '🏆', QQ_COLORS.brandPink);
@@ -865,6 +865,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       }
     }
     if (!action) return;
+    // 2026-07-03 (Wolf 'autoplay in cozyarena zu schnell auf allen pages'):
+    // In Cozy Arena (largeGroupMode) sind die Reveals reicher (Fraktions-Wertung,
+    // Bar-Race) → Autoplay generell strecken, damit man Lesen/Anschauen kann.
+    // TEAMS_REVEAL + RULES sind schon inhalts-proportional getimt → ausgenommen.
+    // PLACEMENT bekommt zusätzlich einen harten Boden, weil die Gesamtwertung
+    // (Akt B) erst per Crossfade nach 4,2s erscheint — der 3,5s-Standard schnitt
+    // sie vorher komplett ab (Wolf 'sieht nie die Gesamttabelle').
+    if ((s as any).largeGroupMode && delayMs > 0 && s.phase !== 'TEAMS_REVEAL' && s.phase !== 'RULES') {
+      delayMs = Math.round(delayMs * 1.3);
+      if (s.phase === 'PLACEMENT' && !(s as any).comebackStealPaused) {
+        delayMs = Math.max(delayMs, 11000);
+      }
+    }
     // 2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Dedup-Guard via
     // ref. Wenn dieselbe action+state-Kombi schon emittet wurde und State
     // sich nicht relevant geaendert hat, NICHT erneut feuern.
@@ -1440,7 +1453,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: QQ_COLORS.blue500, sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: QQ_COLORS.green500, sub: `${answeredCount}/${connectedTeams} Teams` };
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: QQ_COLORS.brandPink, sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
-      case 'PLACEMENT': return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: QQ_COLORS.red500, sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
+      case 'PLACEMENT':
+        // 2026-07-03 (Wolf-Audit): In Cozy Arena gibt es kein Feld-Setzen — der
+        // Beamer zeigt die Wertung dieser Frage (Akt A, +Punkte) und danach die
+        // Gesamtwertung (Akt B, Bar-Race). 'PLATZIERUNG FERTIG' war dauerhaft
+        // falsch, weil pendingFor in Arena immer null ist.
+        if ((s as any).largeGroupMode) return { text: 'WERTUNG & STANDINGS', color: QQ_COLORS.violet500, sub: 'Punkte dieser Frage → Gesamt-Bar-Race (Space, wenn Tabelle gelesen)' };
+        return { text: s.pendingFor ? 'FELD SETZEN' : 'PLATZIERUNG FERTIG', color: QQ_COLORS.red500, sub: s.pendingFor ? `${teamList.find(t => t.id === s.pendingFor)?.name} setzt` : undefined };
       case 'COMEBACK_CHOICE': return { text: 'COMEBACK', color: QQ_COLORS.violet500 };
       case 'CONNECTIONS_4X4': return { text: '🔗 4×4 — FINALE', color: QQ_COLORS.brandPink, sub: s.connections?.phase ?? '' };
       case 'FINAL_BETTING': {
@@ -3341,6 +3360,25 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
   },
 };
 
+// 2026-07-03 (Wolf-Audit 'moderator im cozyarena mit falschen seiten benannt'):
+// In Cozy Arena (largeGroupMode) gibt es kein Gitter/Feld-Setzen. Wertung =
+// Speed-Punkte pro Fraktion, dargestellt als Bar-Race. Diese Overrides ersetzen
+// die grid-lastigen Standard-Notes in RULES/PLACEMENT/QUESTION_REVEAL.
+const HOST_NOTES_ARENA_DE: Record<string, { title: string; text: string }> = {
+  RULES: {
+    title: 'Regeln erklären (Arena)',
+    text: 'Jede Fraktion sammelt Punkte: Je mehr Handys der Fraktion richtig liegen — und je schneller — desto mehr Punkte für diese Frage. Kein Gitter, kein Klauen — es zählt reine Geschwindigkeit + Trefferzahl. Der Gesamtstand läuft als Bar-Race der 8 Fraktionen.',
+  },
+  PLACEMENT: {
+    title: 'Wertung & Standings (Arena)',
+    text: 'Der Beamer zeigt zuerst die Punkte für DIESE Frage (schnellste Fraktionen, +Punkte), dann blendet er in die Gesamtwertung (Bar-Race aller 8 Fraktionen) über. Warte, bis das Bar-Race sichtbar ist, kommentiere Auf-/Abstieg — dann mit Space zur nächsten Frage.',
+  },
+  QUESTION_REVEAL: {
+    title: 'Antwort aufdecken (Arena)',
+    text: 'Verkünde die richtige Antwort. Hebe hervor, welche Fraktionen am schnellsten richtig lagen — sie holen gleich die meisten Punkte.',
+  },
+};
+
 // ── ActiveTeamStrip — Sticky unter Hero, zeigt wer dran ist / wer geantwortet hat ──
 // 2026-05-11 (Senior-Audit P0): kein Scroll mehr nötig um zu sehen wer Wolfs
 // nächste Aktion blockiert. Hotkeys:
@@ -3467,7 +3505,8 @@ function ActiveTeamStrip({ state }: { state: QQStateUpdate }) {
 
 function HostNotes({ state }: { state: QQStateUpdate }) {
   const phase = state.phase;
-  const baseNote = HOST_NOTES_DE[phase] ?? { title: phase, text: 'Kein Hinweis für diese Phase.' };
+  const arenaMode = !!(state as any).largeGroupMode;
+  const baseNote = (arenaMode && HOST_NOTES_ARENA_DE[phase]) || HOST_NOTES_DE[phase] || { title: phase, text: 'Kein Hinweis für diese Phase.' };
   const customNote = state.currentQuestion?.hostNote?.trim();
   const funFact = state.currentQuestion?.funFact?.trim();
   const questionPhase = phase === 'QUESTION_ACTIVE' || phase === 'QUESTION_REVEAL' || phase === 'PLACEMENT';

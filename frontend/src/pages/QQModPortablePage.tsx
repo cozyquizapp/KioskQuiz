@@ -213,7 +213,7 @@ export default function QQModPortablePage() {
           onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
           <span style={{ fontSize: 28 }}>▶</span>
-          <span>{getActionLabel(state.phase)}</span>
+          <span>{getActionLabel(state.phase, (state as any).largeGroupMode)}</span>
         </button>
       </div>
     </div>
@@ -230,7 +230,7 @@ const pageStyle: React.CSSProperties = {
   paddingTop: 'env(safe-area-inset-top)',
 };
 
-function getActionLabel(phase: QQStateUpdate['phase']): string {
+function getActionLabel(phase: QQStateUpdate['phase'], arena?: boolean): string {
   switch (phase) {
     case 'LOBBY': return 'Setup am Laptop';
     case 'TEAMS_REVEAL': return 'Regel-Intro';
@@ -238,7 +238,7 @@ function getActionLabel(phase: QQStateUpdate['phase']): string {
     case 'PHASE_INTRO': return 'Frage starten';
     case 'QUESTION_ACTIVE': return 'Antwort zeigen';
     case 'QUESTION_REVEAL': return 'Weiter →';
-    case 'PLACEMENT': return 'Nächste Frage';
+    case 'PLACEMENT': return arena ? 'Nächste Frage (nach Standings)' : 'Nächste Frage';
     case 'PAUSED': return 'Pause beenden';
     case 'COMEBACK_CHOICE': return 'Comeback weiter';
     case 'CONNECTIONS_4X4': return '4×4 weiter';
@@ -262,7 +262,7 @@ function PhaseHeader({ state: s }: { state: QQStateUpdate }) {
     PHASE_INTRO: 'Runden-Intro',
     QUESTION_ACTIVE: '⏱ Frage läuft',
     QUESTION_REVEAL: '✓ Auflösung',
-    PLACEMENT: '📍 Setzen',
+    PLACEMENT: (s as any).largeGroupMode ? '📊 Wertung' : '📍 Setzen',
     PAUSED: '⏸ Pause',
     COMEBACK_CHOICE: '🔄 Comeback',
     CONNECTIONS_4X4: '🧩 4×4 Finale',
@@ -319,7 +319,7 @@ function ModFactsCompact({ state: s }: { state: QQStateUpdate }) {
         color: '#94A3B8', fontSize: 14, lineHeight: 1.5,
         textAlign: 'center',
       }}>
-        {phaseHelpText(phase)}
+        {phaseHelpText(phase, (s as any).largeGroupMode)}
       </div>
     );
   }
@@ -445,19 +445,24 @@ function ModFactsCompact({ state: s }: { state: QQStateUpdate }) {
           border: '1px solid rgba(6,182,212,0.30)',
           fontSize: 12, color: '#67E8F9', textAlign: 'center', fontWeight: 700,
         }}>
-          Team setzt Felder — Space wenn fertig
+          {(s as any).largeGroupMode
+            ? 'Wertung + Bar-Race läuft — Space wenn Standings gelesen'
+            : 'Team setzt Felder — Space wenn fertig'}
         </div>
       )}
     </>
   );
 }
 
-function phaseHelpText(phase: QQStateUpdate['phase']): string {
+function phaseHelpText(phase: QQStateUpdate['phase'], arena?: boolean): string {
   switch (phase) {
     case 'LOBBY': return 'Setup auf /moderator (Laptop)';
     case 'TEAMS_REVEAL': return 'Teams werden vorgestellt — Space für Regeln';
     case 'RULES': return 'Regel-Slides — Space für nächste';
     case 'PHASE_INTRO': return 'Runde wird angekündigt — Space startet Frage';
+    case 'PLACEMENT': return arena
+      ? 'Wertung dieser Frage → Gesamt-Bar-Race. Space, wenn die Standings gelesen sind'
+      : 'Teams setzen Felder — Space wenn fertig';
     case 'PAUSED': return 'Pause — Space resumed';
     case 'COMEBACK_CHOICE': return 'Comeback-Team wählt Aktion';
     case 'CONNECTIONS_4X4': return '4×4 Finale — Spieler raten Gruppen';

@@ -1940,7 +1940,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 rechten Bildschirmstreifen.
               - LANDSCAPE (Card unten am Rand): absolute oben mittig — sonst wuerden
                 Avatare unter der bottom-aligned Card aus dem Bildschirm fallen. */}
-          {!revealed && s.teams.length > 0 && (() => {
+          {/* 2026-07-03 (Wolf 'gesammelt-Status soll auch im Reveal bleiben'):
+              Früher `!revealed` → Reihe verschwand im CHEESE-Reveal. Jetzt auch
+              während des Reveals sichtbar (Container ist ohnehin CHEESE-only), damit
+              der Wappen-Status durchgehend stehen bleibt. */}
+          {s.teams.length > 0 && (() => {
             const tc = s.teams.length;
             // 2026-05-05 (Wolf 'Cheese-Portrait Avatare zu klein, fast unter
             // ganze Frage-Card passen lassen'): Portrait-Sizes fast verdoppelt

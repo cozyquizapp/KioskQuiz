@@ -120,11 +120,11 @@ const hpQs = [
     funFact: 'Anagramm von „I am Lord Voldemort" — ein Sprachspiel das nur in Englisch funktioniert.'
   }),
   q(`${hp}-p3-2`, 3, 2, 'BUNTE_TUETE', {
-    text: 'Wie hieß das Tagebuch von Tom Riddle, das als Horkrux genutzt wurde?',
-    textEn: 'What was the title on Tom Riddle\'s diary horcrux?',
-    answer: 'T. M. Riddle', answerEn: 'T. M. Riddle',
-    bunteTuete: { kind: 'bluff', realAnswer: 'T. M. Riddle', realAnswerEn: 'T. M. Riddle' },
-    funFact: 'Im Buch steht der Name Tom Marvolo Riddle eingraviert — als Hinweis auf seine wahre Identität.'
+    text: 'Sortiert diese Harry-Potter-Bände chronologisch — ältester zuerst.',
+    textEn: 'Put these Harry Potter books in chronological order — oldest first.',
+    answer: 'Stein der Weisen, Kammer des Schreckens, Gefangene von Askaban, Feuerkelch', answerEn: 'Philosopher\'s Stone, Chamber of Secrets, Prisoner of Azkaban, Goblet of Fire',
+    bunteTuete: { kind: 'order', items: ['Feuerkelch', 'Stein der Weisen', 'Gefangene von Askaban', 'Kammer des Schreckens'], itemsEn: ['Goblet of Fire', 'Philosopher\'s Stone', 'Prisoner of Azkaban', 'Chamber of Secrets'], correctOrder: [1, 3, 2, 0], criteria: 'chronologisch (ältester zuerst)', criteriaEn: 'chronological (oldest first)', itemValues: ['2000', '1997', '1999', '1998'] },
+    funFact: 'Die Reihe erschien 1997–2007. Der erste Band wurde von zwölf Verlagen abgelehnt, bevor Bloomsbury zusagte.'
   }),
   q(`${hp}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', {
     text: 'Wie heißt Voldemorts Schlange?',
@@ -241,11 +241,11 @@ const hhQs = [
     funFact: 'Der Große Brand zerstörte 1842 ein Viertel der Innenstadt — danach wurden weite Teile neu im Klassizismus gebaut.'
   }),
   q(`${hh}-p3-2`, 3, 2, 'BUNTE_TUETE', {
-    text: 'Wer war Hamburgs erster Bürgermeister nach 1945?',
-    textEn: 'Who was Hamburg\'s first mayor after 1945?',
-    answer: 'Rudolf Petersen', answerEn: 'Rudolf Petersen',
-    bunteTuete: { kind: 'bluff', realAnswer: 'Rudolf Petersen', realAnswerEn: 'Rudolf Petersen' },
-    funFact: 'Petersen wurde 1945 von der britischen Besatzung eingesetzt und war bis 1946 Erster Bürgermeister.'
+    text: 'Sortiert diese Hamburger Bauwerke nach Baujahr — ältestes zuerst.',
+    textEn: 'Sort these Hamburg landmarks by year built — oldest first.',
+    answer: 'Michel, Rathaus, Köhlbrandbrücke, Elbphilharmonie', answerEn: 'St. Michael\'s, City Hall, Köhlbrand Bridge, Elbphilharmonie',
+    bunteTuete: { kind: 'order', items: ['Elbphilharmonie', 'Michel', 'Köhlbrandbrücke', 'Rathaus'], itemsEn: ['Elbphilharmonie', 'St. Michael\'s Church', 'Köhlbrand Bridge', 'City Hall'], correctOrder: [1, 3, 2, 0], criteria: 'nach Baujahr (ältestes zuerst)', criteriaEn: 'by year built (oldest first)', itemValues: ['2017', '1786', '1974', '1897'] },
+    funFact: 'Zwischen dem Michel (vollendet 1786) und der Elbphilharmonie (2017) liegen über 230 Jahre Hamburger Baugeschichte.'
   }),
   q(`${hh}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', {
     text: 'Welche Band kommt aus Hamburg?',

@@ -532,12 +532,14 @@ export default function QQTeamPage() {
         </AvatarSetProvider>
       );
     }
-    // 2026-07-03 (Wolf): Vor der Format-Wahl (Mod hat CozyQuiz/Cozy Arena noch
-    // nicht gewählt → formatSelected===false) ist unklar, ob freie Avatare
-    // (CozyQuiz) oder feste Fraktionen/Wappen (Cozy Arena) gelten. Kein
-    // Avatar-Setup zeigen, sondern „wird vorbereitet". `=== false` explizit →
-    // Legacy-Backend (undefined) verhält sich unverändert (deploy-sicher).
-    if (state && (state as any).formatSelected === false) {
+    // 2026-07-03 (Wolf 'wie lösen'): „Quiz wird vorbereitet" solange der Mod
+    // vorbereitet — gekoppelt an setupDone (sein „Setup abschließen"-Klick),
+    // symmetrisch zum Beamer (Neutral/Pre-Game → Lobby). Erst wenn setupDone,
+    // ist das Format sicher gewählt → passender Join-Flow. Kein Lobby-Block:
+    // die Handys treten NACH „Setup abschließen" bei (weiterhin vor Spielstart).
+    // Startet der Mod ohne setupDone, verlässt die Phase die Lobby → Reconnect-
+    // Pfad oben greift (kein Lock). Gilt für beide Formate (Wolf-Wahl).
+    if (state && state.phase === 'LOBBY' && !state.setupDone) {
       return (
         <AvatarSetProvider value={setId} emojis={state.avatarSetEmojis}>
           <PreparingScreen

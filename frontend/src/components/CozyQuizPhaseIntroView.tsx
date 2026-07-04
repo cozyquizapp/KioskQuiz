@@ -694,9 +694,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       // (0.4 → ~0.5), damit der leere Bereich unten verschwindet. Wolf-Pin bleibt
       // dank des höheren vAnchor (Linie tiefer) trotzdem frei vom oberen Rand.
       if ((s as any).largeGroupMode) {
-        S = Math.min(2.8, Math.max(1.9, (camVp.w * 0.66) / (phaseWidths[pi] || camVp.w)));
+        // 2026-07-04 (Wolf 'hier waere noch etwas Platz'): Arena hat KEINE
+        // Action-Cards → grosser Leerraum zwischen Cluster und NEU/Text-Block.
+        // Cluster etwas groesser + tiefer ziehen; der NEU/Text-Block wird
+        // parallel nach oben gehoben (s. BOTTOM-Block bottom-Offset).
+        S = Math.min(2.9, Math.max(2.1, (camVp.w * 0.7) / (phaseWidths[pi] || camVp.w)));
         const megaClear = 0.09 + (2.1 * dotSize * S) / camVp.h;
-        vAnchor = Math.min(0.56, Math.max(0.5, megaClear));
+        vAnchor = Math.min(0.6, Math.max(0.52, megaClear));
       }
     }
     // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
@@ -1143,9 +1147,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           </div>
 
-          {/* BOTTOM: NEU-Badge + Aktion unten angepinnt */}
+          {/* BOTTOM: NEU-Badge + Aktion unten angepinnt. In Cozy Arena (keine
+              Action-Cards) hoeher angesetzt, damit NEU+Text naeher an den Cluster
+              ruecken und der Leerraum dazwischen verschwindet (Wolf 2026-07-04). */}
           <div style={{
-            position: 'absolute', bottom: 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
+            position: 'absolute',
+            bottom: (s as any).largeGroupMode ? 'clamp(78px, 12cqh, 180px)' : 'clamp(26px, 5cqh, 72px)',
+            left: 0, right: 0,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
             zIndex: 5, boxSizing: 'border-box',
             animation: 'qqStationFade 0.5s ease 0.3s both',

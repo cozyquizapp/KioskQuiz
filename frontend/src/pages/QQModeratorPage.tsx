@@ -660,6 +660,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           delayMs = 16000;
           action = () => emit('qq:startPlacement', { roomCode });
         }
+        // Top-Antworten (Family Feud): Bottom-Up-Tafel 600ms Initial + bis 5 ×
+        // 2400ms + Sieger-Reveal + Lesen → ~16s (wie Top5).
+        else if (cat === 'BUNTE_TUETE' && bt?.kind === 'crowdTop') {
+          delayMs = 16000;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
         // Order (Bunte Tüte): Bottom-Up-Cascade 500ms Initial + bis 5 × 2000ms +
         // Winner-Reveal + Lesen → ~13s.
         else if (cat === 'BUNTE_TUETE' && bt?.kind === 'order') {

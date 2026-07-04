@@ -21,6 +21,7 @@ import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData'
 import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
 import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
+import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
 import { recordQQQuestionUsage } from '../db/schemas';
 import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep } from '../../../shared/qqFinalReveal';
 
@@ -1560,6 +1561,7 @@ function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
     case 'hotPotato':   return { winnerTeamIds: [], earnedPoints: {} }; // handled via hotPotatoCorrect
     case 'oneOfEight':  return evalOneOfEight(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOneOfEight);
     case 'top5':        return evalTop5(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteTop5);
+    case 'crowdTop':    return evalCrowdTop(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdTop);
     case 'order':       return evalOrder(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder);
     case 'map':         return evalMap(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteMap);
     case 'onlyConnect': return evalOnlyConnect(room);
@@ -1660,6 +1662,24 @@ function evalTop5(
 
   const winners = scores.filter(s => s.score === maxScore).map(s => s.teamId);
   return { winnerTeamIds: winners, earnedPoints: {}, top5HitsByTeam };
+}
+
+// crowdTop (Top-Antworten / Family Feud): jedes Handy tippt EIN Wort. Bündelung
+// + Tafel via shared qqCrowdTopBoard (Vorgegeben + Auto-Surface, Rang-Punkte
+// [5,4,3,2,1]). Winner = alle Teams mit einem Antwort auf der Tafel; earnedPoints
+// = Board-Punkte (in Arena über qqMegaEventScore/crowdTop-Branch aggregiert, im
+// Grid-Modus platzieren alle Board-Teams). Reveal-Tafel rechnet das Frontend aus
+// s.answers + q selbst nach (dieselbe shared-Funktion → keine Divergenz).
+function evalCrowdTop(
+  room: QQRoomState,
+  bt: import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdTop
+): QQEvalResult {
+  const board = qqCrowdTopBoard(
+    room.answers.map(a => ({ teamId: a.teamId, text: a.text, submittedAt: a.submittedAt })),
+    bt,
+  );
+  const winners = Object.keys(board.boardPointsByTeam).filter(tid => board.boardPointsByTeam[tid] > 0);
+  return { winnerTeamIds: winners, earnedPoints: board.boardPointsByTeam };
 }
 
 // order (Fix It): teams submit pipe-separated items in their chosen order
@@ -2273,6 +2293,21 @@ export function qqMegaEventScore(room: QQRoomState): void {
       const g = grpOf(a.teamId); if (!g) continue;
       if (dist <= rangeAbs) { g.correct++; g.perf++; }
       if (dist < g.bestDist) g.bestDist = dist;
+    }
+  } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdTop') {
+    // Top-Antworten: Fraktion-perf = SUMME der Board-Rang-Punkte ihrer Handys
+    // (Antwort auf Platz 1 = 5 … Platz 5 = 1). Ranking nach perf/total (per-
+    // capita, wie die anderen Mega-Kategorien), Top-5-Fraktionen +[5,4,3,2,1].
+    const board = qqCrowdTopBoard(
+      room.answers.map(a => ({ teamId: a.teamId, text: a.text, submittedAt: a.submittedAt })),
+      q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdTop,
+    );
+    for (const a of room.answers) {
+      const pts = board.boardPointsByTeam[a.teamId] ?? 0;
+      if (pts <= 0) continue;
+      const g = grpOf(a.teamId); if (!g) continue;
+      g.perf += pts; g.correct++;
+      if (a.submittedAt < g.bestSpeed) g.bestSpeed = a.submittedAt;
     }
   } else {
     // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners).

@@ -52,6 +52,7 @@ import {
 // 2026-05-24 (Refactor #5): Reveals in components/reveals/ extrahiert.
 import { SchaetzchenReveal } from './reveals/SchaetzchenReveal';
 import { Top5Reveal } from './reveals/Top5Reveal';
+import { CrowdTopReveal } from './reveals/CrowdTopReveal';
 import { OrderReveal } from './reveals/OrderReveal';
 import { CozyGuessrReveal } from './reveals/CozyGuessrReveal';
 import { OnlyConnectBeamerView } from './reveals/OnlyConnectBeamerView';
@@ -1267,6 +1268,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     && (q.bunteTuete as any)?.kind === 'top5';
   if (isTop5Reveal) {
     return <Top5Reveal state={s} lang={lang} />;
+  }
+
+  // ── Top-Antworten / Family Feud: Tafel-Reveal ───────────────────────────
+  const isCrowdTopReveal = revealed
+    && q.category === 'BUNTE_TUETE'
+    && (q.bunteTuete as any)?.kind === 'crowdTop';
+  if (isCrowdTopReveal) {
+    return <CrowdTopReveal state={s} lang={lang} />;
   }
 
   // ── 4 gewinnt / Only Connect: eigene Layout-Komponente für active + reveal ──

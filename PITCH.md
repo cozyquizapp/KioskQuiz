@@ -13,11 +13,17 @@
 
 ## B) Live-Demo — der eigentliche Verkäufer
 Echtes Mini-Spiel auf dem Café-Screen, du moderierst, 2–3 Handys spielen mit:
-1. `/beamer` → auf TV/Beamer des Cafés (sehen die Gäste)
-2. `/moderator` (oder portable am Handy) → dein Steuerpult
+1. `/moderator` → Setup: Draft **„✨ Pitch-Demo · Café (2 Runden)"** wählen → starten
+2. `/beamer` → auf TV/Beamer des Cafés (sehen die Gäste)
 3. `/team` → 2–3 Handys scannen QR, treten bei
 
-**Ablauf:** Lobby → 2–3 Fragen (verschiedene Mechaniken) → Brett-Eroberung →
+**Fertige Pitch-Draft** (`qq-pitch-demo`): 2 kurze Runden, leicht + publikums-
+freundlich, alle 5 Mechaniken einmal (Schätzen · Multiple-Choice · Reihum-
+Aufzählen · Bilderraten · Top-5), Eiffelturm + Panda als Bild-Fragen. **Nichts
+vorzubereiten — nur starten.** (CHEESE-Bilder im Builder gegen café-eigene Fotos
+tauschbar.) ⚠️ Erscheint erst nach dem Coolify-Redeploy im Draft-Picker.
+
+**Ablauf:** Lobby → paar Fragen (verschiedene Mechaniken) → Brett-Eroberung →
 Auflösung → **Siegerehrung**. Der ganze Abend in 5 Minuten.
 
 ## Café-Argumente (unbedingt einbauen)
@@ -43,9 +49,8 @@ Editor-/Tool-Routen (`/builder`, `/library`, `/katalog`, `/admin`, `/stats`,
 ---
 
 ## ⚠️ Was für den Pitch noch fehlt / offen
-1. **Fertige Pitch-Demo-Draft** (in-App, 3–4 Fragen, gemischte Mechaniken,
-   Café-Branding-Platzhalter) — damit du beim Termin nichts vorbereiten musst,
-   nur starten. → Claude kann anlegen.
+1. ✅ **Fertige Pitch-Demo-Draft** — angelegt (`qq-pitch-demo`, „✨ Pitch-Demo ·
+   Café"). Erscheint nach dem Coolify-Redeploy oben im Draft-Picker.
 2. **Geschäftsangebot / Preis** (Wolfs Seite, kein Code): Ein-Satz-Ask — was
    kostet das Café / Modell (Pauschale pro Abend · Café zahlt · Eintritt/Rev-Share).
    Ohne das hat der Pitch keinen Abschluss.

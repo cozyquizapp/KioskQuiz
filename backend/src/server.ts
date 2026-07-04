@@ -8281,7 +8281,30 @@ function createSampleQQDrafts(): any[] {
     q(`${v5}-p4-4`, 4, 4, 'CHEESE', { text: 'Welcher Vogel ist hier zu sehen?', textEn: 'Which bird is shown here?', answer: 'Flamingo', answerEn: 'Flamingo' }),
   ];
 
+  // ─── PITCH-DEMO ─────────────────────────────────────────────────────────
+  // 2026-07-05: Kurzes 2-Runden-Set fuer den Cafe-Pitch. Leicht + Publikums-
+  // freundlich (die Zuschauer sollen sich schlau fuehlen), alle 5 Mechaniken
+  // einmal, damit die Vielfalt sofort sichtbar ist. CHEESE nutzt stabile
+  // Wikimedia-Bilder (im Builder gegen cafe-eigene Fotos tauschbar).
+  const pd = 'qq-pitch-demo';
+  const pdqs = [
+    // Runde 1 — Aufwaermen
+    q(`${pd}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Bundesländer hat Deutschland?', textEn: 'How many states does Germany have?', answer: '16', targetValue: 16, unit: 'Länder', unitEn: 'states', funFact: 'Das kleinste ist Bremen, das größte Bayern.' }),
+    q(`${pd}-p1-1`, 1, 1, 'MUCHO', { text: 'In welcher Stadt steht das Brandenburger Tor?', textEn: 'In which city is the Brandenburg Gate?', answer: 'Berlin', options: ['Hamburg', 'Berlin', 'München', 'Köln'], optionsEn: ['Hamburg', 'Berlin', 'Munich', 'Cologne'], correctOptionIndex: 1, funFact: 'Das Brandenburger Tor wurde 1791 vollendet — nach dem Vorbild der Athener Akropolis.' }),
+    q(`${pd}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein Getränk, das man in einer Bar bestellt — reihum!', textEn: 'Name a drink you order at a bar — one by one!', answer: 'Bier, Wein, Cola, Wasser, Gin Tonic, Aperol Spritz, Whisky, Wodka, Rum, Cocktail, Sekt, Kaffee, Espresso, Limonade, Saft, Mojito, Margarita, Caipirinha, Longdrink, Radler, Weißwein, Rotwein, Prosecco, Tequila, Bacardi', answerEn: 'Beer, Wine, Cola, Water, Gin and tonic, Aperol Spritz, Whisky, Vodka, Rum, Cocktail, Sparkling wine, Coffee, Espresso, Lemonade, Juice, Mojito, Margarita, Caipirinha, Longdrink, Shandy, White wine, Red wine, Prosecco, Tequila, Bacardi', bunteTuete: { kind: 'hotPotato' }, funFact: 'Der wohl älteste Cocktail der Welt ist der Sazerac — erfunden Mitte des 19. Jahrhunderts in New Orleans.' }),
+    q(`${pd}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Tier ist bekannt für seinen sehr langen Hals?', textEn: 'Which animal is known for its very long neck?', answer: 'Giraffe', options: ['Elefant', 'Giraffe', 'Zebra'], optionsEn: ['Elephant', 'Giraffe', 'Zebra'], correctOptionIndex: 1, funFact: 'Eine Giraffe hat trotz des langen Halses genau 7 Halswirbel — genau wie der Mensch.' }),
+    q(`${pd}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Bauwerk ist hier zu sehen?', textEn: 'Which landmark is shown here?', answer: 'Eiffelturm', answerEn: 'Eiffel Tower', image: { url: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg', layout: 'fullscreen' as const, animation: 'none' as const }, funFact: 'Der Eiffelturm war als temporäres Bauwerk für die Weltausstellung 1889 gedacht.' }),
+    // Runde 2 — Finale
+    q(`${pd}-p2-0`, 2, 0, 'SCHAETZCHEN', { text: 'Wie viele Tasten hat ein Standardklavier?', textEn: 'How many keys does a standard piano have?', answer: '88', targetValue: 88, unit: 'Tasten', unitEn: 'keys', funFact: '52 weiße und 36 schwarze Tasten.' }),
+    q(`${pd}-p2-1`, 2, 1, 'MUCHO', { text: 'Welches Land wurde 2014 Fußball-Weltmeister?', textEn: 'Which country won the 2014 FIFA World Cup?', answer: 'Deutschland', options: ['Brasilien', 'Deutschland', 'Argentinien', 'Spanien'], optionsEn: ['Brazil', 'Germany', 'Argentina', 'Spain'], correctOptionIndex: 1, funFact: 'Das Finale gegen Argentinien entschied Mario Götze in der Verlängerung.' }),
+    q(`${pd}-p2-2`, 2, 2, 'BUNTE_TUETE', { text: 'Nennt die 5 größten Planeten unseres Sonnensystems.', textEn: 'Name the 5 largest planets in our solar system.', answer: 'Jupiter, Saturn, Uranus, Neptun, Erde', answerEn: 'Jupiter, Saturn, Uranus, Neptune, Earth', bunteTuete: { kind: 'top5', answers: ['Jupiter', 'Saturn', 'Uranus', 'Neptun', 'Erde'], answersEn: ['Jupiter', 'Saturn', 'Uranus', 'Neptune', 'Earth'] }, funFact: 'In Jupiter würden rund 1.300 Erden hineinpassen.' }),
+    q(`${pd}-p2-3`, 2, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Fluss fließt durch Paris?', textEn: 'Which river flows through Paris?', answer: 'Seine', options: ['Seine', 'Rhein', 'Themse'], optionsEn: ['Seine', 'Rhine', 'Thames'], correctOptionIndex: 0, funFact: 'Über die Seine führen in Paris 37 Brücken.' }),
+    q(`${pd}-p2-4`, 2, 4, 'CHEESE', { text: 'Welches Tier ist hier zu sehen?', textEn: 'Which animal is shown here?', answer: 'Panda', answerEn: 'Panda', image: { url: 'https://upload.wikimedia.org/wikipedia/commons/0/0f/Grosser_Panda.JPG', layout: 'fullscreen' as const, animation: 'none' as const }, funFact: 'Ein Großer Panda frisst bis zu 38 kg Bambus pro Tag.' }),
+  ];
+
   return [
+    // 2026-07-05: Pitch-Demo zuerst (oben im Draft-Picker, schnell zu finden).
+    { id: pd, title: '✨ Pitch-Demo · Café (2 Runden)', phases: 2 as const, language: 'both', questions: pdqs, createdAt: now, updatedAt: now },
     // 2026-05-06 (Wolf 'gerade in allen Allgemeinwissen-Drafts gleich'):
     // Pro Draft eigenes 4×4-Connections-Set damit das Finale unterschiedlich
     // ist. Default-FALLBACK (Kaffee/Programmiersprachen/Edelsteine/Apple)
@@ -8324,6 +8347,21 @@ if (qqDrafts.length === 0) {
   if (missing.length > 0) {
     qqDrafts = [...qqDrafts, ...missing];
     console.log(`[seed-qq] ${missing.length} Extra-Test-Drafts geladen (${missing.map((d) => d.id).join(', ')})`);
+  }
+}
+
+// 2026-07-05: Pitch-Demo-Draft sicherstellen. Neuer Draft `qq-pitch-demo`
+// erscheint auf Live-Servern mit bestehender File/DB nicht ueber den
+// length===0-Seed (und die qq-vol-*-Migrationen fassen ihn nicht an). Idempotent
+// aus dem Source einfuegen — GET /api/qq/drafts synct file-only Drafts in die DB.
+{
+  if (!qqDrafts.some((d) => d.id === 'qq-pitch-demo')) {
+    const pitch = createSampleQQDrafts().find((d) => d.id === 'qq-pitch-demo');
+    if (pitch) {
+      qqDrafts = [pitch, ...qqDrafts];
+      persistQQDrafts();
+      console.log('[seed-qq] Pitch-Demo-Draft (qq-pitch-demo) hinzugefuegt');
+    }
   }
 }
 

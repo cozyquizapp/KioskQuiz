@@ -57,7 +57,7 @@ export function FactionCountAvatars({
           } : {}),
         }}>
           <div style={{ position: 'relative', display: 'inline-flex' }}>
-            <QQTeamAvatar avatarId={b.avatarId} teamEmoji={b.slug} size={size} style={{ boxShadow: `0 0 12px ${b.color}55` }} />
+            <QQTeamAvatar avatarId={b.avatarId} teamEmoji={b.slug} size={size} style={{ boxShadow: `0 0 8px ${b.color}44` }} />
             {b.count > 1 && (
               <span style={{
                 position: 'absolute', right: -4, bottom: -4, minWidth: 18, height: 18, padding: '0 4px',

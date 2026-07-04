@@ -179,7 +179,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center', maxWidth: '100%' }}>
                   {winnerTeams.slice(0, 4).map(tm => (
                     <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(84px, 8cqw, 128px)'} title={tm.name}
-                      style={{ boxShadow: `0 0 16px ${tm.color}55` }} />
+                      style={{ boxShadow: `0 0 9px ${tm.color}44` }} />
                   ))}
                   {winnerTeams.length > 4 && (
                     <div style={{ fontSize: 'clamp(18px, 2cqw, 30px)', fontWeight: 900, color: 'var(--qq-text-muted)' }}>
@@ -259,7 +259,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                       <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} teamEmoji={tm.emoji}
                         size={'clamp(52px, 5.4cqw, 78px)'} title={tm.name}
                         style={{
-                          boxShadow: `0 0 16px ${tm.color}55`,
+                          boxShadow: `0 0 9px ${tm.color}44`,
                           animation: isVisible ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09 + rowDelay}s both` : 'none',
                         }} />
                     ))}

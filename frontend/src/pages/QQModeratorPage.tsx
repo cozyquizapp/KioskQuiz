@@ -6316,32 +6316,33 @@ function LobbyView({
 
   return (
     <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-      {/* Titel + Setup-Zurück */}
+      {/* Kompakter Kopf (Wolf 2026-07-04 'oben kompakter, nebeneinander, dann
+          passt alles auf die Seite') — Pille + Titel + Hinweis in EINER Reihe
+          statt drei gestapelten Bloecken. */}
       <div style={{
-        textAlign: 'center', marginBottom: 18,
+        display: 'flex', flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center',
+        gap: 12, marginBottom: 10,
       }}>
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 10,
+          display: 'inline-flex', alignItems: 'center', gap: 8,
           padding: '6px 14px', borderRadius: 999,
           background: 'rgba(236,72,153,0.12)', border: '1px solid rgba(236,72,153,0.3)',
           fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', color: GOLD,
           textTransform: 'uppercase',
         }}>
-          <span style={{ fontSize: 16 }}>🎭</span>
+          <span style={{ fontSize: 15 }}>🎭</span>
           Lobby — Teams joinen
         </div>
-        <h1 style={{
-          margin: '12px 0 6px', fontSize: 28, fontWeight: 900, color: '#fff',
-        }}>Bereit zum Start</h1>
-        <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>
-          Sobald alle Teams dabei sind: <strong style={{ color: QQ_COLORS.green500 }}>Quiz starten</strong> drücken (oder Space).
+        <h1 style={{ margin: 0, fontSize: 22, fontWeight: 900, color: '#fff' }}>Bereit zum Start</h1>
+        <div style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>
+          · <strong style={{ color: QQ_COLORS.green500 }}>Quiz starten</strong> (oder Space)
         </div>
       </div>
 
       {/* Read-only Config-Streifen */}
       <div style={{
         display: 'flex', flexWrap: 'wrap', gap: 10,
-        marginBottom: 14, justifyContent: 'center',
+        marginBottom: 10, justifyContent: 'center',
       }}>
         <ConfigChip label="Fragensatz" value={draft?.title ?? '—'} />
         <ConfigChip label="Fragen" value={draft ? `${draft.questionCount}` : '—'} />

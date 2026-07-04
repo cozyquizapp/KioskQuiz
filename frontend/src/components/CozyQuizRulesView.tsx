@@ -572,7 +572,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                       fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
                       color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#7c7390',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      maxWidth: active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(70px, 10cqw, 170px)',
+                      // 2026-07-04 (Wolf 'Dein Weg durchs Quiz immer noch abgeschnitten'):
+                      // inaktiver Cap 170->320px, damit die vollen Stepper-Labels passen
+                      // (die 5 Pillen bleiben zusammen < 1280px Zeilenbreite). Ellipsis
+                      // bleibt als Sicherheitsnetz fuer sehr lange Custom-Labels.
+                      maxWidth: active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(120px, 17cqw, 320px)',
                     }}>{item.label}</span>
                   )}
                 </div>

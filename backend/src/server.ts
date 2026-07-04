@@ -9984,26 +9984,37 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
     // (= Eltern-Team). Emoji bewusst undefined → alle Sub-Teams eines Avatars
     // zeigen denselben Slot-Default → Eltern-Avatar konsistent. Namen aus dem
     // Funny-Pool (testet Reveal + Lobby-Chips mit variierenden Namen).
-    // 2026-07-04 (Wolf 'nur 6 statt 8 Fraktionen bei Bots'): Round-Robin statt
-    // 3-pro-Fraktion sequentiell — erst JEDE der 8 Fraktionen ihr 1. Sub-Team,
-    // dann das 2., dann das 3. So erscheinen ALLE 8 Fraktionen schon ab 8 Bots
-    // (18 Bots = alle 8, davon 2 mit 3 Handys). Vorher: 18 Bots = nur 6 Fraktionen.
-    outer:
-    for (let slot = 0; slot < 3; slot++) {
+    // 2026-07-04 (Wolf 'nur 6 statt 8, zwei mit 6/6 Handys'): bestehende Sub-
+    // Team-Anzahl pro Fraktion beachten und IMMER die leerste Fraktion (< 3
+    // Handys) zuerst fuellen. Vorher stapelte inkrementelles Nachfuellen
+    // (+18 dann +24) 6 neue Handys auf die ersten zwei Fraktionen (6/6) statt
+    // Einspruch/Risiko zu fuellen → nur 6 statt 8 Fraktionen sichtbar.
+    const countByAv = new Map<string, number>();
+    for (const t of Object.values(room.teams)) {
+      const av = (t as any).avatarId;
+      if (av) countByAv.set(av, (countByAv.get(av) ?? 0) + 1);
+    }
+    while (added < toAdd) {
+      // Fraktion mit den wenigsten Sub-Teams waehlen (QQ_AVATARS-Reihenfolge
+      // bei Gleichstand → gleichmaessige Round-Robin-Verteilung ueber alle 8).
+      let targetAv: string | null = null;
+      let min = 3;
       for (const av of QQ_AVATARS) {
-        if (added >= toAdd) break outer;
-        const teamId = `dev-${av.id}-${slot}-${Math.random().toString(36).slice(2, 7)}`;
-        // Cozy Arena: Sub-Teams heißen nach der FRAKTION (nicht Avatar-Label) —
-        // sonst „Koala 3" statt „Letzte Sekunde 3" (Wolf 2026-07-03).
-        const name = namePicks[added] ?? `${qqMegaFactionName(av.id, botLang === 'en' ? 'en' : 'de')} ${slot + 1}`;
-        try {
-          // Emoji = Fraktions-Wappen-Slug → Bots zeigen das Wappen (wie echte Handys),
-          // nicht den cozy3d-Tier-Default.
-          qqJoinTeam(room, teamId, name, av.id, qqMegaFactionSlug(av.id));
-          if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
-          added++;
-        } catch { added++; }
+        const have = countByAv.get(av.id) ?? 0;
+        if (have < min) { min = have; targetAv = av.id; }
       }
+      if (!targetAv || min >= 3) break; // alle 8 Fraktionen voll (je 3 Handys)
+      const have = countByAv.get(targetAv) ?? 0;
+      const teamId = `dev-${targetAv}-${have}-${Math.random().toString(36).slice(2, 7)}`;
+      // Sub-Teams heißen nach der FRAKTION + laufender Handy-Nummer.
+      const name = namePicks[added] ?? `${qqMegaFactionName(targetAv, botLang === 'en' ? 'en' : 'de')} ${have + 1}`;
+      try {
+        // Emoji = Fraktions-Wappen-Slug → Bots zeigen das Wappen wie echte Handys.
+        qqJoinTeam(room, teamId, name, targetAv, qqMegaFactionSlug(targetAv));
+        if (room.teams[teamId]) (room.teams[teamId] as any)._dummy = true;
+        added++;
+      } catch { /* Join fehlgeschlagen — Fraktion trotzdem hochzaehlen (kein Loop) */ }
+      countByAv.set(targetAv, have + 1);
     }
   } else if (room.largeGroupMode) {
     // Groß-Modus: bis 25 Teams > 8 Avatar-Slots → Slots zyklisch wiederverwenden

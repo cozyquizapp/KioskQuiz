@@ -553,7 +553,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             );
           }
 
-          const wordmark = customWelcome.length > 0 ? customWelcome : 'COZYQUIZ';
+          // 2026-07-04 (Wolf 'nur in der Cozy Arena, NICHT im Cozy Quiz'):
+          // Wortmarke = 'COZY ARENA' NUR wenn largeGroupMode an ist; normaler
+          // Cozy-Quiz-Modus bleibt 'COZYQUIZ'. Per-Draft-welcomeText-Override
+          // (customWelcome) gewinnt weiterhin ueber beides.
+          const wordmark = customWelcome.length > 0
+            ? customWelcome
+            : ((s as any).largeGroupMode ? 'COZY ARENA' : 'COZYQUIZ');
           // Stagger reduziert sich proportional bei langen Texten damit Wave
           // nicht ueber 4s laeuft.
           const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));

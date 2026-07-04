@@ -151,12 +151,12 @@ export default function QQLandingPage() {
           <SectionTitle>📅 Nächstes Event</SectionTitle>
           <div style={{
             padding: '28px 20px', borderRadius: 18,
-            background: 'linear-gradient(135deg, rgba(245,158,11,0.12), rgba(249,115,22,0.08))',
-            border: '1.5px dashed rgba(245,158,11,0.4)',
+            background: 'linear-gradient(135deg, rgba(236,72,153,0.12), rgba(162,18,71,0.08))',
+            border: '1.5px dashed rgba(236,72,153,0.4)',
           }}>
             <div style={{
               fontSize: 'clamp(22px, 3vw, 32px)', fontWeight: 900,
-              color: '#FBBF24', letterSpacing: '0.02em',
+              color: '#EC4899', letterSpacing: '0.02em',
             }}>
               Bald verfügbar
             </div>
@@ -289,26 +289,26 @@ function ContactRow({ href, emoji, label, value }: { href: string; emoji: string
       style={{
         display: 'flex', alignItems: 'center', gap: 14,
         padding: '14px 18px', borderRadius: 14,
-        background: 'rgba(245,158,11,0.08)',
-        border: '1.5px solid rgba(245,158,11,0.25)',
+        background: 'rgba(236,72,153,0.08)',
+        border: '1.5px solid rgba(236,72,153,0.25)',
         textDecoration: 'none', color: '#F1F5F9',
         fontWeight: 700,
         transition: 'background 0.2s, border-color 0.2s',
       }}
       onMouseEnter={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.14)';
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(245,158,11,0.5)';
+        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(236,72,153,0.14)';
+        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(236,72,153,0.5)';
       }}
       onMouseLeave={(e) => {
-        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(245,158,11,0.08)';
-        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(245,158,11,0.25)';
+        (e.currentTarget as HTMLAnchorElement).style.background = 'rgba(236,72,153,0.08)';
+        (e.currentTarget as HTMLAnchorElement).style.borderColor = 'rgba(236,72,153,0.25)';
       }}
     >
       <span style={{ fontSize: 24 }}>{emoji}</span>
       <span style={{ fontSize: 12, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', fontWeight: 800 }}>
         {label}
       </span>
-      <span style={{ marginLeft: 'auto', fontSize: 16, color: '#FBBF24', fontWeight: 800 }}>
+      <span style={{ marginLeft: 'auto', fontSize: 16, color: '#EC4899', fontWeight: 800 }}>
         {value}
       </span>
     </a>

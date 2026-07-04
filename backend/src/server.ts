@@ -9984,9 +9984,13 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
     // (= Eltern-Team). Emoji bewusst undefined → alle Sub-Teams eines Avatars
     // zeigen denselben Slot-Default → Eltern-Avatar konsistent. Namen aus dem
     // Funny-Pool (testet Reveal + Lobby-Chips mit variierenden Namen).
+    // 2026-07-04 (Wolf 'nur 6 statt 8 Fraktionen bei Bots'): Round-Robin statt
+    // 3-pro-Fraktion sequentiell — erst JEDE der 8 Fraktionen ihr 1. Sub-Team,
+    // dann das 2., dann das 3. So erscheinen ALLE 8 Fraktionen schon ab 8 Bots
+    // (18 Bots = alle 8, davon 2 mit 3 Handys). Vorher: 18 Bots = nur 6 Fraktionen.
     outer:
-    for (const av of QQ_AVATARS) {
-      for (let slot = 0; slot < 3; slot++) {
+    for (let slot = 0; slot < 3; slot++) {
+      for (const av of QQ_AVATARS) {
         if (added >= toAdd) break outer;
         const teamId = `dev-${av.id}-${slot}-${Math.random().toString(36).slice(2, 7)}`;
         // Cozy Arena: Sub-Teams heißen nach der FRAKTION (nicht Avatar-Label) —

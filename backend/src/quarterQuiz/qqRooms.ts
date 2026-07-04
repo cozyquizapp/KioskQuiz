@@ -12,6 +12,7 @@ import {
   QQ_ONLY_CONNECT_HINT_DURATION_DEFAULT_SEC,
   QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC, QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
   getRandomDummyEmojis,
+  QQ_TIEBREAKER_POOL, QQTieBreakerState,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -902,6 +903,7 @@ export function qqStartGame(
   room.megaQuestionRanking = null; // Modell B: per-Frage-Ranking bei neuer Frage weg
   (room as any).tieBreakerCandidates = [];
   (room as any).tieBreakerWinnerId = null;
+  (room as any).tieBreaker = null;
   // ── Hot Potato ──
   room.hotPotatoActiveTeamId = null;
   room.hotPotatoEliminated = [];
@@ -3490,6 +3492,94 @@ export function qqResolveTieBreaker(room: QQRoomState, teamId: string): void {
   room.lastActivityAt = Date.now();
 }
 
+/**
+ * 2026-07-04: Sudden-Death-Stechen starten. Nur bei ≥2 tieBreakerCandidates.
+ * Waehlt eine zufaellige eingebaute MC-Frage (in Raum-Sprache) und wechselt in
+ * Phase TIEBREAKER_QUESTION. Erneuter Aufruf bei laufendem Stechen ohne Gewinner
+ * = Re-Roll (neue Frage, Antworten zurueck). Beide Modi: candidateIds sind im
+ * Arena-Modus die Faktions-Repraesentanten (nur repId je Faktion hat Punkte).
+ */
+export function qqStartTieBreaker(room: QQRoomState): void {
+  const candidates = room.tieBreakerCandidates ?? [];
+  if (candidates.length < 2) {
+    throw new QQError('NO_TIE', 'Kein Gleichstand zum Stechen vorhanden.');
+  }
+  const isReroll = room.phase === 'TIEBREAKER_QUESTION';
+  if (room.phase !== 'GAME_OVER' && !isReroll) {
+    throw new QQError('WRONG_PHASE', 'Stechen nur am Spielende.');
+  }
+  const pool = QQ_TIEBREAKER_POOL;
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  const en = room.language === 'en';
+  (room as any).tieBreaker = {
+    prompt: en ? pick.promptEn : pick.promptDe,
+    options: en ? pick.optionsEn.slice() : pick.optionsDe.slice(),
+    correctIndex: pick.correctIndex,
+    candidateIds: candidates.slice(),
+    answers: [],
+    winnerId: null,
+    revealed: false,
+    startedAt: Date.now(),
+  } as QQTieBreakerState;
+  room.tieBreakerWinnerId = null;   // vorherige (manuelle) Aufloesung verwerfen
+  room.phase = 'TIEBREAKER_QUESTION';
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * 2026-07-04: Antwort im Stechen. Ein Geraet hat genau EINEN Versuch (falsch =
+ * raus). Die erste RICHTIGE Antwort gewinnt sofort — im Arena-Modus fuer die
+ * Faktion des Geraets. Sobald ein Gewinner feststeht, werden weitere Antworten
+ * ignoriert.
+ */
+export function qqTieBreakerAnswer(room: QQRoomState, teamId: string, optionIndex: number): void {
+  const tb = (room as any).tieBreaker as QQTieBreakerState | null;
+  if (room.phase !== 'TIEBREAKER_QUESTION' || !tb) {
+    throw new QQError('WRONG_PHASE', 'Kein Stechen aktiv.');
+  }
+  if (tb.revealed || tb.winnerId) return;  // schon entschieden
+  const team = room.teams[teamId];
+  if (!team) throw new QQError('INVALID_TEAM', 'Team unbekannt.');
+  // Kandidat bestimmen: direkte teamId (Team-Modus) ODER Faktion (Arena) via avatarId.
+  const avToCandidate = new Map<string, string>();
+  for (const cid of tb.candidateIds) {
+    const av = room.teams[cid]?.avatarId;
+    if (av) avToCandidate.set(av, cid);
+  }
+  let candidateId: string | null = null;
+  if (tb.candidateIds.includes(teamId)) candidateId = teamId;                                   // Team-Modus
+  else if (team.avatarId && avToCandidate.has(team.avatarId)) candidateId = avToCandidate.get(team.avatarId)!;  // Arena
+  if (!candidateId) {
+    throw new QQError('NOT_IN_TIEBREAKER', 'Dieses Team nimmt nicht am Stechen teil.');
+  }
+  // Ein Versuch pro Geraet.
+  if (tb.answers.some(a => a.teamId === teamId)) return;
+  if (typeof optionIndex !== 'number' || optionIndex < 0 || optionIndex >= tb.options.length) {
+    throw new QQError('INVALID_ANSWER', 'Ungueltige Option.');
+  }
+  const correct = optionIndex === tb.correctIndex;
+  tb.answers.push({ teamId, avatarId: team.avatarId ?? '', optionIndex, correct, submittedAt: Date.now() });
+  if (correct) {
+    // Erste richtige Antwort → Gewinner (answers ist chronologisch, erste correct
+    // ist die schnellste). qqSortedTeams zieht tieBreakerWinnerId vor.
+    tb.winnerId = candidateId;
+    tb.revealed = true;
+    room.tieBreakerWinnerId = candidateId;
+  }
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * 2026-07-04: Stechen abbrechen → zurueck zu GAME_OVER (Mod loest ggf. manuell
+ * via qqResolveTieBreaker auf). Verwirft die Stechfrage.
+ */
+export function qqCancelTieBreaker(room: QQRoomState): void {
+  if (room.phase !== 'TIEBREAKER_QUESTION') return;
+  (room as any).tieBreaker = null;
+  room.phase = 'GAME_OVER';
+  room.lastActivityAt = Date.now();
+}
+
 /** Berechnet aktuelle Leader-Teams (alle mit maximalem largestConnected,
  *  die NICHT selbst im H/L-Mini-Game sitzen).
  *  Wird beim Setup aufgerufen und nach jedem Klau neu. */
@@ -3928,6 +4018,14 @@ function clearAllJokerVisuals(room: QQRoomState): void {
 }
 
 export function qqNextQuestion(room: QQRoomState): void {
+  // 2026-07-04: Stechen aufgeloest → Mod-Space fuehrt zur Siegerehrung (GAME_OVER
+  // mit gesetztem tieBreakerWinnerId). Stechfrage-State bleibt fuer Recap erhalten.
+  if (room.phase === 'TIEBREAKER_QUESTION') {
+    const tb = (room as any).tieBreaker as QQTieBreakerState | null;
+    if (tb?.revealed) room.phase = 'GAME_OVER';
+    return;
+  }
+
   // Comeback-Steal-Pause: zwischen einzelnen Klau-Aktionen wartet das Spiel auf
   // Moderator-Space. Hier weiter zum naechsten Steal/Team — ohne andere Logik.
   if (room._comebackStealPaused) {
@@ -4491,6 +4589,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     currentQuestionWinners: room._currentQuestionWinners ?? [],
     tieBreakerCandidates: room.tieBreakerCandidates ?? [],
     tieBreakerWinnerId:   room.tieBreakerWinnerId ?? null,
+    tieBreaker:           (room as any).tieBreaker ?? null,
     pendingFor:       room.pendingFor,
     pendingAction:    room.pendingAction,
     comebackTeamId:   room.comebackTeamId,

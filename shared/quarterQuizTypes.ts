@@ -114,6 +114,7 @@ export type QQPhase =
   | 'FINAL_REVEAL'      // Nach Final-Phase: dramatische Score-Cascade-Auflösung. State in finalBetResolution.
   | 'COZY_GAME'         // CozyGame-Round (analog Real-Life-Mini-Spiel). Sub-Phasen in cozyGame.phase. Siehe shared/cozyGameTypes.ts.
   | 'PAUSED'            // Moderator-triggered pause — shows records/leaderboard
+  | 'TIEBREAKER_QUESTION' // Sudden-Death-Stechen bei Gleichstand am Spielende. State in tieBreaker.
   | 'GAME_OVER'         // Final state, territory winner shown
   | 'THANKS';           // Danke-fürs-Spielen-Folie mit QR nach der Siegerehrung
 
@@ -550,6 +551,62 @@ export interface QQComebackHLState {
   /** Wie viele Felder das aktuelle Stealing-Team noch klauen darf (von winnings). */
   currentStealerRemaining: number;
 }
+
+// ── Sudden-Death-Stechen (Tiebreaker) ────────────────────────────────────────
+/** 2026-07-04: In-App-Stechfrage bei Gleichstand am Spielende (ersetzt die
+ *  muendliche Pub-Stechfrage). Multiple-Choice; die erste RICHTIGE Antwort
+ *  gewinnt. Ein Geraet hat genau EINEN Versuch (falsch = raus). */
+export interface QQTieBreakerState {
+  /** Frage-Text bereits in Raum-Sprache aufgeloest. */
+  prompt: string;
+  /** Antwort-Optionen (in Raum-Sprache). */
+  options: string[];
+  /** Index der richtigen Option in `options`. */
+  correctIndex: number;
+  /** Kandidaten (teamIds). Im Arena-Modus je Faktion der Repraesentant (repId). */
+  candidateIds: string[];
+  /** Abgegebene Antworten. avatarId erlaubt Arena-Zuordnung Geraet → Faktion. */
+  answers: Array<{ teamId: string; avatarId: string; optionIndex: number; correct: boolean; submittedAt: number }>;
+  /** Gewinner-Kandidat (teamId) nach erster richtiger Antwort. Null = offen. */
+  winnerId: string | null;
+  /** True sobald ein Gewinner feststeht → Beamer zeigt Aufloesung. */
+  revealed: boolean;
+  startedAt: number;
+}
+
+/** 2026-07-04: Eingebauter Stechfragen-Pool (allgemeinwissen, eindeutig richtig).
+ *  Bewusst simpel + faktisch unstrittig — es geht nur ums schnelle Entscheiden. */
+export interface QQTieBreakerPoolEntry {
+  promptDe: string; promptEn: string;
+  optionsDe: string[]; optionsEn: string[];
+  correctIndex: number;
+}
+export const QQ_TIEBREAKER_POOL: QQTieBreakerPoolEntry[] = [
+  { promptDe: 'Wie viele Beine hat eine Spinne?', promptEn: 'How many legs does a spider have?',
+    optionsDe: ['6', '8', '10', '12'], optionsEn: ['6', '8', '10', '12'], correctIndex: 1 },
+  { promptDe: 'Welcher Planet ist der Sonne am nächsten?', promptEn: 'Which planet is closest to the Sun?',
+    optionsDe: ['Venus', 'Merkur', 'Mars', 'Erde'], optionsEn: ['Venus', 'Mercury', 'Mars', 'Earth'], correctIndex: 1 },
+  { promptDe: 'Wie viele Farben hat ein Regenbogen?', promptEn: 'How many colours are in a rainbow?',
+    optionsDe: ['5', '6', '7', '8'], optionsEn: ['5', '6', '7', '8'], correctIndex: 2 },
+  { promptDe: 'Was ergibt 7 × 8?', promptEn: 'What is 7 × 8?',
+    optionsDe: ['54', '56', '58', '64'], optionsEn: ['54', '56', '58', '64'], correctIndex: 1 },
+  { promptDe: 'Welches Tier ist das größte der Welt?', promptEn: 'What is the largest animal in the world?',
+    optionsDe: ['Elefant', 'Blauwal', 'Giraffe', 'Nashorn'], optionsEn: ['Elephant', 'Blue whale', 'Giraffe', 'Rhino'], correctIndex: 1 },
+  { promptDe: 'In welchem Land steht der Eiffelturm?', promptEn: 'In which country is the Eiffel Tower?',
+    optionsDe: ['Italien', 'Spanien', 'Frankreich', 'Belgien'], optionsEn: ['Italy', 'Spain', 'France', 'Belgium'], correctIndex: 2 },
+  { promptDe: 'Wie viele Kontinente gibt es?', promptEn: 'How many continents are there?',
+    optionsDe: ['5', '6', '7', '8'], optionsEn: ['5', '6', '7', '8'], correctIndex: 2 },
+  { promptDe: 'Welche Farbe entsteht aus Blau und Gelb?', promptEn: 'Which colour do blue and yellow make?',
+    optionsDe: ['Grün', 'Orange', 'Lila', 'Braun'], optionsEn: ['Green', 'Orange', 'Purple', 'Brown'], correctIndex: 0 },
+  { promptDe: 'Wie viele Minuten hat eine Stunde?', promptEn: 'How many minutes are in an hour?',
+    optionsDe: ['30', '45', '60', '90'], optionsEn: ['30', '45', '60', '90'], correctIndex: 2 },
+  { promptDe: 'Welches ist das größte Land Europas nach Fläche?', promptEn: 'Which is the largest country in Europe by area?',
+    optionsDe: ['Frankreich', 'Deutschland', 'Russland', 'Spanien'], optionsEn: ['France', 'Germany', 'Russia', 'Spain'], correctIndex: 2 },
+  { promptDe: 'Wie viele Seiten hat ein Würfel?', promptEn: 'How many faces does a cube have?',
+    optionsDe: ['4', '6', '8', '12'], optionsEn: ['4', '6', '8', '12'], correctIndex: 1 },
+  { promptDe: 'Was ist die Hauptstadt von Italien?', promptEn: 'What is the capital of Italy?',
+    optionsDe: ['Mailand', 'Venedig', 'Rom', 'Neapel'], optionsEn: ['Milan', 'Venice', 'Rome', 'Naples'], correctIndex: 2 },
+];
 
 // ── Answer entry ─────────────────────────────────────────────────────────────
 export interface QQAnswerEntry {
@@ -1059,6 +1116,11 @@ export interface QQStateUpdate {
   // — Mod resolved manuell, danach steht der Sieger in `tieBreakerWinnerId`.
   tieBreakerCandidates?: string[];
   tieBreakerWinnerId?: string | null;
+  /** 2026-07-04: Sudden-Death-Stechen. Null = kein Stechen aktiv. Gestartet vom
+   *  Mod bei ≥2 tieBreakerCandidates. Erste richtige Antwort gewinnt; im Arena-
+   *  Modus zaehlt die Antwort fuer die Faktion des Geraets (candidateIds sind
+   *  die Faktions-Repraesentanten). Siehe QQTieBreakerState. */
+  tieBreaker?: QQTieBreakerState | null;
   pendingFor: string | null;         // teamId that must act (place/steal/comeback)
   pendingAction: QQPendingAction | null;
   comebackTeamId: string | null;

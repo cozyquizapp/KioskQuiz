@@ -31,6 +31,7 @@ import {
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
   qqAddCoWinner, qqRemoveWinner, qqResolveTieBreaker,
+  qqStartTieBreaker, qqTieBreakerAnswer, qqCancelTieBreaker,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqRenameTeam, qqStartPlacement,
@@ -130,12 +131,68 @@ const QQ_PUBLIC_EVENTS = new Set<string>([
   'qq:onlyConnectGuess', 'qq:bluffSubmit', 'qq:bluffVote',
   // Final-Wager (Team tippt)
   'qq:submitFinalBet',
+  // Sudden-Death-Stechen (Team tippt MC-Antwort)
+  'qq:tiebreakerAnswer',
 ]);
+
+// 2026-07-04 (Comeback-Auto-Skip): Self-healing Watchdog gegen ein
+// eingefrorenes Comeback. Der disconnect-Watchdog (s. socket 'disconnect')
+// feuert nur bei einem FRISCHEN disconnect-Event. Laeuft aber die Steal-Queue
+// auf ein Team, das SCHON offline war (kein neues disconnect-Event), haengt das
+// Spiel bis Wolf manuell F18-skippt. Dieser Hook laeuft bei JEDEM Broadcast:
+// ist das aktuelle Comeback-Steal-Team offline, wird nach einer Grace-Periode
+// der bestehende Skip-Pfad (qqSkipCurrentPlacement) getriggert. Kaskadiert
+// automatisch durch weitere offline Stealer, weil der Skip selbst broadcastet.
+// Nur CozyQuiz (Comeback = Grid-Mechanik, in der Arena hart aus).
+const COMEBACK_OFFLINE_GRACE_MS = 12000;
+
+function armComebackOfflineWatchdog(io: SocketIOServer, roomCode: string, room: import('./qqRooms').QQRoomState): void {
+  const r = room as any;
+  const comebackActive = !!room.comebackTeamId || !!room.comebackHL?.currentStealer;
+  const pending = room.pendingFor;
+  const stuck = !room.largeGroupMode
+    && room.phase === 'PLACEMENT'
+    && comebackActive
+    && !!pending
+    && !room.teams[pending]?.connected;
+
+  if (!stuck) {
+    // Zustand aufgeloest (reconnect / weiter / Comeback-Ende) → Timer entschaerfen.
+    if (r._cbOfflineTimer) { clearTimeout(r._cbOfflineTimer); r._cbOfflineTimer = null; }
+    r._cbOfflineArmedFor = null;
+    return;
+  }
+  // Bereits fuer genau dieses Team scharf → Timer weiterlaufen lassen, nicht neu bewaffnen.
+  if (r._cbOfflineArmedFor === pending && r._cbOfflineTimer) return;
+  if (r._cbOfflineTimer) clearTimeout(r._cbOfflineTimer);
+  const armedFor = pending as string;
+  r._cbOfflineArmedFor = armedFor;
+  r._cbOfflineTimer = setTimeout(() => {
+    const cur = getQQRoom(roomCode);
+    if (!cur) return;
+    const cr = cur as any;
+    cr._cbOfflineTimer = null;
+    cr._cbOfflineArmedFor = null;
+    // Re-Check: immer noch dasselbe offline Team dran?
+    if (cur.phase !== 'PLACEMENT' || cur.pendingFor !== armedFor) return;
+    if (cur.teams[armedFor]?.connected) return;
+    const stillComeback = !!cur.comebackTeamId || !!cur.comebackHL?.currentStealer;
+    if (!stillComeback) return;
+    console.log('[comeback-offline-watchdog] auto-skipping offline comeback stealer:', armedFor);
+    try {
+      qqSkipCurrentPlacement(cur);
+      broadcast(io, roomCode);  // loest bei weiteren offline Stealern erneut aus
+    } catch (err) {
+      console.warn('[comeback-offline-watchdog] skip failed:', err);
+    }
+  }, COMEBACK_OFFLINE_GRACE_MS);
+}
 
 export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
   const room = getQQRoom(roomCode);
   if (!room) return;
   io.to(roomCode).emit('qq:stateUpdate', buildQQStateUpdate(room));
+  armComebackOfflineWatchdog(io, roomCode, room);
   // 2026-05-25 (Wolf-Bug 'bots setzen nicht 0/8'): wenn qqBeginPhase via
   // Auto-Flow nach FINAL_BETTING gewechselt hat, _pendingAutoFinalBets ist
   // gesetzt → maybeAutoFinalBets triggern. Vorher feuerten Bot-Bets nur wenn
@@ -1404,6 +1461,38 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         const room = ensureQQRoom(payload.roomCode);
         qqResolveTieBreaker(room, payload.teamId);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-07-04: Sudden-Death-Stechen — Mod startet (oder wuerfelt neu).
+    socket.on('qq:startTieBreaker', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqStartTieBreaker(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-07-04: Mod bricht Stechen ab → zurueck zu GAME_OVER (manuelle Aufloesung).
+    socket.on('qq:cancelTieBreaker', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCancelTieBreaker(room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-07-04: Team gibt MC-Antwort im Stechen ab (ein Versuch pro Geraet).
+    socket.on('qq:tiebreakerAnswer', (payload: { roomCode: string; teamId: string; optionIndex: number }, ack?: unknown) => {
+      try {
+        assertOwnTeam(socket, payload.teamId);
+        assertRateLimit(socket, 'qq:tiebreakerAnswer', 4);
+        const room = ensureQQRoom(payload.roomCode);
+        qqTieBreakerAnswer(room, payload.teamId, payload.optionIndex);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

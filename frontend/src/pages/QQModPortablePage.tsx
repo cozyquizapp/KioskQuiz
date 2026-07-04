@@ -269,6 +269,7 @@ function PhaseHeader({ state: s }: { state: QQStateUpdate }) {
     FINAL_BETTING: '🪙 Final-Tipp',
     FINAL_REVEAL: '🏆 Final-Reveal',
     COZY_GAME: '🪅 CozyGame',
+    TIEBREAKER_QUESTION: '⚔ Stechen',
     GAME_OVER: '🏆 Game-Over',
     THANKS: '👋 Thanks',
   };

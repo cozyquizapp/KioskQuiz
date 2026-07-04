@@ -43,6 +43,7 @@ import { PlacementView } from '../components/CozyQuizPlacementView';
 import { ComebackView } from '../components/CozyQuizComebackView';
 import { ThanksView } from '../components/CozyQuizThanksView';
 import { GameOverView } from '../components/CozyQuizGameOverView';
+import { TieBreakerView } from '../components/CozyQuizTieBreakerView';
 import { ConnectionsBeamerView } from '../components/CozyQuizConnectionsBeamerView';
 import CozyGameView from '../components/CozyGameView';
 import { FinalBettingView } from '../components/CozyQuizFinalBettingView';
@@ -2051,6 +2052,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                 />
               )}
               {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
+              {renderState.phase === 'TIEBREAKER_QUESTION' && <TieBreakerView state={renderState} />}
               {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}
               {renderState.phase === 'THANKS'          && <ThanksView state={renderState} roomCode={roomCode} />}
             </>

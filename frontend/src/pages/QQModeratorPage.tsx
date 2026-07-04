@@ -2817,6 +2817,57 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   );
                 })()}
 
+                {/* ── STECHEN (Sudden-Death-Tiebreaker) ── */}
+                {s.phase === 'TIEBREAKER_QUESTION' && (() => {
+                  const tb = (s as any).tieBreaker as import('../../../shared/quarterQuizTypes').QQTieBreakerState | null;
+                  if (!tb) return null;
+                  const answered = tb.answers.length;
+                  const winner = tb.winnerId ? s.teams.find(t => t.id === tb.winnerId) : null;
+                  const label = (id: string) => {
+                    const t = s.teams.find(x => x.id === id);
+                    if (!t) return id;
+                    return (s as any).largeGroupMode
+                      ? qqMegaFactionName(t.avatarId, s.language === 'en' ? 'en' : 'de')
+                      : t.name;
+                  };
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <div style={{ fontSize: 15, color: QQ_COLORS.brandPink, fontWeight: 900 }}>⚔ Stechen laeuft</div>
+                      <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700, lineHeight: 1.35 }}>
+                        {tb.prompt}
+                      </div>
+                      <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                        Kandidaten: {tb.candidateIds.map(label).join(' · ')} — {answered} Antwort(en) eingegangen
+                      </div>
+                      {winner ? (
+                        <>
+                          <div style={{
+                            fontSize: 13, fontWeight: 900, color: '#22C55E',
+                            padding: '6px 10px', borderRadius: 8, background: 'rgba(34,197,94,0.12)',
+                          }}>
+                            ✓ {label(winner.id)} war zuerst richtig!
+                          </div>
+                          <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                            ▶ Zur Siegerehrung
+                          </PrimaryBtn>
+                        </>
+                      ) : (
+                        <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                          Warte auf die erste richtige Antwort…
+                        </div>
+                      )}
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        <Btn small color={QQ_COLORS.slate400} onClick={() => emit('qq:startTieBreaker', { roomCode })}>
+                          🎲 Neue Frage
+                        </Btn>
+                        <Btn small color={QQ_COLORS.slate400} onClick={() => emit('qq:cancelTieBreaker', { roomCode })}>
+                          ✖ Abbrechen (manuell setzen)
+                        </Btn>
+                      </div>
+                    </div>
+                  );
+                })()}
+
                 {/* ── GAME OVER ── */}
                 {s.phase === 'GAME_OVER' && (() => {
                   const tieCands = s.tieBreakerCandidates ?? [];
@@ -2833,10 +2884,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                           background: 'rgba(236,72,153,0.10)',
                         }}>
                           <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em' }}>
-                            ⚠ STECHFRAGE — gleicher Endstand bei {tieCands.length} Teams
+                            ⚔ STECHEN — gleicher Endstand bei {tieCands.length} {(s as any).largeGroupMode ? 'Fraktionen' : 'Teams'}
                           </div>
+                          <button
+                            onClick={() => emit('qq:startTieBreaker', { roomCode })}
+                            style={{
+                              padding: '9px 14px', borderRadius: 8, border: 'none',
+                              background: QQ_COLORS.brandPink, color: '#fff',
+                              fontFamily: 'inherit', fontWeight: 900, fontSize: 14, cursor: 'pointer',
+                            }}
+                            title="Sudden-Death-Stechfrage auf den Beamer bringen — erste richtige Antwort gewinnt"
+                          >
+                            ⚔ Stechen starten (Sudden-Death-Frage)
+                          </button>
                           <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700, lineHeight: 1.35 }}>
-                            Stell den Teams eine Schaetz-/Stichfrage. Sieger anklicken — er rueckt im Ranking auf Platz 1.
+                            Oder Sieger manuell setzen (nach muendlicher Frage) — er rueckt im Ranking auf Platz 1:
                           </div>
                           <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                             {tieCands.map(id => {

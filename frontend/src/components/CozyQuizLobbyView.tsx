@@ -769,7 +769,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   <FactionCrest avatarId={g.avatarId} width={'clamp(48px, 5cqw, 68px)'} style={{ flexShrink: 0 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
-                      fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 23px)',
+                      // 2026-07-04 (Wolf 'Lobby-Namen vom Sofa schwer lesbar'): +~20%.
+                      fontWeight: 900, fontSize: 'clamp(19px, 2cqw, 28px)',
                       color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
                       // Konzept-Namen sind kurz + bekannt → KEINE Silbentrennung
                       // (kein QQ_TEAM_NAME_WRAP). Umbruch nur an Leerzeichen; die
@@ -868,11 +869,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         // 1-Buchstaben-Umbruch-Situation. Font fuer lange
                         // Namen wieder etwas hochgezogen (16-24 → 17-25) damit
                         // die Karten gleichmaessiger gross wirken.
+                        // 2026-07-04 (Wolf 'Lobby-Namen vom Sofa schwer lesbar'):
+                        // alle Stufen ~+15-20% fuer Beamer/TV-Distanz.
                         fontSize: veryMany
-                          ? (t.name.length > 14 ? 'clamp(13px, 1.3cqw, 17px)' : 'clamp(15px, 1.5cqw, 20px)')
+                          ? (t.name.length > 14 ? 'clamp(15px, 1.5cqw, 20px)' : 'clamp(17px, 1.7cqw, 23px)')
                           : t.name.length > 16
-                            ? (compact ? 'clamp(16px, 1.65cqw, 22px)' : 'clamp(17px, 1.8cqw, 25px)')
-                            : (compact ? 'clamp(18px, 1.9cqw, 26px)' : 'clamp(20px, 2.1cqw, 30px)'),
+                            ? (compact ? 'clamp(18px, 1.85cqw, 25px)' : 'clamp(19px, 2cqw, 28px)')
+                            : (compact ? 'clamp(20px, 2.1cqw, 29px)' : 'clamp(22px, 2.3cqw, 33px)'),
                         // 2026-06-28 (Beamer-Review): Team-Name weiß statt Team-Farbe
                         // (Lesbarkeit; Farbe lebt im Card-Akzent + Avatar).
                         color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',

@@ -126,9 +126,13 @@ export default function QQProgressTree({
     : variant === 'hero' ? 1
     : variant === 'panel' ? 0.8
     : isMini ? 0.42
+    // 2026-07-04 (Wolf 'progress tree groesser fuer Beamer/TV-Sofa-Lesbarkeit'):
+    // inline (RulesView-Tree) von 0.95 → 1.08. maxWidth unten mit hochgezogen,
+    // damit das Maximal-Setup (4 Runden + CG + Bieten + Finale) nicht ueberlaeuft.
+    : variant === 'inline' ? 1.08
     : 0.95;
   const titleSize = isShowcase ? 44 : variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
-  const phaseNameSize = isShowcase ? 34 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : 15;
+  const phaseNameSize = isShowcase ? 34 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : variant === 'inline' ? 17 : 15;
   // bigIcons (Round-Intro-Roadmap): Dots ~1.3× größer → die 3D-Kategorie-Icons
   // lesen sich aus Distanz deutlich besser (Beamer-Review 54px-Tiles vs. 34px).
   const dotSize = Math.round(34 * scale * (bigIcons ? 1.3 : 1));
@@ -524,7 +528,7 @@ export default function QQProgressTree({
         transition: 'border-color 0.6s ease, box-shadow 0.6s ease',
         // Showcase: volle Container-Breite (Pan-Camera fliegt smooth durch).
         width: isShowcase ? '100%' : undefined,
-        maxWidth: isShowcase ? '100%' : variant === 'hero' ? 1200 : variant === 'inline' ? 1400 : isMini ? 720 : 920,
+        maxWidth: isShowcase ? '100%' : variant === 'hero' ? 1200 : variant === 'inline' ? 1600 : isMini ? 720 : 920,
         // Showcase: outer cliped damit gepannte Tree-Teile außerhalb verschwinden.
         overflow: isShowcase ? 'hidden' : undefined,
         fontFamily: "'Nunito', system-ui, sans-serif",

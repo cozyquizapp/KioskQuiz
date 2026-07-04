@@ -66,8 +66,9 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
   // 2026-06-29 (Wolf): Wolf wandert jetzt ÜBER der Linie (Pin nach unten) statt
   // auf dem aktuellen Dot zu sitzen — so bleibt das Kategorie-Emoji sichtbar,
   // in das als Nächstes gezoomt wird.
-  const DOT = 84;
-  const GAP = 32;
+  // 2026-07-04 (Wolf 'runden-mini-tree groesser fuer Beamer/TV-Sofa-Lesbarkeit').
+  const DOT = 96;
+  const GAP = 34;
   const WOLF = DOT - 4;        // Marker über der Linie (etwas kleiner als ein Dot)
   const POINTER = 11;          // Pfeil-Spitze nach unten auf den aktuellen Dot
   const VGAP = 6;              // Abstand Pfeil → Dot-Oberkante

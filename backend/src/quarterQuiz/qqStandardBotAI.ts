@@ -113,6 +113,31 @@ function pickDummyAnswer(
         : [...correct].sort(() => Math.random() - 0.5).map(idx => items[idx] ?? '');
       return seq.join('|');
     }
+    // crowdTop (Top-Antworten): EINE gewichtete Nennung je Bot.
+    // Fruehere Labels = populaerer (exp. Decay) -> sauberer #1-Cluster.
+    // Nicht-korrekte Bots antworten teils "aus der Menge" (off-board) fuer Auto-Surface.
+    if (bt.kind === 'crowdTop') {
+      const answers = ((bt.answers as any[]) || []).filter(a => a && a.label && String(a.label).trim());
+      if (!answers.length) return `Idee-${Math.random().toString(36).slice(2, 5)}`;
+      if (!beCorrect && Math.random() < 0.4) {
+        return `Idee-${Math.random().toString(36).slice(2, 5)}`;
+      }
+      const weights = answers.map((_, i) => Math.pow(0.62, i));
+      const total = weights.reduce((s, w) => s + w, 0);
+      let r = Math.random() * total;
+      for (let i = 0; i < answers.length; i++) {
+        r -= weights[i];
+        if (r <= 0) return String(answers[i].label);
+      }
+      return String(answers[answers.length - 1].label);
+    }
+    // crowdEstimate (Schwarm-Schaetzen): EINE Zahl nahe/fern am Zielwert (wie SCHAETZCHEN).
+    if (bt.kind === 'crowdEstimate') {
+      const target = Number.isFinite(bt.targetValue) ? Number(bt.targetValue) : 100;
+      const noise = beCorrect ? Math.abs(target) * 0.12 : Math.abs(target) * (0.5 + Math.random());
+      const val = Math.max(0, Math.round(target + (Math.random() - 0.5) * noise * 2));
+      return String(val);
+    }
     // hotPotato / oneOfEight / onlyConnect / bluff: eigene Auto-Handler.
     const fallback = (q as any).answer || 'Test';
     return beCorrect ? String(fallback) : `Dummy-${Math.random().toString(36).slice(2, 6)}`;

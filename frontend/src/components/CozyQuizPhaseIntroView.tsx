@@ -655,7 +655,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // Step 0 (Übersicht): Tree tiefer (~Spacer-Mitte), damit der Wolf-Pin (sitzt
     // ÜBER der Linie) + der Titel-Glow den großen „Runde N"-Titel nicht mehr
     // touchieren (Wolf 2026-06-30 'Unterschrift hängt im Tree').
-    let vAnchor = 0.62;
+    // 2026-07-04 (Wolf '3-Band': Titel oben, Untertitel Mitte, Tree unten):
+    // Step-0-Normal-Tree klar in die untere Zone (war 0.62 → touchierte den
+    // mittig gesetzten Untertitel). Titel+Untertitel werden per Trailing-Spacer
+    // nach oben gehoben (s. Render), der Tree bekommt so ein eigenes Band unten.
+    let vAnchor = 0.76;
     // 2026-07-02 (Wolf Mega): im Groß-Modus fehlt der Aktions-Block unter dem
     // Tree → viel Dead-Space bei Step 0. Tree etwas größer ziehen + vertikal
     // mittiger anlegen, damit der Ausschnitt die Fläche besser füllt. Nur Mega
@@ -680,7 +684,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       tx = (phaseCenters[pi] ?? totalWidth / 2) + PAD_L;
       S = Math.min(2.3, Math.max(1.6, (camVp.w * 0.56) / (phaseWidths[pi] || camVp.w)));
       const wolfClearVAnchor = 0.09 + (2.1 * dotSize * S) / camVp.h;
-      vAnchor = Math.min(0.44, Math.max(0.37, wolfClearVAnchor));
+      // 2026-07-04 (Wolf 'Mini-Tree zu viel Deadspace → Cluster mittiger'):
+      // Cluster tiefer/mittiger (war 0.37–0.44 = zu weit oben, grosse Luecke zum
+      // Aktions-Block) → 0.42–0.50, naeher an die Mitte. Aktions-Block sitzt
+      // absolut ganz unten, bleibt frei.
+      vAnchor = Math.min(0.5, Math.max(0.42, wolfClearVAnchor));
       // 2026-07-03 (Wolf 'Deadspace Bild 4'): In Cozy Arena fehlt der Aktions-
       // Block unter dem Tree → Cluster größer ziehen UND vertikal mittiger legen
       // (0.4 → ~0.5), damit der leere Bereich unten verschwindet. Wolf-Pin bleibt
@@ -1052,11 +1060,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           {/* Tree-Zone-Spacer: reserviert den vertikalen Raum, in dem der
               persistente Welt-Backdrop-Tree liegt. Der Subtitle kommt DANACH →
               er steht unter dem Tree (Wolf 2026-06-29).
-              2026-06-29 (Wolf 'große Lücke nach unten zwischen Text und Tree'):
-              Spacer war bis 300px/22cqh → riesiger Void zwischen Tree und
-              Subtitle. Knapper reserviert (≈ Tree-Höhe inkl. Wolf-Pin), damit
-              der Subtitle den Tree hugged statt darunter abzudriften. */}
-          <div style={{ height: 'clamp(104px, 14cqh, 184px)' }} aria-hidden />
+              2026-07-04 (Wolf '3-Band': Untertitel mittig unter den Titel, Tree
+              unten): Zwischen-Spacer klein → Untertitel hugged den Titel (nicht
+              mehr den Tree). Ein Trailing-Spacer NACH dem Untertitel (s. unten)
+              hebt Titel+Untertitel ins obere/mittlere Band, der Tree (vAnchor
+              0.76) bekommt das untere Band für sich. */}
+          <div style={{ height: 'clamp(12px, 1.8cqh, 32px)' }} aria-hidden />
 
           {/* Mission subtitle — bei Round-Transition rollt der alte Text raus und der neue rein (synchron zur Ziffer).
               overflow:hidden nur waehrend der Transition, sonst bleibt ein
@@ -1105,6 +1114,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
 
+          {/* Trailing-Spacer: hebt Titel+Untertitel (im zentrierten Block) ins
+              obere/mittlere Band, damit der Tree unten (vAnchor 0.76) ein eigenes
+              Band bekommt — 3-Band-Layout (Wolf 2026-07-04). */}
+          <div style={{ height: 'clamp(150px, 22cqh, 320px)' }} aria-hidden />
         </>
       ) : isFirstOfRound && s.introStep === 1 ? (
         /* ── Step 1: Rule reminder — space-between: Titel oben, Aktion unten,

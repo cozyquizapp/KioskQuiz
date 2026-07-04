@@ -4388,14 +4388,17 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             wird zusätzlich Word-Stagger animiert (qqWordFadeUp pro Wort) statt
             statisch — wirkt lebendig wie der Wolf wirklich spricht. */}
         <div style={{
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          gap: 'clamp(14px, 1.8cqw, 28px)',
-          marginTop: 'clamp(20px, 2.6cqh, 36px)',
+          // 2026-07-04 (Wolf 'Wolf mittig, Balance'): Vertikal-Stack statt
+          // Wolf-links-neben-Blase — Wolf oben zentriert, Sprechblase darunter
+          // (Tail zeigt hoch). Wirkt ausbalanciert statt links-lastig.
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(10px, 1.4cqh, 20px)',
+          marginTop: 'clamp(18px, 2.4cqh, 34px)',
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0,
         }}>
           <AnimatedCozyWolf
-            widthCss="clamp(130px, 15cqw, 220px)"
+            widthCss="clamp(150px, 16cqw, 240px)"
             mode={eurovisionMode ? 'flagge' : undefined}
             speaking={visible}
           />
@@ -4415,18 +4418,18 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             lineHeight: 1.28,
             animation: 'qqIntroBubbleBob 5s ease-in-out 4s infinite',
           }}>
-            {/* Tail */}
+            {/* Tail — zeigt nach OBEN auf den Wolf (der jetzt darueber steht). */}
             <div style={{
-              position: 'absolute', left: -13, top: '50%',
-              width: 0, height: 0, transform: 'translateY(-50%)',
-              borderTop: '11px solid transparent', borderBottom: '11px solid transparent',
-              borderRight: `14px solid rgba(${accentRgb},0.55)`,
+              position: 'absolute', top: -13, left: '50%',
+              width: 0, height: 0, transform: 'translateX(-50%)',
+              borderLeft: '11px solid transparent', borderRight: '11px solid transparent',
+              borderBottom: `14px solid rgba(${accentRgb},0.55)`,
             }} />
             <div style={{
-              position: 'absolute', left: -10, top: '50%',
-              width: 0, height: 0, transform: 'translateY(-50%)',
-              borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
-              borderRight: '12px solid rgba(15,23,42,0.85)',
+              position: 'absolute', top: -10, left: '50%',
+              width: 0, height: 0, transform: 'translateX(-50%)',
+              borderLeft: '9px solid transparent', borderRight: '9px solid transparent',
+              borderBottom: '12px solid rgba(15,23,42,0.85)',
             }} />
             {greeting.split(' ').map((word, i) => (
               <span key={i} style={{

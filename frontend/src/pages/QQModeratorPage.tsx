@@ -1767,6 +1767,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               margin: '0 2px', flex: 'none',
             }} />
           )}
+          {/* 2026-07-04 (Wolf 'installierte App: Moderator + Beamer parallel'):
+              oeffnet den Beamer mit der aktuellen Room-ID in einem EIGENEN
+              benannten Fenster ('cozyquiz-beamer') — auf den zweiten Screen
+              ziehbar, Moderator bleibt bestehen. Wiederholtes Klicken fokussiert
+              dasselbe Fenster statt neue zu spawnen. */}
+          <button
+            onClick={() => { try { window.open(`/beamer?room=${encodeURIComponent(roomCode)}`, 'cozyquiz-beamer')?.focus(); } catch {} }}
+            title="Beamer in eigenem Fenster öffnen (auf zweiten Bildschirm ziehen)"
+            className="qm-ghost"
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: QQ_COLORS.brandPink }}
+          >
+            <span style={{ fontSize: 15 }}>🖥️</span>
+            Beamer
+          </button>
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"

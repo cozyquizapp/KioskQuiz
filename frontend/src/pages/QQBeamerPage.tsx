@@ -590,8 +590,15 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
 // Phase-1-Scope: nur der Phase-Render-Bereich wird gewrappt. Globale
 // Overlays (Grain, Confetti, Toasts) bleiben ausserhalb damit position:fixed
 // nicht mit dem transform:scale-Container kollidiert.
-const STAGE_DESIGN_WIDTH = 1920;
-const STAGE_DESIGN_HEIGHT = 1080;
+// 2026-07-04 (Wolf 'alles zu klein fuer Beamer/TV'): Global-Sizing-Hebel.
+// Der Stage-Content wird per scale=min(w/W, h/H) auf den Screen gezoomt. Ein
+// KLEINERER Design-Canvas (bei exakt 16:9) => groesserer scale => alles uniform
+// groesser, ohne eine Folie anzufassen. 1920x1080 -> 1760x990 = ~+9%.
+// EINE Stelle zum Tunen: naeher an 1920 = kleiner, kleiner = groesser. Muss
+// exakt 16:9 bleiben (sonst Letterbox-Rand auf 16:9-Beamern). Falls eine Folie
+// an den Kanten blutet: Wert Richtung 1840x1035 (~+4%) zuruecknehmen.
+const STAGE_DESIGN_WIDTH = 1760;
+const STAGE_DESIGN_HEIGHT = 990;
 function isStageEnabled(): boolean {
   if (typeof window === 'undefined') return false;
   try {

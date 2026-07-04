@@ -9,7 +9,9 @@
  *  - Unmatched Abgaben werden nach normalisiertem String gruppiert; ein
  *    Auto-Cluster mit genug Stimmen (autoSurfaceMin) erscheint ebenfalls auf der
  *    Tafel. So punktet auch eine nicht vorgesehene Antwort, die viele tippen.
- *  - Board = Top-5 nach Stimmen. Rang-Punkte [5,4,3,2,1] (Wolf-Entscheid B).
+ *  - Board = Top-5 nach Stimmen. Podium-Punkte 5/4/3/2/1; JEDE weitere gültige
+ *    Antwort (tafel-fähiger Bucket jenseits Top-5) noch 1 — analog „alle richtigen
+ *    +1" der übrigen Arena-Kategorien (Wolf-Entscheid B + Verfeinerung 2026-07-04).
  */
 import { normalizeText, similarityScore } from './textNormalization';
 import type { QQBunteTueteCrowdTop } from './quarterQuizTypes';
@@ -108,13 +110,23 @@ export function qqCrowdTopBoard(
   // Nach Stimmen absteigend; Tiebreak nach order (vorgegeben vor auto, stabil).
   eligible.sort((a, b) => (b.count - a.count) || (a.order - b.order));
 
+  // Punkte (Wolf 2026-07-04): Podium 5/4/3/2/1 (sichtbare Tafel), und JEDE
+  // weitere GÜLTIGE Antwort (tafel-fähiger Bucket jenseits Top-5) noch 1 — analog
+  // „alle richtigen +1" der übrigen Arena-Kategorien. Nicht-fähig = 0 (unmatched
+  // Einzeltipps / Auto-Cluster unter der Schwelle).
+  const pointsForRank = (rank: number) =>
+    rank < QQ_CROWDTOP_BOARD_POINTS.length ? QQ_CROWDTOP_BOARD_POINTS[rank] : 1;
+  const boardPointsByTeam: Record<string, number> = {};
+  eligible.forEach((b, rank) => {
+    const pts = pointsForRank(rank);
+    for (const tid of b.teamIds) boardPointsByTeam[tid] = pts;
+  });
+
   const boardBuckets = eligible.slice(0, boardSize);
   const boardTeamIds = new Set<string>();
-  const boardPointsByTeam: Record<string, number> = {};
   const slots: QQCrowdTopSlot[] = boardBuckets.map((b, rank) => {
-    const points = rank < QQ_CROWDTOP_BOARD_POINTS.length ? QQ_CROWDTOP_BOARD_POINTS[rank] : 0;
-    for (const tid of b.teamIds) { boardPointsByTeam[tid] = points; boardTeamIds.add(tid); }
-    return { label: b.label, count: b.count, teamIds: b.teamIds, points, rank, autoSurfaced: b.autoSurfaced, seedIndex: b.seedIndex };
+    for (const tid of b.teamIds) boardTeamIds.add(tid);
+    return { label: b.label, count: b.count, teamIds: b.teamIds, points: pointsForRank(rank), rank, autoSurfaced: b.autoSurfaced, seedIndex: b.seedIndex };
   });
 
   const boardVotes = boardBuckets.reduce((s, b) => s + b.count, 0);

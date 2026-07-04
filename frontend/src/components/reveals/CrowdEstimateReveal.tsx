@@ -20,7 +20,9 @@ import { isThemed } from '../../qqTheme';
 
 export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
-  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  // 2026-07-04 (Audit): explizite Modus-Flags statt fragiler Avatar-Aliasing-
+  // Heuristik (die kippte, wenn kurzzeitig Handys ausfielen).
+  const isMega = !!(s as any).nestedTeams || !!(s as any).largeGroupMode;
   const def = q.bunteTuete as QQBunteTueteCrowdEstimate;
   const unit = (lang === 'en' && def.unitEn ? def.unitEn : def.unit) ?? '';
 

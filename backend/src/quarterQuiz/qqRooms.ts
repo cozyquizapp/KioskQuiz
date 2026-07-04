@@ -6914,6 +6914,13 @@ function qqFlushPendingStacks(room: QQRoomState): void {
 /** Mod-Space in FINAL_REVEAL: increment step. Bei letztem Step → THANKS. */
 export function qqAdvanceFinalReveal(room: QQRoomState): void {
   if (room.phase !== 'FINAL_REVEAL') return;
+  // 2026-07-04 (Wolf-Audit): Doppelklick-/Streamdeck-Bounce-Schutz. Zwei
+  // Advances < 400ms = zweiter ignoriert, sonst ueberspringt ein Bounce einen
+  // Reveal-Step (Teams sehen falsche Step-Grafik). Eigener Timestamp, damit es
+  // nicht mit sonstiger room.lastActivityAt-Aktivitaet kollidiert.
+  const nowTs = Date.now();
+  if (nowTs - ((room as any).__lastFinalAdvanceAt ?? 0) < 400) return;
+  (room as any).__lastFinalAdvanceAt = nowTs;
   // Vor dem Advance: Restliche pending Stacks auto-flushen (Bot-Heuristik).
   qqFlushPendingStacks(room);
   const max = qqFinalRevealMaxStep(room);

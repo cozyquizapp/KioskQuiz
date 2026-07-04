@@ -5302,6 +5302,23 @@ function clearDevPin(): void {
   localStorage.removeItem(DEV_PIN_STORAGE_KEY);
 }
 
+// Dev-Tools-Gate (Wolf 2026-07-04): Bot-Fill/Test-Buttons sind NUR sichtbar,
+// wenn explizit freigeschaltet — sonst clean fuer Pitch/Live. Freischalten per
+// URL `?dev=1` (merkt sich der Browser dauerhaft), ausschalten per `?dev=0`.
+// Lokale Dev-Umgebung (npm run dev) hat die Tools immer. Ersetzt das alte
+// hart verdrahtete `true` / `devEnabled = true`.
+const DEV_TOOLS_KEY = 'qq-dev-tools';
+function qqDevToolsEnabled(): boolean {
+  try {
+    const p = new URLSearchParams(window.location.search).get('dev');
+    if (p === '1') localStorage.setItem(DEV_TOOLS_KEY, '1');
+    else if (p === '0') localStorage.removeItem(DEV_TOOLS_KEY);
+    return !!import.meta.env.DEV || localStorage.getItem(DEV_TOOLS_KEY) === '1';
+  } catch {
+    return !!import.meta.env.DEV;
+  }
+}
+
 function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: {
   onRestart: () => void; onBackToSetup: () => void;
   roomCode: string; phase: string;
@@ -5310,8 +5327,9 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
   const [open, setOpen] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
-  // TEMP: auch in Production sichtbar für 8-Team-Test. Nach Test zurück auf `import.meta.env.DEV`.
-  const devEnabled = true;
+  // Dev-Teil (Dummy-Teams) nur wenn Dev-Tools freigeschaltet (?dev=1). Restart +
+  // Zurueck-zum-Setup bleiben davon unberuehrt (immer verfuegbar).
+  const devEnabled = qqDevToolsEnabled();
   useEffect(() => {
     if (!open) return;
     function onDoc(e: MouseEvent) {
@@ -6532,8 +6550,8 @@ function LobbyView({
               </div>
             )}
 
-            {/* TEMP Dev-Fill: sichtbar in Production für 8-Team-Test */}
-            {true && (() => {
+            {/* Dev-Fill: nur wenn Dev-Tools freigeschaltet (?dev=1) — sonst clean fuer Pitch/Live. */}
+            {qqDevToolsEnabled() && (() => {
               const dummyCount = s.teams.filter(t => (t as any)._dummy).length;
               return (
               <div style={{

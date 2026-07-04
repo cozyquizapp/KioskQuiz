@@ -23,7 +23,9 @@ import { isThemed, themedWindow } from '../../qqTheme';
 
 export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
-  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  // 2026-07-04 (Audit): explizite Modus-Flags statt fragiler Avatar-Aliasing-
+  // Heuristik (die kippte, wenn kurzzeitig Handys ausfielen).
+  const isMega = !!(s as any).nestedTeams || !!(s as any).largeGroupMode;
   const def = q.bunteTuete as QQBunteTueteCrowdTop;
 
   const board = useMemo(

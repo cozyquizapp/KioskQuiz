@@ -45,8 +45,31 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
   }, [s.teams]);
   const teamsFor = (ids: string[]) => ids.map(id => teamsById.get(id)).filter((t): t is NonNullable<typeof t> => !!t);
 
-  // Rundensieger = Nenner der beliebtesten Antwort (Board-Platz 1).
-  const winnerTeams = teamsFor(slots[0]?.teamIds ?? []);
+  // Rundensieger = Fraktion/Team mit der BESTEN Leistung auf dieser Frage
+  // (Summe Board-Punkte pro Sub-Team, per-capita — exakt wie qqMegaEventScore
+  // die crowdTop-Wertung rankt). Ersetzt die alte "alle Nenner der #1-Antwort"-
+  // Liste (Wolf: quoll links raus + zeigte zu viele statt nur dem besten Team).
+  const winnerTeams = useMemo(() => {
+    const pts = board.boardPointsByTeam;
+    if (isMega) {
+      const agg = new Map<string, { pts: number; total: number }>();
+      for (const t of s.teams) {
+        const e = agg.get(t.avatarId) ?? { pts: 0, total: 0 };
+        e.total += 1; e.pts += pts[t.id] ?? 0;
+        agg.set(t.avatarId, e);
+      }
+      let best = 0;
+      for (const e of agg.values()) { const r = e.total ? e.pts / e.total : 0; if (r > best) best = r; }
+      if (best <= 0) return [];
+      const winAv = new Set([...agg].filter(([, e]) => (e.total ? e.pts / e.total : 0) === best).map(([av]) => av));
+      return s.teams.filter(t => winAv.has(t.avatarId));
+    }
+    let best = 0;
+    for (const t of s.teams) { const p = pts[t.id] ?? 0; if (p > best) best = p; }
+    if (best <= 0) return [];
+    return s.teams.filter(t => (pts[t.id] ?? 0) === best);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [board, s.teams, isMega]);
 
   // Sequentielles Reveal #n…#1 (bottom-up), wie Top5.
   const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
@@ -119,7 +142,8 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
       }}>
         {/* Sieger-Karte */}
         {(() => {
-          const singleColor = winnerTeams.length === 1 ? winnerTeams[0].color ?? null : null;
+          const winnerAvatars = new Set(winnerTeams.map(t => t.avatarId));
+          const singleColor = winnerAvatars.size === 1 ? (winnerTeams[0]?.color ?? null) : null;
           const has = winnerTeams.length > 0;
           return (
             <div style={{
@@ -131,37 +155,38 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
               borderRadius: 24,
               padding: 'clamp(18px, 2.4cqh, 32px) clamp(14px, 1.8cqw, 28px)',
               boxShadow: !has ? 'none' : singleColor ? `0 0 48px ${singleColor}33, 0 8px 24px rgba(0,0,0,0.4)` : '0 0 48px rgba(236,72,153,0.22), 0 8px 24px rgba(0,0,0,0.4)',
-              display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14, minHeight: 0,
+              display: 'flex', flexDirection: 'column', justifyContent: 'center', alignItems: 'center',
+              gap: 'clamp(14px, 2cqh, 26px)', minHeight: 0, overflow: 'hidden',
               opacity: revealedMinIdx === 0 ? 1 : 0.12,
               filter: revealedMinIdx === 0 ? 'none' : 'blur(18px) saturate(0.4)',
               transition: 'opacity 0.7s ease, filter 0.7s ease',
             }}>
               <div style={{
-                fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                letterSpacing: '0.1em', textTransform: 'uppercase',
+                fontSize: 'clamp(12px, 1.2cqw, 18px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+                letterSpacing: '0.1em', textTransform: 'uppercase', textAlign: 'center',
               }}>
-                <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Top answer named by' : 'Top-Antwort genannt von'}
+                <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Round winner' : 'Rundensieger'}
               </div>
               {!has ? (
-                <div style={{ fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900, color: '#f87171' }}>
+                <div style={{ fontSize: 'clamp(20px, 2.2cqw, 34px)', fontWeight: 900, color: '#f87171', textAlign: 'center' }}>
                   {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
                 </div>
+              ) : isMega ? (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'clamp(12px, 1.4cqw, 22px)', alignItems: 'center', justifyContent: 'center', maxWidth: '100%' }}>
+                  <FactionCountAvatars teams={winnerTeams} de={lang === 'de'} size={'clamp(104px, 10cqw, 168px)'} showName />
+                </div>
               ) : (
-                <>
-                  <div style={{ fontSize: 'clamp(22px, 2.5cqw, 40px)', fontWeight: 900, color: singleColor ?? '#EC4899', lineHeight: 1.1 }}>
-                    „{slots[0].label}"
-                  </div>
-                  {isMega
-                    ? <FactionCountAvatars teams={winnerTeams} de={lang === 'de'} size={'clamp(84px, 8.6cqw, 130px)'} showName />
-                    : (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 14, alignItems: 'center' }}>
-                        {winnerTeams.map(tm => (
-                          <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(72px, 7cqw, 112px)'} title={tm.name}
-                            style={{ boxShadow: `0 0 16px ${tm.color}55` }} />
-                        ))}
-                      </div>
-                    )}
-                </>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, alignItems: 'center', justifyContent: 'center', maxWidth: '100%' }}>
+                  {winnerTeams.slice(0, 4).map(tm => (
+                    <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(84px, 8cqw, 128px)'} title={tm.name}
+                      style={{ boxShadow: `0 0 16px ${tm.color}55` }} />
+                  ))}
+                  {winnerTeams.length > 4 && (
+                    <div style={{ fontSize: 'clamp(18px, 2cqw, 30px)', fontWeight: 900, color: 'var(--qq-text-muted)' }}>
+                      +{winnerTeams.length - 4}
+                    </div>
+                  )}
+                </div>
               )}
             </div>
           );

@@ -6243,7 +6243,10 @@ function MegaFactionLobby({ teams, emit, roomCode }: {
     fontSize: 10, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit', flexShrink: 0,
   });
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+    // 2026-07-04 (Wolf 'muss total scrollen um alle Teams zu sehen'): Fraktionen
+    // in ein mehrspaltiges Raster (wie der Nicht-Arena-Fall) statt einer hohen
+    // Einzelspalte — bei 6-8 Fraktionen passen alle ohne Scrollen.
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))', gap: 10, alignContent: 'start' }}>
       {factions.map(f => (
         <div key={f.avatarId} style={{ borderRadius: 12, border: `1px solid ${f.color}44`, background: `${f.color}12`, padding: '10px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8 }}>

@@ -84,11 +84,11 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
       {/* Zahlenstrahl */}
       <div style={{
         position: 'relative', flexShrink: 0,
-        margin: 'clamp(40px, 6cqh, 72px) clamp(20px, 4cqw, 64px) clamp(34px, 5cqh, 60px)',
-        height: 'clamp(8px, 1cqh, 12px)',
+        margin: 'clamp(46px, 6.8cqh, 82px) clamp(24px, 4.5cqw, 72px) clamp(30px, 4.5cqh, 54px)',
+        height: 'clamp(14px, 1.8cqh, 22px)',
       }}>
-        {/* Track */}
-        <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(148,163,184,0.22)' }} />
+        {/* Track — dicker + kontrastreicher fuer Distanz (Wolf 'von weitem') */}
+        <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(148,163,184,0.32)', border: '1px solid rgba(148,163,184,0.24)' }} />
         {/* „nah genug"-Band */}
         <div style={{
           position: 'absolute', top: '-4px', bottom: '-4px',
@@ -105,9 +105,9 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
           return (
             <div key={f.avatarId} title={rep?.name} style={{
               position: 'absolute', left: `${xPct(f.median)}%`, top: '50%',
-              width: 'clamp(14px, 1.4cqw, 20px)', height: 'clamp(14px, 1.4cqw, 20px)',
+              width: 'clamp(20px, 2cqw, 30px)', height: 'clamp(20px, 2cqw, 30px)',
               transform: 'translate(-50%, -50%)', borderRadius: '50%',
-              background: col, border: '2px solid rgba(255,255,255,0.85)', boxShadow: `0 0 10px ${col}`,
+              background: col, border: '3px solid rgba(255,255,255,0.9)', boxShadow: `0 0 10px ${col}`,
               opacity: shown ? 1 : 0, transition: `opacity 0.5s ease ${0.2 + i * 0.06}s`, zIndex: 2,
             }} />
           );
@@ -117,7 +117,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
         {Number.isFinite(globalMedian) && (
           <div style={{ position: 'absolute', left: `${xPct(globalMedian)}%`, top: 'clamp(14px, 2cqh, 26px)', transform: 'translateX(-50%)', textAlign: 'center', opacity: shown ? 1 : 0, transition: 'opacity 0.7s ease 0.3s', zIndex: 3 }}>
             <div style={{ width: 2, height: 'clamp(12px, 1.6cqh, 20px)', background: '#38bdf8', margin: '0 auto 3px' }} />
-            <div style={{ fontSize: 'clamp(13px, 1.5cqw, 22px)', fontWeight: 900, color: '#38bdf8', whiteSpace: 'nowrap' }}>
+            <div style={{ fontSize: 'clamp(16px, 1.9cqw, 28px)', fontWeight: 900, color: '#38bdf8', whiteSpace: 'nowrap' }}>
               🌊 {lang === 'en' ? 'Swarm' : 'Schwarm'} {fmt(globalMedian)}
             </div>
           </div>
@@ -125,11 +125,29 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
 
         {/* Wahrheit (ploppt) */}
         <div style={{ position: 'absolute', left: `${xPct(target)}%`, bottom: 'clamp(14px, 2cqh, 26px)', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 4, opacity: shown ? 1 : 0, transition: 'opacity 0.4s ease', animation: shown ? 'revealWinnerIn 0.6s var(--qq-ease-bounce) both' : 'none' }}>
-          <div style={{ fontSize: 'clamp(18px, 2.2cqw, 34px)', fontWeight: 900, color: '#EC4899', whiteSpace: 'nowrap', marginBottom: 3 }}>
+          <div style={{ fontSize: 'clamp(24px, 2.8cqw, 46px)', fontWeight: 900, color: '#EC4899', whiteSpace: 'nowrap', marginBottom: 3 }}>
             ✓ {fmt(target)}{unit ? ` ${unit}` : ''}
           </div>
-          <div style={{ width: 3, height: 'clamp(16px, 2.2cqh, 30px)', background: '#EC4899', margin: '0 auto', boxShadow: '0 0 12px #EC4899' }} />
+          <div style={{ width: 4, height: 'clamp(18px, 2.4cqh, 32px)', background: '#EC4899', margin: '0 auto', boxShadow: '0 0 12px #EC4899' }} />
         </div>
+      </div>
+
+      {/* Legende — erklaert den Strahl (Wolf 'nicht gut beschriftet'). */}
+      <div style={{
+        display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center',
+        gap: 'clamp(16px, 2.8cqw, 44px)', flexShrink: 0,
+        fontSize: 'clamp(14px, 1.5cqw, 22px)', fontWeight: 800, color: 'var(--qq-text-muted)',
+      }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
+          <span style={{ width: 'clamp(24px, 2.6cqw, 38px)', height: 'clamp(13px, 1.5cqh, 20px)', borderRadius: 6, background: 'rgba(34,197,94,0.30)', border: '1px solid rgba(34,197,94,0.5)' }} />
+          {lang === 'en' ? 'close enough' : 'nah genug'}
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, color: '#EC4899' }}>
+          ✓ {lang === 'en' ? 'truth' : 'Wahrheit'}
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, color: '#38bdf8' }}>
+          🌊 {lang === 'en' ? 'swarm median (all guesses)' : 'Schwarm-Median (alle Tipps)'}
+        </span>
       </div>
 
       {/* Fraktionen nach Median-Nähe */}
@@ -138,7 +156,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
           <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Closest factions' : 'Nächste Fraktionen'}
           {swarmClose && <span style={{ color: '#38bdf8' }}>· {lang === 'en' ? 'the crowd nailed it!' : 'die Masse lag goldrichtig!'}</span>}
         </div>
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: factions.length > 4 ? '1fr 1fr' : '1fr', gap: 'clamp(6px, 1cqw, 12px)', minHeight: 0, alignContent: 'start' }}>
+        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: factions.length > 4 ? '1fr 1fr' : '1fr', gap: 'clamp(6px, 1cqw, 12px)', minHeight: 0, alignContent: 'stretch', gridAutoRows: 'minmax(clamp(58px, 7cqh, 100px), 1fr)' }}>
           {factions.map((f, i) => {
             const rep = s.teams.find(t => t.avatarId === f.avatarId);
             const col = rep?.color ?? '#94a3b8';
@@ -153,7 +171,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                 transition: `opacity 0.5s ease ${0.3 + i * 0.08}s, transform 0.5s ease ${0.3 + i * 0.08}s`,
               }}>
                 <div style={{ width: 'clamp(20px, 2cqw, 30px)', fontWeight: 900, fontSize: 'clamp(15px, 1.6cqw, 24px)', color: i === 0 ? '#EC4899' : 'var(--qq-text-muted)', textAlign: 'center', flexShrink: 0 }}>#{i + 1}</div>
-                <QQTeamAvatar avatarId={f.avatarId} teamEmoji={rep?.emoji} size={'clamp(40px, 4cqw, 62px)'} style={{ flexShrink: 0, boxShadow: `0 0 12px ${col}44` }} />
+                <QQTeamAvatar avatarId={f.avatarId} teamEmoji={rep?.emoji} size={'clamp(46px, 4.6cqw, 72px)'} style={{ flexShrink: 0, boxShadow: `0 0 12px ${col}44` }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 'clamp(15px, 1.6cqw, 24px)', fontWeight: 900, color: col, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
                   <div style={{ fontSize: 'clamp(12px, 1.3cqw, 18px)', fontWeight: 800, color: 'var(--qq-text-muted)' }}>

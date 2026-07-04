@@ -143,14 +143,15 @@ Sound je Slot: bestehendes `playAvatarCascadeNote()` + `playRevealHighlight()` (
 
 ## 8. Staged Build (jede Stufe end-to-end per Bots testbar)
 
-1. **Types + Builder** — `crowdTop`-Frage anlegbar & speicherbar (Draft).
-2. **/team-Eingabe** — Freitext-Wort + Mobile-P1-Fixes + Submission.
-3. **Backend Normalizer + Bündelung + Wertung (Kleingruppe)** — Punkte fließen.
-4. **Reveal-View** — Tafel-Cascade auf dem Beamer.
-5. **Arena-Fraktions-Aggregation** — Wappen-Cluster + Mega-Scoring.
-6. **Autoplay + Sound + Politur.**
+1. ✅ **Types + Builder** (05e55417) — `crowdTop`-Frage anlegbar & speicherbar.
+2. ✅ **/team-Eingabe** (e965f945) — Freitext-Wort + Mobile-P1-Fixes + Submission.
+3. ✅ **Backend Normalizer + Bündelung + Wertung** (15b9910e) — `shared/qqCrowdTop.ts` + `evalCrowdTop`.
+4. ✅ **Reveal-View** (15b9910e) — `CrowdTopReveal.tsx`, Tafel-Cascade.
+5. ✅ **Arena-Fraktions-Aggregation** (15b9910e) — `qqMegaEventScore`-Branch, Wappen-Cluster.
+6. ✅ **Autoplay** (15b9910e) — crowdTop QUESTION_REVEAL ~16s.
 
-⚠️ **Ab Stufe 3 Backend-Änderung → Coolify-Redeploy beim Ship** (Push allein reicht nicht).
+⚠️ **Backend geändert → Coolify-Redeploy NÖTIG zum Spielen** (Push allein reicht nicht). Danach per Bots-Durchlauf testen.
+**Kür/offen:** eigener Sound-Slot (nutzt aktuell Top5-Töne) · EN-Auto-Übersetzung im Builder · Schwarm als 2. Format.
 
 ---
 

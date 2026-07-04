@@ -35,6 +35,17 @@ const cozyQuizTestLinks: LinkItem[] = [
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
+// Marketing & Öffentlich — Seiten, die auch ohne Login/Spiel erreichbar sind
+// ─────────────────────────────────────────────────────────────────────────
+const marketingLinks: LinkItem[] = [
+  { path: '/',         label: 'Landing-Page',      emoji: '🏠', note: 'Öffentliche Startseite (play.cozyquiz.app)' },
+  { path: '/about',    label: 'Was ist CozyQuiz?', emoji: 'ℹ️', note: 'Marketing-Erklärseite (/about)' },
+  { path: '/trailer',  label: 'Trailer',           emoji: '🎬', note: 'Showreel / Trailer-Seite' },
+  { path: '/showroom', label: 'Showroom',          emoji: '🖼️', note: 'Format-Showcase' },
+  { path: '/skins',    label: 'Skins & Themes',    emoji: '🎨', note: 'Design-Skins Vorschau (Cozy / Mono / SoftPop / Neo)' },
+];
+
+// ─────────────────────────────────────────────────────────────────────────
 // Extras — Tools, Admin, Stats (verbliebene Editoren)
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
@@ -49,6 +60,7 @@ const extrasLinks: LinkItem[] = [
   { path: '/intro',           label: 'Intro-Slides',       emoji: '📖', note: 'Pre-Show Slides editieren' },
   { path: '/fragen',          label: 'Fragen-Editor',      emoji: '✏️', note: 'Einzelne Fragen bearbeiten' },
   { path: '/qrcode',          label: 'Beitritts-QR',       emoji: '🔳', note: 'QR-Code für Team-Beitritt' },
+  { path: '/blinktest',       label: 'Blink-Test',         emoji: '👁️', note: 'Avatar-Blinzeln testen (Dev)' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -212,6 +224,14 @@ const MenuPage = () => {
           tagline="Standalone-Vorschauen einzelner Quiz-Slides — Thanks, Treppchen, Summary, Avatar-Picker"
           accent="#EC4899"
           links={cozyQuizTestLinks}
+        />
+
+        <AppPanel
+          label="Marketing & Öffentlich"
+          emoji="🌐"
+          tagline="Landing, About, Trailer, Showroom, Skins — auch ohne Spiel erreichbar"
+          accent="#22C55E"
+          links={marketingLinks}
         />
 
         <AppPanel

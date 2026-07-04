@@ -1343,12 +1343,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // — bei breiter Card (~1160px) reichte das fuer 14-15 chars/line, 66 chars
   // = 5 Zeilen. Neuer 56-80er Bucket mit max 60px = ~18 chars/line, 66 chars
   // in 3 Zeilen → Winner-Card unten hat wieder Platz.
-  const qFontSize = qText.length > 200 ? 'clamp(26px, min(3cqw, 4.6cqh), 44px)'
-    : qText.length > 120 ? 'clamp(32px, min(3.7cqw, 5.8cqh), 56px)'
-    : qText.length > 80  ? 'clamp(38px, min(4.4cqw, 6.5cqh), 68px)'
-    : qText.length > 55  ? 'clamp(36px, min(4cqw, 6cqh), 60px)'
-    : qText.length > 40  ? 'clamp(42px, min(4.8cqw, 7cqh), 76px)'
-    : 'clamp(46px, min(5.5cqw, 7.5cqh), 88px)';
+  // 2026-07-04 (Wolf 'aktiv/Reveal nutzt den Platz nicht, alles zu klein'):
+  // cqh-Faktoren + Deckel moderat hoch (~+15%). Der min(cqw,cqh)-Cap bleibt und
+  // verhindert weiter Vertikal-Ueberlauf (langer Text waechst nicht ins Layout).
+  const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 52px)'
+    : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 66px)'
+    : qText.length > 80  ? 'clamp(40px, min(5cqw, 7.3cqh), 80px)'
+    : qText.length > 55  ? 'clamp(40px, min(4.6cqw, 6.8cqh), 72px)'
+    : qText.length > 40  ? 'clamp(46px, min(5.4cqw, 7.8cqh), 88px)'
+    : 'clamp(50px, min(6.2cqw, 8.4cqh), 104px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 

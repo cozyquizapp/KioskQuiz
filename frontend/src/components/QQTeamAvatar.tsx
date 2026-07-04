@@ -492,12 +492,16 @@ function CrestAvatar({
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  void src; void size;
+  void src;
   const imgSrc = crestEmblemSrc(slug);
-  // Puls-Aura (Wolf-Wahl): per-Instanz-Delay → Fraktionen atmen asynchron,
-  // nicht im Gleichtakt. Nur non-flat (runde Scheiben), Grid bleibt ruhig.
-  const auraDelay = useMemo(() => -Math.random() * 3.2, []);
   const fillPct = flat ? '88%' : '78%';
+  // 2026-07-04 (Wolf 'pulsierender schwarzer Ring stoert'): statt der atmenden
+  // Puls-Aura ein ruhiger, statischer Ring in Fraktionsfarbe (Muenz-Bezel).
+  // Ring-Breite skaliert grob mit der Avatar-Groesse; String-Sizes (clamp)
+  // bekommen einen sinnvollen Default. Der schwarze Rand direkt ums Emblem
+  // bleibt (imgFilter drop-shadow) — nur der aeussere Kreis-Ring ist neu.
+  const ringW = typeof size === 'number' ? Math.max(2, Math.round(size * 0.06)) : 4;
+  const gapW = Math.max(1, Math.round(ringW * 0.4));
   const imgFilter = flat
     ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))'
     : 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))';
@@ -511,7 +515,7 @@ function CrestAvatar({
           radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
           ${color}
         `,
-        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
+        boxShadow: `0 0 0 ${gapW}px #0A0814, 0 0 0 ${ringW + gapW}px ${color}, 0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
       };
   return (
     <span
@@ -528,15 +532,6 @@ function CrestAvatar({
         borderRadius: square ? 0 : '50%',
       }}
     >
-      {/* Puls-Aura — nur runde Scheiben (non-flat, nicht square). */}
-      {!flat && !square && !failed && (
-        <span aria-hidden style={{
-          position: 'absolute', inset: 0, borderRadius: '50%',
-          boxShadow: `0 0 16px 4px ${color}`,
-          pointerEvents: 'none',
-          animation: `qqCrestAura 3.2s ease-in-out ${auraDelay}s infinite`,
-        }} />
-      )}
       {failed ? (
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
       ) : (

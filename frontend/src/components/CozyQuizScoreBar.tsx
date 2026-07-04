@@ -138,12 +138,15 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
 
   // Bei vielen Teams (≥6) kompakter, sonst passen 8 Zeilen nicht nebeneinander.
   // Balken ist raus — Info steckt in der Zahl. Dafür Name + Wert deutlich größer.
+  // 2026-07-04 (Wolf 'Tabellen zu klein fuer Beamer/TV'): Namen/Werte hoch.
+  // ≤5 Teams (Normalfall, Wolf spielt max 3-4) grosszuegig; 6-8 moderat, damit
+  // die Zeilen weiter in die feste Grid-Hoehe passen (kein Overflow).
   const dense = sorted.length >= 6;
-  const avatarSize = dense ? 64 : 78;
-  const avatarBox = dense ? 76 : 92;
-  const nameFs = dense ? 34 : 42;
-  const valFs = dense ? 42 : 54;
-  const unitFs = dense ? 18 : 22;
+  const avatarSize = dense ? 68 : 92;
+  const avatarBox = dense ? 82 : 108;
+  const nameFs = dense ? 37 : 52;
+  const valFs = dense ? 46 : 66;
+  const unitFs = dense ? 19 : 26;
 
   // Medaillen-Style für Top 3 (nur wenn Wert > 0 und eindeutig).
   // 2026-05-24 (Wolf-Feedback): Bei Tie an der Spitze bekommen ALLE
@@ -180,7 +183,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
       gap: many ? 0 : rowGap,
       // 2026-05-05 (Wolf): maxWidth 560→640 — ScoreBar darf jetzt den
       // groesseren Container ausfuellen (Wrapper ist 620px).
-      width: '100%', maxWidth: 640, height: '100%',
+      width: '100%', maxWidth: 720, height: '100%',
       paddingTop: dense ? 4 : 8, paddingBottom: dense ? 4 : 8,
     }}>
       {sorted.map((t, i) => {
@@ -358,7 +361,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               // (38/48px) bei zweistelliger Zahl ueberlief und der Text in den
               // Folge-Slot reinragte. Jetzt 56/72 → beide Stellen passen rein,
               // gap auf 10 sichert weiter Abstand zum Wort.
-              width: dense ? 56 : 72,
+              width: dense ? 62 : 90,
               textAlign: 'right',
               flexShrink: 0,
             }}>

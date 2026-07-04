@@ -216,7 +216,8 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
           // Container, sobald ein Team-Name die intrinsische Spaltenbreite ändert.
           // Höhe = gridMaxSize sorgt dafür dass die Liste exakt Grid-Höhe hat.
           // 2026-05-05 (Wolf): Breite 540→620 damit Liste mehr Atemraum hat.
-          width: 620, height: gridMaxSize, flexShrink: 0,
+          // 2026-07-04 (Wolf 'Tabellen zu klein'): 620→740 fuer groessere Namen.
+          width: 740, height: gridMaxSize, flexShrink: 0,
           display: 'flex', alignItems: 'stretch', justifyContent: 'flex-start',
         }}>
           {/* 2026-05-05 (Wolf): activeActionLabel/Desc NICHT mehr gesetzt —

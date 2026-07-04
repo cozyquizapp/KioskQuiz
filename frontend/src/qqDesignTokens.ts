@@ -147,6 +147,46 @@ export const TAP_TARGET = {
   cozy: 48,   // Inputs, Primary-Buttons
 } as const;
 
+// ════════════════════════════════════════════════════════════════════════════
+// BEAMER-SIZING (2026-07-04, Wolf 'alles zu klein fuer Beamer/TV, Sofa-Distanz')
+// ════════════════════════════════════════════════════════════════════════════
+// Zentrale Groessen fuer die Beamer-Folien. Der Beamer rendert auf einem festen
+// 1920×1080-Design-Canvas (QQBeamerPage STAGE_DESIGN_*), der uniform per
+// transform:scale auf den echten Screen skaliert wird → cqw = 19.2px, cqh =
+// 10.8px. Die Ceilings sind bewusst grosszuegig fuer 8m+ TV-Distanz gewaehlt.
+// AENDERN = einmal hier, wirkt ueberall wo das Token genutzt wird (das war
+// Wolfs Wunsch: 'ich kann nicht pro Folie screenshotten'). Schrittweise
+// Migration der Inline-clamps auf diese Tokens (High-Impact-Folien zuerst).
+export const FONT_SIZE = {
+  heroXl:  'clamp(84px, 15cqw, 300px)',   // Riesen-Hero (Phase-Runde, GameOver-Score)
+  heroLg:  'clamp(56px, 9cqw, 172px)',    // grosse Ueberschrift / Winner-Name
+  headMd:  'clamp(40px, 6cqw, 116px)',    // Card-Header, grosse Reveal-Antwort
+  qShort:  'clamp(40px, 5cqw, 104px)',    // Fragetext kurz
+  qLong:   'clamp(30px, 3.4cqw, 68px)',   // Fragetext lang
+  bodyXl:  'clamp(24px, 3cqw, 60px)',     // Optionen, grosse Stats
+  bodyLg:  'clamp(20px, 2.4cqw, 44px)',   // Standings/Tabellen-Text
+  bodyMd:  'clamp(17px, 1.9cqw, 34px)',   // Sekundaer-Text
+  bodySm:  'clamp(14px, 1.4cqw, 24px)',   // Labels
+  eyebrow: 'clamp(13px, 1.2cqw, 22px)',   // UPPERCASE-Eyebrow
+} as const;
+
+/** Content-Breiten — bewusst hoehere Ceilings, damit Cards/Tabellen den
+ *  1920er-Canvas nutzen statt in einer schmalen Mittelspalte zu sitzen. */
+export const CONTENT_WIDTH = {
+  stage:  'min(1800px, 95cqw)',   // Full-bleed Reveal/Frage
+  wide:   'min(1440px, 90cqw)',   // breite Cards/Tabellen
+  medium: 'min(1040px, 82cqw)',   // Sidebar-Content
+  narrow: 'min(720px, 72cqw)',    // schmale Modals/Pills
+} as const;
+
+/** Vertikale/innere Paddings (cqh-basiert) — fuers Hoehe-Fuellen der Folien. */
+export const BEAMER_PAD = {
+  xl: 'clamp(40px, 5cqh, 80px)',
+  lg: 'clamp(28px, 3.5cqh, 56px)',
+  md: 'clamp(18px, 2.4cqh, 38px)',
+  sm: 'clamp(11px, 1.3cqh, 20px)',
+} as const;
+
 /** Shadow-Tokens (UI-Audit 2026-05-05).
  *  Max-2-Layer-Pattern: 1 hard (kein Blur) + 1 soft (mit Blur) ersetzt
  *  willkuerliche 3-6-Layer-Stacks. 3D-Plaettchen-Look (Tile/Card) bleibt

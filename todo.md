@@ -13,6 +13,16 @@
 
 ---
 
+## ⚠️ BLOCKER — Backend-Redeploy offen (2026-07-04)
+
+**Coolify-Backend-Redeploy nötig**, sonst sind diese Backend-Features NICHT live
+(Frontend ist über Vercel schon deployt, aber der Server kennt die Events nicht):
+- **Stechen (Schätz-Tiebreaker)** — beide Modi, Phase `TIEBREAKER_QUESTION`.
+- **Comeback-Auto-Skip** — self-healing Watchdog gegen eingefrorenes Comeback.
+- Ältere ausstehende Backend-Änderungen (Bot-Namen nested, balanced Fill, Arena-Flavour).
+
+Nach Redeploy: Trockentest Stechen (künstlichen Gleichstand herstellen ist der fummelige Teil).
+
 ## 🆕 Offene Follow-ups (2026-06-26)
 
 **Team-View-Audit** (P0 + 2 billige P1 schon gefixt — Commit `f08414da`). Noch offen,

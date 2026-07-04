@@ -209,16 +209,29 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%', maxWidth: 420 }}>
                 <div style={ov.fieldCap}>🧑‍🎨 Avatar-Set</div>
-                <select value={activeAvatarId}
-                  onChange={e => setAvatarSet(e.target.value)}
-                  style={ov.select}>
-                  {AVATAR_SETS.map(set => (
-                    <option key={set.id} value={set.id} style={{ background: '#1f1610', color: '#fff' }}>
-                      {set.leadEmoji}  {set.label}
-                    </option>
-                  ))}
-                </select>
-                <div style={ov.hint}>Bestimmt, aus welchen Avataren die Spieler wählen.</div>
+                {/* 2026-07-04 (Wolf): In Cozy Arena tragen alle Fraktionen ihr
+                    festes Wappen → Set-Wahl entfällt. Sonst Arena-Set ausblenden. */}
+                {mega ? (
+                  <>
+                    <div style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(167,139,250,0.12)', boxShadow: '0 0 0 1.5px #A78BFA55', color: '#fff', fontWeight: 900, fontSize: 14 }}>
+                      🛡️ Cozy-Arena-Wappen
+                    </div>
+                    <div style={ov.hint}>In Cozy Arena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.</div>
+                  </>
+                ) : (
+                  <>
+                    <select value={activeAvatarId}
+                      onChange={e => setAvatarSet(e.target.value)}
+                      style={ov.select}>
+                      {AVATAR_SETS.filter(x => x.id !== 'cozyArena').map(set => (
+                        <option key={set.id} value={set.id} style={{ background: '#1f1610', color: '#fff' }}>
+                          {set.leadEmoji}  {set.label}
+                        </option>
+                      ))}
+                    </select>
+                    <div style={ov.hint}>Bestimmt, aus welchen Avataren die Spieler wählen.</div>
+                  </>
+                )}
               </div>
             </div>
           )}

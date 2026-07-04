@@ -5882,6 +5882,15 @@ function SetupView({
         <div style={{ ...settingRow, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <span style={{ ...settingLabel, marginTop: 6 }}>🧑‍🎨 Avatar</span>
           {(() => {
+            // 2026-07-04 (Wolf): In Cozy Arena tragen alle Fraktionen ihr festes
+            // Wappen — das Avatar-Set entfällt → statt Dropdown ein Info-Chip.
+            if ((s as any).largeGroupMode) {
+              return (
+                <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, background: 'rgba(167,139,250,0.12)', boxShadow: '0 0 0 1.5px #A78BFA55', color: '#fff', fontWeight: 900, fontSize: 13 }}>
+                  🛡️ Cozy-Arena-Wappen <span style={{ fontSize: 11, fontWeight: 700, color: '#b8a5e8' }}>· fest je Fraktion</span>
+                </div>
+              );
+            }
             const activeId = s.avatarSetId ?? 'cozyAnimals';
             const activeSet = AVATAR_SETS.find(x => x.id === activeId) ?? AVATAR_SETS[0];
             return (
@@ -5913,7 +5922,7 @@ function SetupView({
                 }}
                 title={activeSet.label}
               >
-                {AVATAR_SETS.map(set => (
+                {AVATAR_SETS.filter(x => x.id !== 'cozyArena').map(set => (
                   <option key={set.id} value={set.id} style={{ background: '#1f1610', color: '#fff' }}>
                     {set.leadEmoji}  {set.label}
                   </option>
@@ -5924,6 +5933,7 @@ function SetupView({
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
             {(() => {
               const id = s.avatarSetId ?? 'all';
+              if ((s as any).largeGroupMode) return 'In Cozy Arena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.';
               if (id === 'all')         return 'Standard · Spieler wählen aus den 8 Default-Emojis (Cozy-Tiere)';
               if (id === 'cozyCast')    return 'CozyCast · klassische PNG-Avatare (alter Look)';
               if (id === 'cozyAnimals') return 'Cozy Animals · Tier-Emojis als Theme';

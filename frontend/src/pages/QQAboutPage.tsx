@@ -81,43 +81,39 @@ export default function QQAboutPage() {
     document.title = 'CozyQuiz — Was ist das?';
   }, []);
 
-  // Poster → Canvas (fuer PNG-Export). Wartet auf Fonts, bettet alle Bilder als
-  // Data-URIs ein und nutzt foreignObjectRendering — dadurch rendert der Browser
-  // Text + Emoji nativ (kein per-Zeichen-Messen). Das umgeht den html2canvas-
-  // 1.4.1-Crash „IndexSizeError: setEnd … offset > length", der bei Emoji
-  // (z.B. 📸 in der Kontaktzeile) auftritt. foreignObject kann keine externen
-  // Bild-URLs laden → wir inlinen sie vorher als Data-URI.
+  // Poster → Canvas (fuer PNG-Export). Normales html2canvas-Rendering
+  // (foreignObjectRendering ergab eine LEERE Seite). Der 1.4.1-Emoji-Crash
+  // („IndexSizeError: setEnd … offset > length") tritt nur bei Emoji auf, das
+  // MIT Text im selben Textknoten steht (z.B. „📸 @cozywolf.de"). Isolierte
+  // Emoji (eigener span, Kategorien/Selling) sind ok. Im geklonten DOM strippen
+  // wir daher Emoji NUR aus gemischten Knoten (Text bleibt) + entfernen Filter.
   async function renderCanvas(): Promise<HTMLCanvasElement> {
     const node = posterRef.current!;
     try { if ((document as any).fonts?.ready) await (document as any).fonts.ready; } catch { /* ignore */ }
-    const srcMap = new Map<string, string>();
-    await Promise.all(Array.from(node.querySelectorAll('img')).map(async (img) => {
-      const src = img.getAttribute('src');
-      if (!src || src.startsWith('data:') || srcMap.has(src)) return;
-      try {
-        const blob = await (await fetch(src)).blob();
-        const dataUrl = await new Promise<string>((res, rej) => {
-          const fr = new FileReader();
-          fr.onload = () => res(fr.result as string);
-          fr.onerror = rej;
-          fr.readAsDataURL(blob);
-        });
-        srcMap.set(src, dataUrl);
-      } catch { /* Bild bleibt extern — foreignObject rendert es dann evtl. nicht */ }
-    }));
     const html2canvas = (await import('html2canvas')).default;
     return html2canvas(node, {
       scale: Math.min(3, (window.devicePixelRatio || 1) * 2),
       backgroundColor: '#ffffff',
       useCORS: true,
       logging: false,
-      foreignObjectRendering: true,
       windowWidth: node.scrollWidth,
       windowHeight: node.scrollHeight,
       onclone: (doc: Document) => {
-        doc.querySelectorAll('img').forEach((img) => {
-          const src = img.getAttribute('src');
-          if (src && srcMap.has(src)) img.setAttribute('src', srcMap.get(src)!);
+        doc.querySelectorAll<HTMLElement>('*').forEach((el) => {
+          if (el.style && el.style.filter) el.style.filter = 'none';
+        });
+        const emojiRe = /(?:\p{Extended_Pictographic}|️|‍)/gu;
+        const walker = doc.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT);
+        const textNodes: Text[] = [];
+        while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+        textNodes.forEach((n) => {
+          const t = n.textContent || '';
+          const stripped = t.replace(emojiRe, '');
+          // Nur gemischte Knoten bereinigen (nach dem Entfernen bleibt echter Text).
+          // Reine Emoji-Knoten (Kategorien/Selling) unangetastet lassen.
+          if (stripped !== t && stripped.trim().length > 0) {
+            n.textContent = stripped.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
+          }
         });
       },
     });
@@ -209,7 +205,7 @@ export default function QQAboutPage() {
         {/* ── Header-Band (Wolf spricht = Logo) ── */}
         <header style={{
           background: `radial-gradient(130% 155% at 18% -30%, ${PINK_MID} 0%, ${PINK} 44%, ${MAGENTA} 100%)`,
-          color: '#fff', padding: '20px 32px 22px', position: 'relative',
+          color: '#fff', padding: '14px 32px 14px', position: 'relative',
           display: 'flex', alignItems: 'center', gap: 22,
           borderRadius: '0 0 34px 34px', boxShadow: `0 10px 24px ${PINK}44`,
         }}>
@@ -217,7 +213,7 @@ export default function QQAboutPage() {
               sonst Doppel-Ring; nur weicher Schatten für Tiefe) + Sprechblase */}
           <div style={{ position: 'relative', flexShrink: 0 }}>
             <div style={{
-              width: 104, height: 104,
+              width: 90, height: 90,
               display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
               filter: 'drop-shadow(0 10px 18px rgba(0,0,0,0.30))',
             }}>
@@ -235,7 +231,7 @@ export default function QQAboutPage() {
             <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 12, letterSpacing: '0.24em', opacity: 0.94, textTransform: 'uppercase' }}>
               Live-Team-Quiz zum Wohlfühlen
             </div>
-            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 50, lineHeight: 0.96, letterSpacing: '-0.015em', marginTop: 2, textShadow: '0 3px 12px rgba(0,0,0,0.18)' }}>
+            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 44, lineHeight: 0.96, letterSpacing: '-0.015em', marginTop: 2, textShadow: '0 3px 12px rgba(0,0,0,0.18)' }}>
               CozyQuiz
             </div>
             <div style={{ fontFamily: BODY, fontWeight: 800, fontSize: 16, marginTop: 6, opacity: 0.98 }}>
@@ -244,8 +240,12 @@ export default function QQAboutPage() {
           </div>
         </header>
 
+        {/* Mittel-Band: nimmt den Platz zwischen Header und Footer, clippt bei
+            Bedarf nur HIER (nicht den Footer) → Footer bleibt IMMER sichtbar,
+            Seite bleibt exakt A4 (Wolf 'Footer abgeschnitten'). */}
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {/* ── Team-Avatar-Leiste (echte Game-Tiere + Farben) auf warmer Pill ── */}
-        <div style={{ display: 'flex', justifyContent: 'center', padding: '14px 30px 0' }}>
+        <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 30px 0' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 12,
             background: CARD, borderRadius: 999, padding: '8px 18px',
@@ -266,7 +266,7 @@ export default function QQAboutPage() {
         </div>
 
         {/* ── Hook ── */}
-        <section style={{ padding: '12px 32px 2px' }}>
+        <section style={{ padding: '7px 32px 0' }}>
           <div style={{
             background: CARD, borderRadius: 16, padding: '12px 18px',
             boxShadow: `0 8px 20px ${WARM_SHADOW}`, borderLeft: `6px solid ${PINK}`,
@@ -280,7 +280,7 @@ export default function QQAboutPage() {
         </section>
 
         {/* ── So funktioniert's + Mini-Brett ── */}
-        <section style={{ padding: '12px 32px 2px', display: 'flex', gap: 16, alignItems: 'stretch' }}>
+        <section style={{ padding: '7px 32px 0', display: 'flex', gap: 16, alignItems: 'stretch' }}>
           <div style={{ flex: 1, minWidth: 0, background: CARD, borderRadius: 16, padding: '12px 16px', boxShadow: `0 8px 20px ${WARM_SHADOW}` }}>
             <h2 style={sectionTitle()}>So funktioniert's</h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
@@ -336,7 +336,7 @@ export default function QQAboutPage() {
         </section>
 
         {/* ── 5 Kategorien (Sticker-Kacheln) ── */}
-        <section style={{ padding: '12px 32px 2px' }}>
+        <section style={{ padding: '7px 32px 0' }}>
           <h2 style={sectionTitle()}>5 Kategorien pro Runde</h2>
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
             {CATEGORIES.map((c, i) => (
@@ -362,10 +362,10 @@ export default function QQAboutPage() {
         </section>
 
         {/* ── Warum es Spaß macht ── */}
-        <section style={{ padding: '12px 32px 6px' }}>
+        <section style={{ padding: '7px 32px 2px' }}>
           <h2 style={sectionTitle()}>Warum es Spaß macht</h2>
           <div style={{
-            background: CARD, borderRadius: 16, padding: '11px 16px', boxShadow: `0 8px 20px ${WARM_SHADOW}`,
+            background: CARD, borderRadius: 16, padding: '9px 16px', boxShadow: `0 8px 20px ${WARM_SHADOW}`,
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px 20px',
           }}>
             {SELLING.map((s, i) => (
@@ -377,17 +377,17 @@ export default function QQAboutPage() {
           </div>
         </section>
 
-        <div style={{ flex: 1 }} />
+        </div>
 
         {/* ── CTA-Footer-Band (Wolf lugt hervor) ── */}
         <footer style={{
-          marginTop: 10, background: `linear-gradient(115deg, ${NAVY} 0%, #243472 100%)`, color: '#fff',
-          padding: '16px 32px 18px', borderRadius: '32px 32px 0 0', position: 'relative',
+          marginTop: 4, background: `linear-gradient(115deg, ${NAVY} 0%, #243472 100%)`, color: '#fff',
+          padding: '10px 30px 10px', borderRadius: '30px 30px 0 0', position: 'relative',
           display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 18, flexWrap: 'wrap',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, minWidth: 0 }}>
             <div style={{
-              width: 58, height: 58, flexShrink: 0,
+              width: 48, height: 48, flexShrink: 0,
               display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
               filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.35))',
             }}>
@@ -395,10 +395,10 @@ export default function QQAboutPage() {
                 style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
             </div>
             <div>
-              <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 22, lineHeight: 1.05 }}>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 19, lineHeight: 1.05 }}>
                 Bock auf ein CozyQuiz?
               </div>
-              <div style={{ fontSize: 13.5, opacity: 0.86, marginTop: 3, fontWeight: 600 }}>
+              <div style={{ fontSize: 12.5, opacity: 0.86, marginTop: 2, fontWeight: 600 }}>
                 Für Bar, Café, Firmenfeier, Geburtstag oder Vereins-Event.
               </div>
             </div>

@@ -81,26 +81,43 @@ export default function QQAboutPage() {
     document.title = 'CozyQuiz — Was ist das?';
   }, []);
 
-  // Poster → Canvas (hochauflösend). Wartet auf geladene Fonts/Bilder, damit
-  // der Export nicht mit Fallback-Schrift oder fehlenden Avataren rendert.
+  // Poster → Canvas (fuer PNG-Export). Wartet auf Fonts, bettet alle Bilder als
+  // Data-URIs ein und nutzt foreignObjectRendering — dadurch rendert der Browser
+  // Text + Emoji nativ (kein per-Zeichen-Messen). Das umgeht den html2canvas-
+  // 1.4.1-Crash „IndexSizeError: setEnd … offset > length", der bei Emoji
+  // (z.B. 📸 in der Kontaktzeile) auftritt. foreignObject kann keine externen
+  // Bild-URLs laden → wir inlinen sie vorher als Data-URI.
   async function renderCanvas(): Promise<HTMLCanvasElement> {
     const node = posterRef.current!;
     try { if ((document as any).fonts?.ready) await (document as any).fonts.ready; } catch { /* ignore */ }
+    const srcMap = new Map<string, string>();
+    await Promise.all(Array.from(node.querySelectorAll('img')).map(async (img) => {
+      const src = img.getAttribute('src');
+      if (!src || src.startsWith('data:') || srcMap.has(src)) return;
+      try {
+        const blob = await (await fetch(src)).blob();
+        const dataUrl = await new Promise<string>((res, rej) => {
+          const fr = new FileReader();
+          fr.onload = () => res(fr.result as string);
+          fr.onerror = rej;
+          fr.readAsDataURL(blob);
+        });
+        srcMap.set(src, dataUrl);
+      } catch { /* Bild bleibt extern — foreignObject rendert es dann evtl. nicht */ }
+    }));
     const html2canvas = (await import('html2canvas')).default;
     return html2canvas(node, {
       scale: Math.min(3, (window.devicePixelRatio || 1) * 2),
       backgroundColor: '#ffffff',
       useCORS: true,
       logging: false,
+      foreignObjectRendering: true,
       windowWidth: node.scrollWidth,
       windowHeight: node.scrollHeight,
-      // 2026-07-04 (Export-Fix): html2canvas 1.4.1 wirft bei CSS `filter:
-      // drop-shadow(...)`. Wir strippen im geklonten DOM alle Filter (rein
-      // dekorativ) — Live-Ansicht bleibt unveraendert, nur der Export-Render
-      // ist wieder robust.
       onclone: (doc: Document) => {
-        doc.querySelectorAll<HTMLElement>('*').forEach((el) => {
-          if (el.style && el.style.filter) el.style.filter = 'none';
+        doc.querySelectorAll('img').forEach((img) => {
+          const src = img.getAttribute('src');
+          if (src && srcMap.has(src)) img.setAttribute('src', srcMap.get(src)!);
         });
       },
     });
@@ -129,34 +146,21 @@ export default function QQAboutPage() {
     }
   }
 
-  async function downloadPdf() {
-    if (busy) return;
-    setBusy('pdf');
-    try {
-      const canvas = await renderCanvas();
-      const { jsPDF } = await import('jspdf');
-      const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: 'a4' });
-      const pageW = 210, pageH = 297;
-      const ratio = canvas.width / canvas.height;
-      let w = pageW, h = pageW / ratio;
-      if (h > pageH) { h = pageH; w = pageH * ratio; }
-      const x = (pageW - w) / 2, y = (pageH - h) / 2;
-      pdf.addImage(canvas.toDataURL('image/png'), 'PNG', x, y, w, h, undefined, 'FAST');
-      pdf.save('CozyQuiz.pdf');
-    } catch (e) {
-      console.error('PDF-Export fehlgeschlagen', e);
-      alert('Ups — der PDF-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
-    } finally {
-      setBusy(null);
-    }
+  // PDF: nativer Browser-Druck statt html2canvas+jsPDF. Nutzt die @page/@media-
+  // print-CSS (nur das Poster, A4, exakte Farben) → rendert Emoji + Fonts perfekt
+  // und ist robust (der html2canvas-Emoji-Crash entfaellt komplett). Der Nutzer
+  // waehlt im Druckdialog „Als PDF speichern".
+  function printPoster() {
+    window.print();
   }
 
   return (
-    <div style={{ minHeight: '100vh', background: '#e7ded0', padding: '24px 16px 60px', fontFamily: BODY }}>
+    <div className="qq-about-outer" style={{ minHeight: '100vh', background: '#e7ded0', padding: '24px 16px 60px', fontFamily: BODY }}>
       <style>{`
         @page { size: A4 portrait; margin: 0; }
         @media print {
           html, body { margin: 0 !important; padding: 0 !important; background: #fff !important; }
+          .qq-about-outer { padding: 0 !important; background: #fff !important; min-height: 0 !important; }
           .qq-about-screen-only { display: none !important; }
           .qq-about-page { box-shadow: none !important; margin: 0 !important; }
           * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
@@ -171,15 +175,15 @@ export default function QQAboutPage() {
         alignItems: 'center', justifyContent: 'flex-end', flexWrap: 'wrap',
       }}>
         <button
-          onClick={downloadPdf}
+          onClick={printPoster}
           disabled={!!busy}
-          title="Als PDF herunterladen"
+          title="Drucken oder im Dialog als PDF speichern"
           style={{
             background: 'rgba(255,255,255,0.85)', color: MAGENTA, border: '1px solid rgba(162,18,71,0.22)',
             borderRadius: 999, padding: '7px 15px', fontFamily: BODY, fontWeight: 700, fontSize: 13,
-            cursor: busy ? 'wait' : 'pointer', opacity: busy && busy !== 'pdf' ? 0.5 : 0.92, whiteSpace: 'nowrap',
+            cursor: busy ? 'wait' : 'pointer', opacity: 0.92, whiteSpace: 'nowrap',
           }}
-        >{busy === 'pdf' ? '⏳ PDF…' : '📄 PDF'}</button>
+        >🖨️ PDF / Druck</button>
         <button
           onClick={downloadPng}
           disabled={!!busy}

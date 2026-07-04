@@ -1926,7 +1926,18 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <button
                     key={f.key}
                     className="qm-format-card"
-                    onClick={() => { emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true }); setShowWizard(true); }}
+                    onClick={() => {
+                      emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true });
+                      // 2026-07-04 (Wolf): Format-Default fuers Avatar-Set — Arena
+                      // → cozyArena (Wappen), Cozy Quiz → cozy3d (Tiere). Ein
+                      // bewusst gewaehltes Theme-Set (halloween/pub/esc/…) bleibt.
+                      const cur = (s as any).avatarSetId as string | undefined;
+                      const nextSet = f.arena ? 'cozyArena' : 'cozy3d';
+                      if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
+                        emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+                      }
+                      setShowWizard(true);
+                    }}
                     style={{
                       flex: '1 1 260px', textAlign: 'left', padding: 'clamp(12px, 1.8vh, 18px) 22px', borderRadius: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden',
                       border: `2px solid ${f.accent}${active ? '' : '55'}`,
@@ -5832,6 +5843,13 @@ function SetupView({
                 // formatSelected: true → Beamer verlässt den neutralen Welcome
                 // (analog Wizard-Schritt 0), auch wenn per Quick-Toggle gewählt.
                 emit('qq:setQuizOptions', { roomCode, largeGroupMode: on, nestedTeams: on, formatSelected: true });
+                // Format-Default fuers Avatar-Set (Arena → cozyArena, sonst cozy3d);
+                // bewusst gewaehltes Theme-Set bleibt unangetastet.
+                const cur = (s as any).avatarSetId as string | undefined;
+                const nextSet = on ? 'cozyArena' : 'cozy3d';
+                if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
+                  emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+                }
               }}
               style={segPill(!!(s as any).largeGroupMode, QQ_COLORS.violet400)}
               title={(s as any).largeGroupMode

@@ -32,8 +32,21 @@ export function FactionCountAvatars({
   style?: CSSProperties;
 }) {
   const buckets = qqFactionBuckets(teams as any, de);
+  // 2026-07-04 (Wolf 'Rundensieger 7+1 → 4+4'): viele benannte Fraktions-Chips
+  // in 2 ausgewogene Reihen legen (Grid mit ceil(n/2) Spalten, 8 → 4+4) statt
+  // flex-wrap, das den letzten Chip allein in Reihe 2 haengen laesst.
+  const n = buckets.length;
+  const useGrid = !!showName && n > 4;
+  const cols = Math.ceil(n / 2);
   return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: showName ? 12 : 8, flexWrap: 'wrap', ...style }}>
+    <div style={{
+      display: useGrid ? 'grid' : 'flex',
+      gap: showName ? 12 : 8,
+      ...(useGrid
+        ? { gridTemplateColumns: `repeat(${cols}, max-content)`, justifyContent: 'center', alignItems: 'center' }
+        : { alignItems: 'center', flexWrap: 'wrap' }),
+      ...style,
+    }}>
       {buckets.map(b => (
         <div key={b.avatarId} style={{
           display: 'inline-flex', alignItems: 'center', gap: showName ? 8 : 0,

@@ -588,7 +588,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           Settle-Overshoot. */}
       <div key={isIntro ? 'rules-intro' : idx} style={{
         position: 'relative', zIndex: 5,
-        maxWidth: 1200, width: '94%', maxHeight: '86cqh', overflow: 'hidden',
+        maxWidth: 1200, width: '94%', overflow: 'hidden',
         // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
         // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
         // Slide-Color-Rand bleibt als Kategorie-Akzent.
@@ -602,9 +602,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         // seinen Inhalt mit einem dezenten Refresh (opacity .35→1 + scale .992→1,
         // 480ms), KEIN Full-Screen-Slide mehr. Der Stepper oben bleibt stehen.
         animation: 'qqRulesWindowRefresh 0.48s cubic-bezier(0.16, 1, 0.3, 1) both',
-        // Stabile Fenstergröße: auf den größten Inhalt (Tree-Showcase) dimensioniert,
-        // damit der Rahmen beim Regel-Wechsel nicht springt. Kürzere Regeln zentrieren.
-        minHeight: 'min(68cqh, 640px)',
+        // 2026-07-04 (Wolf 'Fenster wechselt Größe je Regelseite, unruhig'):
+        // FIXE einheitliche Höhe für ALLE Slides (statt min/maxHeight-Spanne) —
+        // der Rahmen springt beim Regel-Wechsel nicht mehr; kürzere Regeln
+        // zentrieren ihren Inhalt in der konstanten Bühne.
+        height: '82cqh',
         justifyContent: 'center',
         display: 'flex', flexDirection: 'column',
       }}>
@@ -648,7 +650,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             {slide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
           </div>
           <div style={{
-            fontSize: 'clamp(44px,7cqw,88px)', fontWeight: 900, lineHeight: 1.05,
+            // 2026-07-04 (Wolf 'Titel oben abgeschnitten'): etwas kleiner, damit
+            // lange Titel ('Dein Weg durchs Quiz') in die feste Card passen.
+            fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
             color: isThemed() ? 'var(--qq-title)' : slide.color,
             textShadow: isThemed() ? 'none' : `0 0 60px ${slide.color}44`,
           }}>

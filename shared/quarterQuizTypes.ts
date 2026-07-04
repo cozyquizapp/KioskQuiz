@@ -27,7 +27,7 @@ export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; em
 // ── Bunte Tüte sub-mechanics ──────────────────────────────────────────────────
 export type QQBunteTueteKind =
   | 'hotPotato' | 'top5' | 'oneOfEight' | 'order' | 'map'
-  | 'onlyConnect' | 'bluff' | 'crowdTop';
+  | 'onlyConnect' | 'bluff' | 'crowdTop' | 'crowdEstimate';
 
 export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: string; emoji: string }> = {
   hotPotato:   { de: 'Heiße Kartoffel', en: 'Hot Potato', emoji: '🥔' },
@@ -38,6 +38,7 @@ export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: s
   onlyConnect: { de: '4 gewinnt',       en: 'Connect 4',  emoji: '🧩' },
   bluff:       { de: 'Bluff',           en: 'Bluff',      emoji: '🎭' },
   crowdTop:    { de: 'Top-Antworten',   en: 'Top Answers', emoji: '📊' },
+  crowdEstimate: { de: 'Schwarm-Schätzen', en: 'Swarm Guess', emoji: '🌊' },
 };
 
 export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
@@ -249,6 +250,20 @@ export interface QQBunteTueteCrowdTop {
   }>;
 }
 
+/**
+ * Schwarm-Schätzen (Wisdom of Crowds, Cozy Arena 2026-07-04): jedes Handy tippt
+ * EINE Zahl. Pro Fraktion zählt der MEDIAN (troll-fest). Reveal = Zahlenstrahl
+ * mit Wahrheit + Fraktions-Medianen + Gesamt-Schwarm-Tipp („die Masse ist
+ * klüger"). Wertung einheitlich: Median-Nähe = Leistung, Basis +1 wenn in der
+ * adaptiven Range + Podium [5,4,3,2,1] für die 5 nächsten Fraktionen.
+ */
+export interface QQBunteTueteCrowdEstimate {
+  kind: 'crowdEstimate';
+  targetValue: number;   // die Wahrheit
+  unit?: string;         // z.B. "Gummibärchen", "km"
+  unitEn?: string;
+}
+
 export type QQBunteTuetePayload =
   | QQBunteTueteTop5
   | QQBunteTueteOneOfEight
@@ -257,7 +272,8 @@ export type QQBunteTuetePayload =
   | QQBunteTueteHotPotato
   | QQBunteTueteOnlyConnect
   | QQBunteTueteBluff
-  | QQBunteTueteCrowdTop;
+  | QQBunteTueteCrowdTop
+  | QQBunteTueteCrowdEstimate;
 
 // ── Questions ─────────────────────────────────────────────────────────────────
 export interface QQQuestion {

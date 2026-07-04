@@ -22,6 +22,7 @@ import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
 import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
+import { qqSwarm, qqParseEstimate } from '../../../shared/qqSwarm';
 import { recordQQQuestionUsage } from '../db/schemas';
 import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep } from '../../../shared/qqFinalReveal';
 
@@ -1562,6 +1563,7 @@ function evalBunteTuete(room: QQRoomState, q: QQQuestion): QQEvalResult {
     case 'oneOfEight':  return evalOneOfEight(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOneOfEight);
     case 'top5':        return evalTop5(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteTop5);
     case 'crowdTop':    return evalCrowdTop(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdTop);
+    case 'crowdEstimate': return evalCrowdEstimate(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdEstimate);
     case 'order':       return evalOrder(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder);
     case 'map':         return evalMap(room, bt as import('../../../shared/quarterQuizTypes').QQBunteTueteMap);
     case 'onlyConnect': return evalOnlyConnect(room);
@@ -1680,6 +1682,27 @@ function evalCrowdTop(
   );
   const winners = Object.keys(board.boardPointsByTeam).filter(tid => board.boardPointsByTeam[tid] > 0);
   return { winnerTeamIds: winners, earnedPoints: board.boardPointsByTeam };
+}
+
+// crowdEstimate (Schwarm-Schätzen): jedes Handy tippt EINE Zahl. Wertung in Arena
+// über qqMegaEventScore (Fraktions-Median). Hier nur der Grid-Modus-Fallback:
+// Winner = nächstes Team (wie Schätzchen closest). Reveal-Zahlenstrahl rechnet das
+// Frontend aus s.answers + q via shared qqSwarm nach.
+function evalCrowdEstimate(
+  room: QQRoomState,
+  bt: import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdEstimate
+): QQEvalResult {
+  const dist: Array<{ teamId: string; d: number; at: number }> = [];
+  for (const a of room.answers) {
+    const v = qqParseEstimate(a.text);
+    if (v == null) continue;
+    dist.push({ teamId: a.teamId, d: Math.abs(v - bt.targetValue), at: a.submittedAt });
+  }
+  if (dist.length === 0) return { winnerTeamIds: [], earnedPoints: {} };
+  dist.sort((a, b) => a.d - b.d || a.at - b.at);
+  const min = dist[0].d;
+  const winners = dist.filter(x => x.d === min).map(x => x.teamId);
+  return { winnerTeamIds: winners, earnedPoints: {} };
 }
 
 // order (Fix It): teams submit pipe-separated items in their chosen order
@@ -2309,6 +2332,20 @@ export function qqMegaEventScore(room: QQRoomState): void {
       g.perf += pts; g.correct++;
       if (a.submittedAt < g.bestSpeed) g.bestSpeed = a.submittedAt;
     }
+  } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate') {
+    // Schwarm-Schätzen: pro Fraktion zählt der MEDIAN. Leistung = Median-Nähe
+    // (Basis +1 wenn in Range), Rang direkt nach Median-Distanz (Sort unten).
+    const def = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdEstimate;
+    const swarm = qqSwarm(
+      room.answers.map(a => ({ teamId: a.teamId, text: a.text })),
+      def.targetValue, (tid) => room.teams[tid]?.avatarId, def.unit,
+    );
+    for (const f of swarm.factions) {
+      const g = groups.get(f.avatarId); if (!g) continue;
+      if (f.inRange) g.perf++;         // Basis-Punkt wenn Median nah genug
+      g.correct = f.inRangeCount;      // Anzeige „X/Y nah dran"
+      g.bestDist = f.dist;             // Ranking nach Median-Distanz
+    }
   } else {
     // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners).
     for (const tid of (room._currentQuestionWinners ?? [])) {
@@ -2320,7 +2357,10 @@ export function qqMegaEventScore(room: QQRoomState): void {
   // statt absoluter Trefferzahl, damit Faktionen mit 1/2/3 Handys fair sind
   // (2/2 schlägt 2/3). Matcht die „X/Y richtig"-Anzeige im Reveal.
   const ratio = (g: Grp) => (g.total > 0 ? g.perf / g.total : 0);
+  const isSwarm = cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate';
   arr.sort((a, b) => {
+    // Schwarm: Median-Nähe entscheidet direkt (nicht Trefferquote).
+    if (isSwarm) return a.bestDist - b.bestDist;
     const ra = ratio(a), rb = ratio(b);
     if (rb !== ra) return rb - ra;
     if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;

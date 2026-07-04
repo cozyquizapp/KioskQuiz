@@ -53,6 +53,7 @@ import {
 import { SchaetzchenReveal } from './reveals/SchaetzchenReveal';
 import { Top5Reveal } from './reveals/Top5Reveal';
 import { CrowdTopReveal } from './reveals/CrowdTopReveal';
+import { CrowdEstimateReveal } from './reveals/CrowdEstimateReveal';
 import { OrderReveal } from './reveals/OrderReveal';
 import { CozyGuessrReveal } from './reveals/CozyGuessrReveal';
 import { OnlyConnectBeamerView } from './reveals/OnlyConnectBeamerView';
@@ -1276,6 +1277,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     && (q.bunteTuete as any)?.kind === 'crowdTop';
   if (isCrowdTopReveal) {
     return <CrowdTopReveal state={s} lang={lang} />;
+  }
+
+  // ── Schwarm-Schätzen: Zahlenstrahl-Reveal ───────────────────────────────
+  const isCrowdEstimateReveal = revealed
+    && q.category === 'BUNTE_TUETE'
+    && (q.bunteTuete as any)?.kind === 'crowdEstimate';
+  if (isCrowdEstimateReveal) {
+    return <CrowdEstimateReveal state={s} lang={lang} />;
   }
 
   // ── 4 gewinnt / Only Connect: eigene Layout-Komponente für active + reveal ──

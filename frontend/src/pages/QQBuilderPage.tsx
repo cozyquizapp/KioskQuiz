@@ -74,7 +74,7 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
 // kommt jetzt auch raus — Wolf will den Sub-Kind spaeter in anderer Form
 // revivem. Code-Pfade in Backend + Render-Komponenten bleiben.
 // Reaktivieren: gewuenschten Kind wieder in die Liste aufnehmen.
-const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'crowdTop', 'order', 'map', 'onlyConnect'];
+const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'crowdTop', 'crowdEstimate', 'order', 'map', 'onlyConnect'];
 
 // 2026-05-11 (Wolf-Wunsch): Wizard-Sub-Steps. Statt langer Scroll-Liste klickt
 // Wolf sich pro Frage durch wenige Felder-Blöcke. Pro Kategorie eigenes Schema.
@@ -2573,6 +2573,7 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
                   if (k === 'hotPotato') bt = { kind: 'hotPotato' };
                   else if (k === 'top5') bt = { kind: 'top5', answers: ['', '', '', '', ''] };
                   else if (k === 'crowdTop') bt = { kind: 'crowdTop', answers: [{ label: '', aliases: [] }, { label: '', aliases: [] }, { label: '', aliases: [] }, { label: '', aliases: [] }] };
+                  else if (k === 'crowdEstimate') bt = { kind: 'crowdEstimate', targetValue: 0, unit: '' };
                   else if (k === 'oneOfEight') bt = { kind: 'oneOfEight', statements: ['', '', '', '', '', '', '', ''], falseIndex: 0 };
                   else if (k === 'order') bt = { kind: 'order', items: ['', '', ''], correctOrder: [0, 1, 2] };
                   else if (k === 'map') bt = { kind: 'map', lat: 53.55, lng: 10.0, targetLabel: '' };
@@ -2609,6 +2610,7 @@ function hasBunteTueteContent(bt: QQBunteTuetePayload | undefined): boolean {
     case 'hotPotato': return false;  // keine eigenen Felder
     case 'top5':       return (bt.answers ?? []).some(a => a && a.trim().length > 0);
     case 'crowdTop':   return (bt.answers ?? []).some(a => a.label && a.label.trim().length > 0);
+    case 'crowdEstimate': return !!bt.targetValue || !!(bt.unit && bt.unit.trim().length > 0);
     case 'oneOfEight': return (bt.statements ?? []).some(s => s && s.trim().length > 0);
     case 'order':      return (bt.items ?? []).some(i => i && i.trim().length > 0);
     case 'map':        return !!(bt.targetLabel && bt.targetLabel.trim().length > 0);
@@ -2702,6 +2704,33 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
             + Antwort
           </button>
         )}
+      </div>
+    );
+  }
+
+  // SCHWARM-SCHÄTZEN ────────────────────────────────────────────────────────────
+  if (bt.kind === 'crowdEstimate') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', fontSize: 12, color: QQ_COLORS.slate400 }}>
+          🌊 Alle tippen EINE Zahl. Pro Fraktion zählt der Median (troll-fest); der Gesamt-Schwarm-Tipp landet oft verblüffend nah. Am besten ab ~12-15 Handys.
+        </div>
+        <div>
+          <label style={labelStyle}>Wahrheit (Zahl)</label>
+          <input type="number" value={Number.isFinite(bt.targetValue) ? bt.targetValue : 0}
+            onChange={e => onChange({ ...q, bunteTuete: { ...bt, targetValue: Number(e.target.value) }, answer: e.target.value })}
+            style={inputStyle} placeholder="z.B. 12500" />
+        </div>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Einheit (DE)</label>
+            <input value={bt.unit ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, unit: e.target.value } })} style={inputStyle} placeholder="z.B. Gummibärchen" />
+          </div>
+          <div style={{ flex: 1 }}>
+            <label style={labelStyle}>Unit (EN) <span style={{ color: QQ_COLORS.slate700 }}>opt.</span></label>
+            <input value={bt.unitEn ?? ''} onChange={e => onChange({ ...q, bunteTuete: { ...bt, unitEn: e.target.value } })} style={inputStyle} placeholder="e.g. gummy bears" />
+          </div>
+        </div>
       </div>
     );
   }

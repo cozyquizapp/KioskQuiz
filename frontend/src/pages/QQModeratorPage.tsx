@@ -666,6 +666,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           delayMs = 16000;
           action = () => emit('qq:startPlacement', { roomCode });
         }
+        // Schwarm-Schätzen: Wahrheit ploppt (~0.9s) + Fraktions-Reihen-Cascade +
+        // Zahlenstrahl lesen → ~10s.
+        else if (cat === 'BUNTE_TUETE' && bt?.kind === 'crowdEstimate') {
+          delayMs = 10000;
+          action = () => emit('qq:startPlacement', { roomCode });
+        }
         // Order (Bunte Tüte): Bottom-Up-Cascade 500ms Initial + bis 5 × 2000ms +
         // Winner-Reveal + Lesen → ~13s.
         else if (cat === 'BUNTE_TUETE' && bt?.kind === 'order') {

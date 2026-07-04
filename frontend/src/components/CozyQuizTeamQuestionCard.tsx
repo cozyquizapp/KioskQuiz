@@ -191,6 +191,14 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     const kind = q.bunteTuete?.kind;
     if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'crowdTop') return <CrowdTopInput catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
+    if (kind === 'crowdEstimate') {
+      const ce = q.bunteTuete as any;
+      const unit = lang === 'en' && ce.unitEn ? ce.unitEn : ce.unit;
+      const ph = unit
+        ? (lang === 'de' ? `Deine Schätzung (${unit})` : `Your estimate (${unit})`)
+        : (lang === 'de' ? 'Deine Schätzung' : 'Your estimate');
+      return <TextInput catColor={catColor} onSubmit={submitText} numeric placeholder={ph} lang={lang} timerEndsAt={tEnd} />;
+    }
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} myTeam={s.teams.find(tm => tm.id === myTeamId) ?? null} />;

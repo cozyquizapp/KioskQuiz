@@ -482,10 +482,10 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   );
 }
 
-// ── TieBreakerCard (Sudden-Death-Stechen) ────────────────────────────────────
+// ── TieBreakerCard (Schätz-Stechen) ──────────────────────────────────────────
 // 2026-07-04: Bei Gleichstand am Spielende. Nur die Kandidaten-Teams (bzw. im
-// Arena-Modus die Geraete der Kandidaten-Faktionen) sehen die Antwort-Buttons.
-// Ein Versuch pro Geraet, erste richtige Antwort gewinnt.
+// Arena-Modus die Geräte der Kandidaten-Faktionen) tippen eine Zahl. Näheste
+// Schätzung gewinnt; ein Versuch pro Gerät.
 export function TieBreakerCard({
   state: s, myTeamId, emit, roomCode, lang,
 }: {
@@ -497,6 +497,7 @@ export function TieBreakerCard({
   const myTeam = s.teams.find(t => t.id === myTeamId);
   const myColor = myTeam?.color ?? QQ_COLORS.brandPink;
   const arena = !!(s as any).largeGroupMode;
+  const [val, setVal] = useState('');
   if (!tb) return null;
 
   const label = (id: string) => {
@@ -504,14 +505,17 @@ export function TieBreakerCard({
     if (!t) return id;
     return arena ? qqMegaFactionName(t.avatarId, de ? 'de' : 'en') : t.name;
   };
+  const unit = tb.unit ? ` ${tb.unit}` : '';
   // Eligibilitaet: eigenes Team ist Kandidat ODER (Arena) eigene Faktion ist Kandidat.
   const candidateAvatars = new Set(tb.candidateIds.map(id => s.teams.find(t => t.id === id)?.avatarId).filter(Boolean) as string[]);
   const eligible = tb.candidateIds.includes(myTeamId) || (arena && !!myTeam?.avatarId && candidateAvatars.has(myTeam.avatarId));
   const myAnswer = tb.answers.find(a => a.teamId === myTeamId) ?? null;
 
-  const send = (idx: number) => {
+  const send = () => {
     if (myAnswer || tb.revealed) return;
-    safeEmit(emit, 'qq:tiebreakerAnswer', { roomCode, teamId: myTeamId, optionIndex: idx });
+    const g = parseFloat(val.replace(',', '.'));
+    if (!isFinite(g)) return;
+    safeEmit(emit, 'qq:tiebreakerAnswer', { roomCode, teamId: myTeamId, guess: g });
     if (navigator.vibrate) navigator.vibrate([15, 25, 15]);
   };
 
@@ -522,24 +526,28 @@ export function TieBreakerCard({
         {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-        {de ? 'Gleichstand — erste richtige Antwort gewinnt!' : 'Tie — first correct answer wins!'}
+        {de ? 'Gleichstand — am nächsten dran gewinnt!' : 'Tie — closest guess wins!'}
       </div>
     </div>
   );
 
-  // Aufloesung: Gewinner steht fest.
-  if (tb.revealed && tb.winnerId) {
-    const iWon = arena
+  // Aufloesung.
+  if (tb.revealed) {
+    const iWon = tb.winnerId && (arena
       ? (!!myTeam?.avatarId && s.teams.find(t => t.id === tb.winnerId)?.avatarId === myTeam.avatarId)
-      : tb.winnerId === myTeamId;
+      : tb.winnerId === myTeamId);
     return (
       <CozyCard borderColor={iWon ? '#22C55E' : myColor}>
         {header}
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>{iWon ? '🏆' : '🤝'}</div>
+          <div style={{ fontSize: 13, color: QQ_COLORS.slate400, marginBottom: 4 }}>
+            {de ? 'Richtige Antwort' : 'Correct answer'}: <b style={{ color: QQ_COLORS.slate100 }}>{tb.target}{unit}</b>
+          </div>
           <div style={{ fontWeight: 900, fontSize: 18, color: iWon ? '#22C55E' : QQ_COLORS.slate300, marginBottom: 6 }}>
-            {iWon ? (de ? 'Ihr habt das Stechen gewonnen!' : 'You won the tiebreaker!')
-                  : (de ? `${label(tb.winnerId)} war zuerst richtig.` : `${label(tb.winnerId)} answered first.`)}
+            {iWon ? (de ? 'Ihr wart am nächsten dran!' : 'You were closest!')
+                  : tb.winnerId ? (de ? `${label(tb.winnerId)} war am nächsten dran.` : `${label(tb.winnerId)} was closest.`)
+                  : (de ? 'Keine Schätzung abgegeben.' : 'No guess submitted.')}
           </div>
           <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>
             {de ? 'Schau auf den Beamer für die Siegerehrung.' : 'Watch the beamer for the crowning.'}
@@ -564,18 +572,15 @@ export function TieBreakerCard({
     );
   }
 
-  // Kandidat, schon geantwortet: warten.
+  // Kandidat, schon getippt: warten.
   if (myAnswer) {
-    const wasWrong = !myAnswer.correct;
     return (
       <CozyCard borderColor={myColor}>
         {header}
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
-          <div style={{ fontSize: 34, marginBottom: 8 }}>{wasWrong ? '🚫' : '⏳'}</div>
-          <div style={{ fontWeight: 900, fontSize: 17, color: wasWrong ? '#EF4444' : myColor, marginBottom: 6 }}>
-            {wasWrong
-              ? (de ? 'Leider falsch — ein Versuch pro Gerät.' : 'Wrong — one try per device.')
-              : (de ? 'Antwort abgegeben!' : 'Answer sent!')}
+          <div style={{ fontSize: 34, marginBottom: 8 }}>⏳</div>
+          <div style={{ fontWeight: 900, fontSize: 17, color: myColor, marginBottom: 6 }}>
+            {de ? 'Schätzung abgegeben' : 'Guess submitted'}: {myAnswer.guess}{unit}
           </div>
           <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>
             {de ? 'Warte auf die Auflösung…' : 'Waiting for the result…'}
@@ -585,31 +590,44 @@ export function TieBreakerCard({
     );
   }
 
-  // Kandidat, noch offen: MC-Buttons.
+  // Kandidat, noch offen: Zahlen-Eingabe.
   return (
     <CozyCard borderColor={myColor}>
       {header}
-      <div style={{ fontWeight: 900, fontSize: 16, color: QQ_COLORS.slate200, textAlign: 'center', marginBottom: 12, lineHeight: 1.3 }}>
+      <div style={{ fontWeight: 900, fontSize: 16, color: QQ_COLORS.slate200, textAlign: 'center', marginBottom: 14, lineHeight: 1.3 }}>
         {tb.prompt}
       </div>
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-        {tb.options.map((opt, idx) => (
-          <button
-            key={idx}
-            onClick={() => send(idx)}
-            style={{
-              padding: '16px 10px', borderRadius: 14,
-              border: `2px solid ${myColor}66`, background: `${myColor}12`,
-              color: QQ_COLORS.slate100, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
-              cursor: 'pointer', minHeight: 60,
-            }}
-          >
-            {opt}
-          </button>
-        ))}
+      <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
+        <input
+          type="number"
+          inputMode="decimal"
+          value={val}
+          onChange={e => setVal(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter') send(); }}
+          placeholder={de ? 'Deine Zahl…' : 'Your number…'}
+          autoFocus
+          style={{
+            flex: 1, minWidth: 0, padding: '16px 14px', borderRadius: 14,
+            border: `2px solid ${myColor}66`, background: `${myColor}10`,
+            color: QQ_COLORS.slate100, fontFamily: 'inherit', fontWeight: 900, fontSize: 22,
+            textAlign: 'center', outline: 'none',
+          }}
+        />
+        <button
+          onClick={send}
+          disabled={!isFinite(parseFloat(val.replace(',', '.')))}
+          style={{
+            padding: '0 20px', borderRadius: 14, border: 'none',
+            background: isFinite(parseFloat(val.replace(',', '.'))) ? myColor : `${myColor}44`,
+            color: '#fff', fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
+            cursor: 'pointer',
+          }}
+        >
+          {de ? 'Los' : 'Go'}
+        </button>
       </div>
       <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-        {de ? '⚡ Schnell sein! Ein Versuch — falsch ist raus.' : '⚡ Be quick! One try — wrong is out.'}
+        {de ? '⚡ Ein Versuch — am nächsten dran gewinnt.' : '⚡ One guess — closest wins.'}
       </div>
     </CozyCard>
   );

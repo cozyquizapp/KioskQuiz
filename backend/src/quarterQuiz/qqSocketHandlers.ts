@@ -31,7 +31,7 @@ import {
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
   qqAddCoWinner, qqRemoveWinner, qqResolveTieBreaker,
-  qqStartTieBreaker, qqTieBreakerAnswer, qqCancelTieBreaker,
+  qqStartTieBreaker, qqTieBreakerAnswer, qqRevealTieBreaker, qqCancelTieBreaker,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqRenameTeam, qqStartPlacement,
@@ -186,6 +186,31 @@ function armComebackOfflineWatchdog(io: SocketIOServer, roomCode: string, room: 
       console.warn('[comeback-offline-watchdog] skip failed:', err);
     }
   }, COMEBACK_OFFLINE_GRACE_MS);
+}
+
+// 2026-07-04: Schaetz-Stechen — Auto-Reveal-Timer. Bei Countdown-Ende loest das
+// Stechen automatisch auf (naeheste Schaetzung gewinnt). Mod-Space/Reveal cancelt
+// implizit (Reveal-Guard); Re-Roll cancelt explizit (arm clear'd zuerst).
+function clearTieBreakerRevealTimer(room: import('./qqRooms').QQRoomState): void {
+  const r = room as any;
+  if (r._tieBreakerTimerHandle) { clearTimeout(r._tieBreakerTimerHandle); r._tieBreakerTimerHandle = null; }
+}
+
+function armTieBreakerRevealTimer(io: SocketIOServer, roomCode: string, room: import('./qqRooms').QQRoomState): void {
+  clearTieBreakerRevealTimer(room);
+  const tb = (room as any).tieBreaker;
+  if (!tb || !tb.endsAt) return;
+  const ms = Math.max(0, tb.endsAt - Date.now());
+  (room as any)._tieBreakerTimerHandle = setTimeout(() => {
+    const cur = getQQRoom(roomCode);
+    if (!cur) return;
+    (cur as any)._tieBreakerTimerHandle = null;
+    if (cur.phase !== 'TIEBREAKER_QUESTION') return;
+    try {
+      qqRevealTieBreaker(cur);
+      broadcast(io, roomCode);
+    } catch (err) { console.warn('[tiebreaker-timer] reveal failed:', err); }
+  }, ms);
 }
 
 export function broadcastQQ(io: SocketIOServer, roomCode: string): void {
@@ -1466,11 +1491,24 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // 2026-07-04: Sudden-Death-Stechen — Mod startet (oder wuerfelt neu).
-    socket.on('qq:startTieBreaker', (payload: { roomCode: string }, ack?: unknown) => {
+    // 2026-07-04: Schaetz-Stechen — Mod startet (oder wuerfelt neu). durationSec
+    // = einstellbarer Countdown; bei Ablauf loest der Timer automatisch auf.
+    socket.on('qq:startTieBreaker', (payload: { roomCode: string; durationSec?: number }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        qqStartTieBreaker(room);
+        qqStartTieBreaker(room, payload.durationSec);
+        armTieBreakerRevealTimer(io, payload.roomCode, room);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-07-04: Mod loest das Stechen manuell auf (frueher als Timer / ohne Timer).
+    socket.on('qq:revealTieBreaker', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        clearTieBreakerRevealTimer(room);
+        qqRevealTieBreaker(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
@@ -1480,19 +1518,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:cancelTieBreaker', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        clearTieBreakerRevealTimer(room);
         qqCancelTieBreaker(room);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });
 
-    // 2026-07-04: Team gibt MC-Antwort im Stechen ab (ein Versuch pro Geraet).
-    socket.on('qq:tiebreakerAnswer', (payload: { roomCode: string; teamId: string; optionIndex: number }, ack?: unknown) => {
+    // 2026-07-04: Team gibt Schaetzung im Stechen ab (ein Versuch pro Geraet).
+    socket.on('qq:tiebreakerAnswer', (payload: { roomCode: string; teamId: string; guess: number }, ack?: unknown) => {
       try {
         assertOwnTeam(socket, payload.teamId);
         assertRateLimit(socket, 'qq:tiebreakerAnswer', 4);
         const room = ensureQQRoom(payload.roomCode);
-        qqTieBreakerAnswer(room, payload.teamId, payload.optionIndex);
+        qqTieBreakerAnswer(room, payload.teamId, payload.guess);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

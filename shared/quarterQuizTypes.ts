@@ -552,60 +552,54 @@ export interface QQComebackHLState {
   currentStealerRemaining: number;
 }
 
-// ── Sudden-Death-Stechen (Tiebreaker) ────────────────────────────────────────
+// ── Stechen (Tiebreaker) ─────────────────────────────────────────────────────
 /** 2026-07-04: In-App-Stechfrage bei Gleichstand am Spielende (ersetzt die
- *  muendliche Pub-Stechfrage). Multiple-Choice; die erste RICHTIGE Antwort
- *  gewinnt. Ein Geraet hat genau EINEN Versuch (falsch = raus). */
+ *  muendliche Pub-Stechfrage). SCHAETZFRAGE: naeheste Zahl gewinnt, bei
+ *  Gleichstand die schnellere Abgabe. Alle Kandidaten tippen eine Zahl, dann
+ *  Reveal (Mod-Space oder Timer-Ende). Ein Versuch pro Geraet. */
 export interface QQTieBreakerState {
   /** Frage-Text bereits in Raum-Sprache aufgeloest. */
   prompt: string;
-  /** Antwort-Optionen (in Raum-Sprache). */
-  options: string[];
-  /** Index der richtigen Option in `options`. */
-  correctIndex: number;
+  /** Die richtige Zahl (Ziel). Erst nach `revealed` fuer Clients relevant. */
+  target: number;
+  /** Optionale Einheit zur Anzeige (z.B. 'Jahr', 'm', '°C'). */
+  unit?: string;
   /** Kandidaten (teamIds). Im Arena-Modus je Faktion der Repraesentant (repId). */
   candidateIds: string[];
-  /** Abgegebene Antworten. avatarId erlaubt Arena-Zuordnung Geraet → Faktion. */
-  answers: Array<{ teamId: string; avatarId: string; optionIndex: number; correct: boolean; submittedAt: number }>;
-  /** Gewinner-Kandidat (teamId) nach erster richtiger Antwort. Null = offen. */
+  /** Abgegebene Schaetzungen. avatarId erlaubt Arena-Zuordnung Geraet → Faktion. */
+  answers: Array<{ teamId: string; avatarId: string; guess: number; submittedAt: number }>;
+  /** Gewinner-Kandidat (teamId) nach Reveal. Null = noch offen. */
   winnerId: string | null;
-  /** True sobald ein Gewinner feststeht → Beamer zeigt Aufloesung. */
+  /** True nach Reveal → Beamer zeigt Zahlen + Sieger. */
   revealed: boolean;
+  /** Countdown-Ende (ms timestamp). Null = kein Timer (rein Mod-gesteuert). */
+  endsAt: number | null;
   startedAt: number;
 }
 
-/** 2026-07-04: Eingebauter Stechfragen-Pool (allgemeinwissen, eindeutig richtig).
- *  Bewusst simpel + faktisch unstrittig — es geht nur ums schnelle Entscheiden. */
+/** 2026-07-04: Eingebauter Schaetz-Stechfragen-Pool. Numerische, eindeutige
+ *  Antworten — naeheste Schaetzung gewinnt. Bewusst allgemein + unstrittig. */
 export interface QQTieBreakerPoolEntry {
   promptDe: string; promptEn: string;
-  optionsDe: string[]; optionsEn: string[];
-  correctIndex: number;
+  target: number;
+  unitDe?: string; unitEn?: string;
 }
 export const QQ_TIEBREAKER_POOL: QQTieBreakerPoolEntry[] = [
-  { promptDe: 'Wie viele Beine hat eine Spinne?', promptEn: 'How many legs does a spider have?',
-    optionsDe: ['6', '8', '10', '12'], optionsEn: ['6', '8', '10', '12'], correctIndex: 1 },
-  { promptDe: 'Welcher Planet ist der Sonne am nächsten?', promptEn: 'Which planet is closest to the Sun?',
-    optionsDe: ['Venus', 'Merkur', 'Mars', 'Erde'], optionsEn: ['Venus', 'Mercury', 'Mars', 'Earth'], correctIndex: 1 },
-  { promptDe: 'Wie viele Farben hat ein Regenbogen?', promptEn: 'How many colours are in a rainbow?',
-    optionsDe: ['5', '6', '7', '8'], optionsEn: ['5', '6', '7', '8'], correctIndex: 2 },
-  { promptDe: 'Was ergibt 7 × 8?', promptEn: 'What is 7 × 8?',
-    optionsDe: ['54', '56', '58', '64'], optionsEn: ['54', '56', '58', '64'], correctIndex: 1 },
-  { promptDe: 'Welches Tier ist das größte der Welt?', promptEn: 'What is the largest animal in the world?',
-    optionsDe: ['Elefant', 'Blauwal', 'Giraffe', 'Nashorn'], optionsEn: ['Elephant', 'Blue whale', 'Giraffe', 'Rhino'], correctIndex: 1 },
-  { promptDe: 'In welchem Land steht der Eiffelturm?', promptEn: 'In which country is the Eiffel Tower?',
-    optionsDe: ['Italien', 'Spanien', 'Frankreich', 'Belgien'], optionsEn: ['Italy', 'Spain', 'France', 'Belgium'], correctIndex: 2 },
-  { promptDe: 'Wie viele Kontinente gibt es?', promptEn: 'How many continents are there?',
-    optionsDe: ['5', '6', '7', '8'], optionsEn: ['5', '6', '7', '8'], correctIndex: 2 },
-  { promptDe: 'Welche Farbe entsteht aus Blau und Gelb?', promptEn: 'Which colour do blue and yellow make?',
-    optionsDe: ['Grün', 'Orange', 'Lila', 'Braun'], optionsEn: ['Green', 'Orange', 'Purple', 'Brown'], correctIndex: 0 },
-  { promptDe: 'Wie viele Minuten hat eine Stunde?', promptEn: 'How many minutes are in an hour?',
-    optionsDe: ['30', '45', '60', '90'], optionsEn: ['30', '45', '60', '90'], correctIndex: 2 },
-  { promptDe: 'Welches ist das größte Land Europas nach Fläche?', promptEn: 'Which is the largest country in Europe by area?',
-    optionsDe: ['Frankreich', 'Deutschland', 'Russland', 'Spanien'], optionsEn: ['France', 'Germany', 'Russia', 'Spain'], correctIndex: 2 },
-  { promptDe: 'Wie viele Seiten hat ein Würfel?', promptEn: 'How many faces does a cube have?',
-    optionsDe: ['4', '6', '8', '12'], optionsEn: ['4', '6', '8', '12'], correctIndex: 1 },
-  { promptDe: 'Was ist die Hauptstadt von Italien?', promptEn: 'What is the capital of Italy?',
-    optionsDe: ['Mailand', 'Venedig', 'Rom', 'Neapel'], optionsEn: ['Milan', 'Venice', 'Rome', 'Naples'], correctIndex: 2 },
+  { promptDe: 'Wie viele Sterne hat die Flagge der EU?', promptEn: 'How many stars are on the EU flag?', target: 12 },
+  { promptDe: 'In welchem Jahr fiel die Berliner Mauer?', promptEn: 'In which year did the Berlin Wall fall?', target: 1989, unitDe: '', unitEn: '' },
+  { promptDe: 'Wie viele Knochen hat ein erwachsener Mensch?', promptEn: 'How many bones does an adult human have?', target: 206 },
+  { promptDe: 'Wie viele Tasten hat ein Klavier?', promptEn: 'How many keys does a piano have?', target: 88 },
+  { promptDe: 'Wie viele Länder liegen in Afrika?', promptEn: 'How many countries are in Africa?', target: 54 },
+  { promptDe: 'Wie viele Felder hat ein Schachbrett?', promptEn: 'How many squares are on a chessboard?', target: 64 },
+  { promptDe: 'Wie viele Sekunden hat ein ganzer Tag?', promptEn: 'How many seconds are in a full day?', target: 86400 },
+  { promptDe: 'Wie hoch ist der Eiffelturm (in Metern)?', promptEn: 'How tall is the Eiffel Tower (in metres)?', target: 330, unitDe: 'm', unitEn: 'm' },
+  { promptDe: 'Wie viele Herzen hat ein Oktopus?', promptEn: 'How many hearts does an octopus have?', target: 3 },
+  { promptDe: 'Wie viele Zähne hat ein erwachsener Mensch?', promptEn: 'How many teeth does an adult human have?', target: 32 },
+  { promptDe: 'Wie viele Streifen hat die US-Flagge?', promptEn: 'How many stripes are on the US flag?', target: 13 },
+  { promptDe: 'Wie viele Minuten dauert ein Fußballspiel (ohne Nachspielzeit)?', promptEn: 'How many minutes is a football match (without stoppage)?', target: 90, unitDe: 'Min', unitEn: 'min' },
+  { promptDe: 'Wie viele Planeten hat unser Sonnensystem?', promptEn: 'How many planets are in our solar system?', target: 8 },
+  { promptDe: 'Wie viele Buchstaben hat das deutsche Alphabet (ohne Umlaute/ß)?', promptEn: 'How many letters are in the alphabet?', target: 26 },
+  { promptDe: 'Wie viele Ringe hat das olympische Symbol?', promptEn: 'How many rings are in the Olympic symbol?', target: 5 },
 ];
 
 // ── Answer entry ─────────────────────────────────────────────────────────────

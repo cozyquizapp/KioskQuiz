@@ -60,6 +60,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   const [phases, setPhases] = useState<2 | 3 | 4>(4);
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
+  const [tbSeconds, setTbSeconds]   = useState(20);  // Stechen-Countdown (einstellbar vorm Start)
   const [drafts, setDrafts]         = useState<DraftSummary[]>([]);
   const [selectedDraftId, setSelectedDraftId] = useState<string>('');
   // 2026-05-24 (Wolf-Audit Cleanup): showSoundPanel + localSoundConfig waren
@@ -2817,12 +2818,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   );
                 })()}
 
-                {/* ── STECHEN (Sudden-Death-Tiebreaker) ── */}
+                {/* ── STECHEN (Schätz-Tiebreaker) ── */}
                 {s.phase === 'TIEBREAKER_QUESTION' && (() => {
                   const tb = (s as any).tieBreaker as import('../../../shared/quarterQuizTypes').QQTieBreakerState | null;
                   if (!tb) return null;
                   const answered = tb.answers.length;
                   const winner = tb.winnerId ? s.teams.find(t => t.id === tb.winnerId) : null;
+                  const unit = tb.unit ? ` ${tb.unit}` : '';
                   const label = (id: string) => {
                     const t = s.teams.find(x => x.id === id);
                     if (!t) return id;
@@ -2832,32 +2834,32 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   };
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                      <div style={{ fontSize: 15, color: QQ_COLORS.brandPink, fontWeight: 900 }}>⚔ Stechen laeuft</div>
+                      <div style={{ fontSize: 15, color: QQ_COLORS.brandPink, fontWeight: 900 }}>⚔ Stechen läuft (Schätzfrage)</div>
                       <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700, lineHeight: 1.35 }}>
-                        {tb.prompt}
+                        {tb.prompt} {tb.revealed && <b style={{ color: QQ_COLORS.slate100 }}>→ {tb.target}{unit}</b>}
                       </div>
                       <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-                        Kandidaten: {tb.candidateIds.map(label).join(' · ')} — {answered} Antwort(en) eingegangen
+                        Kandidaten: {tb.candidateIds.map(label).join(' · ')} — {answered} Schätzung(en) eingegangen
                       </div>
-                      {winner ? (
+                      {!tb.revealed ? (
+                        <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:revealTieBreaker', { roomCode })} hotkey="Space">
+                          ▶ Auflösen (näheste gewinnt)
+                        </PrimaryBtn>
+                      ) : (
                         <>
                           <div style={{
-                            fontSize: 13, fontWeight: 900, color: '#22C55E',
+                            fontSize: 13, fontWeight: 900, color: winner ? '#22C55E' : QQ_COLORS.slate300,
                             padding: '6px 10px', borderRadius: 8, background: 'rgba(34,197,94,0.12)',
                           }}>
-                            ✓ {label(winner.id)} war zuerst richtig!
+                            {winner ? `✓ ${label(winner.id)} war am nächsten dran!` : 'Keine Schätzung abgegeben.'}
                           </div>
                           <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                             ▶ Zur Siegerehrung
                           </PrimaryBtn>
                         </>
-                      ) : (
-                        <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-                          Warte auf die erste richtige Antwort…
-                        </div>
                       )}
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        <Btn small color={QQ_COLORS.slate400} onClick={() => emit('qq:startTieBreaker', { roomCode })}>
+                        <Btn small color={QQ_COLORS.slate400} onClick={() => emit('qq:startTieBreaker', { roomCode, durationSec: tbSeconds })}>
                           🎲 Neue Frage
                         </Btn>
                         <Btn small color={QQ_COLORS.slate400} onClick={() => emit('qq:cancelTieBreaker', { roomCode })}>
@@ -2886,16 +2888,23 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                           <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em' }}>
                             ⚔ STECHEN — gleicher Endstand bei {tieCands.length} {(s as any).largeGroupMode ? 'Fraktionen' : 'Teams'}
                           </div>
+                          {/* Countdown einstellbar vorm Start */}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 800, color: QQ_COLORS.slate300 }}>
+                            <span>Timer:</span>
+                            <button onClick={() => setTbSeconds(v => Math.max(5, v - 5))} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${QQ_COLORS.slate400}`, background: 'transparent', color: QQ_COLORS.slate300, fontWeight: 900, cursor: 'pointer' }}>−</button>
+                            <span style={{ minWidth: 42, textAlign: 'center', fontVariantNumeric: 'tabular-nums' }}>{tbSeconds}s</span>
+                            <button onClick={() => setTbSeconds(v => Math.min(120, v + 5))} style={{ width: 26, height: 26, borderRadius: 6, border: `1px solid ${QQ_COLORS.slate400}`, background: 'transparent', color: QQ_COLORS.slate300, fontWeight: 900, cursor: 'pointer' }}>+</button>
+                          </div>
                           <button
-                            onClick={() => emit('qq:startTieBreaker', { roomCode })}
+                            onClick={() => emit('qq:startTieBreaker', { roomCode, durationSec: tbSeconds })}
                             style={{
                               padding: '9px 14px', borderRadius: 8, border: 'none',
                               background: QQ_COLORS.brandPink, color: '#fff',
                               fontFamily: 'inherit', fontWeight: 900, fontSize: 14, cursor: 'pointer',
                             }}
-                            title="Sudden-Death-Stechfrage auf den Beamer bringen — erste richtige Antwort gewinnt"
+                            title="Schätz-Stechfrage auf den Beamer bringen — näheste Zahl gewinnt"
                           >
-                            ⚔ Stechen starten (Sudden-Death-Frage)
+                            ⚔ Stechen starten (Schätzfrage)
                           </button>
                           <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700, lineHeight: 1.35 }}>
                             Oder Sieger manuell setzen (nach muendlicher Frage) — er rueckt im Ranking auf Platz 1:

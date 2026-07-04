@@ -388,6 +388,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       en: { name:    getRuleText('bunte.map.name',    'en', 'CozyGuessr'),
             explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map — closest team wins.') },
     },
+    crowdTop: {
+      emoji: '🗳️',
+      de: { name:    getRuleText('bunte.crowdTop.name',    'de', 'Umfrage'),
+            explain: getRuleText('bunte.crowdTop.explain', 'de', 'Jedes Handy tippt EIN Stichwort — nennt, was die meisten nennen.') },
+      en: { name:    getRuleText('bunte.crowdTop.name',    'en', 'Survey'),
+            explain: getRuleText('bunte.crowdTop.explain', 'en', 'Each phone types ONE word — name what most people name.') },
+    },
+    crowdEstimate: {
+      emoji: '🧠',
+      de: { name:    getRuleText('bunte.crowdEstimate.name',    'de', 'Schwarmintelligenz'),
+            explain: getRuleText('bunte.crowdEstimate.explain', 'de', 'Jedes Handy schätzt eine Zahl — gemeinsam liegt der Schwarm goldrichtig.') },
+      en: { name:    getRuleText('bunte.crowdEstimate.name',    'en', 'Hive Mind'),
+            explain: getRuleText('bunte.crowdEstimate.explain', 'en', 'Each phone guesses a number — together the swarm nails it.') },
+    },
   };
   const bunteKind = cat === 'BUNTE_TUETE'
     ? (s.currentQuestion?.bunteTuete?.kind as keyof typeof BUNTE_SUB_INTRO | undefined)
@@ -1409,6 +1423,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               lines: {
                 de: ['Erfindet plausible Falsch-Antworten und ratet die echte.'],
                 en: ['Invent plausible fake answers — then spot the real one.'],
+              },
+            },
+            'BUNTE_TUETE:crowdTop': {
+              emoji: '🗳️', title: { de: 'Umfrage', en: 'Survey' },
+              lines: {
+                de: ['Jedes Handy tippt EIN Stichwort — nennt, was die meisten nennen.'],
+                en: ['Each phone types ONE word — name what most people name.'],
+              },
+            },
+            'BUNTE_TUETE:crowdEstimate': {
+              emoji: '🧠', title: { de: 'Schwarmintelligenz', en: 'Hive Mind' },
+              lines: {
+                de: ['Jedes Handy schätzt eine Zahl — gemeinsam liegt der Schwarm goldrichtig.'],
+                en: ['Each phone guesses a number — together the swarm nails it.'],
               },
             },
           };

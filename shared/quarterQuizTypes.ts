@@ -37,8 +37,8 @@ export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: s
   map:         { de: 'Pin It',          en: 'Pin It',     emoji: '📍' },
   onlyConnect: { de: '4 gewinnt',       en: 'Connect 4',  emoji: '🧩' },
   bluff:       { de: 'Bluff',           en: 'Bluff',      emoji: '🎭' },
-  crowdTop:    { de: 'Top-Antworten',   en: 'Top Answers', emoji: '📊' },
-  crowdEstimate: { de: 'Schwarm-Schätzen', en: 'Swarm Guess', emoji: '🌊' },
+  crowdTop:    { de: 'Umfrage',         en: 'Survey',    emoji: '🗳️' },
+  crowdEstimate: { de: 'Schwarmintelligenz', en: 'Hive Mind', emoji: '🧠' },
 };
 
 export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {

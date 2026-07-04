@@ -99,7 +99,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
           fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-accent)',
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
         }}>
-          📊 {lang === 'en' ? 'Top Answers — Reveal' : 'Top-Antworten — Auflösung'}
+          🗳️ {lang === 'en' ? 'Survey — Reveal' : 'Umfrage — Auflösung'}
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 120 ? 'clamp(26px, 2.7cqw, 40px)' : 'clamp(30px, 3.2cqw, 52px)',

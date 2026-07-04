@@ -21,6 +21,8 @@ export type QQIconSlug =
   | 'sub-top5'
   | 'sub-order'
   | 'sub-map'
+  | 'sub-umfrage'
+  | 'sub-schwarm'
   // Brett-Aktionen (cozy3d-Look, icons-v2 2026-06-28)
   | 'action-place'
   | 'action-steal'
@@ -92,6 +94,8 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'sub-top5':          '🏆',
   'sub-order':         '🔀',
   'sub-map':           '📍',
+  'sub-umfrage':       '🗳️',
+  'sub-schwarm':       '🧠',
   'action-place':      '📍',
   'action-steal':      '⚡',
   'action-stack':      '🏯',
@@ -169,6 +173,8 @@ export function qqSubSlug(kind: string): QQIconSlug | null {
     case 'top5':      return 'sub-top5';
     case 'order':     return 'sub-order';
     case 'map':       return 'sub-map';
+    case 'crowdTop':      return 'sub-umfrage';
+    case 'crowdEstimate': return 'sub-schwarm';
     case 'oneOfEight': return null; // Imposter deaktiviert
     default:          return null;
   }

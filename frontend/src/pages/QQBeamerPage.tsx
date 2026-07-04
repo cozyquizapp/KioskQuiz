@@ -2072,7 +2072,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Übergang zum Regel-Intro. 2026-05-11: zurückgebracht nach Wolf-
           Klarstellung — vorher fälschlich unter „L1 Welcome doppelt"
           entfernt. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} arena={!!(s as any).largeGroupMode} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
       {/* Regel-Intro (rulesSlideIndex === -1): 2026-06-28 (Wolf) als ERSTE Station
           in die persistente Regel-Bühne (RulesView) verlegt — kein separates
           Overlay mehr, sonst doppelt. RulesIntroOverlay bleibt als toter Code
@@ -3922,10 +3922,15 @@ export function MuchoOptionsReveal({
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
+function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; arena?: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
   const lang = useLangFlip(language);
-  const title = 'COZYQUIZ';
-  const welcome = lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM';
+  // 2026-07-04 (Wolf 'im Arena-Modus konstant Cozy Arena statt CozyQuiz'):
+  // CozyQuiz bleibt Dach-Marke, aber die Willkommens-Wortmarke adaptiert sich
+  // an den Modus. „in der/zur Arena" liest sich sauberer als „zum".
+  const title = arena ? 'COZY ARENA' : 'COZYQUIZ';
+  const welcome = arena
+    ? (lang === 'en' ? 'WELCOME TO THE' : 'HERZLICH WILLKOMMEN IN DER')
+    : (lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM');
   const greeting = lang === 'en'
     ? 'Get comfy — here we go!'
     : 'Macht\'s euch bequem – gleich geht\'s los!';
@@ -4895,7 +4900,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
           textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
           lineHeight: 0.96, textTransform: 'uppercase', display: 'inline-block',
           animation: 'qqNeutralFloat 4.2s ease-in-out 0.6s infinite',
-        }}>COZYQUIZ</span>
+        }}>{(s as any).largeGroupMode ? 'COZY ARENA' : 'COZYQUIZ'}</span>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 12,
           fontSize: 'clamp(22px, 2.6cqw, 40px)', fontWeight: 900,

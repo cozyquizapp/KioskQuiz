@@ -11,7 +11,7 @@
 
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { playArenaLeadChange } from '../utils/sounds';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -373,8 +373,55 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
   const wColor = winner?.color ?? '#EC4899';
 
+  // 2026-07-04 (Wolf 'arena-artiges Finale'): Sieger-Kroenung als Bookend zum
+  // Einzug — erst dramatische Kroenung der Sieger-Fraktion (Wappen gross,
+  // Farbflut, Slogan, Konfetti), dann Uebergang in die Standings. Spielt einmal.
+  const [goPhase, setGoPhase] = useState<'crown' | 'full'>(winner ? 'crown' : 'full');
+  useEffect(() => {
+    if (!winner) { setGoPhase('full'); return; }
+    const id = window.setTimeout(() => setGoPhase('full'), 5200);
+    return () => window.clearTimeout(id);
+  }, [winner?.id]);
+  const motto = winner ? qqMegaFactionMotto(winner.avatarId, de ? 'de' : 'en') : '';
+
+  if (goPhase === 'crown' && winner) {
+    return (
+      <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: '#0A0814', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.6cqh, 24px)', color: '#f4f6ff' }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 80% 62% at 50% 42%, ${wColor}3a 0%, transparent 62%)`, animation: 'qqCrownFlood 0.8s ease both' }} />
+        <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
+        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#e9c46a' }}>
+          {de ? 'Champions der Arena' : 'Arena Champions'}
+        </div>
+        <div style={{ position: 'relative', zIndex: 5, animation: 'qqCrownIn 0.7s cubic-bezier(0.2,1.3,0.4,1) both' }}>
+          <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ position: 'absolute', top: '-9%', left: '50%', transform: 'translateX(-50%)', width: 'clamp(50px, 5.2cqw, 88px)', height: 'auto', zIndex: 6, animation: 'finaleTrophyFloat 3.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.5))' }} />
+          <div style={{ borderRadius: '50%', boxShadow: `0 0 80px ${wColor}77, 0 0 150px ${wColor}44` }}>
+            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(160px, 20cqw, 320px)'} />
+          </div>
+        </div>
+        <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.8cqh, 12px)' }}>
+          <TeamNameLabel name={winner.name} maxLines={1} shrinkAfter={14} color={wColor} fontWeight={900} fontSize="clamp(40px, 6.4cqw, 104px)" fontSizeLong="clamp(30px, 4.6cqw, 74px)" style={{ textAlign: 'center', textShadow: `0 0 50px ${wColor}66` }} />
+          <div aria-hidden style={{ height: 'clamp(3px, 0.42cqh, 6px)', width: 'clamp(70px, 12cqw, 210px)', borderRadius: 999, background: wColor, transformOrigin: 'center', boxShadow: `0 0 16px ${wColor}99`, animation: 'qqCrownUnderline 0.5s cubic-bezier(0.2,1,0.4,1) 0.45s both' }} />
+        </div>
+        {motto && (
+          <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(18px, 2.5cqw, 40px)', fontWeight: 800, fontStyle: 'italic', color: '#cbd5e1', animation: 'qqCrownFadeUp 0.6s ease 0.5s both' }}>
+            „{motto}"
+          </div>
+        )}
+        <div style={{ position: 'relative', zIndex: 5, fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 38px)', color: wColor, animation: 'qqCrownFadeUp 0.6s ease 0.72s both' }}>
+          {winner.largestConnected} {de ? 'Punkte' : 'points'}
+        </div>
+        <style>{`
+          @keyframes qqCrownIn { 0% { opacity: 0; transform: translateY(40px) scale(0.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0) scale(1); } }
+          @keyframes qqCrownUnderline { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
+          @keyframes qqCrownFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
+          @keyframes qqCrownFlood { from { opacity: 0; } to { opacity: 1; } }
+        `}</style>
+      </div>
+    );
+  }
+
   return (
-    <div style={S.goWrap}>
+    <div style={{ ...S.goWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 50% 22%, ${wColor}33 0%, transparent 60%)` }} />
       <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
 

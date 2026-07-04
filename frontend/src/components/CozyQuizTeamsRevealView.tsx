@@ -9,7 +9,7 @@
  */
 import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
@@ -20,7 +20,172 @@ import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCrestSlug, crestEmblemSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
+// Cozy Arena — Fraktions-Einzug: jede Fraktion tritt einzeln auf (Wappen gross,
+// Name, Motto, Farb-Flut), setzt sich dann in die Startaufstellung unten. KEIN
+// FLIP-Flug (Wolfs Positions-Bug damit hinfaellig) — Einzug = Drama, Aufstellung
+// = sauberer Pop. Nur nested/Arena; Cozy Quiz behaelt den Roll-Call.
+function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  const themed = isThemed();
+  const de = lang !== 'en';
+  const sfxMutedRef = useRef(s.sfxMuted);
+  sfxMutedRef.current = s.sfxMuted;
+
+  const factions = useMemo(() => {
+    const connected = s.teams.filter(t => t.connected);
+    const base = connected.length > 0 ? connected : s.teams;
+    const byAv = new Map<string, { avatarId: string; color: string; subs: number }>();
+    const order: string[] = [];
+    for (const t of base) {
+      let g = byAv.get(t.avatarId);
+      if (!g) {
+        const meta = QQ_AVATARS.find(a => a.id === t.avatarId);
+        g = { avatarId: t.avatarId, color: meta?.color ?? t.color ?? '#EC4899', subs: 0 };
+        byAv.set(t.avatarId, g); order.push(t.avatarId);
+      }
+      g.subs++;
+    }
+    return order.map(a => byAv.get(a)!);
+  }, [s.teams]);
+  const n = factions.length;
+
+  const [enterIdx, setEnterIdx] = useState(-1);
+  const [placed, setPlaced] = useState<Set<number>>(() => new Set());
+  const [done, setDone] = useState(false);
+  const sfxRef = sfxMutedRef;
+
+  useEffect(() => { wakeAllAvatars(16000); }, []);
+  useEffect(() => {
+    if (n === 0) { setDone(true); return; }
+    let cancelled = false;
+    const timers: number[] = [];
+    const T = (fn: () => void, ms: number) => { const id = window.setTimeout(() => { if (!cancelled) fn(); }, ms); timers.push(id); return id; };
+    const ENTER = 1900;
+    const step = (i: number) => {
+      if (cancelled) return;
+      if (i >= n) {
+        T(() => { setDone(true); if (!sfxRef.current) { try { playGoodLuckFanfare(); } catch {} } }, 360);
+        return;
+      }
+      setEnterIdx(i);
+      if (!sfxRef.current) { try { playWoodKnock(); } catch {} }
+      T(() => {
+        setPlaced(prev => { const nx = new Set(prev); nx.add(i); return nx; });
+        if (!sfxRef.current) { try { playAvatarCascadeNote(i, n + 1); } catch {} }
+      }, ENTER - 420);
+      T(() => step(i + 1), ENTER);
+    };
+    T(() => step(0), 520);
+    return () => { cancelled = true; timers.forEach(t => window.clearTimeout(t)); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [n]);
+
+  const crestFor = (avId: string): string | null => {
+    const slug = qqMegaFactionSlug(avId);
+    return slug && isCrestSlug(slug) ? crestEmblemSrc(slug) : null;
+  };
+  const cur = (enterIdx >= 0 && enterIdx < n && !done) ? factions[enterIdx] : null;
+  const curColor = cur?.color ?? '#EC4899';
+
+  return (
+    <div style={{
+      width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
+      backgroundColor: themed ? undefined : '#0A0814',
+      background: themed ? 'var(--qq-bg)' : undefined,
+      fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+      display: 'flex', flexDirection: 'column', alignItems: 'center',
+    }}>
+      {/* Farb-Flut der aktuellen Fraktion */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 0,
+        background: `radial-gradient(ellipse 82% 62% at 50% 40%, ${curColor}2e 0%, transparent 62%)`,
+        transition: 'background 0.6s ease',
+      }} />
+
+      {/* Titel */}
+      <div style={{ position: 'relative', zIndex: 2, marginTop: 'clamp(22px, 4cqh, 52px)', textAlign: 'center' }}>
+        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#94a3b8' }}>
+          {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
+        </div>
+        <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc' }}>
+          {done ? (de ? 'Los geht’s!' : 'Let’s go!') : '🏟️ Cozy Arena'}
+        </div>
+      </div>
+
+      {/* Bühne — aktuelle Fraktion */}
+      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+        {cur && (() => {
+          const src = crestFor(cur.avatarId);
+          return (
+            <div key={enterIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.4cqh, 20px)', animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
+              {src
+                ? <img src={src} alt="" draggable={false} style={{ width: 'clamp(170px, 21cqw, 340px)', height: 'auto', filter: `drop-shadow(0 0 60px ${curColor}88) drop-shadow(0 16px 30px rgba(0,0,0,0.55))` }} />
+                : <QQTeamAvatar avatarId={cur.avatarId} teamEmoji={qqMegaFactionSlug(cur.avatarId)} size={'clamp(170px, 21cqw, 340px)'} style={{ boxShadow: `0 0 60px ${curColor}88` }} />}
+              <div style={{ fontSize: 'clamp(38px, 6.4cqw, 100px)', fontWeight: 900, color: curColor, lineHeight: 1, textShadow: `0 0 50px ${curColor}66` }}>
+                {qqMegaFactionName(cur.avatarId, de ? 'de' : 'en')}
+              </div>
+              <div style={{ fontSize: 'clamp(19px, 2.5cqw, 40px)', fontWeight: 800, fontStyle: 'italic', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1' }}>
+                „{qqMegaFactionMotto(cur.avatarId, de ? 'de' : 'en')}"
+              </div>
+            </div>
+          );
+        })()}
+      </div>
+
+      {/* Startaufstellung — 8 Slots, füllen sich */}
+      <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 'clamp(8px, 1.2cqw, 20px)', justifyContent: 'center', flexWrap: 'wrap', padding: 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)', width: '100%', boxSizing: 'border-box' }}>
+        {factions.map((f, i) => {
+          const on = placed.has(i);
+          const src = crestFor(f.avatarId);
+          return (
+            <div key={f.avatarId} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
+              width: 'clamp(80px, 10cqw, 150px)',
+              opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
+              transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
+              transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
+            }}>
+              <div style={{
+                width: 'clamp(54px, 6cqw, 96px)', height: 'clamp(54px, 6cqw, 96px)', borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                background: on ? `${f.color}1f` : 'rgba(148,163,184,0.08)',
+                border: `2px solid ${on ? f.color : 'rgba(148,163,184,0.25)'}`,
+                boxShadow: on ? `0 0 18px ${f.color}66` : 'none',
+              }}>
+                {src
+                  ? <img src={src} alt="" draggable={false} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+                  : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={'clamp(42px, 4.6cqw, 74px)'} />}
+              </div>
+              <div style={{ fontSize: 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+                {qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      <style>{`
+        @keyframes qqArenaEnter {
+          0%   { opacity: 0; transform: translateY(46px) scale(0.66); }
+          60%  { opacity: 1; }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+    </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────
+// Phase-Router (Wolf 2026-07-04 'mehr Arena-Vibe bei der Team-Vorstellung',
+// Variante A): Arena (nested) → Fraktions-Einzug + Startaufstellung, sonst der
+// klassische Cozy-Quiz-Roll-Call.
+// ─────────────────────────────────────────────────────────────────────────
 export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
+  if ((s as any).nestedTeams) return <ArenaEntranceView state={s} />;
+  return <CozyRollCall state={s} />;
+}
+
+function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
   const fontFam = themed

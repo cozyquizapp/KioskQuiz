@@ -87,6 +87,48 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const cur = (enterIdx >= 0 && enterIdx < n && !done) ? factions[enterIdx] : null;
   const curColor = cur?.color ?? '#EC4899';
 
+  // Startaufstellung — waehrend des Einzugs klein am Boden (baut sich auf),
+  // im „Los geht's"-Finale gross + zentriert (fuellt die Mitte statt leerem Raum).
+  const renderLineup = (big: boolean) => (
+    <div style={{
+      position: 'relative', zIndex: 2, display: 'flex',
+      gap: big ? 'clamp(14px, 2cqw, 34px)' : 'clamp(8px, 1.2cqw, 20px)',
+      justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start',
+      padding: big ? 'clamp(8px, 1.5cqh, 24px) clamp(24px, 4cqw, 72px)' : 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)',
+      width: '100%', boxSizing: 'border-box',
+    }}>
+      {factions.map((f, i) => {
+        const on = placed.has(i);
+        const src = crestFor(f.avatarId);
+        const disc = big ? 'clamp(84px, 9cqw, 156px)' : 'clamp(54px, 6cqw, 96px)';
+        return (
+          <div key={f.avatarId} style={{
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: big ? 8 : 5,
+            width: big ? 'clamp(112px, 13cqw, 210px)' : 'clamp(80px, 10cqw, 150px)',
+            opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
+            transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
+            transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
+          }}>
+            <div style={{
+              width: disc, height: disc, borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              background: on ? `${f.color}1f` : 'rgba(148,163,184,0.08)',
+              border: `${big ? 3 : 2}px solid ${on ? f.color : 'rgba(148,163,184,0.25)'}`,
+              boxShadow: on ? `0 0 ${big ? 28 : 18}px ${f.color}66` : 'none',
+            }}>
+              {src
+                ? <img src={src} alt="" draggable={false} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
+                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={big ? 'clamp(66px, 7cqw, 122px)' : 'clamp(42px, 4.6cqw, 74px)'} />}
+            </div>
+            <div style={{ fontSize: big ? 'clamp(15px, 1.7cqw, 27px)' : 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+              {qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
@@ -112,9 +154,11 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         </div>
       </div>
 
-      {/* Bühne — aktuelle Fraktion */}
+      {/* Bühne: Einzug (aktuelle Fraktion) ODER — wenn fertig — die grosse
+          zentrierte Startaufstellung (fuellt die Mitte statt leerem Raum;
+          Wolf 2026-07-04 'leerer space in der mitte'). */}
       <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
-        {cur && (() => {
+        {done ? renderLineup(true) : (cur && (() => {
           const src = crestFor(cur.avatarId);
           return (
             <div key={enterIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.4cqh, 20px)', animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
@@ -129,40 +173,11 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
               </div>
             </div>
           );
-        })()}
+        })())}
       </div>
 
-      {/* Startaufstellung — 8 Slots, füllen sich */}
-      <div style={{ position: 'relative', zIndex: 2, display: 'flex', gap: 'clamp(8px, 1.2cqw, 20px)', justifyContent: 'center', flexWrap: 'wrap', padding: 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)', width: '100%', boxSizing: 'border-box' }}>
-        {factions.map((f, i) => {
-          const on = placed.has(i);
-          const src = crestFor(f.avatarId);
-          return (
-            <div key={f.avatarId} style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 5,
-              width: 'clamp(80px, 10cqw, 150px)',
-              opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
-              transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
-              transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
-            }}>
-              <div style={{
-                width: 'clamp(54px, 6cqw, 96px)', height: 'clamp(54px, 6cqw, 96px)', borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                background: on ? `${f.color}1f` : 'rgba(148,163,184,0.08)',
-                border: `2px solid ${on ? f.color : 'rgba(148,163,184,0.25)'}`,
-                boxShadow: on ? `0 0 18px ${f.color}66` : 'none',
-              }}>
-                {src
-                  ? <img src={src} alt="" draggable={false} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
-                  : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={'clamp(42px, 4.6cqw, 74px)'} />}
-              </div>
-              <div style={{ fontSize: 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-                {qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+      {/* Waehrend des Einzugs: kleine Aufstellung unten, baut sich auf. */}
+      {!done && renderLineup(false)}
 
       <style>{`
         @keyframes qqArenaEnter {

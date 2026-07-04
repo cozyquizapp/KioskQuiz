@@ -271,7 +271,13 @@ function CategoryHeroFlip({ dotScreen, vpRef, style, children }: {
     return () => cancelAnimationFrame(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dotScreen]);
-  return <div ref={ref} style={{ lineHeight: 0, willChange: 'transform', ...style }}>{children}</div>;
+  return (
+    <div ref={ref} style={{ lineHeight: 0, willChange: 'transform', ...style }}>
+      {/* Innerer Bob-Wrapper: schwebt sanft nach dem Einrasten (Delay > Flip-
+          Dauer), einheitlich fuer ALLE Kategorien (Wolf: 'alle sollen hovern'). */}
+      <div style={{ animation: 'qqCatHeroBob 3.8s ease-in-out 1.2s infinite' }}>{children}</div>
+    </div>
+  );
 }
 
 export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
@@ -855,6 +861,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqCatHeroFloat {
           0%, 100% { transform: translate(-50%, -50%) translateY(0); }
           50%      { transform: translate(-50%, -50%) translateY(-10px); }
+        }
+        /* Reiner translateY-Bob fuer den Hero-Inner-Wrapper — kollidiert NICHT
+           mit dem Flip-/Zoom-Transform des Outers. Wolf 2026-07-04: alle
+           Kategorie-Emojis sollen einheitlich schweben (vorher gar keins). */
+        @keyframes qqCatHeroBob {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-12px); }
         }
       `}</style>
 

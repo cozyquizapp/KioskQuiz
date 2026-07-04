@@ -27,7 +27,7 @@ export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; em
 // ── Bunte Tüte sub-mechanics ──────────────────────────────────────────────────
 export type QQBunteTueteKind =
   | 'hotPotato' | 'top5' | 'oneOfEight' | 'order' | 'map'
-  | 'onlyConnect' | 'bluff';
+  | 'onlyConnect' | 'bluff' | 'crowdTop';
 
 export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: string; emoji: string }> = {
   hotPotato:   { de: 'Heiße Kartoffel', en: 'Hot Potato', emoji: '🥔' },
@@ -37,6 +37,7 @@ export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: s
   map:         { de: 'Pin It',          en: 'Pin It',     emoji: '📍' },
   onlyConnect: { de: '4 gewinnt',       en: 'Connect 4',  emoji: '🧩' },
   bluff:       { de: 'Bluff',           en: 'Bluff',      emoji: '🎭' },
+  crowdTop:    { de: 'Top-Antworten',   en: 'Top Answers', emoji: '📊' },
 };
 
 export const QQ_CATEGORY_COLORS: Record<QQCategory, string> = {
@@ -224,6 +225,30 @@ export interface QQBunteTueteBluff {
   realAnswerEn?: string;
 }
 
+/**
+ * Top-Antworten / Family Feud (Cozy Arena, 2026-07-04): alle Handys tippen frei
+ * EIN Wort. Antworten werden per Normalizer + Synonym-Liste gebündelt, eine
+ * Top-5-Tafel deckt nach Stimmen-Anzahl auf. Fraktion punktet je Board-Platz
+ * ihrer Antwort (rang-basiert [5,4,3,2,1]).
+ *
+ * Antwort-Modell „Vorgegeben + Auto-Surface" (Wolf-Wahl): der Autor gibt die
+ * erwartbaren Antworten + Synonyme vor (deterministisch scorebar). Zusätzlich
+ * werden unmatched Abgaben nach normalisiertem String gruppiert; ein Auto-Cluster
+ * mit genug Stimmen erscheint ebenfalls als Board-Slot. Siehe VOTING_FORMAT_SPEC.md.
+ * Gedacht für Groß-Gruppen (~ab 10-12 Handys), technisch aber in beiden Modi lauffähig.
+ */
+export interface QQBunteTueteCrowdTop {
+  kind: 'crowdTop';
+  /** Vom Autor vorgegebene erwartbare Antworten (2-8). Board-Rang ergibt sich zur
+   *  LAUFZEIT aus der Stimmen-Anzahl, NICHT aus dieser Reihenfolge. */
+  answers: Array<{
+    label: string;        // Anzeige auf der Tafel (DE), z.B. "Salami"
+    labelEn?: string;
+    aliases?: string[];   // Synonyme/Schreibweisen (DE), z.B. ["peperoni-salami"]
+    aliasesEn?: string[];
+  }>;
+}
+
 export type QQBunteTuetePayload =
   | QQBunteTueteTop5
   | QQBunteTueteOneOfEight
@@ -231,7 +256,8 @@ export type QQBunteTuetePayload =
   | QQBunteTueteMap
   | QQBunteTueteHotPotato
   | QQBunteTueteOnlyConnect
-  | QQBunteTueteBluff;
+  | QQBunteTueteBluff
+  | QQBunteTueteCrowdTop;
 
 // ── Questions ─────────────────────────────────────────────────────────────────
 export interface QQQuestion {

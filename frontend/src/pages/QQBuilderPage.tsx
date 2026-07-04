@@ -74,7 +74,7 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
 // kommt jetzt auch raus — Wolf will den Sub-Kind spaeter in anderer Form
 // revivem. Code-Pfade in Backend + Render-Komponenten bleiben.
 // Reaktivieren: gewuenschten Kind wieder in die Liste aufnehmen.
-const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'order', 'map', 'onlyConnect'];
+const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'crowdTop', 'order', 'map', 'onlyConnect'];
 
 // 2026-05-11 (Wolf-Wunsch): Wizard-Sub-Steps. Statt langer Scroll-Liste klickt
 // Wolf sich pro Frage durch wenige Felder-Blöcke. Pro Kategorie eigenes Schema.
@@ -2572,6 +2572,7 @@ function CategoryFields({ question: q, onChange, catColor, onOptionImageUpload }
                   let bt: QQBunteTuetePayload;
                   if (k === 'hotPotato') bt = { kind: 'hotPotato' };
                   else if (k === 'top5') bt = { kind: 'top5', answers: ['', '', '', '', ''] };
+                  else if (k === 'crowdTop') bt = { kind: 'crowdTop', answers: [{ label: '', aliases: [] }, { label: '', aliases: [] }, { label: '', aliases: [] }, { label: '', aliases: [] }] };
                   else if (k === 'oneOfEight') bt = { kind: 'oneOfEight', statements: ['', '', '', '', '', '', '', ''], falseIndex: 0 };
                   else if (k === 'order') bt = { kind: 'order', items: ['', '', ''], correctOrder: [0, 1, 2] };
                   else if (k === 'map') bt = { kind: 'map', lat: 53.55, lng: 10.0, targetLabel: '' };
@@ -2607,6 +2608,7 @@ function hasBunteTueteContent(bt: QQBunteTuetePayload | undefined): boolean {
   switch (bt.kind) {
     case 'hotPotato': return false;  // keine eigenen Felder
     case 'top5':       return (bt.answers ?? []).some(a => a && a.trim().length > 0);
+    case 'crowdTop':   return (bt.answers ?? []).some(a => a.label && a.label.trim().length > 0);
     case 'oneOfEight': return (bt.statements ?? []).some(s => s && s.trim().length > 0);
     case 'order':      return (bt.items ?? []).some(i => i && i.trim().length > 0);
     case 'map':        return !!(bt.targetLabel && bt.targetLabel.trim().length > 0);
@@ -2661,6 +2663,45 @@ function BunteTueteFields({ question: q, onChange }: { question: QQQuestion; onC
             </div>
           </div>
         ))}
+      </div>
+    );
+  }
+
+  // TOP-ANTWORTEN / Family Feud ─────────────────────────────────────────────────
+  if (bt.kind === 'crowdTop') {
+    const answers = bt.answers ?? [];
+    const commit = (next: typeof bt.answers) =>
+      onChange({ ...q, bunteTuete: { ...bt, answers: next }, answer: next.map(a => a.label).filter(Boolean).join(', ') });
+    const update = (i: number, patch: Partial<(typeof bt.answers)[number]>) =>
+      commit(answers.map((a, idx) => idx === i ? { ...a, ...patch } : a));
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+        <div style={{ padding: '8px 12px', borderRadius: 8, background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.2)', fontSize: 12, color: QQ_COLORS.slate400 }}>
+          📊 Alle tippen frei EIN Wort. Antworten werden gebündelt, eine Top-5-Tafel deckt nach Stimmen auf. Reihenfolge egal — sortiert wird nach Stimmen. Aliase großzügig pflegen (Tippfehler, Singular/Plural, Synonyme). Am besten ab ~10-12 Handys.
+        </div>
+        {answers.map((a, i) => (
+          <div key={i} style={{ padding: '8px 10px', borderRadius: 10, border: '2px solid rgba(255,255,255,0.07)', background: 'rgba(255,255,255,0.02)', display: 'flex', flexDirection: 'column', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+              <div style={{ width: 22, flexShrink: 0, fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate600, textAlign: 'center' }}>{i + 1}</div>
+              <input value={a.label} onChange={e => update(i, { label: e.target.value })}
+                style={{ ...inputStyle, flex: 1 }} placeholder={`Antwort ${i + 1} (DE)…`} />
+              {answers.length > 2 && (
+                <button onClick={() => commit(answers.filter((_, idx) => idx !== i))}
+                  style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 6, border: '1px solid rgba(255,255,255,0.1)', background: 'transparent', color: QQ_COLORS.slate600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }} title="Antwort entfernen">✕</button>
+              )}
+            </div>
+            <input value={a.labelEn ?? ''} onChange={e => update(i, { labelEn: e.target.value })}
+              style={{ ...inputStyle, fontSize: 12, opacity: 0.7 }} placeholder={`Answer ${i + 1} (EN, opt.)…`} />
+            <input value={(a.aliases ?? []).join(', ')} onChange={e => update(i, { aliases: e.target.value.split(',').map(s => s.trim()).filter(Boolean) })}
+              style={{ ...inputStyle, fontSize: 12 }} placeholder="Synonyme, Komma-getrennt (z.B. peperoni, salami-typ)…" />
+          </div>
+        ))}
+        {answers.length < 8 && (
+          <button onClick={() => commit([...answers, { label: '', aliases: [] }])}
+            style={{ padding: '7px 8px', borderRadius: 8, border: '1px dashed rgba(255,255,255,0.15)', background: 'transparent', color: QQ_COLORS.slate500, cursor: 'pointer', fontFamily: 'inherit', fontSize: 12, fontWeight: 800 }}>
+            + Antwort
+          </button>
+        )}
       </div>
     );
   }

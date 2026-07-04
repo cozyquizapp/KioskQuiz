@@ -154,11 +154,15 @@ Sound je Slot: bestehendes `playAvatarCascadeNote()` + `playRevealHighlight()` (
 
 ---
 
-## 9. ⚠️ Offene Entscheidungen (vor Implementierung)
+## 9. ✅ Design-Entscheidungen (Wolf, 2026-07-04 — GESETZT)
 
-**A — Antwort-Modell:** vorgegebene Antworten + Synonyme (deterministisch, sicher) — mit optionaler
-Auto-Surface großer unmatched-Cluster (eine Überraschungs-Antwort, die viele identisch tippen,
-darf trotzdem auf die Tafel)?
+**A — Antwort-Modell: Vorgegeben + Auto-Surface.** Autor gibt erwartbare Antworten + Synonyme vor
+(deterministisch scorebar). ZUSÄTZLICH: unmatched Abgaben werden nach normalisiertem String
+gruppiert; erreicht ein Auto-Cluster einen Schwellwert (z.B. ≥3 Stimmen ODER genug für einen
+Top-5-Platz), erscheint es als eigener Board-Slot und ist ebenfalls scorebar. So punktet auch eine
+nicht vorgesehene Antwort, die viele identisch tippen. `sonstiges` = Rest darunter (nur Zähler).
 
-**B — Punkte pro Slot:** Rang-basiert `[5,4,3,2,1]` (konsistent mit Arena-Speed-Bonus) oder
-popularitäts-basiert (Stimmen-Anteil = Punkte, echter Family-Feud, braucht Skalierung)?
+**B — Punkte: Rang-basiert `[5,4,3,2,1]`.** Board-Platz 1 = 5 … Platz 5 = 1. Konsistent mit dem
+Arena-Speed-Bonus (`qqLargeGroupAwardPoints`/`qqMegaEventScore`). Fraktion-perf = Summe der
+Slot-Punkte ihrer Handys; `+1 Basis` bei perf>0; Top-5-Fraktionen zusätzlich `[5,4,3,2,1]` (wie
+bestehende Mega-Wertung).

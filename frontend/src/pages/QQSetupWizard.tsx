@@ -52,11 +52,14 @@ interface Props {
   setLocalSoundConfig?: (cfg: QQSoundConfig) => void;
 }
 
+// 2026-07-04 (Wolf): Fragensatz VOR Runden & Timer — sonst wählt man z.B. 4
+// Runden und der danach gewählte Draft hat nur 3. Draft zuerst → Runden-Schritt
+// kennt die max. Rundenzahl und sperrt zu große Werte direkt.
 const STEPS = [
+  { key: 'draft', emoji: '📋', title: 'Fragensatz' },
   { key: 'rounds', emoji: '🎮', title: 'Runden & Timer' },
   { key: 'lang', emoji: '🌐', title: 'Sprache & Avatare' },
   { key: 'addons', emoji: '🧩', title: 'Add-ons' },
-  { key: 'draft', emoji: '📋', title: 'Fragensatz' },
   { key: 'theme', emoji: '🎨', title: 'Design' },
   { key: 'sound', emoji: '🔊', title: 'Sound' },
   { key: 'done', emoji: '✅', title: 'Bereit' },
@@ -86,6 +89,13 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
   const draftMax = selDraft ? (selDraft.phases ?? (selDraft.questionCount >= 20 ? 4 : selDraft.questionCount >= 15 ? 3 : 2)) : 4;
   const qqDraftId = selectedDraftId ? (selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId) : '';
   const fitOK = selDraft ? selDraft.questionCount >= phases * 5 : false;
+
+  // 2026-07-04 (Wolf): Auto-Clamp — erlaubt der gewählte Draft weniger Runden als
+  // aktuell eingestellt, Rundenzahl runterziehen (z.B. 4 gewählt → 3-Runden-Draft).
+  useEffect(() => {
+    if (selDraft && phases > draftMax) setPhases(draftMax as 2 | 3 | 4);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDraftId, draftMax]);
 
   // ── Custom-Sounds pro Draft (fetch + persist) ─────────────────────────────
   const [draftSoundConfig, setDraftSoundConfig] = useState<QQSoundConfig>({});

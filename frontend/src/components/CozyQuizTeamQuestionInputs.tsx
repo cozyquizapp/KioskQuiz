@@ -85,6 +85,49 @@ export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnl
   );
 }
 
+// ── Crowd Top / Family Feud: ein freies Wort ──────────────────────────────────
+// 2026-07-04 (Cozy Arena „Top-Antworten"): Freitext-EIN-Wort. Bewusst OHNE
+// Auto-Focus (im Groß-Modus tippen mehrere Handys pro Fraktion — Auto-Focus
+// würde die Tastatur ungefragt öffnen + die Frage verdecken, Mobile-Audit P1-3)
+// und mit Autokorrektur AUS + maxLength (P1-1: sonst macht iOS aus „Kohl" →
+// „Kohle", und ohne Limit wird ein ganzer Satz statt eines Wortes abgegeben).
+export function CrowdTopInput({ catColor, onSubmit, lang = 'de', timerEndsAt }: {
+  catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null;
+}) {
+  const [val, setVal] = useState('');
+  const expired = useExpiry(timerEndsAt ?? null);
+  const valRef = useRef(val); valRef.current = val;
+  const firedRef = useRef(false);
+  useEffect(() => {
+    if (expired && !firedRef.current) {
+      firedRef.current = true;
+      const v = valRef.current;
+      if (v.trim()) onSubmit(v);
+    }
+  }, [expired, onSubmit]);
+  const placeholder = lang === 'de' ? 'Ein Wort…' : 'One word…';
+  return (
+    <div style={{ marginTop: 4 }}>
+      <StandardInput
+        value={val}
+        onChange={setVal}
+        onEnter={() => val.trim() && onSubmit(val)}
+        catColor={catColor}
+        type="text"
+        inputMode="text"
+        placeholder={placeholder}
+        ariaLabel={lang === 'de' ? 'Deine Antwort (ein Wort)' : 'Your answer (one word)'}
+        maxLength={24}
+        autoCorrect="off"
+        autoCapitalize="off"
+        spellCheck={false}
+        disabled={expired}
+      />
+      <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
+    </div>
+  );
+}
+
 // ── Mu-Cho: A/B/C/D buttons ───────────────────────────────────────────────────
 const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
 // 2026-05-09 (Wolf): A/B/C/D als Negative-Squared-Latin-Emojis statt Plain-Text.

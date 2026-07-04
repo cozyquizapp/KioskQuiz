@@ -27,7 +27,7 @@ import {
 } from './CozyQuizTeamPrimitives';
 import { SubmittedBadge } from './CozyQuizTeamInputs';
 import {
-  TextInput, MuchoInput, AllInInput, Top5Input, FixItInput,
+  TextInput, MuchoInput, AllInInput, Top5Input, FixItInput, CrowdTopInput,
 } from './CozyQuizTeamQuestionInputs';
 import {
   HotPotatoInput, BluffInput, OnlyConnectInput,
@@ -190,6 +190,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
   if (q.category === 'BUNTE_TUETE') {
     const kind = q.bunteTuete?.kind;
     if (kind === 'top5') return <Top5Input catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
+    if (kind === 'crowdTop') return <CrowdTopInput catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'oneOfEight') return <ImposterInput question={q} catColor={catColor} state={s} myTeamId={myTeamId} emit={emit} roomCode={roomCode} lang={lang} />;
     if (kind === 'order') return <FixItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} />;
     if (kind === 'map') return <PinItInput question={q} catColor={catColor} onSubmit={submitText} lang={lang} timerEndsAt={tEnd} myTeam={s.teams.find(tm => tm.id === myTeamId) ?? null} />;

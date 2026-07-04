@@ -41,12 +41,18 @@ export type StandardInputProps = {
   ariaLabel?: string;
   autoComplete?: string;
   maxLength?: number;
+  // 2026-07-04 (Mobile-Audit P1-1): Autokorrektur-Kontrolle fuer Freitext-EIN-
+  // Wort-Formate (Top-Antworten). Ohne diese macht iOS aus „Kohl" → „Kohle".
+  autoCorrect?: string;
+  autoCapitalize?: string;
+  spellCheck?: boolean;
   submitted?: boolean;   // gruener Erfolgs-Tint (Bluff write)
   urgency?: boolean;     // roter Urgency-Tint wenn leer (HotPotato)
 };
 export const StandardInput = forwardRef<HTMLInputElement, StandardInputProps>(({
   value, onChange, catColor, placeholder, disabled, onEnter,
   type, inputMode, pattern, ariaLabel, autoComplete, maxLength,
+  autoCorrect, autoCapitalize, spellCheck,
   submitted, urgency,
 }, ref) => {
   const borderColor = submitted
@@ -76,6 +82,9 @@ export const StandardInput = forwardRef<HTMLInputElement, StandardInputProps>(({
       aria-label={ariaLabel ?? placeholder}
       autoComplete={autoComplete ?? 'off'}
       maxLength={maxLength}
+      autoCorrect={autoCorrect}
+      autoCapitalize={autoCapitalize}
+      spellCheck={spellCheck}
       style={{
         borderColor,
         background: bg,

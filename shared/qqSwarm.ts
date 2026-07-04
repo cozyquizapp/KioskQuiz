@@ -9,12 +9,21 @@
  * nächsten Fraktionen (das macht qqMegaEventScore).
  */
 
-/** Zahl aus Freitext parsen (Komma→Punkt, Einheiten/Buchstaben weg). */
+/**
+ * Zahl aus Freitext parsen (Komma→Punkt, Einheiten/Buchstaben weg).
+ * Minus zählt NUR als echtes Vorzeichen, wenn der Text mit '-' beginnt
+ * (z.B. "-5 °C") — ein Bindestrich mitten im Wort ("Dummy-5") wird ignoriert,
+ * sonst entstuenden falsche negative Schaetzungen.
+ */
 export function qqParseEstimate(text: string | null | undefined): number | null {
-  const cleaned = (text ?? '').replace(/[^0-9.,\-]/g, '').replace(',', '.');
-  if (!cleaned || cleaned === '-' || cleaned === '.') return null;
-  const n = Number(cleaned);
-  return Number.isFinite(n) ? n : null;
+  const raw = (text ?? '').trim().replace(',', '.');
+  if (!raw) return null;
+  const neg = raw.startsWith('-');
+  const digits = raw.replace(/[^0-9.]/g, '');
+  if (!digits || digits === '.') return null;
+  const n = Number(digits);
+  if (!Number.isFinite(n)) return null;
+  return neg ? -n : n;
 }
 
 export function qqMedian(values: number[]): number {

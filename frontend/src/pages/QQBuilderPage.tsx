@@ -867,6 +867,17 @@ export default function QQBuilderPage() {
           if (bt.kind === 'top5' && bt.answers?.length) {
             bt.answersEn = await Promise.all(bt.answers.map((a: string) => a ? tr(a) : Promise.resolve('')));
           }
+          // 2026-07-04: Top-Antworten (crowdTop) — jedes Antwort-Label DE→EN.
+          // Aliase bleiben (nur Match-Hilfe, sprachübergreifend genutzt).
+          if (bt.kind === 'crowdTop' && bt.answers?.length) {
+            bt.answers = await Promise.all(bt.answers.map(async (a: any) => ({
+              ...a, labelEn: a?.label ? await tr(a.label) : (a?.labelEn ?? ''),
+            })));
+          }
+          // Schwarm-Schätzen (crowdEstimate) — Einheit DE→EN (liegt auf bt, nicht q).
+          if (bt.kind === 'crowdEstimate' && bt.unit) {
+            bt.unitEn = await tr(bt.unit);
+          }
           if (bt.kind === 'order' && bt.items?.length) {
             bt.itemsEn = await Promise.all(bt.items.map((item: string) => item ? tr(item) : Promise.resolve('')));
             if (bt.criteria) bt.criteriaEn = await tr(bt.criteria);

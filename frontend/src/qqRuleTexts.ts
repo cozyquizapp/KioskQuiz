@@ -196,7 +196,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'rules.slide_fairplay.line1', label: 'Fair Play — Zeile 1', defaultDe: 'Kein Googeln · Handy nur fürs Antworten', defaultEn: 'No googling · phones only for answering' },
       { key: 'rules.slide_fairplay.line2', label: 'Fair Play — Zeile 2', defaultDe: 'Antworten nicht zwischen Teams spoilern', defaultEn: 'Don\'t spoil answers between teams' },
       { key: 'rules.slide_fairplay.line3', label: 'Fair Play — Zeile 3', defaultDe: 'Im Zweifel zählt der Moderator-Wolf 🐺', defaultEn: 'When in doubt, the wolf decides 🐺' },
-      { key: 'rules.slide_fairplay.extra', label: 'Fair Play — Extra', defaultDe: 'Habt Spaß! Punkte sind nur Beilage.', defaultEn: 'Have fun! Points are just the side dish.' },
+      { key: 'rules.slide_fairplay.extra', label: 'Fair Play — Extra', defaultDe: 'Hauptsache, ihr habt Spaß.', defaultEn: 'The main thing is having fun.' },
 
       // Slide 8: Finale
       { key: 'rules.slide8.title',  label: '8 · Finale — Titel', defaultDe: 'Großes Finale', defaultEn: 'Grand Finale' },
@@ -218,7 +218,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
     items: [
       { key: 'cat.SCHAETZCHEN.explain',   label: 'Schätzchen',   defaultDe: 'Wer schätzt am nächsten dran?', defaultEn: 'Who can guess the closest?' },
       { key: 'cat.MUCHO.explain',         label: 'Mucho',        defaultDe: 'Wählt die richtige Antwort', defaultEn: 'Pick the right answer' },
-      { key: 'cat.BUNTE_TUETE.explain',   label: 'Bunte Tüte',   defaultDe: 'Überraschungs-Mechanik — seid bereit!', defaultEn: 'Surprise mechanic — be ready!' },
+      { key: 'cat.BUNTE_TUETE.explain',   label: 'Bunte Tüte',   defaultDe: 'Immer eine Überraschung. Jedes Mal anders.', defaultEn: 'Always a surprise. Different every time.' },
       { key: 'cat.ZEHN_VON_ZEHN.explain', label: 'Zehn von Zehn',defaultDe: '3 Antworten, 10 Punkte vergeben', defaultEn: '3 answers, distribute 10 points' },
       { key: 'cat.CHEESE.explain',        label: 'Cheese',       defaultDe: 'Was ist das?', defaultEn: 'What is this?' },
     ],

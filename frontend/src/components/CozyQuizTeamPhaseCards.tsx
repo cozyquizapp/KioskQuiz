@@ -316,7 +316,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
     SCHAETZCHEN:   { de: 'Wer schätzt am nächsten dran?', en: 'Who can guess the closest?' },
     MUCHO:         { de: 'Wählt die richtige Antwort', en: 'Pick the right answer' },
-    BUNTE_TUETE:   { de: 'Überraschungs-Mechanik — seid bereit!', en: 'Surprise mechanic — be ready!' },
+    BUNTE_TUETE:   { de: 'Immer eine Überraschung. Jedes Mal anders.', en: 'Always a surprise. Different every time.' },
     ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
     CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
   };

@@ -162,7 +162,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
         t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Habt Spaß! Punkte sind nur Beilage.'),
+      extra: t('rules.slide_fairplay.extra', 'Hauptsache, ihr habt Spaß.'),
     },
     {
       icon: '🧩',
@@ -321,7 +321,7 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
         t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
         t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Habt Spaß! Punkte sind nur Beilage.'),
+      extra: t('rules.slide_fairplay.extra', 'Hauptsache, ihr habt Spaß.'),
     },
   ];
 }

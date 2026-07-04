@@ -3220,7 +3220,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 <div style={{ color: QQ_COLORS.slate600, fontSize: 13 }}>Noch keine Teams beigetreten</div>
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                {teamList.map((t, i) => {
+                {/* 2026-07-04 (Wolf 'wie unterscheide ich die Subteams? Namen falsch'):
+                    In Cozy Arena wird die Live-Liste nach FRAKTION gruppiert
+                    (Wappen + Name + X/N abgegeben), darunter jedes Handy als
+                    „Handy N" (nach Beitritts-Reihenfolge) — so ist ein Problem-
+                    Geraet eindeutig zuordenbar. Zeilen-Renderer wird geteilt. */}
+                {(() => {
+                  const renderTeamRow = (t: any, i: number, handyLabel?: string) => {
                   const stats = s.teamPhaseStats[t.id];
                   const answer = s.answers.find(a => a.teamId === t.id);
                   const isActive = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
@@ -3255,7 +3261,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                         <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={30} />
                         <div style={{ flex: 1 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                            <span style={{ fontWeight: 900, color: t.color, textDecoration: isOffline ? 'line-through' : 'none' }}>{t.name}</span>
+                            <span style={{ fontWeight: 900, color: t.color, textDecoration: isOffline ? 'line-through' : 'none' }}>{handyLabel ?? t.name}</span>
                             {isOffline ? (
                               <span style={{
                                 fontSize: 10, fontWeight: 900, color: '#fff',
@@ -3389,7 +3395,50 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                       })()}
                     </div>
                   );
-                })}
+                  }; // renderTeamRow
+
+                  // Cozy Arena: nach Fraktion (avatarId) gruppieren.
+                  if ((s as any).largeGroupMode) {
+                    const byAv = new Map<string, any[]>();
+                    for (const t of teamList) {
+                      const a = t.avatarId;
+                      if (!byAv.has(a)) byAv.set(a, []);
+                      byAv.get(a)!.push(t);
+                    }
+                    const groups = [...byAv.entries()].map(([avatarId, subs]) => ({
+                      avatarId, subs,
+                      color: subs[0]?.color ?? QQ_COLORS.brandPink,
+                      label: qqMegaFactionName(avatarId, s.language === 'en' ? 'en' : 'de'),
+                      points: subs.reduce((n: number, x: any) => n + (x.largestConnected ?? 0), 0),
+                      answered: subs.filter((x: any) => s.answers.some(a => a.teamId === x.id)).length,
+                    }));
+                    groups.sort((a, b) => b.points - a.points || a.label.localeCompare(b.label));
+                    const inQ = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
+                    let gi = 0;
+                    return groups.map(g => (
+                      <div key={g.avatarId} style={{
+                        borderRadius: 12, border: `1px solid ${g.color}33`,
+                        background: `${g.color}0d`, padding: '8px 10px',
+                        display: 'flex', flexDirection: 'column', gap: 8,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <QQTeamAvatar avatarId={g.avatarId} teamEmoji={qqMegaFactionSlug(g.avatarId)} size={26} />
+                          <span style={{ fontWeight: 900, color: g.color, fontSize: 14, flex: 1 }}>{g.label}</span>
+                          {inQ && (
+                            <span style={{
+                              fontSize: 11, fontWeight: 800,
+                              color: g.answered >= g.subs.length ? QQ_COLORS.green500 : QQ_COLORS.slate400,
+                            }}>{g.answered}/{g.subs.length} abgegeben</span>
+                          )}
+                          <span title="Fraktionspunkte" style={{ fontSize: 13, fontWeight: 900, color: g.color, minWidth: 20, textAlign: 'right' }}>{g.points}</span>
+                        </div>
+                        {g.subs.map((sub: any, hi: number) => renderTeamRow(sub, gi++, `Handy ${hi + 1}`))}
+                      </div>
+                    ));
+                  }
+
+                  return teamList.map((t, i) => renderTeamRow(t, i));
+                })()}
               </div>
 
               {/* Niemand-Button wenn alle geantwortet haben */}

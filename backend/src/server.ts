@@ -10006,8 +10006,11 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
       if (!targetAv || min >= 3) break; // alle 8 Fraktionen voll (je 3 Handys)
       const have = countByAv.get(targetAv) ?? 0;
       const teamId = `dev-${targetAv}-${have}-${Math.random().toString(36).slice(2, 7)}`;
-      // Sub-Teams heißen nach der FRAKTION + laufender Handy-Nummer.
-      const name = namePicks[added] ?? `${qqMegaFactionName(targetAv, botLang === 'en' ? 'en' : 'de')} ${have + 1}`;
+      // 2026-07-04 (Wolf 'Namen falsch'): Sub-Teams heissen nach der FRAKTION
+      // (wie echte Handys via qqJoinTeam:teamName) — NICHT nach dem Funny-Pool.
+      // Vorher hatte namePicks[] Vorrang → Bots zeigten Fantasienamen statt
+      // Fraktionsnamen, was die Handy-Zuordnung im Moderator verwirrte.
+      const name = qqMegaFactionName(targetAv, botLang === 'en' ? 'en' : 'de');
       try {
         // Emoji = Fraktions-Wappen-Slug → Bots zeigen das Wappen wie echte Handys.
         qqJoinTeam(room, teamId, name, targetAv, qqMegaFactionSlug(targetAv));

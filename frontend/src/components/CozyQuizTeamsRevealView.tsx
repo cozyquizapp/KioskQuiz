@@ -20,6 +20,37 @@ import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCrestSlug, crestEmblemSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
+// Arena-Moment (Wolf 2026-07-04): der Fraktions-Slogan tippt sich wie eine
+// Schreibmaschine ein (erst NACH dem Namens-Einzug). Remountet pro Fraktion
+// (key=enterIdx im Aufrufer) → startet jedes Mal frisch.
+function ArenaTypewriter({ text, color, delayMs = 560 }: { text: string; color: string; delayMs?: number }) {
+  const [count, setCount] = useState(0);
+  useEffect(() => {
+    setCount(0);
+    let cancelled = false;
+    const timers: number[] = [];
+    const per = 1000 / 26; // ~26 Zeichen/Sekunde
+    const tick = (i: number) => {
+      if (cancelled) return;
+      setCount(i);
+      if (i < text.length) timers.push(window.setTimeout(() => tick(i + 1), per));
+    };
+    timers.push(window.setTimeout(() => tick(1), delayMs));
+    return () => { cancelled = true; timers.forEach(t => window.clearTimeout(t)); };
+  }, [text, delayMs]);
+  const typing = count < text.length;
+  return (
+    <span>
+      {text.slice(0, count)}
+      <span aria-hidden style={{
+        color, fontWeight: 900, marginLeft: '0.04em',
+        opacity: typing ? 1 : 0,
+        animation: typing ? 'qqArenaCaret 0.62s steps(1) infinite' : 'none',
+      }}>▍</span>
+    </span>
+  );
+}
+
 // Cozy Arena — Fraktions-Einzug: jede Fraktion tritt einzeln auf (Wappen gross,
 // Name, Motto, Farb-Flut), setzt sich dann in die Startaufstellung unten. KEIN
 // FLIP-Flug (Wolfs Positions-Bug damit hinfaellig) — Einzug = Drama, Aufstellung
@@ -89,11 +120,16 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
 
   // Startaufstellung — waehrend des Einzugs klein am Boden (baut sich auf),
   // im „Los geht's"-Finale gross + zentriert (fuellt die Mitte statt leerem Raum).
-  const renderLineup = (big: boolean) => (
+  const renderLineup = (big: boolean) => {
+    // Ausgewogene 2 Reihen statt 6-2 (Wolf 2026-07-04): 8 → 4+4, 6 → 3+3, 7 → 4+3.
+    const cols = n <= 4 ? Math.max(1, n) : Math.ceil(n / 2);
+    const cellW = big ? 'clamp(112px, 13cqw, 210px)' : 'clamp(80px, 10cqw, 150px)';
+    return (
     <div style={{
-      position: 'relative', zIndex: 2, display: 'flex',
+      position: 'relative', zIndex: 2, display: 'grid',
+      gridTemplateColumns: `repeat(${cols}, ${cellW})`,
       gap: big ? 'clamp(14px, 2cqw, 34px)' : 'clamp(8px, 1.2cqw, 20px)',
-      justifyContent: 'center', flexWrap: 'wrap', alignItems: 'flex-start',
+      justifyContent: 'center', justifyItems: 'center', alignItems: 'flex-start',
       padding: big ? 'clamp(8px, 1.5cqh, 24px) clamp(24px, 4cqw, 72px)' : 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)',
       width: '100%', boxSizing: 'border-box',
     }}>
@@ -104,7 +140,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         return (
           <div key={f.avatarId} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: big ? 8 : 5,
-            width: big ? 'clamp(112px, 13cqw, 210px)' : 'clamp(80px, 10cqw, 150px)',
+            width: '100%',
             opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
             transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
             transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
@@ -127,7 +163,8 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         );
       })}
     </div>
-  );
+    );
+  };
 
   return (
     <div style={{
@@ -150,7 +187,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
         <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc' }}>
-          {done ? (de ? 'Los geht’s!' : 'Let’s go!') : '🏟️ Cozy Arena'}
+          {done ? (de ? 'Los geht’s!' : 'Let’s go!') : 'Cozy Arena'}
         </div>
       </div>
 
@@ -158,18 +195,29 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           zentrierte Startaufstellung (fuellt die Mitte statt leerem Raum;
           Wolf 2026-07-04 'leerer space in der mitte'). */}
       <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
-        {done ? renderLineup(true) : (cur && (() => {
+        {done ? (
+          // Smoothe Schluss-Transition (Wolf): die Startaufstellung steigt von
+          // unten in die Mitte statt hart einzublenden.
+          <div style={{ width: '100%', animation: 'qqArenaFinale 0.75s cubic-bezier(0.2,1,0.4,1) both' }}>
+            {renderLineup(true)}
+          </div>
+        ) : (cur && (() => {
           const src = crestFor(cur.avatarId);
           return (
             <div key={enterIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.4cqh, 20px)', animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
               {src
                 ? <img src={src} alt="" draggable={false} style={{ width: 'clamp(170px, 21cqw, 340px)', height: 'auto', filter: `drop-shadow(0 0 60px ${curColor}88) drop-shadow(0 16px 30px rgba(0,0,0,0.55))` }} />
                 : <QQTeamAvatar avatarId={cur.avatarId} teamEmoji={qqMegaFactionSlug(cur.avatarId)} size={'clamp(170px, 21cqw, 340px)'} style={{ boxShadow: `0 0 60px ${curColor}88` }} />}
-              <div style={{ fontSize: 'clamp(38px, 6.4cqw, 100px)', fontWeight: 900, color: curColor, lineHeight: 1, textShadow: `0 0 50px ${curColor}66` }}>
-                {qqMegaFactionName(cur.avatarId, de ? 'de' : 'en')}
+              {/* Name mit Unterstrich (zieht sich auf) + Slogan, der sich wie eine
+                  Schreibmaschine eintippt = der Arena-Moment (Wolf 2026-07-04). */}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.8cqh, 12px)' }}>
+                <div style={{ fontSize: 'clamp(38px, 6.4cqw, 100px)', fontWeight: 900, color: curColor, lineHeight: 1, textShadow: `0 0 50px ${curColor}66` }}>
+                  {qqMegaFactionName(cur.avatarId, de ? 'de' : 'en')}
+                </div>
+                <div aria-hidden style={{ height: 'clamp(3px, 0.42cqh, 6px)', width: 'clamp(64px, 11cqw, 190px)', borderRadius: 999, background: curColor, transformOrigin: 'center', boxShadow: `0 0 16px ${curColor}99`, animation: 'qqArenaUnderline 0.5s cubic-bezier(0.2,1,0.4,1) 0.42s both' }} />
               </div>
-              <div style={{ fontSize: 'clamp(19px, 2.5cqw, 40px)', fontWeight: 800, fontStyle: 'italic', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1' }}>
-                „{qqMegaFactionMotto(cur.avatarId, de ? 'de' : 'en')}"
+              <div style={{ fontSize: 'clamp(19px, 2.5cqw, 40px)', fontWeight: 800, fontStyle: 'italic', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', minHeight: '1.4em' }}>
+                „<ArenaTypewriter text={qqMegaFactionMotto(cur.avatarId, de ? 'de' : 'en')} color={curColor} />"
               </div>
             </div>
           );
@@ -183,6 +231,18 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqArenaEnter {
           0%   { opacity: 0; transform: translateY(46px) scale(0.66); }
           60%  { opacity: 1; }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes qqArenaUnderline {
+          from { transform: scaleX(0); opacity: 0; }
+          to   { transform: scaleX(1); opacity: 1; }
+        }
+        @keyframes qqArenaCaret {
+          0%, 100% { opacity: 1; }
+          50%      { opacity: 0; }
+        }
+        @keyframes qqArenaFinale {
+          0%   { opacity: 0; transform: translateY(64px) scale(0.92); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
         }
       `}</style>

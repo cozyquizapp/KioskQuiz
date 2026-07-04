@@ -4171,12 +4171,12 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
           animation: 'qqIntroWelcomeCard 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) 1.2s both',
           opacity: 0,
         }}>
-          {/* Cross-Hatch-Pattern (matcht Card-Back-Look in TeamsReveal) */}
+          {/* Weicher Spotlight-Glow hinter dem Schriftzug — ersetzt das
+              Karo-Gitter (Wolf 2026-07-04 'Gitter etwas unruhig'). Der
+              Schriftzug wird zum Held, die Card beruhigt sich. */}
           <div aria-hidden style={{
             position: 'absolute', inset: 0,
-            backgroundImage:
-              `repeating-linear-gradient(45deg, rgba(${accentRgb},0.05) 0 2px, transparent 2px 22px),` +
-              `repeating-linear-gradient(-45deg, rgba(${accentRgb},0.04) 0 2px, transparent 2px 22px)`,
+            background: `radial-gradient(ellipse 62% 54% at 50% 52%, rgba(${accentRgb},0.18) 0%, rgba(${accentRgb},0.06) 42%, transparent 72%)`,
             pointerEvents: 'none',
           }} />
 
@@ -4212,12 +4212,12 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
         }}>
           {/* Goldlinie OBEN — zieht sich von Mitte nach außen aus (0.9s delay). */}
           <div style={{
-            width: 'clamp(380px, 50cqw, 760px)', height: 2, borderRadius: 'var(--qq-pill-radius)',
-            background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.6) 25%, ${accentHex} 50%, rgba(${accentRgb},0.6) 75%, transparent 100%)`,
-            backgroundSize: '200% 100%',
-            boxShadow: `0 0 14px rgba(${accentRgb},0.55)`,
+            // 2026-07-04 (Wolf 'Gitter/Linien unruhig'): dezenter duenner Trenner
+            // statt gluehendem Balken — kein boxShadow/Shimmer, weicher Verlauf.
+            width: 'clamp(300px, 42cqw, 620px)', height: 1, borderRadius: 'var(--qq-pill-radius)',
+            background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.35) 50%, transparent 100%)`,
             transformOrigin: 'center',
-            animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
+            animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.9s both',
             opacity: 0,
           }} />
 
@@ -4349,14 +4349,12 @@ function QuizIntroOverlay({ language, visible, eurovisionMode, logoUrl, welcomeV
             )}
           </div>
 
-          {/* Goldlinie UNTEN — symmetrisch zur oberen, gleiches expand */}
+          {/* Trenner UNTEN — symmetrisch zur oberen, dezent (kein Glow/Shimmer). */}
           <div style={{
-            width: 'clamp(380px, 50cqw, 760px)', height: 2, borderRadius: 'var(--qq-pill-radius)',
-            background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.6) 25%, ${accentHex} 50%, rgba(${accentRgb},0.6) 75%, transparent 100%)`,
-            backgroundSize: '200% 100%',
-            boxShadow: `0 0 14px rgba(${accentRgb},0.55)`,
+            width: 'clamp(300px, 42cqw, 620px)', height: 1, borderRadius: 'var(--qq-pill-radius)',
+            background: `linear-gradient(90deg, transparent 0%, rgba(${accentRgb},0.35) 50%, transparent 100%)`,
             transformOrigin: 'center',
-            animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.95s both, qqIntroAccentShimmer 3.5s linear 2.6s infinite',
+            animation: 'qqIntroLineExpand 0.7s cubic-bezier(0.16, 1, 0.3, 1) 0.95s both',
             opacity: 0,
           }} />
 

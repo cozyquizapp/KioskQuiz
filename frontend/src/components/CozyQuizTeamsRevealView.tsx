@@ -17,7 +17,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
 import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
-import { isCrestSlug, crestEmblemSrc, crestLabel } from '../cozyArenaCrests';
+import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
 // Arena-Moment (Wolf 2026-07-04): der Fraktions-Slogan tippt sich wie eine
@@ -113,7 +113,9 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
 
   const crestFor = (avId: string): string | null => {
     const slug = qqMegaFactionSlug(avId);
-    return slug && isCrestSlug(slug) ? crestEmblemSrc(slug) : null;
+    // 2026-07-04: volles Fraktions-Wappen (Form + Farbe + Rand gebacken) statt
+    // Emblem-auf-Disc.
+    return slug && isCrestSlug(slug) ? crestSrc(slug) : null;
   };
   const cur = (enterIdx >= 0 && enterIdx < n && !done) ? factions[enterIdx] : null;
   const curColor = cur?.color ?? '#EC4899';
@@ -146,15 +148,12 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
             transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
           }}>
             <div style={{
-              width: disc, height: disc, borderRadius: '50%',
+              width: disc, height: disc,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              background: on ? `${f.color}1f` : 'rgba(148,163,184,0.08)',
-              border: `${big ? 3 : 2}px solid ${on ? f.color : 'rgba(148,163,184,0.25)'}`,
-              boxShadow: on ? `0 0 ${big ? 28 : 18}px ${f.color}66` : 'none',
             }}>
               {src
-                ? <img src={src} alt="" draggable={false} style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
-                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={big ? 'clamp(66px, 7cqw, 122px)' : 'clamp(42px, 4.6cqw, 74px)'} />}
+                ? <img src={src} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', filter: on ? `drop-shadow(0 0 ${big ? 22 : 13}px ${f.color}66) drop-shadow(0 3px 6px rgba(0,0,0,0.4))` : 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }} />
+                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={disc} />}
             </div>
             <div style={{ fontSize: big ? 'clamp(15px, 1.7cqw, 27px)' : 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
               {qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}
@@ -688,8 +687,8 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
           // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case
           // darunter → abgeschnittener Slug-Text in der Disc (Wolf 2026-07-03).
           if (isCrestSlug(t.emoji)) {
-            return <img src={crestEmblemSrc(t.emoji)} alt={crestLabel(t.emoji)} draggable={false}
-              style={{ width: '78%', height: '78%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+            return <img src={crestSrc(t.emoji)} alt={crestLabel(t.emoji)} draggable={false}
+              style={{ width: '92%', height: '92%', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />;
           }
           if (t.emoji) return <>{t.emoji}</>;
           return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;

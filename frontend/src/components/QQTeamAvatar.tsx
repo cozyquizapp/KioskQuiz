@@ -2,7 +2,7 @@ import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'rea
 import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
-import { isCrestSlug, crestEmblemSrc, crestLabel } from '../cozyArenaCrests';
+import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
 
@@ -492,44 +492,27 @@ function CrestAvatar({
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean;
 }) {
   const [failed, setFailed] = useState(false);
-  void src;
-  const imgSrc = crestEmblemSrc(slug);
-  const fillPct = flat ? '88%' : '78%';
-  // 2026-07-04 (Wolf 'pulsierender schwarzer Ring stoert'): statt der atmenden
-  // Puls-Aura ein ruhiger, statischer Ring in Fraktionsfarbe (Muenz-Bezel).
-  // Ring-Breite skaliert grob mit der Avatar-Groesse; String-Sizes (clamp)
-  // bekommen einen sinnvollen Default. Der schwarze Rand direkt ums Emblem
-  // bleibt (imgFilter drop-shadow) — nur der aeussere Kreis-Ring ist neu.
-  const ringW = typeof size === 'number' ? Math.max(2, Math.round(size * 0.06)) : 4;
-  const gapW = Math.max(1, Math.round(ringW * 0.4));
-  const imgFilter = flat
-    ? 'drop-shadow(0 1px 2px rgba(0,0,0,0.35))'
-    : 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))';
-  // Runde Farb-Disc (nur non-flat) — 1:1 wie cozy3d, damit Fraktionen und Tiere
-  // im selben Kontext gleich „sitzen".
-  const discStyle: CSSProperties = flat
-    ? { background: 'transparent', boxShadow: 'none' }
-    : {
-        background: `
-          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
-          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
-          ${color}
-        `,
-        boxShadow: `0 0 0 ${gapW}px #0A0814, 0 0 0 ${ringW + gapW}px ${color}, 0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
-      };
+  void src; void color; void flat; void square;
+  // 2026-07-04 (Wolf): neue Fraktions-Wappen sind vollstaendige Badges — Form +
+  // Farbe + Creme-Rand komplett gebacken, transparenter Hintergrund, 8 distinkte
+  // Silhouetten. -> flach rendern, KEINE Farb-Disc, KEIN Code-Ring; nur ein
+  // weicher Boden-Schatten fuer Tiefe. (Emblem-auf-Disc + Puls-Aura sind damit
+  // hinfaellig — der frueher stoerende pulsierende schwarze Ring ist weg.)
+  const imgSrc = crestSrc(slug);
+  const imgFilter = 'drop-shadow(0 3px 6px rgba(0,0,0,0.45))';
   return (
     <span
       className={className}
       title={title}
       style={{
         ...baseStyle,
-        ...discStyle,
+        background: 'transparent',
+        boxShadow: 'none',
         position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        overflow: square ? 'hidden' : 'visible',
-        borderRadius: square ? 0 : '50%',
+        overflow: 'visible',
       }}
     >
       {failed ? (
@@ -540,7 +523,7 @@ function CrestAvatar({
           alt={title}
           onError={() => setFailed(true)}
           draggable={false}
-          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter, position: 'relative' }}
+          style={{ width: '98%', height: '98%', objectFit: 'contain', filter: imgFilter, position: 'relative' }}
         />
       )}
     </span>

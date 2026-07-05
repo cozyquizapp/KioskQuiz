@@ -20,6 +20,10 @@ const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)';
 
 const cz = (slug: string) => `/avatars/cozy3d/${slug}.png`;
+// 2026-07-05 (Wolf): eigene App-Icons statt Microsoft-Fluent-Emojis + CozyWolf-
+// Maskottchen als Gastgeber (vorher kam der Wolf gar nicht vor).
+const icon = (name: string) => `/icons/${name}.png`;
+const cw = (pose: string) => `/avatars/cozywolf/${pose}.png`;
 
 // 5 Teams = die echten Default-Avatare mit den echten App-Farben (QQ_TEAM_PALETTE).
 const TEAMS = [
@@ -40,17 +44,17 @@ const MINI_GRID = [
 ];
 
 const CATEGORIES = [
-  { emoji: '🎯', name: 'Schätzchen', desc: 'Am nächsten dran' },
-  { emoji: '🔤', name: 'Mu-Cho', desc: 'Tempo entscheidet' },
-  { emoji: '📊', name: '10 von 10', desc: '10 Punkte, 3 Antworten' },
-  { emoji: '📸', name: 'Schau mal!', desc: 'Erkennt das Bild' },
-  { emoji: '🎁', name: 'Bunte Tüte', desc: 'Überraschungs-Format' },
+  { icon: 'cat-schaetzchen',  name: 'Schätzchen', desc: 'Am nächsten dran' },
+  { icon: 'cat-mucho',        name: 'Mu-Cho', desc: 'Tempo entscheidet' },
+  { icon: 'cat-zehn-von-zehn', name: '10 von 10', desc: '10 Punkte, 3 Antworten' },
+  { icon: 'cat-cheese',       name: 'Schau mal!', desc: 'Erkennt das Bild' },
+  { icon: 'cat-bunte-tuete',  name: 'Bunte Tüte', desc: 'Überraschungs-Format' },
 ];
 
 const TWISTS = [
-  { emoji: '🗡️', text: 'Felder klauen' },
-  { emoji: '🃏', text: 'Joker-Bonus sammeln' },
-  { emoji: '🔄', text: 'Comeback fürs letzte Team' },
+  { icon: 'action-steal',   text: 'Felder klauen' },
+  { icon: 'fx-star',        text: 'Joker-Bonus sammeln' },
+  { icon: 'award-underdog', text: 'Comeback fürs letzte Team' },
 ];
 
 type Scene = { key: string; dur: number };
@@ -69,6 +73,12 @@ export default function QQTrailerPage() {
   const [paused, setPaused] = useState(false);
   const pausedRef = useRef(false);
   pausedRef.current = paused;
+  const frameRef = useRef<HTMLDivElement>(null);
+  const goFullscreen = () => {
+    const el = frameRef.current as any;
+    if (!el) return;
+    try { (el.requestFullscreen ?? el.webkitRequestFullscreen)?.call(el); } catch { /* ignore */ }
+  };
 
   useEffect(() => { document.title = 'CozyQuiz — Trailer'; }, []);
 
@@ -88,7 +98,7 @@ export default function QQTrailerPage() {
       <style>{KEYFRAMES}</style>
 
       {/* 9:16-Frame (container-query-Einheiten → alles skaliert mit) */}
-      <div style={{
+      <div ref={frameRef} style={{
         position: 'relative', aspectRatio: '9 / 16', height: 'min(94vh, calc(100vw * 16 / 9))',
         maxWidth: '100vw', borderRadius: 22, overflow: 'hidden',
         containerType: 'size',
@@ -134,8 +144,15 @@ export default function QQTrailerPage() {
       </div>
 
       {/* Screen-only Hinweis (wird nicht mit-aufgenommen wenn du nur den Frame abfilmst) */}
-      <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', maxWidth: 360 }}>
-        Tippen = Pause · Loopt automatisch. Für ein Reel einfach den Rahmen per Bildschirmaufnahme abfilmen.
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, maxWidth: 400 }}>
+        <button onClick={goFullscreen} style={{
+          appearance: 'none', border: '1.5px solid rgba(236,72,153,0.5)', background: 'rgba(236,72,153,0.12)',
+          color: '#fff', fontFamily: BODY, fontWeight: 800, fontSize: 14, padding: '9px 18px',
+          borderRadius: 999, cursor: 'pointer',
+        }}>⛶ Vollbild für die Aufnahme</button>
+        <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>
+          Tippen = Pause · loopt automatisch (~33&nbsp;s). Fürs Reel: Vollbild öffnen und mit der <b style={{ color: '#c9c5da' }}>Bildschirmaufnahme deines Handys</b> abfilmen — das ergibt direkt ein MP4.
+        </div>
       </div>
     </div>
   );
@@ -147,7 +164,7 @@ function renderScene(key: string) {
     case 'title':
       return (
         <>
-          <PetDisc slug={HERO.slug} color={HERO.color} sizeCqw={34} anim="popIn 0.7s var(--eb) both" />
+          <WolfMascot pose="augenauf.mundauf.winken" sizeCqw={42} anim="popIn 0.7s var(--eb) both" />
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', letterSpacing: '0.3em', opacity: 0.9, marginTop: '4cqh', animation: 'fadeUp 0.6s ease 0.15s both' }}>
             DAS LIVE-QUIZ FÜR TEAMS
           </div>
@@ -233,7 +250,7 @@ function renderScene(key: string) {
                 background: 'rgba(255,255,255,0.10)', borderRadius: '3cqw', padding: '2.2cqh 4cqw',
                 animation: `slideIn 0.5s var(--eb) ${0.25 + i * 0.28}s both`,
               }}>
-                <span style={{ fontSize: '8cqw', lineHeight: 1 }}>{c.emoji}</span>
+                <img src={icon(c.icon)} alt="" style={{ width: '11cqw', height: '11cqw', objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 0.4cqh 0.6cqh rgba(0,0,0,0.35))' }} />
                 <div style={{ textAlign: 'left' }}>
                   <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', lineHeight: 1 }}>{c.name}</div>
                   <div style={{ fontSize: '4cqw', opacity: 0.82 }}>{c.desc}</div>
@@ -256,7 +273,7 @@ function renderScene(key: string) {
                 display: 'flex', alignItems: 'center', gap: '4cqw',
                 animation: `slideIn 0.5s var(--eb) ${0.3 + i * 0.55}s both`,
               }}>
-                <span style={{ fontSize: '11cqw', lineHeight: 1 }}>{t.emoji}</span>
+                <img src={icon(t.icon)} alt="" style={{ width: '13cqw', height: '13cqw', objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 0.5cqh 0.7cqh rgba(0,0,0,0.4))' }} />
                 <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', textAlign: 'left', lineHeight: 1.05 }}>{t.text}</span>
               </div>
             ))}
@@ -278,7 +295,7 @@ function renderScene(key: string) {
             <PetDisc slug={TEAMS[2].slug} color={TEAMS[2].color} sizeCqw={20} />
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5cqh' }}>
               <span style={{ fontSize: '3.4cqw', fontWeight: 900, letterSpacing: '0.15em', opacity: 0.85 }}>TIPPT AUF</span>
-              <span style={{ fontSize: '9cqw', lineHeight: 1, animation: 'cellPulse 1.4s ease 0.6s infinite' }}>🎯</span>
+              <img src={icon('fx-target')} alt="" style={{ width: '11cqw', height: '11cqw', objectFit: 'contain', animation: 'cellPulse 1.4s ease 0.6s infinite', filter: 'drop-shadow(0 0.4cqh 0.6cqh rgba(0,0,0,0.35))' }} />
             </div>
             <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={20} />
           </div>
@@ -291,16 +308,20 @@ function renderScene(key: string) {
     case 'cta':
       return (
         <>
-          <PetDisc slug={HERO.slug} color={HERO.color} sizeCqw={32} anim="popIn 0.7s var(--eb) both" />
+          <WolfMascot pose="augenauf.troete.jubel" sizeCqw={40} anim="popIn 0.7s var(--eb) both" />
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
             Bock auf ein<br />CozyQuiz?
           </div>
           <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3cqh', opacity: 0.9, animation: 'fadeUp 0.6s ease 0.45s both' }}>
             Für Bar · Café · Firmenfeier · Event
           </div>
-          <div style={{ marginTop: '5cqh', display: 'flex', flexDirection: 'column', gap: '1.4cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
-            <span>🌐 cozywolf.de</span>
-            <span style={{ color: PINK_MID }}>📸 @cozywolf.events</span>
+          <div style={{ marginTop: '5cqh', display: 'flex', flexDirection: 'column', gap: '1.8cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center' }}>
+              <img src={icon('fx-globe')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />cozywolf.de
+            </span>
+            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID }}>
+              <img src={cw('head')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />@cozywolf.events
+            </span>
           </div>
         </>
       );
@@ -321,6 +342,16 @@ function PetDisc({ slug, color, sizeCqw, anim }: { slug: string; color: string; 
       animation: anim,
     }}>
       <img src={cz(slug)} alt="" style={{ width: '84%', height: '84%', objectFit: 'contain', filter: 'drop-shadow(0 0.5cqh 0.6cqh rgba(0,0,0,0.35))' }} />
+    </div>
+  );
+}
+
+// CozyWolf-Maskottchen (Gastgeber) — freistehend mit Pink-Glow, kein Team-Disc.
+function WolfMascot({ pose, sizeCqw, anim }: { pose: string; sizeCqw: number; anim?: string }) {
+  return (
+    <div style={{ position: 'relative', width: `${sizeCqw}cqw`, height: `${sizeCqw}cqw`, display: 'grid', placeItems: 'center', animation: anim }}>
+      <div style={{ position: 'absolute', width: '84%', height: '84%', borderRadius: '50%', background: `radial-gradient(circle, ${PINK}55, transparent 68%)`, filter: 'blur(6px)' }} />
+      <img src={cw(pose)} alt="CozyWolf" style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 1.4cqh 1.8cqh rgba(0,0,0,0.45))', animation: 'floatPet 5s ease-in-out infinite' }} />
     </div>
   );
 }

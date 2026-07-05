@@ -52,9 +52,9 @@ const CATEGORIES = [
 ];
 
 const TWISTS = [
-  { icon: 'action-steal',   text: 'Felder klauen' },
-  { icon: 'fx-star',        text: 'Joker-Bonus sammeln' },
-  { icon: 'award-underdog', text: 'Comeback fürs letzte Team' },
+  { img: icon('action-steal'),      text: 'Felder klauen' },
+  { img: '/images/jokers/wolf.png', text: 'Joker: der CozyWolf' },  // App-Joker = Wolf, nicht Stern
+  { img: icon('award-underdog'),    text: 'Comeback fürs letzte Team' },
 ];
 
 type Scene = { key: string; dur: number };
@@ -74,11 +74,22 @@ export default function QQTrailerPage() {
   const pausedRef = useRef(false);
   pausedRef.current = paused;
   const frameRef = useRef<HTMLDivElement>(null);
-  const goFullscreen = () => {
-    const el = frameRef.current as any;
-    if (!el) return;
-    try { (el.requestFullscreen ?? el.webkitRequestFullscreen)?.call(el); } catch { /* ignore */ }
+  // 2026-07-05 (Wolf 'Vollbild ist weird / croppt nicht sauber fuer IG'):
+  // Reel-Modus = randlos-fuellendes exaktes 9:16 (kein Rahmen/Rand/Schatten),
+  // vertikal zentriert. Der Handy-Screen-Record croppt dann sauber auf 9:16.
+  const [reel, setReel] = useState(false);
+  const [controls, setControls] = useState(true);
+  const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const pokeControls = () => {
+    setControls(true);
+    if (hideT.current) clearTimeout(hideT.current);
+    hideT.current = setTimeout(() => setControls(false), 3000);
   };
+  useEffect(() => {
+    if (reel) pokeControls();
+    else if (hideT.current) clearTimeout(hideT.current);
+    return () => { if (hideT.current) clearTimeout(hideT.current); };
+  }, [reel]);
 
   useEffect(() => { document.title = 'CozyQuiz — Trailer'; }, []);
 
@@ -91,21 +102,37 @@ export default function QQTrailerPage() {
 
   return (
     <div style={{
-      minHeight: '100vh', background: '#0c0a14', display: 'flex',
-      flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      gap: 14, padding: 10, fontFamily: BODY,
+      minHeight: reel ? undefined : '100vh',
+      ...(reel
+        ? { position: 'fixed', inset: 0, zIndex: 9999, background: '#0A0E22', padding: 0, gap: 0 }
+        : { background: '#0c0a14', gap: 14, padding: 10 }),
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      fontFamily: BODY,
     }}>
       <style>{KEYFRAMES}</style>
 
-      {/* 9:16-Frame (container-query-Einheiten → alles skaliert mit) */}
+      {/* 9:16-Frame (container-query-Einheiten → alles skaliert mit).
+          Reel-Modus: exaktes 9:16, groesstmoeglich, randlos + zentriert. */}
       <div ref={frameRef} style={{
-        position: 'relative', aspectRatio: '9 / 16', height: 'min(94vh, calc(100vw * 16 / 9))',
-        maxWidth: '100vw', borderRadius: 22, overflow: 'hidden',
-        containerType: 'size',
-        boxShadow: '0 24px 70px rgba(0,0,0,0.6)',
-        background: COZY_BG,
-        cursor: 'pointer',
-      }} onClick={() => setPaused(p => !p)}>
+        position: 'relative', aspectRatio: '9 / 16', containerType: 'size',
+        overflow: 'hidden', background: COZY_BG, cursor: 'pointer',
+        ...(reel
+          ? { width: 'min(100vw, calc(100dvh * 9 / 16))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
+          : { height: 'min(94vh, calc(100vw * 16 / 9))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
+      }} onClick={() => reel ? pokeControls() : setPaused(p => !p)}>
+        {reel && (
+          <button
+            onClick={(e) => { e.stopPropagation(); setReel(false); }}
+            aria-label="Reel-Modus schließen"
+            style={{
+              position: 'absolute', top: '2.5cqh', right: '3.5cqw', zIndex: 30,
+              width: '9cqw', height: '9cqw', borderRadius: '50%', border: 'none',
+              background: 'rgba(0,0,0,0.4)', color: '#fff', fontSize: '5cqw', fontWeight: 900,
+              cursor: 'pointer', opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease',
+              display: 'grid', placeItems: 'center',
+            }}
+          >✕</button>
+        )}
         {/* Stories-Fortschrittsbalken */}
         <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
           {SCENES.map((s, i) => (
@@ -123,8 +150,8 @@ export default function QQTrailerPage() {
           ))}
         </div>
 
-        {/* Hintergrund-Deko: schwebende Tier-Discs */}
-        <FloatingPets />
+        {/* Hintergrund-Deko: schwebende Kategorie-Icons */}
+        <FloatingIcons />
 
         {/* Aktive Szene (key → Remount triggert Entrance-Animationen) */}
         <div key={scene} style={{
@@ -143,17 +170,20 @@ export default function QQTrailerPage() {
         )}
       </div>
 
-      {/* Screen-only Hinweis (wird nicht mit-aufgenommen wenn du nur den Frame abfilmst) */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, maxWidth: 400 }}>
-        <button onClick={goFullscreen} style={{
-          appearance: 'none', border: '1.5px solid rgba(236,72,153,0.5)', background: 'rgba(236,72,153,0.12)',
-          color: '#fff', fontFamily: BODY, fontWeight: 800, fontSize: 14, padding: '9px 18px',
-          borderRadius: 999, cursor: 'pointer',
-        }}>⛶ Vollbild für die Aufnahme</button>
-        <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center' }}>
-          Tippen = Pause · loopt automatisch (~33&nbsp;s). Fürs Reel: Vollbild öffnen und mit der <b style={{ color: '#c9c5da' }}>Bildschirmaufnahme deines Handys</b> abfilmen — das ergibt direkt ein MP4.
+      {/* Screen-only Hinweis (nur ausserhalb des Reel-Modus) */}
+      {!reel && (
+        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, maxWidth: 400 }}>
+          <button onClick={() => setReel(true)} style={{
+            appearance: 'none', border: 'none', background: PINK,
+            color: '#fff', fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px',
+            borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
+          }}>▶ Reel-Modus (randlos 9:16 fürs Aufnehmen)</button>
+          <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
+            Tippen = Pause · loopt automatisch (~33&nbsp;s).<br />
+            Fürs Reel: <b style={{ color: '#c9c5da' }}>Reel-Modus</b> öffnen → am <b style={{ color: '#c9c5da' }}>Handy</b> mit der Bildschirmaufnahme abfilmen. Das Bild füllt dann randlos 9:16 und croppt in Instagram perfekt.
+          </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }
@@ -273,7 +303,7 @@ function renderScene(key: string) {
                 display: 'flex', alignItems: 'center', gap: '4cqw',
                 animation: `slideIn 0.5s var(--eb) ${0.3 + i * 0.55}s both`,
               }}>
-                <img src={icon(t.icon)} alt="" style={{ width: '13cqw', height: '13cqw', objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 0.5cqh 0.7cqh rgba(0,0,0,0.4))' }} />
+                <img src={t.img} alt="" style={{ width: '13cqw', height: '13cqw', objectFit: 'contain', flexShrink: 0, filter: 'drop-shadow(0 0.5cqh 0.7cqh rgba(0,0,0,0.4))' }} />
                 <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', textAlign: 'left', lineHeight: 1.05 }}>{t.text}</span>
               </div>
             ))}
@@ -356,21 +386,23 @@ function WolfMascot({ pose, sizeCqw, anim }: { pose: string; sizeCqw: number; an
   );
 }
 
-// Dezent schwebende Tiere im Hintergrund (Deko).
-function FloatingPets() {
-  const pets = [
-    { slug: 'pinguin', x: 8, y: 16, s: 13, d: 0 },
-    { slug: 'koala', x: 82, y: 22, s: 11, d: 1.3 },
-    { slug: 'eule', x: 14, y: 80, s: 12, d: 0.6 },
-    { slug: 'baer', x: 86, y: 78, s: 13, d: 2.0 },
+// Dezent schwebende Kategorie-Icons im Hintergrund (Deko) — Wolf-Wunsch:
+// eigene Kategorie-Icons statt Cozy-Tiere.
+function FloatingIcons() {
+  const items = [
+    { name: 'cat-schaetzchen',  x: 8,  y: 15, s: 13, d: 0 },
+    { name: 'cat-mucho',        x: 82, y: 21, s: 11, d: 1.1 },
+    { name: 'cat-cheese',       x: 13, y: 79, s: 12, d: 0.6 },
+    { name: 'cat-bunte-tuete',  x: 84, y: 74, s: 13, d: 1.8 },
+    { name: 'cat-zehn-von-zehn', x: 80, y: 47, s: 10, d: 2.5 },
   ];
   return (
     <>
-      {pets.map(p => (
-        <img key={p.slug} src={cz(p.slug)} alt="" aria-hidden style={{
+      {items.map(p => (
+        <img key={p.name} src={icon(p.name)} alt="" aria-hidden style={{
           position: 'absolute', left: `${p.x}cqw`, top: `${p.y}cqh`,
           width: `${p.s}cqw`, height: `${p.s}cqw`, objectFit: 'contain',
-          opacity: 0.16, filter: 'drop-shadow(0 0.4cqh 0.6cqh rgba(0,0,0,0.4))',
+          opacity: 0.18, filter: 'drop-shadow(0 0.4cqh 0.6cqh rgba(0,0,0,0.4))',
           animation: `floatPet 6s ease-in-out ${p.d}s infinite`, zIndex: 1, pointerEvents: 'none',
         }} />
       ))}

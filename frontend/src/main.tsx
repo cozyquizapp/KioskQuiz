@@ -7,6 +7,39 @@ import App from './App';
 import './main.css';
 
 import * as Sentry from '@sentry/react';
+import { API_BASE } from './api';
+
+// ── Admin-PIN-Header-Interceptor (Security-Audit 2026-07-05) ─────────────────
+// PIN-geschuetzte Endpunkte (Write-Routen + Feedback-Read) verlangen in Prod den
+// ADMIN_PIN. Statt jeden fetch-Aufruf einzeln anzufassen, haengen wir den PIN
+// (aus der PinGate, sessionStorage['qq_admin_pin']) global als x-admin-pin-Header
+// an unsere eigenen /api/-Requests. Fuer ungeschuetzte Endpunkte ist der Header
+// harmlos; oeffentliche Seiten ohne PIN schicken keinen. Der Header geht NUR an
+// same-origin /api/-Pfade oder an die konfigurierte Backend-Basis (API_BASE) —
+// nie an fremde Hosts (kein PIN-Leak).
+if (typeof window !== 'undefined' && typeof window.fetch === 'function' && !(window as any).__cozyPinFetch) {
+  (window as any).__cozyPinFetch = true;
+  const nativeFetch = window.fetch.bind(window);
+  const isOwnApi = (url: string): boolean =>
+    url.startsWith('/api/') || (!!API_BASE && url.startsWith(API_BASE));
+  window.fetch = (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
+    try {
+      const url =
+        typeof input === 'string' ? input :
+        input instanceof URL ? input.toString() :
+        (input as Request).url;
+      const pin = sessionStorage.getItem('qq_admin_pin') || localStorage.getItem('qq-admin-pin');
+      if (pin && typeof url === 'string' && isOwnApi(url)) {
+        const headers = new Headers(
+          init?.headers ?? (input instanceof Request ? input.headers : undefined),
+        );
+        if (!headers.has('x-admin-pin')) headers.set('x-admin-pin', pin);
+        return nativeFetch(input as any, { ...init, headers });
+      }
+    } catch { /* faellt auf nativen fetch zurueck */ }
+    return nativeFetch(input as any, init);
+  };
+}
 
 // ── Service Worker mit Auto-Update + Polling ─────────────────────────────────
 // Problem zuvor: Workbox cachte JS/CSS-Bundles aggressiv. Selbst Hard-Reload

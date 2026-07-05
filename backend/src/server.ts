@@ -164,7 +164,36 @@ import {
 
 // --- Server setup ----------------------------------------------------------
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
-const ADMIN_PIN = process.env.ADMIN_PIN || '2506';
+// Security-Audit 2026-07-05 (#2): Kein hardcodierter Prod-Fallback mehr.
+// In Prod MUSS ADMIN_PIN als Env gesetzt sein — sonst fail-fast beim Start,
+// damit der Server nicht versehentlich mit einer oeffentlich bekannten PIN
+// online geht. Nur im Dev greift ein lokaler Default fuer schnelle Iteration.
+const ADMIN_PIN = resolveAdminPin();
+function resolveAdminPin(): string {
+  const pin = process.env.ADMIN_PIN;
+  if (pin && pin.length >= 4) return pin;
+  if (process.env.NODE_ENV === 'production') {
+    console.error('[FATAL] ADMIN_PIN fehlt oder ist zu kurz (min. 4 Zeichen). In Produktion erforderlich — Start abgebrochen.');
+    process.exit(1);
+  }
+  return '2506'; // nur lokaler Dev-Fallback — in Prod unerreichbar (fail-fast oben)
+}
+// Security-Audit 2026-07-05 (#3/#4/#5): PIN-Guard fuer Write-Endpunkte + den
+// sensiblen Feedback-Read. Der PIN kommt vom Frontend automatisch als
+// x-admin-pin-Header (globaler fetch-Interceptor in main.tsx, gespeist aus
+// sessionStorage['qq_admin_pin'] der PinGate) — kann aber auch als body.pin /
+// query.pin geschickt werden (z.B. Wolf haengt ?pin=... an den Feedback-URL).
+// In Dev (NODE_ENV !== production) uebersprungen, damit lokale Iteration ohne
+// PIN laeuft; die echten Daten liegen nur in Prod.
+function requirePin(req: any, res: any, next: any): void {
+  if (process.env.NODE_ENV !== 'production') return next();
+  const pin = req.headers?.['x-admin-pin'] ?? req.body?.pin ?? req.query?.pin;
+  if (!pin || pin !== ADMIN_PIN) {
+    res.status(403).json({ error: 'PIN erforderlich' });
+    return;
+  }
+  next();
+}
 const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS
   ? process.env.ALLOWED_ORIGINS.split(',')
   : ['http://localhost:5173', 'http://localhost:4173'];
@@ -8851,7 +8880,7 @@ app.get('/api/qq/drafts', async (_req, res) => {
   res.json(sorted);
 });
 
-app.post('/api/qq/drafts', async (req, res) => {
+app.post('/api/qq/drafts', requirePin, async (req, res) => {
   const body = req.body;
   if (!body || typeof body.title !== 'string' || body.title.length > 200) return res.status(400).json({ error: 'Ungültiger Titel' });
   if (body.phases !== 2 && body.phases !== 3 && body.phases !== 4) return res.status(400).json({ error: 'Phasen muss 2, 3 oder 4 sein' });
@@ -9155,7 +9184,7 @@ app.post('/api/qq/drafts/:id/translate', async (req, res) => {
   res.json({ ok: true, translatedFields, draft: newDraft });
 });
 
-app.put('/api/qq/drafts/:id', async (req, res) => {
+app.put('/api/qq/drafts/:id', requirePin, async (req, res) => {
   const body = req.body;
   if (!body || typeof body.title !== 'string' || body.title.length > 200) return res.status(400).json({ error: 'Ungültiger Titel' });
   if (!Array.isArray(body.questions) || body.questions.length > 50) return res.status(400).json({ error: 'Ungültige Fragen' });
@@ -9180,7 +9209,7 @@ app.put('/api/qq/drafts/:id', async (req, res) => {
   res.json(qqDrafts[idx]);
 });
 
-app.delete('/api/qq/drafts/:id', async (req, res) => {
+app.delete('/api/qq/drafts/:id', requirePin, async (req, res) => {
   if (await ensureDraftDbConnection()) {
     await deleteQQDraftFromDB(req.params.id);
   }
@@ -9221,7 +9250,7 @@ app.get('/api/cozygames/:id', async (req, res) => {
   res.json(fallback);
 });
 
-app.post('/api/cozygames', async (req, res) => {
+app.post('/api/cozygames', requirePin, async (req, res) => {
   const body = req.body ?? {};
   if (!body.id || typeof body.id !== 'string') {
     return res.status(400).json({ error: 'id-Feld fehlt' });
@@ -9257,7 +9286,7 @@ app.post('/api/cozygames', async (req, res) => {
   res.status(503).json({ error: 'DB nicht verfügbar' });
 });
 
-app.put('/api/cozygames/:id', async (req, res) => {
+app.put('/api/cozygames/:id', requirePin, async (req, res) => {
   const body = req.body ?? {};
   const id = req.params.id;
   if (!(await ensureDraftDbConnection())) {
@@ -9282,7 +9311,7 @@ app.put('/api/cozygames/:id', async (req, res) => {
   }
 });
 
-app.delete('/api/cozygames/:id', async (req, res) => {
+app.delete('/api/cozygames/:id', requirePin, async (req, res) => {
   if (!(await ensureDraftDbConnection())) {
     return res.status(503).json({ error: 'DB nicht verfügbar' });
   }
@@ -10405,7 +10434,9 @@ app.post('/api/qq/feedback', async (req, res) => {
     res.status(500).json({ error: 'Feedback konnte nicht gespeichert werden.' });
   }
 });
-app.get('/api/qq/feedback', async (_req, res) => {
+app.get('/api/qq/feedback', requirePin, async (_req, res) => {
+  // Security-Audit 2026-07-05 (#4): Kontaktdaten (E-Mail/Telefon aus contactIntent)
+  // NICHT mehr offen lesbar. Kein Frontend-Consumer — Wolf ruft mit ?pin=... auf.
   // Neueste zuerst (sort via getQQFeedbackFromDB).
   const list = await getQQFeedbackFromDB(500);
   res.json(list);
@@ -10465,14 +10496,14 @@ app.get('/api/qq/library/topics', async (_req, res) => {
   res.json(topics);
 });
 
-app.post('/api/qq/library/items', async (req, res) => {
+app.post('/api/qq/library/items', requirePin, async (req, res) => {
   const item = req.body;
   if (!item?.id || !item?.category) return res.status(400).json({ error: 'id + category erforderlich' });
   await upsertQQLibraryItem({ ...item, source: item.source || 'wolf' });
   res.json({ ok: true });
 });
 
-app.delete('/api/qq/library/items/:id', async (req, res) => {
+app.delete('/api/qq/library/items/:id', requirePin, async (req, res) => {
   const { pin } = req.body as { pin?: string };
   if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
   const ok = await deleteQQLibraryItem(req.params.id);

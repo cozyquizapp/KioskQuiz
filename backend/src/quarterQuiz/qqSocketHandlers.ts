@@ -108,6 +108,8 @@ function fail(ack: unknown, error: unknown): void {
 // Fix: ein socket.use-Gate (siehe registerQQHandlers) laesst nur PUBLIC/Team-
 // Events fuer nicht-authentifizierte Sockets durch; alles andere braucht
 // socket.data.qqIsMod (gesetzt in qq:joinModerator bei korrektem PIN).
+// Security-Audit 2026-07-05 (#2): In Prod MUSS ADMIN_PIN als Env gesetzt sein
+// (fail-fast in server.ts:resolveAdminPin). Hier derselbe Fallback nur fuer Dev.
 const QQ_ADMIN_PIN = process.env.ADMIN_PIN || '2506';
 
 // Events, die JEDER Client (Team-Phone, Beamer, noch-nicht-Mod) senden darf.
@@ -300,6 +302,48 @@ function assertRateLimit(socket: any, event: string, maxPerSec: number): void {
 function cleanupRateLimitBucket(socketId: string): void {
   rateLimitBuckets.delete(socketId);
 }
+
+// ── Brute-Force-Schutz Mod-PIN (Security-Audit 2026-07-05 #1) ───────────────
+// Der 4-stellige ADMIN_PIN liesse sich sonst per WebSocket in Sekunden
+// durchprobieren (10k Kombinationen, kein Lockout). Pro Client-IP zaehlen wir
+// FEHLversuche (nur wenn ein FALSCHER PIN geschickt wurde — read-only-Joins
+// ohne PIN zaehlen NICHT). Ab MAX_PIN_FAILS greift eine eskalierende Sperre.
+const MAX_PIN_FAILS = 5;
+const PIN_LOCK_BASE_MS = 30_000;   // 30s nach dem 5. Fehlversuch
+const PIN_LOCK_MAX_MS  = 15 * 60_000; // Deckel: 15 Min
+const pinFailTracker: Map<string, { fails: number; lockedUntil: number }> = new Map();
+
+function pinClientKey(socket: any): string {
+  return socket?.handshake?.address || socket?.conn?.remoteAddress || socket?.id || 'unknown';
+}
+/** true = Client ist aktuell gesperrt (Aufrufer bricht ab). */
+function isPinLocked(socket: any): number {
+  const rec = pinFailTracker.get(pinClientKey(socket));
+  if (!rec) return 0;
+  const remaining = rec.lockedUntil - Date.now();
+  return remaining > 0 ? remaining : 0;
+}
+function registerPinFailure(socket: any): void {
+  const key = pinClientKey(socket);
+  const rec = pinFailTracker.get(key) ?? { fails: 0, lockedUntil: 0 };
+  rec.fails += 1;
+  if (rec.fails >= MAX_PIN_FAILS) {
+    // Eskalierend: 30s, 60s, 120s … gedeckelt bei 15 Min.
+    const over = rec.fails - MAX_PIN_FAILS;
+    rec.lockedUntil = Date.now() + Math.min(PIN_LOCK_BASE_MS * 2 ** over, PIN_LOCK_MAX_MS);
+  }
+  pinFailTracker.set(key, rec);
+}
+function registerPinSuccess(socket: any): void {
+  pinFailTracker.delete(pinClientKey(socket));
+}
+// Alte Eintraege periodisch aufraeumen (Speicher-Leak-Schutz bei vielen IPs).
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, rec] of pinFailTracker) {
+    if (rec.lockedUntil < now && rec.fails < MAX_PIN_FAILS) pinFailTracker.delete(k);
+  }
+}, 5 * 60_000).unref?.();
 
 // ── Live-Reactions State (in-memory) ──────────────────────────────────────
 // Pro Room und Team eine Liste der letzten Reaction-Timestamps fürs Rate-Limit.
@@ -1126,13 +1170,25 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         // Mod-Auth: NUR korrekter PIN → Mod-Rechte. Bewusst KEINE NODE_ENV-Valve
         // (waere unsicher, falls Coolify NODE_ENV nicht auf 'production' setzt).
-        // Im Dev greift der ADMIN_PIN-Fallback '2506', den PinGate ohnehin abfragt
-        // und in sessionStorage legt → joinModerator schickt ihn mit, matcht.
-        // Sonst joint der Socket read-only (sieht State wie ein Beamer, aber das
-        // Gate oben blockt alle Mod-Events). Re-join bei Reconnect setzt das Flag
-        // erneut, da das Frontend den PIN jedes Mal mitschickt.
-        if (payload?.pin && payload.pin === QQ_ADMIN_PIN) {
-          socket.data.qqIsMod = true;
+        // Ohne (oder mit falschem) PIN joint der Socket read-only (sieht State wie
+        // ein Beamer, aber das Gate oben blockt alle Mod-Events). Re-join bei
+        // Reconnect setzt das Flag erneut, da das Frontend den PIN jedes Mal
+        // mitschickt.
+        // Security-Audit 2026-07-05 (#1): Brute-Force-Sperre. Ist der Client
+        // gesperrt, wird der PIN gar nicht erst geprueft.
+        const lockedMs = isPinLocked(socket);
+        if (lockedMs > 0) {
+          fail(ack, new QQError('PIN_LOCKED', `Zu viele Fehlversuche. Erneut moeglich in ${Math.ceil(lockedMs / 1000)}s.`));
+          return;
+        }
+        if (payload?.pin) {
+          if (payload.pin === QQ_ADMIN_PIN) {
+            socket.data.qqIsMod = true;
+            registerPinSuccess(socket);
+          } else {
+            // Falscher PIN → Fehlversuch zaehlen (read-only-Joins ohne PIN nicht).
+            registerPinFailure(socket);
+          }
         }
         const room = ensureQQRoom(payload.roomCode);
         socket.join(payload.roomCode);
@@ -2199,6 +2255,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:chooseFreeAction', (payload: QQChooseFreeActionPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         // 2026-05-03 (Wolf-Bug 'Connections-Finale Steal->Place'): Diagnose-Logs
         // damit wir sehen was passiert wenn Wolf Steal waehlt aber Place greift.
@@ -2245,6 +2302,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:comebackChoice', (payload: QQComebackChoicePayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqApplyComebackChoice(room, payload.teamId, payload.action);
         broadcast(io, payload.roomCode);
@@ -2255,6 +2313,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:comebackUndo', (payload: { roomCode: string; teamId: string }, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqUndoComebackChoice(room, payload.teamId);
         broadcast(io, payload.roomCode);
@@ -2264,6 +2323,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     socket.on('qq:swapCells', (payload: QQSwapCellsPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqSwapCells(
           room, payload.teamId,
@@ -2278,6 +2338,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Phase 4: Tauschen (1 own + 1 enemy, 2-step)
     socket.on('qq:swapOneCell', (payload: QQSwapOneCellPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqSwapOneCell(room, payload.teamId, payload.row, payload.col);
         // Connections-Placement: Cursor erst NACH dem 2. Swap-Step advancen
@@ -2296,6 +2357,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Phase 3/4: Einfrieren (1 own cell, 1 question)
     socket.on('qq:freezeCell', (payload: QQFreezeCellPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqFreezeCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
@@ -2309,6 +2371,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // qqStapelBonusCell, regulaeres STAPEL_1 weiter in qqStuckCell.
     socket.on('qq:stapelCell', (payload: QQStapelCellPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         if (room.pendingAction === 'STAPEL_BONUS') {
           qqStapelBonusCell(room, payload.teamId, payload.row, payload.col);
@@ -2330,6 +2393,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // FINAL_REVEAL, legt 1 Stamp aus der pending-Queue. Server-validated.
     socket.on('qq:finalRevealPlaceStack', (payload: { roomCode: string; teamId: string; row: number; col: number }, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqFinalRevealPlaceStack(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
@@ -2340,6 +2404,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Phase 3: Bann (Gegner-/Leerfeld → 3 Fragen blockiert, frei wählbar pro Frage)
     socket.on('qq:sandLockCell', (payload: QQSandLockCellPayload, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqSandLockCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
@@ -2352,6 +2417,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Backward-Compat (Payload jetzt aliased auf {row,col}-Variante).
     function shieldHandler(payload: QQShieldCellPayload, ack?: unknown) {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqShieldCell(room, payload.teamId, payload.row, payload.col);
         broadcast(io, payload.roomCode);
@@ -2808,6 +2874,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqComebackHLSubmitAnswer(room, payload.teamId, payload.choice);
         broadcast(io, payload.roomCode);
@@ -2954,6 +3021,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         qqConnectionsSelectItem(room, payload.teamId, payload.item);
         broadcast(io, payload.roomCode);
@@ -2967,6 +3035,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
       ack?: unknown
     ) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         const room = ensureQQRoom(payload.roomCode);
         const result = qqConnectionsSubmitGroup(room, payload.teamId);
         // Auto-End wenn ALLE Teams fertig (4 Gruppen oder lockout) → reveal
@@ -3428,6 +3497,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Rate-Limit pro Team: max 4 Reactions pro 5-Sekunden-Fenster gegen Spam.
     socket.on('qq:reaction', (payload: { roomCode: string; teamId: string; emoji: string }, ack?: unknown) => {
       try {
+        assertOwnTeam(socket, payload.teamId);
         if (typeof payload.emoji !== 'string' || payload.emoji.length > 4) {
           throw new QQError('INVALID_REACTION', 'Ungültiges Emoji.');
         }

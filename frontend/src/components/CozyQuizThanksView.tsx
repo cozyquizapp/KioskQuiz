@@ -314,10 +314,10 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           </div>
         )}
 
-        {/* Big Title „Danke für's Spielen!" — Letter-Cascade + Wave wie auf
+        {/* Big Title „Danke fürs Spielen!" — Letter-Cascade + Wave wie auf
             Setup-Page. Wolf 2026-05-10. */}
         {(() => {
-          const titleText = de ? "Danke für's Spielen!" : 'Thanks for Playing!';
+          const titleText = de ? 'Danke fürs Spielen!' : 'Thanks for Playing!';
           return (
             <div
               aria-label={titleText}

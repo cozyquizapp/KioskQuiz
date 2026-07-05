@@ -33,7 +33,7 @@ const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 // Echte Kategorien (qqRuleTexts.ts cat.*.explain + bunte-sub).
 const CATEGORIES = [
   { emoji: '🎯', name: 'Schätzchen', desc: 'Wer schätzt am nächsten dran?' },
-  { emoji: '🔤', name: 'Mu-Cho', desc: 'Die richtige Antwort — Tempo entscheidet.' },
+  { emoji: '🔤', name: 'Mu-Cho', desc: 'Die richtige Antwort: Tempo entscheidet.' },
   { emoji: '📊', name: '10 von 10', desc: 'Verteilt 10 Punkte auf 3 Antworten.' },
   { emoji: '📸', name: 'Schau mal!', desc: 'Erkennt das Bild.' },
   { emoji: '🎁', name: 'Bunte Tüte', desc: 'Jede Runde ein Überraschungs-Format: Bluff, Heiße Kartoffel, CozyGuessr & mehr.' },
@@ -272,7 +272,7 @@ export default function QQAboutPage() {
             boxShadow: `0 8px 20px ${WARM_SHADOW}`, borderLeft: `6px solid ${PINK}`,
           }}>
             <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.45, color: '#33304a', fontWeight: 600 }}>
-              Ein <b>moderiertes Quiz für Teams</b> — gespielt auf der großen Leinwand, beantwortet per Handy.
+              Ein <b>moderiertes Quiz für Teams</b>, gespielt auf der großen Leinwand, beantwortet per Handy.
               Aber kein gewöhnliches Pub-Quiz: <b style={{ color: MAGENTA }}>Jede richtige Antwort erobert euch ein Feld
               auf dem Spielbrett.</b> Wer am Ende das größte zusammenhängende Gebiet hält, gewinnt.
             </p>
@@ -330,7 +330,7 @@ export default function QQAboutPage() {
               })}
             </div>
             <div style={{ fontSize: 11.5, fontWeight: 800, color: NAVY, textAlign: 'center', lineHeight: 1.3 }}>
-              5×5-Spielbrett — jedes Team<br />kämpft um sein Gebiet
+              5×5-Spielbrett: jedes Team<br />kämpft um sein Gebiet
             </div>
           </div>
         </section>

@@ -389,9 +389,10 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
 
       </div>
 
-      {/* Ranking-Panel rechts (slide-in) — Sizing so dass min. 8 Teams reinpassen.
-          2026-05-05 (Wolf): justifyContent center damit die Liste vertikal mittig
-          sitzt statt top-aligned. Bei mehr Teams als reinpassen kicked overflow:auto. */}
+      {/* Ranking-Panel rechts (slide-in). 2026-05-05 (Wolf): justifyContent center
+          damit die Liste vertikal mittig sitzt statt top-aligned. Liste ist auf
+          Top-5 gecappt (s.u. slice(0,5)) → overflow:hidden statt auto, damit auf
+          /beamer NIE eine Scrollbar erscheint (harte Regel). */}
       {showRanking && (
         <div style={{
           flex: '0 0 38%', padding: '34px 22px 22px',
@@ -400,7 +401,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
-          gap: 8, overflowY: 'auto',
+          gap: 8, overflowY: 'hidden',
         }}>
           <div style={{
             fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)',

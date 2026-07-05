@@ -49,6 +49,11 @@ Kein Fix ohne Snapshot — beim nächsten Live-Vorkommen DevTools-Network `qq:st
   resetten. Files: `qqBfs.ts:122+`, `qqRooms.ts` handleJokerDetection.
 - **/team Joker-False-Positive** — Pragma-Patch ist drin (`myJokersThisPhase > 0`-Gate). Wenn
   trotzdem nochmal: `state-update`-Payload mit `pendingAction`/`placementsLeft`/`teamPhaseStats`.
+- **Beamer-Clipping bei 10+ NICHT-genesteten Teams** (Pre-Pitch-Audit 2026-07-05, kein Scroll,
+  nur Clipping am Stage-Rand): `CozyQuizLargeGroupView` CumulativeStandings (10×88px ≈ 970px, an
+  der 990er-Kante) + `CozyQuizGameOverView` Normal-Recap (`cols=1` ohne Höhen-Cap bei vielen
+  Teams). 3-4er-Teams unkritisch; genestete Arena (8 Fraktionen) sicher. Am echten Screen mit
+  genau 10+ echten Teams prüfen, dann ggf. Höhen-Cap/2-Spalten. Nicht blind fixen (Layout-Regress).
 
 ## 🌐 Blockiert / extern (kein Code-Task hier)
 

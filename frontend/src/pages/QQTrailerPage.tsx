@@ -320,7 +320,7 @@ function renderScene(key: string) {
     case 'hook-team':      return <HookTeam />;
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
-    case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location, egal. Ich bring Beamer, Stimme und gute Laune mit." />;
+    case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." />;
     case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Dann komm ich vorbei. Ihr müsst nichts tun außer aufmachen." />;
     case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." />;
 

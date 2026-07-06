@@ -129,6 +129,21 @@ export default function QQReelsHubPage() {
           </div>
         )}
 
+        {/* Dediziertes Foto-Karussell (4:5, eigene Standbild-Slides). */}
+        <Link to="/karussell" style={{
+          display: 'flex', alignItems: 'center', gap: 12, textDecoration: 'none',
+          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(236,72,153,0.28)', borderRadius: 16,
+          padding: '13px 15px', color: '#fff',
+        }}>
+          <span style={{ fontSize: 26 }}>🎠</span>
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: 16 }}>Foto-Karussell „Welches Team bist du?"</div>
+            <div style={{ color: '#b6b3d0', fontSize: 12.5, fontWeight: 600, lineHeight: 1.4 }}>
+              Eigene 4:5-Standbild-Slides (1080×1350) statt Reel-Screenshots. Einzeln HD oder alles als ZIP.
+            </div>
+          </div>
+        </Link>
+
         {/* Reel-Karten */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {REELS.map(r => (

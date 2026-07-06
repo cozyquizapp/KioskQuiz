@@ -88,21 +88,25 @@ function teamSlide(idx: number): JSX.Element {
   const meta = FACTION_META[f.slug] ?? { accent: PINK, char: '' };
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.7, animation: 'fadeUp 0.4s ease both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.6cqw', letterSpacing: '0.2em', opacity: 0.7, animation: 'fadeUp 0.4s ease both' }}>
         TEAM {idx + 1} / 8
       </div>
       {/* Wappen auf Radial-Halo (kein filter → export-treu). */}
-      <div style={{ position: 'relative', width: '48cqw', height: '48cqw', margin: '3cqh 0 3.5cqh', display: 'grid', placeItems: 'center', animation: 'crestPop 0.7s var(--eb) 0.1s both' }}>
+      <div style={{ position: 'relative', width: '38cqw', height: '38cqw', margin: '2cqh 0 3cqh', display: 'grid', placeItems: 'center', animation: 'crestPop 0.7s var(--eb) 0.1s both' }}>
         <div style={{ position: 'absolute', inset: '2%', borderRadius: '50%', background: `radial-gradient(circle, ${meta.accent}66 0%, ${meta.accent}22 45%, transparent 70%)` }} />
         <img src={crestSrc(f.slug)} alt={f.nameDe} style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', animation: 'floatPet 5s ease-in-out infinite' }} />
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11.5cqw', lineHeight: 1.0, color: meta.accent, animation: 'popIn 0.6s var(--eb) 0.25s both' }}>
-        {f.nameDe}
+      {/* Name + Motto in einem Flex-Gap → definierter Abstand, KEINE Überlappung
+          (marginTop scheiterte an Descendern + html2canvas-Baseline-Drift). */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '2.4cqh' }}>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10.5cqw', lineHeight: 1.12, color: meta.accent, animation: 'popIn 0.6s var(--eb) 0.25s both' }}>
+          {f.nameDe}
+        </div>
+        <div style={{ display: 'inline-block', fontWeight: 900, fontSize: '4.5cqw', color: '#fff', background: `${meta.accent}33`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '0.9cqh 3.5cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
+          „{f.mottoDe}"
+        </div>
       </div>
-      <div style={{ display: 'inline-block', marginTop: '2.4cqh', fontWeight: 900, fontSize: '4.8cqw', color: '#fff', background: `${meta.accent}33`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '0.8cqh 3.5cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
-        „{f.mottoDe}"
-      </div>
-      <div style={{ fontWeight: 700, fontSize: '4.9cqw', marginTop: '3.8cqh', opacity: 0.95, maxWidth: '82cqw', lineHeight: 1.34, animation: 'fadeUp 0.5s ease 0.35s both' }}>
+      <div style={{ fontWeight: 700, fontSize: '4.4cqw', marginTop: '3.4cqh', opacity: 0.95, maxWidth: '84cqw', lineHeight: 1.34, animation: 'fadeUp 0.5s ease 0.35s both' }}>
         {meta.char}
       </div>
       <BrandTag />

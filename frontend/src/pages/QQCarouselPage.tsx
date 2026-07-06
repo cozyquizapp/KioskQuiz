@@ -98,11 +98,13 @@ function teamSlide(idx: number): JSX.Element {
       </div>
       {/* Name + Motto in einem Flex-Gap → definierter Abstand, KEINE Überlappung
           (marginTop scheiterte an Descendern + html2canvas-Baseline-Drift). */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4.2cqh' }}>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10.5cqw', lineHeight: 1.05, color: meta.accent, paddingBottom: '0.5cqh', animation: 'popIn 0.6s var(--eb) 0.25s both' }}>
+      {/* marginTop statt Flex-gap: html2canvas rendert Margins originalgetreu wie
+          der Browser (Flex-`gap` kam im Export groesser raus → Download ≠ Vorschau). */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10.5cqw', lineHeight: 1.05, color: meta.accent, animation: 'popIn 0.6s var(--eb) 0.25s both' }}>
           {f.nameDe}
         </div>
-        <div style={{ display: 'inline-block', fontWeight: 900, fontSize: '4.5cqw', color: '#fff', background: `${meta.accent}33`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '0.9cqh 3.5cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
+        <div style={{ display: 'inline-block', marginTop: '4.2cqh', fontWeight: 900, fontSize: '4.5cqw', color: '#fff', background: `${meta.accent}33`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '0.9cqh 3.5cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
           „{f.mottoDe}"
         </div>
       </div>

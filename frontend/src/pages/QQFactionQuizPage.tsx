@@ -53,6 +53,8 @@ export default function QQFactionQuizPage() {
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reel, setReel] = useState(false);
+  const [slideshow, setSlideshow] = useState(false);
+  const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pokeControls = () => {
@@ -61,23 +63,27 @@ export default function QQFactionQuizPage() {
     hideT.current = setTimeout(() => setControls(false), 3000);
   };
   useEffect(() => {
-    if (reel) pokeControls();
+    if (big) pokeControls();
     else if (hideT.current) clearTimeout(hideT.current);
     return () => { if (hideT.current) clearTimeout(hideT.current); };
-  }, [reel]);
+  }, [big]);
+  const exitBig = () => { setReel(false); setSlideshow(false); };
+  const prevSlide = () => { setScene(s => (s - 1 + SCENES.length) % SCENES.length); pokeControls(); };
+  const nextSlide = () => { setScene(s => (s + 1) % SCENES.length); pokeControls(); };
 
   useEffect(() => { document.title = 'CozyQuiz — Welches Team bist du?'; }, []);
 
+  // Auto-Weiterlauf nur wenn nicht pausiert UND nicht im Slideshow-Modus.
   useEffect(() => {
-    if (paused) return;
+    if (paused || slideshow) return;
     const t = setTimeout(() => setScene(s => (s + 1) % SCENES.length), SCENES[scene].dur);
     return () => clearTimeout(t);
-  }, [scene, paused]);
+  }, [scene, paused, slideshow]);
 
   return (
     <div style={{
-      minHeight: reel ? undefined : '100vh',
-      ...(reel
+      minHeight: big ? undefined : '100vh',
+      ...(big
         ? { position: 'fixed', inset: 0, zIndex: 9999, background: '#0A0E22', padding: 0, gap: 0 }
         : { background: '#0c0a14', gap: 14, padding: 10 }),
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', fontFamily: BODY,
@@ -87,18 +93,31 @@ export default function QQFactionQuizPage() {
       <div style={{
         position: 'relative', aspectRatio: '9 / 16', containerType: 'size',
         overflow: 'hidden', background: COZY_BG, cursor: 'pointer',
-        ...(reel
+        ...(big
           ? { width: 'min(100vw, calc(100dvh * 9 / 16))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
           : { height: 'min(94vh, calc(100vw * 16 / 9))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
-      }} onClick={() => reel ? pokeControls() : setPaused(p => !p)}>
+      }} onClick={() => big ? pokeControls() : setPaused(p => !p)}>
 
-        {reel && (
-          <button onClick={(e) => { e.stopPropagation(); setReel(false); }} aria-label="Reel-Modus schließen" style={{
+        {big && (
+          <button onClick={(e) => { e.stopPropagation(); exitBig(); }} aria-label="Vollbild schließen" style={{
             position: 'absolute', top: '2.5cqh', right: '3.5cqw', zIndex: 30,
             width: '9cqw', height: '9cqw', borderRadius: '50%', border: 'none',
             background: 'rgba(0,0,0,0.4)', color: '#fff', fontSize: '5cqw', fontWeight: 900,
             cursor: 'pointer', opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease', display: 'grid', placeItems: 'center',
           }}>✕</button>
+        )}
+
+        {/* Slideshow-Nav (Zähler + Vor/Zurück) — faded aus, damit Screenshots sauber sind */}
+        {slideshow && (
+          <div style={{ opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease', pointerEvents: controls ? 'auto' : 'none' }}>
+            <div style={{ position: 'absolute', top: '2.8cqh', left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'rgba(0,0,0,0.45)', color: '#fff', fontWeight: 900, fontSize: '3.4cqw', padding: '0.6cqh 3cqw', borderRadius: 999 }}>
+              {scene + 1} / {SCENES.length}
+            </div>
+            <div style={{ position: 'absolute', bottom: '3cqh', left: 0, right: 0, zIndex: 30, display: 'flex', justifyContent: 'center', gap: '4cqw' }}>
+              <button onClick={(e) => { e.stopPropagation(); prevSlide(); }} style={slideBtn}>‹ Zurück</button>
+              <button onClick={(e) => { e.stopPropagation(); nextSlide(); }} style={slideBtn}>Weiter ›</button>
+            </div>
+          </div>
         )}
 
         {/* Kein Fortschrittsbalken (Wolf): TikTok/Insta legen ihre eigene drüber. */}
@@ -111,28 +130,39 @@ export default function QQFactionQuizPage() {
           {renderScene(SCENES[scene].key)}
         </div>
 
-        {paused && !reel && (
+        {paused && !big && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)' }}>
             <span style={{ fontSize: '14cqw' }}>▶︎</span>
           </div>
         )}
       </div>
 
-      {!reel && (
+      {!big && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, maxWidth: 400 }}>
-          <button onClick={() => setReel(true)} style={{
-            appearance: 'none', border: 'none', background: PINK, color: '#fff', fontFamily: BODY, fontWeight: 900,
-            fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
-          }}>▶ Reel-Modus (randlos 9:16 fürs Aufnehmen)</button>
+          <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', justifyContent: 'center' }}>
+            <button onClick={() => setReel(true)} style={{
+              appearance: 'none', border: 'none', background: PINK, color: '#fff', fontFamily: BODY, fontWeight: 900,
+              fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
+            }}>▶ Reel-Modus</button>
+            <button onClick={() => { setScene(0); setSlideshow(true); }} style={{
+              appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#fff',
+              fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer',
+            }}>🖼 Slideshow-Modus</button>
+          </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~41&nbsp;s).<br />
-            Fürs Reel: <b style={{ color: '#c9c5da' }}>Reel-Modus</b> öffnen → am Handy mit der Bildschirmaufnahme abfilmen.
+            <b style={{ color: '#c9c5da' }}>Reel</b> = am Handy abfilmen · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
           </div>
         </div>
       )}
     </div>
   );
 }
+
+const slideBtn: React.CSSProperties = {
+  appearance: 'none', border: 'none', background: 'rgba(0,0,0,0.5)', color: '#fff',
+  fontFamily: BODY, fontWeight: 900, fontSize: '3.8cqw', padding: '1.4cqh 5cqw', borderRadius: 999, cursor: 'pointer',
+};
 
 function renderScene(key: string) {
   if (key === 'intro') {

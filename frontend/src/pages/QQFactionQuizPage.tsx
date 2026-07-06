@@ -148,7 +148,7 @@ function renderScene(key: string) {
           Welches<br />Team<br />bist du?
         </div>
         <div style={{ fontWeight: 800, fontSize: '5.2cqw', marginTop: '4cqh', opacity: 0.94, animation: 'fadeUp 0.6s ease 0.5s both' }}>
-          Scroll, bis du dich <span style={{ color: PINK_MID }}>erkennst</span>.
+          Bleib dran, bis du dich <span style={{ color: PINK_MID }}>erkennst</span>.
         </div>
       </>
     );
@@ -162,7 +162,7 @@ function renderScene(key: string) {
           <img src={cw('augenauf.troete.jubel')} alt="CozyWolf" style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 1.4cqh 1.8cqh rgba(0,0,0,0.45))', animation: 'floatPet 5s ease-in-out infinite' }} />
         </div>
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '3cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
-          Und? Welche<br />bist du?
+          Und? Welches<br />bist du?
         </div>
         <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
           Kommentier dein Team <span style={{ color: PINK_MID }}>👇</span> und tag jemanden, der genau SO spielt.

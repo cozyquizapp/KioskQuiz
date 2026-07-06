@@ -334,23 +334,24 @@ function renderScene(key: string) {
             ))}
           </div>
           <div style={{ fontWeight: 800, fontSize: '5.6cqw', opacity: 0.96, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 0.7s both' }}>
-            Zusammen mit Freunden<br />oder <span style={{ color: PINK_MID }}>Kolleg:innen</span>.
+            Zusammen mit <span style={{ color: PINK_MID }}>deinen Leuten</span>.
           </div>
         </>
       );
 
-    // ── Witzige Minispiele (CozyGames / Bunte Tüte) ──
+    // ── Bunte Tüte: die Quiz-Kategorie mit wechselnden Ueberraschungs-Minispielen
+    // (Wolf: das ist NICHT „Cozygames" — die sind analog. Und Bluff ist deaktiviert). ──
     case 'minigames':
       return (
         <>
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '4cqh', animation: 'fadeUp 0.5s ease both' }}>
-            Und witzige<br />Minispiele
+            Und die<br />Bunte Tüte 🎁
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2.2cqh', width: '82cqw' }}>
             {[
-              { e: '🃏', t: 'Bluff', d: 'Wer flunkert am besten?' },
               { e: '🥔', t: 'Heiße Kartoffel', d: 'Bloß nicht hängen bleiben!' },
               { e: '🌍', t: 'CozyGuessr', d: 'Wo auf der Welt ist das?' },
+              { e: '🏆', t: 'Top 5', d: 'Die häufigsten Antworten zählen' },
             ].map((m, i) => (
               <div key={m.t} style={{
                 display: 'flex', alignItems: 'center', gap: '3.5cqw',

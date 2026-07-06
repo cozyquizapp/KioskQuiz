@@ -20,7 +20,7 @@ const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)';
 const cw = (pose: string) => `/avatars/cozywolf/${pose}.png`;
 
-type ClipQ = { q: string; a: number; unit?: string; fact?: string };
+type ClipQ = { q: string; a: number; unit?: string; fact?: string; visual?: 'eu-flag' };
 
 // Fun-Facts zu den Stechen-Fragen (macht das Reveal teilbar). Key = target.
 const FACTS: Record<number, string> = {
@@ -46,6 +46,8 @@ const POOL: ClipQ[] = QQ_TIEBREAKER_POOL.map(e => ({
   a: e.target,
   unit: (e as any).unitDe ?? undefined,
   fact: FACTS[e.target],
+  // Spezial-Reveal: EU-Flagge nachbauen (blaues Rechteck + 12 Stern-Emojis).
+  visual: e.promptDe.includes('Flagge der EU') ? ('eu-flag' as const) : undefined,
 }));
 
 type Scene = { key: 'ask' | 'reveal' | 'cta'; dur: number };
@@ -162,17 +164,10 @@ export default function QQClipPage() {
               <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.12, marginTop: '2.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
                 {active.q}
               </div>
-              {/* Countdown-Ring */}
-              <div style={{ position: 'relative', width: '34cqw', height: '34cqw', margin: '6cqh 0 4cqh', display: 'grid', placeItems: 'center', animation: 'popIn 0.5s var(--eb) 0.35s both' }}>
-                <div style={{ position: 'absolute', inset: 0, borderRadius: '50%', border: '1.4cqw solid rgba(255,255,255,0.14)' }} />
-                <div key={count} style={{
-                  position: 'absolute', inset: 0, borderRadius: '50%',
-                  border: `1.4cqw solid ${count <= 1 ? PINK : PINK_MID}`, borderTopColor: 'transparent', borderRightColor: 'transparent',
-                  animation: 'spin 1s linear', boxShadow: `0 0 6cqw ${PINK}44`,
-                }} />
-                <span key={`n${count}`} style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '16cqw', animation: 'countPop 0.9s var(--eb)' }}>
-                  {count > 0 ? count : '⏰'}
-                </span>
+              {/* Countdown-Ring im Quiz-Timer-Stil (Brand-konsistent): laeuft
+                  ab statt zu drehen; Pink -> Orange -> Rot wie der Beamer-Timer. */}
+              <div style={{ margin: '6cqh 0 4cqh', animation: 'popIn 0.5s var(--eb) 0.35s both' }}>
+                <CountdownRing seconds={5} count={count} />
               </div>
               <div style={{ fontWeight: 800, fontSize: '5.2cqw', opacity: 0.96, animation: 'fadeUp 0.6s ease 0.6s both' }}>
                 Kommentier deine Schätzung <span style={{ color: PINK_MID }}>👇</span>
@@ -185,10 +180,20 @@ export default function QQClipPage() {
               <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.6cqw', letterSpacing: '0.22em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
                 DIE ANTWORT
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2cqw', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.1s both' }}>
-                <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '22cqw', lineHeight: 1, color: '#fff', textShadow: `0 0 10cqw ${PINK}66` }}>{fmt(active.a)}</span>
-                {active.unit && <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', color: PINK_MID }}>{active.unit}</span>}
-              </div>
+              {active.visual === 'eu-flag' ? (
+                <>
+                  <div style={{ margin: '3cqh 0 2.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}><EuFlag /></div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2cqw', animation: 'fadeUp 0.5s ease 0.95s both' }}>
+                    <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '15cqw', lineHeight: 1, color: '#fff', textShadow: `0 0 8cqw ${PINK}66` }}>{fmt(active.a)}</span>
+                    <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.5cqw', color: PINK_MID }}>Sterne</span>
+                  </div>
+                </>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2cqw', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.1s both' }}>
+                  <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '22cqw', lineHeight: 1, color: '#fff', textShadow: `0 0 10cqw ${PINK}66` }}>{fmt(active.a)}</span>
+                  {active.unit && <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', color: PINK_MID }}>{active.unit}</span>}
+                </div>
+              )}
               {active.fact && (
                 <div style={{
                   marginTop: '6cqh', maxWidth: '82cqw', background: 'rgba(255,255,255,0.08)',
@@ -290,6 +295,49 @@ function CustomForm({ onApply }: { onApply: (q: ClipQ) => void }) {
         >▶ Diesen Clip zeigen</button>
         <button onClick={() => setOpen(false)} style={{ ...btn('rgba(255,255,255,0.10)', '#fff', '1px solid rgba(255,255,255,0.18)'), fontSize: 14 }}>Zu</button>
       </div>
+    </div>
+  );
+}
+
+// Ablaufender Ring-Timer im Look des Beamer-Timers (CozyQuizBeamerTimer): SVG-Ring
+// schrumpft von voll → leer über `seconds`; Farbe Pink → Orange → Rot je Restzeit.
+function CountdownRing({ seconds, count }: { seconds: number; count: number }) {
+  const R = 80, STROKE = 9, C = 2 * Math.PI * R;
+  const [go, setGo] = useState(false);
+  useEffect(() => { const t = setTimeout(() => setGo(true), 40); return () => clearTimeout(t); }, []);
+  const color = count <= 1 ? '#EF4444' : count <= 2 ? '#F97316' : PINK;
+  return (
+    <div style={{ position: 'relative', width: '38cqw', height: '38cqw' }}>
+      <svg viewBox="0 0 200 200" width="100%" height="100%" style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
+        <circle cx="100" cy="100" r={R} fill="none" stroke="rgba(255,255,255,0.14)" strokeWidth={STROKE} />
+        <circle cx="100" cy="100" r={R} fill="none" stroke={color} strokeWidth={STROKE} strokeLinecap="round"
+          strokeDasharray={C} strokeDashoffset={go ? C : 0}
+          style={{ transition: `stroke-dashoffset ${seconds}s linear, stroke 0.3s ease`, filter: `drop-shadow(0 0 2cqw ${color}aa)` }} />
+      </svg>
+      <div key={count} style={{
+        position: 'absolute', inset: 0, display: 'grid', placeItems: 'center',
+        fontFamily: DISPLAY, fontWeight: 800, fontSize: '16cqw', color,
+        fontVariantNumeric: 'tabular-nums', textShadow: `0 0 3cqw ${color}88`, animation: 'countPop 0.6s var(--eb)',
+      }}>
+        {count > 0 ? count : '⏰'}
+      </div>
+    </div>
+  );
+}
+
+// EU-Flagge nachgebaut: blaues Rechteck + 12 Stern-Emojis im Kreis (poppen der Reihe
+// nach rein = „mitzählen"). Wolf-Wunsch für die EU-Sterne-Schätzfrage.
+function EuFlag() {
+  const stars = Array.from({ length: 12 }, (_, i) => {
+    const a = (i * 30) * Math.PI / 180;
+    const R = 34;
+    return { x: 50 + R * Math.sin(a), y: 50 - R * Math.cos(a) };
+  });
+  return (
+    <div style={{ position: 'relative', width: '62cqw', aspectRatio: '3 / 2', background: '#003399', borderRadius: '2.5cqw', border: '0.4cqw solid rgba(255,255,255,0.18)', boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.5)', overflow: 'hidden' }}>
+      {stars.map((s, i) => (
+        <span key={i} style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%,-50%)', fontSize: '8cqw', lineHeight: 1, animation: `popIn 0.4s var(--eb) ${0.2 + i * 0.07}s both` }}>⭐</span>
+      ))}
     </div>
   );
 }

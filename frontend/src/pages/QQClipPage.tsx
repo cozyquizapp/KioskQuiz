@@ -24,17 +24,17 @@ type ClipQ = { q: string; a: number; unit?: string; fact?: string; visual?: 'eu-
 
 // Fun-Facts zu den Stechen-Fragen (macht das Reveal teilbar). Key = target.
 const FACTS: Record<number, string> = {
-  12: 'Die 12 steht für Vollkommenheit — nicht für die Zahl der Länder.',
-  1989: 'Am 9. November 1989 — eigentlich durch eine Panne auf einer Pressekonferenz.',
-  206: 'Babys starten mit rund 300 — viele wachsen später zusammen.',
+  12: 'Die 12 steht für Vollkommenheit, nicht für die Zahl der Länder.',
+  1989: 'Am 9. November 1989, ausgelöst durch eine Panne auf einer Pressekonferenz.',
+  206: 'Babys starten mit rund 300, viele wachsen später zusammen.',
   88: '52 weiße und 36 schwarze Tasten.',
   54: 'Der flächenmäßig zweitgrößte Kontinent.',
   64: '32 helle und 32 dunkle Felder.',
-  86400: '60 × 60 × 24 — merk dir das für die nächste Party.',
+  86400: '60 × 60 × 24, merk dir das für die nächste Party.',
   330: 'Bei Hitze wächst er um bis zu 15 cm.',
   3: 'Zwei pumpen zu den Kiemen, eins durch den Körper.',
   32: 'Inklusive der vier Weisheitszähne.',
-  13: 'Für die 13 Gründerstaaten — die 50 Sterne für die Bundesstaaten.',
+  13: 'Für die 13 Gründerstaaten, die 50 Sterne stehen für die Bundesstaaten.',
   90: 'Zweimal 45 Minuten, plus Nachspielzeit.',
   8: 'Seit Pluto 2006 zum Zwergplaneten wurde.',
   26: 'Von A bis Z — die Umlaute zählen nicht extra.',
@@ -328,10 +328,13 @@ function CountdownRing({ seconds, count }: { seconds: number; count: number }) {
 // EU-Flagge nachgebaut: blaues Rechteck + 12 Stern-Emojis im Kreis (poppen der Reihe
 // nach rein = „mitzählen"). Wolf-Wunsch für die EU-Sterne-Schätzfrage.
 function EuFlag() {
+  // Echter Kreis in einem 3:2-Rechteck: Prozente skalieren pro Achse unterschiedlich,
+  // also Radius getrennt. EU-Spec = Kreisradius 1/3 der Flaggenhöhe → Ry = 33% (Höhe),
+  // Rx = Ry × Höhe/Breite = 33 × (2/3) = 22% (Breite). Sonst wird der Kreis zum Oval.
+  const Ry = 33, Rx = 22;
   const stars = Array.from({ length: 12 }, (_, i) => {
     const a = (i * 30) * Math.PI / 180;
-    const R = 34;
-    return { x: 50 + R * Math.sin(a), y: 50 - R * Math.cos(a) };
+    return { x: 50 + Rx * Math.sin(a), y: 50 - Ry * Math.cos(a) };
   });
   return (
     <div style={{ position: 'relative', width: '62cqw', aspectRatio: '3 / 2', background: '#003399', borderRadius: '2.5cqw', border: '0.4cqw solid rgba(255,255,255,0.18)', boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.5)', overflow: 'hidden' }}>

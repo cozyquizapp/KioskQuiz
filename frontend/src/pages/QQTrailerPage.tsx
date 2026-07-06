@@ -116,7 +116,10 @@ const DECO_BDAY: DecoItem[] = [
 
 // Wolf 2026-07-06: FUN zuerst (Fragen + Minispiele = der Hook), Gebiet-Taktik
 // erst spaet als „obendrauf". „Erobert euer Gebiet" ist NICHT der Aufmacher.
-const B = { fun: 4800, cats: 5400, minigames: 4900, board: 5000 };
+// Wolf 2026-07-06 (2. Runde): Nischen dürfen sich nicht mehr denselben Mittelteil
+// teilen. Jede Nische = echter Frage-Moment (anderer Kategorie-Typ) + eigener
+// Gefühls-Bogen. Body-Bausteine hier, /trailer general bleibt unverändert.
+const B = { fun: 4800, cats: 5400, minigames: 4900, board: 5000, qTeam: 5600, qLoc: 5400, qBday: 5400, steal: 4600, fill: 4400, win: 4600 };
 const VARIANTS: Record<string, VariantCfg> = {
   general: {
     title: 'CozyQuiz — Trailer',
@@ -131,36 +134,39 @@ const VARIANTS: Record<string, VariantCfg> = {
   },
   team: {
     title: 'CozyQuiz — Teamevent-Reel',
+    // TEAM = Rivalität: echte Mu-Cho (Wettrennen) → Felder klauen → Brett.
     full: [
-      { key: 'hook-team', dur: 5000 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
-      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4600 },
+      { key: 'hook-team', dur: 5000 }, { key: 'q-team', dur: B.qTeam }, { key: 'steal', dur: B.steal },
+      { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4600 },
     ],
     kurz: [
-      { key: 'hook-team', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta-team', dur: 4200 },
+      { key: 'hook-team', dur: 4800 }, { key: 'q-team', dur: B.qTeam }, { key: 'cta-team', dur: 4200 },
     ],
     bgTint: 'radial-gradient(120% 80% at 78% 8%, rgba(38,111,211,0.16), transparent 60%)',
     deco: DECO_TEAM,
   },
   location: {
     title: 'CozyQuiz — Location-Reel',
+    // LOCATION = toter Abend wird voll: echtes „Schau mal!"-Bild → Bunte Tüte → Bude füllt sich.
     full: [
-      { key: 'hook-location', dur: 5000 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
-      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta-location', dur: 4600 },
+      { key: 'hook-location', dur: 5000 }, { key: 'q-location', dur: B.qLoc }, { key: 'minigames', dur: B.minigames },
+      { key: 'fill', dur: B.fill }, { key: 'cta-location', dur: 4600 },
     ],
     kurz: [
-      { key: 'hook-location', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta-location', dur: 4200 },
+      { key: 'hook-location', dur: 4800 }, { key: 'q-location', dur: B.qLoc }, { key: 'cta-location', dur: 4200 },
     ],
     bgTint: 'radial-gradient(120% 80% at 22% 10%, rgba(162,18,71,0.20), transparent 62%)',
     deco: DECO_LOCATION,
   },
   geburtstag: {
     title: 'CozyQuiz — Geburtstags-Reel',
+    // BDAY = Chaos + persönlich: Schätzchen übers Geburtstagskind → Bunte Tüte → Sieg + Konfetti.
     full: [
-      { key: 'hook-bday', dur: 5000 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
-      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta-bday', dur: 4600 },
+      { key: 'hook-bday', dur: 5000 }, { key: 'q-bday', dur: B.qBday }, { key: 'minigames', dur: B.minigames },
+      { key: 'win', dur: B.win }, { key: 'cta-bday', dur: 4600 },
     ],
     kurz: [
-      { key: 'hook-bday', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta-bday', dur: 4200 },
+      { key: 'hook-bday', dur: 4800 }, { key: 'q-bday', dur: B.qBday }, { key: 'cta-bday', dur: 4200 },
     ],
     bgTint: 'radial-gradient(110% 70% at 50% 4%, rgba(236,72,153,0.18), transparent 58%)',
     deco: DECO_BDAY,
@@ -318,6 +324,15 @@ function renderScene(key: string) {
     case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Dann komm ich vorbei. Ihr müsst nichts tun außer aufmachen." />;
     case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." />;
 
+    // ── Echte Frage-Momente (je Nische anderer Kategorie-Typ) ──
+    case 'q-team':         return <QMucho />;
+    case 'q-location':     return <QCheese />;
+    case 'q-bday':         return <QSchaetz />;
+    // ── Nischen-Gefühls-Beats ──
+    case 'steal':          return <StealBeat />;
+    case 'fill':           return <FillBeat />;
+    case 'win':            return <WinBeat />;
+
     // ── FUN zuerst: das eigentliche Erlebnis (Wolf-Feedback) ──
     case 'fun':
       return (
@@ -351,7 +366,7 @@ function renderScene(key: string) {
             {[
               { e: '🥔', t: 'Heiße Kartoffel', d: 'Bloß nicht hängen bleiben!' },
               { e: '🌍', t: 'CozyGuessr', d: 'Wo auf der Welt ist das?' },
-              { e: '🏆', t: 'Top 5', d: 'Die häufigsten Antworten zählen' },
+              { e: '🏆', t: 'Top 5', d: 'Nennt ihr die 5 Richtigen?' },
             ].map((m, i) => (
               <div key={m.t} style={{
                 display: 'flex', alignItems: 'center', gap: '3.5cqw',
@@ -650,6 +665,176 @@ function CtaBlock({ heading, sub, tightSub }: { heading: React.ReactNode; sub: s
   );
 }
 
+// Kategorie-Badge über den echten Frage-Szenen (macht klar: das ist eine echte Runde).
+function QBadge({ iconName, label }: { iconName: string; label: string }) {
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: '2cqw',
+      background: 'rgba(255,255,255,0.12)', borderRadius: '99px', padding: '1cqh 3.6cqw',
+      fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.6cqw', letterSpacing: '0.03em',
+      animation: 'fadeUp 0.5s ease both',
+    }}>
+      <img src={icon(iconName)} alt="" style={{ width: '6cqw', height: '6cqw', objectFit: 'contain' }} />
+      {label}
+    </div>
+  );
+}
+
+// TEAM-Frage: echte Mu-Cho — 4 Optionen, die richtige leuchtet spät grün auf.
+function QMucho() {
+  const opts = ['Paris', 'London', 'Berlin', 'Dublin'];
+  const correct = 1;
+  return (
+    <>
+      <QBadge iconName="cat-mucho" label="Mu-Cho · Tempo zählt" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', lineHeight: 1.08, margin: '3cqh 0 3.5cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
+        Welche Stadt liegt am<br />weitesten nördlich?
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8cqh', width: '80cqw' }}>
+        {opts.map((o, i) => (
+          <div key={o} style={{
+            display: 'flex', alignItems: 'center', gap: '3cqw',
+            background: 'rgba(255,255,255,0.10)', borderRadius: '2.6cqw', padding: '1.9cqh 4cqw',
+            fontWeight: 800, fontSize: '5.2cqw', textAlign: 'left',
+            animation: i === correct
+              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both, revealCorrect 0.5s ease 2.6s both`
+              : `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both`,
+          }}>
+            <span style={{ fontFamily: DISPLAY, opacity: 0.7, width: '5cqw', flexShrink: 0 }}>{'ABCD'[i]}</span>
+            <span>{o}</span>
+            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.75s both' }}>✓</span>}
+          </div>
+        ))}
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '5cqw', marginTop: '4cqh', animation: 'fadeUp 0.6s ease 3.1s both' }}>
+        Wer zuerst tippt, <span style={{ color: PINK_MID }}>punktet</span>.
+      </div>
+    </>
+  );
+}
+
+// LOCATION-Frage: echtes „Schau mal!" — Foto-Karte, Antwort ploppt spät auf.
+function QCheese() {
+  return (
+    <>
+      <QBadge iconName="cat-cheese" label="Schau mal!" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', lineHeight: 1.08, margin: '3cqh 0 3cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
+        Welches Wahrzeichen<br />ist das?
+      </div>
+      <div style={{
+        width: '52cqw', aspectRatio: '4 / 3', borderRadius: '3cqw',
+        background: 'linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05))',
+        border: '0.5cqw solid rgba(255,255,255,0.2)', display: 'grid', placeItems: 'center',
+        boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.42)', animation: 'popIn 0.6s var(--eb) 0.4s both',
+      }}>
+        <span style={{ fontSize: '26cqw', animation: 'floatPet 4s ease-in-out infinite' }}>🗽</span>
+      </div>
+      <div style={{
+        marginTop: '4cqh', display: 'inline-flex', alignItems: 'center', gap: '2cqw',
+        background: 'linear-gradient(135deg, #16a34a, #22c55e)', borderRadius: '99px', padding: '1.4cqh 5cqw',
+        fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw',
+        boxShadow: '0 1cqh 3cqh rgba(34,197,94,0.45)', animation: 'popIn 0.5s var(--eb) 2.7s both',
+      }}>
+        Freiheitsstatue ✓
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3.5cqh', opacity: 0.9, animation: 'fadeUp 0.6s ease 3.2s both' }}>
+        Zusammen erkennen, zusammen grübeln.
+      </div>
+    </>
+  );
+}
+
+// BDAY-Frage: Schätzchen übers Geburtstagskind — zwei Team-Tipps, Auflösung spät.
+function QSchaetz() {
+  const guesses = [
+    { v: '42', slug: TEAMS[0].slug, color: TEAMS[0].color, d: 0.6 },
+    { v: '51', slug: TEAMS[2].slug, color: TEAMS[2].color, d: 0.95 },
+  ];
+  return (
+    <>
+      <QBadge iconName="cat-schaetzchen" label="Schätzchen · eigene Frage" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.4cqw', lineHeight: 1.08, margin: '3cqh 0 2cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
+        Wie viele Kerzen passen<br />auf Lisas Torte?
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '6cqw', margin: '1cqh 0 3cqh' }}>
+        {guesses.map((g, i) => (
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1cqh', animation: `fadeUp 0.5s var(--eb) ${g.d}s both` }}>
+            <PetDisc slug={g.slug} color={g.color} sizeCqw={15} />
+            <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', opacity: 0.85 }}>{g.v}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2.4cqw', animation: 'popIn 0.6s var(--eb) 2.6s both' }}>
+        <span style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.8 }}>Richtig:</span>
+        <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', color: PINK_MID, lineHeight: 1 }}>50</span>
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', animation: 'fadeUp 0.6s ease 3.2s both' }}>
+        Am nächsten dran <span style={{ color: PINK_MID }}>gewinnt</span>.
+      </div>
+    </>
+  );
+}
+
+// TEAM-Beat: ein Feld kippt von der Gegner-Farbe in die eigene.
+function StealBeat() {
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
+        Und dann…<br /><span style={{ color: PINK_MID }}>Felder klauen.</span>
+      </div>
+      <div style={{ position: 'relative', width: '34cqw', height: '34cqw', margin: '2cqh 0 6cqh' }}>
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '4cqw', background: `linear-gradient(135deg, ${TEAMS[2].color}, ${TEAMS[2].color}cc)`, animation: 'stealOut 0.5s ease 1.7s both' }} />
+        <img src={cz(TEAMS[2].slug)} alt="" style={{ position: 'absolute', inset: '10%', width: '80%', height: '80%', objectFit: 'contain', animation: 'stealOut 0.5s ease 1.7s both' }} />
+        <div style={{ position: 'absolute', inset: 0, borderRadius: '4cqw', background: `linear-gradient(135deg, ${TEAMS[0].color}, ${TEAMS[0].color}cc)`, boxShadow: `0 0 0 0.7cqw rgba(255,255,255,0.85), 0 1.5cqh 4cqh ${TEAMS[0].color}88`, opacity: 0, animation: 'stealIn 0.55s var(--eb) 1.85s both' }} />
+        <img src={cz(TEAMS[0].slug)} alt="" style={{ position: 'absolute', inset: '10%', width: '80%', height: '80%', objectFit: 'contain', opacity: 0, animation: 'stealIn 0.55s var(--eb) 1.95s both' }} />
+        <img src={icon('action-steal')} alt="" style={{ position: 'absolute', top: '-9cqh', right: '-7cqw', width: '17cqw', height: '17cqw', objectFit: 'contain', filter: 'drop-shadow(0 0.5cqh 0.8cqh rgba(0,0,0,0.4))', animation: 'popIn 0.5s var(--eb) 1.2s both' }} />
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '5.4cqw', animation: 'fadeUp 0.6s ease 2.5s both' }}>
+        Ihr Feld. Jetzt <span style={{ color: PINK_MID }}>euer</span> Feld.
+      </div>
+    </>
+  );
+}
+
+// LOCATION-Beat: die Bude füllt sich mit Teams.
+function FillBeat() {
+  const seats = [0, 1, 2, 3, 4, 0, 2, 4];
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
+        Und plötzlich ist<br />die Bude <span style={{ color: PINK_MID }}>voll.</span>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3cqw', width: '76cqw' }}>
+        {seats.map((t, i) => (
+          <PetDisc key={i} slug={TEAMS[t].slug} color={TEAMS[t].color} sizeCqw={16} anim={`popIn 0.5s var(--eb) ${0.3 + i * 0.15}s both`} />
+        ))}
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '5.4cqw', marginTop: '5.5cqh', animation: 'fadeUp 0.6s ease 1.7s both' }}>
+        Dienstag ist das <span style={{ color: PINK_MID }}>neue Wochenende</span>.
+      </div>
+    </>
+  );
+}
+
+// BDAY-Beat: ein Team gewinnt, Krone + Konfetti.
+function WinBeat() {
+  return (
+    <>
+      <Confetti />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
+        Am Ende gewinnt<br />ein Team.
+      </div>
+      <div style={{ position: 'relative', animation: 'popIn 0.7s var(--eb) 0.4s both' }}>
+        <span style={{ position: 'absolute', top: '-10cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '12cqw', animation: 'floatPet 3s ease-in-out infinite' }}>👑</span>
+        <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={32} />
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '5.6cqw', marginTop: '6cqh', animation: 'fadeUp 0.6s ease 1s both' }}>
+        Aber <span style={{ color: PINK_MID }}>Spaß</span> hatten alle.
+      </div>
+    </>
+  );
+}
+
 function PetDisc({ slug, color, sizeCqw, anim }: { slug: string; color: string; sizeCqw: number; anim?: string }) {
   return (
     <div style={{
@@ -725,4 +910,7 @@ const KEYFRAMES = `
   @keyframes clashL { 0% { opacity: 0; transform: translateX(-12cqw); } 70% { transform: translateX(1.5cqw); } 100% { opacity: 1; transform: none; } }
   @keyframes clashR { 0% { opacity: 0; transform: translateX(12cqw); } 70% { transform: translateX(-1.5cqw); } 100% { opacity: 1; transform: none; } }
   @keyframes confetti { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 10% { opacity: 1; } 100% { opacity: 0.9; transform: translateY(150cqh) rotate(340deg); } }
+  @keyframes revealCorrect { to { background: linear-gradient(135deg, #16a34a, #22c55e); box-shadow: 0 0 0 0.4cqw rgba(255,255,255,0.45), 0 1cqh 3cqh rgba(34,197,94,0.5); } }
+  @keyframes stealOut { to { opacity: 0; transform: scale(0.65); } }
+  @keyframes stealIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
 `;

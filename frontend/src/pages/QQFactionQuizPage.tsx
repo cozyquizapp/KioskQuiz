@@ -8,6 +8,9 @@
  * ⚠️ Wolf: Wort „Team" statt „Fraktion"; KEIN Bezug zu Brett/Feldern-Erobern —
  * die Team-Typen leben im Groß-Modus, der KEIN Spielbrett nutzt (nicht mit dem
  * Standard-CozyQuiz-Brett vermischen).
+ * ⚠️ Wolf 2026-07-06: eigene „context"-Szene stellt klar, dass das die COZY ARENA
+ * (Groß-Gruppen-Modus, ab ~20 Leuten) ist — sonst suchen Leute im normalen
+ * CozyQuiz vergeblich nach „Team Feierabend wählen".
  */
 import { useEffect, useRef, useState } from 'react';
 import { QQ_MEGA_FACTIONS } from '@shared/quarterQuizTypes';
@@ -36,6 +39,9 @@ const FACTION_META: Record<string, { accent: string; char: string }> = {
 type Scene = { key: string; dur: number };
 const SCENES: Scene[] = [
   { key: 'intro', dur: 3800 },
+  // Wolf 2026-07-06: klarstellen, dass die Team-Typen zum Cozy-Arena-Groß-Modus
+  // gehören (sonst suchen Leute im normalen CozyQuiz nach „Team Feierabend wählen").
+  { key: 'context', dur: 4400 },
   ...QQ_MEGA_FACTIONS.map((_, i) => ({ key: `fac-${i}`, dur: 2900 })),
   { key: 'cta', dur: 4800 },
 ];
@@ -128,7 +134,7 @@ export default function QQFactionQuizPage() {
             fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
           }}>▶ Reel-Modus (randlos 9:16 fürs Aufnehmen)</button>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
-            Tippen = Pause · loopt automatisch (~33&nbsp;s).<br />
+            Tippen = Pause · loopt automatisch (~36&nbsp;s).<br />
             Fürs Reel: <b style={{ color: '#c9c5da' }}>Reel-Modus</b> öffnen → am Handy mit der Bildschirmaufnahme abfilmen.
           </div>
         </div>
@@ -141,14 +147,36 @@ function renderScene(key: string) {
   if (key === 'intro') {
     return (
       <>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.2cqw', letterSpacing: '0.24em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
-          COZYQUIZ · 8 TEAM-TYPEN
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.2cqw', letterSpacing: '0.22em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+          COZY ARENA · GROSSE EVENTS
         </div>
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', lineHeight: 1.0, letterSpacing: '-0.02em', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.15s both' }}>
           Welches<br />Team<br />bist du?
         </div>
         <div style={{ fontWeight: 800, fontSize: '5.2cqw', marginTop: '4cqh', opacity: 0.94, animation: 'fadeUp 0.6s ease 0.5s both' }}>
           Bleib dran, bis du dich <span style={{ color: PINK_MID }}>erkennst</span>.
+        </div>
+      </>
+    );
+  }
+
+  if (key === 'context') {
+    return (
+      <>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+          NUR BEI GROSSEN GRUPPEN
+        </div>
+        {/* Wappen-Cluster (alle 8) → „viele Leute, viele Teams" */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2cqw', width: '72cqw', margin: '3.5cqh 0' }}>
+          {QQ_MEGA_FACTIONS.map((f, i) => (
+            <img key={f.slug} src={crestSrc(f.slug)} alt="" style={{ width: '15cqw', height: '15cqw', objectFit: 'contain', filter: 'drop-shadow(0 0.6cqh 0.8cqh rgba(0,0,0,0.45))', animation: `crestPop 0.5s var(--eb) ${0.2 + i * 0.09}s both` }} />
+          ))}
+        </div>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.04, animation: 'popIn 0.6s var(--eb) 0.3s both' }}>
+          Das ist die<br /><span style={{ color: PINK_MID }}>Cozy Arena</span>.
+        </div>
+        <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.6s both' }}>
+          Der Groß-Gruppen-Modus vom CozyQuiz. Ab etwa 20 Leuten spielt ihr in 8 Teams statt einzeln.
         </div>
       </>
     );
@@ -167,7 +195,10 @@ function renderScene(key: string) {
         <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
           Kommentier dein Team <span style={{ color: PINK_MID }}>👇</span> und tag jemanden, der genau SO spielt.
         </div>
-        <div style={{ marginTop: '4.5cqh', display: 'flex', flexDirection: 'column', gap: '1.6cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
+        <div style={{ fontWeight: 800, fontSize: '3.9cqw', marginTop: '3.5cqh', opacity: 0.78, letterSpacing: '0.04em', animation: 'fadeUp 0.6s ease 0.6s both' }}>
+          Cozy Arena · für Firmenfeiern & große Events
+        </div>
+        <div style={{ marginTop: '2.5cqh', display: 'flex', flexDirection: 'column', gap: '1.6cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
           <span style={{ color: PINK_MID }}>@cozywolf.events</span>
           <span style={{ opacity: 0.92 }}>cozywolf.de</span>
         </div>

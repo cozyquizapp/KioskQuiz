@@ -43,6 +43,16 @@ const REELS: Reel[] = [
     accent: '#f472b6', full: '/trailer/geburtstag', kurz: '/trailer/geburtstag-kurz',
     use: 'Private Feiern. Personalisierte Fragen übers Geburtstagskind.',
   },
+  {
+    emoji: '🛡️', name: 'Welches Team bist du?', hook: '„Scroll, bis du dich erkennst."',
+    accent: '#EF4444', full: '/welches-team',
+    use: 'Der Share-/Kommentar-Motor: die 8 Team-Typen. Leute taggen Freunde.',
+  },
+  {
+    emoji: '🎯', name: 'Schätzfrage-Clip', hook: '„Schätz mal…"',
+    accent: '#22C55E', full: '/clip',
+    use: 'Täglicher Reichweiten-Content. Eigene Frage eintippbar. Kommentier-Bait.',
+  },
 ];
 
 export default function QQReelsHubPage() {

@@ -36,6 +36,7 @@ const QQAboutPage         = React.lazy(() => import('./pages/QQAboutPage'));
 const QQTrailerPage       = React.lazy(() => import('./pages/QQTrailerPage'));
 const QQReelsHubPage      = React.lazy(() => import('./pages/QQReelsHubPage'));
 const QQClipPage          = React.lazy(() => import('./pages/QQClipPage'));
+const QQFactionQuizPage   = React.lazy(() => import('./pages/QQFactionQuizPage'));
 const QQBlinkTestPage     = React.lazy(() => import('./pages/QQBlinkTestPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
@@ -182,6 +183,7 @@ function App() {
           <Route path="/trailer/:variant" element={<QQTrailerPage />} />
           <Route path="/reels"      element={<QQReelsHubPage />} />
           <Route path="/clip"       element={<QQClipPage />} />
+          <Route path="/welches-team" element={<QQFactionQuizPage />} />
           <Route path="/blinktest"  element={<QQBlinkTestPage />} />
           <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
           {/* 2026-05-25 (Wolf 'test-modus zum reveal-testen'): selbe Mod-Komponente

@@ -138,8 +138,8 @@ function renderScene(key: string) {
   if (key === 'intro') {
     return (
       <>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.2cqw', letterSpacing: '0.24em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
-          COZYQUIZ · 8 TEAM-TYPEN
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', color: PINK, letterSpacing: '-0.01em', animation: 'fadeUp 0.5s ease both' }}>
+          CozyQuiz
         </div>
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', lineHeight: 1.0, letterSpacing: '-0.02em', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.15s both' }}>
           Welches<br />Team<br />bist du?

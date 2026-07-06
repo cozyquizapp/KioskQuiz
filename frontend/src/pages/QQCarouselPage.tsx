@@ -94,9 +94,11 @@ function teamSlide(idx: number): JSX.Element {
       {/* Wappen auf Radial-Halo (kein filter → export-treu). PNG ist 500×500 quadratisch,
           darum width + height:auto statt object-fit (html2canvas rendert object-fit falsch
           = schrumpft das Bild → Lücke → wirkt „nicht zentriert"). */}
-      <div style={{ position: 'relative', margin: '2cqh 0 3cqh', display: 'grid', placeItems: 'center', animation: 'crestPop 0.7s var(--eb) 0.1s both' }}>
+      <div style={{ position: 'relative', width: '42cqw', height: '42cqw', margin: '2cqh 0 3cqh', animation: 'crestPop 0.7s var(--eb) 0.1s both' }}>
         <div style={{ position: 'absolute', inset: '2%', borderRadius: '50%', background: `radial-gradient(circle, ${meta.accent}66 0%, ${meta.accent}22 45%, transparent 70%)` }} />
-        <img src={crestSrc(f.slug)} alt={f.nameDe} style={{ position: 'relative', width: '42cqw', height: '42cqw', display: 'block', animation: 'floatPet 5s ease-in-out infinite' }} />
+        {/* Wappen als background-image statt <img> — html2canvas rendert <img> zu klein
+            (0.78×), background-size:contain aber auf volle Containergroesse. */}
+        <div role="img" aria-label={f.nameDe} style={{ position: 'absolute', inset: 0, backgroundImage: `url(${crestSrc(f.slug)})`, backgroundSize: 'contain', backgroundPosition: 'center', backgroundRepeat: 'no-repeat', animation: 'floatPet 5s ease-in-out infinite' }} />
       </div>
       {/* Name + Motto in einem Flex-Gap → definierter Abstand, KEINE Überlappung
           (marginTop scheiterte an Descendern + html2canvas-Baseline-Drift). */}

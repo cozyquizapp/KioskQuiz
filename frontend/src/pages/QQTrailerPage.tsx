@@ -329,7 +329,7 @@ function renderScene(key: string) {
 
     // ── Echte Frage-Momente (je Nische anderer Kategorie-Typ) ──
     case 'q-team':         return <QMucho />;
-    case 'q-location':     return <QCheese />;
+    case 'q-location':     return <QOlder />;
     case 'q-bday':         return <QSchaetz />;
     // ── Nischen-Gefühls-Beats ──
     case 'steal':          return <StealBeat />;
@@ -362,30 +362,28 @@ function renderScene(key: string) {
     case 'minigames':
       return (
         <>
-          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '4cqh', animation: 'fadeUp 0.5s ease both' }}>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
             Und die<br />Bunte Tüte 🎁
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '2.2cqh', width: '82cqw' }}>
-            {[
-              { e: '🥔', t: 'Heiße Kartoffel', d: 'Bloß nicht hängen bleiben!' },
-              { e: '🌍', t: 'CozyGuessr', d: 'Wo auf der Welt ist das?' },
-              { e: '🏆', t: 'Top 5', d: 'Nennt ihr die 5 Richtigen?' },
-            ].map((m, i) => (
-              <div key={m.t} style={{
-                display: 'flex', alignItems: 'center', gap: '3.5cqw',
-                background: 'rgba(255,255,255,0.10)', borderRadius: '3cqw', padding: '2.2cqh 4cqw',
-                animation: `slideIn 0.5s var(--eb) ${0.25 + i * 0.3}s both`,
-              }}>
-                <span style={{ fontSize: '9cqw', flexShrink: 0 }}>{m.e}</span>
-                <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', lineHeight: 1 }}>{m.t}</div>
-                  <div style={{ fontSize: '4cqw', opacity: 0.82 }}>{m.d}</div>
-                </div>
+          {/* Wolf: Modi NICHT verraten — es sind Überraschungen. ?-Boxen statt Namen. */}
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '4.5cqw', margin: '1cqh 0 5cqh' }}>
+            {[0, 1, 2].map(i => (
+              <div key={i} style={{ animation: `popIn 0.5s var(--eb) ${0.3 + i * 0.22}s both` }}>
+                <div style={{
+                  width: '21cqw', height: '21cqw', borderRadius: '4.5cqw',
+                  background: 'rgba(255,255,255,0.10)', border: '0.5cqw dashed rgba(255,255,255,0.4)',
+                  display: 'grid', placeItems: 'center', fontFamily: DISPLAY, fontWeight: 800,
+                  fontSize: '12cqw', color: PINK_MID,
+                  animation: `floatPet ${3.6 + i * 0.4}s ease-in-out ${0.9 + i * 0.2}s infinite`,
+                }}>?</div>
               </div>
             ))}
           </div>
-          <div style={{ fontWeight: 800, fontSize: '4.8cqw', opacity: 0.9, marginTop: '4cqh', animation: 'fadeUp 0.6s ease 1.3s both' }}>
-            Jede Runde <span style={{ color: PINK_MID }}>eine Überraschung</span>.
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.2cqw', lineHeight: 1.1, animation: 'popIn 0.6s var(--eb) 0.95s both' }}>
+            Jede Runde ein<br />anderes Minispiel.
+          </div>
+          <div style={{ fontWeight: 800, fontSize: '4.8cqw', opacity: 0.92, marginTop: '3cqh', animation: 'fadeUp 0.6s ease 1.35s both' }}>
+            Du weißt nie, <span style={{ color: PINK_MID }}>welches kommt</span>.
           </div>
         </>
       );
@@ -714,48 +712,52 @@ function QMucho() {
   );
 }
 
-// LOCATION-Frage: echtes „Schau mal!" — Foto-Karte, Antwort ploppt spät auf.
-function QCheese() {
+// LOCATION-Frage: kontraintuitive Mu-Cho (Wolf-Wahl). Fast alle tippen falsch →
+// verblüffende Auflösung = Kommentar-Bait. Richtige Option (B) leuchtet spät grün.
+function QOlder() {
+  const opts = [{ k: 'A', l: 'Die Pyramiden' }, { k: 'B', l: 'Die Mammuts' }];
+  const correct = 1;
   return (
     <>
-      <QBadge iconName="cat-cheese" label="Schau mal!" />
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', lineHeight: 1.08, margin: '3cqh 0 3cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
-        Welches Wahrzeichen<br />ist das?
+      <QBadge iconName="cat-mucho" label="Mu-Cho · was stimmt?" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', lineHeight: 1.06, margin: '3cqh 0 4.5cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
+        Was ist älter?
       </div>
-      <div style={{
-        width: '52cqw', aspectRatio: '4 / 3', borderRadius: '3cqw',
-        background: 'linear-gradient(160deg, rgba(255,255,255,0.16), rgba(255,255,255,0.05))',
-        border: '0.5cqw solid rgba(255,255,255,0.2)', display: 'grid', placeItems: 'center',
-        boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.42)', animation: 'popIn 0.6s var(--eb) 0.4s both',
-      }}>
-        <span style={{ fontSize: '26cqw', animation: 'floatPet 4s ease-in-out infinite' }}>🗽</span>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.6cqh', width: '80cqw' }}>
+        {opts.map((o, i) => (
+          <div key={o.k} style={{
+            display: 'flex', alignItems: 'center', gap: '3cqw',
+            background: 'rgba(255,255,255,0.10)', borderRadius: '2.6cqw', padding: '2.5cqh 4cqw',
+            fontWeight: 800, fontSize: '5.8cqw', textAlign: 'left',
+            animation: i === correct
+              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.2}s both, revealCorrect 0.5s ease 2.7s both`
+              : `slideIn 0.4s var(--eb) ${0.3 + i * 0.2}s both`,
+          }}>
+            <span style={{ fontFamily: DISPLAY, opacity: 0.7, width: '5cqw', flexShrink: 0 }}>{o.k}</span>
+            <span>{o.l}</span>
+            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.85s both' }}>✓</span>}
+          </div>
+        ))}
       </div>
-      <div style={{
-        marginTop: '4cqh', display: 'inline-flex', alignItems: 'center', gap: '2cqw',
-        background: 'linear-gradient(135deg, #16a34a, #22c55e)', borderRadius: '99px', padding: '1.4cqh 5cqw',
-        fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw',
-        boxShadow: '0 1cqh 3cqh rgba(34,197,94,0.45)', animation: 'popIn 0.5s var(--eb) 2.7s both',
-      }}>
-        Freiheitsstatue ✓
-      </div>
-      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3.5cqh', opacity: 0.9, animation: 'fadeUp 0.6s ease 3.2s both' }}>
-        Zusammen erkennen, zusammen grübeln.
+      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '4.5cqh', lineHeight: 1.25, animation: 'fadeUp 0.6s ease 3.2s both' }}>
+        Mammuts lebten noch, als die<br />Pyramiden schon <span style={{ color: PINK_MID }}>standen</span>.
       </div>
     </>
   );
 }
 
-// BDAY-Frage: Schätzchen übers Geburtstagskind — zwei Team-Tipps, Auflösung spät.
+// BDAY-Frage: Schätzchen übers Geburtstagskind (Wolf-Wahl: Reisen) — zwei
+// Team-Tipps, Auflösung spät. „Lena" = Platzhalter fürs Geburtstagskind.
 function QSchaetz() {
   const guesses = [
-    { v: '42', slug: TEAMS[0].slug, color: TEAMS[0].color, d: 0.6 },
-    { v: '51', slug: TEAMS[2].slug, color: TEAMS[2].color, d: 0.95 },
+    { v: '9', slug: TEAMS[0].slug, color: TEAMS[0].color, d: 0.6 },
+    { v: '17', slug: TEAMS[2].slug, color: TEAMS[2].color, d: 0.95 },
   ];
   return (
     <>
       <QBadge iconName="cat-schaetzchen" label="Schätzchen · eigene Frage" />
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.4cqw', lineHeight: 1.08, margin: '3cqh 0 2cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
-        Wie viele Kerzen passen<br />auf Lisas Torte?
+        In wie vielen Ländern<br />war Lena schon?
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '6cqw', margin: '1cqh 0 3cqh' }}>
         {guesses.map((g, i) => (
@@ -767,7 +769,7 @@ function QSchaetz() {
       </div>
       <div style={{ display: 'flex', alignItems: 'baseline', gap: '2.4cqw', animation: 'popIn 0.6s var(--eb) 2.6s both' }}>
         <span style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.8 }}>Richtig:</span>
-        <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', color: PINK_MID, lineHeight: 1 }}>50</span>
+        <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', color: PINK_MID, lineHeight: 1 }}>14</span>
       </div>
       <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', animation: 'fadeUp 0.6s ease 3.2s both' }}>
         Am nächsten dran <span style={{ color: PINK_MID }}>gewinnt</span>.
@@ -797,21 +799,26 @@ function StealBeat() {
   );
 }
 
-// LOCATION-Beat: die Bude füllt sich mit GÄSTEN (Wolf: Tier-Teams lasen sich nicht
-// als volle Bude → diverse Menschen-Emojis, die reinploppen = „hier ist was los").
+// LOCATION-Beat: „volle Bude". Wolf: Personen-Emojis gehen nicht — das Fluent-Set
+// rendert alle gleich gelb, ohne Hauttöne, also NIE divers. Statt Menschen die
+// KNEIPEN-ATMOSPHÄRE zeigen (Gläser, Anstoßen, Gelächter, Musik) = „hier ist was los".
 function FillBeat() {
-  const crowd = ['🧑', '👩', '🧔', '👵', '🧓', '👨', '👱‍♀️', '🧑‍🦰', '👩‍🦰', '👴', '🧑‍🦱', '👩‍🦳', '🧑‍🦳', '👨‍🦲', '🧑‍🎤'];
+  const buzz = [
+    { e: '🍻', s: 12 }, { e: '🎉', s: 10 }, { e: '💬', s: 9 }, { e: '🥂', s: 12 },
+    { e: '🎶', s: 9 }, { e: '🍷', s: 10 }, { e: '😂', s: 10 }, { e: '🗣️', s: 9 },
+    { e: '🍺', s: 12 }, { e: '✨', s: 8 }, { e: '💬', s: 8 }, { e: '🎊', s: 10 },
+  ];
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5.5cqh', animation: 'fadeUp 0.5s ease both' }}>
         Und plötzlich ist<br />die Bude <span style={{ color: PINK_MID }}>voll.</span>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.6cqw', width: '80cqw' }}>
-        {crowd.map((p, i) => (
-          <span key={i} style={{ fontSize: '11cqw', lineHeight: 1, animation: `popIn 0.4s var(--eb) ${0.25 + i * 0.08}s both` }}>{p}</span>
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', gap: '2.4cqw', width: '80cqw' }}>
+        {buzz.map((b, i) => (
+          <span key={i} style={{ fontSize: `${b.s}cqw`, lineHeight: 1, animation: `popIn 0.42s var(--eb) ${0.25 + i * 0.08}s both` }}>{b.e}</span>
         ))}
       </div>
-      <div style={{ fontWeight: 800, fontSize: '5.4cqw', marginTop: '5.5cqh', animation: 'fadeUp 0.6s ease 1.7s both' }}>
+      <div style={{ fontWeight: 800, fontSize: '5.4cqw', marginTop: '6cqh', animation: 'fadeUp 0.6s ease 1.7s both' }}>
         Dienstag ist das <span style={{ color: PINK_MID }}>neue Wochenende</span>.
       </div>
     </>

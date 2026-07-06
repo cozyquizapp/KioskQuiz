@@ -34,6 +34,7 @@ const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQSkinsPage         = React.lazy(() => import('./pages/QQSkinsPage'));
 const QQAboutPage         = React.lazy(() => import('./pages/QQAboutPage'));
 const QQTrailerPage       = React.lazy(() => import('./pages/QQTrailerPage'));
+const QQReelsHubPage      = React.lazy(() => import('./pages/QQReelsHubPage'));
 const QQBlinkTestPage     = React.lazy(() => import('./pages/QQBlinkTestPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
@@ -178,6 +179,7 @@ function App() {
           <Route path="/was-ist-cozyquiz" element={<QQAboutPage />} />
           <Route path="/trailer"    element={<QQTrailerPage />} />
           <Route path="/trailer/:variant" element={<QQTrailerPage />} />
+          <Route path="/reels"      element={<QQReelsHubPage />} />
           <Route path="/blinktest"  element={<QQBlinkTestPage />} />
           <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
           {/* 2026-05-25 (Wolf 'test-modus zum reveal-testen'): selbe Mod-Komponente

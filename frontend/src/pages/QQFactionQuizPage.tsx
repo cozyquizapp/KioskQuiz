@@ -15,6 +15,7 @@
  * ohne diese 8 Typen).
  */
 import { useEffect, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { QQ_MEGA_FACTIONS } from '@shared/quarterQuizTypes';
 import { crestSrc } from '../cozyArenaCrests';
 
@@ -50,10 +51,12 @@ const SCENES: Scene[] = [
 ];
 
 export default function QQFactionQuizPage() {
+  // ?slides in der URL oeffnet direkt den Slideshow-Modus (Deep-Link aus /reels + Menue).
+  const [sp] = useSearchParams();
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reel, setReel] = useState(false);
-  const [slideshow, setSlideshow] = useState(false);
+  const [slideshow, setSlideshow] = useState(sp.has('slides'));
   const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);

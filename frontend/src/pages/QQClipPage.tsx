@@ -93,7 +93,8 @@ export default function QQClipPage() {
   const [paused, setPaused] = useState(false);
   const [count, setCount] = useState(4);
   const [reel, setReel] = useState(false);
-  const [slideshow, setSlideshow] = useState(false);
+  // ?slides in der URL oeffnet direkt den Slideshow-Modus (Deep-Link aus /reels + Menue).
+  const [slideshow, setSlideshow] = useState(params.has('slides'));
   const big = reel || slideshow;
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);

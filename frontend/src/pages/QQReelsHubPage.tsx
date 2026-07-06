@@ -110,6 +110,13 @@ export default function QQReelsHubPage() {
                   }}>⚡ Kurz (~13s)</Link>
                 )}
               </div>
+              {/* Bilder-Slideshow (Karussell): oeffnet den Reel direkt im Slideshow-Modus,
+                  Frame fuer Frame durchtippen und screenshotten. */}
+              <Link to={`${r.full}?slides`} style={{
+                display: 'block', textAlign: 'center', textDecoration: 'none', fontFamily: BODY, fontWeight: 800, fontSize: 13.5,
+                marginTop: 9, padding: '10px 12px', borderRadius: 11, background: 'rgba(255,255,255,0.06)',
+                border: '1px dashed rgba(255,255,255,0.22)', color: '#d7d4ea',
+              }}>🖼 Als Bilder-Slideshow (Karussell)</Link>
             </div>
           ))}
         </div>
@@ -120,7 +127,9 @@ export default function QQReelsHubPage() {
           borderRadius: 14, padding: '13px 16px', fontSize: 13, fontWeight: 700, color: '#e7cfe0', lineHeight: 1.5,
         }}>
           💡 <b>Kurz</b> = für TikTok-Reichweite (Hook zuerst, schneller Payoff). <b>Voll</b> = für Bio-Link & Website.
-          Jeder Reel hat einen anderen Startframe, damit TikTok sie nicht als Werbung einstuft.
+          <b>🖼 Bilder-Slideshow</b> = Reel wird zum Foto-Karussell: Frame für Frame durchtippen und jeden screenshotten
+          (kein fertiger Bild-Ordner, die Slides entstehen live beim Durchtippen). Jeder Reel hat einen anderen Startframe,
+          damit TikTok sie nicht als Werbung einstuft.
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 4 }}>

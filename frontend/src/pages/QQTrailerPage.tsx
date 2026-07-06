@@ -20,7 +20,7 @@
  *   /trailer/geburtstag      — Geburtstag/Privat (voll)    · /trailer/geburtstag-kurz
  */
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useSearchParams } from 'react-router-dom';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
@@ -187,6 +187,9 @@ function resolveVariant(param?: string): { cfg: VariantCfg; scenes: Scene[] } {
 export default function QQTrailerPage() {
   const { variant } = useParams();
   const { cfg, scenes } = resolveVariant(variant);
+  // ?slides in der URL oeffnet direkt den Slideshow-Modus (Deep-Link aus /reels + Menue).
+  const [sp] = useSearchParams();
+  const slidesDeepLink = sp.has('slides');
 
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -197,7 +200,7 @@ export default function QQTrailerPage() {
   // Reel-Modus = randlos-fuellendes exaktes 9:16 (kein Rahmen/Rand/Schatten),
   // vertikal zentriert. Der Handy-Screen-Record croppt dann sauber auf 9:16.
   const [reel, setReel] = useState(false);
-  const [slideshow, setSlideshow] = useState(false);
+  const [slideshow, setSlideshow] = useState(slidesDeepLink);
   const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);

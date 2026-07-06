@@ -40,6 +40,7 @@ const cozyQuizTestLinks: LinkItem[] = [
 const marketingLinks: LinkItem[] = [
   { path: '/',         label: 'Landing-Page',      emoji: '🏠', note: 'Öffentliche Startseite (play.cozyquiz.app)' },
   { path: '/about',    label: 'Was ist CozyQuiz?', emoji: 'ℹ️', note: 'Marketing-Erklärseite (/about)' },
+  { path: '/reels',    label: 'Reels-Hub',         emoji: '📱', note: 'Alle Werbe-Reels + Bilder-Slideshow-Deep-Links (Foto-Karussell fürs Durchtippen & Screenshotten)' },
   { path: '/trailer',  label: 'Trailer',           emoji: '🎬', note: 'Showreel / Trailer-Seite' },
   { path: '/showroom', label: 'Showroom',          emoji: '🖼️', note: 'Format-Showcase' },
   { path: '/skins',    label: 'Skins & Themes',    emoji: '🎨', note: 'Design-Skins Vorschau (Cozy / Mono / SoftPop / Neo)' },

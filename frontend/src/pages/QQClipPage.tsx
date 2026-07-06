@@ -254,9 +254,17 @@ export default function QQClipPage() {
                 {active.q}
               </div>
               {/* Countdown-Ring im Quiz-Timer-Stil (Brand-konsistent): laeuft
-                  ab statt zu drehen; Pink -> Orange -> Rot wie der Beamer-Timer. */}
+                  ab statt zu drehen; Pink -> Orange -> Rot wie der Beamer-Timer.
+                  Bei 0 zeigt der Ring das Symbol der Frage (Wolf): Oktopus-Frage =
+                  Wolfs eigener cozy3d-Oktopus statt des generischen Timer-Emojis. */}
               <div style={{ margin: '6cqh 0 4cqh', animation: 'popIn 0.5s var(--eb) 0.35s both' }}>
-                <CountdownRing seconds={4} count={count} />
+                <CountdownRing
+                  seconds={4}
+                  count={count}
+                  endContent={active.visual === 'octopus'
+                    ? <img src="/avatars/cozy3d/oktopus.png" alt="" style={{ width: '22cqw', height: '22cqw', objectFit: 'contain' }} />
+                    : undefined}
+                />
               </div>
               <div style={{ fontWeight: 800, fontSize: '5.2cqw', opacity: 0.96, animation: 'fadeUp 0.6s ease 0.6s both' }}>
                 Kommentier deine Schätzung <span style={{ color: PINK_MID }}>👇</span>
@@ -415,7 +423,7 @@ function CustomForm({ onApply }: { onApply: (q: ClipQ) => void }) {
 
 // Ablaufender Ring-Timer im Look des Beamer-Timers (CozyQuizBeamerTimer): SVG-Ring
 // schrumpft von voll → leer über `seconds`; Farbe Pink → Orange → Rot je Restzeit.
-function CountdownRing({ seconds, count }: { seconds: number; count: number }) {
+function CountdownRing({ seconds, count, endContent }: { seconds: number; count: number; endContent?: React.ReactNode }) {
   const R = 80, STROKE = 9, C = 2 * Math.PI * R;
   const [go, setGo] = useState(false);
   useEffect(() => { const t = setTimeout(() => setGo(true), 40); return () => clearTimeout(t); }, []);
@@ -433,7 +441,8 @@ function CountdownRing({ seconds, count }: { seconds: number; count: number }) {
         fontFamily: DISPLAY, fontWeight: 800, fontSize: '16cqw', color,
         fontVariantNumeric: 'tabular-nums', textShadow: `0 0 3cqw ${color}88`, animation: 'countPop 0.6s var(--eb)',
       }}>
-        {count > 0 ? count : '⏰'}
+        {/* Bei 0 das Frage-Symbol (z.B. Oktopus) statt des generischen ⏰. */}
+        {count > 0 ? count : (endContent ?? '⏰')}
       </div>
     </div>
   );

@@ -11,7 +11,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { downloadReelSlide } from '../reelCapture';
+import { downloadReelSlide, runSlideExport, deliverReelExport, zipStore, downloadBlob } from '../reelCapture';
 import { QQ_TIEBREAKER_POOL } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
@@ -94,8 +94,9 @@ export default function QQClipPage() {
   const [paused, setPaused] = useState(false);
   const [count, setCount] = useState(4);
   const [reel, setReel] = useState(false);
-  // ?slides in der URL oeffnet direkt den Slideshow-Modus (Deep-Link aus /reels + Menue).
-  const [slideshow, setSlideshow] = useState(params.has('slides'));
+  // ?slides oeffnet direkt den Slideshow-Modus; ?export=zip|frames = Batch-Export.
+  const exportMode = (params.get('export') === 'zip' || params.get('export') === 'frames') ? params.get('export') as 'zip' | 'frames' : null;
+  const [slideshow, setSlideshow] = useState(params.has('slides') || !!exportMode);
   const big = reel || slideshow;
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -147,6 +148,52 @@ export default function QQClipPage() {
       setSaving(false);
     }
   };
+
+  // Ganzes Reel als ZIP (alle Folien als einzelne HD-PNGs).
+  const [zipProg, setZipProg] = useState<string | null>(null);
+  const saveZip = async () => {
+    if (!frameRef.current || zipProg) return;
+    const prev = scene;
+    setSlideshow(true);
+    setZipProg('0/' + SCENES.length);
+    try {
+      await new Promise((r) => setTimeout(r, 80));
+      const bytes = await runSlideExport({
+        frameRef, count: SCENES.length, setScene,
+        onProgress: (d, t) => setZipProg(`${d}/${t}`),
+      });
+      const files = bytes.map((data, i) => ({ name: `clip-${String(i + 1).padStart(2, '0')}.png`, data }));
+      downloadBlob(zipStore(files), 'cozyquiz-clip-slides.zip');
+    } catch (e) {
+      console.error('ZIP-Export fehlgeschlagen', e);
+      alert('Ups — der ZIP-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setZipProg(null);
+      setScene(prev);
+    }
+  };
+
+  // Auto-Export-Modus (?export=zip|frames).
+  useEffect(() => {
+    if (!exportMode) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await new Promise((r) => setTimeout(r, 700)); // kalter iframe-Start: App + erste Avatare laden lassen
+        const bytes = await runSlideExport({ frameRef, count: SCENES.length, setScene });
+        if (cancelled) return;
+        await deliverReelExport(exportMode, bytes, 'clip');
+      } catch (e) {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'cozyreel-error', message: String(e) }, window.location.origin);
+        } else {
+          console.error('Auto-Export fehlgeschlagen', e);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{
@@ -301,6 +348,9 @@ export default function QQClipPage() {
             </button>
             <button onClick={() => { setScene(0); setSlideshow(true); }} style={btn('rgba(255,255,255,0.10)', '#fff', '1px solid rgba(255,255,255,0.18)')}>
               🖼 Slideshow
+            </button>
+            <button onClick={saveZip} disabled={!!zipProg} style={btn('rgba(255,255,255,0.10)', '#fff', '1px solid rgba(255,255,255,0.18)')}>
+              {zipProg ? `⏳ ${zipProg}` : '⬇ Alle Folien (ZIP)'}
             </button>
           </div>
 

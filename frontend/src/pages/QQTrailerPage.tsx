@@ -22,7 +22,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
-import { downloadReelSlide } from '../reelCapture';
+import { downloadReelSlide, runSlideExport, deliverReelExport, zipStore, downloadBlob } from '../reelCapture';
 
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
@@ -188,9 +188,12 @@ function resolveVariant(param?: string): { cfg: VariantCfg; scenes: Scene[] } {
 export default function QQTrailerPage() {
   const { variant } = useParams();
   const { cfg, scenes } = resolveVariant(variant);
-  // ?slides in der URL oeffnet direkt den Slideshow-Modus (Deep-Link aus /reels + Menue).
+  // ?slides oeffnet direkt den Slideshow-Modus; ?export=zip|frames faehrt den
+  // automatischen Batch-Export (ganzes Reel als ZIP bzw. Frames an /reels-Sammler).
   const [sp] = useSearchParams();
   const slidesDeepLink = sp.has('slides');
+  const exportMode = (sp.get('export') === 'zip' || sp.get('export') === 'frames') ? sp.get('export') as 'zip' | 'frames' : null;
+  const slug = variant ?? 'allgemein';
 
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
@@ -201,7 +204,7 @@ export default function QQTrailerPage() {
   // Reel-Modus = randlos-fuellendes exaktes 9:16 (kein Rahmen/Rand/Schatten),
   // vertikal zentriert. Der Handy-Screen-Record croppt dann sauber auf 9:16.
   const [reel, setReel] = useState(false);
-  const [slideshow, setSlideshow] = useState(slidesDeepLink);
+  const [slideshow, setSlideshow] = useState(slidesDeepLink || !!exportMode);
   const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -249,6 +252,52 @@ export default function QQTrailerPage() {
       setSaving(false);
     }
   };
+
+  // Ganzes Reel als ZIP (alle Folien als einzelne HD-PNGs).
+  const [zipProg, setZipProg] = useState<string | null>(null);
+  const saveZip = async () => {
+    if (!frameRef.current || zipProg) return;
+    const prev = scene;
+    setSlideshow(true);
+    setZipProg('0/' + scenes.length);
+    try {
+      await new Promise((r) => setTimeout(r, 80));
+      const bytes = await runSlideExport({
+        frameRef, count: scenes.length, setScene,
+        onProgress: (d, t) => setZipProg(`${d}/${t}`),
+      });
+      const files = bytes.map((data, i) => ({ name: `${slug}-${String(i + 1).padStart(2, '0')}.png`, data }));
+      downloadBlob(zipStore(files), `cozyquiz-${slug}-slides.zip`);
+    } catch (e) {
+      console.error('ZIP-Export fehlgeschlagen', e);
+      alert('Ups — der ZIP-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setZipProg(null);
+      setScene(prev);
+    }
+  };
+
+  // Auto-Export-Modus (?export=zip|frames): einmalig durchsteppen + ausliefern.
+  useEffect(() => {
+    if (!exportMode) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await new Promise((r) => setTimeout(r, 700)); // kalter iframe-Start: App + erste Avatare laden lassen
+        const bytes = await runSlideExport({ frameRef, count: scenes.length, setScene });
+        if (cancelled) return;
+        await deliverReelExport(exportMode, bytes, slug);
+      } catch (e) {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'cozyreel-error', message: String(e) }, window.location.origin);
+        } else {
+          console.error('Auto-Export fehlgeschlagen', e);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <div style={{
@@ -336,6 +385,10 @@ export default function QQTrailerPage() {
               appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#fff',
               fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer',
             }}>🖼 Slideshow-Modus</button>
+            <button onClick={saveZip} disabled={!!zipProg} style={{
+              appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: zipProg ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.10)', color: '#fff',
+              fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: zipProg ? 'default' : 'pointer',
+            }}>{zipProg ? `⏳ ${zipProg}` : '⬇ Alle Folien (ZIP)'}</button>
           </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />

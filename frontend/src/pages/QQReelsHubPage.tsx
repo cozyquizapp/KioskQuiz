@@ -6,7 +6,9 @@
  * Record). Keine Marketing-Seite, sondern ein Werkzeug-Hub. Öffentlich, aber
  * unverlinkt (nur wer die URL kennt). Verlinkt die /trailer-Varianten.
  */
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { captureReelFramesViaIframe, zipStore, downloadBlob } from '../reelCapture';
 
 const PINK = '#ec4899';
 const NAVY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 55%, #0A0E22 100%)';
@@ -55,7 +57,41 @@ const REELS: Reel[] = [
   },
 ];
 
+// Reels fuer den „alle auf einmal"-Sammelexport (volle Varianten, keine kurzen).
+const EXPORT_REELS = [
+  { slug: 'allgemein', url: '/trailer' },
+  { slug: 'team', url: '/trailer/team' },
+  { slug: 'location', url: '/trailer/location' },
+  { slug: 'geburtstag', url: '/trailer/geburtstag' },
+  { slug: 'welches-team', url: '/welches-team' },
+  { slug: 'clip', url: '/clip' },
+];
+
 export default function QQReelsHubPage() {
+  const [allProg, setAllProg] = useState<string | null>(null);
+
+  // Alle Reels als EIN ZIP: jede Reel-Seite laeuft in einem versteckten iframe
+  // selbst durch (?export=frames) und postet die HD-PNGs zurueck.
+  const exportAllReels = async () => {
+    if (allProg) return;
+    const files: { name: string; data: Uint8Array }[] = [];
+    try {
+      for (let i = 0; i < EXPORT_REELS.length; i++) {
+        const r = EXPORT_REELS[i];
+        setAllProg(`${r.slug} … (${i + 1}/${EXPORT_REELS.length})`);
+        const frames = await captureReelFramesViaIframe(`${r.url}?export=frames`);
+        frames.forEach((data, j) => files.push({ name: `${r.slug}/${r.slug}-${String(j + 1).padStart(2, '0')}.png`, data }));
+      }
+      setAllProg('ZIP wird gepackt …');
+      downloadBlob(zipStore(files), 'cozyquiz-alle-reels-slides.zip');
+    } catch (e) {
+      console.error('Sammel-Export fehlgeschlagen', e);
+      alert('Ups — der Sammel-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setAllProg(null);
+    }
+  };
+
   return (
     <div style={{
       minHeight: '100vh', background: NAVY_BG, color: '#fff', fontFamily: BODY,
@@ -73,6 +109,25 @@ export default function QQReelsHubPage() {
             Alle Werbe-Reels auf einen Blick. Karte tippen → im <b style={{ color: '#d7d4ea' }}>Reel-Modus</b> öffnen → am Handy mit der Bildschirmaufnahme abfilmen.
           </div>
         </header>
+
+        {/* Sammel-Export: alle Reels als ein ZIP (einzelne HD-PNGs). */}
+        <button
+          onClick={exportAllReels}
+          disabled={!!allProg}
+          style={{
+            appearance: 'none', border: '1px solid rgba(236,72,153,0.4)', borderRadius: 14,
+            background: allProg ? 'rgba(236,72,153,0.12)' : PINK, color: '#fff',
+            fontFamily: BODY, fontWeight: 900, fontSize: 15.5, padding: '13px 16px',
+            cursor: allProg ? 'default' : 'pointer', boxShadow: allProg ? 'none' : '0 8px 22px rgba(236,72,153,0.35)',
+          }}
+        >
+          {allProg ? `⏳ Export läuft: ${allProg}` : '⬇ Alle Reels als ein ZIP (HD-Bilder)'}
+        </button>
+        {allProg && (
+          <div style={{ color: '#a9a6c4', fontSize: 12.5, fontWeight: 700, textAlign: 'center', marginTop: -8, lineHeight: 1.45 }}>
+            Bitte Tab offen lassen — jedes Reel rendert kurz im Hintergrund. Das dauert ein bisschen.
+          </div>
+        )}
 
         {/* Reel-Karten */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
@@ -127,10 +182,11 @@ export default function QQReelsHubPage() {
           borderRadius: 14, padding: '13px 16px', fontSize: 13, fontWeight: 700, color: '#e7cfe0', lineHeight: 1.5,
         }}>
           💡 <b>Kurz</b> = für TikTok-Reichweite (Hook zuerst, schneller Payoff). <b>Voll</b> = für Bio-Link & Website.
-          <b>🖼 Bilder-Slideshow</b> = Reel wird zum Foto-Karussell: Frame für Frame durchtippen und pro Folie
-          <b style={{ color: '#fff' }}>⬇ HD</b> tippen → das Bild lädt in Full-HD (1080×1920) runter (die Animationen
-          werden fürs Standbild auf ihren Endzustand gesetzt). Jeder Reel hat einen anderen Startframe, damit TikTok
-          sie nicht als Werbung einstuft.
+          <b>🖼 Bilder-Slideshow</b> = Reel wird zum Foto-Karussell. Pro Folie <b style={{ color: '#fff' }}>⬇ HD</b>
+          (einzelnes Bild, 1080×1920) oder <b style={{ color: '#fff' }}>⬇ Alle Folien (ZIP)</b> für das ganze Reel auf
+          einmal. Ganz oben <b style={{ color: '#fff' }}>„Alle Reels als ein ZIP"</b> zieht alle Reels gebündelt. Die
+          Animationen werden fürs Standbild auf ihren Endzustand gesetzt. Jeder Reel hat einen anderen Startframe, damit
+          TikTok sie nicht als Werbung einstuft.
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 4 }}>

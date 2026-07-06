@@ -16,7 +16,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
-import { downloadReelSlide } from '../reelCapture';
+import { downloadReelSlide, runSlideExport, deliverReelExport, zipStore, downloadBlob } from '../reelCapture';
 import { QQ_MEGA_FACTIONS } from '@shared/quarterQuizTypes';
 import { crestSrc } from '../cozyArenaCrests';
 
@@ -52,12 +52,13 @@ const SCENES: Scene[] = [
 ];
 
 export default function QQFactionQuizPage() {
-  // ?slides in der URL oeffnet direkt den Slideshow-Modus (Deep-Link aus /reels + Menue).
+  // ?slides oeffnet direkt den Slideshow-Modus; ?export=zip|frames = Batch-Export.
   const [sp] = useSearchParams();
+  const exportMode = (sp.get('export') === 'zip' || sp.get('export') === 'frames') ? sp.get('export') as 'zip' | 'frames' : null;
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
   const [reel, setReel] = useState(false);
-  const [slideshow, setSlideshow] = useState(sp.has('slides'));
+  const [slideshow, setSlideshow] = useState(sp.has('slides') || !!exportMode);
   const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -90,6 +91,52 @@ export default function QQFactionQuizPage() {
       setSaving(false);
     }
   };
+
+  // Ganzes Reel als ZIP (alle Folien als einzelne HD-PNGs).
+  const [zipProg, setZipProg] = useState<string | null>(null);
+  const saveZip = async () => {
+    if (!frameRef.current || zipProg) return;
+    const prev = scene;
+    setSlideshow(true);
+    setZipProg('0/' + SCENES.length);
+    try {
+      await new Promise((r) => setTimeout(r, 80));
+      const bytes = await runSlideExport({
+        frameRef, count: SCENES.length, setScene,
+        onProgress: (d, t) => setZipProg(`${d}/${t}`),
+      });
+      const files = bytes.map((data, i) => ({ name: `welches-team-${String(i + 1).padStart(2, '0')}.png`, data }));
+      downloadBlob(zipStore(files), 'cozyquiz-welches-team-slides.zip');
+    } catch (e) {
+      console.error('ZIP-Export fehlgeschlagen', e);
+      alert('Ups — der ZIP-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setZipProg(null);
+      setScene(prev);
+    }
+  };
+
+  // Auto-Export-Modus (?export=zip|frames).
+  useEffect(() => {
+    if (!exportMode) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await new Promise((r) => setTimeout(r, 700)); // kalter iframe-Start: App + erste Avatare laden lassen
+        const bytes = await runSlideExport({ frameRef, count: SCENES.length, setScene });
+        if (cancelled) return;
+        await deliverReelExport(exportMode, bytes, 'welches-team');
+      } catch (e) {
+        if (window.parent && window.parent !== window) {
+          window.parent.postMessage({ type: 'cozyreel-error', message: String(e) }, window.location.origin);
+        } else {
+          console.error('Auto-Export fehlgeschlagen', e);
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => { document.title = 'CozyQuiz — Welches Team bist du?'; }, []);
 
@@ -169,6 +216,10 @@ export default function QQFactionQuizPage() {
               appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#fff',
               fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer',
             }}>🖼 Slideshow-Modus</button>
+            <button onClick={saveZip} disabled={!!zipProg} style={{
+              appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: zipProg ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.10)', color: '#fff',
+              fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: zipProg ? 'default' : 'pointer',
+            }}>{zipProg ? `⏳ ${zipProg}` : '⬇ Alle Folien (ZIP)'}</button>
           </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~41&nbsp;s).<br />

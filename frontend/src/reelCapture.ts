@@ -58,42 +58,33 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080, fixed
   const html2canvas = (await import('html2canvas')).default;
 
   if (fixed) {
-    // Offscreen-Klon in exakter Zielgroesse (1080×1350). Der Inhalt ist FUER diese
-    // Groesse designt (passt immer), Ausgabe ist scharf und deterministisch. Der
-    // Live-Frame kann am kleinen Viewport zu klein sein → Inhalt bricht (Cover-Titel).
-    const clone = node.cloneNode(true) as HTMLElement;
-    clone.querySelectorAll('[data-no-capture]').forEach((el) => el.remove());
-    clone.style.cssText += `;position:fixed;left:-99999px;top:0;margin:0;width:${fixed.w}px;height:${fixed.h}px;max-width:none;max-height:none;min-width:0;min-height:0;border-radius:0;box-shadow:none;transform:none;overflow:hidden;`;
-    clone.style.animation = 'none';
-    clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
-      if (!el.style) return;
-      el.style.animation = 'none';
-      el.style.transition = 'none';
-      if (el.style.filter) el.style.filter = 'none';
+    // Der Aufrufer hat den ECHTEN Frame bereits auf fixed.w × fixed.h px gesetzt
+    // (React-State, offscreen). Der Browser hat das Layout in Zielgroesse gemacht →
+    // alle cq-Einheiten sind zu Pixeln aufgeloest. html2canvas liest diese fertigen
+    // Pixel (kein Klon mit falscher cq-Aufloesung mehr → Inhalt in korrekter Groesse).
+    return html2canvas(node, {
+      scale: targetW / fixed.w,
+      width: fixed.w,
+      height: fixed.h,
+      windowWidth: fixed.w,
+      windowHeight: fixed.h,
+      backgroundColor: null,
+      useCORS: true,
+      logging: false,
+      onclone: (_doc: Document, clone: HTMLElement) => {
+        clone.querySelectorAll('[data-no-capture]').forEach((el) => el.remove());
+        clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
+          if (!el.style) return;
+          el.style.animation = 'none';
+          el.style.transition = 'none';
+          if (el.style.filter) el.style.filter = 'none';
+        });
+        clone.style.animation = 'none';
+        clone.style.borderRadius = '0';
+        clone.style.boxShadow = 'none';
+        stripMixedEmoji(clone);
+      },
     });
-    document.body.appendChild(clone);
-    try {
-      await nextFrame();
-      await Promise.all(Array.from(clone.querySelectorAll('img')).map((img) =>
-        img.complete ? null : new Promise<void>((res) => { img.onload = img.onerror = () => res(); })));
-      await sleep(40);
-      return await html2canvas(clone, {
-        scale: targetW / fixed.w,
-        width: fixed.w,
-        height: fixed.h,
-        windowWidth: fixed.w,
-        windowHeight: fixed.h,
-        backgroundColor: null,
-        useCORS: true,
-        logging: false,
-        onclone: (_doc: Document, c: HTMLElement) => {
-          c.querySelectorAll<HTMLElement>('*').forEach((el) => { if (el.style?.filter) el.style.filter = 'none'; });
-          stripMixedEmoji(c);
-        },
-      });
-    } finally {
-      clone.remove();
-    }
   }
 
   // Standard-Pfad (Reels, Live-Frame skaliert).

@@ -182,6 +182,10 @@ export default function QQCarouselPage() {
   const [slide, setSlide] = useState(0);
   const [big, setBig] = useState(!!exportMode);
   const [controls, setControls] = useState(true);
+  // Waehrend des Exports rendert der Frame offscreen in exakt 1080×1350 px, damit der
+  // Browser das Layout in Zielgroesse macht (korrekte cq-Aufloesung) und html2canvas
+  // nur fertige Pixel liest → Download == Live-View.
+  const [exporting, setExporting] = useState(false);
   const frameRef = useRef<HTMLDivElement>(null);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const cur = Math.min(slide, SLIDES.length - 1);
@@ -202,12 +206,23 @@ export default function QQCarouselPage() {
 
   useEffect(() => { document.title = 'CozyQuiz — Karussell'; }, []);
 
+  // Frame offscreen auf 1080×1350 bringen + Layout/Bilder abwarten, dann fn ausfuehren.
+  const withExport = async (fn: () => Promise<void>) => {
+    setExporting(true);
+    // 2 Frames fuer Re-Layout in Zielgroesse + kurz fuer background-image-Decode.
+    await new Promise<void>((r) => requestAnimationFrame(() => requestAnimationFrame(() => r())));
+    await new Promise((r) => setTimeout(r, 140));
+    try { await fn(); } finally { setExporting(false); }
+  };
+
   const [saving, setSaving] = useState(false);
   const saveSlide = async () => {
     if (!frameRef.current || saving) return;
     setSaving(true);
     try {
-      await downloadReelSlide(frameRef.current, `cozyquiz-welches-team-karussell-${String(cur + 1).padStart(2, '0')}.png`, 1080, FIXED);
+      await withExport(async () => {
+        await downloadReelSlide(frameRef.current!, `cozyquiz-welches-team-karussell-${String(cur + 1).padStart(2, '0')}.png`, 1080, FIXED);
+      });
     } catch (e) {
       alert('Ups — der Bild-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -219,16 +234,16 @@ export default function QQCarouselPage() {
   const saveZip = async () => {
     if (!frameRef.current || zipProg) return;
     const prevSlide = slide;
-    setBig(true);
     setZipProg('0/' + SLIDES.length);
     try {
-      await new Promise((r) => setTimeout(r, 80));
-      const bytes = await runSlideExport({
-        frameRef, count: SLIDES.length, setScene: setSlide, fixed: FIXED,
-        onProgress: (d, t) => setZipProg(`${d}/${t}`),
+      await withExport(async () => {
+        const bytes = await runSlideExport({
+          frameRef, count: SLIDES.length, setScene: setSlide, fixed: FIXED,
+          onProgress: (d, t) => setZipProg(`${d}/${t}`),
+        });
+        const files = bytes.map((data, i) => ({ name: `welches-team-${String(i + 1).padStart(2, '0')}.png`, data }));
+        downloadBlob(zipStore(files), 'cozyquiz-welches-team-karussell.zip');
       });
-      const files = bytes.map((data, i) => ({ name: `welches-team-${String(i + 1).padStart(2, '0')}.png`, data }));
-      downloadBlob(zipStore(files), 'cozyquiz-welches-team-karussell.zip');
     } catch (e) {
       alert('Ups — der ZIP-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -244,7 +259,8 @@ export default function QQCarouselPage() {
     (async () => {
       try {
         await new Promise((r) => setTimeout(r, 700));
-        const bytes = await runSlideExport({ frameRef, count: SLIDES.length, setScene: setSlide, fixed: FIXED });
+        let bytes: Uint8Array[] = [];
+        await withExport(async () => { bytes = await runSlideExport({ frameRef, count: SLIDES.length, setScene: setSlide, fixed: FIXED }); });
         if (cancelled) return;
         await deliverReelExport(exportMode, bytes, 'welches-team-karussell');
       } catch (e) {
@@ -269,11 +285,13 @@ export default function QQCarouselPage() {
 
       {/* 4:5-Frame (container-query-Einheiten). */}
       <div ref={frameRef} style={{
-        position: 'relative', aspectRatio: '4 / 5', containerType: 'size',
-        overflow: 'hidden', background: COZY_BG, cursor: 'pointer',
-        ...(big
-          ? { width: 'min(100vw, calc(100dvh * 4 / 5))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
-          : { height: 'min(90vh, calc(100vw * 5 / 4))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
+        containerType: 'size', overflow: 'hidden', background: COZY_BG, cursor: 'pointer',
+        ...(exporting
+          // Export: exakt 1080×1350 px, offscreen → Browser-Layout in Zielgroesse.
+          ? { position: 'fixed' as const, left: '-99999px', top: '0', width: '1080px', height: '1350px', aspectRatio: 'auto', maxWidth: 'none', maxHeight: 'none', borderRadius: 0, boxShadow: 'none' }
+          : big
+          ? { position: 'relative' as const, aspectRatio: '4 / 5', width: 'min(100vw, calc(100dvh * 4 / 5))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
+          : { position: 'relative' as const, aspectRatio: '4 / 5', height: 'min(90vh, calc(100vw * 5 / 4))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
       }} onClick={() => big ? pokeControls() : undefined}>
 
         {big && (

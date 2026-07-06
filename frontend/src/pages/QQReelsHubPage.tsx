@@ -10,7 +10,7 @@ import { Link } from 'react-router-dom';
 
 const PINK = '#ec4899';
 const NAVY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 55%, #0A0E22 100%)';
-const DISPLAY = "'Bricolage Grotesque', 'Inter', system-ui, sans-serif";
+const DISPLAY = "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
 const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 
 type Reel = {

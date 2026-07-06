@@ -26,7 +26,10 @@ import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
 const MAGENTA = '#a21247';
-const DISPLAY = "'Bricolage Grotesque', 'Inter', system-ui, sans-serif";
+// Marken-Font wie die App-Hero-Titel (Lobby/Paused): Stinger Fit zuerst,
+// Bricolage/Inter/Nunito als Fallback (Stinger-Fit-unicode-range lässt Ziffern
+// bewusst auf den Fallback → identisch zur App).
+const DISPLAY = "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
 const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 
 // Cozy-Bühnen-BG (1:1 aus dem Cozy-Theme, qqTheme.ts COZY.surface.pageBg).
@@ -111,27 +114,29 @@ const DECO_BDAY: DecoItem[] = [
   { name: 'cat-mucho',        x: 11, y: 80, s: 12, d: 1.9 },
 ];
 
-const B = { conquer: 4600, board: 5200, cats: 5600, twists: 4800, bets: 4400 };
+// Wolf 2026-07-06: FUN zuerst (Fragen + Minispiele = der Hook), Gebiet-Taktik
+// erst spaet als „obendrauf". „Erobert euer Gebiet" ist NICHT der Aufmacher.
+const B = { fun: 4800, cats: 5400, minigames: 4900, board: 5000 };
 const VARIANTS: Record<string, VariantCfg> = {
   general: {
     title: 'CozyQuiz — Trailer',
     full: [
-      { key: 'title',  dur: 3800 }, { key: 'conquer', dur: B.conquer }, { key: 'board', dur: B.board },
-      { key: 'cats', dur: B.cats }, { key: 'twists', dur: B.twists }, { key: 'bets', dur: B.bets }, { key: 'cta', dur: 4600 },
+      { key: 'title', dur: 3800 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
+      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta', dur: 4600 },
     ],
     kurz: [
-      { key: 'title', dur: 3400 }, { key: 'board', dur: B.board }, { key: 'cta', dur: 4200 },
+      { key: 'title', dur: 3400 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta', dur: 4200 },
     ],
     bgTint: null, deco: DECO_GENERAL,
   },
   team: {
     title: 'CozyQuiz — Teamevent-Reel',
     full: [
-      { key: 'hook-team', dur: 4600 }, { key: 'conquer', dur: B.conquer }, { key: 'board', dur: B.board },
-      { key: 'twists', dur: B.twists }, { key: 'bets', dur: B.bets }, { key: 'cta-team', dur: 4600 },
+      { key: 'hook-team', dur: 5000 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
+      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4600 },
     ],
     kurz: [
-      { key: 'hook-team', dur: 4400 }, { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4200 },
+      { key: 'hook-team', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta-team', dur: 4200 },
     ],
     bgTint: 'radial-gradient(120% 80% at 78% 8%, rgba(38,111,211,0.16), transparent 60%)',
     deco: DECO_TEAM,
@@ -139,11 +144,11 @@ const VARIANTS: Record<string, VariantCfg> = {
   location: {
     title: 'CozyQuiz — Location-Reel',
     full: [
-      { key: 'hook-location', dur: 4800 }, { key: 'board', dur: B.board }, { key: 'conquer', dur: B.conquer },
-      { key: 'cats', dur: B.cats }, { key: 'twists', dur: B.twists }, { key: 'cta-location', dur: 4600 },
+      { key: 'hook-location', dur: 5000 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
+      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta-location', dur: 4600 },
     ],
     kurz: [
-      { key: 'hook-location', dur: 4600 }, { key: 'board', dur: B.board }, { key: 'cta-location', dur: 4200 },
+      { key: 'hook-location', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta-location', dur: 4200 },
     ],
     bgTint: 'radial-gradient(120% 80% at 22% 10%, rgba(162,18,71,0.20), transparent 62%)',
     deco: DECO_LOCATION,
@@ -151,11 +156,11 @@ const VARIANTS: Record<string, VariantCfg> = {
   geburtstag: {
     title: 'CozyQuiz — Geburtstags-Reel',
     full: [
-      { key: 'hook-bday', dur: 4800 }, { key: 'cats', dur: B.cats }, { key: 'conquer', dur: B.conquer },
-      { key: 'board', dur: B.board }, { key: 'twists', dur: B.twists }, { key: 'cta-bday', dur: 4600 },
+      { key: 'hook-bday', dur: 5000 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
+      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta-bday', dur: 4600 },
     ],
     kurz: [
-      { key: 'hook-bday', dur: 4600 }, { key: 'board', dur: B.board }, { key: 'cta-bday', dur: 4200 },
+      { key: 'hook-bday', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta-bday', dur: 4200 },
     ],
     bgTint: 'radial-gradient(110% 70% at 50% 4%, rgba(236,72,153,0.18), transparent 58%)',
     deco: DECO_BDAY,
@@ -313,6 +318,59 @@ function renderScene(key: string) {
     case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Dann komm ich vorbei. Ihr müsst nichts tun außer aufmachen." />;
     case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." />;
 
+    // ── FUN zuerst: das eigentliche Erlebnis (Wolf-Feedback) ──
+    case 'fun':
+      return (
+        <>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9cqw', lineHeight: 1.04, animation: 'fadeUp 0.6s ease both' }}>
+            Quizfragen,<br />die Bock machen
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3cqw', margin: '6.5cqh 0 5cqh' }}>
+            {[{ t: 0, e: '😂', d: 0 }, { t: 2, e: '🎉', d: 0.5 }, { t: 4, e: '🔥', d: 1.0 }].map((p, i) => (
+              <div key={i} style={{ position: 'relative', animation: `fadeUp 0.5s var(--eb) ${0.3 + i * 0.18}s both` }}>
+                <span style={{ position: 'absolute', top: '-5cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '6cqw', animation: `floatPet 3.4s ease-in-out ${p.d}s infinite` }}>{p.e}</span>
+                <PetDisc slug={TEAMS[p.t].slug} color={TEAMS[p.t].color} sizeCqw={19} anim="floatPet 4.4s ease-in-out infinite" />
+              </div>
+            ))}
+          </div>
+          <div style={{ fontWeight: 800, fontSize: '5.6cqw', opacity: 0.96, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 0.7s both' }}>
+            Zusammen mit Freunden<br />oder <span style={{ color: PINK_MID }}>Kolleg:innen</span>.
+          </div>
+        </>
+      );
+
+    // ── Witzige Minispiele (CozyGames / Bunte Tüte) ──
+    case 'minigames':
+      return (
+        <>
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '4cqh', animation: 'fadeUp 0.5s ease both' }}>
+            Und witzige<br />Minispiele
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '2.2cqh', width: '82cqw' }}>
+            {[
+              { e: '🃏', t: 'Bluff', d: 'Wer flunkert am besten?' },
+              { e: '🥔', t: 'Heiße Kartoffel', d: 'Bloß nicht hängen bleiben!' },
+              { e: '🌍', t: 'CozyGuessr', d: 'Wo auf der Welt ist das?' },
+            ].map((m, i) => (
+              <div key={m.t} style={{
+                display: 'flex', alignItems: 'center', gap: '3.5cqw',
+                background: 'rgba(255,255,255,0.10)', borderRadius: '3cqw', padding: '2.2cqh 4cqw',
+                animation: `slideIn 0.5s var(--eb) ${0.25 + i * 0.3}s both`,
+              }}>
+                <span style={{ fontSize: '9cqw', flexShrink: 0 }}>{m.e}</span>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', lineHeight: 1 }}>{m.t}</div>
+                  <div style={{ fontSize: '4cqw', opacity: 0.82 }}>{m.d}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontWeight: 800, fontSize: '4.8cqw', opacity: 0.9, marginTop: '4cqh', animation: 'fadeUp 0.6s ease 1.3s both' }}>
+            Jede Runde <span style={{ color: PINK_MID }}>eine Überraschung</span>.
+          </div>
+        </>
+      );
+
     case 'title':
       return (
         <>
@@ -359,7 +417,7 @@ function renderScene(key: string) {
       return (
         <>
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', marginBottom: '3.5cqh', animation: 'fadeUp 0.5s ease both' }}>
-            Erobert euer Gebiet
+            Und obendrauf:<br />ein bisschen Taktik
           </div>
           <div style={{
             display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.4cqw',
@@ -393,7 +451,7 @@ function renderScene(key: string) {
       return (
         <>
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', marginBottom: '4cqh', animation: 'fadeUp 0.5s ease both' }}>
-            5 Kategorien<br />pro Runde
+            5 Kategorien,<br />nie langweilig
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '2cqh', width: '82cqw' }}>
             {CATEGORIES.map((c, i) => (
@@ -467,7 +525,7 @@ function renderScene(key: string) {
 
 // ── Nischen-Hooks (bewusst unterschiedliche Kompositionen & erste Frames) ─────
 
-// TEAM: kompetitives „VS" — zwei Team-Discs prallen aufeinander. Kein Wordmark.
+// TEAM: Hook mit dem CozyWolf als Payoff (Wolf-Feedback: kein Tier-vs-Tier).
 function HookTeam() {
   return (
     <>
@@ -477,13 +535,14 @@ function HookTeam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
         Bevor ihr <span style={{ color: PINK_MID }}>wieder</span><br />bowlen geht…
       </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '3cqw', margin: '6cqh 0 5cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
-        <PetDisc slug={TEAMS[2].slug} color={TEAMS[2].color} sizeCqw={24} anim="clashL 0.7s var(--eb) 0.5s both" />
-        <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', color: '#fff', background: MAGENTA, borderRadius: '2.4cqw', padding: '0.1em 0.45em', boxShadow: '0 1cqh 3cqh rgba(162,18,71,0.5)', animation: 'popIn 0.5s var(--eb) 1s both' }}>VS</span>
-        <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={24} anim="clashR 0.7s var(--eb) 0.5s both" />
+      <div style={{ margin: '4cqh 0 3cqh' }}>
+        <WolfMascot pose="augenauf.mundauf.winken" sizeCqw={38} anim="popIn 0.7s var(--eb) 0.5s both" />
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.2cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.1s both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 0.9s both' }}>
         …macht ein <span style={{ color: '#fff', background: PINK, borderRadius: 8, padding: '0.08em 0.3em' }}>CozyQuiz</span>.
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.82, marginTop: '2.5cqh', animation: 'fadeUp 0.6s ease 1.2s both' }}>
+        Team gegen Team, live moderiert.
       </div>
     </>
   );
@@ -499,23 +558,43 @@ function HookLocation() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11cqw', lineHeight: 0.98, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
         Dienstag.<br />19 Uhr.<br /><span style={{ color: PINK_MID }}>Leer?</span>
       </div>
-      {/* Beamer-Screen-Motiv: gerahmter Screen mit Mini-Brett + Glow */}
-      <div style={{ position: 'relative', width: '52cqw', margin: '5.5cqh 0 4.5cqh', animation: 'fadeUp 0.6s ease 0.45s both' }}>
+      {/* Beamer-Screen-Motiv: gerahmter Screen zeigt das echte CozyQuiz-Brett
+          (Team-Avatare auf den Feldern) + „LIVE"-Label + Beamer-Glow → liest sich
+          als „stell einen Beamer hin, er füllt sich mit dem Spiel". */}
+      <div style={{ position: 'relative', width: '54cqw', margin: '6.5cqh 0 4.5cqh', animation: 'fadeUp 0.6s ease 0.45s both' }}>
+        {/* On-Screen-Label, überlappt die obere Kante */}
+        <div style={{
+          position: 'absolute', top: '-2.6cqh', left: '50%', transform: 'translateX(-50%)', zIndex: 2,
+          display: 'flex', alignItems: 'center', gap: '1.4cqw', background: '#0F1530',
+          border: '0.4cqw solid rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0.7cqh 2.6cqw',
+          fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.4cqw', whiteSpace: 'nowrap',
+          boxShadow: '0 1cqh 2.6cqh rgba(0,0,0,0.45)', animation: 'popIn 0.5s var(--eb) 1.1s both',
+        }}>
+          <span style={{ width: '2cqw', height: '2cqw', borderRadius: '50%', background: '#ff3b6b', boxShadow: '0 0 2cqw #ff3b6b' }} />
+          CozyQuiz · LIVE
+        </div>
         <div style={{
           aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'rgba(255,255,255,0.06)',
           border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '2cqw',
           boxShadow: `0 0 0 0.5cqw rgba(0,0,0,0.3), 0 2cqh 6cqh rgba(236,72,153,0.35), 0 0 10cqw rgba(236,72,153,0.25)`,
           display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1cqw',
         }}>
-          {[0, 1, 2, 3, 3, 2, 0, 1].map((r, i) => (
+          {[2, 4, 0, 3, 3, 1, 2, 0].map((r, i) => (
             <div key={i} style={{
-              aspectRatio: '1', borderRadius: '1cqw',
+              aspectRatio: '1', borderRadius: '1cqw', position: 'relative',
               background: `linear-gradient(135deg, ${TEAMS[r].color}, ${TEAMS[r].color}cc)`,
+              boxShadow: 'inset 0 0 0 0.25cqw rgba(255,255,255,0.28)',
               animation: `cellIn 0.4s var(--eb) ${0.7 + i * 0.05}s both`,
-            }} />
+            }}>
+              <img src={cz(TEAMS[r].slug)} alt="" style={{
+                position: 'absolute', inset: '10%', width: '80%', height: '80%', objectFit: 'contain',
+                filter: 'drop-shadow(0 0.2cqh 0.3cqh rgba(0,0,0,0.42))',
+              }} />
+            </div>
           ))}
         </div>
-        <div style={{ position: 'absolute', bottom: '-2.4cqh', left: '50%', transform: 'translateX(-50%)', width: '18cqw', height: '2.4cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
+        {/* Standfuß-Schatten (Beamer/Screen steht) */}
+        <div style={{ position: 'absolute', bottom: '-2.4cqh', left: '50%', transform: 'translateX(-50%)', width: '20cqw', height: '2.4cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.2s both' }}>
         Ich füll euch die <span style={{ color: PINK_MID }}>Bude</span>.

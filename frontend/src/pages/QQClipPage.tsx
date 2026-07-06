@@ -15,7 +15,7 @@ import { QQ_TIEBREAKER_POOL } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
-const DISPLAY = "'Bricolage Grotesque', 'Inter', system-ui, sans-serif";
+const DISPLAY = "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
 const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)';
 const cw = (pose: string) => `/avatars/cozywolf/${pose}.png`;

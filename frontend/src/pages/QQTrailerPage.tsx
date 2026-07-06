@@ -21,6 +21,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import { QRCodeSVG } from 'qrcode.react';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
@@ -258,25 +259,8 @@ export default function QQTrailerPage() {
             }}
           >✕</button>
         )}
-        {/* Stories-Fortschrittsbalken NUR in der Screen-Vorschau — im Reel-Modus
-            weg, weil TikTok/Insta ihre eigene Leiste drüberlegen (Wolf). */}
-        {!reel && (
-          <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
-            {scenes.map((s, i) => (
-              <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-                <div
-                  key={`${s.key}-${cur}-${paused}`}
-                  style={{
-                    height: '100%', borderRadius: 99, background: '#fff',
-                    width: i < cur ? '100%' : '0%',
-                    animation: i === cur && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
-                    ...(i < cur ? { width: '100%' } : {}),
-                  }}
-                />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Kein Stories-Fortschrittsbalken (Wolf): TikTok/Insta legen ihre eigene
+            Leiste drüber, und in der Vorschau stört er nur. */}
 
         {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert) */}
         <FloatingIcons items={cfg.deco} />
@@ -324,7 +308,7 @@ function renderScene(key: string) {
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." />;
-    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Dann komm ich vorbei. Ihr müsst nichts tun außer aufmachen." />;
+    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." />;
     case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." />;
 
     // ── Echte Frage-Momente (je Nische anderer Kategorie-Typ) ──
@@ -380,10 +364,10 @@ function renderScene(key: string) {
             ))}
           </div>
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.2cqw', lineHeight: 1.1, animation: 'popIn 0.6s var(--eb) 0.95s both' }}>
-            Jede Runde ein<br />anderes Minispiel.
+            Jede Runde eine<br />neue Überraschung.
           </div>
           <div style={{ fontWeight: 800, fontSize: '4.8cqw', opacity: 0.92, marginTop: '3cqh', animation: 'fadeUp 0.6s ease 1.35s both' }}>
-            Du weißt nie, <span style={{ color: PINK_MID }}>welches kommt</span>.
+            Du weißt nie, <span style={{ color: PINK_MID }}>was kommt</span>.
           </div>
         </>
       );
@@ -575,11 +559,10 @@ function HookLocation() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11cqw', lineHeight: 0.98, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
         Dienstag.<br />19 Uhr.<br /><span style={{ color: PINK_MID }}>Leer?</span>
       </div>
-      {/* Beamer-Screen-Motiv: gerahmter Screen zeigt das echte CozyQuiz-Brett
-          (Team-Avatare auf den Feldern) + „LIVE"-Label + Beamer-Glow → liest sich
-          als „stell einen Beamer hin, er füllt sich mit dem Spiel". */}
-      <div style={{ position: 'relative', width: '58cqw', margin: '5cqh 0 4.5cqh', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp 0.6s ease 0.45s both' }}>
-        {/* LIVE-Label ÜBER dem Screen (kein Overlap mit den Feldern) */}
+      {/* Screen zeigt die echte LOBBY: QR-Code + „Scannt euch rein!" + joinende
+          Teams — universell verständlich („scan to join"), einladend, statt eines
+          abstrakten Bretts, mit dem Nicht-Spieler nichts anfangen können (Wolf). */}
+      <div style={{ position: 'relative', width: '64cqw', margin: '5.5cqh 0 4.5cqh', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp 0.6s ease 0.45s both' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '1.4cqw', background: '#0F1530',
           border: '0.4cqw solid rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0.7cqh 3cqw',
@@ -589,29 +572,45 @@ function HookLocation() {
           <span style={{ width: '2cqw', height: '2cqw', borderRadius: '50%', background: '#ff3b6b', boxShadow: '0 0 2cqw #ff3b6b' }} />
           CozyQuiz · LIVE
         </div>
-        {/* Screen-Rahmen: board-artiges 5×3-Raster, das den Screen VOLL füllt. */}
+        {/* Screen-Rahmen mit Lobby-Inhalt */}
         <div style={{
-          width: '100%', aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'rgba(255,255,255,0.06)',
-          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '1.6cqw',
+          width: '100%', aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'linear-gradient(160deg, #1E2A5A, #0F1530)',
+          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '3cqw',
           boxShadow: `0 0 0 0.5cqw rgba(0,0,0,0.3), 0 2cqh 6cqh rgba(236,72,153,0.35), 0 0 10cqw rgba(236,72,153,0.25)`,
-          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: '0.7cqw',
+          display: 'flex', alignItems: 'center', gap: '4cqw',
         }}>
-          {[0, 0, 1, 1, 2, 0, 0, 1, 2, 2, 0, 3, 1, 1, 2].map((r, i) => (
-            <div key={i} style={{
-              borderRadius: '0.8cqw', position: 'relative',
-              background: `linear-gradient(135deg, ${TEAMS[r].color}, ${TEAMS[r].color}cc)`,
-              boxShadow: 'inset 0 0 0 0.2cqw rgba(255,255,255,0.28)',
-              animation: `cellIn 0.35s var(--eb) ${0.7 + i * 0.035}s both`,
-            }}>
-              <img src={cz(TEAMS[r].slug)} alt="" style={{
-                position: 'absolute', inset: '12%', width: '76%', height: '76%', objectFit: 'contain',
-                filter: 'drop-shadow(0 0.2cqh 0.3cqh rgba(0,0,0,0.42))',
-              }} />
+          {/* QR-Code (echt, auf play.cozyquiz.app) */}
+          <div className="qr-box" style={{
+            height: '84%', aspectRatio: '1', background: '#fff', borderRadius: '1.8cqw', padding: '1.4cqw',
+            display: 'grid', placeItems: 'center', flexShrink: 0,
+            boxShadow: '0 0.6cqh 1.4cqh rgba(0,0,0,0.4)', animation: 'popIn 0.5s var(--eb) 0.95s both',
+          }}>
+            <QRCodeSVG value="https://play.cozyquiz.app" size={256} bgColor="#ffffff" fgColor="#1E2A5A" level="M" />
+          </div>
+          {/* „Scannt euch rein!" + joinende Teams */}
+          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1.6cqh', textAlign: 'left' }}>
+            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', lineHeight: 1.02, color: PINK_MID, animation: 'fadeUp 0.5s ease 1.15s both' }}>
+              Scannt euch<br />rein!
             </div>
-          ))}
+            <div style={{ fontWeight: 800, fontSize: '3cqw', opacity: 0.8, letterSpacing: '0.02em', animation: 'fadeUp 0.5s ease 1.3s both' }}>
+              cozyquiz.app
+            </div>
+            <div style={{ display: 'flex', gap: '1.2cqw', marginTop: '0.6cqh' }}>
+              {[0, 2, 3].map((t, i) => (
+                <div key={i} style={{
+                  width: '7cqw', height: '7cqw', borderRadius: '50%',
+                  background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.3), rgba(255,255,255,0) 52%), ${TEAMS[t].color}`,
+                  display: 'grid', placeItems: 'center', boxShadow: `0 0.4cqh 1cqh ${TEAMS[t].color}66`,
+                  animation: `popIn 0.4s var(--eb) ${1.45 + i * 0.16}s both`,
+                }}>
+                  <img src={cz(TEAMS[t].slug)} alt="" style={{ width: '82%', height: '82%', objectFit: 'contain' }} />
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
         {/* Standfuß-Schatten (Screen steht) */}
-        <div style={{ marginTop: '2.2cqh', width: '22cqw', height: '2.2cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
+        <div style={{ marginTop: '2.2cqh', width: '24cqw', height: '2.2cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.2s both' }}>
         Ich füll euch die <span style={{ color: PINK_MID }}>Bude</span>.
@@ -923,4 +922,5 @@ const KEYFRAMES = `
   @keyframes revealCorrect { to { background: linear-gradient(135deg, #16a34a, #22c55e); box-shadow: 0 0 0 0.4cqw rgba(255,255,255,0.45), 0 1cqh 3cqh rgba(34,197,94,0.5); } }
   @keyframes stealOut { to { opacity: 0; transform: scale(0.65); } }
   @keyframes stealIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
+  .qr-box svg { width: 100%; height: 100%; display: block; }
 `;

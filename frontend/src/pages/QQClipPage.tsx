@@ -138,22 +138,7 @@ export default function QQClipPage() {
           }}>✕</button>
         )}
 
-        {/* Fortschrittsbalken NUR in der Screen-Vorschau — im Reel-Modus weg, weil
-            TikTok/Insta ihre eigene Leiste drüberlegen (Wolf). */}
-        {!reel && (
-          <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
-            {SCENES.map((s, i) => (
-              <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-                <div key={`${s.key}-${scene}-${paused}-${qIndex}`} style={{
-                  height: '100%', borderRadius: 99, background: '#fff',
-                  width: i < scene ? '100%' : '0%',
-                  animation: i === scene && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
-                  ...(i < scene ? { width: '100%' } : {}),
-                }} />
-              </div>
-            ))}
-          </div>
-        )}
+        {/* Kein Fortschrittsbalken (Wolf): TikTok/Insta legen ihre eigene drüber. */}
 
         {/* Szene */}
         <div key={`${scene}-${qIndex}-${custom ? 'c' : 'p'}`} style={{

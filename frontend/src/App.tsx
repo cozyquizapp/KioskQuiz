@@ -177,6 +177,7 @@ function App() {
           <Route path="/about"      element={<QQAboutPage />} />
           <Route path="/was-ist-cozyquiz" element={<QQAboutPage />} />
           <Route path="/trailer"    element={<QQTrailerPage />} />
+          <Route path="/trailer/:variant" element={<QQTrailerPage />} />
           <Route path="/blinktest"  element={<QQBlinkTestPage />} />
           <Route path="/moderator"  element={<PinGate><QQErrorBoundary source="moderator"><QQModeratorPage /></QQErrorBoundary></PinGate>} />
           {/* 2026-05-25 (Wolf 'test-modus zum reveal-testen'): selbe Mod-Komponente

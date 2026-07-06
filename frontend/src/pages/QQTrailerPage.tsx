@@ -1,13 +1,26 @@
 /**
- * QQTrailerPage — animierter Werbe-Trailer „Was ist CozyQuiz?" im 9:16-Hochformat.
+ * QQTrailerPage — animierte Werbe-Reels im 9:16-Hochformat, CozyWolf-Marke.
  *
  * 2026-06-25 (Wolf): kurzer Erklär-Trailer der Bock macht — autoplay + loop,
- * gecaptionte Motion-Sequenz in CozyWolf-Marke mit den echten cozy3d-Game-
- * Avataren. Gedacht zum Live-Herzeigen am Handy ODER als Bildschirmaufnahme
- * fürs Instagram-Reel (@cozywolf.events). Inhalt 1:1 aus den echten Spielregeln,
- * nichts Erfundenes. Route /trailer, öffentlich.
+ * gecaptionte Motion-Sequenz mit den echten cozy3d-Game-Avataren. Inhalt 1:1
+ * aus den echten Spielregeln, nichts Erfundenes. Zum Live-Herzeigen ODER als
+ * Bildschirmaufnahme fürs Reel (@cozywolf.events).
+ *
+ * 2026-07-06 (Wolf): NISCHEN-VARIANTEN. Der /trailer läuft super (1700+ Views),
+ * jetzt zielgruppen-spitze Reels. WICHTIG (Wolf): die Titel-/Startframes dürfen
+ * NICHT alle gleich aussehen — sonst stuft TikTok es als Werbung/Spam ein. Also
+ * hat JEDE Nische einen eigenen Hook-Screen (andere Komposition + erster Frame +
+ * Farb-Zweitton + Deko) und ein eigenes CTA; der erklärende Mittelteil
+ * (Erobern/Brett) wird geteilt, teils in anderer Reihenfolge.
+ *
+ * Routen (öffentlich):
+ *   /trailer                 — allgemein (unverändert)
+ *   /trailer/team            — Teamevent/Firmen (voll)     · /trailer/team-kurz
+ *   /trailer/location        — Café/Pub/Bar (voll)         · /trailer/location-kurz
+ *   /trailer/geburtstag      — Geburtstag/Privat (voll)    · /trailer/geburtstag-kurz
  */
 import { useEffect, useRef, useState } from 'react';
+import { useParams } from 'react-router-dom';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
@@ -58,17 +71,110 @@ const TWISTS = [
 ];
 
 type Scene = { key: string; dur: number };
-const SCENES: Scene[] = [
-  { key: 'title',  dur: 3800 },
-  { key: 'conquer', dur: 4600 },
-  { key: 'board',  dur: 5200 },
-  { key: 'cats',   dur: 5600 },
-  { key: 'twists', dur: 4800 },
-  { key: 'bets',   dur: 4400 },
-  { key: 'cta',    dur: 4600 },
+
+// ── Nischen-Varianten ────────────────────────────────────────────────────────
+// Jede Nische: eigener Hook-Screen (Key 'hook-*') + eigenes CTA (Key 'cta-*') +
+// eigener Zweitton/Deko/BG-Tint → unterschiedliche Startframes (kein Werbe-Flag).
+// Body-Szenen (conquer/board/cats/twists/bets) werden geteilt, teils umsortiert.
+type DecoItem = { name: string; x: number; y: number; s: number; d: number };
+type VariantCfg = {
+  title: string;          // document.title
+  full: Scene[];
+  kurz: Scene[];
+  bgTint: string | null;  // subtiler Overlay-Radiant für Startframe-Unterschied
+  deco: DecoItem[];       // schwebende Hintergrund-Icons (Position/Set variiert)
+};
+
+const DECO_GENERAL: DecoItem[] = [
+  { name: 'cat-schaetzchen',  x: 8,  y: 15, s: 13, d: 0 },
+  { name: 'cat-mucho',        x: 82, y: 21, s: 11, d: 1.1 },
+  { name: 'cat-cheese',       x: 13, y: 79, s: 12, d: 0.6 },
+  { name: 'cat-bunte-tuete',  x: 84, y: 74, s: 13, d: 1.8 },
+  { name: 'cat-zehn-von-zehn', x: 80, y: 47, s: 10, d: 2.5 },
+];
+const DECO_TEAM: DecoItem[] = [
+  { name: 'action-steal',     x: 80, y: 14, s: 12, d: 0.3 },
+  { name: 'cat-mucho',        x: 9,  y: 24, s: 11, d: 1.4 },
+  { name: 'award-underdog',   x: 84, y: 72, s: 12, d: 0.9 },
+  { name: 'cat-zehn-von-zehn', x: 11, y: 78, s: 11, d: 2.1 },
+];
+const DECO_LOCATION: DecoItem[] = [
+  { name: 'cat-cheese',       x: 10, y: 18, s: 12, d: 0.5 },
+  { name: 'cat-bunte-tuete',  x: 83, y: 26, s: 12, d: 1.7 },
+  { name: 'cat-schaetzchen',  x: 84, y: 70, s: 11, d: 1.0 },
+  { name: 'cat-mucho',        x: 12, y: 74, s: 12, d: 2.3 },
+];
+const DECO_BDAY: DecoItem[] = [
+  { name: 'cat-bunte-tuete',  x: 9,  y: 14, s: 14, d: 0.2 },
+  { name: 'cat-schaetzchen',  x: 83, y: 20, s: 12, d: 1.2 },
+  { name: 'cat-cheese',       x: 85, y: 73, s: 12, d: 0.7 },
+  { name: 'cat-mucho',        x: 11, y: 80, s: 12, d: 1.9 },
 ];
 
+const B = { conquer: 4600, board: 5200, cats: 5600, twists: 4800, bets: 4400 };
+const VARIANTS: Record<string, VariantCfg> = {
+  general: {
+    title: 'CozyQuiz — Trailer',
+    full: [
+      { key: 'title',  dur: 3800 }, { key: 'conquer', dur: B.conquer }, { key: 'board', dur: B.board },
+      { key: 'cats', dur: B.cats }, { key: 'twists', dur: B.twists }, { key: 'bets', dur: B.bets }, { key: 'cta', dur: 4600 },
+    ],
+    kurz: [
+      { key: 'title', dur: 3400 }, { key: 'board', dur: B.board }, { key: 'cta', dur: 4200 },
+    ],
+    bgTint: null, deco: DECO_GENERAL,
+  },
+  team: {
+    title: 'CozyQuiz — Teamevent-Reel',
+    full: [
+      { key: 'hook-team', dur: 4600 }, { key: 'conquer', dur: B.conquer }, { key: 'board', dur: B.board },
+      { key: 'twists', dur: B.twists }, { key: 'bets', dur: B.bets }, { key: 'cta-team', dur: 4600 },
+    ],
+    kurz: [
+      { key: 'hook-team', dur: 4400 }, { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4200 },
+    ],
+    bgTint: 'radial-gradient(120% 80% at 78% 8%, rgba(38,111,211,0.16), transparent 60%)',
+    deco: DECO_TEAM,
+  },
+  location: {
+    title: 'CozyQuiz — Location-Reel',
+    full: [
+      { key: 'hook-location', dur: 4800 }, { key: 'board', dur: B.board }, { key: 'conquer', dur: B.conquer },
+      { key: 'cats', dur: B.cats }, { key: 'twists', dur: B.twists }, { key: 'cta-location', dur: 4600 },
+    ],
+    kurz: [
+      { key: 'hook-location', dur: 4600 }, { key: 'board', dur: B.board }, { key: 'cta-location', dur: 4200 },
+    ],
+    bgTint: 'radial-gradient(120% 80% at 22% 10%, rgba(162,18,71,0.20), transparent 62%)',
+    deco: DECO_LOCATION,
+  },
+  geburtstag: {
+    title: 'CozyQuiz — Geburtstags-Reel',
+    full: [
+      { key: 'hook-bday', dur: 4800 }, { key: 'cats', dur: B.cats }, { key: 'conquer', dur: B.conquer },
+      { key: 'board', dur: B.board }, { key: 'twists', dur: B.twists }, { key: 'cta-bday', dur: 4600 },
+    ],
+    kurz: [
+      { key: 'hook-bday', dur: 4600 }, { key: 'board', dur: B.board }, { key: 'cta-bday', dur: 4200 },
+    ],
+    bgTint: 'radial-gradient(110% 70% at 50% 4%, rgba(236,72,153,0.18), transparent 58%)',
+    deco: DECO_BDAY,
+  },
+};
+
+/** Route-Param → {cfg, scenes}. 'team-kurz' → Nische team, Format kurz. */
+function resolveVariant(param?: string): { cfg: VariantCfg; scenes: Scene[] } {
+  const raw = (param ?? '').toLowerCase();
+  const kurz = raw.endsWith('-kurz');
+  const niche = kurz ? raw.slice(0, -'-kurz'.length) : raw;
+  const cfg = VARIANTS[niche] ?? VARIANTS.general;
+  return { cfg, scenes: kurz ? cfg.kurz : cfg.full };
+}
+
 export default function QQTrailerPage() {
+  const { variant } = useParams();
+  const { cfg, scenes } = resolveVariant(variant);
+
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
   const pausedRef = useRef(false);
@@ -91,14 +197,20 @@ export default function QQTrailerPage() {
     return () => { if (hideT.current) clearTimeout(hideT.current); };
   }, [reel]);
 
-  useEffect(() => { document.title = 'CozyQuiz — Trailer'; }, []);
+  useEffect(() => { document.title = cfg.title; }, [cfg.title]);
+  // Variant-Wechsel → zurück auf Szene 0 (falls Route ohne Remount wechselt).
+  useEffect(() => { setScene(0); }, [variant]);
 
   // Szenen-Stepper: nach Ablauf der Szenen-Dauer zur nächsten (Loop). Pausierbar.
   useEffect(() => {
     if (paused) return;
-    const t = setTimeout(() => setScene(s => (s + 1) % SCENES.length), SCENES[scene].dur);
+    const safe = Math.min(scene, scenes.length - 1);
+    const t = setTimeout(() => setScene(s => (s + 1) % scenes.length), scenes[safe].dur);
     return () => clearTimeout(t);
-  }, [scene, paused]);
+  }, [scene, paused, scenes]);
+
+  const cur = Math.min(scene, scenes.length - 1);
+  const totalSec = Math.round(scenes.reduce((a, s) => a + s.dur, 0) / 1000);
 
   return (
     <div style={{
@@ -120,6 +232,8 @@ export default function QQTrailerPage() {
           ? { width: 'min(100vw, calc(100dvh * 9 / 16))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
           : { height: 'min(94vh, calc(100vw * 16 / 9))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
       }} onClick={() => reel ? pokeControls() : setPaused(p => !p)}>
+        {/* Nischen-BG-Tint (subtiler Farbstich → unterschiedlicher Startframe) */}
+        {cfg.bgTint && <div aria-hidden style={{ position: 'absolute', inset: 0, background: cfg.bgTint, zIndex: 0, pointerEvents: 'none' }} />}
         {reel && (
           <button
             onClick={(e) => { e.stopPropagation(); setReel(false); }}
@@ -135,32 +249,32 @@ export default function QQTrailerPage() {
         )}
         {/* Stories-Fortschrittsbalken */}
         <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
-          {SCENES.map((s, i) => (
+          {scenes.map((s, i) => (
             <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
               <div
-                key={`${s.key}-${scene}-${paused}`}
+                key={`${s.key}-${cur}-${paused}`}
                 style={{
                   height: '100%', borderRadius: 99, background: '#fff',
-                  width: i < scene ? '100%' : i > scene ? '0%' : '0%',
-                  animation: i === scene && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
-                  ...(i < scene ? { width: '100%' } : {}),
+                  width: i < cur ? '100%' : '0%',
+                  animation: i === cur && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
+                  ...(i < cur ? { width: '100%' } : {}),
                 }}
               />
             </div>
           ))}
         </div>
 
-        {/* Hintergrund-Deko: schwebende Kategorie-Icons */}
-        <FloatingIcons />
+        {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert) */}
+        <FloatingIcons items={cfg.deco} />
 
         {/* Aktive Szene (key → Remount triggert Entrance-Animationen) */}
-        <div key={scene} style={{
+        <div key={cur} style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
           padding: '12cqh 7cqw', zIndex: 5, color: '#fff',
           animation: 'sceneIn 0.5s ease both',
         }}>
-          {renderScene(SCENES[scene].key)}
+          {renderScene(scenes[cur].key)}
         </div>
 
         {paused && (
@@ -179,7 +293,7 @@ export default function QQTrailerPage() {
             borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
           }}>▶ Reel-Modus (randlos 9:16 fürs Aufnehmen)</button>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
-            Tippen = Pause · loopt automatisch (~33&nbsp;s).<br />
+            Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />
             Fürs Reel: <b style={{ color: '#c9c5da' }}>Reel-Modus</b> öffnen → am <b style={{ color: '#c9c5da' }}>Handy</b> mit der Bildschirmaufnahme abfilmen. Das Bild füllt dann randlos 9:16 und croppt in Instagram perfekt.
           </div>
         </div>
@@ -191,6 +305,14 @@ export default function QQTrailerPage() {
 // ── Szenen-Renderer ──────────────────────────────────────────────────────────
 function renderScene(key: string) {
   switch (key) {
+    // ── Nischen-Hooks (jeder optisch eigenständig — anderer erster Frame) ──
+    case 'hook-team':      return <HookTeam />;
+    case 'hook-location':  return <HookLocation />;
+    case 'hook-bday':      return <HookBday />;
+    case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location, egal. Ich bring Beamer, Stimme und gute Laune mit." />;
+    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Dann komm ich vorbei. Ihr müsst nichts tun außer aufmachen." />;
+    case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." />;
+
     case 'title':
       return (
         <>
@@ -336,32 +458,118 @@ function renderScene(key: string) {
       );
 
     case 'cta':
-      return (
-        <>
-          <WolfMascot pose="augenauf.troete.jubel" sizeCqw={40} anim="popIn 0.7s var(--eb) both" />
-          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
-            Bock auf ein<br />CozyQuiz?
-          </div>
-          <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3cqh', opacity: 0.9, animation: 'fadeUp 0.6s ease 0.45s both' }}>
-            Für Bar · Café · Firmenfeier · Event
-          </div>
-          <div style={{ marginTop: '5cqh', display: 'flex', flexDirection: 'column', gap: '1.8cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center' }}>
-              <img src={icon('fx-globe')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />cozywolf.de
-            </span>
-            <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID }}>
-              <img src={cw('head')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />@cozywolf.events
-            </span>
-          </div>
-        </>
-      );
+      return <CtaBlock heading={<>Bock auf ein<br />CozyQuiz?</>} sub="Für Bar · Café · Firmenfeier · Event" tightSub />;
 
     default:
       return null;
   }
 }
 
+// ── Nischen-Hooks (bewusst unterschiedliche Kompositionen & erste Frames) ─────
+
+// TEAM: kompetitives „VS" — zwei Team-Discs prallen aufeinander. Kein Wordmark.
+function HookTeam() {
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.26em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+        TEAMEVENT GESUCHT?
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
+        Bevor ihr <span style={{ color: PINK_MID }}>wieder</span><br />bowlen geht…
+      </div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '3cqw', margin: '6cqh 0 5cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
+        <PetDisc slug={TEAMS[2].slug} color={TEAMS[2].color} sizeCqw={24} anim="clashL 0.7s var(--eb) 0.5s both" />
+        <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', color: '#fff', background: MAGENTA, borderRadius: '2.4cqw', padding: '0.1em 0.45em', boxShadow: '0 1cqh 3cqh rgba(162,18,71,0.5)', animation: 'popIn 0.5s var(--eb) 1s both' }}>VS</span>
+        <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={24} anim="clashR 0.7s var(--eb) 0.5s both" />
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.2cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.1s both' }}>
+        …macht ein <span style={{ color: '#fff', background: PINK, borderRadius: 8, padding: '0.08em 0.3em' }}>CozyQuiz</span>.
+      </div>
+    </>
+  );
+}
+
+// LOCATION: „leerer Abend" — gestapelte Frage + Beamer-Screen-Motiv. Warm/Magenta.
+function HookLocation() {
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.24em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+        CAFÉ · PUB · BAR
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11cqw', lineHeight: 0.98, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
+        Dienstag.<br />19 Uhr.<br /><span style={{ color: PINK_MID }}>Leer?</span>
+      </div>
+      {/* Beamer-Screen-Motiv: gerahmter Screen mit Mini-Brett + Glow */}
+      <div style={{ position: 'relative', width: '52cqw', margin: '5.5cqh 0 4.5cqh', animation: 'fadeUp 0.6s ease 0.45s both' }}>
+        <div style={{
+          aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'rgba(255,255,255,0.06)',
+          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '2cqw',
+          boxShadow: `0 0 0 0.5cqw rgba(0,0,0,0.3), 0 2cqh 6cqh rgba(236,72,153,0.35), 0 0 10cqw rgba(236,72,153,0.25)`,
+          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1cqw',
+        }}>
+          {[0, 1, 2, 3, 3, 2, 0, 1].map((r, i) => (
+            <div key={i} style={{
+              aspectRatio: '1', borderRadius: '1cqw',
+              background: `linear-gradient(135deg, ${TEAMS[r].color}, ${TEAMS[r].color}cc)`,
+              animation: `cellIn 0.4s var(--eb) ${0.7 + i * 0.05}s both`,
+            }} />
+          ))}
+        </div>
+        <div style={{ position: 'absolute', bottom: '-2.4cqh', left: '50%', transform: 'translateX(-50%)', width: '18cqw', height: '2.4cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.2s both' }}>
+        Ich füll euch die <span style={{ color: PINK_MID }}>Bude</span>.
+      </div>
+    </>
+  );
+}
+
+// GEBURTSTAG: Party — Konfetti + Torte, jubelndes Maskottchen zwischen Gästen.
+function HookBday() {
+  return (
+    <>
+      <Confetti />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10.5cqw', lineHeight: 1, animation: 'popIn 0.6s var(--eb) both' }}>
+        <span style={{ fontSize: '11cqw' }}>🎂</span><br />Runder<br />Geburtstag?
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '2.5cqw', margin: '5cqh 0 4cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
+        <PetDisc slug={TEAMS[0].slug} color={TEAMS[0].color} sizeCqw={17} anim="floatPet 4s ease-in-out infinite" />
+        <WolfMascot pose="augenauf.troete.jubel" sizeCqw={30} anim="popIn 0.6s var(--eb) 0.6s both" />
+        <PetDisc slug={TEAMS[3].slug} color={TEAMS[3].color} sizeCqw={17} anim="floatPet 4.6s ease-in-out infinite" />
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '6cqw', lineHeight: 1.1, opacity: 0.98, animation: 'fadeUp 0.6s ease 1.1s both' }}>
+        Keine Lust auf<br />Stehparty mit Chips?
+      </div>
+    </>
+  );
+}
+
 // ── Bausteine ────────────────────────────────────────────────────────────────
+
+// Gemeinsamer CTA-Block (pro Nische anderer heading/sub) — CozyWolf jubelt,
+// Kontakt bleibt konstant (cozywolf.de + @cozywolf.events).
+function CtaBlock({ heading, sub, tightSub }: { heading: React.ReactNode; sub: string; tightSub?: boolean }) {
+  return (
+    <>
+      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={38} anim="popIn 0.7s var(--eb) both" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
+        {heading}
+      </div>
+      <div style={{ fontWeight: 800, fontSize: tightSub ? '4.6cqw' : '4.8cqw', marginTop: '3cqh', opacity: 0.9, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
+        {sub}
+      </div>
+      <div style={{ marginTop: '5cqh', display: 'flex', flexDirection: 'column', gap: '1.8cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center' }}>
+          <img src={icon('fx-globe')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />cozywolf.de
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID }}>
+          <img src={cw('head')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />@cozywolf.events
+        </span>
+      </div>
+    </>
+  );
+}
+
 function PetDisc({ slug, color, sizeCqw, anim }: { slug: string; color: string; sizeCqw: number; anim?: string }) {
   return (
     <div style={{
@@ -386,16 +594,29 @@ function WolfMascot({ pose, sizeCqw, anim }: { pose: string; sizeCqw: number; an
   );
 }
 
-// Dezent schwebende Kategorie-Icons im Hintergrund (Deko) — Wolf-Wunsch:
-// eigene Kategorie-Icons statt Cozy-Tiere.
-function FloatingIcons() {
-  const items = [
-    { name: 'cat-schaetzchen',  x: 8,  y: 15, s: 13, d: 0 },
-    { name: 'cat-mucho',        x: 82, y: 21, s: 11, d: 1.1 },
-    { name: 'cat-cheese',       x: 13, y: 79, s: 12, d: 0.6 },
-    { name: 'cat-bunte-tuete',  x: 84, y: 74, s: 13, d: 1.8 },
-    { name: 'cat-zehn-von-zehn', x: 80, y: 47, s: 10, d: 2.5 },
+// Konfetti-Burst (nur Geburtstags-Hook) — leichte fallende Farbpunkte.
+function Confetti() {
+  const bits = [
+    { x: 14, c: PINK, d: 0 }, { x: 28, c: '#FEC814', d: 0.3 }, { x: 42, c: '#266FD3', d: 0.6 },
+    { x: 58, c: '#9DCB2F', d: 0.15 }, { x: 72, c: '#9A65D5', d: 0.5 }, { x: 86, c: PINK_MID, d: 0.8 },
+    { x: 20, c: '#9DCB2F', d: 1.0 }, { x: 50, c: '#FEC814', d: 1.3 }, { x: 80, c: '#266FD3', d: 1.1 },
   ];
+  return (
+    <div aria-hidden style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 2 }}>
+      {bits.map((b, i) => (
+        <span key={i} style={{
+          position: 'absolute', left: `${b.x}cqw`, top: '-4cqh',
+          width: '2.2cqw', height: '2.8cqw', borderRadius: '0.4cqw', background: b.c,
+          animation: `confetti 2.6s linear ${b.d}s infinite`,
+        }} />
+      ))}
+    </div>
+  );
+}
+
+// Dezent schwebende Icons im Hintergrund (Deko) — Set/Positionen pro Nische
+// variiert, damit die Startframes sich unterscheiden.
+function FloatingIcons({ items }: { items: DecoItem[] }) {
   return (
     <>
       {items.map(p => (
@@ -421,4 +642,7 @@ const KEYFRAMES = `
   @keyframes cellPulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.05); } }
   @keyframes barFill { from { width: 0%; } to { width: 100%; } }
   @keyframes floatPet { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-3cqh) rotate(4deg); } }
+  @keyframes clashL { 0% { opacity: 0; transform: translateX(-12cqw); } 70% { transform: translateX(1.5cqw); } 100% { opacity: 1; transform: none; } }
+  @keyframes clashR { 0% { opacity: 0; transform: translateX(12cqw); } 70% { transform: translateX(-1.5cqw); } 100% { opacity: 1; transform: none; } }
+  @keyframes confetti { 0% { opacity: 0; transform: translateY(0) rotate(0deg); } 10% { opacity: 1; } 100% { opacity: 0.9; transform: translateY(150cqh) rotate(340deg); } }
 `;

@@ -41,7 +41,7 @@ const FACTION_META: Record<string, { accent: string; char: string }> = {
 type Scene = { key: string; dur: number };
 const SCENES: Scene[] = [
   { key: 'intro', dur: 3800 },
-  ...QQ_MEGA_FACTIONS.map((_, i) => ({ key: `fac-${i}`, dur: 2900 })),
+  ...QQ_MEGA_FACTIONS.map((_, i) => ({ key: `fac-${i}`, dur: 3500 })),
   // Wolf 2026-07-06: Kontext (Groß-Gruppen-Modus) GANZ ans Ende — Anfang muss
   // catchy sein, nicht erklärend. Erklärt kurz vor dem CTA, dass die 8 Team-Typen
   // zum Groß-Event-Modus gehören (sonst suchen Leute im normalen CozyQuiz danach).
@@ -125,7 +125,7 @@ export default function QQFactionQuizPage() {
             fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
           }}>▶ Reel-Modus (randlos 9:16 fürs Aufnehmen)</button>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
-            Tippen = Pause · loopt automatisch (~36&nbsp;s).<br />
+            Tippen = Pause · loopt automatisch (~41&nbsp;s).<br />
             Fürs Reel: <b style={{ color: '#c9c5da' }}>Reel-Modus</b> öffnen → am Handy mit der Bildschirmaufnahme abfilmen.
           </div>
         </div>
@@ -138,10 +138,12 @@ function renderScene(key: string) {
   if (key === 'intro') {
     return (
       <>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', color: PINK, letterSpacing: '-0.01em', animation: 'fadeUp 0.5s ease both' }}>
+        {/* Kleines CozyWolf-Logo überm Wortmark */}
+        <img src={cw('head')} alt="CozyWolf" style={{ width: '20cqw', height: '20cqw', objectFit: 'contain', marginBottom: '1.5cqh', filter: 'drop-shadow(0 0.8cqh 1cqh rgba(0,0,0,0.4))', animation: 'popIn 0.6s var(--eb) both' }} />
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', color: PINK, letterSpacing: '-0.01em', animation: 'fadeUp 0.5s ease 0.15s both' }}>
           CozyQuiz
         </div>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', lineHeight: 1.0, letterSpacing: '-0.02em', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.15s both' }}>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', lineHeight: 1.0, letterSpacing: '-0.02em', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.3s both' }}>
           Welches<br />Team<br />bist du?
         </div>
         <div style={{ fontWeight: 800, fontSize: '5.2cqw', marginTop: '4cqh', opacity: 0.94, animation: 'fadeUp 0.6s ease 0.5s both' }}>
@@ -181,7 +183,7 @@ function renderScene(key: string) {
           <img src={cw('augenauf.troete.jubel')} alt="CozyWolf" style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 1.4cqh 1.8cqh rgba(0,0,0,0.45))', animation: 'floatPet 5s ease-in-out infinite' }} />
         </div>
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '3cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
-          Und? Welches<br />bist du?
+          Und? Welches<br />Team bist du?
         </div>
         <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
           Kommentier dein Team <span style={{ color: PINK_MID }}>👇</span> und tag jemanden, der genau SO spielt.

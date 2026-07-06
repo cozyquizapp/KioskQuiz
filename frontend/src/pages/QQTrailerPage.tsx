@@ -706,8 +706,8 @@ function QMucho() {
           </div>
         ))}
       </div>
-      <div style={{ fontWeight: 800, fontSize: '5cqw', marginTop: '4cqh', animation: 'fadeUp 0.6s ease 3.1s both' }}>
-        Wer zuerst tippt, <span style={{ color: PINK_MID }}>punktet</span>.
+      <div style={{ fontWeight: 800, fontSize: '4.9cqw', marginTop: '4cqh', lineHeight: 1.25, animation: 'fadeUp 0.6s ease 3.1s both' }}>
+        Jede richtige Antwort: <span style={{ color: PINK_MID }}>ein Feld</span>.<br />Die Schnellsten wählen zuerst.
       </div>
     </>
   );

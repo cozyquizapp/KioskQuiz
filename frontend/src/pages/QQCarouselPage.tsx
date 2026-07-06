@@ -108,8 +108,12 @@ function teamSlide(idx: number): JSX.Element {
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10.5cqw', lineHeight: 1.05, color: meta.accent, animation: 'popIn 0.6s var(--eb) 0.25s both' }}>
           {f.nameDe}
         </div>
-        <div style={{ display: 'inline-block', marginTop: '4.2cqh', fontWeight: 900, fontSize: '4.5cqw', color: '#fff', background: `${meta.accent}33`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '0.9cqh 3.5cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
-          „{f.mottoDe}"
+        {/* line-height:1 + inline-flex-Zentrierung: html2canvas rendert die Text-
+            Baseline bei grosser line-height zu tief → Text sass unten. So mittig. */}
+        {/* Live: normal zentriert. Nur im Export korrigiert `data-export-nudge` die
+            html2canvas-Baseline (die haengt den Text ~1.35cqh zu tief) — siehe reelCapture. */}
+        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', marginTop: '4.2cqh', fontWeight: 900, fontSize: '4.5cqw', lineHeight: 1, color: '#fff', background: `${meta.accent}33`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '1.35cqh 3.5cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
+          <span data-export-nudge="-1.35cqh" style={{ display: 'inline-block' }}>„{f.mottoDe}"</span>
         </div>
       </div>
       <div style={{ fontWeight: 700, fontSize: '4.4cqw', marginTop: '3.4cqh', opacity: 0.95, maxWidth: '84cqw', lineHeight: 1.34, animation: 'fadeUp 0.5s ease 0.35s both' }}>

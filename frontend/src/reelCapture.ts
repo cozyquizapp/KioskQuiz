@@ -82,6 +82,11 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080, fixed
         clone.style.animation = 'none';
         clone.style.borderRadius = '0';
         clone.style.boxShadow = 'none';
+        // html2canvas haengt Text mit line-height:1 zu tief → gezielt nur im Export
+        // um data-export-nudge korrigieren (Live-DOM bleibt normal zentriert).
+        clone.querySelectorAll<HTMLElement>('[data-export-nudge]').forEach((el) => {
+          el.style.transform = `translateY(${el.getAttribute('data-export-nudge')})`;
+        });
         stripMixedEmoji(clone);
       },
     });

@@ -52,7 +52,9 @@ const POOL: ClipQ[] = QQ_TIEBREAKER_POOL.map(e => ({
 
 type Scene = { key: 'ask' | 'reveal' | 'cta'; dur: number };
 const SCENES: Scene[] = [
-  { key: 'ask',    dur: 7000 },
+  // ask-Dauer = Countdown (5s) + kleiner Puffer, damit der Ring nicht leer „tot"
+  // rumsteht, bevor die Auflösung kommt (Wolf: „bei Ablauf weird").
+  { key: 'ask',    dur: 5400 },
   { key: 'reveal', dur: 5200 },
   { key: 'cta',    dur: 4200 },
 ];
@@ -136,19 +138,22 @@ export default function QQClipPage() {
           }}>✕</button>
         )}
 
-        {/* Fortschrittsbalken */}
-        <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
-          {SCENES.map((s, i) => (
-            <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-              <div key={`${s.key}-${scene}-${paused}-${qIndex}`} style={{
-                height: '100%', borderRadius: 99, background: '#fff',
-                width: i < scene ? '100%' : '0%',
-                animation: i === scene && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
-                ...(i < scene ? { width: '100%' } : {}),
-              }} />
-            </div>
-          ))}
-        </div>
+        {/* Fortschrittsbalken NUR in der Screen-Vorschau — im Reel-Modus weg, weil
+            TikTok/Insta ihre eigene Leiste drüberlegen (Wolf). */}
+        {!reel && (
+          <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
+            {SCENES.map((s, i) => (
+              <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+                <div key={`${s.key}-${scene}-${paused}-${qIndex}`} style={{
+                  height: '100%', borderRadius: 99, background: '#fff',
+                  width: i < scene ? '100%' : '0%',
+                  animation: i === scene && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
+                  ...(i < scene ? { width: '100%' } : {}),
+                }} />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Szene */}
         <div key={`${scene}-${qIndex}-${custom ? 'c' : 'p'}`} style={{
@@ -329,9 +334,10 @@ function CountdownRing({ seconds, count }: { seconds: number; count: number }) {
 // nach rein = „mitzählen"). Wolf-Wunsch für die EU-Sterne-Schätzfrage.
 function EuFlag() {
   // Echter Kreis in einem 3:2-Rechteck: Prozente skalieren pro Achse unterschiedlich,
-  // also Radius getrennt. EU-Spec = Kreisradius 1/3 der Flaggenhöhe → Ry = 33% (Höhe),
-  // Rx = Ry × Höhe/Breite = 33 × (2/3) = 22% (Breite). Sonst wird der Kreis zum Oval.
-  const Ry = 33, Rx = 22;
+  // also Radius getrennt. Ry (Höhe) und Rx = Ry × Höhe/Breite = Ry × 2/3 (Breite),
+  // sonst wird der Kreis zum Oval. Ry=35 gibt bei 12 Sternen genug Umfang, damit sie
+  // sich NICHT überlappen (Sterngröße 6cqw < Bogenabstand ~7,6cqw).
+  const Ry = 35, Rx = 35 * 2 / 3;
   const stars = Array.from({ length: 12 }, (_, i) => {
     const a = (i * 30) * Math.PI / 180;
     return { x: 50 + Rx * Math.sin(a), y: 50 - Ry * Math.cos(a) };

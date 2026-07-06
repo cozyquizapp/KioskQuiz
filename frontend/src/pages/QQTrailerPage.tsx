@@ -258,22 +258,25 @@ export default function QQTrailerPage() {
             }}
           >✕</button>
         )}
-        {/* Stories-Fortschrittsbalken */}
-        <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
-          {scenes.map((s, i) => (
-            <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-              <div
-                key={`${s.key}-${cur}-${paused}`}
-                style={{
-                  height: '100%', borderRadius: 99, background: '#fff',
-                  width: i < cur ? '100%' : '0%',
-                  animation: i === cur && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
-                  ...(i < cur ? { width: '100%' } : {}),
-                }}
-              />
-            </div>
-          ))}
-        </div>
+        {/* Stories-Fortschrittsbalken NUR in der Screen-Vorschau — im Reel-Modus
+            weg, weil TikTok/Insta ihre eigene Leiste drüberlegen (Wolf). */}
+        {!reel && (
+          <div style={{ position: 'absolute', top: '2cqh', left: '4cqw', right: '4cqw', zIndex: 10, display: 'flex', gap: '1cqw' }}>
+            {scenes.map((s, i) => (
+              <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+                <div
+                  key={`${s.key}-${cur}-${paused}`}
+                  style={{
+                    height: '100%', borderRadius: 99, background: '#fff',
+                    width: i < cur ? '100%' : '0%',
+                    animation: i === cur && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
+                    ...(i < cur ? { width: '100%' } : {}),
+                  }}
+                />
+              </div>
+            ))}
+          </div>
+        )}
 
         {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert) */}
         <FloatingIcons items={cfg.deco} />
@@ -577,40 +580,40 @@ function HookLocation() {
       {/* Beamer-Screen-Motiv: gerahmter Screen zeigt das echte CozyQuiz-Brett
           (Team-Avatare auf den Feldern) + „LIVE"-Label + Beamer-Glow → liest sich
           als „stell einen Beamer hin, er füllt sich mit dem Spiel". */}
-      <div style={{ position: 'relative', width: '54cqw', margin: '6.5cqh 0 4.5cqh', animation: 'fadeUp 0.6s ease 0.45s both' }}>
-        {/* On-Screen-Label, überlappt die obere Kante */}
+      <div style={{ position: 'relative', width: '58cqw', margin: '5cqh 0 4.5cqh', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp 0.6s ease 0.45s both' }}>
+        {/* LIVE-Label ÜBER dem Screen (kein Overlap mit den Feldern) */}
         <div style={{
-          position: 'absolute', top: '-2.6cqh', left: '50%', transform: 'translateX(-50%)', zIndex: 2,
-          display: 'flex', alignItems: 'center', gap: '1.4cqw', background: '#0F1530',
-          border: '0.4cqw solid rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0.7cqh 2.6cqw',
-          fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.4cqw', whiteSpace: 'nowrap',
-          boxShadow: '0 1cqh 2.6cqh rgba(0,0,0,0.45)', animation: 'popIn 0.5s var(--eb) 1.1s both',
+          display: 'inline-flex', alignItems: 'center', gap: '1.4cqw', background: '#0F1530',
+          border: '0.4cqw solid rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0.7cqh 3cqw',
+          marginBottom: '2.4cqh', fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.2cqw', whiteSpace: 'nowrap',
+          boxShadow: '0 1cqh 2.6cqh rgba(0,0,0,0.45)', animation: 'popIn 0.5s var(--eb) 0.9s both',
         }}>
           <span style={{ width: '2cqw', height: '2cqw', borderRadius: '50%', background: '#ff3b6b', boxShadow: '0 0 2cqw #ff3b6b' }} />
           CozyQuiz · LIVE
         </div>
+        {/* Screen-Rahmen: board-artiges 5×3-Raster, das den Screen VOLL füllt. */}
         <div style={{
-          aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'rgba(255,255,255,0.06)',
-          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '2cqw',
+          width: '100%', aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'rgba(255,255,255,0.06)',
+          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '1.6cqw',
           boxShadow: `0 0 0 0.5cqw rgba(0,0,0,0.3), 0 2cqh 6cqh rgba(236,72,153,0.35), 0 0 10cqw rgba(236,72,153,0.25)`,
-          display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1cqw',
+          display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gridTemplateRows: 'repeat(3, 1fr)', gap: '0.7cqw',
         }}>
-          {[2, 4, 0, 3, 3, 1, 2, 0].map((r, i) => (
+          {[0, 0, 1, 1, 2, 0, 0, 1, 2, 2, 0, 3, 1, 1, 2].map((r, i) => (
             <div key={i} style={{
-              aspectRatio: '1', borderRadius: '1cqw', position: 'relative',
+              borderRadius: '0.8cqw', position: 'relative',
               background: `linear-gradient(135deg, ${TEAMS[r].color}, ${TEAMS[r].color}cc)`,
-              boxShadow: 'inset 0 0 0 0.25cqw rgba(255,255,255,0.28)',
-              animation: `cellIn 0.4s var(--eb) ${0.7 + i * 0.05}s both`,
+              boxShadow: 'inset 0 0 0 0.2cqw rgba(255,255,255,0.28)',
+              animation: `cellIn 0.35s var(--eb) ${0.7 + i * 0.035}s both`,
             }}>
               <img src={cz(TEAMS[r].slug)} alt="" style={{
-                position: 'absolute', inset: '10%', width: '80%', height: '80%', objectFit: 'contain',
+                position: 'absolute', inset: '12%', width: '76%', height: '76%', objectFit: 'contain',
                 filter: 'drop-shadow(0 0.2cqh 0.3cqh rgba(0,0,0,0.42))',
               }} />
             </div>
           ))}
         </div>
-        {/* Standfuß-Schatten (Beamer/Screen steht) */}
-        <div style={{ position: 'absolute', bottom: '-2.4cqh', left: '50%', transform: 'translateX(-50%)', width: '20cqw', height: '2.4cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
+        {/* Standfuß-Schatten (Screen steht) */}
+        <div style={{ marginTop: '2.2cqh', width: '22cqw', height: '2.2cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.2s both' }}>
         Ich füll euch die <span style={{ color: PINK_MID }}>Bude</span>.
@@ -627,10 +630,8 @@ function HookBday() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10.5cqw', lineHeight: 1, animation: 'popIn 0.6s var(--eb) both' }}>
         <span style={{ fontSize: '11cqw' }}>🎂</span><br />Runder<br />Geburtstag?
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '2.5cqw', margin: '5cqh 0 4cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
-        <PetDisc slug={TEAMS[0].slug} color={TEAMS[0].color} sizeCqw={17} anim="floatPet 4s ease-in-out infinite" />
-        <WolfMascot pose="augenauf.troete.jubel" sizeCqw={30} anim="popIn 0.6s var(--eb) 0.6s both" />
-        <PetDisc slug={TEAMS[3].slug} color={TEAMS[3].color} sizeCqw={17} anim="floatPet 4.6s ease-in-out infinite" />
+      <div style={{ margin: '5cqh 0 4cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
+        <WolfMascot pose="augenauf.troete.jubel" sizeCqw={36} anim="popIn 0.6s var(--eb) 0.5s both" />
       </div>
       <div style={{ fontWeight: 800, fontSize: '6cqw', lineHeight: 1.1, opacity: 0.98, animation: 'fadeUp 0.6s ease 1.1s both' }}>
         Keine Lust auf<br />Stehparty mit Chips?
@@ -796,17 +797,18 @@ function StealBeat() {
   );
 }
 
-// LOCATION-Beat: die Bude füllt sich mit Teams.
+// LOCATION-Beat: die Bude füllt sich mit GÄSTEN (Wolf: Tier-Teams lasen sich nicht
+// als volle Bude → diverse Menschen-Emojis, die reinploppen = „hier ist was los").
 function FillBeat() {
-  const seats = [0, 1, 2, 3, 4, 0, 2, 4];
+  const crowd = ['🧑', '👩', '🧔', '👵', '🧓', '👨', '👱‍♀️', '🧑‍🦰', '👩‍🦰', '👴', '🧑‍🦱', '👩‍🦳', '🧑‍🦳', '👨‍🦲', '🧑‍🎤'];
   return (
     <>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
         Und plötzlich ist<br />die Bude <span style={{ color: PINK_MID }}>voll.</span>
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '3cqw', width: '76cqw' }}>
-        {seats.map((t, i) => (
-          <PetDisc key={i} slug={TEAMS[t].slug} color={TEAMS[t].color} sizeCqw={16} anim={`popIn 0.5s var(--eb) ${0.3 + i * 0.15}s both`} />
+      <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '1.6cqw', width: '80cqw' }}>
+        {crowd.map((p, i) => (
+          <span key={i} style={{ fontSize: '11cqw', lineHeight: 1, animation: `popIn 0.4s var(--eb) ${0.25 + i * 0.08}s both` }}>{p}</span>
         ))}
       </div>
       <div style={{ fontWeight: 800, fontSize: '5.4cqw', marginTop: '5.5cqh', animation: 'fadeUp 0.6s ease 1.7s both' }}>
@@ -821,11 +823,12 @@ function WinBeat() {
   return (
     <>
       <Confetti />
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '5cqh', animation: 'fadeUp 0.5s ease both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '4cqh', animation: 'fadeUp 0.5s ease both' }}>
         Am Ende gewinnt<br />ein Team.
       </div>
-      <div style={{ position: 'relative', animation: 'popIn 0.7s var(--eb) 0.4s both' }}>
-        <span style={{ position: 'absolute', top: '-10cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '12cqw', animation: 'floatPet 3s ease-in-out infinite' }}>👑</span>
+      {/* Krone ragt nach oben → genug Luft zur Headline, sonst sitzt sie im Text. */}
+      <div style={{ position: 'relative', marginTop: '9cqh', animation: 'popIn 0.7s var(--eb) 0.4s both' }}>
+        <span style={{ position: 'absolute', top: '-8.5cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '11cqw', animation: 'floatPet 3s ease-in-out infinite' }}>👑</span>
         <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={32} />
       </div>
       <div style={{ fontWeight: 800, fontSize: '5.6cqw', marginTop: '6cqh', animation: 'fadeUp 0.6s ease 1s both' }}>

@@ -8,9 +8,11 @@
  * ⚠️ Wolf: Wort „Team" statt „Fraktion"; KEIN Bezug zu Brett/Feldern-Erobern —
  * die Team-Typen leben im Groß-Modus, der KEIN Spielbrett nutzt (nicht mit dem
  * Standard-CozyQuiz-Brett vermischen).
- * ⚠️ Wolf 2026-07-06: eigene „context"-Szene stellt klar, dass das die COZY ARENA
- * (Groß-Gruppen-Modus, ab ~20 Leuten) ist — sonst suchen Leute im normalen
- * CozyQuiz vergeblich nach „Team Feierabend wählen".
+ * ⚠️ Wolf 2026-07-06: „context"-Szene (GANZ am Ende, Anfang muss catchy sein)
+ * stellt klar, dass die 8 Team-Typen nur im Groß-Event-Modus vorkommen — sonst
+ * suchen Leute im normalen CozyQuiz vergeblich nach „Team Feierabend wählen".
+ * NICHT „statt einzeln" behaupten (bei CozyQuiz spielt man auch in Teams, nur
+ * ohne diese 8 Typen).
  */
 import { useEffect, useRef, useState } from 'react';
 import { QQ_MEGA_FACTIONS } from '@shared/quarterQuizTypes';
@@ -39,10 +41,11 @@ const FACTION_META: Record<string, { accent: string; char: string }> = {
 type Scene = { key: string; dur: number };
 const SCENES: Scene[] = [
   { key: 'intro', dur: 3800 },
-  // Wolf 2026-07-06: klarstellen, dass die Team-Typen zum Cozy-Arena-Groß-Modus
-  // gehören (sonst suchen Leute im normalen CozyQuiz nach „Team Feierabend wählen").
-  { key: 'context', dur: 4400 },
   ...QQ_MEGA_FACTIONS.map((_, i) => ({ key: `fac-${i}`, dur: 2900 })),
+  // Wolf 2026-07-06: Kontext (Groß-Gruppen-Modus) GANZ ans Ende — Anfang muss
+  // catchy sein, nicht erklärend. Erklärt kurz vor dem CTA, dass die 8 Team-Typen
+  // zum Groß-Event-Modus gehören (sonst suchen Leute im normalen CozyQuiz danach).
+  { key: 'context', dur: 4400 },
   { key: 'cta', dur: 4800 },
 ];
 
@@ -98,19 +101,22 @@ export default function QQFactionQuizPage() {
           }}>✕</button>
         )}
 
-        {/* Fortschrittsbalken (10 Segmente) */}
-        <div style={{ position: 'absolute', top: '2cqh', left: '3cqw', right: '3cqw', zIndex: 10, display: 'flex', gap: '0.7cqw' }}>
-          {SCENES.map((s, i) => (
-            <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
-              <div key={`${s.key}-${scene}-${paused}`} style={{
-                height: '100%', borderRadius: 99, background: '#fff',
-                width: i < scene ? '100%' : '0%',
-                animation: i === scene && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
-                ...(i < scene ? { width: '100%' } : {}),
-              }} />
-            </div>
-          ))}
-        </div>
+        {/* Fortschrittsbalken NUR in der Screen-Vorschau — im Reel-Modus weg, weil
+            TikTok/Insta ihre eigene Leiste drüberlegen (Wolf). */}
+        {!reel && (
+          <div style={{ position: 'absolute', top: '2cqh', left: '3cqw', right: '3cqw', zIndex: 10, display: 'flex', gap: '0.7cqw' }}>
+            {SCENES.map((s, i) => (
+              <div key={s.key} style={{ flex: 1, height: '0.7cqh', borderRadius: 99, background: 'rgba(255,255,255,0.22)', overflow: 'hidden' }}>
+                <div key={`${s.key}-${scene}-${paused}`} style={{
+                  height: '100%', borderRadius: 99, background: '#fff',
+                  width: i < scene ? '100%' : '0%',
+                  animation: i === scene && !paused ? `barFill ${s.dur}ms linear forwards` : 'none',
+                  ...(i < scene ? { width: '100%' } : {}),
+                }} />
+              </div>
+            ))}
+          </div>
+        )}
 
         <div key={scene} style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
@@ -147,14 +153,14 @@ function renderScene(key: string) {
   if (key === 'intro') {
     return (
       <>
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.2cqw', letterSpacing: '0.22em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
-          COZY ARENA · GROSSE EVENTS
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.2cqw', letterSpacing: '0.24em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+          COZYQUIZ · 8 TEAM-TYPEN
         </div>
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', lineHeight: 1.0, letterSpacing: '-0.02em', marginTop: '2cqh', animation: 'popIn 0.7s var(--eb) 0.15s both' }}>
           Welches<br />Team<br />bist du?
         </div>
         <div style={{ fontWeight: 800, fontSize: '5.2cqw', marginTop: '4cqh', opacity: 0.94, animation: 'fadeUp 0.6s ease 0.5s both' }}>
-          Bleib dran, bis du dich <span style={{ color: PINK_MID }}>erkennst</span>.
+          Bleib dran, bis <span style={{ color: PINK_MID }}>du</span> dich erkennst.
         </div>
       </>
     );
@@ -176,7 +182,7 @@ function renderScene(key: string) {
           Das ist die<br /><span style={{ color: PINK_MID }}>Cozy Arena</span>.
         </div>
         <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.6s both' }}>
-          Der Groß-Gruppen-Modus vom CozyQuiz. Ab etwa 20 Leuten spielt ihr in 8 Teams statt einzeln.
+          Der Groß-Gruppen-Modus vom CozyQuiz. Die acht Team-Typen gibt's nur bei großen Events.
         </div>
       </>
     );

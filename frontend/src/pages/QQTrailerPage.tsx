@@ -309,7 +309,7 @@ function renderScene(key: string) {
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
-    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." commentPrompt={<>Kennst du so eine Bar? <span style={{ color: PINK_MID }}>👇</span> Taggt sie.</>} />;
+    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." commentPrompt={<>Kennst du so eine Bar? <span style={{ color: PINK_MID }}>👇</span><br />Taggt sie.</>} />;
     case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." commentPrompt={<>Wer hat bald Geburtstag? <span style={{ color: PINK_MID }}>👇</span><br />Taggt die Person.</>} />;
 
     // ── Echte Frage-Momente (je Nische anderer Kategorie-Typ) ──

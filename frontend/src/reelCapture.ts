@@ -22,8 +22,33 @@ import type { RefObject } from 'react';
 
 // ── html2canvas-Capture eines 9:16-Frames ────────────────────────────────────
 
-/** Rendert einen Frame als Canvas, ~targetW breit (Default 1080 → 1080×1920). */
-export async function captureReelCanvas(node: HTMLElement, targetW = 1080): Promise<HTMLCanvasElement> {
+/** Emoji-Crash-Guard: Emoji nur aus GEMISCHTEN Text+Emoji-Knoten strippen. */
+function stripMixedEmoji(root: HTMLElement): void {
+  const emojiRe = /(?:\p{Extended_Pictographic}|️|‍)/gu;
+  const walker = root.ownerDocument.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  const textNodes: Text[] = [];
+  while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
+  textNodes.forEach((n) => {
+    const t = n.textContent || '';
+    const stripped = t.replace(emojiRe, '');
+    if (stripped !== t && stripped.trim().length > 0) {
+      n.textContent = stripped.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
+    }
+  });
+}
+
+type FixedSize = { w: number; h: number };
+
+/**
+ * Rendert einen Frame als Canvas, ~targetW breit (Default 1080 → 1080×1920).
+ *
+ * `fixed` (z.B. {w:1080,h:1350} fuers 4:5-Karussell): rendert die Folie in einen
+ * fest dimensionierten OFFSCREEN-Klon und fotografiert den. Das ist der zuverlaessige
+ * Weg — Container-Query-Einheiten (cqw/cqh) loesen sich sonst in html2canvas gegen ein
+ * anderes Format auf → falsches Seitenverhaeltnis + verrutschte Elemente (Wolf-Bug
+ * 2026-07-06: 4:5-Karussell kam als 9:16 raus). Fest = deterministisch = Export==Vorschau.
+ */
+export async function captureReelCanvas(node: HTMLElement, targetW = 1080, fixed?: FixedSize): Promise<HTMLCanvasElement> {
   try {
     if ((document as { fonts?: { ready?: Promise<unknown> } }).fonts?.ready) {
       await (document as unknown as { fonts: { ready: Promise<unknown> } }).fonts.ready;
@@ -31,9 +56,50 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080): Prom
   } catch { /* ignore */ }
 
   const html2canvas = (await import('html2canvas')).default;
+
+  if (fixed) {
+    // Offscreen-Klon in exakter Zielgroesse → deterministische cq-Aufloesung.
+    const clone = node.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('[data-no-capture]').forEach((el) => el.remove());
+    clone.style.cssText += `;position:fixed;left:-99999px;top:0;margin:0;width:${fixed.w}px;height:${fixed.h}px;max-width:none;max-height:none;min-width:0;min-height:0;border-radius:0;box-shadow:none;transform:none;`;
+    // Animationen aus (die Karussell-Einblenden enden auf dem natuerlichen Zustand
+    // = Basis-Style → `none` zeigt den Endzustand). Filter raus (html2canvas-unsicher).
+    clone.style.animation = 'none';
+    clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
+      if (!el.style) return;
+      el.style.animation = 'none';
+      el.style.transition = 'none';
+      if (el.style.filter) el.style.filter = 'none';
+    });
+    document.body.appendChild(clone);
+    try {
+      // Layout + Bilder im Klon sicher fertig.
+      await nextFrame();
+      await Promise.all(Array.from(clone.querySelectorAll('img')).map((img) =>
+        img.complete ? null : new Promise<void>((res) => { img.onload = img.onerror = () => res(); })));
+      await sleep(40);
+      return await html2canvas(clone, {
+        scale: targetW / fixed.w,
+        width: fixed.w,
+        height: fixed.h,
+        windowWidth: fixed.w,
+        windowHeight: fixed.h,
+        backgroundColor: null,
+        useCORS: true,
+        logging: false,
+        onclone: (_doc: Document, c: HTMLElement) => {
+          c.querySelectorAll<HTMLElement>('*').forEach((el) => { if (el.style?.filter) el.style.filter = 'none'; });
+          stripMixedEmoji(c);
+        },
+      });
+    } finally {
+      clone.remove();
+    }
+  }
+
+  // Standard-Pfad (Reels, Live-Frame skaliert).
   const rect = node.getBoundingClientRect();
   const scale = Math.min(6, Math.max(1, targetW / Math.max(1, rect.width)));
-
   return html2canvas(node, {
     scale,
     backgroundColor: null,
@@ -42,9 +108,7 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080): Prom
     windowWidth: node.scrollWidth,
     windowHeight: node.scrollHeight,
     onclone: (_doc: Document, clone: HTMLElement) => {
-      // 1) Overlay-UI raus.
       clone.querySelectorAll('[data-no-capture]').forEach((el) => el.remove());
-      // 2) Alle Animationen auf Endzustand zwingen (Standbild statt Mitten-im-Fade).
       clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
         if (!el.style) return;
         el.style.animationDelay = '-1s';
@@ -56,26 +120,14 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080): Prom
       });
       clone.style.animation = 'none';
       clone.style.transition = 'none';
-      // 3) Emoji-Crash-Guard: Emoji nur aus gemischten Text+Emoji-Knoten strippen.
-      const emojiRe = /(?:\p{Extended_Pictographic}|️|‍)/gu;
-      const doc = clone.ownerDocument;
-      const walker = doc.createTreeWalker(clone, NodeFilter.SHOW_TEXT);
-      const textNodes: Text[] = [];
-      while (walker.nextNode()) textNodes.push(walker.currentNode as Text);
-      textNodes.forEach((n) => {
-        const t = n.textContent || '';
-        const stripped = t.replace(emojiRe, '');
-        if (stripped !== t && stripped.trim().length > 0) {
-          n.textContent = stripped.replace(/\s{2,}/g, ' ').replace(/^\s+/, '');
-        }
-      });
+      stripMixedEmoji(clone);
     },
   });
 }
 
 /** Frame → PNG-Bytes (verlustfrei). */
-export async function captureReelBytes(node: HTMLElement, targetW = 1080): Promise<Uint8Array> {
-  const canvas = await captureReelCanvas(node, targetW);
+export async function captureReelBytes(node: HTMLElement, targetW = 1080, fixed?: FixedSize): Promise<Uint8Array> {
+  const canvas = await captureReelCanvas(node, targetW, fixed);
   const blob: Blob = await new Promise((resolve, reject) => {
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('toBlob() lieferte null'))), 'image/png');
   });
@@ -83,8 +135,8 @@ export async function captureReelBytes(node: HTMLElement, targetW = 1080): Promi
 }
 
 /** Laedt eine einzelne Folie als HD-PNG herunter. */
-export async function downloadReelSlide(node: HTMLElement, filename: string, targetW = 1080): Promise<void> {
-  const canvas = await captureReelCanvas(node, targetW);
+export async function downloadReelSlide(node: HTMLElement, filename: string, targetW = 1080, fixed?: FixedSize): Promise<void> {
+  const canvas = await captureReelCanvas(node, targetW, fixed);
   downloadBlob(await canvasToPngBlob(canvas), filename);
 }
 
@@ -110,9 +162,10 @@ export async function runSlideExport(opts: {
   setScene: (i: number) => void;
   settleMs?: number;
   targetW?: number;
+  fixed?: FixedSize;
   onProgress?: (done: number, total: number) => void;
 }): Promise<Uint8Array[]> {
-  const { frameRef, count, setScene, settleMs = 380, targetW = 1080, onProgress } = opts;
+  const { frameRef, count, setScene, settleMs = 380, targetW = 1080, fixed, onProgress } = opts;
   const out: Uint8Array[] = [];
   for (let i = 0; i < count; i++) {
     setScene(i);
@@ -120,7 +173,7 @@ export async function runSlideExport(opts: {
     await sleep(settleMs); // Mount + Bilder/Avatare laden lassen
     const node = frameRef.current;
     if (!node) throw new Error('Frame-Ref ist leer');
-    out.push(await captureReelBytes(node, targetW));
+    out.push(await captureReelBytes(node, targetW, fixed));
     onProgress?.(i + 1, count);
   }
   return out;

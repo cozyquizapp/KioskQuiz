@@ -29,6 +29,9 @@ const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 58%, #0A0E22 100%)';
 const cw = (pose: string) => `/avatars/cozywolf/${pose}.png`;
 
+// 4:5-Export-Zielgroesse (1080×1350). Fest → deterministisch, Export == Vorschau.
+const FIXED = { w: 1080, h: 1350 };
+
 // Team-Akzent + „so spielst du"-Charakterzeile (aus dem Reel, 1:1, kein Em-Dash).
 const FACTION_META: Record<string, { accent: string; char: string }> = {
   bauchgefuehl:  { accent: '#FB923C', char: 'Du tippst aus dem Bauch und liegst öfter richtig, als alle zugeben.' },
@@ -194,7 +197,7 @@ export default function QQCarouselPage() {
     if (!frameRef.current || saving) return;
     setSaving(true);
     try {
-      await downloadReelSlide(frameRef.current, `cozyquiz-welches-team-karussell-${String(cur + 1).padStart(2, '0')}.png`);
+      await downloadReelSlide(frameRef.current, `cozyquiz-welches-team-karussell-${String(cur + 1).padStart(2, '0')}.png`, 1080, FIXED);
     } catch (e) {
       alert('Ups — der Bild-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
     } finally {
@@ -211,7 +214,7 @@ export default function QQCarouselPage() {
     try {
       await new Promise((r) => setTimeout(r, 80));
       const bytes = await runSlideExport({
-        frameRef, count: SLIDES.length, setScene: setSlide,
+        frameRef, count: SLIDES.length, setScene: setSlide, fixed: FIXED,
         onProgress: (d, t) => setZipProg(`${d}/${t}`),
       });
       const files = bytes.map((data, i) => ({ name: `welches-team-${String(i + 1).padStart(2, '0')}.png`, data }));
@@ -231,7 +234,7 @@ export default function QQCarouselPage() {
     (async () => {
       try {
         await new Promise((r) => setTimeout(r, 700));
-        const bytes = await runSlideExport({ frameRef, count: SLIDES.length, setScene: setSlide });
+        const bytes = await runSlideExport({ frameRef, count: SLIDES.length, setScene: setSlide, fixed: FIXED });
         if (cancelled) return;
         await deliverReelExport(exportMode, bytes, 'welches-team-karussell');
       } catch (e) {

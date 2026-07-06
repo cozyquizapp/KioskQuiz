@@ -37,7 +37,7 @@ const FACTS: Record<number, string> = {
   13: 'Für die 13 Gründerstaaten, die 50 Sterne stehen für die Bundesstaaten.',
   90: 'Zweimal 45 Minuten, plus Nachspielzeit.',
   8: 'Seit Pluto 2006 zum Zwergplaneten wurde.',
-  26: 'Von A bis Z — die Umlaute zählen nicht extra.',
+  26: 'Von A bis Z, die Umlaute zählen nicht extra.',
   5: 'Die fünf Ringe stehen für die fünf Kontinente.',
 };
 

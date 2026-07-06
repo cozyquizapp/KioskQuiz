@@ -680,8 +680,10 @@ function QBadge({ iconName, label }: { iconName: string; label: string }) {
 
 // TEAM-Frage: echte Mu-Cho — 4 Optionen, die richtige leuchtet spät grün auf.
 function QMucho() {
+  // Kontraintuitiv (guter Kommentar-Bait): die meisten tippen Berlin/London,
+  // richtig ist Dublin (53,3°N > Berlin 52,5° > London 51,5° > Paris 48,9°).
   const opts = ['Paris', 'London', 'Berlin', 'Dublin'];
-  const correct = 1;
+  const correct = 3;
   return (
     <>
       <QBadge iconName="cat-mucho" label="Mu-Cho · Tempo zählt" />

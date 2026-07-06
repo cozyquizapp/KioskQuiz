@@ -21,7 +21,6 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { QRCodeSVG } from 'qrcode.react';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 
 const PINK = '#ec4899';
@@ -311,7 +310,7 @@ function renderScene(key: string) {
     case 'hook-bday':      return <HookBday />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
     case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." commentPrompt={<>Kennst du so eine Bar? <span style={{ color: PINK_MID }}>👇</span> Taggt sie.</>} />;
-    case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." commentPrompt={<>Wer hat bald Geburtstag? <span style={{ color: PINK_MID }}>👇</span> Taggt die Person.</>} />;
+    case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." commentPrompt={<>Wer hat bald Geburtstag? <span style={{ color: PINK_MID }}>👇</span><br />Taggt die Person.</>} />;
 
     // ── Echte Frage-Momente (je Nische anderer Kategorie-Typ) ──
     case 'q-team':         return <QMucho />;
@@ -532,8 +531,8 @@ function renderScene(key: string) {
 function HookTeam() {
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.26em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
-        KENNT IHR DAS?
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.22em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
+        FÜRS NÄCHSTE TEAM-EVENT
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) both' }}>
         Bevor ihr <span style={{ color: PINK_MID }}>wieder</span><br />bowlen geht…
@@ -561,10 +560,10 @@ function HookLocation() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11cqw', lineHeight: 0.98, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
         Dienstag.<br />19 Uhr.<br /><span style={{ color: PINK_MID }}>Leer?</span>
       </div>
-      {/* Screen zeigt die echte LOBBY: QR-Code + „Scannt euch rein!" + joinende
-          Teams — universell verständlich („scan to join"), einladend, statt eines
-          abstrakten Bretts, mit dem Nicht-Spieler nichts anfangen können (Wolf). */}
-      <div style={{ position: 'relative', width: '64cqw', margin: '5.5cqh 0 4.5cqh', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp 0.6s ease 0.45s both' }}>
+      {/* Screen zeigt eine schöne ÜBERSICHT, wie das Quiz aussieht (Kategorie +
+          echte Frage + Antworten + wer mitspielt) — Wolf: kein QR (unlogisch im
+          Reel), sondern „wie sieht das Quiz aus". */}
+      <div style={{ position: 'relative', width: '66cqw', margin: '5.5cqh 0 4.5cqh', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp 0.6s ease 0.45s both' }}>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: '1.4cqw', background: '#0F1530',
           border: '0.4cqw solid rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0.7cqh 3cqw',
@@ -574,41 +573,44 @@ function HookLocation() {
           <span style={{ width: '2cqw', height: '2cqw', borderRadius: '50%', background: '#ff3b6b', boxShadow: '0 0 2cqw #ff3b6b' }} />
           CozyQuiz · LIVE
         </div>
-        {/* Screen-Rahmen mit Lobby-Inhalt */}
+        {/* Beamer-Screen: so sieht eine Quizfrage aus */}
         <div style={{
-          width: '100%', aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'linear-gradient(160deg, #1E2A5A, #0F1530)',
-          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '3cqw',
+          width: '100%', aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'linear-gradient(160deg, #23306a, #0F1530)',
+          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '2.8cqw',
           boxShadow: `0 0 0 0.5cqw rgba(0,0,0,0.3), 0 2cqh 6cqh rgba(236,72,153,0.35), 0 0 10cqw rgba(236,72,153,0.25)`,
-          display: 'flex', alignItems: 'center', gap: '4cqw',
+          display: 'flex', flexDirection: 'column', gap: '1.6cqh', textAlign: 'left', overflow: 'hidden',
         }}>
-          {/* QR-Code (echt, auf play.cozyquiz.app) */}
-          <div className="qr-box" style={{
-            height: '84%', aspectRatio: '1', background: '#fff', borderRadius: '1.8cqw', padding: '1.4cqw',
-            display: 'grid', placeItems: 'center', flexShrink: 0,
-            boxShadow: '0 0.6cqh 1.4cqh rgba(0,0,0,0.4)', animation: 'popIn 0.5s var(--eb) 0.95s both',
-          }}>
-            <QRCodeSVG value="https://play.cozyquiz.app" size={256} bgColor="#ffffff" fgColor="#1E2A5A" level="M" />
-          </div>
-          {/* „Scannt euch rein!" + joinende Teams */}
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: '1.6cqh', textAlign: 'left' }}>
-            <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', lineHeight: 1.02, color: PINK_MID, animation: 'fadeUp 0.5s ease 1.15s both' }}>
-              Scannt euch<br />rein!
+          {/* Kopf: Kategorie + wer mitspielt */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1.4cqw', background: 'rgba(255,255,255,0.12)', borderRadius: '99px', padding: '0.5cqh 2.2cqw', animation: 'fadeUp 0.4s ease 0.9s both' }}>
+              <img src={icon('cat-mucho')} alt="" style={{ width: '4cqw', height: '4cqw', objectFit: 'contain' }} />
+              <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '2.9cqw', letterSpacing: '0.04em' }}>MU-CHO</span>
             </div>
-            <div style={{ fontWeight: 800, fontSize: '3cqw', opacity: 0.8, letterSpacing: '0.02em', animation: 'fadeUp 0.5s ease 1.3s both' }}>
-              cozyquiz.app
-            </div>
-            <div style={{ display: 'flex', gap: '1.2cqw', marginTop: '0.6cqh' }}>
-              {[0, 2, 3].map((t, i) => (
-                <div key={i} style={{
-                  width: '7cqw', height: '7cqw', borderRadius: '50%',
-                  background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.3), rgba(255,255,255,0) 52%), ${TEAMS[t].color}`,
-                  display: 'grid', placeItems: 'center', boxShadow: `0 0.4cqh 1cqh ${TEAMS[t].color}66`,
-                  animation: `popIn 0.4s var(--eb) ${1.45 + i * 0.16}s both`,
-                }}>
-                  <img src={cz(TEAMS[t].slug)} alt="" style={{ width: '82%', height: '82%', objectFit: 'contain' }} />
+            <div style={{ display: 'flex', gap: '0.9cqw', animation: 'fadeUp 0.4s ease 1s both' }}>
+              {[0, 2, 4].map((t, i) => (
+                <div key={i} style={{ width: '5cqw', height: '5cqw', borderRadius: '50%', background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.3), rgba(255,255,255,0) 52%), ${TEAMS[t].color}`, display: 'grid', placeItems: 'center' }}>
+                  <img src={cz(TEAMS[t].slug)} alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
                 </div>
               ))}
             </div>
+          </div>
+          {/* Frage */}
+          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.9cqw', lineHeight: 1.12, animation: 'fadeUp 0.5s ease 1.05s both' }}>
+            Welche Stadt liegt am<br />weitesten nördlich?
+          </div>
+          {/* 2×2 Antworten, richtige (Dublin) leuchtet */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.4cqw', marginTop: 'auto' }}>
+            {[{ k: 'A', l: 'Paris' }, { k: 'B', l: 'London' }, { k: 'C', l: 'Berlin' }, { k: 'D', l: 'Dublin', ok: true }].map((o, i) => (
+              <div key={o.k} style={{
+                display: 'flex', alignItems: 'center', gap: '1.6cqw', borderRadius: '1.6cqw', padding: '1.1cqh 1.8cqw',
+                fontFamily: DISPLAY, fontWeight: 800, fontSize: '3cqw',
+                background: o.ok ? 'linear-gradient(135deg, #16a34a, #22c55e)' : 'rgba(255,255,255,0.10)',
+                boxShadow: o.ok ? '0 0 0 0.25cqw rgba(255,255,255,0.4)' : 'none',
+                animation: `fadeUp 0.4s var(--eb) ${1.15 + i * 0.12}s both`,
+              }}>
+                <span style={{ opacity: 0.7 }}>{o.k}</span>{o.l}
+              </div>
+            ))}
           </div>
         </div>
         {/* Standfuß-Schatten (Screen steht) */}
@@ -759,8 +761,8 @@ function QOlder() {
 // Team-Tipps, Auflösung spät. „Lena" = Platzhalter fürs Geburtstagskind.
 function QSchaetz() {
   const guesses = [
-    { v: '9', slug: TEAMS[0].slug, color: TEAMS[0].color, d: 0.6 },
-    { v: '17', slug: TEAMS[2].slug, color: TEAMS[2].color, d: 0.95 },
+    { v: '9', name: 'Team Tanten', slug: TEAMS[0].slug, color: TEAMS[0].color, d: 0.6 },
+    { v: '17', name: 'Team Freunde', slug: TEAMS[2].slug, color: TEAMS[2].color, d: 0.95 },
   ];
   return (
     <>
@@ -770,9 +772,10 @@ function QSchaetz() {
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '6cqw', margin: '1cqh 0 3cqh' }}>
         {guesses.map((g, i) => (
-          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1cqh', animation: `fadeUp 0.5s var(--eb) ${g.d}s both` }}>
+          <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.7cqh', animation: `fadeUp 0.5s var(--eb) ${g.d}s both` }}>
             <PetDisc slug={g.slug} color={g.color} sizeCqw={15} />
-            <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', opacity: 0.85 }}>{g.v}</span>
+            <span style={{ fontWeight: 800, fontSize: '3.2cqw', opacity: 0.85, whiteSpace: 'nowrap' }}>{g.name}</span>
+            <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', opacity: 0.9 }}>{g.v}</span>
           </div>
         ))}
       </div>
@@ -936,6 +939,5 @@ const KEYFRAMES = `
   @keyframes revealCorrect { to { background: linear-gradient(135deg, #16a34a, #22c55e); box-shadow: 0 0 0 0.4cqw rgba(255,255,255,0.45), 0 1cqh 3cqh rgba(34,197,94,0.5); } }
   @keyframes stealOut { to { opacity: 0; transform: scale(0.65); } }
   @keyframes stealIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
-  .qr-box svg { width: 100%; height: 100%; display: block; }
   @keyframes crownBob { 0%, 100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(-8deg) translateY(-1.4cqh); } }
 `;

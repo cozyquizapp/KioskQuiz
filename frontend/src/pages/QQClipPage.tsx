@@ -20,7 +20,7 @@ const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 const COZY_BG = 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)';
 const cw = (pose: string) => `/avatars/cozywolf/${pose}.png`;
 
-type ClipQ = { q: string; a: number; unit?: string; fact?: string; visual?: 'eu-flag' };
+type ClipQ = { q: string; a: number; unit?: string; fact?: string; visual?: 'eu-flag' | 'octopus' };
 
 // Fun-Facts zu den Stechen-Fragen (macht das Reveal teilbar). Key = target.
 const FACTS: Record<number, string> = {
@@ -59,7 +59,9 @@ const POOL: ClipQ[] = QQ_TIEBREAKER_POOL
     unit: (e as any).unitDe ?? undefined,
     fact: FACTS[e.target],
     // Spezial-Reveal: EU-Flagge nachbauen (SVG, 12 goldene Sterne im Kreis).
-    visual: e.promptDe.includes('Flagge der EU') ? ('eu-flag' as const) : undefined,
+    visual: e.promptDe.includes('Flagge der EU') ? ('eu-flag' as const)
+      : e.promptDe.includes('Oktopus') ? ('octopus' as const)
+      : undefined,
   }))
   .sort((a, b) => clipRank(a.a) - clipRank(b.a));
 
@@ -189,6 +191,20 @@ export default function QQClipPage() {
                   <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2cqw', animation: 'fadeUp 0.5s ease 0.95s both' }}>
                     <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '15cqw', lineHeight: 1, color: '#fff', textShadow: `0 0 8cqw ${PINK}66` }}>{fmt(active.a)}</span>
                     <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.5cqw', color: PINK_MID }}>Sterne</span>
+                  </div>
+                </>
+              ) : active.visual === 'octopus' ? (
+                <>
+                  {/* Wolfs eigener cozy3d-Oktopus + 3 anatomische Herzen (kein rotes ❤️). */}
+                  <img src="/avatars/cozy3d/oktopus.png" alt="" style={{ width: '40cqw', height: '40cqw', objectFit: 'contain', margin: '1cqh 0', filter: 'drop-shadow(0 1.4cqh 1.8cqh rgba(0,0,0,0.45))', animation: 'popIn 0.6s var(--eb) 0.1s both' }} />
+                  <div style={{ display: 'flex', gap: '3.5cqw', margin: '1cqh 0 2cqh' }}>
+                    {[0, 1, 2].map(i => (
+                      <span key={i} style={{ fontSize: '13cqw', lineHeight: 1, animation: `popIn 0.45s var(--eb) ${0.6 + i * 0.2}s both` }}>🫀</span>
+                    ))}
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'center', gap: '2cqw', animation: 'fadeUp 0.5s ease 1.3s both' }}>
+                    <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '15cqw', lineHeight: 1, color: '#fff', textShadow: `0 0 8cqw ${PINK}66` }}>{fmt(active.a)}</span>
+                    <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.5cqw', color: PINK_MID }}>Herzen</span>
                   </div>
                 </>
               ) : (

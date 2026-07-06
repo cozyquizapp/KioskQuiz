@@ -550,73 +550,50 @@ function HookTeam() {
   );
 }
 
-// LOCATION: „leerer Abend" — gestapelte Frage + Beamer-Screen-Motiv. Warm/Magenta.
+// LOCATION: „Licht-Flip" (Wolf-Wahl) — dunkler leerer Raum, der CozyWolf knipst
+// an, Pink flutet rein, Buzz startet = leer→voll in einem Move. Kein App-Screen
+// (das Quiz kommt in der nächsten Szene). Buzz-Emojis statt Personen (Fluent-Gelb).
 function HookLocation() {
+  const buzz = [
+    { e: '🍻', x: 42, y: 30, s: 11, d: 1.5 },
+    { e: '🎉', x: 72, y: 26, s: 9, d: 1.66 },
+    { e: '🥂', x: 76, y: 56, s: 11, d: 1.82 },
+    { e: '💬', x: 54, y: 50, s: 8, d: 1.98 },
+    { e: '🎶', x: 62, y: 76, s: 8, d: 2.14 },
+  ];
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.24em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.24em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
         CAFÉ · PUB · BAR
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11cqw', lineHeight: 0.98, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11cqw', lineHeight: 0.98, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) both' }}>
         Dienstag.<br />19 Uhr.<br /><span style={{ color: PINK_MID }}>Leer?</span>
       </div>
-      {/* Screen zeigt eine schöne ÜBERSICHT, wie das Quiz aussieht (Kategorie +
-          echte Frage + Antworten + wer mitspielt) — Wolf: kein QR (unlogisch im
-          Reel), sondern „wie sieht das Quiz aus". */}
-      <div style={{ position: 'relative', width: '66cqw', margin: '5.5cqh 0 4.5cqh', display: 'flex', flexDirection: 'column', alignItems: 'center', animation: 'fadeUp 0.6s ease 0.45s both' }}>
-        <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: '1.4cqw', background: '#0F1530',
-          border: '0.4cqw solid rgba(255,255,255,0.2)', borderRadius: '99px', padding: '0.7cqh 3cqw',
-          marginBottom: '2.4cqh', fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.2cqw', whiteSpace: 'nowrap',
-          boxShadow: '0 1cqh 2.6cqh rgba(0,0,0,0.45)', animation: 'popIn 0.5s var(--eb) 0.9s both',
-        }}>
-          <span style={{ width: '2cqw', height: '2cqw', borderRadius: '50%', background: '#ff3b6b', boxShadow: '0 0 2cqw #ff3b6b' }} />
-          CozyQuiz · LIVE
+      {/* Der Raum: dunkel+leer → Wolf knipst → Pink-Flood + Buzz */}
+      <div style={{
+        position: 'relative', width: '56cqw', aspectRatio: '4 / 3', margin: '5cqh 0 4cqh',
+        borderRadius: '3cqw', overflow: 'hidden', background: 'linear-gradient(165deg, #141a3c, #0a0e22)',
+        border: '0.5cqw solid rgba(255,255,255,0.1)', boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.55)',
+        animation: 'fadeUp 0.6s ease 0.4s both',
+      }}>
+        {/* Pink-Flood (flutet nach dem Knipsen rein) */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 30%, rgba(236,72,153,0.6), rgba(236,72,153,0.14) 52%, transparent 76%)', opacity: 0, animation: 'floodIn 0.6s ease 1.4s forwards' }} />
+        {/* Glühbirne oben (dim → leuchtet beim Flip) */}
+        <div style={{ position: 'absolute', top: '5%', left: '50%', transform: 'translateX(-50%)', fontSize: '10cqw', filter: 'grayscale(1) brightness(0.55)', animation: 'bulbOn 0.4s ease 1.35s forwards' }}>💡</div>
+        {/* einsames Glas (Mitte) — verblasst, wenn der Buzz startet */}
+        <div style={{ position: 'absolute', top: '48%', left: '52%', transform: 'translate(-50%,-50%)', fontSize: '11cqw', animation: 'fadeOutEarly 0.4s ease 1.5s forwards' }}>🥃</div>
+        {/* Buzz poppt nach dem Flip rein */}
+        {buzz.map((b, i) => (
+          <span key={i} style={{ position: 'absolute', left: `${b.x}%`, top: `${b.y}%`, transform: 'translate(-50%,-50%)', fontSize: `${b.s}cqw`, animation: `popIn 0.4s var(--eb) ${b.d}s both` }}>{b.e}</span>
+        ))}
+        {/* Lichtschalter (Knopf kippt hoch beim Flip) */}
+        <div style={{ position: 'absolute', left: '30%', bottom: '30%', width: '4.6cqw', height: '8cqw', borderRadius: '1cqw', background: 'rgba(255,255,255,0.14)', border: '0.3cqw solid rgba(255,255,255,0.32)', animation: 'popIn 0.4s var(--eb) 1.0s both' }}>
+          <div style={{ position: 'absolute', left: '50%', top: '56%', width: '3cqw', height: '3cqw', borderRadius: '0.6cqw', background: '#fff', transform: 'translateX(-50%)', animation: 'switchFlip 0.2s ease 1.35s forwards' }} />
         </div>
-        {/* Beamer-Screen: so sieht eine Quizfrage aus */}
-        <div style={{
-          width: '100%', aspectRatio: '16 / 10', borderRadius: '2.6cqw', background: 'linear-gradient(160deg, #23306a, #0F1530)',
-          border: '0.6cqw solid rgba(255,255,255,0.18)', padding: '2.8cqw',
-          boxShadow: `0 0 0 0.5cqw rgba(0,0,0,0.3), 0 2cqh 6cqh rgba(236,72,153,0.35), 0 0 10cqw rgba(236,72,153,0.25)`,
-          display: 'flex', flexDirection: 'column', gap: '1.6cqh', textAlign: 'left', overflow: 'hidden',
-        }}>
-          {/* Kopf: Kategorie + wer mitspielt */}
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <div style={{ display: 'inline-flex', alignItems: 'center', gap: '1.4cqw', background: 'rgba(255,255,255,0.12)', borderRadius: '99px', padding: '0.5cqh 2.2cqw', animation: 'fadeUp 0.4s ease 0.9s both' }}>
-              <img src={icon('cat-mucho')} alt="" style={{ width: '4cqw', height: '4cqw', objectFit: 'contain' }} />
-              <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '2.9cqw', letterSpacing: '0.04em' }}>MU-CHO</span>
-            </div>
-            <div style={{ display: 'flex', gap: '0.9cqw', animation: 'fadeUp 0.4s ease 1s both' }}>
-              {[0, 2, 4].map((t, i) => (
-                <div key={i} style={{ width: '5cqw', height: '5cqw', borderRadius: '50%', background: `radial-gradient(circle at 32% 28%, rgba(255,255,255,0.3), rgba(255,255,255,0) 52%), ${TEAMS[t].color}`, display: 'grid', placeItems: 'center' }}>
-                  <img src={cz(TEAMS[t].slug)} alt="" style={{ width: '80%', height: '80%', objectFit: 'contain' }} />
-                </div>
-              ))}
-            </div>
-          </div>
-          {/* Frage */}
-          <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.9cqw', lineHeight: 1.12, animation: 'fadeUp 0.5s ease 1.05s both' }}>
-            Welche Stadt liegt<br />am nördlichsten?
-          </div>
-          {/* 2×2 Antworten, richtige (Dublin) leuchtet */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.4cqw', marginTop: 'auto' }}>
-            {[{ k: 'A', l: 'Paris' }, { k: 'B', l: 'London' }, { k: 'C', l: 'Berlin' }, { k: 'D', l: 'Dublin', ok: true }].map((o, i) => (
-              <div key={o.k} style={{
-                display: 'flex', alignItems: 'center', gap: '1.6cqw', borderRadius: '1.6cqw', padding: '1.1cqh 1.8cqw',
-                fontFamily: DISPLAY, fontWeight: 800, fontSize: '3cqw',
-                background: o.ok ? 'linear-gradient(135deg, #16a34a, #22c55e)' : 'rgba(255,255,255,0.10)',
-                boxShadow: o.ok ? '0 0 0 0.25cqw rgba(255,255,255,0.4)' : 'none',
-                animation: `fadeUp 0.4s var(--eb) ${1.15 + i * 0.12}s both`,
-              }}>
-                <span style={{ opacity: 0.7 }}>{o.k}</span>{o.l}
-              </div>
-            ))}
-          </div>
-        </div>
-        {/* Standfuß-Schatten (Screen steht) */}
-        <div style={{ marginTop: '2.2cqh', width: '24cqw', height: '2.2cqh', background: 'rgba(0,0,0,0.4)', borderRadius: '50%', filter: 'blur(3px)' }} />
+        {/* CozyWolf unten links (winkende Pose = Pfote am Schalter) */}
+        <img src={cw('augenauf.mundauf.winken')} alt="CozyWolf" style={{ position: 'absolute', bottom: '3%', left: '4%', width: '24cqw', height: '24cqw', objectFit: 'contain', filter: 'drop-shadow(0 0.6cqh 0.9cqh rgba(0,0,0,0.55))', animation: 'popIn 0.5s var(--eb) 0.85s both' }} />
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 1.2s both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 2.2s both' }}>
         Ich füll euch die <span style={{ color: PINK_MID }}>Bude</span>.
       </div>
     </>
@@ -940,4 +917,8 @@ const KEYFRAMES = `
   @keyframes stealOut { to { opacity: 0; transform: scale(0.65); } }
   @keyframes stealIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
   @keyframes crownBob { 0%, 100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(-8deg) translateY(-1.4cqh); } }
+  @keyframes floodIn { to { opacity: 1; } }
+  @keyframes bulbOn { to { filter: brightness(1.25) drop-shadow(0 0 3cqw rgba(255,210,90,0.95)) drop-shadow(0 0 6cqw rgba(236,72,153,0.55)); } }
+  @keyframes fadeOutEarly { to { opacity: 0; transform: translate(-50%,-50%) scale(0.7); } }
+  @keyframes switchFlip { to { top: 12%; background: #ec4899; } }
 `;

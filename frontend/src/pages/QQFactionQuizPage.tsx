@@ -32,8 +32,8 @@ const FACTION_META: Record<string, { accent: string; char: string }> = {
   glueckstreffer:{ accent: '#4ADE80', char: 'Keine Ahnung. Trotzdem die Punkte. Frag lieber nicht wie.' },
   feierabend:    { accent: '#2DD4BF', char: 'Gewinnen? Nett. Aber das kühle Getränk ist wichtiger.' },
   letztesekunde: { accent: '#A78BFA', char: 'Deine Antwort kommt, wenn der Timer schon blinkt. Jedes Mal.' },
-  allwissen:     { accent: '#FACC15', char: 'Ihr kennt die Antwort, bevor die Frage zu Ende gelesen ist.' },
-  improvisation: { accent: '#3B82F6', char: 'Kein Plan, aber viel Selbstbewusstsein. Läuft schon irgendwie.' },
+  allwissen:     { accent: '#FACC15', char: 'Du kennst die Antwort, bevor die Frage zu Ende gelesen ist.' },
+  improvisation: { accent: '#3B82F6', char: 'Kein Plan, aber maximale Überzeugung. Wird schon klappen.' },
   einspruch:     { accent: '#EC4899', char: 'Bei jeder Auflösung: „Moment, das ist total unfair!"' },
   risiko:        { accent: '#EF4444', char: 'Beim Finale wird alles gesetzt. Glorreich oder Totalschaden.' },
 };
@@ -186,12 +186,9 @@ function renderScene(key: string) {
         <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
           Kommentier dein Team <span style={{ color: PINK_MID }}>👇</span> und tag jemanden, der genau SO spielt.
         </div>
-        <div style={{ fontWeight: 800, fontSize: '3.9cqw', marginTop: '3.5cqh', opacity: 0.78, letterSpacing: '0.04em', animation: 'fadeUp 0.6s ease 0.6s both' }}>
-          Cozy Arena · für Firmenfeiern & große Events
-        </div>
-        <div style={{ marginTop: '2.5cqh', display: 'flex', flexDirection: 'column', gap: '1.6cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
+        <div style={{ marginTop: '4.5cqh', display: 'flex', flexDirection: 'column', gap: '1.4cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
           <span style={{ color: PINK_MID }}>@cozywolf.events</span>
-          <span style={{ opacity: 0.92 }}>cozywolf.de</span>
+          <span style={{ opacity: 0.7, fontSize: '3.6cqw' }}>cozywolf.de</span>
         </div>
       </>
     );
@@ -218,7 +215,7 @@ function renderScene(key: string) {
       <div style={{ display: 'inline-block', marginTop: '2cqh', fontWeight: 900, fontSize: '4.6cqw', color: '#fff', background: `${meta.accent}2e`, border: `0.35cqw solid ${meta.accent}`, borderRadius: '99px', padding: '0.5cqh 3cqw', animation: 'fadeUp 0.5s ease 0.45s both' }}>
         „{f.mottoDe}"
       </div>
-      <div style={{ fontWeight: 700, fontSize: '4.6cqw', marginTop: '3.5cqh', opacity: 0.94, maxWidth: '80cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.6s both' }}>
+      <div style={{ fontWeight: 700, fontSize: '4.6cqw', marginTop: '3.5cqh', opacity: 0.94, maxWidth: '80cqw', lineHeight: 1.32, animation: 'fadeUp 0.5s ease 0.35s both' }}>
         {meta.char}
       </div>
     </>

@@ -41,20 +41,33 @@ const FACTS: Record<number, string> = {
   5: 'Die fünf Ringe stehen für die fünf Kontinente.',
 };
 
-const POOL: ClipQ[] = QQ_TIEBREAKER_POOL.map(e => ({
-  q: e.promptDe,
-  a: e.target,
-  unit: (e as any).unitDe ?? undefined,
-  fact: FACTS[e.target],
-  // Spezial-Reveal: EU-Flagge nachbauen (blaues Rechteck + 12 Stern-Emojis).
-  visual: e.promptDe.includes('Flagge der EU') ? ('eu-flag' as const) : undefined,
-}));
+// SMM-Audit: der Fundus ist als Stechen-Tiebreaker gebaut (bekannte Fakten), nicht
+// als Schätz-Bait. Für /clip die besten Aha-Fragen (niemand weiß es genau → man
+// kommentiert seinen Tipp) ZUERST, Schulwissen (8 Planeten, 26 Buchstaben … jeder
+// weiß es → kein Kommentar-Anreiz) ans Ende. Sortiert nach Zielwert.
+const CLIP_STRONG = [3, 86400, 206, 12, 330, 88, 90, 54];
+const CLIP_WEAK = [8, 26, 5, 64, 1989];
+const clipRank = (t: number) => {
+  const s = CLIP_STRONG.indexOf(t); if (s >= 0) return s;
+  const w = CLIP_WEAK.indexOf(t); if (w >= 0) return 900 + w;
+  return 500;
+};
+const POOL: ClipQ[] = QQ_TIEBREAKER_POOL
+  .map(e => ({
+    q: e.promptDe,
+    a: e.target,
+    unit: (e as any).unitDe ?? undefined,
+    fact: FACTS[e.target],
+    // Spezial-Reveal: EU-Flagge nachbauen (SVG, 12 goldene Sterne im Kreis).
+    visual: e.promptDe.includes('Flagge der EU') ? ('eu-flag' as const) : undefined,
+  }))
+  .sort((a, b) => clipRank(a.a) - clipRank(b.a));
 
 type Scene = { key: 'ask' | 'reveal' | 'cta'; dur: number };
 const SCENES: Scene[] = [
-  // ask-Dauer = Countdown (5s) + kleiner Puffer, damit der Ring nicht leer „tot"
-  // rumsteht, bevor die Auflösung kommt (Wolf: „bei Ablauf weird").
-  { key: 'ask',    dur: 5400 },
+  // ask-Dauer = Countdown (4s) + kleiner Puffer. SMM-Audit: 5s war zu lang für
+  // Kaltverkehr (Ring lief leer, Retention brach); 4s = snappy + noch lesbar.
+  { key: 'ask',    dur: 4600 },
   { key: 'reveal', dur: 5200 },
   { key: 'cta',    dur: 4200 },
 ];
@@ -76,7 +89,7 @@ export default function QQClipPage() {
 
   const [scene, setScene] = useState(0);
   const [paused, setPaused] = useState(false);
-  const [count, setCount] = useState(5);
+  const [count, setCount] = useState(4);
   const [reel, setReel] = useState(false);
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -103,7 +116,7 @@ export default function QQClipPage() {
   // Countdown 5→0 während der Frage-Szene.
   useEffect(() => {
     if (SCENES[scene].key !== 'ask' || paused) return;
-    setCount(5);
+    setCount(4);
     const iv = setInterval(() => setCount(c => (c > 0 ? c - 1 : 0)), 1000);
     return () => clearInterval(iv);
   }, [scene, paused, qIndex, custom]);
@@ -151,13 +164,13 @@ export default function QQClipPage() {
               <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.6cqw', letterSpacing: '0.22em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
                 SCHÄTZ MAL 🤔
               </div>
-              <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.12, marginTop: '2.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
+              <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.12, marginTop: '2.5cqh', animation: 'popIn 0.6s var(--eb) both' }}>
                 {active.q}
               </div>
               {/* Countdown-Ring im Quiz-Timer-Stil (Brand-konsistent): laeuft
                   ab statt zu drehen; Pink -> Orange -> Rot wie der Beamer-Timer. */}
               <div style={{ margin: '6cqh 0 4cqh', animation: 'popIn 0.5s var(--eb) 0.35s both' }}>
-                <CountdownRing seconds={5} count={count} />
+                <CountdownRing seconds={4} count={count} />
               </div>
               <div style={{ fontWeight: 800, fontSize: '5.2cqw', opacity: 0.96, animation: 'fadeUp 0.6s ease 0.6s both' }}>
                 Kommentier deine Schätzung <span style={{ color: PINK_MID }}>👇</span>
@@ -203,10 +216,10 @@ export default function QQClipPage() {
                 <img src={cw('augenauf.troete.jubel')} alt="CozyWolf" style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 1.4cqh 1.8cqh rgba(0,0,0,0.45))', animation: 'floatPet 5s ease-in-out infinite' }} />
               </div>
               <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '3cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
-                Wie nah<br />warst du?
+                Lagst du drüber<br />oder drunter?
               </div>
-              <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', opacity: 0.9, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
-                Folg für die tägliche Schätzfrage. Und spiel's live mit deinem Team.
+              <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
+                Kommentier's <span style={{ color: PINK_MID }}>👇</span> Und folg für die tägliche Schätzfrage.
               </div>
               <div style={{ marginTop: '4.5cqh', display: 'flex', flexDirection: 'column', gap: '1.6cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
                 <span style={{ color: PINK_MID }}>@cozywolf.events</span>

@@ -120,13 +120,15 @@ const DECO_BDAY: DecoItem[] = [
 // Wolf 2026-07-06 (2. Runde): Nischen dürfen sich nicht mehr denselben Mittelteil
 // teilen. Jede Nische = echter Frage-Moment (anderer Kategorie-Typ) + eigener
 // Gefühls-Bogen. Body-Bausteine hier, /trailer general bleibt unverändert.
-const B = { fun: 4800, cats: 5400, minigames: 4900, board: 5000, qTeam: 5600, qLoc: 5400, qBday: 5400, steal: 4600, fill: 4400, win: 4600 };
+// SMM-Audit: Szenen endeten 1,5–3,8s nach dem letzten Text (toter Hold auf Mute
+// = Abbruch). Dauern gestrafft + Reveals früher (siehe QMucho/QOlder/QSchaetz).
+const B = { fun: 4200, cats: 4600, minigames: 4300, board: 4400, qTeam: 4600, qLoc: 4600, qBday: 4800, steal: 4200, fill: 4000, win: 4000 };
 const VARIANTS: Record<string, VariantCfg> = {
   general: {
     title: 'CozyQuiz — Trailer',
     full: [
       { key: 'title', dur: 3800 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
-      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta', dur: 4600 },
+      { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta', dur: 4400 },
     ],
     kurz: [
       { key: 'title', dur: 3400 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames }, { key: 'cta', dur: 4200 },
@@ -137,11 +139,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     title: 'CozyQuiz — Teamevent-Reel',
     // TEAM = Rivalität: echte Mu-Cho (Wettrennen) → Felder klauen → Brett.
     full: [
-      { key: 'hook-team', dur: 5000 }, { key: 'q-team', dur: B.qTeam }, { key: 'steal', dur: B.steal },
-      { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4600 },
+      { key: 'hook-team', dur: 4400 }, { key: 'q-team', dur: B.qTeam }, { key: 'steal', dur: B.steal },
+      { key: 'board', dur: B.board }, { key: 'cta-team', dur: 4400 },
     ],
     kurz: [
-      { key: 'hook-team', dur: 4800 }, { key: 'q-team', dur: B.qTeam }, { key: 'cta-team', dur: 4200 },
+      { key: 'hook-team', dur: 4400 }, { key: 'q-team', dur: B.qTeam }, { key: 'cta-team', dur: 4200 },
     ],
     bgTint: 'radial-gradient(120% 80% at 78% 8%, rgba(38,111,211,0.16), transparent 60%)',
     deco: DECO_TEAM,
@@ -150,11 +152,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     title: 'CozyQuiz — Location-Reel',
     // LOCATION = toter Abend wird voll: echtes „Schau mal!"-Bild → Bunte Tüte → Bude füllt sich.
     full: [
-      { key: 'hook-location', dur: 5000 }, { key: 'q-location', dur: B.qLoc }, { key: 'minigames', dur: B.minigames },
-      { key: 'fill', dur: B.fill }, { key: 'cta-location', dur: 4600 },
+      { key: 'hook-location', dur: 4400 }, { key: 'q-location', dur: B.qLoc }, { key: 'minigames', dur: B.minigames },
+      { key: 'fill', dur: B.fill }, { key: 'cta-location', dur: 4400 },
     ],
     kurz: [
-      { key: 'hook-location', dur: 4800 }, { key: 'q-location', dur: B.qLoc }, { key: 'cta-location', dur: 4200 },
+      { key: 'hook-location', dur: 4400 }, { key: 'q-location', dur: B.qLoc }, { key: 'cta-location', dur: 4200 },
     ],
     bgTint: 'radial-gradient(120% 80% at 22% 10%, rgba(162,18,71,0.20), transparent 62%)',
     deco: DECO_LOCATION,
@@ -163,11 +165,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     title: 'CozyQuiz — Geburtstags-Reel',
     // BDAY = Chaos + persönlich: Schätzchen übers Geburtstagskind → Bunte Tüte → Sieg + Konfetti.
     full: [
-      { key: 'hook-bday', dur: 5000 }, { key: 'q-bday', dur: B.qBday }, { key: 'minigames', dur: B.minigames },
-      { key: 'win', dur: B.win }, { key: 'cta-bday', dur: 4600 },
+      { key: 'hook-bday', dur: 4400 }, { key: 'q-bday', dur: B.qBday }, { key: 'minigames', dur: B.minigames },
+      { key: 'win', dur: B.win }, { key: 'cta-bday', dur: 4400 },
     ],
     kurz: [
-      { key: 'hook-bday', dur: 4800 }, { key: 'q-bday', dur: B.qBday }, { key: 'cta-bday', dur: 4200 },
+      { key: 'hook-bday', dur: 4400 }, { key: 'q-bday', dur: B.qBday }, { key: 'cta-bday', dur: 4200 },
     ],
     bgTint: 'radial-gradient(110% 70% at 50% 4%, rgba(236,72,153,0.18), transparent 58%)',
     deco: DECO_BDAY,
@@ -307,9 +309,9 @@ function renderScene(key: string) {
     case 'hook-team':      return <HookTeam />;
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
-    case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." />;
-    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." />;
-    case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." />;
+    case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
+    case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." commentPrompt={<>Kennst du so eine Bar? <span style={{ color: PINK_MID }}>👇</span> Taggt sie.</>} />;
+    case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." commentPrompt={<>Wer hat bald Geburtstag? <span style={{ color: PINK_MID }}>👇</span> Taggt die Person.</>} />;
 
     // ── Echte Frage-Momente (je Nische anderer Kategorie-Typ) ──
     case 'q-team':         return <QMucho />;
@@ -517,7 +519,7 @@ function renderScene(key: string) {
       );
 
     case 'cta':
-      return <CtaBlock heading={<>Bock auf ein<br />CozyQuiz?</>} sub="Für Bar · Café · Firmenfeier · Event" tightSub />;
+      return <CtaBlock heading={<>Bock auf ein<br />CozyQuiz?</>} sub="Für Bar · Café · Firmenfeier · Event" tightSub commentPrompt={<>Wärt ihr dabei? <span style={{ color: PINK_MID }}>👇</span></>} />;
 
     default:
       return null;
@@ -530,10 +532,10 @@ function renderScene(key: string) {
 function HookTeam() {
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.26em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
-        TEAMEVENT GESUCHT?
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.26em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
+        KENNT IHR DAS?
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) 0.1s both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.5cqh', animation: 'popIn 0.6s var(--eb) both' }}>
         Bevor ihr <span style={{ color: PINK_MID }}>wieder</span><br />bowlen geht…
       </div>
       <div style={{ margin: '4cqh 0 3cqh' }}>
@@ -641,22 +643,28 @@ function HookBday() {
 
 // Gemeinsamer CTA-Block (pro Nische anderer heading/sub) — CozyWolf jubelt,
 // Kontakt bleibt konstant (cozywolf.de + @cozywolf.events).
-function CtaBlock({ heading, sub, tightSub }: { heading: React.ReactNode; sub: string; tightSub?: boolean }) {
+function CtaBlock({ heading, sub, tightSub, commentPrompt }: { heading: React.ReactNode; sub: string; tightSub?: boolean; commentPrompt?: React.ReactNode }) {
   return (
     <>
-      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={38} anim="popIn 0.7s var(--eb) both" />
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
+      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={34} anim="popIn 0.7s var(--eb) both" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '3cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
         {heading}
       </div>
-      <div style={{ fontWeight: 800, fontSize: tightSub ? '4.6cqw' : '4.8cqw', marginTop: '3cqh', opacity: 0.9, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
+      <div style={{ fontWeight: 800, fontSize: tightSub ? '4.6cqw' : '4.8cqw', marginTop: '2.6cqh', opacity: 0.9, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
         {sub}
       </div>
-      <div style={{ marginTop: '5cqh', display: 'flex', flexDirection: 'column', gap: '1.8cqh', fontWeight: 800, fontSize: '5cqw', animation: 'fadeUp 0.6s ease 0.7s both' }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center' }}>
-          <img src={icon('fx-globe')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />cozywolf.de
-        </span>
+      {/* Kommentar-Trigger (SMM-Audit: Reels fragen den Zuschauer fast nie was). */}
+      {commentPrompt && (
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.2cqw', marginTop: '3cqh', lineHeight: 1.15, animation: 'fadeUp 0.6s ease 0.6s both' }}>
+          {commentPrompt}
+        </div>
+      )}
+      <div style={{ marginTop: '3.5cqh', display: 'flex', flexDirection: 'column', gap: '1.6cqh', fontWeight: 800, fontSize: '4.6cqw', animation: 'fadeUp 0.6s ease 0.75s both' }}>
         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID }}>
-          <img src={cw('head')} alt="" style={{ width: '6.4cqw', height: '6.4cqw', objectFit: 'contain' }} />@cozywolf.events
+          <img src={cw('head')} alt="" style={{ width: '6cqw', height: '6cqw', objectFit: 'contain' }} />@cozywolf.events
+        </span>
+        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', opacity: 0.7, fontSize: '3.8cqw' }}>
+          <img src={icon('fx-globe')} alt="" style={{ width: '5cqw', height: '5cqw', objectFit: 'contain' }} />cozywolf.de
         </span>
       </div>
     </>
@@ -697,16 +705,16 @@ function QMucho() {
             background: 'rgba(255,255,255,0.10)', borderRadius: '2.6cqw', padding: '1.9cqh 4cqw',
             fontWeight: 800, fontSize: '5.2cqw', textAlign: 'left',
             animation: i === correct
-              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both, revealCorrect 0.5s ease 2.6s both`
+              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both, revealCorrect 0.5s ease 2.0s both`
               : `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both`,
           }}>
             <span style={{ fontFamily: DISPLAY, opacity: 0.7, width: '5cqw', flexShrink: 0 }}>{'ABCD'[i]}</span>
             <span>{o}</span>
-            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.75s both' }}>✓</span>}
+            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.15s both' }}>✓</span>}
           </div>
         ))}
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.9cqw', marginTop: '4cqh', lineHeight: 1.25, animation: 'fadeUp 0.6s ease 3.1s both' }}>
+      <div style={{ fontWeight: 800, fontSize: '4.9cqw', marginTop: '4cqh', lineHeight: 1.25, animation: 'fadeUp 0.6s ease 2.5s both' }}>
         Jede richtige Antwort: <span style={{ color: PINK_MID }}>ein Feld</span>.<br />Die Schnellsten wählen zuerst.
       </div>
     </>
@@ -731,16 +739,16 @@ function QOlder() {
             background: 'rgba(255,255,255,0.10)', borderRadius: '2.6cqw', padding: '2.5cqh 4cqw',
             fontWeight: 800, fontSize: '5.8cqw', textAlign: 'left',
             animation: i === correct
-              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.2}s both, revealCorrect 0.5s ease 2.7s both`
+              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.2}s both, revealCorrect 0.5s ease 1.9s both`
               : `slideIn 0.4s var(--eb) ${0.3 + i * 0.2}s both`,
           }}>
             <span style={{ fontFamily: DISPLAY, opacity: 0.7, width: '5cqw', flexShrink: 0 }}>{o.k}</span>
             <span>{o.l}</span>
-            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.85s both' }}>✓</span>}
+            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.05s both' }}>✓</span>}
           </div>
         ))}
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '4.5cqh', lineHeight: 1.25, animation: 'fadeUp 0.6s ease 3.2s both' }}>
+      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '4.5cqh', lineHeight: 1.25, animation: 'fadeUp 0.6s ease 2.4s both' }}>
         Mammuts lebten noch, als die<br />Pyramiden schon <span style={{ color: PINK_MID }}>standen</span>.
       </div>
     </>
@@ -768,11 +776,11 @@ function QSchaetz() {
           </div>
         ))}
       </div>
-      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2.4cqw', animation: 'popIn 0.6s var(--eb) 2.6s both' }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: '2.4cqw', animation: 'popIn 0.6s var(--eb) 2.2s both' }}>
         <span style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.8 }}>Richtig:</span>
         <span style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '13cqw', color: PINK_MID, lineHeight: 1 }}>14</span>
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', animation: 'fadeUp 0.6s ease 3.2s both' }}>
+      <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3cqh', animation: 'fadeUp 0.6s ease 2.7s both' }}>
         Am nächsten dran <span style={{ color: PINK_MID }}>gewinnt</span>.
       </div>
     </>

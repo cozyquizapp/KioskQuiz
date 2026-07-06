@@ -155,7 +155,7 @@ function renderScene(key: string) {
     return (
       <>
         <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.5s ease both' }}>
-          NUR BEI GROSSEN GRUPPEN
+          FÜR GROSSE GRUPPEN
         </div>
         {/* Wappen-Cluster (alle 8) → „viele Leute, viele Teams" */}
         <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: '2cqw', width: '72cqw', margin: '3.5cqh 0' }}>
@@ -167,7 +167,7 @@ function renderScene(key: string) {
           Das ist die<br /><span style={{ color: PINK_MID }}>Cozy Arena</span>.
         </div>
         <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '3cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.6s both' }}>
-          Der Groß-Gruppen-Modus vom CozyQuiz. Die acht Team-Typen gibt's nur bei großen Events.
+          Der Groß-Gruppen-Modus vom CozyQuiz. Die acht Team-Typen gibt's bei großen Events.
         </div>
       </>
     );

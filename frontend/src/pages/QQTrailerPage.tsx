@@ -338,7 +338,7 @@ function renderScene(key: string) {
             ))}
           </div>
           <div style={{ fontWeight: 800, fontSize: '5.6cqw', opacity: 0.96, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 0.7s both' }}>
-            Zusammen mit <span style={{ color: PINK_MID }}>deinen Leuten</span>.
+            Zusammen mit <span style={{ color: PINK_MID }}>deinen Freunden</span>.
           </div>
         </>
       );

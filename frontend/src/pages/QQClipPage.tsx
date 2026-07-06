@@ -315,23 +315,39 @@ function CountdownRing({ seconds, count }: { seconds: number; count: number }) {
   );
 }
 
-// EU-Flagge nachgebaut: blaues Rechteck + 12 Stern-Emojis im Kreis (poppen der Reihe
-// nach rein = „mitzählen"). Wolf-Wunsch für die EU-Sterne-Schätzfrage.
+// EU-Flagge als echte SVG: flache goldene 5-Zack-Sterne (aufrecht, EU-Gold #FFCC00)
+// exakt im Kreis (Radius = 1/3 der Flaggenhöhe, EU-Spec) auf EU-Blau #003399.
+// Emoji-Sterne wurden nie ein sauberer Ring → SVG-Polygone sind crisp + gleichmäßig.
 function EuFlag() {
-  // Echter Kreis in einem 3:2-Rechteck: Prozente skalieren pro Achse unterschiedlich,
-  // also Radius getrennt. Ry (Höhe) und Rx = Ry × Höhe/Breite = Ry × 2/3 (Breite),
-  // sonst wird der Kreis zum Oval. Ry=35 gibt bei 12 Sternen genug Umfang, damit sie
-  // sich NICHT überlappen (Sterngröße 6cqw < Bogenabstand ~7,6cqw).
-  const Ry = 35, Rx = 35 * 2 / 3;
+  const W = 300, H = 200, cx = W / 2, cy = H / 2;
+  const ring = H / 3;               // Sternkreis-Radius = 1/3 Höhe (EU-Spec)
+  const Ro = 15, Ri = Ro * 0.382;   // Stern: Außen-/Innenradius (5-Zack)
+  const starPoints = (scx: number, scy: number) => {
+    const pts: string[] = [];
+    for (let k = 0; k < 10; k++) {
+      const ang = (-90 + k * 36) * Math.PI / 180;   // Spitze zeigt nach oben
+      const rad = k % 2 === 0 ? Ro : Ri;
+      pts.push(`${(scx + rad * Math.cos(ang)).toFixed(1)},${(scy + rad * Math.sin(ang)).toFixed(1)}`);
+    }
+    return pts.join(' ');
+  };
   const stars = Array.from({ length: 12 }, (_, i) => {
     const a = (i * 30) * Math.PI / 180;
-    return { x: 50 + Rx * Math.sin(a), y: 50 - Ry * Math.cos(a) };
+    return { x: cx + ring * Math.sin(a), y: cy - ring * Math.cos(a), i };
   });
   return (
-    <div style={{ position: 'relative', width: '62cqw', aspectRatio: '3 / 2', background: '#003399', borderRadius: '2.5cqw', border: '0.4cqw solid rgba(255,255,255,0.18)', boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.5)', overflow: 'hidden' }}>
-      {stars.map((s, i) => (
-        <span key={i} style={{ position: 'absolute', left: `${s.x}%`, top: `${s.y}%`, transform: 'translate(-50%,-50%)', fontSize: '8cqw', lineHeight: 1, animation: `popIn 0.4s var(--eb) ${0.2 + i * 0.07}s both` }}>⭐</span>
-      ))}
+    <div style={{ width: '62cqw', aspectRatio: '3 / 2', borderRadius: '2.5cqw', overflow: 'hidden', border: '0.4cqw solid rgba(255,255,255,0.18)', boxShadow: '0 2cqh 6cqh rgba(0,0,0,0.5)' }}>
+      <svg viewBox={`0 0 ${W} ${H}`} width="100%" height="100%" style={{ display: 'block' }}>
+        <rect width={W} height={H} fill="#003399" />
+        {stars.map(s => (
+          <polygon
+            key={s.i}
+            points={starPoints(s.x, s.y)}
+            fill="#FFCC00"
+            style={{ transformBox: 'fill-box', transformOrigin: 'center', animation: `starPop 0.4s var(--eb) ${0.2 + s.i * 0.06}s both` }}
+          />
+        ))}
+      </svg>
     </div>
   );
 }
@@ -345,4 +361,5 @@ const KEYFRAMES = `
   @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
   @keyframes barFill { from { width: 0%; } to { width: 100%; } }
   @keyframes floatPet { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-3cqh) rotate(4deg); } }
+  @keyframes starPop { from { opacity: 0; transform: scale(0.2); } to { opacity: 1; transform: scale(1); } }
 `;

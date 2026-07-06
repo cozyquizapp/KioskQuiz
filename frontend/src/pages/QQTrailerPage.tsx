@@ -832,9 +832,13 @@ function WinBeat() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginBottom: '4cqh', animation: 'fadeUp 0.5s ease both' }}>
         Am Ende gewinnt<br />ein Team.
       </div>
-      {/* Krone ragt nach oben → genug Luft zur Headline, sonst sitzt sie im Text. */}
-      <div style={{ position: 'relative', marginTop: '9cqh', animation: 'popIn 0.7s var(--eb) 0.4s both' }}>
-        <span style={{ position: 'absolute', top: '-8.5cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '11cqw', animation: 'floatPet 3s ease-in-out infinite' }}>👑</span>
+      {/* Krone sitzt AUF dem Kopf (leicht überlappend), nicht schwebend darüber.
+          Zentrierung über Flex-Wrapper, damit das Wackeln (crownBob) den Mittelpunkt
+          nicht verschiebt. */}
+      <div style={{ position: 'relative', marginTop: '6cqh', animation: 'popIn 0.7s var(--eb) 0.4s both' }}>
+        <div style={{ position: 'absolute', top: '-3cqh', left: 0, right: 0, display: 'flex', justifyContent: 'center', zIndex: 2, pointerEvents: 'none' }}>
+          <span style={{ fontSize: '11cqw', animation: 'crownBob 3.4s ease-in-out infinite', filter: 'drop-shadow(0 0.4cqh 0.5cqh rgba(0,0,0,0.4))' }}>👑</span>
+        </div>
         <PetDisc slug={TEAMS[4].slug} color={TEAMS[4].color} sizeCqw={32} />
       </div>
       <div style={{ fontWeight: 800, fontSize: '5.6cqw', marginTop: '6cqh', animation: 'fadeUp 0.6s ease 1s both' }}>
@@ -923,4 +927,5 @@ const KEYFRAMES = `
   @keyframes stealOut { to { opacity: 0; transform: scale(0.65); } }
   @keyframes stealIn { from { opacity: 0; transform: scale(0.5); } to { opacity: 1; transform: none; } }
   .qr-box svg { width: 100%; height: 100%; display: block; }
+  @keyframes crownBob { 0%, 100% { transform: rotate(-8deg) translateY(0); } 50% { transform: rotate(-8deg) translateY(-1.4cqh); } }
 `;

@@ -127,9 +127,10 @@ export default function QQReelsHubPage() {
           borderRadius: 14, padding: '13px 16px', fontSize: 13, fontWeight: 700, color: '#e7cfe0', lineHeight: 1.5,
         }}>
           💡 <b>Kurz</b> = für TikTok-Reichweite (Hook zuerst, schneller Payoff). <b>Voll</b> = für Bio-Link & Website.
-          <b>🖼 Bilder-Slideshow</b> = Reel wird zum Foto-Karussell: Frame für Frame durchtippen und jeden screenshotten
-          (kein fertiger Bild-Ordner, die Slides entstehen live beim Durchtippen). Jeder Reel hat einen anderen Startframe,
-          damit TikTok sie nicht als Werbung einstuft.
+          <b>🖼 Bilder-Slideshow</b> = Reel wird zum Foto-Karussell: Frame für Frame durchtippen und pro Folie
+          <b style={{ color: '#fff' }}>⬇ HD</b> tippen → das Bild lädt in Full-HD (1080×1920) runter (die Animationen
+          werden fürs Standbild auf ihren Endzustand gesetzt). Jeder Reel hat einen anderen Startframe, damit TikTok
+          sie nicht als Werbung einstuft.
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 4 }}>

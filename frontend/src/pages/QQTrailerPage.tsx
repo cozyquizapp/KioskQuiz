@@ -22,6 +22,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
+import { downloadReelSlide } from '../reelCapture';
 
 const PINK = '#ec4899';
 const PINK_MID = '#f472b6';
@@ -234,6 +235,21 @@ export default function QQTrailerPage() {
   const cur = Math.min(scene, scenes.length - 1);
   const totalSec = Math.round(scenes.reduce((a, s) => a + s.dur, 0) / 1000);
 
+  // HD-Download der aktuellen Folie (Standbild → Anim auf Endzustand gezwungen).
+  const [saving, setSaving] = useState(false);
+  const saveSlide = async () => {
+    if (!frameRef.current || saving) return;
+    setSaving(true);
+    try {
+      await downloadReelSlide(frameRef.current, `cozyquiz-${variant ?? 'allgemein'}-${cur + 1}.png`);
+    } catch (e) {
+      console.error('Slide-Export fehlgeschlagen', e);
+      alert('Ups — der Bild-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <div style={{
       minHeight: big ? undefined : '100vh',
@@ -258,6 +274,7 @@ export default function QQTrailerPage() {
         {cfg.bgTint && <div aria-hidden style={{ position: 'absolute', inset: 0, background: cfg.bgTint, zIndex: 0, pointerEvents: 'none' }} />}
         {big && (
           <button
+            data-no-capture
             onClick={(e) => { e.stopPropagation(); exitBig(); }}
             aria-label="Vollbild schließen"
             style={{
@@ -269,15 +286,17 @@ export default function QQTrailerPage() {
             }}
           >✕</button>
         )}
-        {/* Slideshow-Nav (Zähler + Vor/Zurück) — faded aus für saubere Screenshots */}
+        {/* Slideshow-Nav (Zähler + Vor/Zurück + HD-Download) — traegt data-no-capture,
+            wird also beim Bild-Export entfernt und faded fuer saubere Screenshots aus. */}
         {slideshow && (
-          <div style={{ opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease', pointerEvents: controls ? 'auto' : 'none' }}>
+          <div data-no-capture style={{ opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease', pointerEvents: controls ? 'auto' : 'none' }}>
             <div style={{ position: 'absolute', top: '2.8cqh', left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'rgba(0,0,0,0.45)', color: '#fff', fontWeight: 900, fontSize: '3.4cqw', padding: '0.6cqh 3cqw', borderRadius: 999 }}>
               {cur + 1} / {scenes.length}
             </div>
-            <div style={{ position: 'absolute', bottom: '3cqh', left: 0, right: 0, zIndex: 30, display: 'flex', justifyContent: 'center', gap: '4cqw' }}>
-              <button onClick={(e) => { e.stopPropagation(); prevSlide(); }} style={slideBtn}>‹ Zurück</button>
-              <button onClick={(e) => { e.stopPropagation(); nextSlide(); }} style={slideBtn}>Weiter ›</button>
+            <div style={{ position: 'absolute', bottom: '3cqh', left: 0, right: 0, zIndex: 30, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '3cqw' }}>
+              <button onClick={(e) => { e.stopPropagation(); prevSlide(); }} style={slideBtn}>‹</button>
+              <button onClick={(e) => { e.stopPropagation(); saveSlide(); }} style={{ ...slideBtn, background: saving ? 'rgba(0,0,0,0.5)' : PINK }}>{saving ? '…' : '⬇ HD'}</button>
+              <button onClick={(e) => { e.stopPropagation(); nextSlide(); }} style={slideBtn}>›</button>
             </div>
           </div>
         )}

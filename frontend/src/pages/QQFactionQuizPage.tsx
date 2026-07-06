@@ -16,6 +16,7 @@
  */
 import { useEffect, useRef, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
+import { downloadReelSlide } from '../reelCapture';
 import { QQ_MEGA_FACTIONS } from '@shared/quarterQuizTypes';
 import { crestSrc } from '../cozyArenaCrests';
 
@@ -74,6 +75,22 @@ export default function QQFactionQuizPage() {
   const prevSlide = () => { setScene(s => (s - 1 + SCENES.length) % SCENES.length); pokeControls(); };
   const nextSlide = () => { setScene(s => (s + 1) % SCENES.length); pokeControls(); };
 
+  // HD-Download der aktuellen Folie (Standbild → Anim auf Endzustand gezwungen).
+  const frameRef = useRef<HTMLDivElement>(null);
+  const [saving, setSaving] = useState(false);
+  const saveSlide = async () => {
+    if (!frameRef.current || saving) return;
+    setSaving(true);
+    try {
+      await downloadReelSlide(frameRef.current, `cozyquiz-welches-team-${scene + 1}.png`);
+    } catch (e) {
+      console.error('Slide-Export fehlgeschlagen', e);
+      alert('Ups — der Bild-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   useEffect(() => { document.title = 'CozyQuiz — Welches Team bist du?'; }, []);
 
   // Auto-Weiterlauf nur wenn nicht pausiert UND nicht im Slideshow-Modus.
@@ -93,7 +110,7 @@ export default function QQFactionQuizPage() {
     }}>
       <style>{KEYFRAMES}</style>
 
-      <div style={{
+      <div ref={frameRef} style={{
         position: 'relative', aspectRatio: '9 / 16', containerType: 'size',
         overflow: 'hidden', background: COZY_BG, cursor: 'pointer',
         ...(big
@@ -102,7 +119,7 @@ export default function QQFactionQuizPage() {
       }} onClick={() => big ? pokeControls() : setPaused(p => !p)}>
 
         {big && (
-          <button onClick={(e) => { e.stopPropagation(); exitBig(); }} aria-label="Vollbild schließen" style={{
+          <button data-no-capture onClick={(e) => { e.stopPropagation(); exitBig(); }} aria-label="Vollbild schließen" style={{
             position: 'absolute', top: '2.5cqh', right: '3.5cqw', zIndex: 30,
             width: '9cqw', height: '9cqw', borderRadius: '50%', border: 'none',
             background: 'rgba(0,0,0,0.4)', color: '#fff', fontSize: '5cqw', fontWeight: 900,
@@ -110,15 +127,16 @@ export default function QQFactionQuizPage() {
           }}>✕</button>
         )}
 
-        {/* Slideshow-Nav (Zähler + Vor/Zurück) — faded aus, damit Screenshots sauber sind */}
+        {/* Slideshow-Nav (Zähler + Vor/Zurück + HD-Download) — traegt data-no-capture. */}
         {slideshow && (
-          <div style={{ opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease', pointerEvents: controls ? 'auto' : 'none' }}>
+          <div data-no-capture style={{ opacity: controls ? 1 : 0, transition: 'opacity 0.4s ease', pointerEvents: controls ? 'auto' : 'none' }}>
             <div style={{ position: 'absolute', top: '2.8cqh', left: '50%', transform: 'translateX(-50%)', zIndex: 30, background: 'rgba(0,0,0,0.45)', color: '#fff', fontWeight: 900, fontSize: '3.4cqw', padding: '0.6cqh 3cqw', borderRadius: 999 }}>
               {scene + 1} / {SCENES.length}
             </div>
-            <div style={{ position: 'absolute', bottom: '3cqh', left: 0, right: 0, zIndex: 30, display: 'flex', justifyContent: 'center', gap: '4cqw' }}>
-              <button onClick={(e) => { e.stopPropagation(); prevSlide(); }} style={slideBtn}>‹ Zurück</button>
-              <button onClick={(e) => { e.stopPropagation(); nextSlide(); }} style={slideBtn}>Weiter ›</button>
+            <div style={{ position: 'absolute', bottom: '3cqh', left: 0, right: 0, zIndex: 30, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: '3cqw' }}>
+              <button onClick={(e) => { e.stopPropagation(); prevSlide(); }} style={slideBtn}>‹</button>
+              <button onClick={(e) => { e.stopPropagation(); saveSlide(); }} style={{ ...slideBtn, background: saving ? 'rgba(0,0,0,0.5)' : PINK }}>{saving ? '…' : '⬇ HD'}</button>
+              <button onClick={(e) => { e.stopPropagation(); nextSlide(); }} style={slideBtn}>›</button>
             </div>
           </div>
         )}

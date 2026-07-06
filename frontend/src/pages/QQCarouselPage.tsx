@@ -91,10 +91,12 @@ function teamSlide(idx: number): JSX.Element {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.6cqw', letterSpacing: '0.2em', opacity: 0.7, animation: 'fadeUp 0.4s ease both' }}>
         TEAM {idx + 1} / 8
       </div>
-      {/* Wappen auf Radial-Halo (kein filter → export-treu). */}
-      <div style={{ position: 'relative', width: '38cqw', height: '38cqw', margin: '2cqh 0 3cqh', display: 'grid', placeItems: 'center', animation: 'crestPop 0.7s var(--eb) 0.1s both' }}>
+      {/* Wappen auf Radial-Halo (kein filter → export-treu). PNG ist 500×500 quadratisch,
+          darum width + height:auto statt object-fit (html2canvas rendert object-fit falsch
+          = schrumpft das Bild → Lücke → wirkt „nicht zentriert"). */}
+      <div style={{ position: 'relative', margin: '2cqh 0 3cqh', display: 'grid', placeItems: 'center', animation: 'crestPop 0.7s var(--eb) 0.1s both' }}>
         <div style={{ position: 'absolute', inset: '2%', borderRadius: '50%', background: `radial-gradient(circle, ${meta.accent}66 0%, ${meta.accent}22 45%, transparent 70%)` }} />
-        <img src={crestSrc(f.slug)} alt={f.nameDe} style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', animation: 'floatPet 5s ease-in-out infinite' }} />
+        <img src={crestSrc(f.slug)} alt={f.nameDe} style={{ position: 'relative', width: '42cqw', height: '42cqw', display: 'block', animation: 'floatPet 5s ease-in-out infinite' }} />
       </div>
       {/* Name + Motto in einem Flex-Gap → definierter Abstand, KEINE Überlappung
           (marginTop scheiterte an Descendern + html2canvas-Baseline-Drift). */}

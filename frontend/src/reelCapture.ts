@@ -58,12 +58,12 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080, fixed
   const html2canvas = (await import('html2canvas')).default;
 
   if (fixed) {
-    // Offscreen-Klon in exakter Zielgroesse → deterministische cq-Aufloesung.
+    // Offscreen-Klon in exakter Zielgroesse (1080×1350). Der Inhalt ist FUER diese
+    // Groesse designt (passt immer), Ausgabe ist scharf und deterministisch. Der
+    // Live-Frame kann am kleinen Viewport zu klein sein → Inhalt bricht (Cover-Titel).
     const clone = node.cloneNode(true) as HTMLElement;
     clone.querySelectorAll('[data-no-capture]').forEach((el) => el.remove());
-    clone.style.cssText += `;position:fixed;left:-99999px;top:0;margin:0;width:${fixed.w}px;height:${fixed.h}px;max-width:none;max-height:none;min-width:0;min-height:0;border-radius:0;box-shadow:none;transform:none;`;
-    // Animationen aus (die Karussell-Einblenden enden auf dem natuerlichen Zustand
-    // = Basis-Style → `none` zeigt den Endzustand). Filter raus (html2canvas-unsicher).
+    clone.style.cssText += `;position:fixed;left:-99999px;top:0;margin:0;width:${fixed.w}px;height:${fixed.h}px;max-width:none;max-height:none;min-width:0;min-height:0;border-radius:0;box-shadow:none;transform:none;overflow:hidden;`;
     clone.style.animation = 'none';
     clone.querySelectorAll<HTMLElement>('*').forEach((el) => {
       if (!el.style) return;
@@ -73,7 +73,6 @@ export async function captureReelCanvas(node: HTMLElement, targetW = 1080, fixed
     });
     document.body.appendChild(clone);
     try {
-      // Layout + Bilder im Klon sicher fertig.
       await nextFrame();
       await Promise.all(Array.from(clone.querySelectorAll('img')).map((img) =>
         img.complete ? null : new Promise<void>((res) => { img.onload = img.onerror = () => res(); })));

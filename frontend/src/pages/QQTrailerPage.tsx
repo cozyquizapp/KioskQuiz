@@ -596,7 +596,7 @@ function HookLocation() {
           </div>
           {/* Frage */}
           <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.9cqw', lineHeight: 1.12, animation: 'fadeUp 0.5s ease 1.05s both' }}>
-            Welche Stadt liegt am<br />weitesten nördlich?
+            Welche Stadt liegt<br />am nördlichsten?
           </div>
           {/* 2×2 Antworten, richtige (Dublin) leuchtet */}
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.4cqw', marginTop: 'auto' }}>
@@ -698,7 +698,7 @@ function QMucho() {
     <>
       <QBadge iconName="cat-mucho" label="Mu-Cho · Tempo zählt" />
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', lineHeight: 1.08, margin: '3cqh 0 3.5cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
-        Welche Stadt liegt am<br />weitesten nördlich?
+        Welche Stadt liegt<br />am nördlichsten?
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8cqh', width: '80cqw' }}>
         {opts.map((o, i) => (

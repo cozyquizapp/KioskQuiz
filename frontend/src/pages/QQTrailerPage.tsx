@@ -580,7 +580,7 @@ function HookLocation() {
         </div>
       </div>
       <div style={{ fontWeight: 800, fontSize: '4.6cqw', opacity: 0.85, marginTop: '1.5cqh', animation: 'fadeUp 0.6s ease 1.3s both' }}>
-        Ich bring alles mit. Ihr macht nur auf.
+        Ich bring alles mit. Ihr kriegt den vollen Laden.
       </div>
     </>
   );

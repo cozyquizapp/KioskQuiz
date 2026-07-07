@@ -720,6 +720,29 @@ export function FinalBettingCard({
     if (navigator.vibrate) navigator.vibrate([20, 30, 20]);
   };
 
+  // 2026-07-07 (Wolf-Livetest): Server akzeptiert Tipps erst wenn die Intro-
+  // Slide weggeklickt ist (phase===FINAL_BETTING UND finalBettingIntroDone).
+  // Vorher zeigte /team schon die klickbaren Picker -> frueher Klick warf
+  // INTRO_NOT_DONE. Bis der Mod freigibt: inaktive Warte-Card statt Buttons.
+  // Nur auf ===false gaten (undefined defaultet server-seitig auf true).
+  if (s.finalBettingIntroDone === false) {
+    return (
+      <CozyCard borderColor={myColor} pulse>
+        <div style={{ textAlign: 'center', padding: '8px 0' }}>
+          <div style={{ fontSize: 38, marginBottom: 8 }}>🎲</div>
+          <div style={{ fontWeight: 900, fontSize: 19, color: myColor, marginBottom: 6 }}>
+            {de ? 'Final-Tipp startet gleich…' : 'Final tip starts soon…'}
+          </div>
+          <div style={{ fontSize: 14, color: QQ_COLORS.slate400, lineHeight: 1.45 }}>
+            {de
+              ? 'Schau auf den Beamer — gleich kannst du deinen Tipp abgeben.'
+              : 'Watch the beamer — you can place your tip in a moment.'}
+          </div>
+        </div>
+      </CozyCard>
+    );
+  }
+
   if (submitted) {
     const myBet = s.finalBets?.[myTeamId];
     const targetTeam = myBet ? s.teams.find(t => t.id === myBet.targetTeamId) : null;

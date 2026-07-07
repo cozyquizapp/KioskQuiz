@@ -15,6 +15,7 @@
  * 3 externe Importer (QQBuiltinSlide + Test-Pages).
  */
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import type { CSSProperties } from 'react';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -2908,8 +2909,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   const secondTeamId = revealOrder[N - 2]?.team.id;
   const winnerX = winnerTeamId ? centerXOfTeam(winnerTeamId) : 760;
   const secondX = secondTeamId ? centerXOfTeam(secondTeamId) : 1000;
-  const flightSwap = flightTick % 2 === 1;    // tauscht die Positionen
-  const flightLanding = flightTick >= 7;      // Endposition korrekt, dann ausblenden
+  const flightLanding = flightTick >= 7;      // Flug endet → ausblenden, Tuerme uebernehmen
 
   return (
     <div style={{
@@ -3010,6 +3010,17 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-5px); }
         }
+        @keyframes qqFlightOrbit {
+          0%   { transform: translate(calc(-50% + var(--r)), calc(-50%)); }
+          25%  { transform: translate(-50%, calc(-50% + var(--ry))); }
+          50%  { transform: translate(calc(-50% - var(--r)), calc(-50%)); }
+          75%  { transform: translate(-50%, calc(-50% - var(--ry))); }
+          100% { transform: translate(calc(-50% + var(--r)), calc(-50%)); }
+        }
+        @keyframes qqFlightGlow {
+          0%, 100% { box-shadow: 0 0 22px var(--gc), 0 6px 18px rgba(0,0,0,0.55); }
+          50%      { box-shadow: 0 0 40px var(--gc), 0 6px 18px rgba(0,0,0,0.55); }
+        }
       `}</style>
 
       {/* Sanfte Aurora im Hintergrund (driftet leicht) */}
@@ -3096,30 +3107,35 @@ export function TowerFinalSlide({ finalRanking, lang }: {
       {phase === 'flight' && winnerTeamId && secondTeamId && (() => {
         const wT = revealOrder[N - 1].team;
         const sT = revealOrder[N - 2].team;
-        const wLeft = flightLanding ? winnerX : (flightSwap ? secondX : winnerX);
-        const sLeft = flightLanding ? secondX : (flightSwap ? winnerX : secondX);
-        const AVF = 96;
-        const fly = (team: QQTeam, left: number, key: string) => (
+        // Die zwei Avatare umkreisen den Mittelpunkt zwischen ihren Tuermen
+        // (elliptische Bahn, gegenlaeufig versetzt) → dynamischer "Tanz" statt
+        // links-rechts. Beim Landen ausblenden, die Tuerme uebernehmen.
+        const midX = (winnerX + secondX) / 2;
+        const rX = Math.min(Math.abs(winnerX - secondX) / 2 + 40, 260);
+        const rY = 105;
+        const AVF = 92;
+        const orbit = (team: QQTeam, delay: string, key: string) => (
           <div key={key} style={{
-            position: 'absolute', top: 250, left, width: AVF, zIndex: 9, pointerEvents: 'none',
-            transform: 'translate(-50%, -50%)',
-            transition: 'left 0.62s cubic-bezier(0.45,0,0.55,1), opacity 0.5s ease',
-            opacity: flightLanding ? 0 : 1,
+            position: 'absolute', left: midX, top: 250, zIndex: 9, pointerEvents: 'none',
+            animation: 'qqFlightOrbit 2.1s ease-in-out infinite', animationDelay: delay,
+            opacity: flightLanding ? 0 : 1, transition: 'opacity 0.6s ease',
+            willChange: 'transform',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-          }}>
+            ['--r']: `${rX}px`, ['--ry']: `${rY}px`,
+          } as CSSProperties}>
             <div style={{
               width: AVF, height: AVF, borderRadius: '50%', background: team.color,
               border: `4px solid ${team.color}`,
-              boxShadow: `0 0 30px ${team.color}, 0 6px 18px rgba(0,0,0,0.55)`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              animation: 'qqTowerWinPop 1.2s ease-in-out infinite',
-            }}>
+              animation: 'qqFlightGlow 1.4s ease-in-out infinite',
+              ['--gc']: team.color,
+            } as CSSProperties}>
               <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AVF} flat />
             </div>
             <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}, 0 2px 6px rgba(0,0,0,0.8)`, whiteSpace: 'nowrap' }}>{team.name}</div>
           </div>
         );
-        return <>{fly(wT, wLeft, 'fw')}{fly(sT, sLeft, 'fs')}</>;
+        return <>{orbit(wT, '0s', 'fw')}{orbit(sT, '-1.05s', 'fs')}</>;
       })()}
 
       {/* Titel-Band — feste Hoehe, damit die Tuerme nie reinlaufen */}
@@ -3339,6 +3355,17 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       transition: 'background 0.35s ease, border-color 0.35s ease',
                       position: 'relative', zIndex: 1,
                     }}>
+                      {/* Erobertes Feld = Team-Avatar drin (wie im Grid). Anonyme
+                          Top-Tuerme bleiben leer/grau bis zur Enthuellung. */}
+                      {!anon && (
+                        <div aria-hidden style={{
+                          position: 'absolute', inset: 0, borderRadius: 'inherit',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          overflow: 'hidden', zIndex: 0,
+                        }}>
+                          <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={Math.round(blockW * 0.82)} flat />
+                        </div>
+                      )}
                       {/* Einschlag-Ring beim Landen des neuesten Blocks */}
                       {isTopBlock && (
                         <div aria-hidden style={{

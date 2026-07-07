@@ -1186,22 +1186,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             zIndex: 5, boxSizing: 'border-box',
             animation: 'qqStationFade 0.5s ease 0.3s both',
           }}>
-          {/* "NEU" badge (skip for round 1) */}
-          {s.gamePhaseIndex > 1 && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '6px 22px', borderRadius: 'var(--qq-pill-radius)',
-              background: isThemed() ? 'var(--qq-surface)' : `${color}25`,
-              border: isThemed() ? '2px solid var(--qq-accent)' : `2px solid ${color}55`,
-              fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.1em', textTransform: 'uppercase',
-              marginTop: 2, marginBottom: 4,
-              animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.3s both',
-              position: 'relative', zIndex: 5,
-            }}>
-              {lang === 'de' ? '✨ NEU' : '✨ NEW'}
-            </div>
-          )}
+          {/* "NEU"-Badge entfernt (Wolf 2026-07-07 'neu karte ueberlappt'): das
+              Pill sass oben auf der Kategorie-Dot-Reihe (Journey-Cluster) und
+              ueberlappte einen Dot — ausserdem doppelt, weil die aufklappende
+              Aktions-Karte rechts ihre Rueckseite bereits gross mit „NEU" zeigt.
+              Ohne das Badge schrumpft der Bottom-Block, Label+Cards bleiben
+              unten und nichts kollidiert mehr mit der Zeitleiste. */}
 
           {/* Aktionen-Bereich — kleiner Header, dann Karten als Hauptinhalt.
               Vorher: zwei dicke Textzeilen mit redundanter Wiederholung der

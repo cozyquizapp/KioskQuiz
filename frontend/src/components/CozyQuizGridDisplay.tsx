@@ -24,6 +24,7 @@
  * alle global in BEAMER_CSS / qqShared.
  */
 import { useState, useEffect, useRef } from 'react';
+import type { CSSProperties } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
@@ -227,6 +228,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     return () => clearInterval(iv);
   }, [s.grid]);
 
+  // ── Radiale Einschlagswelle beim Feld-Claim (Wolf-Idee 2026-07-07) ──────────
+  // Vom gerade gesetzten (oder gestohlenen) Feld läuft eine physische Welle
+  // (Lift + Glow) ringförmig über die Nachbarschaft. Ergänzt die farbliche
+  // Connect-Welle (BFS über eigenes Gebiet) — hier reagiert das GANZE Brett im
+  // Radius, egal wem die Felder gehören. Radiusbegrenzt = wirkt als Einschlag
+  // und bleibt auch auf großen Arena-Grids billig. Die direkten 4-Nachbarn
+  // behalten ihr cellNeighborDuck (Ring 1), die Welle läuft ab Ring 2 weiter.
+  const RIPPLE_RADIUS = 3.5;  // euklidisch (~3–4 Felder)
+  const RIPPLE_STEP = 42;     // ms Delay pro Distanz-Einheit → Ausbreitungstempo
+  const rippleOrigins: Array<{ r: number; c: number; color: string }> = [];
+  [...newCellsRef.current, ...stolenCellsRef.current].forEach(key => {
+    const [rr, cc] = key.split('-').map(Number);
+    const owner = s.grid[rr]?.[cc]?.ownerId;
+    rippleOrigins.push({ r: rr, c: cc, color: s.teams.find(t => t.id === owner)?.color ?? '#EC4899' });
+  });
+
   return (
     <div style={{ animation: shakeTick > 0 ? 'boardShake 0.45s ease-out' : undefined }} key={`shake-${shakeTick}`}>
       {/* Grid — Border + Glow in Team-Farbe wenn ein Team gerade dran ist
@@ -292,6 +309,19 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             //   1x stapeln (Connections):   stuck=t, sb=1     → 1 → 2 Avatare ✓
             //   2x stapeln (Connections):   stuck=t, sb=2     → 2 → 3 Avatare ✓
             const stackCount = Math.max(cell.stackBonus ?? 0, cell.stuck ? 1 : 0);
+            // Radial-Welle: Delay = Distanz zum nächsten Einschlag · STEP. Die
+            // Zelle selbst (isNew/isStolen → eigener Pop), die 4-Nachbarn
+            // (cellNeighborDuck), Joker- und Stapel-Zellen bleiben außen vor.
+            let ripDelay: number | null = null;
+            let ripColor = '#EC4899';
+            if (rippleOrigins.length && !isNew && !isStolen && !isNeighbor && !isJustFormedJoker && !isStuck) {
+              let min = Infinity;
+              for (const o of rippleOrigins) {
+                const d = Math.hypot(r - o.r, c - o.c);
+                if (d < min) { min = d; ripColor = o.color; }
+              }
+              if (min <= RIPPLE_RADIUS) ripDelay = Math.round(min * RIPPLE_STEP);
+            }
             return (
               <div key={`${r}-${c}`} style={{
                 position: 'relative', overflow: 'visible',
@@ -312,12 +342,15 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 transition: 'transform 0.4s var(--qq-ease-bounce), filter 0.4s ease',
                 animation: isJustFormedJoker
                   ? 'jokerCellPulse 2.2s var(--qq-ease-smooth) both'
-                  : isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both' : undefined,
+                  : isNeighbor ? 'cellNeighborDuck 0.45s ease-out 0.1s both'
+                  : ripDelay != null ? `cellRipple 0.5s ease-out ${ripDelay}ms both` : undefined,
                 // Stagger: die 4 frischen Joker-Zellen stampfen gestaffelt als Welle.
                 animationDelay: isJustFormedJoker
                   ? `${jokerStaggerRef.current.get(`${r}-${c}`) ?? 0}ms`
                   : undefined,
-              }}>
+                // Glow-Farbe der Radial-Welle (Teamfarbe des Einschlags).
+                ...(ripDelay != null ? { ['--rip']: ripColor } : {}),
+              } as CSSProperties}>
                 {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{
                   position: 'absolute', inset: 0, borderRadius: cellRadius,

@@ -3175,30 +3175,36 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 })}
               </div>
 
-              {/* Live-Zaehler (poppt bei jedem neuen Block) */}
+              {/* Sockel-Zone mit FESTER Hoehe (BASE_H) → alle Turm-Boeden liegen
+                  auf einer Linie, egal ob der Name 1 oder 2 Zeilen hat. */}
               <div style={{
-                marginTop: 8, fontSize: 30, fontWeight: 900, lineHeight: 1,
-                color: capped ? entry.team.color : '#E2D6FF',
-                fontVariantNumeric: 'tabular-nums',
-                textShadow: capped ? `0 0 14px ${entry.team.color}77` : 'none',
-                transition: 'color 0.3s ease',
+                height: BASE_H, flexShrink: 0,
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                justifyContent: 'flex-start', paddingTop: 8, gap: 4,
               }}>
-                <span key={shown} style={{
-                  display: 'inline-block',
-                  animation: shown > 0 && !crowned ? 'qqTowerNumPop 0.32s ease-out' : 'none',
-                }}>{shown}</span>
+                {/* Live-Zaehler (poppt bei jedem neuen Block) */}
+                <div style={{
+                  fontSize: 30, fontWeight: 900, lineHeight: 1,
+                  color: capped ? entry.team.color : '#E2D6FF',
+                  fontVariantNumeric: 'tabular-nums',
+                  textShadow: capped ? `0 0 14px ${entry.team.color}77` : 'none',
+                  transition: 'color 0.3s ease',
+                }}>
+                  <span key={shown} style={{
+                    display: 'inline-block',
+                    animation: shown > 0 && !crowned ? 'qqTowerNumPop 0.32s ease-out' : 'none',
+                  }}>{shown}</span>
+                </div>
+                <TeamNameLabel
+                  name={entry.team.name}
+                  maxLines={2}
+                  shrinkAfter={12}
+                  color="#F1F5F9"
+                  fontWeight={800}
+                  fontSize="clamp(12px, 1cqw, 17px)"
+                  style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
+                />
               </div>
-
-              {/* Sockel: nur Name (Avatar klettert oben mit) */}
-              <TeamNameLabel
-                name={entry.team.name}
-                maxLines={2}
-                shrinkAfter={12}
-                color="#F1F5F9"
-                fontWeight={800}
-                fontSize="clamp(12px, 1cqw, 17px)"
-                style={{ marginTop: 5, maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
-              />
             </div>
           );
         })}

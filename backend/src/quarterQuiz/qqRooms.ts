@@ -752,6 +752,21 @@ export function qqStartGame(
   // N+1 dieselbe Kategorie haben, swappen wir Frage 1 von Runde N+1 mit einer
   // anderen Frage derselben Runde (falls vorhanden).
   let processedQuestions = questions;
+  // 2026-07-07 (Wolf-Livetest 'Heisse Kartoffel war noch in Cozy-Arena-Draft'):
+  // Hot Potato passt nicht in den Gross-Gruppen-Modus (rundenbasiert, ein Team
+  // nach dem anderen — bei 8x3 sinnlos; qqHotPotatoStart no-opt dort eh). Der
+  // Wizard warnt nur, filtert aber nicht, und Direktstarts umgehen ihn ganz.
+  // Robuste, zentrale Loesung: HP-Fragen beim Start eines Arena-Spiels hart aus
+  // dem Fragensatz entfernen, damit sie nie als (kaputte) "normale" Frage laufen.
+  const isArenaStart = largeGroupMode === true || nestedTeams === true;
+  if (isArenaStart) {
+    const before = processedQuestions.length;
+    processedQuestions = processedQuestions.filter(
+      q => !(q.category === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'hotPotato'),
+    );
+    const removed = before - processedQuestions.length;
+    if (removed > 0) console.log(`[arena] ${removed} Hot-Potato-Frage(n) im Gross-Modus herausgefiltert.`);
+  }
   if (room.shuffleQuestionsInRound) {
     const byPhase: Record<number, QQQuestion[]> = {};
     for (const q of questions) {

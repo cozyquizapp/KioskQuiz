@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react';
-import { RaceFinalSlide } from '../components/CozyQuizFinalRevealView';
+import { RaceFinalSlide, TowerFinalSlide } from '../components/CozyQuizFinalRevealView';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
- * QQRaceFinaleTestPage — Vorschau des alten (deprecated) Raketen-Finales
- * RaceFinalSlide. Nur zum Anschauen/Vergleichen; das Live-Finale
- * (FinalEurovisionFinale) bleibt unberuehrt. 2026-07-07 (Wolf).
+ * QQRaceFinaleTestPage — Finale-Vorschau. Standard: TowerFinalSlide (neues
+ * Turm-Finale, Wolf 2026-07-07 'Tuerme aus den Feldern'). Umschaltbar auf
+ * RaceFinalSlide (altes Race) zum Vergleich. Das Live-Finale
+ * (FinalEurovisionFinale) bleibt unberuehrt.
  * Team-Anzahl 4/6/8 umschaltbar; Neustart-Button (remount) spielt die
  * Choreo erneut ab.
  */
@@ -37,6 +38,7 @@ function buildRanking(n: number) {
 
 export default function QQRaceFinaleTestPage() {
   const [n, setN] = useState<4 | 6 | 8>(6);
+  const [mode, setMode] = useState<'tower' | 'race'>('tower');
   const [runKey, setRunKey] = useState(0);
 
   useEffect(() => {
@@ -52,7 +54,9 @@ export default function QQRaceFinaleTestPage() {
         width: STAGE_W, height: STAGE_H, flexShrink: 0, position: 'relative',
         display: 'flex', flexDirection: 'column', containerType: 'size', overflow: 'hidden',
       }}>
-        <RaceFinalSlide key={`${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
+        {mode === 'tower'
+          ? <TowerFinalSlide key={`t-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
+          : <RaceFinalSlide key={`r-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />}
       </div>
 
       {/* Steuer-Panel */}
@@ -63,7 +67,14 @@ export default function QQRaceFinaleTestPage() {
         border: '1px solid rgba(236,72,153,0.4)', borderRadius: 14, zIndex: 1000,
         color: '#F1F5F9', fontSize: 13, fontWeight: 800,
       }}>
-        <span style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>🏁 Race-Finale</span>
+        <span style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>Finale</span>
+        {([['tower', '🏗️ Türme'], ['race', '🏁 Race']] as const).map(([m, label]) => (
+          <button key={m} onClick={() => { setMode(m); setRunKey(k => k + 1); }} style={{
+            padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
+            background: mode === m ? '#A855F7' : 'rgba(255,255,255,0.06)', color: mode === m ? '#fff' : '#94a3b8',
+          }}>{label}</button>
+        ))}
+        <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)' }} />
         {([4, 6, 8] as const).map(v => (
           <button key={v} onClick={() => { setN(v); setRunKey(k => k + 1); }} style={{
             padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',

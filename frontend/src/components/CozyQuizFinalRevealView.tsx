@@ -2746,6 +2746,277 @@ export function SuspensePodiumFinale({ finalRanking, lang }: {
 // 2026-07-07 (Wolf 'Raketenflug erst zeigen'): exportiert, damit die Vorschau-
 // Route /race-finale den alten Race-Finale-Slide rendern kann, ohne das Live-
 // Finale (FinalEurovisionFinale) anzufassen. Bleibt sonst DEPRECATED.
+// ============================================================================
+// TowerFinalSlide — 2026-07-07 (Wolf 'Tuerme aus den Feldern bauen sich auf')
+// ----------------------------------------------------------------------------
+// Neues Finale-Konzept: statt Race baut jedes Team einen Turm aus seinen
+// eroberten Feldern (Turmhoehe = RankingEntry.total = groesstes Gebiet +
+// Stack-Bonus + Bet + Awards). Choreo "synchron Feld fuer Feld" (Wolf-Wahl):
+// alle Tuerme wachsen im selben Takt je einen Block; schwaechere Tuerme
+// stoppen sichtbar, der Sieger klettert am Ende allein weiter → der letzte
+// Block landet beim Gewinner. Pyramiden-Anordnung (hoechster Turm mittig,
+// abwechselnd nach aussen) fuer eine saubere Bergsilhouette + zentrierten
+// Kr-Moment. Zahlen unter den Tuermen zaehlen live mit, frieren beim Cap ein.
+// Vorschau-only (Route /race-finale); Live-Finale bleibt FinalEurovisionFinale.
+// ============================================================================
+export function TowerFinalSlide({ finalRanking, lang }: {
+  finalRanking: RankingEntry[]; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const N = finalRanking.length;
+  const winner = finalRanking[0];
+
+  // Turmhoehe pro Team = total (min. 1 Block, damit jedes Team sichtbar bleibt).
+  const heights = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const e of finalRanking) m[e.team.id] = Math.max(1, e.total);
+    return m;
+  }, [finalRanking]);
+  const maxH = useMemo(
+    () => Math.max(1, ...finalRanking.map(e => Math.max(1, e.total))),
+    [finalRanking],
+  );
+
+  // Pyramiden-Anordnung: hoechster (finalRanking[0]) mittig, naechste
+  // abwechselnd links/rechts → Bergsilhouette mit Peak in der Mitte.
+  const ordered = useMemo(() => {
+    const arr: RankingEntry[] = [];
+    finalRanking.forEach((e, i) => { if (i % 2 === 0) arr.push(e); else arr.unshift(e); });
+    return arr;
+  }, [finalRanking]);
+
+  // Choreo-Phasen: intro (Titel-Hold) → building (Bloecke fallen) → crowned.
+  const [phase, setPhase] = useState<'intro' | 'building' | 'crowned'>('intro');
+  const [tick, setTick] = useState(0); // Anzahl bereits gelegter Block-Reihen
+
+  useEffect(() => {
+    const h = window.setTimeout(() => setPhase('building'), 1500);
+    return () => window.clearTimeout(h);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'building') return;
+    if (tick >= maxH) {
+      const h = window.setTimeout(() => setPhase('crowned'), 850);
+      return () => window.clearTimeout(h);
+    }
+    // Tempo skaliert mit Turmhoehe, damit die Gesamtdauer ~6-8s bleibt.
+    const stepMs = maxH > 16 ? 240 : maxH > 10 ? 320 : maxH > 6 ? 400 : 480;
+    const h = window.setTimeout(() => {
+      setTick(t => t + 1);
+      try { playTick(); } catch { /* headless / kein Audio */ }
+    }, stepMs);
+    return () => window.clearTimeout(h);
+  }, [phase, tick, maxH]);
+
+  useEffect(() => {
+    if (phase !== 'crowned') return;
+    try { playClimaxFinish(); } catch { /* noop */ }
+  }, [phase]);
+
+  const crowned = phase === 'crowned';
+
+  // Block-Groessen (px im 1760x990-Stage, wird per Stage-Transform mitskaliert).
+  const availH = 620;                                   // vertikaler Platz fuer Tuerme
+  const blockH = Math.max(20, Math.min(54, Math.floor(availH / maxH)));
+  const colW = Math.min(168, Math.max(64, Math.floor(1520 / N) - 22));
+  const blockW = Math.min(colW, Math.round(blockH * 1.7));
+  const colGap = Math.max(8, Math.min(28, Math.round((1600 - N * colW) / (N + 1))));
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at 50% 18%, #241436 0%, #150C24 46%, #0C0718 100%)',
+      display: 'flex', flexDirection: 'column',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      <style>{`
+        @keyframes qqTowerDrop {
+          0%   { transform: translateY(-90px) scaleY(0.55); opacity: 0; }
+          55%  { transform: translateY(0) scaleY(1.2); opacity: 1; }
+          76%  { transform: translateY(0) scaleY(0.92); }
+          100% { transform: translateY(0) scaleY(1); }
+        }
+        @keyframes qqTowerWinPop {
+          0%, 100% { transform: translateY(0); }
+          32%      { transform: translateY(-16px); }
+          60%      { transform: translateY(0); }
+        }
+        @keyframes qqTowerCrownDrop {
+          0%   { transform: translate(-50%, -140px) scale(0.4) rotate(-18deg); opacity: 0; }
+          65%  { transform: translate(-50%, 8px) scale(1.14) rotate(6deg); opacity: 1; }
+          100% { transform: translate(-50%, 0) scale(1) rotate(0deg); opacity: 1; }
+        }
+        @keyframes qqTowerCrownFloat {
+          0%, 100% { transform: translate(-50%, 0) rotate(-3deg); }
+          50%      { transform: translate(-50%, -8px) rotate(3deg); }
+        }
+        @keyframes qqTowerTitleIn {
+          from { transform: translateY(-24px); opacity: 0; }
+          to   { transform: translateY(0); opacity: 1; }
+        }
+        @keyframes qqTowerCapGlow {
+          0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
+          50%      { box-shadow: 0 -2px 14px rgba(255,255,255,0.28); }
+        }
+      `}</style>
+
+      {crowned && <ConfettiOverlay />}
+
+      {/* Titel-Band */}
+      <div style={{
+        flexShrink: 0, textAlign: 'center', paddingTop: 34, paddingBottom: 8,
+        position: 'relative', zIndex: 5,
+      }}>
+        {!crowned ? (
+          <>
+            <div style={{
+              fontSize: 40, fontWeight: 900, letterSpacing: '0.01em',
+              color: '#F8FAFC', textShadow: '0 3px 18px rgba(0,0,0,0.6)',
+              animation: 'qqTowerTitleIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both',
+            }}>
+              {de ? '🏗️ Wer baut den höchsten Turm?' : '🏗️ Who builds the tallest tower?'}
+            </div>
+            <div style={{
+              marginTop: 6, fontSize: 18, fontWeight: 700, color: 'rgba(226,214,255,0.75)',
+            }}>
+              {de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every field you claimed is one block'}
+            </div>
+          </>
+        ) : (
+          <div style={{ animation: 'qqTowerTitleIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>
+            <div style={{
+              fontSize: 22, fontWeight: 800, letterSpacing: '0.14em',
+              textTransform: 'uppercase', color: '#FBBF24',
+            }}>
+              {de ? '🏆 Sieger' : '🏆 Winner'}
+            </div>
+            <div style={{
+              fontSize: 46, fontWeight: 900, color: winner?.team.color ?? '#F8FAFC',
+              textShadow: `0 0 26px ${winner?.team.color ?? '#fff'}88, 0 3px 16px rgba(0,0,0,0.6)`,
+            }}>
+              {winner?.team.name}
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Turm-Reihe */}
+      <div style={{
+        flex: 1, position: 'relative', zIndex: 2,
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        gap: colGap, padding: `0 40px 6px`,
+      }}>
+        {ordered.map((entry) => {
+          const h = heights[entry.team.id];
+          const shown = Math.min(tick, h);
+          const capped = shown >= h;
+          const isWinner = entry.team.id === winner?.team.id;
+          const dimmed = crowned && !isWinner;
+
+          return (
+            <div key={entry.team.id} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              flexShrink: 0, width: colW,
+              opacity: dimmed ? 0.5 : 1,
+              filter: dimmed ? 'saturate(0.6)' : 'none',
+              transition: 'opacity 0.6s ease, filter 0.6s ease',
+            }}>
+              {/* Krone ueber dem Sieger-Turm */}
+              <div style={{ position: 'relative', width: '100%', height: 0 }}>
+                {crowned && isWinner && (
+                  <span aria-hidden style={{
+                    position: 'absolute', left: '50%', bottom: 6,
+                    fontSize: 60, lineHeight: 1, pointerEvents: 'none', zIndex: 6,
+                    filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 22px rgba(251,191,36,0.8))',
+                    animation: 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite',
+                  }}>👑</span>
+                )}
+              </div>
+
+              {/* Turm — Bloecke von unten nach oben */}
+              <div style={{
+                display: 'flex', flexDirection: 'column-reverse', alignItems: 'center',
+                gap: 3, minHeight: blockH,
+                animation: crowned && isWinner ? 'qqTowerWinPop 1.6s ease-in-out 0.5s infinite' : 'none',
+              }}>
+                {Array.from({ length: shown }).map((_, bi) => {
+                  const isTopBlock = bi === shown - 1;
+                  const isCapBlock = capped && bi === h - 1;
+                  return (
+                    <div key={bi} style={{
+                      width: blockW, height: blockH,
+                      borderRadius: Math.min(10, Math.round(blockH * 0.22)),
+                      background: `linear-gradient(180deg, ${entry.team.color} 0%, ${entry.team.color} 55%, rgba(0,0,0,0.22) 100%)`,
+                      border: `2px solid ${entry.team.color}`,
+                      boxShadow: `inset 0 2px 3px rgba(255,255,255,0.35), inset 0 -3px 5px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.3)`,
+                      // Nur der jeweils oberste (neueste) Block spielt die Drop-Animation.
+                      transformOrigin: 'bottom center',
+                      animation: isTopBlock ? 'qqTowerDrop 0.42s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
+                      position: 'relative',
+                    }}>
+                      {/* Cap-Sheen auf dem obersten Block eines fertigen Turms */}
+                      {isCapBlock && !crowned && (
+                        <div style={{
+                          position: 'absolute', inset: 0, borderRadius: 'inherit',
+                          animation: 'qqTowerCapGlow 1.8s ease-in-out infinite',
+                        }} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Live-Zaehler */}
+              <div style={{
+                marginTop: 8, fontSize: 30, fontWeight: 900, lineHeight: 1,
+                color: capped ? entry.team.color : '#E2D6FF',
+                fontVariantNumeric: 'tabular-nums',
+                textShadow: capped ? `0 0 14px ${entry.team.color}77` : 'none',
+                transition: 'color 0.3s ease',
+              }}>
+                {shown}
+              </div>
+
+              {/* Sockel: Avatar + Name */}
+              <div style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
+                marginTop: 6,
+              }}>
+                <div style={{
+                  width: 54, height: 54, borderRadius: '50%',
+                  background: entry.team.color,
+                  border: `3px solid ${entry.team.color}`,
+                  boxShadow: `0 0 16px ${entry.team.color}66, 0 3px 8px rgba(0,0,0,0.4)`,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                }}>
+                  <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={54} flat />
+                </div>
+                <TeamNameLabel
+                  name={entry.team.name}
+                  maxLines={2}
+                  shrinkAfter={12}
+                  color="#F1F5F9"
+                  fontWeight={800}
+                  fontSize="clamp(12px, 1cqw, 17px)"
+                  style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Boden-Linie */}
+      <div style={{
+        flexShrink: 0, height: 2, margin: '0 40px 22px',
+        background: 'linear-gradient(90deg, transparent, rgba(236,72,153,0.45), transparent)',
+        zIndex: 1,
+      }} />
+    </div>
+  );
+}
+
 export function RaceFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {

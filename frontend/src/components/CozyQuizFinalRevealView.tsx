@@ -2798,25 +2798,33 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   const [tick, setTick] = useState(0); // Anzahl bereits gelegter Block-Reihen
 
   useEffect(() => {
-    const h = window.setTimeout(() => setPhase('building'), 1500);
+    // Laenger anhalten — der Saal soll den Moment spueren, bevor der erste Block faellt.
+    const h = window.setTimeout(() => setPhase('building'), 2800);
     return () => window.clearTimeout(h);
   }, []);
 
   useEffect(() => {
     if (phase !== 'building') return;
     if (tick >= maxH) {
-      const h = window.setTimeout(() => setPhase('crowned'), 850);
+      // Nach dem Sieger-Block kurz sacken lassen, dann Kroenung.
+      const h = window.setTimeout(() => setPhase('crowned'), 700);
       return () => window.clearTimeout(h);
     }
-    // Tempo skaliert mit Turmhoehe (~6-8s). Sobald nur noch <=3 Tuerme wachsen,
-    // wird jeder weitere Block LANGSAM & dramatisch gelegt (Top-3-Showdown).
+    // Epische Dramaturgie in Stufen — je weniger Tuerme noch klettern, desto
+    // langsamer & schwerer faellt jeder Block. Vor dem allerletzten Block (Sieger
+    // steht allein, eine Reihe vor dem Ziel) eine GEHALTENE Sekunde Stille.
     const climbingNow = finalRanking.filter(e => Math.max(1, e.total) > tick).length;
-    const stepMs = climbingNow <= 3
-      ? 640
-      : (maxH > 16 ? 240 : maxH > 10 ? 320 : maxH > 6 ? 400 : 480);
+    const isWinnerFinalBlock = tick === maxH - 1 && climbingNow === 1;
+    const stepMs = isWinnerFinalBlock
+      ? 1900                                   // angehaltener Atem vor der Kroenung
+      : climbingNow === 1
+        ? 1150                                 // der Sieger klettert allein hoch
+        : climbingNow <= 3
+          ? 860                                // Top-3-Showdown
+          : (maxH > 16 ? 300 : maxH > 10 ? 380 : maxH > 6 ? 460 : 540);
     const h = window.setTimeout(() => {
       setTick(t => t + 1);
-      try { playTick(); } catch { /* headless / kein Audio */ }
+      try { playWoodKnock(); } catch { /* headless / kein Audio */ }
     }, stepMs);
     return () => window.clearTimeout(h);
   }, [phase, tick, maxH, finalRanking]);
@@ -2824,6 +2832,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   useEffect(() => {
     if (phase !== 'crowned') return;
     try { playClimaxFinish(); } catch { /* noop */ }
+    try { playFanfare(); } catch { /* noop */ }
   }, [phase]);
 
   const crowned = phase === 'crowned';
@@ -2847,6 +2856,13 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   // Showdown: wenn nur noch <=3 Tuerme wachsen, wird der Schluss dramatisch.
   const climbingCount = finalRanking.filter(e => Math.max(1, e.total) > tick).length;
   const showdown = phase === 'building' && climbingCount > 0 && climbingCount <= 3;
+  // Der Saal wird dunkel, wenn sich das Feld verengt — Spotlight auf die Leader.
+  const darkLevel = crowned ? 0.16
+    : climbingCount === 1 ? 0.74
+    : climbingCount <= 3 && phase === 'building' ? 0.52
+    : 0;
+  // Gehaltener Atem: Sieger steht eine Reihe vorm Ziel, allein.
+  const heldBreath = phase === 'building' && climbingCount === 1 && tick === maxH - 1;
 
   return (
     <div style={{
@@ -2910,6 +2926,22 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.5; }
           50%      { transform: translate(4%, -3%) scale(1.12); opacity: 0.75; }
         }
+        @keyframes qqTowerFlash {
+          0%   { opacity: 0; }
+          14%  { opacity: 0.85; }
+          100% { opacity: 0; }
+        }
+        @keyframes qqTowerShake {
+          0%, 100% { transform: translate(0, 0); }
+          20% { transform: translate(-5px, 3px); }
+          40% { transform: translate(5px, -2px); }
+          60% { transform: translate(-4px, -3px); }
+          80% { transform: translate(3px, 2px); }
+        }
+        @keyframes qqTowerBreathe {
+          0%, 100% { opacity: 0.55; transform: translateX(-50%) scale(1); }
+          50%      { opacity: 1; transform: translateX(-50%) scale(1.04); }
+        }
       `}</style>
 
       {/* Sanfte Aurora im Hintergrund (driftet leicht) */}
@@ -2926,7 +2958,23 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         }} />
       </div>
 
+      {/* Saal verdunkelt sich, Spotlight wandert auf die Mitte (Sieger) */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 60% 72% at 50% 46%, transparent 28%, rgba(3,1,8,1) 84%)',
+        opacity: darkLevel, transition: 'opacity 1.2s ease',
+      }} />
+
       {crowned && <ConfettiOverlay />}
+
+      {/* Lichtblitz im Moment der Kroenung */}
+      {crowned && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, zIndex: 7, pointerEvents: 'none',
+          background: 'radial-gradient(circle at 50% 40%, rgba(255,240,205,0.95), rgba(255,255,255,0) 60%)',
+          animation: 'qqTowerFlash 0.9s ease-out both',
+        }} />
+      )}
 
       {/* Titel-Band — feste Hoehe, damit die Tuerme nie reinlaufen */}
       <div style={{
@@ -2934,7 +2982,23 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 5,
       }}>
-        {!crowned ? (
+        {!crowned && phase === 'intro' ? (
+          <>
+            <div style={{
+              fontSize: 52, fontWeight: 900, letterSpacing: '0.02em',
+              color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.4), 0 3px 18px rgba(0,0,0,0.6)',
+              animation: 'qqTowerTitleIn 1.1s cubic-bezier(0.2,0.8,0.3,1) both',
+            }}>
+              {de ? '🏆 Das große Finale' : '🏆 The Grand Finale'}
+            </div>
+            <div style={{
+              marginTop: 8, fontSize: 20, fontWeight: 700, color: 'rgba(226,214,255,0.8)',
+              animation: 'qqTowerBreathe 2.4s ease-in-out infinite', transformOrigin: 'center',
+            }}>
+              {de ? 'Der Moment der Wahrheit' : 'The moment of truth'}
+            </div>
+          </>
+        ) : !crowned ? (
           <>
             <div style={{
               fontSize: 40, fontWeight: 900, letterSpacing: '0.01em',
@@ -2944,9 +3008,15 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               {de ? '🏗️ Wer baut den höchsten Turm?' : '🏗️ Who builds the tallest tower?'}
             </div>
             <div style={{
-              marginTop: 6, fontSize: 18, fontWeight: 700, color: 'rgba(226,214,255,0.75)',
+              marginTop: 6, fontSize: heldBreath ? 24 : 18, fontWeight: heldBreath ? 900 : 700,
+              color: heldBreath ? '#FBBF24' : 'rgba(226,214,255,0.75)',
+              transition: 'color 0.4s ease',
+              animation: heldBreath ? 'qqTowerBreathe 1.3s ease-in-out infinite' : 'none',
+              transformOrigin: 'center',
             }}>
-              {de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every field you claimed is one block'}
+              {heldBreath
+                ? (de ? 'Und der Sieger ist…' : 'And the winner is…')
+                : (de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every field you claimed is one block')}
             </div>
           </>
         ) : (
@@ -2972,6 +3042,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         flex: 1, minHeight: 0, position: 'relative', zIndex: 2, overflow: 'hidden',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         gap: colGap, padding: `0 40px ${BOTTOM}px`,
+        animation: crowned ? 'qqTowerShake 0.55s ease-out' : 'none',
       }}>
         {ordered.map((entry) => {
           const h = heights[entry.team.id];

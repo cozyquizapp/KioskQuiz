@@ -2169,11 +2169,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Diese Wrapper-Div haelt jetzt nur noch den Top-Right Timer. */}
           <div style={{
             position: 'absolute',
-            // 2026-05-12 (Slide-Boundary-System): Top/Left/Right nutzen jetzt
-            // den globalen --qq-safe-margin Token statt eigener clamp-Werte.
-            top: 'var(--qq-safe-margin)',
-            left: 'var(--qq-safe-margin)',
-            right: 'var(--qq-safe-margin)',
+            // 2026-07-07 (Wolf-Livetest 'timer hängt halb übers fragefeld'):
+            // Timer-Inset von der Content-Margin ENTKOPPELT — eigener enger
+            // Eck-Abstand rueckt den Timer rechts an der (maxWidth:1400,
+            // zentrierten) Frage-Karte vorbei, statt mit ihr zu ueberlappen.
+            top: 'clamp(14px, 1.6vh, 26px)',
+            left: 'clamp(14px, 1.6vh, 26px)',
+            right: 'clamp(14px, 1.6vh, 26px)',
             display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
             gap: 16,
             zIndex: 60,

@@ -75,8 +75,12 @@
      Content-Container, NICHT auf dem View-Root (sonst BG-Layer geclippt).
      2026-05-12 v2 (Wolf 'zu nah am rand oben und unten'): min 20→32,
      max 32→52. Mehr Atem zur Slide-Kante. Cards die das Token konsumieren
-     bekommen sofort mehr Rand. */
-  --qq-safe-margin: clamp(32px, 3vh, 52px);
+     bekommen sofort mehr Rand.
+     2026-07-07 (Wolf-Livetest 'rahmen frisst platz, vieles zu klein, rand
+     schmaler'): wieder verkleinert (52→40 max) — mehr nutzbare Slide-Flaeche.
+     Timer haengt NICHT mehr an dieser Var (eigener enger Inset), also frei
+     justierbar ohne Timer-Overlap. */
+  --qq-safe-margin: clamp(22px, 2.4vh, 40px);
   /* ── Theme-Akzent-Tokens (2026-06-23) ──────────────────────────────────
      Umschaltbare Grunddesigns (Skins). Default = Cozy-Brand-Pink → die
      Migration der hardcoded #ec4899 auf diese Vars ist zero-visual-change.

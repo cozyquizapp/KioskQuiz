@@ -3035,6 +3035,15 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           25%  { opacity: 1; }
           100% { transform: translateY(-110px) scale(1); opacity: 0; }
         }
+        @keyframes qqWaveFlash {
+          0%   { opacity: 0; }
+          30%  { opacity: 0.85; }
+          100% { opacity: 0; }
+        }
+        @keyframes qqWaveReveal {
+          0%   { opacity: 0; transform: scale(0.5); }
+          100% { opacity: 1; transform: scale(1); }
+        }
       `}</style>
 
       {/* Sanfte Aurora im Hintergrund (driftet leicht) */}
@@ -3294,15 +3303,21 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           const isTop3 = rank <= 2;
           const isFinalist = rank <= 1;                // Platz 1 & 2 → Flug-Reveal
           const ascIdx = N - 1 - rank;                 // 0 = letzter Platz
-          // Finalisten (Top 2) werden erst nach dem Flug sichtbar; Platz 3 normal.
-          const flightDone = crowned || (phase === 'card' && revealedCount >= N - 2);
+          // Platz 2 wird beim Flug-Landen (Karte) enthuellt und bleibt stabil
+          // sichtbar; der SIEGER (Platz 1) bleibt bis zur KRONUNG anonym → dann
+          // laeuft die Energie-Welle hoch + Krone. Platz 3 wird normal enthuellt.
+          const platz2Shown = crowned || revealedCount >= N - 1 || (phase === 'card' && revealedCount >= N - 2);
           const identityShown = !isTop3
             ? true
             : isFinalist
-              ? flightDone
+              ? (isWinner ? crowned : platz2Shown)
               : (revealedCount > ascIdx || (phase === 'card' && revealedCount === ascIdx));
           const anon = !identityShown;
           const colr = identityShown ? entry.team.color : NEUTRAL;
+          // Energiewelle: beim Enthuellen faerbt sich die Farbe von unten nach
+          // oben durch (gestaffelter Delay pro Feld, ~400ms gesamt) statt alles
+          // auf einmal — fuehlt sich "magisch" an.
+          const waveStep = Math.min(38, Math.round(400 / Math.max(1, h)));
 
           return (
             <div key={entry.team.id} style={{
@@ -3403,6 +3418,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 {Array.from({ length: shown }).map((_, bi) => {
                   const isTopBlock = bi === shown - 1;
                   const isCapBlock = capped && bi === h - 1;
+                  // Welle laeuft von UNTEN nach oben: unterstes Feld zuerst.
+                  const waveDelay = (shown - 1 - bi) * waveStep;
                   return (
                     <div key={bi} style={{
                       width: blockW, height: blockH,
@@ -3415,7 +3432,9 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       // Nur der jeweils oberste (neueste) Block spielt die Drop-Animation.
                       transformOrigin: 'bottom center',
                       animation: isTopBlock ? 'qqTowerDrop 0.42s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
-                      transition: 'background 0.35s ease, border-color 0.35s ease',
+                      // Farbwechsel laeuft als Welle von unten (bi=0) nach oben durch.
+                      transition: 'background 0.3s ease, border-color 0.3s ease',
+                      transitionDelay: isTop3 ? `${waveDelay}ms` : '0ms',
                       position: 'relative', zIndex: 1,
                     }}>
                       {/* Erobertes Feld = Team-Avatar drin (wie im Grid). Anonyme
@@ -3425,9 +3444,19 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                           position: 'absolute', inset: 0, borderRadius: 'inherit',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           overflow: 'hidden', zIndex: 0,
+                          // Bei Top-3-Enthuellung poppen die Avatare mit der Welle rein.
+                          animation: isTop3 ? `qqWaveReveal 0.32s ease ${waveDelay}ms both` : 'none',
                         }}>
                           <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={Math.round(blockW * 0.82)} flat />
                         </div>
+                      )}
+                      {/* Weisser Flash-Impuls, der mit der Farb-Welle nach oben laeuft. */}
+                      {isTop3 && identityShown && (
+                        <div aria-hidden style={{
+                          position: 'absolute', inset: 0, borderRadius: 'inherit',
+                          background: 'rgba(255,255,255,0.9)', pointerEvents: 'none', zIndex: 3,
+                          animation: `qqWaveFlash 0.5s ease-out ${waveDelay}ms both`,
+                        }} />
                       )}
                       {/* Einschlag-Ring beim Landen des neuesten Blocks */}
                       {isTopBlock && (

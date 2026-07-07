@@ -2816,10 +2816,17 @@ export function TowerFinalSlide({ finalRanking, lang }: {
 
   const crowned = phase === 'crowned';
 
-  // Block-Groessen (px im 1760x990-Stage, wird per Stage-Transform mitskaliert).
-  const availH = 620;                                   // vertikaler Platz fuer Tuerme
-  const blockH = Math.max(20, Math.min(54, Math.floor(availH / maxH)));
-  const colW = Math.min(168, Math.max(64, Math.floor(1520 / N) - 22));
+  // Vertikales Budget (px im 1760x990-Stage, per Stage-Transform mitskaliert).
+  // Feste Zonen abziehen, damit der hoechste Turm NIE in Titel/Sockel laeuft
+  // (Bug bei 8 Teams: maxH~14 → Spalte lief oben+unten aus dem Bild).
+  const TITLE_H = 104;   // Titel-/Sieger-Band oben
+  const CROWN_H = 56;    // Kopfraum fuer Krone ueber dem hoechsten Turm
+  const BASE_H = 148;    // Zaehler + Avatar + Name unter dem Turm
+  const BOTTOM = 36;     // Bodenabstand
+  const GAP = 3;         // Abstand zwischen Bloecken
+  const towerZone = 990 - TITLE_H - CROWN_H - BASE_H - BOTTOM; // = 646
+  const blockH = Math.max(15, Math.min(46, Math.floor((towerZone - (maxH - 1) * GAP) / maxH)));
+  const colW = Math.min(168, Math.max(58, Math.floor(1520 / N) - 22));
   const blockW = Math.min(colW, Math.round(blockH * 1.7));
   const colGap = Math.max(8, Math.min(28, Math.round((1600 - N * colW) / (N + 1))));
 
@@ -2863,9 +2870,10 @@ export function TowerFinalSlide({ finalRanking, lang }: {
 
       {crowned && <ConfettiOverlay />}
 
-      {/* Titel-Band */}
+      {/* Titel-Band — feste Hoehe, damit die Tuerme nie reinlaufen */}
       <div style={{
-        flexShrink: 0, textAlign: 'center', paddingTop: 34, paddingBottom: 8,
+        flexShrink: 0, height: TITLE_H, textAlign: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 5,
       }}>
         {!crowned ? (
@@ -2901,11 +2909,11 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         )}
       </div>
 
-      {/* Turm-Reihe */}
+      {/* Turm-Reihe — clippt sicherheitshalber, Bodenabstand = BOTTOM */}
       <div style={{
-        flex: 1, position: 'relative', zIndex: 2,
+        flex: 1, minHeight: 0, position: 'relative', zIndex: 2, overflow: 'hidden',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-        gap: colGap, padding: `0 40px 6px`,
+        gap: colGap, padding: `0 40px ${BOTTOM}px`,
       }}>
         {ordered.map((entry) => {
           const h = heights[entry.team.id];
@@ -2922,12 +2930,12 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               filter: dimmed ? 'saturate(0.6)' : 'none',
               transition: 'opacity 0.6s ease, filter 0.6s ease',
             }}>
-              {/* Krone ueber dem Sieger-Turm */}
-              <div style={{ position: 'relative', width: '100%', height: 0 }}>
+              {/* Krone ueber dem Sieger-Turm — feste Kopfraum-Zone (CROWN_H) */}
+              <div style={{ position: 'relative', width: '100%', height: CROWN_H, flexShrink: 0 }}>
                 {crowned && isWinner && (
                   <span aria-hidden style={{
-                    position: 'absolute', left: '50%', bottom: 6,
-                    fontSize: 60, lineHeight: 1, pointerEvents: 'none', zIndex: 6,
+                    position: 'absolute', left: '50%', bottom: 0,
+                    fontSize: 56, lineHeight: 1, pointerEvents: 'none', zIndex: 6,
                     filter: 'drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 22px rgba(251,191,36,0.8))',
                     animation: 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite',
                   }}>👑</span>

@@ -29,6 +29,7 @@ import { AVATAR_SETS } from '../avatarSets';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import type { QQSoundConfig } from '../../../shared/quarterQuizTypes';
+import { QQ_COMEBACK_ENABLED } from '../../../shared/quarterQuizTypes';
 
 type EmitFn = (event: string, payload: unknown) => Promise<{ ok: boolean; error?: string }>;
 
@@ -253,9 +254,12 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                   In der Cozy Arena laufen Comeback, Final-Tipp & CozyGames nicht (grid-basiert) — automatisch aus.
                 </div>
               )}
-              <ToggleRow label="🔄 Comeback" desc="Letztes Team klaut via Mehr-oder-Weniger"
-                on={!mega && (s?.comebackEnabled !== false)} disabled={mega}
-                onToggle={v => setComeback(v)} />
+              {/* 2026-07-07 (Wolf): Comeback global deaktiviert (QQ_COMEBACK_ENABLED). */}
+              {QQ_COMEBACK_ENABLED && (
+                <ToggleRow label="🔄 Comeback" desc="Letztes Team klaut via Mehr-oder-Weniger"
+                  on={!mega && (s?.comebackEnabled !== false)} disabled={mega}
+                  onToggle={v => setComeback(v)} />
+              )}
               <ToggleRow label="🪙 Final-Tipp" desc="Wett-Phase vor der Final-Runde"
                 on={!mega && !!s?.finalWagerEnabled} disabled={mega}
                 onToggle={v => setWager(v)} />
@@ -264,7 +268,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                 onToggle={v => setCozy(v)} />
 
               {/* Comeback-Timer — nur relevant wenn Comeback aktiv */}
-              {!mega && (s?.comebackEnabled !== false) && (
+              {QQ_COMEBACK_ENABLED && !mega && (s?.comebackEnabled !== false) && (
                 <div style={ov.subField}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
                     <span style={{ fontSize: 13, fontWeight: 900 }}>⚡ Comeback-Timer</span>
@@ -433,7 +437,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               <SummaryRow label="Avatar-Set" value={(AVATAR_SETS.find(a => a.id === activeAvatarId)?.label) ?? 'Standard'} />
               <SummaryRow label="Fragensatz" value={selDraft?.title ?? '— noch keiner gewählt —'} />
               <SummaryRow label="Add-ons" value={mega ? 'keine (Cozy Arena)' : [
-                (s?.comebackEnabled !== false) ? 'Comeback' : null,
+                (QQ_COMEBACK_ENABLED && s?.comebackEnabled !== false) ? 'Comeback' : null,
                 s?.finalWagerEnabled ? 'Final-Tipp' : null,
                 s?.cozyGamesEnabled ? 'CozyGames' : null,
               ].filter(Boolean).join(', ') || 'keine'} />

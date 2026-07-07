@@ -65,7 +65,7 @@ import {
 } from './qqRooms';
 import {
   QQ_CONNECTIONS_TIMER_MIN_SEC, QQ_CONNECTIONS_TIMER_MAX_SEC,
-  QQConnectionsPayload,
+  QQConnectionsPayload, QQ_COMEBACK_ENABLED,
 } from '../../../shared/quarterQuizTypes';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
 import { pickDummyAction, DummyActionChoice, DummyActionKind } from './qqDummyAI';
@@ -3319,7 +3319,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (typeof payload.shuffleQuestionsInRound === 'boolean') {
           room.shuffleQuestionsInRound = payload.shuffleQuestionsInRound;
         }
-        if (typeof payload.comebackEnabled === 'boolean') {
+        // 2026-07-07 (Wolf): Comeback global via QQ_COMEBACK_ENABLED deaktiviert —
+        // ein durchrutschender Toggle darf es nicht doch wieder anschalten.
+        if (QQ_COMEBACK_ENABLED && typeof payload.comebackEnabled === 'boolean') {
           room.comebackEnabled = payload.comebackEnabled;
         }
         // 2026-07-02 (Wolf): Mega Event = IMMER genestet (flaches 25er verworfen).

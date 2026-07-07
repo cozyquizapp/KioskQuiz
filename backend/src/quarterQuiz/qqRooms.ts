@@ -4,7 +4,7 @@ import {
   QQGrid, QQPhase, QQGamePhaseIndex, QQTeam, QQTeamPhaseStats,
   QQQuestion, QQStateUpdate, QQPendingAction, QQComebackAction,
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
-  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS, QQ_MAX_TEAMS_LARGE,
+  QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS, QQ_MAX_TEAMS_LARGE, QQ_COMEBACK_ENABLED,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
   QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
@@ -856,7 +856,9 @@ export function qqStartGame(
   room.finalWagerEnabled = true;
   room.connectionsEnabled = false;
   // 2026-05-17: Comeback-Toggle aus Draft. Default true (Backward-Compat).
-  room.comebackEnabled = comebackEnabled !== false;
+  // 2026-07-07 (Wolf): global via QQ_COMEBACK_ENABLED deaktiviert — Draft-Wert
+  // wird ignoriert solange die Konstante false ist.
+  room.comebackEnabled = QQ_COMEBACK_ENABLED && comebackEnabled !== false;
   // 2026-07-01: Groß-Gruppen-Modus aus Draft. Default off.
   // 2026-07-02 (Wolf): Mega Event = IMMER genestet (flaches 25er verworfen) —
   // largeGroupMode und nestedTeams sind gekoppelt (large ⟺ nested).

@@ -87,6 +87,11 @@ export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_GAME   = 2;
 export const QQ_MAX_STAPELS_PER_GAME  = 3;  // Stapel-Cap pro Team pro Spiel (verhindert Snowball-Effekt)
+// 2026-07-07 (Wolf-Livetest): Comeback-Runde (Higher/Lower) global deaktiviert.
+// Sie war buggy und ist mechanisch redundant zur Final-Wager/Bet-Phase. Code
+// bleibt komplett erhalten — nur ge-gated. Zum Reaktivieren: auf true setzen
+// (dann kommen Trigger + Moderator/Wizard-Toggles automatisch zurueck).
+export const QQ_COMEBACK_ENABLED      = false;
 export const QQ_MAX_TEAMS             = 8;
 export const QQ_MAX_TEAMS_LARGE       = 25; // Groß-Gruppen-Modus (largeGroupMode): Bar-Race statt Grid
 export const QQ_MIN_TEAMS             = 2;

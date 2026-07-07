@@ -7,6 +7,7 @@ import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
+  QQ_COMEBACK_ENABLED,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { QQSoundPanel } from '../components/QQSoundPanel';
@@ -5971,6 +5972,8 @@ function SetupView({
                 ? '🪙 Final-Wetten AN — Wager-Phase vor Final-Runde.\nKlick zum Deaktivieren.'
                 : '🪙 Final-Wetten AUS.\nKlick zum Aktivieren: Wager-Phase vor Final-Runde.'}
             >🪙 Wager</button>
+            {/* 2026-07-07 (Wolf): Comeback global deaktiviert (QQ_COMEBACK_ENABLED). */}
+            {QQ_COMEBACK_ENABLED && (
             <button
               onClick={() => emit('qq:setQuizOptions', { roomCode, comebackEnabled: !((s as any).comebackEnabled !== false) })}
               style={segPill((s as any).comebackEnabled !== false, QQ_COLORS.brandPinkMid)}
@@ -5978,6 +5981,7 @@ function SetupView({
                 ? '🔄 Comeback AN — letztes Team kann via Mehr-oder-Weniger Felder klauen.\nKlick zum Deaktivieren.'
                 : '🔄 Comeback AUS — direkt zur Final-Runde.\nKlick zum Aktivieren.'}
             >🔄 Comeback</button>
+            )}
             <button
               onClick={() => emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: !(s as any).cozyGamesEnabled })}
               style={segPill(!!(s as any).cozyGamesEnabled, QQ_COLORS.brandPink)}

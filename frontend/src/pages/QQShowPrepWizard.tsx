@@ -12,6 +12,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQDraft, QQStateUpdate, QQLanguage, QQCategory } from '../../../shared/quarterQuizTypes';
+import { QQ_COMEBACK_ENABLED } from '../../../shared/quarterQuizTypes';
 import type { CozyGame } from '../../../shared/cozyGameTypes';
 
 interface Props {
@@ -76,7 +77,7 @@ function derivePrep(draft: QQDraft | null, catalog: CozyGame[]): DerivedPrep {
   if (hasAudio) beachte.push('🔊 Musik-/Audio-Fragen dabei — Boxen & Lautstärke vorher testen (auch hinten gut hörbar?).');
   if (imageCount > 0) beachte.push(`🖼️ ${imageCount} Bild-Frage${imageCount === 1 ? '' : 'n'} — Beamer scharf & groß genug, Raum nicht zu hell.`);
   if (games.length > 0) beachte.push(`🎲 ${games.length} Minigame${games.length === 1 ? '' : 's'} — Material bereitlegen (siehe Material-Schritt) & Ablauf kurz durchlesen.`);
-  if (draft?.comebackEnabled !== false) beachte.push('🔁 Comeback-Runde (Higher/Lower) ist aktiv — vor der Final-Runde eingeplant.');
+  if (QQ_COMEBACK_ENABLED && draft?.comebackEnabled !== false) beachte.push('🔁 Comeback-Runde (Higher/Lower) ist aktiv — vor der Final-Runde eingeplant.');
 
   const briefing = questions
     .filter(q => (q.hostNote && q.hostNote.trim()) || (q.funFact && q.funFact.trim()))
@@ -316,6 +317,8 @@ export default function QQShowPrepWizard({ roomCode, state, selectedDraftId, dra
                   ))}
                 </div>
               </div>
+              {/* 2026-07-07 (Wolf): Comeback global deaktiviert (QQ_COMEBACK_ENABLED). */}
+              {QQ_COMEBACK_ENABLED && (
               <div style={C.block}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontWeight: 800 }}>🔁 Comeback-Runde</div>
@@ -324,6 +327,7 @@ export default function QQShowPrepWizard({ roomCode, state, selectedDraftId, dra
                   </button>
                 </div>
               </div>
+              )}
               <div style={C.block}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <div style={{ fontWeight: 800 }}>🎲 Minigames (CozyGames)</div>

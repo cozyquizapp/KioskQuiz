@@ -2777,12 +2777,12 @@ export function TowerFinalSlide({ finalRanking, lang }: {
     [finalRanking],
   );
 
-  // Pyramiden-Anordnung: hoechster (finalRanking[0]) mittig, naechste
-  // abwechselnd links/rechts → Bergsilhouette mit Peak in der Mitte.
+  // Rank-NEUTRALE Anordnung (Wolf: kein "Sieger steht in der Mitte"-Spoiler).
+  // Nach Hash der Team-ID gemischt → Position verraet die Platzierung nicht
+  // (auch bei aufsteigenden Mock-IDs t1..t8). Die Spannung macht die Zeremonie.
   const ordered = useMemo(() => {
-    const arr: RankingEntry[] = [];
-    finalRanking.forEach((e, i) => { if (i % 2 === 0) arr.push(e); else arr.unshift(e); });
-    return arr;
+    const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 131 + s.charCodeAt(i) * 2654435761) >>> 0; return h; };
+    return [...finalRanking].sort((a, b) => hash(a.team.id) - hash(b.team.id));
   }, [finalRanking]);
 
   // Rang pro Team (0-basiert) fuer Podium-Badges 👑🥈🥉.
@@ -2958,10 +2958,13 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         }} />
       </div>
 
-      {/* Saal verdunkelt sich, Spotlight wandert auf die Mitte (Sieger) */}
+      {/* Saal verdunkelt sich, je enger das Feld wird. HINTER den Tuermen (z1),
+          damit der Spotlight NICHT an einer festen Position klebt: die fertigen
+          Tuerme dimmen per eigener Opacity, die kletternden Leader leuchten —
+          funktioniert bei jeder (auch gemischter) Anordnung. */}
       <div aria-hidden style={{
-        position: 'absolute', inset: 0, zIndex: 4, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 60% 72% at 50% 46%, transparent 28%, rgba(3,1,8,1) 84%)',
+        position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 96% 96% at 50% 50%, rgba(3,1,8,0.55), rgba(2,1,6,1))',
         opacity: darkLevel, transition: 'opacity 1.2s ease',
       }} />
 
@@ -3111,19 +3114,37 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                   transform: 'translateX(-50%)',
                   transition: 'bottom 0.34s cubic-bezier(0.34, 1.5, 0.6, 1)',
                 }}>
-                  {/* Krone/Medaille ueber dem Avatar */}
-                  {badgeVisible && (
+                  {/* Team-Moment: sobald der Turm fertig ist, poppt die Platz-Karte
+                      nach vorn (Krone fuer Platz 1, Medaille+PLATZ N fuer Top 3,
+                      PLATZ N fuer den Rest). */}
+                  {rank === 0 && badgeVisible && (
                     <span aria-hidden style={{
                       position: 'absolute', left: '50%', bottom: AV - 8,
-                      fontSize: rank === 0 ? 46 : 34, lineHeight: 1, pointerEvents: 'none', zIndex: 6,
+                      fontSize: 46, lineHeight: 1, pointerEvents: 'none', zIndex: 8,
                       transform: 'translateX(-50%)',
-                      filter: rank === 0
-                        ? 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(251,191,36,0.85))'
-                        : 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))',
-                      animation: rank === 0
-                        ? 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite'
-                        : 'qqTowerBadgeIn 0.5s cubic-bezier(0.3,1.4,0.5,1) both',
-                    }}>{badge}</span>
+                      filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(251,191,36,0.85))',
+                      animation: 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite',
+                    }}>👑</span>
+                  )}
+                  {rank !== 0 && (capped || crowned) && (
+                    <div style={{
+                      position: 'absolute', left: '50%', bottom: AV - 6,
+                      transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1,
+                      whiteSpace: 'nowrap',
+                      animation: 'qqTowerBadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both',
+                    }}>
+                      {badge && (
+                        <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}>{badge}</span>
+                      )}
+                      <span style={{
+                        fontSize: 14, fontWeight: 900, letterSpacing: '0.04em',
+                        color: '#fff', background: 'rgba(15,10,25,0.94)',
+                        border: `2px solid ${entry.team.color}`,
+                        borderRadius: 999, padding: '2px 9px',
+                        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${entry.team.color}66`,
+                      }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+                    </div>
                   )}
                   <div style={{
                     width: AV, height: AV, borderRadius: '50%',

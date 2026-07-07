@@ -2797,6 +2797,21 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   // Reveal-Reihenfolge: kuerzester Turm zuerst (= letzter Platz), Sieger zuletzt.
   const revealOrder = useMemo(() => [...finalRanking].sort((a, b) => a.total - b.total), [finalRanking]);
 
+  // Ambient Energie-Orbs (driftende Glut). Deterministisch aus dem Index geseedet
+  // (sin-Hash) → kein Re-Randomisieren pro Render, stabile Bahnen.
+  const orbs = useMemo(() => Array.from({ length: 18 }).map((_, i) => {
+    const r = (n: number) => { const x = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return x - Math.floor(x); };
+    return {
+      left: 3 + r(1) * 94,          // %
+      size: 4 + r(2) * 9,           // px
+      dur: 9 + r(3) * 11,           // s
+      delay: -r(4) * 20,            // s (negativ → gleich mittendrin, kein leerer Start)
+      sway: (r(5) - 0.5) * 64,      // px seitliches Driften
+      opac: 0.22 + r(6) * 0.4,
+      color: ['#EC4899', '#A855F7', '#FBBF24'][i % 3],
+    };
+  }), []);
+
   // Choreo (Moderator-gesteuert per Leertaste / Streamdeck):
   // intro → building (Tuerme wachsen synchron bis der naechste Turm fertig ist)
   // → card (STOP: Vordergrund-Karte "Team X wurde Platz N", wartet auf Weiter)
@@ -3044,6 +3059,52 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           0%   { opacity: 0; transform: scale(0.5); }
           100% { opacity: 1; transform: scale(1); }
         }
+        /* Volumetrische Lichtstrahlen (God Rays) — langsam rotierendes Buehnenlicht */
+        @keyframes qqGodRays {
+          from { transform: translateX(-50%) rotate(0deg); }
+          to   { transform: translateX(-50%) rotate(360deg); }
+        }
+        /* Feiner Film-Grain: schneller Positions-Jitter fuer das "lebende Korn". */
+        @keyframes qqGrainShift {
+          0%   { transform: translate(0, 0); }
+          10%  { transform: translate(-4%, -4%); }
+          20%  { transform: translate(-8%, 3%); }
+          30%  { transform: translate(5%, -6%); }
+          40%  { transform: translate(-2%, 8%); }
+          50%  { transform: translate(-8%, 4%); }
+          60%  { transform: translate(6%, 0); }
+          70%  { transform: translate(-4%, 6%); }
+          80%  { transform: translate(4%, -8%); }
+          90%  { transform: translate(-6%, -2%); }
+          100% { transform: translate(0, 0); }
+        }
+        /* Aufsteigende Energie-Orbs (Glut): steigen von unten durch die Buehne. */
+        @keyframes qqOrbRise {
+          0%   { transform: translate(0, 0); opacity: 0; }
+          10%  { opacity: var(--oo, 0.5); }
+          50%  { transform: translate(var(--osway, 14px), -50cqh); }
+          86%  { opacity: var(--oo, 0.5); }
+          100% { transform: translate(0, calc(-100cqh - 40px)); opacity: 0; }
+        }
+        /* Sieger-Wumms: 1-Frame Chromatic Aberration (RGB-Split) ueber die Buehne. */
+        @keyframes qqRGBSplit {
+          0%   { filter: none; }
+          14%  { filter: drop-shadow(-7px 0 0 rgba(255,0,88,0.6)) drop-shadow(7px 0 0 rgba(0,224,255,0.6)); }
+          42%  { filter: drop-shadow(-3px 0 0 rgba(255,0,88,0.4)) drop-shadow(3px 0 0 rgba(0,224,255,0.4)); }
+          100% { filter: none; }
+        }
+        /* Sieger-Wumms: expandierender Licht-Ring vom Siegerturm ueber die Buehne. */
+        @keyframes qqShockRing {
+          0%   { transform: translate(-50%, -50%) scale(0.08); opacity: 0.95; }
+          70%  { opacity: 0.35; }
+          100% { transform: translate(-50%, -50%) scale(3.6); opacity: 0; }
+        }
+        /* Bau-Feedback: jedes neu gesetzte Feld "zuendet" mit einem Glow-Bloom. */
+        @keyframes qqBlockBloom {
+          0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.6); }
+          28%  { opacity: 0.85; }
+          100% { opacity: 0; transform: translate(-50%, -50%) scale(1.9); }
+        }
       `}</style>
 
       {/* Sanfte Aurora im Hintergrund (driftet leicht) */}
@@ -3058,6 +3119,35 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           background: 'radial-gradient(circle, rgba(236,72,153,0.18), transparent 68%)',
           filter: 'blur(18px)', animation: 'qqTowerAurora 11s ease-in-out 1.2s infinite',
         }} />
+      </div>
+
+      {/* Volumetrische Lichtstrahlen (God Rays) — langsam rotierendes Buehnenlicht
+          von oben, HINTER den Tuermen. Zur Kroenung heller. */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', overflow: 'hidden' }}>
+        <div style={{
+          position: 'absolute', left: '50%', top: '-45%', width: '170%', height: '160%',
+          transformOrigin: '50% 50%',
+          background: 'repeating-conic-gradient(from 0deg at 50% 0%, rgba(255,236,196,0) 0deg, rgba(255,236,196,0.055) 3.5deg, rgba(255,236,196,0) 8deg)',
+          WebkitMaskImage: 'radial-gradient(ellipse 62% 82% at 50% 0%, #000 0%, transparent 72%)',
+          maskImage: 'radial-gradient(ellipse 62% 82% at 50% 0%, #000 0%, transparent 72%)',
+          animation: 'qqGodRays 64s linear infinite',
+          opacity: crowned ? 1 : 0.5, transition: 'opacity 1.5s ease',
+        }} />
+      </div>
+
+      {/* Ambient Energie-Orbs — steigen wie Glut langsam durch die Buehne. */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', overflow: 'hidden' }}>
+        {orbs.map((o, i) => (
+          <span key={i} style={{
+            position: 'absolute', left: `${o.left}%`, bottom: -20,
+            width: o.size, height: o.size, borderRadius: '50%',
+            background: `radial-gradient(circle, ${o.color}, transparent 70%)`,
+            boxShadow: `0 0 ${Math.round(o.size * 1.6)}px ${o.color}`,
+            animation: `qqOrbRise ${o.dur}s linear ${o.delay}s infinite`,
+            willChange: 'transform',
+            ['--oo']: String(o.opac.toFixed(2)), ['--osway']: `${Math.round(o.sway)}px`,
+          } as CSSProperties} />
+        ))}
       </div>
 
       {/* Saal verdunkelt sich, je enger das Feld wird. HINTER den Tuermen (z1),
@@ -3110,6 +3200,18 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           animation: 'qqTowerFlash 0.9s ease-out both',
         }} />
       )}
+
+      {/* Sieger-Wumms: expandierende Licht-Ringe vom Siegerturm ueber die ganze
+          Buehne (zwei gestaffelt = Schockwelle). */}
+      {crowned && winnerTeamId && [0, 1].map(i => (
+        <div key={`shock-${i}`} aria-hidden style={{
+          position: 'absolute', left: centerXOfTeam(winnerTeamId), top: '52%', zIndex: 6,
+          width: 300, height: 300, borderRadius: '50%', pointerEvents: 'none',
+          border: `${8 - i * 3}px solid ${winner?.team.color ?? '#FBBF24'}`,
+          boxShadow: `0 0 44px ${winner?.team.color ?? '#FBBF24'}, inset 0 0 30px ${(winner?.team.color ?? '#FBBF24')}88`,
+          animation: `qqShockRing ${1.15 + i * 0.15}s cubic-bezier(0.15,0.7,0.25,1) ${i * 0.18}s both`,
+        }} />
+      ))}
 
       {/* Vordergrund-Karte: "Team X wurde Platz N" (Moderator bestaetigt mit
           Leertaste). Beim Sieger die gold Kroenungs-Karte. */}
@@ -3275,7 +3377,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         flex: 1, minHeight: 0, position: 'relative', zIndex: 2, overflow: 'hidden',
         display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
         gap: colGap, padding: `0 40px ${BOTTOM}px`,
-        animation: crowned ? 'qqTowerShake 0.55s ease-out' : 'none',
+        // Kroenung: Shake (Transform) + 1-Frame RGB-Split (Filter) gleichzeitig.
+        animation: crowned ? 'qqTowerShake 0.55s ease-out, qqRGBSplit 0.6s ease-out' : 'none',
       }}>
         {ordered.map((entry) => {
           const h = heights[entry.team.id];
@@ -3458,6 +3561,17 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                           animation: `qqWaveFlash 0.5s ease-out ${waveDelay}ms both`,
                         }} />
                       )}
+                      {/* Bloom-Puls: das neu gesetzte Feld "zuendet" mit einem Glow. */}
+                      {isTopBlock && !crowned && (
+                        <div aria-hidden style={{
+                          position: 'absolute', left: '50%', top: '50%',
+                          width: Math.round(blockW * 1.8), height: Math.round(blockW * 1.8),
+                          borderRadius: '50%', pointerEvents: 'none', zIndex: 2,
+                          background: `radial-gradient(circle, ${colr}cc, ${colr}44 42%, transparent 70%)`,
+                          mixBlendMode: 'screen',
+                          animation: 'qqBlockBloom 0.5s ease-out both',
+                        }} />
+                      )}
                       {/* Einschlag-Ring beim Landen des neuesten Blocks */}
                       {isTopBlock && (
                         <div aria-hidden style={{
@@ -3522,6 +3636,20 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         flexShrink: 0, height: 2, margin: '0 40px 22px',
         background: 'linear-gradient(90deg, transparent, rgba(236,72,153,0.45), transparent)',
         zIndex: 1,
+      }} />
+
+      {/* Film-Grain + Vignette — oberstes Overlay, gibt den "teuren Kino"-Look.
+          Sehr subtil (Grain 5% overlay), pointer-events aus. */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: '-24%', zIndex: 9, pointerEvents: 'none',
+        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")`,
+        backgroundSize: '170px 170px',
+        opacity: 0.05, mixBlendMode: 'overlay',
+        animation: 'qqGrainShift 0.7s steps(1) infinite',
+      }} />
+      <div aria-hidden style={{
+        position: 'absolute', inset: 0, zIndex: 9, pointerEvents: 'none',
+        background: 'radial-gradient(ellipse 80% 78% at 50% 46%, transparent 54%, rgba(4,1,10,0.58) 100%)',
       }} />
     </div>
   );

@@ -3000,24 +3000,24 @@ export function RaceFinalSlide({ finalRanking, lang }: {
     if (phase !== 'race') return;
     const ids = finalRanking.map(e => e.team.id);
     let step = 0;
-    const totalSteps = 11;
     const tick = () => {
       step++;
-      const progress = Math.min(1, step / totalSteps);
+      const t = step * 0.5;
       setRaceX(() => {
         const m: Record<string, number> = {};
         ids.forEach((id, i) => {
-          const spread = teamXPositions.initial[id] ?? 50;
-          const start = startX[id] ?? 12;
-          const base = start + (spread - start) * progress;
-          const wob = Math.sin(step * 1.35 + i * 2.1) * (13 * (1 - progress * 0.55));
-          m[id] = Math.max(6, Math.min(94, base + wob));
+          // Jedes Team rennt mit eigener oszillierender Geschwindigkeit nach
+          // rechts -> staendige Fuehrungswechsel + Ueberholen (grosse Swings),
+          // deutlich sichtbare horizontale Bewegung statt Bob-auf-der-Stelle.
+          const swing = Math.sin(t * 0.95 + i * 1.7) * 26 + Math.sin(t * 1.7 + i * 3.1) * 11;
+          const drift = 22 + Math.min(1, step / 14) * 34; // Feld wandert 22->56 nach rechts
+          m[id] = Math.max(7, Math.min(93, drift + swing + (i - (ids.length - 1) / 2) * 2.5));
         });
         return m;
       });
     };
     tick();
-    const iv = window.setInterval(tick, 600);
+    const iv = window.setInterval(tick, 420);
     return () => window.clearInterval(iv);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, finalRanking, startX, teamXPositions]);
@@ -3110,7 +3110,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
               // Waehrend des Rennens flotter Transition (matcht das Jostle-
               // Intervall), sonst 1.5s Drift (parallel zum Fall / P1-zur-Mitte).
               transition: raceMoving
-                ? 'left 0.58s ease-in-out'
+                ? 'left 0.46s ease-in-out'
                 : 'left 1.5s cubic-bezier(0.4, 0, 0.6, 1)',
               zIndex: fallen ? 1 : 2,
             }}>

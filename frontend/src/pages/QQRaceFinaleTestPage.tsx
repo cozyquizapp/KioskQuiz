@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RaceFinalSlide, SuspensePodiumFinale } from '../components/CozyQuizFinalRevealView';
+import { RaceFinalSlide } from '../components/CozyQuizFinalRevealView';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
@@ -16,14 +16,14 @@ const STAGE_H = 990;
 type Team = QQStateUpdate['teams'][number];
 
 const ALL: Team[] = [
-  { id: 't1', name: 'Zwischen Bier und Bildung', color: '#A855F7', avatarId: 'seekuh',      emoji: 'seekuh' },
+  { id: 't1', name: 'Zwischen Bier und Bildung', color: '#A855F7', avatarId: 'seehkuh',     emoji: 'seehkuh' },
   { id: 't2', name: 'Pubquatscher',              color: '#22C55E', avatarId: 'schwan',      emoji: 'schwan' },
   { id: 't3', name: 'Brain-Trust',               color: '#06B6D4', avatarId: 'walross',     emoji: 'walross' },
   { id: 't4', name: 'Käse-Kenner',               color: '#3B82F6', avatarId: 'gorilla',     emoji: 'gorilla' },
   { id: 't5', name: 'Frag Mich Was Leichtes',    color: '#F59E0B', avatarId: 'zebra',       emoji: 'zebra' },
   { id: 't6', name: 'Nicht Zuhause',             color: '#EC4899', avatarId: 'schildkroete', emoji: 'schildkroete' },
   { id: 't7', name: 'Die Grübler',               color: '#EF4444', avatarId: 'fuchs',       emoji: 'fuchs' },
-  { id: 't8', name: 'Wolfsrudel',                color: '#14B8A6', avatarId: 'wolf',         emoji: 'wolf' },
+  { id: 't8', name: 'Wolfsrudel',                color: '#14B8A6', avatarId: 'loewe',        emoji: 'loewe' },
 ] as unknown as Team[];
 
 function buildRanking(n: number) {
@@ -38,7 +38,6 @@ function buildRanking(n: number) {
 export default function QQRaceFinaleTestPage() {
   const [n, setN] = useState<4 | 6 | 8>(6);
   const [runKey, setRunKey] = useState(0);
-  const [variant, setVariant] = useState<'neu' | 'alt'>('neu');
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
@@ -53,9 +52,7 @@ export default function QQRaceFinaleTestPage() {
         width: STAGE_W, height: STAGE_H, flexShrink: 0, position: 'relative',
         display: 'flex', flexDirection: 'column', containerType: 'size', overflow: 'hidden',
       }}>
-        {variant === 'neu'
-          ? <SuspensePodiumFinale key={`neu-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
-          : <RaceFinalSlide key={`alt-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />}
+        <RaceFinalSlide key={`${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
       </div>
 
       {/* Steuer-Panel */}
@@ -66,16 +63,7 @@ export default function QQRaceFinaleTestPage() {
         border: '1px solid rgba(236,72,153,0.4)', borderRadius: 14, zIndex: 1000,
         color: '#F1F5F9', fontSize: 13, fontWeight: 800,
       }}>
-        <span style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>Finale-Vorschau</span>
-        <div style={{ display: 'flex', gap: 4 }}>
-          {([['neu', '🚀 Neu (Spannung)'], ['alt', 'Alt (Race)']] as const).map(([v, label]) => (
-            <button key={v} onClick={() => { setVariant(v); setRunKey(k => k + 1); }} style={{
-              padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
-              background: variant === v ? '#A855F7' : 'rgba(255,255,255,0.06)', color: variant === v ? '#fff' : '#94a3b8',
-            }}>{label}</button>
-          ))}
-        </div>
-        <span style={{ color: 'rgba(148,163,184,0.4)' }}>·</span>
+        <span style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>🏁 Race-Finale</span>
         {([4, 6, 8] as const).map(v => (
           <button key={v} onClick={() => { setN(v); setRunKey(k => k + 1); }} style={{
             padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',

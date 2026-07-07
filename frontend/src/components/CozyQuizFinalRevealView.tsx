@@ -2800,12 +2800,15 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   // intro → building (Tuerme wachsen synchron bis der naechste Turm fertig ist)
   // → card (STOP: Vordergrund-Karte "Team X wurde Platz N", wartet auf Weiter)
   // → building → card → … → beim Sieger direkt crowned.
-  const [phase, setPhase] = useState<'intro' | 'building' | 'card' | 'crowned'>('intro');
+  const [phase, setPhase] = useState<'intro' | 'building' | 'flight' | 'card' | 'crowned'>('intro');
   const [tick, setTick] = useState(0);
   const [revealedCount, setRevealedCount] = useState(0); // schon per Karte enthuellte Plaetze
+  const [flightTick, setFlightTick] = useState(0);       // Flug-Takt der Top-2-Avatare
 
   const currentReveal = revealOrder[Math.min(revealedCount, revealOrder.length - 1)];
-  const buildTarget = currentReveal ? Math.max(1, currentReveal.total) : maxH;
+  // Fuer die letzten beiden (Platz 1 & 2) beide Tuerme voll hochbauen (maxH),
+  // damit die zwei Finalisten dazwischen fliegen koennen.
+  const buildTarget = revealedCount >= N - 2 ? maxH : (currentReveal ? Math.max(1, currentReveal.total) : maxH);
 
   // Weiter-Schritt (Leertaste/Enter/→ bzw. Streamdeck): Intro starten / naechste Karte.
   const advance = useCallback(() => {
@@ -2834,13 +2837,15 @@ export function TowerFinalSlide({ finalRanking, lang }: {
     return () => window.clearTimeout(h);
   }, [phase]);
 
-  // Bauen bis der aktuelle Turm seine Zielhoehe erreicht → STOP (Karte),
-  // beim Sieger direkt Kroenung.
+  // Bauen bis der aktuelle Turm seine Zielhoehe erreicht → STOP.
+  //  - Platz N..3: Karte.
+  //  - Platz 2 (beide Top-Tuerme voll): Flug der zwei Finalisten.
+  //  - Sieger: Kroenung.
   useEffect(() => {
     if (phase !== 'building') return;
     if (tick >= buildTarget) {
-      const isWinner = revealedCount >= N - 1;
-      const h = window.setTimeout(() => setPhase(isWinner ? 'crowned' : 'card'), 260);
+      const next = revealedCount >= N - 1 ? 'crowned' : revealedCount === N - 2 ? 'flight' : 'card';
+      const h = window.setTimeout(() => setPhase(next), 260);
       return () => window.clearTimeout(h);
     }
     const h = window.setTimeout(() => {
@@ -2849,6 +2854,20 @@ export function TowerFinalSlide({ finalRanking, lang }: {
     }, 230);
     return () => window.clearTimeout(h);
   }, [phase, tick, buildTarget, revealedCount, N]);
+
+  // Flug der zwei Finalisten: langsames Hin-und-Her, dann landen → Platz-2-Karte.
+  useEffect(() => {
+    if (phase !== 'flight') return;
+    if (flightTick >= 7) {
+      const h = window.setTimeout(() => setPhase('card'), 800); // landen, dann Karte
+      return () => window.clearTimeout(h);
+    }
+    const h = window.setTimeout(() => {
+      setFlightTick(f => f + 1);
+      try { playTick(); } catch { /* noop */ }
+    }, 620);
+    return () => window.clearTimeout(h);
+  }, [phase, flightTick]);
 
   useEffect(() => {
     if (phase === 'card') { try { playReveal(); } catch { /* noop */ } }
@@ -2874,9 +2893,23 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   const colW = Math.min(150, Math.max(Math.round(blockW * 1.35), Math.floor(1560 / N) - 18));
   const colGap = Math.max(8, Math.min(30, Math.round((1600 - N * colW) / (N + 1))));
 
-  // Waehrend eine Platz-Karte im Vordergrund steht (oder bei Kroenung) verdunkelt
-  // sich der Saal — Fokus auf die Ansage.
-  const darkLevel = crowned ? 0.18 : phase === 'card' ? 0.5 : 0;
+  // Waehrend eine Platz-Karte / der Finalisten-Flug laeuft (oder bei Kroenung)
+  // verdunkelt sich der Saal — Fokus.
+  const darkLevel = crowned ? 0.18 : (phase === 'card' || phase === 'flight') ? 0.5 : 0;
+
+  // X-Zentren der zwei Finalisten-Tuerme (fuer den Hin-und-Her-Flug der Avatare).
+  const contentW = N * colW + (N - 1) * colGap;
+  const leftPad = 40 + Math.max(0, (1680 - contentW) / 2);
+  const centerXOfTeam = (teamId: string) => {
+    const i = ordered.findIndex(e => e.team.id === teamId);
+    return i < 0 ? 880 : leftPad + i * (colW + colGap) + colW / 2;
+  };
+  const winnerTeamId = revealOrder[N - 1]?.team.id;
+  const secondTeamId = revealOrder[N - 2]?.team.id;
+  const winnerX = winnerTeamId ? centerXOfTeam(winnerTeamId) : 760;
+  const secondX = secondTeamId ? centerXOfTeam(secondTeamId) : 1000;
+  const flightSwap = flightTick % 2 === 1;    // tauscht die Positionen
+  const flightLanding = flightTick >= 7;      // Endposition korrekt, dann ausblenden
 
   return (
     <div style={{
@@ -3056,6 +3089,39 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         );
       })()}
 
+      {/* Finalisten-Flug: die zwei Top-Avatare fliegen langsam hin und her
+          zwischen ihren zwei (noch anonymen) Tuermen — man sieht WER die zwei
+          sind, aber noch nicht wer #1. Beim Landen blenden sie aus, die Tuerme
+          uebernehmen (Platz-2-Karte, dann Krone auf #1). */}
+      {phase === 'flight' && winnerTeamId && secondTeamId && (() => {
+        const wT = revealOrder[N - 1].team;
+        const sT = revealOrder[N - 2].team;
+        const wLeft = flightLanding ? winnerX : (flightSwap ? secondX : winnerX);
+        const sLeft = flightLanding ? secondX : (flightSwap ? winnerX : secondX);
+        const AVF = 96;
+        const fly = (team: QQTeam, left: number, key: string) => (
+          <div key={key} style={{
+            position: 'absolute', top: 250, left, width: AVF, zIndex: 9, pointerEvents: 'none',
+            transform: 'translate(-50%, -50%)',
+            transition: 'left 0.62s cubic-bezier(0.45,0,0.55,1), opacity 0.5s ease',
+            opacity: flightLanding ? 0 : 1,
+            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+          }}>
+            <div style={{
+              width: AVF, height: AVF, borderRadius: '50%', background: team.color,
+              border: `4px solid ${team.color}`,
+              boxShadow: `0 0 30px ${team.color}, 0 6px 18px rgba(0,0,0,0.55)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              animation: 'qqTowerWinPop 1.2s ease-in-out infinite',
+            }}>
+              <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AVF} flat />
+            </div>
+            <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}, 0 2px 6px rgba(0,0,0,0.8)`, whiteSpace: 'nowrap' }}>{team.name}</div>
+          </div>
+        );
+        return <>{fly(wT, wLeft, 'fw')}{fly(sT, sLeft, 'fs')}</>;
+      })()}
+
       {/* Titel-Band — feste Hoehe, damit die Tuerme nie reinlaufen */}
       <div style={{
         flexShrink: 0, height: TITLE_H, textAlign: 'center',
@@ -3082,15 +3148,20 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           <>
             <div style={{
               fontSize: 40, fontWeight: 900, letterSpacing: '0.01em',
-              color: '#F8FAFC', textShadow: '0 3px 18px rgba(0,0,0,0.6)',
+              color: phase === 'flight' ? '#FBBF24' : '#F8FAFC', textShadow: '0 3px 18px rgba(0,0,0,0.6)',
               animation: 'qqTowerTitleIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both',
             }}>
-              {de ? '🏗️ Wer baut den höchsten Turm?' : '🏗️ Who builds the tallest tower?'}
+              {phase === 'flight'
+                ? (de ? '✨ Die zwei Finalisten' : '✨ The two finalists')
+                : (de ? '🏗️ Wer baut den höchsten Turm?' : '🏗️ Who builds the tallest tower?')}
             </div>
             <div style={{
               marginTop: 6, fontSize: 18, fontWeight: 700, color: 'rgba(226,214,255,0.75)',
+              animation: phase === 'flight' ? 'qqTowerBreathe 1.6s ease-in-out infinite' : 'none', transformOrigin: 'center',
             }}>
-              {de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every field you claimed is one block'}
+              {phase === 'flight'
+                ? (de ? 'Wer holt sich den Sieg?' : 'Who takes the win?')
+                : (de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every field you claimed is one block')}
             </div>
           </>
         ) : (
@@ -3142,11 +3213,15 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           // Plaetze 4..N sind immer sichtbar. Sieger enthuellt sich erst bei der
           // Kroenung (max. Spannung: die 3 hoechsten Tuerme sind ein Raetsel).
           const isTop3 = rank <= 2;
+          const isFinalist = rank <= 1;                // Platz 1 & 2 → Flug-Reveal
           const ascIdx = N - 1 - rank;                 // 0 = letzter Platz
+          // Finalisten (Top 2) werden erst nach dem Flug sichtbar; Platz 3 normal.
+          const flightDone = crowned || (phase === 'card' && revealedCount >= N - 2);
           const identityShown = !isTop3
-            || revealedCount > ascIdx
-            || (phase === 'card' && revealedCount === ascIdx)
-            || (crowned && isWinner);
+            ? true
+            : isFinalist
+              ? flightDone
+              : (revealedCount > ascIdx || (phase === 'card' && revealedCount === ascIdx));
           const anon = !identityShown;
           const colr = identityShown ? entry.team.color : NEUTRAL;
 
@@ -3202,7 +3277,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                   {/* Team-Moment: sobald der Turm fertig ist, poppt die Platz-Karte
                       nach vorn (Krone fuer Platz 1, Medaille+PLATZ N fuer Top 3,
                       PLATZ N fuer den Rest). */}
-                  {rank === 0 && badgeVisible && identityShown && (
+                  {rank === 0 && identityShown && crowned && (
                     <span aria-hidden style={{
                       position: 'absolute', left: '50%', bottom: AV - 8,
                       fontSize: 46, lineHeight: 1, pointerEvents: 'none', zIndex: 8,

@@ -3021,6 +3021,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         const r = rankById[t.id] ?? 0;
         const isWin = r === 0;
         const medal = badgeFor(r);
+        const pts = currentReveal.total;
         return (
           <div style={{ position: 'absolute', inset: 0, zIndex: 8, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
             <div key={`card-${r}`} style={{
@@ -3040,8 +3041,10 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={92} flat />
               </div>
               <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', textAlign: 'center', maxWidth: 540, lineHeight: 1.1 }}>{t.name}</div>
-              <div style={{ fontSize: 26, fontWeight: 800, color: isWin ? '#FBBF24' : '#C9BEEA' }}>
-                {isWin ? (de ? 'ist SIEGER! 🏆' : 'is the WINNER! 🏆') : (de ? `wurde Platz ${r + 1}` : `is #${r + 1}`)}
+              <div style={{ fontSize: 26, fontWeight: 800, color: isWin ? '#FBBF24' : '#C9BEEA', textAlign: 'center' }}>
+                {isWin
+                  ? (de ? `Mit ${pts} Punkten SIEGER! 🏆` : `${pts} points — WINNER! 🏆`)
+                  : (de ? `Mit ${pts} Punkten auf Platz ${r + 1}` : `${pts} points — #${r + 1}`)}
               </div>
               {!crowned && (
                 <div style={{ marginTop: 4, fontSize: 13, fontWeight: 800, letterSpacing: '0.1em', color: '#94a3b8', animation: 'qqTowerHintPulse 1.4s ease-in-out infinite' }}>

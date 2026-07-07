@@ -3021,6 +3021,20 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           0%, 100% { box-shadow: 0 0 22px var(--gc), 0 6px 18px rgba(0,0,0,0.55); }
           50%      { box-shadow: 0 0 40px var(--gc), 0 6px 18px rgba(0,0,0,0.55); }
         }
+        @keyframes confettiFall {
+          0%   { transform: translateY(var(--cy, -60px)) rotate(0deg) scale(1); opacity: 1; }
+          75%  { opacity: 1; }
+          100% { transform: translateY(calc(100cqh + 40px)) rotate(var(--cr, 720deg)) scale(0.4); opacity: 0; }
+        }
+        @keyframes qqTowerBeam {
+          0%, 100% { opacity: 0.30; }
+          50%      { opacity: 0.55; }
+        }
+        @keyframes qqTowerSparkle {
+          0%   { transform: translateY(0) scale(0.5); opacity: 0; }
+          25%  { opacity: 1; }
+          100% { transform: translateY(-110px) scale(1); opacity: 0; }
+        }
       `}</style>
 
       {/* Sanfte Aurora im Hintergrund (driftet leicht) */}
@@ -3047,7 +3061,37 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         opacity: darkLevel, transition: 'opacity 1.2s ease',
       }} />
 
-      {crowned && <ConfettiOverlay />}
+      {/* Sieger-Lichtstrahl von oben auf den (evtl. am Rand stehenden) Sieger-
+          Turm — verbindet den Blick mit der zentralen Sieger-Karte. */}
+      {crowned && winnerTeamId && (
+        <div aria-hidden style={{
+          position: 'absolute', top: 0, bottom: 0, left: centerXOfTeam(winnerTeamId),
+          width: Math.round(colW * 2.1), transform: 'translateX(-50%)',
+          zIndex: 1, pointerEvents: 'none',
+          background: `linear-gradient(180deg, ${winner?.team.color ?? '#fff'}55 0%, ${winner?.team.color ?? '#fff'}22 45%, transparent 85%)`,
+          WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent)',
+          maskImage: 'linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent)',
+          animation: 'qqTowerBeam 2.6s ease-in-out infinite',
+        }} />
+      )}
+
+      {crowned && <ConfettiOverlay accent={winner?.team.color} />}
+
+      {/* Aufsteigende Funken am Sieger-Turm */}
+      {crowned && winnerTeamId && (
+        <div aria-hidden style={{
+          position: 'absolute', top: 0, bottom: 0, left: centerXOfTeam(winnerTeamId),
+          width: Math.round(colW * 2.6), transform: 'translateX(-50%)', zIndex: 6, pointerEvents: 'none',
+        }}>
+          {[0, 1, 2, 3, 4, 5, 6, 7].map(i => (
+            <span key={i} style={{
+              position: 'absolute', left: `calc(50% + ${(i - 3.5) * 24}px)`,
+              top: 210 + (i % 3) * 150, fontSize: 13 + (i % 3) * 6,
+              animation: `qqTowerSparkle ${1.9 + (i % 3) * 0.5}s ease-out ${i * 0.26}s infinite`,
+            }}>✨</span>
+          ))}
+        </div>
+      )}
 
       {/* Lichtblitz im Moment der Kroenung */}
       {crowned && (
@@ -3114,27 +3158,46 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         const rX = Math.min(Math.abs(winnerX - secondX) / 2 + 40, 260);
         const rY = 105;
         const AVF = 92;
-        const orbit = (team: QQTeam, delay: string, key: string) => (
-          <div key={key} style={{
-            position: 'absolute', left: midX, top: 250, zIndex: 9, pointerEvents: 'none',
-            animation: 'qqFlightOrbit 2.1s ease-in-out infinite', animationDelay: delay,
-            opacity: flightLanding ? 0 : 1, transition: 'opacity 0.6s ease',
-            willChange: 'transform',
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-            ['--r']: `${rX}px`, ['--ry']: `${rY}px`,
-          } as CSSProperties}>
-            <div style={{
-              width: AVF, height: AVF, borderRadius: '50%', background: team.color,
-              border: `4px solid ${team.color}`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              animation: 'qqFlightGlow 1.4s ease-in-out infinite',
-              ['--gc']: team.color,
+        const orbit = (team: QQTeam, delay: string, key: string) => {
+          const d = parseFloat(delay);
+          // Kometen-Schweif: ein paar nachlaufende Ghost-Scheiben (spaeterer Phase).
+          const ghosts = [0, 1, 2, 3].map(i => (
+            <div key={`${key}-g${i}`} aria-hidden style={{
+              position: 'absolute', left: midX, top: 250, zIndex: 8, pointerEvents: 'none',
+              animation: 'qqFlightOrbit 2.1s ease-in-out infinite', animationDelay: `${d + 0.05 * (i + 1)}s`,
+              opacity: flightLanding ? 0 : (0.34 - i * 0.075), transition: 'opacity 0.5s ease',
+              willChange: 'transform',
+              ['--r']: `${rX}px`, ['--ry']: `${rY}px`,
             } as CSSProperties}>
-              <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AVF} flat />
+              <div style={{
+                width: AVF * (0.9 - i * 0.12), height: AVF * (0.9 - i * 0.12), borderRadius: '50%',
+                background: team.color, transform: 'translate(-50%, -50%)', filter: 'blur(2px)',
+              }} />
             </div>
-            <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}, 0 2px 6px rgba(0,0,0,0.8)`, whiteSpace: 'nowrap' }}>{team.name}</div>
-          </div>
-        );
+          ));
+          const main = (
+            <div key={key} style={{
+              position: 'absolute', left: midX, top: 250, zIndex: 9, pointerEvents: 'none',
+              animation: 'qqFlightOrbit 2.1s ease-in-out infinite', animationDelay: delay,
+              opacity: flightLanding ? 0 : 1, transition: 'opacity 0.6s ease',
+              willChange: 'transform',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+              ['--r']: `${rX}px`, ['--ry']: `${rY}px`,
+            } as CSSProperties}>
+              <div style={{
+                width: AVF, height: AVF, borderRadius: '50%', background: team.color,
+                border: `4px solid ${team.color}`,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                animation: 'qqFlightGlow 1.4s ease-in-out infinite',
+                ['--gc']: team.color,
+              } as CSSProperties}>
+                <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AVF} flat />
+              </div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}, 0 2px 6px rgba(0,0,0,0.8)`, whiteSpace: 'nowrap' }}>{team.name}</div>
+            </div>
+          );
+          return <div key={key} style={{ display: 'contents' }}>{ghosts}{main}</div>;
+        };
         return <>{orbit(wT, '0s', 'fw')}{orbit(sT, '-1.05s', 'fs')}</>;
       })()}
 

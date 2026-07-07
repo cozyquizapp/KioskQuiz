@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { RaceFinalSlide, TowerFinalSlide, TowerMysteryFinale } from '../components/CozyQuizFinalRevealView';
+import { RaceFinalSlide, TowerFinalSlide } from '../components/CozyQuizFinalRevealView';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
@@ -38,7 +38,7 @@ function buildRanking(n: number) {
 
 export default function QQRaceFinaleTestPage() {
   const [n, setN] = useState<4 | 6 | 8>(6);
-  const [mode, setMode] = useState<'tower' | 'mystery' | 'race'>('tower');
+  const [mode, setMode] = useState<'tower' | 'race'>('tower');
   const [runKey, setRunKey] = useState(0);
   // Buehne (1760x990) auf die Fenstergroesse herunterskalieren — wie der echte
   // Beamer. Sonst laeuft das Design bei nicht-Vollbild ueber die Fensterraender.
@@ -64,9 +64,7 @@ export default function QQRaceFinaleTestPage() {
       }}>
         {mode === 'tower'
           ? <TowerFinalSlide key={`t-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
-          : mode === 'mystery'
-            ? <TowerMysteryFinale key={`m-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
-            : <RaceFinalSlide key={`r-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />}
+          : <RaceFinalSlide key={`r-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />}
       </div>
 
       {/* Steuer-Panel */}
@@ -78,7 +76,7 @@ export default function QQRaceFinaleTestPage() {
         color: '#F1F5F9', fontSize: 13, fontWeight: 800,
       }}>
         <span style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>Finale</span>
-        {([['tower', '🏗️ Türme A'], ['mystery', '🔦 Türme B'], ['race', '🏁 Race']] as const).map(([m, label]) => (
+        {([['tower', '🏗️ Türme'], ['race', '🏁 Race']] as const).map(([m, label]) => (
           <button key={m} onClick={() => { setMode(m); setRunKey(k => k + 1); }} style={{
             padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
             background: mode === m ? '#A855F7' : 'rgba(255,255,255,0.06)', color: mode === m ? '#fff' : '#94a3b8',

@@ -11,7 +11,7 @@
 import { useState, useEffect } from 'react';
 import type { QQStateUpdate, QQBunteTueteCrowdEstimate } from '../../../../shared/quarterQuizTypes';
 import { qqSwarm } from '../../../../shared/qqSwarm';
-import { qqMegaFactionName } from '../../../../shared/quarterQuizTypes';
+import { qqMegaFactionName, qqMegaFactionSlug } from '../../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
 import { playRevealHighlight, playClimaxFinish } from '../../utils/sounds';
@@ -173,7 +173,11 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                 transition: `opacity 0.5s ease ${0.3 + i * 0.08}s, transform 0.5s ease ${0.3 + i * 0.08}s`,
               }}>
                 <div style={{ width: 'clamp(20px, 2cqw, 30px)', fontWeight: 900, fontSize: 'clamp(15px, 1.6cqw, 24px)', color: i === 0 ? '#EC4899' : 'var(--qq-text-muted)', textAlign: 'center', flexShrink: 0 }}>#{i + 1}</div>
-                <QQTeamAvatar avatarId={f.avatarId} teamEmoji={rep?.emoji} size={'clamp(46px, 4.6cqw, 72px)'} style={{ flexShrink: 0, boxShadow: `0 0 8px ${col}33` }} />
+                {/* 2026-07-07 (Wolf-Livetest): In der Arena ist rep.emoji der
+                    individuelle cozy3d-Tier des Repraesentanten, NICHT das
+                    Fraktions-Wappen -> zeigte hier ein "altes Symbol". Wie an
+                    allen anderen Arena-Stellen auf qqMegaFactionSlug remappen. */}
+                <QQTeamAvatar avatarId={f.avatarId} teamEmoji={isMega ? (qqMegaFactionSlug(f.avatarId) ?? rep?.emoji) : rep?.emoji} size={'clamp(46px, 4.6cqw, 72px)'} style={{ flexShrink: 0, boxShadow: `0 0 8px ${col}33` }} />
                 <div style={{ minWidth: 0, flex: 1 }}>
                   <div style={{ fontSize: 'clamp(15px, 1.6cqw, 24px)', fontWeight: 900, color: col, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
                   <div style={{ fontSize: 'clamp(12px, 1.3cqw, 18px)', fontWeight: 800, color: 'var(--qq-text-muted)' }}>

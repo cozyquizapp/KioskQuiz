@@ -2763,11 +2763,12 @@ export function RaceFinalSlide({ finalRanking, lang }: {
   // driftedIds tracked welche Teams zu ihrer target-X driften (in v8 nur P1
   // nach P2-fall — aktuell der einzige Drifter).
   const [driftedIds, setDriftedIds] = useState<Set<string>>(new Set());
-  // 2026-07-07 (Wolf 'die avatare racen nicht, sie stehen'): echte horizontale
-  // Renn-Bewegung waehrend der Race-Phase. raceX haelt die aktuelle X-Position
-  // pro Team; ein Intervall jostlet/ueberholt sie von der Startlinie (links) zur
-  // Verteilung — Sieger bleibt verborgen (kein Positions-Spoiler), Spannung bleibt.
-  const [raceX, setRaceX] = useState<Record<string, number>>({});
+  // 2026-07-07 (Wolf 'da wo das race perfekt war — replizieren'): zurueck zur
+  // v7-Choreo. Statt Chaos-Jostle EIN wuerdevoller 9s-Drift: driftStarted kippt
+  // 200ms nach Race-Beginn auf true → alle Teams gleiten via CSS-Transition von
+  // der Gleichverteilung zu ihren Ziel-Positionen (Top 3 zur Mitte, Rest zu den
+  // Raendern). Episch statt chaotisch.
+  const [driftStarted, setDriftStarted] = useState(false);
 
   // 2026-05-09 v8 (Wolf 'alle fallen bis P1, Treppchen steigt mit allen
   // avataren von unten, dann P1 fällt drauf'):
@@ -2803,7 +2804,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
       try { stopLobbyLoop(); } catch {}
       try { startRaceLoop(); } catch {}
     }, cursor));
-    cursor += 7000; // Race-Hold 7s (2026-07-07: laenger, damit man das Jostle-Rennen sieht)
+    cursor += 8000; // Race-Hold 8s (v7-Pacing: alle driften auf Position, bevor die Falls starten)
 
     // N..2 fallen gestaffelt — gerade runter, KEIN Drift mehr.
     // 2026-05-19 (Wolf 'final zw 1+2 spannender, kopf an kopf laenger'):
@@ -2969,58 +2970,36 @@ export function RaceFinalSlide({ finalRanking, lang }: {
       }
     });
 
-    // 2026-05-10 (Audit-P1): Target-X nur für P1 — seit v8 driftet KEIN
-    // anderes Team mehr horizontal (P2/P3 erscheinen direkt auf Treppchen-
-    // Stufe wenn Treppchen rises, P4..PN fallen gerade von initial-X runter).
-    // Vorher war target-X für P2..PN berechnet aber nie gelesen (~20 Zeilen
-    // toter Aufwand pro Render).
+    // 2026-07-07 (v7-Choreo repliziert): Top 3 driften zur Podium-Mitte,
+    // P4..PN zu den Raendern — der langsame 9s-Drift dorthin IST das Rennen.
     if (p1) target[p1.team.id] = 50;  // Mitte
+    if (p2) target[p2.team.id] = 38;  // links der Mitte
+    if (p3) target[p3.team.id] = 62;  // rechts der Mitte
+    // P4..PN gleichmaessig auf die Raender (links 4-28%, rechts 72-96%),
+    // damit sie nicht mit dem Top-3-Mittelbereich (38-62%) ueberlappen.
+    const restTeams = finalRanking.slice(3);
+    const half = Math.ceil(restTeams.length / 2);
+    restTeams.forEach((entry, i) => {
+      if (i < half) {
+        target[entry.team.id] = restTeams.length === 1 ? 16 : (half === 1 ? 16 : 4 + (24 / (half - 1)) * i);
+      } else {
+        const rightIdx = i - half;
+        const rightCount = restTeams.length - half;
+        target[entry.team.id] = rightCount === 1 ? 84 : 72 + (24 / Math.max(1, rightCount - 1)) * rightIdx;
+      }
+    });
 
     return { initial, target };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [finalRanking, N, shuffledIndices]);
 
-  // 2026-07-07: Startlinie — alle Teams links geclustert (vertikal via yOffset
-  // getrennt), damit der Renn-Start sichtbar von links losgeht.
-  const startX = useMemo(() => {
-    const m: Record<string, number> = {};
-    shuffledIndices.forEach((rankIdx, pos) => {
-      const e = finalRanking[rankIdx];
-      if (e) m[e.team.id] = 9 + (pos % 2) * 4 + Math.floor(pos / 2) * 2.5;
-    });
-    return m;
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [finalRanking, shuffledIndices]);
-
-  // 2026-07-07: Jostle-Rennen waehrend phase==='race'. Base driftet von der
-  // Startlinie zur Verteilung, drueberliegender Sinus-Wobble laesst die Teams
-  // hin- und herschieben + ueberholen. Deterministisch (kein Spoiler-Random),
-  // Cluster bleibt eng bis die Falls die Reihenfolge aufloesen.
+  // 2026-07-07: Drift-Trigger — 200ms nachdem die Race-Phase startet, kippt
+  // driftStarted auf true und die 9s-left-Transition laeuft an (v7-Choreo).
   useEffect(() => {
     if (phase !== 'race') return;
-    const ids = finalRanking.map(e => e.team.id);
-    let step = 0;
-    const tick = () => {
-      step++;
-      const t = step * 0.5;
-      setRaceX(() => {
-        const m: Record<string, number> = {};
-        ids.forEach((id, i) => {
-          // Jedes Team rennt mit eigener oszillierender Geschwindigkeit nach
-          // rechts -> staendige Fuehrungswechsel + Ueberholen (grosse Swings),
-          // deutlich sichtbare horizontale Bewegung statt Bob-auf-der-Stelle.
-          const swing = Math.sin(t * 0.95 + i * 1.7) * 26 + Math.sin(t * 1.7 + i * 3.1) * 11;
-          const drift = 22 + Math.min(1, step / 14) * 34; // Feld wandert 22->56 nach rechts
-          m[id] = Math.max(7, Math.min(93, drift + swing + (i - (ids.length - 1) / 2) * 2.5));
-        });
-        return m;
-      });
-    };
-    tick();
-    const iv = window.setInterval(tick, 420);
-    return () => window.clearInterval(iv);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [phase, finalRanking, startX, teamXPositions]);
+    const h = window.setTimeout(() => setDriftStarted(true), 200);
+    return () => window.clearTimeout(h);
+  }, [phase]);
 
   return (
     <div style={{
@@ -3090,16 +3069,11 @@ export function RaceFinalSlide({ finalRanking, lang }: {
           // Bei driftedIds.has(id) → drift zu target-X (parallel zum Fall, 1.5s).
           // 2026-05-10 (Audit-P1): Defensive ?? 50 falls Race-Condition bei
           // Live-Team-Beitritt teamXPositions noch nicht populiert hat.
-          // 2026-07-07: X-Position — drift (P1→Mitte) > laufendes Rennen (raceX)
-          // > Startlinie (countdown) > Verteilung (initial). raceX bleibt nach
-          // der Race-Phase gesetzt, sodass die Falls von der zuletzt gelaufenen
-          // Position starten (kein Sprung).
-          const raceMoving = phase === 'race';
-          const xPct = driftedIds.has(entry.team.id)
-            ? (teamXPositions.target[entry.team.id] ?? 50)
-            : (raceX[entry.team.id]
-                ?? (phase === 'countdown' ? startX[entry.team.id] : teamXPositions.initial[entry.team.id])
-                ?? 50);
+          // 2026-07-07 (v7-Choreo): bei Mount initial-X → 200ms nach Race-Start
+          // driftStarted → alle Teams gleiten ueber 9s zu ihrer target-X.
+          const xPct = driftStarted
+            ? (teamXPositions.target[entry.team.id] ?? teamXPositions.initial[entry.team.id] ?? 50)
+            : (teamXPositions.initial[entry.team.id] ?? 50);
 
           return (
             <div key={entry.team.id} style={{
@@ -3107,11 +3081,8 @@ export function RaceFinalSlide({ finalRanking, lang }: {
               left: `${xPct}%`,
               top: '50%',
               transform: 'translate(-50%, -50%)',
-              // Waehrend des Rennens flotter Transition (matcht das Jostle-
-              // Intervall), sonst 1.5s Drift (parallel zum Fall / P1-zur-Mitte).
-              transition: raceMoving
-                ? 'left 0.46s ease-in-out'
-                : 'left 1.5s cubic-bezier(0.4, 0, 0.6, 1)',
+              // Wuerdevoller 9s-Drift (langsam an, sanft auf Position) — DAS Rennen.
+              transition: 'left 9s cubic-bezier(0.25, 0.1, 0.3, 1)',
               zIndex: fallen ? 1 : 2,
             }}>
               <RaceTeamUnit

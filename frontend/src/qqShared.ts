@@ -285,11 +285,14 @@ export const QQ_BEAMER_CSS = `
     100% { transform: rotate(-16deg) translateY(0); }
   }
   @keyframes qqHpRingPotatoThrow {
-    /* 2026-07-07 (Wolf-Livetest 'wird nicht mehr so hochgeworfen'): Wurf-Bogen
-       deutlich hoeher (72->150px) + groesserer Scale-Pop = dramatischer Toss. */
-    0%   { transform: rotate(0deg) translateY(0) scale(1); }
-    45%  { transform: rotate(560deg) translateY(-150px) scale(1.28); }
-    100% { transform: rotate(1080deg) translateY(0) scale(1); }
+    /* 2026-07-08 (Wolf 'fliegt beim Teamwechsel komische Kreise, sieht buggy
+       aus'): frueher 1080deg (3 volle Spins) = wirbelte wie ein Bug. Jetzt EIN
+       sauberer Wurf-Bogen: Kartoffel kommt vom vorherigen Team (rechts oben)
+       reingeflogen, kleiner Squash beim Fangen, settelt in die Wobble-Ruhelage
+       (-16deg). Keine Mehrfach-Rotation mehr. */
+    0%   { transform: translate(64px, -34px) rotate(96deg) scale(0.72); }
+    58%  { transform: translate(-6px, 6px) rotate(-24deg) scale(1.14); }
+    100% { transform: translate(0, 0) rotate(-16deg) scale(1); }
   }
   /* Countdown-Chip unten am Ring pulsiert (dezent). */
   @keyframes qqHpCountPulse {

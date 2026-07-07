@@ -2658,12 +2658,20 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         }}
                       />
                     </svg>
-                    {/* Avatar zentriert im Ring. 2026-07-07 (Wolf-Livetest
-                        'unschöner rand ums aktive team'): Disc groesser (196→228)
-                        damit sie den Ring fast fuellt — der dunkle Spalt zwischen
-                        Farb-Disc und Timer-Ring (= der 'Rand') verschwindet, aber
-                        die Countdown-Ring-Bahn bleibt sichtbar (gameplay-relevant). */}
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 14.4cqw, 200px)'} bgColor={t.color} />
+                    {/* Weicher Team-Farb-Glow fuellt den dunklen Spalt zwischen
+                        Farb-Disc und Timer-Ring (2026-07-08 Wolf 'starrer rand um
+                        den gruenen glow' / 'quadratisches feld ums aktive team'):
+                        der harte Rand verschwindet, es glueht weich aus, Timer-
+                        Bahn bleibt sichtbar. */}
+                    <div aria-hidden style={{
+                      position: 'absolute', inset: 'clamp(5px, 0.6cqw, 9px)', borderRadius: '50%',
+                      background: `radial-gradient(circle, ${t.color}dd 0%, ${t.color}66 52%, ${t.color}22 68%, transparent 78%)`,
+                      filter: 'blur(7px)', pointerEvents: 'none',
+                    }} />
+                    {/* Avatar zentriert im Ring. 2026-07-08 (Wolf 'unschöner rand'):
+                        Disc groesser + weicher Glow drum (oben) = kein harter Spalt
+                        mehr zum Timer-Ring, Ring-Bahn bleibt aber sichtbar. */}
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(164px, 15.8cqw, 216px)'} bgColor={t.color} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
                     <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
                       position: 'absolute', top: '2%', right: '0%',
@@ -2671,7 +2679,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                       filter: 'drop-shadow(0 6px 12px rgba(239,68,68,0.55)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
                       transformOrigin: 'center center',
                       animation: isThrowing
-                        ? 'qqHpRingPotatoThrow 0.85s cubic-bezier(0.4, 1.2, 0.6, 1) both'
+                        ? 'qqHpRingPotatoThrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both'
                         : 'qqHpRingPotatoWobble 1.6s ease-in-out infinite',
                       zIndex: 6, pointerEvents: 'none',
                     }} />
@@ -2804,7 +2812,10 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // der Active-Card-Glow. Jetzt: ≤4 xl, ≤10 lg, ≤20 md, sonst sm — bei 11
   // Chips greift 'md' (kleiner, mehr passen in 2 Reihen). Schafft mehr
   // vertikalen Headroom zur Semicircle-Card.
-  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 4 ? 'xl' : n <= 8 ? 'lg' : n <= 14 ? 'md' : 'sm';
+  // 2026-07-08 (Wolf '3. antwortzeile wird verdeckt'): Schwellen denser — Chips
+  // schrumpfen frueher, packen mehr pro Reihe => weniger Reihen, die 3. Reihe
+  // wird seltener vom overflow:hidden abgeschnitten.
+  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 3 ? 'xl' : n <= 7 ? 'lg' : n <= 12 ? 'md' : 'sm';
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6cqw, 38px)', padding: 'clamp(10px, 1.2cqh, 16px) clamp(18px, 1.8cqw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2cqw, 32px)', padding: 'clamp(8px, 1cqh, 14px) clamp(16px, 1.6cqw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },

@@ -2866,6 +2866,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   const BOTTOM = 30;     // Bodenabstand
   const GAP = 3;         // Abstand zwischen Bloecken
   const AV = 52;         // Avatar-Groesse (klettert oben mit)
+  const NEUTRAL = '#6B6480'; // Grau fuer anonyme (noch geheime) Top-3-Tuerme
   const towerZone = 990 - TITLE_H - CROWN_H - BASE_H - BOTTOM; // = 668
   // Quadratische Felder wie auf dem Grid → blockW === blockH.
   const blockH = Math.max(15, Math.min(50, Math.floor((towerZone - (maxH - 1) * GAP) / maxH)));
@@ -2963,6 +2964,18 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         @keyframes qqTowerHintPulse {
           0%, 100% { opacity: 0.5; }
           50%      { opacity: 1; }
+        }
+        @keyframes qqTowerReveal {
+          0%   { opacity: 0.15; filter: brightness(2.6); transform: scale(1.45); }
+          30%  { opacity: 1; }
+          45%  { opacity: 0.3; }
+          62%  { opacity: 1; }
+          78%  { opacity: 0.5; }
+          100% { opacity: 1; filter: brightness(1); transform: scale(1); }
+        }
+        @keyframes qqTowerQ {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-5px); }
         }
       `}</style>
 
@@ -3122,6 +3135,17 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           const towerPx = shown * blockH + Math.max(0, shown - 1) * GAP; // aktuelle Hoehe
           const fullPx = h * blockH + Math.max(0, h - 1) * GAP;
           const raysSize = Math.round(fullPx * 1.35);
+          // Top 3 bleiben ANONYM (grau, "?", "???") bis sie an der Reihe sind —
+          // Plaetze 4..N sind immer sichtbar. Sieger enthuellt sich erst bei der
+          // Kroenung (max. Spannung: die 3 hoechsten Tuerme sind ein Raetsel).
+          const isTop3 = rank <= 2;
+          const ascIdx = N - 1 - rank;                 // 0 = letzter Platz
+          const identityShown = !isTop3
+            || revealedCount > ascIdx
+            || (phase === 'card' && revealedCount === ascIdx)
+            || (crowned && isWinner);
+          const anon = !identityShown;
+          const colr = identityShown ? entry.team.color : NEUTRAL;
 
           return (
             <div key={entry.team.id} style={{
@@ -3158,8 +3182,9 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 <div aria-hidden style={{
                   position: 'absolute', left: '50%', bottom: -14, transform: 'translateX(-50%)',
                   width: Math.round(blockW * 2.4), height: 30, borderRadius: '50%',
-                  background: `radial-gradient(ellipse, ${entry.team.color}5c, transparent 70%)`,
+                  background: `radial-gradient(ellipse, ${colr}5c, transparent 70%)`,
                   filter: 'blur(6px)', zIndex: 0, pointerEvents: 'none',
+                  transition: 'background 0.35s ease',
                 }} />
 
                 {/* Kletternder Avatar — sitzt oben auf dem aktuellen Turm.
@@ -3174,7 +3199,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                   {/* Team-Moment: sobald der Turm fertig ist, poppt die Platz-Karte
                       nach vorn (Krone fuer Platz 1, Medaille+PLATZ N fuer Top 3,
                       PLATZ N fuer den Rest). */}
-                  {rank === 0 && badgeVisible && (
+                  {rank === 0 && badgeVisible && identityShown && (
                     <span aria-hidden style={{
                       position: 'absolute', left: '50%', bottom: AV - 8,
                       fontSize: 46, lineHeight: 1, pointerEvents: 'none', zIndex: 8,
@@ -3183,7 +3208,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       animation: 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite',
                     }}>👑</span>
                   )}
-                  {rank !== 0 && (capped || crowned) && (
+                  {rank !== 0 && (capped || crowned) && identityShown && (
                     <div style={{
                       position: 'absolute', left: '50%', bottom: AV - 6,
                       transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none',
@@ -3203,14 +3228,18 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                     </div>
                   )}
-                  <div style={{
+                  <div key={anon ? 'anon' : 'id'} style={{
                     width: AV, height: AV, borderRadius: '50%',
-                    background: entry.team.color,
-                    border: `3px solid ${entry.team.color}`,
-                    boxShadow: `0 0 16px ${entry.team.color}88, 0 3px 8px rgba(0,0,0,0.45)`,
+                    background: anon ? '#2A2640' : entry.team.color,
+                    border: `3px solid ${anon ? '#4A4460' : entry.team.color}`,
+                    boxShadow: anon ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 16px ${entry.team.color}88, 0 3px 8px rgba(0,0,0,0.45)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    // Beim Enthuellen eines Top-3-Turms flackert die Scheibe kurz und rastet ein.
+                    animation: (isTop3 && identityShown) ? 'qqTowerReveal 0.7s ease-out both' : 'none',
                   }}>
-                    <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={AV} flat />
+                    {anon
+                      ? <span aria-hidden style={{ fontSize: 30, fontWeight: 900, color: '#B9AEDA', animation: 'qqTowerQ 1.6s ease-in-out infinite' }}>?</span>
+                      : <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={AV} flat />}
                   </div>
                 </div>
 
@@ -3221,14 +3250,15 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                     <div key={bi} style={{
                       width: blockW, height: blockH,
                       borderRadius: Math.min(8, Math.round(blockH * 0.16)),  // quadratisch wie Grid-Feld
-                      background: `linear-gradient(160deg, rgba(255,255,255,0.30) 0%, ${entry.team.color} 34%, ${entry.team.color} 62%, rgba(0,0,0,0.28) 100%)`,
-                      border: `2px solid ${entry.team.color}`,
+                      background: `linear-gradient(160deg, rgba(255,255,255,0.30) 0%, ${colr} 34%, ${colr} 62%, rgba(0,0,0,0.28) 100%)`,
+                      border: `2px solid ${colr}`,
                       boxShadow: (crowned && isWinner)
                         ? `inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -3px 5px rgba(0,0,0,0.28), 0 0 16px ${entry.team.color}88, 0 2px 4px rgba(0,0,0,0.3)`
                         : `inset 0 2px 3px rgba(255,255,255,0.40), inset 0 -3px 5px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.3)`,
                       // Nur der jeweils oberste (neueste) Block spielt die Drop-Animation.
                       transformOrigin: 'bottom center',
                       animation: isTopBlock ? 'qqTowerDrop 0.42s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
+                      transition: 'background 0.35s ease, border-color 0.35s ease',
                       position: 'relative', zIndex: 1,
                     }}>
                       {/* Einschlag-Ring beim Landen des neuesten Blocks */}
@@ -3236,7 +3266,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                         <div aria-hidden style={{
                           position: 'absolute', left: '50%', bottom: -3,
                           width: Math.round(blockW * 0.95), height: Math.round(blockW * 0.95),
-                          borderRadius: '50%', border: `3px solid ${entry.team.color}`,
+                          borderRadius: '50%', border: `3px solid ${colr}`,
                           transform: 'translateX(-50%)', pointerEvents: 'none',
                           animation: 'qqTowerShock 0.5s ease-out both',
                         }} />
@@ -3263,9 +3293,9 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 {/* Live-Zaehler (poppt bei jedem neuen Block) */}
                 <div style={{
                   fontSize: 30, fontWeight: 900, lineHeight: 1,
-                  color: capped ? entry.team.color : '#E2D6FF',
+                  color: capped ? colr : '#E2D6FF',
                   fontVariantNumeric: 'tabular-nums',
-                  textShadow: capped ? `0 0 14px ${entry.team.color}77` : 'none',
+                  textShadow: capped && !anon ? `0 0 14px ${entry.team.color}77` : 'none',
                   transition: 'color 0.3s ease',
                 }}>
                   <span key={shown} style={{
@@ -3273,15 +3303,17 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                     animation: shown > 0 && !crowned ? 'qqTowerNumPop 0.32s ease-out' : 'none',
                   }}>{shown}</span>
                 </div>
-                <TeamNameLabel
-                  name={entry.team.name}
-                  maxLines={2}
-                  shrinkAfter={12}
-                  color="#F1F5F9"
-                  fontWeight={800}
-                  fontSize="clamp(12px, 1cqw, 17px)"
-                  style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
-                />
+                {anon
+                  ? <div style={{ fontSize: 17, fontWeight: 900, color: '#6B6480', letterSpacing: '0.1em' }}>???</div>
+                  : <TeamNameLabel
+                      name={entry.team.name}
+                      maxLines={2}
+                      shrinkAfter={12}
+                      color="#F1F5F9"
+                      fontWeight={800}
+                      fontSize="clamp(12px, 1cqw, 17px)"
+                      style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
+                    />}
               </div>
             </div>
           );

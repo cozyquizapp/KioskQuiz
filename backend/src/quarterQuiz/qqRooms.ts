@@ -4325,12 +4325,12 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
   if (stats.jokersEarned >= QQ_MAX_JOKERS_PER_GAME) {
     return 0;
   }
-  // 2026-05-05 (Wolf 'pro Runde max 1 Joker einloesbar'): per-phase Cap
-  // (game-Cap bleibt 2). Verhindert dass ein Team in einer einzigen Runde
-  // beide Joker abraeumt — gibt der Mechanik mehr Tempo-Variation.
-  if ((stats.jokersThisPhase ?? 0) >= 1) {
-    return 0;
-  }
+  // 2026-07-07 (Wolf-Livetest): Pro-Runde-Cap (max 1 Joker/Phase, eingebaut
+  // 2026-05-05) entfernt. Er sorgte dafuer, dass die Engine einen zweiten in
+  // derselben Runde verdienten Joker still verweigerte, waehrend das Team-Menue
+  // (rechnet nur mit game-Cap 2 - jokersEarned) weiter '1 von 2' anzeigte.
+  // Jetzt limitiert nur noch das game-Cap (2/Spiel) — selbstbegrenzend,
+  // Menue und Engine sind wieder deckungsgleich.
 
   const newBlocks = detectNewJokers(room.grid, room.gridSize, teamId);
   if (newBlocks.length === 0) return 0;
@@ -4354,10 +4354,6 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
 
   const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
   let toAward = Math.min(newBlocks.length, remaining);
-
-  // 2026-05-05: Per-Phase-Cap auch hier — auch wenn ein Block 2 Joker geben
-  // wuerde, max 1 pro Phase.
-  toAward = Math.min(toAward, 1 - (stats.jokersThisPhase ?? 0));
 
   // Comeback-Place-Cap: max 3 Felder Gesamtgewinn (2 Place + max 1 Joker-Bonus).
   if (room.pendingAction === 'COMEBACK' && room.comebackAction === 'PLACE_2') {

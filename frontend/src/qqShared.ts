@@ -272,9 +272,17 @@ export const QQ_BEAMER_CSS = `
   }
   /* Hot-Potato 3-Slot-Spec (2026-06-30): Kartoffel oben rechts am Timer-Ring.
      Position via top/right → Transform = nur rotate/translateY (kein -50%). */
+  /* 2026-07-07 (Wolf 'kartoffel dreht sich nicht, heisse-kartoffel-in-der-hand-
+     halten Sinnbild'): lebhaftes Jonglieren statt zaghaftem Wobble — deutliche
+     Rotation (±20°) + Hopser, als wuerde das Team die heisse Kartoffel weiter-
+     reichen/tossen. */
   @keyframes qqHpRingPotatoWobble {
-    0%,100% { transform: rotate(-9deg) translateY(0); }
-    50%     { transform: rotate(9deg) translateY(-6px); }
+    0%   { transform: rotate(-16deg) translateY(0); }
+    20%  { transform: rotate(11deg)  translateY(-14px); }
+    40%  { transform: rotate(21deg)  translateY(0); }
+    60%  { transform: rotate(-5deg)  translateY(-12px); }
+    80%  { transform: rotate(-21deg) translateY(-3px); }
+    100% { transform: rotate(-16deg) translateY(0); }
   }
   @keyframes qqHpRingPotatoThrow {
     /* 2026-07-07 (Wolf-Livetest 'wird nicht mehr so hochgeworfen'): Wurf-Bogen

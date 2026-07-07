@@ -2580,12 +2580,14 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
       // 2026-07-07 (Wolf-Livetest 'antworten abgeschnitten'): Container-Höhe +
       // Ring + Heat-Glow kompakter -> die absolut-zentrierte Bühne blutet nicht
       // mehr nach oben in den Chip-Block (der sonst hinter dem Ring verschwand).
-      width: '100%', height: 'clamp(300px, 32cqh, 430px)',
+      width: '100%', height: 'clamp(316px, 34cqh, 404px)',
       pointerEvents: 'none',
     }}>
-      {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent */}
+      {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent.
+          2026-07-07: auf Ring-Mitte statt Container-Mitte (Inhalt ist jetzt
+          oben-ausgerichtet) — Glow bleibt hinter dem aktiven Team. */}
       <div aria-hidden style={{
-        position: 'absolute', left: '50%', top: '50%',
+        position: 'absolute', left: '50%', top: 'clamp(100px, 9.5cqw, 132px)',
         transform: 'translate(-50%,-50%)',
         width: 'clamp(300px, 32cqw, 500px)', height: 'clamp(230px, 24cqw, 360px)',
         borderRadius: '50%',
@@ -2593,8 +2595,9 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
         filter: 'blur(14px)', zIndex: 0,
       }} />
 
-      {/* Slot-Anker = Container-Mitte; Slots transformieren relativ dazu */}
-      <div style={{ position: 'absolute', left: '50%', top: '50%', width: 0, height: 0, zIndex: 2 }}>
+      {/* Slot-Anker = OBERKANTE (2026-07-07): Inhalt waechst nach unten, blutet
+          nie in den Chip-Block darueber. Ring sitzt oben, Name darunter. */}
+      <div style={{ position: 'absolute', left: '50%', top: 0, width: 0, height: 0, zIndex: 2 }}>
         {slotEntries.map(({ teamId, slot }) => {
           const t = s.teams.find((x: any) => x.id === teamId);
           if (!t) return null;
@@ -2603,8 +2606,9 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
           const isActive = slot === 0;
           const prevSlot = prevSlotsRef.current.get(teamId);
           const wrapped = prevSlot !== undefined && Math.abs(slot - prevSlot) > 1;
-          // Seiten leicht angehoben → Avatar auf Ring-Mitte; aktiv exakt zentriert.
-          const ty = isActive ? '-50%' : 'calc(-50% - 4cqh)';
+          // Oben-ausgerichtet (2026-07-07): aktive Spalte startet an der Anker-
+          // Oberkante (ty 0). Seiten-Slots liegen mit ihrem Avatar auf Ring-Mitte.
+          const ty = isActive ? '0%' : 'clamp(50px, 5cqw, 70px)';
           return (
             <div
               key={teamId}
@@ -2632,7 +2636,9 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                     // 2026-07-02: Ring von 400→360 max reduziert → reclaimt Vertikal-
                     // Raum für die Namenszeile darunter (Wolf-Bug 'name abgeschnitten').
                     // 2026-07-07: nochmal kompakter (360→300) für mehr Chip-Raum oben.
-                    width: 'clamp(210px, 21cqw, 300px)', height: 'clamp(210px, 21cqw, 300px)',
+                    // 2026-07-07 v2: 300→264 — schafft Platz für 2 volle Chip-Reihen
+                    // UNTER der Frage-Karte (Wolf-Livetest 'lösungen 2. reihe versteckt').
+                    width: 'clamp(200px, 19cqw, 264px)', height: 'clamp(200px, 19cqw, 264px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben) */}
@@ -2657,7 +2663,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         damit sie den Ring fast fuellt — der dunkle Spalt zwischen
                         Farb-Disc und Timer-Ring (= der 'Rand') verschwindet, aber
                         die Countdown-Ring-Bahn bleibt sichtbar (gameplay-relevant). */}
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(158px, 15.6cqw, 228px)'} bgColor={t.color} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 14.4cqw, 200px)'} bgColor={t.color} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
                     <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
                       position: 'absolute', top: '2%', right: '0%',
@@ -2798,7 +2804,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // der Active-Card-Glow. Jetzt: ≤4 xl, ≤10 lg, ≤20 md, sonst sm — bei 11
   // Chips greift 'md' (kleiner, mehr passen in 2 Reihen). Schafft mehr
   // vertikalen Headroom zur Semicircle-Card.
-  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 4 ? 'xl' : n <= 10 ? 'lg' : n <= 20 ? 'md' : 'sm';
+  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 4 ? 'xl' : n <= 8 ? 'lg' : n <= 14 ? 'md' : 'sm';
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6cqw, 38px)', padding: 'clamp(10px, 1.2cqh, 16px) clamp(18px, 1.8cqw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2cqw, 32px)', padding: 'clamp(8px, 1cqh, 14px) clamp(16px, 1.6cqw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },
@@ -2822,7 +2828,10 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
       // Chips-Block und Semicircle größer. War 14px, jetzt clamp(20,3cqh,40).
       // Schafft visuelle Trennung damit Chips nicht direkt an die Active-Card
       // anstoßen, plus puffert gegen 1-2px Layout-Rundungsfehler.
-      gap: 'clamp(20px, 3cqh, 40px)',
+      // 2026-07-07 (Wolf-Livetest 'rausgeflogene teams zu nah am aktiven'):
+      // Abstand vergrößert, damit die 'Raus:'-Reihe nicht an der JETZT-DRAN-
+      // Namenszeile klebt.
+      gap: 'clamp(28px, 4cqh, 56px)',
     }}>
       {/* Used answers list — top-aligned damit unten garantiert Platz fuer
           Trivia-Trio-Semicircle + Out-Liste bleibt.
@@ -2853,6 +2862,10 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
         paddingTop: 8,
         paddingBottom: 'clamp(16px, 2cqh, 28px)',
         overflow: 'hidden',
+        // 2026-07-07 (Wolf-Livetest 'lösungen 2. reihe hinter den teams'):
+        // Chips über der Halbkreis-Bühne — falls die Bühne doch mal hochblutet,
+        // bleiben die Antworten lesbar statt dahinter zu verschwinden.
+        position: 'relative', zIndex: 5,
       }}>
         {used.length > 0 && (
         <div style={{

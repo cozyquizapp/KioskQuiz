@@ -2808,14 +2808,18 @@ export function TowerFinalSlide({ finalRanking, lang }: {
       const h = window.setTimeout(() => setPhase('crowned'), 850);
       return () => window.clearTimeout(h);
     }
-    // Tempo skaliert mit Turmhoehe, damit die Gesamtdauer ~6-8s bleibt.
-    const stepMs = maxH > 16 ? 240 : maxH > 10 ? 320 : maxH > 6 ? 400 : 480;
+    // Tempo skaliert mit Turmhoehe (~6-8s). Sobald nur noch <=3 Tuerme wachsen,
+    // wird jeder weitere Block LANGSAM & dramatisch gelegt (Top-3-Showdown).
+    const climbingNow = finalRanking.filter(e => Math.max(1, e.total) > tick).length;
+    const stepMs = climbingNow <= 3
+      ? 640
+      : (maxH > 16 ? 240 : maxH > 10 ? 320 : maxH > 6 ? 400 : 480);
     const h = window.setTimeout(() => {
       setTick(t => t + 1);
       try { playTick(); } catch { /* headless / kein Audio */ }
     }, stepMs);
     return () => window.clearTimeout(h);
-  }, [phase, tick, maxH]);
+  }, [phase, tick, maxH, finalRanking]);
 
   useEffect(() => {
     if (phase !== 'crowned') return;
@@ -2825,18 +2829,24 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   const crowned = phase === 'crowned';
 
   // Vertikales Budget (px im 1760x990-Stage, per Stage-Transform mitskaliert).
-  // Feste Zonen abziehen, damit der hoechste Turm NIE in Titel/Sockel laeuft
-  // (Bug bei 8 Teams: maxH~14 → Spalte lief oben+unten aus dem Bild).
+  // Feste Zonen abziehen, damit der hoechste Turm NIE in Titel/Sockel laeuft.
+  // CROWN_H = Kopfraum fuer den kletternden Avatar + Krone/Medaille obendrauf.
   const TITLE_H = 104;   // Titel-/Sieger-Band oben
-  const CROWN_H = 56;    // Kopfraum fuer Krone ueber dem hoechsten Turm
-  const BASE_H = 148;    // Zaehler + Avatar + Name unter dem Turm
-  const BOTTOM = 36;     // Bodenabstand
+  const CROWN_H = 100;   // Kopfraum: kletternder Avatar + Krone/Medaille
+  const BASE_H = 88;     // Zaehler + Name unter dem Turm (Avatar klettert jetzt)
+  const BOTTOM = 30;     // Bodenabstand
   const GAP = 3;         // Abstand zwischen Bloecken
-  const towerZone = 990 - TITLE_H - CROWN_H - BASE_H - BOTTOM; // = 646
-  const blockH = Math.max(15, Math.min(46, Math.floor((towerZone - (maxH - 1) * GAP) / maxH)));
-  const colW = Math.min(168, Math.max(58, Math.floor(1520 / N) - 22));
-  const blockW = Math.min(colW, Math.round(blockH * 1.7));
-  const colGap = Math.max(8, Math.min(28, Math.round((1600 - N * colW) / (N + 1))));
+  const AV = 52;         // Avatar-Groesse (klettert oben mit)
+  const towerZone = 990 - TITLE_H - CROWN_H - BASE_H - BOTTOM; // = 668
+  // Quadratische Felder wie auf dem Grid → blockW === blockH.
+  const blockH = Math.max(15, Math.min(50, Math.floor((towerZone - (maxH - 1) * GAP) / maxH)));
+  const blockW = blockH;
+  const colW = Math.min(150, Math.max(Math.round(blockW * 1.35), Math.floor(1560 / N) - 18));
+  const colGap = Math.max(8, Math.min(30, Math.round((1600 - N * colW) / (N + 1))));
+
+  // Showdown: wenn nur noch <=3 Tuerme wachsen, wird der Schluss dramatisch.
+  const climbingCount = finalRanking.filter(e => Math.max(1, e.total) > tick).length;
+  const showdown = phase === 'building' && climbingCount > 0 && climbingCount <= 3;
 
   return (
     <div style={{
@@ -2967,38 +2977,35 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           const h = heights[entry.team.id];
           const shown = Math.min(tick, h);
           const capped = shown >= h;
+          const climbing = h > tick;                 // hat noch Bloecke zu setzen
           const isWinner = entry.team.id === winner?.team.id;
-          const dimmed = crowned && !isWinner;
           const rank = rankById[entry.team.id] ?? 99;
-          const badge = crowned ? badgeFor(rank) : null;
-          const towerPx = h * (blockH + GAP);
-          const raysSize = Math.round(towerPx * 1.35);
+          const badge = badgeFor(rank);              // 👑/🥈/🥉 nur Top 3
+          // Medaille erscheint sobald der Turm fertig ist (Podium baut sich
+          // von unten auf: 🥉 → 🥈 → 👑, weil der hoechste zuletzt cappt).
+          const badgeVisible = badge && (capped || crowned);
+          // Dimmen: im Showdown treten fertige Tuerme zurueck; nach Kroenung
+          // alle ausser Sieger. Noch kletternde Tuerme bleiben im Spotlight.
+          const dimmed = crowned ? !isWinner : (showdown && !climbing);
+          const spotlight = showdown && climbing;
+          const towerPx = shown * blockH + Math.max(0, shown - 1) * GAP; // aktuelle Hoehe
+          const fullPx = h * blockH + Math.max(0, h - 1) * GAP;
+          const raysSize = Math.round(fullPx * 1.35);
 
           return (
             <div key={entry.team.id} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center',
               flexShrink: 0, width: colW, position: 'relative',
-              opacity: dimmed ? 0.5 : 1,
-              filter: dimmed ? 'saturate(0.6)' : 'none',
-              transition: 'opacity 0.6s ease, filter 0.6s ease',
+              opacity: dimmed ? 0.42 : 1,
+              filter: dimmed ? 'saturate(0.55)' : 'none',
+              transform: spotlight ? 'scale(1.04)' : 'scale(1)',
+              transition: 'opacity 0.5s ease, filter 0.5s ease, transform 0.4s ease',
+              zIndex: spotlight || isWinner ? 3 : 2,
             }}>
-              {/* Podium-Badge ueber dem Turm — feste Kopfraum-Zone (CROWN_H) */}
-              <div style={{ position: 'relative', width: '100%', height: CROWN_H, flexShrink: 0 }}>
-                {crowned && badge && (
-                  <span aria-hidden style={{
-                    position: 'absolute', left: '50%', bottom: 0,
-                    fontSize: rank === 0 ? 56 : 42, lineHeight: 1, pointerEvents: 'none', zIndex: 6,
-                    filter: rank === 0
-                      ? 'drop-shadow(0 4px 10px rgba(0,0,0,0.6)) drop-shadow(0 0 22px rgba(251,191,36,0.8))'
-                      : 'drop-shadow(0 3px 8px rgba(0,0,0,0.55))',
-                    animation: rank === 0
-                      ? 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite'
-                      : 'qqTowerBadgeIn 0.55s cubic-bezier(0.3,1.4,0.5,1) 0.15s both',
-                  }}>{badge}</span>
-                )}
-              </div>
+              {/* Kopfraum-Zone (CROWN_H): hier klettert der Avatar hoch */}
+              <div style={{ width: '100%', height: CROWN_H, flexShrink: 0 }} />
 
-              {/* Turm — Bloecke von unten nach oben */}
+              {/* Turm — Bloecke von unten nach oben; Avatar klettert oben mit */}
               <div style={{
                 position: 'relative',
                 display: 'flex', flexDirection: 'column-reverse', alignItems: 'center',
@@ -3019,22 +3026,57 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 {/* Farbige Boden-Aura unter dem Turm */}
                 <div aria-hidden style={{
                   position: 'absolute', left: '50%', bottom: -14, transform: 'translateX(-50%)',
-                  width: Math.round(blockW * 2.1), height: 34, borderRadius: '50%',
+                  width: Math.round(blockW * 2.4), height: 30, borderRadius: '50%',
                   background: `radial-gradient(ellipse, ${entry.team.color}5c, transparent 70%)`,
                   filter: 'blur(6px)', zIndex: 0, pointerEvents: 'none',
                 }} />
+
+                {/* Kletternder Avatar — sitzt oben auf dem aktuellen Turm.
+                    Bleibt gemountet (stabile Position im JSX) → die bottom-
+                    Transition mit Overshoot laesst ihn Block fuer Block hochhopsen. */}
+                <div style={{
+                  position: 'absolute', left: '50%', bottom: towerPx + 6, zIndex: 5,
+                  width: AV, height: AV,
+                  transform: 'translateX(-50%)',
+                  transition: 'bottom 0.34s cubic-bezier(0.34, 1.5, 0.6, 1)',
+                }}>
+                  {/* Krone/Medaille ueber dem Avatar */}
+                  {badgeVisible && (
+                    <span aria-hidden style={{
+                      position: 'absolute', left: '50%', bottom: AV - 8,
+                      fontSize: rank === 0 ? 46 : 34, lineHeight: 1, pointerEvents: 'none', zIndex: 6,
+                      transform: 'translateX(-50%)',
+                      filter: rank === 0
+                        ? 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(251,191,36,0.85))'
+                        : 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))',
+                      animation: rank === 0
+                        ? 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite'
+                        : 'qqTowerBadgeIn 0.5s cubic-bezier(0.3,1.4,0.5,1) both',
+                    }}>{badge}</span>
+                  )}
+                  <div style={{
+                    width: AV, height: AV, borderRadius: '50%',
+                    background: entry.team.color,
+                    border: `3px solid ${entry.team.color}`,
+                    boxShadow: `0 0 16px ${entry.team.color}88, 0 3px 8px rgba(0,0,0,0.45)`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={AV} flat />
+                  </div>
+                </div>
+
                 {Array.from({ length: shown }).map((_, bi) => {
                   const isTopBlock = bi === shown - 1;
                   const isCapBlock = capped && bi === h - 1;
                   return (
                     <div key={bi} style={{
                       width: blockW, height: blockH,
-                      borderRadius: Math.min(10, Math.round(blockH * 0.22)),
-                      background: `linear-gradient(160deg, rgba(255,255,255,0.28) 0%, ${entry.team.color} 32%, ${entry.team.color} 60%, rgba(0,0,0,0.28) 100%)`,
+                      borderRadius: Math.min(8, Math.round(blockH * 0.16)),  // quadratisch wie Grid-Feld
+                      background: `linear-gradient(160deg, rgba(255,255,255,0.30) 0%, ${entry.team.color} 34%, ${entry.team.color} 62%, rgba(0,0,0,0.28) 100%)`,
                       border: `2px solid ${entry.team.color}`,
                       boxShadow: (crowned && isWinner)
                         ? `inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -3px 5px rgba(0,0,0,0.28), 0 0 16px ${entry.team.color}88, 0 2px 4px rgba(0,0,0,0.3)`
-                        : `inset 0 2px 3px rgba(255,255,255,0.38), inset 0 -3px 5px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.3)`,
+                        : `inset 0 2px 3px rgba(255,255,255,0.40), inset 0 -3px 5px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.3)`,
                       // Nur der jeweils oberste (neueste) Block spielt die Drop-Animation.
                       transformOrigin: 'bottom center',
                       animation: isTopBlock ? 'qqTowerDrop 0.42s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
@@ -3044,7 +3086,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       {isTopBlock && (
                         <div aria-hidden style={{
                           position: 'absolute', left: '50%', bottom: -3,
-                          width: Math.round(blockW * 0.85), height: Math.round(blockW * 0.85),
+                          width: Math.round(blockW * 0.95), height: Math.round(blockW * 0.95),
                           borderRadius: '50%', border: `3px solid ${entry.team.color}`,
                           transform: 'translateX(-50%)', pointerEvents: 'none',
                           animation: 'qqTowerShock 0.5s ease-out both',
@@ -3076,30 +3118,16 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                 }}>{shown}</span>
               </div>
 
-              {/* Sockel: Avatar + Name */}
-              <div style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
-                marginTop: 6,
-              }}>
-                <div style={{
-                  width: 54, height: 54, borderRadius: '50%',
-                  background: entry.team.color,
-                  border: `3px solid ${entry.team.color}`,
-                  boxShadow: `0 0 16px ${entry.team.color}66, 0 3px 8px rgba(0,0,0,0.4)`,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                }}>
-                  <QQTeamAvatar avatarId={entry.team.avatarId} teamEmoji={entry.team.emoji} size={54} flat />
-                </div>
-                <TeamNameLabel
-                  name={entry.team.name}
-                  maxLines={2}
-                  shrinkAfter={12}
-                  color="#F1F5F9"
-                  fontWeight={800}
-                  fontSize="clamp(12px, 1cqw, 17px)"
-                  style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
-                />
-              </div>
+              {/* Sockel: nur Name (Avatar klettert oben mit) */}
+              <TeamNameLabel
+                name={entry.team.name}
+                maxLines={2}
+                shrinkAfter={12}
+                color="#F1F5F9"
+                fontWeight={800}
+                fontSize="clamp(12px, 1cqw, 17px)"
+                style={{ marginTop: 5, maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
+              />
             </div>
           );
         })}

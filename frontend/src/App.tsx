@@ -224,7 +224,10 @@ function App() {
           <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
           <Route path="/territory-test" element={<PinGate><QQTerritoryTestPage /></PinGate>} />
           <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
-          <Route path="/race-finale" element={<PinGate><QQRaceFinaleTestPage /></PinGate>} />
+          {/* 2026-07-07: bewusst OHNE PinGate — reine Animations-Vorschau ohne
+              Daten/Steuerung, damit Wolf sie ohne PIN (und unabhaengig vom
+              Backend-Status waehrend Coolify-Redeploys) oeffnen kann. */}
+          <Route path="/race-finale" element={<QQRaceFinaleTestPage />} />
           {/* 2026-07-03 (Wolf): Preview der Landing-Demo mit ECHTEN Quiz-Views —
               live `/` bleibt vorerst unangetastet, bis Fidelity abgenommen ist. */}
           <Route path="/demo-real" element={<QQErrorBoundary source="demo-real"><div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)' }}><QQDemoReal /></div></QQErrorBoundary>} />

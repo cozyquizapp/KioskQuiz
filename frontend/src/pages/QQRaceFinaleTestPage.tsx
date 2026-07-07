@@ -40,10 +40,17 @@ export default function QQRaceFinaleTestPage() {
   const [n, setN] = useState<4 | 6 | 8>(6);
   const [mode, setMode] = useState<'tower' | 'race'>('tower');
   const [runKey, setRunKey] = useState(0);
+  // Buehne (1760x990) auf die Fenstergroesse herunterskalieren — wie der echte
+  // Beamer. Sonst laeuft das Design bei nicht-Vollbild ueber die Fensterraender.
+  const [scale, setScale] = useState(1);
 
   useEffect(() => {
     document.body.style.overflow = 'hidden';
     document.documentElement.style.overflow = 'hidden';
+    const fit = () => setScale(Math.min(window.innerWidth / STAGE_W, window.innerHeight / STAGE_H));
+    fit();
+    window.addEventListener('resize', fit);
+    return () => window.removeEventListener('resize', fit);
   }, []);
 
   const ranking = buildRanking(n);
@@ -53,6 +60,7 @@ export default function QQRaceFinaleTestPage() {
       <div style={{
         width: STAGE_W, height: STAGE_H, flexShrink: 0, position: 'relative',
         display: 'flex', flexDirection: 'column', containerType: 'size', overflow: 'hidden',
+        transform: `scale(${scale})`, transformOrigin: 'center center',
       }}>
         {mode === 'tower'
           ? <TowerFinalSlide key={`t-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />

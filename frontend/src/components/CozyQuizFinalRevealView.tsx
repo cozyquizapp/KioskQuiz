@@ -2543,6 +2543,193 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
   );
 }
 
+// ─── SuspensePodiumFinale [2026-07-07, Wolf 'Spannung bis zuletzt + episch'] ──
+// Verschmelzung: Bottom-up-Spannung von FinalEurovisionFinale (schlechtester
+// zuerst, Drumroll, Sieger zuletzt) + episches Podium/Raketen-Feeling vom alten
+// RaceFinalSlide. Ablauf: Podium fuellt sich von AUSSEN nach INNEN (Platz N an
+// der Kante slammt zuerst rein, dann N-1 ... bis Platz 2), dann Drumroll-Hold
+// („Und der Sieger ist…"), dann Platz 1 steigt per Raketen-Lift-off von unten
+// in die Mitte + Krone + Konfetti + Fanfare. Aktuell NUR ueber die Vorschau-
+// Route /race-finale (Toggle) sichtbar; Live-Finale bleibt FinalEurovisionFinale.
+export function SuspensePodiumFinale({ finalRanking, lang }: {
+  finalRanking: RankingEntry[]; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const N = finalRanking.length;
+  const winner = finalRanking[0];
+  const [revealedRanks, setRevealedRanks] = useState<Set<number>>(new Set());
+  const [drumroll, setDrumroll] = useState(false);
+  const [winnerRevealed, setWinnerRevealed] = useState(false);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    try { startFinaleLoop(); } catch {}
+    // Reveal worst-first (rank N..2), progressiver Slowdown fuer Top-Plaetze.
+    const staggerForRank = (rank: number): number =>
+      rank === 3 ? 1100 : rank === 2 ? 1700 : 700;
+    let cursor = 700;
+    for (let rank = N; rank >= 2; rank--) {
+      const fireAt = cursor;
+      timers.push(window.setTimeout(() => {
+        setRevealedRanks(prev => { const s = new Set(prev); s.add(rank); return s; });
+        try { playTick(); } catch {}
+      }, fireAt));
+      cursor += staggerForRank(rank);
+    }
+    // Drumroll-Anticipation vor dem Sieger.
+    const drumAt = cursor;
+    timers.push(window.setTimeout(() => setDrumroll(true), drumAt));
+    cursor += 2400;
+    const winnerAt = cursor;
+    timers.push(window.setTimeout(() => {
+      setDrumroll(false);
+      setRevealedRanks(prev => { const s = new Set(prev); s.add(1); return s; });
+      setWinnerRevealed(true);
+      try { playFanfare(); } catch {}
+    }, winnerAt));
+    timers.push(window.setTimeout(() => { try { playClimaxFinish(); } catch {} }, winnerAt + 700));
+    return () => timers.forEach(t => window.clearTimeout(t));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [N]);
+
+  // Center-out-Slots: #1 Mitte, gerade Raenge links, ungerade rechts, wachsender
+  // Abstand. So fuellt sich das Podium von den Kanten zur Mitte (= zum Sieger).
+  const slotOffset = (rank: number): number => {
+    if (rank === 1) return 0;
+    const dist = Math.floor(rank / 2);
+    return rank % 2 === 0 ? -dist : dist;
+  };
+  const podiumHeightFor = (rank: number): string =>
+    rank === 1 ? 'clamp(150px, 20cqh, 250px)'
+    : rank === 2 ? 'clamp(110px, 15cqh, 195px)'
+    : rank === 3 ? 'clamp(84px, 12cqh, 155px)'
+    : 'clamp(48px, 7cqh, 100px)';
+  const avatarFor = (rank: number): string =>
+    rank === 1 ? 'clamp(96px, 10.5cqw, 156px)'
+    : rank <= 3 ? 'clamp(64px, 7cqw, 104px)'
+    : 'clamp(46px, 5cqw, 74px)';
+  const slotWidthFor = (rank: number): string =>
+    rank === 1 ? 'clamp(150px, 15cqw, 230px)'
+    : rank <= 3 ? 'clamp(120px, 12cqw, 175px)'
+    : 'clamp(92px, 9cqw, 135px)';
+
+  const slots = finalRanking
+    .map((entry, idx) => ({ entry: entry.team, rank: idx + 1, offset: slotOffset(idx + 1) }))
+    .sort((a, b) => a.offset - b.offset);
+
+  return (
+    <div style={{
+      flex: 1, width: '100%', height: '100%', position: 'relative',
+      overflow: 'hidden', display: 'flex', flexDirection: 'column',
+    }}>
+      <style>{`
+        @keyframes qqSPExhaust { 0%,100%{transform:scaleY(1);opacity:0.85} 50%{transform:scaleY(1.55);opacity:0.45} }
+        @keyframes qqSPWinnerPop { 0%{transform:scale(0.8)} 55%{transform:scale(1.12)} 100%{transform:scale(1)} }
+        @keyframes qqSPCrownDrop { 0%{transform:translateX(-50%) translateY(-60px) rotate(-25deg);opacity:0} 60%{transform:translateX(-50%) translateY(6px) rotate(8deg);opacity:1} 100%{transform:translateX(-50%) translateY(0) rotate(-8deg);opacity:1} }
+        @keyframes qqSPDrumPulse { 0%,100%{transform:scale(1);opacity:0.85} 50%{transform:scale(1.06);opacity:1} }
+        @keyframes qqSPBannerIn { 0%{transform:translateY(-40px) scale(0.9);opacity:0} 100%{transform:translateY(0) scale(1);opacity:1} }
+      `}</style>
+
+      <RaceStarryBackground />
+      {winnerRevealed && <ConfettiOverlay />}
+
+      {/* SIEGER-Banner oben */}
+      {winnerRevealed && (
+        <div style={{
+          position: 'absolute', top: 'clamp(24px, 4cqh, 60px)', left: 0, right: 0,
+          textAlign: 'center', zIndex: 6, pointerEvents: 'none',
+          animation: 'qqSPBannerIn 0.7s cubic-bezier(0.2,1.3,0.4,1) both',
+        }}>
+          <div style={{
+            fontSize: 'clamp(16px, 1.8cqw, 26px)', fontWeight: 900, letterSpacing: '0.18em',
+            textTransform: 'uppercase', color: '#FBBF24', marginBottom: 4,
+            textShadow: '0 0 20px rgba(251,191,36,0.6)',
+          }}>🏆 {de ? 'Sieger' : 'Winner'}</div>
+          <TeamNameLabel
+            name={winner.team.name} maxLines={1} shrinkAfter={16}
+            color={winner.team.color} fontWeight={900}
+            fontSize="clamp(40px, 5.2cqw, 88px)"
+            style={{ textShadow: `0 0 34px ${winner.team.color}88` }}
+          />
+        </div>
+      )}
+
+      {/* Drumroll-Overlay vor dem Sieger */}
+      {drumroll && (
+        <div style={{
+          position: 'absolute', top: 'clamp(40px, 7cqh, 90px)', left: 0, right: 0,
+          textAlign: 'center', zIndex: 6, pointerEvents: 'none',
+          fontSize: 'clamp(28px, 3.4cqw, 56px)', fontWeight: 900,
+          color: 'var(--qq-accent-soft)', textShadow: '0 0 24px rgba(var(--qq-accent-rgb),0.6)',
+          animation: 'qqSPDrumPulse 0.5s ease-in-out infinite',
+        }}>
+          🥁 {de ? 'Und der Sieger ist…' : 'And the winner is…'}
+        </div>
+      )}
+
+      {/* Podium-Reihe, unten verankert */}
+      <div style={{
+        flex: 1, display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        gap: 'clamp(6px, 1cqw, 20px)',
+        padding: '0 clamp(20px, 3cqw, 60px) clamp(18px, 2.6cqh, 46px)',
+        position: 'relative', zIndex: 2, minHeight: 0,
+      }}>
+        {slots.map(({ entry, rank }) => {
+          const revealed = revealedRanks.has(rank);
+          const isWinner = rank === 1;
+          return (
+            <div key={entry.id} style={{
+              position: 'relative',
+              opacity: revealed ? 1 : 0,
+              transform: revealed
+                ? 'translateY(0)'
+                : (isWinner ? 'translateY(460px)' : 'translateY(70px)'),
+              transition: isWinner
+                ? 'opacity 0.25s ease, transform 1.15s cubic-bezier(0.16,0.9,0.3,1)'
+                : 'opacity 0.4s ease, transform 0.7s cubic-bezier(0.34,1.45,0.64,1)',
+              filter: isWinner && revealed
+                ? `drop-shadow(0 0 40px ${entry.color}aa)` : undefined,
+              zIndex: isWinner ? 3 : 1,
+            }}>
+              {/* Krone auf dem Sieger */}
+              {isWinner && winnerRevealed && (
+                <span style={{
+                  position: 'absolute', top: 'clamp(-46px, -4cqh, -34px)', left: '50%',
+                  fontSize: 'clamp(44px, 5cqw, 78px)', zIndex: 4, pointerEvents: 'none',
+                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7))',
+                  animation: 'qqSPCrownDrop 0.9s cubic-bezier(0.2,1.4,0.4,1) 0.2s both',
+                }}>👑</span>
+              )}
+              {/* Raketen-Abgas unter dem Sieger waehrend/nach dem Lift-off */}
+              {isWinner && revealed && (
+                <div aria-hidden style={{
+                  position: 'absolute', bottom: '-6%', left: '50%', transform: 'translateX(-50%)',
+                  width: '38%', height: 'clamp(60px, 9cqh, 120px)', zIndex: 0, pointerEvents: 'none',
+                  background: `linear-gradient(180deg, ${entry.color}dd, ${entry.color}55 45%, transparent)`,
+                  filter: 'blur(6px)', borderRadius: '50% 50% 40% 40%',
+                  transformOrigin: 'top center',
+                  animation: 'qqSPExhaust 0.28s ease-in-out infinite',
+                }} />
+              )}
+              <div style={{
+                animation: isWinner && winnerRevealed ? 'qqSPWinnerPop 0.9s cubic-bezier(0.2,1.3,0.4,1) 0.9s both' : undefined,
+              }}>
+                <PodiumStepFinal
+                  entry={entry}
+                  rank={rank}
+                  podiumHeight={podiumHeightFor(rank)}
+                  avatarSize={avatarFor(rank)}
+                  slotWidth={slotWidthFor(rank)}
+                />
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 // ─── RaceFinalSlide [DEPRECATED 2026-05-24] ─────────────────────────────────
 // Auto-Rennen-Choreo mit Speed-Lines, fallenden Verlierern, Solo-P1-Drift,
 // Podium-Aufbau und Konfetti. Wolf-Entscheidung 2026-05-24: durch

@@ -3241,6 +3241,258 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   );
 }
 
+// ============================================================================
+// TowerMysteryFinale — 2026-07-07 (Wolf 'Version B'): die Tuerme wachsen ANONYM
+// (neutral, man weiss nicht wem welcher Turm gehoert), dann wird per Aufblitzen/
+// Slot-Reel enthuellt, welches Team welchen Turm hat — Countdown von Platz N
+// hoch bis Platz 1. Der Gaensehaut-Moment ist 'das ist Team X!'.
+// ============================================================================
+export function TowerMysteryFinale({ finalRanking, lang }: {
+  finalRanking: RankingEntry[]; lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const N = finalRanking.length;
+  const winner = finalRanking[0];
+
+  const heights = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const e of finalRanking) m[e.team.id] = Math.max(1, e.total);
+    return m;
+  }, [finalRanking]);
+  const maxH = useMemo(() => Math.max(1, ...finalRanking.map(e => Math.max(1, e.total))), [finalRanking]);
+  const rankById = useMemo(() => {
+    const m: Record<string, number> = {};
+    finalRanking.forEach((e, i) => { m[e.team.id] = i; });
+    return m;
+  }, [finalRanking]);
+  const ordered = useMemo(() => {
+    const hash = (s: string) => { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 131 + s.charCodeAt(i) * 2654435761) >>> 0; return h; };
+    return [...finalRanking].sort((a, b) => hash(a.team.id) - hash(b.team.id));
+  }, [finalRanking]);
+  const badgeFor = (rank: number) => (rank === 0 ? '👑' : rank === 1 ? '🥈' : rank === 2 ? '🥉' : null);
+
+  // Phasen: intro → building (neutral wachsen) → reveal (Slot-Reel lockt Platz
+  // N..1 nacheinander) → crowned.
+  const [phase, setPhase] = useState<'intro' | 'building' | 'reveal' | 'crowned'>('intro');
+  const [tick, setTick] = useState(0);
+  const [flashTick, setFlashTick] = useState(0);   // treibt das Aufblitzen
+  const [lockedCount, setLockedCount] = useState(0); // wie viele Teams enthuellt
+
+  useEffect(() => {
+    const t = window.setTimeout(() => setPhase('building'), 2000);
+    return () => window.clearTimeout(t);
+  }, []);
+
+  useEffect(() => {
+    if (phase !== 'building') return;
+    if (tick >= maxH) {
+      const t = window.setTimeout(() => setPhase('reveal'), 650);
+      return () => window.clearTimeout(t);
+    }
+    const t = window.setTimeout(() => {
+      setTick(x => x + 1);
+      try { playWoodKnock(); } catch { /* noop */ }
+    }, 200);
+    return () => window.clearTimeout(t);
+  }, [phase, tick, maxH]);
+
+  // Aufblitzen (Slot-Reel) waehrend der Enthuellung.
+  useEffect(() => {
+    if (phase !== 'reveal') return;
+    const i = window.setInterval(() => setFlashTick(f => f + 1), 95);
+    return () => window.clearInterval(i);
+  }, [phase]);
+
+  // Nacheinander enthuellen: kuerzester Turm (Platz N) zuerst, Sieger zuletzt.
+  useEffect(() => {
+    if (phase !== 'reveal') return;
+    if (lockedCount >= N) {
+      const t = window.setTimeout(() => setPhase('crowned'), 550);
+      return () => window.clearTimeout(t);
+    }
+    const winnerNext = lockedCount === N - 1;               // als naechstes der Sieger
+    const t = window.setTimeout(() => {
+      setLockedCount(c => c + 1);
+      try { winnerNext ? playFanfare() : playReveal(); } catch { /* noop */ }
+    }, winnerNext ? 2000 : 820);
+    return () => window.clearTimeout(t);
+  }, [phase, lockedCount, N]);
+
+  useEffect(() => {
+    if (phase !== 'crowned') return;
+    try { playClimaxFinish(); } catch { /* noop */ }
+  }, [phase]);
+
+  const crowned = phase === 'crowned';
+  const revealing = phase === 'reveal' || crowned;
+
+  // Sizing (identisch zu TowerFinalSlide).
+  const TITLE_H = 104, CROWN_H = 100, BASE_H = 88, BOTTOM = 30, GAP = 3, AV = 52;
+  const towerZone = 990 - TITLE_H - CROWN_H - BASE_H - BOTTOM;
+  const blockH = Math.max(15, Math.min(50, Math.floor((towerZone - (maxH - 1) * GAP) / maxH)));
+  const blockW = blockH;
+  const colW = Math.min(150, Math.max(Math.round(blockW * 1.35), Math.floor(1560 / N) - 18));
+  const colGap = Math.max(8, Math.min(30, Math.round((1600 - N * colW) / (N + 1))));
+
+  const NEUTRAL = '#6B6480';
+  const heldBreath = phase === 'reveal' && lockedCount === N - 1;
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0, overflow: 'hidden',
+      background: 'radial-gradient(ellipse at 50% 18%, #241436 0%, #150C24 46%, #0C0718 100%)',
+      display: 'flex', flexDirection: 'column',
+      fontFamily: "'Nunito', system-ui, sans-serif",
+    }}>
+      <style>{`
+        @keyframes qqMysDrop { 0%{transform:translateY(-90px) scaleY(0.55);opacity:0} 55%{transform:translateY(0) scaleY(1.2);opacity:1} 76%{transform:translateY(0) scaleY(0.92)} 100%{transform:translateY(0) scaleY(1)} }
+        @keyframes qqMysCrownDrop { 0%{transform:translate(-50%,-140px) scale(0.4) rotate(-18deg);opacity:0} 65%{transform:translate(-50%,8px) scale(1.14) rotate(6deg);opacity:1} 100%{transform:translate(-50%,0) scale(1) rotate(0);opacity:1} }
+        @keyframes qqMysCrownFloat { 0%,100%{transform:translate(-50%,0) rotate(-3deg)} 50%{transform:translate(-50%,-8px) rotate(3deg)} }
+        @keyframes qqMysTitleIn { from{transform:translateY(-24px);opacity:0} to{transform:translateY(0);opacity:1} }
+        @keyframes qqMysFlash { 0%{opacity:0} 14%{opacity:0.85} 100%{opacity:0} }
+        @keyframes qqMysLock { 0%{transform:translateX(-50%) scale(1.5);filter:brightness(2.2)} 60%{transform:translateX(-50%) scale(0.94)} 100%{transform:translateX(-50%) scale(1);filter:brightness(1)} }
+        @keyframes qqMysBadgeIn { 0%{transform:translate(-50%,-18px) scale(0.3);opacity:0} 60%{transform:translate(-50%,4px) scale(1.15);opacity:1} 100%{transform:translate(-50%,0) scale(1);opacity:1} }
+        @keyframes qqMysBreathe { 0%,100%{opacity:0.55;transform:translateX(-50%) scale(1)} 50%{opacity:1;transform:translateX(-50%) scale(1.04)} }
+        @keyframes qqMysQ { 0%,100%{transform:translate(-50%,0)} 50%{transform:translate(-50%,-6px)} }
+      `}</style>
+
+      {crowned && <ConfettiOverlay />}
+      {crowned && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, zIndex: 7, pointerEvents: 'none',
+          background: 'radial-gradient(circle at 50% 40%, rgba(255,240,205,0.95), rgba(255,255,255,0) 60%)',
+          animation: 'qqMysFlash 0.9s ease-out both',
+        }} />
+      )}
+
+      {/* Titel */}
+      <div style={{
+        flexShrink: 0, height: TITLE_H, textAlign: 'center',
+        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+        position: 'relative', zIndex: 5,
+      }}>
+        {crowned ? (
+          <div style={{ animation: 'qqMysTitleIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>
+            <div style={{ fontSize: 22, fontWeight: 800, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#FBBF24' }}>{de ? '🏆 Sieger' : '🏆 Winner'}</div>
+            <div style={{ fontSize: 46, fontWeight: 900, color: winner?.team.color ?? '#fff', textShadow: `0 0 26px ${winner?.team.color ?? '#fff'}88, 0 3px 16px rgba(0,0,0,0.6)` }}>{winner?.team.name}</div>
+          </div>
+        ) : phase === 'intro' ? (
+          <>
+            <div style={{ fontSize: 46, fontWeight: 900, color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.4), 0 3px 18px rgba(0,0,0,0.6)', animation: 'qqMysTitleIn 1.1s cubic-bezier(0.2,0.8,0.3,1) both' }}>
+              {de ? '🏗️ Wem gehört welcher Turm?' : '🏗️ Whose tower is whose?'}
+            </div>
+            <div style={{ marginTop: 8, fontSize: 20, fontWeight: 700, color: 'rgba(226,214,255,0.8)', animation: 'qqMysBreathe 2.4s ease-in-out infinite', transformOrigin: 'center' }}>
+              {de ? 'Gleich wird es sich zeigen…' : 'Soon it will be revealed…'}
+            </div>
+          </>
+        ) : (
+          <>
+            <div style={{ fontSize: 38, fontWeight: 900, color: '#F8FAFC', textShadow: '0 3px 18px rgba(0,0,0,0.6)' }}>
+              {revealing ? (de ? '🔦 Wer steckt dahinter?' : '🔦 Who is behind it?') : (de ? '❓ Die Türme wachsen…' : '❓ The towers rise…')}
+            </div>
+            <div style={{
+              marginTop: 6, fontSize: heldBreath ? 24 : 18, fontWeight: heldBreath ? 900 : 700,
+              color: heldBreath ? '#FBBF24' : 'rgba(226,214,255,0.75)',
+              animation: heldBreath ? 'qqMysBreathe 1.3s ease-in-out infinite' : 'none', transformOrigin: 'center',
+            }}>
+              {heldBreath ? (de ? 'Und der höchste Turm gehört…' : 'And the tallest tower belongs to…')
+                : revealing ? (de ? 'Die Türme geben sich zu erkennen' : 'The towers reveal themselves')
+                : (de ? 'Noch ist geheim, wem welcher gehört' : 'Still a secret whose is whose')}
+            </div>
+          </>
+        )}
+      </div>
+
+      {/* Turm-Reihe */}
+      <div style={{
+        flex: 1, minHeight: 0, position: 'relative', zIndex: 2, overflow: 'hidden',
+        display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+        gap: colGap, padding: `0 40px ${BOTTOM}px`,
+      }}>
+        {ordered.map((entry, colIndex) => {
+          const h = heights[entry.team.id];
+          const shown = Math.min(tick, h);
+          const rank = rankById[entry.team.id] ?? 99;
+          const ascIdx = N - 1 - rank;                  // 0 = letzter Platz
+          const locked = crowned || (revealing && ascIdx < lockedCount);
+          const isWinner = rank === 0;
+          const towerPx = shown * blockH + Math.max(0, shown - 1) * GAP;
+          // Aufblitzende Fremd-Identitaet solange nicht enthuellt.
+          const flashEntry = finalRanking[(flashTick + colIndex * 3) % N];
+          const showTeam = locked ? entry.team : (revealing ? flashEntry.team : null);
+          const blockColor = showTeam ? showTeam.color : NEUTRAL;
+          const badge = badgeFor(rank);
+
+          return (
+            <div key={entry.team.id} style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              flexShrink: 0, width: colW, position: 'relative',
+              zIndex: locked && isWinner ? 3 : 2,
+            }}>
+              <div style={{ width: '100%', height: CROWN_H, flexShrink: 0 }} />
+
+              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: GAP, minHeight: blockH }}>
+                {/* Disc oben — '?' / aufblitzend / enthuellt */}
+                <div style={{
+                  position: 'absolute', left: '50%', bottom: towerPx + 6, zIndex: 5,
+                  width: AV, height: AV, transform: 'translateX(-50%)',
+                  transition: 'bottom 0.24s cubic-bezier(0.34,1.5,0.6,1)',
+                }}>
+                  {locked && isWinner && (
+                    <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: AV - 8, fontSize: 46, lineHeight: 1, zIndex: 8, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(251,191,36,0.85))', animation: 'qqMysCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqMysCrownFloat 2.4s ease-in-out 0.8s infinite' }}>👑</span>
+                  )}
+                  {locked && !isWinner && (
+                    <div style={{ position: 'absolute', left: '50%', bottom: AV - 6, transform: 'translateX(-50%)', zIndex: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: 'qqMysBadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
+                      {badge && <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}>{badge}</span>}
+                      <span style={{ fontSize: 14, fontWeight: 900, letterSpacing: '0.04em', color: '#fff', background: 'rgba(15,10,25,0.94)', border: `2px solid ${entry.team.color}`, borderRadius: 999, padding: '2px 9px', boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${entry.team.color}66` }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+                    </div>
+                  )}
+                  <div key={locked ? 'locked' : 'reel'} style={{
+                    width: AV, height: AV, borderRadius: '50%',
+                    background: showTeam ? showTeam.color : '#2A2640',
+                    border: `3px solid ${showTeam ? showTeam.color : '#4A4460'}`,
+                    boxShadow: showTeam ? `0 0 16px ${showTeam.color}88, 0 3px 8px rgba(0,0,0,0.45)` : '0 3px 8px rgba(0,0,0,0.45)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    animation: locked ? 'qqMysLock 0.5s cubic-bezier(0.3,1.5,0.5,1) both' : 'none',
+                  }}>
+                    {showTeam
+                      ? <QQTeamAvatar avatarId={(locked ? entry.team : flashEntry.team).avatarId} teamEmoji={(locked ? entry.team : flashEntry.team).emoji} size={AV} flat />
+                      : <span aria-hidden style={{ fontSize: 30, fontWeight: 900, color: '#B9AEDA', animation: 'qqMysQ 1.6s ease-in-out infinite' }}>?</span>}
+                  </div>
+                </div>
+
+                {Array.from({ length: shown }).map((_, bi) => {
+                  const isTopBlock = bi === shown - 1;
+                  return (
+                    <div key={bi} style={{
+                      width: blockW, height: blockH, borderRadius: Math.min(8, Math.round(blockH * 0.16)),
+                      background: `linear-gradient(160deg, rgba(255,255,255,0.28) 0%, ${blockColor} 34%, ${blockColor} 62%, rgba(0,0,0,0.28) 100%)`,
+                      border: `2px solid ${blockColor}`,
+                      boxShadow: `inset 0 2px 3px rgba(255,255,255,0.38), inset 0 -3px 5px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.3)${locked && isWinner ? `, 0 0 16px ${entry.team.color}88` : ''}`,
+                      transformOrigin: 'bottom center',
+                      animation: isTopBlock && !revealing ? 'qqMysDrop 0.4s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
+                      transition: 'background 0.25s ease, border-color 0.25s ease',
+                      position: 'relative', zIndex: 1,
+                    }} />
+                  );
+                })}
+              </div>
+
+              {/* Sockel: Zaehler + Name (Name erst nach Enthuellung) */}
+              <div style={{ height: BASE_H, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 8, gap: 4 }}>
+                <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: locked ? entry.team.color : '#E2D6FF', fontVariantNumeric: 'tabular-nums', textShadow: locked ? `0 0 14px ${entry.team.color}77` : 'none', transition: 'color 0.3s ease' }}>{shown}</div>
+                {locked
+                  ? <TeamNameLabel name={entry.team.name} maxLines={2} shrinkAfter={12} color="#F1F5F9" fontWeight={800} fontSize="clamp(12px, 1cqw, 17px)" style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }} />
+                  : <div style={{ fontSize: 17, fontWeight: 900, color: '#6B6480', letterSpacing: '0.1em' }}>???</div>}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function RaceFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {

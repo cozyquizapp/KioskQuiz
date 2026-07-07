@@ -15,29 +15,29 @@
       var(--bg);
     -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
 
-  /* dezente Fraktions-Wappen als Spiel-Flair */
+  /* dezente Fraktions-Wappen als Spiel-Flair, geclustert links vom Wolf */
   .crest{position:absolute;pointer-events:none;filter:drop-shadow(0 6px 16px rgba(0,0,0,0.35));}
-  .crest.c1{width:96px;left:1004px;top:44px;transform:rotate(-12deg);opacity:0.92;}
-  .crest.c2{width:74px;left:1006px;top:250px;transform:rotate(10deg);opacity:0.85;}
-  .crest.c3{width:60px;left:900px;top:150px;transform:rotate(-6deg);opacity:0.55;}
+  .crest.c1{width:88px;left:1108px;top:70px;transform:rotate(-12deg);opacity:0.92;}
+  .crest.c2{width:70px;left:1124px;top:246px;transform:rotate(10deg);opacity:0.85;}
+  .crest.c3{width:56px;left:1044px;top:176px;transform:rotate(-6deg);opacity:0.6;}
 
-  /* Textblock links (avatar-sichere Zone startet ~340px) */
-  .content{position:absolute;left:118px;top:0;height:100%;display:flex;flex-direction:column;justify-content:center;gap:20px;}
+  /* Textblock nach rechts verschoben: raus aus der LinkedIn-Avatar-Zone (links unten ~x<420) */
+  .content{position:absolute;left:462px;top:0;height:100%;display:flex;flex-direction:column;justify-content:center;gap:18px;}
   .eyebrow{display:inline-flex;align-items:center;gap:9px;align-self:flex-start;
     padding:8px 18px;border-radius:999px;background:rgba(250,75,163,0.14);
     border:1px solid rgba(250,75,163,0.32);
     font-weight:900;font-size:20px;letter-spacing:0.22em;color:var(--pink);text-transform:uppercase;}
-  .wordmark{font-family:'League Spartan',sans-serif;font-weight:800;font-size:118px;line-height:0.9;
+  .wordmark{font-family:'League Spartan',sans-serif;font-weight:800;font-size:104px;line-height:0.9;
     letter-spacing:-0.01em;text-transform:uppercase;color:var(--pink);
     text-shadow:0 6px 34px rgba(250,75,163,0.45);}
-  .sub{font-weight:800;font-size:33px;color:var(--ink);letter-spacing:0.005em;}
+  .sub{font-weight:800;font-size:29px;line-height:1.25;max-width:560px;color:var(--ink);letter-spacing:0.005em;}
   .sub b{color:var(--pink);}
-  .url{display:inline-flex;align-items:center;gap:11px;font-weight:800;font-size:24px;color:var(--pink-soft);}
+  .url{display:inline-flex;align-items:center;gap:11px;font-weight:800;font-size:23px;color:var(--pink-soft);}
   .url .globe{width:26px;height:26px;border-radius:50%;background:rgba(250,75,163,0.16);
     display:inline-flex;align-items:center;justify-content:center;font-size:15px;}
 
   /* Wolf rechts im Ring mit Glow */
-  .wolf-wrap{position:absolute;right:86px;top:50%;transform:translateY(-50%);width:326px;height:326px;
+  .wolf-wrap{position:absolute;right:76px;top:50%;transform:translateY(-50%);width:300px;height:300px;
     display:flex;align-items:center;justify-content:center;}
   .wolf-wrap::before{content:"";position:absolute;inset:-6%;border-radius:50%;
     background:radial-gradient(circle, rgba(250,75,163,0.42), transparent 66%);filter:blur(10px);}

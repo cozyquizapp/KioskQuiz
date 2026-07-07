@@ -2577,16 +2577,19 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
       // etwas höher — die aktive Spalte (Ring + JETZT-DRAN + Name) war bei knapper
       // Höhe länger als der Container, der Beamer-overflow:hidden schnitt die
       // Namenszeile ab. Mehr Höhe + kompakterer Ring (s.u.) = Name passt rein.
-      width: '100%', height: 'clamp(360px, 39cqh, 500px)',
+      // 2026-07-07 (Wolf-Livetest 'antworten abgeschnitten'): Container-Höhe +
+      // Ring + Heat-Glow kompakter -> die absolut-zentrierte Bühne blutet nicht
+      // mehr nach oben in den Chip-Block (der sonst hinter dem Ring verschwand).
+      width: '100%', height: 'clamp(300px, 32cqh, 430px)',
       pointerEvents: 'none',
     }}>
       {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent */}
       <div aria-hidden style={{
         position: 'absolute', left: '50%', top: '50%',
         transform: 'translate(-50%,-50%)',
-        width: 'clamp(360px, 40cqw, 620px)', height: 'clamp(280px, 30cqw, 440px)',
+        width: 'clamp(300px, 32cqw, 500px)', height: 'clamp(230px, 24cqw, 360px)',
         borderRadius: '50%',
-        background: 'radial-gradient(circle, rgba(249,115,22,0.30) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
+        background: 'radial-gradient(circle, rgba(249,115,22,0.26) 0%, rgba(249,115,22,0.09) 38%, transparent 68%)',
         filter: 'blur(14px)', zIndex: 0,
       }} />
 
@@ -2615,7 +2618,10 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   ? 'opacity 0.6s ease'
                   : 'transform 0.85s cubic-bezier(0.34, 1.25, 0.64, 1), opacity 0.6s ease, filter 0.6s ease',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
-                gap: isActive ? 'clamp(6px, 0.9cqh, 12px)' : 8,
+                // 2026-07-07 (Wolf-Livetest 'timer überdeckt text'): mehr Abstand
+                // zwischen Ring (dessen Countdown-Chip unten rausragt) und der
+                // JETZT-DRAN/Name-Zeile, damit der Chip nicht auf 'JETZT DRAN' klebt.
+                gap: isActive ? 'clamp(24px, 2.8cqh, 40px)' : 8,
               }}
             >
               {isActive ? (
@@ -2625,7 +2631,8 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                     position: 'relative',
                     // 2026-07-02: Ring von 400→360 max reduziert → reclaimt Vertikal-
                     // Raum für die Namenszeile darunter (Wolf-Bug 'name abgeschnitten').
-                    width: 'clamp(250px, 25cqw, 360px)', height: 'clamp(250px, 25cqw, 360px)',
+                    // 2026-07-07: nochmal kompakter (360→300) für mehr Chip-Raum oben.
+                    width: 'clamp(210px, 21cqw, 300px)', height: 'clamp(210px, 21cqw, 300px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben) */}
@@ -2645,8 +2652,12 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         }}
                       />
                     </svg>
-                    {/* Avatar zentriert im Ring */}
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(134px, 13.4cqw, 196px)'} bgColor={t.color} />
+                    {/* Avatar zentriert im Ring. 2026-07-07 (Wolf-Livetest
+                        'unschöner rand ums aktive team'): Disc groesser (196→228)
+                        damit sie den Ring fast fuellt — der dunkle Spalt zwischen
+                        Farb-Disc und Timer-Ring (= der 'Rand') verschwindet, aber
+                        die Countdown-Ring-Bahn bleibt sichtbar (gameplay-relevant). */}
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(158px, 15.6cqw, 228px)'} bgColor={t.color} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
                     <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
                       position: 'absolute', top: '2%', right: '0%',
@@ -2708,8 +2719,11 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   }}>
                     {slot > 0 ? (
                       <>
-                        <span aria-hidden style={{ display: 'inline-block', animation: 'qqHpNextArrow 1s ease-in-out infinite' }}>←</span>
+                        {/* 2026-07-07 (Wolf-Livetest): Pfeil zeigt nach rechts =
+                            Richtung Mitte, wohin dieses Team als Naechstes rutscht
+                            (vorher '←' zeigte gegen die Bewegungsrichtung). */}
                         {lang === 'en' ? 'Up next' : 'Als Nächstes'}
+                        <span aria-hidden style={{ display: 'inline-block', animation: 'qqHpNextArrow 1s ease-in-out infinite' }}>→</span>
                       </>
                     ) : (
                       <>{lang === 'en' ? 'Done ✓' : 'War dran ✓'}</>

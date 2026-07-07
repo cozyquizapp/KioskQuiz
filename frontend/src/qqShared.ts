@@ -277,8 +277,10 @@ export const QQ_BEAMER_CSS = `
     50%     { transform: rotate(9deg) translateY(-6px); }
   }
   @keyframes qqHpRingPotatoThrow {
+    /* 2026-07-07 (Wolf-Livetest 'wird nicht mehr so hochgeworfen'): Wurf-Bogen
+       deutlich hoeher (72->150px) + groesserer Scale-Pop = dramatischer Toss. */
     0%   { transform: rotate(0deg) translateY(0) scale(1); }
-    45%  { transform: rotate(560deg) translateY(-72px) scale(1.14); }
+    45%  { transform: rotate(560deg) translateY(-150px) scale(1.28); }
     100% { transform: rotate(1080deg) translateY(0) scale(1); }
   }
   /* Countdown-Chip unten am Ring pulsiert (dezent). */
@@ -286,10 +288,12 @@ export const QQ_BEAMER_CSS = `
     0%,100% { transform: translateX(-50%) scale(1); }
     50%     { transform: translateX(-50%) scale(1.08); }
   }
-  /* „← als Nächstes"-Pfeil pulsiert horizontal. */
+  /* „Als Nächstes →"-Pfeil pulsiert Richtung Mitte (nach rechts). Das nächste
+     Team steht links und rutscht beim Weiterreichen nach rechts in die Mitte —
+     der Pfeil zeigt in die Bewegungsrichtung (2026-07-07 Wolf-Livetest). */
   @keyframes qqHpNextArrow {
     0%,100% { transform: translateX(0); opacity: 0.65; }
-    50%     { transform: translateX(-5px); opacity: 1; }
+    50%     { transform: translateX(5px); opacity: 1; }
   }
   /* 2026-05-08: Brand-Pink-Lichtsweep der einmalig beim Phase-Wechsel über
      den Wrapper streicht — gibt dem Übergang einen subtilen „Whoosh"-Moment

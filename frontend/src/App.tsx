@@ -51,6 +51,7 @@ const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const QQHigherLowerTestPage = React.lazy(() => import('./pages/QQHigherLowerTestPage'));
 const QQTerritoryTestPage = React.lazy(() => import('./pages/QQTerritoryTestPage'));
 const QQBarRaceTestPage = React.lazy(() => import('./pages/QQBarRaceTestPage'));
+const QQRaceFinaleTestPage = React.lazy(() => import('./pages/QQRaceFinaleTestPage'));
 const LegalPage = React.lazy(() => import('./pages/LegalPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -223,6 +224,7 @@ function App() {
           <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
           <Route path="/territory-test" element={<PinGate><QQTerritoryTestPage /></PinGate>} />
           <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
+          <Route path="/race-finale" element={<PinGate><QQRaceFinaleTestPage /></PinGate>} />
           {/* 2026-07-03 (Wolf): Preview der Landing-Demo mit ECHTEN Quiz-Views —
               live `/` bleibt vorerst unangetastet, bis Fidelity abgenommen ist. */}
           <Route path="/demo-real" element={<QQErrorBoundary source="demo-real"><div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)' }}><QQDemoReal /></div></QQErrorBoundary>} />

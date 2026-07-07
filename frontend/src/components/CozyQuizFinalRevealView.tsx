@@ -2556,7 +2556,10 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
 // AKTUELL NICHT GERENDERT — siehe FinalRevealView phase.kind === 'race-final'.
 // Falls re-aktivieren: einfach den Render-Call in FinalRevealView von
 // <FinalEurovisionFinale ...> zurueck auf <RaceFinalSlide ...> aendern.
-function RaceFinalSlide({ finalRanking, lang }: {
+// 2026-07-07 (Wolf 'Raketenflug erst zeigen'): exportiert, damit die Vorschau-
+// Route /race-finale den alten Race-Finale-Slide rendern kann, ohne das Live-
+// Finale (FinalEurovisionFinale) anzufassen. Bleibt sonst DEPRECATED.
+export function RaceFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const N = finalRanking.length;

@@ -1202,6 +1202,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Punkte-Verteilung kommt in Akt 3 (Standings). Die Kategorie-Reveals (MUCHO-
   // Optionen, 10v10-Verteilung, Schätzchen-Zahlenstrahl) laufen separat weiter.
   const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner && !(s as any).largeGroupMode;
+  // 2026-07-07 (Wolf-Livetest 'unteres Ergebnisfeld laesst die Seite springen'):
+  // Der Unified-Winner-Slot wird jetzt fuer die zutreffenden Kategorien IMMER
+  // reserviert (auch waehrend der aktiven Frage) — mit fester Hoehe + absolut
+  // positioniertem Inhalt. Dadurch aendert sich das Layout beim Reveal nicht
+  // (kein Mount, kein Wachstum ueber minHeight) → kein Shift, und weil der Slot
+  // transparent ist, auch kein sichtbarer/starrer Rand. HotPotato (eigene View),
+  // Schaetzchen (eigener Chip) und Arena (kein Einzelsieger) sind ausgenommen.
+  const isHotPotatoCat = cat === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'hotPotato';
+  const reservesWinnerSlot = cat !== 'SCHAETZCHEN' && !isHotPotatoCat && !(s as any).largeGroupMode;
 
   // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
   // Synchron zur Animation: revealWinnerIn nutzt bannerDelay=0.7s, davor ist
@@ -3408,26 +3417,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Bet-Cascade-Step 1 (low-bets out) und Step 2 (winner-card pop) —
               der Slot ist die ganze Zeit da, nur der Inhalt fadet rein.
               MUCHO/CHEESE/HotPotato profitieren auch. */}
-          {revealed && q.category !== 'SCHAETZCHEN' && (
+          {reservesWinnerSlot && (
             <div style={{
+              // 2026-07-07: FESTE Hoehe (nicht minHeight) + immer gerendert →
+              // reserviert den Platz in aktiver Frage UND Reveal identisch, damit
+              // beim Erscheinen der Winner-Card nichts springt. Inhalt liegt
+              // absolut drin, kann die Slot-Hoehe also nie ueber diesen Wert
+              // hinaus wachsen. Transparent = kein Rand.
+              position: 'relative',
               width: '100%', maxWidth: 1400,
-              overflow: 'visible',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              // 2026-05-06 v2 (Wolf 'obere Cards springen leicht hoch wenn
-              // Winner-Card kommt' fuer MUCHO + ZvZ): Slot wird jetzt SOFORT
-              // beim Eintritt in QUESTION_REVEAL reserviert (nicht erst wenn
-              // correctTeamId arrives). Damit kein Layout-Shift mehr zwischen
-              // 'reveal-phase aber noch keine winner-id' und 'winner-id da'.
-              // Inner content gated auf showUnifiedWinner + (correctTeamId
-              // ODER winners.length>0) damit keine leere Card pop't.
-              minHeight: 'clamp(120px, 14cqh, 200px)',
+              height: 'clamp(150px, 16cqh, 210px)',
               marginBottom: 12,
-              opacity: showUnifiedWinner ? 1 : 0,
-              transform: showUnifiedWinner ? 'scale(1)' : 'scale(0.96)',
-              transformOrigin: 'top center',
-              transition: 'opacity 0.7s var(--qq-ease-out-cubic), transform 0.7s var(--qq-ease-bounce)',
+              pointerEvents: 'none',
             }}>
-              {showUnifiedWinner && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (() => {
+              <div style={{
+                position: 'absolute', inset: 0,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                opacity: (revealed && showUnifiedWinner) ? 1 : 0,
+                transform: (revealed && showUnifiedWinner) ? 'scale(1)' : 'scale(0.96)',
+                transformOrigin: 'center center',
+                transition: 'opacity 0.7s var(--qq-ease-out-cubic), transform 0.7s var(--qq-ease-bounce)',
+              }}>
+              {revealed && showUnifiedWinner && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (() => {
             const isEn = lang === 'en';
             const bannerDelay = 0.7;
             const avatarDelay = 1.1;
@@ -3672,6 +3683,31 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               </div>
             );
           })()}
+              {/* Nobody got it right — im selben reservierten Slot (absolut
+                  zentriert), damit auch dieser Fall nicht springt. */}
+              {revealed && !s.correctTeamId && (s.currentQuestionWinners?.length ?? 0) === 0 && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
+                  padding: '24px 44px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+                  width: '100%', maxWidth: 1400,
+                  background: 'rgba(239,68,68,0.08)',
+                  border: '2px solid rgba(239,68,68,0.30)',
+                  boxShadow: '0 0 40px rgba(239,68,68,0.15)',
+                }}>
+                  <span style={{ fontSize: 'clamp(48px, 6cqw, 80px)', lineHeight: 1 }}>
+                    {s.answers.length === 0 ? '⏱' : <QQEmojiIcon emoji="❌"/>}
+                  </span>
+                  <div style={{
+                    fontSize: 'clamp(24px, 3.5cqw, 48px)', fontWeight: 900,
+                    color: s.answers.length === 0 ? QQ_COLORS.slate400 : '#f87171',
+                  }}>
+                    {s.answers.length === 0
+                      ? (lang === 'en' ? 'No answers!' : 'Keine Antworten!')
+                      : (lang === 'en' ? 'Nobody got it right!' : 'Keiner hatte Recht!')}
+                  </div>
+                </div>
+              )}
+              </div>
             </div>
           )}
 
@@ -3682,8 +3718,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Nobody got it right banner */}
-          {revealed && !s.correctTeamId && (
+          {/* Nobody got it right banner — nur fuer Kategorien OHNE reservierten
+              Slot (z.B. Schaetzchen); MUCHO/ZvZ/CHEESE/BunteTuete zeigen den
+              Nobody-Fall oben im reservierten Slot (shift-frei). */}
+          {revealed && !s.correctTeamId && !reservesWinnerSlot && (
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
               padding: '24px 44px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, marginBottom: 12,

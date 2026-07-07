@@ -269,7 +269,19 @@ export function getAvatarDisplay(
     COZY_ANIMALS_EMOJI[slotIdx],
     slot.emoji,
   ];
-  const emoji = candidates.find((e): e is string => typeof e === 'string' && e.length > 0) ?? slot.emoji;
+  let emoji = candidates.find((e): e is string => typeof e === 'string' && e.length > 0) ?? slot.emoji;
+
+  // 2026-07-07 (Wolf 'im cozyArena-Set unten cozy-Animals statt Wappen'):
+  // Im Wappen-Set ist das Fraktions-Wappen AUTORITATIV. Ein cozy3d-/Emoji-
+  // teamEmoji (z.B. von Bots oder aus einem frueher gewaehlten Set) darf das
+  // Wappen NICHT ueberschreiben — sonst zeigen ScoreBar/Standings/etc. an
+  // Stellen ohne expliziten Crest-Override wieder Tier-Avatare. Nur ein
+  // explizit gewaehltes ANDERES Wappen (isCrestSlug) darf gewinnen; alles
+  // andere faellt auf das Slot-Wappen des Sets zurueck.
+  if (set.id === 'cozyArena' && !isCrestSlug(emoji)) {
+    const setCrest = set.avatars[slotIdx];
+    if (isCrestSlug(setCrest)) emoji = setCrest;
+  }
 
   // Cozy Arena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {

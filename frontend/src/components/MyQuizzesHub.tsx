@@ -11,6 +11,10 @@ import { exportHostCheatsheet } from '../pages/qqHostCheatsheet';
 type DraftSummary = {
   id: string;
   title: string;
+  // Die Listen-API /api/qq/drafts liefert das volle questions-Array (kein
+  // questionCount-Feld) — 2026-07-08 Fix: Anzahl daraus ableiten, sonst zeigten
+  // ALLE Karten faelschlich „0 Fragen" (wirkten leer).
+  questions?: unknown[];
   questionCount?: number;
   updatedAt?: number;
   language?: string;
@@ -120,7 +124,7 @@ function QuickLink({ to, emoji, label }: { to: string; emoji: string; label: str
 
 function QuizCard({ draft }: { draft: DraftSummary }) {
   const demo = isDemo(draft.id);
-  const count = draft.questionCount ?? 0;
+  const count = draft.questions?.length ?? draft.questionCount ?? 0;
   const [printing, setPrinting] = useState(false);
   // Host-Sheet direkt aus der Karte: vollen Draft ziehen → PDF/Print. Spart den
   // Umweg über die /host-sheets-Liste.

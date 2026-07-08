@@ -587,23 +587,68 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           nested={summary.nested}
         />
         <Section title={tr('whichTeam', lang)}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12 }}>
-            {ranking.map((t, i) => (
-                <button key={t.id} onClick={() => setSelectedTeamId(t.id)}
-                  style={{
-                    padding: 14, borderRadius: sumR(16),
-                    background: t.color + '22', border: `2px solid ${t.color}`,
-                    cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                  }}>
-                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={56} />
-                  <div style={{ fontSize: 15, fontWeight: 900 }}>{t.name}</div>
-                  <div style={{ fontSize: 11, color: 'var(--sum-muted)' }}>
-                    {tr('rankShort', lang)} {i + 1} · {t.largestConnected} {lang === 'de' ? 'Pkt' : 'pts'}
-                  </div>
-                </button>
-              ))}
-          </div>
+          {/* 2026-07-08 (Wolf-Livetest): Team-Picker neu designt (Medaillen Top-3,
+              größere Avatare, Rang-Pill in Markenpink, Hover-Lift) + robuste
+              Empty-State falls die Summary keine Teams enthält (statt „leer"). */}
+          <style>{`
+            .qq-sum-pick { transition: transform 0.18s cubic-bezier(0.34,1.4,0.64,1), box-shadow 0.18s ease, filter 0.18s ease; }
+            .qq-sum-pick:hover { transform: translateY(-4px); filter: brightness(1.06); }
+            .qq-sum-pick:active { transform: translateY(-1px) scale(0.99); }
+          `}</style>
+          {ranking.length === 0 ? (
+            <div style={{
+              textAlign: 'center', padding: '28px 20px', borderRadius: sumR(18),
+              background: 'rgba(255,255,255,0.04)', border: '1px dashed rgba(255,255,255,0.16)',
+              display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+            }}>
+              <div style={{ fontSize: 40 }}>🫥</div>
+              <div style={{ fontSize: 16, fontWeight: 900, color: '#fff' }}>
+                {lang === 'de' ? 'Noch keine Teams hinterlegt' : 'No teams recorded yet'}
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--sum-muted)', maxWidth: 320 }}>
+                {lang === 'de'
+                  ? 'Für dieses Spiel wurden keine Team-Daten gespeichert. Scannt den QR-Code am Ende der nächsten Show nochmal.'
+                  : 'No team data was stored for this game. Scan the QR code again at the end of the next show.'}
+              </div>
+            </div>
+          ) : (
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 12 }}>
+              {ranking.map((t, i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
+                return (
+                  <button key={t.id} onClick={() => setSelectedTeamId(t.id)} className="qq-sum-pick"
+                    style={{
+                      position: 'relative',
+                      padding: '18px 14px 16px', borderRadius: sumR(18),
+                      background: `linear-gradient(165deg, ${t.color}30, ${t.color}12)`,
+                      border: `2px solid ${t.color}`,
+                      boxShadow: sumSh(`0 8px 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`),
+                      cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
+                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                    }}>
+                    <span aria-hidden style={{
+                      position: 'absolute', top: 8, left: 10,
+                      fontSize: medal ? 20 : 12, fontWeight: 900,
+                      color: medal ? undefined : 'var(--sum-muted)', lineHeight: 1,
+                    }}>{medal ?? `#${i + 1}`}</span>
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={64} />
+                    <div style={{
+                      fontSize: 15, fontWeight: 900, textAlign: 'center', lineHeight: 1.15,
+                      overflowWrap: 'anywhere', wordBreak: 'break-word',
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
+                    }}>{t.name}</div>
+                    <div style={{
+                      fontSize: 12, fontWeight: 900, color: '#fff',
+                      background: brand.pink, borderRadius: sumPill(999),
+                      padding: '3px 12px', letterSpacing: '0.02em',
+                    }}>
+                      {t.largestConnected} {lang === 'de' ? 'Pkt' : 'pts'}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          )}
         </Section>
         <FeedbackForm roomCode={summary.roomCode} lang={lang} brand={brand} />
         <PartnerCTA lang={lang} brand={brand} />

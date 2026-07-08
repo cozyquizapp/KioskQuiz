@@ -2,7 +2,8 @@
 // Teil des largeGroupMode (bis 25 Teams, Bar-Race statt Grid). Doku:
 // memory project_large_group_mode. Die 3 Akte des Groß-Gruppen-Loops:
 //   Akt 1 = QUESTION_ACTIVE → bestehende QuestionView (unverändert wiederverwendet)
-//   Akt 2 = QUESTION_REVEAL  → LargeGroupRevealView (hier): Top-5-schnellste-Reveal
+//   Akt 2 = QUESTION_REVEAL  → ebenfalls die normale QuestionView (LargeGroupRevealView
+//            wurde 2026-07-02 entfernt, 2026-07-08 der tote Code endgültig gelöscht)
 //   Akt 3 = PLACEMENT        → LargeGroupStandingsView (hier): Bar-Race-Gesamtwertung
 //
 // Punkte-Modell (spiegelt Backend qqLargeGroupAwardPoints): jede Richtige +1,
@@ -19,14 +20,9 @@ import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
-const SPEED_BONUS = [5, 4, 3, 2, 1];
 const MEDALS = ['🥇', '🥈', '🥉'];
 const STANDINGS_ROW_H = 88;
 const STANDINGS_MAX = 10;
-
-function pointsForRank(idx: number): number {
-  return 1 + (idx < 5 ? SPEED_BONUS[idx] : 0);
-}
 
 const KEYFRAMES = `
 @keyframes brPodIn { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: none; } }
@@ -42,84 +38,6 @@ interface AvaMeta { label: string; labelEn: string; color: string }
 const AVA_BY_ID = new Map<string, AvaMeta>(
   QQ_AVATARS.map(a => [a.id, { label: a.label, labelEn: a.labelEn, color: a.color }] as [string, AvaMeta]),
 );
-
-// ── Akt 2: Top-5-schnellste-Reveal ───────────────────────────────────────────
-export function LargeGroupRevealView({ state }: { state: QQStateUpdate }) {
-  const de = state.language !== 'en';
-  const byId = useMemo(() => new Map(state.teams.map(t => [t.id, t])), [state.teams]);
-  const winners = state.currentQuestionWinners ?? (state.correctTeamId ? [state.correctTeamId] : []);
-  const top5 = winners.slice(0, 5);
-  const also = winners.slice(5);
-  const answer = state.revealedAnswer ?? state.currentQuestion?.answer ?? '';
-
-  return (
-    <div style={S.wrap}>
-      <style>{KEYFRAMES}</style>
-      <div style={S.correctBanner}>
-        <span style={{ opacity: 0.6, fontWeight: 800 }}>{de ? 'Richtig' : 'Correct'}:</span>
-        <b style={{ marginLeft: 12 }}>{answer}</b>
-        <span style={S.correctCount}>
-          {winners.length} / {state.teams.length} {de ? 'wussten’s' : 'knew it'}
-        </span>
-      </div>
-
-      {state.nestedTeams ? (
-        // Modell B (Akt 2 = Auflösung): richtige Antwort + wie viele Handys
-        // richtig lagen. Die Punkte-Verteilung pro Farbe kommt im nächsten
-        // Beat (Standings, Akt 3) — hier bewusst nur die Auflösung.
-        <div style={S.megaReveal}>
-          <div style={S.megaRevealBig}>
-            <b style={{ color: '#EC4899' }}>{winners.length}</b> {de ? 'von' : 'of'} {state.teams.length} {de ? 'Handys richtig' : 'phones correct'}
-          </div>
-          <div style={S.megaRevealTrack}>
-            <div style={{
-              height: '100%', width: `${state.teams.length ? (winners.length / state.teams.length) * 100 : 0}%`,
-              background: 'linear-gradient(90deg, #EC4899, #F472B6)', borderRadius: 999,
-              boxShadow: '0 0 18px rgba(236,72,153,0.5)', transition: 'width 0.9s cubic-bezier(0.34,1.05,0.5,1)',
-            }} />
-          </div>
-          <div style={S.megaRevealHint}>{de ? 'Punkte gleich in der Wertung →' : 'Points up next in the scoring →'}</div>
-        </div>
-      ) : top5.length === 0 ? (
-        <div style={S.emptyReveal}>{de ? 'Niemand richtig — weiter geht’s!' : 'Nobody correct — moving on!'}</div>
-      ) : (
-        <div style={S.podium}>
-          {top5.map((teamId, idx) => {
-            const t = byId.get(teamId);
-            if (!t) return null;
-            return (
-              <div key={teamId} style={{ ...S.podRow, animation: 'brPodIn 0.5s ease both', animationDelay: `${idx * 0.45}s` }}>
-                <span style={S.podMedal}>{idx < 3 ? <QQEmojiIcon emoji={MEDALS[idx]} /> : idx + 1}</span>
-                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={92} />
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <TeamNameLabel name={t.name} fontSize={40} color={t.color} fontWeight={900} maxLines={1} shrinkAfter={16} />
-                </div>
-                <span style={{ ...S.podPts, color: t.color }}>+{pointsForRank(idx)}</span>
-              </div>
-            );
-          })}
-
-          {also.length > 0 && (
-            <div style={{ ...S.alsoWrap, animation: 'brAlsoIn 0.5s ease both', animationDelay: `${top5.length * 0.45 + 0.2}s` }}>
-              <span style={S.alsoLabel}>{de ? 'auch richtig · je +1' : 'also correct · +1 each'}</span>
-              <div style={S.alsoRow}>
-                {also.map(teamId => {
-                  const t = byId.get(teamId);
-                  if (!t) return null;
-                  return (
-                    <span key={teamId} title={t.name} style={S.alsoChip}>
-                      <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={52} />
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
 
 // ── Akt 3: per-Frage-Wertung (Beat A) → Bar-Race-Gesamtwertung (Beat B) ───────
 export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {

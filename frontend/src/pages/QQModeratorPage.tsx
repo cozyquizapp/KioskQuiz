@@ -84,7 +84,18 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // Autoplay + Bots-Durchlauf sind auf der Live-Landing standardmaessig weg
   // (Fehlklick-Schutz). Ein dezenter '🧪'-Toggle blendet sie sofort wieder ein;
   // im Test-Modus (/moderator-test) oder ?dev=1 sind sie von vornherein da.
-  const [showTestTools, setShowTestTools] = useState(() => testMode || qqDevToolsEnabled());
+  // 2026-07-08 v2 (Wolf 'zum Testen bloed, ich mache alles mit Bot-Durchlaeufen'):
+  // Der Test-Tools-Zustand wird jetzt PRO GERAET gemerkt. Einmal einblenden →
+  // bleibt bei jedem Reload an (kein Klick mehr pro Session). Vor einem echten
+  // Event einmal „🧪 aus" → sauber. testMode/?dev=1 blenden weiterhin auto ein.
+  const [showTestTools, setShowTestToolsState] = useState(() => {
+    if (testMode || qqDevToolsEnabled()) return true;
+    try { return localStorage.getItem('qqShowTestTools') === '1'; } catch { return false; }
+  });
+  const setShowTestTools = (v: boolean) => {
+    setShowTestToolsState(v);
+    try { v ? localStorage.setItem('qqShowTestTools', '1') : localStorage.removeItem('qqShowTestTools'); } catch { /* ignore */ }
+  };
   // 2026-07-08 (Wolf 'QR neben Beamer, immer sichtbar'): Join-QR-Popover im Header.
   const [qrOpen, setQrOpen] = useState(false);
   // 2026-07-08: Venue jetzt zentral (Cockpit + SetupView teilen sich die Quelle).
@@ -2293,6 +2304,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 );
               })()}
             </div>
+            {!testMode && !qqDevToolsEnabled() && (
+              <button
+                onClick={() => setShowTestTools(false)}
+                title="Test-Tools ausblenden (für echte Events)"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 9, border: '1px solid rgba(148,163,184,0.2)', background: 'transparent', color: '#64748b', fontWeight: 700, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >
+                🧪 aus
+              </button>
+            )}
             </>) : (
             <button
               onClick={() => setShowTestTools(true)}

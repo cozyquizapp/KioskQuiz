@@ -213,6 +213,12 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   const rest = sorted.length - shown.length;
   const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
 
+  // 2026-07-08 (Audit B2): responsive Zeilenhoehe. Bei 9-10 Fraktionen wuerde die
+  // feste 88px-Hoehe (10*88=880 + Label/Rest ≈ 964px) den zentrierten Block ueber
+  // den 16:9-Rahmen schieben → oberste Kronen-Zeile + unterste Zeilen verschwinden.
+  // rowH schrumpft ab ~9 Zeilen, so bleibt alles im Viewport (≤8 bleibt bei 88).
+  const rowH = Math.min(STANDINGS_ROW_H, Math.floor(780 / Math.max(1, shown.length)));
+
   // Rang pro Team-ID (für FLIP-artige Reorder-Animation via translateY).
   const rankOf = useMemo(() => {
     const m = new Map<string, number>();
@@ -231,9 +237,9 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
     <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <style>{KEYFRAMES}</style>
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
-      <div style={{ position: 'relative', height: shown.length * STANDINGS_ROW_H, width: '100%', maxWidth: 1100 }}>
+      <div style={{ position: 'relative', height: shown.length * rowH, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (
-          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} />
+          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} rowH={rowH} />
         ))}
       </div>
       {rest > 0 && (
@@ -243,10 +249,10 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   );
 }
 
-function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry }) {
+function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; rank: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry; rowH: number }) {
   const ref = useRef<HTMLDivElement | null>(null);
   const prevTop = useRef<number | null>(null);
-  const targetTop = rank * STANDINGS_ROW_H;
+  const targetTop = rank * rowH;
   // FLIP: sanftes Gleiten bei Rang-Wechsel (Überholmoment).
   useLayoutEffect(() => {
     const el = ref.current;
@@ -286,7 +292,7 @@ function StandingsRow({ team, rank, maxVal, de, qEntry }: { team: QQTeam; rank: 
   }, [rank, val]);
 
   return (
-    <div ref={ref} style={{ ...S.standRow, top: targetTop }}>
+    <div ref={ref} style={{ ...S.standRow, height: rowH - 12, top: targetTop }}>
       {leadFlash && (
         <>
           <span aria-hidden style={{
@@ -484,7 +490,7 @@ const S: Record<string, React.CSSProperties> = {
   megaRevealHint: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
 
   // Akt 3 Beat A „Wertung dieser Frage"
-  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both' },
+  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
   qrLabel: { fontSize: 24, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6, fontWeight: 900 },
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
   qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.05)' },
@@ -510,7 +516,7 @@ const S: Record<string, React.CSSProperties> = {
   goVal: { width: 74, textAlign: 'right', fontWeight: 900, fontSize: 32, fontVariantNumeric: 'tabular-nums' },
   goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
-  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px', color: '#f4f6ff' },
+  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px', color: '#f4f6ff', overflow: 'hidden' },
   standLabel: { fontSize: 22, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800 },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(255,255,255,0.045)' },

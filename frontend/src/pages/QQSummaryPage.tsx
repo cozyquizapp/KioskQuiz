@@ -910,7 +910,7 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
           filter: 'drop-shadow(0 4px 8px rgba(0,0,0,0.5)) drop-shadow(0 0 16px rgba(251,191,36,0.7))',
           animation: 'qqWinnerCrownBob 2.4s ease-in-out infinite',
           zIndex: 2,
-        }}>👑</span>
+        }}><QQEmojiIcon emoji="👑" size="1em" /></span>
         {/* Avatar-Disc mit Pulse. 2026-07-04 (Konsistenz mit ThanksView-Fix
             a9235654 'glow komisch, wappen verschwommen'): Disc mit Tiefe
             (radiale Lichter/Schatten) + hellem Rand, damit Avatar/Wappen als

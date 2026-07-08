@@ -438,7 +438,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.9))',
                     animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
                     zIndex: 5,
-                  }}>👑</span>
+                  }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                   <div style={{
                     ['--wg' as string]: `${winner.color}99`,
                     width: 'clamp(180px, 20cqw, 290px)', height: 'clamp(180px, 20cqw, 290px)',

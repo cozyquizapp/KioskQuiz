@@ -16,6 +16,7 @@ import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed } from '../qqTheme';
@@ -563,7 +564,23 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // Stagger reduziert sich proportional bei langen Texten damit Wave
           // nicht ueber 4s laeuft.
           const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));
+          // 2026-07-08 (Wolf 3D-Icons): Im Cozy-Arena-Modus das neue 3D-Arena-
+          // Kolosseum als Hero ueber die Wortmarke (nur ohne Custom-Welcome).
+          const showArenaHero = (s as any).largeGroupMode && customWelcome.length === 0;
           return (
+            <>
+            {showArenaHero && (
+              <QQIcon
+                slug="fx-arena"
+                size="clamp(96px, 15cqw, 220px)"
+                alt="Cozy Arena"
+                style={{
+                  display: 'block', margin: '0 auto clamp(2px, 0.8cqh, 12px)',
+                  filter: 'drop-shadow(0 8px 22px rgba(0,0,0,0.5))',
+                  animation: 'qqStingerHover 4.2s ease-in-out 0.4s infinite',
+                }}
+              />
+            )}
             <div
               className="cq-wordmark"
               style={{
@@ -597,6 +614,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 >{ch}</span>
               ))}
             </div>
+            </>
           );
         })()}
       </div>

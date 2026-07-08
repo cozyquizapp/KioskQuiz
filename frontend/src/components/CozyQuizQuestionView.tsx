@@ -1756,7 +1756,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                     fontSize: 'clamp(22px, 2.6cqw, 38px)', lineHeight: 1,
                                     filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
                                     animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.3s both',
-                                  }}>👑</span>
+                                  }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                                 </span>
                               )}
                               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avSz} />

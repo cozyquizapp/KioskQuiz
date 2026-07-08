@@ -3604,7 +3604,7 @@ function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim }: {
                     fontSize: 'clamp(28px, 3.4cqw, 48px)', lineHeight: 1,
                     filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
                     animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
-                  }}>👑</span>
+                  }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                 </span>
               )}
               <QQTeamAvatar
@@ -3898,7 +3898,7 @@ export function MuchoOptionsReveal({
                               fontSize: 'clamp(28px, 3.4cqw, 48px)', lineHeight: 1,
                               filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
                               animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
-                            }}>👑</span>
+                            }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                           </span>
                         )}
                         <QQTeamAvatar

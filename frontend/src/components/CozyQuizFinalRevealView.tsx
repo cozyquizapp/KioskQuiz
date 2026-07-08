@@ -1952,7 +1952,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
                   animation: 'celebShake 0.9s ease 0.25s both',
                   pointerEvents: 'none',
                   zIndex: 2,
-                }}>👑</span>
+                }}><QQEmojiIcon emoji="👑" size="1em" /></span>
               )}
               {/* Rang / Medal */}
               <div style={{
@@ -2171,7 +2171,7 @@ export function SuspensePodiumFinale({ finalRanking, lang }: {
                   fontSize: 'clamp(44px, 5cqw, 78px)', zIndex: 4, pointerEvents: 'none',
                   filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7))',
                   animation: 'qqSPCrownDrop 0.9s cubic-bezier(0.2,1.4,0.4,1) 0.2s both',
-                }}>👑</span>
+                }}><QQEmojiIcon emoji="👑" size="1em" /></span>
               )}
               {/* Raketen-Abgas unter dem Sieger waehrend/nach dem Lift-off */}
               {isWinner && revealed && (
@@ -2953,7 +2953,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       transform: 'translateX(-50%)',
                       filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(251,191,36,0.85))',
                       animation: 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite',
-                    }}>👑</span>
+                    }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                   )}
                   {rank !== 0 && (capped || crowned) && identityShown && (
                     <div style={{
@@ -3515,7 +3515,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                         filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
                         animation: 'qqFRCrownDrop 0.6s var(--qq-ease-bounce) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
                         zIndex: 30,
-                      }}>👑</span>
+                      }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                       <div style={{
                         width: config.avatarSize, height: config.avatarSize,
                         borderRadius: '50%',

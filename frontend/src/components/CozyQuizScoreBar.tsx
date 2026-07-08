@@ -253,7 +253,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   fontSize: dense ? 24 : 30,
                   pointerEvents: 'none',
                   filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
-                }}>👑</span>
+                }}><QQEmojiIcon emoji="👑" size="1em" /></span>
               )}
               {/* Joker komplett aus der ScoreBar raus (2026-06-28, Claude-Design-
                   Handoff #2): kein Stern-Flug, kein Impact-Pulse, keine statische

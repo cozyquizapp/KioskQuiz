@@ -59,6 +59,11 @@ export type QQIconSlug =
   | 'fx-detective'
   | 'fx-globe'
   | 'fx-map'
+  // Wolfs neue 3D-Marken-Icons (2026-07-08, aus "logos für website") — Krone/
+  // Arena neu, Trophy/Phone ersetzen die alten Fluent-PNGs in-place.
+  | 'fx-crown'
+  | 'fx-arena'
+  | 'fx-teams'
   // Fluent Emoji 3D Kandidaten fuer bestehende Custom-PNGs (Kategorien/Subs/Marker).
   // Nicht automatisch im Einsatz — werden via qqCatSlug/qqSubSlug gesteuert.
   | 'fx-cat-schaetzchen'
@@ -126,6 +131,9 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-detective':      '🕵️',
   'fx-globe':          '🌍',
   'fx-map':            '🗺️',
+  'fx-crown':          '👑',
+  'fx-arena':          '🏟️',
+  'fx-teams':          '👥',
   'fx-cat-schaetzchen':   '🎯',
   'fx-cat-mucho':         '🅰️',
   'fx-cat-bunte-tuete':   '🎁',
@@ -210,6 +218,8 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '🌍': 'fx-globe',
   '🗺️': 'fx-map',
   '🗺': 'fx-map',
+  '👑': 'fx-crown',
+  '👥': 'fx-teams',
 };
 
 export function qqEmojiSlug(emoji: string): QQIconSlug | null {

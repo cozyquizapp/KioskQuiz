@@ -313,7 +313,7 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
             />
           </div>
           <div style={{
-            fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+            fontFamily: 'var(--font-brand)',
             fontSize: 40, fontWeight: 400, color: '#EC4899',
             letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
             textShadow: '0 2px 12px rgba(0,0,0,0.55), 0 0 26px rgba(236,72,153,0.55)',

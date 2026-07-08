@@ -30,7 +30,7 @@ const MAGENTA = '#a21247';
 // Marken-Font wie die App-Hero-Titel (Lobby/Paused): Stinger Fit zuerst,
 // Bricolage/Inter/Nunito als Fallback (Stinger-Fit-unicode-range lässt Ziffern
 // bewusst auf den Fallback → identisch zur App).
-const DISPLAY = "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
+const DISPLAY = 'var(--font-brand)';
 const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 
 // Cozy-Bühnen-BG (1:1 aus dem Cozy-Theme, qqTheme.ts COZY.surface.pageBg).

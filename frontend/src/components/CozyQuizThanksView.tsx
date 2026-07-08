@@ -257,7 +257,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
             <span style={{
-              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontFamily: 'var(--font-brand)',
               fontSize: 'clamp(42px, 5.5cqw, 82px)',
               fontWeight: 400,
               letterSpacing: '0.04em',
@@ -300,7 +300,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
             <span style={{
-              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontFamily: 'var(--font-brand)',
               fontSize: 'clamp(48px, 6cqw, 96px)',
               fontWeight: 400,
               letterSpacing: '0.06em',

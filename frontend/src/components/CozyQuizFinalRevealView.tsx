@@ -2516,6 +2516,10 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
                 shrinkAfter={14}
                 style={{
                   flex: 1, minWidth: 0,
+                  // 2026-07-08 (Audit D2): Sieger-Name im groessten Frame in der
+                  // Marken-Wordmark-Font (League Spartan), sonst inherit.
+                  fontFamily: isWinner ? 'var(--font-brand)' : undefined,
+                  letterSpacing: isWinner ? '0.01em' : undefined,
                   textShadow: isWinner ? `0 0 18px ${tColor}66` : 'none',
                 }}
               />

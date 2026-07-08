@@ -1392,7 +1392,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
             <span style={{
-              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontFamily: 'var(--font-brand)',
               // 2026-05-12 v3 (Wolf 'beides wieder dynamisch groesser, cozyquiz
               // etwas groesser'): CozyQuiz dominant ueber der Card. fontSize
               // wieder hochgezogen auf clamp(56px, 7cqw, 112px) — bei 1080p
@@ -1420,7 +1420,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           }}>
             {/* CozyQuiz-Wordmark — 2026-05-07 v19 proportional geshrinkt zu Lobby. */}
             <span style={{
-              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontFamily: 'var(--font-brand)',
               fontSize: 'clamp(42px, 5.5cqw, 82px)',
               fontWeight: 400,
               letterSpacing: '0.04em',

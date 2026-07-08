@@ -34,6 +34,15 @@
   unicode-range: U+0020-002F, U+003A-FFFF;
 }
 
+/* 2026-07-08 (Wolf 'League Spartan als EINE Wordmark-Font ueber Web+App'):
+   self-hosted, identisch zur cozywolf.de-Landing. Ersetzt Stinger Fit als
+   Marken-Wordmark-Font (via --font-brand). Keine unicode-range noetig — League
+   Spartan hat saubere Ziffern (anders als Stinger Fit), also kein Ziffern-
+   Fallback-Shift. */
+@font-face { font-family: 'League Spartan'; font-style: normal; font-weight: 700; font-display: swap; src: url('/fonts/league-spartan-latin-700-normal.woff2') format('woff2'); }
+@font-face { font-family: 'League Spartan'; font-style: normal; font-weight: 800; font-display: swap; src: url('/fonts/league-spartan-latin-800-normal.woff2') format('woff2'); }
+@font-face { font-family: 'League Spartan'; font-style: normal; font-weight: 900; font-display: swap; src: url('/fonts/league-spartan-latin-900-normal.woff2') format('woff2'); }
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -129,6 +138,11 @@
      greift der Font NUR fuer Flag-Codepoints, alle anderen Glyphen kommen aus
      'Nunito'/'Geist'/system-ui. Ergibt Windows einheitliche Flagen-Darstellung. */
   --font-game: 'Twemoji Country Flags', 'Nunito', 'Geist', system-ui, sans-serif;
+  /* 2026-07-08 (Wolf): EINE Marken-Wordmark-Font ueber Web + App. League Spartan
+     (wie cozywolf.de). Steuert alle Marken-Namen (COZYQUIZ/COZYARENA/COZYGAMES/
+     COZYWOLF) + Finale-Sieger-Name zentral. Rueckgaengig = hier auf
+     'Stinger Fit' zuruecksetzen. */
+  --font-brand: 'League Spartan', 'Bricolage Grotesque', 'Nunito', system-ui, sans-serif;
   --glass: rgba(11, 22, 42, 0.55);
   --glass-strong: rgba(14, 33, 63, 0.8);
   --ui-panel-bg: rgba(10, 24, 46, 0.85);

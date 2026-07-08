@@ -4286,7 +4286,7 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
               // wird in Stinger Fit + Brand-Pink gerendert. Eurovision behaelt
               // zusaetzlich × + ESC-Logo daneben (Stinger-Composition); Standard
               // zeigt nur den Wordmark Solo.
-              fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+              fontFamily: 'var(--font-brand)',
               // 2026-05-09 (Wolf 'etwas größer und schön prominent mittig'):
               // Standard-Wordmark von clamp(72px,9cqw,158px) auf (82px,10cqw,178px)
               // — ~13% größer. Eurovision behält Komposition (X + Logo brauchen
@@ -4934,7 +4934,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
       }}>
         <AnimatedCozyWolf widthCss="clamp(170px, 18cqw, 300px)" speaking={false} />
         <span style={{
-          fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+          fontFamily: 'var(--font-brand)',
           fontSize: 'clamp(56px, 7cqw, 112px)', fontWeight: 400,
           letterSpacing: '0.04em', color: 'var(--qq-accent)',
           textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',

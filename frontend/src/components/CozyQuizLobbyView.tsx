@@ -499,7 +499,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     entspannt im viewport-Center ohne dem Top-Right-Wolf in
                     die Quere zu kommen — und wirkt visuell mittiger. */}
                 <span style={{
-                  fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+                  fontFamily: 'var(--font-brand)',
                   fontSize: 'clamp(38px, 5.2cqw, 82px)',
                   fontWeight: 400,
                   letterSpacing: '0.04em',
@@ -571,7 +571,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 // Stinger Fit als Wordmark-Font auch fuer Standard-Drafts.
                 // Eurovision behaelt Hot-Pink (#FF2D7B), Standard nutzt Brand-
                 // Pink (#EC4899). Wave-Animation pro Buchstabe bleibt erhalten.
-                fontFamily: "'Stinger Fit', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
+                fontFamily: 'var(--font-brand)',
                 fontWeight: 400,
                 letterSpacing: '0.04em',
                 fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5cqw, 100px)' : 'clamp(56px, 9cqw, 140px)',

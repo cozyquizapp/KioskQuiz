@@ -2130,17 +2130,21 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 }}
               >
                 {q.category === 'CHEESE' ? (() => {
-                  // CHEESE Preview spiegelt Beamer-Rendering: blurred cover backdrop +
-                  // sharp contain foreground. scale=1 zeigt das vollständige Bild
-                  // (kein Crop), scale>1 zoomt rein, scale<1 lässt Backdrop um das
-                  // Bild herum sichtbar werden.
+                  // 2026-07-08 (Wolf-Bug 'Bild zeigt falschen Ausschnitt'): Vorschau
+                  // nutzt jetzt EXAKT das Beamer-Rendering — backgroundSize:'cover'
+                  // (nicht mehr 'contain'!) + layout-abhaengiger Frame. Vorher zeigte
+                  // die Drag-Vorschau das GANZE Bild (contain), der Beamer beschnitt
+                  // aber (cover, seit 2026-05-04) → was Wolf hier abnickte war nicht
+                  // was der Beamer zeigte. Jetzt 1:1: Portrait → Bild in linker Haelfte
+                  // (Card rechts), Landscape → Vollbild. scale=1 = fuellt den Rahmen.
                   const z = img.scale ?? 1;
                   const px = 50 + (img.offsetX ?? 0) / 2;
                   const py = 50 + (img.offsetY ?? 0) / 2;
                   const url = img.bgRemovedUrl ?? img.url;
+                  const isPortrait = img.cheeseLayout === 'portrait';
                   return (
                     <>
-                      {/* Layer 1: blurred backdrop */}
+                      {/* Layer 1: blurred cover backdrop (wie Beamer Layer 1) */}
                       <div style={{
                         position: 'absolute', inset: 0,
                         backgroundImage: `url(${url})`,
@@ -2152,11 +2156,13 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                         transformOrigin: 'center',
                         pointerEvents: 'none',
                       }} />
-                      {/* Layer 2: sharp contain foreground */}
+                      {/* Layer 2: scharfer COVER-Vordergrund im echten Beamer-Frame.
+                          Portrait → linke 50 %, Landscape → volle Breite. */}
                       <div style={{
-                        position: 'absolute', inset: 0,
+                        position: 'absolute', top: 0, bottom: 0, left: 0,
+                        width: isPortrait ? '50%' : '100%',
                         backgroundImage: `url(${url})`,
-                        backgroundSize: 'contain',
+                        backgroundSize: 'cover',
                         backgroundPosition: `${px}% ${py}%`,
                         backgroundRepeat: 'no-repeat',
                         transform: `scale(${z})${img.rotation ? ` rotate(${img.rotation}deg)` : ''}`,
@@ -2175,21 +2181,24 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 {/* Crosshair */}
                 <div style={{ position: 'absolute', top: '50%', left: 0, right: 0, height: 1, background: 'rgba(255,255,255,0.15)', pointerEvents: 'none' }} />
                 <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 1, background: 'rgba(255,255,255,0.15)', pointerEvents: 'none' }} />
-                {/* CHEESE: Safe-Area-Overlay — zeigt wo die Frage-Card auf dem Beamer liegt */}
+                {/* CHEESE: Safe-Area-Overlay — zeigt wo die Frage-Card auf dem Beamer
+                    liegt. 2026-07-08: layout-abhaengig (Portrait = rechte Haelfte,
+                    Landscape = unteres Band) statt fix unten. */}
                 {q.category === 'CHEESE' && (
-                  <>
-                    <div style={{
-                      position: 'absolute', left: '8%', right: '8%', bottom: '8%', height: '32%',
-                      border: '1.5px dashed rgba(255,215,0,0.55)',
-                      background: 'rgba(13,10,6,0.25)',
-                      borderRadius: 8, pointerEvents: 'none',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    }}>
-                      <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,215,0,0.8)', letterSpacing: '0.08em' }}>
-                        FRAGE-CARD · nicht verdecken
-                      </span>
-                    </div>
-                  </>
+                  <div style={{
+                    position: 'absolute',
+                    ...(img.cheeseLayout === 'portrait'
+                      ? { top: '4%', bottom: '4%', right: '3%', width: '44%' } as const
+                      : { left: '8%', right: '8%', bottom: '8%', height: '32%' } as const),
+                    border: '1.5px dashed rgba(255,215,0,0.55)',
+                    background: 'rgba(13,10,6,0.25)',
+                    borderRadius: 8, pointerEvents: 'none',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <span style={{ fontSize: 9, fontWeight: 800, color: 'rgba(255,215,0,0.8)', letterSpacing: '0.08em', textAlign: 'center' }}>
+                      FRAGE-CARD · nicht verdecken
+                    </span>
+                  </div>
                 )}
                 {/* Position indicator */}
                 <div style={{ position: 'absolute', bottom: 4, right: 6, fontSize: 9, color: 'rgba(255,255,255,0.4)', fontWeight: 700, background: 'rgba(0,0,0,0.6)', padding: '2px 6px', borderRadius: 4 }}>
@@ -2200,7 +2209,7 @@ function QuestionEditor({ question: q, onChange, onUpload, onRemoveBg, onDelete,
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 10, color: QQ_COLORS.slate600, marginBottom: 3 }}>
                     Zoom ({((img.scale ?? 1) * 100).toFixed(0)}%)
-                    {q.category === 'CHEESE' && <span style={{ color: QQ_COLORS.slate700, fontSize: 9 }}> · 100% = ganzes Bild</span>}
+                    {q.category === 'CHEESE' && <span style={{ color: QQ_COLORS.slate700, fontSize: 9 }}> · 100% = füllt den Rahmen</span>}
                   </div>
                   <input
                     type="range"

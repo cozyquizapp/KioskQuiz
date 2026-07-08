@@ -78,8 +78,13 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   // 2026-05-09 v3 (Wolf TODO 3 'text noch größer'): zweiter Bump nach v2.
   // 8 Teams 78→92, 5-6 Teams 92→108, 3-4 Teams 110→130.
   // Avatare proportional mit hochgezogen.
-  const rowH = N >= 7 ? 92 : N >= 5 ? 108 : 130;
-  const avatarSize = N >= 7 ? 64 : N >= 5 ? 76 : 92;
+  // 2026-07-08 Audit B6: rowH zusaetzlich gegen die verfuegbare Slide-Hoehe
+  // deckeln (SlideStage clippt overflow) — bei >8 Teams (z.B. Arena-Durchreichung)
+  // wuerde rowH*N sonst ueber den Screen laufen. Fuer N<=8 ein No-op (floor(820/8)
+  // =102 > 92), darueber schrumpfen Reihen+Avatar proportional statt zu clippen.
+  const baseRowH = N >= 7 ? 92 : N >= 5 ? 108 : 130;
+  const rowH = Math.min(baseRowH, Math.floor(820 / Math.max(1, N)));
+  const avatarSize = Math.min(N >= 7 ? 64 : N >= 5 ? 76 : 92, rowH - 24);
   const containerH = rowH * N;
 
   return (

@@ -74,6 +74,14 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
   const [step, setStep] = useState(0);
   const mega = !!s?.largeGroupMode;
 
+  // 2026-07-08 (Wolf): Location/Event-Tag. Fliesst pro Frage in die Usage-Historie
+  // + ins Ergebnis → CozyLibrary filtert „bei diesem Ort schon gespielt" weg.
+  const [venue, setVenue] = useState('');
+  const [knownVenues, setKnownVenues] = useState<string[]>([]);
+  useEffect(() => {
+    fetch('/api/qq/venues').then(r => (r.ok ? r.json() : [])).then(v => { if (Array.isArray(v)) setKnownVenues(v); }).catch(() => {});
+  }, []);
+
   // ── Setter (live, wie die Quick-Pills) ────────────────────────────────────
   // Format (Gruppengröße) wird VOR dem Wizard auf der Spotlight-Bühne gesetzt.
   const setLang = (lang: 'de' | 'en' | 'both') => emit('qq:setLanguage', { roomCode, language: lang });
@@ -431,6 +439,29 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
 
           {cur.key === 'done' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 460 }}>
+              {/* 📍 Location/Event — gegen Fragen-Wiederholung am selben Ort */}
+              <div>
+                <label style={{ display: 'block', fontSize: 12, fontWeight: 800, color: ACCENT, marginBottom: 6 }}>
+                  📍 Location / Event <span style={{ color: '#94a3b8', fontWeight: 500 }}>· optional</span>
+                </label>
+                <input
+                  list="qq-wizard-venues"
+                  value={venue}
+                  onChange={e => { const v = e.target.value; setVenue(v); emit('qq:setVenue', { roomCode, venue: v }); }}
+                  placeholder="z.B. Kneipe Zum Anker"
+                  style={{
+                    width: '100%', boxSizing: 'border-box', padding: '10px 12px', borderRadius: 10,
+                    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.15)',
+                    color: '#f1f5f9', fontFamily: 'inherit', fontSize: 14, fontWeight: 600, outline: 'none',
+                  }}
+                />
+                <datalist id="qq-wizard-venues">
+                  {knownVenues.map(v => <option key={v} value={v} />)}
+                </datalist>
+                <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>
+                  Merkt sich pro Ort, welche Fragen liefen — die Library filtert Wiederholungen dann weg.
+                </div>
+              </div>
               <SummaryRow label="Modus" value={mega ? '👥 Cozy Arena (8×3, Bar-Race)' : 'Cozy Quiz (Grid)'} />
               <SummaryRow label="Runden · Timer" value={`${phases} Runden · ${s?.timerDurationSec ?? 30}s`} />
               <SummaryRow label="Sprache" value={s?.language === 'de' ? 'Deutsch' : s?.language === 'en' ? 'English' : 'Beide'} />

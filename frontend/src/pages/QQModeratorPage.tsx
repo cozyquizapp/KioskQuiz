@@ -5581,7 +5581,15 @@ function SetupView({
   emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
   finishSetup: () => void;
 }) {
-  void emit; // stays in signature for future use, currently not needed after moving team-lobby out
+  // 2026-07-08 (Wolf): Location/Event-Tag fuer dieses Spiel. Fliesst pro Frage in
+  // die Usage-Historie + beim Game-Over ins Ergebnis → die CozyLibrary kann dann
+  // „an diesem Ort schon gespielt" filtern (keine Wiederholung bei Stammgaesten).
+  const [venue, setVenueLocal] = useState('');
+  const [knownVenues, setKnownVenues] = useState<string[]>([]);
+  useEffect(() => {
+    fetch('/api/qq/venues').then(r => (r.ok ? r.json() : [])).then(v => { if (Array.isArray(v)) setKnownVenues(v); }).catch(() => {});
+  }, []);
+
   // Load the currently-selected draft's soundConfig (persistent per draft).
   const qqDraftId = selectedDraftId.startsWith('qq:') ? selectedDraftId.slice(3) : selectedDraftId;
   const [draftSoundConfig, setDraftSoundConfig] = useState<QQSoundConfig>({});
@@ -5872,6 +5880,34 @@ function SetupView({
             ℹ Set hat {selectedDraft.questionCount} Fragen — nutze die ersten {fitNeeded} ({phases} Runden × 5)
           </div>
         )}
+
+        {/* 📍 Location/Event-Tag — Basis fuer „keine Wiederholung am selben Ort" */}
+        <div style={{ marginTop: 16 }}>
+          <label style={{
+            display: 'block', fontSize: 11, fontWeight: 900, color: GOLD,
+            letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
+          }}>
+            📍 Location / Event
+            <span style={{ color: '#a8a395', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
+              {' '}· optional — merkt sich pro Ort, welche Fragen schon liefen
+            </span>
+          </label>
+          <input
+            list="qq-known-venues"
+            value={venue}
+            onChange={e => { const v = e.target.value; setVenueLocal(v); emit('qq:setVenue', { roomCode, venue: v }); }}
+            placeholder="z.B. Kneipe Zum Anker"
+            style={{
+              width: '100%', boxSizing: 'border-box',
+              padding: '10px 12px', borderRadius: 10,
+              background: 'rgba(0,0,0,0.25)', border: `1px solid ${GOLD_BORDER}`,
+              color: '#f5efe3', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, outline: 'none',
+            }}
+          />
+          <datalist id="qq-known-venues">
+            {knownVenues.map(v => <option key={v} value={v} />)}
+          </datalist>
+        </div>
       </div>
 
       {/* ── SCHEDULE-VORSCHAU — was kommt in welcher Runde ── */}

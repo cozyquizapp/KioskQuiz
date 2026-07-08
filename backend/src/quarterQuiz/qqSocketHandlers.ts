@@ -454,6 +454,8 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     winner,
     phases: room.totalPhases,
     language: room.language,
+    venue: (room as any).venue ?? '',   // 2026-07-08 (Wolf): Location/Event-Tag
+
     avatarSetId: room.avatarSetId ?? 'all',   // 2026-05-04: Phase 2 - Set fuer Summary-Render
     themeId: room.themeId ?? 'cozy',           // 2026-06-24: Buehnen-Skin
     // 2026-05-07: Server-gewuerfelte Slot-Emojis fuer 'all'-Set (sonst zeigt
@@ -2492,6 +2494,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const room = ensureQQRoom(payload.roomCode);
         room.language = payload.language;
         broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-07-08 (Wolf): Location/Event-Tag fuer dieses Spiel setzen. Wird bei
+    // jeder Frage-Aktivierung in die Usage-Historie + beim Game-Over ins
+    // Ergebnis geschrieben → Basis fuer „keine Wiederholung an derselben
+    // Location"-Filter in der CozyLibrary. Trim + Cap gegen Muell-Eintraege.
+    socket.on('qq:setVenue', (payload: { roomCode: string; venue?: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        (room as any).venue = (payload.venue ?? '').toString().trim().slice(0, 80);
         ok(ack);
       } catch (e) { fail(ack, e); }
     });

@@ -408,6 +408,9 @@ const QQGameResultSchema = new mongoose.Schema({
   draftId:   { type: String, default: null },
   draftTitle:{ type: String, default: 'Unbekannt' },
   roomCode:  { type: String, default: '' },
+  // 2026-07-08 (Wolf): Location/Event-Tag pro Spiel — Basis fuer die
+  // „keine Wiederholung an derselben Location"-Filterung in der CozyLibrary.
+  venue:     { type: String, default: '', index: true },
   playedAt:  { type: Number, default: Date.now, index: true },
   teams: mongoose.Schema.Types.Mixed,       // Array<{id, name, color, score}>
   winner:    { type: String, default: null }, // winning team name
@@ -697,6 +700,7 @@ const QQQuestionUsageSchema = new mongoose.Schema({
     roomCode:   String,
     draftId:    String,
     draftTitle: String,
+    venue:      String, // 2026-07-08 (Wolf): Location/Event dieser Nutzung
     playedAt:   Number,
   }],
 }, { strict: false });
@@ -715,6 +719,7 @@ export async function recordQQQuestionUsage(args: {
   roomCode?: string;
   draftId?: string;
   draftTitle?: string;
+  venue?: string;
 }): Promise<void> {
   const now = Date.now();
   const dedupeWindow = 5 * 60 * 1000;
@@ -733,6 +738,7 @@ export async function recordQQQuestionUsage(args: {
       roomCode:   args.roomCode ?? '',
       draftId:    args.draftId ?? '',
       draftTitle: args.draftTitle ?? '',
+      venue:      args.venue ?? '',
       playedAt:   now,
     };
     await QQQuestionUsageModel.updateOne(
@@ -760,7 +766,7 @@ export async function getQQUsageMap(): Promise<Record<string, {
   usageCount: number;
   firstUsedAt: number;
   lastUsedAt: number;
-  recentUses: Array<{ roomCode: string; draftId: string; draftTitle: string; playedAt: number }>;
+  recentUses: Array<{ roomCode: string; draftId: string; draftTitle: string; venue?: string; playedAt: number }>;
 }>> {
   try {
     const docs = await QQQuestionUsageModel.find({}).lean();
@@ -779,6 +785,21 @@ export async function getQQUsageMap(): Promise<Record<string, {
   } catch (err) {
     console.error('Fehler beim Laden der QQ Usage Map:', err);
     return {};
+  }
+}
+
+/** Distinct-Liste bisher genutzter Locations (Autocomplete im Moderator +
+ *  „bei Ort X schon gespielt"-Filter in der CozyLibrary). Aus den Spielergebnissen
+ *  gezogen (ein Eintrag pro Spiel), leere/ungetaggte ignoriert. */
+export async function getQQVenues(): Promise<string[]> {
+  try {
+    const vals = await QQGameResultModel.distinct('venue');
+    return (vals as unknown[])
+      .filter((v): v is string => typeof v === 'string' && v.trim() !== '')
+      .sort((a, b) => a.localeCompare(b, 'de'));
+  } catch (err) {
+    console.error('Fehler beim Laden der QQ Venues:', err);
+    return [];
   }
 }
 

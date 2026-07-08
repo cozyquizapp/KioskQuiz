@@ -145,6 +145,7 @@ import {
   getQQFeedbackFromDB,
   deleteQQFeedbackFromDB,
   getQQUsageMap,
+  getQQVenues,
   clearQQQuestionUsage,
   getQQLibraryItems,
   getQQLibraryItem,
@@ -10468,6 +10469,18 @@ app.delete('/api/qq/library/usage', async (req, res) => {
   if (pin !== ADMIN_PIN) return res.status(403).json({ error: 'PIN falsch' });
   const deleted = await clearQQQuestionUsage();
   res.json({ ok: true, deleted });
+});
+
+// 2026-07-08 (Wolf): Liste bisher getaggter Locations — Autocomplete im
+// Moderator-Setup + „bei Ort X schon gespielt"-Filter in der CozyLibrary.
+app.get('/api/qq/venues', async (_req, res) => {
+  if (!isDBConnected()) return res.json([]);
+  try {
+    res.json(await getQQVenues());
+  } catch (err) {
+    console.error('[/api/qq/venues] error:', err);
+    res.json([]);
+  }
 });
 
 // ── CozyLibrary: Pool-Items ───────────────────────────────────────────────────

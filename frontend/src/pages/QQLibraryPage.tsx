@@ -30,7 +30,7 @@ type UsageEntry = {
   usageCount: number;
   firstUsedAt: number;
   lastUsedAt: number;
-  recentUses: Array<{ roomCode: string; draftId: string; draftTitle: string; playedAt: number }>;
+  recentUses: Array<{ roomCode: string; draftId: string; draftTitle: string; venue?: string; playedAt: number }>;
 };
 type UsageMap = Record<string, UsageEntry>;
 
@@ -101,6 +101,9 @@ export default function QQLibraryPage() {
   const [topicFilter, setTopicFilter] = useState<string | 'all'>('all');
   const [useFilter, setUseFilter] = useState<UseFilter>('all');
   const [sourceFilter, setSourceFilter] = useState<SourceFilter>('all');
+  // 2026-07-08 (Wolf): Location-Filter — '' = aus. Gesetzt zeigt NUR Fragen, die
+  // an diesem Ort noch NICHT liefen (baue frisch fuer einen Stammort ohne Wdh.).
+  const [venueFilter, setVenueFilter] = useState<string>('');
   const [qSortBy, setQSortBy] = useState<QSortKey>('unused');
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
   const [expandedQuestionId, setExpandedQuestionId] = useState<string | null>(null);
@@ -307,7 +310,7 @@ export default function QQLibraryPage() {
   // Reset Pagination when filter changes
   useEffect(() => {
     setVisibleCount(PAGE_SIZE);
-  }, [search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, sourceFilter, qSortBy, viewMode]);
+  }, [search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, sourceFilter, venueFilter, qSortBy, viewMode]);
 
   // Drafts-View filter+sort
   const filtered = useMemo(() => {
@@ -399,6 +402,11 @@ export default function QQLibraryPage() {
       const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
       list = list.filter(q => q.usage.lastUsedAt > cutoff);
     }
+    // 2026-07-08 (Wolf): Location-Filter — nur Fragen, die am gewaehlten Ort noch
+    // NICHT liefen. So baut Wolf fuer einen Stammort frisch, ohne Wiederholung.
+    if (venueFilter) {
+      list = list.filter(q => !q.usage.recentUses.some(u => u.venue === venueFilter));
+    }
     list.sort((a, b) => {
       switch (qSortBy) {
         case 'unused': return a.usage.usageCount - b.usage.usageCount || a.usage.lastUsedAt - b.usage.lastUsedAt;
@@ -416,7 +424,18 @@ export default function QQLibraryPage() {
       }
     });
     return list;
-  }, [drafts, poolItems, usageMap, search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, sourceFilter, qSortBy]);
+  }, [drafts, poolItems, usageMap, search, catFilter, phaseFilter, mechFilter, topicFilter, useFilter, sourceFilter, venueFilter, qSortBy]);
+
+  // 2026-07-08 (Wolf): Distinct-Orte aus der Usage-Historie fuer das Location-Dropdown.
+  const availableVenues = useMemo(() => {
+    const set = new Set<string>();
+    for (const u of Object.values(usageMap)) {
+      for (const r of u.recentUses ?? []) {
+        if (r.venue && r.venue.trim()) set.add(r.venue.trim());
+      }
+    }
+    return Array.from(set).sort((a, b) => a.localeCompare(b, 'de'));
+  }, [usageMap]);
 
   // Topic-Liste aus allen vorhandenen Fragen aggregieren (Custom-Topics behalten)
   const availableTopics = useMemo(() => {
@@ -827,6 +846,36 @@ export default function QQLibraryPage() {
                 );
               })}
             </div>
+
+            {/* 📍 Location-Filter — nur wenn Orte getaggt sind. Aktiv = zeigt NUR
+                Fragen, die an diesem Ort noch nie liefen (frisch bauen ohne Wdh.). */}
+            {availableVenues.length > 0 && (
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                <span style={{ fontSize: 11, fontWeight: 800, color: QQ_COLORS.slate500, textTransform: 'uppercase', letterSpacing: '0.05em', marginRight: 4 }}>📍 Ort:</span>
+                <button onClick={() => setVenueFilter('')} style={{
+                  padding: '4px 12px', borderRadius: 6, border: 'none', cursor: 'pointer',
+                  fontWeight: 700, fontSize: 12, fontFamily: 'inherit',
+                  background: venueFilter === '' ? QQ_COLORS.slate600 : 'rgba(255,255,255,0.05)',
+                  color: venueFilter === '' ? '#fff' : QQ_COLORS.slate500,
+                }}>Alle</button>
+                {availableVenues.map(v => {
+                  const active = venueFilter === v;
+                  return (
+                    <button key={v} onClick={() => setVenueFilter(active ? '' : v)} style={{
+                      padding: '4px 10px', borderRadius: 6, border: `1px solid ${active ? QQ_COLORS.brandPink : 'transparent'}`, cursor: 'pointer',
+                      fontWeight: 700, fontSize: 11, fontFamily: 'inherit',
+                      background: active ? QQ_COLORS.brandPink + '22' : 'rgba(255,255,255,0.04)',
+                      color: active ? QQ_COLORS.brandPink : QQ_COLORS.slate400,
+                    }}>{v}</button>
+                  );
+                })}
+                {venueFilter && (
+                  <span style={{ fontSize: 11, color: QQ_COLORS.brandPink, fontWeight: 700 }}>
+                    → nur Fragen, die bei „{venueFilter}" noch nie liefen
+                  </span>
+                )}
+              </div>
+            )}
 
             {/* Topic-Filter */}
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>

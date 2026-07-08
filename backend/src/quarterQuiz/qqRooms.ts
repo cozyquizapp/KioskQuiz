@@ -1250,6 +1250,7 @@ export function qqActivateQuestion(
         roomCode:   room.roomCode,
         draftId:    room.draftId,
         draftTitle: room.draftTitle,
+        venue:      (room as any).venue ?? '',
       }).catch(() => {});
     }
   }

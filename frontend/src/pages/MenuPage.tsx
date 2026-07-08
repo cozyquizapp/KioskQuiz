@@ -31,7 +31,6 @@ const cozyQuizTestLinks: LinkItem[] = [
   { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — 1-5 Teams, Frage/Reveal-Phasen, Higher/Lower-Choice, 4 Pair-Beispiele' },
   { path: '/cozygame-test',    label: 'CozyGame-Wheel Test',emoji: '🪅', note: 'Standalone-Test: Glücksrad-Spin + alle 5 Sub-Phasen, Slice-Slider 3-8, Auto-Demo-Button' },
   { path: '/summary-test',     label: 'Summary Test',       emoji: '📊', note: 'Public-Summary-Page nach QR-Scan — 3/5/8 Teams, Awards, ESC-Mode-Toggle' },
-  { path: '/testpage',         label: 'Team-Avatar-Picker', emoji: '🧑‍🎨', note: 'Lobby-Setup: Name + Emoji + Farbe pro Team (mobile-first)' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -52,15 +51,10 @@ const marketingLinks: LinkItem[] = [
 // ─────────────────────────────────────────────────────────────────────────
 const extrasLinks: LinkItem[] = [
   { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
-  { path: '/bingo-grid-test.html', label: 'Grid Tester',        emoji: '🔬', note: 'Spielfeld & Mechaniken simulieren' },
-  { path: '/sneak-peak.html',     label: 'Design Sneak Peak',  emoji: '✨', note: 'Mockup: Canva-Look für das neue Design' },
   { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
   { path: '/rules-editor',        label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise anpassen (lokal)' },
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
   { path: '/stats',           label: 'Stats & Leaderboard', emoji: '📈', note: 'AllTime-Stats, Frage-Verteilungen, Funny-Answers (Recap = pro Spiel, oben verlinkt)' },
-  { path: '/katalog',         label: 'Fragenkatalog',      emoji: '📚', note: 'Frage-Datenbank durchsuchen & verwalten' },
-  { path: '/intro',           label: 'Intro-Slides',       emoji: '📖', note: 'Pre-Show Slides editieren' },
-  { path: '/fragen',          label: 'Fragen-Editor',      emoji: '✏️', note: 'Einzelne Fragen bearbeiten' },
   { path: '/qrcode',          label: 'Beitritts-QR',       emoji: '🔳', note: 'QR-Code für Team-Beitritt' },
   { path: '/blinktest',       label: 'Blink-Test',         emoji: '👁️', note: 'Avatar-Blinzeln testen (Dev)' },
 ];

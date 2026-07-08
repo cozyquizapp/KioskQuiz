@@ -9,10 +9,7 @@ import LandingPage from './pages/LandingPage';
 // Lazy load: Heavy pages
 const AdminPage = React.lazy(() => import('./pages/AdminPage'));
 const MenuPage = React.lazy(() => import('./pages/MenuPage'));
-const QuestionEditorPage = React.lazy(() => import('./pages/QuestionEditorPage'));
-const IntroSlidesPage = React.lazy(() => import('./pages/IntroSlidesPage'));
 const StatsPage = React.lazy(() => import('./pages/StatsPage'));
-const QuestionCatalogPage = React.lazy(() => import('./pages/QuestionCatalogPage'));
 const QrCodePage = React.lazy(() => import('./pages/QrCodePage'));
 const QQModeratorPage = React.lazy(() => import('./pages/QQModeratorPage'));
 const QQModPortablePage = React.lazy(() => import('./pages/QQModPortablePage'));
@@ -41,7 +38,6 @@ const QQCarouselPage      = React.lazy(() => import('./pages/QQCarouselPage'));
 const QQBlinkTestPage     = React.lazy(() => import('./pages/QQBlinkTestPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
-const QQAvatarGeneratorPage = React.lazy(() => import('./pages/QQAvatarGeneratorPage'));
 const DesignLabPage = React.lazy(() => import('./pages/DesignLabPage'));
 const AnimationsLabPage = React.lazy(() => import('./pages/AnimationsLabPage'));
 const QQThanksTestPage = React.lazy(() => import('./pages/QQThanksTestPage'));
@@ -213,7 +209,6 @@ function App() {
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
-          <Route path="/testpage"   element={<PinGate><QQAvatarGeneratorPage /></PinGate>} />
           <Route path="/gekocht"    element={<DesignLabPage />} />
           <Route path="/animations" element={<AnimationsLabPage />} />
           <Route path="/thanks-test" element={<PinGate><QQThanksTestPage /></PinGate>} />
@@ -233,10 +228,7 @@ function App() {
           <Route path="/demo-real" element={<QQErrorBoundary source="demo-real"><div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)' }}><QQDemoReal /></div></QQErrorBoundary>} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
-          <Route path="/fragen"       element={<QuestionEditorPage />} />
-          <Route path="/katalog"      element={<QuestionCatalogPage />} />
           <Route path="/stats"        element={<StatsPage />} />
-          <Route path="/intro"        element={<IntroSlidesPage />} />
           <Route path="/menu"         element={<PinGate><MenuPage /></PinGate>} />
           <Route path="/qrcode"       element={<QrCodePage />} />
 
@@ -249,12 +241,7 @@ function App() {
           <Route path="/qq-slides"             element={<Navigate to="/slides" replace />} />
 
           {/* ── Legacy-Redirects (alte URLs) ────────────────────── */}
-          <Route path="/question-editor"       element={<Navigate to="/fragen" replace />} />
-          <Route path="/question-catalog"      element={<Navigate to="/katalog" replace />} />
-          <Route path="/alt/fragen"            element={<Navigate to="/fragen" replace />} />
-          <Route path="/alt/katalog"           element={<Navigate to="/katalog" replace />} />
           <Route path="/alt/stats"             element={<Navigate to="/stats" replace />} />
-          <Route path="/alt/intro"             element={<Navigate to="/intro" replace />} />
           <Route path="/alt/menu"              element={<Navigate to="/menu" replace />} />
           <Route path="/alt/qrcode"            element={<Navigate to="/qrcode" replace />} />
 

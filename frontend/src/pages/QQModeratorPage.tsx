@@ -101,6 +101,23 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     document.body.classList.add('qq-active');
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
+
+  // 2026-07-08 (Draft-Hub Deep-Link): /moderator?draft=<id> waehlt den Fragensatz
+  // vor, sobald die Draft-Liste geladen ist. Nur Vorauswahl, KEIN Auto-Start —
+  // Wolf durchlaeuft sein normales Setup. Damit kann die neue „Meine Quizze"-
+  // Startseite mit „▶ Starten" direkt auf einen konkreten Abend zeigen.
+  const draftParamRef = useRef<string | null>(
+    typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('draft') : null
+  );
+  useEffect(() => {
+    const wanted = draftParamRef.current;
+    if (!wanted || drafts.length === 0) return;
+    if (drafts.some(d => d.id === wanted)) {
+      setSelectedDraftId(wanted);
+      draftParamRef.current = null; // nur einmal anwenden
+    }
+  }, [drafts]);
+
   const { state, connected, emit, reconnect } = useQQSocket(roomCode);
 
   // 2026-05-08: Doppelklick-Schutz fuer Mod-Aktionen die zweifach zu fruehen

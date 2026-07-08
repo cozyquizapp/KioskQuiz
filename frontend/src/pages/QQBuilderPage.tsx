@@ -636,6 +636,21 @@ export default function QQBuilderPage() {
     fetch('/api/qq/drafts').then(r => r.json()).then(data => { if (Array.isArray(data)) setDrafts(data); }).catch(() => {});
   }, []);
 
+  // 2026-07-08 (Draft-Hub Deep-Link): /builder?draft=<id> oeffnet diesen Fragensatz
+  // direkt zum Bearbeiten (statt der Draft-Liste), damit „Meine Quizze → Bearbeiten"
+  // ohne Zwischenklick funktioniert. Laeuft einmalig, gewinnt vor der Backup-
+  // Restore-Logik (spaeterer async setActiveDraft).
+  useEffect(() => {
+    const wanted = new URLSearchParams(window.location.search).get('draft');
+    if (!wanted) return;
+    let cancelled = false;
+    fetch(`/api/qq/drafts/${wanted}`)
+      .then(r => (r.ok ? r.json() : null))
+      .then(d => { if (!cancelled && d && d.id) setActiveDraft(d); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
+
   function getQuestionsForCell(draft: QQDraft, phase: number, cat: QQCategory): QQQuestion[] {
     return draft.questions.filter(q => q.phaseIndex === phase && q.category === cat);
   }

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { MyQuizzesHub } from '../components/MyQuizzesHub';
 
 type LinkItem = { path: string; label: string; emoji: string; note?: string };
 
@@ -200,18 +201,28 @@ const MenuPage = () => {
         </div>
       </div>
 
-      {/* Drei Untermenüs */}
+      {/* Startseite: Meine Quizze (Draft-zentriert) */}
       <div style={{
-        maxWidth: 820, margin: '0 auto', padding: '28px 24px',
+        maxWidth: 820, margin: '0 auto', padding: '28px 24px 8px',
+      }}>
+        <MyQuizzesHub />
+      </div>
+
+      {/* Werkzeuge & mehr — sekundär, eingeklappt */}
+      <div style={{
+        maxWidth: 820, margin: '0 auto', padding: '16px 24px 0',
         display: 'flex', flexDirection: 'column', gap: 12,
       }}>
+        <div style={{
+          fontSize: 11, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase',
+          color: '#475569', margin: '8px 2px 2px',
+        }}>Werkzeuge & mehr</div>
         <AppPanel
           label="COZYQUIZ"
           emoji="🗺️"
           tagline="Live-Spiel — Moderator, Beamer, Team, Builder"
           accent="#3B82F6"
           links={cozyQuizLinks}
-          defaultOpen
         />
 
         <AppPanel

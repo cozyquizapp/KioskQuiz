@@ -1148,6 +1148,10 @@ export interface QQStateUpdate {
   timerDurationSec: number;
   timerEndsAt: number | null;        // ms timestamp, null = not running
   timerExpired?: boolean;            // 2026-05-02: true wenn Timer regulaer abgelaufen (nicht via Reveal/Stop)
+  /** 2026-07-09: echter Frage-/Timer-Start (ms). Bleibt bis zur naechsten Frage
+   *  gesetzt — Reveals rechnen die Reaktionszeit hierueber, weil timerEndsAt beim
+   *  Reveal schon null ist (sonst 0.0 fuers schnellste Team). */
+  currentQuestionStartedAt?: number | null;
   // Answers (all submissions this question)
   answers: QQAnswerEntry[];
   // 2026-05-02: Pro-Team-Hits fuer Top5/Order. Backend matcht mit

@@ -975,9 +975,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   </div>
                 );
               }
-              const t0 = s.timerEndsAt
-                ? s.timerEndsAt - (s.timerDurationSec * 1000)
-                : (correctAnswers[0].submittedAt);
+              // 2026-07-09 (Wolf 'Reveal-Timer 0.0'): currentQuestionStartedAt zuerst
+              // (timerEndsAt ist beim Reveal null → sonst 0.0 fürs schnellste Team).
+              const t0 = (s as any).currentQuestionStartedAt
+                ?? (s.timerEndsAt
+                  ? s.timerEndsAt - (s.timerDurationSec * 1000)
+                  : (correctAnswers[0].submittedAt));
               const winnerTeam = s.teams.find(t => t.id === correctAnswers[0].teamId);
               const multiCorrect = correctAnswers.length > 1;
               const winMsg = multiCorrect
@@ -1520,6 +1523,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               cardBg={cardBg}
               timerEndsAt={s.timerEndsAt}
               timerDurationSec={s.timerDurationSec}
+              currentQuestionStartedAt={(s as any).currentQuestionStartedAt}
               revealStep={revealed ? s.muchoRevealStep : 0}
             />
           )}
@@ -1532,9 +1536,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const earliestSubmit = zvzAnswers.length > 0
               ? Math.min(...zvzAnswers.map(a => a.submittedAt))
               : null;
-            const t0 = s.timerEndsAt && s.timerDurationSec
-              ? s.timerEndsAt - s.timerDurationSec * 1000
-              : earliestSubmit;
+            const t0 = (s as any).currentQuestionStartedAt
+              ?? (s.timerEndsAt && s.timerDurationSec
+                ? s.timerEndsAt - s.timerDurationSec * 1000
+                : earliestSubmit);
             // Analog Mucho: kompakt waehrend QUESTION_ACTIVE, Rows ziehen sich
             // smooth auseinander sobald Top-Bet-Chips einfliegen (zvzStep>=1).
             const expandedLayout = zvzStep >= 1;
@@ -1893,9 +1898,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   return team ? { team, submittedAt: a.submittedAt } : null;
                 })
                 .filter((x): x is { team: NonNullable<ReturnType<typeof s.teams.find>>; submittedAt: number } => !!x);
-              const t0 = s.timerEndsAt && s.timerDurationSec
-                ? s.timerEndsAt - s.timerDurationSec * 1000
-                : correctTeams[0]?.submittedAt;
+              const t0 = (s as any).currentQuestionStartedAt
+                ?? (s.timerEndsAt && s.timerDurationSec
+                  ? s.timerEndsAt - s.timerDurationSec * 1000
+                  : correctTeams[0]?.submittedAt);
               // Cozy Arena: bis zu 24 Sub-Team-Avatare → auf 8 Fraktionen bündeln.
               // Vertreter je Fraktion = schnellstes richtiges Handy (correctTeams
               // ist nach submittedAt sortiert → erster Treffer je avatarId), + ×Zähler.

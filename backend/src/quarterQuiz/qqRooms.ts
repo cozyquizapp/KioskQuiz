@@ -4774,6 +4774,11 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     finalRoundWinners:     room.finalRoundWinners ?? null,
     finalBetResolution:    room.finalBetResolution ?? null,
     endAwards:             room.endAwards ?? null,
+    // 2026-07-09 (Wolf-Livetest 'Timer im Reveal 0.0 beim schnellsten'): der
+    // echte Frage-/Timer-Start, damit Reveals die Reaktionszeit relativ dazu
+    // rechnen können. Bei Reveal ist timerEndsAt schon null → Frontend fiel sonst
+    // auf den ersten Submit zurück (= 0.0 fürs schnellste Team).
+    currentQuestionStartedAt: (room as any)._currentQuestionStartedAt ?? null,
     // 2026-05-10: Wenn das Spiel persistiert wurde (GAME_OVER → THANKS),
     // liegt die Game-Result-ID hier — ThanksView nutzt sie für den QR-Link
     // (`/summary/by-id/{id}` statt nur `/summary/{roomCode}`), damit

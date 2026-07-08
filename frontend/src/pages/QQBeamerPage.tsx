@@ -3645,7 +3645,7 @@ function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim }: {
 
 export function MuchoOptionsReveal({
   options, optionsEn, correctOptionIndex, optionImages, answers, teams, lang,
-  cardBg, timerEndsAt, timerDurationSec, revealStep,
+  cardBg, timerEndsAt, timerDurationSec, revealStep, currentQuestionStartedAt,
 }: {
   options: string[];
   optionsEn?: string[];
@@ -3658,6 +3658,7 @@ export function MuchoOptionsReveal({
   timerEndsAt: number | null;
   timerDurationSec: number;
   revealStep: number;
+  currentQuestionStartedAt?: number | null;
 }) {
   const N = options.length;
   // Cozy Arena erkennen: mehrere Sub-Teams teilen sich einen avatarId-Slot
@@ -3754,9 +3755,12 @@ export function MuchoOptionsReveal({
             return team ? { team, submittedAt: a.submittedAt } : null;
           })
           .filter((x): x is { team: NonNullable<ReturnType<typeof teams.find>>; submittedAt: number } => !!x);
-        const t0 = timerEndsAt && timerDurationSec
-          ? timerEndsAt - timerDurationSec * 1000
-          : voters[0]?.submittedAt;
+        // 2026-07-09 (Wolf 'Reveal-Timer 0.0'): currentQuestionStartedAt zuerst
+        // (timerEndsAt ist beim Reveal null → sonst 0.0 fürs schnellste Team).
+        const t0 = currentQuestionStartedAt
+          ?? (timerEndsAt && timerDurationSec
+            ? timerEndsAt - timerDurationSec * 1000
+            : voters[0]?.submittedAt);
         return (
           // 2026-05-07 (Audit P1): MUCHO-Cards gleich-hoch via flex:1+height:100%,
           // analog zu ZvZ. Wrapper bekommt display:flex + height:100%, Inner-Card

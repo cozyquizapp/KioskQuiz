@@ -221,10 +221,14 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 flexWrap auf mehrere Zeilen → Card konnte höher als Container
                 wachsen. Jetzt fix kompakte Höhe wie Lösung-Card. */}
             {winnerTeams.length > 0 && (() => {
-              // t0 = Question-Start, berechnet aus timer (oder Fallback erste Submission)
-              const t0 = s.timerEndsAt && s.timerDurationSec
-                ? s.timerEndsAt - s.timerDurationSec * 1000
-                : correctSorted[0]?.submittedAt ?? null;
+              // t0 = Question-Start. 2026-07-09 (Wolf 'Reveal-Timer 0.0'): zuerst
+              // den broadcasteten currentQuestionStartedAt nehmen — beim Reveal ist
+              // timerEndsAt schon null, sonst fiel t0 auf den ersten Submit zurück
+              // (= 0.0 fürs schnellste Team). Danach Timer-Rechnung, dann Fallback.
+              const t0 = (s as any).currentQuestionStartedAt
+                ?? (s.timerEndsAt && s.timerDurationSec
+                  ? s.timerEndsAt - s.timerDurationSec * 1000
+                  : correctSorted[0]?.submittedAt ?? null);
               const guessByTeam = new Map(correctSorted.map(g => [g.teamId, g]));
               return (
                 <div style={{

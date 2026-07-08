@@ -476,12 +476,16 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const allSlides = mega
     ? (lang === 'en' ? buildMegaRulesSlidesEn(totalPhases) : buildMegaRulesSlidesDe(totalPhases))
     : (lang === 'en' ? buildRulesSlidesEn(totalPhases) : buildRulesSlidesDe(totalPhases));
-  // 2026-05-24 (Wolf 'connections raus'): requiresConnections-Slides werden
-  // ueberall ausgeblendet (Feature deaktiviert). Comeback + CozyGames bleiben.
+  // 2026-05-24 (Wolf 'connections raus'): requiresConnections-Slides waren hart
+  // ausgeblendet. 2026-07-08 Konsistenz B7: jetzt am Flag gegated wie CozyGames/
+  // Comeback — bei connectionsEnabled=false (Default) unveraendert versteckt,
+  // aber wenn ein Mod Connections aktiv einschaltet, kommt die Regel-Folie mit
+  // (sonst kennen Teams die Finale-Regeln nicht).
+  const connEnabled = !!(s as any).connectionsEnabled;
   const cgEnabled = !!(s as any).cozyGamesEnabled;
   const cbEnabled = (s as any).comebackEnabled !== false;
   const slides = allSlides.filter(sl => {
-    if (sl.requiresConnections) return false;
+    if (sl.requiresConnections && !connEnabled) return false;
     if (sl.requiresCozyGames && !cgEnabled) return false;
     if (sl.requiresComeback && !cbEnabled) return false;
     return true;

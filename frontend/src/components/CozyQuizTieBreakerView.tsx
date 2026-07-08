@@ -7,10 +7,13 @@ import React, { useEffect, useState } from 'react';
 import { QQStateUpdate, qqMegaFactionName } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { useLangFlip } from '../cozyQuizShared';
 
 export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
   const tb = (s as any).tieBreaker as import('../../../shared/quarterQuizTypes').QQTieBreakerState | null;
-  const de = s.language !== 'en';
+  // 2026-07-08 Konsistenz B5: 'both'-Modus flippt jetzt DE/EN wie alle anderen
+  // Beamer-Screens (vorher `s.language !== 'en'` = blieb bei 'both' immer DE).
+  const de = useLangFlip(s.language) === 'de';
   const arena = !!(s as any).largeGroupMode;
 
   // Live-Countdown (nur Anzeige — Auto-Reveal macht der Server).
@@ -49,6 +52,9 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
       gap: '2.4cqh', padding: '4cqh 6cqw', boxSizing: 'border-box',
+      // 2026-07-08 Konsistenz B5: einziger Beamer-View ohne eigenes overflow-
+      // hidden — bei vielen Kandidaten/langen Namen sonst Clipping-Risiko.
+      overflow: 'hidden',
       background: 'radial-gradient(circle at 50% 28%, rgba(236,72,153,0.12), transparent 60%)',
       fontFamily: "'Nunito', 'Geist', system-ui, sans-serif", textAlign: 'center',
     }}>

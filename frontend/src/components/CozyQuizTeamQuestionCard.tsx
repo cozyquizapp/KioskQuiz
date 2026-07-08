@@ -114,10 +114,11 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
     }
     // 2026-05-23 (Live-Test-Bug #K): ZEHN_VON_ZEHN-Bets sind als „n,n,n" gespeichert
     // — vorher pur als „1,10,15" angezeigt was unklar war. Jetzt Punkte-Verteilung
-    // pro Option lesbar: „A: 1 · B: 10 · C: 15" mit Original-Optionstext im Reveal.
+    // pro Option lesbar: „1: 1 · 2: 10 · 3: 15" mit Original-Optionstext im Reveal.
+    // 2026-07-08 Konsistenz #6: 1/2/3 statt A/B/C — Buttons + Beamer nutzen Zahlen.
     if (q && q.category === 'ZEHN_VON_ZEHN' && q.options) {
       const parts = myAnswer.text.split(',').map(s => s.trim());
-      const labels = ['A','B','C','D'];
+      const labels = ['1','2','3','4'];
       const formatted = parts.map((p, i) => {
         const pts = parseInt(p, 10);
         if (isNaN(pts) || pts === 0) return null;
@@ -596,7 +597,6 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const correctIdx = q.correctOptionIndex;
         const earned = correctIdx != null ? (parts[correctIdx] ?? 0) : 0;
         const maxPts = Math.max(...parts, 1);
-        const ALLIN_COLORS = [QQ_COLORS.blue500,QQ_COLORS.green500,QQ_COLORS.red500];
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
@@ -608,7 +608,8 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             {q.options.map((opt, i) => {
               const pts = parts[i] ?? 0;
               const isCorrect = i === correctIdx;
-              const color = ALLIN_COLORS[i] ?? catColor;
+              // 2026-07-08 Konsistenz #5: alle Optionen in Kategorie-Akzent wie Beamer.
+              const color = catColor;
               const pct = (pts / maxPts) * 100;
               return (
                 <div key={i} style={{

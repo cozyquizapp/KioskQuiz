@@ -129,7 +129,10 @@ export function CrowdTopInput({ catColor, onSubmit, lang = 'de', timerEndsAt }: 
 }
 
 // ── Mu-Cho: A/B/C/D buttons ───────────────────────────────────────────────────
-const MUCHO_COLORS = ['#3B82F6','#22C55E','#EF4444','#F97316'];
+// 2026-07-08 Konsistenz #4: exakt die Beamer-Reihenfolge (MuchoOptionsReveal
+// MUCHO_COLORS = blue/red/pink/green). Vorher blau/gruen/rot/orange — nur A
+// stimmte, Orange existierte am Beamer gar nicht.
+const MUCHO_COLORS = ['#3B82F6','#EF4444','#EC4899','#22C55E'];
 // 2026-05-09 (Wolf): A/B/C/D als Negative-Squared-Latin-Emojis statt Plain-Text.
 // 2026-05-09 v2 (Wolf): zurueck auf Plain Text — die OS-Emoji-Versions
 // 🅰🅱🅲🅳 wurden als blaue Squares gerendert, doppeln den existing Box-Look.
@@ -209,7 +212,9 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
 }
 
 // ── All In: 1/2/3 betting ─────────────────────────────────────────────────────
-const ALLIN_COLORS = ['#3B82F6','#22C55E','#EF4444'];
+// 2026-07-08 Konsistenz #5: Beamer faerbt alle ZvZ-Optionen in der Kategorie-
+// Akzentfarbe (QuestionView optColor = accent); die Nummer 1/2/3 unterscheidet
+// sie. Vorher per-Option blau/gruen/rot am Handy — jetzt = catColor wie Beamer.
 const ALLIN_POOL = 10;
 
 export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null }) {
@@ -265,7 +270,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
       </div>
 
       {opts.map((opt: string, i: number) => {
-        const color = ALLIN_COLORS[i] ?? catColor;
+        const color = catColor;
         const label = qqCapOption(lang === 'en' && optsEn[i] ? optsEn[i] : opt);
         const pts = bets[i];
         return (

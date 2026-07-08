@@ -524,9 +524,12 @@ function WheelView({
   spinning: boolean; revealedGame?: CozyGame | null;
   lang: 'de' | 'en';
 }) {
-  // 2026-05-17 (P2 #6): Adaptive Anzeige — bei ≤3 Spielen kein vollwertiges
-  // Rad-Theater (Pizza-Effekt), sondern direkter Card-Pop wenn revealed.
-  if (slices.length <= 3) {
+  // 2026-05-17 (P2 #6): Adaptive Anzeige — bei sehr wenigen Spielen kein
+  // vollwertiges Rad-Theater, sondern direkter Card-Pop wenn revealed.
+  // 2026-07-09 (Wolf-Livetest 'Glücksrad bei 3 Spielen nicht angezeigt'):
+  // Schwelle 3 → 1. Ab 2 Spielen wird wieder das echte Rad gedreht; nur bei
+  // 0/1 Spiel (kein Rad möglich) bleibt der direkte Card-Pop.
+  if (slices.length <= 1) {
     return (
       <FullScreenLayout width={width} height={height}>
         {spinning && (

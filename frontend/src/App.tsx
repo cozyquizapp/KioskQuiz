@@ -19,7 +19,9 @@ const QQBuilderPage   = React.lazy(() => import('./pages/QQBuilderPage'));
 const QQPrepFlowPage  = React.lazy(() => import('./pages/QQPrepFlowPage'));
 const QQLibraryPage       = React.lazy(() => import('./pages/QQLibraryPage'));
 const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'));
-const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage'));
+// 2026-07-08: Slide-Editor aus dem Workflow genommen (Wolf: „brauche ich nicht mehr,
+// die Vorschau ist fake"). Seite bleibt auf Platte, Route leitet auf /menu um.
+// Der echte /beamer rendert gespeicherte Custom-Templates unveraendert weiter.
 const QQRulesEditorPage   = React.lazy(() => import('./pages/QQRulesEditorPage'));
 const CozyGamesEditorPage = React.lazy(() => import('./pages/CozyGamesEditorPage'));
 const CozyGameWheelTestPage = React.lazy(() => import('./pages/CozyGameWheelTestPage'));
@@ -191,7 +193,7 @@ function App() {
           <Route path="/vorbereiten" element={<PinGate><QQPrepFlowPage /></PinGate>} />
           <Route path="/library"    element={<PinGate><QQLibraryPage /></PinGate>} />
           <Route path="/host-sheets" element={<PinGate><QQHostSheetsPage /></PinGate>} />
-          <Route path="/slides"     element={<PinGate><QQSlideEditorPage /></PinGate>} />
+          <Route path="/slides"     element={<Navigate to="/menu" replace />} />
           <Route path="/rules-editor" element={<PinGate><QQRulesEditorPage /></PinGate>} />
           <Route path="/cozygames"   element={<PinGate><CozyGamesEditorPage /></PinGate>} />
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
@@ -230,7 +232,7 @@ function App() {
           <Route path="/quarterquiz-team"      element={<Navigate to="/team" replace />} />
           <Route path="/qq-builder"            element={<Navigate to="/builder" replace />} />
           <Route path="/qq-library"            element={<Navigate to="/library" replace />} />
-          <Route path="/qq-slides"             element={<Navigate to="/slides" replace />} />
+          <Route path="/qq-slides"             element={<Navigate to="/menu" replace />} />
 
           {/* ── Legacy-Redirects (alte URLs) ────────────────────── */}
           <Route path="/alt/stats"             element={<Navigate to="/stats" replace />} />

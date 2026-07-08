@@ -23,7 +23,6 @@ const liveLinks: LinkItem[] = [
 const buildLinks: LinkItem[] = [
   { path: '/builder',     label: 'CozyBuilder',        emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
   { path: '/library',     label: 'CozyLibrary',        emoji: '📚', note: 'Alle Fragen + 📍 Ort-Filter (keine Wiederholung) + wie oft gespielt' },
-  { path: '/slides',      label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten' },
   { path: '/rules-editor',label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise (lokal)' },
   { path: '/cozygames',   label: 'CozyGames-Editor',   emoji: '🎲', note: 'Mini-Spiele-Katalog für analoge CozyGame-Slots' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },

@@ -1,5 +1,4 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
 
 // ── CozyBuilder Brand-Tokens ──────────────────────────────────────────────────
 // 2026-05-10 (CozyBuilder Audit Pack A #1): Brand-Refresh statt Tailwind-Slate-
@@ -12,27 +11,6 @@ const COZY_PINK      = QQ_COLORS.brandPink;    // Primary-Action, Active-Tab
 const COZY_PINK_SOFT = QQ_COLORS.brandPinkSoft;    // Helle Pink-Variante (Highlights)
 const COZY_MAGENTA   = '#A21247';    // Errors, Magenta-Akzent (Finale-Farbe)
 
-// ── Shared tab bar (Builder ↔ Editor) ─────────────────────────────────────────
-function QQEditorTabs({ active, draftId, onSave }: { active: 'builder' | 'editor'; draftId?: string; onSave?: () => void }) {
-  const navigate = useNavigate();
-  const tabs = [
-    { id: 'builder', label: '📋 Fragen',  path: '/builder' },
-    { id: 'editor',  label: '🎨 Design',  path: `/slides?draft=${draftId}` },
-  ] as const;
-  return (
-    <div style={{ display: 'flex', gap: 2, background: COZY_NAVY_DARK, borderBottom: '1px solid rgba(236,72,153,0.12)', padding: '0 16px', flexShrink: 0 }}>
-      {tabs.map(t => {
-        const isActive = t.id === active;
-        return (
-          <button key={t.id} onClick={() => { if (!isActive) { onSave?.(); navigate(t.path); } }}
-            style={{ padding: '9px 18px', border: 'none', borderBottom: isActive ? `2px solid ${COZY_PINK}` : '2px solid transparent', background: 'transparent', color: isActive ? '#F8FAFC' : QQ_COLORS.slate400, fontFamily: 'inherit', fontWeight: 800, fontSize: 12, cursor: isActive ? 'default' : 'pointer', transition: 'all 0.15s' }}>
-            {t.label}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
 import {
   QQQuestion, QQCategory, QQLanguage, QQDraft,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
@@ -421,7 +399,6 @@ function cellPreview(q: QQQuestion | undefined): { text: string; sub?: string; a
 
 // ── Main component ─────────────────────────────────────────────────────────────
 export default function QQBuilderPage() {
-  const navigate = useNavigate();
   const [drafts, setDrafts] = useState<QQDraft[]>([]);
   const [activeDraft, setActiveDraft] = useState<QQDraft | null>(null);
   const [activeQId, setActiveQId] = useState<string | null>(null);
@@ -1104,7 +1081,6 @@ export default function QQBuilderPage() {
         </div>
       )}
       <style>{`
-        .qq-filmstrip-thumb:hover .qq-filmstrip-design-btn { opacity: 1 !important; }
         /* 2026-05-11: Wizard-Filmstrip Hover-Tooltip mit Frage-Preview. */
         .qq-filmstrip-chip-wrap:hover .qq-filmstrip-tooltip { opacity: 1 !important; }
         /* 2026-05-11: Kategorie-Focus-Glow auf Textareas. catColor per
@@ -1271,9 +1247,6 @@ export default function QQBuilderPage() {
           </div>
         );
       })()}
-      {/* Shared tab bar */}
-      <QQEditorTabs active="builder" draftId={activeDraft.id} onSave={() => saveDraftRaw(activeDraft)} />
-
       {/* Header — 2026-05-10 CozyBuilder Pack A: Navy + Pink-Tint statt
           Tailwind-Slate. Subtle Pink-Border-Bottom als Brand-Anker.
           2026-05-11 (Wolf-Wunsch 'Wizard im Vollbild'): Settings (Title-
@@ -1610,11 +1583,6 @@ export default function QQBuilderPage() {
                         </div>
                       </div>
                       <div style={{ position: 'absolute', bottom: 2, right: 4, fontSize: 7, color: QQ_COLORS.slate600, fontWeight: 700 }}>#{i + 1}</div>
-                      <div className="qq-filmstrip-design-btn"
-                        onClick={async e => { e.stopPropagation(); await saveDraftRaw(activeDraft); navigate(`/slides?draft=${activeDraft.id}&focusQuestion=${q.id}`); }}
-                        style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.65)', display: 'flex', alignItems: 'center', justifyContent: 'center', opacity: 0, transition: 'opacity 0.15s', zIndex: 10 }}>
-                        <span style={{ fontSize: 11, fontWeight: 900, color: '#fff', background: '#6366F1', padding: '3px 8px', borderRadius: 6 }}>🎨 Design</span>
-                      </div>
                     </div>
                     {/* Move left/right within phase */}
                     <div style={{ display: 'flex', gap: 2 }}>

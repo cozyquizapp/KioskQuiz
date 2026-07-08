@@ -30,7 +30,6 @@ export default function QQPrepFlowPage() {
   const total = questions.length;
   const filled = questions.filter(q => (q.text ?? '').trim().length > 0).length;
   const withAnswer = questions.filter(q => (q.answer ?? '').trim().length > 0).length;
-  const slideCount = draft?.slideTemplates ? Object.keys(draft.slideTemplates).length : 0;
   const cozyOn = !!draft?.cozyGamesEnabled;
   const cozyPool = draft?.cozyGamesPool?.length ?? 0;
 
@@ -55,28 +54,21 @@ export default function QQPrepFlowPage() {
       to: '/library', cta: 'Library öffnen',
     },
     {
-      n: 3, emoji: '🎨', title: 'Slides gestalten',
-      desc: 'Feinschliff fürs Beamer-Bild pro Frage (Bilder, Layout, Animation).',
-      status: slideCount > 0 ? 'done' : 'optional',
-      statusLabel: slideCount > 0 ? `${slideCount} gestaltet` : 'optional',
-      to: `/slides?draft=${draftId}`, cta: 'Slide-Editor öffnen',
-    },
-    {
-      n: 4, emoji: '🎲', title: 'CozyGames',
+      n: 3, emoji: '🎲', title: 'CozyGames',
       desc: 'Analoge Mini-Spiele als Auflockerungs-Slots. Katalog pflegen & im Builder aktivieren.',
       status: cozyOn ? 'done' : 'optional',
       statusLabel: cozyOn ? `aktiviert · ${cozyPool} im Pool` : 'optional',
       to: '/cozygames', cta: 'CozyGames öffnen',
     },
     {
-      n: 5, emoji: '🎬', title: 'Show planen',
+      n: 4, emoji: '🎬', title: 'Show planen',
       desc: 'Pre-Show-Checkliste: Material, Technik, Briefing & grobe Laufzeit — automatisch aus dem Quiz abgeleitet.',
       status: 'optional',
       statusLabel: 'optional',
       to: `/moderator?draft=${draftId}&plan=1`, cta: 'Show-Planer öffnen',
     },
     {
-      n: 6, emoji: '📄', title: 'Host-Sheet drucken',
+      n: 5, emoji: '📄', title: 'Host-Sheet drucken',
       desc: 'Dein Moderator-Spickzettel als PDF — Fragen, Antworten, Fun-Facts.',
       status: questionsDone ? 'todo' : 'optional',
       statusLabel: questionsDone ? 'bereit zum Drucken' : 'erst Fragen fertig',

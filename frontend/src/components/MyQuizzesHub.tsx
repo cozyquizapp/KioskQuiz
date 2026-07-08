@@ -1,8 +1,8 @@
 // 2026-07-08 (Wolf-Wunsch „alles Sinnvolle besser verknuepfen"): Draft-zentrierte
 // Startseite. Statt Tools in einem flachen Menue zu suchen, sieht Wolf seine
 // Quizze und haengt jede Aktion direkt ans jeweilige Quiz:
-//   ▶ Starten (Moderator, Draft vorgewaehlt) · ✏ Bearbeiten (Builder) ·
-//   🎨 Slides · 📄 Host-Sheet.
+//   ▶ Starten (Moderator, Draft vorgewaehlt) · 🧭 Vorbereiten · ✏ Bearbeiten
+//   (Builder) · 📄 Host-Sheet.
 // Alle Aktionen zeigen auf reale, funktionierende Ziele (Deep-Links mit ?draft=).
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
@@ -170,7 +170,6 @@ function QuizCard({ draft }: { draft: DraftSummary }) {
         <CardAction to={`/moderator?draft=${draft.id}`} emoji="▶" label="Starten" primary />
         <CardAction to={`/vorbereiten?draft=${draft.id}`} emoji="🧭" label="Vorbereiten" />
         <CardAction to={`/builder?draft=${draft.id}`} emoji="✏️" label="Bearbeiten" />
-        <CardAction to={`/slides?draft=${draft.id}`} emoji="🎨" label="Slides" />
         <button onClick={printSheet} disabled={printing} style={{
           display: 'inline-flex', alignItems: 'center', gap: 6,
           padding: '8px 12px', borderRadius: 10,

@@ -1825,7 +1825,13 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
-  const N = finalRanking.length;
+  // 2026-07-08 Audit B4: Ranking beim Mount EINFRIEREN. Sonst kann ein spaeter
+  // eintreffender stateUpdate den Parent-useMemo neu berechnen -> die Rows
+  // sortieren sich MITTEN im laufenden Reveal um (Flex-Order, kein FLIP) ->
+  // sichtbares Flackern/Umspringen des Siegers. Im race-final ist der Score
+  // final, Einfrieren ist korrekt und haelt zugleich N (Reveal-Timer-Dep) stabil.
+  const [frozenRanking] = useState(finalRanking);
+  const N = frozenRanking.length;
   // revealedCount zählt von unten (worst-first). 0 = nichts sichtbar,
   // N-1 = alle ausser Sieger, N = Sieger reveal-done.
   const [revealedCount, setRevealedCount] = useState(0);
@@ -1908,7 +1914,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
         justifyContent: 'center',
         minHeight: 0,
       }}>
-        {finalRanking.map((r, idx) => {
+        {frozenRanking.map((r, idx) => {
           const rank = idx + 1;
           const isWinner = rank === 1;
           // Reveal-Index 0 = worst (last DOM row). Winner-Row hat revealIdx = N-1

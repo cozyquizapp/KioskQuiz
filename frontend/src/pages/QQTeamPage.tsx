@@ -363,6 +363,25 @@ export default function QQTeamPage() {
     else setError(ack.error ?? 'error');
   }
 
+  // 2026-07-09 (Wolf-Livetest 'nach Beitreten kommt sofort Wieder-einsteigen'):
+  // Wenn UNSER Team schon im Raum ist, wir verbunden sind und nicht gekickt
+  // wurden, aber der Mid-Game-Rejoin-Screen erscheinen würde (phase != LOBBY,
+  // !joined) — NICHT den Spieler manuell klicken lassen. Das eigene Team auf dem
+  // eigenen Gerät wird automatisch resumt. Deckt Test-Races sauber ab (Bots/
+  // Autoplay startet das Quiz zwischen Setup und Beitreten → Phase verlässt die
+  // Lobby, das Handy landet sonst auf dem Klick-Wall). Der manuelle Button bleibt
+  // als Fallback, wenn nichts zu resumen ist oder die Verbindung fehlt.
+  const autoResumeRef = useRef(false);
+  useEffect(() => {
+    if (joined || !connected || kicked) { autoResumeRef.current = false; return; }
+    if (!state || state.phase === 'LOBBY') return;
+    if (!existingTeamInRoom) return;
+    if (autoResumeRef.current) return;
+    autoResumeRef.current = true;
+    handleResume();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [joined, connected, kicked, state?.phase, existingTeamInRoom?.id]);
+
   // Identity-Banner nur bei frischem Join anzeigen, nicht bei Auto-Rejoin.
   const [showIdentityBanner, setShowIdentityBanner] = useState(false);
 

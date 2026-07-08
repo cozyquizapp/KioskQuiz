@@ -5371,7 +5371,7 @@ function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string
       <span style={{ fontSize: 48, lineHeight: 1 }}><QQEmojiIcon emoji={icon}/></span>
       <div>
         <div style={{ fontWeight: 900, color, fontSize: 'clamp(22px, 2.5cqw, 30px)' }}>{label}</div>
-        <div style={{ fontFamily: "'Caveat', cursive", fontSize: 'clamp(17px, 1.8cqw, 22px)', color: QQ_COLORS.slate400, marginTop: 4 }}>{desc}</div>
+        <div style={{ fontFamily: 'inherit', fontSize: 'clamp(17px, 1.8cqw, 22px)', color: QQ_COLORS.slate400, marginTop: 4 }}>{desc}</div>
       </div>
     </div>
   );

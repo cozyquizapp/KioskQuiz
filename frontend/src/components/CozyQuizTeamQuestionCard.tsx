@@ -406,7 +406,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         }}>
           ✓ {s.revealedAnswer}
           {lang === 'en' && q.answerEn && q.answerEn !== s.revealedAnswer && (
-            <div style={{ fontFamily: "'Caveat', cursive", fontSize: 14, color: 'rgba(74,222,128,0.5)', marginTop: 4 }}>
+            <div style={{ fontFamily: 'inherit', fontSize: 14, color: 'rgba(74,222,128,0.5)', marginTop: 4 }}>
               {q.answerEn}
             </div>
           )}
@@ -782,7 +782,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
                   <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? QQ_COLORS.slate200 }}>{team?.name ?? a.teamId}</span>
-                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate400, fontFamily: "'Caveat', cursive" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
+                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate400, fontFamily: 'inherit' }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             })}

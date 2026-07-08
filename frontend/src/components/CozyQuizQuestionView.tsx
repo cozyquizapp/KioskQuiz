@@ -175,7 +175,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
                       </span>
                       <span style={{
                         minWidth: 'clamp(64px, 8cqw, 110px)', textAlign: 'right',
-                        fontFamily: "'Caveat', cursive",
+                        fontFamily: 'inherit',
                         fontSize: 'clamp(14px, 1.5cqw, 20px)',
                         color: isWinner ? QQ_COLORS.green300 : 'var(--qq-text-muted)', fontWeight: 700,
                       }}>
@@ -909,7 +909,7 @@ function TeamAnswerReveal({ s, q, lang, cardBg, accent }: {
               <span style={{ fontSize: 12, fontWeight: 900, color: i === 0 ? QQ_COLORS.blue400 : 'var(--qq-text-muted)', width: 20 }}>#{i + 1}</span>
               {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
               <span style={{ fontWeight: 900, color: team?.color ?? QQ_COLORS.slate200, flex: 1, fontSize: 13 }}>{team?.name}</span>
-              <span style={{ fontFamily: "'Caveat', cursive", fontSize: 15, color: isWinner ? QQ_COLORS.green400 : 'var(--qq-text-muted)' }}><QQEmojiIcon emoji="📍"/> {distStr}</span>
+              <span style={{ fontFamily: 'inherit', fontSize: 15, color: isWinner ? QQ_COLORS.green400 : 'var(--qq-text-muted)' }}><QQEmojiIcon emoji="📍"/> {distStr}</span>
             </div>
           );
         });

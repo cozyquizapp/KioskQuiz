@@ -1333,7 +1333,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 : <span style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={opt.icon}/></span>}
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 900, color: disabled ? QQ_COLORS.slate500 : opt.color, fontSize: 15 }}>{opt.label}</div>
-                <div style={{ fontFamily: "'Caveat', cursive", fontSize: 13, color: disabled ? QQ_COLORS.slate600 : QQ_COLORS.slate600, marginTop: 2 }}>
+                <div style={{ fontFamily: 'inherit', fontSize: 13, color: disabled ? QQ_COLORS.slate600 : QQ_COLORS.slate600, marginTop: 2 }}>
                   {disabled ? `🚫 ${opt.reason}` : opt.desc}
                 </div>
               </div>

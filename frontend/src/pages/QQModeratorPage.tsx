@@ -447,6 +447,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // 2026-07-07 (Wolf 'nur 2/4/8 waehlbar, will + button + mehr + arena-max'):
   // frei waehlbare Bot-Anzahl per Stepper statt fixer Presets.
   const [botCount, setBotCount] = useState(4);
+  // 2026-07-08 (Wolf 'in cozyarena muessen alle teams fuer bots auswaehlbar
+  // sein'): in der Arena (8 Fraktionen x bis 3 Sub-Teams) den Default auf Voll
+  // (24) ziehen, damit ein Bot-Fill wirklich ALLE Fraktionen belegt statt nur
+  // 4. Ausserhalb der Arena zurueck auf 4. Ein bewusst gesetzter Wert im
+  // jeweils gueltigen Bereich bleibt erhalten.
+  useEffect(() => {
+    if ((state as any)?.largeGroupMode) setBotCount(c => (c <= 8 ? 24 : c));
+    else setBotCount(c => (c > 8 ? 4 : c));
+  }, [(state as any)?.largeGroupMode]);
   async function runBotsTest(count: number) {
     const pin = getDevPin();
     if (!pin) { alert('Bots-Durchlauf braucht den Admin-PIN. Seite neu laden + PIN eingeben.'); return; }

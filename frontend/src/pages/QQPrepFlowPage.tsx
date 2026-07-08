@@ -69,7 +69,14 @@ export default function QQPrepFlowPage() {
       to: '/cozygames', cta: 'CozyGames öffnen',
     },
     {
-      n: 5, emoji: '📄', title: 'Host-Sheet drucken',
+      n: 5, emoji: '🎬', title: 'Show planen',
+      desc: 'Pre-Show-Checkliste: Material, Technik, Briefing & grobe Laufzeit — automatisch aus dem Quiz abgeleitet.',
+      status: 'optional',
+      statusLabel: 'optional',
+      to: `/moderator?draft=${draftId}&plan=1`, cta: 'Show-Planer öffnen',
+    },
+    {
+      n: 6, emoji: '📄', title: 'Host-Sheet drucken',
       desc: 'Dein Moderator-Spickzettel als PDF — Fragen, Antworten, Fun-Facts.',
       status: questionsDone ? 'todo' : 'optional',
       statusLabel: questionsDone ? 'bereit zum Drucken' : 'erst Fragen fertig',

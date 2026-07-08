@@ -120,6 +120,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
   const { state, connected, emit, reconnect } = useQQSocket(roomCode);
 
+  // 2026-07-08 (Wolf): /moderator?draft=id&plan=1 oeffnet direkt den Show-Prep-
+  // Wizard (Schritt aus dem „Quiz vorbereiten"-Fahrplan). Wartet bis der Socket-
+  // State da ist (das Modal braucht `s`=state), dann einmalig auf.
+  const planParamRef = useRef<boolean>(
+    typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('plan') === '1'
+  );
+  useEffect(() => {
+    if (planParamRef.current && state) {
+      setShowPrep(true);
+      planParamRef.current = false;
+    }
+  }, [state]);
+
   // 2026-05-08: Doppelklick-Schutz fuer Mod-Aktionen die zweifach zu fruehen
   // Phasen-Wechseln fuehren koennen (Hot-Potato-Doppel-Fire-Klasse). 500 ms
   // Lock pro Key reicht fuer schnelle Doppel-Spaces ohne legitime Folge-Klicks

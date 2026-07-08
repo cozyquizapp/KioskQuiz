@@ -199,7 +199,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 0,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Eiffel_Tower_from_Trocadero%2C_Paris_%282D%2C_retouched%29.jpg/1200px-Eiffel_Tower_from_Trocadero%2C_Paris_%282D%2C_retouched%29.jpg',
+      url: 'https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=1024&q=80',
       alt: 'Eiffelturm Paris'
     },
     answer: 'Eiffelturm',
@@ -216,7 +216,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 0,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Cat_03.jpg/1200px-Cat_03.jpg',
+      url: 'https://images.unsplash.com/photo-1536589961747-e239b2abbec2?w=1024&q=80',
       alt: 'Statue of Liberty'
     },
     answer: 'Freiheitsstatue',
@@ -233,7 +233,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Giant_Panda_2.jpg/1024px-Giant_Panda_2.jpg',
+      url: 'https://images.unsplash.com/photo-1527118732049-c88155f2107c?w=1024&q=80',
       alt: 'Großer Panda'
     },
     answer: 'Panda',
@@ -250,7 +250,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Sydney_Opera_House_-_Dec_2008_%28edit%29.jpg/1200px-Sydney_Opera_House_-_Dec_2008_%28edit%29.jpg',
+      url: 'https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?w=1024&q=80',
       alt: 'Sydney Opera House'
     },
     answer: 'Sydney Opera House',
@@ -267,7 +267,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4a/Brooklyn_Bridge_Manhattan.jpg/1200px-Brooklyn_Bridge_Manhattan.jpg',
+      url: 'https://images.unsplash.com/photo-1467521335787-2f0fc0f0e9a0?w=1024&q=80',
       alt: 'Brooklyn Bridge'
     },
     answer: 'Brooklyn Bridge',
@@ -286,7 +286,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1a/24701-nature-natural-beauty.jpg/1024px-24701-nature-natural-beauty.jpg',
+      url: 'https://images.unsplash.com/photo-1635010924649-2a1f324fa7f7?w=1024&q=80',
       alt: 'Starry Night'
     },
     answer: 'Van Gogh',
@@ -303,7 +303,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Uluru%2C_near_Alice_Springs%2C_NT%2C_07.2007.jpg/800px-Uluru%2C_near_Alice_Springs%2C_NT%2C_07.2007.jpg',
+      url: 'https://images.unsplash.com/photo-1557214997-7eae7e0e7aaa?w=1024&q=80',
       alt: 'Uluru Australien'
     },
     answer: 'Australien',
@@ -320,7 +320,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Elaphe_quadrivirgata_01.jpg/800px-Elaphe_quadrivirgata_01.jpg',
+      url: 'https://images.unsplash.com/photo-1531386151447-fd76ad50012f?w=1024&q=80',
       alt: 'Kobra Schlange'
     },
     answer: 'Kobra',
@@ -337,7 +337,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Colosseum_2020.jpg/1024px-Colosseum_2020.jpg',
+      url: 'https://images.unsplash.com/photo-1552432552-06c0b0a94dda?w=1024&q=80',
       alt: 'Kolosseum Rom'
     },
     answer: 'Rom',
@@ -354,7 +354,7 @@ export const questions: AnyQuestion[] = [
     segmentIndex: 1,
     media: {
       type: 'image',
-      url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Taj_Mahal.jpg/1024px-Taj_Mahal.jpg',
+      url: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?w=1024&q=80',
       alt: 'Taj Mahal'
     },
     answer: 'Indien',

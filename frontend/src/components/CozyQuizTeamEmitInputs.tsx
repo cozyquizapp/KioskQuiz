@@ -21,6 +21,7 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { useExpiry } from '../hooks/useExpiry';
+import { getServerNow } from '../utils/serverTime';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { StandardInput, SubmitBtn } from './CozyQuizTeamInputs';
 import { AnimatedDots } from './CozyQuizTeamPrimitives';
@@ -49,7 +50,7 @@ export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, l
   useEffect(() => {
     if (!s.hotPotatoTurnEndsAt) { setSecondsLeft(null); return; }
     const tick = () => {
-      const left = Math.max(0, Math.ceil((s.hotPotatoTurnEndsAt! - Date.now()) / 1000));
+      const left = Math.max(0, Math.ceil((s.hotPotatoTurnEndsAt! - getServerNow()) / 1000));
       setSecondsLeft(left);
     };
     tick();

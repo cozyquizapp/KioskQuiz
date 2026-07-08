@@ -37,6 +37,7 @@ import { safeEmit } from '../utils/qqTeamAckBus';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqCapOption } from '../cozyQuizShared';
 import { isThemed } from '../qqTheme';
+import { getServerNow } from '../utils/serverTime';
 
 // Kleine Hash-Helper-Funktion (nur fuer deterministische Trost-Message-Auswahl, kein Crypto).
 function hashString(s: string): number {
@@ -220,7 +221,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   useEffect(() => {
     if (!s.timerEndsAt || s.phase !== 'QUESTION_ACTIVE') { setIsCritical(false); return; }
     const iv = setInterval(() => {
-      const secs = Math.ceil(Math.max(0, (s.timerEndsAt! - Date.now()) / 1000));
+      const secs = Math.ceil(Math.max(0, (s.timerEndsAt! - getServerNow()) / 1000));
       setIsCritical(secs >= 1 && secs <= 3);
       if (secs === 0) clearInterval(iv);
     }, 120);

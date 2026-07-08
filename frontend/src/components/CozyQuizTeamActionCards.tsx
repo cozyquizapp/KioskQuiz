@@ -19,6 +19,7 @@ import { QQIcon, QQEmojiIcon, type QQIconSlug } from './QQIcon';
 import { CozyCard, CozyBtn, AnimatedDots } from './CozyQuizTeamPrimitives';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { getServerNow } from '../utils/serverTime';
 
 // Page-Cards-Background (Strangler-Fig: identisch zu QQTeamPage COZY_CARD_BG).
 const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
@@ -1613,10 +1614,11 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
 }
 
 function ConnectionsTeamTimer({ endsAt }: { endsAt: number }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-07-08 T4: getServerNow statt Date.now (Server-Clock, kein Drift).
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   useEffect(() => {
     const iv = setInterval(() => {
-      setRemaining(Math.max(0, (endsAt - Date.now()) / 1000));
+      setRemaining(Math.max(0, (endsAt - getServerNow()) / 1000));
     }, 500);
     return () => clearInterval(iv);
   }, [endsAt]);

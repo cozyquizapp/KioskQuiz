@@ -17,6 +17,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { ReactNode, CSSProperties } from 'react';
 import { isThemed } from '../qqTheme';
+import { getServerNow } from '../utils/serverTime';
 
 /** Frosted-Glass-Surface fuer Team-View Cards. Premium-Mobile-Look (opacity
  *  0.62 + saturate 160%, lesbar). backdrop-filter mit -webkit-Fallback fuer
@@ -193,12 +194,14 @@ export function MobileFireflies({ color }: { color?: string }) {
  *  Bar-Hoehe + Farbe je Urgency-Stufe (15s/10s/5s Schwellen). Haptic-Buzz
  *  in den letzten 3 Sek (genau 1 Buzz pro neuer Sekunde via lastBuzzSecRef). */
 export function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: number; durationSec: number; accentColor: string }) {
-  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - Date.now()) / 1000));
+  // 2026-07-08 T4: getServerNow statt Date.now — Timer-Anzeige folgt der Server-
+  // Clock (wie useExpiry/Beamer), driftet nicht bei falscher Client-Uhr.
+  const [remaining, setRemaining] = useState(() => Math.max(0, (endsAt - getServerNow()) / 1000));
   const lastBuzzSecRef = useRef<number | null>(null);
 
   useEffect(() => {
     const iv = setInterval(() => {
-      const r = Math.max(0, (endsAt - Date.now()) / 1000);
+      const r = Math.max(0, (endsAt - getServerNow()) / 1000);
       setRemaining(r);
       const secs = Math.ceil(r);
       if (secs >= 1 && secs <= 3 && lastBuzzSecRef.current !== secs) {

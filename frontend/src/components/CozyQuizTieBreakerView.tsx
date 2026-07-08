@@ -8,6 +8,7 @@ import { QQStateUpdate, qqMegaFactionName } from '../../../shared/quarterQuizTyp
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { useLangFlip } from '../cozyQuizShared';
+import { getServerNow } from '../utils/serverTime';
 
 export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
   const tb = (s as any).tieBreaker as import('../../../shared/quarterQuizTypes').QQTieBreakerState | null;
@@ -17,10 +18,11 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
   const arena = !!(s as any).largeGroupMode;
 
   // Live-Countdown (nur Anzeige — Auto-Reveal macht der Server).
-  const [now, setNow] = useState(() => Date.now());
+  // 2026-07-08 T4: getServerNow statt Date.now (Server-Clock, kein Drift).
+  const [now, setNow] = useState(() => getServerNow());
   useEffect(() => {
     if (!tb || tb.revealed || !tb.endsAt) return;
-    const h = setInterval(() => setNow(Date.now()), 250);
+    const h = setInterval(() => setNow(getServerNow()), 250);
     return () => clearInterval(h);
   }, [tb?.endsAt, tb?.revealed]);
   if (!tb) return null;

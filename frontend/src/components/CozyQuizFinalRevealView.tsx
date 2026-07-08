@@ -1330,8 +1330,10 @@ function AwardHeroSlide({ awardIndex, state: s, lang }: {
   const [isFlipped, setIsFlipped] = useState(false);
 
   useEffect(() => {
-    // Drumroll → Flip beim Mount (analog Bet-Cards). 900ms Drumroll-Build-up.
-    const DRUMROLL_MS = 900;
+    // Drumroll → Flip beim Mount (analog Bet-Cards).
+    // 2026-07-09 (Wolf): Front-Seite (WELCHER Award wird vergeben) länger zeigen
+    // → Drumroll 900ms → 2000ms, mehr Anticipation bevor der Sieger erscheint.
+    const DRUMROLL_MS = 2000;
     const t1 = window.setTimeout(() => {
       try { playSpecialAwardReveal(); } catch {}
     }, 100);
@@ -2743,11 +2745,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                   ? (de ? `Mit ${pts} Punkten SIEGER! 🏆` : `${pts} points — WINNER! 🏆`)
                   : (de ? `Mit ${pts} Punkten auf Platz ${r + 1}` : `${pts} points — #${r + 1}`)}
               </div>
-              {!crowned && (
-                <div style={{ marginTop: 4, fontSize: 13, fontWeight: 800, letterSpacing: '0.1em', color: '#94a3b8', animation: 'qqTowerHintPulse 1.4s ease-in-out infinite' }}>
-                  {de ? 'LEERTASTE ▶ WEITER' : 'SPACE ▶ NEXT'}
-                </div>
-              )}
+              {/* 2026-07-09 (Wolf): 'LEERTASTE WEITER' raus — Publikum braucht den
+                  Steuer-Hinweis nicht, sieht unpoliert aus. */}
             </div>
           </div>
         );

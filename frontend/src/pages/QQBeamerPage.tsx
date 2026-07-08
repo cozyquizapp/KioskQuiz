@@ -2835,17 +2835,17 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
       // - Active-Pill + Eliminated-Reihe: flex:0 0 auto am Footer
       // - Container nutzt full-height des Parent-Slots
       display: 'flex', flexDirection: 'column', alignItems: 'center',
+      // 2026-07-09 (Wolf-Livetest 'Name/Glow abgeschnitten' — 6. Anlauf, jetzt
+      // Root-Cause): der Chips-Block war flex:1 1 0 und dehnte sich bei WENIGEN/
+      // KEINEN Antworten auf die volle Höhe → schob den Halbkreis (mit der
+      // Namenszeile) nach ganz unten aus dem sichtbaren Bereich → gerade
+      // Clip-Kante. Fix: Cluster (Chips+Halbkreis+Raus) vertikal ZENTRIEREN und
+      // den Chips-Block NICHT mehr wachsen lassen (s.u.).
+      justifyContent: 'center',
       pointerEvents: 'none',
       width: '100%', height: '100%',
       maxWidth: 'min(94cqw, 1500px)',
-      // 2026-05-11 (Wolf-Bug 'Antworten hängen in Team-Cards'): Gap zwischen
-      // Chips-Block und Semicircle größer. War 14px, jetzt clamp(20,3cqh,40).
-      // Schafft visuelle Trennung damit Chips nicht direkt an die Active-Card
-      // anstoßen, plus puffert gegen 1-2px Layout-Rundungsfehler.
-      // 2026-07-07 (Wolf-Livetest 'rausgeflogene teams zu nah am aktiven'):
-      // Abstand vergrößert, damit die 'Raus:'-Reihe nicht an der JETZT-DRAN-
-      // Namenszeile klebt.
-      gap: 'clamp(28px, 4cqh, 56px)',
+      gap: 'clamp(16px, 2.5cqh, 36px)',
     }}>
       {/* Used answers list — top-aligned damit unten garantiert Platz fuer
           Trivia-Trio-Semicircle + Out-Liste bleibt.
@@ -2868,7 +2868,11 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
         // unten aus dem Slide gedrueckt wird. overflow:hidden cuttet die
         // hinteren Chip-Zeilen sauber statt sie auf folgende Sibling-Items
         // zu schieben.
-        flex: '1 1 0',
+        // 2026-07-09 (Wolf-Livetest): NICHT mehr wachsen (war flex:1 1 0 → dehnte
+        // sich leer auf und drückte den Halbkreis aus dem Bild). Jetzt natürliche
+        // Höhe, nach oben gedeckelt, eigener overflow für sehr viele Antworten.
+        flex: '0 1 auto',
+        maxHeight: 'clamp(80px, 20cqh, 210px)',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
         alignItems: 'center',
         width: '100%',

@@ -5,57 +5,60 @@ import { MyQuizzesHub } from '../components/MyQuizzesHub';
 type LinkItem = { path: string; label: string; emoji: string; note?: string };
 
 // ─────────────────────────────────────────────────────────────────────────
-// CozyQuiz — Live-Spiel-Elemente (alles was an einem Quiz-Abend gebraucht wird)
+// Menü nach ABLAUF gruppiert (2026-07-08, Wolf „unübersichtlich"): Live-Abend →
+// Bauen & Vorbereiten → Nachher → Marketing → Test & Dev. Die eigentliche
+// Startseite (Meine Quizze) steht darüber, jedes Quiz mit eigenen Aktionen.
 // ─────────────────────────────────────────────────────────────────────────
-const cozyQuizLinks: LinkItem[] = [
+
+// 🎬 Live-Abend — was am Spielabend selbst läuft
+const liveLinks: LinkItem[] = [
   { path: '/moderator',   label: 'Moderator',          emoji: '🎛️', note: 'Fragen steuern, Gewinner bestätigen' },
   { path: '/mopo',        label: 'MoPo (mobile Mod)',  emoji: '📲', note: 'iPhone-Version — großer Space-Button + Mod-Facts' },
   { path: '/beamer',      label: 'Beamer',             emoji: '📽️', note: 'Grid live anzeigen' },
   { path: '/team',        label: 'Team',               emoji: '📱', note: 'Antworten eingeben & Felder wählen' },
+  { path: '/qrcode',      label: 'Beitritts-QR',       emoji: '🔳', note: 'QR-Code für Team-Beitritt' },
+];
+
+// 🛠 Bauen & Vorbereiten — Quiz erstellen & fürs Event fertigmachen
+const buildLinks: LinkItem[] = [
   { path: '/builder',     label: 'CozyBuilder',        emoji: '🏗️', note: 'Fragensätze erstellen & verwalten' },
-  { path: '/library',     label: 'CozyLibrary',        emoji: '📚', note: 'Alle Fragen + Topic-Filter + wie oft schon gespielt' },
-  { path: '/cozygames',   label: 'CozyGames-Editor',   emoji: '🎲', note: 'Mini-Spiele-Katalog für analoge CozyGame-Slots im Quiz' },
+  { path: '/library',     label: 'CozyLibrary',        emoji: '📚', note: 'Alle Fragen + 📍 Ort-Filter (keine Wiederholung) + wie oft gespielt' },
+  { path: '/slides',      label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten' },
+  { path: '/rules-editor',label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise (lokal)' },
+  { path: '/cozygames',   label: 'CozyGames-Editor',   emoji: '🎲', note: 'Mini-Spiele-Katalog für analoge CozyGame-Slots' },
   { path: '/host-sheets', label: 'Host-Sheets',        emoji: '🎙️', note: 'Moderator-Spickzettel als PDF drucken' },
-  { path: '/feedback',    label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
-  { path: '/recap',       label: 'Recap-Übersicht',    emoji: '📊', note: 'Alle gespielten Quizze auf einen Blick — klick auf Spiel → Q-by-Q-History, Team-Stats, Awards, Funny-Answers' },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// CozyQuiz Test-Pages — Standalone-Vorschauen einzelner Quiz-Slides ohne ein
-// echtes Spiel durchzuziehen. Mit Toggle-Toolbars für Sprache/Teams/Awards.
-// ─────────────────────────────────────────────────────────────────────────
-const cozyQuizTestLinks: LinkItem[] = [
-  { path: '/thanks-test',      label: 'Thanks-Page Test',   emoji: '🎉', note: 'Standalone-Vorschau der Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams, Award-Sets)' },
-  { path: '/finalreveal-test', label: 'Final-Flow Test',    emoji: '🎬', note: 'Kompletter End-Flow: Bet-Intro → Bet-Active → Awards-Reveal (Split+Tabelle) → Bet-Cards (Climb) → Eurovision-Finale. Phase-Toggle + Step-Slider.' },
-  { path: '/moderator-test',   label: 'Mod-Test-Modus',     emoji: '🧪', note: 'Mod-Page mit Setup-Skip, 5 Bots auto-gespawnt, Skip-Buttons (→ Runde 2/3/4, FinalBet, FinalReveal). Kein DB-Save. Für schnelles Reveal-Choreo-Testen.' },
-  { path: '/bet-test',         label: 'Bet-Page Test',      emoji: '🎰', note: 'Final-Wager-Beamer-View — 3/5/8 Teams, Submit-Count Slider, Sprache' },
-  { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — 1-5 Teams, Frage/Reveal-Phasen, Higher/Lower-Choice, 4 Pair-Beispiele' },
-  { path: '/cozygame-test',    label: 'CozyGame-Wheel Test',emoji: '🪅', note: 'Standalone-Test: Glücksrad-Spin + alle 5 Sub-Phasen, Slice-Slider 3-8, Auto-Demo-Button' },
-  { path: '/summary-test',     label: 'Summary Test',       emoji: '📊', note: 'Public-Summary-Page nach QR-Scan — 3/5/8 Teams, Awards, ESC-Mode-Toggle' },
+// 📊 Nachher — nach dem Spiel: Auswertung & Rückmeldungen
+const afterLinks: LinkItem[] = [
+  { path: '/recap',    label: 'Recap-Übersicht',    emoji: '📊', note: 'Alle gespielten Quizze — klick → Q-by-Q-History, Team-Stats, Awards, Funny-Answers' },
+  { path: '/stats',    label: 'Stats & Leaderboard', emoji: '📈', note: 'AllTime-Stats, Frage-Verteilungen, Funny-Answers' },
+  { path: '/feedback', label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// Marketing & Öffentlich — Seiten, die auch ohne Login/Spiel erreichbar sind
-// ─────────────────────────────────────────────────────────────────────────
+// 📣 Marketing & Öffentlich
 const marketingLinks: LinkItem[] = [
-  { path: '/',         label: 'Landing-Page',      emoji: '🏠', note: 'Öffentliche Startseite (play.cozyquiz.app)' },
-  { path: '/about',    label: 'Was ist CozyQuiz?', emoji: 'ℹ️', note: 'Marketing-Erklärseite (/about)' },
-  { path: '/reels',    label: 'Reels-Hub',         emoji: '📱', note: 'Alle Werbe-Reels + Bilder-Slideshow-Deep-Links (Foto-Karussell fürs Durchtippen & Screenshotten)' },
-  { path: '/karussell', label: 'Foto-Karussell',   emoji: '🎠', note: 'Dedizierte 4:5-Standbild-Slides (welches-team): einzeln als HD-PNG oder alles als ZIP — für Insta-Foto-Karussells' },
-  { path: '/trailer',  label: 'Trailer',           emoji: '🎬', note: 'Showreel / Trailer-Seite' },
-  { path: '/showroom', label: 'Showroom',          emoji: '🖼️', note: 'Format-Showcase' },
+  { path: '/',          label: 'Landing-Page',      emoji: '🏠', note: 'Öffentliche Startseite (play.cozyquiz.app)' },
+  { path: '/about',     label: 'Was ist CozyQuiz?', emoji: 'ℹ️', note: 'Marketing-Erklärseite (/about)' },
+  { path: '/reels',     label: 'Reels-Hub',         emoji: '📱', note: 'Alle Werbe-Reels + Foto-Karussell + Trailer-Deep-Links an einem Ort' },
+  { path: '/karussell', label: 'Foto-Karussell',    emoji: '🎠', note: '4:5-Standbild-Slides — einzeln HD-PNG oder als ZIP für Insta' },
+  { path: '/trailer',   label: 'Trailer',           emoji: '🎬', note: 'Showreel / Trailer-Seite' },
+  { path: '/showroom',  label: 'Showroom',          emoji: '🖼️', note: 'Format-Showcase mit echten Beamer-Views' },
+  { path: '/formats',   label: 'Format-Roadmap',    emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
 ];
 
-// ─────────────────────────────────────────────────────────────────────────
-// Extras — Tools, Admin, Stats (verbliebene Editoren)
-// ─────────────────────────────────────────────────────────────────────────
-const extrasLinks: LinkItem[] = [
-  { path: '/formats',             label: 'Format-Roadmap',     emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
-  { path: '/slides',              label: 'Slide-Editor',       emoji: '🎨', note: 'Custom Slides pro Frage gestalten — bestehende Drafts editieren' },
-  { path: '/rules-editor',        label: 'Regeltexte',         emoji: '📜', note: 'Spielregel-Folien, Kategorie-Intros, Runden-Hinweise anpassen (lokal)' },
-  { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
-  { path: '/stats',           label: 'Stats & Leaderboard', emoji: '📈', note: 'AllTime-Stats, Frage-Verteilungen, Funny-Answers (Recap = pro Spiel, oben verlinkt)' },
-  { path: '/qrcode',          label: 'Beitritts-QR',       emoji: '🔳', note: 'QR-Code für Team-Beitritt' },
+// 🧪 Test & Dev — Vorschau-Harnesse & Admin (selten, eingeklappt)
+const devLinks: LinkItem[] = [
+  { path: '/moderator-test',   label: 'Mod-Test-Modus',     emoji: '🧪', note: 'Mod-Page mit Setup-Skip, 5 Bots, Skip-Buttons. Kein DB-Save — schnelles Reveal-Testen.' },
+  { path: '/finalreveal-test', label: 'Final-Flow Test',    emoji: '🎬', note: 'Kompletter End-Flow: Bet → Awards → Climb → Finale. Phase-Toggle + Step-Slider.' },
+  { path: '/race-finale',      label: 'Race-Finale',        emoji: '🏁', note: 'Turm-Finale-Vorschau (ohne PIN, auch bei Redeploys erreichbar)' },
+  { path: '/barrace-test',     label: 'Bar-Race Test',      emoji: '📊', note: 'Cozy-Arena Bar-Race (Mega-Event / Large-Group)' },
+  { path: '/thanks-test',      label: 'Thanks-Page Test',   emoji: '🎉', note: 'Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams)' },
+  { path: '/bet-test',         label: 'Bet-Page Test',      emoji: '🎰', note: 'Final-Wager-Beamer-View — 3/5/8 Teams' },
+  { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — Frage/Reveal-Phasen' },
+  { path: '/cozygame-test',    label: 'CozyGame-Wheel Test',emoji: '🪅', note: 'Glücksrad-Spin + alle 5 Sub-Phasen' },
+  { path: '/summary-test',     label: 'Summary Test',       emoji: '📊', note: 'Public-Summary-Page nach QR-Scan' },
+  { path: '/admin',            label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -214,37 +217,46 @@ const MenuPage = () => {
         <div style={{
           fontSize: 11, fontWeight: 900, letterSpacing: '0.12em', textTransform: 'uppercase',
           color: '#475569', margin: '8px 2px 2px',
-        }}>Werkzeuge & mehr</div>
+        }}>Alle Werkzeuge</div>
         <AppPanel
-          label="COZYQUIZ"
-          emoji="🗺️"
-          tagline="Live-Spiel — Moderator, Beamer, Team, Builder"
+          label="Live-Abend"
+          emoji="🎬"
+          tagline="Was am Spielabend läuft — Moderator, Beamer, Team, QR"
           accent="#3B82F6"
-          links={cozyQuizLinks}
+          links={liveLinks}
+          defaultOpen
         />
 
         <AppPanel
-          label="COZYQUIZ · Test-Pages"
-          emoji="🧪"
-          tagline="Standalone-Vorschauen einzelner Quiz-Slides — Thanks, Treppchen, Summary, Avatar-Picker"
+          label="Bauen & Vorbereiten"
+          emoji="🛠"
+          tagline="Quiz erstellen & fürs Event fertigmachen"
           accent="#EC4899"
-          links={cozyQuizTestLinks}
+          links={buildLinks}
+        />
+
+        <AppPanel
+          label="Nachher"
+          emoji="📊"
+          tagline="Auswertung & Rückmeldungen nach dem Spiel"
+          accent="#A78BFA"
+          links={afterLinks}
         />
 
         <AppPanel
           label="Marketing & Öffentlich"
-          emoji="🌐"
-          tagline="Landing, About, Trailer, Showroom, Skins — auch ohne Spiel erreichbar"
+          emoji="📣"
+          tagline="Landing, About, Reels-Hub, Trailer — auch ohne Spiel erreichbar"
           accent="#22C55E"
           links={marketingLinks}
         />
 
         <AppPanel
-          label="Extras"
-          emoji="🧰"
-          tagline="Tools, Editoren, Admin, Stats"
+          label="Test & Dev"
+          emoji="🧪"
+          tagline="Vorschau-Harnesse & Admin — selten gebraucht"
           accent="#6B7280"
-          links={extrasLinks}
+          links={devLinks}
         />
       </div>
     </div>

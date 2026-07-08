@@ -16,6 +16,7 @@ const QQModPortablePage = React.lazy(() => import('./pages/QQModPortablePage'));
 const QQBeamerPage    = React.lazy(() => import('./pages/QQBeamerPage'));
 const QQTeamPage      = React.lazy(() => import('./pages/QQTeamPage'));
 const QQBuilderPage   = React.lazy(() => import('./pages/QQBuilderPage'));
+const QQPrepFlowPage  = React.lazy(() => import('./pages/QQPrepFlowPage'));
 const QQLibraryPage       = React.lazy(() => import('./pages/QQLibraryPage'));
 const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'));
 const QQSlideEditorPage   = React.lazy(() => import('./pages/QQSlideEditorPage'));
@@ -187,6 +188,7 @@ function App() {
           <Route path="/moderator-test" element={<PinGate><QQErrorBoundary source="moderator-test"><QQModeratorPage testMode /></QQErrorBoundary></PinGate>} />
           <Route path="/mopo"       element={<PinGate><QQErrorBoundary source="mopo"><QQModPortablePage /></QQErrorBoundary></PinGate>} />
           <Route path="/builder"    element={<PinGate><QQBuilderPage /></PinGate>} />
+          <Route path="/vorbereiten" element={<PinGate><QQPrepFlowPage /></PinGate>} />
           <Route path="/library"    element={<PinGate><QQLibraryPage /></PinGate>} />
           <Route path="/host-sheets" element={<PinGate><QQHostSheetsPage /></PinGate>} />
           <Route path="/slides"     element={<PinGate><QQSlideEditorPage /></PinGate>} />

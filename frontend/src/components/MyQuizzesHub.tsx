@@ -151,6 +151,7 @@ function QuizCard({ draft }: { draft: DraftSummary }) {
       {/* Aktionen */}
       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 7 }}>
         <CardAction to={`/moderator?draft=${draft.id}`} emoji="▶" label="Starten" primary />
+        <CardAction to={`/vorbereiten?draft=${draft.id}`} emoji="🧭" label="Vorbereiten" />
         <CardAction to={`/builder?draft=${draft.id}`} emoji="✏️" label="Bearbeiten" />
         <CardAction to={`/slides?draft=${draft.id}`} emoji="🎨" label="Slides" />
         <CardAction to="/host-sheets" emoji="📄" label="Host-Sheet" />

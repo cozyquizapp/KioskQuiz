@@ -6,6 +6,7 @@
 // Alle Aktionen zeigen auf reale, funktionierende Ziele (Deep-Links mit ?draft=).
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { exportHostCheatsheet } from '../pages/qqHostCheatsheet';
 
 type DraftSummary = {
   id: string;
@@ -120,6 +121,18 @@ function QuickLink({ to, emoji, label }: { to: string; emoji: string; label: str
 function QuizCard({ draft }: { draft: DraftSummary }) {
   const demo = isDemo(draft.id);
   const count = draft.questionCount ?? 0;
+  const [printing, setPrinting] = useState(false);
+  // Host-Sheet direkt aus der Karte: vollen Draft ziehen → PDF/Print. Spart den
+  // Umweg über die /host-sheets-Liste.
+  const printSheet = async () => {
+    if (printing) return;
+    setPrinting(true);
+    try {
+      const r = await fetch(`/api/qq/drafts/${draft.id}`);
+      if (r.ok) { const full = await r.json(); await exportHostCheatsheet(full); }
+    } catch { /* ignore */ }
+    setPrinting(false);
+  };
   return (
     <div style={{
       display: 'flex', flexDirection: 'column', gap: 12,
@@ -154,7 +167,15 @@ function QuizCard({ draft }: { draft: DraftSummary }) {
         <CardAction to={`/vorbereiten?draft=${draft.id}`} emoji="🧭" label="Vorbereiten" />
         <CardAction to={`/builder?draft=${draft.id}`} emoji="✏️" label="Bearbeiten" />
         <CardAction to={`/slides?draft=${draft.id}`} emoji="🎨" label="Slides" />
-        <CardAction to="/host-sheets" emoji="📄" label="Host-Sheet" />
+        <button onClick={printSheet} disabled={printing} style={{
+          display: 'inline-flex', alignItems: 'center', gap: 6,
+          padding: '8px 12px', borderRadius: 10,
+          fontSize: 13, fontWeight: 800, whiteSpace: 'nowrap', fontFamily: 'inherit',
+          background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.10)',
+          color: '#cbd5e1', cursor: printing ? 'default' : 'pointer', opacity: printing ? 0.6 : 1,
+        }}>
+          <span>📄</span>{printing ? '…' : 'Host-Sheet'}
+        </button>
       </div>
     </div>
   );

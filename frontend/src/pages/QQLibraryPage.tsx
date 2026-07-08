@@ -34,6 +34,10 @@ type UsageEntry = {
 };
 type UsageMap = Record<string, UsageEntry>;
 
+// 2026-07-08 (Wolf): Fremd-Trivia-Import (TriviaDB) ausgeblendet — unebene
+// Qualitaet, solo kaum gebraucht. Code bleibt, nur der Einstieg ist aus.
+const SHOW_TRIVIADB_IMPORT = false;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 function getDraftStatus(d: QQDraft): 'complete' | 'incomplete' {
   const filled = d.questions.filter(q => q.text.trim().length > 0).length;
@@ -683,14 +687,16 @@ export default function QQLibraryPage() {
           <button onClick={() => navigate('/menu')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: 'rgba(255,255,255,0.07)', color: QQ_COLORS.slate400 }}>← Menü</button>
           <h1 style={{ fontSize: 22, fontWeight: 900, margin: 0 }}>📚 CozyLibrary</h1>
           <div style={{ marginLeft: 'auto', display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button onClick={() => setShowImportPanel(p => !p)} style={{
-              padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
-              fontWeight: 700, fontSize: 13,
-              background: showImportPanel ? QQ_COLORS.violet400 : 'rgba(168,139,250,0.18)',
-              color: showImportPanel ? '#fff' : QQ_COLORS.violet400,
-            }}>
-              ⬇️ Pool erweitern (TriviaDB)
-            </button>
+            {SHOW_TRIVIADB_IMPORT && (
+              <button onClick={() => setShowImportPanel(p => !p)} style={{
+                padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
+                fontWeight: 700, fontSize: 13,
+                background: showImportPanel ? QQ_COLORS.violet400 : 'rgba(168,139,250,0.18)',
+                color: showImportPanel ? '#fff' : QQ_COLORS.violet400,
+              }}>
+                ⬇️ Pool erweitern (TriviaDB)
+              </button>
+            )}
             <button onClick={importDraft} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: QQ_COLORS.blue500, color: '#fff' }}>📥 Draft importieren</button>
             <button onClick={() => navigate('/builder')} style={{ padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 700, fontSize: 13, background: QQ_COLORS.green500, color: '#fff' }}>+ Neuer Fragensatz</button>
           </div>

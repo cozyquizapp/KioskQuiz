@@ -220,7 +220,7 @@ function App() {
           <Route path="/race-finale" element={<QQRaceFinaleTestPage />} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
-          <Route path="/stats"        element={<StatsPage />} />
+          <Route path="/stats"        element={<PinGate><StatsPage /></PinGate>} />
           <Route path="/menu"         element={<PinGate><MenuPage /></PinGate>} />
           <Route path="/qrcode"       element={<QrCodePage />} />
 

@@ -31,8 +31,7 @@ const buildLinks: LinkItem[] = [
 
 // 📊 Nachher — nach dem Spiel: Auswertung & Rückmeldungen
 const afterLinks: LinkItem[] = [
-  { path: '/recap',    label: 'Recap-Übersicht',    emoji: '📊', note: 'Alle gespielten Quizze — klick → Q-by-Q-History, Team-Stats, Awards, Funny-Answers' },
-  { path: '/stats',    label: 'Stats & Leaderboard', emoji: '📈', note: 'AllTime-Stats, Frage-Verteilungen, Funny-Answers' },
+  { path: '/stats',    label: 'Stats & Recap',      emoji: '📊', note: 'Alle gespielten Spiele + Sieger — klick → Q-by-Q-Recap, Team-Stats, Awards, Funny-Answers' },
   { path: '/feedback', label: 'Feedback-Dashboard', emoji: '📋', note: 'Spieler-Feedback & Bug-Reports' },
 ];
 

@@ -30,7 +30,7 @@ import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
 import { CozyCard, CozyBtn, CopyButton } from './CozyQuizTeamPrimitives';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode } from '../utils/qqStammCode';
-import { compareTeamsForRanking } from '../utils/qqTeamRanking';
+import { qqFinalSortedTeams, qqFinalTotal } from '../utils/qqFinalScore';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── LobbyCard ────────────────────────────────────────────────────────────────
@@ -1172,7 +1172,11 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
   // summiert Sub-Teams je Fraktion) — sonst listet die Endkarte ~25 rohe Sub-Teams
   // mit doppelten Fraktions-Namen + 0-Punkte-Phantomzeilen. Muster wie PausedCard.
   const largeMode = !!(s as any).largeGroupMode;
-  const sorted  = largeMode ? qqSortedGroups(s) : [...s.teams].sort(compareTeamsForRanking);
+  // 2026-07-09 (Wolf-Livetest 'Handy und Beamer zeigen unterschiedliche Sieger'):
+  // Endstand MUSS wie der Beamer nach dem FINALEN Gesamt-Score ranken
+  // (largestConnected + Final-Wetten-Bonus + Award-Punkte), nicht nur nach
+  // largestConnected. Sonst kürt das Handy einen anderen Sieger als der Beamer.
+  const sorted  = largeMode ? qqSortedGroups(s) : qqFinalSortedTeams(s);
   const myRaw   = s.teams.find(t => t.id === myTeamId);
   const myTeam  = largeMode ? sorted.find(t => t.avatarId === myRaw?.avatarId) : myRaw;
   const myRank  = sorted.findIndex(t => t.id === myTeam?.id) + 1;
@@ -1240,7 +1244,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
                 <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.brandPink : QQ_COLORS.slate400 }}>
-                    {tm.largestConnected} {connectedLabel}
+                    {largeMode ? tm.largestConnected : qqFinalTotal(s, tm.id)} {connectedLabel}
                   </div>
                   {!largeMode && <div style={{ fontSize: 11, color: QQ_COLORS.slate600 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}
                 </div>

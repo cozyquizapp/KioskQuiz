@@ -312,6 +312,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
 // shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
 // (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
 import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalReveal';
+import { qqFinalTotal } from '../utils/qqFinalScore';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed } from '../qqTheme';
 
@@ -573,15 +574,15 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     // ignoriert, widersprach Wolfs Mental-Model "groesstes Gebiet gewinnt".
     // cellsByTeam bleibt fuer GridRevealSlide-Display (Visual-Info "X Felder
     // gesetzt"), wird aber nicht mehr fuer Score-Sortierung benutzt.
+    // 2026-07-09: total über den SHARED-Helper (qqFinalTotal) — identisch zur
+    // Handy-GameOverCard, damit beide Geräte denselben Sieger küren (Drift-Bug).
     const finalRanking = [...s.teams]
       .map(t => ({
         team: t,
         score: t.largestConnected ?? 0,
         bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
         awards: awardPoints[t.id] ?? 0,
-        total: (t.largestConnected ?? 0)
-          + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
-          + (awardPoints[t.id] ?? 0),
+        total: qqFinalTotal(s, t.id, awardPoints),
       }))
       .sort((a, b) => b.total - a.total);
 

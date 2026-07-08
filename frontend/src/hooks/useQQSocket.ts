@@ -40,6 +40,16 @@ export function useQQSocket(roomCode: string) {
     socket.on('disconnect', () => setConnected(false));
     socket.on('reconnect_failed', () => setConnected(false));
 
+    // 2026-07-08 (Audit T2): expliziter session:restarted-Listener statt nur
+    // der LOBBY-Heuristik. Backend feuert das bei host:restartSession + Single-
+    // Session-Verdraengung (server.ts). State leeren → Consumer re-syncen sauber
+    // (Team: Auto-Rejoin/Setup-Gate + Kick-Detection feuern frisch; Beamer baut
+    // aus dem naechsten qq:stateUpdate neu auf). Vorher konnte die reine Phase-
+    // Heuristik bei schnellem Restart hinterherhinken.
+    socket.on('session:restarted', () => {
+      setState(null);
+    });
+
     socket.on('qq:stateUpdate', (payload: QQStateUpdate) => {
       // 2026-05-19: Server-Clock-Offset vor State-Update merken. Timer-
       // Komponenten nutzen `getServerNow()` damit Beamer/Team/Mod denselben
@@ -76,6 +86,7 @@ export function useQQSocket(roomCode: string) {
       window.clearInterval(heartbeatId);
       document.removeEventListener('visibilitychange', onVisibility);
       socket.off('qq:stateUpdate');
+      socket.off('session:restarted');
       socket.disconnect();
       socketRef.current = null;
     };

@@ -909,9 +909,9 @@ export function FinalRecapHintCard({
               {targetTeam.name}
             </span>
             <span style={{
-              fontSize: 22, fontWeight: 900, color: QQ_COLORS.amber400,
+              fontSize: 22, fontWeight: 900, color: QQ_COLORS.brandPink,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: '0 0 12px rgba(251,191,36,0.5)',
+              textShadow: '0 0 12px rgba(236,72,153,0.5)',
             }}>{targetWins} 🏆</span>
           </div>
         ) : (
@@ -1227,7 +1227,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
                 <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
                 <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.yellow500 : QQ_COLORS.slate400 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.brandPink : QQ_COLORS.slate400 }}>
                     {tm.largestConnected} {connectedLabel}
                   </div>
                   {!largeMode && <div style={{ fontSize: 11, color: QQ_COLORS.slate600 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}

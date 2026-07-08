@@ -810,8 +810,16 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               textTransform: 'uppercase',
             }}>live quiz</span>
           </div>
-          <div style={{ fontSize: 38, fontWeight: 900, color: QQ_COLORS.slate100, letterSpacing: '-0.02em' }}>
-            {t.header[lang]}
+          {/* 2026-07-08 Konsistenz #2: Wordmark = Beamer-Look (League Spartan via
+              --font-brand + Brand-Pink), und 'COZY ARENA' im largeGroupMode wie
+              der Beamer (CozyQuizLobbyView). Vorher slate-weiss + Nunito. */}
+          <div style={{
+            fontSize: 40, fontWeight: 900,
+            fontFamily: 'var(--font-brand)',
+            color: '#EC4899', letterSpacing: '0.03em',
+            textShadow: '0 2px 12px rgba(236,72,153,0.3)',
+          }}>
+            {largeGroup ? 'COZY ARENA' : t.header[lang]}
           </div>
           {/* Always show language flag in setup/lobby.
               2026-05-05 (Phase-8 Bucket-1 B-1): minWidth/minHeight 44 fuer

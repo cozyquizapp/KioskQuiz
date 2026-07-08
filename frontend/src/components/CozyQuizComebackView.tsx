@@ -664,7 +664,9 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         fontSize: bamActive ? 'clamp(68px, 9cqw, 128px)' : 'clamp(56px, 6.5cqw, 104px)',
         fontWeight: 900,
         color: 'var(--qq-accent)', textAlign: 'center',
-        textShadow: '0 0 50px rgba(234,179,8,0.55)',
+        // 2026-07-08 Konsistenz #9: Marke ist NICHT Gold — Glow von Gold auf
+        // Brand-Pink (Beamer war hier off-brand vs Team-Pink).
+        textShadow: '0 0 50px rgba(236,72,153,0.55)',
         letterSpacing: bamActive ? '0.04em' : 'normal',
         animation: bamActive
           ? 'comebackSlam 1s var(--qq-ease-bounce) both'
@@ -700,7 +702,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             padding: '6px 18px', borderRadius: 'var(--qq-pill-radius)',
             background: 'rgba(var(--qq-accent-rgb),0.18)', border: '2px solid rgba(var(--qq-accent-rgb),0.5)',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
-            color: QQ_COLORS.yellow300, letterSpacing: '0.1em', textTransform: 'uppercase',
+            color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.1em', textTransform: 'uppercase',
           }}>
             <QQEmojiIcon emoji="📖"/> {lang === 'en' ? 'How it works' : 'So funktioniert’s'}
           </div>
@@ -769,7 +771,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
           position: 'relative', zIndex: 5,
         }}>
-          <div style={{ fontSize: 'clamp(22px, 2.6cqw, 34px)', lineHeight: 1.45, color: QQ_COLORS.yellow300, fontWeight: 900, marginBottom: 18 }}>
+          <div style={{ fontSize: 'clamp(22px, 2.6cqw, 34px)', lineHeight: 1.45, color: QQ_COLORS.brandPink, fontWeight: 900, marginBottom: 18 }}>
             {lang === 'en'
               ? 'Last place gets a Comeback-Boost.'
               : 'Letzter Platz bekommt einen Comeback-Boost.'}
@@ -875,7 +877,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               ? '0 0 44px rgba(var(--qq-accent-rgb),0.25), 0 8px 22px rgba(0,0,0,0.4)'
               : `0 0 44px rgba(239,68,68,0.22), 0 8px 22px rgba(0,0,0,0.4)`,
             fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 900,
-            color: hl ? QQ_COLORS.yellow300 : '#fecaca',
+            color: hl ? QQ_COLORS.brandPink : '#fecaca',
             maxWidth: 1000,
             lineHeight: 1.4,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,

@@ -1131,7 +1131,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 opacity: answered && myAnswer !== 'higher' ? 0.35 : 1,
                 transition: 'all 0.2s ease',
               }}
-            >↑<br/>{lang === 'en' ? 'MORE' : 'MEHR'}</button>
+            >↑<br/>{lang === 'en' ? 'HIGHER' : 'MEHR'}</button>
             <button
               onClick={() => submit('lower')}
               disabled={answered}
@@ -1145,7 +1145,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 opacity: answered && myAnswer !== 'lower' ? 0.35 : 1,
                 transition: 'all 0.2s ease',
               }}
-            >↓<br/>{lang === 'en' ? 'LESS' : 'WENIGER'}</button>
+            >↓<br/>{lang === 'en' ? 'LOWER' : 'WENIGER'}</button>
           </div>
         )}
         {!isReveal && answered && (

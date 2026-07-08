@@ -753,9 +753,11 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               fontSize: 'clamp(15px, 1.6cqw, 22px)', fontWeight: 700,
               color: 'var(--qq-text-muted)', opacity: 0.85, lineHeight: 1.5,
             }}>
+              {/* 2026-07-08 Konsistenz #13: Rundenzahl dynamisch (hl.rounds) statt
+                  hartkodierter „3" — wie die Team-Ansicht. */}
               {lang === 'en'
-                ? 'Up to 3 rounds — each correct answer steals 1 cell from the leader.'
-                : 'Bis zu 3 Runden — jede richtige Antwort klaut 1 Feld vom Führenden.'}
+                ? `Up to ${hl?.rounds ?? 3} rounds — each correct answer steals 1 cell from the leader.`
+                : `Bis zu ${hl?.rounds ?? 3} Runden — jede richtige Antwort klaut 1 Feld vom Führenden.`}
             </div>
           </div>
         </div>

@@ -23,7 +23,7 @@ import {
   QQStateUpdate, QQTeam, qqGetAvatar, qqMegaFactionName,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
-import { QQ_CAT_ACCENT, qqSortedGroups } from '../qqShared';
+import { QQ_CAT_ACCENT, qqSortedGroups, qqSortedTeams } from '../qqShared';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
@@ -221,7 +221,7 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
           textTransform: 'uppercase', color: '#F9A8D4',
           animation: 'tcreveal 0.4s ease both',
         }}>
-          🎬 {lang === 'en' ? "Today's players" : 'Heute spielen'}
+          🎬 {lang === 'en' ? "Tonight's teams" : 'Heute spielen'}
         </div>
 
         {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring */}
@@ -639,14 +639,18 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
   // 2026-07-03 (Wolf-Audit): Cozy Arena zeigt Fraktions-Standings nach Punkten,
   // nicht Grid-„Felder". qqSortedGroups summiert Sub-Teams je Fraktion.
   const largeMode = !!(s as any).largeGroupMode;
-  const sorted = largeMode ? qqSortedGroups(s) : [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
+  // 2026-07-08 Konsistenz #7: Rang + Zahl exakt wie Beamer-PausedView —
+  // Backend-kanonische Sortierung (qqSortedTeams) statt lokalem totalCells-Sort,
+  // und largestConnected als Hauptzahl (nicht totalCells). Vorher wichen Rang
+  // UND Zahl vom Beamer ab.
+  const sorted = largeMode ? qqSortedGroups(s) : qqSortedTeams(s);
   const myRaw = s.teams.find(t => t.id === myTeamId);
   const myTeam = largeMode ? sorted.find(t => t.avatarId === myRaw?.avatarId) : myRaw;
   const myRank = sorted.findIndex(t => t.id === myTeam?.id) + 1;
-  const scoreOf = (t: QQTeam) => largeMode ? (t.largestConnected ?? 0) : (t.totalCells ?? 0);
+  const scoreOf = (t: QQTeam) => t.largestConnected ?? 0;
   const unitLabel = (n: number) => largeMode
     ? (de ? (n === 1 ? 'Punkt' : 'Punkte') : (n === 1 ? 'pt' : 'pts'))
-    : (de ? (n === 1 ? 'Feld' : 'Felder') : (n === 1 ? 'cell' : 'cells'));
+    : (de ? 'verbunden' : 'connected');
 
   return (
     <CozyCard>
@@ -1285,13 +1289,15 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
               fontSize: 17, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
               textAlign: 'center', marginBottom: 4, lineHeight: 1.35,
             }}>
-              {lang === 'en' ? '✨ Thanks for playing! ✨' : '✨ Danke fürs Mitspielen! ✨'}
+              {/* 2026-07-08 Konsistenz #14: Wording exakt wie Beamer-ThanksView
+                  ('Danke fürs Spielen' / 'Thanks for Playing'). */}
+              {lang === 'en' ? '✨ Thanks for Playing! ✨' : '✨ Danke fürs Spielen! ✨'}
             </div>
             <div style={{
               fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate400,
               textAlign: 'center', marginBottom: 14,
             }}>
-              {lang === 'en' ? 'We hope you had fun — see you next round!' : 'Wir hoffen, ihr hattet Spaß — bis zum nächsten Mal!'}
+              {lang === 'en' ? 'We hope you had fun — see you next time!' : 'Wir hoffen, ihr hattet Spaß — bis zum nächsten Mal!'}
             </div>
             {roomCode && (
               <a

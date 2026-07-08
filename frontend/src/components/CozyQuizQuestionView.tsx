@@ -809,6 +809,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Schnellstes korrektes Team finden (für Reveal-Glow)
             const fastestColor = (() => {
               if (!isCheeseReveal) return null;
+              // 2026-07-08 Konsistenz #15: Backend-Gewinner nutzen (currentQuestionWinners
+              // in Placement-Reihenfolge, fastest zuerst) — der String-Match unten
+              // faerbte bei Fuzzy-Tippfehlern das falsche Team. Fallback = alter
+              // Match, falls das Feld (alter Backend/stale State) fehlt.
+              const winnerId = s.currentQuestionWinners?.[0];
+              if (winnerId) return s.teams.find(t => t.id === winnerId)?.color ?? null;
               const correctDE = (q.answer ?? '').trim().toLowerCase();
               const correctEN = (q.answerEn ?? '').trim().toLowerCase();
               const correctSet = [correctDE, correctEN].filter(Boolean);

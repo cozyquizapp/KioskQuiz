@@ -217,6 +217,42 @@ export function BlitzEditor({ themes, onChange }: BlitzEditorProps) {
                               </button>
                             </div>
 
+                            {/* WYSIWYG-Bildvorschau: zeigt das Bild so, wie es
+                                gerahmt erscheint (16:9-Ausschnitt, object-fit
+                                cover). Wolf sieht schlechte Rahmung/kaputte
+                                Links VOR dem Event. */}
+                            {item.mediaUrl && (
+                              <div style={{ marginTop: 10, marginBottom: 6 }}>
+                                <div style={{ fontSize: 11, opacity: 0.72, marginBottom: 6 }}>Vorschau (Beamer-Ausschnitt)</div>
+                                <div style={{
+                                  position: 'relative', width: '100%', maxWidth: 340, aspectRatio: '16 / 9',
+                                  borderRadius: 10, overflow: 'hidden', background: 'rgba(0,0,0,0.35)',
+                                  border: '1px solid rgba(148,163,184,0.25)',
+                                }}>
+                                  <img
+                                    src={item.mediaUrl}
+                                    alt=""
+                                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                                    onError={(e) => {
+                                      const el = e.currentTarget as HTMLImageElement;
+                                      el.style.display = 'none';
+                                      if (el.nextElementSibling) (el.nextElementSibling as HTMLElement).style.display = 'flex';
+                                    }}
+                                    onLoad={(e) => {
+                                      const el = e.currentTarget as HTMLImageElement;
+                                      el.style.display = 'block';
+                                      if (el.nextElementSibling) (el.nextElementSibling as HTMLElement).style.display = 'none';
+                                    }}
+                                  />
+                                  <div style={{
+                                    display: 'none', position: 'absolute', inset: 0,
+                                    alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+                                    color: '#f87171', fontSize: 12, fontWeight: 600, padding: 12,
+                                  }}>⚠️ Bild lädt nicht (Link tot?)</div>
+                                </div>
+                              </div>
+                            )}
+
                             <label style={labelStyle}>Alias-Antworten (optional)</label>
                             <input
                               type="text"

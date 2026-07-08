@@ -1210,7 +1210,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // transparent ist, auch kein sichtbarer/starrer Rand. HotPotato (eigene View),
   // Schaetzchen (eigener Chip) und Arena (kein Einzelsieger) sind ausgenommen.
   const isHotPotatoCat = cat === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'hotPotato';
-  const reservesWinnerSlot = cat !== 'SCHAETZCHEN' && !isHotPotatoCat && !(s as any).largeGroupMode;
+  // 2026-07-08 (Audit B1): Hot Potato reserviert den Winner-Slot jetzt AUCH — so
+  // bekommt die Auflösung eine Gewinner-/Überlebenden-Feier statt „Keiner hatte
+  // Recht!". Waehrend der aktiven Frage bleibt der Slot fuer HP aber auf Hoehe 0
+  // (siehe unten), damit die Potato-Ansicht nicht nach unten geschoben wird.
+  const reservesWinnerSlot = cat !== 'SCHAETZCHEN' && !(s as any).largeGroupMode;
 
   // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
   // Synchron zur Animation: revealWinnerIn nutzt bannerDelay=0.7s, davor ist
@@ -3428,8 +3432,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // hinaus wachsen. Transparent = kein Rand.
               position: 'relative',
               width: '100%', maxWidth: 1400,
-              height: 'clamp(150px, 16cqh, 210px)',
-              marginBottom: 12,
+              // HP: waehrend aktiver Frage 0 (nichts reservieren), erst bei Reveal
+              // die volle Slot-Hoehe fuer die Ueberlebenden-/Sieger-Card.
+              height: (isHotPotatoCat && !revealed) ? 0 : 'clamp(150px, 16cqh, 210px)',
+              marginBottom: (isHotPotatoCat && !revealed) ? 0 : 12,
               pointerEvents: 'none',
             }}>
               <div style={{
@@ -3440,7 +3446,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 transformOrigin: 'center center',
                 transition: 'opacity 0.7s var(--qq-ease-out-cubic), transform 0.7s var(--qq-ease-bounce)',
               }}>
-              {revealed && showUnifiedWinner && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0) && (() => {
+              {revealed && showUnifiedWinner && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0 || isHotPotatoCat) && (() => {
             const isEn = lang === 'en';
             const bannerDelay = 0.7;
             const avatarDelay = 1.1;
@@ -3536,7 +3542,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             if (cat === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'hotPotato') {
               const eliminated = new Set((s.hotPotatoEliminated ?? []) as string[]);
               const alive = s.teams.filter(t => !eliminated.has(t.id));
-              if (alive.length >= 2) hpCoWinners = alive;
+              // 2026-07-08 (Audit B1): Ohne klaren Einzel-Sieger (correctTeamId) sind
+              // ALLE Ueberlebenden Gewinner (pool-exhausted) → Ueberlebenden-Card.
+              // Mit correctTeamId laeuft der normale Single-Winner-Banner.
+              if (!s.correctTeamId && alive.length >= 1) hpCoWinners = alive;
             }
             if (hpCoWinners) {
               const survivorCount = hpCoWinners.length;
@@ -3545,10 +3554,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const hpMsg = isEn
                 ? (everyoneSurvived
                     ? 'all survived — each gets an action!'
-                    : `${survivorCount} survived — each gets an action!`)
+                    : survivorCount === 1
+                      ? 'survived — gets an action!'
+                      : `${survivorCount} survived — each gets an action!`)
                 : (everyoneSurvived
                     ? 'alle überlebt — jedes Team bekommt eine Aktion!'
-                    : `${survivorCount} haben überlebt — jedes Team bekommt eine Aktion!`);
+                    : survivorCount === 1
+                      ? 'überlebt — bekommt eine Aktion!'
+                      : `${survivorCount} haben überlebt — jedes Team bekommt eine Aktion!`);
               return (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -3686,8 +3699,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             );
           })()}
               {/* Nobody got it right — im selben reservierten Slot (absolut
-                  zentriert), damit auch dieser Fall nicht springt. */}
-              {revealed && !s.correctTeamId && (s.currentQuestionWinners?.length ?? 0) === 0 && (
+                  zentriert), damit auch dieser Fall nicht springt.
+                  2026-07-08 (Audit B1): NICHT fuer Hot Potato — dort gibt es immer
+                  Ueberlebende, die Card oben zeigt sie. */}
+              {revealed && !s.correctTeamId && (s.currentQuestionWinners?.length ?? 0) === 0 && !isHotPotatoCat && (
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
                   padding: '24px 44px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,

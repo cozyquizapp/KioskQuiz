@@ -80,6 +80,16 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // 2026-07-02 (Wolf „wizard als main setup, rest im hintergrund"): das alte
   // Pill-Schnell-Setup (SetupView) versteckt sich hinter „⚙ Alle Einstellungen".
   const [showAllSettings, setShowAllSettings] = useState(false);
+  // 2026-07-08 (Wolf 'Test-Tools verstecken, aber guter Bot-Modus muss bleiben'):
+  // Autoplay + Bots-Durchlauf sind auf der Live-Landing standardmaessig weg
+  // (Fehlklick-Schutz). Ein dezenter '🧪'-Toggle blendet sie sofort wieder ein;
+  // im Test-Modus (/moderator-test) oder ?dev=1 sind sie von vornherein da.
+  const [showTestTools, setShowTestTools] = useState(() => testMode || qqDevToolsEnabled());
+  // 2026-07-08 (Wolf 'QR neben Beamer, immer sichtbar'): Join-QR-Popover im Header.
+  const [qrOpen, setQrOpen] = useState(false);
+  // 2026-07-08: Venue jetzt zentral (Cockpit + SetupView teilen sich die Quelle).
+  const [venue, setVenueLocal] = useState('');
+  const [knownVenues, setKnownVenues] = useState<string[]>([]);
   const startingRef = useRef(false); // prevent double-fire on startGame
 
   // ── Autoplay-Mode (lokaler Test-Modus, kein Backend-State) ────────────────
@@ -265,6 +275,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   useEffect(() => {
     if (state) setTimerInput(state.timerDurationSec);
   }, [state?.timerDurationSec]);
+
+  // Bekannte Orte fuer den Venue-Autocomplete (Cockpit + SetupView).
+  useEffect(() => {
+    fetch('/api/qq/venues').then(r => (r.ok ? r.json() : [])).then(v => { if (Array.isArray(v)) setKnownVenues(v); }).catch(() => {});
+  }, []);
+  const setVenue = (v: string) => { setVenueLocal(v); emit('qq:setVenue', { roomCode, venue: v }); };
 
   // Sync sound config from server state (e.g. after game start loads draft config)
   const prevSoundConfigRef = useRef<QQSoundConfig | undefined>(undefined);
@@ -464,6 +480,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   setupDoneRef.current = setupDone;
   const setSetupDoneRef = useRef(setSetupDone);
   setSetupDoneRef.current = setSetupDone;
+  const selectedDraftIdRef = useRef(selectedDraftId);
+  selectedDraftIdRef.current = selectedDraftId;
   const cheatsheetOpenRef = useRef(false);
   // 2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Dedup-Key fuer
   // Autoplay-Effekt. Verhindert Mehrfach-Fires desselben Actions wenn
@@ -1204,8 +1222,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       }
       if (s.phase === 'PAUSED')           emitRef.current('qq:resume', { roomCode });
       else if (s.phase === 'LOBBY') {
-        // Zweistufig: erst Setup abschließen → in Lobby-Ansicht; dort dann Quiz starten.
-        if (!setupDoneRef.current) setSetupDoneRef.current(true);
+        // 2026-07-08 (Cockpit): Mit vorgewaehltem Draft IST die Landing schon das
+        // fertige Cockpit → Space startet direkt. Ohne Draft (Format-Wahl-Landing)
+        // weiterhin zweistufig: erst Setup abschliessen, dann in der Lobby starten.
+        if (selectedDraftIdRef.current) startGameRef.current();
+        else if (!setupDoneRef.current) setSetupDoneRef.current(true);
         else startGameRef.current();
       }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
@@ -1816,6 +1837,39 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             <span style={{ fontSize: 15 }}>🖥️</span>
             Beamer
           </button>
+          {/* 2026-07-08 (Wolf 'QR neben Beamer, immer sichtbar'): Team-Beitritts-QR
+              als Popover direkt im Header — jederzeit herzeigbar, ohne PIN, ohne
+              Seitenwechsel. Gilt in Lobby UND im laufenden Spiel. */}
+          <div style={{ position: 'relative' }}>
+            <button
+              onClick={() => setQrOpen(v => !v)}
+              title="Team-Beitritts-QR anzeigen (zum Herzeigen)"
+              className="qm-ghost"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, fontSize: 13, color: QQ_COLORS.brandPink }}
+            >
+              <span style={{ fontSize: 15 }}>📱</span>
+              Beitritt
+            </button>
+            {qrOpen && (() => {
+              const joinUrl = `${window.location.origin}/team?room=${roomCode}`;
+              return (
+                <>
+                  <div onClick={() => setQrOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 40 }} />
+                  <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 41, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 16, borderRadius: 16, background: '#171326', border: '1px solid rgba(236,72,153,0.4)', boxShadow: '0 18px 44px rgba(0,0,0,0.6)', minWidth: 220 }}>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Team-Beitritt scannen</div>
+                    <div style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
+                      <QRCodeSVG value={joinUrl} size={168} bgColor="#ffffff" fgColor="#0D0A06" />
+                    </div>
+                    <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 800 }}>Raum <span style={{ color: QQ_COLORS.brandPink, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></div>
+                    <button
+                      onClick={() => { try { navigator.clipboard.writeText(joinUrl); } catch {} }}
+                      style={{ padding: '7px 14px', borderRadius: 9, border: '1px solid rgba(148,163,184,0.3)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 12, cursor: 'pointer', fontFamily: 'inherit' }}
+                    >🔗 Link kopieren</button>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"
@@ -1930,7 +1984,133 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         </div>
       )}
 
-      {joined && s && s.phase === 'LOBBY' && !setupDone && (
+      {/* 2026-07-08 (Wolf 'Bereit-Cockpit'): Kommt Wolf mit vorgewaehltem Quiz
+          (?draft= aus „Meine Quizze"), zeigt EIN Screen alles Noetige — Quiz-
+          Vorschau, Join-QR, Ort, grosser Start-Button. Der 7-Schritt-Wizard wird
+          optional („⚙ Details"). Ohne Draft weiterhin die Format-Wahl-Landing. */}
+      {joined && s && s.phase === 'LOBBY' && !setupDone && selectedDraftId && (() => {
+        const cd = drafts.find(d => d.id === selectedDraftId);
+        const title = (cd?.title ?? 'Quiz').replace(/^🎯\s*/, '');
+        const qCount = (cd as any)?.questionCount ?? ((cd as any)?.questions?.length ?? 0);
+        const arena = !!(s as any).largeGroupMode;
+        const accent = arena ? '#A78BFA' : '#EC4899';
+        const maxPhases = qCount ? Math.max(2, Math.min(4, Math.floor(qCount / 5))) : 4;
+        const eff = Math.min(phases, maxPhases);
+        const joinUrl = `${window.location.origin}/team?room=${roomCode}`;
+        const connectedTeams = s.teams.filter(t => t.connected).length;
+        const setFormat = (isArena: boolean) => {
+          emit('qq:setQuizOptions', { roomCode, largeGroupMode: isArena, nestedTeams: isArena, formatSelected: true });
+          const cur = (s as any).avatarSetId as string | undefined;
+          const nextSet = isArena ? 'cozyArena' : 'cozy3d';
+          if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
+            emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+          }
+        };
+        const card: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: 18 };
+        const fieldLbl: React.CSSProperties = { fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 };
+        return (
+          <div style={{ minHeight: 'calc(100dvh - 124px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(8px, 1.8vh, 18px)', maxWidth: 860, margin: '0 auto', width: '100%' }}>
+            {/* Sprechblase */}
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{ position: 'relative', background: '#fff', color: '#1E2A5A', fontWeight: 900, fontSize: 'clamp(15px, 2.1vw, 20px)', padding: '8px 20px', borderRadius: 16, boxShadow: '0 12px 30px -8px rgba(236,72,153,0.5)', border: '2px solid rgba(236,72,153,0.4)' }}>
+                Bereit für heute Abend? <span style={{ marginLeft: 2 }}>🎬</span>
+                <span aria-hidden style={{ position: 'absolute', bottom: -8, left: '50%', width: 15, height: 15, transform: 'translateX(-50%) rotate(45deg)', background: '#fff', borderRight: '2px solid rgba(236,72,153,0.4)', borderBottom: '2px solid rgba(236,72,153,0.4)' }} />
+              </div>
+            </div>
+
+            {/* Zwei Karten: Quiz-Vorschau + Join-QR */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', alignItems: 'stretch' }}>
+              {/* Quiz-Vorschau */}
+              <div style={{ ...card, flex: '1 1 380px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <div>
+                  <div style={{ fontSize: 'clamp(19px, 2.6vh, 24px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>📋 {title}</div>
+                  <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, marginTop: 4 }}>{qCount} Fragen im Set</div>
+                </div>
+                {/* Format */}
+                <div>
+                  <div style={fieldLbl}>Format</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[{ a: false, label: '🍺 Cozy Quiz' }, { a: true, label: '🏟️ Cozy Arena' }].map(f => {
+                      const on = arena === f.a && !!(s as any).formatSelected;
+                      const ac = f.a ? '#A78BFA' : '#EC4899';
+                      return (
+                        <button key={f.label} onClick={() => setFormat(f.a)}
+                          style={{ flex: 1, padding: '9px 8px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 13,
+                            border: `1.5px solid ${on ? ac : 'rgba(148,163,184,0.25)'}`, background: on ? `${ac}22` : 'transparent', color: on ? '#fff' : '#94a3b8' }}>
+                          {f.label}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                {/* Runden-Stepper */}
+                <div>
+                  <div style={fieldLbl}>Runden</div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <button onClick={() => setPhases(Math.max(2, eff - 1) as 2 | 3 | 4)} disabled={eff <= 2}
+                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff <= 2 ? 'default' : 'pointer', opacity: eff <= 2 ? 0.4 : 1, fontFamily: 'inherit' }}>−</button>
+                    <span style={{ minWidth: 40, textAlign: 'center', fontWeight: 900, fontSize: 22, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{eff}</span>
+                    <button onClick={() => setPhases(Math.min(maxPhases, eff + 1) as 2 | 3 | 4)} disabled={eff >= maxPhases}
+                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff >= maxPhases ? 'default' : 'pointer', opacity: eff >= maxPhases ? 0.4 : 1, fontFamily: 'inherit' }}>+</button>
+                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>{eff * 5} Fragen · à 5</span>
+                  </div>
+                </div>
+                {/* Venue */}
+                <div>
+                  <div style={fieldLbl}>📍 Ort <span style={{ textTransform: 'none', letterSpacing: 0, color: '#64748b', fontWeight: 700 }}>— gegen Fragen-Wiederholung an Stammorten</span></div>
+                  <input
+                    list="qq-cockpit-venues"
+                    value={venue}
+                    onChange={e => setVenue(e.target.value)}
+                    placeholder="z. B. Café Sommer, Musterstadt"
+                    style={{ width: '100%', boxSizing: 'border-box', padding: '9px 12px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.25)', background: 'rgba(15,19,38,0.5)', color: '#e2e8f0', fontFamily: 'inherit', fontSize: 13 }}
+                  />
+                  <datalist id="qq-cockpit-venues">{knownVenues.map(v => <option key={v} value={v} />)}</datalist>
+                </div>
+              </div>
+
+              {/* Join-QR */}
+              <div style={{ ...card, flex: '0 1 250px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
+                <div style={fieldLbl}>📱 Teams beitreten</div>
+                <div style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
+                  <QRCodeSVG value={joinUrl} size={150} bgColor="#ffffff" fgColor="#0D0A06" />
+                </div>
+                <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 800 }}>Raum <span style={{ color: accent, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></div>
+                <div style={{ fontSize: 12, fontWeight: 800, color: connectedTeams > 0 ? '#86efac' : '#94a3b8' }}>
+                  {connectedTeams > 0 ? `✓ ${connectedTeams} verbunden` : '○ noch keine Teams'}
+                </div>
+              </div>
+            </div>
+
+            {/* Start */}
+            <button
+              onClick={() => startGame()}
+              style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 40px', borderRadius: 16, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900, fontSize: 'clamp(18px, 2.4vh, 23px)', color: '#fff', background: 'linear-gradient(135deg, #22C55E, #16A34A)', boxShadow: '0 12px 30px -6px rgba(34,197,94,0.5)', animation: 'qqCockpitPulse 2.2s ease-in-out infinite' }}
+            >
+              ▶ Quiz starten
+              <span style={{ fontSize: 12, marginLeft: 4, padding: '3px 10px', borderRadius: 6, background: 'rgba(0,0,0,0.22)', opacity: 0.9, fontWeight: 700 }}>SPACE</span>
+            </button>
+            <style>{`@keyframes qqCockpitPulse { 0%,100% { box-shadow: 0 12px 30px -6px rgba(34,197,94,0.5); } 50% { box-shadow: 0 14px 40px -4px rgba(34,197,94,0.78); } }`}</style>
+
+            {/* Sekundär: Details / Beamer / Show planen */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+              <button onClick={() => setShowWizard(true)} title="Alle Setup-Schritte im Detail (Sprache, Timer, Add-ons, Theme …)"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                ⚙ Details einstellen
+              </button>
+              <button onClick={() => { try { window.open(`/beamer?room=${encodeURIComponent(roomCode)}`, 'cozyquiz-beamer')?.focus(); } catch {} }} title="Beamer in eigenem Fenster öffnen"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(236,72,153,0.35)', background: 'rgba(236,72,153,0.08)', color: '#f9d3e6', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                🖥️ Beamer öffnen
+              </button>
+              <button onClick={() => setShowPrep(true)} title="Geführt vorbereiten: Material, Druck, Briefing, Technik"
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                🎬 Show planen
+              </button>
+            </div>
+          </div>
+        );
+      })()}
+      {joined && s && s.phase === 'LOBBY' && !setupDone && !selectedDraftId && (
         <>
           {/* 2026-07-03 (Wolf 'moderator-start sieht sehr traurig aus'): Die
               Format-Wahl IST jetzt die Seite (Hero-Karten) statt in einem Wizard
@@ -2053,6 +2233,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             >
               ⚙ Alle Einstellungen {showAllSettings ? '▲' : '▼'}
             </button>
+            {showTestTools ? (<>
             <span style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 900 }}>·</span>
             <label style={{
               display: 'inline-flex', alignItems: 'center', gap: 8, cursor: 'pointer', fontFamily: 'inherit',
@@ -2112,6 +2293,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 );
               })()}
             </div>
+            </>) : (
+            <button
+              onClick={() => setShowTestTools(true)}
+              title="Autoplay & Bots-Durchlauf zum Testen einblenden"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px dashed rgba(148,163,184,0.3)', background: 'transparent', color: '#64748b', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+            >
+              🧪 Test-Tools
+            </button>
+            )}
           </div>
           </div>
           {showAllSettings && (
@@ -2143,7 +2333,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           drafts={drafts}
           emit={emit}
           onClose={() => setShowPrep(false)}
-          onFinish={() => setSetupDone(true)}
+          onFinish={() => setShowPrep(false)}
         />
       )}
 

@@ -393,7 +393,7 @@ export default function QQShowPrepWizard({ roomCode, state, selectedDraftId, dra
           {!isLast ? (
             <button style={C.primary} onClick={() => setStepIdx(i => Math.min(STEPS.length - 1, i + 1))}>Weiter →</button>
           ) : (
-            <button style={C.primary} onClick={() => { onFinish(); onClose(); }}>Fertig — zur Team-Lobby ✓</button>
+            <button style={C.primary} onClick={() => { onFinish(); onClose(); }}>Planung fertig ✓</button>
           )}
         </div>
       </div>

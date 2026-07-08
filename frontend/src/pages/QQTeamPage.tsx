@@ -357,7 +357,9 @@ export default function QQTeamPage() {
       // sonst geht der vom Spieler gewaehlte Avatar beim Resume verloren.
       emoji: existingTeamInRoom.emoji ?? undefined,
     });
-    if (ack.ok) setJoined(true);
+    // 2026-07-08 (Audit T1): erfolgreicher (Re)Join hebt den kicked-Zustand auf,
+    // sonst bleibt Auto-Rejoin fuer den Tab nach einem Session-Restart tot.
+    if (ack.ok) { setJoined(true); setKicked(false); }
     else setError(ack.error ?? 'error');
   }
 
@@ -380,7 +382,7 @@ export default function QQTeamPage() {
       roomCode, teamId, teamName: finalName, avatarId, emoji: chosenEmoji,
     });
     if (ack.ok) {
-      setJoined(true); setShowIdentityBanner(true);
+      setJoined(true); setShowIdentityBanner(true); setKicked(false);
       // 2026-05-12 (Lobby-Audit P0 #2): Flag setzen damit beim nächsten Visit
       // die Stamm-Code-Card prominent angezeigt wird (statt als Mini-Text-Link).
       try { localStorage.setItem('qq_hasJoinedBefore', '1'); } catch { /* ignore */ }

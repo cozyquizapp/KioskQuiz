@@ -1987,6 +1987,10 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
 }) {
   const a = AWARD_DEFS[awardIndex];
   const de = lang === 'de';
+  // 2026-07-08 (Audit B3): Underdog (Index 2) ist +2 Bonus wert (siehe awardPoints/
+  // FinalLeaderboard), Speedy+Meisterklauer je +1. Vorher zeigte die Karte fuer ALLE
+  // hart „+1" → das Publikum sah +1, die Endsumme sprang aber um 2.
+  const bonus = awardIndex === 2 ? 2 : 1;
   // 2026-05-25 v4 (Wolf 'underdog hat 3× first, das ist Speedy!'):
   // Award-Order in v4: 0=Speedy, 1=Meisterklauer, 2=Underdog.
   // Alter Code hatte awardIndex===2 fuer Speedy stehen — Migration-Drift.
@@ -2041,7 +2045,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           pointerEvents: 'none',
           lineHeight: 1,
           zIndex: 10,
-        }}>+1</span>
+        }}>+{bonus}</span>
       )}
       <div style={{
         position: 'relative',
@@ -2149,7 +2153,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
                 border: '2px solid rgba(34,197,94,0.55)',
                 fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,
                 color: QQ_COLORS.green500,
-              }}>{de ? '+ 1 Bonus' : '+ 1 bonus'}</div>
+              }}>{de ? `+ ${bonus} Bonus` : `+ ${bonus} bonus`}</div>
             </>
           ) : (
             <div style={{ fontSize: 'clamp(16px, 1.6cqw, 22px)', color: 'var(--qq-text-muted)', fontStyle: 'italic' }}>

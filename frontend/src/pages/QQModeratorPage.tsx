@@ -2148,6 +2148,53 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
                 🎬 Show planen
               </button>
+              {/* 2026-07-08 (Wolf-Livetest 'wo stelle ich Bots ein?'): Bot-Regler
+                  direkt im Cockpit — vorher nur auf dem Format-Auswahl-Screen. */}
+              <div style={{ position: 'relative' }}>
+                <button onClick={() => setBotsRunOpen(v => !v)} title="Bots zum Testen hinzufügen — Anzahl wählbar (nicht in der Bestenliste)"
+                  style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.12)', color: '#bbf7d0', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
+                  🤖 Bots {botsRunOpen ? '▲' : '▾'}
+                </button>
+                {botsRunOpen && (() => {
+                  const botMax = (s as any)?.largeGroupMode ? 24 : 8;
+                  const presets = (s as any)?.largeGroupMode ? [8, 16, 24] : [2, 4, 6, 8];
+                  const cnt = Math.min(botMax, Math.max(2, botCount));
+                  const stepBtn = { width: 40, height: 40, borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.14)', color: '#dcfce7', fontWeight: 900, fontSize: 22, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } as const;
+                  return (
+                    <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 14px', borderRadius: 12, background: '#171326', border: '1px solid rgba(52,211,153,0.4)', boxShadow: '0 14px 34px rgba(0,0,0,0.55)', minWidth: 230 }}>
+                      <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Wie viele Bots? <span style={{ color: '#4b5563' }}>(max {botMax})</span></div>
+                      <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+                        <button style={{ ...stepBtn, opacity: cnt <= 2 ? 0.4 : 1 }} disabled={cnt <= 2} onClick={() => setBotCount(Math.max(2, cnt - 1))}>−</button>
+                        <span style={{ minWidth: 52, textAlign: 'center', fontWeight: 900, fontSize: 26, color: '#dcfce7', fontVariantNumeric: 'tabular-nums' }}>{cnt}</span>
+                        <button style={{ ...stepBtn, opacity: cnt >= botMax ? 0.4 : 1 }} disabled={cnt >= botMax} onClick={() => setBotCount(Math.min(botMax, cnt + 1))}>+</button>
+                      </div>
+                      <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                        {presets.map(n => (
+                          <button key={n} onClick={() => setBotCount(n)}
+                            style={{ minWidth: 40, padding: '6px 10px', borderRadius: 8, border: `1px solid ${cnt === n ? 'rgba(52,211,153,0.9)' : 'rgba(52,211,153,0.35)'}`, background: cnt === n ? 'rgba(52,211,153,0.28)' : 'rgba(52,211,153,0.08)', color: '#dcfce7', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                          >{n}</button>
+                        ))}
+                        <button onClick={() => setBotCount(botMax)}
+                          style={{ padding: '6px 10px', borderRadius: 8, border: `1px solid ${cnt === botMax ? 'rgba(52,211,153,0.9)' : 'rgba(52,211,153,0.35)'}`, background: cnt === botMax ? 'rgba(52,211,153,0.28)' : 'rgba(52,211,153,0.08)', color: '#dcfce7', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >Max</button>
+                      </div>
+                      <button onClick={() => { setBotsRunOpen(false); runBotsTest(cnt); }}
+                        style={{ padding: '10px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 16px rgba(34,197,94,0.35)' }}
+                      >▶ {cnt} Bots starten</button>
+                      <button onClick={() => { setBotsRunOpen(false); addBotsToLobby(cnt); }}
+                        disabled={s?.phase !== 'LOBBY'}
+                        title={s?.phase !== 'LOBBY' ? 'Nur in der Lobby verfügbar' : undefined}
+                        style={{ padding: '9px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.55)', background: 'rgba(52,211,153,0.12)', color: '#dcfce7', fontWeight: 900, fontSize: 14, cursor: s?.phase !== 'LOBBY' ? 'not-allowed' : 'pointer', opacity: s?.phase !== 'LOBBY' ? 0.4 : 1, fontFamily: 'inherit' }}
+                      >🧍 {cnt} Bots in die Lobby</button>
+                      <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'center', lineHeight: 1.45 }}>
+                        <b style={{ color: '#86efac' }}>Starten</b>: Autoplay an, läuft sofort durch.<br/>
+                        <b style={{ color: '#86efac' }}>In Lobby</b>: Bots joinen sichtbar — du startest selbst.<br/>
+                        (Test — nicht in der Bestenliste)
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
             </div>
           </div>
         );

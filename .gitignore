@@ -16,3 +16,5 @@ backend/.qq-rooms/
 
 # Roh-Asset-Zips (z.B. Wolfs Icon-/Logo-Lieferungen) — nie ins public/-Deploy
 frontend/public/**/*.zip
+# Lokale Roh-Quell-Assets (Zip-Lieferungen etc.) — nicht committen, nicht bauen
+_source-assets/

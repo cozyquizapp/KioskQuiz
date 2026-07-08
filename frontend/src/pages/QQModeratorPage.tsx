@@ -2357,10 +2357,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </>) : (
             <button
               onClick={() => setShowTestTools(true)}
-              title="Autoplay & Bots-Durchlauf zum Testen einblenden"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px dashed rgba(148,163,184,0.3)', background: 'transparent', color: '#64748b', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              title="Bots-Durchlauf & Autoplay zum Testen einblenden (bleibt danach an)"
+              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.55)', background: 'rgba(52,211,153,0.12)', color: '#bbf7d0', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              🧪 Test-Tools
+              🤖 Bots & Test-Tools
             </button>
             )}
           </div>

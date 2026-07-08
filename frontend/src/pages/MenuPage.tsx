@@ -38,9 +38,7 @@ const afterLinks: LinkItem[] = [
 const marketingLinks: LinkItem[] = [
   { path: '/',          label: 'Landing-Page',      emoji: '🏠', note: 'Öffentliche Startseite (play.cozyquiz.app)' },
   { path: '/about',     label: 'Was ist CozyQuiz?', emoji: 'ℹ️', note: 'Marketing-Erklärseite (/about)' },
-  { path: '/reels',     label: 'Reels-Hub',         emoji: '📱', note: 'Alle Werbe-Reels + Foto-Karussell + Trailer-Deep-Links an einem Ort' },
-  { path: '/karussell', label: 'Foto-Karussell',    emoji: '🎠', note: '4:5-Standbild-Slides — einzeln HD-PNG oder als ZIP für Insta' },
-  { path: '/trailer',   label: 'Trailer',           emoji: '🎬', note: 'Showreel / Trailer-Seite' },
+  { path: '/reels',     label: 'Reels-Hub',         emoji: '📱', note: 'Alle Werbe-Medien an einem Ort: Trailer-Varianten (allgemein/Team/Location/Geburtstag) + Foto-Karussell' },
   { path: '/showroom',  label: 'Showroom',          emoji: '🖼️', note: 'Format-Showcase mit echten Beamer-Views' },
   { path: '/formats',   label: 'Format-Roadmap',    emoji: '🗺️', note: 'Alle Spielformate (live + Konzepte) auf einen Blick' },
 ];

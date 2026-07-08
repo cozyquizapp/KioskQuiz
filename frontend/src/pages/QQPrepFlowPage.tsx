@@ -61,14 +61,21 @@ export default function QQPrepFlowPage() {
       to: '/cozygames', cta: 'CozyGames öffnen',
     },
     {
-      n: 4, emoji: '🎬', title: 'Show planen',
+      n: 4, emoji: '📜', title: 'Regeltexte & Intros',
+      desc: 'Spielregel-Folien, Kategorie-Intros und Runden-Hinweise für den Beamer anpassen (lokal pro Gerät gespeichert).',
+      status: 'optional',
+      statusLabel: 'optional',
+      to: '/rules-editor', cta: 'Regeltexte öffnen',
+    },
+    {
+      n: 5, emoji: '🎬', title: 'Show planen',
       desc: 'Pre-Show-Checkliste: Material, Technik, Briefing & grobe Laufzeit — automatisch aus dem Quiz abgeleitet.',
       status: 'optional',
       statusLabel: 'optional',
       to: `/moderator?draft=${draftId}&plan=1`, cta: 'Show-Planer öffnen',
     },
     {
-      n: 5, emoji: '📄', title: 'Host-Sheet drucken',
+      n: 6, emoji: '📄', title: 'Host-Sheet drucken',
       desc: 'Dein Moderator-Spickzettel als PDF — Fragen, Antworten, Fun-Facts.',
       status: questionsDone ? 'todo' : 'optional',
       statusLabel: questionsDone ? 'bereit zum Drucken' : 'erst Fragen fertig',

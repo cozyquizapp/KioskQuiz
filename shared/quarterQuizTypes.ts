@@ -987,61 +987,58 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   questionStartCheese:      '❓ Frage-Start · Cheese',
 };
 
-/** Pfade zu den Default-WAVs in /frontend/public/sounds/. */
+/** Default-Sound-URLs pro Slot. Seit 2026-07-08 Wolfs custom Cloudinary-Sounds
+ * als App-Default (statt der alten /sounds/*.wav). Draft-soundConfig ueberschreibt. */
 export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
-  timerLoop:     '/sounds/timer-loop.wav',
-  timesUp:       '/sounds/times-up.wav',
-  fieldPlaced:   '/sounds/field-placed.wav',
-  steal:         '/sounds/steal.wav',
-  correct:       '/sounds/correct.wav',
-  wrong:         '/sounds/wrong.wav',
-  reveal:        '/sounds/reveal.wav',
-  fanfare:       '/sounds/fanfare.wav',
-  // 2026-04-30: leer = Pool-Logik in startLobbyLoop greift (4 Tracks geshuffelt).
-  // Vorher: '/sounds/lobby-welcome.mp3' (existierte nicht, war Legacy).
-  lobbyWelcome:  '',
-  gameOver:      '/sounds/game-over.wav',
-  teamReveal:    '/sounds/field-placed.wav',
-  // Leer = synth-Fallback bis Moderator eigene Datei lädt.
-  questionStart: '',
-  roundStart:    '',
-  // Kategorie-Musik: leer = fallback auf timerLoop. Moderator kann pro
-  // Kategorie eigene MP3 hochladen (im Sound-Panel).
+  // 2026-07-08 (Wolf): Wolfs custom Cloudinary-Sounds sind jetzt der App-Default
+  // (aus qq-vol-1/-3 uebernommen) — greifen in JEDEM Draft, auch neuen/leeren.
+  // Draft-eigenes soundConfig ueberschreibt weiterhin. Slots ohne Wolf-Sound
+  // (Lobby-Pool, Kategorie-Musik, CozyGame, timerTick/Urgent) bleiben wie gehabt.
+  timerLoop: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778694831/cozyquiz/audio/iacqap93ek2yhleqhykl.mp3',
+  timesUp: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1776498255/cozyquiz/audio/uqildyyijbqvcdjap3kz.mp3',
+  fieldPlaced: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778694845/cozyquiz/audio/ajl5ee9kmyk9rkpczp4g.mp3',
+  steal: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1776614460/cozyquiz/audio/ioqywyuyynjkxgzkrqtg.mp3',
+  correct: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778694860/cozyquiz/audio/vxgm4ghqq0ldyjoyzkbr.mp3',
+  wrong: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1776615215/cozyquiz/audio/glka6wwxjkaihnd8ddhu.mp3',
+  reveal: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778694872/cozyquiz/audio/kvoznty2sj4xhkbyr5ut.mp3',
+  fanfare: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1776967125/cozyquiz/audio/q6173xdifqqvm4xshch5.mp3',
+  lobbyWelcome: '',
+  gameOver: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778694889/cozyquiz/audio/ez3ckjc1s9saombfzhhq.mp3',
+  teamReveal: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778694903/cozyquiz/audio/ggfxzuwbsypplg9xu8vr.mp3',
+  questionStart: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778695023/cozyquiz/audio/tbj00soifjtafvdaqbuz.mp3',
+  roundStart: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1777551186/cozyquiz/audio/bbp3ozgsj6vejicu3r6l.mp3',
+  stapelStamp: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1777552642/cozyquiz/audio/msm6bprbmi4zltjtsg4f.mp3',
+  teamJoin: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1777552574/cozyquiz/audio/ekdnlxlhklrm4rvq9ju6.mp3',
+  winnerCardReveal: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778695041/cozyquiz/audio/myfic6fej7vnngmzfmyi.mp3',
+  gridReveal: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778695070/cozyquiz/audio/idn0b7y26dp6ouuvmdkt.mp3',
+  actionMenuReveal: '',
+  climaxFinish: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1779535170/cozyquiz/audio/pfsan9bgo5wn2qjvzbc5.mp3',
+  revealHighlight: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1777625677/cozyquiz/audio/ueut3edksn4ai7gu8kfj.mp3',
+  goodLuckFanfare: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1777625668/cozyquiz/audio/k4yetship6qmxlqhobal.mp3',
+  finaleMusic: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778695509/cozyquiz/audio/j7jaciwgvjzti68jhup1.mp3',
+  comebackMusic: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1777625703/cozyquiz/audio/dw1nhzz5qzvll9seoklj.mp3',
+  timerTick: '',
+  timerUrgent: '',
+  raceCountdown: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778695552/cozyquiz/audio/yoy7eo8daw87dlx9kj09.mp3',
+  raceLoop: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778701977/cozyquiz/audio/lm50p3mk9mreweeyztlx.mp3',
+  raceTeamFall: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778701957/cozyquiz/audio/iwuv8f3uz9gd4bb7s0mz.mp3',
+  raceWinner: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778701946/cozyquiz/audio/syarby6lghd41rqno9fc.mp3',
+  racePodium: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778695575/cozyquiz/audio/u3y0rlmvq2bfpuaxffdm.mp3',
+  specialAwardReveal: 'https://res.cloudinary.com/diq5dbrfl/video/upload/v1778702005/cozyquiz/audio/z2jnzhpkkrizzzj1cfld.mp3',
+  cozyGameIntro: '',
+  cozyGameWheelTick: '',
+  cozyGameWheelStop: '',
+  cozyGameStart: '',
+  arenaStandings: '',
+  arenaLeadChange: '',
+  // Kategorie-Musik: leer = fallback auf timerLoop. Moderator kann pro Kategorie eigene MP3 laden.
   catMusicSchaetzchen: '',
-  catMusicMucho:       '',
-  catMusicBunteTuete:  '',
+  catMusicMucho: '',
+  catMusicBunteTuete: '',
   catMusicZehnVonZehn: '',
-  catMusicCheese:      '',
-  // Aktions-Sounds: leer = Synth-Fallback bis Moderator eigene Datei laedt.
-  stapelStamp:         '',
-  teamJoin:            '',
-  winnerCardReveal:    '',
-  gridReveal:          '',
-  actionMenuReveal:    '',
-  climaxFinish:        '',
-  revealHighlight:     '',
-  goodLuckFanfare:     '',
-  finaleMusic:         '',
-  comebackMusic:       '',
-  timerTick:           '',
-  timerUrgent:         '',
-  raceCountdown:       '',
-  raceLoop:            '',
-  raceTeamFall:        '',
-  raceWinner:          '',
-  racePodium:          '',
-  specialAwardReveal:  '',
-  cozyGameIntro:       '',
-  cozyGameWheelTick:   '',
-  cozyGameWheelStop:   '',
-  cozyGameStart:       '',
-  arenaStandings:      '',
-  arenaLeadChange:     '',
+  catMusicCheese: '',
   // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
-  correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '',
-  wrongSchaetzchen:   '', wrongMucho:   '', wrongBunteTuete:   '', wrongZehnVonZehn:   '', wrongCheese:   '',
-  revealSchaetzchen:  '', revealMucho:  '', revealBunteTuete:  '', revealZehnVonZehn:  '', revealCheese:  '',
-  questionStartSchaetzchen: '', questionStartMucho: '', questionStartBunteTuete: '', questionStartZehnVonZehn: '', questionStartCheese: '',
+  correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '', wrongSchaetzchen: '', wrongMucho: '', wrongBunteTuete: '', wrongZehnVonZehn: '', wrongCheese: '', revealSchaetzchen: '', revealMucho: '', revealBunteTuete: '', revealZehnVonZehn: '', revealCheese: '', questionStartSchaetzchen: '', questionStartMucho: '', questionStartBunteTuete: '', questionStartZehnVonZehn: '', questionStartCheese: '',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

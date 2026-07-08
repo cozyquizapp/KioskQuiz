@@ -303,7 +303,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
       {/* Ambient glow */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: `radial-gradient(ellipse at 25% 50%, ${winnerColor}28 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(234,179,8,0.10) 0%, transparent 50%)`,
+        background: `radial-gradient(ellipse at 25% 50%, ${winnerColor}28 0%, transparent 55%), radial-gradient(ellipse at 80% 90%, rgba(162,18,71,0.14) 0%, transparent 50%)`,
       }} />
 
       {/* Confetti */}
@@ -451,8 +451,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           }}>
             <span style={{
               fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
-              color: '#EAB308',
-              textShadow: '0 0 18px rgba(234,179,8,0.45)',
+              color: '#EC4899',
+              textShadow: '0 0 18px rgba(236,72,153,0.45)',
             }}>
               {winner.largestConnected} {lang === 'de' ? 'verbundene Felder' : 'connected fields'}
             </span>

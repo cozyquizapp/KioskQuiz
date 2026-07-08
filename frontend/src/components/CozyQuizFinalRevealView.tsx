@@ -112,15 +112,15 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
           100% { transform: translateY(var(--swapDiff)); }
         }
         @keyframes qqRecapWinnerGlow {
-          0%   { box-shadow: 0 0 0 rgba(251,191,36,0); border-color: rgba(255,255,255,0.10); }
-          100% { box-shadow: 0 0 36px rgba(251,191,36,0.55), 0 0 72px rgba(251,191,36,0.25); border-color: rgba(251,191,36,0.85); }
+          0%   { box-shadow: 0 0 0 rgba(236,72,153,0); border-color: rgba(255,255,255,0.10); }
+          100% { box-shadow: 0 0 36px rgba(236,72,153,0.55), 0 0 72px rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.85); }
         }
       `}</style>
 
       {/* Title */}
       <div style={{
         fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900,
-        color: QQ_COLORS.amber400, textTransform: 'uppercase', letterSpacing: '0.18em',
+        color: QQ_COLORS.brandPink, textTransform: 'uppercase', letterSpacing: '0.18em',
         opacity: 0.92, marginBottom: 10,
         animation: 'qqRecapTitleLetter 0.6s cubic-bezier(0.16, 1.2, 0.3, 1) 0.05s both',
       }}>
@@ -186,10 +186,10 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
               gap: 14, alignItems: 'center',
               padding: '0 18px', borderRadius: 14,
               background: isJust
-                ? 'linear-gradient(90deg, rgba(251,191,36,0.18), rgba(245,158,11,0.10))'
+                ? 'linear-gradient(90deg, rgba(236,72,153,0.20), rgba(162,18,71,0.12))'
                 : 'rgba(255,255,255,0.04)',
               border: isJust
-                ? '2px solid rgba(251,191,36,0.7)'
+                ? '2px solid rgba(236,72,153,0.7)'
                 : '1.5px solid var(--qq-hairline)',
               boxSizing: 'border-box',
             }}>
@@ -250,8 +250,8 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
     // Initial-Setup: from-Wert sichtbar, Delta hidden.
     if (valRef.current) {
       valRef.current.textContent = String(from);
-      valRef.current.style.color = from > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)';
-      valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
+      valRef.current.style.color = from > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)';
+      valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(236,72,153,0.5)' : 'none';
     }
     if (deltaRef.current) deltaRef.current.style.opacity = '0';
 
@@ -265,8 +265,8 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
         lastVal = val;
         if (valRef.current) {
           valRef.current.textContent = String(val);
-          valRef.current.style.color = val > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)';
-          valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none';
+          valRef.current.style.color = val > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)';
+          valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(236,72,153,0.5)' : 'none';
         }
         if (deltaRef.current) {
           const showDelta = to > from && val > from && val < to;
@@ -289,8 +289,8 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
       }}>+{to - from}</span>
       <span ref={valRef} style={{
         fontSize: `clamp(34px, 4cqw, ${Math.round(rowH * 0.66)}px)`,
-        color: from > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)',
-        textShadow: from > 0 ? '0 0 18px rgba(251,191,36,0.5)' : 'none',
+        color: from > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
+        textShadow: from > 0 ? '0 0 18px rgba(236,72,153,0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
       }}>{from}</span>
     </span>
@@ -351,7 +351,7 @@ function FinalWinsTracker({ state: s }: { state: QQStateUpdate }) {
               </span>
               <span style={{
                 fontSize: 'clamp(13px, 1.1cqw, 17px)', fontWeight: 900,
-                color: w > 0 ? QQ_COLORS.amber400 : 'var(--qq-text-muted)',
+                color: w > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
                 minWidth: 22, textAlign: 'right',
               }}>
                 {w > 0 ? `${w}🏆` : '–'}

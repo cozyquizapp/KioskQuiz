@@ -44,7 +44,6 @@ const marketingLinks: LinkItem[] = [
   { path: '/karussell', label: 'Foto-Karussell',   emoji: '🎠', note: 'Dedizierte 4:5-Standbild-Slides (welches-team): einzeln als HD-PNG oder alles als ZIP — für Insta-Foto-Karussells' },
   { path: '/trailer',  label: 'Trailer',           emoji: '🎬', note: 'Showreel / Trailer-Seite' },
   { path: '/showroom', label: 'Showroom',          emoji: '🖼️', note: 'Format-Showcase' },
-  { path: '/skins',    label: 'Skins & Themes',    emoji: '🎨', note: 'Design-Skins Vorschau (Cozy / Mono / SoftPop / Neo)' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -57,7 +56,6 @@ const extrasLinks: LinkItem[] = [
   { path: '/admin',               label: 'Admin',              emoji: '⚙️', note: 'PIN, Settings, etc.' },
   { path: '/stats',           label: 'Stats & Leaderboard', emoji: '📈', note: 'AllTime-Stats, Frage-Verteilungen, Funny-Answers (Recap = pro Spiel, oben verlinkt)' },
   { path: '/qrcode',          label: 'Beitritts-QR',       emoji: '🔳', note: 'QR-Code für Team-Beitritt' },
-  { path: '/blinktest',       label: 'Blink-Test',         emoji: '👁️', note: 'Avatar-Blinzeln testen (Dev)' },
 ];
 
 // ─────────────────────────────────────────────────────────────────────────

@@ -26,7 +26,6 @@ const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQRecapPage         = React.lazy(() => import('./pages/QQRecapPage'));
 const QQRecapIndexPage    = React.lazy(() => import('./pages/QQRecapIndexPage'));
 const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
-const QQDemoReal          = React.lazy(() => import('./components/QQDemoReal'));
 const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQSkinsPage         = React.lazy(() => import('./pages/QQSkinsPage'));
 const QQAboutPage         = React.lazy(() => import('./pages/QQAboutPage'));
@@ -38,14 +37,11 @@ const QQCarouselPage      = React.lazy(() => import('./pages/QQCarouselPage'));
 const QQBlinkTestPage     = React.lazy(() => import('./pages/QQBlinkTestPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
-const DesignLabPage = React.lazy(() => import('./pages/DesignLabPage'));
-const AnimationsLabPage = React.lazy(() => import('./pages/AnimationsLabPage'));
 const QQThanksTestPage = React.lazy(() => import('./pages/QQThanksTestPage'));
 const QQFinalRevealTestPage = React.lazy(() => import('./pages/QQFinalRevealTestPage'));
 const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const QQHigherLowerTestPage = React.lazy(() => import('./pages/QQHigherLowerTestPage'));
-const QQTerritoryTestPage = React.lazy(() => import('./pages/QQTerritoryTestPage'));
 const QQBarRaceTestPage = React.lazy(() => import('./pages/QQBarRaceTestPage'));
 const QQRaceFinaleTestPage = React.lazy(() => import('./pages/QQRaceFinaleTestPage'));
 const LegalPage = React.lazy(() => import('./pages/LegalPage'));
@@ -209,23 +205,17 @@ function App() {
           <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
           <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
-          <Route path="/gekocht"    element={<DesignLabPage />} />
-          <Route path="/animations" element={<AnimationsLabPage />} />
           <Route path="/thanks-test" element={<PinGate><QQThanksTestPage /></PinGate>} />
           <Route path="/finalreveal-test" element={<PinGate><QQFinalRevealTestPage /></PinGate>} />
           <Route path="/bet-test" element={<PinGate><QQBetTestPage /></PinGate>} />
           <Route path="/summary-test" element={<PinGate><QQSummaryTestPage /></PinGate>} />
           <Route path="/hl-test" element={<PinGate><QQHigherLowerTestPage /></PinGate>} />
           <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
-          <Route path="/territory-test" element={<PinGate><QQTerritoryTestPage /></PinGate>} />
           <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
           {/* 2026-07-07: bewusst OHNE PinGate — reine Animations-Vorschau ohne
               Daten/Steuerung, damit Wolf sie ohne PIN (und unabhaengig vom
               Backend-Status waehrend Coolify-Redeploys) oeffnen kann. */}
           <Route path="/race-finale" element={<QQRaceFinaleTestPage />} />
-          {/* 2026-07-03 (Wolf): Preview der Landing-Demo mit ECHTEN Quiz-Views —
-              live `/` bleibt vorerst unangetastet, bis Fidelity abgenommen ist. */}
-          <Route path="/demo-real" element={<QQErrorBoundary source="demo-real"><div style={{ minHeight: '100vh', background: 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)' }}><QQDemoReal /></div></QQErrorBoundary>} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
           <Route path="/stats"        element={<StatsPage />} />

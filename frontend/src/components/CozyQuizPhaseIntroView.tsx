@@ -694,6 +694,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       S = 1.18;
       vAnchor = 0.72;
     }
+    // 2026-07-09 (Wolf 'Progress-Tree zu lang mit Cozy Games'): den Gesamt-Tree
+    // (Step 0) IMMER in die Viewport-Breite einpassen — nur verkleinern, nie
+    // vergrößern. So werden bei vielen Cozy-Game-Nodes keine Stationen mehr am
+    // Rand abgeschnitten; der aktuelle Dot bleibt durch Ring+Glow hervorgehoben.
+    if (step === 0) {
+      S = Math.min(S, (camVp.w * 0.92) / (totalWidth || camVp.w));
+    }
     if (step >= 1) {
       // Step 1: auf den aktuellen Runden-Cluster. tx = phaseCenters[pi] = Mitte
       // der 5-Dot-Gruppe (horizontal mittig). 2026-06-30 (Wolf 'oben

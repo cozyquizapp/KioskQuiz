@@ -449,39 +449,37 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     return (
       <CozyCard borderColor={myTeam?.color}>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
-          {showPendingTeamView ? (
-            <>
-              <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={40} style={{
-                margin: '0 auto 8px',
-                animation: 'tcfloat 2s ease-in-out infinite',
-              }} />
-              <div style={{ fontWeight: 900, color: pendingTeam.color, fontSize: 17 }}>{pendingTeam.name}</div>
-              <div style={{ fontSize: 14, color: QQ_COLORS.slate400, marginTop: 4, fontWeight: 700 }}>
-                {isComebackStealPause
-                  ? (pendingTeam.id === myTeamId
-                      ? (lang === 'de' ? '✓ Geklaut — warte auf Moderator' : '✓ Stolen — waiting for moderator')
-                      : (lang === 'de' ? 'wartet auf Moderator' : 'waiting for moderator'))
-                  : (lang === 'de' ? 'wählt ein Feld' : 'is choosing a field')}
-                <AnimatedDots />
+          {/* 2026-07-09 (Wolf-Livetest 'Grid springt hoch'): Das Brett bleibt
+              IMMER an gleicher Stelle+Größe — auch während ein anderes Team wählt.
+              Nur das Banner drüber wechselt (fixe Höhe), das Grid verschwindet
+              nicht mehr → kein Layout-Sprung. */}
+          <div style={{ minHeight: 44, display: 'flex', flexDirection: 'column', justifyContent: 'center', marginBottom: 10 }}>
+            {showPendingTeamView ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
+                <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={28} style={{ animation: 'tcfloat 2s ease-in-out infinite' }} />
+                <span style={{ fontWeight: 900, color: pendingTeam.color, fontSize: 15, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pendingTeam.name}</span>
+                <span style={{ fontSize: 13, color: QQ_COLORS.slate400, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
+                  {isComebackStealPause
+                    ? (pendingTeam.id === myTeamId
+                        ? (lang === 'de' ? '✓ Geklaut' : '✓ Stolen')
+                        : (lang === 'de' ? 'wartet' : 'waiting'))
+                    : (lang === 'de' ? 'wählt' : 'choosing')}
+                  <AnimatedDots />
+                </span>
               </div>
-            </>
-          ) : (
-            /* Placement done — show mini grid + score summary.
-               2026-05-07: Banner kippt auf "✓ Gesetzt!" wenn ich gerade
-               selbst gesetzt habe (myRecentPlace) — gibt der eigenen
-               Setzung 900ms sichtbares Eigen-Feedback bevor die normale
-               Wartesicht uebernimmt. */
-            <>
+            ) : (
               <div style={{
                 fontSize: 14, fontWeight: 900,
                 color: showRecentPlaceFlash ? (myTeam?.color ?? QQ_COLORS.green500) : QQ_COLORS.slate400,
-                textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 12,
+                textTransform: 'uppercase', letterSpacing: '0.1em',
                 animation: showRecentPlaceFlash ? 'tcCellClaim 0.5s var(--qq-ease-bounce) both' : undefined,
               }}>
                 {showRecentPlaceFlash
                   ? (lang === 'de' ? '✓ Gesetzt!' : '✓ Placed!')
                   : (lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board')}
               </div>
+            )}
+          </div>
               <div style={{
                 // 2026-05-09 v3: square-grid-pattern wie selecting-mode für
                 // konsistente Zell-Größen.
@@ -557,8 +555,6 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                   })
                 )}
               </div>
-            </>
-          )}
         </div>
       </CozyCard>
     );

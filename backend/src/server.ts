@@ -4808,57 +4808,10 @@ if (DEBUG) {
   });
 }
 
-app.get('/api/questions', async (_req, res) => {
-  const cacheKey = 'questions';
-  const cached = cache.get<any>(cacheKey);
-  if (cached) {
-    return res.json({ questions: cached });
-  }
-
-  try {
-    let allQuestions: AnyQuestion[];
-    
-    // Lade von MongoDB wenn verfügbar
-    if (isDBConnected()) {
-      allQuestions = await getQuestionsFromDB();
-    } else {
-      // Fallback zu In-Memory
-      allQuestions = Array.from(questions);
-    }
-
-    const mapped = allQuestions.map((q) => {
-      const usage = questionUsageMap[q.id] ?? {};
-      return { ...q, usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null };
-    });
-    
-    cache.set(cacheKey, mapped);
-    res.json({ questions: mapped });
-  } catch (err) {
-    console.error('Fehler beim Laden von Fragen:', err);
-    res.status(500).json({ error: 'Fragen konnten nicht geladen werden' });
-  }
-});
-
-app.get('/api/questions/custom', async (_req, res) => {
-  try {
-    let customQs: AnyQuestion[];
-    
-    if (isDBConnected()) {
-      customQs = await getCustomQuestionsFromDB();
-    } else {
-      customQs = customQuestions.filter(q => q.id);
-    }
-
-    const mapped = customQs.map((q) => {
-      const usage = questionUsageMap[q.id] ?? {};
-      return { ...q, usedIn: usage.usedIn ?? [], lastUsedAt: usage.lastUsedAt ?? null, isCustom: true };
-    });
-    res.json({ questions: mapped });
-  } catch (err) {
-    console.error('Fehler beim Laden custom questions:', err);
-    res.status(500).json({ error: 'Custom-Fragen konnten nicht geladen werden' });
-  }
-});
+// 2026-07-08 (Wolf 'legacy read-only weg'): Die Legacy-Read-Routen
+// GET /api/questions und /api/questions/custom entfernt — bedienten nur den
+// bereits geloeschten Frontend-Fragen-Editor-Stack; kein Live-Aufruf mehr
+// (grep frontend/src → 0 Treffer). /api/catalogs + /api/quizzes bleiben.
 
 // Katalogliste
 app.get('/api/catalogs', async (_req, res) => {

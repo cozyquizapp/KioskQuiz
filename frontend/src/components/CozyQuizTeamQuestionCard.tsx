@@ -254,6 +254,14 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         // Map-Reveal hat lange Cascade — Target-Pin-Drop + Team-Pin-Drops
         // gestaffelt + Polylines-Tweening + mapRevealStep schrittweise.
         if (q.category === 'BUNTE_TUETE' && btKind === 'map') return Math.min(16000, 5500 + teamCount * 1200);
+        // 2026-07-08 Konsistenz #3: crowdTop hat KEIN Reveal-Step-Signal, cascadet
+        // aber die Board-Zeilen bottom-up mit 2400ms/Step (CrowdTopReveal STEP_MS).
+        // Vorher fiel es auf 5000ms Default -> Phone verriet den Sieger ~7s vor
+        // dem Beamer. Jetzt skaliert mit der Zeilenzahl (Autor-Antworten 2-8).
+        if (q.category === 'BUNTE_TUETE' && btKind === 'crowdTop') {
+          const rows = (q.bunteTuete as any)?.answers?.length ?? 6;
+          return Math.min(20000, 2500 + rows * 2400);
+        }
         return 5000; // single-winner default (hotPotato, oneOfEight)
       })();
       const t = setTimeout(() => setRevealUnlocked(true), lockMs);
@@ -295,8 +303,13 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
   // Hook fuer zukuenftige Cheese-Reveal-Bilder. Strangler-Fig 1:1.
   void (isCheese && q.image?.url);
 
-  // Phase-specific card styling — accent color for glow matching beamer
-  const cardBorder = isRevealed
+  // Phase-specific card styling — accent color for glow matching beamer.
+  // 2026-07-08 Konsistenz #3: Rand faerbt Sieg/Niederlage erst bei
+  // `solutionVisible` (= echter Beamer-Solution-Step) statt schon bei
+  // `isRevealed` (= lokaler Timeout). Sonst verriet die gruene/rote Border das
+  // Ergebnis, bevor der Beamer die Loesung zeigt — v.a. bei MUCHO/ZvZ/map, wo
+  // der Solution-Step spaeter kommt als der Timeout.
+  const cardBorder = solutionVisible
     ? (iWon ? QQ_COLORS.green500 : QQ_COLORS.red500)
     : catAccent;
 

@@ -1009,8 +1009,15 @@ export function qqStartTimer(
   qqStopTimer(room);
   room._timerOnExpire = onExpire;
   const durationMs   = room.timerDurationSec * 1000;
-  room.timerEndsAt   = Date.now() + durationMs;
+  const nowStart     = Date.now();
+  room.timerEndsAt   = nowStart + durationMs;
   room.timerExpired  = false;
+  // 2026-07-08 (Wolf-Livetest 'Timer zaehlt 0.0'): die Reaktionszeit soll ab
+  // dem echten TIMER-Start zaehlen, nicht ab dem ersten Submit. Baseline hier
+  // fest auf den Timer-Start setzen — so ist _currentQuestionStartedAt garantiert
+  // gesetzt (nicht null → sonst fiel die Baseline auf den ersten Submit → 0.0)
+  // und deckungsgleich mit dem sichtbaren Countdown-Ring.
+  (room as any)._currentQuestionStartedAt = nowStart;
   room.timerHandle   = setTimeout(() => {
     room.timerHandle = null;
     room.timerEndsAt = null;
@@ -4343,12 +4350,14 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
   if (stats.jokersEarned >= QQ_MAX_JOKERS_PER_GAME) {
     return 0;
   }
-  // 2026-07-07 (Wolf-Livetest): Pro-Runde-Cap (max 1 Joker/Phase, eingebaut
-  // 2026-05-05) entfernt. Er sorgte dafuer, dass die Engine einen zweiten in
-  // derselben Runde verdienten Joker still verweigerte, waehrend das Team-Menue
-  // (rechnet nur mit game-Cap 2 - jokersEarned) weiter '1 von 2' anzeigte.
-  // Jetzt limitiert nur noch das game-Cap (2/Spiel) — selbstbegrenzend,
-  // Menue und Engine sind wieder deckungsgleich.
+  // 2026-07-08 (Wolf-Livetest): Pro-Runde-Cap wieder aktiv — max 1 Joker/Phase.
+  // (2026-07-07 war er kurz entfernt; im Live triggerten dann mehrere Joker in
+  // derselben Runde, was Wolf nicht wollte. jokersThisPhase wird pro Phase via
+  // emptyPhaseStats implizit auf 0 zurueckgesetzt.)
+  const MAX_JOKERS_PER_PHASE = 1;
+  if ((stats.jokersThisPhase ?? 0) >= MAX_JOKERS_PER_PHASE) {
+    return 0;
+  }
 
   const newBlocks = detectNewJokers(room.grid, room.gridSize, teamId);
   if (newBlocks.length === 0) return 0;
@@ -4370,7 +4379,10 @@ function handleJokerDetection(room: QQRoomState, teamId: string): number {
     });
   }
 
-  const remaining = QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned;
+  const remaining = Math.min(
+    QQ_MAX_JOKERS_PER_GAME - stats.jokersEarned,
+    MAX_JOKERS_PER_PHASE - (stats.jokersThisPhase ?? 0),
+  );
   let toAward = Math.min(newBlocks.length, remaining);
 
   // Comeback-Place-Cap: max 3 Felder Gesamtgewinn (2 Place + max 1 Joker-Bonus).

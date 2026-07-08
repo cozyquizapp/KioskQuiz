@@ -5044,6 +5044,11 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
         // PLACE fliegt im Backend mit NO_FREE_CELL — Frontend muss den
         // unmöglichen Button ausblenden, sonst klickt Wolf live ins Leere.
         const gridFull = Array.isArray(s.grid) && s.grid.every((row: any[]) => row.every((c: any) => c.ownerId !== null));
+        // 2026-07-08 (Wolf-Livetest 'Feld-Klauen kaputt nach Stack'): Klauen nur
+        // anbieten wenn es ein klaubares Gegner-Feld gibt (nicht stuck/frozen/
+        // shielded). Sonst waehlt Wolf Klauen und landet in einer Sackgasse.
+        const canSteal = Array.isArray(s.grid) && s.grid.some((row: any[]) => row.some((c: any) =>
+          c.ownerId != null && c.ownerId !== team.id && !c.stuck && !c.frozen && !c.shielded));
         return (
           <>
             {!gridFull && (
@@ -5051,9 +5056,11 @@ function PlacementControls({ state: s, roomCode, emit }: any) {
                 <QQEmojiIcon emoji="📍"/> Setzen
               </Btn>
             )}
-            <Btn small color={QQ_COLORS.red500} onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
-              <QQEmojiIcon emoji="⚡"/> Klauen
-            </Btn>
+            {canSteal && (
+              <Btn small color={QQ_COLORS.red500} onClick={() => emit('qq:chooseFreeAction', { roomCode, teamId: team.id, action: 'STEAL' })}>
+                <QQEmojiIcon emoji="⚡"/> Klauen
+              </Btn>
+            )}
           </>
         );
       })()}

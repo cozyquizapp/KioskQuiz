@@ -602,6 +602,55 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         );
       })()}
 
+      {/* Schätzchen: Distanz-Ranking (Platz + In-Range-„+1") — Wolf-Livetest
+          2026-07-08: /team zeigte keinen Platz + kein „ob richtig". Spiegelt
+          jetzt das Beamer-Top-5 (SchaetzchenReveal): jedes Team mit Rang,
+          eigener Tipp hervorgehoben, In-Range-Gewinner mit +1-Badge. */}
+      {solutionVisible && q.category === 'SCHAETZCHEN' && (() => {
+        const target = q.targetValue as number;
+        if (!Number.isFinite(target)) return null;
+        const winners = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
+        const scored = [...s.answers].map(a => {
+          const num = Number(String(a.text ?? '').replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+          return { ...a, delta: Number.isFinite(num) ? Math.abs(num - target) : null };
+        }).sort((a, b) => (a.delta === null ? 1 : b.delta === null ? -1 : a.delta - b.delta || a.submittedAt - b.submittedAt));
+        if (scored.length === 0) return null;
+        return (
+          <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3 }}>
+              <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Closest to the value' : 'Am nächsten dran'}
+            </div>
+            {scored.map((a, i) => {
+              const team = s.teams.find(t => t.id === a.teamId);
+              const isMe = a.teamId === myTeamId;
+              const inRange = winners.includes(a.teamId);
+              const medal = i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i+1}`;
+              return (
+                <div key={a.teamId} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 10px', borderRadius: 8,
+                  background: isMe ? `${team?.color ?? QQ_COLORS.blue500}22` : 'rgba(255,255,255,0.04)',
+                  border: `1px solid ${isMe ? (team?.color ?? QQ_COLORS.blue500) + '88' : 'rgba(255,255,255,0.08)'}`,
+                  animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
+                }}>
+                  <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
+                  {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? QQ_COLORS.slate200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {team?.name ?? a.teamId}{isMe ? (lang === 'en' ? ' (you)' : ' (ihr)') : ''}
+                  </span>
+                  {inRange && (
+                    <span style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.green400, background: 'rgba(34,197,94,0.16)', border: '1px solid rgba(34,197,94,0.4)', borderRadius: 999, padding: '1px 7px', flexShrink: 0 }}>
+                      +1
+                    </span>
+                  )}
+                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate300, flexShrink: 0 }}>{a.text || '—'}</span>
+                </div>
+              );
+            })}
+          </div>
+        );
+      })()}
+
       {/* All-In: Punkteverteilung der eigenen Tipps */}
       {solutionVisible && q.category === 'ZEHN_VON_ZEHN' && q.options && (() => {
         const myAns = s.answers.find(a => a.teamId === myTeamId);

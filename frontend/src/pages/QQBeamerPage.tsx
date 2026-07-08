@@ -2580,7 +2580,10 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
       // 2026-07-07 (Wolf-Livetest 'antworten abgeschnitten'): Container-Höhe +
       // Ring + Heat-Glow kompakter -> die absolut-zentrierte Bühne blutet nicht
       // mehr nach oben in den Chip-Block (der sonst hinter dem Ring verschwand).
-      width: '100%', height: 'clamp(316px, 34cqh, 404px)',
+      // 2026-07-08 (Wolf-Livetest 'name IMMER NOCH abgeschnitten'): Container
+      // nochmal höher + Ring/Gap unten weiter gestrafft (s.u.), damit die
+      // Namenszeile garantiert im Container bleibt (Stage-overflow schnitt sie ab).
+      width: '100%', height: 'clamp(336px, 36cqh, 430px)',
       pointerEvents: 'none',
     }}>
       {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent.
@@ -2625,7 +2628,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                 // 2026-07-07 (Wolf-Livetest 'timer überdeckt text'): mehr Abstand
                 // zwischen Ring (dessen Countdown-Chip unten rausragt) und der
                 // JETZT-DRAN/Name-Zeile, damit der Chip nicht auf 'JETZT DRAN' klebt.
-                gap: isActive ? 'clamp(24px, 2.8cqh, 40px)' : 8,
+                gap: isActive ? 'clamp(14px, 1.8cqh, 26px)' : 8,
               }}
             >
               {isActive ? (
@@ -2638,7 +2641,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                     // 2026-07-07: nochmal kompakter (360→300) für mehr Chip-Raum oben.
                     // 2026-07-07 v2: 300→264 — schafft Platz für 2 volle Chip-Reihen
                     // UNTER der Frage-Karte (Wolf-Livetest 'lösungen 2. reihe versteckt').
-                    width: 'clamp(200px, 19cqw, 264px)', height: 'clamp(200px, 19cqw, 264px)',
+                    width: 'clamp(184px, 17.5cqw, 244px)', height: 'clamp(184px, 17.5cqw, 244px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben) */}

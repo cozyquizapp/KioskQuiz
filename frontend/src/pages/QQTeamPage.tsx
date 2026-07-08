@@ -1870,6 +1870,29 @@ function TeamGameView({
         {(s.phase === 'GAME_OVER' || s.phase === 'THANKS') && <GameOverCard state={s} myTeamId={myTeamId} lang={lang} roomCode={roomCode} />}
         </div>
 
+        {/* 2026-07-08 (Wolf-Livetest 'auf /team kam gar keine Pause-Message'):
+            garantierte Vollbild-Pause-Einblendung, UNABHAENGIG vom Phase-Switch
+            (falls ein Sheet/Overlay die PausedCard verdeckte). Deckt alles ab,
+            sobald der Broadcast phase==='PAUSED' beim Handy ankommt. */}
+        {s.phase === 'PAUSED' && (
+          <div style={{
+            position: 'fixed', inset: 0, zIndex: 1200,
+            background: 'rgba(10,7,15,0.86)', backdropFilter: 'blur(5px)', WebkitBackdropFilter: 'blur(5px)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24,
+            animation: 'tcreveal 0.3s ease both',
+          }}>
+            <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
+              <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite' }}>⏸️</div>
+              <div style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: '0.02em' }}>
+                {lang === 'en' ? 'Short break' : 'Kurze Pause'}
+              </div>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.72)', maxWidth: 320 }}>
+                {lang === 'en' ? 'The quiz continues in a moment …' : 'Gleich geht’s weiter …'}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Live-Reactions-Pad — sichtbar in passiven Beobachter-Phasen.
             Spieler tappen ein Emoji; das fliegt als Mini-Burst über den Beamer.
             Backend rate-limit (4 pro 5s pro Team) gegen Spam.

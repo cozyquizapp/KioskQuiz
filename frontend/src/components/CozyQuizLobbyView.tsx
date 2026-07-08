@@ -387,13 +387,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {de ? 'Willkommen' : 'Welcome'}
             </div>
+            {/* 2026-07-08 (Wolf-Livetest 'Join-Message schneidet lange Namen ab'):
+                statt hartem nowrap+ellipsis darf der Name jetzt auf 2 Zeilen
+                umbrechen (kleinere Max-Größe), lange Team-Namen bleiben lesbar. */}
             <div style={{
               fontFamily: fontFam,
-              fontSize: 'clamp(56px, 7cqw, 120px)', fontWeight: 900,
-              color: '#FFEFC9', lineHeight: 1.02,
+              fontSize: 'clamp(40px, 5.6cqw, 92px)', fontWeight: 900,
+              color: '#FFEFC9', lineHeight: 1.04,
               letterSpacing: '-0.005em',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden', textOverflow: 'ellipsis',
+              overflowWrap: 'anywhere', wordBreak: 'break-word',
+              display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               maxWidth: '70cqw',
               textShadow: `0 0 36px ${welcomedTeam.color}88`,
             }}>

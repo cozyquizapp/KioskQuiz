@@ -14,6 +14,7 @@ import React from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { JokerIcon } from './JokerIcon';
 import { HelpModal } from './CozyQuizTeamOverlays';
+import { QQTeamAvatar } from './QQTeamAvatar';
 
 export function TeamBottomSheetMenu({
   lang, setLang, onClose, onLeaveRequest,
@@ -297,7 +298,6 @@ export function TeamBottomSheetMenu({
                   const isMine = cell?.ownerId === myTeamId;
                   const ownerTeam = cell?.ownerId ? state.teams.find(t => t.id === cell.ownerId) : null;
                   const ownerColor = ownerTeam?.color ?? null;
-                  const ownerEmoji = ownerTeam?.emoji ?? null;
                   const isStacked = !!cell?.stuck;
                   const isShielded = !!cell?.shielded;
                   return (
@@ -324,13 +324,20 @@ export function TeamBottomSheetMenu({
                         overflow: 'hidden',
                       }}
                     >
-                      {/* Owner-Emoji als Identifier (Farbschwäche-tauglich) */}
-                      {ownerEmoji && (
-                        <span style={{
-                          fontSize: 12, lineHeight: 1,
-                          opacity: isMine ? 0.95 : 0.75,
-                          filter: isMine ? 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' : 'none',
-                        }}>{ownerEmoji}</span>
+                      {/* 2026-07-08 (Wolf-Livetest 'Grid zeigt Namen statt
+                          Avatare'): echten Team-Avatar rendern (cozy3d/Wappen/
+                          Emoji) statt den Slug-String als Rohtext. */}
+                      {ownerTeam && (
+                        <QQTeamAvatar
+                          avatarId={ownerTeam.avatarId}
+                          teamEmoji={ownerTeam.emoji}
+                          size="82%"
+                          flat
+                          style={{
+                            opacity: isMine ? 1 : 0.82,
+                            filter: isMine ? 'drop-shadow(0 0 2px rgba(0,0,0,0.5))' : 'none',
+                          }}
+                        />
                       )}
                       {/* Stacked/Shielded-Marker als kleines Overlay top-right */}
                       {isMine && isStacked && (

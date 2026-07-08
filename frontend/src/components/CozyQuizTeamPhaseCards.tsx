@@ -359,14 +359,12 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                 <div style={{ fontSize: 13, fontWeight: 900, color, letterSpacing: '0.04em', marginBottom: 6 }}>
                   {phaseName}
                 </div>
+                {/* 2026-07-08 (Wolf-Livetest 'Runden-Emojis inkonsistent zum
+                    Beamer'): die alten marker-sanduhr/marker-swap-PNGs (Bann/Swap
+                    = gestrichene Mechaniken) raus — jetzt exakt das Beamer-Emoji
+                    (🏯 fuer R3/R4) wie in ROUND_RULES. */}
                 <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 44 }}>
-                  {largeMode ? r.emoji : s.gamePhaseIndex === 3 ? (
-                    <QQIcon slug="marker-sanduhr" size={44} alt="Bann" />
-                  ) : s.gamePhaseIndex === 4 ? (
-                    <QQIcon slug="marker-swap" size={44} alt="Swap" />
-                  ) : (
-                    r.emoji
-                  )}
+                  <QQEmojiIcon emoji={r.emoji} />
                 </div>
                 {s.gamePhaseIndex > 1 && (
                   <div style={{
@@ -413,7 +411,17 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                 <div style={{ fontSize: 13, fontWeight: 900, color: catColor, letterSpacing: '0.04em', marginBottom: 8 }}>
                   {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
                 </div>
-                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}><QQEmojiIcon emoji={info.emoji}/></div>
+                {/* 2026-07-08 (Wolf-Livetest 'Kategorie-Emojis inkonsistent zum
+                    Beamer'): custom PNG-Icon (cat-... / bunte-...) wie Beamer-Hero
+                    + Team-Pill statt Roh-Emoji. Fallback aufs Emoji wenn kein Slug. */}
+                <div style={{ fontSize: 44, marginBottom: 4, animation: 'tcfloat 3s ease-in-out infinite' }}>
+                  {(() => {
+                    const catSlug = cat === 'BUNTE_TUETE' && btKind ? qqSubSlug(btKind) : (cat ? qqCatSlug(cat as string) : null);
+                    return catSlug
+                      ? <QQIcon slug={catSlug} size={44} alt={info.title[lang]} />
+                      : <QQEmojiIcon emoji={info.emoji}/>;
+                  })()}
+                </div>
                 <div style={{ fontSize: 28, fontWeight: 900, color: catColor, textShadow: `0 0 20px ${catColor}44` }}>
                   {info.title[lang]}
                 </div>

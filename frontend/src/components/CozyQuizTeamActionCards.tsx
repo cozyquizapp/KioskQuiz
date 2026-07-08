@@ -133,6 +133,16 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     const t = window.setTimeout(() => setMyRecentPlace(null), 900);
     return () => window.clearTimeout(t);
   }, [myRecentPlace]);
+  // 2026-07-08 (Wolf-Livetest 'Feld-Klauen kaputt nach Stack'): Root-Cause war,
+  // dass ein Tap auf ein gestapeltes/geschütztes Feld im Klau-Modus STILL
+  // verschluckt wurde (return, keine Rückmeldung, keine Logs). Jetzt kurze
+  // Hinweis-Blase, damit klar ist WARUM nichts passiert.
+  const [blockedHint, setBlockedHint] = useState<string | null>(null);
+  useEffect(() => {
+    if (!blockedHint) return;
+    const t = window.setTimeout(() => setBlockedHint(null), 2200);
+    return () => window.clearTimeout(t);
+  }, [blockedHint]);
   // Comeback-Steal-Pause: pendingFor=null, comebackTeamId zeigt aber das aktive Team.
   // Damit andere Teams nicht „Spielfeld" sehen (so als waere die Klau-Phase fertig),
   // sondern weiterhin das klauende Team mit „wartet auf Moderator".
@@ -152,6 +162,13 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   const isStapelBonusMode = s.pendingAction === 'STAPEL_BONUS';
   const hasStapable = s.grid.some(row => row.some(cell =>
     cell.ownerId === myTeamId && (isStapelBonusMode || !cell.stuck)
+  ));
+  // 2026-07-08 (Wolf-Livetest 'Feld-Klauen kaputt nach Stack'): gibt es ueberhaupt
+  // ein klaubares Gegner-Feld? Nach vielen Stapeln sind alle Gegner-Felder stuck →
+  // Klauen wuerde ins Leere fuehren (STEAL_1 ohne tapbares Ziel → nur Skip). Dann
+  // den Klauen-Button gar nicht erst anbieten.
+  const hasStealable = s.grid.some(row => row.some(cell =>
+    cell.ownerId != null && cell.ownerId !== myTeamId && !cell.stuck && !cell.frozen && !cell.shielded
   ));
   const hasSandTarget = s.grid.some(row => row.some(cell =>
     !(cell.sandLockTtl && cell.sandLockTtl > 0) && (
@@ -345,7 +362,24 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
 
     // STEAL
     if (isSteal) {
-      if (!cell.ownerId || cell.ownerId === myTeamId || cell.frozen || cell.stuck || cell.shielded) return;
+      // 2026-07-08 (Wolf-Livetest): unklaubare Felder mit klarer Rückmeldung
+      // statt stillem Ignorieren (leeres/eigenes Feld = kein Hinweis nötig).
+      if (!cell.ownerId || cell.ownerId === myTeamId) return;
+      if (cell.stuck) {
+        setBlockedHint(lang === 'en' ? 'This field is stacked — can’t be stolen.' : 'Dieses Feld ist gestapelt — nicht klaubar.');
+        if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+        return;
+      }
+      if (cell.shielded) {
+        setBlockedHint(lang === 'en' ? 'This field is shielded — can’t be stolen.' : 'Dieses Feld ist geschützt — nicht klaubar.');
+        if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+        return;
+      }
+      if (cell.frozen) {
+        setBlockedHint(lang === 'en' ? 'This field is frozen — can’t be stolen.' : 'Dieses Feld ist eingefroren — nicht klaubar.');
+        if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
+        return;
+      }
       setPendingPick({ r, c, kind: 'steal' });
       return;
     }
@@ -644,11 +678,33 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
         </div>
       )}
 
+      {/* 2026-07-08 (Wolf-Livetest): Warum-nichts-passiert-Hinweis beim Klauen
+          unklaubarer (gestapelter/geschützter/eingefrorener) Felder. */}
+      {blockedHint && (
+        <div style={{
+          background: 'rgba(239, 68, 68, 0.14)',
+          border: '1px solid rgba(239, 68, 68, 0.4)',
+          borderRadius: 10,
+          padding: '10px 12px',
+          marginBottom: 12,
+          fontSize: 13,
+          fontWeight: 800,
+          lineHeight: 1.4,
+          color: '#fecaca',
+          textAlign: 'center',
+          animation: 'tcreveal 0.25s ease both',
+        }}>
+          <QQEmojiIcon emoji="🔒"/> {blockedHint}
+        </div>
+      )}
+
       {/* Phase 2: place 2 OR steal 1 */}
       {isPhase2Choice && !selecting && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
           <CozyBtn color={QQ_COLORS.green500} onClick={() => chooseFreeAction('PLACE')}>{iconLabel('action-place', lang === 'de' ? '2 Felder setzen' : 'Place 2 fields')}</CozyBtn>
-          <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>{iconLabel('action-steal', lang === 'de' ? '1 Feld klauen' : 'Steal 1 field')}</CozyBtn>
+          {hasStealable && (
+            <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>{iconLabel('action-steal', lang === 'de' ? '1 Feld klauen' : 'Steal 1 field')}</CozyBtn>
+          )}
         </div>
       )}
 
@@ -661,9 +717,11 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               {iconLabel('action-place', lang === 'de' ? '2 Felder setzen' : 'Place 2 cells')}
             </CozyBtn>
           )}
-          <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>
-            {iconLabel('action-steal', lang === 'de' ? 'Feld klauen' : 'Steal a cell')}
-          </CozyBtn>
+          {hasStealable && (
+            <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>
+              {iconLabel('action-steal', lang === 'de' ? 'Feld klauen' : 'Steal a cell')}
+            </CozyBtn>
+          )}
           {/* Bann + Schild + Tauschen entfernt — Trinity Place/Steal/Stapel
               ist die finale Mechanik-Auswahl. */}
           {(phase >= 3 || (phase === 2 && s.totalPhases === 2)) && hasStapable && stapelsLeft > 0 && (

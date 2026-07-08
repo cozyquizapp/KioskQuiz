@@ -27,6 +27,7 @@ import { StandardInput, SubmitBtn } from './CozyQuizTeamInputs';
 import { AnimatedDots } from './CozyQuizTeamPrimitives';
 import { QQEmojiIcon } from './QQIcon';
 import { isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
+import { getAvatarDisplay } from '../avatarSets';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── Hot Potato team input with countdown ──────────────────────────────────────
@@ -687,6 +688,16 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
   const teamColor = myTeam?.color ?? catColor;
   const teamEmoji = (myTeam as any)?.emoji ?? '📍';
   const isFlag = isCountryFlagGlyph(teamEmoji);
+  // 2026-07-08 (Wolf-Livetest 'CozyGuessr-Pin zeigt Tier-NAMEN statt 3D-Avatar'):
+  // teamEmoji kann ein cozy3d-/Wappen-Slug sein (kein echtes Emoji) → als Bild
+  // rendern statt Rohtext. teamEmoji hat in getAvatarDisplay hoechste Prio, daher
+  // reicht der Emoji-Override auch ohne vollen State.
+  const pinDisplay = getAvatarDisplay((myTeam as any)?.avatarId ?? '', undefined, undefined, teamEmoji);
+  const pinImgSrc = pinDisplay.kind === 'image' || pinDisplay.kind === 'crest'
+    ? pinDisplay.src
+    : pinDisplay.kind === 'png'
+      ? pinDisplay.pngBase
+      : null;
   const customPinIcon = useMemo(() => {
     if (isFlag) {
       // Flaggen-Pin: 44×33 Rechteck (4:3) + Nadel-Spitze drunter. Total 44×64.
@@ -751,13 +762,16 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
           display: flex; align-items: center; justify-content: center;
           z-index: 2;
           font-size: 24px; line-height: 1;
+          overflow: hidden;
           filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
-        ">${teamEmoji}</div>
+        ">${pinImgSrc
+          ? `<img src="${pinImgSrc}" alt="" style="width: 34px; height: 34px; object-fit: contain; display: block;" />`
+          : teamEmoji}</div>
       </div>`,
       iconSize: [48, 64] as any,
       iconAnchor: [24, 60] as any,
     });
-  }, [teamColor, teamEmoji, isFlag]);
+  }, [teamColor, teamEmoji, isFlag, pinImgSrc]);
 
   // B7: Auto-Submit on Timer-End wenn Pin gesetzt; sonst nur Lock.
   const expired = useExpiry(timerEndsAt ?? null);

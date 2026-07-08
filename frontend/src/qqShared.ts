@@ -1092,14 +1092,8 @@ export const QQ_BEAMER_CSS = `
     40%      { transform: scale(0.94); }
     70%      { transform: scale(1.02); }
   }
-  /* Radiale Einschlagswelle beim Feld-Claim (Wolf-Idee 2026-07-07): jedes Feld
-     im Radius hebt sich kurz + glowt in Teamfarbe (--rip), gestaffelt per
-     Distanz-Delay → Welle laeuft ringfoermig nach aussen. */
-  @keyframes cellRipple {
-    0%   { transform: translateY(0);    box-shadow: 0 0 0 0 rgba(0,0,0,0); }
-    40%  { transform: translateY(-7px); box-shadow: 0 7px 14px rgba(0,0,0,0.36), 0 0 22px 3px var(--rip, #EC4899); }
-    100% { transform: translateY(0);    box-shadow: 0 0 0 0 rgba(0,0,0,0); }
-  }
+  /* 2026-07-08 (Wolf-Livetest): cellRipple (Radial-Welle beim Feld-Claim) raus
+     — sah nicht gut aus + laggte. Nachbarn behalten cellNeighborDuck. */
   @keyframes cellShatter {
     0%   { opacity: 1; transform: scale(1); filter: brightness(1); }
     25%  { opacity: 0.9; transform: scale(1.08); filter: brightness(2); }

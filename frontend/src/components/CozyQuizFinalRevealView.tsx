@@ -472,7 +472,10 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
       slotKey={String(slotIndex)}
       exitAnimation="qqFRSlamOutDown 0.22s cubic-bezier(0.4, 0, 0.7, 0.3) both"
       exitMs={220}
-      enterAnimation="qqFRSlotEnter 0.35s cubic-bezier(0.34, 1.36, 0.64, 1) 0.10s both"
+      // 2026-07-08 (Wolf-Livetest 'alte+neue Card ueberlappen'): Enter erst NACH
+      // dem Exit (0.22s delay) + richtungs-Slide von unten statt in-place-Pop,
+      // damit die neue Card nicht auf der noch fadenden alten sitzt.
+      enterAnimation="qqFRSlotEnterV2 0.34s cubic-bezier(0.34, 1.36, 0.64, 1) 0.22s both"
     >
       {renderSlot(slot)}
     </SlotTransition>
@@ -724,11 +727,11 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
       )}
-      {/* 2026-05-24 (Wolf-Entscheidung): Race-Final ist deaktiviert, ersetzt
-          durch FinalEurovisionFinale (Hero-Standings + Konfetti). RaceFinalSlide
-          bleibt als Dead-Code im File darunter — Verweis für spätere KIs falls
-          die Race-Choreo wieder aktiviert werden soll. */}
-      {phase.kind === 'race-final' && <FinalEurovisionFinale finalRanking={finalRanking} lang={lang} />}
+      {/* 2026-07-08 (Wolf-Livetest 'Tower-Aufbau-Finale einbauen'): Live-Finale
+          ist jetzt die TowerFinalSlide (Turm-Aufbau-Sequenz). FinalEurovisionFinale
+          + RaceFinalSlide bleiben als Dead-Code im File darunter — Verweis für
+          spätere KIs falls eine andere Finale-Choreo gebraucht wird. */}
+      {phase.kind === 'race-final' && <TowerFinalSlide finalRanking={finalRanking} lang={lang} />}
     </div>
   );
 }
@@ -772,6 +775,13 @@ function FinalRevealSharedKeyframes() {
          verschwundene Alte mit klarer „Neue Card kommt"-Geste. */
       @keyframes qqFRSlotEnter {
         0%   { opacity: 0; transform: scale(0.94) translateY(6%); }
+        100% { opacity: 1; transform: scale(1)    translateY(0); }
+      }
+      /* 2026-07-08 (Wolf-Livetest): Enter der neuen Bet-Card mit klarem
+         Richtungs-Slide von unten — laeuft erst nach dem Exit, kein Overlap. */
+      @keyframes qqFRSlotEnterV2 {
+        0%   { opacity: 0; transform: scale(0.9)  translateY(64%); }
+        60%  { opacity: 1; }
         100% { opacity: 1; transform: scale(1)    translateY(0); }
       }
       @keyframes qqFRSlamFromTop {
@@ -1526,7 +1536,9 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
         minHeight: 'clamp(360px, 44cqh, 620px)',
         transformStyle: 'preserve-3d',
         WebkitTransformStyle: 'preserve-3d',
-        transition: 'transform 1.1s cubic-bezier(0.34, 1.46, 0.64, 1)',
+        // 2026-07-08 (Wolf-Livetest 'Awards drehen sich zu schnell'):
+        // Flip von 1.1s→1.7s + sanfteres Easing (weniger Overshoot).
+        transition: 'transform 1.7s cubic-bezier(0.25, 1, 0.3, 1)',
         transform: isFlipped ? 'rotateY(180deg)' : 'rotateY(0deg)',
       }}>
         {/* BG — Award-Name + Emoji + ??? */}
@@ -1821,7 +1833,9 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
 // Hero-Row (Avatar 2x, Krone von oben, Konfetti, Fanfare + Climax-Akkord).
 // Trade-off ggue. „Sieger-Hero solo": alle Teams sehen ihren finalen Rang,
 // Spannungsbogen wird statt punktuell durchgehend ueber ~6-9s aufgebaut.
-function FinalEurovisionFinale({ finalRanking, lang }: {
+// 2026-07-08: seit Tower-Finale live ist diese Slide Dead-Code — export haelt
+// sie fuer spaetere KIs referenzierbar (sonst noUnusedLocals-Fehler).
+export function FinalEurovisionFinale({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
@@ -1987,7 +2001,7 @@ function FinalEurovisionFinale({ finalRanking, lang }: {
                 fontSize={isWinner ? 'clamp(28px, 3.2cqw, 52px)' : 'clamp(18px, 1.9cqw, 28px)'}
                 color={tColor}
                 fontWeight={900}
-                maxLines={1}
+                maxLines={2}
                 shrinkAfter={14}
                 style={{
                   flex: 1, minWidth: 0,

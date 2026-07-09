@@ -93,6 +93,10 @@ export interface CozyGameViewProps {
 export default function CozyGameView({ round, width, height, teams, language }: CozyGameViewProps) {
   const lang = useLangFlip(language ?? 'de');
   const [games, setGames] = useState<CozyGame[]>([]);
+  // 2026-07-09 (Wolf-Bug 'Lade Spiel-Details… hängt'): komplette DB-Liste
+  // ungefiltert — das aktive Spiel muss auch auflösbar sein, wenn es archiviert
+  // ist (z.B. altes Spiel noch in einem Draft-Pool) oder nicht im Pool-Filter.
+  const [allGames, setAllGames] = useState<CozyGame[]>([]);
   const [loading, setLoading] = useState(true);
 
   // 2026-05-17 (P1 #5): Sounds pro Sub-Phase.
@@ -172,6 +176,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
         if (!res.ok) throw new Error('load failed');
         const data: CozyGame[] = await res.json();
         if (!cancelled) {
+          setAllGames(data);
           const inPool = data.filter(g => round.poolGameIds.includes(g.id) && !g.archived);
           setGames(inPool);
         }
@@ -184,9 +189,12 @@ export default function CozyGameView({ round, width, height, teams, language }: 
     return () => { cancelled = true; };
   }, [round.poolGameIds]);
 
+  // Aktives Spiel aus der UNGEFILTERTEN Liste (archivierte/Pool-fremde inkl.) —
+  // sonst hängt der Beamer auf 'Lade Spiel-Details…' wenn das Rad auf ein
+  // archiviertes Spiel fällt (Wolf-Bug 2026-07-09).
   const activeGame = useMemo(
-    () => round.activeGameId ? games.find(g => g.id === round.activeGameId) ?? null : null,
-    [games, round.activeGameId]
+    () => round.activeGameId ? allGames.find(g => g.id === round.activeGameId) ?? null : null,
+    [allGames, round.activeGameId]
   );
 
   // Verbleibende Spiele fürs Rad (Shrink-Logik aus Wolfs Entscheidung)

@@ -185,11 +185,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
-      { key: 'hook-testteam', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames },
+      { key: 'hook-testteam', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'facts-testteam', dur: 5000 },
       { key: 'board', dur: B.board }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
-      { key: 'hook-testteam', dur: 4600 }, { key: 'fun', dur: B.fun }, { key: 'cta-testteam', dur: 5000 },
+      { key: 'hook-testteam', dur: 4600 }, { key: 'facts-testteam', dur: 4800 }, { key: 'cta-testteam', dur: 5000 },
     ],
     bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
     deco: DECO_TESTTEAM,
@@ -433,6 +433,7 @@ function renderScene(key: string) {
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
     case 'hook-testteam':  return <HookTestteam />;
+    case 'facts-testteam': return <FactsTestteam />;
     case 'cta-testteam':   return <CtaTestteam />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
     case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." commentPrompt={<>Kennst du so eine Bar? <span style={{ color: PINK_MID }}>👇</span><br />Taggt sie.</>} />;
@@ -731,8 +732,9 @@ function HookBday() {
 }
 
 // TEST-TEAM: persoenliche Gruender-Bitte (Wolf 2026-07-09). Bewusst KEIN
-// Hochglanz-Hook wie die Nischen — nahbar, Ich-Form, Maskottchen bittet direkt.
-// Authentizitaet schlaegt Politur bei einer „helft mir testen"-Ansprache.
+// Hochglanz-Hook wie die Nischen — nahbar, Ich-Form, echtes Gesicht (Johannes,
+// rundes Portrait wie auf der Website) statt Maskottchen. Authentizitaet
+// schlaegt Politur bei einer „helft mir testen"-Ansprache.
 function HookTestteam() {
   return (
     <>
@@ -740,16 +742,62 @@ function HookTestteam() {
         📍 HAMBURG · TEST-TEAM GESUCHT
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.8cqh', animation: 'popIn 0.6s var(--eb) both' }}>
-        Ich hab 2 Jahre<br />an einem Quiz<br /><span style={{ color: PINK_MID }}>gebaut.</span>
+        Ich hab eine<br />Quiz-Event-App<br /><span style={{ color: PINK_MID }}>gebaut.</span>
       </div>
-      <div style={{ margin: '4.5cqh 0 3.5cqh' }}>
-        <WolfMascot pose="augenauf.mundauf.winken" sizeCqw={38} anim="popIn 0.7s var(--eb) 0.5s both" />
+      {/* Echtes Gesicht: Johannes' rundes Portrait (dasselbe wie auf cozywolf.de). */}
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.4cqh', margin: '4cqh 0 3cqh' }}>
+        <img src="/johannes.jpg" alt="Johannes" style={{
+          width: '32cqw', height: '32cqw', borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 22%',
+          border: '0.8cqw solid rgba(236,72,153,0.85)',
+          boxShadow: '0 1.4cqh 3.4cqh rgba(0,0,0,0.45), 0 0 4cqw rgba(236,72,153,0.4)',
+          animation: 'popIn 0.7s var(--eb) 0.5s both',
+        }} />
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', opacity: 0.92, animation: 'fadeUp 0.6s ease 0.75s both' }}>
+          Johannes · <span style={{ color: PINK_MID }}>cozywolf</span>
+        </div>
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.4cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 0.9s both' }}>
         Jetzt brauch ich<br /><span style={{ color: '#fff', background: PINK, borderRadius: 8, padding: '0.08em 0.3em' }}>euch</span>.
       </div>
       <div style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.82, marginTop: '2.5cqh', animation: 'fadeUp 0.6s ease 1.2s both' }}>
         5 Teams, die es mit mir durchspielen.
+      </div>
+    </>
+  );
+}
+
+// TEST-TEAM-FAKTEN: was ihr mitbringt (ersetzt die „Bunte Tuete"-Szene, Wolf
+// 2026-07-09). Klare Voraussetzungen filtern die Anfragen vor.
+function FactsTestteam() {
+  const facts = [
+    { icon: '📽️', text: 'Platz für einen Beamer' },
+    { icon: '⏱️', text: '90–120 Minuten Zeit' },
+    { icon: '👥', text: 'Mindestens 9 Leute' },
+    { icon: '📍', text: 'Im Raum Hamburg' },
+  ];
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
+        DAS BRAUCHT IHR
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.04, marginTop: '1.4cqh', animation: 'popIn 0.6s var(--eb) both' }}>
+        Passt das<br />bei <span style={{ color: PINK_MID }}>euch?</span>
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.2cqh', margin: '5cqh 0 3.5cqh', width: '80cqw' }}>
+        {facts.map((f, i) => (
+          <div key={i} style={{
+            display: 'flex', alignItems: 'center', gap: '4cqw',
+            background: 'rgba(255,255,255,0.06)', border: '0.3cqh solid rgba(255,255,255,0.14)',
+            borderRadius: '3.5cqw', padding: '1.9cqh 4.5cqw',
+            animation: `fadeUp 0.5s var(--eb) ${0.25 + i * 0.16}s both`,
+          }}>
+            <span style={{ fontSize: '8cqw', lineHeight: 1, flexShrink: 0 }}>{f.icon}</span>
+            <span style={{ fontWeight: 800, fontSize: '5.2cqw', textAlign: 'left', lineHeight: 1.15 }}>{f.text}</span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4cqw', opacity: 0.82, animation: 'fadeUp 0.6s ease 1.15s both' }}>
+        📱 Jede:r ein Handy · WLAN reicht
       </div>
     </>
   );
@@ -765,7 +813,7 @@ function CtaTestteam() {
         Euer Abend<br />geht <span style={{ color: PINK_MID }}>aufs Haus.</span>
       </div>
       <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '2.6cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
-        Ein kompletter, moderierter Quizabend — gratis. Dafür sagt ihr mir ehrlich, was hakt.
+        Ein kompletter, moderierter Quizabend. Komplett gratis. Dafür sagt ihr mir ehrlich, was hakt.
       </div>
       {/* Knappheit + klare Aktion */}
       <div style={{ marginTop: '3cqh', display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', padding: '1.2cqh 4cqw', borderRadius: '99px', background: 'rgba(236,72,153,0.16)', border: '0.3cqh solid rgba(236,72,153,0.5)', fontWeight: 800, fontSize: '4cqw', animation: 'fadeUp 0.6s ease 0.6s both' }}>

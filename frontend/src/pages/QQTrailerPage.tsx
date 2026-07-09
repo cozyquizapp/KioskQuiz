@@ -744,7 +744,7 @@ function HookTestteam() {
         📍 HAMBURG · TEST-TEAM GESUCHT
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.8cqh', animation: 'popIn 0.6s var(--eb) both' }}>
-        Ich hab eine<br />Quiz-Event-App<br /><span style={{ color: PINK_MID }}>gebaut.</span>
+        Ich hab eine<br /><span style={{ color: PINK_MID }}>Quiz-Event-App</span><br />gebaut.
       </div>
       {/* Echtes Gesicht: Johannes' rundes Portrait (dasselbe wie auf cozywolf.de). */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.4cqh', margin: '4cqh 0 3cqh' }}>

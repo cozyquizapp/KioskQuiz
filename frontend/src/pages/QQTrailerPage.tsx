@@ -232,17 +232,13 @@ export default function QQTrailerPage() {
   const [reel, setReel] = useState(false);
   const [slideshow, setSlideshow] = useState(slidesDeepLink || !!exportMode);
   const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
-  const [recNonce, setRecNonce] = useState(0);
-  const [recording, setRecording] = useState(false);
-  const [recBlank, setRecBlank] = useState(false); // Aufnahme: reiner Background (Handles)
-  // Im Reel-Modus (Vorschau/Abfilmen, nicht Aufnahme/Slideshow) haengt am Loop-
-  // Nahtpunkt ein 3s-Background-Handle → der Loop laesst sich beim manuellen
-  // Abfilmen sauber an den Background-Frames schneiden (Wolf 2026-07-09).
-  // useMemo: sonst neue Array-Referenz je Render → Stepper-Timer wuerde staendig
-  // resetten.
+  // Reel-Modus (Abfilmen am PC, nicht Slideshow): je ein 3s-Background-Handle VOR
+  // und NACH dem Reel → beim manuellen Abfilmen laesst sich sauber an den reinen
+  // Background-Frames schneiden (Vorlauf + Nachlauf fuer den Loop, Wolf 2026-07-09).
+  // useMemo: sonst neue Array-Referenz je Render → Stepper-Timer wuerde staendig resetten.
   const playScenes = useMemo<Scene[]>(
-    () => (reel && !recording ? [...scenes, BLANK_SCENE] : scenes),
-    [reel, recording, scenes],
+    () => (reel ? [BLANK_SCENE, ...scenes, BLANK_SCENE] : scenes),
+    [reel, scenes],
   );
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -256,7 +252,18 @@ export default function QQTrailerPage() {
     else if (hideT.current) clearTimeout(hideT.current);
     return () => { if (hideT.current) clearTimeout(hideT.current); };
   }, [big]);
-  const exitBig = () => { setReel(false); setSlideshow(false); };
+  const exitBig = () => {
+    setReel(false); setSlideshow(false);
+    try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch { /* ignore */ }
+  };
+  // Reel-Modus in Vollbild starten → maximale Aufloesung fuers Abfilmen am PC
+  // („in HD", Wolf 2026-07-09). Fullscreen-API braucht eine User-Geste, laeuft
+  // daher im Button-onClick. Start bei Szene 0 (Blank), damit der 3s-Vorlauf zuerst kommt.
+  const enterReel = () => {
+    setScene(0);
+    setReel(true);
+    try { void document.documentElement.requestFullscreen?.().catch(() => {}); } catch { /* ignore */ }
+  };
   const prevSlide = () => { setScene(s => (s - 1 + scenes.length) % scenes.length); pokeControls(); };
   const nextSlide = () => { setScene(s => (s + 1) % scenes.length); pokeControls(); };
 
@@ -274,8 +281,8 @@ export default function QQTrailerPage() {
   }, [scene, paused, playScenes, slideshow]);
 
   const cur = Math.min(scene, playScenes.length - 1);
-  // Nur-Background: waehrend der Aufnahme-Handles ODER auf der Loop-Naht-Blank-Szene.
-  const blankNow = (recBlank && recording) || playScenes[cur]?.key === '__blank';
+  // Nur-Background auf den Vorlauf-/Nachlauf-Blank-Szenen (Loop-Schnitt-Handles).
+  const blankNow = playScenes[cur]?.key === '__blank';
   const totalSec = Math.round(scenes.reduce((a, s) => a + s.dur, 0) / 1000);
 
   // HD-Download der aktuellen Folie (Standbild → Anim auf Endzustand gezwungen).
@@ -315,92 +322,6 @@ export default function QQTrailerPage() {
       setZipProg(null);
       setScene(prev);
     }
-  };
-
-  // ── HD-Video-Aufnahme (Wolf 2026-07-09): ein Klick → crisper Reel-Clip, kein
-  //    Handy-Screen-Record + kein KI-Upscaling mehr. Nutzt getDisplayMedia
-  //    (Tab teilen) + MediaRecorder mit hoher Bitrate, nimmt genau EINEN
-  //    Durchlauf auf und laedt die Datei runter. recNonce erzwingt beim Start
-  //    einen frischen Mount von Szene 0 (Entrance-Animation ab Frame 1). ──
-  const recordHd = async () => {
-    if (recording) return;
-    const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: (c: MediaStreamConstraints) => Promise<MediaStream> };
-    if (!md?.getDisplayMedia || typeof MediaRecorder === 'undefined') {
-      alert('Dein Browser kann keine Tab-Aufnahme. Nutze Chrome oder Edge am Desktop.');
-      return;
-    }
-    // Ganzseiten-Vollbild (versteckt Browser-Leisten → maximale Aufloesung).
-    // Fire-and-forget, nutzt die Klick-Geste; getDisplayMedia folgt synchron.
-    try { void document.documentElement.requestFullscreen?.().catch(() => {}); } catch { /* ignore */ }
-    const exitFs = () => { try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch { /* ignore */ } };
-    let stream: MediaStream;
-    try {
-      // preferCurrentTab: der Picker waehlt den AKTUELLEN Tab vor → nur noch
-      // „Teilen" klicken (kein „welchen Tab?"-Raten mehr). selfBrowserSurface:
-      // 'include' erlaubt das Teilen des eigenen Tabs.
-      stream = await md.getDisplayMedia({
-        video: { frameRate: 30 } as MediaTrackConstraints, audio: false,
-        preferCurrentTab: true, selfBrowserSurface: 'include',
-      } as MediaStreamConstraints & Record<string, unknown>);
-    } catch {
-      exitFs();
-      return; // User hat abgebrochen
-    }
-    // WebM (VP9) zuerst: robustestes MediaRecorder-Format. Der aus dem Browser
-    // erzeugte fragmentierte MP4 laesst sich vom Windows-Standard-Player nicht
-    // oeffnen (0x80004005) — WebM importiert CapCut/Chrome/VLC sauber.
-    const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=h264'];
-    const mimeType = types.find(t => MediaRecorder.isTypeSupported?.(t)) ?? '';
-    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-    const rec = new MediaRecorder(stream, { mimeType: mimeType || undefined, videoBitsPerSecond: 12_000_000 });
-    const chunks: BlobPart[] = [];
-    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
-    rec.onstop = () => {
-      stream.getTracks().forEach(t => t.stop());
-      downloadBlob(new Blob(chunks, { type: mimeType || 'video/webm' }), `cozyquiz-${slug}-hd.${ext}`);
-      exitFs();
-      setRecording(false);
-      setRecBlank(false);
-      setReel(false);
-      setControls(true);
-    };
-    // Sauberes Vollbild-9:16, keine Bedienelemente im Bild. Start als reiner
-    // Background (Szenen-Loop pausiert) → Loop-Schnitt-Handle am Anfang.
-    setSlideshow(false);
-    setReel(true);
-    setControls(false);
-    setRecording(true);
-    setRecBlank(true);
-    setPaused(true);
-    setScene(0);
-    const totalMs = scenes.reduce((a, s) => a + s.dur, 0);
-    const vtrack = stream.getVideoTracks()[0];
-    // User beendet die Freigabe selbst → sauber stoppen.
-    vtrack.addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop(); });
-    await new Promise((r) => setTimeout(r, 500)); // Reel-Modus + Frame mounten lassen
-    // Region Capture: exakt auf den 9:16-Frame zuschneiden → keine dunklen
-    // Raender, kein manuelles Croppen (Chromium 104+, sonst wird ignoriert).
-    try {
-      const w = window as unknown as { CropTarget?: { fromElement(el: Element): Promise<unknown> } };
-      const t = vtrack as MediaStreamTrack & { cropTo?: (target: unknown) => Promise<void> };
-      if (w.CropTarget?.fromElement && t.cropTo && frameRef.current) {
-        await t.cropTo(await w.CropTarget.fromElement(frameRef.current));
-      }
-    } catch { /* Region Capture optional */ }
-    rec.start();
-    // 1) ~3 s reiner Background am Anfang (Schnitt-Handle fuer den Loop)
-    await new Promise((r) => setTimeout(r, 3000));
-    // 2) Reel EINMAL durchspielen (frischer Mount ab Szene 0, Entrance ab Frame 1)
-    setRecBlank(false);
-    setScene(0);
-    setRecNonce((n) => n + 1);
-    setPaused(false);
-    await new Promise((r) => setTimeout(r, totalMs + 250));
-    // 3) ~3 s reiner Background am Ende → sauberer Loop-Schnittpunkt
-    setPaused(true);
-    setRecBlank(true);
-    await new Promise((r) => setTimeout(r, 3000));
-    if (rec.state !== 'inactive') rec.stop();
   };
 
   // Auto-Export-Modus (?export=zip|frames): einmalig durchsteppen + ausliefern.
@@ -444,12 +365,10 @@ export default function QQTrailerPage() {
         ...(big
           ? { width: 'min(100vw, calc(100dvh * 9 / 16))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
           : { height: 'min(94vh, calc(100vw * 16 / 9))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
-      }} onClick={() => { if (recording) return; big ? pokeControls() : setPaused(p => !p); }}>
+      }} onClick={() => { big ? pokeControls() : setPaused(p => !p); }}>
         {/* Nischen-BG-Tint (subtiler Farbstich → unterschiedlicher Startframe) */}
         {cfg.bgTint && <div aria-hidden style={{ position: 'absolute', inset: 0, background: cfg.bgTint, zIndex: 0, pointerEvents: 'none' }} />}
-        {/* Waehrend der HD-Aufnahme KEINE Bedienelemente rendern — getDisplayMedia
-            filmt alles Sichtbare (data-no-capture wirkt nur beim Bild-Export). */}
-        {big && !recording && (
+        {big && (
           <button
             data-no-capture
             onClick={(e) => { e.stopPropagation(); exitBig(); }}
@@ -481,18 +400,15 @@ export default function QQTrailerPage() {
             Leiste drüber, und in der Vorschau stört er nur. */}
 
         {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert).
-            Waehrend der Aufnahme-Handles ausgeblendet → reiner Background. Blank
-            greift NUR bei laufender Aufnahme (recording), damit ein abgebrochener
-            Record nicht den Reel-Modus schwarz laesst. */}
+            Auf den Vorlauf-/Nachlauf-Blank-Szenen ausgeblendet → reiner Background. */}
         {!blankNow && <FloatingIcons items={cfg.deco} />}
 
         {/* Aktive Szene (key → Remount triggert Entrance-Animationen).
             2026-07-09 (Wolf): TikTok-Safe-Zone — mehr Bottom-Padding hebt den
             zentrierten Inhalt nach oben, weg von der Caption-/Musik-Leiste unten.
-            recBlank = Aufnahme-Vor-/Nachlauf (nur Background, kein Inhalt) fuer
-            saubere Loop-Schnitt-Handles. */}
+            Auf den Blank-Szenen (Reel-Vor-/Nachlauf) bleibt nur der Background. */}
         {!blankNow && (
-          <div key={`${cur}-${recNonce}`} style={{
+          <div key={cur} style={{
             position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', textAlign: 'center',
             padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
@@ -513,20 +429,15 @@ export default function QQTrailerPage() {
       {!big && (
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 9, maxWidth: 400 }}>
           <div style={{ display: 'flex', gap: 9, flexWrap: 'wrap', justifyContent: 'center' }}>
-            <button onClick={() => setReel(true)} style={{
+            <button onClick={enterReel} style={{
               appearance: 'none', border: 'none', background: PINK,
               color: '#fff', fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px',
               borderRadius: 999, cursor: 'pointer', boxShadow: '0 8px 24px rgba(236,72,153,0.4)',
-            }}>▶ Reel-Modus</button>
+            }}>▶ Reel-Modus (HD-Vollbild)</button>
             <button onClick={() => { setScene(0); setSlideshow(true); }} style={{
               appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#fff',
               fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer',
             }}>🖼 Slideshow-Modus</button>
-            <button onClick={recordHd} disabled={recording} style={{
-              appearance: 'none', border: 'none', background: recording ? 'rgba(236,72,153,0.35)' : '#0EA5E9',
-              color: '#fff', fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px',
-              borderRadius: 999, cursor: recording ? 'default' : 'pointer', boxShadow: recording ? 'none' : '0 8px 24px rgba(14,165,233,0.4)',
-            }}>{recording ? `⏺ Aufnahme läuft … (~${totalSec}s)` : '⬇ Video aufnehmen (HD)'}</button>
             <button onClick={saveZip} disabled={!!zipProg} style={{
               appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: zipProg ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.10)', color: '#fff',
               fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: zipProg ? 'default' : 'pointer',
@@ -534,8 +445,8 @@ export default function QQTrailerPage() {
           </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />
-            <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = Klick → „<b>Teilen</b>" → Reel läuft einmal durch → 9:16-Datei (<b>.webm</b>) lädt automatisch. <b>In CapCut importieren</b> (dort Sound drauf) oder in Chrome/VLC ansehen — der Windows-Standard-Player kann WebM nicht.<br />
-            <b style={{ color: '#c9c5da' }}>Reel</b> = am PC abfilmen (am Loop-Ende sind <b>3&nbsp;s reiner Background</b> → dort sauber schneiden) · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
+            <b style={{ color: '#f9a8d4' }}>▶ Reel-Modus</b> = geht ins <b>Vollbild (HD)</b> → am PC mit deinem Screen-Recorder abfilmen. Am <b>Anfang</b> und am <b>Ende</b> laufen je <b>3&nbsp;s reiner Background</b> → dort den Loop sauber schneiden.<br />
+            <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell) · <b style={{ color: '#c9c5da' }}>ZIP</b> = alle Folien als HD-PNGs.
           </div>
         </div>
       )}
@@ -1081,7 +992,7 @@ function CtaTestteam() {
       </div>
       {/* Trust: erklaert WARUM gratis → killt den Scam-/MLM-Verdacht */}
       <div style={{ fontWeight: 800, fontSize: '4.4cqw', marginTop: '2cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.4s both' }}>
-        Ihr testet mein Quiz, bevor die ersten Events es buchen. <span style={{ color: PINK_MID }}>Kein Haken.</span>
+        Ihr testet mein Quiz, bevor die ersten es für ihr Event buchen. <span style={{ color: PINK_MID }}>Kein Haken.</span>
       </div>
       {/* EINE Aktion: Freunde markieren (treibt Reichweite via Tag-Shares) */}
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.8cqw', marginTop: '3.2cqh', lineHeight: 1.15, animation: 'fadeUp 0.6s ease 0.6s both' }}>

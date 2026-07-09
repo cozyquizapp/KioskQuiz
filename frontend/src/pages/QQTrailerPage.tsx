@@ -314,10 +314,21 @@ export default function QQTrailerPage() {
       alert('Dein Browser kann keine Tab-Aufnahme. Nutze Chrome oder Edge am Desktop.');
       return;
     }
+    // Ganzseiten-Vollbild (versteckt Browser-Leisten → maximale Aufloesung).
+    // Fire-and-forget, nutzt die Klick-Geste; getDisplayMedia folgt synchron.
+    try { void document.documentElement.requestFullscreen?.().catch(() => {}); } catch { /* ignore */ }
+    const exitFs = () => { try { if (document.fullscreenElement) void document.exitFullscreen?.(); } catch { /* ignore */ } };
     let stream: MediaStream;
     try {
-      stream = await md.getDisplayMedia({ video: { frameRate: 30 } as MediaTrackConstraints, audio: false });
+      // preferCurrentTab: der Picker waehlt den AKTUELLEN Tab vor → nur noch
+      // „Teilen" klicken (kein „welchen Tab?"-Raten mehr). selfBrowserSurface:
+      // 'include' erlaubt das Teilen des eigenen Tabs.
+      stream = await md.getDisplayMedia({
+        video: { frameRate: 30 } as MediaTrackConstraints, audio: false,
+        preferCurrentTab: true, selfBrowserSurface: 'include',
+      } as MediaStreamConstraints & Record<string, unknown>);
     } catch {
+      exitFs();
       return; // User hat abgebrochen
     }
     const types = ['video/mp4;codecs=h264', 'video/webm;codecs=vp9', 'video/webm'];
@@ -329,6 +340,7 @@ export default function QQTrailerPage() {
     rec.onstop = () => {
       stream.getTracks().forEach(t => t.stop());
       downloadBlob(new Blob(chunks, { type: mimeType || 'video/webm' }), `cozyquiz-${slug}-hd.${ext}`);
+      exitFs();
       setRecording(false);
       setReel(false);
       setControls(true);
@@ -341,9 +353,19 @@ export default function QQTrailerPage() {
     setControls(false);
     setRecording(true);
     const totalMs = scenes.reduce((a, s) => a + s.dur, 0);
+    const vtrack = stream.getVideoTracks()[0];
     // User beendet die Freigabe selbst → sauber stoppen.
-    stream.getVideoTracks()[0].addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop(); });
+    vtrack.addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop(); });
     await new Promise((r) => setTimeout(r, 500)); // Reel-Modus + Fonts + Szene 0 mounten lassen
+    // Region Capture: exakt auf den 9:16-Frame zuschneiden → keine dunklen
+    // Raender, kein manuelles Croppen (Chromium 104+, sonst wird ignoriert).
+    try {
+      const w = window as unknown as { CropTarget?: { fromElement(el: Element): Promise<unknown> } };
+      const t = vtrack as MediaStreamTrack & { cropTo?: (target: unknown) => Promise<void> };
+      if (w.CropTarget?.fromElement && t.cropTo && frameRef.current) {
+        await t.cropTo(await w.CropTarget.fromElement(frameRef.current));
+      }
+    } catch { /* Region Capture optional */ }
     rec.start();
     setRecNonce((n) => n + 1); // Szene 0 frisch remounten → Aufnahme ab Frame 1
     setTimeout(() => { if (rec.state !== 'inactive') rec.stop(); }, totalMs + 600);
@@ -475,7 +497,7 @@ export default function QQTrailerPage() {
           </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />
-            <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = ein Klick, „<b>Diesen Tab</b>" teilen → das Reel läuft einmal durch → fertige Datei lädt automatisch (kein Handy, kein Upscaling).<br />
+            <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = Klick → im Dialog einfach auf „<b>Teilen</b>" (der Tab ist schon gewählt) → das Reel läuft einmal durch → fertige, auf 9:16 zugeschnittene Datei lädt automatisch. Kein Handy, kein Upscaling.<br />
             <b style={{ color: '#c9c5da' }}>Reel</b> = am PC abfilmen · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
           </div>
         </div>

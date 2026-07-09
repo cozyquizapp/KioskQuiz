@@ -18,6 +18,7 @@ import { useLangFlip } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon } from './QQIcon';
+import { CozyGameIcon } from './CozyGameIcon';
 import { JokerIcon } from './JokerIcon';
 import { Fireflies } from './CozyQuizAmbient';
 import QQProgressTree from './QQProgressTree';
@@ -35,6 +36,9 @@ type AbilityBadge = {
 };
 type RulesSlide = {
   icon: string;
+  /** 2026-07-09 (Motion-Audit): optionales Custom-3D-Icon (/icons/<id>.png) statt
+   *  Emoji — z.B. cg-cozygames auf der CozyGame-Slide, konsistent zum Rad-Intro. */
+  iconImg?: string;
   title: string;
   color: string;
   lines: string[];
@@ -143,6 +147,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     // mit eigener Regelpille erklaert).
     {
       icon: '🪅',
+      iconImg: 'cg-cozygames',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
@@ -244,6 +249,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     // per-question with its own rules-pill).
     {
       icon: '🪅',
+      iconImg: 'cg-cozygames',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
@@ -562,7 +568,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   borderRadius: 999, minWidth: 0,
                   background: active ? `rgba(${aRGB},0.18)` : 'rgba(255,255,255,0.03)',
                   border: active ? `1.5px solid rgba(${aRGB},0.6)` : '1.5px solid rgba(255,255,255,0.08)',
-                  transition: 'all 0.4s ease',
+                  // 2026-07-09 (Motion-Audit): 'all' → konkrete Properties (kein
+                  // versehentliches Animieren von Layout-Werten).
+                  transition: 'background 0.4s ease, border-color 0.4s ease',
                 }}>
                   <span style={{
                     flexShrink: 0, display: 'grid', placeItems: 'center',
@@ -643,6 +651,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               <JokerIcon i={1} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
                 style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 1.7s infinite' }} />
             </div>
+          ) : slide.iconImg ? (
+            <span style={{
+              display: 'inline-block',
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}><CozyGameIcon id={slide.iconImg} emoji={slide.icon} size={'clamp(64px,9cqw,110px)'} /></span>
           ) : (
             <span style={{
               display: 'inline-block',

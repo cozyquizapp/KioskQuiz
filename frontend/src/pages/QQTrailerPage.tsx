@@ -185,11 +185,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
-      { key: 'hook-testteam', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'board', dur: B.board },
+      { key: 'hook-testteam', dur: 4800 }, { key: 'bock-testteam', dur: B.fun }, { key: 'board', dur: B.board },
       { key: 'facts-testteam', dur: 5000 }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
-      { key: 'hook-testteam', dur: 4600 }, { key: 'fun', dur: B.fun }, { key: 'cta-testteam', dur: 5000 },
+      { key: 'hook-testteam', dur: 4600 }, { key: 'bock-testteam', dur: B.fun }, { key: 'cta-testteam', dur: 5000 },
     ],
     bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
     deco: DECO_TESTTEAM,
@@ -433,6 +433,7 @@ function renderScene(key: string) {
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
     case 'hook-testteam':  return <HookTestteam />;
+    case 'bock-testteam':  return <BockTestteam />;
     case 'facts-testteam': return <FactsTestteam />;
     case 'cta-testteam':   return <CtaTestteam />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
@@ -755,12 +756,36 @@ function HookTestteam() {
           boxShadow: '0 1.4cqh 3.4cqh rgba(0,0,0,0.45), 0 0 4cqw rgba(236,72,153,0.4)',
           animation: 'popIn 0.7s var(--eb) 0.5s both',
         }} />
-        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4cqw', opacity: 0.92, animation: 'fadeUp 0.6s ease 0.75s both' }}>
-          Johannes · <span style={{ color: PINK_MID }}>cozywolf</span>
+        <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '4.2cqw', opacity: 0.92, animation: 'fadeUp 0.6s ease 0.75s both' }}>
+          <span style={{ color: PINK_MID }}>Johannes</span>
         </div>
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.4cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 0.9s both' }}>
         Jetzt brauch ich<br /><span style={{ color: '#fff', background: PINK, borderRadius: 8, padding: '0.08em 0.3em' }}>euch</span>.
+      </div>
+    </>
+  );
+}
+
+// TEST-TEAM-BOCK: spricht den Zuschauer direkt an (Wolf 2026-07-09) — „Bock auf
+// einen Quizabend mit Freunden?". Eigene Szene (nicht die geteilte fun-Szene),
+// damit der allgemeine Trailer unveraendert bleibt. Nutzt die lebhaften Pet-Discs.
+function BockTestteam() {
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.04, animation: 'fadeUp 0.6s ease both' }}>
+        Bock auf einen<br /><span style={{ color: PINK_MID }}>Quizabend</span><br />mit deinen Freunden?
+      </div>
+      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3cqw', margin: '6.5cqh 0 5cqh' }}>
+        {[{ t: 0, e: '😂', d: 0 }, { t: 2, e: '🎉', d: 0.5 }, { t: 4, e: '🔥', d: 1.0 }].map((p, i) => (
+          <div key={i} style={{ position: 'relative', animation: `fadeUp 0.5s var(--eb) ${0.3 + i * 0.18}s both` }}>
+            <span style={{ position: 'absolute', top: '-5cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '6cqw', animation: `floatPet 3.4s ease-in-out ${p.d}s infinite` }}>{p.e}</span>
+            <PetDisc slug={TEAMS[p.t].slug} color={TEAMS[p.t].color} sizeCqw={19} anim="floatPet 4.4s ease-in-out infinite" />
+          </div>
+        ))}
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '5.4cqw', opacity: 0.96, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 0.7s both' }}>
+        Dann bist du hier <span style={{ color: PINK_MID }}>richtig</span>.
       </div>
     </>
   );
@@ -798,7 +823,7 @@ function FactsTestteam() {
       </div>
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2cqh', marginTop: '0.5cqh' }}>
         <div style={{ fontWeight: 800, fontSize: '4.2cqw', opacity: 0.9, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 1.1s both' }}>
-          Ob bei euch, im Café oder in der Bar. <span style={{ color: PINK_MID }}>Ihr wählt.</span>
+          Im Büro, Vereinsraum oder bei euch. <span style={{ color: PINK_MID }}>Ihr wählt.</span>
         </div>
         <div style={{ fontWeight: 800, fontSize: '4cqw', opacity: 0.78, animation: 'fadeUp 0.6s ease 1.25s both' }}>
           📱 Jede:r ein Handy · WLAN reicht

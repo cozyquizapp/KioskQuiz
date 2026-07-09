@@ -138,6 +138,7 @@ import {
   seedCozyGamesIfMissing,
   syncCozyGameSeedFlags,
   syncCozyGameSeedI18n,
+  syncCozyGameSeedArchived,
   getQQGameResults,
   deleteQQGameResult,
   deleteAllQQGameResults,
@@ -7608,6 +7609,14 @@ const listenWithFallback = (port: number, attemptsLeft: number) => {
             if (cgI18n > 0) console.log(`✓ CozyGames i18n-Sync: ${cgI18n} Spiele EN-uebersetzt`);
           } catch (err) {
             console.warn('CozyGames i18n-Sync fehlgeschlagen:', err);
+          }
+          // 2026-07-09: archived-Migration. Zieht archived:true (deprecatete
+          // Seed-Spiele) auf existing DB-Eintraege. Einseitig — Wolf-Edits safe.
+          try {
+            const cgArch = await syncCozyGameSeedArchived(COZY_GAME_V1_SEED);
+            if (cgArch > 0) console.log(`✓ CozyGames archived-Sync: ${cgArch} Spiele archiviert`);
+          } catch (err) {
+            console.warn('CozyGames archived-Sync fehlgeschlagen:', err);
           }
           console.log('✓ MongoDB bereit');
         } else {

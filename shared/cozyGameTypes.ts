@@ -47,6 +47,7 @@ export const COZY_GAME_MATERIAL_TAGS_V1 = [
   'Bausteine', 'Plastikbecher', 'Karten', 'Strohhalm', 'Süßigkeit',
   'Wäscheklammer', 'Wurfringe', 'Action-Sport-Set', 'Wattebausch',
   'Flasche', 'Teller', 'Glas', 'Waage', 'Schnur', 'Lineal', 'Papier',
+  'Stift',
 ] as const;
 
 /** Ein einzelnes CozyGame im Katalog. */
@@ -145,10 +146,13 @@ export interface CozyGameRoundState {
   timerDurationSec?: number;
 }
 
-// ── V1-Seed: 15 Spiele ───────────────────────────────────────────────────────
+// ── Seed-Katalog: 14 aktive Spiele (+3 archiviert) ───────────────────────────
 // seedCozyGamesIfMissing() fügt fehlende IDs bei jedem Backend-Start ein (nicht
 // nur bei leerer DB) — neue Seed-Einträge landen also nach Redeploy in der DB.
-// Wolf kann später via /cozygames-Editor archivieren.
+// archived:true wird via syncCozyGameSeedArchived einmalig auf bestehende
+// DB-Einträge gezogen (nur Archivieren, nie Ent-Archivieren → Wolf-Edits safe).
+// 2026-07-09 (Wolf): cg-muenzturm→cg-muenz-kante, cg-schnur-halbieren→cg-stift-fang,
+//   cg-getraenk-halbieren ersatzlos archiviert. Wolf kann via /cozygames-Editor weiter pflegen.
 
 const SEED_TIMESTAMP = 1715900000000; // 2026-05-17 Wolf-Konzept-Date, fixed für Idempotenz
 
@@ -203,6 +207,9 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
 
   // ── Stapel/Bau (3) ──
   {
+    // 2026-07-09 (Wolf): archiviert — „Münzturm bauen ist zu leicht". Ersetzt
+    // durch cg-muenz-kante (Schnippen zur Tischkante). archived greift live via
+    // syncCozyGameSeedArchived beim Redeploy.
     id: 'cg-muenzturm',
     emoji: '🪙',
     name: 'Münzturm einhändig',
@@ -214,6 +221,24 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     noiseLevel: 'leise',
     scoringType: 'height',
     scoringNote: 'Höhe = Anzahl gestapelter Münzen am Ende der 60s.',
+    isSeed: true,
+    archived: true,
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
+  },
+  {
+    id: 'cg-muenz-kante',
+    emoji: '🪙',
+    name: 'Münz-Schnippen zur Kante',
+    nameEn: 'Coin Flick to the Edge',
+    description: 'Münze übers Tisch Richtung Kante schnippen. Ziel: so nah wie möglich an der Kante liegen bleiben — ohne runterzufallen. Näheste Münze gewinnt.',
+    descriptionEn: 'Flick a coin across the table toward the edge. Goal: come to rest as close to the edge as possible without falling off. Closest coin wins.',
+    materialTags: ['Münzen'],
+    setting: 'tisch',
+    noiseLevel: 'leise',
+    scoringType: 'closestToTarget',
+    scoringNote: 'Ziel = Tischkante. Runtergefallene Münzen sind raus. Kleinster Abstand zur Kante gewinnt.',
+    parallel: false, // gemessen an EINER Kante → Teams nacheinander schnippen + messen
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
@@ -368,6 +393,8 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     updatedAt: SEED_TIMESTAMP,
   },
   {
+    // 2026-07-09 (Wolf): archiviert — Konzept „Getränk halbieren" funktioniert so
+    // nicht sauber. Ersatz-Slot fällt weg (Katalog auf 14 aktive Spiele).
     id: 'cg-getraenk-halbieren',
     emoji: '⚖️',
     name: 'Getränk perfekt halbieren',
@@ -381,10 +408,13 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     scoringNote: 'Ziel = 50/50. Abweichung = Gewichts-/Füllstands-Differenz der beiden Gläser. Kleinste gewinnt.',
     parallel: false, // nur eine Waage → Teams nacheinander messen
     isSeed: true,
+    archived: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,
   },
   {
+    // 2026-07-09 (Wolf): archiviert — Konzept „Schnur halbieren" funktioniert so
+    // nicht sauber. Ersetzt durch cg-stift-fang (Reaktions-Duell).
     id: 'cg-schnur-halbieren',
     emoji: '✂️',
     name: 'Genau in der Mitte teilen',
@@ -396,6 +426,25 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     noiseLevel: 'leise',
     scoringType: 'closestToTarget',
     scoringNote: 'Abweichung = Längendifferenz der beiden Hälften. Kleinste gewinnt.',
+    isSeed: true,
+    archived: true,
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
+  },
+
+  // ── Reaktion (1) — 2026-07-09 Wolf ──
+  {
+    id: 'cg-stift-fang',
+    emoji: '✏️',
+    name: 'Stift-Fang-Reaktion',
+    nameEn: 'Pen Catch Reflex',
+    description: 'Ein Spieler hält einen Stift senkrecht über der offenen Hand des Partners und lässt ihn ohne Ansage fallen. Der Partner muss zugreifen, bevor der Stift durchrutscht. Meiste Fänge in 60s.',
+    descriptionEn: 'One player holds a pen vertically above their partner\'s open hand and drops it without warning. The partner must grab it before it slips through. Most catches in 60s.',
+    materialTags: ['Stift'],
+    setting: 'tisch',
+    noiseLevel: 'leise',
+    scoringType: 'countIn60s',
+    scoringNote: 'Fang zählt nur, wenn der Stift vor dem Durchrutschen gegriffen wird. Reihum abwechselnd fallenlassen/fangen erlaubt.',
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,

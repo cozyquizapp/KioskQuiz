@@ -376,6 +376,27 @@ export async function syncCozyGameSeedFlags(seedGames: any[]): Promise<number> {
   return updated;
 }
 
+/** 2026-07-09 Migration: Zieht `archived:true` aus dem Seed auf bestehende
+ *  DB-Einträge (z.B. cg-muenzturm, cg-getraenk-halbieren, cg-schnur-halbieren).
+ *  EINSEITIG — archiviert nur, ent-archiviert nie → Wolfs eigene Un-Archive-Edits
+ *  im /cozygames-Editor bleiben unangetastet. */
+export async function syncCozyGameSeedArchived(seedGames: any[]): Promise<number> {
+  let updated = 0;
+  for (const g of seedGames) {
+    try {
+      if (g.archived !== true) continue;
+      const existing = await CozyGameModel.findOne({ id: g.id }).lean();
+      if (!existing) continue;
+      if ((existing as any).archived === true) continue;
+      await CozyGameModel.updateOne({ id: g.id }, { $set: { archived: true } });
+      updated++;
+    } catch (err) {
+      console.warn(`[cozygames-archive] failed to sync ${g.id}:`, err);
+    }
+  }
+  return updated;
+}
+
 /** 2026-05-20 Migration: Syncs `nameEn` + `descriptionEn` aus Seed → DB.
  *  Wolf-Edits bleiben unangetastet (nur leere Felder werden gefuellt).
  *  Nutzt updateOne+$set statt save() — siehe Kommentar bei syncCozyGameSeedFlags. */

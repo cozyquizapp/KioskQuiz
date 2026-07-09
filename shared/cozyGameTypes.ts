@@ -146,7 +146,7 @@ export interface CozyGameRoundState {
   timerDurationSec?: number;
 }
 
-// ── Seed-Katalog: 14 aktive Spiele (+3 archiviert) ───────────────────────────
+// ── Seed-Katalog: 15 aktive Spiele (+3 archiviert) ───────────────────────────
 // seedCozyGamesIfMissing() fügt fehlende IDs bei jedem Backend-Start ein (nicht
 // nur bei leerer DB) — neue Seed-Einträge landen also nach Redeploy in der DB.
 // archived:true wird via syncCozyGameSeedArchived einmalig auf bestehende
@@ -445,6 +445,24 @@ export const COZY_GAME_V1_SEED: CozyGame[] = [
     noiseLevel: 'leise',
     scoringType: 'countIn60s',
     scoringNote: 'Fang zählt nur, wenn der Stift vor dem Durchrutschen gegriffen wird. Reihum abwechselnd fallenlassen/fangen erlaubt.',
+    isSeed: true,
+    createdAt: SEED_TIMESTAMP,
+    updatedAt: SEED_TIMESTAMP,
+  },
+
+  // ── Wurf/Fang (1) — 2026-07-09 Wolf ──
+  {
+    id: 'cg-marshmallow-fang',
+    emoji: '🍡',
+    name: 'Marshmallow-Fang',
+    nameEn: 'Marshmallow Catch',
+    description: 'Ein Spieler wirft Marshmallows (oder Bonbons) aus kurzer Distanz, der Partner fängt sie mit einem Becher — oder direkt mit dem Mund. Jeder Fang zählt. Meiste Fänge in 60s.',
+    descriptionEn: 'One player tosses marshmallows (or candy) from a short distance; the partner catches them with a cup — or straight in the mouth. Each catch counts. Most catches in 60s.',
+    materialTags: ['Süßigkeit', 'Pappbecher'],
+    setting: 'steh',
+    noiseLevel: 'leise',
+    scoringType: 'countIn60s',
+    scoringNote: 'Nur gefangene Marshmallows zählen. Wurf-Distanz fair halten (Mod legt eine Linie fest).',
     isSeed: true,
     createdAt: SEED_TIMESTAMP,
     updatedAt: SEED_TIMESTAMP,

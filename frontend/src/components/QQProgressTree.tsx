@@ -5,6 +5,7 @@ import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { QQIcon, qqCatSlug, qqSubSlug } from './QQIcon';
+import { CozyGameIcon } from './CozyGameIcon';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -772,7 +773,11 @@ export default function QQProgressTree({
                     animation: isCozyGameActive ? 'qqTreePulse 1.6s ease-in-out infinite' : undefined,
                     transition: 'all 0.45s var(--qq-ease-out-cubic)',
                   }}
-                >🪅</div>
+                >
+                  {/* 2026-07-09 (Wolf 'Tree zeigt noch altes Cozygames-Logo'):
+                      3D-Dach-Icon cg-cozygames statt 🪅-Emoji. */}
+                  <CozyGameIcon id="cg-cozygames" emoji="🪅" size={Math.round(cozyGameDotSize * 0.74)} />
+                </div>
               </div>
             ) : null;
             const biddingNode = insertBiddingHere ? (

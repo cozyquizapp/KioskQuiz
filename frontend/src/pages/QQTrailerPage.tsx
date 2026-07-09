@@ -782,6 +782,26 @@ function BockTestteam() {
   return (
     <>
       <Confetti />
+      {/* Floating Kategorie-Emojis rund um den Text — gibt dem Opener Leben,
+          ohne Avatar-Clutter (Wolf 2026-07-09). Sitzen an den Raendern, damit
+          sie den zentrierten Text nicht ueberlagern. */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none' }}>
+        {[
+          { n: 'cat-schaetzchen',  x: 11, y: 13, s: 15, d: 0 },
+          { n: 'cat-mucho',        x: 85, y: 11, s: 13, d: 0.8 },
+          { n: 'cat-cheese',       x: 6,  y: 50, s: 13, d: 1.4 },
+          { n: 'cat-bunte-tuete',  x: 88, y: 50, s: 15, d: 0.4 },
+          { n: 'cat-zehn-von-zehn', x: 14, y: 87, s: 12, d: 1.9 },
+          { n: 'cat-cheese',       x: 84, y: 88, s: 13, d: 1.1 },
+        ].map((p, i) => (
+          <img key={i} src={icon(p.n)} alt="" style={{
+            position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: `${p.s}cqw`, height: `${p.s}cqw`,
+            objectFit: 'contain', transform: 'translate(-50%, -50%)',
+            animation: `floatPet ${3.6 + i * 0.4}s ease-in-out ${p.d}s infinite, fadeUp 0.6s ease ${0.2 + i * 0.1}s both`,
+            filter: 'drop-shadow(0 0.6cqh 1cqh rgba(0,0,0,0.35))',
+          }} />
+        ))}
+      </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.06, animation: 'fadeUp 0.5s ease both' }}>
         Bock auf einen
       </div>
@@ -915,7 +935,7 @@ function FactsTestteam() {
             borderRadius: '3.5cqw', padding: '1.9cqh 4.5cqw',
             animation: `fadeUp 0.5s var(--eb) ${0.25 + i * 0.16}s both`,
           }}>
-            <img src={`/assets/icon-${f.icon}.webp`} alt="" style={{ width: '10cqw', height: '10cqw', objectFit: 'contain', flexShrink: 0 }} />
+            <img src={`/assets/icon-${f.icon}.webp`} alt="" style={{ width: '12.5cqw', height: '12.5cqw', objectFit: 'contain', flexShrink: 0 }} />
             <span style={{ fontWeight: 800, fontSize: '5.2cqw', textAlign: 'left', lineHeight: 1.15 }}>{f.text}</span>
           </div>
         ))}
@@ -925,7 +945,7 @@ function FactsTestteam() {
           Im Büro, Vereinsraum oder bei euch. <span style={{ color: PINK_MID }}>Ihr wählt.</span>
         </div>
         <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '2cqw', fontWeight: 800, fontSize: '4cqw', opacity: 0.82, animation: 'fadeUp 0.6s ease 1.25s both' }}>
-          <img src="/assets/icon-handy.webp" alt="" style={{ width: '6cqw', height: '6cqw', objectFit: 'contain' }} />
+          <img src="/assets/icon-handy.webp" alt="" style={{ width: '7cqw', height: '7cqw', objectFit: 'contain' }} />
           Jede:r ein Handy · WLAN reicht
         </div>
       </div>

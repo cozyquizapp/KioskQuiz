@@ -307,6 +307,7 @@ export default function QQTrailerPage() {
   //    einen frischen Mount von Szene 0 (Entrance-Animation ab Frame 1). ──
   const [recNonce, setRecNonce] = useState(0);
   const [recording, setRecording] = useState(false);
+  const [recBlank, setRecBlank] = useState(false); // Aufnahme: reiner Background (Loop-Schnitt-Handles)
   const recordHd = async () => {
     if (recording) return;
     const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: (c: MediaStreamConstraints) => Promise<MediaStream> };
@@ -345,21 +346,24 @@ export default function QQTrailerPage() {
       downloadBlob(new Blob(chunks, { type: mimeType || 'video/webm' }), `cozyquiz-${slug}-hd.${ext}`);
       exitFs();
       setRecording(false);
+      setRecBlank(false);
       setReel(false);
       setControls(true);
     };
-    // Sauberes Vollbild-9:16, keine Bedienelemente im Bild.
+    // Sauberes Vollbild-9:16, keine Bedienelemente im Bild. Start als reiner
+    // Background (Szenen-Loop pausiert) → Loop-Schnitt-Handle am Anfang.
     setSlideshow(false);
     setReel(true);
-    setPaused(false);
-    setScene(0);
     setControls(false);
     setRecording(true);
+    setRecBlank(true);
+    setPaused(true);
+    setScene(0);
     const totalMs = scenes.reduce((a, s) => a + s.dur, 0);
     const vtrack = stream.getVideoTracks()[0];
     // User beendet die Freigabe selbst → sauber stoppen.
     vtrack.addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop(); });
-    await new Promise((r) => setTimeout(r, 500)); // Reel-Modus + Fonts + Szene 0 mounten lassen
+    await new Promise((r) => setTimeout(r, 500)); // Reel-Modus + Frame mounten lassen
     // Region Capture: exakt auf den 9:16-Frame zuschneiden → keine dunklen
     // Raender, kein manuelles Croppen (Chromium 104+, sonst wird ignoriert).
     try {
@@ -370,8 +374,19 @@ export default function QQTrailerPage() {
       }
     } catch { /* Region Capture optional */ }
     rec.start();
-    setRecNonce((n) => n + 1); // Szene 0 frisch remounten → Aufnahme ab Frame 1
-    setTimeout(() => { if (rec.state !== 'inactive') rec.stop(); }, totalMs + 600);
+    // 1) ~3 s reiner Background am Anfang (Schnitt-Handle fuer den Loop)
+    await new Promise((r) => setTimeout(r, 3000));
+    // 2) Reel EINMAL durchspielen (frischer Mount ab Szene 0, Entrance ab Frame 1)
+    setRecBlank(false);
+    setScene(0);
+    setRecNonce((n) => n + 1);
+    setPaused(false);
+    await new Promise((r) => setTimeout(r, totalMs + 250));
+    // 3) ~3 s reiner Background am Ende → sauberer Loop-Schnittpunkt
+    setPaused(true);
+    setRecBlank(true);
+    await new Promise((r) => setTimeout(r, 3000));
+    if (rec.state !== 'inactive') rec.stop();
   };
 
   // Auto-Export-Modus (?export=zip|frames): einmalig durchsteppen + ausliefern.
@@ -451,22 +466,25 @@ export default function QQTrailerPage() {
         {/* Kein Stories-Fortschrittsbalken (Wolf): TikTok/Insta legen ihre eigene
             Leiste drüber, und in der Vorschau stört er nur. */}
 
-        {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert) */}
-        <FloatingIcons items={cfg.deco} />
+        {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert).
+            Waehrend der Aufnahme-Handles (recBlank) ausgeblendet → reiner Background. */}
+        {!recBlank && <FloatingIcons items={cfg.deco} />}
 
         {/* Aktive Szene (key → Remount triggert Entrance-Animationen).
             2026-07-09 (Wolf): TikTok-Safe-Zone — mehr Bottom-Padding hebt den
             zentrierten Inhalt nach oben, weg von der Caption-/Musik-Leiste unten.
-            Rechte Aktions-Leiste (Like/Kommentar) wird pro Szene beruecksichtigt
-            (schmalere Reihen, nichts Wichtiges an der rechten Kante). */}
-        <div key={`${cur}-${recNonce}`} style={{
-          position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-          alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-          padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
-          animation: 'sceneEnter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both',
-        }}>
-          {renderScene(scenes[cur].key)}
-        </div>
+            recBlank = Aufnahme-Vor-/Nachlauf (nur Background, kein Inhalt) fuer
+            saubere Loop-Schnitt-Handles. */}
+        {!recBlank && (
+          <div key={`${cur}-${recNonce}`} style={{
+            position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+            alignItems: 'center', justifyContent: 'center', textAlign: 'center',
+            padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
+            animation: 'sceneEnter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both',
+          }}>
+            {renderScene(scenes[cur].key)}
+          </div>
+        )}
 
         {paused && !big && (
           <div style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'rgba(0,0,0,0.25)' }}>

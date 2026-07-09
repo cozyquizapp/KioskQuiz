@@ -811,10 +811,10 @@ function BockTestteam() {
         ))}
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11.5cqw', lineHeight: 1.03, letterSpacing: '-0.01em', animation: 'fadeUp 0.5s ease both' }}>
-        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span><br />Quizabend?
+        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span><br />Quizabend
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', opacity: 0.94, marginTop: '3.4cqh', animation: 'fadeUp 0.6s ease 0.5s both' }}>
-        Mit deinen <span style={{ color: PINK_MID }}>Freunden</span>.
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.8cqw', lineHeight: 1.05, marginTop: '2.4cqh', animation: 'fadeUp 0.6s ease 0.5s both' }}>
+        mit deinen <span style={{ color: PINK_MID }}>Freunden?</span>
       </div>
     </>
   );

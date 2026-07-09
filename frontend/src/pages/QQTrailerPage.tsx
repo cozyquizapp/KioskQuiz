@@ -746,8 +746,11 @@ function HookTestteam() {
       </div>
       {/* Echtes Gesicht: Johannes' rundes Portrait (dasselbe wie auf cozywolf.de). */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.4cqh', margin: '4cqh 0 3cqh' }}>
-        <img src="/johannes.jpg" alt="Johannes" style={{
-          width: '32cqw', height: '32cqw', borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 22%',
+        <img src="/images/Johannes.jpeg" alt="Johannes" style={{
+          // Lockeres Foto (Cap/Daumen hoch). objectPosition auf den Kopf: das
+          // Motiv ist hochkant, Gesicht im oberen Drittel → Kopf sitzt mittig
+          // im Kreis, Daumen-Hand wird unten weggeschnitten.
+          width: '32cqw', height: '32cqw', borderRadius: '50%', objectFit: 'cover', objectPosition: 'center 14%',
           border: '0.8cqw solid rgba(236,72,153,0.85)',
           boxShadow: '0 1.4cqh 3.4cqh rgba(0,0,0,0.45), 0 0 4cqw rgba(236,72,153,0.4)',
           animation: 'popIn 0.7s var(--eb) 0.5s both',

@@ -462,7 +462,8 @@ function FullScreenLayout({ children, width, height, accent = COZY_PINK, solid }
       ...bgStyle,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 24,
-      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'),
+      fontFamily: isThemed() ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       overflow: 'hidden',
       position: 'relative',
     }}>
@@ -756,15 +757,19 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
   return (
     <div style={{
       width, height,
-      // 2026-05-17 v17 (Wolf 'ab wheel result gleiche bg dunkle farbe aus slice
-      // bis zum öffnen des grids'): Solid dark Slice-Color als BG, kein Radial-
-      // Tint mehr. Konsistente Farbe von WHEEL_RESULT bis WINNER_SELECT.
-      backgroundColor: isThemed() ? 'var(--qq-bg)' : darkAccentColor,
+      // 2026-07-09 (Wolf 'passen die farben?'): flacher abgedunkelter Team-Ton
+      // (konnte muddy-braun werden) → Cozy-Brand-BG (dunkler Grund #0A0814 +
+      // Pink/Accent-Glow) wie Intro/Wheel/PausedView. accentColor bleibt als
+      // Per-Game-Identität im Glow erhalten, aber der Grund ist markenkonsistent.
+      ...darkBgWithAccent(accentColor),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
-      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
+      flexDirection: 'column', gap: 'clamp(22px, 3.2vh, 44px)',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'),
+      // 2026-07-09 (Wolf 'schrift ans quiz angepasst?'): explizit die Quiz-Font
+      // statt 'inherit' — garantiert Bricolage/Nunito wie Fragen/Regeln.
+      fontFamily: isThemed() ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       overflow: 'hidden',
-      padding: 'clamp(20px, 3vh, 40px)',
+      padding: 'clamp(24px, 4vh, 56px)',
       boxSizing: 'border-box',
       position: 'relative',
     }}>
@@ -814,11 +819,11 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
           opacity: 0,
           animation: 'cozyGameLogoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         }}>
-          <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(96px, 14vw, 220px)" />
+          <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(150px, 19vw, 340px)" />
         </div>
       </div>
       <div style={{
-        fontSize: 'clamp(36px, 4.5vw, 76px)',
+        fontSize: 'clamp(52px, 6.2vw, 112px)',
         fontWeight: 900,
         letterSpacing: '-0.02em',
         textAlign: 'center',
@@ -829,9 +834,9 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
         {cgName(game, lang)}
       </div>
       <div style={{
-        fontSize: 'clamp(16px, 1.6vw, 26px)',
+        fontSize: 'clamp(20px, 2.1vw, 36px)',
         color: 'rgba(255,255,255,0.92)',
-        maxWidth: 1000,
+        maxWidth: 1180,
         textAlign: 'center',
         lineHeight: 1.4,
         padding: '0 40px',
@@ -849,11 +854,11 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
         }}>
           {game.materialTags.map(t => (
             <span key={t} style={{
-              padding: '4px 12px',
+              padding: '7px 18px',
               background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.25)'),
               border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(255,255,255,0.35)',
               borderRadius: 999,
-              fontSize: 'clamp(12px, 1vw, 16px)',
+              fontSize: 'clamp(15px, 1.3vw, 22px)',
               fontWeight: 700,
               color: (isThemed() ? 'var(--qq-text)' : '#fff'),
             }}>{t}</span>
@@ -913,7 +918,8 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
       background: accentColor,
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 28,
-      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'),
+      fontFamily: isThemed() ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       overflow: 'hidden',
     }}>
       {/* 2026-05-17 v7 (Wolf 'timer + card sollen animation haben'):
@@ -1001,9 +1007,10 @@ function SequenceGameView({
   return (
     <div style={{
       width, height,
-      backgroundColor: isThemed() ? 'var(--qq-bg)' : darkAccentColor,
+      ...darkBgWithAccent(accentColor),
       display: 'flex', flexDirection: 'column',
-      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'),
+      fontFamily: isThemed() ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',
@@ -1263,10 +1270,11 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
       width, height,
       // 2026-05-17 v17: Solid dark Slice-Color als BG, matched GameDetailView
       // → seamless Übergang von Game-Active zu Winner-Reveal.
-      backgroundColor: isThemed() ? 'var(--qq-bg)' : darkAccentColor,
+      ...darkBgWithAccent(accentColor),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       flexDirection: 'column', gap: 'clamp(14px, 2vh, 24px)',
-      color: (isThemed() ? 'var(--qq-text)' : '#fff'), fontFamily: 'inherit',
+      color: (isThemed() ? 'var(--qq-text)' : '#fff'),
+      fontFamily: isThemed() ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       overflow: 'hidden',
       padding: 'clamp(20px, 3vh, 40px)',
       boxSizing: 'border-box',

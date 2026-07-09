@@ -1047,7 +1047,7 @@ function CtaTestteam() {
       </div>
       {/* Trust: erklaert WARUM gratis → killt den Scam-/MLM-Verdacht */}
       <div style={{ fontWeight: 800, fontSize: '4.4cqw', marginTop: '2cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.4s both' }}>
-        Ihr testet mein Quiz, bevor die ersten Firmen es buchen. <span style={{ color: PINK_MID }}>Kein Haken.</span>
+        Ihr testet mein Quiz, bevor die ersten Events es buchen. <span style={{ color: PINK_MID }}>Kein Haken.</span>
       </div>
       {/* EINE Aktion: Freunde markieren (treibt Reichweite via Tag-Shares) */}
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.8cqw', marginTop: '3.2cqh', lineHeight: 1.15, animation: 'fadeUp 0.6s ease 0.6s both' }}>

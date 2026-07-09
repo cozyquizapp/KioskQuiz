@@ -300,6 +300,55 @@ export default function QQTrailerPage() {
     }
   };
 
+  // ── HD-Video-Aufnahme (Wolf 2026-07-09): ein Klick → crisper Reel-Clip, kein
+  //    Handy-Screen-Record + kein KI-Upscaling mehr. Nutzt getDisplayMedia
+  //    (Tab teilen) + MediaRecorder mit hoher Bitrate, nimmt genau EINEN
+  //    Durchlauf auf und laedt die Datei runter. recNonce erzwingt beim Start
+  //    einen frischen Mount von Szene 0 (Entrance-Animation ab Frame 1). ──
+  const [recNonce, setRecNonce] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const recordHd = async () => {
+    if (recording) return;
+    const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: (c: MediaStreamConstraints) => Promise<MediaStream> };
+    if (!md?.getDisplayMedia || typeof MediaRecorder === 'undefined') {
+      alert('Dein Browser kann keine Tab-Aufnahme. Nutze Chrome oder Edge am Desktop.');
+      return;
+    }
+    let stream: MediaStream;
+    try {
+      stream = await md.getDisplayMedia({ video: { frameRate: 30 } as MediaTrackConstraints, audio: false });
+    } catch {
+      return; // User hat abgebrochen
+    }
+    const types = ['video/mp4;codecs=h264', 'video/webm;codecs=vp9', 'video/webm'];
+    const mimeType = types.find(t => MediaRecorder.isTypeSupported?.(t)) ?? '';
+    const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
+    const rec = new MediaRecorder(stream, { mimeType: mimeType || undefined, videoBitsPerSecond: 12_000_000 });
+    const chunks: BlobPart[] = [];
+    rec.ondataavailable = (e) => { if (e.data.size) chunks.push(e.data); };
+    rec.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      downloadBlob(new Blob(chunks, { type: mimeType || 'video/webm' }), `cozyquiz-${slug}-hd.${ext}`);
+      setRecording(false);
+      setReel(false);
+      setControls(true);
+    };
+    // Sauberes Vollbild-9:16, keine Bedienelemente im Bild.
+    setSlideshow(false);
+    setReel(true);
+    setPaused(false);
+    setScene(0);
+    setControls(false);
+    setRecording(true);
+    const totalMs = scenes.reduce((a, s) => a + s.dur, 0);
+    // User beendet die Freigabe selbst → sauber stoppen.
+    stream.getVideoTracks()[0].addEventListener('ended', () => { if (rec.state !== 'inactive') rec.stop(); });
+    await new Promise((r) => setTimeout(r, 500)); // Reel-Modus + Fonts + Szene 0 mounten lassen
+    rec.start();
+    setRecNonce((n) => n + 1); // Szene 0 frisch remounten → Aufnahme ab Frame 1
+    setTimeout(() => { if (rec.state !== 'inactive') rec.stop(); }, totalMs + 600);
+  };
+
   // Auto-Export-Modus (?export=zip|frames): einmalig durchsteppen + ausliefern.
   useEffect(() => {
     if (!exportMode) return;
@@ -341,10 +390,12 @@ export default function QQTrailerPage() {
         ...(big
           ? { width: 'min(100vw, calc(100dvh * 9 / 16))', height: 'auto', maxHeight: '100dvh', borderRadius: 0, boxShadow: 'none' }
           : { height: 'min(94vh, calc(100vw * 16 / 9))', maxWidth: '100vw', borderRadius: 22, boxShadow: '0 24px 70px rgba(0,0,0,0.6)' }),
-      }} onClick={() => big ? pokeControls() : setPaused(p => !p)}>
+      }} onClick={() => { if (recording) return; big ? pokeControls() : setPaused(p => !p); }}>
         {/* Nischen-BG-Tint (subtiler Farbstich → unterschiedlicher Startframe) */}
         {cfg.bgTint && <div aria-hidden style={{ position: 'absolute', inset: 0, background: cfg.bgTint, zIndex: 0, pointerEvents: 'none' }} />}
-        {big && (
+        {/* Waehrend der HD-Aufnahme KEINE Bedienelemente rendern — getDisplayMedia
+            filmt alles Sichtbare (data-no-capture wirkt nur beim Bild-Export). */}
+        {big && !recording && (
           <button
             data-no-capture
             onClick={(e) => { e.stopPropagation(); exitBig(); }}
@@ -383,7 +434,7 @@ export default function QQTrailerPage() {
             zentrierten Inhalt nach oben, weg von der Caption-/Musik-Leiste unten.
             Rechte Aktions-Leiste (Like/Kommentar) wird pro Szene beruecksichtigt
             (schmalere Reihen, nichts Wichtiges an der rechten Kante). */}
-        <div key={cur} style={{
+        <div key={`${cur}-${recNonce}`} style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
           padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
@@ -412,6 +463,11 @@ export default function QQTrailerPage() {
               appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: 'rgba(255,255,255,0.10)', color: '#fff',
               fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: 'pointer',
             }}>🖼 Slideshow-Modus</button>
+            <button onClick={recordHd} disabled={recording} style={{
+              appearance: 'none', border: 'none', background: recording ? 'rgba(236,72,153,0.35)' : '#0EA5E9',
+              color: '#fff', fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px',
+              borderRadius: 999, cursor: recording ? 'default' : 'pointer', boxShadow: recording ? 'none' : '0 8px 24px rgba(14,165,233,0.4)',
+            }}>{recording ? `⏺ Aufnahme läuft … (~${totalSec}s)` : '⬇ Video aufnehmen (HD)'}</button>
             <button onClick={saveZip} disabled={!!zipProg} style={{
               appearance: 'none', border: '1px solid rgba(255,255,255,0.18)', background: zipProg ? 'rgba(255,255,255,0.06)' : 'rgba(255,255,255,0.10)', color: '#fff',
               fontFamily: BODY, fontWeight: 900, fontSize: 15, padding: '11px 22px', borderRadius: 999, cursor: zipProg ? 'default' : 'pointer',
@@ -419,7 +475,8 @@ export default function QQTrailerPage() {
           </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />
-            <b style={{ color: '#c9c5da' }}>Reel</b> = am Handy abfilmen · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
+            <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = ein Klick, „<b>Diesen Tab</b>" teilen → das Reel läuft einmal durch → fertige Datei lädt automatisch (kein Handy, kein Upscaling).<br />
+            <b style={{ color: '#c9c5da' }}>Reel</b> = am PC abfilmen · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
           </div>
         </div>
       )}
@@ -751,8 +808,8 @@ function HookTestteam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
         📍 HAMBURG · TEST-TEAM GESUCHT
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.06, marginTop: '1.2cqh', animation: 'popIn 0.6s var(--eb) both' }}>
-        Ich hab ein Quiz gebaut,<br />bei dem euer Tisch<br />zum <span style={{ color: PINK_MID }}>Spielbrett</span> wird.
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.4cqw', lineHeight: 1.05, marginTop: '1.2cqh', animation: 'popIn 0.6s var(--eb) both' }}>
+        Ich hab ein Quiz gebaut:<br />halb Pub-Quiz,<br />halb <span style={{ color: PINK_MID }}>Strategiespiel</span>.
       </div>
       {/* Echtes Gesicht: Johannes' rundes Portrait (dasselbe wie auf cozywolf.de). */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2cqh', margin: '3cqh 0 2.4cqh' }}>

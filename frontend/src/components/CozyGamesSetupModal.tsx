@@ -5,6 +5,7 @@ import {
   COZY_GAME_NOISE_LABELS,
   COZY_GAME_MATERIAL_TAGS_V1,
 } from '@shared/cozyGameTypes';
+import { CozyGameIcon } from './CozyGameIcon';
 
 // 2026-05-17 (Wolf-Feature CozyGames): Setup-Modal im Builder.
 // Aktiviert CozyGames pro Quiz + erlaubt Wolf die Spiele-Auswahl (max 8 fürs Rad).
@@ -233,7 +234,7 @@ export function CozyGamesSetupModal({ initialEnabled, initialPool, onSave, onClo
                       onChange={() => {}}
                       style={{ accentColor: COZY_PINK, pointerEvents: 'none' }}
                     />
-                    <span style={{ fontSize: 22, flexShrink: 0 }}>{g.emoji}</span>
+                    <CozyGameIcon id={g.id} emoji={g.emoji} size={26} style={{ flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ fontWeight: 700, fontSize: 14 }}>{g.name}</div>
                       <div style={{ fontSize: 11, color: '#94a3b8', marginTop: 2, display: 'flex', gap: 8, flexWrap: 'wrap' }}>

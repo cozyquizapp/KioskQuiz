@@ -27,6 +27,7 @@ import { QQ_CAT_ACCENT, qqSortedGroups, qqSortedTeams } from '../qqShared';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from './QQIcon';
+import { CozyGameIcon } from './CozyGameIcon';
 import { CozyCard, CozyBtn, CopyButton } from './CozyQuizTeamPrimitives';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode } from '../utils/qqStammCode';
@@ -1348,7 +1349,7 @@ export function CozyGameCard({
   lang?: 'de' | 'en';
 }) {
   const cg = (s as any).cozyGame;
-  const [activeGame, setActiveGame] = useState<{ emoji: string; name: string; description: string; parallel?: boolean } | null>(null);
+  const [activeGame, setActiveGame] = useState<{ id: string; emoji: string; name: string; description: string; parallel?: boolean } | null>(null);
   const activeGameId = cg?.activeGameId ?? null;
 
   useEffect(() => {
@@ -1361,7 +1362,7 @@ export function CozyGameCard({
         const data = await res.json();
         if (cancelled) return;
         const g = (data ?? []).find((x: any) => x.id === activeGameId);
-        if (g) setActiveGame({ emoji: g.emoji, name: g.name, description: g.description, parallel: g.parallel });
+        if (g) setActiveGame({ id: g.id, emoji: g.emoji, name: g.name, description: g.description, parallel: g.parallel });
       } catch { /* ignore */ }
     })();
     return () => { cancelled = true; };
@@ -1398,7 +1399,7 @@ export function CozyGameCard({
     headline = de ? '🎡 Rad dreht sich …' : '🎡 Wheel spinning …';
     subline = de ? 'Welches Spiel wirds?' : 'Which game will it be?';
   } else if (sub === 'WHEEL_RESULT' || sub === 'GAME_ACTIVE') {
-    headline = activeGame ? `${activeGame.emoji} ${activeGame.name}` : (de ? 'Spiel ausgewählt' : 'Game picked');
+    headline = activeGame ? activeGame.name : (de ? 'Spiel ausgewählt' : 'Game picked');
     if (playMode === 'sequence') {
       if (isMyTurn) subline = de ? '🎯 DU BIST DRAN! Spielt jetzt am Beamer.' : '🎯 YOUR TURN! Play at the beamer now.';
       else if (iAmCompleted) subline = de ? '✓ Du bist fertig — gut gemacht!' : '✓ You\'re done — well played!';
@@ -1412,7 +1413,7 @@ export function CozyGameCard({
         : (de ? '👀 Gleich startet das Spiel …' : '👀 Game starts in a moment …');
     }
   } else if (sub === 'WINNER_SELECT') {
-    headline = activeGame ? `${activeGame.emoji} ${activeGame.name}` : (de ? 'Sieger-Reveal' : 'Winner reveal');
+    headline = activeGame ? activeGame.name : (de ? 'Sieger-Reveal' : 'Winner reveal');
     subline = de ? '🏆 Sieger steht gleich fest — Blick auf den Beamer!' : '🏆 Winner reveal coming — watch the beamer!';
   }
 
@@ -1423,7 +1424,17 @@ export function CozyGameCard({
         display: 'flex', flexDirection: 'column', alignItems: 'center',
         gap: 'clamp(14px, 2vh, 22px)', textAlign: 'center',
       }}>
-        {/* Headline (Game-Emoji + Name) */}
+        {/* Game-Icon (nur wenn ein Spiel gewählt ist) */}
+        {activeGame && (sub === 'WHEEL_RESULT' || sub === 'GAME_ACTIVE' || sub === 'WINNER_SELECT') && (
+          <CozyGameIcon
+            id={activeGame.id}
+            emoji={activeGame.emoji}
+            size="clamp(56px, 12vw, 104px)"
+            style={{ filter: 'drop-shadow(0 8px 20px rgba(0,0,0,0.35))' }}
+          />
+        )}
+
+        {/* Headline (Game-Name) */}
         <div style={{
           fontSize: 'clamp(28px, 5.5vw, 44px)',
           fontWeight: 900,

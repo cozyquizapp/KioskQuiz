@@ -9,6 +9,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
 import { Fireflies } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { CozyGameIcon, CozyGameWheelIcon } from './CozyGameIcon';
 import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 import { useLangFlip } from '../cozyQuizShared';
 import { isThemed } from '../qqTheme';
@@ -478,11 +479,12 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
           qqCatNameWave (2.8s pure Bob) wie ueberall in Quiz-Hero-Slides
           → konsistente Motion-Sprache. */}
       <div style={{
-        fontSize: 'clamp(80px, 12vw, 200px)',
         lineHeight: 1,
         filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))',
         animation: 'qqCatNameWave 2.8s ease-in-out infinite',
-      }}>🪅</div>
+      }}>
+        <CozyGameIcon id="cg-cozygames" emoji="🪅" size="clamp(80px, 12vw, 200px)" />
+      </div>
       <div style={{
         fontSize: 'clamp(48px, 6vw, 96px)',
         fontWeight: 900,
@@ -545,7 +547,7 @@ function WheelView({
             boxShadow: `0 0 60px ${COZY_PINK}55, 0 20px 60px rgba(0,0,0,0.4)`,
             animation: 'qqPhasePop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}>
-            <span style={{ fontSize: 96 }}>{revealedGame.emoji}</span>
+            <CozyGameIcon id={revealedGame.id} emoji={revealedGame.emoji} size={96} />
             <div>
               <div style={{ fontSize: 'clamp(36px, 4vw, 72px)', fontWeight: 900 }}>{cgName(revealedGame, lang)}</div>
               <div style={{ fontSize: 'clamp(16px, 1.4vw, 26px)', color: (isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1'), marginTop: 8, maxWidth: 700 }}>
@@ -686,20 +688,14 @@ function WheelView({
                   stroke="#0F1736"
                   strokeWidth={1.5}
                 />
-                <text
-                  x={lx} y={ly}
+                <CozyGameWheelIcon
+                  id={g.id}
+                  emoji={g.emoji}
+                  cx={lx} cy={ly}
+                  size={n <= 4 ? 44 : n <= 6 ? 38 : 30}
+                  rotateDeg={a0 + anglePerSlice / 2}
                   fontSize={n <= 4 ? 24 : n <= 6 ? 20 : 16}
-                  fontWeight={900}
-                  textAnchor="middle"
-                  dominantBaseline="middle"
-                  fill="#fff"
-                  transform={`rotate(${a0 + anglePerSlice / 2} ${lx} ${ly})`}
-                  style={{
-                    filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
-                  }}
-                >
-                  {g.emoji}
-                </text>
+                />
               </g>
             );
           })}
@@ -802,13 +798,12 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
         animation: 'cozyGameEmojiFloat 3s ease-in-out 0.5s infinite',
       }}>
         <div style={{
-          fontSize: 'clamp(96px, 14vw, 220px)',
           lineHeight: 1,
           filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
           opacity: 0,
           animation: 'cozyGameLogoPop 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
         }}>
-          {game.emoji}
+          <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(96px, 14vw, 220px)" />
         </div>
       </div>
       <div style={{
@@ -933,7 +928,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
         opacity: 0,
         animation: 'cozyGameActiveCardIn 0.6s cubic-bezier(0.22, 1, 0.36, 1) 0.1s both',
       }}>
-        <span style={{ fontSize: 'clamp(72px, 8vw, 128px)', lineHeight: 1 }}>{game.emoji}</span>
+        <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(72px, 8vw, 128px)" />
         <div>
           <div style={{
             fontSize: 'clamp(36px, 4vw, 72px)',
@@ -1132,12 +1127,11 @@ function SequenceGameView({
         minHeight: 0,
       }}>
         <div style={{
-          fontSize: 'clamp(72px, 10vw, 160px)',
           lineHeight: 1,
           filter: 'drop-shadow(0 10px 24px rgba(0,0,0,0.5))',
           animation: 'cozyGameEmojiFloat 3s ease-in-out infinite',
         }}>
-          {game.emoji}
+          <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(72px, 10vw, 160px)" />
         </div>
         <div style={{
           fontSize: 'clamp(28px, 3.5vw, 56px)',
@@ -1366,7 +1360,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             opacity: 0,
             animation: 'cozyGameWinnerHeadline 0.4s ease-out 0.5s both',
           }}>
-            <span style={{ fontSize: 'clamp(28px, 3vw, 48px)', lineHeight: 1 }}>{game.emoji}</span>
+            <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(28px, 3vw, 48px)" />
             <span><strong>{cgName(game, lang)}</strong> — {lang === 'en' ? 'wins 1 action on the grid' : 'gewinnt 1 Aktion auf dem Grid'}</span>
           </div>
         </>
@@ -1374,12 +1368,11 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
         // ── WAITING: Mod hat noch keinen Sieger gewählt ───────────────────
         <>
           <div style={{
-            fontSize: 'clamp(96px, 14vw, 220px)',
             lineHeight: 1,
             filter: 'drop-shadow(0 12px 30px rgba(0,0,0,0.5))',
             animation: 'cozyGameEmojiFloat 3s ease-in-out infinite',
           }}>
-            {game.emoji}
+            <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(96px, 14vw, 220px)" />
           </div>
           <div style={{
             fontSize: 'clamp(36px, 4.5vw, 76px)',

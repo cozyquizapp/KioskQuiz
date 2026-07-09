@@ -376,11 +376,15 @@ export default function QQTrailerPage() {
         {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert) */}
         <FloatingIcons items={cfg.deco} />
 
-        {/* Aktive Szene (key → Remount triggert Entrance-Animationen) */}
+        {/* Aktive Szene (key → Remount triggert Entrance-Animationen).
+            2026-07-09 (Wolf): TikTok-Safe-Zone — mehr Bottom-Padding hebt den
+            zentrierten Inhalt nach oben, weg von der Caption-/Musik-Leiste unten.
+            Rechte Aktions-Leiste (Like/Kommentar) wird pro Szene beruecksichtigt
+            (schmalere Reihen, nichts Wichtiges an der rechten Kante). */}
         <div key={cur} style={{
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
-          padding: '12cqh 7cqw', zIndex: 5, color: '#fff',
+          padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
           animation: 'sceneIn 0.5s ease both',
         }}>
           {renderScene(scenes[cur].key)}
@@ -807,7 +811,9 @@ function FrageTestteam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', lineHeight: 1.08, margin: '3cqh 0 3.5cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
         Welche Stadt liegt<br />am nördlichsten?
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8cqh', width: '80cqw' }}>
+      {/* Reihen bewusst schmaler (74cqw) + ✓ direkt hinter der Antwort statt an
+          der rechten Kante → nichts landet unter TikToks Like/Kommentar-Leiste. */}
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8cqh', width: '74cqw' }}>
         {opts.map((o, i) => (
           <div key={o} style={{
             display: 'flex', alignItems: 'center', gap: '3cqw',
@@ -819,12 +825,12 @@ function FrageTestteam() {
           }}>
             <span style={{ fontFamily: DISPLAY, opacity: 0.7, width: '5cqw', flexShrink: 0 }}>{'ABCD'[i]}</span>
             <span>{o}</span>
-            {i === correct && <span style={{ marginLeft: 'auto', fontSize: '5cqw', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.15s both' }}>✓</span>}
+            {i === correct && <span style={{ marginLeft: '2.5cqw', fontSize: '5cqw', color: '#86efac', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.15s both' }}>✓</span>}
           </div>
         ))}
       </div>
       <div style={{ fontWeight: 800, fontSize: '4.9cqw', marginTop: '4cqh', animation: 'fadeUp 0.6s ease 2.5s both' }}>
-        Gemeinsam mit euren <span style={{ color: PINK_MID }}>Freunden</span>.
+        Die meisten <span style={{ color: PINK_MID }}>tippen falsch</span>.
       </div>
     </>
   );
@@ -895,10 +901,10 @@ function FactsTestteam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
         DAS BRAUCHT IHR
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.04, marginTop: '1.4cqh', animation: 'popIn 0.6s var(--eb) both' }}>
-        Passt das<br />bei <span style={{ color: PINK_MID }}>euch?</span>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.8cqw', lineHeight: 1.04, marginTop: '1.2cqh', animation: 'popIn 0.6s var(--eb) both' }}>
+        Passt das bei <span style={{ color: PINK_MID }}>euch?</span>
       </div>
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '2.2cqh', margin: '5cqh 0 3.5cqh', width: '80cqw' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '2cqh', margin: '4cqh 0 2.6cqh', width: '76cqw' }}>
         {facts.map((f, i) => (
           <div key={i} style={{
             display: 'flex', alignItems: 'center', gap: '4cqw',

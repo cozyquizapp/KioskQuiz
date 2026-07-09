@@ -185,11 +185,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
-      { key: 'hook-testteam', dur: 4800 }, { key: 'bock-testteam', dur: B.fun }, { key: 'peek-testteam', dur: B.qTeam },
+      { key: 'hook-testteam', dur: 4800 }, { key: 'bock-testteam', dur: B.fun }, { key: 'peek-testteam', dur: 5400 },
       { key: 'facts-testteam', dur: 5000 }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
-      { key: 'hook-testteam', dur: 4600 }, { key: 'peek-testteam', dur: B.qTeam }, { key: 'cta-testteam', dur: 5000 },
+      { key: 'hook-testteam', dur: 4600 }, { key: 'peek-testteam', dur: 5400 }, { key: 'cta-testteam', dur: 5000 },
     ],
     bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
     deco: DECO_TESTTEAM,
@@ -434,7 +434,7 @@ function renderScene(key: string) {
     case 'hook-bday':      return <HookBday />;
     case 'hook-testteam':  return <HookTestteam />;
     case 'bock-testteam':  return <BockTestteam />;
-    case 'peek-testteam':  return <QMucho />;
+    case 'peek-testteam':  return <PeekTestteam />;
     case 'facts-testteam': return <FactsTestteam />;
     case 'cta-testteam':   return <CtaTestteam />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
@@ -743,11 +743,11 @@ function HookTestteam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
         📍 HAMBURG · TEST-TEAM GESUCHT
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.8cqh', animation: 'popIn 0.6s var(--eb) both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9cqw', lineHeight: 1.02, marginTop: '1.2cqh', animation: 'popIn 0.6s var(--eb) both' }}>
         Ich hab eine<br /><span style={{ color: PINK_MID }}>Quiz-Event-App</span><br />gebaut.
       </div>
       {/* Echtes Gesicht: Johannes' rundes Portrait (dasselbe wie auf cozywolf.de). */}
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.4cqh', margin: '4cqh 0 3cqh' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2cqh', margin: '3cqh 0 2.4cqh' }}>
         <img src="/images/Johannes.jpeg" alt="Johannes" style={{
           // Lockeres Foto (Cap/Daumen hoch). objectPosition auf den Kopf: das
           // Motiv ist hochkant, Gesicht im oberen Drittel → Kopf sitzt mittig
@@ -787,6 +787,74 @@ function BockTestteam() {
       </div>
       <div style={{ fontWeight: 800, fontSize: '5.4cqw', opacity: 0.96, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 0.7s both' }}>
         Dann bist du hier <span style={{ color: PINK_MID }}>richtig</span>.
+      </div>
+    </>
+  );
+}
+
+// TEST-TEAM-PEEK: der einzigartige Loop (Wolf 2026-07-09) — Antwort loest sich
+// auf, dann wird ein Feld auf dem Brett erobert. DAS ist „Pub-Quiz trifft
+// Strategiespiel", nicht die Frage allein. Kompakte Frage + Mini-Brett, in dem
+// das Mittelfeld spaet in Team-Farbe „umschnappt" (der Eroberungs-Moment).
+function PeekTestteam() {
+  const conquerIdx = 12; // Mitte des 5x5-Bretts
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.6cqw', letterSpacing: '0.2em', opacity: 0.82, animation: 'fadeUp 0.4s ease both' }}>
+        SO FUNKTIONIERT'S
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', lineHeight: 1.1, marginTop: '1.6cqh', animation: 'fadeUp 0.5s ease 0.1s both' }}>
+        Welche Stadt liegt<br />am nördlichsten?
+      </div>
+      {/* Antwort loest auf (gruen) */}
+      <div style={{
+        display: 'inline-flex', alignItems: 'center', gap: '2cqw', marginTop: '2.4cqh',
+        padding: '1.2cqh 4.5cqw', borderRadius: '99px',
+        background: 'rgba(74,222,128,0.16)', border: '0.35cqh solid rgba(74,222,128,0.7)',
+        fontWeight: 800, fontSize: '5cqw', color: '#86efac',
+        opacity: 0, animation: 'popIn 0.5s var(--eb) 0.9s both',
+      }}>
+        Dublin <span>✓</span>
+      </div>
+      <div style={{ fontSize: '5cqw', opacity: 0, margin: '0.8cqh 0', animation: 'fadeUp 0.5s ease 1.3s both' }}>↓</div>
+      {/* Mini-Brett: das Mittelfeld wird erobert (popt spaet in Team-Farbe rein) */}
+      <div style={{
+        display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: '1.2cqw',
+        padding: '2cqw', background: 'rgba(255,255,255,0.06)', borderRadius: '3.5cqw',
+        width: '56cqw',
+      }}>
+        {MINI_GRID.flat().map((region, i) => {
+          const team = TEAMS[region];
+          const isNew = i === conquerIdx;
+          return (
+            <div key={i} style={{
+              aspectRatio: '1', borderRadius: '1.8cqw', position: 'relative', overflow: 'hidden',
+              background: isNew ? 'rgba(255,255,255,0.08)' : `linear-gradient(135deg, ${team.color}, ${team.color}cc)`,
+              boxShadow: isNew ? 'inset 0 0 0 0.4cqw rgba(236,72,153,0.55)' : 'inset 0 0 0 0.3cqw rgba(255,255,255,0.26)',
+              animation: isNew ? undefined : `cellIn 0.4s var(--eb) ${0.15 + i * 0.028}s both`,
+            }}>
+              {!isNew && (
+                <img src={cz(team.slug)} alt="" style={{ position: 'absolute', inset: '8%', width: '84%', height: '84%', objectFit: 'contain', filter: 'drop-shadow(0 0.3cqh 0.4cqh rgba(0,0,0,0.42))' }} />
+              )}
+              {isNew && (
+                <div style={{
+                  position: 'absolute', inset: 0, borderRadius: '1.8cqw',
+                  background: `linear-gradient(135deg, ${team.color}, ${team.color}cc)`,
+                  boxShadow: 'inset 0 0 0 0.4cqw rgba(255,255,255,0.5)',
+                  opacity: 0, animation: 'popIn 0.55s var(--eb) 1.6s both',
+                }}>
+                  <img src={cz(team.slug)} alt="" style={{ position: 'absolute', inset: '8%', width: '84%', height: '84%', objectFit: 'contain' }} />
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', marginTop: '3cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 2.1s both' }}>
+        Feld <span style={{ color: PINK_MID }}>erobert.</span>
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.9, marginTop: '1.4cqh', animation: 'fadeUp 0.6s ease 2.35s both' }}>
+        Größtes Gebiet gewinnt.
       </div>
     </>
   );

@@ -1960,7 +1960,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           phaseGroup !== prevGroupRef.current;
         const wrapperAnim = isQuestionToQuestion
           ? 'qqStageSlideInRight 0.55s cubic-bezier(0.34, 1.30, 0.64, 1) both'
-          : 'qqSlideIn 720ms cubic-bezier(0.16, 1, 0.3, 1) both';
+          // 2026-07-09 (Motion-Audit A3): Ad-hoc-Bezier (0.16,1,0.3,1) → Token
+          // --qq-ease-out-cubic. Der Phasen-Entry ('landet + settlet') liest
+          // dezelerierend sauberer und ist konsistent mit Card-Reveal/Hero-Entry.
+          : 'qqSlideIn 720ms var(--qq-ease-out-cubic) both';
         // 2026-05-12 (Wolf 'Option A — Fixed Canvas Stage'): wenn ?stage=1
         // gesetzt, wird der Phase-Render-Bereich in einem 1920×1080 Canvas
         // gerendert und per transform:scale auf die echte Viewport-Groesse

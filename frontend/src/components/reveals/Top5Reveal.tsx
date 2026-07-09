@@ -372,7 +372,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                       style={{
                         boxShadow: `0 0 16px ${tm.color}55`,
                         animation: isVisible
-                          ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09 + rowDelay}s both`
+                          ? `top5AvatarPop 0.5s var(--qq-ease-bounce) ${0.35 + hi * 0.09 + rowDelay}s both`
                           : 'none',
                       }}
                     />
@@ -386,7 +386,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 'clamp(20px, 2.2cqw, 28px)', fontWeight: 900, color: 'var(--qq-text-muted)',
                     animation: isVisible
-                      ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + rowDelay}s both`
+                      ? `top5AvatarPop 0.5s var(--qq-ease-bounce) ${0.35 + rowDelay}s both`
                       : 'none',
                   }}>
                     ✕

@@ -1640,7 +1640,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       display: 'flex', alignItems: 'center', gap: 16,
                       transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
                       animation: isCorrect
-                        ? 'revealDoubleBlink 1.1s ease both'
+                        // 2026-07-09 (Motion-Audit B2): Blink allein war ein flacher
+                        // Aha. + revealCorrectPop (scale-frei, nur box-shadow → keine
+                        // Width-Drift in der Sibling-Row) gibt den Grün-Glow-Pulse.
+                        // Ohne 'both' → Card settlet danach in ihren statischen Doppel-Glow.
+                        ? 'revealDoubleBlink 1.1s ease both, revealCorrectPop 0.6s var(--qq-ease-bounce)'
                         : isWrong
                           ? 'revealWrongDim 0.4s ease 0.15s both'
                           : `contentReveal 0.4s var(--qq-ease-pop-fast) ${0.1 + i * 0.08}s both`,
@@ -1741,7 +1745,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               boxShadow: isFastest
                                 ? '0 0 22px rgba(var(--qq-accent-rgb),0.55), 0 6px 14px rgba(0,0,0,0.55)'
                                 : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`,
-                              animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${0.1 + bi * 0.08}s both`,
+                              animation: `muchoVoterDrop 0.55s var(--qq-ease-bounce) ${0.1 + bi * 0.08}s both`,
                             }}>
                               {/* Beat 5 — Sieger-Krönung: Krone bouncet auf den
                                   höchsten Bet der korrekten Option. */}
@@ -1760,7 +1764,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                     display: 'inline-block',
                                     fontSize: 'clamp(22px, 2.6cqw, 38px)', lineHeight: 1,
                                     filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
-                                    animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.3s both',
+                                    animation: 'muchoVoterDrop 0.6s var(--qq-ease-bounce) 0.3s both',
                                   }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                                 </span>
                               )}
@@ -1972,9 +1976,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         // Cascade (siehe useEffect oben). Vorher 160ms war zu schnell
                         // und unspannend ("alle auf einmal"-Gefuehl).
                         const isCheeseCascade = q.category === 'CHEESE' && cheeseShowAvatars;
-                        const cascadeDelay = isCheeseCascade ? vi * 0.85 : 0.6;
+                        // 2026-07-09 (Motion-Audit B1): Nicht-CHEESE-Reveals (v.a.
+                        // MUCHO/Schätzchen) poppten alle Avatare synchron bei 0.6s.
+                        // Jetzt gestaffelt wie ZvZ/Top5 (0.45s + vi*0.09s) → der
+                        // 'wer war richtig'-Moment kaskadiert statt flach zu landen.
+                        const cascadeDelay = isCheeseCascade ? vi * 0.85 : 0.45 + vi * 0.09;
                         const avatarAnim = isCheeseCascade
-                          ? `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${cascadeDelay}s both`
+                          ? `muchoVoterDrop 0.55s var(--qq-ease-bounce) ${cascadeDelay}s both`
                           : `revealAnswerBam 0.5s var(--qq-ease-bounce) ${cascadeDelay}s both`;
                         const avSize = isFastest ? 'clamp(78px, 8.6cqw, 116px)' : 'clamp(58px, 6.4cqw, 88px)';
                         return (

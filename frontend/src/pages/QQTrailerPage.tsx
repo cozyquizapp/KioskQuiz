@@ -19,7 +19,7 @@
  *   /trailer/location        — Café/Pub/Bar (voll)         · /trailer/location-kurz
  *   /trailer/geburtstag      — Geburtstag/Privat (voll)    · /trailer/geburtstag-kurz
  */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useSearchParams } from 'react-router-dom';
 import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 import { downloadReelSlide, runSlideExport, deliverReelExport, zipStore, downloadBlob } from '../reelCapture';
@@ -75,6 +75,9 @@ const TWISTS = [
 ];
 
 type Scene = { key: string; dur: number };
+// Loop-Naht-Handle im Reel-Modus: reiner Background (kein Inhalt) fuer sauberen
+// Loop-Schnitt beim Abfilmen. Modul-Konstante → stabile Referenz.
+const BLANK_SCENE: Scene = { key: '__blank', dur: 3000 };
 
 // ── Nischen-Varianten ────────────────────────────────────────────────────────
 // Jede Nische: eigener Hook-Screen (Key 'hook-*') + eigenes CTA (Key 'cta-*') +
@@ -229,6 +232,18 @@ export default function QQTrailerPage() {
   const [reel, setReel] = useState(false);
   const [slideshow, setSlideshow] = useState(slidesDeepLink || !!exportMode);
   const big = reel || slideshow; // randloser Vollbild-Frame (Aufnehmen / Abfotografieren)
+  const [recNonce, setRecNonce] = useState(0);
+  const [recording, setRecording] = useState(false);
+  const [recBlank, setRecBlank] = useState(false); // Aufnahme: reiner Background (Handles)
+  // Im Reel-Modus (Vorschau/Abfilmen, nicht Aufnahme/Slideshow) haengt am Loop-
+  // Nahtpunkt ein 3s-Background-Handle → der Loop laesst sich beim manuellen
+  // Abfilmen sauber an den Background-Frames schneiden (Wolf 2026-07-09).
+  // useMemo: sonst neue Array-Referenz je Render → Stepper-Timer wuerde staendig
+  // resetten.
+  const playScenes = useMemo<Scene[]>(
+    () => (reel && !recording ? [...scenes, BLANK_SCENE] : scenes),
+    [reel, recording, scenes],
+  );
   const [controls, setControls] = useState(true);
   const hideT = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pokeControls = () => {
@@ -253,12 +268,14 @@ export default function QQTrailerPage() {
   // im Slideshow-Modus manuell (kein Auto-Weiterlauf).
   useEffect(() => {
     if (paused || slideshow) return;
-    const safe = Math.min(scene, scenes.length - 1);
-    const t = setTimeout(() => setScene(s => (s + 1) % scenes.length), scenes[safe].dur);
+    const safe = Math.min(scene, playScenes.length - 1);
+    const t = setTimeout(() => setScene(s => (s + 1) % playScenes.length), playScenes[safe].dur);
     return () => clearTimeout(t);
-  }, [scene, paused, scenes, slideshow]);
+  }, [scene, paused, playScenes, slideshow]);
 
-  const cur = Math.min(scene, scenes.length - 1);
+  const cur = Math.min(scene, playScenes.length - 1);
+  // Nur-Background: waehrend der Aufnahme-Handles ODER auf der Loop-Naht-Blank-Szene.
+  const blankNow = (recBlank && recording) || playScenes[cur]?.key === '__blank';
   const totalSec = Math.round(scenes.reduce((a, s) => a + s.dur, 0) / 1000);
 
   // HD-Download der aktuellen Folie (Standbild → Anim auf Endzustand gezwungen).
@@ -305,9 +322,6 @@ export default function QQTrailerPage() {
   //    (Tab teilen) + MediaRecorder mit hoher Bitrate, nimmt genau EINEN
   //    Durchlauf auf und laedt die Datei runter. recNonce erzwingt beim Start
   //    einen frischen Mount von Szene 0 (Entrance-Animation ab Frame 1). ──
-  const [recNonce, setRecNonce] = useState(0);
-  const [recording, setRecording] = useState(false);
-  const [recBlank, setRecBlank] = useState(false); // Aufnahme: reiner Background (Loop-Schnitt-Handles)
   const recordHd = async () => {
     if (recording) return;
     const md = navigator.mediaDevices as MediaDevices & { getDisplayMedia?: (c: MediaStreamConstraints) => Promise<MediaStream> };
@@ -467,22 +481,24 @@ export default function QQTrailerPage() {
             Leiste drüber, und in der Vorschau stört er nur. */}
 
         {/* Hintergrund-Deko: schwebende Kategorie-/Aktions-Icons (pro Nische variiert).
-            Waehrend der Aufnahme-Handles (recBlank) ausgeblendet → reiner Background. */}
-        {!recBlank && <FloatingIcons items={cfg.deco} />}
+            Waehrend der Aufnahme-Handles ausgeblendet → reiner Background. Blank
+            greift NUR bei laufender Aufnahme (recording), damit ein abgebrochener
+            Record nicht den Reel-Modus schwarz laesst. */}
+        {!blankNow && <FloatingIcons items={cfg.deco} />}
 
         {/* Aktive Szene (key → Remount triggert Entrance-Animationen).
             2026-07-09 (Wolf): TikTok-Safe-Zone — mehr Bottom-Padding hebt den
             zentrierten Inhalt nach oben, weg von der Caption-/Musik-Leiste unten.
             recBlank = Aufnahme-Vor-/Nachlauf (nur Background, kein Inhalt) fuer
             saubere Loop-Schnitt-Handles. */}
-        {!recBlank && (
+        {!blankNow && (
           <div key={`${cur}-${recNonce}`} style={{
             position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
             alignItems: 'center', justifyContent: 'center', textAlign: 'center',
             padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
             animation: 'sceneEnter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both',
           }}>
-            {renderScene(scenes[cur].key)}
+            {renderScene(playScenes[cur].key)}
           </div>
         )}
 
@@ -519,7 +535,7 @@ export default function QQTrailerPage() {
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />
             <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = Klick → „<b>Teilen</b>" → Reel läuft einmal durch → 9:16-Datei (<b>.webm</b>) lädt automatisch. <b>In CapCut importieren</b> (dort Sound drauf) oder in Chrome/VLC ansehen — der Windows-Standard-Player kann WebM nicht.<br />
-            <b style={{ color: '#c9c5da' }}>Reel</b> = am PC abfilmen · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
+            <b style={{ color: '#c9c5da' }}>Reel</b> = am PC abfilmen (am Loop-Ende sind <b>3&nbsp;s reiner Background</b> → dort sauber schneiden) · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
           </div>
         </div>
       )}

@@ -27,6 +27,11 @@ type Reel = {
 
 const REELS: Reel[] = [
   {
+    emoji: '🐺', name: 'Test-Team-Aufruf', hook: '„Ich hab 2 Jahre gebaut — jetzt brauch ich euch"',
+    accent: '#ec4899', full: '/trailer/testteam', kurz: '/trailer/testteam-kurz',
+    use: 'AKTUELL: Test-Teams gewinnen. Gründer-Bitte + Gratis-Quizabend, CTA → cozywolf.de/testen. Ideal mit deinem Gesicht/Voiceover davor.',
+  },
+  {
     emoji: '✨', name: 'Allgemein', hook: '„Pub-Quiz trifft Strategiespiel"',
     accent: '#ec4899', full: '/trailer', use: 'Der Allrounder — für Bio-Link & wenn jemand fragt „was ist das?"',
   },
@@ -59,6 +64,7 @@ const REELS: Reel[] = [
 
 // Reels fuer den „alle auf einmal"-Sammelexport (volle Varianten, keine kurzen).
 const EXPORT_REELS = [
+  { slug: 'testteam', url: '/trailer/testteam' },
   { slug: 'allgemein', url: '/trailer' },
   { slug: 'team', url: '/trailer/team' },
   { slug: 'location', url: '/trailer/location' },

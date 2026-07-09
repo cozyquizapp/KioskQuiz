@@ -415,7 +415,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 padding: 'clamp(14px, 2cqw, 28px)',
               }}>
                 <div style={colStyle}>{left.map(renderPill)}</div>
-                <GridDisplay state={s} maxSize={420} showJoker={false} />
+                <GridDisplay state={s} maxSize={480} showJoker={false} />
                 <div style={colStyle}>{right.map(renderPill)}</div>
               </div>
             );
@@ -426,7 +426,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               gap: 'clamp(16px, 2.2cqw, 32px)',
               padding: 'clamp(14px, 2cqw, 28px)',
             }}>
-              <GridDisplay state={s} maxSize={420} showJoker={false} />
+              <GridDisplay state={s} maxSize={480} showJoker={false} />
               <div style={colStyle}>{sortedByCells.map(renderPill)}</div>
             </div>
           );
@@ -1340,7 +1340,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       {mode === 'pause' && (
         <div style={{
           position: 'absolute',
-          left: 'clamp(20px, 3cqw, 60px)',
+          // 2026-07-09 (Wolf 'Sprechblase links abgeschnitten'): etwas mehr Abstand
+          // zum Buehnenrand, damit die Bubble garantiert frei steht (zus. zum
+          // transform-origin-Fix in SpeechBubble).
+          left: 'clamp(28px, 3.2cqw, 64px)',
           bottom: 'clamp(20px, 3cqh, 50px)',
           zIndex: 6,
           pointerEvents: 'none',

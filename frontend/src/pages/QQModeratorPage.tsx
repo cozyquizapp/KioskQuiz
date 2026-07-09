@@ -524,6 +524,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   setSetupDoneRef.current = setSetupDone;
   const selectedDraftIdRef = useRef(selectedDraftId);
   selectedDraftIdRef.current = selectedDraftId;
+  // 2026-07-09 (Wolf 'nach Pause geht Weiter-Button nicht'): qq:resume wurde
+  // bisher OHNE Ack-Handler gesendet. Schlug es Backend-seitig fehl (z.B.
+  // _phaseBeforePause nach einem Coolify-Restart verloren → WRONG_PHASE), ver-
+  // schwand der Fehler LAUTLOS und der Button wirkte „tot". Jetzt zentral mit
+  // Ack-Check + sichtbarem Toast — ein Fehlschlag ist damit sofort diagnostizier-
+  // bar (Wolf sieht die Backend-Meldung), statt still zu scheitern.
+  const resumeGameRef = useRef<() => void>(() => {});
+  resumeGameRef.current = () => {
+    emit('qq:resume', { roomCode }).then((ack) => {
+      if (ack && (ack as { ok?: boolean }).ok === false) {
+        const a = ack as { error?: string; code?: string };
+        pushToast(`Weiter fehlgeschlagen: ${a.error ?? a.code ?? 'unbekannt'}`, '⚠️', QQ_COLORS.amber500);
+      }
+    }).catch(() => {});
+  };
   const cheatsheetOpenRef = useRef(false);
   // 2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Dedup-Key fuer
   // Autoplay-Effekt. Verhindert Mehrfach-Fires desselben Actions wenn
@@ -1262,7 +1277,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         }
         return;
       }
-      if (s.phase === 'PAUSED')           emitRef.current('qq:resume', { roomCode });
+      if (s.phase === 'PAUSED')           resumeGameRef.current();
       else if (s.phase === 'LOBBY') {
         // 2026-07-08 (Cockpit): Mit vorgewaehltem Draft IST die Landing schon das
         // fertige Cockpit → Space startet direkt. Ohne Draft (Format-Wahl-Landing)
@@ -1550,7 +1565,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // ergänzt — Wolf-Audit hatte P ohne Streamdeck-Key gefunden).
     if (e.code === 'KeyP' || e.code === 'F19') {
       e.preventDefault(); playHotkeyFeedback();
-      if (s.phase === 'PAUSED') emitRef.current('qq:resume', { roomCode });
+      if (s.phase === 'PAUSED') resumeGameRef.current();
       else if (!['LOBBY', 'GAME_OVER', 'THANKS', 'RULES', 'TEAMS_REVEAL'].includes(s.phase))
         emitRef.current('qq:pause', { roomCode });
       return;
@@ -3392,7 +3407,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 {/* ── PAUSED ── */}
                 {s.phase === 'PAUSED' && (
                   <>
-                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:resume', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => resumeGameRef.current()} hotkey="Space">
                       ▶ Weiter
                     </PrimaryBtn>
                     {/* 2026-05-17 (P0): Auto-Flow triggert CozyGame nach Frage 5

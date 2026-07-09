@@ -130,8 +130,13 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   // kein Platz für die Team-Liste bei 8 Teams.
   // 2026-05-05 (Wolf 'grid und tabelle koennten groesser sein, viel rand'):
   // Cap 720→1100, vh 0.72→0.86, vw 0.48→0.55 — Beamer-Whitespace minimiert.
+  // 2026-07-09 (Wolf 'grid koennte den raum noch besser nutzen, zur lesbarkeit
+  // auf beamer etwas klein'): vh 0.86→0.90, vw 0.55→0.57, Cap 1100→1150. Auf
+  // 1080p bindet die Hoehe → Grid 928→972 (+4.7%). Vertikales Budget (≈1004px
+  // = Viewport − 2×safe-margin − Banner − Row-Padding) bleibt gewahrt, kein
+  // /beamer-Scroll. Horizontal passt weiter neben die 740px-ScoreBar.
   const gridMaxSize = typeof window !== 'undefined'
-    ? Math.min(1100, window.innerHeight * 0.86, window.innerWidth * 0.55)
+    ? Math.min(1150, window.innerHeight * 0.90, window.innerWidth * 0.57)
     : 800;
 
   // Manual flyover hotkey (F): trigger a cinematic orbit over the grid

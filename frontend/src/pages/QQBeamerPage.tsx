@@ -5203,6 +5203,12 @@ export function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSi
           : '0 8px 22px rgba(0,0,0,0.45), 0 0 18px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,231,170,0.10)',
         // Animation: Enter-Bounce + lange Hold + Exit-Fade. Keyframe-Times
         // sind relativ zu totalLifeMs (CSS percentage).
+        // 2026-07-09 (Wolf 'Sprechblase links abgeschnitten'): transform-origin
+        // an den Zipfel (tail) legen. Default-Center-Origin liess die Bubble beim
+        // scale(1.02)-Bounce-Overshoot kurz ueber die linke Kante ragen — genau
+        // dort sitzt der Co-Moderator am Buehnenrand → sichtbarer Links-Clip.
+        // Origin am Tail: der Pop emaniert jetzt AUS dem Wolf, Kante bleibt fix.
+        transformOrigin: tailSide === 'left' ? '32px 100%' : 'calc(100% - 32px) 100%',
         animation: `qqWolfBubbleLife ${totalLifeMs}ms cubic-bezier(0.34,1.56,0.64,1) both`,
       }}
     >

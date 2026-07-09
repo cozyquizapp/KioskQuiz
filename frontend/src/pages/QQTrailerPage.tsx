@@ -114,6 +114,12 @@ const DECO_BDAY: DecoItem[] = [
   { name: 'cat-cheese',       x: 85, y: 73, s: 12, d: 0.7 },
   { name: 'cat-mucho',        x: 11, y: 80, s: 12, d: 1.9 },
 ];
+const DECO_TESTTEAM: DecoItem[] = [
+  { name: 'cat-mucho',        x: 10, y: 16, s: 11, d: 0.4 },
+  { name: 'cat-schaetzchen',  x: 84, y: 22, s: 12, d: 1.5 },
+  { name: 'award-underdog',   x: 12, y: 76, s: 11, d: 1.0 },
+  { name: 'cat-cheese',       x: 83, y: 71, s: 12, d: 2.2 },
+];
 
 // Wolf 2026-07-06: FUN zuerst (Fragen + Minispiele = der Hook), Gebiet-Taktik
 // erst spaet als „obendrauf". „Erobert euer Gebiet" ist NICHT der Aufmacher.
@@ -173,6 +179,20 @@ const VARIANTS: Record<string, VariantCfg> = {
     ],
     bgTint: 'radial-gradient(110% 70% at 50% 4%, rgba(236,72,153,0.18), transparent 58%)',
     deco: DECO_BDAY,
+  },
+  testteam: {
+    title: 'CozyQuiz — Test-Team-Aufruf',
+    // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
+    // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
+    full: [
+      { key: 'hook-testteam', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'minigames', dur: B.minigames },
+      { key: 'board', dur: B.board }, { key: 'cta-testteam', dur: 5200 },
+    ],
+    kurz: [
+      { key: 'hook-testteam', dur: 4600 }, { key: 'fun', dur: B.fun }, { key: 'cta-testteam', dur: 5000 },
+    ],
+    bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
+    deco: DECO_TESTTEAM,
   },
 };
 
@@ -412,6 +432,8 @@ function renderScene(key: string) {
     case 'hook-team':      return <HookTeam />;
     case 'hook-location':  return <HookLocation />;
     case 'hook-bday':      return <HookBday />;
+    case 'hook-testteam':  return <HookTestteam />;
+    case 'cta-testteam':   return <CtaTestteam />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;
     case 'cta-location':   return <CtaBlock heading={<>Platz für<br />einen Beamer?</>} sub="Ein Stück freie Wand reicht. Beamer, Stimme und gute Laune bring ich mit." commentPrompt={<>Kennst du so eine Bar? <span style={{ color: PINK_MID }}>👇</span><br />Taggt sie.</>} />;
     case 'cta-bday':       return <CtaBlock heading={<>Feiert mal<br />richtig.</>} sub="Sogar mit eigenen Fragen über das Geburtstagskind." commentPrompt={<>Wer hat bald Geburtstag? <span style={{ color: PINK_MID }}>👇</span><br />Taggt die Person.</>} />;
@@ -703,6 +725,58 @@ function HookBday() {
       </div>
       <div style={{ fontWeight: 800, fontSize: '6cqw', lineHeight: 1.1, opacity: 0.98, animation: 'fadeUp 0.6s ease 1.1s both' }}>
         Keine Lust auf<br />Stehparty mit Chips?
+      </div>
+    </>
+  );
+}
+
+// TEST-TEAM: persoenliche Gruender-Bitte (Wolf 2026-07-09). Bewusst KEIN
+// Hochglanz-Hook wie die Nischen — nahbar, Ich-Form, Maskottchen bittet direkt.
+// Authentizitaet schlaegt Politur bei einer „helft mir testen"-Ansprache.
+function HookTestteam() {
+  return (
+    <>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
+        📍 HAMBURG · TEST-TEAM GESUCHT
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '1.8cqh', animation: 'popIn 0.6s var(--eb) both' }}>
+        Ich hab 2 Jahre<br />an einem Quiz<br /><span style={{ color: PINK_MID }}>gebaut.</span>
+      </div>
+      <div style={{ margin: '4.5cqh 0 3.5cqh' }}>
+        <WolfMascot pose="augenauf.mundauf.winken" sizeCqw={38} anim="popIn 0.7s var(--eb) 0.5s both" />
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.4cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 0.9s both' }}>
+        Jetzt brauch ich<br /><span style={{ color: '#fff', background: PINK, borderRadius: 8, padding: '0.08em 0.3em' }}>euch</span>.
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.82, marginTop: '2.5cqh', animation: 'fadeUp 0.6s ease 1.2s both' }}>
+        5 Teams, die es mit mir durchspielen.
+      </div>
+    </>
+  );
+}
+
+// TEST-TEAM-CTA: Angebot (Gratis-Quizabend) + klare Aktion (/testen) + Knappheit.
+// Eigener Block statt CtaBlock, weil der Kontakt hier auf cozywolf.de/testen zeigt.
+function CtaTestteam() {
+  return (
+    <>
+      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={34} anim="popIn 0.7s var(--eb) both" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '3cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
+        Euer Abend<br />geht <span style={{ color: PINK_MID }}>aufs Haus.</span>
+      </div>
+      <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '2.6cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
+        Ein kompletter, moderierter Quizabend — gratis. Dafür sagt ihr mir ehrlich, was hakt.
+      </div>
+      {/* Knappheit + klare Aktion */}
+      <div style={{ marginTop: '3cqh', display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', padding: '1.2cqh 4cqw', borderRadius: '99px', background: 'rgba(236,72,153,0.16)', border: '0.3cqh solid rgba(236,72,153,0.5)', fontWeight: 800, fontSize: '4cqw', animation: 'fadeUp 0.6s ease 0.6s both' }}>
+        <span style={{ width: '2.2cqw', height: '2.2cqw', borderRadius: '50%', background: PINK, boxShadow: `0 0 2cqw ${PINK}` }} />
+        Nur 5 Plätze
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', marginTop: '3.2cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.75s both' }}>
+        Anmelden: <span style={{ color: PINK_MID }}>cozywolf.de/testen</span>
+      </div>
+      <div style={{ marginTop: '2.6cqh', display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID, fontWeight: 800, fontSize: '4.2cqw', animation: 'fadeUp 0.6s ease 0.9s both' }}>
+        <img src={cw('head')} alt="" style={{ width: '6cqw', height: '6cqw', objectFit: 'contain' }} />@cozywolf.events
       </div>
     </>
   );

@@ -185,11 +185,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
-      { key: 'hook-testteam', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'facts-testteam', dur: 5000 },
-      { key: 'board', dur: B.board }, { key: 'cta-testteam', dur: 5200 },
+      { key: 'hook-testteam', dur: 4800 }, { key: 'fun', dur: B.fun }, { key: 'board', dur: B.board },
+      { key: 'facts-testteam', dur: 5000 }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
-      { key: 'hook-testteam', dur: 4600 }, { key: 'facts-testteam', dur: 4800 }, { key: 'cta-testteam', dur: 5000 },
+      { key: 'hook-testteam', dur: 4600 }, { key: 'fun', dur: B.fun }, { key: 'cta-testteam', dur: 5000 },
     ],
     bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
     deco: DECO_TESTTEAM,
@@ -762,9 +762,6 @@ function HookTestteam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.4cqw', lineHeight: 1.05, animation: 'fadeUp 0.6s ease 0.9s both' }}>
         Jetzt brauch ich<br /><span style={{ color: '#fff', background: PINK, borderRadius: 8, padding: '0.08em 0.3em' }}>euch</span>.
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.4cqw', opacity: 0.82, marginTop: '2.5cqh', animation: 'fadeUp 0.6s ease 1.2s both' }}>
-        5 Teams, die es mit mir durchspielen.
-      </div>
     </>
   );
 }
@@ -799,8 +796,13 @@ function FactsTestteam() {
           </div>
         ))}
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4cqw', opacity: 0.82, animation: 'fadeUp 0.6s ease 1.15s both' }}>
-        📱 Jede:r ein Handy · WLAN reicht
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.2cqh', marginTop: '0.5cqh' }}>
+        <div style={{ fontWeight: 800, fontSize: '4.2cqw', opacity: 0.9, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 1.1s both' }}>
+          Ob bei euch, im Café oder in der Bar. <span style={{ color: PINK_MID }}>Ihr wählt.</span>
+        </div>
+        <div style={{ fontWeight: 800, fontSize: '4cqw', opacity: 0.78, animation: 'fadeUp 0.6s ease 1.25s both' }}>
+          📱 Jede:r ein Handy · WLAN reicht
+        </div>
       </div>
     </>
   );
@@ -816,7 +818,7 @@ function CtaTestteam() {
         Euer Abend<br />geht <span style={{ color: PINK_MID }}>aufs Haus.</span>
       </div>
       <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '2.6cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
-        Ein kompletter, moderierter Quizabend. Komplett gratis. Dafür sagt ihr mir ehrlich, was hakt.
+        Ein kompletter, moderierter Quizabend. Komplett gratis. Dafür gebt ihr mir ehrlich euer Feedback.
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', marginTop: '4cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.6s both' }}>
         Anmelden: <span style={{ color: PINK_MID }}>cozywolf.de/testen</span>

@@ -815,12 +815,7 @@ function CtaTestteam() {
       <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '2.6cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
         Ein kompletter, moderierter Quizabend. Komplett gratis. Dafür sagt ihr mir ehrlich, was hakt.
       </div>
-      {/* Knappheit + klare Aktion */}
-      <div style={{ marginTop: '3cqh', display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', padding: '1.2cqh 4cqw', borderRadius: '99px', background: 'rgba(236,72,153,0.16)', border: '0.3cqh solid rgba(236,72,153,0.5)', fontWeight: 800, fontSize: '4cqw', animation: 'fadeUp 0.6s ease 0.6s both' }}>
-        <span style={{ width: '2.2cqw', height: '2.2cqw', borderRadius: '50%', background: PINK, boxShadow: `0 0 2cqw ${PINK}` }} />
-        Nur 5 Plätze
-      </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', marginTop: '3.2cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.75s both' }}>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', marginTop: '4cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.6s both' }}>
         Anmelden: <span style={{ color: PINK_MID }}>cozywolf.de/testen</span>
       </div>
       <div style={{ marginTop: '2.6cqh', display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID, fontWeight: 800, fontSize: '4.2cqw', animation: 'fadeUp 0.6s ease 0.9s both' }}>

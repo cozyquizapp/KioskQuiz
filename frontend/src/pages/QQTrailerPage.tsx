@@ -186,8 +186,8 @@ const VARIANTS: Record<string, VariantCfg> = {
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
       { key: 'bock-testteam', dur: B.fun }, { key: 'hook-testteam', dur: 4800 },
-      { key: 'frage-testteam', dur: B.qTeam }, { key: 'erobern-testteam', dur: 4800 },
-      { key: 'facts-testteam', dur: 5000 }, { key: 'cta-testteam', dur: 5200 },
+      { key: 'facts-testteam', dur: 5000 }, { key: 'frage-testteam', dur: B.qTeam },
+      { key: 'erobern-testteam', dur: 4800 }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
       { key: 'hook-testteam', dur: 4600 }, { key: 'frage-testteam', dur: B.qTeam }, { key: 'cta-testteam', dur: 5000 },
@@ -774,25 +774,27 @@ function HookTestteam() {
   );
 }
 
-// TEST-TEAM-BOCK: spricht den Zuschauer direkt an (Wolf 2026-07-09) — „Bock auf
-// einen Quizabend mit Freunden?". Eigene Szene (nicht die geteilte fun-Szene),
-// damit der allgemeine Trailer unveraendert bleibt. Nutzt die lebhaften Pet-Discs.
+// TEST-TEAM-BOCK: der Scroll-Stopper (Wolf 2026-07-09, „Bold-Text-Hook") — als
+// erstes Frame muss „kostenlos" sofort knallen. Text-getrieben: die Frage, das
+// riesige pinke Highlight-Wort KOSTENLOSEN (leicht gekippt + Glow), Konfetti.
+// Kein Avatar-Clutter (bewusste Wahl gegen die 3 Pet-Discs).
 function BockTestteam() {
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', lineHeight: 1.04, animation: 'fadeUp 0.6s ease both' }}>
-        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span> Quizabend<br />mit deinen Freunden?
+      <Confetti />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.06, animation: 'fadeUp 0.5s ease both' }}>
+        Bock auf einen
       </div>
-      <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3cqw', margin: '6.5cqh 0 5cqh' }}>
-        {[{ t: 0, e: '😂', d: 0 }, { t: 2, e: '🎉', d: 0.5 }, { t: 4, e: '🔥', d: 1.0 }].map((p, i) => (
-          <div key={i} style={{ position: 'relative', animation: `fadeUp 0.5s var(--eb) ${0.3 + i * 0.18}s both` }}>
-            <span style={{ position: 'absolute', top: '-5cqh', left: '50%', transform: 'translateX(-50%)', fontSize: '6cqw', animation: `floatPet 3.4s ease-in-out ${p.d}s infinite` }}>{p.e}</span>
-            <PetDisc slug={TEAMS[p.t].slug} color={TEAMS[p.t].color} sizeCqw={19} anim="floatPet 4.4s ease-in-out infinite" />
-          </div>
-        ))}
+      <div style={{ margin: '2.6cqh 0', animation: 'popIn 0.6s var(--eb) 0.2s both' }}>
+        <span style={{
+          fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1,
+          color: '#fff', background: PINK, borderRadius: '3cqw', padding: '0.1em 0.26em',
+          display: 'inline-block', transform: 'rotate(-2deg)',
+          boxShadow: '0 1.4cqh 3.2cqh rgba(236,72,153,0.5), 0 0 5cqw rgba(236,72,153,0.35)',
+        }}>KOSTENLOSEN</span>
       </div>
-      <div style={{ fontWeight: 800, fontSize: '5.4cqw', opacity: 0.96, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 0.7s both' }}>
-        Dann bist du hier <span style={{ color: PINK_MID }}>richtig</span>.
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginTop: '2.6cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
+        Quizabend mit<br />deinen Freunden?
       </div>
     </>
   );
@@ -890,11 +892,12 @@ function ErobernTestteam() {
 // TEST-TEAM-FAKTEN: was ihr mitbringt (ersetzt die „Bunte Tuete"-Szene, Wolf
 // 2026-07-09). Klare Voraussetzungen filtern die Anfragen vor.
 function FactsTestteam() {
+  // Wolfs Soft-3D-Icons aus der Landing (public/assets/icon-*.webp).
   const facts = [
-    { icon: '📽️', text: 'Platz für einen Beamer' },
-    { icon: '⏱️', text: '90–120 Minuten Zeit' },
-    { icon: '👥', text: 'Mindestens 9 Leute' },
-    { icon: '📍', text: 'Im Raum Hamburg' },
+    { icon: 'aufbau',   text: 'Platz für einen Beamer' },
+    { icon: 'dauer',    text: '90–120 Minuten Zeit' },
+    { icon: 'team',     text: 'Mindestens 9 Leute' },
+    { icon: 'standort', text: 'Im Raum Hamburg' },
   ];
   return (
     <>
@@ -912,7 +915,7 @@ function FactsTestteam() {
             borderRadius: '3.5cqw', padding: '1.9cqh 4.5cqw',
             animation: `fadeUp 0.5s var(--eb) ${0.25 + i * 0.16}s both`,
           }}>
-            <span style={{ fontSize: '8cqw', lineHeight: 1, flexShrink: 0 }}>{f.icon}</span>
+            <img src={`/assets/icon-${f.icon}.webp`} alt="" style={{ width: '10cqw', height: '10cqw', objectFit: 'contain', flexShrink: 0 }} />
             <span style={{ fontWeight: 800, fontSize: '5.2cqw', textAlign: 'left', lineHeight: 1.15 }}>{f.text}</span>
           </div>
         ))}
@@ -921,8 +924,9 @@ function FactsTestteam() {
         <div style={{ fontWeight: 800, fontSize: '4.2cqw', opacity: 0.9, lineHeight: 1.2, animation: 'fadeUp 0.6s ease 1.1s both' }}>
           Im Büro, Vereinsraum oder bei euch. <span style={{ color: PINK_MID }}>Ihr wählt.</span>
         </div>
-        <div style={{ fontWeight: 800, fontSize: '4cqw', opacity: 0.78, animation: 'fadeUp 0.6s ease 1.25s both' }}>
-          📱 Jede:r ein Handy · WLAN reicht
+        <div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '2cqw', fontWeight: 800, fontSize: '4cqw', opacity: 0.82, animation: 'fadeUp 0.6s ease 1.25s both' }}>
+          <img src="/assets/icon-handy.webp" alt="" style={{ width: '6cqw', height: '6cqw', objectFit: 'contain' }} />
+          Jede:r ein Handy · WLAN reicht
         </div>
       </div>
     </>

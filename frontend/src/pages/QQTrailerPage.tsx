@@ -192,7 +192,7 @@ const VARIANTS: Record<string, VariantCfg> = {
       { key: 'erobern-testteam', dur: 4800 }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
-      { key: 'hook-testteam', dur: 4600 }, { key: 'frage-testteam', dur: B.qTeam }, { key: 'cta-testteam', dur: 5000 },
+      { key: 'bock-testteam', dur: B.fun }, { key: 'frage-testteam', dur: B.qTeam }, { key: 'cta-testteam', dur: 5000 },
     ],
     bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
     deco: DECO_TESTTEAM,
@@ -751,8 +751,8 @@ function HookTestteam() {
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '3.8cqw', letterSpacing: '0.2em', opacity: 0.85, animation: 'fadeUp 0.4s ease both' }}>
         📍 HAMBURG · TEST-TEAM GESUCHT
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9cqw', lineHeight: 1.02, marginTop: '1.2cqh', animation: 'popIn 0.6s var(--eb) both' }}>
-        Ich hab eine<br /><span style={{ color: PINK_MID }}>Quiz-Event-App</span><br />gebaut.
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.06, marginTop: '1.2cqh', animation: 'popIn 0.6s var(--eb) both' }}>
+        Ich hab ein Quiz gebaut,<br />bei dem euer Tisch<br />zum <span style={{ color: PINK_MID }}>Spielbrett</span> wird.
       </div>
       {/* Echtes Gesicht: Johannes' rundes Portrait (dasselbe wie auf cozywolf.de). */}
       <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1.2cqh', margin: '3cqh 0 2.4cqh' }}>
@@ -820,39 +820,38 @@ function BockTestteam() {
   );
 }
 
-// TEST-TEAM-FRAGE: Schritt 1 des Loops (Wolf 2026-07-09) — einfach nur „es ist
-// ein Quiz". Echte Frage, 4 Antworten, die richtige leuchtet gruen. KEINE Feld-
-// Erklaerung hier, damit die Eroberungs-Pointe frisch auf der naechsten Szene
-// landet. Endet warm („mit euren Freunden") statt mit Mechanik.
+// TEST-TEAM-FRAGE: Schritt 1 des Loops — „es ist ein Quiz". Echte Frage, 4
+// Antworten. 2026-07-09 (SM-Profi): Antwort BEWUSST NICHT aufloesen → der
+// Viewer soll seinen Tipp kommentieren (Kommentar-Motor > Tag-Bait fuer kalte
+// Reichweite). Kontraintuitiv (Dublin) = Neugier + Bauchgefuehl-Bait.
 function FrageTestteam() {
   const opts = ['Paris', 'London', 'Berlin', 'Dublin'];
-  const correct = 3;
   return (
     <>
-      <QBadge iconName="cat-mucho" label="Eine echte Frage" />
+      <QBadge iconName="cat-mucho" label="Rate mit!" />
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.6cqw', lineHeight: 1.08, margin: '3cqh 0 3.5cqh', animation: 'fadeUp 0.5s ease 0.15s both' }}>
         Welche Stadt liegt<br />am nördlichsten?
       </div>
-      {/* Reihen bewusst schmaler (74cqw) + ✓ direkt hinter der Antwort statt an
-          der rechten Kante → nichts landet unter TikToks Like/Kommentar-Leiste. */}
+      {/* Reihen schmaler (74cqw) → nichts unter TikToks Like/Kommentar-Leiste.
+          Keine Aufloesung — der Tipp gehoert in die Kommentare. */}
       <div style={{ display: 'flex', flexDirection: 'column', gap: '1.8cqh', width: '74cqw' }}>
         {opts.map((o, i) => (
           <div key={o} style={{
             display: 'flex', alignItems: 'center', gap: '3cqw',
             background: 'rgba(255,255,255,0.10)', borderRadius: '2.6cqw', padding: '1.9cqh 4cqw',
             fontWeight: 800, fontSize: '5.2cqw', textAlign: 'left',
-            animation: i === correct
-              ? `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both, revealCorrect 0.5s ease 2.0s both`
-              : `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both`,
+            animation: `slideIn 0.4s var(--eb) ${0.3 + i * 0.16}s both`,
           }}>
             <span style={{ fontFamily: DISPLAY, opacity: 0.7, width: '5cqw', flexShrink: 0 }}>{'ABCD'[i]}</span>
             <span>{o}</span>
-            {i === correct && <span style={{ marginLeft: '2.5cqw', fontSize: '5cqw', color: '#86efac', opacity: 0, animation: 'popIn 0.4s var(--eb) 2.15s both' }}>✓</span>}
           </div>
         ))}
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.9cqw', marginTop: '4cqh', animation: 'fadeUp 0.6s ease 2.5s both' }}>
-        Die meisten <span style={{ color: PINK_MID }}>tippen falsch</span>.
+      <div style={{ fontWeight: 800, fontSize: '5cqw', marginTop: '3.4cqh', lineHeight: 1.2, animation: 'fadeUp 0.6s ease 1.5s both' }}>
+        Die meisten tippen falsch.
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6.4cqw', marginTop: '1.6cqh', animation: 'fadeUp 0.6s ease 1.8s both' }}>
+        Dein Tipp? <span style={{ color: PINK_MID }}>👇</span>
       </div>
     </>
   );
@@ -916,7 +915,7 @@ function FactsTestteam() {
   const facts = [
     { icon: 'aufbau',   text: 'Platz für einen Beamer' },
     { icon: 'dauer',    text: '90–120 Minuten Zeit' },
-    { icon: 'team',     text: 'Mindestens 9 Leute' },
+    { icon: 'team',     text: '8–12 Leute' },
     { icon: 'standort', text: 'Im Raum Hamburg' },
   ];
   return (
@@ -953,24 +952,27 @@ function FactsTestteam() {
   );
 }
 
-// TEST-TEAM-CTA: Angebot (Gratis-Quizabend) + klare Aktion (/testen) + Knappheit.
-// Eigener Block statt CtaBlock, weil der Kontakt hier auf cozywolf.de/testen zeigt.
+// TEST-TEAM-CTA: 2026-07-09 (SM-Profi) — Scam-Barriere senken (warum gratis =
+// Beta, kein Haken) + EINE klare Aktion (Freunde markieren) statt zweier
+// konkurrierender Asks. Link nur noch als kleine Info-Zeile, nicht als zweiter
+// fetter CTA.
 function CtaTestteam() {
   return (
     <>
-      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={24} anim="popIn 0.7s var(--eb) both" />
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '2.4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
+      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={22} anim="popIn 0.7s var(--eb) both" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9cqw', lineHeight: 1.02, marginTop: '2.2cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
         Euer Abend<br />geht <span style={{ color: PINK_MID }}>aufs Haus.</span>
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '2cqh', opacity: 0.9, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.4s both' }}>
-        Komplett gratis. Nur euer ehrliches Feedback als Gegenleistung.
+      {/* Trust: erklaert WARUM gratis → killt den Scam-/MLM-Verdacht */}
+      <div style={{ fontWeight: 800, fontSize: '4.4cqw', marginTop: '2cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.32, animation: 'fadeUp 0.6s ease 0.4s both' }}>
+        Ihr testet mein Quiz, bevor es in die Kneipen kommt. <span style={{ color: PINK_MID }}>Kein Haken.</span>
       </div>
-      {/* Engagement: Freunde markieren treibt die TikTok-Reichweite (Tagging verbreitet). */}
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.4cqw', marginTop: '3cqh', lineHeight: 1.15, animation: 'fadeUp 0.6s ease 0.55s both' }}>
+      {/* EINE Aktion: Freunde markieren (treibt Reichweite via Tag-Shares) */}
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.8cqw', marginTop: '3.2cqh', lineHeight: 1.15, animation: 'fadeUp 0.6s ease 0.6s both' }}>
         Markiert die Freunde, mit<br />denen ihr spielen wollt <span>👇</span>
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.4cqw', marginTop: '3cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.75s both' }}>
-        Anmelden: <span style={{ color: PINK_MID }}>cozywolf.de/testen</span>
+      <div style={{ fontWeight: 800, fontSize: '4cqw', opacity: 0.78, marginTop: '2.6cqh', animation: 'fadeUp 0.6s ease 0.8s both' }}>
+        Alles zum Testen: cozywolf.de/testen
       </div>
     </>
   );

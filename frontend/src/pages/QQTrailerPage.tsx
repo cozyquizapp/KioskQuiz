@@ -185,7 +185,7 @@ const VARIANTS: Record<string, VariantCfg> = {
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
-      { key: 'hook-testteam', dur: 4800 }, { key: 'bock-testteam', dur: B.fun },
+      { key: 'bock-testteam', dur: B.fun }, { key: 'hook-testteam', dur: 4800 },
       { key: 'frage-testteam', dur: B.qTeam }, { key: 'erobern-testteam', dur: 4800 },
       { key: 'facts-testteam', dur: 5000 }, { key: 'cta-testteam', dur: 5200 },
     ],

@@ -387,7 +387,7 @@ export default function QQTrailerPage() {
           position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
           alignItems: 'center', justifyContent: 'center', textAlign: 'center',
           padding: '10cqh 7cqw 16cqh', zIndex: 5, color: '#fff',
-          animation: 'sceneIn 0.5s ease both',
+          animation: 'sceneEnter 0.62s cubic-bezier(0.22, 1, 0.36, 1) both',
         }}>
           {renderScene(scenes[cur].key)}
         </div>
@@ -1260,6 +1260,13 @@ function FloatingIcons({ items }: { items: DecoItem[] }) {
 const KEYFRAMES = `
   :root { --eb: cubic-bezier(0.2, 1.2, 0.3, 1); }
   @keyframes sceneIn { from { opacity: 0; } to { opacity: 1; } }
+  /* 2026-Trend „Soft-Zoom + Blur": neue Slide kommt aus leichter Vergroesserung
+     + weichem Blur scharf rein (premium Tiefe statt flachem Fade). */
+  @keyframes sceneEnter {
+    0%   { opacity: 0; transform: scale(1.07); filter: blur(11px); }
+    50%  { opacity: 1; }
+    100% { opacity: 1; transform: scale(1); filter: blur(0); }
+  }
   @keyframes fadeUp { from { opacity: 0; transform: translateY(4cqh); } to { opacity: 1; transform: none; } }
   @keyframes popIn { 0% { opacity: 0; transform: scale(0.7); } 100% { opacity: 1; transform: scale(1); } }
   @keyframes slideIn { from { opacity: 0; transform: translateX(-6cqw); } to { opacity: 1; transform: none; } }

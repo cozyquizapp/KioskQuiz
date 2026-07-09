@@ -114,11 +114,13 @@ const DECO_BDAY: DecoItem[] = [
   { name: 'cat-cheese',       x: 85, y: 73, s: 12, d: 0.7 },
   { name: 'cat-mucho',        x: 11, y: 80, s: 12, d: 1.9 },
 ];
+// Ambient-Deko laeuft auf ALLEN Slides — bewusst aus TikToks rechter Aktions-
+// Leiste (x>82 ab Mitte) + unterer Caption (y>74) heraus positioniert.
 const DECO_TESTTEAM: DecoItem[] = [
-  { name: 'cat-mucho',        x: 10, y: 16, s: 11, d: 0.4 },
-  { name: 'cat-schaetzchen',  x: 84, y: 22, s: 12, d: 1.5 },
-  { name: 'award-underdog',   x: 12, y: 76, s: 11, d: 1.0 },
-  { name: 'cat-cheese',       x: 83, y: 71, s: 12, d: 2.2 },
+  { name: 'cat-mucho',        x: 10, y: 14, s: 11, d: 0.4 },
+  { name: 'cat-schaetzchen',  x: 78, y: 12, s: 11, d: 1.5 },
+  { name: 'award-underdog',   x: 9,  y: 62, s: 11, d: 1.0 },
+  { name: 'cat-cheese',       x: 72, y: 66, s: 11, d: 2.2 },
 ];
 
 // Wolf 2026-07-06: FUN zuerst (Fragen + Minispiele = der Hook), Gebiet-Taktik
@@ -782,17 +784,16 @@ function BockTestteam() {
   return (
     <>
       <Confetti />
-      {/* Floating Kategorie-Emojis rund um den Text — gibt dem Opener Leben,
-          ohne Avatar-Clutter (Wolf 2026-07-09). Sitzen an den Raendern, damit
-          sie den zentrierten Text nicht ueberlagern. */}
+      {/* Floating Kategorie-Emojis — nur im OBEREN + UNTEREN Band (nicht auf
+          Texthoehe, der Text fuellt die Mitte breit aus) und raus aus TikToks
+          rechter Aktions-Leiste (x>82) + unterer Caption (y>76). Wolf 2026-07-09. */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none' }}>
         {[
-          { n: 'cat-schaetzchen',  x: 11, y: 13, s: 15, d: 0 },
-          { n: 'cat-mucho',        x: 85, y: 11, s: 13, d: 0.8 },
-          { n: 'cat-cheese',       x: 6,  y: 50, s: 13, d: 1.4 },
-          { n: 'cat-bunte-tuete',  x: 88, y: 50, s: 15, d: 0.4 },
-          { n: 'cat-zehn-von-zehn', x: 14, y: 87, s: 12, d: 1.9 },
-          { n: 'cat-cheese',       x: 84, y: 88, s: 13, d: 1.1 },
+          { n: 'cat-schaetzchen',   x: 13, y: 12, s: 11, d: 0 },
+          { n: 'cat-cheese',        x: 32, y: 23, s: 9,  d: 1.4 },
+          { n: 'cat-mucho',         x: 78, y: 11, s: 10, d: 0.8 },
+          { n: 'cat-bunte-tuete',   x: 16, y: 71, s: 11, d: 0.4 },
+          { n: 'cat-zehn-von-zehn', x: 69, y: 68, s: 10, d: 1.9 },
         ].map((p, i) => (
           <img key={i} src={icon(p.n)} alt="" style={{
             position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: `${p.s}cqw`, height: `${p.s}cqw`,

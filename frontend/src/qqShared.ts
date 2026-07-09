@@ -349,6 +349,14 @@ export const QQ_BEAMER_CSS = `
     45%  { transform: translate(-50%, -115%); }
     100% { transform: translate(-50%, -50%); }
   }
+  /* 2026-07-09 (Motion-Audit C4): reiner Y-Hop-Bogen fuer den PhaseIntro-Wolf.
+     Sitzt auf einem inneren Wrapper (keyed auf displayIdx) → hüpft bei jedem
+     Schritt, während der äußere Positioner horizontal per left-transition gleitet. */
+  @keyframes qqWolfHopArc {
+    0%   { transform: translateY(0); }
+    42%  { transform: translateY(-22px); }
+    100% { transform: translateY(0); }
+  }
   /* 2026-05-09 v2 (Wolf 'kreis darf nicht bouncen — linie ist fix'): Outer
      Bounce entfernt. qqWolfBob bleibt als Legacy-Keyframe (falls noch wo
      verlinkt), wird aber nicht mehr genutzt. Stattdessen: qqWolfHeadBob

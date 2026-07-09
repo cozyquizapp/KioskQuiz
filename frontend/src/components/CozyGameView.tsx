@@ -647,7 +647,10 @@ function WheelView({
             transform: `rotate(${renderAngle}deg)`,
             transition: spinning
               ? 'transform 6.5s cubic-bezier(0.14, 0.6, 0.2, 1)'
-              : 'transform 1.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+              // 2026-07-09 (Motion-Audit C6): 1.56-Overshoot nach 6.5s-Spin ließ
+              // das Sieger-Slice sichtbar über den Pointer und zurück wackeln.
+              // Sauberer, selbstbewusster Stop via --qq-ease-out-cubic.
+              : 'transform 1.0s var(--qq-ease-out-cubic)',
             filter: 'drop-shadow(0 8px 32px rgba(0,0,0,0.5))',
           }}
         >

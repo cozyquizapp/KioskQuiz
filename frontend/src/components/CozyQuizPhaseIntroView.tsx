@@ -164,32 +164,44 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
         zIndex: 3,
       }} />
 
-      {/* Wolf-Avatar — schwebt ÜBER der Linie und slidet horizontal zum nächsten
-          Dot (Pin-Kopf). Innen wackelt der Kopf subtil (qqWolfHeadBob). */}
+      {/* Wolf-Avatar — Positioner gleitet horizontal (left), innerer Hopper springt
+          bei jedem Schritt im Bogen (qqWolfHopArc, keyed auf displayIdx), Kopf
+          wackelt subtil (qqWolfHeadBob). 2026-07-09 (Motion-Audit C4): vorher nur
+          flacher Horizontal-Slide → wirkte als würde der Wolf rutschen, nicht hüpfen. */}
       <div style={{
         position: 'absolute', top: 0, left: wolfLeft,
-        width: WOLF, height: WOLF, borderRadius: '50%',
-        background: themed ? 'var(--qq-surface)' : 'rgba(20,16,31,0.92)',
-        border: themed ? '3px solid var(--qq-accent)' : `3px solid ${catColor}`,
-        boxShadow: themed
-          ? '0 0 0 4px rgba(var(--qq-accent-rgb),0.18), 0 6px 14px rgba(var(--qq-accent-rgb),0.28)'
-          : `0 0 0 4px ${catColor}40, 0 6px 16px ${catColor}66`,
+        width: WOLF, height: WOLF,
         transform: 'translateX(-50%)',
-        transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-color 400ms ease, box-shadow 400ms ease',
+        transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1)',
         zIndex: 4,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden',
       }}>
-        <img
-          src="/avatars/cozywolf/pink.png"
-          alt=""
-          draggable={false}
-          style={{
-            width: '94%', height: '94%', objectFit: 'contain',
-            filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
-            animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
-          }}
-        />
+        <div key={displayIdx} style={{
+          width: '100%', height: '100%',
+          animation: 'qqWolfHopArc 560ms var(--qq-ease-out-cubic) both',
+        }}>
+          <div style={{
+            width: '100%', height: '100%', borderRadius: '50%',
+            background: themed ? 'var(--qq-surface)' : 'rgba(20,16,31,0.92)',
+            border: themed ? '3px solid var(--qq-accent)' : `3px solid ${catColor}`,
+            boxShadow: themed
+              ? '0 0 0 4px rgba(var(--qq-accent-rgb),0.18), 0 6px 14px rgba(var(--qq-accent-rgb),0.28)'
+              : `0 0 0 4px ${catColor}40, 0 6px 16px ${catColor}66`,
+            transition: 'border-color 400ms ease, box-shadow 400ms ease',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+          }}>
+            <img
+              src="/avatars/cozywolf/pink.png"
+              alt=""
+              draggable={false}
+              style={{
+                width: '94%', height: '94%', objectFit: 'contain',
+                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+                animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
+              }}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -264,7 +276,7 @@ function CategoryHeroFlip({ dotScreen, vpRef, style, children }: {
     el.style.opacity = '0.9';
     void el.offsetWidth; // reflow → Startzustand festschreiben
     const id = requestAnimationFrame(() => {
-      el.style.transition = 'transform 0.9s cubic-bezier(0.66,0,0.34,1), opacity 0.45s ease';
+      el.style.transition = 'transform 0.9s var(--qq-ease-out-cubic), opacity 0.45s ease';
       el.style.transform = 'translate(0px, 0px) scale(1)';
       el.style.opacity = '1';
     });
@@ -750,7 +762,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     }
     return {
       transform: `translate(${camTx}px, ${camTy}px) scale(${S})`,
-      transition: 'transform 0.9s cubic-bezier(0.66,0,0.34,1)',
+      transition: 'transform 0.9s var(--qq-ease-out-cubic)',
     };
   }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi, worldEntered, isFirstOfRound]);
 

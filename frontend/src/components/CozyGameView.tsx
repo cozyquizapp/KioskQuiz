@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
-import { QQ_TEAM_PALETTE } from '@shared/quarterQuizTypes';
 import { playCozyGameIntro, playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal, playTick, playUrgentTick, playTimesUp } from '../utils/sounds';
 import { getServerNow } from '../utils/serverTime';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
@@ -52,7 +51,21 @@ const mixToDark = (hex: string): string => {
   const to2 = (n: number) => n.toString(16).padStart(2, '0');
   return `#${to2(mix(br, 10))}${to2(mix(bg, 8))}${to2(mix(bb, 20))}`;
 };
-const SLICE_PALETTE_DARK = QQ_TEAM_PALETTE.map(mixToDark);
+// 2026-07-09 (Wolf 'designtechnisch geht noch was'): eigene Cozy-Wheel-Palette
+// (harmonische Juwel-Töne) fürs Glücksrad + Reveal-Akzent — die alten QQ_TEAM_
+// PALETTE-Farben lieferten muddy-Braun/Oliv. Team-Farben bleiben nur für echte
+// Team-Avatare. Reihenfolge bewusst kontrastreich (Nachbar-Slices weit im Farbrad).
+const COZY_WHEEL_PALETTE = [
+  '#EC4899', // Pink (Brand)
+  '#14B8A6', // Teal
+  '#A855F7', // Purple
+  '#F43F5E', // Rose
+  '#6366F1', // Indigo
+  '#22D3EE', // Cyan
+  '#C026A3', // Magenta
+  '#8B5CF6', // Violet
+];
+const SLICE_PALETTE_DARK = COZY_WHEEL_PALETTE.map(mixToDark);
 
 // 2026-05-17 v11 (Wolf 'CG-slides fallen aus dem raster, andere bgs sind dunkler
 // mit fireflies'): Standard-Brand-BG analog PausedView etc. — dunkler Grund
@@ -265,7 +278,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
       const isSpin = round.phase === 'WHEEL_SPIN';
       const showDetail = !isSpin && resultStage === 'detail';
       const targetIdx = round.wheelTargetSliceIndex ?? 0;
-      const sliceColor = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
+      const sliceColor = COZY_WHEEL_PALETTE[targetIdx % COZY_WHEEL_PALETTE.length];
       const darkSliceColor = SLICE_PALETTE_DARK[targetIdx % SLICE_PALETTE_DARK.length];
       phaseContent = showDetail ? (
         <GameDetailView
@@ -291,7 +304,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
 
     case 'GAME_ACTIVE': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
-      const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
+      const accent = COZY_WHEEL_PALETTE[tIdx % COZY_WHEEL_PALETTE.length];
       const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
       if (round.playMode === 'sequence') {
         phaseContent = (
@@ -327,7 +340,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
 
     case 'WINNER_SELECT': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
-      const accent = QQ_TEAM_PALETTE[tIdx % QQ_TEAM_PALETTE.length];
+      const accent = COZY_WHEEL_PALETTE[tIdx % COZY_WHEEL_PALETTE.length];
       const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
       phaseContent = (
         <WinnerSelectView
@@ -616,15 +629,15 @@ function WheelView({
   // direkt auf die SOLIDE dunkle Slice-Farbe (kein Radial-Tint mehr). Ab dem
   // Moment der Wahl bis zum Grid-Öffnen ist die BG-Farbe identisch.
   // Fireflies-Akzent folgt der hellen Slice-Color für sichtbaren Kontrast.
-  const sliceColorBright = QQ_TEAM_PALETTE[targetIdx % QQ_TEAM_PALETTE.length];
-  const sliceColorDark = SLICE_PALETTE[targetIdx % SLICE_PALETTE.length];
+  const sliceColorBright = COZY_WHEEL_PALETTE[targetIdx % COZY_WHEEL_PALETTE.length];
   const revealed = !spinning && !!revealedGame;
-  // accent = Fireflies-Farbe (heller Slice nach Reveal, sonst Brand-Pink)
+  // 2026-07-09 (Wolf 'designtechnisch geht noch was'): kein solider dunkler
+  // Slice-BG (wurde muddy-braun) mehr — IMMER Cozy-Brand-BG (dunkler Grund +
+  // Glow via darkBgWithAccent). Der Glow folgt nach dem Reveal der Slice-Farbe,
+  // davor Brand-Pink. Konsistent mit dem GameDetail-Reveal-Screen.
   const bgAccent = revealed ? sliceColorBright : COZY_PINK;
-  // solid = Solid-BG-Farbe (dark Slice nach Reveal, sonst undefined = darkBgWithAccent)
-  const solidBg = revealed ? sliceColorDark : undefined;
   return (
-    <FullScreenLayout width={width} height={height} accent={bgAccent} solid={solidBg}>
+    <FullScreenLayout width={width} height={height} accent={bgAccent}>
       {/* Wheel-Container: exakt size×size, Pointer ragt absolut nach oben raus
           (negative top), damit der Wheel-Kreis selbst der flex-zentrierte Block
           ist und visuell mittig sitzt. */}
@@ -715,6 +728,14 @@ function WheelView({
           <circle cx={0} cy={0} r={14} fill="#0F1736" stroke="#fff" strokeWidth={2.5} />
           <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
         </svg>
+        {/* 2026-07-09 (Wolf 'designtechnisch geht noch was'): nicht-rotierender
+            Dome-Sheen + Rand-Vignette über dem Rad → Licht von oben, plastische
+            Tiefe statt flacher Farbscheiben. Unter dem Pointer (zIndex 2). */}
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', zIndex: 1,
+          background: 'radial-gradient(ellipse 72% 62% at 50% 30%, rgba(255,255,255,0.17), rgba(255,255,255,0.04) 46%, rgba(0,0,0,0.30) 100%)',
+          boxShadow: 'inset 0 2px 12px rgba(255,255,255,0.12), inset 0 -16px 44px rgba(0,0,0,0.38)',
+        }} />
       </div>
       {/* 2026-05-17 v18 (Wolf 'wheel kommt nochmal rein, helle farbe später'):
           Wave-Overlay komplett raus. BG ist ab Wheel-Stop bereits die dunkle

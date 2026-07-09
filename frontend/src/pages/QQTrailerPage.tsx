@@ -780,8 +780,8 @@ function HookTestteam() {
 function BockTestteam() {
   return (
     <>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.4cqw', lineHeight: 1.04, animation: 'fadeUp 0.6s ease both' }}>
-        Bock auf einen<br /><span style={{ color: PINK_MID }}>Quizabend</span><br />mit deinen Freunden?
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', lineHeight: 1.04, animation: 'fadeUp 0.6s ease both' }}>
+        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span> Quizabend<br />mit deinen Freunden?
       </div>
       <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: '3cqw', margin: '6.5cqh 0 5cqh' }}>
         {[{ t: 0, e: '😂', d: 0 }, { t: 2, e: '🎉', d: 0.5 }, { t: 4, e: '🔥', d: 1.0 }].map((p, i) => (
@@ -934,18 +934,19 @@ function FactsTestteam() {
 function CtaTestteam() {
   return (
     <>
-      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={34} anim="popIn 0.7s var(--eb) both" />
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1.02, marginTop: '3cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
+      <WolfMascot pose="augenauf.troete.jubel" sizeCqw={24} anim="popIn 0.7s var(--eb) both" />
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '9.5cqw', lineHeight: 1.02, marginTop: '2.4cqh', animation: 'popIn 0.7s var(--eb) 0.2s both' }}>
         Euer Abend<br />geht <span style={{ color: PINK_MID }}>aufs Haus.</span>
       </div>
-      <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '2.6cqh', opacity: 0.9, maxWidth: '82cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.45s both' }}>
-        Ein kompletter, moderierter Quizabend. Komplett gratis. Dafür gebt ihr mir ehrlich euer Feedback.
+      <div style={{ fontWeight: 800, fontSize: '4.6cqw', marginTop: '2cqh', opacity: 0.9, maxWidth: '80cqw', lineHeight: 1.3, animation: 'fadeUp 0.6s ease 0.4s both' }}>
+        Komplett gratis. Nur euer ehrliches Feedback als Gegenleistung.
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.6cqw', marginTop: '4cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.6s both' }}>
+      {/* Engagement: Freunde markieren treibt die TikTok-Reichweite (Tagging verbreitet). */}
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.4cqw', marginTop: '3cqh', lineHeight: 1.15, animation: 'fadeUp 0.6s ease 0.55s both' }}>
+        Markiert die Freunde, mit<br />denen ihr spielen wollt <span>👇</span>
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '5.4cqw', marginTop: '3cqh', lineHeight: 1.12, animation: 'fadeUp 0.6s ease 0.75s both' }}>
         Anmelden: <span style={{ color: PINK_MID }}>cozywolf.de/testen</span>
-      </div>
-      <div style={{ marginTop: '2.6cqh', display: 'inline-flex', alignItems: 'center', gap: '2.4cqw', justifyContent: 'center', color: PINK_MID, fontWeight: 800, fontSize: '4.2cqw', animation: 'fadeUp 0.6s ease 0.9s both' }}>
-        <img src={cw('head')} alt="" style={{ width: '6cqw', height: '6cqw', objectFit: 'contain' }} />@cozywolf.events
       </div>
     </>
   );

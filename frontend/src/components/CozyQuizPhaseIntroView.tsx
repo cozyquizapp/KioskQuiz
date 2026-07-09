@@ -276,7 +276,12 @@ function CategoryHeroFlip({ dotScreen, vpRef, style, children }: {
     el.style.opacity = '0.9';
     void el.offsetWidth; // reflow → Startzustand festschreiben
     const id = requestAnimationFrame(() => {
-      el.style.transition = 'transform 0.9s var(--qq-ease-out-cubic), opacity 0.45s ease';
+      // 2026-07-09 (Wolf 'Zoom aufs Kategorie-Logo funktioniert nicht mehr'):
+      // WICHTIG literaler Bezier, NICHT var(--qq-ease-out-cubic). Diese Transition
+      // wird imperativ (el.style.transition) direkt vor dem Transform-Wechsel im
+      // selben Frame gesetzt — ein var() ist dabei unzuverlässig (pending-
+      // substitution → Transition greift nicht → Hero springt statt rauszuzoomen).
+      el.style.transition = 'transform 0.9s cubic-bezier(0.66,0,0.34,1), opacity 0.45s ease';
       el.style.transform = 'translate(0px, 0px) scale(1)';
       el.style.opacity = '1';
     });
@@ -762,7 +767,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     }
     return {
       transform: `translate(${camTx}px, ${camTy}px) scale(${S})`,
-      transition: 'transform 0.9s var(--qq-ease-out-cubic)',
+      transition: 'transform 0.9s cubic-bezier(0.66,0,0.34,1)',
     };
   }, [treeMetrics, camVp, s.introStep, s.questionIndex, displayGpi, worldEntered, isFirstOfRound]);
 

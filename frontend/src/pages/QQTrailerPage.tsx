@@ -802,19 +802,8 @@ function BockTestteam() {
           }} />
         ))}
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7cqw', lineHeight: 1.06, animation: 'fadeUp 0.5s ease both' }}>
-        Bock auf einen
-      </div>
-      <div style={{ margin: '2.6cqh 0', animation: 'popIn 0.6s var(--eb) 0.2s both' }}>
-        <span style={{
-          fontFamily: DISPLAY, fontWeight: 800, fontSize: '10cqw', lineHeight: 1,
-          color: '#fff', background: PINK, borderRadius: '3cqw', padding: '0.1em 0.26em',
-          display: 'inline-block', transform: 'rotate(-2deg)',
-          boxShadow: '0 1.4cqh 3.2cqh rgba(236,72,153,0.5), 0 0 5cqw rgba(236,72,153,0.35)',
-        }}>KOSTENLOSEN</span>
-      </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '7.6cqw', lineHeight: 1.05, marginTop: '2.6cqh', animation: 'fadeUp 0.6s ease 0.4s both' }}>
-        Quizabend mit<br />deinen Freunden?
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.2cqw', lineHeight: 1.08, animation: 'fadeUp 0.5s ease both' }}>
+        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span> Quizabend<br />mit deinen Freunden?
       </div>
     </>
   );

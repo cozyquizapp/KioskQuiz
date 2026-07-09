@@ -789,11 +789,11 @@ function BockTestteam() {
           rechter Aktions-Leiste (x>82) + unterer Caption (y>76). Wolf 2026-07-09. */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none' }}>
         {[
-          { n: 'cat-schaetzchen',   x: 14, y: 13, s: 14, d: 0 },
-          { n: 'cat-cheese',        x: 34, y: 22, s: 11, d: 1.4 },
-          { n: 'cat-mucho',         x: 77, y: 12, s: 13, d: 0.8 },
-          { n: 'cat-bunte-tuete',   x: 17, y: 70, s: 14, d: 0.4 },
-          { n: 'cat-zehn-von-zehn', x: 68, y: 67, s: 13, d: 1.9 },
+          { n: 'cat-schaetzchen',   x: 13, y: 12, s: 14, d: 0 },
+          { n: 'cat-cheese',        x: 33, y: 21, s: 11, d: 1.4 },
+          { n: 'cat-mucho',         x: 78, y: 12, s: 13, d: 0.8 },
+          { n: 'cat-bunte-tuete',   x: 16, y: 75, s: 13, d: 0.4 },
+          { n: 'cat-zehn-von-zehn', x: 70, y: 74, s: 12, d: 1.9 },
         ].map((p, i) => (
           // Aussen: positionieren + zentrieren + einblenden (Opacity).
           // Innen: floaten (Transform) — getrennt, damit das Zentrieren nicht
@@ -810,8 +810,11 @@ function BockTestteam() {
           </div>
         ))}
       </div>
-      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.2cqw', lineHeight: 1.08, animation: 'fadeUp 0.5s ease both' }}>
-        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span> Quizabend<br />mit deinen Freunden?
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '11.5cqw', lineHeight: 1.03, letterSpacing: '-0.01em', animation: 'fadeUp 0.5s ease both' }}>
+        Bock auf einen<br /><span style={{ color: PINK_MID }}>kostenlosen</span><br />Quizabend?
+      </div>
+      <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '6cqw', opacity: 0.94, marginTop: '3.4cqh', animation: 'fadeUp 0.6s ease 0.5s both' }}>
+        Mit deinen <span style={{ color: PINK_MID }}>Freunden</span>.
       </div>
     </>
   );

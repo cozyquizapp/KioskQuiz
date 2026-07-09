@@ -789,18 +789,25 @@ function BockTestteam() {
           rechter Aktions-Leiste (x>82) + unterer Caption (y>76). Wolf 2026-07-09. */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: -1, pointerEvents: 'none' }}>
         {[
-          { n: 'cat-schaetzchen',   x: 13, y: 12, s: 11, d: 0 },
-          { n: 'cat-cheese',        x: 32, y: 23, s: 9,  d: 1.4 },
-          { n: 'cat-mucho',         x: 78, y: 11, s: 10, d: 0.8 },
-          { n: 'cat-bunte-tuete',   x: 16, y: 71, s: 11, d: 0.4 },
-          { n: 'cat-zehn-von-zehn', x: 69, y: 68, s: 10, d: 1.9 },
+          { n: 'cat-schaetzchen',   x: 14, y: 13, s: 14, d: 0 },
+          { n: 'cat-cheese',        x: 34, y: 22, s: 11, d: 1.4 },
+          { n: 'cat-mucho',         x: 77, y: 12, s: 13, d: 0.8 },
+          { n: 'cat-bunte-tuete',   x: 17, y: 70, s: 14, d: 0.4 },
+          { n: 'cat-zehn-von-zehn', x: 68, y: 67, s: 13, d: 1.9 },
         ].map((p, i) => (
-          <img key={i} src={icon(p.n)} alt="" style={{
-            position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, width: `${p.s}cqw`, height: `${p.s}cqw`,
-            objectFit: 'contain', transform: 'translate(-50%, -50%)',
-            animation: `floatPet ${3.6 + i * 0.4}s ease-in-out ${p.d}s infinite, fadeUp 0.6s ease ${0.2 + i * 0.1}s both`,
-            filter: 'drop-shadow(0 0.6cqh 1cqh rgba(0,0,0,0.35))',
-          }} />
+          // Aussen: positionieren + zentrieren + einblenden (Opacity).
+          // Innen: floaten (Transform) — getrennt, damit das Zentrieren nicht
+          // von der Float-Animation ueberschrieben wird.
+          <div key={i} style={{
+            position: 'absolute', left: `${p.x}%`, top: `${p.y}%`, transform: 'translate(-50%, -50%)',
+            animation: `sceneIn 0.6s ease ${0.2 + i * 0.1}s both`,
+          }}>
+            <img src={icon(p.n)} alt="" style={{
+              display: 'block', width: `${p.s}cqw`, height: `${p.s}cqw`, objectFit: 'contain',
+              animation: `floatPet ${3.6 + i * 0.4}s ease-in-out ${p.d}s infinite`,
+              filter: 'drop-shadow(0 0.6cqh 1cqh rgba(0,0,0,0.35))',
+            }} />
+          </div>
         ))}
       </div>
       <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8.2cqw', lineHeight: 1.08, animation: 'fadeUp 0.5s ease both' }}>

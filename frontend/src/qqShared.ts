@@ -187,17 +187,18 @@ export const QQ_BEAMER_CSS = `
      bounce — fühlt sich „fließend" an statt „springig". Blur raus, war zu
      fragil und kostete Perf bei 16k-Beamer. */
   @keyframes qqSlideIn {
-    /* 2026-05-12 (Beamer-Choreo-Audit P0 #1): weicherer Start. Vorher schnellte
-       Opacity in den ersten 50% von 0→1 → harter Phase-Cut weil prev-Phase im
-       gleichen Frame verschwand. Jetzt: 30% reine Opacity-Anzeige als „Fade-
-       Reception" damit ALTE Phase visuell endet bevor neue motiongetrieben
-       reinkommt. Echte Cross-Fade-Wrapper-Layer wären invasiv (Refactor mit
-       prev-state). Diese Mini-Variante geht 90% des Wegs. */
-    0%   { opacity: 0; transform: scale(0.96) translateY(24px); }
-    30%  { opacity: 0.7; transform: scale(0.985) translateY(10px); }
-    55%  { opacity: 1; }
-    70%  { transform: scale(1.005) translateY(-2px); }
-    100% { opacity: 1; transform: scale(1)    translateY(0); }
+    /* 2026-07-09 (Motion-Audit A1): Der langsame Opacity-Ramp (1 erst bei 55%)
+       war als „Fade-Reception" gedacht, damit die alte Phase ausklingt — aber es
+       gibt keine alte Phase (sie unmountet sofort). Ergebnis: ~400ms dunkler
+       BG-Dip zwischen jeder Phase. Ein echter 2-Layer-Crossfade müsste die alte
+       Phase mitgemountet halten → Doppel-Mount von Sound/Timer/Socket-Effects,
+       zu riskant für die Live-Show. Stattdessen: Opacity FRONT-LOADEN (voll bei
+       ~22% ≈ 160ms) → der Dip verschwindet fast; der Transform gleitet weiter
+       über die volle Dauer cinematisch nach (Rise + Micro-Overshoot). */
+    0%   { opacity: 0; transform: scale(0.965) translateY(20px); }
+    22%  { opacity: 1; transform: scale(0.99)  translateY(9px); }
+    70%  { transform: scale(1.004) translateY(-2px); }
+    100% { opacity: 1; transform: scale(1)     translateY(0); }
   }
   /* Final-Reveal Score-Cascade: Zeile fliegt von rechts rein mit slight Y-Drop. */
   @keyframes qqFinalRowIn {

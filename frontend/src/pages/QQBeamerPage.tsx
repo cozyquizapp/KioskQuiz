@@ -2674,10 +2674,12 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                       background: `radial-gradient(circle, ${t.color}dd 0%, ${t.color}66 52%, ${t.color}22 68%, transparent 78%)`,
                       filter: 'blur(7px)', pointerEvents: 'none',
                     }} />
-                    {/* Avatar zentriert im Ring. 2026-07-08 (Wolf 'unschöner rand'):
-                        Disc groesser + weicher Glow drum (oben) = kein harter Spalt
-                        mehr zum Timer-Ring, Ring-Bahn bleibt aber sichtbar. */}
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(164px, 15.8cqw, 216px)'} bgColor={t.color} />
+                    {/* Avatar zentriert im Ring. 2026-07-09 (Wolf 'noch leicht
+                        quadratischer Rand ums Team + bg verdeckt Timer'): KEIN
+                        bgColor mehr — der eckige Farb-Tile ragte über den Timer-
+                        Ring. Der weiche runde Glow (oben) liefert die Team-Farbe,
+                        der Avatar schwebt frei mittig, Timer-Ring bleibt frei. */}
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 14.5cqw, 200px)'} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
                     <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
                       position: 'absolute', top: '2%', right: '0%',

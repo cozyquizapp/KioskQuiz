@@ -331,7 +331,10 @@ export default function QQTrailerPage() {
       exitFs();
       return; // User hat abgebrochen
     }
-    const types = ['video/mp4;codecs=h264', 'video/webm;codecs=vp9', 'video/webm'];
+    // WebM (VP9) zuerst: robustestes MediaRecorder-Format. Der aus dem Browser
+    // erzeugte fragmentierte MP4 laesst sich vom Windows-Standard-Player nicht
+    // oeffnen (0x80004005) — WebM importiert CapCut/Chrome/VLC sauber.
+    const types = ['video/webm;codecs=vp9', 'video/webm;codecs=vp8', 'video/webm', 'video/mp4;codecs=h264'];
     const mimeType = types.find(t => MediaRecorder.isTypeSupported?.(t)) ?? '';
     const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
     const rec = new MediaRecorder(stream, { mimeType: mimeType || undefined, videoBitsPerSecond: 12_000_000 });
@@ -497,7 +500,7 @@ export default function QQTrailerPage() {
           </div>
           <div style={{ color: '#8a86a0', fontSize: 13, fontWeight: 700, textAlign: 'center', lineHeight: 1.5 }}>
             Tippen = Pause · loopt automatisch (~{totalSec}&nbsp;s).<br />
-            <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = Klick → im Dialog einfach auf „<b>Teilen</b>" (der Tab ist schon gewählt) → das Reel läuft einmal durch → fertige, auf 9:16 zugeschnittene Datei lädt automatisch. Kein Handy, kein Upscaling.<br />
+            <b style={{ color: '#7dd3fc' }}>⬇ Video (HD)</b> = Klick → „<b>Teilen</b>" → Reel läuft einmal durch → 9:16-Datei (<b>.webm</b>) lädt automatisch. <b>In CapCut importieren</b> (dort Sound drauf) oder in Chrome/VLC ansehen — der Windows-Standard-Player kann WebM nicht.<br />
             <b style={{ color: '#c9c5da' }}>Reel</b> = am PC abfilmen · <b style={{ color: '#c9c5da' }}>Slideshow</b> = je Folie durchtippen &amp; screenshotten (fürs Karussell).
           </div>
         </div>

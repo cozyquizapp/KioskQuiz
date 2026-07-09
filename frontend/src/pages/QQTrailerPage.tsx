@@ -185,11 +185,11 @@ const VARIANTS: Record<string, VariantCfg> = {
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [
-      { key: 'hook-testteam', dur: 4800 }, { key: 'bock-testteam', dur: B.fun }, { key: 'board', dur: B.board },
+      { key: 'hook-testteam', dur: 4800 }, { key: 'bock-testteam', dur: B.fun }, { key: 'peek-testteam', dur: B.qTeam },
       { key: 'facts-testteam', dur: 5000 }, { key: 'cta-testteam', dur: 5200 },
     ],
     kurz: [
-      { key: 'hook-testteam', dur: 4600 }, { key: 'bock-testteam', dur: B.fun }, { key: 'cta-testteam', dur: 5000 },
+      { key: 'hook-testteam', dur: 4600 }, { key: 'peek-testteam', dur: B.qTeam }, { key: 'cta-testteam', dur: 5000 },
     ],
     bgTint: 'radial-gradient(120% 78% at 26% 6%, rgba(236,72,153,0.20), transparent 60%)',
     deco: DECO_TESTTEAM,
@@ -434,6 +434,7 @@ function renderScene(key: string) {
     case 'hook-bday':      return <HookBday />;
     case 'hook-testteam':  return <HookTestteam />;
     case 'bock-testteam':  return <BockTestteam />;
+    case 'peek-testteam':  return <QMucho />;
     case 'facts-testteam': return <FactsTestteam />;
     case 'cta-testteam':   return <CtaTestteam />;
     case 'cta-team':       return <CtaBlock heading={<>Holt's zu<br />euch ins Team.</>} sub="Büro oder Location. Ich bring Beamer, Quiz und beste Stimmung mit." commentPrompt={<>Welches Team wärt ihr? <span style={{ color: PINK_MID }}>👇</span></>} />;

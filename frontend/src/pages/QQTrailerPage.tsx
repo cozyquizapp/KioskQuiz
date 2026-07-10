@@ -942,7 +942,7 @@ function FactsTestteam() {
   const facts = [
     { icon: 'aufbau',   text: 'Platz für einen Beamer' },
     { icon: 'dauer',    text: '90–120 Minuten Zeit' },
-    { icon: 'team',     text: 'Mindestens 9 Leute' },
+    { icon: 'team',     text: 'Mindestens 6 Leute' },
     { icon: 'standort', text: 'Im Raum Hamburg' },
   ];
   return (

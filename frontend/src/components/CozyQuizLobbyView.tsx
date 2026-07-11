@@ -666,6 +666,20 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               {joinUrl.replace('https://', '').replace('http://', '')}
             </div>
           </div>
+          {/* Arena/nested (2026-07-11): eine Gruppe teilt sich EIN Handy → sonst
+              loggen sich 40 Einzelpersonen ein. Nur im nested-Modus, bilingual. */}
+          {nested && (
+            <div style={{
+              display: 'inline-flex', alignItems: 'center', gap: 8,
+              padding: '7px 16px', borderRadius: 'var(--qq-pill-radius)',
+              background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.06)',
+              border: '1.5px solid var(--qq-hairline)',
+              fontSize: 'clamp(13px, 1.35cqw, 18px)', fontWeight: 800, color: 'var(--qq-text)',
+            }}>
+              <span aria-hidden style={{ fontSize: '1.2em' }}>👥</span>
+              {de ? 'Ein Handy pro Gruppe' : 'One phone per group'}
+            </div>
+          )}
           {/* CozyWolf Branding — prominent unterhalb des QR-Codes */}
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,

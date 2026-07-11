@@ -409,10 +409,25 @@ export default function QQTeamPage() {
     else setError(ack.error ?? 'error');
   }
 
-  // Always allow local language override, even in lobby/setup
-  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => (localStorage.getItem('qq_lang') as 'de' | 'en') ?? 'de');
+  // Always allow local language override, even in lobby/setup.
+  // 2026-07-11 (Bilingual-Readiness): Erstnutzer nicht mehr hart auf Deutsch.
+  // Prioritaet: getippte Wahl (this session) > gespeicherte Wahl > Raumsprache
+  // (Mod-Setup, greift per Effect unten sobald State da ist) > Browser-Sprache > de.
+  const [localLang, setLocalLang] = useState<'de' | 'en'>(() => {
+    const stored = localStorage.getItem('qq_lang');
+    if (stored === 'de' || stored === 'en') return stored;
+    try { return (navigator.language || '').toLowerCase().startsWith('en') ? 'en' : 'de'; } catch { return 'de'; }
+  });
+  const userTouchedLang = useRef(false);
   const lang: 'de' | 'en' = localLang;
-  const setLang = (l: 'de' | 'en') => { setLocalLang(l); localStorage.setItem('qq_lang', l); };
+  const setLang = (l: 'de' | 'en') => { userTouchedLang.current = true; setLocalLang(l); localStorage.setItem('qq_lang', l); };
+  // Raumsprache uebernehmen (Event: Mod stellt DE/EN ein), solange der Nutzer keine
+  // eigene gespeicherte/getippte Wahl hat. 'both' bleibt bei der aktuellen Sprache.
+  useEffect(() => {
+    if (userTouchedLang.current || localStorage.getItem('qq_lang')) return;
+    const rl = (state as any)?.language;
+    if (rl === 'de' || rl === 'en') setLocalLang(rl);
+  }, [(state as any)?.language]);
   const [flagFlip, setFlagFlip] = useState(false); // true = mid-flip (hidden at 90°)
   const flipLockRef = useRef(false);
   const handleFlagClick = () => {

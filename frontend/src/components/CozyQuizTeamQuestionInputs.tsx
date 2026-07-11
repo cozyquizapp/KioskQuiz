@@ -86,7 +86,7 @@ export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnl
 }
 
 // ── Crowd Top / Family Feud: ein freies Wort ──────────────────────────────────
-// 2026-07-04 (Cozy Arena „Top-Antworten"): Freitext-EIN-Wort. Bewusst OHNE
+// 2026-07-04 (CozyArena „Top-Antworten"): Freitext-EIN-Wort. Bewusst OHNE
 // Auto-Focus (im Groß-Modus tippen mehrere Handys pro Fraktion — Auto-Focus
 // würde die Tastatur ungefragt öffnen + die Frage verdecken, Mobile-Audit P1-3)
 // und mit Autokorrektur AUS + maxLength (P1-1: sonst macht iOS aus „Kohl" →

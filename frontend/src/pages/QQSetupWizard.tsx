@@ -228,14 +228,14 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, width: '100%', maxWidth: 420 }}>
                 <div style={ov.fieldCap}>🧑‍🎨 Avatar-Set</div>
-                {/* 2026-07-04 (Wolf): In Cozy Arena tragen alle Fraktionen ihr
+                {/* 2026-07-04 (Wolf): In CozyArena tragen alle Fraktionen ihr
                     festes Wappen → Set-Wahl entfällt. Sonst Arena-Set ausblenden. */}
                 {mega ? (
                   <>
                     <div style={{ padding: '8px 14px', borderRadius: 10, background: 'rgba(167,139,250,0.12)', boxShadow: '0 0 0 1.5px #A78BFA55', color: '#fff', fontWeight: 900, fontSize: 14 }}>
-                      🛡️ Cozy-Arena-Wappen
+                      🛡️ CozyArena-Wappen
                     </div>
-                    <div style={ov.hint}>In Cozy Arena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.</div>
+                    <div style={ov.hint}>In CozyArena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.</div>
                   </>
                 ) : (
                   <>
@@ -259,7 +259,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 560 }}>
               {mega && (
                 <div style={ov.megaNote}>
-                  In der Cozy Arena laufen Comeback, Final-Tipp & CozyGames nicht (grid-basiert) — automatisch aus.
+                  In der CozyArena laufen Comeback, Final-Tipp & CozyGames nicht (grid-basiert) — automatisch aus.
                 </div>
               )}
               {/* 2026-07-07 (Wolf): Comeback global deaktiviert (QQ_COMEBACK_ENABLED). */}
@@ -320,7 +320,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               <div style={{ display: 'flex', flexDirection: 'column', gap: 12, width: '100%', maxWidth: 640 }}>
                 {mega && (
                   <div style={ov.megaNote}>
-                    Cozy Arena: Drafts mit <strong>Hot Potato</strong> (rundenbasiert) sind {showUnsuitable ? 'eingeblendet' : 'automatisch ausgeblendet'} — für den saubersten Ablauf einen Draft ohne wählen.
+                    CozyArena: Drafts mit <strong>Hot Potato</strong> (rundenbasiert) sind {showUnsuitable ? 'eingeblendet' : 'automatisch ausgeblendet'} — für den saubersten Ablauf einen Draft ohne wählen.
                   </div>
                 )}
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 10, maxHeight: 240, overflowY: 'auto' }}>
@@ -462,12 +462,12 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                   Merkt sich pro Ort, welche Fragen liefen — die Library filtert Wiederholungen dann weg.
                 </div>
               </div>
-              <SummaryRow label="Modus" value={mega ? '👥 Cozy Arena (8×3, Bar-Race)' : 'Cozy Quiz (Grid)'} />
+              <SummaryRow label="Modus" value={mega ? '👥 CozyArena (8×3, Bar-Race)' : 'CozyQuiz (Grid)'} />
               <SummaryRow label="Runden · Timer" value={`${phases} Runden · ${s?.timerDurationSec ?? 30}s`} />
               <SummaryRow label="Sprache" value={s?.language === 'de' ? 'Deutsch' : s?.language === 'en' ? 'English' : 'Beide'} />
               <SummaryRow label="Avatar-Set" value={(AVATAR_SETS.find(a => a.id === activeAvatarId)?.label) ?? 'Standard'} />
               <SummaryRow label="Fragensatz" value={selDraft?.title ?? '— noch keiner gewählt —'} />
-              <SummaryRow label="Add-ons" value={mega ? 'keine (Cozy Arena)' : [
+              <SummaryRow label="Add-ons" value={mega ? 'keine (CozyArena)' : [
                 (QQ_COMEBACK_ENABLED && s?.comebackEnabled !== false) ? 'Comeback' : null,
                 s?.finalWagerEnabled ? 'Final-Tipp' : null,
                 s?.cozyGamesEnabled ? 'CozyGames' : null,
@@ -477,7 +477,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               {!selDraft && <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>Noch kein Fragensatz gewählt — zurück zu Schritt 5.</div>}
               {mega && selDraft && (selDraft.megaWarnCount ?? 0) > 0 && (
                 <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>
-                  🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft in der Cozy Arena als normale Frage (nicht ideal).
+                  🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft in der CozyArena als normale Frage (nicht ideal).
                 </div>
               )}
               <div style={{ ...ov.hint, marginTop: 6 }}>

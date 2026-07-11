@@ -289,7 +289,7 @@ export default function QQTeamPage() {
   // gekickt wurden (sonst rejoint man sich endlos selbst zurueck).
   useEffect(() => {
     if (joined || !connected || kicked) return;
-    // Cozy Arena: Auto-Rejoin darf NICHT den stale Funny-Namen aus localStorage
+    // CozyArena: Auto-Rejoin darf NICHT den stale Funny-Namen aus localStorage
     // nehmen (Push „Willkommen Hirnsturm"). Name + Emoji sind an die Fraktion
     // gebunden → erzwingen. Erst joinen wenn State da ist, damit largeGroupMode
     // sicher bekannt ist (sonst Race: State noch null → Funny-Name).
@@ -386,7 +386,7 @@ export default function QQTeamPage() {
   const [showIdentityBanner, setShowIdentityBanner] = useState(false);
 
   async function joinRoom() {
-    // Cozy Arena: der Sub-Team-Name IST der Fraktions-Name (avatarId → Fraktion),
+    // CozyArena: der Sub-Team-Name IST der Fraktions-Name (avatarId → Fraktion),
     // unabhängig vom Namensfeld/localStorage/Effect-Timing. Sonst blieb ein
     // Alt-Wert („Koala 3") stehen (Wolf 2026-07-03).
     const largeGroup = !!(state as any)?.largeGroupMode;
@@ -481,7 +481,7 @@ export default function QQTeamPage() {
 
   const setId = state?.avatarSetId;
   // 2026-07-01: Groß-Modus (largeGroupMode) → Avatar-Slots wiederverwendbar.
-  // 2026-07-10 (Cozy-Arena-Balance): Statt „alle frei" sperren wir die Fraktionen,
+  // 2026-07-10 (CozyArena-Balance): Statt „alle frei" sperren wir die Fraktionen,
   // die ÜBER dem aktuellen Minimum liegen → nur die leerste Ebene ist wählbar, das
   // Bar-Race bleibt fair (garantiert max-min ≤ 1). Da QQ_AVATARS == die 8 Fraktionen,
   // greift die bestehende „taken"-Maschinerie (Auto-Switch + Karussell-Ausgrauen)
@@ -497,7 +497,7 @@ export default function QQTeamPage() {
     const min = Math.min(...ids.map(id => counts.get(id) ?? 0));
     return ids.filter(id => (counts.get(id) ?? 0) > min);
   }, [state?.teams, (state as any)?.largeGroupMode]);
-  // Cozy Arena: mehrere Handys teilen sich eine Fraktion (= gleiches Wappen/Emoji)
+  // CozyArena: mehrere Handys teilen sich eine Fraktion (= gleiches Wappen/Emoji)
   // → keine „belegt"-Sperre auf Emojis, sonst könnte nur 1 Handy pro Fraktion rein.
   const takenEmojis = (state as any)?.largeGroupMode ? [] : (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
   // Doppelten Team-Namen blocken (case-insensitive, getrimmt). Wenn dasselbe
@@ -569,7 +569,7 @@ export default function QQTeamPage() {
   // aus dem Set-Pool (sobald Set + Pool da sind).
   useEffect(() => {
     if (joined) return;
-    // Cozy Arena: chosenEmoji ist an die Fraktion gebunden (Wappen-Slug, nicht im
+    // CozyArena: chosenEmoji ist an die Fraktion gebunden (Wappen-Slug, nicht im
     // cozy3d-Pool) → dieser Set-Pool-Auto-Switch würde es fälschlich zurücksetzen.
     if ((state as any)?.largeGroupMode) return;
     if (!setId) return;
@@ -596,7 +596,7 @@ export default function QQTeamPage() {
     // 2026-07-03 (Wolf 'hard reload zeigt ~1s cozy-animals'): solange der erste
     // qq:stateUpdate noch nicht da ist, kennen wir das Format (largeGroupMode)
     // NICHT → NICHT den Default-Avatar-Setup (cozy-animals) raten, sonst blitzt
-    // ~1s das falsche Set auf, bis Cozy Arena greift. Bis State da ist: neutraler
+    // ~1s das falsche Set auf, bis CozyArena greift. Bis State da ist: neutraler
     // Branded-Screen (zeigt auch den Verbindungs-Status beim Aufwachen).
     if (!state) {
       return (
@@ -746,7 +746,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   useEffect(() => {
     if (largeGroup && avatarId) {
       setTeamName(qqMegaFactionName(avatarId, lang));
-      // Cozy Arena: Wappen ist an die Fraktion (Farbe) gekoppelt — chosenEmoji
+      // CozyArena: Wappen ist an die Fraktion (Farbe) gekoppelt — chosenEmoji
       // fest auf den Fraktions-Wappen-Slug binden, damit Farbe⟷Wappen kohärent
       // bleiben und keine cozy3d-Tier-Wahl reinrutscht.
       setChosenEmoji(qqMegaFactionSlug(avatarId));
@@ -864,7 +864,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             }}>live quiz</span>
           </div>
           {/* 2026-07-08 Konsistenz #2: Wordmark = Beamer-Look (League Spartan via
-              --font-brand + Brand-Pink), und 'COZY ARENA' im largeGroupMode wie
+              --font-brand + Brand-Pink), und 'COZYARENA' im largeGroupMode wie
               der Beamer (CozyQuizLobbyView). Vorher slate-weiss + Nunito. */}
           <div style={{
             fontSize: 40, fontWeight: 900,
@@ -872,7 +872,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             color: '#EC4899', letterSpacing: '0.03em',
             textShadow: '0 2px 12px rgba(236,72,153,0.3)',
           }}>
-            {largeGroup ? 'COZY ARENA' : t.header[lang]}
+            {largeGroup ? 'COZYARENA' : t.header[lang]}
           </div>
           {/* Always show language flag in setup/lobby.
               2026-05-05 (Phase-8 Bucket-1 B-1): minWidth/minHeight 44 fuer
@@ -915,7 +915,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             {(() => {
               const isAvatarStep = step === 'COLOR' || step === 'AVATAR';
               const isNameStep = step === 'NAME';
-              // Cozy Arena: Name ist an die Fraktion gebunden (fix) → kein
+              // CozyArena: Name ist an die Fraktion gebunden (fix) → kein
               // Name-Schritt. Stepper zeigt nur „Fraktion → Los".
               const items = largeGroup
                 ? [
@@ -1887,7 +1887,7 @@ function TeamGameView({
             )}
           </>
         )}
-        {/* 2026-07-03 (Wolf-Audit): Comeback + 4×4-Finale sind in Cozy Arena
+        {/* 2026-07-03 (Wolf-Audit): Comeback + 4×4-Finale sind in CozyArena
             backend-seitig deaktiviert → defensiv gaten, damit kein Grid/Steal/
             Only-Connect-UI auf ein Arena-Handy gemalt werden kann. */}
         {!(s as any).largeGroupMode && s.phase === 'COMEBACK_CHOICE' && (

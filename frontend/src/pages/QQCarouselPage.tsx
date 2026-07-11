@@ -135,7 +135,7 @@ const contextSlide: SlideFn = () => (
       ))}
     </div>
     <div style={{ fontFamily: DISPLAY, fontWeight: 800, fontSize: '8cqw', lineHeight: 1.04, animation: 'popIn 0.6s var(--eb) 0.3s both' }}>
-      Das ist die<br /><span style={{ color: PINK_MID }}>Cozy Arena</span>.
+      Das ist die<br /><span style={{ color: PINK_MID }}>CozyArena</span>.
     </div>
     <div style={{ fontWeight: 800, fontSize: '4.8cqw', marginTop: '3.2cqh', opacity: 0.92, maxWidth: '82cqw', lineHeight: 1.34, animation: 'fadeUp 0.6s ease 0.6s both' }}>
       Der Groß-Gruppen-Modus vom CozyQuiz. Die acht Team-Typen gibt's bei großen Events.

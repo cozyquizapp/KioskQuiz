@@ -26,7 +26,7 @@ import { isThemed, themedWindow } from '../../qqTheme';
  */
 export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
-  // Cozy Arena: Sub-Teams zu Fraktionen zusammenfassen (1 Tier + ×Anzahl).
+  // CozyArena: Sub-Teams zu Fraktionen zusammenfassen (1 Tier + ×Anzahl).
   const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const btt = q.bunteTuete as any;
   const correctListDE: string[] = (btt.answers ?? []).map((x: string) => x.trim()).filter(Boolean);

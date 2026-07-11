@@ -465,7 +465,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // Sicherheitsabfrage nur wenn echte (nicht-Bot) Teams im Raum sind.
     const realTeams = (state?.teams ?? []).filter((t: any) => !t._dummy).length;
     if (realTeams > 0 && !window.confirm(`${realTeams} echte Team(s) im Raum — trotzdem einen Bot-Testlauf starten? Das startet das Spiel sofort.`)) return;
-    // Bot-Avatare aus aktivem Set ableiten (Fraktions-Wappen in Cozy Arena).
+    // Bot-Avatare aus aktivem Set ableiten (Fraktions-Wappen in CozyArena).
     const setId = state?.avatarSetId ?? 'all';
     const set = AVATAR_SETS.find(a => a.id === setId);
     const setAvatars: string[] = setId === 'all' ? MEGA_EMOJI_POOL : setId === 'esc' ? ESC_FLAG_POOL : (set?.avatars ?? []);
@@ -580,7 +580,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       const parts = String(a.text ?? '').split(',');
       return Number.isFinite(Number(parts[0])) && Number.isFinite(Number(parts[1]));
     });
-    // 2026-07-03 (Wolf 'nur bester Pin pro Team'): In Cozy Arena kollabiert der
+    // 2026-07-03 (Wolf 'nur bester Pin pro Team'): In CozyArena kollabiert der
     // CozyGuessr-Reveal auf 1 Pin je Fraktion → die Cascade-Schritte müssen
     // ebenfalls auf die Fraktions-Anzahl zählen, sonst tickt der Autoplay durch
     // ~24 Phantom-Pins statt der ~8 sichtbaren.
@@ -1056,7 +1056,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     }
     if (!action) return;
     // 2026-07-03 (Wolf 'autoplay in cozyarena zu schnell auf allen pages'):
-    // In Cozy Arena (largeGroupMode) sind die Reveals reicher (Fraktions-Wertung,
+    // In CozyArena (largeGroupMode) sind die Reveals reicher (Fraktions-Wertung,
     // Bar-Race) → Autoplay generell strecken, damit man Lesen/Anschauen kann.
     // TEAMS_REVEAL + RULES sind schon inhalts-proportional getimt → ausgenommen.
     // PLACEMENT bekommt zusätzlich einen harten Boden. 2026-07-12: PLACEMENT ist
@@ -1649,7 +1649,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: QQ_COLORS.green500, sub: `${answeredCount}/${connectedTeams} Teams` };
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: QQ_COLORS.brandPink, sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
       case 'PLACEMENT':
-        // 2026-07-03 (Wolf-Audit): In Cozy Arena gibt es kein Feld-Setzen — der
+        // 2026-07-03 (Wolf-Audit): In CozyArena gibt es kein Feld-Setzen — der
         // Beamer zeigt die Wertung dieser Frage (Akt A, +Punkte) und danach die
         // Gesamtwertung (Akt B, Bar-Race). 'PLATZIERUNG FERTIG' war dauerhaft
         // falsch, weil pendingFor in Arena immer null ist.
@@ -2089,7 +2089,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 <div>
                   <div style={fieldLbl}>Format</div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    {[{ a: false, label: '🍺 Cozy Quiz' }, { a: true, label: '🏟️ Cozy Arena' }].map(f => {
+                    {[{ a: false, label: '🍺 CozyQuiz' }, { a: true, label: '🏟️ CozyArena' }].map(f => {
                       const on = arena === f.a && !!(s as any).formatSelected;
                       const ac = f.a ? '#A78BFA' : '#EC4899';
                       return (
@@ -2253,8 +2253,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             {/* Zwei Format-Hero-Karten */}
             <div style={{ position: 'relative', zIndex: 1, display: 'flex', gap: 16, margin: 'clamp(8px, 1.6vh, 16px) auto clamp(4px, 0.8vh, 10px)', flexWrap: 'wrap' }}>
               {[
-                { key: 'quiz', arena: false, emoji: '🍺', title: 'Cozy Quiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], accent: '#EC4899' },
-                { key: 'arena', arena: true, emoji: '🏟️', title: 'Cozy Arena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], accent: '#A78BFA' },
+                { key: 'quiz', arena: false, emoji: '🍺', title: 'CozyQuiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], accent: '#EC4899' },
+                { key: 'arena', arena: true, emoji: '🏟️', title: 'CozyArena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], accent: '#A78BFA' },
               ].map(f => {
                 const active = (!!(s as any).largeGroupMode === f.arena) && !!(s as any).formatSelected;
                 return (
@@ -3116,7 +3116,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   const isEndOfPhase = nextIdx >= s.gamePhaseIndex * QPP;
                   const isLastPhase = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
                   const isBeforeFinal = isEndOfPhase && (s.gamePhaseIndex + 1) === s.totalPhases;
-                  // 2026-07-12 (Mod-Pacing Cozy Arena): PLACEMENT ist im largeGroupMode
+                  // 2026-07-12 (Mod-Pacing CozyArena): PLACEMENT ist im largeGroupMode
                   // ein 2-Beat-Reveal. Solange die Wertung dieser Frage noch nicht
                   // freigegeben ist, führt der erste Druck NICHT zur nächsten Frage,
                   // sondern zeigt den Gesamtstand. Label zeigt das ehrlich an.
@@ -3348,7 +3348,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                         }}>
                           📋 Team-Highlights (Spickzettel)
                         </div>
-                        {/* 2026-07-03 (Wolf-Audit): In Cozy Arena Fraktionen (summierte
+                        {/* 2026-07-03 (Wolf-Audit): In CozyArena Fraktionen (summierte
                             Punkte) statt Sub-Teams, keine Grid-Highlights (Joker/Klau/Stapel). */}
                         {((s as any).largeGroupMode
                           ? qqSortedGroups(s)
@@ -3670,7 +3670,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {/* 2026-07-04 (Wolf 'wie unterscheide ich die Subteams? Namen falsch'):
-                    In Cozy Arena wird die Live-Liste nach FRAKTION gruppiert
+                    In CozyArena wird die Live-Liste nach FRAKTION gruppiert
                     (Wappen + Name + X/N abgegeben), darunter jedes Handy als
                     „Handy N" (nach Beitritts-Reihenfolge) — so ist ein Problem-
                     Geraet eindeutig zuordenbar. Zeilen-Renderer wird geteilt. */}
@@ -3732,7 +3732,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                             )}
                           </div>
                           {/* 2026-07-03 (Wolf-Audit): Grid-Stats (Felder/Klau/Joker)
-                              existieren in Cozy Arena nicht → nur im Normal-Modus zeigen. */}
+                              existieren in CozyArena nicht → nur im Normal-Modus zeigen. */}
                           {!(s as any).largeGroupMode && (
                             <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 1 }}>
                               {t.totalCells} Felder
@@ -3846,7 +3846,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   );
                   }; // renderTeamRow
 
-                  // Cozy Arena: nach Fraktion (avatarId) gruppieren.
+                  // CozyArena: nach Fraktion (avatarId) gruppieren.
                   if ((s as any).largeGroupMode) {
                     const byAv = new Map<string, any[]>();
                     for (const t of teamList) {
@@ -4032,14 +4032,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </div>
 
             {/* Grid — collapsible */}
-            {/* 2026-07-03 (Wolf-Audit): Backend baut room.grid immer → in Cozy Arena
+            {/* 2026-07-03 (Wolf-Audit): Backend baut room.grid immer → in CozyArena
                 zeigte die Mini-Grid ein bedeutungsloses Gitter. In Arena ausblenden. */}
             {!(s as any).largeGroupMode && s.grid && <CollapsibleGrid state={s} />}
 
             {/* Rangliste — 2026-05-08: collapsible, default-collapsed während
                 QUESTION_ACTIVE/REVEAL (Mod sieht nur Header), default-offen
                 in PAUSED/PLACEMENT/COMEBACK/GAME_OVER (wo Rang relevant ist). */}
-            {/* 2026-07-03 (Wolf-Audit): In Cozy Arena die 8 Fraktionen (summierte
+            {/* 2026-07-03 (Wolf-Audit): In CozyArena die 8 Fraktionen (summierte
                 Punkte) ranken statt bis zu 25 Sub-Teams nach Grid-Metrik. */}
             <CollapsibleRanking teams={(s as any).largeGroupMode ? qqSortedGroups(s) : teamList} phase={s.phase} />
           </div>
@@ -4101,7 +4101,7 @@ const HOST_NOTES_DE: Record<string, { title: string; text: string }> = {
 };
 
 // 2026-07-03 (Wolf-Audit 'moderator im cozyarena mit falschen seiten benannt'):
-// In Cozy Arena (largeGroupMode) gibt es kein Gitter/Feld-Setzen. Wertung =
+// In CozyArena (largeGroupMode) gibt es kein Gitter/Feld-Setzen. Wertung =
 // Speed-Punkte pro Fraktion, dargestellt als Bar-Race. Diese Overrides ersetzen
 // die grid-lastigen Standard-Notes in RULES/PLACEMENT/QUESTION_REVEAL.
 const HOST_NOTES_ARENA_DE: Record<string, { title: string; text: string }> = {
@@ -4519,7 +4519,7 @@ function ModWinnerActionsToggle({ forceOpen, nonWinners, coWinners, roomCode, em
 }
 
 function downloadEndstandCSV(s: QQStateUpdate, roomCode: string): void {
-  // 2026-07-03 (Wolf-Audit): Cozy Arena hat kein Grid → Fraktions-CSV (Punkte)
+  // 2026-07-03 (Wolf-Audit): CozyArena hat kein Grid → Fraktions-CSV (Punkte)
   // statt Grid-Spalten (Insel/Felder/Joker/Klau/Stapel).
   const largeMode = !!(s as any).largeGroupMode;
   const tieWinnerId = s.tieBreakerWinnerId ?? null;
@@ -6429,9 +6429,9 @@ function SetupView({
               }}
               style={segPill(!!(s as any).largeGroupMode, QQ_COLORS.violet400)}
               title={(s as any).largeGroupMode
-                ? '👥 Cozy Arena AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten), bis 72 Personen. Bar-Race statt Grid, Top-5-schnellste-Reveal, 8 Eltern-Balken. Grid-Add-ons deaktiviert.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
-                : '👥 Cozy Arena AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: 8×3-Struktur (bis 72 Personen), Bar-Race-Wertung.'}
-            >👥 Cozy Arena</button>
+                ? '👥 CozyArena AN — 8 Eltern-Teams à bis zu 3 Sub-Teams (eigene Handys, unabhängiges Antworten), bis 72 Personen. Bar-Race statt Grid, Top-5-schnellste-Reveal, 8 Eltern-Balken. Grid-Add-ons deaktiviert.\nSub-Teams wählen denselben Avatar wie ihr Eltern-Team.\nVor Team-Beitritt setzen!\nKlick zum Deaktivieren.'
+                : '👥 CozyArena AUS (Standard: bis 8 Teams, Grid).\nKlick zum Aktivieren: 8×3-Struktur (bis 72 Personen), Bar-Race-Wertung.'}
+            >👥 CozyArena</button>
           </div>
         </div>
 
@@ -6458,12 +6458,12 @@ function SetupView({
         <div style={{ ...settingRow, alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <span style={{ ...settingLabel, marginTop: 6 }}>🧑‍🎨 Avatar</span>
           {(() => {
-            // 2026-07-04 (Wolf): In Cozy Arena tragen alle Fraktionen ihr festes
+            // 2026-07-04 (Wolf): In CozyArena tragen alle Fraktionen ihr festes
             // Wappen — das Avatar-Set entfällt → statt Dropdown ein Info-Chip.
             if ((s as any).largeGroupMode) {
               return (
                 <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 8, padding: '7px 12px', borderRadius: 8, background: 'rgba(167,139,250,0.12)', boxShadow: '0 0 0 1.5px #A78BFA55', color: '#fff', fontWeight: 900, fontSize: 13 }}>
-                  🛡️ Cozy-Arena-Wappen <span style={{ fontSize: 11, fontWeight: 700, color: '#b8a5e8' }}>· fest je Fraktion</span>
+                  🛡️ CozyArena-Wappen <span style={{ fontSize: 11, fontWeight: 700, color: '#b8a5e8' }}>· fest je Fraktion</span>
                 </div>
               );
             }
@@ -6509,7 +6509,7 @@ function SetupView({
           <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
             {(() => {
               const id = s.avatarSetId ?? 'all';
-              if ((s as any).largeGroupMode) return 'In Cozy Arena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.';
+              if ((s as any).largeGroupMode) return 'In CozyArena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.';
               if (id === 'all')         return 'Standard · Spieler wählen aus den 8 Default-Emojis (Cozy-Tiere)';
               if (id === 'cozyCast')    return 'CozyCast · klassische PNG-Avatare (alter Look)';
               if (id === 'cozyAnimals') return 'Cozy Animals · Tier-Emojis als Theme';

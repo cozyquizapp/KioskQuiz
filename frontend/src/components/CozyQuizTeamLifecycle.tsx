@@ -263,7 +263,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
 
 // ── PreparingScreen ─────────────────────────────────────────────────────────
 // 2026-07-03 (Wolf): bevor der Moderator das Format wählt (formatSelected===false)
-// weiß /team noch nicht, ob es CozyQuiz (freie Avatar-Wahl) oder Cozy Arena
+// weiß /team noch nicht, ob es CozyQuiz (freie Avatar-Wahl) oder CozyArena
 // (feste Fraktionen/Wappen) wird — deshalb KEIN Avatar-Setup zeigen, sondern
 // „Quiz wird vorbereitet". Sobald der Mod wählt, schaltet /team automatisch
 // auf den passenden Join-Flow um (Re-Render über State-Update).

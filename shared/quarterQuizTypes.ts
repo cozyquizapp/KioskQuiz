@@ -233,7 +233,7 @@ export interface QQBunteTueteBluff {
 }
 
 /**
- * Top-Antworten / Family Feud (Cozy Arena, 2026-07-04): alle Handys tippen frei
+ * Top-Antworten / Family Feud (CozyArena, 2026-07-04): alle Handys tippen frei
  * EIN Wort. Antworten werden per Normalizer + Synonym-Liste gebündelt, eine
  * Top-5-Tafel deckt nach Stimmen-Anzahl auf. Fraktion punktet je Board-Platz
  * ihrer Antwort (rang-basiert [5,4,3,2,1]).
@@ -257,7 +257,7 @@ export interface QQBunteTueteCrowdTop {
 }
 
 /**
- * Schwarm-Schätzen (Wisdom of Crowds, Cozy Arena 2026-07-04): jedes Handy tippt
+ * Schwarm-Schätzen (Wisdom of Crowds, CozyArena 2026-07-04): jedes Handy tippt
  * EINE Zahl. Pro Fraktion zählt der MEDIAN (troll-fest). Reveal = Zahlenstrahl
  * mit Wahrheit + Fraktions-Medianen + Gesamt-Schwarm-Tipp („die Masse ist
  * klüger"). Wertung einheitlich: Median-Nähe = Leistung, Basis +1 wenn in der
@@ -845,7 +845,7 @@ export type QQSoundSlot =
   // 2026-05-17 (Wolf-Feature CozyGames): Glücksrad-Spin + Stop-Snap.
   // 2026-05-19 (Wolf): cozyGameIntro = Anticipation-Chime beim 🪅-Mount.
   | 'cozyGameIntro' | 'cozyGameWheelTick' | 'cozyGameWheelStop' | 'cozyGameStart'
-  // 2026-07-04 (Wolf Sound-Audit): Cozy-Arena-Cues. Bar-Race/Gesamtwertung
+  // 2026-07-04 (Wolf Sound-Audit): CozyArena-Cues. Bar-Race/Gesamtwertung
   // erscheint + Fraktions-Fuehrungswechsel. Leer = Fallback auf bestehenden
   // Cue (gridReveal / scoreUp), Moderator kann eigene MP3 hochladen.
   | 'arenaStandings' | 'arenaLeadChange'
@@ -903,7 +903,7 @@ export interface QQSoundConfig {
   cozyGameWheelTick?: string;  // tickender Pointer waehrend Spin
   cozyGameWheelStop?: string;  // Final-Snap beim Rad-Stopp
   cozyGameStart?: string;       // 60s-Timer-Start ("Los geht's"-Cue)
-  // Cozy-Arena-Cues (2026-07-04). Leer = Fallback auf gridReveal / scoreUp.
+  // CozyArena-Cues (2026-07-04). Leer = Fallback auf gridReveal / scoreUp.
   arenaStandings?: string;      // Bar-Race/Gesamtwertung erscheint
   arenaLeadChange?: string;     // Fraktion ueberholt an die Spitze
   // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)

@@ -557,17 +557,17 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             );
           }
 
-          // 2026-07-04 (Wolf 'nur in der Cozy Arena, NICHT im Cozy Quiz'):
-          // Wortmarke = 'COZY ARENA' NUR wenn largeGroupMode an ist; normaler
+          // 2026-07-04 (Wolf 'nur in der CozyArena, NICHT im Cozy Quiz'):
+          // Wortmarke = 'COZYARENA' NUR wenn largeGroupMode an ist; normaler
           // Cozy-Quiz-Modus bleibt 'COZYQUIZ'. Per-Draft-welcomeText-Override
           // (customWelcome) gewinnt weiterhin ueber beides.
           const wordmark = customWelcome.length > 0
             ? customWelcome
-            : ((s as any).largeGroupMode ? 'COZY ARENA' : 'COZYQUIZ');
+            : ((s as any).largeGroupMode ? 'COZYARENA' : 'COZYQUIZ');
           // Stagger reduziert sich proportional bei langen Texten damit Wave
           // nicht ueber 4s laeuft.
           const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));
-          // 2026-07-08 (Wolf 3D-Icons): Im Cozy-Arena-Modus das neue 3D-Arena-
+          // 2026-07-08 (Wolf 3D-Icons): Im CozyArena-Modus das neue 3D-Arena-
           // Kolosseum als Hero ueber die Wortmarke (nur ohne Custom-Welcome).
           const showArenaHero = (s as any).largeGroupMode && customWelcome.length === 0;
           return (
@@ -576,7 +576,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               <QQIcon
                 slug="fx-arena"
                 size="clamp(96px, 15cqw, 220px)"
-                alt="Cozy Arena"
+                alt="CozyArena"
                 style={{
                   display: 'block', margin: '0 auto clamp(2px, 0.8cqh, 12px)',
                   filter: 'drop-shadow(0 8px 22px rgba(0,0,0,0.5))',

@@ -734,7 +734,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       // Aktions-Block) → 0.42–0.50, naeher an die Mitte. Aktions-Block sitzt
       // absolut ganz unten, bleibt frei.
       vAnchor = Math.min(0.5, Math.max(0.42, wolfClearVAnchor));
-      // 2026-07-03 (Wolf 'Deadspace Bild 4'): In Cozy Arena fehlt der Aktions-
+      // 2026-07-03 (Wolf 'Deadspace Bild 4'): In CozyArena fehlt der Aktions-
       // Block unter dem Tree → Cluster größer ziehen UND vertikal mittiger legen
       // (0.4 → ~0.5), damit der leere Bereich unten verschwindet. Wolf-Pin bleibt
       // dank des höheren vAnchor (Linie tiefer) trotzdem frei vom oberen Rand.
@@ -1199,7 +1199,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           </div>
 
-          {/* BOTTOM: NEU-Badge + Aktion unten angepinnt. In Cozy Arena (keine
+          {/* BOTTOM: NEU-Badge + Aktion unten angepinnt. In CozyArena (keine
               Action-Cards) hoeher angesetzt, damit NEU+Text naeher an den Cluster
               ruecken und der Leerraum dazwischen verschwindet (Wolf 2026-07-04). */}
           <div style={{

@@ -23,7 +23,7 @@ import { isThemed, themedWindow } from '../../qqTheme';
 // ═══════════════════════════════════════════════════════════════════════════════
 export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
-  // Cozy Arena: mehrere Sub-Teams teilen einen avatarId → Cluster zu Fraktionen
+  // CozyArena: mehrere Sub-Teams teilen einen avatarId → Cluster zu Fraktionen
   // zusammenfassen (1 Tier + ×Anzahl) statt bis zu 24 Einzel-Avatare.
   const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const btt = q.bunteTuete as any;

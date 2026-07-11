@@ -48,7 +48,7 @@ const devLinks: LinkItem[] = [
   { path: '/moderator-test',   label: 'Mod-Test-Modus',     emoji: '🧪', note: 'Mod-Page mit Setup-Skip, 5 Bots, Skip-Buttons. Kein DB-Save — schnelles Reveal-Testen.' },
   { path: '/finalreveal-test', label: 'Final-Flow Test',    emoji: '🎬', note: 'Kompletter End-Flow: Bet → Awards → Climb → Finale. Phase-Toggle + Step-Slider.' },
   { path: '/race-finale',      label: 'Race-Finale',        emoji: '🏁', note: 'Turm-Finale-Vorschau (ohne PIN, auch bei Redeploys erreichbar)' },
-  { path: '/barrace-test',     label: 'Bar-Race Test',      emoji: '📊', note: 'Cozy-Arena Bar-Race (Mega-Event / Large-Group)' },
+  { path: '/barrace-test',     label: 'Bar-Race Test',      emoji: '📊', note: 'CozyArena Bar-Race (Mega-Event / Large-Group)' },
   { path: '/thanks-test',      label: 'Thanks-Page Test',   emoji: '🎉', note: 'Thanks-View mit Mock-Daten (DE/EN, 3-8 Teams)' },
   { path: '/bet-test',         label: 'Bet-Page Test',      emoji: '🎰', note: 'Final-Wager-Beamer-View — 3/5/8 Teams' },
   { path: '/hl-test',          label: 'Mehr-oder-Weniger',  emoji: '⚡', note: 'Comeback Higher/Lower — Frage/Reveal-Phasen' },

@@ -6,7 +6,7 @@
  * dran, Fraktions-Punkte streuen. Unten die Fraktionen nach Median-Nähe.
  *
  * Aggregation via shared qqSwarm — dieselbe Funktion wertet im Backend.
- * 2026-07-04 (Cozy Arena Voting/Schwarm, Stufe 4).
+ * 2026-07-04 (CozyArena Voting/Schwarm, Stufe 4).
  */
 import { useState, useEffect } from 'react';
 import type { QQStateUpdate, QQBunteTueteCrowdEstimate } from '../../../../shared/quarterQuizTypes';

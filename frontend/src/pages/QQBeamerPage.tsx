@@ -928,7 +928,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // wenn das Grid sichtbar wird — unabhaengig davon ob jemand richtig lag.
       // Bei Wrong-Answer zusaetzlich playWrongFor (kategorie-spez. Wrong).
       const cat = s.currentQuestion?.category;
-      // Cozy Arena: PLACEMENT zeigt kein Grid, sondern die Bar-Race-Gesamtwertung
+      // CozyArena: PLACEMENT zeigt kein Grid, sondern die Bar-Race-Gesamtwertung
       // → eigener (ersetzbarer) Cue statt des Grid-Slams. Fallback = gridReveal.
       if ((s as any).largeGroupMode) playArenaStandings();
       else playGridReveal();
@@ -3577,7 +3577,7 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
 //         richtige Option → permanent grün + Speedrun-Highlight (⚡ Goldrand).
 // ─────────────────────────────────────────────────────────────────────────────
 /**
- * MegaMuchoVoterPills — Cozy-Arena-Ersatz für die Einzel-Voter-Avatare unter
+ * MegaMuchoVoterPills — CozyArena-Ersatz für die Einzel-Voter-Avatare unter
  * einer MuCho-Option. Fasst die Voter zu ihren Faktionen zusammen: EIN Faktions-
  * Tier je Farbe + ×Anzahl-Badge (statt bis zu 24 gemischten Sub-Team-Avataren).
  * Die Gewinner-Faktion (schnellste korrekte Antwort) behält die Krone.
@@ -3666,7 +3666,7 @@ export function MuchoOptionsReveal({
   currentQuestionStartedAt?: number | null;
 }) {
   const N = options.length;
-  // Cozy Arena erkennen: mehrere Sub-Teams teilen sich einen avatarId-Slot
+  // CozyArena erkennen: mehrere Sub-Teams teilen sich einen avatarId-Slot
   // (im Normal-Modus ist jeder Avatar exklusiv). Dann Voter zu 8 Faktionen
   // zusammenfassen (1 Tier je Farbe + ×Anzahl) statt bis zu 24 Einzel-Avatare.
   const isMega = useMemo(() => new Set(teams.map(t => t.avatarId)).size < teams.length, [teams]);
@@ -3980,10 +3980,10 @@ export function MuchoOptionsReveal({
 // ─────────────────────────────────────────────────────────────────────────────
 function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; arena?: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
   const lang = useLangFlip(language);
-  // 2026-07-04 (Wolf 'im Arena-Modus konstant Cozy Arena statt CozyQuiz'):
+  // 2026-07-04 (Wolf 'im Arena-Modus konstant CozyArena statt CozyQuiz'):
   // CozyQuiz bleibt Dach-Marke, aber die Willkommens-Wortmarke adaptiert sich
   // an den Modus. „in der/zur Arena" liest sich sauberer als „zum".
-  const title = arena ? 'COZY ARENA' : 'COZYQUIZ';
+  const title = arena ? 'COZYARENA' : 'COZYQUIZ';
   const welcome = arena
     ? (lang === 'en' ? 'WELCOME TO THE' : 'HERZLICH WILLKOMMEN IN DER')
     : (lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM');
@@ -4956,7 +4956,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
           textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
           lineHeight: 0.96, textTransform: 'uppercase', display: 'inline-block',
           animation: 'qqNeutralFloat 4.2s ease-in-out 0.6s infinite',
-        }}>{(s as any).largeGroupMode ? 'COZY ARENA' : 'COZYQUIZ'}</span>
+        }}>{(s as any).largeGroupMode ? 'COZYARENA' : 'COZYQUIZ'}</span>
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 12,
           fontSize: 'clamp(22px, 2.6cqw, 40px)', fontWeight: 900,

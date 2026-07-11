@@ -235,7 +235,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Step 0: alle Chips sichtbar AUSSER höchste(r) Bet(s) pro Option; kein Grün, keine Winner-Card.
   // Step 1: höchste Bets kaskadieren pro Option (leere Optionen überspringen).
   // Step 2: Doppelblink auf korrekte Option → Grün + Winner-Card (analog MUCHO).
-  // ── Cozy Arena (Mega): 10v10-Reveal auf Fraktionen bündeln ────────────────
+  // ── CozyArena (Mega): 10v10-Reveal auf Fraktionen bündeln ────────────────
   // Statt bis zu 24 Sub-Team-Bet-Pills zeigen wir 8 Fraktionen mit element-
   // weise summierten Einsätzen. Wir bauen synthetische „Fraktions-Teams" +
   // -Answers und schleusen sie NUR in die ZvZ-Pfade — alle bestehende Mechanik
@@ -1199,7 +1199,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   </div>
                 )}
                 {(() => {
-                  // 2026-07-03 (Wolf-Audit): In Cozy Arena (nestedTeams) NICHT 25
+                  // 2026-07-03 (Wolf-Audit): In CozyArena (nestedTeams) NICHT 25
                   // Sub-Team-Avatare zeigen — auf 8 Fraktions-Wappen mit x/n-Badge
                   // gruppieren (wie die normale Footer-Reihe). Normal-Modus unverändert.
                   const nested = !!(s as any).nestedTeams;
@@ -1915,7 +1915,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 ?? (s.timerEndsAt && s.timerDurationSec
                   ? s.timerEndsAt - s.timerDurationSec * 1000
                   : correctTeams[0]?.submittedAt);
-              // Cozy Arena: bis zu 24 Sub-Team-Avatare → auf 8 Fraktionen bündeln.
+              // CozyArena: bis zu 24 Sub-Team-Avatare → auf 8 Fraktionen bündeln.
               // Vertreter je Fraktion = schnellstes richtiges Handy (correctTeams
               // ist nach submittedAt sortiert → erster Treffer je avatarId), + ×Zähler.
               // Optik (schnellster groß + Zeit-Pillen + Cascade) bleibt erhalten.
@@ -2011,7 +2011,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                     : '0 4px 12px rgba(0,0,0,0.4)',
                                 }}
                               />
-                              {/* Cozy Arena: wie viele Handys dieser Fraktion richtig lagen */}
+                              {/* CozyArena: wie viele Handys dieser Fraktion richtig lagen */}
                               {ct.count > 1 && (
                                 <span style={{
                                   position: 'absolute', right: -6, bottom: -6, minWidth: 22, height: 22, padding: '0 5px',
@@ -2656,7 +2656,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }
             }
 
-            // ZvZ nutzt zvzTeams (in Cozy Arena = Fraktions-Synth-Teams, sonst
+            // ZvZ nutzt zvzTeams (in CozyArena = Fraktions-Synth-Teams, sonst
             // === s.teams) damit die speedTied-IDs (Fraktions-IDs) auflösbar sind.
             const coWinners = allInTie && allInTie.speedTied.length > 1
               ? (cat === 'ZEHN_VON_ZEHN' ? zvzTeams : s.teams).filter(t => allInTie!.speedTied.includes(t.id))
@@ -2667,7 +2667,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // ersten Winner aus currentQuestionWinners — bei CHEESE ohne fastest
             // ist correctTeamId leer, aber wir haben trotzdem Sieger.
             const winnerIds = s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []);
-            // Cozy Arena (ZvZ): Sieger = Fraktion mit dem höchsten summierten Einsatz
+            // CozyArena (ZvZ): Sieger = Fraktion mit dem höchsten summierten Einsatz
             // auf der korrekten Option (allInTie.speedTied[0]) — konsistent mit der
             // Krone auf den Karten. Sonst der Backend-Truth-Sieger (Sub-Team).
             const rawWinner = s.teams.find(t => t.id === s.correctTeamId)
@@ -2675,7 +2675,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             let team = (cat === 'ZEHN_VON_ZEHN' && isMegaTeams && allInTie?.speedTied.length)
               ? zvzTeams.find(t => t.id === allInTie!.speedTied[0])
               : rawWinner;
-            // Cozy Arena (MUCHO/CHEESE/Bunte-Tüte): den Sub-Team-Sieger auf seine
+            // CozyArena (MUCHO/CHEESE/Bunte-Tüte): den Sub-Team-Sieger auf seine
             // FRAKTION mappen (Name/Wappen), sonst nennt der Sieger-Hero ein
             // einzelnes Sub-Team statt der Fraktion (Arena-Audit 2026-07-04).
             // Farbe = Slot-Farbe des Reps bleibt (konsistent zur Avatar-Kaskade).

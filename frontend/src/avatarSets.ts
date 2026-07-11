@@ -103,14 +103,14 @@ export const AVATAR_SETS: AvatarSet[] = [
     source: 'emoji',
     avatars: COZY_ANIMALS_EMOJI,    // bei 'all' nutzen wir die Cozy-Tiere als Default-Display
   },
-  // 2026-07-03 (Wolf): Cozy Arena — 8 Fraktions-Wappen (Quiz-Archetypen). Die
+  // 2026-07-03 (Wolf): CozyArena — 8 Fraktions-Wappen (Quiz-Archetypen). Die
   // „avatars"-Einträge sind Crest-Slugs (isCrestSlug), gerendert als flaches
   // Wappen-PNG (eigene Schild-Form+Farbe, KEINE Farb-Disc). Reihenfolge =
   // QQ_AVATARS-Slots. Auch die Groß-Modus-Fraktionen (QQ_MEGA_FACTIONS.slug)
   // ziehen diese Slugs → Wappen erscheinen in Lobby/Reveals unabhängig vom Set.
   {
     id: 'cozyArena',
-    label: 'Cozy Arena',
+    label: 'CozyArena',
     tint: '#EC4899',
     leadEmoji: '🛡️',
     preview: ['🏆', '🔥', '🍀'],
@@ -229,7 +229,7 @@ export function getSet(id: string | undefined): AvatarSet {
 export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
   | { kind: 'image'; src: string;     color: string; label: string }   // cozy3d 3D-Avatar
-  | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // Cozy-Arena-Wappen (flach)
+  | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // CozyArena-Wappen (flach)
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
 export function getAvatarDisplay(
@@ -283,7 +283,7 @@ export function getAvatarDisplay(
     if (isCrestSlug(setCrest)) emoji = setCrest;
   }
 
-  // Cozy Arena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
+  // CozyArena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {
     return {
       kind: 'crest',

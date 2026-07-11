@@ -101,7 +101,7 @@ export function QQTeamAvatar({
     ...style,
   };
 
-  // ── Cozy-Arena-Wappen (flaches Crest-Bild, eigene Schild-Form) ──────────
+  // ── CozyArena-Wappen (flaches Crest-Bild, eigene Schild-Form) ──────────
   if (display.kind === 'crest') {
     return (
       <CrestAvatar
@@ -292,7 +292,7 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
   style?: CSSProperties;
 }) {
   const fontSizeStr = typeof fontSize === 'number' ? `${fontSize}px` : fontSize;
-  // Cozy-Arena-Wappen-Slug → freigestelltes Emblem (cremes Symbol). Inline
+  // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol). Inline
   // sitzt es meist auf einer farbigen Disc → Emblem statt volles Wappen. Ohne
   // diesen Zweig würde der Slug als Text-Glyph gerendert (Wolf 2026-07-03:
   // „ovis"/„spr"/„sik" in den Discs = abgeschnittener Slug-Text).
@@ -475,7 +475,7 @@ function ImageAvatar({
   );
 }
 
-// ─── Cozy-Arena-Fraktions-Avatar ──────────────────────────────────────────
+// ─── CozyArena-Fraktions-Avatar ──────────────────────────────────────────
 // 2026-07-03 (Wolf-Entscheidung „rund + Puls-Aura überall, Wappen NUR in der
 // Auswahl"): CrestAvatar rendert IMMER das freigestellte EMBLEM auf einer
 // runden Fraktions-Farbscheibe (identische Disc wie cozy3d ImageAvatar) —

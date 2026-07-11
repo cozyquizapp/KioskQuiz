@@ -24,7 +24,7 @@ type Props = {
   activeSetId: string;
   serverEmojis?: string[];
   lang: 'de' | 'en';
-  /** Cozy Arena: Emoji ist an die Fraktion (Farbe) gekoppelt → Emoji-Wechsel
+  /** CozyArena: Emoji ist an die Fraktion (Farbe) gekoppelt → Emoji-Wechsel
    *  sperren. Swipe (Fraktion wählen) bleibt aktiv. */
   factionMode?: boolean;
 };
@@ -72,7 +72,7 @@ export function AvatarKarussellEditor({
   const myColor = currentSlot?.color ?? '#EAB308';
   const availableEmojis = emojiPool.filter(em => !takenEmojis.includes(em));
   const needsEmoji = !isPng && emojiPool.length > 0;
-  // Cozy Arena: Emoji fest an die Fraktion → kein Tap-to-change (sonst könnte ein
+  // CozyArena: Emoji fest an die Fraktion → kein Tap-to-change (sonst könnte ein
   // cozy3d-Tier das Wappen überschreiben). Swipe zum Fraktion-Wechsel bleibt.
   const canTapAvatar = !factionMode && needsEmoji && availableEmojis.length > 0;
 
@@ -147,7 +147,7 @@ export function AvatarKarussellEditor({
     );
   }
 
-  // ── Cozy Arena: Fraktions-Grid statt Karussell ─────────────────────────────
+  // ── CozyArena: Fraktions-Grid statt Karussell ─────────────────────────────
   // Wolf 2026-07-03: „wäre es bei der Fraktionsauswahl besser alle auf einmal zu
   // sehen?" — Ja. 8 feste Fraktionen = Roster, kein Blätter-Katalog. Alle Wappen
   // auf einen Blick, Tap wählt, gewählte leuchtet + Slogan drunter. Wappen (Schild)
@@ -372,7 +372,7 @@ export function AvatarKarussellEditor({
               : 'tcfloat 3.6s ease-in-out infinite',
             position: 'relative',
           }}>
-            {/* Cozy Arena: Emblem DETERMINISTISCH aus avatarId ableiten (nicht
+            {/* CozyArena: Emblem DETERMINISTISCH aus avatarId ableiten (nicht
                 aus chosenEmoji). Sonst zeigt der erste Paint den stale cozy3d-
                 Slug aus localStorage (z.B. „dog") bis der Binding-Effekt greift
                 → sichtbarer Hund-Flash. So stimmt schon der erste Frame. */}

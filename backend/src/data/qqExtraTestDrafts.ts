@@ -263,7 +263,7 @@ const hhQs = [
   }),
 ];
 
-// ─── COZY ARENA: NEUE BUNTE TÜTE (Top-Antworten + Schwarm-Schätzen) ──────
+// ─── COZYARENA: NEUE BUNTE TÜTE (Top-Antworten + Schwarm-Schätzen) ──────
 // Test-Draft für die zwei neuen Groß-Gruppen-Formate (2026-07-04). Je Phase
 // 2× Top-Antworten (Family Feud) + 2× Schwarm-Schätzen + 1× MUCHO.
 const ca = 'qq-test-cozy-arena-neu';
@@ -440,7 +440,7 @@ const caQs = [
 export const QQ_EXTRA_TEST_DRAFTS: QQTestDraft[] = [
   {
     id: ca,
-    title: '🌊 Cozy Arena: Neue Bunte Tüte (Test)',
+    title: '🌊 CozyArena: Neue Bunte Tüte (Test)',
     phases: 3,
     language: 'both',
     questions: caQs,

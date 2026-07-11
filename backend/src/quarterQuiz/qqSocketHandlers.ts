@@ -1610,7 +1610,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:nextQuestion', (payload: QQNextQuestionPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        // 2026-07-12 (Mod-Pacing Cozy Arena): im PLACEMENT hält „Wertung dieser
+        // 2026-07-12 (Mod-Pacing CozyArena): im PLACEMENT hält „Wertung dieser
         // Frage", bis der Mod EINMAL weiterdrückt → Gesamtstand. Erst der ZWEITE
         // Weiter schaltet zur nächsten Frage. Gibt dem Solo-Host Redezeit statt
         // eines 4,2s-Auto-Timers im Beamer. Nur wenn es überhaupt eine Wertung
@@ -3364,7 +3364,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
           room.largeGroupMode = true;
         }
         room.nestedTeams = room.largeGroupMode;
-        // Hinweis: Cozy Arena erzwingt KEIN Avatar-Set — die Fraktions-Wappen
+        // Hinweis: CozyArena erzwingt KEIN Avatar-Set — die Fraktions-Wappen
         // erscheinen, weil team.emoji auf den Wappen-Slug (qqMegaFactionSlug)
         // gesetzt wird (höchste Prio in getAvatarDisplay). So bleibt Farbe⟷Wappen
         // immer kohärent (kein „violetter Slot + rotes Wappen"-Mismatch).

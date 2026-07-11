@@ -1219,7 +1219,7 @@ export function playRaceTeamFall(): void {
   playUrlOneShot(url);
 }
 
-/** Cozy Arena: Bar-Race/Gesamtwertung erscheint (PLACEMENT in largeGroupMode).
+/** CozyArena: Bar-Race/Gesamtwertung erscheint (PLACEMENT in largeGroupMode).
  *  Leer = Fallback auf den bisherigen gridReveal-Cue; Moderator kann eine
  *  eigene MP3 im Sound-Panel hinterlegen (Slot 'arenaStandings'). */
 export function playArenaStandings(): void {
@@ -1230,7 +1230,7 @@ export function playArenaStandings(): void {
   playUrlOneShot(url);
 }
 
-/** Cozy Arena: eine Fraktion ueberholt an die Spitze (Bar-Race-Ueberhol-Blitz).
+/** CozyArena: eine Fraktion ueberholt an die Spitze (Bar-Race-Ueberhol-Blitz).
  *  Leer = Fallback auf den aufsteigenden scoreUp-Cue; ersetzbar via Slot
  *  'arenaLeadChange'. */
 export function playArenaLeadChange(): void {

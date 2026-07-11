@@ -37,7 +37,7 @@ import { QQ_COLORS } from '../../../shared/qqColors';
 // ── LobbyCard ────────────────────────────────────────────────────────────────
 export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; myTeam: QQTeam | null; lang: 'de' | 'en' }) {
   const de = lang === 'de';
-  // 2026-07-03 (Wolf-Audit): Cozy Arena — Gegner = die anderen FRAKTIONEN (nach
+  // 2026-07-03 (Wolf-Audit): CozyArena — Gegner = die anderen FRAKTIONEN (nach
   // avatarId dedupliziert), nicht bis zu 25 gleichnamige Sub-Teams.
   const largeMode = !!(s as any).largeGroupMode;
   const opponents = largeMode
@@ -302,7 +302,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   const isFirstOfRound = questionInPhase === 1;
   const showRules    = isFirstOfRound && s.introStep === 1;
   const showCategory = !isFirstOfRound || s.introStep >= 2;
-  // 2026-07-03 (Wolf-Audit): Cozy Arena hat kein Grid → keine „Erobert/Klaut/
+  // 2026-07-03 (Wolf-Audit): CozyArena hat kein Grid → keine „Erobert/Klaut/
   // Stapelt"-Runden-Regel. Punkte-Copy statt Grid-Mechanik.
   const largeMode = !!(s as any).largeGroupMode;
   const phaseName = names[lang][s.gamePhaseIndex];
@@ -645,7 +645,7 @@ export function TieBreakerCard({
 // ── PausedCard ───────────────────────────────────────────────────────────────
 export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
   const de = lang === 'de';
-  // 2026-07-03 (Wolf-Audit): Cozy Arena zeigt Fraktions-Standings nach Punkten,
+  // 2026-07-03 (Wolf-Audit): CozyArena zeigt Fraktions-Standings nach Punkten,
   // nicht Grid-„Felder". qqSortedGroups summiert Sub-Teams je Fraktion.
   const largeMode = !!(s as any).largeGroupMode;
   // 2026-07-08 Konsistenz #7: Rang + Zahl exakt wie Beamer-PausedView —
@@ -1169,7 +1169,7 @@ export function FinalRevealCard({
 
 // ── GameOverCard ─────────────────────────────────────────────────────────────
 export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en'; roomCode?: string }) {
-  // 2026-07-04 (Arena-Audit): Cozy Arena nach Fraktion gruppieren (qqSortedGroups
+  // 2026-07-04 (Arena-Audit): CozyArena nach Fraktion gruppieren (qqSortedGroups
   // summiert Sub-Teams je Fraktion) — sonst listet die Endkarte ~25 rohe Sub-Teams
   // mit doppelten Fraktions-Namen + 0-Punkte-Phantomzeilen. Muster wie PausedCard.
   const largeMode = !!(s as any).largeGroupMode;

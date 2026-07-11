@@ -186,7 +186,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // mehr aktuell sind'): Texte auf aktuellen Stand gebracht — Joker-Pattern
     // (2x2 oder 4-in-a-row), Cap (max 2 pro Team, 1 pro Runde), Faehigkeiten
     // pro Runde (Klauen R2, Stapeln R3), Bunte Tuete als Surprise-Slot.
-    // 2026-07-02 (Cozy Universe): Cozy Arena hat kein Brett/keine Joker — eigene
+    // 2026-07-02 (Cozy Universe): CozyArena hat kein Brett/keine Joker — eigene
     // 4 Mini-Cards (Konzept-Fraktionen mit Wappen, Punkte, Tempo/Trefferquote).
     const howItems = largeGroup
       ? (de

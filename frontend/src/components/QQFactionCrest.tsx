@@ -1,5 +1,5 @@
 /**
- * QQFactionCrest — Wappen einer Cozy-Arena-Fraktion (Wolf „Cozy Universe").
+ * QQFactionCrest — Wappen einer CozyArena-Fraktion (Wolf „Cozy Universe").
  *
  * 2026-07-03 (Wolf): echte 3D-Wappen-PNGs (Schild + Farbe + Emblem komplett
  * gebacken) unter /avatars/cozyarena/<slug>.png. Der Crest wird als flaches
@@ -17,7 +17,7 @@ import { qqFactionBuckets } from '../qqShared';
 import { QQTeamAvatar } from './QQTeamAvatar';
 
 /**
- * FactionCountAvatars — Cozy-Arena-Rollout für Reveal-Cluster: fasst eine
+ * FactionCountAvatars — CozyArena-Rollout für Reveal-Cluster: fasst eine
  * Team-Liste zu ihren Fraktionen zusammen und zeigt je Fraktion EIN Tier-Avatar
  * + ×Anzahl-Badge (statt bis zu 24 Einzel-Sub-Teams). Optional Fraktions-Name.
  * Zum Eintauschen an den Avatar-Cluster-Stellen der Reveals (Order/Top5/…).

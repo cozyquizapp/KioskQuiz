@@ -591,7 +591,7 @@ export function qqJoinTeam(
   if (existingCount >= maxTeams) {
     throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${maxTeams}) erreicht.`);
   }
-  // ── Cozy Arena: Fraktionen ausbalancieren (autoritativer Safety-Net) ─────────
+  // ── CozyArena: Fraktionen ausbalancieren (autoritativer Safety-Net) ─────────
   // Die 8 Fraktionen sollen gleichmaessig gefuellt werden, sonst wird das Bar-Race
   // langweilig (12 Handys auf einer, 0 auf einer anderen). Regel: eine Fraktion ist
   // nur „waehlbar", wenn ihr Count == aktuellem Minimum ist → garantiert max-min <= 1.
@@ -790,7 +790,7 @@ export function qqStartGame(
   // N+1 dieselbe Kategorie haben, swappen wir Frage 1 von Runde N+1 mit einer
   // anderen Frage derselben Runde (falls vorhanden).
   let processedQuestions = questions;
-  // 2026-07-07 (Wolf-Livetest 'Heisse Kartoffel war noch in Cozy-Arena-Draft'):
+  // 2026-07-07 (Wolf-Livetest 'Heisse Kartoffel war noch in CozyArena-Draft'):
   // Hot Potato passt nicht in den Gross-Gruppen-Modus (rundenbasiert, ein Team
   // nach dem anderen — bei 8x3 sinnlos; qqHotPotatoStart no-opt dort eh). Der
   // Wizard warnt nur, filtert aber nicht, und Direktstarts umgehen ihn ganz.

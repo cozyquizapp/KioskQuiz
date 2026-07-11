@@ -1,5 +1,5 @@
 /**
- * qqSwarm — Aggregation für „Schwarm-Schätzen" (Wisdom of Crowds, Cozy Arena).
+ * qqSwarm — Aggregation für „Schwarm-Schätzen" (Wisdom of Crowds, CozyArena).
  * GETEILT zwischen Backend (autoritative Wertung) und Frontend (Zahlenstrahl-
  * Reveal) — EINE Quelle für Median/Range/Fraktions-Nähe.
  *

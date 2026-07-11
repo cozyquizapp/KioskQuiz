@@ -56,7 +56,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       .sort((a, b) => a.delta - b.delta || a.submittedAt - b.submittedAt);
   }, [s.answers, s.teams, target]);
 
-  // Cozy Arena: 1 Marker pro Fraktion = der BESTE (nächste) Tipp der Fraktion.
+  // CozyArena: 1 Marker pro Fraktion = der BESTE (nächste) Tipp der Fraktion.
   // Sub-Team → Fraktions-Rep (Tiername + Tier-slug, Farbe bleibt = Slot-Farbe).
   const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const rankedFinal = useMemo(() => {

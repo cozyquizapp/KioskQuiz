@@ -1,4 +1,4 @@
-// 2026-07-03 — Cozy Arena: Fraktions-Wappen (Wolf).
+// 2026-07-03 — CozyArena: Fraktions-Wappen (Wolf).
 //
 // 8 3D-Wappen (Schild + Farbe + Emblem komplett gebacken) unter
 // /avatars/cozyarena/<slug>.png. Ersetzen im Groß-Modus (largeGroupMode) den

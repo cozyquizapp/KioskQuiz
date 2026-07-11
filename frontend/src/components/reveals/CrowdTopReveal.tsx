@@ -3,13 +3,13 @@
  *
  * Zweispaltige Show-Seite: links Rundensieger (Nenner der beliebtesten Antwort),
  * rechts die Tafel die sequentiell #5→#1 aufdeckt. Pro Slot: Rang, Antwort,
- * Stimmen-Zähler, Nenner-Avatare (Fraktions-Cluster in Cozy Arena). Unten
+ * Stimmen-Zähler, Nenner-Avatare (Fraktions-Cluster in CozyArena). Unten
  * „N weitere Antworten".
  *
  * Die Tafel wird aus s.answers + q via shared qqCrowdTopBoard berechnet —
  * dieselbe Funktion, die im Backend wertet → Anzeige und Punkte divergieren nie.
  *
- * 2026-07-04 (Cozy Arena Voting, Stufe 4).
+ * 2026-07-04 (CozyArena Voting, Stufe 4).
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQBunteTueteCrowdTop } from '../../../../shared/quarterQuizTypes';

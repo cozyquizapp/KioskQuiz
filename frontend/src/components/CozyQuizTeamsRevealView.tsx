@@ -51,7 +51,7 @@ function ArenaTypewriter({ text, color, delayMs = 560 }: { text: string; color: 
   );
 }
 
-// Cozy Arena — Fraktions-Einzug: jede Fraktion tritt einzeln auf (Wappen gross,
+// CozyArena — Fraktions-Einzug: jede Fraktion tritt einzeln auf (Wappen gross,
 // Name, Motto, Farb-Flut), setzt sich dann in die Startaufstellung unten. KEIN
 // FLIP-Flug (Wolfs Positions-Bug damit hinfaellig) — Einzug = Drama, Aufstellung
 // = sauberer Pop. Nur nested/Arena; Cozy Quiz behaelt den Roll-Call.
@@ -192,7 +192,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
         <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc' }}>
-          {done ? (de ? 'Los geht’s!' : 'Let’s go!') : 'Cozy Arena'}
+          {done ? (de ? 'Los geht’s!' : 'Let’s go!') : 'CozyArena'}
         </div>
       </div>
 
@@ -689,7 +689,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={cozy3dSrc(t.emoji)} alt={cozy3dLabel(t.emoji)} draggable={false}
               style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
-          // Cozy-Arena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
+          // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
           // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case
           // darunter → abgeschnittener Slug-Text in der Disc (Wolf 2026-07-03).
           if (isCrestSlug(t.emoji)) {
@@ -754,7 +754,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>
-                          {/* Cozy Arena: Puls-Aura (atmend) + Einzug-Stempel (einmaliger
+                          {/* CozyArena: Puls-Aura (atmend) + Einzug-Stempel (einmaliger
                               Ring-Pop) beim Aufdecken — nur Fraktions-Wappen. */}
                           {revealed && isCrestSlug(t.emoji) && (
                             <>

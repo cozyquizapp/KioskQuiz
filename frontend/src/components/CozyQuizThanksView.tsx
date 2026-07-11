@@ -59,7 +59,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         + (awardPoints[t.id] ?? 0),
     }))
     .sort((a, b) => b.total - a.total)[0];
-  // 2026-07-03 (Wolf-Audit 'name der teams hier falsch'): In Cozy Arena
+  // 2026-07-03 (Wolf-Audit 'name der teams hier falsch'): In CozyArena
   // (nestedTeams) darf NICHT ein einzelnes Sub-Team gewinnen — Sieger ist die
   // FRAKTION mit den meisten summierten Punkten. qqSortedGroups liefert schon
   // synthetische Fraktions-Teams (Name = Fraktionsname, emoji = Wappen-Slug),

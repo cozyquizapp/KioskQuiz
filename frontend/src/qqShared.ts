@@ -76,7 +76,7 @@ export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
 }
 
 /**
- * 2026-07-02 (Wolf „Cozy Arena"): In-Game-Reveals fassen Sub-Teams zu ihren 8
+ * 2026-07-02 (Wolf „CozyArena"): In-Game-Reveals fassen Sub-Teams zu ihren 8
  * Faktionen zusammen — statt bis zu 24 Einzel-Avataren (mit gemischten Tieren
  * je Farbe) EIN Faktions-Tier je Farbe + Anzahl-Badge. `qqFactionBuckets`
  * gruppiert eine Team-Liste nach avatarId und liefert pro Faktion Farbe/Tier/

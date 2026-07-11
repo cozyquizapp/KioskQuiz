@@ -1,6 +1,6 @@
 /**
  * qqCrowdTop — Bündelung + Tafel-Berechnung für das „Top-Antworten"-Format
- * (Family Feud, Cozy Arena). GETEILT zwischen Backend (autoritative Wertung) und
+ * (Family Feud, CozyArena). GETEILT zwischen Backend (autoritative Wertung) und
  * Frontend (Reveal-Tafel) — EINE Quelle, damit Anzeige und Punkte nie divergieren.
  *
  * Antwort-Modell „Vorgegeben + Auto-Surface" (Wolf-Entscheid 2026-07-04):

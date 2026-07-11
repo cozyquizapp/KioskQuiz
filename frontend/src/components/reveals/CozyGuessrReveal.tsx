@@ -82,7 +82,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
     }).filter(a => a.distKm !== null);
   }, [s.answers, tLat, tLng]);
 
-  // Cozy Arena: pro Fraktion nur den BESTEN (nächsten) Pin behalten — sonst
+  // CozyArena: pro Fraktion nur den BESTEN (nächsten) Pin behalten — sonst
   // klebt die Karte mit bis zu 24 Sub-Team-Pins zu (Wolf 2026-07-03 'nur der
   // beste pin pro team'). Wirkt auf Karte, Cascade UND Ranking gleichermaßen.
   const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
@@ -410,7 +410,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
             <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
           {(() => {
-            // Top-5-Nächste anzeigen (Wolf 2026-07-03) — bei Cozy Arena schon je
+            // Top-5-Nächste anzeigen (Wolf 2026-07-03) — bei CozyArena schon je
             // Fraktion kollabiert (scoredEff), sonst reale Teams. Kein Bloßstellen
             // der hintersten (nur die besten 5 stehen in der Liste).
             const rankList = bestFirst.slice(0, 5);
@@ -431,7 +431,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
             return rankList.map((p, i) => {
               const rawTeam = s.teams.find(t => t.id === p.teamId);
               if (!rawTeam) return null;
-              // Cozy Arena: Fraktions-Identität (Tiername + Tier-slug) statt Sub-Team.
+              // CozyArena: Fraktions-Identität (Tiername + Tier-slug) statt Sub-Team.
               const team = isMega
                 ? { ...rawTeam, name: qqMegaFactionName(rawTeam.avatarId, lang), emoji: qqMegaFactionSlug(rawTeam.avatarId) ?? rawTeam.emoji }
                 : rawTeam;

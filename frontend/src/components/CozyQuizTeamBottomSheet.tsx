@@ -103,7 +103,7 @@ export function TeamBottomSheetMenu({
   const myPosition = teamScores.findIndex(t => t.id === myTeamId) + 1;
   const myCellsCount = teamScores.find(t => t.id === myTeamId)?.count ?? 0;
   const totalTeams = state.teams.length;
-  // 2026-07-04 (Arena-Audit): in Cozy Arena hat ein Sub-Team keine Grid-Zellen.
+  // 2026-07-04 (Arena-Audit): in CozyArena hat ein Sub-Team keine Grid-Zellen.
   // Fraktions-Punkte (Summe je avatarId) + Fraktions-Rang statt Sub-Team-Werte.
   let myFactionPoints = 0, myFactionRank = 0;
   if (largeMode && myTeam) {
@@ -268,7 +268,7 @@ export function TeamBottomSheetMenu({
         </div>
 
         {/* MEIN BRETT — Mini-Grid mit eigenen Zellen highlighted.
-            Arena-Audit 2026-07-04: in Cozy Arena kein Brett (gridSize bleibt
+            Arena-Audit 2026-07-04: in CozyArena kein Brett (gridSize bleibt
             backend-seitig ≠ 0, daher explizit auf !largeMode gaten). */}
         {!largeMode && state.gridSize > 0 && (
           <div style={{
@@ -393,7 +393,7 @@ export function TeamBottomSheetMenu({
         </button>
 
         {/* Joker-Counter — read-only Info, nicht klickbar.
-            2026-07-03 (Wolf-Audit): In Cozy Arena gibt es keine Joker → jokersTotal=0
+            2026-07-03 (Wolf-Audit): In CozyArena gibt es keine Joker → jokersTotal=0
             wird durchgereicht, dann Sektion komplett ausblenden (kein „0 von 0"). */}
         {jokersTotal > 0 && (
         <div style={{

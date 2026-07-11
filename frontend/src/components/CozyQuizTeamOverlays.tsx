@@ -21,7 +21,7 @@ import { ACK_ERROR_EVENT, type AckErrorEventDetail } from '../utils/qqTeamAckBus
 // HelpModal — Quick-Rules-Dialog mit 5 Icon-Karten.
 // ─────────────────────────────────────────────────────────────────────────
 export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onClose: () => void; largeMode?: boolean }) {
-  // 2026-07-03 (Wolf-Audit): Cozy Arena hat kein Brett/Joker/Klauen/Stapeln →
+  // 2026-07-03 (Wolf-Audit): CozyArena hat kein Brett/Joker/Klauen/Stapeln →
   // eigener Regel-Satz (Fraktions-Punkte, Tempo), sonst der klassische Grid-Satz.
   const arenaItems = lang === 'de' ? [
     { icon: '🎯', title: 'Spielziel', body: 'Sammelt als Fraktion die meisten Punkte, je mehr Handys richtig und je schneller, desto mehr.' },

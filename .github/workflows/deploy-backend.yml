@@ -1,0 +1,46 @@
+name: Deploy Backend (Coolify)
+
+# Stoesst Coolify automatisch an, wenn sich Backend-relevanter Code aendert —
+# damit der manuelle Redeploy in der Coolify-UI entfaellt (analog zu Vercels
+# Frontend-Auto-Deploy). Path-gefiltert: Frontend-only-Pushes loesen KEINEN
+# Backend-Neustart aus. Zusaetzlich manuell per "Run workflow"-Button ausloesbar.
+#
+# EINRICHTUNG (einmalig, ~2 Min) — GitHub: Repo → Settings → Secrets and
+# variables → Actions → "New repository secret":
+#   COOLIFY_WEBHOOK_URL  = die Deploy-Webhook-URL aus Coolify
+#        (Coolify → deine Backend-App → Tab "Webhooks" → Deploy-Webhook,
+#         oder  https://<coolify-host>/api/v1/deploy?uuid=<APP-UUID> )
+#   COOLIFY_TOKEN        = Coolify-API-Token (Coolify → Keys & Tokens / API Tokens)
+#        — nur noetig, wenn der Webhook Bearer-Auth verlangt; sonst leer lassen.
+# Ohne Secret ueberspringt sich der Job sauber (kein Fehler-Spam).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+  workflow_dispatch: {}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Coolify redeploy
+        env:
+          URL: ${{ secrets.COOLIFY_WEBHOOK_URL }}
+          TOKEN: ${{ secrets.COOLIFY_TOKEN }}
+        run: |
+          if [ -z "$URL" ]; then
+            echo "::warning::COOLIFY_WEBHOOK_URL noch nicht gesetzt — Auto-Deploy uebersprungen. Secret anlegen, dann greift es automatisch."
+            exit 0
+          fi
+          if [ -n "$TOKEN" ]; then
+            curl --fail -sS -X GET "$URL" -H "Authorization: Bearer $TOKEN"
+          else
+            curl --fail -sS -X GET "$URL"
+          fi
+          echo ""
+          echo "✅ Coolify-Redeploy angestoßen."

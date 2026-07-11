@@ -1425,6 +1425,10 @@ export interface QQMegaRankEntry {
   total: number;
   points: number;
   rank: number;
+  /** 2026-07-12: Ø-Antwortzeit der RICHTIGEN Handys dieser Fraktion in Sekunden
+   *  (relativ zum Fragestart). Macht sichtbar, WARUM bei gleicher Trefferquote
+   *  die Punkte differieren (Ø-Speed = Tiebreak). null wenn keine Zeit erfassbar. */
+  avgSec?: number | null;
 }
 
 /** Tipp eines Teams auf ein anderes Team (oder eigenes Team).

@@ -2447,6 +2447,15 @@ export function qqMegaEventScore(room: QQRoomState): void {
     if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;
     return avgSpeed(a) - avgSpeed(b);
   });
+  // 2026-07-12: Ø-Antwortzeit (Sek. seit Fragestart) der richtigen Handys je
+  // Fraktion fürs Scoring-Reveal — macht den Speed-Tiebreak transparent. Nur
+  // sinnvoll wo Speed die Rangachse ist (speedCount>0); Distanz-Kategorien → null.
+  const qStart = (room as any)._currentQuestionStartedAt as number | undefined;
+  const avgSecOf = (g: Grp): number | null => {
+    if (g.speedCount <= 0 || !qStart) return null;
+    const sec = (g.speedSum / g.speedCount - qStart) / 1000;
+    return sec >= 0 && Number.isFinite(sec) ? Math.round(sec * 10) / 10 : null;
+  };
   const ranking: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] = [];
   arr.forEach((g, idx) => {
     let pts = 0;
@@ -2458,7 +2467,7 @@ export function qqMegaEventScore(room: QQRoomState): void {
       const rep = room.teams[g.repId];
       if (rep) { rep.totalCells += pts; rep.largestConnected += pts; }
     }
-    ranking.push({ avatarId: g.avatarId, correct: g.correct, total: g.total, points: pts, rank: idx });
+    ranking.push({ avatarId: g.avatarId, correct: g.correct, total: g.total, points: pts, rank: idx, avgSec: avgSecOf(g) });
   });
   room.megaQuestionRanking = ranking;
 

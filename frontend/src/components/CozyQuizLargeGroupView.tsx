@@ -79,7 +79,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
               <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={64} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 30, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-                <Dots correct={r.correct} total={r.total} color={color} de={de} />
+                <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} />
               </div>
               <span style={{
                 ...S.qrPts, color: scored ? color : 'rgba(255,255,255,0.4)',
@@ -97,8 +97,13 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
 }
 
 // Punkte-Dots: gefüllt = richtige Sub-Teams, hohl = Rest. Bei >5 nur Zahl.
-function Dots({ correct, total, color, de }: { correct: number; total: number; color: string; de: boolean }) {
+// 2026-07-12: dahinter dezent die Ø-Antwortzeit der richtigen Handys — macht
+// den Speed-Tiebreak transparent (warum +6 vs +1 bei gleicher Trefferquote).
+function Dots({ correct, total, color, de, avgSec }: { correct: number; total: number; color: string; de: boolean; avgSec?: number | null }) {
   const showDots = total > 0 && total <= 5;
+  const timeStr = (avgSec != null && correct > 0)
+    ? (de ? `${avgSec.toFixed(1).replace('.', ',')}s` : `${avgSec.toFixed(1)}s`)
+    : null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
       {showDots && (
@@ -116,6 +121,12 @@ function Dots({ correct, total, color, de }: { correct: number; total: number; c
       <span style={{ fontSize: 17, fontWeight: 800, opacity: 0.7 }}>
         {correct}/{total} {de ? 'Handys richtig' : 'phones correct'}
       </span>
+      {timeStr && (
+        <span style={{ fontSize: 16, fontWeight: 800, opacity: 0.6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+          <span aria-hidden style={{ opacity: 0.7 }}>·</span>
+          <span aria-hidden>⚡</span>{de ? `Ø ${timeStr}` : `avg ${timeStr}`}
+        </span>
+      )}
     </div>
   );
 }

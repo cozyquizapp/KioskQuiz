@@ -85,6 +85,21 @@ Offene Punkte (priorisiert):
 - [x] 🟡 **„Let's go!"-Komposition** ausbalanciert — GEBAUT+GEPUSHT 2026-07-12. Im Finale Titel + Aufstellung als
       eine zentrierte Gruppe, Wappen größer. Per Showroom-Screenshot verifiziert (`Desktop/arena-letsgo-neu.png`).
 - [ ] 🟡 **Kontrast am echten Beamer:** „Wing It" (Blau) + „Objection" (Pink) Fraktionsnamen auf Dunkel prüfen.
+
+### 🖼️ Screenshot-Review-Batch 2026-07-12 (2. Runde, 40-Bot-Lauf)
+GEBAUT+GEPUSHT (alle typecheck-grün):
+- [x] **Scoring Ø-Antwortzeit** pro Fraktion („5/5 · ⚡Ø 3,2s") — macht Speed-Tiebreak transparent (Bild 10).
+- [x] **App-weiter Gedankenstrich-Sweep** (~130 spielersichtbare Strings, DE+EN, Kommentare/deaktivierte Features aus).
+- [x] **Fairness-Nenner = nur aktive Handys** (toter Tab drückt Quote nicht mehr; alle Kategorien per-capita bestätigt, inkl. 10v10 = schon Ø).
+- [x] **Größere Abgabe-Wappen** in aktiver Frage (Arena: 8 Wappen → 124px statt 80).
+- [x] **CozyGuessr rang-basiert** (Top-5 5/4/3/2/1 statt nur Platz 1; Map zeigt schon 1 besten Pin/Fraktion).
+- [x] **preGame-Wolf verkleinert** (überlappte „Die Fraktionen"-Karte) — visuell bestätigen.
+- [x] **Reflow-Fix** „X/Y submitted"-Zeile (rechte Spalte sprang bei Timer-Ende) + systemische Regel dokumentiert.
+OFFEN:
+- [ ] 🔴 **Epic Standings** — voller Rennen-Umbau (Balken überholen sich, Positions-Wechsel animiert, wandernde Krone). Wolf wählte „voller Umbau". Mit Screenshot-Verifikation.
+- [ ] **Reflow-Audit Frage-View** breiter (Timer/Badges) — falls CHEESE-Shift nach dem Fix bleibt, Timer-Element prüfen.
+- [ ] Approved Polish: „Now the rules"-Karte kompakter, Round-Intro-Balance, Icon-Fidelity (Buch/Klemmbrett → 3D).
+- ⚠️ Vieles davon ist im alten Frontend-Screenshot NICHT drin → Wolf: Beamer hart neuladen + Autoplay AUS zum echten Mod-Pacing-Test.
 - [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll) — im Dry-Run ok aussehend, final am Projektor.
 
 ### Woche 4 — Puffer

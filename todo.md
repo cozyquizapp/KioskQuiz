@@ -51,7 +51,11 @@ Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ung
       NICHT der Flaschenhals → **Broadcast-Throttle vorerst nicht nötig.**
 - [ ] **Rest-Validierung Last** (nur am echten Gerät/WLAN möglich): Venue-WLAN-Latenz + in-Frage-Payload
       (Antworten-Array) beim Trockenlauf (Woche 4) gegenprüfen. Bei Lag dann Broadcast drosseln/Delta.
-- [ ] **Join-Onboarding EN wasserdicht:** QR + Raumcode + „3–4 pro Handy" + eine klare Beitreten-Seite.
+- [x] ~~Join-Onboarding bilingual~~ — **erledigt** `0827eb1e`: `/team` folgt Browser- dann Raumsprache
+      (nicht mehr hart DE); Beamer-Lobby zeigt im Arena-Modus „Ein Handy pro Gruppe / One phone per group".
+      `/team` nutzt Singleton-Raum `'default'` → QR ohne Raumcode ist korrekt. Gruppengröße (3–4) kommt in die
+      **Event-Einladung** (Text DE+EN steht bereit), nicht rigide in die App.
+- [ ] **Setup-Flow am echten Gerät gegenprüfen** (EN durchklicken: Fraktion wählen → beitreten), beim Trockenlauf.
 
 ### Woche 3 — UX-Politur (Designer-Publikum)
 - [ ] Microcopy-EN-Sweep Team + Beamer · Motion/Klarheit-Feinschliff.

@@ -70,15 +70,16 @@ Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ung
 ### Visueller Dry-Run (40 Bots, Arena, EN) — Screenshots ausgewertet 2026-07-12
 Gesamturteil: **stark, premium, designer-tauglich.** Volle Auswertung: [[project-cozyarena-live-event-2026-08]].
 Offene Punkte (priorisiert):
-- [ ] 🔴 **Mod-Pacing Scoring→Standings** (BESTÄTIGT „ein Druck extra"). Client-4,2s-Timer
-      (`CozyQuizLargeGroupView.tsx:51-56`) → Mod-gesteuert: Scoring hält → weiter → Standings → weiter →
-      nächste Frage. Backend-Flag `megaStandingsRevealed` + Beamer nutzt Flag + Mod-Advance in PLACEMENT
-      abfangen. Ändert Streamdeck-Flow (Wolf ok).
+- [x] 🔴 **Mod-Pacing Scoring→Standings** — GEBAUT+GEPUSHT 2026-07-12. Backend-Flag `megaStandingsRevealed`
+      (Reset in `qqStartPlacement`, im State broadcastet); `qq:nextQuestion` fängt ersten Weiter im largeGroup-
+      PLACEMENT ab (Flag=true statt Advance), zweiter schaltet zur Frage. Beamer nutzt Flag statt `setTimeout`.
+      Mod: Flag im Autoplay-`fireKey`, Pacing 11s→2×6s, Label „→ Gesamtstand zeigen" vs „→ Nächste Frage".
+      Streamdeck: gleiche Space-Taste, 1 Druck extra. Typechecks grün. ⚠️ Live-Trockentest steht aus.
 - [ ] 🔴 **CHEESE-Scoring eigenes Modell** (Wolf 2026-07-12): „x/5 correct + schneller" passt für CHEESE
       nicht → Vorschlag „5-Team-Ø-Geschwindigkeit". OFFEN: betrifft weitere Kategorien? Design-Frage klären.
       (CHEESE-Screenshot war >5MB → verkleinert neu schicken.)
-- [ ] 🟠 **„Vollbild (F11)" deutsch auf EN-Beamer** → „Fullscreen (F11)" im EN oder aus Publikumsbild ausblenden.
-- [ ] 🟠 **Gedankenstriche** raus: `CozyQuizLargeGroupView.tsx:96` Scoring-Footer (DE+EN) + CozyGuessr-Subtitle „on the map — closest team wins".
+- [x] 🟠 **„Vollbild (F11)" bilingual** — EN-Beamer zeigt „Fullscreen (F11)". ERLEDIGT 2026-07-12.
+- [x] 🟠 **Gedankenstriche** raus: Arena-Scoring-Footer + CozyGuessr-Subtitle (DE+EN). ERLEDIGT 2026-07-12.
 - [ ] 🟡 **„Let's go!"-Komposition** oben-lastig (Titel oben, Wappen unten → Leere oben).
 - [ ] 🟡 **Kontrast am echten Beamer:** „Wing It" (Blau) + „Objection" (Pink) Fraktionsnamen auf Dunkel prüfen.
 - [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll) — im Dry-Run ok aussehend, final am Projektor.

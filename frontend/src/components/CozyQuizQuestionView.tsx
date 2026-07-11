@@ -1200,6 +1200,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   // gruppieren (wie die normale Footer-Reihe). Normal-Modus unverändert.
                   const nested = !!(s as any).nestedTeams;
                   if (nested) {
+                    // 2026-07-12 (Wolf): im Arena-Modus sind es nur 8 Fraktions-
+                    // Wappen (nicht bis zu 40 Handys) → deutlich größer für Distanz-
+                    // Lesbarkeit + mehr Spannung beim Abgabe-Tracker. Badge mit.
+                    const navSize = isCheesePortrait ? 96 : 124;
                     const groups = new Map<string, { rep: typeof s.teams[number]; total: number; answered: number }>();
                     const order: string[] = [];
                     for (const tm of s.teams) {
@@ -1214,18 +1218,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       const some = g.answered > 0;
                       return (
                         <div key={id} style={{
-                          position: 'relative', padding: 5, borderRadius: '50%',
+                          position: 'relative', padding: 6, borderRadius: '50%',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           background: done ? 'rgba(34,197,94,0.18)' : 'transparent',
                           border: done ? '3px solid #22C55E' : some ? '3px solid rgba(34,197,94,0.45)' : '3px solid transparent',
+                          boxShadow: done ? '0 0 20px rgba(34,197,94,0.5), 0 0 40px rgba(34,197,94,0.18)' : 'none',
                           opacity: some ? 1 : 0.55, filter: some ? 'none' : 'grayscale(0.4)',
                           transition: 'all 0.45s ease',
                         }}>
-                          <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={g.rep.emoji} size={av} />
+                          <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={g.rep.emoji} size={navSize} />
                           <div style={{
-                            position: 'absolute', bottom: -2, right: -2, minWidth: 22, height: 22, padding: '0 5px',
+                            position: 'absolute', bottom: -2, right: -2, minWidth: 28, height: 28, padding: '0 6px',
                             borderRadius: 999, background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
-                            border: '2px solid rgba(255,255,255,0.18)', color: '#fff', fontSize: 12, fontWeight: 900,
+                            border: '2px solid rgba(255,255,255,0.18)', color: '#fff', fontSize: 15, fontWeight: 900,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                           }}>{g.answered}/{g.total}</div>
                         </div>

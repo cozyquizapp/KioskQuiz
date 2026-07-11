@@ -2351,7 +2351,10 @@ export function qqMegaEventScore(room: QQRoomState): void {
   for (const [id, t] of Object.entries(room.teams)) {
     let g = groups.get(t.avatarId);
     if (!g) { g = { avatarId: t.avatarId, repId: id, total: 0, correct: 0, perf: 0, bestSpeed: Infinity, speedSum: 0, speedCount: 0, bestDist: Infinity }; groups.set(t.avatarId, g); }
-    g.total++;
+    // 2026-07-12 (Wolf Fairness): Nenner der Trefferquote = nur AKTIVE Handys.
+    // Ein abgemeldeter/toter Tab darf die Quote der Fraktion nicht drücken. Die
+    // Gruppe existiert trotzdem (fürs Ranking), zählt aber nur verbundene Handys.
+    if (t.connected !== false) g.total++;
     if (id < g.repId) g.repId = id; // deterministischer Repräsentant
   }
   const grpOf = (teamId: string): Grp | undefined => {

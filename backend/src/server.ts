@@ -9800,7 +9800,7 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   if (room.phase !== 'LOBBY') return res.status(400).json({ error: 'Nur in Lobby möglich' });
   // 2026-07-01: Groß-Modus erlaubt bis 25 Bots (sonst max 8).
   // 2026-07-02: Nested → max 24 (8 Eltern × 3 Sub-Teams).
-  const cap = room.nestedTeams ? 24 : (room.largeGroupMode ? QQ_MAX_TEAMS_LARGE : 8);
+  const cap = (room.nestedTeams || room.largeGroupMode) ? QQ_MAX_TEAMS_LARGE : 8;
   const count = Math.min(cap, Math.max(1, Number(req.body?.count) || cap));
   const existing = Object.keys(room.teams).length;
   const toAdd = Math.max(0, count - existing);

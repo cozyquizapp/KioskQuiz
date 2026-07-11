@@ -783,16 +783,17 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   minWidth: 0, position: 'relative', minHeight: 'clamp(76px, 8.2cqh, 104px)',
                   animation: `teamCardIn 0.5s var(--qq-ease-bounce) ${0.35 + i * 0.06}s both`,
                 }}>
-                  {/* „X/3"-Pill oben rechts — aus der Namenszeile raus, damit der
-                      Name die volle Kartenbreite bekommt (Wolf 2026-07-03:
-                      abgeschnittene/hyphenierte Namen). */}
+                  {/* Count-Pill oben rechts — reine Handy-Zahl der Fraktion. KEIN
+                      „/3" mehr: der Soft-Cap ist dynamisch (bis 5 pro Fraktion bei
+                      40 Teams), ein festes „/3" würde bei Überfüllung lügen
+                      (Live-Event-Fix 2026-07-10). */}
                   <span style={{
                     position: 'absolute', top: 'clamp(8px, 1cqh, 12px)', right: 'clamp(10px, 1.1cqw, 14px)',
                     padding: '2px 9px', borderRadius: 999,
                     background: `${g.color}22`, border: `1px solid ${g.color}66`,
                     color: g.color, fontWeight: 900, fontSize: 'clamp(11px, 1.1cqw, 15px)',
                     fontVariantNumeric: 'tabular-nums',
-                  }}>{g.subs.length}/3</span>
+                  }}>{g.subs.length}</span>
                   <FactionCrest avatarId={g.avatarId} width={'clamp(48px, 5cqw, 68px)'} style={{ flexShrink: 0 }} />
                   <div style={{ minWidth: 0, flex: 1 }}>
                     <div style={{
@@ -814,7 +815,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     {/* Faction-Modell (Wolf 2026-07-02): KEINE Sub-Team-Namen auf
                         dem Beamer — nur anonyme Handy-Dots (verbunden = gefüllt).
                         Die Sub-Team-Identität lebt auf dem eigenen /team-Handy. */}
-                    <div style={{ marginTop: 7, display: 'flex', gap: 7 }}>
+                    <div style={{ marginTop: 7, display: 'flex', flexWrap: 'wrap', gap: 7 }}>
                       {g.subs.map(st => (
                         <span key={st.id} style={{
                           width: 'clamp(10px, 1cqw, 14px)', height: 'clamp(10px, 1cqw, 14px)', borderRadius: '50%',

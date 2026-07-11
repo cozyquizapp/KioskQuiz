@@ -2171,8 +2171,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   🤖 Bots {botsRunOpen ? '▲' : '▾'}
                 </button>
                 {botsRunOpen && (() => {
-                  const botMax = (s as any)?.largeGroupMode ? 24 : 8;
-                  const presets = (s as any)?.largeGroupMode ? [8, 16, 24] : [2, 4, 6, 8];
+                  const botMax = (s as any)?.largeGroupMode ? 40 : 8;
+                  const presets = (s as any)?.largeGroupMode ? [8, 24, 40] : [2, 4, 6, 8];
                   const cnt = Math.min(botMax, Math.max(2, botCount));
                   const stepBtn = { width: 40, height: 40, borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.14)', color: '#dcfce7', fontWeight: 900, fontSize: 22, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } as const;
                   return (
@@ -2363,9 +2363,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </button>
               {botsRunOpen && (() => {
                 // 2026-07-07 (Wolf): frei waehlbare Anzahl per Stepper.
-                // Cap = Backend-Limit: Arena (nested) 24, sonst 8.
-                const botMax = (s as any).largeGroupMode ? 24 : 8;
-                const presets = (s as any).largeGroupMode ? [8, 16, 24] : [2, 4, 6, 8];
+                // Cap = Backend-Limit: Arena (nested/large) 40, sonst 8.
+                const botMax = (s as any).largeGroupMode ? 40 : 8;
+                const presets = (s as any).largeGroupMode ? [8, 24, 40] : [2, 4, 6, 8];
                 const cnt = Math.min(botMax, Math.max(2, botCount));
                 const stepBtn = { width: 40, height: 40, borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.14)', color: '#dcfce7', fontWeight: 900, fontSize: 22, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } as const;
                 return (

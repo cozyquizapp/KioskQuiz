@@ -93,7 +93,7 @@ export const QQ_MAX_STAPELS_PER_GAME  = 3;  // Stapel-Cap pro Team pro Spiel (ve
 // (dann kommen Trigger + Moderator/Wizard-Toggles automatisch zurueck).
 export const QQ_COMEBACK_ENABLED      = false;
 export const QQ_MAX_TEAMS             = 8;
-export const QQ_MAX_TEAMS_LARGE       = 25; // Groß-Gruppen-Modus (largeGroupMode): Bar-Race statt Grid
+export const QQ_MAX_TEAMS_LARGE       = 40; // Groß-Gruppen-Modus (largeGroupMode): Bar-Race statt Grid. 40 = 5×8 Fraktionen (Live-Event-Notbremse, 2026-07-10)
 export const QQ_MIN_TEAMS             = 2;
 
 export function qqGridSize(teamCount: number): number {

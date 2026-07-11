@@ -45,10 +45,12 @@ Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ung
       gefüllt? Leere Felder fallen auf DE zurück. **Wolf macht den Event-Draft erst wenn die App steht** → dieser Punkt kommt später.
 
 ### Woche 2 — Last & Join
-- [ ] **40-Geräte-Lasttest** (Bots + echte Geräte). Broadcast-Latenz auf Venue-WLAN messen:
-      jeder `qq:submitAnswer` → voller `buildQQStateUpdate` an alle (`qqSocketHandlers.ts:1676`,
-      `qqRooms.ts:4630+`), kein Delta/Throttle. Rate-Limit 5/s verhindert Absturz, aber Latenz-Wildcard.
-- [ ] Falls Lag: Broadcast drosseln/debouncen/Delta.
+- [x] ~~40-Geräte-Lasttest (Server-Seite)~~ — **erledigt** (`backend/scripts/loadtest-arena.mjs`, 40 echte
+      Socket-Verbindungen). Ergebnis: 40/40 Joins ok, Broadcast-Fan-out an alle 40 in **33 ms**, Payload
+      15,3 KB @ 40 Teams, **Fraktions-Balance perfekt 5×8** (alle wollten dieselbe Fraktion). Server ist
+      NICHT der Flaschenhals → **Broadcast-Throttle vorerst nicht nötig.**
+- [ ] **Rest-Validierung Last** (nur am echten Gerät/WLAN möglich): Venue-WLAN-Latenz + in-Frage-Payload
+      (Antworten-Array) beim Trockenlauf (Woche 4) gegenprüfen. Bei Lag dann Broadcast drosseln/Delta.
 - [ ] **Join-Onboarding EN wasserdicht:** QR + Raumcode + „3–4 pro Handy" + eine klare Beitreten-Seite.
 
 ### Woche 3 — UX-Politur (Designer-Publikum)

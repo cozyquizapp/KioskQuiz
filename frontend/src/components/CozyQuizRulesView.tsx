@@ -509,7 +509,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     icon: '📖',
     title: lang === 'en' ? 'Now the rules' : 'Jetzt kommen die Regeln',
     color: RULES_SLIDE_COLOR,
-    lines: [lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!'],
+    // 2026-07-12 (Wolf): zweite Zeile als Vorschau — füllt die vorher sehr leere
+    // Intro-Karte und setzt die Erwartung (kurzer Überblick, dann Spielstart).
+    lines: [
+      lang === 'en' ? 'Pay close attention!' : 'Gut aufpassen!',
+      lang === 'en' ? 'A quick overview, then we play.' : 'Ein kurzer Überblick, dann geht’s los.',
+    ],
     eyebrow: lang === 'en' ? 'Get ready' : 'Vorbereitung',
   };
   const idx = isIntro ? -1 : Math.max(0, Math.min(rawIdx, totalSlides - 1));
@@ -543,8 +548,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           Label (Rest Nummern), damit der Stepper einzeilig bleibt (kein Scroll). */}
       {(() => {
         // Intro-Pill (📖) als erste Station + die echten Regeln danach.
+        // 2026-07-12 (Wolf): Intro-Pill nutzt das Eyebrow („Get ready") statt des
+        // Titels — sonst dopplte die aktive Pill exakt den Karten-Titel „Now the rules".
         const stepList = [
-          { label: introSlide.title, glyph: '📖' as string },
+          { label: introSlide.eyebrow ?? introSlide.title, glyph: '📖' as string },
           ...slides.map((sl, i) => ({ label: sl.title, glyph: String(i + 1) })),
         ];
         const activeStep = isIntro ? 0 : idx + 1;

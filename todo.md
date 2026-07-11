@@ -67,9 +67,21 @@ Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ung
   (`CozyQuizFinalBettingView`/`FinalRevealView`), aktuell backend-seitig in Arena aus. Vor Reaktivierung
   Fraktions-Bucketing (`isMega`/`qqFactionBuckets`) ergänzen.
 
-### Woche 3 — UX-Politur (Designer-Publikum)
-- [ ] Microcopy-EN-Sweep Team + Beamer · Motion/Klarheit-Feinschliff.
-- [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll).
+### Visueller Dry-Run (40 Bots, Arena, EN) — Screenshots ausgewertet 2026-07-12
+Gesamturteil: **stark, premium, designer-tauglich.** Volle Auswertung: [[project-cozyarena-live-event-2026-08]].
+Offene Punkte (priorisiert):
+- [ ] 🔴 **Mod-Pacing Scoring→Standings** (BESTÄTIGT „ein Druck extra"). Client-4,2s-Timer
+      (`CozyQuizLargeGroupView.tsx:51-56`) → Mod-gesteuert: Scoring hält → weiter → Standings → weiter →
+      nächste Frage. Backend-Flag `megaStandingsRevealed` + Beamer nutzt Flag + Mod-Advance in PLACEMENT
+      abfangen. Ändert Streamdeck-Flow (Wolf ok).
+- [ ] 🔴 **CHEESE-Scoring eigenes Modell** (Wolf 2026-07-12): „x/5 correct + schneller" passt für CHEESE
+      nicht → Vorschlag „5-Team-Ø-Geschwindigkeit". OFFEN: betrifft weitere Kategorien? Design-Frage klären.
+      (CHEESE-Screenshot war >5MB → verkleinert neu schicken.)
+- [ ] 🟠 **„Vollbild (F11)" deutsch auf EN-Beamer** → „Fullscreen (F11)" im EN oder aus Publikumsbild ausblenden.
+- [ ] 🟠 **Gedankenstriche** raus: `CozyQuizLargeGroupView.tsx:96` Scoring-Footer (DE+EN) + CozyGuessr-Subtitle „on the map — closest team wins".
+- [ ] 🟡 **„Let's go!"-Komposition** oben-lastig (Titel oben, Wappen unten → Leere oben).
+- [ ] 🟡 **Kontrast am echten Beamer:** „Wing It" (Blau) + „Objection" (Pink) Fraktionsnamen auf Dunkel prüfen.
+- [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll) — im Dry-Run ok aussehend, final am Projektor.
 
 ### Woche 4 — Puffer
 - [ ] Kompletter Trockenlauf mit mehreren echten Geräten (voller Durchlauf, EN).

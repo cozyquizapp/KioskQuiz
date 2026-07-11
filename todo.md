@@ -13,6 +13,58 @@
 
 ---
 
+## 🎯 CozyArena LIVE-EVENT — HÖCHSTE PRIO (Ziel ~Anfang Aug 2026)
+
+**Kontext:** Erstes CozyArena-Event mit **echten Geräten**. Firma lädt ein, **50–100 Leute**
+(theoret. bis 200), **Tech + UX-Designer** (kritisches Publikum!), **komplett Englisch**,
+**kostenloses Testevent**, **Wolf moderiert solo**. 3–4 Leute pro Handy → ~25–40 Handys/Teams.
+Zeitachse: 3–4 Wochen ab 2026-07-10.
+
+**🔒 Gelockte Entscheidungen (2026-07-10):**
+- **Fraktions-Verteilung = A + Variante 1:** Server balanciert per **Soft-Cap pro Fraktion**
+  (`ceil(Teams/8)`), aber **freie Wahl bleibt** — leerste Fraktion vorgeschlagen, volle gesperrt.
+  (Behält Identitäts-Moment, garantiert faires Rennen, null Einlass-Orga für Solo-Host.)
+- **Team-Cap 25 → 40** (`QQ_MAX_TEAMS_LARGE`, 5×8). Notbremse, keiner wird abgewiesen.
+- **3 vs 4 pro Handy = Vor-Ort-Ansage**, kein Code. Wir last-testen auf volle 40.
+- **Progressives Fraktions-Öffnen:** v1 NICHT, beim Trockenlauf entscheiden (nur Optik bei wenig Andrang).
+- **Sprache = gelöst im Code:** Raum auf EN → Handy+Beamer+Fraktionen komplett EN. Mod-Konsole
+  bleibt DE (Wolf moderiert). **Einziger echter Rest = Content:** EN erscheint nur bei gefüllten
+  `*En`-Feldern.
+
+**Audit-Befund (2 Explore-Agents, 2026-07-10):** Layout skaliert (Arena bündelt auf 8 Fraktions-
+Balken, alles `overflow:hidden`, Join-Cap greift, keine Crash-Pfade). Echte Risiken = (1) Fraktions-
+Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ungetestet.
+
+### Woche 1 — De-risk
+- [ ] **Fraktions-Soft-Cap + Auto-Balance.** Backend `qqRooms.ts:585-615` join-Validierung: pro-
+      Fraktion-Cap `ceil(Teams/8)`. Frontend `QQTeamPage.tsx:470` (largeGroupMode `takenAvatarIds=[]`):
+      leerste Fraktion vorschlagen, volle ausgrauen. Round-Robin-Logik existiert bisher NUR im Bot-Fill
+      (`server.ts:9849-9873`) → auf echte Joins übertragen.
+- [ ] **Lobby-Anzeige-Bugs:** „X/3"-Pille dynamisch statt hart `/3` (`CozyQuizLobbyView.tsx:795`) +
+      Dot-Reihe deckeln gegen Overflow (`:818`).
+- [ ] **Cap 25 → 40** (`quarterQuizTypes.ts:96`) + Bot-Fill 24 → 40 (`server.ts:9803`) + grep nach
+      hartverdrahteten 24/25-Annahmen.
+- [ ] **EN-Content-Verify:** Event-Draft Frage für Frage — jedes `textEn/answerEn/optionsEn/unitEn`
+      gefüllt? Leere Felder fallen auf DE zurück. (Wolf sagt: EN-Fragen existieren → prüfen.)
+
+### Woche 2 — Last & Join
+- [ ] **40-Geräte-Lasttest** (Bots + echte Geräte). Broadcast-Latenz auf Venue-WLAN messen:
+      jeder `qq:submitAnswer` → voller `buildQQStateUpdate` an alle (`qqSocketHandlers.ts:1676`,
+      `qqRooms.ts:4630+`), kein Delta/Throttle. Rate-Limit 5/s verhindert Absturz, aber Latenz-Wildcard.
+- [ ] Falls Lag: Broadcast drosseln/debouncen/Delta.
+- [ ] **Join-Onboarding EN wasserdicht:** QR + Raumcode + „3–4 pro Handy" + eine klare Beitreten-Seite.
+
+### Woche 3 — UX-Politur (Designer-Publikum)
+- [ ] Microcopy-EN-Sweep Team + Beamer · Motion/Klarheit-Feinschliff.
+- [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll).
+
+### Woche 4 — Puffer
+- [ ] Kompletter Trockenlauf mit mehreren echten Geräten (voller Durchlauf, EN).
+- [ ] **Coolify-Backend-Redeploy** (Cap, Faction-Balance, ggf. Broadcast-Throttle).
+- [ ] Progressives Fraktions-Öffnen entscheiden (falls Bars dünn).
+
+---
+
 ## ✅ Backend-Redeploy erledigt (2026-07-05)
 
 Coolify-Redeploy durch, Backend gesund (health 200, db connected). Damit LIVE:

@@ -36,14 +36,14 @@ Balken, alles `overflow:hidden`, Join-Cap greift, keine Crash-Pfade). Echte Risi
 Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ungetestet.
 
 ### Woche 1 — De-risk
-- [ ] **Fraktions-Soft-Cap + Auto-Balance.** Backend `qqRooms.ts:585-615` join-Validierung: pro-
-      Fraktion-Cap `ceil(Teams/8)`. Frontend `QQTeamPage.tsx:470` (largeGroupMode `takenAvatarIds=[]`):
-      leerste Fraktion vorschlagen, volle ausgrauen. Round-Robin-Logik existiert bisher NUR im Bot-Fill
-      (`server.ts:9849-9873`) → auf echte Joins übertragen.
-- [ ] **Lobby-Anzeige-Bugs:** „X/3"-Pille dynamisch statt hart `/3` (`CozyQuizLobbyView.tsx:795`) +
-      Dot-Reihe deckeln gegen Overflow (`:818`).
-- [ ] **Cap 25 → 40** (`quarterQuizTypes.ts:96`) + Bot-Fill 24 → 40 (`server.ts:9803`) + grep nach
-      hartverdrahteten 24/25-Annahmen.
+- [x] ~~Cap 25 → 40~~ + Bot-Fill 24 → 40 + Mod-Stepper + hardcoded-Audit — **erledigt** `3b830e18`.
+- [x] ~~Lobby „X/3"-Pille~~ → reine Count-Zahl + Dots flexWrap — **erledigt** `3b830e18`.
+- [ ] **Fraktions-Soft-Cap + Auto-Balance** (der subtile Teil, fokussiert bauen + verifizieren).
+      Backend `qqRooms.ts:585-615` join: Fraktion nur waehlbar wenn `count == min` (garantiert
+      max-min ≤ 1); ueberfuellte Wahl → serverseitig leerste zuweisen (dabei color/emoji/Wappen
+      aus neuem avatarId kohaerent nachziehen — Emoji/Slug-Flow prüfen!). Frontend `QQTeamPage.tsx:470`
+      (largeGroupMode `takenAvatarIds=[]`): leerste Fraktion vorschlagen + auto-switch, volle ausgrauen.
+      Round-Robin existiert bisher NUR im Bot-Fill (`server.ts:9849-9873`) → auf echte Joins uebertragen.
 - [ ] **EN-Content-Verify:** Event-Draft Frage für Frage — jedes `textEn/answerEn/optionsEn/unitEn`
       gefüllt? Leere Felder fallen auf DE zurück. (Wolf sagt: EN-Fragen existieren → prüfen.)
 

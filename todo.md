@@ -38,14 +38,11 @@ Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ung
 ### Woche 1 — De-risk
 - [x] ~~Cap 25 → 40~~ + Bot-Fill 24 → 40 + Mod-Stepper + hardcoded-Audit — **erledigt** `3b830e18`.
 - [x] ~~Lobby „X/3"-Pille~~ → reine Count-Zahl + Dots flexWrap — **erledigt** `3b830e18`.
-- [ ] **Fraktions-Soft-Cap + Auto-Balance** (der subtile Teil, fokussiert bauen + verifizieren).
-      Backend `qqRooms.ts:585-615` join: Fraktion nur waehlbar wenn `count == min` (garantiert
-      max-min ≤ 1); ueberfuellte Wahl → serverseitig leerste zuweisen (dabei color/emoji/Wappen
-      aus neuem avatarId kohaerent nachziehen — Emoji/Slug-Flow prüfen!). Frontend `QQTeamPage.tsx:470`
-      (largeGroupMode `takenAvatarIds=[]`): leerste Fraktion vorschlagen + auto-switch, volle ausgrauen.
-      Round-Robin existiert bisher NUR im Bot-Fill (`server.ts:9849-9873`) → auf echte Joins uebertragen.
+- [x] ~~Fraktions-Soft-Cap + Auto-Balance~~ — **erledigt** `bb11a88d`. Backend-Safety-Net (`qqRooms.ts`
+      join: nur `count==min` waehlbar, sonst leerste zugewiesen, Name/Emoji/Farbe kohaerent) + Frontend
+      (`takenAvatarIds`=ueber-Minimum-Fraktionen → Auto-Switch/Karussell greift). ⏳ Live-Validierung im 40-Geraete-Lasttest.
 - [ ] **EN-Content-Verify:** Event-Draft Frage für Frage — jedes `textEn/answerEn/optionsEn/unitEn`
-      gefüllt? Leere Felder fallen auf DE zurück. (Wolf sagt: EN-Fragen existieren → prüfen.)
+      gefüllt? Leere Felder fallen auf DE zurück. **Wolf macht den Event-Draft erst wenn die App steht** → dieser Punkt kommt später.
 
 ### Woche 2 — Last & Join
 - [ ] **40-Geräte-Lasttest** (Bots + echte Geräte). Broadcast-Latenz auf Venue-WLAN messen:

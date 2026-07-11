@@ -2427,6 +2427,24 @@ export function qqMegaEventScore(room: QQRoomState): void {
       g.correct = f.inRangeCount;      // Anzeige „X/Y nah dran"
       g.bestDist = f.dist;             // Ranking nach Median-Distanz
     }
+  } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
+    // 2026-07-12 (Wolf): CozyGuessr rang-basiert statt nur Platz 1. Jede Fraktion
+    // nach ihrem BESTEN Pin (kleinste Distanz) ranken → Top-5 kriegen 5/4/3/2/1 +
+    // Basis, wie alle anderen Kategorien. Pythagoras wie evalMap (reicht fürs
+    // relative Ranking). perf>0 = Fraktion hat teilgenommen; Rang via bestDist.
+    const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteMap;
+    for (const a of room.answers) {
+      const parts = a.text.split(',');
+      if (parts.length < 2) continue;
+      const lat = parseFloat(parts[0].trim());
+      const lng = parseFloat(parts[1].trim());
+      if (Number.isNaN(lat) || Number.isNaN(lng)) continue;
+      const g = grpOf(a.teamId); if (!g) continue;
+      const dLat = lat - bt.lat, dLng = lng - bt.lng;
+      const dist = Math.sqrt(dLat * dLat + dLng * dLng);
+      g.correct++; g.perf++;              // Teilnahme (gültiger Pin gesetzt)
+      if (dist < g.bestDist) g.bestDist = dist; // bester Pin der Fraktion
+    }
   } else {
     // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners).
     for (const tid of (room._currentQuestionWinners ?? [])) {
@@ -2442,9 +2460,10 @@ export function qqMegaEventScore(room: QQRoomState): void {
   // single-fastest). Belohnt geschlossene, schnelle Fraktionen.
   const avgSpeed = (g: Grp) => (g.speedCount > 0 ? g.speedSum / g.speedCount : Infinity);
   const isSwarm = cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate';
+  const isMap = cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map';
   arr.sort((a, b) => {
-    // Schwarm: Median-Nähe entscheidet direkt (nicht Trefferquote).
-    if (isSwarm) return a.bestDist - b.bestDist;
+    // Schwarm + CozyGuessr: Distanz entscheidet direkt (nicht Trefferquote).
+    if (isSwarm || isMap) return a.bestDist - b.bestDist;
     const ra = ratio(a), rb = ratio(b);
     if (rb !== ra) return rb - ra;
     if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;

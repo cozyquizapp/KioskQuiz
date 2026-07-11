@@ -1170,9 +1170,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.4s both',
               }}>
                 {/* Mini-Progress-Text "X/Y TEAMS" zwischen Card-Unterkante und
-                    Avataren — nur sichtbar solange nicht alle dran sind. */}
-                {!s.allAnswered && (
-                  <div style={{ width: '100%', textAlign: 'center', marginBottom: -2 }}>
+                    Avataren. 2026-07-12 (Wolf 'rechte Spalte verschiebt sich bei
+                    Timer-Ende'): NICHT mehr entfernen wenn alle dran/Timer aus —
+                    das entfernte volle-Breite-Element ließ die Wappen-Reihe
+                    springen. Stattdessen Platz reservieren (visibility:hidden).
+                    Systemische Regel: dynamische Elemente ändern nie ihre Box. */}
+                {(
+                  <div style={{ width: '100%', textAlign: 'center', marginBottom: -2, visibility: s.allAnswered ? 'hidden' : 'visible' }}>
                     <span style={{
                       display: 'inline-block',
                       fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,

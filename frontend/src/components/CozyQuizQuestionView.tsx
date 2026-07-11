@@ -1189,7 +1189,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         : { color: 'rgba(226,232,240,0.85)' }),
                     }}>
                       {(s as any).nestedTeams
-                        ? `${s.answers.length}/${s.teams.length} Abgaben`
+                        ? `${s.answers.length}/${s.teams.length} ${lang === 'en' ? 'submitted' : 'Abgaben'}`
                         : `${s.answers.length}/${s.teams.length} Teams`}
                     </span>
                   </div>

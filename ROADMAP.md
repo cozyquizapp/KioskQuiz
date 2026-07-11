@@ -54,6 +54,9 @@ ist der **Löwenanteil der Definition of Done erledigt.**
 Aus dem echten Event lernen, statt spekulativ zu polieren:
 - [ ] Was das Event an Bugs/Rauheiten zeigt, **fixen** (echte Funde, kein Raten).
 - [ ] Die bekannten **No-Repro-Bugs** (`todo.md` „Beobachten") beim nächsten Auftreten schließen.
+- [ ] **Voll-Review Standard-Modus (2–8 Teams) + Gesamt-App** — analog zum Arena-Event-Review
+      (2026-07-11), aber über die GANZE App: alle Phasen DE+EN, Korrektheit, alle Features/Modi
+      (nicht nur Arena). Deckt die **2–8-Team-Seite der Definition of Done** ab. Wolf-Wunsch, auf M2.
 - [ ] Kern-Loop-Politur **nur wo es im echten Einsatz auffiel**.
 - → **Danach ist die Ziellinie erreicht. Die App ist verkaufsbereit.**
 

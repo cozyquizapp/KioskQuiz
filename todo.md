@@ -57,6 +57,16 @@ Balance ungesteuert, (2) per-answer Full-State-Broadcast bei vielen Geräten ung
       **Event-Einladung** (Text DE+EN steht bereit), nicht rigide in die App.
 - [ ] **Setup-Flow am echten Gerät gegenprüfen** (EN durchklicken: Fraktion wählen → beitreten), beim Trockenlauf.
 
+### Arena-Verifikation (Review-Agent 2026-07-11) — erledigt
+- [x] Voller Arena-Flow (Lobby→Frage→Reveal→Bar-Race→Finale→Thanks) auf DE/EN + Fraktions-
+      Gruppierung bei 40 Teams geprüft. **Sauber** bis auf 1 Bug (gefixt): „Abgaben" statt
+      „submitted" auf CHEESE/Foto-Fragen im Arena-EN (`CozyQuizQuestionView.tsx:1192`).
+- **🧨 Schlafende Landminen (deaktivierte Features → kein Live-Risiko, NICHT jetzt fixen):**
+  wenn Bluff/OnlyConnect je reaktiviert werden → `Bluff.tsx:511/640` + `OnlyConnectBeamerView.tsx:321`
+  iterieren rohe `s.teams` (40 statt 8 Fraktionen → Overflow); ebenso Final-Wager/Comeback in Arena
+  (`CozyQuizFinalBettingView`/`FinalRevealView`), aktuell backend-seitig in Arena aus. Vor Reaktivierung
+  Fraktions-Bucketing (`isMega`/`qqFactionBuckets`) ergänzen.
+
 ### Woche 3 — UX-Politur (Designer-Publikum)
 - [ ] Microcopy-EN-Sweep Team + Beamer · Motion/Klarheit-Feinschliff.
 - [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll).

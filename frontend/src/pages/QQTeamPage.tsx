@@ -465,9 +465,23 @@ export default function QQTeamPage() {
   };
 
   const setId = state?.avatarSetId;
-  // 2026-07-01: Groß-Modus (bis 25 Teams > 8 Avatar-Slots) → Slots wiederverwendbar,
-  // also keine „belegt"-Sperre. Teams unterscheiden sich über Name + Tier.
-  const takenAvatarIds = (state as any)?.largeGroupMode ? [] : (state?.teams ?? []).map(t => t.avatarId);
+  // 2026-07-01: Groß-Modus (largeGroupMode) → Avatar-Slots wiederverwendbar.
+  // 2026-07-10 (Cozy-Arena-Balance): Statt „alle frei" sperren wir die Fraktionen,
+  // die ÜBER dem aktuellen Minimum liegen → nur die leerste Ebene ist wählbar, das
+  // Bar-Race bleibt fair (garantiert max-min ≤ 1). Da QQ_AVATARS == die 8 Fraktionen,
+  // greift die bestehende „taken"-Maschinerie (Auto-Switch + Karussell-Ausgrauen)
+  // 1:1. Der Server erzwingt es zusätzlich als Safety-Net gegen Races.
+  const takenAvatarIds = useMemo<string[]>(() => {
+    if (!(state as any)?.largeGroupMode) return (state?.teams ?? []).map(t => t.avatarId);
+    const ids = QQ_AVATARS.map(a => a.id);
+    const counts = new Map<string, number>(ids.map(id => [id, 0]));
+    for (const t of (state?.teams ?? [])) {
+      const c = counts.get(t.avatarId);
+      if (c !== undefined) counts.set(t.avatarId, c + 1);
+    }
+    const min = Math.min(...ids.map(id => counts.get(id) ?? 0));
+    return ids.filter(id => (counts.get(id) ?? 0) > min);
+  }, [state?.teams, (state as any)?.largeGroupMode]);
   // Cozy Arena: mehrere Handys teilen sich eine Fraktion (= gleiches Wappen/Emoji)
   // → keine „belegt"-Sperre auf Emojis, sonst könnte nur 1 Handy pro Fraktion rein.
   const takenEmojis = (state as any)?.largeGroupMode ? [] : (state?.teams ?? []).map(t => t.emoji).filter(Boolean) as string[];
@@ -495,13 +509,18 @@ export default function QQTeamPage() {
         // User-Feedback: Vibration + Toast (nur wenn nicht initial-random)
         if (didRandomInit.current) {
           if (navigator.vibrate) navigator.vibrate(40);
-          setAutoSwitchToast(lang === 'de'
-            ? '⚡ Farbe war weg — du hast jetzt eine neue!'
-            : '⚡ Color was taken — picked a new one!');
+          // Arena: „Fraktion war voll" ist die zutreffende Botschaft (die 8 Slots
+          // sind Fraktionen); sonst der Farb-Text.
+          const large = !!(state as any)?.largeGroupMode;
+          setAutoSwitchToast(large
+            ? (lang === 'de' ? '⚖️ Fraktion war voll — du bist jetzt in einer freien!' : '⚖️ Faction was full — you\'re in an open one now!')
+            : (lang === 'de' ? '⚡ Farbe war weg — du hast jetzt eine neue!' : '⚡ Color was taken — picked a new one!'));
         }
       }
     }
-  }, [takenAvatarIds.join(',')]);
+    // avatarId in den Deps: tippt jemand manuell eine gesperrte (volle) Fraktion,
+    // bounct die Auswahl sofort zur leersten zurück (nicht erst beim nächsten Join).
+  }, [takenAvatarIds.join(','), avatarId]);
 
   // 2026-05-04: Beim ersten Mount mit Live-State -> random freie Color +
   // Emoji + Name Vorschlag setzen (wenn nichts in sessionStorage steht).

@@ -6,6 +6,7 @@ import {
   QQLanguage, QQ_TEAM_PALETTE, QQ_AVATARS, QQ_QUESTIONS_PER_PHASE,
   QQ_MAX_STEALS_PER_PHASE, QQ_MAX_JOKERS_PER_GAME, QQ_MAX_STAPELS_PER_GAME, QQ_MAX_TEAMS, QQ_MAX_TEAMS_LARGE, QQ_COMEBACK_ENABLED,
   qqGridSize, QQBuzzEntry, QQAnswerEntry,
+  QQ_MEGA_FACTIONS, qqMegaFactionName, qqMegaFactionSlug,
   QQComebackHLState, QQHLChoice, QQ_COMEBACK_HL_TIMER_DEFAULT_SEC,
   QQConnectionsState, QQ_CONNECTIONS_TIMER_DEFAULT_SEC, QQ_CONNECTIONS_MAX_FAILS_DEFAULT,
   QQ_CONNECTIONS_FALLBACK_PAYLOAD,
@@ -586,6 +587,30 @@ export function qqJoinTeam(
   if (existingCount >= maxTeams) {
     throw new QQError('ROOM_FULL', `Maximale Teamanzahl (${maxTeams}) erreicht.`);
   }
+  // ── Cozy Arena: Fraktionen ausbalancieren (autoritativer Safety-Net) ─────────
+  // Die 8 Fraktionen sollen gleichmaessig gefuellt werden, sonst wird das Bar-Race
+  // langweilig (12 Handys auf einer, 0 auf einer anderen). Regel: eine Fraktion ist
+  // nur „waehlbar", wenn ihr Count == aktuellem Minimum ist → garantiert max-min <= 1.
+  // Das /team-Frontend schlaegt die leerste vor + sperrt volle; hier faengt der
+  // Server Races / veraltete Clients ab: waehlt ein Handy eine ueberfuellte Fraktion,
+  // weisen wir die leerste zu. Name/Emoji/Farbe leiten sich deterministisch aus
+  // avatarId ab (qqSortedGroups/qqFactionBuckets gruppieren rein nach avatarId), also
+  // bleibt nach dem Reassign alles kohaerent — auf Beamer wie Handy.
+  let effectiveAvatarId = avatarId;
+  if (room.largeGroupMode) {
+    const factionIds = QQ_MEGA_FACTIONS.map(f => f.avatarId);
+    const counts = new Map<string, number>(factionIds.map(id => [id, 0]));
+    for (const t of Object.values(room.teams)) {
+      const c = counts.get(t.avatarId);
+      if (c !== undefined) counts.set(t.avatarId, c + 1);
+    }
+    const min = Math.min(...factionIds.map(id => counts.get(id) ?? 0));
+    const requested = counts.get(avatarId);
+    if (requested === undefined || requested > min) {
+      // Ueberfuellt/unbekannt → erste Fraktion mit count == min (leerste).
+      effectiveAvatarId = factionIds.find(id => (counts.get(id) ?? 0) === min) ?? avatarId;
+    }
+  }
   // Avatar exclusivity: each avatar (Color-Slot) can only be chosen by one team.
   // 2026-07-01: Im Groß-Modus (bis 25 Teams > 8 Avatar-Slots) Wiederverwendung
   // erlaubt — Teams unterscheiden sich über Name + Tier, Farb-Kollision egal.
@@ -616,14 +641,23 @@ export function qqJoinTeam(
   // Color is derived from the chosen avatar (each avatar has a fixed signature color).
   // Wolf 2026-05-05 (Klaerung): team.color = Avatar-Slot-Farbe wird ueberall
   // genutzt — Grid, Tabelle, Hero. Keine separate Brett-Palette mehr.
-  const avatar = QQ_AVATARS.find(a => a.id === avatarId);
+  const avatar = QQ_AVATARS.find(a => a.id === effectiveAvatarId);
   const color = avatar?.color ?? QQ_TEAM_PALETTE[existingCount % QQ_TEAM_PALETTE.length];
+  // Bei Fraktions-Reassign (largeGroupMode) Name + Emoji auf die neue Fraktion
+  // nachziehen — in Arena IST der Team-Name der Fraktions-Name + Emoji der Wappen-
+  // Slug (siehe /team joinRoom). Sonst Client-Werte 1:1 uebernehmen (kein Change).
+  const reassigned = effectiveAvatarId !== avatarId;
+  const factionLang: 'de' | 'en' = room.language === 'en' ? 'en' : 'de';
+  const finalName = reassigned ? qqMegaFactionName(effectiveAvatarId, factionLang) : teamName;
+  const finalEmoji = reassigned
+    ? qqMegaFactionSlug(effectiveAvatarId)
+    : (emoji && emoji.trim() ? emoji : undefined);
   room.teams[teamId] = {
     id: teamId,
-    name: teamName,
+    name: finalName,
     color,
-    avatarId,
-    emoji: emoji && emoji.trim() ? emoji : undefined,
+    avatarId: effectiveAvatarId,
+    emoji: finalEmoji,
     connected: true,
     totalCells: 0,
     largestConnected: 0,

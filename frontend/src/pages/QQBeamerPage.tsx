@@ -3988,8 +3988,8 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
     ? (lang === 'en' ? 'WELCOME TO THE' : 'HERZLICH WILLKOMMEN IN DER')
     : (lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM');
   const greeting = lang === 'en'
-    ? 'Get comfy — here we go!'
-    : 'Macht\'s euch bequem – gleich geht\'s los!';
+    ? 'Get comfy, here we go!'
+    : 'Macht\'s euch bequem, gleich geht\'s los!';
   // 2026-05-07 v6 (Wolf 'video VOR cascade, cascade erst nach video einblenden'):
   // hasIntroVideo = wenn eurovisionMode + welcomeVideoUrl + sichtbar. Solange
   // das Video laeuft (videoEnded=false), wird die komplette Cascade-Stage

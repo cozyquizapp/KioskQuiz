@@ -261,8 +261,8 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
           animation: 'tcreveal 0.5s ease 0.55s both',
         }}>
           {lang === 'en'
-            ? 'Phones at the ready — here we go!'
-            : 'Handy bereithalten — gleich geht\'s los!'}
+            ? 'Phones at the ready, here we go!'
+            : 'Handy bereithalten, gleich geht\'s los!'}
         </div>
 
         {/* Sparkles */}

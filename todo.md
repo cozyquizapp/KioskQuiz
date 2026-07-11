@@ -95,11 +95,13 @@ GEBAUT+GEPUSHT (alle typecheck-grün):
 - [x] **CozyGuessr rang-basiert** (Top-5 5/4/3/2/1 statt nur Platz 1; Map zeigt schon 1 besten Pin/Fraktion).
 - [x] **preGame-Wolf verkleinert** (überlappte „Die Fraktionen"-Karte) — visuell bestätigen.
 - [x] **Reflow-Fix** „X/Y submitted"-Zeile (rechte Spalte sprang bei Timer-Ende) + systemische Regel dokumentiert.
-OFFEN:
-- [ ] 🔴 **Epic Standings** — voller Rennen-Umbau (Balken überholen sich, Positions-Wechsel animiert, wandernde Krone). Wolf wählte „voller Umbau". Mit Screenshot-Verifikation.
+- [x] 🔴 **Epic Standings** — voller Rennen-Umbau GEBAUT+VERIFIZIERT (`standings-epic-neu.png`): Leader-Spotlight (Glow-Rahmen + hüpfende Krone + größer), Komet-Spitzen an Balken-Front, Renn-Lane-Track, hochzählende Werte (useCountUp), FLIP + Führungs-Blitz bleiben.
+- [x] **„Now the rules"-Karte** voller (Vorschau-Zeile) + Stepper-Titel-Dopplung raus.
+DEFERRED (bewusst, mit Grund):
+- [ ] **Round-Intro-Balance** — DEFERRED: tief mit dem Journey-Zoom-Kamerasystem verzahnt (Bug-Hotspot #2), hohes Bruchrisiko; „oben-lastig" evtl. nur Transition-Frame. Erst am echten Trockenlauf prüfen, ob's überhaupt stört.
+- [ ] **Icon-Fidelity** (📖/📋 flach) — DEFERRED: kein 3D-Book/Clipboard-Asset vorhanden. Wolf designt die PNGs (wie Cozy-Game-Icons), dann wire ich sie.
 - [ ] **Reflow-Audit Frage-View** breiter (Timer/Badges) — falls CHEESE-Shift nach dem Fix bleibt, Timer-Element prüfen.
-- [ ] Approved Polish: „Now the rules"-Karte kompakter, Round-Intro-Balance, Icon-Fidelity (Buch/Klemmbrett → 3D).
-- ⚠️ Vieles davon ist im alten Frontend-Screenshot NICHT drin → Wolf: Beamer hart neuladen + Autoplay AUS zum echten Mod-Pacing-Test.
+- ⚠️ Vieles davon war im alten Frontend-Screenshot NICHT drin → Wolf: Beamer hart neuladen (Strg+Shift+R) + Autoplay AUS zum echten Mod-Pacing-Test.
 - [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll) — im Dry-Run ok aussehend, final am Projektor.
 
 ### Woche 4 — Puffer

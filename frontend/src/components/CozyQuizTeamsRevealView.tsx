@@ -138,7 +138,9 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       {factions.map((f, i) => {
         const on = placed.has(i);
         const src = crestFor(f.avatarId);
-        const disc = big ? 'clamp(84px, 9cqw, 156px)' : 'clamp(54px, 6cqw, 96px)';
+        // 2026-07-12 (Wolf): Finale-Wappen groesser/praesenter, damit die Mitte
+        // gefuellt wirkt statt leer. Einzugs-Groesse (klein) unveraendert.
+        const disc = big ? 'clamp(96px, 10.5cqw, 186px)' : 'clamp(54px, 6cqw, 96px)';
         return (
           <div key={f.avatarId} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: big ? 8 : 5,
@@ -155,7 +157,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                 ? <img src={src} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', filter: on ? `drop-shadow(0 0 ${big ? 22 : 13}px ${f.color}66) drop-shadow(0 3px 6px rgba(0,0,0,0.4))` : 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }} />
                 : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={disc} />}
             </div>
-            <div style={{ fontSize: big ? 'clamp(15px, 1.7cqw, 27px)' : 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
+            <div style={{ fontSize: big ? 'clamp(16px, 1.9cqw, 30px)' : 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
               {qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}
             </div>
           </div>
@@ -172,6 +174,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       background: themed ? 'var(--qq-bg)' : undefined,
       fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       display: 'flex', flexDirection: 'column', alignItems: 'center',
+      // 2026-07-12 (Wolf 'Let's go oben-lastig, Leere oben'): im Finale Titel +
+      // Aufstellung als EINE zentrierte Gruppe, statt Titel oben angepinnt und
+      // Aufstellung tief im flex:1-Raum. Waehrend des Einzugs bleibt flex-start.
+      justifyContent: done ? 'center' : 'flex-start',
     }}>
       {/* Farb-Flut der aktuellen Fraktion */}
       <div aria-hidden style={{
@@ -181,7 +187,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       }} />
 
       {/* Titel */}
-      <div style={{ position: 'relative', zIndex: 2, marginTop: 'clamp(22px, 4cqh, 52px)', textAlign: 'center' }}>
+      <div style={{ position: 'relative', zIndex: 2, marginTop: done ? 0 : 'clamp(22px, 4cqh, 52px)', marginBottom: done ? 'clamp(16px, 2.6cqh, 40px)' : 0, textAlign: 'center' }}>
         <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#94a3b8' }}>
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
@@ -193,7 +199,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       {/* Bühne: Einzug (aktuelle Fraktion) ODER — wenn fertig — die grosse
           zentrierte Startaufstellung (fuellt die Mitte statt leerem Raum;
           Wolf 2026-07-04 'leerer space in der mitte'). */}
-      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+      <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
         {done ? (
           // Smoothe Schluss-Transition (Wolf): die Startaufstellung steigt von
           // unten in die Mitte statt hart einzublenden.

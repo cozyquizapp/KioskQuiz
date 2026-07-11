@@ -9846,16 +9846,20 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
       const av = (t as any).avatarId;
       if (av) countByAv.set(av, (countByAv.get(av) ?? 0) + 1);
     }
+    // 2026-07-12 (Wolf '40 eingestellt, nur 24 kamen'): Sub-Teams pro Fraktion
+    // dynamisch aus der Zielzahl statt hart 3 → count=40 → 5 pro Fraktion (8×5),
+    // 24 → 3, 16 → 2. So erreicht der Bot-Fill den eingestellten Wert (bis Cap 40).
+    const perFactionMax = Math.max(1, Math.ceil(count / QQ_AVATARS.length));
     while (added < toAdd) {
       // Fraktion mit den wenigsten Sub-Teams waehlen (QQ_AVATARS-Reihenfolge
       // bei Gleichstand → gleichmaessige Round-Robin-Verteilung ueber alle 8).
       let targetAv: string | null = null;
-      let min = 3;
+      let min = perFactionMax;
       for (const av of QQ_AVATARS) {
         const have = countByAv.get(av.id) ?? 0;
         if (have < min) { min = have; targetAv = av.id; }
       }
-      if (!targetAv || min >= 3) break; // alle 8 Fraktionen voll (je 3 Handys)
+      if (!targetAv || min >= perFactionMax) break; // alle 8 Fraktionen bis perFactionMax voll
       const have = countByAv.get(targetAv) ?? 0;
       const teamId = `dev-${targetAv}-${have}-${Math.random().toString(36).slice(2, 7)}`;
       // 2026-07-04 (Wolf 'Namen falsch'): Sub-Teams heissen nach der FRAKTION

@@ -82,7 +82,8 @@ Offene Punkte (priorisiert):
       „Schnellstes-Team"-Award. Backend-Typecheck grün. ⚠️ Live-Trockentest steht aus.
 - [x] 🟠 **„Vollbild (F11)" bilingual** — EN-Beamer zeigt „Fullscreen (F11)". ERLEDIGT 2026-07-12.
 - [x] 🟠 **Gedankenstriche** raus: Arena-Scoring-Footer + CozyGuessr-Subtitle (DE+EN). ERLEDIGT 2026-07-12.
-- [ ] 🟡 **„Let's go!"-Komposition** oben-lastig (Titel oben, Wappen unten → Leere oben).
+- [x] 🟡 **„Let's go!"-Komposition** ausbalanciert — GEBAUT+GEPUSHT 2026-07-12. Im Finale Titel + Aufstellung als
+      eine zentrierte Gruppe, Wappen größer. Per Showroom-Screenshot verifiziert (`Desktop/arena-letsgo-neu.png`).
 - [ ] 🟡 **Kontrast am echten Beamer:** „Wing It" (Blau) + „Objection" (Pink) Fraktionsnamen auf Dunkel prüfen.
 - [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll) — im Dry-Run ok aussehend, final am Projektor.
 

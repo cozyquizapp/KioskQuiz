@@ -75,9 +75,11 @@ Offene Punkte (priorisiert):
       PLACEMENT ab (Flag=true statt Advance), zweiter schaltet zur Frage. Beamer nutzt Flag statt `setTimeout`.
       Mod: Flag im Autoplay-`fireKey`, Pacing 11s→2×6s, Label „→ Gesamtstand zeigen" vs „→ Nächste Frage".
       Streamdeck: gleiche Space-Taste, 1 Druck extra. Typechecks grün. ⚠️ Live-Trockentest steht aus.
-- [ ] 🔴 **CHEESE-Scoring eigenes Modell** (Wolf 2026-07-12): „x/5 correct + schneller" passt für CHEESE
-      nicht → Vorschlag „5-Team-Ø-Geschwindigkeit". OFFEN: betrifft weitere Kategorien? Design-Frage klären.
-      (CHEESE-Screenshot war >5MB → verkleinert neu schicken.)
+- [x] 🔴 **CHEESE-Scoring: Ø-Speed statt Hero-Handy** — GEBAUT+GEPUSHT 2026-07-12. Wolf wählte „Ø-Speed der
+      richtigen Handys" + „überall wo's passt". Speed-Tiebreak in `qqMegaEventScore` nutzt jetzt die DURCHSCHNITTS-
+      Abgabezeit der richtigen Handys (`avgSpeed` via `speedSum`/`speedCount`) statt `bestSpeed` (single-fastest) —
+      gilt für MUCHO/10v10/CHEESE/Top-5. Distanz-Kategorien (Schätzchen/Schwarm) unberührt. `bestSpeed` bleibt fürs
+      „Schnellstes-Team"-Award. Backend-Typecheck grün. ⚠️ Live-Trockentest steht aus.
 - [x] 🟠 **„Vollbild (F11)" bilingual** — EN-Beamer zeigt „Fullscreen (F11)". ERLEDIGT 2026-07-12.
 - [x] 🟠 **Gedankenstriche** raus: Arena-Scoring-Footer + CozyGuessr-Subtitle (DE+EN). ERLEDIGT 2026-07-12.
 - [ ] 🟡 **„Let's go!"-Komposition** oben-lastig (Titel oben, Wappen unten → Leere oben).

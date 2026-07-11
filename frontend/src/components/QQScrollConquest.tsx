@@ -30,10 +30,10 @@ const STUCK = { r: 4, c: 4 };
 
 const CHAPTERS = [
   'So läuft eine Runde CozyQuiz.',
-  'Beantwortet Fragen aus 5 Kategorien — jedes Team am eigenen Handy.',
+  'Beantwortet Fragen aus 5 Kategorien, jedes Team am eigenen Handy.',
   'Jede richtige Antwort erobert ein Feld auf dem Brett.',
   'Runde um Runde wächst euer Gebiet in eurer Farbe.',
-  'Klauen, Stapeln, Joker — Taktik entscheidet.',
+  'Klauen, Stapeln, Joker, Taktik entscheidet.',
   'Das größte zusammenhängende Gebiet gewinnt. Buch dein CozyQuiz!',
 ];
 

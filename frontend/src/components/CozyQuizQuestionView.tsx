@@ -562,7 +562,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             color: isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.violet400,
             letterSpacing: '0.1em', textTransform: 'uppercase', opacity: isThemed() ? 0.8 : 0.55,
           }}>
-            {lang === 'de' ? 'Bild fehlt — Frage trotzdem spielbar' : 'No image — question still playable'}
+            {lang === 'de' ? 'Bild fehlt, Frage trotzdem spielbar' : 'No image, question still playable'}
           </div>
         </div>
       )}
@@ -2573,7 +2573,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     color: 'var(--qq-text-muted)', fontSize: 'clamp(19px, 2.1cqw, 28px)', fontWeight: 700, lineHeight: 1.1,
                   }}>
                     {distanceTied
-                      ? (lang === 'en' ? 'was closest — and fastest! ⚡' : 'war am nächsten dran — und am schnellsten! ⚡')
+                      ? (lang === 'en' ? 'was closest, and fastest! ⚡' : 'war am nächsten dran, und am schnellsten! ⚡')
                       : (lang === 'en' ? 'was closest!' : 'war am nächsten dran!')}
                   </span>
                 </div>
@@ -2695,7 +2695,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 ? (isEn ? 'wins the round!' : 'gewinnt die Runde!')
                 : cat === 'ZEHN_VON_ZEHN'
                   ? (allInTied
-                      ? (isEn ? 'had the most points — and was fastest!' : 'hatte die meisten Punkte — und war am schnellsten!')
+                      ? (isEn ? 'had the most points, and was fastest!' : 'hatte die meisten Punkte, und war am schnellsten!')
                       : (isEn ? 'bet the most points on the correct answer!' : 'hat die meisten Punkte auf die richtige Antwort gesetzt!'))
                   : muchoSpeedWin
                     ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
@@ -2719,14 +2719,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const everyoneSurvived = survivorCount === totalCount;
               const hpMsg = isEn
                 ? (everyoneSurvived
-                    ? 'all survived — each gets an action!'
+                    ? 'all survived, each gets an action!'
                     : survivorCount === 1
-                      ? 'survived — gets an action!'
+                      ? 'survived, gets an action!'
                       : `${survivorCount} survived — each gets an action!`)
                 : (everyoneSurvived
-                    ? 'alle überlebt — jedes Team bekommt eine Aktion!'
+                    ? 'alle überlebt, jedes Team bekommt eine Aktion!'
                     : survivorCount === 1
-                      ? 'überlebt — bekommt eine Aktion!'
+                      ? 'überlebt, bekommt eine Aktion!'
                       : `${survivorCount} haben überlebt — jedes Team bekommt eine Aktion!`);
               return (
                 <div style={{

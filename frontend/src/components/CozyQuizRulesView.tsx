@@ -152,7 +152,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
       lines: [
-        t('rules.slide_cozygames.line1', 'Nach jeder Runde dreht das Glücksrad — ein analoges Mini-Spiel'),
+        t('rules.slide_cozygames.line1', 'Nach jeder Runde dreht das Glücksrad: ein analoges Mini-Spiel'),
         t('rules.slide_cozygames.line2', 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen'),
       ],
       // 2026-05-17 (Wolf): extra-Beschreibung raus — Moderator erklärt das selbst.
@@ -254,7 +254,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
       lines: [
-        t('rules.slide_cozygames.line1', 'After every round the wheel spins — one analog mini-game'),
+        t('rules.slide_cozygames.line1', 'After every round the wheel spins: one analog mini-game'),
         t('rules.slide_cozygames.line2', 'Winner places 1 action on the board · skill > knowledge'),
       ],
     },
@@ -748,8 +748,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
                 }} />
                 {getRuleText('rules.slide3.hint', lang, lang === 'de'
-                  ? '5 Kategorien pro Runde — jede mit eigenem Twist'
-                  : '5 categories per round — each with its own twist')}
+                  ? '5 Kategorien pro Runde, jede mit eigenem Twist'
+                  : '5 categories per round, each with its own twist')}
               </div>
               <style>{`
                 @keyframes qqShowcaseHintPulse {

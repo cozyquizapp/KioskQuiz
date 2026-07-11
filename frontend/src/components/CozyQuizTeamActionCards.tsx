@@ -106,7 +106,7 @@ export function MegaScoringCard({ state: s, myTeamId, lang = 'de' }: {
         </div>
       )}
       <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.45 }}>
-        {de ? 'Punkte für dein Team — gleich geht’s weiter!' : 'Points for your team — next up soon!'}
+        {de ? 'Punkte für dein Team, gleich geht’s weiter!' : 'Points for your team, next up soon!'}
       </div>
     </div>
   );
@@ -366,17 +366,17 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       // statt stillem Ignorieren (leeres/eigenes Feld = kein Hinweis nötig).
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
       if (cell.stuck) {
-        setBlockedHint(lang === 'en' ? 'This field is stacked — can’t be stolen.' : 'Dieses Feld ist gestapelt — nicht klaubar.');
+        setBlockedHint(lang === 'en' ? 'This field is stacked, can’t be stolen.' : 'Dieses Feld ist gestapelt, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
       if (cell.shielded) {
-        setBlockedHint(lang === 'en' ? 'This field is shielded — can’t be stolen.' : 'Dieses Feld ist geschützt — nicht klaubar.');
+        setBlockedHint(lang === 'en' ? 'This field is shielded, can’t be stolen.' : 'Dieses Feld ist geschützt, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
       if (cell.frozen) {
-        setBlockedHint(lang === 'en' ? 'This field is frozen — can’t be stolen.' : 'Dieses Feld ist eingefroren — nicht klaubar.');
+        setBlockedHint(lang === 'en' ? 'This field is frozen, can’t be stolen.' : 'Dieses Feld ist eingefroren, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
@@ -604,11 +604,11 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       ? (lang === 'de' ? 'Jetzt ein Gegner-Feld tippen' : 'Now tap an opponent\'s cell')
       : (lang === 'de' ? 'Erst ein eigenes Feld tippen' : 'First tap one of your own cells');
     if (isStuck) return isStapelBonusMode
-      ? (lang === 'de' ? 'Eigenes Feld tippen (Bonus-Stapel, +1 Pkt — gleiches Feld mehrfach erlaubt)' : 'Tap one of your cells (bonus stack, +1 pt — same cell allowed multiple times)')
+      ? (lang === 'de' ? 'Eigenes Feld tippen (Bonus-Stapel, +1 Pkt, gleiches Feld mehrfach erlaubt)' : 'Tap one of your cells (bonus stack, +1 pt, same cell allowed multiple times)')
       : (lang === 'de' ? 'Eigenes Feld tippen (wird gestapelt, 2 Punkte)' : 'Tap one of your cells (stacked, 2 pts)');
     if (isShield) return lang === 'de'
-      ? 'Eigenes Feld tippen — wird bis Spielende geschützt'
-      : 'Tap one of your cells — shielded till end of game';
+      ? 'Eigenes Feld tippen, wird bis Spielende geschützt'
+      : 'Tap one of your cells, shielded till end of game';
     if (isSandLock) return lang === 'de'
       ? 'Feld tippen (Gegner oder leer) — 3 Fragen gebannt'
       : 'Tap a cell (enemy or empty) — banned for 3 questions';
@@ -669,8 +669,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           textAlign: 'center',
         }}>
           {lang === 'de'
-            ? <><QQEmojiIcon emoji="✅"/> Auch richtig! Ihr setzt jetzt — als <b>{positionLabel}</b>.</>
-            : <><QQEmojiIcon emoji="✅"/> Also correct! You're placing now — in <b>{positionLabel}</b>.</>}
+            ? <><QQEmojiIcon emoji="✅"/> Auch richtig! Ihr setzt jetzt, als <b>{positionLabel}</b>.</>
+            : <><QQEmojiIcon emoji="✅"/> Also correct! You're placing now, in <b>{positionLabel}</b>.</>}
         </div>
       )}
 
@@ -1009,8 +1009,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate400 }}>
                 {lang === 'de'
-                  ? 'Tippe nochmal zum Bestätigen — oder ein anderes Feld zum Wechseln.'
-                  : 'Tap again to confirm — or another cell to switch.'}
+                  ? 'Tippe nochmal zum Bestätigen, oder ein anderes Feld zum Wechseln.'
+                  : 'Tap again to confirm, or another cell to switch.'}
               </div>
             </div>
           )}
@@ -1359,7 +1359,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
       </div>
       {!anyAvailable && (
         <div style={{ fontSize: 13, color: QQ_COLORS.slate400, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
-          {lang === 'de' ? 'Keine Aktion möglich — warte auf Moderator.' : 'No action possible — wait for moderator.'}
+          {lang === 'de' ? 'Keine Aktion möglich, warte auf Moderator.' : 'No action possible, wait for moderator.'}
         </div>
       )}
       <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1460,8 +1460,8 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: QQ_COLORS.slate200, lineHeight: 1.4 }}>
             {de
-              ? 'Findet 4 Gruppen — gewinnt Felder fürs Spielfeld.'
-              : 'Find 4 groups — earn cells on the board.'}
+              ? 'Findet 4 Gruppen, gewinnt Felder fürs Spielfeld.'
+              : 'Find 4 groups, earn cells on the board.'}
           </div>
           <div style={{
             display: 'flex', flexDirection: 'column', gap: 6,
@@ -1508,7 +1508,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
             if (!placingTeam) {
               return (
                 <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center' }}>
-                  {de ? 'Schaut auf den Beamer — Setzen läuft.' : 'Watch the beamer — placement in progress.'}
+                  {de ? 'Schaut auf den Beamer, Setzen läuft.' : 'Watch the beamer, placement in progress.'}
                 </div>
               );
             }
@@ -1542,7 +1542,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
           )}
           {c.phase === 'done' && (
             <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center' }}>
-              {de ? 'Finale beendet — Punkte werden vergeben' : 'Finale done — scoring'}
+              {de ? 'Finale beendet, Punkte werden vergeben' : 'Finale done, scoring'}
             </div>
           )}
         </div>

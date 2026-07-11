@@ -492,8 +492,8 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
     ? (lang === 'en' ? '🏆 Final category' : '🏆 Final-Kategorie')
     : (lang === 'en' ? 'Energy reset between rounds' : 'Energy-Reset zwischen den Runden');
   const hint = lang === 'en'
-    ? "Get ready — the wheel decides which game you play."
-    : "Gleich geht's los — das Glücksrad entscheidet, welches Spiel ihr spielt.";
+    ? "Get ready, the wheel decides which game you play."
+    : "Gleich geht's los, das Glücksrad entscheidet, welches Spiel ihr spielt.";
   return (
     <FullScreenLayout width={width} height={height}>
       {/* 2026-05-24 (Wolf-Audit Bob-Konsistenz P1): vorher eigene

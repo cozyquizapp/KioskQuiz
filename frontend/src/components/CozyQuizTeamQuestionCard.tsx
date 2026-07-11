@@ -96,7 +96,7 @@ function AnswerInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
         </div>
         <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.red300, maxWidth: 260, lineHeight: 1.4 }}>
           {lang === 'de'
-            ? 'Diesmal wart ihr leider zu langsam. Beim nächsten Mal — wir glauben an euch.'
+            ? 'Diesmal wart ihr leider zu langsam. Beim nächsten Mal, wir glauben an euch.'
             : 'You were a bit too slow this time. Next round you got this!'}
         </div>
       </div>
@@ -920,8 +920,8 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         // 2026-05-03 (Wolf-Bug): bei SCHAETZCHEN gibt's kein objektiv 'falsch'.
         const isSchaetz = q.category === 'SCHAETZCHEN';
         const msgs = lang === 'de'
-          ? ['Nächstes Mal schafft ihr es!', 'Knapp daneben — bleibt dran!', 'Fast erwischt — weiter so!', 'Nicht aufgeben — der nächste Punkt wartet!', 'Schade — aber gleich kommt eure Chance!']
-          : ["You'll get it next time!", 'So close — stay in it!', 'Almost there — keep going!', "Don't give up — your point is waiting!", 'Tough one — your chance is coming!'];
+          ? ['Nächstes Mal schafft ihr es!', 'Knapp daneben, bleibt dran!', 'Fast erwischt, weiter so!', 'Nicht aufgeben, der nächste Punkt wartet!', 'Schade, aber gleich kommt eure Chance!']
+          : ["You'll get it next time!", 'So close, stay in it!', 'Almost there, keep going!', "Don't give up, your point is waiting!", 'Tough one, your chance is coming!'];
         const pick = msgs[Math.abs(hashString(q.id)) % msgs.length];
         const headline = isSchaetz
           ? (lang === 'de' ? '🤏 Knapp daneben' : '🤏 Not quite in range')

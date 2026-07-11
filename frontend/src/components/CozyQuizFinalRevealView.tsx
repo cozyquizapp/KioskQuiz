@@ -1242,7 +1242,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     <div style={{
                       fontSize: 'clamp(14px, 1.3cqw, 20px)', fontWeight: 700,
                       color: 'var(--qq-text-muted)', textAlign: 'center',
-                    }}>{de ? '0 Bonus — Tipp ging nicht auf' : '0 bonus — tip didn\'t pay off'}</div>
+                    }}>{de ? '0 Bonus, Tipp ging nicht auf' : '0 bonus, tip didn\'t pay off'}</div>
                   </div>
                 ) : (
                   <div style={{
@@ -1448,8 +1448,8 @@ function BetZeroGroupSlide({ teams, lang }: {
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
       }}>{de
-        ? 'Schade — der Tipp ging daneben 🤞'
-        : 'Tough luck — the tip went sideways 🤞'}
+        ? 'Schade, der Tipp ging daneben 🤞'
+        : 'Tough luck, the tip went sideways 🤞'}
       </div>
     </div>
   );

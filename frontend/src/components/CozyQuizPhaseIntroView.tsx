@@ -380,16 +380,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     hotPotato: {
       emoji: '🔥',
       de: { name:    getRuleText('bunte.hotPotato.name',    'de', 'Heiße Kartoffel'),
-            explain: getRuleText('bunte.hotPotato.explain', 'de', 'Reihum antworten — keine Antwort vor Zeitende = raus.') },
+            explain: getRuleText('bunte.hotPotato.explain', 'de', 'Reihum antworten, keine Antwort vor Zeitende = raus.') },
       en: { name:    getRuleText('bunte.hotPotato.name',    'en', 'Hot Potato'),
-            explain: getRuleText('bunte.hotPotato.explain', 'en', 'Take turns — no answer before time runs out = out.') },
+            explain: getRuleText('bunte.hotPotato.explain', 'en', 'Take turns, no answer before time runs out = out.') },
     },
     top5: {
       emoji: '🏆',
       de: { name:    getRuleText('bunte.top5.name',    'de', 'Top 5'),
-            explain: getRuleText('bunte.top5.explain', 'de', 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.') },
+            explain: getRuleText('bunte.top5.explain', 'de', 'Nennt die häufigsten Antworten, je oben desto mehr Punkte.') },
       en: { name:    getRuleText('bunte.top5.name',    'en', 'Top 5'),
-            explain: getRuleText('bunte.top5.explain', 'en', 'Guess the most common answers — higher rank, more points.') },
+            explain: getRuleText('bunte.top5.explain', 'en', 'Guess the most common answers, higher rank means more points.') },
     },
     oneOfEight: {
       emoji: '🕵️',
@@ -415,16 +415,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     crowdTop: {
       emoji: '🗳️',
       de: { name:    getRuleText('bunte.crowdTop.name',    'de', 'Umfrage'),
-            explain: getRuleText('bunte.crowdTop.explain', 'de', 'Jedes Handy tippt EIN Stichwort — nennt, was die meisten nennen.') },
+            explain: getRuleText('bunte.crowdTop.explain', 'de', 'Jedes Handy tippt EIN Stichwort, nennt was die meisten nennen.') },
       en: { name:    getRuleText('bunte.crowdTop.name',    'en', 'Survey'),
-            explain: getRuleText('bunte.crowdTop.explain', 'en', 'Each phone types ONE word — name what most people name.') },
+            explain: getRuleText('bunte.crowdTop.explain', 'en', 'Each phone types ONE word, name what most people name.') },
     },
     crowdEstimate: {
       emoji: '🧠',
       de: { name:    getRuleText('bunte.crowdEstimate.name',    'de', 'Schwarmintelligenz'),
-            explain: getRuleText('bunte.crowdEstimate.explain', 'de', 'Jedes Handy schätzt eine Zahl — gemeinsam liegt der Schwarm goldrichtig.') },
+            explain: getRuleText('bunte.crowdEstimate.explain', 'de', 'Jedes Handy schätzt eine Zahl, gemeinsam liegt der Schwarm goldrichtig.') },
       en: { name:    getRuleText('bunte.crowdEstimate.name',    'en', 'Hive Mind'),
-            explain: getRuleText('bunte.crowdEstimate.explain', 'en', 'Each phone guesses a number — together the swarm nails it.') },
+            explain: getRuleText('bunte.crowdEstimate.explain', 'en', 'Each phone guesses a number, together the swarm nails it.') },
     },
   };
   const bunteKind = cat === 'BUNTE_TUETE'
@@ -485,22 +485,22 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     3: {
       emoji: '🏯',
       de: [getRuleText('round.3.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
-           getRuleText('round.3.line2', 'de', 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!')],
+           getRuleText('round.3.line2', 'de', 'Stapeln freigeschaltet: Felder dauerhaft sichern + 1 Punkt extra!')],
       en: [getRuleText('round.3.line1', 'en', 'Per correct answer choose one action:'),
-           getRuleText('round.3.line2', 'en', 'Stack unlocked — lock your tile + 1 extra point!')],
+           getRuleText('round.3.line2', 'en', 'Stack unlocked: lock your tile + 1 extra point!')],
     },
     4: {
       emoji: '🏯',
       de: s.connectionsEnabled !== false
         ? [getRuleText('round.4.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
-           getRuleText('round.4.line2_finale', 'de', 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!')]
+           getRuleText('round.4.line2_finale', 'de', 'Quiz-Buddy-Punkte sammeln, danach Stapel-Bonus im Finale!')]
         : [getRuleText('round.4.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
-           getRuleText('round.4.line2_nofin', 'de', 'Quiz-Buddy-Punkte — alles bleibt verfügbar!')],
+           getRuleText('round.4.line2_nofin', 'de', 'Quiz-Buddy-Punkte, alles bleibt verfügbar!')],
       en: s.connectionsEnabled !== false
         ? [getRuleText('round.4.line1', 'en', 'Per correct answer choose one action:'),
-           getRuleText('round.4.line2_finale', 'en', 'Collect quiz buddy points — stack-bonus finale follows!')]
+           getRuleText('round.4.line2_finale', 'en', 'Collect quiz buddy points, stack-bonus finale follows!')]
         : [getRuleText('round.4.line1', 'en', 'Per correct answer choose one action:'),
-           getRuleText('round.4.line2_nofin', 'en', 'Quiz buddy points — everything stays available!')],
+           getRuleText('round.4.line2_nofin', 'en', 'Quiz buddy points, everything stays available!')],
     },
   };
   // 2-Runden-Showcase: R2 ist die letzte Runde und schaltet Klauen UND Stapeln
@@ -511,9 +511,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     ? {
         emoji: '⚡',
         de: ['Sammelt Punkte für euer Team!',
-             'Je mehr richtig — und je schneller — desto mehr Punkte!'],
+             'Je mehr richtig und je schneller, desto mehr Punkte!'],
         en: ['Score points for your team!',
-             'The more correct — and the faster — the more points!'],
+             'The more correct and the faster, the more points!'],
       }
     : (s.totalPhases === 2 && s.gamePhaseIndex === 2)
     ? {
@@ -1378,8 +1378,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             SCHAETZCHEN: {
               emoji: catEmoji, title: { de: 'Schätzchen', en: 'Close Call' },
               lines: {
-                de: ['Wer am nächsten dran liegt, gewinnt — knapp dran zählt auch.'],
-                en: ['Closest guess wins — near misses also count.'],
+                de: ['Wer am nächsten dran liegt, gewinnt. Knapp dran zählt auch.'],
+                en: ['Closest guess wins, near misses also count.'],
               },
             },
             MUCHO: {
@@ -1399,16 +1399,16 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             CHEESE: {
               emoji: catEmoji, title: { de: 'Schau mal!', en: 'Picture This' },
               lines: {
-                de: ['Erkennt das Bild — tippt die Antwort ins Handy.'],
-                en: ['Spot the image — type your answer.'],
+                de: ['Erkennt das Bild, tippt die Antwort ins Handy.'],
+                en: ['Spot the image, type your answer.'],
               },
             },
             // BUNTE_TUETE sub-mechanics
             'BUNTE_TUETE:top5': {
               emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' },
               lines: {
-                de: ['Bis zu 5 Antworten — meiste Treffer gewinnt.'],
-                en: ['Up to 5 answers — most hits wins.'],
+                de: ['Bis zu 5 Antworten, meiste Treffer gewinnt.'],
+                en: ['Up to 5 answers, most hits wins.'],
               },
             },
             'BUNTE_TUETE:oneOfEight': {
@@ -1421,8 +1421,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:order': {
               emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
               lines: {
-                de: ['Sortiert richtig — meiste Treffer gewinnt.'],
-                en: ['Sort correctly — most hits wins.'],
+                de: ['Sortiert richtig, meiste Treffer gewinnt.'],
+                en: ['Sort correctly, most hits wins.'],
               },
             },
             'BUNTE_TUETE:map': {
@@ -1435,8 +1435,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:hotPotato': {
               emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
               lines: {
-                de: ['Reihum antworten — keine Antwort vor Zeitende = raus'],
-                en: ['Take turns — no answer before time runs out = out'],
+                de: ['Reihum antworten, keine Antwort vor Zeitende = raus'],
+                en: ['Take turns, no answer before time runs out = out'],
               },
             },
             'BUNTE_TUETE:onlyConnect': {
@@ -1456,15 +1456,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:crowdTop': {
               emoji: '🗳️', title: { de: 'Umfrage', en: 'Survey' },
               lines: {
-                de: ['Jedes Handy tippt EIN Stichwort — nennt, was die meisten nennen.'],
-                en: ['Each phone types ONE word — name what most people name.'],
+                de: ['Jedes Handy tippt EIN Stichwort, nennt was die meisten nennen.'],
+                en: ['Each phone types ONE word, name what most people name.'],
               },
             },
             'BUNTE_TUETE:crowdEstimate': {
               emoji: '🧠', title: { de: 'Schwarmintelligenz', en: 'Hive Mind' },
               lines: {
-                de: ['Jedes Handy schätzt eine Zahl — gemeinsam liegt der Schwarm goldrichtig.'],
-                en: ['Each phone guesses a number — together the swarm nails it.'],
+                de: ['Jedes Handy schätzt eine Zahl, gemeinsam liegt der Schwarm goldrichtig.'],
+                en: ['Each phone guesses a number, together the swarm nails it.'],
               },
             },
           };

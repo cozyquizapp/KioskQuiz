@@ -76,7 +76,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
         animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
       }}>
         <div style={{ fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-          🧠 {lang === 'en' ? 'Hive Mind — Reveal' : 'Schwarmintelligenz — Auflösung'}
+          🧠 {lang === 'en' ? 'Hive Mind · Reveal' : 'Schwarmintelligenz · Auflösung'}
         </div>
         <div style={{ fontSize: qText.length > 120 ? 'clamp(24px, 2.5cqw, 38px)' : 'clamp(28px, 3cqw, 48px)', fontWeight: 900, lineHeight: 1.18, color: 'var(--qq-card-text)' }}>
           {qText}

@@ -68,7 +68,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
         ⚔️ {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>
-        {de ? 'Schätzfrage — am nächsten dran gewinnt!' : 'Estimate — closest guess wins!'}
+        {de ? 'Schätzfrage, am nächsten dran gewinnt!' : 'Estimate, closest guess wins!'}
       </div>
 
       {/* Kandidaten mit Wappen (+ Schätzung nach Reveal) */}

@@ -251,8 +251,8 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
               fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 1.5,
             }}>
               {lang === 'de'
-                ? 'Das Quiz hat schon angefangen. Warte auf eine Pause oder die nächste Lobby — dann kannst du als neues Team einsteigen.'
-                : 'The quiz has already started. Wait for a break or the next lobby — then you can join as a new team.'}
+                ? 'Das Quiz hat schon angefangen. Warte auf eine Pause oder die nächste Lobby, dann kannst du als neues Team einsteigen.'
+                : 'The quiz has already started. Wait for a break or the next lobby, then you can join as a new team.'}
             </div>
           </div>
         )}
@@ -441,8 +441,8 @@ export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: 
           }}>
             <div style={{ fontSize: 13, color: '#FBCFE8', fontWeight: 700, marginBottom: 8 }}>
               {lang === 'de'
-                ? 'Dauert lange? Server schlaeft eventuell — bitte warten oder neu laden.'
-                : 'Taking long? Server may be waking up — wait or reload.'}
+                ? 'Dauert lange? Server schlaeft eventuell, bitte warten oder neu laden.'
+                : 'Taking long? Server may be waking up, wait or reload.'}
             </div>
             <button
               onClick={() => window.location.reload()}

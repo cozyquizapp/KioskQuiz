@@ -295,8 +295,8 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   const names  = { de: ['', 'Runde 1', 'Runde 2', 'Runde 3', 'Runde 4'], en: ['', 'Round 1', 'Round 2', 'Round 3', 'Round 4'] };
   // Synchron mit Beamer ROUND_RULES (QQBeamerPage). Bann/Schild/Tauschen sind
   // gedroppt — aktuelle Mechaniken sind Setzen/Klauen/Stapeln + 4×4-Finale.
-  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet — Felder dauerhaft sichern!', 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!'],
-                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked — lock your tile permanently!', 'Collect quiz buddy points — stack-bonus finale follows!'] };
+  const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet: Felder dauerhaft sichern!', 'Quiz-Buddy-Punkte sammeln, danach Stapel-Bonus im Finale!'],
+                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked, lock your tile permanently!', 'Collect quiz buddy points, stack-bonus finale follows!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -353,7 +353,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
               4: { emoji: '🏯', de: ['Quiz-Buddy-Punkte', 'danach Stapel-Bonus im Finale'], en: ['Quiz buddy points', 'stack-bonus finale follows'] },
             };
             const r = largeMode
-              ? { emoji: '⚡', de: ['Schnell & richtig', 'Je mehr Handys richtig — und je schneller — desto mehr Punkte'], en: ['Fast & correct', 'More phones right — and faster — means more points'] }
+              ? { emoji: '⚡', de: ['Schnell & richtig', 'Je mehr Handys richtig, und je schneller, desto mehr Punkte'], en: ['Fast & correct', 'More phones right, and faster, means more points'] }
               : (RULES[s.gamePhaseIndex] ?? RULES[3]);
             return (
               <>
@@ -395,7 +395,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
               SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Close Call' }, lines: { de: ['Wer am nächsten dran liegt, gewinnt', 'Knapp dran zählt auch'], en: ['Closest guess wins', 'Near misses also count'] } },
               MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
               ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
-              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Schau mal!', en: 'Picture This' }, lines: { de: ['Erkennt das Bild — tippt die Antwort ins Handy.'], en: ['Spot the image — type your answer.'] } },
+              CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Schau mal!', en: 'Picture This' }, lines: { de: ['Erkennt das Bild, tippt die Antwort ins Handy.'], en: ['Spot the image, type your answer.'] } },
               'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['Bis zu 5 Antworten', 'Meiste Treffer gewinnt'], en: ['Up to 5 answers', 'Most hits wins'] } },
               'BUNTE_TUETE:oneOfEight': { emoji: '🕵️', title: { de: 'Imposter', en: 'Imposter' }, lines: { de: ['Findet die EINE falsche Aussage', 'unter 7 wahren'], en: ['Spot the ONE false statement', 'among 7 true ones'] } },
               'BUNTE_TUETE:order':      { emoji: '📋', title: { de: 'Reihenfolge', en: 'Order' }, lines: { de: ['Sortiert in der richtigen Reihenfolge'], en: ['Sort in the correct order'] } },
@@ -535,7 +535,7 @@ export function TieBreakerCard({
         {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-        {de ? 'Gleichstand — am nächsten dran gewinnt!' : 'Tie — closest guess wins!'}
+        {de ? 'Gleichstand, am nächsten dran gewinnt!' : 'Tie, closest guess wins!'}
       </div>
     </div>
   );
@@ -636,7 +636,7 @@ export function TieBreakerCard({
         </button>
       </div>
       <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-        {de ? '⚡ Ein Versuch — am nächsten dran gewinnt.' : '⚡ One guess — closest wins.'}
+        {de ? '⚡ Ein Versuch, am nächsten dran gewinnt.' : '⚡ One guess, closest wins.'}
       </div>
     </CozyCard>
   );
@@ -748,8 +748,8 @@ export function FinalBettingCard({
           </div>
           <div style={{ fontSize: 14, color: QQ_COLORS.slate400, lineHeight: 1.45 }}>
             {de
-              ? 'Schau auf den Beamer — gleich kannst du deinen Tipp abgeben.'
-              : 'Watch the beamer — you can place your tip in a moment.'}
+              ? 'Schau auf den Beamer, gleich kannst du deinen Tipp abgeben.'
+              : 'Watch the beamer, you can place your tip in a moment.'}
           </div>
         </div>
       </CozyCard>
@@ -795,8 +795,8 @@ export function FinalBettingCard({
             fontSize: 13, color: QQ_COLORS.slate300, lineHeight: 1.4,
           }}>
             {de
-              ? 'Schau jetzt auf den Beamer — die Final-Runde startet gleich.'
-              : 'Watch the beamer — the final round starts soon.'}
+              ? 'Schau jetzt auf den Beamer, die Final-Runde startet gleich.'
+              : 'Watch the beamer, the final round starts soon.'}
           </div>
         </div>
       </CozyCard>
@@ -905,7 +905,7 @@ export function FinalRecapHintCard({
           {de ? '🪙 Zwischenstand' : '🪙 Standings'}
         </div>
         <div style={{ fontSize: 17, fontWeight: 800, color: QQ_COLORS.slate100, lineHeight: 1.4, marginBottom: 14 }}>
-          {de ? 'Schau auf den Beamer — wie steht dein Tipp?' : 'Check the screen — how\'s your tip doing?'}
+          {de ? 'Schau auf den Beamer, wie steht dein Tipp?' : 'Check the screen, how\'s your tip doing?'}
         </div>
         {targetTeam ? (
           <div style={{
@@ -1104,7 +1104,7 @@ export function FinalRevealCard({
         </div>
         {!myResolution || !targetTeam ? (
           <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontStyle: 'italic', padding: '14px 0' }}>
-            {de ? 'Du hattest keinen Tipp abgegeben — kein Bonus.' : 'You placed no tip — no bonus.'}
+            {de ? 'Du hattest keinen Tipp abgegeben, kein Bonus.' : 'You placed no tip, no bonus.'}
           </div>
         ) : (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginTop: 6 }}>
@@ -1287,8 +1287,8 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             marginTop: 4, lineHeight: 1.35,
           }}>
             {lang === 'de'
-              ? 'Beim nächsten Mal eingeben — deine Sieg-Streak zählt mit.'
-              : 'Enter it next time — your win streak carries over.'}
+              ? 'Beim nächsten Mal eingeben, deine Sieg-Streak zählt mit.'
+              : 'Enter it next time, your win streak carries over.'}
           </div>
         </div>
 
@@ -1310,7 +1310,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
               fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate400,
               textAlign: 'center', marginBottom: 14,
             }}>
-              {lang === 'en' ? 'We hope you had fun — see you next time!' : 'Wir hoffen, ihr hattet Spaß — bis zum nächsten Mal!'}
+              {lang === 'en' ? 'We hope you had fun, see you next time!' : 'Wir hoffen, ihr hattet Spaß, bis zum nächsten Mal!'}
             </div>
             {roomCode && (
               <a
@@ -1394,7 +1394,7 @@ export function CozyGameCard({
   let subline = '';
   if (sub === 'INTRO') {
     headline = de ? '🪅 CozyGame!' : '🪅 CozyGame!';
-    subline = de ? 'Gleich geht\'s los — das Glücksrad entscheidet.' : 'Here we go — the wheel will pick a game.';
+    subline = de ? 'Gleich geht\'s los, das Glücksrad entscheidet.' : 'Here we go, the wheel will pick a game.';
   } else if (sub === 'WHEEL_SPIN') {
     headline = de ? '🎡 Rad dreht sich …' : '🎡 Wheel spinning …';
     subline = de ? 'Welches Spiel wirds?' : 'Which game will it be?';
@@ -1402,19 +1402,19 @@ export function CozyGameCard({
     headline = activeGame ? activeGame.name : (de ? 'Spiel ausgewählt' : 'Game picked');
     if (playMode === 'sequence') {
       if (isMyTurn) subline = de ? '🎯 DU BIST DRAN! Spielt jetzt am Beamer.' : '🎯 YOUR TURN! Play at the beamer now.';
-      else if (iAmCompleted) subline = de ? '✓ Du bist fertig — gut gemacht!' : '✓ You\'re done — well played!';
+      else if (iAmCompleted) subline = de ? '✓ Du bist fertig, gut gemacht!' : '✓ You\'re done, well played!';
       else if (iAmWaiting) {
         const remaining = myPos - curIdx;
         subline = de ? `Du bist als ${remaining + 1}. dran (Position ${myPos + 1} / ${order.length})` : `You're up in ${remaining} (position ${myPos + 1} / ${order.length})`;
       } else subline = de ? 'Du bist nicht im Spiel-Pool.' : 'You\'re not in the play pool.';
     } else {
       subline = sub === 'GAME_ACTIVE'
-        ? (de ? '🤜 Alle Teams spielen gleichzeitig — Beamer zeigt den Timer!' : '🤜 All teams play simultaneously — see beamer for timer!')
+        ? (de ? '🤜 Alle Teams spielen gleichzeitig, Beamer zeigt den Timer!' : '🤜 All teams play simultaneously, see beamer for timer!')
         : (de ? '👀 Gleich startet das Spiel …' : '👀 Game starts in a moment …');
     }
   } else if (sub === 'WINNER_SELECT') {
     headline = activeGame ? activeGame.name : (de ? 'Sieger-Reveal' : 'Winner reveal');
-    subline = de ? '🏆 Sieger steht gleich fest — Blick auf den Beamer!' : '🏆 Winner reveal coming — watch the beamer!';
+    subline = de ? '🏆 Sieger steht gleich fest, Blick auf den Beamer!' : '🏆 Winner reveal coming, watch the beamer!';
   }
 
   return (

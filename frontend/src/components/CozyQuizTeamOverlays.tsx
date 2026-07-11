@@ -24,27 +24,27 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
   // 2026-07-03 (Wolf-Audit): Cozy Arena hat kein Brett/Joker/Klauen/Stapeln →
   // eigener Regel-Satz (Fraktions-Punkte, Tempo), sonst der klassische Grid-Satz.
   const arenaItems = lang === 'de' ? [
-    { icon: '🎯', title: 'Spielziel', body: 'Sammelt als Fraktion die meisten Punkte — je mehr Handys richtig und je schneller, desto mehr.' },
-    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese — jede mit eigener Frage-Mechanik.' },
+    { icon: '🎯', title: 'Spielziel', body: 'Sammelt als Fraktion die meisten Punkte, je mehr Handys richtig und je schneller, desto mehr.' },
+    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese, jede mit eigener Frage-Mechanik.' },
     { icon: '⚡', title: 'Tempo zählt', body: 'Schnelle richtige Antworten bringen eurer Fraktion mehr Punkte.' },
     { icon: '🏆', title: 'Sieger', body: 'Die Fraktion mit den meisten Punkten am Ende gewinnt.' },
   ] : [
-    { icon: '🎯', title: 'Goal', body: 'Score the most points as a faction — more phones correct and faster means more points.' },
-    { icon: '🌶️', title: 'Categories', body: 'Close Call · Mu-Cho · Lucky Bag · All In · Picture This — each with its own question mechanic.' },
+    { icon: '🎯', title: 'Goal', body: 'Score the most points as a faction, more phones correct and faster means more points.' },
+    { icon: '🌶️', title: 'Categories', body: 'Close Call · Mu-Cho · Lucky Bag · All In · Picture This, each with its own question mechanic.' },
     { icon: '⚡', title: 'Speed matters', body: 'Fast correct answers earn your faction more points.' },
     { icon: '🏆', title: 'Winner', body: 'The faction with the most points at the end wins.' },
   ];
   const gridItems = lang === 'de' ? [
-    { icon: '🎯', title: 'Spielziel', body: 'Beantworte Fragen richtig — pro richtige Antwort darfst du eine Zelle auf dem Brett setzen.' },
-    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese — jede mit eigener Frage-Mechanik.' },
+    { icon: '🎯', title: 'Spielziel', body: 'Beantworte Fragen richtig, pro richtige Antwort darfst du eine Zelle auf dem Brett setzen.' },
+    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese, jede mit eigener Frage-Mechanik.' },
     { icon: '⭐', title: 'Joker', body: '2 Joker pro Spiel. Verdienst du, wenn du eine bestimmte Reihe-Form auf dem Brett bildest. Setzt eine Bonus-Zelle.' },
     { icon: '🔄', title: 'Stehlen + Stapeln', body: 'Felder eines Gegners können geklaut werden. Stapel-Felder (★) zählen doppelt im Endscore und sind unklaubar.' },
     { icon: '🏆', title: 'Sieger', body: 'Wer am Ende die meisten Felder + Stapel-Bonusse hat, gewinnt.' },
   ] : [
-    { icon: '🎯', title: 'Goal', body: 'Answer questions correctly — each correct answer lets you place a cell on the board.' },
+    { icon: '🎯', title: 'Goal', body: 'Answer questions correctly, each correct answer lets you place a cell on the board.' },
     // 2026-05-10 (Wolf-Audit Klasse 2): EN-Card hatte DE-Kategorienamen drin.
     // Jetzt EN-Brand-Namen aus QQ_CATEGORY_LABELS — bleiben hardcoded da Help-Text statisch.
-    { icon: '🌶️', title: 'Categories', body: 'Close Call · Mu-Cho · Lucky Bag · All In · Picture This — each with its own question mechanic.' },
+    { icon: '🌶️', title: 'Categories', body: 'Close Call · Mu-Cho · Lucky Bag · All In · Picture This, each with its own question mechanic.' },
     { icon: '⭐', title: 'Jokers', body: '2 jokers per game. Earned by forming a specific row pattern on the board. Places a bonus cell.' },
     { icon: '🔄', title: 'Steal + Stack', body: 'Opponent cells can be stolen. Stacked cells (★) count double at end-score and are un-stealable.' },
     { icon: '🏆', title: 'Winner', body: 'Most cells + stack bonuses at the end wins.' },

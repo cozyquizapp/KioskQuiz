@@ -103,7 +103,7 @@ export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, l
         textAlign: 'center', color: QQ_COLORS.brandPinkSoft, fontSize: 14, fontWeight: 800,
         animation: 'tcpulse 1.5s ease-in-out infinite',
       }}>
-        🎰 {lang === 'de' ? 'Slot dreht — gleich geht es los!' : 'Slot is spinning — get ready!'}
+        🎰 {lang === 'de' ? 'Slot dreht, gleich geht es los!' : 'Slot is spinning, get ready!'}
       </div>
     );
   }
@@ -244,7 +244,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
           submitted={submitted}
           catColor={catColor}
           label={lang === 'de' ? '✓ Bluff abgeben' : '✓ Submit bluff'}
-          submittedLabel={lang === 'de' ? 'Eingereicht — andere warten' : 'Submitted — waiting on others'}
+          submittedLabel={lang === 'de' ? 'Eingereicht, andere warten' : 'Submitted, waiting on others'}
           lang={lang}
         />
         {submitted && (
@@ -330,7 +330,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
         })}
         {myVote && (
           <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700 }}>
-            {lang === 'de' ? 'Stimme abgegeben — wartet auf den Rest.' : 'Voted — waiting on others.'}
+            {lang === 'de' ? 'Stimme abgegeben, wartet auf den Rest.' : 'Voted, waiting on others.'}
           </div>
         )}
       </div>
@@ -364,7 +364,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
           </div>
         )}
         <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 4 }}>
-          {lang === 'de' ? 'Schau auf den Beamer — Auflösung läuft.' : 'Check the beamer — reveal in progress.'}
+          {lang === 'de' ? 'Schau auf den Beamer, Auflösung läuft.' : 'Check the beamer, reveal in progress.'}
         </div>
       </div>
     );
@@ -460,7 +460,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
           fontSize: 14, fontWeight: 900, color: QQ_COLORS.slate300,
         }}>
-          {lang === 'de' ? '✓ Tipp eingegangen — wartest auf Auflösung' : '✓ Tip submitted — waiting for reveal'}
+          {lang === 'de' ? '✓ Tipp eingegangen, wartest auf Auflösung' : '✓ Tip submitted, waiting for reveal'}
         </div>
       )}
       {isLocked && (
@@ -469,7 +469,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
           fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate400,
         }}>
-          {lang === 'de' ? 'Tipp abgegeben — wartest auf Auflösung' : 'Tip submitted — waiting for reveal'}
+          {lang === 'de' ? 'Tipp abgegeben, wartest auf Auflösung' : 'Tip submitted, waiting for reveal'}
         </div>
       )}
 
@@ -493,7 +493,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
             lang={lang}
           />
           <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textAlign: 'center', fontWeight: 700 }}>
-            {lang === 'de' ? '1 Versuch — schnellste richtige Antwort gewinnt zuerst' : '1 try — fastest correct answer wins first'}
+            {lang === 'de' ? '1 Versuch, schnellste richtige Antwort gewinnt zuerst' : '1 try, fastest correct answer wins first'}
           </div>
         </>
       )}

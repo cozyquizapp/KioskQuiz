@@ -158,7 +158,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: themed ? 'var(--qq-accent)' : QQ_COLORS.yellow500,
           letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6,
         }}>
-          <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Guess It — Reveal' : 'Schätzchen — Auflösung'}
+          <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Guess It · Reveal' : 'Schätzchen · Auflösung'}
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 120 ? 'clamp(26px, 2.6cqw, 40px)' : 'clamp(30px, 3.2cqw, 52px)',

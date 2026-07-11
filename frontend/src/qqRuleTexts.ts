@@ -157,7 +157,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
 
       // Slide 3: Roadmap (treeShowcase — kein Body-Text außer Title)
       { key: 'rules.slide3.title',  label: '3 · Roadmap — Titel', defaultDe: 'Dein Weg durchs Quiz', defaultEn: 'Your Quiz Roadmap' },
-      { key: 'rules.slide3.hint',   label: '3 · Roadmap — Hinweis-Text', defaultDe: '5 Kategorien pro Runde — jede mit eigenem Twist', defaultEn: '5 categories per round — each with its own twist' },
+      { key: 'rules.slide3.hint',   label: '3 · Roadmap — Hinweis-Text', defaultDe: '5 Kategorien pro Runde, jede mit eigenem Twist', defaultEn: '5 categories per round, each with its own twist' },
 
       // Slide 4: Joker
       { key: 'rules.slide4.title',  label: '4 · Joker — Titel', defaultDe: 'Joker-Bonus', defaultEn: 'Joker Bonus' },
@@ -178,13 +178,13 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
 
       // Slide CozyGame (zwischen Bunte Tüte und Comeback, nur sichtbar wenn cozyGamesEnabled)
       { key: 'rules.slide_cozygames.title', label: 'CozyGame — Titel', defaultDe: 'CozyGame', defaultEn: 'CozyGame' },
-      { key: 'rules.slide_cozygames.line1', label: 'CozyGame — Zeile 1', defaultDe: 'Nach jeder Runde dreht das Glücksrad — ein analoges Mini-Spiel', defaultEn: 'After every round the wheel spins — one analog mini-game' },
+      { key: 'rules.slide_cozygames.line1', label: 'CozyGame — Zeile 1', defaultDe: 'Nach jeder Runde dreht das Glücksrad: ein analoges Mini-Spiel', defaultEn: 'After every round the wheel spins: one analog mini-game' },
       { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen', defaultEn: 'Winner places 1 action on the board · skill > knowledge' },
 
       // Slide 7: Comeback
       { key: 'rules.slide7.title',  label: '7 · Comeback — Titel', defaultDe: 'Comeback', defaultEn: 'Comeback' },
       { key: 'rules.slide7.line1',  label: '7 · Comeback — Zeile 1', defaultDe: 'Letztes Team holt vor dem Finale auf', defaultEn: 'Last-place team catches up before the finale' },
-      { key: 'rules.slide7.line2',  label: '7 · Comeback — Zeile 2', defaultDe: '„Mehr oder Weniger?" — Treffer klaut Feld vom 1. Platz', defaultEn: '„Higher or Lower?" — correct answer steals a cell from the leader' },
+      { key: 'rules.slide7.line2',  label: '7 · Comeback — Zeile 2', defaultDe: '„Mehr oder Weniger?": Treffer klaut Feld vom 1. Platz', defaultEn: '„Higher or Lower?": correct answer steals a cell from the leader' },
 
       // Slide Final-Tipp (vor dem Finale)
       { key: 'rules.slide_final_tip.title', label: 'Final-Tipp — Titel', defaultDe: 'Final-Tipp', defaultEn: 'Final Tip' },
@@ -237,10 +237,10 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'bunte.bluff.explain',       label: 'Bluff — Erkl.',       defaultDe: 'Erfindet plausible Falsch-Antworten und ratet die echte.', defaultEn: 'Make up plausible fake answers and find the real one.' },
 
       { key: 'bunte.hotPotato.name',      label: 'Hot Potato — Name',   defaultDe: 'Heiße Kartoffel', defaultEn: 'Hot Potato' },
-      { key: 'bunte.hotPotato.explain',   label: 'Hot Potato — Erkl.',  defaultDe: 'Reihum antworten — keine Antwort vor Zeitende = raus.', defaultEn: 'Take turns — no answer before time runs out = out.' },
+      { key: 'bunte.hotPotato.explain',   label: 'Hot Potato — Erkl.',  defaultDe: 'Reihum antworten, keine Antwort vor Zeitende = raus.', defaultEn: 'Take turns, no answer before time runs out = out.' },
 
       { key: 'bunte.top5.name',           label: 'Top 5 — Name',        defaultDe: 'Top 5',         defaultEn: 'Top 5' },
-      { key: 'bunte.top5.explain',        label: 'Top 5 — Erkl.',       defaultDe: 'Nennt die häufigsten Antworten — je oben, desto mehr Punkte.', defaultEn: 'Guess the most common answers — higher rank, more points.' },
+      { key: 'bunte.top5.explain',        label: 'Top 5 — Erkl.',       defaultDe: 'Nennt die häufigsten Antworten, je oben desto mehr Punkte.', defaultEn: 'Guess the most common answers, higher rank means more points.' },
 
       // Imposter (oneOfEight) ist deaktiviert (Mai 2026) — keine Editor-Items,
       // sonst irritiert es Wolf, weil sich die Mechanik im Quiz nirgends zeigt.
@@ -266,11 +266,11 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'round.2.line2', label: 'Runde 2 — Zeile 2', defaultDe: 'Klauen jetzt möglich!', defaultEn: 'Stealing now possible!' },
 
       { key: 'round.3.line1', label: 'Runde 3 — Zeile 1', defaultDe: 'Pro richtige Antwort wählt eine Aktion:', defaultEn: 'Per correct answer choose one action:' },
-      { key: 'round.3.line2', label: 'Runde 3 — Zeile 2', defaultDe: 'Stapeln freigeschaltet — Felder dauerhaft sichern + 1 Punkt extra!', defaultEn: 'Stack unlocked — lock your tile + 1 extra point!' },
+      { key: 'round.3.line2', label: 'Runde 3 — Zeile 2', defaultDe: 'Stapeln freigeschaltet: Felder dauerhaft sichern + 1 Punkt extra!', defaultEn: 'Stack unlocked: lock your tile + 1 extra point!' },
 
       { key: 'round.4.line1',         label: 'Runde 4 — Zeile 1', defaultDe: 'Pro richtige Antwort wählt eine Aktion:', defaultEn: 'Per correct answer choose one action:' },
-      { key: 'round.4.line2_finale',  label: 'Runde 4 — Zeile 2 (mit Finale)', defaultDe: 'Quiz-Buddy-Punkte sammeln — danach Stapel-Bonus im Finale!', defaultEn: 'Collect quiz buddy points — stack-bonus finale follows!' },
-      { key: 'round.4.line2_nofin',   label: 'Runde 4 — Zeile 2 (ohne Finale)', defaultDe: 'Quiz-Buddy-Punkte — alles bleibt verfügbar!', defaultEn: 'Quiz buddy points — everything stays available!' },
+      { key: 'round.4.line2_finale',  label: 'Runde 4 — Zeile 2 (mit Finale)', defaultDe: 'Quiz-Buddy-Punkte sammeln, danach Stapel-Bonus im Finale!', defaultEn: 'Collect quiz buddy points, stack-bonus finale follows!' },
+      { key: 'round.4.line2_nofin',   label: 'Runde 4 — Zeile 2 (ohne Finale)', defaultDe: 'Quiz-Buddy-Punkte, alles bleibt verfügbar!', defaultEn: 'Quiz buddy points, everything stays available!' },
     ],
   },
 ];

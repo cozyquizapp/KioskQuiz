@@ -1305,7 +1305,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <WolfCoModerator
               lang={de ? 'de' : 'en'}
               variant="preGame"
-              widthCss="clamp(190px, 19cqw, 300px)"
+              // 2026-07-12 (Wolf): verkleinert (war 300px) — der große Wolf
+              // überlappte im Arena-„Die Fraktionen"-Panel die untere Kartenreihe.
+              widthCss="clamp(150px, 15cqw, 240px)"
               eurovisionMode={s.theme?.eurovisionMode}
             />
           </div>

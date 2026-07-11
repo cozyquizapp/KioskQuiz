@@ -2321,9 +2321,14 @@ export function qqLargeGroupAwardPoints(room: QQRoomState): void {
 // ── Modell B (2026-07-02): Mega-Event-Wertung nach Haupt-Team (Farbe) ────────
 // Genestet: bis zu 3 unabhängige Sub-Handys punkten für dieselbe Farbe (avatarId).
 // ADDITIV — jede richtige/nahe Antwort JEDES Subs zählt zur Farb-Leistung:
-//   MUCHO/Cheese/BunteTüte = # richtige Sub-Handys (+ frühester Submit als Tiebreak)
+//   MUCHO/Cheese/BunteTüte = # richtige Sub-Handys (+ Ø-Submit-Speed als Tiebreak)
 //   10v10                  = SUMME aller Sub-Punkte auf der richtigen Option
 //   Schätzchen             = # Sub-Handys „nah genug" (≤ Range), nächstes bricht Tie
+// 2026-07-12 (Wolf): Speed-Tiebreak = DURCHSCHNITT der Abgabezeiten der richtigen
+// Handys einer Fraktion (nicht mehr das schnellste Einzel-Handy). Belohnt schnelle,
+// geschlossene Gruppen statt eines „Hero-Handys". Gilt überall, wo Speed die Rang-
+// achse ist (MUCHO/10v10/Cheese/Top-5); Distanz-Kategorien ranken weiter nach Nähe.
+// `bestSpeed` bleibt nur für das „⚡ Schnellstes-Team"-Award (= single-fastest).
 // Dann Farben nach Leistung ranken → Top-5 kriegen 5/4/3/2/1, jede Farbe mit
 // Leistung>0 zusätzlich +1. Punkte auf den Repräsentanten-Sub (kleinste id)
 // schreiben, damit die Frontend-Gruppierung (qqSortedGroups) korrekt summiert.
@@ -2339,11 +2344,13 @@ function qqParseMuchoIndex(text: string): number | null {
 export function qqMegaEventScore(room: QQRoomState): void {
   const q = room.currentQuestion;
   if (!q) return;
-  type Grp = { avatarId: string; repId: string; total: number; correct: number; perf: number; bestSpeed: number; bestDist: number };
+  // speedSum/speedCount = Basis für den Ø-Speed-Tiebreak (Summe + Anzahl der
+  // Abgabezeiten der richtigen Handys). bestSpeed = weiter single-fastest fürs Award.
+  type Grp = { avatarId: string; repId: string; total: number; correct: number; perf: number; bestSpeed: number; speedSum: number; speedCount: number; bestDist: number };
   const groups = new Map<string, Grp>();
   for (const [id, t] of Object.entries(room.teams)) {
     let g = groups.get(t.avatarId);
-    if (!g) { g = { avatarId: t.avatarId, repId: id, total: 0, correct: 0, perf: 0, bestSpeed: Infinity, bestDist: Infinity }; groups.set(t.avatarId, g); }
+    if (!g) { g = { avatarId: t.avatarId, repId: id, total: 0, correct: 0, perf: 0, bestSpeed: Infinity, speedSum: 0, speedCount: 0, bestDist: Infinity }; groups.set(t.avatarId, g); }
     g.total++;
     if (id < g.repId) g.repId = id; // deterministischer Repräsentant
   }
@@ -2351,9 +2358,15 @@ export function qqMegaEventScore(room: QQRoomState): void {
     const av = room.teams[teamId]?.avatarId;
     return av ? groups.get(av) : undefined;
   };
+  // Zeit eines richtigen Handys fürs Speed-Ranking erfassen (Ø + single-fastest).
+  const addSpeed = (g: Grp, submittedAt: number) => {
+    if (!Number.isFinite(submittedAt)) return;
+    g.speedSum += submittedAt; g.speedCount++;
+    if (submittedAt < g.bestSpeed) g.bestSpeed = submittedAt;
+  };
   const markCorrect = (g: Grp, submittedAt: number) => {
     g.correct++; g.perf++;
-    if (submittedAt < g.bestSpeed) g.bestSpeed = submittedAt;
+    addSpeed(g, submittedAt);
   };
   const cat = q.category;
   if (cat === 'MUCHO') {
@@ -2370,7 +2383,7 @@ export function qqMegaEventScore(room: QQRoomState): void {
       const earned = parts[ci] ?? 0;
       const g = grpOf(a.teamId); if (!g) continue;
       g.perf += earned; // Summe aller Sub-Punkte
-      if (earned > 0) { g.correct++; if (a.submittedAt < g.bestSpeed) g.bestSpeed = a.submittedAt; }
+      if (earned > 0) { g.correct++; addSpeed(g, a.submittedAt); }
     }
   } else if (cat === 'SCHAETZCHEN' && q.targetValue != null) {
     const rangeAbs = schaetzchenRangeAbs(q.targetValue, q.unit);
@@ -2395,7 +2408,7 @@ export function qqMegaEventScore(room: QQRoomState): void {
       if (pts <= 0) continue;
       const g = grpOf(a.teamId); if (!g) continue;
       g.perf += pts; g.correct++;
-      if (a.submittedAt < g.bestSpeed) g.bestSpeed = a.submittedAt;
+      addSpeed(g, a.submittedAt);
     }
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate') {
     // Schwarm-Schätzen: pro Fraktion zählt der MEDIAN. Leistung = Median-Nähe
@@ -2422,6 +2435,9 @@ export function qqMegaEventScore(room: QQRoomState): void {
   // statt absoluter Trefferzahl, damit Faktionen mit 1/2/3 Handys fair sind
   // (2/2 schlägt 2/3). Matcht die „X/Y richtig"-Anzeige im Reveal.
   const ratio = (g: Grp) => (g.total > 0 ? g.perf / g.total : 0);
+  // 2026-07-12 (Wolf): Ø-Submit-Speed der richtigen Handys als Tiebreak (statt
+  // single-fastest). Belohnt geschlossene, schnelle Fraktionen.
+  const avgSpeed = (g: Grp) => (g.speedCount > 0 ? g.speedSum / g.speedCount : Infinity);
   const isSwarm = cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate';
   arr.sort((a, b) => {
     // Schwarm: Median-Nähe entscheidet direkt (nicht Trefferquote).
@@ -2429,7 +2445,7 @@ export function qqMegaEventScore(room: QQRoomState): void {
     const ra = ratio(a), rb = ratio(b);
     if (rb !== ra) return rb - ra;
     if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;
-    return a.bestSpeed - b.bestSpeed;
+    return avgSpeed(a) - avgSpeed(b);
   });
   const ranking: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] = [];
   arr.forEach((g, idx) => {

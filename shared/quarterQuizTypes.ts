@@ -1395,6 +1395,11 @@ export interface QQStateUpdate {
    *  Mega-Event-Reveal. Vom Backend bei qqStartPlacement gesetzt, auf null bei
    *  neuer Frage. Sortiert nach Rang (0 = beste). */
   megaQuestionRanking?: QQMegaRankEntry[] | null;
+  /** Mega Event Mod-Pacing (2026-07-12): steuert im PLACEMENT den 2-Beat-Reveal.
+   *  false = „Wertung dieser Frage" hält (Mod redet), true = Gesamtstand sichtbar.
+   *  Erster Mod-Weiter im PLACEMENT flippt auf true, zweiter schaltet zur Frage.
+   *  Ersetzt den früheren 4,2s-Auto-Timer im Beamer. */
+  megaStandingsRevealed?: boolean;
   /** Mega Event: 3 Faktions-Awards am Spielende (avatarId je Award, null wenn
    *  keiner). Vom Backend am Spielende berechnet. */
   megaAwards?: QQMegaAwards | null;

@@ -366,7 +366,7 @@ export default function QQBeamerPage() {
       {state.phase === 'QUESTION_ACTIVE' && state.timerEndsAt && (
         <UrgencyVignette endsAt={state.timerEndsAt} />
       )}
-      {!isFullscreen && <FullscreenNudge onClick={requestFS} />}
+      {!isFullscreen && <FullscreenNudge onClick={requestFS} de={state.language !== 'en'} />}
       {/* Time-Travel-Replay deaktiviert (Wolfs Wunsch) — die separate Card
           überlagerte die GameOver-Komposition und wirkte fragmentiert.
           Code in ReplayOverlay bleibt drin falls später wieder gewünscht. */}
@@ -551,12 +551,12 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
   );
 }
 
-function FullscreenNudge({ onClick }: { onClick: () => void }) {
+function FullscreenNudge({ onClick, de }: { onClick: () => void; de: boolean }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      title="Beamer auf Vollbild schalten (F11)"
+      title={de ? 'Beamer auf Vollbild schalten (F11)' : 'Switch beamer to fullscreen (F11)'}
       style={{
         position: 'fixed', top: 14, right: 14, zIndex: 99999,
         padding: '8px 14px', borderRadius: 8,
@@ -568,7 +568,7 @@ function FullscreenNudge({ onClick }: { onClick: () => void }) {
         animation: 'fsNudgePulse 2.4s ease-in-out infinite',
         pointerEvents: 'auto',
       }}
-    >⛶ Vollbild (F11)</button>
+    >⛶ {de ? 'Vollbild (F11)' : 'Fullscreen (F11)'}</button>
   );
 }
 

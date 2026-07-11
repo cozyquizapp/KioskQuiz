@@ -408,9 +408,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     map: {
       emoji: '🗺️',
       de: { name:    getRuleText('bunte.map.name',    'de', 'CozyGuessr'),
-            explain: getRuleText('bunte.map.explain', 'de', 'Errate den Ort auf der Karte — nächstes Team gewinnt.') },
+            explain: getRuleText('bunte.map.explain', 'de', 'Errate den Ort auf der Karte. Nächstes Team gewinnt.') },
       en: { name:    getRuleText('bunte.map.name',    'en', 'CozyGuessr'),
-            explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map — closest team wins.') },
+            explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map. Closest team wins.') },
     },
     crowdTop: {
       emoji: '🗳️',
@@ -1428,8 +1428,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:map': {
               emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' },
               lines: {
-                de: ['Tippt den Ort auf der Karte — nächstes Team gewinnt.'],
-                en: ['Pin the spot on the map — closest team wins.'],
+                de: ['Tippt den Ort auf der Karte. Nächstes Team gewinnt.'],
+                en: ['Pin the spot on the map. Closest team wins.'],
               },
             },
             'BUNTE_TUETE:hotPotato': {

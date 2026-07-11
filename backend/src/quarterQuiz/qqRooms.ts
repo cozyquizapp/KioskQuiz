@@ -209,6 +209,10 @@ export interface QQRoomState {
   // 2026-07-02 (Modell B): per-Frage-Ranking der Farben (Haupt-Teams) fürs
   // Mega-Event-Reveal. Gesetzt in qqStartPlacement, null bei neuer Frage.
   megaQuestionRanking?: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] | null;
+  // 2026-07-12 (Mod-Pacing): steuert im PLACEMENT den 2-Beat-Reveal statt eines
+  // Client-Timers. false = „Wertung dieser Frage" hält; erster Mod-Weiter setzt
+  // true (Gesamtstand), zweiter schaltet zur nächsten Frage. Reset in qqStartPlacement.
+  megaStandingsRevealed?: boolean;
   // 2026-07-02: kumulierte Farb-Statistiken übers Spiel für die 3 Faktions-
   // Awards (schnellstes/treffsicherstes/Aufholjagd). Wird in qqMegaEventScore
   // pro Frage fortgeschrieben, am Spielende zu megaAwards verdichtet.
@@ -2502,6 +2506,7 @@ export function qqStartPlacement(room: QQRoomState): void {
     qqMegaEventScore(room);
     room.pendingFor = null;
     room.pendingAction = null;
+    room.megaStandingsRevealed = false; // 2026-07-12: Beat A (Wertung) hält, bis Mod weiterdrückt
     room.phase = 'PLACEMENT';
     room.lastActivityAt = Date.now();
     return;
@@ -4703,6 +4708,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     largeGroupMode:       room.largeGroupMode ?? false,
     nestedTeams:          room.nestedTeams ?? false,
     megaQuestionRanking:  room.megaQuestionRanking ?? null,
+    megaStandingsRevealed: room.megaStandingsRevealed ?? false,
     megaAwards:           room.megaAwards ?? null,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell

@@ -46,14 +46,12 @@ export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
   const hasRanking = !!state.nestedTeams && ranking.length > 0;
 
   // 2-Beat-Reveal: zuerst „Wertung dieser Frage" (transparent, wer wie viele
-  // Handys richtig hatte → Punkte), dann Cross-Fade in den Gesamtstand.
-  // Remount pro Frage (key im Beamer) setzt den Beat sauber zurück.
-  const [beat, setBeat] = useState<'question' | 'standings'>(hasRanking ? 'question' : 'standings');
-  useEffect(() => {
-    if (!hasRanking) return;
-    const t = setTimeout(() => setBeat('standings'), 4200);
-    return () => clearTimeout(t);
-  }, [hasRanking]);
+  // Handys richtig hatte → Punkte), dann der Gesamtstand.
+  // 2026-07-12 (Mod-Pacing): NICHT mehr per 4,2s-Auto-Timer, sondern vom
+  // Moderator gesteuert (Backend-Flag megaStandingsRevealed). Erster Weiter im
+  // PLACEMENT flippt das Flag → Standings; zweiter schaltet zur Frage. Gibt dem
+  // Solo-Host Redezeit. Ohne Ranking (hasRanking=false) direkt Gesamtstand.
+  const beat: 'question' | 'standings' = hasRanking && !state.megaStandingsRevealed ? 'question' : 'standings';
 
   if (beat === 'question' && hasRanking) {
     return <MegaQuestionRanking state={state} ranking={ranking} de={de} />;
@@ -93,7 +91,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           );
         })}
       </div>
-      <div style={S.qrFoot}>{de ? '⚡ Je mehr Handys richtig — und je schneller — desto mehr Punkte' : '⚡ More phones correct — and faster — means more points'}</div>
+      <div style={S.qrFoot}>{de ? '⚡ Je mehr Handys richtig, desto mehr Punkte. Schneller = mehr.' : '⚡ More phones correct means more points. Faster = more.'}</div>
     </div>
   );
 }

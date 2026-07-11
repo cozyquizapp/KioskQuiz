@@ -1610,6 +1610,23 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:nextQuestion', (payload: QQNextQuestionPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-07-12 (Mod-Pacing Cozy Arena): im PLACEMENT hält „Wertung dieser
+        // Frage", bis der Mod EINMAL weiterdrückt → Gesamtstand. Erst der ZWEITE
+        // Weiter schaltet zur nächsten Frage. Gibt dem Solo-Host Redezeit statt
+        // eines 4,2s-Auto-Timers im Beamer. Nur wenn es überhaupt eine Wertung
+        // gibt (largeGroupMode + Ranking vorhanden), sonst normal durchschalten.
+        if (
+          room.phase === 'PLACEMENT'
+          && room.largeGroupMode
+          && (room.megaQuestionRanking?.length ?? 0) > 0
+          && !room.megaStandingsRevealed
+        ) {
+          room.megaStandingsRevealed = true;
+          room.lastActivityAt = Date.now();
+          broadcast(io, payload.roomCode);
+          ok(ack);
+          return;
+        }
         // 2026-05-03 Wolf-Bug 'Comeback-Maria-Hang' — Debug-Logs fuer
         // Comeback-Steal-Pause-Pfad. Der Pfad: nach 1 Klau setzt
         // _comebackStealPaused=true, pendingFor=null. Frontend-Autoplay

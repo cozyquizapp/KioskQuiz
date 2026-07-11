@@ -249,7 +249,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'bunte.order.explain',       label: 'Reihenfolge — Erkl.', defaultDe: 'Sortiert in der richtigen Reihenfolge.', defaultEn: 'Sort in the correct order.' },
 
       { key: 'bunte.map.name',            label: 'CozyGuessr — Name',   defaultDe: 'CozyGuessr',    defaultEn: 'CozyGuessr' },
-      { key: 'bunte.map.explain',         label: 'CozyGuessr — Erkl.',  defaultDe: 'Errate den Ort auf der Karte — nächstes Team gewinnt.', defaultEn: 'Guess the location on the map — closest team wins.' },
+      { key: 'bunte.map.explain',         label: 'CozyGuessr — Erkl.',  defaultDe: 'Errate den Ort auf der Karte. Nächstes Team gewinnt.', defaultEn: 'Guess the location on the map. Closest team wins.' },
     ],
   },
 

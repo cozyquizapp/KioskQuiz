@@ -1059,13 +1059,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // In Cozy Arena (largeGroupMode) sind die Reveals reicher (Fraktions-Wertung,
     // Bar-Race) → Autoplay generell strecken, damit man Lesen/Anschauen kann.
     // TEAMS_REVEAL + RULES sind schon inhalts-proportional getimt → ausgenommen.
-    // PLACEMENT bekommt zusätzlich einen harten Boden, weil die Gesamtwertung
-    // (Akt B) erst per Crossfade nach 4,2s erscheint — der 3,5s-Standard schnitt
-    // sie vorher komplett ab (Wolf 'sieht nie die Gesamttabelle').
+    // PLACEMENT bekommt zusätzlich einen harten Boden. 2026-07-12: PLACEMENT ist
+    // jetzt 2 mod-gesteuerte Beats (Wertung → Gesamtstand), je eigener Autoplay-
+    // Fire. Boden pro Beat ~6s, damit im Bots-Durchlauf beide lesbar bleiben
+    // (früher 11s für den einen kombinierten Beat mit 4,2s-Crossfade).
     if ((s as any).largeGroupMode && delayMs > 0 && s.phase !== 'TEAMS_REVEAL' && s.phase !== 'RULES') {
       delayMs = Math.round(delayMs * 1.3);
       if (s.phase === 'PLACEMENT' && !(s as any).comebackStealPaused) {
-        delayMs = Math.max(delayMs, 11000);
+        delayMs = Math.max(delayMs, 6000);
       }
     }
     // 2026-05-07 (Wolf-Bug 'autoplay loest HP-Slot 3x aus'): Dedup-Guard via
@@ -1101,6 +1102,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       (s as any).finalRevealStep ?? 0, // 2026-05-09: Step in fireKey, sonst dedup blockt
       (s as any).finalRecapStep ?? 0,  // 2026-05-25 (Wolf-Bug 'hier hängts'): Recap-Step 0→1 muss neu fire'n
       s.finalBettingSubmitted ? Object.values(s.finalBettingSubmitted).filter(Boolean).length : 0,
+      (s as any).megaStandingsRevealed ? 'std' : 'scr', // 2026-07-12: 2-Beat-PLACEMENT (Mod-Pacing) muss neu fire'n
     ].join(':');
     if (autoplayLastFireKeyRef.current === fireKey) return;
     // 2026-05-09 v2 (Wolf-Bug 'autoplay langsam'): ref-stabiler Timer.
@@ -3114,16 +3116,25 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   const isEndOfPhase = nextIdx >= s.gamePhaseIndex * QPP;
                   const isLastPhase = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
                   const isBeforeFinal = isEndOfPhase && (s.gamePhaseIndex + 1) === s.totalPhases;
+                  // 2026-07-12 (Mod-Pacing Cozy Arena): PLACEMENT ist im largeGroupMode
+                  // ein 2-Beat-Reveal. Solange die Wertung dieser Frage noch nicht
+                  // freigegeben ist, führt der erste Druck NICHT zur nächsten Frage,
+                  // sondern zeigt den Gesamtstand. Label zeigt das ehrlich an.
+                  const megaHold = (s as any).largeGroupMode
+                    && ((s as any).megaQuestionRanking?.length ?? 0) > 0
+                    && !(s as any).megaStandingsRevealed;
                   // 2026-05-24 (Wolf 'connections raus'): kein 4×4-Branch mehr.
-                  const label = isLastPhase
-                    ? '🏆 Spielende'
-                    : isBeforeFinal
-                      ? '⚡ Comeback-Phase'
-                      : isEndOfPhase
-                        ? `→ Runde ${s.gamePhaseIndex + 1}`
-                        : '→ Nächste Frage';
+                  const label = megaHold
+                    ? '→ Gesamtstand zeigen'
+                    : isLastPhase
+                      ? '🏆 Spielende'
+                      : isBeforeFinal
+                        ? '⚡ Comeback-Phase'
+                        : isEndOfPhase
+                          ? `→ Runde ${s.gamePhaseIndex + 1}`
+                          : '→ Nächste Frage';
                   return (
-                    <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
+                    <PrimaryBtn color={megaHold ? QQ_COLORS.brandPink : QQ_COLORS.green500} onClick={() => emit('qq:nextQuestion', { roomCode })} hotkey="Space">
                       {label}
                     </PrimaryBtn>
                   );

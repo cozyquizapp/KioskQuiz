@@ -31,7 +31,33 @@ const KEYFRAMES = `
 @keyframes brPtsPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes brFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes brBarGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* 2026-07-12 (Wolf 'episches Event-Rennen'): Renn-Dynamik. */
+@keyframes qqCometPulse { 0%,100% { transform: translate(50%,-50%) scale(1); opacity: 1; } 50% { transform: translate(50%,-50%) scale(1.4); opacity: 0.82; } }
+@keyframes qqCrownBounce { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-6px) rotate(5deg); } }
+@keyframes qqLeaderGlow { 0%,100% { box-shadow: inset 0 0 0 1.5px var(--lc, #fff), 0 0 24px -6px var(--lc, #fff); } 50% { box-shadow: inset 0 0 0 2px var(--lc, #fff), 0 0 44px 2px var(--lc, #fff); } }
+@keyframes qqRowIn { from { opacity: 0; transform: translateX(-34px); } to { opacity: 1; transform: none; } }
+@keyframes qqValuePop { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 `;
+
+// Zahl weich hochzählen (Renn-Drama). performance.now ist im Browser ok.
+function useCountUp(target: number, ms = 900): number {
+  const [v, setV] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    const start = from.current;
+    if (start === target) { setV(target); return; }
+    let raf = 0; const t0 = performance.now();
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - t0) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      setV(Math.round(start + (target - start) * eased));
+      if (p < 1) raf = requestAnimationFrame(tick); else from.current = target;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
 
 // Farbe/Label je avatarId (= Farb-Slot) aus dem kanonischen Avatar-Set.
 interface AvaMeta { label: string; labelEn: string; color: string }
@@ -199,6 +225,9 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
   const val = team.largestConnected;
   const pct = (val / maxVal) * 100;
   const medal = rank < 3 && val > 0 ? MEDALS[rank] : null;
+  const isLeader = rank === 0 && val > 0;
+  const displayVal = useCountUp(val); // Zahl zählt beim Standings-Reveal hoch
+  const valPopKey = `${val}`; // Re-Pop bei Wert-Änderung
 
   // Führungswechsel-Blitz (Wolf-Idee „Bar-Race Führungswechsel = Glow-Blitz"):
   // wenn eine Fraktion von Rang >0 auf Rang 0 (Krone) springt, kurz aufleuchten.
@@ -219,7 +248,17 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
   }, [rank, val]);
 
   return (
-    <div ref={ref} style={{ ...S.standRow, height: rowH - 12, top: targetTop }}>
+    <div ref={ref} style={{
+      ...S.standRow, height: rowH - 12, top: targetTop,
+      // Leader-Spotlight: leicht größer, hellerer Grund + atmender Farb-Glow.
+      ...(isLeader ? {
+        transform: 'scale(1.035)', zIndex: 3,
+        background: `linear-gradient(90deg, ${team.color}22, rgba(255,255,255,0.06))`,
+        // CSS-Var für den Glow-Keyframe.
+        ['--lc' as any]: team.color,
+        animation: 'qqLeaderGlow 2.4s ease-in-out infinite',
+      } : {}),
+    }}>
       {leadFlash && (
         <>
           <span aria-hidden style={{
@@ -236,7 +275,9 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
           }}>⚔️ {de ? 'Führung!' : 'Lead!'}</span>
         </>
       )}
-      <span style={S.standRank}>{rank === 0 && val > 0 ? <QQEmojiIcon emoji="👑" /> : rank + 1}</span>
+      <span style={S.standRank}>{isLeader
+        ? <span style={{ display: 'inline-flex', animation: 'qqCrownBounce 1.6s ease-in-out infinite', filter: `drop-shadow(0 3px 8px ${team.color}aa)` }}><QQEmojiIcon emoji="👑" /></span>
+        : rank + 1}</span>
       <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={62} />
       <div style={{ width: 260, minWidth: 0 }}>
         <TeamNameLabel name={team.name} fontSize={30} color={team.color} fontWeight={900} maxLines={1} shrinkAfter={16} />
@@ -250,14 +291,30 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
           </div>
         )}
       </div>
-      <div style={S.standBarTrack}>
+      <div style={{
+        ...S.standBarTrack,
+        // Renn-Lane-Optik: dezente „Finish-Line"-Ticks im Track.
+        backgroundImage: 'repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(255,255,255,0.05) calc(10% - 1px), rgba(255,255,255,0.05) 10%)',
+      }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`,
-          background: `linear-gradient(90deg, ${team.color}, ${team.color}dd)`,
-          borderRadius: 999, boxShadow: `0 0 16px ${team.color}66`, transition: 'width 0.7s ease',
-        }} />
+          background: `linear-gradient(90deg, ${team.color}cc, ${team.color})`,
+          borderRadius: 999,
+          boxShadow: `0 0 18px ${team.color}88, inset 0 1px 0 rgba(255,255,255,0.25)`,
+          transition: 'width 0.8s cubic-bezier(0.34,1.05,0.5,1)',
+        }}>
+          {/* Komet-Spitze: heller, pulsierender Kopf an der Balken-Front. */}
+          {val > 0 && (
+            <span aria-hidden style={{
+              position: 'absolute', right: 0, top: '50%',
+              width: 16, height: 16, borderRadius: '50%', background: '#fff',
+              boxShadow: `0 0 12px 3px ${team.color}, 0 0 26px 8px ${team.color}88`,
+              animation: 'qqCometPulse 1.4s ease-in-out infinite',
+            }} />
+          )}
+        </div>
       </div>
-      <span style={{ ...S.standVal, color: team.color }}>{val}</span>
+      <span key={valPopKey} style={{ ...S.standVal, color: team.color, display: 'inline-block', animation: 'qqValuePop 0.5s ease both' }}>{displayVal}</span>
       <span style={S.standUnit}>{medal ? <QQEmojiIcon emoji={medal} /> : de ? 'Pkt' : 'pts'}</span>
     </div>
   );
@@ -448,7 +505,7 @@ const S: Record<string, React.CSSProperties> = {
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(255,255,255,0.045)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  standBarTrack: { flex: 1, height: 28, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },
+  standBarTrack: { flex: 1, height: 32, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'visible' },
   standVal: { width: 90, textAlign: 'right', fontWeight: 900, fontSize: 40, fontVariantNumeric: 'tabular-nums' },
   standUnit: { width: 60, textAlign: 'left', fontSize: 22, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
 };

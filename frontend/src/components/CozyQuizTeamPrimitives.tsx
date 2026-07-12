@@ -65,15 +65,20 @@ export function CozyBtn({
   disabled?: boolean;
 }) {
   return (
-    <button onClick={onClick} disabled={disabled} style={{
-      width: '100%', padding: '16px', borderRadius: 16, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
-      border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : color}`,
-      background: disabled ? 'rgba(255,255,255,0.04)' : `${color}22`,
-      color: disabled ? '#334155' : color,
-      cursor: disabled ? 'default' : 'pointer',
-      boxShadow: disabled ? 'none' : `0 0 20px ${color}22`,
-      transition: 'all 0.15s',
-    }}>
+    <button
+      className="qq-pressable"
+      onClick={onClick}
+      disabled={disabled}
+      // Leichter Haptik-Tick beim Druecken (nur wo unterstuetzt + aktiv).
+      onPointerDown={() => { if (!disabled && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8); }}
+      style={{
+        width: '100%', padding: '16px', borderRadius: 16, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
+        border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : color}`,
+        background: disabled ? 'rgba(255,255,255,0.04)' : `${color}22`,
+        color: disabled ? '#334155' : color,
+        cursor: disabled ? 'default' : 'pointer',
+        boxShadow: disabled ? 'none' : `0 0 20px ${color}22`,
+      }}>
       {children}
     </button>
   );

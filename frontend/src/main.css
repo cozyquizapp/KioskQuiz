@@ -128,6 +128,18 @@
   /* "ease-out-quint"-aehnliche Kurve, haeufigster Inline-Wert in QQBeamerPage
      (30+ Vorkommen). Phase-4 Bucket-2 (CC-2): als Var verfuegbar zur Migration. */
   --qq-ease-out-cubic:   cubic-bezier(0.22, 1,    0.36, 1);
+  /* ── Motion-Handschrift (2026-07-12 Design-System-Audit) ──────────────────
+     Semantische Rollen fuer EINE konsistente Motion-Sprache. enter/state/
+     celebrate = Aliase auf bestehende Kurven (zero-visual-change), exit/carry/
+     press sind neu. Regel: State/Hover -> --qq-state (KEIN Overshoot); Overshoot
+     (--qq-celebrate) nur fuer den EINEN Hero-Beat pro Screen. Details:
+     [[project-design-system-audit-2026-07-12]]. */
+  --qq-enter:     var(--qq-ease-out-cubic);        /* Auftritte: ankommen + setzen (480-680ms) */
+  --qq-exit:      cubic-bezier(0.4, 0, 1, 1);      /* Verlassen: beschleunigen (200-280ms) */
+  --qq-state:     var(--qq-ease-smooth);           /* Hover/Farbe/Selected: ruhig (160-240ms) */
+  --qq-carry:     cubic-bezier(0.34, 1.05, 0.5, 1);/* durch den Raum: FLIP/Balken/Pins (700-800ms) */
+  --qq-celebrate: var(--qq-ease-bounce);           /* RESERVIERT Hero-Beat: Krone/Auflösung (500-700ms) */
+  --qq-press:     cubic-bezier(0.3, 0, 0.4, 1);    /* Tap-Attack (90ms) -> settle via --qq-celebrate */
   --cat-schaetzchen: #f3c367;
   --cat-mucho: #9fbfd3;
   --cat-stimmts: #72ac78;
@@ -4472,7 +4484,8 @@ button:active:not(:disabled),
   /* 2026-05-04 (UI-Audit P0-2): outline:none nur fuer Maus, fuer Keyboard
      bleibt focus-visible-Outline aktiv (Tab-Navigation muss sichtbar sein). */
   outline: none;
-  transition: all 0.2s;
+  /* 2026-07-12 Motion-Handschrift: benannte Props statt 'all' + ruhige State-Kurve */
+  transition: border-color 200ms var(--qq-state), box-shadow 200ms var(--qq-state), background 200ms var(--qq-state);
   border-style: solid;
   border-width: 2px;
 }
@@ -4497,7 +4510,24 @@ button:active:not(:disabled),
   align-items: center;
   justify-content: center;
   gap: 8px;
-  transition: all 0.2s;
+  /* 2026-07-12 Motion-Handschrift: Press-Feedback (scale-in) + ruhige State-Kurve */
+  transition: transform 90ms var(--qq-press), background 200ms var(--qq-state), border-color 200ms var(--qq-state), box-shadow 200ms var(--qq-state);
+}
+.qq-team-submit-btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+/* Wiederverwendbares Press-Feedback fuer inline-gestylte Buttons (CozyBtn etc.).
+   scale-in beim Druecken, ruhige State-Kurve fuer Farb/Rand/Glow-Wechsel. */
+.qq-pressable {
+  transition: transform 90ms var(--qq-press), background 200ms var(--qq-state), border-color 200ms var(--qq-state), box-shadow 200ms var(--qq-state);
+}
+.qq-pressable:active:not(:disabled) {
+  transform: scale(0.96);
+}
+@media (prefers-reduced-motion: reduce) {
+  .qq-team-submit-btn:active:not(:disabled),
+  .qq-pressable:active:not(:disabled) { transform: none; }
 }
 
 .qq-team-waiting-card {

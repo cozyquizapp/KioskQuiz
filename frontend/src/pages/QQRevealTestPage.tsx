@@ -66,7 +66,7 @@ export default function QQRevealTestPage() {
           <button style={btn(arena)} onClick={() => setArena(true)}>Arena · Fraktionen</button>
           <button style={btn(!arena)} onClick={() => setArena(false)}>Grid · Teams</button>
         </div>
-        <button style={S.ghost} onClick={() => setRemountKey(k => k + 1)}>↺ Cascade neu</button>
+        <button style={S.ghost} onClick={() => setRemountKey(k => k + 1)}>▶ Reveal abspielen</button>
         <span style={S.hint}>gleiche Komponente, beide Modi · eine Design-Handschrift</span>
       </div>
 

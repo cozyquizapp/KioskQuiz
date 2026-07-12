@@ -3792,14 +3792,21 @@ export function MuchoOptionsReveal({
               // Cards in derselben Row schoben sich nach. Wrong-Border in
               // Transparent damit visuell nichts da ist, Höhe aber konstant.
               boxSizing: 'border-box',
-              background: isCorrect ? 'rgba(34,197,94,0.22)' : cardBg,
+              // 2026-07-12 (Wolf-Livetest 'MUCHO-Reveal aus der Ferne schlecht
+              // erkennbar'): korrekte Karte deutlich staerker gruen (Fill 0.22→0.34
+              // + Inset-Ring), Falsche zusaetzlich entsaettigt → die richtige Antwort
+              // knallt jetzt auch aus Beamer-Distanz raus.
+              background: isCorrect ? 'rgba(34,197,94,0.34)' : cardBg,
               // 2026-06-24 (Wolf 'option-rahmen auch schwarz'): bei Skin Card-Behandlung
               // (Mono=schwarzer Rand+Hard-Shadow) statt Akzent-Rand.
               border: isCorrect ? '3px solid #22C55E'
                 : isWrong ? (isThemed() ? '3px solid var(--qq-hairline)' : '3px solid rgba(255,255,255,0.06)')
                 : (isThemed() ? 'var(--qq-card-border)' : `3px solid ${optColor}55`),
-              boxShadow: isCorrect ? '0 0 44px rgba(34,197,94,0.48), 0 0 90px rgba(34,197,94,0.18)'
+              boxShadow: isCorrect ? '0 0 64px rgba(34,197,94,0.6), 0 0 130px rgba(34,197,94,0.28), inset 0 0 0 2px rgba(34,197,94,0.55), inset 0 0 70px rgba(34,197,94,0.12)'
                 : (isThemed() ? 'var(--qq-card-shadow)' : '0 4px 16px rgba(0,0,0,0.3)'),
+              // Falsche Karten entsaettigen (kein „Bloßstellen" — es geht um Antwort-
+              // Optionen, nicht Teams), damit nur die korrekte farbig bleibt.
+              filter: isWrong ? 'grayscale(0.55)' : undefined,
               display: 'flex', alignItems: 'center', gap: 16,
               transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
               animation: isCorrect
@@ -3826,11 +3833,12 @@ export function MuchoOptionsReveal({
               {isCorrect && (
                 <span aria-hidden style={{
                   position: 'absolute', top: 10, right: 12, zIndex: 2,
-                  width: 'clamp(30px, 3cqw, 44px)', height: 'clamp(30px, 3cqw, 44px)',
+                  // Groesser fuer Distanz-Lesbarkeit (Wolf 2026-07-12).
+                  width: 'clamp(38px, 3.6cqw, 56px)', height: 'clamp(38px, 3.6cqw, 56px)',
                   borderRadius: '50%', background: QQ_COLORS.green500,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900, color: '#fff',
-                  boxShadow: '0 0 20px rgba(34,197,94,0.7)',
+                  fontSize: 'clamp(22px, 2.3cqw, 34px)', fontWeight: 900, color: '#fff',
+                  boxShadow: '0 0 20px rgba(34,197,94,0.7), 0 2px 8px rgba(0,0,0,0.4)',
                   animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both',
                 }}>✓</span>
               )}

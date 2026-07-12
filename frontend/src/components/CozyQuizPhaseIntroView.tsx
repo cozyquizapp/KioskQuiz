@@ -708,8 +708,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       // vAnchor 0.5 legte die Journey-Linie GENAU durch den Titel. Journey daher
       // in die untere Hälfte (klar UNTER den Titel) legen; moderater Zoom füllt
       // die Fläche ohne die untere Tagline zu touchieren.
-      S = 1.18;
-      vAnchor = 0.72;
+      // 2026-07-12 (Wolf-Livetest 'Runde 2: Progress-Tree hängt im Untertitel'):
+      // vAnchor 0.72 → 0.82 — der Wolf-Pin sitzt ~2·dotSize·S ÜBER der Linie und
+      // ragte bei 0.72 hoch in den mittig gesetzten Untertitel. Tree klar ins
+      // untere Band schieben. S minimal runter, damit der Pin nicht zu weit hoch
+      // greift und die Dots unten nicht clippen.
+      S = 1.12;
+      vAnchor = 0.82;
     }
     // 2026-07-09 (Wolf 'Progress-Tree zu lang mit Cozy Games'): den Gesamt-Tree
     // (Step 0) IMMER in die Viewport-Breite einpassen — nur verkleinern, nie

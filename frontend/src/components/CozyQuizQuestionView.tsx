@@ -962,9 +962,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 Schreibfehler-akzeptierte Avatare in der Frosted-Card. */}
             {isCheeseReveal && (() => {
               const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
-              const correctAnswers = [...s.answers]
+              const correctSorted = [...s.answers]
                 .filter(a => winnerSet.has(a.teamId))
                 .sort((a, b) => a.submittedAt - b.submittedAt);
+              // CozyArena (Wolf-Livetest 2026-07-12 'nicht alle Wappen von allen
+              // Subteams'): pro Fraktion nur die SCHNELLSTE Antwort zeigen (erste je
+              // avatarId in der nach Zeit sortierten Liste), sonst bis zu 40 Wappen.
+              const correctAnswers = isMegaTeams
+                ? (() => { const seen = new Set<string>(); return correctSorted.filter(a => {
+                    const av = s.teams.find(t => t.id === a.teamId)?.avatarId;
+                    if (!av || seen.has(av)) return false; seen.add(av); return true;
+                  }); })()
+                : correctSorted;
               if (correctAnswers.length === 0) {
                 return (
                   <div style={{
@@ -1018,7 +1027,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           animation: isFastest ? `celebShake 0.6s ease ${popDelay + 600}ms both` : 'none',
                         }}>
                           <QQTeamAvatar
-                            avatarId={team.avatarId} teamEmoji={team.emoji}
+                            avatarId={team.avatarId} teamEmoji={qqFactionAvatarEmoji(team.avatarId, team.emoji, isMegaTeams)}
                             // 2026-04-29: Avatare bei Reveal etwas kleiner — Card flacher.
                             size={isFastest ? 'clamp(60px, 6.8cqw, 92px)' : 'clamp(46px, 5.2cqw, 70px)'}
                             style={{
@@ -1069,12 +1078,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Card faded leicht ein, knallt im Peak mit dem Climax-Sound. */}
           {isCheeseReveal && (() => {
             const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
-            const correctAnswers = [...s.answers]
+            const correctSorted = [...s.answers]
               .filter(a => winnerSet.has(a.teamId))
               .sort((a, b) => a.submittedAt - b.submittedAt);
+            // Arena: pro Fraktion verdichten (wie oben), damit Delay-Timing + Text
+            // (mehrere Sieger?) auf Fraktions-Ebene stimmen.
+            const correctAnswers = isMegaTeams
+              ? (() => { const seen = new Set<string>(); return correctSorted.filter(a => {
+                  const av = s.teams.find(t => t.id === a.teamId)?.avatarId;
+                  if (!av || seen.has(av)) return false; seen.add(av); return true;
+                }); })()
+              : correctSorted;
             if (correctAnswers.length === 0) return null;
-            const winnerTeam = s.teams.find(t => t.id === correctAnswers[0].teamId);
-            if (!winnerTeam) return null;
+            const rawWinnerTeam = s.teams.find(t => t.id === correctAnswers[0].teamId);
+            if (!rawWinnerTeam) return null;
+            // Arena: Sieger-Pille nennt die FRAKTION (Name + Wappen), nicht das Sub-Team.
+            const winnerTeam = isMegaTeams
+              ? { ...rawWinnerTeam, name: qqMegaFactionName(rawWinnerTeam.avatarId, lang), emoji: qqMegaFactionSlug(rawWinnerTeam.avatarId) ?? rawWinnerTeam.emoji }
+              : rawWinnerTeam;
             const multiCorrect = correctAnswers.length > 1;
             const winMsg = multiCorrect
               ? (lang === 'en' ? 'recognized it fastest!' : 'hat es am schnellsten erkannt!')
@@ -1218,7 +1239,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       g.total++;
                       if (s.answers.some(a => a.teamId === tm.id)) g.answered++;
                     }
-                    return order.map(id => {
+                    // 2026-07-12 (Wolf 'unten 4-4 statt 6-2 wenn 2-zeilig'): bei
+                    // >=7 Fraktionen auf 2 balancierte Reihen (ceil(n/2) Spalten =
+                    // 4/4 bei 8, 4/3 bei 7) statt greedy 6/2-Umbruch. <=6 einzeilig.
+                    const cols = order.length >= 7 ? Math.ceil(order.length / 2) : order.length;
+                    return (
+                      <div style={{ display: 'grid', gridTemplateColumns: `repeat(${cols}, auto)`, justifyContent: 'center', gap, width: '100%' }}>
+                      {order.map(id => {
                       const g = groups.get(id)!;
                       const done = g.answered >= g.total;
                       const some = g.answered > 0;
@@ -1245,7 +1272,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           }}>{g.answered}/{g.total}</div>
                         </div>
                       );
-                    });
+                    })}
+                      </div>
+                    );
                   }
                   return s.teams.map(tm => {
                     const answered = s.answers.some(a => a.teamId === tm.id);

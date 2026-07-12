@@ -579,7 +579,7 @@ function WheelView({
           </div>
         )}
         <div style={{ fontSize: 'clamp(14px, 1.2vw, 20px)', color: (isThemed() ? 'var(--qq-text-muted)' : '#64748b'), fontStyle: 'italic', marginTop: 24 }}>
-          {spinning ? (lang === 'en' ? `Choosing from ${slices.length} games …` : `Wählt aus ${slices.length} Spielen …`) : ''}
+          {spinning ? (lang === 'en' ? 'Almost there …' : 'Gleich geht\'s los …') : ''}
         </div>
       </FullScreenLayout>
     );

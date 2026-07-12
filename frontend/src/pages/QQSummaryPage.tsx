@@ -409,7 +409,7 @@ function ShareButton({ team, place, lang, brand }: {
   async function share() {
     const text = lang === 'de'
       ? `${team.name} wurde ${place}. mit ${team.largestConnected} Punkten bei CozyQuiz! 🎉`
-      : `${team.name} came in ${place} with ${team.largestConnected} points at CozyQuiz! 🎉`;
+      : `${team.name} finished #${place} with ${team.largestConnected} points at CozyQuiz! 🎉`;
     try {
       if (navigator.share) {
         await navigator.share({ title: tr('shareTitle', lang), text, url });

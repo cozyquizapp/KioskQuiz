@@ -415,7 +415,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                         color: r.team.color,
                         whiteSpace: 'nowrap',
                       }}>
-                        🎯 {lang === 'en' ? 'in range · +1' : 'in Range · +1'}
+                        🎯 {lang === 'en' ? 'in range · +1' : 'in Reichweite · +1'}
                       </span>
                     )}
                   </div>
@@ -434,8 +434,8 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 }}>
                   <div style={{
                     padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
-                    background: isTop ? 'rgba(250,204,21,0.22)' : (themed ? 'var(--qq-surface)' : 'rgba(15,23,42,0.7)'),
-                    border: isTop ? '2px solid rgba(250,204,21,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
+                    background: isTop ? 'rgba(236,72,153,0.22)' : (themed ? 'var(--qq-surface)' : 'rgba(15,23,42,0.7)'),
+                    border: isTop ? '2px solid rgba(236,72,153,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
                     fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 900,
                     color: isTop ? (themed ? 'var(--qq-accent)' : QQ_COLORS.brandPinkSoft) : 'var(--qq-card-text)',
                     fontVariantNumeric: 'tabular-nums',

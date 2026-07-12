@@ -417,7 +417,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                         persistDraftSoundConfig(cfg);
                       }} />
                     </div>
-                  ) : <div style={{ ...ov.hint, textAlign: 'left', marginTop: 8 }}>Erst einen Fragensatz wählen (Schritt 5) — Custom-Sounds werden pro Draft gespeichert.</div>
+                  ) : <div style={{ ...ov.hint, textAlign: 'left', marginTop: 8 }}>Erst einen Fragensatz wählen (Schritt 1). Custom-Sounds werden pro Draft gespeichert.</div>
                 )}
               </div>
 
@@ -474,7 +474,7 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
               ].filter(Boolean).join(', ') || 'keine'} />
               <SummaryRow label="Design" value={(Object.values(QQ_THEMES).find((t: any) => t.id === (s?.themeId ?? 'cozy')) as any)?.label ?? 'Cozy'} />
               <SummaryRow label="Sound" value={[s?.musicMuted ? 'Musik aus' : 'Musik an', s?.sfxMuted ? 'SFX aus' : 'SFX an', `${Math.round((s?.volume ?? 0.8) * 100)}%`].join(' · ')} />
-              {!selDraft && <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>Noch kein Fragensatz gewählt — zurück zu Schritt 5.</div>}
+              {!selDraft && <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>Noch kein Fragensatz gewählt, zurück zu Schritt 1.</div>}
               {mega && selDraft && (selDraft.megaWarnCount ?? 0) > 0 && (
                 <div style={{ ...ov.hint, marginTop: 6, color: '#F59E0B' }}>
                   🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft in der CozyArena als normale Frage (nicht ideal).

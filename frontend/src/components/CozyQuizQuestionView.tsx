@@ -1461,7 +1461,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     fontSize: cardFontSize,
                     fontWeight: 900, lineHeight: 1.22,
                     color: 'var(--qq-card-text)',
-                    animation: 'langFadeIn 0.4s ease both',
+                    // 2026-07-12 (Delight): kleiner Versatz nach dem Karten-Bounce
+                    // (bQuestionIn) — Karte landet, Text schreibt sich danach ein
+                    // statt gleichzeitig. Weichere Kurve. Versatz bewusst klein,
+                    // damit Font-Snaps (hpCompact) nicht laggy wirken.
+                    animation: 'langFadeIn 0.45s var(--qq-ease-out-cubic) 0.16s both',
                   }}>
                     {qText}
                   </div>

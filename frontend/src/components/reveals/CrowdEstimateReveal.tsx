@@ -111,7 +111,10 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
               width: 'clamp(20px, 2cqw, 30px)', height: 'clamp(20px, 2cqw, 30px)',
               transform: 'translate(-50%, -50%)', borderRadius: '50%',
               background: col, border: '3px solid rgba(255,255,255,0.9)', boxShadow: `0 0 10px ${col}`,
+              // Pin-Drop statt flachem Fade; opacity/transition bleiben als
+              // reduced-motion-Fallback (dann greift animation:none).
               opacity: shown ? 1 : 0, transition: `opacity 0.5s ease ${0.2 + i * 0.06}s`, zIndex: 2,
+              animation: shown ? `qqCrowdPinDrop 0.55s var(--qq-ease-bounce) ${0.2 + i * 0.06}s both` : 'none',
             }} />
           );
         })}

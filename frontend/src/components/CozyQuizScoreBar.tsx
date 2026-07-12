@@ -57,6 +57,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   const [floaters, setFloaters] = useState<{ id: string; teamId: string; diff: number }[]>([]);
   // F2: Rank-Change-Indikator (up/down Pfeil pro Team).
   const [rankChanges, setRankChanges] = useState<Record<string, 'up' | 'down'>>({});
+  // Delight 2026-07-12: Fuehrungswechsel-Feier auch im Standard-Modus (vorher
+  // schnappte die Krone kommentarlos auf den neuen Fuehrenden — Asymmetrie zum
+  // Arena-Rennen). Bewusst kleiner als die Arena-⚔️: Krone-Pop + Ring-Flash.
+  const [leadChangeId, setLeadChangeId] = useState<string | null>(null);
   // FLIP-Animation für Row-Reorder (User-Wunsch 2026-04-28: 'Swap zu schnell,
   // smoother darstellen'). Snapshotted Positionen vor dem Re-Render → nach
   // dem Re-Render Inverse-Transform anwenden, dann zur Identität animieren.
@@ -88,16 +92,24 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   });
   useEffect(() => {
     const next: Record<string, 'up' | 'down'> = {};
+    let newLeader: string | null = null;
     sorted.forEach((t, i) => {
       const prevIdx = prevRanks.current[t.id];
       if (prevIdx != null && prevIdx !== i) {
         next[t.id] = prevIdx > i ? 'up' : 'down';
+        // Echter Ueberhol-Moment: war vorher NICHT vorne (prevIdx>0), jetzt
+        // auf Platz 1 mit Punkten. Kein Flash beim ersten Mount (prevIdx null).
+        if (prevIdx > 0 && i === 0 && t.largestConnected > 0) newLeader = t.id;
       }
       prevRanks.current[t.id] = i;
     });
     if (Object.keys(next).length > 0) {
       setRankChanges(next);
       setTimeout(() => setRankChanges({}), 1200);
+    }
+    if (newLeader) {
+      setLeadChangeId(newLeader);
+      setTimeout(() => setLeadChangeId(null), 1300);
     }
   }, [sorted.map(t => t.id).join(',')]); // eslint-disable-line react-hooks/exhaustive-deps
   // C2: Streak-Counter pro Team (wie oft hintereinander correctTeamId).
@@ -225,6 +237,17 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           position: 'relative', overflow: 'visible',
           willChange: 'transform',
         }}>
+          {/* Delight: Fuehrungswechsel-Ring — kurzer Farb-Flash um die Zeile,
+              die gerade die Fuehrung uebernimmt (zusammen mit der Krone-Pop). */}
+          {leadChangeId === t.id && (
+            <span aria-hidden style={{
+              position: 'absolute', inset: -4,
+              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 18,
+              boxShadow: `0 0 26px 6px ${tColor}, inset 0 0 20px ${tColor}88`,
+              pointerEvents: 'none', zIndex: 0,
+              animation: 'qqLeadFlash 1.2s ease-out both',
+            }} />
+          )}
           {/* Hot-Seat-Spotlight wurde entfernt (Wolfs Wunsch) — der Box-Ring
               + Border am Container reichen als visueller Anker für das aktive
               Team. Animationen `hotSeatFlicker` / `hotSeatGlitter` bleiben in
@@ -252,7 +275,12 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   transform: 'translateX(-50%) rotate(-14deg)',
                   fontSize: dense ? 24 : 30,
                   pointerEvents: 'none',
-                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                  // Delight: beim Fuehrungswechsel poppt die Krone einmal freudig
+                  // rein (Rest-Winkel bleibt danach ruhig bei -14deg).
+                  filter: leadChangeId === t.id
+                    ? `drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 0 12px ${tColor})`
+                    : 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                  animation: leadChangeId === t.id ? 'qqCrownArrive 0.7s var(--qq-ease-bounce) both' : undefined,
                 }}><QQEmojiIcon emoji="👑" size="1em" /></span>
               )}
               {/* Joker komplett aus der ScoreBar raus (2026-06-28, Claude-Design-

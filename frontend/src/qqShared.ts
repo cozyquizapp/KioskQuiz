@@ -833,6 +833,34 @@ export const QQ_BEAMER_CSS = `
     62%  { transform: scale(1.06);  opacity: 0.95; filter: brightness(1.2); }
     100% { transform: scale(0.72);  opacity: 0; filter: brightness(0.8); }
   }
+  /* Krone-Ankunft bei Fuehrungswechsel (Standard-Modus-ScoreBar): wenn die
+     Krone auf einen NEUEN Fuehrenden springt, poppt sie freudig rein statt
+     kommentarlos zu erscheinen. Behaelt den statischen Rest-Winkel (-14deg)
+     als End-Zustand, damit sie danach ruhig sitzt (Feier bewusst klein — die
+     grosse ⚔️-Feier lebt im Arena-Rennen). */
+  @keyframes qqCrownArrive {
+    0%   { transform: translateX(-50%) rotate(-14deg) scale(0);    opacity: 0; }
+    55%  { transform: translateX(-50%) rotate(7deg)   scale(1.35); opacity: 1; }
+    78%  { transform: translateX(-50%) rotate(-20deg) scale(0.94); opacity: 1; }
+    100% { transform: translateX(-50%) rotate(-14deg) scale(1);    opacity: 1; }
+  }
+  /* Beat-A-Trefferdots ("Wertung dieser Frage"): gefuellte Dots rasten
+     gestaffelt ein, waehrend die Zeile reinkommt — macht die "warum +N"-Story
+     (mehr Handys richtig = mehr Punkte) spuerbar statt statisch. */
+  @keyframes qqDotFill {
+    0%   { transform: scale(0);    opacity: 0; }
+    60%  { transform: scale(1.35); opacity: 1; }
+    100% { transform: scale(1);    opacity: 1; }
+  }
+  /* CrowdEstimate-Fraktionsmarker: Pin-Drop auf den Zahlenstrahl statt flachem
+     Opacity-Fade. Behaelt die Center-Translate (-50%,-50%) als Rest-Zustand,
+     faellt von oben rein und settlet mit kleinem Ueberschwung. Bei
+     reduced-motion greift der Opacity-Fallback am Element (animation:none). */
+  @keyframes qqCrowdPinDrop {
+    0%   { transform: translate(-50%, -180%) scale(0.5);  opacity: 0; }
+    60%  { transform: translate(-50%, -35%)  scale(1.15); opacity: 1; }
+    100% { transform: translate(-50%, -50%)  scale(1);    opacity: 1; }
+  }
   /* VS-Badge Pulse für Comeback-H/L Question-Phase — atmender Glow auf der
      gold-Pille, signalisiert „hier passiert gleich was" ohne hektisch zu sein. */
   @keyframes qqVsPulse {

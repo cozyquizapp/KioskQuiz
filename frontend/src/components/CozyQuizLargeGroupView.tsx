@@ -105,7 +105,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
               <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={64} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 30, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-                <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} />
+                <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} baseDelay={i * 0.32} />
               </div>
               <span style={{
                 ...S.qrPts, color: scored ? color : 'rgba(255,255,255,0.4)',
@@ -125,7 +125,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
 // Punkte-Dots: gefüllt = richtige Sub-Teams, hohl = Rest. Bei >5 nur Zahl.
 // 2026-07-12: dahinter dezent die Ø-Antwortzeit der richtigen Handys — macht
 // den Speed-Tiebreak transparent (warum +6 vs +1 bei gleicher Trefferquote).
-function Dots({ correct, total, color, de, avgSec }: { correct: number; total: number; color: string; de: boolean; avgSec?: number | null }) {
+function Dots({ correct, total, color, de, avgSec, baseDelay = 0 }: { correct: number; total: number; color: string; de: boolean; avgSec?: number | null; baseDelay?: number }) {
   const showDots = total > 0 && total <= 5;
   const timeStr = (avgSec != null && correct > 0)
     ? (de ? `${avgSec.toFixed(1).replace('.', ',')}s` : `${avgSec.toFixed(1)}s`)
@@ -134,14 +134,20 @@ function Dots({ correct, total, color, de, avgSec }: { correct: number; total: n
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
       {showDots && (
         <span style={{ display: 'inline-flex', gap: 5 }}>
-          {Array.from({ length: total }, (_, i) => (
-            <span key={i} style={{
-              width: 15, height: 15, borderRadius: '50%',
-              background: i < correct ? color : 'transparent',
-              border: `2px solid ${i < correct ? color : 'rgba(255,255,255,0.28)'}`,
-              boxShadow: i < correct ? `0 0 8px ${color}88` : 'none',
-            }} />
-          ))}
+          {Array.from({ length: total }, (_, i) => {
+            const filled = i < correct;
+            return (
+              <span key={i} style={{
+                width: 15, height: 15, borderRadius: '50%',
+                background: filled ? color : 'transparent',
+                border: `2px solid ${filled ? color : 'rgba(255,255,255,0.28)'}`,
+                boxShadow: filled ? `0 0 8px ${color}88` : 'none',
+                // Gefuellte Dots rasten gestaffelt ein (reduced-motion:
+                // animation:none → sofort sichtbar). Hohle Dots bleiben ruhig.
+                animation: filled ? `qqDotFill 0.4s var(--qq-ease-bounce) ${(baseDelay + 0.3 + i * 0.09).toFixed(2)}s both` : undefined,
+              }} />
+            );
+          })}
         </span>
       )}
       <span style={{ fontSize: 17, fontWeight: 800, opacity: 0.7 }}>

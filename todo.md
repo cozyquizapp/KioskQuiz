@@ -36,6 +36,8 @@
 
 **OFFENE VISUELLE BESTÄTIGUNGEN (am echten Lauf/Beamer):** preGame-Wolf-Overlap weg? · CHEESE-Reflow weg? · Kontrast „Wing It"(Blau)/„Objection"(Pink) auf Distanz · Lobby bei 40 Handys kein Scroll.
 
+**🧰 NEUE WERKZEUGE (seit 2026-07-12, global installiert):** Claude-Code-Skills verfügbar — **Remotion** (Reels/Trailer programmatisch), **Marketing** (copywriting/cro/seo für cozywolf.de + Akquise), **UI-UX-Pro-Max** (Beamer-Politur). Nutzung: `/skillname` oder in Sprache. Regel: Skills nie gegen gesperrte Marken-/Design-Entscheidungen. Passt zu Roadmap-Items Reel-Studio, Landing-Ausbau, Beamer-Motion. Details: Memory [[reference-installed-skills]].
+
 ---
 
 ## 🎯 CozyArena LIVE-EVENT — HÖCHSTE PRIO (Ziel ~Anfang Aug 2026)

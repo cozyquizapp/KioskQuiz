@@ -255,37 +255,33 @@ Used-Answers-Chips spawnen mittig statt am Footer (Active-Pill bleibt unten).
 
 ## Roadmap (priorisiert)
 
-### Block A — Event-Readiness ✅
-- [x] Host-Cheatsheet PDF-Export
-- [x] Frage-Validierung beim Speichern
-- [x] Sound-System (Default-WAVs, Master-Mute, Volume)
-- [x] CHEESE-Bild-Positionierung
-- [x] Pause-Button mit Musik-Duck
+> **Stand 2026-07-12.** Die früheren Blöcke A–G (Event-Readiness, Content, Show-Polish,
+> Betrieb, Memory) sind abgeschlossen — das war die Phase vor CozyArena. Live-Tracker der
+> Einzel-Todos ist `todo.md`; hier stehen nur die groben Blöcke.
 
-### Block B — Content & Partner ✅
-- [x] CSV-Import im Builder
-- [x] Frage duplizieren
-- [x] Live-Frage-Preview im Builder
+### North Star — Markt-Leiter
+**Pub → Corporate → Events.** Aktueller Fokus: das erste große Firmen-/Event-Publikum.
+(Schule läuft als **eigenes, separates Projekt** — nicht Teil dieser Leiter.)
 
-### Block C — Show-Polish ✅
-- [x] Epische Team-Reveal-Folie
-- [x] Game-Over QR-Code → Team-Summary
+### 🎯 Aktiv — CozyArena Live-Event (~Anfang Aug 2026)
+Erstes Echtgeräte-Event: 50–100 Leute (Tech/UX-Publikum), komplett Englisch, Wolf
+moderiert solo, ~25–40 Handys. 4-Wochen-De-Risk-Plan (Details `todo.md` → „CozyArena
+LIVE-EVENT"). Technisch weitgehend de-risked; offen ist der echte Durchlauf am Gerät.
+- [x] Team-Cap 40 + Fraktions-Soft-Cap + Auto-Balance
+- [x] 40-Geräte-Lasttest bestanden (33 ms Broadcast-Fan-out, Server nicht der Flaschenhals)
+- [x] Bilingualer Join (DE/EN) · Scoring 0–100 + Finale ×2/×3 · Mod-Pacing · Epic Standings
+- [ ] Kompletter Trockenlauf mit echten Geräten (komplett EN) — Woche 4
+- [ ] Verifikationen am echten Beamer/WLAN (Kontrast, Layout bei 40 Handys, Latenz)
+- [ ] EN-Content im Event-Draft (Wolf, sobald die App steht)
 
-### Block D — Spectator
-- [→] Emote-Rückmeldungen für Zuschauer — nach Longterm verschoben
+### 🎨 Geparkt — Design-/Delight-Pass
+„Richtig nice aus UX-Sicht" — Reveals + Motion Screen für Screen. Governing doc:
+`CREATIVE_DIRECTION.md` (+ Reveal-Brief). Wartet auf Wolfs Recherche. Kür, kein Event-Blocker.
 
-### Block E — Betrieb ✅
-- [x] Reconnect-Audit
-- [→] Sentry — nach Longterm
-- [→] Plausible — nach Longterm
-
-### Block F — Memory & Longterm-Memo ✅
-- [x] Handoff-Memo komprimiert
-- [x] Longterm-TODO-File gepflegt
-
-### Block G — Gouache-Stil 🎨 (geloescht 2026-05-07)
-Aquarell-Variante komplett aus dem Code entfernt — Fokus auf Cozy-Quiz-
-Polish. War seit 2026-04-26 pausiert, wurde im Cleanup mitabgeraeumt.
+### Abgeschlossen (Historie)
+Blöcke A–G ✅ (Host-Cheatsheet-PDF, Frage-Validierung, Sound-System, CSV-Import, Team-Reveal,
+Game-Over-QR, Reconnect-Audit, Memory-Pflege …). Gouache-Stil 🎨 entfernt 2026-05-07 (Fokus
+Cozy-Quiz-Polish). Zuschauer-Emotes + Sentry/Plausible → Longterm verschoben.
 
 ---
 

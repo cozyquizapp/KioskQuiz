@@ -151,9 +151,14 @@ Formen: https://claude.ai/code/artifact/b22fbb30-0679-40a4-ac83-788e6aa345b4
       guter Tipp zieht immer hoch). **Finale-Multiplikator** letzte Phase ×2 / letzte Frage ×3
       (Monte-Carlo-Sweet-Spot: dreht ~1/3 der Spiele, stärkste gewinnt noch 63%). Typecheck grün,
       nur largeGroupMode. ⚠️ **Coolify-Auto-Deploy läuft; Live-Trockentest steht aus.**
-- [ ] **PHASE 2 (Beamer):** Showdown-Zone (leuchtende Top-Gruppe), Cut-Moment (Wolf-Ansage +
-      Awards-Feier), Showdown-Look (dunkle Bühne/Spotlight/×N-Banner), 0–100-Reveal-Anzeige
-      (+ persönliche Handy-Anzeige „Du: 96!"). Droppbar falls Zeit knapp — Phase 1 shippt allein.
+- [x] **PHASE 2a (Anzeige) GEBAUT+GEPUSHT** `33dd68ca` — Standings-Layout für 4-stellige Summen
+      (standVal 90→132), Footer-Copy korrigiert (Speed = nur Tiebreak, „bis 100 pro Frage").
+- [x] **Finale-Banner GEBAUT+GEPUSHT** `0ef6077d` — „🔥 FINALE ×2 / SCHLUSSFRAGE ×3" in Reveal +
+      Standings; Multiplikator frontend-seitig spiegelbildlich zum Backend abgeleitet.
+- [ ] **PHASE 2b REST (episch, droppbar):** Showdown-Zone (Top-Gruppe leuchtet durchgehend) ·
+      Cut-Moment (einmalige Wolf-Ansage + Awards-Feier, Akt 2) · Showdown-Look (dunkle Bühne/
+      Spotlight im Finale) · persönliche Handy-Anzeige `/team` bei Distanz („Du: 96!"). Größer/
+      design-sensibel (Beamer 16k Z.) → eigener Pass. Phase 1 + 2a + Banner shippen allein.
 - [ ] **Tuning am Trockenlauf:** Finale=„letzte Phase" ok? · Nähe-Kurve K=3 / Map-Cap 25° am
       echten Content justieren · Reveal zeigt jetzt 0–100 (bis 300 im Finale) → in Phase 2 stylen.
 

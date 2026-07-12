@@ -1234,7 +1234,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           <div style={{
                             position: 'absolute', bottom: -2, right: -2, minWidth: 28, height: 28, padding: '0 6px',
                             borderRadius: 999, background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
-                            border: '2px solid rgba(255,255,255,0.18)', color: '#fff', fontSize: 15, fontWeight: 900,
+                            // F1 (color-contrast Skill): weiss auf #22C55E = 2.28:1 (AA-Fail).
+                            // Dunkler Text auf dem gruenen Badge = 8.67:1. Auf dem dunklen
+                            // Nicht-fertig-Badge bleibt weiss (dort bestens lesbar).
+                            border: '2px solid rgba(255,255,255,0.18)', color: done ? '#0A0814' : '#fff', fontSize: 15, fontWeight: 900,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                           }}>{g.answered}/{g.total}</div>
                         </div>

@@ -13,7 +13,17 @@
 
 ---
 
-## 🔜 MORGEN — HIER STARTEN (Handoff 2026-07-12, Endphase)
+## 🔜 HIER STARTEN (Handoff 2026-07-12 Abend — nach Skill-Review)
+
+**Zustand:** working tree sauber, alles gepusht. Heute: 28 Claude-Skills installiert (kuratiert), Full-App-**Skill-Review** als Multi-Agent-Workflow (67 Findings), **High-Batch (17 Em-Dashes) + 4 Medium-Batches gefixt+gepusht**. Voll: Memory [[project-skill-review-2026-07-12]]. Roadmap-Artefakt: https://claude.ai/code/artifact/01a21783-7974-454d-8cb7-6f0c4a602212
+
+**➡️ NAECHSTER SCHRITT = UX-Delight- & Motion-Elevation-Pass.** Wolf-Wunsch woertlich: „Design, Effekte, Motions richtig nice aus UX-Sicht". Kreativ, Screen fuer Screen, Wolf im Loop, Delight-Brille (nicht Bug-Brille) via `animate` (Emil Kowalski) + `ui-ux-pro-max` + `web-design-guidelines`. Die geflaggten Aesthetik-Punkte (Hot-Potato-Pille, Landing-Wortmarke, Grid-Sizing 1080p, **Leader-Spotlight-scale geht im FLIP verloren** = gute erste Aufgabe) gehen INS Delight-Briefing.
+
+**Optional davor:** Low-Politur + Struktur-A11y (~25) abraeumen — Details in der Memory. Reihenfolge-Entscheidung 2026-07-12: „Boden fertig, dann Delight-Pass" (Boden = substanziell fertig).
+
+---
+
+## 🔜 (aelterer Handoff 2026-07-12 frueh, Endphase)
 
 **Zustand:** Alle Commits gepusht, working tree sauber, Backend auto-redeployt (Coolify). Voller Batch-Detail in Memory [[project-cozyarena-live-event-2026-08]] (Abschnitt „Screenshot-Review-Batch Runde 2").
 

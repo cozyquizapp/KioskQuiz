@@ -46,6 +46,7 @@ const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const QQHigherLowerTestPage = React.lazy(() => import('./pages/QQHigherLowerTestPage'));
 const QQBarRaceTestPage = React.lazy(() => import('./pages/QQBarRaceTestPage'));
+const QQRevealTestPage = React.lazy(() => import('./pages/QQRevealTestPage'));
 const QQRaceFinaleTestPage = React.lazy(() => import('./pages/QQRaceFinaleTestPage'));
 const LegalPage = React.lazy(() => import('./pages/LegalPage'));
 
@@ -216,6 +217,7 @@ function App() {
           <Route path="/hl-test" element={<PinGate><QQHigherLowerTestPage /></PinGate>} />
           <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
           <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
+          <Route path="/reveal-test" element={<PinGate><QQRevealTestPage /></PinGate>} />
           {/* 2026-07-07: bewusst OHNE PinGate — reine Animations-Vorschau ohne
               Daten/Steuerung, damit Wolf sie ohne PIN (und unabhaengig vom
               Backend-Status waehrend Coolify-Redeploys) oeffnen kann. */}

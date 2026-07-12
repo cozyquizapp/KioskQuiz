@@ -37,7 +37,7 @@ const t = {
     titlePlace: { de: '📍 Wähle ein Feld!', en: '📍 Choose a field!' },
     titleSteal: { de: '⚡ Klau ein fremdes Feld!', en: '⚡ Steal an opponent\'s field!' },
     titleSwap: { de: '🔄 Tausche 2 gegnerische Felder!', en: '🔄 Swap 2 opponent fields!' },
-    titlePhase2: { de: '🏆 Runde 2 — Wähle deine Aktion!', en: '🏆 Round 2 — Choose your action!' },
+    titlePhase2: { de: '🏆 Runde 2: Wähle deine Aktion!', en: '🏆 Round 2: Choose your action!' },
     place2: { de: '📍 2 Felder setzen', en: '📍 Place 2 fields' },
     steal1: { de: '⚡ 1 Feld klauen', en: '⚡ Steal 1 field' },
     placeBtn: { de: '📍 Setzen', en: '📍 Place' },
@@ -823,7 +823,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                   : '';
                 return (
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
-                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt — Bestätigen' : 'selected — confirm'})` : ''}`}
+                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt, Bestätigen' : 'selected, confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
                     // aspectRatio raus — Grid garantiert square cells via gridTemplateRows: 1fr
                     minWidth: 0, minHeight: 0, borderRadius: 4,
@@ -1586,7 +1586,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
             fontWeight: 900, fontSize: 14,
           }}>
             {locked
-              ? (de ? `🚫 Ausgeschieden — wartet auf Auflösung.` : `🚫 Out — wait for reveal.`)
+              ? (de ? `🚫 Ausgeschieden. Warte auf Auflösung.` : `🚫 Out. Wait for the reveal.`)
               : (de ? `✓ Alle 4 Gruppen gefunden! Wartet aufs Auflösen.` : `✓ All 4 groups found! Wait for reveal.`)}
           </div>
         ) : (

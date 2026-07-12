@@ -2742,8 +2742,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', textAlign: 'center', maxWidth: 540, lineHeight: 1.1 }}>{t.name}</div>
               <div style={{ fontSize: 26, fontWeight: 800, color: isWin ? '#FBBF24' : '#C9BEEA', textAlign: 'center' }}>
                 {isWin
-                  ? (de ? `Mit ${pts} Punkten SIEGER! 🏆` : `${pts} points — WINNER! 🏆`)
-                  : (de ? `Mit ${pts} Punkten auf Platz ${r + 1}` : `${pts} points — #${r + 1}`)}
+                  ? (de ? `Mit ${pts} Punkten SIEGER! 🏆` : `WINNER with ${pts} points! 🏆`)
+                  : (de ? `Mit ${pts} Punkten auf Platz ${r + 1}` : `#${r + 1} with ${pts} points`)}
               </div>
               {/* 2026-07-09 (Wolf): 'LEERTASTE WEITER' raus — Publikum braucht den
                   Steuer-Hinweis nicht, sieht unpoliert aus. */}

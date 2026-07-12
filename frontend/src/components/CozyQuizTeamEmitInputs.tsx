@@ -148,7 +148,7 @@ export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, l
           fontSize: 13, fontWeight: 700, color: QQ_COLORS.red300, textAlign: 'center',
           animation: 'tcpulse 0.4s ease-out',
         }}>
-          {lang === 'de' ? `Nicht akzeptiert: „${lastAttempt}" — versuch's nochmal!` : `Not accepted: "${lastAttempt}" — try again!`}
+          {lang === 'de' ? `Nicht akzeptiert: „${lastAttempt}". Versuch's nochmal!` : `Not accepted: "${lastAttempt}". Try again!`}
         </div>
       )}
       <StandardInput

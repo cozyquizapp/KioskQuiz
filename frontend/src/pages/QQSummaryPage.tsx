@@ -334,8 +334,8 @@ function SummaryStammCode({ teamId, lang, brand }: {
       </div>
       <div style={{ fontSize: 12, color: 'var(--sum-muted)', lineHeight: 1.4 }}>
         {lang === 'de'
-          ? 'Beim nächsten Quiz auf /team eingeben — deine Sieg-Streak zählt mit.'
-          : 'Enter on /team next time — your win streak carries over.'}
+          ? 'Beim nächsten Quiz auf /team eingeben, deine Sieg-Streak zählt mit.'
+          : 'Enter on /team next time, your win streak carries over.'}
       </div>
     </div>
   );

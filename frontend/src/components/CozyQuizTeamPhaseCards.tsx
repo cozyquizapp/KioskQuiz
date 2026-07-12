@@ -393,7 +393,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
             const btKind = s.currentQuestion?.bunteTuete?.kind;
             const TC_INTRO: Record<string, { emoji: string; title: { de: string; en: string }; lines: { de: string[]; en: string[] } }> = {
               SCHAETZCHEN:          { emoji: catInfo?.emoji ?? '🎯', title: { de: 'Schätzchen', en: 'Close Call' }, lines: { de: ['Wer am nächsten dran liegt, gewinnt', 'Knapp dran zählt auch'], en: ['Closest guess wins', 'Near misses also count'] } },
-              MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen — 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options — 1 is correct', '⚡ Speed decides!'] } },
+              MUCHO:                { emoji: catInfo?.emoji ?? '🔥', title: { de: 'Mu-Cho', en: 'Mu-Cho' }, lines: { de: ['4 Optionen, nur 1 ist richtig', '⚡ Schnelligkeit entscheidet!'], en: ['4 options, only 1 is correct', '⚡ Speed decides!'] } },
               ZEHN_VON_ZEHN:        { emoji: catInfo?.emoji ?? '🎰', title: { de: '10 von 10', en: 'All In' }, lines: { de: ['10 Punkte auf 3 Antworten verteilen'], en: ['Distribute 10 points across 3 answers'] } },
               CHEESE:               { emoji: catInfo?.emoji ?? '📸', title: { de: 'Schau mal!', en: 'Picture This' }, lines: { de: ['Erkennt das Bild, tippt die Antwort ins Handy.'], en: ['Spot the image, type your answer.'] } },
               'BUNTE_TUETE:top5':       { emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' }, lines: { de: ['Bis zu 5 Antworten', 'Meiste Treffer gewinnt'], en: ['Up to 5 answers', 'Most hits wins'] } },
@@ -1011,8 +1011,8 @@ export function FinalRevealStackPlacementCard({
         </div>
         <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 12 }}>
           {de
-            ? `Tippe ein eigenes Feld — ${remaining} ${remaining === 1 ? 'Stempel' : 'Stempel'} übrig`
-            : `Tap an own field — ${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} left`}
+            ? `Tippe ein eigenes Feld, ${remaining} ${remaining === 1 ? 'Stempel' : 'Stempel'} übrig`
+            : `Tap an own field, ${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} left`}
         </div>
         {/* Queue-Pills */}
         {total > 1 && (

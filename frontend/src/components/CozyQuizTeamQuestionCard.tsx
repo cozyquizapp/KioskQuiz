@@ -476,8 +476,8 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           const loseMsg = iWasAlsoCorrect
             ? (myRank >= 2
                 ? (isEn
-                    ? `✓ Also correct! You place #${myRank} — coming up right after.`
-                    : `✓ Auch richtig! Ihr platziert als Nr. ${myRank} — gleich seid ihr dran.`)
+                    ? `✓ Also correct! You place #${myRank}. Coming up right after.`
+                    : `✓ Auch richtig! Ihr platziert als Nr. ${myRank}. Gleich seid ihr dran.`)
                 : (isEn
                     ? `✓ Correct! Placement coming up right after ${winnerTeam.name}.`
                     : `✓ Richtig! Ihr setzt gleich nach ${winnerTeam.name}.`))
@@ -550,8 +550,8 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             statusText = lang === 'en' ? 'Closest estimate!' : 'Beste Schätzung!';
           } else if (rankAmongCorrect && rankAmongCorrect > 0) {
             statusText = lang === 'en'
-              ? `Correct — ${ordinalEn(rankAmongCorrect)} fastest team`
-              : `Richtig — ${ordinalDe(rankAmongCorrect)} schnellstes Team`;
+              ? `Correct: ${ordinalEn(rankAmongCorrect)} fastest team`
+              : `Richtig: ${ordinalDe(rankAmongCorrect)} schnellstes Team`;
           } else {
             statusText = lang === 'en' ? 'Correct!' : 'Richtig!';
           }

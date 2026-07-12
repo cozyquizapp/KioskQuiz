@@ -760,7 +760,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
             <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.highestScore.teamName)} — {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
+              {teamInline(funStats.highestScore.teamName)} · {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
             </div>
           </div>
         </div>
@@ -773,7 +773,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
             <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} — {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
+              {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} · {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
             </div>
           </div>
         </div>
@@ -786,7 +786,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
             <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.winStreak.teamName)} — {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
+              {teamInline(funStats.winStreak.teamName)} · {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
             </div>
           </div>
         </div>
@@ -800,7 +800,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
             <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.fastestAnswer.teamName)} — {secs}s {de ? 'Vorsprung' : 'ahead'}
+              {teamInline(funStats.fastestAnswer.teamName)} · {secs}s {de ? 'Vorsprung' : 'ahead'}
             </div>
           </div>
         </div>
@@ -1127,7 +1127,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div>
             <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (rivalTeam?.color ?? QQ_COLORS.brandPinkMid) }}>{rivalName}</div>
             <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: 'var(--qq-text-muted)' }}>
-              {de ? `hat schon ${rival.wins}× gewonnen — wer dreht heute das Spiel?` : `already won ${rival.wins}× — who flips the script today?`}
+              {de ? `hat schon ${rival.wins}× gewonnen. Wer dreht heute das Spiel?` : `already won ${rival.wins}×. Who flips the script today?`}
             </div>
           </div>
         </div>
@@ -1145,7 +1145,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {funStats.funnyAnswers.map((fa, i) => (
           <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid var(--qq-hairline)' : 'none' }}>
             <div style={{ fontSize: 'clamp(22px, 2.6cqw, 30px)', fontWeight: 700, color: 'var(--qq-accent)' }}>„{fa.text}"</div>
-            <div style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', color: 'var(--qq-text-muted)', marginTop: 4 }}>— {fa.teamName}</div>
+            <div style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', color: 'var(--qq-text-muted)', marginTop: 4 }}>· {fa.teamName}</div>
           </div>
         ))}
       </div>

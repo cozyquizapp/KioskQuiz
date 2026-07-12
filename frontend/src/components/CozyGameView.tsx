@@ -398,8 +398,8 @@ function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame |
     switch (phase) {
       case 'INTRO':         return "Which game will it be today?";
       case 'WHEEL_SPIN':    return 'So exciting!';
-      case 'WHEEL_RESULT':  return game ? `Oho — ${cgName(game, 'en')}!` : 'Aha!';
-      case 'GAME_ACTIVE':   return "Let's go — 60 seconds!";
+      case 'WHEEL_RESULT':  return game ? `Oho, ${cgName(game, 'en')}!` : 'Aha!';
+      case 'GAME_ACTIVE':   return "Let's go: 60 seconds!";
       case 'WINNER_SELECT': return 'Who won?';
       default:              return "Let's play!";
     }
@@ -407,7 +407,7 @@ function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame |
   switch (phase) {
     case 'INTRO':         return 'Welches Spiel wirds heute?';
     case 'WHEEL_SPIN':    return 'Spannend, spannend!';
-    case 'WHEEL_RESULT':  return game ? `Oho — ${cgName(game, 'de')}!` : 'Aha!';
+    case 'WHEEL_RESULT':  return game ? `Oho, ${cgName(game, 'de')}!` : 'Aha!';
     case 'GAME_ACTIVE':   return 'Los geht\'s, 60 Sekunden!';
     case 'WINNER_SELECT': return 'Wer hat gewonnen?';
     default:              return 'Lasst uns spielen!';
@@ -1401,7 +1401,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             animation: 'cozyGameWinnerHeadline 0.4s ease-out 0.5s both',
           }}>
             <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(28px, 3vw, 48px)" />
-            <span><strong>{cgName(game, lang)}</strong> — {lang === 'en' ? 'wins 1 action on the grid' : 'gewinnt 1 Aktion auf dem Grid'}</span>
+            <span><strong>{cgName(game, lang)}</strong>: {lang === 'en' ? 'wins 1 action on the grid' : 'gewinnt 1 Aktion auf dem Grid'}</span>
           </div>
         </>
       ) : (

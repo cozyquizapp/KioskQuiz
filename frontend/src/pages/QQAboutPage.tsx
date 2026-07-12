@@ -42,16 +42,16 @@ const CATEGORIES = [
 // 4 Schritte — abgeleitet aus rules.slide1/2/4, round.2/3, slide7, slide8.
 const STEPS = [
   { n: '1', title: 'Team & Handy', text: 'Bildet Teams und tretet per Handy bei. Gespielt wird auf der großen Leinwand.' },
-  { n: '2', title: 'Antworten & erobern', text: '4 Runden, 5 Kategorien pro Runde. Richtig — und schnell — geantwortet, und ihr setzt ein Feld aufs Spielbrett.' },
+  { n: '2', title: 'Antworten & erobern', text: '4 Runden, 5 Kategorien pro Runde. Richtig und schnell geantwortet, und ihr setzt ein Feld aufs Spielbrett.' },
   { n: '3', title: 'Verbinden & tricksen', text: 'Felder clever verbinden gibt Joker-Bonus. Ab Runde 2 dürft ihr Felder klauen, ab Runde 3 dauerhaft sichern.' },
-  { n: '4', title: 'Comeback & Final-Bets', text: 'Das letzte Team bekommt eine Aufhol-Chance. Im Finale tippt jedes Team auf ein Team — pro gewonnene Final-Kategorie eures Tipps gibt es Bonus-Punkte.' },
+  { n: '4', title: 'Comeback & Final-Bets', text: 'Das letzte Team bekommt eine Aufhol-Chance. Im Finale tippt jedes Team auf ein Team: pro gewonnene Final-Kategorie eures Tipps gibt es Bonus-Punkte.' },
 ];
 
 const SELLING = [
-  { emoji: '🧠', text: 'Wissen, Schätzen & Bauchgefühl — für jede Stärke eine Kategorie.' },
+  { emoji: '🧠', text: 'Wissen, Schätzen & Bauchgefühl: für jede Stärke eine Kategorie.' },
   { emoji: '♟️', text: 'Strategie zählt: nicht nur richtig antworten, sondern clever setzen.' },
   { emoji: '🔄', text: 'Niemand ist raus: die Comeback-Mechanik hält es bis zum Schluss spannend.' },
-  { emoji: '🐺', text: 'Moderiert & locker: kein Googeln, kein Vorwissen-Stress — Spaß vor Punkten.' },
+  { emoji: '🐺', text: 'Moderiert & locker: kein Googeln, kein Vorwissen-Stress, Spaß vor Punkten.' },
 ];
 
 // 5 Teams = echte Default-cozy3d-Avatare mit den echten App-Farben (QQ_TEAM_PALETTE
@@ -78,7 +78,7 @@ export default function QQAboutPage() {
   const [busy, setBusy] = useState<null | 'png' | 'pdf'>(null);
 
   useEffect(() => {
-    document.title = 'CozyQuiz — Was ist das?';
+    document.title = 'CozyQuiz: Was ist das?';
   }, []);
 
   // Poster → Canvas (fuer PNG-Export). Normales html2canvas-Rendering
@@ -136,7 +136,7 @@ export default function QQAboutPage() {
       triggerDownload(canvas.toDataURL('image/png'), 'CozyQuiz.png');
     } catch (e) {
       console.error('PNG-Export fehlgeschlagen', e);
-      alert('Ups — der Bild-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
+      alert('Ups, der Bild-Export hat nicht geklappt.\n\n' + (e instanceof Error ? e.message : String(e)));
     } finally {
       setBusy(null);
     }

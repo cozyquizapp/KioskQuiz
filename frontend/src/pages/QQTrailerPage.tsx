@@ -136,7 +136,7 @@ const DECO_TESTTEAM: DecoItem[] = [
 const B = { fun: 4200, cats: 4600, minigames: 4300, board: 4400, qTeam: 4600, qLoc: 4600, qBday: 4800, steal: 4200, fill: 4000, win: 4000 };
 const VARIANTS: Record<string, VariantCfg> = {
   general: {
-    title: 'CozyQuiz — Trailer',
+    title: 'CozyQuiz · Trailer',
     full: [
       { key: 'title', dur: 3800 }, { key: 'fun', dur: B.fun }, { key: 'cats', dur: B.cats },
       { key: 'minigames', dur: B.minigames }, { key: 'board', dur: B.board }, { key: 'cta', dur: 4400 },
@@ -147,7 +147,7 @@ const VARIANTS: Record<string, VariantCfg> = {
     bgTint: null, deco: DECO_GENERAL,
   },
   team: {
-    title: 'CozyQuiz — Teamevent-Reel',
+    title: 'CozyQuiz · Teamevent-Reel',
     // TEAM = Rivalität: echte Mu-Cho (Wettrennen) → Felder klauen → Brett.
     full: [
       { key: 'hook-team', dur: 4400 }, { key: 'q-team', dur: B.qTeam }, { key: 'steal', dur: B.steal },
@@ -160,7 +160,7 @@ const VARIANTS: Record<string, VariantCfg> = {
     deco: DECO_TEAM,
   },
   location: {
-    title: 'CozyQuiz — Location-Reel',
+    title: 'CozyQuiz · Location-Reel',
     // LOCATION = toter Abend wird voll: echtes „Schau mal!"-Bild → Bunte Tüte → Bude füllt sich.
     full: [
       { key: 'hook-location', dur: 4400 }, { key: 'q-location', dur: B.qLoc }, { key: 'minigames', dur: B.minigames },
@@ -173,7 +173,7 @@ const VARIANTS: Record<string, VariantCfg> = {
     deco: DECO_LOCATION,
   },
   geburtstag: {
-    title: 'CozyQuiz — Geburtstags-Reel',
+    title: 'CozyQuiz · Geburtstags-Reel',
     // BDAY = Chaos + persönlich: Schätzchen übers Geburtstagskind → Bunte Tüte → Sieg + Konfetti.
     full: [
       { key: 'hook-bday', dur: 4400 }, { key: 'q-bday', dur: B.qBday }, { key: 'minigames', dur: B.minigames },
@@ -186,7 +186,7 @@ const VARIANTS: Record<string, VariantCfg> = {
     deco: DECO_BDAY,
   },
   testteam: {
-    title: 'CozyQuiz — Test-Team-Aufruf',
+    title: 'CozyQuiz · Test-Team-Aufruf',
     // TEST-TEAM = persoenliche Gruender-Bitte (kein Hochglanz-Verkauf): Wolf-Ask
     // Hook → kurzer Blick aufs Erlebnis (fun/minigames) → Angebot + /testen-CTA.
     full: [

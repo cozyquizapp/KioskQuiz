@@ -3583,7 +3583,8 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
  * MegaMuchoVoterPills — CozyArena-Ersatz für die Einzel-Voter-Avatare unter
  * einer MuCho-Option. Fasst die Voter zu ihren Faktionen zusammen: EIN Faktions-
  * Tier je Farbe + ×Anzahl-Badge (statt bis zu 24 gemischten Sub-Team-Avataren).
- * Die Gewinner-Faktion (schnellste korrekte Antwort) behält die Krone.
+ * showCrown wird in der Arena bewusst NICHT gesetzt (reine Verteilung, kein
+ * Sieger — der lebt im Wertungs-Beat); der Krone-Pfad bleibt für evtl. Reuse.
  */
 function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim }: {
   teams: Array<{ id: string; name: string; avatarId: string; color?: string; emoji?: string }>;
@@ -3884,7 +3885,12 @@ export function MuchoOptionsReveal({
                   <MegaMuchoVoterPills
                     teams={voters.map(v => v.team)}
                     winnerAvatarId={winnerTeam?.avatarId}
-                    showCrown={akt3On && isCorrect}
+                    /* 2026-07-12 (Wolf): Arena-Reveal = reine Verteilung, KEINE Krone.
+                       Die Krone kroente das schnellste Einzel-Handy → wirkte unlogisch
+                       auf einer kleinen Fraktion und widersprach der Quoten-Wertung.
+                       „Wer gewinnt" lebt jetzt im Wertungs-Beat (Medaille + Quote); die
+                       Sieger-Karte „war am schnellsten richtig" bleibt als Spotlight. */
+                    showCrown={false}
                     de={lang === 'de'}
                     dim={isWrong}
                   />

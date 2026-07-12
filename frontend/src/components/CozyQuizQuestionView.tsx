@@ -1075,8 +1075,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ist 0.6s; Anim-Peak (max scale/glow ~70%) ist bei card-start
               + 420ms. Damit Card-Peak und Sound zusammenfallen:
                 card-start = sound-time − 420 = N×850 + 420ms.
-              Card faded leicht ein, knallt im Peak mit dem Climax-Sound. */}
-          {isCheeseReveal && (() => {
+              Card faded leicht ein, knallt im Peak mit dem Climax-Sound.
+              2026-07-12 (Wolf-Livetest 'Siegerband nur bei CHEESE, soll einheitlich
+              sein'): in der Arena KEIN Einzelsieger-Band — konsistent mit MUCHO/
+              10v10 (dort per !largeGroupMode ebenfalls aus). Das Zeit-Grid pro
+              Fraktion (oben) bleibt als Info erhalten. */}
+          {isCheeseReveal && !(s as any).largeGroupMode && (() => {
             const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
             const correctSorted = [...s.answers]
               .filter(a => winnerSet.has(a.teamId))

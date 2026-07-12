@@ -44,6 +44,24 @@ export function qqSortedTeams(s: QQStateUpdate): QQTeam[] {
  * kommen aus QQ_AVATARS (Avatar = Identität, Wolf: "nur der Avatar sichtbar").
  * Sub-Teams behalten ihre eigenen Namen im Akt-2-Reveal (ihr Moment).
  */
+
+/**
+ * Fraktions-Avatar-Emoji fuer <QQTeamAvatar> — die EINZIGE erlaubte Quelle.
+ *
+ * ⚠️ WARUM (wurde schon 3x mit Tieren verwechselt): Eine CozyArena-Fraktion ist
+ * technisch an eine Tier-`avatarId` gekoppelt (nur Farb-/Gruppierungs-Traeger).
+ * Jeder Slug hat ZWEI Assets: das Tier (`/avatars/cozy-cast/…`) UND das
+ * Fraktions-WAPPEN (`/avatars/cozyarena/<slug>.png`). Das rohe `team.emoji` ist
+ * das TIER, das der Spieler beim Beitritt gewaehlt hat. Wer `team.emoji` direkt
+ * an QQTeamAvatar gibt, zeigt in der Arena ein TIER statt des WAPPENS.
+ *
+ * Regel: Wird eine FRAKTION dargestellt, IMMER diese Funktion nutzen, nie
+ * `team.emoji` direkt. (Nicht-Arena gibt das rohe Emoji unveraendert zurueck.)
+ */
+export function qqFactionAvatarEmoji(avatarId: string, rawEmoji: string | undefined, isArena: boolean): string | undefined {
+  return isArena ? (qqMegaFactionSlug(avatarId) ?? rawEmoji) : rawEmoji;
+}
+
 export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
   const de = s.language !== 'en';
   const byAvatar = new Map<string, QQTeam[]>();
@@ -57,14 +75,14 @@ export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
     const meta = QQ_AVATARS.find(a => a.id === avatarId);
     const rep = members[0];
     const points = members.reduce((sum, m) => sum + (m.largestConnected ?? 0), 0);
-    // Mega Event: Faktions-Name („Denkfaule Dachse") + Faktions-Tier (slug via
-    // emoji auf die Farb-Disc). Fallback: Default-Avatar-Label.
+    // Mega Event: Faktions-Name („Denkfaule Dachse") + Faktions-WAPPEN (Crest-
+    // slug, NICHT das Tier — siehe qqFactionAvatarEmoji). Fallback: rohes Emoji.
     groups.push({
       id: `grp-${avatarId}`,
       name: qqMegaFactionName(avatarId, de ? 'de' : 'en'),
       color: meta?.color ?? rep.color,
       avatarId,
-      emoji: qqMegaFactionSlug(avatarId) ?? rep.emoji,
+      emoji: qqFactionAvatarEmoji(avatarId, rep.emoji, true),
       connected: true,
       totalCells: points,
       largestConnected: points,

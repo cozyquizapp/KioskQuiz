@@ -61,7 +61,7 @@ import {
   BluffWriteScreen, BluffReviewScreen, BluffVoteWaitingScreen, BluffVoteScreen,
 } from './reveals/Bluff';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { qqFactionBuckets } from '../qqShared';
+import { qqFactionBuckets, qqFactionAvatarEmoji } from '../qqShared';
 
 
 // 2026-05-24 (Refactor #5): Reveals + Helpers in components/reveals/ extrahiert:
@@ -1230,7 +1230,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           opacity: some ? 1 : 0.55, filter: some ? 'none' : 'grayscale(0.4)',
                           transition: 'all 0.45s ease',
                         }}>
-                          <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={g.rep.emoji} size={navSize} />
+                          {/* Fraktion → WAPPEN, nicht das Tier (qqFactionAvatarEmoji). */}
+                          <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={qqFactionAvatarEmoji(g.rep.avatarId, g.rep.emoji, true)} size={navSize} />
                           <div style={{
                             position: 'absolute', bottom: -2, right: -2, minWidth: 28, height: 28, padding: '0 6px',
                             borderRadius: 999, background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
@@ -3000,14 +3001,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               boxShadow: done ? '0 0 0 3px #22C55E' : some ? '0 0 0 3px rgba(34,197,94,0.45)' : 'none',
                               transition: 'box-shadow 0.45s ease', display: 'inline-flex',
                             }}>
-                              <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={g.rep.emoji} size={av} />
+                              {/* Fraktion → WAPPEN, nicht das Tier (qqFactionAvatarEmoji). */}
+                              <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={qqFactionAvatarEmoji(g.rep.avatarId, g.rep.emoji, true)} size={av} />
                             </div>
                             <div style={{
                               position: 'absolute', bottom: -4, right: -4,
                               minWidth: 24, height: 24, padding: '0 6px', borderRadius: 999,
                               background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
                               border: '2px solid rgba(255,255,255,0.18)',
-                              color: '#fff', fontSize: 13, fontWeight: 900,
+                              // F1 (color-contrast): dunkler Text auf gruenem Badge (8.67:1 statt 2.28:1).
+                              color: done ? '#0A0814' : '#fff', fontSize: 13, fontWeight: 900,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                             }}>{g.answered}/{g.total}</div>

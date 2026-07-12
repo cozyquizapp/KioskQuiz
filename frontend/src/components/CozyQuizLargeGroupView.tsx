@@ -117,7 +117,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           );
         })}
       </div>
-      <div style={S.qrFoot}>{de ? '⚡ Je mehr Handys richtig, desto mehr Punkte. Schneller = mehr.' : '⚡ More phones correct means more points. Faster = more.'}</div>
+      <div style={S.qrFoot}>{de ? '⚡ Je mehr eurer Handys richtig liegen, desto mehr Punkte (bis 100 pro Frage).' : '⚡ The more of your phones are right, the more points (up to 100 per question).'}</div>
     </div>
   );
 }
@@ -509,7 +509,7 @@ const S: Record<string, React.CSSProperties> = {
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
   qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.05)' },
   qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  qrPts: { fontWeight: 900, fontSize: 42, minWidth: 96, textAlign: 'right' },
+  qrPts: { fontWeight: 900, fontSize: 42, minWidth: 116, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
   qrFoot: { fontSize: 20, fontWeight: 700, opacity: 0.5, textAlign: 'center', marginTop: 4 },
   podium: { display: 'flex', flexDirection: 'column', gap: 14 },
   podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 18, background: 'rgba(255,255,255,0.05)' },
@@ -536,6 +536,6 @@ const S: Record<string, React.CSSProperties> = {
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(255,255,255,0.045)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   standBarTrack: { flex: 1, height: 32, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'visible' },
-  standVal: { width: 90, textAlign: 'right', fontWeight: 900, fontSize: 40, fontVariantNumeric: 'tabular-nums' },
+  standVal: { width: 132, textAlign: 'right', fontWeight: 900, fontSize: 40, fontVariantNumeric: 'tabular-nums' },
   standUnit: { width: 60, textAlign: 'left', fontSize: 22, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
 };

@@ -266,10 +266,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         if (a.submittedAt < earliest) earliest = a.submittedAt;
       }
       if (!seedAnswer) continue;
+      // A (2026-07-12, Wolf): Ø statt Summe → groessen-fair + deckungsgleich mit
+      // der 0-100-Wertung (Fraktions-Score = Ø-Einsatz auf richtig × 10). Sonst
+      // saehen grosse Fraktionen im Reveal faelschlich „staerker" aus. Nenner =
+      // AKTIVE (connected) Handys, exakt wie qqMegaEventScore; Nicht-Abgaben = 0.
+      const activeCount = Math.max(1, b.members.filter(m => m.connected !== false).length);
+      const avg = sum.map(v => Math.round(v / activeCount));
       const synthId = `faction-${b.avatarId}`;
       const rep = b.members[0];
       teams.push({ ...rep, id: synthId, avatarId: b.avatarId, emoji: b.slug ?? rep.emoji, name: b.name, color: b.color });
-      answers.push({ ...seedAnswer, teamId: synthId, text: sum.join(','), submittedAt: earliest });
+      answers.push({ ...seedAnswer, teamId: synthId, text: avg.join(','), submittedAt: earliest });
     }
     return { answers, teams };
   }, [cat, isMegaTeams, q.options, s.teams, s.answers, lang]);

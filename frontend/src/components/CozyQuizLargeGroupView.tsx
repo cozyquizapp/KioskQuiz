@@ -113,7 +113,11 @@ function qqScoreSub(sc: QQScoreCat, e: QQMegaRankEntry, finaleMult: number, de: 
   const isDist = sc.cat === 'SCHAETZCHEN' || (sc.cat === 'BUNTE_TUETE' && (sc.kind === 'crowdEstimate' || sc.kind === 'map'));
   if (isDist) return { label: de ? `Ø ${base}% dran` : `Ø ${base}% close`, showDots: false };
   if (sc.cat === 'ZEHN_VON_ZEHN') { const x = Math.round(base / 10); return { label: de ? `Ø ${x}/10 auf richtig` : `Ø ${x}/10 on correct`, showDots: false }; }
-  if (sc.cat === 'BUNTE_TUETE' && sc.kind === 'crowdTop') return { label: de ? `${e.correct}/${e.total} auf der Tafel` : `${e.correct}/${e.total} on the board`, showDots: true };
+  // crowdTop (Top-Antworten): Board-Punkte 5/4/3/2/1 → pro Handy 100/80/60/40/20 %
+  // Naehe zur Bestantwort (#1 = 100 %, off-board = 0). base = exakt die Punkte →
+  // Label-% = Punkte, maximal nachvollziehbar, keine Extra-Rundung. Keine Dots
+  // (ist kein Zaehl-Wert — „4/4 auf der Tafel" verschwieg, dass Platz 1 > Platz 5).
+  if (sc.cat === 'BUNTE_TUETE' && sc.kind === 'crowdTop') return { label: de ? `Ø ${base}% zur Bestantwort` : `Ø ${base}% toward best`, showDots: false };
   return { label: de ? `${e.correct}/${e.total} Handys richtig` : `${e.correct}/${e.total} phones correct`, showDots: true };
 }
 

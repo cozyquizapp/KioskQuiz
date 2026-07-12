@@ -10,6 +10,7 @@
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "build": "tsc --project tsconfig.json && node ./scripts/copy-data.js",
     "start": "node dist/backend/src/server.js",
+    "test:scoring": "ts-node scripts/scoring-selfcheck.ts",
     "recover:drafts": "node scripts/recover-cozy-drafts.js",
     "recover:drafts:apply": "node scripts/recover-cozy-drafts.js --apply"
   },

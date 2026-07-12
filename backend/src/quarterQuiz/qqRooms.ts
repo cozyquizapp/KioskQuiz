@@ -24,7 +24,7 @@ import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
 import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
-import { qqSwarm, qqParseEstimate } from '../../../shared/qqSwarm';
+import { qqParseEstimate } from '../../../shared/qqSwarm';
 import { recordQQQuestionUsage } from '../db/schemas';
 import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep } from '../../../shared/qqFinalReveal';
 
@@ -2318,21 +2318,31 @@ export function qqLargeGroupAwardPoints(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
-// ── Modell B (2026-07-02): Mega-Event-Wertung nach Haupt-Team (Farbe) ────────
-// Genestet: bis zu 3 unabhängige Sub-Handys punkten für dieselbe Farbe (avatarId).
-// ADDITIV — jede richtige/nahe Antwort JEDES Subs zählt zur Farb-Leistung:
-//   MUCHO/Cheese/BunteTüte = # richtige Sub-Handys (+ Ø-Submit-Speed als Tiebreak)
-//   10v10                  = SUMME aller Sub-Punkte auf der richtigen Option
-//   Schätzchen             = # Sub-Handys „nah genug" (≤ Range), nächstes bricht Tie
-// 2026-07-12 (Wolf): Speed-Tiebreak = DURCHSCHNITT der Abgabezeiten der richtigen
-// Handys einer Fraktion (nicht mehr das schnellste Einzel-Handy). Belohnt schnelle,
-// geschlossene Gruppen statt eines „Hero-Handys". Gilt überall, wo Speed die Rang-
-// achse ist (MUCHO/10v10/Cheese/Top-5); Distanz-Kategorien ranken weiter nach Nähe.
-// `bestSpeed` bleibt nur für das „⚡ Schnellstes-Team"-Award (= single-fastest).
-// Dann Farben nach Leistung ranken → Top-5 kriegen 5/4/3/2/1, jede Farbe mit
-// Leistung>0 zusätzlich +1. Punkte auf den Repräsentanten-Sub (kleinste id)
-// schreiben, damit die Frontend-Gruppierung (qqSortedGroups) korrekt summiert.
-const QQ_MEGA_SPEED_BONUS = [5, 4, 3, 2, 1];
+// ── Modell C (2026-07-12, Showdown): Prozent-Wertung 0–100 pro Fraktion ──────
+// Wolf-Redesign fuer Grossevent (ue100): weg von Rang-Punkten [5,4,3,2,1] (die
+// eine Groessen-Unfairness reintroduzierten), hin zu EINER selbsterklaerenden
+// Skala fuer JEDE Kategorie: jedes aktive Handy erhaelt 0–100 Punkte, die
+// Fraktion = DURCHSCHNITT ueber ihre aktiven Handys. Selbe Skala/Balken/Mentales
+// Modell fuers Publikum, nur die Pro-Handy-Rechnung passt sich der Kategorie an:
+//   MUCHO/Cheese/Rest = richtig? 100 : 0            → Ø = % der Handys richtig
+//   10v10 (All-In)    = 100 × Wett-Punkte/10        → wie voll auf richtig gesetzt
+//   crowdTop          = 100 × Board-Rangpunkte/5    → Guete der Top-Antwort
+//   Schätzchen/map/   = 100 × (1 − dist/(K×range))  → NAEHE-Score, PUNKTE gemittelt
+//   crowdEstimate       (nicht die Tipps!) — ein guter Tipp zieht immer hoch, nie
+//                       runter; niemand wird von fremden Sub-Handys bestraft.
+// Statistisch fair (Monte-Carlo: groessen-unabhaengiger Erwartungswert). Ranking
+// nach Fraktions-Score, Ø-Submit-Speed nur noch Tiebreak. Punkte auf den
+// Repraesentanten-Sub (kleinste id) schreiben (Frontend-Gruppierung summiert).
+// Finale-Multiplikatoren („steigende Einsaetze") — Monte-Carlo-getunt (x2/x3 =
+// Sweet Spot: Finale dreht ~1/3 der Spiele, staerkste Fraktion gewinnt noch 63%;
+// groesser waere zu swingy fuers kritische Publikum). Am Trockenlauf nachjustierbar.
+const QQ_MEGA_FINALE_MULT = 2;   // letzte Phase zaehlt doppelt
+const QQ_MEGA_LAST_Q_MULT = 3;   // allerletzte Frage dreifach (ueberschreibt x2)
+// Naehe-Score-Breite: bei dist = K × „nah-genug"-Range → 0 Punkte. K=3 → am
+// Range-Rand noch ~67 Pkt. Selbst-skalierend pro Frage via schaetzchenRangeAbs.
+const QQ_MEGA_DIST_K = 3;
+const QQ_MEGA_MAP_MAX_DEG = 25;  // CozyGuessr: ~25° daneben = 0 Pkt (kein per-Frage-Range)
+const QQ_MEGA_MAP_CLOSE_DEG = 3; // ≤ 3° = „nah dran" fuer die X/Y-Anzeige
 function qqParseMuchoIndex(text: string): number | null {
   const t = text.trim().toUpperCase();
   const map: Record<string, number> = { A: 0, B: 1, C: 2, D: 3 };
@@ -2346,11 +2356,13 @@ export function qqMegaEventScore(room: QQRoomState): void {
   if (!q) return;
   // speedSum/speedCount = Basis für den Ø-Speed-Tiebreak (Summe + Anzahl der
   // Abgabezeiten der richtigen Handys). bestSpeed = weiter single-fastest fürs Award.
-  type Grp = { avatarId: string; repId: string; total: number; correct: number; perf: number; bestSpeed: number; speedSum: number; speedCount: number; bestDist: number };
+  // scoreSum = Summe der Pro-Handy-Punkte (0–100). Fraktions-Score = scoreSum/total.
+  // correct/perf = weiter „X/Y richtig"-Anzeige + Award-Statistiken. bestDist = Tiebreak-Reserve.
+  type Grp = { avatarId: string; repId: string; total: number; correct: number; perf: number; scoreSum: number; bestSpeed: number; speedSum: number; speedCount: number; bestDist: number };
   const groups = new Map<string, Grp>();
   for (const [id, t] of Object.entries(room.teams)) {
     let g = groups.get(t.avatarId);
-    if (!g) { g = { avatarId: t.avatarId, repId: id, total: 0, correct: 0, perf: 0, bestSpeed: Infinity, speedSum: 0, speedCount: 0, bestDist: Infinity }; groups.set(t.avatarId, g); }
+    if (!g) { g = { avatarId: t.avatarId, repId: id, total: 0, correct: 0, perf: 0, scoreSum: 0, bestSpeed: Infinity, speedSum: 0, speedCount: 0, bestDist: Infinity }; groups.set(t.avatarId, g); }
     // 2026-07-12 (Wolf Fairness): Nenner der Trefferquote = nur AKTIVE Handys.
     // Ein abgemeldeter/toter Tab darf die Quote der Fraktion nicht drücken. Die
     // Gruppe existiert trotzdem (fürs Ranking), zählt aber nur verbundene Handys.
@@ -2367,16 +2379,23 @@ export function qqMegaEventScore(room: QQRoomState): void {
     g.speedSum += submittedAt; g.speedCount++;
     if (submittedAt < g.bestSpeed) g.bestSpeed = submittedAt;
   };
-  const markCorrect = (g: Grp, submittedAt: number) => {
-    g.correct++; g.perf++;
-    addSpeed(g, submittedAt);
+  // Zentraler Pro-Handy-Scorer: addiert 0–100 auf scoreSum; isHit = zaehlt fuer die
+  // „X/Y richtig"-Anzeige + Speed-Tiebreak + Award-Statistik (perf/correct).
+  const scorePhone = (g: Grp, score0100: number, submittedAt: number, isHit: boolean) => {
+    g.scoreSum += Math.max(0, Math.min(100, score0100));
+    if (isHit) { g.correct++; g.perf++; addSpeed(g, submittedAt); }
   };
+  // Naehe-Score fuer Distanz-Kategorien: 100 am Ziel, 0 bei dist ≥ maxErr.
+  const nearScore = (dist: number, maxErr: number) => (maxErr > 0 ? 100 * Math.max(0, 1 - dist / maxErr) : 0);
   const cat = q.category;
   if (cat === 'MUCHO') {
     for (const a of room.answers) {
-      if (qqParseMuchoIndex(a.text) === q.correctOptionIndex) { const g = grpOf(a.teamId); if (g) markCorrect(g, a.submittedAt); }
+      const g = grpOf(a.teamId); if (!g) continue;
+      scorePhone(g, 100, a.submittedAt, qqParseMuchoIndex(a.text) === q.correctOptionIndex);
     }
   } else if (cat === 'ZEHN_VON_ZEHN') {
+    // All-In: Handy verteilt 10 Punkte auf die Optionen. Score = wie viel davon auf
+    // die richtige Option gesetzt wurde → 0–100 (10 Punkte = volle 100).
     const expectedLen = q.options?.length ?? 0;
     const ci = q.correctOptionIndex ?? -1;
     for (const a of room.answers) {
@@ -2385,53 +2404,51 @@ export function qqMegaEventScore(room: QQRoomState): void {
       if (parts.length < 2 || parts.some(Number.isNaN)) continue;
       const earned = parts[ci] ?? 0;
       const g = grpOf(a.teamId); if (!g) continue;
-      g.perf += earned; // Summe aller Sub-Punkte
-      if (earned > 0) { g.correct++; addSpeed(g, a.submittedAt); }
+      scorePhone(g, 100 * earned / 10, a.submittedAt, earned > 0);
     }
   } else if (cat === 'SCHAETZCHEN' && q.targetValue != null) {
+    // Distanz: jedes Handy einzeln → Naehe-Punkte, Fraktion mittelt die PUNKTE
+    // (nicht die Tipps!). Ein perfekter Tipp kann nicht mehr von Fremden auf 0
+    // gezogen werden. „nah genug" (≤ Range) = Hit fuer die X/Y-Anzeige.
     const rangeAbs = schaetzchenRangeAbs(q.targetValue, q.unit);
+    const maxErr = rangeAbs * QQ_MEGA_DIST_K;
     for (const a of room.answers) {
       const parsed = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
       if (Number.isNaN(parsed)) continue;
       const dist = Math.abs(parsed - q.targetValue);
       const g = grpOf(a.teamId); if (!g) continue;
-      if (dist <= rangeAbs) { g.correct++; g.perf++; }
+      scorePhone(g, nearScore(dist, maxErr), a.submittedAt, dist <= rangeAbs);
       if (dist < g.bestDist) g.bestDist = dist;
     }
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdTop') {
-    // Top-Antworten: Fraktion-perf = SUMME der Board-Rang-Punkte ihrer Handys
-    // (Antwort auf Platz 1 = 5 … Platz 5 = 1). Ranking nach perf/total (per-
-    // capita, wie die anderen Mega-Kategorien), Top-5-Fraktionen +[5,4,3,2,1].
+    // Top-Antworten: Board-Rang-Punkte pro Handy (Platz 1 = 5 … Platz 5 = 1) →
+    // 0–100 (5 = volle 100). Fraktion mittelt ueber aktive Handys.
     const board = qqCrowdTopBoard(
       room.answers.map(a => ({ teamId: a.teamId, text: a.text, submittedAt: a.submittedAt })),
       q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdTop,
     );
     for (const a of room.answers) {
       const pts = board.boardPointsByTeam[a.teamId] ?? 0;
-      if (pts <= 0) continue;
       const g = grpOf(a.teamId); if (!g) continue;
-      g.perf += pts; g.correct++;
-      addSpeed(g, a.submittedAt);
+      scorePhone(g, 100 * pts / 5, a.submittedAt, pts > 0);
     }
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate') {
-    // Schwarm-Schätzen: pro Fraktion zählt der MEDIAN. Leistung = Median-Nähe
-    // (Basis +1 wenn in Range), Rang direkt nach Median-Distanz (Sort unten).
+    // Schwarm-Schätzen: wie Schätzchen — jedes Handy einzeln Naehe-Punkte, Fraktion
+    // mittelt die PUNKTE (konsistent mit dem Distanz-Modell, kein Median mehr).
     const def = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdEstimate;
-    const swarm = qqSwarm(
-      room.answers.map(a => ({ teamId: a.teamId, text: a.text })),
-      def.targetValue, (tid) => room.teams[tid]?.avatarId, def.unit,
-    );
-    for (const f of swarm.factions) {
-      const g = groups.get(f.avatarId); if (!g) continue;
-      if (f.inRange) g.perf++;         // Basis-Punkt wenn Median nah genug
-      g.correct = f.inRangeCount;      // Anzeige „X/Y nah dran"
-      g.bestDist = f.dist;             // Ranking nach Median-Distanz
+    const rangeAbs = schaetzchenRangeAbs(def.targetValue, def.unit);
+    const maxErr = rangeAbs * QQ_MEGA_DIST_K;
+    for (const a of room.answers) {
+      const v = qqParseEstimate(a.text);
+      if (v == null) continue;
+      const dist = Math.abs(v - def.targetValue);
+      const g = grpOf(a.teamId); if (!g) continue;
+      scorePhone(g, nearScore(dist, maxErr), a.submittedAt, dist <= rangeAbs);
+      if (dist < g.bestDist) g.bestDist = dist;
     }
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
-    // 2026-07-12 (Wolf): CozyGuessr rang-basiert statt nur Platz 1. Jede Fraktion
-    // nach ihrem BESTEN Pin (kleinste Distanz) ranken → Top-5 kriegen 5/4/3/2/1 +
-    // Basis, wie alle anderen Kategorien. Pythagoras wie evalMap (reicht fürs
-    // relative Ranking). perf>0 = Fraktion hat teilgenommen; Rang via bestDist.
+    // CozyGuessr: jedes Handy einzeln → Naehe-Punkte nach Grad-Distanz (Pythagoras
+    // wie evalMap), Fraktion mittelt die PUNKTE. ≤ QQ_MEGA_MAP_CLOSE_DEG = „nah dran".
     const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteMap;
     for (const a of room.answers) {
       const parts = a.text.split(',');
@@ -2442,33 +2459,34 @@ export function qqMegaEventScore(room: QQRoomState): void {
       const g = grpOf(a.teamId); if (!g) continue;
       const dLat = lat - bt.lat, dLng = lng - bt.lng;
       const dist = Math.sqrt(dLat * dLat + dLng * dLng);
-      g.correct++; g.perf++;              // Teilnahme (gültiger Pin gesetzt)
-      if (dist < g.bestDist) g.bestDist = dist; // bester Pin der Fraktion
+      scorePhone(g, nearScore(dist, QQ_MEGA_MAP_MAX_DEG), a.submittedAt, dist <= QQ_MEGA_MAP_CLOSE_DEG);
+      if (dist < g.bestDist) g.bestDist = dist;
     }
   } else {
-    // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners).
-    for (const tid of (room._currentQuestionWinners ?? [])) {
-      const g = grpOf(tid); if (g) markCorrect(g, room.answers.find(x => x.teamId === tid)?.submittedAt ?? Infinity);
+    // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners) = 100.
+    const winners = new Set(room._currentQuestionWinners ?? []);
+    for (const tid of winners) {
+      const g = grpOf(tid); if (g) scorePhone(g, 100, room.answers.find(x => x.teamId === tid)?.submittedAt ?? Infinity, true);
     }
   }
   const arr = [...groups.values()];
-  // 2026-07-02 (Wolf): normalisierte Wertung — Trefferquote (perf ÷ Sub-Teams)
-  // statt absoluter Trefferzahl, damit Faktionen mit 1/2/3 Handys fair sind
-  // (2/2 schlägt 2/3). Matcht die „X/Y richtig"-Anzeige im Reveal.
-  const ratio = (g: Grp) => (g.total > 0 ? g.perf / g.total : 0);
-  // 2026-07-12 (Wolf): Ø-Submit-Speed der richtigen Handys als Tiebreak (statt
-  // single-fastest). Belohnt geschlossene, schnelle Fraktionen.
+  // 2026-07-12 (Wolf, Modell C): Fraktions-Score = Ø der Pro-Handy-Punkte (0–100).
+  // Gilt einheitlich fuer ALLE Kategorien (Distanz inklusive, da scoreSum die Naehe
+  // schon enthaelt). Groessen-fair, weil Mittelwert unabhaengig von der Handy-Zahl.
+  const factionScore = (g: Grp) => (g.total > 0 ? g.scoreSum / g.total : 0);
+  // Ø-Submit-Speed der richtigen Handys — jetzt nur noch Tiebreak (0–100-Scores
+  // sind kontinuierlich, exakte Gleichstaende selten). Belohnt schnelle Fraktionen.
   const avgSpeed = (g: Grp) => (g.speedCount > 0 ? g.speedSum / g.speedCount : Infinity);
-  const isSwarm = cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate';
-  const isMap = cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map';
   arr.sort((a, b) => {
-    // Schwarm + CozyGuessr: Distanz entscheidet direkt (nicht Trefferquote).
-    if (isSwarm || isMap) return a.bestDist - b.bestDist;
-    const ra = ratio(a), rb = ratio(b);
-    if (rb !== ra) return rb - ra;
-    if (cat === 'SCHAETZCHEN') return a.bestDist - b.bestDist;
+    const sa = factionScore(a), sb = factionScore(b);
+    if (sb !== sa) return sb - sa;
     return avgSpeed(a) - avgSpeed(b);
   });
+  // Finale-Multiplikator („steigende Einsaetze"): letzte Phase x2, allerletzte
+  // Frage x3. Nutzt die bestehende Phasen-Struktur (gamePhaseIndex/totalPhases).
+  const isFinaleRound = room.gamePhaseIndex === room.totalPhases;
+  const isLastQuestion = isFinaleRound && (room.questionIndex % QQ_QUESTIONS_PER_PHASE) === (QQ_QUESTIONS_PER_PHASE - 1);
+  const finaleMult = isLastQuestion ? QQ_MEGA_LAST_Q_MULT : (isFinaleRound ? QQ_MEGA_FINALE_MULT : 1);
   // 2026-07-12: Ø-Antwortzeit (Sek. seit Fragestart) der richtigen Handys je
   // Fraktion fürs Scoring-Reveal — macht den Speed-Tiebreak transparent. Nur
   // sinnvoll wo Speed die Rangachse ist (speedCount>0); Distanz-Kategorien → null.
@@ -2480,11 +2498,8 @@ export function qqMegaEventScore(room: QQRoomState): void {
   };
   const ranking: import('../../../shared/quarterQuizTypes').QQMegaRankEntry[] = [];
   arr.forEach((g, idx) => {
-    let pts = 0;
-    if (g.perf > 0) {
-      pts += 1;                                       // Basis für jede getroffene Farbe
-      if (idx < 5) pts += QQ_MEGA_SPEED_BONUS[idx];   // Top-5-Bonus
-    }
+    // Punkte = gerundeter Fraktions-Score (0–100) × Finale-Multiplikator.
+    const pts = Math.round(factionScore(g) * finaleMult);
     if (pts > 0) {
       const rep = room.teams[g.repId];
       if (rep) { rep.totalCells += pts; rep.largestConnected += pts; }

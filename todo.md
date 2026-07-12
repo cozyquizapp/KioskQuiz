@@ -33,9 +33,6 @@
 
 **Diese Session gebaut + gepusht (12 Commits, alle typecheck-grün):** Ø-Antwortzeit im Scoring · app-weiter Gedankenstrich-Sweep (~130) · Fairness-Nenner = aktive Handys · größere Abgabe-Wappen · CozyGuessr rang-basiert · preGame-Wolf verkleinert · CHEESE-Reflow-Fix · **Epic Standings** (verifiziert, `Desktop/standings-epic-neu.png`) · „Now the rules"-Karte · **Brand-Rename „CozyArena" ein Wort** (+ 4× „CozyQuiz"). Auch: „Let's go!"-Komposition (`Desktop/arena-letsgo-neu.png`), Vollbild→Fullscreen EN, Mod-Pacing 2-Beat.
 
-**NÄCHSTER BAU (bereit, KEIN Design nötig — kann sofort losgehen):**
-- [ ] **Gruppe-A-Icons verdrahten** (existieren schon als 3D-`fx-*`, laufen aber flach): 🥇🥈🥉→`fx-medal-*` (Scoring+Standings-Ränge), 👑→`fx-crown` (Standings-Leader), 🎯→`fx-target` (how-it-works+Overlays), 📱→`fx-phone` (how-it-works), 🥔→`fx-potato` (Hot Potato). **⚡→`fx-lightning` AUSLASSEN** (PNG rendert fehlerhaft, siehe QQIcon.tsx:198 — braucht Wolfs PNG-Fix).
-
 **WARTET AUF WOLF:**
 - [ ] **Gruppe-B-Icons designen** (kein 3D-Asset da → Wolf malt PNGs transparent, dann wire ich): `fx-book` (📖 Regel-Intro/how-it-works), `fx-shield-faction` (🛡️ Fraktionen-Header), `fx-clapperboard` (🎬 „Los geht's"), `fx-swords` (⚔️ „Führung!"-Callout). Plus **`fx-lightning.png` fixen** (⚡).
 - [ ] **40-Bot-Gegencheck** aller Fixes am echten (neu geladenen) Beamer → Feedback fließt in nächste Runde.
@@ -190,8 +187,6 @@ weil Geräte-Test / Verhaltensänderung nötig:
 - **Tastatur verdeckt Eingabefeld** auf kleinen Phones (iPhone SE). Fix-Kandidat:
   `scrollIntoView({block:'center'})` nach Fokus — aber Vorsicht, `preventScroll:true`
   wurde bewusst gegen Header-Springen gesetzt. Erst am echten Gerät testen.
-- **Disconnect-Flackern**: bei 1–2 s WLAN-Aussetzer springt der Spieler kurz zur
-  Rejoin-Ansicht vor Auto-Rejoin. Fix: `joined` erst nach ~1,5 s zurücksetzen (QQTeamPage ~271).
 
 **Brand-Farb-Sweep:** Amber/Gold taucht entgegen der Pink/Magenta-Marke wieder auf
 (Landing-Page `QQLandingPage`, `FinalRecapHintCard` amber400). Bei Gelegenheit angleichen.

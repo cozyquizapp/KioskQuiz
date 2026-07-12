@@ -151,41 +151,51 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       {/* ── Body: links Antwort + Zahlenstrahl, rechts Rangliste ── */}
       <div style={{
         flex: 1, display: 'grid',
-        gridTemplateColumns: 'minmax(0, 1.25fr) minmax(0, 1fr)',
+        gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)',
         gap: 'clamp(18px, 2.6cqw, 40px)', minHeight: 0,
       }}>
-        {/* Linke Spalte: EIN ruhiges Panel — Hero-Antwort + Story-Zahlenstrahl */}
+        {/* Linke Spalte: EIN warmes Cozy-Panel — Hero-Antwort + Story-Zahlenstrahl */}
         <div style={{
           display: 'flex', flexDirection: 'column',
-          borderRadius: 'clamp(18px, 1.6cqw, 26px)',
-          background: 'var(--qq-surface)',
-          border: '1px solid var(--qq-hairline)',
-          boxShadow: '0 12px 40px rgba(0,0,0,0.28)',
-          padding: 'clamp(20px, 2.4cqh, 34px) clamp(22px, 2.4cqw, 40px)',
+          borderRadius: 'clamp(20px, 1.8cqw, 30px)',
+          // Cozy-DNA: warme, pink-getönte Karte mit Tiefe (kein kaltes Flat-Panel).
+          background: 'linear-gradient(165deg, rgba(var(--qq-accent-rgb),0.10) 0%, rgba(30,20,48,0.55) 45%, rgba(16,12,32,0.6) 100%)',
+          border: '1px solid rgba(var(--qq-accent-rgb),0.22)',
+          boxShadow: '0 24px 60px rgba(0,0,0,0.42), inset 0 1px 0 rgba(255,255,255,0.06)',
+          padding: 'clamp(22px, 2.8cqh, 40px) clamp(24px, 2.6cqw, 44px)',
           minHeight: 0, minWidth: 0, position: 'relative', overflow: 'hidden',
         }}>
+          {/* Warmer Brand-Glow hinter der Hero-Zahl (DNA-Wärme) */}
+          <div style={{
+            position: 'absolute', top: '-8%', left: '4%', width: '52%', height: '58%',
+            background: 'radial-gradient(circle at 30% 30%, rgba(var(--qq-accent-rgb),0.28), transparent 68%)',
+            filter: 'blur(6px)', pointerEvents: 'none',
+          }} />
+
           {/* Hero-Antwort */}
-          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'clamp(10px, 1.2cqw, 18px)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'baseline', gap: 'clamp(10px, 1.2cqw, 18px)', flexShrink: 0, position: 'relative', zIndex: 1 }}>
             <span style={{
-              fontSize: 'clamp(11px, 1cqw, 16px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-              letterSpacing: '0.14em', textTransform: 'uppercase',
+              fontSize: 'clamp(11px, 1cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)',
+              letterSpacing: '0.16em', textTransform: 'uppercase',
             }}>{lang === 'en' ? 'Answer' : 'Antwort'}</span>
             <span style={{
-              fontSize: 'clamp(58px, 8.4cqw, 150px)', fontWeight: 900, lineHeight: 0.9,
-              letterSpacing: '-0.04em', color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
-              animation: 'revealAnswerBam 0.6s var(--qq-enter) 0.15s both',
+              fontFamily: 'var(--font-display)',
+              fontSize: 'clamp(66px, 9.6cqw, 178px)', fontWeight: 700, lineHeight: 0.86,
+              letterSpacing: '-0.02em', color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
+              textShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.5), 0 4px 24px rgba(0,0,0,0.4)',
+              animation: 'revealAnswerBam 0.6s var(--qq-celebrate) 0.15s both',
             }}>{fmt(target)}</span>
             {unitStr && (
               <span style={{
-                fontSize: 'clamp(14px, 1.5cqw, 24px)', fontWeight: 800, color: 'var(--qq-text-muted)',
+                fontSize: 'clamp(15px, 1.6cqw, 26px)', fontWeight: 800, color: 'var(--qq-text-muted)',
               }}>{unitStr}</span>
             )}
           </div>
 
           {/* Caption */}
           <div style={{
-            fontSize: 'clamp(13px, 1.3cqw, 20px)', fontWeight: 700, color: 'var(--qq-text-muted)',
-            marginTop: 'clamp(6px, 0.8cqh, 12px)', flexShrink: 0,
+            fontSize: 'clamp(14px, 1.4cqw, 22px)', fontWeight: 700, color: 'var(--qq-card-text)',
+            opacity: 0.9, marginTop: 'clamp(8px, 1cqh, 14px)', flexShrink: 0, position: 'relative', zIndex: 1,
           }}>
             {winner
               ? (winner.delta === 0
@@ -194,60 +204,69 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               : (lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.')}
           </div>
 
-          {/* Zahlenstrahl — Signatur-Viz */}
+          {/* Zahlenstrahl — Signatur-Viz (gross, füllt das Panel) */}
           {rankedFinal.length > 0 && (
-            <div style={{ flex: 1, position: 'relative', margin: 'clamp(24px, 3cqh, 44px) clamp(8px, 1cqw, 20px) clamp(20px, 2.4cqh, 34px)', minHeight: 0 }}>
+            <div style={{ flex: 1, position: 'relative', margin: 'clamp(28px, 3.5cqh, 56px) clamp(10px, 1.2cqw, 24px) clamp(30px, 3.4cqh, 52px)', minHeight: 'clamp(120px, 16cqh, 220px)', zIndex: 1 }}>
+              {/* Warme Nähe-Zone um das Ziel (Wärme + Bedeutung) */}
+              <div style={{
+                position: 'absolute', top: '20%', bottom: '20%', left: 0, right: 0, pointerEvents: 'none',
+                background: `radial-gradient(ellipse 22% 120% at ${scale.pos(target)}% 50%, rgba(59,224,165,0.16), transparent 60%)`,
+              }} />
               {/* Track */}
               <div style={{
-                position: 'absolute', left: 0, right: 0, top: '58%', height: 4, borderRadius: 3,
-                background: 'linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.16), rgba(255,255,255,0.05))',
+                position: 'absolute', left: 0, right: 0, top: '55%', height: 5, borderRadius: 4,
+                background: 'linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.18), rgba(255,255,255,0.04))',
               }} />
               {/* Ziel-Tick */}
               <div style={{
-                position: 'absolute', top: '38%', height: '30%', width: 2, borderRadius: 2,
-                left: `${scale.pos(target)}%`, transform: 'translateX(-1px)',
-                background: MINT, boxShadow: `0 0 14px ${MINT}`,
+                position: 'absolute', top: '30%', height: '38%', width: 3, borderRadius: 2,
+                left: `${scale.pos(target)}%`, transform: 'translateX(-1.5px)',
+                background: MINT, boxShadow: `0 0 20px ${MINT}, 0 0 6px ${MINT}`,
               }}>
                 <span style={{
-                  position: 'absolute', top: 'clamp(-22px, -2cqh, -18px)', left: '50%', transform: 'translateX(-50%)',
-                  fontSize: 'clamp(10px, 0.95cqw, 14px)', fontWeight: 900, letterSpacing: '0.1em',
+                  position: 'absolute', top: 'clamp(-26px, -2.4cqh, -20px)', left: '50%', transform: 'translateX(-50%)',
+                  fontSize: 'clamp(11px, 1cqw, 15px)', fontWeight: 900, letterSpacing: '0.12em',
                   textTransform: 'uppercase', color: MINT, whiteSpace: 'nowrap',
                 }}>{lang === 'en' ? 'Target' : 'Ziel'}</span>
               </div>
               {/* Marker je Fraktion */}
               {rankedFinal.map((r, idx) => {
                 const isW = idx === 0;
-                const mColor = isW && r.delta === 0 ? MINT : r.team.color;
-                const below = idx % 2 === 1; // alternierend, gegen Label-Kollision
+                const isExactW = isW && r.delta === 0;
+                const mColor = isExactW ? MINT : r.team.color;
+                const below = idx % 2 === 1; // alternierend gegen Label-Kollision
+                const dotSize = isW ? 'clamp(20px, 1.9cqw, 30px)' : 'clamp(14px, 1.35cqw, 21px)';
                 return (
                   <div key={r.teamId} style={{
-                    position: 'absolute', top: '58%', left: `${scale.pos(r.num)}%`,
+                    position: 'absolute', top: '55%', left: `${scale.pos(r.num)}%`,
                     transform: 'translate(-50%, -50%)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
-                    animation: `top5AvatarPop 0.5s var(--qq-enter) ${0.25 + (rankedFinal.length - idx) * 0.06}s both`,
+                    animation: `top5AvatarPop 0.5s var(--qq-celebrate) ${0.25 + (rankedFinal.length - idx) * 0.06}s both`,
                     zIndex: isW ? 3 : 2,
                   }}>
                     <div style={{
-                      width: isW ? 'clamp(16px, 1.5cqw, 22px)' : 'clamp(12px, 1.1cqw, 16px)',
-                      height: isW ? 'clamp(16px, 1.5cqw, 22px)' : 'clamp(12px, 1.1cqw, 16px)',
-                      borderRadius: '50%', background: mColor,
-                      border: '2px solid var(--qq-bg, #0c1326)',
-                      boxShadow: `0 0 ${isW ? 16 : 10}px ${mColor}`,
+                      width: dotSize, height: dotSize, borderRadius: '50%',
+                      background: `radial-gradient(circle at 35% 30%, color-mix(in srgb, ${mColor} 70%, #fff), ${mColor})`,
+                      border: '2.5px solid rgba(16,12,32,0.85)',
+                      boxShadow: `0 0 ${isW ? 24 : 13}px ${mColor}, 0 3px 8px rgba(0,0,0,0.4)`,
+                      animation: isExactW ? 'top5RowGlow 1.6s ease infinite' : 'none',
                     }} />
                     <span style={{
-                      position: 'absolute', top: below ? 'calc(100% + 4px)' : 'auto', bottom: below ? 'auto' : 'calc(100% + 4px)',
-                      fontSize: 'clamp(11px, 1.05cqw, 15px)', fontWeight: 900, color: isW ? mColor : 'var(--qq-card-text)',
+                      position: 'absolute', top: below ? 'calc(100% + 6px)' : 'auto', bottom: below ? 'auto' : 'calc(100% + 6px)',
+                      fontSize: isW ? 'clamp(14px, 1.35cqw, 20px)' : 'clamp(12px, 1.15cqw, 17px)',
+                      fontWeight: 900, color: isW ? mColor : 'var(--qq-card-text)',
                       fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                      textShadow: isW ? `0 0 12px ${mColor}66` : 'none',
                     }}>{fmt(r.num)}</span>
                   </div>
                 );
               })}
               {/* Skala-Enden */}
               <div style={{
-                position: 'absolute', left: 0, right: 0, top: 'calc(58% + 16px)',
+                position: 'absolute', left: 0, right: 0, top: 'calc(55% + 20px)',
                 display: 'flex', justifyContent: 'space-between',
-                fontSize: 'clamp(10px, 0.9cqw, 13px)', fontWeight: 800, color: 'var(--qq-text-muted)',
-                fontVariantNumeric: 'tabular-nums', opacity: 0.7,
+                fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 800, color: 'var(--qq-text-muted)',
+                fontVariantNumeric: 'tabular-nums', opacity: 0.6,
               }}>
                 <span>{fmt(scale.lo)}</span><span>{fmt(scale.hi)}</span>
               </div>
@@ -255,9 +274,9 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           )}
         </div>
 
-        {/* Rechte Spalte: Rangliste — getiert, eine Status-Sprache, Cascade-Reveal */}
+        {/* Rechte Spalte: Rangliste — getiert, warm, eine Status-Sprache, Cascade */}
         <div style={{
-          display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.1cqh, 14px)',
+          display: 'flex', flexDirection: 'column', gap: 'clamp(9px, 1.2cqh, 15px)',
           minHeight: 0, minWidth: 0,
         }}>
           {top5.map((r, idx) => {
@@ -266,54 +285,71 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             const isTop = rank === 1;
             const isExact = r.delta === 0;
             const st = statusOf(r.delta, isTop);
-            const accent = isExact ? MINT : 'var(--qq-accent)';
-            // Tier: Leader = erhoehte Card, Podium 2-3 = Surface, Tail 4-5 = leise.
+            const accentRGB = isExact ? '59,224,165' : 'var(--qq-accent-rgb)';
+            const accentCol = isExact ? MINT : 'var(--qq-accent)';
             const tier = isTop ? 'lead' : rank <= 3 ? 'podium' : 'tail';
             return (
               <div key={r.teamId} style={{
-                display: 'grid', gridTemplateColumns: 'clamp(22px,2.2cqw,34px) auto 1fr auto',
-                alignItems: 'center', gap: 'clamp(10px, 1.2cqw, 18px)',
-                padding: isTop ? 'clamp(14px,1.7cqh,22px) clamp(16px,1.8cqw,26px)' : 'clamp(10px,1.3cqh,17px) clamp(14px,1.6cqw,22px)',
-                borderRadius: 'clamp(14px, 1.3cqw, 18px)',
+                display: 'grid', gridTemplateColumns: 'auto auto 1fr auto',
+                alignItems: 'center', gap: 'clamp(12px, 1.4cqw, 20px)',
+                padding: isTop ? 'clamp(15px,1.9cqh,24px) clamp(18px,2cqw,28px)' : 'clamp(11px,1.4cqh,18px) clamp(15px,1.7cqw,24px)',
+                borderRadius: 'clamp(16px, 1.5cqw, 22px)',
+                // Vibrant & Block-based (ui-ux-pro-max): jede Fraktion als Farb-Block.
+                // Leader glüht bold in Mint/Pink, Rest in ihrer Fraktionsfarbe getönt.
                 background: isTop
-                  ? `linear-gradient(180deg, ${isExact ? 'rgba(59,224,165,0.16)' : 'rgba(var(--qq-accent-rgb),0.14)'}, var(--qq-surface))`
-                  : tier === 'podium' ? 'var(--qq-surface)' : 'transparent',
-                border: isTop
-                  ? `1px solid ${isExact ? 'rgba(59,224,165,0.55)' : 'rgba(var(--qq-accent-rgb),0.5)'}`
-                  : tier === 'podium' ? '1px solid var(--qq-hairline)' : '1px solid transparent',
-                boxShadow: isTop ? `0 10px 26px rgba(0,0,0,0.4), 0 0 26px ${isExact ? 'rgba(59,224,165,0.2)' : 'rgba(var(--qq-accent-rgb),0.18)'}` : 'none',
-                opacity: isVisible ? (tier === 'tail' ? 0.62 : 1) : 0,
-                transform: isVisible ? 'none' : 'translateY(8px)',
-                transition: 'opacity 0.5s var(--qq-enter), transform 0.5s var(--qq-enter)',
-                minHeight: 0, flex: '1 1 0',
+                  ? `linear-gradient(150deg, rgba(${accentRGB},0.30), rgba(${accentRGB},0.08) 70%, rgba(20,14,36,0.7))`
+                  : `linear-gradient(150deg, ${r.team.color}2e, ${r.team.color}0d)`,
+                border: isTop ? `2px solid rgba(${accentRGB},0.75)` : `1.5px solid ${r.team.color}66`,
+                boxShadow: isTop
+                  ? `0 16px 40px rgba(0,0,0,0.45), 0 0 44px rgba(${accentRGB},0.35), inset 0 1px 0 rgba(255,255,255,0.1)`
+                  : `0 8px 22px rgba(0,0,0,0.3), 0 0 16px ${r.team.color}22`,
+                opacity: isVisible ? (tier === 'tail' ? 0.78 : 1) : 0,
+                transform: isVisible ? 'none' : 'translateY(10px) scale(0.98)',
+                transition: 'opacity 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
+                minHeight: 0, flex: '1 1 0', position: 'relative',
               }}>
-                {/* Rang */}
+                {/* Rang als Farb-Block (Block-based, verspielt) */}
                 <span style={{
-                  fontSize: isTop ? 'clamp(18px,2cqw,30px)' : 'clamp(15px,1.6cqw,24px)', fontWeight: 900,
-                  color: isTop ? accent : 'var(--qq-text-muted)', textAlign: 'center', fontVariantNumeric: 'tabular-nums',
+                  display: 'grid', placeItems: 'center', flexShrink: 0,
+                  width: isTop ? 'clamp(38px,3.8cqw,56px)' : 'clamp(30px,3cqw,44px)', aspectRatio: '1',
+                  borderRadius: 'clamp(11px,1.1cqw,15px)',
+                  background: isTop ? accentCol : r.team.color,
+                  color: '#fff', fontFamily: 'var(--font-display)', fontWeight: 700,
+                  fontSize: isTop ? 'clamp(19px,2cqw,30px)' : 'clamp(15px,1.55cqw,23px)',
+                  fontVariantNumeric: 'tabular-nums',
+                  boxShadow: `0 5px 14px ${isTop ? accentCol : r.team.color}77`,
                 }}>{rank}</span>
-                {/* Wappen */}
-                <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji}
-                  size={isTop ? 'clamp(42px,4.2cqw,60px)' : 'clamp(34px,3.4cqw,48px)'}
-                  style={{ flexShrink: 0 }} />
+                {/* Wappen — gefeiert (Glow-Ring in Fraktionsfarbe) */}
+                <div style={{
+                  flexShrink: 0, borderRadius: '50%', padding: 2,
+                  boxShadow: `0 0 ${isTop ? 22 : 13}px ${r.team.color}${isTop ? 'bb' : '77'}`,
+                }}>
+                  <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji}
+                    size={isTop ? 'clamp(48px,4.8cqw,70px)' : 'clamp(38px,3.8cqw,54px)'} />
+                </div>
                 {/* Name + Tipp */}
                 <div style={{ minWidth: 0, display: 'flex', flexDirection: 'column', gap: 2 }}>
                   <span style={{
-                    fontSize: isTop ? 'clamp(17px,1.8cqw,27px)' : 'clamp(15px,1.6cqw,23px)', fontWeight: isTop ? 900 : 700,
-                    color: isTop ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', lineHeight: 1.1,
+                    fontFamily: 'var(--font-display)',
+                    fontSize: isTop ? 'clamp(19px,2cqw,31px)' : 'clamp(16px,1.75cqw,25px)', fontWeight: isTop ? 700 : 600,
+                    color: 'var(--qq-card-text)', lineHeight: 1.05,
                     overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>{r.team.name}</span>
                   <span style={{
-                    fontSize: 'clamp(12px,1.2cqw,17px)', fontWeight: 800, color: 'var(--qq-text-muted)',
-                    fontVariantNumeric: 'tabular-nums', opacity: 0.8,
+                    fontSize: 'clamp(12px,1.25cqw,18px)', fontWeight: 800, color: 'var(--qq-card-text)',
+                    opacity: 0.7, fontVariantNumeric: 'tabular-nums',
                   }}>{lang === 'en' ? 'guess' : 'Tipp'} {fmt(r.num)}</span>
                 </div>
-                {/* Status (eine Sprache) */}
+                {/* Status (eine Sprache, Fredoka) */}
                 <span style={{
-                  fontSize: isTop ? 'clamp(14px,1.5cqw,22px)' : 'clamp(12px,1.3cqw,18px)', fontWeight: 900,
+                  fontFamily: 'var(--font-display)',
+                  fontSize: isTop ? 'clamp(16px,1.7cqw,25px)' : 'clamp(13px,1.4cqw,20px)', fontWeight: 700,
                   color: st.color, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
-                  padding: isExact ? '4px 12px' : '0', borderRadius: 'var(--qq-pill-radius)',
-                  background: isExact ? 'rgba(59,224,165,0.14)' : 'transparent',
+                  padding: isExact ? 'clamp(4px,0.6cqh,7px) clamp(12px,1.3cqw,18px)' : '0',
+                  borderRadius: 'var(--qq-pill-radius)',
+                  background: isExact ? 'rgba(59,224,165,0.20)' : 'transparent',
+                  border: isExact ? '1.5px solid rgba(59,224,165,0.55)' : 'none',
+                  textShadow: isExact ? `0 0 14px ${MINT}66` : 'none',
                 }}>{isExact ? '✨ ' : ''}{st.text}</span>
               </div>
             );

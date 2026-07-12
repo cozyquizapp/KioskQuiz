@@ -155,6 +155,11 @@
      COZYWOLF) + Finale-Sieger-Name zentral. Rueckgaengig = hier auf
      'Stinger Fit' zuruecksetzen. */
   --font-brand: 'League Spartan', 'Bricolage Grotesque', 'Nunito', system-ui, sans-serif;
+  /* 2026-07-12 (ui-ux-pro-max Skill: 'Fredoka/Nunito' fuer entertainment/gaming):
+     Fredoka = runde, verspielte, warme Display-Schrift (CozyWolf-DNA) fuer grosse
+     Zahlen/Headlines in Reveals. Nunito bleibt Body. Vibrant & Block-based statt
+     minimal. [[project-design-system-audit-2026-07-12]] */
+  --font-display: 'Fredoka', 'Nunito', system-ui, sans-serif;
   --glass: rgba(11, 22, 42, 0.55);
   --glass-strong: rgba(14, 33, 63, 0.8);
   --ui-panel-bg: rgba(10, 24, 46, 0.85);

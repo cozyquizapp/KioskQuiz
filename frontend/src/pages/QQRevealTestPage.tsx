@@ -102,8 +102,9 @@ const S: Record<string, React.CSSProperties> = {
   stageWrap: { maxWidth: 1240, margin: '0 auto' },
   stage: {
     containerType: 'size', width: '100%', aspectRatio: '16 / 9',
-    background: 'radial-gradient(1200px 800px at 50% -10%, #17224d 0%, #0d1430 60%, #0a0f24 100%)',
-    borderRadius: 24, border: '1px solid rgba(255,255,255,0.09)', boxShadow: '0 30px 80px rgba(0,0,0,0.5)',
+    // Warme, cozy Bühne (wie der echte Beamer) statt kaltem Navy.
+    background: 'radial-gradient(1100px 760px at 30% -8%, #3a1a44 0%, #241338 42%, #140b26 100%)',
+    borderRadius: 24, border: '1px solid rgba(236,72,153,0.16)', boxShadow: '0 30px 80px rgba(0,0,0,0.55)',
     overflow: 'hidden', display: 'flex', position: 'relative',
   } as React.CSSProperties,
 };

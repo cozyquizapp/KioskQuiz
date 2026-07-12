@@ -1232,11 +1232,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // CozyGuessr (map) reveal helpers — progressiv im QUESTION_REVEAL
     const q = s.currentQuestion;
     const isMapReveal = q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'map';
-    const mapValidPinCount = s.answers?.filter((a: any) => {
+    const mapValidPinsArr = s.answers?.filter((a: any) => {
       const parts = String(a.text ?? '').split(',');
       const lat = Number(parts[0]); const lng = Number(parts[1]);
       return Number.isFinite(lat) && Number.isFinite(lng);
-    }).length ?? 0;
+    }) ?? [];
+    // CozyArena: pro Fraktion kollabieren (Space-Stepping stoppt am Fraktions-Count).
+    const mapValidPinCount = (s as any).largeGroupMode
+      ? new Set(mapValidPinsArr.map((a: any) => s.teams?.find((t: any) => t.id === a.teamId)?.avatarId).filter(Boolean)).size
+      : mapValidPinsArr.length;
     const mapMaxStep = 1 + mapValidPinCount + 1;
     const mapRevealDone = isMapReveal && (s.mapRevealStep ?? 0) >= mapMaxStep;
     const mapRevealInProgress = isMapReveal && !mapRevealDone;
@@ -2962,10 +2966,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 {s.phase === 'QUESTION_REVEAL' && (() => {
                   const qRev = s.currentQuestion;
                   const isMap = qRev?.category === 'BUNTE_TUETE' && (qRev as any)?.bunteTuete?.kind === 'map';
-                  const validPins = s.answers?.filter((a: any) => {
+                  const validPinsArr = s.answers?.filter((a: any) => {
                     const [lat, lng] = String(a.text ?? '').split(',').map(Number);
                     return Number.isFinite(lat) && Number.isFinite(lng);
-                  }).length ?? 0;
+                  }) ?? [];
+                  // CozyArena: Pin-Count pro Fraktion (Beamer zeigt 1 Pin/Fraktion) →
+                  // Label „Pin X/8" statt „X/40", Auto-Advance stoppt korrekt.
+                  const validPins = (s as any).largeGroupMode
+                    ? new Set(validPinsArr.map((a: any) => s.teams?.find((t: any) => t.id === a.teamId)?.avatarId).filter(Boolean)).size
+                    : validPinsArr.length;
                   const maxStep = 1 + validPins + 1;
                   const step = s.mapRevealStep ?? 0;
                   const inProgress = isMap && step < maxStep;

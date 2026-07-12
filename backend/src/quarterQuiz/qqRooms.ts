@@ -4338,6 +4338,15 @@ export function qqNextQuestion(room: QQRoomState): void {
         // Mega Event: 3 Faktions-Awards aus den kumulierten Farb-Statistiken.
         if (room.largeGroupMode) qqComputeMegaAwards(room);
         room.phase = 'GAME_OVER';
+        // 2026-07-12 (Wolf-Livetest 'Stechen lief obwohl Sieger schon gekuert
+        // war'): bei Gleichstand an der Spitze das Stechen AUTOMATISCH starten,
+        // BEVOR der Champion-Screen den (falschen) sorted[0] kroent. qqStartTie-
+        // Breaker verlangt phase===GAME_OVER (oben gesetzt) und flippt dann auf
+        // TIEBREAKER_QUESTION. Der GameOver-Wind-down (qqNextQuestion, TIEBREAKER-
+        // Branch) kroent anschliessend den ausgestochenen Sieger (tieBreakerWinnerId
+        // wird in qqSortedGroups/Teams auf Rang 1 gezogen). Rein Mod-gesteuert
+        // (kein Timer), damit die Reihenfolge sauber bleibt.
+        if ((room.tieBreakerCandidates?.length ?? 0) >= 2) qqStartTieBreaker(room);
       }
     } else if (next === room.totalPhases) {
       // 2026-05-17 (Wolf): Comeback-Toggle. Wenn aus, skip H/L-Mini-Game

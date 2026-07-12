@@ -163,6 +163,14 @@ function Dots({ correct, total, color, de, avgSec, baseDelay = 0 }: { correct: n
   );
 }
 
+// Modul-Snapshot der letzten Rang-Verteilung. Ueberlebt den Per-Frage-Remount
+// (Beamer keyed die Standings pro questionIndex → jede StandingsRow startet
+// frisch, prevTop.current waere immer null → FLIP + Lead-Flash feuerten NIE,
+// Wolf sah keinen Positionswechsel). Der Snapshot seedet die neue Mount-Instanz
+// mit dem VORHERIGEN Rang → der FLIP animiert genau den Ueberhol-Sprung dieser
+// Frage. Modul-global ist ok: nur EIN Beamer/Standings gleichzeitig.
+let qqPrevStandRanks: Map<string, number> | null = null;
+
 // ── Beat B: Bar-Race-Gesamtwertung ───────────────────────────────────────────
 function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean }) {
   // Genestet (Idee 2): 8 Eltern-Team-Balken (nach avatarId gruppiert, Punkte
@@ -192,13 +200,18 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
     return m;
   }, [state.megaQuestionRanking]);
 
+  // Vorherige Rang-Verteilung LESEN, bevor der Snapshot ueberschrieben wird —
+  // die frisch gemountete StandingsRow bekommt so ihren Alt-Rang zum Animieren.
+  const prevRanksSnapshot = qqPrevStandRanks;
+  useEffect(() => { qqPrevStandRanks = new Map(rankOf); }, [rankOf]);
+
   return (
     <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <style>{KEYFRAMES}</style>
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
       <div style={{ position: 'relative', height: shown.length * rowH, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (
-          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} rowH={rowH} />
+          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} seedRank={prevRanksSnapshot?.get(t.id)} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} rowH={rowH} />
         ))}
       </div>
       {rest > 0 && (
@@ -208,9 +221,12 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   );
 }
 
-function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; rank: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry; rowH: number }) {
+function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH }: { team: QQTeam; rank: number; seedRank?: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry; rowH: number }) {
   const ref = useRef<HTMLDivElement | null>(null);
-  const prevTop = useRef<number | null>(null);
+  // prevTop mit dem Vorrunden-Rang seeden (via seedRank aus qqPrevStandRanks) —
+  // sonst waere er nach dem Per-Frage-Remount immer null und der FLIP feuerte
+  // nie. So gleitet die Zeile von ihrer alten auf die neue Position.
+  const prevTop = useRef<number | null>(seedRank != null ? seedRank * rowH : null);
   const targetTop = rank * rowH;
   const val = team.largestConnected;
   const isLeader = rank === 0 && val > 0;
@@ -244,7 +260,9 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
   // Führungswechsel-Blitz (Wolf-Idee „Bar-Race Führungswechsel = Glow-Blitz"):
   // wenn eine Fraktion von Rang >0 auf Rang 0 (Krone) springt, kurz aufleuchten.
   // Kein Flash beim ersten Mount (prevRank null) → nur echte Overtakes.
-  const prevRank = useRef<number | null>(null);
+  // Auch mit dem Vorrunden-Rang seeden → der ⚔️-Fuehrungswechsel-Blitz feuert
+  // jetzt beim echten Ueberholen (vorher nie, weil prevRank nach Remount null war).
+  const prevRank = useRef<number | null>(seedRank ?? null);
   const [leadFlash, setLeadFlash] = useState(false);
   useEffect(() => {
     let t: ReturnType<typeof setTimeout> | undefined;

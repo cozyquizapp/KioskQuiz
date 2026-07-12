@@ -2812,12 +2812,20 @@ export function registerQQHandlers(io: SocketIOServer): void {
       const q = live.currentQuestion;
       const isMap = q?.category === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'map';
       if (!isMap || live.phase !== 'QUESTION_REVEAL') return;
-      const validPinCount = live.answers.filter(a => {
+      const validPins = live.answers.filter(a => {
         const parts = String(a.text ?? '').split(',');
         const lat = Number(parts[0]);
         const lng = Number(parts[1]);
         return Number.isFinite(lat) && Number.isFinite(lng);
-      }).length;
+      });
+      // 2026-07-12 (Wolf-Livetest 'Moderator steppt durch alle 40 Pins obwohl
+      // Beamer nur 1 Pin pro Fraktion zeigt'): in CozyArena den Pin-Count auf die
+      // Fraktionen (avatarId) kollabieren — der Beamer (CozyGuessrReveal) zeigt
+      // ohnehin nur den naechsten Pin pro Fraktion. Sonst laeuft der Auto-Advance
+      // bis 40 weiter, waehrend visuell nichts mehr passiert.
+      const validPinCount = live.largeGroupMode
+        ? new Set(validPins.map(a => live.teams[a.teamId]?.avatarId).filter(Boolean)).size
+        : validPins.length;
       // Auto-Advance nur zwischen step 1 und 1+validPinCount-1 (letzter Pin),
       // danach wartet der Moderator aufs Ranking.
       const allPinsStep = 1 + validPinCount;
@@ -2845,12 +2853,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const q = room.currentQuestion;
         const isMap = q?.category === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'map';
         if (room.phase !== 'QUESTION_REVEAL' || !isMap) { ok(ack); return; }
-        const validPinCount = room.answers.filter(a => {
+        const validPinsM = room.answers.filter(a => {
           const parts = String(a.text ?? '').split(',');
           const lat = Number(parts[0]);
           const lng = Number(parts[1]);
           return Number.isFinite(lat) && Number.isFinite(lng);
-        }).length;
+        });
+        // Analog zu scheduleMapAutoAdvance: in CozyArena pro Fraktion kollabieren.
+        const validPinCount = room.largeGroupMode
+          ? new Set(validPinsM.map(a => room.teams[a.teamId]?.avatarId).filter(Boolean)).size
+          : validPinsM.length;
         const maxStep = 1 + validPinCount + 1;
         // Manuelles Advance bricht ggf. laufenden Auto-Timer ab.
         if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }

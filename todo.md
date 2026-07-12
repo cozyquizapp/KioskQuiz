@@ -141,6 +141,22 @@ DEFERRED (bewusst, mit Grund):
 - ⚠️ Vieles davon war im alten Frontend-Screenshot NICHT drin → Wolf: Beamer hart neuladen (Strg+Shift+R) + Autoplay AUS zum echten Mod-Pacing-Test.
 - [ ] Lobby bei 40 Handys am echten Beamer prüfen (kein Scroll) — im Dry-Run ok aussehend, final am Projektor.
 
+### 🏟️ Showdown-Wertung (Modell C) — Spannung + Fairness fürs Grossevent
+Kontext: „1. Team gewinnt einfach, Strategie fehlt". Konzept + Fairness/Spannungs-Analyse
+(Monte-Carlo) voll in Memory [[project-cozyarena-showdown-concept]]. Mockup aller Kategorie-
+Formen: https://claude.ai/code/artifact/b22fbb30-0679-40a4-ac83-788e6aa345b4
+- [x] **PHASE 1 (Backend) GEBAUT+GEPUSHT** `2bdfe2bb` — `qqMegaEventScore` auf einheitliche
+      **0–100-Skala**: jedes aktive Handy → 0–100, Fraktion = Ø der Punkte (Rang-Punkte [5,4,3,2,1]
+      raus, waren größen-unfair). Distanz = Nähe-Punkte pro Handy gemittelt (nicht die Tipps →
+      guter Tipp zieht immer hoch). **Finale-Multiplikator** letzte Phase ×2 / letzte Frage ×3
+      (Monte-Carlo-Sweet-Spot: dreht ~1/3 der Spiele, stärkste gewinnt noch 63%). Typecheck grün,
+      nur largeGroupMode. ⚠️ **Coolify-Auto-Deploy läuft; Live-Trockentest steht aus.**
+- [ ] **PHASE 2 (Beamer):** Showdown-Zone (leuchtende Top-Gruppe), Cut-Moment (Wolf-Ansage +
+      Awards-Feier), Showdown-Look (dunkle Bühne/Spotlight/×N-Banner), 0–100-Reveal-Anzeige
+      (+ persönliche Handy-Anzeige „Du: 96!"). Droppbar falls Zeit knapp — Phase 1 shippt allein.
+- [ ] **Tuning am Trockenlauf:** Finale=„letzte Phase" ok? · Nähe-Kurve K=3 / Map-Cap 25° am
+      echten Content justieren · Reveal zeigt jetzt 0–100 (bis 300 im Finale) → in Phase 2 stylen.
+
 ### Woche 4 — Puffer
 - [ ] Kompletter Trockenlauf mit mehreren echten Geräten (voller Durchlauf, EN).
 - [ ] **Coolify-Backend-Redeploy** (Cap, Faction-Balance, ggf. Broadcast-Throttle).

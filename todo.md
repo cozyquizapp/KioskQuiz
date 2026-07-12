@@ -13,6 +13,31 @@
 
 ---
 
+## 🔜 MORGEN — HIER STARTEN (Handoff 2026-07-12, Endphase)
+
+**Zustand:** Alle Commits gepusht, working tree sauber, Backend auto-redeployt (Coolify). Voller Batch-Detail in Memory [[project-cozyarena-live-event-2026-08]] (Abschnitt „Screenshot-Review-Batch Runde 2").
+
+**⚠️ ZUERST — TEST-GATE (sonst wirken neue Fixes „kaputt"):**
+1. Beamer **UND** Moderator **hart neuladen** (Strg+Shift+R). Wolfs letzte Screenshots liefen auf ALTEM Frontend (Beweis: „Vollbild" statt „Fullscreen").
+2. **Autoplay AUS** — sonst drückt Autoplay den Mod-Pacing-Space selbst; der Halt (Wertung → Space → Standings → Space → Frage) zeigt sich nur manuell. Bots dürfen weiter antworten.
+
+**Diese Session gebaut + gepusht (12 Commits, alle typecheck-grün):** Ø-Antwortzeit im Scoring · app-weiter Gedankenstrich-Sweep (~130) · Fairness-Nenner = aktive Handys · größere Abgabe-Wappen · CozyGuessr rang-basiert · preGame-Wolf verkleinert · CHEESE-Reflow-Fix · **Epic Standings** (verifiziert, `Desktop/standings-epic-neu.png`) · „Now the rules"-Karte · **Brand-Rename „CozyArena" ein Wort** (+ 4× „CozyQuiz"). Auch: „Let's go!"-Komposition (`Desktop/arena-letsgo-neu.png`), Vollbild→Fullscreen EN, Mod-Pacing 2-Beat.
+
+**NÄCHSTER BAU (bereit, KEIN Design nötig — kann sofort losgehen):**
+- [ ] **Gruppe-A-Icons verdrahten** (existieren schon als 3D-`fx-*`, laufen aber flach): 🥇🥈🥉→`fx-medal-*` (Scoring+Standings-Ränge), 👑→`fx-crown` (Standings-Leader), 🎯→`fx-target` (how-it-works+Overlays), 📱→`fx-phone` (how-it-works), 🥔→`fx-potato` (Hot Potato). **⚡→`fx-lightning` AUSLASSEN** (PNG rendert fehlerhaft, siehe QQIcon.tsx:198 — braucht Wolfs PNG-Fix).
+
+**WARTET AUF WOLF:**
+- [ ] **Gruppe-B-Icons designen** (kein 3D-Asset da → Wolf malt PNGs transparent, dann wire ich): `fx-book` (📖 Regel-Intro/how-it-works), `fx-shield-faction` (🛡️ Fraktionen-Header), `fx-clapperboard` (🎬 „Los geht's"), `fx-swords` (⚔️ „Führung!"-Callout). Plus **`fx-lightning.png` fixen** (⚡).
+- [ ] **40-Bot-Gegencheck** aller Fixes am echten (neu geladenen) Beamer → Feedback fließt in nächste Runde.
+
+**DEFERRED (bewusst, mit Grund — nicht vergessen aber nicht blind bauen):**
+- Round-Intro-Balance → Journey-Zoom-Kamerasystem (Bug-Hotspot #2), hohes Risiko; „oben-lastig" evtl. nur Transition-Frame → erst am echten Lauf prüfen ob's stört.
+- Icon-Fidelity 📖/📋 → deckt sich mit Gruppe B (Assets fehlen).
+
+**OFFENE VISUELLE BESTÄTIGUNGEN (am echten Lauf/Beamer):** preGame-Wolf-Overlap weg? · CHEESE-Reflow weg? · Kontrast „Wing It"(Blau)/„Objection"(Pink) auf Distanz · Lobby bei 40 Handys kein Scroll.
+
+---
+
 ## 🎯 CozyArena LIVE-EVENT — HÖCHSTE PRIO (Ziel ~Anfang Aug 2026)
 
 **Kontext:** Erstes CozyArena-Event mit **echten Geräten**. Firma lädt ein, **50–100 Leute**

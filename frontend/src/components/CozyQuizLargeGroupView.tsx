@@ -12,7 +12,7 @@
 
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { playArenaLeadChange } from '../utils/sounds';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -37,7 +37,40 @@ const KEYFRAMES = `
 @keyframes qqLeaderGlow { 0%,100% { box-shadow: inset 0 0 0 1.5px var(--lc, #fff), 0 0 24px -6px var(--lc, #fff); } 50% { box-shadow: inset 0 0 0 2px var(--lc, #fff), 0 0 44px 2px var(--lc, #fff); } }
 @keyframes qqRowIn { from { opacity: 0; transform: translateX(-34px); } to { opacity: 1; transform: none; } }
 @keyframes qqValuePop { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
+/* 2026-07-12 (Showdown 2b): Finale-Multiplikator-Banner atmet. */
+@keyframes qqFinalePulse { 0%,100% { transform: scale(1); box-shadow: 0 0 30px -4px #EC4899, inset 0 1px 0 rgba(255,255,255,0.3); } 50% { transform: scale(1.035); box-shadow: 0 0 52px 2px #EC4899, inset 0 1px 0 rgba(255,255,255,0.4); } }
 `;
+
+// Finale-Multiplikator spiegelbildlich zur Backend-Wertung (qqMegaEventScore):
+// letzte Phase ×2, allerletzte Frage ×3. Aus questionIndex + totalPhases ableitbar
+// (gleiche Phasen-Struktur wie im Backend), daher kein extra State-Feld noetig.
+function qqFinaleMult(state: QQStateUpdate): 1 | 2 | 3 {
+  const qpp = QQ_QUESTIONS_PER_PHASE;
+  const qi = state.questionIndex ?? 0;
+  const phaseOfQ = Math.floor(qi / qpp) + 1;
+  if (phaseOfQ !== state.totalPhases) return 1;
+  return (qi % qpp) === (qpp - 1) ? 3 : 2;
+}
+
+// „×2 FINALE / ×3 SCHLUSSFRAGE"-Banner — macht die hoeheren Punkte im Finale
+// verstaendlich und liefert die „steigende Einsaetze"-Dramatik.
+function FinaleBanner({ mult, de }: { mult: 1 | 2 | 3; de: boolean }) {
+  if (mult <= 1) return null;
+  const label = mult === 3 ? (de ? 'SCHLUSSFRAGE' : 'FINAL QUESTION') : (de ? 'FINALE' : 'FINALE');
+  return (
+    <div style={{
+      display: 'inline-flex', alignItems: 'center', gap: 14, alignSelf: 'center',
+      padding: '9px 24px', borderRadius: 999,
+      background: 'linear-gradient(90deg, #A21247, #EC4899)',
+      animation: 'qqFinalePulse 1.8s ease-in-out infinite',
+    }}>
+      <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}>🔥</span>
+      <span style={{ fontWeight: 900, fontSize: 27, letterSpacing: '0.08em', color: '#fff' }}>{label}</span>
+      <span style={{ fontWeight: 900, fontSize: 30, color: '#fff', background: 'rgba(0,0,0,0.24)', borderRadius: 11, padding: '2px 13px', fontVariantNumeric: 'tabular-nums' }}>×{mult}</span>
+      <span style={{ fontWeight: 800, fontSize: 17, color: 'rgba(255,255,255,0.88)' }}>{de ? 'Punkte zählen mehr' : 'points count more'}</span>
+    </div>
+  );
+}
 
 // Zahl weich hochzählen (Renn-Drama). performance.now ist im Browser ok.
 function useCountUp(target: number, ms = 900): number {
@@ -91,6 +124,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
   return (
     <div style={S.qrWrap}>
       <style>{KEYFRAMES}</style>
+      <FinaleBanner mult={qqFinaleMult(state)} de={de} />
       <div style={S.qrLabel}>{de ? 'Wertung dieser Frage' : 'This question’s scoring'}</div>
       <div style={S.qrList}>
         {rows.map((r, i) => {
@@ -208,6 +242,7 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   return (
     <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <style>{KEYFRAMES}</style>
+      <FinaleBanner mult={qqFinaleMult(state)} de={de} />
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
       <div style={{ position: 'relative', height: shown.length * rowH, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (

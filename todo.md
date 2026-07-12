@@ -155,6 +155,10 @@ Formen: https://claude.ai/code/artifact/b22fbb30-0679-40a4-ac83-788e6aa345b4
       (standVal 90→132), Footer-Copy korrigiert (Speed = nur Tiebreak, „bis 100 pro Frage").
 - [x] **Finale-Banner GEBAUT+GEPUSHT** `0ef6077d` — „🔥 FINALE ×2 / SCHLUSSFRAGE ×3" in Reveal +
       Standings; Multiplikator frontend-seitig spiegelbildlich zum Backend abgeleitet.
+- [x] **Wertungs-Anzeige-Audit GEBAUT+GEPUSHT** `e2fd7bf3` — 3 Bruchstellen gefixt: Reveal-Sieger
+      = Spotlight (nicht mehr „gewinnt", Wolf-Wahl A) · Unterzeile kategorie-abhängig (erklärt jetzt
+      die Punkte: 10v10 „Ø X/10", Distanz „Ø X% dran", binär „X/Y richtig") · Footer neutral ·
+      Schätzchen-Reveal aufs Fraktions-Wappen gemappt + 🏆→🎯.
 - [ ] **PHASE 2b REST (episch, droppbar):** Showdown-Zone (Top-Gruppe leuchtet durchgehend) ·
       Cut-Moment (einmalige Wolf-Ansage + Awards-Feier, Akt 2) · Showdown-Look (dunkle Bühne/
       Spotlight im Finale) · persönliche Handy-Anzeige `/team` bei Distanz („Du: 96!"). Größer/

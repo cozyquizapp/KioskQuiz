@@ -51,8 +51,10 @@ const ANIM_LABELS: Record<QQImageAnimation, string> = {
 // schon raus (1 Phone pro Team macht's schwierig). Imposter (oneOfEight)
 // kommt jetzt auch raus — Wolf will den Sub-Kind spaeter in anderer Form
 // revivem. Code-Pfade in Backend + Render-Komponenten bleiben.
+// 2026-07-12 (Wolf): onlyConnect ('4 gewinnt') auch raus — 'war zu abstrakt
+// auch in cozyquiz'. Code-Pfade + OnlyConnectBeamerView bleiben.
 // Reaktivieren: gewuenschten Kind wieder in die Liste aufnehmen.
-const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'crowdTop', 'crowdEstimate', 'order', 'map', 'onlyConnect'];
+const BUNTE_KINDS: QQBunteTueteKind[] = ['hotPotato', 'top5', 'crowdTop', 'crowdEstimate', 'order', 'map'];
 
 // 2026-05-11 (Wolf-Wunsch): Wizard-Sub-Steps. Statt langer Scroll-Liste klickt
 // Wolf sich pro Frage durch wenige Felder-Blöcke. Pro Kategorie eigenes Schema.

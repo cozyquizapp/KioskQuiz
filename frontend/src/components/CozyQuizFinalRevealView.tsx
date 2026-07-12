@@ -1992,7 +1992,7 @@ export function FinalEurovisionFinale({ finalRanking, lang }: {
                 lineHeight: 1,
                 flexShrink: 0,
               }}>
-                {medal ?? `#${rank}`}
+                {medal ? <QQEmojiIcon emoji={medal} /> : `#${rank}`}
               </div>
               <QQTeamAvatar
                 avatarId={r.team.avatarId}
@@ -2731,7 +2731,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 42px ${isWin ? 'rgba(251,191,36,0.5)' : t.color + '66'}`,
               animation: 'qqTowerCardIn 0.5s cubic-bezier(0.3,1.4,0.5,1) both',
             }}>
-              {medal && <span aria-hidden style={{ fontSize: 54, lineHeight: 1, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.5))' }}>{medal}</span>}
+              {medal && <span aria-hidden style={{ fontSize: 54, lineHeight: 1, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.5))' }}><QQEmojiIcon emoji={medal} size={54} /></span>}
               <div style={{
                 width: 92, height: 92, borderRadius: '50%', background: t.color,
                 border: `4px solid ${t.color}`, boxShadow: `0 0 24px ${t.color}88, 0 4px 12px rgba(0,0,0,0.5)`,
@@ -2989,7 +2989,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       animation: 'qqTowerBadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both',
                     }}>
                       {badge && (
-                        <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}>{badge}</span>
+                        <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}><QQEmojiIcon emoji={badge} size={30} /></span>
                       )}
                       <span style={{
                         fontSize: 14, fontWeight: 900, letterSpacing: '0.04em',

@@ -630,7 +630,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
                       position: 'absolute', top: 8, left: 10,
                       fontSize: medal ? 20 : 12, fontWeight: 900,
                       color: medal ? undefined : 'var(--sum-muted)', lineHeight: 1,
-                    }}>{medal ?? `#${i + 1}`}</span>
+                    }}>{medal ? <QQEmojiIcon emoji={medal}/> : `#${i + 1}`}</span>
                     <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={64} />
                     <div style={{
                       fontSize: 15, fontWeight: 900, textAlign: 'center', lineHeight: 1.15,

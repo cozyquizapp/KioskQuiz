@@ -267,10 +267,16 @@ export default function QQTeamPage() {
     setActiveThemeId(state?.themeId ?? 'cozy');
   }, [state?.themeId]);
 
-  // Reset joined on disconnect so auto-rejoin fires on reconnect
+  // Reset joined on disconnect so auto-rejoin fires on reconnect — aber mit
+  // Grace-Period (Wolf: bei 1-2s WLAN-Aussetzer flackerte kurz die Rejoin-
+  // Ansicht). Erst nach 1,5s ohne Verbindung zuruecksetzen; kommt die Verbindung
+  // vorher zurueck, raeumt das Cleanup den Timer ab → kein Flackern. joinBeamer
+  // re-subscribed bei Reconnect ohnehin (eigener Effect), Antworten tragen teamId.
   useEffect(() => {
-    if (!connected && joined) setJoined(false);
-  }, [connected]);
+    if (connected || !joined) return;
+    const t = setTimeout(() => setJoined(false), 1500);
+    return () => clearTimeout(t);
+  }, [connected, joined]);
 
   // 2026-07-03 (Wolf 'bei beamer klappts, bei team nicht'): /team muss den Raum
   // schon VOR dem Team-Join abonnieren — sonst kommt kein qq:stateUpdate an und

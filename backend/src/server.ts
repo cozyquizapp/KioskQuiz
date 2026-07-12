@@ -617,7 +617,7 @@ app.get('/api/quizzes/:quizId/layout', (req, res) => {
   res.json({ layout });
 });
 
-app.post('/api/quizzes/:quizId/layout', (req, res) => {
+app.post('/api/quizzes/:quizId/layout', requirePin, (req, res) => {
   const { quizId } = req.params;
   const payload = req.body as QuizLayout;
   quizLayoutMap[quizId] = {
@@ -731,7 +731,7 @@ app.get('/api/quizzes/published', (_req, res) => {
   res.json({ quizzes: publishedQuizzes });
 });
 
-app.post('/api/quizzes/publish', (req, res) => {
+app.post('/api/quizzes/publish', requirePin, (req, res) => {
   const payload = req.body as PublishedQuiz;
   if (!payload?.id || !payload?.name || !Array.isArray(payload.questionIds)) {
     return res.status(400).json({ error: 'id, name, questionIds erforderlich' });
@@ -4833,7 +4833,7 @@ app.get('/api/catalogs', async (_req, res) => {
   }
 });
 
-app.get('/api/questions/custom/export', async (_req, res) => {
+app.get('/api/questions/custom/export', requirePin, async (_req, res) => {
   try {
     let customQs: AnyQuestion[];
     
@@ -4853,7 +4853,7 @@ app.get('/api/quizzes', (_req, res) => {
   res.json({ quizzes: Array.from(quizzes.values()) });
 });
 
-app.post('/api/quizzes/custom', (req, res) => {
+app.post('/api/quizzes/custom', requirePin, (req, res) => {
   const { name, questionIds, meta, categories, mode } = req.body as {
     name?: string;
     questionIds?: string[];
@@ -6333,7 +6333,7 @@ app.get('/api/rooms/:roomCode/blitz-timers', (req, res) => {
 // questionOverrideMap — ein kleines Einfallstor. Runtime-Reads/-Helfer bleiben.
 
 // Quizzes löschen
-app.delete('/api/quizzes/:id', (req, res) => {
+app.delete('/api/quizzes/:id', requirePin, (req, res) => {
   const { id } = req.params;
   if (!id || !quizzes.has(id)) return res.status(404).json({ error: 'Quiz nicht gefunden' });
   quizzes.delete(id);

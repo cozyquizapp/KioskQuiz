@@ -98,6 +98,25 @@ const AVA_BY_ID = new Map<string, AvaMeta>(
   QQ_AVATARS.map(a => [a.id, { label: a.label, labelEn: a.labelEn, color: a.color }] as [string, AvaMeta]),
 );
 
+// ── Kategorie-abhaengige Score-Unterzeile (2026-07-12 Audit) ─────────────────
+// Bisher stand ueberall „X/Y Handys richtig" — irrefuehrend, weil es die 0-100-
+// Punkte nicht erklaert: bei 10v10 (Wett-Einsatz) und Distanz (Naehe, nicht
+// Anzahl → „+40 mit 0/4 richtig" war widerspruechlich). Jetzt pro Kategorie eine
+// Unterzeile, die GENAU die Punkte erklaert. base = 0-100-Score vor Finale-Mult.
+type QQScoreCat = { cat?: string; kind?: string };
+function qqScoreCatOf(state: QQStateUpdate): QQScoreCat {
+  const q = state.currentQuestion;
+  return { cat: q?.category, kind: (q?.bunteTuete as { kind?: string } | undefined)?.kind };
+}
+function qqScoreSub(sc: QQScoreCat, e: QQMegaRankEntry, finaleMult: number, de: boolean): { label: string; showDots: boolean } {
+  const base = finaleMult > 1 ? Math.round(e.points / finaleMult) : e.points;
+  const isDist = sc.cat === 'SCHAETZCHEN' || (sc.cat === 'BUNTE_TUETE' && (sc.kind === 'crowdEstimate' || sc.kind === 'map'));
+  if (isDist) return { label: de ? `Ø ${base}% dran` : `Ø ${base}% close`, showDots: false };
+  if (sc.cat === 'ZEHN_VON_ZEHN') { const x = Math.round(base / 10); return { label: de ? `Ø ${x}/10 auf richtig` : `Ø ${x}/10 on correct`, showDots: false }; }
+  if (sc.cat === 'BUNTE_TUETE' && sc.kind === 'crowdTop') return { label: de ? `${e.correct}/${e.total} auf der Tafel` : `${e.correct}/${e.total} on the board`, showDots: true };
+  return { label: de ? `${e.correct}/${e.total} Handys richtig` : `${e.correct}/${e.total} phones correct`, showDots: true };
+}
+
 // ── Akt 3: per-Frage-Wertung (Beat A) → Bar-Race-Gesamtwertung (Beat B) ───────
 export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
@@ -121,6 +140,8 @@ export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
 // ── Beat A: Punkte-Verteilung dieser Frage (Modell B, niedrigschwellig) ───────
 function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ranking: QQMegaRankEntry[]; de: boolean }) {
   const rows = useMemo(() => [...ranking].sort((a, b) => a.rank - b.rank), [ranking]);
+  const sc = qqScoreCatOf(state);
+  const fm = qqFinaleMult(state);
   return (
     <div style={S.qrWrap}>
       <style>{KEYFRAMES}</style>
@@ -133,13 +154,14 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           const name = qqMegaFactionName(r.avatarId, de ? 'de' : 'en');
           const medal = i < 3 && r.points > 0 ? MEDALS[i] : null;
           const scored = r.points > 0;
+          const sub = qqScoreSub(sc, r, fm, de);
           return (
             <div key={r.avatarId} style={{ ...S.qrRow, animation: 'brRankIn 0.5s ease both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
               <span style={S.qrRank}>{medal ? <QQEmojiIcon emoji={medal} /> : i + 1}</span>
               <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={64} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{ fontSize: 30, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-                <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} baseDelay={i * 0.32} />
+                <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} baseDelay={i * 0.32} label={sub.label} showDots={sub.showDots} />
               </div>
               <span style={{
                 ...S.qrPts, color: scored ? color : 'rgba(255,255,255,0.4)',
@@ -151,7 +173,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           );
         })}
       </div>
-      <div style={S.qrFoot}>{de ? '⚡ Je mehr eurer Handys richtig liegen, desto mehr Punkte (bis 100 pro Frage).' : '⚡ The more of your phones are right, the more points (up to 100 per question).'}</div>
+      <div style={S.qrFoot}>{de ? '⚡ Je besser eure Fraktion abschneidet, desto mehr Punkte (bis 100 pro Frage).' : '⚡ The better your faction does, the more points (up to 100 per question).'}</div>
     </div>
   );
 }
@@ -159,14 +181,14 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
 // Punkte-Dots: gefüllt = richtige Sub-Teams, hohl = Rest. Bei >5 nur Zahl.
 // 2026-07-12: dahinter dezent die Ø-Antwortzeit der richtigen Handys — macht
 // den Speed-Tiebreak transparent (warum +6 vs +1 bei gleicher Trefferquote).
-function Dots({ correct, total, color, de, avgSec, baseDelay = 0 }: { correct: number; total: number; color: string; de: boolean; avgSec?: number | null; baseDelay?: number }) {
-  const showDots = total > 0 && total <= 5;
+function Dots({ correct, total, color, de, avgSec, baseDelay = 0, label, showDots }: { correct: number; total: number; color: string; de: boolean; avgSec?: number | null; baseDelay?: number; label: string; showDots: boolean }) {
+  const dotsVisible = showDots && total > 0 && total <= 5;
   const timeStr = (avgSec != null && correct > 0)
     ? (de ? `${avgSec.toFixed(1).replace('.', ',')}s` : `${avgSec.toFixed(1)}s`)
     : null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
-      {showDots && (
+      {dotsVisible && (
         <span style={{ display: 'inline-flex', gap: 5 }}>
           {Array.from({ length: total }, (_, i) => {
             const filled = i < correct;
@@ -185,7 +207,7 @@ function Dots({ correct, total, color, de, avgSec, baseDelay = 0 }: { correct: n
         </span>
       )}
       <span style={{ fontSize: 17, fontWeight: 800, opacity: 0.7 }}>
-        {correct}/{total} {de ? 'Handys richtig' : 'phones correct'}
+        {label}
       </span>
       {timeStr && (
         <span style={{ fontSize: 16, fontWeight: 800, opacity: 0.6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
@@ -239,6 +261,9 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   const prevRanksSnapshot = qqPrevStandRanks;
   useEffect(() => { qqPrevStandRanks = new Map(rankOf); }, [rankOf]);
 
+  const sc = qqScoreCatOf(state);
+  const fm = qqFinaleMult(state);
+
   return (
     <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <style>{KEYFRAMES}</style>
@@ -246,7 +271,7 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
       <div style={{ position: 'relative', height: shown.length * rowH, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (
-          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} seedRank={prevRanksSnapshot?.get(t.id)} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} rowH={rowH} />
+          <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} seedRank={prevRanksSnapshot?.get(t.id)} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} rowH={rowH} sc={sc} fm={fm} />
         ))}
       </div>
       {rest > 0 && (
@@ -256,7 +281,7 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   );
 }
 
-function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH }: { team: QQTeam; rank: number; seedRank?: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry; rowH: number }) {
+function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }: { team: QQTeam; rank: number; seedRank?: number; maxVal: number; de: boolean; qEntry?: QQMegaRankEntry; rowH: number; sc: QQScoreCat; fm: number }) {
   const ref = useRef<HTMLDivElement | null>(null);
   // prevTop mit dem Vorrunden-Rang seeden (via seedRank aus qqPrevStandRanks) —
   // sonst waere er nach dem Per-Frage-Remount immer null und der FLIP feuerte
@@ -352,7 +377,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH }: { team
             <span style={{ color: qEntry.points > 0 ? team.color : 'rgba(255,255,255,0.35)' }}>
               {qEntry.points > 0 ? `+${qEntry.points}` : '±0'}
             </span>
-            <span style={{ opacity: 0.55, fontSize: 15 }}>{qEntry.correct}/{qEntry.total} {de ? 'richtig' : 'correct'}</span>
+            <span style={{ opacity: 0.55, fontSize: 15 }}>{qqScoreSub(sc, qEntry, fm, de).label}</span>
           </div>
         )}
       </div>

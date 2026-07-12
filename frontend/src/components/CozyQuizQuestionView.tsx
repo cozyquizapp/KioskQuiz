@@ -2610,6 +2610,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const tColor = w.team.color;
             // Gleichstand auf der Distanz → Speed war der Tiebreaker.
             const distanceTied = ranked.filter(r => r.distance === w.distance).length > 1;
+            // CozyArena: das naechste EINZEL-Handy auf seine Fraktion mappen (sonst
+            // nennt die Karte ein Sub-Team). Spotlight (🎯 „am naechsten dran"), NICHT
+            // Punkte-Sieger — der steht im Wertungs-Beat.
+            const dispName = isMegaTeams ? qqMegaFactionName(w.team.avatarId, lang) : w.team.name;
+            const dispEmoji = isMegaTeams ? (qqMegaFactionSlug(w.team.avatarId) ?? w.team.emoji) : w.team.emoji;
             return (
               <div style={{
                 display: 'flex', justifyContent: 'center', width: '100%',
@@ -2622,11 +2627,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   border: `2px solid ${tColor}55`,
                   boxShadow: `0 0 32px ${tColor}44`,
                 }}>
-                  <span style={{ fontSize: 'clamp(26px, 2.8cqw, 36px)', lineHeight: 1 }}><QQEmojiIcon emoji="🏆"/></span>
-                  <QQTeamAvatar avatarId={w.team.avatarId} teamEmoji={w.team.emoji} size={'clamp(28px, 3cqw, 40px)'} style={{ flexShrink: 0 }} />
+                  <span style={{ fontSize: 'clamp(26px, 2.8cqw, 36px)', lineHeight: 1 }}><QQEmojiIcon emoji="🎯"/></span>
+                  <QQTeamAvatar avatarId={w.team.avatarId} teamEmoji={dispEmoji} size={'clamp(28px, 3cqw, 40px)'} style={{ flexShrink: 0 }} />
                   <span style={{
                     fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: tColor, lineHeight: 1.1,
-                  }}>{w.team.name}</span>
+                  }}>{dispName}</span>
                   <span style={{
                     color: 'var(--qq-text-muted)', fontSize: 'clamp(19px, 2.1cqw, 28px)', fontWeight: 700, lineHeight: 1.1,
                   }}>
@@ -2758,6 +2763,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   : muchoSpeedWin
                     ? (isEn ? 'fastest & correct!' : 'am schnellsten & richtig!')
                     : (isEn ? 'correct!' : 'richtig!');
+
+            // CozyArena (2026-07-12 Audit): Der Reveal kuert NICHT den Punkte-
+            // Sieger (der steht im Wertungs-Beat mit Medaille), sondern ist ein
+            // ehrliches SPOTLIGHT aufs schnellste/naechste Handy. Daher „Highlight"-
+            // Formulierung statt „gewinnt" — sonst widerspricht die Karte dem Beat.
+            let megaWinMsg = winMsg;
+            if (isMegaTeams) {
+              const btKind = (q.bunteTuete as { kind?: string } | undefined)?.kind;
+              const isDistReveal = cat === 'BUNTE_TUETE' && (btKind === 'map' || btKind === 'crowdEstimate');
+              if (isDistReveal) megaWinMsg = isEn ? 'was closest!' : 'war am nächsten dran!';
+              else if (cat === 'ZEHN_VON_ZEHN') megaWinMsg = isEn ? 'bet the most on the correct answer!' : 'hat am meisten auf richtig gesetzt!';
+              else if (cat === 'BUNTE_TUETE' && btKind === 'crowdTop') megaWinMsg = isEn ? 'had the best answers!' : 'hatte die besten Antworten!';
+              else megaWinMsg = isEn ? 'was fastest correct!' : 'war am schnellsten richtig!';
+            }
 
             // Hot Potato: bei pool-exhausted (>=2 Ueberlebende) haben alle
             // Ueberlebenden gewonnen und ein Feld bekommen. Zeige sie alle an,
@@ -2916,7 +2935,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{
                     color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 2.4cqw, 30px)', fontWeight: 900, marginTop: 4, lineHeight: 1.2,
                   }}>
-                    {winMsg}
+                    {megaWinMsg}
                   </div>
                 </div>
               </div>

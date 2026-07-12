@@ -1141,6 +1141,15 @@ function useCountUp(finalValue: number | string, durationMs = 720, delayMs = 0):
   // ersten Mount mit gültigem Wert. Plus delayMs für Stagger (i * 80ms).
   const hasAnimatedRef = useRef(false);
   useEffect(() => {
+    // Reduced-Motion: die globale CSS-Regel (main.css) killt nur CSS-Animationen.
+    // Dieser JS-RAF-Count-Up umgeht das -> hier selbst pruefen + Endwert direkt setzen.
+    const reduceMo = typeof window !== 'undefined' && window.matchMedia
+      && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (reduceMo) {
+      hasAnimatedRef.current = true;
+      setDisplay(typeof finalValue === 'string' ? finalValue : String(finalValue));
+      return;
+    }
     if (hasAnimatedRef.current) {
       // Bereits animiert → direkt finalValue setzen ohne Re-Animation
       setDisplay(typeof finalValue === 'string' ? finalValue : String(finalValue));

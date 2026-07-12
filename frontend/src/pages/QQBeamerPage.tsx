@@ -2928,7 +2928,10 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
           C1 Shake-Red + Kartoffel-Drop 🥔 + fade-to-grey. */}
       {s.hotPotatoEliminated && s.hotPotatoEliminated.length > 0 && (
         <div style={{
-          flex: '0 0 auto',
+          // Cap + clip: bei bis zu 7 Ausgeschiedenen wuchs die flexWrap-Reihe auf
+          // 2 Zeilen und schob den zentrierten Cluster ueber die Beamer-Slot-Hoehe
+          // (Spill/Clip-Risiko, da aeusserer Container kein overflow:hidden hat).
+          flex: '0 1 auto', maxHeight: 'clamp(56px, 9cqh, 116px)', overflow: 'hidden',
           display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
           gap: 'clamp(10px, 1.4cqw, 18px)',
           fontSize: 'clamp(18px, 2cqw, 28px)', color: QQ_COLORS.slate400, fontWeight: 900,

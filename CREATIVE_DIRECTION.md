@@ -23,6 +23,18 @@ Warm. Friendly. Playful. Storybook. Fireflies. Soft depth. Character-driven.
 Never cold. Never futuristic. Never cyberpunk. Never luxury.
 The wolf is not decoration — the wolf is part of the experience.
 
+# Colors (non-negotiable, Wolf 2026-07-12)
+The logo brand colours MUST live in the app: pink #EC4899, magenta #A21247, navy #1E2A5A.
+Category colours STAY (MUCHO blue, Schätzchen yellow, 10v10 green, CHEESE purple, Bunte Tüte red).
+Faction / team colours STAY. It must be cozy + warm AND quiz-event at the same time — never only one.
+
+# Participant-first priority (the lens for EVERY screen, Wolf 2026-07-12)
+Before composing any screen, answer in this order — do NOT start from a metaphor or decoration:
+1. What does the participant need on screen RIGHT NOW?
+2. What is interesting / emotionally alive here?
+3. In what PRIORITY? Rank it. The top item becomes the hero; the rest support it.
+Build the hierarchy from that ranking. This is the anti-circling gate: no composition without it.
+
 # Emotional Design
 Every screen has EXACTLY ONE emotional purpose. Examples:
 Lobby → Arrival · Question → Suspense · Countdown → Pressure · Reveal → Surprise ·

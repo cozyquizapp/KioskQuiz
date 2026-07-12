@@ -208,7 +208,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           style={{
           display: 'flex', alignItems: 'center', gap: dense ? 14 : 18,
           animation: poppedIds.has(t.id) ? 'scorePop 0.5s ease both' : undefined,
-          opacity: activeTeamId && !isActive ? 0.42 : 1,
+          opacity: activeTeamId && !isActive ? 0.62 : 1,
           // 2026-05-05 (Wolf-Bug 'tabelle neben grid veraendert hoehe beim
           // setzen'): Padding/Border IMMER reservieren — vorher Padding 0 bei
           // inaktiv, 6-14px bei aktiv → Zeile wuchs/schrumpfte → Stack mit

@@ -182,7 +182,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                     {lang === 'en' ? 'median' : 'Median'} {fmt(f.median)}{unit ? ` ${unit}` : ''}
                   </div>
                 </div>
-                <div style={{ fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900, color: f.inRange ? QQ_COLORS.green300 : '#64748b', flexShrink: 0 }}>
+                <div style={{ fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900, color: f.inRange ? QQ_COLORS.green300 : '#94a3b8', flexShrink: 0 }}>
                   {f.inRange ? (lang === 'en' ? '✓ close' : '✓ nah') : `Δ ${fmt(f.dist)}`}
                 </div>
               </div>

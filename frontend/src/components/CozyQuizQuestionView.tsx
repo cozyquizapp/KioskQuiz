@@ -939,7 +939,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               <div style={{
                 position: 'relative', overflow: 'hidden',
                 fontSize: 'clamp(28px, 3.8cqw, 56px)', fontWeight: 900,
-                color: QQ_COLORS.green400,
+                // Themed Skins haben eine weisse Card -> green400 (#4ade80) faellt auf 1.6:1.
+                // Kraeftiges Dunkelgruen bei isThemed(), in Cozy (dunkle Card) weiter green400.
+                color: isThemed() ? '#15803d' : QQ_COLORS.green400,
                 animation: 'langFadeIn 0.5s var(--qq-ease-out-cubic) 0.15s both',
                 textShadow: '0 0 30px rgba(34,197,94,0.4)',
                 marginBottom: 6,
@@ -1965,7 +1967,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     pointerEvents: 'none',
                   }} />
                   <span style={{
-                    fontSize: 'clamp(28px, 4cqw, 64px)', fontWeight: 900, color: QQ_COLORS.green400,
+                    fontSize: 'clamp(28px, 4cqw, 64px)', fontWeight: 900, color: isThemed() ? '#15803d' : QQ_COLORS.green400,
                     flexShrink: 1, minWidth: 0,
                     overflow: 'hidden', textOverflow: 'ellipsis',
                     position: 'relative', zIndex: 1,

@@ -249,7 +249,9 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
     });
   }
 
-  const pillColor = remaining === 0 ? '#22C55E' : remaining < ALLIN_POOL ? '#EC4899' : '#475569';
+  // Start-Zustand (voller Pool) nutzte #475569 (~2.4:1 auf dunkler Card) -> hellere
+  // Neutralfarbe fuer lesbare Budget-Anzeige von Anfang an.
+  const pillColor = remaining === 0 ? '#22C55E' : remaining < ALLIN_POOL ? '#EC4899' : '#CBD5E1';
   const distributeLabel = lang === 'de' ? 'Punkte verteilen' : 'Distribute points';
   const submitLabel = lang === 'de' ? 'Abgeben' : 'Submit';
   const leftLabel = lang === 'de' ? `Noch {n} Punkte verteilen` : `{n} points left to distribute`;

@@ -417,7 +417,9 @@ export default function QQAboutPage() {
 function sectionTitle(): CSSProperties {
   return {
     fontFamily: DISPLAY, fontWeight: 800, fontSize: 13, letterSpacing: '0.14em',
-    textTransform: 'uppercase', color: PINK, margin: '0 0 8px',
+    // Pink #EC4899 auf Creme ~2.8:1 (zu klein). Magenta #A21247 ~8:1, bleibt Brand.
+    // Pinke Unterstreichung als Akzent bleibt.
+    textTransform: 'uppercase', color: '#A21247', margin: '0 0 8px',
     display: 'inline-block', borderBottom: `3px solid ${PINK_SOFT}`, paddingBottom: 3,
   };
 }

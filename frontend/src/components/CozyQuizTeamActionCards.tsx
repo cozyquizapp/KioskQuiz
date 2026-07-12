@@ -105,7 +105,7 @@ export function MegaScoringCard({ state: s, myTeamId, lang = 'de' }: {
           {de ? 'Schau auf den Beamer 📺' : 'Look at the screen 📺'}
         </div>
       )}
-      <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.45 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, opacity: 0.6 }}>
         {de ? 'Punkte für dein Team, gleich geht’s weiter!' : 'Points for your team, next up soon!'}
       </div>
     </div>

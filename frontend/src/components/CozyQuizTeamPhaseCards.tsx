@@ -68,7 +68,7 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
           <div style={{ fontWeight: 900, fontSize: 22, color: QQ_COLORS.slate100, marginBottom: 6 }}>
             {de ? 'Warteraum' : 'Waiting room'}
           </div>
-          <div style={{ fontSize: 14, color: QQ_COLORS.slate500 }}>
+          <div style={{ fontSize: 14, color: QQ_COLORS.slate300 }}>
             {s.teams.length === 0 ? (de ? 'Noch keine Teams' : 'No teams yet') : `${s.teams.length} ${largeMode ? 'Handys' : 'Teams'}`}
           </div>
         </div>
@@ -337,7 +337,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
               animation: 'tcfloat 3s ease-in-out infinite' }}>
               {phaseName ?? `${lang === 'de' ? 'Runde' : 'Round'} ${s.gamePhaseIndex}`}
             </div>
-            <div style={{ fontSize: 17, color: `${color}88`, marginTop: 8 }}>
+            <div style={{ fontSize: 17, color: `${color}cc`, marginTop: 8 }}>
               {phaseDesc ?? ''}
             </div>
           </>
@@ -701,7 +701,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
           ))}
         </div>
 
-        <div style={{ fontSize: 14, color: QQ_COLORS.slate600, fontWeight: 700 }}>
+        <div style={{ fontSize: 14, color: QQ_COLORS.slate300, fontWeight: 700 }}>
           {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
         </div>
       </div>

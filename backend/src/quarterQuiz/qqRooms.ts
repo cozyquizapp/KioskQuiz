@@ -2462,6 +2462,30 @@ export function qqMegaEventScore(room: QQRoomState): void {
       scorePhone(g, nearScore(dist, QQ_MEGA_MAP_MAX_DEG), a.submittedAt, dist <= QQ_MEGA_MAP_CLOSE_DEG);
       if (dist < g.bestDist) g.bestDist = dist;
     }
+  } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'top5') {
+    // Bunte Tüte „Nenne 5": jedes Handy tippt bis zu 5 Antworten. Score = wie viele
+    // der 5 Slots getroffen → 0–100 (5/5 = volle 100). Fraktion mittelt ueber aktive
+    // Handys. Treffer-Slots liegen in room.top5HitsByTeam (aus applyAutoEval/evalTop5).
+    const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteTop5;
+    const n = (bt.answers ?? []).length;
+    const hitsByTeam = room.top5HitsByTeam ?? {};
+    for (const a of room.answers) {
+      const hits = (hitsByTeam[a.teamId] ?? []).length;
+      const g = grpOf(a.teamId); if (!g) continue;
+      scorePhone(g, n > 0 ? 100 * hits / n : 0, a.submittedAt, hits > 0);
+    }
+  } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'order') {
+    // Bunte Tüte „Reihenfolge": jedes Handy sortiert die Items. Score = wie viele auf
+    // der richtigen Position → 0–100 (alle richtig = volle 100). Fraktion mittelt.
+    // Positions-Treffer liegen in room.orderHitsByTeam (aus applyAutoEval/evalOrder).
+    const bt = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteOrder;
+    const n = (bt.correctOrder ?? []).length;
+    const hitsByTeam = room.orderHitsByTeam ?? {};
+    for (const a of room.answers) {
+      const hits = (hitsByTeam[a.teamId] ?? []).filter(Boolean).length;
+      const g = grpOf(a.teamId); if (!g) continue;
+      scorePhone(g, n > 0 ? 100 * hits / n : 0, a.submittedAt, hits > 0);
+    }
   } else {
     // CHEESE / BUNTE_TUETE / Rest: mod-markierte Sieger (_currentQuestionWinners) = 100.
     const winners = new Set(room._currentQuestionWinners ?? []);

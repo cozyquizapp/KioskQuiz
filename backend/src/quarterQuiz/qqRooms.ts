@@ -2389,9 +2389,12 @@ export function qqMegaEventScore(room: QQRoomState): void {
   const nearScore = (dist: number, maxErr: number) => (maxErr > 0 ? 100 * Math.max(0, 1 - dist / maxErr) : 0);
   const cat = q.category;
   if (cat === 'MUCHO') {
+    // Bugfix 2026-07-12 (Wolf): richtig = 100, falsch = 0. Vorher bekam JEDES
+    // Handy fix 100 (der isHit-Flag steuerte nur die Trefferquote, nicht den Score).
     for (const a of room.answers) {
       const g = grpOf(a.teamId); if (!g) continue;
-      scorePhone(g, 100, a.submittedAt, qqParseMuchoIndex(a.text) === q.correctOptionIndex);
+      const isCorrect = qqParseMuchoIndex(a.text) === q.correctOptionIndex;
+      scorePhone(g, isCorrect ? 100 : 0, a.submittedAt, isCorrect);
     }
   } else if (cat === 'ZEHN_VON_ZEHN') {
     // All-In: Handy verteilt 10 Punkte auf die Optionen. Score = wie viel davon auf

@@ -3742,7 +3742,9 @@ export function MuchoOptionsReveal({
       paddingBottom: expandedLayout ? 'clamp(70px, 9cqh, 110px)' : 0,
       marginBottom: 'clamp(10px, 1.4cqh, 22px)',
       width: '100%', maxWidth: 1400,
-      animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
+      // 2026-07-12 (Delight-Pass): Block-Entrance entfernt — die 4 Karten werden
+      // jetzt pro Karte gestaffelt eingeblendet (siehe Card-Wrapper unten), analog
+      // zu ZvZ/Bunte Tuete. Vorher ploppten alle vier als ein Block rein.
       // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing — User-Feedback
       // 'cards verschieben sich zu hektisch'. ≥0.45s ist die neue Faustregel.
       transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth), margin-bottom 0.9s ease',
@@ -3773,7 +3775,13 @@ export function MuchoOptionsReveal({
           // 2026-05-07 (Audit P1): MUCHO-Cards gleich-hoch via flex:1+height:100%,
           // analog zu ZvZ. Wrapper bekommt display:flex + height:100%, Inner-Card
           // flex:1 — bei laengeren Optionen (zweizeilig) wachsen alle Cards mit.
-          <div key={i} style={{ position: 'relative', display: 'flex', height: '100%' }}>
+          <div key={i} style={{
+            position: 'relative', display: 'flex', height: '100%',
+            // 2026-07-12 (Delight-Pass): gestaffelte Entrance pro Karte statt
+            // Block-Fade. Nur vor dem Reveal — im Reveal uebernehmen die
+            // Card-eigenen Reveal-Keyframes (Pop/Shake) am Inner-Div.
+            animation: showLock ? undefined : `contentReveal 0.4s var(--qq-ease-pop-fast) ${(0.1 + i * 0.08).toFixed(2)}s both`,
+          }}>
             <div style={{
               flex: 1,
               position: 'relative', overflow: 'hidden',

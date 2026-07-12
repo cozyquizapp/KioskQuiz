@@ -206,6 +206,14 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
   const ref = useRef<HTMLDivElement | null>(null);
   const prevTop = useRef<number | null>(null);
   const targetTop = rank * rowH;
+  const val = team.largestConnected;
+  const isLeader = rank === 0 && val > 0;
+  // Der Leader-Spotlight-Scale muss in die FLIP-Transform gefaltet werden:
+  // sonst ueberschreibt das imperativ gesetzte translateY() das scale(1.035)
+  // genau auf der Zeile, die gerade an die Spitze zieht — der Ueberhol-Moment
+  // (neuer Fuehrender wird groesser) verpuffte, weil transform nur EINEN Wert
+  // haelt und der letzte Schreiber (JS-FLIP) gewinnt.
+  const leaderScale = isLeader ? ' scale(1.035)' : '';
   // FLIP: sanftes Gleiten bei Rang-Wechsel (Überholmoment).
   useLayoutEffect(() => {
     const el = ref.current;
@@ -213,19 +221,17 @@ function StandingsRow({ team, rank, maxVal, de, qEntry, rowH }: { team: QQTeam; 
     if (prevTop.current != null && prevTop.current !== targetTop) {
       const dy = prevTop.current - targetTop;
       el.style.transition = 'none';
-      el.style.transform = `translateY(${dy}px)`;
+      el.style.transform = `translateY(${dy}px)${leaderScale}`;
       requestAnimationFrame(() => requestAnimationFrame(() => {
         el.style.transition = 'transform 0.7s cubic-bezier(0.34,1.05,0.5,1)';
-        el.style.transform = 'translateY(0)';
+        el.style.transform = `translateY(0)${leaderScale}`;
       }));
     }
     prevTop.current = targetTop;
-  }, [targetTop]);
+  }, [targetTop, leaderScale]);
 
-  const val = team.largestConnected;
   const pct = (val / maxVal) * 100;
   const medal = rank < 3 && val > 0 ? MEDALS[rank] : null;
-  const isLeader = rank === 0 && val > 0;
   const displayVal = useCountUp(val); // Zahl zählt beim Standings-Reveal hoch
   const valPopKey = `${val}`; // Re-Pop bei Wert-Änderung
 

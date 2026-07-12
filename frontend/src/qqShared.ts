@@ -829,7 +829,7 @@ export const QQ_BEAMER_CSS = `
      Reveal greift weiterhin der Outer-Wrapper-opacity-Fade. */
   @keyframes qqTimerOutro {
     0%   { transform: scale(1);     opacity: 1; filter: brightness(1); }
-    32%  { transform: scale(1.18);  opacity: 1; filter: brightness(1.45) drop-shadow(0 0 24px rgba(251,191,36,0.65)); }
+    32%  { transform: scale(1.18);  opacity: 1; filter: brightness(1.45) drop-shadow(0 0 24px rgba(236,72,153,0.65)); }
     62%  { transform: scale(1.06);  opacity: 0.95; filter: brightness(1.2); }
     100% { transform: scale(0.72);  opacity: 0; filter: brightness(0.8); }
   }

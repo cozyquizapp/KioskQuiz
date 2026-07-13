@@ -1391,8 +1391,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             position: 'absolute',
             // 2026-07-07 (Wolf-Livetest 'timer hängt halb übers fragefeld'):
             // Timer-Inset von der Content-Margin ENTKOPPELT — eigener enger
-            // Eck-Abstand rueckt den Timer rechts an der (maxWidth:1400,
-            // zentrierten) Frage-Karte vorbei, statt mit ihr zu ueberlappen.
+            // Eck-Abstand rueckt den Timer rechts an der Frage-Karte vorbei.
+            // 2026-07-13 (A1): Karte jetzt QQ_QUESTION_MAX_W=1300 (statt 1400)
+            // → 230px Gutter, Timer (196px) ueberlappt die Ecke nicht mehr.
             top: 'clamp(14px, 1.6vh, 26px)',
             left: 'clamp(14px, 1.6vh, 26px)',
             right: 'clamp(14px, 1.6vh, 26px)',

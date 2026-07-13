@@ -286,7 +286,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // 2026-05-07 (Wolf-Sidequest): pro-Draft optionales Lobby-BG-Bild — wird
   // hinter den Standard-Glow-Layer gelegt, damit das Bild dezent durchscheint
   // ohne dass die UI darunter unlesbar wird. Kein BG-URL = Standard bleibt.
-  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
+  // 2026-07-13 (Wolf Arena-Background-Set): im Arena-Modus (ohne aktiven Skin und
+  // ohne explizites Theme-BG) das neue Kolosseum-Bild als Lobby-Hintergrund.
+  const arenaLobbyBg = (s as any).largeGroupMode && !isThemed() && !s.theme?.lobbyBackgroundUrl
+    ? '/arena-bg/arena-main.webp' : undefined;
+  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl ?? arenaLobbyBg;
 
   return (
     <div style={{
@@ -322,11 +326,25 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             // hat ESC-Buehnenbild fast komplett geschluckt (Screen-Mode laesst
             // nur helle Pixel durch). Switch auf normal-Blend mit 0.7 — BG
             // wird klar sichtbar, Content sitzt mit eigenem Card-BG drueber.
-            opacity: 0.7,
+            // Arena-Bild darf klarer durchscheinen (eigene Kunst) als das
+            // ESC-Buehnenbild; der Scrim unten sichert den Textkontrast.
+            opacity: arenaLobbyBg ? 0.92 : 0.7,
             pointerEvents: 'none',
             zIndex: 0,
           }}
         />
+      )}
+      {/* 2026-07-13 (Wolf Arena-BG, color-contrast): Scrim zwischen Kolosseum und
+          Inhalt. Dunkelt Ober-/Unterband (Wortmarke + untere Zeilen) + eine
+          Vignette, Mitte bleibt hell → Kunst sichtbar, Text lesbar. Nur Arena. */}
+      {arenaLobbyBg && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+          background:
+            'linear-gradient(180deg, rgba(8,6,16,0.58) 0%, rgba(8,6,16,0.10) 24%, ' +
+            'rgba(8,6,16,0.10) 66%, rgba(8,6,16,0.62) 100%), ' +
+            'radial-gradient(ellipse at 50% 44%, transparent 38%, rgba(8,6,16,0.42) 100%)',
+        }} />
       )}
       <Fireflies />
       {s.theme?.eurovisionMode && <EurovisionHearts />}

@@ -18,3 +18,6 @@ backend/.qq-rooms/
 frontend/public/**/*.zip
 # Lokale Roh-Quell-Assets (Zip-Lieferungen etc.) — nicht committen, nicht bauen
 _source-assets/
+# Wolfs Arena-Background-Rohlieferung (68MB PNG) — die komprimierten WebP liegen
+# in frontend/public/arena-bg/, die Originale bleiben nur lokal.
+frontend/public/neue background/

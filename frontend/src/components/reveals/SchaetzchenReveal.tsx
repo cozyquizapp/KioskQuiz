@@ -1,26 +1,25 @@
 /**
- * SchaetzchenReveal — "SPOTLIGHT PANEL" (Konzept C, Blank-Slate-Neubau 2026-07-12).
+ * SchaetzchenReveal — "STRAHL / MESS-BUEHNE" (Neubau 2026-07-13, Skill-getrieben).
  *
- * Weg mit dem Zahlenstrahl. Der Reveal ist jetzt eine TV-SHOW, kein Diagramm.
- * Die Fraktionen stehen als CHARAKTERE in einer Reihe auf einer Bühne (Jackbox /
- * Family Feud), jede mit einem Antwort-Paddle. Die wahre Zahl ist NICHT der Held —
- * sie ist der Aufbau (bescheidene Klapptafel oben). Der Held ist das LICHT: ein
- * Spotlight fegt die Reihe entlang und rastet auf dem Sieger ein, der Rest dimmt
- * ins Publikums-Dunkel. Man erinnert den MENSCHEN, der gewinnt, nicht die Zahl.
+ * Der Zahlenstrahl kehrt zurueck — aber als BUEHNE, nicht als Diagramm. Vorbild:
+ * warme TV-Gameshow (Jackbox / Mario Party), nicht SaaS. Die Wahrheit steigt als
+ * goldener Licht-Pfeiler auf der Mess-Schiene; die Teams/Fraktionen stehen als
+ * Kontrahenten an ihrem Tippwert (Naeher dran = groesser). Der Saal dimmt auf den
+ * Sieger, und eine PINK-BRUECKE spult sich vom Sieger zur Wahrheit auf — sie misst
+ * physisch "wie nah". So sieht man beide Infos, die ein Schaetz-Reveal braucht:
+ * DRUEBER/DRUNTER (Position) und WIE WEIT (Bruecke).
  *
- * Gebrochene Annahmen (vs. Zahlenstrahl): Nähe muss NICHT räumlich gezeigt werden ·
- * die Zahl thront NICHT · Rang wird NICHT abgelesen (die Reihe ist nach Tippwert
- * sortiert, das LICHT findet den Sieger) · kein flaches Chart, sondern eine Bühne.
- *
- * Reveal als SEQUENZ (6 Beats): Bühne steht → Zahl klappt ein → Paddles hoch →
- * Saallicht fällt + Spotlight fegt → Spotlight rastet ein + Konfetti → Callout.
- * animate-Skill (Emil Kowalski): bespoke Keyframes + rAF, reduced-motion respektiert.
- * [[project-design-system-audit-2026-07-12]]
+ * Gebaut mit den Design-Skills (impeccable critique+audit / design-taste anti-slop /
+ * ui-ux-pro-max / animate-Emil-Kowalski). Audit-gehaertet: Motion nur ueber transform
+ * (scaleY/scaleX, kein height/left-top), ease-out (Overshoot nur EIN Held-Beat),
+ * Count-up mit Hidden-Tab-Guard, reduced-motion respektiert, Wappen statt Kuerzel-Discs,
+ * Zahlenbereich pro Frage aus den Daten abgeleitet + geclamped.
+ * [[project-design-system-audit-2026-07-12]] · Marke: Gold=Wahrheit, Pink feiert.
  */
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
-import { qqMegaFactionName, qqMegaFactionSlug } from '../../../../shared/quarterQuizTypes';
+import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shared/quarterQuizTypes';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
@@ -28,7 +27,9 @@ import { QQ_COLORS } from '../../../../shared/qqColors';
 import { useActiveThemeId } from '../../qqTheme';
 
 const MINT = QQ_COLORS.green300;
-// Konfetti-Richtungen am Einrast-Moment (px).
+const GOLD = '#EAB308';          // Schaetzchen-Kategoriefarbe = die Wahrheit
+const GOLD_BRIGHT = '#FDE68A';
+// Konfetti-Richtungen am Sieger-Einrasten (px).
 const CONFETTI = [
   { dx: -60, dy: -78, r: -20 }, { dx: -22, dy: -96, r: 12 }, { dx: 20, dy: -92, r: -14 },
   { dx: 58, dy: -80, r: 22 }, { dx: -84, dy: -44, r: -8 }, { dx: 82, dy: -50, r: 16 },
@@ -63,7 +64,9 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       .sort((a, b) => a.delta - b.delta || a.submittedAt - b.submittedAt);
   }, [s.answers, s.teams, target]);
 
-  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  // In CozyArena bündeln wir pro Fraktion (avatarId = Farb-/Fraktions-Slot) auf den
+  // besten Tipp und zeigen das Wappen + Fraktionsnamen (nie 40 Sub-Teams).
+  const isMega = qqIsMega(s);
   const rankedFinal = useMemo(() => {
     if (!isMega) return ranked;
     const bestByAvatar = new Map<string, typeof ranked[number]>();
@@ -77,117 +80,160 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [ranked, isMega, lang]);
 
   const winner = rankedFinal[0] ?? null;
+  const maxDelta = useMemo(() => Math.max(1, ...rankedFinal.map(r => r.delta)), [rankedFinal]);
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   useActiveThemeId();
 
-  // Reihe nach TIPPWERT sortiert (nicht Rang) — das Licht findet den Sieger, man liest ihn nicht ab.
+  // ── Zahlenbereich pro Frage aus den Daten ableiten + Rand geben (kein fixer Chart-Bereich) ──
+  const { axisPct } = useMemo(() => {
+    const vals = rankedFinal.map(r => r.num).concat([target]);
+    let lo = Math.min(...vals), hi = Math.max(...vals);
+    if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) { lo = target - 1; hi = target + 1; }
+    const pad = (hi - lo) * 0.14 || 1;
+    lo -= pad; hi += pad;
+    const fn = (v: number) => {
+      const p = ((v - lo) / (hi - lo)) * 86 + 7;
+      return Math.max(5, Math.min(95, p)); // clamp: Ausreisser bleiben auf der Buehne
+    };
+    return { axisPct: fn };
+  }, [rankedFinal, target]);
+
+  // Reihe nach TIPPWERT sortiert (fuer die x-Position + 2-Reihen-Staffelung gegen Kollision).
   const panel = useMemo(() => [...rankedFinal].sort((a, b) => a.num - b.num), [rankedFinal]);
   const N = Math.max(1, panel.length);
-  const winIndex = winner ? panel.findIndex(p => p.teamId === winner.teamId) : -1;
-  const winX = winIndex >= 0 ? ((winIndex + 0.5) / N) * 100 : 50;
+  const tx = axisPct(target);
+  const wx = winner ? axisPct(winner.num) : 50;
+
+  // Avatare ober- UND unterhalb der Schiene (Raum nutzen + weniger Kollision):
+  // zu HOCH getippt = über der Schiene, zu NIEDRIG = darunter, getroffen = auf Höhe.
+  // Nur wenn eine Seite überläuft (>5), zweite Reihe staffeln.
+  const placed = useMemo(() => {
+    const overN = panel.filter(r => r.num > target).length;
+    const underN = panel.filter(r => r.num < target).length;
+    let oi = 0, ui = 0;
+    return panel.map(r => {
+      if (r.num === target) return { r, top: 46 };
+      if (r.num > target) { const t = overN > 5 ? 30 + (oi % 2) * 12 : 34; oi++; return { r, top: t }; }
+      const t = underN > 5 ? 60 + (ui % 2) * 13 : 62; ui++; return { r, top: t };
+    });
+  }, [panel, target]);
 
   const offWord = lang === 'en' ? 'off' : 'daneben';
   const winnerStatus = winner
-    ? (winner.delta === 0 ? { text: lang === 'en' ? 'exact' : 'getroffen', color: MINT, exact: true }
+    ? (winner.delta === 0
+      ? { text: lang === 'en' ? 'spot on' : 'getroffen', color: MINT, exact: true }
       : { text: lang === 'en' ? 'closest' : 'am nächsten', color: 'var(--qq-accent)', exact: false })
     : null;
 
-  // ── Dramaturgie (6 Beats) ──
+  // ── Dramaturgie ──
+  // 0 Kontrahenten stehen · 1 Wahrheit zündet + Count-up · 2 Saal dimmt · 3 Sieger + Brücke · 4 Callout
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const [beat, setBeat] = useState<number>(reduce ? 5 : 0);
+  const [beat, setBeat] = useState<number>(reduce ? 4 : 0);
   useEffect(() => {
     if (reduce) return;
     const sfx = !s.sfxMuted;
+    const tBooths = 300 + N * 95;
+    const tStrike = tBooths + 450;
+    const tDark = tStrike + 950;
+    const tWin = tDark + 480;
+    const tCall = tWin + 260;
     const ts: ReturnType<typeof setTimeout>[] = [
-      setTimeout(() => setBeat(1), 500),   // Zahl klappt ein
-      setTimeout(() => setBeat(2), 1300),  // Paddles hoch
-      setTimeout(() => setBeat(3), 2400),  // Saallicht fällt, Spotlight fegt
-      setTimeout(() => setBeat(4), 3400),  // Spotlight rastet ein
-      setTimeout(() => setBeat(5), 3900),  // Callout
+      setTimeout(() => setBeat(1), tStrike),
+      setTimeout(() => setBeat(2), tDark),
+      setTimeout(() => setBeat(3), tWin),
+      setTimeout(() => setBeat(4), tCall),
     ];
     if (sfx) {
-      // Paddles klappen hoch: aufsteigende Kaskade.
-      panel.forEach((_, i) => {
-        ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 1300 + i * 90));
-      });
-      // Spotlight rastet auf dem Sieger ein: Climax.
-      ts.push(setTimeout(() => { try { playClimaxFinish(); } catch {} }, 3400));
+      panel.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 300 + i * 95)); });
+      ts.push(setTimeout(() => { try { playClimaxFinish(); } catch {} }, tWin));
     }
     return () => ts.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const answerStr = fmt(target);
-  const answerChars = answerStr.split('');
-  const lit = beat >= 4;         // Sieger ist beleuchtet (Held)
-  const housedark = beat >= 3;   // Saallicht ist gefallen
+  // Count-up der Held-Zahl (Audit: rAF pausiert im Hintergrund-Tab → dann direkt setzen).
+  const [shown, setShown] = useState<number>(reduce ? target : 0);
+  const doCount = !isYearUnit; // Jahres-Antworten nicht hochzählen (0→1949 wirkt seltsam)
+  const rafRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (beat < 1) return;
+    if (reduce || !doCount || (typeof document !== 'undefined' && document.hidden)) { setShown(target); return; }
+    const start = performance.now(); const dur = 900;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      setShown(target * e);
+      if (p < 1) rafRef.current = requestAnimationFrame(tick); else setShown(target);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [beat, target, reduce, doCount]);
+
+  const struck = beat >= 1;
+  const housedark = beat >= 2;
+  const lit = beat >= 3;
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      padding: 'clamp(16px, 2.2cqh, 30px) clamp(24px, 3.4cqw, 56px) clamp(10px, 1.4cqh, 20px)',
+      padding: 'clamp(14px, 2cqh, 26px) clamp(20px, 3cqw, 52px) clamp(10px, 1.4cqh, 20px)',
       animation: 'contentReveal 0.5s var(--qq-enter) both',
       minHeight: 0, position: 'relative', overflow: 'hidden',
     }}>
       <style>{`
-        @keyframes qqFlap{0%{transform:rotateX(-92deg);opacity:0}55%{transform:rotateX(12deg);opacity:1}100%{transform:rotateX(0);opacity:1}}
-        @keyframes qqPaddle{0%{transform:rotateX(88deg) translateY(10px);opacity:0}60%{transform:rotateX(-8deg);opacity:1}100%{transform:rotateX(0);opacity:1}}
-        @keyframes qqRaise{0%{transform:translate(-50%,26px);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
-        @keyframes qqWinLift{0%{transform:translateY(0) scale(1)}55%{transform:translateY(-4%) scale(1.16)}100%{transform:translateY(-3%) scale(1.12)}}
-        @keyframes qqConfetti{0%{transform:translate(-50%,-50%) scale(.4) rotate(0);opacity:0}22%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1) rotate(var(--r));opacity:0}}
-        @keyframes qqHunt{0%{transform:translateX(-46cqw)}38%{transform:translateX(34cqw)}64%{transform:translateX(-18cqw)}84%{transform:translateX(9cqw)}100%{transform:translateX(0)}}
-        @keyframes qqCalloutIn{0%{transform:translate(-50%,10px);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
+        @keyframes qqStrRaise{0%{transform:translate(-50%,26px);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
+        @keyframes qqStrStrike{0%{transform:translateX(-50%) scale(1.06)}100%{transform:translateX(-50%) scale(1)}}
+        @keyframes qqStrConfetti{0%{transform:translate(-50%,-50%) scale(.4) rotate(0);opacity:0}22%{opacity:1}100%{transform:translate(calc(-50% + var(--dx)),calc(-50% + var(--dy))) scale(1) rotate(var(--r));opacity:0}}
+        @keyframes qqStrSweep{0%{transform:translateX(-60%);opacity:0}22%{opacity:1}100%{transform:translateX(60%);opacity:0}}
+        @keyframes qqStrCallout{0%{transform:translate(-50%,10px);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
       `}</style>
 
-      {/* ── Kopf: Eyebrow + Frage (kompakt, oben links) ── */}
-      <div style={{ flexShrink: 0, position: 'relative', zIndex: 4, maxWidth: '58%' }}>
+      {/* ── Kopf: Eyebrow + Frage (kompakt oben, Kontext — die Antwort ist der Held) ── */}
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 6 }}>
         <div style={{
-          fontSize: 'clamp(12px, 1.1cqw, 17px)', fontWeight: 900, color: 'var(--qq-accent)',
-          letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 'clamp(4px, 0.6cqh, 9px)',
+          fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)',
+          letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 'clamp(3px, 0.5cqh, 7px)',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
           <QQEmojiIcon emoji="🎯" /> {lang === 'en' ? 'Guess It · Reveal' : 'Schätzchen · Auflösung'}
         </div>
         <div key={lang} style={{
-          fontSize: qText.length > 110 ? 'clamp(19px, 2.0cqw, 33px)' : 'clamp(22px, 2.4cqw, 40px)',
-          fontWeight: 900, lineHeight: 1.1, letterSpacing: '-0.01em', color: 'var(--qq-card-text)',
+          fontSize: qText.length > 90 ? 'clamp(16px, 1.7cqw, 27px)' : 'clamp(18px, 2cqw, 32px)',
+          fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.01em', color: 'var(--qq-card-text)',
+          maxWidth: '82%', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           animation: 'langFadeIn 0.4s ease both',
         }}>{qText}</div>
       </div>
 
-      {/* ── Klapptafel: die wahre Zahl (Aufbau, nicht der Held) ── */}
-      <div style={{
-        flexShrink: 0, display: 'flex', justifyContent: 'center', alignItems: 'baseline', gap: 'clamp(6px,0.7cqw,10px)',
-        marginTop: 'clamp(6px,0.9cqh,14px)', position: 'relative', zIndex: 4,
-        perspective: '600px',
+      {/* ── Held: die aufleuchtende Antwort-Tafel (oben-mittig) ── */}
+      <div aria-hidden style={{
+        position: 'absolute', left: '50%', top: 'clamp(21%, 24cqh, 27%)', transform: 'translateX(-50%)',
+        zIndex: 7, display: 'flex', flexDirection: 'column', alignItems: 'center',
+        opacity: struck ? 1 : 0, transition: 'opacity 0.35s var(--qq-enter)',
       }}>
         <span style={{
-          fontSize: 'clamp(11px, 1cqw, 15px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-          letterSpacing: '0.2em', textTransform: 'uppercase', alignSelf: 'center', marginRight: 'clamp(4px,0.6cqw,10px)',
-          opacity: beat >= 1 ? 1 : 0, transition: 'opacity 0.4s',
+          fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 800, color: 'var(--qq-text-muted)',
+          letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4,
         }}>{lang === 'en' ? 'Answer' : 'Antwort'}</span>
-        {answerChars.map((ch, i) => (
-          <span key={i} style={{
-            fontFamily: 'var(--font-display)', fontSize: 'clamp(30px, 3.6cqw, 66px)', fontWeight: 700,
-            lineHeight: 1, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
-            padding: /[0-9]/.test(ch) ? 'clamp(3px,0.5cqh,7px) clamp(6px,0.7cqw,11px)' : 0,
-            borderRadius: 8,
-            background: /[0-9]/.test(ch) ? 'linear-gradient(180deg, rgba(255,255,255,0.10), rgba(0,0,0,0.28))' : 'transparent',
-            boxShadow: /[0-9]/.test(ch) ? 'inset 0 1px 0 rgba(255,255,255,0.14), inset 0 -1px 0 rgba(0,0,0,0.4)' : 'none',
-            transformOrigin: 'center', transformStyle: 'preserve-3d',
-            opacity: beat >= 1 ? 1 : 0,
-            animation: beat >= 1 && !reduce ? `qqFlap 0.5s var(--qq-celebrate) ${i * 0.09}s both` : 'none',
-          }}>{ch}</span>
-        ))}
-        {unitStr && (
+        <div style={{
+          display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.4cqw,7px)',
+          padding: 'clamp(6px,0.9cqh,13px) clamp(14px,1.6cqw,26px)', borderRadius: 16,
+          background: 'linear-gradient(180deg, rgba(30,24,58,0.92), rgba(10,8,24,0.92))',
+          boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 48px 9px ${GOLD}66, inset 0 1px 0 rgba(255,255,255,0.10)`,
+          animation: struck && !reduce ? 'qqStrStrike 0.5s var(--qq-celebrate) both' : 'none',
+        }}>
           <span style={{
-            fontSize: 'clamp(13px, 1.4cqw, 24px)', fontWeight: 800, color: 'var(--qq-text-muted)', alignSelf: 'center',
-            opacity: beat >= 1 ? 1 : 0, transition: 'opacity 0.4s 0.3s',
-          }}>{unitStr}</span>
-        )}
+            fontFamily: 'var(--font-display)', fontSize: 'clamp(34px, 6.2cqw, 104px)', fontWeight: 700,
+            lineHeight: 0.92, color: GOLD_BRIGHT, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
+            textShadow: `0 0 28px ${GOLD}8c`,
+          }}>{fmt(shown)}</span>
+          {unitStr && (
+            <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 800, color: GOLD }}>{unitStr}</span>
+          )}
+        </div>
       </div>
 
-      {/* ── Bühne: die Panel-Reihe der Charaktere ── */}
+      {/* ── Mess-Bühne ── */}
       <div style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
         {panel.length === 0 ? (
           <div style={{
@@ -196,110 +242,117 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           }}>{lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}</div>
         ) : (
           <>
-            {/* Bühnenboden (warme Kante) */}
+            {/* Licht-Sweep quer über die Bühne beim Zünden der Wahrheit */}
             <div aria-hidden style={{
-              position: 'absolute', left: '-6%', right: '-6%', bottom: '6%', height: 3, borderRadius: 3,
-              background: 'linear-gradient(90deg, transparent, rgba(255,214,150,0.35), rgba(var(--qq-accent-rgb),0.28), rgba(255,214,150,0.35), transparent)',
-            }} />
-            <div aria-hidden style={{
-              position: 'absolute', left: 0, right: 0, bottom: 0, height: '14%', pointerEvents: 'none',
-              background: 'linear-gradient(180deg, transparent, rgba(0,0,0,0.30))',
+              position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none',
+              background: 'linear-gradient(105deg, transparent 38%, rgba(255,244,214,0.14) 50%, transparent 62%)',
+              animation: struck && !reduce ? 'qqStrSweep 0.9s var(--qq-enter) both' : 'none', opacity: 0,
             }} />
 
-            {/* Saallicht fällt: Publikums-Dunkel legt sich über die Bühne */}
+            {/* Mess-Schiene (Bühnenboden, warm) — Trennlinie zwischen "zu hoch" und "zu niedrig" */}
             <div aria-hidden style={{
-              position: 'absolute', inset: '-10%', pointerEvents: 'none', zIndex: 3,
-              background: 'radial-gradient(120% 90% at 50% 62%, transparent 30%, rgba(6,4,14,0.72) 100%)',
+              position: 'absolute', left: '4%', right: '4%', top: '57%', height: 5, borderRadius: 5, zIndex: 2,
+              background: `linear-gradient(90deg, transparent, ${GOLD}4d 12%, rgba(255,244,214,0.55) 50%, ${GOLD}4d 88%, transparent)`,
+              boxShadow: `0 0 22px ${GOLD}40`,
+            }} />
+
+            {/* Wahrheits-Beam: goldene Licht-Säule über die volle Höhe an der Wahrheit (wächst per scaleY) */}
+            <div aria-hidden style={{
+              position: 'absolute', left: `${tx}%`, top: '30%', height: '60%', width: 'clamp(5px,0.8cqw,13px)', zIndex: 3,
+              transform: `translateX(-50%) scaleY(${struck ? 1 : 0})`, transformOrigin: 'center',
+              borderRadius: 10,
+              background: `linear-gradient(180deg, ${GOLD}1f, ${GOLD_BRIGHT} 28%, ${GOLD_BRIGHT} 72%, ${GOLD}1f)`,
+              boxShadow: `0 0 40px 7px ${GOLD}80`,
+              transition: reduce ? 'none' : 'transform 0.7s var(--qq-celebrate)',
+            }} />
+
+            {/* Saallicht fällt (Publikums-Dunkel legt sich über die Bühne) */}
+            <div aria-hidden style={{
+              position: 'absolute', inset: '-10%', pointerEvents: 'none', zIndex: 4,
+              background: 'radial-gradient(120% 90% at 50% 60%, transparent 34%, rgba(6,4,14,0.70) 100%)',
               opacity: housedark ? 1 : 0, transition: 'opacity 0.7s var(--qq-enter)',
             }} />
 
-            {/* Spotlight: fegt die Reihe entlang und rastet auf dem Sieger ein */}
-            {housedark && winner && (
+            {/* Pink-Brücke: spult vom Sieger zur Wahrheit auf = "wie nah" */}
+            {winner && winner.delta > 0 && (
               <div aria-hidden style={{
-                position: 'absolute', left: `${winX}%`, top: '50%', width: '30cqw', height: '116%',
-                transform: 'translate(-50%,-50%)', zIndex: 3, pointerEvents: 'none',
-                background: `radial-gradient(46% 50% at 50% 42%, ${winnerStatus?.exact ? 'rgba(59,224,165,0.34)' : 'rgba(255,244,222,0.34)'}, rgba(255,240,215,0.10) 55%, transparent 72%)`,
-                animation: !reduce ? 'qqHunt 1s var(--qq-enter) both' : 'none',
-                mixBlendMode: 'screen',
+                position: 'absolute', top: '57%', zIndex: 4, height: 5, borderRadius: 5,
+                left: `${Math.min(wx, tx)}%`, width: `${Math.abs(tx - wx)}%`,
+                transform: `translateY(-50%) scaleX(${lit ? 1 : 0})`,
+                transformOrigin: wx <= tx ? 'left center' : 'right center',
+                background: 'linear-gradient(90deg, var(--qq-accent), rgba(var(--qq-accent-rgb),0.25))',
+                boxShadow: '0 0 16px rgba(var(--qq-accent-rgb),0.6)',
+                transition: reduce ? 'none' : 'transform 0.55s var(--qq-celebrate)',
               }} />
             )}
 
-            {/* Die Charaktere (absolut positioniert = Spotlight rastet exakt) */}
-            {panel.map((r, i) => {
+            {/* Kontrahenten an ihrem Tippwert — über der Schiene = zu hoch, darunter = zu niedrig */}
+            {placed.map(({ r, top }, i) => {
               const isWin = r.teamId === winner?.teamId;
               const dim = housedark && !(isWin && lit);
-              const crest = 'clamp(52px, 5.8cqw, 108px)';
+              const prox = 1 - 0.32 * (r.delta / maxDelta); // Näher dran = größer (Sichtbarkeit)
+              const crest = 'clamp(44px, 5cqw, 90px)';
               return (
                 <div key={r.teamId} style={{
-                  position: 'absolute', left: `${((i + 0.5) / N) * 100}%`, bottom: '9%',
-                  width: `${88 / N}cqw`, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                  transform: 'translateX(-50%)', zIndex: isWin && lit ? 5 : 2,
-                  opacity: beat >= 0 ? 1 : 0,
-                  animation: beat >= 0 && !reduce ? `qqRaise 0.5s var(--qq-celebrate) ${i * 0.05}s both` : 'none',
+                  position: 'absolute', left: `${axisPct(r.num)}%`, top: `${top}%`,
+                  width: `${84 / N}cqw`, minWidth: 'clamp(54px,7cqw,116px)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  transform: 'translate(-50%, 0)', zIndex: isWin && lit ? 8 : 3,
+                  animation: !reduce ? `qqStrRaise 0.5s var(--qq-celebrate) ${0.3 + i * 0.06}s both` : 'none',
                 }}>
-                  {/* Fußlicht-Glow unter dem Charakter */}
-                  <div aria-hidden style={{
-                    position: 'absolute', bottom: '-6%', left: '50%', transform: 'translateX(-50%)',
-                    width: '90%', height: 'clamp(12px,1.6cqh,26px)', borderRadius: '50%',
-                    background: `radial-gradient(50% 100% at 50% 100%, ${isWin && lit ? (winnerStatus?.exact ? MINT : r.team.color) : r.team.color}${isWin && lit ? '88' : '33'}, transparent 70%)`,
-                    filter: 'blur(3px)', transition: 'background 0.4s',
-                  }} />
-
-                  {/* Charakter-Wrapper (Sieger hebt + skaliert beim Einrasten) */}
+                  {/* Innerer Wrapper: Nähe-Skalierung + Sieger-Hebung, ohne Positions-Transform zu stören */}
                   <div style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px,0.6cqh,9px)',
-                    transformOrigin: 'center bottom',
-                    filter: dim ? 'brightness(0.32) saturate(0.7)' : 'none',
-                    transition: 'filter 0.5s var(--qq-enter)',
-                    animation: isWin && lit && !reduce ? 'qqWinLift 0.6s var(--qq-celebrate) both' : 'none',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(3px,0.5cqh,8px)',
+                    transformOrigin: 'center top',
+                    transform: `scale(${isWin && lit ? prox * 1.14 : prox})`,
+                    filter: dim ? 'brightness(0.34) saturate(0.7)' : 'none',
+                    transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
                   }}>
+                    {/* Fußlicht-Glow */}
+                    <div aria-hidden style={{
+                      position: 'absolute', top: '-6%', left: '50%', transform: 'translateX(-50%)',
+                      width: '112%', height: 'clamp(10px,1.4cqh,22px)', borderRadius: '50%', filter: 'blur(4px)',
+                      background: `radial-gradient(50% 100% at 50% 50%, ${isWin && lit ? (winnerStatus?.exact ? MINT : 'var(--qq-accent)') : r.team.color}${isWin && lit ? 'aa' : '44'}, transparent 72%)`,
+                      transition: 'background 0.4s',
+                    }} />
                     <div style={{
                       borderRadius: '50%',
                       boxShadow: isWin && lit
-                        ? `0 0 44px ${winnerStatus?.exact ? MINT : r.team.color}, 0 8px 22px rgba(0,0,0,0.45)`
-                        : `0 0 14px ${r.team.color}66`,
+                        ? `0 0 42px ${winnerStatus?.exact ? MINT : 'var(--qq-accent)'}, 0 8px 22px rgba(0,0,0,0.45)`
+                        : `0 0 14px ${r.team.color}55`,
                       transition: 'box-shadow 0.4s',
                     }}>
                       <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={crest} />
                     </div>
                     <span style={{
-                      fontFamily: 'var(--font-display)',
-                      fontSize: isWin ? 'clamp(13px, 1.4cqw, 22px)' : 'clamp(11px, 1.15cqw, 17px)',
+                      fontFamily: 'var(--font-display)', fontSize: 'clamp(11px, 1.15cqw, 17px)',
                       fontWeight: 700, color: 'var(--qq-card-text)', whiteSpace: 'nowrap',
-                      maxWidth: `${86 / N}cqw`, overflow: 'hidden', textOverflow: 'ellipsis',
+                      maxWidth: `${88 / N}cqw`, overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{r.team.name}</span>
-
-                    {/* Antwort-Paddle (klappt bei Beat 2 hoch) */}
+                    {/* Tipp-Paddle */}
                     <div style={{
-                      perspective: '400px',
-                      opacity: beat >= 2 ? 1 : 0,
+                      display: 'inline-flex', alignItems: 'baseline',
+                      padding: 'clamp(2px,0.4cqh,5px) clamp(7px,0.8cqw,13px)', borderRadius: 'var(--qq-pill-radius)',
+                      background: isWin && lit ? 'rgba(var(--qq-accent-rgb),0.24)' : 'rgba(12,10,30,0.66)',
+                      border: `1.5px solid ${isWin && lit ? 'var(--qq-accent)' : 'rgba(255,255,255,0.14)'}`,
+                      transition: 'background 0.4s, border-color 0.4s',
                     }}>
-                      <div style={{
-                        display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(2px,0.3cqw,5px)',
-                        padding: 'clamp(4px,0.6cqh,8px) clamp(8px,0.9cqw,14px)', borderRadius: 'var(--qq-pill-radius)',
-                        background: 'linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.30))',
-                        border: `1.5px solid ${isWin && lit ? (winnerStatus?.exact ? 'rgba(59,224,165,0.6)' : 'rgba(var(--qq-accent-rgb),0.55)') : 'rgba(255,255,255,0.14)'}`,
-                        transformOrigin: 'center bottom', transformStyle: 'preserve-3d',
-                        animation: beat >= 2 && !reduce ? `qqPaddle 0.5s var(--qq-celebrate) ${i * 0.09}s both` : 'none',
-                        transition: 'border-color 0.4s',
-                      }}>
-                        <span style={{
-                          fontFamily: 'var(--font-display)', fontSize: isWin ? 'clamp(18px, 2cqw, 34px)' : 'clamp(15px, 1.6cqw, 27px)',
-                          fontWeight: 700, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
-                        }}>{fmt(r.num)}</span>
-                      </div>
+                      <span style={{
+                        fontFamily: 'var(--font-display)', fontSize: 'clamp(14px, 1.55cqw, 25px)',
+                        fontWeight: 700, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
+                      }}>{fmt(r.num)}</span>
                     </div>
                   </div>
 
-                  {/* Konfetti am Sieger beim Einrasten */}
+                  {/* Konfetti am Sieger */}
                   {isWin && lit && !reduce && (
-                    <div aria-hidden style={{ position: 'absolute', top: '30%', left: '50%', zIndex: 6, pointerEvents: 'none' }}>
+                    <div aria-hidden style={{ position: 'absolute', top: '18%', left: '50%', zIndex: 9, pointerEvents: 'none' }}>
                       {CONFETTI.map((c, ci) => (
                         <span key={ci} style={{
                           position: 'absolute', left: 0, top: 0, width: 9, height: 12, borderRadius: 2,
                           ['--dx' as any]: `${c.dx}px`, ['--dy' as any]: `${c.dy}px`, ['--r' as any]: `${c.r * 18}deg`,
                           background: ci % 2 === 0 ? (winnerStatus?.exact ? MINT : r.team.color) : 'var(--qq-accent)',
-                          animation: `qqConfetti 0.85s var(--qq-enter) ${ci * 0.02}s both`,
+                          animation: `qqStrConfetti 0.85s var(--qq-enter) ${ci * 0.02}s both`,
                         }} />
                       ))}
                     </div>
@@ -308,22 +361,22 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               );
             })}
 
-            {/* Sieger-Callout (unter der Bühne, erscheint beim Einrasten) */}
+            {/* Sieger-Callout (Verdikt-Banner unten mittig — immer lesbar, kollidiert nicht) */}
             {winner && winnerStatus && (
               <div style={{
-                position: 'absolute', left: `${winX}%`, bottom: '-1%', transform: 'translateX(-50%)',
-                display: 'flex', alignItems: 'center', gap: 'clamp(8px,0.9cqw,14px)', zIndex: 6, whiteSpace: 'nowrap',
+                position: 'absolute', left: '50%', bottom: 'clamp(1%,1cqh,3%)', transform: 'translateX(-50%)',
+                display: 'flex', alignItems: 'center', gap: 'clamp(7px,0.8cqw,12px)', zIndex: 9, whiteSpace: 'nowrap',
                 opacity: lit ? 1 : 0,
-                animation: lit && !reduce ? 'qqCalloutIn 0.5s var(--qq-enter) 0.1s both' : 'none',
+                animation: lit && !reduce ? 'qqStrCallout 0.5s var(--qq-enter) 0.1s both' : 'none',
               }}>
                 <span style={{
-                  fontFamily: 'var(--font-display)', fontSize: 'clamp(20px, 2.3cqw, 40px)', fontWeight: 700,
+                  fontFamily: 'var(--font-display)', fontSize: 'clamp(16px, 1.9cqw, 32px)', fontWeight: 700,
                   color: 'var(--qq-card-text)', textShadow: `0 0 22px ${(winnerStatus.exact ? MINT : winner.team.color)}66`,
                 }}>{winner.team.name}</span>
                 <span style={{
-                  fontFamily: 'var(--font-display)', fontSize: 'clamp(14px, 1.5cqw, 24px)', fontWeight: 700,
+                  fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 1.35cqw, 22px)', fontWeight: 700,
                   color: winnerStatus.color,
-                  padding: 'clamp(3px,0.5cqh,6px) clamp(11px,1.2cqw,17px)', borderRadius: 'var(--qq-pill-radius)',
+                  padding: 'clamp(3px,0.5cqh,6px) clamp(10px,1.1cqw,16px)', borderRadius: 'var(--qq-pill-radius)',
                   background: winnerStatus.exact ? 'rgba(59,224,165,0.20)' : 'rgba(var(--qq-accent-rgb),0.18)',
                   border: `1.5px solid ${winnerStatus.exact ? 'rgba(59,224,165,0.55)' : 'rgba(var(--qq-accent-rgb),0.5)'}`,
                 }}>{winnerStatus.exact ? '✨ ' : ''}{winnerStatus.text}{winner.delta > 0 ? ` · ${fmt(winner.delta)} ${offWord}` : ''}</span>

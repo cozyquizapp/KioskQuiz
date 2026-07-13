@@ -745,6 +745,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
   /** 2026-05-12 (Lobby-Audit P0 #3): Toast wenn Auto-Switch passierte. */
   autoSwitchToast?: string | null;
 }) {
+  // 2026-07-13 (Wolf Arena-Mobile-BG): im Arena-Modus zeigt das Handy die Welt
+  // der GERADE gewählten Fraktion (avatarId → Slug, matcht faction-<slug>.webp).
+  // Weil avatarId sich beim Wählen/Swipen ändert, ist das automatisch die Live-
+  // Vorschau der Fraktionswahl → ein separater neutraler Auswahl-BG ist unnötig.
+  const arenaFactionBg = largeGroup && !eurovisionMode
+    ? `/arena-bg/faction-${qqMegaFactionSlug(avatarId)}.webp` : null;
   const [stammInput, setStammInput] = useState('');
   const [stammExpanded, setStammExpanded] = useState(false);
   // Mega Event: kein Name-Schritt — Name automatisch = Faktions-Name (die
@@ -838,6 +844,25 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           pointerEvents: 'none',
           zIndex: 0,
         }} />
+      )}
+      {/* Arena-Mobile-BG: Welt der gewählten Fraktion (Live-Vorschau bei der Wahl).
+          Crossfade beim Fraktionswechsel via key-Remount + Fade-In. Scrim sichert
+          Text-/Button-Kontrast (color-contrast). */}
+      {arenaFactionBg && (
+        <>
+          <div key={arenaFactionBg} aria-hidden style={{
+            position: 'fixed', inset: 0,
+            backgroundImage: `url(${arenaFactionBg})`,
+            backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+            opacity: 0.44, pointerEvents: 'none', zIndex: 0,
+            animation: 'qqFactionBgFade 0.5s ease both',
+          }} />
+          <div aria-hidden style={{
+            position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+            background: 'linear-gradient(180deg, rgba(8,6,16,0.5) 0%, rgba(8,6,16,0.18) 28%, ' +
+              'rgba(8,6,16,0.3) 62%, rgba(8,6,16,0.72) 100%)',
+          }} />
+        </>
       )}
       {eurovisionMode && <MobileEurovisionHearts />}
       <div style={grainOverlay} />

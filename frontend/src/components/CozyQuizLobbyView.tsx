@@ -277,7 +277,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   }, [nested, s.teams, de]);
 
   // QR size responsive to viewport height (avoid clipping on laptops)
-  const qrSize = 'min(44cqh, 420px)';
+  // Arena/viele Teams: linke Spalte traegt eine Extra-Pill ("Ein Handy pro Gruppe")
+  // + CozyWolf-Branding und der grosse COZYARENA-Header frisst oben Hoehe → das
+  // fixe 420px-QR liess die unterste Pill unten aus overflow:hidden rausclippen.
+  // Kleineres QR im nested/veryMany-Modus, damit die ganze Spalte reinpasst.
+  const qrSize = (nested || veryMany) ? 'min(34cqh, 340px)' : 'min(44cqh, 420px)';
 
   // 2026-05-07 (Wolf-Sidequest): pro-Draft optionales Lobby-BG-Bild — wird
   // hinter den Standard-Glow-Layer gelegt, damit das Bild dezent durchscheint

@@ -47,8 +47,10 @@ const KEYFRAMES = `
 function qqFinaleMult(state: QQStateUpdate): 1 | 2 | 3 {
   const qpp = QQ_QUESTIONS_PER_PHASE;
   const qi = state.questionIndex ?? 0;
-  const phaseOfQ = Math.floor(qi / qpp) + 1;
-  if (phaseOfQ !== state.totalPhases) return 1;
+  // gamePhaseIndex = AUTORITATIVE aktuelle Runde (Backend, qqRooms:2518). Vorher
+  // wurde die Runde aus questionIndex/5 re-abgeleitet → bei !=5 Fragen pro Runde
+  // (Wolf: 2-Runden-Draft) falsche Runde → Finale-×2/×3-Banner zuendete nie.
+  if (((state as any).gamePhaseIndex ?? 1) !== (state.totalPhases ?? 3)) return 1;
   return (qi % qpp) === (qpp - 1) ? 3 : 2;
 }
 

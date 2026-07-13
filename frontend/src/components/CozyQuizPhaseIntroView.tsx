@@ -330,7 +330,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // 2026-07-02 (Wolf Mega): kein Grid → Mission-Subtitle nicht „Erobert das
   // Spielfeld!"/„Klaut Felder!" (jede Runde), sondern grid-freie Punkte-Ansage.
   const phaseDesc = (s as any).largeGroupMode
-    ? (lang === 'de' ? 'Sammelt Punkte für euer Team!' : 'Score points for your team!')
+    ? (lang === 'de' ? 'Kämpft euch die Rangliste hoch!' : 'Climb the ranks!')
     : phaseDescsRaw[s.gamePhaseIndex];
 
   const questionInPhase = (s.questionIndex % 5) + 1;
@@ -510,9 +510,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // Einfache, einheitliche Punkte-Ansage für alle Runden.
     ? {
         emoji: '⚡',
-        de: ['Sammelt Punkte für euer Team!',
+        de: ['Kämpft euch die Rangliste hoch!',
              'Je mehr richtig und je schneller, desto mehr Punkte!'],
-        en: ['Score points for your team!',
+        en: ['Climb the ranks!',
              'The more correct and the faster, the more points!'],
       }
     : (s.totalPhases === 2 && s.gamePhaseIndex === 2)

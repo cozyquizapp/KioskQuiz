@@ -90,6 +90,14 @@ export function truncName(name: string, max = 28): string {
  *  unterschiedlich lange Texte sind und der Container bei jedem Wechsel
  *  resized. 12s gibt mehr Lese-Zeit pro Sprache und reduziert die Frequenz
  *  der Layout-Shifts entsprechend. */
+// Beamer-Mega-Flag: im Arena-Modus (qqIsMega) soll der Beamer durchgaengig EN
+// laufen. Frueher rutschte bei serverLang 'both' (Default) die DE-Haelfte des
+// 12s-Flips durch (z.B. "Umfrage" statt "Survey"). QQBeamerPage setzt dieses Flag
+// pro Render via setBeamerMega(qqIsMega(state)); useLangFlip erzwingt dann EN —
+// aber nur beim 'both'-Auto-Flip, eine explizite de/en-Wahl bleibt respektiert.
+let _beamerMega = false;
+export function setBeamerMega(v: boolean): void { _beamerMega = v; }
+
 export function useLangFlip(serverLang: string): 'de' | 'en' {
   const [flip, setFlip] = useState(false);
   useEffect(() => {
@@ -103,6 +111,7 @@ export function useLangFlip(serverLang: string): 'de' | 'en' {
   }, [serverLang]);
   if (serverLang === 'de') return 'de';
   if (serverLang === 'en') return 'en';
+  if (_beamerMega) return 'en'; // Arena-Beamer bleibt EN statt DE/EN zu flippen
   return flip ? 'en' : 'de';
 }
 

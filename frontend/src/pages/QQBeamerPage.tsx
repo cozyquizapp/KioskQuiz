@@ -141,7 +141,7 @@ import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 // Vorher inline in dieser Datei (~200 Zeilen). Jetzt zentral fuer extrahierte
 // Sub-Components (CozyQuizActionCard, CozyQuizQuestionView, ...).
 import {
-  truncName, useLangFlip, bt, actionVerb, actionDesc,
+  truncName, useLangFlip, setBeamerMega, bt, actionVerb, actionDesc,
   imgAnim, imgFilter, formatRevealedAnswer,
   CAT_BG, CAT_GLOW, CAT_CUTOUTS,
   COZY_CARD_BG as _COZY_CARD_BG_SHARED,
@@ -849,6 +849,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   }, [s.phase, s.gamePhaseIndex]);
   // Atomic: entweder frozen-Snapshot (während Countdown) oder live-State.
   const renderState: QQStateUpdate = getReady ? getReady.frozenState : s;
+  // Arena-Beamer durchgaengig EN: setzt das Modul-Flag fuer useLangFlip, damit
+  // im Mega-Modus kein DE/EN-Flip mehr durchrutscht (z.B. "Umfrage" statt "Survey").
+  setBeamerMega(qqIsMega(renderState));
 
   // ── Sound: sync volume & config from server state ──
   // Volume only applies to SFX (music has its own volume handling)

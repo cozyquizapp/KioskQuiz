@@ -459,11 +459,20 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div style={{
           display: 'grid',
           gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
+          // Spalten-weise fuellen (Platz 1-4 links runter, 5-8 rechts) statt zeilenweise
+          // (Platz 1 links-oben, 2 rechts-oben) — konsistent zu den anderen Standings.
+          gridAutoFlow: twoCol ? 'column' : 'row',
+          gridTemplateRows: twoCol ? `repeat(${Math.ceil(sortedTeams.length / 2)}, auto)` : undefined,
           columnGap: 32, rowGap: 0,
         }}>
           {sortedTeams.map((t, i) => {
-            // Border-bottom nur wenn es innerhalb der Spalte noch einen Nachfolger gibt
-            const nextInCol = twoCol ? (i + 2 < sortedTeams.length) : (i < sortedTeams.length - 1);
+            // Border-bottom nur wenn es innerhalb der Spalte noch einen Nachfolger gibt.
+            // Spalten-major: Nachfolger unten existiert, ausser am Fuss von Spalte 1
+            // (i == rows-1) oder Spalte 2 (i == letzter Index).
+            const colRows = Math.ceil(sortedTeams.length / 2);
+            const nextInCol = twoCol
+              ? (i !== colRows - 1 && i !== sortedTeams.length - 1)
+              : (i < sortedTeams.length - 1);
             // Mono: Editorial-Chart (grosse Rang-Ziffer, #1 in Lime-Karte, grosse Zahl).
             if (isQuietMotion()) {
               const isFirst = i === 0;

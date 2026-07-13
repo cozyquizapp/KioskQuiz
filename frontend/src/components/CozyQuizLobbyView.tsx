@@ -628,7 +628,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       <div style={{
         flex: 1, display: 'grid',
         gridTemplateColumns: 'auto 1fr',
-        alignItems: 'center',
+        // stretch statt center: beide Spalten teilen sich die Zeilenhoehe, damit
+        // die QR-Spalte nicht kuerzer/„hoeher" als die Teams-Spalte steht
+        // (Wolf: „rechte Spalte tiefer als linke → QR-Hoehe = Tabellenhoehe angleichen").
+        alignItems: 'stretch',
         columnGap: 'clamp(24px, 3cqw, 48px)',
         position: 'relative', zIndex: 5,
         width: '100%',
@@ -637,7 +640,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       }}>
         {/* Left: QR Code */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.5cqh, 18px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.5cqh, 18px)',
           flexShrink: 0, justifySelf: 'start',
           animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
         }}>

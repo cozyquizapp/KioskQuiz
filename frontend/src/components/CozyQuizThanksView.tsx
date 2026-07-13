@@ -542,11 +542,18 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   gap: 3, lineHeight: 1.2, textAlign: 'center',
                   maxWidth: 'clamp(220px, 22cqw, 340px)',
                 }}>
+                  {/* 2026-07-13 (Skill-Review CRO): Scan-Verb ergaenzt. Vorher nur
+                      der Benefit ohne Aufforderung → QR-Aktion (scannen) war nicht
+                      angesagt. Jetzt Aktions-Zeile + Benefit-Zeile. */}
                   <div style={{
                     fontSize: 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
                     color: brand.accentHex, letterSpacing: '0.02em',
                     textShadow: `0 0 12px rgba(${brand.accentRgb},0.5)`,
-                  }}>📱 {de ? 'Feedback + auf Insta folgen' : 'Feedback + follow us on Insta'}</div>
+                  }}>📱 {de ? 'QR scannen' : 'Scan the code'}</div>
+                  <div style={{
+                    fontSize: 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
+                    color: themed ? 'var(--qq-text-muted)' : 'rgba(255,255,255,0.82)',
+                  }}>{de ? 'Feedback geben + auf Insta folgen' : 'Leave feedback + follow on Insta'}</div>
                 </div>
               </div>
             )}

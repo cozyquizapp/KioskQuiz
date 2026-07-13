@@ -790,12 +790,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     const pi = Math.max(0, (displayGpi ?? 1) - 1);
     const qi = s.questionIndex;
     if (dotCenters[qi] == null) return null;
-    const S1 = Math.min(2.3, Math.max(1.6, (camVp.w * 0.56) / (phaseWidths[pi] || camVp.w)));
     const dotSize = dotRowHeight / 1.3;
-    // gleiche dynamische vAnchor wie camWorldStyle Step 1 → FLIP startet exakt
-    // an der echten Dot-Position.
-    const wolfClearVAnchor = 0.09 + (2.1 * dotSize * S1) / camVp.h;
-    const vA = Math.min(0.44, Math.max(0.37, wolfClearVAnchor));
+    // 2026-07-13 (B2): dotScreen MUSS die Kamera-Werte von camWorldStyle Step 1
+    // exakt spiegeln, sonst startet der Kategorie-Hero-FLIP an der falschen
+    // Position. Vorher fehlten (a) der largeGroupMode-Zweig und (b) die aktuellen
+    // vAnchor-Clamps (0.42–0.5 normal / 0.52–0.6 Arena) — dotScreen hing auf den
+    // alten 0.37–0.44-Werten → im Arena flog das Kategorie-Emoji sichtbar aus dem
+    // falschen Punkt (S1 nutzte zudem die 0.56-Basis statt der Arena-0.7-Basis).
+    let S1 = Math.min(2.3, Math.max(1.6, (camVp.w * 0.56) / (phaseWidths[pi] || camVp.w)));
+    let vA = Math.min(0.5, Math.max(0.42, 0.09 + (2.1 * dotSize * S1) / camVp.h));
+    if ((s as any).largeGroupMode) {
+      S1 = Math.min(2.9, Math.max(2.1, (camVp.w * 0.7) / (phaseWidths[pi] || camVp.w)));
+      vA = Math.min(0.6, Math.max(0.52, 0.09 + (2.1 * dotSize * S1) / camVp.h));
+    }
     const sx = camVp.w / 2 + (dotCenters[qi] - (phaseCenters[pi] ?? 0)) * S1;
     const sy = camVp.h * vA;
     return { sx, sy, size: dotSize * S1 };

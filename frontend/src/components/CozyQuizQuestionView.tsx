@@ -566,17 +566,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           flexDirection: 'column', gap: 14,
           pointerEvents: 'none',
         }}>
+          {/* 2026-07-13 (Skill-Review): Nur das dekorative 📸-Ambiente-Icon. Die
+              frühere „Bild fehlt, Frage trotzdem spielbar"-Zeile stand auf der
+              Publikums-Leinwand und las sich wie ein Fehler/eine Entschuldigung —
+              ein fehlendes Bild ist eine Produktions-Lücke, kein Spielzustand, und
+              gehört nicht aufs Beamer-Bild. Frage bleibt unverändert spielbar. */}
           <div style={{
             fontSize: 'clamp(120px, 18cqw, 240px)', opacity: isThemed() ? 0.12 : 0.18,
             animation: 'cfloat 4s ease-in-out infinite',
           }}>📸</div>
-          <div style={{
-            fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-            color: isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.violet400,
-            letterSpacing: '0.1em', textTransform: 'uppercase', opacity: isThemed() ? 0.8 : 0.55,
-          }}>
-            {lang === 'de' ? 'Bild fehlt, Frage trotzdem spielbar' : 'No image, question still playable'}
-          </div>
         </div>
       )}
       {/* Fullscreen background image: non-overlay fullscreen layout OR CHEESE/Map-Picture overlay.

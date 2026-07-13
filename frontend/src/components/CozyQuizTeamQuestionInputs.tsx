@@ -172,11 +172,15 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
               display: 'flex', alignItems: 'center', gap: 0,
               borderRadius: 16, overflow: 'hidden', border: 'none', cursor: 'pointer',
               background: isSelected ? `${color}30` : 'rgba(255,255,255,0.04)',
-              boxShadow: isSelected ? `0 4px 0 ${color}55` : '0 3px 0 rgba(0,0,0,0.4)',
+              // 2026-07-13 (A11y): Selected-Ring als inset boxShadow statt inline
+              // `outline` — inline outline ueberschrieb den CSS :focus-visible-Ring,
+              // Keyboard-Fokus war unsichtbar. So bleibt outline fuer den Fokus frei.
+              boxShadow: isSelected
+                ? `0 4px 0 ${color}55, inset 0 0 0 2px ${color}`
+                : `0 3px 0 rgba(0,0,0,0.4), inset 0 0 0 1px ${color}33`,
               transform: isSelected ? 'translateY(-2px)' : 'none',
               transition: 'all 0.15s var(--qq-ease-bounce)',
               animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
-              outline: isSelected ? `2px solid ${color}` : `1px solid ${color}33`,
             }}
           >
             {/* Letter badge */}
@@ -276,7 +280,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
         const label = qqCapOption(lang === 'en' && optsEn[i] ? optsEn[i] : opt);
         const pts = bets[i];
         return (
-          <div key={i} style={{
+          <div key={i} role="group" aria-label={label} style={{
             display: 'grid', gridTemplateColumns: '1fr auto auto auto',
             alignItems: 'center', gap: 8,
             padding: '10px 14px', borderRadius: 16,
@@ -293,21 +297,24 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
               {label}
             </div>
             {/* − */}
-            <button onClick={() => updateBet(i, -1)} disabled={pts <= 0} style={{
+            <button onClick={() => updateBet(i, -1)} disabled={pts <= 0}
+              aria-label={lang === 'en' ? 'Remove point' : 'Punkt abziehen'} style={{
               width: 48, height: 48, borderRadius: 16, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
               background: pts > 0 ? `${color}18` : 'transparent', color: pts > 0 ? color : '#334155',
               cursor: pts > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
-            }}>−</button>
+            }}><span aria-hidden="true">−</span></button>
             {/* Points */}
-            <div style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#475569', fontVariantNumeric: 'tabular-nums' }}>
+            <div aria-live="polite" aria-label={`${pts} ${lang === 'en' ? 'points' : 'Punkte'}`}
+              style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#475569', fontVariantNumeric: 'tabular-nums' }}>
               {pts}
             </div>
             {/* + */}
-            <button onClick={() => updateBet(i, 1)} disabled={remaining <= 0} style={{
+            <button onClick={() => updateBet(i, 1)} disabled={remaining <= 0}
+              aria-label={lang === 'en' ? 'Add point' : 'Punkt hinzufügen'} style={{
               width: 48, height: 48, borderRadius: 16, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
               background: remaining > 0 ? `${color}18` : 'transparent', color: remaining > 0 ? color : '#334155',
               cursor: remaining > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
-            }}>+</button>
+            }}><span aria-hidden="true">+</span></button>
           </div>
         );
       })}

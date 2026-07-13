@@ -21,6 +21,16 @@ import { ACK_ERROR_EVENT, type AckErrorEventDetail } from '../utils/qqTeamAckBus
 // HelpModal — Quick-Rules-Dialog mit 5 Icon-Karten.
 // ─────────────────────────────────────────────────────────────────────────
 export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onClose: () => void; largeMode?: boolean }) {
+  // 2026-07-13 (A11y): Escape schliesst den Dialog; Fokus beim Oeffnen in den
+  // Dialog ziehen, damit Keyboard/Screenreader im Modal landen (statt hinter der
+  // Blur-Backdrop weiterzunavigieren). tabIndex=-1 macht den Container fokussierbar.
+  const dialogRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', onKey);
+    dialogRef.current?.focus();
+    return () => window.removeEventListener('keydown', onKey);
+  }, [onClose]);
   // 2026-07-03 (Wolf-Audit): CozyArena hat kein Brett/Joker/Klauen/Stapeln →
   // eigener Regel-Satz (Fraktions-Punkte, Tempo), sonst der klassische Grid-Satz.
   const arenaItems = lang === 'de' ? [
@@ -71,10 +81,14 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
         pointerEvents: 'none',
       }}>
         <div
+          ref={dialogRef}
           role="dialog"
           aria-modal="true"
+          aria-label={lang === 'de' ? 'Kurz-Regeln' : 'Quick rules'}
+          tabIndex={-1}
           style={{
             width: '100%', maxWidth: 420,
+            outline: 'none',
             padding: '22px 20px',
             borderRadius: 24,
             background: 'rgba(31, 26, 46, 0.94)',

@@ -1663,15 +1663,17 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
         {(type === 'feedback' || type === 'praise') && (
           <div>
             <Caption>{tr('fbStars', lang)}</Caption>
-            <div style={{ display: 'flex', gap: 4 }}>
+            <div style={{ display: 'flex', gap: 4 }} role="group" aria-label={tr('fbStars', lang)}>
               {[1, 2, 3, 4, 5].map(n => (
                 <button key={n} type="button" onClick={() => setRating(rating === n ? null : n)}
+                  aria-label={`${n} ${lang === 'en' ? (n === 1 ? 'star' : 'stars') : (n === 1 ? 'Stern' : 'Sterne')}`}
+                  aria-pressed={!!rating && rating >= n}
                   style={{
                     flex: 1, padding: '10px 0', borderRadius: sumPill(8),
                     background: rating && rating >= n ? QQ_COLORS.amber400 : 'var(--sum-card-2)',
                     color: rating && rating >= n ? QQ_COLORS.slate800 : 'var(--sum-muted)',
                     border: 'none', cursor: 'pointer', fontSize: 20, fontFamily: 'inherit',
-                  }}>★</button>
+                  }}><span aria-hidden="true">★</span></button>
               ))}
             </div>
           </div>
@@ -1682,6 +1684,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           <div>
             <Caption>{tr('fbSurprise', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
             <input value={surprise} onChange={e => setSurprise(e.target.value)} maxLength={500}
+              aria-label={tr('fbSurprise', lang)}
               placeholder={tr('fbSurprisePh', lang)}
               style={{
                 width: '100%', boxSizing: 'border-box',
@@ -1696,6 +1699,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
         <div>
           <Caption>{type === 'bug' ? tr('fbMainBug', lang) : type === 'idea' ? tr('fbMainIdea', lang) : tr('fbMainGen', lang)}</Caption>
           <textarea value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={2000}
+            aria-label={type === 'bug' ? tr('fbMainBug', lang) : type === 'idea' ? tr('fbMainIdea', lang) : tr('fbMainGen', lang)}
             placeholder={textPlaceholder}
             style={{
               width: '100%', boxSizing: 'border-box',
@@ -1709,6 +1713,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
         <div>
           <Caption>{tr('fbContact', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
           <input value={contact} onChange={e => setContact(e.target.value)} maxLength={200}
+            aria-label={tr('fbContact', lang)}
             placeholder={tr('fbContactPh', lang)}
             style={{
               width: '100%', boxSizing: 'border-box',
@@ -1742,7 +1747,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           )}
         </div>
 
-        {err && <div data-fb-error style={{ fontSize: 13, color: QQ_COLORS.red300, fontWeight: 700, padding: '8px 12px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: sumPill(8) }}>⚠️ {err}</div>}
+        {err && <div data-fb-error role="alert" style={{ fontSize: 13, color: QQ_COLORS.red300, fontWeight: 700, padding: '8px 12px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: sumPill(8) }}>⚠️ {err}</div>}
 
         <button type="button" onClick={submit} disabled={sending}
           style={{

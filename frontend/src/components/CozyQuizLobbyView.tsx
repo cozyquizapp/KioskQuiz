@@ -333,9 +333,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             // hat ESC-Buehnenbild fast komplett geschluckt (Screen-Mode laesst
             // nur helle Pixel durch). Switch auf normal-Blend mit 0.7 — BG
             // wird klar sichtbar, Content sitzt mit eigenem Card-BG drueber.
-            // 2026-07-13 (Wolf: „hintergrund etwas transparenter"): 0.92 → 0.6,
-            // das Bild tritt zurueck, die opaken Cards treten vor.
-            opacity: arenaLobbyBg ? 0.6 : 0.7,
+            // 2026-07-13 (Wolf: „hintergrund transparenter", 2 Runden): 0.92 →
+            // 0.6 → 0.5. Bild nur noch Andeutung, opake Cards tragen den Screen.
+            opacity: arenaLobbyBg ? 0.5 : 0.7,
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -754,7 +754,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12,
+            // 2026-07-13 (Wolf: „joined-Zaehler aus der Mitte"): im Arena-BG-Modus
+            // links ausgerichtet, damit er nicht mittig ueberm Arena-Tor schwebt.
+            display: 'flex', alignItems: 'center',
+            justifyContent: arenaLobbyBg ? 'flex-start' : 'center', gap: 12,
           }}>
             <span style={{ opacity: 0.7 }}>{de ? 'Angemeldete Teams' : 'Joined Teams'}</span>
             <span key={teamCount} style={{

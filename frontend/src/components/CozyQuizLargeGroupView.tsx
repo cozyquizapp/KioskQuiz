@@ -301,8 +301,21 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
   // genau auf der Zeile, die gerade an die Spitze zieht — der Ueberhol-Moment
   // (neuer Fuehrender wird groesser) verpuffte, weil transform nur EINEN Wert
   // haelt und der letzte Schreiber (JS-FLIP) gewinnt.
+  //
+  // 2026-07-13 (Delight-Pass, Todo „Leader-Spotlight-scale geht im FLIP
+  // verloren"): `transform` wird jetzt AUSSCHLIESSLICH hier imperativ gesetzt,
+  // NIE mehr im React-Inline-Style (s. unten). Grund: `useCountUp(val)`
+  // re-rendert die Row jeden Frame waehrend der 0.7s-Glide; hatte React ein
+  // `transform: scale(1.035)` im Style, schrieb es das translateY() mitten in
+  // der Bewegung zurueck (translateY fehlt → Row schnappt sofort ans Ziel, die
+  // Glide UND der Scale-Pop gehen verloren). Ohne transform-Key im React-Style
+  // fasst React den Wert nie an → die imperative Schicht bleibt alleiniger
+  // Besitzer und ueberlebt jeden Re-Render.
   const leaderScale = isLeader ? ' scale(1.035)' : '';
-  // FLIP: sanftes Gleiten bei Rang-Wechsel (Überholmoment).
+  // FLIP: sanftes Gleiten bei Rang-Wechsel (Überholmoment). Bei Rang-Wechsel
+  // gleitet die Zeile; ohne Wechsel wird nur der Ruhe-Transform gesetzt (Scale
+  // fuer den Leader, sonst leer) — damit ein stehen-bleibender Fuehrender seinen
+  // Spotlight-Scale behaelt, obwohl React ihn nicht mehr setzt.
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
@@ -314,6 +327,10 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
         el.style.transition = 'transform 0.7s cubic-bezier(0.34,1.05,0.5,1)';
         el.style.transform = `translateY(0)${leaderScale}`;
       }));
+    } else {
+      // Kein Rang-Wechsel: Ruhe-Transform ohne Uebergang setzen.
+      el.style.transition = 'none';
+      el.style.transform = leaderScale ? `translateY(0)${leaderScale}` : '';
     }
     prevTop.current = targetTop;
   }, [targetTop, leaderScale]);
@@ -346,9 +363,11 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
   return (
     <div ref={ref} style={{
       ...S.standRow, height: rowH - 12, top: targetTop,
-      // Leader-Spotlight: leicht größer, hellerer Grund + atmender Farb-Glow.
+      // Leader-Spotlight: hellerer Grund + atmender Farb-Glow. Der Scale (1.035)
+      // wird BEWUSST NICHT hier gesetzt, sondern imperativ im FLIP-useLayoutEffect
+      // oben — sonst clobbert React den translateY-Glide bei jedem Countup-Frame.
       ...(isLeader ? {
-        transform: 'scale(1.035)', zIndex: 3,
+        zIndex: 3,
         background: `linear-gradient(90deg, ${team.color}22, rgba(255,255,255,0.06))`,
         // CSS-Var für den Glow-Keyframe.
         ['--lc' as any]: team.color,

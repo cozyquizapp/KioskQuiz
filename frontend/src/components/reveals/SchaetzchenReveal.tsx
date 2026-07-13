@@ -84,16 +84,15 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   useActiveThemeId();
 
-  // ── Zahlenbereich pro Frage aus den Daten ableiten + Rand geben (kein fixer Chart-Bereich) ──
+  // ── Achse AUF DIE WAHRHEIT zentriert: Beam sitzt mittig (unter der Held-Zahl),
+  //    zu niedrig = links, zu hoch = rechts. Halbspanne = größter Abstand + Rand. ──
   const { axisPct } = useMemo(() => {
-    const vals = rankedFinal.map(r => r.num).concat([target]);
-    let lo = Math.min(...vals), hi = Math.max(...vals);
-    if (!Number.isFinite(lo) || !Number.isFinite(hi) || lo === hi) { lo = target - 1; hi = target + 1; }
-    const pad = (hi - lo) * 0.14 || 1;
-    lo -= pad; hi += pad;
+    let half = 1;
+    for (const r of rankedFinal) half = Math.max(half, Math.abs(r.num - target));
+    const span = half * 1.18 || 1;
     const fn = (v: number) => {
-      const p = ((v - lo) / (hi - lo)) * 86 + 7;
-      return Math.max(5, Math.min(95, p)); // clamp: Ausreisser bleiben auf der Buehne
+      const p = 50 + ((v - target) / span) * 43;
+      return Math.max(5, Math.min(95, p)); // clamp: Ausreisser bleiben auf der Bühne
     };
     return { axisPct: fn };
   }, [rankedFinal, target]);
@@ -104,19 +103,27 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const tx = axisPct(target);
   const wx = winner ? axisPct(winner.num) : 50;
 
-  // Avatare ober- UND unterhalb der Schiene (Raum nutzen + weniger Kollision):
-  // zu HOCH getippt = über der Schiene, zu NIEDRIG = darunter, getroffen = auf Höhe.
-  // Nur wenn eine Seite überläuft (>5), zweite Reihe staffeln.
+  // Avatare ober- UND unterhalb der Schiene (Raum nutzen): zu HOCH = über, zu NIEDRIG
+  // = unter, getroffen = auf Höhe. Pro Seite horizontal entzerren, damit enge Tippwerte
+  // (z.B. 79 vs 80) nicht überlappen — der exakte Wert steht ohnehin am Paddle.
   const placed = useMemo(() => {
-    const overN = panel.filter(r => r.num > target).length;
-    const underN = panel.filter(r => r.num < target).length;
-    let oi = 0, ui = 0;
-    return panel.map(r => {
-      if (r.num === target) return { r, top: 46 };
-      if (r.num > target) { const t = overN > 5 ? 30 + (oi % 2) * 12 : 34; oi++; return { r, top: t }; }
-      const t = underN > 5 ? 60 + (ui % 2) * 13 : 62; ui++; return { r, top: t };
-    });
-  }, [panel, target]);
+    const mk = (r: typeof panel[number]) => ({ r, x: axisPct(r.num) });
+    const spreadIn = (items: { r: typeof panel[number]; x: number }[], lo: number, hi: number) => {
+      const sorted = items.slice().sort((a, b) => a.x - b.x);
+      const MIN = Math.min(8, (hi - lo) / Math.max(1, sorted.length));
+      let last = lo - MIN;
+      sorted.forEach(it => { it.x = Math.max(it.x, last + MIN); last = it.x; });
+      const overflow = sorted.length ? sorted[sorted.length - 1].x - hi : 0;
+      if (overflow > 0) sorted.forEach(it => { it.x = Math.max(lo, it.x - overflow); });
+      return sorted;
+    };
+    const overs = spreadIn(panel.filter(r => r.num > target).map(mk), 53, 95).map(o => ({ r: o.r, x: o.x, top: 40 }));
+    const unders = spreadIn(panel.filter(r => r.num < target).map(mk), 5, 47).map(o => ({ r: o.r, x: o.x, top: 64 }));
+    const exacts = panel.filter(r => r.num === target).map(r => ({ r, x: axisPct(r.num), top: 46 }));
+    return [...unders, ...exacts, ...overs];
+  }, [panel, target, axisPct]);
+  // Angezeigte Sieger-x (nach Entzerrung) — damit die Pink-Brücke zur Booth passt.
+  const wxDisp = useMemo(() => placed.find(p => p.r.teamId === winner?.teamId)?.x ?? wx, [placed, winner, wx]);
 
   const offWord = lang === 'en' ? 'off' : 'daneben';
   const winnerStatus = winner
@@ -277,9 +284,9 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             {winner && winner.delta > 0 && (
               <div aria-hidden style={{
                 position: 'absolute', top: '57%', zIndex: 4, height: 5, borderRadius: 5,
-                left: `${Math.min(wx, tx)}%`, width: `${Math.abs(tx - wx)}%`,
+                left: `${Math.min(wxDisp, tx)}%`, width: `${Math.abs(tx - wxDisp)}%`,
                 transform: `translateY(-50%) scaleX(${lit ? 1 : 0})`,
-                transformOrigin: wx <= tx ? 'left center' : 'right center',
+                transformOrigin: wxDisp <= tx ? 'left center' : 'right center',
                 background: 'linear-gradient(90deg, var(--qq-accent), rgba(var(--qq-accent-rgb),0.25))',
                 boxShadow: '0 0 16px rgba(var(--qq-accent-rgb),0.6)',
                 transition: reduce ? 'none' : 'transform 0.55s var(--qq-celebrate)',
@@ -287,14 +294,14 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             )}
 
             {/* Kontrahenten an ihrem Tippwert — über der Schiene = zu hoch, darunter = zu niedrig */}
-            {placed.map(({ r, top }, i) => {
+            {placed.map(({ r, top, x }, i) => {
               const isWin = r.teamId === winner?.teamId;
               const dim = housedark && !(isWin && lit);
               const prox = 1 - 0.32 * (r.delta / maxDelta); // Näher dran = größer (Sichtbarkeit)
               const crest = 'clamp(44px, 5cqw, 90px)';
               return (
                 <div key={r.teamId} style={{
-                  position: 'absolute', left: `${axisPct(r.num)}%`, top: `${top}%`,
+                  position: 'absolute', left: `${x}%`, top: `${top}%`,
                   width: `${84 / N}cqw`, minWidth: 'clamp(54px,7cqw,116px)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   transform: 'translate(-50%, 0)', zIndex: isWin && lit ? 8 : 3,
@@ -305,7 +312,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(3px,0.5cqh,8px)',
                     transformOrigin: 'center top',
                     transform: `scale(${isWin && lit ? prox * 1.14 : prox})`,
-                    filter: dim ? 'brightness(0.34) saturate(0.7)' : 'none',
+                    filter: dim ? 'brightness(0.5) saturate(0.75)' : 'none',
                     transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
                   }}>
                     {/* Fußlicht-Glow */}

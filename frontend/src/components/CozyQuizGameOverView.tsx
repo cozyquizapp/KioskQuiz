@@ -454,14 +454,14 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               color: '#EC4899',
               textShadow: '0 0 18px rgba(236,72,153,0.45)',
             }}>
-              {winner.largestConnected} {lang === 'de' ? 'verbundene Felder' : 'connected fields'}
+              {winner.largestConnected} {lang === 'de' ? 'verbundene Felder' : 'connected cells'}
             </span>
             {/* v3 round 9: totalCells als Tie-Break-Hint immer mit anzeigen */}
             <span style={{
               fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 700,
               color: 'var(--qq-text-muted)',
             }}>
-              {winner.totalCells} {lang === 'de' ? 'Felder gesamt' : 'total fields'}
+              {winner.totalCells} {lang === 'de' ? 'Felder gesamt' : 'total cells'}
             </span>
           </div>
         </div>

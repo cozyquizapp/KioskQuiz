@@ -14,6 +14,7 @@ import {
   QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC, QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
   getRandomDummyEmojis,
   QQ_TIEBREAKER_POOL, QQTieBreakerState,
+  qqIsMega,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -796,7 +797,10 @@ export function qqStartGame(
   // Wizard warnt nur, filtert aber nicht, und Direktstarts umgehen ihn ganz.
   // Robuste, zentrale Loesung: HP-Fragen beim Start eines Arena-Spiels hart aus
   // dem Fragensatz entfernen, damit sie nie als (kaputte) "normale" Frage laufen.
-  const isArenaStart = largeGroupMode === true || nestedTeams === true;
+  // qqIsMega statt nur der Flags: faengt auch den Fall, dass largeGroupMode/
+  // nestedTeams beim (Bot-)Start noch nicht gesetzt sind, die Teams aber schon
+  // die 8 Fraktions-Slots (avatarId) teilen (Wolf: 'HP darf NIEMALS in Arena').
+  const isArenaStart = qqIsMega({ teams: room.teams, largeGroupMode, nestedTeams } as any);
   if (isArenaStart) {
     const before = processedQuestions.length;
     processedQuestions = processedQuestions.filter(

@@ -11,6 +11,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cozyCard } from '../qqStyleTokens';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { qqIsMega } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -310,7 +311,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
               textTransform: 'uppercase',
-            }}>COZYQUIZ</span>
+            }}>{qqIsMega(s) ? 'COZYARENA' : 'COZYQUIZ'}</span>
           </div>
         )}
 

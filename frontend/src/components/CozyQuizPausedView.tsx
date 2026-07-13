@@ -13,7 +13,7 @@
 import { useState, useEffect, useRef, useMemo, cloneElement, isValidElement } from 'react';
 import type { ReactElement } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, QQ_MEGA_FACTIONS } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_MEGA_FACTIONS, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -1412,7 +1412,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
               textTransform: 'uppercase',
-            }}>COZYQUIZ</span>
+            }}>{qqIsMega(s) ? 'COZYARENA' : 'COZYQUIZ'}</span>
           </div>
         )}
         {(mode === 'preGame' || mode === 'pause') && s.theme?.eurovisionMode && (s.theme.logoUrl ? (

@@ -702,6 +702,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     // Tree → viel Dead-Space bei Step 0. Tree etwas größer ziehen + vertikal
     // mittiger anlegen, damit der Ausschnitt die Fläche besser füllt. Nur Mega
     // + Step 0 (Normal-Journey bleibt exakt wie getunt).
+    // 2026-07-13 (Wolf B2): In CozyArena gibt es KEINE Cozy-Games → der Tree ist
+    // kürzer als der Worst-Case (4 Runden + Cozy-Games), für den die 1.12-Bremse
+    // kalibriert war. Der Übersichts-Tree darf hier deutlich größer sein (füllt
+    // den Dead-Space in Bild 1). Fit-Width-Cap unten bleibt als Clip-Schutz; die
+    // Step-1-Framing-Werte (phaseWidths-basiert) sind unberührt → die Zoomfahrt
+    // bleibt identisch, nur das Ruhe-Frame startet größer. (Magnitude tunebar:
+    // bei Pin-im-Untertitel vAnchor leicht runter oder S dämpfen.)
     if (step === 0 && (s as any).largeGroupMode) {
       // 2026-07-03 (Wolf 'Deadspace Bild 3' → danach 'überlappt immernoch mit
       // Schrift'): Der grosse „Runde N"-Titel steht flex-zentriert in der Mitte.
@@ -713,7 +720,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       // ragte bei 0.72 hoch in den mittig gesetzten Untertitel. Tree klar ins
       // untere Band schieben. S minimal runter, damit der Pin nicht zu weit hoch
       // greift und die Dots unten nicht clippen.
-      S = 1.12;
+      // 2026-07-13 (Wolf B2 'Bild 1 zu klein — Cozy-Games-Bremse gilt in Arena
+      // nicht'): 1.12 → 1.35, damit der kürzere Arena-Tree den Dead-Space füllt.
+      // Konservativ gewählt (nicht 1.5), weil der Wolf-Pin mit S steigt und bei
+      // Runde 2 schon mal im Untertitel hing. ⚠️ Beide Runden-Intros gegenchecken:
+      // wenn der Pin den Untertitel touchiert → vAnchor 0.82 leicht hoch (0.84)
+      // ODER S auf 1.25 dämpfen.
+      S = 1.35;
       vAnchor = 0.82;
     }
     // 2026-07-09 (Wolf 'Progress-Tree zu lang mit Cozy Games'): den Gesamt-Tree
@@ -928,7 +941,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, transformOrigin: '0 0',
-          willChange: 'transform',
+          // 2026-07-13 (B2 Bild-2 verpixelt): KEIN `will-change: transform` hier.
+          // Es promotet die Welt zu einer bei 1× gecachten GPU-Textur, die dann
+          // per scale(S bis 2.9) hochskaliert wird → sichtbare Pixeligkeit im
+          // gezoomten Cluster (obwohl die Icon-PNGs 500px sind). Ohne den Hint
+          // rastert der Browser im Ruhezustand bei der ECHTEN Zoom-Auflösung neu
+          // → scharf. Die 0.9s-Kamerafahrt bleibt smooth (Transition-Layer wird
+          // automatisch komponiert). Camera-Werte unverändert.
           ...camWorldStyle,
         }}>
           <QQProgressTree

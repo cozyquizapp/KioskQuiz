@@ -36,6 +36,24 @@ const CONFETTI = [
   { dx: -38, dy: -66, r: 30 }, { dx: 40, dy: -70, r: -26 },
 ];
 
+// Tipp-Zahl robust parsen: deutsche Tausender-Punkte + Dezimalkomma korrekt
+// (Audit-Bug: "1.000" wurde 1, "1.000.000" wurde NaN → Tipps verschwanden lautlos).
+function parseGuess(raw: unknown): number {
+  let t = String(raw ?? '').trim().replace(/[^\d.,-]/g, '');
+  const hasDot = t.includes('.'), hasComma = t.includes(',');
+  if (hasDot && hasComma) {
+    // Letztes Trennzeichen = Dezimal, das andere = Tausender.
+    t = t.lastIndexOf(',') > t.lastIndexOf('.') ? t.replace(/\./g, '').replace(',', '.') : t.replace(/,/g, '');
+  } else if (hasComma) {
+    const p = t.split(',');
+    t = (p.length === 2 && p[1].length !== 3) ? p[0] + '.' + p[1] : t.replace(/,/g, '');
+  } else if (hasDot) {
+    const p = t.split('.');
+    if (!(p.length === 2 && p[1].length !== 3)) t = t.replace(/\./g, ''); // 1.000 / 1.000.000 = Tausender
+  }
+  return Number(t);
+}
+
 export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
   const target = q.targetValue as number;
@@ -55,7 +73,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const ranked = useMemo(() => {
     return s.answers
       .map(a => {
-        const num = Number(String(a.text).replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+        const num = parseGuess(a.text);
         const team = s.teams.find(t => t.id === a.teamId);
         if (!team || !Number.isFinite(num)) return null;
         return { teamId: a.teamId, num, team, delta: Math.abs(num - target), submittedAt: a.submittedAt };
@@ -119,7 +137,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     };
     const overs = spreadIn(panel.filter(r => r.num > target).map(mk), 53, 95).map(o => ({ r: o.r, x: o.x, top: 40 }));
     const unders = spreadIn(panel.filter(r => r.num < target).map(mk), 5, 47).map(o => ({ r: o.r, x: o.x, top: 64 }));
-    const exacts = panel.filter(r => r.num === target).map(r => ({ r, x: axisPct(r.num), top: 46 }));
+    const exacts = spreadIn(panel.filter(r => r.num === target).map(mk), 40, 60).map(o => ({ r: o.r, x: o.x, top: 46 }));
     return [...unders, ...exacts, ...overs];
   }, [panel, target, axisPct]);
   // Angezeigte Sieger-x (nach Entzerrung) — damit die Pink-Brücke zur Booth passt.
@@ -139,7 +157,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   useEffect(() => {
     if (reduce) return;
     const sfx = !s.sfxMuted;
-    const tBooths = 300 + N * 95;
+    const tBooths = 300 + N * 65;
     const tStrike = tBooths + 450;
     const tDark = tStrike + 950;
     const tWin = tDark + 480;
@@ -151,7 +169,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       setTimeout(() => setBeat(4), tCall),
     ];
     if (sfx) {
-      panel.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 300 + i * 95)); });
+      panel.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 300 + i * 65)); });
       ts.push(setTimeout(() => { try { playClimaxFinish(); } catch {} }, tWin));
     }
     return () => ts.forEach(clearTimeout);
@@ -162,8 +180,11 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const [shown, setShown] = useState<number>(reduce ? target : 0);
   const doCount = !isYearUnit; // Jahres-Antworten nicht hochzählen (0→1949 wirkt seltsam)
   const rafRef = useRef<number | null>(null);
+  // Audit-Bug: an `beat` gehängt zählte die Zahl bei jedem Beat-Wechsel (2/3/4)
+  // erneut von 0 hoch. Stabiles Flag → Effect läuft genau einmal.
+  const startCount = beat >= 1;
   useEffect(() => {
-    if (beat < 1) return;
+    if (!startCount) return;
     if (reduce || !doCount || (typeof document !== 'undefined' && document.hidden)) { setShown(target); return; }
     const start = performance.now(); const dur = 900;
     const tick = (now: number) => {
@@ -174,7 +195,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     };
     rafRef.current = requestAnimationFrame(tick);
     return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
-  }, [beat, target, reduce, doCount]);
+  }, [startCount, target, reduce, doCount]);
 
   const struck = beat >= 1;
   const housedark = beat >= 2;
@@ -219,7 +240,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
         opacity: struck ? 1 : 0, transition: 'opacity 0.35s var(--qq-enter)',
       }}>
         <span style={{
-          fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 800, color: 'var(--qq-text-muted)',
+          fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)',
           letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4,
         }}>{lang === 'en' ? 'Answer' : 'Antwort'}</span>
         <div style={{
@@ -235,7 +256,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             textShadow: `0 0 28px ${GOLD}8c`,
           }}>{fmt(shown)}</span>
           {unitStr && (
-            <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 800, color: GOLD }}>{unitStr}</span>
+            <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, color: GOLD }}>{unitStr}</span>
           )}
         </div>
       </div>
@@ -267,16 +288,16 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             <div aria-hidden style={{
               position: 'absolute', left: `${tx}%`, top: '30%', height: '60%', width: 'clamp(5px,0.8cqw,13px)', zIndex: 3,
               transform: `translateX(-50%) scaleY(${struck ? 1 : 0})`, transformOrigin: 'center',
-              borderRadius: 10,
+              borderRadius: 8,
               background: `linear-gradient(180deg, ${GOLD}1f, ${GOLD_BRIGHT} 28%, ${GOLD_BRIGHT} 72%, ${GOLD}1f)`,
               boxShadow: `0 0 40px 7px ${GOLD}80`,
-              transition: reduce ? 'none' : 'transform 0.7s var(--qq-celebrate)',
+              transition: reduce ? 'none' : 'transform 0.7s var(--qq-enter)',
             }} />
 
             {/* Saallicht fällt (Publikums-Dunkel legt sich über die Bühne) */}
             <div aria-hidden style={{
               position: 'absolute', inset: '-10%', pointerEvents: 'none', zIndex: 4,
-              background: 'radial-gradient(120% 90% at 50% 60%, transparent 34%, rgba(6,4,14,0.70) 100%)',
+              background: 'radial-gradient(120% 90% at 50% 60%, transparent 38%, rgba(6,4,14,0.56) 100%)',
               opacity: housedark ? 1 : 0, transition: 'opacity 0.7s var(--qq-enter)',
             }} />
 
@@ -289,7 +310,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 transformOrigin: wxDisp <= tx ? 'left center' : 'right center',
                 background: 'linear-gradient(90deg, var(--qq-accent), rgba(var(--qq-accent-rgb),0.25))',
                 boxShadow: '0 0 16px rgba(var(--qq-accent-rgb),0.6)',
-                transition: reduce ? 'none' : 'transform 0.55s var(--qq-celebrate)',
+                transition: reduce ? 'none' : 'transform 0.55s var(--qq-carry)',
               }} />
             )}
 
@@ -305,15 +326,15 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   width: `${84 / N}cqw`, minWidth: 'clamp(54px,7cqw,116px)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   transform: 'translate(-50%, 0)', zIndex: isWin && lit ? 8 : 3,
-                  animation: !reduce ? `qqStrRaise 0.5s var(--qq-celebrate) ${0.3 + i * 0.06}s both` : 'none',
+                  animation: !reduce ? `qqStrRaise 0.5s var(--qq-enter) ${0.3 + i * 0.065}s both` : 'none',
                 }}>
                   {/* Innerer Wrapper: Nähe-Skalierung + Sieger-Hebung, ohne Positions-Transform zu stören */}
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(3px,0.5cqh,8px)',
                     transformOrigin: 'center top',
                     transform: `scale(${isWin && lit ? prox * 1.14 : prox})`,
-                    filter: dim ? 'brightness(0.5) saturate(0.75)' : 'none',
-                    transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
+                    filter: dim ? 'brightness(0.66) saturate(0.85)' : 'none',
+                    transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-enter)',
                   }}>
                     {/* Fußlicht-Glow */}
                     <div aria-hidden style={{
@@ -382,7 +403,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 }}>{winner.team.name}</span>
                 <span style={{
                   fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 1.35cqw, 22px)', fontWeight: 700,
-                  color: winnerStatus.color,
+                  color: winnerStatus.color, fontVariantNumeric: 'tabular-nums',
                   padding: 'clamp(3px,0.5cqh,6px) clamp(10px,1.1cqw,16px)', borderRadius: 'var(--qq-pill-radius)',
                   background: winnerStatus.exact ? 'rgba(59,224,165,0.20)' : 'rgba(var(--qq-accent-rgb),0.18)',
                   border: `1.5px solid ${winnerStatus.exact ? 'rgba(59,224,165,0.55)' : 'rgba(var(--qq-accent-rgb),0.5)'}`,

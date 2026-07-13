@@ -290,6 +290,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // ohne explizites Theme-BG) das neue Kolosseum-Bild als Lobby-Hintergrund.
   const arenaLobbyBg = (s as any).largeGroupMode && !isThemed() && !s.theme?.lobbyBackgroundUrl
     ? '/arena-bg/arena-main.webp' : undefined;
+  // 2026-07-13 (Wolf-Feedback Lobby-Proof): über dem Arena-Bild brauchen die
+  // Team-/Fraktions-„Fenster" mehr Deckung → dunkles Glas statt 4%-Weiss.
+  const arenaCardBg = arenaLobbyBg ? 'rgba(12,10,22,0.6)' : undefined;
   const lobbyBgUrl = s.theme?.lobbyBackgroundUrl ?? arenaLobbyBg;
 
   return (
@@ -298,7 +301,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       // 2026-05-12 (Wolf 'safe-margin sollte ja im ganzen quiz drin sein'):
       // padding-vertikal jetzt floor auf var(--qq-safe-margin). horiz bleibt
       // groesser (Cards in der Lobby brauchen mehr Atem).
-      padding: 'max(var(--qq-safe-margin), clamp(16px, 2.5cqh, 32px)) clamp(24px, 3cqw, 56px)',
+      // 2026-07-13 (Wolf: „text nach oben"): im Arena-BG-Modus kleineres Top-
+      // Padding → Wortmarke rueckt hoch in die obere Arena-Zone.
+      padding: arenaLobbyBg
+        ? 'clamp(6px, 0.8cqh, 14px) clamp(24px, 3cqw, 56px) max(var(--qq-safe-margin), clamp(16px, 2.5cqh, 32px))'
+        : 'max(var(--qq-safe-margin), clamp(16px, 2.5cqh, 32px)) clamp(24px, 3cqw, 56px)',
       position: 'relative', overflow: 'hidden',
       gap: 'clamp(10px, 1.5cqh, 20px)',
       minHeight: 0,
@@ -326,9 +333,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             // hat ESC-Buehnenbild fast komplett geschluckt (Screen-Mode laesst
             // nur helle Pixel durch). Switch auf normal-Blend mit 0.7 — BG
             // wird klar sichtbar, Content sitzt mit eigenem Card-BG drueber.
-            // Arena-Bild darf klarer durchscheinen (eigene Kunst) als das
-            // ESC-Buehnenbild; der Scrim unten sichert den Textkontrast.
-            opacity: arenaLobbyBg ? 0.92 : 0.7,
+            // 2026-07-13 (Wolf: „hintergrund etwas transparenter"): 0.92 → 0.6,
+            // das Bild tritt zurueck, die opaken Cards treten vor.
+            opacity: arenaLobbyBg ? 0.6 : 0.7,
             pointerEvents: 'none',
             zIndex: 0,
           }}
@@ -341,9 +348,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         <div aria-hidden style={{
           position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
           background:
-            'linear-gradient(180deg, rgba(8,6,16,0.58) 0%, rgba(8,6,16,0.10) 24%, ' +
-            'rgba(8,6,16,0.10) 66%, rgba(8,6,16,0.62) 100%), ' +
-            'radial-gradient(ellipse at 50% 44%, transparent 38%, rgba(8,6,16,0.42) 100%)',
+            'linear-gradient(180deg, rgba(8,6,16,0.42) 0%, rgba(8,6,16,0.06) 24%, ' +
+            'rgba(8,6,16,0.06) 66%, rgba(8,6,16,0.46) 100%), ' +
+            'radial-gradient(ellipse at 50% 44%, transparent 42%, rgba(8,6,16,0.30) 100%)',
         }} />
       )}
       <Fireflies />
@@ -591,7 +598,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));
           // 2026-07-08 (Wolf 3D-Icons): Im CozyArena-Modus das neue 3D-Arena-
           // Kolosseum als Hero ueber die Wortmarke (nur ohne Custom-Welcome).
-          const showArenaHero = (s as any).largeGroupMode && customWelcome.length === 0;
+          // 2026-07-13 (Wolf: „arena symbol oben raus"): kein fx-arena-Hero, wenn
+          // das Arena-Kolosseum ohnehin als Hintergrund liegt (redundant).
+          const showArenaHero = (s as any).largeGroupMode && customWelcome.length === 0 && !arenaLobbyBg;
           return (
             <>
             {showArenaHero && (
@@ -814,7 +823,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 <div key={g.avatarId} style={{
                   padding: 'clamp(12px, 1.4cqh, 18px) clamp(14px, 1.5cqw, 20px)',
                   borderRadius: isThemed() ? 'var(--qq-card-radius)' : 20,
-                  background: isThemed() ? cardBg : 'rgba(255,255,255,0.04)',
+                  background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)'),
                   border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
                   borderLeft: `4px solid ${g.color}`,
                   boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
@@ -897,7 +906,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     // 4px-Farb-Akzent LINKS statt voll-bunter Rahmen. Team-Farbe
                     // lebt nur noch im Akzent + Avatar-Disc → weniger Color-Noise,
                     // Namen lesen sich auf neutralem BG besser.
-                    background: isThemed() ? cardBg : 'rgba(255,255,255,0.04)',
+                    background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)'),
                     border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
                     // 2026-07-01 (Wolf Mega-Event): bei vielen Teams wiederholen sich
                     // die 8 Slot-Farben → Farb-Border wäre Noise. Neutral, nur der

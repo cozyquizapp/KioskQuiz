@@ -188,8 +188,11 @@ weil Geräte-Test / Verhaltensänderung nötig:
   `scrollIntoView({block:'center'})` nach Fokus — aber Vorsicht, `preventScroll:true`
   wurde bewusst gegen Header-Springen gesetzt. Erst am echten Gerät testen.
 
-**Brand-Farb-Sweep:** Amber/Gold taucht entgegen der Pink/Magenta-Marke wieder auf
-(Landing-Page `QQLandingPage`, `FinalRecapHintCard` amber400). Bei Gelegenheit angleichen.
+**Brand-Farb-Sweep:** ✅ erledigt (verifiziert 2026-07-13). Beide genannten Spots sind
+schon brand-konform: `QQLandingPage` hat kein Amber mehr, `FinalRecapHintCard` nutzt
+`brandPink`. Restliche Amber-Vorkommen sind SEMANTISCH (Builder-Warnungen, Status
+„waiting", Countdown 3·2·1) oder bewusst festlich (Wimpel-Mix) → bleiben. Offene
+Gold-Grundsatzfrage (Medaillen/Krönung `ACCENT_GOLD`) ist separat und wartet auf Wolf.
 
 ## 🐛 Beobachten — Bugs ohne Repro (warten aufs nächste Auftreten)
 

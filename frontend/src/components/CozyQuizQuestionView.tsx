@@ -63,6 +63,12 @@ import {
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqFactionBuckets, qqFactionAvatarEmoji } from '../qqShared';
 
+// A1 (2026-07-13): Timer sitzt oben rechts (196px breit, ~16px Rand). Auf dem
+// 1760er-Design-Canvas laesst maxWidth 1300 zentriert 230px Rand pro Seite frei
+// (1760-1300)/2 → Timer-Ecke (212px) ueberlappt die Frage-Card nicht mehr.
+// Ein gemeinsamer Wert haelt alle Card-/Antwort-Grid-Kanten buendig.
+const QQ_QUESTION_MAX_W = 1300;
+
 
 // 2026-05-24 (Refactor #5): Reveals + Helpers in components/reveals/ extrahiert:
 //   - #5.1 SchaetzchenReveal       — components/reveals/SchaetzchenReveal.tsx
@@ -1467,7 +1473,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // keine willChange. Vereinfacht den Wrapper.
             return (
               <div style={{
-                width: '100%', maxWidth: 1400,
+                width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                 flexShrink: 0,
               }}>
                 <div style={{
@@ -1532,7 +1538,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: 14,
-                width: '100%', maxWidth: 1400, marginBottom: 16,
+                width: '100%', maxWidth: QQ_QUESTION_MAX_W, marginBottom: 16,
                 animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
               }}>
                 {criteria && (
@@ -1643,7 +1649,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               alignContent: 'center',
               marginTop: 16,
               marginBottom: 16,
-              width: '100%', maxWidth: 1400,
+              width: '100%', maxWidth: QQ_QUESTION_MAX_W,
               animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
               // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing analog MUCHO.
               transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth)',
@@ -1885,7 +1891,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               nach unten weg + fade — clean Spotlight auf die richtige Option. */}
           {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (
             <div style={{
-              width: '100%', maxWidth: 1400,
+              width: '100%', maxWidth: QQ_QUESTION_MAX_W,
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
               gap: 18,
@@ -1989,7 +1995,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   border: cheeseHideContent ? '3px dashed rgba(34,197,94,0.22)' : '3px solid rgba(34,197,94,0.50)',
                   boxShadow: cheeseHideContent ? 'none' : '0 0 60px rgba(34,197,94,0.25), 0 0 120px rgba(34,197,94,0.1)',
                   marginBottom: 'clamp(8px, 1.2cqh, 24px)',
-                  width: '100%', maxWidth: 1400,
+                  width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   gap: 'clamp(10px, 1.4cqh, 18px)',
                   // 2026-05-07 (Audit P1): Cheese hat oben schon Frage-Card-
@@ -2146,7 +2152,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             }[tier];
             return (
               <div style={{
-                width: '100%', maxWidth: 1400,
+                width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                 marginBottom: 'clamp(8px, 1.2cqh, 24px)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 gap: tier === 'xxl' ? 22 : tier === 'xl' ? 18 : tier === 'lg' ? 14 : tier === 'md' ? 10 : 8,
@@ -2404,7 +2410,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             };
             return (
               <div style={{
-                width: '100%', maxWidth: 1400,
+                width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                 // Oben/unten: weit-Row (180 + Avatar 41 + Chip 36 ≈ 250). Target sitzt jetzt ON-Rail.
                 padding: '235px clamp(24px, 3cqw, 48px) 235px',
                 marginBottom: 'clamp(8px, 1cqh, 16px)',
@@ -2661,7 +2667,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // absolut drin, kann die Slot-Hoehe also nie ueber diesen Wert
               // hinaus wachsen. Transparent = kein Rand.
               position: 'relative',
-              width: '100%', maxWidth: 1400,
+              width: '100%', maxWidth: QQ_QUESTION_MAX_W,
               // HP: waehrend aktiver Frage 0 (nichts reservieren), erst bei Reveal
               // die volle Slot-Hoehe fuer die Ueberlebenden-/Sieger-Card.
               height: (isHotPotatoCat && !revealed) ? 0 : 'clamp(150px, 16cqh, 210px)',
@@ -2815,7 +2821,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   gap: 'clamp(6px, 0.8cqh, 12px)',
                   padding: 'clamp(10px, 1.2cqh, 18px) clamp(18px, 2.4cqw, 36px)',
                   borderRadius: isThemed() ? 'var(--qq-card-radius)' : 20,
-                  width: '100%', maxWidth: 1400,
+                  width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
                   boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 8px 24px rgba(0,0,0,0.4)',
@@ -2868,7 +2874,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
                   padding: '22px 38px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-                  width: '100%', maxWidth: 1400, flexWrap: 'wrap',
+                  width: '100%', maxWidth: QQ_QUESTION_MAX_W, flexWrap: 'wrap',
                   background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.15), rgba(var(--qq-accent-rgb),0.05))',
                   border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
                   boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.25), 0 8px 24px rgba(0,0,0,0.4)',
@@ -2908,7 +2914,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap: 'clamp(16px, 2cqw, 30px)',
                 padding: 'clamp(12px, 1.6cqh, 22px) clamp(20px, 2.6cqw, 36px)',
-                width: '100%', maxWidth: 1400,
+                width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
                 background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: `3px solid ${team!.color}88`,
@@ -2950,7 +2956,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 <div style={{
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
                   padding: '24px 44px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-                  width: '100%', maxWidth: 1400,
+                  width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                   background: 'rgba(239,68,68,0.08)',
                   border: '2px solid rgba(239,68,68,0.30)',
                   boxShadow: '0 0 40px rgba(239,68,68,0.15)',
@@ -2986,7 +2992,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             <div style={{
               display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
               padding: '24px 44px', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, marginBottom: 12,
-              width: '100%', maxWidth: 1400,
+              width: '100%', maxWidth: QQ_QUESTION_MAX_W,
               background: 'rgba(239,68,68,0.08)',
               border: '2px solid rgba(239,68,68,0.30)',
               boxShadow: '0 0 40px rgba(239,68,68,0.15)',

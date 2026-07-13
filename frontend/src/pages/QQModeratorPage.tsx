@@ -2170,7 +2170,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 🎬 Show planen
               </button>
               {/* 2026-07-08 (Wolf-Livetest 'wo stelle ich Bots ein?'): Bot-Regler
-                  direkt im Cockpit — vorher nur auf dem Format-Auswahl-Screen. */}
+                  direkt im Cockpit — vorher nur auf dem Format-Auswahl-Screen.
+                  2026-07-13 (Wolf-Audit 'Bots in den Wizard, nichts extern; Bot-
+                  Modus soll in die LOBBY, nicht instant ins Spiel'): Nur noch mit
+                  aktiven Test-Tools sichtbar (echtes Event = sauber), und „In die
+                  Lobby" ist der Primär-Weg. Der Autoplay-Sofortlauf bleibt als
+                  dezenter Sekundär-Button für Wolfs Reveal-Tests. */}
+              {showTestTools && (
               <div style={{ position: 'relative' }}>
                 <button onClick={() => setBotsRunOpen(v => !v)} title="Bots zum Testen hinzufügen — Anzahl wählbar (nicht in der Bestenliste)"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.12)', color: '#bbf7d0', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -2199,23 +2205,26 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                           style={{ padding: '6px 10px', borderRadius: 8, border: `1px solid ${cnt === botMax ? 'rgba(52,211,153,0.9)' : 'rgba(52,211,153,0.35)'}`, background: cnt === botMax ? 'rgba(52,211,153,0.28)' : 'rgba(52,211,153,0.08)', color: '#dcfce7', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
                         >Max</button>
                       </div>
-                      <button onClick={() => { setBotsRunOpen(false); runBotsTest(cnt); }}
-                        style={{ padding: '10px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 16px rgba(34,197,94,0.35)' }}
-                      >▶ {cnt} Bots starten</button>
+                      {/* Primär: in die Lobby (Wolf moderiert selbst). */}
                       <button onClick={() => { setBotsRunOpen(false); addBotsToLobby(cnt); }}
                         disabled={s?.phase !== 'LOBBY'}
                         title={s?.phase !== 'LOBBY' ? 'Nur in der Lobby verfügbar' : undefined}
-                        style={{ padding: '9px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.55)', background: 'rgba(52,211,153,0.12)', color: '#dcfce7', fontWeight: 900, fontSize: 14, cursor: s?.phase !== 'LOBBY' ? 'not-allowed' : 'pointer', opacity: s?.phase !== 'LOBBY' ? 0.4 : 1, fontFamily: 'inherit' }}
+                        style={{ padding: '11px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: s?.phase !== 'LOBBY' ? 'not-allowed' : 'pointer', opacity: s?.phase !== 'LOBBY' ? 0.4 : 1, fontFamily: 'inherit', boxShadow: '0 6px 16px rgba(34,197,94,0.35)' }}
                       >🧍 {cnt} Bots in die Lobby</button>
+                      {/* Sekundär/Dev: Autoplay-Sofortlauf für Reveal-Tests. */}
+                      <button onClick={() => { setBotsRunOpen(false); runBotsTest(cnt); }}
+                        style={{ padding: '8px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.4)', background: 'transparent', color: '#86efac', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >▶ Autoplay-Sofortlauf (Reveal-Test)</button>
                       <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'center', lineHeight: 1.45 }}>
-                        <b style={{ color: '#86efac' }}>Starten</b>: Autoplay an, läuft sofort durch.<br/>
-                        <b style={{ color: '#86efac' }}>In Lobby</b>: Bots joinen sichtbar — du startest selbst.<br/>
+                        <b style={{ color: '#86efac' }}>In Lobby</b>: Bots joinen sichtbar — du startest + moderierst selbst.<br/>
+                        <b style={{ color: '#86efac' }}>Sofortlauf</b>: Autoplay an, läuft ohne dich durch (Reveal-Test).<br/>
                         (Test — nicht in der Bestenliste)
                       </div>
                     </div>
                   );
                 })()}
               </div>
+              )}
             </div>
           </div>
         );
@@ -2394,19 +2403,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                       style={{ padding: '6px 10px', borderRadius: 8, border: `1px solid ${cnt === botMax ? 'rgba(52,211,153,0.9)' : 'rgba(52,211,153,0.35)'}`, background: cnt === botMax ? 'rgba(52,211,153,0.28)' : 'rgba(52,211,153,0.08)', color: '#dcfce7', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
                     >Max</button>
                   </div>
-                  {/* Voller Durchlauf */}
-                  <button onClick={() => { setBotsRunOpen(false); runBotsTest(cnt); }}
-                    style={{ padding: '10px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 6px 16px rgba(34,197,94,0.35)' }}
-                  >▶ {cnt} Bots starten</button>
-                  {/* Nur Lobby (2026-07-08 Wolf): Bots joinen sichtbar, du startest selbst */}
+                  {/* Primär: in die Lobby (2026-07-08 Wolf; 2026-07-13 als Haupt-Weg
+                      priorisiert): Bots joinen sichtbar, du startest + moderierst selbst */}
                   <button onClick={() => { setBotsRunOpen(false); addBotsToLobby(cnt); }}
                     disabled={s?.phase !== 'LOBBY'}
                     title={s?.phase !== 'LOBBY' ? 'Nur in der Lobby verfügbar' : undefined}
-                    style={{ padding: '9px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.55)', background: 'rgba(52,211,153,0.12)', color: '#dcfce7', fontWeight: 900, fontSize: 14, cursor: s?.phase !== 'LOBBY' ? 'not-allowed' : 'pointer', opacity: s?.phase !== 'LOBBY' ? 0.4 : 1, fontFamily: 'inherit' }}
+                    style={{ padding: '11px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', fontWeight: 900, fontSize: 15, cursor: s?.phase !== 'LOBBY' ? 'not-allowed' : 'pointer', opacity: s?.phase !== 'LOBBY' ? 0.4 : 1, fontFamily: 'inherit', boxShadow: '0 6px 16px rgba(34,197,94,0.35)' }}
                   >🧍 {cnt} Bots in die Lobby</button>
+                  {/* Sekundär/Dev: Autoplay-Sofortlauf für Reveal-Tests */}
+                  <button onClick={() => { setBotsRunOpen(false); runBotsTest(cnt); }}
+                    style={{ padding: '8px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.4)', background: 'transparent', color: '#86efac', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                  >▶ Autoplay-Sofortlauf (Reveal-Test)</button>
                   <div style={{ fontSize: 10, color: '#6b7280', textAlign: 'center', lineHeight: 1.45 }}>
-                    <b style={{ color: '#86efac' }}>Starten</b>: Autoplay an, läuft sofort durch.<br/>
                     <b style={{ color: '#86efac' }}>In Lobby</b>: Bots joinen sichtbar — du startest + moderierst selbst.<br/>
+                    <b style={{ color: '#86efac' }}>Sofortlauf</b>: Autoplay an, läuft ohne dich durch (Reveal-Test).<br/>
                     (Test — nicht in der Bestenliste)
                   </div>
                 </div>
@@ -2480,6 +2490,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           onClose={() => setShowWizard(false)}
           setTimerInput={setTimerInput}
           setLocalSoundConfig={setLocalSoundConfig}
+          devMode={showTestTools}
+          addBotsToLobby={addBotsToLobby}
+          runBotsTest={runBotsTest}
+          botCount={botCount}
+          setBotCount={setBotCount}
         />
       )}
 

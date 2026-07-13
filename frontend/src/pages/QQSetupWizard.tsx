@@ -51,6 +51,17 @@ interface Props {
   setTimerInput?: (sec: number) => void;
   /** Lokale SoundConfig im Parent spiegeln (Live-Preview). */
   setLocalSoundConfig?: (cfg: QQSoundConfig) => void;
+  // 2026-07-13 (Wolf-Audit „Bots IN den Wizard, nichts extern"): Bot-Regler im
+  // Schluss-Schritt. Nur sichtbar wenn Test-Tools aktiv (echtes Event = sauber).
+  /** Test-Tools aktiv? Nur dann erscheint der Bot-Regler im „Bereit"-Schritt. */
+  devMode?: boolean;
+  /** N Bots sichtbar in die Lobby holen (Haupt-Weg — Wolf startet selbst). */
+  addBotsToLobby?: (count: number) => void | Promise<void>;
+  /** Autoplay-Sofortlauf (Reveal-Test) — dezenter Sekundär-Weg. */
+  runBotsTest?: (count: number) => void | Promise<void>;
+  /** Bot-Anzahl (im Parent gehalten, mega-abhängiger Default). */
+  botCount?: number;
+  setBotCount?: (n: number) => void;
 }
 
 // 2026-07-04 (Wolf): Fragensatz VOR Runden & Timer — sonst wählt man z.B. 4
@@ -70,7 +81,7 @@ const ACCENT = '#EC4899';
 const VIOLET = '#A78BFA';
 const TIMERS = [15, 30, 45, 60, 90] as const;
 
-export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDraftId, setSelectedDraftId, drafts, onClose, finishSetup, setTimerInput, setLocalSoundConfig }: Props) {
+export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDraftId, setSelectedDraftId, drafts, onClose, finishSetup, setTimerInput, setLocalSoundConfig, devMode, addBotsToLobby, runBotsTest, botCount, setBotCount }: Props) {
   const [step, setStep] = useState(0);
   const mega = !!s?.largeGroupMode;
 
@@ -480,6 +491,45 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
                   🥔 „{selDraft.title}" enthält {selDraft.megaWarnCount}× Hot Potato — läuft in der CozyArena als normale Frage (nicht ideal).
                 </div>
               )}
+              {/* 2026-07-13 (Wolf-Audit „Bots IN den Wizard"): Test-Bots direkt hier
+                  holen — nur bei aktiven Test-Tools. „In die Lobby" ist der Haupt-Weg
+                  (du startest selbst); Autoplay-Sofortlauf bleibt dezenter Reveal-Test. */}
+              {devMode && addBotsToLobby && (() => {
+                const botMax = mega ? 40 : 8;
+                const presets = mega ? [8, 24, 40] : [2, 4, 6, 8];
+                const cnt = Math.min(botMax, Math.max(2, botCount ?? (mega ? 24 : 4)));
+                const stepBtn = { width: 38, height: 38, borderRadius: 9, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.14)', color: '#dcfce7', fontWeight: 900, fontSize: 20, cursor: 'pointer', fontFamily: 'inherit', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' } as const;
+                return (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8, padding: '12px 14px', borderRadius: 12, background: 'rgba(52,211,153,0.06)', border: '1px dashed rgba(52,211,153,0.4)' }}>
+                    <div style={{ fontSize: 11, fontWeight: 900, color: '#86efac', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>🤖 Test-Bots <span style={{ color: '#4b5563' }}>(max {botMax} · nicht in der Bestenliste)</span></div>
+                    <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
+                      <button style={{ ...stepBtn, opacity: cnt <= 2 ? 0.4 : 1 }} disabled={cnt <= 2} onClick={() => setBotCount?.(Math.max(2, cnt - 1))}>−</button>
+                      <span style={{ minWidth: 48, textAlign: 'center', fontWeight: 900, fontSize: 24, color: '#dcfce7', fontVariantNumeric: 'tabular-nums' }}>{cnt}</span>
+                      <button style={{ ...stepBtn, opacity: cnt >= botMax ? 0.4 : 1 }} disabled={cnt >= botMax} onClick={() => setBotCount?.(Math.min(botMax, cnt + 1))}>+</button>
+                    </div>
+                    <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
+                      {presets.map(n => (
+                        <button key={n} onClick={() => setBotCount?.(n)}
+                          style={{ minWidth: 38, padding: '5px 10px', borderRadius: 8, border: `1px solid ${cnt === n ? 'rgba(52,211,153,0.9)' : 'rgba(52,211,153,0.35)'}`, background: cnt === n ? 'rgba(52,211,153,0.28)' : 'rgba(52,211,153,0.08)', color: '#dcfce7', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                        >{n}</button>
+                      ))}
+                      <button onClick={() => setBotCount?.(botMax)}
+                        style={{ padding: '5px 10px', borderRadius: 8, border: `1px solid ${cnt === botMax ? 'rgba(52,211,153,0.9)' : 'rgba(52,211,153,0.35)'}`, background: cnt === botMax ? 'rgba(52,211,153,0.28)' : 'rgba(52,211,153,0.08)', color: '#dcfce7', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >Max</button>
+                    </div>
+                    <button onClick={() => addBotsToLobby(cnt)}
+                      disabled={s?.phase !== 'LOBBY'}
+                      title={s?.phase !== 'LOBBY' ? 'Nur in der Lobby verfügbar' : undefined}
+                      style={{ padding: '10px 0', borderRadius: 10, border: 'none', background: 'linear-gradient(135deg,#22C55E,#16A34A)', color: '#fff', fontWeight: 900, fontSize: 14, cursor: s?.phase !== 'LOBBY' ? 'not-allowed' : 'pointer', opacity: s?.phase !== 'LOBBY' ? 0.4 : 1, fontFamily: 'inherit', boxShadow: '0 6px 16px rgba(34,197,94,0.35)' }}
+                    >🧍 {cnt} Bots in die Lobby</button>
+                    {runBotsTest && (
+                      <button onClick={() => runBotsTest(cnt)}
+                        style={{ padding: '7px 0', borderRadius: 10, border: '1px solid rgba(52,211,153,0.4)', background: 'transparent', color: '#86efac', fontWeight: 800, fontSize: 12.5, cursor: 'pointer', fontFamily: 'inherit' }}
+                      >▶ Autoplay-Sofortlauf (Reveal-Test)</button>
+                    )}
+                  </div>
+                );
+              })()}
               <div style={{ ...ov.hint, marginTop: 6 }}>
                 Alles gesetzt. „Setup abschließen" → die Teams können beitreten, dann startest du wie gewohnt.
               </div>

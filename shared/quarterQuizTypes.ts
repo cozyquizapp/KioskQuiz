@@ -1625,6 +1625,21 @@ export function qqMegaFactionByColor(color: string) {
   return av ? qqMegaFaction(av.id) : undefined;
 }
 
+/**
+ * Kanonische CozyArena-/Mega-Erkennung. VORHER divergierten die Checks quer durch
+ * den Code (`largeGroupMode` im Moderator vs. `nestedTeams` vs. Avatar-Dedup in den
+ * Reveals) → Reveal bündelte auf 8 Fraktionen, Moderator zählte 40 → „Pin 1/40",
+ * Auto-Advance über die 8 sichtbaren Pins hinaus, Leaflet-Hänger. Ein Wappen-Slot
+ * (avatarId) mehrfach vergeben = Sub-Teams unter einer Fraktion = Mega. Ab jetzt
+ * ÜBERALL diese eine Funktion nutzen, damit Reveal + Moderator immer übereinstimmen.
+ */
+export function qqIsMega(s: { teams?: { avatarId: string }[] } & Record<string, any>): boolean {
+  if (!s) return false;
+  if (s.largeGroupMode || s.nestedTeams) return true;
+  const teams = s.teams ?? [];
+  return teams.length > 0 && new Set(teams.map(t => t.avatarId)).size < teams.length;
+}
+
 export function qqGetAvatar(avatarId: string): QQAvatar {
   const av = QQ_AVATARS.find(a => a.id === avatarId) ?? QQ_AVATARS[0];
   return {

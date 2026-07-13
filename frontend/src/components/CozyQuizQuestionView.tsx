@@ -23,7 +23,7 @@
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
-import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName } from '../../../shared/quarterQuizTypes';
+import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion } from '../qqTheme';
 import { SkinDeco } from './SkinDeco';
@@ -243,8 +243,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // submittedAt = frühester Sub-Team-Submit (schnellstes Handy der Fraktion).
   // Nicht-Mega: zvzAnswers/zvzTeams === s.answers/s.teams → byte-identisch.
   const isMegaTeams = useMemo(
-    () => new Set(s.teams.map(t => t.avatarId)).size < s.teams.length,
-    [s.teams]
+    () => qqIsMega(s),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [s.teams, (s as any).largeGroupMode, (s as any).nestedTeams]
   );
   const zvzFactionAgg = useMemo(() => {
     if (cat !== 'ZEHN_VON_ZEHN' || !isMegaTeams || !q.options) return null;
@@ -353,7 +354,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Mega Event: kein Einzel-Team-Gewinner-Banner — es zählt die Farbe, und die
   // Punkte-Verteilung kommt in Akt 3 (Standings). Die Kategorie-Reveals (MUCHO-
   // Optionen, 10v10-Verteilung, Schätzchen-Zahlenstrahl) laufen separat weiter.
-  const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner && !(s as any).largeGroupMode;
+  const showUnifiedWinner = showMuchoWinner && showZvzWinner && showCheeseWinner && !isMegaTeams;
   // 2026-07-07 (Wolf-Livetest 'unteres Ergebnisfeld laesst die Seite springen'):
   // Der Unified-Winner-Slot wird jetzt fuer die zutreffenden Kategorien IMMER
   // reserviert (auch waehrend der aktiven Frage) — mit fester Hoehe + absolut
@@ -1086,7 +1087,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               sein'): in der Arena KEIN Einzelsieger-Band — konsistent mit MUCHO/
               10v10 (dort per !largeGroupMode ebenfalls aus). Das Zeit-Grid pro
               Fraktion (oben) bleibt als Info erhalten. */}
-          {isCheeseReveal && !(s as any).largeGroupMode && (() => {
+          {isCheeseReveal && !isMegaTeams && (() => {
             const winnerSet = new Set(s.currentQuestionWinners ?? (s.correctTeamId ? [s.correctTeamId] : []));
             const correctSorted = [...s.answers]
               .filter(a => winnerSet.has(a.teamId))

@@ -8,7 +8,7 @@
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
-import { qqGetAvatar, qqMegaFactionName, qqMegaFactionSlug } from '../../../../shared/quarterQuizTypes';
+import { qqGetAvatar, qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shared/quarterQuizTypes';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import { QQTeamAvatar } from '../QQTeamAvatar';
@@ -85,7 +85,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // CozyArena: pro Fraktion nur den BESTEN (nächsten) Pin behalten — sonst
   // klebt die Karte mit bis zu 24 Sub-Team-Pins zu (Wolf 2026-07-03 'nur der
   // beste pin pro team'). Wirkt auf Karte, Cascade UND Ranking gleichermaßen.
-  const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
+  const isMega = qqIsMega(s);
   const scoredEff = useMemo(() => {
     if (!isMega) return scored;
     const byAvatar = new Map<string, typeof scored[number]>();

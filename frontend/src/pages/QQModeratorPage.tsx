@@ -7,7 +7,7 @@ import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
-  QQ_COMEBACK_ENABLED,
+  QQ_COMEBACK_ENABLED, qqIsMega,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { QQSoundPanel } from '../components/QQSoundPanel';
@@ -584,7 +584,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // CozyGuessr-Reveal auf 1 Pin je Fraktion → die Cascade-Schritte müssen
     // ebenfalls auf die Fraktions-Anzahl zählen, sonst tickt der Autoplay durch
     // ~24 Phantom-Pins statt der ~8 sichtbaren.
-    const mapValidPinCount = (s as any).largeGroupMode
+    const mapValidPinCount = qqIsMega(s)
       ? new Set(validPinAnswers
           .map((a: any) => s.teams.find(t => t.id === a.teamId)?.avatarId)
           .filter(Boolean)).size
@@ -1238,7 +1238,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       return Number.isFinite(lat) && Number.isFinite(lng);
     }) ?? [];
     // CozyArena: pro Fraktion kollabieren (Space-Stepping stoppt am Fraktions-Count).
-    const mapValidPinCount = (s as any).largeGroupMode
+    const mapValidPinCount = qqIsMega(s)
       ? new Set(mapValidPinsArr.map((a: any) => s.teams?.find((t: any) => t.id === a.teamId)?.avatarId).filter(Boolean)).size
       : mapValidPinsArr.length;
     const mapMaxStep = 1 + mapValidPinCount + 1;
@@ -2972,7 +2972,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   }) ?? [];
                   // CozyArena: Pin-Count pro Fraktion (Beamer zeigt 1 Pin/Fraktion) →
                   // Label „Pin X/8" statt „X/40", Auto-Advance stoppt korrekt.
-                  const validPins = (s as any).largeGroupMode
+                  const validPins = qqIsMega(s)
                     ? new Set(validPinsArr.map((a: any) => s.teams?.find((t: any) => t.id === a.teamId)?.avatarId).filter(Boolean)).size
                     : validPinsArr.length;
                   const maxStep = 1 + validPins + 1;

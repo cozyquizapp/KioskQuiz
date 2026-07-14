@@ -1,14 +1,21 @@
 /**
- * CrowdEstimateReveal — „Schwarm-Schätzen" (Wisdom of Crowds) Reveal.
+ * CrowdEstimateReveal v2 — Schwarm-Reveal auf dem "EIN STRAHL"-Pattern (2026-07-14).
  *
- * Oben Frage, mittig ein Zahlenstrahl: „nah genug"-Band, die Wahrheit ploppt,
- * der Gesamt-Schwarm-Tipp (Median aller ~25 Handys) liegt oft verblüffend nah
- * dran, Fraktions-Punkte streuen. Unten die Fraktionen nach Median-Nähe.
+ * Übernimmt das SchaetzchenReveal-v2-Layout: EIN Zahlenstrahl mit farbigen
+ * Ticks an den Fraktions-Medianen, darunter EINE entzerrte Chip-Reihe mit
+ * Connector-Linien (keine Überlappung bei engen Medianen). Dazu Schwarm-
+ * Spezifika: grünes „nah genug = Punkte"-Band, 🌊 Gesamt-Median-Marker,
+ * und pro Chip eine PUNKTE-PILL (0–100) mit Mini-Balken — zeigt, wie die
+ * Handy-Punkte (Nähe → linear auf 0) zustande kommen.
  *
- * Aggregation via shared qqSwarm — dieselbe Funktion wertet im Backend.
- * 2026-07-04 (CozyArena Voting/Schwarm, Stufe 4).
+ * Beats: 0 Chips · 1 Wahrheit+Count-up · 2 Band+Schwarm+Punkte · 3 Dimmen · 4 Sieger.
+ * Aggregation unverändert via shared qqSwarm (Backend-identisch).
+ *
+ * HINWEIS Punkte-Anzeige: ptsOf() spiegelt die Backend-Formel „100 am Ziel,
+ * linear runter" mit Falloff 4×range. Wenn das Backend eine eigene Konstante
+ * exportiert, hier importieren statt duplizieren.
  */
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQBunteTueteCrowdEstimate } from '../../../../shared/quarterQuizTypes';
 import { qqSwarm } from '../../../../shared/qqSwarm';
 import { qqMegaFactionName } from '../../../../shared/quarterQuizTypes';
@@ -17,12 +24,17 @@ import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
 import { playRevealHighlight, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed } from '../../qqTheme';
+import { useActiveThemeId } from '../../qqTheme';
+
+const GOLD = '#EAB308', GOLD_BRIGHT = '#FDE68A', SWARM_BLUE = '#38bdf8';
+// 2026-07-14 (Integration): an Backend `QQ_MEGA_DIST_K = 3` angeglichen (war 4) —
+// nearScore fällt auf 0 bei dist = 3 × „nah genug"-Range (qqRooms.ts nearScore/maxErr).
+// HINWEIS: Backend mittelt inzwischen PER HANDY (kein Median mehr) → ptsOf(median)
+// ist eine Näherung, keine 1:1-Wertung. Wolf-Flag offen.
+const PTS_FALLOFF = 3;
 
 export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
-  // 2026-07-04 (Audit): explizite Modus-Flags statt fragiler Avatar-Aliasing-
-  // Heuristik (die kippte, wenn kurzzeitig Handys ausfielen).
   const isMega = !!(s as any).nestedTeams || !!(s as any).largeGroupMode;
   const def = q.bunteTuete as QQBunteTueteCrowdEstimate;
   const unit = (lang === 'en' && def.unitEn ? def.unitEn : def.unit) ?? '';
@@ -37,161 +49,334 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
 
   const isYear = Number.isInteger(target) && Math.abs(target) >= 1500 && Math.abs(target) <= 2100 && !unit;
   const fmt = (n: number) => isYear ? String(Math.round(n)) : Math.round(n).toLocaleString('de-DE');
+  const ptsOf = (d: number) => Math.max(0, Math.round(100 * (1 - d / (range * PTS_FALLOFF))));
+  useActiveThemeId();
 
-  // Achsen-Domäne aus Fraktions-Medianen + Wahrheit + Schwarm (robust, keine
-  // Troll-Ausreißer weil Fraktions-Werte Mediane sind).
-  const domainPts = [target, ...factions.map(f => f.median)];
-  if (Number.isFinite(globalMedian)) domainPts.push(globalMedian);
-  let lo = Math.min(...domainPts), hi = Math.max(...domainPts);
-  if (!(hi > lo)) { const w = Math.max(1, Math.abs(target) * 0.15); lo = target - w; hi = target + w; }
-  const pad = (hi - lo) * 0.12; lo -= pad; hi += pad;
-  const xPct = (v: number) => Math.max(0, Math.min(100, ((v - lo) / (hi - lo)) * 100));
+  // Achse auf die Wahrheit zentriert (wie Schätzchen v2), Domäne inkl. Band+Schwarm.
+  const axisPct = useMemo(() => {
+    let half = Math.max(1, range);
+    for (const f of factions) half = Math.max(half, Math.abs(f.median - target));
+    if (Number.isFinite(globalMedian)) half = Math.max(half, Math.abs(globalMedian - target));
+    const span = half * 1.18 || 1;
+    return (v: number) => Math.max(4, Math.min(96, 50 + ((v - target) / span) * 43));
+  }, [factions, target, range, globalMedian]);
+  const tx = axisPct(target);
+  const sx = Number.isFinite(globalMedian) ? axisPct(globalMedian) : 50;
 
-  const [shown, setShown] = useState(false);
+  // Chips nach Median sortieren + horizontal entzerren; Tick bleibt an der echten Position.
+  const placed = useMemo(() => {
+    const sorted = [...factions].sort((a, b) => a.median - b.median)
+      .map(f => ({ f, x: axisPct(f.median), cx: axisPct(f.median) }));
+    if (!sorted.length) return sorted;
+    const LO = 7, HI = 93, MIN = Math.min(12.2, (HI - LO) / Math.max(1, sorted.length - 1));
+    let last = LO - MIN;
+    sorted.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
+    const overflow = sorted[sorted.length - 1].cx - HI;
+    if (overflow > 0) {
+      let prev = HI + MIN;
+      for (let i = sorted.length - 1; i >= 0; i--) { sorted[i].cx = Math.min(sorted[i].cx, prev - MIN); prev = sorted[i].cx; }
+    }
+    return sorted;
+  }, [factions, axisPct]);
+
+  const ranked = useMemo(() => [...factions].sort((a, b) => a.dist - b.dist), [factions]);
+  const rankOf = useMemo(() => new Map(ranked.map((f, i) => [f.avatarId, i + 1])), [ranked]);
+  const winner = ranked[0] ?? null;
+
+  // Beats: 0 Chips · 1 Wahrheit · 2 Band+Schwarm+Punkte · 3 Dimmen · 4 Sieger
+  const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [beat, setBeat] = useState<number>(reduce ? 4 : 0);
+  const N = Math.max(1, placed.length);
   useEffect(() => {
-    const t = setTimeout(() => {
-      setShown(true);
-      if (!s.sfxMuted) { try { playRevealHighlight(); } catch {} try { playClimaxFinish(); } catch {} }
-    }, 900);
-    return () => clearTimeout(t);
+    if (reduce) return;
+    const tBeam = 400 + N * 90 + 350;
+    const tBand = tBeam + 1100, tDark = tBand + 1300, tWin = tDark + 550;
+    const ts = [
+      setTimeout(() => { setBeat(1); if (!s.sfxMuted) { try { playRevealHighlight(); } catch {} } }, tBeam),
+      setTimeout(() => setBeat(2), tBand),
+      setTimeout(() => setBeat(3), tDark),
+      setTimeout(() => { setBeat(4); if (!s.sfxMuted) { try { playClimaxFinish(); } catch {} } }, tWin),
+    ];
+    return () => ts.forEach(clearTimeout);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Count-up der Wahrheit.
+  const [shown, setShown] = useState<number>(reduce ? target : 0);
+  const rafRef = useRef<number | null>(null);
+  const startCount = beat >= 1;
+  useEffect(() => {
+    if (!startCount) return;
+    if (reduce || isYear || (typeof document !== 'undefined' && document.hidden)) { setShown(target); return; }
+    const start = performance.now(), dur = 900;
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / dur);
+      setShown(target * (1 - Math.pow(1 - p, 3)));
+      if (p < 1) rafRef.current = requestAnimationFrame(tick); else setShown(target);
+    };
+    rafRef.current = requestAnimationFrame(tick);
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current); };
+  }, [startCount, target, reduce, isYear]);
+
+  const struck = beat >= 1, banded = beat >= 2, housedark = beat >= 3, lit = beat >= 4;
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   const swarmDist = Math.abs(globalMedian - target);
   const swarmClose = Number.isFinite(swarmDist) && swarmDist <= range;
+  const bandL = axisPct(target - range), bandR = axisPct(target + range);
 
   return (
     <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column', gap: 'clamp(14px, 1.8cqh, 22px)',
-      padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 3cqw, 48px) clamp(54px, 7cqh, 80px)',
-      animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) both', minHeight: 0,
+      flex: 1, display: 'flex', flexDirection: 'column',
+      padding: 'clamp(14px, 2cqh, 26px) clamp(20px, 3cqw, 52px) clamp(10px, 1.4cqh, 20px)',
+      animation: 'contentReveal 0.5s var(--qq-enter) both', minHeight: 0, position: 'relative', overflow: 'hidden',
     }}>
-      {/* Frage */}
-      <div style={{
-        background: isThemed() ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
-        border: isThemed() ? 'var(--qq-card-border)' : '2px solid var(--qq-hairline)',
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-        padding: 'clamp(16px, 2cqh, 26px) clamp(24px, 2.8cqw, 42px)',
-        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 8px 32px rgba(0,0,0,0.4)', flexShrink: 0,
-        animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
-      }}>
-        <div style={{ fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-accent)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8 }}>
-          🧠 {lang === 'en' ? 'Hive Mind · Reveal' : 'Schwarmintelligenz · Auflösung'}
+      <style>{`
+        @keyframes qqCE2Rise{0%{transform:translateY(24px);opacity:0}100%{transform:translateY(0);opacity:1}}
+        @keyframes qqCE2Strike{0%{transform:scale(1.07)}100%{transform:scale(1)}}
+        @keyframes qqCE2Drop{0%{transform:translate(-50%,-16px);opacity:0}100%{transform:translate(-50%,0);opacity:1}}
+      `}</style>
+
+      {/* Kopf */}
+      <div style={{ flexShrink: 0, position: 'relative', zIndex: 6 }}>
+        <div style={{ fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: SWARM_BLUE, letterSpacing: '0.16em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+          <QQEmojiIcon emoji="🧠" /> {lang === 'en' ? 'Hive Mind · Reveal' : 'Schwarmintelligenz · Auflösung'}
         </div>
-        <div style={{ fontSize: qText.length > 120 ? 'clamp(24px, 2.5cqw, 38px)' : 'clamp(28px, 3cqw, 48px)', fontWeight: 900, lineHeight: 1.18, color: 'var(--qq-card-text)' }}>
-          {qText}
-        </div>
+        <div key={lang} style={{
+          fontSize: qText.length > 90 ? 'clamp(16px, 1.8cqw, 29px)' : 'clamp(18px, 2.3cqw, 37px)',
+          fontWeight: 900, lineHeight: 1.12, color: 'var(--qq-card-text)', maxWidth: '62%',
+          marginTop: 'clamp(3px,0.5cqh,7px)', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' as any,
+          overflow: 'hidden', animation: 'langFadeIn 0.4s ease both', textWrap: 'pretty' as any,
+        }}>{qText}</div>
       </div>
 
-      {/* Zahlenstrahl */}
-      <div style={{
-        position: 'relative', flexShrink: 0,
-        margin: 'clamp(46px, 6.8cqh, 82px) clamp(24px, 4.5cqw, 72px) clamp(30px, 4.5cqh, 54px)',
-        height: 'clamp(14px, 1.8cqh, 22px)',
-      }}>
-        {/* Track — dicker + kontrastreicher fuer Distanz (Wolf 'von weitem') */}
-        <div style={{ position: 'absolute', inset: 0, borderRadius: 999, background: 'rgba(148,163,184,0.32)', border: '1px solid rgba(148,163,184,0.24)' }} />
-        {/* „nah genug"-Band */}
-        <div style={{
-          position: 'absolute', top: '-4px', bottom: '-4px',
-          left: `${xPct(target - range)}%`, width: `${Math.max(0, xPct(target + range) - xPct(target - range))}%`,
-          background: 'linear-gradient(90deg, rgba(34,197,94,0.10), rgba(34,197,94,0.28), rgba(34,197,94,0.10))',
-          border: '1px solid rgba(34,197,94,0.4)', borderRadius: 999,
-          opacity: shown ? 1 : 0, transition: 'opacity 0.6s ease',
-        }} />
-
-        {/* Fraktions-Marker (kleine Farbpunkte an ihrem Median) */}
-        {factions.map((f, i) => {
-          const rep = s.teams.find(t => t.avatarId === f.avatarId);
-          const col = rep?.color ?? '#94a3b8';
-          return (
-            <div key={f.avatarId} title={rep?.name} style={{
-              position: 'absolute', left: `${xPct(f.median)}%`, top: '50%',
-              width: 'clamp(20px, 2cqw, 30px)', height: 'clamp(20px, 2cqw, 30px)',
-              transform: 'translate(-50%, -50%)', borderRadius: '50%',
-              background: col, border: '3px solid rgba(255,255,255,0.9)', boxShadow: `0 0 10px ${col}`,
-              // Pin-Drop statt flachem Fade; opacity/transition bleiben als
-              // reduced-motion-Fallback (dann greift animation:none).
-              opacity: shown ? 1 : 0, transition: `opacity 0.5s ease ${0.2 + i * 0.06}s`, zIndex: 2,
-              animation: shown ? `qqCrowdPinDrop 0.55s var(--qq-ease-bounce) ${0.2 + i * 0.06}s both` : 'none',
-            }} />
-          );
-        })}
-
-        {/* Schwarm-Tipp (Gesamt-Median) */}
-        {Number.isFinite(globalMedian) && (
-          <div style={{ position: 'absolute', left: `${xPct(globalMedian)}%`, top: 'clamp(14px, 2cqh, 26px)', transform: 'translateX(-50%)', textAlign: 'center', opacity: shown ? 1 : 0, transition: 'opacity 0.7s ease 0.3s', zIndex: 3 }}>
-            <div style={{ width: 2, height: 'clamp(12px, 1.6cqh, 20px)', background: '#38bdf8', margin: '0 auto 3px' }} />
-            <div style={{ fontSize: 'clamp(16px, 1.9cqw, 28px)', fontWeight: 900, color: '#38bdf8', whiteSpace: 'nowrap' }}>
-              🌊 {lang === 'en' ? 'Swarm' : 'Schwarm'} {fmt(globalMedian)}
-            </div>
+      {/* Bühne */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
+        {placed.length === 0 ? (
+          <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--qq-text-muted)', fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 700 }}>
+            {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
           </div>
-        )}
-
-        {/* Wahrheit (ploppt) */}
-        <div style={{ position: 'absolute', left: `${xPct(target)}%`, bottom: 'clamp(14px, 2cqh, 26px)', transform: 'translateX(-50%)', textAlign: 'center', zIndex: 4, opacity: shown ? 1 : 0, transition: 'opacity 0.4s ease', animation: shown ? 'revealWinnerIn 0.6s var(--qq-ease-bounce) both' : 'none' }}>
-          <div style={{ fontSize: 'clamp(24px, 2.8cqw, 46px)', fontWeight: 900, color: '#EC4899', whiteSpace: 'nowrap', marginBottom: 3 }}>
-            ✓ {fmt(target)}{unit ? ` ${unit}` : ''}
-          </div>
-          <div style={{ width: 4, height: 'clamp(18px, 2.4cqh, 32px)', background: '#EC4899', margin: '0 auto', boxShadow: '0 0 12px #EC4899' }} />
-        </div>
-      </div>
-
-      {/* Legende — erklaert den Strahl (Wolf 'nicht gut beschriftet'). */}
-      <div style={{
-        display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center',
-        gap: 'clamp(16px, 2.8cqw, 44px)', flexShrink: 0,
-        fontSize: 'clamp(14px, 1.5cqw, 22px)', fontWeight: 800, color: 'var(--qq-text-muted)',
-      }}>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9 }}>
-          <span style={{ width: 'clamp(24px, 2.6cqw, 38px)', height: 'clamp(13px, 1.5cqh, 20px)', borderRadius: 6, background: 'rgba(34,197,94,0.30)', border: '1px solid rgba(34,197,94,0.5)' }} />
-          {lang === 'en' ? 'close enough' : 'nah genug'}
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, color: '#EC4899' }}>
-          ✓ {lang === 'en' ? 'truth' : 'Wahrheit'}
-        </span>
-        <span style={{ display: 'inline-flex', alignItems: 'center', gap: 9, color: '#38bdf8' }}>
-          🌊 {lang === 'en' ? 'swarm median (all guesses)' : 'Schwarm-Median (alle Tipps)'}
-        </span>
-      </div>
-
-      {/* Fraktionen nach Median-Nähe */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 1cqh, 12px)', minHeight: 0, overflow: 'hidden' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.08em', textTransform: 'uppercase' }}>
-          <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Closest factions' : 'Nächste Fraktionen'}
-          {swarmClose && <span style={{ color: '#38bdf8' }}>· {lang === 'en' ? 'the crowd nailed it!' : 'die Masse lag goldrichtig!'}</span>}
-        </div>
-        <div style={{ flex: 1, display: 'grid', gridTemplateColumns: factions.length > 4 ? '1fr 1fr' : '1fr', gap: 'clamp(6px, 1cqw, 12px)', minHeight: 0, alignContent: 'stretch', gridAutoRows: 'minmax(clamp(58px, 7cqh, 100px), 1fr)' }}>
-          {factions.map((f, i) => {
-            const rep = s.teams.find(t => t.avatarId === f.avatarId);
-            const col = rep?.color ?? '#94a3b8';
-            const name = isMega ? qqMegaFactionName(f.avatarId, lang) : (rep?.name ?? f.avatarId);
-            return (
-              <div key={f.avatarId} style={{
-                display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1cqw, 14px)',
-                padding: 'clamp(6px, 0.9cqh, 12px) clamp(10px, 1.2cqw, 18px)', borderRadius: 14,
-                background: f.inRange ? `linear-gradient(135deg, ${col}22, ${col}08)` : 'rgba(148,163,184,0.06)',
-                border: `2px solid ${f.inRange ? col + '66' : 'rgba(148,163,184,0.15)'}`,
-                opacity: shown ? 1 : 0, transform: shown ? 'none' : 'translateY(8px)',
-                transition: `opacity 0.5s ease ${0.3 + i * 0.08}s, transform 0.5s ease ${0.3 + i * 0.08}s`,
+        ) : (
+          <>
+            {/* Antwort-Tafel auf dem Beam */}
+            <div aria-hidden style={{
+              position: 'absolute', left: `${tx}%`, top: '6%', transform: 'translateX(-50%)', zIndex: 7,
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              opacity: struck ? 1 : 0, transition: 'opacity 0.35s var(--qq-enter)',
+            }}>
+              <span style={{ fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 5 }}>
+                {lang === 'en' ? 'Answer' : 'Antwort'}
+              </span>
+              <div style={{
+                display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
+                padding: 'clamp(7px,1.1cqh,15px) clamp(15px,1.7cqw,28px)', borderRadius: 18,
+                background: 'linear-gradient(180deg, rgba(30,24,58,0.94), rgba(10,8,24,0.94))',
+                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(255,255,255,0.10)`,
+                animation: struck && !reduce ? 'qqCE2Strike 0.5s var(--qq-celebrate) both' : 'none',
               }}>
-                <div style={{ width: 'clamp(20px, 2cqw, 30px)', fontWeight: 900, fontSize: 'clamp(15px, 1.6cqw, 24px)', color: i === 0 ? '#EC4899' : 'var(--qq-text-muted)', textAlign: 'center', flexShrink: 0 }}>#{i + 1}</div>
-                {/* Fraktion → WAPPEN, nicht das Tier (qqFactionAvatarEmoji, siehe dort). */}
-                <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqFactionAvatarEmoji(f.avatarId, rep?.emoji, isMega)} size={'clamp(46px, 4.6cqw, 72px)'} style={{ flexShrink: 0, boxShadow: `0 0 8px ${col}33` }} />
-                <div style={{ minWidth: 0, flex: 1 }}>
-                  <div style={{ fontSize: 'clamp(15px, 1.6cqw, 24px)', fontWeight: 900, color: col, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
-                  <div style={{ fontSize: 'clamp(12px, 1.3cqw, 18px)', fontWeight: 800, color: 'var(--qq-text-muted)' }}>
-                    {lang === 'en' ? 'median' : 'Median'} {fmt(f.median)}{unit ? ` ${unit}` : ''}
+                <span style={{
+                  fontFamily: 'var(--font-display)', fontSize: 'clamp(36px, 6cqw, 104px)', fontWeight: 700,
+                  lineHeight: 0.92, color: GOLD_BRIGHT, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
+                  textShadow: `0 0 30px ${GOLD}8c`,
+                }}>{fmt(shown)}</span>
+                {unit && <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, color: GOLD }}>{unit}</span>}
+              </div>
+            </div>
+
+            {/* Wahrheits-Beam */}
+            <div aria-hidden style={{
+              position: 'absolute', left: `${tx}%`, top: '24%', height: '24%', width: 'clamp(5px,0.62cqw,12px)', zIndex: 3,
+              transform: `translateX(-50%) scaleY(${struck ? 1 : 0})`, transformOrigin: 'top center', borderRadius: 8,
+              background: `linear-gradient(180deg, ${GOLD_BRIGHT} 0%, ${GOLD_BRIGHT} 65%, ${GOLD}1f 100%)`,
+              boxShadow: `0 0 40px 7px ${GOLD}80`, transition: reduce ? 'none' : 'transform 0.7s var(--qq-enter)',
+            }} />
+
+            {/* „nah genug"-Band */}
+            <div aria-hidden style={{
+              position: 'absolute', top: '45%', height: '6%', borderRadius: 10, zIndex: 1,
+              left: `${bandL}%`, width: `${Math.max(0, bandR - bandL)}%`,
+              background: 'linear-gradient(90deg, rgba(34,197,94,0.06), rgba(34,197,94,0.24), rgba(34,197,94,0.06))',
+              border: '1px solid rgba(34,197,94,0.4)',
+              opacity: banded ? 1 : 0, transition: 'opacity 0.6s ease',
+            }} />
+            <div aria-hidden style={{
+              position: 'absolute', left: `${(bandL + bandR) / 2}%`, top: '40.5%', transform: 'translateX(-50%)', zIndex: 2,
+              fontSize: 'clamp(9px,0.95cqw,15px)', fontWeight: 900, color: QQ_COLORS.green400,
+              letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+              opacity: banded ? 1 : 0, transition: 'opacity 0.6s ease',
+            }}>{lang === 'en' ? 'close enough = points' : 'nah genug = Punkte'}</div>
+
+            {/* Skalen-Endlabels */}
+            <div aria-hidden style={{ position: 'absolute', left: '1%', top: '41%', zIndex: 2, fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              ← {lang === 'en' ? 'too low' : 'zu niedrig'}
+            </div>
+            <div aria-hidden style={{ position: 'absolute', right: '1%', top: '41%', zIndex: 2, fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+              {lang === 'en' ? 'too high' : 'zu hoch'} →
+            </div>
+
+            {/* Mess-Schiene */}
+            <div aria-hidden style={{
+              position: 'absolute', left: '1%', right: '1%', top: '48%', height: 5, borderRadius: 5, zIndex: 2,
+              background: `linear-gradient(90deg, transparent, ${GOLD}4d 10%, rgba(255,244,214,0.55) 50%, ${GOLD}4d 90%, transparent)`,
+              boxShadow: `0 0 22px ${GOLD}40`,
+            }} />
+
+            {/* Schwarm-Median-Marker */}
+            {Number.isFinite(globalMedian) && (
+              <div style={{
+                position: 'absolute', left: `${sx}%`, top: '32%', zIndex: 5, transform: 'translateX(-50%)',
+                display: 'flex', flexDirection: 'column', alignItems: 'center',
+                opacity: banded ? 1 : 0,
+                animation: banded && !reduce ? 'qqCE2Drop 0.55s var(--qq-celebrate) both' : 'none',
+              }}>
+                <div style={{ fontSize: 'clamp(12px,1.2cqw,19px)', fontWeight: 900, color: SWARM_BLUE, whiteSpace: 'nowrap', textShadow: `0 0 14px ${SWARM_BLUE}80` }}>
+                  🌊 {lang === 'en' ? 'Swarm' : 'Schwarm'} {fmt(globalMedian)}
+                </div>
+                <div style={{ width: 3, height: '16cqh', maxHeight: '16%', minHeight: 20, background: `linear-gradient(180deg, ${SWARM_BLUE}, ${SWARM_BLUE}26)`, borderRadius: 2, marginTop: 4, boxShadow: `0 0 12px ${SWARM_BLUE}8c` }} />
+              </div>
+            )}
+
+            {/* Ticks an den Fraktions-Medianen */}
+            {placed.map(({ f, x }) => {
+              const rep = s.teams.find(t => t.avatarId === f.avatarId);
+              const col = rep?.color ?? '#94a3b8';
+              const isWin = f.avatarId === winner?.avatarId;
+              return (
+                <div key={'tick-' + f.avatarId} aria-hidden style={{
+                  position: 'absolute', left: `${x}%`, top: '44.5%', width: 'clamp(3px,0.4cqw,7px)', height: '7%',
+                  borderRadius: 4, transform: 'translateX(-50%)', zIndex: 3, background: col,
+                  boxShadow: `0 0 12px ${col}99`, opacity: housedark && !isWin ? 0.35 : 1, transition: 'opacity 0.4s ease',
+                }} />
+              );
+            })}
+
+            {/* Connectors */}
+            <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none"
+              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'none' }}>
+              {placed.map(({ f, x, cx }) => {
+                const rep = s.teams.find(t => t.avatarId === f.avatarId);
+                const col = rep?.color ?? '#94a3b8';
+                const isWin = f.avatarId === winner?.avatarId;
+                const dimmed = housedark && !(isWin && lit);
+                return (
+                  <line key={'ln-' + f.avatarId} x1={x} y1={51.5} x2={cx} y2={60}
+                    stroke={dimmed ? 'rgba(148,163,184,0.18)' : col + '66'}
+                    strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
+                );
+              })}
+            </svg>
+
+            {/* Saallicht */}
+            <div aria-hidden style={{
+              position: 'absolute', inset: '-6%', pointerEvents: 'none', zIndex: 4,
+              background: 'radial-gradient(120% 90% at 50% 55%, transparent 34%, rgba(6,4,14,0.9) 100%)',
+              opacity: housedark ? 1 : 0, transition: 'opacity 0.7s var(--qq-enter)',
+            }} />
+
+            {/* Chip-Reihe */}
+            {placed.map(({ f, cx }, i) => {
+              const rep = s.teams.find(t => t.avatarId === f.avatarId);
+              const col = rep?.color ?? '#94a3b8';
+              const name = isMega ? qqMegaFactionName(f.avatarId, lang) : (rep?.name ?? f.avatarId);
+              const isWin = f.avatarId === winner?.avatarId;
+              const rank = rankOf.get(f.avatarId) ?? 99;
+              const dimmed = housedark && !(isWin && lit);
+              const diff = f.median - target;
+              const pts = ptsOf(f.dist);
+              return (
+                <div key={f.avatarId} style={{
+                  position: 'absolute', left: `${cx}%`, top: '60%',
+                  width: `${92 / N}cqw`, minWidth: 'clamp(64px,8cqw,150px)',
+                  display: 'flex', flexDirection: 'column', alignItems: 'center',
+                  transform: 'translateX(-50%)', zIndex: isWin && lit ? 8 : 3,
+                  animation: !reduce ? `qqCE2Rise 0.5s var(--qq-enter) ${0.35 + i * 0.09}s both` : 'none',
+                }}>
+                  <div style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(3px,0.6cqh,9px)',
+                    transformOrigin: 'center top',
+                    transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
+                    filter: dimmed ? 'brightness(0.62) saturate(0.8)' : 'none',
+                    transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
+                  }}>
+                    <div style={{
+                      position: 'relative', borderRadius: '50%',
+                      boxShadow: isWin && lit ? `0 0 0 3px ${SWARM_BLUE}e6, 0 0 42px ${SWARM_BLUE}99, 0 8px 22px rgba(0,0,0,0.45)` : `0 0 14px ${col}44`,
+                      transition: 'box-shadow 0.4s ease',
+                    }}>
+                      <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqFactionAvatarEmoji(f.avatarId, rep?.emoji, isMega)} size="clamp(44px, 5.6cqw, 100px)" />
+                      {rank <= 3 && (
+                        <div style={{
+                          position: 'absolute', top: '-8%', left: '-10%',
+                          minWidth: 'clamp(18px,1.9cqw,32px)', height: 'clamp(18px,1.9cqw,32px)', borderRadius: '50%',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center',
+                          fontFamily: 'var(--font-display)', fontSize: 'clamp(11px,1.05cqw,18px)', fontWeight: 700,
+                          color: QQ_COLORS.bgPage,
+                          background: rank === 1 ? QQ_COLORS.amber400 : rank === 2 ? QQ_COLORS.slate300 : QQ_COLORS.orange700,
+                          boxShadow: '0 3px 8px rgba(0,0,0,0.4)', opacity: lit ? 1 : 0, transition: 'opacity 0.4s ease',
+                        }}>{rank}</div>
+                      )}
+                    </div>
+                    <span style={{
+                      fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 1.3cqw, 21px)', fontWeight: 700,
+                      color: 'var(--qq-card-text)', whiteSpace: 'nowrap', maxWidth: `${92 / N}cqw`,
+                      overflow: 'hidden', textOverflow: 'ellipsis',
+                    }}>{name}</span>
+                    {/* Median + Delta */}
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.45cqw,8px)',
+                      padding: 'clamp(3px,0.5cqh,6px) clamp(8px,0.95cqw,15px)', borderRadius: 'var(--qq-pill-radius)',
+                      background: 'rgba(12,10,30,0.72)', border: '1.5px solid rgba(255,255,255,0.14)',
+                    }}>
+                      <span style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(14px, 1.7cqw, 28px)', fontWeight: 700, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums' }}>{fmt(f.median)}</span>
+                      <span style={{ fontSize: 'clamp(9px, 1cqw, 16px)', fontWeight: 900, color: 'var(--qq-text-muted)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>
+                        {diff === 0 ? '✨' : diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`}
+                      </span>
+                    </div>
+                    {/* Punkte-Pill: so kam die 0–100 zustande */}
+                    <div style={{
+                      display: 'inline-flex', alignItems: 'center', gap: 'clamp(3px,0.5cqw,8px)',
+                      padding: 'clamp(2px,0.45cqh,6px) clamp(8px,0.95cqw,15px)', borderRadius: 'var(--qq-pill-radius)',
+                      background: f.inRange ? 'rgba(34,197,94,0.14)' : 'rgba(148,163,184,0.08)',
+                      border: `1.5px solid ${f.inRange ? 'rgba(34,197,94,0.45)' : 'rgba(148,163,184,0.18)'}`,
+                      opacity: banded ? 1 : 0, transition: `opacity 0.45s ease ${i * 0.06}s`,
+                    }}>
+                      <span style={{
+                        width: `${Math.max(4, (pts / 100) * 34)}px`, height: 'clamp(4px,0.7cqh,9px)', borderRadius: 5,
+                        background: f.inRange ? QQ_COLORS.green400 : pts > 0 ? '#94a3b8' : '#475569',
+                      }} />
+                      <span style={{
+                        fontFamily: 'var(--font-display)', fontSize: 'clamp(11px, 1.25cqw, 20px)', fontWeight: 700,
+                        color: f.inRange ? QQ_COLORS.green300 : pts > 0 ? 'var(--qq-card-text)' : 'var(--qq-text-muted)',
+                        fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                      }}>{pts} P</span>
+                    </div>
+                    {/* Verdikt am Sieger */}
+                    {isWin && lit && (
+                      <div style={{
+                        marginTop: 'clamp(2px,0.3cqh,5px)', padding: 'clamp(3px,0.5cqh,6px) clamp(9px,1.1cqw,17px)',
+                        borderRadius: 'var(--qq-pill-radius)', whiteSpace: 'nowrap',
+                        fontFamily: 'var(--font-display)', fontSize: 'clamp(11px, 1.15cqw, 19px)', fontWeight: 700,
+                        color: 'var(--qq-accent)', background: 'rgba(var(--qq-accent-rgb),0.2)',
+                        border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
+                        animation: !reduce ? 'qqCE2Rise 0.45s var(--qq-enter) 0.1s both' : 'none',
+                      }}>🏆 {lang === 'en' ? 'closest' : 'am nächsten'} · Δ {fmt(f.dist)}</div>
+                    )}
                   </div>
                 </div>
-                <div style={{ fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900, color: f.inRange ? QQ_COLORS.green300 : '#94a3b8', flexShrink: 0 }}>
-                  {f.inRange ? (lang === 'en' ? '✓ close' : '✓ nah') : `Δ ${fmt(f.dist)}`}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+
+            {/* Schwarm-Callout */}
+            {lit && swarmClose && (
+              <div style={{
+                position: 'absolute', left: '50%', bottom: '1%', transform: 'translateX(-50%)', zIndex: 9,
+                padding: 'clamp(4px,0.7cqh,9px) clamp(12px,1.5cqw,24px)', borderRadius: 'var(--qq-pill-radius)',
+                fontSize: 'clamp(11px,1.15cqw,18px)', fontWeight: 900, color: '#7dd3fc', whiteSpace: 'nowrap',
+                background: 'rgba(56,189,248,0.14)', border: '1.5px solid rgba(56,189,248,0.45)',
+                animation: !reduce ? 'qqCE2Rise 0.5s var(--qq-enter) 0.2s both' : 'none',
+              }}>🌊 {lang === 'en' ? `The crowd nailed it — swarm median only Δ ${fmt(swarmDist)} off` : `Die Masse lag goldrichtig — Schwarm-Median nur Δ ${fmt(swarmDist)} daneben`}</div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

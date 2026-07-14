@@ -9,7 +9,7 @@
 // Custom-Theme-BG. Nicht-Arena + Skins bleiben exakt beim alten Look.
 import React, { useState, useEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { qqIsMega } from '../../../shared/quarterQuizTypes';
+import { qqIsMega, QQ_QUESTIONS_PER_PHASE } from '../../../shared/quarterQuizTypes';
 import { isThemed } from '../qqTheme';
 
 // Kategorie-Key -> Asset. Wolf: CHEESE heisst „Schau mal", 10v10 heisst „All In".
@@ -48,9 +48,17 @@ export function qqArenaBeamerBgSlug(s: QQStateUpdate): string | null {
       return 'lobby-waiting';
     case 'RULES':          return 'arena-exterior';
     case 'TEAMS_REVEAL':   return 'arena-aerial';
-    // Kategorie-Intro zeigt das Bild der GERADE eingefuehrten Kategorie
-    // (Wolf: „in den kategorie intros fehlen die passenden bilder").
-    case 'PHASE_INTRO':    return qqCategoryAsset(s);
+    // Runden-Intro (Wolf 2026-07-14): Schritt 1+2 der Journey (introStep 0 =
+    // Gesamt-Übersicht, 1 = Runden-Cluster) zeigen das `rundenintro`-Bild; erst
+    // wenn die Kategorie enthüllt wird (introStep >= 2) kommt das Kategorie-BG.
+    // Nur bei der ERSTEN Frage einer Runde gibt es die Journey — Fragen 2–5
+    // springen direkt auf die Kategorie (kein Runden-Intro).
+    case 'PHASE_INTRO': {
+      const firstOfRound = (s.questionIndex % QQ_QUESTIONS_PER_PHASE) === 0;
+      const step = s.introStep ?? 0;
+      if (firstOfRound && step <= 1) return 'rundenintro';
+      return qqCategoryAsset(s);
+    }
     case 'QUESTION_ACTIVE':
     case 'QUESTION_REVEAL':
     case 'TIEBREAKER_QUESTION': return qqCategoryAsset(s);
@@ -119,7 +127,28 @@ function usePrefersReducedMotion(): boolean {
  */
 export function ArenaMainVideo({ opacity = 1, style }: { opacity?: number; style?: React.CSSProperties }) {
   const reduce = usePrefersReducedMotion();
-  if (reduce) return null;
+  const base: React.CSSProperties = {
+    position: 'absolute', inset: 0,
+    width: '100%', height: '100%',
+    objectFit: 'cover',
+    opacity,
+    pointerEvents: 'none',
+    zIndex: 0,
+    ...style,
+  };
+  // reduced-motion → statisches WebP (kein Video), damit die Ebene trotzdem einen
+  // Hintergrund liefert (der Aufrufer rendert kein separates Bild mehr darunter).
+  if (reduce) {
+    return (
+      <div aria-hidden style={{
+        ...base,
+        backgroundImage: 'url(/arena-bg/arena-main.webp)',
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }} />
+    );
+  }
   return (
     <video
       aria-hidden
@@ -129,15 +158,7 @@ export function ArenaMainVideo({ opacity = 1, style }: { opacity?: number; style
       playsInline
       preload="auto"
       poster="/arena-bg/arena-main.webp"
-      style={{
-        position: 'absolute', inset: 0,
-        width: '100%', height: '100%',
-        objectFit: 'cover',
-        opacity,
-        pointerEvents: 'none',
-        zIndex: 0,
-        ...style,
-      }}
+      style={base}
     >
       {/* webm zuerst (kleiner, ~1,9 MB); mp4-Fallback (~2,7 MB) fuer Safari. */}
       <source src="/arena-bg/arena-main.webm" type="video/webm" />

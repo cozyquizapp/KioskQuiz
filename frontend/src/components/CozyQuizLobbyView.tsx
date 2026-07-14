@@ -294,7 +294,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // 2026-07-13 (Wolf-Feedback Lobby-Proof): über dem Arena-Bild brauchen die
   // Team-/Fraktions-„Fenster" mehr Deckung → dunkles Glas statt 4%-Weiss.
   const arenaCardBg = arenaLobbyBg ? 'rgba(12,10,22,0.6)' : undefined;
-  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl ?? arenaLobbyBg;
+  // 2026-07-14 (Wolf: „hinter dem Video ist noch das BG-Bild zu sehen"): im
+  // Arena-Modus KEIN statisches WebP mehr unter dem Video — das Video (ArenaMainVideo,
+  // mit eigenem WebP-Poster) trägt den BG allein. Die WebP-Bild-Ebene bleibt nur
+  // für Custom-Theme-Draft-BGs (nicht-Arena).
+  const lobbyBgUrl = s.theme?.lobbyBackgroundUrl;
 
   return (
     <div style={{
@@ -336,7 +340,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             // wird klar sichtbar, Content sitzt mit eigenem Card-BG drueber.
             // 2026-07-13 (Wolf: „hintergrund transparenter", 2 Runden): 0.92 →
             // 0.6 → 0.5. Bild nur noch Andeutung, opake Cards tragen den Screen.
-            opacity: arenaLobbyBg ? 0.5 : 0.7,
+            opacity: 0.7,
             pointerEvents: 'none',
             zIndex: 0,
           }}

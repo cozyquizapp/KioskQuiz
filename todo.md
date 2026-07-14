@@ -31,7 +31,8 @@
 **⏳ ZUERST: Wolf-Beamer-Check** aller obigen Fixes (hart neuladen). Besonders: Distanz-Strahl-Lanes bei 8 Fraktionen (Kollision mit Antwort-Tafel?), Welcome-Overlay-Wolf-Position, Cheese-Arena-BG.
 
 **➡️ OFFENE ENTSCHEIDUNGEN (Wolf):**
-- MuchoOptionsReveal = noch v1 → auch in Claude Design neu, oder lassen? Weitere Reveals (Order/Bluff)?
+- MUCHO: Layout 1 gebaut; **Delight-Hebel** (A Tally/B Sweep/C Drumroll/D Settle) — Wolf muss Preview anschauen + waehlen. Fraktions-Namen unter Layout-1-Wappen ja/nein?
+- ~~Order/Bluff Reveals~~ ERLEDIGT/geklaert: **Order** ist aktiv + hat Reveal (nicht offen). **Bluff bleibt raus** (Wolf 2026-07-14 „nur neugierig", Mechanik-Grund 1-Phone/Team gilt weiter).
 - **Backend-Refactor** `qqMegaEventScore`-Distanzzweige auf shared `qqDistanceScore` (beseitigt Drift-Risiko, braucht Redeploy) — angeboten, wartet auf OK.
 - arena-main-Video auch aufs Welcome-Overlay/andere Stellen? (nur wenn Lobby-Video gefaellt)
 

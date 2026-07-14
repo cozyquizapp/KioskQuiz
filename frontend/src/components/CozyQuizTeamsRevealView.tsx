@@ -128,11 +128,26 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
     const cellW = big ? 'clamp(112px, 13cqw, 210px)' : 'clamp(80px, 10cqw, 150px)';
     return (
     <div style={{
-      position: 'relative', zIndex: 2, display: 'grid',
-      gridTemplateColumns: `repeat(${cols}, ${cellW})`,
-      gap: big ? 'clamp(14px, 2cqw, 34px)' : 'clamp(8px, 1.2cqw, 20px)',
-      justifyContent: 'center', justifyItems: 'center', alignItems: 'flex-start',
-      padding: big ? 'clamp(8px, 1.5cqh, 24px) clamp(24px, 4cqw, 72px)' : 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)',
+      position: 'relative', zIndex: 2,
+      // 2026-07-14 (Wolf 'Wappen mehr auf Bild verteilen'): Finale-Aufstellung
+      // NICHT mehr als kompaktes zentriertes Raster in der Mitte, sondern breit
+      // ueber die Arena-Flaeche verteilt (space-evenly + Zickzack-Versatz), damit
+      // die 8 Wappen das arena-aerial-Bild fuellen statt zu clustern. Der kleine
+      // Einzugs-Aufbau (big=false) bleibt das ruhige zentrierte Raster unten.
+      ...(big
+        ? {
+            display: 'flex', flexWrap: 'wrap' as const,
+            justifyContent: 'space-evenly', alignItems: 'flex-start',
+            rowGap: 'clamp(14px, 3cqh, 46px)', columnGap: 'clamp(18px, 4cqw, 82px)',
+            padding: 'clamp(8px, 1.5cqh, 24px) clamp(18px, 5cqw, 120px)',
+          }
+        : {
+            display: 'grid',
+            gridTemplateColumns: `repeat(${cols}, ${cellW})`,
+            gap: 'clamp(8px, 1.2cqw, 20px)',
+            justifyContent: 'center', justifyItems: 'center', alignItems: 'flex-start',
+            padding: 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)',
+          }),
       width: '100%', boxSizing: 'border-box',
     }}>
       {factions.map((f, i) => {
@@ -144,7 +159,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         return (
           <div key={f.avatarId} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: big ? 8 : 5,
-            width: '100%',
+            width: big ? cellW : '100%',
+            // Finale: Zickzack-Versatz (jede 2. Fraktion tiefer) → verteilt die
+            // Wappen organisch ueber die Arena-Flaeche statt in einer starren Linie.
+            marginTop: big ? (i % 2 === 1 ? 'clamp(16px, 3.4cqh, 58px)' : 0) : 0,
             opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
             transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
             transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',

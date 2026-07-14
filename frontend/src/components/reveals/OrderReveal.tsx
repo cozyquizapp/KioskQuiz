@@ -1,10 +1,19 @@
 /**
- * OrderReveal — Bunte-Tüte "order" Sub-Mechanic, Reveal-Phase.
+ * OrderReveal v2 — "MYSTERY-TAFEL" (Redesign 2026-07-14, Wolf: "wie Top 5").
  *
- * Top5-Style 2-Spalten-Layout. Vergleicht Team-Submissions mit korrekter
- * Reihenfolge via orderHitsByTeam (Backend-Truth).
+ * Auf den Top5Reveal-v2-Look gehoben (vorher v1-2-Spalten-Layout):
+ *  - Kompakter Kopf (Eyebrow + Frage + Kriterium links, "x/n aufgedeckt" rechts)
+ *    statt grosser Frage-Card.
+ *  - Verdeckte Positionen sind SICHTBARE Mystery-Rows ("· · ·") statt hidden —
+ *    Spannung statt Leere, kein Layout-Sprung.
+ *  - Sieger-Banner poppt erst NACH der letzten Row unten rein (reservierte Zeile
+ *    mit Teaser davor) — inkl. Wappen/Team, x/n richtig.
+ *  - Treffer-Zaehler (n×) pro Row rechts.
+ *  - Order-Eigenheit erhalten: Wert-Pille pro Item (itemValues) + Sortier-Kriterium.
  *
- * 2026-05-24 (Refactor #5.3): aus CozyQuizQuestionView.tsx extrahiert.
+ * Scoring-Story: Handy-Punkte = korrekte Positionen / n → Row-Zaehler +
+ * Sieger-Quote zeigen, wie die 0–100 zustande kam. Daten-Logik (orderHitsByTeam,
+ * Fraktions-Buendelung, Cascade-Sound-Filter) unveraendert aus v1 uebernommen.
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
@@ -12,19 +21,14 @@ import { QQTeamAvatar } from '../QQTeamAvatar';
 import { FactionCountAvatars } from '../QQFactionCrest';
 import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
-import {
-  playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
-} from '../../utils/sounds';
+import { playAvatarCascadeNote, playClimaxFinish, playRevealHighlight } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
 import { isThemed, themedWindow } from '../../qqTheme';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// OrderReveal — Bunte-Tüte "order" reveal, Top5-Style mit 2-Spalten-Layout
-// ═══════════════════════════════════════════════════════════════════════════════
 export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
   // CozyArena: mehrere Sub-Teams teilen einen avatarId → Cluster zu Fraktionen
-  // zusammenfassen (1 Tier + ×Anzahl) statt bis zu 24 Einzel-Avatare.
+  // zusammenfassen (1 Wappen + ×Anzahl) statt bis zu 24 Einzel-Avatare.
   const isMega = !!(s as any).nestedTeams || new Set(s.teams.map(t => t.avatarId)).size < s.teams.length;
   const btt = q.bunteTuete as any;
   const itemsDE: string[] = (btt.items ?? []) as string[];
@@ -33,31 +37,10 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
   const correctOrder: number[] = (btt.correctOrder ?? []) as number[];
   const items = lang === 'en' && itemsEN.length ? itemsEN : itemsDE;
   const n = correctOrder.length;
-
   const criteriaTxt = lang === 'en' && btt.criteriaEn ? btt.criteriaEn : btt.criteria;
 
-  // 2026-05-02: Backend-Truth via orderHitsByTeam (per-team boolean[] per
-  // Position, similarityScore>=0.8 fuzzy matched). Frontend nutzt das direkt;
-  // parseAnswers wird nur noch fuer den Item-Display benoetigt.
+  // 2026-05-02: Backend-Truth via orderHitsByTeam (per-team boolean[] pro Position).
   const orderHits = s.orderHitsByTeam ?? {};
-  const parsedAnswers = useMemo(() => {
-    const deLc = itemsDE.map(s => (s ?? '').trim().toLowerCase());
-    const enLc = itemsEN.map(s => (s ?? '').trim().toLowerCase());
-    return s.answers.map(a => {
-      const parts = String(a.text ?? '').split('|').map(p => p.trim()).filter(Boolean);
-      const order: number[] = parts.map(p => {
-        const asNum = Number(p);
-        if (Number.isFinite(asNum) && asNum >= 0 && asNum < itemsDE.length) return asNum;
-        const pLc = p.toLowerCase();
-        const di = deLc.indexOf(pLc);
-        if (di >= 0) return di;
-        const ei = enLc.indexOf(pLc);
-        if (ei >= 0) return ei;
-        return -1;
-      });
-      return { teamId: a.teamId, order };
-    });
-  }, [s.answers, itemsDE, itemsEN]);
 
   // Pro Position: welche Teams haben hier richtig (Backend-Truth)?
   const perPosition = useMemo(() => {
@@ -83,21 +66,17 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
   const topHits = teamScore[0]?.hits ?? 0;
   const winners = teamScore.filter(t => t.hits === topHits && topHits > 0);
 
-  // 2026-05-03 (Wolf-Bug Cascade-Race): siehe Schaetzchen. Race-Fix.
+  // Kaskade #n…#1 + Sieger-Beat am Ende. Cascade-Sound nur fuer Rows mit Hittern.
   const [revealedMinIdx, setRevealedMinIdx] = useState<number>(n);
+  const [winnerLit, setWinnerLit] = useState(false);
   const cascadeStartedRef = useRef(false);
-  const STEP_MS = 2000;
-  const INITIAL_DELAY_MS = 500;
+  const STEP_MS = 2400, INITIAL_DELAY_MS = 600;
 
   useEffect(() => {
     if (cascadeStartedRef.current || n === 0) return;
     cascadeStartedRef.current = true;
     setRevealedMinIdx(n);
     const timers: ReturnType<typeof setTimeout>[] = [];
-    // 2026-05-13 (Wolf 'sound cascaden nicht passend') — Order-Fix analog zu
-    // Top5: Sound nur fuer Positionen mit Hittern. Visual-Reveal-Stepping
-    // (revealedMinIdx) bleibt ueber alle n Positionen, nur die Cascade-Notes
-    // ueberspringen leere Reihen.
     let hitAccum = 0;
     const hitOrderMap: number[] = new Array(n);
     for (let j = 0; j < n; j++) {
@@ -105,322 +84,208 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
       const hasHit = (perPosition[tIdx]?.hitters.length ?? 0) > 0;
       hitOrderMap[j] = hasHit ? hitAccum++ : -1;
     }
-    const totalHits = hitAccum;
-    const cascadeTotal = totalHits + 1;
+    const totalHits = hitAccum, cascadeTotal = totalHits + 1;
     for (let i = 0; i < n; i++) {
       const targetIdx = n - 1 - i;
       const hitOrder = hitOrderMap[i];
       const hasHitters = hitOrder >= 0;
       const isLastHit = hasHitters && hitOrder === totalHits - 1;
-      const t = setTimeout(() => {
+      timers.push(setTimeout(() => {
         setRevealedMinIdx(targetIdx);
         if (!s.sfxMuted && hasHitters) {
           try { playAvatarCascadeNote(hitOrder, cascadeTotal); } catch {}
-          if (isLastHit) {
-            try { playRevealHighlight(); } catch {}
-          }
+          if (isLastHit) { try { playRevealHighlight(); } catch {} }
         }
-      }, INITIAL_DELAY_MS + i * STEP_MS);
-      timers.push(t);
+      }, INITIAL_DELAY_MS + i * STEP_MS));
     }
+    timers.push(setTimeout(() => {
+      setWinnerLit(true);
+      if (!s.sfxMuted) { try { playClimaxFinish(); } catch {} }
+    }, INITIAL_DELAY_MS + n * STEP_MS + 200));
     return () => { timers.forEach(clearTimeout); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
+  const revealedCount = n - revealedMinIdx;
 
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      gap: 'clamp(14px, 1.8cqh, 22px)',
-      padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 3cqw, 48px) clamp(54px, 7cqh, 80px)',
-      animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) both',
-      minHeight: 0,
+      padding: 'clamp(16px, 2.2cqh, 30px) clamp(20px, 3cqw, 48px) clamp(14px, 2cqh, 26px)',
+      animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) both', minHeight: 0,
     }}>
-      {/* ── Top: Frage ─────────────────────────────────────────── */}
-      <div style={{
-        background: isThemed() ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
-        border: isThemed() ? 'var(--qq-card-border)' : '2px solid var(--qq-hairline)',
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-        padding: 'clamp(16px, 2cqh, 26px) clamp(24px, 2.8cqw, 42px)',
-        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 8px 32px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
-        animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
-        flexShrink: 0,
-      }}>
-        <div style={{
-          fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-accent)',
-          letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 8,
-        }}>
-          🎁 {lang === 'en' ? 'Lucky Bag · Order' : 'Bunte Tüte · Reihenfolge'}
-        </div>
-        <div key={lang} style={{
-          fontSize: qText.length > 120 ? 'clamp(26px, 2.7cqw, 40px)' : 'clamp(30px, 3.2cqw, 52px)',
-          fontWeight: 900, lineHeight: 1.18, color: 'var(--qq-card-text)',
-          animation: 'langFadeIn 0.4s ease both',
-        }}>
-          {qText}
-        </div>
-        {criteriaTxt && (
-          <div style={{
-            marginTop: 8, fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 700,
-            color: 'var(--qq-accent-soft)', fontStyle: 'italic',
-          }}>
-            ↕ {criteriaTxt}
+      <style>{`
+        @keyframes qqOrdV2Flip{0%{transform:rotateX(72deg);opacity:0}100%{transform:rotateX(0);opacity:1}}
+        @keyframes qqOrdV2Rise{0%{transform:translateY(20px);opacity:0}100%{transform:translateY(0);opacity:1}}
+      `}</style>
+
+      {/* Kopf: Frage + Kriterium + Fortschritt */}
+      <div style={{ flexShrink: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'clamp(14px,2cqw,32px)' }}>
+        <div style={{ minWidth: 0 }}>
+          <div style={{ fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)', letterSpacing: '0.16em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <QQEmojiIcon emoji="🎁" /> {lang === 'en' ? 'Order · Reveal' : 'Reihenfolge · Auflösung'}
           </div>
-        )}
+          <div key={lang} style={{
+            fontSize: qText.length > 120 ? 'clamp(20px, 2cqw, 32px)' : 'clamp(22px, 2.3cqw, 37px)',
+            fontWeight: 900, lineHeight: 1.12, color: 'var(--qq-card-text)', marginTop: 'clamp(4px,0.8cqh,10px)',
+            animation: 'langFadeIn 0.4s ease both', textWrap: 'pretty' as any,
+          }}>{qText}</div>
+          {criteriaTxt && (
+            <div style={{ marginTop: 'clamp(3px,0.6cqh,7px)', fontSize: 'clamp(13px, 1.3cqw, 19px)', fontWeight: 800, color: 'var(--qq-accent-soft)', fontStyle: 'italic' }}>
+              ↕ {criteriaTxt}
+            </div>
+          )}
+        </div>
+        <div style={{ fontSize: 'clamp(12px, 1.1cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+          {revealedCount} / {n} {lang === 'en' ? 'revealed' : 'aufgedeckt'}
+        </div>
       </div>
 
-      {/* ── Mitte: Antwort-Liste full-width, von oben nach unten ── */}
-      <div style={{
-        flex: 1, display: 'flex', flexDirection: 'column',
-        minHeight: 0,
-      }}>
-        {/* Antwort-Liste — bottom-up enthuellt */}
-        <div style={{
-          flex: 1,
-          display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.2cqh, 14px)',
-          justifyContent: 'space-between',
-          minHeight: 0,
-        }}>
-          {perPosition.map(({ correctIdx, hitters }, idx) => {
-            const rank = idx + 1;
-            const isVisible = idx >= revealedMinIdx;
-            const hasHits = hitters.length > 0;
-            // 2026-05-07 (Audit P1): siehe Top5 — pro Reihe Stagger-Delay,
-            // damit synchron-flippende Reihen kaskadieren statt synchron poppen.
-            const rowDelay = (perPosition.length - 1 - idx) * 0.18;
-            const rankGradient = rank === 1
-              ? 'linear-gradient(135deg,#EC4899,#EC4899)'
-              : rank === 2
-                ? 'linear-gradient(135deg,#E2E8F0,#94A3B8)'
-                : rank === 3
-                  ? 'linear-gradient(135deg,#F97316,#B45309)'
-                  : 'linear-gradient(135deg,#475569,#334155)';
-            const itemText = items[correctIdx] ?? '';
+      {/* Tafel: volle Breite, Mystery-Rows, von unten nach oben aufgedeckt */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.4cqh, 16px)', marginTop: 'clamp(10px,2cqh,22px)', minHeight: 0, perspective: 1200 }}>
+        {perPosition.map(({ correctIdx, hitters }, idx) => {
+          const rank = idx + 1;
+          const isRevealed = idx >= revealedMinIdx;
+          const hasHits = hitters.length > 0;
+          const itemText = items[correctIdx] ?? '';
+          const valueTxt = itemValues[correctIdx];
+          const badgeBg = rank === 1 ? 'linear-gradient(135deg,#FDE68A,#FACC15)'
+            : rank === 2 ? 'linear-gradient(135deg,#f1f5f9,#94a3b8)'
+            : rank === 3 ? 'linear-gradient(135deg,#fdba74,#b45309)'
+            : 'linear-gradient(135deg,#64748b,#334155)';
+          if (!isRevealed) {
             return (
-              <div
-                key={idx}
-                style={{
-                  display: 'grid',
-                  gridTemplateColumns: 'auto 1fr auto',
-                  alignItems: 'center',
-                  gap: 'clamp(10px, 1.2cqw, 18px)',
-                  padding: 'clamp(10px, 1.4cqh, 18px) clamp(14px, 1.6cqw, 22px)',
-                  // Cozy-Look (hasHits=gruen). Im Skin einheitlicher Frame via Helper.
-                  borderRadius: 16,
-                  background: hasHits
-                    ? 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(22,163,74,0.06))'
-                    : 'rgba(148,163,184,0.06)',
-                  border: hasHits
-                    ? '2px solid rgba(34,197,94,0.4)'
-                    : '2px solid rgba(148,163,184,0.15)',
-                  visibility: isVisible ? 'visible' : 'hidden',
-                  animation: isVisible
-                    ? `top5RowSlideIn 0.55s var(--qq-ease-out-cubic) ${rowDelay}s both, top5RowGlow 1.2s ease ${0.3 + rowDelay}s both`
-                    : 'none',
-                  flex: 1,
-                  minHeight: 'clamp(64px, 8cqh, 92px)',
-                  ...(themedWindow({ ok: hasHits }) ?? {}),
-                }}
-              >
+              <div key={idx} style={{
+                flex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center',
+                gap: 'clamp(12px,1.4cqw,22px)', padding: '0 clamp(14px,1.6cqw,24px)', borderRadius: 18,
+                minHeight: 'clamp(56px,7cqh,88px)', background: 'rgba(255,255,255,0.03)',
+                border: '2px solid rgba(148,163,184,0.14)',
+              }}>
                 <div style={{
-                  width: 'clamp(52px, 5cqw, 72px)', height: 'clamp(52px, 5cqw, 72px)',
-                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-                  background: rankGradient,
+                  width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)', borderRadius: 14,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900, color: 'var(--qq-card-text)',
-                  flexShrink: 0,
-                  textShadow: '0 2px 4px rgba(0,0,0,0.3)',
-                  animation: isVisible ? `top5RankPop 0.55s var(--qq-ease-bounce) ${0.1 + rowDelay}s both` : 'none',
-                  boxShadow: rank === 1 ? '0 0 20px rgba(236,72,153,0.5)' : 'none',
-                }}>
-                  #{rank}
-                </div>
-
-                <div style={{
-                  display: 'flex', alignItems: 'baseline', gap: 'clamp(8px, 1cqw, 14px)',
-                  flexWrap: 'wrap', minWidth: 0,
-                }}>
-                  <div style={{
-                    fontSize: 'clamp(20px, 2.3cqw, 34px)', fontWeight: 900,
+                  fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: 'var(--qq-card-text)',
+                  background: 'linear-gradient(135deg,#334155,#1e293b)',
+                }}>#{rank}</div>
+                <div style={{ fontSize: 'clamp(20px,2.4cqw,36px)', fontWeight: 900, color: '#475569', letterSpacing: '0.5em' }}>· · ·</div>
+                <div /><div />
+              </div>
+            );
+          }
+          return (
+            <div key={idx} style={{
+              flex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center',
+              gap: 'clamp(12px,1.4cqw,22px)', padding: '0 clamp(14px,1.6cqw,24px)', borderRadius: 18,
+              minHeight: 'clamp(56px,7cqh,88px)', transformOrigin: 'center bottom',
+              background: hasHits ? 'linear-gradient(135deg, rgba(34,197,94,0.13), rgba(22,163,74,0.05))' : 'rgba(148,163,184,0.06)',
+              border: `2px solid ${hasHits ? 'rgba(34,197,94,0.42)' : 'rgba(148,163,184,0.18)'}`,
+              animation: 'qqOrdV2Flip 0.55s var(--qq-ease-out-cubic) both',
+              ...(themedWindow({ ok: hasHits }) ?? {}),
+            }}>
+              <div style={{
+                width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 14, background: badgeBg,
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#0a0814',
+                textShadow: '0 1px 2px rgba(255,255,255,0.2)',
+                boxShadow: rank === 1 ? '0 0 20px rgba(250,204,21,0.5)' : '0 3px 8px rgba(0,0,0,0.35)',
+              }}>#{rank}</div>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 'clamp(8px,1cqw,14px)', minWidth: 0 }}>
+                <span style={{
+                  fontSize: 'clamp(20px,2.4cqw,36px)', fontWeight: 900, lineHeight: 1.1,
+                  color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
+                  minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+                }}>{itemText}</span>
+                {valueTxt && (
+                  <span style={{
+                    flexShrink: 0, display: 'inline-flex', alignItems: 'center',
+                    padding: '2px 11px', borderRadius: 'var(--qq-pill-radius)',
+                    background: hasHits ? 'rgba(34,197,94,0.20)' : 'rgba(148,163,184,0.16)',
+                    border: hasHits ? '1.5px solid rgba(34,197,94,0.5)' : '1.5px solid rgba(148,163,184,0.3)',
                     color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
-                    lineHeight: 1.2,
-                    minWidth: 0, wordBreak: 'break-word',
-                  }}>
-                    {hasHits ? '✓ ' : ''}{itemText}
-                  </div>
-                  {itemValues[correctIdx] && (
-                    <span style={{
-                      display: 'inline-flex', alignItems: 'center',
-                      padding: '3px 12px', borderRadius: 'var(--qq-pill-radius)',
-                      background: hasHits ? 'rgba(34,197,94,0.22)' : 'rgba(148,163,184,0.16)',
-                      border: hasHits ? '1.5px solid rgba(34,197,94,0.55)' : '1.5px solid rgba(148,163,184,0.3)',
-                      color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
-                      fontWeight: 900,
-                      fontSize: 'clamp(14px, 1.5cqw, 22px)',
-                      whiteSpace: 'nowrap',
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>
-                      {itemValues[correctIdx]}
-                    </span>
-                  )}
-                </div>
-
-                <div style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  flexShrink: 0,
-                }}>
-                  {hasHits ? (
-                    isMega ? (
-                      <FactionCountAvatars teams={hitters} de={lang === 'de'} size={'clamp(36px, 3.8cqw, 54px)'} />
-                    ) : hitters.map((tm, hi) => (
-                      <QQTeamAvatar
-                        key={tm.id}
-                        avatarId={tm.avatarId} teamEmoji={tm.emoji}
-                        size={'clamp(36px, 3.8cqw, 54px)'}
-                        title={tm.name}
-                        style={{
-                          boxShadow: `0 0 14px ${tm.color}55`,
-                          animation: isVisible
-                            ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + hi * 0.09 + rowDelay}s both`
-                            : 'none',
-                        }}
-                      />
+                    fontWeight: 900, fontSize: 'clamp(13px,1.35cqw,20px)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
+                  }}>{valueTxt}</span>
+                )}
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
+                {hasHits ? (
+                  isMega ? <FactionCountAvatars teams={hitters} de={lang === 'de'} size={'clamp(46px, 4.6cqw, 68px)'} />
+                    : hitters.map((tm, hi) => (
+                      <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} teamEmoji={tm.emoji}
+                        size={'clamp(46px, 4.6cqw, 68px)'} title={tm.name}
+                        style={{ boxShadow: `0 0 12px ${tm.color}55`, animation: `top5AvatarPop 0.5s var(--qq-ease-bounce) ${0.25 + hi * 0.09}s both` }} />
                     ))
-                  ) : (
-                    <div style={{
-                      width: 'clamp(36px, 3.8cqw, 54px)', height: 'clamp(36px, 3.8cqw, 54px)',
-                      borderRadius: '50%',
-                      background: 'rgba(148,163,184,0.15)',
-                      border: '2px dashed rgba(148,163,184,0.4)',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      fontSize: 'clamp(20px, 2.2cqw, 28px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                      animation: isVisible
-                        ? `top5AvatarPop 0.5s cubic-bezier(0.34,1.6,0.64,1) ${0.35 + rowDelay}s both`
-                        : 'none',
-                    }}>
-                      ✕
-                    </div>
-                  )}
-                </div>
+                ) : (
+                  <div style={{
+                    width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)', borderRadius: '50%',
+                    background: 'rgba(148,163,184,0.12)', border: '2px dashed rgba(148,163,184,0.4)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 'clamp(18px,1.8cqw,26px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+                    animation: 'top5AvatarPop 0.5s var(--qq-ease-bounce) 0.3s both',
+                  }}>✕</div>
+                )}
               </div>
-            );
-          })}
-        </div>
+              <div style={{
+                fontSize: 'clamp(12px,1.15cqw,18px)', fontWeight: 900, minWidth: 'clamp(30px,3.2cqw,48px)', textAlign: 'right',
+                color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)', fontVariantNumeric: 'tabular-nums',
+              }}>{hitters.length}×</div>
+            </div>
+          );
+        })}
+      </div>
 
-        {/* Sieger-Footer — horizontale Pill-Reihe, skaliert bis 8 Teams */}
-        <div style={{
-          marginTop: 'clamp(10px, 1.4cqh, 18px)',
-          padding: 'clamp(10px, 1.4cqh, 16px) clamp(14px, 1.8cqw, 24px)',
-          borderRadius: 16,
-          background: winners.length > 0
-            ? 'linear-gradient(135deg, rgba(236,72,153,0.10), rgba(236,72,153,0.04))'
-            : 'rgba(148,163,184,0.06)',
-          border: winners.length > 0
-            ? '2px solid rgba(236,72,153,0.35)'
-            : '2px solid rgba(148,163,184,0.15)',
-          display: 'flex', alignItems: 'center',
-          gap: 'clamp(12px, 1.6cqw, 22px)',
-          flexShrink: 0, minHeight: 0,
-          opacity: revealedMinIdx === 0 ? 1 : 0.18,
-          filter: revealedMinIdx === 0 ? 'none' : 'blur(8px) saturate(0.4)',
-          transition: 'opacity 0.6s ease, filter 0.6s ease',
-          ...(themedWindow({ emphasis: winners.length > 0 }) ?? {}),
-        }}>
+      {/* Sieger-Banner (reserviert, poppt am Ende) */}
+      <div style={{ flexShrink: 0, height: 'clamp(70px,11cqh,120px)', marginTop: 'clamp(10px,2cqh,20px)', position: 'relative' }}>
+        {winnerLit ? (
+          winners.length === 0 ? (
+            <div style={{
+              position: 'absolute', inset: 0, borderRadius: 20, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 'clamp(18px,2cqw,30px)', fontWeight: 900, color: '#f87171',
+              background: 'rgba(248,113,113,0.08)', border: '2px solid rgba(248,113,113,0.3)',
+              animation: 'qqOrdV2Rise 0.5s var(--qq-ease-bounce) both',
+            }}>{lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}</div>
+          ) : (
+            <div style={{
+              position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
+              gap: 'clamp(12px,1.4cqw,24px)', borderRadius: 20,
+              background: 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(236,72,153,0.10))',
+              border: '2.5px solid rgba(250,204,21,0.65)', boxShadow: '0 0 48px rgba(250,204,21,0.25)',
+              animation: 'qqOrdV2Rise 0.55s var(--qq-ease-bounce) both',
+            }}>
+              <span style={{ fontSize: 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+                <QQEmojiIcon emoji="🏆" /> {winners.length > 1 ? (lang === 'en' ? 'Round winners' : 'Rundensieger') : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
+              </span>
+              {isMega ? (
+                <FactionCountAvatars
+                  teams={winners.map(w => s.teams.find(t => t.id === w.teamId)).filter((t): t is NonNullable<typeof t> => !!t)}
+                  de={lang === 'de'} size={'clamp(60px,7.6cqh,104px)'} />
+              ) : winners.slice(0, 3).map(w => {
+                const tm = s.teams.find(t => t.id === w.teamId);
+                if (!tm) return null;
+                return (
+                  <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px,1cqw,16px)', minWidth: 0 }}>
+                    <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px,7cqh,96px)'}
+                      style={{ animation: 'celebShake 0.6s ease 0.5s both' }} />
+                    <TeamNameLabel name={tm.name} maxLines={1} shrinkAfter={14}
+                      fontSize={'clamp(22px,2.4cqw,40px)'} color={tm.color} fontWeight={900} />
+                  </div>
+                );
+              })}
+              <span style={{
+                fontSize: 'clamp(16px,1.7cqw,28px)', fontWeight: 900, color: QQ_COLORS.yellow300,
+                padding: 'clamp(5px,0.7cqh,10px) clamp(12px,1.3cqw,22px)', borderRadius: 'var(--qq-pill-radius)',
+                background: 'rgba(250,204,21,0.14)', border: '1.5px solid rgba(250,204,21,0.5)', fontVariantNumeric: 'tabular-nums',
+              }}>{topHits} / {n} {lang === 'en' ? 'correct' : 'richtig'}</span>
+            </div>
+          )
+        ) : (
           <div style={{
-            display: 'flex', flexDirection: 'column', gap: 2,
-            flexShrink: 0, minWidth: 0,
-            paddingRight: 'clamp(8px, 1cqw, 16px)',
-            borderRight: '2px solid var(--qq-hairline)',
-          }}>
-            <div style={{
-              fontSize: 'clamp(11px, 1cqw, 14px)', fontWeight: 900, color: 'var(--qq-accent)',
-              letterSpacing: '0.1em', textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-            }}>
-              <QQEmojiIcon emoji="🏆"/> {winners.length > 1
-                ? (lang === 'en' ? 'Round winners' : 'Rundensieger')
-                : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
-            </div>
-            {winners.length > 0 && (
-              <div style={{
-                fontSize: 'clamp(13px, 1.2cqw, 18px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                whiteSpace: 'nowrap',
-              }}>
-                {winners[0].hits}/{n} {lang === 'en' ? 'correct' : 'richtig'}
-              </div>
-            )}
-          </div>
-
-          {winners.length === 0 ? (
-            <div style={{
-              fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900, color: '#f87171',
-            }}>
-              {lang === 'en' ? 'Nobody scored.' : 'Niemand hat getroffen.'}
-            </div>
-          ) : (() => {
-            const wn = winners.length;
-            // Avatar + Name als Pill, skaliert je nach Anzahl Sieger
-            const avatarSize = wn <= 2 ? 'clamp(54px, 5.6cqw, 78px)'
-              : wn <= 4 ? 'clamp(46px, 4.8cqw, 66px)'
-              : wn <= 6 ? 'clamp(40px, 4.2cqw, 56px)'
-              : 'clamp(36px, 3.8cqw, 50px)';
-            const nameSize = wn <= 2 ? 'clamp(20px, 2.2cqw, 32px)'
-              : wn <= 4 ? 'clamp(17px, 1.9cqw, 26px)'
-              : wn <= 6 ? 'clamp(15px, 1.7cqw, 22px)'
-              : 'clamp(14px, 1.5cqw, 19px)';
-            const pillGap = wn <= 4 ? 'clamp(10px, 1.2cqw, 18px)' : 'clamp(8px, 0.9cqw, 12px)';
-            if (isMega) {
-              const winTeams = winners
-                .map(w => s.teams.find(t => t.id === w.teamId))
-                .filter((t): t is NonNullable<typeof t> => !!t);
-              return (
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <FactionCountAvatars teams={winTeams} de={lang === 'de'} size={avatarSize} />
-                </div>
-              );
-            }
-            return (
-              <div style={{
-                display: 'flex', alignItems: 'center', flexWrap: 'wrap',
-                gap: pillGap,
-                flex: 1, minWidth: 0,
-              }}>
-                {winners.map((w, wi) => {
-                  const tm = s.teams.find(t => t.id === w.teamId);
-                  if (!tm) return null;
-                  return (
-                    <div key={tm.id} style={{
-                      display: 'flex', alignItems: 'center', gap: 'clamp(6px, 0.8cqw, 12px)',
-                      padding: 'clamp(4px, 0.6cqh, 8px) clamp(10px, 1.1cqw, 16px) clamp(4px, 0.6cqh, 8px) clamp(4px, 0.5cqh, 6px)',
-                      borderRadius: 'var(--qq-pill-radius)',
-                      background: `linear-gradient(135deg, ${tm.color}26, ${tm.color}0a)`,
-                      border: `2px solid ${tm.color}55`,
-                      animation: revealedMinIdx === 0
-                        ? `revealWinnerIn 0.55s var(--qq-ease-bounce) ${0.2 + wi * 0.08}s both`
-                        : 'none',
-                      minWidth: 0,
-                    }}>
-                      <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={avatarSize} style={{
-                        flexShrink: 0,
-                        boxShadow: `0 0 14px ${tm.color}55`,
-                      }} />
-                      <TeamNameLabel
-                        name={tm.name}
-                        maxLines={2}
-                        shrinkAfter={14}
-                        fontSize={nameSize}
-                        color={tm.color}
-                        fontWeight={900}
-                        style={{ lineHeight: 1.1, minWidth: 0 }}
-                      />
-                    </div>
-                  );
-                })}
-              </div>
-            );
-          })()}
-        </div>
+            position: 'absolute', inset: 0, borderRadius: 20, border: '2px dashed rgba(148,163,184,0.2)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 'clamp(11px,1.1cqw,17px)', fontWeight: 900, color: '#475569', letterSpacing: '0.18em', textTransform: 'uppercase',
+          }}>{lang === 'en' ? 'Who nailed the order?' : 'Wer hatte die Reihenfolge?'}</div>
+        )}
       </div>
     </div>
   );

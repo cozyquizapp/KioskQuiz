@@ -3369,6 +3369,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         // 2026-07-02 (Wolf): Mega Event = IMMER genestet (flaches 25er verworfen).
         // largeGroupMode und nestedTeams sind gekoppelt (large ⟺ nested).
+        const prevLarge = !!room.largeGroupMode;
         if (typeof payload.largeGroupMode === 'boolean') {
           room.largeGroupMode = payload.largeGroupMode;
         }
@@ -3376,6 +3377,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
           room.largeGroupMode = true;
         }
         room.nestedTeams = room.largeGroupMode;
+        // 2026-07-14 (Wolf 'wechsel cozyarena<->cozyquiz geht nicht, bots werden
+        // nicht gekickt'): Arena- und CozyQuiz-Teams sind strukturell
+        // unvereinbar (genestete Fraktionen vs. flache Teams). Wenn das Format
+        // in der Lobby tatsaechlich WECHSELT, die Test-Bots (_dummy) rauswerfen —
+        // sonst bleiben die Fraktions-Bots stehen und alles sieht weiter nach
+        // Arena aus. Echte Spieler (kein _dummy) bleiben unangetastet.
+        if (room.phase === 'LOBBY' && prevLarge !== !!room.largeGroupMode) {
+          for (const [id, t] of Object.entries(room.teams)) {
+            if ((t as any)._dummy) qqKickTeam(room, id);
+          }
+        }
         // Hinweis: CozyArena erzwingt KEIN Avatar-Set — die Fraktions-Wappen
         // erscheinen, weil team.emoji auf den Wappen-Slug (qqMegaFactionSlug)
         // gesetzt wird (höchste Prio in getAvatarDisplay). So bleibt Farbe⟷Wappen

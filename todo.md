@@ -145,6 +145,12 @@ DEFERRED (bewusst, mit Grund):
 Kontext: „1. Team gewinnt einfach, Strategie fehlt". Konzept + Fairness/Spannungs-Analyse
 (Monte-Carlo) voll in Memory [[project-cozyarena-showdown-concept]]. Mockup aller Kategorie-
 Formen: https://claude.ai/code/artifact/b22fbb30-0679-40a4-ac83-788e6aa345b4
+
+> 🎨 **REVEAL-DESIGN = Wolf macht es selbst in Claude Design (2026-07-14).** Der KI-seitige
+> Reveal-Rethink (smarte Viz pro Kategorie / Kuchendiagramm / Zahlenstrahl / Füll-Kacheln,
+> Scoring+Standings-Merge-DESIGN) ist **gestrichen** — nicht bauen, nicht brainstormen. Wir
+> setzen nur Wolfs fertige Designs um, wenn sie kommen. Backend-Wertung bleibt unsere Domäne.
+> ✅ Scoring-Coverage komplett: top5 + order sind in `qqMegaEventScore` (kein Loch mehr).
 - [x] **PHASE 1 (Backend) GEBAUT+GEPUSHT** `2bdfe2bb` — `qqMegaEventScore` auf einheitliche
       **0–100-Skala**: jedes aktive Handy → 0–100, Fraktion = Ø der Punkte (Rang-Punkte [5,4,3,2,1]
       raus, waren größen-unfair). Distanz = Nähe-Punkte pro Handy gemittelt (nicht die Tipps →

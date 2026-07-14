@@ -7,6 +7,7 @@
 // deckt es die volle Buehne (wie der dunkle Default-BG), ohne Stacking-Risiko und
 // ohne Aenderung an jeder einzelnen View. Gegated auf qqIsMega + kein Skin + kein
 // Custom-Theme-BG. Nicht-Arena + Skins bleiben exakt beim alten Look.
+import React, { useState, useEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { qqIsMega } from '../../../shared/quarterQuizTypes';
 import { isThemed } from '../qqTheme';
@@ -92,4 +93,55 @@ export function qqArenaRootBg(s: QQStateUpdate): string | null {
   const slug = qqArenaBeamerBgSlug(s);
   if (!slug) return null;
   return qqArenaBgFor(slug, s.phase === 'QUESTION_ACTIVE');
+}
+
+// prefers-reduced-motion — live (Beamer-Fenster kann die Einstellung wechseln).
+function usePrefersReducedMotion(): boolean {
+  const [reduce, setReduce] = useState(false);
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return;
+    const m = window.matchMedia('(prefers-reduced-motion: reduce)');
+    const on = () => setReduce(m.matches);
+    on();
+    m.addEventListener('change', on);
+    return () => m.removeEventListener('change', on);
+  }, []);
+  return reduce;
+}
+
+/**
+ * Ambient-Loop-Video für den `arena-main`-Hintergrund (Wolf-Video: Fackeln
+ * flackern, Fahnen wehen). Absolut positionierte, stumme, endlos loopende Ebene
+ * mit `/arena-bg/arena-main.webp` als Poster/Fallback. Bei `prefers-reduced-motion`
+ * rendert nichts → der Aufrufer zeigt weiter das statische WebP darunter.
+ * Der Aufrufer setzt Position (relative Container), Scrim + z-Stacking selbst;
+ * hier nur die Bild-Ebene (zIndex 0, pointer-events aus, aria-hidden).
+ */
+export function ArenaMainVideo({ opacity = 1, style }: { opacity?: number; style?: React.CSSProperties }) {
+  const reduce = usePrefersReducedMotion();
+  if (reduce) return null;
+  return (
+    <video
+      aria-hidden
+      autoPlay
+      muted
+      loop
+      playsInline
+      preload="auto"
+      poster="/arena-bg/arena-main.webp"
+      style={{
+        position: 'absolute', inset: 0,
+        width: '100%', height: '100%',
+        objectFit: 'cover',
+        opacity,
+        pointerEvents: 'none',
+        zIndex: 0,
+        ...style,
+      }}
+    >
+      {/* webm zuerst (kleiner, ~1,9 MB); mp4-Fallback (~2,7 MB) fuer Safari. */}
+      <source src="/arena-bg/arena-main.webm" type="video/webm" />
+      <source src="/arena-bg/arena-main.mp4" type="video/mp4" />
+    </video>
+  );
 }

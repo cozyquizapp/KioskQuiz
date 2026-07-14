@@ -20,6 +20,7 @@ import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed } from '../qqTheme';
+import { ArenaMainVideo } from './ArenaBeamerBg';
 
 // WolfLobbyGreeter — kleiner Wolf top-right in der Lobby, winkt hereinkommende
 // Teams herein. Idle: 'QR-Code scannen!' / 'Genau den da!' / etc. Wenn Parent
@@ -341,6 +342,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           }}
         />
       )}
+      {/* 2026-07-14 (Wolf): arena-main als Ambient-Loop-Video (Fackeln/Fahnen).
+          Liegt ueber dem WebP (= Poster/Fallback + reduced-motion) und unter dem
+          Scrim. Gleiche Deckung wie das statische Bild, damit der Kontrast der
+          getunten Lobby erhalten bleibt. */}
+      {arenaLobbyBg && <ArenaMainVideo opacity={0.5} />}
       {/* 2026-07-13 (Wolf Arena-BG, color-contrast): Scrim zwischen Kolosseum und
           Inhalt. Dunkelt Ober-/Unterband (Wortmarke + untere Zeilen) + eine
           Vignette, Mitte bleibt hell → Kunst sichtbar, Text lesbar. Nur Arena. */}

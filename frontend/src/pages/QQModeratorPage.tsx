@@ -77,6 +77,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // Bühne (Format-Wahl). Der Wizard öffnet erst, wenn Wolf dort ein Format wählt
   // (Karte klick → setShowWizard(true)) und übernimmt dann den REST des Setups.
   const [showWizard, setShowWizard] = useState(false);
+  // 2026-07-14 (Wolf 'format klarer trennen, ein schritt vorher; inline-toggle
+  // raus'): im Bereit-Cockpit (Draft vorgewaehlt) gibt es KEINEN Inline-Format-
+  // Umschalter mehr — nur ein Badge + 'Format aendern', das zurueck aufs Format-
+  // Gate (Hero-Karten) fuehrt. Eine Quelle der Wahrheit. editFormat = Gate offen.
+  const [editFormat, setEditFormat] = useState(false);
   // 2026-07-02 (Wolf „wizard als main setup, rest im hintergrund"): das alte
   // Pill-Schnell-Setup (SetupView) versteckt sich hinter „⚙ Alle Einstellungen".
   const [showAllSettings, setShowAllSettings] = useState(false);
@@ -2051,7 +2056,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           (?draft= aus „Meine Quizze"), zeigt EIN Screen alles Noetige — Quiz-
           Vorschau, Join-QR, Ort, grosser Start-Button. Der 7-Schritt-Wizard wird
           optional („⚙ Details"). Ohne Draft weiterhin die Format-Wahl-Landing. */}
-      {joined && s && s.phase === 'LOBBY' && !setupDone && selectedDraftId && (() => {
+      {joined && s && s.phase === 'LOBBY' && !setupDone && selectedDraftId && !editFormat && (() => {
         const cd = drafts.find(d => d.id === selectedDraftId);
         const title = (cd?.title ?? 'Quiz').replace(/^🎯\s*/, '');
         const qCount = (cd as any)?.questionCount ?? ((cd as any)?.questions?.length ?? 0);
@@ -2061,14 +2066,6 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         const eff = Math.min(phases, maxPhases);
         const joinUrl = `${window.location.origin}/team?room=${roomCode}`;
         const connectedTeams = s.teams.filter(t => t.connected).length;
-        const setFormat = (isArena: boolean) => {
-          emit('qq:setQuizOptions', { roomCode, largeGroupMode: isArena, nestedTeams: isArena, formatSelected: true });
-          const cur = (s as any).avatarSetId as string | undefined;
-          const nextSet = isArena ? 'cozyArena' : 'cozy3d';
-          if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
-            emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
-          }
-        };
         const card: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: 18 };
         const fieldLbl: React.CSSProperties = { fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 };
         return (
@@ -2089,21 +2086,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <div style={{ fontSize: 'clamp(19px, 2.6vh, 24px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>📋 {title}</div>
                   <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, marginTop: 4 }}>{qCount} Fragen im Set</div>
                 </div>
-                {/* Format */}
+                {/* Format — 2026-07-14 (Wolf): read-only Badge statt Inline-Toggle.
+                    Wechseln laeuft bewusst uebers Format-Gate (setzt Teams zurueck). */}
                 <div>
                   <div style={fieldLbl}>Format</div>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    {[{ a: false, label: '🍺 CozyQuiz' }, { a: true, label: '🏟️ CozyArena' }].map(f => {
-                      const on = arena === f.a && !!(s as any).formatSelected;
-                      const ac = f.a ? '#A78BFA' : '#EC4899';
-                      return (
-                        <button key={f.label} onClick={() => setFormat(f.a)}
-                          style={{ flex: 1, padding: '9px 8px', borderRadius: 10, cursor: 'pointer', fontFamily: 'inherit', fontWeight: 800, fontSize: 13,
-                            border: `1.5px solid ${on ? ac : 'rgba(148,163,184,0.25)'}`, background: on ? `${ac}22` : 'transparent', color: on ? '#fff' : '#94a3b8' }}>
-                          {f.label}
-                        </button>
-                      );
-                    })}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between',
+                    padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${accent}66`, background: `${accent}18` }}>
+                    <span style={{ fontWeight: 900, fontSize: 14, color: '#fff' }}>
+                      {arena ? '🏟️ CozyArena' : '🍺 CozyQuiz'}
+                    </span>
+                    <button onClick={() => setEditFormat(true)} title="Format wechseln (setzt beigetretene Teams/Bots zurueck)"
+                      style={{ padding: '5px 11px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                        fontWeight: 800, fontSize: 12, border: '1px solid rgba(148,163,184,0.3)',
+                        background: 'rgba(148,163,184,0.1)', color: '#c7d2e8' }}>
+                      Format ändern
+                    </button>
                   </div>
                 </div>
                 {/* Runden-Stepper */}
@@ -2229,7 +2226,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           </div>
         );
       })()}
-      {joined && s && s.phase === 'LOBBY' && !setupDone && !selectedDraftId && (
+      {joined && s && s.phase === 'LOBBY' && !setupDone && (!selectedDraftId || editFormat) && (
         <>
           {/* 2026-07-03 (Wolf 'moderator-start sieht sehr traurig aus'): Die
               Format-Wahl IST jetzt die Seite (Hero-Karten) statt in einem Wizard
@@ -2259,8 +2256,18 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </div>
               <FormatHeroWolf />
               <div style={{ fontSize: 13, color: '#c7d2e8', fontWeight: 800, letterSpacing: '0.03em', marginTop: 2, textAlign: 'center' }}>
-                Wähle dein Format — der Rest wird Schritt für Schritt geführt.
+                {editFormat
+                  ? 'Format wechseln — beigetretene Teams/Bots werden zurückgesetzt.'
+                  : 'Wähle dein Format — der Rest wird Schritt für Schritt geführt.'}
               </div>
+              {editFormat && (
+                <button onClick={() => setEditFormat(false)}
+                  style={{ marginTop: 6, padding: '4px 12px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
+                    fontWeight: 800, fontSize: 12, border: '1px solid rgba(148,163,184,0.3)',
+                    background: 'rgba(148,163,184,0.1)', color: '#c7d2e8' }}>
+                  ← Abbrechen
+                </button>
+              )}
             </div>
 
             {/* Zwei Format-Hero-Karten */}
@@ -2279,12 +2286,17 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                       // 2026-07-04 (Wolf): Format-Default fuers Avatar-Set — Arena
                       // → cozyArena (Wappen), Cozy Quiz → cozy3d (Tiere). Ein
                       // bewusst gewaehltes Theme-Set (halloween/pub/esc/…) bleibt.
+                      // (Backend setzt das beim echten Wechsel ebenfalls autoritativ.)
                       const cur = (s as any).avatarSetId as string | undefined;
                       const nextSet = f.arena ? 'cozyArena' : 'cozy3d';
                       if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
                         emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
                       }
-                      setShowWizard(true);
+                      // 2026-07-14 (Wolf): Kam die Wahl uebers 'Format aendern' im
+                      // Cockpit (editFormat), zurueck ins Cockpit — NICHT in den
+                      // Wizard. Sonst (frische Landing ohne Draft) Wizard oeffnen.
+                      if (editFormat) setEditFormat(false);
+                      else setShowWizard(true);
                     }}
                     style={{
                       flex: '1 1 260px', textAlign: 'left', padding: 'clamp(12px, 1.8vh, 18px) 22px', borderRadius: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden',

@@ -3377,15 +3377,27 @@ export function registerQQHandlers(io: SocketIOServer): void {
           room.largeGroupMode = true;
         }
         room.nestedTeams = room.largeGroupMode;
-        // 2026-07-14 (Wolf 'wechsel cozyarena<->cozyquiz geht nicht, bots werden
-        // nicht gekickt'): Arena- und CozyQuiz-Teams sind strukturell
-        // unvereinbar (genestete Fraktionen vs. flache Teams). Wenn das Format
-        // in der Lobby tatsaechlich WECHSELT, die Test-Bots (_dummy) rauswerfen —
-        // sonst bleiben die Fraktions-Bots stehen und alles sieht weiter nach
-        // Arena aus. Echte Spieler (kein _dummy) bleiben unangetastet.
+        // 2026-07-14 (Wolf 'wechsel cozyarena<->cozyquiz geht nicht; alle cozyquiz-
+        // elemente muessen aktiv sein, sonst fatal'): Arena- und CozyQuiz-Teams
+        // sind strukturell UNVEREINBAR — Arena erlaubt doppelte avatarIds
+        // (Fraktions-Slots, Unique-Check ist auf !largeGroupMode gegated), Quiz
+        // verlangt eindeutige. qqIsMega() erkennt Arena u.a. an genau diesen
+        // doppelten avatarIds → nach dem Zurueckschalten blieben echte Arena-Teams
+        // liegen und qqIsMega/Moderator-PIN-Logik haengen weiter im Arena-Modus.
+        // Darum bei ECHTEM Format-Wechsel in der Lobby ALLE Teams (Bots UND echte)
+        // rauswerfen → Raum sauber im neuen Format, keine Arena-Reste.
         if (room.phase === 'LOBBY' && prevLarge !== !!room.largeGroupMode) {
-          for (const [id, t] of Object.entries(room.teams)) {
-            if ((t as any)._dummy) qqKickTeam(room, id);
+          for (const id of Object.keys(room.teams)) qqKickTeam(room, id);
+          // avatarSetId ist ein modus-definierendes Setting, das der Toggle sonst
+          // NIE anfasst — ein Arena-Wappen-Set (cozyArena) wuerde sonst in ein
+          // CozyQuiz durchrutschen (Fraktions-Wappen statt Tiere; Picker filtert
+          // cozyArena sogar raus → unwaehlbarer <select>-Wert). Nur die auto-
+          // verwalteten Sets umstellen; ein bewusst gewaehltes Theme-Set
+          // (pub/halloween/esc/...) bleibt erhalten.
+          const autoSets = ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'];
+          const curSet = room.avatarSetId;
+          if (!curSet || autoSets.includes(curSet)) {
+            room.avatarSetId = room.largeGroupMode ? 'cozyArena' : 'cozy3d';
           }
         }
         // Hinweis: CozyArena erzwingt KEIN Avatar-Set — die Fraktions-Wappen

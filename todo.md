@@ -13,13 +13,16 @@
 
 ---
 
-## 🔜 HIER STARTEN (Handoff 2026-07-12 Abend — nach Skill-Review)
+## 🔜 HIER STARTEN (Handoff 2026-07-14)
 
-**Zustand:** working tree sauber, alles gepusht. Heute: 28 Claude-Skills installiert (kuratiert), Full-App-**Skill-Review** als Multi-Agent-Workflow (67 Findings), **High-Batch (17 Em-Dashes) + 4 Medium-Batches gefixt+gepusht**. Voll: Memory [[project-skill-review-2026-07-12]]. Roadmap-Artefakt: https://claude.ai/code/artifact/01a21783-7974-454d-8cb7-6f0c4a602212
+**Zustand:** working tree sauber, alles gepusht. Diese Session gebaut+gepusht:
+- **Fraktions-Mobile-BG dauerhaft im Team-Handy** (`1ca3f3f5`).
+- **Sauberer Format-Wechsel CozyQuiz/CozyArena** (`71749ada`): Audit (2 Agenten) fand 2 Lecks (qqIsMega-Duplikat-avatarIds + avatarSetId nie zurueckgesetzt). Fix: bei echtem Wechsel alle Teams raus + avatarSetId autoritativ; UI Inline-Toggle raus -> Badge + „Format aendern"-Gate. Details [[project-format-switch-separation]]. Wolf-Gegencheck am Setup offen.
+- **A11y-Batch 2 DURCH** (`ab0c048e`): Explore-Audit -> Team-Handy/Summary/Moderator gelabelt. Damit ist der **Skill-Review-Boden fertig** (High + 4 Med + 2 A11y-Batches). Details [[project-skill-review-2026-07-12]].
 
-**➡️ NAECHSTER SCHRITT = UX-Delight- & Motion-Elevation-Pass.** Wolf-Wunsch woertlich: „Design, Effekte, Motions richtig nice aus UX-Sicht". Kreativ, Screen fuer Screen, Wolf im Loop, Delight-Brille (nicht Bug-Brille) via `animate` (Emil Kowalski) + `ui-ux-pro-max` + `web-design-guidelines`. Die geflaggten Aesthetik-Punkte (Hot-Potato-Pille, Landing-Wortmarke, Grid-Sizing 1080p) gehen INS Delight-Briefing. (Leader-Spotlight-Scale-im-FLIP GEFIXT `388cda05`.)
+**➡️ AKTIV = Arena-Background-Set ausrollen** — [[project-arena-background-set]]. Lobby + Team-Handy gebaut. **Wolf will das Screen->BG-Mapping VORHER besprechen** (welcher BG wohin), bevor die restlichen Beamer-Screens verdrahtet werden. Danach Muster: BG-Ebene + Scrim, gated auf `qqIsMega`, `isThemed` respektieren.
 
-**Optional davor:** Low-Politur + Struktur-A11y (~25) abraeumen — Details in der Memory. Reihenfolge-Entscheidung 2026-07-12: „Boden fertig, dann Delight-Pass" (Boden = substanziell fertig).
+**DANACH = UX-Delight- & Motion-Elevation-Pass.** Wolf-Wunsch woertlich: „Design, Effekte, Motions richtig nice aus UX-Sicht". Kreativ, Screen fuer Screen, Wolf im Loop, Delight-Brille (nicht Bug-Brille) via `animate` (Emil Kowalski) + `ui-ux-pro-max` + `web-design-guidelines`. Die geflaggten Aesthetik-Punkte (Hot-Potato-Pille, Landing-Wortmarke, Grid-Sizing 1080p) gehen INS Delight-Briefing. (Leader-Spotlight-Scale-im-FLIP GEFIXT `388cda05`.) Reihenfolge-Entscheidung 2026-07-12: „Boden fertig, dann Delight-Pass".
 
 ---
 

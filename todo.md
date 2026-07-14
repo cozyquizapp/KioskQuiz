@@ -13,16 +13,22 @@
 
 ---
 
-## 🔜 HIER STARTEN (Handoff 2026-07-14)
+## 🔜 HIER STARTEN (Handoff 2026-07-14, spaet)
 
-**Zustand:** working tree sauber, alles gepusht. Diese Session gebaut+gepusht:
-- **Fraktions-Mobile-BG dauerhaft im Team-Handy** (`1ca3f3f5`).
-- **Sauberer Format-Wechsel CozyQuiz/CozyArena** (`71749ada`): Audit (2 Agenten) fand 2 Lecks (qqIsMega-Duplikat-avatarIds + avatarSetId nie zurueckgesetzt). Fix: bei echtem Wechsel alle Teams raus + avatarSetId autoritativ; UI Inline-Toggle raus -> Badge + „Format aendern"-Gate. Details [[project-format-switch-separation]]. Wolf-Gegencheck am Setup offen.
-- **A11y-Batch 2 DURCH** (`ab0c048e`): Explore-Audit -> Team-Handy/Summary/Moderator gelabelt. Damit ist der **Skill-Review-Boden fertig** (High + 4 Med + 2 A11y-Batches). Details [[project-skill-review-2026-07-12]].
+**Zustand:** working tree sauber, alles gepusht (HEAD `d3fa55af`). Diese Session gebaut+gepusht (viel):
+- **Arena-Background-Set komplett ausgerollt** + **arena-main als Ambient-Loop-Video** in der Lobby (ffmpeg via winget installiert; mp4 2,7MB/webm 1,9MB). rundenintro-BG in Journey-Schritt 1+2. Details [[project-arena-background-set]].
+- **Format-Wechsel CozyQuiz/CozyArena sauber** (`71749ada`) + **A11y-Batch 2** (`ab0c048e`, Skill-Review-Boden fertig).
+- **Wolfs Reveal-Redesign v2 integriert** (ZIP „Ansicht optimieren fuer cozyarena"): Schaetzchen/Top5/CrowdEstimate/CrowdTop. **Distanz-Reveals exakt auf Backend-Wertung** (neue `shared/qqDistanceScore.ts`, per-Handy, gated isMega). Details [[project-cozyarena-showdown-concept]] „Batch 1/2".
+- **2 Screenshot-Feedback-Runden**: Sieger-Banner nur Wappen, „All In" ohne untere Breakdown, Abgabe-Wappen groesser, Lobby-Transparenzen, Welcome-Overlay-Umbau (Wolf ueberlappt Card unten-links), **Distanz-Strahl 2-Lanes** (ueber/unter, minimal-verschoben zentriert = Wappen am Tick), Cheese-Blur-BG in Arena weg.
 
-**➡️ AKTIV = Arena-Background-Set ausrollen** — [[project-arena-background-set]]. Lobby + Team-Handy gebaut. **Wolf will das Screen->BG-Mapping VORHER besprechen** (welcher BG wohin), bevor die restlichen Beamer-Screens verdrahtet werden. Danach Muster: BG-Ebene + Scrim, gated auf `qqIsMega`, `isThemed` respektieren.
+**⏳ ZUERST: Wolf-Beamer-Check** aller obigen Fixes (hart neuladen). Besonders: Distanz-Strahl-Lanes bei 8 Fraktionen (Kollision mit Antwort-Tafel?), Welcome-Overlay-Wolf-Position, Cheese-Arena-BG.
 
-**DANACH = UX-Delight- & Motion-Elevation-Pass.** Wolf-Wunsch woertlich: „Design, Effekte, Motions richtig nice aus UX-Sicht". Kreativ, Screen fuer Screen, Wolf im Loop, Delight-Brille (nicht Bug-Brille) via `animate` (Emil Kowalski) + `ui-ux-pro-max` + `web-design-guidelines`. Die geflaggten Aesthetik-Punkte (Hot-Potato-Pille, Landing-Wortmarke, Grid-Sizing 1080p) gehen INS Delight-Briefing. (Leader-Spotlight-Scale-im-FLIP GEFIXT `388cda05`.) Reihenfolge-Entscheidung 2026-07-12: „Boden fertig, dann Delight-Pass".
+**➡️ OFFENE ENTSCHEIDUNGEN (Wolf):**
+- MuchoOptionsReveal = noch v1 → auch in Claude Design neu, oder lassen? Weitere Reveals (Order/Bluff)?
+- **Backend-Refactor** `qqMegaEventScore`-Distanzzweige auf shared `qqDistanceScore` (beseitigt Drift-Risiko, braucht Redeploy) — angeboten, wartet auf OK.
+- arena-main-Video auch aufs Welcome-Overlay/andere Stellen? (nur wenn Lobby-Video gefaellt)
+
+**DANACH = UX-Delight- & Motion-Elevation-Pass.** Wolf-Wunsch: „Design, Effekte, Motions richtig nice". Kreativ, Screen fuer Screen, Wolf im Loop, Delight-Brille via `animate`+`ui-ux-pro-max`+`web-design-guidelines`. Reihenfolge: „Boden fertig, dann Delight-Pass".
 
 ---
 

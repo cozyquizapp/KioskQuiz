@@ -3351,7 +3351,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
     socket.on('qq:setQuizOptions', async (
-      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean; formatSelected?: boolean },
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean; arenaBackgrounds?: boolean; formatSelected?: boolean },
       ack?: unknown
     ) => {
       try {
@@ -3361,6 +3361,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         }
         if (typeof payload.shuffleQuestionsInRound === 'boolean') {
           room.shuffleQuestionsInRound = payload.shuffleQuestionsInRound;
+        }
+        // 2026-07-14 (Wolf): Arena-Backgrounds an/aus (schlichter Default-BG).
+        if (typeof payload.arenaBackgrounds === 'boolean') {
+          room.arenaBackgrounds = payload.arenaBackgrounds;
         }
         // 2026-07-07 (Wolf): Comeback global via QQ_COMEBACK_ENABLED deaktiviert —
         // ein durchrutschender Toggle darf es nicht doch wieder anschalten.

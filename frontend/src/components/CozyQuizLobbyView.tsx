@@ -289,7 +289,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // ohne dass die UI darunter unlesbar wird. Kein BG-URL = Standard bleibt.
   // 2026-07-13 (Wolf Arena-Background-Set): im Arena-Modus (ohne aktiven Skin und
   // ohne explizites Theme-BG) das neue Kolosseum-Bild als Lobby-Hintergrund.
-  const arenaLobbyBg = (s as any).largeGroupMode && !isThemed() && !s.theme?.lobbyBackgroundUrl
+  // 2026-07-14 (Wolf): Moderator-Toggle „Arena-Backgrounds" respektieren →
+  // aus = schlichter Default-Lobby-BG (kein Kolosseum-Video).
+  const arenaLobbyBg = (s as any).largeGroupMode && (s as any).arenaBackgrounds !== false && !isThemed() && !s.theme?.lobbyBackgroundUrl
     ? '/arena-bg/arena-main.webp' : undefined;
   // 2026-07-13 (Wolf-Feedback Lobby-Proof): über dem Arena-Bild brauchen die
   // Team-/Fraktions-„Fenster" mehr Deckung → dunkles Glas statt 4%-Weiss.

@@ -1391,6 +1391,11 @@ export interface QQStateUpdate {
    *  ins Eltern-Team. Impliziert largeGroupMode. Bar-Race gruppiert nach avatarId
    *  (= Eltern-Team) → 8 Balken statt 24. Default false. */
   nestedTeams?: boolean;
+  /** Setup-Toggle (2026-07-14, Wolf): CozyArena-Kolosseum-Backgrounds an/aus.
+   *  Default true (undefined = an). false → Beamer/Lobby/Welcome zeigen den
+   *  schlichten dunklen Default-BG statt der Arena-Bilder. Nur im Arena-Modus
+   *  relevant. */
+  arenaBackgrounds?: boolean;
   /** Modell B (2026-07-02): per-Frage-Ranking der Haupt-Teams (Farben) fürs
    *  Mega-Event-Reveal. Vom Backend bei qqStartPlacement gesetzt, auf null bei
    *  neuer Frage. Sortiert nach Rang (0 = beste). */

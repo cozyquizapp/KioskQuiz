@@ -36,8 +36,16 @@ function qqCategoryAsset(s: QQStateUpdate): string {
   return ARENA_CAT_ASSET[cat] ?? 'arena-main';
 }
 
+/** Arena-Backgrounds aktiv? Moderator-Toggle (Default an). false → schlichter
+ *  dunkler Default-BG statt Kolosseum. Zentral, damit Beamer/Lobby/Welcome
+ *  denselben Gate nutzen. */
+export function qqArenaBgEnabled(s: QQStateUpdate): boolean {
+  return (s as any).arenaBackgrounds !== false;
+}
+
 export function qqArenaBeamerBgSlug(s: QQStateUpdate): string | null {
   if (!qqIsMega(s) || isThemed()) return null;
+  if (!qqArenaBgEnabled(s)) return null; // Moderator hat Arena-BGs ausgeschaltet
   if (s.theme?.lobbyBackgroundUrl) return null; // Custom Draft-BG hat Vorrang
   switch (s.phase) {
     case 'LOBBY':

@@ -103,6 +103,8 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
   const setTimer = (sec: number) => { emit('qq:setTimer', { roomCode, durationSec: sec }); setTimerInput?.(sec); };
   const setAvatarSet = (id: string) => emit('qq:setAvatarSet', { roomCode, avatarSetId: id });
   const setShuffle = (on: boolean) => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: on });
+  // 2026-07-14 (Wolf): CozyArena-Kolosseum-Backgrounds an/aus (Default an).
+  const setArenaBg = (on: boolean) => emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: on });
   const setComebackTimer = (sec: number) => emit('qq:comebackHLTimer', { roomCode, seconds: sec });
 
   const selDraft = drafts.find(d => d.id === selectedDraftId) ?? null;
@@ -376,13 +378,36 @@ export function QQSetupWizard({ roomCode, s, emit, phases, setPhases, selectedDr
           })()}
 
           {cur.key === 'theme' && (
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', maxWidth: 620 }}>
-              {Object.values(QQ_THEMES).map((t: any) => (
-                <button key={t.id} onClick={() => setTheme(t.id)}
-                  style={{ ...ov.themeCard, ...((s?.themeId ?? 'cozy') === t.id ? ov.themeCardActive : {}) }}>
-                  {t.label}
-                </button>
-              ))}
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 20, width: '100%' }}>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 12, justifyContent: 'center', maxWidth: 620 }}>
+                {Object.values(QQ_THEMES).map((t: any) => (
+                  <button key={t.id} onClick={() => setTheme(t.id)}
+                    style={{ ...ov.themeCard, ...((s?.themeId ?? 'cozy') === t.id ? ov.themeCardActive : {}) }}>
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              {/* 2026-07-14 (Wolf): CozyArena-Backgrounds an/aus. Nur im Arena-Modus
+                  relevant — das Kolosseum umfaerbt pro Screen, „Schlicht" zeigt den
+                  ruhigen dunklen Default-BG. */}
+              {mega && (
+                <div style={{ width: '100%', maxWidth: 520 }}>
+                  <div style={ov.fieldCap}>🏛️ Arena-Hintergründe</div>
+                  <div style={{ display: 'flex', gap: 10, justifyContent: 'center', marginTop: 8 }}>
+                    <button onClick={() => setArenaBg(true)}
+                      style={{ ...ov.soundBtn, ...((s as any)?.arenaBackgrounds !== false ? ov.soundBtnActive : {}) }}>
+                      🏛️ Mit Kolosseum
+                    </button>
+                    <button onClick={() => setArenaBg(false)}
+                      style={{ ...ov.soundBtn, ...((s as any)?.arenaBackgrounds === false ? ov.soundBtnActive : {}) }}>
+                      🌑 Schlicht
+                    </button>
+                  </div>
+                  <div style={{ ...ov.hint, textAlign: 'center', marginTop: 8 }}>
+                    „Mit Kolosseum" nutzt die CozyArena-Bilder pro Screen · „Schlicht" zeigt den ruhigen dunklen Hintergrund.
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

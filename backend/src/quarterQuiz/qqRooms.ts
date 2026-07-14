@@ -335,6 +335,9 @@ export interface QQRoomState {
    *  Kein-Grid erbt komplett von largeGroupMode; nested ändert NUR die
    *  Bar-Race-Anzeige (Frontend gruppiert nach avatarId). Default false. */
   nestedTeams: boolean;
+  /** Setup-Toggle (2026-07-14, Wolf): CozyArena-Kolosseum-Backgrounds an/aus.
+   *  Default true. false → schlichter dunkler Default-BG (Beamer/Lobby/Welcome). */
+  arenaBackgrounds: boolean;
   // ── CozyGames (Mini-Game-Phase) — 2026-05-17 ─────────────────────────────
   /** Setup-Toggle aus Draft: aktiviert CozyGames in diesem Run. Default false. */
   cozyGamesEnabled: boolean;
@@ -539,6 +542,8 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       largeGroupMode: false,
       // 2026-07-01 (Wolf Idee 2): Genestete Teams (8×3), default off.
       nestedTeams: false,
+      // 2026-07-14 (Wolf): Arena-Backgrounds default AN (bisheriges Verhalten).
+      arenaBackgrounds: true,
       // 2026-05-17 (CozyGames): default off, wird beim qqStartGame aus Draft gelesen.
       cozyGamesEnabled: false,
       cozyGamesPool: [],
@@ -4809,6 +4814,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     comebackEnabled:      room.comebackEnabled !== false,
     largeGroupMode:       room.largeGroupMode ?? false,
     nestedTeams:          room.nestedTeams ?? false,
+    arenaBackgrounds:     room.arenaBackgrounds !== false,
     megaQuestionRanking:  room.megaQuestionRanking ?? null,
     megaStandingsRevealed: room.megaStandingsRevealed ?? false,
     megaAwards:           room.megaAwards ?? null,

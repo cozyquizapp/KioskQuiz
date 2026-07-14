@@ -4251,22 +4251,28 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
             Pattern — gleicher Look wie Format-Cards auf /formats und Card-Backs
             in TeamsRevealView. Goldlinien bleiben als Innen-Decorations.
             Card poppt nach dem Sunrise-Light rein (Delay 1.2s). */}
+        {/* 2026-07-14 (Wolf): relativer Wrapper, damit der Wolf die Card unten-links
+            ueberlappen kann (die Card selbst hat overflow:hidden). */}
+        <div style={{ position: 'relative', display: 'inline-block' }}>
         <div style={{
           position: 'relative',
-          padding: 'clamp(28px, 4.5cqh, 60px) clamp(36px, 6.5cqw, 100px)',
+          // 2026-07-14 (Wolf): Text mittiger → engeres vertikales Padding, Inhalt zentriert.
+          padding: 'clamp(22px, 3.2cqh, 44px) clamp(36px, 6.5cqw, 100px)',
           borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(20px, 2.4cqw, 32px)',
+          // 2026-07-14 (Wolf „window transparenter"): Fuellung deutlich durchsichtiger
+          // (0.92 → 0.5), Arena scheint durch — Rahmen/Glow tragen die Card weiter.
           background: themed
             ? 'var(--qq-card-bg)'
-            : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.28) 0%, transparent 60%),' +
-            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.22) 0%, transparent 55%),' +
-            'linear-gradient(135deg, rgba(31,26,46,0.92) 0%, rgba(20,16,31,0.92) 60%, rgba(15,8,23,0.92) 100%)',
-          border: `2.5px solid rgba(${accentRgb},0.65)`,
-          boxShadow: `0 16px 56px rgba(0,0,0,0.55), 0 0 80px rgba(${accentRgb},0.32), inset 0 0 48px rgba(${accentRgb},0.14)`,
-          backdropFilter: 'blur(6px)',
-          WebkitBackdropFilter: 'blur(6px)',
+            : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.20) 0%, transparent 60%),' +
+            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.14) 0%, transparent 55%),' +
+            'linear-gradient(135deg, rgba(31,26,46,0.50) 0%, rgba(20,16,31,0.50) 60%, rgba(15,8,23,0.50) 100%)',
+          border: `2.5px solid rgba(${accentRgb},0.6)`,
+          boxShadow: `0 16px 56px rgba(0,0,0,0.5), 0 0 80px rgba(${accentRgb},0.3), inset 0 0 48px rgba(${accentRgb},0.12)`,
+          backdropFilter: 'blur(7px)',
+          WebkitBackdropFilter: 'blur(7px)',
           overflow: 'hidden',
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 'clamp(14px, 2cqh, 28px)',
+          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+          gap: 'clamp(10px, 1.6cqh, 22px)',
           animation: 'qqIntroWelcomeCard 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) 1.2s both',
           opacity: 0,
         }}>
@@ -4485,14 +4491,14 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
             wird zusätzlich Word-Stagger animiert (qqWordFadeUp pro Wort) statt
             statisch — wirkt lebendig wie der Wolf wirklich spricht. */}
         <div style={{
-          // 2026-07-04 (Wolf 'Wolf mittig, Balance'): Vertikal-Stack statt
-          // Wolf-links-neben-Blase — Wolf oben zentriert, Sprechblase darunter
-          // (Tail zeigt hoch). Wirkt ausbalanciert statt links-lastig.
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-          gap: 'clamp(10px, 1.4cqh, 20px)',
-          marginTop: 'clamp(18px, 2.4cqh, 34px)',
+          // 2026-07-14 (Wolf): Wolf ueberlappt die Card unten-LINKS, Sprechblase
+          // RECHTS daneben nahe dem Mund (Tail zeigt links). Absolut im Card-Wrapper.
+          position: 'absolute', left: 0, bottom: 0,
+          transform: 'translate(-12%, 44%)',
+          display: 'flex', flexDirection: 'row', alignItems: 'center',
+          gap: 'clamp(2px, 0.6cqw, 10px)',
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
-          opacity: 0,
+          opacity: 0, zIndex: 6,
         }}>
           <AnimatedCozyWolf
             widthCss="clamp(150px, 16cqw, 240px)"
@@ -4502,31 +4508,31 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
 
           <div style={{
             position: 'relative',
-            padding: 'clamp(14px, 1.8cqh, 24px) clamp(22px, 2.6cqw, 38px)',
+            padding: 'clamp(12px, 1.6cqh, 22px) clamp(20px, 2.4cqw, 34px)',
             borderRadius: 24,
-            background: 'linear-gradient(180deg, rgba(15,23,42,0.78) 0%, rgba(11,16,28,0.78) 100%)',
+            background: 'linear-gradient(180deg, rgba(15,23,42,0.82) 0%, rgba(11,16,28,0.82) 100%)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             border: `2px solid rgba(${accentRgb},0.55)`,
             boxShadow: `0 10px 32px rgba(0,0,0,0.5), 0 0 0 3px rgba(${accentRgb},0.12), inset 0 1px 0 rgba(255,255,255,0.06)`,
             color: QQ_COLORS.slate100,
-            fontSize: 'clamp(18px, 2cqw, 30px)', fontWeight: 900,
-            maxWidth: '60cqw',
+            fontSize: 'clamp(17px, 1.9cqw, 28px)', fontWeight: 900,
+            maxWidth: '30cqw',
             lineHeight: 1.28,
             animation: 'qqIntroBubbleBob 5s ease-in-out 4s infinite',
           }}>
-            {/* Tail — zeigt nach OBEN auf den Wolf (der jetzt darueber steht). */}
+            {/* Tail — zeigt nach LINKS auf den Wolf-Mund (Wolf steht links daneben). */}
             <div style={{
-              position: 'absolute', top: -13, left: '50%',
-              width: 0, height: 0, transform: 'translateX(-50%)',
-              borderLeft: '11px solid transparent', borderRight: '11px solid transparent',
-              borderBottom: `14px solid rgba(${accentRgb},0.55)`,
+              position: 'absolute', left: -13, top: '46%',
+              width: 0, height: 0, transform: 'translateY(-50%)',
+              borderTop: '11px solid transparent', borderBottom: '11px solid transparent',
+              borderRight: `14px solid rgba(${accentRgb},0.55)`,
             }} />
             <div style={{
-              position: 'absolute', top: -10, left: '50%',
-              width: 0, height: 0, transform: 'translateX(-50%)',
-              borderLeft: '9px solid transparent', borderRight: '9px solid transparent',
-              borderBottom: '12px solid rgba(15,23,42,0.85)',
+              position: 'absolute', left: -10, top: '46%',
+              width: 0, height: 0, transform: 'translateY(-50%)',
+              borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
+              borderRight: '12px solid rgba(15,23,42,0.86)',
             }} />
             {greeting.split(' ').map((word, i) => (
               <span key={i} style={{
@@ -4538,6 +4544,7 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
             ))}
           </div>
         </div>
+        </div>{/* /card-wrapper (Wolf-Overlap) */}
       </div>
       <style>{`
         @keyframes qqIntroAmbientPulse {

@@ -27,7 +27,7 @@ import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar, CountryFlagOrEmoji } from '../components/QQTeamAvatar';
 import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
-import { qqArenaRootBg } from '../components/ArenaBeamerBg';
+import { qqArenaRootBg, qqArenaBgFor } from '../components/ArenaBeamerBg';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
@@ -4090,7 +4090,9 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
       // Wolf 2026-05-05 'sehe da aktuell nichts': Mount-Anim deutlich
       // dramatischer — Folie zoomt aus 1.18 → 1 (war 1.04, kaum sichtbar).
       hiddenScale={1.18}
-      background={themed ? 'var(--qq-bg)' : 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)'}
+      // 2026-07-14 (Wolf „hier fehlt noch bg"): im Arena-Modus das Kolosseum
+      // (arena-main) auch hinter dem Welcome-Overlay (liegt ausserhalb SlideStage).
+      background={themed ? 'var(--qq-bg)' : (arena ? qqArenaBgFor('arena-main') : 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)')}
     >
       {/* 2026-05-07 (Wolf-ESC 'wie geil waere ein 10sec intro video — video
           ist drin'): Welcome-Video laeuft als BG-Layer hinter allen anderen
@@ -4959,6 +4961,9 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const de = lang === 'de';
   const themed = isThemed();
+  // 2026-07-14 (Wolf „hier fehlt noch bg"): im Arena-Modus Root transparent
+  // lassen, damit der zentrale SlideStage-BG (lobby-waiting) durchscheint.
+  const arenaWelcomeBg = qqIsMega(s) && !themed && !s.theme?.lobbyBackgroundUrl;
   const bgUrl = s.theme?.lobbyBackgroundUrl;
   return (
     <div style={{
@@ -4967,6 +4972,8 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
       padding: '40px 64px 56px', position: 'relative', overflow: 'hidden', gap: 8,
       background: themed
         ? 'var(--qq-bg)'
+        : arenaWelcomeBg
+        ? 'transparent'
         : 'radial-gradient(ellipse at 50% -10%, rgba(var(--qq-accent-rgb),0.16), transparent 55%), '
           + 'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), #0A0814',
     }}>

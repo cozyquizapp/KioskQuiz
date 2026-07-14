@@ -19,6 +19,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
 import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shared/quarterQuizTypes';
+import { qqDistanceFactionScores, qqSchaetzchenParse } from '../../../../shared/qqDistanceScore';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
@@ -76,6 +77,18 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
 
   // CozyArena: pro Fraktion auf den besten Tipp bündeln.
   const isMega = qqIsMega(s);
+  // Arena-Wertung EXAKT wie Backend (per Handy, Ø über verbundene Handys) — nur
+  // mega. Marker bleibt der beste Tipp (Visual), aber Ranking/Sieger = Punkte, so
+  // matcht der Sieger 1:1 das Standing (Wolf 2026-07-14). qqSchaetzchenParse =
+  // exakt der Backend-Parser fuer SCHAETZCHEN.
+  const factionScores = useMemo(
+    () => isMega
+      ? qqDistanceFactionScores(s.answers.map(a => ({ teamId: a.teamId, text: a.text })), target, q.unit, s.teams as any, qqSchaetzchenParse)
+      : new Map(),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [isMega, s.answers, s.teams, target, q.unit],
+  );
+  const ptsOfAvatar = (av: string) => Math.round((factionScores.get(av) as any)?.points ?? 0);
   const rankedFinal = useMemo(() => {
     if (!isMega) return ranked;
     const bestByAvatar = new Map<string, typeof ranked[number]>();
@@ -85,8 +98,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     }
     return [...bestByAvatar.values()]
       .map(r => ({ ...r, team: { ...r.team, name: qqMegaFactionName(r.team.avatarId, lang), emoji: qqMegaFactionSlug(r.team.avatarId) ?? r.team.emoji } }))
-      .sort((a, b) => a.delta - b.delta || a.submittedAt - b.submittedAt);
-  }, [ranked, isMega, lang]);
+      // Ranking nach Backend-Punkten (nicht bester Tipp) → Sieger = Standing-Sieger.
+      .sort((a, b) => (ptsOfAvatar(b.team.avatarId) - ptsOfAvatar(a.team.avatarId)) || a.delta - b.delta || a.submittedAt - b.submittedAt);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ranked, isMega, lang, factionScores]);
 
   const winner = rankedFinal[0] ?? null;
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
@@ -400,7 +415,9 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                         animation: !reduce ? 'qqStr2Rise 0.45s var(--qq-enter) 0.1s both' : 'none',
                       }}>{exact
                         ? (lang === 'en' ? '✨ spot on' : '✨ getroffen')
-                        : `🏆 ${lang === 'en' ? 'closest' : 'am nächsten'} · ${fmt(winner!.delta)} ${offWord}`}</div>
+                        : isMega
+                          ? `🏆 ${lang === 'en' ? 'leads' : 'vorne'} · ${ptsOfAvatar(r.team.avatarId)} P`
+                          : `🏆 ${lang === 'en' ? 'closest' : 'am nächsten'} · ${fmt(winner!.delta)} ${offWord}`}</div>
                     )}
                   </div>
                   {/* Konfetti am Sieger */}

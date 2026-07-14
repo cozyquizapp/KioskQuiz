@@ -11,13 +11,15 @@
  * Beats: 0 Chips · 1 Wahrheit+Count-up · 2 Band+Schwarm+Punkte · 3 Dimmen · 4 Sieger.
  * Aggregation unverändert via shared qqSwarm (Backend-identisch).
  *
- * HINWEIS Punkte-Anzeige: ptsOf() spiegelt die Backend-Formel „100 am Ziel,
- * linear runter" mit Falloff 4×range. Wenn das Backend eine eigene Konstante
- * exportiert, hier importieren statt duplizieren.
+ * Punkte-Anzeige (Wolf 2026-07-14): EXAKT wie das Backend via shared
+ * qqDistanceFactionScores (per Handy, Ø über verbundene Handys, K=3) — Punkte +
+ * Ranking + Sieger matchen 1:1 das Standing. qqSwarm-Median nur noch fuer die
+ * Tick-Position auf dem Zahlenstrahl.
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQBunteTueteCrowdEstimate } from '../../../../shared/quarterQuizTypes';
 import { qqSwarm } from '../../../../shared/qqSwarm';
+import { qqDistanceFactionScores, qqParseEstimate } from '../../../../shared/qqDistanceScore';
 import { qqMegaFactionName } from '../../../../shared/quarterQuizTypes';
 import { qqFactionAvatarEmoji } from '../../qqShared';
 import { QQTeamAvatar } from '../QQTeamAvatar';
@@ -27,11 +29,6 @@ import { QQ_COLORS } from '../../../../shared/qqColors';
 import { useActiveThemeId } from '../../qqTheme';
 
 const GOLD = '#EAB308', GOLD_BRIGHT = '#FDE68A', SWARM_BLUE = '#38bdf8';
-// 2026-07-14 (Integration): an Backend `QQ_MEGA_DIST_K = 3` angeglichen (war 4) —
-// nearScore fällt auf 0 bei dist = 3 × „nah genug"-Range (qqRooms.ts nearScore/maxErr).
-// HINWEIS: Backend mittelt inzwischen PER HANDY (kein Median mehr) → ptsOf(median)
-// ist eine Näherung, keine 1:1-Wertung. Wolf-Flag offen.
-const PTS_FALLOFF = 3;
 
 export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
@@ -49,7 +46,17 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
 
   const isYear = Number.isInteger(target) && Math.abs(target) >= 1500 && Math.abs(target) <= 2100 && !unit;
   const fmt = (n: number) => isYear ? String(Math.round(n)) : Math.round(n).toLocaleString('de-DE');
-  const ptsOf = (d: number) => Math.max(0, Math.round(100 * (1 - d / (range * PTS_FALLOFF))));
+  // Exakte Backend-Punkte (per Handy, Ø über verbundene Handys) — matcht das
+  // Standing 1:1 (Wolf 2026-07-14). qqSwarm-Median dient nur noch der Tick-Position.
+  const factionScores = useMemo(
+    () => qqDistanceFactionScores(
+      s.answers.map(a => ({ teamId: a.teamId, text: a.text })),
+      def.targetValue, def.unit, s.teams as any, qqParseEstimate,
+    ),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [s.answers, s.teams, def.targetValue, def.unit],
+  );
+  const ptsOfAvatar = (av: string) => Math.round(factionScores.get(av)?.points ?? 0);
   useActiveThemeId();
 
   // Achse auf die Wahrheit zentriert (wie Schätzchen v2), Domäne inkl. Band+Schwarm.
@@ -79,7 +86,15 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
     return sorted;
   }, [factions, axisPct]);
 
-  const ranked = useMemo(() => [...factions].sort((a, b) => a.dist - b.dist), [factions]);
+  // Arena (mega): Ranking nach Backend-PUNKTEN → Sieger = Standing-Sieger.
+  // Normal-CozyQuiz (non-mega): „nächster gewinnt" → nach Median-Distanz.
+  const ranked = useMemo(
+    () => isMega
+      ? [...factions].sort((a, b) => (ptsOfAvatar(b.avatarId) - ptsOfAvatar(a.avatarId)) || (a.dist - b.dist))
+      : [...factions].sort((a, b) => a.dist - b.dist),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [factions, factionScores, isMega],
+  );
   const rankOf = useMemo(() => new Map(ranked.map((f, i) => [f.avatarId, i + 1])), [ranked]);
   const winner = ranked[0] ?? null;
 
@@ -281,7 +296,8 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
               const rank = rankOf.get(f.avatarId) ?? 99;
               const dimmed = housedark && !(isWin && lit);
               const diff = f.median - target;
-              const pts = ptsOf(f.dist);
+              const pts = ptsOfAvatar(f.avatarId);
+              const scored = pts > 0;
               return (
                 <div key={f.avatarId} style={{
                   position: 'absolute', left: `${cx}%`, top: '60%',
@@ -331,24 +347,26 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                         {diff === 0 ? '✨' : diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`}
                       </span>
                     </div>
-                    {/* Punkte-Pill: so kam die 0–100 zustande */}
+                    {/* Punkte-Pill (nur Arena/mega — 0–100 ist ein Arena-Konzept): so kam die Wertung zustande */}
+                    {isMega && (
                     <div style={{
                       display: 'inline-flex', alignItems: 'center', gap: 'clamp(3px,0.5cqw,8px)',
                       padding: 'clamp(2px,0.45cqh,6px) clamp(8px,0.95cqw,15px)', borderRadius: 'var(--qq-pill-radius)',
-                      background: f.inRange ? 'rgba(34,197,94,0.14)' : 'rgba(148,163,184,0.08)',
-                      border: `1.5px solid ${f.inRange ? 'rgba(34,197,94,0.45)' : 'rgba(148,163,184,0.18)'}`,
+                      background: scored ? 'rgba(34,197,94,0.14)' : 'rgba(148,163,184,0.08)',
+                      border: `1.5px solid ${scored ? 'rgba(34,197,94,0.45)' : 'rgba(148,163,184,0.18)'}`,
                       opacity: banded ? 1 : 0, transition: `opacity 0.45s ease ${i * 0.06}s`,
                     }}>
                       <span style={{
                         width: `${Math.max(4, (pts / 100) * 34)}px`, height: 'clamp(4px,0.7cqh,9px)', borderRadius: 5,
-                        background: f.inRange ? QQ_COLORS.green400 : pts > 0 ? '#94a3b8' : '#475569',
+                        background: scored ? QQ_COLORS.green400 : '#475569',
                       }} />
                       <span style={{
                         fontFamily: 'var(--font-display)', fontSize: 'clamp(11px, 1.25cqw, 20px)', fontWeight: 700,
-                        color: f.inRange ? QQ_COLORS.green300 : pts > 0 ? 'var(--qq-card-text)' : 'var(--qq-text-muted)',
+                        color: scored ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
                         fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
                       }}>{pts} P</span>
                     </div>
+                    )}
                     {/* Verdikt am Sieger */}
                     {isWin && lit && (
                       <div style={{
@@ -358,7 +376,9 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                         color: 'var(--qq-accent)', background: 'rgba(var(--qq-accent-rgb),0.2)',
                         border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
                         animation: !reduce ? 'qqCE2Rise 0.45s var(--qq-enter) 0.1s both' : 'none',
-                      }}>🏆 {lang === 'en' ? 'closest' : 'am nächsten'} · Δ {fmt(f.dist)}</div>
+                      }}>{isMega
+                        ? `🏆 ${lang === 'en' ? 'leads' : 'vorne'} · ${pts} P`
+                        : `🏆 ${lang === 'en' ? 'closest' : 'am nächsten'} · Δ ${fmt(f.dist)}`}</div>
                     )}
                   </div>
                 </div>

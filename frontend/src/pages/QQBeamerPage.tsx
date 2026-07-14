@@ -27,6 +27,7 @@ import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar, CountryFlagOrEmoji } from '../components/QQTeamAvatar';
 import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
+import { qqArenaRootBg } from '../components/ArenaBeamerBg';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
@@ -732,7 +733,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         '#0A0814',
       ].join(',')
     : null;
-  const bg = pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0A0814') : '#0A0814');
+  // 2026-07-14 (Arena-Background-Set): im CozyArena-Modus das Kolosseum-Bild pro
+  // Screen/Kategorie direkt in die Root-`bg` backen (Scrim + Bild + Fallback).
+  // null bei Nicht-Arena/Skin/Custom-BG → alter Look exakt erhalten.
+  const bg = qqArenaRootBg(s) ?? pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0A0814') : '#0A0814');
   const textCol = s.theme?.textColor ?? QQ_COLORS.slate200;
   const accent = s.theme?.accentColor ?? QQ_COLORS.brandPink;
   // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy.

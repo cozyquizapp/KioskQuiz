@@ -491,7 +491,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
 
   if (goPhase === 'crown' && winner) {
     return (
-      <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: '#0A0814', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.6cqh, 24px)', color: '#f4f6ff' }}>
+      <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.6cqh, 24px)', color: '#f4f6ff' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 80% 62% at 50% 42%, ${wColor}3a 0%, transparent 62%)`, animation: 'qqCrownFlood 0.8s ease both' }} />
         <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
         <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#e9c46a' }}>

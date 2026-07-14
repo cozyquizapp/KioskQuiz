@@ -170,7 +170,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   return (
     <div style={{
       width: '100%', height: '100%', position: 'relative', overflow: 'hidden',
-      backgroundColor: themed ? undefined : '#0A0814',
+      // 2026-07-14 (Arena-Background-Set): Root transparent lassen, damit der
+      // zentrale Arena-BG (arena-aerial, in QQBeamerPage-`bg` gebacken) durch-
+      // scheint. ArenaEntranceView rendert nur im Mega-Modus. Themed unveraendert.
+      backgroundColor: themed ? undefined : 'transparent',
       background: themed ? 'var(--qq-bg)' : undefined,
       fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       display: 'flex', flexDirection: 'column', alignItems: 'center',

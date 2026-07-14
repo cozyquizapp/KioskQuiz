@@ -1686,6 +1686,13 @@ function TeamGameView({
     : pageBg;
   const finalPageBg = isEsc ? escPageBg : pageBg;
 
+  // 2026-07-14 (Wolf 'das bg im mobile soll immer im bg sein'): In CozyArena bleibt
+  // die Welt der eigenen Fraktion dauerhaft im Hintergrund — nicht nur bei der Wahl.
+  // Bild-Layer sitzt hinter dem opaken Gradient + Scrim für Text-Kontrast.
+  const arenaFactionSlug = (s as any).largeGroupMode && !isEsc
+    ? qqMegaFactionSlug(myTeam?.avatarId ?? '') : undefined;
+  const arenaFactionBg = arenaFactionSlug ? `/arena-bg/faction-${arenaFactionSlug}.webp` : null;
+
   return (
     <div style={{
       ...darkPage,
@@ -1709,6 +1716,24 @@ function TeamGameView({
           pointerEvents: 'none',
           zIndex: 0,
         }} />
+      )}
+      {/* CozyArena: Fraktions-Welt dauerhaft im Hintergrund (gleiches Muster wie
+          die Team-Auswahl). Crossfade bei Fraktions-/Farbwechsel via key-Remount. */}
+      {arenaFactionBg && (
+        <>
+          <div key={arenaFactionBg} aria-hidden style={{
+            position: 'fixed', inset: 0,
+            backgroundImage: `url(${arenaFactionBg})`,
+            backgroundSize: 'cover', backgroundPosition: 'center', backgroundRepeat: 'no-repeat',
+            opacity: 0.44, pointerEvents: 'none', zIndex: 0,
+            animation: 'qqFactionBgFade 0.5s ease both',
+          }} />
+          <div aria-hidden style={{
+            position: 'fixed', inset: 0, pointerEvents: 'none', zIndex: 0,
+            background: 'linear-gradient(180deg, rgba(8,6,16,0.5) 0%, rgba(8,6,16,0.18) 28%, ' +
+              'rgba(8,6,16,0.3) 62%, rgba(8,6,16,0.72) 100%)',
+          }} />
+        </>
       )}
       {isEsc && <MobileEurovisionHearts />}
       <div style={grainOverlay} />

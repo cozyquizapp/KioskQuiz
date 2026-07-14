@@ -70,20 +70,27 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
   const tx = axisPct(target);
   const sx = Number.isFinite(globalMedian) ? axisPct(globalMedian) : 50;
 
-  // Chips nach Median sortieren + horizontal entzerren; Tick bleibt an der echten Position.
-  const placed = useMemo(() => {
-    const sorted = [...factions].sort((a, b) => a.median - b.median)
-      .map(f => ({ f, x: axisPct(f.median), cx: axisPct(f.median) }));
-    if (!sorted.length) return sorted;
-    const LO = 7, HI = 93, MIN = Math.min(12.2, (HI - LO) / Math.max(1, sorted.length - 1));
+  // Chips nach Median sortieren + in ZWEI Lanes (abwechselnd ober-/unterhalb des
+  // Strahls, Wolf 2026-07-14) — jede Lane separat entzerrt = mehr horizontaler Platz.
+  const spread = (arr: Array<{ cx: number }>) => {
+    if (!arr.length) return;
+    const LO = 6, HI = 94, MIN = Math.min(17, (HI - LO) / Math.max(1, arr.length - 1));
     let last = LO - MIN;
-    sorted.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
-    const overflow = sorted[sorted.length - 1].cx - HI;
+    arr.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
+    const overflow = arr[arr.length - 1].cx - HI;
     if (overflow > 0) {
       let prev = HI + MIN;
-      for (let i = sorted.length - 1; i >= 0; i--) { sorted[i].cx = Math.min(sorted[i].cx, prev - MIN); prev = sorted[i].cx; }
+      for (let i = arr.length - 1; i >= 0; i--) { arr[i].cx = Math.min(arr[i].cx, prev - MIN); prev = arr[i].cx; }
     }
+  };
+  const placed = useMemo(() => {
+    const sorted = [...factions].sort((a, b) => a.median - b.median)
+      .map((f, i) => ({ f, x: axisPct(f.median), cx: axisPct(f.median), above: i % 2 === 1 }));
+    if (!sorted.length) return sorted;
+    spread(sorted.filter(c => !c.above));
+    spread(sorted.filter(c => c.above));
     return sorted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [factions, axisPct]);
 
   // Arena (mega): Ranking nach Backend-PUNKTEN → Sieger = Standing-Sieger.
@@ -267,13 +274,15 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
             {/* Connectors */}
             <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'none' }}>
-              {placed.map(({ f, x, cx }) => {
+              {placed.map(({ f, x, cx, above }) => {
                 const rep = s.teams.find(t => t.avatarId === f.avatarId);
                 const col = rep?.color ?? '#94a3b8';
                 const isWin = f.avatarId === winner?.avatarId;
                 const dimmed = housedark && !(isWin && lit);
+                const y1 = above ? 46 : 52;
+                const y2 = above ? 43.5 : 57.5;
                 return (
-                  <line key={'ln-' + f.avatarId} x1={x} y1={51.5} x2={cx} y2={60}
+                  <line key={'ln-' + f.avatarId} x1={x} y1={y1} x2={cx} y2={y2}
                     stroke={dimmed ? 'rgba(148,163,184,0.18)' : col + '66'}
                     strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
                 );
@@ -287,8 +296,8 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
               opacity: housedark ? 1 : 0, transition: 'opacity 0.7s var(--qq-enter)',
             }} />
 
-            {/* Chip-Reihe */}
-            {placed.map(({ f, cx }, i) => {
+            {/* Chip-Reihe (zwei Lanes: oben/unten am Strahl, je separat entzerrt) */}
+            {placed.map(({ f, cx, above }, i) => {
               const rep = s.teams.find(t => t.avatarId === f.avatarId);
               const col = rep?.color ?? '#94a3b8';
               const name = isMega ? qqMegaFactionName(f.avatarId, lang) : (rep?.name ?? f.avatarId);
@@ -298,17 +307,19 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
               const diff = f.median - target;
               const pts = ptsOfAvatar(f.avatarId);
               const scored = pts > 0;
+              const laneW = `${92 / Math.max(3, Math.ceil(N / 2))}cqw`;
               return (
                 <div key={f.avatarId} style={{
-                  position: 'absolute', left: `${cx}%`, top: '60%',
-                  width: `${92 / N}cqw`, minWidth: 'clamp(64px,8cqw,150px)',
+                  position: 'absolute', left: `${cx}%`,
+                  ...(above ? { bottom: '56%' } : { top: '57%' }),
+                  width: laneW, minWidth: 'clamp(64px,8cqw,150px)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   transform: 'translateX(-50%)', zIndex: isWin && lit ? 8 : 3,
                   animation: !reduce ? `qqCE2Rise 0.5s var(--qq-enter) ${0.35 + i * 0.09}s both` : 'none',
                 }}>
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(3px,0.6cqh,9px)',
-                    transformOrigin: 'center top',
+                    transformOrigin: above ? 'center bottom' : 'center top',
                     transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
                     filter: dimmed ? 'brightness(0.62) saturate(0.8)' : 'none',
                     transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
@@ -333,7 +344,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                     </div>
                     <span style={{
                       fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 1.3cqw, 21px)', fontWeight: 700,
-                      color: 'var(--qq-card-text)', whiteSpace: 'nowrap', maxWidth: `${92 / N}cqw`,
+                      color: 'var(--qq-card-text)', whiteSpace: 'nowrap', maxWidth: laneW,
                       overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{name}</span>
                     {/* Median + Delta */}

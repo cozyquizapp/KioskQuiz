@@ -116,22 +116,31 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [rankedFinal, target]);
   const tx = axisPct(target);
 
-  // Chips nach Tippwert sortieren, dann EINE Reihe entzerren (min. Abstand,
-  // beidseitig geclamped) — Tick bleibt an der echten Position, Connector verbindet.
+  // Chips nach Tippwert sortieren, dann in ZWEI Lanes verteilen (abwechselnd ober-
+  // und unterhalb des Strahls — Wolf 2026-07-14: „mehr Platz zur Verteilung, klarer
+  // welches Team wo steht"). Jede Lane wird SEPARAT entzerrt → halb so viele Chips
+  // pro Reihe = viel mehr horizontaler Raum, weniger Kollision. Tick bleibt an der
+  // echten Position, Connector verbindet zur (ggf. verschobenen) Chip-Spalte.
+  const spread = (arr: Array<{ cx: number }>) => {
+    if (!arr.length) return;
+    const LO = 6, HI = 94, MIN = Math.min(17, (HI - LO) / Math.max(1, arr.length - 1));
+    let last = LO - MIN;
+    arr.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
+    const overflow = arr[arr.length - 1].cx - HI;
+    if (overflow > 0) {
+      let prev = HI + MIN;
+      for (let i = arr.length - 1; i >= 0; i--) { arr[i].cx = Math.min(arr[i].cx, prev - MIN); prev = arr[i].cx; }
+    }
+  };
   const placed = useMemo(() => {
     const sorted = [...rankedFinal]
       .sort((a, b) => a.num - b.num)
-      .map(r => ({ r, x: axisPct(r.num), cx: axisPct(r.num) }));
+      .map((r, i) => ({ r, x: axisPct(r.num), cx: axisPct(r.num), above: i % 2 === 1 }));
     if (!sorted.length) return sorted;
-    const LO = 7, HI = 93, MIN = Math.min(12.2, (HI - LO) / Math.max(1, sorted.length - 1));
-    let last = LO - MIN;
-    sorted.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
-    const overflow = sorted[sorted.length - 1].cx - HI;
-    if (overflow > 0) {
-      let prev = HI + MIN;
-      for (let i = sorted.length - 1; i >= 0; i--) { sorted[i].cx = Math.min(sorted[i].cx, prev - MIN); prev = sorted[i].cx; }
-    }
+    spread(sorted.filter(c => !c.above)); // untere Lane
+    spread(sorted.filter(c => c.above));  // obere Lane
     return sorted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rankedFinal, axisPct]);
 
   const rankOf = useMemo(() => new Map(rankedFinal.map((r, i) => [r.teamId, i + 1])), [rankedFinal]);
@@ -315,14 +324,16 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               );
             })}
 
-            {/* Connectors Tick → Chip */}
+            {/* Connectors Tick → Chip (oben: hoch, unten: runter) */}
             <svg aria-hidden viewBox="0 0 100 100" preserveAspectRatio="none"
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', zIndex: 2, pointerEvents: 'none' }}>
-              {placed.map(({ r, x, cx }) => {
+              {placed.map(({ r, x, cx, above }) => {
                 const isWin = r.teamId === winner?.teamId;
                 const dimmed = housedark && !(isWin && lit);
+                const y1 = above ? 46 : 52;
+                const y2 = above ? 43.5 : 57.5;
                 return (
-                  <line key={'ln-' + r.teamId} x1={x} y1={51.5} x2={cx} y2={60}
+                  <line key={'ln-' + r.teamId} x1={x} y1={y1} x2={cx} y2={y2}
                     stroke={dimmed ? 'rgba(148,163,184,0.18)' : r.team.color + '66'}
                     strokeWidth={1.5} vectorEffect="non-scaling-stroke" strokeDasharray="3 3" />
                 );
@@ -336,24 +347,27 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               opacity: housedark ? 1 : 0, transition: 'opacity 0.7s var(--qq-enter)',
             }} />
 
-            {/* Chip-Reihe (entzerrt, EINE Reihe) */}
-            {placed.map(({ r, cx }, i) => {
+            {/* Chip-Reihe (zwei Lanes: oben/unten am Strahl, je separat entzerrt) */}
+            {placed.map(({ r, cx, above }, i) => {
               const isWin = r.teamId === winner?.teamId;
               const rank = rankOf.get(r.teamId) ?? 99;
               const dimmed = housedark && !(isWin && lit);
               const diff = r.num - target;
               const exact = diff === 0;
+              // Chips duerfen breiter sein — pro Lane nur ~halb so viele.
+              const laneW = `${92 / Math.max(3, Math.ceil(N / 2))}cqw`;
               return (
                 <div key={r.teamId} style={{
-                  position: 'absolute', left: `${cx}%`, top: '60%',
-                  width: `${92 / N}cqw`, minWidth: 'clamp(64px,8cqw,150px)',
+                  position: 'absolute', left: `${cx}%`,
+                  ...(above ? { bottom: '56%' } : { top: '57%' }),
+                  width: laneW, minWidth: 'clamp(64px,8cqw,150px)',
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   transform: 'translateX(-50%)', zIndex: isWin && lit ? 8 : 3,
                   animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${0.35 + i * 0.09}s both` : 'none',
                 }}>
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px,0.7cqh,10px)',
-                    transformOrigin: 'center top',
+                    transformOrigin: above ? 'center bottom' : 'center top',
                     transform: isWin && lit ? 'scale(1.16)' : 'scale(1)',
                     filter: dimmed ? `brightness(${DIM}) saturate(0.8)` : 'none',
                     transition: 'filter 0.5s var(--qq-enter), transform 0.5s var(--qq-celebrate)',
@@ -383,7 +397,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     <span style={{
                       fontFamily: 'var(--font-display)', fontSize: 'clamp(12px, 1.25cqw, 20px)',
                       fontWeight: 700, color: 'var(--qq-card-text)', whiteSpace: 'nowrap',
-                      maxWidth: `${92 / N}cqw`, overflow: 'hidden', textOverflow: 'ellipsis',
+                      maxWidth: laneW, overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{r.team.name}</span>
                     {/* Wert + signiertes Delta */}
                     <div style={{

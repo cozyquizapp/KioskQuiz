@@ -2088,7 +2088,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Übergang zum Regel-Intro. 2026-05-11: zurückgebracht nach Wolf-
           Klarstellung — vorher fälschlich unter „L1 Welcome doppelt"
           entfernt. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} arena={qqIsMega(s)} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} arena={qqIsMega(s)} arenaBg={qqIsMega(s) && (s as any).arenaBackgrounds !== false} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
       {/* Regel-Intro (rulesSlideIndex === -1): 2026-06-28 (Wolf) als ERSTE Station
           in die persistente Regel-Bühne (RulesView) verlegt — kein separates
           Overlay mehr, sonst doppelt. RulesIntroOverlay bleibt als toter Code
@@ -3597,12 +3597,16 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
  * showCrown wird in der Arena bewusst NICHT gesetzt (reine Verteilung, kein
  * Sieger — der lebt im Wertungs-Beat); der Krone-Pfad bleibt für evtl. Reuse.
  */
-function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim }: {
+function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim, big }: {
   teams: Array<{ id: string; name: string; avatarId: string; color?: string; emoji?: string }>;
   winnerAvatarId?: string;
   showCrown: boolean;
   de: boolean;
   dim: boolean;
+  /** 2026-07-14 (Wolf 'Layout 1'): Full-Width-Bars-Variante — Wappen sitzen inline
+   *  rechts in der Antwort-Zeile mit viel Platz → deutlich groesser fuer maximale
+   *  Fern-Sichtbarkeit. */
+  big?: boolean;
 }) {
   const buckets = qqFactionBuckets(teams as any, de);
   const many = buckets.length > 4;
@@ -3610,7 +3614,9 @@ function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim }: {
     <>
       {buckets.map((b, bi) => {
         const isWinner = showCrown && b.avatarId === winnerAvatarId;
-        const avatarSz = isWinner
+        const avatarSz = big
+          ? (many ? 'clamp(58px, 6.4cqw, 88px)' : 'clamp(72px, 7.8cqw, 108px)')
+          : isWinner
           ? (many ? 'clamp(56px, 6cqw, 80px)' : 'clamp(64px, 7cqw, 92px)')
           : (many ? 'clamp(44px, 4.8cqw, 64px)' : 'clamp(52px, 5.6cqw, 76px)');
         return (
@@ -3740,27 +3746,33 @@ export function MuchoOptionsReveal({
   // ziehen die Rows smooth auseinander, damit die Chips Platz unter der Card
   // bekommen ohne die naechste Card zu verdecken.
   const expandedLayout = revealStep >= 1;
+  // 2026-07-14 (Wolf 'Layout 1 fuer Mucho'): In der Arena wird aus dem 2x2-Grid
+  // EINE Spalte mit vollbreiten Antwort-Balken. Die Fraktions-Wappen sitzen inline
+  // rechts in jeder Zeile — maximaler horizontaler Platz = groesste Wappen, klarste
+  // Antwort->Fraktion-Zuordnung, aus Beamer-Distanz lesbar. Nicht-Arena bleibt 2x2
+  // mit den unter den Karten haengenden Voter-Reihen (unveraendert).
+  const containerStyle: React.CSSProperties = isMega
+    ? {
+        display: 'flex', flexDirection: 'column',
+        gap: 'clamp(10px, 1.6cqh, 18px)',
+        width: '100%', maxWidth: 1400,
+        marginBottom: 'clamp(10px, 1.4cqh, 22px)',
+      }
+    : {
+        display: 'grid',
+        gridTemplateColumns: '1fr 1fr',
+        columnGap: 18,
+        // 2026-05-12 (Wolf 'mucho runde 1 felder stehen unten aus slide raus'):
+        // rowGap-Max von 120 → 90, paddingBottom-Max von 160 → 110 reduziert.
+        rowGap: expandedLayout ? 'clamp(60px, 8cqh, 90px)' : 18,
+        paddingBottom: expandedLayout ? 'clamp(70px, 9cqh, 110px)' : 0,
+        marginBottom: 'clamp(10px, 1.4cqh, 22px)',
+        width: '100%', maxWidth: 1400,
+        // 2026-04-30 v2: 0.9s entspanntes Easing (User: 'cards verschieben sich zu hektisch').
+        transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth), margin-bottom 0.9s ease',
+      };
   return (
-    <div style={{
-      display: 'grid',
-      gridTemplateColumns: '1fr 1fr',
-      columnGap: 18,
-      // 2026-05-12 (Wolf 'mucho runde 1 felder stehen unten aus slide raus'):
-      // rowGap-Max von 120 → 90, paddingBottom-Max von 160 → 110 reduziert.
-      // Zwei-Spalten-Layout mit 4 Optionen + Voter-Reihen + Footer-Avatar-Row
-      // war bei kleinen Beamer-Aufloesungen + grosser Frage-Card knapp am
-      // Bottom-Edge. Kompaktere Bottom-Spaces verhindern Clipping.
-      rowGap: expandedLayout ? 'clamp(60px, 8cqh, 90px)' : 18,
-      paddingBottom: expandedLayout ? 'clamp(70px, 9cqh, 110px)' : 0,
-      marginBottom: 'clamp(10px, 1.4cqh, 22px)',
-      width: '100%', maxWidth: 1400,
-      // 2026-07-12 (Delight-Pass): Block-Entrance entfernt — die 4 Karten werden
-      // jetzt pro Karte gestaffelt eingeblendet (siehe Card-Wrapper unten), analog
-      // zu ZvZ/Bunte Tuete. Vorher ploppten alle vier als ein Block rein.
-      // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing — User-Feedback
-      // 'cards verschieben sich zu hektisch'. ≥0.45s ist die neue Faustregel.
-      transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth), margin-bottom 0.9s ease',
-    }}>
+    <div style={containerStyle}>
       {options.map((opt, i) => {
         const optImg = optionImages?.[i];
         const isCorrect = showLock && i === correctOptionIndex;
@@ -3798,6 +3810,10 @@ export function MuchoOptionsReveal({
               flex: 1,
               position: 'relative', overflow: 'hidden',
               borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: '24px 28px',
+              // 2026-07-14 (Wolf 'Layout 1'): Arena-Balken bekommen eine Mindesthoehe,
+              // damit alle 4 Zeilen gleich hoch sind und die grossen Inline-Wappen +
+              // ×Anzahl-Badge nicht am overflow:hidden der Karte geclippt werden.
+              ...(isMega ? { minHeight: 'clamp(118px, 15cqh, 168px)' } : null),
               // 2026-05-09 (Wolf 'Mini-Sprung in Reihe wenn Sieger-Card kommt'):
               // Border einheitlich 3px ausgeführt (vorher 2/3/2) + box-sizing
               // border-box, sonst wuchs die korrekte Card 2px höher und alle
@@ -3877,13 +3893,31 @@ export function MuchoOptionsReveal({
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
+              {/* 2026-07-14 (Wolf 'Layout 1'): Arena — Fraktions-Wappen inline rechts
+                  in der Antwort-Zeile. Viel horizontaler Platz → grosse Wappen (big),
+                  aus Beamer-Distanz lesbar, klare Antwort->Fraktion-Zuordnung. */}
+              {isMega && voterShow && voters.length > 0 && (
+                <div style={{
+                  position: 'relative', zIndex: 1, marginLeft: 'auto', paddingLeft: 10,
+                  display: 'flex', flexWrap: 'wrap', alignItems: 'center',
+                  justifyContent: 'flex-end', gap: 'clamp(12px, 1.5cqw, 22px)',
+                }}>
+                  <MegaMuchoVoterPills
+                    teams={voters.map(v => v.team)}
+                    winnerAvatarId={winnerTeam?.avatarId}
+                    showCrown={false}
+                    de={lang === 'de'}
+                    dim={isWrong}
+                    big
+                  />
+                </div>
+              )}
             </div>
-            {/* Voter-Reihe: haengt unter der Card (Avatare 80% rausragend, nur
-                der obere Top-Edge scrapt die Card-Unterkante) damit der
-                Antwort-Text nicht verdeckt wird. Zeit-Pill direkt unter dem
-                Avatar-Kreis. justifyContent:center damit einzelne Avatare
-                unter der Card zentriert stehen. */}
-            {voterShow && voters.length > 0 && (
+            {/* Voter-Reihe (nur Nicht-Arena): haengt unter der Card (Avatare 80%
+                rausragend). Zeit-Pill direkt unter dem Avatar-Kreis, zentriert.
+                Arena nutzt stattdessen die grossen Inline-Wappen rechts in der
+                Antwort-Zeile (Layout 1, siehe oben in der Karte). */}
+            {!isMega && voterShow && voters.length > 0 && (
               <div style={{
                 position: 'absolute', left: 8, right: 8, bottom: 0,
                 transform: 'translateY(80%)',
@@ -3892,20 +3926,7 @@ export function MuchoOptionsReveal({
                 gap: voters.length > 4 ? 6 : 10,
                 pointerEvents: 'none', zIndex: 5,
               }}>
-                {isMega ? (
-                  <MegaMuchoVoterPills
-                    teams={voters.map(v => v.team)}
-                    winnerAvatarId={winnerTeam?.avatarId}
-                    /* 2026-07-12 (Wolf): Arena-Reveal = reine Verteilung, KEINE Krone.
-                       Die Krone kroente das schnellste Einzel-Handy → wirkte unlogisch
-                       auf einer kleinen Fraktion und widersprach der Quoten-Wertung.
-                       „Wer gewinnt" lebt jetzt im Wertungs-Beat (Medaille + Quote); die
-                       Sieger-Karte „war am schnellsten richtig" bleibt als Spotlight. */
-                    showCrown={false}
-                    de={lang === 'de'}
-                    dim={isWrong}
-                  />
-                ) : voters.map((v, vi) => {
+                {voters.map((v, vi) => {
                   const tm = v.team;
                   const timeSec = t0 ? Math.max(0, (v.submittedAt - t0) / 1000) : null;
                   const isFastest = akt3On && isCorrect && vi === 0;
@@ -4014,7 +4035,7 @@ export function MuchoOptionsReveal({
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
 // ─────────────────────────────────────────────────────────────────────────────
-function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; arena?: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
+function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, logoUrl, welcomeVideoUrl }: { language: QQLanguage; visible: boolean; arena?: boolean; arenaBg?: boolean; eurovisionMode?: boolean; logoUrl?: string; welcomeVideoUrl?: string }) {
   const lang = useLangFlip(language);
   // 2026-07-04 (Wolf 'im Arena-Modus konstant CozyArena statt CozyQuiz'):
   // CozyQuiz bleibt Dach-Marke, aber die Willkommens-Wortmarke adaptiert sich
@@ -4092,7 +4113,7 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
       hiddenScale={1.18}
       // 2026-07-14 (Wolf „hier fehlt noch bg"): im Arena-Modus das Kolosseum
       // (arena-main) auch hinter dem Welcome-Overlay (liegt ausserhalb SlideStage).
-      background={themed ? 'var(--qq-bg)' : (arena ? qqArenaBgFor('arena-main') : 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)')}
+      background={themed ? 'var(--qq-bg)' : (arenaBg ? qqArenaBgFor('arena-main') : 'radial-gradient(ellipse at center, #0f172a 0%, #0a0f1c 55%, #050810 100%)')}
     >
       {/* 2026-05-07 (Wolf-ESC 'wie geil waere ein 10sec intro video — video
           ist drin'): Welcome-Video laeuft als BG-Layer hinter allen anderen

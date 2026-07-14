@@ -13,9 +13,16 @@
 
 ---
 
-## 🔜 HIER STARTEN (Handoff 2026-07-14, spaet)
+## 🔜 HIER STARTEN (Handoff 2026-07-14, ganz spaet)
 
-**Zustand:** working tree sauber, alles gepusht (HEAD `d3fa55af`). Diese Session gebaut+gepusht (viel):
+**Neu gebaut+gepusht (`ff0e87bb`, FE+BE typecheck-gruen, Scoring-Gate ok):**
+- **Moderator-Toggle „Arena-Backgrounds an/aus"** (`4ec204cc`) — Wizard-Schritt „Design", nur Arena: „Mit Kolosseum" (Default) vs „Schlicht" (ruhiger dunkler BG). Flow: `shared arenaBackgrounds?` → Room-Default true → State-Builder → `setQuizOptions` → zentraler Gate `qqArenaBgEnabled(s)`. Greift auf Beamer-BG, Lobby-Video, Welcome-Overlay-BG (Wortmarke „COZYARENA" bleibt).
+- **MUCHO Arena Layout 1** (`ff0e87bb`) — 2x2 → EINE Spalte mit vollbreiten Antwort-Balken, Fraktions-Wappen gross inline rechts (`MegaMuchoVoterPills big`), Balken-Mindesthoehe gegen Clipping. Nicht-Arena bleibt 2x2.
+
+**⏳ Wolf-Check offen:** Toggle „Schlicht" wirklich ueberall sauber (Beamer/Lobby/Welcome)? · MUCHO-Layout-1 Wappen-Groesse ok, brauchen sie Fraktions-NAMEN drunter (Preview hatte Namen; gebaut ist Wappen+×Anzahl)?
+**⏳ MUCHO-Delight-Hebel offen** (Wolf muss Preview anschauen, dann waehlen): A Vote-Tally · B Light-Sweep · C Pre-Lock-Drumroll · D Doppelblink→Settle. Interaktive Vorschau als Artifact gebaut (Layout+Hebel).
+
+**Zustand vorher:** working tree sauber, alles gepusht (HEAD `d3fa55af`). Session-Historie gebaut+gepusht (viel):
 - **Arena-Background-Set komplett ausgerollt** + **arena-main als Ambient-Loop-Video** in der Lobby (ffmpeg via winget installiert; mp4 2,7MB/webm 1,9MB). rundenintro-BG in Journey-Schritt 1+2. Details [[project-arena-background-set]].
 - **Format-Wechsel CozyQuiz/CozyArena sauber** (`71749ada`) + **A11y-Batch 2** (`ab0c048e`, Skill-Review-Boden fertig).
 - **Wolfs Reveal-Redesign v2 integriert** (ZIP „Ansicht optimieren fuer cozyarena"): Schaetzchen/Top5/CrowdEstimate/CrowdTop. **Distanz-Reveals exakt auf Backend-Wertung** (neue `shared/qqDistanceScore.ts`, per-Handy, gated isMega). Details [[project-cozyarena-showdown-concept]] „Batch 1/2".

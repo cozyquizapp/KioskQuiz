@@ -616,7 +616,7 @@ function isStageEnabled(): boolean {
     return true;
   }
 }
-function SlideStage({ children }: { children: React.ReactNode }) {
+function SlideStage({ children, bg }: { children: React.ReactNode; bg?: string | null }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
@@ -667,7 +667,10 @@ function SlideStage({ children }: { children: React.ReactNode }) {
       // i.d.R. auch sehr dunkles Lila) praktisch unsichtbar.
       // 2026-06-23 (Skin): bei aktivem Skin der Aussenring = Skin-BG, sonst
       // erscheint ein dunkler Rahmen um die hell-lackierte Stage.
-      background: isThemed() ? 'var(--qq-bg)' : '#0F0817',
+      // 2026-07-14 (Arena-Background-Set): im CozyArena-Modus deckt hier das
+      // Kolosseum-Bild die volle Buehne (Views sind transparent → scheint durch).
+      // bg = qqArenaRootBg(s) oder null → dann der normale dunkle Aussenring.
+      background: isThemed() ? 'var(--qq-bg)' : (bg ?? '#0F0817'),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>
@@ -2072,7 +2075,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         );
         // 2026-05-12 (Wolf 'Option A Fixed Canvas'): wenn Flag aktiv,
         // wrap'd den Phase-Render in SlideStage (1920×1080 transform:scale).
-        return useStage ? <SlideStage>{phaseRender}</SlideStage> : phaseRender;
+        return useStage ? <SlideStage bg={qqArenaRootBg(s)}>{phaseRender}</SlideStage> : phaseRender;
       })()}
 
       {/* 2026-05-07: TwelvePoints-Sticker entfernt (Wolf-Feedback 'wirkt

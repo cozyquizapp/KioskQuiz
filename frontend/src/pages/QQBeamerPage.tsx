@@ -4491,10 +4491,12 @@ function QuizIntroOverlay({ language, visible, arena, eurovisionMode, logoUrl, w
             wird zusätzlich Word-Stagger animiert (qqWordFadeUp pro Wort) statt
             statisch — wirkt lebendig wie der Wolf wirklich spricht. */}
         <div style={{
-          // 2026-07-14 (Wolf): Wolf ueberlappt die Card unten-LINKS, Sprechblase
-          // RECHTS daneben nahe dem Mund (Tail zeigt links). Absolut im Card-Wrapper.
-          position: 'absolute', left: 0, bottom: 0,
-          transform: 'translate(-12%, 44%)',
+          // 2026-07-14 (Wolf „Wolf nicht ueber den Text"): Wolf sitzt UNTER dem
+          // Window unten-links und ueberlappt nur den unteren Rand leicht (top:100%
+          // = Card-Unterkante, dann leicht hoch), Sprechblase rechts daneben unter
+          // der Card (Tail zeigt links zum Mund). Deckt so nicht mehr den Titel.
+          position: 'absolute', left: '3%', top: '100%',
+          transform: 'translate(0, -22%)',
           display: 'flex', flexDirection: 'row', alignItems: 'center',
           gap: 'clamp(2px, 0.6cqw, 10px)',
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',

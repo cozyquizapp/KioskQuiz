@@ -605,7 +605,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               v3 round 5 (User-Bug 'fliegt aus mitte nach links'): fsExpand
               clip-path ersetzt durch reinen opacity-Fade. Das clip-path-
               Expand wirkte wie 'aus Mitte rauslaufen'. */}
-          {cheeseFullscreen && (
+          {/* 2026-07-14 (Wolf): in CozyArena den blurry Bild-Backdrop WEGLASSEN —
+              dort soll der Arena-Hintergrund (SlideStage-BG) durchscheinen, wo kein
+              Bild/Window ist. Normal-CozyQuiz behaelt den Blur (kein Arena-BG dahinter). */}
+          {cheeseFullscreen && !(s as any).nestedTeams && (
             <div style={{
               position: 'fixed', inset: 0,
               zIndex: 49,

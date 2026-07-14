@@ -121,16 +121,27 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // welches Team wo steht"). Jede Lane wird SEPARAT entzerrt → halb so viele Chips
   // pro Reihe = viel mehr horizontaler Raum, weniger Kollision. Tick bleibt an der
   // echten Position, Connector verbindet zur (ggf. verschobenen) Chip-Spalte.
-  const spread = (arr: Array<{ cx: number }>) => {
-    if (!arr.length) return;
-    const LO = 6, HI = 94, MIN = Math.min(17, (HI - LO) / Math.max(1, arr.length - 1));
-    let last = LO - MIN;
-    arr.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
-    const overflow = arr[arr.length - 1].cx - HI;
-    if (overflow > 0) {
-      let prev = HI + MIN;
-      for (let i = arr.length - 1; i >= 0; i--) { arr[i].cx = Math.min(arr[i].cx, prev - MIN); prev = arr[i].cx; }
+  // Entzerren mit MINIMALER Verschiebung: Chips bleiben so nah wie moeglich an
+  // ihrer echten Position (Tick), werden nur bei Overlap auseinandergeschoben und
+  // die Reihe dann auf den echten Cluster zentriert (Wolf 2026-07-14: „Wappen da
+  // wo das Team auf dem Strahl steht"). Kein Aufspreizen auf volle Breite mehr.
+  const spread = (arr: Array<{ x: number; cx: number }>) => {
+    if (arr.length < 2) return;
+    const LO = 6, HI = 94, MIN = 12.5;
+    // 1) Forward-Pass: garantiert Mindestabstand (schiebt nur nach rechts).
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i].cx < arr[i - 1].cx + MIN) arr[i].cx = arr[i - 1].cx + MIN;
     }
+    // 2) Drift der Forward-Pass rausrechnen → auf den echten Schwerpunkt zentrieren.
+    const meanReal = arr.reduce((s, c) => s + c.x, 0) / arr.length;
+    const meanCx = arr.reduce((s, c) => s + c.cx, 0) / arr.length;
+    const shift = meanReal - meanCx;
+    for (const c of arr) c.cx += shift;
+    // 3) Ganze Gruppe in [LO,HI] halten (Abstaende bleiben erhalten).
+    const minCx = Math.min(...arr.map(c => c.cx));
+    const maxCx = Math.max(...arr.map(c => c.cx));
+    if (minCx < LO) { const d = LO - minCx; for (const c of arr) c.cx += d; }
+    else if (maxCx > HI) { const d = maxCx - HI; for (const c of arr) c.cx -= d; }
   };
   const placed = useMemo(() => {
     const sorted = [...rankedFinal]

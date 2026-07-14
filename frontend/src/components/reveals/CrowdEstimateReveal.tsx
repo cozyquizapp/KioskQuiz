@@ -72,16 +72,22 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
 
   // Chips nach Median sortieren + in ZWEI Lanes (abwechselnd ober-/unterhalb des
   // Strahls, Wolf 2026-07-14) — jede Lane separat entzerrt = mehr horizontaler Platz.
-  const spread = (arr: Array<{ cx: number }>) => {
-    if (!arr.length) return;
-    const LO = 6, HI = 94, MIN = Math.min(17, (HI - LO) / Math.max(1, arr.length - 1));
-    let last = LO - MIN;
-    arr.forEach(c => { c.cx = Math.max(c.cx, last + MIN); last = c.cx; });
-    const overflow = arr[arr.length - 1].cx - HI;
-    if (overflow > 0) {
-      let prev = HI + MIN;
-      for (let i = arr.length - 1; i >= 0; i--) { arr[i].cx = Math.min(arr[i].cx, prev - MIN); prev = arr[i].cx; }
+  // Entzerren mit MINIMALER Verschiebung + auf den echten Cluster zentriert, damit
+  // die Wappen an ihrer Tick-Position bleiben (Wolf 2026-07-14). Kein Aufspreizen.
+  const spread = (arr: Array<{ x: number; cx: number }>) => {
+    if (arr.length < 2) return;
+    const LO = 6, HI = 94, MIN = 12.5;
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i].cx < arr[i - 1].cx + MIN) arr[i].cx = arr[i - 1].cx + MIN;
     }
+    const meanReal = arr.reduce((s, c) => s + c.x, 0) / arr.length;
+    const meanCx = arr.reduce((s, c) => s + c.cx, 0) / arr.length;
+    const shift = meanReal - meanCx;
+    for (const c of arr) c.cx += shift;
+    const minCx = Math.min(...arr.map(c => c.cx));
+    const maxCx = Math.max(...arr.map(c => c.cx));
+    if (minCx < LO) { const d = LO - minCx; for (const c of arr) c.cx += d; }
+    else if (maxCx > HI) { const d = maxCx - HI; for (const c of arr) c.cx -= d; }
   };
   const placed = useMemo(() => {
     const sorted = [...factions].sort((a, b) => a.median - b.median)

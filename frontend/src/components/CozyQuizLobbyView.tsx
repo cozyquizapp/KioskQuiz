@@ -293,7 +293,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     ? '/arena-bg/arena-main.webp' : undefined;
   // 2026-07-13 (Wolf-Feedback Lobby-Proof): über dem Arena-Bild brauchen die
   // Team-/Fraktions-„Fenster" mehr Deckung → dunkles Glas statt 4%-Weiss.
-  const arenaCardBg = arenaLobbyBg ? 'rgba(12,10,22,0.6)' : undefined;
+  // 2026-07-14 (Wolf: „Team-Felder weniger transparent"): solidere Cards → besser lesbar.
+  const arenaCardBg = arenaLobbyBg ? 'rgba(10,8,18,0.82)' : undefined;
   // 2026-07-14 (Wolf: „hinter dem Video ist noch das BG-Bild zu sehen"): im
   // Arena-Modus KEIN statisches WebP mehr unter dem Video — das Video (ArenaMainVideo,
   // mit eigenem WebP-Poster) trägt den BG allein. Die WebP-Bild-Ebene bleibt nur
@@ -350,7 +351,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           Liegt ueber dem WebP (= Poster/Fallback + reduced-motion) und unter dem
           Scrim. Gleiche Deckung wie das statische Bild, damit der Kontrast der
           getunten Lobby erhalten bleibt. */}
-      {arenaLobbyBg && <ArenaMainVideo opacity={0.5} />}
+      {arenaLobbyBg && <ArenaMainVideo opacity={0.4} />}
       {/* 2026-07-13 (Wolf Arena-BG, color-contrast): Scrim zwischen Kolosseum und
           Inhalt. Dunkelt Ober-/Unterband (Wortmarke + untere Zeilen) + eine
           Vignette, Mitte bleibt hell → Kunst sichtbar, Text lesbar. Nur Arena. */}
@@ -768,8 +769,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             // links ausgerichtet, damit er nicht mittig ueberm Arena-Tor schwebt.
             display: 'flex', alignItems: 'center',
             justifyContent: arenaLobbyBg ? 'flex-start' : 'center', gap: 12,
+            // 2026-07-14 (Wolf „joined teams nicht gut erkennbar"): auf der Arena-Kunst
+            // als solider dunkler Chip → klar lesbar, kompakt links.
+            ...(arenaLobbyBg ? {
+              alignSelf: 'flex-start', width: 'auto',
+              background: 'rgba(8,6,16,0.72)', padding: '6px 16px', borderRadius: 999,
+              border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(232,236,244,0.95)',
+              boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
+            } : {}),
           }}>
-            <span style={{ opacity: 0.7 }}>{de ? 'Angemeldete Teams' : 'Joined Teams'}</span>
+            <span style={{ opacity: arenaLobbyBg ? 0.95 : 0.7 }}>{de ? 'Angemeldete Teams' : 'Joined Teams'}</span>
             <span key={teamCount} style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               minWidth: 'clamp(28px, 2.4cqw, 42px)', height: 'clamp(28px, 2.4cqw, 42px)',

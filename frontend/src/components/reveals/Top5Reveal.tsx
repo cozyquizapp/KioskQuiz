@@ -232,7 +232,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               {isMega ? (
                 <FactionCountAvatars
                   teams={winners.map(w => s.teams.find(t => t.id === w.teamId)).filter((t): t is NonNullable<typeof t> => !!t)}
-                  de={lang === 'de'} size={'clamp(56px,7cqh,96px)'} showName />
+                  de={lang === 'de'} size={'clamp(60px,7.6cqh,104px)'} />
               ) : winners.slice(0, 3).map(w => {
                 const tm = s.teams.find(t => t.id === w.teamId);
                 if (!tm) return null;

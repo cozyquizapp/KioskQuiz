@@ -1245,7 +1245,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     // 2026-07-12 (Wolf): im Arena-Modus sind es nur 8 Fraktions-
                     // Wappen (nicht bis zu 40 Handys) → deutlich größer für Distanz-
                     // Lesbarkeit + mehr Spannung beim Abgabe-Tracker. Badge mit.
-                    const navSize = isCheesePortrait ? 96 : 124;
+                    // 2026-07-14 (Wolf 'Reihe + X/Y noch zu klein von weitem'): weiter hoch.
+                    const navSize = isCheesePortrait ? 116 : 150;
                     const groups = new Map<string, { rep: typeof s.teams[number]; total: number; answered: number }>();
                     const order: string[] = [];
                     for (const tm of s.teams) {
@@ -1277,12 +1278,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           {/* Fraktion → WAPPEN, nicht das Tier (qqFactionAvatarEmoji). */}
                           <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={qqFactionAvatarEmoji(g.rep.avatarId, g.rep.emoji, true)} size={navSize} />
                           <div style={{
-                            position: 'absolute', bottom: -2, right: -2, minWidth: 28, height: 28, padding: '0 6px',
+                            position: 'absolute', bottom: -3, right: -3, minWidth: 40, height: 40, padding: '0 9px',
                             borderRadius: 999, background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
                             // F1 (color-contrast Skill): weiss auf #22C55E = 2.28:1 (AA-Fail).
                             // Dunkler Text auf dem gruenen Badge = 8.67:1. Auf dem dunklen
                             // Nicht-fertig-Badge bleibt weiss (dort bestens lesbar).
-                            border: '2px solid rgba(255,255,255,0.18)', color: done ? '#0A0814' : '#fff', fontSize: 15, fontWeight: 900,
+                            // 2026-07-14 (Wolf 'X/Y zu klein von weitem'): 28→40px, 15→22.
+                            border: '2.5px solid rgba(255,255,255,0.2)', color: done ? '#0A0814' : '#fff', fontSize: 22, fontWeight: 900,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                           }}>{g.answered}/{g.total}</div>
                         </div>
@@ -1887,8 +1889,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               direkt auf der Option oben eingeblendet. Hier also nur die restlichen
               Tipps pro Option, von Anfang an in einheitlicher Größe.
               Sobald die Korrektheit gelockt ist (zvzLocked), gleiten die Sub-Bets
-              nach unten weg + fade — clean Spotlight auf die richtige Option. */}
-          {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && (
+              nach unten weg + fade — clean Spotlight auf die richtige Option.
+              2026-07-14 (Wolf): in CozyArena (nestedTeams) NICHT zeigen — nur die
+              größten Guesses pro Antwort, sonst Overload. Normal-CozyQuiz behält sie. */}
+          {revealed && q.category === 'ZEHN_VON_ZEHN' && q.options && !(s as any).nestedTeams && (
             <div style={{
               width: '100%', maxWidth: QQ_QUESTION_MAX_W,
               display: 'grid',

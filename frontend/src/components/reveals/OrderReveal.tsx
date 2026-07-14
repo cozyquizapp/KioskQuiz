@@ -376,7 +376,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                 .filter((t): t is NonNullable<typeof t> => !!t);
               return (
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <FactionCountAvatars teams={winTeams} de={lang === 'de'} size={avatarSize} showName />
+                  <FactionCountAvatars teams={winTeams} de={lang === 'de'} size={avatarSize} />
                 </div>
               );
             }

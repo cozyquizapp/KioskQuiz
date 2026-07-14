@@ -273,7 +273,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                 <QQEmojiIcon emoji="🏆" /> {lang === 'en' ? 'Round winner' : 'Rundensieger'}
               </span>
               {isMega ? (
-                <FactionCountAvatars teams={winnerTeams} de={lang === 'de'} size={'clamp(56px,7cqh,96px)'} showName />
+                <FactionCountAvatars teams={winnerTeams} de={lang === 'de'} size={'clamp(60px,7.6cqh,104px)'} />
               ) : (
                 <>
                   {winnerTeams.slice(0, 4).map(tm => (

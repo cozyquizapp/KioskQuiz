@@ -914,7 +914,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             onClick={onFlagClick}
             style={{
               border: 'none', background: 'none', cursor: 'pointer', padding: 0,
-              marginLeft: 8, marginRight: 0, outline: 'none',
+              marginLeft: 8, marginRight: 0,
               fontSize: 24,
               minWidth: 44, minHeight: 44,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -1052,6 +1052,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
               <input
                 value={teamName}
+                aria-label={t.setup.teamName[lang]}
                 onChange={e => {
                   const stripped = e.target.value.replace(/^team\s+/i, '');
                   setTeamName(stripped);
@@ -1091,6 +1092,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     setTeamName(free[Math.floor(Math.random() * free.length)]);
                   }
                 }}
+                aria-label={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
                 title={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
                 style={{
                   padding: '0 14px', borderRadius: 8,
@@ -1205,6 +1207,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   <input
                     type="text"
                     value={stammInput}
+                    aria-label={lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
                     onChange={e => setStammInput(e.target.value)}
                     placeholder="T-ABC123"
                     style={{
@@ -1324,6 +1327,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       key={`${em}-${i}`}
                       onClick={() => !taken && setChosenEmoji(em)}
                       disabled={taken}
+                      aria-label={taken ? (lang === 'de' ? `${em} (vergeben)` : `${em} (taken)`) : em}
+                      aria-pressed={sel}
                       style={{
                         padding: '14px 4px', borderRadius: 16,
                         cursor: taken ? 'not-allowed' : 'pointer',
@@ -1373,6 +1378,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
               <input
                 value={teamName}
+                aria-label={t.setup.teamName[lang]}
                 onChange={e => setTeamName(e.target.value)}
                 placeholder={t.setup.placeholder[lang]}
                 style={{
@@ -1401,6 +1407,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     setTeamName(free[Math.floor(Math.random() * free.length)]);
                   }
                 }}
+                aria-label={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
                 title={lang === 'de' ? 'Zufälligen Namen würfeln' : 'Roll a random name'}
                 style={{
                   padding: '0 14px', borderRadius: 8,

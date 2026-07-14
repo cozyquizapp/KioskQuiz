@@ -2107,11 +2107,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 <div>
                   <div style={fieldLbl}>Runden</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button onClick={() => setPhases(Math.max(2, eff - 1) as 2 | 3 | 4)} disabled={eff <= 2}
-                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff <= 2 ? 'default' : 'pointer', opacity: eff <= 2 ? 0.4 : 1, fontFamily: 'inherit' }}>−</button>
+                    <button onClick={() => setPhases(Math.max(2, eff - 1) as 2 | 3 | 4)} disabled={eff <= 2} aria-label="Eine Runde weniger"
+                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff <= 2 ? 'default' : 'pointer', opacity: eff <= 2 ? 0.4 : 1, fontFamily: 'inherit' }}><span aria-hidden="true">−</span></button>
                     <span style={{ minWidth: 40, textAlign: 'center', fontWeight: 900, fontSize: 22, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{eff}</span>
-                    <button onClick={() => setPhases(Math.min(maxPhases, eff + 1) as 2 | 3 | 4)} disabled={eff >= maxPhases}
-                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff >= maxPhases ? 'default' : 'pointer', opacity: eff >= maxPhases ? 0.4 : 1, fontFamily: 'inherit' }}>+</button>
+                    <button onClick={() => setPhases(Math.min(maxPhases, eff + 1) as 2 | 3 | 4)} disabled={eff >= maxPhases} aria-label="Eine Runde mehr"
+                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff >= maxPhases ? 'default' : 'pointer', opacity: eff >= maxPhases ? 0.4 : 1, fontFamily: 'inherit' }}><span aria-hidden="true">+</span></button>
                     <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>{eff * 5} Fragen · à 5</span>
                   </div>
                 </div>
@@ -2188,9 +2188,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     <div style={{ position: 'absolute', bottom: 'calc(100% + 8px)', left: '50%', transform: 'translateX(-50%)', zIndex: 20, display: 'flex', flexDirection: 'column', gap: 10, padding: '12px 14px', borderRadius: 12, background: '#171326', border: '1px solid rgba(52,211,153,0.4)', boxShadow: '0 14px 34px rgba(0,0,0,0.55)', minWidth: 230 }}>
                       <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Wie viele Bots? <span style={{ color: '#4b5563' }}>(max {botMax})</span></div>
                       <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-                        <button style={{ ...stepBtn, opacity: cnt <= 2 ? 0.4 : 1 }} disabled={cnt <= 2} onClick={() => setBotCount(Math.max(2, cnt - 1))}>−</button>
+                        <button style={{ ...stepBtn, opacity: cnt <= 2 ? 0.4 : 1 }} disabled={cnt <= 2} onClick={() => setBotCount(Math.max(2, cnt - 1))} aria-label="Ein Bot weniger"><span aria-hidden="true">−</span></button>
                         <span style={{ minWidth: 52, textAlign: 'center', fontWeight: 900, fontSize: 26, color: '#dcfce7', fontVariantNumeric: 'tabular-nums' }}>{cnt}</span>
-                        <button style={{ ...stepBtn, opacity: cnt >= botMax ? 0.4 : 1 }} disabled={cnt >= botMax} onClick={() => setBotCount(Math.min(botMax, cnt + 1))}>+</button>
+                        <button style={{ ...stepBtn, opacity: cnt >= botMax ? 0.4 : 1 }} disabled={cnt >= botMax} onClick={() => setBotCount(Math.min(botMax, cnt + 1))} aria-label="Ein Bot mehr"><span aria-hidden="true">+</span></button>
                       </div>
                       <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
                         {presets.map(n => (
@@ -2400,9 +2400,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Wie viele Bots? <span style={{ color: '#4b5563' }}>(max {botMax})</span></div>
                   {/* Stepper */}
                   <div style={{ display: 'flex', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-                    <button style={{ ...stepBtn, opacity: cnt <= 2 ? 0.4 : 1 }} disabled={cnt <= 2} onClick={() => setBotCount(Math.max(2, cnt - 1))}>−</button>
+                    <button style={{ ...stepBtn, opacity: cnt <= 2 ? 0.4 : 1 }} disabled={cnt <= 2} onClick={() => setBotCount(Math.max(2, cnt - 1))} aria-label="Ein Bot weniger"><span aria-hidden="true">−</span></button>
                     <span style={{ minWidth: 52, textAlign: 'center', fontWeight: 900, fontSize: 26, color: '#dcfce7', fontVariantNumeric: 'tabular-nums' }}>{cnt}</span>
-                    <button style={{ ...stepBtn, opacity: cnt >= botMax ? 0.4 : 1 }} disabled={cnt >= botMax} onClick={() => setBotCount(Math.min(botMax, cnt + 1))}>+</button>
+                    <button style={{ ...stepBtn, opacity: cnt >= botMax ? 0.4 : 1 }} disabled={cnt >= botMax} onClick={() => setBotCount(Math.min(botMax, cnt + 1))} aria-label="Ein Bot mehr"><span aria-hidden="true">+</span></button>
                   </div>
                   {/* Presets + Max */}
                   <div style={{ display: 'flex', gap: 6, justifyContent: 'center', flexWrap: 'wrap' }}>
@@ -3794,11 +3794,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                             emit('qq:renameTeam', { roomCode, teamId: t.id, name: trimmed });
                           }}
                           title="Umbenennen"
+                          aria-label="Team umbenennen"
                           style={{
                             padding: '3px 7px', borderRadius: 6, cursor: 'pointer',
                             border: '1px solid rgba(148,163,184,0.3)', background: 'transparent',
                             color: QQ_COLORS.slate400, fontSize: 11, fontFamily: 'inherit',
-                          }}>✎</button>
+                          }}><span aria-hidden="true">✎</span></button>
                         {/* Kick button */}
                         <button
                           onClick={() => {
@@ -6275,13 +6276,14 @@ function SetupView({
           <input
             list="qq-known-venues"
             value={venue}
+            aria-label="Veranstaltungsort"
             onChange={e => { const v = e.target.value; setVenueLocal(v); emit('qq:setVenue', { roomCode, venue: v }); }}
             placeholder="z.B. Kneipe Zum Anker"
             style={{
               width: '100%', boxSizing: 'border-box',
               padding: '10px 12px', borderRadius: 10,
               background: 'rgba(0,0,0,0.25)', border: `1px solid ${GOLD_BORDER}`,
-              color: '#f5efe3', fontFamily: 'inherit', fontSize: 14, fontWeight: 700, outline: 'none',
+              color: '#f5efe3', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
             }}
           />
           <datalist id="qq-known-venues">
@@ -7051,6 +7053,7 @@ function LobbyView({
                           emit('qq:renameTeam', { roomCode, teamId: t.id, name: trimmed });
                         }}
                         title="Team umbenennen"
+                        aria-label="Team umbenennen"
                         style={{
                           width: 22, height: 22, borderRadius: '50%',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
@@ -7059,7 +7062,7 @@ function LobbyView({
                           fontSize: 11, fontWeight: 900, cursor: 'pointer',
                           fontFamily: 'inherit',
                         }}
-                      >✎</button>
+                      ><span aria-hidden="true">✎</span></button>
                       <button
                         onClick={() => {
                           if (!window.confirm(`Team "${t.name}" entfernen?`)) return;

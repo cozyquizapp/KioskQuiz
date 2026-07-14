@@ -385,7 +385,7 @@ export function AckErrorToast() {
   }, []);
   if (!msg) return null;
   return (
-    <div style={{
+    <div role="alert" aria-live="assertive" style={{
       position: 'fixed',
       top: 'env(safe-area-inset-top, 0px)',
       left: '50%',

@@ -172,10 +172,16 @@ export function TeamBottomSheetMenu({
             oberen Drittel runterswipen. */}
         <div
           {...dragHandleProps}
+          role="button"
+          tabIndex={0}
+          aria-label={lang === 'de' ? 'Menü schließen (ziehen oder tippen)' : 'Close menu (drag or tap)'}
           onClick={(e) => {
             // Tap-on-Handle schließt (wenn nicht gerade dragging)
             if (!dragStateRef.current && dragY === 0) onClose();
             e.stopPropagation();
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClose(); }
           }}
           style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center',
@@ -184,7 +190,7 @@ export function TeamBottomSheetMenu({
             userSelect: 'none', WebkitUserSelect: 'none',
           }}
         >
-          <span aria-label={lang === 'de' ? 'Menü schließen (ziehen oder tippen)' : 'Close menu (drag or tap)'}
+          <span aria-hidden="true"
             style={{
               display: 'inline-block',
               width: 44, height: 5,

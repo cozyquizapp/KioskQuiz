@@ -1547,7 +1547,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
             {TYPE_OPTIONS.map(opt => {
               const active = type === opt.id;
               return (
-                <button key={opt.id} type="button" onClick={() => setType(opt.id)}
+                <button key={opt.id} type="button" onClick={() => setType(opt.id)} aria-pressed={active}
                   style={{
                     padding: '10px 4px', borderRadius: sumPill(10),
                     background: active ? `${opt.color}22` : 'var(--sum-card)',
@@ -1578,7 +1578,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                 const active = playAgain === opt.id;
                 return (
                   <button key={opt.id} type="button"
-                    onClick={() => setPlayAgain(active ? null : opt.id)}
+                    onClick={() => setPlayAgain(active ? null : opt.id)} aria-pressed={active}
                     style={{
                       padding: '8px 4px', borderRadius: sumPill(10),
                       background: active ? 'rgba(251,191,36,0.15)' : 'var(--sum-card)',
@@ -1606,7 +1606,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                 const active = favoriteCategory === opt.id;
                 return (
                   <button key={opt.id} type="button"
-                    onClick={() => setFavoriteCategory(active ? null : opt.id)}
+                    onClick={() => setFavoriteCategory(active ? null : opt.id)} aria-pressed={active}
                     style={{
                       flex: '1 1 calc(33% - 4px)', minWidth: 0,
                       padding: '8px 6px', borderRadius: sumPill(999),
@@ -1640,7 +1640,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
                 const active = lengthFeel === opt.id;
                 return (
                   <button key={opt.id} type="button"
-                    onClick={() => setLengthFeel(active ? null : opt.id)}
+                    onClick={() => setLengthFeel(active ? null : opt.id)} aria-pressed={active}
                     style={{
                       padding: '8px 4px', borderRadius: sumPill(10),
                       background: active ? 'rgba(34,197,94,0.12)' : 'var(--sum-card)',
@@ -1730,7 +1730,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
               ] as Array<{ id: ContactIntent; labelKey: keyof typeof T }>).map(opt => {
                 const active = contactIntent.includes(opt.id);
                 return (
-                  <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)}
+                  <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)} aria-pressed={active}
                     style={{
                       padding: '5px 10px', borderRadius: sumPill(999),
                       background: active ? 'rgba(236,72,153,0.18)' : 'var(--sum-card)',

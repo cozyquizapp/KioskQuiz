@@ -27,7 +27,7 @@ import QQProgressTree from '../components/QQProgressTree';
 import { QQTeamAvatar, CountryFlagOrEmoji } from '../components/QQTeamAvatar';
 import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
-import { qqArenaRootBg, qqArenaBgFor } from '../components/ArenaBeamerBg';
+import { qqArenaRootBg, qqArenaBgFor, qqArenaBgEnabled } from '../components/ArenaBeamerBg';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
@@ -3015,10 +3015,14 @@ export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
     if (!speaking || reduce) { setMouthOpen(false); return; }
     let alive = true;
     let timer: number | undefined;
+    // 2026-07-15 (Wolf 'ganzer Koerper wackelt'): die 3 Posen sind minimal
+    // body-versetzt (AI-Render), harte Schnell-Swaps liessen den Koerper zittern.
+    // Gemaessigtes Tempo + Cross-Fade (opacity-Transition am img) blenden den
+    // Versatz weg, sodass optisch nur das Gesicht arbeitet.
     const tick = () => {
       if (!alive) return;
       setMouthOpen(m => !m);
-      timer = window.setTimeout(tick, 200 + Math.random() * 90);
+      timer = window.setTimeout(tick, 280 + Math.random() * 120);
     };
     tick();
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
@@ -3056,6 +3060,8 @@ export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
               position: 'absolute', inset: 0, width: '100%', height: '100%',
               objectFit: 'contain', display: 'block', zIndex: 1,
               opacity: p === pose ? 1 : 0, pointerEvents: 'none',
+              // Cross-Fade blendet den minimalen Body-Versatz zwischen den Posen.
+              transition: reduce ? undefined : 'opacity 150ms ease-in-out',
             }}
           />
         </picture>
@@ -4600,8 +4606,10 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0, zIndex: 6,
         }}>
-          {arena ? (
-            // Arena: Magier-Wolf begruesst (Mund-Flap hi↔calm synchron zur Blase).
+          {arenaBg ? (
+            // Arena MIT Kolosseum-BG: Magier-Wolf begruesst (Mund-Flap synchron zur
+            // Blase). Der Magier gehoert zur Kolosseum-Auswahl — bei „Schlicht" bleibt
+            // der normale Wolf. (arenaBg = isMega && arenaBackgrounds-Toggle an.)
             <ArenaMageWolf widthCss="clamp(150px, 16cqw, 240px)" speaking={visible} />
           ) : (
             <AnimatedCozyWolf
@@ -5103,7 +5111,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
         textAlign: 'center',
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
-        {qqIsMega(s)
+        {qqIsMega(s) && qqArenaBgEnabled(s)
           ? <ArenaMageWolf widthCss="clamp(170px, 18cqw, 300px)" />
           : <AnimatedCozyWolf widthCss="clamp(170px, 18cqw, 300px)" speaking={false} />}
         <span style={{

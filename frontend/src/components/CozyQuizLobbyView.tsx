@@ -20,7 +20,7 @@ import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed } from '../qqTheme';
-import { ArenaMainVideo } from './ArenaBeamerBg';
+import { ArenaMainVideo, qqArenaBgEnabled } from './ArenaBeamerBg';
 
 // WolfLobbyGreeter — kleiner Wolf top-right in der Lobby, winkt hereinkommende
 // Teams herein. Idle: 'QR-Code scannen!' / 'Genau den da!' / etc. Wenn Parent
@@ -408,7 +408,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           lang={de ? 'de' : 'en'}
           welcomedTeamName={welcomedTeam?.name ?? null}
           eurovisionMode={s.theme?.eurovisionMode}
-          arena={qqIsMega(s)}
+          arena={qqIsMega(s) && qqArenaBgEnabled(s)}
         />
       </div>
       )}

@@ -209,6 +209,14 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Titel */}
       <div style={{ position: 'relative', zIndex: 2, marginTop: done ? 0 : 'clamp(22px, 4cqh, 52px)', marginBottom: done ? 'clamp(16px, 2.6cqh, 40px)' : 0, textAlign: 'center' }}>
+        {/* 2026-07-15 (Wolf-Lieferung): neutrales Fraktions-Wappen als Sektions-Marker
+            ueber dem Titel der Team-Vorstellung. */}
+        <img src="/icons/fx-shield-faction.png" alt="" aria-hidden draggable={false} style={{
+          width: 'clamp(46px, 5.2cqw, 88px)', height: 'auto', display: 'block',
+          margin: '0 auto clamp(4px, 0.9cqh, 12px)',
+          filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.45)) drop-shadow(0 0 16px ${curColor}55)`,
+          animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both',
+        }} />
         <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#94a3b8' }}>
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>

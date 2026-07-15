@@ -35,7 +35,7 @@
 
 ---
 
-## Fortschritt: 1 / 21
+## Fortschritt: 2 / 21
 
 _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)_
 
@@ -48,7 +48,7 @@ _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)
   - ✅ **Akzent-Palette gelöst (Kolosseum, Wolf-Referenz „das ist der moment"):** Brand-Pink/Magenta = Hauptmarke · **Gold** (`ACCENT_GOLD`) = Sieg/Zeremonie (Pokal/Krönung/Medaillen) · **Violett/Kristall/Glut** (`ARENA_ACCENT`) = Kolosseum-Stimmung (Banner/Scrim/Funken, sparsam). Kein Violett als Text-/CTA-Farbe. Exakte Hex ggf. beim Beamer-Check nachtunen.
 
 ### Akt 1 — Einstieg
-- [ ] **1 — Pre-Game „Setting up".** Beamer `NeutralWelcomeView` · Team Join-Screen (`/team` Eingang).
+- [x] **1 — Pre-Game „Setting up".** ✅ EINGEFROREN. Beamer `NeutralWelcomeView` + Team `PreparingScreen` geprüft: DoD erfüllt (Kontrast Muted-Text ≈6.7:1 auf Card, Beamer-Labels ≫3:1; reduced-motion via globalem Kill-Switch in `main.css`+`TEAM_CSS`; keine Scrollbar; DE+EN; Symmetrie Brand-Hero). **Fix:** Sprach-Flag-Button (PreparingScreen + MidGameRejoinView) von ~40px auf 44×44 Touch-Ziel gehoben (Apple HIG/Material). Sonst keine Geschmacks-Änderung — Screens waren reif.
 - [ ] **2 — Lobby.** Beamer: QR, Team-Karten, Wolf-Greeter (Arena: Magier) · Team: Lobby/Warten.
 - [ ] **3 — Rules.** Beamer: Welcome-Overlay → (Arena) Arena-Meister-Splash → Regel-Intro → Regel-Folien · Team: Warten.
 

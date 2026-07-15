@@ -146,7 +146,11 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
             onClick={onFlagClick}
             style={{
               border: 'none', background: 'transparent', cursor: 'pointer',
-              fontSize: 28, padding: 6, borderRadius: 999,
+              fontSize: 28, borderRadius: 999,
+              // Touch-Ziel >= 44x44 (Apple HIG / Material): Glyph bleibt 28px,
+              // aber die tappbare Flaeche ist garantiert gross genug.
+              minWidth: 44, minHeight: 44, padding: 0,
+              display: 'grid', placeItems: 'center', lineHeight: 1,
               transition: 'transform 0.2s ease',
               transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0)',
             }}
@@ -283,7 +287,11 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
             onClick={onFlagClick}
             style={{
               border: 'none', background: 'transparent', cursor: 'pointer',
-              fontSize: 28, padding: 6, borderRadius: 999,
+              fontSize: 28, borderRadius: 999,
+              // Touch-Ziel >= 44x44 (Apple HIG / Material): Glyph bleibt 28px,
+              // aber die tappbare Flaeche ist garantiert gross genug.
+              minWidth: 44, minHeight: 44, padding: 0,
+              display: 'grid', placeItems: 'center', lineHeight: 1,
               transition: 'transform 0.2s ease',
               transform: flagFlip ? 'rotateY(90deg)' : 'rotateY(0)',
             }}

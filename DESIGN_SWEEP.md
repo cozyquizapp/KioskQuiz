@@ -35,7 +35,12 @@
 
 ---
 
-## Fortschritt: 5 / 21
+## Fortschritt: 6 / 21
+
+> **Arena-BG-Merke (Station 5):** `ArenaBeamerBg` legt über JEDES Arena-Foto einen
+> dunklen Scrim (`rgba(8,6,16,0.58…)`, dim bei QUESTION_ACTIVE). Text über Arena-BGs
+> ist damit generell lesbar — bei Arena-Stationen (11 PLACEMENT, 14 Siegerehrung)
+> keine Foto-Legibilitäts-Schatten erzwingen, der Scrim trägt das schon.
 
 _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)_
 
@@ -54,7 +59,7 @@ _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)
 
 ### Akt 2 — Teams & Runde
 - [x] **4 — Teams-Reveal.** ✅ EINGEFROREN. ArenaEntranceView (Fraktions-Einzug + Startaufstellung) + CozyRollCall geprüft: reduced-motion (global + ref), Wappen-Drops, DE+EN. **Fix:** Sektions-Titel + Eyebrow sitzen transparent überm Arena-Foto-BG → Text-Shadow ergänzt (color-contrast: Text über Foto garantiert lesbar); Eyebrow slate-400→300. Classic-Roll-Call auf dunklem Standard-BG, kein Foto-Text-Problem.
-- [ ] **5 — Runden-Intro / Journey + Kategorie-Reveal.** Beamer · Team: Warten.
+- [x] **5 — Runden-Intro / Journey + Kategorie-Reveal.** ✅ EINGEFROREN (verifiziert, kein Defekt). Beamer `PhaseIntroView`: reduced-motion global, Arena-BG scrim-gedunkelt (kein Foto-Kontrast-Problem), farbige Titel+Glows lesbar, DE+EN (phaseNames + cat-explain), Arena+Classic-Zweige, keine Scrollbar. Team `PhaseIntroCard`: Cross-Fade + `aria-live=polite`. Mature.
 
 ### Akt 3 — Frage & Antwort (je Kategorie: Frage + Team-Eingabe + Reveal)
 - [ ] **6 — Schätzchen** (Distanz-Strahl-Reveal).

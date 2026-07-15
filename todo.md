@@ -19,9 +19,9 @@
 - ✅ **3D-Buch** `fx-book` — 📖 global auto-3D (QQIcon-Map), LIVE im Regel-Intro.
 - ✅ **Neutrales Wappen** `fx-shield-faction` — als Fraktionen-Header in der Team-Vorstellung (Titel-Marker). LIVE.
 - ✅ Assets abgelegt: `avatars/cozywolf/cozywolf-arena-{hi,cheer,calm,master}.png` (Magier-Posen, freigestellt), `arena-bg/arena-master.webp` (16:9-Szene).
-- ⏳ **NOCH ZU BAUEN (Asset-Verdrahtung):**
-  1. **Begruessungs-Wolf (Magier-Posen)** dort wo der Wolf spricht (Lobby + Welcome-Overlay, NUR Arena): neue `ArenaMageWolf`-Komponente mit **Mund-Flap** (hi↔calm beim Sprechen, cheer als Reaktion) — die 3 Posen sind statisch, kein volles Lip-Sync-Raster. AnimatedCozyWolf in Arena an diesen 2 Stellen ersetzen.
-  2. **Arena-Meister-Szene** (`arena-bg/arena-master.webp`) = **eigener Splash VOR den Regeln** (Wolf-Wahl): kurze Standalone-Folie „Der Arena-Meister", dann Rules. Braucht kleinen Flow-Step (evtl. rulesSlideIndex -2-Bereich / neuer Pre-Rules-State + Mod-Weiter).
+- ✅ **Asset-Verdrahtung GEBAUT (2026-07-15, FE+BE tsc-gruen):**
+  1. **Begruessungs-Wolf (`ArenaMageWolf`)** — 3 Magier-Posen (calm/hi/cheer, webp), Mund-Flap hi↔calm (cheer↔calm als Reaktion beim Team-Willkommen), in Lobby-Greeter + Welcome-Overlay + Pre-Game. **Gated auf isMega && Kolosseum-Toggle** (Wolf: „gehoert zur Kolosseum-Auswahl, nicht Standard"). ⚠️ **Wolf-Rework offen:** die 3 PNGs sind minimal body-versetzt → beim Flap wackelte der ganze Koerper; aktuell via langsamerer Flap (280ms) + Cross-Fade (150ms) gemildert. **Fuer sauberen Face-only-Flap braucht es body-deckungsgleiche Posen-Exports** (wie das Haupt-cozywolf-Set: gleicher Koerper/Staff, nur Gesicht wechselt). → Wolf: aligned re-exportieren ODER Magier statisch (calm) lassen?
+  2. **Arena-Meister-Splash** (`ArenaMasterSplash`, `arena-master.webp` = fertige 16:9-Szene) — zwischen Willkommen und Regeln (Wolf-Wahl „direkt vor den Regeln"). RULES-Flow: Arena+Kolosseum startet bei -3 (Willkommen), -2 = Meister-Splash, -1 = Regel-Intro (`qqRulesMinIndex`). → **Wolf-Beamer-Check** (Titel/Pacing).
 - ✅ **Award-Zeremonie GEBAUT** (Step-State + Socket + Mod-Buttons + Frontend-Zeremonie + Kolosseum-Kroenung) — s.u. „SIEGEREHRUNG". → **Wolf-Beamer-Check.**
 - (Joker fuer Arena: von Wolf verworfen, Arena hat keine Joker.)
 

@@ -1418,6 +1418,20 @@ export interface QQMegaAwards {
   sharpshooter: string | null;
   /** 🔥 Beste Aufholjagd — größter Rang-Aufstieg vom Start bis zum Ende. */
   comeback: string | null;
+  /** 🙌 Vollzählig (2026-07-15) — höchste Beteiligungsquote (antwortende /
+   *  verbundene Handys). Belohnt das Per-Capita-Herz der neuen Wertung. */
+  participation?: string | null;
+  /** ⚖️ Beständig (2026-07-15) — geringste Schwankung der Fraktions-Scores über
+   *  alle Fragen (nie ein Ausrutscher). */
+  steady?: string | null;
+  /** Stat-Werte je Award für die Zeremonie-Beats (optional, für Anzeige). */
+  stats?: {
+    fastest?: number;       // Anzahl „schnellste Fraktion"-Fragen
+    sharpshooter?: number;  // Trefferquote in % (0–100)
+    comeback?: number;      // aufgestiegene Plätze
+    participation?: number; // Beteiligungsquote in % (0–100)
+    steady?: number;        // Ø-Fraktions-Score (0–100) des beständigsten Teams
+  };
 }
 
 /** Modell B Mega-Event: Ergebnis EINER Farbe (Haupt-Team) für die aktuelle Frage.

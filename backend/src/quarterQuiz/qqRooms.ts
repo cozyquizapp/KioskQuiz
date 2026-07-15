@@ -217,7 +217,11 @@ export interface QQRoomState {
   // 2026-07-02: kumulierte Farb-Statistiken übers Spiel für die 3 Faktions-
   // Awards (schnellstes/treffsicherstes/Aufholjagd). Wird in qqMegaEventScore
   // pro Frage fortgeschrieben, am Spielende zu megaAwards verdichtet.
-  megaColorStats?: Record<string, { correct: number; answered: number; speedWins: number; firstRank: number | null; latestRank: number | null }>;
+  megaColorStats?: Record<string, { correct: number; answered: number; speedWins: number; firstRank: number | null; latestRank: number | null;
+    /** 2026-07-15 Award „Vollzaehlig": Summe verbundener Handys ueber die Fragen (Beteiligungs-Nenner). */
+    possible: number;
+    /** 2026-07-15 Award „Bestaendig": Per-Frage-Fraktions-Score (0-100) fuer die Streuung. */
+    scores: number[] }>;
   megaAwards?: import('../../../shared/quarterQuizTypes').QQMegaAwards | null;
   // 2026-05-02: Tie-Breaker am GAME_OVER. Wenn ≥2 Teams identische
   // (largestConnected, totalCells) haben, listet `tieBreakerCandidates` sie auf.
@@ -2559,10 +2563,14 @@ export function qqMegaEventScore(room: QQRoomState): void {
   let fastestAv: string | null = null; let fastestSpeed = Infinity;
   for (const g of groups.values()) { if (g.perf > 0 && g.bestSpeed < fastestSpeed) { fastestSpeed = g.bestSpeed; fastestAv = g.avatarId; } }
   for (const g of groups.values()) {
-    const st = room.megaColorStats[g.avatarId] ?? { correct: 0, answered: 0, speedWins: 0, firstRank: null, latestRank: null };
+    const st = room.megaColorStats[g.avatarId] ?? { correct: 0, answered: 0, speedWins: 0, firstRank: null, latestRank: null, possible: 0, scores: [] };
     st.correct += g.correct;
     st.answered += submittedByAv[g.avatarId] ?? 0;
     if (g.avatarId === fastestAv) st.speedWins += 1;
+    // 2026-07-15 Award „Vollzaehlig": verbundene Handys der Fraktion = Beteiligungs-Nenner.
+    st.possible += g.total;
+    // 2026-07-15 Award „Bestaendig": un-multiplizierter Per-Frage-Score (0-100) fuer die Streuung.
+    st.scores.push(Math.round(factionScore(g)));
     const r = cumRank.get(g.avatarId) ?? null;
     if (st.firstRank === null) st.firstRank = r;
     st.latestRank = r;
@@ -2587,7 +2595,33 @@ export function qqComputeMegaAwards(room: QQRoomState): void {
   // 🔥 Beste Aufholjagd: größter Rang-Aufstieg vom ersten bis zum letzten Stand.
   let comeback: string | null = null, cb = 0;
   for (const [av, s] of entries) { if (s.firstRank == null || s.latestRank == null) continue; const d = s.firstRank - s.latestRank; if (d > cb) { cb = d; comeback = av; } }
-  room.megaAwards = { fastest, sharpshooter, comeback };
+  // 🙌 Vollzählig (2026-07-15): höchste Beteiligungsquote (antwortende / verbundene
+  //    Handys). Belohnt das Per-Capita-Herz der Wertung. Guard gegen Winz-Nenner.
+  let participation: string | null = null, pRate = -1;
+  for (const [av, s] of entries) { if ((s.possible ?? 0) < 3) continue; const rate = s.answered / s.possible; if (rate > pRate) { pRate = rate; participation = av; } }
+  // ⚖️ Beständig (2026-07-15): geringste Standardabweichung der Per-Frage-Scores
+  //    (nie ein Ausrutscher). Nur Fraktionen mit ≥3 Fragen UND anständigem Schnitt
+  //    (≥20) — sonst gewönne „konstant 0 Punkte".
+  let steady: string | null = null, sSd = Infinity, steadyAvg = 0;
+  for (const [av, s] of entries) {
+    const sc = s.scores ?? [];
+    if (sc.length < 3) continue;
+    const mean = sc.reduce((a, b) => a + b, 0) / sc.length;
+    if (mean < 20) continue;
+    const variance = sc.reduce((a, b) => a + (b - mean) * (b - mean), 0) / sc.length;
+    const sd = Math.sqrt(variance);
+    if (sd < sSd) { sSd = sd; steady = av; steadyAvg = mean; }
+  }
+  room.megaAwards = {
+    fastest, sharpshooter, comeback, participation, steady,
+    stats: {
+      fastest: fastest ? (stats[fastest]?.speedWins ?? 0) : undefined,
+      sharpshooter: sharpshooter && sacc >= 0 ? Math.round(sacc * 100) : undefined,
+      comeback: comeback ? cb : undefined,
+      participation: participation && pRate >= 0 ? Math.round(pRate * 100) : undefined,
+      steady: steady ? Math.round(steadyAvg) : undefined,
+    },
+  };
 }
 
 // Moderator transitions from QUESTION_REVEAL → PLACEMENT using the

@@ -443,6 +443,9 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
     { slug: 'award-speedy' as const, label: de ? 'Schnellstes Team' : 'Fastest team', av: awards.fastest },
     { slug: 'award-sharpshooter' as const, label: de ? 'Treffsicherstes Team' : 'Sharpest team', av: awards.sharpshooter },
     { slug: 'award-underdog' as const, label: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback },
+    // 2026-07-15 (Wolf): 2 neue Awards passend zur Per-Capita-Wertung.
+    { slug: 'fx-teams' as const, label: de ? 'Vollzählig' : 'Full house', av: awards.participation },
+    { slug: 'fx-chart' as const, label: de ? 'Beständig' : 'Most steady', av: awards.steady },
   ]).filter(x => !!x.av);
   if (items.length === 0) return null;
   return (

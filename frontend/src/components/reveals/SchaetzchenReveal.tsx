@@ -77,6 +77,13 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
 
   // CozyArena: pro Fraktion auf den besten Tipp bündeln.
   const isMega = qqIsMega(s);
+  // 2026-07-15 (Wolf 'schau wo die wappen sind, wo das bild endet, wo der strahl
+  // ist'): In der Arena liegt hinter der Bühne das Kolosseum-Bild (cover). Dessen
+  // Schale endet deutlich vor dem Bildrand — volle Breite (Schiene/Ticks/Wappen bis
+  // ~95%) schob Content in den dunklen Rand bzw. schnitt das rechte Wappen ab.
+  // Darum die gesamte Strahl-Bühne in ein zentrales Band ziehen, das auf der Schale
+  // sitzt. Nur Arena (der dunkle Default-BG braucht das nicht).
+  const CONTENT_INSET = isMega ? 11 : 0; // % Rand je Seite
   // Arena-Wertung EXAKT wie Backend (per Handy, Ø über verbundene Handys) — nur
   // mega. Marker bleibt der beste Tipp (Visual), aber Ranking/Sieger = Punkte, so
   // matcht der Sieger 1:1 das Standing (Wolf 2026-07-14). qqSchaetzchenParse =
@@ -245,7 +252,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             color: 'var(--qq-text-muted)', fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 700,
           }}>{lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}</div>
         ) : (
-          <>
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${CONTENT_INSET}%`, right: `${CONTENT_INSET}%` }}>
             {/* Licht-Sweep */}
             <div aria-hidden style={{
               position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', opacity: 0,
@@ -465,7 +472,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 </div>
               );
             })}
-          </>
+          </div>
         )}
       </div>
     </div>

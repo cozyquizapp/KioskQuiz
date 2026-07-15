@@ -81,6 +81,8 @@ function build() {
 <html lang="de"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CozyWolf · Arbeitszeit</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%90%BA%3C/text%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%90%BA%3C/text%3E%3C/svg%3E">
 <style>
   :root{ --gold:#EAB308; --ink:#f4f2fb; }
   *{ box-sizing:border-box; margin:0; padding:0; }
@@ -138,10 +140,8 @@ function build() {
     </div>
     <div class="pill">⏳ noch ~<span id="rem">0</span> h bis ${data.goal}</div>
     ${endspurt ? '<div class="endspurt">🔥 Endspurt! Fast am Ziel.</div>' : ''}
-    <div class="totsub">${data.repos.length} Repos · ${data.commits} Commits · ${data.days} aktive Tage<br>(Gesamt = zusammengefuehrte Zeitleiste, ueberlappende Sessions zaehlen einmal)</div>
-    <div class="repos" id="repos"></div>
     <div class="foot">zuletzt aktualisiert: ${data.stamp}
-      <span class="hint">aktualisiert sich alle ${RELOAD_MIN} Min selbst · manuell: „CozyWolf-Stunden.cmd"</span></div>
+      <span class="hint">aktualisiert sich alle ${RELOAD_MIN} Min selbst</span></div>
   </div>
 <script>
   const DATA = ${JSON.stringify(data)};
@@ -157,18 +157,6 @@ function build() {
     el.textContent=Math.round(to*(1-Math.pow(1-p,3))); if(p<1) requestAnimationFrame(t); })(performance.now()); }
   countUp(document.getElementById('num'), DATA.total, 1700);
   countUp(document.getElementById('rem'), DATA.remaining, 1700);
-  const rc = document.getElementById('repos');
-  DATA.repos.forEach((r,i)=>{ const row=document.createElement('div'); row.className='repo';
-    row.style.animation='rise .7s '+(0.3+i*0.08)+'s both';
-    row.innerHTML='<div class="top"><span class="nm" style="color:'+r.color+'">'+r.name+'</span><span class="hr" id="hr'+i+'">0 h</span></div>'
-      +'<div class="bar"><div class="fill" id="fill'+i+'" style="background:linear-gradient(90deg,'+r.color+'aa,'+r.color+')"></div></div>'
-      +'<div class="sub">'+r.commits+' Commits · '+r.days+' Tage</div>';
-    rc.appendChild(row);
-    setTimeout(()=>{ document.getElementById('fill'+i).style.width=(r.hours/MAXREPO*100)+'%';
-      countUp(document.getElementById('hr'+i), r.hours, 1400); document.getElementById('hr'+i).dataset.u='h';
-      const el=document.getElementById('hr'+i); const st=performance.now();
-      (function t(n){ const p=Math.min(1,(n-st)/1400); el.textContent=Math.round(r.hours*(1-Math.pow(1-p,3)))+' h'; if(p<1) requestAnimationFrame(t); })(performance.now());
-    }, 400+i*90); });
   setTimeout(()=>location.reload(), ${RELOAD_MIN} * 60 * 1000);
 </script></body></html>`;
 

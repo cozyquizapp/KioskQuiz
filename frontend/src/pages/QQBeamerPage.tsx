@@ -4162,7 +4162,9 @@ function ArenaMasterSplash({ language, visible }: { language: QQLanguage; visibl
       }}>
         <div style={{
           fontSize: 'clamp(12px, 1.4cqw, 22px)', fontWeight: 900, letterSpacing: '0.28em',
-          textTransform: 'uppercase', color: '#f0abfc', textShadow: '0 2px 14px rgba(0,0,0,0.7)',
+          // Palette-Regel (Station 0): Gold = Zeremonie, Violett nur Atmosphaere/BG,
+          // nie als Text. Eyebrow + Untertitel daher neutral warm-weiss statt Lavendel.
+          textTransform: 'uppercase', color: '#e6e9f5', textShadow: '0 2px 14px rgba(0,0,0,0.7)',
           animation: visible ? 'qqMasterEyebrow 0.7s cubic-bezier(0.2,0.9,0.3,1) 0.2s both' : 'none',
         }}>{de ? 'Euer Gastgeber' : 'Your host'}</div>
         <div style={{
@@ -4180,7 +4182,7 @@ function ArenaMasterSplash({ language, visible }: { language: QQLanguage; visibl
         }} />
         <div style={{
           marginTop: 'clamp(10px, 1.6cqh, 22px)', fontSize: 'clamp(16px, 2cqw, 32px)', fontWeight: 800,
-          color: '#e9d5ff', textShadow: '0 2px 14px rgba(0,0,0,0.75)',
+          color: '#f4f6ff', textShadow: '0 2px 14px rgba(0,0,0,0.75)',
           animation: visible ? 'qqMasterSub 0.7s ease 0.9s both' : 'none',
         }}>{de ? 'Er führt euch durch die Arena' : 'He guides you through the Arena'}</div>
       </div>

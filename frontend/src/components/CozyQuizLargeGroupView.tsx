@@ -11,12 +11,13 @@
 // (fastest zuerst). Score-Feld = largestConnected (= Punkte im Groß-Modus).
 
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
-import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
-import { playArenaLeadChange } from '../utils/sounds';
+import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards, QQMegaAwardKey } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqMegaAwardKeys } from '../../../shared/quarterQuizTypes';
+import { playArenaLeadChange, playSpecialAwardReveal, playRaceWinner, playWolfHowl } from '../utils/sounds';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
+import type { QQIconSlug } from './QQIcon';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
@@ -471,7 +472,56 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
   );
 }
 
-// ── GameOver: Sieger-Hero + Top-10-Standings (kein Grid, keine 25er-Kaskade) ──
+// ── Award-Beat-Metadaten (Icon/Titel/Sieger-Fraktion/Stat) je Award-Key ──────
+// Reihenfolge & Vorhandensein liefert qqMegaAwardKeys (Single Source of Truth,
+// shared) — hier nur die Darstellungs-Details pro Beat der Siegerehrung.
+function megaAwardBeat(key: QQMegaAwardKey, awards: QQMegaAwards, de: boolean): { slug: QQIconSlug; title: string; av: string; stat: string } {
+  const st = awards.stats ?? {};
+  switch (key) {
+    case 'fastest':
+      return { slug: 'award-speedy', title: de ? 'Schnellstes Team' : 'Fastest team', av: awards.fastest!, stat: de ? `${st.fastest ?? 0}× die schnellste Fraktion` : `${st.fastest ?? 0}× fastest faction` };
+    case 'sharpshooter':
+      return { slug: 'award-sharpshooter', title: de ? 'Treffsicherstes Team' : 'Sharpest team', av: awards.sharpshooter!, stat: de ? `${st.sharpshooter ?? 0}% Trefferquote` : `${st.sharpshooter ?? 0}% accuracy` };
+    case 'comeback':
+      return { slug: 'award-underdog', title: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback!, stat: de ? `+${st.comeback ?? 0} Plätze aufgeholt` : `+${st.comeback ?? 0} places climbed` };
+    case 'participation':
+      return { slug: 'fx-teams', title: de ? 'Vollzählig' : 'Full house', av: awards.participation!, stat: de ? `${st.participation ?? 0}% mitgemacht` : `${st.participation ?? 0}% turnout` };
+    case 'steady':
+      return { slug: 'fx-chart', title: de ? 'Beständig' : 'Most steady', av: awards.steady!, stat: de ? `Ø ${st.steady ?? 0} Punkte, kaum Schwankung` : `avg ${st.steady ?? 0} pts, low swing` };
+  }
+}
+
+// Funken-Positionen um die einfahrende Sieger-Fraktion (Award-Beat).
+const AWARD_SPARKS = [
+  { top: '-8%', left: '10%',  delay: 0.0, dur: 2.8, size: 'clamp(12px,1.4cqw,20px)' },
+  { top: '22%', left: '-8%',  delay: 0.6, dur: 3.2, size: 'clamp(10px,1.2cqw,16px)' },
+  { top: '78%', left: '-4%',  delay: 1.2, dur: 2.6, size: 'clamp(10px,1.1cqw,15px)' },
+  { top: '88%', left: '82%',  delay: 0.3, dur: 3.0, size: 'clamp(12px,1.4cqw,20px)' },
+  { top: '8%',  left: '96%',  delay: 0.9, dur: 2.8, size: 'clamp(11px,1.3cqw,18px)' },
+];
+
+// Zeremonie-Keyframes (einmal je Branch via <style> injiziert). Reduced-Motion
+// via data-qq-ceremony-Scope entschärft alle Loops/Entrances.
+const CEREMONY_KEYFRAMES = `
+@keyframes qqCrownIn { 0% { opacity:0; transform:translateY(40px) scale(0.6);} 60%{opacity:1;} 100%{opacity:1;transform:translateY(0) scale(1);} }
+@keyframes qqCrownUnderline { from{transform:scaleX(0);opacity:0;} to{transform:scaleX(1);opacity:1;} }
+@keyframes qqCrownFadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
+@keyframes qqCrownFlood { from{opacity:0;} to{opacity:1;} }
+@keyframes qqAwardIconPop { 0%{opacity:0;transform:translateY(24px) scale(0.5) rotate(-8deg);} 60%{opacity:1;transform:scale(1.12) rotate(3deg);} 100%{opacity:1;transform:scale(1) rotate(0);} }
+@keyframes qqAwardShine { from{transform:translateX(-130%);} to{transform:translateX(130%);} }
+@keyframes qqAwardDriveIn { from{opacity:0;transform:translateX(64px);} to{opacity:1;transform:translateX(0);} }
+@keyframes qqBannerUnfurl { from{transform:translateX(-50%) scaleY(0);opacity:0.35;} to{transform:translateX(-50%) scaleY(1);opacity:1;} }
+@keyframes qqLaurelDrop { from{opacity:0;transform:translateY(-34px) scale(0.6);} to{opacity:1;transform:translateY(0) scale(1);} }
+@keyframes qqTorchFlicker { 0%,100%{transform:scale(1) rotate(-3deg);opacity:0.9;} 50%{transform:scale(1.1) rotate(3deg);opacity:1;} }
+@media (prefers-reduced-motion: reduce) {
+  [data-qq-ceremony] * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
+}
+`;
+
+// ── GameOver-Siegerehrung: Award-Beats → Kolosseum-Krönung → Endstand ────────
+// 2026-07-15 (Wolf): moderator-gesteuerte Zeremonie statt Auto-Timer. Steps
+// (state.awardCeremonyStep, Backend qqAwardStep): 0..(n-1) = Special-Award-Beats
+// (n = qqMegaAwardKeys), n = Krönung, n+1 = Endstand. Nur largeGroupMode.
 export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
   const sorted = state.nestedTeams ? qqSortedGroups(state) : qqSortedTeams(state);
@@ -480,28 +530,93 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const rest = sorted.length - shown.length;
   const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
   const wColor = winner?.color ?? '#EC4899';
-
-  // 2026-07-04 (Wolf 'arena-artiges Finale'): Sieger-Kroenung als Bookend zum
-  // Einzug — erst dramatische Kroenung der Sieger-Fraktion (Wappen gross,
-  // Farbflut, Slogan, Konfetti), dann Uebergang in die Standings. Spielt einmal.
-  const [goPhase, setGoPhase] = useState<'crown' | 'full'>(winner ? 'crown' : 'full');
-  useEffect(() => {
-    if (!winner) { setGoPhase('full'); return; }
-    const id = window.setTimeout(() => setGoPhase('full'), 5200);
-    return () => window.clearTimeout(id);
-  }, [winner?.id]);
   const motto = winner ? qqMegaFactionMotto(winner.avatarId, de ? 'de' : 'en') : '';
 
-  if (goPhase === 'crown' && winner) {
+  // Zeremonie-Step (geklemmt spiegelbildlich zum Backend).
+  const awardKeys = qqMegaAwardKeys(state.megaAwards);
+  const nAwards = awardKeys.length;
+  const crownStep = nAwards;
+  const standingsStep = nAwards + 1;
+  const step = Math.max(0, Math.min(standingsStep, state.awardCeremonyStep ?? 0));
+
+  // Sound je Beat: Award-Reveal-Sting pro Award, Champion-Fanfare + Wolf-Howl
+  // bei der Krönung. Nur bei tatsächlichem Step-Wechsel + nicht gemutet.
+  const lastBeatRef = useRef<number>(-1);
+  useEffect(() => {
+    if (step === lastBeatRef.current) return;
+    const prev = lastBeatRef.current;
+    lastBeatRef.current = step;
+    if ((state as any).sfxMuted) return;
+    if (prev < 0) return; // Mount: kein Sound (Reload-Schutz)
+    try {
+      if (step < crownStep) playSpecialAwardReveal();
+      else if (step === crownStep && winner) {
+        playRaceWinner();
+        window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 700);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // ── Beat 0..n-1: Special-Award-Spotlight ───────────────────────────────────
+  if (step < crownStep && state.megaAwards) {
+    const beat = megaAwardBeat(awardKeys[step], state.megaAwards, de);
+    const color = AVA_BY_ID.get(beat.av)?.color ?? '#EC4899';
+    const name = qqMegaFactionName(beat.av, de ? 'de' : 'en');
     return (
-      <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.6cqh, 24px)', color: '#f4f6ff' }}>
+      <div key={`award-${step}`} data-qq-ceremony style={{ ...S.goWrap, justifyContent: 'center', gap: 'clamp(12px, 2.2cqh, 32px)' }}>
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, animation: 'qqCrownFlood 0.7s ease both' }} />
+        <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+          <div style={{ fontSize: 'clamp(12px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#e9c46a' }}>
+            {(de ? 'Auszeichnung' : 'Special award')} {step + 1} / {nAwards}
+          </div>
+          <div style={{ display: 'flex', gap: 7 }}>
+            {awardKeys.map((_, i) => (
+              <span key={i} aria-hidden style={{ width: i === step ? 24 : 9, height: 9, borderRadius: 999, background: i === step ? color : (i < step ? `${color}99` : 'rgba(255,255,255,0.18)'), transition: 'width .3s ease, background .3s ease' }} />
+            ))}
+          </div>
+        </div>
+        <div style={{ position: 'relative', zIndex: 5, animation: 'qqAwardIconPop 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, display: 'inline-flex' }}>
+            <QQIcon slug={beat.slug} size={'clamp(88px, 11cqw, 176px)'} />
+            <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.5) 50%, transparent 66%)', transform: 'translateX(-130%)', animation: 'qqAwardShine 1.1s ease 0.5s both' }} />
+          </div>
+        </div>
+        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(26px, 4.2cqw, 64px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
+        <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6cqw, 24px)', animation: 'qqAwardDriveIn 0.7s cubic-bezier(0.2,1,0.4,1) 0.35s both' }}>
+          <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
+            <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(78px, 9cqw, 148px)'} />
+            {AWARD_SPARKS.map((sp, i) => (
+              <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${0.9 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
+            ))}
+          </div>
+          <TeamNameLabel name={name} maxLines={1} shrinkAfter={14} color={color} fontWeight={900} fontSize="clamp(28px, 4.2cqw, 68px)" fontSizeLong="clamp(20px, 3cqw, 48px)" style={{ textShadow: `0 0 40px ${color}66` }} />
+        </div>
+        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.6s ease 0.6s both' }}>{beat.stat}</div>
+        <style>{CEREMONY_KEYFRAMES}</style>
+      </div>
+    );
+  }
+
+  // ── Beat n: Kolosseum-Krönung (Höhepunkt) ──────────────────────────────────
+  if (step === crownStep && winner) {
+    return (
+      <div key="crown" data-qq-ceremony style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.6cqh, 24px)', color: '#f4f6ff' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 80% 62% at 50% 42%, ${wColor}3a 0%, transparent 62%)`, animation: 'qqCrownFlood 0.8s ease both' }} />
+        {/* Riesen-Banner (Fraktionsfarbe) entrollt sich hinter dem Wappen. */}
+        <div aria-hidden style={{ position: 'absolute', top: '4%', left: '50%', width: 'clamp(130px, 17cqw, 280px)', height: 'clamp(230px, 46cqh, 560px)', background: `linear-gradient(180deg, ${wColor}f0 0%, ${wColor}a0 82%, ${wColor}66 100%)`, clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)', transformOrigin: 'top center', animation: 'qqBannerUnfurl 0.9s cubic-bezier(0.2,1,0.3,1) 0.15s both', boxShadow: `0 24px 70px ${wColor}55`, zIndex: 2 }} />
+        {/* Fackeln flankieren die Bühne. */}
+        <span aria-hidden style={{ position: 'absolute', left: '11%', bottom: '16%', fontSize: 'clamp(30px, 4cqw, 66px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
+        <span aria-hidden style={{ position: 'absolute', right: '11%', bottom: '16%', fontSize: 'clamp(30px, 4cqw, 66px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out 0.4s infinite' }}><QQEmojiIcon emoji="🔥" /></span>
         <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
         <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#e9c46a' }}>
           {de ? 'Champions der Arena' : 'Arena Champions'}
         </div>
         <div style={{ position: 'relative', zIndex: 5, animation: 'qqCrownIn 0.7s cubic-bezier(0.2,1.3,0.4,1) both' }}>
           <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ position: 'absolute', top: '-9%', left: '50%', transform: 'translateX(-50%)', width: 'clamp(50px, 5.2cqw, 88px)', height: 'auto', zIndex: 6, animation: 'finaleTrophyFloat 3.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.5))' }} />
+          {/* Lorbeer senkt sich rechts & links ans Wappen. */}
+          <span aria-hidden style={{ position: 'absolute', top: '30%', left: '-14%', fontSize: 'clamp(46px, 6cqw, 100px)', lineHeight: 1, zIndex: 6, animation: 'qqLaurelDrop 0.7s cubic-bezier(0.2,1,0.4,1) 0.55s both' }}><QQEmojiIcon emoji="🌿" /></span>
+          <span aria-hidden style={{ position: 'absolute', top: '30%', right: '-14%', fontSize: 'clamp(46px, 6cqw, 100px)', lineHeight: 1, zIndex: 6, transform: 'scaleX(-1)', animation: 'qqLaurelDrop 0.7s cubic-bezier(0.2,1,0.4,1) 0.55s both' }}><QQEmojiIcon emoji="🌿" /></span>
           <div style={{ borderRadius: '50%', boxShadow: `0 0 80px ${wColor}77, 0 0 150px ${wColor}44` }}>
             <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(160px, 20cqw, 320px)'} />
           </div>
@@ -518,18 +633,14 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         <div style={{ position: 'relative', zIndex: 5, fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 38px)', color: wColor, animation: 'qqCrownFadeUp 0.6s ease 0.72s both' }}>
           {winner.largestConnected} {de ? 'Punkte' : 'points'}
         </div>
-        <style>{`
-          @keyframes qqCrownIn { 0% { opacity: 0; transform: translateY(40px) scale(0.6); } 60% { opacity: 1; } 100% { opacity: 1; transform: translateY(0) scale(1); } }
-          @keyframes qqCrownUnderline { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
-          @keyframes qqCrownFadeUp { from { opacity: 0; transform: translateY(14px); } to { opacity: 1; transform: translateY(0); } }
-          @keyframes qqCrownFlood { from { opacity: 0; } to { opacity: 1; } }
-        `}</style>
+        <style>{CEREMONY_KEYFRAMES}</style>
       </div>
     );
   }
 
+  // ── Beat n+1: Endstand (Bar-Race-Standings) ────────────────────────────────
   return (
-    <div style={{ ...S.goWrap, animation: 'brFadeIn 0.5s ease both' }}>
+    <div data-qq-ceremony style={{ ...S.goWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 50% 22%, ${wColor}33 0%, transparent 60%)` }} />
       <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
 

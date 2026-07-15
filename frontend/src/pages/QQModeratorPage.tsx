@@ -7,7 +7,7 @@ import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
-  QQ_COMEBACK_ENABLED, qqIsMega,
+  QQ_COMEBACK_ENABLED, qqIsMega, qqMegaAwardKeys,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { QQSoundPanel } from '../components/QQSoundPanel';
@@ -54,6 +54,19 @@ interface DraftSummary {
   /** Anzahl Fragen, die im Mega Event nicht ideal sind (aktuell: Hot Potato =
       rundenbasiert statt gleichzeitig). Wizard filtert/warnt darüber. */
   megaWarnCount?: number;
+}
+
+// 2026-07-15 (Wolf Siegerehrung): in der Arena schaltet GAME_OVER-Space die
+// moderator-gesteuerte Award-Zeremonie Beat für Beat weiter (Awards → Krönung →
+// Endstand); erst am Endstand folgt die Danke-Folie. true = noch ein Beat offen.
+// Gilt nur, wenn kein offenes Stechen ansteht (sonst erst Sieger klären).
+function gameOverCeremonyPending(s: QQStateUpdate): boolean {
+  if (!(s as any).largeGroupMode) return false;
+  const tieActive = (s.tieBreakerCandidates?.length ?? 0) >= 2 && !s.tieBreakerWinnerId;
+  if (tieActive) return false;
+  const standingsStep = qqMegaAwardKeys(s.megaAwards).length + 1;
+  const step = Math.max(0, Math.min(standingsStep, s.awardCeremonyStep ?? 0));
+  return step < standingsStep;
 }
 
 export default function QQModeratorPage({ testMode = false }: { testMode?: boolean } = {}) {
@@ -1054,8 +1067,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         // 2026-05-25 (Wolf 'autoplay soll immer durchlaufen außer lobby/pause/
         // thanks'): GAME_OVER war Halt-Punkt → jetzt auto-advance zu THANKS
         // nach Celebration-Hold (~12s fuer Sieger-Anim + Konfetti + Lese-Pause).
-        delayMs = 12000;
-        action = () => emit('qq:showThanks', { roomCode });
+        // 2026-07-15: In der Arena erst die Siegerehrung Beat für Beat
+        // durchlaufen (Awards → Krönung → Endstand), dann Danke-Folie.
+        if (gameOverCeremonyPending(s)) {
+          delayMs = 7000; // pro Award-/Krönungs-Beat Lese-/Anschau-Pause
+          action = () => emit('qq:awardStep', { roomCode, dir: 1 });
+        } else {
+          delayMs = 12000;
+          action = () => emit('qq:showThanks', { roomCode });
+        }
         break;
       }
     }
@@ -1108,6 +1128,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       (s as any).finalRecapStep ?? 0,  // 2026-05-25 (Wolf-Bug 'hier hängts'): Recap-Step 0→1 muss neu fire'n
       s.finalBettingSubmitted ? Object.values(s.finalBettingSubmitted).filter(Boolean).length : 0,
       (s as any).megaStandingsRevealed ? 'std' : 'scr', // 2026-07-12: 2-Beat-PLACEMENT (Mod-Pacing) muss neu fire'n
+      s.awardCeremonyStep ?? 0, // 2026-07-15: Siegerehrung-Beat muss neu fire'n
     ].join(':');
     if (autoplayLastFireKeyRef.current === fireKey) return;
     // 2026-05-09 v2 (Wolf-Bug 'autoplay langsam'): ref-stabiler Timer.
@@ -1142,6 +1163,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // 2026-05-09 (Wolf End-Flow): Multi-Step FINAL_REVEAL braucht Re-Trigger
     // bei jedem Step-Wechsel sonst hängt Autoplay nach erstem Step.
     (state as any)?.finalRevealStep,
+    state?.awardCeremonyStep, // 2026-07-15: Siegerehrung-Beats durchlaufen
+    state?.megaAwards,        // 2026-07-15: Award-Anzahl bestimmt Beat-Zahl
   ]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── L11 Fix 2 (2026-05-10): Cleanup für laufenden Autoplay-Timer ──
@@ -1371,8 +1394,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       }
       else if (s.phase === 'FINAL_REVEAL')
         emitRef.current('qq:nextQuestion', { roomCode });
-      else if (s.phase === 'GAME_OVER')
-        emitRef.current('qq:showThanks', { roomCode });
+      else if (s.phase === 'GAME_OVER') {
+        if (gameOverCeremonyPending(s)) emitRef.current('qq:awardStep', { roomCode, dir: 1 });
+        else emitRef.current('qq:showThanks', { roomCode });
+      }
       return;
     }
 
@@ -1517,8 +1542,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       }
       else if (s.phase === 'PLACEMENT' && !s.pendingFor)
         emitRef.current('qq:nextQuestion', { roomCode });
-      else if (s.phase === 'GAME_OVER')
-        emitRef.current('qq:showThanks', { roomCode });
+      else if (s.phase === 'GAME_OVER') {
+        if (gameOverCeremonyPending(s)) emitRef.current('qq:awardStep', { roomCode, dir: 1 });
+        else emitRef.current('qq:showThanks', { roomCode });
+      }
       return;
     }
 
@@ -3356,9 +3383,50 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                           ✓ Stechfrage aufgeloest — {s.teams.find(t => t.id === s.tieBreakerWinnerId)?.name}
                         </div>
                       )}
-                      <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
-                        ▶ Danke-Folie & QR
-                      </PrimaryBtn>
+                      {/* 2026-07-15 (Wolf Siegerehrung): in der Arena moderator-
+                          gesteuerte Zeremonie — Beat für Beat (Awards → Krönung →
+                          Endstand), dann Danke-Folie. Sonst direkt Danke-Folie. */}
+                      {(s as any).largeGroupMode && !tieActive ? (() => {
+                        const awardKeys = qqMegaAwardKeys(s.megaAwards);
+                        const nAwards = awardKeys.length;
+                        const crownStep = nAwards;
+                        const standingsStep = nAwards + 1;
+                        const step = Math.max(0, Math.min(standingsStep, s.awardCeremonyStep ?? 0));
+                        const beatLabel = step < crownStep
+                          ? `Auszeichnung ${step + 1}/${nAwards}`
+                          : step === crownStep ? 'Kolosseum-Krönung' : 'Endstand';
+                        const nextLabel = step < crownStep - 1 ? '▶ Nächster Award'
+                          : step === crownStep - 1 ? '▶ Krönung'
+                          : step === crownStep ? '▶ Endstand'
+                          : null;
+                        return (
+                          <>
+                            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate300, display: 'flex', alignItems: 'center', gap: 6 }}>
+                              <QQEmojiIcon emoji="🎖️" /> Siegerehrung — {beatLabel}
+                            </div>
+                            <div style={{ display: 'flex', gap: 8, alignItems: 'stretch' }}>
+                              {step > 0 && (
+                                <Btn small color={QQ_COLORS.slate400} onClick={() => emit('qq:awardStep', { roomCode, dir: -1 })}>
+                                  ◀ Zurück
+                                </Btn>
+                              )}
+                              {nextLabel ? (
+                                <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:awardStep', { roomCode, dir: 1 })} hotkey="Space">
+                                  {nextLabel}
+                                </PrimaryBtn>
+                              ) : (
+                                <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
+                                  ▶ Danke-Folie & QR
+                                </PrimaryBtn>
+                              )}
+                            </div>
+                          </>
+                        );
+                      })() : (
+                        <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:showThanks', { roomCode })} hotkey="Space">
+                          ▶ Danke-Folie & QR
+                        </PrimaryBtn>
+                      )}
                       {/* 2026-05-02 (Event-Manager-Audit): Endstand exportieren.
                           Pub-Wirt will die Wochen-Tafel updaten — heute musste
                           er den Beamer abfotografieren. */}

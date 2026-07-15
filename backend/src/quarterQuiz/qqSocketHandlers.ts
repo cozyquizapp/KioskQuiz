@@ -32,6 +32,7 @@ import {
   qqUndoComebackChoice,
   qqAddCoWinner, qqRemoveWinner, qqResolveTieBreaker,
   qqStartTieBreaker, qqTieBreakerAnswer, qqRevealTieBreaker, qqCancelTieBreaker,
+  qqAwardStep,
   qqNextQuestion, qqResetRoom, qqTriggerComeback, qqPause, qqResume,
   qqBuzzIn, qqClearBuzz, qqSetTimerDuration, qqStopTimer,
   qqSubmitAnswer, qqClearAnswers, qqKickTeam, qqRenameTeam, qqStartPlacement,
@@ -1590,6 +1591,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         assertRateLimit(socket, 'qq:tiebreakerAnswer', 4);
         const room = ensureQQRoom(payload.roomCode);
         qqTieBreakerAnswer(room, payload.teamId, payload.guess);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-07-15 (Wolf Siegerehrung): Mod schaltet die Award-Zeremonie am
+    // GAME_OVER weiter/zurück (Streamdeck). dir=1 vor, -1 zurück.
+    socket.on('qq:awardStep', (payload: { roomCode: string; dir?: number }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqAwardStep(room, payload.dir === -1 ? -1 : 1);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

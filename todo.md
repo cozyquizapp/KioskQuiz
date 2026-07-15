@@ -22,7 +22,7 @@
 - ⏳ **NOCH ZU BAUEN (Asset-Verdrahtung):**
   1. **Begruessungs-Wolf (Magier-Posen)** dort wo der Wolf spricht (Lobby + Welcome-Overlay, NUR Arena): neue `ArenaMageWolf`-Komponente mit **Mund-Flap** (hi↔calm beim Sprechen, cheer als Reaktion) — die 3 Posen sind statisch, kein volles Lip-Sync-Raster. AnimatedCozyWolf in Arena an diesen 2 Stellen ersetzen.
   2. **Arena-Meister-Szene** (`arena-bg/arena-master.webp`) = **eigener Splash VOR den Regeln** (Wolf-Wahl): kurze Standalone-Folie „Der Arena-Meister", dann Rules. Braucht kleinen Flow-Step (evtl. rulesSlideIndex -2-Bereich / neuer Pre-Rules-State + Mod-Weiter).
-- ⏭️ **DANN (Wolf-Ansage): Award-Zeremonie bauen** (Step-State + Mod-Buttons + Frontend-Zeremonie + Kolosseum-Kroenung) — Backend-Fundament steht (`e9c11c4a`).
+- ✅ **Award-Zeremonie GEBAUT** (Step-State + Socket + Mod-Buttons + Frontend-Zeremonie + Kolosseum-Kroenung) — s.u. „SIEGEREHRUNG". → **Wolf-Beamer-Check.**
 - (Joker fuer Arena: von Wolf verworfen, Arena hat keine Joker.)
 
 
@@ -42,10 +42,11 @@
 - **Stats in den Beats:** JA (real, Backend rechnet sie mit).
 - **Pacing: MODERATOR-GESTEUERT** (Wolf klickt je Beat weiter, Streamdeck) — braucht Backend-Step-State + Socket + Mod-Buttons.
 - ✅ **Backend-Fundament gebaut+gepusht (`e9c11c4a`):** Vollzaehlig + Bestaendig + Stat-Werte in `qqComputeMegaAwards`, `megaColorStats` erweitert, `QQMegaAwards`-Type, `MegaAwardsStrip` (Summary/Recap). typecheck+Scoring-Gate ok.
-- ⏳ **NOCH ZU BAUEN (naechster Schritt, grosser Frontend/Socket-Chunk):**
-  1. **Step-State** fuer moderator-gesteuerte Zeremonie: Room-Feld `awardCeremonyStep` (0..4 Awards → 5 Kroenung → 6 Endstand) + Socket-Handler `qq:awardStep` (vor/zurueck) + State-Update. Nur GAME_OVER/Mega.
-  2. **Moderator-Buttons** (QQModeratorPage GAME_OVER): „naechster Award / Kroenung / Endstand".
-  3. **Frontend-Zeremonie** in `LargeGroupGameOverView`: 5 Award-Beats (Icon-Pop+Shine, Titel, Sieger-Fraktion, Stat) → **Kolosseum-Kroenung** (Wappen steigt, Banner entrollt, Lorbeer, Fackeln, Crowd-Roar, Konfetti) → Endstand. Vorschau-Artifacts: award-ceremony (Reihenfolge Awards→Kroenung→Endstand). Award-Reihenfolge: Speedy→Scharfschuetze→Aufholjagd→Vollzaehlig→Bestaendig, nur Awards mit Sieger zeigen.
+- ✅ **GEBAUT (2026-07-15, FE+BE tsc-gruen, Scoring-Gate ok):** kompletter Zeremonie-Chunk.
+  1. **Step-State**: Room-Feld `awardCeremonyStep` (0..n-1 Awards → n Kroenung → n+1 Endstand), Reset+Init bei GAME_OVER, Socket `qq:awardStep` (vor/zurueck, geklemmt), Broadcast. Shared-SSOT `qqMegaAwardKeys` + `QQ_MEGA_AWARD_ORDER` (Backend-Clamp + FE-Render einig).
+  2. **Moderator** (QQModeratorPage GAME_OVER): Zeremonie-Status + „◀ Zurueck" + Primary „Naechster Award / Kroenung / Endstand / Danke-Folie". Space + Autoplay laufen die Beats durch (7s/Beat), dann Thanks. Nur wenn kein offenes Stechen.
+  3. **Frontend** `LargeGroupGameOverView`: Award-Beats (Icon-Pop+Shine, Fortschritts-Dots, Titel, Sieger-Fraktion faehrt ein, Funken, Stat) → **Kolosseum-Kroenung** (Banner entrollt, Lorbeer senkt sich, Fackeln, Trophy, Konfetti, Motto) → Endstand. Sounds: `playSpecialAwardReveal` je Award, `playRaceWinner`+`playWolfHowl` bei Kroenung. reduced-motion-safe.
+- ⏳ **Wolf-Beamer-Check:** Beat-Pacing, Banner-/Lorbeer-/Fackel-Optik bei 8 Fraktionen, Krone-Layout, Award-Stat-Texte (DE/EN) ok? Streamdeck-Weiter/Zurueck.
 
 **🎨 ICON-ENTSCHEIDUNGEN (2026-07-15, final) — Wolf malt nur noch 2 PNGs + 1 CozyGame:**
 - Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header). (`cg-marshmallow-fang` 2026-07-15 bewusst ausgelassen → 🍡-Fallback bleibt.)

@@ -1408,6 +1408,10 @@ export interface QQStateUpdate {
   /** Mega Event: 3 Faktions-Awards am Spielende (avatarId je Award, null wenn
    *  keiner). Vom Backend am Spielende berechnet. */
   megaAwards?: QQMegaAwards | null;
+  /** Mega Event Siegerehrung (2026-07-15, Mod-gesteuert): Step-Index der
+   *  Award-Zeremonie am GAME_OVER. 0..(n-1) = Award-Beats (n = qqMegaAwardKeys),
+   *  n = Kolosseum-Krönung, n+1 = Endstand. Nur GAME_OVER/Mega relevant. */
+  awardCeremonyStep?: number | null;
 }
 
 /** Mega-Event-Faktions-Awards (Spielende). avatarId = Gewinner-Farbe je Award. */
@@ -1432,6 +1436,20 @@ export interface QQMegaAwards {
     participation?: number; // Beteiligungsquote in % (0–100)
     steady?: number;        // Ø-Fraktions-Score (0–100) des beständigsten Teams
   };
+}
+
+/** Reihenfolge der Award-Beats in der Siegerehrung (Wolf 2026-07-15):
+ *  Speedy → Scharfschütze → Aufholjagd → Vollzählig → Beständig. Nur Awards mit
+ *  Sieger werden gezeigt. Single Source of Truth für Backend-Clamping (Step-State)
+ *  UND Frontend-Rendering, damit beide über die Beat-Anzahl einig sind. */
+export const QQ_MEGA_AWARD_ORDER = ['fastest', 'sharpshooter', 'comeback', 'participation', 'steady'] as const;
+export type QQMegaAwardKey = typeof QQ_MEGA_AWARD_ORDER[number];
+
+/** Liefert die vorhandenen Award-Keys (mit Sieger-Fraktion) in Zeremonie-Reihenfolge.
+ *  Länge = Anzahl Award-Beats. Ceremony-Steps: 0..(n-1) Awards → n Krönung → n+1 Endstand. */
+export function qqMegaAwardKeys(awards: QQMegaAwards | null | undefined): QQMegaAwardKey[] {
+  if (!awards) return [];
+  return QQ_MEGA_AWARD_ORDER.filter((k) => !!awards[k]);
 }
 
 /** Modell B Mega-Event: Ergebnis EINER Farbe (Haupt-Team) für die aktuelle Frage.

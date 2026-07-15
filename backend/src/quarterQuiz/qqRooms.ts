@@ -14,7 +14,7 @@ import {
   QQ_BLUFF_WRITE_DURATION_DEFAULT_SEC, QQ_BLUFF_VOTE_DURATION_DEFAULT_SEC,
   getRandomDummyEmojis,
   QQ_TIEBREAKER_POOL, QQTieBreakerState,
-  qqIsMega,
+  qqIsMega, qqMegaAwardKeys,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -223,6 +223,10 @@ export interface QQRoomState {
     /** 2026-07-15 Award „Bestaendig": Per-Frage-Fraktions-Score (0-100) fuer die Streuung. */
     scores: number[] }>;
   megaAwards?: import('../../../shared/quarterQuizTypes').QQMegaAwards | null;
+  // 2026-07-15 (Wolf Siegerehrung, Mod-Pacing): Step-Index der Award-Zeremonie
+  // am GAME_OVER (nur largeGroupMode). 0..(n-1) = Award-Beats, n = Krönung,
+  // n+1 = Endstand. Gesetzt auf 0 bei GAME_OVER, via qqAwardStep vor/zurück.
+  awardCeremonyStep?: number;
   // 2026-05-02: Tie-Breaker am GAME_OVER. Wenn ≥2 Teams identische
   // (largestConnected, totalCells) haben, listet `tieBreakerCandidates` sie auf.
   // Mod resolved manuell via qqResolveTieBreaker → tieBreakerWinnerId, Frontend
@@ -1017,6 +1021,7 @@ export function qqStartGame(
   room.endAwards = null;
   room.megaColorStats = {};  // Mega-Faktions-Award-Statistiken frisch
   room.megaAwards = null;
+  room.awardCeremonyStep = 0; // Siegerehrung-Step frisch
   // ── Media/UI State (Spoiler-Prevention) ──
   (room as any).imageRevealed = false;
   (room as any).mapRevealStep = 0;
@@ -2622,6 +2627,24 @@ export function qqComputeMegaAwards(room: QQRoomState): void {
       steady: steady ? Math.round(steadyAvg) : undefined,
     },
   };
+}
+
+/** 2026-07-15 (Wolf Siegerehrung): moderator-gesteuerter Schritt durch die
+ *  Award-Zeremonie am GAME_OVER. dir=+1 vor, -1 zurück. Steps: 0..(n-1) Award-
+ *  Beats (n = Awards mit Sieger, in Reihenfolge), n = Kolosseum-Krönung,
+ *  n+1 = Endstand. Geklemmt auf [0, n+1]. Nur GAME_OVER + largeGroupMode. */
+export function qqAwardStep(room: QQRoomState, dir: 1 | -1): void {
+  if (room.phase !== 'GAME_OVER') {
+    throw new QQError('WRONG_PHASE', 'Siegerehrung nur am Spielende.');
+  }
+  if (!room.largeGroupMode) {
+    throw new QQError('WRONG_PHASE', 'Siegerehrung nur im Arena-Modus.');
+  }
+  const beats = qqMegaAwardKeys(room.megaAwards).length; // Anzahl Award-Beats
+  const maxStep = beats + 1; // Krönung (beats) + Endstand (beats+1)
+  const cur = room.awardCeremonyStep ?? 0;
+  room.awardCeremonyStep = Math.max(0, Math.min(maxStep, cur + dir));
+  room.lastActivityAt = Date.now();
 }
 
 // Moderator transitions from QUESTION_REVEAL → PLACEMENT using the
@@ -4421,7 +4444,7 @@ export function qqNextQuestion(room: QQRoomState): void {
         // Code; spaeter komplett schlachtbar.
         detectTieBreakerCandidates(room);
         // Mega Event: 3 Faktions-Awards aus den kumulierten Farb-Statistiken.
-        if (room.largeGroupMode) qqComputeMegaAwards(room);
+        if (room.largeGroupMode) { qqComputeMegaAwards(room); room.awardCeremonyStep = 0; }
         room.phase = 'GAME_OVER';
         // 2026-07-12 (Wolf-Livetest 'Stechen lief obwohl Sieger schon gekuert
         // war'): bei Gleichstand an der Spitze das Stechen AUTOMATISCH starten,
@@ -4852,6 +4875,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     megaQuestionRanking:  room.megaQuestionRanking ?? null,
     megaStandingsRevealed: room.megaStandingsRevealed ?? false,
     megaAwards:           room.megaAwards ?? null,
+    awardCeremonyStep:    room.awardCeremonyStep ?? 0,
     shuffleQuestionsInRound: room.shuffleQuestionsInRound ?? true,
     swapFirstCell:    room.swapFirstCell
       ? { row: room.swapFirstCell.row, col: room.swapFirstCell.col }

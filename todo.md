@@ -23,7 +23,13 @@
 **✅ RULES-REDESIGN gebaut+gepusht (`8bf9dcd7`, typecheck-gruen):** gerichteter Tiefen-Uebergang · Signatur-Hero-Motion pro Regel (Buch/Pokal/Map/Ziel/Haende) · Stepper-Schiene + Wolf laeuft mit · Divider-Draw · Arena-Glut (Mega) · ⚡→🎯. → **Wolf-Beamer-Check.**
   - Deferred (optional, wenn gewuenscht): Bonus-Chips (5·4·3·2·1) + Count-up „4·5" auf How-to-score/Journey · lastSlideHint „🎬 Los geht's" → fx-arena (braucht Icon-statt-Text-Render) · Stepper-Wolf ist OS-🐺 (koennte echte cozywolf-Pose werden).
 
-**➡️ NÄCHSTES GROSSES THEMA (Wolf 2026-07-15): CozyArena-SIEGEREHRUNG + SPECIAL AWARDS** ueberarbeiten. Noch nicht begonnen — erst Bestand sichten (`CozyQuizGameOverView`, `megaAwards`, award-*-Icons) + Konzept mit Wolf.
+**➡️ IN ARBEIT: CozyArena-SIEGEREHRUNG neu (Wolf 2026-07-15, Konzept steht, Vorschau abgenommen bis auf Pacing):**
+- **Reihenfolge:** erst **Special Awards** (Spotlight-Beat je Award), DANN **Champion-Kroenung** als Hoehepunkt, dann Endstand. (Wolf: „Awards VOR der Siegerehrung".)
+- **Award-Zeremonie:** je Award ein Beat — Icon-Pop + Shine, Titel, Sieger-Fraktion faehrt ein, Funken, Stat-Zeile. Vorschau-Artifact gebaut+abgenommen.
+- **5 Awards** = 3 bestehende (⚡ Speedy, 🎯 Scharfschuetze, 📈 Aufholjagd) + **2 neue (Wolf-Wahl): 🙌 Vollzaehlig** (hoechste Beteiligungsquote = answered/verbundene Handys) + **⚖️ Bestaendig** (geringste Streuung der Per-Frage-Scores). Backend: `megaColorStats` erweitern (possible-Nenner + scores[]), `qqComputeMegaAwards` + `QQMegaAwards`-Type + `MegaAwardsStrip`.
+- **Kroenung = „A · Kolosseum-Kroenung"**: Sieger-Wappen steigt zentral, Riesen-Banner entrollt sich (Fraktionsfarbe), Lorbeer senkt sich, Fackeln, Crowd-Roar, Konfetti. In `LargeGroupGameOverView` (crown-Phase ausbauen).
+- **Stats in den Beats:** JA (real, ich rechne sie im Backend eh mit).
+- ⏳ **OFFEN vor Bau:** Pacing der Zeremonie — **auto-getimt** (wie jetzige Krönung) oder **moderator-gesteuert** (Wolf klickt je Beat weiter, Streamdeck)? → dann Backend-Awards + Ceremony + Kolosseum-Kroenung bauen (nur Mega/Arena).
 
 **🎨 ICON-ENTSCHEIDUNGEN (2026-07-15, final) — Wolf malt nur noch 2 PNGs + 1 CozyGame:**
 - Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header). (`cg-marshmallow-fang` 2026-07-15 bewusst ausgelassen → 🍡-Fallback bleibt.)

@@ -13,9 +13,22 @@
 
 ---
 
-## 🔜 HIER STARTEN (Handoff 2026-07-14, ganz spaet)
+## 🔜 HIER STARTEN (Handoff 2026-07-15)
 
-**Neu gebaut+gepusht (`ff0e87bb`, FE+BE typecheck-gruen, Scoring-Gate ok):**
+**Neu gebaut+gepusht (2026-07-15, FE typecheck-gruen):**
+- **Team-Vorstellung: Wappen verteilt** (`093abaa9`) — Finale-Aufstellung breit ueber die Arena-Flaeche (space-evenly + Zickzack) statt zentral geclustert. → Beamer-Check.
+- **Order-Reveal → Top5-v2** (`093abaa9`) — Mystery-Tafel-Look (`· · ·`-Rows, Sieger-Banner poppt am Ende, n×-Zaehler), Wert-Pille + Kriterium erhalten. → Beamer-Check.
+- **„Fuehrung!"-Callout ⚔️→👑** (`849548ee`, fx-crown 3D). ⚠️ Anfuehrer traegt am Rang schon 👑 → evtl. Doppel-Krone bei Fuehrungswechsel; falls stoerend → `fx-chart`. Beamer-Check.
+
+**⏳ RULES-REDESIGN — Vorschau gebaut, wartet auf Wolf-Freigabe der Richtung:**
+Artifact v2 (Arena-Atmosphaere: Arkade/Glut/Vignette · Wolf laeuft die Stepper-Schiene · Signatur-Motion pro Regel · Parallax-Tiefe im Uebergang · Count-up · Bonus-Chips). Pink bleibt einheitlich (KEINE Slide-Farben — locked). Nach OK → in echte `CozyQuizRulesView` umsetzen (850 Z.).
+
+**🎨 ICON-ENTSCHEIDUNGEN (2026-07-15, final) — Wolf malt nur noch 2 PNGs + 1 CozyGame:**
+- Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header) · `cg-marshmallow-fang` (🍡-Fallback, alt).
+- Wiederverwendet (schon da, via QQEmojiIcon-Auto-Map Emoji→3D): **Los geht's = `fx-arena`** (🏟️) · **Fuehrung = `fx-crown`** (👑, wired) · **How to score = `fx-target`** (🎯).
+- Noch zu verdrahten beim Rules-Umbau: „So gibt es Punkte"-Slide-Icon ⚡→🎯 (fx-target) · lastSlideHint „🎬 Los geht's" → fx-arena. `fx-swords`/`fx-clapperboard`/`fx-lightning` werden NICHT mehr gebraucht.
+
+**Aeltere neu-Punkte (`ff0e87bb`, FE+BE typecheck-gruen, Scoring-Gate ok):**
 - **Moderator-Toggle „Arena-Backgrounds an/aus"** (`4ec204cc`) — Wizard-Schritt „Design", nur Arena: „Mit Kolosseum" (Default) vs „Schlicht" (ruhiger dunkler BG). Flow: `shared arenaBackgrounds?` → Room-Default true → State-Builder → `setQuizOptions` → zentraler Gate `qqArenaBgEnabled(s)`. Greift auf Beamer-BG, Lobby-Video, Welcome-Overlay-BG (Wortmarke „COZYARENA" bleibt).
 - **MUCHO Arena Layout 1** (`ff0e87bb`) — 2x2 → EINE Spalte mit vollbreiten Antwort-Balken, Fraktions-Wappen gross inline rechts (`MegaMuchoVoterPills big`), Balken-Mindesthoehe gegen Clipping. Nicht-Arena bleibt 2x2.
 

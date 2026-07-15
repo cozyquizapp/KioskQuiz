@@ -15,6 +15,17 @@
 
 ## 🔜 HIER STARTEN (Handoff 2026-07-15)
 
+**🎁 WOLF-ASSET-LIEFERUNG integriert (2026-07-15, `c9724547`+`+Wappen-Header`):** aus `Desktop/für claude`.
+- ✅ **3D-Buch** `fx-book` — 📖 global auto-3D (QQIcon-Map), LIVE im Regel-Intro.
+- ✅ **Neutrales Wappen** `fx-shield-faction` — als Fraktionen-Header in der Team-Vorstellung (Titel-Marker). LIVE.
+- ✅ Assets abgelegt: `avatars/cozywolf/cozywolf-arena-{hi,cheer,calm,master}.png` (Magier-Posen, freigestellt), `arena-bg/arena-master.webp` (16:9-Szene).
+- ⏳ **NOCH ZU BAUEN (Asset-Verdrahtung):**
+  1. **Begruessungs-Wolf (Magier-Posen)** dort wo der Wolf spricht (Lobby + Welcome-Overlay, NUR Arena): neue `ArenaMageWolf`-Komponente mit **Mund-Flap** (hi↔calm beim Sprechen, cheer als Reaktion) — die 3 Posen sind statisch, kein volles Lip-Sync-Raster. AnimatedCozyWolf in Arena an diesen 2 Stellen ersetzen.
+  2. **Arena-Meister-Szene** (`arena-bg/arena-master.webp`) = **eigener Splash VOR den Regeln** (Wolf-Wahl): kurze Standalone-Folie „Der Arena-Meister", dann Rules. Braucht kleinen Flow-Step (evtl. rulesSlideIndex -2-Bereich / neuer Pre-Rules-State + Mod-Weiter).
+- ⏭️ **DANN (Wolf-Ansage): Award-Zeremonie bauen** (Step-State + Mod-Buttons + Frontend-Zeremonie + Kolosseum-Kroenung) — Backend-Fundament steht (`e9c11c4a`).
+- (Joker fuer Arena: von Wolf verworfen, Arena hat keine Joker.)
+
+
 **Neu gebaut+gepusht (2026-07-15, FE typecheck-gruen):**
 - **Team-Vorstellung: Wappen verteilt** (`093abaa9`) — Finale-Aufstellung breit ueber die Arena-Flaeche (space-evenly + Zickzack) statt zentral geclustert. → Beamer-Check.
 - **Order-Reveal → Top5-v2** (`093abaa9`) — Mystery-Tafel-Look (`· · ·`-Rows, Sieger-Banner poppt am Ende, n×-Zaehler), Wert-Pille + Kriterium erhalten. → Beamer-Check.

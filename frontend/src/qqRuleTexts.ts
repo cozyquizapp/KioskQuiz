@@ -143,17 +143,16 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
   {
     id: 'rules-slides',
     title: 'Spielregeln-Folien',
-    description: 'Die 8 großen Folien nach „Willkommen". Title + 1–3 Zeilen + optionaler Extra-Hinweis.',
+    description: 'Die großen Folien nach „Willkommen" (Deck). Title + 1–3 Zeilen + optionaler Extra-Hinweis. Einige nur bei aktivem Feature (CozyGame, Connections).',
     items: [
       // Slide 1: Das Ziel
       { key: 'rules.slide1.title',  label: '1 · Das Ziel — Titel',   defaultDe: 'Das Ziel', defaultEn: 'The Goal' },
       { key: 'rules.slide1.line1',  label: '1 · Das Ziel — Zeile 1', defaultDe: 'Größtes zusammenhängendes Gebiet gewinnt', defaultEn: 'Largest connected area wins' },
 
-      // Slide 2: So läuft's
-      { key: 'rules.slide2.title',  label: '2 · So läuft\'s — Titel',   defaultDe: 'So läuft\'s', defaultEn: 'How It Works' },
-      { key: 'rules.slide2.line1',  label: '2 · So läuft\'s — Zeile 1 (mit {phases})', defaultDe: '{phases} Runden · 5 Kategorien', defaultEn: '{phases} rounds · 5 categories' },
-      { key: 'rules.slide2.line2',  label: '2 · So läuft\'s — Zeile 2', defaultDe: 'Richtige Antwort → Feld setzen', defaultEn: 'Right answer → place a cell' },
-      { key: 'rules.slide2.line3',  label: '2 · So läuft\'s — Zeile 3', defaultDe: 'Schnellste richtige Antwort setzt zuerst', defaultEn: 'Fastest correct answer places first' },
+      // Slide 2 „So läuft's" 2026-07-15 (Design-Sweep-Audit) aus dem Editor
+      // entfernt — im Render gibt es keine solche Folie mehr (die Setz-/Tempo-
+      // Regeln stehen auf „Das Ziel" bzw. werden pro Frage erklärt). Sonst sieht
+      // Wolf hier eine Phantom-Folie.
 
       // Slide 3: Roadmap (treeShowcase — kein Body-Text außer Title)
       { key: 'rules.slide3.title',  label: '3 · Roadmap — Titel', defaultDe: 'Dein Weg durchs Quiz', defaultEn: 'Your Quiz Roadmap' },
@@ -170,33 +169,27 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       // NEU-Badge). Editor-Keys mit raus, sonst sieht Wolf hier Items, die im
       // Render nirgends auftauchen.
 
-      // Slide 6: Bunte Tüte
-      { key: 'rules.slide6.title',  label: '6 · Bunte Tüte — Titel', defaultDe: 'Bunte Tüte', defaultEn: 'Lucky Bag' },
-      { key: 'rules.slide6.line1',  label: '6 · Bunte Tüte — Zeile 1', defaultDe: 'Eine Kategorie pro Runde ist eine Überraschung', defaultEn: 'One category per round is a surprise' },
-      { key: 'rules.slide6.line2',  label: '6 · Bunte Tüte — Zeile 2', defaultDe: 'Jede Runde ein anderes Format', defaultEn: 'A different format each round' },
-      { key: 'rules.slide6.extra',  label: '6 · Bunte Tüte — Extra-Hinweis', defaultDe: 'Regeln werden vor jeder Frage kurz erklärt', defaultEn: 'Rules explained before each question' },
+      // Slide 6 „Bunte Tüte" 2026-07-15 (Design-Sweep-Audit) aus dem Editor
+      // entfernt — keine Deck-Folie mehr; die Bunte-Tüte-Sub-Mechaniken werden
+      // pro Frage im Cat-Intro erklärt (Gruppe „Bunte-Tüte-Mechaniken" unten).
 
       // Slide CozyGame (zwischen Bunte Tüte und Comeback, nur sichtbar wenn cozyGamesEnabled)
       { key: 'rules.slide_cozygames.title', label: 'CozyGame — Titel', defaultDe: 'CozyGame', defaultEn: 'CozyGame' },
       { key: 'rules.slide_cozygames.line1', label: 'CozyGame — Zeile 1', defaultDe: 'Nach jeder Runde dreht das Glücksrad: ein analoges Mini-Spiel', defaultEn: 'After every round the wheel spins: one analog mini-game' },
       { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen', defaultEn: 'Winner places 1 action on the board · skill > knowledge' },
 
-      // Slide 7: Comeback
-      { key: 'rules.slide7.title',  label: '7 · Comeback — Titel', defaultDe: 'Comeback', defaultEn: 'Comeback' },
-      { key: 'rules.slide7.line1',  label: '7 · Comeback — Zeile 1', defaultDe: 'Letztes Team holt vor dem Finale auf', defaultEn: 'Last-place team catches up before the finale' },
-      { key: 'rules.slide7.line2',  label: '7 · Comeback — Zeile 2', defaultDe: '„Mehr oder Weniger?": Treffer klaut Feld vom 1. Platz', defaultEn: '„Higher or Lower?": correct answer steals a cell from the leader' },
-
-      // Slide Final-Tipp (vor dem Finale)
-      { key: 'rules.slide_final_tip.title', label: 'Final-Tipp — Titel', defaultDe: 'Final-Tipp', defaultEn: 'Final Tip' },
-      { key: 'rules.slide_final_tip.line1', label: 'Final-Tipp — Zeile 1', defaultDe: 'Vor dem Finale tippt jedes Team auf ein anderes (oder eigenes) Team', defaultEn: 'Before the finale every team tips on another (or own) team' },
-      { key: 'rules.slide_final_tip.line2', label: 'Final-Tipp — Zeile 2', defaultDe: 'Pro gewonnene Final-Kategorie eures Tipps = +1 Bonus', defaultEn: 'Per final-category win of your tip = +1 bonus' },
+      // Slide 7 „Comeback" 2026-07-15 (Design-Sweep-Audit) aus dem Editor entfernt
+      // — Comeback ist global deaktiviert (QQ_COMEBACK_ENABLED=false) und hat keine
+      // Deck-Folie mehr. Slide „Final-Tipp" ebenfalls entfernt: der Final-Tipp wird
+      // just-in-time direkt vor der Wettphase erklärt (CozyQuizFinalBettingView),
+      // nicht im Vorab-Deck → beide Key-Gruppen waren verwaiste Phantom-Folien.
 
       // Slide Fair Play (Anti-Google + Tonfall)
       { key: 'rules.slide_fairplay.title', label: 'Fair Play — Titel', defaultDe: 'Fair Play', defaultEn: 'Fair Play' },
       { key: 'rules.slide_fairplay.line1', label: 'Fair Play — Zeile 1', defaultDe: 'Kein Googeln · Handy nur fürs Antworten', defaultEn: 'No googling · phones only for answering' },
       { key: 'rules.slide_fairplay.line2', label: 'Fair Play — Zeile 2', defaultDe: 'Antworten nicht zwischen Teams spoilern', defaultEn: 'Don\'t spoil answers between teams' },
       { key: 'rules.slide_fairplay.line3', label: 'Fair Play — Zeile 3', defaultDe: 'Im Zweifel zählt der Moderator-Wolf 🐺', defaultEn: 'When in doubt, the wolf decides 🐺' },
-      { key: 'rules.slide_fairplay.extra', label: 'Fair Play — Extra', defaultDe: 'Hauptsache, ihr habt Spaß.', defaultEn: 'The main thing is having fun.' },
+      { key: 'rules.slide_fairplay.extra', label: 'Fair Play — Extra', defaultDe: 'Hauptsache, ihr habt Spaß.', defaultEn: 'Have fun! Points are just the side dish.' },
 
       // Slide 8: Finale
       { key: 'rules.slide8.title',  label: '8 · Finale — Titel', defaultDe: 'Großes Finale', defaultEn: 'Grand Finale' },

@@ -286,9 +286,10 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
 
 // ── Mega-Event-Regelset (kein Grid!) ─────────────────────────────────────────
 // Im Mega Event (largeGroupMode) gibt es kein Spielfeld/Klauen/Stapeln, sondern
-// ein Bar-Race: jede Farbe (Eltern-Team) sammelt Punkte, jede richtige Antwort
-// zählt, die 5 schnellsten Farben pro Frage bekommen extra Punkte. Eigene, kurze
-// Slides — Grid-Slides (Ziel-Gebiet, Joker-Muster, Finale-Feld) fallen weg.
+// ein Bar-Race: jede Antwort bringt 0–100 Punkte (je besser/näher, desto mehr),
+// die Fraktion zählt den Durchschnitt ihrer Handys; letzte Runde ×2, letzte Frage
+// ×3 (qqMegaEventScore, qqRooms.ts). Eigene, kurze Slides — Grid-Slides (Ziel-
+// Gebiet, Joker-Muster, Finale-Feld) fallen weg.
 function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   const t = (k: string, fb: string) => getRuleText(k, 'de', fb);
   return [
@@ -315,9 +316,10 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Jede richtige Antwort zählt für dein Team'),
-        t('rules.mega.slide3.line2', 'Die 5 schnellsten Teams pro Frage: extra Punkte (5·4·3·2·1)'),
+        t('rules.mega.slide3.line1', 'Jede Antwort bringt deinem Team 0–100 Punkte — je besser, desto mehr'),
+        t('rules.mega.slide3.line2', 'Dein Team zählt den Schnitt aller Mitspieler'),
       ],
+      extra: t('rules.mega.slide3.extra', 'Letzte Runde zählt doppelt, letzte Frage dreifach'),
     },
     {
       icon: '🤝',
@@ -359,9 +361,10 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'How to score'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Every correct answer counts for your team'),
-        t('rules.mega.slide3.line2', 'The 5 fastest teams per question: bonus points (5·4·3·2·1)'),
+        t('rules.mega.slide3.line1', 'Every answer earns your team 0–100 points — the better, the more'),
+        t('rules.mega.slide3.line2', 'Your team counts the average of all players'),
       ],
+      extra: t('rules.mega.slide3.extra', 'Last round counts double, the last question triple'),
     },
     {
       icon: '🤝',

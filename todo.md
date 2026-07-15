@@ -13,6 +13,15 @@
 
 ---
 
+## 🎨 DESIGN-SWEEP (Anti-ADHS-Schlussstrich)
+
+**→ [`DESIGN_SWEEP.md`](DESIGN_SWEEP.md)** = der einmalige Design-Durchlauf (Beamer+Team,
+21 Stationen, vorne→hinten, dann Design eingefroren → nur noch Funktionalität).
+Arbeitszeit-Kontext: ~895/1000 h über alle 3 Repos (kioskquiz ~760 · wonky ~108 · landing ~27),
+noch ~105 h bis zum selbstgesetzten Ende. Sweep-Fortschritt steht in der Datei.
+
+---
+
 ## 🔜 HIER STARTEN (Handoff 2026-07-15)
 
 **🎁 WOLF-ASSET-LIEFERUNG integriert (2026-07-15, `c9724547`+`+Wappen-Header`):** aus `Desktop/für claude`.

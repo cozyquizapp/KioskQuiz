@@ -13,6 +13,7 @@
  *
  * 1 externer Importer (QQBuiltinSlide).
  */
+import { useRef, useEffect } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
@@ -310,7 +311,7 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       treeShowcase: true,
     },
     {
-      icon: '⚡',
+      icon: '🎯',
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
       color: '#EC4899',
       lines: [
@@ -354,7 +355,7 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       treeShowcase: true,
     },
     {
-      icon: '⚡',
+      icon: '🎯',
       title: t('rules.mega.slide3.title', 'How to score'),
       color: '#EC4899',
       lines: [
@@ -498,6 +499,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   });
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
+  // 2026-07-15 (Rules-Redesign): Slide-Richtung fuer den gerichteten Tiefen-
+  // Uebergang (vorwaerts = von rechts, rueckwaerts = von links). Hooks MUESSEN
+  // vor dem fruehen return stehen (Rules of Hooks).
+  const prevIdxRef = useRef<number>(rawIdx);
+  const slideDir: 'fwd' | 'back' = rawIdx >= prevIdxRef.current ? 'fwd' : 'back';
+  useEffect(() => { prevIdxRef.current = rawIdx; });
   // rawIdx === -2 = Willkommen-Overlay (bleibt in QQBeamerPage) → hier nichts.
   // rawIdx === -1 = Regel-Intro: 2026-06-28 (Wolf) jetzt als ERSTE Station IN
   // dieser persistenten Bühne (vor „Das Ziel"), nicht mehr als separates Overlay.
@@ -522,6 +529,16 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const fontFam = s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
   const isLast = !isIntro && idx === totalSlides - 1;
   const hasGrid = !!slide.grid;
+  // 2026-07-15 (Rules-Redesign): Signatur-Motion pro Regel — das Hero-Icon zieht
+  // je nach Motiv unterschiedlich ein (Buch blaettert, Pokal poppt, Map klappt auf,
+  // Blitz schlaegt ein, Haende treffen sich), danach uebernimmt das ruhige Wave.
+  const heroMotif = ({ '📖': 'book', '🏆': 'trophy', '🗺': 'map', '🗺️': 'map', '🎯': 'bolt', '⚡': 'bolt', '🤝': 'shake' } as Record<string, string>)[slide.icon] ?? '';
+  const heroEntrance = heroMotif === 'book' ? 'qqHeroBook'
+    : heroMotif === 'trophy' ? 'qqHeroTrophy'
+    : heroMotif === 'map' ? 'qqHeroMap'
+    : heroMotif === 'bolt' ? 'qqHeroBolt'
+    : heroMotif === 'shake' ? 'qqHeroShake'
+    : 'qqHeroRise';
 
   // 2026-06-28 (Beamer-Review): Stepper-Farben (persistente Bühne). Akzent ist
   // im Skin der Theme-Akzent, sonst Marken-Pink.
@@ -542,6 +559,40 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <Fireflies />
 
+      {/* 2026-07-15 (Rules-Redesign): Keyframes fuer Tiefen-Uebergang, Signatur-
+          Hero-Motion, Divider-Draw und Arena-Glut. Einmal pro Bühne. */}
+      <style>{`
+        @keyframes qqRulesDepthR{0%{opacity:0;transform:translateX(48px) scale(.985);filter:blur(6px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}}
+        @keyframes qqRulesDepthL{0%{opacity:0;transform:translateX(-48px) scale(.985);filter:blur(6px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}}
+        @keyframes qqRulesDivDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+        @keyframes qqHeroRise{0%{opacity:0;transform:translateY(-12px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes qqHeroBook{0%{opacity:0;transform:translateY(-14px) rotate(-8deg) scale(.6)}60%{opacity:1;transform:translateY(0) rotate(4deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
+        @keyframes qqHeroTrophy{0%{opacity:0;transform:translateY(-14px) scale(.5)}60%{opacity:1;transform:translateY(0) scale(1.12)}100%{transform:scale(1)}}
+        @keyframes qqHeroMap{0%{opacity:0;transform:perspective(520px) rotateY(72deg) scale(.7)}100%{opacity:1;transform:perspective(520px) rotateY(0) scale(1)}}
+        @keyframes qqHeroBolt{0%{opacity:0;transform:translateY(-42px) scale(1.3) rotate(-8deg)}55%{opacity:1;transform:translateY(5px) scale(.92)}100%{transform:translateY(0) scale(1) rotate(0)}}
+        @keyframes qqHeroShake{0%{opacity:0;transform:scale(.5)}60%{opacity:1;transform:scale(1.14)}100%{transform:scale(1)}}
+        @keyframes qqRulesEmber{0%{opacity:0;transform:translateY(0) scale(.7)}15%{opacity:.8}100%{opacity:0;transform:translateY(-260px) scale(.3)}}
+        @keyframes qqRulesWolfBob{0%,100%{transform:translateX(-50%) translateY(0) rotate(-3deg)}50%{transform:translateX(-50%) translateY(-4px) rotate(3deg)}}
+        @media (prefers-reduced-motion: reduce){
+          .qqRulesEmberLayer{display:none !important}
+          .qqRulesWolf{animation:none !important}
+        }
+      `}</style>
+
+      {/* Arena-Glut: nur im Mega-Modus, aufsteigende Funken vor dem Kolosseum-BG. */}
+      {mega && (
+        <div aria-hidden className="qqRulesEmberLayer" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
+          {Array.from({ length: 12 }, (_, i) => (
+            <span key={i} style={{
+              position: 'absolute', bottom: -10, left: `${4 + (i * 61) % 92}%`,
+              width: 4, height: 4, borderRadius: '50%', background: '#FCA55D',
+              boxShadow: '0 0 8px 1px rgba(252,165,93,0.55)',
+              animation: `qqRulesEmber ${(4.5 + (i % 4) * 1.3).toFixed(1)}s linear ${((i * 0.5) % 5).toFixed(1)}s infinite`,
+            }} />
+          ))}
+        </div>
+      )}
+
       {/* 2026-06-28 (Beamer-Review): persistenter Stepper — Übersicht aller
           Regeln, aktuelle aktiv. Steht AUSSERHALB des key={idx}-Fensters, bleibt
           also beim Regel-Wechsel stehen. Bei >5 Regeln nur die aktuelle mit
@@ -557,13 +608,38 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         const activeStep = isIntro ? 0 : idx + 1;
         const compact = stepList.length > 5;
         if (stepList.length <= 1) return null;
+        // 2026-07-15 (Rules-Redesign): Fortschritts-Anteil fuer Schiene + Wolf-Marker.
+        const activeFrac = stepList.length > 1 ? activeStep / (stepList.length - 1) : 0;
         return (
           <div style={{
             position: 'relative', zIndex: 6, flexShrink: 0,
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            gap: 'clamp(6px, 0.8cqw, 12px)',
-            maxWidth: 1280, width: '96%', marginBottom: 'clamp(14px, 2cqh, 26px)',
+            maxWidth: 1280, width: '96%', marginBottom: 'clamp(20px, 2.6cqh, 32px)',
           }}>
+            {/* Fortschritts-Schiene hinter den Pillen (Fuellung waechst mit). */}
+            <div aria-hidden style={{
+              position: 'absolute', left: '6%', right: '6%', top: '50%', transform: 'translateY(-50%)',
+              height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.09)', zIndex: 0,
+            }}>
+              <div style={{
+                position: 'absolute', top: 0, bottom: 0, left: 0, width: `${(activeFrac * 100).toFixed(1)}%`,
+                borderRadius: 2, background: `linear-gradient(90deg, rgba(${aRGB},0.7), ${aHex})`,
+                boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+              }} />
+            </div>
+            {/* Der Wolf laeuft die Schiene entlang = „du bist hier". */}
+            <div aria-hidden className="qqRulesWolf" style={{
+              position: 'absolute', top: -10, left: `calc(6% + ${(activeFrac * 88).toFixed(1)}%)`,
+              zIndex: 3, fontSize: 'clamp(20px, 2cqw, 30px)', lineHeight: 1,
+              filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
+              transition: 'left 0.6s cubic-bezier(0.16,1,0.3,1)',
+              animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
+            }}>🐺</div>
+            {/* Pillen-Reihe (space-between → verteilt, Schiene laeuft dahinter durch). */}
+            <div style={{
+              position: 'relative', zIndex: 1,
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+              gap: 'clamp(6px, 0.8cqw, 12px)',
+            }}>
             {stepList.map((item, i) => {
               const active = i === activeStep;
               const done = i < activeStep;
@@ -601,6 +677,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               );
             })}
+            </div>
           </div>
         );
       })()}
@@ -621,10 +698,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        // 2026-06-28 (Beamer-Review): persistente Bühne — das Fenster swappt nur
-        // seinen Inhalt mit einem dezenten Refresh (opacity .35→1 + scale .992→1,
-        // 480ms), KEIN Full-Screen-Slide mehr. Der Stepper oben bleibt stehen.
-        animation: 'qqRulesWindowRefresh 0.48s cubic-bezier(0.16, 1, 0.3, 1) both',
+        // 2026-07-15 (Rules-Redesign): gerichteter Tiefen-Uebergang statt flachem
+        // Refresh — Inhalt slidet vorwaerts von rechts / rueckwaerts von links rein,
+        // mit dezenter Tiefe (scale + blur-clear). Persistente Buehne bleibt: der
+        // Stepper oben und der Card-Rahmen bleiben stehen, nur der Inhalt wechselt.
+        animation: `${slideDir === 'back' ? 'qqRulesDepthL' : 'qqRulesDepthR'} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both`,
         // 2026-07-04 (Wolf 'Fenster wechselt Größe je Regelseite, unruhig'):
         // FIXE einheitliche Höhe für ALLE Slides (statt min/maxHeight-Spanne) —
         // der Rahmen springt beim Regel-Wechsel nicht mehr; kürzere Regeln
@@ -662,14 +740,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             <span style={{
               display: 'inline-block',
               filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+              animation: `${heroEntrance} 0.62s var(--qq-ease-pop-fast) both, qqCatNameWave 2.4s ease-in-out 1.3s infinite`,
             }}><CozyGameIcon id={slide.iconImg} emoji={slide.icon} size={'clamp(64px,9cqw,110px)'} /></span>
           ) : (
             <span style={{
               display: 'inline-block',
               fontSize: 'clamp(64px,9cqw,110px)', lineHeight: 1,
               filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+              animation: `${heroEntrance} 0.62s var(--qq-ease-pop-fast) both, qqCatNameWave 2.4s ease-in-out 1.3s infinite`,
             }}><QQEmojiIcon emoji={slide.icon}/></span>
           )}
           <div style={{
@@ -713,7 +791,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             : `linear-gradient(90deg, transparent, ${slide.color}cc 50%, transparent)`,
           backgroundSize: '200% 100%',
           marginBottom: 'clamp(16px, 2.5cqh, 32px)',
-          animation: 'lineShimmer 3s linear infinite',
+          // 2026-07-15 (Rules-Redesign): Divider zieht sich erst aus der Mitte auf,
+          // dann laeuft der Shimmer.
+          transformOrigin: 'center',
+          animation: 'qqRulesDivDraw 0.55s var(--qq-ease-out-cubic) 0.28s both, lineShimmer 3s linear 0.9s infinite',
           boxShadow: isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${slide.color}44`,
         }} />
 

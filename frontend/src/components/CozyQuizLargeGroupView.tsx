@@ -387,7 +387,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
             color: team.color, whiteSpace: 'nowrap',
             textShadow: `0 2px 10px ${team.color}, 0 0 4px rgba(0,0,0,0.6)`,
             pointerEvents: 'none', animation: 'qqLeadCallout 1.2s ease-out both',
-          }}>⚔️ {de ? 'Führung!' : 'Lead!'}</span>
+          }}><QQEmojiIcon emoji="👑" /> {de ? 'Führung!' : 'Lead!'}</span>
         </>
       )}
       <span style={S.standRank}>{isLeader

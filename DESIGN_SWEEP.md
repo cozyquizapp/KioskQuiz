@@ -35,7 +35,7 @@
 
 ---
 
-## Fortschritt: 2 / 21
+## Fortschritt: 3 / 21
 
 _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)_
 
@@ -49,7 +49,7 @@ _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)
 
 ### Akt 1 — Einstieg
 - [x] **1 — Pre-Game „Setting up".** ✅ EINGEFROREN. Beamer `NeutralWelcomeView` + Team `PreparingScreen` geprüft: DoD erfüllt (Kontrast Muted-Text ≈6.7:1 auf Card, Beamer-Labels ≫3:1; reduced-motion via globalem Kill-Switch in `main.css`+`TEAM_CSS`; keine Scrollbar; DE+EN; Symmetrie Brand-Hero). **Fix:** Sprach-Flag-Button (PreparingScreen + MidGameRejoinView) von ~40px auf 44×44 Touch-Ziel gehoben (Apple HIG/Material). Sonst keine Geschmacks-Änderung — Screens waren reif.
-- [ ] **2 — Lobby.** Beamer: QR, Team-Karten, Wolf-Greeter (Arena: Magier) · Team: Lobby/Warten.
+- [x] **2 — Lobby.** ✅ EINGEFROREN (verifiziert, mature — kein Defekt). Beamer `LobbyView`: mehrfach kontrast-auditiert, token-basiert, QR #0A0814/Weiß = max. Kontrast, reduced-motion global, keine Scrollbar, DE+EN, Arena-Magier-Greeter + Kolosseum-BG korrekt gegatet. Team `LobbyCard`: Bereit-Status = Farbe+Text+Dot (nicht color-only), keine Touch-Ziele, sauber. Keine Geschmacks-Änderung (Freeze-Regel).
 - [ ] **3 — Rules.** Beamer: Welcome-Overlay → (Arena) Arena-Meister-Splash → Regel-Intro → Regel-Folien · Team: Warten.
 
 ### Akt 2 — Teams & Runde

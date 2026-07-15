@@ -64,6 +64,9 @@ export type QQIconSlug =
   | 'fx-crown'
   | 'fx-arena'
   | 'fx-teams'
+  // Wolf-Lieferung 2026-07-15 (Arena): 3D-Buch (Regeln) + neutrales Wappen.
+  | 'fx-book'
+  | 'fx-shield-faction'
   // Fluent Emoji 3D Kandidaten fuer bestehende Custom-PNGs (Kategorien/Subs/Marker).
   // Nicht automatisch im Einsatz — werden via qqCatSlug/qqSubSlug gesteuert.
   | 'fx-cat-schaetzchen'
@@ -134,6 +137,8 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-crown':          '👑',
   'fx-arena':          '🏟️',
   'fx-teams':          '👥',
+  'fx-book':           '📖',
+  'fx-shield-faction': '🛡️',
   'fx-cat-schaetzchen':   '🎯',
   'fx-cat-mucho':         '🅰️',
   'fx-cat-bunte-tuete':   '🎁',
@@ -220,6 +225,7 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '🗺': 'fx-map',
   '👑': 'fx-crown',
   '👥': 'fx-teams',
+  '📖': 'fx-book',
 };
 
 export function qqEmojiSlug(emoji: string): QQIconSlug | null {

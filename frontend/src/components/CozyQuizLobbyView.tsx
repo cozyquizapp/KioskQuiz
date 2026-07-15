@@ -11,14 +11,14 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
-import { AnimatedCozyWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
+import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed } from '../qqTheme';
 import { ArenaMainVideo } from './ArenaBeamerBg';
 
@@ -27,11 +27,13 @@ import { ArenaMainVideo } from './ArenaBeamerBg';
 // `welcomedTeamName` setzt (kommt von welcomeTeamId in LobbyView, ~3.2s aktiv
 // nach Team-Join), uebernimmt 'Hallo {teamName}!' bis zum Timeout, dann zurueck
 // zur Idle-Rotation.
-function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
+function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode, arena }: {
   lang: 'de' | 'en';
   welcomedTeamName: string | null;
   /** 2026-05-07 (Wolf-ESC): wenn true, Wolf haelt EU-Flagge statt Daumen hoch. */
   eurovisionMode?: boolean;
+  /** 2026-07-15: CozyArena → Magier-Wolf (ArenaMageWolf) statt AnimatedCozyWolf. */
+  arena?: boolean;
 }) {
   // 2026-05-07 v8 (Wolf 'gib dem wolf ein paar eurovision sprueche'): im
   // ESC-Mode Slogan-Pool gegen Eurovision-Phrasen tauschen — Bonsoir-Vibe,
@@ -179,13 +181,24 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode }: {
           size="lg"
         />
       </div>
-      <AnimatedCozyWolf
-        widthCss="clamp(140px, 13cqw, 200px)"
-        mode={eurovisionMode ? 'flagge' : 'daumen'}
-        speaking={speakingNow}
-        wink={!eurovisionMode && isWelcoming}
-        mirror
-      />
+      {arena ? (
+        // Arena: Magier-Wolf. Beim Team-Willkommen die grosse cheer-Pose als
+        // Reaktion (statt hi), sonst normaler Sprech-Flap. mirror analog Daumen-Wolf.
+        <ArenaMageWolf
+          widthCss="clamp(140px, 13cqw, 200px)"
+          speaking={speakingNow}
+          cheer={isWelcoming}
+          mirror
+        />
+      ) : (
+        <AnimatedCozyWolf
+          widthCss="clamp(140px, 13cqw, 200px)"
+          mode={eurovisionMode ? 'flagge' : 'daumen'}
+          speaking={speakingNow}
+          wink={!eurovisionMode && isWelcoming}
+          mirror
+        />
+      )}
     </div>
   );
 }
@@ -395,6 +408,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           lang={de ? 'de' : 'en'}
           welcomedTeamName={welcomedTeam?.name ?? null}
           eurovisionMode={s.theme?.eurovisionMode}
+          arena={qqIsMega(s)}
         />
       </div>
       )}

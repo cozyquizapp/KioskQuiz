@@ -2987,6 +2987,83 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
 
 
 // ─────────────────────────────────────────────────────────────────────────────
+// ─────────────────────────────────────────────────────────────────────────────
+// ArenaMageWolf — CozyArena-Begruessungswolf (Magier-Posen, Wolf-Lieferung
+// 2026-07-15). Nur 3 statische Posen: calm (Idle, Augen zu, sanft), hi (Augen +
+// Mund auf, „Hallo!") und cheer (grosses Lachen). Kein volles Lip-Sync-Raster wie
+// AnimatedCozyWolf — der Mund-Flap IST die Alternation hi↔calm (bzw. cheer↔calm
+// als Reaktion), weil hi/calm/cheer koerperlich deckungsgleich sind (Staff/Robe
+// identisch, nur das Gesicht wechselt). Genutzt in der Arena (isMega) statt
+// AnimatedCozyWolf an den 2 Begruessungs-Stellen (Lobby-Greeter + Pre-Game-
+// Welcome). Direkte <img> (nur PNG geliefert, kein avif/webp → CozyWolfImage
+// wuerde auf 404-Sources laufen).
+// ─────────────────────────────────────────────────────────────────────────────
+const ARENA_MAGE_POSES = ['calm', 'hi', 'cheer'] as const;
+export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
+  widthCss: string;
+  /** true → Mund-Flap (Open-Pose ↔ calm), synchron zur Sprechblase. */
+  speaking?: boolean;
+  /** true → als „Reaktion" die grosse cheer-Pose als Open-Frame nutzen (statt hi);
+   *  ohne speaking bleibt cheer statisch stehen. */
+  cheer?: boolean;
+  mirror?: boolean;
+}) {
+  const reduce = typeof matchMedia !== 'undefined'
+    && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [mouthOpen, setMouthOpen] = useState(false);
+  useEffect(() => {
+    if (!speaking || reduce) { setMouthOpen(false); return; }
+    let alive = true;
+    let timer: number | undefined;
+    const tick = () => {
+      if (!alive) return;
+      setMouthOpen(m => !m);
+      timer = window.setTimeout(tick, 200 + Math.random() * 90);
+    };
+    tick();
+    return () => { alive = false; if (timer) window.clearTimeout(timer); };
+  }, [speaking, reduce]);
+
+  const openPose = cheer ? 'cheer' : 'hi';
+  const pose: typeof ARENA_MAGE_POSES[number] =
+    speaking ? (mouthOpen ? openPose : 'calm') : (cheer ? 'cheer' : 'calm');
+
+  return (
+    <div style={{
+      position: 'relative', width: widthCss, aspectRatio: '1 / 1',
+      transformOrigin: 'bottom center',
+      transform: mirror ? 'scaleX(-1)' : undefined,
+      animation: 'qqIntroWolfBreathe 4.2s ease-in-out infinite',
+      isolation: 'isolate',
+    }}>
+      {/* Statischer Arkan-Halo (aendert sich nicht mit Frame → kein Flicker). */}
+      <div aria-hidden style={{
+        position: 'absolute', inset: '8% 8% -2% 8%',
+        background: 'radial-gradient(ellipse at center 60%, rgba(168,85,247,0.34) 0%, rgba(236,72,153,0.18) 42%, transparent 70%)',
+        filter: 'blur(18px)', pointerEvents: 'none', zIndex: 0,
+      }} />
+      {/* Alle 3 Posen gemountet, opacity-Toggle (alle geladen → kein Netz-Flicker).
+          <picture> webp (~150KB) → png-Fallback; kein avif-Source (nicht erzeugt),
+          damit keine 404-Fallback-Falle wie bei CozyWolfImage. */}
+      {ARENA_MAGE_POSES.map(p => (
+        <picture key={p}>
+          <source srcSet={`/avatars/cozywolf/cozywolf-arena-${p}.webp`} type="image/webp" />
+          <img
+            src={`/avatars/cozywolf/cozywolf-arena-${p}.png`}
+            alt="" aria-hidden draggable={false}
+            loading="eager" decoding="sync"
+            style={{
+              position: 'absolute', inset: 0, width: '100%', height: '100%',
+              objectFit: 'contain', display: 'block', zIndex: 1,
+              opacity: p === pose ? 1 : 0, pointerEvents: 'none',
+            }}
+          />
+        </picture>
+      ))}
+    </div>
+  );
+}
+
 // AnimatedCozyWolf — Multi-Mode-Wolf-Animation.
 //
 // Modi:
@@ -4523,11 +4600,16 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0, zIndex: 6,
         }}>
-          <AnimatedCozyWolf
-            widthCss="clamp(150px, 16cqw, 240px)"
-            mode={eurovisionMode ? 'flagge' : undefined}
-            speaking={visible}
-          />
+          {arena ? (
+            // Arena: Magier-Wolf begruesst (Mund-Flap hi↔calm synchron zur Blase).
+            <ArenaMageWolf widthCss="clamp(150px, 16cqw, 240px)" speaking={visible} />
+          ) : (
+            <AnimatedCozyWolf
+              widthCss="clamp(150px, 16cqw, 240px)"
+              mode={eurovisionMode ? 'flagge' : undefined}
+              speaking={visible}
+            />
+          )}
 
           <div style={{
             position: 'relative',
@@ -5021,7 +5103,9 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
         textAlign: 'center',
         animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
-        <AnimatedCozyWolf widthCss="clamp(170px, 18cqw, 300px)" speaking={false} />
+        {qqIsMega(s)
+          ? <ArenaMageWolf widthCss="clamp(170px, 18cqw, 300px)" />
+          : <AnimatedCozyWolf widthCss="clamp(170px, 18cqw, 300px)" speaking={false} />}
         <span style={{
           fontFamily: 'var(--font-brand)',
           fontSize: 'clamp(56px, 7cqw, 112px)', fontWeight: 400,

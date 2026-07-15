@@ -24,7 +24,7 @@
 Artifact v2 (Arena-Atmosphaere: Arkade/Glut/Vignette · Wolf laeuft die Stepper-Schiene · Signatur-Motion pro Regel · Parallax-Tiefe im Uebergang · Count-up · Bonus-Chips). Pink bleibt einheitlich (KEINE Slide-Farben — locked). Nach OK → in echte `CozyQuizRulesView` umsetzen (850 Z.).
 
 **🎨 ICON-ENTSCHEIDUNGEN (2026-07-15, final) — Wolf malt nur noch 2 PNGs + 1 CozyGame:**
-- Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header) · `cg-marshmallow-fang` (🍡-Fallback, alt).
+- Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header). (`cg-marshmallow-fang` 2026-07-15 bewusst ausgelassen → 🍡-Fallback bleibt.)
 - Wiederverwendet (schon da, via QQEmojiIcon-Auto-Map Emoji→3D): **Los geht's = `fx-arena`** (🏟️) · **Fuehrung = `fx-crown`** (👑, wired) · **How to score = `fx-target`** (🎯).
 - Noch zu verdrahten beim Rules-Umbau: „So gibt es Punkte"-Slide-Icon ⚡→🎯 (fx-target) · lastSlideHint „🎬 Los geht's" → fx-arena. `fx-swords`/`fx-clapperboard`/`fx-lightning` werden NICHT mehr gebraucht.
 

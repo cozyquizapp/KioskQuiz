@@ -35,7 +35,7 @@
 
 ---
 
-## Fortschritt: 4 / 21
+## Fortschritt: 5 / 21
 
 _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)_
 
@@ -53,7 +53,7 @@ _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)
 - [x] **3 — Rules.** ✅ EINGEFROREN. RulesView: reduced-motion korrekt (Glut/Wolf-Bob gegatet), Slide-Farben token-basiert, DE+EN. **Fix:** Arena-Meister-Splash — Eyebrow + Untertitel von Lavendel auf neutral-warmweiß gemäß Station-0-Palette (Gold=Zeremonie, Violett nur Atmosphäre/Glow, nie Text). Gold-Titel + lila Glow bleiben (Glow = erlaubte Atmosphäre). Regel-Auslegung: **streng — kein Violett als Text**, gilt auch für Stationen 11 + 14.
 
 ### Akt 2 — Teams & Runde
-- [ ] **4 — Teams-Reveal.** Beamer (Aufstellung/Wappen).
+- [x] **4 — Teams-Reveal.** ✅ EINGEFROREN. ArenaEntranceView (Fraktions-Einzug + Startaufstellung) + CozyRollCall geprüft: reduced-motion (global + ref), Wappen-Drops, DE+EN. **Fix:** Sektions-Titel + Eyebrow sitzen transparent überm Arena-Foto-BG → Text-Shadow ergänzt (color-contrast: Text über Foto garantiert lesbar); Eyebrow slate-400→300. Classic-Roll-Call auf dunklem Standard-BG, kein Foto-Text-Problem.
 - [ ] **5 — Runden-Intro / Journey + Kategorie-Reveal.** Beamer · Team: Warten.
 
 ### Akt 3 — Frage & Antwort (je Kategorie: Frage + Team-Eingabe + Reveal)

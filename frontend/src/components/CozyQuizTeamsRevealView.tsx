@@ -217,10 +217,13 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.45)) drop-shadow(0 0 16px ${curColor}55)`,
           animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both',
         }} />
-        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#94a3b8' }}>
+        {/* 2026-07-15 (Design-Sweep S4, color-contrast): Titel + Eyebrow sitzen
+            transparent ueber dem Arena-Foto-BG → Text-Shadow garantiert Lesbarkeit
+            auch ueber hellen Bildstellen (themed = flacher Skin-BG, braucht keinen). */}
+        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', textShadow: themed ? 'none' : '0 2px 12px rgba(0,0,0,0.75)' }}>
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
-        <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc' }}>
+        <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : '0 3px 20px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.6)' }}>
           {done ? (de ? 'Los geht’s!' : 'Let’s go!') : 'CozyArena'}
         </div>
       </div>

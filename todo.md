@@ -27,6 +27,8 @@
 
 
 **Neu gebaut+gepusht (2026-07-15, FE typecheck-gruen):**
+- **PLACEMENT-BGs gesplittet** (`b5678fe8`) — Wolf-Assets scoring.webp/standing.webp (lila Kolosseum m. Board) in `public/arena-bg/`. Beat A „Wertung" → `scoring`, Beat B „Gesamtstand" → `standing` (via `megaStandingsRevealed` in `ArenaBeamerBg`). Alte `standings.webp` verwaist (liegt noch da). → Beamer-Check: sitzt Content im Board-Rahmen?
+- **Schätzchen-Distanzstrahl auf die Schale gezogen** (`2e1e3d30`) — in der Arena Bühne in zentrales Band (11% Rand/Seite), damit Wappen/Strahl nicht in den dunklen Bildrand laufen/abgeschnitten werden. → Beamer-Check: 11% ok bei 8 Fraktionen? (ggf. `CONTENT_INSET` nachdrehen). Evtl. gleiche Logik für CrowdEstimate/CrowdTop prüfen.
 - **Team-Vorstellung: Wappen verteilt** (`093abaa9`) — Finale-Aufstellung breit ueber die Arena-Flaeche (space-evenly + Zickzack) statt zentral geclustert. → Beamer-Check.
 - **Order-Reveal → Top5-v2** (`093abaa9`) — Mystery-Tafel-Look (`· · ·`-Rows, Sieger-Banner poppt am Ende, n×-Zaehler), Wert-Pille + Kriterium erhalten. → Beamer-Check.
 - **„Fuehrung!"-Callout ⚔️→👑** (`849548ee`, fx-crown 3D). ⚠️ Anfuehrer traegt am Rang schon 👑 → evtl. Doppel-Krone bei Fuehrungswechsel; falls stoerend → `fx-chart`. Beamer-Check.

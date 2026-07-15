@@ -44,7 +44,8 @@ _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)
 ## Stationen (Spielfluss vorne → hinten)
 
 ### Fundament
-- [ ] **0 — Tokens einfrieren.** Farbe, Typo-Skala, Spacing-Skala, Radius, Motion-Primitives, Safe-Margins in `qqDesignTokens.ts`/`qqShared.ts` final festziehen. **Einzige Entscheidungs-Station.** ⚠️ Offene Grundsatzfrage vorher klären: Gold (Krönung/Medaillen `ACCENT_GOLD`) — Ausnahme oder raus?
+- [~] **0 — Tokens einfrieren.** ✅ Bestätigt & eingefroren (`qqDesignTokens.ts`, reifes System): Radius · Alpha (d0–d4) · Letter-Spacing · Weight (700/900) · Duration · Easing · Stagger · Text-Farben (Kontrast AAA/AA getestet) · Tap-Targets · Beamer-Sizing (FONT_SIZE/CONTENT_WIDTH/BEAMER_PAD) · Shadow (max 2 Layer) · Z-Index-Zonen · Safe-Margin · Brand-Pink-Eskalation `#F9A8D4→#F472B6→#EC4899→#A21247`.
+  - ⏳ **OFFEN (blockt Freeze): Akzent-Farbe.** Wolf-Entscheidung 2026-07-15: Gold/Akzent wird an die **Arena-Kolosseum-Palette** (lila/gold der Kolosseum-BGs) angepasst. **Warte auf Wolfs Farb-Referenz**, dann `ACCENT_GOLD` → Kolosseum-Akzent-Token final setzen, Station 0 abhaken. Bis dahin NICHT mit Station 1+ starten (sonst Rework beim Farbwechsel).
 
 ### Akt 1 — Einstieg
 - [ ] **1 — Pre-Game „Setting up".** Beamer `NeutralWelcomeView` · Team Join-Screen (`/team` Eingang).

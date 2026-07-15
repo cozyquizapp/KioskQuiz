@@ -5023,13 +5023,22 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
 
 // ── Rules presentation ────────────────────────────────────────────────────────
 
+/** 2026-07-15 (Wolf): Untergrenze des rulesSlideIndex. In der Arena MIT Kolosseum-
+ *  BG schiebt sich ein „Der Arena-Meister"-Splash bei -2 dazwischen, das Willkommen
+ *  rueckt auf -3 → Min -3. Sonst klassisch -2 (Willkommen). Frontend spiegelt das
+ *  (welcomeIdx / masterActive in QQBeamerPage). */
+function qqRulesMinIndex(room: QQRoomState): number {
+  return (room.largeGroupMode && room.arenaBackgrounds !== false) ? -3 : -2;
+}
+
 /** Transition from LOBBY to RULES presentation.
  *  -2 = Willkommen-Folie, -1 = Regel-Intro, 0..= Regel-Folien.
+ *  Arena+Kolosseum: -3 = Willkommen, -2 = Arena-Meister-Splash, -1 = Regel-Intro.
  *  Weiter-Klick erhöht jeweils um 1. */
 export function qqStartRules(room: QQRoomState): void {
   assertPhase(room, ['LOBBY']);
   room.phase = 'RULES';
-  room.rulesSlideIndex = -2;
+  room.rulesSlideIndex = qqRulesMinIndex(room);
   room.lastActivityAt = Date.now();
 }
 
@@ -5054,7 +5063,7 @@ export function qqRulesNext(room: QQRoomState): void {
  *  Damit kann der Moderator vollständig zurückspulen. */
 export function qqRulesPrev(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
-  room.rulesSlideIndex = Math.max(-2, room.rulesSlideIndex - 1);
+  room.rulesSlideIndex = Math.max(qqRulesMinIndex(room), room.rulesSlideIndex - 1);
   room.lastActivityAt = Date.now();
 }
 
@@ -7049,8 +7058,9 @@ export function qqGoBackSlide(room: QQRoomState): void {
     Math.max(min, (cur ?? 0) - 1);
   switch (room.phase) {
     case 'RULES':
-      // -2 = Willkommen, -1 = Regel-Intro, 0+ = Folien. Min ist -2.
-      room.rulesSlideIndex = Math.max(-2, (room.rulesSlideIndex ?? 0) - 1);
+      // -2 = Willkommen, -1 = Regel-Intro, 0+ = Folien (Arena+Kolosseum: -3 Willkommen,
+      // -2 Arena-Meister). Min via qqRulesMinIndex.
+      room.rulesSlideIndex = Math.max(qqRulesMinIndex(room), (room.rulesSlideIndex ?? 0) - 1);
       break;
     case 'PHASE_INTRO':
       room.introStep = dec(room.introStep);

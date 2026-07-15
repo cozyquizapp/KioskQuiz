@@ -710,7 +710,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // großer Hero vor den Regeln. Vorher fälschlich entfernt unter Missverständnis
   // („L1 Welcome doppelt"). Bleibt jetzt drin.
   const rulesIdx = s.rulesSlideIndex ?? 0;
-  const welcomeActive = s.phase === 'RULES' && rulesIdx === -2;
+  // 2026-07-15 (Wolf): In der Arena MIT Kolosseum schiebt sich ein „Der Arena-
+  // Meister"-Splash zwischen Willkommen und Regeln. Dafuer startet RULES bei -3
+  // (Willkommen), -2 = Meister-Splash, -1 = Regel-Intro, 0.. = Regeln. Ohne
+  // Kolosseum bleibt es beim klassischen -2 = Willkommen.
+  const arenaMaster = qqIsMega(s) && qqArenaBgEnabled(s);
+  const welcomeIdx = arenaMaster ? -3 : -2;
+  const welcomeActive = s.phase === 'RULES' && rulesIdx === welcomeIdx;
+  const masterActive = s.phase === 'RULES' && arenaMaster && rulesIdx === -2;
   const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
   // Pause-/Wartescreen: Aurora-Vivid-Pink-Mesh passend zum CozyWolf-Brand
   // (Pink-Wolf + Navy-Hoodie). Pre-Game und Paused teilen sich den Pink/Navy-
@@ -2089,6 +2096,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Klarstellung — vorher fälschlich unter „L1 Welcome doppelt"
           entfernt. */}
       <QuizIntroOverlay language={s.language} visible={welcomeActive} arena={qqIsMega(s)} arenaBg={qqIsMega(s) && (s as any).arenaBackgrounds !== false} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
+      {/* Arena-Meister-Splash (nur Arena+Kolosseum, rulesSlideIndex === -2):
+          zwischen Willkommen und Regel-Intro. Stellt den Magier-Host vor. */}
+      <ArenaMasterSplash language={s.language} visible={masterActive} />
       {/* Regel-Intro (rulesSlideIndex === -1): 2026-06-28 (Wolf) als ERSTE Station
           in die persistente Regel-Bühne (RulesView) verlegt — kein separates
           Overlay mehr, sonst doppelt. RulesIntroOverlay bleibt als toter Code
@@ -4110,6 +4120,68 @@ export function MuchoOptionsReveal({
         </div>
       )}
     </div>
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ArenaMasterSplash — kurze Standalone-Folie „Der Arena-Meister" (Wolf-Lieferung
+// arena-master.webp: fertige 16:9-Szene mit dem Magier-Wolf am Pult). Nur in der
+// Arena MIT Kolosseum, zwischen Willkommen (Slot -3) und Regel-Intro (-1), im
+// Slot -2. Moderator-gesteuert (Space) im RULES-Weiter-Flow. Bild ist full-bleed,
+// Titel sitzt in der Unterdrittel-Zone (ueber dem Pult) mit Scrim fuer Kontrast.
+// ─────────────────────────────────────────────────────────────────────────────
+function ArenaMasterSplash({ language, visible }: { language: QQLanguage; visible: boolean }) {
+  const lang = useLangFlip(language);
+  const de = lang !== 'en';
+  useEffect(() => {
+    if (!visible) return;
+    document.body.setAttribute('data-cinematic', 'true');
+    return () => { document.body.removeAttribute('data-cinematic'); };
+  }, [visible]);
+  return (
+    <BeamerOverlay
+      visible={visible}
+      zIndex={9990}
+      hiddenScale={1.12}
+      background={'linear-gradient(180deg, rgba(8,4,16,0.32) 0%, transparent 24%, transparent 50%, rgba(8,4,16,0.80) 100%), '
+        + 'url(/arena-bg/arena-master.webp) center / cover no-repeat, #0A0814'}
+    >
+      <div style={{
+        position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
+        justifyContent: 'flex-end', alignItems: 'center',
+        padding: '0 6cqw clamp(28px, 6cqh, 76px)', textAlign: 'center', color: '#f4f6ff',
+      }}>
+        <div style={{
+          fontSize: 'clamp(12px, 1.4cqw, 22px)', fontWeight: 900, letterSpacing: '0.28em',
+          textTransform: 'uppercase', color: '#f0abfc', textShadow: '0 2px 14px rgba(0,0,0,0.7)',
+          animation: visible ? 'qqMasterEyebrow 0.7s cubic-bezier(0.2,0.9,0.3,1) 0.2s both' : 'none',
+        }}>{de ? 'Euer Gastgeber' : 'Your host'}</div>
+        <div style={{
+          fontFamily: 'var(--font-brand)', fontSize: 'clamp(42px, 7cqw, 120px)', fontWeight: 400,
+          lineHeight: 0.98, textTransform: 'uppercase', letterSpacing: '0.02em', color: '#fde68a',
+          textShadow: '0 4px 24px rgba(0,0,0,0.75), 0 0 40px rgba(168,85,247,0.5)',
+          animation: visible ? 'qqMasterTitle 0.8s cubic-bezier(0.2,0.9,0.3,1.1) 0.35s both' : 'none',
+        }}>{de ? 'Der Arena-Meister' : 'The Arena Master'}</div>
+        <div aria-hidden style={{
+          height: 4, width: 'clamp(120px, 20cqw, 340px)', borderRadius: 999,
+          marginTop: 'clamp(10px, 1.6cqh, 22px)',
+          background: 'linear-gradient(90deg, transparent, #eab308, #fde68a, #eab308, transparent)',
+          boxShadow: '0 0 18px rgba(234,179,8,0.6)', transformOrigin: 'center',
+          animation: visible ? 'qqMasterLine 0.6s cubic-bezier(0.2,1,0.4,1) 0.7s both' : 'none',
+        }} />
+        <div style={{
+          marginTop: 'clamp(10px, 1.6cqh, 22px)', fontSize: 'clamp(16px, 2cqw, 32px)', fontWeight: 800,
+          color: '#e9d5ff', textShadow: '0 2px 14px rgba(0,0,0,0.75)',
+          animation: visible ? 'qqMasterSub 0.7s ease 0.9s both' : 'none',
+        }}>{de ? 'Er führt euch durch die Arena' : 'He guides you through the Arena'}</div>
+      </div>
+      <style>{`
+        @keyframes qqMasterEyebrow { from{opacity:0;transform:translateY(14px);letter-spacing:0.5em} to{opacity:1;transform:translateY(0);letter-spacing:0.28em} }
+        @keyframes qqMasterTitle { 0%{opacity:0;transform:translateY(28px) scale(0.9)} 60%{opacity:1} 100%{opacity:1;transform:translateY(0) scale(1)} }
+        @keyframes qqMasterLine { from{transform:scaleX(0);opacity:0} to{transform:scaleX(1);opacity:1} }
+        @keyframes qqMasterSub { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+      `}</style>
+    </BeamerOverlay>
   );
 }
 

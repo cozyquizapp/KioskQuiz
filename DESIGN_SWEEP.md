@@ -35,7 +35,7 @@
 
 ---
 
-## Fortschritt: 0 / 21
+## Fortschritt: 1 / 21
 
 _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)_
 
@@ -44,8 +44,8 @@ _(Beim Abhaken hochzählen. Das ist die Dopamin-Anzeige — das sichtbare Ende.)
 ## Stationen (Spielfluss vorne → hinten)
 
 ### Fundament
-- [~] **0 — Tokens einfrieren.** ✅ Bestätigt & eingefroren (`qqDesignTokens.ts`, reifes System): Radius · Alpha (d0–d4) · Letter-Spacing · Weight (700/900) · Duration · Easing · Stagger · Text-Farben (Kontrast AAA/AA getestet) · Tap-Targets · Beamer-Sizing (FONT_SIZE/CONTENT_WIDTH/BEAMER_PAD) · Shadow (max 2 Layer) · Z-Index-Zonen · Safe-Margin · Brand-Pink-Eskalation `#F9A8D4→#F472B6→#EC4899→#A21247`.
-  - ⏳ **OFFEN (blockt Freeze): Akzent-Farbe.** Wolf-Entscheidung 2026-07-15: Gold/Akzent wird an die **Arena-Kolosseum-Palette** (lila/gold der Kolosseum-BGs) angepasst. **Warte auf Wolfs Farb-Referenz**, dann `ACCENT_GOLD` → Kolosseum-Akzent-Token final setzen, Station 0 abhaken. Bis dahin NICHT mit Station 1+ starten (sonst Rework beim Farbwechsel).
+- [x] **0 — Tokens einfrieren.** ✅ EINGEFROREN (`qqDesignTokens.ts`, reifes System): Radius · Alpha (d0–d4) · Letter-Spacing · Weight (700/900) · Duration · Easing · Stagger · Text-Farben (Kontrast AAA/AA getestet) · Tap-Targets · Beamer-Sizing · Shadow (max 2 Layer) · Z-Index-Zonen · Safe-Margin · Brand-Pink-Eskalation `#F9A8D4→#F472B6→#EC4899→#A21247`.
+  - ✅ **Akzent-Palette gelöst (Kolosseum, Wolf-Referenz „das ist der moment"):** Brand-Pink/Magenta = Hauptmarke · **Gold** (`ACCENT_GOLD`) = Sieg/Zeremonie (Pokal/Krönung/Medaillen) · **Violett/Kristall/Glut** (`ARENA_ACCENT`) = Kolosseum-Stimmung (Banner/Scrim/Funken, sparsam). Kein Violett als Text-/CTA-Farbe. Exakte Hex ggf. beim Beamer-Check nachtunen.
 
 ### Akt 1 — Einstieg
 - [ ] **1 — Pre-Game „Setting up".** Beamer `NeutralWelcomeView` · Team Join-Screen (`/team` Eingang).

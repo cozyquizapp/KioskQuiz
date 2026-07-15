@@ -78,12 +78,33 @@ export const TEXT_COLOR = {
   dim:       '#64748B',  // Footer-Text, Inactive-Hints, Timestamps
 } as const;
 
-/** Akzent-Gold (CozyQuiz-Brand). */
+/** Akzent-Gold = Sieg-/Zeremonie-Akzent (Pokal, Krönung, Medaillen 🥇, Endstand-
+ *  Sieger). Entspricht dem Kolosseum-Gold der Award-Szene (Wolf-Referenz
+ *  2026-07-15). NICHT als allgemeiner zweiter Akzent verwenden — Hauptmarke bleibt
+ *  Brand-Pink/Magenta. Siehe ARENA_ACCENT für den restlichen Kolosseum-Layer. */
 export const ACCENT_GOLD = {
   bright: '#FBBF24',
   warm:   '#F59E0B',
   light:  '#FDE68A',
   deep:   '#D97706',
+} as const;
+
+/** Kolosseum-Akzent (CozyArena, 2026-07-15 — abgeleitet aus der Award-Ceremony-
+ *  Szene „das ist der moment"). Der Arena-Atmosphäre-Layer NEBEN der Brand:
+ *  - gold* = Sieg-Akzent (identisch Rolle zu ACCENT_GOLD, hier für Arena-Kontext)
+ *  - purple* = Arena-Sekundär (Banner, Kristalle, Boden-Tint, Scrims)
+ *  - crystal = Kristall-Glanz / Funken-Highlights
+ *  - ember = warme Fackel-Glut — SEHR sparsam (nur Fackeln/Glut-Akzente)
+ *  Regel: Brand-Pink/Magenta = Hauptmarke · Gold = Sieg · Purple/crystal/ember =
+ *  Kolosseum-Stimmung (BG/Scrim/Funken). Kein Purple als Text-/CTA-Farbe. */
+export const ARENA_ACCENT = {
+  gold:       '#F4C24B',  // Kolosseum-Pokal-Gold
+  goldBright: '#FDE68A',  // Highlight/Glow
+  goldDeep:   '#B8860B',  // Brass-Kanten, Tiefe
+  purple:     '#8B4FE0',  // Kolosseum-Violett (Banner/Boden)
+  purpleDeep: '#4C1D95',  // Tiefe, Scrim, Vignette
+  crystal:    '#C084FC',  // Kristall-Glanz, Funken
+  ember:      '#F97316',  // Fackel-Glut (sehr sparsam)
 } as const;
 
 /** Game-Phase-Farben — Pink-Eskalation Richtung Finale.

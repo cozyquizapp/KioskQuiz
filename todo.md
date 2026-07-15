@@ -20,8 +20,10 @@
 - **Order-Reveal → Top5-v2** (`093abaa9`) — Mystery-Tafel-Look (`· · ·`-Rows, Sieger-Banner poppt am Ende, n×-Zaehler), Wert-Pille + Kriterium erhalten. → Beamer-Check.
 - **„Fuehrung!"-Callout ⚔️→👑** (`849548ee`, fx-crown 3D). ⚠️ Anfuehrer traegt am Rang schon 👑 → evtl. Doppel-Krone bei Fuehrungswechsel; falls stoerend → `fx-chart`. Beamer-Check.
 
-**⏳ RULES-REDESIGN — Vorschau gebaut, wartet auf Wolf-Freigabe der Richtung:**
-Artifact v2 (Arena-Atmosphaere: Arkade/Glut/Vignette · Wolf laeuft die Stepper-Schiene · Signatur-Motion pro Regel · Parallax-Tiefe im Uebergang · Count-up · Bonus-Chips). Pink bleibt einheitlich (KEINE Slide-Farben — locked). Nach OK → in echte `CozyQuizRulesView` umsetzen (850 Z.).
+**✅ RULES-REDESIGN gebaut+gepusht (`8bf9dcd7`, typecheck-gruen):** gerichteter Tiefen-Uebergang · Signatur-Hero-Motion pro Regel (Buch/Pokal/Map/Ziel/Haende) · Stepper-Schiene + Wolf laeuft mit · Divider-Draw · Arena-Glut (Mega) · ⚡→🎯. → **Wolf-Beamer-Check.**
+  - Deferred (optional, wenn gewuenscht): Bonus-Chips (5·4·3·2·1) + Count-up „4·5" auf How-to-score/Journey · lastSlideHint „🎬 Los geht's" → fx-arena (braucht Icon-statt-Text-Render) · Stepper-Wolf ist OS-🐺 (koennte echte cozywolf-Pose werden).
+
+**➡️ NÄCHSTES GROSSES THEMA (Wolf 2026-07-15): CozyArena-SIEGEREHRUNG + SPECIAL AWARDS** ueberarbeiten. Noch nicht begonnen — erst Bestand sichten (`CozyQuizGameOverView`, `megaAwards`, award-*-Icons) + Konzept mit Wolf.
 
 **🎨 ICON-ENTSCHEIDUNGEN (2026-07-15, final) — Wolf malt nur noch 2 PNGs + 1 CozyGame:**
 - Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header). (`cg-marshmallow-fang` 2026-07-15 bewusst ausgelassen → 🍡-Fallback bleibt.)

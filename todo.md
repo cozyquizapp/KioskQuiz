@@ -28,8 +28,13 @@
 - **Award-Zeremonie:** je Award ein Beat — Icon-Pop + Shine, Titel, Sieger-Fraktion faehrt ein, Funken, Stat-Zeile. Vorschau-Artifact gebaut+abgenommen.
 - **5 Awards** = 3 bestehende (⚡ Speedy, 🎯 Scharfschuetze, 📈 Aufholjagd) + **2 neue (Wolf-Wahl): 🙌 Vollzaehlig** (hoechste Beteiligungsquote = answered/verbundene Handys) + **⚖️ Bestaendig** (geringste Streuung der Per-Frage-Scores). Backend: `megaColorStats` erweitern (possible-Nenner + scores[]), `qqComputeMegaAwards` + `QQMegaAwards`-Type + `MegaAwardsStrip`.
 - **Kroenung = „A · Kolosseum-Kroenung"**: Sieger-Wappen steigt zentral, Riesen-Banner entrollt sich (Fraktionsfarbe), Lorbeer senkt sich, Fackeln, Crowd-Roar, Konfetti. In `LargeGroupGameOverView` (crown-Phase ausbauen).
-- **Stats in den Beats:** JA (real, ich rechne sie im Backend eh mit).
-- ⏳ **OFFEN vor Bau:** Pacing der Zeremonie — **auto-getimt** (wie jetzige Krönung) oder **moderator-gesteuert** (Wolf klickt je Beat weiter, Streamdeck)? → dann Backend-Awards + Ceremony + Kolosseum-Kroenung bauen (nur Mega/Arena).
+- **Stats in den Beats:** JA (real, Backend rechnet sie mit).
+- **Pacing: MODERATOR-GESTEUERT** (Wolf klickt je Beat weiter, Streamdeck) — braucht Backend-Step-State + Socket + Mod-Buttons.
+- ✅ **Backend-Fundament gebaut+gepusht (`e9c11c4a`):** Vollzaehlig + Bestaendig + Stat-Werte in `qqComputeMegaAwards`, `megaColorStats` erweitert, `QQMegaAwards`-Type, `MegaAwardsStrip` (Summary/Recap). typecheck+Scoring-Gate ok.
+- ⏳ **NOCH ZU BAUEN (naechster Schritt, grosser Frontend/Socket-Chunk):**
+  1. **Step-State** fuer moderator-gesteuerte Zeremonie: Room-Feld `awardCeremonyStep` (0..4 Awards → 5 Kroenung → 6 Endstand) + Socket-Handler `qq:awardStep` (vor/zurueck) + State-Update. Nur GAME_OVER/Mega.
+  2. **Moderator-Buttons** (QQModeratorPage GAME_OVER): „naechster Award / Kroenung / Endstand".
+  3. **Frontend-Zeremonie** in `LargeGroupGameOverView`: 5 Award-Beats (Icon-Pop+Shine, Titel, Sieger-Fraktion, Stat) → **Kolosseum-Kroenung** (Wappen steigt, Banner entrollt, Lorbeer, Fackeln, Crowd-Roar, Konfetti) → Endstand. Vorschau-Artifacts: award-ceremony (Reihenfolge Awards→Kroenung→Endstand). Award-Reihenfolge: Speedy→Scharfschuetze→Aufholjagd→Vollzaehlig→Bestaendig, nur Awards mit Sieger zeigen.
 
 **🎨 ICON-ENTSCHEIDUNGEN (2026-07-15, final) — Wolf malt nur noch 2 PNGs + 1 CozyGame:**
 - Wolf zeichnet: **`fx-book`** (📖 Regel-Intro) · **neutrales Wappen** (Fraktionen-Header). (`cg-marshmallow-fang` 2026-07-15 bewusst ausgelassen → 🍡-Fallback bleibt.)

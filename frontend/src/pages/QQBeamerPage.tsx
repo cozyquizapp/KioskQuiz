@@ -3008,13 +3008,21 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
 // Welcome). Direkte <img> (nur PNG geliefert, kein avif/webp → CozyWolfImage
 // wuerde auf 404-Sources laufen).
 // ─────────────────────────────────────────────────────────────────────────────
-const ARENA_MAGE_POSES = ['calm', 'hi', 'cheer'] as const;
+// 2026-07-15 (Wolf-Idee gegen das Body-Wackeln): NICHT ganze Posen swappen —
+// `calm` (Augen+Mund zu) ist die statische Basis, die sich NIE bewegt. Nur die
+// Gesichtsregion (Augen+Schnauze+Mund) der offenen Pose wird per weicher Maske
+// DARUEBER geblendet. So wackelt kein Koerper/Staff, es wechselt optisch nur das
+// Gesicht. FACE_MASK = weich auslaufende Ellipse ueber der Gesichtsmitte (die
+// Feder blendet den minimalen Kopf-Versatz zwischen den Posen nahtlos weg).
+// Bei Bedarf hier justieren: ellipse <breite%> <hoehe%> at <x%> <y%>.
+const FACE_MASK =
+  'radial-gradient(ellipse 27% 23% at 49% 42%, #000 50%, rgba(0,0,0,0.55) 74%, transparent 100%)';
 export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
   widthCss: string;
-  /** true → Mund-Flap (Open-Pose ↔ calm), synchron zur Sprechblase. */
+  /** true → Mund-Flap (offenes Gesicht ↔ calm), synchron zur Sprechblase. */
   speaking?: boolean;
-  /** true → als „Reaktion" die grosse cheer-Pose als Open-Frame nutzen (statt hi);
-   *  ohne speaking bleibt cheer statisch stehen. */
+  /** true → als „Reaktion" die cheer-Gesichtsregion als Open-Frame nutzen (statt
+   *  hi); ohne speaking bleibt das cheer-Gesicht statisch offen. */
   cheer?: boolean;
   mirror?: boolean;
 }) {
@@ -3025,22 +3033,38 @@ export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
     if (!speaking || reduce) { setMouthOpen(false); return; }
     let alive = true;
     let timer: number | undefined;
-    // 2026-07-15 (Wolf 'ganzer Koerper wackelt'): die 3 Posen sind minimal
-    // body-versetzt (AI-Render), harte Schnell-Swaps liessen den Koerper zittern.
-    // Gemaessigtes Tempo + Cross-Fade (opacity-Transition am img) blenden den
-    // Versatz weg, sodass optisch nur das Gesicht arbeitet.
+    // Nur die Gesichts-Region wechselt (Body ist statische calm-Basis) → der Flap
+    // darf wieder zackig sein, ohne dass etwas wackelt.
     const tick = () => {
       if (!alive) return;
       setMouthOpen(m => !m);
-      timer = window.setTimeout(tick, 280 + Math.random() * 120);
+      timer = window.setTimeout(tick, 200 + Math.random() * 90);
     };
     tick();
     return () => { alive = false; if (timer) window.clearTimeout(timer); };
   }, [speaking, reduce]);
 
-  const openPose = cheer ? 'cheer' : 'hi';
-  const pose: typeof ARENA_MAGE_POSES[number] =
-    speaking ? (mouthOpen ? openPose : 'calm') : (cheer ? 'cheer' : 'calm');
+  // Offenes Gesicht sichtbar? Beim Sprechen im Flap-Takt, sonst gehalten wenn cheer.
+  const showOpen = speaking ? mouthOpen : !!cheer;
+  const openIsCheer = !!cheer;
+
+  const layer = (p: 'calm' | 'hi' | 'cheer', show: boolean, masked: boolean) => (
+    <picture key={p}>
+      <source srcSet={`/avatars/cozywolf/cozywolf-arena-${p}.webp`} type="image/webp" />
+      <img
+        src={`/avatars/cozywolf/cozywolf-arena-${p}.png`}
+        alt="" aria-hidden draggable={false}
+        loading="eager" decoding="sync"
+        style={{
+          position: 'absolute', inset: 0, width: '100%', height: '100%',
+          objectFit: 'contain', display: 'block', zIndex: 1,
+          opacity: show ? 1 : 0, pointerEvents: 'none',
+          transition: reduce ? undefined : 'opacity 110ms ease-in-out',
+          ...(masked ? { maskImage: FACE_MASK, WebkitMaskImage: FACE_MASK } : {}),
+        }}
+      />
+    </picture>
+  );
 
   return (
     <div style={{
@@ -3056,26 +3080,11 @@ export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
         background: 'radial-gradient(ellipse at center 60%, rgba(168,85,247,0.34) 0%, rgba(236,72,153,0.18) 42%, transparent 70%)',
         filter: 'blur(18px)', pointerEvents: 'none', zIndex: 0,
       }} />
-      {/* Alle 3 Posen gemountet, opacity-Toggle (alle geladen → kein Netz-Flicker).
-          <picture> webp (~150KB) → png-Fallback; kein avif-Source (nicht erzeugt),
-          damit keine 404-Fallback-Falle wie bei CozyWolfImage. */}
-      {ARENA_MAGE_POSES.map(p => (
-        <picture key={p}>
-          <source srcSet={`/avatars/cozywolf/cozywolf-arena-${p}.webp`} type="image/webp" />
-          <img
-            src={`/avatars/cozywolf/cozywolf-arena-${p}.png`}
-            alt="" aria-hidden draggable={false}
-            loading="eager" decoding="sync"
-            style={{
-              position: 'absolute', inset: 0, width: '100%', height: '100%',
-              objectFit: 'contain', display: 'block', zIndex: 1,
-              opacity: p === pose ? 1 : 0, pointerEvents: 'none',
-              // Cross-Fade blendet den minimalen Body-Versatz zwischen den Posen.
-              transition: reduce ? undefined : 'opacity 150ms ease-in-out',
-            }}
-          />
-        </picture>
-      ))}
+      {/* calm = statische Basis (immer sichtbar). hi/cheer nur als maskierte
+          Gesichts-Patches darueber (Body bleibt der von calm → kein Wackeln). */}
+      {layer('calm', true, false)}
+      {layer('hi', showOpen && !openIsCheer, true)}
+      {layer('cheer', showOpen && openIsCheer, true)}
     </div>
   );
 }

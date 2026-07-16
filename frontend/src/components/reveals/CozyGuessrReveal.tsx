@@ -396,7 +396,10 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
       {showRanking && (
         <div style={{
           flex: '0 0 38%', padding: '34px 22px 22px',
-          background: 'linear-gradient(180deg, rgba(15,23,42,0.96), rgba(13,10,6,0.96))',
+          // 2026-07-15 (Wolf 'rechts BG etwas sichtbar, wie Schau-mal'): Panel-
+          // Hintergrund halbtransparent (0.96 → 0.62) → der Arena-BG scheint rechts
+          // durch, bleibt aber dunkel genug fuer die Rangliste (Text hell auf dunkel).
+          background: 'linear-gradient(180deg, rgba(15,23,42,0.62), rgba(13,10,6,0.62))',
           borderLeft: '2px solid rgba(236,72,153,0.2)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',

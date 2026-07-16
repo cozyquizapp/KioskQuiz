@@ -51,7 +51,9 @@
       Team-Vorstellung arena-main (Titel/Einzug/Aufstellung überschneiden Banner nicht mehr?) · Scoring nutzt
       Standings-BG (sitzt im Board?) · Cheese Anzahl-richtig-Layout · 10v10 Wappen unter Feldern · CozyGuessr
       rotes BG · Finale-Ansage im Intro (×2/×3).
-- [ ] 🎂 **Kuchendiagramm** (optional, Wolf entscheidet ob bauen): möglich bei MUCHO (A/B/C/D-Split) oder 10v10.
+
+> **Verworfen:** 🎂 Kuchendiagramm für MUCHO (Vorschau gezeigt 2026-07-16 → Wolf „passt nicht so gut");
+> aktueller MUCHO-Balken-Reveal (2×2→4 Reihen) bleibt.
 
 ---
 

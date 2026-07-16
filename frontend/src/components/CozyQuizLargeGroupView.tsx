@@ -507,10 +507,185 @@ const CEREMONY_KEYFRAMES = `
 @keyframes qqBannerUnfurl { from{transform:translateX(-50%) scaleY(0);opacity:0.35;} to{transform:translateX(-50%) scaleY(1);opacity:1;} }
 @keyframes qqLaurelDrop { from{opacity:0;transform:translateY(-34px) scale(0.6);} to{opacity:1;transform:translateY(0) scale(1);} }
 @keyframes qqTorchFlicker { 0%,100%{transform:scale(1) rotate(-3deg);opacity:0.9;} 50%{transform:scale(1.1) rotate(3deg);opacity:1;} }
+/* Banner-Entzuendung (Wolf 2026-07-16): Arena dunkelt, die 8 Wandbanner dimmen,
+   nur das Sieger-Banner entzuendet sich (grau+dunkel -> voll Farbe+Glow+groesser),
+   dann schlaegt "CHAMPIONS DER ARENA" ein. filter deckt auch den box-shadow-Glow
+   ab, daher faehrt der Glow mit dem brightness-Ramp hoch. */
+@keyframes qqArenaDim { from{opacity:0;} to{opacity:1;} }
+@keyframes qqBannerIgnite { 0%{filter:grayscale(0.85) brightness(0.4);opacity:0.5;transform:scale(1);} 55%{filter:grayscale(0) brightness(1.25);transform:scale(1.2);} 100%{filter:none;opacity:1;transform:scale(1.14);} }
+@keyframes qqChampSlam { 0%{opacity:0;transform:scale(1.7);letter-spacing:0.5em;} 60%{opacity:1;transform:scale(0.96);} 100%{opacity:1;transform:scale(1);letter-spacing:0.2em;} }
+@keyframes qqBannerFlame { 0%,100%{transform:translateX(-50%) scale(1) rotate(-4deg);opacity:0.92;} 50%{transform:translateX(-50%) scale(1.18) rotate(4deg);opacity:1;} }
+@keyframes qqShockRing { 0%{transform:translate(-50%,-50%) scale(0);opacity:0.85;} 100%{transform:translate(-50%,-50%) scale(16);opacity:0;} }
+@keyframes qqFlashPulse { 0%{opacity:0;} 12%{opacity:0.9;} 100%{opacity:0;} }
+@keyframes qqTensionPulse { 0%,100%{opacity:0.7;transform:translate(-50%,-50%) scale(1);} 50%{opacity:1;transform:translate(-50%,-50%) scale(1.05);} }
+@keyframes qqPodRise { from{transform:translateY(118%);opacity:0;} to{transform:translateY(0);opacity:1;} }
 @media (prefers-reduced-motion: reduce) {
   [data-qq-ceremony] * { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
 `;
+
+// ── Kolosseum-Krönung: Banner-Roulette → Blink → Treppchen (Wolf 2026-07-16) ──
+// Beim Wechsel auf den Krönungs-Step läuft die Sequenz automatisch ab: Arena
+// dunkelt → die Erleuchtung springt zufällig über die 8 Wandbanner (schnell →
+// auslaufend) → blinkt auf dem Sieger → Flash + Lock → das Treppchen (Top 3)
+// steigt auf, „Champions der Arena" schlägt gold ein, Konfetti. Timing via
+// setTimeout-Kette (Cleanup bei Unmount). Reduced-Motion: direkt Lock + Podium.
+// Sound (Fanfare + Wolf-Howl) erst beim Einrasten, nicht beim Step-Wechsel.
+function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
+  state: QQStateUpdate; sorted: any[]; winner: any; wColor: string; de: boolean;
+}) {
+  const reduce = prefersReducedMotion();
+  // 8 Banner in STABILER Fraktions-Reihenfolge (nicht nach Rang → die Position
+  // verrät den Sieger nicht, das Roulette bleibt spannend).
+  const avaOrder = (id: string) => { const i = QQ_AVATARS.findIndex(a => a.id === id); return i < 0 ? 99 : i; };
+  const banners = useMemo(() => [...sorted].slice(0, 8).sort((a, b) => avaOrder(a.avatarId) - avaOrder(b.avatarId)), [sorted]);
+  const champIdx = banners.findIndex(t => t.id === winner.id);
+  const top3 = sorted.slice(0, 3);
+
+  const [litIdx, setLitIdx] = useState<number | null>(null);
+  const [blinkOn, setBlinkOn] = useState(false);
+  const [blinking, setBlinking] = useState(false);
+  const [locked, setLocked] = useState(false);
+  const [showPodium, setShowPodium] = useState(false);
+
+  useEffect(() => {
+    const timers: number[] = [];
+    const at = (ms: number, fn: () => void) => { timers.push(window.setTimeout(fn, ms)); };
+    const muted = (state as any).sfxMuted;
+    const lockFx = () => {
+      if (muted) return;
+      try { playRaceWinner(); at(700, () => { try { playWolfHowl(); } catch {} }); } catch {}
+    };
+
+    if (reduce || champIdx < 0) {
+      setLitIdx(champIdx); setLocked(true);
+      at(400, () => setShowPodium(true));
+      if (!muted) { try { playRaceWinner(); } catch {} }
+      return () => timers.forEach(clearTimeout);
+    }
+
+    // Roulette: zufällige Sprünge, erst schnell dann auslaufend, landet auf Sieger.
+    let t = 600, delay = 44, prev = -1;
+    const steps = 22;
+    for (let i = 0; i < steps; i++) {
+      const last = i === steps - 1;
+      let idx: number;
+      if (last) idx = champIdx;
+      else { do { idx = Math.floor(Math.random() * banners.length); } while (idx === prev); }
+      prev = idx;
+      at(t, () => setLitIdx(idx));
+      t += delay; delay *= 1.115;
+    }
+    // Blink auf dem Sieger, dann Lock + Flash.
+    const holdOn = t + 280;
+    const seq = [false, true, false, true, false, true];
+    const bd = 165;
+    at(holdOn - 1, () => setBlinking(true));
+    seq.forEach((on, k) => at(holdOn + k * bd, () => setBlinkOn(on)));
+    const lockAt = holdOn + seq.length * bd;
+    at(lockAt, () => { setBlinking(false); setLocked(true); lockFx(); });
+    at(lockAt + 1350, () => setShowPodium(true));
+
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const bannerNode = (t: any, i: number) => {
+    const isChamp = i === champIdx;
+    let lit = false, scale = 1;
+    if (locked && isChamp) { lit = true; scale = 1.16; }
+    else if (blinking && isChamp) { lit = blinkOn; scale = blinkOn ? 1.2 : 1; }
+    else if (litIdx === i && !locked) { lit = true; scale = 1.1; }
+    const fc = t.color;
+    return (
+      <div key={t.id} style={{
+        position: 'relative', width: 'clamp(38px, 4.4cqw, 72px)', height: 'clamp(66px, 7.8cqw, 118px)',
+        clipPath: 'polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%)',
+        background: `linear-gradient(180deg, ${fc} 0%, ${fc}bb 80%, ${fc}66 100%)`,
+        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '0.7cqw',
+        transformOrigin: 'top center', transform: `scale(${scale})`,
+        filter: lit ? 'none' : 'grayscale(0.85) brightness(0.42)', opacity: lit ? 1 : 0.5,
+        boxShadow: (locked && isChamp) ? `0 0 30px ${fc}, 0 0 66px ${fc}99` : (lit ? `0 0 20px ${fc}, 0 0 42px ${fc}88` : 'none'),
+        transition: 'filter .08s linear, opacity .08s linear, transform .14s ease, box-shadow .2s ease',
+      }}>
+        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={'clamp(24px, 2.9cqw, 46px)'} />
+        {locked && isChamp && (
+          <>
+            <span aria-hidden style={{ position: 'absolute', top: '-2.2cqw', left: '50%', transform: 'translateX(-50%)', fontSize: 'clamp(16px, 2.1cqw, 32px)', lineHeight: 1, zIndex: 5, animation: 'qqBannerFlame 1.3s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
+            <span aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', width: '2cqw', height: '2cqw', borderRadius: '50%', border: `0.35cqw solid ${fc}`, transform: 'translate(-50%,-50%) scale(0)', animation: 'qqShockRing 0.9s ease-out both', pointerEvents: 'none' }} />
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const podium = (t: any, place: 0 | 1 | 2) => {
+    const isWin = place === 0;
+    const blockH = place === 0 ? '24cqh' : place === 1 ? '17cqh' : '12cqh';
+    const crestSz = isWin ? 'clamp(80px, 12cqw, 190px)' : 'clamp(58px, 9cqw, 140px)';
+    const rankNum = place === 0 ? 1 : place === 1 ? 2 : 3;
+    const delay = place === 1 ? '0s' : place === 2 ? '.12s' : '.3s';
+    const ease = isWin ? 'cubic-bezier(.2,1.28,.35,1)' : 'cubic-bezier(.23,1,.32,1)';
+    return (
+      <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5cqh', animation: `qqPodRise ${isWin ? 0.84 : 0.7}s ${ease} ${delay} both`, willChange: 'transform, opacity' }}>
+        {isWin && <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ width: 'clamp(34px, 3.4cqw, 60px)', height: 'auto', animation: 'finaleTrophyFloat 3.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }} />}
+        <div style={{ position: 'relative', borderRadius: '50%', boxShadow: isWin ? `0 0 46px ${t.color}, 0 0 92px ${t.color}66` : `0 0 26px ${t.color}`, border: isWin ? '0.35cqw solid #f6d98a' : 'none' }}>
+          <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={crestSz} />
+        </div>
+        <TeamNameLabel name={qqMegaFactionName(t.avatarId, de ? 'de' : 'en')} maxLines={1} shrinkAfter={12} color={t.color} fontWeight={900} fontSize={isWin ? 'clamp(22px, 3.2cqw, 48px)' : 'clamp(15px, 2cqw, 30px)'} fontSizeLong={isWin ? 'clamp(16px, 2.4cqw, 36px)' : 'clamp(12px, 1.6cqw, 22px)'} style={{ textShadow: '0 2px 8px rgba(0,0,0,.6)' }} />
+        <div style={{ fontWeight: 900, color: t.color, fontVariantNumeric: 'tabular-nums', fontSize: isWin ? 'clamp(16px, 2.4cqw, 34px)' : 'clamp(13px, 1.7cqw, 24px)' }}>{t.largestConnected}</div>
+        <div style={{ width: '15cqw', maxWidth: 240, height: blockH, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '1cqh', background: isWin ? 'linear-gradient(180deg, #4a381c, #1a1109)' : 'linear-gradient(180deg, #2b2540, #171223)', borderTop: isWin ? '0.35cqw solid #f6d98a' : place === 1 ? '0.3cqw solid #9ca3c4' : '0.3cqw solid #b08d6a' }}>
+          <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 3cqw, 44px)', color: 'rgba(255,255,255,0.82)' }}>{rankNum}</span>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div key="crown" data-qq-ceremony style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', color: '#f4f6ff' }}>
+      {/* Arena dunkelt */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse 96% 86% at 50% 46%, rgba(0,0,0,0.12), rgba(0,0,0,0.72))', animation: 'qqArenaDim 0.8s ease both' }} />
+      {showPodium && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 56% at 50% 64%, ${wColor}44, transparent 62%)`, animation: 'qqArenaDim 1s ease both' }} />}
+      {/* Fackeln flankieren */}
+      <span aria-hidden style={{ position: 'absolute', left: '8%', bottom: '10%', fontSize: 'clamp(26px, 3.4cqw, 58px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
+      <span aria-hidden style={{ position: 'absolute', right: '8%', bottom: '10%', fontSize: 'clamp(26px, 3.4cqw, 58px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out 0.4s infinite' }}><QQEmojiIcon emoji="🔥" /></span>
+
+      {/* Rod + 8 Wandbanner */}
+      <div aria-hidden style={{ position: 'absolute', top: '4cqh', left: '50%', transform: 'translateX(-50%)', width: '74cqw', maxWidth: 1200, height: 3, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(214,190,120,0.5), transparent)' }} />
+      <div style={{ position: 'absolute', top: '4cqh', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 'clamp(6px, 1.3cqw, 18px)', zIndex: 4 }}>
+        {banners.map((t, i) => bannerNode(t, i))}
+      </div>
+
+      {/* Weiß-Flash beim Einrasten */}
+      {locked && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 9, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.2) 42%, transparent 60%)', animation: 'qqFlashPulse 0.55s ease both' }} />}
+
+      {/* Spannungstext während Roulette/Blink */}
+      {!showPodium && (
+        <div style={{ position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-50%)', zIndex: 5, fontSize: 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900, color: '#f6d98a', letterSpacing: '0.04em', textShadow: '0 2px 10px rgba(0,0,0,0.8), 0 0 26px rgba(233,196,106,0.4)', animation: 'qqTensionPulse 1.1s ease-in-out infinite', pointerEvents: 'none' }}>
+          {de ? 'Wer krönt sich?' : 'Who takes the crown?'}
+        </div>
+      )}
+
+      {/* Treppchen + „Champions der Arena" + Konfetti */}
+      {showPodium && (
+        <>
+          <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
+          <div style={{ position: 'absolute', left: 0, right: 0, top: '27cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontSize: 'clamp(20px, 2.7cqw, 48px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
+              {de ? 'Champions der Arena' : 'Arena Champions'}
+            </div>
+          </div>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: '2cqh', zIndex: 6, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', gap: 'clamp(8px, 1.4cqw, 24px)' }}>
+            {top3[1] && podium(top3[1], 1)}
+            {top3[0] && podium(top3[0], 0)}
+            {top3[2] && podium(top3[2], 2)}
+          </div>
+        </>
+      )}
+      <style>{CEREMONY_KEYFRAMES}</style>
+    </div>
+  );
+}
 
 // ── GameOver-Siegerehrung: Award-Beats → Kolosseum-Krönung → Endstand ────────
 // 2026-07-15 (Wolf): moderator-gesteuerte Zeremonie statt Auto-Timer. Steps
@@ -543,11 +718,9 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
     if ((state as any).sfxMuted) return;
     if (prev < 0) return; // Mount: kein Sound (Reload-Schutz)
     try {
+      // Krönungs-Fanfare läuft jetzt in MegaCrownCeremony beim Einrasten des
+      // Roulettes (nicht beim Step-Wechsel) → hier nur noch der Award-Sting.
       if (step < crownStep) playSpecialAwardReveal();
-      else if (step === crownStep && winner) {
-        playRaceWinner();
-        window.setTimeout(() => { try { playWolfHowl(); } catch {} }, 700);
-      }
     } catch {}
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
@@ -561,7 +734,8 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
       <div key={`award-${step}`} data-qq-ceremony style={{ ...S.goWrap, justifyContent: 'center', gap: 'clamp(12px, 2.2cqh, 32px)' }}>
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, animation: 'qqCrownFlood 0.7s ease both' }} />
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-          <div style={{ fontSize: 'clamp(12px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#e9c46a' }}>
+          {/* Label in Silber — Gold bleibt exklusiv der Champion-Krönung. */}
+          <div style={{ fontSize: 'clamp(12px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c7cede' }}>
             {(de ? 'Auszeichnung' : 'Special award')} {step + 1} / {nAwards}
           </div>
           <div style={{ display: 'flex', gap: 7 }}>
@@ -576,60 +750,32 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.5) 50%, transparent 66%)', transform: 'translateX(-130%)', animation: 'qqAwardShine 1.1s ease 0.5s both' }} />
           </div>
         </div>
+        {/* Titel + Leistung ZUERST — dann (nach kurzer Pause) die Enthüllung. */}
         <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(26px, 4.2cqw, 64px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
-        <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6cqw, 24px)', animation: 'qqAwardDriveIn 0.7s cubic-bezier(0.2,1,0.4,1) 0.35s both' }}>
-          <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
-            <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(78px, 9cqw, 148px)'} />
-            {AWARD_SPARKS.map((sp, i) => (
-              <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${0.9 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
-            ))}
+        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.5s ease 0.42s both' }}>{beat.stat}</div>
+        {/* Enthüllung: das Banner der Gewinnerfraktion entrollt sich (gleiche
+            Banner-Geste wie in der Krönung), Wappen + Name fahren ein. */}
+        <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6cqw, 24px)', animation: 'qqAwardDriveIn 0.7s cubic-bezier(0.2,1,0.4,1) 1.05s both' }}>
+          <div style={{ position: 'relative', display: 'inline-flex' }}>
+            <div aria-hidden style={{ position: 'absolute', top: '-8%', left: '50%', width: 'clamp(74px, 8cqw, 138px)', height: 'clamp(100px, 13cqh, 185px)', transform: 'translateX(-50%)', background: `linear-gradient(180deg, ${color}f0, ${color}88 82%, ${color}44)`, clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)', transformOrigin: 'top center', animation: 'qqBannerUnfurl 0.7s cubic-bezier(0.2,1,0.3,1) 1.0s both', boxShadow: `0 12px 40px ${color}55`, zIndex: -1 }} />
+            <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
+              <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(78px, 9cqw, 148px)'} />
+              {AWARD_SPARKS.map((sp, i) => (
+                <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${1.5 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
+              ))}
+            </div>
           </div>
           <TeamNameLabel name={name} maxLines={1} shrinkAfter={14} color={color} fontWeight={900} fontSize="clamp(28px, 4.2cqw, 68px)" fontSizeLong="clamp(20px, 3cqw, 48px)" style={{ textShadow: `0 0 40px ${color}66` }} />
         </div>
-        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.6s ease 0.6s both' }}>{beat.stat}</div>
         <style>{CEREMONY_KEYFRAMES}</style>
       </div>
     );
   }
 
   // ── Beat n: Kolosseum-Krönung (Höhepunkt) ──────────────────────────────────
+  // Banner-Roulette → Blink → Treppchen (eigener Component wegen Timing-State).
   if (step === crownStep && winner) {
-    return (
-      <div key="crown" data-qq-ceremony style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', background: 'transparent', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.6cqh, 24px)', color: '#f4f6ff' }}>
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 80% 62% at 50% 42%, ${wColor}3a 0%, transparent 62%)`, animation: 'qqCrownFlood 0.8s ease both' }} />
-        {/* Riesen-Banner (Fraktionsfarbe) entrollt sich hinter dem Wappen. */}
-        <div aria-hidden style={{ position: 'absolute', top: '4%', left: '50%', width: 'clamp(130px, 17cqw, 280px)', height: 'clamp(230px, 46cqh, 560px)', background: `linear-gradient(180deg, ${wColor}f0 0%, ${wColor}a0 82%, ${wColor}66 100%)`, clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)', transformOrigin: 'top center', animation: 'qqBannerUnfurl 0.9s cubic-bezier(0.2,1,0.3,1) 0.15s both', boxShadow: `0 24px 70px ${wColor}55`, zIndex: 2 }} />
-        {/* Fackeln flankieren die Bühne. */}
-        <span aria-hidden style={{ position: 'absolute', left: '11%', bottom: '16%', fontSize: 'clamp(30px, 4cqw, 66px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
-        <span aria-hidden style={{ position: 'absolute', right: '11%', bottom: '16%', fontSize: 'clamp(30px, 4cqw, 66px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out 0.4s infinite' }}><QQEmojiIcon emoji="🔥" /></span>
-        <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
-        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#e9c46a' }}>
-          {de ? 'Champions der Arena' : 'Arena Champions'}
-        </div>
-        <div style={{ position: 'relative', zIndex: 5, animation: 'qqCrownIn 0.7s cubic-bezier(0.2,1.3,0.4,1) both' }}>
-          <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ position: 'absolute', top: '-9%', left: '50%', transform: 'translateX(-50%)', width: 'clamp(50px, 5.2cqw, 88px)', height: 'auto', zIndex: 6, animation: 'finaleTrophyFloat 3.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,0.5))' }} />
-          {/* Lorbeer senkt sich rechts & links ans Wappen. */}
-          <span aria-hidden style={{ position: 'absolute', top: '30%', left: '-14%', fontSize: 'clamp(46px, 6cqw, 100px)', lineHeight: 1, zIndex: 6, animation: 'qqLaurelDrop 0.7s cubic-bezier(0.2,1,0.4,1) 0.55s both' }}><QQEmojiIcon emoji="🌿" /></span>
-          <span aria-hidden style={{ position: 'absolute', top: '30%', right: '-14%', fontSize: 'clamp(46px, 6cqw, 100px)', lineHeight: 1, zIndex: 6, transform: 'scaleX(-1)', animation: 'qqLaurelDrop 0.7s cubic-bezier(0.2,1,0.4,1) 0.55s both' }}><QQEmojiIcon emoji="🌿" /></span>
-          <div style={{ borderRadius: '50%', boxShadow: `0 0 80px ${wColor}77, 0 0 150px ${wColor}44` }}>
-            <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(160px, 20cqw, 320px)'} />
-          </div>
-        </div>
-        <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.8cqh, 12px)' }}>
-          <TeamNameLabel name={winner.name} maxLines={1} shrinkAfter={14} color={wColor} fontWeight={900} fontSize="clamp(40px, 6.4cqw, 104px)" fontSizeLong="clamp(30px, 4.6cqw, 74px)" style={{ textAlign: 'center', textShadow: `0 0 50px ${wColor}66` }} />
-          <div aria-hidden style={{ height: 'clamp(3px, 0.42cqh, 6px)', width: 'clamp(70px, 12cqw, 210px)', borderRadius: 999, background: wColor, transformOrigin: 'center', boxShadow: `0 0 16px ${wColor}99`, animation: 'qqCrownUnderline 0.5s cubic-bezier(0.2,1,0.4,1) 0.45s both' }} />
-        </div>
-        {motto && (
-          <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(18px, 2.5cqw, 40px)', fontWeight: 800, fontStyle: 'italic', color: '#cbd5e1', animation: 'qqCrownFadeUp 0.6s ease 0.5s both' }}>
-            „{motto}"
-          </div>
-        )}
-        <div style={{ position: 'relative', zIndex: 5, fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 38px)', color: wColor, animation: 'qqCrownFadeUp 0.6s ease 0.72s both' }}>
-          {winner.largestConnected} {de ? 'Punkte' : 'points'}
-        </div>
-        <style>{CEREMONY_KEYFRAMES}</style>
-      </div>
-    );
+    return <MegaCrownCeremony state={state} sorted={sorted} winner={winner} wColor={wColor} de={de} />;
   }
 
   // ── Beat n+1: Endstand (Bar-Race-Standings) ────────────────────────────────
@@ -674,13 +820,9 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         })}
       </div>
       {rest > 0 && <div style={S.goRest}>+ {rest} {de ? 'weitere Fraktionen' : 'more factions'}</div>}
-
-      {state.megaAwards && (
-        <div style={{ marginTop: 18, position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10 }}>
-          <div style={S.goLabel}>{de ? 'Fraktions-Awards' : 'Faction awards'}</div>
-          <MegaAwardsStrip awards={state.megaAwards} de={de} />
-        </div>
-      )}
+      {/* Fraktions-Award-Leiste raus (Wolf 2026-07-16): die Awards werden in den
+          Award-Beats der Zeremonie einzeln zelebriert → im Endstand redundant +
+          von weitem unlesbar. MegaAwardsStrip bleibt für Summary/Recap. */}
     </div>
   );
 }

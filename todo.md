@@ -46,6 +46,12 @@
 **Nachgezogen (Wolf-Feedback 2026-07-16, gepusht):**
 - **Schätzchen-Reveal → v4 „NUR STRAHL"** (`88d68cde`..`41cb8f78`): 2-spalt. Liste war verwirrend → Wolf-Wahl „nur Strahl, keine Liste". Wappen an ihrer Tipp-Position in ZWEI Lanes (oben/unten am Strahl, `spread` MIN=12%), kurzer Stiel zur Schiene, Wert+Delta(+Punkte Arena) am Wappen. Alles GOLD/GELB (kein Pink). ⚠️ **Beamer-Check: überlappungsfrei bei 8 Fraktionen mit engen Tipps?** (sonst MIN/Wappen-Größe nachdrehen).
 - **Kategorie-Intro-Farben gefixt** (`88d68cde`): catColor war in Arena auf Pink geforced → alle Kategorie-Intro-Texte pink. Jetzt: Kategorie-Intros in EIGENER Farbe (Schätzchen gold, MUCHO blau…), NUR Progress-Tree-Pages bleiben pink (`color`/`displayColor`).
+- **🏆 ARENA-SIEGEREHRUNG umgebaut** (Wolf-Feedback Bild 8, Konzept via Mockup abgestimmt): ganze Finalsequenz neu.
+  - **Krönung = „Banner-Entzündung"** (neuer `MegaCrownCeremony`, Roulette-Timing): Arena dunkelt → Erleuchtung springt **zufällig** über die 8 Wandbanner (schnell→auslaufend, Deceleration) → **Blink** auf dem Sieger → **Weiß-Flash + Schockwelle + Lock** → Halt → **Treppchen (Top 3)** steigt auf, „Champions der Arena" gold-Slam, Konfetti. Banner in STABILER Fraktions-Reihenfolge (Position verrät Sieger nicht). Sound (Fanfare+Wolf-Howl) erst beim Einrasten. reduced-motion: direkt Lock+Podium.
+  - **Award-Beats:** „Stat zuerst, dann Enthüllung" — Icon → Titel+Leistung → Pause → **Banner der Gewinnerfraktion entrollt** sich (gleiche Banner-Geste wie Krönung). Label **Silber** (Gold exklusiv Champion).
+  - **Endstand aufgeräumt:** Mini-`MegaAwardsStrip` raus (Awards schon in Beats zelebriert; Strip bleibt für Summary/Recap).
+  - Skills angewandt: `animate` (Easing-Tokens, Exits<Enters, reduced-motion), `ui-ux-pro-max` (ein Hero-Moment/Step), `color-contrast`. Mockup: claude.ai Artifact (Roulette→Treppchen).
+  - ⚠️ **Beamer-Verify:** Roulette-Timing/Blink-Tempo, Treppchen-Sitz (kein Scrollbar), 8-Banner-Zeile passt, Award-Banner-Entrollung überlappt Stat nicht.
 
 **Offen (braucht Wolf / Beamer):**
 - [ ] ⏳ **Bild fürs Vorstellen** (Wappen fliegen zu festen Ständen) — Wolf liefert Bild, dann Flug-Reveal

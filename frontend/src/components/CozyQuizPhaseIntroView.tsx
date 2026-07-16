@@ -1042,25 +1042,28 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               2026-05-07 (Wolf 'mehr Pink+Blau, Set F'): im ESC-Mode Pille mit
               Pink→Blau-Gradient-BG + zweifarbiger Border statt monochrom. */}
           <div style={{
-            padding: '8px 24px', borderRadius: 'var(--qq-pill-radius)',
+            padding: '10px 30px', borderRadius: 'var(--qq-pill-radius)',
+            // 2026-07-16 (Wolf 'Runde 1/2 geht unter'): Pille war auf dem
+            // bewegten Vortex-BG zu dezent (18er-Alpha, displayColor-Text). Jetzt
+            // kräftiger Verlauf + stärkere Border + weißer Text mit Farb-Glow →
+            // hebt sich klar vom BG ab, ohne den Look zu sprengen.
             background: isEsc
               ? 'linear-gradient(135deg, rgba(255,45,123,0.20) 0%, rgba(59,130,246,0.20) 100%)'
-              : isThemed() ? 'var(--qq-surface)' : `${displayColor}18`,
+              : isThemed() ? 'var(--qq-surface)' : `linear-gradient(180deg, ${displayColor}3d, ${displayColor}20)`,
             border: isEsc
               ? '2px solid rgba(255,45,123,0.55)'
-              : isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${displayColor}44`,
-            fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900,
+              : isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${displayColor}9c`,
+            fontSize: 'clamp(17px, 1.9cqw, 26px)', fontWeight: 900,
             // 2026-05-13 Kontrast-Audit: #fde6f0 auf der hellen Seite des
-            // Pink/Blau-Gradient-Pill-BG matschte. #FFFFFF + Dark-Halo trennt
-            // den Round-Counter klar vom Pill-BG ohne den Look zu opfern.
-            color: isEsc ? '#FFFFFF' : isThemed() ? 'var(--qq-text-muted)' : `${displayColor}cc`,
-            textShadow: isEsc ? '0 1px 4px rgba(0,0,0,0.5)' : 'none',
+            // Pill-BG matschte. #FFFFFF + Dark-Halo trennt den Round-Counter klar.
+            color: isEsc ? '#FFFFFF' : isThemed() ? 'var(--qq-text-muted)' : '#FFFFFF',
+            textShadow: isEsc ? '0 1px 4px rgba(0,0,0,0.5)' : isThemed() ? 'none' : '0 1px 6px rgba(0,0,0,0.55)',
             letterSpacing: '0.1em',
             marginBottom: 28,
             animation: hasRoundTransition ? undefined : 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
             transition: 'background 500ms ease, border-color 500ms ease, color 500ms ease',
             position: 'relative', zIndex: 5,
-            boxShadow: isEsc ? '0 0 18px rgba(255,45,123,0.25)' : 'none',
+            boxShadow: isEsc ? '0 0 18px rgba(255,45,123,0.25)' : isThemed() ? 'none' : `0 0 24px ${displayColor}55, 0 4px 16px rgba(0,0,0,0.38)`,
           }}>
             {lang === 'de'
               ? `Runde ${displayGpi} von ${s.totalPhases}`

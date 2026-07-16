@@ -3771,6 +3771,59 @@ function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim, big }:
   );
 }
 
+/**
+ * MegaOptionBar — CozyArena Farb-Balken je MuCho-Option (Wolf 2026-07-16, Bild 6).
+ * Ersetzt die Wappen+×N-Reihe: ein liegender, gestapelter Farbbalken (Segment je
+ * Fraktion, Breite ∝ Stimmen, skaliert auf die stimmenstärkste Option — wie die
+ * Standings-Balken) + grosse Gesamtzahl am Ende. Aus Beamer-Distanz sofort
+ * lesbar, WIE stark eine Option gewaehlt wurde; die Segmentfarben (+ Mini-Wappen
+ * in breiten Segmenten) zeigen die Fraktions-Verteilung. Kein Sieger/keine Krone.
+ */
+function MegaOptionBar({ teams, maxOptTotal, de, dim }: {
+  teams: Array<{ id: string; name: string; avatarId: string; color?: string; emoji?: string }>;
+  maxOptTotal: number; de: boolean; dim: boolean;
+}) {
+  const buckets = qqFactionBuckets(teams as any, de);
+  const total = buckets.reduce((s, b) => s + b.count, 0);
+  return (
+    <div style={{
+      position: 'relative', zIndex: 1, marginLeft: 'auto',
+      flex: '0 0 clamp(300px, 40cqw, 600px)', maxWidth: '54%',
+      display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.4cqw, 20px)',
+      opacity: dim ? 0.5 : 1, filter: dim ? 'grayscale(0.6)' : 'none',
+      transition: 'opacity 0.4s ease, filter 0.4s ease',
+      animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
+    }}>
+      <div style={{
+        position: 'relative', flex: 1, height: 'clamp(28px, 3.2cqh, 46px)',
+        borderRadius: 999, background: 'rgba(255,255,255,0.08)',
+        overflow: 'hidden', display: 'flex',
+        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)',
+      }}>
+        {buckets.map((b) => {
+          const w = (b.count / maxOptTotal) * 100;
+          const wide = w >= 9;
+          return (
+            <div key={b.avatarId} title={`${b.name}: ${b.count}`} style={{
+              width: `${w}%`, height: '100%',
+              background: `linear-gradient(180deg, ${b.color}, ${b.color}cc)`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              borderRight: '1px solid rgba(0,0,0,0.28)',
+            }}>
+              {wide && <QQTeamAvatar avatarId={b.avatarId} teamEmoji={b.slug} size={'clamp(20px, 2.4cqh, 34px)'} />}
+            </div>
+          );
+        })}
+      </div>
+      <span style={{
+        fontWeight: 900, fontSize: 'clamp(28px, 3.4cqw, 52px)', color: '#fff',
+        fontVariantNumeric: 'tabular-nums', minWidth: '1.4em', textAlign: 'right',
+        textShadow: '0 2px 6px rgba(0,0,0,0.5)', lineHeight: 1,
+      }}>{total}</span>
+    </div>
+  );
+}
+
 export function MuchoOptionsReveal({
   options, optionsEn, correctOptionIndex, optionImages, answers, teams, lang,
   cardBg, timerEndsAt, timerDurationSec, revealStep, currentQuestionStartedAt,
@@ -3802,6 +3855,12 @@ export function MuchoOptionsReveal({
     return res;
   }, [answers, N]);
   const akt1Max = nonEmptyOrdered.length;
+  // Stimmenstärkste Option → Skalierung der Arena-Farb-Balken (wie Standings).
+  const maxOptTotal = useMemo(() => {
+    let m = 1;
+    for (let i = 0; i < N; i++) m = Math.max(m, answers.filter(a => a.text === String(i)).length);
+    return m;
+  }, [answers, N]);
   const lockStep = akt1Max + 1;
   const locked = revealStep >= lockStep && correctOptionIndex != null && N > 0;
   // Auto-Stagger ab 2026-04-26: Backend springt bei Klick 1 direkt auf akt1Max,
@@ -4015,24 +4074,17 @@ export function MuchoOptionsReveal({
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
-              {/* 2026-07-14 (Wolf 'Layout 1'): Arena — Fraktions-Wappen inline rechts
-                  in der Antwort-Zeile. Viel horizontaler Platz → grosse Wappen (big),
-                  aus Beamer-Distanz lesbar, klare Antwort->Fraktion-Zuordnung. */}
+              {/* 2026-07-16 (Wolf 'Bild 6'): Arena — statt der Wappen+×N-Reihe ein
+                  liegender Farb-Balken je Option (Fraktions-Segmente, skaliert auf
+                  die stimmenstärkste Option) + grosse Gesamtzahl. Aus Beamer-Distanz
+                  sofort lesbar wie stark eine Option gewaehlt wurde. */}
               {isMega && voterShow && voters.length > 0 && (
-                <div style={{
-                  position: 'relative', zIndex: 1, marginLeft: 'auto', paddingLeft: 10,
-                  display: 'flex', flexWrap: 'wrap', alignItems: 'center',
-                  justifyContent: 'flex-end', gap: 'clamp(12px, 1.5cqw, 22px)',
-                }}>
-                  <MegaMuchoVoterPills
-                    teams={voters.map(v => v.team)}
-                    winnerAvatarId={winnerTeam?.avatarId}
-                    showCrown={false}
-                    de={lang === 'de'}
-                    dim={isWrong}
-                    big
-                  />
-                </div>
+                <MegaOptionBar
+                  teams={voters.map(v => v.team)}
+                  maxOptTotal={maxOptTotal}
+                  de={lang === 'de'}
+                  dim={isWrong}
+                />
               )}
             </div>
             {/* Voter-Reihe (nur Nicht-Arena): haengt unter der Card (Avatare 80%

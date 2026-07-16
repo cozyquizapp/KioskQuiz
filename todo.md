@@ -52,6 +52,10 @@
   - **Endstand aufgeräumt:** Mini-`MegaAwardsStrip` raus (Awards schon in Beats zelebriert; Strip bleibt für Summary/Recap).
   - Skills angewandt: `animate` (Easing-Tokens, Exits<Enters, reduced-motion), `ui-ux-pro-max` (ein Hero-Moment/Step), `color-contrast`. Mockup: claude.ai Artifact (Roulette→Treppchen).
   - ⚠️ **Beamer-Verify:** Roulette-Timing/Blink-Tempo, Treppchen-Sitz (kein Scrollbar), 8-Banner-Zeile passt, Award-Banner-Entrollung überlappt Stat nicht.
+- **Bild 2 — Round-Intro-Pille** (PhaseIntroView): „Runde X von Y" ging auf dem Vortex-BG unter → kräftigerer Verlauf-BG + stärkere Border + **weißer Text** mit Dark-Halo + Farb-Glow. (BG-Zentrierung ist asset-abhängig, nicht angefasst.)
+- **Bild 6 — Farb-Balken pro Option** (QQBeamerPage `MegaOptionBar`): MUCHO-Arena statt Wappen+×N-Reihe jetzt liegender, gestapelter Farbbalken je Option (Fraktions-Segmente, skaliert auf stimmenstärkste Option wie Standings) + grosse Gesamtzahl + Mini-Wappen in breiten Segmenten. Alte `MegaMuchoVoterPills` bleibt ungenutzt im Code (Reuse). ⚠️ Beamer-Verify: Segment-Lesbarkeit/Balken-Breite bei 8 Fraktionen.
+- **Gold in Krönung: bewusst OK** (Wolf 2026-07-16) — Zeremonie-Ausnahme bestätigt, Gold-Grundsatzfrage für Krönung erledigt.
+- **Gruppe-B-Icons:** ✅ `fx-book` + `fx-shield-faction` da. **Fehlen noch: `fx-clapperboard` (🎬), `fx-swords` (⚔️), `fx-lightning` (⚡ fix)** — Wolf malt, dann wire ich.
 
 **Offen (braucht Wolf / Beamer):**
 - [ ] ⏳ **Bild fürs Vorstellen** (Wappen fliegen zu festen Ständen) — Wolf liefert Bild, dann Flug-Reveal

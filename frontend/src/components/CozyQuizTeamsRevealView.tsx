@@ -125,7 +125,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const renderLineup = (big: boolean) => {
     // Ausgewogene 2 Reihen statt 6-2 (Wolf 2026-07-04): 8 → 4+4, 6 → 3+3, 7 → 4+3.
     const cols = n <= 4 ? Math.max(1, n) : Math.ceil(n / 2);
-    const cellW = big ? 'clamp(112px, 13cqw, 210px)' : 'clamp(80px, 10cqw, 150px)';
+    // 2026-07-16: Finale-Aufstellung etwas kompakter (disc/cellW/rowGap/Zickzack),
+    // damit die 2 Reihen komplett in den offenen Boden von arena-main passen und
+    // nicht in die gemalte Banner-Reihe hochlaufen.
+    const cellW = big ? 'clamp(100px, 11cqw, 178px)' : 'clamp(80px, 10cqw, 150px)';
     return (
     <div style={{
       position: 'relative', zIndex: 2,
@@ -138,8 +141,8 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         ? {
             display: 'flex', flexWrap: 'wrap' as const,
             justifyContent: 'space-evenly', alignItems: 'flex-start',
-            rowGap: 'clamp(14px, 3cqh, 46px)', columnGap: 'clamp(18px, 4cqw, 82px)',
-            padding: 'clamp(8px, 1.5cqh, 24px) clamp(18px, 5cqw, 120px)',
+            rowGap: 'clamp(10px, 2cqh, 30px)', columnGap: 'clamp(18px, 4cqw, 82px)',
+            padding: 'clamp(6px, 1.2cqh, 18px) clamp(18px, 5cqw, 120px)',
           }
         : {
             display: 'grid',
@@ -155,14 +158,14 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         const src = crestFor(f.avatarId);
         // 2026-07-12 (Wolf): Finale-Wappen groesser/praesenter, damit die Mitte
         // gefuellt wirkt statt leer. Einzugs-Groesse (klein) unveraendert.
-        const disc = big ? 'clamp(96px, 10.5cqw, 186px)' : 'clamp(54px, 6cqw, 96px)';
+        const disc = big ? 'clamp(84px, 9cqw, 152px)' : 'clamp(54px, 6cqw, 96px)';
         return (
           <div key={f.avatarId} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: big ? 8 : 5,
             width: big ? cellW : '100%',
             // Finale: Zickzack-Versatz (jede 2. Fraktion tiefer) → verteilt die
             // Wappen organisch ueber die Arena-Flaeche statt in einer starren Linie.
-            marginTop: big ? (i % 2 === 1 ? 'clamp(16px, 3.4cqh, 58px)' : 0) : 0,
+            marginTop: big ? (i % 2 === 1 ? 'clamp(10px, 2.2cqh, 40px)' : 0) : 0,
             opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
             transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
             transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
@@ -195,10 +198,15 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       background: themed ? 'var(--qq-bg)' : undefined,
       fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       display: 'flex', flexDirection: 'column', alignItems: 'center',
-      // 2026-07-12 (Wolf 'Let's go oben-lastig, Leere oben'): im Finale Titel +
-      // Aufstellung als EINE zentrierte Gruppe, statt Titel oben angepinnt und
-      // Aufstellung tief im flex:1-Raum. Waehrend des Einzugs bleibt flex-start.
-      justifyContent: done ? 'center' : 'flex-start',
+      // 2026-07-16 (Wolf 'nicht die gemalten Wappen ueberschneiden'): arena-main
+      // hat die Fraktions-Banner OBEN gemalt und einen grossen offenen Boden UNTEN.
+      // Darum Titel oben ins Sky-Band (ueber den Bannern), Einzug/Aufstellung unten
+      // in den Boden → space-between haelt beide Zonen klar getrennt von der
+      // gemalten Banner-Reihe in der Mitte.
+      justifyContent: 'space-between',
+      paddingTop: 'clamp(14px, 2.6cqh, 40px)',
+      paddingBottom: 'clamp(18px, 3.4cqh, 52px)',
+      boxSizing: 'border-box',
     }}>
       {/* Farb-Flut der aktuellen Fraktion */}
       <div aria-hidden style={{
@@ -207,8 +215,8 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         transition: 'background 0.6s ease',
       }} />
 
-      {/* Titel */}
-      <div style={{ position: 'relative', zIndex: 2, marginTop: done ? 0 : 'clamp(22px, 4cqh, 52px)', marginBottom: done ? 'clamp(16px, 2.6cqh, 40px)' : 0, textAlign: 'center' }}>
+      {/* Titel — oben im Sky-Band (ueber den gemalten Bannern) */}
+      <div style={{ position: 'relative', zIndex: 2, flexShrink: 0, textAlign: 'center' }}>
         {/* 2026-07-15 (Wolf): graues fx-shield-faction ueber dem Titel RAUS — es
             fraß oben Hoehe und klemmte den Einzugs-Reveal. Gehoert woanders hin
             (Parkplatz). Ohne das Wappen passt die Reveal-Groesse wieder. */}
@@ -230,7 +238,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           der Buehne (der hat den Reveal oben gekappt). Ohne das graue Wappen + mit
           hoehen-gedeckelter Reveal-Groesse (min(clamp, cqh)) passt der Einzug ohne
           Overlap in den Platz; der Root clippt ohnehin die Aussenkanten. */}
-      <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
+      <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: done ? 'center' : 'flex-end', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 0 : 'clamp(8px, 1.6cqh, 24px)' }}>
         {done ? (
           // Smoothe Schluss-Transition (Wolf): die Startaufstellung steigt von
           // unten in die Mitte statt hart einzublenden.

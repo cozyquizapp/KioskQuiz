@@ -136,13 +136,19 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
   const rows = useMemo(() => [...ranking].sort((a, b) => a.rank - b.rank), [ranking]);
   const sc = qqScoreCatOf(state);
   const fm = qqFinaleMult(state);
+  // 2026-07-16 (Design-Audit): Beat A hatte feste Groessen (Avatar 64, Font 30) →
+  // bei 7-8 Fraktionen drohte unten Abschneiden. Jetzt dichter gestuft (analog zum
+  // responsiven rowH der CumulativeStandings), damit alle Zeilen ins Board passen.
+  const dense = rows.length > 6;
+  const avSz = dense ? 50 : 64;
+  const nameFs = dense ? 25 : 30;
   return (
     <div style={S.qrWrap}>
       <style>{KEYFRAMES}</style>
       {/* Finale-×2/×3 wird jetzt im Runden-Intro angesagt (Wolf 2026-07-16),
           nicht mehr als Banner mitten im Reveal. */}
       <div style={S.qrLabel}>{de ? 'Wertung dieser Frage' : 'This question’s scoring'}</div>
-      <div style={S.qrList}>
+      <div style={{ ...S.qrList, gap: dense ? 7 : 10 }}>
         {rows.map((r, i) => {
           const ava = AVA_BY_ID.get(r.avatarId);
           const color = ava?.color ?? '#EC4899';
@@ -151,11 +157,11 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           const scored = r.points > 0;
           const sub = qqScoreSub(sc, r, fm, de);
           return (
-            <div key={r.avatarId} style={{ ...S.qrRow, animation: 'brRankIn 0.5s ease both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
+            <div key={r.avatarId} style={{ ...S.qrRow, ...(dense ? { padding: '7px 22px', gap: 14 } : {}), animation: 'brRankIn 0.5s ease both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
               <span style={S.qrRank}>{medal ? <QQEmojiIcon emoji={medal} /> : i + 1}</span>
-              <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={64} />
+              <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={avSz} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 30, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
+                <div style={{ fontSize: nameFs, fontWeight: 900, color, lineHeight: 1.1, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{name}</div>
                 <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} baseDelay={i * 0.32} label={sub.label} showDots={sub.showDots} />
               </div>
               <span style={{
@@ -700,7 +706,7 @@ const S: Record<string, React.CSSProperties> = {
   qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px 12%', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
   qrLabel: { fontSize: 24, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6, fontWeight: 900 },
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
-  qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.05)' },
+  qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   qrPts: { fontWeight: 900, fontSize: 42, minWidth: 116, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
   qrFoot: { fontSize: 20, fontWeight: 700, opacity: 0.5, textAlign: 'center', marginTop: 4 },
@@ -728,7 +734,7 @@ const S: Record<string, React.CSSProperties> = {
   standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px 12%', color: '#f4f6ff', overflow: 'hidden' },
   standLabel: { fontSize: 22, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800 },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
-  standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(255,255,255,0.045)' },
+  standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   standBarTrack: { flex: 1, height: 32, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'visible' },
   standVal: { width: 132, textAlign: 'right', fontWeight: 900, fontSize: 40, fontVariantNumeric: 'tabular-nums' },

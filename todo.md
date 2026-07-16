@@ -39,17 +39,19 @@
 - 🟠 Cheese-Reveal (Arena): Anzahl-richtig pro Fraktion + Rang nach Anzahl (Speed = Tiebreak).
 - 🟠 Scoring-Tabelle: beide PLACEMENT-Beats nutzen jetzt Standings-Board-BG (`standing`); scoring.webp ungenutzt.
 - 🔴 Schätzchen-Reveal Redesign: Strahl oben (nur Ticks + Wahrheit) + 2-spaltige Rangliste (4×2), Chip-Lanes/Connectors/Krone raus.
+- 🔴 MUCHO Arena: 2×2 aktiv → 4 Reihen beim Reveal (flex-wrap 50%→100%, animiert) + Frage kleiner, Höhen-Caps gegen Overflow.
+- 🔴 Top5 Arena: kein „Rundensieger"-Krönung mehr → neutrales „Meiste Treffer" (Akzent statt Gold), konsistent mit Kronen-raus.
+- 🔴 Team-Vorstellung: TEAMS_REVEAL-BG → arena-main, Content in Sky (Titel oben) / Boden (Aufstellung unten), klar von gemalten Bannern getrennt.
 
-**Offene Punkte:**
-- [ ] 🔴 **MUCHO 2×2→4-Reihen** (s.o.), `MuchoOptionsReveal` in `QQBeamerPage.tsx` (~3774).
-- [ ] 🔴 **Top5:** „alle sind Rundensieger egal welche Antwort" = unlogisch → **neue gemeinsame Darstellung**
-      überlegen (`components/reveals/Top5Reveal.tsx`).
-- [ ] 🔴 **arena-main.webp:** Wappen + Startaufstellung + „Los geht's" mittig so, dass sie die im BG
-      gemalten Wappen NICHT überschneiden (`CozyQuizTeamsRevealView` ArenaEntranceView).
+**Offen (braucht Wolf / Beamer):**
 - [ ] ⏳ **Bild fürs Vorstellen** (Wappen fliegen zu festen Ständen) — Wolf liefert Bild, dann Flug-Reveal
       mit 8 Ankern bauen.
-- [ ] **Beamer-Verify** der visuellen Tunings: Schätzchen-Entzerrung, MUCHO-Höhe, Placement-Lift
-      (`paddingBottom`-Regler), CozyGuessr-Transparenz.
+- [ ] **Beamer-Verify** der visuellen Tunings dieses Batches (Wolf am Beamer): Schätzchen-Redesign (Strahl-Ticks
+      + 2-spalt. Liste bei 8 Fraktionen) · MUCHO 2×2→4-Reihen-Morph + Frage-Shrink (Overflow? smooth?) ·
+      Team-Vorstellung arena-main (Titel/Einzug/Aufstellung überschneiden Banner nicht mehr?) · Scoring nutzt
+      Standings-BG (sitzt im Board?) · Cheese Anzahl-richtig-Layout · 10v10 Wappen unter Feldern · CozyGuessr
+      rotes BG · Finale-Ansage im Intro (×2/×3).
+- [ ] 🎂 **Kuchendiagramm** (optional, Wolf entscheidet ob bauen): möglich bei MUCHO (A/B/C/D-Split) oder 10v10.
 
 ---
 

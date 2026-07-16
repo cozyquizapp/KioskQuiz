@@ -75,6 +75,16 @@
 - **Rules auf Fraktion** (Mega-Regelset): „Team"→„Fraktion" DE+EN, Doppelung entzerrt (Slide1 Zugehörigkeit / Slide3 Wertung). Klassisches Grid-Regelset bleibt „Team". ⚠️ Falls `/rules-editor`-Overrides in localStorage → dort auch anpassen (nur Defaults geändert).
 - **BUG Bot-Test**: `/moderator-test` startete immer in CozyQuiz → jetzt `?arena=1`/`?mega=1` startet Arena (largeGroupMode+nested, 24 Bots) vor dem Bot-Spawn.
 
+**Nachgezogen #2b (Wolf 2026-07-16, gepusht):**
+- **BUG Bot-Test (korrigiert)**: `/moderator-test` startete beim Reload SOFORT ins Quiz statt im Setup zu warten. Auto-Start jetzt OPT-IN via `?run=1` (+`?arena=1`/`?mega=1`). Ohne Param bleibt die Seite im Moderator-Setup.
+- **CozyGuessr roter Stich**: Ranking-Panel neutral-dunkel statt rot (das rote Kolosseum scheint eh durch). Map: **CartoDB Dark**.
+- **Arena-Antwort-Zähler**: Wappen zeigt nur noch die **Anzahl** geantworteter Subteams (kein „1/5"), beide Footer (Cheese + normal), Badge grösser. Fraktion grünt komplett wenn alle Handys in.
+- **bild 1 gelöst**: rundes Wappen an der Wand RAUS (doppelte das gemalte arena-main-Banner-Wappen) → nur weicher Farb-Halo + Namensschild. Die gemalten Banner SIND die Aufstellung.
+- **Special-Award-Bonuspunkte**: `QQ_MEGA_AWARD_BONUS=50` (+`qqMegaAwardBonusFor`), addiert in `qqSortedGroups` (nur am Spielende) → Standings/Krönung/Endstand konsistent; Award-Beat zeigt „+50 Punkte"-Pille. test:scoring 10/10. ⚠️ Bonus greift erst am Ende (laufende Standings ohne) → knapper Führender kann von Multi-Award-Fraktion überholt werden (gewollte Spannung; bei zu viel Swing → 25 oder honorär). Bestenlisten-Persistenz nutzt weiter Rohpunkte (bei Bedarf nachziehen).
+
+**🟠 Offen — Wolf liefert selbst:**
+- **Breitbild-Award-BGs je Fraktion** (`frontend/public/arena-bg/award-<slug>.webp`, 16:9): Drop-in-Mechanismus steht (Layer über `faction-<slug>.webp`-Fallback in `MegaAwardBeat`) → greifen automatisch sobald geliefert. ⚠️ Wolfs VS Code verarbeitet zu grosse Bilder nicht → Wolf liefert/optimiert selbst. Slugs: bauchgefuehl/glueckstreffer/feierabend/letztesekunde/allwissen/improvisation/einspruch/risiko.
+
 **🟠 Offen — Richtung gelockt, BUILD als nächstes:**
 - **bild 4 — Antwort-Ergebnis „Wappen-Wahltafel + Zahl-Badge"** (Wolf-Idee „Zahl der (richtigen) Sub-Teams im Wappen"): statt dünner Farbsegmente (`MegaOptionBar`, von weitem Matsch) → große Fraktions-Wappen + große Zahl-Badge (Sub-Team-/Richtig-Anzahl), richtige Antwort grün+Haken. Gilt für MUCHO + Choice. Detail-Wertung liegt eh im Scoring-Beat.
 

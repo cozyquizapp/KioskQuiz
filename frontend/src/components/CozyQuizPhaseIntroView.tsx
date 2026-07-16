@@ -356,6 +356,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Frage-Reveal (SchaetzchenReveal etc.) behaelt seine Kategorie-Farbe.
   const catColor = (s as any).largeGroupMode ? color : ((cat && CAT_COLORS[cat]) || color);
 
+  // ── Finale-Multiplikator-Ansage (Wolf 2026-07-16) ──────────────────────────
+  // Frueher lief ein „×2/×3"-Banner MITTEN im Wertungs-Reveal — Wolf will es im
+  // Runden-Intro angesagt. Spiegelt qqFinaleMult (das die Wertung tatsaechlich
+  // rechnet, s. CozyQuizLargeGroupView): Finalrunde iff gamePhaseIndex ===
+  // totalPhases, ×3 auf der allerletzten Frage der Phase, sonst ×2. Nur Arena.
+  const arenaFinaleMult: 1 | 2 | 3 = !((s as any).largeGroupMode)
+    ? 1
+    : ((s.gamePhaseIndex ?? 1) !== (s.totalPhases ?? 3))
+    ? 1
+    : ((s.questionIndex % 5) === 4 ? 3 : 2);
+
   // Wolf 2026-05-05: Texte sind editierbar im /rules-editor.
   // Defaults bleiben hier als Fallback erhalten.
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
@@ -858,6 +869,34 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           }}
         />
       )}
+      {/* Finale-Ansage: Top-Overlay im Arena-Finalrunden-Intro. Nicht in Step 1
+          (Regel-Reminder pinnt dort einen Titel oben → Kollision). Runden-Intro
+          zeigt „FINALRUNDE ×2 · Schlussfrage ×3", die letzte Frage „SCHLUSSFRAGE
+          ×3". Ersetzt den frueheren Mid-Reveal-Banner (Wolf 2026-07-16). */}
+      {arenaFinaleMult > 1 && s.introStep !== 1 && (
+        <div style={{
+          position: 'absolute', top: 'clamp(14px, 2.4cqh, 36px)', left: '50%', transform: 'translateX(-50%)',
+          zIndex: 6, pointerEvents: 'none',
+          display: 'inline-flex', alignItems: 'center', gap: 'clamp(8px, 1cqw, 14px)',
+          padding: 'clamp(6px,0.9cqh,11px) clamp(14px,1.6cqw,24px)', borderRadius: 999,
+          background: 'linear-gradient(90deg, #A21247, #EC4899)',
+          boxShadow: '0 8px 30px rgba(162,18,71,0.42)',
+          animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
+        }}>
+          <span aria-hidden style={{ fontSize: 'clamp(18px,2cqw,28px)', lineHeight: 1 }}>🔥</span>
+          <span style={{ fontWeight: 900, fontSize: 'clamp(15px,1.7cqw,24px)', letterSpacing: '0.06em', color: '#fff' }}>
+            {arenaFinaleMult === 3
+              ? (lang === 'de' ? 'SCHLUSSFRAGE' : 'FINAL QUESTION')
+              : (lang === 'de' ? 'FINALRUNDE' : 'FINAL ROUND')}
+          </span>
+          <span style={{ fontWeight: 900, fontSize: 'clamp(17px,1.9cqw,26px)', color: '#fff', background: 'rgba(0,0,0,0.24)', borderRadius: 10, padding: '1px 10px', fontVariantNumeric: 'tabular-nums' }}>×{arenaFinaleMult}</span>
+          {arenaFinaleMult === 2 && (
+            <span style={{ fontWeight: 800, fontSize: 'clamp(12px,1.3cqw,17px)', color: 'rgba(255,255,255,0.9)' }}>
+              {lang === 'de' ? '· Schlussfrage ×3' : '· final question ×3'}
+            </span>
+          )}
+        </div>
+      )}
       <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${displayColor}88` : `${catColor ?? color}88`} />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 
@@ -930,6 +969,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqCatHeroBob {
           0%, 100% { transform: translateY(0); }
           50%      { transform: translateY(-12px); }
+        }
+        /* Finale-Hinweis-Pill faellt sanft von oben ein (Wolf 2026-07-16). */
+        @keyframes qqFinaleHintIn {
+          0%   { opacity: 0; transform: translate(-50%, -14px); }
+          100% { opacity: 1; transform: translate(-50%, 0); }
         }
       `}</style>
 

@@ -1794,7 +1794,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           const isFastest = showTimePills && bi === 0;
                           // Sieger-Chip = höchster Bet auf korrekter Option (auch solo,
                           // unabhängig vom Tie-Speed-Indikator) → bekommt die Krone.
-                          const isWinnerChip = isCorrect && bi === 0;
+                          // In der Arena KEINE Krone (anteilige Punkte, kein klassischer
+                          // Sieger pro Frage) — Wolf-Livetest 2026-07-16.
+                          const isWinnerChip = isCorrect && bi === 0 && !isMegaTeams;
                           // Dim-Logik bewusst entfernt (User-Feedback): ZvZ-Voter-Chips
                           // bleiben voll opak auf allen Optionen, Falsch-Markierung
                           // laeuft nur ueber die Card selbst (Rand + Text gedimmt).

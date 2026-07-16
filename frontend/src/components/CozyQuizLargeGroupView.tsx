@@ -55,25 +55,9 @@ function qqFinaleMult(state: QQStateUpdate): 1 | 2 | 3 {
   return (qi % qpp) === (qpp - 1) ? 3 : 2;
 }
 
-// „×2 FINALE / ×3 SCHLUSSFRAGE"-Banner — macht die hoeheren Punkte im Finale
-// verstaendlich und liefert die „steigende Einsaetze"-Dramatik.
-function FinaleBanner({ mult, de }: { mult: 1 | 2 | 3; de: boolean }) {
-  if (mult <= 1) return null;
-  const label = mult === 3 ? (de ? 'SCHLUSSFRAGE' : 'FINAL QUESTION') : (de ? 'FINALE' : 'FINALE');
-  return (
-    <div style={{
-      display: 'inline-flex', alignItems: 'center', gap: 14, alignSelf: 'center',
-      padding: '9px 24px', borderRadius: 999,
-      background: 'linear-gradient(90deg, #A21247, #EC4899)',
-      animation: 'qqFinalePulse 1.8s ease-in-out infinite',
-    }}>
-      <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}>🔥</span>
-      <span style={{ fontWeight: 900, fontSize: 27, letterSpacing: '0.08em', color: '#fff' }}>{label}</span>
-      <span style={{ fontWeight: 900, fontSize: 30, color: '#fff', background: 'rgba(0,0,0,0.24)', borderRadius: 11, padding: '2px 13px', fontVariantNumeric: 'tabular-nums' }}>×{mult}</span>
-      <span style={{ fontWeight: 800, fontSize: 17, color: 'rgba(255,255,255,0.88)' }}>{de ? 'Punkte zählen mehr' : 'points count more'}</span>
-    </div>
-  );
-}
+// Der fruehere „×2/×3"-FinaleBanner (mitten im Reveal) ist entfernt — die
+// Finale-Ansage laeuft jetzt im Runden-Intro (CozyQuizPhaseIntroView,
+// Wolf 2026-07-16). qqFinaleMult bleibt: die Score-Unterzeile braucht die Basis.
 
 // Zahl weich hochzählen (Renn-Drama). performance.now ist im Browser ok.
 function useCountUp(target: number, ms = 900): number {
@@ -152,7 +136,8 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
   return (
     <div style={S.qrWrap}>
       <style>{KEYFRAMES}</style>
-      <FinaleBanner mult={qqFinaleMult(state)} de={de} />
+      {/* Finale-×2/×3 wird jetzt im Runden-Intro angesagt (Wolf 2026-07-16),
+          nicht mehr als Banner mitten im Reveal. */}
       <div style={S.qrLabel}>{de ? 'Wertung dieser Frage' : 'This question’s scoring'}</div>
       <div style={S.qrList}>
         {rows.map((r, i) => {
@@ -274,7 +259,7 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   return (
     <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <style>{KEYFRAMES}</style>
-      <FinaleBanner mult={qqFinaleMult(state)} de={de} />
+      {/* Finale-×2/×3 jetzt im Runden-Intro (Wolf 2026-07-16), nicht mehr hier. */}
       <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
       <div style={{ position: 'relative', height: shown.length * rowH, width: '100%', maxWidth: 1100 }}>
         {shown.map(t => (
@@ -388,12 +373,12 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
             color: team.color, whiteSpace: 'nowrap',
             textShadow: `0 2px 10px ${team.color}, 0 0 4px rgba(0,0,0,0.6)`,
             pointerEvents: 'none', animation: 'qqLeadCallout 1.2s ease-out both',
-          }}><QQEmojiIcon emoji="👑" /> {de ? 'Führung!' : 'Lead!'}</span>
+          }}><QQEmojiIcon emoji="📈" /> {de ? 'Führung!' : 'Lead!'}</span>
         </>
       )}
-      <span style={S.standRank}>{isLeader
-        ? <span style={{ display: 'inline-flex', animation: 'qqCrownBounce 1.6s ease-in-out infinite', filter: `drop-shadow(0 3px 8px ${team.color}aa)` }}><QQEmojiIcon emoji="👑" /></span>
-        : rank + 1}</span>
+      {/* Arena: keine Krone im Standing (anteilige Punkte, kein klassischer Sieger).
+          Fuehrung wird nur ueber Glow/Scale/„Fuehrung!"-Callout markiert. */}
+      <span style={S.standRank}>{rank + 1}</span>
       <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={62} />
       <div style={{ width: 260, minWidth: 0 }}>
         <TeamNameLabel name={team.name} fontSize={30} color={team.color} fontWeight={900} maxLines={1} shrinkAfter={16} />
@@ -663,7 +648,9 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           const medal = i < 3 && t.largestConnected > 0 ? MEDALS[i] : null;
           return (
             <div key={t.id} style={{ ...S.goRow, top: i * 62 }}>
-              <span style={S.goRank}>{i === 0 && t.largestConnected > 0 ? <QQEmojiIcon emoji="👑" /> : i + 1}</span>
+              {/* Endstand-Liste: keine Krone (#1 traegt schon 🥇 in der Einheit-
+                  Spalte; der Champion wird im Kroenungs-Beat + Hero gefeiert). */}
+              <span style={S.goRank}>{i + 1}</span>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={44} />
               <div style={{ width: 220, minWidth: 0 }}>
                 <TeamNameLabel name={t.name} fontSize={24} color={t.color} fontWeight={900} maxLines={1} shrinkAfter={16} />

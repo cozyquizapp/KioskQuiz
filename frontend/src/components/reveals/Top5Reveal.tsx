@@ -222,12 +222,20 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(12px,1.4cqw,24px)', borderRadius: 20,
-              background: 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(236,72,153,0.10))',
-              border: '2.5px solid rgba(250,204,21,0.65)', boxShadow: '0 0 48px rgba(250,204,21,0.25)',
+              // Arena: KEINE Gold-Kroenung (anteilige Punkte, kein Rundensieger) →
+              // neutraler Akzent-Rahmen + „Meiste Treffer"-Framing statt „Rundensieger".
+              // Wolf 2026-07-16 (konsistent mit Kronen-raus im ganzen Batch).
+              background: isMega
+                ? 'linear-gradient(135deg, rgba(236,72,153,0.14), rgba(162,18,71,0.08))'
+                : 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(236,72,153,0.10))',
+              border: isMega ? '2.5px solid rgba(236,72,153,0.6)' : '2.5px solid rgba(250,204,21,0.65)',
+              boxShadow: isMega ? '0 0 44px rgba(236,72,153,0.22)' : '0 0 48px rgba(250,204,21,0.25)',
               animation: 'qqT5v2Rise 0.55s var(--qq-ease-bounce) both',
             }}>
               <span style={{ fontSize: 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
-                <QQEmojiIcon emoji="🏆" /> {winners.length > 1 ? (lang === 'en' ? 'Round winners' : 'Rundensieger') : (lang === 'en' ? 'Round winner' : 'Rundensieger')}
+                {isMega
+                  ? <><QQEmojiIcon emoji="🎯" /> {lang === 'en' ? 'Most hits' : 'Meiste Treffer'}</>
+                  : <><QQEmojiIcon emoji="🏆" /> {winners.length > 1 ? (lang === 'en' ? 'Round winners' : 'Rundensieger') : (lang === 'en' ? 'Round winner' : 'Rundensieger')}</>}
               </span>
               {isMega ? (
                 <FactionCountAvatars
@@ -246,9 +254,12 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 );
               })}
               <span style={{
-                fontSize: 'clamp(16px,1.7cqw,28px)', fontWeight: 900, color: QQ_COLORS.yellow300,
+                fontSize: 'clamp(16px,1.7cqw,28px)', fontWeight: 900,
+                color: isMega ? 'var(--qq-accent)' : QQ_COLORS.yellow300,
                 padding: 'clamp(5px,0.7cqh,10px) clamp(12px,1.3cqw,22px)', borderRadius: 'var(--qq-pill-radius)',
-                background: 'rgba(250,204,21,0.14)', border: '1.5px solid rgba(250,204,21,0.5)', fontVariantNumeric: 'tabular-nums',
+                background: isMega ? 'rgba(var(--qq-accent-rgb),0.16)' : 'rgba(250,204,21,0.14)',
+                border: isMega ? '1.5px solid rgba(var(--qq-accent-rgb),0.5)' : '1.5px solid rgba(250,204,21,0.5)',
+                fontVariantNumeric: 'tabular-nums',
               }}>{topHits} / {n} {lang === 'en' ? 'correct' : 'richtig'}</span>
             </div>
           )

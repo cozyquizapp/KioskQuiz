@@ -207,11 +207,11 @@ function Dots({ correct, total, color, de, avgSec, baseDelay = 0, label, showDot
           })}
         </span>
       )}
-      <span style={{ fontSize: 17, fontWeight: 800, opacity: 0.7 }}>
+      <span style={{ fontSize: 'clamp(17px, 1.6cqw, 24px)', fontWeight: 800, opacity: 0.75 }}>
         {label}
       </span>
       {timeStr && (
-        <span style={{ fontSize: 16, fontWeight: 800, opacity: 0.6, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+        <span style={{ fontSize: 'clamp(15px, 1.4cqw, 21px)', fontWeight: 800, opacity: 0.65, display: 'inline-flex', alignItems: 'center', gap: 4 }}>
           <span aria-hidden style={{ opacity: 0.7 }}>·</span>
           <span aria-hidden>⚡</span>{de ? `Ø ${timeStr}` : `avg ${timeStr}`}
         </span>

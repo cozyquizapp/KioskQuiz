@@ -355,7 +355,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
             zIndex: 1000, maxWidth: 'calc(100% - 80px)', justifyContent: 'center',
           }}>
             <span style={{
-              fontSize: 13, fontWeight: 900, color: '#FBCFE8',
+              fontSize: 'clamp(14px, 1.3cqw, 20px)', fontWeight: 900, color: '#FBCFE8',
               letterSpacing: 0.3, textTransform: 'uppercase',
             }}>
               {lang === 'en' ? '✈ Far away' : '✈ Weit weg'}
@@ -372,7 +372,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                 }}>
                   <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={28} />
                   <span style={{
-                    fontWeight: 900, color: team.color, fontSize: 13,
+                    fontWeight: 900, color: team.color, fontSize: 'clamp(14px, 1.3cqw, 20px)',
                     fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2,
                   }}>
                     {(p.distKm ?? 0) >= 1000 ? `${((p.distKm ?? 0) / 1000).toFixed(1)} Mm` : `${Math.round(p.distKm ?? 0)} km`}

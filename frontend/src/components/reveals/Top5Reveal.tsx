@@ -153,7 +153,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: 'var(--qq-card-text)',
                   background: 'linear-gradient(135deg,#334155,#1e293b)',
                 }}>#{rank}</div>
-                <div style={{ fontSize: 'clamp(20px,2.4cqw,36px)', fontWeight: 900, color: '#475569', letterSpacing: '0.5em' }}>· · ·</div>
+                <div style={{ fontSize: 'clamp(20px,2.4cqw,36px)', fontWeight: 900, color: 'rgba(148,163,184,0.5)', letterSpacing: '0.5em' }}>· · ·</div>
                 <div /><div />
               </div>
             );

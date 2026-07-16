@@ -13,6 +13,52 @@
 
 ---
 
+## 🔴 AKTUELLER LIVETEST-BATCH (Wolf 2026-07-16) — ZUERST
+
+> Wolf-Livetest CozyArena. Reihenfolge: 🟢 klein → 🟠 mittel → 🔴 Redesign.
+> **Bereits gefixt (gepusht) diese Session:** Rules-Wolf (echter CozyWolf) + Bildband-
+> Übergang stärker + Stepper-Schiene unter die Pillen · Teams-Reveal graues Wappen raus +
+> Größe höhen-gedeckelt · Arena-Runden-Farbe **Gold→Magenta konstant alle Runden** (Titel+
+> Tree+Umrahmung) · MUCHO-Balken niedriger · Schätzchen-Entzerrung enger · Placement-Tabelle
+> ins Rahmen-Band gehoben · CozyGuessr-Panel halbtransparent.
+
+**Locked Entscheidungen (Wolf):**
+- **Schätzchen-Reveal:** Strahl OBEN (nur farbige Ticks + Wahrheit, KEINE Werte am Strahl) +
+  Rangliste DARUNTER **2-spaltig (4×2 bei 8 Teams)**, design-optimiert. Zielscheibe verworfen
+  (Werte sind 1D). Sieger-Krönung in Arena RAUS.
+- **10v10:** Wappen der Höchst-Bieter **unter die 1/2/3-Felder** (nicht drüber/transparent).
+- **MUCHO:** Frage-aktiv **2×2-Raster** → beim Reveal auf **4 Reihen + Frage kleiner**, smooth transition.
+- **Kuchendiagramm:** möglich bei **MUCHO** (A/B/C/D-Split) oder **10v10** (3 Optionen). Noch nicht
+  entschieden ob bauen. War nie fest einer Kategorie zugeordnet (todo Reveal-Rethink).
+
+**Offene Punkte:**
+- [ ] 🟢 **CozyGuessr rechts:** halbtransparentes Panel zeigt dahinter NICHTS → das **rote Bunte-
+      Tüte-BG** dahinterlegen (liegt aktuell keins). Prüfen: bekommt der Map-Reveal in Arena den
+      Kategorie-BG (BUNTE_TUETE = rot)? Sonst BG wiren.
+- [ ] 🟢 **Kronen raus** in ALLEN CozyArena-Reveals (kein klassischer Sieger, anteilige Punkte).
+      Stellen u.a.: `CozyQuizLargeGroupView` 391/395/666, `CozyQuizQuestionView` 1837,
+      Schätzchen-Verdikt „🏆 leads". Mega-gaten.
+- [ ] 🟢 **10v10:** Wappen unter die Felder (s.o.).
+- [ ] 🟢 **Finale ×2/×3:** Banner mittendrin raus → schon im **Runden-Intro** ansagen („Finalrunde
+      ×2", letzte Frage „×3"), bei letzter Kategorie „×3" aufs Intro-Banner.
+- [ ] 🟠 **Cheese-Reveal:** auch **Anzahl-richtig pro Fraktion + Speed-Tiebreak** anzeigen (wie andere).
+- [ ] 🟠 **Scoring-Tabelle (Beat A, „Wertung dieser Frage"):** sitzt nicht im BG-Rahmen → kleiner ODER
+      **gleicher BG wie Standings** (Standings/Beat B ist gut). `MegaQuestionRanking` in `CozyQuizLargeGroupView`.
+- [ ] 🔴 **Schätzchen-Reveal Redesign** (Struktur oben locked). Datei `components/reveals/SchaetzchenReveal.tsx`:
+      Bühne (Z. ~250-479) neu → Top-Band Antwort+Strahl(Ticks), Bottom-Band 2-spalt. Liste. Daten
+      behalten (`rankedFinal`, `ptsOfAvatar`, `tx`, `axisPct`, `shown`, Beats). Chip-Lanes+Connectors raus.
+- [ ] 🔴 **MUCHO 2×2→4-Reihen** (s.o.), `MuchoOptionsReveal` in `QQBeamerPage.tsx` (~3774).
+- [ ] 🔴 **Top5:** „alle sind Rundensieger egal welche Antwort" = unlogisch → **neue gemeinsame Darstellung**
+      überlegen (`components/reveals/Top5Reveal.tsx`).
+- [ ] 🔴 **arena-main.webp:** Wappen + Startaufstellung + „Los geht's" mittig so, dass sie die im BG
+      gemalten Wappen NICHT überschneiden (`CozyQuizTeamsRevealView` ArenaEntranceView).
+- [ ] ⏳ **Bild fürs Vorstellen** (Wappen fliegen zu festen Ständen) — Wolf liefert Bild, dann Flug-Reveal
+      mit 8 Ankern bauen.
+- [ ] **Beamer-Verify** der visuellen Tunings: Schätzchen-Entzerrung, MUCHO-Höhe, Placement-Lift
+      (`paddingBottom`-Regler), CozyGuessr-Transparenz.
+
+---
+
 ## 🎨 DESIGN-SWEEP (Anti-ADHS-Schlussstrich)
 
 **→ [`DESIGN_SWEEP.md`](DESIGN_SWEEP.md)** = der einmalige Design-Durchlauf (Beamer+Team,

@@ -63,6 +63,21 @@
   - Slugs in QQIcon-Registry (Union + Fallback-Emoji + Emoji→Slug) eingetragen. Award-Form = **Wolf-Maskottchen** (bestätigt).
   - ✅ **Transparente Versionen geliefert** (Zip „logos für website" = 2/3/4.png) → eingebackene ersetzt. Zusätzlich mit `sharp` von ~3 MB/1920px auf **512px / ~42-47 KB** runterskaliert (waren über der 2-MiB-Workbox-Precache-Grenze → hätte den Build gebrochen). Jetzt sauber freigestellt + leicht. Originale als Backup im Scratchpad.
 
+**Nachgezogen (Wolf-Feedback-Batch 2026-07-16 #2, gepusht):**
+- **bild 2 Scoring** (`LargeGroupStandingsView`): Fuß-Satz „Je besser eure Fraktion…" raus + Block runter (`qrWrap` padding `7%..4%`) → Titel „Wertung dieser Frage" nicht mehr vom Rahmen abgeschnitten.
+- **bild 3 Standings**: Block leicht runter (`standWrap` padding `5%..7%`), Titel im Feld.
+- **bild 6 Special-Awards**: eigener **Fraktions-Arena-BG je Award** (`faction-<slug>.webp`+Scrim) statt generischem Feuerwerk-BG (pro Award anders); Icon/Titel/Wappen kleiner → Sieger-Wappen nicht mehr abgeschnitten.
+- **CozyGuessr**: Root-BG in Arena TRANSPARENT (statt fast-opakem rotem Gradient) → `cat-buntetuete`-Kolosseum scheint rechts durchs Panel. Map: **Voyager → CartoDB Dark Matter** (ruhig, arena-passend, Pins leuchten).
+- **Cheese-Portrait**: Blur-Backdrop-Gate von `nestedTeams` auf EXAKTE Arena-BG-Bedingung (`qqIsMega + arenaBackgrounds + !themed`) → Kolosseum rechts sichtbar.
+- **Rundenintro-BG**: per-Asset Fokus-Override (`ARENA_BG_FOCUS`, Zoom+Position) → Boden-Kristall näher an Bildmitte. ⚠️ Beamer-Nudge: `rundenintro: 'center 66% / 116%'`.
+- **Final-Reveal Krönung GRÖSSER+zentral** (Wolf „es ist DER Moment, spielt sich klein oben ab"): Banner-Roulette groß+tiefer (12cqh statt 4cqh), beim **Lock großer Sieger-Name zentral**, Treppchen+„Champions" größer; Banner schrumpfen erst beim Treppchen zur Kopf-Leiste.
+- **bild 5 Schätzchen-Sieger**: Sieger-Wappen deutlich größer (`68..134` vs Rest `38..68`) + dicker Gold-Doppelring + **Krone**, Rest stärker gedimmt (`DIM 0.62→0.5`) → klar wer gewann (Punkte-Sieger, nicht zwingend nächster Tipp).
+- **Rules auf Fraktion** (Mega-Regelset): „Team"→„Fraktion" DE+EN, Doppelung entzerrt (Slide1 Zugehörigkeit / Slide3 Wertung). Klassisches Grid-Regelset bleibt „Team". ⚠️ Falls `/rules-editor`-Overrides in localStorage → dort auch anpassen (nur Defaults geändert).
+- **BUG Bot-Test**: `/moderator-test` startete immer in CozyQuiz → jetzt `?arena=1`/`?mega=1` startet Arena (largeGroupMode+nested, 24 Bots) vor dem Bot-Spawn.
+
+**🟠 Offen — Richtung gelockt, BUILD als nächstes:**
+- **bild 4 — Antwort-Ergebnis „Wappen-Wahltafel + Zahl-Badge"** (Wolf-Idee „Zahl der (richtigen) Sub-Teams im Wappen"): statt dünner Farbsegmente (`MegaOptionBar`, von weitem Matsch) → große Fraktions-Wappen + große Zahl-Badge (Sub-Team-/Richtig-Anzahl), richtige Antwort grün+Haken. Gilt für MUCHO + Choice. Detail-Wertung liegt eh im Scoring-Beat.
+
 **Offen (braucht Wolf / Beamer):**
 - ✅ **Bild 1 — Wappen fliegen an die Stände** (Wolf: arena-main.webp, „deckungsgleich einrasten"): ArenaEntranceView
       umgebaut — nach jeder Vorstellung fliegt das Wappen hoch an sein gemaltes Banner (`BANNER_ANCHORS` per avatarId,

@@ -209,15 +209,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
 
       {/* Titel */}
       <div style={{ position: 'relative', zIndex: 2, marginTop: done ? 0 : 'clamp(22px, 4cqh, 52px)', marginBottom: done ? 'clamp(16px, 2.6cqh, 40px)' : 0, textAlign: 'center' }}>
-        {/* 2026-07-15 (Wolf-Lieferung): neutrales Fraktions-Wappen als Sektions-Marker
-            ueber dem Titel der Team-Vorstellung. */}
-        <img src="/icons/fx-shield-faction.png" alt="" aria-hidden draggable={false} style={{
-          width: 'clamp(46px, 5.2cqw, 88px)', height: 'auto', display: 'block',
-          margin: '0 auto clamp(4px, 0.9cqh, 12px)',
-          filter: `drop-shadow(0 4px 12px rgba(0,0,0,0.45)) drop-shadow(0 0 16px ${curColor}55)`,
-          animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both',
-        }} />
-        {/* 2026-07-15 (Design-Sweep S4, color-contrast): Titel + Eyebrow sitzen
+        {/* 2026-07-15 (Wolf): graues fx-shield-faction ueber dem Titel RAUS — es
+            fraß oben Hoehe und klemmte den Einzugs-Reveal. Gehoert woanders hin
+            (Parkplatz). Ohne das Wappen passt die Reveal-Groesse wieder. */}
+        {/* Titel + Eyebrow sitzen
             transparent ueber dem Arena-Foto-BG → Text-Shadow garantiert Lesbarkeit
             auch ueber hellen Bildstellen (themed = flacher Skin-BG, braucht keinen). */}
         <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', textShadow: themed ? 'none' : '0 2px 12px rgba(0,0,0,0.75)' }}>
@@ -231,11 +226,11 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       {/* Bühne: Einzug (aktuelle Fraktion) ODER — wenn fertig — die grosse
           zentrierte Startaufstellung (fuellt die Mitte statt leerem Raum;
           Wolf 2026-07-04 'leerer space in der mitte'). */}
-      {/* 2026-07-15 (Design-Sweep S4, Wolf 'Text HINTER den Wappen'): waehrend des
-          Einzugs die Reveal-Buehne clippen, damit ein zu hoher Reveal (kleiner
-          Container/16:9-Vorschau) sich NICHT ueber die Aufstellung darunter schiebt.
-          Im Finale (done) overflow visible → volle Glow-Ausbreitung der Aufstellung. */}
-      <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, overflow: done ? 'visible' : 'hidden' }}>
+      {/* 2026-07-15 (Wolf 'oben abgeschnitten'): KEIN eigener overflow-Clip mehr auf
+          der Buehne (der hat den Reveal oben gekappt). Ohne das graue Wappen + mit
+          hoehen-gedeckelter Reveal-Groesse (min(clamp, cqh)) passt der Einzug ohne
+          Overlap in den Platz; der Root clippt ohnehin die Aussenkanten. */}
+      <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0 }}>
         {done ? (
           // Smoothe Schluss-Transition (Wolf): die Startaufstellung steigt von
           // unten in die Mitte statt hart einzublenden.
@@ -247,8 +242,8 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           return (
             <div key={enterIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.4cqh, 20px)', animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
               {src
-                ? <img src={src} alt="" draggable={false} style={{ width: 'min(clamp(140px, 20cqw, 340px), 34cqh)', height: 'auto', filter: `drop-shadow(0 0 60px ${curColor}88) drop-shadow(0 16px 30px rgba(0,0,0,0.55))` }} />
-                : <QQTeamAvatar avatarId={cur.avatarId} teamEmoji={qqMegaFactionSlug(cur.avatarId)} size={'min(clamp(140px, 20cqw, 340px), 34cqh)'} style={{ boxShadow: `0 0 60px ${curColor}88` }} />}
+                ? <img src={src} alt="" draggable={false} style={{ width: 'min(clamp(150px, 20cqw, 340px), 36cqh)', height: 'auto', filter: `drop-shadow(0 0 60px ${curColor}88) drop-shadow(0 16px 30px rgba(0,0,0,0.55))` }} />
+                : <QQTeamAvatar avatarId={cur.avatarId} teamEmoji={qqMegaFactionSlug(cur.avatarId)} size={'min(clamp(150px, 20cqw, 340px), 36cqh)'} style={{ boxShadow: `0 0 60px ${curColor}88` }} />}
               {/* Name mit Unterstrich (zieht sich auf) + Slogan, der sich wie eine
                   Schreibmaschine eintippt = der Arena-Moment (Wolf 2026-07-04). */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.8cqh, 12px)' }}>

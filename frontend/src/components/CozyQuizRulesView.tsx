@@ -565,8 +565,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       {/* 2026-07-15 (Rules-Redesign): Keyframes fuer Tiefen-Uebergang, Signatur-
           Hero-Motion, Divider-Draw und Arena-Glut. Einmal pro Bühne. */}
       <style>{`
-        @keyframes qqRulesDepthR{0%{opacity:0;transform:translateX(48px) scale(.985);filter:blur(6px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}}
-        @keyframes qqRulesDepthL{0%{opacity:0;transform:translateX(-48px) scale(.985);filter:blur(6px)}100%{opacity:1;transform:translateX(0) scale(1);filter:blur(0)}}
+        @keyframes qqRulesSlideR{0%{opacity:0;transform:translateX(64px)}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesSlideL{0%{opacity:0;transform:translateX(-64px)}100%{opacity:1;transform:translateX(0)}}
         @keyframes qqRulesDivDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
         @keyframes qqHeroRise{0%{opacity:0;transform:translateY(-12px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes qqHeroBook{0%{opacity:0;transform:translateY(-14px) rotate(-8deg) scale(.6)}60%{opacity:1;transform:translateY(0) rotate(4deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
@@ -629,14 +629,18 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
               }} />
             </div>
-            {/* Der Wolf laeuft die Schiene entlang = „du bist hier". */}
+            {/* Der Wolf laeuft die Schiene entlang = „du bist hier".
+                2026-07-15 (Wolf): generisches 🐺-Emoji → echter CozyWolf (Marke). */}
             <div aria-hidden className="qqRulesWolf" style={{
-              position: 'absolute', top: -10, left: `calc(6% + ${(activeFrac * 88).toFixed(1)}%)`,
-              zIndex: 3, fontSize: 'clamp(20px, 2cqw, 30px)', lineHeight: 1,
+              position: 'absolute', top: -14, left: `calc(6% + ${(activeFrac * 88).toFixed(1)}%)`,
+              zIndex: 3, width: 'clamp(30px, 2.8cqw, 46px)',
               filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
               transition: 'left 0.6s cubic-bezier(0.16,1,0.3,1)',
               animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
-            }}>🐺</div>
+            }}>
+              <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}
+                style={{ width: '100%', height: 'auto', display: 'block' }} />
+            </div>
             {/* Pillen-Reihe (space-between → verteilt, Schiene laeuft dahinter durch). */}
             <div style={{
               position: 'relative', zIndex: 1,
@@ -701,11 +705,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        // 2026-07-15 (Rules-Redesign): gerichteter Tiefen-Uebergang statt flachem
-        // Refresh — Inhalt slidet vorwaerts von rechts / rueckwaerts von links rein,
-        // mit dezenter Tiefe (scale + blur-clear). Persistente Buehne bleibt: der
-        // Stepper oben und der Card-Rahmen bleiben stehen, nur der Inhalt wechselt.
-        animation: `${slideDir === 'back' ? 'qqRulesDepthL' : 'qqRulesDepthR'} 0.5s cubic-bezier(0.16, 1, 0.3, 1) both`,
+        // 2026-07-15 (Wolf 'Wechsel staerker als noetig, kein neue-Page-Gefuehl,
+        // eher wie ein Bildband weitergeschoben'): reiner horizontaler Schub —
+        // blur+scale (die „Tiefe"/Page-Wechsel-Anmutung) RAUS. Inhalt gleitet nur
+        // seitlich rein (vorwaerts von rechts / rueckwaerts von links). Persistente
+        // Buehne bleibt: Stepper + Card-Rahmen stehen, nur der Inhalt schiebt durch.
+        animation: `${slideDir === 'back' ? 'qqRulesSlideL' : 'qqRulesSlideR'} 0.45s cubic-bezier(0.16, 1, 0.3, 1) both`,
         // 2026-07-04 (Wolf 'Fenster wechselt Größe je Regelseite, unruhig'):
         // FIXE einheitliche Höhe für ALLE Slides (statt min/maxHeight-Spanne) —
         // der Rahmen springt beim Regel-Wechsel nicht mehr; kürzere Regeln

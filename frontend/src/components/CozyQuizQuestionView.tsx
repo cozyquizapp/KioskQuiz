@@ -1783,7 +1783,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       return (
                       <div style={{
                         position: 'absolute', left: 8, right: 8, bottom: 0,
-                        transform: 'translateY(72%)',
+                        // 2026-07-16 (Wolf 10v10): in der Arena die Fraktions-Wappen
+                        // KOMPLETT unter das 1/2/3-Feld setzen (vorher 72% → Lip lag
+                        // ueber der Card-Kante, wirkte gedraengt). Nicht-Arena behaelt
+                        // den kleinen Lip-Look.
+                        transform: isMegaTeams ? 'translateY(calc(100% + 8px))' : 'translateY(72%)',
                         display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
                         justifyContent: 'center',
                         gap: outerGap,
@@ -1811,7 +1815,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // ragen — visuell "abgeschnitten" am border-radius:999.
                               padding: `6px ${padR}px 6px 2px`,
                               borderRadius: 'var(--qq-pill-radius)',
-                              background: 'var(--qq-overlay)',
+                              // Arena: kraeftigerer, opakerer Pill-Grund → die
+                              // Fraktions-Wappen lesen klar (Wolf 'weniger transparent').
+                              background: isMegaTeams && !isThemed() ? 'rgba(15,23,42,0.92)' : 'var(--qq-overlay)',
                               border: isFastest ? '3px solid var(--qq-accent)' : `2px solid ${tm.color}`,
                               boxShadow: isFastest
                                 ? '0 0 22px rgba(var(--qq-accent-rgb),0.55), 0 6px 14px rgba(0,0,0,0.55)'

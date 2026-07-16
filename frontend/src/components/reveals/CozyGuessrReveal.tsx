@@ -244,8 +244,12 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
 
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
 
+  // 2026-07-16 (Wolf 'rechts kein Hintergrund'): das halbtransparente Ranking-
+  // Panel (0.62) zeigte nur flaches Dunkel. CozyGuessr IST immer Bunte-Tuete →
+  // rotes Kategorie-Gradient rechts hinterlegen, das durchs Panel schimmert (wie
+  // 'Schau mal'). Karte links deckt ihr Feld selbst ab.
   return (
-    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: isThemed() ? 'var(--qq-bg)' : '#0A0814' }}>
+    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: isThemed() ? 'var(--qq-bg)' : 'radial-gradient(ellipse 72% 118% at 100% 50%, rgba(127,20,32,0.9) 0%, #200409 58%, #0A0814 100%)' }}>
       {/* Karte */}
       <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s var(--qq-ease-smooth)' }}>
         <MapContainer

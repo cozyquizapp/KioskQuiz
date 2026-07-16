@@ -1023,7 +1023,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             <CozyBtn color={resumeTeam.color || QQ_COLORS.brandPink} onClick={onResume}>
               {lang === 'de' ? `Wieder dabei als ${resumeTeam.name}` : `Resume as ${resumeTeam.name}`}
             </CozyBtn>
-            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: QQ_COLORS.slate500 }}>
+            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: QQ_COLORS.slate400 }}>
               {lang === 'de' ? 'oder unten neues Team anlegen' : 'or set up a new team below'}
             </div>
           </CozyCard>
@@ -1104,7 +1104,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               >🎲</button>
             </div>
             <div style={{
-              fontSize: 11, color: QQ_COLORS.slate500, fontWeight: 700,
+              fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700,
               marginBottom: 12, letterSpacing: '0.02em',
             }}>
               {lang === 'de'
@@ -1225,7 +1225,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     onClick={() => onStammLookup(stammInput)}
                     disabled={stammStatus === 'searching' || stammInput.trim().length < 4}
                     style={{
-                      padding: '10px 16px', borderRadius: 8,
+                      padding: '10px 16px', minHeight: 44, borderRadius: 8,
                       border: 'none',
                       background: stammStatus === 'searching' ? QQ_COLORS.slate600 : QQ_COLORS.brandPink,
                       color: '#0A0814', fontWeight: 900, fontSize: 13,
@@ -1245,12 +1245,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 <button
                   onClick={() => { setStammExpanded(false); setStammInput(''); }}
                   style={{
-                    background: 'none', border: 'none', color: QQ_COLORS.slate500,
-                    fontSize: 11, fontWeight: 700, cursor: 'pointer',
+                    background: 'none', border: 'none', color: QQ_COLORS.slate300,
+                    fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     fontFamily: 'inherit', alignSelf: 'flex-start',
+                    minHeight: 44, padding: '8px 6px',
                   }}
                 >
-                  {lang === 'de' ? '← zurueck' : '← back'}
+                  {lang === 'de' ? '← zurück' : '← back'}
                 </button>
               </div>
             )}

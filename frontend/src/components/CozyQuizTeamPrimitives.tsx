@@ -88,7 +88,7 @@ export function CozyBtn({
 export function StepLabel({ children }: { children: ReactNode }) {
   return (
     <div style={{
-      fontSize: 13, fontWeight: 900, color: '#64748b',
+      fontSize: 13, fontWeight: 900, color: '#94a3b8',
       textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10,
     }}>
       {children}
@@ -149,7 +149,7 @@ export function CopyButton({ text, lang }: { text: string; lang: 'de' | 'en' }) 
     <button
       onClick={copy}
       style={{
-        padding: '4px 10px', borderRadius: 8,
+        padding: '8px 14px', minHeight: 44, borderRadius: 8,
         border: `1.5px solid ${copied ? '#22C55E' : (isThemed() ? 'var(--qq-accent)' : '#EC4899')}55`,
         background: copied ? 'rgba(34,197,94,0.15)' : (isThemed() ? 'var(--qq-surface)' : 'rgba(236,72,153,0.10)'),
         color: copied ? '#86efac' : (isThemed() ? 'var(--qq-card-text)' : '#FBCFE8'),
@@ -230,7 +230,7 @@ export function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: num
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>Timer</span>
+        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>Timer</span>
         <span style={{
           fontSize: timerFontSize, fontWeight: 900, color,
           textShadow: isCritical ? '0 0 14px rgba(239,68,68,0.7)' : isWarning ? '0 0 10px rgba(249,115,22,0.5)' : 'none',

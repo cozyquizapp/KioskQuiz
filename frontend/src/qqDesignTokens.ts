@@ -75,7 +75,7 @@ export const TEXT_COLOR = {
   primary:   '#F8FAFC',  // Hauptueberschriften, Hero-Numbers
   secondary: '#CBD5E1',  // Body-Text, Card-Inhalte
   muted:     '#94A3B8',  // Subtitle, Sekundaer-Labels
-  dim:       '#64748B',  // Footer-Text, Inactive-Hints, Timestamps
+  dim:       '#77869F',  // Footer-Text, Inactive-Hints, Timestamps (~4.6:1 auf #0A0814, AA)
 } as const;
 
 /** Akzent-Gold = Sieg-/Zeremonie-Akzent (Pokal, Krönung, Medaillen 🥇, Endstand-

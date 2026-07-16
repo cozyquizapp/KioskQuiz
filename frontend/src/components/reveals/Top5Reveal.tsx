@@ -267,7 +267,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           <div style={{
             position: 'absolute', inset: 0, borderRadius: 20, border: '2px dashed rgba(148,163,184,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(11px,1.1cqw,17px)', fontWeight: 900, color: '#475569', letterSpacing: '0.18em', textTransform: 'uppercase',
+            fontSize: 'clamp(11px,1.1cqw,17px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.18em', textTransform: 'uppercase',
           }}>{lang === 'en' ? 'Who has the most hits?' : 'Wer hat die meisten Treffer?'}</div>
         )}
       </div>

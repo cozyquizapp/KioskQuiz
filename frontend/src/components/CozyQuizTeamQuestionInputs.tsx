@@ -264,7 +264,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
       {/* Remaining */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>{distributeLabel}</span>
+        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{distributeLabel}</span>
         <div style={{
           padding: '3px 12px', borderRadius: 999, fontSize: 13, fontWeight: 900,
           background: `${pillColor}22`, border: `1px solid ${pillColor}55`, color: pillColor,
@@ -290,7 +290,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
             borderLeft: `4px solid ${color}`,
             animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
           }}>
-            <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#64748b' }}>
+            <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#94a3b8' }}>
               {/* 2026-05-09 v2 (Wolf): zurueck auf Plain Number — Keycap-
                   Emojis 1️⃣2️⃣3️⃣ wurden als blaue OS-Squares gerendert. */}
               <span style={{ fontSize: 13, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
@@ -305,7 +305,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
             }}><span aria-hidden="true">−</span></button>
             {/* Points */}
             <div aria-live="polite" aria-label={`${pts} ${lang === 'en' ? 'points' : 'Punkte'}`}
-              style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#475569', fontVariantNumeric: 'tabular-nums' }}>
+              style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>
               {pts}
             </div>
             {/* + */}
@@ -348,7 +348,7 @@ export function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor:
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
-      <div style={{ fontSize: 12, color: '#64748b', fontWeight: 700, marginBottom: 2 }}>
+      <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 2 }}>
         {lang === 'en' ? 'Enter up to 5 answers (order doesn\'t matter)' : 'Bis zu 5 Antworten eingeben (Reihenfolge egal)'}
       </div>
       {vals.map((v, i) => (
@@ -410,7 +410,7 @@ export function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
           🔀 {criteria}
         </div>
       )}
-      <div style={{ fontSize: 12, color: '#64748b', textAlign: 'center' }}>
+      <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
         {lang === 'en' ? 'Tap ▲▼ to reorder' : '▲▼ zum Sortieren tippen'}
       </div>
       {items.map((item, i) => (

@@ -1281,7 +1281,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               background: isThemed() ? 'var(--qq-surface)' : `${color}15`,
               border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${color}33`,
               fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-accent)' : `${color}aa`, letterSpacing: '0.04em',
+              color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.04em',
             }}>
               {phaseName}
             </div>
@@ -1316,7 +1316,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             {/* Schlankes Label statt riesiger Regel-Texte */}
             <div style={{
               fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-accent)' : `${color}cc`, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.1em', textTransform: 'uppercase',
               textAlign: 'center',
               animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.4s both',
             }}>

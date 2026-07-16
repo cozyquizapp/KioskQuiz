@@ -4010,7 +4010,7 @@ export function MuchoOptionsReveal({
                 // Skin: Option-Label lesbar auf hellen Karten (slate100 war fast
                 // weiss -> unsichtbar auf Mono). isWrong bleibt gedimmt. Cozy gleich.
                 color: isWrong
-                  ? (isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate600)
+                  ? (isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate400)
                   : (isThemed() ? 'var(--qq-card-text)' : QQ_COLORS.slate100), lineHeight: 1.3,
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',

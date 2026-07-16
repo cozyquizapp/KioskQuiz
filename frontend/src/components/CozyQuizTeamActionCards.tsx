@@ -1016,9 +1016,9 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           )}
 
           <button onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); setPendingPick(null); }} style={{
-            marginTop: 12, width: '100%', padding: '8px', borderRadius: 8,
+            marginTop: 12, width: '100%', padding: '10px', minHeight: 44, borderRadius: 8,
             border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
-            color: QQ_COLORS.slate600, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+            color: QQ_COLORS.slate300, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
           }}>
             {t.placement.cancel[lang]}
           </button>
@@ -1029,7 +1029,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
         <button
           onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); emit('qq:comebackUndo', { roomCode, teamId: myTeamId }); }}
           style={{
-            marginTop: 14, width: '100%', padding: '10px 12px', borderRadius: 8,
+            marginTop: 14, width: '100%', padding: '10px 12px', minHeight: 44, borderRadius: 8,
             border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
             color: QQ_COLORS.slate300, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
@@ -1045,7 +1045,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
         <button
           onClick={() => { setFreeMode(null); setSwapFirst(null); setPendingPick(null); }}
           style={{
-            marginTop: 12, width: '100%', padding: '10px 12px', borderRadius: 8,
+            marginTop: 12, width: '100%', padding: '10px 12px', minHeight: 44, borderRadius: 8,
             border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
             color: QQ_COLORS.slate300, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
@@ -1388,7 +1388,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 : <span style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={opt.icon}/></span>}
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 900, color: disabled ? QQ_COLORS.slate500 : opt.color, fontSize: 15 }}>{opt.label}</div>
-                <div style={{ fontFamily: 'inherit', fontSize: 13, color: disabled ? QQ_COLORS.slate600 : QQ_COLORS.slate600, marginTop: 2 }}>
+                <div style={{ fontFamily: 'inherit', fontSize: 13, color: disabled ? QQ_COLORS.slate500 : QQ_COLORS.slate400, marginTop: 2 }}>
                   {disabled ? `🚫 ${opt.reason}` : opt.desc}
                 </div>
               </div>

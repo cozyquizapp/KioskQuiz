@@ -1790,7 +1790,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: 'clamp(72px, 8cqw, 124px)', fontWeight: 900, flexShrink: 0,
                         lineHeight: 1,
-                        color: isCorrect ? QQ_COLORS.green500 : isWrong ? QQ_COLORS.slate600 : optColor,
+                        color: isCorrect ? QQ_COLORS.green500 : isWrong ? QQ_COLORS.slate400 : optColor,
                         textShadow: isCorrect
                           ? '0 0 28px rgba(34,197,94,0.75), 0 0 60px rgba(34,197,94,0.35)'
                           : `0 0 22px ${optColor}88, 0 0 50px ${optColor}44`,
@@ -1801,7 +1801,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         position: 'relative', zIndex: 1,
                         flex: 1, minWidth: 0,
                         fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900,
-                        color: isWrong ? QQ_COLORS.slate600 : 'var(--qq-card-text)', lineHeight: 1.25,
+                        color: isWrong ? QQ_COLORS.slate400 : 'var(--qq-card-text)', lineHeight: 1.25,
                         textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                         transition: 'color 0.3s ease',
                       }}>{optText}</div>

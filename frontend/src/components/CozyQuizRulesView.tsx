@@ -648,12 +648,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                     width: 'clamp(20px,1.9cqw,28px)', height: 'clamp(20px,1.9cqw,28px)',
                     borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
                     background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(255,255,255,0.08)',
-                    color: active ? '#1a0a14' : done ? '#fff' : '#9a8fb5',
+                    color: active ? '#1a0a14' : done ? '#fff' : '#aab0be',
                   }}>{item.glyph}</span>
                   {showLabel && (
                     <span style={{
                       fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
-                      color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#7c7390',
+                      color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#a8adba',
                       whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                       // 2026-07-04 (Wolf 'Dein Weg durchs Quiz immer noch abgeschnitten'):
                       // inaktiver Cap 170->320px, damit die vollen Stepper-Labels passen

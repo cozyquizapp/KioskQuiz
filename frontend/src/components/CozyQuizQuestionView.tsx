@@ -607,8 +607,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Expand wirkte wie 'aus Mitte rauslaufen'. */}
           {/* 2026-07-14 (Wolf): in CozyArena den blurry Bild-Backdrop WEGLASSEN —
               dort soll der Arena-Hintergrund (SlideStage-BG) durchscheinen, wo kein
-              Bild/Window ist. Normal-CozyQuiz behaelt den Blur (kein Arena-BG dahinter). */}
-          {cheeseFullscreen && !(s as any).nestedTeams && (
+              Bild/Window ist. Normal-CozyQuiz behaelt den Blur (kein Arena-BG dahinter).
+              2026-07-16 (Wolf 'cheese vertikal rechts blockiert bg'): Gate von
+              nestedTeams auf die EXAKTE Arena-BG-Bedingung (qqIsMega + Arena-BGs an +
+              kein Skin) umgestellt. Bei Arena OHNE nestedTeams (avatarId-Erkennung)
+              rutschte der Blur-Backdrop sonst rein und verdeckte das Kolosseum rechts. */}
+          {cheeseFullscreen && !(isMegaTeams && (s as any).arenaBackgrounds !== false && !isThemed()) && (
             <div style={{
               position: 'fixed', inset: 0,
               zIndex: 49,

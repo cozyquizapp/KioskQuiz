@@ -108,10 +108,23 @@ const SCRIM_DIM =
  * fuer die zentrale Beamer-`bg`, oder null wenn kein Arena-BG gilt. In
  * QQBeamerPage VOR den anderen bg-Fallbacks einsetzen.
  */
+// Per-Asset Fokus-Override: '<position> / <size>' statt Default 'center / cover'.
+// Manche Bilder haben ihren visuellen Mittelpunkt NICHT in der Bildmitte — mit
+// reinem cover (kein Crop bei 16:9) sitzt der Fokus dann off-center. Hier leicht
+// reinzoomen (size > 100%) schafft Crop-Raum, die Position schiebt den Fokus in
+// die Bildmitte. Werte am Beamer feinjustierbar (Wolf 2026-07-16).
+const ARENA_BG_FOCUS: Record<string, string> = {
+  // rundenintro: der Boden-Kristall („Diamant in der Mitte") sitzt bei ~50%/71%,
+  // also unter der Bildmitte. Leicht reinzoomen + nach unten schieben (mehr Boden
+  // zeigen) rueckt den Kristall naeher an die Screen-Mitte.
+  rundenintro: 'center 66% / 116%',
+};
+
 /** Fertiger CSS-`background`-String fuer einen Asset-Slug (Scrim + Bild + Fallback). */
 export function qqArenaBgFor(slug: string, dim = false): string {
   const scrim = dim ? SCRIM_DIM : SCRIM_FULL;
-  return `${scrim}, url(/arena-bg/${slug}.webp) center / cover no-repeat, #0A0814`;
+  const focus = ARENA_BG_FOCUS[slug] ?? 'center / cover';
+  return `${scrim}, url(/arena-bg/${slug}.webp) ${focus} no-repeat, #0A0814`;
 }
 
 export function qqArenaRootBg(s: QQStateUpdate): string | null {

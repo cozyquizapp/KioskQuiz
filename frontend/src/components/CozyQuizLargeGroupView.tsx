@@ -174,7 +174,6 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           );
         })}
       </div>
-      <div style={S.qrFoot}>{de ? '⚡ Je besser eure Fraktion abschneidet, desto mehr Punkte (bis 100 pro Frage).' : '⚡ The better your faction does, the more points (up to 100 per question).'}</div>
     </div>
   );
 }
@@ -731,7 +730,13 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
     const color = AVA_BY_ID.get(beat.av)?.color ?? '#EC4899';
     const name = qqMegaFactionName(beat.av, de ? 'de' : 'en');
     return (
-      <div key={`award-${step}`} data-qq-ceremony style={{ ...S.goWrap, justifyContent: 'center', gap: 'clamp(12px, 2.2cqh, 32px)' }}>
+      <div key={`award-${step}`} data-qq-ceremony style={{ ...S.goWrap, justifyContent: 'center', gap: 'clamp(8px, 1.5cqh, 20px)' }}>
+        {/* 2026-07-16 (Wolf bild 6 'neuer background'): jeder Award-Beat zeigt den
+            eigenen Arena-Hintergrund der Gewinner-Fraktion (faction-<slug>.webp) +
+            Scrim statt des generischen Feuerwerk-BGs — pro Award anders, farblich
+            passend zur enthuellten Fraktion. */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/faction-${qqMegaFactionSlug(beat.av)}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center', animation: 'brFadeIn 0.6s ease both' }} />
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(8,6,16,0.64) 0%, rgba(8,6,16,0.44) 30%, rgba(8,6,16,0.5) 66%, rgba(8,6,16,0.8) 100%)' }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, animation: 'qqCrownFlood 0.7s ease both' }} />
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           {/* Label in Silber — Gold bleibt exklusiv der Champion-Krönung. */}
@@ -746,26 +751,26 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         </div>
         <div style={{ position: 'relative', zIndex: 5, animation: 'qqAwardIconPop 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
           <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, display: 'inline-flex' }}>
-            <QQIcon slug={beat.slug} size={'clamp(88px, 11cqw, 176px)'} />
+            <QQIcon slug={beat.slug} size={'clamp(72px, 8.8cqw, 138px)'} />
             <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.5) 50%, transparent 66%)', transform: 'translateX(-130%)', animation: 'qqAwardShine 1.1s ease 0.5s both' }} />
           </div>
         </div>
         {/* Titel + Leistung ZUERST — dann (nach kurzer Pause) die Enthüllung. */}
-        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(26px, 4.2cqw, 64px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
+        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
         <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.5s ease 0.42s both' }}>{beat.stat}</div>
         {/* Enthüllung: das Banner der Gewinnerfraktion entrollt sich (gleiche
             Banner-Geste wie in der Krönung), Wappen + Name fahren ein. */}
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6cqw, 24px)', animation: 'qqAwardDriveIn 0.7s cubic-bezier(0.2,1,0.4,1) 1.05s both' }}>
           <div style={{ position: 'relative', display: 'inline-flex' }}>
-            <div aria-hidden style={{ position: 'absolute', top: '-8%', left: '50%', width: 'clamp(74px, 8cqw, 138px)', height: 'clamp(100px, 13cqh, 185px)', transform: 'translateX(-50%)', background: `linear-gradient(180deg, ${color}f0, ${color}88 82%, ${color}44)`, clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)', transformOrigin: 'top center', animation: 'qqBannerUnfurl 0.7s cubic-bezier(0.2,1,0.3,1) 1.0s both', boxShadow: `0 12px 40px ${color}55`, zIndex: -1 }} />
+            <div aria-hidden style={{ position: 'absolute', top: '-8%', left: '50%', width: 'clamp(64px, 6.8cqw, 116px)', height: 'clamp(84px, 10.5cqh, 150px)', transform: 'translateX(-50%)', background: `linear-gradient(180deg, ${color}f0, ${color}88 82%, ${color}44)`, clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)', transformOrigin: 'top center', animation: 'qqBannerUnfurl 0.7s cubic-bezier(0.2,1,0.3,1) 1.0s both', boxShadow: `0 12px 40px ${color}55`, zIndex: -1 }} />
             <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
-              <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(78px, 9cqw, 148px)'} />
+              <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(66px, 7.4cqw, 116px)'} />
               {AWARD_SPARKS.map((sp, i) => (
                 <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${1.5 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
               ))}
             </div>
           </div>
-          <TeamNameLabel name={name} maxLines={1} shrinkAfter={14} color={color} fontWeight={900} fontSize="clamp(28px, 4.2cqw, 68px)" fontSizeLong="clamp(20px, 3cqw, 48px)" style={{ textShadow: `0 0 40px ${color}66` }} />
+          <TeamNameLabel name={name} maxLines={1} shrinkAfter={14} color={color} fontWeight={900} fontSize="clamp(26px, 3.6cqw, 56px)" fontSizeLong="clamp(19px, 2.7cqw, 42px)" style={{ textShadow: `0 0 40px ${color}66` }} />
         </div>
         <style>{CEREMONY_KEYFRAMES}</style>
       </div>
@@ -845,7 +850,7 @@ const S: Record<string, React.CSSProperties> = {
   // legen'): der Rahmen sitzt im OBEREN Band (~18-66% Hoehe), nicht mittig.
   // paddingBottom hebt den zentrierten Block ins Rahmen-Band. Feintuning-Regel:
   // groesser = hoeher. (Exakter Sitz haengt vom cover-Crop ab → am Beamer nudgen.)
-  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px 12%', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
+  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '7% 56px 4%', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
   qrLabel: { fontSize: 24, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6, fontWeight: 900 },
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
   qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
@@ -873,7 +878,7 @@ const S: Record<string, React.CSSProperties> = {
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
   // Gesamtstand: gleicher Rahmen-Bias wie qrWrap (paddingBottom hebt in den
   // Rahmen des standing-BG; groesser = hoeher, am Beamer feinjustieren).
-  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px 12%', color: '#f4f6ff', overflow: 'hidden' },
+  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '5% 48px 7%', color: '#f4f6ff', overflow: 'hidden' },
   standLabel: { fontSize: 22, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800 },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },

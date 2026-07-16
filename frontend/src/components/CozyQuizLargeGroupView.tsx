@@ -744,10 +744,14 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
     return (
       <div key={`award-${step}`} data-qq-ceremony style={{ ...S.goWrap, justifyContent: 'center', gap: 'clamp(8px, 1.5cqh, 20px)' }}>
         {/* 2026-07-16 (Wolf bild 6 'neuer background'): jeder Award-Beat zeigt den
-            eigenen Arena-Hintergrund der Gewinner-Fraktion (faction-<slug>.webp) +
-            Scrim statt des generischen Feuerwerk-BGs — pro Award anders, farblich
-            passend zur enthuellten Fraktion. */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/faction-${qqMegaFactionSlug(beat.av)}.webp)`, backgroundSize: 'cover', backgroundPosition: 'center', animation: 'brFadeIn 0.6s ease both' }} />
+            eigenen Arena-Hintergrund der Gewinner-Fraktion + Scrim statt des generischen
+            Feuerwerk-BGs — pro Award anders, farblich passend zur enthuellten Fraktion.
+            2026-07-16 (Wolf 'ich mache neue Breitbild-Award-BGs'): ZWEI Layer — oben das
+            dedizierte 16:9-Award-BG (`award-<slug>.webp`), darunter als Fallback das
+            bestehende `faction-<slug>.webp` (auch auf der Handy-Seite genutzt). Fehlt das
+            Award-BG (noch nicht geliefert), 404t Layer 1 transparent → Fallback scheint
+            durch. Sobald Wolf die award-*.webp liefert, greifen sie automatisch. */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/award-${qqMegaFactionSlug(beat.av)}.webp), url(/arena-bg/faction-${qqMegaFactionSlug(beat.av)}.webp)`, backgroundSize: 'cover, cover', backgroundPosition: 'center, center', backgroundRepeat: 'no-repeat, no-repeat', animation: 'brFadeIn 0.6s ease both' }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(8,6,16,0.64) 0%, rgba(8,6,16,0.44) 30%, rgba(8,6,16,0.5) 66%, rgba(8,6,16,0.8) 100%)' }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, animation: 'qqCrownFlood 0.7s ease both' }} />
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>

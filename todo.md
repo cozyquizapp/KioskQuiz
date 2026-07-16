@@ -55,6 +55,19 @@
 > **Verworfen:** 🎂 Kuchendiagramm für MUCHO (Vorschau gezeigt 2026-07-16 → Wolf „passt nicht so gut");
 > aktueller MUCHO-Balken-Reveal (2×2→4 Reihen) bleibt.
 
+### 🔍 DESIGN-AUDIT 2026-07-16 (4 Skill-Auditoren: color-contrast · ui-ux-pro-max · animate)
+**✅ ROT gefixt (5 Pakete, gepusht):** A Kontrast-Pass (slate600/500→400/300, Alpha-Text raus, dim-Token)
+· B Touch-Targets 44px (Team-Buttons) · C reduced-motion für JS/RAF (Count-ups + Leaflet-flyTo; CSS ist
+global gegatet) · D Beamer-Standings responsive (Beat A dense) + dunkle Row-BGs überm Foto · E FinalReveal
+reduced-motion-Guard.
+**✅ GELB gefixt (sicher):** Distanz-Fonts (CozyGuessr km-Labels, Score-Unterzeile) · Mystery-Dots-Kontrast.
+**🟡 GELB bewusst GEPARKT (kein klarer Gewinn / Risiko — nicht als Politur nachjagen):**
+- [ ] **Token-Massen-Refactor** — 159× rohes `#ec4899`, ~40 Inline-Easings, `DURATION`-Token ungenutzt, zwei
+      Farbquellen (`qqDesignTokens` vs `qqColors`). Reine Tech-Debt, NICHT sichtbar, Regressions-Risiko →
+      nur als eigener dedizierter Refactor, nicht im Design-Sweep.
+- [ ] **FinalReveal `left`→`transform`** (9s-Drift Reflow) — heikel wg. %-Positionen + Wolfs Race-Tuning; reduced-motion ist schon gegatet.
+- [ ] Judgment-Calls (Wolf entscheidet am Beamer): Schätzchen-Antwort in Gold (wirkt bewusst?) · CHEESE-Kategorie-Titel violett (= Kategorie-Eigenfarbe) · Fraktionsnamen-Ellipsis→Wrap (Risiko fürs arena-main-Layout).
+
 ---
 
 ## 🎨 DESIGN-SWEEP (Anti-ADHS-Schlussstrich)

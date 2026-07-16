@@ -1452,6 +1452,21 @@ export function qqMegaAwardKeys(awards: QQMegaAwards | null | undefined): QQMega
   return QQ_MEGA_AWARD_ORDER.filter((k) => !!awards[k]);
 }
 
+/** Bonuspunkte pro Special Award (Wolf 2026-07-16): jede gewonnene Auszeichnung
+ *  gibt der Fraktion diese Punkte on top — sie zählen zum Endstand + zur Krönung.
+ *  50 = spürbar (bis +250 bei allen 5), überfährt aber den Punkte-Sieger nicht so
+ *  leicht wie 100 (bis +500). Nur am Spielende relevant (megaAwards erst dann gesetzt). */
+export const QQ_MEGA_AWARD_BONUS = 50;
+
+/** Summe der Award-Bonuspunkte, die eine Fraktion (avatarId) am Spielende bekommt
+ *  (Anzahl gewonnener Awards × QQ_MEGA_AWARD_BONUS). 0 solange keine Awards. */
+export function qqMegaAwardBonusFor(avatarId: string, awards: QQMegaAwards | null | undefined): number {
+  if (!awards) return 0;
+  let n = 0;
+  for (const k of QQ_MEGA_AWARD_ORDER) if (awards[k] === avatarId) n++;
+  return n * QQ_MEGA_AWARD_BONUS;
+}
+
 /** Modell B Mega-Event: Ergebnis EINER Farbe (Haupt-Team) für die aktuelle Frage.
  *  correct = wie viele der Sub-Handys „getroffen" haben (richtig/nah/Punkte>0),
  *  total = Anzahl Sub-Handys der Farbe, points = diese Frage vergebene Punkte

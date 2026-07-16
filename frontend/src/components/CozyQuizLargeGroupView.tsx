@@ -12,7 +12,7 @@
 
 import { useMemo, useRef, useLayoutEffect, useState, useEffect } from 'react';
 import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards, QQMegaAwardKey } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqMegaAwardKeys } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqMegaAwardKeys, QQ_MEGA_AWARD_BONUS } from '../../../shared/quarterQuizTypes';
 import { playArenaLeadChange, playSpecialAwardReveal, playRaceWinner, playWolfHowl } from '../utils/sounds';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -787,6 +787,14 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             </div>
           </div>
           <TeamNameLabel name={name} maxLines={1} shrinkAfter={14} color={color} fontWeight={900} fontSize="clamp(26px, 3.6cqw, 56px)" fontSizeLong="clamp(19px, 2.7cqw, 42px)" style={{ textShadow: `0 0 40px ${color}66` }} />
+        </div>
+        {/* Award-Bonus (Wolf 2026-07-16): jede Auszeichnung gibt der Fraktion Punkte
+            (zaehlen zum Endstand + zur Kroenung). Pille in Fraktionsfarbe (Gold bleibt
+            der Champion-Kroenung vorbehalten), erscheint nach der Enthuellung. */}
+        <div style={{ position: 'relative', zIndex: 5, animation: 'qqCrownFadeUp 0.5s ease 1.5s both' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: 'clamp(4px,0.6cqh,9px) clamp(14px,1.5cqw,24px)', borderRadius: 999, background: `${color}26`, border: `2px solid ${color}99`, color: '#fff', fontWeight: 900, fontSize: 'clamp(17px, 2.1cqw, 32px)', boxShadow: `0 0 24px ${color}44`, fontVariantNumeric: 'tabular-nums' }}>
+            +{QQ_MEGA_AWARD_BONUS} {de ? 'Punkte' : 'points'}
+          </span>
         </div>
         <style>{CEREMONY_KEYFRAMES}</style>
       </div>

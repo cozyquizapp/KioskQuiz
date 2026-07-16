@@ -1,7 +1,7 @@
 // ── Shared Quarter Quiz constants (used by BeamerPage + CustomSlide) ──────────
 
 import type { QQStateUpdate, QQTeam } from '@shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug } from '@shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaAwardBonusFor } from '@shared/quarterQuizTypes';
 
 /**
  * 2026-05-24 (Refactor #2): Kanonische Team-Sortierung. Backend schickt seit
@@ -74,7 +74,12 @@ export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
   for (const [avatarId, members] of byAvatar) {
     const meta = QQ_AVATARS.find(a => a.id === avatarId);
     const rep = members[0];
-    const points = members.reduce((sum, m) => sum + (m.largestConnected ?? 0), 0);
+    // Award-Bonus (Wolf 2026-07-16): am Spielende geben Special Awards Bonuspunkte
+    // (qqMegaAwardBonusFor). megaAwards ist erst im GAME_OVER gesetzt → waehrend des
+    // Spiels 0, danach zaehlt der Bonus zum Fraktions-Total → Standings/Krönung/
+    // Endstand spiegeln ihn konsistent (eine Aggregation, alle Views lesen sie).
+    const points = members.reduce((sum, m) => sum + (m.largestConnected ?? 0), 0)
+      + qqMegaAwardBonusFor(avatarId, (s as any).megaAwards);
     // Mega Event: Faktions-Name („Denkfaule Dachse") + Faktions-WAPPEN (Crest-
     // slug, NICHT das Tier — siehe qqFactionAvatarEmoji). Fallback: rohes Emoji.
     groups.push({

@@ -1,18 +1,17 @@
 /**
- * SchaetzchenReveal v3 — "STRAHL OBEN, RANGLISTE DARUNTER" (Redesign 2026-07-16, Wolf).
+ * SchaetzchenReveal v4 — "NUR STRAHL" (Redesign 2026-07-16, Wolf).
  *
- * v2 (Chip-Lanes mit Connector-Linien am Strahl) war unuebersichtlich — alles
- * ueberschnitt sich. Neu:
- *  - TOP-BAND: EIN Zahlenstrahl mit farbigen Ticks an den echten Tipp-Positionen
- *    (Farbe = Team) + Gold-Wahrheits-Marker + Antwort-Tafel zentriert am Zielwert.
- *    KEINE Werte/Chips/Connectors mehr am Strahl — nur die Ticks.
- *  - BOTTOM-BAND: 2-spaltige Rangliste (4×2 bei 8 Teams), column-major. Jede Zeile:
- *    Rang · Wappen (Team-Farb-Ring, verbindet zum Tick) · Name · Tipp · signiertes
- *    Delta (▲/▼) · Punkte (nur Arena). Sieger gold hervorgehoben, kein Extra-Verdikt/
- *    Krone (Arena = anteilige Punkte).
- *  - Skalen-Endlabels "← zu niedrig / zu hoch →" links/rechts am Strahl.
+ * v2 (Chip-Lanes+Connectors) war Chaos, v3 (Strahl + 2-spalt. Liste) war verwirrend
+ * (Lese-Reihenfolge unklar). v4: NUR der Zahlenstrahl, KEINE Liste.
+ *  - Antwort-Tafel oben zentriert (Wahrheit = 50%, Gold, Count-up).
+ *  - Mess-Schiene mittig + Gold-Wahrheits-Diamant + Skalen-Endlabels.
+ *  - Jede Fraktion: Wappen direkt an ihrer Tipp-Position, in ZWEI Lanes (oben/unten
+ *    am Strahl → halbe Dichte), sanft entzerrt (nur bei Overlap minimal geschoben),
+ *    kurzer Stiel zur Schiene, Wert + signiertes Delta (+ Punkte in Arena) am Wappen.
+ *  - Sieger: Gold-Ring + Pop + Gold-Messstrecke zur Wahrheit. Schätzchen-Identität
+ *    ist Gold/Gelb (kein Pink).
  *
- * Beats: 0 Ticks/Liste steigen · 1 Beam + Count-up · 2 Nicht-Sieger dimmen · 3 Sieger-Pop.
+ * Beats: 0 Wappen steigen · 1 Beam + Count-up · 2 Nicht-Sieger dimmen · 3 Sieger-Pop.
  * Motion nur ueber transform/opacity, reduced-motion respektiert, Count-up mit
  * Hidden-Tab-Guard. Zahlen-Parsing (dt. Tausender/Dezimal) unveraendert.
  */
@@ -124,23 +123,45 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [rankedFinal, target]);
   const tx = axisPct(target);
 
-  // Redesign 2026-07-16 (Wolf 'Strahl oben + Liste darunter, design-optimiert'):
-  // KEINE Chip-Lanes/Connectors mehr am Strahl. Der Strahl traegt nur farbige
-  // Ticks an den echten Tipp-Positionen (Farbe = Team) + Wahrheits-Marker. Wer
-  // welcher Tick ist, steht in der 2-spaltigen Rangliste im unteren Band (die
-  // Team-Farbe verbindet Tick ↔ Listeneintrag).
-  const ticks = useMemo(
-    () => rankedFinal.map(r => ({ r, x: axisPct(r.num) })),
-    [rankedFinal, axisPct],
-  );
+  // Redesign 2026-07-16 v4 (Wolf 'nur Strahl, keine Liste'): die Wappen sitzen
+  // direkt am Strahl an ihrer Tipp-Position, in ZWEI Lanes (abwechselnd ober-/
+  // unterhalb → halbe Dichte pro Reihe), sanft entzerrt (nur bei Overlap minimal
+  // auseinandergeschoben, dann auf den echten Schwerpunkt zentriert). KEIN
+  // Connector-Chaos: Tick UND Wappen sitzen auf derselben (ggf. minimal
+  // verschobenen) Position, der Wert steht am Wappen. Keine Rangliste mehr.
+  const spread = (arr: Array<{ x: number; cx: number }>) => {
+    if (arr.length < 2) return;
+    const LO = 5, HI = 95, MIN = 12; // % Mindestabstand der Wappen-Mitten in einer Lane
+    arr.sort((a, b) => a.cx - b.cx);
+    for (let i = 1; i < arr.length; i++) {
+      if (arr[i].cx < arr[i - 1].cx + MIN) arr[i].cx = arr[i - 1].cx + MIN;
+    }
+    const meanReal = arr.reduce((s, c) => s + c.x, 0) / arr.length;
+    const meanCx = arr.reduce((s, c) => s + c.cx, 0) / arr.length;
+    const shift = meanReal - meanCx;
+    for (const c of arr) c.cx += shift;
+    const minCx = Math.min(...arr.map(c => c.cx));
+    const maxCx = Math.max(...arr.map(c => c.cx));
+    if (minCx < LO) { const d = LO - minCx; for (const c of arr) c.cx += d; }
+    else if (maxCx > HI) { const d = maxCx - HI; for (const c of arr) c.cx -= d; }
+  };
+  const placed = useMemo(() => {
+    // nach Tippwert sortiert, abwechselnd obere/untere Lane, jede Lane separat entzerrt.
+    const sorted = [...rankedFinal]
+      .sort((a, b) => a.num - b.num)
+      .map((r, i) => ({ r, x: axisPct(r.num), cx: axisPct(r.num), above: i % 2 === 1 }));
+    spread(sorted.filter(c => !c.above));
+    spread(sorted.filter(c => c.above));
+    return sorted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rankedFinal, axisPct]);
 
-  const rankOf = useMemo(() => new Map(rankedFinal.map((r, i) => [r.teamId, i + 1])), [rankedFinal]);
   const wx = winner ? axisPct(winner.num) : 50;
 
   // ── Dramaturgie: 0 Chips · 1 Beam+Count-up · 2 Dimmen · 3 Sieger ──
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [beat, setBeat] = useState<number>(reduce ? 3 : 0);
-  const N = Math.max(1, ticks.length);
+  const N = Math.max(1, placed.length);
   useEffect(() => {
     if (reduce) return;
     const sfx = !s.sfxMuted;
@@ -153,7 +174,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       setTimeout(() => setBeat(3), tWin),
     ];
     if (sfx) {
-      ticks.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 400 + i * 90)); });
+      placed.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 400 + i * 90)); });
       ts.push(setTimeout(() => { try { playClimaxFinish(); } catch {} }, tWin));
     }
     return () => ts.forEach(clearTimeout);
@@ -213,213 +234,165 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
         }}>{qText}</div>
       </div>
 
-      {/* Bühne: Top-Band = Strahl (nur farbige Ticks + Wahrheit), Bottom-Band =
-          2-spaltige Rangliste. Redesign 2026-07-16 (Wolf), Chip-Lanes/Connectors raus. */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1, display: 'flex', flexDirection: 'column' }}>
-        {ticks.length === 0 ? (
+      {/* Bühne: NUR Strahl (Wolf 2026-07-16 v4). Wappen sitzen in zwei Lanes direkt
+          am Strahl an ihrer Tipp-Position, Wert+Delta am Wappen. Keine Liste. */}
+      <div style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
+        {placed.length === 0 ? (
           <div style={{
             position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
             color: 'var(--qq-text-muted)', fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 700,
           }}>{lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}</div>
         ) : (() => {
-          // 2-Spalten-Rangliste (4×2 bei 8). Column-major: linke Spalte Rang 1..half,
-          // rechte den Rest → jede Spalte ist eine zusammenhaengende Rangfolge. Bei
-          // wenigen Teams (≤4) eine Spalte (sonst zu leer).
-          const two = N > 4;
-          const half = Math.ceil(N / 2);
-          const cols = two ? [rankedFinal.slice(0, half), rankedFinal.slice(half)] : [rankedFinal];
+          const RAIL = 54; // % Höhe: die Mess-Schiene, Wappen darüber/darunter
+          const winnerCx = placed.find(p => p.r.teamId === winner?.teamId)?.cx ?? wx;
+          return (
+          <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${CONTENT_INSET}%`, right: `${CONTENT_INSET}%` }}>
+            {/* Licht-Sweep */}
+            <div aria-hidden style={{
+              position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', opacity: 0,
+              background: 'linear-gradient(105deg, transparent 38%, rgba(255,244,214,0.13) 50%, transparent 62%)',
+              animation: struck && !reduce ? 'qqStr2Sweep 0.9s var(--qq-enter) both' : 'none',
+            }} />
 
-          const renderRow = (r: typeof rankedFinal[number]) => {
-            const rank = rankOf.get(r.teamId) ?? 99;
-            const isWin = r.teamId === winner?.teamId;
-            const diff = r.num - target;
-            const exact = diff === 0;
-            const dimmed = housedark && !(isWin && lit);
-            const badgeBg = rank === 1 ? QQ_COLORS.amber400 : rank === 2 ? QQ_COLORS.slate300 : rank === 3 ? QQ_COLORS.orange700 : 'rgba(255,255,255,0.10)';
-            const badgeFg = rank <= 3 ? QQ_COLORS.bgPage : 'var(--qq-text-muted)';
-            return (
-              <div key={r.teamId} style={{
-                display: 'flex', alignItems: 'center', gap: 'clamp(8px, 1cqw, 16px)',
-                padding: 'clamp(5px,0.7cqh,10px) clamp(9px,1.1cqw,18px)',
-                borderRadius: 'clamp(12px, 1.2cqw, 20px)',
-                background: isWin && lit
-                  ? `linear-gradient(90deg, ${GOLD}2e, ${GOLD}12)`
-                  : 'rgba(12,10,30,0.55)',
-                border: `2px solid ${isWin && lit ? GOLD + 'cc' : 'rgba(255,255,255,0.08)'}`,
-                boxShadow: isWin && lit ? `0 0 26px ${GOLD}44` : 'none',
-                filter: dimmed ? `brightness(${DIM}) saturate(0.82)` : 'none',
-                transform: isWin && lit ? 'scale(1.02)' : 'scale(1)',
-                transition: 'filter 0.5s ease, transform 0.5s var(--qq-celebrate), background 0.4s ease, border-color 0.4s ease',
-                animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${0.3 + (rank - 1) * 0.07}s both` : 'none',
-                minWidth: 0,
+            {/* Antwort-Tafel oben zentriert (Wahrheit = 50%) */}
+            <div aria-hidden style={{
+              position: 'absolute', left: `${tx}%`, top: 0, transform: 'translateX(-50%)',
+              zIndex: 7, display: 'flex', flexDirection: 'column', alignItems: 'center',
+              opacity: struck ? 1 : 0, transition: 'opacity 0.35s var(--qq-enter)',
+            }}>
+              <span style={{
+                fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+                letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4,
+              }}>{lang === 'en' ? 'Answer' : 'Antwort'}</span>
+              <div style={{
+                display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
+                padding: 'clamp(6px,0.9cqh,13px) clamp(14px,1.6cqw,26px)', borderRadius: 18,
+                background: 'linear-gradient(180deg, rgba(30,24,58,0.94), rgba(10,8,24,0.94))',
+                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(255,255,255,0.10)`,
+                animation: struck && !reduce ? 'qqStr2Strike 0.5s var(--qq-celebrate) both' : 'none',
               }}>
-                {/* Rang-Badge */}
                 <span style={{
-                  flexShrink: 0, width: 'clamp(24px,2.4cqw,40px)', height: 'clamp(24px,2.4cqw,40px)', borderRadius: '50%',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontFamily: 'var(--font-display)', fontSize: 'clamp(13px,1.3cqw,22px)', fontWeight: 700,
-                  color: badgeFg, background: badgeBg, boxShadow: rank <= 3 ? '0 3px 8px rgba(0,0,0,0.4)' : 'none',
-                }}>{rank}</span>
-                {/* Wappen mit Team-Farb-Ring (verbindet zum Tick) */}
-                <div style={{
-                  flexShrink: 0, borderRadius: '50%',
-                  boxShadow: isWin && lit ? `0 0 0 2.5px ${GOLD}, 0 0 20px ${GOLD}77` : `0 0 0 2px ${r.team.color}, 0 0 12px ${r.team.color}55`,
-                }}>
-                  <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size="clamp(38px, 4.2cqw, 62px)" />
-                </div>
-                {/* Name */}
-                <span style={{
-                  flex: 1, minWidth: 0, fontFamily: 'var(--font-display)',
-                  fontSize: 'clamp(15px, 1.5cqw, 27px)', fontWeight: 700, color: 'var(--qq-card-text)',
-                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                }}>{r.team.name}</span>
-                {/* Tipp-Wert */}
-                <span style={{
-                  flexShrink: 0, fontFamily: 'var(--font-display)', fontSize: 'clamp(17px, 1.8cqw, 32px)',
-                  fontWeight: 700, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums',
-                }}>{fmt(r.num)}{unitStr ? <span style={{ fontSize: '0.6em', fontWeight: 900, opacity: 0.6, marginLeft: 2 }}>{unitStr}</span> : null}</span>
-                {/* Signiertes Delta */}
-                <span style={{
-                  flexShrink: 0, minWidth: 'clamp(52px,5cqw,90px)', textAlign: 'right',
-                  fontSize: 'clamp(11px, 1.15cqw, 20px)', fontWeight: 900, whiteSpace: 'nowrap',
-                  fontVariantNumeric: 'tabular-nums',
-                  color: exact ? MINT : 'var(--qq-text-muted)',
-                }}>{exact ? '✨' : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}</span>
-                {/* Punkte (nur Arena) */}
-                {isMega && (
-                  <span style={{
-                    flexShrink: 0, minWidth: 'clamp(42px,4cqw,72px)', textAlign: 'right',
-                    fontFamily: 'var(--font-display)', fontSize: 'clamp(16px, 1.7cqw, 30px)', fontWeight: 700,
-                    fontVariantNumeric: 'tabular-nums',
-                    color: isWin && lit ? GOLD_BRIGHT : 'var(--qq-accent)',
-                  }}>{ptsOfAvatar(r.team.avatarId)}<span style={{ fontSize: '0.55em', fontWeight: 900, opacity: 0.7, marginLeft: 2 }}>P</span></span>
+                  fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 4.8cqw, 84px)', fontWeight: 700,
+                  lineHeight: 0.92, color: GOLD_BRIGHT, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
+                  textShadow: `0 0 30px ${GOLD}8c`,
+                }}>{fmt(shown)}</span>
+                {unitStr && (
+                  <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, color: GOLD }}>{unitStr}</span>
                 )}
               </div>
-            );
-          };
+            </div>
 
-          return (
-          <>
-            {/* ── TOP-BAND: Strahl mit farbigen Ticks + Wahrheit ── */}
-            <div style={{
-              position: 'relative', flexShrink: 0, height: 'clamp(150px, 30cqh, 320px)',
-              marginLeft: `${CONTENT_INSET}%`, marginRight: `${CONTENT_INSET}%`,
-            }}>
-              {/* Licht-Sweep */}
+            {/* Wahrheits-Beam (Tafel → Schiene) */}
+            <div aria-hidden style={{
+              position: 'absolute', left: `${tx}%`, top: '24%', height: `${RAIL - 24}%`, width: 'clamp(5px,0.62cqw,12px)', zIndex: 1,
+              transform: `translateX(-50%) scaleY(${struck ? 1 : 0})`, transformOrigin: 'top center', borderRadius: 8,
+              background: `linear-gradient(180deg, ${GOLD_BRIGHT} 0%, ${GOLD_BRIGHT} 65%, ${GOLD}1f 100%)`,
+              boxShadow: `0 0 40px 7px ${GOLD}80`,
+              transition: reduce ? 'none' : 'transform 0.7s var(--qq-enter)',
+            }} />
+
+            {/* Skalen-Endlabels (auf Schienen-Höhe) */}
+            <div aria-hidden style={{
+              position: 'absolute', left: 0, top: `${RAIL - 6}%`, zIndex: 2,
+              fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>← {lang === 'en' ? 'too low' : 'zu niedrig'}</div>
+            <div aria-hidden style={{
+              position: 'absolute', right: 0, top: `${RAIL - 6}%`, zIndex: 2,
+              fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+              letterSpacing: '0.12em', textTransform: 'uppercase',
+            }}>{lang === 'en' ? 'too high' : 'zu hoch'} →</div>
+
+            {/* Mess-Schiene */}
+            <div aria-hidden style={{
+              position: 'absolute', left: 0, right: 0, top: `${RAIL}%`, height: 5, borderRadius: 5, zIndex: 2,
+              transform: 'translateY(-50%)',
+              background: `linear-gradient(90deg, transparent, ${GOLD}4d 10%, rgba(255,244,214,0.55) 50%, ${GOLD}4d 90%, transparent)`,
+              boxShadow: `0 0 22px ${GOLD}40`,
+            }} />
+
+            {/* Gold-Messstrecke Sieger → Wahrheit (Schätzchen-Identität = Gold) */}
+            {winner && winner.delta > 0 && (
               <div aria-hidden style={{
-                position: 'absolute', inset: 0, zIndex: 5, pointerEvents: 'none', opacity: 0,
-                background: 'linear-gradient(105deg, transparent 38%, rgba(255,244,214,0.13) 50%, transparent 62%)',
-                animation: struck && !reduce ? 'qqStr2Sweep 0.9s var(--qq-enter) both' : 'none',
+                position: 'absolute', top: `${RAIL}%`, zIndex: 3, height: 5, borderRadius: 5,
+                left: `${Math.min(winnerCx, tx)}%`, width: `${Math.abs(tx - winnerCx)}%`,
+                transform: `translateY(-50%) scaleX(${lit ? 1 : 0})`,
+                transformOrigin: winnerCx <= tx ? 'left center' : 'right center',
+                background: `linear-gradient(90deg, ${GOLD}, ${GOLD}40)`,
+                boxShadow: `0 0 16px ${GOLD}99`,
+                transition: reduce ? 'none' : 'transform 0.55s var(--qq-carry)',
               }} />
+            )}
 
-              {/* Antwort-Tafel (immer zentriert: Wahrheit sitzt auf 50%) */}
-              <div aria-hidden style={{
-                position: 'absolute', left: `${tx}%`, top: 0, transform: 'translateX(-50%)',
-                zIndex: 7, display: 'flex', flexDirection: 'column', alignItems: 'center',
-                opacity: struck ? 1 : 0, transition: 'opacity 0.35s var(--qq-enter)',
-              }}>
-                <span style={{
-                  fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                  letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4,
-                }}>{lang === 'en' ? 'Answer' : 'Antwort'}</span>
-                <div style={{
-                  display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
-                  padding: 'clamp(6px,0.9cqh,13px) clamp(14px,1.6cqw,26px)', borderRadius: 18,
-                  background: 'linear-gradient(180deg, rgba(30,24,58,0.94), rgba(10,8,24,0.94))',
-                  boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(255,255,255,0.10)`,
-                  animation: struck && !reduce ? 'qqStr2Strike 0.5s var(--qq-celebrate) both' : 'none',
+            {/* Wahrheits-Marker (Gold-Diamant) auf der Schiene */}
+            <div aria-hidden style={{
+              position: 'absolute', left: `${tx}%`, top: `${RAIL}%`, width: 'clamp(13px,1.4cqw,24px)', height: 'clamp(13px,1.4cqw,24px)',
+              transform: `translate(-50%, -50%) rotate(45deg) scale(${struck ? 1 : 0})`, zIndex: 6,
+              background: GOLD_BRIGHT, borderRadius: 3, boxShadow: `0 0 18px 4px ${GOLD}aa`,
+              transition: reduce ? 'none' : 'transform 0.5s var(--qq-celebrate) 0.2s',
+            }} />
+
+            {/* Wappen an ihrer Tipp-Position, zwei Lanes (oben/unten am Strahl) */}
+            {placed.map(({ r, cx, above }, i) => {
+              const isWin = r.teamId === winner?.teamId;
+              const dimmed = housedark && !(isWin && lit);
+              const diff = r.num - target;
+              const exact = diff === 0;
+              const av = isWin ? 'clamp(52px, 6cqw, 100px)' : 'clamp(42px, 4.8cqw, 78px)';
+              return (
+                <div key={r.teamId} style={{
+                  position: 'absolute', left: `${cx}%`,
+                  ...(above ? { bottom: `${100 - RAIL + 1}%` } : { top: `${RAIL + 1}%` }),
+                  transform: 'translateX(-50%)', zIndex: isWin && lit ? 8 : 4,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px,0.4cqh,6px)',
+                  filter: dimmed ? `brightness(${DIM}) saturate(0.82)` : 'none',
+                  transition: 'filter 0.5s var(--qq-enter)',
+                  animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${0.35 + i * 0.08}s both` : 'none',
                 }}>
-                  <span style={{
-                    fontFamily: 'var(--font-display)', fontSize: 'clamp(34px, 5.2cqw, 92px)', fontWeight: 700,
-                    lineHeight: 0.92, color: GOLD_BRIGHT, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
-                    textShadow: `0 0 30px ${GOLD}8c`,
-                  }}>{fmt(shown)}</span>
-                  {unitStr && (
-                    <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, color: GOLD }}>{unitStr}</span>
+                  {/* untere Lane: kurzer Stiel NACH OBEN zur Schiene steht vor dem Wappen;
+                      obere Lane: Wert zuerst, dann Wappen, dann Stiel nach unten. Reihenfolge
+                      via column-reverse fuer die obere Lane, damit das Wappen der Schiene am
+                      naechsten ist. */}
+                  {above && (
+                    <span aria-hidden style={{ order: 3, width: 2, height: 'clamp(6px,1.2cqh,16px)', background: r.team.color, opacity: 0.6, borderRadius: 2 }} />
+                  )}
+                  {/* Wappen */}
+                  <div style={{
+                    order: above ? 2 : 1,
+                    borderRadius: '50%',
+                    transform: isWin && lit ? 'scale(1.08)' : 'scale(1)',
+                    transition: 'transform 0.5s var(--qq-celebrate)',
+                    boxShadow: isWin && lit ? `0 0 0 3px ${GOLD}, 0 0 30px ${GOLD}99` : `0 0 0 2px ${r.team.color}, 0 0 14px ${r.team.color}66`,
+                  }}>
+                    <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={av} />
+                  </div>
+                  {/* Wert + Delta (+ Punkte in Arena) */}
+                  <div style={{
+                    order: above ? 1 : 2, display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05,
+                    background: 'rgba(12,10,30,0.66)', borderRadius: 'clamp(8px,0.9cqw,14px)',
+                    padding: 'clamp(2px,0.4cqh,5px) clamp(6px,0.8cqw,12px)',
+                    border: `1.5px solid ${isWin && lit ? GOLD + 'aa' : 'rgba(255,255,255,0.12)'}`,
+                  }}>
+                    <span style={{
+                      fontFamily: 'var(--font-display)', fontSize: 'clamp(14px,1.5cqw,26px)', fontWeight: 700,
+                      color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                    }}>{fmt(r.num)}</span>
+                    <span style={{
+                      fontSize: 'clamp(10px,1cqw,16px)', fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
+                      color: exact ? MINT : 'var(--qq-text-muted)',
+                    }}>
+                      {exact ? (lang === 'en' ? '✨ spot on' : '✨ getroffen') : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
+                      {isMega && <span style={{ color: isWin && lit ? GOLD_BRIGHT : GOLD, marginLeft: 6 }}>· {ptsOfAvatar(r.team.avatarId)}P</span>}
+                    </span>
+                  </div>
+                  {/* untere Lane: Stiel nach OBEN zur Schiene (order 0 = ganz oben) */}
+                  {!above && (
+                    <span aria-hidden style={{ order: 0, width: 2, height: 'clamp(6px,1.2cqh,16px)', background: r.team.color, opacity: 0.6, borderRadius: 2 }} />
                   )}
                 </div>
-              </div>
-
-              {/* Wahrheits-Beam (Tafel → Schiene) */}
-              <div aria-hidden style={{
-                position: 'absolute', left: `${tx}%`, top: '46%', height: '30%', width: 'clamp(5px,0.62cqw,12px)', zIndex: 3,
-                transform: `translateX(-50%) scaleY(${struck ? 1 : 0})`, transformOrigin: 'top center', borderRadius: 8,
-                background: `linear-gradient(180deg, ${GOLD_BRIGHT} 0%, ${GOLD_BRIGHT} 65%, ${GOLD}1f 100%)`,
-                boxShadow: `0 0 40px 7px ${GOLD}80`,
-                transition: reduce ? 'none' : 'transform 0.7s var(--qq-enter)',
-              }} />
-
-              {/* Skalen-Endlabels */}
-              <div aria-hidden style={{
-                position: 'absolute', left: 0, top: '70%', zIndex: 2,
-                fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                letterSpacing: '0.12em', textTransform: 'uppercase',
-              }}>← {lang === 'en' ? 'too low' : 'zu niedrig'}</div>
-              <div aria-hidden style={{
-                position: 'absolute', right: 0, top: '70%', zIndex: 2,
-                fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                letterSpacing: '0.12em', textTransform: 'uppercase',
-              }}>{lang === 'en' ? 'too high' : 'zu hoch'} →</div>
-
-              {/* Mess-Schiene */}
-              <div aria-hidden style={{
-                position: 'absolute', left: 0, right: 0, top: '80%', height: 5, borderRadius: 5, zIndex: 2,
-                background: `linear-gradient(90deg, transparent, ${GOLD}4d 10%, rgba(255,244,214,0.55) 50%, ${GOLD}4d 90%, transparent)`,
-                boxShadow: `0 0 22px ${GOLD}40`,
-              }} />
-
-              {/* Pink-Messstrecke Sieger → Wahrheit */}
-              {winner && winner.delta > 0 && (
-                <div aria-hidden style={{
-                  position: 'absolute', top: '80%', zIndex: 3, height: 5, borderRadius: 5,
-                  left: `${Math.min(wx, tx)}%`, width: `${Math.abs(tx - wx)}%`,
-                  transform: `translateY(-50%) scaleX(${lit ? 1 : 0})`,
-                  transformOrigin: wx <= tx ? 'left center' : 'right center',
-                  background: 'linear-gradient(90deg, var(--qq-accent), rgba(var(--qq-accent-rgb),0.25))',
-                  boxShadow: '0 0 16px rgba(var(--qq-accent-rgb),0.6)',
-                  transition: reduce ? 'none' : 'transform 0.55s var(--qq-carry)',
-                }} />
-              )}
-
-              {/* Wahrheits-Marker (Gold-Diamant) auf der Schiene */}
-              <div aria-hidden style={{
-                position: 'absolute', left: `${tx}%`, top: '80%', width: 'clamp(12px,1.3cqw,22px)', height: 'clamp(12px,1.3cqw,22px)',
-                transform: `translate(-50%, -50%) rotate(45deg) scale(${struck ? 1 : 0})`, zIndex: 6,
-                background: GOLD_BRIGHT, borderRadius: 3, boxShadow: `0 0 18px 4px ${GOLD}aa`,
-                transition: reduce ? 'none' : 'transform 0.5s var(--qq-celebrate) 0.2s',
-              }} />
-
-              {/* Farbige Ticks an den echten Tipp-Positionen (nur Ticks, keine Werte) */}
-              {ticks.map(({ r, x }) => {
-                const isWin = r.teamId === winner?.teamId;
-                return (
-                  <div key={'tick-' + r.teamId} aria-hidden style={{
-                    position: 'absolute', left: `${x}%`, top: isWin ? '70%' : '73%',
-                    width: isWin ? 'clamp(5px,0.6cqw,10px)' : 'clamp(3px,0.4cqw,7px)', height: isWin ? '20%' : '14%',
-                    borderRadius: 4, transform: 'translateX(-50%)', zIndex: isWin ? 5 : 3, background: r.team.color,
-                    boxShadow: `0 0 12px ${r.team.color}${isWin ? 'ee' : '99'}`,
-                    opacity: housedark && !isWin ? 0.32 : 1, transition: 'opacity 0.4s ease',
-                  }} />
-                );
-              })}
-            </div>
-
-            {/* ── BOTTOM-BAND: 2-spaltige Rangliste ── */}
-            <div style={{
-              flex: 1, minHeight: 0, display: 'flex', gap: 'clamp(10px, 1.6cqw, 28px)',
-              marginTop: 'clamp(8px, 1.6cqh, 22px)', alignItems: 'stretch',
-              paddingLeft: `${CONTENT_INSET}%`, paddingRight: `${CONTENT_INSET}%`,
-            }}>
-              {cols.map((col, ci) => (
-                <div key={ci} style={{
-                  flex: 1, minWidth: 0, display: 'flex', flexDirection: 'column',
-                  gap: 'clamp(5px, 0.8cqh, 12px)', justifyContent: 'center',
-                }}>
-                  {col.map(renderRow)}
-                </div>
-              ))}
-            </div>
-          </>
+              );
+            })}
+          </div>
           );
         })()}
       </div>

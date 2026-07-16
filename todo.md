@@ -58,8 +58,11 @@
 - **Gruppe-B-Icons:** ✅ `fx-book` + `fx-shield-faction` da. **Fehlen noch: `fx-clapperboard` (🎬), `fx-swords` (⚔️), `fx-lightning` (⚡ fix)** — Wolf malt, dann wire ich.
 
 **Offen (braucht Wolf / Beamer):**
-- [ ] ⏳ **Bild fürs Vorstellen** (Wappen fliegen zu festen Ständen) — Wolf liefert Bild, dann Flug-Reveal
-      mit 8 Ankern bauen.
+- ✅ **Bild 1 — Wappen fliegen an die Stände** (Wolf: arena-main.webp, „deckungsgleich einrasten"): ArenaEntranceView
+      umgebaut — nach jeder Vorstellung fliegt das Wappen hoch an sein gemaltes Banner (`BANNER_ANCHORS` per avatarId,
+      fox→cat = Banner-Reihe) und rastet deckungsgleich ein (`qqBannerLand` + `qqBannerGlow` + Nameplate). Boden-Lineup
+      raus, Wand = Startaufstellung, Center-Finale = „Los geht's!". ⚠️ **Beamer-Nudge:** `BANNER_ANCHORS` x/y feinjustieren
+      falls Wappen leicht neben dem gemalten Banner sitzt.
 - [ ] **Beamer-Verify** der visuellen Tunings dieses Batches (Wolf am Beamer): **Schätzchen v4** (Zwei-Lane
       überlappungsfrei bei 8 Fraktionen?) · **Kategorie-Intros** (jede Kategorie in ihrer Farbe, Tree pink?) ·
       MUCHO 2×2→4-Reihen-Morph + Frage-Shrink (Overflow? smooth?) · Team-Vorstellung arena-main (Titel/Einzug/

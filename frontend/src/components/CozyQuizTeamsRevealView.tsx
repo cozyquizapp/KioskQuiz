@@ -51,10 +51,28 @@ function ArenaTypewriter({ text, color, delayMs = 560 }: { text: string; color: 
   );
 }
 
-// CozyArena — Fraktions-Einzug: jede Fraktion tritt einzeln auf (Wappen gross,
-// Name, Motto, Farb-Flut), setzt sich dann in die Startaufstellung unten. KEIN
-// FLIP-Flug (Wolfs Positions-Bug damit hinfaellig) — Einzug = Drama, Aufstellung
-// = sauberer Pop. Nur nested/Arena; Cozy Quiz behaelt den Roll-Call.
+// Banner-Anker auf arena-main.webp (Wolf 2026-07-16, Bild 1): x/y in % der
+// Bühne = Mitte des gemalten Fraktions-Banners an der Wand. Key = avatarId
+// (COZY_ARENA_CRESTS-Reihenfolge fox→cat = gemalte Banner-Reihe links→rechts,
+// Gate in der Mitte). Nach der Vorstellung fliegt das Wappen HIERHER und rastet
+// deckungsgleich auf sein gemaltes Banner ein (Icons decken sich → kein Doppel).
+// ⚠️ Feinschliff am Beamer: Werte per Auge nachziehen falls leicht versetzt.
+const BANNER_ANCHORS: Record<string, { x: number; y: number }> = {
+  fox:     { x: 8.5,  y: 27 }, // Bauchgefühl  — Orange, Spirale
+  frog:    { x: 20,   y: 27 }, // Glückstreffer — Grün, Kleeblatt
+  panda:   { x: 27.5, y: 27 }, // Feierabend   — Teal, Bierkrug
+  rabbit:  { x: 34.5, y: 27 }, // Letzte Sekunde — Violett, Sanduhr
+  unicorn: { x: 61,   y: 27 }, // Allwissen    — Gelb, Lorbeer
+  raccoon: { x: 69,   y: 27 }, // Improvisation — Blau, Würfel
+  cow:     { x: 78,   y: 27 }, // Einspruch    — Pink, Hammer
+  cat:     { x: 90.5, y: 27 }, // Risiko       — Rot, Flamme
+};
+
+// CozyArena — Fraktions-Einzug: jede Fraktion tritt einzeln in der Mitte auf
+// (Wappen gross, Name, Motto), dann fliegt ihr Wappen hoch an sein gemaltes
+// Banner an der Wand und rastet deckungsgleich ein (Glow + Nameplate). Am Ende
+// stehen alle 8 Banner erleuchtet = Startaufstellung. Nur nested/Arena; Cozy
+// Quiz behaelt den Roll-Call.
 function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
@@ -120,73 +138,52 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const cur = (enterIdx >= 0 && enterIdx < n && !done) ? factions[enterIdx] : null;
   const curColor = cur?.color ?? '#EC4899';
 
-  // Startaufstellung — waehrend des Einzugs klein am Boden (baut sich auf),
-  // im „Los geht's"-Finale gross + zentriert (fuellt die Mitte statt leerem Raum).
-  const renderLineup = (big: boolean) => {
-    // Ausgewogene 2 Reihen statt 6-2 (Wolf 2026-07-04): 8 → 4+4, 6 → 3+3, 7 → 4+3.
-    const cols = n <= 4 ? Math.max(1, n) : Math.ceil(n / 2);
-    // 2026-07-16: Finale-Aufstellung etwas kompakter (disc/cellW/rowGap/Zickzack),
-    // damit die 2 Reihen komplett in den offenen Boden von arena-main passen und
-    // nicht in die gemalte Banner-Reihe hochlaufen.
-    const cellW = big ? 'clamp(100px, 11cqw, 178px)' : 'clamp(80px, 10cqw, 150px)';
-    return (
-    <div style={{
-      position: 'relative', zIndex: 2,
-      // 2026-07-14 (Wolf 'Wappen mehr auf Bild verteilen'): Finale-Aufstellung
-      // NICHT mehr als kompaktes zentriertes Raster in der Mitte, sondern breit
-      // ueber die Arena-Flaeche verteilt (space-evenly + Zickzack-Versatz), damit
-      // die 8 Wappen das arena-aerial-Bild fuellen statt zu clustern. Der kleine
-      // Einzugs-Aufbau (big=false) bleibt das ruhige zentrierte Raster unten.
-      ...(big
-        ? {
-            display: 'flex', flexWrap: 'wrap' as const,
-            justifyContent: 'space-evenly', alignItems: 'flex-start',
-            rowGap: 'clamp(10px, 2cqh, 30px)', columnGap: 'clamp(18px, 4cqw, 82px)',
-            padding: 'clamp(6px, 1.2cqh, 18px) clamp(18px, 5cqw, 120px)',
-          }
-        : {
-            display: 'grid',
-            gridTemplateColumns: `repeat(${cols}, ${cellW})`,
-            gap: 'clamp(8px, 1.2cqw, 20px)',
-            justifyContent: 'center', justifyItems: 'center', alignItems: 'flex-start',
-            padding: 'clamp(14px, 2.5cqh, 34px) clamp(18px, 3cqw, 48px)',
-          }),
-      width: '100%', boxSizing: 'border-box',
-    }}>
+  // Wand-Banner (Wolf 2026-07-16, Bild 1): jede Fraktion fliegt nach ihrer
+  // Vorstellung hoch an ihr gemaltes arena-main-Banner und rastet DECKUNGSGLEICH
+  // ein (Icons decken sich → kein Doppel) + Glow-Flash + Nameplate. Absolut an den
+  // BANNER_ANCHORS positioniert → einmal im Root gerendert, unabhaengig vom Flow.
+  // `big` = Startaufstellungs-Finale (etwas groesser). Ignite triggert bei `placed`.
+  const renderWallBanners = (big: boolean) => (
+    <>
       {factions.map((f, i) => {
+        const anchor = BANNER_ANCHORS[f.avatarId];
+        if (!anchor) return null;
         const on = placed.has(i);
         const src = crestFor(f.avatarId);
-        // 2026-07-12 (Wolf): Finale-Wappen groesser/praesenter, damit die Mitte
-        // gefuellt wirkt statt leer. Einzugs-Groesse (klein) unveraendert.
-        const disc = big ? 'clamp(84px, 9cqw, 152px)' : 'clamp(54px, 6cqw, 96px)';
+        const cw = big ? 'clamp(64px, 7cqw, 128px)' : 'clamp(58px, 6.4cqw, 116px)';
         return (
           <div key={f.avatarId} style={{
-            display: 'flex', flexDirection: 'column', alignItems: 'center', gap: big ? 8 : 5,
-            width: big ? cellW : '100%',
-            // Finale: Zickzack-Versatz (jede 2. Fraktion tiefer) → verteilt die
-            // Wappen organisch ueber die Arena-Flaeche statt in einer starren Linie.
-            marginTop: big ? (i % 2 === 1 ? 'clamp(10px, 2.2cqh, 40px)' : 0) : 0,
-            opacity: on ? 1 : 0.3, filter: on ? 'none' : 'grayscale(0.7)',
-            transform: on ? 'translateY(0) scale(1)' : 'translateY(10px) scale(0.92)',
-            transition: 'all 0.45s cubic-bezier(0.2,1.2,0.4,1)',
+            position: 'absolute', left: `${anchor.x}%`, top: `${anchor.y}%`,
+            transform: 'translate(-50%, -50%)', zIndex: 3, pointerEvents: 'none',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: 'clamp(3px, 0.6cqh, 8px)',
+            opacity: on ? 1 : 0, transition: 'opacity 0.3s ease',
           }}>
             <div style={{
-              width: disc, height: disc,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              position: 'relative', width: cw, height: cw,
+              animation: on ? 'qqBannerLand 0.72s cubic-bezier(0.2,1.2,0.4,1) both' : 'none',
             }}>
+              {/* Glow-Flash beim Einrasten */}
+              {on && <span aria-hidden style={{ position: 'absolute', inset: '-32%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}99, transparent 66%)`, animation: 'qqBannerGlow 0.9s ease-out both', pointerEvents: 'none' }} />}
               {src
-                ? <img src={src} alt="" draggable={false} style={{ width: '100%', height: '100%', objectFit: 'contain', filter: on ? `drop-shadow(0 0 ${big ? 22 : 13}px ${f.color}66) drop-shadow(0 3px 6px rgba(0,0,0,0.4))` : 'drop-shadow(0 2px 4px rgba(0,0,0,0.35))' }} />
-                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={disc} />}
+                ? <img src={src} alt="" draggable={false} style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: `drop-shadow(0 0 15px ${f.color}) drop-shadow(0 3px 6px rgba(0,0,0,0.5))` }} />
+                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={'100%'} />}
             </div>
-            <div style={{ fontSize: big ? 'clamp(16px, 1.9cqw, 30px)' : 'clamp(11px, 1.2cqw, 17px)', fontWeight: 900, color: on ? f.color : '#64748b', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', maxWidth: '100%' }}>
-              {qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}
-            </div>
+            {/* Nameplate unter dem Banner */}
+            <div style={{
+              padding: '2px clamp(7px, 0.9cqw, 13px)', borderRadius: 'var(--qq-pill-radius)',
+              background: 'rgba(10,8,20,0.74)', border: `1.5px solid ${f.color}`,
+              fontSize: big ? 'clamp(12px, 1.3cqw, 20px)' : 'clamp(11px, 1.2cqw, 18px)',
+              fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
+              textShadow: '0 1px 3px rgba(0,0,0,0.7)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              opacity: on ? 1 : 0, transform: on ? 'translateY(0)' : 'translateY(-6px)',
+              transition: 'opacity 0.4s ease 0.42s, transform 0.4s ease 0.42s',
+            }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
           </div>
         );
       })}
-    </div>
-    );
-  };
+    </>
+  );
 
   return (
     <div style={{
@@ -215,6 +212,11 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         transition: 'background 0.6s ease',
       }} />
 
+      {/* Wand-Banner (Bild 1): fliegen nach jeder Vorstellung hoch an ihr
+          gemaltes arena-main-Banner und rasten deckungsgleich ein. Absolut zum
+          Root → immer an den Ankern, unabhaengig vom Center/Finale-Flow. */}
+      {renderWallBanners(done)}
+
       {/* Titel — oben im Sky-Band (ueber den gemalten Bannern) */}
       <div style={{ position: 'relative', zIndex: 2, flexShrink: 0, textAlign: 'center' }}>
         {/* 2026-07-15 (Wolf): graues fx-shield-faction ueber dem Titel RAUS — es
@@ -227,7 +229,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
         <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : '0 3px 20px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.6)' }}>
-          {done ? (de ? 'Los geht’s!' : 'Let’s go!') : 'CozyArena'}
+          CozyArena
         </div>
       </div>
 
@@ -240,10 +242,12 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           Overlap in den Platz; der Root clippt ohnehin die Aussenkanten. */}
       <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: done ? 'center' : 'flex-end', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 0 : 'clamp(8px, 1.6cqh, 24px)' }}>
         {done ? (
-          // Smoothe Schluss-Transition (Wolf): die Startaufstellung steigt von
-          // unten in die Mitte statt hart einzublenden.
-          <div style={{ width: '100%', animation: 'qqArenaFinale 0.75s cubic-bezier(0.2,1,0.4,1) both' }}>
-            {renderLineup(true)}
+          // Finale: die Wand-Banner (renderWallBanners im Root) tragen jetzt die
+          // Startaufstellung → in der Mitte nur noch der grosse „Los geht's!"-Ruf.
+          <div style={{ textAlign: 'center', animation: 'qqArenaFinale 0.75s cubic-bezier(0.2,1,0.4,1) both' }}>
+            <div style={{ fontSize: 'min(clamp(48px, 9cqw, 150px), 22cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(246,217,138,0.35)' }}>
+              {de ? 'Los geht’s!' : 'Let’s go!'}
+            </div>
           </div>
         ) : (cur && (() => {
           const src = crestFor(cur.avatarId);
@@ -268,9 +272,6 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         })())}
       </div>
 
-      {/* Waehrend des Einzugs: kleine Aufstellung unten, baut sich auf. */}
-      {!done && renderLineup(false)}
-
       <style>{`
         @keyframes qqArenaEnter {
           0%   { opacity: 0; transform: translateY(46px) scale(0.66); }
@@ -288,6 +289,18 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqArenaFinale {
           0%   { opacity: 0; transform: translateY(64px) scale(0.92); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* Bild 1: Wappen fliegt hoch (von der Mitte) und rastet auf sein Banner. */
+        @keyframes qqBannerLand {
+          0%   { opacity: 0; transform: translateY(20cqh) scale(1.7); }
+          55%  { opacity: 1; }
+          72%  { transform: translateY(-4%) scale(1.08); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes qqBannerGlow {
+          0%   { opacity: 0; transform: scale(0.5); }
+          30%  { opacity: 1; }
+          100% { opacity: 0; transform: scale(1.5); }
         }
       `}</style>
     </div>

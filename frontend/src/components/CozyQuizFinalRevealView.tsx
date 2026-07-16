@@ -14,7 +14,7 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-13 (Refactor Phase 6, Bug-Hot-Spot).
  * 3 externe Importer (QQBuiltinSlide + Test-Pages).
  */
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
@@ -3177,6 +3177,24 @@ export function RaceFinalSlide({ finalRanking, lang }: {
   // Raendern). Episch statt chaotisch.
   const [driftStarted, setDriftStarted] = useState(false);
 
+  // 2026-07-16 (Design-Audit Perf): der 9s-Drift animierte die Layout-Property
+  // `left` → 9s Reflow (wenn auch nur der absolut positionierten Einheiten). Jetzt
+  // via `transform: translate(px)` (GPU-composited, kein Layout). Dafuer die echte
+  // Container-Breite messen (ResizeObserver) und die %-Position in px umrechnen —
+  // KEIN containerType/cqw, weil RaceTeamUnit intern viel cqw nutzt (das wuerde die
+  // getunten Avatar-/Font-Groessen verbiegen).
+  const raceRef = useRef<HTMLDivElement | null>(null);
+  const [raceW, setRaceW] = useState(0);
+  useLayoutEffect(() => {
+    const el = raceRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') { if (el) setRaceW(el.clientWidth); return; }
+    const update = () => setRaceW(el.clientWidth);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // 2026-05-09 v8 (Wolf 'alle fallen bis P1, Treppchen steigt mit allen
   // avataren von unten, dann P1 fällt drauf'):
   // - N..2 fallen gerade gestaffelt (kein Drift, einfach raus aus dem Bild)
@@ -3453,7 +3471,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
           beitragen. Fix: explizite Höhe-Garantie via height: 100% +
           minHeight: 70cqh, damit `top: 50%` der Avatare auf eine definite
           Höhe greift (statt 50% von 0 = 0 = ganz oben). */}
-      <div style={{
+      <div ref={raceRef} style={{
         flex: 1, position: 'relative', zIndex: 2,
         height: '100%',
         // 2026-05-10 (Wolf 'Treppchen wird unten abgeschnitten bei 100%'):
@@ -3482,17 +3500,22 @@ export function RaceFinalSlide({ finalRanking, lang }: {
             ? (teamXPositions.target[entry.team.id] ?? teamXPositions.initial[entry.team.id] ?? 50)
             : (teamXPositions.initial[entry.team.id] ?? 50);
 
+          // Position via transform (GPU, kein Reflow) sobald die Breite gemessen ist;
+          // davor Fallback auf left:% (nur der allererste Paint — Layout-Effect misst
+          // vor dem Paint → i.d.R. schon useT=true, kein Flash). Die 9s-Transition wird
+          // NUR beim echten Drift (driftStarted) scharf geschaltet — sonst wuerde der
+          // Mess-Wechsel (raceW 0→gemessen) faelschlich animieren.
+          const useT = raceW > 0;
+          const xPx = (xPct / 100) * raceW;
+          const driftAnim = !prefersReducedMotion() && driftStarted && useT;
           return (
             <div key={entry.team.id} style={{
               position: 'absolute',
-              left: `${xPct}%`,
+              left: useT ? 0 : `${xPct}%`,
               top: '50%',
-              transform: 'translate(-50%, -50%)',
               // Wuerdevoller 9s-Drift (langsam an, sanft auf Position) — DAS Rennen.
-              // reduced-motion: kein 9s-Drift, Teams stehen sofort auf Zielposition.
-              // (TODO Perf: `left` ist eine Layout-Property → 9s Reflow; ein Umbau auf
-              //  transform/cqw ist wg. der %-Positionen + Race-Tuning heikel, separat.)
-              transition: prefersReducedMotion() ? 'none' : 'left 9s cubic-bezier(0.25, 0.1, 0.3, 1)',
+              transform: useT ? `translate(calc(${xPx}px - 50%), -50%)` : 'translate(-50%, -50%)',
+              transition: driftAnim ? 'transform 9s cubic-bezier(0.25, 0.1, 0.3, 1)' : 'none',
               zIndex: fallen ? 1 : 2,
             }}>
               <RaceTeamUnit

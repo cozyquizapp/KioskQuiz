@@ -703,7 +703,11 @@ const S: Record<string, React.CSSProperties> = {
   megaRevealHint: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
 
   // Akt 3 Beat A „Wertung dieser Frage"
-  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
+  // 2026-07-15 (Wolf 'Tabelle auf die Rahmen-Flaeche des scoring/standing-BG
+  // legen'): der Rahmen sitzt im OBEREN Band (~18-66% Hoehe), nicht mittig.
+  // paddingBottom hebt den zentrierten Block ins Rahmen-Band. Feintuning-Regel:
+  // groesser = hoeher. (Exakter Sitz haengt vom cover-Crop ab → am Beamer nudgen.)
+  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '0 56px 12%', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
   qrLabel: { fontSize: 24, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6, fontWeight: 900 },
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
   qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(255,255,255,0.05)' },
@@ -729,7 +733,9 @@ const S: Record<string, React.CSSProperties> = {
   goVal: { width: 74, textAlign: 'right', fontWeight: 900, fontSize: 32, fontVariantNumeric: 'tabular-nums' },
   goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
-  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px', color: '#f4f6ff', overflow: 'hidden' },
+  // Gesamtstand: gleicher Rahmen-Bias wie qrWrap (paddingBottom hebt in den
+  // Rahmen des standing-BG; groesser = hoeher, am Beamer feinjustieren).
+  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '0 48px 12%', color: '#f4f6ff', overflow: 'hidden' },
   standLabel: { fontSize: 22, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800 },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(255,255,255,0.045)' },

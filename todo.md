@@ -61,12 +61,13 @@
 global gegatet) · D Beamer-Standings responsive (Beat A dense) + dunkle Row-BGs überm Foto · E FinalReveal
 reduced-motion-Guard.
 **✅ GELB gefixt (sicher):** Distanz-Fonts (CozyGuessr km-Labels, Score-Unterzeile) · Mystery-Dots-Kontrast.
-**🟡 GELB bewusst GEPARKT (kein klarer Gewinn / Risiko — nicht als Politur nachjagen):**
-- [ ] **Token-Massen-Refactor** — 159× rohes `#ec4899`, ~40 Inline-Easings, `DURATION`-Token ungenutzt, zwei
-      Farbquellen (`qqDesignTokens` vs `qqColors`). Reine Tech-Debt, NICHT sichtbar, Regressions-Risiko →
-      nur als eigener dedizierter Refactor, nicht im Design-Sweep.
-- [ ] **FinalReveal `left`→`transform`** (9s-Drift Reflow) — heikel wg. %-Positionen + Wolfs Race-Tuning; reduced-motion ist schon gegatet.
-- [ ] Judgment-Calls (Wolf entscheidet am Beamer): Schätzchen-Antwort in Gold (wirkt bewusst?) · CHEESE-Kategorie-Titel violett (= Kategorie-Eigenfarbe) · Fraktionsnamen-Ellipsis→Wrap (Risiko fürs arena-main-Layout).
+**✅ Nachgezogen 2026-07-16:**
+- **FinalReveal `left`→`transform`** — 9s-Drift jetzt GPU-composited (Container-Breite per ResizeObserver → `translate(calc(px−50%))`, kein cqw-Leak, pixel-identisch). Reflow weg.
+
+**❌ VERWORFEN (Wolf-Entscheid 2026-07-16 „Lassen"):**
+- **Token-Massen-Refactor** — Prüfung ergab: (1) `qqDesignTokens` dokumentiert selbst „kein Mass-Replace auf einen Schwung", (2) `#f472a0` (Skin-Akzent m. eigenem rgb/soft/gradient) + avatarSets-Tints sind ABSICHT, keine Bugs, (3) die meisten rohen Pinks liegen in EINGEFRORENEN Sweep-Stationen → aufmachen wäre Freeze-Verstoß bei 0 sichtbarem Effekt. Gradual-Policy des Codes bleibt.
+
+**🟡 Offene Judgment-Calls (Wolf am Beamer):** Schätzchen-Antwort in Gold (wirkt bewusst?) · CHEESE-Kategorie-Titel violett (= Kategorie-Eigenfarbe) · Fraktionsnamen-Ellipsis→Wrap (Risiko fürs arena-main-Layout).
 
 ---
 

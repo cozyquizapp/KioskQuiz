@@ -565,8 +565,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       {/* 2026-07-15 (Rules-Redesign): Keyframes fuer Tiefen-Uebergang, Signatur-
           Hero-Motion, Divider-Draw und Arena-Glut. Einmal pro Bühne. */}
       <style>{`
-        @keyframes qqRulesSlideR{0%{opacity:0;transform:translateX(64px)}100%{opacity:1;transform:translateX(0)}}
-        @keyframes qqRulesSlideL{0%{opacity:0;transform:translateX(-64px)}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesSlideR{0%{opacity:0;transform:translateX(120px)}60%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesSlideL{0%{opacity:0;transform:translateX(-120px)}60%{opacity:1}100%{opacity:1;transform:translateX(0)}}
         @keyframes qqRulesDivDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
         @keyframes qqHeroRise{0%{opacity:0;transform:translateY(-12px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes qqHeroBook{0%{opacity:0;transform:translateY(-14px) rotate(-8deg) scale(.6)}60%{opacity:1;transform:translateY(0) rotate(4deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
@@ -617,31 +617,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             position: 'relative', zIndex: 6, flexShrink: 0,
             maxWidth: 1280, width: '96%', marginBottom: 'clamp(20px, 2.6cqh, 32px)',
+            // 2026-07-15 (Wolf 'Wolf liegt ueber der Schrift, Linie macht Text
+            // schwer lesbar'): Pillen OBEN, Schiene + Wolf als eigenes Band
+            // DARUNTER → keine Ueberlappung mehr mit den Pillen-Labels.
+            display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.1cqh, 16px)',
           }}>
-            {/* Fortschritts-Schiene hinter den Pillen (Fuellung waechst mit). */}
-            <div aria-hidden style={{
-              position: 'absolute', left: '6%', right: '6%', top: '50%', transform: 'translateY(-50%)',
-              height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.09)', zIndex: 0,
-            }}>
-              <div style={{
-                position: 'absolute', top: 0, bottom: 0, left: 0, width: `${(activeFrac * 100).toFixed(1)}%`,
-                borderRadius: 2, background: `linear-gradient(90deg, rgba(${aRGB},0.7), ${aHex})`,
-                boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
-              }} />
-            </div>
-            {/* Der Wolf laeuft die Schiene entlang = „du bist hier".
-                2026-07-15 (Wolf): generisches 🐺-Emoji → echter CozyWolf (Marke). */}
-            <div aria-hidden className="qqRulesWolf" style={{
-              position: 'absolute', top: -14, left: `calc(6% + ${(activeFrac * 88).toFixed(1)}%)`,
-              zIndex: 3, width: 'clamp(30px, 2.8cqw, 46px)',
-              filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
-              transition: 'left 0.6s cubic-bezier(0.16,1,0.3,1)',
-              animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
-            }}>
-              <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}
-                style={{ width: '100%', height: 'auto', display: 'block' }} />
-            </div>
-            {/* Pillen-Reihe (space-between → verteilt, Schiene laeuft dahinter durch). */}
+            {/* Pillen-Reihe (space-between → verteilt). */}
             <div style={{
               position: 'relative', zIndex: 1,
               display: 'flex', alignItems: 'center', justifyContent: 'space-between',
@@ -684,6 +665,31 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               );
             })}
+            </div>
+            {/* Fortschritts-Schiene + Wolf-Marker als eigenes Band UNTER den Pillen.
+                Kreuzt keinen Text mehr; der Wolf laeuft auf der Schiene = „du bist hier". */}
+            <div aria-hidden style={{ position: 'relative', height: 'clamp(26px, 2.8cqh, 40px)' }}>
+              <div style={{
+                position: 'absolute', left: '6%', right: '6%', top: '50%', transform: 'translateY(-50%)',
+                height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.09)', zIndex: 0,
+              }}>
+                <div style={{
+                  position: 'absolute', top: 0, bottom: 0, left: 0, width: `${(activeFrac * 100).toFixed(1)}%`,
+                  borderRadius: 2, background: `linear-gradient(90deg, rgba(${aRGB},0.7), ${aHex})`,
+                  boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+                }} />
+              </div>
+              {/* CozyWolf steht auf der Schiene (bottom:50% = Fuesse auf der Linie). */}
+              <div className="qqRulesWolf" style={{
+                position: 'absolute', bottom: '50%', left: `calc(6% + ${(activeFrac * 88).toFixed(1)}%)`,
+                zIndex: 3, width: 'clamp(28px, 2.6cqw, 44px)',
+                filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
+                transition: 'left 0.6s cubic-bezier(0.16,1,0.3,1)',
+                animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
+              }}>
+                <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}
+                  style={{ width: '100%', height: 'auto', display: 'block' }} />
+              </div>
             </div>
           </div>
         );

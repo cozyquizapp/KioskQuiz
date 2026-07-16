@@ -350,11 +350,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     SCHAETZCHEN: '#EAB308', MUCHO: '#3B82F6', BUNTE_TUETE: '#EF4444',
     ZEHN_VON_ZEHN: '#10B981', CHEESE: '#8B5CF6',
   };
-  // 2026-07-15 (Wolf 'Tree/Umrahmung/Schrift im Arena-Intro konsistent, kein Gold
-  // je Kategorie'): in Arena traegt der Intro-Tree/Frame die KONSTANTE Arena-Farbe
-  // (magenta), nicht die Kategorie-Farbe (Schaetzchen-Gold etc.). Der eigentliche
-  // Frage-Reveal (SchaetzchenReveal etc.) behaelt seine Kategorie-Farbe.
-  const catColor = (s as any).largeGroupMode ? color : ((cat && CAT_COLORS[cat]) || color);
+  // 2026-07-16 (Wolf 'alle Kategorie-Intro-Texte wurden pink — sollen in ihren
+  // Kategorie-Farben bleiben, NUR die Progress-Tree-Pages nicht'): catColor ist
+  // wieder die echte Kategorie-Farbe (Schaetzchen-Gold, MUCHO-Blau …) in BEIDEN
+  // Modi. Der Runden-Intro/Tree laeuft ueber `color`/`displayColor` (in Arena =
+  // konstantes Pink/Magenta) — das bleibt unveraendert. So sind Tree-Pages pink,
+  // Kategorie-Reveals aber in ihrer eigenen Farbe.
+  const catColor = (cat && CAT_COLORS[cat]) || color;
 
   // ── Finale-Multiplikator-Ansage (Wolf 2026-07-16) ──────────────────────────
   // Frueher lief ein „×2/×3"-Banner MITTEN im Wertungs-Reveal — Wolf will es im

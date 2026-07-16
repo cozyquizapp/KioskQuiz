@@ -589,25 +589,30 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const bannerNode = (t: any, i: number) => {
+  // Wolf 2026-07-16 (Final-Reveal): das Roulette ist DER Moment → gross + zentral,
+  // NICHT die kleine Leiste oben. `big` (= vor dem Treppchen) blaest Banner + den
+  // Champion-Pop auf; sobald das Treppchen kommt, schrumpfen sie zur Kopf-Leiste.
+  const bannerNode = (t: any, i: number, big: boolean) => {
     const isChamp = i === champIdx;
     let lit = false, scale = 1;
-    if (locked && isChamp) { lit = true; scale = 1.16; }
-    else if (blinking && isChamp) { lit = blinkOn; scale = blinkOn ? 1.2 : 1; }
-    else if (litIdx === i && !locked) { lit = true; scale = 1.1; }
+    if (locked && isChamp) { lit = true; scale = big ? 1.42 : 1.16; }
+    else if (blinking && isChamp) { lit = blinkOn; scale = blinkOn ? (big ? 1.34 : 1.2) : 1; }
+    else if (litIdx === i && !locked) { lit = true; scale = big ? 1.22 : 1.1; }
     const fc = t.color;
     return (
       <div key={t.id} style={{
-        position: 'relative', width: 'clamp(38px, 4.4cqw, 72px)', height: 'clamp(66px, 7.8cqw, 118px)',
+        position: 'relative',
+        width: big ? 'clamp(58px, 7cqw, 118px)' : 'clamp(38px, 4.4cqw, 72px)',
+        height: big ? 'clamp(100px, 12.2cqw, 200px)' : 'clamp(66px, 7.8cqw, 118px)',
         clipPath: 'polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%)',
         background: `linear-gradient(180deg, ${fc} 0%, ${fc}bb 80%, ${fc}66 100%)`,
         display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '0.7cqw',
         transformOrigin: 'top center', transform: `scale(${scale})`,
         filter: lit ? 'none' : 'grayscale(0.85) brightness(0.42)', opacity: lit ? 1 : 0.5,
-        boxShadow: (locked && isChamp) ? `0 0 30px ${fc}, 0 0 66px ${fc}99` : (lit ? `0 0 20px ${fc}, 0 0 42px ${fc}88` : 'none'),
-        transition: 'filter .08s linear, opacity .08s linear, transform .14s ease, box-shadow .2s ease',
+        boxShadow: (locked && isChamp) ? `0 0 34px ${fc}, 0 0 78px ${fc}99` : (lit ? `0 0 20px ${fc}, 0 0 42px ${fc}88` : 'none'),
+        transition: 'filter .08s linear, opacity .08s linear, transform .16s ease, box-shadow .2s ease, width .5s var(--qq-ease-smooth), height .5s var(--qq-ease-smooth)',
       }}>
-        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={'clamp(24px, 2.9cqw, 46px)'} />
+        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={big ? 'clamp(38px, 4.6cqw, 78px)' : 'clamp(24px, 2.9cqw, 46px)'} />
         {locked && isChamp && (
           <>
             <span aria-hidden style={{ position: 'absolute', top: '-2.2cqw', left: '50%', transform: 'translateX(-50%)', fontSize: 'clamp(16px, 2.1cqw, 32px)', lineHeight: 1, zIndex: 5, animation: 'qqBannerFlame 1.3s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
@@ -621,7 +626,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
   const podium = (t: any, place: 0 | 1 | 2) => {
     const isWin = place === 0;
     const blockH = place === 0 ? '24cqh' : place === 1 ? '17cqh' : '12cqh';
-    const crestSz = isWin ? 'clamp(80px, 12cqw, 190px)' : 'clamp(58px, 9cqw, 140px)';
+    const crestSz = isWin ? 'clamp(92px, 13.2cqw, 214px)' : 'clamp(62px, 9.6cqw, 152px)';
     const rankNum = place === 0 ? 1 : place === 1 ? 2 : 3;
     const delay = place === 1 ? '0s' : place === 2 ? '.12s' : '.3s';
     const ease = isWin ? 'cubic-bezier(.2,1.28,.35,1)' : 'cubic-bezier(.23,1,.32,1)';
@@ -649,19 +654,26 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
       <span aria-hidden style={{ position: 'absolute', left: '8%', bottom: '10%', fontSize: 'clamp(26px, 3.4cqw, 58px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
       <span aria-hidden style={{ position: 'absolute', right: '8%', bottom: '10%', fontSize: 'clamp(26px, 3.4cqw, 58px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out 0.4s infinite' }}><QQEmojiIcon emoji="🔥" /></span>
 
-      {/* Rod + 8 Wandbanner */}
-      <div aria-hidden style={{ position: 'absolute', top: '4cqh', left: '50%', transform: 'translateX(-50%)', width: '74cqw', maxWidth: 1200, height: 3, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(214,190,120,0.5), transparent)' }} />
-      <div style={{ position: 'absolute', top: '4cqh', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: 'clamp(6px, 1.3cqw, 18px)', zIndex: 4 }}>
-        {banners.map((t, i) => bannerNode(t, i))}
+      {/* Rod + 8 Wandbanner. Wolf 2026-07-16: vor dem Treppchen gross & etwas tiefer
+          (zentraler Reveal-Moment), danach schrumpfen sie zur schlanken Kopf-Leiste. */}
+      <div aria-hidden style={{ position: 'absolute', top: showPodium ? '4cqh' : '12cqh', left: '50%', transform: 'translateX(-50%)', width: '80cqw', maxWidth: 1320, height: 3, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(214,190,120,0.5), transparent)', transition: 'top .5s var(--qq-ease-smooth)' }} />
+      <div style={{ position: 'absolute', top: showPodium ? '4cqh' : '12cqh', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: showPodium ? 'clamp(6px, 1.3cqw, 18px)' : 'clamp(10px, 1.9cqw, 28px)', zIndex: 4, transition: 'top .5s var(--qq-ease-smooth), gap .5s var(--qq-ease-smooth)' }}>
+        {banners.map((t, i) => bannerNode(t, i, !showPodium))}
       </div>
 
       {/* Weiß-Flash beim Einrasten */}
       {locked && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 9, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.2) 42%, transparent 60%)', animation: 'qqFlashPulse 0.55s ease both' }} />}
 
-      {/* Spannungstext während Roulette/Blink */}
+      {/* Spannungstext während Roulette/Blink → beim Lock der GROSSE Sieger-Name
+          (Wolf 2026-07-16: „es ist doch DER Reveal-Moment"). */}
       {!showPodium && (
-        <div style={{ position: 'absolute', left: '50%', top: '46%', transform: 'translate(-50%,-50%)', zIndex: 5, fontSize: 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900, color: '#f6d98a', letterSpacing: '0.04em', textShadow: '0 2px 10px rgba(0,0,0,0.8), 0 0 26px rgba(233,196,106,0.4)', animation: 'qqTensionPulse 1.1s ease-in-out infinite', pointerEvents: 'none' }}>
-          {de ? 'Wer krönt sich?' : 'Who takes the crown?'}
+        <div style={{ position: 'absolute', left: '50%', top: locked ? '62%' : '52%', transform: 'translate(-50%,-50%)', zIndex: 5, maxWidth: '86%', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          fontSize: locked ? 'clamp(30px, 5.2cqw, 96px)' : 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900,
+          color: locked ? wColor : '#f6d98a', letterSpacing: locked ? '-0.01em' : '0.04em',
+          textShadow: locked ? `0 3px 14px rgba(0,0,0,0.85), 0 0 40px ${wColor}77` : '0 2px 10px rgba(0,0,0,0.8), 0 0 26px rgba(233,196,106,0.4)',
+          animation: locked ? 'qqChampSlam 0.6s cubic-bezier(.2,1.28,.35,1) both' : 'qqTensionPulse 1.1s ease-in-out infinite', pointerEvents: 'none',
+          transition: 'top .5s var(--qq-ease-smooth)' }}>
+          {locked ? qqMegaFactionName(winner.avatarId, de ? 'de' : 'en') : (de ? 'Wer krönt sich?' : 'Who takes the crown?')}
         </div>
       )}
 
@@ -670,7 +682,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
         <>
           <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
           <div style={{ position: 'absolute', left: 0, right: 0, top: '27cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontSize: 'clamp(20px, 2.7cqw, 48px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
+            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
               {de ? 'Champions der Arena' : 'Arena Champions'}
             </div>
           </div>

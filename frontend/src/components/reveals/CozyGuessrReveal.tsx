@@ -270,10 +270,12 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           touchZoom={false}
           style={{ width: '100%', height: '100%', background: '#0a1120' }}
         >
-          {/* CartoDB Voyager — bunte, freundliche Karte mit Labels darueber.
-              War vorher 'dark_all' (grau-schwarz) — User wollte was Schoeneres. */}
+          {/* 2026-07-16 (Wolf 'nicere, ruhigere Karte fuer die Arena'): CartoDB
+              Dark Matter — dunkle, ruhige Karte, beisst sich nicht mit dem roten
+              Arena-Kolosseum und die pinken Pins + das Ziel leuchten deutlich raus.
+              (Frueher Voyager = knallbunt; davor dark_all/grau-schwarz.) */}
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
             subdomains={['a', 'b', 'c', 'd']}
           />
           {/* Geoguessr-Style: erst Welt-Level (zoom 3), dann smoothes Reinzoomen

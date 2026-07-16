@@ -29,7 +29,7 @@ import { useActiveThemeId } from '../../qqTheme';
 const MINT = QQ_COLORS.green300;
 const GOLD = '#EAB308';
 const GOLD_BRIGHT = '#FDE68A';
-const DIM = 0.62; // brightness() der nicht-Sieger beim Saal-Dimmen
+const DIM = 0.5; // brightness() der nicht-Sieger beim Saal-Dimmen (Wolf: Sieger klarer heben)
 
 // Tipp-Zahl robust parsen: deutsche Tausender-Punkte + Dezimalkomma korrekt.
 function parseGuess(raw: unknown): number {
@@ -338,7 +338,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               const dimmed = housedark && !(isWin && lit);
               const diff = r.num - target;
               const exact = diff === 0;
-              const av = isWin ? 'clamp(52px, 6cqw, 100px)' : 'clamp(42px, 4.8cqw, 78px)';
+              // Wolf 2026-07-16 (bild 5 'unklar wer Sieger, alle gleich gross'):
+              // Sieger deutlich groesser als der Rest → unuebersehbar, welches Wappen
+              // gewonnen hat (Sieger = Punkte-Sieger, nicht zwingend der naechste Tipp).
+              const av = isWin ? 'clamp(68px, 8.2cqw, 134px)' : 'clamp(38px, 4.3cqw, 68px)';
               return (
                 <div key={r.teamId} style={{
                   position: 'absolute', left: `${cx}%`,
@@ -356,14 +359,22 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   {above && (
                     <span aria-hidden style={{ order: 3, width: 2, height: 'clamp(6px,1.2cqh,16px)', background: r.team.color, opacity: 0.6, borderRadius: 2 }} />
                   )}
-                  {/* Wappen */}
+                  {/* Wappen (Sieger: gross, dicker Gold-Doppelring + Krone drueber) */}
                   <div style={{
                     order: above ? 2 : 1,
+                    position: 'relative',
                     borderRadius: '50%',
-                    transform: isWin && lit ? 'scale(1.08)' : 'scale(1)',
+                    transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
                     transition: 'transform 0.5s var(--qq-celebrate)',
-                    boxShadow: isWin && lit ? `0 0 0 3px ${GOLD}, 0 0 30px ${GOLD}99` : `0 0 0 2px ${r.team.color}, 0 0 14px ${r.team.color}66`,
+                    boxShadow: isWin && lit ? `0 0 0 5px ${GOLD}, 0 0 0 9px ${GOLD}55, 0 0 48px 7px ${GOLD}aa` : `0 0 0 2px ${r.team.color}, 0 0 14px ${r.team.color}66`,
                   }}>
+                    {isWin && lit && (
+                      <span aria-hidden style={{
+                        position: 'absolute', top: '-52%', left: '50%', transform: 'translateX(-50%)',
+                        fontSize: 'clamp(22px, 2.8cqw, 48px)', lineHeight: 1, zIndex: 9,
+                        filter: `drop-shadow(0 0 14px ${GOLD}) drop-shadow(0 3px 6px rgba(0,0,0,0.5))`,
+                      }}><QQEmojiIcon emoji="👑" /></span>
+                    )}
                     <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={av} />
                   </div>
                   {/* Wert + Delta (+ Punkte in Arena) */}

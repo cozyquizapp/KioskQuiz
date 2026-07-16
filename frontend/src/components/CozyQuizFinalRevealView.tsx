@@ -16,6 +16,7 @@
  */
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import type { CSSProperties } from 'react';
+import { prefersReducedMotion } from '../utils/reducedMotion';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -3488,7 +3489,10 @@ export function RaceFinalSlide({ finalRanking, lang }: {
               top: '50%',
               transform: 'translate(-50%, -50%)',
               // Wuerdevoller 9s-Drift (langsam an, sanft auf Position) — DAS Rennen.
-              transition: 'left 9s cubic-bezier(0.25, 0.1, 0.3, 1)',
+              // reduced-motion: kein 9s-Drift, Teams stehen sofort auf Zielposition.
+              // (TODO Perf: `left` ist eine Layout-Property → 9s Reflow; ein Umbau auf
+              //  transform/cqw ist wg. der %-Positionen + Race-Tuning heikel, separat.)
+              transition: prefersReducedMotion() ? 'none' : 'left 9s cubic-bezier(0.25, 0.1, 0.3, 1)',
               zIndex: fallen ? 1 : 2,
             }}>
               <RaceTeamUnit

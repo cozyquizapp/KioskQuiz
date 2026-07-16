@@ -20,6 +20,7 @@ import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
 } from '../../utils/sounds';
 import { isThemed } from '../../qqTheme';
+import { prefersReducedMotion } from '../../utils/reducedMotion';
 
 // ── Leaflet-Map Helpers ─────────────────────────────────────────────────────
 // Vorher inline in CozyQuizQuestionView.tsx — beim Extract mit hierher gewandert,
@@ -30,7 +31,9 @@ const QQFitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number }
   useEffect(() => {
     if (bounds.isValid()) {
       // flyToBounds = smoother Cinematic-Zoom (vs. fitBounds = harter Sprung).
-      map.flyToBounds(bounds, { padding: [100, 100], maxZoom: 8, duration: 1.4 });
+      // reduced-motion: harter fitBounds statt Kamerafahrt.
+      if (prefersReducedMotion()) map.fitBounds(bounds, { padding: [100, 100], maxZoom: 8 });
+      else map.flyToBounds(bounds, { padding: [100, 100], maxZoom: 8, duration: 1.4 });
     }
   }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
@@ -43,7 +46,8 @@ const QQInitialTargetZoom: React.FC<{ lat: number; lng: number }> = ({ lat, lng 
   const map = useMap();
   useEffect(() => {
     const t = window.setTimeout(() => {
-      map.flyTo([lat, lng] as any, 6, { duration: 2.0 });
+      if (prefersReducedMotion()) map.setView([lat, lng] as any, 6);
+      else map.flyTo([lat, lng] as any, 6, { duration: 2.0 });
     }, 200);
     return () => window.clearTimeout(t);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps

@@ -19,6 +19,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import type { QQIconSlug } from './QQIcon';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
+import { prefersReducedMotion } from '../utils/reducedMotion';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -66,6 +67,8 @@ function useCountUp(target: number, ms = 900): number {
   useEffect(() => {
     const start = from.current;
     if (start === target) { setV(target); return; }
+    // reduced-motion: kein RAF-Tween, Endwert sofort.
+    if (prefersReducedMotion()) { setV(target); from.current = target; return; }
     let raf = 0; const t0 = performance.now();
     const tick = (now: number) => {
       const p = Math.min(1, (now - t0) / ms);

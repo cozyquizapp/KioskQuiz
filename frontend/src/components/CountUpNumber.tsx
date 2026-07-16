@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef } from 'react';
+import { prefersReducedMotion } from '../utils/reducedMotion';
 
 interface CountUpNumberProps {
   value: number;
@@ -14,7 +15,9 @@ export const CountUpNumber = ({ value, duration = 600, className = '', style }: 
 
   useEffect(() => {
     if (prevValueRef.current === value) return;
-    
+    // reduced-motion: kein RAF-Tween, Zielwert sofort setzen.
+    if (prefersReducedMotion()) { setDisplayValue(value); prevValueRef.current = value; return; }
+
     setIsAnimating(true);
     const startValue = prevValueRef.current;
     const endValue = value;

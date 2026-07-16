@@ -21,7 +21,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt } from '../cozyQuizShared';
 import { isThemed, isQuietMotion } from '../qqTheme';
-import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
+import { getRoundColor, QQ_PHASE_COLORS, ARENA_ACCENT } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug, type QQIconSlug } from './QQIcon';
@@ -307,7 +307,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // (gold/lila/grün rotierend). Dadurch wirkt 'Halbfinale 1/2/Finale'
   // konsistent in der ESC-Identitaet.
   const isEsc = !!s.theme?.eurovisionMode;
-  const color = isEsc ? '#FF2D7B' : getRoundColor(s.gamePhaseIndex, s.totalPhases ?? 4);
+  // 2026-07-15 (Wolf 'CozyArena: kein Farbwechsel je Runde, an Kolosseum-BG
+  // anpassen'): im Arena-Modus KONSTANTE Kolosseum-Farbe (Gold aus der Award-
+  // Ceremony-Referenz) statt der rotierenden Pink-Eskalation. Nur Arena — Cozy
+  // behaelt die pro-Runde-Farbe.
+  const color = isEsc ? '#FF2D7B'
+    : (s as any).largeGroupMode ? ARENA_ACCENT.gold
+    : getRoundColor(s.gamePhaseIndex, s.totalPhases ?? 4);
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
   // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
@@ -586,7 +592,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const prevIdx = s.gamePhaseIndex - 1;
   // 2026-05-07: prevColor auch ESC-Pink, damit waehrend Round-Transition
   // kein Farbwechsel stattfindet (Phase-Color cycelt nicht im ESC-Mode).
-  const prevColor = isEsc ? '#FF2D7B' : getRoundColor(Math.max(1, prevIdx), s.totalPhases ?? 4);
+  const prevColor = isEsc ? '#FF2D7B'
+    : (s as any).largeGroupMode ? ARENA_ACCENT.gold
+    : getRoundColor(Math.max(1, prevIdx), s.totalPhases ?? 4);
   // 2026-06-24 (Wolf 'schrift auch schwarz?'): Hero-„Runde N" auf dem Seiten-BG
   // → var(--qq-title) (Mono=Schwarz etc.) bei Skin. Cozy/ESC = Runden-Farbe.
   const titleColor = isThemed() ? 'var(--qq-title)' : color;

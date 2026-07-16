@@ -134,7 +134,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // wo das Team auf dem Strahl steht"). Kein Aufspreizen auf volle Breite mehr.
   const spread = (arr: Array<{ x: number; cx: number }>) => {
     if (arr.length < 2) return;
-    const LO = 6, HI = 94, MIN = 12.5;
+    // 2026-07-15 (Wolf 'Wappen total versetzt zum Strahl'): Mindestabstand von
+    // 12.5 → 8.5 % gesenkt, damit die Wappen viel naeher an ihrer echten Tick-
+    // Position kleben (weniger Auseinanderschieben bei geclusterten Tipps).
+    const LO = 6, HI = 94, MIN = 8.5;
     // 1) Forward-Pass: garantiert Mindestabstand (schiebt nur nach rechts).
     for (let i = 1; i < arr.length; i++) {
       if (arr[i].cx < arr[i - 1].cx + MIN) arr[i].cx = arr[i - 1].cx + MIN;

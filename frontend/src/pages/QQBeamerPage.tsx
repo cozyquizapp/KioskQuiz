@@ -3717,7 +3717,7 @@ function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim, big }:
       {buckets.map((b, bi) => {
         const isWinner = showCrown && b.avatarId === winnerAvatarId;
         const avatarSz = big
-          ? (many ? 'clamp(58px, 6.4cqw, 88px)' : 'clamp(72px, 7.8cqw, 108px)')
+          ? (many ? 'clamp(50px, 5.4cqw, 78px)' : 'clamp(60px, 6.6cqw, 100px)')
           : isWinner
           ? (many ? 'clamp(56px, 6cqw, 80px)' : 'clamp(64px, 7cqw, 92px)')
           : (many ? 'clamp(44px, 4.8cqw, 64px)' : 'clamp(52px, 5.6cqw, 76px)');
@@ -3915,7 +3915,10 @@ export function MuchoOptionsReveal({
               // 2026-07-14 (Wolf 'Layout 1'): Arena-Balken bekommen eine Mindesthoehe,
               // damit alle 4 Zeilen gleich hoch sind und die grossen Inline-Wappen +
               // ×Anzahl-Badge nicht am overflow:hidden der Karte geclippt werden.
-              ...(isMega ? { minHeight: 'clamp(118px, 15cqh, 168px)' } : null),
+              // 2026-07-15 (Wolf 'MUCHO steht unten aus dem Bild raus'): Balken-
+              // Mindesthoehe 15cqh/168 → 12.5cqh/148 gesenkt, damit alle 4 Zeilen
+              // + Frage sicher ins Bild passen (Wappen unten leicht mitverkleinert).
+              ...(isMega ? { minHeight: 'clamp(96px, 12.5cqh, 148px)' } : null),
               // 2026-05-09 (Wolf 'Mini-Sprung in Reihe wenn Sieger-Card kommt'):
               // Border einheitlich 3px ausgeführt (vorher 2/3/2) + box-sizing
               // border-box, sonst wuchs die korrekte Card 2px höher und alle

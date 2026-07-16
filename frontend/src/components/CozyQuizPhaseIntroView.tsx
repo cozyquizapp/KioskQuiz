@@ -21,7 +21,7 @@ import {
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt } from '../cozyQuizShared';
 import { isThemed, isQuietMotion } from '../qqTheme';
-import { getRoundColor, QQ_PHASE_COLORS, ARENA_ACCENT } from '../qqDesignTokens';
+import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug, type QQIconSlug } from './QQIcon';
@@ -307,12 +307,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // (gold/lila/grün rotierend). Dadurch wirkt 'Halbfinale 1/2/Finale'
   // konsistent in der ESC-Identitaet.
   const isEsc = !!s.theme?.eurovisionMode;
-  // 2026-07-15 (Wolf 'CozyArena: kein Farbwechsel je Runde, an Kolosseum-BG
-  // anpassen'): im Arena-Modus KONSTANTE Kolosseum-Farbe (Gold aus der Award-
-  // Ceremony-Referenz) statt der rotierenden Pink-Eskalation. Nur Arena — Cozy
-  // behaelt die pro-Runde-Farbe.
+  // 2026-07-15 (Wolf): im Arena-Modus KONSTANTE Farbe ueber ALLE Runden 1-5
+  // (kein Wechsel). Kein Gold (sah aus wie Schaetzchen) → Brand-Pink/Magenta,
+  // passt zu den magenta Bannern im Kolosseum-BG. Gilt fuer Titel, Tree,
+  // Umrahmung, Fireflies. Nur Arena — Cozy behaelt die pro-Runde-Farbe.
+  const ARENA_ROUND_COLOR = '#EC4899';
   const color = isEsc ? '#FF2D7B'
-    : (s as any).largeGroupMode ? ARENA_ACCENT.gold
+    : (s as any).largeGroupMode ? ARENA_ROUND_COLOR
     : getRoundColor(s.gamePhaseIndex, s.totalPhases ?? 4);
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
@@ -349,7 +350,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     SCHAETZCHEN: '#EAB308', MUCHO: '#3B82F6', BUNTE_TUETE: '#EF4444',
     ZEHN_VON_ZEHN: '#10B981', CHEESE: '#8B5CF6',
   };
-  const catColor = (cat && CAT_COLORS[cat]) || color;
+  // 2026-07-15 (Wolf 'Tree/Umrahmung/Schrift im Arena-Intro konsistent, kein Gold
+  // je Kategorie'): in Arena traegt der Intro-Tree/Frame die KONSTANTE Arena-Farbe
+  // (magenta), nicht die Kategorie-Farbe (Schaetzchen-Gold etc.). Der eigentliche
+  // Frage-Reveal (SchaetzchenReveal etc.) behaelt seine Kategorie-Farbe.
+  const catColor = (s as any).largeGroupMode ? color : ((cat && CAT_COLORS[cat]) || color);
 
   // Wolf 2026-05-05: Texte sind editierbar im /rules-editor.
   // Defaults bleiben hier als Fallback erhalten.
@@ -593,7 +598,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // 2026-05-07: prevColor auch ESC-Pink, damit waehrend Round-Transition
   // kein Farbwechsel stattfindet (Phase-Color cycelt nicht im ESC-Mode).
   const prevColor = isEsc ? '#FF2D7B'
-    : (s as any).largeGroupMode ? ARENA_ACCENT.gold
+    : (s as any).largeGroupMode ? ARENA_ROUND_COLOR
     : getRoundColor(Math.max(1, prevIdx), s.totalPhases ?? 4);
   // 2026-06-24 (Wolf 'schrift auch schwarz?'): Hero-„Runde N" auf dem Seiten-BG
   // → var(--qq-title) (Mono=Schwarz etc.) bei Skin. Cozy/ESC = Runden-Farbe.

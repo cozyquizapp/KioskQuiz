@@ -70,11 +70,12 @@ export function qqArenaBeamerBgSlug(s: QQStateUpdate): string | null {
     case 'QUESTION_ACTIVE':
     case 'QUESTION_REVEAL':
     case 'TIEBREAKER_QUESTION': return qqCategoryAsset(s);
-    // 2026-07-15 (Wolf-Assets scoring/standing): der 2-Beat-PLACEMENT bekommt
-    // eigene BGs — Beat A „Wertung dieser Frage" (scoring) haelt bis der Mod
-    // weiterdrueckt, dann Beat B „Gesamtstand" (standing). megaStandingsRevealed
-    // flippt zwischen beiden (s. qqSocketHandlers/qqRooms). Ersetzt 'standings'.
-    case 'PLACEMENT':      return s.megaStandingsRevealed ? 'standing' : 'scoring';
+    // 2026-07-16 (Wolf-Livetest): die scoring.webp-Tafel passte NICHT auf den
+    // Wertungs-Beat (Liste sass nicht im Board-Rahmen). Standings-BG (standing)
+    // sitzt bestaetigt gut → BEIDE PLACEMENT-Beats nutzen jetzt denselben Board-
+    // Frame. scoring.webp bleibt ungenutzt liegen. (Frueher: scoring/standing
+    // je nach megaStandingsRevealed.)
+    case 'PLACEMENT':      return 'standing';
     case 'PAUSED':         return 'pause';
     case 'FINAL_BETTING':
     case 'FINAL_REVEAL':   return 'epic-moment';

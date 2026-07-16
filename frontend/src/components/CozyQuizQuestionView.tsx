@@ -979,14 +979,38 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const correctSorted = [...s.answers]
                 .filter(a => winnerSet.has(a.teamId))
                 .sort((a, b) => a.submittedAt - b.submittedAt);
+              // CozyArena: Anzahl-richtig pro Fraktion (Score-Treiber) + schnellste
+              // Antwort je Fraktion (Tiebreak). Wolf-Livetest 2026-07-16.
+              const factionStats = isMegaTeams ? (() => {
+                const m = new Map<string, { correct: number; total: number }>();
+                for (const t of s.teams) {
+                  const e = m.get(t.avatarId) ?? { correct: 0, total: 0 };
+                  e.total++;
+                  if (winnerSet.has(t.id)) e.correct++;
+                  m.set(t.avatarId, e);
+                }
+                return m;
+              })() : null;
               // CozyArena (Wolf-Livetest 2026-07-12 'nicht alle Wappen von allen
-              // Subteams'): pro Fraktion nur die SCHNELLSTE Antwort zeigen (erste je
-              // avatarId in der nach Zeit sortierten Liste), sonst bis zu 40 Wappen.
+              // Subteams'): pro Fraktion nur die SCHNELLSTE korrekte Antwort zeigen
+              // (dedup nach avatarId), sonst bis zu 40 Wappen. Rang dann nach Anzahl-
+              // richtig (so wie die Arena wertet), Speed nur als Tiebreak.
               const correctAnswers = isMegaTeams
-                ? (() => { const seen = new Set<string>(); return correctSorted.filter(a => {
-                    const av = s.teams.find(t => t.id === a.teamId)?.avatarId;
-                    if (!av || seen.has(av)) return false; seen.add(av); return true;
-                  }); })()
+                ? (() => {
+                    const seen = new Set<string>();
+                    const perFaction = correctSorted.filter(a => {
+                      const av = s.teams.find(t => t.id === a.teamId)?.avatarId;
+                      if (!av || seen.has(av)) return false; seen.add(av); return true;
+                    });
+                    return perFaction.sort((a, b) => {
+                      const avA = s.teams.find(t => t.id === a.teamId)?.avatarId ?? '';
+                      const avB = s.teams.find(t => t.id === b.teamId)?.avatarId ?? '';
+                      const cA = factionStats!.get(avA)?.correct ?? 0;
+                      const cB = factionStats!.get(avB)?.correct ?? 0;
+                      if (cB !== cA) return cB - cA;
+                      return a.submittedAt - b.submittedAt;
+                    });
+                  })()
                 : correctSorted;
               if (correctAnswers.length === 0) {
                 return (
@@ -1064,6 +1088,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         }}>
                           {timeSec.toFixed(1)}s
                         </span>
+                        {/* Arena: Anzahl-richtig pro Fraktion (Score-Treiber) unter
+                            der Speed-Pille — Speed ist nur der Tiebreak. Wolf 2026-07-16. */}
+                        {isMegaTeams && factionStats && (() => {
+                          const st = factionStats.get(team.avatarId);
+                          if (!st) return null;
+                          return (
+                            <span style={{
+                              fontSize: 'clamp(12px, 1.3cqw, 17px)', fontWeight: 900,
+                              color: isFastest ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : 'var(--qq-text-muted)',
+                              whiteSpace: 'nowrap', letterSpacing: '0.02em',
+                            }}>
+                              {st.correct}/{st.total} {lang === 'en' ? 'correct' : 'richtig'}
+                            </span>
+                          );
+                        })()}
                       </div>
                     );
                   })}

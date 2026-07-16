@@ -43,14 +43,19 @@
 - 🔴 Top5 Arena: kein „Rundensieger"-Krönung mehr → neutrales „Meiste Treffer" (Akzent statt Gold), konsistent mit Kronen-raus.
 - 🔴 Team-Vorstellung: TEAMS_REVEAL-BG → arena-main, Content in Sky (Titel oben) / Boden (Aufstellung unten), klar von gemalten Bannern getrennt.
 
+**Nachgezogen (Wolf-Feedback 2026-07-16, gepusht):**
+- **Schätzchen-Reveal → v4 „NUR STRAHL"** (`88d68cde`..`41cb8f78`): 2-spalt. Liste war verwirrend → Wolf-Wahl „nur Strahl, keine Liste". Wappen an ihrer Tipp-Position in ZWEI Lanes (oben/unten am Strahl, `spread` MIN=12%), kurzer Stiel zur Schiene, Wert+Delta(+Punkte Arena) am Wappen. Alles GOLD/GELB (kein Pink). ⚠️ **Beamer-Check: überlappungsfrei bei 8 Fraktionen mit engen Tipps?** (sonst MIN/Wappen-Größe nachdrehen).
+- **Kategorie-Intro-Farben gefixt** (`88d68cde`): catColor war in Arena auf Pink geforced → alle Kategorie-Intro-Texte pink. Jetzt: Kategorie-Intros in EIGENER Farbe (Schätzchen gold, MUCHO blau…), NUR Progress-Tree-Pages bleiben pink (`color`/`displayColor`).
+
 **Offen (braucht Wolf / Beamer):**
 - [ ] ⏳ **Bild fürs Vorstellen** (Wappen fliegen zu festen Ständen) — Wolf liefert Bild, dann Flug-Reveal
       mit 8 Ankern bauen.
-- [ ] **Beamer-Verify** der visuellen Tunings dieses Batches (Wolf am Beamer): Schätzchen-Redesign (Strahl-Ticks
-      + 2-spalt. Liste bei 8 Fraktionen) · MUCHO 2×2→4-Reihen-Morph + Frage-Shrink (Overflow? smooth?) ·
-      Team-Vorstellung arena-main (Titel/Einzug/Aufstellung überschneiden Banner nicht mehr?) · Scoring nutzt
-      Standings-BG (sitzt im Board?) · Cheese Anzahl-richtig-Layout · 10v10 Wappen unter Feldern · CozyGuessr
-      rotes BG · Finale-Ansage im Intro (×2/×3).
+- [ ] **Beamer-Verify** der visuellen Tunings dieses Batches (Wolf am Beamer): **Schätzchen v4** (Zwei-Lane
+      überlappungsfrei bei 8 Fraktionen?) · **Kategorie-Intros** (jede Kategorie in ihrer Farbe, Tree pink?) ·
+      MUCHO 2×2→4-Reihen-Morph + Frage-Shrink (Overflow? smooth?) · Team-Vorstellung arena-main (Titel/Einzug/
+      Aufstellung überschneiden Banner nicht mehr?) · Scoring nutzt Standings-BG (sitzt im Board?) · Cheese
+      Anzahl-richtig-Layout · 10v10 Wappen unter Feldern · CozyGuessr rotes BG · Finale-Ansage im Intro (×2/×3) ·
+      **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion — auch im KLASSISCHEN CozyQuiz, nicht nur Arena).
 
 > **Verworfen:** 🎂 Kuchendiagramm für MUCHO (Vorschau gezeigt 2026-07-16 → Wolf „passt nicht so gut");
 > aktueller MUCHO-Balken-Reveal (2×2→4 Reihen) bleibt.

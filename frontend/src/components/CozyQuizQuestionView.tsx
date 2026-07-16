@@ -1499,15 +1499,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // clamp(60-120). Vorher: Card 1400 breit aber bis 360 Innen-Padding
             // → nur 1040px Textbreite, Frage wirkte klein. Jetzt 240px max
             // Innen-Padding → ~1160px Text bei voller Breite.
-            const cardPadding = hpCompact
+            // 2026-07-16 (Wolf 'MUCHO: bei Aufloesung Frage kleiner'): sobald der
+            // MUCHO-Arena-Reveal auf die 4 vollbreiten Zeilen aufklappt (muchoReveal
+            // Step>=1), schrumpft die Frage-Card (Padding/Margin/Font) smooth →
+            // macht Platz fuer die 4 Balken. Nur Arena+MUCHO.
+            const muchoArenaExpanded = q.category === 'MUCHO' && !!(s as any).largeGroupMode
+              && revealed && ((s as any).muchoRevealStep ?? 0) >= 1;
+            const compactCard = hpCompact || muchoArenaExpanded;
+            const cardPadding = compactCard
               ? 'clamp(10px, 1.4cqh, 18px) clamp(60px, 8cqw, 120px) clamp(10px, 1.4cqh, 18px)'
               : 'clamp(18px, 2.6cqh, 32px) clamp(60px, 8cqw, 120px) clamp(18px, 2.6cqh, 32px)';
-            const cardMarginBottom = hpCompact ? 'clamp(8px, 1.2cqh, 16px)' : 'clamp(16px, 2.2cqh, 32px)';
+            const cardMarginBottom = compactCard ? 'clamp(8px, 1.2cqh, 16px)' : 'clamp(16px, 2.2cqh, 32px)';
             // v3 round 11 (User-Wunsch 'textgroesse muss nicht zwangsweise
             // kleiner werden'): Font-Size bleibt voll, nur Padding/Margin
             // werden im hpCompact-Modus kleiner. Card-Shift uebernimmt das
             // Platzproblem.
-            const cardFontSize = qFontSize;
+            // MUCHO-Arena-Reveal: Frage-Font zusaetzlich verkleinert (Wolf 2026-07-16).
+            // key-Remount unten (key inkl. cardFontSize) macht den Wechsel atomic →
+            // kein Buchstaben-Wandern, nur ein sauberes langFadeIn.
+            const cardFontSize = muchoArenaExpanded ? 'clamp(22px, min(3.2cqw, 4.6cqh), 46px)' : qFontSize;
             // 2026-05-12 (Audit-A 'Dead-Code chipShiftVh entfernt'): die
             // chipShiftVh-Variable war seit 2026-05-07 immer 0 (Comment
             // beschrieb Legacy aus 2026-04-29 als Chips position:absolute

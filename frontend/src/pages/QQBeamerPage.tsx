@@ -3848,15 +3848,20 @@ export function MuchoOptionsReveal({
   // ziehen die Rows smooth auseinander, damit die Chips Platz unter der Card
   // bekommen ohne die naechste Card zu verdecken.
   const expandedLayout = revealStep >= 1;
-  // 2026-07-14 (Wolf 'Layout 1 fuer Mucho'): In der Arena wird aus dem 2x2-Grid
-  // EINE Spalte mit vollbreiten Antwort-Balken. Die Fraktions-Wappen sitzen inline
-  // rechts in jeder Zeile — maximaler horizontaler Platz = groesste Wappen, klarste
-  // Antwort->Fraktion-Zuordnung, aus Beamer-Distanz lesbar. Nicht-Arena bleibt 2x2
-  // mit den unter den Karten haengenden Voter-Reihen (unveraendert).
+  // 2026-07-16 (Wolf 'MUCHO geht immernoch aus dem Screen, mach 2x2 aktiv → 4
+  // Reihen beim Reveal, smooth'): In der Arena ist das Options-Layout jetzt ein
+  // flex-wrap-Container. Waehrend QUESTION_ACTIVE (keine Wappen) sitzen die 4
+  // Optionen als 2x2-Raster (Breite 50%) — kompakt, passt sicher. Beim Reveal
+  // (Wappen fliegen ein) waechst jede Zeile auf 100% Breite → 4 volle Balken mit
+  // grossen Inline-Wappen. Der Breiten-Uebergang (50%→100%) ist per CSS animierbar
+  // = smooth. Harte Hoehen-Caps (kleiner beim Reveal) halten alle 4 Zeilen + Frage
+  // im Bild. Nicht-Arena bleibt beim festen 2x2-Grid (unveraendert).
+  const ARENA_GAP = 14; // px, fix → calc(50% - GAP/2) fuer sauberes 2x2
   const containerStyle: React.CSSProperties = isMega
     ? {
-        display: 'flex', flexDirection: 'column',
-        gap: 'clamp(10px, 1.6cqh, 18px)',
+        display: 'flex', flexWrap: 'wrap',
+        justifyContent: 'center', alignContent: 'center',
+        gap: ARENA_GAP,
         width: '100%', maxWidth: 1400,
         marginBottom: 'clamp(10px, 1.4cqh, 22px)',
       }
@@ -3902,7 +3907,16 @@ export function MuchoOptionsReveal({
           // analog zu ZvZ. Wrapper bekommt display:flex + height:100%, Inner-Card
           // flex:1 — bei laengeren Optionen (zweizeilig) wachsen alle Cards mit.
           <div key={i} style={{
-            position: 'relative', display: 'flex', height: '100%',
+            position: 'relative', display: 'flex',
+            // Arena: flex-wrap-Kachel — aktiv 50% (2x2), Reveal 100% (4 Reihen),
+            // Breite animiert = smooth. Nicht-Arena: height:100% fuers Grid.
+            ...(isMega
+              ? {
+                  flex: `0 0 ${expandedLayout ? '100%' : `calc(50% - ${ARENA_GAP / 2}px)`}`,
+                  maxWidth: expandedLayout ? '100%' : `calc(50% - ${ARENA_GAP / 2}px)`,
+                  transition: 'flex-basis 0.6s var(--qq-ease-smooth), max-width 0.6s var(--qq-ease-smooth)',
+                }
+              : { height: '100%' }),
             // 2026-07-12 (Delight-Pass): gestaffelte Entrance pro Karte statt
             // Block-Fade. Nur vor dem Reveal — im Reveal uebernehmen die
             // Card-eigenen Reveal-Keyframes (Pop/Shake) am Inner-Div.
@@ -3911,14 +3925,17 @@ export function MuchoOptionsReveal({
             <div style={{
               flex: 1,
               position: 'relative', overflow: 'hidden',
-              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: '24px 28px',
-              // 2026-07-14 (Wolf 'Layout 1'): Arena-Balken bekommen eine Mindesthoehe,
-              // damit alle 4 Zeilen gleich hoch sind und die grossen Inline-Wappen +
-              // ×Anzahl-Badge nicht am overflow:hidden der Karte geclippt werden.
-              // 2026-07-15 (Wolf 'MUCHO steht unten aus dem Bild raus'): Balken-
-              // Mindesthoehe 15cqh/168 → 12.5cqh/148 gesenkt, damit alle 4 Zeilen
-              // + Frage sicher ins Bild passen (Wappen unten leicht mitverkleinert).
-              ...(isMega ? { minHeight: 'clamp(96px, 12.5cqh, 148px)' } : null),
+              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+              // Arena: schlankeres Vertikal-Padding, damit die grossen Inline-Wappen
+              // (bis 100px) in der gecappten Balken-Hoehe Platz haben (Wolf 2026-07-16).
+              padding: isMega ? 'clamp(10px,1.4cqh,16px) clamp(16px,1.8cqw,28px)' : '24px 28px',
+              // Arena-Balken-Hoehe: aktiv (2x2) kompakter, Reveal (4 volle Zeilen)
+              // gecappt, damit alle 4 Zeilen + Frage sicher ins Bild passen (Wolf
+              // 2026-07-16). Beim Reveal sind es nur 4 Zeilen untereinander →
+              // Cap 10.5cqh/128 (statt frueher 12.5cqh/148 im Single-Column-Layout).
+              ...(isMega
+                ? { minHeight: expandedLayout ? 'clamp(84px, 11.5cqh, 140px)' : 'clamp(66px, 8.5cqh, 104px)' }
+                : null),
               // 2026-05-09 (Wolf 'Mini-Sprung in Reihe wenn Sieger-Card kommt'):
               // Border einheitlich 3px ausgeführt (vorher 2/3/2) + box-sizing
               // border-box, sonst wuchs die korrekte Card 2px höher und alle

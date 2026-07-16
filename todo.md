@@ -38,11 +38,9 @@
 - 🟢 Finale ×2/×3: Mid-Reveal-Banner raus → Ansage im Runden-Intro (adaptiv ×2/×3), `arenaFinaleMult` in PhaseIntroView.
 - 🟠 Cheese-Reveal (Arena): Anzahl-richtig pro Fraktion + Rang nach Anzahl (Speed = Tiebreak).
 - 🟠 Scoring-Tabelle: beide PLACEMENT-Beats nutzen jetzt Standings-Board-BG (`standing`); scoring.webp ungenutzt.
+- 🔴 Schätzchen-Reveal Redesign: Strahl oben (nur Ticks + Wahrheit) + 2-spaltige Rangliste (4×2), Chip-Lanes/Connectors/Krone raus.
 
 **Offene Punkte:**
-- [ ] 🔴 **Schätzchen-Reveal Redesign** (Struktur oben locked). Datei `components/reveals/SchaetzchenReveal.tsx`:
-      Bühne (Z. ~250-479) neu → Top-Band Antwort+Strahl(Ticks), Bottom-Band 2-spalt. Liste. Daten
-      behalten (`rankedFinal`, `ptsOfAvatar`, `tx`, `axisPct`, `shown`, Beats). Chip-Lanes+Connectors raus.
 - [ ] 🔴 **MUCHO 2×2→4-Reihen** (s.o.), `MuchoOptionsReveal` in `QQBeamerPage.tsx` (~3774).
 - [ ] 🔴 **Top5:** „alle sind Rundensieger egal welche Antwort" = unlogisch → **neue gemeinsame Darstellung**
       überlegen (`components/reveals/Top5Reveal.tsx`).

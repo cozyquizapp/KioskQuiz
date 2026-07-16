@@ -55,7 +55,13 @@
 - **Bild 2 — Round-Intro-Pille** (PhaseIntroView): „Runde X von Y" ging auf dem Vortex-BG unter → kräftigerer Verlauf-BG + stärkere Border + **weißer Text** mit Dark-Halo + Farb-Glow. (BG-Zentrierung ist asset-abhängig, nicht angefasst.)
 - **Bild 6 — Farb-Balken pro Option** (QQBeamerPage `MegaOptionBar`): MUCHO-Arena statt Wappen+×N-Reihe jetzt liegender, gestapelter Farbbalken je Option (Fraktions-Segmente, skaliert auf stimmenstärkste Option wie Standings) + grosse Gesamtzahl + Mini-Wappen in breiten Segmenten. Alte `MegaMuchoVoterPills` bleibt ungenutzt im Code (Reuse). ⚠️ Beamer-Verify: Segment-Lesbarkeit/Balken-Breite bei 8 Fraktionen.
 - **Gold in Krönung: bewusst OK** (Wolf 2026-07-16) — Zeremonie-Ausnahme bestätigt, Gold-Grundsatzfrage für Krönung erledigt.
-- **Gruppe-B-Icons:** ✅ `fx-book` + `fx-shield-faction` da. **Fehlen noch: `fx-clapperboard` (🎬), `fx-swords` (⚔️), `fx-lightning` (⚡ fix)** — Wolf malt, dann wire ich.
+- **Icons — finalisiert (Wolf 2026-07-16):** ✅ `fx-book` + `fx-shield-faction` da. **Gestrichen:** ~~fx-clapperboard~~ (Filmklappe passt nicht; „Los geht's" hat Text-Hero / ggf. `fx-arena`), ~~fx-swords~~ (Führung war 👑→📈, aber generisch), ~~fx-lightning~~ (Wolf: streichen).
+  **✅ Wolf-PNGs geliefert + verdrahtet (2026-07-16):**
+  1. **`rocket.png`** (Slug `rocket`) — Rakete im „Führung!"-Callout (📈→🚀, `QQEmojiIcon emoji="🚀"`).
+  2. **`anker.png`** (Slug `anker`) — CozyWolf mit Anker (Matrosen-Stirnband), Award „Beständig" (ersetzt `fx-chart` in `megaAwardBeat` + `MegaAwardsStrip`).
+  3. **`group.png`** (Slug `group`) — CozyWolf als Rudel + Konfetti, Award „Vollzählig" (ersetzt `fx-teams`).
+  - Slugs in QQIcon-Registry (Union + Fallback-Emoji + Emoji→Slug) eingetragen. Award-Form = **Wolf-Maskottchen** (bestätigt).
+  - ⚠️ **OFFEN — transparente PNGs:** die 3 gelieferten Bilder haben noch einen **eingebackenen dunklen/farbigen Hintergrund** (Halo-Kasten). Wolf exportiert sie **freigestellt/transparent** unter gleichem Namen nach → dann sitzen sie sauber wie `award-speedy`/`award-sharpshooter`. Wiring bleibt gleich.
 
 **Offen (braucht Wolf / Beamer):**
 - ✅ **Bild 1 — Wappen fliegen an die Stände** (Wolf: arena-main.webp, „deckungsgleich einrasten"): ArenaEntranceView

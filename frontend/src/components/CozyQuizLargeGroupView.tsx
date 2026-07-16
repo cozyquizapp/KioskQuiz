@@ -382,7 +382,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
             color: team.color, whiteSpace: 'nowrap',
             textShadow: `0 2px 10px ${team.color}, 0 0 4px rgba(0,0,0,0.6)`,
             pointerEvents: 'none', animation: 'qqLeadCallout 1.2s ease-out both',
-          }}><QQEmojiIcon emoji="📈" /> {de ? 'Führung!' : 'Lead!'}</span>
+          }}><QQEmojiIcon emoji="🚀" /> {de ? 'Führung!' : 'Lead!'}</span>
         </>
       )}
       {/* Arena: keine Krone im Standing (anteilige Punkte, kein klassischer Sieger).
@@ -439,8 +439,8 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
     { slug: 'award-sharpshooter' as const, label: de ? 'Treffsicherstes Team' : 'Sharpest team', av: awards.sharpshooter },
     { slug: 'award-underdog' as const, label: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback },
     // 2026-07-15 (Wolf): 2 neue Awards passend zur Per-Capita-Wertung.
-    { slug: 'fx-teams' as const, label: de ? 'Vollzählig' : 'Full house', av: awards.participation },
-    { slug: 'fx-chart' as const, label: de ? 'Beständig' : 'Most steady', av: awards.steady },
+    { slug: 'group' as const, label: de ? 'Vollzählig' : 'Full house', av: awards.participation },
+    { slug: 'anker' as const, label: de ? 'Beständig' : 'Most steady', av: awards.steady },
   ]).filter(x => !!x.av);
   if (items.length === 0) return null;
   return (
@@ -479,9 +479,9 @@ function megaAwardBeat(key: QQMegaAwardKey, awards: QQMegaAwards, de: boolean): 
     case 'comeback':
       return { slug: 'award-underdog', title: de ? 'Beste Aufholjagd' : 'Best comeback', av: awards.comeback!, stat: de ? `+${st.comeback ?? 0} Plätze aufgeholt` : `+${st.comeback ?? 0} places climbed` };
     case 'participation':
-      return { slug: 'fx-teams', title: de ? 'Vollzählig' : 'Full house', av: awards.participation!, stat: de ? `${st.participation ?? 0}% mitgemacht` : `${st.participation ?? 0}% turnout` };
+      return { slug: 'group', title: de ? 'Vollzählig' : 'Full house', av: awards.participation!, stat: de ? `${st.participation ?? 0}% mitgemacht` : `${st.participation ?? 0}% turnout` };
     case 'steady':
-      return { slug: 'fx-chart', title: de ? 'Beständig' : 'Most steady', av: awards.steady!, stat: de ? `Ø ${st.steady ?? 0} Punkte, kaum Schwankung` : `avg ${st.steady ?? 0} pts, low swing` };
+      return { slug: 'anker', title: de ? 'Beständig' : 'Most steady', av: awards.steady!, stat: de ? `Ø ${st.steady ?? 0} Punkte, kaum Schwankung` : `avg ${st.steady ?? 0} pts, low swing` };
   }
 }
 

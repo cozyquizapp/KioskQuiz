@@ -298,8 +298,8 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide1.title', 'Das Ziel'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.mega.slide1.line1', 'Sammelt als Team die meisten Punkte!'),
-        t('rules.mega.slide1.line2', 'Jedes Handy spielt für sein Team mit'),
+        t('rules.mega.slide1.line1', 'Holt als Fraktion die meisten Punkte!'),
+        t('rules.mega.slide1.line2', 'Jedes Handy spielt für eure Fraktion'),
       ],
     },
     {
@@ -316,8 +316,8 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Jede Antwort bringt deinem Team 0–100 Punkte — je besser, desto mehr'),
-        t('rules.mega.slide3.line2', 'Dein Team zählt den Schnitt aller Mitspieler'),
+        t('rules.mega.slide3.line1', 'Jede Antwort bringt eurer Fraktion 0–100 Punkte — je besser, desto mehr'),
+        t('rules.mega.slide3.line2', 'Gewertet wird der Schnitt aller Handys'),
       ],
       extra: t('rules.mega.slide3.extra', 'Letzte Runde zählt doppelt, letzte Frage dreifach'),
     },
@@ -343,8 +343,8 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide1.title', 'The Goal'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.mega.slide1.line1', 'Score the most points as a team!'),
-        t('rules.mega.slide1.line2', 'Every phone plays for its team'),
+        t('rules.mega.slide1.line1', 'Score the most points as a faction!'),
+        t('rules.mega.slide1.line2', 'Every phone plays for your faction'),
       ],
     },
     {
@@ -361,8 +361,8 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'How to score'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Every answer earns your team 0–100 points — the better, the more'),
-        t('rules.mega.slide3.line2', 'Your team counts the average of all players'),
+        t('rules.mega.slide3.line1', 'Every answer earns your faction 0–100 points — the better, the more'),
+        t('rules.mega.slide3.line2', 'Scored as the average of all your phones'),
       ],
       extra: t('rules.mega.slide3.extra', 'Last round counts double, the last question triple'),
     },

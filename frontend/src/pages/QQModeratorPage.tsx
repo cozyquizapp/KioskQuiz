@@ -277,12 +277,24 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       setAutoplayEnabled(true);
       // Test-Mode-Flag setzen → Backend skipt persistGameResult
       try { await emit('qq:setTestMode', { roomCode, value: true }); } catch {}
-      // 1. Bots spawnen (5 reichen für realistische Streuung)
+      // 2026-07-16 (Wolf 'Test startet immer automatisch in CozyQuiz'): der Auto-
+      // Start hat largeGroupMode nie gesetzt → immer normaler CozyQuiz-Test, Arena
+      // liess sich nie per Test-Route mit Bots durchspielen. Jetzt schaltet
+      // /moderator-test?arena=1 (oder ?mega=1) VOR dem Bot-Spawn auf Arena
+      // (largeGroupMode + nested), sonst bleibt es CozyQuiz. Format vor den Bots
+      // setzen, damit die Bots gleich als Fraktionen/nested einsteigen.
+      const wantArena = /[?&](arena|mega)=1/i.test(window.location.search);
+      if (wantArena) {
+        try { await emit('qq:setQuizOptions', { roomCode, largeGroupMode: true, nestedTeams: true, formatSelected: true }); } catch {}
+        await new Promise(r => setTimeout(r, 250));
+      }
+      // 1. Bots spawnen — Arena braucht mehr fuer eine realistische Fraktions-
+      // Streuung (24), CozyQuiz reichen 5.
       try {
         const r = await fetch(`/api/qq/${roomCode}/dev/fillTeams`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ count: 5, pin }),
+          body: JSON.stringify({ count: wantArena ? 24 : 5, pin }),
         });
         if (r.status === 403) {
           clearDevPin();

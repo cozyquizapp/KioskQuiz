@@ -253,12 +253,17 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   //   1. 5 Bots via /dev/fillTeams spawnen
   //   2. Setup als done markieren
   //   3. Spiel starten
-  // Damit landet Wolf direkt in PHASE_INTRO Runde 1 mit gefüllter Lobby,
-  // ohne durch den Setup-Flow klicken zu muessen. Autoplay defaultet auf
-  // AN im Test-Modus (kein Klick nötig um durchzulaufen).
+  // 2026-07-16 (Wolf 'Reload geht sofort ins Quiz statt zum Moderator-Setup'):
+  // Der Auto-Start ist jetzt OPT-IN via ?run=1 (bzw. ?autostart=1 / ?auto=1).
+  // Ohne Param laedt /moderator-test die Mod-Seite (Dev-Tools + Bot-Buttons),
+  // bleibt aber im Setup stehen — kein automatischer Bot-Spawn + Quiz-Start mehr
+  // beim Neuladen. Mit ?run=1 laeuft der schnelle Reveal-Test wie frueher durch
+  // (zusaetzlich ?arena=1 / ?mega=1 → Arena statt CozyQuiz).
   const testSetupTriggeredRef = useRef(false);
   useEffect(() => {
     if (!testMode) return;
+    const autoStart = /[?&](run|autostart|auto)=1/i.test(window.location.search);
+    if (!autoStart) return;
     if (testSetupTriggeredRef.current) return;
     if (!connected || !joined) return;
     if (drafts.length === 0 || !selectedDraftId) return;

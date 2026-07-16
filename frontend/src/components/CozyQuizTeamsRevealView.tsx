@@ -149,7 +149,6 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         const anchor = BANNER_ANCHORS[f.avatarId];
         if (!anchor) return null;
         const on = placed.has(i);
-        const src = crestFor(f.avatarId);
         const cw = big ? 'clamp(64px, 7cqw, 128px)' : 'clamp(58px, 6.4cqw, 116px)';
         return (
           <div key={f.avatarId} style={{
@@ -159,15 +158,13 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
             gap: 'clamp(3px, 0.6cqh, 8px)',
             opacity: on ? 1 : 0, transition: 'opacity 0.3s ease',
           }}>
-            <div style={{
-              position: 'relative', width: cw, height: cw,
-              animation: on ? 'qqBannerLand 0.72s cubic-bezier(0.2,1.2,0.4,1) both' : 'none',
-            }}>
-              {/* Glow-Flash beim Einrasten */}
-              {on && <span aria-hidden style={{ position: 'absolute', inset: '-32%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}99, transparent 66%)`, animation: 'qqBannerGlow 0.9s ease-out both', pointerEvents: 'none' }} />}
-              {src
-                ? <img src={src} alt="" draggable={false} style={{ position: 'relative', width: '100%', height: '100%', objectFit: 'contain', filter: `drop-shadow(0 0 15px ${f.color}) drop-shadow(0 3px 6px rgba(0,0,0,0.5))` }} />
-                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={'100%'} />}
+            <div style={{ position: 'relative', width: cw, height: cw }}>
+              {/* 2026-07-16 (Wolf Bild 1 'wie loesen'): KEIN rundes Wappen mehr an die
+                  Wand — das gemalte arena-main-Banner IST schon das Fraktions-Wappen,
+                  ein rundes drueber doppelte das Icon. Nur ein weicher Farb-Halo ueber
+                  dem gemalten Banner signalisiert „diese Fraktion steht", das
+                  Namensschild darunter benennt sie (Namen sind im BG nicht gemalt). */}
+              {on && <span aria-hidden style={{ position: 'absolute', inset: '-38%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}66, ${f.color}22 46%, transparent 70%)`, animation: 'qqBannerGlow 1s ease-out both', pointerEvents: 'none' }} />}
             </div>
             {/* Nameplate unter dem Banner */}
             <div style={{

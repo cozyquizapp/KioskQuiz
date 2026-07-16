@@ -409,11 +409,12 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
       {showRanking && (
         <div style={{
           flex: '0 0 38%', padding: '34px 22px 22px',
-          // 2026-07-15 (Wolf 'rechts BG etwas sichtbar, wie Schau-mal'): Panel-
-          // Hintergrund halbtransparent (0.96 → 0.62) → der Arena-BG scheint rechts
-          // durch, bleibt aber dunkel genug fuer die Rangliste (Text hell auf dunkel).
-          background: 'linear-gradient(180deg, rgba(74,12,20,0.5), rgba(28,5,11,0.62))',
-          borderLeft: '2px solid rgba(180,40,52,0.32)',
+          // 2026-07-16 (Wolf 'noch ein roter Stich'): das rote Kolosseum-Kategorie-BG
+          // scheint jetzt hinter dem Panel durch → ein zusaetzlich ROTES Panel-Gradient
+          // doppelte das Rot (Stich). Panel daher NEUTRAL-DUNKEL → der rote Arena-BG
+          // liefert die Waerme, das Panel nur den Kontrast fuer die Rangliste.
+          background: 'linear-gradient(180deg, rgba(14,11,22,0.44), rgba(8,6,14,0.64))',
+          borderLeft: '2px solid rgba(255,255,255,0.10)',
           boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',

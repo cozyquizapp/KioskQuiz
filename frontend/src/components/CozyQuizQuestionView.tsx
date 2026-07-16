@@ -1330,9 +1330,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             // Dunkler Text auf dem gruenen Badge = 8.67:1. Auf dem dunklen
                             // Nicht-fertig-Badge bleibt weiss (dort bestens lesbar).
                             // 2026-07-14 (Wolf 'X/Y zu klein von weitem'): 28→40px, 15→22.
-                            border: '2.5px solid rgba(255,255,255,0.2)', color: done ? '#0A0814' : '#fff', fontSize: 22, fontWeight: 900,
+                            border: '2.5px solid rgba(255,255,255,0.2)', color: done ? '#0A0814' : '#fff', fontSize: 24, fontWeight: 900,
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                          }}>{g.answered}/{g.total}</div>
+                            // 2026-07-16 (Wolf): nur die ANZAHL der Subteams, die geantwortet
+                            // haben (kein „1/5" mehr) — die Fraktion grünt komplett, wenn alle
+                            // ihre Handys abgegeben haben (done-Ring), die Zahl zeigt den Fortschritt.
+                          }}>{g.answered}</div>
                         </div>
                       );
                     })}
@@ -3144,14 +3147,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             </div>
                             <div style={{
                               position: 'absolute', bottom: -4, right: -4,
-                              minWidth: 24, height: 24, padding: '0 6px', borderRadius: 999,
+                              minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999,
                               background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
-                              border: '2px solid rgba(255,255,255,0.18)',
+                              border: '2.5px solid rgba(255,255,255,0.2)',
                               // F1 (color-contrast): dunkler Text auf gruenem Badge (8.67:1 statt 2.28:1).
-                              color: done ? '#0A0814' : '#fff', fontSize: 13, fontWeight: 900,
+                              color: done ? '#0A0814' : '#fff', fontSize: 19, fontWeight: 900,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                            }}>{g.answered}/{g.total}</div>
+                              // 2026-07-16 (Wolf): nur die Anzahl geantworteter Subteams (kein „1/5").
+                            }}>{g.answered}</div>
                           </div>
                         );
                       })}

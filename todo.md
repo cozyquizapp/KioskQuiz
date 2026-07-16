@@ -31,19 +31,15 @@
 - **Kuchendiagramm:** möglich bei **MUCHO** (A/B/C/D-Split) oder **10v10** (3 Optionen). Noch nicht
   entschieden ob bauen. War nie fest einer Kategorie zugeordnet (todo Reveal-Rethink).
 
+**✅ Erledigt (gepusht 2026-07-16):**
+- 🟢 CozyGuessr rechts: rotes Bunte-Tüte-Gradient hinterm halbtransparenten Panel (`6d61fc8d`+`CozyGuessr`).
+- 🟢 Kronen raus aus Arena-Reveals (StandingsRow/Endstand/Winner-Chip/Führung-Callout 👑→📈); Champion bleibt via Krönungs-Beat+Hero.
+- 🟢 10v10: Wappen komplett unter die Felder + opaker (Arena).
+- 🟢 Finale ×2/×3: Mid-Reveal-Banner raus → Ansage im Runden-Intro (adaptiv ×2/×3), `arenaFinaleMult` in PhaseIntroView.
+- 🟠 Cheese-Reveal (Arena): Anzahl-richtig pro Fraktion + Rang nach Anzahl (Speed = Tiebreak).
+- 🟠 Scoring-Tabelle: beide PLACEMENT-Beats nutzen jetzt Standings-Board-BG (`standing`); scoring.webp ungenutzt.
+
 **Offene Punkte:**
-- [ ] 🟢 **CozyGuessr rechts:** halbtransparentes Panel zeigt dahinter NICHTS → das **rote Bunte-
-      Tüte-BG** dahinterlegen (liegt aktuell keins). Prüfen: bekommt der Map-Reveal in Arena den
-      Kategorie-BG (BUNTE_TUETE = rot)? Sonst BG wiren.
-- [ ] 🟢 **Kronen raus** in ALLEN CozyArena-Reveals (kein klassischer Sieger, anteilige Punkte).
-      Stellen u.a.: `CozyQuizLargeGroupView` 391/395/666, `CozyQuizQuestionView` 1837,
-      Schätzchen-Verdikt „🏆 leads". Mega-gaten.
-- [ ] 🟢 **10v10:** Wappen unter die Felder (s.o.).
-- [ ] 🟢 **Finale ×2/×3:** Banner mittendrin raus → schon im **Runden-Intro** ansagen („Finalrunde
-      ×2", letzte Frage „×3"), bei letzter Kategorie „×3" aufs Intro-Banner.
-- [ ] 🟠 **Cheese-Reveal:** auch **Anzahl-richtig pro Fraktion + Speed-Tiebreak** anzeigen (wie andere).
-- [ ] 🟠 **Scoring-Tabelle (Beat A, „Wertung dieser Frage"):** sitzt nicht im BG-Rahmen → kleiner ODER
-      **gleicher BG wie Standings** (Standings/Beat B ist gut). `MegaQuestionRanking` in `CozyQuizLargeGroupView`.
 - [ ] 🔴 **Schätzchen-Reveal Redesign** (Struktur oben locked). Datei `components/reveals/SchaetzchenReveal.tsx`:
       Bühne (Z. ~250-479) neu → Top-Band Antwort+Strahl(Ticks), Bottom-Band 2-spalt. Liste. Daten
       behalten (`rankedFinal`, `ptsOfAvatar`, `tx`, `axisPct`, `shown`, Beats). Chip-Lanes+Connectors raus.

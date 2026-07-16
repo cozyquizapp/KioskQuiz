@@ -61,7 +61,7 @@
   2. **`anker.png`** (Slug `anker`) — CozyWolf mit Anker (Matrosen-Stirnband), Award „Beständig" (ersetzt `fx-chart` in `megaAwardBeat` + `MegaAwardsStrip`).
   3. **`group.png`** (Slug `group`) — CozyWolf als Rudel + Konfetti, Award „Vollzählig" (ersetzt `fx-teams`).
   - Slugs in QQIcon-Registry (Union + Fallback-Emoji + Emoji→Slug) eingetragen. Award-Form = **Wolf-Maskottchen** (bestätigt).
-  - ⚠️ **OFFEN — transparente PNGs:** die 3 gelieferten Bilder haben noch einen **eingebackenen dunklen/farbigen Hintergrund** (Halo-Kasten). Wolf exportiert sie **freigestellt/transparent** unter gleichem Namen nach → dann sitzen sie sauber wie `award-speedy`/`award-sharpshooter`. Wiring bleibt gleich.
+  - ✅ **Transparente Versionen geliefert** (Zip „logos für website" = 2/3/4.png) → eingebackene ersetzt. Zusätzlich mit `sharp` von ~3 MB/1920px auf **512px / ~42-47 KB** runterskaliert (waren über der 2-MiB-Workbox-Precache-Grenze → hätte den Build gebrochen). Jetzt sauber freigestellt + leicht. Originale als Backup im Scratchpad.
 
 **Offen (braucht Wolf / Beamer):**
 - ✅ **Bild 1 — Wappen fliegen an die Stände** (Wolf: arena-main.webp, „deckungsgleich einrasten"): ArenaEntranceView

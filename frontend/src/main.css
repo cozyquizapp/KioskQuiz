@@ -166,6 +166,11 @@
      passend"): ruhiger Serif-Begleiter zu Cinzel fuer Arena-Sprueche/Mottos
      (Zitat-Charakter, kursiv). Klassisches Cinzel-Paar. Nur fuer kurze Sprueche. */
   --font-arena-quote: 'EB Garamond', Georgia, serif;
+  /* 2026-07-17 (Wolf „generell die subfont im cozyarena colloseum"): EB Garamond
+     als durchgaengiger Kolosseum-Begleiter unter Cinzel — Untertitel, Anweisungen,
+     Body. Ein kohaerentes Cinzel+Garamond-System. Kleinste Pills/Zahlen bleiben
+     bewusst Nunito (Distanz-Lesbarkeit). Gegatet largeGroupMode && !themed. */
+  --font-arena-body: 'EB Garamond', Georgia, serif;
   /* 2026-07-12 (ui-ux-pro-max Skill: 'Fredoka/Nunito' fuer entertainment/gaming):
      Fredoka = runde, verspielte, warme Display-Schrift (CozyWolf-DNA) fuer grosse
      Zahlen/Headlines in Reveals. Nunito bleibt Body. Vibrant & Block-based statt

@@ -319,6 +319,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Kategorie-Name) in Cinzel-Inschrift — NUR Arena (largeGroupMode) + kein Skin.
   // Sonst Standard-Display-Font. Kleiner Text/Subtitle bleibt fontFam.
   const arenaTitleFont = ((s as any).largeGroupMode && !isThemed()) ? 'var(--font-arena)' : fontFam;
+  // 2026-07-17 (Wolf „generell die subfont im colloseum"): EB Garamond als
+  // Kolosseum-Begleiter unter Cinzel fuer Untertitel/Anweisungen. EB Garamond hat
+  // kein 900 → im Arena-Fall Gewicht auf 700 deckeln (megaArena).
+  const megaArena = !!(s as any).largeGroupMode && !isThemed();
+  const arenaSubFont = megaArena ? 'var(--font-arena-body)' : fontFam;
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
   // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
@@ -1225,8 +1230,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               Clip-Rechteck um den Subtitle stehen. */}
           {hasRoundTransition ? (
             <div style={{
-              fontFamily: fontFam,
-              fontSize: 'clamp(36px, 5cqw, 68px)', fontWeight: 900,
+              fontFamily: arenaSubFont,
+              fontSize: 'clamp(36px, 5cqw, 68px)', fontWeight: megaArena ? 700 : 900,
               textShadow: isThemed() ? 'none' : `0 0 30px ${color}33`,
               position: 'relative', zIndex: 5,
               textAlign: 'center',
@@ -1254,8 +1259,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             </div>
           ) : (
             <div style={{
-              fontFamily: fontFam,
-              fontSize: 'clamp(36px, 5cqw, 68px)', fontWeight: 900,
+              fontFamily: arenaSubFont,
+              fontSize: 'clamp(36px, 5cqw, 68px)', fontWeight: megaArena ? 700 : 900,
               color: isThemed() ? 'var(--qq-title)' : `${displayColor}dd`,
               textShadow: isThemed() ? 'none' : `0 0 30px ${displayColor}33`,
               animation: 'subtitleSlide 0.55s var(--qq-ease-bounce) 0.7s both',
@@ -1669,8 +1674,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 {info.lines[lang].map((line, i) => (
                   <div key={i} style={{
+                    fontFamily: arenaSubFont,
                     fontSize: i === 0 ? 'clamp(26px, 3.5cqw, 48px)' : 'clamp(20px, 2.5cqw, 36px)',
-                    fontWeight: i === 0 ? 800 : 600,
+                    fontWeight: i === 0 ? (megaArena ? 700 : 800) : 600,
                     color: isThemed()
                       ? (i === 0 ? 'var(--qq-text)' : 'var(--qq-text-muted)')
                       : (i === 0 ? '#F1F5F9' : `${catColor}99`),

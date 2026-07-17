@@ -838,7 +838,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
-      position: 'relative', overflow: 'hidden', fontFamily: fontFam,
+      // 2026-07-17 (Wolf „generell die subfont im colloseum"): im Arena-Modus erbt
+      // der ganze Regel-Body EB Garamond (Cinzel-Titel hat eigene fontFamily und
+      // ueberschreibt) → kohaerentes Cinzel+Garamond-System.
+      position: 'relative', overflow: 'hidden',
+      fontFamily: (mega && !isThemed()) ? 'var(--font-arena-body)' : fontFam,
       minHeight: 0,
       // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): RulesView Root-Padding
       // mit Safe-Margin Token. BG-Layer (Fireflies) sind position:absolute

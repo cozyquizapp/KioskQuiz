@@ -270,28 +270,38 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     if (state?.phase !== 'LOBBY') return;
     testSetupTriggeredRef.current = true;
     (async () => {
-      // 2026-05-25 (Wolf-Bug 'bots waren nicht da'): /dev/fillTeams braucht
-      // ADMIN_PIN in production. Erstes Mal wird PIN per Prompt geholt, dann
-      // localStorage-cached. Ohne PIN → 403 → keine Bots → confirm-Dialog.
-      const pin = getDevPin();
-      if (!pin) {
-        alert('Test-Modus braucht den Admin-PIN. Bitte Page neu laden + PIN eingeben.');
-        return;
-      }
       // Autoplay an damit Test-Quizze durchlaufen ohne Mod-Space
       setAutoplayEnabled(true);
       // Test-Mode-Flag setzen → Backend skipt persistGameResult
       try { await emit('qq:setTestMode', { roomCode, value: true }); } catch {}
       // 2026-07-16 (Wolf 'Test startet immer automatisch in CozyQuiz'): der Auto-
       // Start hat largeGroupMode nie gesetzt → immer normaler CozyQuiz-Test, Arena
-      // liess sich nie per Test-Route mit Bots durchspielen. Jetzt schaltet
-      // /moderator-test?arena=1 (oder ?mega=1) VOR dem Bot-Spawn auf Arena
-      // (largeGroupMode + nested), sonst bleibt es CozyQuiz. Format vor den Bots
-      // setzen, damit die Bots gleich als Fraktionen/nested einsteigen.
+      // liess sich nie per Test-Route mit Bots durchspielen. /moderator-test?arena=1
+      // (oder ?mega=1) schaltet VOR dem Bot-Spawn auf Arena (largeGroupMode +
+      // nested), damit die Bots gleich als Fraktionen/nested einsteigen.
+      //
+      // 2026-07-17 (Wolf 'ne der bug besteht noch' — per Screenshot-Harness am
+      // ECHTEN Beamer reproduziert): der Umschalter stand HINTER dem PIN-Gate.
+      // Ohne gecachten PIN → alert + return → weder Bots NOCH Arena → der Test
+      // landete wieder in CozyQuiz. Genau Wolfs Symptom. Der Format-Wechsel ist
+      // ein reiner Socket-Emit und braucht ueberhaupt keinen PIN → jetzt DAVOR.
       const wantArena = /[?&](arena|mega)=1/i.test(window.location.search);
       if (wantArena) {
         try { await emit('qq:setQuizOptions', { roomCode, largeGroupMode: true, nestedTeams: true, formatSelected: true }); } catch {}
         await new Promise(r => setTimeout(r, 250));
+      }
+      // 2026-05-25 (Wolf-Bug 'bots waren nicht da'): /dev/fillTeams braucht
+      // ADMIN_PIN in production. Erstes Mal wird PIN per Prompt geholt, dann
+      // localStorage-cached. Ohne PIN → 403 → keine Bots → confirm-Dialog.
+      // Lokal (NODE_ENV != production) laesst requirePin alles durch; der PIN
+      // wird trotzdem geholt, weil derselbe Pfad in Prod laeuft.
+      const pin = getDevPin();
+      if (!pin) {
+        // 2026-07-17: Ref zuruecksetzen — sonst blieb er auf true und der
+        // Auto-Start versuchte es NIE wieder, auch nicht nach PIN-Eingabe.
+        testSetupTriggeredRef.current = false;
+        alert('Test-Modus braucht den Admin-PIN. Bitte Page neu laden + PIN eingeben.');
+        return;
       }
       // 1. Bots spawnen — Arena braucht mehr fuer eine realistische Fraktions-
       // Streuung (24), CozyQuiz reichen 5.
@@ -303,6 +313,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         });
         if (r.status === 403) {
           clearDevPin();
+          // 2026-07-17: wie oben — ohne Reset kein zweiter Versuch nach PIN-Eingabe.
+          testSetupTriggeredRef.current = false;
           alert('Admin-PIN falsch. Page neu laden + PIN eingeben.');
           return;
         }

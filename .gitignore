@@ -21,3 +21,9 @@ _source-assets/
 # Wolfs Arena-Background-Rohlieferung (68MB PNG) — die komprimierten WebP liegen
 # in frontend/public/arena-bg/, die Originale bleiben nur lokal.
 frontend/public/neue background/
+
+# Screenshot-Harness-Output (scripts/beamer-shot.mjs)
+.shots/
+
+# Lokales Laufzeit-Artefakt des In-Memory-Fallbacks (Backend ohne MONGODB_URI)
+backend/src/data/qqDrafts.json

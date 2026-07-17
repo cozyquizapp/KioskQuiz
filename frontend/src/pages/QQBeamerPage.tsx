@@ -616,7 +616,12 @@ function isStageEnabled(): boolean {
     return true;
   }
 }
-function SlideStage({ children, bg }: { children: React.ReactNode; bg?: string | null }) {
+// 2026-07-17: exportiert fuer die Arena-Lab-Harness (`/arena-lab`). WICHTIG: die
+// Harness MUSS diese echte Stage benutzen und darf sie nicht nachbauen — der
+// Arena-BG haengt am AEUSSEREN Div (nicht an der 1760x990-Buehne), und genau
+// diese Geometrie entscheidet, ob Content auf der gemalten Tafel sitzt. Ein
+// Nachbau wuerde driften → wir wuerden gegen eine Luege verifizieren.
+export function SlideStage({ children, bg }: { children: React.ReactNode; bg?: string | null }) {
   const outerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
   useLayoutEffect(() => {
@@ -1990,6 +1995,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         const phaseRender = (
         <div
           key={phaseGroup}
+          // 2026-07-17: Test-Anker fuer die Screenshot-Harness (scripts/beamer-shot.mjs).
+          // Reines data-Attribut — aendert NICHTS am Bild, macht den ECHTEN Beamer aber
+          // beobachtbar (Wolf: „IMMER der echte beamer, nie nur ein nachbau"). Ohne das
+          // muesste die Harness blind auf Timings warten oder einen Nachbau rendern.
+          data-qq-phase={renderState.phase}
+          data-qq-mega={renderState.largeGroupMode ? '1' : '0'}
+          data-qq-standings-revealed={(renderState as any).megaStandingsRevealed ? '1' : '0'}
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
             animation: wrapperAnim,

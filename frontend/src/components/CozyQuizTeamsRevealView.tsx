@@ -148,32 +148,45 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       {factions.map((f, i) => {
         const on = placed.has(i);
         const src = crestFor(f.avatarId);
-        const cw = big ? 'clamp(50px, 6cqw, 104px)' : 'clamp(44px, 5.2cqw, 90px)';
+        // 2026-07-17 (Wolf 'wappen groesser ins bild mit nicer motion'): mit dem
+        // cleanen Sky-BG (keine gemalten Banner) sind die Roster-Wappen der Star →
+        // deutlich groesser. Beim Platzieren: qqRosterLand (steigt gross rein,
+        // Scale-Overshoot, setzt sich) + Glow-Flash.
+        const cw = big ? 'clamp(66px, 9cqw, 152px)' : 'clamp(58px, 7.4cqw, 132px)';
         return (
           <div key={f.avatarId} style={{
-            flex: '1 1 0', minWidth: 0, maxWidth: 'clamp(120px, 13cqw, 210px)',
+            flex: '1 1 0', minWidth: 0, maxWidth: 'clamp(130px, 14cqw, 240px)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            gap: 'clamp(3px, 0.6cqh, 8px)',
-            opacity: on ? 1 : 0.16,
-            transform: on ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.9)',
-            transition: 'opacity 0.4s ease, transform 0.55s var(--qq-enter)',
+            gap: 'clamp(4px, 0.7cqh, 10px)',
+            opacity: on ? 1 : 0.14,
+            transition: 'opacity 0.4s ease',
           }}>
-            {src
-              ? <img src={src} alt="" draggable={false} style={{
-                  width: cw, height: 'auto',
-                  filter: on
-                    ? `drop-shadow(0 0 22px ${f.color}88) drop-shadow(0 8px 16px rgba(0,0,0,0.5))`
-                    : 'grayscale(0.7) brightness(0.65)',
-                  transition: 'filter 0.4s ease',
-                }} />
-              : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center' }}>
+              {/* Glow-Flash beim Landen */}
+              {on && <span aria-hidden style={{
+                position: 'absolute', inset: '-24%', borderRadius: '50%',
+                background: `radial-gradient(circle, ${f.color}77, ${f.color}22 50%, transparent 72%)`,
+                animation: 'qqRosterGlow 0.85s ease-out both', pointerEvents: 'none',
+              }} />}
+              {src
+                ? <img src={src} alt="" draggable={false} style={{
+                    position: 'relative', width: cw, height: 'auto',
+                    filter: on
+                      ? `drop-shadow(0 0 28px ${f.color}aa) drop-shadow(0 10px 20px rgba(0,0,0,0.55))`
+                      : 'grayscale(0.75) brightness(0.55)',
+                    animation: on ? 'qqRosterLand 0.62s var(--qq-ease-bounce-soft) both' : 'none',
+                    transition: 'filter 0.45s ease',
+                  }} />
+                : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
+            </div>
             {/* Namensschild unter dem Wappen */}
             <div style={{
-              padding: '2px clamp(7px, 0.9cqw, 13px)', borderRadius: 'var(--qq-pill-radius)',
+              padding: '3px clamp(9px, 1cqw, 15px)', borderRadius: 'var(--qq-pill-radius)',
               background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
-              fontSize: big ? 'clamp(12px, 1.3cqw, 20px)' : 'clamp(11px, 1.2cqw, 18px)',
+              fontSize: big ? 'clamp(13px, 1.4cqw, 22px)' : 'clamp(12px, 1.3cqw, 19px)',
               fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
               textShadow: '0 1px 3px rgba(0,0,0,0.7)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+              opacity: on ? 1 : 0.7,
             }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
           </div>
         );
@@ -289,6 +302,20 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqArenaFinale {
           0%   { opacity: 0; transform: translateY(64px) scale(0.92); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        /* 2026-07-17 (Wolf): Roster-Wappen landen gross rein (steigt von unten,
+           Scale-Overshoot, setzt sich) + Glow-Flash. Ersetzt die alte
+           Fly-to-Banner-Motion, jetzt fuer den Vordergrund-Roster. */
+        @keyframes qqRosterLand {
+          0%   { opacity: 0; transform: translateY(42px) scale(1.5); }
+          55%  { opacity: 1; }
+          74%  { transform: translateY(-6px) scale(1.07); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes qqRosterGlow {
+          0%   { opacity: 0; transform: scale(0.5); }
+          35%  { opacity: 1; }
+          100% { opacity: 0; transform: scale(1.45); }
         }
       `}</style>
     </div>

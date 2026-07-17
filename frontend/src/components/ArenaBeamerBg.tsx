@@ -55,11 +55,12 @@ export function qqArenaBeamerBgSlug(s: QQStateUpdate): string | null {
       if (s.setupDone) return null;
       return 'lobby-waiting';
     case 'RULES':          return 'arena-exterior';
-    // 2026-07-16 (Wolf): Team-Vorstellung nutzt arena-main (Banner klar OBEN, grosser
-    // offener Boden UNTEN) statt arena-aerial (kleiner Vordergrund) → der Overlay-
-    // Content (Titel oben, Einzug/Aufstellung im Boden) klemmt nicht mehr auf den im
-    // BG gemalten Fraktions-Bannern.
-    case 'TEAMS_REVEAL':   return 'arena-main';
+    // 2026-07-17 (Wolf, neuer BG): Team-Vorstellung → arena-teams-sky (offene Mitte,
+    // KEINE gemalten Fraktions-Banner, nur Kronen-Wimpel in den Ecken). Loest das
+    // „doppelt gemoppelt" von bild 2: der Vordergrund-Roster ist jetzt die EINZIGE
+    // Wappen-Reihe, nichts im BG doppelt sie. (Vorher arena-main = Kolosseum mit
+    // gemalten Bannern → Doppelung mit dem Roster.)
+    case 'TEAMS_REVEAL':   return 'arena-teams-sky';
     // Runden-Intro (Wolf 2026-07-14): Schritt 1+2 der Journey (introStep 0 =
     // Gesamt-Übersicht, 1 = Runden-Cluster) zeigen das `rundenintro`-Bild; erst
     // wenn die Kategorie enthüllt wird (introStep >= 2) kommt das Kategorie-BG.

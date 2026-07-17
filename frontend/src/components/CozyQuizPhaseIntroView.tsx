@@ -1047,9 +1047,46 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       {isFirstOfRound && s.introStep === 0 ? (
         /* ── Step 0: Round announcement (first question only) ── */
         <>
-          {/* Round progress pill — Farbe + Text transitionen von prev auf new.
-              2026-05-07 (Wolf 'mehr Pink+Blau, Set F'): im ESC-Mode Pille mit
-              Pink→Blau-Gradient-BG + zweifarbiger Border statt monochrom. */}
+          {/* Round-Counter — Arena: farblich passendes GEM-Badge (Wolf 2026-07-17
+              „sollte in einem farblich passenden diamanten sitzen"), Facetten-Cut
+              per clip-path in der Rundenfarbe (KEIN Gold → Gold-Regel). Cozy/Skin:
+              das bewaehrte runde Pill. */}
+          {megaArena ? (() => {
+            const GEM = 'polygon(6% 0, 94% 0, 100% 50%, 94% 100%, 6% 100%, 0 50%)';
+            const roundCountText = lang === 'de' ? `Runde ${displayGpi} von ${s.totalPhases}` : `Round ${displayGpi} of ${s.totalPhases}`;
+            return (
+              <div style={{
+                position: 'relative', zIndex: 5, marginBottom: 28,
+                animation: hasRoundTransition ? undefined : 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
+                filter: `drop-shadow(0 0 18px ${displayColor}66) drop-shadow(0 4px 12px rgba(0,0,0,0.4))`,
+                transition: 'filter 500ms ease',
+              }}>
+                {/* Facetten-Kante (heller Rundton) */}
+                <div style={{
+                  clipPath: GEM,
+                  background: `linear-gradient(180deg, ${displayColor} 0%, ${displayColor}88 55%, ${displayColor}bb 100%)`,
+                  padding: 2, transition: 'background 500ms ease',
+                }}>
+                  {/* Fuellung + Text */}
+                  <div style={{
+                    clipPath: GEM,
+                    background: `linear-gradient(180deg, ${displayColor}66 0%, rgba(18,10,26,0.92) 62%)`,
+                    padding: '10px clamp(42px, 4.6cqw, 68px)',
+                    fontSize: 'clamp(16px, 1.8cqw, 25px)', fontWeight: 900, letterSpacing: '0.14em',
+                    color: '#FFFFFF', textShadow: '0 1px 6px rgba(0,0,0,0.6)',
+                    textAlign: 'center', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
+                    transition: 'background 500ms ease',
+                  }}>{roundCountText}</div>
+                </div>
+                {/* obere Facetten-Glanzlinie */}
+                <div aria-hidden style={{
+                  position: 'absolute', top: 3, left: '14%', right: '14%', height: 1,
+                  background: `linear-gradient(90deg, transparent, ${displayColor}, transparent)`,
+                  opacity: 0.7, pointerEvents: 'none',
+                }} />
+              </div>
+            );
+          })() : (
           <div style={{
             padding: '10px 30px', borderRadius: 'var(--qq-pill-radius)',
             // 2026-07-16 (Wolf 'Runde 1/2 geht unter'): Pille war auf dem
@@ -1078,6 +1115,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               ? `Runde ${displayGpi} von ${s.totalPhases}`
               : `Round ${displayGpi} of ${s.totalPhases}`}
           </div>
+          )}
 
           {/* Shockwave burst behind title — laeuft jetzt auch waehrend
               Round-Transition (Wolf 2026-05-04): in Runde 1 sah man eine

@@ -52,21 +52,11 @@ function ArenaTypewriter({ text, color, delayMs = 560 }: { text: string; color: 
 }
 
 // Banner-Anker auf arena-main.webp (Wolf 2026-07-16, Bild 1): x/y in % der
-// Bühne = Mitte des gemalten Fraktions-Banners an der Wand. Key = avatarId
-// (COZY_ARENA_CRESTS-Reihenfolge fox→cat = gemalte Banner-Reihe links→rechts,
-// Gate in der Mitte). Nach der Vorstellung fliegt das Wappen HIERHER und rastet
-// deckungsgleich auf sein gemaltes Banner ein (Icons decken sich → kein Doppel).
-// ⚠️ Feinschliff am Beamer: Werte per Auge nachziehen falls leicht versetzt.
-const BANNER_ANCHORS: Record<string, { x: number; y: number }> = {
-  fox:     { x: 8.5,  y: 27 }, // Bauchgefühl  — Orange, Spirale
-  frog:    { x: 20,   y: 27 }, // Glückstreffer — Grün, Kleeblatt
-  panda:   { x: 27.5, y: 27 }, // Feierabend   — Teal, Bierkrug
-  rabbit:  { x: 34.5, y: 27 }, // Letzte Sekunde — Violett, Sanduhr
-  unicorn: { x: 61,   y: 27 }, // Allwissen    — Gelb, Lorbeer
-  raccoon: { x: 69,   y: 27 }, // Improvisation — Blau, Würfel
-  cow:     { x: 78,   y: 27 }, // Einspruch    — Pink, Hammer
-  cat:     { x: 90.5, y: 27 }, // Risiko       — Rot, Flamme
-};
+// 2026-07-17 (Wolf bild 2): BANNER_ANCHORS (feste x% auf die gemalten arena-main-
+// Banner) ENTFERNT — die Namen ueberlappten, weil die gemalte Banner-Reihe links
+// enger steht als die Namen brauchen. Ersetzt durch die gleichmaessig verteilte
+// Vordergrund-Roster-Reihe (renderForegroundRoster), die die BG-Banner-Positionen
+// nicht mehr braucht.
 
 // CozyArena — Fraktions-Einzug: jede Fraktion tritt einzeln in der Mitte auf
 // (Wappen gross, Name, Motto), dann fliegt ihr Wappen hoch an sein gemaltes
@@ -138,48 +128,57 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const cur = (enterIdx >= 0 && enterIdx < n && !done) ? factions[enterIdx] : null;
   const curColor = cur?.color ?? '#EC4899';
 
-  // Wand-Banner (Wolf 2026-07-16, Bild 1): jede Fraktion fliegt nach ihrer
-  // Vorstellung hoch an ihr gemaltes arena-main-Banner und rastet DECKUNGSGLEICH
-  // ein (Icons decken sich → kein Doppel) + Glow-Flash + Nameplate. Absolut an den
-  // BANNER_ANCHORS positioniert → einmal im Root gerendert, unabhaengig vom Flow.
-  // `big` = Startaufstellungs-Finale (etwas groesser). Ignite triggert bei `placed`.
-  const renderWallBanners = (big: boolean) => (
-    <>
+  // 2026-07-17 (Wolf bild 2 „texte ueberlappen, wappen in 3d in den Vordergrund"):
+  // Die alten Wand-Nameplates sassen an BANNER_ANCHORS (feste x% = gemalte, LINKS
+  // eng stehende arena-main-Banner) → die Namen ueberlappten. Jetzt: eine EIGENE,
+  // gleichmaessig verteilte VORDERGRUND-Reihe (8 gleiche Flex-Slots → strukturell
+  // nie Ueberlapp, unabhaengig von der ungleichen BG-Banner-Kunst). Jeder Slot: das
+  // 3D-Fraktions-Wappen + Namensschild. Sitzt als klare Foreground-Roster-Reihe im
+  // unteren Band (ueber dem Arena-Boden), die gemalten Banner bleiben Backdrop.
+  // `big` = Startaufstellungs-Finale (etwas groesser). Slot leuchtet bei `placed`.
+  const renderForegroundRoster = (big: boolean) => (
+    <div style={{
+      position: 'absolute', left: 0, right: 0,
+      bottom: big ? 'clamp(18px, 3.2cqh, 52px)' : 'clamp(12px, 2.4cqh, 36px)',
+      zIndex: 3, pointerEvents: 'none',
+      display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
+      gap: 'clamp(6px, 1cqw, 22px)', padding: '0 clamp(14px, 2.6cqw, 44px)',
+      transition: 'bottom 0.5s var(--qq-enter)',
+    }}>
       {factions.map((f, i) => {
-        const anchor = BANNER_ANCHORS[f.avatarId];
-        if (!anchor) return null;
         const on = placed.has(i);
-        const cw = big ? 'clamp(64px, 7cqw, 128px)' : 'clamp(58px, 6.4cqw, 116px)';
+        const src = crestFor(f.avatarId);
+        const cw = big ? 'clamp(50px, 6cqw, 104px)' : 'clamp(44px, 5.2cqw, 90px)';
         return (
           <div key={f.avatarId} style={{
-            position: 'absolute', left: `${anchor.x}%`, top: `${anchor.y}%`,
-            transform: 'translate(-50%, -50%)', zIndex: 3, pointerEvents: 'none',
+            flex: '1 1 0', minWidth: 0, maxWidth: 'clamp(120px, 13cqw, 210px)',
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             gap: 'clamp(3px, 0.6cqh, 8px)',
-            opacity: on ? 1 : 0, transition: 'opacity 0.3s ease',
+            opacity: on ? 1 : 0.16,
+            transform: on ? 'translateY(0) scale(1)' : 'translateY(12px) scale(0.9)',
+            transition: 'opacity 0.4s ease, transform 0.55s var(--qq-enter)',
           }}>
-            <div style={{ position: 'relative', width: cw, height: cw }}>
-              {/* 2026-07-16 (Wolf Bild 1 'wie loesen'): KEIN rundes Wappen mehr an die
-                  Wand — das gemalte arena-main-Banner IST schon das Fraktions-Wappen,
-                  ein rundes drueber doppelte das Icon. Nur ein weicher Farb-Halo ueber
-                  dem gemalten Banner signalisiert „diese Fraktion steht", das
-                  Namensschild darunter benennt sie (Namen sind im BG nicht gemalt). */}
-              {on && <span aria-hidden style={{ position: 'absolute', inset: '-38%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}66, ${f.color}22 46%, transparent 70%)`, animation: 'qqBannerGlow 1s ease-out both', pointerEvents: 'none' }} />}
-            </div>
-            {/* Nameplate unter dem Banner */}
+            {src
+              ? <img src={src} alt="" draggable={false} style={{
+                  width: cw, height: 'auto',
+                  filter: on
+                    ? `drop-shadow(0 0 22px ${f.color}88) drop-shadow(0 8px 16px rgba(0,0,0,0.5))`
+                    : 'grayscale(0.7) brightness(0.65)',
+                  transition: 'filter 0.4s ease',
+                }} />
+              : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
+            {/* Namensschild unter dem Wappen */}
             <div style={{
               padding: '2px clamp(7px, 0.9cqw, 13px)', borderRadius: 'var(--qq-pill-radius)',
-              background: 'rgba(10,8,20,0.74)', border: `1.5px solid ${f.color}`,
+              background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
               fontSize: big ? 'clamp(12px, 1.3cqw, 20px)' : 'clamp(11px, 1.2cqw, 18px)',
               fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
               textShadow: '0 1px 3px rgba(0,0,0,0.7)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
-              opacity: on ? 1 : 0, transform: on ? 'translateY(0)' : 'translateY(-6px)',
-              transition: 'opacity 0.4s ease 0.42s, transform 0.4s ease 0.42s',
             }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
           </div>
         );
       })}
-    </>
+    </div>
   );
 
   return (
@@ -209,10 +208,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         transition: 'background 0.6s ease',
       }} />
 
-      {/* Wand-Banner (Bild 1): fliegen nach jeder Vorstellung hoch an ihr
-          gemaltes arena-main-Banner und rasten deckungsgleich ein. Absolut zum
-          Root → immer an den Ankern, unabhaengig vom Center/Finale-Flow. */}
-      {renderWallBanners(done)}
+      {/* Vordergrund-Roster (Wolf bild 2): gleichmaessig verteilte Reihe aus
+          Wappen + Name, fuellt sich Fraktion fuer Fraktion. Absolut zum Root →
+          unabhaengig vom Center/Finale-Flow, strukturell nie ueberlappend. */}
+      {renderForegroundRoster(done)}
 
       {/* Titel — oben im Sky-Band (ueber den gemalten Bannern) */}
       <div style={{ position: 'relative', zIndex: 2, flexShrink: 0, textAlign: 'center' }}>
@@ -237,7 +236,11 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           der Buehne (der hat den Reveal oben gekappt). Ohne das graue Wappen + mit
           hoehen-gedeckelter Reveal-Groesse (min(clamp, cqh)) passt der Einzug ohne
           Overlap in den Platz; der Root clippt ohnehin die Aussenkanten. */}
-      <div style={{ position: 'relative', zIndex: 2, flex: done ? '0 0 auto' : 1, width: '100%', display: 'flex', alignItems: done ? 'center' : 'flex-end', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 0 : 'clamp(8px, 1.6cqh, 24px)' }}>
+      {/* 2026-07-17 (Wolf bild 2): Buehne bleibt flex:1 auch im Done-Zustand +
+          grosser paddingBottom → der „Los geht's!"-Ruf zentriert sich im Raum
+          UEBER dem Vordergrund-Roster (sonst schob space-between ihn nach unten
+          direkt auf die Wappen-Reihe = Kollision). */}
+      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 'clamp(120px, 21cqh, 220px)' : 'clamp(8px, 1.6cqh, 24px)' }}>
         {done ? (
           // Finale: die Wand-Banner (renderWallBanners im Root) tragen jetzt die
           // Startaufstellung → in der Mitte nur noch der grosse „Los geht's!"-Ruf.
@@ -286,18 +289,6 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqArenaFinale {
           0%   { opacity: 0; transform: translateY(64px) scale(0.92); }
           100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        /* Bild 1: Wappen fliegt hoch (von der Mitte) und rastet auf sein Banner. */
-        @keyframes qqBannerLand {
-          0%   { opacity: 0; transform: translateY(20cqh) scale(1.7); }
-          55%  { opacity: 1; }
-          72%  { transform: translateY(-4%) scale(1.08); }
-          100% { opacity: 1; transform: translateY(0) scale(1); }
-        }
-        @keyframes qqBannerGlow {
-          0%   { opacity: 0; transform: scale(0.5); }
-          30%  { opacity: 1; }
-          100% { opacity: 0; transform: scale(1.5); }
         }
       `}</style>
     </div>

@@ -22,8 +22,10 @@ Material-Verbesserungen dazu. Alles auf Branch **`design/material-pass-standings
   auf den fokussierten Cluster begrenzt (phaseDotSpans + focusPhaseIdx). Commit f5010369.
 - **Regel-Motion** (Wolf-Idee): horizontaler Einheits-Schwenk (qqRulesArriveR/L) passend zum
   Progress-Tree, statt Tiefe. Inhalt reist als EINHEIT. Commit ef1d0348. Depth-Keyframe bleibt.
-- **Kolosseum-Wappen**: `<slug>-colosseum.png` (freigestellt aus Wolfs `<slug> colloseum.png`,
-  Gold-Rahmen/Glut/Stein) ersetzen glossy. crestSrc zeigt drauf. Commit 403fe0d6.
+- **Kolosseum-Wappen**: `<slug>-colosseum.webp` (freigestellt aus Wolfs `<slug> colloseum.png`
+  via Luma-Key t0=6/t1=34, auf 680px + WebP 119-233KB) ersetzen glossy. crestSrc → `.webp`.
+  Commit 403fe0d6 (PNG) → fd1aaaaf (WebP, weil 3MB-PNG den Vercel/PWA-Build sprengte).
+  ⚠️ `public/neue background/` jetzt gitignored + workbox globIgnores (Wolfs 2-3MB-Staging-PNGs).
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL (nichts committen/aendern bis er sich meldet)
 1. **Regel-Motion horizontal vs Tiefe** — er vergleicht live. „Tiefe zurueck" = crestSrc… nein:

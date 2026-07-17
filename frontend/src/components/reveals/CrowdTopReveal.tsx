@@ -294,7 +294,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
             display: 'flex', alignItems: 'center', justifyContent: 'center', textAlign: 'center',
             fontSize: 'clamp(10px,1.05cqw,16px)', fontWeight: 900, color: '#475569', letterSpacing: '0.16em', textTransform: 'uppercase',
             padding: '0 clamp(12px,2cqw,32px)',
-          }}>{lang === 'en' ? 'Rank 1 = 100 P · last = 20 P — who reads the crowd?' : 'Platz 1 = 100 P · letzter = 20 P — wer trifft die Menge?'}</div>
+          }}>{lang === 'en' ? 'Rank 1 = 100 P · last = 20 P · who reads the crowd?' : 'Platz 1 = 100 P · letzter = 20 P · wer trifft die Menge?'}</div>
         )}
       </div>
     </div>

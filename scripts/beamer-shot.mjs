@@ -7,18 +7,20 @@
  * echte Beamer liefert die Geometrie, an der sich entscheidet, ob Content auf der
  * gemalten Tafel sitzt.
  *
- * VORAUSSETZUNG (beides lokal, NIE gegen Prod — Bots im Live-Backend + Neustart
- * trennt bei Events die Spieler):
- *   1) Backend:  cd backend  && env -u MONGODB_URI npm run dev     (Port 4000, In-Memory)
- *   2) Frontend: cd frontend && VITE_API_BASE=http://localhost:4000/api \
- *                VITE_SOCKET_URL=http://localhost:4000 npm run dev  (Port 5173)
+ * Faehrt den Test-Lauf (Autoplay) und knipst JEDE Station, sobald sie auftaucht —
+ * verfolgt ueber die data-qq-*-Anker am echten Beamer (kein blindes Warten).
  *
- * NUTZUNG:
- *   node scripts/beamer-shot.mjs                 → alle Schritte, Shots in .shots/
- *   node scripts/beamer-shot.mjs --keep-open     → Browser offen lassen (Debug)
+ * VORAUSSETZUNG — lokal, NIE gegen Prod (Bots im Live-Backend + Neustart trennt
+ * bei Events die Spieler!). Vor JEDEM Lauf frischer Raum, sonst misst man Reste:
+ *   PID=$(netstat -ano | grep :4000 | grep -i abh | head -1 | awk '{print $NF}')
+ *   taskkill //PID $PID //T //F        # ts-node-dev ueberlebt sonst!
+ *   rm -f backend/.qq-rooms/default.json   # Raeume werden PERSISTIERT (!)
+ *   cd backend && env -u MONGODB_URI npm run dev      # Port 4000
+ *   cd frontend && VITE_API_BASE=http://localhost:4000/api \
+ *     VITE_SOCKET_URL=http://localhost:4000 npm run dev   # Port 5173
  *
- * Viewport ist exakt 1760x990 = STAGE_DESIGN → SlideStage-scale = 1, der
- * Screenshot ist pixelgenau das, was der 16:9-Beamer zeigt.
+ * NUTZUNG: node scripts/beamer-shot.mjs [--secs 240]
+ * Viewport 1760x990 = STAGE_DESIGN → SlideStage-scale = 1 → pixelgenau der Beamer.
  */
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
@@ -26,88 +28,73 @@ import { mkdirSync } from 'node:fs';
 const BASE = process.env.QQ_BASE ?? 'http://localhost:5173';
 const OUT = '.shots';
 const STAGE = { width: 1760, height: 990 };
-const KEEP = process.argv.includes('--keep-open');
-
+const SECS = Number((process.argv.find((a) => a.startsWith('--secs=')) ?? '--secs=240').split('=')[1]);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-async function main() {
-  mkdirSync(OUT, { recursive: true });
-  const browser = await chromium.launch({ headless: !KEEP });
-  const ctx = await browser.newContext({ viewport: STAGE, deviceScaleFactor: 1 });
+const health = await fetch('http://localhost:4000/api/health').then((r) => r.json()).catch(() => null);
+if (!health?.ok) { console.error('Backend nicht erreichbar (Port 4000).'); process.exit(1); }
+console.log(`Backend ok (uptime ${Math.round(health.uptime)}s, db=${health.db})`);
+if (health.uptime > 600) console.log('⚠️  Uptime hoch — Raum evtl. aus frueherem Lauf. Frisch starten!');
 
-  // PinGate prueft NUR sessionStorage. Zusaetzlich braucht der Test-Auto-Start
-  // den Dev-PIN fuer /dev/fillTeams (getDevPin liest localStorage['qq-admin-pin'],
-  // sonst window.prompt → laeuft headless ins Leere und der Start bricht STILL ab).
-  // 2506 = lokaler Dev-Fallback des Backends (resolveAdminPin), in Prod unerreichbar.
-  await ctx.addInitScript(() => {
-    try {
-      sessionStorage.setItem('qq_admin_unlocked', '1');
-      sessionStorage.setItem('qq_admin_pin', '2506');
-      localStorage.setItem('qq-admin-pin', '2506');
-    } catch {}
-  });
+mkdirSync(OUT, { recursive: true });
+const browser = await chromium.launch({ headless: true });
+const ctx = await browser.newContext({ viewport: STAGE, deviceScaleFactor: 1 });
 
-  const log = [];
-  const shot = async (page, name) => {
-    const p = `${OUT}/${name}.png`;
-    await page.screenshot({ path: p });
-    log.push(`  ${p}`);
-    return p;
-  };
+// ZWEI PINs: sessionStorage['qq_admin_pin'] → qq:joinModerator (ohne ihn joint der
+// Socket READ-ONLY und die Mod-Auth-Middleware blockt still JEDES qq:-Event).
+// localStorage['qq-admin-pin'] → nur /dev/fillTeams. Beide noetig.
+await ctx.addInitScript(() => {
+  try {
+    sessionStorage.setItem('qq_admin_unlocked', '1');
+    sessionStorage.setItem('qq_admin_pin', '2506');
+    localStorage.setItem('qq-admin-pin', '2506');
+  } catch {}
+});
 
-  // ── Beamer zuerst oeffnen, damit er jeden State-Broadcast mitbekommt ──────
-  const beamer = await ctx.newPage();
-  beamer.on('pageerror', (e) => console.log('  [beamer pageerror]', String(e).slice(0, 200)));
-  await beamer.goto(`${BASE}/beamer`, { waitUntil: 'domcontentloaded' });
+const beamer = await ctx.newPage();
+beamer.on('pageerror', (e) => console.log('  [beamer PAGEERROR]', String(e).slice(0, 200)));
+await beamer.goto(`${BASE}/beamer`, { waitUntil: 'domcontentloaded' });
 
-  // ── Moderator-Test: Arena + Mega + Auto-Start mit Bots ────────────────────
-  // ?run=1 ist seit 16.7. Opt-in (ohne bleibt die Seite im Setup stehen).
-  const mod = await ctx.newPage();
-  mod.on('pageerror', (e) => console.log('  [mod PAGEERROR]', String(e).slice(0, 300)));
-  mod.on('console', (m) => {
-    if (m.type() === 'error' || m.type() === 'warning') console.log(`  [mod ${m.type()}]`, m.text().slice(0, 220));
-  });
-  // alert()/prompt() wuerden headless haengen → sichtbar machen statt verschlucken.
-  mod.on('dialog', async (d) => {
-    console.log(`  [mod DIALOG ${d.type()}] "${d.message()}"`);
-    await d.dismiss();
-  });
-  mod.on('requestfailed', (r) => console.log('  [mod REQ-FAIL]', r.method(), r.url().slice(0, 120), r.failure()?.errorText));
-  mod.on('response', async (r) => {
-    if (r.status() >= 400) console.log('  [mod HTTP', r.status() + ']', r.url().slice(0, 120));
-  });
+const mod = await ctx.newPage();
+mod.on('dialog', async (d) => { console.log(`  [mod DIALOG] ${d.message()}`); await d.dismiss(); });
+await mod.goto(`${BASE}/moderator-test?arena=1&mega=1&run=1`, { waitUntil: 'domcontentloaded' });
 
-  await mod.goto(`${BASE}/moderator-test?arena=1&mega=1&run=1`, { waitUntil: 'domcontentloaded' });
+// Jede Station EINMAL knipsen, sobald sie erscheint. Key = Phase (+ Reveal-Beat,
+// weil PLACEMENT zwei sehr verschiedene Bilder hat: Wertung vs. Gesamtstand).
+const seen = new Set();
+const t0 = Date.now();
+console.log(`\nVerfolge den echten Beamer ${SECS}s lang …`);
 
-  await sleep(8000); // Bots spawnen + Raum aufbauen lassen
+while ((Date.now() - t0) / 1000 < SECS) {
+  const st = await beamer.evaluate(() => {
+    const el = document.querySelector('[data-qq-phase]');
+    if (!el) return null;
+    return {
+      phase: el.getAttribute('data-qq-phase'),
+      mega: el.getAttribute('data-qq-mega'),
+      stand: el.getAttribute('data-qq-standings-revealed'),
+    };
+  }).catch(() => null);
 
-  await shot(mod, '00-moderator');
-  await shot(beamer, '01-beamer-start');
-
-  // Was sagt der Server WIRKLICH? (Format/Teams/Phase — statt es aus dem Bild zu raten)
-  const st = await mod.evaluate(async () => {
-    try {
-      const r = await fetch('/api/qq/default/state');
-      if (!r.ok) return { httpError: r.status };
-      const s = await r.json();
-      return {
-        phase: s.phase, largeGroupMode: s.largeGroupMode, nestedTeams: s.nestedTeams,
-        formatSelected: s.formatSelected, setupDone: s.setupDone, teams: (s.teams ?? []).length,
-      };
-    } catch (e) { return { fetchError: String(e) }; }
-  });
-  console.log('\nSERVER-STATE:', JSON.stringify(st));
-
-  console.log('Screenshots:');
-  console.log(log.join('\n'));
-  console.log('\nBeamer-URL :', `${BASE}/beamer`);
-  console.log('Mod-URL    :', `${BASE}/moderator-test?arena=1&mega=1&run=1`);
-
-  if (KEEP) {
-    console.log('\n--keep-open: Browser bleibt offen. Strg+C zum Beenden.');
-    await sleep(600000);
+  if (st?.phase) {
+    const key = st.phase === 'PLACEMENT' ? `PLACEMENT-${st.stand === '1' ? 'b-gesamtstand' : 'a-wertung'}` : st.phase;
+    if (!seen.has(key)) {
+      seen.add(key);
+      // Entrance-Animationen VOLL auslaufen lassen → echtes Standbild.
+      // 4s statt 1.8s (2026-07-17): der PLACEMENT-Beat staffelt die Zeilen mit
+      // 0.32s Delay — bei 8 Fraktionen startet die letzte erst nach 2.24s (+0.5s
+      // Dauer). Mit 1.8s knipste die Harness ein ZWISCHENBILD: nur 6 von 8 Zeilen
+      // sichtbar, und weil der Platz fuer alle 8 reserviert ist, sassen sie
+      // scheinbar „zu hoch". Das haette ein Fehlbefund im Design-Audit werden
+      // koennen — ein Artefakt des eigenen Werkzeugs. Lieber warten.
+      await sleep(4000);
+      const name = `${String(seen.size).padStart(2, '0')}-${key}`;
+      await beamer.screenshot({ path: `${OUT}/${name}.png` });
+      console.log(`  ✓ ${name}.png   (mega=${st.mega})`);
+    }
   }
-  await browser.close();
+  await sleep(700);
 }
 
-main().catch((e) => { console.error(e); process.exit(1); });
+console.log(`\n${seen.size} Stationen geknipst → ${OUT}/`);
+await browser.close();

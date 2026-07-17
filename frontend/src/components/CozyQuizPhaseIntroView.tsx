@@ -1685,7 +1685,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {/* 2026-05-24 (Wolf-Live-Test #8): ZvZ Visual-Beispiel.
                   Wolfs Feedback: „die erste mit punkten verteilen war nicht
                   sofort klar". Mini-Mockup mit Beispiel-Verteilung 7/2/1
-                  damit Teams sofort die Idee „10 Punkte gewichten" greifen. */}
+                  damit Teams sofort die Idee „10 Punkte gewichten" greifen.
+                  2026-07-17 (Wolf bild 4 „Beispiel passt nicht zum realen all in"):
+                  echte Runde labelt die Optionen 1/2/3 (CozyQuizQuestionView `${i+1}`)
+                  und faerbt ALLE im Kategorie-Accent (gruen) — nicht A/B/C blau/gruen/
+                  rot. Beispiel jetzt = Spiegel der echten Runde: 1/2/3, alle catColor. */}
               {cat === 'ZEHN_VON_ZEHN' && (
                 <div style={{
                   marginTop: 'clamp(4px, 0.8cqh, 14px)', position: 'relative', zIndex: 5,
@@ -1703,23 +1707,23 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     flexWrap: 'wrap', justifyContent: 'center',
                   }}>
                     {[
-                      { label: 'A', pts: 7, color: '#3B82F6' },
-                      { label: 'B', pts: 2, color: '#22C55E' },
-                      { label: 'C', pts: 1, color: '#EF4444' },
+                      { label: '1', pts: 7 },
+                      { label: '2', pts: 2 },
+                      { label: '3', pts: 1 },
                     ].map((opt, idx) => (
                       <div key={opt.label} style={{
                         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                         padding: 'clamp(12px, 1.5cqw, 22px) clamp(18px, 2.2cqw, 32px)',
                         borderRadius: 14,
-                        background: `${opt.color}22`,
-                        border: `2px solid ${opt.color}66`,
-                        boxShadow: `0 0 22px ${opt.color}33`,
+                        background: `${catColor}22`,
+                        border: `2px solid ${catColor}66`,
+                        boxShadow: `0 0 22px ${catColor}33`,
                         minWidth: 'clamp(80px, 9cqw, 130px)',
                         animation: `phasePop 0.5s var(--qq-ease-bounce) ${1.0 + idx * 0.12}s both`,
                       }}>
                         <span style={{
                           fontSize: 'clamp(20px, 2cqw, 32px)', fontWeight: 900,
-                          color: opt.color, letterSpacing: '0.04em',
+                          color: catColor, letterSpacing: '0.04em',
                         }}>{opt.label}</span>
                         <span style={{
                           fontSize: 'clamp(28px, 3.2cqw, 50px)', fontWeight: 900,

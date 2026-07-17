@@ -575,12 +575,15 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
            2026-07-17b (Wolf): horizontaler Einheits-Schwenk STATT Tiefe, damit die
            Karte zur horizontalen Bewegung des Progress-Trees oben passt (kohaerenter
            Kamera-Schwenk durch die Reise). Vorwaerts = von rechts rein, zurueck = von
-           links. Unterschied zum alten PowerPoint-Push (qqRulesSlideR): kleinerer
-           Offset (60px statt 120), Opacity front-geladen (kein Loch) UND Inhalt faehrt
-           als Einheit mit (kein Bullet-Fade). */
+           links. Unterschied zum alten PowerPoint-Push (qqRulesSlideR): Inhalt faehrt
+           STARR als ganzes Fenster mit (kein Buchstaben-/Divider-/Icon-Entrance mehr,
+           s.u.), Opacity front-geladen (kein Loch).
+           2026-07-17c (Wolf „nicht wirklich als ganze windows reingeschoben"): deutlich
+           mehr Weg (150px) + Inhalt komplett starr → liest sich als geschobenes Fenster
+           statt „Inhalt baut sich auf". */
         @keyframes qqRulesArrive{0%{opacity:0;transform:translateY(18px) scale(.955)}30%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes qqRulesArriveR{0%{opacity:0;transform:translateX(60px)}30%{opacity:1}100%{opacity:1;transform:translateX(0)}}
-        @keyframes qqRulesArriveL{0%{opacity:0;transform:translateX(-60px)}30%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesArriveR{0%{opacity:0;transform:translateX(150px)}22%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesArriveL{0%{opacity:0;transform:translateX(-150px)}22%{opacity:1}100%{opacity:1;transform:translateX(0)}}
         @keyframes qqRulesDivDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
         @keyframes qqHeroRise{0%{opacity:0;transform:translateY(-12px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes qqHeroBook{0%{opacity:0;transform:translateY(-14px) rotate(-8deg) scale(.6)}60%{opacity:1;transform:translateY(0) rotate(4deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
@@ -767,14 +770,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             <span style={{
               display: 'inline-block',
               filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: `${heroEntrance} 0.62s var(--qq-ease-pop-fast) both, qqCatNameWave 2.4s ease-in-out 1.3s infinite`,
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><CozyGameIcon id={slide.iconImg} emoji={slide.icon} size={'clamp(64px,9cqw,110px)'} /></span>
           ) : (
             <span style={{
               display: 'inline-block',
               fontSize: 'clamp(64px,9cqw,110px)', lineHeight: 1,
               filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: `${heroEntrance} 0.62s var(--qq-ease-pop-fast) both, qqCatNameWave 2.4s ease-in-out 1.3s infinite`,
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><QQEmojiIcon emoji={slide.icon}/></span>
           )}
           <div style={{
@@ -796,12 +799,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             {slide.title.split('').map((char, i) => (
               <span key={`${idx}-${i}`} style={{
                 display: 'inline-block',
-                opacity: 0,
                 // 2026-05-05 v2 (Wolf 'jetzt kommen die regeln auch wave?'):
                 // Entry-Letter-Cascade (scaleIn + blur-clear, stagger 0.05s —
                 // gleiche Sprache wie Welcome-Title), DANN continuous
                 // qqCatNameWave als sanftes Wiegen.
-                animation: `qqRulesTitleLetter 0.55s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.08 + i * 0.03}s both, qqCatNameWave 2.4s ease-in-out ${1.0 + i * 0.08}s infinite`,
+                // 2026-07-17c (Wolf „ganze windows reingeschoben"): Titel STARR, faehrt
+                // mit dem geschobenen Fenster mit (keine Buchstaben-Kaskade); nur das
+                // ambiente Wiegen bleibt.
+                animation: `qqCatNameWave 2.4s ease-in-out ${1.0 + i * 0.08}s infinite`,
                 whiteSpace: 'pre',
               }}>{char === ' ' ? ' ' : char}</span>
             ))}
@@ -818,10 +823,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             : `linear-gradient(90deg, transparent, ${slide.color}cc 50%, transparent)`,
           backgroundSize: '200% 100%',
           marginBottom: 'clamp(16px, 2.5cqh, 32px)',
-          // 2026-07-15 (Rules-Redesign): Divider zieht sich erst aus der Mitte auf,
-          // dann laeuft der Shimmer.
-          transformOrigin: 'center',
-          animation: 'qqRulesDivDraw 0.5s var(--qq-ease-out-cubic) 0.12s both, lineShimmer 3s linear 0.9s infinite',
+          // 2026-07-17c (Wolf „ganze windows reingeschoben"): Divider STARR (kein
+          // Aufzieh-Draw mehr), faehrt mit dem Fenster mit; nur der Shimmer laeuft.
+          animation: 'lineShimmer 3s linear 0.9s infinite',
           boxShadow: isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${slide.color}44`,
         }} />
 
@@ -905,9 +909,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                     padding: 'clamp(10px, 1.2cqh, 16px) clamp(14px, 1.6cqw, 22px)', borderRadius: 16,
                     background: `${b.accent}1a`, border: `2px solid ${b.accent}55`,
                     boxShadow: `0 0 18px ${b.accent}33`, minWidth: 'clamp(96px, 11cqw, 140px)',
-                    // 2026-07-17 (Motion-Pass): Kacheln kommen als Gruppe mit der Karte
-                    // (ein sanfter Fade), statt einzeln gestaffelt reinzupoppen.
-                    animation: 'contentReveal 0.4s var(--qq-ease-pop-fast) 0.14s both',
+                    // 2026-07-17c (Wolf „ganze windows reingeschoben"): starr, faehrt mit
+                    // dem geschobenen Fenster mit (kein eigener Fade).
                   }}>
                     {b.slug
                       ? <QQIcon slug={b.slug} size={'clamp(40px, 5.5cqw, 72px)'} alt={b.label} />
@@ -934,7 +937,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${slide.color}33`,
             fontSize: 'clamp(18px,2.4cqw,34px)', fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : slide.color,
-            animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.14s both',
+            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
             textShadow: isThemed() ? 'none' : `0 0 24px ${slide.color}33`,
             textAlign: 'center',
           }}>
@@ -948,7 +951,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             marginTop: 'clamp(16px, 2.5cqh, 32px)', textAlign: 'center',
             fontSize: 'clamp(20px,2.8cqw,36px)', fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : slide.color,
-            animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.16s both',
+            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
             textShadow: isThemed() ? 'none' : `0 0 24px ${slide.color}33`,
           }}>
             {getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')}

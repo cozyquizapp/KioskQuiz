@@ -224,7 +224,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       {/* Vordergrund-Roster (Wolf bild 2): gleichmaessig verteilte Reihe aus
           Wappen + Name, fuellt sich Fraktion fuer Fraktion. Absolut zum Root →
           unabhaengig vom Center/Finale-Flow, strukturell nie ueberlappend. */}
-      {renderForegroundRoster(done)}
+      {!done && renderForegroundRoster(false)}
 
       {/* Titel — oben im Sky-Band (ueber den gemalten Bannern) */}
       <div style={{ position: 'relative', zIndex: 2, flexShrink: 0, textAlign: 'center' }}>
@@ -253,13 +253,51 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           grosser paddingBottom → der „Los geht's!"-Ruf zentriert sich im Raum
           UEBER dem Vordergrund-Roster (sonst schob space-between ihn nach unten
           direkt auf die Wappen-Reihe = Kollision). */}
-      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 'clamp(120px, 21cqh, 220px)' : 'clamp(8px, 1.6cqh, 24px)' }}>
+      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 'clamp(4px, 1cqh, 16px)' : 'clamp(8px, 1.6cqh, 24px)' }}>
         {done ? (
-          // Finale: die Wand-Banner (renderWallBanners im Root) tragen jetzt die
-          // Startaufstellung → in der Mitte nur noch der grosse „Los geht's!"-Ruf.
-          <div style={{ textAlign: 'center', animation: 'qqArenaFinale 0.75s cubic-bezier(0.2,1,0.4,1) both' }}>
-            <div style={{ fontSize: 'min(clamp(48px, 9cqw, 150px), 22cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(246,217,138,0.35)' }}>
+          // Finale (Wolf „das sind die maincharacter des abends"): der „Los geht's!"-
+          // Ruf als Headline UND darunter die grosse zentrierte Hero-Startaufstellung
+          // — die Fraktions-Wappen fuellen die Buehne (nicht mehr als duenner Boden-
+          // streifen), steigen gestaffelt gross rein und schweben ruhig.
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(16px, 3cqh, 44px)', width: '100%', animation: 'qqArenaFinale 0.7s cubic-bezier(0.2,1,0.4,1) both' }}>
+            <div style={{ fontSize: 'min(clamp(40px, 6.2cqw, 104px), 15cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(246,217,138,0.35)' }}>
               {de ? 'Los geht’s!' : 'Let’s go!'}
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 'clamp(0px, 0.4cqw, 12px)', width: '100%', flexWrap: 'nowrap', padding: '0 clamp(4px, 1cqw, 22px)', boxSizing: 'border-box' }}>
+              {factions.map((f, i) => {
+                const src = crestFor(f.avatarId);
+                // Wappen bewusst breiter als der Flex-Slot: die PNGs haben transparenten
+                // Rand (~35%), die Ueberlappung liegt also nur im transparenten Bereich →
+                // die SICHTBAREN Schilde werden deutlich groesser ohne echte Kollision.
+                const cw = 'min(clamp(120px, 16cqw, 268px), 31cqh)';
+                return (
+                  <div key={f.avatarId} style={{
+                    flex: '1 1 0', minWidth: 0, maxWidth: 'clamp(180px, 17cqw, 300px)',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center',
+                    gap: 'clamp(6px, 1cqh, 14px)',
+                    animation: `qqLineupRise 0.72s var(--qq-ease-bounce-soft) ${(i * 0.07).toFixed(2)}s both`,
+                  }}>
+                    <div style={{
+                      position: 'relative', display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
+                      animation: `qqLineupFloat 3.6s ease-in-out ${(0.7 + i * 0.07).toFixed(2)}s infinite`,
+                    }}>
+                      {/* atmende Aura in Fraktionsfarbe */}
+                      <span aria-hidden style={{ position: 'absolute', inset: '-16%', borderRadius: '50%', background: `radial-gradient(circle, ${f.color}55, ${f.color}18 48%, transparent 68%)`, animation: 'qqLineupAura 3.4s ease-in-out infinite', pointerEvents: 'none', zIndex: 0 }} />
+                      {/* Podest-Glut am Boden — „stellt" das Wappen auf die Buehne */}
+                      <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: '-8%', transform: 'translateX(-50%)', width: '96%', height: '34%', borderRadius: '50%', background: `radial-gradient(ellipse, ${f.color}66, transparent 70%)`, filter: 'blur(7px)', zIndex: 0, pointerEvents: 'none' }} />
+                      {src
+                        ? <img src={src} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, width: cw, height: 'auto', filter: `drop-shadow(0 0 30px ${f.color}aa) drop-shadow(0 12px 22px rgba(0,0,0,0.55))` }} />
+                        : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
+                    </div>
+                    <div style={{
+                      padding: '3px clamp(10px, 1.1cqw, 16px)', borderRadius: 'var(--qq-pill-radius)',
+                      background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
+                      fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
+                      textShadow: '0 1px 3px rgba(0,0,0,0.7)', boxShadow: `0 2px 10px rgba(0,0,0,0.5), 0 0 18px ${f.color}44`,
+                    }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ) : (cur && (() => {
@@ -316,6 +354,24 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           0%   { opacity: 0; transform: scale(0.5); }
           35%  { opacity: 1; }
           100% { opacity: 0; transform: scale(1.45); }
+        }
+        /* 2026-07-17e (Wolf „das sind die maincharacter des abends, c'mon"): die
+           Fraktions-Wappen als grosse zentrierte Hero-Startaufstellung. Jedes Wappen
+           steigt gestaffelt gross rein (Rise + Overshoot), schwebt danach ruhig (das
+           Leben der Charaktere) und traegt eine atmende Aura in Fraktionsfarbe. */
+        @keyframes qqLineupRise {
+          0%   { opacity: 0; transform: translateY(54px) scale(0.6); }
+          60%  { opacity: 1; }
+          78%  { transform: translateY(-8px) scale(1.06); }
+          100% { opacity: 1; transform: translateY(0) scale(1); }
+        }
+        @keyframes qqLineupFloat {
+          0%, 100% { transform: translateY(0); }
+          50%      { transform: translateY(-7px); }
+        }
+        @keyframes qqLineupAura {
+          0%, 100% { opacity: 0.32; transform: scale(0.96); }
+          50%      { opacity: 0.62; transform: scale(1.05); }
         }
       `}</style>
     </div>

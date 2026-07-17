@@ -13,7 +13,7 @@
  *
  * 1 externer Importer (QQBuiltinSlide).
  */
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
@@ -508,6 +508,23 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const prevIdxRef = useRef<number>(rawIdx);
   const slideDir: 'fwd' | 'back' = rawIdx >= prevIdxRef.current ? 'fwd' : 'back';
   useEffect(() => { prevIdxRef.current = rawIdx; });
+
+  // 2026-07-17d (Wolf „schieb das window mit der rule wirklich raus“): Zwei-
+  // Karten-Uebergang. view = aktuell gezeigte Karte, outgoing = die verlassende.
+  // Beide animieren gekoppelt (gleiche Dauer/Easing) -> echter Fenster-Schub, kein Fade.
+  const [view, setView] = useState<{ raw: number; enterDir: 'fwd' | 'back' }>({ raw: rawIdx, enterDir: 'fwd' });
+  const [outgoing, setOutgoing] = useState<{ raw: number; dir: 'fwd' | 'back' } | null>(null);
+  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    if (rawIdx === view.raw) return;
+    const dir: 'fwd' | 'back' = rawIdx >= view.raw ? 'fwd' : 'back';
+    setOutgoing({ raw: view.raw, dir });
+    setView({ raw: rawIdx, enterDir: dir });
+    if (pushTimer.current) clearTimeout(pushTimer.current);
+    pushTimer.current = setTimeout(() => setOutgoing(null), 620);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rawIdx]);
+  useEffect(() => () => { if (pushTimer.current) clearTimeout(pushTimer.current); }, []);
   // rawIdx === -2 = Willkommen-Overlay (bleibt in QQBeamerPage) → hier nichts.
   // rawIdx === -1 = Regel-Intro: 2026-06-28 (Wolf) jetzt als ERSTE Station IN
   // dieser persistenten Bühne (vor „Das Ziel"), nicht mehr als separates Overlay.
@@ -548,6 +565,267 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const aHex = isThemed() ? 'var(--qq-accent)' : '#EC4899';
   const aRGB = isThemed() ? 'var(--qq-accent-rgb)' : '236,72,153';
 
+  // 2026-07-17d (Wolf „schieb das window mit der rule wirklich raus“): echter
+  // Fenster-Schub - die Karte wird als Funktion gerendert, damit alte + neue Karte
+  // GLEICHZEITIG animieren koennen (alt faehrt sichtbar raus, neu rein; gekoppelt,
+  // KEIN Fade). renderCard baut eine Karte fuer einen beliebigen Slide.
+  const PUSH_S = '0.56s';
+  const PUSH_EASE = 'cubic-bezier(0.7, 0, 0.3, 1)';
+  const PUSH_LAYER = { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' } as const;
+  const slideFor = (raw: number) => {
+    const intro = raw === -1;
+    const clamped = intro ? -1 : Math.max(0, Math.min(raw, totalSlides - 1));
+    return { intro, cardIdx: clamped, cardSlide: intro ? introSlide : slides[clamped] };
+  };
+  const renderCard = (cardSlide: RulesSlide, cardIdx: number, cardIsIntro: boolean, animName: string) => {
+    const hasGridC = !!cardSlide.grid;
+    const isLastC = !cardIsIntro && cardIdx === totalSlides - 1;
+    return (
+      <div className="qqRulesCard" style={{
+        position: 'relative', zIndex: 5,
+        maxWidth: 1200, width: '94%', overflow: 'hidden',
+        // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
+        // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
+        // Slide-Color-Rand bleibt als Kategorie-Akzent.
+        background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(15,12,9,0.85)',
+        color: isThemed() ? 'var(--qq-card-text)' : undefined,
+        border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${cardSlide.color}44`,
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+        padding: `clamp(24px, 4cqh, ${hasGridC ? 52 : 60}px) clamp(32px, 5cqw, ${hasGridC ? 64 : 72}px)`,
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${cardSlide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
+        // 2026-07-17b (Wolf): horizontaler Einheits-Schwenk passend zum Progress-Tree
+        // oben (vorwaerts von rechts, zurueck von links). Inhalt reist als Ganzes mit
+        // (kein Per-Zeile-contentReveal), Opacity front-geladen → kein „totes Loch".
+        // Icon + Titel bleiben die EINE Signatur. --qq-enter = Arena-Ankunft.
+        animation: animName,
+        // 2026-07-04 (Wolf 'Fenster wechselt Größe je Regelseite, unruhig'):
+        // FIXE einheitliche Höhe für ALLE Slides (statt min/maxHeight-Spanne) —
+        // der Rahmen springt beim Regel-Wechsel nicht mehr; kürzere Regeln
+        // zentrieren ihren Inhalt in der konstanten Bühne.
+        height: '82cqh',
+        justifyContent: 'center',
+        display: 'flex', flexDirection: 'column',
+      }}>
+        {/* Icon + title — beides zentriert, Icon über Titel. Klassischer
+            Stage-Look statt links-rechts-Layout. */}
+        <div style={{
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(8px, 1cqh, 14px)', marginBottom: 'clamp(16px, 2.5cqh, 28px)',
+          textAlign: 'center',
+        }}>
+          {/* 2026-05-05 (Wolf 'alle Emojis in Regeln bouncen, sync zum Wave'):
+              continuous qqCatNameWave wie Title-Buchstaben. Delay 1.3s = Title-
+              Wave-Init (1.0s) + halbe Cascade (~0.3s) → Emoji peakt synchron
+              mit mittlerem Buchstaben statt asynchron dagegen zu wirken.
+              2026-05-09 (Wolf-Wunsch 'Joker-PNGs prominent auf Joker-Slide'):
+              Bei heroJokers ein Pärchen Joker-PNGs (Boy+Girl) als Hero, mit
+              Wiggle-Animation in Counter-Phase für lebendige Doppel-Pose. */}
+          {cardSlide.heroJokers ? (
+            <div style={{
+              display: 'inline-flex', alignItems: 'flex-end', gap: 'clamp(8px, 1cqw, 18px)',
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}>
+              <JokerIcon i={0} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
+                style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 0.5s infinite' }} />
+              <JokerIcon i={1} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
+                style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 1.7s infinite' }} />
+            </div>
+          ) : cardSlide.iconImg ? (
+            <span style={{
+              display: 'inline-block',
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}><CozyGameIcon id={cardSlide.iconImg} emoji={cardSlide.icon} size={'clamp(64px,9cqw,110px)'} /></span>
+          ) : (
+            <span style={{
+              display: 'inline-block',
+              fontSize: 'clamp(64px,9cqw,110px)', lineHeight: 1,
+              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}><QQEmojiIcon emoji={cardSlide.icon}/></span>
+          )}
+          <div style={{
+            fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
+            textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : `${cardSlide.color}88`,
+          }}>
+            {cardSlide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
+          </div>
+          <div style={{
+            // 2026-07-04 (Wolf 'Titel oben abgeschnitten'): etwas kleiner, damit
+            // lange Titel ('Dein Weg durchs Quiz') in die feste Card passen.
+            fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
+            color: isThemed() ? 'var(--qq-title)' : cardSlide.color,
+            textShadow: isThemed() ? 'none' : `0 0 60px ${cardSlide.color}44`,
+          }}>
+            {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
+                Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.
+                Spaces als &nbsp; damit Word-Spacing erhalten bleibt. */}
+            {cardSlide.title.split('').map((char, i) => (
+              <span key={`${cardIdx}-${i}`} style={{
+                display: 'inline-block',
+                // 2026-05-05 v2 (Wolf 'jetzt kommen die regeln auch wave?'):
+                // Entry-Letter-Cascade (scaleIn + blur-clear, stagger 0.05s —
+                // gleiche Sprache wie Welcome-Title), DANN continuous
+                // qqCatNameWave als sanftes Wiegen.
+                // 2026-07-17c (Wolf „ganze windows reingeschoben"): Titel STARR, faehrt
+                // mit dem geschobenen Fenster mit (keine Buchstaben-Kaskade); nur das
+                // ambiente Wiegen bleibt.
+                animation: `qqCatNameWave 2.4s ease-in-out ${1.0 + i * 0.08}s infinite`,
+                whiteSpace: 'pre',
+              }}>{char === ' ' ? ' ' : char}</span>
+            ))}
+          </div>
+        </div>
+
+        {/* Divider — symmetrischer Gradient + continuous shimmer (analog Round-Intro-Bar
+            und Welcome-Linie, damit die drei Marken-Folien dieselbe Bewegungs-Sprache
+            sprechen). */}
+        <div style={{
+          width: '100%', height: 3, borderRadius: 2,
+          background: isThemed()
+            ? 'linear-gradient(90deg, transparent, var(--qq-accent) 50%, transparent)'
+            : `linear-gradient(90deg, transparent, ${cardSlide.color}cc 50%, transparent)`,
+          backgroundSize: '200% 100%',
+          marginBottom: 'clamp(16px, 2.5cqh, 32px)',
+          // 2026-07-17c (Wolf „ganze windows reingeschoben"): Divider STARR (kein
+          // Aufzieh-Draw mehr), faehrt mit dem Fenster mit; nur der Shimmer laeuft.
+          animation: 'lineShimmer 3s linear 0.9s infinite',
+          boxShadow: isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${cardSlide.color}44`,
+        }} />
+
+        {/* Content: text left, grid right (if grid exists) */}
+        <div style={{
+          display: 'flex', gap: 'clamp(24px, 3cqw, 48px)',
+          alignItems: (cardSlide.showTree || cardSlide.treeShowcase) ? 'stretch' : 'center',
+          flexDirection: (cardSlide.showTree || cardSlide.treeShowcase) ? 'column' : (hasGridC ? 'row' : 'column'),
+        }}>
+          {/* Fortschrittsbaum (Inline-Variante in Abilities-Slide) */}
+          {cardSlide.showTree && (
+            <div style={{ display: 'flex', justifyContent: 'center', animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.05s both' }}>
+              {/* 2026-06-29 (Wolf 'Wolf auch über den normalen Tree'): wolfAbove
+                  → Wolf schwebt über der Linie (Pin), aktuelle Kategorie bleibt
+                  sichtbar — konsistent mit dem Journey-Look. */}
+              <QQProgressTree state={s} variant="inline" wolfAbove />
+            </div>
+          )}
+
+          {/* TREE SHOWCASE — eigene Slide, Tree groß + Phasen-Sweep */}
+          {cardSlide.treeShowcase && (
+            <div style={{
+              display: 'flex', flexDirection: 'column', alignItems: 'center',
+              gap: 'clamp(20px, 3cqh, 40px)',
+              animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.1s both',
+              padding: 'clamp(8px, 1.5cqh, 24px) 0',
+            }}>
+              <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2800} />
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 12,
+                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
+                color: '#a8a395', letterSpacing: '0.04em',
+                animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.5s both',
+              }}>
+                <span style={{
+                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
+                  background: isThemed() ? 'var(--qq-accent)' : '#EC4899',
+                  boxShadow: isThemed() ? '0 0 12px rgba(var(--qq-accent-rgb),0.65)' : '0 0 12px rgba(236,72,153,0.65)',
+                  animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
+                }} />
+                {getRuleText('rules.slide3.hint', lang, lang === 'de'
+                  ? '5 Kategorien pro Runde, jede mit eigenem Twist'
+                  : '5 categories per round, each with its own twist')}
+              </div>
+              <style>{`
+                @keyframes qqShowcaseHintPulse {
+                  0%, 100% { opacity: 0.5; transform: scale(0.85); }
+                  50% { opacity: 1; transform: scale(1.15); }
+                }
+              `}</style>
+            </div>
+          )}
+
+          {/* Text lines — zentriert für Quiz-Event-Look (kein Bullet-Liste-
+              Eindruck, klare Stage-Präsentation). */}
+          <div style={{
+            display: 'flex', flexDirection: 'column',
+            gap: 'clamp(10px, 1.5cqh, 20px)', flex: 1,
+            alignItems: 'center', textAlign: 'center',
+          }}>
+            {/* 2026-07-17 (Motion-Pass): Zeilen reisen als Einheit mit der Karte
+                (kein gestaffelter Per-Zeile-contentReveal = kein „Aufzaehlungspunkte
+                erscheinen"-Gefuehl). Sie sind fertig gesetzt, wenn die Folie landet. */}
+            {cardSlide.lines.map((line, i) => (
+              <div key={i} style={{ maxWidth: 920 }}>
+                <span style={{
+                  fontSize: 'clamp(22px,3cqw,40px)', fontWeight: 700,
+                  color: 'var(--qq-card-text)', lineHeight: 1.3,
+                }}>{line}</span>
+              </div>
+            ))}
+            {/* Ability-Badges (Bann, Schild, Tauschen, …) als Icon-Strip */}
+            {cardSlide.abilities && cardSlide.abilities.length > 0 && (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
+                gap: 'clamp(10px, 1.4cqw, 20px)', marginTop: 'clamp(10px, 1.6cqh, 22px)',
+              }}>
+                {cardSlide.abilities.map((b, i) => (
+                  <div key={`${b.label}-${i}`} style={{
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                    padding: 'clamp(10px, 1.2cqh, 16px) clamp(14px, 1.6cqw, 22px)', borderRadius: 16,
+                    background: `${b.accent}1a`, border: `2px solid ${b.accent}55`,
+                    boxShadow: `0 0 18px ${b.accent}33`, minWidth: 'clamp(96px, 11cqw, 140px)',
+                    // 2026-07-17c (Wolf „ganze windows reingeschoben"): starr, faehrt mit
+                    // dem geschobenen Fenster mit (kein eigener Fade).
+                  }}>
+                    {b.slug
+                      ? <QQIcon slug={b.slug} size={'clamp(40px, 5.5cqw, 72px)'} alt={b.label} />
+                      : <span style={{ fontSize: 'clamp(36px, 5cqw, 64px)', lineHeight: 1 }}><QQEmojiIcon emoji={b.emoji}/></span>}
+                    <div style={{
+                      fontSize: 'clamp(14px, 1.6cqw, 22px)', fontWeight: 900,
+                      color: b.accent, letterSpacing: '0.04em',
+                    }}>{b.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Mini grid example */}
+          {cardSlide.grid && <RulesMiniGrid grid={cardSlide.grid} slideColor={cardSlide.color} eurovisionMode={!!s.theme?.eurovisionMode} />}
+        </div>
+
+        {/* Extra callout — zentriert */}
+        {cardSlide.extra && (
+          <div style={{
+            marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+            background: isThemed() ? 'var(--qq-surface)' : `${cardSlide.color}15`,
+            border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${cardSlide.color}33`,
+            fontSize: 'clamp(18px,2.4cqw,34px)', fontWeight: 900,
+            color: isThemed() ? 'var(--qq-accent)' : cardSlide.color,
+            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
+            textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,
+            textAlign: 'center',
+          }}>
+            {cardSlide.extra}
+          </div>
+        )}
+
+        {/* Last slide hint */}
+        {isLastC && (
+          <div style={{
+            marginTop: 'clamp(16px, 2.5cqh, 32px)', textAlign: 'center',
+            fontSize: 'clamp(20px,2.8cqw,36px)', fontWeight: 900,
+            color: isThemed() ? 'var(--qq-accent)' : cardSlide.color,
+            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
+            textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,
+          }}>
+            {getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
@@ -582,8 +860,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
            mehr Weg (150px) + Inhalt komplett starr → liest sich als geschobenes Fenster
            statt „Inhalt baut sich auf". */
         @keyframes qqRulesArrive{0%{opacity:0;transform:translateY(18px) scale(.955)}30%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1)}}
-        @keyframes qqRulesArriveR{0%{opacity:0;transform:translateX(150px)}22%{opacity:1}100%{opacity:1;transform:translateX(0)}}
-        @keyframes qqRulesArriveL{0%{opacity:0;transform:translateX(-150px)}22%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesPushInR{from{transform:translateX(135%)}to{transform:translateX(0)}}
+        @keyframes qqRulesPushInL{from{transform:translateX(-135%)}to{transform:translateX(0)}}
+        @keyframes qqRulesPushOutL{from{transform:translateX(0)}to{transform:translateX(-135%)}}
+        @keyframes qqRulesPushOutR{from{transform:translateX(0)}to{transform:translateX(135%)}}
         @keyframes qqRulesDivDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
         @keyframes qqHeroRise{0%{opacity:0;transform:translateY(-12px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes qqHeroBook{0%{opacity:0;transform:translateY(-14px) rotate(-8deg) scale(.6)}60%{opacity:1;transform:translateY(0) rotate(4deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
@@ -596,6 +876,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         @media (prefers-reduced-motion: reduce){
           .qqRulesEmberLayer{display:none !important}
           .qqRulesWolf{animation:none !important}
+          .qqRulesCard{animation-duration:0.01ms !important}
         }
       `}</style>
 
@@ -712,251 +993,30 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         );
       })()}
 
-      {/* Main card — full-width for beamer readability.
-          2026-05-08 (Wolf-Wunsch /animations Slot-1): Slide-In statt phasePop.
-          Forward = von rechts, Backward = von links. Spring-Easing für sanftes
-          Settle-Overshoot. */}
-      <div key={isIntro ? 'rules-intro' : idx} style={{
-        position: 'relative', zIndex: 5,
-        maxWidth: 1200, width: '94%', overflow: 'hidden',
-        // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
-        // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
-        // Slide-Color-Rand bleibt als Kategorie-Akzent.
-        background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(15,12,9,0.85)',
-        color: isThemed() ? 'var(--qq-card-text)' : undefined,
-        border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${slide.color}44`,
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-        padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
-        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        // 2026-07-17b (Wolf): horizontaler Einheits-Schwenk passend zum Progress-Tree
-        // oben (vorwaerts von rechts, zurueck von links). Inhalt reist als Ganzes mit
-        // (kein Per-Zeile-contentReveal), Opacity front-geladen → kein „totes Loch".
-        // Icon + Titel bleiben die EINE Signatur. --qq-enter = Arena-Ankunft.
-        animation: `${slideDir === 'back' ? 'qqRulesArriveL' : 'qqRulesArriveR'} 0.42s var(--qq-enter) both`,
-        // 2026-07-04 (Wolf 'Fenster wechselt Größe je Regelseite, unruhig'):
-        // FIXE einheitliche Höhe für ALLE Slides (statt min/maxHeight-Spanne) —
-        // der Rahmen springt beim Regel-Wechsel nicht mehr; kürzere Regeln
-        // zentrieren ihren Inhalt in der konstanten Bühne.
-        height: '82cqh',
-        justifyContent: 'center',
-        display: 'flex', flexDirection: 'column',
+      {/* Fenster-Schub (Wolf „schieb das window wirklich raus“): outgoing faehrt
+          sichtbar nach aussen, view faehrt gekoppelt rein - deckungsgleich, KEIN Fade. */}
+      <div style={{
+        position: 'relative', zIndex: 5, flex: 1, width: '100%',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0,
       }}>
-        {/* Icon + title — beides zentriert, Icon über Titel. Klassischer
-            Stage-Look statt links-rechts-Layout. */}
-        <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 'clamp(8px, 1cqh, 14px)', marginBottom: 'clamp(16px, 2.5cqh, 28px)',
-          textAlign: 'center',
-        }}>
-          {/* 2026-05-05 (Wolf 'alle Emojis in Regeln bouncen, sync zum Wave'):
-              continuous qqCatNameWave wie Title-Buchstaben. Delay 1.3s = Title-
-              Wave-Init (1.0s) + halbe Cascade (~0.3s) → Emoji peakt synchron
-              mit mittlerem Buchstaben statt asynchron dagegen zu wirken.
-              2026-05-09 (Wolf-Wunsch 'Joker-PNGs prominent auf Joker-Slide'):
-              Bei heroJokers ein Pärchen Joker-PNGs (Boy+Girl) als Hero, mit
-              Wiggle-Animation in Counter-Phase für lebendige Doppel-Pose. */}
-          {slide.heroJokers ? (
-            <div style={{
-              display: 'inline-flex', alignItems: 'flex-end', gap: 'clamp(8px, 1cqw, 18px)',
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
-            }}>
-              <JokerIcon i={0} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
-                style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 0.5s infinite' }} />
-              <JokerIcon i={1} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
-                style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 1.7s infinite' }} />
+        {outgoing && outgoing.raw >= -1 && (() => {
+          const o = slideFor(outgoing.raw);
+          const anim = outgoing.dir === 'fwd' ? 'qqRulesPushOutL' : 'qqRulesPushOutR';
+          return (
+            <div key={'out-' + outgoing.raw} aria-hidden style={PUSH_LAYER}>
+              {renderCard(o.cardSlide, o.cardIdx, o.intro, anim + ' ' + PUSH_S + ' ' + PUSH_EASE + ' both')}
             </div>
-          ) : slide.iconImg ? (
-            <span style={{
-              display: 'inline-block',
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
-            }}><CozyGameIcon id={slide.iconImg} emoji={slide.icon} size={'clamp(64px,9cqw,110px)'} /></span>
-          ) : (
-            <span style={{
-              display: 'inline-block',
-              fontSize: 'clamp(64px,9cqw,110px)', lineHeight: 1,
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
-              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
-            }}><QQEmojiIcon emoji={slide.icon}/></span>
-          )}
-          <div style={{
-            fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : `${slide.color}88`,
-          }}>
-            {slide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
-          </div>
-          <div style={{
-            // 2026-07-04 (Wolf 'Titel oben abgeschnitten'): etwas kleiner, damit
-            // lange Titel ('Dein Weg durchs Quiz') in die feste Card passen.
-            fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
-            color: isThemed() ? 'var(--qq-title)' : slide.color,
-            textShadow: isThemed() ? 'none' : `0 0 60px ${slide.color}44`,
-          }}>
-            {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
-                Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.
-                Spaces als &nbsp; damit Word-Spacing erhalten bleibt. */}
-            {slide.title.split('').map((char, i) => (
-              <span key={`${idx}-${i}`} style={{
-                display: 'inline-block',
-                // 2026-05-05 v2 (Wolf 'jetzt kommen die regeln auch wave?'):
-                // Entry-Letter-Cascade (scaleIn + blur-clear, stagger 0.05s —
-                // gleiche Sprache wie Welcome-Title), DANN continuous
-                // qqCatNameWave als sanftes Wiegen.
-                // 2026-07-17c (Wolf „ganze windows reingeschoben"): Titel STARR, faehrt
-                // mit dem geschobenen Fenster mit (keine Buchstaben-Kaskade); nur das
-                // ambiente Wiegen bleibt.
-                animation: `qqCatNameWave 2.4s ease-in-out ${1.0 + i * 0.08}s infinite`,
-                whiteSpace: 'pre',
-              }}>{char === ' ' ? ' ' : char}</span>
-            ))}
-          </div>
-        </div>
-
-        {/* Divider — symmetrischer Gradient + continuous shimmer (analog Round-Intro-Bar
-            und Welcome-Linie, damit die drei Marken-Folien dieselbe Bewegungs-Sprache
-            sprechen). */}
-        <div style={{
-          width: '100%', height: 3, borderRadius: 2,
-          background: isThemed()
-            ? 'linear-gradient(90deg, transparent, var(--qq-accent) 50%, transparent)'
-            : `linear-gradient(90deg, transparent, ${slide.color}cc 50%, transparent)`,
-          backgroundSize: '200% 100%',
-          marginBottom: 'clamp(16px, 2.5cqh, 32px)',
-          // 2026-07-17c (Wolf „ganze windows reingeschoben"): Divider STARR (kein
-          // Aufzieh-Draw mehr), faehrt mit dem Fenster mit; nur der Shimmer laeuft.
-          animation: 'lineShimmer 3s linear 0.9s infinite',
-          boxShadow: isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${slide.color}44`,
-        }} />
-
-        {/* Content: text left, grid right (if grid exists) */}
-        <div style={{
-          display: 'flex', gap: 'clamp(24px, 3cqw, 48px)',
-          alignItems: (slide.showTree || slide.treeShowcase) ? 'stretch' : 'center',
-          flexDirection: (slide.showTree || slide.treeShowcase) ? 'column' : (hasGrid ? 'row' : 'column'),
-        }}>
-          {/* Fortschrittsbaum (Inline-Variante in Abilities-Slide) */}
-          {slide.showTree && (
-            <div style={{ display: 'flex', justifyContent: 'center', animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.05s both' }}>
-              {/* 2026-06-29 (Wolf 'Wolf auch über den normalen Tree'): wolfAbove
-                  → Wolf schwebt über der Linie (Pin), aktuelle Kategorie bleibt
-                  sichtbar — konsistent mit dem Journey-Look. */}
-              <QQProgressTree state={s} variant="inline" wolfAbove />
+          );
+        })()}
+        {(() => {
+          const v = slideFor(view.raw);
+          const anim = view.enterDir === 'fwd' ? 'qqRulesPushInR' : 'qqRulesPushInL';
+          return (
+            <div key={'in-' + view.raw} style={PUSH_LAYER}>
+              {renderCard(v.cardSlide, v.cardIdx, v.intro, anim + ' ' + PUSH_S + ' ' + PUSH_EASE + ' both')}
             </div>
-          )}
-
-          {/* TREE SHOWCASE — eigene Slide, Tree groß + Phasen-Sweep */}
-          {slide.treeShowcase && (
-            <div style={{
-              display: 'flex', flexDirection: 'column', alignItems: 'center',
-              gap: 'clamp(20px, 3cqh, 40px)',
-              animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.1s both',
-              padding: 'clamp(8px, 1.5cqh, 24px) 0',
-            }}>
-              <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2800} />
-              <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 12,
-                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
-                color: '#a8a395', letterSpacing: '0.04em',
-                animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.5s both',
-              }}>
-                <span style={{
-                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                  background: isThemed() ? 'var(--qq-accent)' : '#EC4899',
-                  boxShadow: isThemed() ? '0 0 12px rgba(var(--qq-accent-rgb),0.65)' : '0 0 12px rgba(236,72,153,0.65)',
-                  animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
-                }} />
-                {getRuleText('rules.slide3.hint', lang, lang === 'de'
-                  ? '5 Kategorien pro Runde, jede mit eigenem Twist'
-                  : '5 categories per round, each with its own twist')}
-              </div>
-              <style>{`
-                @keyframes qqShowcaseHintPulse {
-                  0%, 100% { opacity: 0.5; transform: scale(0.85); }
-                  50% { opacity: 1; transform: scale(1.15); }
-                }
-              `}</style>
-            </div>
-          )}
-
-          {/* Text lines — zentriert für Quiz-Event-Look (kein Bullet-Liste-
-              Eindruck, klare Stage-Präsentation). */}
-          <div style={{
-            display: 'flex', flexDirection: 'column',
-            gap: 'clamp(10px, 1.5cqh, 20px)', flex: 1,
-            alignItems: 'center', textAlign: 'center',
-          }}>
-            {/* 2026-07-17 (Motion-Pass): Zeilen reisen als Einheit mit der Karte
-                (kein gestaffelter Per-Zeile-contentReveal = kein „Aufzaehlungspunkte
-                erscheinen"-Gefuehl). Sie sind fertig gesetzt, wenn die Folie landet. */}
-            {slide.lines.map((line, i) => (
-              <div key={i} style={{ maxWidth: 920 }}>
-                <span style={{
-                  fontSize: 'clamp(22px,3cqw,40px)', fontWeight: 700,
-                  color: 'var(--qq-card-text)', lineHeight: 1.3,
-                }}>{line}</span>
-              </div>
-            ))}
-            {/* Ability-Badges (Bann, Schild, Tauschen, …) als Icon-Strip */}
-            {slide.abilities && slide.abilities.length > 0 && (
-              <div style={{
-                display: 'flex', flexWrap: 'wrap', justifyContent: 'center',
-                gap: 'clamp(10px, 1.4cqw, 20px)', marginTop: 'clamp(10px, 1.6cqh, 22px)',
-              }}>
-                {slide.abilities.map((b, i) => (
-                  <div key={`${b.label}-${i}`} style={{
-                    display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-                    padding: 'clamp(10px, 1.2cqh, 16px) clamp(14px, 1.6cqw, 22px)', borderRadius: 16,
-                    background: `${b.accent}1a`, border: `2px solid ${b.accent}55`,
-                    boxShadow: `0 0 18px ${b.accent}33`, minWidth: 'clamp(96px, 11cqw, 140px)',
-                    // 2026-07-17c (Wolf „ganze windows reingeschoben"): starr, faehrt mit
-                    // dem geschobenen Fenster mit (kein eigener Fade).
-                  }}>
-                    {b.slug
-                      ? <QQIcon slug={b.slug} size={'clamp(40px, 5.5cqw, 72px)'} alt={b.label} />
-                      : <span style={{ fontSize: 'clamp(36px, 5cqw, 64px)', lineHeight: 1 }}><QQEmojiIcon emoji={b.emoji}/></span>}
-                    <div style={{
-                      fontSize: 'clamp(14px, 1.6cqw, 22px)', fontWeight: 900,
-                      color: b.accent, letterSpacing: '0.04em',
-                    }}>{b.label}</div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* Mini grid example */}
-          {slide.grid && <RulesMiniGrid grid={slide.grid} slideColor={slide.color} eurovisionMode={!!s.theme?.eurovisionMode} />}
-        </div>
-
-        {/* Extra callout — zentriert */}
-        {slide.extra && (
-          <div style={{
-            marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-            background: isThemed() ? 'var(--qq-surface)' : `${slide.color}15`,
-            border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${slide.color}33`,
-            fontSize: 'clamp(18px,2.4cqw,34px)', fontWeight: 900,
-            color: isThemed() ? 'var(--qq-accent)' : slide.color,
-            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
-            textShadow: isThemed() ? 'none' : `0 0 24px ${slide.color}33`,
-            textAlign: 'center',
-          }}>
-            {slide.extra}
-          </div>
-        )}
-
-        {/* Last slide hint */}
-        {isLast && (
-          <div style={{
-            marginTop: 'clamp(16px, 2.5cqh, 32px)', textAlign: 'center',
-            fontSize: 'clamp(20px,2.8cqw,36px)', fontWeight: 900,
-            color: isThemed() ? 'var(--qq-accent)' : slide.color,
-            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
-            textShadow: isThemed() ? 'none' : `0 0 24px ${slide.color}33`,
-          }}>
-            {getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')}
-          </div>
-        )}
+          );
+        })()}
       </div>
     </div>
   );

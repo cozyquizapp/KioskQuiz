@@ -20,8 +20,11 @@ Material-Verbesserungen dazu. Alles auf Branch **`design/material-pass-standings
   gemalten Banner → kein Doppel) + **grosse Wappen** + qqRosterLand-Motion. Commit db4eb615.
 - **bild 3** (Cluster-Zoom nicht symmetrisch): BG via bild-1-Fix mit erledigt; Track-Strich
   auf den fokussierten Cluster begrenzt (phaseDotSpans + focusPhaseIdx). Commit f5010369.
-- **Regel-Motion** (Wolf-Idee): horizontaler Einheits-Schwenk (qqRulesArriveR/L) passend zum
-  Progress-Tree, statt Tiefe. Inhalt reist als EINHEIT. Commit ef1d0348. Depth-Keyframe bleibt.
+- **Regel-Motion** (Wolf-Idee): ganze Karte als STARRES Fenster horizontal reingeschoben
+  (qqRulesArriveR/L, 150px, rechts→links) passend zum Progress-Tree. Alle internen Entrance-
+  Animationen RAUS (Titel-Kaskade/Icon-heroEntrance/Divider-Draw/Kachel-Fades) → Inhalt starr,
+  faehrt mit; nur ambientes Wiegen + Shimmer bleiben. Commits ef1d0348 → 996fd43a (Wolf „nicht
+  wirklich als ganze windows reingeschoben"). Depth-Keyframe qqRulesArrive bleibt fuer Rueckkehr.
 - **Kolosseum-Wappen**: `<slug>-colosseum.webp` (freigestellt aus Wolfs `<slug> colloseum.png`
   via Luma-Key t0=6/t1=34, auf 680px + WebP 119-233KB) ersetzen glossy. crestSrc → `.webp`.
   Commit 403fe0d6 (PNG) → fd1aaaaf (WebP, weil 3MB-PNG den Vercel/PWA-Build sprengte).

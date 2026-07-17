@@ -39,7 +39,7 @@ export function isCrestSlug(s: string | undefined | null): s is string {
  *  aus `<slug> colloseum.png` (schwarzer BG) nach `<slug>-colosseum.png` (transparent,
  *  Glow erhalten). Alte glossy `<slug>.png` bleiben liegen (Rueckkehr = eine Zeile). */
 export function crestSrc(slug: string): string {
-  return `/avatars/cozyarena/${slug}-colosseum.png`;
+  return `/avatars/cozyarena/${slug}-colosseum.webp`;
 }
 
 /** Pfad zum freigestellten Emblem-PNG (nur cremefarbenes Symbol, ohne Schild) —

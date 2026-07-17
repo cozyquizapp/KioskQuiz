@@ -52,6 +52,10 @@ export default defineConfig({
         // 4-5 MB jeweils, würden Precache massiv aufblähen + überschreiten
         // das 3-MB-Limit. BG-Music läuft eh dauerhaft, on-demand-Load OK.
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2,webp,avif,wav}'],
+        // 2026-07-17: Wolfs Staging-Ordner `public/neue background/` (Quell-PNGs, 2-3 MB
+        // je Stueck) NIE precachen — er ist gitignored (nicht auf Vercel), wuerde aber
+        // lokale Builds sprengen (Datei > Limit = Build-Error). globIgnore haelt beide gruen.
+        globIgnores: ['**/neue background/**'],
         // 3 MB Limit fuer joker-PNGs (2.3 MB) und category-Logos (1.7 MB).
         maximumFileSizeToCacheInBytes: 3 * 1024 * 1024,
         // Fall back to index.html for SPA navigation, but not for API/socket routes

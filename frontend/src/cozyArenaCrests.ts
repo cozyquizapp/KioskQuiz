@@ -33,9 +33,13 @@ export function isCrestSlug(s: string | undefined | null): s is string {
   return !!s && CREST_SET.has(s);
 }
 
-/** Pfad zum vollen Wappen-PNG (Schild + Farbe + Emblem). */
+/** Pfad zum vollen Wappen-PNG (Schild + Farbe + Emblem).
+ *  2026-07-17 (Wolf): Kolosseum-Wappen (Gold-Rahmen, Glut-Rand, gemeisselter Stein)
+ *  statt der alten glossy-Variante — passen zur Arena-Material-Sprache. Freigestellt
+ *  aus `<slug> colloseum.png` (schwarzer BG) nach `<slug>-colosseum.png` (transparent,
+ *  Glow erhalten). Alte glossy `<slug>.png` bleiben liegen (Rueckkehr = eine Zeile). */
 export function crestSrc(slug: string): string {
-  return `/avatars/cozyarena/${slug}.png`;
+  return `/avatars/cozyarena/${slug}-colosseum.png`;
 }
 
 /** Pfad zum freigestellten Emblem-PNG (nur cremefarbenes Symbol, ohne Schild) —

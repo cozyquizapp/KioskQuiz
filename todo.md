@@ -75,8 +75,18 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
-*Aktuell nichts gelockt offen.* (bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen
-jetzt oben im Beamer-Check.)
+**Moderator-View-Batch (Wolf 17.7., neu):**
+- [ ] **„Runde 1 / Frage 1 von 5" anders darstellen** — passendere Darstellung für die Runden-/
+      Frage-Zähler-Badges (jetzt wo Cinzel/Kolosseum steht, wirkt die alte Pille evtl. off).
+- [ ] **Fraktionen im Moderator einklappen** — Fraktions-Block collapsible machen.
+- [ ] **Moderator-View übersichtlicher** — insgesamt aufräumen/strukturieren.
+- [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
+- [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt.
+
+**Screens-1707-Batch (Reihenfolge, einer nach dem anderen):** bild 4 ✅ (All-In-Beispiel). Nächste:
+bild 9, 10 (+18), 11, 12, 13, 14, 15, 16, 17 — Details in Memory `project_screens_1707_batch`.
+
+*(bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen auch oben im Beamer-Check.)*
 
 ---
 

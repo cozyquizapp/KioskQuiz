@@ -428,28 +428,29 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
           </div>
         )}
       </div>
+      {/* 2026-07-17 (Geschmacks-Pass, Material-Rezept): der Balken war ein flacher
+          Web-Slider (weisser Komet-Ball am Ende = „zieh mich"-Signal). Jetzt eine in
+          Stein eingelassene RILLE (warmer, versenkter Kanal via inset-Schatten) mit
+          einer Edelstein-Fuellung (Fraktionsfarbe + Facetten-Glanz oben + dunkle
+          Kante unten). Kein neues Gold (gesperrt ausser Kroenung), Ball raus. Die
+          Zahl steht rechts NEBEN dem Balken (standVal), also frisst die dunklere
+          Kante keinen Text-Kontrast. */}
       <div style={{
         ...S.standBarTrack,
-        // Renn-Lane-Optik: dezente „Finish-Line"-Ticks im Track.
-        backgroundImage: 'repeating-linear-gradient(90deg, transparent 0, transparent calc(10% - 1px), rgba(255,255,255,0.05) calc(10% - 1px), rgba(255,255,255,0.05) 10%)',
+        overflow: 'hidden',
+        boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 0 rgba(255,255,255,0.04)',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`,
-          background: `linear-gradient(90deg, ${team.color}cc, ${team.color})`,
+          // Edelstein statt Neon-Fill: horizontaler Farbverlauf traegt die Farbe,
+          // der vertikale Anteil gibt Rundung (heller Grat oben, satter Fuss unten).
+          background: `linear-gradient(180deg, ${team.color} 0%, ${team.color} 42%, ${team.color}c8 100%)`,
           borderRadius: 999,
-          boxShadow: `0 0 18px ${team.color}88, inset 0 1px 0 rgba(255,255,255,0.25)`,
+          // Facetten-Tiefe: heller Grat oben, dunkle Schattenkante unten + weicher
+          // Farbschein nach aussen (im Kanal gehalten, kein greller Web-Glow).
+          boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -3px 4px rgba(0,0,0,0.28), 0 0 12px ${team.color}55`,
           transition: 'width 0.8s cubic-bezier(0.34,1.05,0.5,1)',
-        }}>
-          {/* Komet-Spitze: heller, pulsierender Kopf an der Balken-Front. */}
-          {val > 0 && (
-            <span aria-hidden style={{
-              position: 'absolute', right: 0, top: '50%',
-              width: 16, height: 16, borderRadius: '50%', background: '#fff',
-              boxShadow: `0 0 12px 3px ${team.color}, 0 0 26px 8px ${team.color}88`,
-              animation: 'qqCometPulse 1.4s ease-in-out infinite',
-            }} />
-          )}
-        </div>
+        }} />
       </div>
       <span key={valPopKey} style={{ ...S.standVal, color: team.color, display: 'inline-block', animation: 'qqValuePop 0.5s ease both' }}>{displayVal}</span>
       <span style={S.standUnit}>{medal ? <QQEmojiIcon emoji={medal} /> : de ? 'Pkt' : 'pts'}</span>

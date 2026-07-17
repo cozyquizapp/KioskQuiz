@@ -568,11 +568,19 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         @keyframes qqRulesSlideR{0%{opacity:0;transform:translateX(120px)}60%{opacity:1}100%{opacity:1;transform:translateX(0)}}
         @keyframes qqRulesSlideL{0%{opacity:0;transform:translateX(-120px)}60%{opacity:1}100%{opacity:1;transform:translateX(0)}}
         /* 2026-07-17 (Motion-Wertigkeits-Pass, Nordstern „Premium schlaegt fruehere
-           Deko"): Regel-Karte tritt als EINHEIT aus der Arena-Tiefe an, statt
-           horizontal reinzuschieben (qqRulesSlideR = PowerPoint-Push, war Wolfs
-           Juli-Wunsch). Opacity front-geladen (voll bei 45% ~0.19s) → das „tote
-           Loch" zwischen zwei Folien verschwindet; Transform settelt weiter. */
+           Deko"): Regel-Karte tritt als EINHEIT an (Inhalt faehrt mit, kein separates
+           Zeilen-Eintippen). Opacity front-geladen (voll bei 30% ~0.13s) → kein „totes
+           Loch" zwischen Folien.
+           Depth-Variante (aufgehoben, falls Wolf zurueck will): translateY+scale.
+           2026-07-17b (Wolf): horizontaler Einheits-Schwenk STATT Tiefe, damit die
+           Karte zur horizontalen Bewegung des Progress-Trees oben passt (kohaerenter
+           Kamera-Schwenk durch die Reise). Vorwaerts = von rechts rein, zurueck = von
+           links. Unterschied zum alten PowerPoint-Push (qqRulesSlideR): kleinerer
+           Offset (60px statt 120), Opacity front-geladen (kein Loch) UND Inhalt faehrt
+           als Einheit mit (kein Bullet-Fade). */
         @keyframes qqRulesArrive{0%{opacity:0;transform:translateY(18px) scale(.955)}30%{opacity:1}100%{opacity:1;transform:translateY(0) scale(1)}}
+        @keyframes qqRulesArriveR{0%{opacity:0;transform:translateX(60px)}30%{opacity:1}100%{opacity:1;transform:translateX(0)}}
+        @keyframes qqRulesArriveL{0%{opacity:0;transform:translateX(-60px)}30%{opacity:1}100%{opacity:1;transform:translateX(0)}}
         @keyframes qqRulesDivDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
         @keyframes qqHeroRise{0%{opacity:0;transform:translateY(-12px) scale(.7)}100%{opacity:1;transform:translateY(0) scale(1)}}
         @keyframes qqHeroBook{0%{opacity:0;transform:translateY(-14px) rotate(-8deg) scale(.6)}60%{opacity:1;transform:translateY(0) rotate(4deg) scale(1.04)}100%{transform:rotate(0) scale(1)}}
@@ -717,13 +725,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGrid ? 52 : 60}px) clamp(32px, 5cqw, ${hasGrid ? 64 : 72}px)`,
         boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${slide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
-        // 2026-07-17 (Motion-Wertigkeits-Pass): Tiefen-Auftritt als Einheit statt
-        // horizontalem Bildband-Schub (qqRulesSlideR fuehlte sich „wie PowerPoint"
-        // an — leeres Buehnen-Loch zwischen Folien + Inhalt tippte gestaffelt rein).
-        // Jetzt: Karte kommt leicht aus der Tiefe nach vorn und setzt sich; der
-        // Inhalt reist als Ganzes mit (kein Per-Zeile-contentReveal mehr). Icon +
-        // Titel bleiben die EINE Signatur pro Folie. --qq-enter = Arena-Ankunft.
-        animation: 'qqRulesArrive 0.42s var(--qq-enter) both',
+        // 2026-07-17b (Wolf): horizontaler Einheits-Schwenk passend zum Progress-Tree
+        // oben (vorwaerts von rechts, zurueck von links). Inhalt reist als Ganzes mit
+        // (kein Per-Zeile-contentReveal), Opacity front-geladen → kein „totes Loch".
+        // Icon + Titel bleiben die EINE Signatur. --qq-enter = Arena-Ankunft.
+        animation: `${slideDir === 'back' ? 'qqRulesArriveL' : 'qqRulesArriveR'} 0.42s var(--qq-enter) both`,
         // 2026-07-04 (Wolf 'Fenster wechselt Größe je Regelseite, unruhig'):
         // FIXE einheitliche Höhe für ALLE Slides (statt min/maxHeight-Spanne) —
         // der Rahmen springt beim Regel-Wechsel nicht mehr; kürzere Regeln

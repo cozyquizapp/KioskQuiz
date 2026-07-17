@@ -129,12 +129,18 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // auseinandergeschoben, dann auf den echten Schwerpunkt zentriert). KEIN
   // Connector-Chaos: Tick UND Wappen sitzen auf derselben (ggf. minimal
   // verschobenen) Position, der Wert steht am Wappen. Keine Rangliste mehr.
-  const spread = (arr: Array<{ x: number; cx: number }>) => {
+  const spread = (arr: Array<{ x: number; cx: number; r?: { teamId: string } }>) => {
     if (arr.length < 2) return;
-    const LO = 5, HI = 95, MIN = 12; // % Mindestabstand der Wappen-Mitten in einer Lane
+    const LO = 5, HI = 95; // % Mindestabstand der Wappen-Mitten in einer Lane
+    // 2026-07-17 (Wolf bild 9): der Sieger ist ~2x so gross → braucht rechts/links
+    // deutlich mehr Luft (20%) als die kleinen Wappen untereinander (12%), sonst
+    // ueberlappt sein Gold-Ring den Nachbarn im dichten Cluster.
+    const winId = winner?.teamId;
     arr.sort((a, b) => a.cx - b.cx);
     for (let i = 1; i < arr.length; i++) {
-      if (arr[i].cx < arr[i - 1].cx + MIN) arr[i].cx = arr[i - 1].cx + MIN;
+      const nearWin = arr[i].r?.teamId === winId || arr[i - 1].r?.teamId === winId;
+      const min = nearWin ? 20 : 12;
+      if (arr[i].cx < arr[i - 1].cx + min) arr[i].cx = arr[i - 1].cx + min;
     }
     const meanReal = arr.reduce((s, c) => s + c.x, 0) / arr.length;
     const meanCx = arr.reduce((s, c) => s + c.cx, 0) / arr.length;
@@ -147,9 +153,16 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   };
   const placed = useMemo(() => {
     // nach Tippwert sortiert, abwechselnd obere/untere Lane, jede Lane separat entzerrt.
+    // 2026-07-17 (Wolf bild 9): der Sieger IMMER in die obere Lane (Hero oben, wie im
+    // sauberen Fall) → er kollidiert nicht mehr mit einem kleinen Nachbarn unten.
+    const winId = winner?.teamId;
+    let k = 0;
     const sorted = [...rankedFinal]
       .sort((a, b) => a.num - b.num)
-      .map((r, i) => ({ r, x: axisPct(r.num), cx: axisPct(r.num), above: i % 2 === 1 }));
+      .map((r) => {
+        const isWin = r.teamId === winId;
+        return { r, x: axisPct(r.num), cx: axisPct(r.num), above: isWin ? true : (k++ % 2 === 1) };
+      });
     spread(sorted.filter(c => !c.above));
     spread(sorted.filter(c => c.above));
     return sorted;
@@ -359,9 +372,12 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   {above && (
                     <span aria-hidden style={{ order: 3, width: 2, height: 'clamp(6px,1.2cqh,16px)', background: r.team.color, opacity: 0.6, borderRadius: 2 }} />
                   )}
-                  {/* Wappen (Sieger: gross, dicker Gold-Doppelring + Krone drueber) */}
+                  {/* Wappen (Sieger: gross, dicker Gold-Doppelring + Krone drueber).
+                      2026-07-17 (Wolf bild 9 „quetscht"): beim Sieger IMMER Wappen
+                      zuerst (order 1) → Krone oben frei, Wert-Label darunter (kein
+                      Kollaps von Label+Krone mehr). */}
                   <div style={{
-                    order: above ? 2 : 1,
+                    order: isWin ? 1 : (above ? 2 : 1),
                     position: 'relative',
                     borderRadius: '50%',
                     transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
@@ -377,9 +393,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     )}
                     <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={av} />
                   </div>
-                  {/* Wert + Delta (+ Punkte in Arena) */}
+                  {/* Wert + Delta (+ Punkte in Arena) — beim Sieger IMMER unter dem Wappen. */}
                   <div style={{
-                    order: above ? 1 : 2, display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05,
+                    order: isWin ? 2 : (above ? 1 : 2), marginTop: isWin ? 'clamp(4px,0.7cqh,10px)' : 0,
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05,
                     background: 'rgba(12,10,30,0.66)', borderRadius: 'clamp(8px,0.9cqw,14px)',
                     padding: 'clamp(2px,0.4cqh,5px) clamp(6px,0.8cqw,12px)',
                     border: `1.5px solid ${isWin && lit ? GOLD + 'aa' : 'rgba(255,255,255,0.12)'}`,

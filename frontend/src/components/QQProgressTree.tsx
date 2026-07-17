@@ -507,6 +507,8 @@ export default function QQProgressTree({
 
   return (
     <div
+      data-qq-tree={variant}
+      data-qq-tree-totalwidth={totalWidth}
       style={{
         display: 'flex',
         flexDirection: 'column',

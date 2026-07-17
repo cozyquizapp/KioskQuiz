@@ -117,7 +117,14 @@ const ARENA_BG_FOCUS: Record<string, string> = {
   // rundenintro: der Boden-Kristall („Diamant in der Mitte") sitzt bei ~50%/71%,
   // also unter der Bildmitte. Leicht reinzoomen + nach unten schieben (mehr Boden
   // zeigen) rueckt den Kristall naeher an die Screen-Mitte.
-  rundenintro: 'center 66% / 116%',
+  // 2026-07-17 (Wolf bild 1 „nicht symmetrisch mittig" — AUSGEMESSEN, nicht geraten):
+  // Der Progress-Tree ist geometrisch exakt mittig (Rand L=R=231px). Ursache war der
+  // BG: der helle Vortex-Streifen sitzt im Bild bei 50.96% (Pixel-Scan von
+  // rundenintro.webp 1672x941), bei `center`/116%-Zoom landete er on-screen bei
+  // ~899px statt 880 (= 20px rechts). Horizontale Position center→57% holt den
+  // Vortex exakt auf Screen-Mitte (verifiziert: on-screen 880px). Formel:
+  // screenX(vortex)=(1-1.16)*P + 0.5096*1.16 = 0.5 → P=0.57.
+  rundenintro: '57% 66% / 116%',
   // standing (Wolf 2026-07-17 „perfekt auf den bg passen, da ist eine Tafel"):
   // AUSGEMESSEN, nicht geschaetzt. standing.webp ist 1462x1076 (AR 1.359) — auf
   // 16:9 croppt `cover` oben/unten weg und die gemalte Tafel landete klein und

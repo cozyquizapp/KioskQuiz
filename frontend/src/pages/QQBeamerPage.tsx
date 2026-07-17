@@ -3693,133 +3693,63 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
 //         richtige Option → permanent grün + Speedrun-Highlight (⚡ Goldrand).
 // ─────────────────────────────────────────────────────────────────────────────
 /**
- * MegaMuchoVoterPills — CozyArena-Ersatz für die Einzel-Voter-Avatare unter
- * einer MuCho-Option. Fasst die Voter zu ihren Faktionen zusammen: EIN Faktions-
- * Tier je Farbe + ×Anzahl-Badge (statt bis zu 24 gemischten Sub-Team-Avataren).
- * showCrown wird in der Arena bewusst NICHT gesetzt (reine Verteilung, kein
- * Sieger — der lebt im Wertungs-Beat); der Krone-Pfad bleibt für evtl. Reuse.
+ * MegaOptionCrests — CozyArena „Wappen-Wahltafel" je MuCho-Option (Wolf 2026-07-17,
+ * „bild 4"). Ersetzt den Farb-Balken (vorher MegaOptionBar, Bild 6): dessen duenne
+ * Fraktions-Segmente waren aus Beamer-Distanz Matsch. Jetzt je Option grosse
+ * Fraktions-WAPPEN + grosse Zahl-Badge = wie viele Sub-Teams der Fraktion diese
+ * Option gewaehlt haben. Auf der richtigen Option ist das also die Anzahl RICHTIGER
+ * Sub-Teams; die Detail-Wertung (Punkte) lebt weiter im Scoring-Beat.
+ *
+ * Badge-Behandlung bewusst IDENTISCH zum Arena-Antwort-Zaehler im Frage-Footer
+ * (CozyQuizQuestionView, 2026-07-16): runder Badge unten rechts, gruen mit dunklem
+ * Text (Kontrast 8.67:1) wenn richtig, sonst weiss auf dunkel. Ein Muster, zwei Orte
+ * — wer den Footer-Zaehler gelesen hat, liest die Wahltafel ohne Umlernen.
+ * Kein Sieger/keine Krone (reine Verteilung).
  */
-function MegaMuchoVoterPills({ teams, winnerAvatarId, showCrown, de, dim, big }: {
+function MegaOptionCrests({ teams, de, dim, correct }: {
   teams: Array<{ id: string; name: string; avatarId: string; color?: string; emoji?: string }>;
-  winnerAvatarId?: string;
-  showCrown: boolean;
-  de: boolean;
-  dim: boolean;
-  /** 2026-07-14 (Wolf 'Layout 1'): Full-Width-Bars-Variante — Wappen sitzen inline
-   *  rechts in der Antwort-Zeile mit viel Platz → deutlich groesser fuer maximale
-   *  Fern-Sichtbarkeit. */
-  big?: boolean;
+  de: boolean; dim: boolean; correct: boolean;
 }) {
   const buckets = qqFactionBuckets(teams as any, de);
+  // Bis zu 8 Fraktionen muessen in ~54% Zeilenbreite passen → ab 5 kleiner.
   const many = buckets.length > 4;
-  return (
-    <>
-      {buckets.map((b, bi) => {
-        const isWinner = showCrown && b.avatarId === winnerAvatarId;
-        const avatarSz = big
-          ? (many ? 'clamp(50px, 5.4cqw, 78px)' : 'clamp(60px, 6.6cqw, 100px)')
-          : isWinner
-          ? (many ? 'clamp(56px, 6cqw, 80px)' : 'clamp(64px, 7cqw, 92px)')
-          : (many ? 'clamp(44px, 4.8cqw, 64px)' : 'clamp(52px, 5.6cqw, 76px)');
-        return (
-          <div key={b.avatarId} style={{
-            position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center',
-            animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${bi * 0.12}s both`,
-            opacity: dim ? 0.55 : 1, filter: dim ? 'grayscale(0.6)' : 'none',
-            transition: 'opacity 0.4s ease, filter 0.4s ease',
-          }}>
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              {isWinner && (
-                <span aria-hidden style={{
-                  position: 'absolute', left: 0, right: 0, top: 0,
-                  display: 'flex', justifyContent: 'center', transform: 'translateY(-58%)',
-                  pointerEvents: 'none', zIndex: 3,
-                }}>
-                  <span style={{
-                    fontSize: 'clamp(28px, 3.4cqw, 48px)', lineHeight: 1,
-                    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
-                    animation: 'muchoVoterDrop 0.6s cubic-bezier(0.34,1.6,0.5,1) 0.25s both',
-                  }}><QQEmojiIcon emoji="👑" size="1em" /></span>
-                </span>
-              )}
-              <QQTeamAvatar
-                avatarId={b.avatarId} teamEmoji={b.slug}
-                size={avatarSz}
-                style={{
-                  border: isWinner ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
-                  boxShadow: isWinner
-                    ? (isThemed()
-                        ? '0 0 22px rgba(var(--qq-accent-rgb),0.6), 0 6px 14px rgba(0,0,0,0.55)'
-                        : '0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)')
-                    : `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${b.color}55`,
-                  background: '#0A0814',
-                }}
-              />
-              {/* ×Anzahl-Badge — direkt unter dem Kreis, wie die Zeit-Pille im Normal-Modus */}
-              <span style={{
-                position: 'absolute', left: '50%', bottom: -8, transform: 'translate(-50%, 50%)',
-                padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
-                background: 'rgba(15,23,42,0.95)', border: `1.5px solid ${b.color}`,
-                color: QQ_COLORS.slate100, fontWeight: 900, fontSize: 'clamp(11px, 1.2cqw, 15px)',
-                whiteSpace: 'nowrap', boxShadow: '0 4px 10px rgba(0,0,0,0.5)', lineHeight: 1.1,
-              }}>×{b.count}</span>
-            </div>
-          </div>
-        );
-      })}
-    </>
-  );
-}
-
-/**
- * MegaOptionBar — CozyArena Farb-Balken je MuCho-Option (Wolf 2026-07-16, Bild 6).
- * Ersetzt die Wappen+×N-Reihe: ein liegender, gestapelter Farbbalken (Segment je
- * Fraktion, Breite ∝ Stimmen, skaliert auf die stimmenstärkste Option — wie die
- * Standings-Balken) + grosse Gesamtzahl am Ende. Aus Beamer-Distanz sofort
- * lesbar, WIE stark eine Option gewaehlt wurde; die Segmentfarben (+ Mini-Wappen
- * in breiten Segmenten) zeigen die Fraktions-Verteilung. Kein Sieger/keine Krone.
- */
-function MegaOptionBar({ teams, maxOptTotal, de, dim }: {
-  teams: Array<{ id: string; name: string; avatarId: string; color?: string; emoji?: string }>;
-  maxOptTotal: number; de: boolean; dim: boolean;
-}) {
-  const buckets = qqFactionBuckets(teams as any, de);
-  const total = buckets.reduce((s, b) => s + b.count, 0);
+  const avatarSz = many ? 'clamp(50px, 5.4cqw, 78px)' : 'clamp(60px, 6.6cqw, 100px)';
+  const badgeSz = many ? 'clamp(26px, 2.6cqw, 38px)' : 'clamp(30px, 3cqw, 44px)';
+  const badgeFs = many ? 'clamp(15px, 1.5cqw, 22px)' : 'clamp(17px, 1.7cqw, 25px)';
   return (
     <div style={{
       position: 'relative', zIndex: 1, marginLeft: 'auto',
-      flex: '0 0 clamp(300px, 40cqw, 600px)', maxWidth: '54%',
-      display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.4cqw, 20px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+      flexWrap: 'nowrap', maxWidth: '54%',
+      gap: many ? 'clamp(8px, 1cqw, 14px)' : 'clamp(12px, 1.4cqw, 20px)',
       opacity: dim ? 0.5 : 1, filter: dim ? 'grayscale(0.6)' : 'none',
       transition: 'opacity 0.4s ease, filter 0.4s ease',
-      animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
     }}>
-      <div style={{
-        position: 'relative', flex: 1, height: 'clamp(28px, 3.2cqh, 46px)',
-        borderRadius: 999, background: 'rgba(255,255,255,0.08)',
-        overflow: 'hidden', display: 'flex',
-        boxShadow: 'inset 0 1px 3px rgba(0,0,0,0.4)',
-      }}>
-        {buckets.map((b) => {
-          const w = (b.count / maxOptTotal) * 100;
-          const wide = w >= 9;
-          return (
-            <div key={b.avatarId} title={`${b.name}: ${b.count}`} style={{
-              width: `${w}%`, height: '100%',
-              background: `linear-gradient(180deg, ${b.color}, ${b.color}cc)`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              borderRight: '1px solid rgba(0,0,0,0.28)',
-            }}>
-              {wide && <QQTeamAvatar avatarId={b.avatarId} teamEmoji={b.slug} size={'clamp(20px, 2.4cqh, 34px)'} />}
-            </div>
-          );
-        })}
-      </div>
-      <span style={{
-        fontWeight: 900, fontSize: 'clamp(28px, 3.4cqw, 52px)', color: '#fff',
-        fontVariantNumeric: 'tabular-nums', minWidth: '1.4em', textAlign: 'right',
-        textShadow: '0 2px 6px rgba(0,0,0,0.5)', lineHeight: 1,
-      }}>{total}</span>
+      {buckets.map((b, bi) => (
+        <div key={b.avatarId} title={`${b.name}: ${b.count}`} style={{
+          position: 'relative', flexShrink: 0, display: 'inline-flex',
+          animation: `muchoVoterDrop 0.55s cubic-bezier(0.34,1.5,0.64,1) ${bi * 0.1}s both`,
+        }}>
+          <QQTeamAvatar
+            avatarId={b.avatarId} teamEmoji={b.slug} size={avatarSz}
+            style={{
+              boxShadow: `0 6px 14px rgba(0,0,0,0.55), 0 0 10px ${b.color}55`,
+              background: '#0A0814',
+            }}
+          />
+          <span style={{
+            position: 'absolute', bottom: -4, right: -4,
+            minWidth: badgeSz, height: badgeSz, padding: '0 6px', borderRadius: 999,
+            background: correct ? '#22C55E' : 'rgba(10,8,20,0.92)',
+            border: '2.5px solid rgba(255,255,255,0.2)',
+            color: correct ? '#0A0814' : '#fff',
+            fontSize: badgeFs, fontWeight: 900,
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontVariantNumeric: 'tabular-nums', lineHeight: 1,
+            boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+          }}>{b.count}</span>
+        </div>
+      ))}
     </div>
   );
 }
@@ -3855,12 +3785,6 @@ export function MuchoOptionsReveal({
     return res;
   }, [answers, N]);
   const akt1Max = nonEmptyOrdered.length;
-  // Stimmenstärkste Option → Skalierung der Arena-Farb-Balken (wie Standings).
-  const maxOptTotal = useMemo(() => {
-    let m = 1;
-    for (let i = 0; i < N; i++) m = Math.max(m, answers.filter(a => a.text === String(i)).length);
-    return m;
-  }, [answers, N]);
   const lockStep = akt1Max + 1;
   const locked = revealStep >= lockStep && correctOptionIndex != null && N > 0;
   // Auto-Stagger ab 2026-04-26: Backend springt bei Klick 1 direkt auf akt1Max,
@@ -4074,16 +3998,17 @@ export function MuchoOptionsReveal({
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
-              {/* 2026-07-16 (Wolf 'Bild 6'): Arena — statt der Wappen+×N-Reihe ein
-                  liegender Farb-Balken je Option (Fraktions-Segmente, skaliert auf
-                  die stimmenstärkste Option) + grosse Gesamtzahl. Aus Beamer-Distanz
-                  sofort lesbar wie stark eine Option gewaehlt wurde. */}
+              {/* 2026-07-17 (Wolf 'bild 4'): Arena — Wappen-Wahltafel statt Farb-Balken.
+                  Der Balken (Bild 6) war von weitem Matsch; jetzt grosse Fraktions-
+                  Wappen + grosse Zahl-Badge (Sub-Teams auf dieser Option, auf der
+                  richtigen Option = Anzahl richtiger Sub-Teams). Badge gruen wie der
+                  Antwort-Zaehler im Frage-Footer. */}
               {isMega && voterShow && voters.length > 0 && (
-                <MegaOptionBar
+                <MegaOptionCrests
                   teams={voters.map(v => v.team)}
-                  maxOptTotal={maxOptTotal}
                   de={lang === 'de'}
                   dim={isWrong}
+                  correct={isCorrect}
                 />
               )}
             </div>

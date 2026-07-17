@@ -286,6 +286,10 @@ export default function QQProgressTree({
   const dotCenters: number[] = [];
   const phaseWidths: number[] = [];
   const phaseCenters: number[] = [];
+  // 2026-07-17 (Wolf bild 3): erster/letzter Dot-Center JE Phase — damit der Track
+  // beim Cluster-Zoom (focusPhaseIdx) nur den fokussierten Cluster spannt statt bis
+  // zum letzten Tree-Dot rechts rauszulaufen (= die „nicht mittig"-Asymmetrie).
+  const phaseDotSpans: Array<{ first: number; last: number }> = [];
   // Bieten-Knoten (Final-Wager-Tipp-Phase): wird VOR der letzten Quiz-Runde
   // eingefuegt (nicht nach), weil das Bid-Phase BEFORE Phase N stattfindet
   // (qqBeginPhase line 3239: phaseIndex===totalPhases triggert FINAL_BETTING).
@@ -317,6 +321,7 @@ export default function QQProgressTree({
     const entries = byPhase.get(p) ?? [];
     const renderCount = entries.length > 0 ? entries.length : DEFAULT_DOTS_PER_PHASE;
     const phaseStart = cursor;
+    const dotIdxStart = dotCenters.length;
     for (let i = 0; i < renderCount; i++) {
       if (i > 0) cursor += dotGap;
       dotCenters.push(cursor + dotSize / 2);
@@ -324,6 +329,7 @@ export default function QQProgressTree({
     }
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
+    phaseDotSpans.push({ first: dotCenters[dotIdxStart], last: dotCenters[dotCenters.length - 1] });
   });
   // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28
   // entfernt (User-Wunsch: 'den - hintendran weg'). Dot sitzt jetzt mittig
@@ -441,8 +447,14 @@ export default function QQProgressTree({
     : wolfOnBidding ? biddingCenter
     : wolfOnCozyGame ? activeCozyGameCenter
     : (dotCenters[wolfDotIdx] ?? firstCenter);
-  const trackStart = firstCenter;
-  const trackEnd = wolfOnFinale ? finaleCenter
+  // 2026-07-17 (Wolf bild 3): beim Cluster-Zoom (focusPhaseIdx gesetzt) spannt der
+  // graue Track NUR den fokussierten Runden-Cluster (erster..letzter Dot der Runde)
+  // → symmetrisch unter den 5 Icons statt bis zum letzten Tree-Dot rechts rauszulaufen.
+  // Ohne focusPhaseIdx (Live-Tree, Step-0-Uebersicht) unveraendert: ganzer Journey-Track.
+  const focusSpan = (focusPhaseIdx != null && phaseDotSpans[focusPhaseIdx]) ? phaseDotSpans[focusPhaseIdx] : null;
+  const trackStart = focusSpan ? focusSpan.first : firstCenter;
+  const trackEnd = focusSpan ? focusSpan.last
+    : wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
     : wolfOnCozyGame ? activeCozyGameCenter
     : lastCenter;

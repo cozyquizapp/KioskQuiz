@@ -155,6 +155,13 @@
      COZYWOLF) + Finale-Sieger-Name zentral. Rueckgaengig = hier auf
      'Stinger Fit' zuruecksetzen. */
   --font-brand: 'League Spartan', 'Bricolage Grotesque', 'Nunito', system-ui, sans-serif;
+  /* 2026-07-17 (Wolf: „andere schriftart fuers colloseum?" -> Cinzel gewaehlt):
+     Arena-Display-Schrift NUR fuer grosse Hero-Worte im Kolosseum (CozyArena-
+     Wortmarke, Fraktionsnamen, „Los geht's!", Regel-Titel). Roemische Inschriften-
+     Kapitaelchen = gemeisselter Stein/Gold-Look. Body/UI/kleine Pills bleiben Nunito
+     (Cinzel-Serifen nur bei GROSSEM, SCHWEREM Schnitt beamer-lesbar). Nie fuer
+     Fliesstext. Rueckgaengig = Verwendungen auf --font-game zuruecksetzen. */
+  --font-arena: 'Cinzel', 'Bricolage Grotesque', Georgia, serif;
   /* 2026-07-12 (ui-ux-pro-max Skill: 'Fredoka/Nunito' fuer entertainment/gaming):
      Fredoka = runde, verspielte, warme Display-Schrift (CozyWolf-DNA) fuer grosse
      Zahlen/Headlines in Reveals. Nunito bleibt Body. Vibrant & Block-based statt

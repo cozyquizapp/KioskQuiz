@@ -67,6 +67,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
   const de = lang !== 'en';
+  // 2026-07-17 (Wolf: Kolosseum-Schriftart -> Cinzel): Arena-Display-Font nur fuer
+  // die grossen Hero-Worte (Wortmarke, Fraktionsname, „Los geht's!"). Bei Skin
+  // (themed) den Skin-Font lassen; sonst gemeisselte roemische Kapitaelchen.
+  const arenaFont = themed ? undefined : 'var(--font-arena)';
   const sfxMutedRef = useRef(s.sfxMuted);
   sfxMutedRef.current = s.sfxMuted;
 
@@ -237,7 +241,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', textShadow: themed ? 'none' : '0 2px 12px rgba(0,0,0,0.75)' }}>
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
-        <div style={{ fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : '0 3px 20px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.6)' }}>
+        <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : '0 3px 20px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.6)' }}>
           CozyArena
         </div>
       </div>
@@ -260,7 +264,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           // — die Fraktions-Wappen fuellen die Buehne (nicht mehr als duenner Boden-
           // streifen), steigen gestaffelt gross rein und schweben ruhig.
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(16px, 3cqh, 44px)', width: '100%', animation: 'qqArenaFinale 0.7s cubic-bezier(0.2,1,0.4,1) both' }}>
-            <div style={{ fontSize: 'min(clamp(40px, 6.2cqw, 104px), 15cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(246,217,138,0.35)' }}>
+            <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'min(clamp(40px, 6.2cqw, 104px), 15cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(246,217,138,0.35)' }}>
               {de ? 'Los geht’s!' : 'Let’s go!'}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 'clamp(0px, 0.4cqw, 12px)', width: '100%', flexWrap: 'nowrap', padding: '0 clamp(4px, 1cqw, 22px)', boxSizing: 'border-box' }}>
@@ -310,7 +314,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
               {/* Name mit Unterstrich (zieht sich auf) + Slogan, der sich wie eine
                   Schreibmaschine eintippt = der Arena-Moment (Wolf 2026-07-04). */}
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(4px, 0.8cqh, 12px)' }}>
-                <div style={{ fontSize: 'min(clamp(34px, 6.4cqw, 100px), 12cqh)', fontWeight: 900, color: curColor, lineHeight: 1, textShadow: `0 0 50px ${curColor}66` }}>
+                <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.015em', fontSize: 'min(clamp(34px, 6.4cqw, 100px), 12cqh)', fontWeight: 900, color: curColor, lineHeight: 1, textShadow: `0 0 50px ${curColor}66` }}>
                   {qqMegaFactionName(cur.avatarId, de ? 'de' : 'en')}
                 </div>
                 <div aria-hidden style={{ height: 'clamp(3px, 0.42cqh, 6px)', width: 'clamp(64px, 11cqw, 190px)', borderRadius: 999, background: curColor, transformOrigin: 'center', boxShadow: `0 0 16px ${curColor}99`, animation: 'qqArenaUnderline 0.5s cubic-bezier(0.2,1,0.4,1) 0.42s both' }} />

@@ -38,7 +38,13 @@ oder Nachdreh-Wunsch dranschreiben.
       `FACE_MASK`-Ellipse am Magier-Wolf (sitzt sie aufs Gesicht?)
 - [ ] **Arena-Meister-Splash + Rules-Redesign** — Pacing/Titel ok?
 - [ ] **Toggle „Schlicht"** wirklich überall sauber (Beamer/Lobby/Welcome-Overlay)?
-- [ ] **Scoring/Standings** — Content sitzt im Board-Rahmen der neuen BGs?
+- [ ] **Scoring/Standings auf der Tafel** (17.7. neu gebaut) — Überschriften sind raus, BG ist
+      auf 110% gezoomt und der Inhalt sitzt in der **ausgemessenen** Tafel (Pixel-Scan von
+      `standing.webp`, nicht mehr geschätzt). Sitzt es am echten Projektor? Bleibt der
+      Edelstein-Zapfen oben mittig frei? ⚠️ Falls nachdrehen: `ARENA_BG_FOCUS['standing']`
+      (ArenaBeamerBg) und `MEGA_BOARD` (CozyQuizLargeGroupView) gehören **zusammen**.
+- [ ] **bild 4 — Wappen-Wahltafel** (17.7. gebaut) — passen 8 Fraktions-Wappen mit Zahl-Badge
+      in eine Zeile (54% Breite)? Falls zu eng: `avatarSz`/`gap` in `MegaOptionCrests`.
 - [ ] **Kontrast am echten Beamer** — „Wing It" (Blau) + „Objection" (Pink) auf Dunkel.
 - [ ] **Lobby bei 40 Handys** — kein Scroll am Projektor.
 - [ ] **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion) auch im **klassischen**
@@ -67,12 +73,10 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 - [ ] **arena-main-Video** auch aufs Welcome-Overlay? (nur wenn dir das Lobby-Video gefällt)
 - [ ] **Wolf-Sprechblase im Logo ist oval** — vor jeder Änderung fragen.
 
-## 🟠 WARTET AUF MICH — Build (gelockt, kann sofort losgehen)
+## 🟠 WARTET AUF MICH — Build
 
-- [ ] **bild 4 — Antwort-Ergebnis „Wappen-Wahltafel + Zahl-Badge"** (deine Idee „Zahl der
-      richtigen Sub-Teams im Wappen"): statt dünner Farbsegmente (`MegaOptionBar`, von weitem
-      Matsch) → große Fraktions-Wappen + große Zahl-Badge (Sub-Team-/Richtig-Anzahl), richtige
-      Antwort grün + Haken. Gilt für MUCHO + Choice. Detail-Wertung liegt eh im Scoring-Beat.
+*Aktuell nichts gelockt offen.* (bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen
+jetzt oben im Beamer-Check.)
 
 ---
 

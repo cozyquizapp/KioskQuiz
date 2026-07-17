@@ -26,6 +26,31 @@ const MEDALS = ['🥇', '🥈', '🥉'];
 const STANDINGS_ROW_H = 88;
 const STANDINGS_MAX = 10;
 
+// ── Die gemalte Tafel im standing.webp-BG ────────────────────────────────────
+// 2026-07-17 (Wolf „keine Ueberschrift mehr, aber perfekt auf den bg passen —
+// da ist eine Tafel zu sehen"). Vorher schoben qrWrap/standWrap ihren zentrierten
+// Block per asymmetrischem Padding ins ungefaehre „Rahmen-Band" (geschaetzt, laut
+// altem Kommentar „~18-66% Hoehe" — real war es 6-79%, der Block sass ~9% zu tief).
+//
+// Jetzt AUSGEMESSEN: Pixel-Scan von standing.webp (1462x1076) → Tafel-Innenflaeche
+// im Bild x 272..1192, y 174..778. Zusammen mit ARENA_BG_FOCUS['standing']
+// ('51% 31% / 110%') ergibt das auf der 1760x990-Buehne die Werte unten.
+//
+// ⚠️ Der Zapfen (Edelstein-Ornament) haengt oben MITTIG in die Tafel hinein, bis
+// y=245 im Bild = 19.1% der Buehne (Wolf: „da sitzt etwas mittig, das nicht
+// ueberdecken"). Darum beginnt der Inhalt erst darunter — der Rahmen ist oben
+// NICHT rechteckig.
+//
+// ⚠️ Gilt fuer 16:9 (das BG liegt auf dem Fenster, nicht auf der Stage).
+// Gegenstueck: ARENA_BG_FOCUS['standing'] in ArenaBeamerBg — beide zusammen aendern!
+const MEGA_BOARD = {
+  insetX: '15.4%',   // Tafel-Innenkante links/rechts
+  top: '19.1%',      // UNTER dem Zapfen (Tafel-Oberkante waere 9.6%)
+  bottom: '9.6%',    // Tafel-Innenkante unten
+};
+/** Nutzbare Tafel-Hoehe in Stage-px (990 - Zapfen-Band - Unterkante) = 706. */
+const MEGA_BOARD_H = Math.round(990 * (1 - 0.191 - 0.096));
+
 const KEYFRAMES = `
 @keyframes brPodIn { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: none; } }
 @keyframes brAlsoIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -147,7 +172,8 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
       <style>{KEYFRAMES}</style>
       {/* Finale-×2/×3 wird jetzt im Runden-Intro angesagt (Wolf 2026-07-16),
           nicht mehr als Banner mitten im Reveal. */}
-      <div style={S.qrLabel}>{de ? 'Wertung dieser Frage' : 'This question’s scoring'}</div>
+      {/* 2026-07-17 (Wolf): Ueberschrift „Wertung dieser Frage" raus — die gemalte
+          Tafel im BG rahmt den Inhalt schon, ein Label darin ist Doppelung. */}
       <div style={{ ...S.qrList, gap: dense ? 7 : 10 }}>
         {rows.map((r, i) => {
           const ava = AVA_BY_ID.get(r.avatarId);
@@ -236,11 +262,13 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
   const rest = sorted.length - shown.length;
   const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
 
-  // 2026-07-08 (Audit B2): responsive Zeilenhoehe. Bei 9-10 Fraktionen wuerde die
-  // feste 88px-Hoehe (10*88=880 + Label/Rest ≈ 964px) den zentrierten Block ueber
-  // den 16:9-Rahmen schieben → oberste Kronen-Zeile + unterste Zeilen verschwinden.
-  // rowH schrumpft ab ~9 Zeilen, so bleibt alles im Viewport (≤8 bleibt bei 88).
-  const rowH = Math.min(STANDINGS_ROW_H, Math.floor(780 / Math.max(1, shown.length)));
+  // 2026-07-08 (Audit B2): responsive Zeilenhoehe, damit bei 9-10 Fraktionen keine
+  // Zeile aus dem Rahmen faellt.
+  // 2026-07-17: Budget ist jetzt die AUSGEMESSENE Tafel-Hoehe (MEGA_BOARD_H = 706px)
+  // statt der geschaetzten 780 — vorher konnten 9-10 Zeilen unten aus der gemalten
+  // Tafel laufen. Bei den 8 Arena-Fraktionen greift der Cap nicht (706/8 = 88 =
+  // STANDINGS_ROW_H), die Standard-Zeilenhoehe bleibt also unveraendert.
+  const rowH = Math.min(STANDINGS_ROW_H, Math.floor(MEGA_BOARD_H / Math.max(1, shown.length)));
 
   // Rang pro Team-ID (für FLIP-artige Reorder-Animation via translateY).
   const rankOf = useMemo(() => {
@@ -268,8 +296,8 @@ function CumulativeStandings({ state, de }: { state: QQStateUpdate; de: boolean 
     <div style={{ ...S.standWrap, animation: 'brFadeIn 0.5s ease both' }}>
       <style>{KEYFRAMES}</style>
       {/* Finale-×2/×3 jetzt im Runden-Intro (Wolf 2026-07-16), nicht mehr hier. */}
-      <div style={S.standLabel}>{de ? 'Gesamtwertung' : 'Standings'}</div>
-      <div style={{ position: 'relative', height: shown.length * rowH, width: '100%', maxWidth: 1100 }}>
+      {/* 2026-07-17 (Wolf): Ueberschrift „Gesamtwertung" raus — s. qrWrap. */}
+      <div style={{ position: 'relative', height: shown.length * rowH, width: '100%' }}>
         {shown.map(t => (
           <StandingsRow key={t.id} team={t} rank={rankOf.get(t.id) ?? 0} seedRank={prevRanksSnapshot?.get(t.id)} maxVal={maxVal} de={de} qEntry={qByAvatar.get(t.avatarId)} rowH={rowH} sc={sc} fm={fm} />
         ))}
@@ -869,18 +897,14 @@ const S: Record<string, React.CSSProperties> = {
   megaRevealTrack: { width: 'min(720px, 80%)', height: 26, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' },
   megaRevealHint: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
 
-  // Akt 3 Beat A „Wertung dieser Frage"
-  // 2026-07-15 (Wolf 'Tabelle auf die Rahmen-Flaeche des scoring/standing-BG
-  // legen'): der Rahmen sitzt im OBEREN Band (~18-66% Hoehe), nicht mittig.
-  // paddingBottom hebt den zentrierten Block ins Rahmen-Band. Feintuning-Regel:
-  // groesser = hoeher. (Exakter Sitz haengt vom cover-Crop ab → am Beamer nudgen.)
-  qrWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '7% 56px 4%', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
-  qrLabel: { fontSize: 24, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.6, fontWeight: 900 },
-  qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 940 },
+  // Akt 3 Beat A „Wertung dieser Frage" — sitzt IN der gemalten Tafel (MEGA_BOARD).
+  // 2026-07-17: Padding-Nudges raus, Ueberschrift raus (Wolf). Die Tafel selbst ist
+  // die Ueberschrift; der Inhalt fuellt sie jetzt exakt statt ungefaehr.
+  qrWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
+  qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%' },
   qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   qrPts: { fontWeight: 900, fontSize: 42, minWidth: 116, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
-  qrFoot: { fontSize: 20, fontWeight: 700, opacity: 0.5, textAlign: 'center', marginTop: 4 },
   podium: { display: 'flex', flexDirection: 'column', gap: 14 },
   podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 18, background: 'rgba(255,255,255,0.05)' },
   podMedal: { fontSize: 44, width: 56, textAlign: 'center', fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
@@ -900,10 +924,8 @@ const S: Record<string, React.CSSProperties> = {
   goVal: { width: 74, textAlign: 'right', fontWeight: 900, fontSize: 32, fontVariantNumeric: 'tabular-nums' },
   goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
-  // Gesamtstand: gleicher Rahmen-Bias wie qrWrap (paddingBottom hebt in den
-  // Rahmen des standing-BG; groesser = hoeher, am Beamer feinjustieren).
-  standWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 20, padding: '5% 48px 7%', color: '#f4f6ff', overflow: 'hidden' },
-  standLabel: { fontSize: 22, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800 },
+  // Gesamtstand: exakt dieselbe Tafel-Box wie qrWrap (ein Muster, zwei Beats).
+  standWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#f4f6ff', overflow: 'hidden' },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },

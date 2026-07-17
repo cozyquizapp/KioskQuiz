@@ -118,6 +118,18 @@ const ARENA_BG_FOCUS: Record<string, string> = {
   // also unter der Bildmitte. Leicht reinzoomen + nach unten schieben (mehr Boden
   // zeigen) rueckt den Kristall naeher an die Screen-Mitte.
   rundenintro: 'center 66% / 116%',
+  // standing (Wolf 2026-07-17 „perfekt auf den bg passen, da ist eine Tafel"):
+  // AUSGEMESSEN, nicht geschaetzt. standing.webp ist 1462x1076 (AR 1.359) — auf
+  // 16:9 croppt `cover` oben/unten weg und die gemalte Tafel landete klein und
+  // zu hoch. Werte per Pixel-Scan des Assets ermittelt (Tafel-Innenflaeche liegt
+  // im Bild bei x 272..1192, y 174..778):
+  //   110% Zoom  → Tafel fuellt die Buehne (x 15.4..84.6%, y 9.6..90.4%)
+  //   Position Y 31% → Tafel-Mitte auf Buehnen-Mitte (sonst sitzt sie zu hoch)
+  // Ergebnis: unter dem Zapfen bleiben exakt 706px = 8 Zeilen a 88px
+  // (STANDINGS_ROW_H). Wolf-Idee „BG zoomen = mehr Flaeche" — genau das hier.
+  // ⚠️ Gilt fuer 16:9 (der BG liegt auf dem Fenster, nicht auf der 1760x990-Stage).
+  // Gegenstueck: MEGA_BOARD in CozyQuizLargeGroupView — beide zusammen aendern!
+  standing: '51% 31% / 110%',
 };
 
 /** Fertiger CSS-`background`-String fuer einen Asset-Slug (Scrim + Bild + Fallback). */

@@ -569,8 +569,13 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   // Fenster-Schub - die Karte wird als Funktion gerendert, damit alte + neue Karte
   // GLEICHZEITIG animieren koennen (alt faehrt sichtbar raus, neu rein; gekoppelt,
   // KEIN Fade). renderCard baut eine Karte fuer einen beliebigen Slide.
-  const PUSH_S = '0.56s';
-  const PUSH_EASE = 'cubic-bezier(0.7, 0, 0.3, 1)';
+  // 2026-07-17e (Wolf „kommen geschoben rein, aber schieben sich nicht schoen raus"):
+  // Ein-/Ausgang ENTKOPPELT + alte Karte FUEHRT. Exit = schneller Start (ease-out),
+  // die alte Karte schiesst sofort sichtbar nach aussen. Einzug leicht VERSETZT
+  // (0.09s Delay) → die neue deckt die alte nicht zu, bevor sie draussen ist, und
+  // settelt danach sanft. So sieht man die alte wirklich RAUS-geschoben.
+  const PUSH_IN = '0.5s cubic-bezier(0.33, 0, 0.2, 1) 0.09s';
+  const PUSH_OUT = '0.46s cubic-bezier(0, 0, 0.3, 1)';
   const PUSH_LAYER = { position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' } as const;
   const slideFor = (raw: number) => {
     const intro = raw === -1;
@@ -1007,7 +1012,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           const anim = outgoing.dir === 'fwd' ? 'qqRulesPushOutL' : 'qqRulesPushOutR';
           return (
             <div key={'out-' + outgoing.raw} aria-hidden style={PUSH_LAYER}>
-              {renderCard(o.cardSlide, o.cardIdx, o.intro, anim + ' ' + PUSH_S + ' ' + PUSH_EASE + ' both')}
+              {renderCard(o.cardSlide, o.cardIdx, o.intro, anim + ' ' + PUSH_OUT + ' both')}
             </div>
           );
         })()}
@@ -1016,7 +1021,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           const anim = view.enterDir === 'fwd' ? 'qqRulesPushInR' : 'qqRulesPushInL';
           return (
             <div key={'in-' + view.raw} style={PUSH_LAYER}>
-              {renderCard(v.cardSlide, v.cardIdx, v.intro, anim + ' ' + PUSH_S + ' ' + PUSH_EASE + ' both')}
+              {renderCard(v.cardSlide, v.cardIdx, v.intro, anim + ' ' + PUSH_IN + ' both')}
             </div>
           );
         })()}

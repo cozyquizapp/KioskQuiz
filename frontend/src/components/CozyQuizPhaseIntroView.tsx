@@ -315,6 +315,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   const color = isEsc ? '#FF2D7B'
     : (s as any).largeGroupMode ? ARENA_ROUND_COLOR
     : getRoundColor(s.gamePhaseIndex, s.totalPhases ?? 4);
+  // 2026-07-17 (Wolf: Cinzel-Rollout aufs Kolosseum): Arena-Hero-Titel (Runde N,
+  // Kategorie-Name) in Cinzel-Inschrift — NUR Arena (largeGroupMode) + kein Skin.
+  // Sonst Standard-Display-Font. Kleiner Text/Subtitle bleibt fontFam.
+  const arenaTitleFont = ((s as any).largeGroupMode && !isThemed()) ? 'var(--font-arena)' : fontFam;
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
   // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
@@ -1132,7 +1136,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               </div>
             ) : canDigitFlip ? (
               <div style={{
-                fontFamily: fontFam,
+                fontFamily: arenaTitleFont,
                 fontSize: 'clamp(100px, 18cqw, 260px)', fontWeight: 900, lineHeight: 1,
                 textShadow: `0 0 120px ${color}33`,
                 textAlign: 'center',
@@ -1182,7 +1186,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               </div>
             ) : (
               <div style={{
-                fontFamily: fontFam,
+                fontFamily: arenaTitleFont,
                 fontSize: 'clamp(100px, 18cqw, 260px)', fontWeight: 900, lineHeight: 0.9,
                 color: titleColor,
                 // 2026-05-07 v12 (Wolf 'kontrast unleserlich'): bei ESC-Pink-
@@ -1626,7 +1630,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   scale: einzelne Buchstaben in Span-Wrappern, 0.07s Stagger
                   ergibt die klassische Ocean-Wave-Geste. */}
               <div style={{
-                fontFamily: fontFam,
+                fontFamily: arenaTitleFont,
                 fontSize: 'clamp(48px, 8.5cqw, 130px)', fontWeight: 900, lineHeight: 1,
                 color: isThemed() ? 'var(--qq-title)' : catColor,
                 textShadow: isThemed()
@@ -1796,7 +1800,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               </CategoryHeroFlip>
               {/* Category name — per-Buchstabe Wave */}
               <div style={{
-                fontFamily: fontFam,
+                fontFamily: arenaTitleFont,
                 fontSize: 'clamp(52px, 9cqw, 140px)', fontWeight: 900, lineHeight: 1,
                 color: isThemed() ? 'var(--qq-title)' : catColor,
                 textShadow: isThemed() ? 'none' : `0 0 80px ${catColor}44`,

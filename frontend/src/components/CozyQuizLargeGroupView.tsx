@@ -701,6 +701,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
           (Wolf 2026-07-16: „es ist doch DER Reveal-Moment"). */}
       {!showPodium && (
         <div style={{ position: 'absolute', left: '50%', top: locked ? '62%' : '52%', transform: 'translate(-50%,-50%)', zIndex: 5, maxWidth: '86%', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+          fontFamily: 'var(--font-arena)',
           fontSize: locked ? 'clamp(30px, 5.2cqw, 96px)' : 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900,
           color: locked ? wColor : '#f6d98a', letterSpacing: locked ? '-0.01em' : '0.04em',
           textShadow: locked ? `0 3px 14px rgba(0,0,0,0.85), 0 0 40px ${wColor}77` : '0 2px 10px rgba(0,0,0,0.8), 0 0 26px rgba(233,196,106,0.4)',
@@ -715,7 +716,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
         <>
           <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
           <div style={{ position: 'absolute', left: 0, right: 0, top: '27cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
+            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: 'var(--font-arena)', fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
               {de ? 'Champions der Arena' : 'Arena Champions'}
             </div>
           </div>
@@ -805,7 +806,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           </div>
         </div>
         {/* Titel + Leistung ZUERST — dann (nach kurzer Pause) die Enthüllung. */}
-        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
+        <div style={{ position: 'relative', zIndex: 5, fontFamily: 'var(--font-arena)', fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
         <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.5s ease 0.42s both' }}>{beat.stat}</div>
         {/* Enthüllung: das Banner der Gewinnerfraktion entrollt sich (gleiche
             Banner-Geste wie in der Krönung), Wappen + Name fahren ein. */}

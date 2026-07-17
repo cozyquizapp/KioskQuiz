@@ -654,6 +654,9 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             // 2026-07-04 (Wolf 'Titel oben abgeschnitten'): etwas kleiner, damit
             // lange Titel ('Dein Weg durchs Quiz') in die feste Card passen.
+            // 2026-07-17 (Cinzel-Rollout): Arena-Regel-Titel in Cinzel (nur mega+!skin).
+            fontFamily: (mega && !isThemed()) ? 'var(--font-arena)' : undefined,
+            letterSpacing: (mega && !isThemed()) ? '0.01em' : undefined,
             fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
             color: isThemed() ? 'var(--qq-title)' : cardSlide.color,
             textShadow: isThemed() ? 'none' : `0 0 60px ${cardSlide.color}44`,

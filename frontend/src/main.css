@@ -162,6 +162,10 @@
      (Cinzel-Serifen nur bei GROSSEM, SCHWEREM Schnitt beamer-lesbar). Nie fuer
      Fliesstext. Rueckgaengig = Verwendungen auf --font-game zuruecksetzen. */
   --font-arena: 'Cinzel', 'Bricolage Grotesque', Georgia, serif;
+  /* 2026-07-17 (Wolf „subtext braucht auch eine passende font, ruhiger aber
+     passend"): ruhiger Serif-Begleiter zu Cinzel fuer Arena-Sprueche/Mottos
+     (Zitat-Charakter, kursiv). Klassisches Cinzel-Paar. Nur fuer kurze Sprueche. */
+  --font-arena-quote: 'EB Garamond', Georgia, serif;
   /* 2026-07-12 (ui-ux-pro-max Skill: 'Fredoka/Nunito' fuer entertainment/gaming):
      Fredoka = runde, verspielte, warme Display-Schrift (CozyWolf-DNA) fuer grosse
      Zahlen/Headlines in Reveals. Nunito bleibt Body. Vibrant & Block-based statt

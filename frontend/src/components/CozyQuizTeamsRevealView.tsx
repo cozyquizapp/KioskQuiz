@@ -71,6 +71,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   // die grossen Hero-Worte (Wortmarke, Fraktionsname, „Los geht's!"). Bei Skin
   // (themed) den Skin-Font lassen; sonst gemeisselte roemische Kapitaelchen.
   const arenaFont = themed ? undefined : 'var(--font-arena)';
+  const arenaQuoteFont = themed ? undefined : 'var(--font-arena-quote)';
   const sfxMutedRef = useRef(s.sfxMuted);
   sfxMutedRef.current = s.sfxMuted;
 
@@ -257,7 +258,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           grosser paddingBottom → der „Los geht's!"-Ruf zentriert sich im Raum
           UEBER dem Vordergrund-Roster (sonst schob space-between ihn nach unten
           direkt auf die Wappen-Reihe = Kollision). */}
-      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 'clamp(4px, 1cqh, 16px)' : 'clamp(8px, 1.6cqh, 24px)' }}>
+      <div style={{ position: 'relative', zIndex: 2, flex: 1, width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: 0, paddingBottom: done ? 'clamp(4px, 1cqh, 16px)' : 'clamp(100px, 18cqh, 200px)' }}>
         {done ? (
           // Finale (Wolf „das sind die maincharacter des abends"): der „Los geht's!"-
           // Ruf als Headline UND darunter die grosse zentrierte Hero-Startaufstellung
@@ -319,7 +320,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                 </div>
                 <div aria-hidden style={{ height: 'clamp(3px, 0.42cqh, 6px)', width: 'clamp(64px, 11cqw, 190px)', borderRadius: 999, background: curColor, transformOrigin: 'center', boxShadow: `0 0 16px ${curColor}99`, animation: 'qqArenaUnderline 0.5s cubic-bezier(0.2,1,0.4,1) 0.42s both' }} />
               </div>
-              <div style={{ fontSize: 'clamp(19px, 2.5cqw, 40px)', fontWeight: 800, fontStyle: 'italic', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', minHeight: '1.4em' }}>
+              <div style={{ fontFamily: arenaQuoteFont, fontSize: 'clamp(20px, 2.7cqw, 44px)', fontWeight: themed ? 800 : 600, fontStyle: 'italic', color: themed ? 'var(--qq-text-muted)' : '#d8c9ad', minHeight: '1.4em' }}>
                 „<ArenaTypewriter text={qqMegaFactionMotto(cur.avatarId, de ? 'de' : 'en')} color={curColor} />"
               </div>
             </div>

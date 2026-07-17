@@ -397,6 +397,10 @@ scripts/compress-cozywolf.js                — Wolf-PNG-Komprimierung (sharp, i
 
 ## Verwandte Docs
 
-- [`WOW_FEATURES.md`](./WOW_FEATURES.md) — fünf Charakter-Features (Haptik, Spotlight, Soundscape, Live-Reactions, Time-Travel-Replay)
+- [`todo.md`](./todo.md) — **Single Source of Truth** für alles Offene
+- [`DESIGN_SWEEP.md`](./DESIGN_SWEEP.md) — der einmalige Design-Durchlauf (21 Stationen)
 - `~/.claude/projects/.../memory/` — Agent-Memory (User-Profil, Feedback-Regeln, etc.)
+- [`docs/archive/`](./docs/archive/) — abgearbeitete Specs, Audits und Handoffs (historisch,
+  u.a. `WOW_FEATURES.md`, `COZYGAMES.md`, `VOTING_FORMAT_SPEC.md`, `ICON_REVIEW.md`,
+  `MODERATOR_OPTIMIZATION.md`, `COZYBUILDER_AUDIT.md`, `BEAMER_REVIEW_MAP.md`)
 - `docs/QQ_ROUND_PLAN_TODO.md` — alte Round-Plan-Diskussion (historisch)

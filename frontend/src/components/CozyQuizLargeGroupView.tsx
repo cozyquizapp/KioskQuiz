@@ -54,7 +54,11 @@ const MEGA_BOARD_H = Math.round(990 * (1 - 0.191 - 0.096));
 const KEYFRAMES = `
 @keyframes brPodIn { from { opacity: 0; transform: translateY(18px) scale(0.95); } to { opacity: 1; transform: none; } }
 @keyframes brAlsoIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
-@keyframes brRankIn { from { opacity: 0; transform: translateX(-26px); } to { opacity: 1; transform: none; } }
+/* 2026-07-17 (Motion-Wertigkeits-Pass, Rezept aus Regel-Auftritt): Wertungs-Zeilen
+   SETZEN sich aus der Tiefe an ihren Platz (translateY+scale) statt von links
+   reinzurutschen (translateX = generisches Web-Slide). Rang-Sequenz-Dramatik
+   (0.32s Stagger + brPtsPop) bleibt — nur der Bewegungs-Charakter wird wertiger. */
+@keyframes brRankIn { from { opacity: 0; transform: translateY(15px) scale(0.975); } to { opacity: 1; transform: none; } }
 @keyframes brPtsPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes brFadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes brBarGrow { from { transform: scaleX(0); } to { transform: scaleX(1); } }
@@ -183,7 +187,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
           const scored = r.points > 0;
           const sub = qqScoreSub(sc, r, fm, de);
           return (
-            <div key={r.avatarId} style={{ ...S.qrRow, ...(dense ? { padding: '7px 22px', gap: 14 } : {}), animation: 'brRankIn 0.5s ease both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
+            <div key={r.avatarId} style={{ ...S.qrRow, ...(dense ? { padding: '7px 22px', gap: 14 } : {}), animation: 'brRankIn 0.5s var(--qq-enter) both', animationDelay: `${i * 0.32}s`, opacity: scored ? 1 : 0.5 }}>
               <span style={S.qrRank}>{medal ? <QQEmojiIcon emoji={medal} /> : i + 1}</span>
               <QQTeamAvatar avatarId={r.avatarId as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(r.avatarId)} size={avSz} />
               <div style={{ flex: 1, minWidth: 0 }}>

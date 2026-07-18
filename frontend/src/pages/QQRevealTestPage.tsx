@@ -10,6 +10,7 @@ import React, { useMemo, useState } from 'react';
 import { QQ_AVATARS } from '@shared/quarterQuizTypes';
 import type { QQStateUpdate } from '@shared/quarterQuizTypes';
 import { SchaetzchenReveal } from '../components/reveals/SchaetzchenReveal';
+import { CrowdEstimateReveal } from '../components/reveals/CrowdEstimateReveal';
 
 const colorOf = (avatarId: string): string => QQ_AVATARS.find(a => a.id === avatarId)?.color ?? '#8892b0';
 
@@ -24,12 +25,26 @@ const FACTS: { av: string; guess: number }[] = [
   { av: 'rabbit',  guess: 85 }, // Last Second
   { av: 'cow',     guess: 76 }, // Objection
 ];
+// Schwarm-Szene = Wolfs schwarm.png (Gummibaeren, Ziel 90) EXAKT, um den
+// Sieger-Positions-Bug + Text-Overlaps reproduzierbar zu pruefen. Sieger =
+// Lucky Guess/frog (93, dichtester Median → sitzt fast in der Mitte).
+const CROWD_FACTS: { av: string; guess: number }[] = [
+  { av: 'cow',     guess: 80 }, // Objection
+  { av: 'raccoon', guess: 86 }, // Wing It
+  { av: 'cat',     guess: 96 }, // All In
+  { av: 'panda',   guess: 100 }, // Happy Hour
+  { av: 'unicorn', guess: 78 }, // Know-It-All
+  { av: 'rabbit',  guess: 85 }, // Last Second
+  { av: 'frog',    guess: 93 }, // Lucky Guess — Sieger
+  { av: 'fox',     guess: 100 }, // Gut Feeling
+];
 const GRID_NAMES = ['Die Schnellmerker', 'Team Kaffeepause', 'Nerd Alert', 'Die Rätselratten', 'Blindflug', 'Besserwisser AG', 'Einspruch!', 'Volles Risiko'];
 
 export default function QQRevealTestPage() {
   const [lang, setLang] = useState<'de' | 'en'>('de');
   const [arena, setArena] = useState(true);
   const [tie, setTie] = useState(false); // alle spot-on → Sieg per Speed-Tiebreak (⚡-Badge)
+  const [mode, setMode] = useState<'schaetzchen' | 'schwarm'>('schaetzchen');
   const [remountKey, setRemountKey] = useState(0); // Cascade neu abspielen
 
   const state = useMemo(() => {
@@ -57,21 +72,50 @@ export default function QQRevealTestPage() {
     } as unknown as QQStateUpdate;
   }, [arena, tie]);
 
+  const crowdState = useMemo(() => {
+    const answers = CROWD_FACTS.map((f, i) => ({ teamId: `c${i}`, text: String(f.guess), submittedAt: 1000 + i * 7 }));
+    const teams = CROWD_FACTS.map((f, i) => ({
+      id: `c${i}`, avatarId: f.av, emoji: '', color: colorOf(f.av),
+      name: arena ? f.av : GRID_NAMES[i],
+    }));
+    return {
+      currentQuestion: {
+        category: 'BUNTE_TUETE',
+        text: 'Wie viele Gummibärchen sind in einer 200g-Tüte Haribo Goldbären?',
+        textEn: 'How many gummy bears are in a 200g bag of Haribo Goldbears?',
+        bunteTuete: { kind: 'crowdEstimate', targetValue: 90, unit: 'Gummibärchen', unitEn: 'gummy bears' },
+      },
+      answers,
+      teams,
+      currentQuestionWinners: [],
+      sfxMuted: true,
+      nestedTeams: arena,
+    } as unknown as QQStateUpdate;
+  }, [arena]);
+
+  const isSchwarm = mode === 'schwarm';
+
   return (
     <div style={S.page}>
       <div style={S.controls}>
-        <span style={S.title}>Reveal-Vorschau · Schätzchen (North Star)</span>
+        <span style={S.title}>Reveal-Vorschau · {isSchwarm ? 'Schwarm (Ein-Strahl)' : 'Schätzchen (North Star)'}</span>
         <div style={S.seg}>
           <button style={btn(lang === 'de')} onClick={() => setLang('de')}>DE</button>
           <button style={btn(lang === 'en')} onClick={() => setLang('en')}>EN</button>
         </div>
         <div style={S.seg}>
+          <button style={btn(!isSchwarm)} onClick={() => setMode('schaetzchen')}>Schätzchen</button>
+          <button style={btn(isSchwarm)} onClick={() => setMode('schwarm')}>Schwarm</button>
+        </div>
+        <div style={S.seg}>
           <button style={btn(arena)} onClick={() => setArena(true)}>Arena · Fraktionen</button>
           <button style={btn(!arena)} onClick={() => setArena(false)}>Grid · Teams</button>
         </div>
-        <div style={S.seg}>
-          <button style={btn(tie)} onClick={() => setTie(t => !t)}>⚡ Gleichstand (alle spot-on)</button>
-        </div>
+        {!isSchwarm && (
+          <div style={S.seg}>
+            <button style={btn(tie)} onClick={() => setTie(t => !t)}>⚡ Gleichstand (alle spot-on)</button>
+          </div>
+        )}
         <button style={S.ghost} onClick={() => setRemountKey(k => k + 1)}>▶ Reveal abspielen</button>
         <span style={S.hint}>gleiche Komponente, beide Modi · eine Design-Handschrift</span>
       </div>
@@ -79,7 +123,9 @@ export default function QQRevealTestPage() {
       {/* Beamer-Stage: 16:9, container-type:size fuer cqw/cqh */}
       <div style={S.stageWrap}>
         <div style={S.stage}>
-          <SchaetzchenReveal key={`${arena}-${lang}-${tie}-${remountKey}`} state={state} lang={lang} />
+          {isSchwarm
+            ? <CrowdEstimateReveal key={`c-${arena}-${lang}-${remountKey}`} state={crowdState} lang={lang} />
+            : <SchaetzchenReveal key={`${arena}-${lang}-${tie}-${remountKey}`} state={state} lang={lang} />}
         </div>
       </div>
     </div>

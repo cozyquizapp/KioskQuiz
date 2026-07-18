@@ -89,16 +89,6 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
     if (minCx < LO) { const d = LO - minCx; for (const c of arr) c.cx += d; }
     else if (maxCx > HI) { const d = maxCx - HI; for (const c of arr) c.cx -= d; }
   };
-  const placed = useMemo(() => {
-    const sorted = [...factions].sort((a, b) => a.median - b.median)
-      .map((f, i) => ({ f, x: axisPct(f.median), cx: axisPct(f.median), above: i % 2 === 1 }));
-    if (!sorted.length) return sorted;
-    spread(sorted.filter(c => !c.above));
-    spread(sorted.filter(c => c.above));
-    return sorted;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [factions, axisPct]);
-
   // Arena (mega): Ranking nach Backend-PUNKTEN → Sieger = Standing-Sieger.
   // Normal-CozyQuiz (non-mega): „nächster gewinnt" → nach Median-Distanz.
   const ranked = useMemo(
@@ -110,6 +100,35 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
   );
   const rankOf = useMemo(() => new Map(ranked.map((f, i) => [f.avatarId, i + 1])), [ranked]);
   const winner = ranked[0] ?? null;
+
+  const placed = useMemo(() => {
+    const sorted = [...factions].sort((a, b) => a.median - b.median)
+      .map((f, i) => ({ f, x: axisPct(f.median), cx: axisPct(f.median), above: i % 2 === 1 }));
+    if (!sorted.length) return sorted;
+    const upper = sorted.filter(c => c.above);
+    const lower = sorted.filter(c => !c.above);
+    spread(lower);
+    spread(upper);
+    // 2026-07-18 (Wolf schwarm.png „der gewinner ist gar nicht in der naehe des
+    // zielwerts"): spread() schob den Sieger bei dichtem Cluster ans Lane-Extrem.
+    // Fix wie beim Schaetzchen: die Lane des Siegers so verschieben, dass sein
+    // Wappen auf der ECHTEN Median-Position (axisPct) sitzt, Rest relativ mit,
+    // dann clampen.
+    const winAv = winner?.avatarId;
+    const lane = upper.some(c => c.f.avatarId === winAv) ? upper : lower;
+    const win = lane.find(c => c.f.avatarId === winAv);
+    if (win) {
+      const dx = axisPct(win.f.median) - win.cx;
+      if (dx) {
+        for (const c of lane) c.cx += dx;
+        const lo = Math.min(...lane.map(c => c.cx)), hi = Math.max(...lane.map(c => c.cx));
+        if (lo < 6) { const d = 6 - lo; for (const c of lane) c.cx += d; }
+        else if (hi > 94) { const d = hi - 94; for (const c of lane) c.cx -= d; }
+      }
+    }
+    return sorted;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [factions, axisPct, winner]);
 
   // Beats: 0 Chips · 1 Wahrheit · 2 Band+Schwarm+Punkte · 3 Dimmen · 4 Sieger
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;

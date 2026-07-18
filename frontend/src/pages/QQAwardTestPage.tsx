@@ -56,6 +56,9 @@ export default function QQAwardTestPage() {
       </div>
       <div style={S.stageWrap}>
         <div style={S.stage}>
+          {/* Reale GAME_OVER-Bühne: award-ceremony-BG dahinter (Award-Beats +
+              Krönung überschreiben mit eigenem BG; Endstand zeigt diesen). */}
+          <div aria-hidden style={{ position: 'absolute', inset: 0, backgroundImage: 'url(/arena-bg/award-ceremony.webp)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
           <LargeGroupGameOverView key={`${lang}-${step}-${remount}`} state={state} />
         </div>
       </div>
@@ -69,10 +72,10 @@ const btn = (on: boolean): React.CSSProperties => ({
 });
 const S: Record<string, React.CSSProperties> = {
   page: { minHeight: '100vh', background: '#0a0f24', color: '#f4f6ff', fontFamily: "'Nunito', system-ui, sans-serif", padding: '20px 28px 48px' },
-  controls: { maxWidth: 1240, margin: '0 auto 16px', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 14, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' },
+  controls: { maxWidth: 1760, margin: '0 auto 16px', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: 14, border: '1px solid rgba(255,255,255,0.08)', display: 'flex', gap: 12, alignItems: 'center', flexWrap: 'wrap' },
   title: { fontWeight: 900, fontSize: 15 },
   seg: { display: 'flex', gap: 6, flexWrap: 'wrap' },
   ghost: { background: 'transparent', color: '#f4f6ff', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 10, padding: '9px 15px', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' },
-  stageWrap: { maxWidth: 1240, margin: '0 auto' },
+  stageWrap: { maxWidth: 1760, margin: '0 auto' },
   stage: { position: 'relative', width: '100%', aspectRatio: '16 / 9', containerType: 'size', borderRadius: 16, overflow: 'hidden', background: '#0a0f24', display: 'flex' } as React.CSSProperties,
 };

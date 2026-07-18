@@ -900,6 +900,9 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   // ── Beat n+1: Endstand (Bar-Race-Standings) ────────────────────────────────
   return (
     <div data-qq-ceremony style={{ ...S.goWrap, animation: 'brFadeIn 0.5s ease both' }}>
+      {/* 2026-07-18 (Wolf bild 15 „Tabelle nicht gut erkennbar"): Scrim ueber der
+          busy award-ceremony-Halle → „Spielende"-Titel, Hero und Tabelle lesbar. */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(6,4,14,0.58) 0%, rgba(6,4,14,0.34) 26%, rgba(6,4,14,0.52) 62%, rgba(6,4,14,0.74) 100%)' }} />
       <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse at 50% 22%, ${wColor}33 0%, transparent 60%)` }} />
       <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
 
@@ -916,7 +919,16 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         </div>
       )}
 
-      <div style={{ position: 'relative', width: '100%', maxWidth: 1000, height: shown.length * 62, marginTop: 8 }}>
+      {/* Kontrast-Panel (Wolf bild 15): Frosted-Glass hinter der Tabelle → die
+          Zeilen sitzen auf konsistentem dunklem Grund statt ueber der busy Halle. */}
+      <div style={{
+        position: 'relative', zIndex: 5, width: '100%', maxWidth: 1080, marginTop: 6,
+        background: 'rgba(10,8,22,0.60)', borderRadius: 26, border: '1px solid rgba(255,255,255,0.10)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
+        backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' as any,
+        padding: 'clamp(12px,1.6cqh,22px) clamp(18px,2.2cqw,38px)',
+      }}>
+      <div style={{ position: 'relative', width: '100%', height: shown.length * 62 }}>
         {shown.map((t, i) => {
           const pct = (t.largestConnected / maxVal) * 100;
           const medal = i < 3 && t.largestConnected > 0 ? MEDALS[i] : null;
@@ -938,7 +950,8 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           );
         })}
       </div>
-      {rest > 0 && <div style={S.goRest}>+ {rest} {de ? 'weitere Fraktionen' : 'more factions'}</div>}
+      {rest > 0 && <div style={{ ...S.goRest, marginTop: 8 }}>+ {rest} {de ? 'weitere Fraktionen' : 'more factions'}</div>}
+      </div>
       {/* Fraktions-Award-Leiste raus (Wolf 2026-07-16): die Awards werden in den
           Award-Beats der Zeremonie einzeln zelebriert → im Endstand redundant +
           von weitem unlesbar. MegaAwardsStrip bleibt für Summary/Recap. */}
@@ -977,9 +990,9 @@ const S: Record<string, React.CSSProperties> = {
   alsoChip: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
 
   goWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 48px', color: '#f4f6ff', position: 'relative', overflow: 'hidden' },
-  goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.55, fontWeight: 800, position: 'relative', zIndex: 5 },
+  goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9, fontWeight: 900, color: '#e7e2f4', textShadow: '0 2px 8px rgba(0,0,0,0.85)', position: 'relative', zIndex: 5 },
   goHero: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative', zIndex: 5 },
-  goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)' },
+  goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
   goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 14, background: 'rgba(255,255,255,0.045)' },
   goRank: { width: 48, textAlign: 'center', fontWeight: 900, fontSize: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   goBarTrack: { flex: 1, height: 22, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },

@@ -28,3 +28,4 @@ frontend/public/neue background/
 # Lokales Laufzeit-Artefakt des In-Memory-Fallbacks (Backend ohne MONGODB_URI)
 backend/src/data/qqDrafts.json
 backend/src/data/qqCrashes.json
+frontend/public/avatars/cozyarena/*colloseum.png

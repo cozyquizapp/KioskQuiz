@@ -83,8 +83,13 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 - [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
 - [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt.
 
-**Screens-1707-Batch (Reihenfolge, einer nach dem anderen):** bild 4 ✅ (All-In-Beispiel). Nächste:
-bild 9, 10 (+18), 11, 12, 13, 14, 15, 16, 17 — Details in Memory `project_screens_1707_batch`.
+**Screens-1707-Batch (Reihenfolge, einer nach dem anderen):** bild 4 ✅, bild 9 ✅. AKTIV: bild 10
+(+18, CHEESE-Reveal: Doppel-Wappen → untere morphen hoch, einheitliche Größe). Danach: 11, 12, 13,
+14, 15, 16, 17 — Details in Memory `project_screens_1707_batch`.
+
+**Kolosseum-Kohärenz (Wolf 18.7., nur TODO — nicht bauen bis Batch durch):**
+- [ ] **Progress-Tree an Kolosseum-Style anpassen** — evtl. Diamanten/Gems statt Kreise (passend
+      zum Round-/Frage-Gem + Cinzel/Garamond-System). Nur Arena-Modus.
 
 *(bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen auch oben im Beamer-Check.)*
 

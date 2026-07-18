@@ -1071,7 +1071,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           <QQTeamAvatar
                             avatarId={team.avatarId} teamEmoji={qqFactionAvatarEmoji(team.avatarId, team.emoji, isMegaTeams)}
                             // 2026-04-29: Avatare bei Reveal etwas kleiner — Card flacher.
-                            size={isFastest ? 'clamp(60px, 6.8cqw, 92px)' : 'clamp(46px, 5.2cqw, 70px)'}
+                            // 2026-07-18 (Wolf 'bild 10/18'): Arena — Wappen EINHEITLICH
+                            // gross (Sieger nur durch Ring/Glow hervorgehoben, nicht durch
+                            // Groesse). Zielbild bild 18: gleiche Groesse, Sieger geringt.
+                            // Nicht-Arena behaelt fastest-groesser.
+                            size={isMegaTeams ? 'clamp(58px, 6.6cqw, 90px)' : (isFastest ? 'clamp(60px, 6.8cqw, 92px)' : 'clamp(46px, 5.2cqw, 70px)')}
                             style={{
                               border: isFastest ? '4px solid var(--qq-accent)' : 'none',
                               boxShadow: isFastest
@@ -1245,13 +1249,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               top: 'clamp(28px, 4cqh, 60px)' as const,
               left: 0, right: 0,
             };
+            // 2026-07-18 (Wolf 'bild 10'): In der Arena sind die Fraktions-Wappen
+            // beim Reveal doppelt (gerankte Reihe IN der Card + dieses Abgabe-Raster
+            // darunter). Wolf-Wunsch: die unteren "morphen" hoch in die obere Reihe.
+            // → Beim Arena-Reveal steigt das Raster zur Card, schrumpft und verblasst
+            // (qqCheeseGridMorphUp) statt stehenzubleiben. Nicht-Arena unveraendert
+            // (dort bleibt der Abgabe-Status im Reveal sichtbar, Wolf 2026-07-03).
+            const morphOut = isCheeseReveal && isMegaTeams;
             return (
               <div style={{
                 ...(isCheesePortrait ? portraitFlow : landscapeAbs),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap, flexWrap: 'wrap',
                 pointerEvents: 'none', zIndex: 65,
-                animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.4s both',
+                animation: morphOut
+                  ? 'qqCheeseGridMorphUp 0.62s var(--qq-ease-out-cubic) 0.12s both'
+                  : 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.4s both',
               }}>
                 {/* Mini-Progress-Text "X/Y TEAMS" zwischen Card-Unterkante und
                     Avataren. 2026-07-12 (Wolf 'rechte Spalte verschiebt sich bei

@@ -970,6 +970,15 @@ export const QQ_BEAMER_CSS = `
     0%   { opacity: 0.6; }
     100% { opacity: 0; }
   }
+  /* CozyArena CHEESE-Reveal (Wolf 2026-07-18 'bild 10'): das untere Abgabe-Raster
+     "morpht" beim Reveal nach oben in die gerankte Reihe — es steigt zur Card,
+     schrumpft und verblasst, waehrend die Reveal-Reihe darueber aufpoppt. So sind
+     die Fraktions-Wappen nicht mehr doppelt auf dem Screen. */
+  @keyframes qqCheeseGridMorphUp {
+    0%   { opacity: 1; transform: translateY(0) scale(1); }
+    45%  { opacity: 0.85; transform: translateY(-18px) scale(0.92); }
+    100% { opacity: 0; transform: translateY(-52px) scale(0.74); }
+  }
   /* Doppelblink auf die korrekte Option (MUCHO/ZvZ Reveal) — zwei kurze Helligkeits-Pulse, Endzustand hell */
   @keyframes revealDoubleBlink {
     0%   { filter: brightness(1); }

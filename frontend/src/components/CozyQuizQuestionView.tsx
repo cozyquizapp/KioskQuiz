@@ -1060,12 +1060,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               const winMsg = multiCorrect
                 ? (lang === 'en' ? 'recognized it fastest!' : 'hat es am schnellsten erkannt!')
                 : (lang === 'en' ? 'got it right!' : 'hat es erkannt!');
+              // 2026-07-18 (Wolf 'nach 4 umbrechen, dann bleibts bei 8 symmetrisch'):
+              // ab 7 Wappen 2 balancierte Reihen (ceil(n/2)) statt greedy flex-wrap
+              // (das brach 8 in haessliches 7+1). Grid flowt links->rechts, max 4/Reihe.
+              const perRow = correctAnswers.length >= 7 ? Math.ceil(correctAnswers.length / 2) : correctAnswers.length;
               return (
                 <>
                 <div style={{
                   marginTop: 8,
-                  display: 'flex', alignItems: 'flex-start', justifyContent: 'center',
-                  gap: 12, flexWrap: 'wrap', width: '100%',
+                  display: 'grid', gridTemplateColumns: `repeat(${perRow}, auto)`,
+                  alignItems: 'flex-start', justifyContent: 'center', justifyItems: 'center',
+                  columnGap: 12, rowGap: 'clamp(6px, 1cqh, 14px)', width: '100%',
                 }}>
                   {correctAnswers.map((a, i) => {
                     const team = s.teams.find(t => t.id === a.teamId);

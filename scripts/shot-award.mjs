@@ -1,0 +1,21 @@
+import { chromium } from 'playwright';
+import { mkdirSync } from 'node:fs';
+const BASE='http://localhost:5173'; const sleep=(ms)=>new Promise(r=>setTimeout(r,ms));
+mkdirSync('.shots',{recursive:true});
+const b=await chromium.launch({headless:true});
+const ctx=await b.newContext({viewport:{width:1760,height:1200},deviceScaleFactor:1});
+await ctx.addInitScript(()=>{try{sessionStorage.setItem('qq_admin_unlocked','1');localStorage.setItem('qq-admin-pin','2506');}catch{}});
+const page=await ctx.newPage();
+const errs=[]; page.on('pageerror',e=>errs.push('PAGEERR '+e.message));
+await page.goto(`${BASE}/award-test`,{waitUntil:'domcontentloaded'});
+await sleep(1500);
+const el=async()=>page.evaluateHandle(()=>[...document.querySelectorAll('div')].find(d=>getComputedStyle(d).containerType==='size')||document.body);
+const clip=async(name)=>{ const e=await el(); try{const box=await e.asElement().boundingBox(); await page.screenshot({path:`.shots/${name}.png`,clip:box||undefined});}catch{await page.screenshot({path:`.shots/${name}.png`});} };
+// Roulette neu ausloesen + Frames waehrend Spin + nach Lock
+await page.getByRole('button',{name:/Roulette neu/}).click();
+await sleep(220); await clip('award-spin1');
+await sleep(300); await clip('award-spin2');
+await sleep(1600); await clip('award-locked');
+if(errs.length) console.log('ERRORS:\n'+errs.slice(0,6).join('\n'));
+console.log('✓ award-spin1/spin2/locked');
+await b.close();

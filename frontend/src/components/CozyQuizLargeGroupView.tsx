@@ -20,6 +20,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import type { QQIconSlug } from './QQIcon';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
+import { COZY_ARENA_CREST_SLUGS } from '../cozyArenaCrests';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
@@ -523,6 +524,7 @@ const CEREMONY_KEYFRAMES = `
 @keyframes qqCrownUnderline { from{transform:scaleX(0);opacity:0;} to{transform:scaleX(1);opacity:1;} }
 @keyframes qqCrownFadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
 @keyframes qqCrownFlood { from{opacity:0;} to{opacity:1;} }
+@keyframes qqAwardBgSettle { 0%{transform:scale(1.05);filter:brightness(1.14);} 100%{transform:scale(1);filter:brightness(1);} }
 @keyframes qqAwardIconPop { 0%{opacity:0;transform:translateY(24px) scale(0.5) rotate(-8deg);} 60%{opacity:1;transform:scale(1.12) rotate(3deg);} 100%{opacity:1;transform:scale(1) rotate(0);} }
 @keyframes qqAwardShine { from{transform:translateX(-130%);} to{transform:translateX(130%);} }
 @keyframes qqAwardDriveIn { from{opacity:0;transform:translateX(64px);} to{opacity:1;transform:translateX(0);} }
@@ -760,6 +762,36 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step]);
 
+  // ── BG-Roulette der Special-Award-Beats (Wolf bild 12 „der Hintergrund koennte
+  //    durchwechseln und auf dem richtigen Gewinner-Team stehen bleiben"): die
+  //    Fraktions-Szene-BGs wechseln beim Reveal schnell durch (deceleriert) und
+  //    rasten ~1s synchron zur Wappen-Enthuellung auf der Award-Gewinner-Fraktion
+  //    ein (Award-Sieger-Farbflut blueht dann auf). Hook laeuft unbedingt (auch in
+  //    Kroenung/Endstand — Ergebnis dort ungenutzt). ──────────────────────────────
+  const awardBeatBg = (step < crownStep && state.megaAwards)
+    ? megaAwardBeat(awardKeys[step], state.megaAwards, de) : null;
+  const awardWinSlug = awardBeatBg ? (qqMegaFactionSlug(awardBeatBg.av) ?? COZY_ARENA_CREST_SLUGS[0]) : null;
+  const reduceMotion = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const [awardBgSlug, setAwardBgSlug] = useState<string>(COZY_ARENA_CREST_SLUGS[0]);
+  const [awardBgLocked, setAwardBgLocked] = useState<boolean>(false);
+  useEffect(() => {
+    if (!awardWinSlug) return;
+    if (reduceMotion) { setAwardBgSlug(awardWinSlug); setAwardBgLocked(true); return; }
+    setAwardBgLocked(false);
+    setAwardBgSlug(COZY_ARENA_CREST_SLUGS[step % COZY_ARENA_CREST_SLUGS.length]);
+    const N = 12; // Wechsel, wachsende Intervalle (ease-out) → Landung ~1.0s
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    let t = 0;
+    for (let k = 0; k < N; k++) {
+      const p = k / (N - 1);
+      t += 45 + p * p * 165; // 45 → ~210ms
+      const slug = k === N - 1 ? awardWinSlug : COZY_ARENA_CREST_SLUGS[(k + step + 1) % COZY_ARENA_CREST_SLUGS.length];
+      timers.push(setTimeout(() => { setAwardBgSlug(slug); if (k === N - 1) setAwardBgLocked(true); }, t));
+    }
+    return () => timers.forEach(clearTimeout);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, awardWinSlug]);
+
   // ── Beat 0..n-1: Special-Award-Spotlight ───────────────────────────────────
   if (step < crownStep && state.megaAwards) {
     const beat = megaAwardBeat(awardKeys[step], state.megaAwards, de);
@@ -775,9 +807,14 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             bestehende `faction-<slug>.webp` (auch auf der Handy-Seite genutzt). Fehlt das
             Award-BG (noch nicht geliefert), 404t Layer 1 transparent → Fallback scheint
             durch. Sobald Wolf die award-*.webp liefert, greifen sie automatisch. */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/award-${qqMegaFactionSlug(beat.av)}.webp), url(/arena-bg/faction-${qqMegaFactionSlug(beat.av)}.webp)`, backgroundSize: 'cover, cover', backgroundPosition: 'center, center', backgroundRepeat: 'no-repeat, no-repeat', animation: 'brFadeIn 0.6s ease both' }} />
+        {/* Roulette-BG (Wolf bild 12): waehrend des Spins schnelle harte Wechsel
+            durch die Fraktions-Szenen (der Scrim daempft das Flackern), beim
+            Einrasten auf dem Sieger ein weicher Settle-Puls. Zwei Layer: dediziertes
+            award-<slug>.webp (falls vorhanden) ueber faction-<slug>.webp. */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/award-${awardBgSlug}.webp), url(/arena-bg/faction-${awardBgSlug}.webp)`, backgroundSize: 'cover, cover', backgroundPosition: 'center, center', backgroundRepeat: 'no-repeat, no-repeat', filter: awardBgLocked ? 'none' : 'brightness(1.07)', animation: awardBgLocked ? 'qqAwardBgSettle 0.6s var(--qq-ease-out-cubic) both' : undefined }} />
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(8,6,16,0.64) 0%, rgba(8,6,16,0.44) 30%, rgba(8,6,16,0.5) 66%, rgba(8,6,16,0.8) 100%)' }} />
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, animation: 'qqCrownFlood 0.7s ease both' }} />
+        {/* Sieger-Farbflut blueht erst beim Einrasten auf. */}
+        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, opacity: awardBgLocked ? 1 : 0, transition: 'opacity 0.55s ease' }} />
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
           {/* Label in Silber — Gold bleibt exklusiv der Champion-Krönung. */}
           <div style={{ fontSize: 'clamp(12px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.2em', textTransform: 'uppercase', color: '#c7cede' }}>

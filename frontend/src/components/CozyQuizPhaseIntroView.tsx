@@ -27,6 +27,7 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug, type QQIconSlug } from './QQIcon';
 import { ActionCard, type ActionCardData } from './CozyQuizActionCard';
 import QQProgressTree from './QQProgressTree';
+import { ArenaCounterGem } from './ArenaCounterGem';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 import { playRevealHighlight, playTick } from '../utils/sounds';
 
@@ -1680,10 +1681,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   ins Kategorie-Emoji (= Hero in der Mitte), drum herum liegen
                   Eyebrow oben + Name/Satz unten (Wolf-Idee 2026-06-29 v4). */}
               <div style={{
-                position: 'absolute', top: 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
+                position: 'absolute', top: (arenaFinaleMult > 1 && s.introStep !== 1) ? 'clamp(84px, 12cqh, 140px)' : 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
                 display: 'flex', justifyContent: 'center', zIndex: 5, pointerEvents: 'none',
                 animation: 'qqStationFade 0.5s ease 0.15s both',
               }}>
+                {/* 2026-07-18 (Wolf): Arena-Zaehler als Kolosseum-Gem (Kategorie-Farbe),
+                    sonst das bewaehrte Rund-Pill. */}
+                {megaArena ? (
+                  <ArenaCounterGem
+                    color={catColor}
+                    eyebrow={lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
+                    text={lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+                  />
+                ) : (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
                   padding: '8px 22px',
@@ -1704,6 +1714,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
                   </div>
                 </div>
+                )}
               </div>
 
               {/* Zentrierte Spalte: Hero-Emoji + Name + Erklärung (+ ZvZ-
@@ -1867,11 +1878,21 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         <>
           {/* TOP: Runde + Fragen-Fortschritt oben angepinnt */}
           <div style={{
-            position: 'absolute', top: 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
+            position: 'absolute', top: (arenaFinaleMult > 1 && s.introStep !== 1) ? 'clamp(84px, 12cqh, 140px)' : 'clamp(26px, 5cqh, 72px)', left: 0, right: 0,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
             zIndex: 5, pointerEvents: 'none',
             animation: 'qqStationFade 0.5s ease 0.15s both',
           }}>
+            {/* 2026-07-18 (Wolf): Arena-Zaehler als Kolosseum-Gem (Kategorie-Farbe,
+                size md = etwas groesser hier, da Haupt-Anker der Kategorie-Reveal). */}
+            {megaArena ? (
+              <ArenaCounterGem
+                color={catColor}
+                size="md"
+                eyebrow={lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
+                text={lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
+              />
+            ) : (<>
             <div style={{
               fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -1884,6 +1905,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             }}>
               {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
             </div>
+            </>)}
           </div>
 
           {/* Zentrierte Spalte: Hero-Emoji + Name + Satz. 2026-06-30 (Wolf

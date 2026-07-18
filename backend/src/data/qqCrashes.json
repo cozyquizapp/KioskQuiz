@@ -1,0 +1,26 @@
+[
+  {
+    "id": "hi3c24rm14kmrqli4xl",
+    "ts": 1784392971809,
+    "source": "qq",
+    "roomCode": null,
+    "kind": "window",
+    "message": "Uncaught TypeError: Cannot read properties of undefined (reading 'emoji')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'emoji')\n    at http://localhost:5173/src/components/QQProgressTree.tsx:608:108\n    at Array.map (<anonymous>)\n    at http://localhost:5173/src/components/QQProgressTree.tsx:602:42\n    at Array.flatMap (<anonymous>)\n    at QQProgressTree (http://localhost:5173/src/components/QQProgressTree.tsx:474:20)\n    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:11548:26)\n    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:14926:21)\n    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:15914:22)\n    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:3674:22)\n    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:3699:24)",
+    "componentStack": null,
+    "url": "http://localhost:5173/phaseintro-test",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36"
+  },
+  {
+    "id": "stput87uo6pmrqli4yq",
+    "ts": 1784392971890,
+    "source": "qq",
+    "roomCode": null,
+    "kind": "window",
+    "message": "Uncaught TypeError: Cannot read properties of undefined (reading 'emoji')",
+    "stack": "TypeError: Cannot read properties of undefined (reading 'emoji')\n    at http://localhost:5173/src/components/QQProgressTree.tsx:608:108\n    at Array.map (<anonymous>)\n    at http://localhost:5173/src/components/QQProgressTree.tsx:602:42\n    at Array.flatMap (<anonymous>)\n    at QQProgressTree (http://localhost:5173/src/components/QQProgressTree.tsx:474:20)\n    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:11548:26)\n    at mountIndeterminateComponent (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:14926:21)\n    at beginWork (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:15914:22)\n    at HTMLUnknownElement.callCallback2 (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:3674:22)\n    at Object.invokeGuardedCallbackDev (http://localhost:5173/node_modules/.vite/deps/chunk-EJTTOCY5.js?v=a4824c01:3699:24)",
+    "componentStack": null,
+    "url": "http://localhost:5173/phaseintro-test",
+    "userAgent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/145.0.7632.6 Safari/537.36"
+  }
+]

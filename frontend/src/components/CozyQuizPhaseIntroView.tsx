@@ -884,30 +884,91 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           (Regel-Reminder pinnt dort einen Titel oben → Kollision). Runden-Intro
           zeigt „FINALRUNDE ×2 · Schlussfrage ×3", die letzte Frage „SCHLUSSFRAGE
           ×3". Ersetzt den frueheren Mid-Reveal-Banner (Wolf 2026-07-16). */}
-      {arenaFinaleMult > 1 && s.introStep !== 1 && (
-        <div style={{
-          position: 'absolute', top: 'clamp(14px, 2.4cqh, 36px)', left: '50%', transform: 'translateX(-50%)',
-          zIndex: 6, pointerEvents: 'none',
-          display: 'inline-flex', alignItems: 'center', gap: 'clamp(8px, 1cqw, 14px)',
-          padding: 'clamp(6px,0.9cqh,11px) clamp(14px,1.6cqw,24px)', borderRadius: 999,
-          background: 'linear-gradient(90deg, #A21247, #EC4899)',
-          boxShadow: '0 8px 30px rgba(162,18,71,0.42)',
-          animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
-        }}>
-          <span aria-hidden style={{ fontSize: 'clamp(18px,2cqw,28px)', lineHeight: 1 }}>🔥</span>
-          <span style={{ fontWeight: 900, fontSize: 'clamp(15px,1.7cqw,24px)', letterSpacing: '0.06em', color: '#fff' }}>
-            {arenaFinaleMult === 3
-              ? (lang === 'de' ? 'SCHLUSSFRAGE' : 'FINAL QUESTION')
-              : (lang === 'de' ? 'FINALRUNDE' : 'FINAL ROUND')}
-          </span>
-          <span style={{ fontWeight: 900, fontSize: 'clamp(17px,1.9cqw,26px)', color: '#fff', background: 'rgba(0,0,0,0.24)', borderRadius: 10, padding: '1px 10px', fontVariantNumeric: 'tabular-nums' }}>×{arenaFinaleMult}</span>
-          {arenaFinaleMult === 2 && (
-            <span style={{ fontWeight: 800, fontSize: 'clamp(12px,1.3cqw,17px)', color: 'rgba(255,255,255,0.9)' }}>
-              {lang === 'de' ? '· Schlussfrage ×3' : '· final question ×3'}
-            </span>
-          )}
-        </div>
-      )}
+      {/* 2026-07-18 (Wolf bild 11 „Final-Bonus-×2-Badge passt gar nicht zur app"):
+          die flache Pink-Pille brach den Kolosseum-Look. Jetzt eine Gem-Cut-
+          Plakette in der GLEICHEN Finale-Farbfamilie wie die Gold-„FINALE"-
+          Wortmarke (Pink→Ember-Gradient, Cinzel), Facetten-Kante + Glanzlinie wie
+          beim Round-Gem. Kein neues Pur-Gold (Gold-Regel) — reused den geshippten
+          FINALE-Verlauf. Themed-Skins: schlichte Surface-Pille. */}
+      {arenaFinaleMult > 1 && s.introStep !== 1 && (() => {
+        const isFinalQ = arenaFinaleMult === 3;
+        const label = isFinalQ
+          ? (lang === 'de' ? 'SCHLUSSFRAGE' : 'FINAL QUESTION')
+          : (lang === 'de' ? 'FINALRUNDE' : 'FINAL ROUND');
+        const sub = lang === 'de' ? '· Schlussfrage ×3' : '· final question ×3';
+        if (!megaArena) {
+          return (
+            <div style={{
+              position: 'absolute', top: 'clamp(14px, 2.4cqh, 36px)', left: '50%', transform: 'translateX(-50%)',
+              zIndex: 6, pointerEvents: 'none',
+              display: 'inline-flex', alignItems: 'center', gap: 'clamp(8px, 1cqw, 14px)',
+              padding: 'clamp(6px,0.9cqh,11px) clamp(14px,1.6cqw,24px)', borderRadius: 'var(--qq-pill-radius)',
+              background: 'var(--qq-surface)', border: '2px solid var(--qq-hairline)',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+              animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
+            }}>
+              <span aria-hidden style={{ fontSize: 'clamp(18px,2cqw,28px)', lineHeight: 1 }}>🔥</span>
+              <span style={{ fontWeight: 900, fontSize: 'clamp(15px,1.7cqw,24px)', letterSpacing: '0.06em', color: 'var(--qq-title)' }}>{label}</span>
+              <span style={{ fontWeight: 900, fontSize: 'clamp(17px,1.9cqw,26px)', color: 'var(--qq-title)', background: 'var(--qq-surface-2, rgba(0,0,0,0.24))', borderRadius: 10, padding: '1px 10px', fontVariantNumeric: 'tabular-nums' }}>×{arenaFinaleMult}</span>
+              {!isFinalQ && (
+                <span style={{ fontWeight: 800, fontSize: 'clamp(12px,1.3cqw,17px)', color: 'var(--qq-text-muted)' }}>{sub}</span>
+              )}
+            </div>
+          );
+        }
+        // ── Kolosseum: Gem-Plakette in Finale-Ember ──
+        const GEM = 'polygon(4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%, 0 50%)';
+        // Facetten-Kante: heiss gluehender Gem (Pink→Ember), ×3 noch intensiver.
+        const edge = isFinalQ
+          ? 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 46%, #B45309 100%)'
+          : 'linear-gradient(180deg, #F9A8D4 0%, #DB2777 52%, #9A3412 100%)';
+        // Text-Verlauf = geshippte FINALE-Wortmarke.
+        const goldText = 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 45%, #D97706 100%)';
+        return (
+          <div style={{
+            position: 'absolute', top: 'clamp(14px, 2.4cqh, 36px)', left: '50%', transform: 'translateX(-50%)',
+            zIndex: 6, pointerEvents: 'none',
+            filter: 'drop-shadow(0 0 20px rgba(236,72,153,0.4)) drop-shadow(0 6px 16px rgba(0,0,0,0.45))',
+            animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
+          }}>
+            {/* Facetten-Kante */}
+            <div style={{ clipPath: GEM, background: edge, padding: 2 }}>
+              {/* Fuellung (dunkler Ember-Stein) + Inhalt */}
+              <div style={{
+                clipPath: GEM,
+                background: 'linear-gradient(180deg, rgba(60,15,38,0.94) 0%, rgba(18,8,20,0.96) 66%)',
+                padding: 'clamp(7px,1cqh,12px) clamp(22px,2.6cqw,40px)',
+                display: 'inline-flex', alignItems: 'center', gap: 'clamp(9px,1cqw,15px)', whiteSpace: 'nowrap',
+              }}>
+                <span aria-hidden style={{ fontSize: 'clamp(17px,1.9cqw,26px)', lineHeight: 1, filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.7))' }}>🔥</span>
+                <span style={{
+                  fontFamily: 'var(--font-arena)', fontWeight: 900, fontSize: 'clamp(15px,1.75cqw,25px)', letterSpacing: '0.1em',
+                  backgroundImage: goldText, WebkitBackgroundClip: 'text', backgroundClip: 'text',
+                  WebkitTextFillColor: 'transparent', color: 'transparent',
+                }}>{label}</span>
+                <span style={{
+                  fontFamily: 'var(--font-arena)', fontWeight: 900, fontSize: 'clamp(16px,1.85cqw,26px)',
+                  color: '#3a0f22', background: 'linear-gradient(180deg, #FBCFE8, #EC4899)', borderRadius: 8,
+                  padding: '1px clamp(8px,0.9cqw,12px)', fontVariantNumeric: 'tabular-nums',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55), 0 2px 6px rgba(0,0,0,0.4)',
+                }}>×{arenaFinaleMult}</span>
+                {!isFinalQ && (
+                  <span style={{
+                    fontFamily: 'var(--font-arena-body)', fontWeight: 700, fontSize: 'clamp(11px,1.25cqw,17px)',
+                    color: 'rgba(251,207,232,0.86)', letterSpacing: '0.02em',
+                  }}>{sub}</span>
+                )}
+              </div>
+            </div>
+            {/* obere Facetten-Glanzlinie */}
+            <div aria-hidden style={{
+              position: 'absolute', top: 3, left: '12%', right: '12%', height: 1,
+              background: 'linear-gradient(90deg, transparent, rgba(251,207,232,0.9), transparent)',
+              opacity: 0.75, pointerEvents: 'none',
+            }} />
+          </div>
+        );
+      })()}
       <Fireflies color={isFirstOfRound && s.introStep <= 1 ? `${displayColor}88` : `${catColor ?? color}88`} />
       {s.theme?.eurovisionMode && <EurovisionHearts />}
 

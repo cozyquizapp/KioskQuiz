@@ -49,6 +49,7 @@ import {
   playTick, playWinnerCardReveal,
 } from '../utils/sounds';
 // 2026-05-24 (Refactor #5): Reveals in components/reveals/ extrahiert.
+import { QQGemFill } from './QQGemFill';
 import { SchaetzchenReveal } from './reveals/SchaetzchenReveal';
 import { Top5Reveal } from './reveals/Top5Reveal';
 import { CrowdTopReveal } from './reveals/CrowdTopReveal';
@@ -93,22 +94,10 @@ const QQ_QUESTION_MAX_W = 1300;
 // richtig), Zahl klein darunter. Feste Groesse -> passt auch unter 8 Fraktionen.
 // Aus der Ferne traegt die LINKS-nach-rechts-Reihenfolge die Aussage; 2/3 = ruhiges
 // Nah-Detail. Ueberall wo Arena "x/y richtig pro Fraktion" zeigt via <QQCorrectViz/>.
-const QQ_GEM_DIAMOND = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
 function QQCorrectViz({ correct, total, color }: { correct: number; total: number; color: string }) {
-  const pct = Math.max(0, Math.min(1, correct / Math.max(1, total)));
-  const sz = 'clamp(24px,2.7cqw,38px)';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-      <div style={{ position: 'relative', width: sz, height: sz }}>
-        {/* Facetten-Kante in Kategorie-Farbe */}
-        <div style={{ position: 'absolute', inset: 0, clipPath: QQ_GEM_DIAMOND, background: `linear-gradient(180deg, ${color} 0%, ${color}aa 60%, ${color}dd 100%)` }} />
-        {/* Dunkler Gem-Kern; Fuellung steigt von unten (auf Diamant geclippt) */}
-        <div style={{ position: 'absolute', inset: 2, clipPath: QQ_GEM_DIAMOND, background: 'rgba(12,9,22,0.9)', overflow: 'hidden' }}>
-          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: `${pct * 100}%`, background: `linear-gradient(180deg, ${color} 0%, ${color}cc 100%)`, boxShadow: `0 0 10px ${color}` }} />
-          {/* oberer Glanz */}
-          <div style={{ position: 'absolute', top: '12%', left: '30%', width: '26%', height: '10%', background: 'rgba(255,255,255,0.5)', filter: 'blur(1px)', borderRadius: '50%', transform: 'rotate(-20deg)' }} />
-        </div>
-      </div>
+      <QQGemFill correct={correct} total={total} color={color} size={'clamp(24px,2.7cqw,38px)'} />
       <span style={{ fontSize: 'clamp(11px,1.15cqw,15px)', fontWeight: 900, color, letterSpacing: '0.02em', opacity: 0.92 }}>
         {correct}/{total}
       </span>
@@ -877,7 +866,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               if (!earliest) return null;
               return s.teams.find(t => t.id === earliest.teamId)?.color ?? null;
             })();
-            const revealGlowColor = fastestColor ?? QQ_COLORS.green500;
+            // 2026-07-18 (Wolf 'bild 10'): in der ARENA soll der Reveal-Card-Rahmen
+            // die KATEGORIE-Farbe tragen, nicht die Sieger-Fraktions-Farbe (blau war
+            // die Gewinner-Fraktion). Nicht-Arena behaelt den Team-Farb-Rahmen.
+            const revealGlowColor = isMegaTeams ? accent : (fastestColor ?? QQ_COLORS.green500);
             return (
           <div style={{
             position: 'relative',

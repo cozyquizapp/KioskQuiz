@@ -69,6 +69,10 @@ for (let t = 0; t < 20; t++) {
   await sleep(500);
 }
 console.log('Reveal-Frames erfasst:', frames);
+
+// Standings/Wertung (PLACEMENT) mit-erfassen -> Diamant-Rollout pruefen.
+for (let t = 0; t < 12; t++) { if (await phase() === 'PLACEMENT') break; await mod.keyboard.press('Space'); await sleep(600); }
+if (await phase() === 'PLACEMENT') { await sleep(2500); await beamer.screenshot({ path: '.shots/cheese-arena-standings.png' }); console.log('✓ .shots/cheese-arena-standings.png (Wertung/Diamanten)'); }
 const txt = await beamer.evaluate(() => (document.body.innerText || '').replace(/\s+/g,' ').slice(0,200));
 console.log('✓ .shots/cheese-arena-reveal.png (nach Morph)');
 console.log('Reveal-Text:', txt);

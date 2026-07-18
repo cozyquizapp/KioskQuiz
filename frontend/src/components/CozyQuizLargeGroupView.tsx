@@ -15,6 +15,7 @@ import type { QQStateUpdate, QQTeam, QQMegaRankEntry, QQMegaAwards, QQMegaAwardK
 import { QQ_AVATARS, QQ_QUESTIONS_PER_PHASE, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqMegaAwardKeys, QQ_MEGA_AWARD_BONUS } from '../../../shared/quarterQuizTypes';
 import { playArenaLeadChange, playSpecialAwardReveal, playRaceWinner, playWolfHowl } from '../utils/sounds';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QQGemFill } from './QQGemFill';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import type { QQIconSlug } from './QQIcon';
@@ -212,29 +213,18 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
 // 2026-07-12: dahinter dezent die Ø-Antwortzeit der richtigen Handys — macht
 // den Speed-Tiebreak transparent (warum +6 vs +1 bei gleicher Trefferquote).
 function Dots({ correct, total, color, de, avgSec, baseDelay = 0, label, showDots }: { correct: number; total: number; color: string; de: boolean; avgSec?: number | null; baseDelay?: number; label: string; showDots: boolean }) {
-  const dotsVisible = showDots && total > 0 && total <= 5;
+  // 2026-07-18 (Wolf 'bild 10' — einheitlich): statt Punkte-Dots derselbe
+  // Kolosseum-Diamant wie im CHEESE-Reveal (fuellt sich = Anteil richtig). Kein
+  // 5er-Cap noetig (Diamant ist eine Fuellung, keine Zaehl-Reihe). Zahl steht
+  // ohnehin im Label daneben.
+  const dotsVisible = showDots && total > 0;
   const timeStr = (avgSec != null && correct > 0)
     ? (de ? `${avgSec.toFixed(1).replace('.', ',')}s` : `${avgSec.toFixed(1)}s`)
     : null;
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4 }}>
       {dotsVisible && (
-        <span style={{ display: 'inline-flex', gap: 5 }}>
-          {Array.from({ length: total }, (_, i) => {
-            const filled = i < correct;
-            return (
-              <span key={i} style={{
-                width: 15, height: 15, borderRadius: '50%',
-                background: filled ? color : 'transparent',
-                border: `2px solid ${filled ? color : 'rgba(255,255,255,0.28)'}`,
-                boxShadow: filled ? `0 0 8px ${color}88` : 'none',
-                // Gefuellte Dots rasten gestaffelt ein (reduced-motion:
-                // animation:none → sofort sichtbar). Hohle Dots bleiben ruhig.
-                animation: filled ? `qqDotFill 0.4s var(--qq-ease-bounce) ${(baseDelay + 0.3 + i * 0.09).toFixed(2)}s both` : undefined,
-              }} />
-            );
-          })}
-        </span>
+        <QQGemFill correct={correct} total={total} color={color} size={'clamp(17px,1.6cqw,24px)'} />
       )}
       <span style={{ fontSize: 'clamp(17px, 1.6cqw, 24px)', fontWeight: 800, opacity: 0.75 }}>
         {label}

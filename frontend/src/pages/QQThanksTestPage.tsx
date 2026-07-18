@@ -1,6 +1,20 @@
 import { useState } from 'react';
 import { ThanksView } from './QQBeamerPage';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { qqArenaBgFor } from '../components/ArenaBeamerBg';
+
+// 8 Arena-Fraktions-Teams (avatarId → Fraktion via qqMegaFaction). Fuer den
+// Mega-Toggle: qqSortedGroups gruppiert danach → Sieger = Fraktion mit Wappen.
+const TEAMS_ARENA = [
+  { id: 'a1', name: 'Rudel 1', color: '#a855f7', avatarId: 'rabbit',  emoji: '🐰', connected: true, totalCells: 42, largestConnected: 42 },
+  { id: 'a2', name: 'Rudel 2', color: '#22c55e', avatarId: 'unicorn', emoji: '🦄', connected: true, totalCells: 38, largestConnected: 38 },
+  { id: 'a3', name: 'Rudel 3', color: '#ec4899', avatarId: 'fox',     emoji: '🦊', connected: true, totalCells: 33, largestConnected: 33 },
+  { id: 'a4', name: 'Rudel 4', color: '#06b6d4', avatarId: 'raccoon', emoji: '🦝', connected: true, totalCells: 28, largestConnected: 28 },
+  { id: 'a5', name: 'Rudel 5', color: '#f59e0b', avatarId: 'cat',     emoji: '🐱', connected: true, totalCells: 22, largestConnected: 22 },
+  { id: 'a6', name: 'Rudel 6', color: '#ef4444', avatarId: 'cow',     emoji: '🐮', connected: true, totalCells: 16, largestConnected: 16 },
+  { id: 'a7', name: 'Rudel 7', color: '#3b82f6', avatarId: 'frog',    emoji: '🐸', connected: true, totalCells: 11, largestConnected: 11 },
+  { id: 'a8', name: 'Rudel 8', color: '#fb923c', avatarId: 'panda',   emoji: '🐼', connected: true, totalCells: 6,  largestConnected: 6 },
+] as QQStateUpdate['teams'];
 
 /**
  * QQThanksTestPage — Standalone-Vorschau der Thanks-View ohne komplettes Quiz
@@ -77,8 +91,9 @@ export default function QQThanksTestPage() {
   const [awardSet, setAwardSet] = useState<AwardSet>('all');
   const [teamCount, setTeamCount] = useState<3 | 5 | 8>(5);
   const [withHistory, setWithHistory] = useState(true);
+  const [mega, setMega] = useState(false); // Arena/Kolosseum-Modus (bild 16)
 
-  const teams = teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
+  const teams = mega ? TEAMS_ARENA : teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
   const grid = buildMockGrid(teams);
 
   // endAwards je nach awardSet
@@ -173,6 +188,8 @@ export default function QQThanksTestPage() {
     finalWagerEnabled: true,
     teamTotalSteals: {},
     questionHistory: withHistory ? MOCK_HISTORY : [],
+    // Arena/Kolosseum-Modus (bild 16): qqIsMega true + Arena-BGs an.
+    ...(mega ? { largeGroupMode: true, nestedTeams: true, arenaBackgrounds: true } : {}),
   } as unknown as QQStateUpdate;
 
   const btnStyle: React.CSSProperties = {
@@ -190,7 +207,8 @@ export default function QQThanksTestPage() {
   return (
     <div style={{
       minHeight: '100vh', width: '100vw',
-      background: '#0A0814',
+      // Arena: Kolosseum-BG (award-ceremony) exakt wie SlideStage in QQBeamerPage.
+      background: mega ? qqArenaBgFor('award-ceremony') : '#0A0814',
       display: 'flex', flexDirection: 'column',
       position: 'relative',
     }}>
@@ -227,6 +245,11 @@ export default function QQThanksTestPage() {
         <div style={{ display: 'flex', gap: 6 }}>
           <button style={withHistory ? btnActive : btnStyle} onClick={() => setWithHistory(!withHistory)}>
             History: {withHistory ? 'an' : 'aus'}
+          </button>
+        </div>
+        <div style={{ display: 'flex', gap: 6 }}>
+          <button style={mega ? btnActive : btnStyle} onClick={() => setMega(!mega)}>
+            🏛️ Arena: {mega ? 'an' : 'aus'}
           </button>
         </div>
       </div>

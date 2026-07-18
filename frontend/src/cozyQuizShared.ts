@@ -13,12 +13,34 @@
  * extrahierte Komponenten EINEN zentralen Import-Pfad haben.
  */
 import { useState, useEffect } from 'react';
+import type { CSSProperties } from 'react';
 import { QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from './qqShared';
 
 // ── Card-Theme ───────────────────────────────────────────────────────────────
 // 2026-06-23: tokenisiert → Skins koennen die Card-Flaeche umstellen.
 // Default-Token (main.css --qq-card-bg) = exakt dieser Gradient → Cozy unveraendert.
 export const COZY_CARD_BG = 'var(--qq-card-bg)';
+
+// ── Arena-Glas (allgemeine Regel, Wolf bild 16, 2026-07-18) ──────────────────
+// Im Kolosseum liegt hinter jeder View der Arena-BG (SlideStage, ArenaBeamerBg).
+// Damit „der bg schoen sichtbar" ist, duerfen die Panels („Windows") NICHT opak
+// sein, sondern translucent + leicht geblurrt, sodass das Kolosseum durchscheint
+// und der Text trotzdem lesbar bleibt (color-contrast). Zentrale Definition, damit
+// alle Arena-Pages denselben Glas-Look teilen (QuestionView macht es sinngemaess
+// schon inline: rgba-Fill statt Vollflaeche). Werte am Beamer abgestimmt.
+//   bg: warmer, dunkler Glas-Verlauf statt Voll-Deckung
+//   backdrop-blur: hebt Text vom Bild ab ohne es zu verdecken
+export const QQ_ARENA_GLASS_BG =
+  'linear-gradient(180deg, rgba(26,18,42,0.52) 0%, rgba(14,10,24,0.60) 100%)';
+export function qqArenaGlass(): CSSProperties {
+  return {
+    background: QQ_ARENA_GLASS_BG,
+    backdropFilter: 'blur(7px) saturate(1.08)',
+    WebkitBackdropFilter: 'blur(7px) saturate(1.08)' as any,
+    border: '1px solid rgba(255,255,255,0.12)',
+    boxShadow: '0 24px 70px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
+  };
+}
 
 // ── Quiz-Option-Normalisierung ───────────────────────────────────────────────
 /**

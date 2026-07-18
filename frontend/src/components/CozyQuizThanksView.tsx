@@ -12,7 +12,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { cozyCard } from '../qqStyleTokens';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { qqIsMega } from '../../../shared/quarterQuizTypes';
-import { useLangFlip, bt, COZY_CARD_BG } from '../cozyQuizShared';
+import { useLangFlip, bt, COZY_CARD_BG, qqArenaGlass } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -79,6 +79,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   //     Trace außen + Inner-Shimmer-Strip + Inner-Glow + 3-col content
   //     (Events · Sieger · Insta+QR)
   const de = lang === 'de';
+  // 2026-07-18 (Wolf bild 16): Im Kolosseum liegt der Arena-BG hinter der Buehne
+  // (SlideStage). Damit „der bg schoen sichtbar" ist, malt die Thanks-Page dann
+  // KEINEN opaken Page-Untergrund mehr und die grosse Card wird zu Arena-Glas
+  // (translucent + blur). Gegated wie ArenaBeamerBg: mega + kein Skin + BGs an.
+  const megaArena = qqIsMega(s) && !themed && (s as any).arenaBackgrounds !== false && !s.theme?.lobbyBackgroundUrl;
   const cardBg = s.theme?.eurovisionMode
     ? 'linear-gradient(180deg, rgba(45,22,68,0.72) 0%, rgba(31,15,61,0.62) 100%)'
     : (s.theme?.cardBg ?? COZY_CARD_BG);
@@ -102,7 +107,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       // BG identisch zu PausedView/PreGameView (Setup-Look).
       // 2026-06-24 (Skin): bei aktivem Skin flacher Skin-BG statt dunklem
       // Pink-Glow-Untergrund.
-      background: themed
+      // 2026-07-18 (Wolf bild 16): Arena → transparent, damit der Kolosseum-BG
+      // der SlideStage durchscheint (nur ein feiner Akzent-Glow bleibt fuer Tiefe).
+      background: megaArena
+        ? `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.08), transparent 60%), transparent`
+        : themed
         ? 'var(--qq-bg)'
         : `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
@@ -120,6 +129,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           opacity: 0.65,
           pointerEvents: 'none',
           zIndex: 0,
+        }} />
+      )}
+      {/* 2026-07-18 (Wolf bild 16): Arena — dezenter Kopf-Scrim hinter dem Hero,
+          damit Titel + Subtitle ueber dem hellen Kolosseum-Lichtstrahl kontrast-
+          sicher bleiben (color-contrast), ohne die Fahnen im BG zu verdecken. */}
+      {megaArena && (
+        <div aria-hidden style={{
+          position: 'absolute', top: 0, left: 0, right: 0, height: '38%',
+          background: 'radial-gradient(ellipse at 50% 0%, rgba(6,4,14,0.55) 0%, rgba(6,4,14,0.22) 55%, transparent 100%)',
+          pointerEvents: 'none', zIndex: 2,
         }} />
       )}
       <Fireflies />
@@ -381,6 +400,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           // Hebel 1 (Style-Tokens): kanonisches Card-Muster via cozyCard() —
           // byte-identisch zum vorherigen Inline-Block (bg/radius/border/shadow).
           ...cozyCard({ bg: cardBg, accentHex: brand.accentHex, accentRgb: brand.accentRgb }),
+          // 2026-07-18 (Wolf bild 16): Arena → translucentes Glas statt opaker
+          // Card, damit das Kolosseum durchscheint (allgemeine Regel qqArenaGlass).
+          ...(megaArena ? qqArenaGlass() : {}),
           padding: 'clamp(32px, 4cqw, 56px)',
           height: 'clamp(460px, 60cqh, 660px)',
           animation: 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',

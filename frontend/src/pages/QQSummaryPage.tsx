@@ -473,6 +473,17 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
     try { window.localStorage.setItem('qqSummaryLang', next); } catch {}
   }
 
+  // Mock-Mode (nur Test-Page): mockSummary kann sich per Toggle aendern —
+  // rawSummary bei jeder Prop-Aenderung synchronisieren (useState initialisiert
+  // nur einmal). In Produktion nie aktiv (mockSummary undefined).
+  useEffect(() => {
+    if (!mockSummary) return;
+    setActiveThemeId(mockSummary.themeId ?? 'cozy');
+    setSummary(mockSummary);
+    setSelectedTeamId(null);
+    setLoading(false);
+  }, [mockSummary]);
+
   useEffect(() => {
     // Mock-Mode: Fetch komplett überspringen, Summary ist schon im State.
     if (mockSummary) return;
@@ -553,6 +564,11 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
     );
   }, [summary]);
 
+  // 2026-07-18 (Wolf bild 17): Arena-Summary → Kolosseum-Look. BG = Portrait-
+  // Szene der Sieger-Fraktion (mobil-optimal, celebratory).
+  const arenaSummary = !!summary?.nested;
+  const arenaBgSlug = arenaSummary ? (qqMegaFactionSlug(ranking[0]?.avatarId ?? '') ?? null) : null;
+
   if (loading) {
     return <Shell lang={lang} onLang={changeLang} brand={brand}><Loading lang={lang} /></Shell>;
   }
@@ -577,7 +593,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
     const winnerTeam = ranking[0];
     return (
       <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
-      <Shell lang={lang} onLang={changeLang} brand={brand}>
+      <Shell lang={lang} onLang={changeLang} brand={brand} arena={arenaSummary} arenaBgSlug={arenaBgSlug}>
         <WinnerCelebrationHero
           winner={winnerTeam}
           draftTitle={summary.draftTitle}
@@ -667,7 +683,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
 
   return (
     <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
-    <Shell lang={lang} onLang={changeLang} brand={brand}>
+    <Shell lang={lang} onLang={changeLang} brand={brand} arena={arenaSummary} arenaBgSlug={arenaBgSlug}>
       <div style={{
         background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
         padding: '28px 20px 22px', borderRadius: sumR(20), marginBottom: 18,
@@ -807,11 +823,16 @@ function formatPlaceLabel(place: number, lang: Lang): string {
 
 // ── Helpers & Subcomponents ───────────────────────────────────────────────────
 
-function Shell({ children, lang, onLang, brand }: {
+function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
   children: React.ReactNode;
   lang: Lang;
   onLang: (l: Lang) => void;
   brand: ReturnType<typeof summaryBrand>;
+  // 2026-07-18 (Wolf bild 17): CozyArena-Summary → Kolosseum-BG (Sieger-Fraktion,
+  // Portrait, mobil-optimal) + translucente Karten, damit die Page „so aussieht
+  // wie in allen" (analog Thanks-Page qqArenaGlass). arenaBgSlug = Fraktions-Slug.
+  arena?: boolean;
+  arenaBgSlug?: string | null;
 }) {
   // 2026-06-25 (Wolf): Skin-Migration. Lokale --sum-*-Rampe — Cozy-Default ist
   // exakt der bisherige Wert (byte-identisch), bei aktivem Skin ziehen sie auf
@@ -821,26 +842,40 @@ function Shell({ children, lang, onLang, brand }: {
   // ⚠️ Cozy-Zweig MUSS die Original-Literale liefern, NICHT var(--sum-*) (das
   // wäre selbst-referenziell → zyklisch → undefined → Text einfarbig + Karten
   // transparent auf der Default-Summary). Nur der themed-Zweig zieht auf --qq-*.
+  // Arena aktiv (nur ohne Skin — Skin hat Vorrang wie ueberall). Karten werden
+  // translucent-dunkel statt fast-transparent, damit Text ueber dem Kolosseum
+  // lesbar bleibt (color-contrast) und der BG in den Zwischenraeumen durchscheint.
+  const arenaOn = !!arena && !themed;
   const sumVars: Record<string, string> = {
     '--sum-text':    themed ? 'var(--qq-text)'        : '#e2e8f0',
     '--sum-muted':   themed ? 'var(--qq-text-muted)'  : '#94a3b8',
     '--sum-dim':     themed ? 'var(--qq-text-muted)'  : '#64748b',
-    '--sum-card':    themed ? 'var(--qq-card-bg)'     : 'rgba(255,255,255,0.04)',
-    '--sum-card-2':  themed ? 'var(--qq-surface)'     : 'rgba(255,255,255,0.08)',
-    '--sum-soft':    themed ? 'var(--qq-surface)'     : 'rgba(255,255,255,0.03)',
-    '--sum-line':    themed ? 'var(--qq-hairline)'    : 'rgba(255,255,255,0.10)',
+    '--sum-card':    themed ? 'var(--qq-card-bg)'     : arenaOn ? 'rgba(16,11,26,0.62)' : 'rgba(255,255,255,0.04)',
+    '--sum-card-2':  themed ? 'var(--qq-surface)'     : arenaOn ? 'rgba(255,255,255,0.10)' : 'rgba(255,255,255,0.08)',
+    '--sum-soft':    themed ? 'var(--qq-surface)'     : arenaOn ? 'rgba(14,10,22,0.50)' : 'rgba(255,255,255,0.03)',
+    '--sum-line':    themed ? 'var(--qq-hairline)'    : arenaOn ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.10)',
     '--sum-line-2':  themed ? 'var(--qq-hairline)'    : 'rgba(255,255,255,0.18)',
     '--sum-on-accent': themed ? '#ffffff'             : '#0A0814',
   };
+  // Kolosseum-BG (Portrait-Fraktions-Szene des Siegers) als fixe Ebene hinter
+  // dem Inhalt — bleibt viewport-gross waehrend die lange Summary drueber
+  // scrollt. Scrim dunkelt fuer Kontrast (unten staerker, wo das Formular sitzt).
+  const arenaBgUrl = arenaOn ? `/arena-bg/faction-${arenaBgSlug ?? 'letztesekunde'}.webp` : null;
+  const arenaScrim =
+    'linear-gradient(180deg, rgba(8,6,16,0.60) 0%, rgba(8,6,16,0.70) 26%, rgba(8,6,16,0.82) 60%, rgba(8,6,16,0.90) 100%)';
   return (
     <div style={{
       minHeight: '100vh',
+      position: 'relative',
       ...sumVars,
       // 2026-05-08 (Aurora-Vivid-Refresh): Brand-Pink-Mesh statt blau-grauem
       // Slate. 2026-05-10: brand.pinkRgb statt hardcoded fuer ESC-Awareness.
       // Skin: heller Bühnen-BG aus dem Token (Mono = cremeweiß).
+      // Arena: dunkle Basis (der Kolosseum liegt als fixe Ebene darueber).
       background: themed
         ? 'var(--qq-bg)'
+        : arenaOn
+        ? '#08060F'
         : `radial-gradient(ellipse at 22% 28%, rgba(${brand.pinkRgb},0.20) 0%, transparent 55%),` +
           'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.24) 0%, transparent 55%),' +
           'linear-gradient(180deg, #14101F 0%, #0A0814 100%)',
@@ -848,7 +883,14 @@ function Shell({ children, lang, onLang, brand }: {
       fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       padding: '20px 16px 40px',
     } as React.CSSProperties}>
-      <div style={{ maxWidth: 520, margin: '0 auto' }}>
+      {arenaBgUrl && (
+        <div aria-hidden style={{
+          position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
+          backgroundImage: `${arenaScrim}, url(${arenaBgUrl})`,
+          backgroundSize: 'cover', backgroundPosition: 'center top', backgroundRepeat: 'no-repeat',
+        }} />
+      )}
+      <div style={{ maxWidth: 520, margin: '0 auto', position: 'relative', zIndex: 1 }}>
         <TopBar lang={lang} onLang={onLang} brand={brand} />
         {children}
       </div>

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import QQSummaryPage from './QQSummaryPage';
 
 /**
@@ -61,15 +61,30 @@ function buildMockGrid(teams: typeof TEAMS_5): Array<Array<string | null>> {
   );
 }
 
+// Arena/Mega: 8 Fraktionen als je 2 Sub-Teams, die sich den avatarId teilen.
+// deriveMegaSummary erkennt „nested" an doppelten avatarIds und aggregiert auf
+// die 8 Fraktionen (Wappen + Fraktions-Name). Punkte variieren fuer ein Ranking.
+const FACTION_AVATARS = ['rabbit', 'unicorn', 'fox', 'raccoon', 'cat', 'cow', 'frog', 'panda'];
+const TEAMS_ARENA = FACTION_AVATARS.flatMap((av, i) => {
+  const base = 24 - i * 2;
+  return [0, 1].map(k => ({
+    id: `${av}-${k}`, name: `Rudel ${i + 1}.${k + 1}`,
+    color: '#8892b0', avatarId: av, emoji: '',
+    score: base - k, totalCells: base - k, largestConnected: base - k,
+    correct: base - k, answered: 24, jokersEarned: 0, stealsUsed: 0,
+  }));
+});
+
 type AwardSet = 'all' | 'underdog-only' | 'none';
 
 export default function QQSummaryTestPage() {
   const [teamCount, setTeamCount] = useState<3 | 5 | 8>(5);
   const [awardSet, setAwardSet] = useState<AwardSet>('all');
   const [eurovisionMode, setEurovisionMode] = useState(false);
+  const [arena, setArena] = useState(false); // CozyArena/Kolosseum (bild 17)
 
-  const teams = teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
-  const grid = buildMockGrid(teams);
+  const teams = arena ? TEAMS_ARENA : teamCount === 3 ? TEAMS_3 : teamCount === 8 ? TEAMS_8 : TEAMS_5;
+  const grid = buildMockGrid(teams as typeof TEAMS_5);
 
   const endAwards = awardSet === 'none' ? null
     : awardSet === 'underdog-only' ? {
@@ -85,7 +100,7 @@ export default function QQSummaryTestPage() {
         speedyAvgMs: 4200,
       };
 
-  const mockSummary = {
+  const mockSummary = useMemo(() => ({
     id: 'qqr-test-DEMO',
     roomCode: 'DEMO',
     playedAt: Date.now() - 3600 * 1000,
@@ -103,7 +118,16 @@ export default function QQSummaryTestPage() {
     cellOwners: grid,
     endAwards,
     eurovisionMode,
-  };
+    // Arena: megaAwards fuer den Fraktions-Award-Strip; deriveMegaSummary
+    // aggregiert die Sub-Teams auf 8 Fraktionen.
+    ...(arena ? {
+      megaAwards: {
+        fastest: 'raccoon', sharpshooter: 'unicorn', comeback: 'cow',
+        participation: 'frog', steady: 'cat',
+        stats: { fastest: 4, sharpshooter: 88, comeback: 5, participation: 100, steady: 47 },
+      },
+    } : {}),
+  }), [teams, grid, endAwards, eurovisionMode, arena]);
 
   return (
     <>
@@ -139,6 +163,11 @@ export default function QQSummaryTestPage() {
         <Group label="Mode">
           <Btn active={!eurovisionMode} onClick={() => setEurovisionMode(false)}>Standard</Btn>
           <Btn active={eurovisionMode} onClick={() => setEurovisionMode(true)}>Eurovision</Btn>
+        </Group>
+
+        <Group label="Arena">
+          <Btn active={!arena} onClick={() => setArena(false)}>Aus</Btn>
+          <Btn active={arena} onClick={() => setArena(true)}>🏛️ An</Btn>
         </Group>
       </div>
 

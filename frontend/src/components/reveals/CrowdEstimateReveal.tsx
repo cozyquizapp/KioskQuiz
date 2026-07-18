@@ -246,7 +246,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
               opacity: banded ? 1 : 0, transition: 'opacity 0.6s ease',
             }} />
             <div aria-hidden style={{
-              position: 'absolute', left: `${(bandL + bandR) / 2}%`, top: '40.5%', transform: 'translateX(-50%)', zIndex: 2,
+              position: 'absolute', left: `${(bandL + bandR) / 2}%`, top: '52%', transform: 'translateX(-50%)', zIndex: 2,
               fontSize: 'clamp(9px,0.95cqw,15px)', fontWeight: 900, color: QQ_COLORS.green400,
               letterSpacing: '0.14em', textTransform: 'uppercase', whiteSpace: 'nowrap',
               opacity: banded ? 1 : 0, transition: 'opacity 0.6s ease',
@@ -270,7 +270,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
             {/* Schwarm-Median-Marker */}
             {Number.isFinite(globalMedian) && (
               <div style={{
-                position: 'absolute', left: `${sx}%`, top: '32%', zIndex: 5, transform: 'translateX(-50%)',
+                position: 'absolute', left: `${sx}%`, top: '28.5%', zIndex: 5, transform: 'translateX(-50%)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 opacity: banded ? 1 : 0,
                 animation: banded && !reduce ? 'qqCE2Drop 0.55s var(--qq-celebrate) both' : 'none',
@@ -403,19 +403,11 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                       }}>{pts} P</span>
                     </div>
                     )}
-                    {/* Verdikt am Sieger */}
-                    {isWin && lit && (
-                      <div style={{
-                        marginTop: 'clamp(2px,0.3cqh,5px)', padding: 'clamp(3px,0.5cqh,6px) clamp(9px,1.1cqw,17px)',
-                        borderRadius: 'var(--qq-pill-radius)', whiteSpace: 'nowrap',
-                        fontFamily: 'var(--font-display)', fontSize: 'clamp(11px, 1.15cqw, 19px)', fontWeight: 700,
-                        color: 'var(--qq-accent)', background: 'rgba(var(--qq-accent-rgb),0.2)',
-                        border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
-                        animation: !reduce ? 'qqCE2Rise 0.45s var(--qq-enter) 0.1s both' : 'none',
-                      }}>{isMega
-                        ? `🏆 ${lang === 'en' ? 'leads' : 'vorne'} · ${pts} P`
-                        : `🏆 ${lang === 'en' ? 'closest' : 'am nächsten'} · Δ ${fmt(f.dist)}`}</div>
-                    )}
+                    {/* 2026-07-18 (Wolf schwarm.png „texte ueberlappen"): die
+                        inline „🏆 vorne · X P"-Verdikt-Pille war redundant (Rang-1-
+                        Badge + Ring + Punkte-Pille markieren den Sieger bereits) und
+                        kollidierte unten mit dem Schwarm-Callout. Entfernt → Parität
+                        mit dem Schaetzchen-Reveal, das auch keine Verdikt-Pille hat. */}
                   </div>
                 </div>
               );

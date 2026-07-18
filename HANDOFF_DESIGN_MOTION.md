@@ -52,9 +52,9 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   UND gleichem Abstand zur Wahrheit (z.B. alle spot-on = alle 100P) entscheidet der Abschick-
   Zeitpunkt → sonst wirkte der Sieger willkürlich („warum gewinnt der?"). `winnerBySpeed`-
   Erkennung + dezentes Badge unter dem Sieger-Wert, NUR in dem Fall. ⚡ ist Platzhalter mit
-  TODO-Kommentar — **Wolf liefert eigenes „am schnellsten"-Icon** (dann ⚡ in
-  `SchaetzchenReveal.tsx` am TODO-Slot tauschen). Reveal-Test: neuer Toggle „⚡ Gleichstand".
-  **Verifiziert** (JA=Badge, Normalfall=kein Badge). Previews `schaetzchen-am-schnellsten-*`.
+  TODO-Kommentar; **Wolfs 3D-Gold-Blitz `fx-blitz.png` als Icon eingesetzt** (`689e6d2c`,
+  schwarzer BG per Luminanz-Alpha freigestellt, 913KB->16KB). Reveal-Test: Toggle „⚡ Gleichstand".
+  **Verifiziert** (JA=Badge, Normalfall=kein Badge). Previews `schaetzchen-am-schnellsten-*` + `-BLITZ`.
 - **Schwarm-Reveal Sieger-Position** (`f4d84116`): Wolf schwarm.png — Sieger (Glückstreffer/93,
   +3) stand ganz rechts bei „zu hoch" statt fast mittig. Gleicher `spread()`-Bug wie Schätzchen →
   gleicher Anker-Fix (ranked/winner vor placed, Sieger-Lane auf echte axisPct verschoben,
@@ -65,8 +65,6 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   unten mit Callout, Parität mit Schätzchen). **Verifiziert.** Preview `schwarm-overlaps-NACHHER`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
-- **„am schnellsten"-Symbol** — Wolf generiert ein eigenes Icon; danach ⚡ im Schätzchen-Sieger-
-  Badge (`SchaetzchenReveal.tsx`, TODO-Slot) dagegen tauschen.
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
 - Alles oben liegt als Preview in `Desktop/für claude/design-vorschau/` (bild10-*, VARIANTE-A/B/C/D,
   DIAMANT, standings-diamanten, cheese-rahmen-lila+diamant).

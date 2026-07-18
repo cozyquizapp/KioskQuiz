@@ -71,7 +71,14 @@ function gameOverCeremonyPending(s: QQStateUpdate): boolean {
 
 export default function QQModeratorPage({ testMode = false }: { testMode?: boolean } = {}) {
   const roomCode = QQ_ROOM;
-  const [phases, setPhases] = useState<2 | 3 | 4>(4);
+  // 2026-07-18 (Wolf 'fuehlt sich an als muesste man zu oft das gleiche
+  // einstellen'): Setup-Wahlen (Runden, Format) ueber Sessions merken statt bei
+  // jedem frischen Raum auf Default zurueckzufallen.
+  const [phases, setPhases] = useState<2 | 3 | 4>(() => {
+    try { const v = Number(window.localStorage.getItem('qqLastPhases')); if (v === 2 || v === 3 || v === 4) return v; } catch {}
+    return 4;
+  });
+  useEffect(() => { try { window.localStorage.setItem('qqLastPhases', String(phases)); } catch {} }, [phases]);
   const [joined, setJoined]     = useState(false);
   const [timerInput, setTimerInput] = useState(30);
   const [tbSeconds, setTbSeconds]   = useState(20);  // Stechen-Countdown (einstellbar vorm Start)
@@ -595,6 +602,36 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [testMode, connected, joined]);
+
+  // 2026-07-18 (Wolf 'zu oft das gleiche einstellen'): das zuletzt gewaehlte
+  // Format ueber Sessions merken und beim frischen Raum vorbelegen — dann ist die
+  // Format-Karte schon aktiv (Wolf pickt nur noch den Draft). 'Format aendern' im
+  // Cockpit bleibt jederzeit da. Bei ?run=1 NICHT (der Autostart setzt das Format
+  // selbst = Arena). Nur einmal pro Mount, nur solange noch kein Format gewaehlt.
+  const formatRestoreRef = useRef(false);
+  useEffect(() => {
+    if (!connected || !joined) return;
+    if (formatRestoreRef.current) return;
+    if (/[?&](run|autostart|auto)=1/i.test(window.location.search)) { formatRestoreRef.current = true; return; }
+    const st = stateRef.current;
+    // Nur auf einem FRISCHEN LOBBY-Raum ohne Format anwenden. Einen stale
+    // Nicht-LOBBY-Raum NICHT locken (er wird ggf. gerade auf LOBBY resettet —
+    // danach soll die Vorwahl noch greifen).
+    if (!st || st.phase !== 'LOBBY' || (st as any).formatSelected) return;
+    let last: string | null = null;
+    try { last = window.localStorage.getItem('qqLastFormat'); } catch {}
+    if (last !== 'arena' && last !== 'quiz') { formatRestoreRef.current = true; return; }
+    formatRestoreRef.current = true;
+    const arena = last === 'arena';
+    emitRef.current('qq:setQuizOptions', { roomCode, largeGroupMode: arena, nestedTeams: arena, formatSelected: true });
+    const cur = (st as any).avatarSetId as string | undefined;
+    const nextSet = arena ? 'cozyArena' : 'cozy3d';
+    if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
+      emitRef.current('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, joined, state?.phase]);
+
   const setupDoneRef = useRef(setupDone);
   setupDoneRef.current = setupDone;
   const setSetupDoneRef = useRef(setSetupDone);
@@ -2368,6 +2405,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     key={f.key}
                     className="qm-format-card"
                     onClick={() => {
+                      try { window.localStorage.setItem('qqLastFormat', f.arena ? 'arena' : 'quiz'); } catch {}
                       emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.arena, nestedTeams: f.arena, formatSelected: true });
                       // 2026-07-04 (Wolf): Format-Default fuers Avatar-Set — Arena
                       // → cozyArena (Wappen), Cozy Quiz → cozy3d (Tiere). Ein

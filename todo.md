@@ -102,10 +102,11 @@ beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in Cozy
 **🐛 Winner-Value-Bugs in Guess-Reveals (Wolf 18.7.):**
 - [x] **Schätzchen-Sieger-Position** — Sieger stand am Lane-Extrem statt am Zielwert (Commit 3f5e8338,
       verifiziert /reveal-test). Sieger sitzt jetzt an echter Tipp-Position (spot-on = Ziel-Mitte).
-- [ ] **schwarm.png** (CrowdEstimate/Hive Mind, `CrowdEstimateReveal.tsx`) — Sieger nicht nahe Zielwert
-      + Texte überlappen. Wahrscheinlich selber Positions-Bug → analog fixen.
-- [ ] **„⚡ am schnellsten" beim Schätzchen-Sieger** (nur bei Punkte-Gleichstand = „warum gewinnt der?").
-      Wolf: ⚡ behalten. SchaetzchenReveal ~398-427. HALB begonnen, nicht committet.
+- [x] **schwarm.png** (CrowdEstimate/Hive Mind) — Sieger-Position (Anker-Fix wie Schätzchen, `f4d84116`)
+      + Text-Overlaps (Bandlabel/Swarm-Marker verschoben, redundante Sieger-Pille raus, `8cf728b5`).
+      Gemessen + verifiziert am /reveal-test Schwarm-Modus.
+- [x] **„⚡ am schnellsten" beim Schätzchen-Sieger** (nur bei Punkte-Gleichstand, `209a83d4`, verifiziert).
+      ⚡ = Platzhalter mit TODO-Slot → **Wolf liefert eigenes „am schnellsten"-Icon, dann tauschen.**
 - [ ] **Counter „Question 1 of 5" → facettierter Gem-Rahmen** (PhaseIntro ~1643 + aktive Frage +
       PausedView). Round-Gem (~1054) als Vorlage. + aktive-Frage-Kolosseum-Texte (Frage-TEXT bleibt Nunito).
 

@@ -1,7 +1,7 @@
-# Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, vor Compact #3)
+# Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, nach Schwarm-Fixes)
 
-> Weiterarbeit NACH dem Compact. Branch **`design/material-pass-standings-bar`** (gepusht,
-> HEAD `3f5e8338`), **main unberührt** bis Wolf merged. ⚠️ Backend läuft evtl. noch (Wolf testete). Voller Kontext: Memory
+> Weiterarbeit. Branch **`design/material-pass-standings-bar`** (gepusht,
+> HEAD `8cf728b5`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
 > [[project-screens-1707-batch]] · [[project-design-motion-elevation]] · [[reference-beamer-harness]].
 > Regeln: [[feedback-real-beamer-never-rebuild]] · [[feedback-red-before-green]] ·
 > [[feedback-measure-assets-not-guess]] · [[feedback-use-skills-proactively]].
@@ -48,32 +48,42 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   am `/reveal-test`** (alle-spot-on + Normalfall; `scripts/shot-revealtest.mjs`, FACTS temporär
   alle=87 setzen für den all-spot-on-Fall). Previews `design-vorschau/schaetzchen-sieger-*-NACHHER`.
 
+- **„⚡ am schnellsten"-Badge beim Schätzchen-Sieger** (`209a83d4`): bei Punkte-Gleichstand
+  UND gleichem Abstand zur Wahrheit (z.B. alle spot-on = alle 100P) entscheidet der Abschick-
+  Zeitpunkt → sonst wirkte der Sieger willkürlich („warum gewinnt der?"). `winnerBySpeed`-
+  Erkennung + dezentes Badge unter dem Sieger-Wert, NUR in dem Fall. ⚡ ist Platzhalter mit
+  TODO-Kommentar — **Wolf liefert eigenes „am schnellsten"-Icon** (dann ⚡ in
+  `SchaetzchenReveal.tsx` am TODO-Slot tauschen). Reveal-Test: neuer Toggle „⚡ Gleichstand".
+  **Verifiziert** (JA=Badge, Normalfall=kein Badge). Previews `schaetzchen-am-schnellsten-*`.
+- **Schwarm-Reveal Sieger-Position** (`f4d84116`): Wolf schwarm.png — Sieger (Glückstreffer/93,
+  +3) stand ganz rechts bei „zu hoch" statt fast mittig. Gleicher `spread()`-Bug wie Schätzchen →
+  gleicher Anker-Fix (ranked/winner vor placed, Sieger-Lane auf echte axisPct verschoben,
+  geclampt). Reveal-Test: neuer **Schwarm-Modus** (CrowdEstimateReveal, echte Komponente).
+- **Schwarm-Reveal Text-Overlaps** (`8cf728b5`): 3 Kollisionen gemessen (Stage-%) + behoben —
+  „nah genug = Punkte"-Bandlabel unter das Band (lag auf Punkte-Pillen), „🌊 Schwarm X"-Marker
+  in die Lücke Name↔Pille hoch, redundante „🏆 vorne · X P"-Sieger-Pille entfernt (kollidierte
+  unten mit Callout, Parität mit Schätzchen). **Verifiziert.** Preview `schwarm-overlaps-NACHHER`.
+
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
+- **„am schnellsten"-Symbol** — Wolf generiert ein eigenes Icon; danach ⚡ im Schätzchen-Sieger-
+  Badge (`SchaetzchenReveal.tsx`, TODO-Slot) dagegen tauschen.
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
 - Alles oben liegt als Preview in `Desktop/für claude/design-vorschau/` (bild10-*, VARIANTE-A/B/C/D,
   DIAMANT, standings-diamanten, cheese-rahmen-lila+diamant).
 
-## ➡️ NÄCHSTE SCHRITTE (nach Compact — offen aus Wolfs Live-Review 18.7.)
-1. **„⚡ am schnellsten" beim Schätzchen-Sieger** (HALB begonnen, NICHT committet — nur Code gelesen):
-   Wolf-Entscheidung „⚡ BEHALTEN" (konsistent mit den Zeit-Pillen). Zu bauen: dem Sieger ein
-   „⚡ am schnellsten / fastest" geben, NUR wenn Sieg per Speed entschieden (Punkte-Gleichstand,
-   z.B. alle spot-on = alle 100P → „warum gewinnt der?"). Stelle: SchaetzchenReveal ~398-427
-   (Sieger-Wert-Label unter dem Wappen). Tie erkennen via `ptsOfAvatar(rankedFinal[1])===ptsOfAvatar(winner)`.
-2. 🐛 **schwarm.png** (CrowdEstimate/Hive Mind, `CrowdEstimateReveal.tsx`) — Wolf: Sieger nicht nahe
-   Zielwert + Texte überlappen. Wahrscheinlich SELBER Positions-Bug wie Schätzchen (eben gefixt) →
-   analog anwenden. Repro: All-Kategorien-Draft crowdEstimate (p1-3 „Knochen 206" / p3-2 „USA-Sterne 50").
-3. **Counter „Question 1 of 5" → Gem/Diamant** (Wolf-Idee): reiner Diamant um langen Text wird eng →
+## ➡️ NÄCHSTE SCHRITTE (offen aus Wolfs Live-Review 18.7.)
+1. **Counter „Question 1 of 5" → Gem/Diamant** (Wolf-Idee): reiner Diamant um langen Text wird eng →
    als **facettierter Gem-Rahmen** bauen. Stellen: PhaseIntroView ~1643 („Frage X von 5") + aktive
    Frage (CozyQuizQuestionView) + PausedView. Der PhaseIntro-Round-Gem (`~1054`) ist die Vorlage.
-4. **Aktive-Frage Kolosseum-Texte** (Wolf-Frage): Frage-TEXT bleibt bewusst Nunito (Lesbarkeit);
+2. **Aktive-Frage Kolosseum-Texte** (Wolf-Frage): Frage-TEXT bleibt bewusst Nunito (Lesbarkeit);
    Counter/Eyebrow/Chrome könnten Cinzel/Gem werden.
-5. **⚡-Kolosseum-Konsistenz-Pass** (Wolf-Notiz): das ⚡ steckt in allen Zeit-Pillen — später
+3. **⚡-Kolosseum-Konsistenz-Pass** (Wolf-Notiz): das ⚡ steckt in allen Zeit-Pillen — später
    einheitlich kolosseum-tauglich machen (eigener kleiner Pass, kein Muss jetzt).
-6. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
+4. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
    Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
-7. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-8. **Screens-Batch:** bild 11 (Final-Bonus-×2-Badge), 12, 13, 14, 15, 16, 17.
-9. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
+5. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
+6. **Screens-Batch:** bild 11 (Final-Bonus-×2-Badge), 12, 13, 14, 15, 16, 17.
+7. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
    zurück" · Zähler-Darstellung) — in todo.md.
 
 ## 🧰 HARNESS (Details [[reference-beamer-harness]])
@@ -84,7 +94,10 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   pausiert Autoplay VERIFIZIERT (idempotent, `button[title="Autoplay pausieren"]` + **blur**, sonst
   togglet Space den Button!), sucht CHEESE per TEXT (Fragen gemischt), erfasst letzten
   QUESTION_REVEAL-Frame (vollste Reihe vor Scoring). Admin-PIN 2506.
-- **`/reveal-test`** (KEIN Backend) — SchaetzchenReveal mit 8 Mock-Fraktionen (bild 9).
+- **`/reveal-test`** (KEIN Backend) — SchaetzchenReveal + jetzt CrowdEstimateReveal (Toggle
+  „Schätzchen/Schwarm") mit 8 Mock-Fraktionen. Schätzchen-Toggle „⚡ Gleichstand (alle spot-on)"
+  triggert das Speed-Badge. Scripts: `shot-revealtest.mjs`, `shot-revealtest-tie.mjs`,
+  `shot-revealtest-schwarm.mjs`, `measure-schwarm.mjs` (Bounding-Box-Messung Stage-%).
 - **Fern-Lesbarkeit testen:** Screenshot mit `sharp` auf ~560px runterskalieren (simuliert Beamer-
   Distanz): `node -e 'require("./frontend/node_modules/sharp")(".shots/x.png").resize(560).toFile(...)'`.
 - ⚠️ Motion ~0.5s: Film-Streifen zeigen sie nicht → Wolf live urteilen. Read-Bilder sieht nur die KI

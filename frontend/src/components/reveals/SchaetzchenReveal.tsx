@@ -163,11 +163,27 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
         const isWin = r.teamId === winId;
         return { r, x: axisPct(r.num), cx: axisPct(r.num), above: isWin ? true : (k++ % 2 === 1) };
       });
+    const above = sorted.filter(c => c.above);
     spread(sorted.filter(c => !c.above));
-    spread(sorted.filter(c => c.above));
+    spread(above);
+    // 2026-07-18 (Wolf 'Sieger liegt am weitesten weg vom Zielstreifen'): bei
+    // dicht/identisch geclusterten Tipps (z.B. alle spot-on) streute spread den
+    // Sieger ans Lane-Extrem — obwohl er der beste ist, wirkte er als "weit weg".
+    // Fix: den Sieger auf seine ECHTE Tipp-Position (axisPct) verankern (spot-on
+    // = Ziel-Mitte), die restliche obere Lane relativ mitschieben, dann clampen.
+    const win = above.find(c => c.r.teamId === winId);
+    if (win) {
+      const dx = axisPct(winner!.num) - win.cx;
+      if (dx) {
+        for (const c of above) c.cx += dx;
+        const lo = Math.min(...above.map(c => c.cx)), hi = Math.max(...above.map(c => c.cx));
+        if (lo < 5) { const d = 5 - lo; for (const c of above) c.cx += d; }
+        else if (hi > 95) { const d = hi - 95; for (const c of above) c.cx -= d; }
+      }
+    }
     return sorted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [rankedFinal, axisPct]);
+  }, [rankedFinal, axisPct, winner]);
 
   const wx = winner ? axisPct(winner.num) : 50;
 

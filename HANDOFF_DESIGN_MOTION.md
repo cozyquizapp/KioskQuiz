@@ -90,6 +90,13 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   Gesamt-Scrim + **Frosted-Glass-Panel** (blur, dunkel) hinter der 8-Zeilen-Tabelle + Titel/Hero-
   Schatten. Alle 8 Zeilen passen bei Beamer-Groesse. `/award-test`-Buehne zeigt jetzt award-ceremony-
   BG + beamer-genaue Breite (1760). Previews `bild15-endstand-panel-NACHHER`/`-VORHER`.
+- **bild 16 — Thanks-Page: Kolosseum-BG sichtbar + Arena-Glas** (`515eb0e1`): ThanksView malte in Arena
+  ihr eigenes opakes Page-bg (#0A0814) + opake Card ueber den award-ceremony-BG der SlideStage → nichts
+  vom Kolosseum sichtbar. **Neue allgemeine Regel `qqArenaGlass()`** (cozyQuizShared.ts): translucentes
+  Glas (rgba-Fill + backdrop-blur) fuer Panels ueber dem Arena-BG. ThanksView (`megaArena`-Gate: qqIsMega
+  + kein Skin + BGs an): Page-bg transparent, grosse Card = Arena-Glas, dezenter Kopf-Scrim fuer Titel-
+  Kontrast. Nicht-Arena unveraendert (alles gegated). Thanks-Test-Page hat jetzt Arena-Toggle. **Verifiziert**
+  (`/thanks-test` Arena an/aus). Previews `bild16-thanks-arena-VORHER/NACHHER`, `-normal-unveraendert`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
@@ -107,8 +114,10 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
 4. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
    Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
 5. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-6. **Screens-Batch:** ✅ 11 · ✅ 12 · ✅ 13 · ✅ 14 · ✅ 15 (Endstand-Panel) · offen: 16 (Kolosseum-BG
-   sichtbarer + Windows transparenter = allg. Regel), 17 (Summary noch nicht CozyArena-ready).
+6. **Screens-Batch:** ✅ 11 · ✅ 12 · ✅ 13 · ✅ 14 · ✅ 15 · ✅ 16 (Thanks Arena-Glas + BG sichtbar,
+   `qqArenaGlass`) · offen: **17** (Summary noch nicht CozyArena-ready: kein Team-BG, alte Emojis,
+   pruefen ob aktuell — „sehe ich nie mit bots"). ⚠️ Regel `qqArenaGlass()` steht jetzt zentral —
+   bei weiteren Arena-Pages mit opaken Panels wiederverwenden.
 7. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
    zurück" · Zähler-Darstellung) — in todo.md.
 

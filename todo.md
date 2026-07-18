@@ -83,9 +83,10 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 - [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
 - [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt.
 
-**Screens-1707-Batch (Reihenfolge, einer nach dem anderen):** bild 4 ✅, bild 9 ✅. AKTIV: bild 10
-(+18, CHEESE-Reveal: Doppel-Wappen → untere morphen hoch, einheitliche Größe). Danach: 11, 12, 13,
-14, 15, 16, 17 — Details in Memory `project_screens_1707_batch`.
+**Screens-1707-Batch (Reihenfolge, einer nach dem anderen):** bild 4 ✅, bild 9 ✅, 11 ✅, 12 ✅,
+13 ✅, 14 ✅, 15 ✅, 16 ✅ (Thanks-Page Arena-Glas + Kolosseum-BG sichtbar, neue Regel `qqArenaGlass()`).
+AKTIV/offen: **bild 17** (Summary noch nicht CozyArena-ready: kein Team-BG, alte Emojis, prüfen ob aktuell).
+Noch offen aus bild 10: 2/3-Ansicht + CHEESE-Reveal-Rethink. Details in Memory `project_screens_1707_batch`.
 
 **Kolosseum-Kohärenz (Wolf 18.7., nur TODO — nicht bauen bis Batch durch):**
 - [ ] **Progress-Tree an Kolosseum-Style anpassen** — evtl. Diamanten/Gems statt Kreise (passend

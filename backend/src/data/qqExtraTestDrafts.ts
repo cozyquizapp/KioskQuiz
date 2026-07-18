@@ -268,179 +268,370 @@ const hhQs = [
 // 2× Top-Antworten (Family Feud) + 2× Schwarm-Schätzen + 1× MUCHO.
 const ca = 'qq-test-cozy-arena-neu';
 const caQs = [
-  // ── Phase 1 ──────────────────────────────────────────────────────────
-  q(`${ca}-p1-0`, 1, 0, 'BUNTE_TUETE', {
-    text: 'Wie viele Gummibärchen sind in einem 200g-Beutel Haribo Goldbären?',
-    textEn: 'How many gummy bears are in a 200g bag of Haribo Goldbears?',
-    answer: '90',
-    bunteTuete: { kind: 'crowdEstimate', targetValue: 90, unit: 'Gummibärchen', unitEn: 'gummy bears' },
-    funFact: 'Ein 200g-Beutel enthält rund 90 Goldbären — je nach Sorten-Mix.'
-  }),
-  q(`${ca}-p1-1`, 1, 1, 'BUNTE_TUETE', {
-    text: 'Nenne eine Pizza-Zutat.',
-    textEn: 'Name a pizza topping.',
-    answer: 'Salami, Käse, Champignon, Schinken, Ananas, Tomate, Zwiebel, Paprika',
-    bunteTuete: { kind: 'crowdTop', answers: [
-      { label: 'Salami', labelEn: 'Salami', aliases: ['peperoni-salami', 'salamie'] },
-      { label: 'Käse', labelEn: 'Cheese', aliases: ['mozzarella', 'gouda', 'cheese'], aliasesEn: ['mozzarella'] },
-      { label: 'Champignon', labelEn: 'Mushroom', aliases: ['pilz', 'pilze', 'champignons'], aliasesEn: ['mushrooms'] },
-      { label: 'Schinken', labelEn: 'Ham', aliases: ['kochschinken'] },
-      { label: 'Ananas', labelEn: 'Pineapple', aliases: [] },
-      { label: 'Tomate', labelEn: 'Tomato', aliases: ['tomaten', 'tomatensauce', 'tomatensoße'] },
-      { label: 'Zwiebel', labelEn: 'Onion', aliases: ['zwiebeln'] },
-      { label: 'Paprika', labelEn: 'Bell pepper', aliases: [] },
-    ] },
-    funFact: 'Salami und Käse sind fast überall die Top-Nennungen — Ananas spaltet die Runde.'
-  }),
-  q(`${ca}-p1-2`, 1, 2, 'MUCHO', {
-    text: 'Welche Farbe entsteht, wenn man Blau und Gelb mischt?',
-    textEn: 'Which color do you get by mixing blue and yellow?',
-    answer: 'Grün',
-    options: ['Grün', 'Orange', 'Lila', 'Braun'],
-    optionsEn: ['Green', 'Orange', 'Purple', 'Brown'],
-    correctOptionIndex: 0,
-    funFact: 'Blau + Gelb = Grün ist eine der ersten Farbmischungen, die Kinder lernen.'
-  }),
-  q(`${ca}-p1-3`, 1, 3, 'BUNTE_TUETE', {
-    text: 'Wie viele Knochen hat ein erwachsener Mensch?',
-    textEn: 'How many bones does an adult human have?',
-    answer: '206',
-    bunteTuete: { kind: 'crowdEstimate', targetValue: 206, unit: 'Knochen', unitEn: 'bones' },
-    funFact: 'Ein Neugeborenes hat ~300 Knochen — viele verwachsen bis zum Erwachsenenalter zu 206.'
-  }),
-  q(`${ca}-p1-4`, 1, 4, 'BUNTE_TUETE', {
-    text: 'Nenne ein Tier, das man im Zoo sieht.',
-    textEn: 'Name an animal you see at the zoo.',
-    answer: 'Löwe, Elefant, Giraffe, Affe, Pinguin, Zebra, Tiger, Bär',
-    bunteTuete: { kind: 'crowdTop', answers: [
-      { label: 'Löwe', labelEn: 'Lion', aliases: ['löwen'] },
-      { label: 'Elefant', labelEn: 'Elephant', aliases: ['elefanten'] },
-      { label: 'Giraffe', labelEn: 'Giraffe', aliases: ['giraffen'] },
-      { label: 'Affe', labelEn: 'Monkey', aliases: ['affen', 'gorilla', 'schimpanse'], aliasesEn: ['ape', 'gorilla'] },
-      { label: 'Pinguin', labelEn: 'Penguin', aliases: ['pinguine'] },
-      { label: 'Zebra', labelEn: 'Zebra', aliases: ['zebras'] },
-      { label: 'Tiger', labelEn: 'Tiger', aliases: [] },
-      { label: 'Bär', labelEn: 'Bear', aliases: ['bären', 'eisbär'] },
-    ] },
-    funFact: 'Löwe und Elefant sind die Klassiker — Pinguine überraschen oft als Top-Nennung.'
-  }),
-  // ── Phase 2 ──────────────────────────────────────────────────────────
-  q(`${ca}-p2-0`, 2, 0, 'BUNTE_TUETE', {
-    text: 'Nenne eine Eissorte.',
-    textEn: 'Name a flavor of ice cream.',
-    answer: 'Vanille, Schokolade, Erdbeere, Zitrone, Stracciatella, Pistazie, Haselnuss, Mango',
-    bunteTuete: { kind: 'crowdTop', answers: [
-      { label: 'Vanille', labelEn: 'Vanilla', aliases: [] },
-      { label: 'Schokolade', labelEn: 'Chocolate', aliases: ['schoko'] },
-      { label: 'Erdbeere', labelEn: 'Strawberry', aliases: ['erdbeer'] },
-      { label: 'Zitrone', labelEn: 'Lemon', aliases: ['zitroneneis'] },
-      { label: 'Stracciatella', labelEn: 'Stracciatella', aliases: ['straciatella'] },
-      { label: 'Pistazie', labelEn: 'Pistachio', aliases: ['pistazien'] },
-      { label: 'Haselnuss', labelEn: 'Hazelnut', aliases: ['nuss'] },
-      { label: 'Mango', labelEn: 'Mango', aliases: [] },
-    ] },
-    funFact: 'Vanille und Schokolade führen fast jede Umfrage an.'
-  }),
-  q(`${ca}-p2-1`, 2, 1, 'BUNTE_TUETE', {
-    text: 'Wie viele Tasten hat ein Standard-Klavier?',
-    textEn: 'How many keys does a standard piano have?',
-    answer: '88',
-    bunteTuete: { kind: 'crowdEstimate', targetValue: 88, unit: 'Tasten', unitEn: 'keys' },
-    funFact: '88 Tasten: 52 weiße + 36 schwarze, über 7 Oktaven plus etwas.'
-  }),
-  q(`${ca}-p2-2`, 2, 2, 'MUCHO', {
-    text: 'Welches Tier ist das schnellste an Land?',
-    textEn: 'Which animal is the fastest on land?',
-    answer: 'Gepard',
-    options: ['Gepard', 'Löwe', 'Pferd', 'Antilope'],
-    optionsEn: ['Cheetah', 'Lion', 'Horse', 'Antelope'],
-    correctOptionIndex: 0,
-    funFact: 'Ein Gepard erreicht kurzzeitig bis zu 110 km/h.'
-  }),
-  q(`${ca}-p2-3`, 2, 3, 'BUNTE_TUETE', {
-    text: 'Wie viele Zähne hat ein Erwachsener (mit Weisheitszähnen)?',
-    textEn: 'How many teeth does an adult have (including wisdom teeth)?',
-    answer: '32',
-    bunteTuete: { kind: 'crowdEstimate', targetValue: 32, unit: 'Zähne', unitEn: 'teeth' },
-    funFact: '32 Zähne inklusive der vier Weisheitszähne — die fehlen aber vielen Menschen.'
-  }),
-  q(`${ca}-p2-4`, 2, 4, 'BUNTE_TUETE', {
-    text: 'Nenne einen Brotaufstrich.',
-    textEn: 'Name a bread spread.',
-    answer: 'Nutella, Marmelade, Honig, Butter, Käse, Wurst, Frischkäse, Erdnussbutter',
-    bunteTuete: { kind: 'crowdTop', answers: [
-      { label: 'Nutella', labelEn: 'Nutella', aliases: ['nuss-nougat-creme', 'nussnougatcreme'] },
-      { label: 'Marmelade', labelEn: 'Jam', aliases: ['konfitüre'] },
-      { label: 'Honig', labelEn: 'Honey', aliases: [] },
-      { label: 'Butter', labelEn: 'Butter', aliases: [] },
-      { label: 'Käse', labelEn: 'Cheese', aliases: [] },
-      { label: 'Wurst', labelEn: 'Sausage', aliases: ['salami', 'leberwurst'] },
-      { label: 'Frischkäse', labelEn: 'Cream cheese', aliases: [] },
-      { label: 'Erdnussbutter', labelEn: 'Peanut butter', aliases: ['peanutbutter'] },
-    ] },
-    funFact: 'Nutella und Marmelade dominieren den süßen Frühstückstisch.'
-  }),
-  // ── Phase 3 ──────────────────────────────────────────────────────────
-  q(`${ca}-p3-0`, 3, 0, 'BUNTE_TUETE', {
-    text: 'Nenne einen Cocktail.',
-    textEn: 'Name a cocktail.',
-    answer: 'Mojito, Caipirinha, Margarita, Piña Colada, Cuba Libre, Aperol Spritz, Gin Tonic, Sex on the Beach',
-    bunteTuete: { kind: 'crowdTop', answers: [
-      { label: 'Mojito', labelEn: 'Mojito', aliases: [] },
-      { label: 'Caipirinha', labelEn: 'Caipirinha', aliases: ['caipi'] },
-      { label: 'Margarita', labelEn: 'Margarita', aliases: [] },
-      { label: 'Piña Colada', labelEn: 'Piña Colada', aliases: ['pina colada', 'colada'] },
-      { label: 'Cuba Libre', labelEn: 'Cuba Libre', aliases: ['cubalibre'] },
-      { label: 'Aperol Spritz', labelEn: 'Aperol Spritz', aliases: ['aperol', 'spritz'] },
-      { label: 'Gin Tonic', labelEn: 'Gin & Tonic', aliases: ['gin tonic', 'gt'] },
-      { label: 'Sex on the Beach', labelEn: 'Sex on the Beach', aliases: [] },
-    ] },
-    funFact: 'Mojito und Caipirinha sind die meistgenannten Klassiker an der Bar.'
-  }),
-  q(`${ca}-p3-1`, 3, 1, 'BUNTE_TUETE', {
-    text: 'Wie lang ist die Chinesische Mauer ungefähr (in Kilometern)?',
-    textEn: 'Roughly how long is the Great Wall of China (in kilometers)?',
-    answer: '21196',
-    bunteTuete: { kind: 'crowdEstimate', targetValue: 21196, unit: 'km', unitEn: 'km' },
-    funFact: 'Inklusive aller Zweige misst die Mauer laut offizieller Vermessung rund 21.196 km.'
-  }),
-  q(`${ca}-p3-2`, 3, 2, 'MUCHO', {
-    text: 'Welcher Planet ist der Sonne am nächsten?',
-    textEn: 'Which planet is closest to the Sun?',
-    answer: 'Merkur',
-    options: ['Merkur', 'Venus', 'Erde', 'Mars'],
-    optionsEn: ['Mercury', 'Venus', 'Earth', 'Mars'],
-    correctOptionIndex: 0,
-    funFact: 'Merkur ist der Sonne am nächsten — aber Venus ist der heißeste Planet.'
-  }),
-  q(`${ca}-p3-3`, 3, 3, 'BUNTE_TUETE', {
-    text: 'Wie viele Länder hat der Kontinent Afrika?',
-    textEn: 'How many countries does the continent of Africa have?',
-    answer: '54',
-    bunteTuete: { kind: 'crowdEstimate', targetValue: 54, unit: 'Länder', unitEn: 'countries' },
-    funFact: 'Afrika hat 54 von der UN anerkannte Staaten — der Kontinent mit den zweitmeisten.'
-  }),
-  q(`${ca}-p3-4`, 3, 4, 'BUNTE_TUETE', {
-    text: 'Nenne etwas, das in fast jeder WG-Küche steht.',
-    textEn: 'Name something found in almost every shared-flat kitchen.',
-    answer: 'Kühlschrank, Herd, Wasserkocher, Mikrowelle, Kaffeemaschine, Spülmaschine, Toaster',
-    bunteTuete: { kind: 'crowdTop', answers: [
-      { label: 'Kühlschrank', labelEn: 'Fridge', aliases: ['kuehlschrank'] },
-      { label: 'Herd', labelEn: 'Stove', aliases: ['ofen', 'backofen'] },
-      { label: 'Wasserkocher', labelEn: 'Kettle', aliases: [] },
-      { label: 'Mikrowelle', labelEn: 'Microwave', aliases: [] },
-      { label: 'Kaffeemaschine', labelEn: 'Coffee maker', aliases: ['kaffee', 'kaffeevollautomat'] },
-      { label: 'Spülmaschine', labelEn: 'Dishwasher', aliases: ['geschirrspüler'] },
-      { label: 'Toaster', labelEn: 'Toaster', aliases: [] },
-    ] },
-    funFact: 'Wasserkocher und Kühlschrank sind quasi WG-Grundausstattung.'
-  }),
+  // Alle Kategorien fuer den Reveal-/Design-Test (Wolf 2026-07-18: "baue den arena
+  // test draft so um, dass er alle kategorien hat"). Reihenfolge so, dass die oft
+  // gepruefen Reveals (CHEESE bild 10, SCHAETZCHEN bild 9, All-In bild 4) frueh kommen.
+  // ── Phase 1 ──
+  // bild 10 — CHEESE Portrait (Bild links, Card rechts)
+  q('qq-test-cozy-arena-neu-p1-0', 1, 0, 'CHEESE', {
+      "text": "Welches Bauwerk ist hier zu sehen?",
+      "answer": "Eiffelturm",
+      "textEn": "Which landmark is shown here?",
+      "answerEn": "Eiffel Tower",
+      "image": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg",
+        "cheeseLayout": "portrait",
+        "animation": "none"
+      },
+      "funFact": "Der Eiffelturm war als temporäres Bauwerk für die Weltausstellung 1889 gedacht."
+    }),
+  // bild 9 — SCHAETZCHEN (Zeitstrahl-Reveal)
+  q('qq-test-cozy-arena-neu-p1-1', 1, 1, 'SCHAETZCHEN', {
+      "text": "Wie viele Tasten hat eine Standard-QWERTZ-Tastatur (ohne Nummernblock)?",
+      "answer": "87",
+      "textEn": "How many keys does a standard QWERTZ keyboard have (without numpad)?",
+      "targetValue": 87,
+      "unit": "Tasten",
+      "unitEn": "keys",
+      "funFact": "Ein deutsches Standard-Layout ohne separaten Nummernblock hat rund 87 Tasten."
+    }),
+  q('qq-test-cozy-arena-neu-p1-2', 1, 2, 'MUCHO', {
+      "text": "Welche Farbe entsteht, wenn man Blau und Gelb mischt?",
+      "answer": "Grün",
+      "textEn": "Which color do you get by mixing blue and yellow?",
+      "answerEn": "Green",
+      "options": [
+        "Grün",
+        "Orange",
+        "Lila",
+        "Braun"
+      ],
+      "optionsEn": [
+        "Green",
+        "Orange",
+        "Purple",
+        "Brown"
+      ],
+      "correctOptionIndex": 0,
+      "funFact": "Blau + Gelb = Grün ist eine der ersten Farbmischungen, die Kinder lernen."
+    }),
+  q('qq-test-cozy-arena-neu-p1-3', 1, 3, 'BUNTE_TUETE', {
+      "text": "Wie viele Knochen hat ein erwachsener Mensch?",
+      "answer": "206",
+      "textEn": "How many bones does an adult human have?",
+      "bunteTuete": {
+        "kind": "crowdEstimate",
+        "targetValue": 206,
+        "unit": "Knochen",
+        "unitEn": "bones"
+      },
+      "funFact": "Ein Neugeborenes hat ~300 Knochen — viele verwachsen bis zum Erwachsenenalter zu 206."
+    }),
+  // bild 4 — ZEHN_VON_ZEHN (All In) als Runden-Finale
+  q('qq-test-cozy-arena-neu-p1-4', 1, 4, 'ZEHN_VON_ZEHN', {
+      "text": "Welcher Planet ist der größte in unserem Sonnensystem?",
+      "answer": "Jupiter",
+      "textEn": "Which planet is the largest in our solar system?",
+      "answerEn": "Jupiter",
+      "options": [
+        "Jupiter",
+        "Saturn",
+        "Neptun"
+      ],
+      "optionsEn": [
+        "Jupiter",
+        "Saturn",
+        "Neptune"
+      ],
+      "correctOptionIndex": 0,
+      "funFact": "Jupiter ist so groß, dass alle anderen Planeten zusammen hineinpassen würden."
+    }),
+  // ── Phase 2 ──
+  q('qq-test-cozy-arena-neu-p2-0', 2, 0, 'BUNTE_TUETE', {
+      "text": "Nenne eine Pizza-Zutat.",
+      "answer": "Salami, Käse, Champignon, Schinken, Ananas, Tomate, Zwiebel, Paprika",
+      "textEn": "Name a pizza topping.",
+      "bunteTuete": {
+        "kind": "crowdTop",
+        "answers": [
+          {
+            "label": "Salami",
+            "labelEn": "Salami",
+            "aliases": [
+              "peperoni-salami",
+              "salamie"
+            ]
+          },
+          {
+            "label": "Käse",
+            "labelEn": "Cheese",
+            "aliases": [
+              "mozzarella",
+              "gouda",
+              "cheese"
+            ],
+            "aliasesEn": [
+              "mozzarella"
+            ]
+          },
+          {
+            "label": "Champignon",
+            "labelEn": "Mushroom",
+            "aliases": [
+              "pilz",
+              "pilze",
+              "champignons"
+            ],
+            "aliasesEn": [
+              "mushrooms"
+            ]
+          },
+          {
+            "label": "Schinken",
+            "labelEn": "Ham",
+            "aliases": [
+              "kochschinken"
+            ]
+          },
+          {
+            "label": "Ananas",
+            "labelEn": "Pineapple",
+            "aliases": []
+          },
+          {
+            "label": "Tomate",
+            "labelEn": "Tomato",
+            "aliases": [
+              "tomaten",
+              "tomatensauce",
+              "tomatensoße"
+            ]
+          },
+          {
+            "label": "Zwiebel",
+            "labelEn": "Onion",
+            "aliases": [
+              "zwiebeln"
+            ]
+          },
+          {
+            "label": "Paprika",
+            "labelEn": "Bell pepper",
+            "aliases": []
+          }
+        ]
+      },
+      "funFact": "Salami und Käse sind fast überall die Top-Nennungen — Ananas spaltet die Runde."
+    }),
+  q('qq-test-cozy-arena-neu-p2-1', 2, 1, 'BUNTE_TUETE', {
+      "text": "Nenne ein Tier, das man im Zoo sieht — reihum!",
+      "answer": "Löwe, Elefant, Giraffe, Affe, Pinguin, Zebra, Tiger, Bär, Nashorn, Flamingo, Krokodil, Erdmännchen",
+      "textEn": "Name a zoo animal — one by one!",
+      "bunteTuete": {
+        "kind": "hotPotato"
+      },
+      "funFact": "Reihum ein Tier nennen, ohne zu wiederholen — wer zögert oder patzt, scheidet aus."
+    }),
+  q('qq-test-cozy-arena-neu-p2-2', 2, 2, 'BUNTE_TUETE', {
+      "text": "Sortiert diese Erfindungen chronologisch — älteste zuerst.",
+      "answer": "Buchdruck, Dampfmaschine, Glühbirne, Internet",
+      "textEn": "Put these inventions in chronological order — oldest first.",
+      "answerEn": "Printing press, Steam engine, Light bulb, Internet",
+      "bunteTuete": {
+        "kind": "order",
+        "items": [
+          "Internet",
+          "Buchdruck",
+          "Glühbirne",
+          "Dampfmaschine"
+        ],
+        "itemsEn": [
+          "Internet",
+          "Printing press",
+          "Light bulb",
+          "Steam engine"
+        ],
+        "correctOrder": [
+          1,
+          3,
+          2,
+          0
+        ],
+        "criteria": "chronologisch (älteste zuerst)",
+        "criteriaEn": "chronological (oldest first)",
+        "itemValues": [
+          "1983",
+          "um 1450",
+          "1879",
+          "1712"
+        ]
+      },
+      "funFact": "Der Buchdruck mit beweglichen Lettern (Gutenberg, um 1450) machte Wissen erstmals massenhaft reproduzierbar."
+    }),
+  q('qq-test-cozy-arena-neu-p2-3', 2, 3, 'BUNTE_TUETE', {
+      "text": "Wo stehen die Pyramiden von Gizeh?",
+      "answer": "Gizeh, Ägypten",
+      "textEn": "Where are the Pyramids of Giza?",
+      "answerEn": "Giza, Egypt",
+      "bunteTuete": {
+        "kind": "map",
+        "lat": 29.9792,
+        "lng": 31.1342,
+        "targetLabel": "Pyramiden von Gizeh, Ägypten"
+      },
+      "funFact": "Die Cheops-Pyramide war rund 3800 Jahre lang das höchste von Menschen errichtete Bauwerk der Welt."
+    }),
+  q('qq-test-cozy-arena-neu-p2-4', 2, 4, 'ZEHN_VON_ZEHN', {
+      "text": "Wie heißt der längste Fluss der Welt?",
+      "answer": "Nil",
+      "textEn": "What is the longest river in the world?",
+      "answerEn": "Nile",
+      "options": [
+        "Nil",
+        "Amazonas",
+        "Jangtse"
+      ],
+      "optionsEn": [
+        "Nile",
+        "Amazon",
+        "Yangtze"
+      ],
+      "correctOptionIndex": 0,
+      "funFact": "Der Nil misst rund 6650 km — knapp vor dem Amazonas, je nach Messung."
+    }),
+  // ── Phase 3 ──
+  // CHEESE Landscape (Fullscreen-Bild, Card unten)
+  q('qq-test-cozy-arena-neu-p3-0', 3, 0, 'CHEESE', {
+      "text": "Welches Bauwerk ist hier zu sehen?",
+      "answer": "Eiffelturm",
+      "textEn": "Which landmark is shown here?",
+      "answerEn": "Eiffel Tower",
+      "image": {
+        "url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg",
+        "cheeseLayout": "landscape",
+        "animation": "none"
+      },
+      "funFact": "Bei Hitze dehnt sich der Eiffelturm um bis zu 15 cm aus."
+    }),
+  q('qq-test-cozy-arena-neu-p3-1', 3, 1, 'MUCHO', {
+      "text": "Welches Tier ist das größte lebende Landtier?",
+      "answer": "Afrikanischer Elefant",
+      "textEn": "Which animal is the largest living land animal?",
+      "answerEn": "African elephant",
+      "options": [
+        "Afrikanischer Elefant",
+        "Nashorn",
+        "Giraffe",
+        "Flusspferd"
+      ],
+      "optionsEn": [
+        "African elephant",
+        "Rhino",
+        "Giraffe",
+        "Hippo"
+      ],
+      "correctOptionIndex": 0,
+      "funFact": "Ein afrikanischer Elefantenbulle wiegt bis zu 6 Tonnen."
+    }),
+  q('qq-test-cozy-arena-neu-p3-2', 3, 2, 'BUNTE_TUETE', {
+      "text": "Wie viele Sterne hat die Flagge der USA?",
+      "answer": "50",
+      "textEn": "How many stars are on the US flag?",
+      "bunteTuete": {
+        "kind": "crowdEstimate",
+        "targetValue": 50,
+        "unit": "Sterne",
+        "unitEn": "stars"
+      },
+      "funFact": "Je ein Stern pro Bundesstaat — zuletzt kam 1960 Hawaii dazu."
+    }),
+  q('qq-test-cozy-arena-neu-p3-3', 3, 3, 'BUNTE_TUETE', {
+      "text": "Nenne eine Eissorte.",
+      "answer": "Vanille, Schokolade, Erdbeere, Zitrone, Stracciatella, Pistazie, Haselnuss, Mango",
+      "textEn": "Name a flavor of ice cream.",
+      "bunteTuete": {
+        "kind": "crowdTop",
+        "answers": [
+          {
+            "label": "Vanille",
+            "labelEn": "Vanilla",
+            "aliases": []
+          },
+          {
+            "label": "Schokolade",
+            "labelEn": "Chocolate",
+            "aliases": [
+              "schoko"
+            ]
+          },
+          {
+            "label": "Erdbeere",
+            "labelEn": "Strawberry",
+            "aliases": [
+              "erdbeer"
+            ]
+          },
+          {
+            "label": "Zitrone",
+            "labelEn": "Lemon",
+            "aliases": [
+              "zitroneneis"
+            ]
+          },
+          {
+            "label": "Stracciatella",
+            "labelEn": "Stracciatella",
+            "aliases": [
+              "straciatella"
+            ]
+          },
+          {
+            "label": "Pistazie",
+            "labelEn": "Pistachio",
+            "aliases": [
+              "pistazien"
+            ]
+          },
+          {
+            "label": "Haselnuss",
+            "labelEn": "Hazelnut",
+            "aliases": [
+              "nuss"
+            ]
+          },
+          {
+            "label": "Mango",
+            "labelEn": "Mango",
+            "aliases": []
+          }
+        ]
+      },
+      "funFact": "Vanille und Schokolade führen fast jede Umfrage an — Stracciatella ist der deutsche Geheimfavorit."
+    }),
+  q('qq-test-cozy-arena-neu-p3-4', 3, 4, 'ZEHN_VON_ZEHN', {
+      "text": "In welchem Land steht die Chinesische Mauer?",
+      "answer": "China",
+      "textEn": "In which country is the Great Wall located?",
+      "answerEn": "China",
+      "options": [
+        "China",
+        "Japan",
+        "Mongolei"
+      ],
+      "optionsEn": [
+        "China",
+        "Japan",
+        "Mongolia"
+      ],
+      "correctOptionIndex": 0,
+      "funFact": "Die Chinesische Mauer ist mit allen Verzweigungen rund 21.000 km lang."
+    }),
 ];
 
 export const QQ_EXTRA_TEST_DRAFTS: QQTestDraft[] = [
   {
     id: ca,
-    title: '🌊 CozyArena: Neue Bunte Tüte (Test)',
+    title: '🏛️ CozyArena: Alle Kategorien (Test)',
     phases: 3,
     language: 'both',
     questions: caQs,

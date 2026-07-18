@@ -111,6 +111,19 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [ranked, isMega, lang, factionScores]);
 
   const winner = rankedFinal[0] ?? null;
+  // 2026-07-18 (Wolf „warum gewinnt jetzt das team? das wird hier nicht
+  // ersichtlich"): wenn der Sieg NICHT ueber Naehe/Punkte entschieden wurde,
+  // sondern ueber den Abschick-Zeitpunkt (Punkte-Gleichstand UND gleicher Abstand
+  // zur Wahrheit, z.B. alle spot-on = alle 100P), dann wirkt der Sieger willkuerlich.
+  // In dem Fall kennzeichnen wir ihn als „am schnellsten" (Speed-Tiebreak sichtbar).
+  const winnerBySpeed = useMemo(() => {
+    const w = rankedFinal[0], second = rankedFinal[1];
+    if (!w || !second) return false;
+    const sameDist = w.delta === second.delta;
+    const samePts = !isMega || ptsOfAvatar(w.team.avatarId) === ptsOfAvatar(second.team.avatarId);
+    return sameDist && samePts;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rankedFinal, isMega, factionScores]);
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   useActiveThemeId();
 
@@ -428,6 +441,22 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                       {exact ? (lang === 'en' ? '✨ spot on' : '✨ getroffen') : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
                       {isMega && <span style={{ color: isWin && lit ? GOLD_BRIGHT : GOLD, marginLeft: 6 }}>· {ptsOfAvatar(r.team.avatarId)}P</span>}
                     </span>
+                    {/* „am schnellsten": nur beim Sieger, nur wenn der Sieg per
+                        Abschick-Zeitpunkt entschieden wurde (Gleichstand). Macht den
+                        sonst willkuerlich wirkenden Sieger nachvollziehbar.
+                        TODO Wolf-Symbol: ⚡ gegen geliefertes „am schnellsten"-Icon tauschen. */}
+                    {isWin && lit && winnerBySpeed && (
+                      <span style={{
+                        marginTop: 'clamp(2px,0.35cqh,5px)',
+                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        fontSize: 'clamp(9px,0.95cqw,15px)', fontWeight: 900, whiteSpace: 'nowrap',
+                        letterSpacing: '0.02em', color: GOLD_BRIGHT,
+                        textShadow: `0 0 10px ${GOLD}aa`,
+                      }}>
+                        <span aria-hidden style={{ filter: `drop-shadow(0 0 6px ${GOLD}cc)` }}>⚡</span>
+                        {lang === 'en' ? 'fastest' : 'am schnellsten'}
+                      </span>
+                    )}
                   </div>
                   {/* untere Lane: Stiel nach OBEN zur Schiene (order 0 = ganz oben) */}
                   {!above && (

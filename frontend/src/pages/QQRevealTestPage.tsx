@@ -29,10 +29,13 @@ const GRID_NAMES = ['Die Schnellmerker', 'Team Kaffeepause', 'Nerd Alert', 'Die 
 export default function QQRevealTestPage() {
   const [lang, setLang] = useState<'de' | 'en'>('de');
   const [arena, setArena] = useState(true);
+  const [tie, setTie] = useState(false); // alle spot-on → Sieg per Speed-Tiebreak (⚡-Badge)
   const [remountKey, setRemountKey] = useState(0); // Cascade neu abspielen
 
   const state = useMemo(() => {
-    const answers = FACTS.map((f, i) => ({ teamId: `t${i}`, text: String(f.guess), submittedAt: 1000 + i * 7 }));
+    // tie: alle raten exakt das Ziel → Punkte+Abstand gleich, der frueheste Tipp
+    // (t0) gewinnt → „am schnellsten"-Badge muss erscheinen.
+    const answers = FACTS.map((f, i) => ({ teamId: `t${i}`, text: String(tie ? 87 : f.guess), submittedAt: 1000 + i * 7 }));
     const teams = FACTS.map((f, i) => ({
       id: `t${i}`, avatarId: f.av, emoji: '', color: colorOf(f.av),
       name: arena ? f.av : GRID_NAMES[i],
@@ -52,7 +55,7 @@ export default function QQRevealTestPage() {
       sfxMuted: true,
       nestedTeams: arena,
     } as unknown as QQStateUpdate;
-  }, [arena]);
+  }, [arena, tie]);
 
   return (
     <div style={S.page}>
@@ -66,6 +69,9 @@ export default function QQRevealTestPage() {
           <button style={btn(arena)} onClick={() => setArena(true)}>Arena · Fraktionen</button>
           <button style={btn(!arena)} onClick={() => setArena(false)}>Grid · Teams</button>
         </div>
+        <div style={S.seg}>
+          <button style={btn(tie)} onClick={() => setTie(t => !t)}>⚡ Gleichstand (alle spot-on)</button>
+        </div>
         <button style={S.ghost} onClick={() => setRemountKey(k => k + 1)}>▶ Reveal abspielen</button>
         <span style={S.hint}>gleiche Komponente, beide Modi · eine Design-Handschrift</span>
       </div>
@@ -73,7 +79,7 @@ export default function QQRevealTestPage() {
       {/* Beamer-Stage: 16:9, container-type:size fuer cqw/cqh */}
       <div style={S.stageWrap}>
         <div style={S.stage}>
-          <SchaetzchenReveal key={`${arena}-${lang}-${remountKey}`} state={state} lang={lang} />
+          <SchaetzchenReveal key={`${arena}-${lang}-${tie}-${remountKey}`} state={state} lang={lang} />
         </div>
       </div>
     </div>

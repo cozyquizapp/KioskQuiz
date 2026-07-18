@@ -1,7 +1,7 @@
-# Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, vor Compact #2)
+# Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, vor Compact #3)
 
 > Weiterarbeit NACH dem Compact. Branch **`design/material-pass-standings-bar`** (gepusht,
-> HEAD `f2cb94b4`), **main unberührt** bis Wolf merged. Voller Kontext: Memory
+> HEAD `3f5e8338`), **main unberührt** bis Wolf merged. ⚠️ Backend läuft evtl. noch (Wolf testete). Voller Kontext: Memory
 > [[project-screens-1707-batch]] · [[project-design-motion-elevation]] · [[reference-beamer-harness]].
 > Regeln: [[feedback-real-beamer-never-rebuild]] · [[feedback-red-before-green]] ·
 > [[feedback-measure-assets-not-guess]] · [[feedback-use-skills-proactively]].
@@ -39,23 +39,41 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   + Standings-Wertung (`LargeGroupView` „X/Y Handys richtig" — alte Punkte-Dots → Diamant).
   Ausserdem **CHEESE-Reveal-Card-Rahmen** in der Arena jetzt KATEGORIE-Farbe (lila) statt Sieger-
   Fraktions-Farbe (blau). **Live verifiziert.**
+- **bild 10 Wappen-Umbruch 8 = 4+4** (`e0383197`): 8 Fraktionen brachen greedy als 7+1 um. Jetzt
+  Grid `repeat(perRow, auto)`, `perRow = n>=7 ? ceil(n/2) : n` → 8=4+4, 7=4+3, ≤6 einreihig.
+- **Schätzchen-Sieger-Position** (`3f5e8338`): Wolf-Screenshot (alle 8 spot-on) → gekrönter Sieger
+  stand ganz LINKS (weitester vom Ziel) obwohl spot-on. Ursache: `spread()` streute den Sieger bei
+  identischen Tipps ans Lane-Extrem. Fix: obere Lane so verschieben, dass Sieger auf ECHTER
+  Tipp-Position (`axisPct`) sitzt (spot-on = Ziel-Mitte), Rest relativ mit, clampen. **Verifiziert
+  am `/reveal-test`** (alle-spot-on + Normalfall; `scripts/shot-revealtest.mjs`, FACTS temporär
+  alle=87 setzen für den all-spot-on-Fall). Previews `design-vorschau/schaetzchen-sieger-*-NACHHER`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
 - Alles oben liegt als Preview in `Desktop/für claude/design-vorschau/` (bild10-*, VARIANTE-A/B/C/D,
   DIAMANT, standings-diamanten, cheese-rahmen-lila+diamant).
 
-## ➡️ NÄCHSTE SCHRITTE (nach Compact — Wolf: „danach gehts weiter")
-1. 🐛 **Winner-Value-Bugs** (Wolf 18.7., klingen verwandt — Sieger-Positionierung Zahlenstrahl):
-   - **bild9-schaetzchen-dicht**: Sieger wird NICHT am richtigen Zielwert angezeigt.
-   - **schwarm.png** (CrowdEstimate/Hive Mind): Sieger nicht nahe Zielwert + Texte überlappen.
-   - Reveals: `SchaetzchenReveal.tsx` + `CrowdEstimateReveal.tsx`. Repro via `/reveal-test` bzw.
-     neuer All-Kategorien-Draft (crowdEstimate = p1-3/p3-2).
-2. **Design-TODOs** (Wolf 18.7., in todo.md, nach Batch): verzierte Rahmen (Windows+Fragen wie
-   Wappen); „abgeschickt" = Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
-3. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-4. **Screens-Batch:** bild 11 (Final-Bonus-×2-Badge), 12, 13, 14, 15, 16, 17.
-5. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
+## ➡️ NÄCHSTE SCHRITTE (nach Compact — offen aus Wolfs Live-Review 18.7.)
+1. **„⚡ am schnellsten" beim Schätzchen-Sieger** (HALB begonnen, NICHT committet — nur Code gelesen):
+   Wolf-Entscheidung „⚡ BEHALTEN" (konsistent mit den Zeit-Pillen). Zu bauen: dem Sieger ein
+   „⚡ am schnellsten / fastest" geben, NUR wenn Sieg per Speed entschieden (Punkte-Gleichstand,
+   z.B. alle spot-on = alle 100P → „warum gewinnt der?"). Stelle: SchaetzchenReveal ~398-427
+   (Sieger-Wert-Label unter dem Wappen). Tie erkennen via `ptsOfAvatar(rankedFinal[1])===ptsOfAvatar(winner)`.
+2. 🐛 **schwarm.png** (CrowdEstimate/Hive Mind, `CrowdEstimateReveal.tsx`) — Wolf: Sieger nicht nahe
+   Zielwert + Texte überlappen. Wahrscheinlich SELBER Positions-Bug wie Schätzchen (eben gefixt) →
+   analog anwenden. Repro: All-Kategorien-Draft crowdEstimate (p1-3 „Knochen 206" / p3-2 „USA-Sterne 50").
+3. **Counter „Question 1 of 5" → Gem/Diamant** (Wolf-Idee): reiner Diamant um langen Text wird eng →
+   als **facettierter Gem-Rahmen** bauen. Stellen: PhaseIntroView ~1643 („Frage X von 5") + aktive
+   Frage (CozyQuizQuestionView) + PausedView. Der PhaseIntro-Round-Gem (`~1054`) ist die Vorlage.
+4. **Aktive-Frage Kolosseum-Texte** (Wolf-Frage): Frage-TEXT bleibt bewusst Nunito (Lesbarkeit);
+   Counter/Eyebrow/Chrome könnten Cinzel/Gem werden.
+5. **⚡-Kolosseum-Konsistenz-Pass** (Wolf-Notiz): das ⚡ steckt in allen Zeit-Pillen — später
+   einheitlich kolosseum-tauglich machen (eigener kleiner Pass, kein Muss jetzt).
+6. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
+   Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
+7. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
+8. **Screens-Batch:** bild 11 (Final-Bonus-×2-Badge), 12, 13, 14, 15, 16, 17.
+9. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
    zurück" · Zähler-Darstellung) — in todo.md.
 
 ## 🧰 HARNESS (Details [[reference-beamer-harness]])

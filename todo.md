@@ -99,10 +99,15 @@ beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in Cozy
 ⚠️ Wolf-Bedenken: bei 5 Sub-Teams viele Pips → Balken skaliert besser. Nach Wahl: EINE Variante +
 **einheitlich überall in CozyArena** ausrollen (alle „x/y correct"-Stellen).
 
-**🐛 Winner-Value-Bugs in Guess-Reveals (Wolf 18.7. — untersuchen):**
-- [ ] **bild9-schaetzchen-dicht** — Sieger wird NICHT am richtigen Zielwert angezeigt.
-- [ ] **schwarm.png** (CrowdEstimate/Hive Mind) — Sieger nicht in Nähe des Zielwerts + Texte überlappen.
-  (Klingt verwandt: Sieger-Positionierung auf dem Zahlenstrahl in SchaetzchenReveal + CrowdEstimateReveal.)
+**🐛 Winner-Value-Bugs in Guess-Reveals (Wolf 18.7.):**
+- [x] **Schätzchen-Sieger-Position** — Sieger stand am Lane-Extrem statt am Zielwert (Commit 3f5e8338,
+      verifiziert /reveal-test). Sieger sitzt jetzt an echter Tipp-Position (spot-on = Ziel-Mitte).
+- [ ] **schwarm.png** (CrowdEstimate/Hive Mind, `CrowdEstimateReveal.tsx`) — Sieger nicht nahe Zielwert
+      + Texte überlappen. Wahrscheinlich selber Positions-Bug → analog fixen.
+- [ ] **„⚡ am schnellsten" beim Schätzchen-Sieger** (nur bei Punkte-Gleichstand = „warum gewinnt der?").
+      Wolf: ⚡ behalten. SchaetzchenReveal ~398-427. HALB begonnen, nicht committet.
+- [ ] **Counter „Question 1 of 5" → facettierter Gem-Rahmen** (PhaseIntro ~1643 + aktive Frage +
+      PausedView). Round-Gem (~1054) als Vorlage. + aktive-Frage-Kolosseum-Texte (Frage-TEXT bleibt Nunito).
 
 *(bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen auch oben im Beamer-Check.)*
 

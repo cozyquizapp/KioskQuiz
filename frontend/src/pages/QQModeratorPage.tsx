@@ -565,6 +565,36 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   stateRef.current = state;
   const startGameRef = useRef(startGame);
   startGameRef.current = startGame;
+
+  // 2026-07-18 (Wolf 'wenn man moderator test oeffnet, startet sofort ein quiz'):
+  // Der geteilte Raum 'default' laeuft im RAM weiter — beim Oeffnen von
+  // /moderator-test rejoint man das LETZTE laufende Test-Quiz statt sauber im
+  // Setup zu landen (der run=1-Opt-in 2026-07-16 verhinderte nur den Auto-START,
+  // nicht das Rejoinen eines Alt-Raums). Fix: die TEST-Route resettet den Raum
+  // beim Oeffnen EINMAL auf LOBBY. Wichtig:
+  //  - NUR bei plain Open (ohne ?run=1) — der run=1-Autostart besitzt den
+  //    Start-Pfad selbst (sonst wuerde der Reset das gerade gestartete Quiz killen).
+  //  - Erst 900ms nach dem Join entscheiden, gegen den FINALEN Zustand (stateRef),
+  //    weil der Client kurz einen transienten LOBBY-Snapshot zeigt bevor die echte
+  //    Phase (z.B. RULES) synct — sonst lockt der one-shot auf dem falschen Frame.
+  //  - NIE resetten wenn echte (nicht-Bot) Teams drin sind → echtes Event auf
+  //    /moderator (testMode=false) ist ohnehin nie betroffen.
+  const testRoomResetRef = useRef(false);
+  useEffect(() => {
+    if (!testMode || !connected || !joined) return;
+    if (testRoomResetRef.current) return;
+    if (/[?&](run|autostart|auto)=1/i.test(window.location.search)) { testRoomResetRef.current = true; return; }
+    testRoomResetRef.current = true;
+    const t = setTimeout(() => {
+      const st = stateRef.current;
+      if (!st || st.phase === 'LOBBY') return;
+      const realTeams = (st.teams ?? []).filter((x: any) => !x._dummy).length;
+      if (realTeams > 0) return; // echtes Spiel: nie anfassen
+      emitRef.current('qq:resetRoom', { roomCode });
+    }, 900);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [testMode, connected, joined]);
   const setupDoneRef = useRef(setupDone);
   setupDoneRef.current = setupDone;
   const setSetupDoneRef = useRef(setSetupDone);

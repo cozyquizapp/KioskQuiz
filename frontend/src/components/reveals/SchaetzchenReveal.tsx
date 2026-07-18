@@ -443,17 +443,20 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     </span>
                     {/* „am schnellsten": nur beim Sieger, nur wenn der Sieg per
                         Abschick-Zeitpunkt entschieden wurde (Gleichstand). Macht den
-                        sonst willkuerlich wirkenden Sieger nachvollziehbar.
-                        TODO Wolf-Symbol: ⚡ gegen geliefertes „am schnellsten"-Icon tauschen. */}
+                        sonst willkuerlich wirkenden Sieger nachvollziehbar. Wolfs 3D-
+                        Gold-Blitz (fx-blitz.png) als Icon. */}
                     {isWin && lit && winnerBySpeed && (
                       <span style={{
                         marginTop: 'clamp(2px,0.35cqh,5px)',
-                        display: 'inline-flex', alignItems: 'center', gap: 4,
+                        display: 'inline-flex', alignItems: 'center', gap: 5,
                         fontSize: 'clamp(9px,0.95cqw,15px)', fontWeight: 900, whiteSpace: 'nowrap',
                         letterSpacing: '0.02em', color: GOLD_BRIGHT,
                         textShadow: `0 0 10px ${GOLD}aa`,
                       }}>
-                        <span aria-hidden style={{ filter: `drop-shadow(0 0 6px ${GOLD}cc)` }}>⚡</span>
+                        <img src="/fx-blitz.png" alt="" aria-hidden style={{
+                          height: 'clamp(15px,1.5cqw,24px)', width: 'auto', display: 'block',
+                          filter: `drop-shadow(0 0 6px ${GOLD}cc)`,
+                        }} />
                         {lang === 'en' ? 'fastest' : 'am schnellsten'}
                       </span>
                     )}

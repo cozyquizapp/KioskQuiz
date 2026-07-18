@@ -27,33 +27,48 @@ async function reach(target, max = 40) {
   return false;
 }
 
-// Autoplay so FRUEH wie moeglich pausieren (poll ab 2s) — sonst rauscht es an
+// Autoplay so FRUEH wie moeglich + VERIFIZIERT pausieren — sonst rauscht es an
 // p1-0 CHEESE vorbei. Button erscheint sobald testMode+joined+phase!=LOBBY.
-let paused = false;
-for (let i = 0; i < 24; i++) {
-  await sleep(500);
-  try { await mod.click('button[title="Autoplay pausieren"]', { timeout: 300 }); paused = true; break; } catch {}
+// Idempotent: pausiert NUR wenn nicht schon pausiert (Button 'fortsetzen' = paused).
+async function ensurePaused() {
+  for (let i = 0; i < 40; i++) {
+    if (await mod.$('button[title="Autoplay fortsetzen"]')) return true; // schon pausiert
+    try { await mod.click('button[title="Autoplay pausieren"]', { timeout: 250 }); } catch { await sleep(250); continue; }
+    await mod.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
+    await sleep(300);
+  }
+  return false;
 }
-// WICHTIG: Fokus vom Pause-Button nehmen, sonst togglet der naechste Space den
-// Button (unpause) statt das Quiz zu steppen.
-await mod.evaluate(() => (document.activeElement instanceof HTMLElement) && document.activeElement.blur());
-console.log('Autoplay pausiert?', paused, '| phase:', await phase());
-await sleep(400);
+console.log('pausiere Autoplay verifiziert...');
+const paused = await ensurePaused();
+console.log('Autoplay pausiert(stabil)?', paused, '| phase:', await phase());
 
-if (!await reach('QUESTION_ACTIVE')) { console.error('QUESTION_ACTIVE nicht erreicht (' + await phase() + ')'); await b.close(); process.exit(1); }
-const isCheese = (await bodyText()).match(/bauwerk|landmark|eiffel/);
-console.log('QUESTION_ACTIVE — CHEESE erkannt?', !!isCheese, '| Warte auf Bot-Abgaben...');
+// Fragen werden pro Runde gemischt -> CHEESE per TEXT suchen (nicht Position).
+// Space steppt durch Nicht-CHEESE-Fragen bis die CHEESE-Frage aktiv ist.
+let found = false;
+for (let i = 0; i < 70; i++) {
+  const ph = await phase();
+  const txt = await bodyText();
+  if (ph === 'QUESTION_ACTIVE' && /landmark|bauwerk|eiffel/.test(txt)) { found = true; break; }
+  await mod.keyboard.press('Space'); await sleep(650);
+}
+if (!found) { console.error('CHEESE-Frage nicht gefunden. phase=' + await phase()); await b.close(); process.exit(2); }
+console.log('CHEESE aktiv gefunden. Warte auf Bot-Abgaben...');
 await sleep(4500);
 await beamer.screenshot({ path: '.shots/cheese-arena-active.png' });
 console.log('✓ .shots/cheese-arena-active.png (Abgabe-Raster live)');
 
 if (!await reach('QUESTION_REVEAL')) { console.error('QUESTION_REVEAL nicht erreicht (' + await phase() + ')'); await b.close(); process.exit(1); }
-console.log('QUESTION_REVEAL erreicht. Morph-Moment direkt erfassen...');
-await sleep(700);
-await beamer.screenshot({ path: '.shots/cheese-arena-reveal-early.png' });
-// NICHT steppen (sonst Scoring-Beat) — die Wappen-Cascade fuellt sich auto.
-await sleep(7000);
-await beamer.screenshot({ path: '.shots/cheese-arena-reveal.png' });
+console.log('QUESTION_REVEAL — erfasse letzten Reveal-Frame (vollste Wappen-Reihe vor Scoring)...');
+// Solange QUESTION_REVEAL: alle 500ms ueberschreiben -> letzter Frame = fullste Reihe.
+let frames = 0;
+for (let t = 0; t < 20; t++) {
+  if (await phase() !== 'QUESTION_REVEAL') break;
+  await beamer.screenshot({ path: '.shots/cheese-arena-reveal.png' });
+  frames++;
+  await sleep(500);
+}
+console.log('Reveal-Frames erfasst:', frames);
 const txt = await beamer.evaluate(() => (document.body.innerText || '').replace(/\s+/g,' ').slice(0,200));
 console.log('✓ .shots/cheese-arena-reveal.png (nach Morph)');
 console.log('Reveal-Text:', txt);

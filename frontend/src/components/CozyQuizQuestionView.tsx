@@ -87,6 +87,45 @@ const QQ_QUESTION_MAX_W = 1300;
 // QUESTION VIEW (active + reveal)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// 2026-07-18 (Wolf 'bild 10'): Ansicht fuer "X von N Sub-Teams richtig" in der
+// Arena statt des Text-"2/3 correct". TEMP-Umschalter fuer Wolfs A/B-Blick
+// (Pips vs Segment-Balken). Nach seiner Wahl bleibt eine Variante + Rollout auf
+// alle Arena-Stellen, wo "x/y correct" steht.
+const QQ_CORRECT_VIZ: 'pips' | 'bar' = 'bar';
+function QQCorrectViz({ correct, total, color, viz }: { correct: number; total: number; color: string; viz: 'pips' | 'bar' }) {
+  const cells = Array.from({ length: Math.max(1, total) });
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
+      {viz === 'pips' ? (
+        <div style={{ display: 'flex', gap: 'clamp(4px,0.5cqw,7px)', alignItems: 'center' }}>
+          {cells.map((_, i) => (
+            <span key={i} aria-hidden style={{
+              width: 'clamp(10px,1.05cqw,15px)', height: 'clamp(10px,1.05cqw,15px)', borderRadius: '50%',
+              background: i < correct ? color : 'transparent',
+              border: `2px solid ${i < correct ? color : color + '66'}`,
+              boxShadow: i < correct ? `0 0 9px ${color}99` : 'none',
+            }} />
+          ))}
+        </div>
+      ) : (
+        <div style={{ display: 'flex', gap: 'clamp(3px,0.35cqw,5px)', alignItems: 'center' }}>
+          {cells.map((_, i) => (
+            <span key={i} aria-hidden style={{
+              width: 'clamp(15px,1.7cqw,24px)', height: 'clamp(8px,0.9cqh,13px)', borderRadius: 3,
+              background: i < correct ? color : `${color}22`,
+              border: `1.5px solid ${i < correct ? color : color + '44'}`,
+              boxShadow: i < correct ? `0 0 8px ${color}77` : 'none',
+            }} />
+          ))}
+        </div>
+      )}
+      <span style={{ fontSize: 'clamp(11px,1.15cqw,15px)', fontWeight: 900, color, letterSpacing: '0.02em', opacity: 0.92 }}>
+        {correct}/{total}
+      </span>
+    </div>
+  );
+}
+
 export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean }) {
   const q = s.currentQuestion;
   if (!q) return null;
@@ -1077,39 +1116,34 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             // Nicht-Arena behaelt fastest-groesser.
                             size={isMegaTeams ? 'clamp(58px, 6.6cqw, 90px)' : (isFastest ? 'clamp(60px, 6.8cqw, 92px)' : 'clamp(46px, 5.2cqw, 70px)')}
                             style={{
-                              border: isFastest ? '4px solid var(--qq-accent)' : 'none',
+                              // Wolf 2026-07-18 (bild 10): keine Sieger-Umrandung mehr,
+                              // Sieger nur durch weichen Glow in KATEGORIE-Farbe (kein Pink-Akzent).
+                              border: 'none',
                               boxShadow: isFastest
-                                ? '0 0 28px rgba(var(--qq-accent-rgb),0.65), 0 4px 14px rgba(0,0,0,0.45)'
+                                ? `0 0 26px ${accent}88, 0 4px 14px rgba(0,0,0,0.45)`
                                 : '0 4px 12px rgba(0,0,0,0.4)',
                             }}
                           />
                         </div>
                         <span style={{
                           padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
-                          background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)'),
-                          border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
-                          // Mono: kein brandPink (Pink-Leak) — Akzent-Token; non-fastest dunkler Text auf hellem Chip.
-                          color: isFastest ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
+                          // Wolf 2026-07-18: Sieger-Pille in KATEGORIE-Farbe statt Pink-Akzent.
+                          background: isFastest ? `${accent}2e` : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)'),
+                          border: isFastest ? `1.5px solid ${accent}b0` : '1px solid var(--qq-hairline)',
+                          color: isFastest ? accent : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
                           whiteSpace: 'nowrap',
                         }}>
                           {timeSec.toFixed(1)}s
                         </span>
-                        {/* Arena: Anzahl-richtig pro Fraktion (Score-Treiber) unter
-                            der Speed-Pille — Speed ist nur der Tiebreak. Wolf 2026-07-16. */}
+                        {/* Arena: Anzahl-richtig pro Fraktion als Pips/Balken in Kategorie-
+                            Farbe (Wolf 2026-07-18, bild 10 — statt Text "2/3 correct").
+                            Speed ist nur der Tiebreak. */}
                         {isMegaTeams && factionStats && (() => {
                           const st = factionStats.get(team.avatarId);
                           if (!st) return null;
-                          return (
-                            <span style={{
-                              fontSize: 'clamp(12px, 1.3cqw, 17px)', fontWeight: 900,
-                              color: isFastest ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : 'var(--qq-text-muted)',
-                              whiteSpace: 'nowrap', letterSpacing: '0.02em',
-                            }}>
-                              {st.correct}/{st.total} {lang === 'en' ? 'correct' : 'richtig'}
-                            </span>
-                          );
+                          return <QQCorrectViz correct={st.correct} total={st.total} color={accent} viz={QQ_CORRECT_VIZ} />;
                         })()}
                       </div>
                     );

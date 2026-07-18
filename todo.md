@@ -90,6 +90,19 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 **Kolosseum-Kohärenz (Wolf 18.7., nur TODO — nicht bauen bis Batch durch):**
 - [ ] **Progress-Tree an Kolosseum-Style anpassen** — evtl. Diamanten/Gems statt Kreise (passend
       zum Round-/Frage-Gem + Cinzel/Garamond-System). Nur Arena-Modus.
+- [ ] **Verzierte Rahmen** für Windows + Frage-Karten (wie die Wappen-Rahmen), statt schlichter Border.
+- [ ] **„Abgeschickt"-Indikator: Wappen ERLEUCHTEN statt grünem Kreis** — der grüne Ring bricht das
+      Design (kommt zu Progress-Tree-Redesign dazu). Glow/Leuchten am Wappen statt Umrandung.
+
+**bild 10 — 2/3-Ansicht (Wolf entscheidet aus design-vorschau):** Pips (A) vs Segment-Balken (B),
+beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in CozyQuizQuestionView).
+⚠️ Wolf-Bedenken: bei 5 Sub-Teams viele Pips → Balken skaliert besser. Nach Wahl: EINE Variante +
+**einheitlich überall in CozyArena** ausrollen (alle „x/y correct"-Stellen).
+
+**🐛 Winner-Value-Bugs in Guess-Reveals (Wolf 18.7. — untersuchen):**
+- [ ] **bild9-schaetzchen-dicht** — Sieger wird NICHT am richtigen Zielwert angezeigt.
+- [ ] **schwarm.png** (CrowdEstimate/Hive Mind) — Sieger nicht in Nähe des Zielwerts + Texte überlappen.
+  (Klingt verwandt: Sieger-Positionierung auf dem Zahlenstrahl in SchaetzchenReveal + CrowdEstimateReveal.)
 
 *(bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen auch oben im Beamer-Check.)*
 

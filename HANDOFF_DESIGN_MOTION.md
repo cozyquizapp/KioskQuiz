@@ -1,7 +1,7 @@
 # Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, nach Schwarm-Fixes)
 
 > Weiterarbeit. Branch **`design/material-pass-standings-bar`** (gepusht,
-> HEAD `afa4e08b`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
+> HEAD `4592b3bf`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
 > [[project-screens-1707-batch]] · [[project-design-motion-elevation]] · [[reference-beamer-harness]].
 > Regeln: [[feedback-real-beamer-never-rebuild]] · [[feedback-red-before-green]] ·
 > [[feedback-measure-assets-not-guess]] · [[feedback-use-skills-proactively]].
@@ -86,6 +86,10 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   Verifiziert `/award-test` Krönung. Previews `bild13-kroenung-roulette/podium-NACHHER`.
 - **bild 14 — Podium-Titel-Overlap** (`afa4e08b`): „ARENA CHAMPIONS" ueberlappte den Pokal an der
   Sieger-Saeulen-Spitze → Titel top 27cqh→18cqh gehoben. Preview `bild14-titel-pokal-NACHHER`.
+- **bild 15 — Endstand-Tabelle lesbar** (`4592b3bf`): Wolf-Option „andere Loesung" (BG behalten) →
+  Gesamt-Scrim + **Frosted-Glass-Panel** (blur, dunkel) hinter der 8-Zeilen-Tabelle + Titel/Hero-
+  Schatten. Alle 8 Zeilen passen bei Beamer-Groesse. `/award-test`-Buehne zeigt jetzt award-ceremony-
+  BG + beamer-genaue Breite (1760). Previews `bild15-endstand-panel-NACHHER`/`-VORHER`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
@@ -103,9 +107,8 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
 4. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
    Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
 5. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-6. **Screens-Batch:** ✅ bild 11 · ✅ 12 · ✅ 13 · ✅ 14 (Titel-Overlap) · offen: 15 (Tabelle
-   schlecht erkennbar, anderer BG?), 16 (Kolosseum-BG sichtbarer + Windows transparenter = allg.
-   Regel), 17 (Summary noch nicht CozyArena-ready).
+6. **Screens-Batch:** ✅ 11 · ✅ 12 · ✅ 13 · ✅ 14 · ✅ 15 (Endstand-Panel) · offen: 16 (Kolosseum-BG
+   sichtbarer + Windows transparenter = allg. Regel), 17 (Summary noch nicht CozyArena-ready).
 7. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
    zurück" · Zähler-Darstellung) — in todo.md.
 

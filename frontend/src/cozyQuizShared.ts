@@ -192,6 +192,39 @@ export const bt = {
   },
 };
 
+// ── Phase-Label + Finale-Multiplikator (Konsistenz Moderator ↔ Beamer/Team) ──
+// 2026-07-18 (Wolf 'Konsistenz mit Beamer und Team'): der Moderator zeigte hart
+// „Runde N" und kannte den Finale-Multiplikator nicht. Diese Helfer spiegeln
+// EXAKT die Beamer-Logik (CozyQuizPhaseIntroView) → alle drei Views sagen
+// dasselbe (inkl. theme.phaseNames-Override, z.B. ESC „Finale" statt „Runde 3").
+type QQPhaseLike = {
+  gamePhaseIndex?: number; totalPhases?: number; questionIndex?: number;
+  largeGroupMode?: boolean;
+  theme?: { phaseNames?: { de?: string[]; en?: string[] } };
+};
+/** Runden-Name honoring theme.phaseNames (1-based gamePhaseIndex). */
+export function qqPhaseName(s: QQPhaseLike, lang: 'de' | 'en'): string {
+  const def = bt.phase.names[lang];
+  const override = lang === 'en' ? s.theme?.phaseNames?.en : s.theme?.phaseNames?.de;
+  const raw = override && override.length > 0
+    ? ['', ...override, ...def.slice(override.length + 1)]
+    : def;
+  const gpi = s.gamePhaseIndex ?? 1;
+  return raw[gpi] ?? `${lang === 'de' ? 'Runde' : 'Round'} ${gpi}`;
+}
+/** Hat der Draft eigene Phasen-Namen (dann Name statt „Runde N/M" zeigen). */
+export function qqHasPhaseNames(s: QQPhaseLike, lang: 'de' | 'en'): boolean {
+  const o = lang === 'en' ? s.theme?.phaseNames?.en : s.theme?.phaseNames?.de;
+  return !!(o && o.length > 0);
+}
+/** Arena Finale-Multiplikator (1|2|3) — spiegelt qqFinaleMult/Beamer:
+ *  Finalrunde iff gamePhaseIndex===totalPhases, ×3 auf letzter Frage, sonst ×2. */
+export function qqArenaFinaleMult(s: QQPhaseLike): 1 | 2 | 3 {
+  if (!s.largeGroupMode) return 1;
+  if ((s.gamePhaseIndex ?? 1) !== (s.totalPhases ?? 3)) return 1;
+  return ((s.questionIndex ?? 0) % 5) === 4 ? 3 : 2;
+}
+
 export function actionVerb(a: string | null, lang: 'de' | 'en' = 'de') {
   if (a === 'STEAL_1') return bt.action.steal[lang];
   if (a === 'COMEBACK') return bt.action.comeback[lang];

@@ -23,6 +23,7 @@ import { JokerIcon } from '../components/JokerIcon';
 import { playHotkeyFeedback } from '../utils/sounds';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { qqSortedGroups } from '../qqShared';
+import { qqPhaseName, qqHasPhaseNames, qqArenaFinaleMult } from '../cozyQuizShared';
 import { AnimatedCozyWolf } from './QQBeamerPage';
 import { API_BASE } from '../api';
 import './qqModeratorTheme.css';
@@ -1751,6 +1752,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     return state?.phase === 'LOBBY';
   });
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
+  // 2026-07-18 (Wolf 'nur relevante Infos'): Teams+Antworten-Liste ist nur in den
+  // Frage-Phasen (Abgaben/Kick/Rename) wirklich gebraucht. Ausserhalb bleibt sie
+  // einklappbar (Header + 1 Klick), statt in jeder Phase voll zu fuellen.
+  const [teamsManualOpen, setTeamsManualOpen] = useState(false);
   useEffect(() => { cheatsheetOpenRef.current = cheatsheetOpen; }, [cheatsheetOpen]);
   // Auto-collapse settings when game starts. Plus auto-open wenn zurück
   // in LOBBY (z. B. via 'Zurück zum Setup').
@@ -1777,7 +1782,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         return { text: 'REGELN', color: '#6366f1', sub };
       }
       case 'TEAMS_REVEAL': return { text: 'TEAM-REVEAL', color: '#F97316', sub: 'Epische Vorstellung läuft' };
-      case 'PHASE_INTRO': return { text: `RUNDE ${s.gamePhaseIndex}`, color: QQ_COLORS.blue500, sub: s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}` };
+      case 'PHASE_INTRO': {
+        // 2026-07-18 (Wolf-Konsistenz): Runden-Name wie Beamer/Team (theme.phaseNames,
+        // z.B. ESC „Finale") + Finale-Multiplikator-Ansage (kannte der Mod bisher nicht).
+        const lg: 'de' | 'en' = s.language === 'en' ? 'en' : 'de';
+        const mult = qqArenaFinaleMult(s);
+        const multSub = mult === 3 ? ' · Schlussfrage ×3' : mult === 2 ? ' · Finalrunde ×2' : '';
+        return { text: qqPhaseName(s, lg).toUpperCase(), color: QQ_COLORS.blue500, sub: (s.categoryIsNew ? 'Kategorie-Erklärung' : `Intro Step ${s.introStep}`) + multSub };
+      }
       case 'QUESTION_ACTIVE': return { text: 'WARTET AUF ANTWORTEN', color: QQ_COLORS.green500, sub: `${answeredCount}/${connectedTeams} Teams` };
       case 'QUESTION_REVEAL': return { text: s.correctTeamId ? 'ANTWORT AUFGEDECKT' : 'ANTWORT — KEIN GEWINNER', color: QQ_COLORS.brandPink, sub: s.correctTeamId ? `✓ ${teamList.find(t => t.id === s.correctTeamId)?.name}` : undefined };
       case 'PLACEMENT':
@@ -2028,9 +2040,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             <span style={{ fontSize: 15 }}>🖥️</span>
             Beamer
           </button>
-          {/* 2026-07-08 (Wolf 'QR neben Beamer, immer sichtbar'): Team-Beitritts-QR
-              als Popover direkt im Header — jederzeit herzeigbar, ohne PIN, ohne
-              Seitenwechsel. Gilt in Lobby UND im laufenden Spiel. */}
+          {/* Team-Beitritts-QR als Popover im Header. 2026-07-18 (Wolf 'nur relevant'):
+              nur in LOBBY + PAUSE zeigen (Beitritts-Fenster, auch fuer Nachzuegler) —
+              im laufenden Spiel sind alle drin, dann Header ruhig halten.
+              (Vorher 2026-07-08 immer sichtbar; Wolf hat das heute bewusst geaendert.) */}
+          {(!state?.phase || state.phase === 'LOBBY' || state.phase === 'PAUSED') && (
           <div style={{ position: 'relative' }}>
             <button
               onClick={() => setQrOpen(v => !v)}
@@ -2061,6 +2075,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               );
             })()}
           </div>
+          )}
           <button
             onClick={() => setCheatsheetOpen(v => !v)}
             title="Hotkey-Cheatsheet (?)"
@@ -2697,12 +2712,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   {/* 2026-05-17 (Wolf-Audit): Phase/Frage-Pills nur in Gameplay-
                       Phasen — sonst stehen veraltete „Runde 4 / Frage 5"-Werte
                       im Mod-Panel während THANKS/GAME_OVER/Final-Phasen. */}
-                  {(s.phase === 'PHASE_INTRO' || s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE') && (
-                    <>
-                      <Pill label={`Runde ${s.gamePhaseIndex}/${s.totalPhases}`} color={QQ_COLORS.blue500} />
-                      <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
-                    </>
-                  )}
+                  {(s.phase === 'PHASE_INTRO' || s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE') && (() => {
+                    // 2026-07-18 (Wolf-Konsistenz): Runden-Pill = Beamer/Team-Sprache
+                    // (theme.phaseNames-Override) + Finale-×2/×3-Pill (kannte der Mod nicht).
+                    const lg: 'de' | 'en' = s.language === 'en' ? 'en' : 'de';
+                    const roundLabel = qqHasPhaseNames(s, lg) ? qqPhaseName(s, lg) : `Runde ${s.gamePhaseIndex}/${s.totalPhases}`;
+                    const mult = qqArenaFinaleMult(s);
+                    return (
+                      <>
+                        <Pill label={roundLabel} color={QQ_COLORS.blue500} />
+                        <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
+                        {mult > 1 && <Pill label={mult === 3 ? 'Schlussfrage ×3' : 'Finale ×2'} color={QQ_COLORS.brandPink} />}
+                      </>
+                    );
+                  })()}
                   {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
                   <RuntimePill state={s} />
                 </div>
@@ -3863,13 +3886,26 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               />
             )}
 
-            {/* Teams + live answers */}
+            {/* Teams + live answers — 2026-07-18 (Wolf): nur in Frage-Phasen voll
+                sichtbar (da braucht man Abgaben/Kick/Rename), sonst eingeklappt. */}
+            {(() => {
+            const teamsRelevant = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'TIEBREAKER_QUESTION';
+            const teamsOpen = teamsRelevant || teamsManualOpen;
+            const answeredNow = s.phase === 'QUESTION_ACTIVE' ? ` · ${s.answers.length}/${teamList.filter(t => t.connected).length} abgegeben` : '';
+            return (
             <div style={card}>
-              <div style={sectionLabel}>Teams ({teamList.length})</div>
-              {teamList.length === 0 && (
+              <div
+                style={{ ...sectionLabel, display: 'flex', alignItems: 'center', gap: 8, cursor: teamsRelevant ? 'default' : 'pointer', userSelect: 'none' }}
+                onClick={teamsRelevant ? undefined : () => setTeamsManualOpen(o => !o)}
+                title={teamsRelevant ? undefined : (teamsOpen ? 'Einklappen' : 'Teams anzeigen')}
+              >
+                {!teamsRelevant && <span style={{ fontSize: 11, opacity: 0.7, transition: 'transform 0.15s', display: 'inline-block', transform: teamsOpen ? 'rotate(90deg)' : 'none' }}>▸</span>}
+                <span>Teams ({teamList.length}){!teamsOpen ? answeredNow : ''}</span>
+              </div>
+              {teamsOpen && teamList.length === 0 && (
                 <div style={{ color: QQ_COLORS.slate600, fontSize: 13 }}>Noch keine Teams beigetreten</div>
               )}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+              {teamsOpen && <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {/* 2026-07-04 (Wolf 'wie unterscheide ich die Subteams? Namen falsch'):
                     In CozyArena wird die Live-Liste nach FRAKTION gruppiert
                     (Wappen + Name + X/N abgegeben), darunter jedes Handy als
@@ -4090,10 +4126,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
                   return teamList.map((t, i) => renderTeamRow(t, i));
                 })()}
-              </div>
+              </div>}
 
               {/* Niemand-Button wenn alle geantwortet haben */}
-              {s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.currentQuestion?.category !== 'SCHAETZCHEN' && (
+              {teamsOpen && s.phase === 'QUESTION_REVEAL' && !s.correctTeamId && s.currentQuestion?.category !== 'SCHAETZCHEN' && (
                 <div style={{ marginTop: 8 }}>
                   <Btn color={QQ_COLORS.slate600} onClick={() => emit('qq:markWrong', { roomCode })}>
                     ✗ Niemand korrekt
@@ -4101,6 +4137,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 </div>
               )}
             </div>
+            );
+            })()}
           </div>
 
           {/* ── Right column ── */}
@@ -4132,7 +4170,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 style={{ ...sectionLabel, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}
               >
                 <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: settingsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                Einstellungen
+                <span aria-hidden>⚙</span> Einstellungen
+                {!settingsOpen && <span style={{ fontSize: 11, fontWeight: 700, color: QQ_COLORS.slate600, marginLeft: 4 }}>· {s.timerDurationSec}s · {(s.language || 'de').toUpperCase()}</span>}
               </div>
               {settingsOpen && <>
 

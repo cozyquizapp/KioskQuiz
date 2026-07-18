@@ -525,6 +525,10 @@ const CEREMONY_KEYFRAMES = `
 @keyframes qqCrownFadeUp { from{opacity:0;transform:translateY(14px);} to{opacity:1;transform:translateY(0);} }
 @keyframes qqCrownFlood { from{opacity:0;} to{opacity:1;} }
 @keyframes qqAwardBgSettle { 0%{transform:scale(1.05);filter:brightness(1.14);} 100%{transform:scale(1);filter:brightness(1);} }
+/* Fahnen-Wehen (Wolf bild 13): sanftes Neigen um die Aufhaengung. */
+@keyframes qqBannerSway { 0%,100%{transform:rotate(-1.4deg);} 50%{transform:rotate(1.4deg);} }
+/* Glut: Funke steigt an der Fahne auf und verglueht. */
+@keyframes qqEmberRise { 0%{transform:translate(-50%,0) scale(1);opacity:0;} 18%{opacity:0.85;} 100%{transform:translate(-50%,-3.2cqw) scale(0.35);opacity:0;} }
 @keyframes qqAwardIconPop { 0%{opacity:0;transform:translateY(24px) scale(0.5) rotate(-8deg);} 60%{opacity:1;transform:scale(1.12) rotate(3deg);} 100%{opacity:1;transform:scale(1) rotate(0);} }
 @keyframes qqAwardShine { from{transform:translateX(-130%);} to{transform:translateX(130%);} }
 @keyframes qqAwardDriveIn { from{opacity:0;transform:translateX(64px);} to{opacity:1;transform:translateX(0);} }
@@ -624,26 +628,40 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
     else if (blinking && isChamp) { lit = blinkOn; scale = blinkOn ? (big ? 1.34 : 1.2) : 1; }
     else if (litIdx === i && !locked) { lit = true; scale = big ? 1.22 : 1.1; }
     const fc = t.color;
+    // Sanftes Wehen (Wolf bild 13 „Fahnen wirken statisch"): jede Fahne neigt sich
+    // leicht um die Aufhaengung (top center), out-of-sync per Index → lebt wie im
+    // Wind, ohne vom Roulette abzulenken. Sway sitzt auf dem WRAPPER (rotate), die
+    // Roulette-Skalierung bleibt auf dem inneren Element (getrennte transforms).
+    const swayDur = (3.4 + (i % 3) * 0.55).toFixed(2);
+    const swayDelay = (i * 0.31).toFixed(2);
     return (
       <div key={t.id} style={{
-        position: 'relative',
-        width: big ? 'clamp(58px, 7cqw, 118px)' : 'clamp(38px, 4.4cqw, 72px)',
-        height: big ? 'clamp(100px, 12.2cqw, 200px)' : 'clamp(66px, 7.8cqw, 118px)',
-        clipPath: 'polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%)',
-        background: `linear-gradient(180deg, ${fc} 0%, ${fc}bb 80%, ${fc}66 100%)`,
-        display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '0.7cqw',
-        transformOrigin: 'top center', transform: `scale(${scale})`,
-        filter: lit ? 'none' : 'grayscale(0.85) brightness(0.42)', opacity: lit ? 1 : 0.5,
-        boxShadow: (locked && isChamp) ? `0 0 34px ${fc}, 0 0 78px ${fc}99` : (lit ? `0 0 20px ${fc}, 0 0 42px ${fc}88` : 'none'),
-        transition: 'filter .08s linear, opacity .08s linear, transform .16s ease, box-shadow .2s ease, width .5s var(--qq-ease-smooth), height .5s var(--qq-ease-smooth)',
+        transformOrigin: 'top center',
+        animation: `qqBannerSway ${swayDur}s ease-in-out ${swayDelay}s infinite`,
+        willChange: 'transform',
       }}>
-        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={big ? 'clamp(38px, 4.6cqw, 78px)' : 'clamp(24px, 2.9cqw, 46px)'} />
-        {locked && isChamp && (
-          <>
-            <span aria-hidden style={{ position: 'absolute', top: '-2.2cqw', left: '50%', transform: 'translateX(-50%)', fontSize: 'clamp(16px, 2.1cqw, 32px)', lineHeight: 1, zIndex: 5, animation: 'qqBannerFlame 1.3s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
-            <span aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', width: '2cqw', height: '2cqw', borderRadius: '50%', border: `0.35cqw solid ${fc}`, transform: 'translate(-50%,-50%) scale(0)', animation: 'qqShockRing 0.9s ease-out both', pointerEvents: 'none' }} />
-          </>
-        )}
+        <div style={{
+          position: 'relative',
+          width: big ? 'clamp(64px, 8cqw, 132px)' : 'clamp(38px, 4.4cqw, 72px)',
+          height: big ? 'clamp(112px, 13.6cqw, 224px)' : 'clamp(66px, 7.8cqw, 118px)',
+          clipPath: 'polygon(0 0, 100% 0, 100% 86%, 50% 100%, 0 86%)',
+          background: `linear-gradient(180deg, ${fc} 0%, ${fc}bb 80%, ${fc}66 100%)`,
+          display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '0.7cqw',
+          transformOrigin: 'top center', transform: `scale(${scale})`,
+          filter: lit ? 'none' : 'grayscale(0.85) brightness(0.42)', opacity: lit ? 1 : 0.5,
+          boxShadow: (locked && isChamp) ? `0 0 34px ${fc}, 0 0 78px ${fc}99` : (lit ? `0 0 20px ${fc}, 0 0 42px ${fc}88` : 'none'),
+          transition: 'filter .08s linear, opacity .08s linear, transform .16s ease, box-shadow .2s ease, width .5s var(--qq-ease-smooth), height .5s var(--qq-ease-smooth)',
+        }}>
+          <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={big ? 'clamp(42px, 5.2cqw, 88px)' : 'clamp(24px, 2.9cqw, 46px)'} />
+          {/* Glut: dezente Funken steigen an jeder Fahne auf (nur big-Phase). */}
+          {big && lit && <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: '8%', width: '0.5cqw', height: '0.5cqw', borderRadius: '50%', background: '#ffd591', boxShadow: `0 0 6px 2px ${fc}`, animation: `qqEmberRise ${(2.6 + (i % 4) * 0.4).toFixed(2)}s ease-out ${(i * 0.2).toFixed(2)}s infinite`, pointerEvents: 'none' }} />}
+          {locked && isChamp && (
+            <>
+              <span aria-hidden style={{ position: 'absolute', top: '-2.2cqw', left: '50%', transform: 'translateX(-50%)', fontSize: 'clamp(16px, 2.1cqw, 32px)', lineHeight: 1, zIndex: 5, animation: 'qqBannerFlame 1.3s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
+              <span aria-hidden style={{ position: 'absolute', top: '42%', left: '50%', width: '2cqw', height: '2cqw', borderRadius: '50%', border: `0.35cqw solid ${fc}`, transform: 'translate(-50%,-50%) scale(0)', animation: 'qqShockRing 0.9s ease-out both', pointerEvents: 'none' }} />
+            </>
+          )}
+        </div>
       </div>
     );
   };
@@ -672,8 +690,16 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
 
   return (
     <div key="crown" data-qq-ceremony style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', color: '#f4f6ff' }}>
-      {/* Arena dunkelt */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse 96% 86% at 50% 46%, rgba(0,0,0,0.12), rgba(0,0,0,0.72))', animation: 'qqArenaDim 0.8s ease both' }} />
+      {/* 2026-07-18 (Wolf bild 13): eigener Krönungs-BG „epic-moment" (zentraler
+          Licht-Ausbruch, KEINE gemalten Banner → die Roulette-Fahnen fuellen den
+          Screen ohne Kollision). Nur die Krönung; Award-Beats/Endstand behalten
+          ihre BGs. */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'url(/arena-bg/epic-moment.webp)', backgroundSize: 'cover', backgroundPosition: 'center', animation: 'brFadeIn 0.6s ease both' }} />
+      {/* Arena dunkelt — auf dem busy epic-moment-BG staerker, damit Banner-Reihe +
+          Text lesbar bleiben (der zentrale Licht-Ausbruch scheint gedaempft durch). */}
+      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse 96% 86% at 50% 46%, rgba(0,0,0,0.32), rgba(0,0,0,0.82))', animation: 'qqArenaDim 0.8s ease both' }} />
+      {/* Kopf-Scrim: dunkelt das obere Band, wo die Roulette-Fahnen haengen. */}
+      <div aria-hidden style={{ position: 'absolute', left: 0, right: 0, top: 0, height: '40%', zIndex: 1, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(6,4,14,0.62) 0%, rgba(6,4,14,0.18) 62%, transparent 100%)' }} />
       {showPodium && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 56% at 50% 64%, ${wColor}44, transparent 62%)`, animation: 'qqArenaDim 1s ease both' }} />}
       {/* Fackeln flankieren */}
       <span aria-hidden style={{ position: 'absolute', left: '8%', bottom: '10%', fontSize: 'clamp(26px, 3.4cqw, 58px)', lineHeight: 1, zIndex: 3, animation: 'qqTorchFlicker 1.5s ease-in-out infinite' }}><QQEmojiIcon emoji="🔥" /></span>
@@ -682,7 +708,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
       {/* Rod + 8 Wandbanner. Wolf 2026-07-16: vor dem Treppchen gross & etwas tiefer
           (zentraler Reveal-Moment), danach schrumpfen sie zur schlanken Kopf-Leiste. */}
       <div aria-hidden style={{ position: 'absolute', top: showPodium ? '4cqh' : '12cqh', left: '50%', transform: 'translateX(-50%)', width: '80cqw', maxWidth: 1320, height: 3, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(214,190,120,0.5), transparent)', transition: 'top .5s var(--qq-ease-smooth)' }} />
-      <div style={{ position: 'absolute', top: showPodium ? '4cqh' : '12cqh', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: showPodium ? 'clamp(6px, 1.3cqw, 18px)' : 'clamp(10px, 1.9cqw, 28px)', zIndex: 4, transition: 'top .5s var(--qq-ease-smooth), gap .5s var(--qq-ease-smooth)' }}>
+      <div style={{ position: 'absolute', top: showPodium ? '4cqh' : '12cqh', left: '50%', transform: 'translateX(-50%)', display: 'flex', alignItems: 'flex-start', gap: showPodium ? 'clamp(6px, 1.3cqw, 18px)' : 'clamp(12px, 2.2cqw, 34px)', zIndex: 4, transition: 'top .5s var(--qq-ease-smooth), gap .5s var(--qq-ease-smooth)' }}>
         {banners.map((t, i) => bannerNode(t, i, !showPodium))}
       </div>
 

@@ -1,7 +1,7 @@
 # Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, nach Schwarm-Fixes)
 
 > Weiterarbeit. Branch **`design/material-pass-standings-bar`** (gepusht,
-> HEAD `c682dffe`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
+> HEAD `55900c62`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
 > [[project-screens-1707-batch]] · [[project-design-motion-elevation]] · [[reference-beamer-harness]].
 > Regeln: [[feedback-real-beamer-never-rebuild]] · [[feedback-red-before-green]] ·
 > [[feedback-measure-assets-not-guess]] · [[feedback-use-skills-proactively]].
@@ -78,6 +78,12 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   (Settle-Puls + Sieger-Farbflut beim Lock). Unbedingter Hook (keine Extraktion). **Neue Route
   `/award-test`** (echte Ceremony + Mock, Step-Buttons; `shot-award*.mjs`). **Verifiziert.**
   Previews `wappen-neu-*`, `bild12-bg-roulette-NACHHER`.
+- **bild 13 — Krönung: epic-moment-BG + Fahnen-Motion** (`55900c62`): Wolf-Wahl BG **epic-moment**
+  (statt award-ceremony, dessen gemalte Banner mit der Roulette-Reihe kollidierten) — nur in
+  `MegaCrownCeremony` gerendert (Award-Beats/Endstand behalten ihre BGs), + staerkere Abdunklung
+  + Kopf-Scrim (Lesbarkeit). Banner-Reihe verbreitert (8cqw + 2.2cqw gap → ~80%). Motion (Wolf-Wahl
+  „sanftes Wehen + Glut"): `qqBannerSway` (out-of-sync Neigen) + `qqEmberRise` (Funken, nur lit).
+  Verifiziert `/award-test` Krönung. Previews `bild13-kroenung-roulette/podium-NACHHER`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
@@ -95,10 +101,10 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
 4. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
    Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
 5. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-6. **Screens-Batch:** ✅ bild 11 · ✅ bild 12 (Wappen HD-Swap + BG-Roulette) · offen:
-   13 (Siegerzeremonie: Reihe füllt Screen nicht, Fahnen statisch — evtl. Wolf-BG),
-   14 (Text ⟂ Pokal), 15 (Tabelle schlecht erkennbar, anderer BG?), 16 (Kolosseum-BG sichtbarer +
-   Windows transparenter = allg. Regel), 17 (Summary noch nicht CozyArena-ready).
+6. **Screens-Batch:** ✅ bild 11 · ✅ bild 12 (Wappen + BG-Roulette) · ✅ bild 13 (Krönung
+   epic-moment-BG + Fahnen-Motion) · offen: 14 (Text ⟂ Pokal), 15 (Tabelle schlecht erkennbar,
+   anderer BG?), 16 (Kolosseum-BG sichtbarer + Windows transparenter = allg. Regel), 17 (Summary
+   noch nicht CozyArena-ready).
 7. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
    zurück" · Zähler-Darstellung) — in todo.md.
 

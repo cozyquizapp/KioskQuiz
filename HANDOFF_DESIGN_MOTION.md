@@ -97,6 +97,12 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   + kein Skin + BGs an): Page-bg transparent, grosse Card = Arena-Glas, dezenter Kopf-Scrim fuer Titel-
   Kontrast. Nicht-Arena unveraendert (alles gegated). Thanks-Test-Page hat jetzt Arena-Toggle. **Verifiziert**
   (`/thanks-test` Arena an/aus). Previews `bild16-thanks-arena-VORHER/NACHHER`, `-normal-unveraendert`.
+- **bild 17 — Summary-Page CozyArena-ready** (`3fb12287`): oeffentliche Summary (nach QR-Scan) hatte
+  keinen Team-/Kolosseum-BG (generischer Pink-Mesh). Shell bei `summary.nested`: fixe Kolosseum-Ebene =
+  Portrait-Szene der **Sieger-Fraktion** (`faction-<slug>.webp`, mobil-optimal) + Scrim (unten staerker
+  fuers Formular), Karten translucent-dunkel (analog qqArenaGlass). Fraktions-Wappen („neue Emojis")
+  rendern schon via `deriveMegaSummary` — verifiziert Picker + Detail. Mock-Sync-Bug gefixt (rawSummary
+  folgt jetzt mockSummary-Prop). Summary-Test-Page hat Arena-Toggle. Previews `bild17-summary-arena-*`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
@@ -114,10 +120,10 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
 4. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
    Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
 5. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-6. **Screens-Batch:** ✅ 11 · ✅ 12 · ✅ 13 · ✅ 14 · ✅ 15 · ✅ 16 (Thanks Arena-Glas + BG sichtbar,
-   `qqArenaGlass`) · offen: **17** (Summary noch nicht CozyArena-ready: kein Team-BG, alte Emojis,
-   pruefen ob aktuell — „sehe ich nie mit bots"). ⚠️ Regel `qqArenaGlass()` steht jetzt zentral —
-   bei weiteren Arena-Pages mit opaken Panels wiederverwenden.
+6. **Screens-Batch KOMPLETT:** ✅ 11 · ✅ 12 · ✅ 13 · ✅ 14 · ✅ 15 · ✅ 16 (Thanks Arena-Glas) · ✅ 17
+   (Summary Kolosseum-BG + Wappen). ⚠️ Regel `qqArenaGlass()` steht zentral — bei weiteren Arena-Pages
+   mit opaken Panels wiederverwenden. **Offen ausserhalb Batch:** bild 10 (2/3-Ansicht A/B/C/D +
+   CHEESE-Reveal-Rethink — wartet auf Wolfs Wahl aus `design-vorschau/`).
 7. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt
    zurück" · Zähler-Darstellung) — in todo.md.
 

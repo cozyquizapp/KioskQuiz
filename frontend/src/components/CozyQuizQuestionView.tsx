@@ -87,38 +87,28 @@ const QQ_QUESTION_MAX_W = 1300;
 // QUESTION VIEW (active + reveal)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-// 2026-07-18 (Wolf 'bild 10'): Ansicht fuer "X von N Sub-Teams richtig" in der
-// Arena statt des Text-"2/3 correct". TEMP-Umschalter fuer Wolfs A/B-Blick
-// (Pips vs Segment-Balken). Nach seiner Wahl bleibt eine Variante + Rollout auf
-// alle Arena-Stellen, wo "x/y correct" steht.
-const QQ_CORRECT_VIZ: 'pips' | 'bar' = 'bar';
-function QQCorrectViz({ correct, total, color, viz }: { correct: number; total: number; color: string; viz: 'pips' | 'bar' }) {
-  const cells = Array.from({ length: Math.max(1, total) });
+// 2026-07-18 (Wolf 'bild 10'): einheitliche Arena-Ansicht fuer "X von N Sub-Teams
+// richtig" statt Text-"2/3 correct". Wolf-Wahl: ein KLEINER DIAMANT (Kolosseum-Gem-
+// Sprache wie der Runden-Gem), der sich von unten in KATEGORIE-Farbe FUELLT (Anteil
+// richtig), Zahl klein darunter. Feste Groesse -> passt auch unter 8 Fraktionen.
+// Aus der Ferne traegt die LINKS-nach-rechts-Reihenfolge die Aussage; 2/3 = ruhiges
+// Nah-Detail. Ueberall wo Arena "x/y richtig pro Fraktion" zeigt via <QQCorrectViz/>.
+const QQ_GEM_DIAMOND = 'polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)';
+function QQCorrectViz({ correct, total, color }: { correct: number; total: number; color: string }) {
+  const pct = Math.max(0, Math.min(1, correct / Math.max(1, total)));
+  const sz = 'clamp(24px,2.7cqw,38px)';
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3 }}>
-      {viz === 'pips' ? (
-        <div style={{ display: 'flex', gap: 'clamp(4px,0.5cqw,7px)', alignItems: 'center' }}>
-          {cells.map((_, i) => (
-            <span key={i} aria-hidden style={{
-              width: 'clamp(10px,1.05cqw,15px)', height: 'clamp(10px,1.05cqw,15px)', borderRadius: '50%',
-              background: i < correct ? color : 'transparent',
-              border: `2px solid ${i < correct ? color : color + '66'}`,
-              boxShadow: i < correct ? `0 0 9px ${color}99` : 'none',
-            }} />
-          ))}
+      <div style={{ position: 'relative', width: sz, height: sz }}>
+        {/* Facetten-Kante in Kategorie-Farbe */}
+        <div style={{ position: 'absolute', inset: 0, clipPath: QQ_GEM_DIAMOND, background: `linear-gradient(180deg, ${color} 0%, ${color}aa 60%, ${color}dd 100%)` }} />
+        {/* Dunkler Gem-Kern; Fuellung steigt von unten (auf Diamant geclippt) */}
+        <div style={{ position: 'absolute', inset: 2, clipPath: QQ_GEM_DIAMOND, background: 'rgba(12,9,22,0.9)', overflow: 'hidden' }}>
+          <div style={{ position: 'absolute', left: 0, right: 0, bottom: 0, height: `${pct * 100}%`, background: `linear-gradient(180deg, ${color} 0%, ${color}cc 100%)`, boxShadow: `0 0 10px ${color}` }} />
+          {/* oberer Glanz */}
+          <div style={{ position: 'absolute', top: '12%', left: '30%', width: '26%', height: '10%', background: 'rgba(255,255,255,0.5)', filter: 'blur(1px)', borderRadius: '50%', transform: 'rotate(-20deg)' }} />
         </div>
-      ) : (
-        <div style={{ display: 'flex', gap: 'clamp(3px,0.35cqw,5px)', alignItems: 'center' }}>
-          {cells.map((_, i) => (
-            <span key={i} aria-hidden style={{
-              width: 'clamp(15px,1.7cqw,24px)', height: 'clamp(8px,0.9cqh,13px)', borderRadius: 3,
-              background: i < correct ? color : `${color}22`,
-              border: `1.5px solid ${i < correct ? color : color + '44'}`,
-              boxShadow: i < correct ? `0 0 8px ${color}77` : 'none',
-            }} />
-          ))}
-        </div>
-      )}
+      </div>
       <span style={{ fontSize: 'clamp(11px,1.15cqw,15px)', fontWeight: 900, color, letterSpacing: '0.02em', opacity: 0.92 }}>
         {correct}/{total}
       </span>
@@ -1143,7 +1133,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         {isMegaTeams && factionStats && (() => {
                           const st = factionStats.get(team.avatarId);
                           if (!st) return null;
-                          return <QQCorrectViz correct={st.correct} total={st.total} color={accent} viz={QQ_CORRECT_VIZ} />;
+                          return <QQCorrectViz correct={st.correct} total={st.total} color={accent} />;
                         })()}
                       </div>
                     );

@@ -733,7 +733,10 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
       {showPodium && (
         <>
           <ConfettiOverlay eurovisionMode={state.theme?.eurovisionMode} />
-          <div style={{ position: 'absolute', left: 0, right: 0, top: '27cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
+          {/* 2026-07-18 (Wolf bild 14 „Text ueberlappt mit dem Pokal"): Titel hoeher
+              gesetzt (war 27cqh → traf den Pokal an der Spitze der Sieger-Saeule bei
+              ~33cqh). Jetzt 18cqh mit klarem Abstand ueber dem Pokal. */}
+          <div style={{ position: 'absolute', left: 0, right: 0, top: '18cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
             <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: 'var(--font-arena)', fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
               {de ? 'Champions der Arena' : 'Arena Champions'}
             </div>

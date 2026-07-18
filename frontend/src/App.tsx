@@ -45,6 +45,7 @@ const QQFinalRevealTestPage = React.lazy(() => import('./pages/QQFinalRevealTest
 const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const QQHigherLowerTestPage = React.lazy(() => import('./pages/QQHigherLowerTestPage'));
+const QQQuestionTestPage = React.lazy(() => import('./pages/QQQuestionTestPage'));
 const QQBarRaceTestPage = React.lazy(() => import('./pages/QQBarRaceTestPage'));
 const QQRevealTestPage = React.lazy(() => import('./pages/QQRevealTestPage'));
 const QQPhaseIntroTestPage = React.lazy(() => import('./pages/QQPhaseIntroTestPage'));
@@ -221,6 +222,7 @@ function App() {
           <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
           <Route path="/reveal-test" element={<PinGate><QQRevealTestPage /></PinGate>} />
           <Route path="/phaseintro-test" element={<PinGate><QQPhaseIntroTestPage /></PinGate>} />
+          <Route path="/question-test" element={<PinGate><QQQuestionTestPage /></PinGate>} />
           <Route path="/award-test" element={<PinGate><QQAwardTestPage /></PinGate>} />
           {/* 2026-07-07: bewusst OHNE PinGate — reine Animations-Vorschau ohne
               Daten/Steuerung, damit Wolf sie ohne PIN (und unabhaengig vom

@@ -397,6 +397,12 @@ export const QQ_BEAMER_CSS = `
   }
   @keyframes winnerPulse { 0%,100%{opacity:0.85;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
   @keyframes qqGlow { 0%,100%{filter:brightness(1)} 50%{filter:brightness(1.2)} }
+  /* 2026-07-18 (Wolf): Arena-„abgeschickt" = Wappen ERLEUCHTEN statt gruenem Kreis.
+     Glow-Puls in der Fraktionsfarbe (--lit). Ersetzt den gruenen Ring/Bg. */
+  @keyframes qqCrestLit {
+    0%,100% { filter: drop-shadow(0 0 9px var(--lit,#fff)) brightness(1.03); }
+    50%     { filter: drop-shadow(0 0 18px var(--lit,#fff)) brightness(1.09); }
+  }
   @keyframes gridCellIn { from{opacity:0;transform:scale(0.5)} to{opacity:1;transform:scale(1)} }
   @keyframes cellInkFill {
     0%   { clip-path: circle(0% at 50% 50%); opacity: 0; filter: brightness(1); }

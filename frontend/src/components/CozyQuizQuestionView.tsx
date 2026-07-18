@@ -1345,30 +1345,39 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       const g = groups.get(id)!;
                       const done = g.answered >= g.total;
                       const some = g.answered > 0;
+                      // 2026-07-18 (Wolf): „abgeschickt" = Wappen ERLEUCHTEN statt gruenem
+                      // Kreis (der Ring brach den Kolosseum-Look). Fraktion, die alle Handys
+                      // abgegeben hat, leuchtet in IHRER Farbe (Glow-Puls, --lit); teilweise
+                      // = ruhiger Glow; keine = gedimmt/entsaettigt. Kein Ring, kein Gruen.
+                      const litColor = g.rep.color || '#ffd9a0';
+                      const litFilter = done
+                        ? (isQuietMotion() ? `drop-shadow(0 0 14px ${litColor}) brightness(1.06)` : undefined)
+                        : some
+                          ? `drop-shadow(0 0 8px ${litColor}aa)`
+                          : 'grayscale(0.5) brightness(0.72)';
                       return (
                         <div key={id} style={{
+                          ['--lit' as any]: litColor,
                           position: 'relative', padding: 6, borderRadius: '50%',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-                          background: done ? 'rgba(34,197,94,0.18)' : 'transparent',
-                          border: done ? '3px solid #22C55E' : some ? '3px solid rgba(34,197,94,0.45)' : '3px solid transparent',
-                          boxShadow: done ? '0 0 20px rgba(34,197,94,0.5), 0 0 40px rgba(34,197,94,0.18)' : 'none',
-                          opacity: some ? 1 : 0.55, filter: some ? 'none' : 'grayscale(0.4)',
-                          transition: 'all 0.45s ease',
+                          opacity: some ? 1 : 0.5,
+                          filter: litFilter,
+                          animation: done && !isQuietMotion() ? 'qqCrestLit 2.4s ease-in-out infinite' : undefined,
+                          transition: 'opacity 0.45s ease, filter 0.45s ease',
                         }}>
                           {/* Fraktion → WAPPEN, nicht das Tier (qqFactionAvatarEmoji). */}
                           <QQTeamAvatar avatarId={g.rep.avatarId} teamEmoji={qqFactionAvatarEmoji(g.rep.avatarId, g.rep.emoji, true)} size={navSize} />
                           <div style={{
                             position: 'absolute', bottom: -3, right: -3, minWidth: 40, height: 40, padding: '0 9px',
-                            borderRadius: 999, background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
-                            // F1 (color-contrast Skill): weiss auf #22C55E = 2.28:1 (AA-Fail).
-                            // Dunkler Text auf dem gruenen Badge = 8.67:1. Auf dem dunklen
-                            // Nicht-fertig-Badge bleibt weiss (dort bestens lesbar).
+                            borderRadius: 999, background: 'rgba(10,8,20,0.92)',
+                            // Badge bleibt neutral-dunkel (weisse Zahl = bester Kontrast); das
+                            // „fertig"-Signal traegt jetzt das erleuchtete Wappen. Wenn alle
+                            // abgegeben haben, faerbt sich die Badge-Kante in Fraktionsfarbe.
                             // 2026-07-14 (Wolf 'X/Y zu klein von weitem'): 28→40px, 15→22.
-                            border: '2.5px solid rgba(255,255,255,0.2)', color: done ? '#0A0814' : '#fff', fontSize: 24, fontWeight: 900,
+                            border: `2.5px solid ${done ? litColor : 'rgba(255,255,255,0.2)'}`, color: '#fff', fontSize: 24, fontWeight: 900,
+                            boxShadow: done ? `0 0 12px ${litColor}88` : 'none',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                            // 2026-07-16 (Wolf): nur die ANZAHL der Subteams, die geantwortet
-                            // haben (kein „1/5" mehr) — die Fraktion grünt komplett, wenn alle
-                            // ihre Handys abgegeben haben (done-Ring), die Zahl zeigt den Fortschritt.
+                            // 2026-07-16 (Wolf): nur die ANZAHL der Subteams, die geantwortet haben.
                           }}>{g.answered}</div>
                         </div>
                       );

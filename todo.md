@@ -88,12 +88,13 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 Wappen). **Einziger offener Rest aus dem Batch:** bild 10 (2/3-Ansicht A/B/C/D + CHEESE-Reveal-Rethink)
 — wartet auf Wolfs Design-Wahl aus `design-vorschau/`. Details in Memory `project_screens_1707_batch`.
 
-**Kolosseum-Kohärenz (Wolf 18.7., nur TODO — nicht bauen bis Batch durch):**
-- [ ] **Progress-Tree an Kolosseum-Style anpassen** — evtl. Diamanten/Gems statt Kreise (passend
-      zum Round-/Frage-Gem + Cinzel/Garamond-System). Nur Arena-Modus.
-- [ ] **Verzierte Rahmen** für Windows + Frage-Karten (wie die Wappen-Rahmen), statt schlichter Border.
-- [ ] **„Abgeschickt"-Indikator: Wappen ERLEUCHTEN statt grünem Kreis** — der grüne Ring bricht das
-      Design (kommt zu Progress-Tree-Redesign dazu). Glow/Leuchten am Wappen statt Umrandung.
+**Kolosseum-Kohärenz (Wolf 18.7.):** ⚠️ SCOPE-ENTSCHEIDUNG 18.7. = **nur Tier 1 (5 Kategorie-
+Medaillons, Wolf zeichnet), dann Design-FREEZE** → Fokus Event-Funktion + Akquise. Tier 2-4 +
+folgende Punkte = „spaeter/optional", NICHT jetzt bauen. Details Memory `project_design_motion_elevation`.
+- [x] **„Abgeschickt" = Wappen ERLEUCHTEN statt grünem Kreis** — erledigt (`16f05d3b`, `qqCrestLit`,
+      Fraktions-Farbe-Glow, verifiziert `/question-test`). Non-Arena behaelt Gruen.
+- [ ] *(spaeter/optional, nach Freeze)* Progress-Tree Diamanten/Gems statt Kreise (koppelt an Tier-1-Assets).
+- [ ] *(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.
 
 **bild 10 — 2/3-Ansicht (Wolf entscheidet aus design-vorschau):** Pips (A) vs Segment-Balken (B),
 beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in CozyQuizQuestionView).
@@ -108,8 +109,8 @@ beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in Cozy
       Gemessen + verifiziert am /reveal-test Schwarm-Modus.
 - [x] **„⚡ am schnellsten" beim Schätzchen-Sieger** (nur bei Punkte-Gleichstand, `209a83d4`, verifiziert).
       ⚡ = Platzhalter mit TODO-Slot → **Wolf liefert eigenes „am schnellsten"-Icon, dann tauschen.**
-- [ ] **Counter „Question 1 of 5" → facettierter Gem-Rahmen** (PhaseIntro ~1643 + aktive Frage +
-      PausedView). Round-Gem (~1054) als Vorlage. + aktive-Frage-Kolosseum-Texte (Frage-TEXT bleibt Nunito).
+- [x] **Counter „Frage X von 5" → Kolosseum-Gem** — erledigt (`a238696c`, neue Komponente
+      `ArenaCounterGem`, beide PhaseIntro-Zaehler, Finale-Overlap-Fix). Paused bewusst gelassen (Card-Kontext).
 
 *(bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen auch oben im Beamer-Check.)*
 

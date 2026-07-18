@@ -104,8 +104,20 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   rendern schon via `deriveMegaSummary` — verifiziert Picker + Detail. Mock-Sync-Bug gefixt (rawSummary
   folgt jetzt mockSummary-Prop). Summary-Test-Page hat Arena-Toggle. Previews `bild17-summary-arena-*`.
 
+## ✅ KOHAERENZ-PASS (Wolf 2026-07-18, AskUserQuestion) — Fokus „Kolosseum-Kohaerenz"
+Reihenfolge einer-nach-dem-anderen. Erledigt:
+- ✅ **Frage-X-von-5-Zaehler = Gem** (`a238696c`): neue Komponente `ArenaCounterGem` (Vorlage Round-Gem),
+  beide PhaseIntro-Zaehler im Arena-Modus als Kategorie-farbiges Gem; in Finale-Runden nach unten
+  versetzt (kein FINALRUNDE-Badge-Overlap). Paused-Zaehler bewusst gelassen (Card-Kontext). `/phaseintro-test`.
+- ✅ **„Abgeschickt" = Wappen ERLEUCHTEN** (`16f05d3b`): gruener Ring/Bg raus, Fraktion leuchtet in IHRER
+  Farbe (Glow-Puls `qqCrestLit` via `--lit`), teilweise = ruhiger Glow, keine = gedimmt. Badge neutral-dunkel,
+  Kante faerbt sich fertig-farbig. Non-Arena behaelt Gruen. Neue Route `/question-test` (CHEESE-Arena, Slider).
+- ⏳ **Emoji-Neubau (Wolf liefert Assets):** Checkliste in `für claude/kolosseum-emoji-checkliste.md`
+  (Tier 1 = 5 Kategorie-Medaillons zuerst → dann verdrahte ich Hero + Progress-Tree-Dots + Rules in einem
+  Rutsch). Progress-Tree-Diamanten/verzierte-Rahmen warten sinnvollerweise auf Tier-1-Assets.
+
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
-- Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
+- (Frage-Zaehler-Gem: ✅ von Wolf freigegeben + ausgerollt, siehe oben.)
 - Alles oben liegt als Preview in `Desktop/für claude/design-vorschau/` (bild10-*, VARIANTE-A/B/C/D,
   DIAMANT, standings-diamanten, cheese-rahmen-lila+diamant).
 

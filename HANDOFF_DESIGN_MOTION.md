@@ -1,7 +1,7 @@
 # Handoff: Arena-Design/Type/Motion + Screens-1707 (Stand 2026-07-18, nach Schwarm-Fixes)
 
 > Weiterarbeit. Branch **`design/material-pass-standings-bar`** (gepusht,
-> HEAD `27d98c98`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
+> HEAD `c682dffe`), **main unberührt** bis Wolf merged. ⚠️ Backend/Frontend laufen evtl. noch (Wolf testete). Voller Kontext: Memory
 > [[project-screens-1707-batch]] · [[project-design-motion-elevation]] · [[reference-beamer-harness]].
 > Regeln: [[feedback-real-beamer-never-rebuild]] · [[feedback-red-before-green]] ·
 > [[feedback-measure-assets-not-guess]] · [[feedback-use-skills-proactively]].
@@ -69,6 +69,15 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
   Chip, Sub in EB Garamond, ×3 intensiver. Kein neues Pur-Gold (Gold-Regel). Themed → schlichte
   Surface-Pille. **Neue Harness-Route `/phaseintro-test`** (echte PhaseIntroView + Finale-Mock,
   ×2/×3-Toggle; `shot-phaseintro.mjs`). **Verifiziert.** Previews `bild11-finalbadge-x2/x3-NACHHER`.
+- **bild 12 — Wappen + BG-Roulette** (`3544922e` + `c682dffe`): (1) „Wappen kaputt" → Wolf-Wahl
+  „Asset tauschen": 8 neue `<slug> colloseum.png` (schwarzer BG) freigestellt (Luminanz-Alpha
+  t0=6/t1=26, keine Loecher, weicher Glow) → ersetzen `<slug>-colosseum.webp` ueberall (Reveals/
+  Awards/Standings/PhaseIntro). Quell-PNGs gitignored. Tool `free-crest.mjs`. (2) „BG durchwechseln
+  → auf Sieger stehen bleiben" + „epischer": Award-Beat-BG rouletttet durch die Fraktions-Szenen
+  (`faction-*.webp`) und rastet ~1s synchron zur Wappen-Enthuellung auf der Gewinner-Fraktion ein
+  (Settle-Puls + Sieger-Farbflut beim Lock). Unbedingter Hook (keine Extraktion). **Neue Route
+  `/award-test`** (echte Ceremony + Mock, Step-Buttons; `shot-award*.mjs`). **Verifiziert.**
+  Previews `wappen-neu-*`, `bild12-bg-roulette-NACHHER`.
 
 ## ⏳ WARTET AUF WOLFS LIVE-URTEIL / OK
 - Round-Gem (`2f192d64`, letzte Session) — noch kein OK → **Frage-X-von-5-Zähler-Gem NICHT ausrollen**.
@@ -86,8 +95,8 @@ zeigt Frontend gegen Live-Backend.** Lokal siehe HARNESS unten.
 4. **Design-TODOs** (in todo.md): verzierte Rahmen (Windows+Fragen wie Wappen); „abgeschickt" =
    Wappen ERLEUCHTEN statt grünem Kreis; Progress-Tree Kolosseum/Diamanten.
 5. **Top5/Order** „X/Y correct" (andere Metrik = Listen-Treffer/Team) — auf Wunsch auch Diamant.
-6. **Screens-Batch:** ✅ bild 11 · offen bild 12 (Special-Awards-Reveal epischer, Wappen „kaputt",
-   BG durchwechseln→Sieger), 13 (Siegerzeremonie: Reihe füllt Screen nicht, Fahnen statisch),
+6. **Screens-Batch:** ✅ bild 11 · ✅ bild 12 (Wappen HD-Swap + BG-Roulette) · offen:
+   13 (Siegerzeremonie: Reihe füllt Screen nicht, Fahnen statisch — evtl. Wolf-BG),
    14 (Text ⟂ Pokal), 15 (Tabelle schlecht erkennbar, anderer BG?), 16 (Kolosseum-BG sichtbarer +
    Windows transparenter = allg. Regel), 17 (Summary noch nicht CozyArena-ready).
 7. **Moderator-View-Batch** (Fraktionen einklappen · übersichtlicher · SPACE-Befehle · „Schritt

@@ -107,13 +107,13 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🔴 WARTET AUF WOLF — Entscheidungen
 
-- [ ] **MUCHO-Delight-Hebel** — Preview anschauen, dann wählen: A Vote-Tally · B Light-Sweep ·
-      C Pre-Lock-Drumroll · D Doppelblink→Settle.
-- [ ] **Fraktions-Namen** unter die Layout-1-Wappen? (Preview hatte Namen; gebaut ist Wappen+×Anzahl)
 - [ ] **Backend-Refactor freigeben:** `qqMegaEventScore`-Distanzzweige auf shared `qqDistanceScore`
-      (beseitigt Drift-Risiko, braucht Redeploy). Angeboten, wartet auf OK.
-- [ ] **arena-main-Video** auch aufs Welcome-Overlay? (nur wenn dir das Lobby-Video gefällt)
-- [ ] **Wolf-Sprechblase im Logo ist oval** — vor jeder Änderung fragen.
+      (beseitigt Drift-Risiko, braucht Redeploy). Angeboten, wartet auf OK. **Einzige noch offene
+      Entscheidung** (Wolf 19.7.: „alle durch außer backend refactor").
+- Erledigt/verworfen 2026-07-19 (Wolf): MUCHO-Delight-Hebel = **verworfen** (vergessen + Design-Freeze,
+  bleibt wie's ist) · Fraktions-Namen unter Wappen = **nein** (nur Wappen+Anzahl, so gebaut) ·
+  arena-main-Video aufs Welcome-Overlay = **durch/moot**.
+- **Standing-Note (keine Entscheidung):** Wolf-Sprechblase im Logo ist oval — vor jeder Logo-Änderung fragen.
 
 ## 🟠 WARTET AUF MICH — Build
 
@@ -161,19 +161,14 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
       an.** Phase 1 (In-Game-Font-Gate) ist durch (`e936fc70`). Details Memory `project_design_motion_elevation`.
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +
-Wappen). **Einziger offener Rest aus dem Batch:** bild 10 (2/3-Ansicht A/B/C/D + CHEESE-Reveal-Rethink)
-— wartet auf Wolfs Design-Wahl aus `design-vorschau/`. Details in Memory `project_screens_1707_batch`.
+Wappen), bild 10 ✅ (2/3-Ansicht = `QQGemFill`-Diamant füllt in Kategorie-Farbe, Wolfs 3. Variante statt
+Pips/Balken — im Code aktiv, Wolf 19.7. bestätigt entschieden). Details in Memory `project_screens_1707_batch`.
 
 **Kolosseum-Kohärenz (Wolf 18.7.):** ⚠️ SCOPE-ENTSCHEIDUNG 18.7. = **nur Tier 1 (5 Kategorie-
 Medaillons, Wolf zeichnet), dann Design-FREEZE** → Fokus Event-Funktion + Akquise. Tier 2-4 +
 folgende Punkte = „spaeter/optional", NICHT jetzt bauen. Details Memory `project_design_motion_elevation`.
 - [ ] *(spaeter/optional, nach Freeze)* Progress-Tree Diamanten/Gems statt Kreise (koppelt an Tier-1-Assets).
 - [ ] *(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.
-
-**bild 10 — 2/3-Ansicht (Wolf entscheidet aus design-vorschau):** Pips (A) vs Segment-Balken (B),
-beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in CozyQuizQuestionView).
-⚠️ Wolf-Bedenken: bei 5 Sub-Teams viele Pips → Balken skaliert besser. Nach Wahl: EINE Variante +
-**einheitlich überall in CozyArena** ausrollen (alle „x/y correct"-Stellen).
 
 **🐛 Winner-Value-Bugs in Guess-Reveals:** alle gefixt + verifiziert (`3f5e8338`, `f4d84116`,
 `8cf728b5`, `209a83d4`, `a238696c`). Offener Rest = nur ein Asset (unten): das „⚡"-Platzhalter-Icon.

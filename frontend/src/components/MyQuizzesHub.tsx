@@ -39,10 +39,12 @@ function relTime(ts?: number): string {
 export function MyQuizzesHub() {
   const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
   const [error, setError] = useState(false);
-  // 2026-07-19 (Wolf 'meine quizze einklappbar'): Kopfzeile bleibt, der Body
-  // (Schnellzugriff + Quiz-Karten) ist ein-/ausklappbar; Zustand persistiert.
+  // 2026-07-19 (Wolf 'meine quizze einklappbar' + 'nehmen ausgeklappt zu viel raum'):
+  // Kopfzeile bleibt, der Body (Schnellzugriff + Quiz-Karten) ist ein-/ausklappbar;
+  // Zustand persistiert. DEFAULT = eingeklappt (nur offen, wenn Wolf es explizit
+  // aufgeklappt hat, gespeichert als '0').
   const [open, setOpen] = useState(() => {
-    try { return localStorage.getItem('qqMyQuizzesCollapsed') !== '1'; } catch { return true; }
+    try { return localStorage.getItem('qqMyQuizzesCollapsed') === '0'; } catch { return false; }
   });
   const toggleOpen = () => setOpen(v => {
     const next = !v;

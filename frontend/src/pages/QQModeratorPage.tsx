@@ -1756,6 +1756,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // Frage-Phasen (Abgaben/Kick/Rename) wirklich gebraucht. Ausserhalb bleibt sie
   // einklappbar (Header + 1 Klick), statt in jeder Phase voll zu fuellen.
   const [teamsManualOpen, setTeamsManualOpen] = useState(false);
+  // 2026-07-19 (Wolf): In der Frage-Phase sind bei 8 Fraktionen x mehreren Handys
+  // schnell 24+ Zeilen offen. Default = pro Fraktion nur die Fraktions-Zeile
+  // (Wappen + X/N abgegeben). Einzelne Fraktion per Klick aufklappen fuer Kick/Rename.
+  const [expandedFactions, setExpandedFactions] = useState<Set<string>>(new Set());
+  const toggleFaction = (id: string) => setExpandedFactions(prev => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
   useEffect(() => { cheatsheetOpenRef.current = cheatsheetOpen; }, [cheatsheetOpen]);
   // Auto-collapse settings when game starts. Plus auto-open wenn zurück
   // in LOBBY (z. B. via 'Zurück zum Setup').
@@ -4102,26 +4111,48 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     groups.sort((a, b) => b.points - a.points || a.label.localeCompare(b.label));
                     const inQ = s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL';
                     let gi = 0;
-                    return groups.map(g => (
+                    return groups.map(g => {
+                      // In der Frage-Phase: Default nur die Fraktions-Zeile, Handys
+                      // pro Fraktion aufklappbar. Sonst (Placement etc.) alles offen.
+                      const collapsible = inQ;
+                      const showSubs = !collapsible || expandedFactions.has(g.avatarId);
+                      const allIn = g.answered >= g.subs.length;
+                      const startGi = gi;
+                      gi += g.subs.length; // Rang-Nummern stabil, auch wenn eingeklappt
+                      return (
                       <div key={g.avatarId} style={{
-                        borderRadius: 12, border: `1px solid ${g.color}33`,
+                        borderRadius: 12, border: `1px solid ${g.color}${allIn && inQ ? '66' : '33'}`,
                         background: `${g.color}0d`, padding: '8px 10px',
-                        display: 'flex', flexDirection: 'column', gap: 8,
+                        display: 'flex', flexDirection: 'column', gap: showSubs ? 8 : 0,
                       }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <div
+                          onClick={collapsible ? () => toggleFaction(g.avatarId) : undefined}
+                          role={collapsible ? 'button' : undefined}
+                          aria-expanded={collapsible ? showSubs : undefined}
+                          title={collapsible ? (showSubs ? 'Handys einklappen' : 'Handys anzeigen (Kick / Umbenennen)') : undefined}
+                          style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: collapsible ? 'pointer' : 'default' }}
+                        >
                           <QQTeamAvatar avatarId={g.avatarId} teamEmoji={qqMegaFactionSlug(g.avatarId)} size={26} />
                           <span style={{ fontWeight: 900, color: g.color, fontSize: 14, flex: 1 }}>{g.label}</span>
                           {inQ && (
                             <span style={{
                               fontSize: 11, fontWeight: 800,
-                              color: g.answered >= g.subs.length ? QQ_COLORS.green500 : QQ_COLORS.slate400,
-                            }}>{g.answered}/{g.subs.length} abgegeben</span>
+                              color: allIn ? QQ_COLORS.green500 : QQ_COLORS.slate400,
+                            }}>{g.answered}/{g.subs.length}{allIn ? ' ✓' : ' abgegeben'}</span>
                           )}
                           <span title="Fraktionspunkte" style={{ fontSize: 13, fontWeight: 900, color: g.color, minWidth: 20, textAlign: 'right' }}>{g.points}</span>
+                          {collapsible && (
+                            <span aria-hidden style={{
+                              color: g.color, fontSize: 11, opacity: 0.75, width: 12, textAlign: 'center',
+                              transform: showSubs ? 'rotate(90deg)' : 'rotate(0deg)',
+                              transition: 'transform 160ms var(--qq-ease-out, ease-out)',
+                            }}>▸</span>
+                          )}
                         </div>
-                        {g.subs.map((sub: any, hi: number) => renderTeamRow(sub, gi++, `Handy ${hi + 1}`))}
+                        {showSubs && g.subs.map((sub: any, hi: number) => renderTeamRow(sub, startGi + hi, `Handy ${hi + 1}`))}
                       </div>
-                    ));
+                      );
+                    });
                   }
 
                   return teamList.map((t, i) => renderTeamRow(t, i));

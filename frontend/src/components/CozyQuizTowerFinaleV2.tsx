@@ -65,12 +65,18 @@ const GOLD_DEEP = '#E0A94E';
 const MYST = '#4A4560';
 const MYST_EDGE = '#655C82';
 
-export function TowerFinaleV2({ teams, awards, lang }: {
+export function TowerFinaleV2({ teams, awards, lang, liveBeat }: {
   teams: TowerTeam[]; awards: TowerAward[]; lang: 'de' | 'en';
+  // Hybrid-Live-Steuerung: wenn gesetzt, gaten die Auto-Play-Uebergaenge an den
+  // Beat-Grenzen auf diesen (Moderator-getriebenen) Wert. Beats:
+  //   0 = Aufbau + Zwischenstand · 1..A = Award i · A+1 = Glide (Top 3) ·
+  //   A+2..A+4 = Enthuellung Platz 3/2/1. Ohne Prop = Auto-Play (Preview).
+  liveBeat?: number;
 }) {
   const de = lang === 'de';
   const reduce = prefersReducedMotion();
   const N = teams.length;
+  const live = liveBeat != null;
 
   const baseOf = useCallback((id: string) => teams.find(t => t.team.id === id)?.base ?? 0, [teams]);
   const teamById = useCallback((id: string) => teams.find(t => t.team.id === id)?.team, [teams]);
@@ -140,13 +146,15 @@ export function TowerFinaleV2({ teams, awards, lang }: {
   }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided]);
 
   useEffect(() => {
-    if (reduce) return;
+    // Live: der Moderator steuert ueber den Socket-Step (liveBeat), nicht ueber
+    // lokale Tasten am Beamer.
+    if (reduce || live) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); skip(); }
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [skip, reduce]);
+  }, [skip, reduce, live]);
 
   useEffect(() => { if (phase !== 'intro') return; const h = window.setTimeout(() => setPhase('base'), 3000); return () => window.clearTimeout(h); }, [phase]);
 
@@ -159,9 +167,10 @@ export function TowerFinaleV2({ teams, awards, lang }: {
 
   useEffect(() => {
     if (phase !== 'baseHold') return;
-    const h = window.setTimeout(() => { setAwardIdx(0); setAwardStage('card'); setAwardTick(0); setPhase(hasAwards ? 'award' : 'reveal'); }, 2200);
+    if (live && (liveBeat ?? 0) < 1) return; // Hybrid: warte auf Moderator-Beat 1
+    const h = window.setTimeout(() => { setAwardIdx(0); setAwardStage('card'); setAwardTick(0); setPhase(hasAwards ? 'award' : 'reveal'); }, live ? 300 : 2200);
     return () => window.clearTimeout(h);
-  }, [phase, hasAwards]);
+  }, [phase, hasAwards, live, liveBeat]);
 
   // Award-Zeremonie: grosse Karte → Turm waechst → Pause → naechster.
   useEffect(() => {
@@ -173,26 +182,31 @@ export function TowerFinaleV2({ teams, awards, lang }: {
     }
     // grow
     if (awardTick >= curAward.bonus) {
+      // Hybrid: der naechste Award / die Enthuellung wartet auf den Moderator-Beat.
+      if (live && (liveBeat ?? 0) < awardIdx + 2) return;
       const h = window.setTimeout(() => {
         if (awardIdx + 1 >= awards.length) setPhase('reveal');
         else { setAwardIdx(i => i + 1); setAwardStage('card'); setAwardTick(0); }
-      }, 1500);
+      }, live ? 200 : 1500);
       return () => window.clearTimeout(h);
     }
     const h = window.setTimeout(() => { setAwardTick(t => t + 1); try { playTick(); } catch { /* noop */ } }, awardTick === 0 ? 650 : 460);
     return () => window.clearTimeout(h);
-  }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length]);
+  }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length, live, liveBeat]);
 
   // Enthuellung: Recede-Beat (Plaetze 4..N dimmen) → Glide in die Mitte →
   // Platz 3 → 2 → Atempause → 1.
   useEffect(() => {
     if (phase !== 'reveal') return;
+    // Glide (Recede → Mitte) laeuft innerhalb des Glide-Beats automatisch.
     if (!glided) { const h = window.setTimeout(() => setGlided(true), 1600); return () => window.clearTimeout(h); }
     if (revealStep >= 3) { try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ } return; }
-    const delay = revealStep === 0 ? 1300 : revealStep === 2 ? 2800 : 2200; // vor #1 laenger (Atempause)
+    // Hybrid: jede Platz-Enthuellung wartet auf den naechsten Moderator-Beat.
+    if (live && (liveBeat ?? 0) < awards.length + 2 + revealStep) return;
+    const delay = live ? 200 : (revealStep === 0 ? 1300 : revealStep === 2 ? 2800 : 2200); // vor #1 laenger (Atempause)
     const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, delay);
     return () => window.clearTimeout(h);
-  }, [phase, glided, revealStep]);
+  }, [phase, glided, revealStep, live, liveBeat, awards.length]);
 
   const inReveal = phase === 'reveal';
   const crowned = inReveal && revealStep >= 3;

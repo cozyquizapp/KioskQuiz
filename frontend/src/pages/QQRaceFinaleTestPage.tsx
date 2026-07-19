@@ -57,8 +57,11 @@ function buildTowerData(n: number): { teams: { team: typeof ALL[number]; base: n
 
 export default function QQRaceFinaleTestPage() {
   const [n, setN] = useState<4 | 6 | 8>(6);
-  const [mode, setMode] = useState<'towerv2' | 'tower' | 'race'>('towerv2');
+  const [mode, setMode] = useState<'towerv2' | 'towerv2live' | 'tower' | 'race'>('towerv2');
   const [runKey, setRunKey] = useState(0);
+  // Hybrid-Live-Vorschau: liveBeat wird per Space/Button hochgezaehlt (simuliert
+  // den Moderator-Step). Beats: 0 Aufbau · 1..A Awards · A+1 Glide · A+2.. Reveals.
+  const [liveBeat, setLiveBeat] = useState(0);
   // Buehne (1760x990) auf die Fenstergroesse herunterskalieren — wie der echte
   // Beamer. Sonst laeuft das Design bei nicht-Vollbild ueber die Fensterraender.
   const [scale, setScale] = useState(1);
@@ -74,6 +77,20 @@ export default function QQRaceFinaleTestPage() {
 
   const ranking = buildRanking(n);
   const towerData = buildTowerData(n);
+  const towerBeats = 1 + towerData.awards.length + 1 + Math.min(3, n); // 0..towerBeats-1
+  const maxBeat = towerBeats - 1;
+
+  // Live-Modus: Space/→ zaehlt liveBeat hoch. Reset bei Neustart/Team-Wechsel.
+  useEffect(() => { setLiveBeat(0); }, [runKey, n, mode]);
+  useEffect(() => {
+    if (mode !== 'towerv2live') return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.code === 'Space' || e.key === ' ' || e.key === 'Enter' || e.key === 'ArrowRight') { e.preventDefault(); setLiveBeat(b => Math.min(b + 1, maxBeat)); }
+      if (e.key === 'ArrowLeft') { e.preventDefault(); setLiveBeat(b => Math.max(0, b - 1)); }
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mode, maxBeat]);
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#0F0817', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', fontFamily: "'Nunito', system-ui, sans-serif" }}>
@@ -84,6 +101,8 @@ export default function QQRaceFinaleTestPage() {
       }}>
         {mode === 'towerv2'
           ? <TowerFinaleV2 key={`v2-${n}-${runKey}`} teams={towerData.teams as any} awards={towerData.awards} lang="de" />
+          : mode === 'towerv2live'
+          ? <TowerFinaleV2 key={`v2l-${n}-${runKey}`} teams={towerData.teams as any} awards={towerData.awards} lang="de" liveBeat={liveBeat} />
           : mode === 'tower'
           ? <TowerFinalSlide key={`t-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
           : <RaceFinalSlide key={`r-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />}
@@ -98,7 +117,7 @@ export default function QQRaceFinaleTestPage() {
         color: '#F1F5F9', fontSize: 13, fontWeight: 800,
       }}>
         <span style={{ color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 11 }}>Finale</span>
-        {([['towerv2', '✨ Türme V2'], ['tower', '🏗️ Türme (alt)'], ['race', '🏁 Race']] as const).map(([m, label]) => (
+        {([['towerv2', '✨ V2 Auto'], ['towerv2live', '🎛 V2 Live'], ['tower', '🏗️ alt'], ['race', '🏁 Race']] as const).map(([m, label]) => (
           <button key={m} onClick={() => { setMode(m); setRunKey(k => k + 1); }} style={{
             padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 800, fontSize: 12, fontFamily: 'inherit',
             background: mode === m ? '#A855F7' : 'rgba(255,255,255,0.06)', color: mode === m ? '#fff' : '#94a3b8',
@@ -115,6 +134,16 @@ export default function QQRaceFinaleTestPage() {
           padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 12, fontFamily: 'inherit',
           background: 'rgba(34,197,94,0.18)', color: '#22C55E',
         }}>↻ Nochmal abspielen</button>
+        {mode === 'towerv2live' && (
+          <>
+            <span style={{ width: 1, height: 20, background: 'rgba(255,255,255,0.15)' }} />
+            <span style={{ color: '#F9C87A', fontSize: 12 }}>Beat {liveBeat}/{maxBeat}</span>
+            <button onClick={() => setLiveBeat(b => Math.min(b + 1, maxBeat))} style={{
+              padding: '6px 14px', borderRadius: 8, border: 'none', cursor: 'pointer', fontWeight: 900, fontSize: 12, fontFamily: 'inherit',
+              background: 'rgba(249,200,122,0.2)', color: '#F9C87A',
+            }}>Space → nächster Beat</button>
+          </>
+        )}
       </div>
     </div>
   );

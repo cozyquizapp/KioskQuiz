@@ -75,13 +75,18 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
-**Moderator-View-Batch (Wolf 17.7., neu):**
-- [ ] **„Runde 1 / Frage 1 von 5" anders darstellen** — passendere Darstellung für die Runden-/
-      Frage-Zähler-Badges (jetzt wo Cinzel/Kolosseum steht, wirkt die alte Pille evtl. off).
-- [ ] **Fraktionen im Moderator einklappen** — Fraktions-Block collapsible machen.
-- [ ] **Moderator-View übersichtlicher** — insgesamt aufräumen/strukturieren.
+**Moderator-View-Batch (Wolf 17.7. + 19.7.):**
+- [x] **Fraktionen im Moderator einklappen** — Frage-Phase: pro Fraktion nur Zeile (Wappen + X/N +
+      ✓), einzeln aufklappbar (`1b89495f`).
+- [x] **Moderator-View übersichtlich / RADIKALES Rework** — Cockpit (Ein-Spalten-Fokus): schlanker
+      Status-Streifen → Aktion als Held → Frage/Antwort → Kontext → Rangliste → eingeklapptes
+      „App-Steuerung". Bedienung 95% / App 5%. (`a43579ba`, verifiziert real, Previews in
+      `design-vorschau/moderator-cockpit-1..4`). ⚠️ **WARTET AUF WOLFS URTEIL.**
+- [ ] **„Runde 1 / Frage 1 von 5" anders darstellen** — Zähler-Badges (Cinzel/Kolosseum) — im
+      Cockpit jetzt schlanke Pills im Status-Streifen; ggf. Kolosseum-Gems auch hier (offen).
 - [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
 - [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt.
+- [ ] *(evtl.)* Danger-Button aus der Aktions-Zone raus; Test-Header-Buttons aufräumen.
 
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +

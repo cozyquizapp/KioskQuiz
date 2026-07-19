@@ -118,10 +118,32 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 ## 🟠 WARTET AUF MICH — Build
 
 **Moderator-View (offener Rest — Cockpit-Rework + Setup-Wizard sind durch, s. Git):**
-- [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt. (echter Bug)
-- [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
+- [ ] **„Einen Schritt zurück" reparieren** — Root-Cause per Audit (2026-07-19) präzise lokalisiert:
+      1. 🔴 `QQModeratorPage.tsx:1380` Vorwärts-Space-Handler prüft `e.shiftKey` NICHT → **Shift+Space
+         springt VOR** (Back-Handler `:1713` ist toter Code). Fix: `if (e.code==='Space' && !e.shiftKey)`.
+      2. 🔴 `QQModeratorPage.tsx:1527` Backspace-Zweig `return`t global → Backspace erreicht Back nie.
+         Fix: Backspace nicht global schlucken (nur `QUESTION_REVEAL && !correctTeamId` → markWrong).
+      3. `qqRooms.ts:7056 qqGoBackSlide` deckt nur 5 Phasen ab (Sub-Step-Dekrement), kein Phasen-
+         Snapshot → Back kann versehentliche Phasen-Weiterschaltung nicht heilen (struktureller Ausbau).
+      4. 🔴 **Finale-kritisch:** `qqRooms.ts:7074` Back re-armt pending Stacks, lässt aber gelegte
+         `cell.revealStamps` stehen → nächstes Advance legt sie ERNEUT → `updateTerritories` zählt doppelt
+         → **Sieger kann kippen** (nur Grid-Modus; Arena `updateTerritories` no-op). MUSS vor Finale-Lauf.
+      (Legacy `host:back`/`undoLastHostStep`/`ActionButtons.tsx` = toter Waisen-Pfad — MEMORY zeigte
+      fälschlich dorthin; echter Pfad ist `qq:goBackSlide`→`qqGoBackSlide`.)
+- [ ] **Alle SPACE-Befehle aktualisieren** — Hints stimmen nicht: Tooltip `:2017` + Hilfe-Panel `:6095`
+      bewerben „Shift+Space/Backspace = zurück", real tot bzw. springt vor (s.o.). Nach Fix 1-3 angleichen.
+      `Strg+Z` (`:1703` → undoLastAction) IST korrekt. Bounce-Schutz für `qqGoBackSlide` fehlt (400ms).
 - [ ] **„Runde 1 / Frage 1 von 5" darstellen** — im Cockpit schlanke Pills; ggf. Kolosseum-Gems
       auch hier (offen, koppelt an Tier-1-Assets).
+
+**Audit-Funde 2026-07-19 (3 Finish-Audits — beide Modi sind funktional durchspielbar, kein harter Blocker):**
+- [ ] **Endstand-Beat Höhen-Cap** — `CozyQuizLargeGroupView.tsx:931-953` nutzt feste `62px`/Zeile OHNE
+      Cap (anders als `CumulativeStandings:266` mit `MEGA_BOARD_H`). Bei 8 Fraktionen + Hero (~360px)
+      ≈ 950px auf 990er-Bühne → knapp/Clipping-Risiko bei langen Fraktionsnamen. Am Beamer prüfen, ggf. Cap.
+- [ ] *(schmal)* **COZY_GAME-Blank** — `QQBeamerPage.tsx:2075` zeigt bei `phase===COZY_GAME` aber
+      `cozyGame===null` (Reconnect/Cancel-Transient) leeren Beamer, kein Fallback. Nur wenn CozyGame genutzt.
+- Bestätigt SAUBER: Arena-Pfad bucketet überall korrekt auf 8 Fraktionen (kein Roh-40-Overflow), EN-Fallback
+  durchgängig, deaktivierte Landminen (Bluff/OnlyConnect/Final-Wager/Comeback) sind in Arena hart gegated.
 
 **Font & Menü (Wolf 19.7.):**
 - [ ] **Kolosseum-Font Phase 2** — „Schlicht = überall schlicht" (Wolf-Wahl): Siegerehrung/Krönung +

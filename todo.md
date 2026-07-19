@@ -22,28 +22,17 @@
    Arena in CozyQuiz übernehmen (z.B. bestimmte Reveal-Seiten).
 3. **Danach:** alle Modi eigenständig je **einmal komplett testen**.
 
-**Setup-/Moderator-Konsolidierung (Wolf-Entscheidungen 2026-07-19):**
-- [x] **VOLL zusammengelegt** — Lobby ins Cockpit gefaltet (`e188223f`, Team-Verwaltung im Cockpit,
-      LobbyView tot entfernt `f16b2e1b`) + **EIN Panel + „🧪 Test-Modus"-Toggle** (`ddd33688`, Bots/
-      Skip/Leaderboard-Skip hinter dem Toggle, Live clean; /moderator-test defaultet an). Previews
-      `design-vorschau/cockpit-lobby-gefaltet`, `moderator-testmodus-an|aus`.
-- [x] **Setup = gefuehrter 7-Schritt-Wizard** (`109e8d35`, ersetzt „Panel behalten"-Entscheidung!):
-      Wolf „Format-Wahl wird zum Wizard, ersetzt das Panel". Neue Komponente `QQSetupFlow.tsx`
-      (haelt QQModeratorPage schlank). Folgen: 1 Format · 2 Look (BILD-Vorschau) · 3 Fragensatz ·
-      4 Runden & Ablauf · 5 Timer & Sprache · 6 Extras · 7 Bereit → Cockpit. Look format-adaptiv
-      (Arena: Kolosseum/Schlicht mit `arena-main.webp`/`pre-neutral.webp`; CozyQuiz: Skin+Avatar).
-      Schritt-Kopf = klickbare Tabs. **Ein Gate** `setupDone`: !done → Wizard, done → schlankes
-      Cockpit (Read-only-Chips + „⚙ Aendern"). Format-Landing + Settings-Panel + tote SetupView
-      (900 Z.) + States editFormat/showAllSettings raus. Danger/Wartung in „Erweitert"-Klappe.
-      Verifiziert per echtem /moderator-test → Previews `design-vorschau/wizard-1..7-*`.
-- [x] **Colosseum-Schalter** = Look-Folie 2 des Wizards (vorher `7e0eaa6b` im Cockpit; jetzt im Wizard
-      mit Bild-Vorschau). Antwort auf „wo stelle ich Colosseum ein" + die „2 Arena-Looks".
-- [x] **Hot-Potato-Warnung** (`e6fc98f7`): Wizard-Fragensatz-Folie + 🔥N-Badge via megaWarnCount.
-- [x] **„Meine Quizze" einklappbar** (`e6fc98f7`).
-- [ ] **NÄCHSTES (Tagesziel): Arena einmal komplett durchspielen + Bugs fixen** → dann CozyQuiz vs
-      CozyArena Views vergleichen (bessere Reveal-Seiten übernehmen), dann alle Modi einmal testen.
-- [x] *(erledigt mit dem Wizard-Umbau)* Die frueheren Doppelungen (Format-Toggle in SetupView-
-      Advanced, No-Draft-S2-Bots-Popover) sind mit SetupView/Format-Landing entfallen.
+**Aktueller Fokus (Wolf 2026-07-19):**
+- [ ] **Tagesziel: CozyArena einmal komplett durchspielen + Bugs fixen** (dann CozyQuiz vs Arena
+      Views vergleichen → bessere Reveal-Seiten übernehmen, dann alle Modi einmal testen). ← LÄUFT.
+- [ ] *(Idee, geparkt — Wolf zeichnet)* **CozyWölfe-Avatar-Set für CozyQuiz**: 8 Wölfe in den 8
+      Slot-Farben, wählbar. Minimal 2 Frames/Wolf (Augen auf + Blinzeln) = plug-in wie cozy3d;
+      „gut" = + Jubel-Frame (3×8 = 24 PNGs). Einheitlicher Wolf-Körper + Slot-Farb-Accessoire
+      (Kontrast + Wiedererkennung), quadratisch/transparent, Blinzel-Frame augen-deckungsgleich.
+      KEINE öffentliche Trauer-Pose (no-shaming). Set unabhängig vom Bühnen-Skin. Brainstorm: Chat 19.7.
+
+> Setup/Moderator-Konsolidierung (Wizard, Cockpit-Fold, Test-Modus-Toggle, Konsolidierung) ist
+> **durch** — Details in der Git-History (`109e8d35`, `e188223f`, `ddd33688`, `f16b2e1b`, `a43579ba`).
 
 ---
 
@@ -94,6 +83,8 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
       `allwissen` `improvisation` `einspruch` `risiko`.
       ⚠️ Wolfs VS Code verarbeitet zu große Bilder nicht → selbst optimieren (max ~2 MB, sonst
       bricht der Workbox-Precache den Build).
+- [ ] **„am schnellsten"-Icon** — ersetzt den ⚡-Platzhalter beim Guess-Sieger (nur bei Punkte-
+      Gleichstand sichtbar). Drop-in: TODO-Slot im Reveal wartet auf dein Icon.
 
 ## 🔴 WARTET AUF WOLF — Entscheidungen
 
@@ -107,32 +98,11 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
-**Moderator-View-Batch (Wolf 17.7. + 19.7.):**
-- [x] **Fraktionen im Moderator einklappen** — Frage-Phase: pro Fraktion nur Zeile (Wappen + X/N +
-      ✓), einzeln aufklappbar (`1b89495f`).
-- [x] **Moderator-View übersichtlich / RADIKALES Rework** — Cockpit (Ein-Spalten-Fokus): schlanker
-      Status-Streifen → Aktion als Held → Frage/Antwort → Kontext → Rangliste → eingeklapptes
-      „App-Steuerung". Bedienung 95% / App 5%. (`a43579ba`, verifiziert real, Previews in
-      `design-vorschau/moderator-cockpit-1..4`). ⚠️ **WARTET AUF WOLFS URTEIL.**
-- [ ] **„Runde 1 / Frage 1 von 5" anders darstellen** — Zähler-Badges (Cinzel/Kolosseum) — im
-      Cockpit jetzt schlanke Pills im Status-Streifen; ggf. Kolosseum-Gems auch hier (offen).
+**Moderator-View (offener Rest — Cockpit-Rework + Setup-Wizard sind durch, s. Git):**
+- [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt. (echter Bug)
 - [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
-- [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt.
-- [x] **Danger-Button aus Aktions-Zone** + **Test-Header aufräumen** (`f557c4d8`): DangerMenu
-      runter in App-Steuerung; 5 Skip-Buttons → ein „🧪 Springe zu"-Dropdown.
-
-**Setup-Vereinheitlichung (Wolf 19.7. „alles doppelt/dreifach"):** Audit → SetupView-Panel ≈
-QQSetupWizard-Modal waren Duplikate. Wolf-Wahl: Ein-Panel + Show-planen als reine Checklisten.
-- [x] **Stage 1** (`89ab6a8f`): QQSetupWizard entfernt; SetupView = DIE eine „⚙ Einstellungen"-
-      Fläche (Cockpit + Format-Wahl → selbes Panel, ← Zurück).
-- [x] **Stage 2** (`d82a2be7`): „Show planen" Optionen-Schritt (Timer/Sprache/Comeback-Dublette)
-      raus → 5 Schritte (nur Vorbereitung). Previews `design-vorschau/setup-unified-1..3`.
-- [x] **Stage 3** (`9cc56ce1`): Format als Inline-Toggle ins Cockpit gefaltet (separate Format-
-      Wahl-Buehne nur noch No-Draft-Fallback); Einstellungen-Panel von warm-gold auf kuehles
-      Cockpit-Indigo umgeskinnt; Bots-Knopf immer im Cockpit sichtbar. → EINE Bildsprache.
-      Previews `design-vorschau/setup-v2-1..2`. ⚠️ WARTET AUF WOLFS BLICK.
-- [ ] *(klein/intern, offen)* Format-Toggle steckt noch zusätzlich in SetupView „Erweiterte
-      Optionen" (umgeht Team-Reset-Gate); Bots-Popover im Cockpit + No-Draft-S2 doppelt (S2 selten).
+- [ ] **„Runde 1 / Frage 1 von 5" darstellen** — im Cockpit schlanke Pills; ggf. Kolosseum-Gems
+      auch hier (offen, koppelt an Tier-1-Assets).
 
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +
@@ -142,8 +112,6 @@ Wappen). **Einziger offener Rest aus dem Batch:** bild 10 (2/3-Ansicht A/B/C/D +
 **Kolosseum-Kohärenz (Wolf 18.7.):** ⚠️ SCOPE-ENTSCHEIDUNG 18.7. = **nur Tier 1 (5 Kategorie-
 Medaillons, Wolf zeichnet), dann Design-FREEZE** → Fokus Event-Funktion + Akquise. Tier 2-4 +
 folgende Punkte = „spaeter/optional", NICHT jetzt bauen. Details Memory `project_design_motion_elevation`.
-- [x] **„Abgeschickt" = Wappen ERLEUCHTEN statt grünem Kreis** — erledigt (`16f05d3b`, `qqCrestLit`,
-      Fraktions-Farbe-Glow, verifiziert `/question-test`). Non-Arena behaelt Gruen.
 - [ ] *(spaeter/optional, nach Freeze)* Progress-Tree Diamanten/Gems statt Kreise (koppelt an Tier-1-Assets).
 - [ ] *(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.
 
@@ -152,18 +120,8 @@ beide Ring-weg + Kategorie-Farbe (QQCorrectViz + Toggle `QQ_CORRECT_VIZ` in Cozy
 ⚠️ Wolf-Bedenken: bei 5 Sub-Teams viele Pips → Balken skaliert besser. Nach Wahl: EINE Variante +
 **einheitlich überall in CozyArena** ausrollen (alle „x/y correct"-Stellen).
 
-**🐛 Winner-Value-Bugs in Guess-Reveals (Wolf 18.7.):**
-- [x] **Schätzchen-Sieger-Position** — Sieger stand am Lane-Extrem statt am Zielwert (Commit 3f5e8338,
-      verifiziert /reveal-test). Sieger sitzt jetzt an echter Tipp-Position (spot-on = Ziel-Mitte).
-- [x] **schwarm.png** (CrowdEstimate/Hive Mind) — Sieger-Position (Anker-Fix wie Schätzchen, `f4d84116`)
-      + Text-Overlaps (Bandlabel/Swarm-Marker verschoben, redundante Sieger-Pille raus, `8cf728b5`).
-      Gemessen + verifiziert am /reveal-test Schwarm-Modus.
-- [x] **„⚡ am schnellsten" beim Schätzchen-Sieger** (nur bei Punkte-Gleichstand, `209a83d4`, verifiziert).
-      ⚡ = Platzhalter mit TODO-Slot → **Wolf liefert eigenes „am schnellsten"-Icon, dann tauschen.**
-- [x] **Counter „Frage X von 5" → Kolosseum-Gem** — erledigt (`a238696c`, neue Komponente
-      `ArenaCounterGem`, beide PhaseIntro-Zaehler, Finale-Overlap-Fix). Paused bewusst gelassen (Card-Kontext).
-
-*(bild 4 + Scoring/Standings-Tafel am 17.7. gebaut → stehen auch oben im Beamer-Check.)*
+**🐛 Winner-Value-Bugs in Guess-Reveals:** alle gefixt + verifiziert (`3f5e8338`, `f4d84116`,
+`8cf728b5`, `209a83d4`, `a238696c`). Offener Rest = nur ein Asset (unten): das „⚡"-Platzhalter-Icon.
 
 ---
 

@@ -93,6 +93,7 @@ export function TowerFinaleV2({ teams, awards, lang }: {
   const [awardStage, setAwardStage] = useState<'card' | 'grow'>('card');
   const [awardTick, setAwardTick] = useState(0);
   const [revealStep, setRevealStep] = useState(reduce ? 3 : 0); // 0 = niemand, 1..3 = Platz 3..1
+  const [glided, setGlided] = useState(reduce); // Top-3 in der Mitte (nach Recede-Beat)
 
   const hasAwards = awards.length > 0;
   const curAward = awards[awardIdx];
@@ -115,8 +116,11 @@ export function TowerFinaleV2({ teams, awards, lang }: {
       } else setAwardTick(curAward ? curAward.bonus : 0);
       return;
     }
-    if (phase === 'reveal') setRevealStep(s => Math.min(3, s + 1));
-  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length]);
+    if (phase === 'reveal') {
+      if (!glided) { setGlided(true); return; }
+      setRevealStep(s => Math.min(3, s + 1));
+    }
+  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided]);
 
   useEffect(() => {
     if (reduce) return;
@@ -162,14 +166,16 @@ export function TowerFinaleV2({ teams, awards, lang }: {
     return () => window.clearTimeout(h);
   }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length]);
 
-  // Enthuellung: Glide-Hold → Platz 3 → 2 → Atempause → 1.
+  // Enthuellung: Recede-Beat (Plaetze 4..N dimmen) → Glide in die Mitte →
+  // Platz 3 → 2 → Atempause → 1.
   useEffect(() => {
     if (phase !== 'reveal') return;
+    if (!glided) { const h = window.setTimeout(() => setGlided(true), 1600); return () => window.clearTimeout(h); }
     if (revealStep >= 3) { try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ } return; }
-    const delay = revealStep === 0 ? 2100 : revealStep === 2 ? 2800 : 2200; // vor #1 laenger (Atempause)
+    const delay = revealStep === 0 ? 1300 : revealStep === 2 ? 2800 : 2200; // vor #1 laenger (Atempause)
     const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, delay);
     return () => window.clearTimeout(h);
-  }, [phase, revealStep]);
+  }, [phase, glided, revealStep]);
 
   const inReveal = phase === 'reveal';
   const crowned = inReveal && revealStep >= 3;
@@ -210,6 +216,17 @@ export function TowerFinaleV2({ teams, awards, lang }: {
   const awardRecipMystery = curAward ? !revealed(rankById[curAward.teamId]) : false;
   const recipTeam = curAward ? teamById(curAward.teamId) : undefined;
 
+  // Spannungs-Flash (C): waehrend ein Award-Baustein faellt, vergleiche die Hoehe
+  // des Empfaengers mit dem hoechsten ANDEREN Spitzenturm → Gleichstand / Fuehrung.
+  let standingFlash: 'tie' | 'lead' | null = null;
+  if (phase === 'award' && curAward && awardStage === 'grow' && awardTick > 0) {
+    const recipShown = shownOf(curAward.teamId);
+    let otherTopMax = 0;
+    for (const t of teams) if (t.team.id !== curAward.teamId && rankById[t.team.id] <= 2) otherTopMax = Math.max(otherTopMax, shownOf(t.team.id));
+    if (otherTopMax > 0 && recipShown === otherTopMax) standingFlash = 'tie';
+    else if (otherTopMax > 0 && recipShown === otherTopMax + 1) standingFlash = 'lead';
+  }
+
   return (
     <div style={{
       position: 'absolute', inset: 0, overflow: 'hidden',
@@ -242,8 +259,10 @@ export function TowerFinaleV2({ teams, awards, lang }: {
             <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: '0.34em', textTransform: 'uppercase', color: GOLD, animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Sieger' : 'Winner'}</div>
             <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.02, color: '#F8FAFC', textShadow: `0 2px 24px ${winner.team.color}66`, animation: reduce ? 'none' : 'qqT2WinnerIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>{winner.team.name}</div>
           </>
-        ) : inReveal && revealStep === 2 ? (
+        ) : inReveal && glided && revealStep === 2 ? (
           <div style={{ fontSize: 32, fontWeight: 900, color: '#F8FAFC', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
+        ) : inReveal && !glided ? (
+          <div style={{ fontSize: 32, fontWeight: 900, color: '#F8FAFC', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Die Top 3 stehen fest…' : 'The Top 3 are set…'}</div>
         ) : inReveal ? (
           <div style={{ fontSize: 34, fontWeight: 900, color: '#F8FAFC' }}>{de ? 'Die Top 3' : 'The Top 3'}</div>
         ) : phase === 'baseHold' ? (
@@ -258,6 +277,19 @@ export function TowerFinaleV2({ teams, awards, lang }: {
           </>
         )}
       </div>
+
+      {/* Spannungs-Flash (C): Gleichstand / In Fuehrung, waehrend der Award-Baustein faellt */}
+      {standingFlash && (
+        <div key={standingFlash} style={{
+          position: 'absolute', top: TITLE_H + 8, left: '50%', transform: 'translateX(-50%)', zIndex: 13,
+          padding: '10px 28px', borderRadius: 999, whiteSpace: 'nowrap',
+          fontSize: 26, fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase',
+          color: standingFlash === 'tie' ? '#1B1206' : '#0A2412',
+          background: standingFlash === 'tie' ? GOLD : '#34D27B',
+          boxShadow: `0 10px 30px rgba(0,0,0,0.5), 0 0 26px ${standingFlash === 'tie' ? GOLD : '#34D27B'}66`,
+          animation: reduce ? 'none' : 'qqT2FlashPop 0.5s cubic-bezier(0.2,1.3,0.4,1) both',
+        }}>{standingFlash === 'tie' ? (de ? '⚖ Gleichstand!' : '⚖ Tied!') : (de ? '▲ In Führung!' : '▲ In the lead!')}</div>
+      )}
 
       {/* Boden-Linie */}
       <div aria-hidden style={{ position: 'absolute', left: SIDE_PAD - 30, right: SIDE_PAD - 30, bottom: BASE_H + BOTTOM - 1, height: 1, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.14) 12%, rgba(255,255,255,0.14) 88%, transparent)' }} />
@@ -279,22 +311,26 @@ export function TowerFinaleV2({ teams, awards, lang }: {
         const badge = rank === 1 ? '🥈' : rank === 2 ? '🥉' : null;
         const i = orderIndex[id];
 
-        // Position + Glide
-        let tx = 0, opacity = 1, z = 4;
+        // Position + Glide (sequenziert: Nicht-Top-3 erst raus, dann Top-3 rein).
+        let tx = 0, ty = 0, opacity = 1, z = 4;
         if (inReveal) {
-          if (isTop3) { tx = podiumX(rank) - baseX(i); z = isWinner ? 7 : 6; }
-          else { opacity = 0.1; z = 3; }
+          if (isTop3) { if (glided) { tx = podiumX(rank) - baseX(i); } z = isWinner ? 7 : 6; }
+          else {
+            // Recede-Beat: kurz mit Platz dimmen, dann beim Glide voll ausblenden.
+            if (glided) { opacity = 0; ty = 40; } else { opacity = 0.4; }
+            z = 3;
+          }
         }
-        // Badge sichtbar: Nicht-Top-3 ab Reveal; Top-3 sobald enthuellt.
-        const showBadge = inReveal && (rank > 2 ? true : show);
+        // Badge: Nicht-Top-3 nur im Recede-Beat (vor Glide); Top-3 sobald enthuellt.
+        const showBadge = inReveal && (rank > 2 ? !glided : show);
         const capped = inReveal;
 
         return (
           <div key={id} style={{
             position: 'absolute', bottom: BOTTOM, left: baseX(i), width: colW, zIndex: z,
             display: 'flex', flexDirection: 'column', alignItems: 'center',
-            transform: `translateX(${tx}px)`, opacity,
-            transition: reduce ? 'none' : 'transform 0.8s cubic-bezier(0.4,0,0.2,1), opacity 0.6s ease',
+            transform: `translateX(${tx}px) translateY(${ty}px)`, opacity,
+            transition: reduce ? 'none' : `transform 0.75s cubic-bezier(0.4,0,0.2,1)${isTop3 ? ' 0.35s' : ''}, opacity 0.5s ease`,
             animation: (isWinner && inReveal && revealStep === 2 && !reduce) ? 'qqT2Heartbeat 1.5s ease-in-out infinite' : 'none',
           }}>
             <div style={{ position: 'relative', width: blockW, display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: GAP }}>
@@ -413,6 +449,7 @@ const KEYFRAMES = `
 @keyframes qqT2Heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
 @keyframes qqT2AwardIn { 0% { opacity: 0; transform: translateY(20px) scale(0.9); } 100% { opacity: 1; transform: none; } }
 @keyframes qqT2AwardPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
+@keyframes qqT2FlashPop { 0% { transform: translateX(-50%) scale(0.7); opacity: 0; } 60% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
 @keyframes qqT2Drift { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 0.18; } 88% { opacity: 0.18; } 100% { transform: translateY(-800px) translateX(24px); opacity: 0; } }
 `;
 

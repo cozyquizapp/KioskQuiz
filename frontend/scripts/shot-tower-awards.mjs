@@ -10,14 +10,14 @@ const FRAMES = [
   [1.5, '01-intro'],
   [6.0, '02-base-mystery'],
   [8.3, '03-zwischenstand'],
-  [10.6, '04-award-underdog-card'],
-  [14.8, '05-award-speedy-card'],
-  [17.2, '06-speedy-tie'],
-  [19.0, '07-award-meisterklauer-card'],
-  [23.2, '08-reveal-glide'],
-  [25.2, '09-reveal-3rd'],
-  [27.6, '10-und-der-sieger'],
-  [31.5, '11-crowned'],
+  [14.8, '04-award-speedy-card'],
+  [17.0, '05-gleichstand-flash'],
+  [19.0, '06-award-meisterklauer-card'],
+  [21.3, '07-fuehrung-flash'],
+  [23.6, '08-recede-beat'],
+  [25.8, '09-glide-reveal3'],
+  [28.2, '10-und-der-sieger'],
+  [31.8, '11-crowned'],
 ];
 
 const run = async () => {

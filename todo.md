@@ -164,9 +164,11 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 Wappen), bild 10 ✅ (2/3-Ansicht = `QQGemFill`-Diamant füllt in Kategorie-Farbe, Wolfs 3. Variante statt
 Pips/Balken — im Code aktiv, Wolf 19.7. bestätigt entschieden). Details in Memory `project_screens_1707_batch`.
 
-**Kolosseum-Kohärenz (Wolf 18.7.):** ⚠️ SCOPE-ENTSCHEIDUNG 18.7. = **nur Tier 1 (5 Kategorie-
-Medaillons, Wolf zeichnet), dann Design-FREEZE** → Fokus Event-Funktion + Akquise. Tier 2-4 +
-folgende Punkte = „spaeter/optional", NICHT jetzt bauen. Details Memory `project_design_motion_elevation`.
+**Kolosseum-Kohärenz (Wolf 18.7.):** ✅ **Tier 1 FERTIG (2026-07-19):** Wolfs 5 Kategorie-Medaillons
+(Stein+Gold, römisch) per Corner-Flood-Fill freigestellt + in `/icons/cat-*.png` verdrahtet (ersetzen
+cozy3d). Vorschau `design-vorschau/tier1-medaillons-cutout.png`. **→ Design-FREEZE erreicht** → Fokus
+Event-Funktion + Akquise. Tier 2-4 + folgende Punkte = „spaeter/optional", NICHT jetzt bauen.
+⚠️ Am echten Beamer im Runden-Intro gegensehen (Blend auf Kolosseum-BG). Details Memory `project_design_motion_elevation`.
 - [ ] *(spaeter/optional, nach Freeze)* Progress-Tree Diamanten/Gems statt Kreise (koppelt an Tier-1-Assets).
 - [ ] *(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.
 

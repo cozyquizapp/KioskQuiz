@@ -2210,17 +2210,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           (?draft= aus „Meine Quizze"), zeigt EIN Screen alles Noetige — Quiz-
           Vorschau, Join-QR, Ort, grosser Start-Button. Der 7-Schritt-Wizard wird
           optional („⚙ Details"). Ohne Draft weiterhin die Format-Wahl-Landing. */}
-      {joined && s && s.phase === 'LOBBY' && !setupDone && !showAllSettings && selectedDraftId && !editFormat && (() => {
+      {/* 2026-07-19 (Wolf 'Lobby ins Cockpit falten'): !setupDone-Gate entfernt →
+          das Cockpit IST der einzige Vor-Spiel-Screen (auch nach Setup-Abschluss),
+          inkl. Team-Verwaltung. Kein separater Lobby-Warteraum mehr. */}
+      {joined && s && s.phase === 'LOBBY' && !showAllSettings && selectedDraftId && !editFormat && (() => {
         const cd = drafts.find(d => d.id === selectedDraftId);
         const title = (cd?.title ?? 'Quiz').replace(/^🎯\s*/, '');
         const qCount = (cd as any)?.questionCount ?? ((cd as any)?.questions?.length ?? 0);
         const arena = !!(s as any).largeGroupMode;
         const accent = arena ? '#A78BFA' : '#EC4899';
         const connectedTeams = s.teams.filter(t => t.connected).length;
+        const hasTeams = s.teams.length > 0;
         const card: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: 18 };
         const fieldLbl: React.CSSProperties = { fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 };
         return (
-          <div style={{ minHeight: 'calc(100dvh - 124px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 'clamp(8px, 1.8vh, 18px)', maxWidth: 860, margin: '0 auto', width: '100%' }}>
+          <div style={{ minHeight: 'calc(100dvh - 124px)', display: 'flex', flexDirection: 'column', justifyContent: hasTeams ? 'flex-start' : 'center', paddingTop: hasTeams ? 18 : 0, gap: 'clamp(8px, 1.8vh, 18px)', maxWidth: 860, margin: '0 auto', width: '100%' }}>
             {/* Sprechblase */}
             <div style={{ display: 'flex', justifyContent: 'center' }}>
               <div style={{ position: 'relative', background: '#fff', color: '#1E2A5A', fontWeight: 900, fontSize: 'clamp(15px, 2.1vw, 20px)', padding: '8px 20px', borderRadius: 16, boxShadow: '0 12px 30px -8px rgba(236,72,153,0.5)', border: '2px solid rgba(236,72,153,0.4)' }}>
@@ -2358,6 +2362,38 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               <span style={{ color: '#64748b' }}>·</span>
               <span style={{ color: '#64748b', fontWeight: 700 }}>Beitritts-QR läuft über den Beamer</span>
             </div>
+
+            {/* Teams — 2026-07-19 (Wolf 'Lobby ins Cockpit falten'): Team-Verwaltung
+                aus dem alten separaten Lobby-Warteraum hierher. Arena/nested →
+                Fraktions-Ansicht (MegaFactionLobby), sonst Team-Liste mit umbenennen/
+                kicken. Bots kommen ueber den „🤖 Bots"-Knopf unten rein. */}
+            {hasTeams && (
+              <div style={{ ...card, width: '100%' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                  <span style={{ ...fieldLbl, marginBottom: 0 }}>👥 Verbundene Teams</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 900, color: connectedTeams > 0 ? '#22c55e' : '#94a3b8' }}>
+                    {connectedTeams}/{s.teams.length} verbunden
+                  </span>
+                </div>
+                {(s as any).nestedTeams ? (
+                  <MegaFactionLobby teams={s.teams} emit={emit} roomCode={roomCode} />
+                ) : (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))', gap: 8 }}>
+                    {s.teams.map(t => (
+                      <div key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 10px', borderRadius: 8, background: t.connected ? `${t.color}18` : 'rgba(255,255,255,0.03)', border: `1px solid ${t.connected ? `${t.color}55` : 'rgba(255,255,255,0.08)'}`, opacity: t.connected ? 1 : 0.55 }}>
+                        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={40} style={{ flexShrink: 0 }} />
+                        <div style={{ minWidth: 0, flex: 1 }}>
+                          <TeamNameLabel name={t.name} maxLines={1} shrinkAfter={14} fontSize={13} color={t.connected ? QQ_COLORS.slate200 : QQ_COLORS.slate500} fontWeight={900} />
+                          <div style={{ fontSize: 10, fontWeight: 700, color: t.connected ? QQ_COLORS.green500 : QQ_COLORS.red500 }}>{t.connected ? '● bereit' : '○ offline'}</div>
+                        </div>
+                        <button onClick={() => { const next = prompt(`Team „${t.name}" umbenennen:`, t.name); if (next == null) return; const tr = next.trim(); if (!tr || tr === t.name) return; emit('qq:renameTeam', { roomCode, teamId: t.id, name: tr }); }} title="Team umbenennen" style={{ width: 22, height: 22, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: QQ_COLORS.slate300, fontSize: 11, fontWeight: 900, cursor: 'pointer', fontFamily: 'inherit' }}><span aria-hidden="true">✎</span></button>
+                        <button onClick={() => { if (!window.confirm(`Team "${t.name}" entfernen?`)) return; emit('qq:kickTeam', { roomCode, teamId: t.id }); }} title="Team entfernen" style={{ width: 22, height: 22, borderRadius: '50%', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.08)', color: QQ_COLORS.red500, fontSize: 11, fontWeight: 900, cursor: 'pointer', padding: 0, lineHeight: 1, fontFamily: 'inherit', flexShrink: 0 }}>✕</button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
 
             {/* Start */}
             <button
@@ -2692,7 +2728,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           (SetupView-Panel) statt zusaetzlichem Modal-Wizard. Erreichbar aus dem
           Cockpit und der Format-Wahl; „← Zurueck" fuehrt dorthin zurueck,
           „Setup abschliessen" fuehrt in die Lobby. */}
-      {showAllSettings && s && s.phase === 'LOBBY' && !setupDone && (
+      {showAllSettings && s && s.phase === 'LOBBY' && (
         <SetupView
           s={s}
           drafts={drafts}
@@ -2707,26 +2743,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           setLocalSoundConfig={setLocalSoundConfig}
           roomCode={roomCode}
           emit={emit}
-          finishSetup={() => setSetupDone(true)}
+          finishSetup={() => { setSetupDone(true); setShowAllSettings(false); }}
           onClose={() => setShowAllSettings(false)}
         />
       )}
 
-      {joined && s && s.phase === 'LOBBY' && setupDone && (
-        <>
-          <LobbyView
-            s={s}
-            drafts={drafts}
-            selectedDraftId={selectedDraftId}
-            phases={phases}
-            timerInput={timerInput}
-            roomCode={roomCode}
-            emit={emit}
-            startGame={startGame}
-            backToSetup={() => setSetupDone(false)}
-          />
-        </>
-      )}
+      {/* 2026-07-19 (Wolf 'Lobby ins Cockpit falten'): Der separate LobbyView-
+          Warteraum ist entfernt — das Cockpit (oben) ist der einzige Vor-Spiel-
+          Screen inkl. Team-Verwaltung. */}
 
       {joined && s && s.phase !== 'LOBBY' && (
         <div className="qm-cockpit-wrap">

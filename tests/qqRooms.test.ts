@@ -11,7 +11,8 @@
  */
 import { describe, it, expect } from 'vitest';
 import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat } from '../shared/qqFinalReveal';
-import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount } from '../backend/src/quarterQuiz/qqRooms';
+import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories } from '../backend/src/quarterQuiz/qqRooms';
+import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
 // ── Test-Helpers ─────────────────────────────────────────────────────────────
 
@@ -110,6 +111,44 @@ describe('qqFinalMaxStep = B + 1 + qqTowerMaxBeat(A, Teams)', () => {
   it('3 bets, 3 awards, 8 teams → 11', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(11));
   it('8 bets, 3 awards, 8 teams → 16', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(16));
   it('3 bets, 0 awards, 8 teams → 8 (Awards weggefallen komprimiert)', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(8));
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// updateTerritories — Bet-Stamp-Doppelzaehlung (2026-07-19 Finale-Score-Audit)
+// ════════════════════════════════════════════════════════════════════════════
+// Empirisch bewiesen: sobald Final-Reveal-Bet-Stamps auf dem Grid lagen, stieg
+// largestConnected um totalBonus → qqFinalTotal (= largestConnected + totalBonus
+// + awardPoints) zaehlte den Wett-Bonus DOPPELT (Sieger-kippbar). Fix: Stamps
+// bleiben rein visuell, zaehlen NICHT mehr in die Wertung. Dieser Test sperrt das.
+describe('updateTerritories — revealStamps zaehlen NICHT in largestConnected (Anti-Doppelzaehlung)', () => {
+  function gridRoom() {
+    const grid = buildEmptyGrid(3);
+    grid[0][0].ownerId = 't1';
+    grid[0][1].ownerId = 't1';
+    grid[1][0].ownerId = 't1'; // zusammenhaengende Region aus 3 Feldern
+    return makeRoom({
+      gridSize: 3,
+      grid,
+      largeGroupMode: false,
+      teams: { t1: makeTeam('t1'), t2: makeTeam('t2') },
+      joinOrder: ['t1', 't2'],
+    });
+  }
+
+  it('largestConnected = reine Grid-Region, unabhaengig von Bet-Stamps', () => {
+    const room = gridRoom();
+    updateTerritories(room);
+    expect(room.teams.t1.largestConnected).toBe(3);
+
+    // Bet-Stamps drauflegen (so wie qqFinalRevealPlaceStack es tut)
+    room.grid[0][0].revealStamps = [{ kind: 'bet', teamId: 't1' }, { kind: 'bet', teamId: 't1' }];
+    room.grid[0][1].revealStamps = [{ kind: 'sympathy', teamId: 't1' }];
+    updateTerritories(room);
+
+    // Vor dem Fix waere largestConnected jetzt 3 + 3 Stamps = 6 gewesen.
+    expect(room.teams.t1.largestConnected).toBe(3);
+    expect(room.teams.t1.totalCells).toBe(3);
+  });
 });
 
 // ════════════════════════════════════════════════════════════════════════════

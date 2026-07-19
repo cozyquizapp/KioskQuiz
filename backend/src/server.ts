@@ -91,7 +91,7 @@ import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
-import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories } from './quarterQuiz/qqRooms';
+import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories, qqAdvanceFinalReveal, qqBetSlotsCount } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
 import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName, qqMegaFactionSlug } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
@@ -10181,6 +10181,53 @@ app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
 
   broadcastQQ(io, roomCode);
   res.json({ ok: true, target, phase: room.phase, gamePhaseIndex: room.gamePhaseIndex });
+});
+
+// 2026-07-19 (Finale-Score-Audit, dev-only): pro-Team Score-Aufschluesselung, um
+// die Bet-Doppelzaehlung zu beweisen (largestConnected inkl. Stamps vs totalBonus).
+app.get('/api/qq/:roomCode/dev/dumpScore', (req, res) => {
+  if (!assertDevAccess(req, res)) return;
+  const room = getQQRoom(req.params.roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  const aw = room.endAwards;
+  const awPts = (id: string) =>
+    (aw?.underdog === id ? 2 : 0) + (aw?.meisterklauer === id ? 1 : 0) + (aw?.speedy === id ? 1 : 0);
+  const rows = Object.values(room.teams).map((t: any) => {
+    const bonus = room.finalBetResolution?.[t.id]?.totalBonus ?? 0;
+    let stamps = 0;
+    for (const row of room.grid) for (const c of row) {
+      if (c.ownerId === t.id && c.revealStamps) stamps += c.revealStamps.length;
+    }
+    const largest = t.largestConnected ?? 0;
+    const ap = awPts(t.id);
+    return {
+      name: t.name,
+      largestConnected: largest,
+      totalCells: t.totalCells ?? 0,
+      totalBonus: bonus,
+      awardPoints: ap,
+      stampsOnGrid: stamps,
+      finalTotal: largest + bonus + ap, // = qqFinalTotal (FE/BE Single-Source)
+    };
+  });
+  res.json({ phase: room.phase, step: room.finalRevealStep, betSlotsCount: qqBetSlotsCount(room), rows });
+});
+
+// 2026-07-19 (Finale-Score-Audit, dev-only): Finale server-seitig N Steps advancen
+// (platziert Bet-Stamps via qqFlushPendingStacks) — ohne Moderator-Socket.
+app.post('/api/qq/:roomCode/dev/advanceFinal', (req, res) => {
+  if (!assertDevAccess(req, res)) return;
+  const room = getQQRoom(req.params.roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  const steps = Math.max(1, Math.min(50, Number(req.body?.steps ?? 1)));
+  const from = room.finalRevealStep;
+  for (let i = 0; i < steps; i++) {
+    if (room.phase !== 'FINAL_REVEAL') break;
+    (room as any).__lastFinalAdvanceAt = 0; // Bounce-Guard umgehen fuers Skript
+    qqAdvanceFinalReveal(room);
+  }
+  broadcastQQ(io, req.params.roomCode);
+  res.json({ ok: true, from, step: room.finalRevealStep, phase: room.phase });
 });
 
 app.post('/api/qq/feedback', async (req, res) => {

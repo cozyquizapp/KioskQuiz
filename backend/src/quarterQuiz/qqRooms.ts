@@ -4630,11 +4630,18 @@ export function updateTerritories(room: QQRoomState): void {
       if (!cell.ownerId) continue;
       if (cell.stuck)      bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + 1;
       if (cell.stackBonus) bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + cell.stackBonus;
-      // 2026-05-25 (Wolf Final-Wager v4): Story-Stamps zaehlen linear zur
-      // largestConnected — 1 Stamp = +1 Punkt (kein Multiplier).
-      if (cell.revealStamps && cell.revealStamps.length > 0) {
-        bonusByTeam[cell.ownerId] = (bonusByTeam[cell.ownerId] ?? 0) + cell.revealStamps.length;
-      }
+      // 2026-07-19 (Finale-Score-Audit — Bet-Doppelzaehlung, empirisch bewiesen):
+      // Die Final-Reveal-Story-Stamps (Bet/Sympathy) sind die VISUELLE Darstellung
+      // des Wett-Bonus auf dem Grid. Sie hier in largestConnected mitzuzaehlen war
+      // eine Doppelzaehlung: qqFinalTotal = largestConnected + finalBetResolution.
+      // totalBonus + awardPoints addiert den Bonus bereits separat, und die Stamp-
+      // Anzahl pro Team ist EXAKT totalBonus (targetWins + sympathyBonus). Sobald
+      // die Stamps landeten, stieg largestConnected um totalBonus → Bonus zaehlte
+      // doppelt (Sieger-kippbar). Ausserdem hatte das Handy (kein Reveal, keine
+      // Stamps) largestConnected OHNE Bonus → Handy/Beamer divergierten wieder.
+      // Fix: Stamps bleiben rein visuell (cell.revealStamps rendert das FE weiter),
+      // die Wertung kommt allein aus totalBonus. Award-Stamps sind seit dem Turm-
+      // Finale-V2-Umbau ohnehin raus (Awards nur noch via endAwards/awardPoints).
     }
   }
   for (const id of room.joinOrder) {

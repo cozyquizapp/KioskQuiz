@@ -23,6 +23,25 @@
 3. **Danach:** alle Modi eigenständig je **einmal komplett testen**.
 
 **Aktueller Fokus (Wolf 2026-07-19):**
+- [ ] **Turm-Finale V2 (Grid-Modus) — LIVE-WIRING scharfschalten** ← nächster Schritt.
+      Design ✅ auf `main`, in der Vorschau voll abgenommen. Neues 2-Akt-Finale (Wolf-Idee):
+      Top-3 bauen ANONYM (grau/?) → grosse Award-Zeremonie (je +1, **Underdog +2**) lässt Türme
+      steigen mit **„⚖ Gleichstand!" / „▲ In Führung!"**-Kipp → Glide in die Mitte → 3-2-1 + Krone.
+      Komponente `CozyQuizTowerFinaleV2.tsx`, Vorschau `/race-finale` Toggle „✨ V2 Auto" + „🎛 V2 Live".
+      FERTIG: Hybrid-Live-Variante (`liveBeat`-gated, hält an jedem Beat auf Space), Mapping
+      `buildTowerFinaleData(state)`, Scoring geprüft (Awards zählen via `endAwards`/`awardPoints`,
+      Grid-Stamp-Platzierung raus ändert Sieger NICHT). Steuerung=**Hybrid**, Awards=**ganz in den Turm**.
+      OFFEN (event-kritisch, **echter /beamer-Finale-Durchlauf Pflicht**): 4 Dateien —
+      (1) `shared/qqFinalReveal.ts`: `award`-Kind raus, `race-final` bekommt `beat`, `maxStep`
+          dynamisch (towerBeats = 1 Aufbau + Awards + 1 Glide + min(3,Teams) Reveals);
+      (2) `backend/qqRooms.ts`: `qqFinalRevealPendingForStep` Award-Stamps raus (Bet bleibt),
+          `qqFinalRevealMaxStep` mit towerBeats;
+      (3) `CozyQuizFinalRevealView.tsx`: `award`-Karten-Rendering raus, `race-final` →
+          `TowerFinaleV2(liveBeat=beat)` statt altem `TowerFinalSlide`;
+      (4) `QQModeratorPage.tsx`: lokales `maxStep` (Z.1071) + FINAL_REVEAL-Autoplay-Timing (Z.1063+).
+      🔴 BLOCKER Validierung: `shot-finale.mjs` (Standard-Spiel → `dev/skipTo final-reveal` → Autoplay)
+      hängt an **stale Arena-Raum im RAM** (`default`, `roomCode=QQ_ROOM` fix) → Standard-Start feuert
+      nicht. FIX: **lokaler Backend-Neustart Port 4000** leert RAM-Räume (Wolf hat OK gegeben).
 - [ ] **Tagesziel: CozyArena einmal komplett durchspielen + Bugs fixen** (dann CozyQuiz vs Arena
       Views vergleichen → bessere Reveal-Seiten übernehmen, dann alle Modi einmal testen). ← LÄUFT.
 - [ ] *(Idee, geparkt — Wolf zeichnet)* **CozyWölfe-Avatar-Set für CozyQuiz**: 8 Wölfe in den 8

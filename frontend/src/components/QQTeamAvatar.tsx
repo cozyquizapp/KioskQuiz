@@ -123,6 +123,7 @@ export function QQTeamAvatar({
     return (
       <ImageAvatar
         src={display.src}
+        blinkSrc={display.blinkSrc}
         color={bgColor ?? display.color}
         size={size}
         baseStyle={base}
@@ -373,9 +374,9 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId,
+  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId,
 }: {
-  src: string; color: string; size: number | string;
+  src: string; blinkSrc?: string; color: string; size: number | string;
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
   /** Augen-Zustand: 'auto' = Ruhe offen + Idle-Blinzeln (große Avatare);
    *  'open'/'closed' = State-gesteuert (z.B. Grid: zu wenn nicht dran, auf wenn
@@ -386,8 +387,10 @@ function ImageAvatar({
 }) {
   const [failed, setFailed] = useState(false);
   const [blinkFailed, setBlinkFailed] = useState(false);
-  const slug = cozy3dSlugFromSrc(src);
-  const has = !!slug && !blinkFailed && cozy3dHasBlink(slug);
+  // Blink-Frame: explizit gesetzt (CozyWölfe) ODER aus dem cozy3d-Slug abgeleitet.
+  const derivedSlug = cozy3dSlugFromSrc(src);
+  const effBlinkSrc = blinkSrc ?? (derivedSlug && cozy3dHasBlink(derivedSlug) ? cozy3dBlinkSrc(derivedSlug) : undefined);
+  const has = !!effBlinkSrc && !blinkFailed;
   // Idle-Blinzeln (Ruhe offen, kurz zu) nur auf GROSSEN Avataren (flat=Grid → statisch).
   const idleBlink = eyes === 'auto' && blink && !flat && has;
   // 'open'/'closed' = explizit State-gesteuert (Crossfade), auch auf flat (Grid).
@@ -432,7 +435,7 @@ function ImageAvatar({
       {failed ? (
         // Fallback: neutraler Punkt (kein potenziell falsches Tier-Emoji).
         <span style={{ color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
-      ) : useStack && slug ? (
+      ) : useStack && effBlinkSrc ? (
         // Zwei gestapelte Frames: offen (Basis) + geschlossen (Overlay).
         // idle → Overlay blinzelt per Keyframe; explicit → Overlay-Opacity per
         // State mit weichem Crossfade (Aufwachen/Einschlafen).
@@ -446,7 +449,7 @@ function ImageAvatar({
             style={{ width: '100%', height: '100%', objectFit: 'contain', filter: imgFilter, display: 'block' }}
           />
           <img
-            src={cozy3dBlinkSrc(slug)}
+            src={effBlinkSrc}
             alt=""
             aria-hidden="true"
             onError={() => setBlinkFailed(true)}

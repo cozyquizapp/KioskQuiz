@@ -9,6 +9,7 @@
 import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
 import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvatars';
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
+import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -93,6 +94,27 @@ export const AVATAR_SETS: AvatarSet[] = [
     preview: ['🐼', '🐧', '🦒'],
     source: 'emoji',
     avatars: COZY3D_SLUGS,
+  },
+  // 2026-07-19 (Wolf): CozyWölfe — 8 illustrierte Wölfe, je Slot eingefärbt
+  // (slot-gebunden wie die Wappen). „avatars"=Wolf-Slugs (isCozyWolfSlug) →
+  // ImageAvatar rendert das Wolf-PNG auf der Slot-Farb-Disc, mit 2-Frame-Blinzeln.
+  // Charaktere (Slot/Farbe/Name/Wesen/Gender-Leaning):
+  //   1 Orange Mika  — Gastgeber, charmant/führungsstark/warm/souverän (m)
+  //   2 Grün   Nuri  — Beobachtung/Ruhe/Geduld, gelassen/trocken-humorvoll (neutral)
+  //   3 Teal   Ari   — kühler Stratege, übersichtlich/ruhig/kontrolliert (neutral)
+  //   4 Violett Ylva — elegante Taktikerin, intuitiv/geistreich/souverän (w)
+  //   5 Gelb   Jori  — chaotischer Schnell-Denker, spontan/wild/unberechenbar (m)
+  //   6 Blau   Levin — Analyst, Fokus/Kontrolle/Präzision/Rationalität (m)
+  //   7 Pink   Maja  — Charisma/Motivation, sozial/schlagfertig/selbstbewusst (w)
+  //   8 Rot    Rurik — Antreiber, Mut/Wettbewerb/Entschlossenheit (m)
+  {
+    id: 'cozyWolves',
+    label: 'CozyWölfe',
+    tint: '#EC4899',
+    leadEmoji: '🐺',
+    preview: ['🐺', '🌙', '🔥'],
+    source: 'emoji',
+    avatars: COZY_WOLF_SLUGS,
   },
   {
     id: 'all',
@@ -228,7 +250,7 @@ export function getSet(id: string | undefined): AvatarSet {
 
 export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
-  | { kind: 'image'; src: string;     color: string; label: string }   // cozy3d 3D-Avatar
+  | { kind: 'image'; src: string;     color: string; label: string; blinkSrc?: string }   // cozy3d / CozyWolf (blinkSrc = expliziter Blink-Frame)
   | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // CozyArena-Wappen (flach)
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
@@ -283,6 +305,14 @@ export function getAvatarDisplay(
     if (isCrestSlug(setCrest)) emoji = setCrest;
   }
 
+  // CozyWölfe-Set ist slot-gebunden: ein stale teamEmoji (cozy3d/Emoji aus einem
+  // frueheren Set) darf den Slot-Wolf nicht ueberschreiben — sonst zeigen
+  // Standings/Reveals wieder Tiere. Nur ein explizit gewaehlter anderer Wolf gewinnt.
+  if (set.id === 'cozyWolves' && !isCozyWolfSlug(emoji)) {
+    const setWolf = set.avatars[slotIdx];
+    if (isCozyWolfSlug(setWolf)) emoji = setWolf;
+  }
+
   // CozyArena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {
     return {
@@ -301,6 +331,18 @@ export function getAvatarDisplay(
       src: cozy3dSrc(emoji),
       color: slot.color,
       label: cozy3dLabel(emoji),
+    };
+  }
+
+  // CozyWölfe: illustriertes Wolf-PNG auf der Slot-Farb-Disc, mit explizitem
+  // Blink-Frame (open/blink). Slug slot-gebunden (ein Wolf je Farbe).
+  if (isCozyWolfSlug(emoji)) {
+    return {
+      kind: 'image',
+      src: cozyWolfSrc(emoji),
+      blinkSrc: cozyWolfBlinkSrc(emoji),
+      color: slot.color,
+      label: cozyWolfLabel(emoji),
     };
   }
 

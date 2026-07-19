@@ -21,7 +21,8 @@
  * respektiert. Auto-Play + Space zum Vorspulen. Vorschau /race-finale.
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import type { QQTeam } from '../../../shared/quarterQuizTypes';
+import type { QQTeam, QQStateUpdate } from '../../../shared/quarterQuizTypes';
+import { qqAwardPoints, qqFinalTotal } from '../utils/qqFinalScore';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -32,6 +33,22 @@ import {
 
 export type TowerTeam = { team: QQTeam; base: number };
 export type TowerAward = { key: string; label: string; labelEn?: string; emoji: string; teamId: string; bonus: number };
+
+// Mapping State → Turm-Daten (Live-Wiring): base = Quiz-Cluster + Bet-Bonus
+// (also OHNE Award-Punkte), Awards separat aus endAwards mit echten Werten
+// (Underdog +2, Speedy/Meisterklauer +1). Underdog zuletzt (= +2-Climax, wie die
+// bestehende Award-Dramaturgie). Score bleibt identisch zu qqFinalTotal — die
+// Awards zaehlen weiter, nur ihre PRAESENTATION wandert in den Turm.
+export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; awards: TowerAward[] } {
+  const ap = qqAwardPoints(s);
+  const teams: TowerTeam[] = s.teams.map(t => ({ team: t, base: qqFinalTotal(s, t.id, ap) - (ap[t.id] ?? 0) }));
+  const a = s.endAwards;
+  const awards: TowerAward[] = [];
+  if (a?.speedy) awards.push({ key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: a.speedy, bonus: 1 });
+  if (a?.meisterklauer) awards.push({ key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: a.meisterklauer, bonus: 1 });
+  if (a?.underdog) awards.push({ key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: a.underdog, bonus: 2 });
+  return { teams, awards };
+}
 
 const STAGE_W = 1760;
 const STAGE_H = 990;

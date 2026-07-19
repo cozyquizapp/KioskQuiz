@@ -101,9 +101,10 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🔴 WARTET AUF WOLF — Entscheidungen
 
-- [ ] **Backend-Refactor freigeben:** `qqMegaEventScore`-Distanzzweige auf shared `qqDistanceScore`
-      (beseitigt Drift-Risiko, braucht Redeploy). Angeboten, wartet auf OK. **Einzige noch offene
-      Entscheidung** (Wolf 19.7.: „alle durch außer backend refactor").
+- ✅ **Backend-Refactor `qqDistanceScore` GEBAUT (2026-07-19):** `qqMegaEventScore`-Distanzzweige
+      (SCHAETZCHEN + Schwarm) auf einen `scoreDistanceCat`-Helfer gezogen (Drift-Killer). Selfcheck
+      10/10, tsc clean, vitest 49/49. Liegt auf Branch `design/material-pass-standings-bar` (`3ecf264b`),
+      geht mit den neuen Wölfen zusammen auf main (Redeploy dann).
 - Erledigt/verworfen 2026-07-19 (Wolf): MUCHO-Delight-Hebel = **verworfen** (vergessen + Design-Freeze,
   bleibt wie's ist) · Fraktions-Namen unter Wappen = **nein** (nur Wappen+Anzahl, so gebaut) ·
   arena-main-Video aufs Welcome-Overlay = **durch/moot**.

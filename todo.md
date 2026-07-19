@@ -22,18 +22,20 @@
    Arena in CozyQuiz übernehmen (z.B. bestimmte Reveal-Seiten).
 3. **Danach:** alle Modi eigenständig je **einmal komplett testen**.
 
-**Offene Setup-/Moderator-Fragen aus dieser Session (an Wolfs Entscheidung):**
-- [ ] **Getrennte Mod-Panels zusammenlegen?** /moderator + /moderator-test sind EIN Page +
-      `testMode`-Flag. Vorschlag: EIN Panel + „Test-Modus"-Toggle (Bots/Skip/kein-Leaderboard
-      dahinter). (Bots sind seit `9cc56ce1` auch im Normal-Modus sichtbar → Frage kam davon.)
-- [ ] **Lobby ins Cockpit falten?** LobbyView-Warteraum (Team-Liste/rename/kick/QR/Start)
-      überschneidet sich mit dem Cockpit → könnte EINE Setup-Seite werden.
-- [ ] **Format-Kompatibilität absichern:** keine CozyQuiz-only-Drafts in Arena spielbar und
-      umgekehrt (Filter im Draft-Picker + Block bei Start). ⚠️ playability-kritisch.
-- [ ] **Wizard vs Panel** nochmal offen: Wolf hatte Panel gewählt, fragt Wizard nochmal an.
-- [ ] **„Meine Quizze" im Menü einklappbar** machen (MenuPage/MyQuizzesHub).
-- [ ] **Colosseum-Einstellung:** aktuell = CozyArena-Format (kein separater Schalter). Ggf.
-      expliziten „Colosseum an/aus" trennen falls gewünscht.
+**Setup-/Moderator-Konsolidierung (Wolf-Entscheidungen 2026-07-19):**
+- 🔒 **VOLL zusammenlegen** gewählt: EIN Moderator-Panel + „Test-Modus"-Toggle (Bots/Skip/
+  kein-Leaderboard dahinter, Live clean) UND **Lobby ins Cockpit falten** (Team-Liste/rename/
+  kick/Fraktions-View/Dummy-Fill ins Cockpit). Grosser Umbau, staged bauen.
+- 🔒 **Panel behalten** (kein Wizard-Restore) als einzige Einstellungen-Fläche.
+- [x] **Colosseum-Schalter zurück** (`7e0eaa6b`): „🏛️ Mit Kolosseum | 🌑 Schlicht"
+      (`arenaBackgrounds`) war im geloeschten Wizard → jetzt im Cockpit unter Format (nur Arena).
+      = Antwort auf „wo stelle ich Colosseum ein" + die „2 Arena-Looks".
+- [ ] **Hot-Potato-Warnung** (Format-Kompat): Format ist KEINE Draft-Eigenschaft → nur Hot Potato
+      ist Arena-inkompatibel; Backend strippt sie beim Arena-Start still. Sichtbare Warnung/Badge
+      am Draft + im Picker („N Hot-Potato-Fragen werden in Arena übersprungen"). `megaWarnCount`
+      (QQModeratorPage ~381) ist schon berechnet, nur totes Feld → nutzen. Klein, keine Entscheidung.
+- [ ] **„Meine Quizze" im Menü einklappbar** (MenuPage/MyQuizzesHub).
+- [ ] Danach: Arena einmal komplett durchspielen + Bugs fixen (Tagesziel).
 
 ---
 

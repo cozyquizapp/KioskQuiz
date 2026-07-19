@@ -22,33 +22,27 @@
    Arena in CozyQuiz übernehmen (z.B. bestimmte Reveal-Seiten).
 3. **Danach:** alle Modi eigenständig je **einmal komplett testen**.
 
-**Aktueller Fokus (Wolf 2026-07-19):**
-- [ ] **Turm-Finale V2 (Grid-Modus) — LIVE-WIRING scharfschalten** ← nächster Schritt.
-      Design ✅ auf `main`, in der Vorschau voll abgenommen. Neues 2-Akt-Finale (Wolf-Idee):
-      Top-3 bauen ANONYM (grau/?) → grosse Award-Zeremonie (je +1, **Underdog +2**) lässt Türme
-      steigen mit **„⚖ Gleichstand!" / „▲ In Führung!"**-Kipp → Glide in die Mitte → 3-2-1 + Krone.
-      Komponente `CozyQuizTowerFinaleV2.tsx`, Vorschau `/race-finale` Toggle „✨ V2 Auto" + „🎛 V2 Live".
-      FERTIG: Hybrid-Live-Variante (`liveBeat`-gated, hält an jedem Beat auf Space), Mapping
-      `buildTowerFinaleData(state)`, Scoring geprüft (Awards zählen via `endAwards`/`awardPoints`,
-      Grid-Stamp-Platzierung raus ändert Sieger NICHT). Steuerung=**Hybrid**, Awards=**ganz in den Turm**.
-      OFFEN (event-kritisch, **echter /beamer-Finale-Durchlauf Pflicht**): 4 Dateien —
-      (1) `shared/qqFinalReveal.ts`: `award`-Kind raus, `race-final` bekommt `beat`, `maxStep`
-          dynamisch (towerBeats = 1 Aufbau + Awards + 1 Glide + min(3,Teams) Reveals);
-      (2) `backend/qqRooms.ts`: `qqFinalRevealPendingForStep` Award-Stamps raus (Bet bleibt),
-          `qqFinalRevealMaxStep` mit towerBeats;
-      (3) `CozyQuizFinalRevealView.tsx`: `award`-Karten-Rendering raus, `race-final` →
-          `TowerFinaleV2(liveBeat=beat)` statt altem `TowerFinalSlide`;
-      (4) `QQModeratorPage.tsx`: lokales `maxStep` (Z.1071) + FINAL_REVEAL-Autoplay-Timing (Z.1063+).
-      🔴 BLOCKER Validierung: `shot-finale.mjs` (Standard-Spiel → `dev/skipTo final-reveal` → Autoplay)
-      hängt an **stale Arena-Raum im RAM** (`default`, `roomCode=QQ_ROOM` fix) → Standard-Start feuert
-      nicht. FIX: **lokaler Backend-Neustart Port 4000** leert RAM-Räume (Wolf hat OK gegeben).
-- [ ] **Tagesziel: CozyArena einmal komplett durchspielen + Bugs fixen** (dann CozyQuiz vs Arena
-      Views vergleichen → bessere Reveal-Seiten übernehmen, dann alle Modi einmal testen). ← LÄUFT.
-- [x] ✅ **CozyWölfe-Avatar-Set (2026-07-19):** Wolfs 8 illustrierte Wölfe (Mika/Nuri/Ari/Ylva/Jori/
-      Levin/Maja/Rurik, je Slot-Farbe) als wählbares Set 'cozyWolves' verdrahtet — open+blink-Frames
-      (Magenta-Chroma-Key freigestellt), auf Slot-Farb-Disc mit Blinzeln, slot-gebunden wie Wappen.
-      Vorschau `design-vorschau/cozywolves-{set,on-discs}.png`. Am echten Beamer/Lobby gegensehen +
-      Set-Picker (`/team`) prüfen. Jubel-Frame (3.-Frame) = optional später. Auf Feature-Branch.
+**✅ ERLEDIGT heute (2026-07-19, alles auf `main` + deployt):**
+- **Turm-Finale V2 (Grid) LIVE geschaltet** — 4-Datei-Umbau (award-Kind raus, Beat-Modell),
+  am echten /beamer validiert (Screenshots `design-vorschau/finale-v2-live/`), 29 Vitest grün.
+- **Finale-Score Bet-Doppelzählung gefixt** — Bet-Bonus zählte doppelt (Stamps in `largestConnected`
+  + `totalBonus`), Sieger-kippbar. Empirisch bewiesen (`dev/dumpScore`-Probe rot→grün) + Regressions-Test.
+- **„Einen Schritt zurück" repariert** — Shift+Space/Backspace/Button routen jetzt korrekt (Fund 1+2).
+- **Tier-1 Kolosseum-Medaillons verdrahtet** (`/icons/cat-*.png`) → **Design-Freeze-Meilenstein**.
+- **3 Finish-Audits** (Gap/Crash-Risk/Moderator) — beide Modi funktional durchspielbar, kein harter Blocker.
+- **Item-4-Entscheidungen geklärt** — nur Backend-Refactor bleibt offen.
+
+**Aktueller Fokus / offen:**
+- [ ] **CozyWölfe-Set — v2-Cutout auf main mergen** (wartet auf Wolf-„passt"). Set 'cozyWolves' (8 Wölfe
+      Mika/Nuri/Ari/Ylva/Jori/Levin/Maja/Rurik, Slot-farbig, open+blink) IST verdrahtet; **v1 ist live auf
+      main**, **v2** (Boden-Fade + Corner-Flood-Fill gegen harten Schnitt/Flecken) liegt auf Feature-Branch
+      `design/material-pass-standings-bar` (1 Commit vor main). Vorschau `design-vorschau/cozywolves-*.png`.
+- [ ] **Backend-Refactor qqDistanceScore** (Wolf-OK: nach den Assets) — Drift-Killer. SCOPE geklärt:
+      `schaetzchenRangeAbs` ist schon shared; echter Drift = nur die 2 fast identischen Schätzchen/Schwarm-
+      Blöcke in `qqMegaEventScore` (`rangeAbs×K; nearScore(dist,maxErr); isHit=dist≤rangeAbs`) → in shared
+      `qqDistanceScore(dist,rangeAbs,K)` ziehen. Low-Risk, `test:scoring` gatet + Vorher/Nachher.
+- [ ] **Tagesziel: CozyArena + CozyQuiz je einmal komplett am Beamer durchspielen** (deckt die Beamer-Checks
+      unten mit ab: Medaillons im Runden-Intro, Wölfe im Set-Picker `/team`, Finale-Scores, Siegerehrung).
 
 > Setup/Moderator-Konsolidierung (Wizard, Cockpit-Fold, Test-Modus-Toggle, Konsolidierung) ist
 > **durch** — Details in der Git-History (`109e8d35`, `e188223f`, `ddd33688`, `f16b2e1b`, `a43579ba`).
@@ -117,31 +111,17 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
-**Moderator-View (offener Rest — Cockpit-Rework + Setup-Wizard sind durch, s. Git):**
-- [x] ✅ **„Einen Schritt zurück" repariert (Fund 1+2, 2026-07-19)** — `QQModeratorPage:1385` Vorwärts-
-      Space-Handler bekam `&& !e.shiftKey` (Shift+Space sprang vorher VOR); `:1532` Escape/Backspace
-      schluckt Backspace nicht mehr global → alle 3 Wege (Shift+Space, Backspace, Header-Button, der
-      synthetisch Space+Shift feuert) routen jetzt auf `qq:goBackSlide`. Auf Feature-Branch, tsc grün.
-      Am echten Moderator gegentesten (Streamdeck-Shift+Space + Button). (Legacy `host:back`/
-      `undoLastHostStep`/`ActionButtons.tsx` = toter Waisen-Pfad; echter Pfad `qq:goBackSlide`.)
+**Moderator-View (offener Rest — Cockpit/Setup-Wizard + Back-Fix Fund 1+2 + Finale-Score-Fund 4 sind durch, s. Git):**
 - [ ] **Back Fund 3 — Phasen-Snapshot (struktureller Ausbau):** `qqRooms.ts:7060 qqGoBackSlide` deckt nur
       5 Phasen ab (nur Sub-Step-Dekrement); `canBack` (`QQModeratorPage:2001`) auch. Kein Snapshot →
       Back kann eine versehentliche PHASEN-Weiterschaltung (Space zu früh → Frage aktiv/Placement/Bets
       zu) nicht heilen. Leichten Snapshot-Stack pro Phasen-Transition + Restore bei Sub-Step 0. Auch
       GAME_OVER-Zeremonie an Back koppeln (`qqAwardStep {dir:-1}`) + 400ms-Bounce-Guard für qqGoBackSlide.
-- [x] ✅ **Back Fund 4 — Finale-Bet-Doppelzählung GEFIXT (2026-07-19, empirisch bewiesen):** die Bet-
-      Stamps zählten via `updateTerritories:4635` in `largestConnected`, und `qqFinalTotal` addierte
-      `totalBonus` (== Stamp-Anzahl) NOCHMAL → Bonus doppelt in JEDEM Finale (Team 5→8), Sieger-kippbar +
-      Handy/Beamer-Drift. Bewiesen per `dev/dumpScore`-Probe (rot: largestConnected +totalBonus sobald
-      Stamps landen; grün: konstant nach Fix). Fix: `updateTerritories` zählt revealStamps nicht mehr
-      (rein visuell). Regressions-Test in `qqRooms.test.ts` (30/30). **Miterledigt:** der back-spezifische
-      Stamp-Dopplungs-Teil ist damit score-immun (Back+Vor = nur noch kosmetische Extra-Stamps). Auf
-      Feature-Branch, tsc+vitest grün. Dev-Diagnose-Endpoints `dev/dumpScore` + `dev/advanceFinal` blieben.
-- [ ] **Alle SPACE-Befehle aktualisieren** — Hints stimmen nicht: Tooltip `:2017` + Hilfe-Panel `:6095`
-      bewerben „Shift+Space/Backspace = zurück", real tot bzw. springt vor (s.o.). Nach Fix 1-3 angleichen.
-      `Strg+Z` (`:1703` → undoLastAction) IST korrekt. Bounce-Schutz für `qqGoBackSlide` fehlt (400ms).
-- [ ] **„Runde 1 / Frage 1 von 5" darstellen** — im Cockpit schlanke Pills; ggf. Kolosseum-Gems
-      auch hier (offen, koppelt an Tier-1-Assets).
+- [ ] **SPACE-Hints angleichen** — Tooltip `:2017` + Hilfe-Panel `:6095` sagen „Shift+Space/Backspace =
+      zurück"; das STIMMT jetzt (Fund 1+2 gefixt), aber Text/Konsistenz gegenchecken. `Strg+Z` (`:1703`)
+      ist korrekt. (Fund 3 = echtes phasenübergreifendes Undo bleibt separat.)
+- [ ] **„Runde 1 / Frage 1 von 5" darstellen** — im Cockpit schlanke Pills; ggf. Kolosseum-Gems auch hier
+      (Tier-1-Medaillons sind jetzt da → unblockt).
 
 **Audit-Funde 2026-07-19 (3 Finish-Audits — beide Modi sind funktional durchspielbar, kein harter Blocker):**
 - [ ] **Endstand-Beat Höhen-Cap** — `CozyQuizLargeGroupView.tsx:931-953` nutzt feste `62px`/Zeile OHNE

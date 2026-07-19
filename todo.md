@@ -44,11 +44,11 @@
       nicht. FIX: **lokaler Backend-Neustart Port 4000** leert RAM-Räume (Wolf hat OK gegeben).
 - [ ] **Tagesziel: CozyArena einmal komplett durchspielen + Bugs fixen** (dann CozyQuiz vs Arena
       Views vergleichen → bessere Reveal-Seiten übernehmen, dann alle Modi einmal testen). ← LÄUFT.
-- [ ] *(Idee, geparkt — Wolf zeichnet)* **CozyWölfe-Avatar-Set für CozyQuiz**: 8 Wölfe in den 8
-      Slot-Farben, wählbar. Minimal 2 Frames/Wolf (Augen auf + Blinzeln) = plug-in wie cozy3d;
-      „gut" = + Jubel-Frame (3×8 = 24 PNGs). Einheitlicher Wolf-Körper + Slot-Farb-Accessoire
-      (Kontrast + Wiedererkennung), quadratisch/transparent, Blinzel-Frame augen-deckungsgleich.
-      KEINE öffentliche Trauer-Pose (no-shaming). Set unabhängig vom Bühnen-Skin. Brainstorm: Chat 19.7.
+- [x] ✅ **CozyWölfe-Avatar-Set (2026-07-19):** Wolfs 8 illustrierte Wölfe (Mika/Nuri/Ari/Ylva/Jori/
+      Levin/Maja/Rurik, je Slot-Farbe) als wählbares Set 'cozyWolves' verdrahtet — open+blink-Frames
+      (Magenta-Chroma-Key freigestellt), auf Slot-Farb-Disc mit Blinzeln, slot-gebunden wie Wappen.
+      Vorschau `design-vorschau/cozywolves-{set,on-discs}.png`. Am echten Beamer/Lobby gegensehen +
+      Set-Picker (`/team`) prüfen. Jubel-Frame (3.-Frame) = optional später. Auf Feature-Branch.
 
 > Setup/Moderator-Konsolidierung (Wizard, Cockpit-Fold, Test-Modus-Toggle, Konsolidierung) ist
 > **durch** — Details in der Git-History (`109e8d35`, `e188223f`, `ddd33688`, `f16b2e1b`, `a43579ba`).

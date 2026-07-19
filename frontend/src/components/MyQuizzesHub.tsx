@@ -39,6 +39,16 @@ function relTime(ts?: number): string {
 export function MyQuizzesHub() {
   const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
   const [error, setError] = useState(false);
+  // 2026-07-19 (Wolf 'meine quizze einklappbar'): Kopfzeile bleibt, der Body
+  // (Schnellzugriff + Quiz-Karten) ist ein-/ausklappbar; Zustand persistiert.
+  const [open, setOpen] = useState(() => {
+    try { return localStorage.getItem('qqMyQuizzesCollapsed') !== '1'; } catch { return true; }
+  });
+  const toggleOpen = () => setOpen(v => {
+    const next = !v;
+    try { localStorage.setItem('qqMyQuizzesCollapsed', next ? '0' : '1'); } catch { /* ignore */ }
+    return next;
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -58,17 +68,30 @@ export function MyQuizzesHub() {
 
   return (
     <div>
-      {/* Kopfzeile */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16, flexWrap: 'wrap' }}>
-        <div style={{
-          width: 44, height: 44, borderRadius: 13, flexShrink: 0,
-          background: `${PINK}22`, border: `1.5px solid ${PINK}55`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
-        }}>🎯</div>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontWeight: 900, fontSize: 20, color: '#f8fafc', lineHeight: 1.15 }}>Meine Quizze</div>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-            Jedes Quiz mit allem drum dran — bauen, planen, starten.
+      {/* Kopfzeile — klickbar zum Ein-/Ausklappen */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: open ? 16 : 0, flexWrap: 'wrap' }}>
+        <div
+          onClick={toggleOpen}
+          role="button"
+          aria-expanded={open}
+          title={open ? 'Meine Quizze einklappen' : 'Meine Quizze ausklappen'}
+          style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer', userSelect: 'none' }}
+        >
+          <div style={{
+            width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+            background: `${PINK}22`, border: `1.5px solid ${PINK}55`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+          }}>🎯</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 900, fontSize: 20, color: '#f8fafc', lineHeight: 1.15, display: 'flex', alignItems: 'center', gap: 8 }}>
+              Meine Quizze
+              <span aria-hidden style={{ fontSize: 13, color: '#64748b', transform: open ? 'rotate(90deg)' : 'none', transition: 'transform 0.16s ease' }}>▸</span>
+            </div>
+            <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
+              {open
+                ? 'Jedes Quiz mit allem drum dran — bauen, planen, starten.'
+                : `${sorted.length} ${sorted.length === 1 ? 'Quiz' : 'Quizze'} — zum Anzeigen ausklappen`}
+            </div>
           </div>
         </div>
         <Link to="/builder" style={{
@@ -81,6 +104,7 @@ export function MyQuizzesHub() {
         }}>+ Neues Quiz</Link>
       </div>
 
+      {open && <>
       {/* Live-Abend-Schnellzugriff */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
         <QuickLink to="/beamer" emoji="📽️" label="Beamer öffnen" />
@@ -104,6 +128,7 @@ export function MyQuizzesHub() {
           {sorted.map(d => <QuizCard key={d.id} draft={d} />)}
         </div>
       )}
+      </>}
     </div>
   );
 }

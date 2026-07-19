@@ -2236,6 +2236,16 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 <div>
                   <div style={{ fontSize: 'clamp(19px, 2.6vh, 24px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>📋 {title}</div>
                   <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, marginTop: 4 }}>{qCount} Fragen im Set</div>
+                  {/* Hot-Potato-Warnung — 2026-07-19 (Wolf 'keine inkompatiblen Quizze
+                      in Arena'): Hot Potato ist rundenbasiert und wird in CozyArena vom
+                      Backend uebersprungen. Hier sichtbar machen, damit keine Fragen
+                      still verschwinden. */}
+                  {arena && (cd?.megaWarnCount ?? 0) > 0 && (
+                    <div style={{ marginTop: 8, padding: '7px 11px', borderRadius: 9, fontSize: 12, fontWeight: 800,
+                      background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.4)', color: '#fdba74' }}>
+                      ⚠️ {cd!.megaWarnCount} Hot-Potato-{cd!.megaWarnCount === 1 ? 'Frage wird' : 'Fragen werden'} in CozyArena übersprungen (rundenbasiert)
+                    </div>
+                  )}
                 </div>
                 {/* Format — 2026-07-19 (Wolf 'Format ins Cockpit falten, EIN Setup'):
                     Inline-Segmented-Toggle direkt hier statt separater Format-Wahl-
@@ -6477,6 +6487,14 @@ function SetupView({
                       color: draftFit ? QQ_COLORS.green300 : QQ_COLORS.yellow300,
                       fontWeight: 900,
                     }}>{draftFit ? `✓ ${phases} Rd.` : `⚠ ${Math.floor(d.questionCount / 5)} Rd.`}</span>
+                    {/* Hot-Potato-Badge nur in Arena (Backend ueberspringt sie dort) */}
+                    {(s as any).largeGroupMode && (d.megaWarnCount ?? 0) > 0 && (
+                      <span title={`${d.megaWarnCount} Hot-Potato-Frage(n) werden in CozyArena uebersprungen`} style={{
+                        padding: '1px 8px', borderRadius: 999,
+                        background: 'rgba(251,146,60,0.14)', border: '1px solid rgba(251,146,60,0.35)',
+                        color: '#fdba74', fontWeight: 900,
+                      }}>🔥{d.megaWarnCount}</span>
+                    )}
                   </div>
                 </button>
               );

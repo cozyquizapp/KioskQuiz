@@ -2280,6 +2280,42 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     })}
                   </div>
                 </div>
+                {/* Kolosseum-Look — 2026-07-19 (Wolf „wo stelle ich Colosseum ein"
+                    + „2 Arena-Looks"): nur im Arena-Format. „Mit Kolosseum" = volle
+                    Kulisse (BG/Cinzel/Wappen), „Schlicht" = ruhiger dunkler Hinter-
+                    grund. Toggle war im geloeschten Wizard, hier wieder rein.
+                    (arenaBackgrounds !== false = Default AN.) */}
+                {arena && (
+                  <div>
+                    <div style={fieldLbl}>Look</div>
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {[
+                        { on: true, emoji: '🏛️', label: 'Mit Kolosseum' },
+                        { on: false, emoji: '🌑', label: 'Schlicht' },
+                      ].map(o => {
+                        const active = ((s as any).arenaBackgrounds !== false) === o.on;
+                        const ac = '#A78BFA';
+                        return (
+                          <button key={o.label}
+                            onClick={() => { if (!active) emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: o.on }); }}
+                            title={o.on ? 'Volle Kolosseum-Kulisse (Hintergruende pro Screen)' : 'Ruhiger dunkler Hintergrund ohne Kolosseum-Bilder'}
+                            style={{
+                              flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                              padding: '10px 12px', borderRadius: 10, cursor: active ? 'default' : 'pointer', fontFamily: 'inherit',
+                              fontWeight: 900, fontSize: 13,
+                              border: `1.5px solid ${active ? ac : 'rgba(148,163,184,0.22)'}`,
+                              background: active ? `${ac}22` : 'rgba(148,163,184,0.05)',
+                              color: active ? '#fff' : '#94a3b8',
+                              boxShadow: active ? `inset 0 0 0 1px ${ac}44` : 'none',
+                              transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+                            }}>
+                            <span>{o.emoji}</span>{o.label}{active && <span style={{ fontSize: 11, opacity: 0.8 }}>✓</span>}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
                 {/* 2026-07-19 (Wolf): Runden-Stepper hier raus — Rundenzahl haengt
                     vom Fragenset ab und steht (mit Fit-Check) in „⚙ Einstellungen".
                     Auf der Auswahlseite nur noch Quiz + Format + Ort. */}

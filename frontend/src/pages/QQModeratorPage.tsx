@@ -2216,9 +2216,6 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         const qCount = (cd as any)?.questionCount ?? ((cd as any)?.questions?.length ?? 0);
         const arena = !!(s as any).largeGroupMode;
         const accent = arena ? '#A78BFA' : '#EC4899';
-        const maxPhases = qCount ? Math.max(2, Math.min(4, Math.floor(qCount / 5))) : 4;
-        const eff = Math.min(phases, maxPhases);
-        const joinUrl = `${window.location.origin}/team?room=${roomCode}`;
         const connectedTeams = s.teams.filter(t => t.connected).length;
         const card: React.CSSProperties = { background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)', borderRadius: 18, padding: 18 };
         const fieldLbl: React.CSSProperties = { fontSize: 10, fontWeight: 900, color: '#94a3b8', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 6 };
@@ -2235,7 +2232,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             {/* Zwei Karten: Quiz-Vorschau + Join-QR */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 16, justifyContent: 'center', alignItems: 'stretch' }}>
               {/* Quiz-Vorschau */}
-              <div style={{ ...card, flex: '1 1 380px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ ...card, flex: '1 1 380px', maxWidth: 560, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 14 }}>
                 <div>
                   <div style={{ fontSize: 'clamp(19px, 2.6vh, 24px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>📋 {title}</div>
                   <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, marginTop: 4 }}>{qCount} Fragen im Set</div>
@@ -2283,18 +2280,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     })}
                   </div>
                 </div>
-                {/* Runden-Stepper */}
-                <div>
-                  <div style={fieldLbl}>Runden</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                    <button onClick={() => setPhases(Math.max(2, eff - 1) as 2 | 3 | 4)} disabled={eff <= 2} aria-label="Eine Runde weniger"
-                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff <= 2 ? 'default' : 'pointer', opacity: eff <= 2 ? 0.4 : 1, fontFamily: 'inherit' }}><span aria-hidden="true">−</span></button>
-                    <span style={{ minWidth: 40, textAlign: 'center', fontWeight: 900, fontSize: 22, color: '#fff', fontVariantNumeric: 'tabular-nums' }}>{eff}</span>
-                    <button onClick={() => setPhases(Math.min(maxPhases, eff + 1) as 2 | 3 | 4)} disabled={eff >= maxPhases} aria-label="Eine Runde mehr"
-                      style={{ width: 38, height: 38, borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#e2e8f0', fontWeight: 900, fontSize: 20, cursor: eff >= maxPhases ? 'default' : 'pointer', opacity: eff >= maxPhases ? 0.4 : 1, fontFamily: 'inherit' }}><span aria-hidden="true">+</span></button>
-                    <span style={{ fontSize: 12, color: '#64748b', fontWeight: 700 }}>{eff * 5} Fragen · à 5</span>
-                  </div>
-                </div>
+                {/* 2026-07-19 (Wolf): Runden-Stepper hier raus — Rundenzahl haengt
+                    vom Fragenset ab und steht (mit Fit-Check) in „⚙ Einstellungen".
+                    Auf der Auswahlseite nur noch Quiz + Format + Ort. */}
                 {/* Venue */}
                 <div>
                   <div style={fieldLbl}>📍 Ort <span style={{ textTransform: 'none', letterSpacing: 0, color: '#64748b', fontWeight: 700 }}>— gegen Fragen-Wiederholung an Stammorten</span></div>
@@ -2309,17 +2297,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 </div>
               </div>
 
-              {/* Join-QR */}
-              <div style={{ ...card, flex: '0 1 250px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
-                <div style={fieldLbl}>📱 Teams beitreten</div>
-                <div style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
-                  <QRCodeSVG value={joinUrl} size={150} bgColor="#ffffff" fgColor="#0A0814" />
-                </div>
-                <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 800 }}>Raum <span style={{ color: accent, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></div>
-                <div style={{ fontSize: 12, fontWeight: 800, color: connectedTeams > 0 ? '#86efac' : '#94a3b8' }}>
-                  {connectedTeams > 0 ? `✓ ${connectedTeams} verbunden` : '○ noch keine Teams'}
-                </div>
-              </div>
+              {/* 2026-07-19 (Wolf): QR-Karte hier raus — die Teams scannen den
+                  Beitritts-QR am Beamer, nicht auf dem Moderator-Laptop. Statt der
+                  Karte nur noch die (fuer den Mod relevante) Verbindungs-Info unten. */}
+            </div>
+
+            {/* Verbindungs-Status — kompakt statt QR-Karte */}
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 10, flexWrap: 'wrap', fontSize: 13, fontWeight: 800 }}>
+              <span style={{ color: connectedTeams > 0 ? '#86efac' : '#94a3b8' }}>
+                {connectedTeams > 0 ? `✓ ${connectedTeams} Teams verbunden` : '○ noch keine Teams verbunden'}
+              </span>
+              <span style={{ color: '#64748b' }}>·</span>
+              <span style={{ color: '#94a3b8' }}>Raum <span style={{ color: accent, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></span>
+              <span style={{ color: '#64748b' }}>·</span>
+              <span style={{ color: '#64748b', fontWeight: 700 }}>Beitritts-QR läuft über den Beamer</span>
             </div>
 
             {/* Start */}

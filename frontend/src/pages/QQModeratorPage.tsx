@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import QQShowPrepWizard from './QQShowPrepWizard';
-import { QQSetupWizard } from './QQSetupWizard';
 import { useQQSocket } from '../hooks/useQQSocket';
 import { useActionLock } from '../hooks/useActionLock';
 import {
@@ -93,11 +92,6 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   const [showPrep, setShowPrep] = useState(false);
   // 2026-07-02 (Wolf): geführter Setup-Wizard (Gruppengröße→Runden→Sprache→
   // Add-ons→Draft→Theme). Setzt alles live über dieselben Kanäle wie die Pills.
-  // 2026-07-04 (Wolf „das ist das erste was kommt wenn ich moderator lade, nicht
-  // die neue moderator seite"): Default ZU. Beim Laden zeigt zuerst die Spotlight-
-  // Bühne (Format-Wahl). Der Wizard öffnet erst, wenn Wolf dort ein Format wählt
-  // (Karte klick → setShowWizard(true)) und übernimmt dann den REST des Setups.
-  const [showWizard, setShowWizard] = useState(false);
   // 2026-07-14 (Wolf 'format klarer trennen, ein schritt vorher; inline-toggle
   // raus'): im Bereit-Cockpit (Draft vorgewaehlt) gibt es KEINEN Inline-Format-
   // Umschalter mehr — nur ein Badge + 'Format aendern', das zurueck aufs Format-
@@ -2216,7 +2210,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           (?draft= aus „Meine Quizze"), zeigt EIN Screen alles Noetige — Quiz-
           Vorschau, Join-QR, Ort, grosser Start-Button. Der 7-Schritt-Wizard wird
           optional („⚙ Details"). Ohne Draft weiterhin die Format-Wahl-Landing. */}
-      {joined && s && s.phase === 'LOBBY' && !setupDone && selectedDraftId && !editFormat && (() => {
+      {joined && s && s.phase === 'LOBBY' && !setupDone && !showAllSettings && selectedDraftId && !editFormat && (() => {
         const cd = drafts.find(d => d.id === selectedDraftId);
         const title = (cd?.title ?? 'Quiz').replace(/^🎯\s*/, '');
         const qCount = (cd as any)?.questionCount ?? ((cd as any)?.questions?.length ?? 0);
@@ -2314,9 +2308,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
             {/* Sekundär: Details / Beamer / Show planen */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-              <button onClick={() => setShowWizard(true)} title="Alle Setup-Schritte im Detail (Sprache, Timer, Add-ons, Theme …)"
+              <button onClick={() => setShowAllSettings(true)} title="Alle Einstellungen: Draft, Runden, Timer, Sprache, Sound, Look, Add-ons"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                ⚙ Details einstellen
+                ⚙ Einstellungen
               </button>
               <button onClick={() => { try { window.open(`/beamer?room=${encodeURIComponent(roomCode)}`, 'cozyquiz-beamer')?.focus(); } catch {} }} title="Beamer in eigenem Fenster öffnen"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(236,72,153,0.35)', background: 'rgba(236,72,153,0.08)', color: '#f9d3e6', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -2386,7 +2380,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           </div>
         );
       })()}
-      {joined && s && s.phase === 'LOBBY' && !setupDone && (!selectedDraftId || editFormat) && (
+      {joined && s && s.phase === 'LOBBY' && !setupDone && !showAllSettings && (!selectedDraftId || editFormat) && (
         <>
           {/* 2026-07-03 (Wolf 'moderator-start sieht sehr traurig aus'): Die
               Format-Wahl IST jetzt die Seite (Hero-Karten) statt in einem Wizard
@@ -2454,10 +2448,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                         emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
                       }
                       // 2026-07-14 (Wolf): Kam die Wahl uebers 'Format aendern' im
-                      // Cockpit (editFormat), zurueck ins Cockpit — NICHT in den
-                      // Wizard. Sonst (frische Landing ohne Draft) Wizard oeffnen.
+                      // Cockpit (editFormat), zurueck ins Cockpit. Sonst (frische
+                      // Landing ohne Draft) das Einstellungen-Panel oeffnen.
+                      // 2026-07-19: einheitliches SetupView-Panel statt Modal-Wizard.
                       if (editFormat) setEditFormat(false);
-                      else setShowWizard(true);
+                      else setShowAllSettings(true);
                     }}
                     style={{
                       flex: '1 1 260px', textAlign: 'left', padding: 'clamp(12px, 1.8vh, 18px) 22px', borderRadius: 20, cursor: 'pointer', position: 'relative', overflow: 'hidden',
@@ -2519,11 +2514,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </button>
             <span style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 900 }}>·</span>
             <button
-              onClick={() => setShowAllSettings(v => !v)}
-              title="Schnell-Pills für gezielte Einzel-Tweaks (Power-Use)"
+              onClick={() => setShowAllSettings(true)}
+              title="Alle Einstellungen: Draft, Runden, Timer, Sprache, Sound, Look, Add-ons"
               style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
             >
-              ⚙ Alle Einstellungen {showAllSettings ? '▲' : '▼'}
+              ⚙ Einstellungen
             </button>
             {showTestTools ? (<>
             <span style={{ color: 'rgba(148,163,184,0.45)', fontWeight: 900 }}>·</span>
@@ -2616,24 +2611,6 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             )}
           </div>
           </div>
-          {showAllSettings && (
-            <SetupView
-              s={s}
-              drafts={drafts}
-              selectedDraftId={selectedDraftId}
-              setSelectedDraftId={setSelectedDraftId}
-              phases={phases}
-              setPhases={setPhases}
-              timerInput={timerInput}
-              setTimerInput={setTimerInput}
-              applyTimer={applyTimer}
-              localSoundConfig={localSoundConfig}
-              setLocalSoundConfig={setLocalSoundConfig}
-              roomCode={roomCode}
-              emit={emit}
-              finishSetup={() => setSetupDone(true)}
-            />
-          )}
         </>
       )}
 
@@ -2649,25 +2626,27 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         />
       )}
 
-      {showWizard && s && s.phase === 'LOBBY' && !setupDone && (
-        <QQSetupWizard
-          roomCode={roomCode}
+      {/* 2026-07-19 (Wolf 'Setup vereinheitlichen'): EINE Einstellungen-Flaeche
+          (SetupView-Panel) statt zusaetzlichem Modal-Wizard. Erreichbar aus dem
+          Cockpit und der Format-Wahl; „← Zurueck" fuehrt dorthin zurueck,
+          „Setup abschliessen" fuehrt in die Lobby. */}
+      {showAllSettings && s && s.phase === 'LOBBY' && !setupDone && (
+        <SetupView
           s={s}
-          emit={emit}
-          phases={phases}
-          setPhases={setPhases}
+          drafts={drafts}
           selectedDraftId={selectedDraftId}
           setSelectedDraftId={setSelectedDraftId}
-          drafts={drafts}
-          finishSetup={() => setSetupDone(true)}
-          onClose={() => setShowWizard(false)}
+          phases={phases}
+          setPhases={setPhases}
+          timerInput={timerInput}
           setTimerInput={setTimerInput}
+          applyTimer={applyTimer}
+          localSoundConfig={localSoundConfig}
           setLocalSoundConfig={setLocalSoundConfig}
-          devMode={showTestTools}
-          addBotsToLobby={addBotsToLobby}
-          runBotsTest={runBotsTest}
-          botCount={botCount}
-          setBotCount={setBotCount}
+          roomCode={roomCode}
+          emit={emit}
+          finishSetup={() => setSetupDone(true)}
+          onClose={() => setShowAllSettings(false)}
         />
       )}
 
@@ -6133,7 +6112,7 @@ const menuItemStyle = (accent: string): React.CSSProperties => ({
 function SetupView({
   s, drafts, selectedDraftId, setSelectedDraftId, phases, setPhases,
   timerInput, setTimerInput, applyTimer, localSoundConfig, setLocalSoundConfig,
-  roomCode, emit, finishSetup,
+  roomCode, emit, finishSetup, onClose,
 }: {
   s: QQStateUpdate;
   drafts: DraftSummary[];
@@ -6149,6 +6128,7 @@ function SetupView({
   roomCode: string;
   emit: (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
   finishSetup: () => void;
+  onClose?: () => void;
 }) {
   // 2026-07-08 (Wolf): Location/Event-Tag fuer dieses Spiel. Fliesst pro Frage in
   // die Usage-Historie + beim Game-Over ins Ergebnis → die CozyLibrary kann dann
@@ -6363,6 +6343,18 @@ function SetupView({
 
   return (
     <div style={{ maxWidth: 980, margin: '0 auto', display: 'flex', flexDirection: 'column', gap: 16, paddingBottom: 120, paddingTop: 8 }}>
+
+      {/* ── Zurueck-Leiste (2026-07-19): Einstellungen ist EINE Flaeche, ueber
+           "Zurueck" gehts ins Cockpit / zur Format-Wahl zurueck. ── */}
+      {onClose && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
+          <button
+            onClick={onClose}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.3)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
+          >← Zurück</button>
+          <span style={{ fontSize: 12, fontWeight: 900, color: '#a8a395', letterSpacing: '0.1em', textTransform: 'uppercase' }}>⚙ Einstellungen</span>
+        </div>
+      )}
 
       {/* ── HERO: Fragensatz als Karten-Grid (statt Dropdown) ── */}
       <div style={{

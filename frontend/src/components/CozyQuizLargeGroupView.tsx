@@ -764,6 +764,14 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const shown = sorted.slice(0, 10);
   const rest = sorted.length - shown.length;
   const maxVal = Math.max(1, ...shown.map(t => t.largestConnected));
+  // Endstand-Zeilen-Pitch mit Cap (Audit-Fund 2026-07-19): war fest 62px OHNE Cap,
+  // anders als CumulativeStandings:266. Reine Sicherheits-Bremse — die 8 Arena-
+  // Fraktionen (nestedTeams) bleiben bei 62 (8*62=496 = akzeptiertes Baseline, Wolf
+  // abgenommen), NUR der 9-10-Zeilen-Edge (nicht-genestet) komprimiert, damit unten
+  // nichts aus der Bühne/dem Frosted-Panel läuft. Am Beamer ggf. GO_LIST_BUDGET tunen.
+  const GO_ROW_H = 62;
+  const GO_LIST_BUDGET = 8 * GO_ROW_H; // 496px = Höhe der akzeptierten 8-Zeilen-Liste
+  const rowPitch = Math.min(GO_ROW_H, Math.floor(GO_LIST_BUDGET / Math.max(1, shown.length)));
   const wColor = winner?.color ?? '#EC4899';
   const motto = winner ? qqMegaFactionMotto(winner.avatarId, de ? 'de' : 'en') : '';
 
@@ -928,12 +936,12 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' as any,
         padding: 'clamp(12px,1.6cqh,22px) clamp(18px,2.2cqw,38px)',
       }}>
-      <div style={{ position: 'relative', width: '100%', height: shown.length * 62 }}>
+      <div style={{ position: 'relative', width: '100%', height: shown.length * rowPitch }}>
         {shown.map((t, i) => {
           const pct = (t.largestConnected / maxVal) * 100;
           const medal = i < 3 && t.largestConnected > 0 ? MEDALS[i] : null;
           return (
-            <div key={t.id} style={{ ...S.goRow, top: i * 62 }}>
+            <div key={t.id} style={{ ...S.goRow, top: i * rowPitch }}>
               {/* Endstand-Liste: keine Krone (#1 traegt schon 🥇 in der Einheit-
                   Spalte; der Champion wird im Kroenungs-Beat + Hero gefeiert). */}
               <span style={S.goRank}>{i + 1}</span>

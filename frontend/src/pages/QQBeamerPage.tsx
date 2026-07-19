@@ -2072,7 +2072,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
               {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
               {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
-              {renderState.phase === 'COZY_GAME'       && renderState.cozyGame && (
+              {renderState.phase === 'COZY_GAME'       && (renderState.cozyGame ? (
                 <CozyGameView
                   round={renderState.cozyGame}
                   // Im Stage-Modus rendert die View im festen 1920x1080-Canvas
@@ -2083,7 +2083,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   teams={renderState.teams}
                   language={renderState.language}
                 />
-              )}
+              ) : (
+                // Transient: phase === COZY_GAME, aber cozyGame kurz null (Reconnect
+                // oder Mod bricht das Mini-Game ab, bevor der neue State kommt). Statt
+                // leerem Beamer die neutrale Pause-Tafel (zeigt den Zwischenstand),
+                // bis der echte Zustand nachrueckt. Audit-Fund 2026-07-19.
+                <PausedView state={renderState} mode="pause" />
+              ))}
               {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
               {renderState.phase === 'TIEBREAKER_QUESTION' && <TieBreakerView state={renderState} />}
               {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}

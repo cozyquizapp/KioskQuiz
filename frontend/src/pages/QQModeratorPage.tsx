@@ -7,7 +7,7 @@ import { useActionLock } from '../hooks/useActionLock';
 import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
-  QQ_COMEBACK_ENABLED, qqIsMega, qqMegaAwardKeys,
+  QQ_COMEBACK_ENABLED, qqIsMega, qqMegaAwardKeys, QQ_QUESTIONS_PER_PHASE,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
@@ -2028,7 +2028,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 <button
                   onClick={(e) => { e.currentTarget.blur(); if (canBack) fireKey('Space', true); }}
                   disabled={!canBack}
-                  title={canBack ? 'Slide zurück (Shift+Space / Backspace)' : 'In dieser Phase kein Zurück'}
+                  title={canBack ? 'Einen Schritt zurück (Shift+Space)' : 'In dieser Phase kein Zurück'}
                   style={canBack ? pillBase : pillDisabled}
                 >
                   {/* 2026-06-29 (MODERATOR_OPTIMIZATION P2 'zwei Space entwirren'):
@@ -2496,7 +2496,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     return (
                       <>
                         <Pill label={roundLabel} color={QQ_COLORS.blue500} />
-                        <Pill label={`Frage ${(s.questionIndex % 5) + 1}/5`} color="#6366f1" />
+                        <Pill label={`Frage ${(s.questionIndex % QQ_QUESTIONS_PER_PHASE) + 1}/${QQ_QUESTIONS_PER_PHASE}`} color="#6366f1" />
                         {mult > 1 && <Pill label={mult === 3 ? 'Schlussfrage ×3' : 'Finale ×2'} color={QQ_COLORS.brandPink} />}
                       </>
                     );
@@ -3076,7 +3076,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 {s.phase === 'PLACEMENT' && !s.pendingFor && (() => {
                   // Was kommt nach diesem qq:nextQuestion? Gleiche Logik wie im Backend.
                   const nextIdx = s.questionIndex + 1;
-                  const QPP = 5;
+                  const QPP = QQ_QUESTIONS_PER_PHASE;
                   const isEndOfPhase = nextIdx >= s.gamePhaseIndex * QPP;
                   const isLastPhase = isEndOfPhase && s.gamePhaseIndex >= s.totalPhases;
                   const isBeforeFinal = isEndOfPhase && (s.gamePhaseIndex + 1) === s.totalPhases;
@@ -4985,7 +4985,7 @@ function RuntimePill({ state }: { state: QQStateUpdate }) {
   const elapsedLabel = `${mm}:${String(ss).padStart(2, '0')}`;
 
   // ETA grob, selbst-kalibrierend: Ø-Zeit pro abgeschlossener Frage × verbleibende.
-  const QPP = 5;
+  const QPP = QQ_QUESTIONS_PER_PHASE;
   const totalQuestions = state.totalPhases * QPP;
   const done = Math.min(Math.max(0, state.questionIndex), totalQuestions);
   const remaining = Math.max(0, totalQuestions - state.questionIndex);
@@ -6037,6 +6037,7 @@ const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
     title: 'Ablauf',
     rows: [
       ['Space / F13', 'Nächster Schritt (Kontext-sensitiv)'],
+      ['⇧Space', 'Einen Schritt zurück (Slide-Phasen)'],
       ['R / F15', 'Antwort aufdecken'],
       ['N / F17 / →', 'Nächste Frage (nur in PLACEMENT)'],
       ['F18', 'Skip aktuelles Team (PLACEMENT, ohne Confirm)'],
@@ -6048,7 +6049,7 @@ const HOTKEY_GROUPS: { title: string; rows: [string, string][] }[] = [
     rows: [
       ['1–5', 'Team 1–5 korrekt (im QUESTION_REVEAL)'],
       ['F14', 'Team 1 korrekt (Buzz-Winner)'],
-      ['Esc / Backspace / F16', 'Niemand korrekt'],
+      ['Esc / Backspace / F16', 'Niemand korrekt (im QUESTION_REVEAL; Backspace sonst = Schritt zurück)'],
       ['Z', 'Letzten Mark-Correct rückgängig (im QUESTION_REVEAL)'],
     ],
   },

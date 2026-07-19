@@ -15,6 +15,28 @@
 
 ---
 
+## 🎯 TAGESZIEL + ROADMAP (Wolf 2026-07-19)
+> **Nordstern:** beide Modi (CozyQuiz + CozyArena/Colosseum) **vollständig spielbar**.
+1. **HEUTE:** CozyArena/Colosseum so weit fertig, dass es **spielbar** ist.
+2. **Danach:** CozyQuiz vs CozyArena vergleichen → bessere **Views** (nicht Designs) aus
+   Arena in CozyQuiz übernehmen (z.B. bestimmte Reveal-Seiten).
+3. **Danach:** alle Modi eigenständig je **einmal komplett testen**.
+
+**Offene Setup-/Moderator-Fragen aus dieser Session (an Wolfs Entscheidung):**
+- [ ] **Getrennte Mod-Panels zusammenlegen?** /moderator + /moderator-test sind EIN Page +
+      `testMode`-Flag. Vorschlag: EIN Panel + „Test-Modus"-Toggle (Bots/Skip/kein-Leaderboard
+      dahinter). (Bots sind seit `9cc56ce1` auch im Normal-Modus sichtbar → Frage kam davon.)
+- [ ] **Lobby ins Cockpit falten?** LobbyView-Warteraum (Team-Liste/rename/kick/QR/Start)
+      überschneidet sich mit dem Cockpit → könnte EINE Setup-Seite werden.
+- [ ] **Format-Kompatibilität absichern:** keine CozyQuiz-only-Drafts in Arena spielbar und
+      umgekehrt (Filter im Draft-Picker + Block bei Start). ⚠️ playability-kritisch.
+- [ ] **Wizard vs Panel** nochmal offen: Wolf hatte Panel gewählt, fragt Wizard nochmal an.
+- [ ] **„Meine Quizze" im Menü einklappbar** machen (MenuPage/MyQuizzesHub).
+- [ ] **Colosseum-Einstellung:** aktuell = CozyArena-Format (kein separater Schalter). Ggf.
+      expliziten „Colosseum an/aus" trennen falls gewünscht.
+
+---
+
 ## 🔴 WARTET AUF WOLF — Beamer-Check (hart neuladen: Strg+Shift+R!)
 
 > ⚠️ **Test-Gate:** Beamer **UND** Moderator hart neuladen, **Autoplay AUS** (sonst drückt

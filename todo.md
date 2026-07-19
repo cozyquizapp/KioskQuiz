@@ -118,18 +118,27 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 ## 🟠 WARTET AUF MICH — Build
 
 **Moderator-View (offener Rest — Cockpit-Rework + Setup-Wizard sind durch, s. Git):**
-- [ ] **„Einen Schritt zurück" reparieren** — Root-Cause per Audit (2026-07-19) präzise lokalisiert:
-      1. 🔴 `QQModeratorPage.tsx:1380` Vorwärts-Space-Handler prüft `e.shiftKey` NICHT → **Shift+Space
-         springt VOR** (Back-Handler `:1713` ist toter Code). Fix: `if (e.code==='Space' && !e.shiftKey)`.
-      2. 🔴 `QQModeratorPage.tsx:1527` Backspace-Zweig `return`t global → Backspace erreicht Back nie.
-         Fix: Backspace nicht global schlucken (nur `QUESTION_REVEAL && !correctTeamId` → markWrong).
-      3. `qqRooms.ts:7056 qqGoBackSlide` deckt nur 5 Phasen ab (Sub-Step-Dekrement), kein Phasen-
-         Snapshot → Back kann versehentliche Phasen-Weiterschaltung nicht heilen (struktureller Ausbau).
-      4. 🔴 **Finale-kritisch:** `qqRooms.ts:7074` Back re-armt pending Stacks, lässt aber gelegte
-         `cell.revealStamps` stehen → nächstes Advance legt sie ERNEUT → `updateTerritories` zählt doppelt
-         → **Sieger kann kippen** (nur Grid-Modus; Arena `updateTerritories` no-op). MUSS vor Finale-Lauf.
-      (Legacy `host:back`/`undoLastHostStep`/`ActionButtons.tsx` = toter Waisen-Pfad — MEMORY zeigte
-      fälschlich dorthin; echter Pfad ist `qq:goBackSlide`→`qqGoBackSlide`.)
+- [x] ✅ **„Einen Schritt zurück" repariert (Fund 1+2, 2026-07-19)** — `QQModeratorPage:1385` Vorwärts-
+      Space-Handler bekam `&& !e.shiftKey` (Shift+Space sprang vorher VOR); `:1532` Escape/Backspace
+      schluckt Backspace nicht mehr global → alle 3 Wege (Shift+Space, Backspace, Header-Button, der
+      synthetisch Space+Shift feuert) routen jetzt auf `qq:goBackSlide`. Auf Feature-Branch, tsc grün.
+      Am echten Moderator gegentesten (Streamdeck-Shift+Space + Button). (Legacy `host:back`/
+      `undoLastHostStep`/`ActionButtons.tsx` = toter Waisen-Pfad; echter Pfad `qq:goBackSlide`.)
+- [ ] **Back Fund 3 — Phasen-Snapshot (struktureller Ausbau):** `qqRooms.ts:7060 qqGoBackSlide` deckt nur
+      5 Phasen ab (nur Sub-Step-Dekrement); `canBack` (`QQModeratorPage:2001`) auch. Kein Snapshot →
+      Back kann eine versehentliche PHASEN-Weiterschaltung (Space zu früh → Frage aktiv/Placement/Bets
+      zu) nicht heilen. Leichten Snapshot-Stack pro Phasen-Transition + Restore bei Sub-Step 0. Auch
+      GAME_OVER-Zeremonie an Back koppeln (`qqAwardStep {dir:-1}`) + 400ms-Bounce-Guard für qqGoBackSlide.
+- [ ] 🔴 **Back Fund 4 — Finale-Stamp/Score-Modell (VORSICHT, erst untersuchen, nicht blind fixen):**
+      `qqRooms.ts:7078` FINAL_REVEAL-Back re-armt pending Stacks, lässt gelegte `cell.revealStamps`
+      stehen → nächstes Advance legt sie via `qqFlushPendingStacks` ERNEUT → `updateTerritories:4635`
+      zählt jeden Stamp +1 auf `largestConnected` → bei Back+Vor **Sieger-kippbar** (nur Grid-Modus,
+      Arena `updateTerritories` no-op). ⚠️ **Zuerst klären:** `qqFinalTotal = largestConnected +
+      finalBetResolution.totalBonus + awardPoints` — die Bet-Stamps stecken via `updateTerritories` schon
+      in `largestConnected`, und `totalBonus` wird NOCHMAL addiert. Frage: überschneidet sich das schon
+      im Normalfall (Doppelzählung Bets/Awards), oder werden Stamps vor dem End-Scoring gecleart / ist
+      totalBonus != Stamp-Count? `qqResolveFinalBets` + Timing von `updateTerritories` prüfen BEVOR man
+      den Back-Fix baut, sonst Regress am gerade geshippten Finale. Eigene fokussierte Session wert.
 - [ ] **Alle SPACE-Befehle aktualisieren** — Hints stimmen nicht: Tooltip `:2017` + Hilfe-Panel `:6095`
       bewerben „Shift+Space/Backspace = zurück", real tot bzw. springt vor (s.o.). Nach Fix 1-3 angleichen.
       `Strg+Z` (`:1703` → undoLastAction) IST korrekt. Bounce-Schutz für `qqGoBackSlide` fehlt (400ms).

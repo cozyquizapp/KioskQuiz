@@ -27,7 +27,7 @@ import { similarityScore, normalizeText } from '../../../shared/textNormalizatio
 import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
 import { qqParseEstimate } from '../../../shared/qqSwarm';
 import { recordQQQuestionUsage } from '../db/schemas';
-import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep } from '../../../shared/qqFinalReveal';
+import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep, qqTowerAwardCount } from '../../../shared/qqFinalReveal';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -6679,7 +6679,11 @@ export function qqResolveFinalBets(room: QQRoomState): void {
  *  Hier nur noch der dünne Adapter der betSlotsCount aus Room rechnet.
  */
 export function qqFinalRevealMaxStep(room: QQRoomState): number {
-  return qqSharedFinalMaxStep(qqBetSlotsCount(room));
+  return qqSharedFinalMaxStep(
+    qqBetSlotsCount(room),
+    qqTowerAwardCount(room.endAwards),
+    Object.keys(room.teams).length,
+  );
 }
 
 /** Helper: berechnet Anzahl Bet-Slots (0-Group + positive). Wird auch fuer das
@@ -7138,20 +7142,9 @@ export function qqFinalRevealPendingForStep(
     return { teamId: team.id, kinds };
   }
 
-  if (decoded.kind === 'award') {
-    const awards = room.endAwards;
-    if (!awards) return null;
-    if (decoded.awardIndex === 0 && awards.speedy) {
-      return { teamId: awards.speedy, kinds: ['speedy'] };
-    }
-    if (decoded.awardIndex === 1 && awards.meisterklauer) {
-      return { teamId: awards.meisterklauer, kinds: ['meisterklauer'] };
-    }
-    if (decoded.awardIndex === 2 && awards.underdog) {
-      return { teamId: awards.underdog, kinds: ['underdog', 'underdog'] };
-    }
-    return null;
-  }
+  // 2026-07-19 (Turm-Finale V2): Award-Stamps entfallen — Awards leben als
+  // goldene Bausteine IM Turm (Punkte via endAwards/awardPoints), kein Grid-
+  // Placement mehr. Nur noch Bet-Slots vergeben Stacks.
   return null;
 }
 

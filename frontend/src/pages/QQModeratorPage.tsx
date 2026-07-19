@@ -10,6 +10,9 @@ import {
   QQ_COMEBACK_ENABLED, qqIsMega, qqMegaAwardKeys,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
+// 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
+// shared/qqFinalReveal.ts). Ersetzt das alte betSlotsCount+4 (3 feste Awards).
+import { qqTowerAwardCount } from '../../../shared/qqFinalReveal';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -1068,16 +1071,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
-        const maxStep = betSlotsCount + 4;
-        // 2026-05-25 v2 (Wolf 'autoplay soll überall durchlaufen, nicht hängen'):
+        // 2026-07-19 (Turm-Finale V2): Race-Final ist jetzt eine Beat-Sequenz
+        // (Turm baut sich moderator-getaktet auf), kein Einzel-Step + separater
+        // Award-Screen mehr. Step-Layout: 0 title · 1..B bets · B+1..maxStep
+        // race-final beats (0 Aufbau · 1..A Awards · A+1 Glide · Reveals+Krone).
+        const awardCount = qqTowerAwardCount(s.endAwards);
+        const top = Math.min(3, N);
+        const towerMaxBeat = awardCount + top + 1;
+        const maxStep = betSlotsCount + 1 + towerMaxBeat;
         // Auto-Advance fuer ALLE Steps wenn Autoplay aktiv:
-        //  - Title (step 0)        → ~3.5s (Wolf-Bouncer + 'Die Auflösung'-Lese)
-        //  - Bet-Slot (1..B)       → ~6s (Drumroll 0.9s + Flip 1.1s + Sub-Step-
-        //                              Stagger 0.55+1.1 + Read ~2.3s) plus
-        //                              ~1.2s extra wenn Sympathie-Bonus visible.
-        //  - Award-Slot (B+1..B+3) → ~5.5s (gleicher Drumroll-Flip + +N badge);
-        //                              Underdog (B+3) +0.8s weil +2 Stacks.
-        //  - Race-Final (maxStep)  → Cascade-Timing + ~7s Celebration.
+        //  - Title (step 0)   → ~3.5s (Wolf-Bouncer + 'Die Auflösung'-Lese)
+        //  - Bet-Slot (1..B)  → ~6s (Drumroll + Flip + Sub-Step-Stagger + Read),
+        //                        +1.2s wenn Sympathie-Bonus visible.
+        //  - Turm-Beats       → siehe unten (Aufbau/Award/Glide/Reveal/Krone).
         // qqAdvanceFinalReveal flusht pending Stacks auto-place per Bot-Heuristik.
         if (step === 0) {
           delayMs = 3500;
@@ -1101,24 +1107,23 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             : false;
           delayMs = isZeroGroupAtSlot0 ? 5500 : (hasSympathy ? 7200 : 6000);
           action = () => emit('qq:nextQuestion', { roomCode });
-        } else if (step >= betSlotsCount + 1 && step <= betSlotsCount + 3) {
-          // Award-Slot — Underdog (B+3) bekommt mehr Zeit fuer 2 Stacks.
-          const isUnderdog = step === betSlotsCount + 3;
-          delayMs = isUnderdog ? 6500 : 5500;
-          action = () => emit('qq:nextQuestion', { roomCode });
-        } else if (step === maxStep) {
-          // Race-Final → Eurovision-Endstand. Cascade + Celebration → THANKS.
-          // 2026-05-25 (Wolf 'progressive slowdown ab platz 3'): Cascade-Timing
-          // angepasst — Top-3 reveals langsamer, vor Sieger 2.4s Drumroll.
-          // Formula matched FinalEurovisionFinale staggerForRank-Logik:
-          //   400 (start) + max(0,N-4)*600 (rank 4+) + 1100 (rank 3) + 1700 (rank 2)
-          //   + 2400 (Drumroll vor Winner)
-          const cascadeMs = 400
-            + Math.max(0, N - 4) * 600
-            + (N >= 3 ? 1100 : 0)
-            + (N >= 2 ? 1700 : 0)
-            + 2400;
-          delayMs = cascadeMs + 7000;
+        } else if (step > betSlotsCount && step <= maxStep) {
+          // Turm-Finale-Beats (Hybrid-getaktet). beat = step - betSlotsCount - 1.
+          const beat = step - betSlotsCount - 1;
+          if (beat === 0) {
+            // Basis-Türme wachsen aus den Quiz-Punkten + Zwischenstand.
+            delayMs = 6000;
+          } else if (beat <= awardCount) {
+            // Award-Zeremonie — goldener Baustein wächst in den Turm.
+            delayMs = 5200;
+          } else if (beat === awardCount + 1) {
+            // Top-3 gleiten anonym in die Mitte.
+            delayMs = 3800;
+          } else {
+            // Reveal Platz 3→2→1; Krone (letzter Beat) bekommt lange Celebration.
+            const isCrown = beat === towerMaxBeat;
+            delayMs = isCrown ? 8000 : 3400;
+          }
           action = () => emit('qq:nextQuestion', { roomCode });
         }
         break;
@@ -2548,14 +2553,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     Mod-Button, nur das Info-Panel weiter unten. Space wurde global
                     durch line 992 emittiert, war aber visuell unsichtbar. */}
                 {s.phase === 'FINAL_REVEAL' && (() => {
-                  // 2026-05-24 v3 (Wolf 'awards-overview raus'): max = betSlotsCount + 4
-                  // (title + 3 award-slots + bet-slots + race-final).
+                  // 2026-07-19 (Turm-Finale V2): Step-Layout = 0 title · 1..B bets ·
+                  // B+1..max race-final beats (Turm baut sich moderator-getaktet auf).
                   const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
                   const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
                   const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
                   const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+                  const towerMaxBeat = qqTowerAwardCount(s.endAwards) + Math.min(3, s.teams.length) + 1;
                   const step = (s as any).finalRevealStep ?? 0;
-                  const max = betSlotsCount + 4;
+                  const max = betSlotsCount + 1 + towerMaxBeat;
                   const isLast = step >= max;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
@@ -4668,13 +4674,15 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       )}
 
       {s.phase === 'FINAL_REVEAL' && (() => {
-        // 2026-05-25 v4 (Wolf 'bets vor awards, awards-last als climax'):
-        // title → bet-slots (B) → award-0/1/2 (Speedy/Meisterklauer/Underdog
-        // als +2-Climax) → race-final.
+        // 2026-07-19 (Turm-Finale V2): title → bet-slots (B) → race-final BEATS
+        // (Turm baut sich auf: Aufbau → Awards → Glide → Reveals + Krone).
         const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+        const awardCount = qqTowerAwardCount(s.endAwards);
+        const top = Math.min(3, s.teams.length);
+        const towerMaxBeat = awardCount + top + 1;
         const step = s.finalRevealStep ?? 0;
         const labelFor = (st: number): string => {
           if (st <= 0) return '0 · Title-Hold „Die Auflösung"';
@@ -4684,13 +4692,15 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
             if (isZeroFirst) return `${st} · 🪙 Bet-Zero-Group (0-Bonus-Tipps)`;
             return `${st} · 🪙 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Stack-Placement)`;
           }
-          const awardOffset = st - betSlotsCount;
-          if (awardOffset === 1) return `${st} · ⚡ Speedy-Award (+1 Stack)`;
-          if (awardOffset === 2) return `${st} · 🦝 Meisterklauer-Award (+1 Stack)`;
-          if (awardOffset === 3) return `${st} · 🐢 Underdog-Award (+2 Stacks — Climax)`;
-          return `${st} · 🏁 Eurovision-Endstand`;
+          const beat = st - betSlotsCount - 1;
+          if (beat === 0) return `${st} · 🏗️ Türme wachsen + Zwischenstand`;
+          if (beat <= awardCount) return `${st} · 🏅 Award ${beat}/${awardCount} (Turm steigt)`;
+          if (beat === awardCount + 1) return `${st} · ✨ Top-3 gleiten in die Mitte`;
+          if (beat === towerMaxBeat) return `${st} · 👑 Sieger + Krönung`;
+          const platz = top - (beat - awardCount - 1) + 1;
+          return `${st} · 🔓 Reveal Platz ${platz}`;
         };
-        const max = betSlotsCount + 4;
+        const max = betSlotsCount + 1 + towerMaxBeat;
         const isLast = step >= max;
         const next = isLast ? '→ THANKS' : labelFor(step + 1);
         return (

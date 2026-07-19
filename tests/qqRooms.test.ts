@@ -10,7 +10,7 @@
  * ohne Socket/DB/Timer-Side-Effects.
  */
 import { describe, it, expect } from 'vitest';
-import { qqDecodeFinalStep, qqFinalMaxStep } from '../shared/qqFinalReveal';
+import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat } from '../shared/qqFinalReveal';
 import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount } from '../backend/src/quarterQuiz/qqRooms';
 
 // ── Test-Helpers ─────────────────────────────────────────────────────────────
@@ -52,7 +52,7 @@ function makeRoom(overrides: Record<string, any> = {}): any {
 // qqDecodeFinalStep + qqFinalMaxStep (shared/qqFinalReveal.ts)
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('qqDecodeFinalStep — v4 (2026-05-25, Wolf: bets vor awards, awards-last als climax)', () => {
+describe('qqDecodeFinalStep — v5 (2026-07-19, Turm-Finale V2: title → bets → race-final beats)', () => {
   it('step 0 → title', () => {
     expect(qqDecodeFinalStep(0, 0).kind).toBe('title');
     expect(qqDecodeFinalStep(-5, 0).kind).toBe('title');
@@ -68,36 +68,48 @@ describe('qqDecodeFinalStep — v4 (2026-05-25, Wolf: bets vor awards, awards-la
     if (slot2.kind === 'bet') expect(slot2.slotIndex).toBe(2);
   });
 
-  it('steps B+1..B+3 → award slots (Speedy/Meisterklauer/Underdog)', () => {
-    const a0 = qqDecodeFinalStep(4, 3);
-    expect(a0.kind).toBe('award');
-    if (a0.kind === 'award') expect(a0.awardIndex).toBe(0);
-    const a1 = qqDecodeFinalStep(5, 3);
-    expect(a1.kind).toBe('award');
-    if (a1.kind === 'award') expect(a1.awardIndex).toBe(1);
-    const a2 = qqDecodeFinalStep(6, 3);
-    expect(a2.kind).toBe('award');
-    if (a2.kind === 'award') expect(a2.awardIndex).toBe(2);
+  it('steps > B → race-final beats (beat 0 direkt nach letztem Bet-Slot)', () => {
+    const b0 = qqDecodeFinalStep(4, 3);
+    expect(b0.kind).toBe('race-final');
+    if (b0.kind === 'race-final') expect(b0.beat).toBe(0);
+    const b1 = qqDecodeFinalStep(5, 3);
+    if (b1.kind === 'race-final') expect(b1.beat).toBe(1);
+    const bBig = qqDecodeFinalStep(100, 3);
+    if (bBig.kind === 'race-final') expect(bBig.beat).toBe(96);
   });
 
-  it('step > B+3 → race-final (== Eurovision-Endstand)', () => {
-    expect(qqDecodeFinalStep(7, 3).kind).toBe('race-final');
-    expect(qqDecodeFinalStep(100, 3).kind).toBe('race-final');
-  });
-
-  it('mit 0 Bet-Slots: 1/2/3 → awards, 4 → race-final', () => {
-    expect(qqDecodeFinalStep(1, 0).kind).toBe('award');
-    expect(qqDecodeFinalStep(3, 0).kind).toBe('award');
-    expect(qqDecodeFinalStep(4, 0).kind).toBe('race-final');
+  it('mit 0 Bet-Slots: step 1 → race-final beat 0, step 4 → beat 3', () => {
+    const b0 = qqDecodeFinalStep(1, 0);
+    expect(b0.kind).toBe('race-final');
+    if (b0.kind === 'race-final') expect(b0.beat).toBe(0);
+    const b3 = qqDecodeFinalStep(4, 0);
+    if (b3.kind === 'race-final') expect(b3.beat).toBe(3);
   });
 });
 
-describe('qqFinalMaxStep', () => {
-  it('= betSlotsCount + 4 (3 award-slots dazwischen)', () => {
-    expect(qqFinalMaxStep(0)).toBe(4);
-    expect(qqFinalMaxStep(3)).toBe(7);
-    expect(qqFinalMaxStep(8)).toBe(12);
+describe('qqTowerAwardCount (jeder Award-Empfänger = 1 Turm-Beat)', () => {
+  it('zählt nur gesetzte Empfänger', () => {
+    expect(qqTowerAwardCount(null)).toBe(0);
+    expect(qqTowerAwardCount({})).toBe(0);
+    expect(qqTowerAwardCount({ speedy: 't1' })).toBe(1);
+    expect(qqTowerAwardCount({ speedy: 't1', meisterklauer: 't2' })).toBe(2);
+    expect(qqTowerAwardCount({ speedy: 't1', meisterklauer: 't2', underdog: 't3' })).toBe(3);
+    // Underdog gibt +2 PUNKTE, aber trotzdem nur 1 beat.
+    expect(qqTowerAwardCount({ underdog: 't3' })).toBe(1);
   });
+});
+
+describe('qqTowerMaxBeat = A + min(3, Teams) + 1 (Aufbau · Awards · Glide · Reveals)', () => {
+  it('3 Awards, 8 Teams → 7', () => expect(qqTowerMaxBeat(3, 8)).toBe(7));
+  it('0 Awards, 2 Teams → 3', () => expect(qqTowerMaxBeat(0, 2)).toBe(3));
+  it('3 Awards, 1 Team → 5 (top = min(3,1) = 1)', () => expect(qqTowerMaxBeat(3, 1)).toBe(5));
+});
+
+describe('qqFinalMaxStep = B + 1 + qqTowerMaxBeat(A, Teams)', () => {
+  it('0 bets, 3 awards, 8 teams → 8', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(8));
+  it('3 bets, 3 awards, 8 teams → 11', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(11));
+  it('8 bets, 3 awards, 8 teams → 16', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(16));
+  it('3 bets, 0 awards, 8 teams → 8 (Awards weggefallen komprimiert)', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(8));
 });
 
 // ════════════════════════════════════════════════════════════════════════════

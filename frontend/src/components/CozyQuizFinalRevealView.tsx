@@ -313,6 +313,9 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
 // shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
 // (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
 import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalReveal';
+// 2026-07-19 (Turm-Finale V2): Live-Finale rendert die TowerFinaleV2, moderator-
+// getaktet per beat (liveBeat). buildTowerFinaleData = reines State->Turm-Mapping.
+import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
 import { qqFinalTotal } from '../utils/qqFinalScore';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed } from '../qqTheme';
@@ -606,47 +609,6 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 
   const phase = decodeFinalStep(step, betSlots.length);
 
-  // 2026-05-24 (Wolf 'Tabelle spoilert vor dem Reveal'): die FLIP-Tabelle
-  // rechts darf erst die +Punkte zeigen NACHDEM die Card links geflippt ist.
-  // Vorher bekam sie sofort beim Step-Wechsel das neue revealedSlotIdx/
-  // revealedAwardCount und re-sortierte → Audience sah den Sieger noch
-  // bevor die Drumroll-BG umgedreht war. Delay = Card-Drumroll-Dauer (900ms)
-  // — exakt der Moment in dem der CSS-Flip startet, FLIP-Climbing läuft
-  // dann synchron zur Card-Drehung.
-  const [effRevealedSlotIdx, setEffRevealedSlotIdx] = useState(-1);
-  const [effRevealedAwardCount, setEffRevealedAwardCount] = useState<0 | 1 | 2 | 3>(0);
-  useEffect(() => {
-    const REVEAL_DELAY = 900;
-    if (phase.kind === 'bet') {
-      // Vor Reveal: nur vorherige Slots zählen, current noch nicht.
-      setEffRevealedSlotIdx(phase.slotIndex - 1);
-      setEffRevealedAwardCount(3);
-      const t = window.setTimeout(() => setEffRevealedSlotIdx(phase.slotIndex), REVEAL_DELAY);
-      return () => window.clearTimeout(t);
-    }
-    if (phase.kind === 'award') {
-      // Vor Reveal: nur vorherige Awards zählen, current noch nicht.
-      setEffRevealedSlotIdx(-1);
-      setEffRevealedAwardCount(phase.awardIndex as 0 | 1 | 2);
-      const t = window.setTimeout(
-        () => setEffRevealedAwardCount((phase.awardIndex + 1) as 1 | 2 | 3),
-        REVEAL_DELAY,
-      );
-      return () => window.clearTimeout(t);
-    }
-    if (phase.kind === 'race-final') {
-      // Race-final: alles längst revealed.
-      setEffRevealedSlotIdx(betSlots.length - 1);
-      setEffRevealedAwardCount(3);
-      return;
-    }
-    // title: nichts revealed
-    setEffRevealedSlotIdx(-1);
-    setEffRevealedAwardCount(0);
-    return;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, phase.kind, betSlots.length]);
-
   // 2026-05-13 (Wolf '7. Rahmen-Fix + End-Page-Cutoff'): Outer-padding +
   // COZY_CARD_BG-Gradient erzeugten einen sichtbaren lila „Rahmen" um Race-
   // Slide und schnitten gleichzeitig das Sieger-Treppchen seitlich ab.
@@ -696,44 +658,23 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
       )}
-      {/* 2026-05-24 v3 (Wolf 'diesen zwischenschritt braucht es nicht mehr'):
-          Awards-Overview-Slide entfernt. Title geht direkt zu Award-Slot 0. */}
-      {/* 2026-05-24 (Wolf-Wunsch 'awards einzeln nacheinander, gleiches Format
-          wie bet cards'): Award-Slot-Rendering analog BetSlotTransition. Links
-          Card mit drumroll + Reveal, rechts Live-Tabelle die progressive Awards
-          bekommt + climbing-animiert. */}
-      {phase.kind === 'award' && (
-        <div style={{
-          flex: 1, width: '100%', minHeight: 0,
-          padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
-          display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
-          gap: 'clamp(20px, 2.5cqw, 40px)',
-          position: 'relative',
-        }}>
-          <FinalRevealGridSlot
-            state={s}
-            focusTeamId={(() => {
-              const a = s.endAwards;
-              if (!a) return null;
-              return phase.awardIndex === 0 ? a.speedy
-                : phase.awardIndex === 1 ? a.meisterklauer
-                : a.underdog;
-            })()}
+      {/* 2026-07-19 (Turm-Finale V2, Wolf 'awards ganz in den turm'): der frühere
+          separate Award-Screen (phase.kind==='award' + AwardSlotTransition) ist
+          entfallen. Awards leben jetzt als goldene Bausteine IM Turm.
+          Das Live-Finale ist die TowerFinaleV2, moderator-getaktet per beat
+          (Hybrid): 1 finalRevealStep = 1 beat. Alte TowerFinalSlide/
+          FinalEurovisionFinale bleiben als Dead-Code im File darunter. */}
+      {phase.kind === 'race-final' && (() => {
+        const { teams: towerTeams, awards: towerAwards } = buildTowerFinaleData(s);
+        return (
+          <TowerFinaleV2
+            teams={towerTeams}
+            awards={towerAwards}
+            lang={lang}
+            liveBeat={phase.beat}
           />
-          <div style={{ display: 'flex', minHeight: 0 }}>
-            <AwardSlotTransition
-              awardIndex={phase.awardIndex}
-              state={s}
-              lang={lang}
-            />
-          </div>
-        </div>
-      )}
-      {/* 2026-07-08 (Wolf-Livetest 'Tower-Aufbau-Finale einbauen'): Live-Finale
-          ist jetzt die TowerFinalSlide (Turm-Aufbau-Sequenz). FinalEurovisionFinale
-          + RaceFinalSlide bleiben als Dead-Code im File darunter — Verweis für
-          spätere KIs falls eine andere Finale-Choreo gebraucht wird. */}
-      {phase.kind === 'race-final' && <TowerFinalSlide finalRanking={finalRanking} lang={lang} />}
+        );
+      })()}
     </div>
   );
 }

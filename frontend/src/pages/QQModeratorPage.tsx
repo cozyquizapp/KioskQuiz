@@ -2079,7 +2079,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <div style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, zIndex: 41, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 16, borderRadius: 16, background: '#171326', border: '1px solid rgba(236,72,153,0.4)', boxShadow: '0 18px 44px rgba(0,0,0,0.6)', minWidth: 220 }}>
                     <div style={{ fontSize: 11, fontWeight: 900, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.08em' }}>Team-Beitritt scannen</div>
                     <div style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
-                      <QRCodeSVG value={joinUrl} size={168} bgColor="#ffffff" fgColor="#0D0A06" />
+                      <QRCodeSVG value={joinUrl} size={168} bgColor="#ffffff" fgColor="#0A0814" />
                     </div>
                     <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 800 }}>Raum <span style={{ color: QQ_COLORS.brandPink, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></div>
                     <button
@@ -2240,21 +2240,47 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <div style={{ fontSize: 'clamp(19px, 2.6vh, 24px)', fontWeight: 900, color: '#fff', lineHeight: 1.2 }}>📋 {title}</div>
                   <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, marginTop: 4 }}>{qCount} Fragen im Set</div>
                 </div>
-                {/* Format — 2026-07-14 (Wolf): read-only Badge statt Inline-Toggle.
-                    Wechseln laeuft bewusst uebers Format-Gate (setzt Teams zurueck). */}
+                {/* Format — 2026-07-19 (Wolf 'Format ins Cockpit falten, EIN Setup'):
+                    Inline-Segmented-Toggle direkt hier statt separater Format-Wahl-
+                    Buehne. Wechsel mit Teams im Raum → Bestaetigung (Backend setzt
+                    Teams beim echten Wechsel zurueck). Loest die 07-14-Read-only-
+                    Loesung ab (Wolf will die zweite Buehne weg). */}
                 <div>
                   <div style={fieldLbl}>Format</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, justifyContent: 'space-between',
-                    padding: '9px 12px', borderRadius: 10, border: `1.5px solid ${accent}66`, background: `${accent}18` }}>
-                    <span style={{ fontWeight: 900, fontSize: 14, color: '#fff' }}>
-                      {arena ? '🏟️ CozyArena' : '🍺 CozyQuiz'}
-                    </span>
-                    <button onClick={() => setEditFormat(true)} title="Format wechseln (setzt beigetretene Teams/Bots zurueck)"
-                      style={{ padding: '5px 11px', borderRadius: 8, cursor: 'pointer', fontFamily: 'inherit',
-                        fontWeight: 800, fontSize: 12, border: '1px solid rgba(148,163,184,0.3)',
-                        background: 'rgba(148,163,184,0.1)', color: '#c7d2e8' }}>
-                      Format ändern
-                    </button>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {[
+                      { ar: false, emoji: '🍺', label: 'CozyQuiz', ac: '#EC4899' },
+                      { ar: true, emoji: '🏟️', label: 'CozyArena', ac: '#A78BFA' },
+                    ].map(f => {
+                      const on = arena === f.ar;
+                      return (
+                        <button key={f.label}
+                          onClick={() => {
+                            if (on) return;
+                            if (s.teams.length > 0 && !window.confirm('Format wechseln? Beigetretene Teams/Bots werden zurückgesetzt.')) return;
+                            try { window.localStorage.setItem('qqLastFormat', f.ar ? 'arena' : 'quiz'); } catch {}
+                            emit('qq:setQuizOptions', { roomCode, largeGroupMode: f.ar, nestedTeams: f.ar, formatSelected: true });
+                            const cur = (s as any).avatarSetId as string | undefined;
+                            const nextSet = f.ar ? 'cozyArena' : 'cozy3d';
+                            if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
+                              emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+                            }
+                          }}
+                          title={on ? `Aktiv: ${f.label}` : `Zu ${f.label} wechseln`}
+                          style={{
+                            flex: 1, display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: 7,
+                            padding: '11px 12px', borderRadius: 10, cursor: on ? 'default' : 'pointer', fontFamily: 'inherit',
+                            fontWeight: 900, fontSize: 14,
+                            border: `1.5px solid ${on ? f.ac : 'rgba(148,163,184,0.22)'}`,
+                            background: on ? `${f.ac}22` : 'rgba(148,163,184,0.05)',
+                            color: on ? '#fff' : '#94a3b8',
+                            boxShadow: on ? `inset 0 0 0 1px ${f.ac}44` : 'none',
+                            transition: 'background 0.15s, border-color 0.15s, color 0.15s',
+                          }}>
+                          <span>{f.emoji}</span>{f.label}{on && <span style={{ fontSize: 11, opacity: 0.8 }}>✓</span>}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
                 {/* Runden-Stepper */}
@@ -2287,7 +2313,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               <div style={{ ...card, flex: '0 1 250px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, justifyContent: 'center' }}>
                 <div style={fieldLbl}>📱 Teams beitreten</div>
                 <div style={{ background: '#fff', padding: 10, borderRadius: 12 }}>
-                  <QRCodeSVG value={joinUrl} size={150} bgColor="#ffffff" fgColor="#0D0A06" />
+                  <QRCodeSVG value={joinUrl} size={150} bgColor="#ffffff" fgColor="#0A0814" />
                 </div>
                 <div style={{ fontSize: 13, color: '#e2e8f0', fontWeight: 800 }}>Raum <span style={{ color: accent, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></div>
                 <div style={{ fontSize: 12, fontWeight: 800, color: connectedTeams > 0 ? '#86efac' : '#94a3b8' }}>
@@ -2322,12 +2348,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </button>
               {/* 2026-07-08 (Wolf-Livetest 'wo stelle ich Bots ein?'): Bot-Regler
                   direkt im Cockpit — vorher nur auf dem Format-Auswahl-Screen.
-                  2026-07-13 (Wolf-Audit 'Bots in den Wizard, nichts extern; Bot-
-                  Modus soll in die LOBBY, nicht instant ins Spiel'): Nur noch mit
-                  aktiven Test-Tools sichtbar (echtes Event = sauber), und „In die
-                  Lobby" ist der Primär-Weg. Der Autoplay-Sofortlauf bleibt als
-                  dezenter Sekundär-Button für Wolfs Reveal-Tests. */}
-              {showTestTools && (
+                  2026-07-13: „In die Lobby" ist der Primär-Weg, Autoplay-Sofortlauf
+                  als dezenter Sekundär-Button. 2026-07-19 (Wolf „wo stelle ich Bots
+                  ein"): Bots-Knopf jetzt IMMER im Cockpit sichtbar (nicht mehr hinter
+                  „Test-Tools" versteckt) — beim echten Event einfach ignorieren. */}
+              {(
               <div style={{ position: 'relative' }}>
                 <button onClick={() => setBotsRunOpen(v => !v)} title="Bots zum Testen hinzufügen — Anzahl wählbar (nicht in der Bestenliste)"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.12)', color: '#bbf7d0', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -4512,7 +4537,7 @@ function HostNotes({ state }: { state: QQStateUpdate }) {
           marginTop: 8,
           paddingTop: 8,
           borderTop: '1px dashed rgba(236,72,153,0.3)',
-          color: '#fef3c7',
+          color: '#F1F5F9',
           fontStyle: 'italic',
         }}>
           <span style={{ fontWeight: 900, fontStyle: 'normal', color: QQ_COLORS.brandPink }}>Frage-Notiz: </span>
@@ -6291,7 +6316,7 @@ function SetupView({
     padding: '8px 14px', borderRadius: 8, border: 'none', cursor: 'pointer',
     fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
     background: active ? GOLD : 'rgba(255,255,255,0.05)',
-    color: active ? '#1a1206' : QQ_COLORS.slate400,
+    color: active ? '#14101F' : QQ_COLORS.slate400,
     boxShadow: active ? '0 3px 10px rgba(236,72,153,0.35)' : 'none',
     transition: 'all 0.15s',
   });
@@ -6311,7 +6336,7 @@ function SetupView({
     padding: '6px 12px', borderRadius: 8, border: 'none', cursor: 'pointer',
     fontWeight: 900, fontSize: 13, fontFamily: 'inherit',
     background: active ? accent : 'transparent',
-    color: active ? '#1a1206' : '#a8a395',
+    color: active ? '#14101F' : '#94A3B8',
     boxShadow: active ? `0 2px 0 rgba(0,0,0,0.35), 0 0 16px ${accent}55` : 'none',
     transition: 'all 0.15s',
     minWidth: 38,
@@ -6320,7 +6345,7 @@ function SetupView({
     display: 'inline-flex', alignItems: 'center', gap: 2,
     padding: 4, borderRadius: 16,
     background: 'rgba(0,0,0,0.32)',
-    border: '1px solid rgba(255,235,200,0.08)',
+    border: '1px solid rgba(226,232,240,0.08)',
     boxShadow: 'inset 0 1px 0 rgba(0,0,0,0.45)',
   };
   // Kompakter — User-Wunsch 2026-04-28: 'fühlt sich noch nicht so nice an'.
@@ -6330,7 +6355,7 @@ function SetupView({
     padding: '6px 4px', minHeight: 36,
   };
   const settingLabel: React.CSSProperties = {
-    fontSize: 11, fontWeight: 900, color: '#a8a395',
+    fontSize: 11, fontWeight: 900, color: '#94A3B8',
     letterSpacing: '0.1em', textTransform: 'uppercase',
     minWidth: 86, display: 'inline-flex', alignItems: 'center', gap: 6,
   };
@@ -6352,7 +6377,7 @@ function SetupView({
             onClick={onClose}
             style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.3)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
           >← Zurück</button>
-          <span style={{ fontSize: 12, fontWeight: 900, color: '#a8a395', letterSpacing: '0.1em', textTransform: 'uppercase' }}>⚙ Einstellungen</span>
+          <span style={{ fontSize: 12, fontWeight: 900, color: '#94A3B8', letterSpacing: '0.1em', textTransform: 'uppercase' }}>⚙ Einstellungen</span>
         </div>
       )}
 
@@ -6363,7 +6388,7 @@ function SetupView({
         background:
           'radial-gradient(ellipse at 0% 0%, rgba(236,72,153,0.22), transparent 55%),' +
           'radial-gradient(ellipse at 100% 100%, rgba(244,114,182,0.14), transparent 60%),' +
-          'linear-gradient(180deg, #1f1610, #150e08)',
+          'linear-gradient(180deg, #1F1A2E, #14101F)',
         border: `1px solid ${GOLD_BORDER}`,
         boxShadow:
           '0 12px 36px rgba(0,0,0,0.5),' +
@@ -6379,7 +6404,7 @@ function SetupView({
           {savingSound && <span style={{ fontSize: 10, color: GOLD, fontWeight: 700, opacity: 0.7 }}>• speichert…</span>}
         </div>
         {drafts.length === 0 ? (
-          <div style={{ color: '#a8a395', fontSize: 14, fontStyle: 'italic', padding: '20px 0' }}>
+          <div style={{ color: '#94A3B8', fontSize: 14, fontStyle: 'italic', padding: '20px 0' }}>
             Keine Fragensätze gefunden. Im Builder anlegen oder importieren.
           </div>
         ) : (
@@ -6401,7 +6426,7 @@ function SetupView({
                     background: sel
                       ? 'linear-gradient(180deg, rgba(236,72,153,0.18), rgba(236,72,153,0.06))'
                       : 'rgba(0,0,0,0.32)',
-                    color: '#fef3c7', cursor: 'pointer', fontFamily: 'inherit',
+                    color: '#F1F5F9', cursor: 'pointer', fontFamily: 'inherit',
                     boxShadow: sel
                       ? '0 6px 18px rgba(236,72,153,0.25), inset 0 1px 0 rgba(255,255,255,0.06)'
                       : 'inset 0 1px 0 rgba(0,0,0,0.4)',
@@ -6410,11 +6435,11 @@ function SetupView({
                   }}>
                   <div style={{
                     fontSize: 14, fontWeight: 900, lineHeight: 1.2,
-                    color: sel ? '#fef3c7' : QQ_COLORS.slate200,
+                    color: sel ? '#F1F5F9' : QQ_COLORS.slate200,
                   }}>{d.title}</div>
                   <div style={{
                     display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap',
-                    fontSize: 11, fontWeight: 700, color: '#a8a395',
+                    fontSize: 11, fontWeight: 700, color: '#94A3B8',
                   }}>
                     <span>{d.questionCount} Fragen</span>
                     <span style={{ opacity: 0.4 }}>·</span>
@@ -6449,7 +6474,7 @@ function SetupView({
             letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 6,
           }}>
             📍 Location / Event
-            <span style={{ color: '#a8a395', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
+            <span style={{ color: '#94A3B8', fontWeight: 600, textTransform: 'none', letterSpacing: 0 }}>
               {' '}· optional — merkt sich pro Ort, welche Fragen schon liefen
             </span>
           </label>
@@ -6463,7 +6488,7 @@ function SetupView({
               width: '100%', boxSizing: 'border-box',
               padding: '10px 12px', borderRadius: 10,
               background: 'rgba(0,0,0,0.25)', border: `1px solid ${GOLD_BORDER}`,
-              color: '#f5efe3', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
+              color: '#F1F5F9', fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
             }}
           />
           <datalist id="qq-known-venues">
@@ -6481,13 +6506,13 @@ function SetupView({
       <div style={{
         padding: '14px 20px',
         borderRadius: 16,
-        background: 'linear-gradient(180deg, rgba(255,235,200,0.045), rgba(255,235,200,0.015))',
+        background: 'linear-gradient(180deg, rgba(226,232,240,0.045), rgba(226,232,240,0.015))',
         border: '1px solid rgba(255,220,180,0.10)',
         boxShadow: '0 6px 18px rgba(0,0,0,0.35)',
         display: 'flex', flexDirection: 'column', gap: 4,
       }}>
         <div style={{
-          fontSize: 11, fontWeight: 900, color: '#6b6555',
+          fontSize: 11, fontWeight: 900, color: '#64748B',
           letterSpacing: '0.1em', textTransform: 'uppercase',
           marginBottom: 6,
         }}>⚡ Quick-Settings</div>
@@ -6559,7 +6584,7 @@ function SetupView({
       {/* ── ERWEITERTE OPTIONEN — collapsible ───────────────────────────── */}
       <div style={{
         borderRadius: 16,
-        background: 'linear-gradient(180deg, rgba(255,235,200,0.025), rgba(255,235,200,0.008))',
+        background: 'linear-gradient(180deg, rgba(226,232,240,0.025), rgba(226,232,240,0.008))',
         border: '1px solid rgba(255,220,180,0.08)',
       }}>
         <button
@@ -6568,7 +6593,7 @@ function SetupView({
             width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             padding: '12px 18px', borderRadius: 16,
             border: 'none', background: 'transparent',
-            color: '#a8a395', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+            color: '#94A3B8', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
             letterSpacing: '0.1em', textTransform: 'uppercase', cursor: 'pointer',
           }}
         >
@@ -6579,7 +6604,7 @@ function SetupView({
             }}>▶</span>
             ⚙ Erweiterte Optionen
             {!advancedOpen && (
-              <span style={{ fontSize: 10, color: '#6b6555', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
+              <span style={{ fontSize: 10, color: '#64748B', fontWeight: 700, letterSpacing: '0.04em', textTransform: 'none' }}>
                 · Spielmechanik · Reihenfolge · Avatar-Set · Sound-Volume · Bestenliste-Reset
               </span>
             )}
@@ -6660,7 +6685,7 @@ function SetupView({
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: true })} style={segPill(s.shuffleQuestionsInRound !== false, QQ_COLORS.violet400)}>Zufällig</button>
             <button onClick={() => emit('qq:setQuizOptions', { roomCode, shuffleQuestionsInRound: false })} style={segPill(s.shuffleQuestionsInRound === false)}>Aus Draft</button>
           </div>
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4 }}>
+          <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700, marginLeft: 4 }}>
             {s.shuffleQuestionsInRound !== false ? 'Kategorien werden in jeder Runde gemischt' : 'Reihenfolge wie im Draft'}
           </span>
         </div>
@@ -6717,14 +6742,14 @@ function SetupView({
                 title={activeSet.label}
               >
                 {AVATAR_SETS.filter(x => x.id !== 'cozyArena').map(set => (
-                  <option key={set.id} value={set.id} style={{ background: '#1f1610', color: '#fff' }}>
+                  <option key={set.id} value={set.id} style={{ background: '#1F1A2E', color: '#fff' }}>
                     {set.leadEmoji}  {set.label}
                   </option>
                 ))}
               </select>
             );
           })()}
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
+          <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700, marginLeft: 4, width: '100%' }}>
             {(() => {
               const id = s.avatarSetId ?? 'all';
               if ((s as any).largeGroupMode) return 'In CozyArena tragen alle Fraktionen ihr festes Wappen — das Avatar-Set entfällt.';
@@ -6776,14 +6801,14 @@ function SetupView({
                 }}
               >
                 {Object.values(QQ_THEMES).map(t => (
-                  <option key={t.id} value={t.id} style={{ background: '#1f1610', color: '#fff' }}>
+                  <option key={t.id} value={t.id} style={{ background: '#1F1A2E', color: '#fff' }}>
                     {t.label}
                   </option>
                 ))}
               </select>
             );
           })()}
-          <span style={{ fontSize: 11, color: '#6b6555', fontWeight: 700, marginLeft: 4, width: '100%' }}>
+          <span style={{ fontSize: 11, color: '#64748B', fontWeight: 700, marginLeft: 4, width: '100%' }}>
             {(() => {
               const id = s.themeId ?? 'cozy';
               if (id === 'cozy')       return 'Cozy · der Standard-Look (Pink/Navy)';
@@ -6807,7 +6832,7 @@ function SetupView({
                   onChange={e => emit('qq:setVolume', { roomCode, volume: Number(e.target.value) / 100 })}
                   style={{ flex: 1, accentColor: GOLD }}
                 />
-                <span style={{ fontSize: 13, color: '#fef3c7', minWidth: 42, fontWeight: 900, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
+                <span style={{ fontSize: 13, color: '#F1F5F9', minWidth: 42, fontWeight: 900, fontVariantNumeric: 'tabular-nums', textAlign: 'right' }}>
                   {Math.round((s.volume ?? 0.8) * 100)}%
                 </span>
               </div>
@@ -6829,14 +6854,14 @@ function SetupView({
                   style={{
                     flex: 1, padding: '8px 14px', borderRadius: 8,
                     border: '1px solid rgba(255,220,180,0.18)',
-                    background: 'rgba(0,0,0,0.4)', color: '#fef3c7',
+                    background: 'rgba(0,0,0,0.4)', color: '#F1F5F9',
                     fontSize: 14, fontWeight: 900, fontFamily: 'inherit',
                     fontVariantNumeric: 'tabular-nums',
                   }}
                 />
-                <span style={{ fontSize: 12, fontWeight: 900, color: '#6b6555' }}>Sek</span>
+                <span style={{ fontSize: 12, fontWeight: 900, color: '#64748B' }}>Sek</span>
               </div>
-              <div style={{ fontSize: 10, color: '#6b6555', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#64748B', marginTop: 4 }}>
                 Zeit pro H/L-Runde beim Comeback (3-60 s). Default: 10 s.
               </div>
             </div>
@@ -6849,7 +6874,7 @@ function SetupView({
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 8,
                   border: '1px solid rgba(255,220,180,0.12)',
-                  background: 'rgba(255,235,200,0.03)', color: '#a8a395',
+                  background: 'rgba(226,232,240,0.03)', color: '#94A3B8',
                   cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
                   display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 }}
@@ -6926,7 +6951,7 @@ function SetupView({
               >
                 Bestenliste leeren (Dummy-Daten weg)
               </button>
-              <div style={{ fontSize: 10, color: '#6b6555', marginTop: 4 }}>
+              <div style={{ fontSize: 10, color: '#64748B', marginTop: 4 }}>
                 Löscht ALLE gespeicherten Spiele → Lobby-/Pause-Rotation zeigt danach keine Einträge bis zum nächsten echten Spielende.
               </div>
             </div>
@@ -6968,7 +6993,7 @@ function SetupView({
       {/* ── Sticky Start-Footer ── */}
       <div style={{
         position: 'fixed', left: 0, right: 0, bottom: 0, zIndex: 50,
-        background: 'linear-gradient(180deg, rgba(13,10,6,0) 0%, rgba(13,10,6,0.95) 40%, #0D0A06 100%)',
+        background: 'linear-gradient(180deg, rgba(13,10,6,0) 0%, rgba(13,10,6,0.95) 40%, #0A0814 100%)',
         padding: '20px 20px 18px', pointerEvents: 'none',
       }}>
         <div style={{
@@ -7172,10 +7197,10 @@ function LobbyView({
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             boxShadow: '0 8px 28px rgba(0,0,0,0.4)',
           }}>
-            <QRCodeSVG value={joinUrl} size={160} bgColor="#ffffff" fgColor="#0D0A06" />
+            <QRCodeSVG value={joinUrl} size={160} bgColor="#ffffff" fgColor="#0A0814" />
             <div style={{
               marginTop: 10, fontFamily: 'monospace', fontSize: 11,
-              color: '#0D0A06', fontWeight: 700,
+              color: '#0A0814', fontWeight: 700,
             }}>/team?room={roomCode}</div>
           </div>
 
@@ -7392,7 +7417,7 @@ const page: React.CSSProperties = {
   background:
     'radial-gradient(circle at 50% -20%, rgba(236,72,153,0.06), transparent 55%), ' +
     'radial-gradient(circle at 90% 110%, rgba(99,102,241,0.05), transparent 50%), ' +
-    '#0D0A06',
+    '#0A0814',
   color: 'var(--qm-text)',
   fontFamily: "'Nunito', system-ui, sans-serif",
   padding: 20,
@@ -7403,14 +7428,14 @@ const header: React.CSSProperties = {
   marginBottom: 18,
   padding: '10px 14px',
   borderRadius: 16,
-  background: 'linear-gradient(180deg, rgba(255,235,200,0.04), rgba(255,235,200,0.015))',
+  background: 'linear-gradient(180deg, rgba(226,232,240,0.04), rgba(226,232,240,0.015))',
   border: '1px solid var(--qm-border)',
   boxShadow: 'var(--qm-depth-sm)',
 };
 
 const card: React.CSSProperties = {
   background:
-    'linear-gradient(180deg, rgba(255,235,200,0.045), rgba(255,235,200,0.02))',
+    'linear-gradient(180deg, rgba(226,232,240,0.045), rgba(226,232,240,0.02))',
   border: '1px solid var(--qm-border)',
   borderRadius: 16,
   padding: 16,
@@ -7432,7 +7457,7 @@ const selectStyle: React.CSSProperties = {
 const inputStyle: React.CSSProperties = {
   padding: '6px 10px', borderRadius: 8,
   border: '1px solid var(--qm-border-hi)',
-  background: 'rgba(255,235,200,0.05)', color: 'var(--qm-text)',
+  background: 'rgba(226,232,240,0.05)', color: 'var(--qm-text)',
   fontFamily: 'inherit', fontSize: 14, fontWeight: 700,
 };
 

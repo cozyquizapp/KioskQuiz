@@ -8,12 +8,16 @@ const prefix = process.argv[2] || 'tower-v2c';
 // [Sekunde ab Reveal-Start, Name]
 const FRAMES = [
   [1.5, '01-intro'],
-  [6.0, '02-base-building'],
-  [8.2, '03-zwischenstand'],
-  [11.0, '04-award-underdog'],
-  [13.9, '05-award-speedy-gleich'],
-  [16.7, '06-award-meisterklauer-kipp'],
-  [21.5, '07-crowned'],
+  [6.0, '02-base-mystery'],
+  [8.3, '03-zwischenstand'],
+  [10.6, '04-award-underdog-card'],
+  [14.8, '05-award-speedy-card'],
+  [17.2, '06-speedy-tie'],
+  [19.0, '07-award-meisterklauer-card'],
+  [23.2, '08-reveal-glide'],
+  [25.2, '09-reveal-3rd'],
+  [27.6, '10-und-der-sieger'],
+  [31.5, '11-crowned'],
 ];
 
 const run = async () => {

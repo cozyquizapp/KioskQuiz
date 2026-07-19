@@ -129,16 +129,14 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
       Back kann eine versehentliche PHASEN-Weiterschaltung (Space zu früh → Frage aktiv/Placement/Bets
       zu) nicht heilen. Leichten Snapshot-Stack pro Phasen-Transition + Restore bei Sub-Step 0. Auch
       GAME_OVER-Zeremonie an Back koppeln (`qqAwardStep {dir:-1}`) + 400ms-Bounce-Guard für qqGoBackSlide.
-- [ ] 🔴 **Back Fund 4 — Finale-Stamp/Score-Modell (VORSICHT, erst untersuchen, nicht blind fixen):**
-      `qqRooms.ts:7078` FINAL_REVEAL-Back re-armt pending Stacks, lässt gelegte `cell.revealStamps`
-      stehen → nächstes Advance legt sie via `qqFlushPendingStacks` ERNEUT → `updateTerritories:4635`
-      zählt jeden Stamp +1 auf `largestConnected` → bei Back+Vor **Sieger-kippbar** (nur Grid-Modus,
-      Arena `updateTerritories` no-op). ⚠️ **Zuerst klären:** `qqFinalTotal = largestConnected +
-      finalBetResolution.totalBonus + awardPoints` — die Bet-Stamps stecken via `updateTerritories` schon
-      in `largestConnected`, und `totalBonus` wird NOCHMAL addiert. Frage: überschneidet sich das schon
-      im Normalfall (Doppelzählung Bets/Awards), oder werden Stamps vor dem End-Scoring gecleart / ist
-      totalBonus != Stamp-Count? `qqResolveFinalBets` + Timing von `updateTerritories` prüfen BEVOR man
-      den Back-Fix baut, sonst Regress am gerade geshippten Finale. Eigene fokussierte Session wert.
+- [x] ✅ **Back Fund 4 — Finale-Bet-Doppelzählung GEFIXT (2026-07-19, empirisch bewiesen):** die Bet-
+      Stamps zählten via `updateTerritories:4635` in `largestConnected`, und `qqFinalTotal` addierte
+      `totalBonus` (== Stamp-Anzahl) NOCHMAL → Bonus doppelt in JEDEM Finale (Team 5→8), Sieger-kippbar +
+      Handy/Beamer-Drift. Bewiesen per `dev/dumpScore`-Probe (rot: largestConnected +totalBonus sobald
+      Stamps landen; grün: konstant nach Fix). Fix: `updateTerritories` zählt revealStamps nicht mehr
+      (rein visuell). Regressions-Test in `qqRooms.test.ts` (30/30). **Miterledigt:** der back-spezifische
+      Stamp-Dopplungs-Teil ist damit score-immun (Back+Vor = nur noch kosmetische Extra-Stamps). Auf
+      Feature-Branch, tsc+vitest grün. Dev-Diagnose-Endpoints `dev/dumpScore` + `dev/advanceFinal` blieben.
 - [ ] **Alle SPACE-Befehle aktualisieren** — Hints stimmen nicht: Tooltip `:2017` + Hilfe-Panel `:6095`
       bewerben „Shift+Space/Backspace = zurück", real tot bzw. springt vor (s.o.). Nach Fix 1-3 angleichen.
       `Strg+Z` (`:1703` → undoLastAction) IST korrekt. Bounce-Schutz für `qqGoBackSlide` fehlt (400ms).

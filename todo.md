@@ -112,24 +112,21 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🟠 WARTET AUF MICH — Build
 
-**Moderator-View (offener Rest — Cockpit/Setup-Wizard + Back-Fix Fund 1+2 + Finale-Score-Fund 4 sind durch, s. Git):**
-- [ ] **Back Fund 3 — Phasen-Snapshot (struktureller Ausbau):** `qqRooms.ts:7060 qqGoBackSlide` deckt nur
-      5 Phasen ab (nur Sub-Step-Dekrement); `canBack` (`QQModeratorPage:2001`) auch. Kein Snapshot →
-      Back kann eine versehentliche PHASEN-Weiterschaltung (Space zu früh → Frage aktiv/Placement/Bets
-      zu) nicht heilen. Leichten Snapshot-Stack pro Phasen-Transition + Restore bei Sub-Step 0. Auch
-      GAME_OVER-Zeremonie an Back koppeln (`qqAwardStep {dir:-1}`) + 400ms-Bounce-Guard für qqGoBackSlide.
-- [ ] **SPACE-Hints angleichen** — Tooltip `:2017` + Hilfe-Panel `:6095` sagen „Shift+Space/Backspace =
-      zurück"; das STIMMT jetzt (Fund 1+2 gefixt), aber Text/Konsistenz gegenchecken. `Strg+Z` (`:1703`)
-      ist korrekt. (Fund 3 = echtes phasenübergreifendes Undo bleibt separat.)
-- [ ] **„Runde 1 / Frage 1 von 5" darstellen** — im Cockpit schlanke Pills; ggf. Kolosseum-Gems auch hier
-      (Tier-1-Medaillons sind jetzt da → unblockt).
+**Moderator-View (offener Rest — Cockpit/Setup-Wizard + Back-Fix Fund 1+2 + Finale-Score-Fund 4 + SPACE-Hints
++ Runden/Frage-Pills sind durch, s. Git):**
+- [ ] **Back Fund 3 — Teil 1: Phasen-Snapshot-Restore (struktureller Ausbau, EINZIGER Rest):** `qqGoBackSlide`
+      dekrementiert nur Sub-Steps; kein Snapshot → Back kann eine versehentliche PHASEN-Weiterschaltung
+      (Space zu früh → Frage aktiv/Placement/Bets zu) nicht heilen. Leichter Snapshot-Stack pro Phasen-
+      Transition + Restore bei Sub-Step 0. **⚠️ Live-riskant (unwindet Timer/Answers/Grid) → braucht Wolfs
+      Beamer + Multi-Client-Test, NICHT blind auf den Live-Server. Erst ROT-Repro am echten Beamer, dann bauen.**
+      Teil 2 (GAME_OVER-Zurück-Hotkey → `qqAwardStep{-1}`) + Teil 3 (400ms-Bounce-Guard am `qq:goBackSlide`-
+      Socket) sind **durch** (2026-07-19, tsc+vitest grün).
 
-**Audit-Funde 2026-07-19 (3 Finish-Audits — beide Modi sind funktional durchspielbar, kein harter Blocker):**
-- [ ] **Endstand-Beat Höhen-Cap** — `CozyQuizLargeGroupView.tsx:931-953` nutzt feste `62px`/Zeile OHNE
-      Cap (anders als `CumulativeStandings:266` mit `MEGA_BOARD_H`). Bei 8 Fraktionen + Hero (~360px)
-      ≈ 950px auf 990er-Bühne → knapp/Clipping-Risiko bei langen Fraktionsnamen. Am Beamer prüfen, ggf. Cap.
-- [ ] *(schmal)* **COZY_GAME-Blank** — `QQBeamerPage.tsx:2075` zeigt bei `phase===COZY_GAME` aber
-      `cozyGame===null` (Reconnect/Cancel-Transient) leeren Beamer, kein Fallback. Nur wenn CozyGame genutzt.
+**Audit-Funde 2026-07-19 (3 Finish-Audits — beide Modi funktional durchspielbar; die 2 Funde sind GEBAUT):**
+- ✅ **Endstand-Beat Höhen-Cap GEBAUT** — reine Sicherheits-Bremse in `LargeGroupGameOverView` (8 Arena-
+      Fraktionen bleiben bei 62px = Wolf-Baseline, nur der 9-10-Zeilen-Edge komprimiert). Am Beamer gegensehen.
+- ✅ **COZY_GAME-Blank GEBAUT** — `QQBeamerPage` zeigt bei `phase===COZY_GAME` + `cozyGame===null` jetzt die
+      neutrale Pause-Tafel statt leerem Beamer (Reconnect/Cancel-Transient).
 - Bestätigt SAUBER: Arena-Pfad bucketet überall korrekt auf 8 Fraktionen (kein Roh-40-Overflow), EN-Fallback
   durchgängig, deaktivierte Landminen (Bluff/OnlyConnect/Final-Wager/Comeback) sind in Arena hart gegated.
 

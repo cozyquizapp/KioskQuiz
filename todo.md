@@ -27,16 +27,23 @@
       LobbyView tot entfernt `f16b2e1b`) + **EIN Panel + „🧪 Test-Modus"-Toggle** (`ddd33688`, Bots/
       Skip/Leaderboard-Skip hinter dem Toggle, Live clean; /moderator-test defaultet an). Previews
       `design-vorschau/cockpit-lobby-gefaltet`, `moderator-testmodus-an|aus`.
-- 🔒 **Panel behalten** (kein Wizard-Restore) als einzige Einstellungen-Fläche.
-- [x] **Colosseum-Schalter zurück** (`7e0eaa6b`): „🏛️ Mit Kolosseum | 🌑 Schlicht"
-      (`arenaBackgrounds`) war im geloeschten Wizard → jetzt im Cockpit unter Format (nur Arena).
-      = Antwort auf „wo stelle ich Colosseum ein" + die „2 Arena-Looks".
-- [x] **Hot-Potato-Warnung** (`e6fc98f7`): Cockpit-Warnzeile + 🔥N-Picker-Badge via megaWarnCount.
+- [x] **Setup = gefuehrter 7-Schritt-Wizard** (`109e8d35`, ersetzt „Panel behalten"-Entscheidung!):
+      Wolf „Format-Wahl wird zum Wizard, ersetzt das Panel". Neue Komponente `QQSetupFlow.tsx`
+      (haelt QQModeratorPage schlank). Folgen: 1 Format · 2 Look (BILD-Vorschau) · 3 Fragensatz ·
+      4 Runden & Ablauf · 5 Timer & Sprache · 6 Extras · 7 Bereit → Cockpit. Look format-adaptiv
+      (Arena: Kolosseum/Schlicht mit `arena-main.webp`/`pre-neutral.webp`; CozyQuiz: Skin+Avatar).
+      Schritt-Kopf = klickbare Tabs. **Ein Gate** `setupDone`: !done → Wizard, done → schlankes
+      Cockpit (Read-only-Chips + „⚙ Aendern"). Format-Landing + Settings-Panel + tote SetupView
+      (900 Z.) + States editFormat/showAllSettings raus. Danger/Wartung in „Erweitert"-Klappe.
+      Verifiziert per echtem /moderator-test → Previews `design-vorschau/wizard-1..7-*`.
+- [x] **Colosseum-Schalter** = Look-Folie 2 des Wizards (vorher `7e0eaa6b` im Cockpit; jetzt im Wizard
+      mit Bild-Vorschau). Antwort auf „wo stelle ich Colosseum ein" + die „2 Arena-Looks".
+- [x] **Hot-Potato-Warnung** (`e6fc98f7`): Wizard-Fragensatz-Folie + 🔥N-Badge via megaWarnCount.
 - [x] **„Meine Quizze" einklappbar** (`e6fc98f7`).
 - [ ] **NÄCHSTES (Tagesziel): Arena einmal komplett durchspielen + Bugs fixen** → dann CozyQuiz vs
       CozyArena Views vergleichen (bessere Reveal-Seiten übernehmen), dann alle Modi einmal testen.
-- [ ] *(klein/intern)* Format-Toggle noch zusätzlich in SetupView-Advanced (umgeht Team-Reset-Gate);
-      Bots-Popover im seltenen No-Draft-S2 doppelt.
+- [x] *(erledigt mit dem Wizard-Umbau)* Die frueheren Doppelungen (Format-Toggle in SetupView-
+      Advanced, No-Draft-S2-Bots-Popover) sind mit SetupView/Format-Landing entfallen.
 
 ---
 

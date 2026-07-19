@@ -1751,6 +1751,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // 2026-07-19 (Wolf 'Bedienung 95% / App-Steuerung 5%'): App-Steuerung (Timer/
   // Sprache/Sound/Reset) lebt im Cockpit hinter einem eingeklappten "Mehr"-Panel.
   const [moreOpen, setMoreOpen] = useState(false);
+  // 2026-07-19 (Wolf 'Test-Header aufraeumen'): die 5 Test-Skip-Buttons
+  // (R2/R3/R4/Bet/Reveal) in EIN "Springe zu"-Dropdown gefaltet.
+  const [skipMenuOpen, setSkipMenuOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   // 2026-07-18 (Wolf 'nur relevante Infos'): Teams+Antworten-Liste ist nur in den
   // Frage-Phasen (Abgaben/Kick/Rename) wirklich gebraucht. Ausserhalb bleibt sie
@@ -1870,45 +1873,67 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               Grid teilweise gefuellt, phase = PHASE_INTRO/FINAL_BETTING/FINAL_REVEAL.
               Autoplay laeuft dann ab der gesprungenen Position weiter. */}
           {testMode && joined && state && state.phase !== 'LOBBY' && (
-            <div style={{ display: 'inline-flex', gap: 4, alignItems: 'center' }}>
-              {(['phase-2', 'phase-3', 'phase-4', 'final-bet', 'final-reveal'] as const).map(target => {
-                const labels: Record<typeof target, string> = {
-                  'phase-2': '→ R2',
-                  'phase-3': '→ R3',
-                  'phase-4': '→ R4',
-                  'final-bet': '→ Bet',
-                  'final-reveal': '→ Reveal',
-                };
-                return (
-                  <button
-                    key={target}
-                    onClick={async () => {
-                      const pin = getDevPin();
-                      if (!pin) return;
-                      const r = await fetch(`/api/qq/${roomCode}/dev/skipTo`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ target, pin }),
-                      });
-                      if (r.status === 403) {
-                        clearDevPin();
-                        alert('Admin-PIN falsch.');
-                      } else if (!r.ok) {
-                        const data = await r.json().catch(() => ({}));
-                        alert(`Skip-Fehler: ${data.error ?? r.status}`);
-                      }
-                    }}
-                    title={`Test-Skip: ${target}`}
-                    style={{
-                      padding: '5px 10px', borderRadius: 6,
-                      border: '1px solid rgba(239,68,68,0.45)',
-                      background: 'rgba(239,68,68,0.12)',
-                      color: '#FCA5A5', cursor: 'pointer',
-                      fontFamily: 'inherit', fontWeight: 900, fontSize: 11, lineHeight: 1,
-                    }}
-                  >{labels[target]}</button>
-                );
-              })}
+            <div style={{ position: 'relative', display: 'inline-flex' }}>
+              <button
+                onClick={() => setSkipMenuOpen(v => !v)}
+                title="Test: direkt zu einer Phase springen"
+                style={{
+                  padding: '5px 12px', borderRadius: 6,
+                  border: '1px solid rgba(239,68,68,0.45)',
+                  background: 'rgba(239,68,68,0.12)',
+                  color: '#FCA5A5', cursor: 'pointer',
+                  fontFamily: 'inherit', fontWeight: 900, fontSize: 11, lineHeight: 1,
+                  display: 'inline-flex', alignItems: 'center', gap: 5,
+                }}
+              >🧪 Springe zu <span style={{ fontSize: 8 }}>▼</span></button>
+              {skipMenuOpen && (
+                <div style={{
+                  position: 'absolute', top: 'calc(100% + 6px)', right: 0, zIndex: 50,
+                  display: 'flex', flexDirection: 'column', gap: 2, padding: 4, minWidth: 130,
+                  borderRadius: 8, background: 'var(--qm-elev)',
+                  border: '1px solid rgba(239,68,68,0.4)', boxShadow: 'var(--qm-depth-md)',
+                }}>
+                  {(['phase-2', 'phase-3', 'phase-4', 'final-bet', 'final-reveal'] as const).map(target => {
+                    const labels: Record<typeof target, string> = {
+                      'phase-2': 'Runde 2',
+                      'phase-3': 'Runde 3',
+                      'phase-4': 'Runde 4',
+                      'final-bet': 'Final-Wette',
+                      'final-reveal': 'Final-Reveal',
+                    };
+                    return (
+                      <button
+                        key={target}
+                        onClick={async () => {
+                          setSkipMenuOpen(false);
+                          const pin = getDevPin();
+                          if (!pin) return;
+                          const r = await fetch(`/api/qq/${roomCode}/dev/skipTo`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ target, pin }),
+                          });
+                          if (r.status === 403) {
+                            clearDevPin();
+                            alert('Admin-PIN falsch.');
+                          } else if (!r.ok) {
+                            const data = await r.json().catch(() => ({}));
+                            alert(`Skip-Fehler: ${data.error ?? r.status}`);
+                          }
+                        }}
+                        style={{
+                          padding: '6px 12px', borderRadius: 6, textAlign: 'left',
+                          border: '1px solid transparent', background: 'transparent',
+                          color: '#FCA5A5', cursor: 'pointer',
+                          fontFamily: 'inherit', fontWeight: 800, fontSize: 12, lineHeight: 1,
+                        }}
+                        onMouseEnter={e => { e.currentTarget.style.background = 'rgba(239,68,68,0.14)'; }}
+                        onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; }}
+                      >→ {labels[target]}</button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
           {/* 2026-06-29 (Beamer-Review #4): Header-Gruppierung — „Ablauf"-
@@ -3758,22 +3783,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   </Btn>
                 )}
 
-                {/* ── Danger-Menu (Reset-Aktionen, weggedrückt) ── */}
-                <DangerMenu
-                  onRestart={() => {
-                    if (!window.confirm('Quiz neu starten? Punkte & Grid werden zurückgesetzt, Teams bleiben verbunden.')) return;
-                    emit('qq:resetRoom', { roomCode });
-                  }}
-                  onBackToSetup={() => {
-                    if (!window.confirm('Zurück zum Setup? Alle Teams werden entfernt und alle Einstellungen können neu gewählt werden.')) return;
-                    for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
-                    emit('qq:resetRoom', { roomCode });
-                    setSetupDone(false);
-                  }}
-                  roomCode={roomCode}
-                  phase={s.phase}
-                  avatarSetId={s.avatarSetId}
-                />
+                {/* 2026-07-19 (Wolf): DangerMenu (Neustart / Zurück zum Setup) ist
+                    aus der Aktions-Zone raus — destruktiv gehoert nicht neben den
+                    naechsten Zug. Sitzt jetzt unten in „App-Steuerung". */}
 
               </div>
             </div>
@@ -4232,6 +4244,26 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               {/* Grid — 2026-07-03: in CozyArena ausgeblendet (room.grid ist dort
                   ein bedeutungsloses Gitter). */}
               {!(s as any).largeGroupMode && s.grid && <CollapsibleGrid state={s} />}
+
+              {/* Raum & Reset — destruktiv, deshalb hier unten in App-Steuerung */}
+              <div>
+                <div style={{ fontSize: 12, color: QQ_COLORS.slate500, marginBottom: 6 }}>⚠️ Raum</div>
+                <DangerMenu
+                  onRestart={() => {
+                    if (!window.confirm('Quiz neu starten? Punkte & Grid werden zurückgesetzt, Teams bleiben verbunden.')) return;
+                    emit('qq:resetRoom', { roomCode });
+                  }}
+                  onBackToSetup={() => {
+                    if (!window.confirm('Zurück zum Setup? Alle Teams werden entfernt und alle Einstellungen können neu gewählt werden.')) return;
+                    for (const t of teamList) emit('qq:kickTeam', { roomCode, teamId: t.id });
+                    emit('qq:resetRoom', { roomCode });
+                    setSetupDone(false);
+                  }}
+                  roomCode={roomCode}
+                  phase={s.phase}
+                  avatarSetId={s.avatarSetId}
+                />
+              </div>
               </div>
               )}
             </div>

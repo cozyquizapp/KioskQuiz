@@ -11,7 +11,7 @@
 
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import type { QQDraft, QQStateUpdate, QQLanguage, QQCategory } from '../../../shared/quarterQuizTypes';
+import type { QQDraft, QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_COMEBACK_ENABLED } from '../../../shared/quarterQuizTypes';
 import type { CozyGame } from '../../../shared/cozyGameTypes';
 
@@ -33,14 +33,14 @@ const CATEGORY_LABEL: Record<QQCategory, string> = {
   CHEESE: 'Cheese 🧀',
 };
 
-const TIMER_PRESETS = [20, 30, 45, 60];
-
 type StepDef = { key: string; title: string; emoji: string };
+// 2026-07-19 (Wolf 'Setup vereinheitlichen'): der fruehere Schritt "Optionen"
+// (Timer/Sprache/Comeback) war ein Duplikat der Einstellungen — entfernt.
+// "Show planen" ist jetzt reine Vorbereitung (Material/Briefing/Technik).
 const STEPS: StepDef[] = [
   { key: 'quiz',     title: 'Quiz wählen',          emoji: '📚' },
   { key: 'material', title: 'Material & Druck',      emoji: '🎒' },
   { key: 'briefing', title: 'Moderations-Briefing',  emoji: '🎤' },
-  { key: 'options',  title: 'Optionen',              emoji: '⚙️' },
   { key: 'tech',     title: 'Technik-Aufbau',        emoji: '📺' },
   { key: 'ready',    title: 'Bereit',                emoji: '✅' },
 ];
@@ -290,51 +290,6 @@ export default function QQShowPrepWizard({ roomCode, state, selectedDraftId, dra
                   </div>
                 ))
               )}
-            </>
-          )}
-
-          {!loading && step.key === 'options' && (
-            <>
-              <div style={C.sub}>Einmal einstellen — wird am Quiz gespeichert, sodass in der Venue alles passt.</div>
-              <div style={C.block}>
-                <div style={{ fontWeight: 800, marginBottom: 8 }}>⏱️ Timer pro Frage</div>
-                <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                  {TIMER_PRESETS.map(t => {
-                    const active = (draft?.defaultTimerSec ?? state.timerDurationSec) === t;
-                    return (
-                      <button key={t} style={C.pill(active)} onClick={() => { emit('qq:setTimer', { roomCode, durationSec: t }); patchDraft({ defaultTimerSec: t }); }}>{t}s</button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div style={C.block}>
-                <div style={{ fontWeight: 800, marginBottom: 8 }}>🌍 Sprache</div>
-                <div style={{ display: 'flex', gap: 8 }}>
-                  {(['de', 'en', 'both'] as QQLanguage[]).map(l => (
-                    <button key={l} style={C.pill(draft?.language === l)} onClick={() => { emit('qq:setLanguage', { roomCode, language: l }); patchDraft({ language: l }); }}>
-                      {l === 'de' ? '🇩🇪 DE' : l === 'en' ? '🇬🇧 EN' : '🌍 Beide'}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              {/* 2026-07-07 (Wolf): Comeback global deaktiviert (QQ_COMEBACK_ENABLED). */}
-              {QQ_COMEBACK_ENABLED && (
-              <div style={C.block}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: 800 }}>🔁 Comeback-Runde</div>
-                  <button style={C.pill(draft?.comebackEnabled !== false)} onClick={() => { const v = !(draft?.comebackEnabled !== false); emit('qq:setQuizOptions', { roomCode, comebackEnabled: v }); patchDraft({ comebackEnabled: v }); }}>
-                    {draft?.comebackEnabled !== false ? 'An' : 'Aus'}
-                  </button>
-                </div>
-              </div>
-              )}
-              <div style={C.block}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <div style={{ fontWeight: 800 }}>🎲 Minigames (CozyGames)</div>
-                  <span style={{ fontSize: 14, color: '#94a3b8' }}>{draft?.cozyGamesEnabled ? `${prep.games.length} aktiv` : 'aus'}</span>
-                </div>
-                <div style={{ ...C.sub, margin: '6px 0 0' }}>Auswahl der Spiele im Builder (CozyGames-Setup). Hier nur Übersicht.</div>
-              </div>
             </>
           )}
 

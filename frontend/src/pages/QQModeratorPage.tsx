@@ -1726,7 +1726,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // Funktioniert nicht in PLACEMENT/QUESTION_ACTIVE (dort gilt Ctrl+Z fuer Undo).
     if ((e.code === 'Space' && e.shiftKey) || e.code === 'Backspace') {
       e.preventDefault(); playHotkeyFeedback();
-      emitRef.current('qq:goBackSlide', { roomCode });
+      // 2026-07-19 (Fund 3): in GAME_OVER ist goBackSlide ein No-op (keine Slide-
+      // Reihenfolge) — die Siegerehrung-Beats fahren ueber awardStep. Damit der
+      // Zurueck-Hotkey/Streamdeck dort dasselbe tut wie der sichtbare Zurueck-
+      // Button (awardStep dir:-1), hier nach Phase routen.
+      if (s.phase === 'GAME_OVER') emitRef.current('qq:awardStep', { roomCode, dir: -1 });
+      else emitRef.current('qq:goBackSlide', { roomCode });
       return;
     }
 

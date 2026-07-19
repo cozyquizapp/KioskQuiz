@@ -1748,9 +1748,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // 2026-05-08 (Wolf-Audit 'mod page total überladen'): Settings-Card
   // DEFAULT COLLAPSED. Vorher useState(true) → Settings nahmen 180+ px Höhe
   // weg während Live-Quiz. Jetzt: nur in LOBBY default offen, sonst zu.
-  const [settingsOpen, setSettingsOpen] = useState(() => {
-    return state?.phase === 'LOBBY';
-  });
+  // 2026-07-19 (Wolf 'Bedienung 95% / App-Steuerung 5%'): App-Steuerung (Timer/
+  // Sprache/Sound/Reset) lebt im Cockpit hinter einem eingeklappten "Mehr"-Panel.
+  const [moreOpen, setMoreOpen] = useState(false);
   const [cheatsheetOpen, setCheatsheetOpen] = useState(false);
   // 2026-07-18 (Wolf 'nur relevante Infos'): Teams+Antworten-Liste ist nur in den
   // Frage-Phasen (Abgaben/Kick/Rename) wirklich gebraucht. Ausserhalb bleibt sie
@@ -1766,18 +1766,6 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     return next;
   });
   useEffect(() => { cheatsheetOpenRef.current = cheatsheetOpen; }, [cheatsheetOpen]);
-  // Auto-collapse settings when game starts. Plus auto-open wenn zurück
-  // in LOBBY (z. B. via 'Zurück zum Setup').
-  const prevPhaseRef = useRef(s?.phase);
-  useEffect(() => {
-    const prev = prevPhaseRef.current;
-    if (prev === 'LOBBY' && s?.phase && s.phase !== 'LOBBY') {
-      setSettingsOpen(false);
-    } else if (prev !== 'LOBBY' && s?.phase === 'LOBBY') {
-      setSettingsOpen(true);
-    }
-    prevPhaseRef.current = s?.phase;
-  }, [s?.phase]);
 
   // Derive status text for the big banner
   function getStatusText(s: QQStateUpdate): { text: string; color: string; sub?: string } {
@@ -2675,55 +2663,25 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       )}
 
       {joined && s && s.phase !== 'LOBBY' && (
-        <>
-          {/* ══ BIG STATUS BANNER ══ */}
+        <div className="qm-cockpit-wrap">
+          {/* ══ STATUS-STREIFEN (schlank) ══ */}
           {(() => {
             const status = getStatusText(s);
             const answeredCount = s.answers.length;
             const connectedTeams = s.teams.filter(t => t.connected).length;
             const showProgress = s.phase === 'QUESTION_ACTIVE' && connectedTeams > 0;
             return (
-              <div className="qm-hero" style={{ ['--qm-hero-color' as any]: status.color }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                  <div className="qm-hero-title">{status.text}</div>
-                  {status.sub && <span className="qm-hero-sub">{status.sub}</span>}
+              <div className="qm-status" style={{ ['--qm-hero-color' as any]: status.color }}>
+                <div className="qm-status-phase">
+                  <span className="qm-status-dot" aria-hidden />
+                  <span className="qm-status-title">{status.text}</span>
+                  {status.sub && <span className="qm-status-sub">{status.sub}</span>}
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  {/* Answer progress bar */}
-                  {showProgress && (
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <div style={{
-                        width: 120, height: 10, borderRadius: 5,
-                        background: 'rgba(0,0,0,0.35)',
-                        border: '1px solid var(--qm-border)',
-                        overflow: 'hidden',
-                      }}>
-                        <div style={{
-                          width: `${(answeredCount / connectedTeams) * 100}%`,
-                          height: '100%', borderRadius: 4,
-                          background: answeredCount >= connectedTeams
-                            ? 'linear-gradient(90deg, #16a34a, #22c55e)'
-                            : 'linear-gradient(90deg, #d97706, #f59e0b)',
-                          boxShadow: answeredCount >= connectedTeams
-                            ? '0 0 10px rgba(34,197,94,0.55)'
-                            : '0 0 10px rgba(236,72,153,0.45)',
-                          transition: 'width 0.3s, background 0.3s',
-                        }} />
-                      </div>
-                      <span style={{
-                        fontSize: 13, fontWeight: 900,
-                        color: answeredCount >= connectedTeams ? 'var(--qm-tone-active)' : 'var(--qm-tone-reveal)',
-                      }}>
-                        {answeredCount}/{connectedTeams}
-                      </span>
-                    </div>
-                  )}
-                  {/* 2026-05-17 (Wolf-Audit): Phase/Frage-Pills nur in Gameplay-
-                      Phasen — sonst stehen veraltete „Runde 4 / Frage 5"-Werte
-                      im Mod-Panel während THANKS/GAME_OVER/Final-Phasen. */}
+                <div className="qm-status-meta">
+                  {/* Phase/Frage-Pills nur in Gameplay-Phasen (sonst veraltete Werte
+                      in THANKS/GAME_OVER/Final). Runden-Pill = Beamer/Team-Sprache
+                      (phaseNames-Override) + Finale-×2/×3-Pill. */}
                   {(s.phase === 'PHASE_INTRO' || s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT' || s.phase === 'COMEBACK_CHOICE') && (() => {
-                    // 2026-07-18 (Wolf-Konsistenz): Runden-Pill = Beamer/Team-Sprache
-                    // (theme.phaseNames-Override) + Finale-×2/×3-Pill (kannte der Mod nicht).
                     const lg: 'de' | 'en' = s.language === 'en' ? 'en' : 'de';
                     const roundLabel = qqHasPhaseNames(s, lg) ? qqPhaseName(s, lg) : `Runde ${s.gamePhaseIndex}/${s.totalPhases}`;
                     const mult = qqArenaFinaleMult(s);
@@ -2735,6 +2693,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                       </>
                     );
                   })()}
+                  {/* Bereitschafts-Puls: wie viele Teams haben abgegeben */}
+                  {showProgress && (
+                    <div className="qm-status-ready" data-full={answeredCount >= connectedTeams}>
+                      <div className="qm-status-ready-bar">
+                        <div style={{ width: `${(answeredCount / connectedTeams) * 100}%` }} />
+                      </div>
+                      <span>{answeredCount}/{connectedTeams}{answeredCount >= connectedTeams ? ' ✓' : ''}</span>
+                    </div>
+                  )}
                   {s.timerEndsAt && <TimerPill endsAt={s.timerEndsAt} />}
                   <RuntimePill state={s} />
                 </div>
@@ -2754,10 +2721,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           {/* ══ HOST NOTES — suggested talking points per phase ══ */}
           <HostNotes state={s} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 360px', gap: 14 }}>
+          <div className="qm-cockpit">
 
-          {/* ── Left column ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* ── Cockpit-Flow (Ein-Spalten-Fokus): Aktion → Frage/Antwort →
+               Kontext (Teams/Buzz) → Rangliste → Mehr ── */}
+          <div className="qm-flow">
 
             {/* ══ SHOW CONTROLS — primary actions ══
                 2026-05-24 (Wolf 'buttons springen, space-button wird größer/
@@ -2767,13 +2735,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 PrimaryBtn bekommt min-width via CSS damit der Text-Inhalt
                 die Buttonbreite nicht mehr diktiert (gleiche Position im Slot
                 über alle Phasen). */}
-            <div style={{
-              ...card,
-              border: '1px solid rgba(255,255,255,0.12)',
-              padding: '12px 16px',
-              minHeight: 86, // 62 (Btn) + 24 (padding)
-            }}>
-              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center', minHeight: 56 }}>
+            <div className="qm-action">
+              <div className="qm-action-slot">
 
                 {/* ── RULES ── */}
                 {s.phase === 'RULES' && (
@@ -3815,6 +3778,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </div>
             </div>
 
+            {/* Frage + erwartete Antwort fuer den Mod (Beamer steht hinter ihm) —
+                direkt unter der Aktion, damit er beim Vorlesen/Werten nicht sucht.
+                2026-07-19: aus der alten rechten Spalte hierher gezogen; ersetzt
+                die fruehere doppelte inline-„Current question"-Card. */}
+            <ModQuestionPanel state={s} />
+            <FinalWagerControls state={s} emit={emit} roomCode={roomCode} />
+
             {/* Buzz queue */}
             {s.buzzQueue.length > 0 && (
               <div style={{ ...card, borderColor: 'rgba(236,72,153,0.3)' }}>
@@ -3840,44 +3810,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </div>
             )}
 
-            {/* Current question — 2026-05-17 (Wolf 'thanks zeigt noch schau mal
-                frage aus runde 4'): Phase-Guard hinzugefügt damit die Frage-
-                Card nur während aktiver Frage-Phasen rendert. Vorher: nur
-                s.currentQuestion-Existenz-Check → letzte Frage hängte in
-                END-Phasen (GAME_OVER, THANKS, FINAL_BETTING, FINAL_REVEAL,
-                CONNECTIONS_4X4) noch im Mod-Panel. */}
-            {s.currentQuestion && (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL' || s.phase === 'PLACEMENT') && (
-              <div style={{ ...card, borderColor: `${QQ_CATEGORY_COLORS[s.currentQuestion.category]}44` }}>
-                <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-                  <span style={{
-                    fontSize: 12, fontWeight: 900, padding: '3px 10px', borderRadius: 999,
-                    background: `${QQ_CATEGORY_COLORS[s.currentQuestion.category]}22`,
-                    color: QQ_CATEGORY_COLORS[s.currentQuestion.category],
-                    border: `1px solid ${QQ_CATEGORY_COLORS[s.currentQuestion.category]}44`,
-                  }}>
-                    {QQ_CATEGORY_LABELS[s.currentQuestion.category].emoji} {QQ_CATEGORY_LABELS[s.currentQuestion.category].de}
-                  </span>
-                  <span style={{ fontSize: 11, color: QQ_COLORS.slate500 }}>
-                    Phase {s.currentQuestion.phaseIndex} · #{s.currentQuestion.questionIndexInPhase + 1}
-                  </span>
-                </div>
-                <div style={{ fontWeight: 900, fontSize: 17, marginBottom: 6, color: QQ_COLORS.slate200 }}>
-                  {s.currentQuestion.text}
-                </div>
-                {s.currentQuestion.textEn && (
-                  <div style={{ color: QQ_COLORS.slate500, fontSize: 13, marginBottom: 8 }}>{s.currentQuestion.textEn}</div>
-                )}
-                {s.revealedAnswer && (
-                  <div style={{
-                    marginTop: 8, padding: '8px 12px', borderRadius: 8,
-                    background: 'rgba(34,197,94,0.1)', border: '1px solid rgba(34,197,94,0.3)',
-                    color: QQ_COLORS.green400, fontWeight: 900,
-                  }}>
-                    ✓ {s.revealedAnswer}
-                  </div>
-                )}
-              </div>
-            )}
+            {/* 2026-07-19: Die fruehere inline-„Current question"-Card war ein
+                aermeres Duplikat von <ModQuestionPanel> (nur Text + revealedAnswer).
+                Entfernt → ModQuestionPanel (oben, direkt unter der Aktion) ist die
+                einzige Frage/Antwort-Quelle fuer den Mod. */}
 
             {/* Schätzchen ranking — shown when it's a SCHAETZCHEN reveal */}
             {(s.phase === 'QUESTION_REVEAL' || s.phase === 'QUESTION_ACTIVE') &&
@@ -4172,39 +4108,32 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             })()}
           </div>
 
-          {/* ── Right column ── */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* ── Bodenzeile: Rangliste (moderation-relevant, sichtbar) + Mehr
+               (App-Steuerung, selten). Ziel: Bedienung 95% / App-Steuerung 5%.
+               ModQuestionPanel + FinalWager sind nach oben unter die Aktion
+               gewandert (Mod liest dort Frage/Antwort). ── */}
+          <div className="qm-flow">
 
-            {/* 2026-05-02 (Event-Manager-Audit + App-Designer-Audit): Frage-Panel
-                fuer den Mod. Pub-Setup: Beamer steht hinter dem Mod, Mod kann
-                Frage/Antwort am Beamer nicht ablesen. Hier ist Frage + erwartete
-                Antwort + akzeptierte Schreibvarianten + sub-mechanik-spezifische
-                Infos kompakt sichtbar. */}
-            <ModQuestionPanel state={s} />
+            {/* Rangliste — collapsible. In CozyArena die 8 Fraktionen (summierte
+                Punkte) statt bis zu 25 Sub-Teams ranken. */}
+            <CollapsibleRanking teams={(s as any).largeGroupMode ? qqSortedGroups(s) : teamList} phase={s.phase} />
 
-            {/* ── Final-Wager-Mechanik (Wolf 2026-05-09) ────────────────────
-                Vor letzter Spiel-Phase: Bets setzen lassen
-                In FINAL_BETTING: Submit-Status + Final-Phase starten
-                In FINAL_REVEAL: nur Hinweis
-                In QUESTION_REVEAL/PLACEMENT der letzten Phase: Resolve-Button. */}
-            <FinalWagerControls state={s} emit={emit} roomCode={roomCode} />
-
-            {/* 2026-05-24 (Wolf-Audit Setup-Cleanup):
-                - Live-Settings-Card wird nur in Non-LOBBY-Phasen gemountet
-                  (outer Bedingung Z. 1593 `s.phase !== 'LOBBY'`).
-                - Volume-Slider raus (Setup/Advanced hat ihn, M-Taste for Mute).
-                - Custom-Sounds-Panel raus (Setup hat Batch-Actions).
-                Nur Timer + Sprache + Music/SFX-Mute bleiben fuer Live-Quiz. */}
-            <div style={card}>
-              <div
-                onClick={() => setSettingsOpen(v => !v)}
-                style={{ ...sectionLabel, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, userSelect: 'none' }}
+            {/* ══ MEHR — App-Steuerung: Timer / Sprache / Sound / Grid.
+                 Standard eingeklappt, damit im Blick nur die Bedienung liegt. ══ */}
+            <div className="qm-more" data-open={moreOpen}>
+              <button
+                type="button"
+                className="qm-more-head"
+                onClick={() => setMoreOpen(v => !v)}
+                aria-expanded={moreOpen}
               >
-                <span style={{ fontSize: 10, transition: 'transform 0.2s', transform: settingsOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>▶</span>
-                <span aria-hidden>⚙</span> Einstellungen
-                {!settingsOpen && <span style={{ fontSize: 11, fontWeight: 700, color: QQ_COLORS.slate600, marginLeft: 4 }}>· {s.timerDurationSec}s · {(s.language || 'de').toUpperCase()}</span>}
-              </div>
-              {settingsOpen && <>
+                <span className="qm-more-chev" aria-hidden>▸</span>
+                <span aria-hidden>⚙</span>
+                <span>App-Steuerung</span>
+                <span className="qm-more-hint">{s.timerDurationSec}s · {(s.language || 'de').toUpperCase()}{(s.musicMuted || s.sfxMuted) ? ' · 🔇' : ''}</span>
+              </button>
+              {moreOpen && (
+              <div className="qm-more-body">
 
               {/* Timer */}
               <div style={{ marginBottom: 14 }}>
@@ -4300,23 +4229,15 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 </div>
                 <div style={{ fontSize: 10, color: QQ_COLORS.slate600, marginTop: 6 }}>M-Taste = alles muten</div>
               </div>
-              </>}
+              {/* Grid — 2026-07-03: in CozyArena ausgeblendet (room.grid ist dort
+                  ein bedeutungsloses Gitter). */}
+              {!(s as any).largeGroupMode && s.grid && <CollapsibleGrid state={s} />}
+              </div>
+              )}
             </div>
-
-            {/* Grid — collapsible */}
-            {/* 2026-07-03 (Wolf-Audit): Backend baut room.grid immer → in CozyArena
-                zeigte die Mini-Grid ein bedeutungsloses Gitter. In Arena ausblenden. */}
-            {!(s as any).largeGroupMode && s.grid && <CollapsibleGrid state={s} />}
-
-            {/* Rangliste — 2026-05-08: collapsible, default-collapsed während
-                QUESTION_ACTIVE/REVEAL (Mod sieht nur Header), default-offen
-                in PAUSED/PLACEMENT/COMEBACK/GAME_OVER (wo Rang relevant ist). */}
-            {/* 2026-07-03 (Wolf-Audit): In CozyArena die 8 Fraktionen (summierte
-                Punkte) ranken statt bis zu 25 Sub-Teams nach Grid-Metrik. */}
-            <CollapsibleRanking teams={(s as any).largeGroupMode ? qqSortedGroups(s) : teamList} phase={s.phase} />
           </div>
         </div>
-        </>
+        </div>
       )}
     </div>
     </AvatarSetProvider>

@@ -93,49 +93,177 @@
   color: var(--qm-text-muted);
 }
 
-/* ----- Hero status banner --------------------------------------- */
+/* ===============================================================
+   COCKPIT (Ein-Spalten-Fokus) — 2026-07-19 (Wolf 'Bedienung 95% /
+   App-Steuerung 5%'). Radikaler Umbau: schlanker Status-Streifen →
+   riesige Aktion (naechster Zug) → Kontext (Frage/Antwort, Teams,
+   Buzz) → Rangliste → eingeklapptes "Mehr" (App-Steuerung).
+   =============================================================== */
 
-.qm-hero {
-  position: relative;
+/* ----- Layout ---------------------------------------------------- */
+.qm-cockpit-wrap {
+  max-width: 940px;
+  margin: 0 auto;
+}
+.qm-cockpit,
+.qm-flow {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.qm-cockpit { gap: 14px; }
+
+/* ----- Status-Streifen (schlank, glanceable) -------------------- */
+.qm-status {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 16px;
-  padding: 16px 24px;
-  margin-bottom: 14px;
-  border-radius: 18px;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 9px 16px;
+  border-radius: 12px;
   background:
-    linear-gradient(135deg, color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 12%, transparent), transparent 65%),
-    var(--qm-elev);
-  border: 1px solid color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 32%, transparent);
-  box-shadow:
-    var(--qm-depth-md),
-    0 0 0 1px color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 8%, transparent),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
-  overflow: hidden;
+    linear-gradient(135deg, color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 10%, transparent), transparent 58%),
+    var(--qm-bg-soft);
+  border: 1px solid color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 26%, transparent);
+  box-shadow: var(--qm-depth-sm);
 }
-.qm-hero::before {
-  content: '';
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(ellipse at left center, color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 18%, transparent), transparent 55%);
-  opacity: 0.7;
+.qm-status-phase {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
 }
-.qm-hero > * { position: relative; }
-
-.qm-hero-title {
-  font-size: 22px;
+.qm-status-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--qm-hero-color, var(--qm-accent));
+  box-shadow: 0 0 10px color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 70%, transparent);
+}
+.qm-status-title {
+  font-size: 15px;
   font-weight: 900;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
+  white-space: nowrap;
   color: var(--qm-hero-color, var(--qm-accent));
-  text-shadow: 0 0 18px color-mix(in oklab, var(--qm-hero-color, var(--qm-accent)) 40%, transparent);
 }
-.qm-hero-sub {
-  font-size: 14px;
+.qm-status-sub {
+  font-size: 12px;
   font-weight: 700;
   color: var(--qm-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.qm-status-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.qm-status-ready {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12px;
+  font-weight: 900;
+  color: var(--qm-tone-reveal);
+}
+.qm-status-ready[data-full="true"] { color: var(--qm-tone-active); }
+.qm-status-ready-bar {
+  width: 92px;
+  height: 8px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.35);
+  border: 1px solid var(--qm-border);
+}
+.qm-status-ready-bar > div {
+  height: 100%;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #d97706, #f59e0b);
+  box-shadow: 0 0 8px rgba(236, 72, 153, 0.4);
+  transition: width 0.3s ease;
+}
+.qm-status-ready[data-full="true"] .qm-status-ready-bar > div {
+  background: linear-gradient(90deg, #16a34a, #22c55e);
+  box-shadow: 0 0 8px rgba(34, 197, 94, 0.55);
+}
+
+/* ----- Aktion (DER Held — der naechste Zug) --------------------- */
+.qm-action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 18px 20px;
+  min-height: 108px;
+  border-radius: 18px;
+  background:
+    radial-gradient(ellipse at center, var(--qm-accent-soft), transparent 72%),
+    linear-gradient(180deg, var(--qm-elev), var(--qm-bg-soft));
+  border: 1px solid var(--qm-border-hi);
+  box-shadow: var(--qm-depth-md), inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+.qm-action-slot {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 60px;
+}
+
+/* ----- Mehr (App-Steuerung, selten, eingeklappt) ---------------- */
+.qm-more {
+  border-radius: 12px;
+  border: 1px solid var(--qm-border);
+  background: var(--qm-surface-lo);
+  overflow: hidden;
+}
+.qm-more-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 10px 14px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-family: inherit;
+  font-weight: 800;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--qm-text-subtle);
+  transition: color 0.15s ease, background 0.15s ease;
+}
+.qm-more-head:hover {
+  color: var(--qm-text-muted);
+  background: var(--qm-surface);
+}
+.qm-more-chev {
+  font-size: 10px;
+  transition: transform 0.16s ease;
+}
+.qm-more[data-open="true"] .qm-more-chev { transform: rotate(90deg); }
+.qm-more-hint {
+  margin-left: auto;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--qm-text-faint);
+}
+.qm-more-body {
+  padding: 6px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border-top: 1px solid var(--qm-border-lo);
 }
 
 /* ----- Pills ---------------------------------------------------- */
@@ -191,15 +319,15 @@
      Breite hat, egal ob der Text 6 oder 22 Zeichen lang ist. justify-content
      center sorgt dass der Inhalt mittig sitzt, nicht links angeschlagen.
      min-height + box-sizing damit Höhe ebenfalls stabil ist über Texte hinweg. */
-  min-width: 240px;
-  min-height: 50px;
+  min-width: 260px;
+  min-height: 58px;
   box-sizing: border-box;
   justify-content: center;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  padding: 12px 26px;
-  border-radius: 12px;
+  padding: 14px 30px;
+  border-radius: 14px;
   border: 2px solid var(--qm-btn-color, var(--qm-accent));
   background:
     linear-gradient(180deg,
@@ -209,7 +337,7 @@
   cursor: pointer;
   font-family: inherit;
   font-weight: 900;
-  font-size: 15px;
+  font-size: 17px;
   letter-spacing: 0.02em;
   box-shadow:
     0 4px 0 color-mix(in oklab, var(--qm-btn-color, var(--qm-accent)) 35%, #000 65%),

@@ -86,7 +86,17 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
       Cockpit jetzt schlanke Pills im Status-Streifen; ggf. Kolosseum-Gems auch hier (offen).
 - [ ] **Alle SPACE-Befehle aktualisieren** — Befehlsliste/Hints im Moderator auf aktuellen Stand.
 - [ ] **„Einen Schritt zurück" reparieren** — Back/Undo-Step im Moderator ist kaputt.
-- [ ] *(evtl.)* Danger-Button aus der Aktions-Zone raus; Test-Header-Buttons aufräumen.
+- [x] **Danger-Button aus Aktions-Zone** + **Test-Header aufräumen** (`f557c4d8`): DangerMenu
+      runter in App-Steuerung; 5 Skip-Buttons → ein „🧪 Springe zu"-Dropdown.
+
+**Setup-Vereinheitlichung (Wolf 19.7. „alles doppelt/dreifach"):** Audit → SetupView-Panel ≈
+QQSetupWizard-Modal waren Duplikate. Wolf-Wahl: Ein-Panel + Show-planen als reine Checklisten.
+- [x] **Stage 1** (`89ab6a8f`): QQSetupWizard entfernt; SetupView = DIE eine „⚙ Einstellungen"-
+      Fläche (Cockpit + Format-Wahl → selbes Panel, ← Zurück).
+- [x] **Stage 2** (`d82a2be7`): „Show planen" Optionen-Schritt (Timer/Sprache/Comeback-Dublette)
+      raus → 5 Schritte (nur Vorbereitung). Previews `design-vorschau/setup-unified-1..3`.
+- [ ] *(Stage 3, optional/intern)* Format-Toggle aus SetupView-Advanced raus (umgeht Team-Reset-
+      Gate); Bots-Durchlauf-UI (3× kopiert) deduplizieren. ⚠️ WARTET AUF WOLFS BLICK aufs Setup.
 
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +

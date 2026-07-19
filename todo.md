@@ -95,8 +95,12 @@ QQSetupWizard-Modal waren Duplikate. Wolf-Wahl: Ein-Panel + Show-planen als rein
       Fläche (Cockpit + Format-Wahl → selbes Panel, ← Zurück).
 - [x] **Stage 2** (`d82a2be7`): „Show planen" Optionen-Schritt (Timer/Sprache/Comeback-Dublette)
       raus → 5 Schritte (nur Vorbereitung). Previews `design-vorschau/setup-unified-1..3`.
-- [ ] *(Stage 3, optional/intern)* Format-Toggle aus SetupView-Advanced raus (umgeht Team-Reset-
-      Gate); Bots-Durchlauf-UI (3× kopiert) deduplizieren. ⚠️ WARTET AUF WOLFS BLICK aufs Setup.
+- [x] **Stage 3** (`9cc56ce1`): Format als Inline-Toggle ins Cockpit gefaltet (separate Format-
+      Wahl-Buehne nur noch No-Draft-Fallback); Einstellungen-Panel von warm-gold auf kuehles
+      Cockpit-Indigo umgeskinnt; Bots-Knopf immer im Cockpit sichtbar. → EINE Bildsprache.
+      Previews `design-vorschau/setup-v2-1..2`. ⚠️ WARTET AUF WOLFS BLICK.
+- [ ] *(klein/intern, offen)* Format-Toggle steckt noch zusätzlich in SetupView „Erweiterte
+      Optionen" (umgeht Team-Reset-Gate); Bots-Popover im Cockpit + No-Draft-S2 doppelt (S2 selten).
 
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +

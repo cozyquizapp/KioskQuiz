@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { RaceFinalSlide, TowerFinalSlide } from '../components/CozyQuizFinalRevealView';
 import { TowerFinaleV2 } from '../components/CozyQuizTowerFinaleV2';
+import type { TowerAward } from '../components/CozyQuizTowerFinaleV2';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 
 /**
@@ -37,6 +38,23 @@ function buildRanking(n: number) {
   }).sort((a, b) => b.total - a.total);
 }
 
+// V2-Mock: Quiz-Basis + 3 End-Awards (je +1, echter Wert). Bewusst KNAPP, damit
+// Speedy erst gleichzieht und Meisterklauer dann ueberholt → sichtbarer Kipp.
+// Basis so gesetzt, dass Pubquatscher (t2) nach Quiz vorn liegt, ZBuB (t1) durch
+// 2 Awards vorbeizieht.
+const V2_BASE: Record<string, number> = { t1: 10, t2: 11, t3: 7, t4: 5, t5: 6, t6: 3, t7: 8, t8: 4 };
+function buildTowerData(n: number): { teams: { team: typeof ALL[number]; base: number }[]; awards: TowerAward[] } {
+  const slice = ALL.slice(0, n);
+  const teams = slice.map(team => ({ team, base: V2_BASE[team.id] ?? 5 }));
+  const has = (id: string) => slice.some(t => t.id === id);
+  const awards: TowerAward[] = [
+    { key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: 't6', bonus: 1 },
+    { key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: 't1', bonus: 1 },
+    { key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: 't1', bonus: 1 },
+  ].filter(a => has(a.teamId));
+  return { teams, awards };
+}
+
 export default function QQRaceFinaleTestPage() {
   const [n, setN] = useState<4 | 6 | 8>(6);
   const [mode, setMode] = useState<'towerv2' | 'tower' | 'race'>('towerv2');
@@ -55,6 +73,7 @@ export default function QQRaceFinaleTestPage() {
   }, []);
 
   const ranking = buildRanking(n);
+  const towerData = buildTowerData(n);
 
   return (
     <div style={{ width: '100vw', height: '100vh', overflow: 'hidden', background: '#0F0817', display: 'flex', alignItems: 'center', justifyContent: 'center', position: 'relative', fontFamily: "'Nunito', system-ui, sans-serif" }}>
@@ -64,7 +83,7 @@ export default function QQRaceFinaleTestPage() {
         transform: `scale(${scale})`, transformOrigin: 'center center',
       }}>
         {mode === 'towerv2'
-          ? <TowerFinaleV2 key={`v2-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
+          ? <TowerFinaleV2 key={`v2-${n}-${runKey}`} teams={towerData.teams as any} awards={towerData.awards} lang="de" />
           : mode === 'tower'
           ? <TowerFinalSlide key={`t-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />
           : <RaceFinalSlide key={`r-${n}-${runKey}`} finalRanking={ranking as any} lang="de" />}

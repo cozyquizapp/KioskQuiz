@@ -15,7 +15,7 @@
  */
 import { useRef, useEffect, useState } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { useLangFlip } from '../cozyQuizShared';
+import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon } from './QQIcon';
@@ -660,8 +660,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             // 2026-07-04 (Wolf 'Titel oben abgeschnitten'): etwas kleiner, damit
             // lange Titel ('Dein Weg durchs Quiz') in die feste Card passen.
             // 2026-07-17 (Cinzel-Rollout): Arena-Regel-Titel in Cinzel (nur mega+!skin).
-            fontFamily: (mega && !isThemed()) ? 'var(--font-arena)' : undefined,
-            letterSpacing: (mega && !isThemed()) ? '0.01em' : undefined,
+            fontFamily: qqArenaType(s) ? 'var(--font-arena)' : undefined,
+            letterSpacing: qqArenaType(s) ? '0.01em' : undefined,
             fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
             color: isThemed() ? 'var(--qq-title)' : cardSlide.color,
             textShadow: isThemed() ? 'none' : `0 0 60px ${cardSlide.color}44`,
@@ -842,7 +842,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
       // der ganze Regel-Body EB Garamond (Cinzel-Titel hat eigene fontFamily und
       // ueberschreibt) → kohaerentes Cinzel+Garamond-System.
       position: 'relative', overflow: 'hidden',
-      fontFamily: (mega && !isThemed()) ? 'var(--font-arena-body)' : fontFam,
+      fontFamily: qqArenaType(s) ? 'var(--font-arena-body)' : fontFam,
       minHeight: 0,
       // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): RulesView Root-Padding
       // mit Safe-Margin Token. BG-Layer (Fireflies) sind position:absolute

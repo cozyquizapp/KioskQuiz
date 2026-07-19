@@ -15,6 +15,7 @@
 import { useState, useEffect } from 'react';
 import type { CSSProperties } from 'react';
 import { QQ_CAT_BADGE_BG, QQ_CAT_ACCENT } from './qqShared';
+import { isThemed } from './qqTheme';
 
 // ── Card-Theme ───────────────────────────────────────────────────────────────
 // 2026-06-23: tokenisiert → Skins koennen die Card-Flaeche umstellen.
@@ -223,6 +224,19 @@ export function qqArenaFinaleMult(s: QQPhaseLike): 1 | 2 | 3 {
   if (!s.largeGroupMode) return 1;
   if ((s.gamePhaseIndex ?? 1) !== (s.totalPhases ?? 3)) return 1;
   return ((s.questionIndex ?? 0) % 5) === 4 ? 3 : 2;
+}
+
+// 2026-07-19 (Wolf „die neue schrift ist nicht überall einheitlich" + „in schlicht
+// soll die alte font komplett bleiben"): EINE Quelle der Wahrheit, wann die
+// Kolosseum-Typo (Cinzel-Titel / EB-Garamond-Subtext) gilt. Vorher war das Gating
+// inline + uneinheitlich (mal largeGroupMode&&!Theme, mal nur Theme, mal ungegatet)
+// und prüfte NIE den Schlicht/Kolosseum-Schalter → im Schlicht-Look erschienen
+// Cinzel/Garamond fälschlich. Gilt nur wenn: Arena (largeGroupMode) + KEIN Skin-Theme
+// + Kolosseum-BGs an (arenaBackgrounds !== false). Schlicht (arenaBackgrounds:false)
+// oder Theme-Skin → false → alles fällt auf Nunito (--font-game) zurück.
+export function qqArenaType(s: unknown): boolean {
+  const a = s as { largeGroupMode?: boolean; arenaBackgrounds?: boolean } | null | undefined;
+  return !!a?.largeGroupMode && !isThemed() && a.arenaBackgrounds !== false;
 }
 
 export function actionVerb(a: string | null, lang: 'de' | 'en' = 'de') {

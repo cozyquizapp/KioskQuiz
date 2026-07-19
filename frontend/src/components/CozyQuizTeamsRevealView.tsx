@@ -10,7 +10,7 @@
 import { useState, useEffect, useRef, useLayoutEffect, useMemo } from 'react';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
-import { useLangFlip } from '../cozyQuizShared';
+import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -70,8 +70,11 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   // 2026-07-17 (Wolf: Kolosseum-Schriftart -> Cinzel): Arena-Display-Font nur fuer
   // die grossen Hero-Worte (Wortmarke, Fraktionsname, „Los geht's!"). Bei Skin
   // (themed) den Skin-Font lassen; sonst gemeisselte roemische Kapitaelchen.
-  const arenaFont = themed ? undefined : 'var(--font-arena)';
-  const arenaQuoteFont = themed ? undefined : 'var(--font-arena-quote)';
+  // 2026-07-19 (Wolf „in schlicht die alte font komplett"): jetzt ueber qqArenaType
+  // gegated → im Schlicht-Look (arenaBackgrounds:false) faellt alles auf Nunito.
+  const arenaType = qqArenaType(s);
+  const arenaFont = arenaType ? 'var(--font-arena)' : undefined;
+  const arenaQuoteFont = arenaType ? 'var(--font-arena-quote)' : undefined;
   const sfxMutedRef = useRef(s.sfxMuted);
   sfxMutedRef.current = s.sfxMuted;
 

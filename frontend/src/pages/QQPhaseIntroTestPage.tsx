@@ -14,6 +14,9 @@ export default function QQPhaseIntroTestPage() {
   const [lang, setLang] = useState<'de' | 'en'>('de');
   const [mult, setMult] = useState<2 | 3>(2); // ×3 = Schlussfrage (questionIndex%5===4)
   const [remount, setRemount] = useState(0);
+  // 2026-07-19 (Font-Verify): ?schlicht=1 → arenaBackgrounds:false → Kolosseum-Font
+  // (Cinzel/Garamond) muss auf Nunito zurueckfallen (qqArenaType-Gate).
+  const schlicht = typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('schlicht');
 
   const state = useMemo(() => {
     const teams = AVS.map((a, i) => ({ id: `t${i}`, avatarId: a, emoji: '', color: colorOf(a), name: a }));
@@ -28,6 +31,7 @@ export default function QQPhaseIntroTestPage() {
       phase: 'PHASE_INTRO',
       largeGroupMode: true,
       nestedTeams: true,
+      arenaBackgrounds: !schlicht,
       gamePhaseIndex: 2,
       totalPhases: 2,
       // ×3 braucht questionIndex%5===4; firstIdx von Phase 2 = 2 → questionIndex 6 (%5=1? )

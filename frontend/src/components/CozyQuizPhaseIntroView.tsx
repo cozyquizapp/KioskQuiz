@@ -19,7 +19,7 @@ import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes
 import {
   QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
 } from '../../../shared/quarterQuizTypes';
-import { useLangFlip, bt } from '../cozyQuizShared';
+import { useLangFlip, bt, qqArenaType } from '../cozyQuizShared';
 import { isThemed, isQuietMotion } from '../qqTheme';
 import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
@@ -319,12 +319,12 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // 2026-07-17 (Wolf: Cinzel-Rollout aufs Kolosseum): Arena-Hero-Titel (Runde N,
   // Kategorie-Name) in Cinzel-Inschrift — NUR Arena (largeGroupMode) + kein Skin.
   // Sonst Standard-Display-Font. Kleiner Text/Subtitle bleibt fontFam.
-  const arenaTitleFont = ((s as any).largeGroupMode && !isThemed()) ? 'var(--font-arena)' : fontFam;
+  const arenaTitleFont = qqArenaType(s) ? 'var(--font-arena)' : fontFam;
   // 2026-07-17 (Wolf „generell die subfont im colloseum"): EB Garamond als
   // Kolosseum-Begleiter unter Cinzel fuer Untertitel/Anweisungen. EB Garamond hat
   // kein 900 → im Arena-Fall Gewicht auf 700 deckeln (megaArena).
   const megaArena = !!(s as any).largeGroupMode && !isThemed();
-  const arenaSubFont = megaArena ? 'var(--font-arena-body)' : fontFam;
+  const arenaSubFont = qqArenaType(s) ? 'var(--font-arena-body)' : fontFam;
   // 2026-05-07 (Wolf-Sidequest): Pro-Draft Phase-Namen Override.
   // Wenn theme.phaseNames gesetzt: ersetzen die Standard-Namen ('Runde 1' etc.).
   // ESC-Quiz nutzt 'Halbfinale 1', 'Halbfinale 2', 'Finale'.
@@ -943,19 +943,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <span aria-hidden style={{ fontSize: 'clamp(17px,1.9cqw,26px)', lineHeight: 1, filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.7))' }}>🔥</span>
                 <span style={{
-                  fontFamily: 'var(--font-arena)', fontWeight: 900, fontSize: 'clamp(15px,1.75cqw,25px)', letterSpacing: '0.1em',
+                  fontFamily: arenaTitleFont, fontWeight: 900, fontSize: 'clamp(15px,1.75cqw,25px)', letterSpacing: '0.1em',
                   backgroundImage: goldText, WebkitBackgroundClip: 'text', backgroundClip: 'text',
                   WebkitTextFillColor: 'transparent', color: 'transparent',
                 }}>{label}</span>
                 <span style={{
-                  fontFamily: 'var(--font-arena)', fontWeight: 900, fontSize: 'clamp(16px,1.85cqw,26px)',
+                  fontFamily: arenaTitleFont, fontWeight: 900, fontSize: 'clamp(16px,1.85cqw,26px)',
                   color: '#3a0f22', background: 'linear-gradient(180deg, #FBCFE8, #EC4899)', borderRadius: 8,
                   padding: '1px clamp(8px,0.9cqw,12px)', fontVariantNumeric: 'tabular-nums',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55), 0 2px 6px rgba(0,0,0,0.4)',
                 }}>×{arenaFinaleMult}</span>
                 {!isFinalQ && (
                   <span style={{
-                    fontFamily: 'var(--font-arena-body)', fontWeight: 700, fontSize: 'clamp(11px,1.25cqw,17px)',
+                    fontFamily: arenaSubFont, fontWeight: 700, fontSize: 'clamp(11px,1.25cqw,17px)',
                     color: 'rgba(251,207,232,0.86)', letterSpacing: '0.02em',
                   }}>{sub}</span>
                 )}

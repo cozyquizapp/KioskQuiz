@@ -130,10 +130,6 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
       `epic-moment.webp`) die `arenaBackgrounds` NICHT respektieren → BG **und** Font zusammen gaten
       (via `qqArenaType`), sonst Nunito auf Kolosseum-BG. **Wolf schaut Siegerehrung-in-Schlicht SELBST
       an.** Phase 1 (In-Game-Font-Gate) ist durch (`e936fc70`). Details Memory `project_design_motion_elevation`.
-- [ ] **„Meine Quizze" im Menü nimmt ausgeklappt zu viel Raum** (Wolf 19.7.) — einklappbar sicherstellen,
-      **Default vermutlich auf EINGEKLAPPT**. Hinweis: MyQuizzesHub HAT schon Collapse (`qqMyQuizzesCollapsed`,
-      Default OFFEN, `e6fc98f7`) → nur Default umdrehen bzw. prüfen ob's im Menü überhaupt greift.
-
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +
 Wappen). **Einziger offener Rest aus dem Batch:** bild 10 (2/3-Ansicht A/B/C/D + CHEESE-Reveal-Rethink)

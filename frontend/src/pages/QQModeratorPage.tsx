@@ -1382,7 +1382,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     const cheeseRevealInProgress = false; // Cheese zeigt Reveal sofort komplett
 
     // Space — smart next step (mirrors CozyQuiz Space behavior)
-    if (e.code === 'Space') {
+    // 2026-07-19 (Audit Back-Bug): `!e.shiftKey` NEU — vorher fing dieser Vorwaerts-
+    // Handler AUCH Shift+Space ab und advancete die Phase, der Back-Handler unten
+    // (Zeile ~1718) war toter Code. Jetzt faellt Shift+Space dorthin durch = zurueck.
+    if (e.code === 'Space' && !e.shiftKey) {
       e.preventDefault();
       // 2026-05-10 (Audit-P0 State-Race): Globaler 350ms-Lock auf den Space-
       // Handler. Vorher konnte ein Doppel-Klick (Streamdeck-Bouncing oder
@@ -1529,12 +1532,18 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     }
 
     // Escape / Backspace — Niemand korrekt (mirrors CozyQuiz step-back feel)
+    // 2026-07-19 (Audit Back-Bug): dieser Zweig schluckte JEDES Backspace mit
+    // globalem return → die Zurueck-Taste (Back-Handler ~Zeile 1718) war per
+    // Backspace tot. Jetzt: markWrong nur im passenden QUESTION_REVEAL-Fall, sonst
+    // faellt Backspace zum Back-Handler durch. Escape behaelt sein No-op-Verhalten.
     if (e.code === 'Escape' || e.code === 'Backspace') {
       if (s.phase === 'QUESTION_REVEAL' && !s.correctTeamId) {
         playHotkeyFeedback();
         emitRef.current('qq:markWrong', { roomCode });
+        return;
       }
-      return;
+      if (e.code === 'Escape') return;
+      // Backspace faellt bewusst durch zum Back-Handler (Shift+Space / Backspace).
     }
 
     // Z — Undo Mark-Correct (Wolf 2026-05-10): falls Mod versehentlich falschen

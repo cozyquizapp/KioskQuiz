@@ -23,19 +23,20 @@
 3. **Danach:** alle Modi eigenständig je **einmal komplett testen**.
 
 **Setup-/Moderator-Konsolidierung (Wolf-Entscheidungen 2026-07-19):**
-- 🔒 **VOLL zusammenlegen** gewählt: EIN Moderator-Panel + „Test-Modus"-Toggle (Bots/Skip/
-  kein-Leaderboard dahinter, Live clean) UND **Lobby ins Cockpit falten** (Team-Liste/rename/
-  kick/Fraktions-View/Dummy-Fill ins Cockpit). Grosser Umbau, staged bauen.
+- [x] **VOLL zusammengelegt** — Lobby ins Cockpit gefaltet (`e188223f`, Team-Verwaltung im Cockpit,
+      LobbyView tot entfernt `f16b2e1b`) + **EIN Panel + „🧪 Test-Modus"-Toggle** (`ddd33688`, Bots/
+      Skip/Leaderboard-Skip hinter dem Toggle, Live clean; /moderator-test defaultet an). Previews
+      `design-vorschau/cockpit-lobby-gefaltet`, `moderator-testmodus-an|aus`.
 - 🔒 **Panel behalten** (kein Wizard-Restore) als einzige Einstellungen-Fläche.
 - [x] **Colosseum-Schalter zurück** (`7e0eaa6b`): „🏛️ Mit Kolosseum | 🌑 Schlicht"
       (`arenaBackgrounds`) war im geloeschten Wizard → jetzt im Cockpit unter Format (nur Arena).
       = Antwort auf „wo stelle ich Colosseum ein" + die „2 Arena-Looks".
-- [ ] **Hot-Potato-Warnung** (Format-Kompat): Format ist KEINE Draft-Eigenschaft → nur Hot Potato
-      ist Arena-inkompatibel; Backend strippt sie beim Arena-Start still. Sichtbare Warnung/Badge
-      am Draft + im Picker („N Hot-Potato-Fragen werden in Arena übersprungen"). `megaWarnCount`
-      (QQModeratorPage ~381) ist schon berechnet, nur totes Feld → nutzen. Klein, keine Entscheidung.
-- [ ] **„Meine Quizze" im Menü einklappbar** (MenuPage/MyQuizzesHub).
-- [ ] Danach: Arena einmal komplett durchspielen + Bugs fixen (Tagesziel).
+- [x] **Hot-Potato-Warnung** (`e6fc98f7`): Cockpit-Warnzeile + 🔥N-Picker-Badge via megaWarnCount.
+- [x] **„Meine Quizze" einklappbar** (`e6fc98f7`).
+- [ ] **NÄCHSTES (Tagesziel): Arena einmal komplett durchspielen + Bugs fixen** → dann CozyQuiz vs
+      CozyArena Views vergleichen (bessere Reveal-Seiten übernehmen), dann alle Modi einmal testen.
+- [ ] *(klein/intern)* Format-Toggle noch zusätzlich in SetupView-Advanced (umgeht Team-Reset-Gate);
+      Bots-Popover im seltenen No-Draft-S2 doppelt.
 
 ---
 

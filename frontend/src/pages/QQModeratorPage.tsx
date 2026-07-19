@@ -1763,6 +1763,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     return next;
   });
   useEffect(() => { cheatsheetOpenRef.current = cheatsheetOpen; }, [cheatsheetOpen]);
+  // 2026-07-19 (Wolf 'ein Panel + Test-Modus-Toggle'): der Test-Modus schaltet die
+  // Leaderboard-Persistenz mit (room._testMode) — AN = Rehearsal zaehlt nicht,
+  // AUS = Live zaehlt normal. Ersetzt die Trennung /moderator vs /moderator-test.
+  useEffect(() => { if (joined) emit('qq:setTestMode', { roomCode, value: showTestTools }); }, [showTestTools, joined]);
 
   // Derive status text for the big banner
   function getStatusText(s: QQStateUpdate): { text: string; color: string; sub?: string } {
@@ -1848,25 +1852,29 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           )}
           <span style={badgeStyle(QQ_COLORS.blue500)}>COZYQUIZ</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
-          {/* 2026-05-25 (Wolf 'mod-test-modus'): roter Banner damit Wolf nie
-              verwechselt ob er Live oder Test ist. */}
-          {testMode && (
-            <span style={{
-              padding: '4px 12px', borderRadius: 999,
-              background: 'rgba(239,68,68,0.18)',
-              border: '1.5px solid rgba(239,68,68,0.55)',
-              color: '#FCA5A5', fontWeight: 900, fontSize: 12,
-              letterSpacing: '0.08em', textTransform: 'uppercase',
-              animation: 'pulse 2.4s ease-in-out infinite',
-            }}>🧪 Test-Modus · keine echten Daten</span>
-          )}
+          {/* 2026-07-19 (Wolf 'ein Panel + Test-Modus-Toggle'): EIN sichtbarer
+              Schalter statt getrennter /moderator-test-Seite. AN → Bots/Skip +
+              rote Warnung + Leaderboard-Skip. AUS → sauberes Live-Panel. Damit
+              ist auch „wo stelle ich Bots ein" klar: Test-Modus an. */}
+          <button
+            onClick={() => setShowTestTools(!showTestTools)}
+            title={showTestTools ? 'Test-Modus AUS schalten (Live, echte Daten, Bestenliste zählt)' : 'Test-Modus AN schalten (Bots & Skip, keine echten Daten)'}
+            style={{
+              padding: '4px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+              fontWeight: 900, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
+              border: showTestTools ? '1.5px solid rgba(239,68,68,0.55)' : '1px solid rgba(148,163,184,0.3)',
+              background: showTestTools ? 'rgba(239,68,68,0.18)' : 'rgba(148,163,184,0.06)',
+              color: showTestTools ? '#FCA5A5' : '#94a3b8',
+              animation: showTestTools ? 'pulse 2.4s ease-in-out infinite' : undefined,
+            }}
+          >🧪 Test-Modus {showTestTools ? '· keine echten Daten' : 'aus'}</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* 2026-05-25 (Wolf 'mod-test-modus skip-buttons'): nur im Test-Modus
               sichtbar. POST /api/qq/:room/dev/skipTo manipuliert State direkt:
               Grid teilweise gefuellt, phase = PHASE_INTRO/FINAL_BETTING/FINAL_REVEAL.
               Autoplay laeuft dann ab der gesprungenen Position weiter. */}
-          {testMode && joined && state && state.phase !== 'LOBBY' && (
+          {showTestTools && joined && state && state.phase !== 'LOBBY' && (
             <div style={{ position: 'relative', display: 'inline-flex' }}>
               <button
                 onClick={() => setSkipMenuOpen(v => !v)}
@@ -2422,10 +2430,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               {/* 2026-07-08 (Wolf-Livetest 'wo stelle ich Bots ein?'): Bot-Regler
                   direkt im Cockpit — vorher nur auf dem Format-Auswahl-Screen.
                   2026-07-13: „In die Lobby" ist der Primär-Weg, Autoplay-Sofortlauf
-                  als dezenter Sekundär-Button. 2026-07-19 (Wolf „wo stelle ich Bots
-                  ein"): Bots-Knopf jetzt IMMER im Cockpit sichtbar (nicht mehr hinter
-                  „Test-Tools" versteckt) — beim echten Event einfach ignorieren. */}
-              {(
+                  als dezenter Sekundär-Button. 2026-07-19 (Wolf „ein Panel + Test-
+                  Modus-Toggle"): Bots haengen jetzt am Test-Modus (Header-Schalter) —
+                  AN = sichtbar, Live = clean. „wo stelle ich Bots ein" = Test-Modus an. */}
+              {showTestTools && (
               <div style={{ position: 'relative' }}>
                 <button onClick={() => setBotsRunOpen(v => !v)} title="Bots zum Testen hinzufügen — Anzahl wählbar (nicht in der Bestenliste)"
                   style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.5)', background: 'rgba(52,211,153,0.12)', color: '#bbf7d0', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
@@ -2689,24 +2697,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 );
               })()}
             </div>
-            {!testMode && !qqDevToolsEnabled() && (
-              <button
-                onClick={() => setShowTestTools(false)}
-                title="Test-Tools ausblenden (für echte Events)"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 5, padding: '6px 10px', borderRadius: 9, border: '1px solid rgba(148,163,184,0.2)', background: 'transparent', color: '#64748b', fontWeight: 700, fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}
-              >
-                🧪 aus
-              </button>
-            )}
-            </>) : (
-            <button
-              onClick={() => setShowTestTools(true)}
-              title="Bots-Durchlauf & Autoplay zum Testen einblenden (bleibt danach an)"
-              style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 10, border: '1px solid rgba(52,211,153,0.55)', background: 'rgba(52,211,153,0.12)', color: '#bbf7d0', fontWeight: 900, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}
-            >
-              🤖 Bots & Test-Tools
-            </button>
-            )}
+            {/* 2026-07-19: „🧪 aus" + „🤖 Bots & Test-Tools"-Reveal entfernt — der
+                Test-Modus-Toggle im Header steuert das jetzt zentral. */}
+            </>) : null}
           </div>
           </div>
         </>

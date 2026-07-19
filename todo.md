@@ -30,19 +30,24 @@
 - **„Einen Schritt zurück" repariert** — Shift+Space/Backspace/Button routen jetzt korrekt (Fund 1+2).
 - **Tier-1 Kolosseum-Medaillons verdrahtet** (`/icons/cat-*.png`) → **Design-Freeze-Meilenstein**.
 - **3 Finish-Audits** (Gap/Crash-Risk/Moderator) — beide Modi funktional durchspielbar, kein harter Blocker.
-- **Item-4-Entscheidungen geklärt** — nur Backend-Refactor bleibt offen.
+- **Backend-Refactor qqDistanceScore GEBAUT** — SCHAETZCHEN + Schwarm-Distanzzweige in `scoreDistanceCat`-
+  Helfer gezogen (Drift-Killer). Selfcheck 10/10, tsc, vitest 49/49. Liegt auf Branch (geht mit Wölfen auf main).
+- **Stufe 2 (Views Arena→CozyQuiz) geprüft** — 3-Agent-Vergleich: **nichts zu portieren**. Reveals schon auf
+  Parität, Zwischenstand/Finale/Siegerehrung je Modus passend anders (Grid vs Bar-Race), keiner ist die
+  schlechtere Kopie. Stufe 2 damit im Kern erreicht.
+- **5 orange Build-Punkte** — COZY_GAME-Fallback · Endstand-Höhen-Cap · SPACE-Hints · Runden-Pills gehärtet ·
+  Fund-3-Teil-2+3 (GAME_OVER-Zurück-Hotkey + Bounce-Guard). Alle tsc/vitest grün, auf Branch.
 
-**Aktueller Fokus / offen:**
-- [ ] **CozyWölfe-Set — v2-Cutout auf main mergen** (wartet auf Wolf-„passt"). Set 'cozyWolves' (8 Wölfe
-      Mika/Nuri/Ari/Ylva/Jori/Levin/Maja/Rurik, Slot-farbig, open+blink) IST verdrahtet; **v1 ist live auf
-      main**, **v2** (Boden-Fade + Corner-Flood-Fill gegen harten Schnitt/Flecken) liegt auf Feature-Branch
-      `design/material-pass-standings-bar` (1 Commit vor main). Vorschau `design-vorschau/cozywolves-*.png`.
-- [ ] **Backend-Refactor qqDistanceScore** (Wolf-OK: nach den Assets) — Drift-Killer. SCOPE geklärt:
-      `schaetzchenRangeAbs` ist schon shared; echter Drift = nur die 2 fast identischen Schätzchen/Schwarm-
-      Blöcke in `qqMegaEventScore` (`rangeAbs×K; nearScore(dist,maxErr); isHit=dist≤rangeAbs`) → in shared
-      `qqDistanceScore(dist,rangeAbs,K)` ziehen. Low-Risk, `test:scoring` gatet + Vorher/Nachher.
-- [ ] **Tagesziel: CozyArena + CozyQuiz je einmal komplett am Beamer durchspielen** (deckt die Beamer-Checks
-      unten mit ab: Medaillons im Runden-Intro, Wölfe im Set-Picker `/team`, Finale-Scores, Siegerehrung).
+**Aktueller Fokus / offen (Bau-seitig ist von MIR alles durch bis auf 1 live-riskanten Punkt):**
+- [ ] **CozyWölfe — Wolf liefert NEUE einheitlich transparente Wölfe** → dann verdrahten (mein Cutout entfällt,
+      Set 'cozyWolves' ist schon komplett verdrahtet), ersetzt die live-v1. Danach Branch auf main.
+- [ ] **Fund 3 Teil 1 — Phasen-Snapshot-Restore** (EINZIGER offener Build-Punkt, live-riskant → Wolfs Beamer +
+      Multi-Client-Test, erst ROT-Repro. Details im Build-Block unten).
+- [ ] **Tagesziel-Rest: CozyArena + CozyQuiz je einmal komplett am Beamer durchspielen** (nur Wolf; deckt die
+      Beamer-Checks unten mit ab: Medaillons im Runden-Intro, Wölfe im Set-Picker `/team`, Finale-Scores, Siegerehrung).
+
+> **Branch `design/material-pass-standings-bar` liegt vor main** (Refactor + 5 Build-Punkte + alte v1-Wölfe).
+> Nichts deployt bis zum Merge. Merge, sobald Wolfs neue Wölfe drin sind.
 
 > Setup/Moderator-Konsolidierung (Wizard, Cockpit-Fold, Test-Modus-Toggle, Konsolidierung) ist
 > **durch** — Details in der Git-History (`109e8d35`, `e188223f`, `ddd33688`, `f16b2e1b`, `a43579ba`).

@@ -18,6 +18,7 @@ import { AvatarKarussellEditor } from '../components/AvatarKarussellEditor';
 import { JokerIcon } from '../components/JokerIcon';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
+import { isCozyWolfSlug, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   CozyCard, CozyBtn, StepLabel, StatChip,
@@ -187,6 +188,12 @@ const BEAMER_LOBBY_BG =
 // useExpiry-Hook jetzt in '../hooks/useExpiry'.
 
 type SetupStep = 'COLOR' | 'AVATAR' | 'NAME';
+
+// 2026-07-20 (Wolf): CozyWölfe haben echte Namen (Mika, Nuri, …). Set aller
+// Wolf-Namen, um beim Namens-Schritt einen AUTO-vorgefuellten Wolf-Namen von
+// einem selbst getippten zu unterscheiden (smart prefill: leer/Wolf-Name →
+// aktualisieren, eigener Name → stehen lassen).
+const WOLF_NAME_SET = new Set(COZY_WOLVES.map(w => w.label));
 
 function getOrCreateTeamId(): string {
   const key = 'qq_teamId';
@@ -1326,7 +1333,18 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   return (
                     <button
                       key={`${em}-${i}`}
-                      onClick={() => !taken && setChosenEmoji(em)}
+                      onClick={() => {
+                        if (taken) return;
+                        setChosenEmoji(em);
+                        // 2026-07-20 (Wolf): Wolf gewaehlt → seinen Namen gleich
+                        // ins Namensfeld vorfuellen. Nur wenn das Feld leer ist
+                        // ODER noch einen (anderen) Wolf-Namen traegt — ein selbst
+                        // getippter Name bleibt unangetastet. Editierbar + Wuerfel
+                        // funktionieren im Namens-Schritt weiter.
+                        if (isCozyWolfSlug(em) && (!teamName.trim() || WOLF_NAME_SET.has(teamName.trim()))) {
+                          setTeamName(cozyWolfLabel(em));
+                        }
+                      }}
                       disabled={taken}
                       aria-label={taken ? (lang === 'de' ? `${em} (vergeben)` : `${em} (taken)`) : em}
                       aria-pressed={sel}

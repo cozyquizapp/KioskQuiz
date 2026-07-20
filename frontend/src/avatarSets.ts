@@ -109,7 +109,11 @@ export const AVATAR_SETS: AvatarSet[] = [
   //   8 Rot    Rurik — Antreiber, Mut/Wettbewerb/Entschlossenheit (m)
   {
     id: 'cozyWolves',
-    label: 'CozyWölfe',
+    // 2026-07-20 (Wolf, AskUserQuestion): Anzeige-Label "Cozy Pack" — bilingual
+    // (pack = Rudel), Cozy-Marken-Praefix, liest fuers EN-Live-Event sauber. Das
+    // Label wird allen gezeigt (nicht uebersetzt). Interne id bleibt 'cozyWolves'
+    // (ueberall referenziert: localStorage, isCozyWolfSlug, Set-Lookups).
+    label: 'Cozy Pack',
     tint: '#EC4899',
     leadEmoji: '🐺',
     preview: ['🐺', '🌙', '🔥'],

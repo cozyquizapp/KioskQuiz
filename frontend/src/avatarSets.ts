@@ -254,7 +254,7 @@ export function getSet(id: string | undefined): AvatarSet {
 
 export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
-  | { kind: 'image'; src: string;     color: string; label: string; blinkSrc?: string }   // cozy3d / CozyWolf (blinkSrc = expliziter Blink-Frame)
+  | { kind: 'image'; src: string;     color: string; label: string; blinkSrc?: string; discFill?: number }   // cozy3d / CozyWolf (blinkSrc = expliziter Blink-Frame; discFill = Disc-Fuellung, Default cozy3d 0.9)
   | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // CozyArena-Wappen (flach)
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
@@ -350,6 +350,11 @@ export function getAvatarDisplay(
       blinkSrc: cozyWolfBlinkSrc(emoji),
       color: slot.color,
       label: cozyWolfLabel(emoji),
+      // 2026-07-20 (Wolf „gross rein, nichts abschneiden"): Woelfe fuellen die
+      // Disc mehr als die cozy3d-Tiere (0.9). 1.0 = spuerbar groesser, overflow
+      // bleibt sichtbar → Ohren beruehren die Kante, werden aber NICHT gekappt
+      // (gemessen: blau reicht oben bis 0% Rand). 106% stuende raus, 100% ist rein.
+      discFill: 1.0,
     };
   }
 

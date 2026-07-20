@@ -135,6 +135,7 @@ export function QQTeamAvatar({
         blink={blink}
         eyes={eyes}
         teamId={teamId}
+        discFill={display.discFill}
       />
     );
   }
@@ -397,10 +398,13 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId,
+  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId, discFill,
 }: {
   src: string; blinkSrc?: string; color: string; size: number | string;
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
+  /** Disc-Fuellung (0..~1.1). Default COZY3D_DISC_FILL (0.9). CozyWoelfe: 1.0
+   *  (groesser, overflow bleibt sichtbar → kein Anschnitt). */
+  discFill?: number;
   /** Augen-Zustand: 'auto' = Ruhe offen + Idle-Blinzeln (große Avatare);
    *  'open'/'closed' = State-gesteuert (z.B. Grid: zu wenn nicht dran, auf wenn
    *  Team „dran"). Weicher Crossfade beim Wechsel (Aufwachen/Einschlafen). */
@@ -436,7 +440,7 @@ function ImageAvatar({
         boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
       };
 
-  const fillPct = `${(COZY3D_DISC_FILL * 100).toFixed(0)}%`;
+  const fillPct = `${((discFill ?? COZY3D_DISC_FILL) * 100).toFixed(0)}%`;
   const imgFilter = 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))';
 
   return (

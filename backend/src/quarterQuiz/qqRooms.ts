@@ -1293,6 +1293,20 @@ export function qqActivateQuestion(
     }
     // At explanation step: fall through to activate
   }
+  // 2026-07-20 (Fund 3 Teil 1): Phasen-Snapshot VOR dem Kreuzen der Grenze
+  // PHASE_INTRO → QUESTION_ACTIVE. Damit kann "Einen Schritt zurueck" eine
+  // versehentliche Frage-Aktivierung (Space zu frueh) heilen. Single-Slot,
+  // bewusst NUR dieser Uebergang (nicht PLACEMENT/COMEBACK_CHOICE-Herkunft →
+  // die haben eigene Undo-Wege). Muss VOR qqFlushQuestionToHistory stehen,
+  // damit questionHistoryLen den Vor-Flush-Stand festhaelt. Restore + Timer-
+  // Stop: qqGoBackSlide + qq:goBackSlide-Handler.
+  if (room.phase === 'PHASE_INTRO') {
+    (room as any)._phaseSnapshot = {
+      phase: 'PHASE_INTRO',
+      introStep: room.introStep,
+      questionHistoryLen: Array.isArray(room.questionHistory) ? room.questionHistory.length : 0,
+    };
+  }
   // Accumulate previous question's answers into history before clearing
   qqFlushQuestionToHistory(room);
   room.phase          = 'QUESTION_ACTIVE';
@@ -1403,6 +1417,10 @@ export function qqShowImage(room: QQRoomState, onTimerExpire?: () => void): void
 export function qqRevealAnswer(room: QQRoomState): void {
   assertPhase(room, ['QUESTION_ACTIVE']);
   qqStopTimer(room);
+  // 2026-07-20 (Fund 3 Teil 1): die Frage laeuft jetzt regulaer weiter → der
+  // Phasen-Snapshot fuer "versehentlich aktiviert" ist verbraucht/veraltet.
+  // Loeschen, damit ein spaeteres Zurueck ihn nie faelschlich anwendet.
+  (room as any)._phaseSnapshot = null;
   const q = room.currentQuestion;
   // 2026-05-02 Diagnose-Log fuer Wolfs Hot-Potato-Insta-End-Bug:
   // logge wer/wann qqRevealAnswer triggert. Stack-Trace zeigt Caller.
@@ -7073,6 +7091,30 @@ export function qqCozyGameCancel(room: QQRoomState): void {
 export function qqGoBackSlide(room: QQRoomState): void {
   const dec = (cur: number | undefined | null, min = 0): number =>
     Math.max(min, (cur ?? 0) - 1);
+
+  // 2026-07-20 (Fund 3 Teil 1): versehentliche Frage-Aktivierung heilen.
+  // Stand der Mod im letzten PHASE_INTRO-Sub-Step und drueckte Space zu frueh,
+  // wechselte qqActivateQuestion die Phase auf QUESTION_ACTIVE. Ein frischer
+  // Phasen-Snapshot (nur dieser eine Uebergang, Wolf 2026-07-20: Scope eng)
+  // erlaubt jetzt, die GANZE Phase zurueckzuholen statt nur einen Sub-Step.
+  // Rein gehalten: der versehentlich gestartete Frage-Timer wird im Socket-
+  // Handler via qqStopTimer zurueckgedreht (kein Handle-Zugriff hier).
+  const snap = (room as any)._phaseSnapshot as
+    { phase: string; introStep: number; questionHistoryLen: number } | null | undefined;
+  if (room.phase === 'QUESTION_ACTIVE' && snap && snap.phase === 'PHASE_INTRO') {
+    room.phase = 'PHASE_INTRO';
+    room.introStep = snap.introStep;
+    // qqActivateQuestion hat qqFlushQuestionToHistory gerufen. Meist ein No-op
+    // (leere answers im Intro), aber falls doch geflusht: auf Snapshot-Stand
+    // zuruecktrimmen. Laengen-basiert = robust gegen "hat nicht gepusht".
+    if (Array.isArray(room.questionHistory) && room.questionHistory.length > snap.questionHistoryLen) {
+      room.questionHistory.length = snap.questionHistoryLen;
+    }
+    (room as any)._phaseSnapshot = null;
+    room.lastActivityAt = Date.now();
+    return;
+  }
+
   switch (room.phase) {
     case 'RULES':
       // -2 = Willkommen, -1 = Regel-Intro, 0+ = Folien (Arena+Kolosseum: -3 Willkommen,

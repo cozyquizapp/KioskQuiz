@@ -1723,7 +1723,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // 2026-05-24 (Wolf-Wunsch 'Back-Button als Gegensatz zum Weiter-Button'):
     // Shift+Space oder Backspace — Slide zurueck in slide-basierten Phasen
     // (RULES, PHASE_INTRO, FINAL_REVEAL, QUESTION_REVEAL-Steps, COMEBACK_INTRO).
-    // Funktioniert nicht in PLACEMENT/QUESTION_ACTIVE (dort gilt Ctrl+Z fuer Undo).
+    // In PLACEMENT gilt Ctrl+Z fuer Cell-Undo. In QUESTION_ACTIVE ist Back seit
+    // 2026-07-20 (Fund 3 Teil 1) NICHT mehr tot: wurde die Frage versehentlich
+    // zu frueh aktiviert (Space im letzten Intro-Step), holt Back die Phase
+    // zurueck nach PHASE_INTRO (Backend qqGoBackSlide via _phaseSnapshot).
     if ((e.code === 'Space' && e.shiftKey) || e.code === 'Backspace') {
       e.preventDefault(); playHotkeyFeedback();
       // 2026-07-19 (Fund 3): in GAME_OVER ist goBackSlide ein No-op (keine Slide-

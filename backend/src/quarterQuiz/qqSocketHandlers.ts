@@ -2555,7 +2555,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const last = (room as any).__lastBackAt as number | undefined;
         if (last && now - last < 400) { ok(ack); return; }
         (room as any).__lastBackAt = now;
+        // 2026-07-20 (Fund 3 Teil 1): heilt qqGoBackSlide eine versehentliche
+        // Frage-Aktivierung (QUESTION_ACTIVE → PHASE_INTRO zurueck), muss der
+        // dabei gestartete Frage-Timer gestoppt werden. Am I/O-Rand, damit
+        // qqGoBackSlide pur/testbar bleibt (wie der Bounce-Guard darueber).
+        const phaseBefore = room.phase;
         qqGoBackSlide(room);
+        if (phaseBefore === 'QUESTION_ACTIVE' && room.phase === 'PHASE_INTRO') {
+          qqStopTimer(room);
+        }
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

@@ -336,3 +336,52 @@ describe('qqGoBackSlide', () => {
     expect(room.comebackIntroStep).toBe(0);
   });
 });
+
+// ════════════════════════════════════════════════════════════════════════════
+// Fund 3 Teil 1 — Phasen-Snapshot: "Einen Schritt zurück" heilt eine
+// versehentliche PHASEN-Weiterschaltung (Space zu frueh → Frage aktiv).
+// qqGoBackSlide dekrementiert sonst nur Sub-Steps INNERHALB einer Phase.
+// ════════════════════════════════════════════════════════════════════════════
+
+describe('qqGoBackSlide — Phasen-Snapshot (Fund 3 Teil 1)', () => {
+  it('QUESTION_ACTIVE mit _phaseSnapshot: Back restauriert PHASE_INTRO + introStep', () => {
+    // Szenario: Mod stand im letzten PHASE_INTRO-Sub-Step, Space aktivierte die
+    // Frage versehentlich. Der Snapshot wurde beim Kreuzen der Phasengrenze
+    // genommen. Back muss die Phase zurueckholen, nicht nur einen Sub-Step.
+    const room = makeRoom({
+      phase: 'QUESTION_ACTIVE',
+      introStep: 0,
+      _phaseSnapshot: { phase: 'PHASE_INTRO', introStep: 2, questionHistoryLen: 0 },
+      questionHistory: [{ id: 'q1' }], // qqActivateQuestion hat geflusht
+    });
+    qqGoBackSlide(room);
+    expect(room.phase).toBe('PHASE_INTRO');
+    expect(room.introStep).toBe(2);
+    // History-Flush zurueckgerollt auf den Snapshot-Stand
+    expect(room.questionHistory).toHaveLength(0);
+    // Snapshot ist Single-Slot und danach verbraucht (kein Doppel-Zurueck)
+    expect(room._phaseSnapshot).toBeFalsy();
+  });
+
+  it('QUESTION_ACTIVE OHNE _phaseSnapshot: no-op (kein Blind-Ruecksprung)', () => {
+    // Ohne Snapshot darf Back NIE die Phase aendern — sonst kaeme man aus einer
+    // regulaer laufenden Frage unkontrolliert heraus.
+    const room = makeRoom({ phase: 'QUESTION_ACTIVE', introStep: 0 });
+    qqGoBackSlide(room);
+    expect(room.phase).toBe('QUESTION_ACTIVE');
+  });
+
+  it('Snapshot wird nur EINMAL verbraucht (zweites Back ist no-op)', () => {
+    const room = makeRoom({
+      phase: 'QUESTION_ACTIVE',
+      _phaseSnapshot: { phase: 'PHASE_INTRO', introStep: 1, questionHistoryLen: 0 },
+      questionHistory: [],
+    });
+    qqGoBackSlide(room); // restauriert PHASE_INTRO, introStep=1
+    expect(room.phase).toBe('PHASE_INTRO');
+    expect(room.introStep).toBe(1);
+    qqGoBackSlide(room); // jetzt normaler PHASE_INTRO-Back: introStep 1→0
+    expect(room.introStep).toBe(0);
+    expect(room.phase).toBe('PHASE_INTRO');
+  });
+});

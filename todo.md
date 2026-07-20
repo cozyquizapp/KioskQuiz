@@ -38,16 +38,19 @@
 - **5 orange Build-Punkte** — COZY_GAME-Fallback · Endstand-Höhen-Cap · SPACE-Hints · Runden-Pills gehärtet ·
   Fund-3-Teil-2+3 (GAME_OVER-Zurück-Hotkey + Bounce-Guard). Alle tsc/vitest grün, auf Branch.
 
-**Aktueller Fokus / offen (Bau-seitig ist von MIR alles durch bis auf 1 live-riskanten Punkt):**
-- [ ] **CozyWölfe — Wolf liefert NEUE einheitlich transparente Wölfe** → dann verdrahten (mein Cutout entfällt,
-      Set 'cozyWolves' ist schon komplett verdrahtet), ersetzt die live-v1. Danach Branch auf main.
-- [ ] **Fund 3 Teil 1 — Phasen-Snapshot-Restore** (EINZIGER offener Build-Punkt, live-riskant → Wolfs Beamer +
-      Multi-Client-Test, erst ROT-Repro. Details im Build-Block unten).
+**Aktueller Fokus / offen — Bau-seitig ist von MIR jetzt ALLES durch. Rest = nur Wolf am Beamer.**
+- ✅ **CozyWölfe NEU verdrahtet** (2026-07-20, `e3c74e0e`) — 8 Wölfe, Farben gemessen statt geraten (7/8 in 25°,
+      alle 8 auf richtiger Slot-Disc, keine Vertauschung), 5,2→1,8 MB komprimiert. Zwei Anmerkungen ohne Fix
+      (Wolfs Illus): grüner Rand olivstichig, violetter hat keinen Leuchtrand nur Augen.
+- ✅ **Fund 3 Teil 1 GEBAUT** (2026-07-20, `0ef05fb1`) — „Zurück" heilt jetzt eine versehentliche Frage-Aktivierung
+      (Space im letzten Intro-Step zu früh → QUESTION_ACTIVE). Scope bewusst ENG (Wolf per AskUserQuestion): nur
+      der Übergang PHASE_INTRO↔QUESTION_ACTIVE, der risikoärmste Fall (noch keine Antwort da, nur Timer läuft).
+      Single-Slot `_phaseSnapshot`, ROT→GRÜN per Unit-Test (52/52).
+      ⚠️ **Am ECHTEN Beamer noch nicht rot-reproduziert** (braucht Wolf) — Fix ist deshalb eng gehalten, berührt
+      keine Antworten/Scores/Grid. Placement-/Bets-zu-früh bewusst NICHT abgedeckt (das bräuchte den Beamer-Lauf).
 - [ ] **Tagesziel-Rest: CozyArena + CozyQuiz je einmal komplett am Beamer durchspielen** (nur Wolf; deckt die
-      Beamer-Checks unten mit ab: Medaillons im Runden-Intro, Wölfe im Set-Picker `/team`, Finale-Scores, Siegerehrung).
-
-> **Branch `design/material-pass-standings-bar` liegt vor main** (Refactor + 5 Build-Punkte + alte v1-Wölfe).
-> Nichts deployt bis zum Merge. Merge, sobald Wolfs neue Wölfe drin sind.
+      Beamer-Checks unten mit ab: Award-BGs pro Sieger-Fraktion, Blitz beim Guess-Sieger, Wölfe im Set-Picker
+      `/team`, Siegerehrung im Schlicht- UND Kolosseum-Modus, Fund-3-Zurück nach zu früher Aktivierung).
 
 > Setup/Moderator-Konsolidierung (Wizard, Cockpit-Fold, Test-Modus-Toggle, Konsolidierung) ist
 > **durch** — Details in der Git-History (`109e8d35`, `e188223f`, `ddd33688`, `f16b2e1b`, `a43579ba`).
@@ -123,13 +126,19 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 **Moderator-View (offener Rest — Cockpit/Setup-Wizard + Back-Fix Fund 1+2 + Finale-Score-Fund 4 + SPACE-Hints
 + Runden/Frage-Pills sind durch, s. Git):**
-- [ ] **Back Fund 3 — Teil 1: Phasen-Snapshot-Restore (struktureller Ausbau, EINZIGER Rest):** `qqGoBackSlide`
-      dekrementiert nur Sub-Steps; kein Snapshot → Back kann eine versehentliche PHASEN-Weiterschaltung
-      (Space zu früh → Frage aktiv/Placement/Bets zu) nicht heilen. Leichter Snapshot-Stack pro Phasen-
-      Transition + Restore bei Sub-Step 0. **⚠️ Live-riskant (unwindet Timer/Answers/Grid) → braucht Wolfs
-      Beamer + Multi-Client-Test, NICHT blind auf den Live-Server. Erst ROT-Repro am echten Beamer, dann bauen.**
-      Teil 2 (GAME_OVER-Zurück-Hotkey → `qqAwardStep{-1}`) + Teil 3 (400ms-Bounce-Guard am `qq:goBackSlide`-
-      Socket) sind **durch** (2026-07-19, tsc+vitest grün).
+- ✅ **Back Fund 3 — Teil 1 GEBAUT** (2026-07-20, `0ef05fb1`). Scope nach AskUserQuestion bewusst ENG: nur
+      der Übergang PHASE_INTRO→QUESTION_ACTIVE („Space im letzten Intro-Step zu früh, Frage aktiviert").
+      Das ist der häufigste Fehlgriff UND der risikoärmste Restore — zu dem Zeitpunkt ist keine Antwort da,
+      einziges Seiteneffekt ist der gestartete Timer + ein meist leerer History-Flush. **Placement-/Bets-zu-früh
+      bewusst NICHT gebaut** (die unwänden echte Scores/Grid → brauchen erst Wolfs Beamer-Durchlauf).
+      Bau: Single-Slot `_phaseSnapshot` in `qqActivateQuestion` (vor dem Grenzübertritt), Restore in
+      `qqGoBackSlide` (pur, längen-basiertes History-Trimmen), Timer-Stop im `qq:goBackSlide`-Handler,
+      Snapshot-Löschen in `qqRevealAnswer`. Muster von `_undoSnapshot` gespiegelt, komplementär zu Ctrl+Z.
+      ROT→GRÜN per 3 Unit-Tests (vitest 52/52).
+      ⚠️ **Am ECHTEN Beamer noch nicht rot-reproduziert** (braucht Wolf) — Fix ist deshalb eng, berührt keine
+      Answers/Scores/Grid. Beim Durchlauf gegenchecken: im Runden-Intro absichtlich Space zu früh, dann Zurück
+      → muss die Kategorie/das Intro zurückholen, ohne Countdown-Geist.
+      Teil 2 (GAME_OVER-Zurück-Hotkey → `qqAwardStep{-1}`) + Teil 3 (400ms-Bounce-Guard) sind schon länger durch.
 
 **Audit-Funde 2026-07-19 (3 Finish-Audits — beide Modi funktional durchspielbar; die 2 Funde sind GEBAUT):**
 - ✅ **Endstand-Beat Höhen-Cap GEBAUT** — reine Sicherheits-Bremse in `LargeGroupGameOverView` (8 Arena-

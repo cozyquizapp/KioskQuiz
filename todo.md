@@ -204,8 +204,15 @@ Broadcast-Fan-out 33 ms, Payload 15,3 KB) → Broadcast-Throttle vorerst nicht n
       nur „add if missing", wurden also nie aufgefrischt).
       ⚠️ Die Migration füllt **nur fehlende** Felder (anders als die Drift-Überschreiber daneben), sonst
       hätte sie Übersetzungen aus dem Studio bzw. `/translate` plattgemacht.
-      🔎 **Nach dem Coolify-Deploy einmal `npm run check:en:live` fahren** — die Live-DB kann Drafts
-      haben, die der Repo-Lauf gar nicht sieht.
+      ✅ **LIVE VERIFIZIERT GRÜN** (`check:en:live`: 11 Drafts, 190 Fragen, **0 Fehler**).
+      ⚠️ **Lehre, die Zeit gekostet hat:** der erste Fix war unvollständig. Es gibt **ZWEI** Migrations-
+      Ebenen, und sie sind getrennt: (1) beim Startup auf `qqDrafts` (Datei/Speicher), (2) im Endpoint
+      `/api/qq/drafts` auf den **Mongo**-Drafts via `saveQQDraftToDB`. Live liest aus Mongo → wer nur
+      Ebene 1 anfasst, sieht lokal grün und live weiter rot. Beim nächsten Draft-Datenfix **beide**
+      Ebenen bedienen. Beleg: Live schlug 150s nach dem Deploy von `61b2306c` um.
+      💡 Die Live-DB hat **11** Drafts / 190 Fragen, das Repo nur 9 / 155 (Spielegruppe, Neue Bunte
+      Tüte, Eurovision existieren nur live) → `check:en` allein reicht als Event-Gate NICHT, immer
+      auch `check:en:live`.
       ⚠️ Fix-Weg für Neues: `qqDrafts.json` ist **gitignored** (reines Laufzeit-Artefakt) und File/DB
       gewinnen über den Source (`createSampleQQDrafts` läuft nur bei `length===0`) → NIE das JSON
       editieren, sondern Quelle **plus** Migration, oder den `/api/qq/drafts/:id/translate`-Endpoint.

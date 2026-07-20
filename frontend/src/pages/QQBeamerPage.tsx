@@ -146,7 +146,7 @@ import {
   imgAnim, imgFilter, formatRevealedAnswer,
   CAT_BG, CAT_GLOW, CAT_CUTOUTS,
   COZY_CARD_BG as _COZY_CARD_BG_SHARED,
-  qqCapOption,
+  qqCapOption, qqArenaType,
 } from '../cozyQuizShared';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
@@ -1916,7 +1916,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen
       // eigenen BG malen). Cozy bleibt 1:1 (Kategorie-BG/Template-BG/fontFam).
       background: isThemed() ? 'var(--qq-bg)' : (activeTemplate ? (activeTemplate.background || bg) : bg),
-      fontFamily: isThemed() ? 'var(--qq-font)' : fontFam,
+      // 2026-07-19 (Wolf „ist Cinzel/Garamond WIRKLICH überall umgestellt?"): nein,
+      // war es nicht. Die Wurzel vererbte im Kolosseum weiter Bricolage/Nunito an
+      // JEDE View ohne eigenen Font (Reveals, Lobby, Stechen, Thanks …) — deshalb
+      // wirkte die Arena stellenweise „alt". Font-Entscheidung gehoert an EINE
+      // Stelle: hier. qqArenaType gatet exakt Arena+Kolosseum (nicht Schlicht,
+      // nicht CozyQuiz, nicht themed). Cinzel-Overrides in den Views bleiben
+      // spezifischer und gewinnen weiterhin.
+      fontFamily: isThemed() ? 'var(--qq-font)' : (qqArenaType(s) ? 'var(--font-arena-body)' : fontFam),
       color: isThemed() ? 'var(--qq-text)' : textCol, display: 'flex', flexDirection: 'column',
       // 2026-05-12 (Glow-Audit): overflow 'hidden' → 'visible'. Body-Scroll
       // ist bereits durch SlideStage outer (overflow:clip + 120px clipMargin)

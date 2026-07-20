@@ -447,7 +447,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 statt hartem nowrap+ellipsis darf der Name jetzt auf 2 Zeilen
                 umbrechen (kleinere Max-Größe), lange Team-Namen bleiben lesbar. */}
             <div style={{
-              fontFamily: fontFam,
+              // 2026-07-19 (Kolosseum-Font-Sweep): im Kolosseum Garamond statt
+              // Bricolage, sonst faellt die Join-Message aus dem Arena-Font-System.
+              // Bewusst NICHT Cinzel — das hier ist ein Team-Name (user-generated,
+              // darf auf 2 Zeilen brechen), Cinzel gilt nur kurzen Hero-Worten.
+              fontFamily: arenaLobbyBg ? 'var(--font-arena-body)' : fontFam,
               fontSize: 'clamp(40px, 5.6cqw, 92px)', fontWeight: 900,
               color: '#FFEFC9', lineHeight: 1.04,
               letterSpacing: '-0.005em',

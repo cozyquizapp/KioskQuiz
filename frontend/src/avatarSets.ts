@@ -309,10 +309,13 @@ export function getAvatarDisplay(
     if (isCrestSlug(setCrest)) emoji = setCrest;
   }
 
-  // CozyWölfe-Set ist slot-gebunden: ein stale teamEmoji (cozy3d/Emoji aus einem
-  // frueheren Set) darf den Slot-Wolf nicht ueberschreiben — sonst zeigen
-  // Standings/Reveals wieder Tiere. Nur ein explizit gewaehlter anderer Wolf gewinnt.
-  if (set.id === 'cozyWolves' && !isCozyWolfSlug(emoji)) {
+  // CozyWölfe-Set ist slot-gebunden: EIN Wolf je Farbe. Der Wolf wird IMMER aus
+  // dem Farb-Slot abgeleitet, nie aus einem (evtl. abweichenden) teamEmoji.
+  // 2026-07-20 (Wolf): sonst sitzt z.B. der blaue Wolf auf oranger Disc — die
+  // Augenfarbe MUSS die Teamfarbe matchen. Es gibt keinen gueltigen „anderer
+  // Wolf gewinnt"-Fall (anders als bei cozy3d, wo man frei mischen darf), daher
+  // ohne die alte !isCozyWolfSlug-Ausnahme: der Slot-Wolf gewinnt bedingungslos.
+  if (set.id === 'cozyWolves') {
     const setWolf = set.avatars[slotIdx];
     if (isCozyWolfSlug(setWolf)) emoji = setWolf;
   }

@@ -1336,13 +1336,19 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       onClick={() => {
                         if (taken) return;
                         setChosenEmoji(em);
-                        // 2026-07-20 (Wolf): Wolf gewaehlt → seinen Namen gleich
-                        // ins Namensfeld vorfuellen. Nur wenn das Feld leer ist
-                        // ODER noch einen (anderen) Wolf-Namen traegt — ein selbst
-                        // getippter Name bleibt unangetastet. Editierbar + Wuerfel
-                        // funktionieren im Namens-Schritt weiter.
-                        if (isCozyWolfSlug(em) && (!teamName.trim() || WOLF_NAME_SET.has(teamName.trim()))) {
-                          setTeamName(cozyWolfLabel(em));
+                        if (isCozyWolfSlug(em)) {
+                          // 2026-07-20 (Wolf): slot-gebunden, der Wolf IST die
+                          // Farbe. Der Render leitet den Wolf aus dem Farb-Slot ab
+                          // → hier den Farb-Slot an den gewaehlten Wolf koppeln,
+                          // sonst zeigt die Disc einen anderen Wolf (Augenfarbe !=
+                          // Teamfarbe). COZY_WOLVES[i] entspricht QQ_AVATARS[i].
+                          const wi = COZY_WOLVES.findIndex(w => w.slug === em);
+                          const slotId = wi >= 0 ? QQ_AVATARS[wi]?.id : undefined;
+                          if (slotId && !takenAvatarIds.includes(slotId)) setAvatarId(slotId);
+                          // Wolf-Name vorfuellen — nur leer ODER (anderer) Wolf-Name.
+                          if (!teamName.trim() || WOLF_NAME_SET.has(teamName.trim())) {
+                            setTeamName(cozyWolfLabel(em));
+                          }
                         }
                       }}
                       disabled={taken}

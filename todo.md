@@ -147,11 +147,15 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 Wappen), bild 10 ✅ (2/3-Ansicht = `QQGemFill`-Diamant füllt in Kategorie-Farbe, Wolfs 3. Variante statt
 Pips/Balken — im Code aktiv, Wolf 19.7. bestätigt entschieden). Details in Memory `project_screens_1707_batch`.
 
-**Kolosseum-Kohärenz (Wolf 18.7.):** ✅ **Tier 1 FERTIG (2026-07-19):** Wolfs 5 Kategorie-Medaillons
-(Stein+Gold, römisch) per Corner-Flood-Fill freigestellt + in `/icons/cat-*.png` verdrahtet (ersetzen
-cozy3d). Vorschau `design-vorschau/tier1-medaillons-cutout.png`. **→ Design-FREEZE erreicht** → Fokus
-Event-Funktion + Akquise. Tier 2-4 + folgende Punkte = „spaeter/optional", NICHT jetzt bauen.
-⚠️ Am echten Beamer im Runden-Intro gegensehen (Blend auf Kolosseum-BG). Details Memory `project_design_motion_elevation`.
+**Kolosseum-Kohärenz — 🔴 RICHTUNG GEKIPPT (Wolf 2026-07-20):** „römisch? meine arena ist bunt und wirkt
+mystisch". Die römische Stein-Schiene ist **zurückgebaut**: Tier-1-Medaillons (Stein+Gold) raus, wieder die
+**bunten 3D-Kategorie-Icons** (Wolf: „passen super zum Background" → **nicht mehr anfassen**) · Wolf-Magier-
+Splash raus (Wolf: „ich bin ja der Wolf, der durch den Abend leitet") · 4 Sandstein-Sub-Icons nicht verdrahtet
+(gitignored, >2 MB brechen den Workbox-Precache). **Cinzel + EB Garamond bleiben** (Wolf 20.7. nach Kandidaten-
+Vergleich am echten Beamer: „wir lassen Cinzel und Garamond" → Alternativen nicht erneut vorschlagen).
+Tier 2-4 = gestrichen, nicht bauen.
+- [ ] **Offen/inhaltlich: was heisst „bunt und mystisch" konkret?** Kommt über Farbe/Leuchten/Tiefe, NICHT über
+      Icons oder Schrift (beides ist entschieden). Erst nach Wolfs Durchlauf angehen, wenn er sagt wo es flach wirkt.
 - [ ] *(spaeter/optional, nach Freeze)* Progress-Tree Diamanten/Gems statt Kreise (koppelt an Tier-1-Assets).
 - [ ] *(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.
 
@@ -178,8 +182,16 @@ Broadcast-Fan-out 33 ms, Payload 15,3 KB) → Broadcast-Throttle vorerst nicht n
 - [ ] **Setup-Flow am echten Gerät** in EN durchklicken (Fraktion wählen → beitreten).
 - [ ] **Venue-WLAN-Latenz + in-Frage-Payload** gegenprüfen. Bei Lag: Broadcast drosseln/Delta.
 - [ ] **Fraktions-Soft-Cap live validieren** im 40-Geräte-Lauf (Backend-Safety-Net ist gebaut).
-- [ ] **EN-Content-Verify:** Event-Draft Frage für Frage — jedes `textEn/answerEn/optionsEn/unitEn`
-      gefüllt? Leere Felder fallen still auf DE zurück. **Kommt erst wenn du den Event-Draft machst.**
+- [ ] **EN-Content-Verify:** ✅ **automatisiert (2026-07-20):** `npm run check:en` (Repo) / `check:en:live`
+      (echte Mongo-Drafts), Exit 1 bei Fehlern → als Gate vorm Event nutzbar. Trennt „zeigt garantiert Deutsch"
+      (Fehler) von „meist sprachneutral" (Warnung), überspringt deaktivierte Mechaniken.
+      🔴 **6 ECHTE FEHLER offen, live bestätigt** — alle in der `order`-Mechanik (der Order-Seed selbst ist
+      sauber, die Lücke sitzt in diesen 4 Drafts): `qq-vol-2` + `qq-vol-5` fehlt `itemsEn`; `qq-test-harry-potter`
+      + `qq-test-hamburg` fehlt `itemsEn` **und** `criteriaEn` („ältestes zuerst" / „meiste Einwohner zuerst").
+      Im EN-Spiel stünden dort deutsche Items + deutsches Sortier-Kriterium auf dem Beamer.
+      ⚠️ Fix-Weg beachten: `qq-vol-*` sind source-generiert (Read-Migration überschreibt die DB) → NICHT
+      `qqDrafts.json` editieren, sondern die Quelle bzw. den vorhandenen `/api/qq/drafts/:id/translate`-Endpoint.
+      Für den EIGENTLICHEN Event-Draft gilt das weiter, sobald du ihn baust.
 - [ ] **Stechen-Trockentest** beide Modi (normal + Arena) + Auto-Reveal-Timer. Fummelig ist nur,
       künstlich einen Gleichstand herzustellen.
 - [ ] **Wertungs-Tuning am Trockenlauf:** Finale = „letzte Phase" richtig? · Nähe-Kurve K=3 /

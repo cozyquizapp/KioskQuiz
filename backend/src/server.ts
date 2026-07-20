@@ -8628,6 +8628,53 @@ app.get('/api/qq/drafts', async (_req, res) => {
     if (dbOptsRefreshed > 0) {
       console.log(`[migration] Refreshed MC-options in ${dbOptsRefreshed} DB drafts (Vol-3 Picasso-Geschwurbel etc.)`);
     }
+    // 2026-07-20: DB-Gegenstueck zur EN-Luecken-Migration beim Startup.
+    // Die Startup-Variante patcht nur qqDrafts (Datei/Speicher) — live kommen
+    // die Drafts aber aus Mongo, also greift sie dort NICHT. Ohne diesen Block
+    // blieben die 6 Luecken auf dem Live-Server bestehen (empirisch: check:en
+    // gruen, check:en:live weiter 6 Fehler).
+    //
+    // Deckt qq-vol-* UND die Extra-Test-Drafts ab (deshalb kein isQQVolDraft-
+    // Filter, sondern schlicht "kennt der Source diesen Draft?").
+    // Fuellt NUR fehlende Felder — nie ueberschreiben, sonst waeren Studio-
+    // bzw. /translate-Uebersetzungen weg.
+    {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const { QQ_EXTRA_TEST_DRAFTS } = require('./data/qqExtraTestDrafts') as { QQ_EXTRA_TEST_DRAFTS: any[] };
+      const enById = new Map<string, any>([...fresh, ...QQ_EXTRA_TEST_DRAFTS].map((d: any) => [d.id, d]));
+      let dbEnFilled = 0;
+      for (let i = 0; i < cleanDbDrafts.length; i++) {
+        const d: any = cleanDbDrafts[i];
+        const fd = enById.get(d.id);
+        if (!fd || !Array.isArray(d.questions) || !Array.isArray(fd.questions)) continue;
+        let dirty = false;
+        for (const lq of d.questions) {
+          const bt = lq?.bunteTuete;
+          if (!bt || bt.kind !== 'order') continue;
+          const fbt = fd.questions.find((fx: any) => fx?.id === lq?.id)?.bunteTuete;
+          if (!fbt || fbt.kind !== 'order') continue;
+          // Laengen-Check: ein Mismatch wuerde die Index-Zuordnung zu
+          // correctOrder zerreissen und die Frage unloesbar machen.
+          if (!Array.isArray(bt.itemsEn) && Array.isArray(fbt.itemsEn)
+              && Array.isArray(bt.items) && fbt.itemsEn.length === bt.items.length) {
+            bt.itemsEn = [...fbt.itemsEn];
+            dirty = true;
+          }
+          if (!bt.criteriaEn && fbt.criteriaEn) {
+            bt.criteriaEn = fbt.criteriaEn;
+            dirty = true;
+          }
+        }
+        if (dirty) {
+          d.updatedAt = Date.now();
+          try { await saveQQDraftToDB(d); } catch { /* ignore */ }
+          dbEnFilled++;
+        }
+      }
+      if (dbEnFilled > 0) {
+        console.log(`[migration] EN-Luecken in order-Fragen gefuellt: ${dbEnFilled} DB-Draft(s)`);
+      }
+    }
     // CHEESE-Image-Enrichment in DB (idempotent — pro Frage erst wenn image fehlt)
     let dbCheeseEnriched = 0;
     for (let i = 0; i < cleanDbDrafts.length; i++) {

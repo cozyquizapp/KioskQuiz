@@ -208,9 +208,12 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '🥇': 'fx-medal-gold',
   '🥈': 'fx-medal-silver',
   '🥉': 'fx-medal-bronze',
-  // '⚡': 'fx-lightning',  // entfernt — fx-lightning.png rendert mit
-  // sichtbarem Rechteck-Artefakt; `⚡` faellt jetzt durch auf native
-  // Unicode-Emoji-Rendering, das ist ueberall sauber transparent.
+  // 2026-07-20 (Wolf liefert 'blitz.png' fuer Schnelligkeit): Mapping wieder
+  // scharf. Die alte fx-lightning.png hatte ein sichtbares Rechteck-Artefakt
+  // (schlecht freigestellt) und war deshalb deaktiviert; die neue ist aus dem
+  // Gold-auf-Schwarz-Master per Luminanz-Alpha freigestellt und auf Weiss/
+  // Brand-Pink/Navy/Beamer-Dunkel gegengeprueft (kein Halo, kein Kasten).
+  '⚡': 'fx-lightning',
   '✅': 'fx-check',
   '❌': 'fx-cross',
   '📍': 'fx-place',

@@ -95,14 +95,18 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🔴 WARTET AUF WOLF — Assets
 
-- [ ] **8× Breitbild-Award-BGs** `frontend/public/arena-bg/award-<slug>.webp` (16:9).
-      Drop-in steht (Layer über `faction-<slug>.webp`-Fallback in `MegaAwardBeat`) → greifen
-      automatisch sobald da. Slugs: `bauchgefuehl` `glueckstreffer` `feierabend` `letztesekunde`
-      `allwissen` `improvisation` `einspruch` `risiko`.
-      ⚠️ Wolfs VS Code verarbeitet zu große Bilder nicht → selbst optimieren (max ~2 MB, sonst
-      bricht der Workbox-Precache den Build).
-- [ ] **„am schnellsten"-Icon** — ersetzt den ⚡-Platzhalter beim Guess-Sieger (nur bei Punkte-
-      Gleichstand sichtbar). Drop-in: TODO-Slot im Reveal wartet auf dein Icon.
+- ✅ **8× Breitbild-Award-BGs GELIEFERT + VERDRAHTET** (2026-07-20, `2ea60c08`). Wolfs Dateien lagen in
+      `public/neue background/` mit englischen Award-Namen; die 8 Fraktionen heißen wie die 8 Awards,
+      daher 1:1-Mapping (`all in`→`risiko`, `gut feeling`→`bauchgefuehl`, …), gegengeprüft an **Farbe +
+      Emblem** statt am Namen. Quellen waren schon exakt 1672×941 → reine WebP-Wandlung ohne Crop,
+      190-264 KB je Bild. Kein Code nötig, der Drop-in-Layer greift. Vorher zog der Beamer das
+      HOCHKANT-`faction-*.webp` (853×1844, Handy-Bild) per `cover` breit und beschnitt es brutal.
+- ✅ **„am schnellsten"-Blitz GELIEFERT + VERDRAHTET** (2026-07-20, `2ea60c08`). `fx-lightning.png` war
+      wegen eines Rechteck-Artefakts deaktiviert und existierte nicht mehr; neu aus Wolfs Gold-auf-
+      Schwarz-Master per Luminanz-Alpha freigestellt, auf Weiß/Pink/Navy/Dunkel geprüft (kein Halo).
+      `EMOJI_TO_SLUG`-Mapping wieder scharf → **alle** nativen ⚡ zeigen jetzt das 3D-Icon.
+      ⚠️ Der Blitz ist **Gold** und berührt damit die Regel „kein Gold außer Krönung" — bewusst so
+      von Wolf geliefert. Falls doch Pink gewünscht: eine Neu-Einfärbung, kein Umbau.
 
 ## 🔴 WARTET AUF WOLF — Entscheidungen
 
@@ -169,6 +173,15 @@ Tier 2-4 = gestrichen, nicht bauen.
 **Kontext:** Erstes Event mit echten Geräten. Firma lädt ein, 50–100 Leute (theoret. bis 200),
 Tech- + UX-Publikum (kritisch!), komplett **Englisch**, kostenloses Testevent, **Wolf moderiert
 solo**. 3–4 Leute pro Handy → ~25–40 Handys/Teams.
+
+**🟠 NEU 2026-07-20 (beim Build aufgefallen, nicht angefasst): Service-Worker-Precache = 114 MB.**
+`vite.config.ts` precacht alle png/webp/avif/wav (611 Einträge) — Avatare 52 MB, Themes 21 MB,
+Icons 21 MB, Sounds 19 MB. Beim **ersten** Öffnen von `/team` lädt jedes Handy das runter. Bei
+~40 Handys auf Venue-WLAN sind das theoretisch ~4,5 GB und langsame Joins. Wolfs Staging-Ordner
+`neue background/` (88 MB) ist korrekt via `globIgnores` raus, das ist **nicht** die Ursache.
+⚠️ Vor dem Event **messen statt schätzen** (echtes Handy, Netzwerk-Tab, Cache leer): lädt der SW
+wirklich alles beim Install, oder greift `runtimeCaching`? Erst danach entscheiden, ob Avatare/
+Themes/Sounds aus dem Precache in Lazy-Runtime-Caching wandern. Kein Blind-Fix.
 
 **🔒 Gelockt:** Fraktions-Soft-Cap (`ceil(Teams/8)`) + freie Wahl · Team-Cap 40
 (`QQ_MAX_TEAMS_LARGE`) · 3-vs-4-pro-Handy = Vor-Ort-Ansage, kein Code · Raum auf EN → Handy +

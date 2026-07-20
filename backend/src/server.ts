@@ -8003,7 +8003,7 @@ function createSampleQQDrafts(): any[] {
     // Phase 4
     q(`${v2}-p4-0`, 4, 0, 'SCHAETZCHEN', { text: 'In welchem Jahr veröffentlichte Apple das erste iPhone?', textEn: 'In which year did Apple release the first iPhone?', answer: '2007', targetValue: 2007, funFact: 'Steve Jobs nannte es „drei Geräte in einem" — iPod, Telefon und Internetkommunikator.' }),
     q(`${v2}-p4-1`, 4, 1, 'MUCHO', { text: 'In welcher Stadt steht das Kolosseum?', textEn: 'In which city is the Colosseum located?', answer: 'Rom', options: ['Athen', 'Rom', 'Florenz', 'Pompeji'], optionsEn: ['Athens', 'Rome', 'Florence', 'Pompeii'], correctOptionIndex: 1, funFact: 'Konnte rund 50.000 Zuschauer fassen — und wurde manchmal sogar geflutet für Schiffsschlachten.' }),
-    q(`${v2}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Filme nach Erscheinungsjahr, beginnend mit dem ältesten!', textEn: 'Sort these four movies by release year, starting with the oldest!', answer: 'Star Wars, Pulp Fiction, Matrix, Inception', bunteTuete: { kind: 'order', items: ['Pulp Fiction', 'Inception', 'Star Wars', 'Matrix'], correctOrder: [2, 0, 3, 1], criteria: 'ältester Film zuerst', criteriaEn: 'oldest movie first', itemValues: ['1994', '2010', '1977', '1999'] }, funFact: 'Star Wars hieß bei Erscheinen einfach „Star Wars" — der Untertitel „Episode IV" kam erst 1981 dazu.' }),
+    q(`${v2}-p4-2`, 4, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Filme nach Erscheinungsjahr, beginnend mit dem ältesten!', textEn: 'Sort these four movies by release year, starting with the oldest!', answer: 'Star Wars, Pulp Fiction, Matrix, Inception', bunteTuete: { kind: 'order', items: ['Pulp Fiction', 'Inception', 'Star Wars', 'Matrix'], itemsEn: ['Pulp Fiction', 'Inception', 'Star Wars', 'The Matrix'], correctOrder: [2, 0, 3, 1], criteria: 'ältester Film zuerst', criteriaEn: 'oldest movie first', itemValues: ['1994', '2010', '1977', '1999'] }, funFact: 'Star Wars hieß bei Erscheinen einfach „Star Wars" — der Untertitel „Episode IV" kam erst 1981 dazu.' }),
     q(`${v2}-p4-3`, 4, 3, 'ZEHN_VON_ZEHN', { text: 'Welcher Hollywoodstar spielte die Hauptrolle in „Mission: Impossible"?', textEn: 'Which Hollywood star played the lead in „Mission: Impossible"?', answer: 'Tom Cruise', options: ['Brad Pitt', 'Tom Cruise', 'Matt Damon'], optionsEn: ['Brad Pitt', 'Tom Cruise', 'Matt Damon'], correctOptionIndex: 1, funFact: 'Macht fast alle seine Stunts selbst — inklusive Sprung vom Burj Khalifa.' }),
     q(`${v2}-p4-4`, 4, 4, 'CHEESE', { text: 'Welches Logo ist hier abgebildet?', textEn: 'Which logo is shown here?', answer: 'Nike', answerEn: 'Nike' }),
   ];
@@ -8084,7 +8084,7 @@ function createSampleQQDrafts(): any[] {
     // Phase 3
     q(`${v5}-p3-0`, 3, 0, 'SCHAETZCHEN', { text: 'Wie viele Minuten dauert ein offizielles Fußballspiel (reine Spielzeit, ohne Nachspielzeit)?', textEn: 'How many minutes does an official football match last (regulation time)?', answer: '90', targetValue: 90, unit: 'Minuten', unitEn: 'minutes', funFact: 'Die längste Nachspielzeit in einem WM-Spiel betrug 14 Minuten — Iran gegen England 2022.' }),
     q(`${v5}-p3-1`, 3, 1, 'MUCHO', { text: 'Welches Gas atmen Pflanzen für die Photosynthese ein?', textEn: 'Which gas do plants take in for photosynthesis?', answer: 'Kohlendioxid', options: ['Sauerstoff', 'Stickstoff', 'Kohlendioxid', 'Methan'], optionsEn: ['Oxygen', 'Nitrogen', 'Carbon dioxide', 'Methane'], correctOptionIndex: 2, funFact: 'Eine ausgewachsene Buche produziert ~5 kg Sauerstoff pro Tag — genug für rund 10 Menschen.' }),
-    q(`${v5}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Berge nach Höhe, beginnend mit dem höchsten!', textEn: 'Sort these four mountains by height, starting with the highest!', answer: 'Mont Blanc, Matterhorn, Großglockner, Zugspitze', bunteTuete: { kind: 'order', items: ['Großglockner', 'Zugspitze', 'Mont Blanc', 'Matterhorn'], correctOrder: [2, 3, 0, 1], criteria: 'höchster zuerst', criteriaEn: 'tallest first', itemValues: ['3798 m', '2962 m', '4810 m', '4478 m'] }, funFact: 'Das Matterhorn wurde erst 1865 erstbestiegen — vier der sieben Erstbesteiger starben beim Abstieg.' }),
+    q(`${v5}-p3-2`, 3, 2, 'BUNTE_TUETE', { text: 'Sortiere diese vier Berge nach Höhe, beginnend mit dem höchsten!', textEn: 'Sort these four mountains by height, starting with the highest!', answer: 'Mont Blanc, Matterhorn, Großglockner, Zugspitze', bunteTuete: { kind: 'order', items: ['Großglockner', 'Zugspitze', 'Mont Blanc', 'Matterhorn'], itemsEn: ['Grossglockner', 'Zugspitze', 'Mont Blanc', 'Matterhorn'], correctOrder: [2, 3, 0, 1], criteria: 'höchster zuerst', criteriaEn: 'tallest first', itemValues: ['3798 m', '2962 m', '4810 m', '4478 m'] }, funFact: 'Das Matterhorn wurde erst 1865 erstbestiegen — vier der sieben Erstbesteiger starben beim Abstieg.' }),
     q(`${v5}-p3-3`, 3, 3, 'ZEHN_VON_ZEHN', { text: 'In welcher Sportart spielen die „New York Yankees"?', textEn: 'In which sport do the „New York Yankees" play?', answer: 'Baseball', options: ['Baseball', 'Basketball', 'American Football'], optionsEn: ['Baseball', 'Basketball', 'American football'], correctOptionIndex: 0, funFact: 'Die Yankees haben 27 World-Series-Titel gewonnen — mehr als jedes andere Team in der MLB.' }),
     q(`${v5}-p3-4`, 3, 4, 'CHEESE', { text: 'Welcher Wissenschaftler ist hier abgebildet?', textEn: 'Which scientist is shown here?', answer: 'Albert Einstein', answerEn: 'Albert Einstein' }),
     // Phase 4
@@ -8346,6 +8346,58 @@ function isQQVolDraft(id: string | undefined | null): boolean {
   if (changed) {
     persistQQDrafts();
     console.log('[migration] MC-Optionen in qq-vol-* Drafts auf Source-Stand gebracht');
+  }
+}
+
+// ── Migration 2026-07-20: fehlende EN-Felder der order-Fragen nachziehen ──
+// Der neue EN-Checker (scripts/check-en-drafts.mjs) fand 6 harte Luecken: vier
+// `order`-Fragen ohne `bunteTuete.itemsEn`, zwei davon zusaetzlich ohne
+// `criteriaEn`. Im EN-Spiel stand dort garantiert Deutsch auf der Buehne.
+//
+// Warum ueberhaupt eine Migration: File/DB gewinnen ueber den Source
+// (createSampleQQDrafts laeuft nur bei length===0), eine reine Source-Aenderung
+// haette den Live-Server also nie erreicht.
+//
+// ⚠️ Bewusst ANDERS als die Migrationen darueber: die ueberschreiben bei Drift,
+// diese fuellt NUR fehlende Felder. Uebersetzungen, die Wolf im Studio oder per
+// /api/qq/drafts/:id/translate gemacht hat, bleiben damit unangetastet.
+// Deckt beide Quellen ab: qq-vol-* (createSampleQQDrafts) + die Extra-Test-
+// Drafts (Harry Potter, Hamburg), die sonst nur "add if missing" kennen.
+{
+  // eslint-disable-next-line @typescript-eslint/no-var-requires
+  const { QQ_EXTRA_TEST_DRAFTS } = require('./data/qqExtraTestDrafts') as { QQ_EXTRA_TEST_DRAFTS: any[] };
+  const freshById = new Map<string, any>(
+    [...createSampleQQDrafts(), ...QQ_EXTRA_TEST_DRAFTS].map((d: any) => [d.id, d])
+  );
+  let filled = 0;
+  for (const d of qqDrafts as any[]) {
+    const fd = freshById.get(d.id);
+    if (!fd || !Array.isArray(d.questions) || !Array.isArray(fd.questions)) continue;
+    for (const lq of d.questions) {
+      const bt = lq?.bunteTuete;
+      if (!bt || bt.kind !== 'order') continue;
+      const fq = fd.questions.find((fx: any) => fx?.id === lq?.id);
+      const fbt = fq?.bunteTuete;
+      if (!fbt || fbt.kind !== 'order') continue;
+      // Nur fuellen wenn leer. itemsEn zusaetzlich nur, wenn die Laenge zu den
+      // DE-items passt — ein Laengen-Mismatch wuerde die Index-Zuordnung zu
+      // correctOrder zerreissen und die Frage unloesbar machen.
+      if (!Array.isArray(bt.itemsEn) && Array.isArray(fbt.itemsEn)
+          && Array.isArray(bt.items) && fbt.itemsEn.length === bt.items.length) {
+        bt.itemsEn = [...fbt.itemsEn];
+        d.updatedAt = Date.now();
+        filled++;
+      }
+      if (!bt.criteriaEn && fbt.criteriaEn) {
+        bt.criteriaEn = fbt.criteriaEn;
+        d.updatedAt = Date.now();
+        filled++;
+      }
+    }
+  }
+  if (filled > 0) {
+    persistQQDrafts();
+    console.log(`[migration] ${filled} fehlende EN-Felder in order-Fragen nachgezogen`);
   }
 }
 

@@ -83,8 +83,12 @@ const hpQs = [
     bunteTuete: {
       kind: 'order',
       items: ['Kammer des Schreckens', 'Stein der Weisen', 'Feuerkelch', 'Gefangene von Askaban'],
+      // UK-Titel (Philosopher's Stone), passend zum funFact unten und wortgleich
+      // mit dem answerEn der Schwester-Frage p2-4. Reihenfolge index-gleich zu items.
+      itemsEn: ['Chamber of Secrets', 'Philosopher\'s Stone', 'Goblet of Fire', 'Prisoner of Azkaban'],
       correctOrder: [1, 0, 3, 2],
       criteria: 'ältestes zuerst',
+      criteriaEn: 'oldest first',
       itemValues: ['1998', '1997', '2000', '1999']
     },
     funFact: 'Stein der Weisen erschien 1997 und hieß im UK ursprünglich „Philosopher\'s Stone".'
@@ -204,8 +208,12 @@ const hhQs = [
     bunteTuete: {
       kind: 'order',
       items: ['Eimsbüttel', 'Rahlstedt', 'St. Pauli', 'Billstedt'],
+      // Stadtteil-Namen sind Eigennamen und bleiben identisch — itemsEn trotzdem
+      // gesetzt, damit die EN-Seite nicht auf den DE-Zweig zurueckfaellt.
+      itemsEn: ['Eimsbüttel', 'Rahlstedt', 'St. Pauli', 'Billstedt'],
       correctOrder: [1, 3, 0, 2],
       criteria: 'meiste Einwohner zuerst',
+      criteriaEn: 'most residents first',
       itemValues: ['~57.000', '~94.000', '~22.000', '~70.000']
     },
     funFact: 'Rahlstedt ist mit ~94.000 Einwohnern der bevölkerungsreichste Stadtteil — größer als manche deutsche Mittelstadt.'

@@ -3666,7 +3666,7 @@ export function qqTriggerComeback(room: QQRoomState): void {
  * Candidate-Set gesetzt — Mod resolved manuell via qqResolveTieBreaker
  * (typischerweise nach kurzer mündlicher Stechfrage im Pub).
  */
-function detectTieBreakerCandidates(room: QQRoomState): void {
+export function detectTieBreakerCandidates(room: QQRoomState): void {
   // Reset (defensiv — falls jemand das doppelt aufruft).
   room.tieBreakerCandidates = [];
   room.tieBreakerWinnerId = null;
@@ -5037,7 +5037,11 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
  *  rueckt auf -3 → Min -3. Sonst klassisch -2 (Willkommen). Frontend spiegelt das
  *  (welcomeIdx / masterActive in QQBeamerPage). */
 function qqRulesMinIndex(room: QQRoomState): number {
-  return (room.largeGroupMode && room.arenaBackgrounds !== false) ? -3 : -2;
+  // 2026-07-20 (Wolf): Arena-Meister-Splash entfernt — "ich bin ja der Wolf, der
+  // durch den Abend leitet", ein zweiter Wolf-Charakter der einmal auftaucht macht
+  // die Rolle unklar. Damit faellt der Sonderfall -3 weg, ALLE Modi starten wieder
+  // klassisch bei -2 = Willkommen. (Frontend: masterActive ist entsprechend tot.)
+  return -2;
 }
 
 /** Transition from LOBBY to RULES presentation.

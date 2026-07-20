@@ -719,10 +719,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Meister"-Splash zwischen Willkommen und Regeln. Dafuer startet RULES bei -3
   // (Willkommen), -2 = Meister-Splash, -1 = Regel-Intro, 0.. = Regeln. Ohne
   // Kolosseum bleibt es beim klassischen -2 = Willkommen.
-  const arenaMaster = qqIsMega(s) && qqArenaBgEnabled(s);
-  const welcomeIdx = arenaMaster ? -3 : -2;
+  // 2026-07-20 (Wolf): Arena-Meister-Splash RAUS — „ich bin ja der Wolf, der durch
+  // den Abend leitet". Der Magier tauchte genau einmal auf und nie wieder und hat
+  // die Host-Rolle verwaessert. Damit gilt wieder ueberall: -2 = Willkommen,
+  // -1 = Regel-Intro, 0.. = Regeln (Backend qqRulesMinIndex gibt jetzt immer -2).
+  // ArenaMasterSplash bleibt als Komponente liegen, wird aber nicht mehr gerendert.
+  const welcomeIdx = -2;
   const welcomeActive = s.phase === 'RULES' && rulesIdx === welcomeIdx;
-  const masterActive = s.phase === 'RULES' && arenaMaster && rulesIdx === -2;
+  const masterActive = false;
   const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
   // Pause-/Wartescreen: Aurora-Vivid-Pink-Mesh passend zum CozyWolf-Brand
   // (Pink-Wolf + Navy-Hoodie). Pre-Game und Paused teilen sich den Pink/Navy-

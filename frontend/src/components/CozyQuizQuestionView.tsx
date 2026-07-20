@@ -550,6 +550,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       flex: 1, display: 'flex', position: 'relative',
       // 2026-06-23 (Skin): Schrift-Family vom aktiven Skin — vererbt sich auf
       // alle Texte der View. Layout-neutral (nur Glyph-Form, fixe Schriftgrössen).
+      // 2026-07-19: Arena-Font wird NICHT hier entschieden, sondern an der Beamer-
+      // Wurzel (QQBeamerPage, qqArenaType → --font-arena-body) und vererbt sich
+      // hierher. Wichtig: die Reveal-Early-Returns oben (Z. ~453-505) liegen VOR
+      // diesem Return — ein Font-Set hier wuerde die Reveals gar nicht erreichen.
+      // Genau deshalb sitzt die Entscheidung an der Wurzel.
       fontFamily: 'var(--qq-font)',
       // 2026-05-12 (Glow-Audit): hidden → visible. Frage-Card + Option-Cards
       // haben dicke Glows (boxShadow 0 0 36-48px) — die wurden hier am

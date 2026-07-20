@@ -2547,6 +2547,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:goBackSlide', (payload: { roomCode: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        // 2026-07-19 (Fund 3): Bounce-Guard gegen Streamdeck-Doppelfeuer — zwei
+        // Back-Events innerhalb 400ms wuerden zwei Slides auf einmal ueberspringen.
+        // Ein Mensch, der bewusst zweimal zurueck will, drueckt langsamer als das
+        // mechanische Bounce. Am I/O-Rand, damit qqGoBackSlide pur/testbar bleibt.
+        const now = Date.now();
+        const last = (room as any).__lastBackAt as number | undefined;
+        if (last && now - last < 400) { ok(ack); return; }
+        (room as any).__lastBackAt = now;
         qqGoBackSlide(room);
         broadcast(io, payload.roomCode);
         ok(ack);

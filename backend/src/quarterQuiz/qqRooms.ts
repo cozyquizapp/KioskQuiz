@@ -2405,6 +2405,23 @@ export function qqMegaEventScore(room: QQRoomState): void {
   };
   // Naehe-Score fuer Distanz-Kategorien: 100 am Ziel, 0 bei dist ≥ maxErr.
   const nearScore = (dist: number, maxErr: number) => (maxErr > 0 ? 100 * Math.max(0, 1 - dist / maxErr) : 0);
+  // Distanz-Kategorien (SCHAETZCHEN + Schwarm/crowdEstimate) teilen EXAKT dieselbe
+  // Wertung: pro Handy Naehe-Punkte, isHit = dist ≤ Range, bestDist-Tiebreak. Die
+  // beiden Bloecke unterschieden sich vorher NUR in Parser + Target-Quelle → ein
+  // Helfer gegen Drift (Hit-Schwelle/maxErr in EINER Zeile, nicht zweimal pflegen).
+  // Spiegelt shared/qqDistanceScore.ts (Reveal-Frontend) 1:1.
+  const scoreDistanceCat = (target: number, unit: string | undefined, parse: (t: string) => number | null) => {
+    const rangeAbs = schaetzchenRangeAbs(target, unit);
+    const maxErr = rangeAbs * QQ_MEGA_DIST_K;
+    for (const a of room.answers) {
+      const v = parse(a.text);
+      if (v == null || !Number.isFinite(v)) continue;
+      const dist = Math.abs(v - target);
+      const g = grpOf(a.teamId); if (!g) continue;
+      scorePhone(g, nearScore(dist, maxErr), a.submittedAt, dist <= rangeAbs);
+      if (dist < g.bestDist) g.bestDist = dist;
+    }
+  };
   const cat = q.category;
   if (cat === 'MUCHO') {
     // Bugfix 2026-07-12 (Wolf): richtig = 100, falsch = 0. Vorher bekam JEDES
@@ -2431,16 +2448,10 @@ export function qqMegaEventScore(room: QQRoomState): void {
     // Distanz: jedes Handy einzeln → Naehe-Punkte, Fraktion mittelt die PUNKTE
     // (nicht die Tipps!). Ein perfekter Tipp kann nicht mehr von Fremden auf 0
     // gezogen werden. „nah genug" (≤ Range) = Hit fuer die X/Y-Anzeige.
-    const rangeAbs = schaetzchenRangeAbs(q.targetValue, q.unit);
-    const maxErr = rangeAbs * QQ_MEGA_DIST_K;
-    for (const a of room.answers) {
-      const parsed = Number(a.text.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
-      if (Number.isNaN(parsed)) continue;
-      const dist = Math.abs(parsed - q.targetValue);
-      const g = grpOf(a.teamId); if (!g) continue;
-      scorePhone(g, nearScore(dist, maxErr), a.submittedAt, dist <= rangeAbs);
-      if (dist < g.bestDist) g.bestDist = dist;
-    }
+    scoreDistanceCat(q.targetValue, q.unit, t => {
+      const parsed = Number(t.replace(/[^0-9.,\-]/g, '').replace(',', '.'));
+      return Number.isNaN(parsed) ? null : parsed;
+    });
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdTop') {
     // Top-Antworten: Board-Rang-Punkte pro Handy (Platz 1 = 5 … Platz 5 = 1) →
     // 0–100 (5 = volle 100). Fraktion mittelt ueber aktive Handys.
@@ -2454,19 +2465,10 @@ export function qqMegaEventScore(room: QQRoomState): void {
       scorePhone(g, 100 * pts / 5, a.submittedAt, pts > 0);
     }
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'crowdEstimate') {
-    // Schwarm-Schätzen: wie Schätzchen — jedes Handy einzeln Naehe-Punkte, Fraktion
-    // mittelt die PUNKTE (konsistent mit dem Distanz-Modell, kein Median mehr).
+    // Schwarm-Schätzen: identisches Distanz-Modell wie Schätzchen (kein Median mehr) —
+    // einziger Unterschied ist der Parser qqParseEstimate + die Target-Quelle def.*.
     const def = q.bunteTuete as import('../../../shared/quarterQuizTypes').QQBunteTueteCrowdEstimate;
-    const rangeAbs = schaetzchenRangeAbs(def.targetValue, def.unit);
-    const maxErr = rangeAbs * QQ_MEGA_DIST_K;
-    for (const a of room.answers) {
-      const v = qqParseEstimate(a.text);
-      if (v == null) continue;
-      const dist = Math.abs(v - def.targetValue);
-      const g = grpOf(a.teamId); if (!g) continue;
-      scorePhone(g, nearScore(dist, maxErr), a.submittedAt, dist <= rangeAbs);
-      if (dist < g.bestDist) g.bestDist = dist;
-    }
+    scoreDistanceCat(def.targetValue, def.unit, qqParseEstimate);
   } else if (cat === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'map') {
     // CozyGuessr: jedes Handy einzeln → Naehe-Punkte nach Grad-Distanz (Pythagoras
     // wie evalMap), Fraktion mittelt die PUNKTE. ≤ QQ_MEGA_MAP_CLOSE_DEG = „nah dran".
@@ -3664,7 +3666,7 @@ export function qqTriggerComeback(room: QQRoomState): void {
  * Candidate-Set gesetzt — Mod resolved manuell via qqResolveTieBreaker
  * (typischerweise nach kurzer mündlicher Stechfrage im Pub).
  */
-function detectTieBreakerCandidates(room: QQRoomState): void {
+export function detectTieBreakerCandidates(room: QQRoomState): void {
   // Reset (defensiv — falls jemand das doppelt aufruft).
   room.tieBreakerCandidates = [];
   room.tieBreakerWinnerId = null;
@@ -5035,7 +5037,11 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
  *  rueckt auf -3 → Min -3. Sonst klassisch -2 (Willkommen). Frontend spiegelt das
  *  (welcomeIdx / masterActive in QQBeamerPage). */
 function qqRulesMinIndex(room: QQRoomState): number {
-  return (room.largeGroupMode && room.arenaBackgrounds !== false) ? -3 : -2;
+  // 2026-07-20 (Wolf): Arena-Meister-Splash entfernt — "ich bin ja der Wolf, der
+  // durch den Abend leitet", ein zweiter Wolf-Charakter der einmal auftaucht macht
+  // die Rolle unklar. Damit faellt der Sonderfall -3 weg, ALLE Modi starten wieder
+  // klassisch bei -2 = Willkommen. (Frontend: masterActive ist entsprechend tot.)
+  return -2;
 }
 
 /** Transition from LOBBY to RULES presentation.

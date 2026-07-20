@@ -7,7 +7,7 @@ import React, { useEffect, useState } from 'react';
 import { QQStateUpdate, qqMegaFactionName } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { QQTeamAvatar } from './QQTeamAvatar';
-import { useLangFlip } from '../cozyQuizShared';
+import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { getServerNow } from '../utils/serverTime';
 
 export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
@@ -58,7 +58,12 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       // hidden — bei vielen Kandidaten/langen Namen sonst Clipping-Risiko.
       overflow: 'hidden',
       background: 'radial-gradient(circle at 50% 28%, rgba(236,72,153,0.12), transparent 60%)',
-      fontFamily: "'Nunito', 'Geist', system-ui, sans-serif", textAlign: 'center',
+      // 2026-07-19 (Kolosseum-Font-Sweep): das Stechen ist der Drama-Moment des
+      // Abends und lief bisher hart auf Nunito. qqArenaType statt dem lokalen
+      // `arena` (Z. 18) — letzteres ist rohes largeGroupMode und wuerde auch in
+      // „Schlicht" feuern, was Wolf ausdruecklich nicht will.
+      fontFamily: qqArenaType(s) ? 'var(--font-arena-body)' : "'Nunito', 'Geist', system-ui, sans-serif",
+      textAlign: 'center',
     }}>
       {/* Eyebrow + Titel */}
       <div style={{ fontSize: '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: QQ_COLORS.brandPink, textTransform: 'uppercase' }}>

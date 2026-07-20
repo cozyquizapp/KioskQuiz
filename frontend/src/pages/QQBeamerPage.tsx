@@ -146,7 +146,7 @@ import {
   imgAnim, imgFilter, formatRevealedAnswer,
   CAT_BG, CAT_GLOW, CAT_CUTOUTS,
   COZY_CARD_BG as _COZY_CARD_BG_SHARED,
-  qqCapOption,
+  qqCapOption, qqArenaType,
 } from '../cozyQuizShared';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
@@ -719,10 +719,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Meister"-Splash zwischen Willkommen und Regeln. Dafuer startet RULES bei -3
   // (Willkommen), -2 = Meister-Splash, -1 = Regel-Intro, 0.. = Regeln. Ohne
   // Kolosseum bleibt es beim klassischen -2 = Willkommen.
-  const arenaMaster = qqIsMega(s) && qqArenaBgEnabled(s);
-  const welcomeIdx = arenaMaster ? -3 : -2;
+  // 2026-07-20 (Wolf): Arena-Meister-Splash RAUS — „ich bin ja der Wolf, der durch
+  // den Abend leitet". Der Magier tauchte genau einmal auf und nie wieder und hat
+  // die Host-Rolle verwaessert. Damit gilt wieder ueberall: -2 = Willkommen,
+  // -1 = Regel-Intro, 0.. = Regeln (Backend qqRulesMinIndex gibt jetzt immer -2).
+  // ArenaMasterSplash bleibt als Komponente liegen, wird aber nicht mehr gerendert.
+  const welcomeIdx = -2;
   const welcomeActive = s.phase === 'RULES' && rulesIdx === welcomeIdx;
-  const masterActive = s.phase === 'RULES' && arenaMaster && rulesIdx === -2;
+  const masterActive = false;
   const rulesIntroActive = s.phase === 'RULES' && rulesIdx === -1;
   // Pause-/Wartescreen: Aurora-Vivid-Pink-Mesh passend zum CozyWolf-Brand
   // (Pink-Wolf + Navy-Hoodie). Pre-Game und Paused teilen sich den Pink/Navy-
@@ -1916,7 +1920,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen
       // eigenen BG malen). Cozy bleibt 1:1 (Kategorie-BG/Template-BG/fontFam).
       background: isThemed() ? 'var(--qq-bg)' : (activeTemplate ? (activeTemplate.background || bg) : bg),
-      fontFamily: isThemed() ? 'var(--qq-font)' : fontFam,
+      // 2026-07-19 (Wolf „ist Cinzel/Garamond WIRKLICH überall umgestellt?"): nein,
+      // war es nicht. Die Wurzel vererbte im Kolosseum weiter Bricolage/Nunito an
+      // JEDE View ohne eigenen Font (Reveals, Lobby, Stechen, Thanks …) — deshalb
+      // wirkte die Arena stellenweise „alt". Font-Entscheidung gehoert an EINE
+      // Stelle: hier. qqArenaType gatet exakt Arena+Kolosseum (nicht Schlicht,
+      // nicht CozyQuiz, nicht themed). Cinzel-Overrides in den Views bleiben
+      // spezifischer und gewinnen weiterhin.
+      fontFamily: isThemed() ? 'var(--qq-font)' : (qqArenaType(s) ? 'var(--font-arena-body)' : fontFam),
       color: isThemed() ? 'var(--qq-text)' : textCol, display: 'flex', flexDirection: 'column',
       // 2026-05-12 (Glow-Audit): overflow 'hidden' → 'visible'. Body-Scroll
       // ist bereits durch SlideStage outer (overflow:clip + 120px clipMargin)
@@ -2072,7 +2083,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               {renderState.phase === 'CONNECTIONS_4X4' && <ConnectionsBeamerView state={renderState} />}
               {renderState.phase === 'FINAL_BETTING'   && <FinalBettingView state={renderState} />}
               {renderState.phase === 'FINAL_REVEAL'    && <FinalRevealView state={renderState} />}
-              {renderState.phase === 'COZY_GAME'       && renderState.cozyGame && (
+              {renderState.phase === 'COZY_GAME'       && (renderState.cozyGame ? (
                 <CozyGameView
                   round={renderState.cozyGame}
                   // Im Stage-Modus rendert die View im festen 1920x1080-Canvas
@@ -2083,7 +2094,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   teams={renderState.teams}
                   language={renderState.language}
                 />
-              )}
+              ) : (
+                // Transient: phase === COZY_GAME, aber cozyGame kurz null (Reconnect
+                // oder Mod bricht das Mini-Game ab, bevor der neue State kommt). Statt
+                // leerem Beamer die neutrale Pause-Tafel (zeigt den Zwischenstand),
+                // bis der echte Zustand nachrueckt. Audit-Fund 2026-07-19.
+                <PausedView state={renderState} mode="pause" />
+              ))}
               {renderState.phase === 'PAUSED'          && <PausedView state={renderState} />}
               {renderState.phase === 'TIEBREAKER_QUESTION' && <TieBreakerView state={renderState} />}
               {renderState.phase === 'GAME_OVER'       && <GameOverView state={renderState} roomCode={roomCode} />}

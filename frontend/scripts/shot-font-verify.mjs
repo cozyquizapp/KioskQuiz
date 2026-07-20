@@ -19,7 +19,7 @@ const grab = async (page, url, name) => {
 const run = async () => {
   const b = await chromium.launch();
   const ctx = await b.newContext({ viewport: { width: 1760, height: 990 } });
-  ctx.addInitScript(p => { try { sessionStorage.setItem('qq_admin_pin', p); } catch {} }, PIN);
+  ctx.addInitScript(p => { try { sessionStorage.setItem('qq_admin_pin', p); localStorage.setItem('qq-admin-pin', p); } catch {} }, PIN);
   const page = await ctx.newPage();
   await grab(page, `${BASE}/phaseintro-test`, 'font-verify-1-kolosseum');
   await grab(page, `${BASE}/phaseintro-test?schlicht=1`, 'font-verify-2-schlicht');

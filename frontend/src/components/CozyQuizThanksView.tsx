@@ -117,7 +117,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         `radial-gradient(ellipse at 15% 80%, rgba(${brand.accentRgb},0.05), transparent 50%), ` +
         '#0A0814',
-      fontFamily: fontFam,
+      // 2026-07-19 (Kolosseum-Font-Sweep): Thanks-Root folgt im Kolosseum dem
+      // Arena-Font-System (vorher immer Bricolage/Nunito).
+      fontFamily: megaArena ? 'var(--font-arena-body)' : fontFam,
     }}>
       {lobbyBgUrl && (
         <div aria-hidden style={{

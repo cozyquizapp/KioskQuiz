@@ -15,7 +15,7 @@ const slug = s => (s || 'x').toLowerCase().replace(/[^a-z0-9äöü]+/gi, '-').re
 const run = async () => {
   const browser = await chromium.launch();
   const ctx = await browser.newContext({ viewport: { width: 1760, height: 990 } });
-  ctx.addInitScript(p => { try { sessionStorage.setItem('qq_admin_pin', p); } catch {} }, PIN);
+  ctx.addInitScript(p => { try { sessionStorage.setItem('qq_admin_pin', p); localStorage.setItem('qq-admin-pin', p); } catch {} }, PIN);
 
   const B = await ctx.newPage();
   await B.goto(`${BASE}/beamer?room=default`, { waitUntil: 'networkidle' });

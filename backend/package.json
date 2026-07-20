@@ -11,6 +11,8 @@
     "build": "tsc --project tsconfig.json && node ./scripts/copy-data.js",
     "start": "node dist/backend/src/server.js",
     "test:scoring": "ts-node scripts/scoring-selfcheck.ts",
+    "check:en": "node scripts/check-en-drafts.mjs",
+    "check:en:live": "node scripts/check-en-drafts.mjs --api",
     "recover:drafts": "node scripts/recover-cozy-drafts.js",
     "recover:drafts:apply": "node scripts/recover-cozy-drafts.js --apply"
   },

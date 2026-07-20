@@ -30,7 +30,7 @@ import { SkinDeco } from './SkinDeco';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
   CAT_ACCENT, CAT_BADGE_BG, CAT_GLOW, CAT_CUTOUTS, COZY_CARD_BG,
-  qqCapOption,
+  qqCapOption, qqArenaType,
 } from '../cozyQuizShared';
 import { Fireflies } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -550,7 +550,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       flex: 1, display: 'flex', position: 'relative',
       // 2026-06-23 (Skin): Schrift-Family vom aktiven Skin — vererbt sich auf
       // alle Texte der View. Layout-neutral (nur Glyph-Form, fixe Schriftgrössen).
-      fontFamily: 'var(--qq-font)',
+      // 2026-07-19 (Wolf „die Font in QUESTION_ACTIVE ist im Kolosseum immer die
+      // alte"): im Kolosseum jetzt EB Garamond als Root — vererbt auf Frage-Text
+      // UND Drumherum, damit die Frage-Seite nicht mehr aus dem Cinzel/Garamond-
+      // System fällt. Wolf hat die frühere „Fragetext bleibt Nunito"-Lesbarkeits-
+      // Entscheidung bewusst gekippt („alles inkl. Fragetext").
+      // Garamond statt Cinzel, weil ein Fragesatz Fliesstext ist — Cinzel bleibt
+      // laut Font-Regel den kurzen Hero-Worten vorbehalten (Beamer-Lesbarkeit).
+      // qqArenaType gatet exakt wie gewuenscht: NUR Arena+Kolosseum, nicht
+      // „Schlicht" (arenaBackgrounds === false) und nicht CozyQuiz/themed.
+      fontFamily: qqArenaType(s) ? 'var(--font-arena-body)' : 'var(--qq-font)',
       // 2026-05-12 (Glow-Audit): hidden → visible. Frage-Card + Option-Cards
       // haben dicke Glows (boxShadow 0 0 36-48px) — die wurden hier am
       // QuestionView-Rand abgeschnitten. SlideStage outer clipMargin (120px)

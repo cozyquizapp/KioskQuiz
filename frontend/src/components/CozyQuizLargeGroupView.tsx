@@ -21,6 +21,12 @@ import { QQEmojiIcon, QQIcon } from './QQIcon';
 import type { QQIconSlug } from './QQIcon';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { COZY_ARENA_CREST_SLUGS } from '../cozyArenaCrests';
+// 2026-07-20: „Schlicht = ueberall schlicht". qqArenaType = Arena + kein Skin +
+// Kolosseum-BGs an. Die Siegerehrung ignorierte den Schlicht-Schalter komplett:
+// sie malte ihre eigenen BGs (epic-moment / award-*) UEBER den schlichten
+// Beamer-Root und setzte Cinzel hart. BG und Font haengen zusammen und werden
+// deshalb am selben Gate entschieden.
+import { qqArenaType } from '../cozyQuizShared';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
@@ -563,6 +569,9 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
   state: QQStateUpdate; sorted: any[]; winner: any; wColor: string; de: boolean;
 }) {
   const reduce = prefersReducedMotion();
+  // Kolosseum-Look? Steuert BG-Bild UND Cinzel gemeinsam (s. Import-Kommentar).
+  const arenaLook = qqArenaType(state);
+  const ceremonyFont = arenaLook ? 'var(--font-arena)' : 'var(--font-game)';
   // 8 Banner in STABILER Fraktions-Reihenfolge (nicht nach Rang → die Position
   // verrät den Sieger nicht, das Roulette bleibt spannend).
   const avaOrder = (id: string) => { const i = QQ_AVATARS.findIndex(a => a.id === id); return i < 0 ? 99 : i; };
@@ -694,7 +703,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
           Licht-Ausbruch, KEINE gemalten Banner → die Roulette-Fahnen fuellen den
           Screen ohne Kollision). Nur die Krönung; Award-Beats/Endstand behalten
           ihre BGs. */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'url(/arena-bg/epic-moment.webp)', backgroundSize: 'cover', backgroundPosition: 'center', animation: 'brFadeIn 0.6s ease both' }} />
+      {arenaLook && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none', backgroundImage: 'url(/arena-bg/epic-moment.webp)', backgroundSize: 'cover', backgroundPosition: 'center', animation: 'brFadeIn 0.6s ease both' }} />}
       {/* Arena dunkelt — auf dem busy epic-moment-BG staerker, damit Banner-Reihe +
           Text lesbar bleiben (der zentrale Licht-Ausbruch scheint gedaempft durch). */}
       <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 1, pointerEvents: 'none', background: 'radial-gradient(ellipse 96% 86% at 50% 46%, rgba(0,0,0,0.32), rgba(0,0,0,0.82))', animation: 'qqArenaDim 0.8s ease both' }} />
@@ -719,7 +728,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
           (Wolf 2026-07-16: „es ist doch DER Reveal-Moment"). */}
       {!showPodium && (
         <div style={{ position: 'absolute', left: '50%', top: locked ? '62%' : '52%', transform: 'translate(-50%,-50%)', zIndex: 5, maxWidth: '86%', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-          fontFamily: 'var(--font-arena)',
+          fontFamily: ceremonyFont,
           fontSize: locked ? 'clamp(30px, 5.2cqw, 96px)' : 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900,
           color: locked ? wColor : '#f6d98a', letterSpacing: locked ? '-0.01em' : '0.04em',
           textShadow: locked ? `0 3px 14px rgba(0,0,0,0.85), 0 0 40px ${wColor}77` : '0 2px 10px rgba(0,0,0,0.8), 0 0 26px rgba(233,196,106,0.4)',
@@ -737,7 +746,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
               gesetzt (war 27cqh → traf den Pokal an der Spitze der Sieger-Saeule bei
               ~33cqh). Jetzt 18cqh mit klarem Abstand ueber dem Pokal. */}
           <div style={{ position: 'absolute', left: 0, right: 0, top: '18cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: 'var(--font-arena)', fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
+            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
               {de ? 'Champions der Arena' : 'Arena Champions'}
             </div>
           </div>
@@ -759,6 +768,9 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
 // (n = qqMegaAwardKeys), n = Krönung, n+1 = Endstand. Nur largeGroupMode.
 export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const de = state.language !== 'en';
+  // Kolosseum-Look? Steuert Award-BG UND Cinzel gemeinsam (s. Import-Kommentar).
+  const arenaLook = qqArenaType(state);
+  const ceremonyFont = arenaLook ? 'var(--font-arena)' : 'var(--font-game)';
   const sorted = state.nestedTeams ? qqSortedGroups(state) : qqSortedTeams(state);
   const winner = sorted[0];
   const shown = sorted.slice(0, 10);
@@ -848,7 +860,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             durch die Fraktions-Szenen (der Scrim daempft das Flackern), beim
             Einrasten auf dem Sieger ein weicher Settle-Puls. Zwei Layer: dediziertes
             award-<slug>.webp (falls vorhanden) ueber faction-<slug>.webp. */}
-        <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/award-${awardBgSlug}.webp), url(/arena-bg/faction-${awardBgSlug}.webp)`, backgroundSize: 'cover, cover', backgroundPosition: 'center, center', backgroundRepeat: 'no-repeat, no-repeat', filter: awardBgLocked ? 'none' : 'brightness(1.07)', animation: awardBgLocked ? 'qqAwardBgSettle 0.6s var(--qq-ease-out-cubic) both' : undefined }} />
+        {arenaLook && <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', backgroundImage: `url(/arena-bg/award-${awardBgSlug}.webp), url(/arena-bg/faction-${awardBgSlug}.webp)`, backgroundSize: 'cover, cover', backgroundPosition: 'center, center', backgroundRepeat: 'no-repeat, no-repeat', filter: awardBgLocked ? 'none' : 'brightness(1.07)', animation: awardBgLocked ? 'qqAwardBgSettle 0.6s var(--qq-ease-out-cubic) both' : undefined }} />}
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'linear-gradient(180deg, rgba(8,6,16,0.64) 0%, rgba(8,6,16,0.44) 30%, rgba(8,6,16,0.5) 66%, rgba(8,6,16,0.8) 100%)' }} />
         {/* Sieger-Farbflut blueht erst beim Einrasten auf. */}
         <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: `radial-gradient(ellipse 72% 60% at 50% 46%, ${color}33 0%, transparent 62%)`, opacity: awardBgLocked ? 1 : 0, transition: 'opacity 0.55s ease' }} />
@@ -870,7 +882,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           </div>
         </div>
         {/* Titel + Leistung ZUERST — dann (nach kurzer Pause) die Enthüllung. */}
-        <div style={{ position: 'relative', zIndex: 5, fontFamily: 'var(--font-arena)', fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
+        <div style={{ position: 'relative', zIndex: 5, fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
         <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.5s ease 0.42s both' }}>{beat.stat}</div>
         {/* Enthüllung: das Banner der Gewinnerfraktion entrollt sich (gleiche
             Banner-Geste wie in der Krönung), Wappen + Name fahren ein. */}

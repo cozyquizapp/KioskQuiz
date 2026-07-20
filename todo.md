@@ -198,12 +198,17 @@ Broadcast-Fan-out 33 ms, Payload 15,3 KB) → Broadcast-Throttle vorerst nicht n
 - [ ] **EN-Content-Verify:** ✅ **automatisiert (2026-07-20):** `npm run check:en` (Repo) / `check:en:live`
       (echte Mongo-Drafts), Exit 1 bei Fehlern → als Gate vorm Event nutzbar. Trennt „zeigt garantiert Deutsch"
       (Fehler) von „meist sprachneutral" (Warnung), überspringt deaktivierte Mechaniken.
-      🔴 **6 ECHTE FEHLER offen, live bestätigt** — alle in der `order`-Mechanik (der Order-Seed selbst ist
-      sauber, die Lücke sitzt in diesen 4 Drafts): `qq-vol-2` + `qq-vol-5` fehlt `itemsEn`; `qq-test-harry-potter`
-      + `qq-test-hamburg` fehlt `itemsEn` **und** `criteriaEn` („ältestes zuerst" / „meiste Einwohner zuerst").
-      Im EN-Spiel stünden dort deutsche Items + deutsches Sortier-Kriterium auf dem Beamer.
-      ⚠️ Fix-Weg beachten: `qq-vol-*` sind source-generiert (Read-Migration überschreibt die DB) → NICHT
-      `qqDrafts.json` editieren, sondern die Quelle bzw. den vorhandenen `/api/qq/drafts/:id/translate`-Endpoint.
+      ✅ **Die 6 Fehler sind GEFIXT (2026-07-20, `bd8c59d1`)** — Quelle gefüllt + Migration, die fehlende
+      EN-Felder in `order`-Fragen nachzieht. Rot→grün belegt (Checker 6 Fehler → Migration lokal echt
+      laufen lassen → 0 Fehler). Deckt `qq-vol-*` **und** die Extra-Test-Drafts ab (die kannten vorher
+      nur „add if missing", wurden also nie aufgefrischt).
+      ⚠️ Die Migration füllt **nur fehlende** Felder (anders als die Drift-Überschreiber daneben), sonst
+      hätte sie Übersetzungen aus dem Studio bzw. `/translate` plattgemacht.
+      🔎 **Nach dem Coolify-Deploy einmal `npm run check:en:live` fahren** — die Live-DB kann Drafts
+      haben, die der Repo-Lauf gar nicht sieht.
+      ⚠️ Fix-Weg für Neues: `qqDrafts.json` ist **gitignored** (reines Laufzeit-Artefakt) und File/DB
+      gewinnen über den Source (`createSampleQQDrafts` läuft nur bei `length===0`) → NIE das JSON
+      editieren, sondern Quelle **plus** Migration, oder den `/api/qq/drafts/:id/translate`-Endpoint.
       Für den EIGENTLICHEN Event-Draft gilt das weiter, sobald du ihn baust.
 - [ ] **Stechen-Trockentest** beide Modi (normal + Arena) + Auto-Reveal-Timer. Fummelig ist nur,
       künstlich einen Gleichstand herzustellen.

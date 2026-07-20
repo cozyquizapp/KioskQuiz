@@ -8105,7 +8105,19 @@ function createSampleQQDrafts(): any[] {
     // Runde 1 — Aufwaermen
     q(`${pd}-p1-0`, 1, 0, 'SCHAETZCHEN', { text: 'Wie viele Bundesländer hat Deutschland?', textEn: 'How many states does Germany have?', answer: '16', targetValue: 16, unit: 'Länder', unitEn: 'states', funFact: 'Das kleinste ist Bremen, das größte Bayern.' }),
     q(`${pd}-p1-1`, 1, 1, 'MUCHO', { text: 'In welcher Stadt steht das Brandenburger Tor?', textEn: 'In which city is the Brandenburg Gate?', answer: 'Berlin', options: ['Hamburg', 'Berlin', 'München', 'Köln'], optionsEn: ['Hamburg', 'Berlin', 'Munich', 'Cologne'], correctOptionIndex: 1, funFact: 'Das Brandenburger Tor wurde 1791 vollendet — nach dem Vorbild der Athener Akropolis.' }),
-    q(`${pd}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne ein Getränk, das man in einer Bar bestellt — reihum!', textEn: 'Name a drink you order at a bar — one by one!', answer: 'Bier, Wein, Cola, Wasser, Gin Tonic, Aperol Spritz, Whisky, Wodka, Rum, Cocktail, Sekt, Kaffee, Espresso, Limonade, Saft, Mojito, Margarita, Caipirinha, Longdrink, Radler, Weißwein, Rotwein, Prosecco, Tequila, Bacardi', answerEn: 'Beer, Wine, Cola, Water, Gin and tonic, Aperol Spritz, Whisky, Vodka, Rum, Cocktail, Sparkling wine, Coffee, Espresso, Lemonade, Juice, Mojito, Margarita, Caipirinha, Longdrink, Shandy, White wine, Red wine, Prosecco, Tequila, Bacardi', bunteTuete: { kind: 'hotPotato' }, funFact: 'Der wohl älteste Cocktail der Welt ist der Sazerac — erfunden Mitte des 19. Jahrhunderts in New Orleans.' }),
+    // 2026-07-20 (Wolf): war hotPotato → jetzt crowdTop (Top-Antworten). Nicht
+    // geloescht, sondern umgestellt: die Phasen-Mathematik rechnet fest mit 5
+    // Fragen je Runde, ein Loeschen haette die Runde auf 4 verkuerzt. crowdTop
+    // passt inhaltlich 1:1 („nenne EIN Getraenk") und fehlte dem Pitch noch
+    // (top5 sitzt schon in R2.3).
+    q(`${pd}-p1-2`, 1, 2, 'BUNTE_TUETE', { text: 'Nenne EIN Getränk, das man in einer Bar bestellt.', textEn: 'Name ONE drink you order at a bar.', answer: 'Bier, Wein, Cola, Wasser, Gin Tonic, Aperol Spritz', answerEn: 'Beer, Wine, Cola, Water, Gin and tonic, Aperol Spritz', bunteTuete: { kind: 'crowdTop', answers: [
+      { label: 'Bier', labelEn: 'Beer', aliases: ['Pils', 'Helles', 'Weizen'], aliasesEn: ['Lager', 'Ale'] },
+      { label: 'Wein', labelEn: 'Wine', aliases: ['Weißwein', 'Rotwein'], aliasesEn: ['White wine', 'Red wine'] },
+      { label: 'Cola', labelEn: 'Cola', aliases: ['Coca Cola'], aliasesEn: ['Coke'] },
+      { label: 'Wasser', labelEn: 'Water', aliases: ['Mineralwasser'], aliasesEn: ['Sparkling water'] },
+      { label: 'Gin Tonic', labelEn: 'Gin and tonic', aliases: ['Gin'], aliasesEn: ['Gin'] },
+      { label: 'Aperol Spritz', labelEn: 'Aperol Spritz', aliases: ['Aperol'], aliasesEn: ['Aperol'] },
+    ] }, funFact: 'Der wohl älteste Cocktail der Welt ist der Sazerac — erfunden Mitte des 19. Jahrhunderts in New Orleans.' }),
     q(`${pd}-p1-3`, 1, 3, 'ZEHN_VON_ZEHN', { text: 'Welches Tier ist bekannt für seinen sehr langen Hals?', textEn: 'Which animal is known for its very long neck?', answer: 'Giraffe', options: ['Elefant', 'Giraffe', 'Zebra'], optionsEn: ['Elephant', 'Giraffe', 'Zebra'], correctOptionIndex: 1, funFact: 'Eine Giraffe hat trotz des langen Halses genau 7 Halswirbel — genau wie der Mensch.' }),
     q(`${pd}-p1-4`, 1, 4, 'CHEESE', { text: 'Welches Bauwerk ist hier zu sehen?', textEn: 'Which landmark is shown here?', answer: 'Eiffelturm', answerEn: 'Eiffel Tower', image: { url: 'https://upload.wikimedia.org/wikipedia/commons/a/a8/Tour_Eiffel_Wikimedia_Commons.jpg', layout: 'fullscreen' as const, animation: 'none' as const }, funFact: 'Der Eiffelturm war als temporäres Bauwerk für die Weltausstellung 1889 gedacht.' }),
     // Runde 2 — Finale

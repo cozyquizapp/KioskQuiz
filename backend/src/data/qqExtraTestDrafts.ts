@@ -423,14 +423,23 @@ const caQs = [
       },
       "funFact": "Salami und Käse sind fast überall die Top-Nennungen — Ananas spaltet die Runde."
     }),
+  // 2026-07-20 (Wolf): war hotPotato — in der Arena wird Hot Potato ohnehin hart
+  // uebersprungen (qqRooms.ts largeGroupMode-Guard), die Runde waere also auf 4
+  // Fragen geschrumpft. Nicht geloescht (Phasen-Mathematik rechnet fest mit 5 je
+  // Runde), sondern auf top5 umgestellt: das war die EINZIGE Bunte-Tuete-Variante,
+  // die diesem "Alle Kategorien"-Draft noch fehlte (crowdTop gibt's schon 2x).
   q('qq-test-cozy-arena-neu-p2-1', 2, 1, 'BUNTE_TUETE', {
-      "text": "Nenne ein Tier, das man im Zoo sieht — reihum!",
-      "answer": "Löwe, Elefant, Giraffe, Affe, Pinguin, Zebra, Tiger, Bär, Nashorn, Flamingo, Krokodil, Erdmännchen",
-      "textEn": "Name a zoo animal — one by one!",
+      "text": "Nennt 5 Tiere, die man im Zoo sieht.",
+      "answer": "Löwe, Elefant, Giraffe, Affe, Pinguin",
+      "textEn": "Name 5 animals you see at the zoo.",
+      "answerEn": "Lion, Elephant, Giraffe, Monkey, Penguin",
       "bunteTuete": {
-        "kind": "hotPotato"
+        "kind": "top5",
+        "answers": ["Löwe", "Elefant", "Giraffe", "Affe", "Pinguin"],
+        "answersEn": ["Lion", "Elephant", "Giraffe", "Monkey", "Penguin"],
+        "aliases": [["Loewe"], ["Elefanten"], ["Giraffen"], ["Affen", "Gorilla", "Schimpanse"], ["Pinguine"]]
       },
-      "funFact": "Reihum ein Tier nennen, ohne zu wiederholen — wer zögert oder patzt, scheidet aus."
+      "funFact": "Der Berliner Zoo zeigt mehr Arten als jeder andere Zoo der Welt."
     }),
   q('qq-test-cozy-arena-neu-p2-2', 2, 2, 'BUNTE_TUETE', {
       "text": "Sortiert diese Erfindungen chronologisch — älteste zuerst.",

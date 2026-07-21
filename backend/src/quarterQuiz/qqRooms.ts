@@ -2538,14 +2538,22 @@ export function qqMegaEventScore(room: QQRoomState): void {
   // 2026-07-12 (Wolf, Modell C): Fraktions-Score = Ø der Pro-Handy-Punkte (0–100).
   // Gilt einheitlich fuer ALLE Kategorien (Distanz inklusive, da scoreSum die Naehe
   // schon enthaelt). Groessen-fair, weil Mittelwert unabhaengig von der Handy-Zahl.
-  const factionScore = (g: Grp) => (g.total > 0 ? g.scoreSum / g.total : 0);
+  // 2026-07-21 (Perfektionist-Audit): auf 0–100 clampen. `scoreSum` kann Punkte
+  // eines Handys enthalten, das nach dem Antworten disconnectet, waehrend `total`
+  // nur verbundene Handys zaehlt (bewusst, Fairness) → der Quotient kann sonst >100
+  // steigen und die Fraktion ueber eine perfekte Runde hinaus aufblaehen.
+  const factionScore = (g: Grp) => (g.total > 0 ? Math.min(100, g.scoreSum / g.total) : 0);
   // Ø-Submit-Speed der richtigen Handys — jetzt nur noch Tiebreak (0–100-Scores
   // sind kontinuierlich, exakte Gleichstaende selten). Belohnt schnelle Fraktionen.
   const avgSpeed = (g: Grp) => (g.speedCount > 0 ? g.speedSum / g.speedCount : Infinity);
   arr.sort((a, b) => {
     const sa = factionScore(a), sb = factionScore(b);
     if (sb !== sa) return sb - sa;
-    return avgSpeed(a) - avgSpeed(b);
+    // 2026-07-21 (Perfektionist-Audit): NaN-sicher — bei zwei 0-Punkte-Fraktionen
+    // ist avgSpeed beidseitig Infinity, und Infinity - Infinity = NaN → undefinierte
+    // Sortierung. Gleichstand explizit auf 0 abbilden.
+    const da = avgSpeed(a), db = avgSpeed(b);
+    return da === db ? 0 : da - db;
   });
   // Finale-Multiplikator („steigende Einsaetze"): letzte Phase x2, allerletzte
   // Frage x3. Nutzt die bestehende Phasen-Struktur (gamePhaseIndex/totalPhases).
@@ -7077,10 +7085,12 @@ export function qqCozyGameSelectWinner(
   room.cozyGame.winnerTeamIds = validIds.slice();
 
   // Bei Final-Slot: Sieger zählen als Final-Kat-Win (siehe COZYGAMES.md).
+  // 2026-07-21 (Perfektionist-Audit, Scoring Finding 1): finalPhaseWins hier NICHT
+  // mehr direkt hochzaehlen — qqCozyGameAdvanceToPlacement legt die Sieger in
+  // _currentQuestionWinners, und qqTickFinalPhaseWinReturn (die „Quelle der
+  // Wahrheit") zaehlt sie danach. Die frühere Direkt-Zaehlung war ein DOPPELTER
+  // Count (cozy-Sieger bekam 2 statt 1 Final-Kat-Win → verfaelschte Wett-Boni).
   if (room.cozyGame.slotKind === 'finalSlot') {
-    for (const id of validIds) {
-      room.finalPhaseWins[id] = (room.finalPhaseWins[id] ?? 0) + 1;
-    }
     room.cozyGameFinalSlotPlayed = true;
   } else {
     if (!Array.isArray(room.cozyGamesPlayedAfterPhases)) {

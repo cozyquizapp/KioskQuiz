@@ -43,6 +43,10 @@ const SKIP_KEYS = new Set<string>([
   '_comebackHLTimerHandle',
   '_cozyGameTimerHandle',
   '_cozyGameOnExpire',
+  '_bluffReviewWatchdog',
+  // 2026-07-21 (Socket-Audit): Besitzer-Socket-IDs pro Team sind ueber Restarts
+  // hinweg bedeutungslos (Sockets ueberleben keinen Neustart) → nicht persistieren.
+  '_teamSockets',
 ]);
 
 function sanitize(room: QQRoomState): unknown {

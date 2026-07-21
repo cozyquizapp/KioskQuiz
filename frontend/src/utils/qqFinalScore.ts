@@ -42,7 +42,16 @@ export function qqFinalTotal(s: QQStateUpdate, teamId: string, awardPts?: Record
 /** Teams nach finalem Gesamt-Score sortiert (Sieger zuerst). Tiebreak: totalCells DESC. */
 export function qqFinalSortedTeams(s: QQStateUpdate): QQTeam[] {
   const ap = qqAwardPoints(s);
+  // 2026-07-21 (Perfektionist-Audit): einen aufgeloesten Stechen-Sieger auf Rang 1
+  // ziehen — sonst zeigte die Handy-GameOver-Karte den Grid-Fuehrer, waehrend der
+  // Beamer (qqSortedTeams → Backend-sortedTeamIds) den Stechen-Sieger kroente.
+  // Identisch zur Backend-Regel in qqSortedTeamIds (qqRooms.ts).
+  const tieWinnerId = s.tieBreakerWinnerId ?? null;
   return [...s.teams].sort((a, b) => {
+    if (tieWinnerId) {
+      if (a.id === tieWinnerId && b.id !== tieWinnerId) return -1;
+      if (b.id === tieWinnerId && a.id !== tieWinnerId) return 1;
+    }
     const ta = qqFinalTotal(s, a.id, ap);
     const tb = qqFinalTotal(s, b.id, ap);
     if (tb !== ta) return tb - ta;

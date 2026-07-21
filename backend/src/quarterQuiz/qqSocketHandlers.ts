@@ -56,6 +56,7 @@ import {
   qqStartFinalBetting, qqSubmitFinalBet, qqFinishFinalBetting, qqFinishFinalBettingIntro, qqResolveFinalBets, qqUndoLastAction,
   qqFinalRevealPlaceStack,
   qqGoBackSlide,
+  qqClearRoundTimersAndState,
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
@@ -1237,6 +1238,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
         socket.join(payload.roomCode);
         socket.data.qqTeamId   = payload.teamId;
         socket.data.qqRoomCode = payload.roomCode;
+        // 2026-07-21 (Socket-Audit #1): den zuletzt beitretenden Socket als aktuellen
+        // Besitzer des Teams merken. Nach einem WLAN-Blip reconnectet das Handy als
+        // NEUER Socket und re-joint mit derselben teamId → hier uebernimmt der neue
+        // Socket. Der (Sekunden spaeter) feuernde disconnect des alten Sockets darf
+        // das dann aktiv verbundene Team nicht offline stempeln (siehe disconnect).
+        (room as any)._teamSockets = (room as any)._teamSockets || {};
+        (room as any)._teamSockets[payload.teamId] = socket.id;
         broadcast(io, payload.roomCode);
         ok(ack);
         // 2026-05-06 (Wolf 'in der Lobby auch anzeigen, Team X mit Code
@@ -2562,7 +2570,13 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const phaseBefore = room.phase;
         qqGoBackSlide(room);
         if (phaseBefore === 'QUESTION_ACTIVE' && room.phase === 'PHASE_INTRO') {
-          qqStopTimer(room);
+          // 2026-07-21 (State-Machine-Audit Finding 2): nicht nur den Haupt-Timer,
+          // sondern ALLE bei der Frage-Aktivierung gestarteten Sub-Mechanik-Timer
+          // + deren Guard-State abraeumen (Connections/CozyGame/Bluff/OnlyConnect) —
+          // sonst feuert z.B. ein Connections-Auto-Reveal in die PHASE_INTRO zurueck.
+          qqClearRoundTimersAndState(room);
+          stopConnectionsAiTimers(payload.roomCode);
+          stopOnlyConnectAiTimers(payload.roomCode);
         }
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -2603,6 +2617,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         qqResetRoom(room);
+        // 2026-07-21 (State-Machine-Audit): auch die roomCode-basierten AI-Timer-
+        // Maps stoppen (qqResetRoom raeumt nur die room-lokalen Handles).
+        stopConnectionsAiTimers(payload.roomCode);
+        stopOnlyConnectAiTimers(payload.roomCode);
         deleteSavedRoom(payload.roomCode).catch(() => {});
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -3639,6 +3657,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       if (qqTeamId && qqRoomCode) {
         const room = getQQRoom(qqRoomCode);
         if (room) {
+          // 2026-07-21 (Socket-Audit #1/#2): NUR reagieren, wenn dieser Socket noch
+          // der aktuelle Besitzer des Teams ist. Hat ein neuerer Socket das Team nach
+          // einem Reconnect uebernommen (oder teilt sich ein zweites Geraet den Code),
+          // ist dieser disconnect stale → das (aktiv verbundene) Team NICHT offline
+          // stempeln und keinen Auto-Skip-Watchdog ausloesen (der sonst dem live
+          // spielenden Team seinen Platzier-Zug wegskippt).
+          const owner = (room as any)._teamSockets?.[qqTeamId];
+          if (owner && owner !== socket.id) return;
+          if ((room as any)._teamSockets) delete (room as any)._teamSockets[qqTeamId];
           // 2026-05-03 Wolf-Bug 'Comeback haengt manchmal trotz Auto-Skip':
           // Log wenn das disconnectende Team das aktuelle Comeback-Team ist —
           // dann muesste der Mod-Autoplay nach 8s qq:skipCurrentTeam feuern.

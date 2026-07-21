@@ -3684,6 +3684,28 @@ export function qqTriggerComeback(room: QQRoomState): void {
  * Candidate-Set gesetzt — Mod resolved manuell via qqResolveTieBreaker
  * (typischerweise nach kurzer mündlicher Stechfrage im Pub).
  */
+// 2026-07-21 (Perfektionist-Audit): der ECHTE Endscore = largestConnected +
+// Final-Wett-Bonus + Award-Punkte (Underdog +2, Meisterklauer +1, Speedy +1).
+// MUSS mit frontend/src/utils/qqFinalScore.ts (qqAwardPoints/qqFinalTotal)
+// uebereinstimmen. Ohne finalBetResolution + endAwards (Nicht-Wett-Pfad) faellt
+// das auf largestConnected zurueck → identisch zum alten Verhalten.
+function qqEndAwardPointsBackend(room: QQRoomState): Record<string, number> {
+  const a = room.endAwards;
+  const pts: Record<string, number> = {};
+  if (!a) return pts;
+  if (a.underdog) pts[a.underdog] = (pts[a.underdog] ?? 0) + 2;
+  if (a.meisterklauer) pts[a.meisterklauer] = (pts[a.meisterklauer] ?? 0) + 1;
+  if (a.speedy) pts[a.speedy] = (pts[a.speedy] ?? 0) + 1;
+  return pts;
+}
+function qqFinalTotalBackend(room: QQRoomState, teamId: string, awardPts: Record<string, number>): number {
+  const t = room.teams[teamId];
+  if (!t) return 0;
+  return (t.largestConnected ?? 0)
+    + (room.finalBetResolution?.[teamId]?.totalBonus ?? 0)
+    + (awardPts[teamId] ?? 0);
+}
+
 export function detectTieBreakerCandidates(room: QQRoomState): void {
   // Reset (defensiv — falls jemand das doppelt aufruft).
   room.tieBreakerCandidates = [];
@@ -3692,20 +3714,22 @@ export function detectTieBreakerCandidates(room: QQRoomState): void {
   const teams = Object.values(room.teams);
   if (teams.length < 2) return;
 
-  // Top-Score finden
-  let topLargest = -1;
+  // Top-Endscore finden (Endscore-Metrik, Tiebreak totalCells — wie
+  // qqFinalSortedTeams). Ein Stechen ist nur noetig, wenn die Spitze auf BEIDEM
+  // gleichauf ist (der Endscore kann sie sonst schon trennen).
+  const ap = qqEndAwardPointsBackend(room);
+  let topFinal = -Infinity;
   let topTotal = -1;
   for (const t of teams) {
-    if (t.largestConnected > topLargest
-        || (t.largestConnected === topLargest && t.totalCells > topTotal)) {
-      topLargest = t.largestConnected;
+    const ft = qqFinalTotalBackend(room, t.id, ap);
+    if (ft > topFinal || (ft === topFinal && t.totalCells > topTotal)) {
+      topFinal = ft;
       topTotal = t.totalCells;
     }
   }
 
-  // Alle Teams mit identischem (largestConnected, totalCells) zum Top-Score
   const candidates = teams
-    .filter(t => t.largestConnected === topLargest && t.totalCells === topTotal)
+    .filter(t => qqFinalTotalBackend(room, t.id, ap) === topFinal && t.totalCells === topTotal)
     .map(t => t.id);
 
   if (candidates.length >= 2) {
@@ -5295,10 +5319,54 @@ export function qqResume(room: QQRoomState): void {
   room.lastActivityAt = Date.now();
 }
 
+// ── Zentrales Timer- + Sub-Mechanik-State-Cleanup ───────────────────────────
+// 2026-07-21 (Perfektionist-Audit, State-Machine Finding 1+2): qqResetRoom und
+// der QUESTION_ACTIVE→PHASE_INTRO-goBack-Bounce stoppten nur den Haupt-Timer und
+// liessen Bluff/Connections/CozyGame/OnlyConnect/ComebackHL-Timer laufen — UND
+// setzten deren Guard-State (bluffPhase / connections.phase / cozyGame.phase)
+// nicht zurueck. Die Callbacks guarden auf genau diese Sub-States (nicht auf
+// room.phase), also feuerten geleakte Timer in die frische LOBBY / PHASE_INTRO
+// und mutierten sie (Beamer sprang in toten Bluff-Vote / Connections-Reveal).
+// Dieser Helper raeumt ALLE room-lokalen Timer-Handles ab UND setzt die Sub-
+// Mechanik-States zurueck. Die roomCode-basierten AI-Timer-Maps
+// (stopConnectionsAiTimers/stopOnlyConnectAiTimers) leben in den AI-Modulen und
+// werden zusaetzlich an den Socket-Handler-Aufrufstellen gestoppt.
+// Analog zu qqPause (das es fuer die Pause vollstaendig macht), aber inkl. der
+// von qqPause NICHT abgedeckten Handles (Review-Watchdog, CozyGame) + State-Reset.
+export function qqClearRoundTimersAndState(room: QQRoomState): void {
+  qqStopTimer(room);
+  qqClearHotPotatoTimer(room);
+  if ((room as any)._mapRevealTimerHandle) { clearTimeout((room as any)._mapRevealTimerHandle); (room as any)._mapRevealTimerHandle = null; }
+  // Bluff: write/vote-Timer + State (bluffPhase=null) via qqBluffReset, plus der
+  // separate Review-Watchdog (den qqBluffReset NICHT abdeckt).
+  if ((room as any)._bluffReviewWatchdog) { clearTimeout((room as any)._bluffReviewWatchdog); (room as any)._bluffReviewWatchdog = null; }
+  qqBluffReset(room);
+  // Connections: Timer + State-Objekt (Callback guardet connections.phase==='active').
+  clearConnectionsTimer(room);
+  room.connections = null;
+  // OnlyConnect: Hint-Timer + Winner/Guess-State.
+  clearOnlyConnectHintTimer(room);
+  (room as any).onlyConnectWinnerTeamId = null;
+  (room as any).onlyConnectWinnerHintIdx = null;
+  (room as any).onlyConnectGuesses = [];
+  (room as any).onlyConnectLockedTeams = [];
+  (room as any).onlyConnectStrikes = {};
+  // CozyGame: Timer + State-Objekt (Callback guardet cozyGame.phase==='GAME_ACTIVE').
+  if (room._cozyGameTimerHandle) { clearTimeout(room._cozyGameTimerHandle); room._cozyGameTimerHandle = null; }
+  room.cozyGame = null;
+  // ComebackHL: Auto-Reveal-Timer (comebackHL-State wird von den Aufrufern genullt).
+  if (room._comebackHLTimerHandle) { clearTimeout(room._comebackHLTimerHandle); room._comebackHLTimerHandle = null; }
+  // Phasen-Snapshot (Fund 3) darf einen Reset/Bounce nicht ueberleben.
+  (room as any)._phaseSnapshot = null;
+}
+
 // ── Reset ─────────────────────────────────────────────────────────────────────
 export function qqResetRoom(room: QQRoomState): void {
   qqStopTimer(room);
   qqClearHotPotatoTimer(room);
+  // 2026-07-21: alle Sub-Mechanik-Timer + deren Guard-State abraeumen (sonst
+  // feuern geleakte Bluff/Connections/CozyGame-Timer in die frische Lobby).
+  qqClearRoundTimersAndState(room);
   delete room._placementQueue;
   room.answers         = [];
   room.buzzQueue       = [];

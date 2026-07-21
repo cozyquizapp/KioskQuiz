@@ -2330,6 +2330,24 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   <span style={{ marginLeft: 'auto', fontSize: 12, fontWeight: 900, color: connectedTeams > 0 ? '#22c55e' : '#94a3b8' }}>
                     {connectedTeams}/{s.teams.length} verbunden
                   </span>
+                  {/* 2026-07-21 (Wolf 'wolfpack-bots bleiben nach format-wechsel, nur
+                      einzeln loeschbar'): Bulk-Kick raeumt alle Teams/Bots auf einen
+                      Klick (z.B. Cozy-Pack-Reste), ohne wie 'Zurueck zum Setup' die
+                      Einstellungen/das Format zurueckzusetzen. */}
+                  {s.teams.length > 1 && (
+                    <button
+                      onClick={() => {
+                        if (!window.confirm(`Alle ${s.teams.length} Teams entfernen? (Einstellungen & Format bleiben)`)) return;
+                        for (const t of s.teams) emit('qq:kickTeam', { roomCode, teamId: t.id });
+                      }}
+                      title="Alle Teams/Bots entfernen (Einstellungen bleiben)"
+                      style={{
+                        padding: '4px 11px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                        border: '1px solid rgba(239,68,68,0.35)', background: 'rgba(239,68,68,0.08)',
+                        color: QQ_COLORS.red500, fontSize: 11, fontWeight: 900,
+                      }}
+                    >✕ Alle entfernen</button>
+                  )}
                 </div>
                 {(s as any).nestedTeams ? (
                   <MegaFactionLobby teams={s.teams} emit={emit} roomCode={roomCode} />
@@ -5802,6 +5820,12 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
   avatarSetId?: string;
 }) {
   const [open, setOpen] = useState(false);
+  // 2026-07-21 (Wolf 'reset-menue soweit unten dass man es nicht erreicht'):
+  // Das Dropdown ist position:absolute → es vergroessert die scrollbare Seite
+  // NICHT. Der Trigger sitzt ganz unten in der App-Steuerung, also lief das nach
+  // unten geoeffnete Menue aus dem Viewport. Jetzt: nach OBEN aufklappen, wenn
+  // unten zu wenig Platz ist (+ interner Scroll als Sicherheitsnetz).
+  const [openUp, setOpenUp] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
   const ref = useRef<HTMLDivElement | null>(null);
   // Dev-Teil (Dummy-Teams) nur wenn Dev-Tools freigeschaltet (?dev=1). Restart +
@@ -5850,13 +5874,19 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
     // 2-stufig (Dropdown) + PIN-geschützt.
     <div ref={ref} style={{ position: 'relative', marginLeft: 'auto', paddingLeft: 8 }}>
       <button
-        onClick={() => {
+        onClick={(e) => {
           const willOpen = !open;
           // 2026-05-20 (Wolf): PIN beim Oeffnen des Menues abfragen, damit
           // die Buttons drinnen direkt klickbar sind ohne Mid-Action-Prompt.
           if (willOpen && !hasDevPin()) {
             const pin = getDevPin();
             if (!pin) return; // User hat Prompt abgebrochen → Menue bleibt zu
+          }
+          // Richtung bestimmen: reicht der Platz unter dem Trigger fuers Menue?
+          if (willOpen) {
+            const rect = e.currentTarget.getBoundingClientRect();
+            const spaceBelow = window.innerHeight - rect.bottom;
+            setOpenUp(spaceBelow < 300);
           }
           setOpen(willOpen);
         }}
@@ -5872,9 +5902,11 @@ function DangerMenu({ onRestart, onBackToSetup, roomCode, phase, avatarSetId }: 
       >⋯ Reset</button>
       {open && (
         <div style={{
-          position: 'absolute', right: 0, top: '100%', marginTop: 4, zIndex: 20,
+          position: 'absolute', right: 0, zIndex: 20,
+          ...(openUp ? { bottom: '100%', marginBottom: 4 } : { top: '100%', marginTop: 4 }),
           background: '#1B1510', border: '1px solid rgba(239,68,68,0.3)',
           borderRadius: 8, padding: 6, minWidth: 260,
+          maxHeight: 'min(70vh, 440px)', overflowY: 'auto',
           boxShadow: '0 12px 28px rgba(0,0,0,0.6)',
         }}>
           <button

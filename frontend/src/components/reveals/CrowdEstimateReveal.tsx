@@ -421,7 +421,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                 fontSize: 'clamp(11px,1.15cqw,18px)', fontWeight: 900, color: '#7dd3fc', whiteSpace: 'nowrap',
                 background: 'rgba(56,189,248,0.14)', border: '1.5px solid rgba(56,189,248,0.45)',
                 animation: !reduce ? 'qqCE2Rise 0.5s var(--qq-enter) 0.2s both' : 'none',
-              }}>🌊 {lang === 'en' ? `The crowd nailed it — swarm median only Δ ${fmt(swarmDist)} off` : `Die Masse lag goldrichtig — Schwarm-Median nur Δ ${fmt(swarmDist)} daneben`}</div>
+              }}>🌊 {lang === 'en' ? `The crowd nailed it: swarm median only Δ ${fmt(swarmDist)} off` : `Die Masse lag goldrichtig: Schwarm-Median nur Δ ${fmt(swarmDist)} daneben`}</div>
             )}
           </>
         )}

@@ -1035,8 +1035,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                           : `${t.gamesPlayed} games · ${t.wins ?? 0} wins`}>
                           {/* 2026-06-28 (Beamer-Review 'kein Emoji'): 👋 raus. */}
                           {de
-                            ? `Willkommen zurück — ${t.gamesPlayed}. Mal dabei`
-                            : `Welcome back — visit #${t.gamesPlayed}`}
+                            ? `Willkommen zurück: ${t.gamesPlayed}. Mal dabei`
+                            : `Welcome back: visit #${t.gamesPlayed}`}
                         </div>
                       )}
                     </div>

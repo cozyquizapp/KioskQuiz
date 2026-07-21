@@ -610,8 +610,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       ? 'Eigenes Feld tippen, wird bis Spielende geschützt'
       : 'Tap one of your cells, shielded till end of game';
     if (isSandLock) return lang === 'de'
-      ? 'Feld tippen (Gegner oder leer) — 3 Fragen gebannt'
-      : 'Tap a cell (enemy or empty) — banned for 3 questions';
+      ? 'Feld tippen (Gegner oder leer): 3 Fragen gebannt'
+      : 'Tap a cell (enemy or empty): banned for 3 questions';
     if (isSteal) return t.placement.tapOpponent[lang];
     if (isJoker) return lang === 'de' ? '⭐ Bonus! Tippe auf ein freies Feld' : '⭐ Bonus! Tap an empty field';
     return t.placement.tapEmpty[lang];

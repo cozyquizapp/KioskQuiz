@@ -2924,12 +2924,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     ? 'all survived, each gets an action!'
                     : survivorCount === 1
                       ? 'survived, gets an action!'
-                      : `${survivorCount} survived — each gets an action!`)
+                      : `${survivorCount} survived, each gets an action!`)
                 : (everyoneSurvived
                     ? 'alle überlebt, jedes Team bekommt eine Aktion!'
                     : survivorCount === 1
                       ? 'überlebt, bekommt eine Aktion!'
-                      : `${survivorCount} haben überlebt — jedes Team bekommt eine Aktion!`);
+                      : `${survivorCount} haben überlebt, jedes Team bekommt eine Aktion!`);
               return (
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',

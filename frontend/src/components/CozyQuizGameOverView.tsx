@@ -556,7 +556,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                       flex: 1, minWidth: 0,
                       fontSize: nameFs,
                       fontWeight: 900, color: tm.color, lineHeight: 1.1,
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                      // 2026-07-21 (Polish-Audit): 2-zeilig clampen statt Ellipsis —
+                      // auf dem Beamer half das title= nichts, lange selbst gesetzte
+                      // Teamnamen waren in der Schluss-Rangliste abgeschnitten.
+                      display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
+                      overflow: 'hidden', wordBreak: 'break-word',
                     }}>{tm.name}</span>
                     {/* v3 round 9 (User-Wunsch 'tie-transparenz im game-over'):
                         Zeige IMMER 'verbunden · gesamt' damit Tie-Break sichtbar ist

@@ -143,7 +143,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
             </div>
           )}
           <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>
-            {de ? `⚡ Auf die Handys — tippt eure Zahl! (${answeredCount} abgegeben)` : `⚡ Grab your phones — enter your number! (${answeredCount} in)`}
+            {de ? `⚡ Auf die Handys, tippt eure Zahl! (${answeredCount} abgegeben)` : `⚡ Grab your phones, enter your number! (${answeredCount} in)`}
           </div>
         </>
       )}

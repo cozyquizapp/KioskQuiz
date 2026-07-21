@@ -4904,7 +4904,7 @@ app.post('/api/quizzes/custom', requirePin, (req, res) => {
 });
 
 // Bild-Upload
-app.post('/api/upload/question-image', upload.single('file'), async (req, res) => {
+app.post('/api/upload/question-image', requirePin, upload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
   const { questionId } = req.body as { questionId?: string };
   const localUrl = `/uploads/questions/${req.file.filename}`;
@@ -4935,7 +4935,7 @@ app.post('/api/upload/question-image', upload.single('file'), async (req, res) =
 });
 
 // Audio upload (music per question / sound slots)
-app.post('/api/upload/question-audio', audioUpload.single('file'), async (req, res) => {
+app.post('/api/upload/question-audio', requirePin, audioUpload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Keine Audiodatei erhalten' });
   const localUrl = `/uploads/audio/${req.file.filename}`;
 
@@ -4955,7 +4955,7 @@ app.post('/api/upload/question-audio', audioUpload.single('file'), async (req, r
 });
 
 // Blitz image upload
-app.post('/api/upload/blitz-image', blitzUpload.single('file'), async (req, res) => {
+app.post('/api/upload/blitz-image', requirePin, blitzUpload.single('file'), async (req, res) => {
   if (!req.file) return res.status(400).json({ error: 'Kein Bild erhalten' });
   const localUrl = `/uploads/blitz/${req.file.filename}`;
 
@@ -4978,7 +4978,7 @@ app.post('/api/upload/blitz-image', blitzUpload.single('file'), async (req, res)
   }
 });
 
-app.delete('/api/upload/blitz-image', (req, res) => {
+app.delete('/api/upload/blitz-image', requirePin, (req, res) => {
   const { imageUrl } = req.body as { imageUrl?: string };
   if (!imageUrl) return res.status(400).json({ error: 'imageUrl fehlt' });
 
@@ -5004,7 +5004,7 @@ app.delete('/api/upload/blitz-image', (req, res) => {
   return res.json({ ok: true });
 });
 
-app.delete('/api/upload/question-image', (req, res) => {
+app.delete('/api/upload/question-image', requirePin, (req, res) => {
   const { questionId, imageUrl } = req.body as { questionId?: string; imageUrl?: string };
   const url = imageUrl || (questionId ? questionImageMap[questionId] : null);
   if (!url) return res.status(400).json({ error: 'imageUrl oder questionId fehlt' });

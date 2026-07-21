@@ -46,6 +46,23 @@ export const sanitizeString = (input: unknown, maxLength: number = LIMITS.GENERA
 };
 
 /**
+ * 2026-07-21 (Security-Audit): permissiver Display-Sanitizer fuer user-generierte
+ * Anzeigenamen (Teamnamen im Live-Join). Entfernt NUR strukturell gefaehrliche
+ * Zeichen (< >), Null-Bytes und Control-Chars — KEINE HTML-Entity-Escapes, weil
+ * React beim Render bereits escaped (ein zweites Escaping wuerde 'Tom & Jerry' als
+ * 'Tom &amp; Jerry' anzeigen). Umlaute + Emoji bleiben erhalten. Defense-in-Depth
+ * gegen gespeicherte <script>-Payloads fuer kuenftige Nicht-React-Sinks (PDF/CSV).
+ */
+export const sanitizeDisplayName = (input: unknown, maxLength: number): string => {
+  if (typeof input !== 'string') return '';
+  return input
+    .slice(0, maxLength)
+    // eslint-disable-next-line no-control-regex
+    .replace(/[<>\x00-\x1F\x7F]/g, '')
+    .trim();
+};
+
+/**
  * Validate team name: 1-100 chars, alphanumeric + spaces/hyphens
  */
 export const validateTeamName = (input: unknown): { valid: boolean; value: string; error?: string } => {

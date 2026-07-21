@@ -80,6 +80,7 @@ import {
 } from './qqHotPotatoAI';
 import { maybeAutoConnections, stopConnectionsAiTimers } from './qqConnectionsAI';
 import { maybeAutoOnlyConnect, stopOnlyConnectAiTimers } from './qqOnlyConnectAI';
+import { sanitizeDisplayName } from '../validation';
 import {
   maybeAutoComebackChoice, scheduleHLAutoReveal, clearHLAutoReveal, maybeDummyAnswerHL,
 } from './qqComebackHLAI';
@@ -1233,8 +1234,14 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         if (!payload.teamName || typeof payload.teamName !== 'string' || payload.teamName.length > 100) throw new QQError('INVALID_NAME', 'Teamname ungültig (max 100 Zeichen).');
         if (!payload.teamId || typeof payload.teamId !== 'string' || payload.teamId.length > 100) throw new QQError('INVALID_ID', 'TeamId ungültig.');
+        // 2026-07-21 (Security-Audit): oeffentlicher Join-Pfad → Namen permissiv
+        // sanitisieren (< > + Control-Chars raus, Umlaute/Emoji bleiben). Defense-
+        // in-Depth gegen gespeicherte Markup-Payloads (React escaped zwar, aber
+        // kuenftige Nicht-React-Sinks wie Recap-PDF/CSV nicht).
+        const cleanName = sanitizeDisplayName(payload.teamName, 100);
+        if (!cleanName) throw new QQError('INVALID_NAME', 'Teamname ungültig.');
         const room = ensureQQRoom(payload.roomCode);
-        qqJoinTeam(room, payload.teamId, payload.teamName, payload.avatarId, payload.emoji);
+        qqJoinTeam(room, payload.teamId, cleanName, payload.avatarId, payload.emoji);
         socket.join(payload.roomCode);
         socket.data.qqTeamId   = payload.teamId;
         socket.data.qqRoomCode = payload.roomCode;

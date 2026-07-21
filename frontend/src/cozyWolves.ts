@@ -8,20 +8,19 @@
 // im freien String-Feld team.emoji; isCozyWolfSlug() erkennt ihn; ImageAvatar
 // rendert das Wolf-PNG auf der Slot-Farb-Disc, mit 2-Frame-Blinzeln (open/blink).
 
+import { QQ_COZY_WOLVES } from '../../shared/quarterQuizTypes';
+
 export type CozyWolf = { slug: string; label: string; color: string };
 
-// Reihenfolge = die 8 Farb-Slots (slot01..slot08 aus der Lieferung). Namen = Wolfs
-// Wolf-Namen aus den Reference-Crops. `color` nur informativ (Slot-Farbe autoritativ).
-export const COZY_WOLVES: CozyWolf[] = [
-  { slug: 'wolf-orange', label: 'Mika',  color: 'orange' },
-  { slug: 'wolf-green',  label: 'Nuri',  color: 'green'  },
-  { slug: 'wolf-teal',   label: 'Ari',   color: 'teal'   },
-  { slug: 'wolf-violet', label: 'Ylva',  color: 'violet' },
-  { slug: 'wolf-yellow', label: 'Jori',  color: 'yellow' },
-  { slug: 'wolf-blue',   label: 'Levin', color: 'blue'   },
-  { slug: 'wolf-pink',   label: 'Maja',  color: 'pink'   },
-  { slug: 'wolf-red',    label: 'Rurik', color: 'red'    },
-];
+// Reihenfolge = die 8 Farb-Slots (QQ_AVATARS-Index-aligned). Kanonische Quelle für
+// Slug+Name ist QQ_COZY_WOLVES in shared/quarterQuizTypes (damit Backend-Bot-Fill
+// und Frontend-Render dieselben Namen nutzen). `color` aus dem Slug abgeleitet,
+// nur informativ (Slot-Farbe via QQ_AVATARS[i].color ist autoritativ).
+export const COZY_WOLVES: CozyWolf[] = QQ_COZY_WOLVES.map(w => ({
+  slug: w.slug,
+  label: w.name,
+  color: w.slug.replace('wolf-', ''),
+}));
 
 /** Alle Slugs (= die 8 Set-`avatars`, in Slot-Reihenfolge). */
 export const COZY_WOLF_SLUGS: string[] = COZY_WOLVES.map(w => w.slug);

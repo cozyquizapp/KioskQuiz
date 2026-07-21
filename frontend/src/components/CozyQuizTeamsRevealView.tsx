@@ -17,6 +17,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
 import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
+import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
@@ -827,6 +828,16 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={crestSrc(t.emoji)} alt={crestLabel(t.emoji)} draggable={false}
               style={{ width: '92%', height: '92%', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />;
           }
+          // Cozy Pack (Wolf 2026-07-21 'text statt bilder der wölfe'): Slug fiel
+          // sonst in den Roh-Text-Case → der Wolf-Slug wurde als Text gerendert.
+          // Wolf IMMER aus dem Farb-Slot ableiten (nicht aus t.emoji, das bei
+          // Bots/Altdaten abweichen kann) — matcht getAvatarDisplay's Slot-Regel.
+          if (isCozyWolfSlug(t.emoji)) {
+            const slotIdx = QQ_AVATARS.findIndex(a => a.id === t.avatarId);
+            const slug = (slotIdx >= 0 ? COZY_WOLVES[slotIdx]?.slug : undefined) ?? t.emoji;
+            return <img src={cozyWolfSrc(slug)} alt={cozyWolfLabel(slug)} draggable={false}
+              style={{ width: '92%', height: '92%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+          }
           if (t.emoji) return <>{t.emoji}</>;
           return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;
         };
@@ -881,7 +892,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji)) ? 'visible' : 'hidden',
+                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji)) ? 'visible' : 'hidden',
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>

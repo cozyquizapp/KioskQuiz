@@ -93,7 +93,7 @@ import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
 import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories, qqAdvanceFinalReveal, qqBetSlotsCount } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
-import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName, qqMegaFactionSlug } from '../../shared/quarterQuizTypes';
+import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName, qqMegaFactionSlug, qqCozyWolfForSlot } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
 import { normalizeText, similarityScore } from '../../shared/textNormalization';
 import {
@@ -10003,13 +10003,20 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
       } catch { added++; }
     }
   } else {
+    // 2026-07-21 (Wolf 'wölfe haben in botrunden noch nicht ihre namen'): bei
+    // aktivem Cozy Pack bekommt jeder Bot den Namen UND den Wolf-Slug seines
+    // Farb-Slots (slot-gebunden, wie ein echter Spieler beim Wolf-Pick) statt
+    // Funny-Pool + geshuffeltem Emoji. Deckt auch den ?run=1-Harness ab, der
+    // gar keine setAvatars schickt (room.avatarSetId ist die Quelle).
+    const wolfSet = room.avatarSetId === 'cozyWolves';
     for (const av of QQ_AVATARS) {
       if (added >= toAdd) break;
       if (usedAvatars.has(av.id)) continue;
       const teamId = `dev-${av.id}-${Math.random().toString(36).slice(2, 7)}`;
-      const name = namePicks[added] ?? `Team ${av.label}`;
-      // Bot-Emoji aus Pool oder undefined-Fallback (= Set-Slot-Default).
-      const botEmoji = emojiPool[added] ?? undefined;
+      const wolf = wolfSet ? qqCozyWolfForSlot(av.id) : undefined;
+      const name = wolf?.name ?? namePicks[added] ?? `Team ${av.label}`;
+      // Bot-Emoji: Cozy-Pack → Slot-Wolf-Slug; sonst Pool oder undefined (= Set-Slot-Default).
+      const botEmoji = wolf?.slug ?? emojiPool[added] ?? undefined;
       try {
         qqJoinTeam(room, teamId, name, av.id, botEmoji);
         // Dummies haben keinen Socket — connected-Flag explizit true lassen

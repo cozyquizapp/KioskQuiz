@@ -1632,6 +1632,29 @@ export const QQ_AVATARS = [
 
 export type QQAvatar = typeof QQ_AVATARS[number] & { image: string; imageClosed: string };
 
+// ── Cozy Pack (CozyWölfe) — Slot→Wolf (Wolf 2026-07-21) ──────────────────────
+// Slot-gebundenes 8-Wolf-Set: ein illustrierter Wolf je Farb-Slot, in EXAKT der
+// QQ_AVATARS-Reihenfolge (index-aligned). Das ist die KANONISCHE Quelle für
+// Name + Slug + Slot — frontend/src/cozyWolves.ts (Render) und der Bot-Fill
+// (server.ts /dev/fillTeams) ziehen beide hieraus, damit Wolf-Name, PNG-Slug und
+// Farb-Slot nie auseinanderdriften (Bug 2026-07-21: Bots zeigten Funny-Namen
+// statt Wolf-Namen). Farbe steckt im Slug (wolf-<farbe>) + QQ_AVATARS[i].color.
+export const QQ_COZY_WOLVES = [
+  { avatarId: 'fox',     slug: 'wolf-orange', name: 'Mika'  },
+  { avatarId: 'frog',    slug: 'wolf-green',  name: 'Nuri'  },
+  { avatarId: 'panda',   slug: 'wolf-teal',   name: 'Ari'   },
+  { avatarId: 'rabbit',  slug: 'wolf-violet', name: 'Ylva'  },
+  { avatarId: 'unicorn', slug: 'wolf-yellow', name: 'Jori'  },
+  { avatarId: 'raccoon', slug: 'wolf-blue',   name: 'Levin' },
+  { avatarId: 'cow',     slug: 'wolf-pink',   name: 'Maja'  },
+  { avatarId: 'cat',     slug: 'wolf-red',    name: 'Rurik' },
+] as const;
+
+/** Slot (avatarId) → Cozy-Pack-Wolf ({slug,name}), undefined wenn kein Match. */
+export function qqCozyWolfForSlot(avatarId: string): { slug: string; name: string } | undefined {
+  return QQ_COZY_WOLVES.find(w => w.avatarId === avatarId);
+}
+
 // ── Mega-Event-Faktionen (2026-07-02, Wolf) ──────────────────────────────────
 // Im Mega Event bekommen die 8 Farb-Slots eine eigene, charakterstarke Identität:
 // cozy/schlaue Tiere mit alliterativen „Wortwitz"-Namen (statt „Team Hund").

@@ -115,7 +115,16 @@ export default function AdminView({ roomCode }: Props) {
     const socket = connectToRoom(roomCode);
     socketRef.current = socket;
 
-    socket.on('connect', () => setConnectionStatus('connected'));
+    socket.on('connect', () => {
+      setConnectionStatus('connected');
+      // 2026-07-21 (Security-Audit): host:*-Events sind jetzt PIN-gegated. /admin
+      // liegt hinter der PinGate → PIN aus sessionStorage holen und bei jedem
+      // (Re-)Connect authentifizieren, sonst blockt das Backend die Host-Aktionen.
+      try {
+        const pin = sessionStorage.getItem('qq_admin_pin');
+        if (pin) socket.emit('host:auth', { pin });
+      } catch { /* sessionStorage nicht verfuegbar → Dev-Bypass greift */ }
+    });
     socket.on('disconnect', () => setConnectionStatus('disconnected'));
     socket.io?.on?.('reconnect_attempt', () => setConnectionStatus('connecting'));
 

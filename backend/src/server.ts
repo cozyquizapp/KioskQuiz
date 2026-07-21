@@ -6521,6 +6521,27 @@ setInterval(() => {
 
 // --- Socket.IO --------------------------------------------------------------
 io.on('connection', (socket: Socket) => {
+  // ── Host-Auth-Gate (Security-Audit 2026-07-21, P1 #3) ─────────────────────
+  // Die Legacy-KioskQuiz-Engine (host:*-Events) war unauthentifiziert — jeder
+  // verbundene Socket konnte sie feuern. Gate analog zum QQ-Mod-Gate: nur ein per
+  // `host:auth` mit ADMIN_PIN authentifizierter Socket darf host:*-Events senden.
+  // `host:auth` selbst + alle Team-/Join-/Read-Events laufen frei durch. Dev-Bypass
+  // wie bei requirePin (lokale /admin-Iteration ohne PIN).
+  socket.use((packet, next) => {
+    const event = packet[0];
+    if (typeof event !== 'string' || !event.startsWith('host:') || event === 'host:auth') return next();
+    if (process.env.NODE_ENV !== 'production') return next();
+    if ((socket.data as any)?.hostIsMod) return next();
+    const maybeAck = packet[packet.length - 1];
+    if (typeof maybeAck === 'function') (maybeAck as AckFn)({ ok: false, error: 'Host-PIN erforderlich.' });
+    // bewusst kein next() → host:*-Handler wird nicht ausgefuehrt
+  });
+  socket.on('host:auth', (payload: { pin?: string }, ack?: AckFn) => {
+    const okPin = !!payload?.pin && payload.pin === ADMIN_PIN;
+    if (okPin) (socket.data as any).hostIsMod = true;
+    if (typeof ack === 'function') ack(okPin ? { ok: true } : { ok: false, error: 'PIN falsch' });
+  });
+
   // Error handling for socket
   socket.on('error', (error: Error) => {
     console.error(`[Socket ${socket.id}] Error:`, error.message);

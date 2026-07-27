@@ -274,7 +274,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               fontWeight: 900,
               fontSize: 'clamp(14px, 1.4cqw, 20px)', letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
-              <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'}
+              <QQEmojiIcon emoji="⚡"/> {lang === 'en' ? 'Higher/Lower' : 'Mehr oder Weniger'}
             </div>
           </div>
         )}

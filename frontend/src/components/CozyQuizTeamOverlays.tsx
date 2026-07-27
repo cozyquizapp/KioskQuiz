@@ -48,7 +48,7 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
     { icon: '🎯', title: 'Spielziel', body: 'Beantworte Fragen richtig, pro richtige Antwort darfst du eine Zelle auf dem Brett setzen.' },
     { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese, jede mit eigener Frage-Mechanik.' },
     { icon: '⭐', title: 'Joker', body: '2 Joker pro Spiel. Verdienst du, wenn du eine bestimmte Reihe-Form auf dem Brett bildest. Setzt eine Bonus-Zelle.' },
-    { icon: '🔄', title: 'Stehlen + Stapeln', body: 'Felder eines Gegners können geklaut werden. Stapel-Felder (★) zählen doppelt im Endscore und sind unklaubar.' },
+    { icon: '🔄', title: 'Klauen + Stapeln', body: 'Felder eines Gegners können geklaut werden. Stapel-Felder (★) zählen doppelt im Endscore und sind unklaubar.' },
     { icon: '🏆', title: 'Sieger', body: 'Wer am Ende die meisten Felder + Stapel-Bonusse hat, gewinnt.' },
   ] : [
     { icon: '🎯', title: 'Goal', body: 'Answer questions correctly, each correct answer lets you place a cell on the board.' },

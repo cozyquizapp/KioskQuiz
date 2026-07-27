@@ -122,7 +122,7 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
   MUCHO:         { color: QQ_COLORS.blue500, emoji: '🔤', label: 'Mu-Cho', labelEn: 'Mu-Cho' },
   BUNTE_TUETE:   { color: QQ_COLORS.red500, emoji: '🎁', label: 'Bunte Tüte',   labelEn: 'Lucky Bag' },
   ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10',    labelEn: 'All In' },
-  CHEESE:        { color: QQ_COLORS.violet500, emoji: '📸', label: 'Schau mal!',   labelEn: 'Picture This' },
+  CHEESE:        { color: QQ_COLORS.violet400, emoji: '📸', label: 'Schau mal!',   labelEn: 'Picture This' },
 };
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,

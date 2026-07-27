@@ -560,7 +560,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     );
   }
 
-  const actionColor = isSwapComeback || isSwapOne ? QQ_COLORS.violet500
+  const actionColor = isSwapComeback || isSwapOne ? QQ_COLORS.violet400
     : isShield   ? '#06B6D4'
     : isStuck    ? QQ_COLORS.brandPink
     : isSandLock ? '#A855F7'
@@ -1095,7 +1095,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase',
           color: QQ_COLORS.brandPinkSoft, textAlign: 'center', marginBottom: 10,
         }}>
-          ⚡ {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'} · {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
+          ⚡ {lang === 'en' ? 'Higher/Lower' : 'Mehr oder Weniger'} · {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
         </div>
 
         {/* Frage-Text — Format-B custom, Format-A auto-generiert.
@@ -1266,8 +1266,8 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           </div>
           <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate300, lineHeight: 1.4 }}>
             {lang === 'en'
-              ? `"More or Less" — each correct = 1 cell stolen from the leader.`
-              : `„Mehr oder Weniger" — pro Richtig = 1 Feld vom 1. Platz.`}
+              ? `"Higher/Lower": each correct = 1 cell stolen from the leader.`
+              : `„Mehr oder Weniger": pro Richtig = 1 Feld vom 1. Platz.`}
           </div>
         </div>
       </CozyCard>
@@ -1292,7 +1292,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           {hl && hl.teamIds.length > 1 && (
             <div style={{ fontSize: 12, color: QQ_COLORS.slate400, marginTop: 4 }}>
               {lang === 'en'
-                ? `${hl.teamIds.length} teams play "More or Less"`
+                ? `${hl.teamIds.length} teams play "Higher/Lower"`
                 : `${hl.teamIds.length} Teams spielen „Mehr oder Weniger"`}
             </div>
           )}
@@ -1348,7 +1348,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
   const options: Array<{ action: string; icon: string; iconSlug?: 'marker-swap'; label: string; desc: string; color: string; available: boolean; reason: string }> = [
     { action: 'PLACE_2', icon: '📍', label: t.comeback.place2[lang], desc: t.comeback.place2desc[lang], color: QQ_COLORS.green500, available: canPlace2, reason: lang === 'de' ? 'zu wenig freie Felder' : 'not enough free cells' },
     { action: 'STEAL_1', icon: '⚡', label: t.comeback.steal1[lang], desc: t.comeback.steal1desc[lang], color: QQ_COLORS.red500, available: canSteal1, reason: lang === 'de' ? 'keine gegnerischen Felder' : 'no opponent cells' },
-    { action: 'SWAP_2',  icon: '🔄', iconSlug: 'marker-swap', label: t.comeback.swap2[lang], desc: t.comeback.swap2desc[lang], color: QQ_COLORS.violet500, available: canSwap2,  reason: lang === 'de' ? 'weniger als 2 gegnerische Teams' : 'fewer than 2 opposing teams' },
+    { action: 'SWAP_2',  icon: '🔄', iconSlug: 'marker-swap', label: t.comeback.swap2[lang], desc: t.comeback.swap2desc[lang], color: QQ_COLORS.violet400, available: canSwap2,  reason: lang === 'de' ? 'weniger als 2 gegnerische Teams' : 'fewer than 2 opposing teams' },
   ];
   const anyAvailable = options.some(o => o.available);
 

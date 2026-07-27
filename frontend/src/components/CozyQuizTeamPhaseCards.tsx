@@ -296,7 +296,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
   // Synchron mit Beamer ROUND_RULES (QQBeamerPage). Bann/Schild/Tauschen sind
   // gedroppt — aktuelle Mechaniken sind Setzen/Klauen/Stapeln + 4×4-Finale.
   const descs  = { de: ['', 'Erobert das Spielfeld!', 'Klauen jetzt möglich!', 'Stapeln freigeschaltet: Felder dauerhaft sichern!', 'Quiz-Buddy-Punkte sammeln, danach Stapel-Bonus im Finale!'],
-                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked, lock your tile permanently!', 'Collect quiz buddy points, stack-bonus finale follows!'] };
+                   en: ['', 'Conquer the grid!', 'Stealing now possible!', 'Stack unlocked, lock your cell permanently!', 'Collect quiz buddy points, stack-bonus finale follows!'] };
 
   const questionInPhase = (s.questionIndex % 5) + 1;
   const isFirstOfRound = questionInPhase === 1;
@@ -347,9 +347,9 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
             // Synchron mit Beamer ROUND_RULES. Bann/Schild/Tauschen sind raus,
             // aktuelle Trinity ist Setzen/Klauen/Stapeln.
             const RULES: Record<number, { de: string[]; en: string[]; emoji: string }> = {
-              1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 tile', 'Claim your first cells!'] },
-              2: { emoji: '⚔️', de: ['2 Felder oder klauen', 'Pro richtige Antwort wählen'], en: ['2 tiles or steal', 'Per correct answer'] },
-              3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock tile + 1 extra pt'] },
+              1: { emoji: '🏁', de: ['1 Feld setzen', 'Sichert euch eure ersten Felder!'], en: ['Place 1 cell', 'Claim your first cells!'] },
+              2: { emoji: '⚔️', de: ['2 Felder oder klauen', 'Pro richtige Antwort wählen'], en: ['2 cells or steal', 'Per correct answer'] },
+              3: { emoji: '🏯', de: ['Stapeln freigeschaltet', 'Felder dauerhaft sichern + 1 Pkt extra'], en: ['Stack unlocked', 'Lock cell + 1 extra pt'] },
               4: { emoji: '🏯', de: ['Quiz-Buddy-Punkte', 'danach Stapel-Bonus im Finale'], en: ['Quiz buddy points', 'stack-bonus finale follows'] },
             };
             const r = largeMode
@@ -1012,7 +1012,7 @@ export function FinalRevealStackPlacementCard({
         <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 12 }}>
           {de
             ? `Tippe ein eigenes Feld, ${remaining} ${remaining === 1 ? 'Stempel' : 'Stempel'} übrig`
-            : `Tap an own field, ${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} left`}
+            : `Tap an own cell, ${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} left`}
         </div>
         {/* Queue-Pills */}
         {total > 1 && (
@@ -1073,7 +1073,7 @@ export function FinalRevealStackPlacementCard({
           }))}
         </div>
         <div style={{ marginTop: 10, fontSize: 11, color: '#94A3B8' }}>
-          {de ? 'Eigene Felder leuchten in deiner Farbe.' : 'Your own fields glow in your color.'}
+          {de ? 'Eigene Felder leuchten in deiner Farbe.' : 'Your own cells glow in your color.'}
         </div>
       </div>
     </CozyCard>

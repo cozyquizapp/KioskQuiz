@@ -249,7 +249,7 @@ export function TeamBottomSheetMenu({
                   accent: '#22C55E',
                 }
               : {
-                  label: lang === 'de' ? 'Zellen' : 'Cells',
+                  label: lang === 'de' ? 'Felder' : 'cells',
                   value: String(myCellsCount),
                   accent: '#22C55E',
                 },

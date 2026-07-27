@@ -316,7 +316,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
         ) : (
           <>
             <div style={{ fontSize: 34, fontWeight: 900, color: '#F8FAFC', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every conquered field is a brick'}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every conquered cell is a brick'}</div>
           </>
         )}
       </div>

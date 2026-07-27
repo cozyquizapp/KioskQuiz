@@ -138,7 +138,7 @@ const T = {
 
   whichTeam:     { de: 'Welches Team seid ihr?', en: 'Which team are you?' },
   rankShort:     { de: 'Platz', en: 'Rank' },
-  fields:        { de: 'Felder', en: 'fields' },
+  fields:        { de: 'Felder', en: 'cells' },
   pickOther:     { de: '\u21A9 anderes Team w\u00E4hlen', en: '\u21A9 pick another team' },
 
   yourNumbers:   { de: 'Eure Zahlen', en: 'Your numbers' },
@@ -148,13 +148,13 @@ const T = {
   // Stack-Bonus = 17 Score \u2014 als 'Gr\u00F6\u00DFtes Gebiet' missverstaendlich.
   // Label auf 'Punktestand' / 'Score' geaendert \u2014 semantisch ehrlich.
   largestArea:   { de: 'Punktestand', en: 'Score' },
-  fieldsTotal:   { de: 'Felder gesamt', en: 'Fields total' },
+  fieldsTotal:   { de: 'Felder gesamt', en: 'Cells total' },
   correct:       { de: 'Richtig', en: 'Correct' },
   accuracy:      { de: 'Trefferquote', en: 'Accuracy' },
   jokersEarned:  { de: 'Joker verdient', en: 'Jokers earned' },
   stolen:        { de: 'Geklaut', en: 'Stolen' },
   pieces:        { de: 'St\u00FCck', en: 'pcs' },
-  fieldsUnit:    { de: 'Felder', en: 'fields' },
+  fieldsUnit:    { de: 'Felder', en: 'cells' },
   times:         { de: 'mal', en: 'times' },
 
   yourMoment:    { de: 'Euer Moment', en: 'Your moment' },

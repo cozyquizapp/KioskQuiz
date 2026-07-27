@@ -227,7 +227,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: '#EC4899',
       heroJokers: true,
       lines: [
-        t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus tile'),
+        t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus cell'),
         t('rules.slide4.line2', 'Max 2 jokers per team'),
       ],
       grid: {

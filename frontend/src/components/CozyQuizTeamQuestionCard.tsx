@@ -436,16 +436,16 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           && s.answers.filter(a => a.text === String(q.correctOptionIndex)).length > 1;
         if (iWon) {
           const winMsg = cat === 'SCHAETZCHEN'
-            ? (isEn ? '🎯 You were closest! Choose a field.' : '🎯 Ihr wart am nächsten dran! Wählt ein Feld.')
+            ? (isEn ? '🎯 You were closest! Choose a cell.' : '🎯 Ihr wart am nächsten dran! Wählt ein Feld.')
             : cat === 'CHEESE'
-              ? (isEn ? '📸 Correct! Choose a field.' : '📸 Erkannt! Wählt ein Feld.')
+              ? (isEn ? '📸 Correct! Choose a cell.' : '📸 Erkannt! Wählt ein Feld.')
               : cat === 'BUNTE_TUETE'
-                ? (isEn ? '🎁 You win this round! Choose a field.' : '🎁 Ihr gewinnt die Runde! Wählt ein Feld.')
+                ? (isEn ? '🎁 You win this round! Choose a cell.' : '🎁 Ihr gewinnt die Runde! Wählt ein Feld.')
                 : cat === 'ZEHN_VON_ZEHN'
-                  ? (isEn ? '💰 Most points on the right answer! Choose a field.' : '💰 Die meisten Punkte auf die richtige Antwort! Wählt ein Feld.')
+                  ? (isEn ? '💰 Most points on the right answer! Choose a cell.' : '💰 Die meisten Punkte auf die richtige Antwort! Wählt ein Feld.')
                   : muchoSpeedWin
-                    ? (isEn ? '⚡ Fastest & correct! Choose a field.' : '⚡ Am schnellsten & richtig! Wählt ein Feld.')
-                    : (isEn ? '🎉 Correct! You may choose a field.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
+                    ? (isEn ? '⚡ Fastest & correct! Choose a cell.' : '⚡ Am schnellsten & richtig! Wählt ein Feld.')
+                    : (isEn ? '🎉 Correct! You may choose a cell.' : '🎉 Richtig! Ihr dürft ein Feld wählen.');
           return (
             <div style={{
               marginTop: 8, padding: '10px 14px', borderRadius: 16,

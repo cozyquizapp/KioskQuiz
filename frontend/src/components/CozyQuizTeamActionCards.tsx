@@ -28,36 +28,36 @@ const COZY_CARD_BG = 'linear-gradient(180deg, #1F1A2E, #14101F)';
 // extrahiert (Strangler-Fig). Bei Aenderungen am Wortlaut beide Stellen mitziehen.
 const t = {
   placement: {
-    tapEmpty: { de: 'Tippe auf ein freies Feld', en: 'Tap an empty field' },
-    tapOpponent: { de: 'Tippe auf ein fremdes Feld', en: 'Tap an opponent\'s field' },
-    tapOpponent12: { de: 'Tippe auf ein gegnerisches Feld (1/2)', en: 'Tap an opponent field (1/2)' },
-    swap2nd: { de: 'Jetzt das 2. Feld (anderes Team) wählen', en: 'Now choose the 2nd field (different team)' },
-    otherChoosing: { de: 'wählt ein Feld…', en: 'is choosing a field…' },
+    tapEmpty: { de: 'Tippe auf ein freies Feld', en: 'Tap an empty cell' },
+    tapOpponent: { de: 'Tippe auf ein fremdes Feld', en: 'Tap an opponent\'s cell' },
+    tapOpponent12: { de: 'Tippe auf ein gegnerisches Feld (1/2)', en: 'Tap an opponent cell (1/2)' },
+    swap2nd: { de: 'Jetzt das 2. Feld (anderes Team) wählen', en: 'Now choose the 2nd cell (different team)' },
+    otherChoosing: { de: 'wählt ein Feld…', en: 'is choosing a cell…' },
     cancel: { de: 'Abbrechen', en: 'Cancel' },
-    titlePlace: { de: '📍 Wähle ein Feld!', en: '📍 Choose a field!' },
-    titleSteal: { de: '⚡ Klau ein fremdes Feld!', en: '⚡ Steal an opponent\'s field!' },
-    titleSwap: { de: '🔄 Tausche 2 gegnerische Felder!', en: '🔄 Swap 2 opponent fields!' },
+    titlePlace: { de: '📍 Wähle ein Feld!', en: '📍 Choose a cell!' },
+    titleSteal: { de: '⚡ Klau ein fremdes Feld!', en: '⚡ Steal an opponent\'s cell!' },
+    titleSwap: { de: '🔄 Tausche 2 gegnerische Felder!', en: '🔄 Swap 2 opponent cells!' },
     titlePhase2: { de: '🏆 Runde 2: Wähle deine Aktion!', en: '🏆 Round 2: Choose your action!' },
-    place2: { de: '📍 2 Felder setzen', en: '📍 Place 2 fields' },
-    steal1: { de: '⚡ 1 Feld klauen', en: '⚡ Steal 1 field' },
+    place2: { de: '📍 2 Felder setzen', en: '📍 Place 2 cells' },
+    steal1: { de: '⚡ 1 Feld klauen', en: '⚡ Steal 1 cell' },
     placeBtn: { de: '📍 Setzen', en: '📍 Place' },
     stealBtn: { de: '⚡ Klauen', en: '⚡ Steal' },
-    swapBtn: { de: '🔄 Felder wählen', en: '🔄 Choose fields' },
-    confirmPlace: { de: '📍 Feld wählen', en: '📍 Choose field' },
+    swapBtn: { de: '🔄 Felder wählen', en: '🔄 Choose cells' },
+    confirmPlace: { de: '📍 Feld wählen', en: '📍 Choose cell' },
     confirmSteal: { de: '⚡ Klauen', en: '⚡ Steal' },
   },
   comeback: {
     title: { de: '⚡ Deine Comeback-Chance!', en: '⚡ Your comeback chance!' },
     otherTeam: { de: '⚡ Comeback-Aktion läuft…', en: '⚡ Comeback action in progress…' },
-    place2: { de: '2 Felder setzen', en: 'Place 2 fields' },
-    place2desc: { de: 'Platziere 2 freie Felder', en: 'Place 2 empty fields' },
-    steal1: { de: '1 Feld klauen', en: 'Steal 1 field' },
-    steal1desc: { de: 'Nimm ein fremdes Feld', en: 'Take an opponent\'s field' },
-    swap2: { de: '2 Felder tauschen', en: 'Swap 2 fields' },
-    swap2desc: { de: 'Tausche je 1 Feld zweier Gegner', en: 'Swap 1 field each of two opponents' },
-    activePlace: { de: '📍 Wähle 2 freie Felder', en: '📍 Choose 2 empty fields' },
-    activeSteal: { de: '⚡ Klau ein fremdes Feld', en: '⚡ Steal an opponent\'s field' },
-    activeSwap: { de: '🔄 Wähle 2 gegnerische Felder zum Tauschen', en: '🔄 Choose 2 opponent fields to swap' },
+    place2: { de: '2 Felder setzen', en: 'Place 2 cells' },
+    place2desc: { de: 'Platziere 2 freie Felder', en: 'Place 2 empty cells' },
+    steal1: { de: '1 Feld klauen', en: 'Steal 1 cell' },
+    steal1desc: { de: 'Nimm ein fremdes Feld', en: 'Take an opponent\'s cell' },
+    swap2: { de: '2 Felder tauschen', en: 'Swap 2 cells' },
+    swap2desc: { de: 'Tausche je 1 Feld zweier Gegner', en: 'Swap 1 cell each of two opponents' },
+    activePlace: { de: '📍 Wähle 2 freie Felder', en: '📍 Choose 2 empty cells' },
+    activeSteal: { de: '⚡ Klau ein fremdes Feld', en: '⚡ Steal an opponent\'s cell' },
+    activeSwap: { de: '🔄 Wähle 2 gegnerische Felder zum Tauschen', en: '🔄 Choose 2 opponent cells to swap' },
   },
 };
 
@@ -366,17 +366,17 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       // statt stillem Ignorieren (leeres/eigenes Feld = kein Hinweis nötig).
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
       if (cell.stuck) {
-        setBlockedHint(lang === 'en' ? 'This field is stacked, can’t be stolen.' : 'Dieses Feld ist gestapelt, nicht klaubar.');
+        setBlockedHint(lang === 'en' ? 'This cell is stacked, can’t be stolen.' : 'Dieses Feld ist gestapelt, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
       if (cell.shielded) {
-        setBlockedHint(lang === 'en' ? 'This field is shielded, can’t be stolen.' : 'Dieses Feld ist geschützt, nicht klaubar.');
+        setBlockedHint(lang === 'en' ? 'This cell is shielded, can’t be stolen.' : 'Dieses Feld ist geschützt, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
       if (cell.frozen) {
-        setBlockedHint(lang === 'en' ? 'This field is frozen, can’t be stolen.' : 'Dieses Feld ist eingefroren, nicht klaubar.');
+        setBlockedHint(lang === 'en' ? 'This cell is frozen, can’t be stolen.' : 'Dieses Feld ist eingefroren, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
@@ -592,10 +592,10 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     if (isShield)   return wrap('marker-shield', lang === 'de' ? 'Schild' : 'Shield');
     if (isStuck)    return wrap('action-stack', lang === 'de' ? 'Stapeln' : 'Stack');
     if (isSandLock) return wrap('marker-sanduhr', lang === 'de' ? 'Bann' : 'Ban');
-    if (isSteal)  return wrap('action-steal', lang === 'de' ? 'Klau ein fremdes Feld!' : 'Steal an opponent\'s field!');
+    if (isSteal)  return wrap('action-steal', lang === 'de' ? 'Klau ein fremdes Feld!' : 'Steal an opponent\'s cell!');
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
     if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';
-    return wrap('action-place', lang === 'de' ? 'Wähle ein Feld!' : 'Choose a field!');
+    return wrap('action-place', lang === 'de' ? 'Wähle ein Feld!' : 'Choose a cell!');
   })();
 
   const instructionText = (() => {
@@ -613,7 +613,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       ? 'Feld tippen (Gegner oder leer): 3 Fragen gebannt'
       : 'Tap a cell (enemy or empty): banned for 3 questions';
     if (isSteal) return t.placement.tapOpponent[lang];
-    if (isJoker) return lang === 'de' ? '⭐ Bonus! Tippe auf ein freies Feld' : '⭐ Bonus! Tap an empty field';
+    if (isJoker) return lang === 'de' ? '⭐ Bonus! Tippe auf ein freies Feld' : '⭐ Bonus! Tap an empty cell';
     return t.placement.tapEmpty[lang];
   })();
 
@@ -697,9 +697,9 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       {/* Phase 2: place 2 OR steal 1 */}
       {isPhase2Choice && !selecting && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10, marginBottom: 12 }}>
-          <CozyBtn color={QQ_COLORS.green500} onClick={() => chooseFreeAction('PLACE')}>{iconLabel('action-place', lang === 'de' ? '2 Felder setzen' : 'Place 2 fields')}</CozyBtn>
+          <CozyBtn color={QQ_COLORS.green500} onClick={() => chooseFreeAction('PLACE')}>{iconLabel('action-place', lang === 'de' ? '2 Felder setzen' : 'Place 2 cells')}</CozyBtn>
           {hasStealable && (
-            <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>{iconLabel('action-steal', lang === 'de' ? '1 Feld klauen' : 'Steal 1 field')}</CozyBtn>
+            <CozyBtn color={QQ_COLORS.red500} onClick={() => chooseFreeAction('STEAL')}>{iconLabel('action-steal', lang === 'de' ? '1 Feld klauen' : 'Steal 1 cell')}</CozyBtn>
           )}
         </div>
       )}
@@ -736,7 +736,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           {isSwapComeback || isSwapOne ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <QQIcon slug="marker-swap" size={24} alt="Swap" />
-              {lang === 'de' ? 'Felder wählen' : 'Choose fields'}
+              {lang === 'de' ? 'Felder wählen' : 'Choose cells'}
             </span>
           ) : isStuck ? (
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
@@ -758,7 +758,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
             )
             : isSteal    ? iconLabel('action-steal', lang === 'de' ? 'Klauen' : 'Steal')
             : isJoker    ? (lang === 'de' ? '⭐ Jokerfeld setzen' : '⭐ Place joker cell')
-            : iconLabel('action-place', lang === 'de' ? 'Feld wählen' : 'Choose field')}
+            : iconLabel('action-place', lang === 'de' ? 'Feld wählen' : 'Choose cell')}
         </CozyBtn>
       )}
 

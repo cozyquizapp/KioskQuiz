@@ -521,7 +521,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       de: [getRuleText('round.3.line1', 'de', 'Pro richtige Antwort wählt eine Aktion:'),
            getRuleText('round.3.line2', 'de', 'Stapeln freigeschaltet: Felder dauerhaft sichern + 1 Punkt extra!')],
       en: [getRuleText('round.3.line1', 'en', 'Per correct answer choose one action:'),
-           getRuleText('round.3.line2', 'en', 'Stack unlocked: lock your tile + 1 extra point!')],
+           getRuleText('round.3.line2', 'en', 'Stack unlocked: lock your cell + 1 extra point!')],
     },
     4: {
       emoji: '🏯',

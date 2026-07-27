@@ -2791,7 +2791,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
             }}>
               {phase === 'flight'
                 ? (de ? 'Wer holt sich den Sieg?' : 'Who takes the win?')
-                : (de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every field you claimed is one block')}
+                : (de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every cell you claimed is one block')}
             </div>
           </>
         ) : (

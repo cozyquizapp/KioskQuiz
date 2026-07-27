@@ -199,7 +199,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         : [
             { icon: '📱', title: 'On your phone', desc: 'Every phone plays, several phones per faction.' },
             { icon: '🛡️', title: 'Factions', desc: 'You belong to one of 8 factions, each with its own crest & motto.' },
-            { icon: '🎯', title: 'Collect points', desc: 'Every correct answer scores points for your faction. No grid, no tiles.' },
+            { icon: '🎯', title: 'Collect points', desc: 'Every correct answer scores points for your faction. No grid, no cells.' },
             { icon: '⚡', title: 'Speed & accuracy', desc: 'Faster correct = more points. Hit-rate keeps it fair across factions.' },
           ])
       : (de
@@ -211,8 +211,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         ]
       : [
           { icon: '📱', title: 'On your phone', desc: 'Each team plays on their own smartphone.' },
-          { icon: '🎯', title: 'Conquer the grid', desc: 'Right answer = place a tile. Largest connected area wins.' },
-          { icon: '🃏', title: 'Joker', desc: '2×2 block or 4 in a row = 1 bonus tile. Max 2 per team, 1 per round.' },
+          { icon: '🎯', title: 'Conquer the grid', desc: 'Right answer = place a cell. Largest connected area wins.' },
+          { icon: '🃏', title: 'Joker', desc: '2×2 block or 4 in a row = 1 bonus cell. Max 2 per team, 1 per round.' },
           { icon: '🎲', title: 'Each round adds', desc: 'Steal from R2, Stack from R3. Lucky Bag delivers a surprise every round.' },
         ]);
 

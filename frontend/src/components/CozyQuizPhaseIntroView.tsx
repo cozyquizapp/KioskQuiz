@@ -1700,11 +1700,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                   background: isThemed() ? 'var(--qq-surface)' : `${catColor}15`,
                   border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${catColor}33`,
-                  color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}aa`, letterSpacing: '0.04em',
+                  color: isThemed() ? 'var(--qq-text-muted)' : catColor, letterSpacing: '0.04em',
                 }}>
                   <div style={{
                     fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 900,
-                    opacity: 0.8, textTransform: 'uppercase',
+                    textTransform: 'uppercase',
                   }}>
                     {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
                   </div>
@@ -1789,7 +1789,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     fontWeight: i === 0 ? (megaArena ? 700 : 800) : 600,
                     color: isThemed()
                       ? (i === 0 ? 'var(--qq-text)' : 'var(--qq-text-muted)')
-                      : (i === 0 ? '#F1F5F9' : `${catColor}99`),
+                      : (i === 0 ? '#F1F5F9' : '#CBD5E1'),
                     textAlign: 'center',
                     animation: `phasePop 0.6s var(--qq-ease-bounce) ${0.5 + i * 0.15}s both`,
                   }}>
@@ -1895,7 +1895,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             ) : (<>
             <div style={{
               fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-text-muted)' : `${catColor}99`, letterSpacing: '0.1em', textTransform: 'uppercase',
+              color: isThemed() ? 'var(--qq-text-muted)' : catColor, letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
               {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
             </div>

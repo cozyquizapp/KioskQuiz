@@ -4968,7 +4968,7 @@ function RulesIntroOverlay({ language, visible, eurovisionMode }: {
         {/* Eyebrow — analog Rules-Slides "Spielregeln" */}
         <div style={{
           fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: `${accent}88`,
+          textTransform: 'uppercase', color: accent,
         }}>
           {lang === 'de' ? 'Vorbereitung' : 'Get Ready'}
         </div>

@@ -217,7 +217,7 @@ export function TeamBottomSheetMenu({
             {lang === 'de' ? 'Menü' : 'Menu'}
           </div>
           <div style={{
-            fontSize: 10, fontWeight: 700, color: '#64748b',
+            fontSize: 10, fontWeight: 700, color: '#94a3b8',
             letterSpacing: '0.08em',
           }}>
             {lang === 'de' ? '↓ runterziehen zum schließen' : '↓ swipe down to close'}

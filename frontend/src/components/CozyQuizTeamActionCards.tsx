@@ -1095,7 +1095,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase',
           color: QQ_COLORS.brandPinkSoft, textAlign: 'center', marginBottom: 10,
         }}>
-          ⚡ {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'} — {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
+          ⚡ {lang === 'en' ? 'More or Less' : 'Mehr oder Weniger'} · {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
         </div>
 
         {/* Frage-Text — Format-B custom, Format-A auto-generiert.

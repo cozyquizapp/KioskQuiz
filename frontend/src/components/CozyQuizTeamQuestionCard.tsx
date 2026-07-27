@@ -379,7 +379,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         <div style={{
           padding: '8px 14px', borderRadius: 16, textAlign: 'center',
           background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-          fontSize: 14, color: QQ_COLORS.slate500, marginBottom: 8,
+          fontSize: 14, color: QQ_COLORS.slate400, marginBottom: 8,
         }}>
           <QQEmojiIcon emoji="🥔"/> {s.teams.find(tm => tm.id === s.hotPotatoActiveTeamId)?.name ?? '?'} {lang === 'en' ? 'is up' : 'ist dran'}
         </div>
@@ -489,7 +489,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               marginTop: 8, padding: '10px 14px', borderRadius: 16,
               background: iWasAlsoCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
               border: `1px solid ${iWasAlsoCorrect ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
-              fontSize: 14, fontWeight: 900, color: iWasAlsoCorrect ? QQ_COLORS.green400 : QQ_COLORS.slate500, textAlign: 'center',
+              fontSize: 14, fontWeight: 900, color: iWasAlsoCorrect ? QQ_COLORS.green400 : QQ_COLORS.slate400, textAlign: 'center',
               animation: 'tcreveal 0.4s ease 0.2s both',
             }}>
               {loseMsg}
@@ -581,7 +581,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                 {lang === 'en' ? 'Your answer' : 'Eure Antwort'}
               </span>
               <span style={{ flex: 1, fontSize: 15, fontWeight: 900, color: isCorrect === true ? QQ_COLORS.green400 : QQ_COLORS.slate200, wordBreak: 'break-word' }}>
-                {displayText || '—'}
+                {displayText || '–'}
               </span>
               {isCorrect !== null && (
                 <span style={{ fontSize: 18, fontWeight: 900, color: isCorrect ? QQ_COLORS.green400 : '#f87171', flexShrink: 0 }}>
@@ -643,7 +643,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                       +1
                     </span>
                   )}
-                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate300, flexShrink: 0 }}>{a.text || '—'}</span>
+                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate300, flexShrink: 0 }}>{a.text || '–'}</span>
                 </div>
               );
             })}
@@ -697,7 +697,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                     </span>
                     <span style={{
                       fontWeight: 900, fontSize: 14,
-                      color: pts === 0 ? QQ_COLORS.slate600 : isCorrect ? QQ_COLORS.green400 : color,
+                      color: pts === 0 ? QQ_COLORS.slate400 : isCorrect ? QQ_COLORS.green400 : color,
                       minWidth: 28, textAlign: 'right',
                     }}>
                       {pts}
@@ -740,7 +740,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   border: `1px solid ${ok ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
-                  <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: QQ_COLORS.slate500 }}>#{i+1}</span>
+                  <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: QQ_COLORS.slate400 }}>#{i+1}</span>
                   <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{ok ? '✓' : '✗'}</span>
                   <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: ok ? QQ_COLORS.green400 : '#f87171' }}>{g}</span>
                   {!ok && correct && (
@@ -834,7 +834,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
               const team = s.teams.find(t => t.id === a.teamId);
               const isMe = a.teamId === myTeamId;
               const medal = i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i+1}`;
-              const dist = a.distKm == null ? '—' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
+              const dist = a.distKm == null ? '–' : a.distKm < 1 ? `${Math.round(a.distKm * 1000)} m` : `${a.distKm.toFixed(1)} km`;
               return (
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'center', gap: 8,

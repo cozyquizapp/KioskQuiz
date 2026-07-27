@@ -119,10 +119,10 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
 // Pause-Stat-Panel (catMeta.label, ~Z. 18539). Vorher zeigte EN-Spiel DE-Texte.
 const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: string; labelEn: string }> = {
   SCHAETZCHEN:   { color: QQ_COLORS.yellow500, emoji: '🎯', label: 'Schätzchen',   labelEn: 'Close Call' },
-  MUCHO:         { color: QQ_COLORS.blue500, emoji: '🔤', label: 'Mucho Choice', labelEn: 'Mu-Cho' },
+  MUCHO:         { color: QQ_COLORS.blue500, emoji: '🔤', label: 'Mu-Cho', labelEn: 'Mu-Cho' },
   BUNTE_TUETE:   { color: QQ_COLORS.red500, emoji: '🎁', label: 'Bunte Tüte',   labelEn: 'Lucky Bag' },
   ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10',    labelEn: 'All In' },
-  CHEESE:        { color: QQ_COLORS.violet500, emoji: '📸', label: 'Cheese!',      labelEn: 'Picture This' },
+  CHEESE:        { color: QQ_COLORS.violet500, emoji: '📸', label: 'Schau mal!',   labelEn: 'Picture This' },
 };
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,
@@ -295,7 +295,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <FactionCrest avatarId={f.avatarId} width={'clamp(58px, 6.2cqw, 96px)'} showName showMotto de={de} />
                   {count > 0 && (
                     <div style={{ fontSize: 'clamp(11px, 1.2cqw, 15px)', color: 'var(--qq-text-muted)', fontWeight: 800 }}>
-                      {count} {count === 1 ? 'Handy' : 'Handys'}
+                      {count} {de ? (count === 1 ? 'Handy' : 'Handys') : (count === 1 ? 'phone' : 'phones')}
                     </div>
                   )}
                 </div>

@@ -652,7 +652,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           )}
           <div style={{
             fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : `${cardSlide.color}88`,
+            textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : cardSlide.color,
           }}>
             {cardSlide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
           </div>

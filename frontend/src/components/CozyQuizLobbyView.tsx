@@ -1007,7 +1007,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       {!veryMany && (
                         <div style={{
                           fontSize: compact ? 'clamp(13px, 1.2cqw, 16px)' : 'clamp(13px, 1.25cqw, 17px)',
-                          fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b866',
+                          fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b8',
                           marginTop: 4,
                         }}>
                           {t.connected ? (de ? '● bereit' : '● ready') : '○ offline'}

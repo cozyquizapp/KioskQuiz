@@ -100,7 +100,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
               </div>
               {revealed
                 ? <div style={{ fontSize: '2.6cqh', fontWeight: 900, color: isWinner ? '#22C55E' : '#fff' }}>
-                    {best ? `${best.guess}${unit}` : (de ? '—' : '—')}
+                    {best ? `${best.guess}${unit}` : (de ? '–' : '–')}
                     {best && <span style={{ fontSize: '1.7cqh', color: QQ_COLORS.slate400, fontWeight: 700 }}> ({de ? 'Δ' : 'off'} {best.dist})</span>}
                   </div>
                 : <div style={{ fontSize: '2cqh', fontWeight: 800, color: hasAnswered ? '#22C55E' : QQ_COLORS.slate400 }}>

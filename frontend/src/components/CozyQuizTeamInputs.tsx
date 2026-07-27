@@ -242,7 +242,7 @@ export function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, p
               </div>
             ))}
             {pendingTeams.length > 10 && (
-              <span style={{ fontSize: 10, color: '#64748b', alignSelf: 'center' }}>+{pendingTeams.length - 10}</span>
+              <span style={{ fontSize: 10, color: '#94a3b8', alignSelf: 'center' }}>+{pendingTeams.length - 10}</span>
             )}
           </div>
         </div>

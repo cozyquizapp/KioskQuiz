@@ -799,7 +799,7 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-      <div style={{ fontSize: 12, color: QQ_COLORS.slate500, textAlign: 'center', fontWeight: 700 }}>
+      <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700 }}>
         {tapLabel}
       </div>
       <div style={{
@@ -827,7 +827,7 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
       </div>
       {pin
         ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 900 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
-        : <div style={{ fontSize: 11, color: QQ_COLORS.slate600, textAlign: 'center' }}>{noPinLabel}</div>
+        : <div style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>{noPinLabel}</div>
       }
       <SubmitBtn onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
     </div>

@@ -138,7 +138,7 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
             </div>
           ))}
           {opponents.length === 0 && (
-            <div style={{ fontSize: 14, color: QQ_COLORS.slate500, fontStyle: 'italic', padding: '8px 0' }}>
+            <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontStyle: 'italic', padding: '8px 0' }}>
               {de ? 'Warte auf Gegner…' : 'Waiting for opponents…'}
             </div>
           )}
@@ -330,7 +330,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
         {!showCategory && !showRules ? (
           /* Round announcement */
           <>
-            <div style={{ fontSize: 14, color: QQ_COLORS.slate500, marginBottom: 6 }}>
+            <div style={{ fontSize: 14, color: QQ_COLORS.slate400, marginBottom: 6 }}>
               {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
@@ -673,7 +673,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
             background: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: '14px 18px',
             border: `2px solid ${myTeam.color}44`,
           }}>
-            <div style={{ fontSize: 14, color: QQ_COLORS.slate500, fontWeight: 700, marginBottom: 6 }}>
+            <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 700, marginBottom: 6 }}>
               {de ? 'Dein Stand' : 'Your Position'}
             </div>
             <div style={{ fontSize: 36, fontWeight: 900, color: myTeam.color }}>
@@ -692,7 +692,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
               borderRadius: 8,
               background: t.id === myTeamId ? 'rgba(255,255,255,0.06)' : 'transparent',
             }}>
-              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: QQ_COLORS.slate500, fontWeight: 900 }}>
+              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: QQ_COLORS.slate400, fontWeight: 900 }}>
                 {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
               </span>
               <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: t.color }}>{t.name}</span>
@@ -871,7 +871,7 @@ export function FinalBettingCard({
       </div>
 
       {/* Submit-Btn */}
-      <CozyBtn color={pickedTargetId ? myColor : QQ_COLORS.slate500} onClick={handleSubmit}>
+      <CozyBtn color={pickedTargetId ? myColor : QQ_COLORS.slate400} onClick={handleSubmit}>
         {pickedTargetId
           ? (de ? 'Tipp bestätigen' : 'Confirm tip')
           : (de ? 'Ohne Tipp abgeben (0 Bonus)' : 'Submit no tip (0 bonus)')}
@@ -1239,7 +1239,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
                 animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
               }}>
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
-                  color: i === 0 ? QQ_COLORS.yellow500 : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : QQ_COLORS.slate600,
+                  color: i === 0 ? QQ_COLORS.yellow500 : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : QQ_COLORS.slate400,
                 }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
                 <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
                 <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
@@ -1247,7 +1247,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
                   <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.brandPink : QQ_COLORS.slate400 }}>
                     {largeMode ? tm.largestConnected : qqFinalTotal(s, tm.id)} {connectedLabel}
                   </div>
-                  {!largeMode && <div style={{ fontSize: 11, color: QQ_COLORS.slate600 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}
+                  {!largeMode && <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}
                 </div>
               </div>
             );

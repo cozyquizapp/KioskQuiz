@@ -105,8 +105,8 @@ const t = {
   },
   imposter: {
     waiting: { de: '🕵️ Warten auf Start…', en: '🕵️ Waiting for start…' },
-    eliminated: { de: '❌ Falsche Aussage gewählt — du bist raus', en: '❌ Wrong statement — you are out' },
-    chosen: { de: '✓ Gewählt — warte auf nächstes Team…', en: '✓ Chosen — waiting for next team…' },
+    eliminated: { de: '❌ Falsche Aussage gewählt, du bist raus', en: '❌ Wrong statement, you are out' },
+    chosen: { de: '✓ Gewählt, warte auf nächstes Team…', en: '✓ Chosen, waiting for next team…' },
     allChosen: { de: 'Alle Aussagen gewählt', en: 'All statements chosen' },
     otherPicking: { de: '{name} wählt gerade…', en: '{name} is choosing…' },
     remaining: { de: '{n} Aussage(n) übrig', en: '{n} statement(s) left' },
@@ -121,7 +121,7 @@ const t = {
     titlePlace: { de: '📍 Wähle ein Feld!', en: '📍 Choose a field!' },
     titleSteal: { de: '⚡ Klau ein fremdes Feld!', en: '⚡ Steal an opponent\'s field!' },
     titleSwap: { de: '🔄 Tausche 2 gegnerische Felder!', en: '🔄 Swap 2 opponent fields!' },
-    titlePhase2: { de: '🏆 Runde 2 — Wähle deine Aktion!', en: '🏆 Round 2 — Choose your action!' },
+    titlePhase2: { de: '🏆 Runde 2: Wähle deine Aktion!', en: '🏆 Round 2: Choose your action!' },
     place2: { de: '📍 2 Felder setzen', en: '📍 Place 2 fields' },
     steal1: { de: '⚡ 1 Feld klauen', en: '⚡ Steal 1 field' },
     placeBtn: { de: '📍 Setzen', en: '📍 Place' },
@@ -541,8 +541,8 @@ export default function QQTeamPage() {
           // sind Fraktionen); sonst der Farb-Text.
           const large = !!(state as any)?.largeGroupMode;
           setAutoSwitchToast(large
-            ? (lang === 'de' ? '⚖️ Fraktion war voll — du bist jetzt in einer freien!' : '⚖️ Faction was full — you\'re in an open one now!')
-            : (lang === 'de' ? '⚡ Farbe war weg — du hast jetzt eine neue!' : '⚡ Color was taken — picked a new one!'));
+            ? (lang === 'de' ? '⚖️ Fraktion war voll, du bist jetzt in einer freien!' : '⚖️ Faction was full, you\'re in an open one now!')
+            : (lang === 'de' ? '⚡ Farbe war weg, du hast jetzt eine neue!' : '⚡ Color was taken, picked a new one!'));
         }
       }
     }
@@ -1115,8 +1115,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               marginBottom: 12, letterSpacing: '0.02em',
             }}>
               {lang === 'de'
-                ? 'Nur den Namen — „Team " kommt automatisch davor'
-                : 'Just the name — "Team " is added automatically'}
+                ? 'Nur den Namen, „Team " kommt automatisch davor'
+                : 'Just the name, "Team " is added automatically'}
             </div>
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, fontWeight: 700 }}>
@@ -1124,8 +1124,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     Vorher saß der Würfel daneben, Verbindung 'Würfel = Lösung'
                     war im lauten Pub nicht offensichtlich. */}
                 {lang === 'de'
-                  ? '⚠ Dieser Name ist schon vergeben — tippe 🎲 für freien Namen.'
-                  : '⚠ Name already taken — tap 🎲 for a free name.'}
+                  ? '⚠ Dieser Name ist schon vergeben, tippe 🎲 für freien Namen.'
+                  : '⚠ Name already taken, tap 🎲 for a free name.'}
               </div>
             )}
             </>)}
@@ -1246,7 +1246,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 </div>
                 {stammStatus === 'notfound' && (
                   <div style={{ fontSize: 11, color: QQ_COLORS.red500, fontWeight: 700 }}>
-                    {lang === 'de' ? 'Code nicht gefunden — neu spielen geht trotzdem.' : 'Code not found — you can still play normally.'}
+                    {lang === 'de' ? 'Code nicht gefunden, neu spielen geht trotzdem.' : 'Code not found, you can still play normally.'}
                   </div>
                 )}
                 <button
@@ -1271,7 +1271,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   <QQTeamAvatar avatarId={stammResult.avatarId} size={48} />
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 18, fontWeight: 900, color: QQ_COLORS.brandPinkSoft }}>
-                      {stammResult.teamName || '—'}
+                      {stammResult.teamName || '–'}
                     </div>
                     <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
                       {lang === 'de'
@@ -1306,7 +1306,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <QQTeamAvatar avatarId={avatarId} size={120} />
                   <div style={{ marginTop: 14, fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 700 }}>
-                    {lang === 'de' ? 'CozyCast-Avatar — fix zur Farbe' : 'CozyCast avatar — fixed to color'}
+                    {lang === 'de' ? 'CozyCast-Avatar, fix zur Farbe' : 'CozyCast avatar, fixed to color'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
@@ -1449,8 +1449,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, marginTop: 4, fontWeight: 700 }}>
                 {lang === 'de'
-                  ? '⚠ Dieser Name ist schon vergeben — bitte anderen wählen.'
-                  : '⚠ Name already taken — please choose another.'}
+                  ? '⚠ Dieser Name ist schon vergeben, bitte anderen wählen.'
+                  : '⚠ Name already taken, please choose another.'}
               </div>
             )}
             {error && !nameTaken && (
@@ -1926,7 +1926,7 @@ function TeamGameView({
             fontWeight: 900, fontSize: 13,
           }}>
             <div style={{ marginBottom: 8, animation: 'tcpulse 2s infinite' }}>
-              {lang === 'de' ? '⚠️ Verbindung unterbrochen — verbinde neu…' : '⚠️ Connection lost — reconnecting…'}
+              {lang === 'de' ? '⚠️ Verbindung unterbrochen, verbinde neu…' : '⚠️ Connection lost, reconnecting…'}
             </div>
             {/* 2026-05-05 (Phase-8 Bucket-1 B-2): minHeight 44 fuer TAP_TARGET.
                 Vorher padding: '8px 20px' + 13px Font ergab ~32px Hoehe — zu

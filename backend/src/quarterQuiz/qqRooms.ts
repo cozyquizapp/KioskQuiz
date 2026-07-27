@@ -5227,6 +5227,17 @@ export function qqPause(room: QQRoomState): void {
       room.comebackHL.timerEndsAt = null;
     }
   }
+  // Pause CozyGame-Timer (Wolf 2026-07-27 Audit): war die EINZIGE Sub-Mechanik,
+  // die bei globaler Pause weiterlief — der 60s-Timer feuerte sonst hinter dem
+  // Pause-Screen (→ WINNER_SELECT), Teams verloren ihre Restspielzeit.
+  if (room._cozyGameTimerHandle) {
+    clearTimeout(room._cozyGameTimerHandle);
+    room._cozyGameTimerHandle = null;
+    if (room.cozyGame?.gameEndsAt) {
+      room._cozyGameRemainingMs = Math.max(0, room.cozyGame.gameEndsAt - Date.now());
+      room.cozyGame.gameEndsAt = null;
+    }
+  }
   room.phase = 'PAUSED';
   room.lastActivityAt = Date.now();
 }
@@ -5295,6 +5306,20 @@ export function qqResume(room: QQRoomState): void {
     }, remainMs);
   }
   delete room._connectionsRemainingMs;
+  // Resume CozyGame-Timer (Wolf 2026-07-27 Audit): Gegenstueck zur Pause oben,
+  // Pattern identisch zum Connections-Resume. _cozyGameOnExpire liegt am Room.
+  if (room._cozyGameRemainingMs != null && room._cozyGameRemainingMs > 0
+      && room._cozyGameOnExpire && room.cozyGame) {
+    const remainMs = room._cozyGameRemainingMs;
+    room.cozyGame.gameEndsAt = Date.now() + remainMs;
+    const onExpire = room._cozyGameOnExpire;
+    room._cozyGameTimerHandle = setTimeout(() => {
+      room._cozyGameTimerHandle = null;
+      room._cozyGameOnExpire = null;
+      onExpire();
+    }, remainMs);
+  }
+  delete room._cozyGameRemainingMs;
   // 2026-05-12 (Backend-Audit P0 #1): Comeback-Higher/Lower-Timer wurde in
   // qqPause persisted, aber in qqResume nie wieder gestartet → Spiel hängt
   // nach Pause mid-Comeback. Pattern identisch zu Bluff-Vote-Timer oben.

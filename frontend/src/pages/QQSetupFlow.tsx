@@ -2,7 +2,7 @@
 // 2026-07-19 (Wolf 'Format-Wahl wird zum Wizard, ersetzt das Panel'): Statt aller
 // Setup-Einstellungen gleichzeitig in einem Panel führt EIN Wizard Folie für Folie
 // durch alles, was ein Quizabend zum Starten braucht — von oben nach unten:
-//   1 Format · 2 Look (mit Vorschau) · 3 Fragensatz · 4 Runden & Ablauf
+//   1 Format · 2 Look (mit Vorschau) · 3 Runden & Ablauf · 4 Fragensatz
 //   5 Timer & Sprache · 6 Extras · 7 Bereit → Cockpit (Teams + Start)
 // Die Schritt-Kopfzeile ist klickbar (Tabs) → später ist ein Timer-Tweak 1 Klick,
 // nicht 7. Danger-/Wartungs-Sachen (Bestenliste leeren, Custom-Sounds, Bulk) sind
@@ -44,8 +44,8 @@ type StepKey = 'format' | 'look' | 'draft' | 'rounds' | 'timing' | 'extras' | 'r
 const STEPS: { key: StepKey; title: string; emoji: string }[] = [
   { key: 'format', title: 'Format',           emoji: '🎯' },
   { key: 'look',   title: 'Look',             emoji: '🎨' },
-  { key: 'draft',  title: 'Fragensatz',       emoji: '📚' },
   { key: 'rounds', title: 'Runden & Ablauf',  emoji: '🎮' },
+  { key: 'draft',  title: 'Fragensatz',       emoji: '📚' },
   { key: 'timing', title: 'Timer & Sprache',  emoji: '⏱' },
   { key: 'extras', title: 'Extras',           emoji: '🎲' },
   { key: 'ready',  title: 'Bereit',           emoji: '✅' },
@@ -367,7 +367,7 @@ export function QQSetupFlow(props: Props) {
               )}
               {selectedDraft && fitTruncate && (
                 <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fde68a', padding: '6px 12px', borderRadius: 8, background: `${accent}18`, border: `1px solid ${accent}40` }}>
-                  ℹ Set hat {selectedDraft.questionCount} Fragen — genutzt werden die ersten {fitNeeded} ({phases} Runden × 5)
+                  ℹ Set hat {selectedDraft.questionCount} Fragen, genutzt werden die ersten {fitNeeded} ({phases} Runden × 5)
                 </div>
               )}
               {arena && selectedDraft && (selectedDraft.megaWarnCount ?? 0) > 0 && (
@@ -376,6 +376,7 @@ export function QQSetupFlow(props: Props) {
                 </div>
               )}
             </div>
+            {selectedDraft && fitOK && <QQSchedulePreview draftId={qqDraftId} phases={phases} />}
             <div style={card}>
               <div style={fieldLbl}>📍 Ort / Event <span style={{ textTransform: 'none', letterSpacing: 0, color: '#64748B', fontWeight: 700 }}>· optional — merkt sich pro Ort, welche Fragen schon liefen</span></div>
               <input list="qq-setup-venues" value={venue} onChange={e => { const v = e.target.value; setVenue(v); emit('qq:setVenue', { roomCode, venue: v }); }}
@@ -399,7 +400,7 @@ export function QQSetupFlow(props: Props) {
                   })}
                 </div>
                 <span style={{ fontSize: 12, color: fitOK ? '#86efac' : '#fca5a5', fontWeight: 800 }}>
-                  {selectedDraft ? (fitOK ? `✓ ${fitNeeded} Fragen im Set` : `⚠ Set hat nur ${selectedDraft.questionCount} — braucht ${fitNeeded}`) : 'Erst Fragensatz wählen'}
+                  {selectedDraft ? (fitOK ? `✓ ${fitNeeded} Fragen im Set` : `⚠ Set hat nur ${selectedDraft.questionCount}, braucht ${fitNeeded}`) : `${fitNeeded} Fragen nötig (${phases} × 5), Set wählst du als Nächstes`}
                 </span>
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', marginTop: 14 }}>
@@ -411,7 +412,6 @@ export function QQSetupFlow(props: Props) {
                 <span style={{ fontSize: 12, color: '#64748B', fontWeight: 700 }}>{s.shuffleQuestionsInRound !== false ? 'Kategorien werden je Runde gemischt' : 'Reihenfolge wie im Draft'}</span>
               </div>
             </div>
-            {selectedDraft && fitOK && <QQSchedulePreview draftId={qqDraftId} phases={phases} />}
           </div>
         )}
 

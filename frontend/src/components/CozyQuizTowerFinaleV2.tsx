@@ -65,13 +65,16 @@ const GOLD_DEEP = '#E0A94E';
 const MYST = '#4A4560';
 const MYST_EDGE = '#655C82';
 
-export function TowerFinaleV2({ teams, awards, lang, liveBeat }: {
+export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerId }: {
   teams: TowerTeam[]; awards: TowerAward[]; lang: 'de' | 'en';
   // Hybrid-Live-Steuerung: wenn gesetzt, gaten die Auto-Play-Uebergaenge an den
   // Beat-Grenzen auf diesen (Moderator-getriebenen) Wert. Beats:
   //   0 = Aufbau + Zwischenstand · 1..A = Award i · A+1 = Glide (Top 3) ·
   //   A+2..A+4 = Enthuellung Platz 3/2/1. Ohne Prop = Auto-Play (Preview).
   liveBeat?: number;
+  // 2026-07-27 (Audit): aufgeloester Stechen-Sieger — wird beim Ranking auf Rang 1
+  // gezogen, damit Beamer-Turm und Handy-GameOver-Karte denselben Sieger kroenen.
+  tieBreakerWinnerId?: string | null;
 }) {
   const de = lang === 'de';
   const reduce = prefersReducedMotion();
@@ -87,9 +90,18 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat }: {
   }, [awards]);
   const totalOf = useCallback((id: string) => baseOf(id) + (bonusByTeam[id] ?? 0), [baseOf, bonusByTeam]);
 
-  const finalRanking = useMemo(() => [...teams].sort((a, b) =>
-    (totalOf(b.team.id) - totalOf(a.team.id)) || (b.base - a.base) || a.team.name.localeCompare(b.team.name),
-  ), [teams, totalOf]);
+  const finalRanking = useMemo(() => [...teams].sort((a, b) => {
+    // 2026-07-27 (Audit): identische Sieger-Logik wie qqFinalSortedTeams (Handy):
+    // Stechen-Sieger auf Rang 1, dann Gesamt-Score, dann totalCells, dann Name.
+    // Vorher (base DESC → name) ignorierte tieBreakerWinnerId + wich vom Handy ab.
+    if (tieBreakerWinnerId) {
+      if (a.team.id === tieBreakerWinnerId && b.team.id !== tieBreakerWinnerId) return -1;
+      if (b.team.id === tieBreakerWinnerId && a.team.id !== tieBreakerWinnerId) return 1;
+    }
+    return (totalOf(b.team.id) - totalOf(a.team.id))
+      || ((b.team.totalCells ?? 0) - (a.team.totalCells ?? 0))
+      || a.team.name.localeCompare(b.team.name);
+  }), [teams, totalOf, tieBreakerWinnerId]);
   const rankById = useMemo(() => {
     const m: Record<string, number> = {};
     finalRanking.forEach((e, i) => { m[e.team.id] = i; });

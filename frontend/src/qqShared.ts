@@ -93,9 +93,21 @@ export function qqSortedGroups(s: QQStateUpdate): QQTeam[] {
       largestConnected: points,
     });
   }
-  return groups.sort((a, b) =>
-    (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
-    || (b.totalCells ?? 0) - (a.totalCells ?? 0));
+  // 2026-07-27 (Audit): aufgeloesten Arena-Stechen-Sieger auf Rang 1 ziehen —
+  // analog qqSortedTeams/qqFinalSortedTeams. tieBreakerWinnerId ist ein Team-
+  // Repraesentant; seine Fraktion (grp-<avatarId>) wird gekroent. Vorher kroente
+  // qqSortedGroups bei Gleichstand nach Map-Insertion-Reihenfolge → das Stechen
+  // war wirkungslos, evtl. falsche Fraktion.
+  const tieWinnerTeam = s.tieBreakerWinnerId ? s.teams.find(t => t.id === s.tieBreakerWinnerId) : null;
+  const tieWinnerGroupId = tieWinnerTeam ? `grp-${tieWinnerTeam.avatarId}` : null;
+  return groups.sort((a, b) => {
+    if (tieWinnerGroupId) {
+      if (a.id === tieWinnerGroupId && b.id !== tieWinnerGroupId) return -1;
+      if (b.id === tieWinnerGroupId && a.id !== tieWinnerGroupId) return 1;
+    }
+    return (b.largestConnected ?? 0) - (a.largestConnected ?? 0)
+      || (b.totalCells ?? 0) - (a.totalCells ?? 0);
+  });
 }
 
 /**

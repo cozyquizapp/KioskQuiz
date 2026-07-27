@@ -672,6 +672,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
             awards={towerAwards}
             lang={lang}
             liveBeat={phase.beat}
+            tieBreakerWinnerId={s.tieBreakerWinnerId}
           />
         );
       })()}

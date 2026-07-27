@@ -5691,7 +5691,9 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         }}>
           CozyQuiz
         </div>
-        <div style={{ color: QQ_COLORS.slate700, marginBottom: 20, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
+        {/* 2026-07-27 (Audit): slate700 (#334155) auf #0A0814 war ~1.6:1 — der
+            Beitritts-Code war auf dem Beamer fast unsichtbar. slate400 = lesbar. */}
+        <div style={{ color: QQ_COLORS.slate400, marginBottom: 20, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
         {/* 2026-05-04 (Wolf #10): Spinner + besserer Wakeup-Hint statt nur Text. */}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
@@ -5705,7 +5707,7 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
           <div style={{ fontSize: 13, color: connected ? QQ_COLORS.green500 : QQ_COLORS.brandPink, fontWeight: 700 }}>
             {connected
               ? bt.loading.waiting.de
-              : 'Server wird wach gemacht — gleich geht’s los'}
+              : 'Server wird wach gemacht, gleich geht’s los'}
           </div>
         </div>
       </div>

@@ -316,7 +316,7 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Jede Antwort bringt eurer Fraktion 0–100 Punkte — je besser, desto mehr'),
+        t('rules.mega.slide3.line1', 'Jede Antwort bringt eurer Fraktion 0–100 Punkte, je besser, desto mehr'),
         t('rules.mega.slide3.line2', 'Gewertet wird der Schnitt aller Handys'),
       ],
       extra: t('rules.mega.slide3.extra', 'Letzte Runde zählt doppelt, letzte Frage dreifach'),
@@ -361,7 +361,7 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide3.title', 'How to score'),
       color: '#EC4899',
       lines: [
-        t('rules.mega.slide3.line1', 'Every answer earns your faction 0–100 points — the better, the more'),
+        t('rules.mega.slide3.line1', 'Every answer earns your faction 0–100 points, the better, the more'),
         t('rules.mega.slide3.line2', 'Scored as the average of all your phones'),
       ],
       extra: t('rules.mega.slide3.extra', 'Last round counts double, the last question triple'),

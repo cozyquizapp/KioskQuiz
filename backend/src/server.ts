@@ -185,10 +185,18 @@ function resolveAdminPin(): string {
 // x-admin-pin-Header (globaler fetch-Interceptor in main.tsx, gespeist aus
 // sessionStorage['qq_admin_pin'] der PinGate) — kann aber auch als body.pin /
 // query.pin geschickt werden (z.B. Wolf haengt ?pin=... an den Feedback-URL).
-// In Dev (NODE_ENV !== production) uebersprungen, damit lokale Iteration ohne
-// PIN laeuft; die echten Daten liegen nur in Prod.
+// 2026-07-27 (Security-Audit): Dev-Bypass fail-secure gemacht. Frueher
+// '!== production' → offen, falls Coolify NODE_ENV nicht auf 'production' setzt
+// (die Backend-Env-Liste fuehrt NODE_ENV gar nicht). Jetzt: Bypass NUR bei
+// explizitem NODE_ENV=development ODER lokal OHNE MONGODB_URI (Wolf-Regel 'nie
+// gegen Prod', Harness startet mit `env -u MONGODB_URI`; Prod hat MONGODB_URI
+// IMMER gesetzt). Unset NODE_ENV zaehlt damit als Prod → PIN erforderlich.
+const DEV_BYPASS = process.env.NODE_ENV === 'development'
+  || (process.env.NODE_ENV !== 'production' && !process.env.MONGODB_URI);
+// In Dev (DEV_BYPASS) uebersprungen, damit lokale Iteration ohne PIN laeuft;
+// die echten Daten liegen nur in Prod.
 function requirePin(req: any, res: any, next: any): void {
-  if (process.env.NODE_ENV !== 'production') return next();
+  if (DEV_BYPASS) return next();
   const pin = req.headers?.['x-admin-pin'] ?? req.body?.pin ?? req.query?.pin;
   if (!pin || pin !== ADMIN_PIN) {
     res.status(403).json({ error: 'PIN erforderlich' });
@@ -6530,7 +6538,7 @@ io.on('connection', (socket: Socket) => {
   socket.use((packet, next) => {
     const event = packet[0];
     if (typeof event !== 'string' || !event.startsWith('host:') || event === 'host:auth') return next();
-    if (process.env.NODE_ENV !== 'production') return next();
+    if (DEV_BYPASS) return next();
     if ((socket.data as any)?.hostIsMod) return next();
     const maybeAck = packet[packet.length - 1];
     if (typeof maybeAck === 'function') (maybeAck as AckFn)({ ok: false, error: 'Host-PIN erforderlich.' });
@@ -9634,7 +9642,9 @@ app.get('/api/qq/leaderboard', async (_req, res) => {
 });
 
 // QQ Game Results — delete single entry
-app.delete('/api/qq/gameresults/:id', async (req, res) => {
+// 2026-07-27 (Security-Audit): requirePin ergaenzt — vorher unauth, jeder mit der
+// URL konnte Ergebnisse loeschen (IDOR) bzw. das ganze Leaderboard wipen.
+app.delete('/api/qq/gameresults/:id', requirePin, async (req, res) => {
   const { id } = req.params;
   if (!id) return res.status(400).json({ error: 'id fehlt' });
   const deleted = await deleteQQGameResult(id);
@@ -9643,7 +9653,7 @@ app.delete('/api/qq/gameresults/:id', async (req, res) => {
 });
 
 // QQ Game Results — delete all (reset leaderboard)
-app.delete('/api/qq/gameresults', async (_req, res) => {
+app.delete('/api/qq/gameresults', requirePin, async (_req, res) => {
   const count = await deleteAllQQGameResults();
   res.json({ ok: true, deleted: count });
 });
@@ -9916,7 +9926,7 @@ app.get('/api/qq/crashes', (req, res) => {
 // In Dev (NODE_ENV !== 'production') wird der PIN-Check ueberspringt fuer
 // schnellere Iteration.
 function assertDevAccess(req: any, res: any): boolean {
-  if (process.env.NODE_ENV !== 'production') return true; // dev: kein Check
+  if (DEV_BYPASS) return true; // dev: kein Check (fail-secure, siehe DEV_BYPASS)
   const pin = req.body?.pin ?? req.query?.pin ?? req.headers?.['x-admin-pin'];
   if (!pin || pin !== ADMIN_PIN) {
     res.status(403).json({ error: 'PIN erforderlich' });

@@ -944,7 +944,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               const showLabel = active || !compact;
               return (
                 <div key={i} style={{
-                  display: 'flex', alignItems: 'center', gap: 'clamp(5px, 0.6cqw, 10px)',
+                  display: 'flex', alignItems: 'center',
                   padding: 'clamp(5px,0.7cqh,9px) clamp(9px,1cqw,15px)',
                   borderRadius: 999, minWidth: 0,
                   background: active ? `rgba(${aRGB},0.18)` : 'rgba(255,255,255,0.03)',
@@ -959,19 +959,24 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                     borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
                     background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(255,255,255,0.08)',
                     color: active ? '#1a0a14' : done ? '#fff' : '#aab0be',
+                    transition: 'background 0.4s ease, color 0.4s ease',
                   }}>{item.glyph}</span>
-                  {showLabel && (
-                    <span style={{
-                      fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
-                      color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#a8adba',
-                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                      // 2026-07-04 (Wolf 'Dein Weg durchs Quiz immer noch abgeschnitten'):
-                      // inaktiver Cap 170->320px, damit die vollen Stepper-Labels passen
-                      // (die 5 Pillen bleiben zusammen < 1280px Zeilenbreite). Ellipsis
-                      // bleibt als Sicherheitsnetz fuer sehr lange Custom-Labels.
-                      maxWidth: active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(120px, 17cqw, 320px)',
-                    }}>{item.label}</span>
-                  )}
+                  {/* 2026-07-27 (Wolf 'motion in der leiste abgehakt'): Label NICHT
+                      per display-Toggle ein/ausblenden — das aenderte die Pillen-
+                      Breite schlagartig und space-between liess die ganze Reihe
+                      springen. Jetzt kollabiert das Label weich per max-width/opacity/
+                      margin -> Pille waechst/schrumpft fluessig, die Reihe gleitet mit
+                      (animate-Skill: nur weiche Uebergaenge, kein Layout-Snap). */}
+                  <span style={{
+                    fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
+                    color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#a8adba',
+                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                    // inaktiver Cap 170->320px, damit die vollen Stepper-Labels passen.
+                    maxWidth: showLabel ? (active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(120px, 17cqw, 320px)') : 0,
+                    opacity: showLabel ? 1 : 0,
+                    marginLeft: showLabel ? 'clamp(5px, 0.6cqw, 10px)' : 0,
+                    transition: 'max-width 0.55s var(--qq-ease-out-cubic), opacity 0.4s ease, margin-left 0.55s var(--qq-ease-out-cubic), color 0.4s ease',
+                  }}>{item.label}</span>
                 </div>
               );
             })}

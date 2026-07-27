@@ -79,94 +79,16 @@ const t = {
     next: { de: 'Weiter →', en: 'Next →' },
     error: { de: 'Fehler beim Beitreten', en: 'Join error' },
   },
-  lobby: {
-    ready: { de: 'Bereit!', en: 'Ready!' },
-    waiting: { de: 'Warteraum', en: 'Waiting room' },
-    waitingForMod: { de: 'Warte auf Moderator', en: 'Waiting for moderator' },
-    teams: { de: 'Team', en: 'Team' },
-  },
-  phase: {
-    next: { de: 'Nächste Phase', en: 'Next phase' },
-    round: { de: 'Runde', en: 'Round' },
-  },
-  answer: {
-    submit: { de: 'Abgeben', en: 'Submit' },
-    submitted: { de: 'Abgegeben', en: 'Submitted' },
-    choose: { de: 'Wählen', en: 'Choose' },
-    given: { de: '✓ Abgegeben', en: '✓ Submitted' },
-    enterAnswer: { de: 'Antwort eingeben…', en: 'Enter answer…' },
-    enterNumber: { de: 'Zahl eingeben…', en: 'Enter number…' },
-  },
-  correct: { de: '🎉 Richtig! Du darfst ein Feld wählen', en: '🎉 Correct! You may choose a field' },
-  potato: {
-    yourTurn: { de: '🥔 Du bist dran!', en: '🥔 Your turn!' },
-    otherTurn: { de: '🥔 {name} ist dran', en: '🥔 {name} is up' },
-    out: { de: '❌ Du bist raus', en: '❌ You are out' },
-  },
-  imposter: {
-    waiting: { de: '🕵️ Warten auf Start…', en: '🕵️ Waiting for start…' },
-    eliminated: { de: '❌ Falsche Aussage gewählt, du bist raus', en: '❌ Wrong statement, you are out' },
-    chosen: { de: '✓ Gewählt, warte auf nächstes Team…', en: '✓ Chosen, waiting for next team…' },
-    allChosen: { de: 'Alle Aussagen gewählt', en: 'All statements chosen' },
-    otherPicking: { de: '{name} wählt gerade…', en: '{name} is choosing…' },
-    remaining: { de: '{n} Aussage(n) übrig', en: '{n} statement(s) left' },
-  },
-  placement: {
-    tapEmpty: { de: 'Tippe auf ein freies Feld', en: 'Tap an empty field' },
-    tapOpponent: { de: 'Tippe auf ein fremdes Feld', en: 'Tap an opponent\'s field' },
-    tapOpponent12: { de: 'Tippe auf ein gegnerisches Feld (1/2)', en: 'Tap an opponent field (1/2)' },
-    swap2nd: { de: 'Jetzt das 2. Feld (anderes Team) wählen', en: 'Now choose the 2nd field (different team)' },
-    otherChoosing: { de: 'wählt ein Feld…', en: 'is choosing a field…' },
-    cancel: { de: 'Abbrechen', en: 'Cancel' },
-    titlePlace: { de: '📍 Wähle ein Feld!', en: '📍 Choose a field!' },
-    titleSteal: { de: '⚡ Klau ein fremdes Feld!', en: '⚡ Steal an opponent\'s field!' },
-    titleSwap: { de: '🔄 Tausche 2 gegnerische Felder!', en: '🔄 Swap 2 opponent fields!' },
-    titlePhase2: { de: '🏆 Runde 2: Wähle deine Aktion!', en: '🏆 Round 2: Choose your action!' },
-    place2: { de: '📍 2 Felder setzen', en: '📍 Place 2 fields' },
-    steal1: { de: '⚡ 1 Feld klauen', en: '⚡ Steal 1 field' },
-    placeBtn: { de: '📍 Setzen', en: '📍 Place' },
-    stealBtn: { de: '⚡ Klauen', en: '⚡ Steal' },
-    swapBtn: { de: '🔄 Felder wählen', en: '🔄 Choose fields' },
-    confirmPlace: { de: '📍 Feld wählen', en: '📍 Choose field' },
-    confirmSteal: { de: '⚡ Klauen', en: '⚡ Steal' },
-  },
-  comeback: {
-    title: { de: '⚡ Deine Comeback-Chance!', en: '⚡ Your comeback chance!' },
-    otherTeam: { de: '⚡ Comeback-Aktion läuft…', en: '⚡ Comeback action in progress…' },
-    place2: { de: '2 Felder setzen', en: 'Place 2 fields' },
-    place2desc: { de: 'Platziere 2 freie Felder', en: 'Place 2 empty fields' },
-    steal1: { de: '1 Feld klauen', en: 'Steal 1 field' },
-    steal1desc: { de: 'Nimm ein fremdes Feld', en: 'Take an opponent\'s field' },
-    swap2: { de: '2 Felder tauschen', en: 'Swap 2 fields' },
-    swap2desc: { de: 'Tausche je 1 Feld zweier Gegner', en: 'Swap 1 field each of two opponents' },
-    activePlace: { de: '📍 Wähle 2 freie Felder', en: '📍 Choose 2 empty fields' },
-    activeSteal: { de: '⚡ Klau ein fremdes Feld', en: '⚡ Steal an opponent\'s field' },
-    activeSwap: { de: '🔄 Wähle 2 gegnerische Felder zum Tauschen', en: '🔄 Choose 2 opponent fields to swap' },
-  },
-  gameOver: {
-    won: { de: 'Gewonnen! 🎉', en: 'You won! 🎉' },
-    wins: { de: '{name} gewinnt!', en: '{name} wins!' },
-    rank: { de: 'Platz {n} für dich', en: 'You placed #{n}' },
-    connected: { de: 'verbunden', en: 'connected' },
-    total: { de: 'gesamt', en: 'total' },
-  },
   stats: {
     stolen: { de: 'geklaut', en: 'stolen' },
     joker: { de: 'Joker', en: 'Joker' },
     connected: { de: 'verbunden', en: 'connected' },
     total: { de: 'gesamt', en: 'total' },
   },
-  allIn: {
-    distribute: { de: 'Punkte verteilen', en: 'Distribute points' },
-    remaining: { de: '{n} übrig', en: '{n} left' },
-    leftToDistribute: { de: 'Noch {n} Punkt(e) verteilen', en: '{n} point(s) left' },
-  },
-  pinIt: {
-    tap: { de: '📍 Tippe auf die Karte um einen Pin zu setzen', en: '📍 Tap the map to place a pin' },
-    noPin: { de: 'Noch kein Pin gesetzt', en: 'No pin placed yet' },
-  },
-  taken: { de: 'Vergeben', en: 'Taken' },
 };
+// Hinweis: Placement/Comeback/Answer/… werden NICHT hier uebersetzt, sondern in
+// den jeweiligen Team-Komponenten (CozyQuizTeamActionCards etc.). Frueher lag hier
+// eine Kopie, die auseinanderdriftete — 2026-07-27 als toter Code entfernt.
 // TEAM_CSS jetzt in '../components/qqTeamStyles'.
 
 const QQ_ROOM = 'default';

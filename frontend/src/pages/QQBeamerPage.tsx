@@ -799,8 +799,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     ? `Q-${s.currentQuestion?.id ?? s.questionIndex}`
     : s.phase === 'PLACEMENT'
       ? `PLACE-${s.questionIndex}`
+      // 2026-07-27 (Wolf 'die ganze seite blendet aus + leiste spawnt neu, card
+      // schiebt nicht raus'): RULES ist EINE phaseGroup (NICHT pro Slide). Vorher
+      // enthielt der Key rulesSlideIndex -> der Phasen-Wrapper <div key={phaseGroup}>
+      // remountete bei JEDEM Regel-Wechsel und spielte die qqSlideIn-Entrance neu
+      // (alles blendet aus, Stepper spawnt neu). Das warf auch die interne Zwei-
+      // Karten-Push-Logik der RulesView weg (view/outgoing) -> kein sichtbares
+      // Rausschieben. Jetzt bleibt der Wrapper stehen; RulesView macht den Slide
+      // intern (Card faehrt raus, Leiste + Wolf gleiten durch).
       : s.phase === 'RULES'
-        ? `RULES-${s.rulesSlideIndex ?? 0}`
+        ? 'RULES'
         : s.phase;
   const [flashKey, setFlashKey] = useState(0);
   const prevGroupRef = useRef(phaseGroup);

@@ -984,21 +984,37 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.09)', zIndex: 0,
               }}>
                 <div style={{
-                  position: 'absolute', top: 0, bottom: 0, left: 0, width: `${(activeFrac * 100).toFixed(1)}%`,
+                  // 2026-07-27 (Wolf-Finding 'motions oben in der leiste holprig'):
+                  // Fortschritt via GPU-transform scaleX statt width-Animation
+                  // (animate-Skill: nur transform/opacity animieren = kein Reflow).
+                  position: 'absolute', top: 0, bottom: 0, left: 0, width: '100%',
+                  transformOrigin: 'left center', transform: `scaleX(${activeFrac.toFixed(3)})`,
                   borderRadius: 2, background: `linear-gradient(90deg, rgba(${aRGB},0.7), ${aHex})`,
-                  boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'width 0.6s cubic-bezier(0.16,1,0.3,1)',
+                  boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'transform 0.6s cubic-bezier(0.16,1,0.3,1)',
+                  willChange: 'transform',
                 }} />
               </div>
-              {/* CozyWolf steht auf der Schiene (bottom:50% = Fuesse auf der Linie). */}
-              <div className="qqRulesWolf" style={{
-                position: 'absolute', bottom: '50%', left: `calc(6% + ${(activeFrac * 88).toFixed(1)}%)`,
-                zIndex: 3, width: 'clamp(28px, 2.6cqw, 44px)',
-                filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
-                transition: 'left 0.6s cubic-bezier(0.16,1,0.3,1)',
-                animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
+              {/* CozyWolf steht auf der Schiene (bottom:50% = Fuesse auf der Linie).
+                  2026-07-27 (Wolf-Finding 'motions oben in der leiste holprig'):
+                  Position via GPU-transform translateX auf einer track-breiten Ebene
+                  (translateX-% = % der Bandbreite, deckt sich mit dem alten left-calc)
+                  statt left-Animation → kein Layout-Reflow, glatter Lauf. Der Bob
+                  bleibt auf dem inneren Wolf (className qqRulesWolf → reduced-motion). */}
+              <div style={{
+                position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
+                transform: `translateX(${(6 + activeFrac * 88).toFixed(1)}%)`,
+                transition: 'transform 0.6s cubic-bezier(0.16,1,0.3,1)',
+                willChange: 'transform',
               }}>
-                <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}
-                  style={{ width: '100%', height: 'auto', display: 'block' }} />
+                <div className="qqRulesWolf" style={{
+                  position: 'absolute', bottom: '50%', left: 0,
+                  width: 'clamp(28px, 2.6cqw, 44px)',
+                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
+                  animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
+                }}>
+                  <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}
+                    style={{ width: '100%', height: 'auto', display: 'block' }} />
+                </div>
               </div>
             </div>
           </div>

@@ -20,7 +20,7 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { FactionCrest } from './QQFactionCrest';
-import { QQEmojiIcon, QQIcon } from './QQIcon';
+import { QQEmojiIcon, QQIcon, qqCatSlug } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { JokerIcon } from './JokerIcon';
 import {
@@ -384,14 +384,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           const sortedByCells = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
           const renderPill = (t: typeof sortedByCells[number]) => (
             <div key={t.id} style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '6px 12px', borderRadius: 'var(--qq-pill-radius)',
+              // 2026-07-27 (Wolf-Finding 'grid in pause komisch'): Seiten-Pillen
+              // beamer-lesbar skaliert (Avatar/Zahl waren mit 28px/14px winzig
+              // neben dem grossen Brett) — cqw-basiert wie der Rest der Pause.
+              display: 'inline-flex', alignItems: 'center', gap: 'clamp(7px, 0.8cqw, 11px)',
+              padding: 'clamp(6px,0.7cqh,9px) clamp(11px,1.1cqw,16px)', borderRadius: 'var(--qq-pill-radius)',
               background: `${t.color}15`,
               border: `1.5px solid ${t.color}55`,
               flexShrink: 0,
             }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
-              <span style={{ fontWeight: 900, color: t.color, fontSize: 14 }}>{t.totalCells}</span>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(30px, 3cqw, 42px)'} />
+              <span style={{ fontWeight: 900, color: t.color, fontSize: 'clamp(15px, 1.7cqw, 22px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
             </div>
           );
           const colStyle: React.CSSProperties = {
@@ -1003,7 +1006,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 border: isQuietMotion() ? '2px solid var(--qq-card-text)' : `1.5px solid ${catMeta.color}44`,
                 boxShadow: isQuietMotion() ? '4px 4px 0 var(--qq-card-text)' : undefined,
               }}>
-                <span style={{ fontSize: 'clamp(28px, 3cqw, 40px)', lineHeight: 1 }}>{catMeta.emoji}</span>
+                {(() => {
+                  // 2026-07-27 (Wolf-Finding 'falsche emojis fuer kategorien'):
+                  // Custom-Kategorie-Medaillon (cat-*.png) statt rohem Emoji —
+                  // wie PhaseIntro/TeamCards/QuestionCard. Fallback: Emoji.
+                  const catSlug = qqCatSlug(cm.category);
+                  return catSlug
+                    ? <QQIcon slug={catSlug} size={'clamp(30px, 3.2cqw, 44px)'} style={{ flexShrink: 0 }} />
+                    : <span style={{ fontSize: 'clamp(28px, 3cqw, 40px)', lineHeight: 1 }}>{catMeta.emoji}</span>;
+                })()}
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 4cqw, 52px)'} style={{ flexShrink: 0 }} />}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (team?.color ?? 'var(--qq-card-text)') }}>{cm.teamName}</div>

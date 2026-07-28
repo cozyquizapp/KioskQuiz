@@ -11,7 +11,7 @@ import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvat
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
-import { QUIRK_SLUGS, isQuirkSlug, quirkBySlug, quirkLabel, quirkOpenSrc, quirkClosedSrc, quirkActionSrc, type QuirkActionType } from './quirksAvatars';
+import { QUIRK_SLUGS, isQuirkSlug, quirkBySlug, quirkLabel, quirkColorForSlot, quirkSrc, type QuirkActionType } from './quirksAvatars';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -355,13 +355,10 @@ export function getAvatarDisplay(
     if (isCozyWolfSlug(setWolf)) emoji = setWolf;
   }
 
-  // Cozy Quirks ist ebenfalls slot-gebunden: EIN Charakter je Farbe (Farbe ist
-  // ins Motiv gebacken). Charakter IMMER aus dem Farb-Slot ableiten, nie aus
-  // einem abweichenden teamEmoji (sonst oranges Motiv auf gruener Kachel).
-  if (set.id === 'cozyQuirks') {
-    const setQuirk = set.avatars[slotIdx];
-    if (isQuirkSlug(setQuirk)) emoji = setQuirk;
-  }
+  // Cozy Quirks V2 (2026-07-28): FREI kombinierbar (10 Designs × 8 Farben). Das
+  // Design kommt aus teamEmoji (oder Set-Default je Slot), die Farbe IMMER vom
+  // Slot → KEIN slot-binding-Override (wie cozy3d/Party). Der teamEmoji-Design-
+  // Slug gewinnt; Default = set.avatars[slotIdx] (erste 8 Designs).
 
   // CozyArena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {
@@ -396,16 +393,18 @@ export function getAvatarDisplay(
     };
   }
 
-  // Cozy Quirks: animierter Charakter auf eckiger Team-Kachel (3 Frames + Timings).
+  // Cozy Quirks: animiertes Design auf eckiger Team-Kachel. Design aus emoji,
+  // Farbe (WebP-Ordner) aus dem Slot → frei kombinierbar. 3 Frames + Timings.
   if (isQuirkSlug(emoji)) {
     const q = quirkBySlug(emoji)!;
+    const colorToken = quirkColorForSlot(slotIdx);
     return {
       kind: 'quirk',
       color: slot.color,
       label: quirkLabel(emoji),
-      openSrc: quirkOpenSrc(q.color),
-      closedSrc: quirkClosedSrc(q.color),
-      actionSrc: quirkActionSrc(q.color),
+      openSrc: quirkSrc(colorToken, q.design, 'open'),
+      closedSrc: quirkSrc(colorToken, q.design, 'closed'),
+      actionSrc: quirkSrc(colorToken, q.design, 'action'),
       actionType: q.action,
       delay: q.delay,
       blink: q.blink,

@@ -1250,7 +1250,9 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 paddingRight: pool.length > 16 ? 4 : undefined,
               }}>
                 {pool.map((em, i) => {
-                  const taken = takenEmojis.includes(em);
+                  // Cozy Quirks (frei): Designs sind NICHT vergeben (die Farbe/Slot
+                  // ist eindeutig, das Design frei mehrfach wählbar).
+                  const taken = isQuirkSlug(em) ? false : takenEmojis.includes(em);
                   const sel = chosenEmoji === em;
                   const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? QQ_COLORS.brandPink;
                   return (
@@ -1259,14 +1261,6 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       onClick={() => {
                         if (taken) return;
                         setChosenEmoji(em);
-                        // Cozy Quirks: slot-gebunden (Farbe ins Motiv gebacken) →
-                        // den Farb-Slot an den gewaehlten Charakter koppeln, sonst
-                        // sitzt ein oranges Motiv auf gruener Kachel. Pool-Index i
-                        // = Slot-Index (QUIRK_SLUGS index-aligned zu QQ_AVATARS).
-                        if (isQuirkSlug(em)) {
-                          const slotId = QQ_AVATARS[i]?.id;
-                          if (slotId && !takenAvatarIds.includes(slotId)) setAvatarId(slotId);
-                        }
                         if (isCozyWolfSlug(em)) {
                           // 2026-07-20 (Wolf): slot-gebunden, der Wolf IST die
                           // Farbe. Der Render leitet den Wolf aus dem Farb-Slot ab
@@ -1303,7 +1297,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                     >
-                      <CountryFlagOrEmoji emoji={em} fontSize={36} />
+                      {isQuirkSlug(em) ? (
+                        // Design in der GEWÄHLTEN Farbe zeigen (frei kombinierbar).
+                        <QQTeamAvatar avatarId={avatarId} teamEmoji={em} size={46} avatarSetId={activeSetId} />
+                      ) : (
+                        <CountryFlagOrEmoji emoji={em} fontSize={36} />
+                      )}
                     </button>
                   );
                 })}

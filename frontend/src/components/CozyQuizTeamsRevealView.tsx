@@ -19,7 +19,7 @@ import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
-import { isQuirkSlug, quirkBySlug, quirkOpenSrc, quirkLabel, quirkSlugForSlot, QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel, quirkColorForSlot, QUIRK_SET_ID } from '../quirksAvatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
@@ -837,12 +837,12 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={partySrc(t.emoji)} alt={partyLabel(t.emoji)} draggable={false}
               style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
-          // Cozy Quirks: slot-gebunden → Charakter IMMER aus dem Farb-Slot
-          // ableiten (nicht aus evtl. abweichendem t.emoji), Ruhe-Frame statisch.
+          // Cozy Quirks (frei): Design aus t.emoji, Farbe aus dem Farb-Slot.
           if (isQuirkSlug(t.emoji)) {
             const slotIdx = QQ_AVATARS.findIndex(a => a.id === t.avatarId);
-            const q = quirkBySlug(slotIdx >= 0 ? quirkSlugForSlot(slotIdx) : t.emoji) ?? quirkBySlug(t.emoji);
-            return <img src={quirkOpenSrc(q?.color ?? 'orange')} alt={quirkLabel(t.emoji)} draggable={false}
+            const q = quirkBySlug(t.emoji);
+            const color = quirkColorForSlot(slotIdx >= 0 ? slotIdx : 0);
+            return <img src={quirkSrc(color, q?.design ?? 'flux', 'open')} alt={quirkLabel(t.emoji)} draggable={false}
               style={{ width: '96%', height: '96%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
           // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf

@@ -4,7 +4,7 @@ import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
-import { isQuirkSlug, quirkBySlug, quirkOpenSrc, quirkLabel } from '../quirksAvatars';
+import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel } from '../quirksAvatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
@@ -363,9 +363,11 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
   // Grid) reicht das statische Motiv. Ohne diesen Zweig faellt der Slug auf Text.
   if (isQuirkSlug(emoji)) {
     const q = quirkBySlug(emoji);
+    // Inline (ohne Slot-Farbe): Design in Default-Farbe. Der /team-Picker rendert
+    // Designs über QQTeamAvatar in der gewählten Farbe (nicht hierüber).
     return (
       <img
-        src={quirkOpenSrc(q?.color ?? 'orange')}
+        src={quirkSrc('orange', q?.design ?? 'flux', 'open')}
         alt={quirkLabel(emoji)}
         draggable={false}
         style={{

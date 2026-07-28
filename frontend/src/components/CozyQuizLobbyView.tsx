@@ -16,6 +16,7 @@ import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
@@ -203,6 +204,9 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode, arena }: {
   );
 }
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
+  // Cozy Quirks: die eckige Farb-Kachel IST der Avatar → in der Teamkarte füllt
+  // sie bündig die volle Höhe links, der farbige Card-Akzent entfällt (Wolf).
+  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const fontFam = isThemed()
     ? 'var(--qq-font)'
@@ -936,13 +940,17 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 // sonst flackert die Karte beim Wave-End (Animation-Property
                 // wechselt von teamJoinWave → teamCardIn → opacity:0-Frame).
                 const wasSeen = seenTeamIdsRef.current.has(t.id);
+                const cardPadding = veryMany
+                  ? 'clamp(8px, 1cqh, 12px) clamp(10px, 1.1cqw, 15px)'
+                  : compact
+                    ? 'clamp(16px, 2cqh, 24px) clamp(20px, 2.2cqw, 28px)'
+                    : 'clamp(18px, 2.2cqh, 26px) clamp(22px, 2.4cqw, 30px)';
                 return (
                   <div key={t.id} style={{
-                    padding: veryMany
-                      ? 'clamp(8px, 1cqh, 12px) clamp(10px, 1.1cqw, 15px)'
-                      : compact
-                        ? 'clamp(16px, 2cqh, 24px) clamp(20px, 2.2cqw, 28px)'
-                        : 'clamp(18px, 2.2cqh, 26px) clamp(22px, 2.4cqw, 30px)',
+                    // Quirks: Kachel bündig links über die volle Höhe → Card-Padding
+                    // wandert in die Text-Spalte, Card clippt die Kachel-Ecken.
+                    padding: quirkSet ? 0 : cardPadding,
+                    overflow: quirkSet ? 'hidden' : undefined,
                     borderRadius: isThemed() ? 'var(--qq-card-radius)' : (compact ? 18 : 22),
                     // 2026-06-28 (Beamer-Review): einheitliche, ruhige Karte mit
                     // 4px-Farb-Akzent LINKS statt voll-bunter Rahmen. Team-Farbe
@@ -953,14 +961,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     // 2026-07-01 (Wolf Mega-Event): bei vielen Teams wiederholen sich
                     // die 8 Slot-Farben → Farb-Border wäre Noise. Neutral, nur der
                     // Avatar trägt die Identität.
-                    borderLeft: veryMany
+                    // Quirks tragen die Farbe in der Kachel → kein farbiger Akzent.
+                    borderLeft: (veryMany || quirkSet)
                       ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)')
                       : `4px solid ${t.color}`,
                     boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
                     // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).
                     ['--gc' as string]: `${t.color}99`,
                     display: 'flex', alignItems: 'center',
-                    gap: veryMany ? 'clamp(8px, 0.9cqw, 12px)' : compact ? 'clamp(14px, 1.5cqw, 20px)' : 'clamp(14px, 1.6cqw, 20px)',
+                    gap: quirkSet ? 0 : (veryMany ? 'clamp(8px, 0.9cqw, 12px)' : compact ? 'clamp(14px, 1.5cqw, 20px)' : 'clamp(14px, 1.6cqw, 20px)'),
                     // Join-Feedback: frische Teams poppen rein (scale .82→1.04→1 +
                     // Glow-Flash, 0.52s). Bereits gesehene Teams: keine Animation
                     // (sonst Flacker beim Re-Render). Erst-Render: sanfter Stagger.
@@ -973,10 +982,17 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     minWidth: 0,
                     position: 'relative',
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={veryMany ? 'clamp(38px, 3.6cqw, 52px)' : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
+                    {quirkSet ? (
+                      // Kachel füllt die volle Kartenhöhe bündig links (kein Padding).
+                      <div style={{ alignSelf: 'stretch', aspectRatio: '1', flexShrink: 0, display: 'flex' }}>
+                        <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size="100%" />
+                      </div>
+                    ) : (
+                      <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={veryMany ? 'clamp(38px, 3.6cqw, 52px)' : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
+                    )}
                     {/* 2026-06-28 (Beamer-Review 'kein Emoji'): Wink-Hand 👋 raus —
                         das Join-Feedback trägt jetzt der Card-Pop + Glow-Flash. */}
-                    <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ minWidth: 0, flex: 1, padding: quirkSet ? cardPadding : undefined }}>
                       <div style={{
                         fontWeight: 900,
                         // 2026-05-12 (Wolf 'teamnamen die mit einem buchstaben

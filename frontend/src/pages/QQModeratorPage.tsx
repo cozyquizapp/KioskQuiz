@@ -261,6 +261,19 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // bleibt aber im Setup stehen — kein automatischer Bot-Spawn + Quiz-Start mehr
   // beim Neuladen. Mit ?run=1 laeuft der schnelle Reveal-Test wie frueher durch
   // (zusaetzlich ?arena=1 / ?mega=1 → Arena statt CozyQuiz).
+  // 2026-07-28 (Test-Harness): ?set=<avatarSetId> erzwingt lokal ein Avatar-Set
+  // (z.B. ?set=cozyQuirks), UNABHÄNGIG von ?run=1 → man kann die Lobby mit dem Set
+  // halten (ohne Autostart) und am echten Beamer sichten. Nur Test-Mode.
+  const testSetTriggeredRef = useRef(false);
+  useEffect(() => {
+    if (!testMode || testSetTriggeredRef.current) return;
+    if (!connected || !joined) return;
+    const setParam = new URLSearchParams(window.location.search).get('set');
+    if (!setParam) return;
+    testSetTriggeredRef.current = true;
+    try { emit('qq:setAvatarSet', { roomCode, avatarSetId: setParam }); } catch {}
+  }, [testMode, connected, joined, roomCode, emit]);
+
   const testSetupTriggeredRef = useRef(false);
   useEffect(() => {
     if (!testMode) return;
@@ -325,6 +338,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       // 2. Setup als done markieren
       try { await emit('qq:setSetupDone', { roomCode, value: true }); } catch {}
       await new Promise(r => setTimeout(r, 300));
+      // 2026-07-28 (Test-Harness): ?hold=1 → Setup fertig + Bots da, aber NICHT
+      // starten → der echte Beamer zeigt die LOBBY und haelt sie (zum Sichten).
+      if (/[?&]hold=1/i.test(window.location.search)) return;
       // 3. Spiel starten
       try { await startGameRef.current(); } catch {}
     })();

@@ -803,9 +803,13 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         const cardWidth = multiRow
           ? 'clamp(165px, 13cqw, 220px)'
           : many ? 'clamp(160px, 15cqw, 240px)' : 'clamp(190px, 18cqw, 280px)';
-        const avatarSize = multiRow
-          ? 'clamp(82px, 8cqw, 130px)'
-          : many ? 'clamp(96px, 9.5cqw, 160px)' : 'clamp(118px, 12cqw, 196px)';
+        // Quirks: die eckige Kachel füllt die Karte (Wolf „so groß wie das Feld
+        // dahinter") → deutlich größer als die runde Disc der anderen Sets.
+        const avatarSize = quirkSet
+          ? (multiRow ? 'clamp(120px, 11.8cqw, 188px)' : many ? 'clamp(140px, 13.6cqw, 222px)' : 'clamp(168px, 16.6cqw, 262px)')
+          : (multiRow
+            ? 'clamp(82px, 8cqw, 130px)'
+            : many ? 'clamp(96px, 9.5cqw, 160px)' : 'clamp(118px, 12cqw, 196px)');
         // 2026-05-28 (Wolf 'avatar viel zu klein im kreis' Round 2): Edge/Chromium
         // rendert `calc(clamp(...) * 0.78)` teilweise auf 0 — nested clamp-in-calc
         // mit Multiplikation ist fragil. Daher Emoji-Size als eigene Clamp

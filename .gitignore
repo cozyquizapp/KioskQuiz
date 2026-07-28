@@ -33,3 +33,4 @@ frontend/public/avatars/cozyarena/*colloseum.png
 # 2026-07-20: Wolfs Roh-Lieferungen im icons-Ordner (unfreigestellt, >2MB,
 # Dateinamen mit Kommas). Nicht deployen - sprengen den Workbox-Precache.
 frontend/public/icons/*colo*.png
+.shots-quirks/

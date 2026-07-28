@@ -203,7 +203,9 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // drauf (Emoji-Mode: Emoji-Glyph; PNG-Mode: cozyCast-PNG). Schaft = sauberer
   // schwarzer CSS-Cone (kein 📍-Emoji mehr — sah „basteln" aus, war Wolfs
   // Beschwerde 'pin köpfe sollen die avatare mit rundem bg sein').
-  const makeTeamIcon = (color: string, mode: 'png' | 'image' | 'emoji', srcOrEmoji: string, emojiFallback: string) => L.divIcon({
+  // square=true (Cozy Quirks): eckige Kachel statt runder Team-Disc → Pin-Kopf +
+  // Bild bekommen einen Kachel-Radius (18%) statt 50%, kein Rund-Clip des Motivs.
+  const makeTeamIcon = (color: string, mode: 'png' | 'image' | 'emoji', srcOrEmoji: string, emojiFallback: string, square = false) => L.divIcon({
     className: 'qq-team-pin',
     html: `<div style="
       position: relative; width: 56px; height: 84px;
@@ -224,7 +226,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
       <!-- Avatar-Disc Kopf (Team-Color BG, Avatar/Emoji drauf) -->
       <div style="
         position: absolute; left: 4px; top: 0;
-        width: 48px; height: 48px; border-radius: 50%;
+        width: 48px; height: 48px; border-radius: ${square ? '18%' : '50%'};
         background: ${color};
         border: 2.5px solid #1A1A1A;
         box-shadow: 0 0 22px ${color}66, inset 0 -3px 6px rgba(0,0,0,0.18), inset 0 2px 4px rgba(255,255,255,0.22);
@@ -235,7 +237,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         ${mode === 'png' || mode === 'image' ? `
         <img src="${srcOrEmoji}" alt="" draggable="false"
           onerror="this.style.display='none';this.nextElementSibling.style.display='flex';"
-          style="width:${mode === 'image' ? '94%' : '100%'};height:${mode === 'image' ? '94%' : '100%'};object-fit:${mode === 'image' ? 'contain' : 'cover'};display:block;border-radius:50%;" />
+          style="width:${mode === 'image' ? '94%' : '100%'};height:${mode === 'image' ? '94%' : '100%'};object-fit:${mode === 'image' ? 'contain' : 'cover'};display:block;border-radius:${square ? '18%' : '50%'};" />
         <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;line-height:1;">${emojiFallback}</span>
         ` : `
         <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:30px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">${srcOrEmoji}</span>
@@ -340,7 +342,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                     return makeTeamIcon(team.color, 'image', display.src, qqGetAvatar(team.avatarId).emoji);
                   }
                   if (display.kind === 'quirk') {
-                    return makeTeamIcon(team.color, 'image', display.openSrc, qqGetAvatar(team.avatarId).emoji);
+                    return makeTeamIcon(team.color, 'image', display.openSrc, qqGetAvatar(team.avatarId).emoji, true);
                   }
                   return makeTeamIcon(team.color, 'emoji', display.emoji, display.emoji);
                 })()}

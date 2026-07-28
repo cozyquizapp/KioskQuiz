@@ -25,6 +25,8 @@ import type { QQTeam, QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { qqAwardPoints, qqFinalTotal } from '../utils/qqFinalScore';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { useAvatarSet } from '../avatarSetContext';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import {
@@ -78,6 +80,9 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
 }) {
   const de = lang === 'de';
   const reduce = prefersReducedMotion();
+  // Cozy Quirks: eckige Kachel → Avatar-Discs quadratisch (Team-Farbe = Kachel),
+  // keine runde Coin um den Avatar. Sieger-Glow bleibt.
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   const N = teams.length;
   const live = liveBeat != null;
 
@@ -390,7 +395,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.05em', color: '#F8FAFC', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: '2px 9px', boxShadow: '0 3px 10px rgba(0,0,0,0.5)' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                   </div>
                 )}
-                <div style={{ width: AV, height: AV, borderRadius: '50%', background: colr, border: `3px solid ${edge}`, boxShadow: myst ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 14px ${colr}77, 0 3px 8px rgba(0,0,0,0.45)`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
+                <div style={{ width: AV, height: AV, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: myst ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 14px ${colr}77, 0 3px 8px rgba(0,0,0,0.45)`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
                   {myst
                     ? <span aria-hidden style={{ fontSize: 30, fontWeight: 900, color: '#B9AEDA', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>?</span>
                     : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV} flat />}
@@ -447,6 +452,8 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
 
 function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; mystery: boolean; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
+  // Cozy Quirks: eckige Kachel → Empfänger-Badge quadratisch (keine runde Coin).
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 60% at 50% 45%, rgba(249,200,122,0.10), rgba(6,3,12,0.62) 70%)', animation: reduce ? 'none' : 'qqT2FadeUp 0.4s ease both' }} />
@@ -464,7 +471,7 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
         <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: `drop-shadow(0 6px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQEmojiIcon emoji={award.emoji} size={76} /></div>
         <div style={{ fontSize: 40, fontWeight: 900, color: '#F8FAFC', lineHeight: 1.02, textAlign: 'center', textShadow: `0 2px 20px ${GOLD}44` }}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-          <div style={{ width: 60, height: 60, borderRadius: '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: mystery ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ width: 60, height: 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: mystery ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {mystery ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: '#B9AEDA' }}>?</span> : <QQTeamAvatar avatarId={recip.avatarId} teamEmoji={recip.emoji} size={60} flat />}
           </div>
           <div style={{ fontSize: 26, fontWeight: 900, color: mystery ? '#C9BEE6' : recip.color, maxWidth: 460 }}>

@@ -37,6 +37,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
 import { getServerNow } from '../utils/serverTime';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
@@ -108,6 +109,9 @@ function QQCorrectViz({ correct, total, color }: { correct: number; total: numbe
 export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean }) {
   const q = s.currentQuestion;
   if (!q) return null;
+  // Cozy Quirks (eckige Kachel): keine runde gruene „geantwortet"-Umrandung. Der
+  // Status bleibt via Dimmen/Graustufe sichtbar (nicht farb-/rund-abhaengig).
+  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
   const cat = q.category as QQCategory;
   const catLabel = QQ_CATEGORY_LABELS[cat];
   const accent = CAT_ACCENT[cat] ?? QQ_COLORS.slate200;
@@ -1395,12 +1399,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     return (
                       <div key={tm.id} style={{
                         position: 'relative',
-                        padding: 5, borderRadius: '50%',
+                        padding: 5, borderRadius: quirkSet ? '20%' : '50%',
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
-                        background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
-                        border: answered ? '3px solid #22C55E' : '3px solid transparent',
-                        boxShadow: answered ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
+                        background: (answered && !quirkSet) ? 'rgba(34,197,94,0.18)' : 'transparent',
+                        border: (answered && !quirkSet) ? '3px solid #22C55E' : '3px solid transparent',
+                        boxShadow: (answered && !quirkSet) ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
                         opacity: answered ? 1 : 0.55,
                         filter: answered ? 'none' : 'grayscale(0.4)',
                         transition: 'all 0.45s ease',
@@ -3230,8 +3234,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           filter: answered ? 'none' : 'grayscale(0.5)',
                         }}>
                           <div style={{
-                            borderRadius: '50%',
-                            boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
+                            borderRadius: quirkSet ? '20%' : '50%',
+                            boxShadow: (answered && !quirkSet) ? '0 0 0 3px #22C55E' : 'none',
                             transition: 'box-shadow 0.45s ease',
                             display: 'inline-flex',
                           }}>

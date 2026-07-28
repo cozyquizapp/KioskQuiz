@@ -16,6 +16,12 @@
 // Slug wird im freien String-Feld `team.emoji` gespeichert (kein Backend-Schema-
 // Change). isQuirkSlug() unterscheidet Quirk vs. Emoji/cozy3d/Wolf/Wappen.
 
+/** Set-ID des Cozy-Quirks-Sets. Quirks sind slot-gebunden → wenn dieses Set aktiv
+ *  ist, sind ALLE Avatare Quirks (eckige Kachel). Render-Stellen mit einem runden
+ *  farbigen Wrapper/Ring nutzen `useAvatarSet() === QUIRK_SET_ID`, um die runde
+ *  Umrandung fuer Quirks wegzulassen (Wolf 2026-07-28). */
+export const QUIRK_SET_ID = 'cozyQuirks';
+
 export type QuirkActionType = 'short' | 'hold' | 'talk';
 
 export type QuirkAvatar = {

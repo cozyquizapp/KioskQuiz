@@ -19,7 +19,7 @@ import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
-import { isQuirkSlug, quirkBySlug, quirkOpenSrc, quirkLabel, quirkSlugForSlot } from '../quirksAvatars';
+import { isQuirkSlug, quirkBySlug, quirkOpenSrc, quirkLabel, quirkSlugForSlot, QUIRK_SET_ID } from '../quirksAvatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
@@ -402,6 +402,9 @@ export function TeamsRevealView({ state: s }: { state: QQStateUpdate }) {
 function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
+  // Cozy Quirks: eckige Kachel statt runder Disc → keine runde Umrandung um den
+  // Avatar. Bei aktivem Set wird die Avatar-Disc quadratisch (Team-Farbe = Kachel).
+  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
   const fontFam = themed
     ? 'var(--qq-font)'
     : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
@@ -903,7 +906,9 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                             Slot-M-Pattern: fontSize sitzt auf dem Flex-Parent. */}
                         <div ref={el => { cardDiscRefs.current[i] = el; }} style={{
                           position: 'relative',
-                          width: avatarSize, height: avatarSize, borderRadius: '50%',
+                          width: avatarSize, height: avatarSize,
+                          // Quirks: eckige Kachel (Team-Farbe = Kachel), sonst runde Disc.
+                          borderRadius: quirkSet ? '18%' : '50%',
                           background: revealed ? t.color : 'transparent',
                           border: revealed ? `2.5px solid ${t.color}` : '2.5px dashed rgba(255,255,255,0.18)',
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',

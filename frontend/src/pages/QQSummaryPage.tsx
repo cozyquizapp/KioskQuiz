@@ -12,7 +12,8 @@ import { QQEmojiIcon } from '../components/QQIcon';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { TeamNameLabel } from '../components/TeamNameLabel';
-import { AvatarSetProvider } from '../avatarSetContext';
+import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { setActiveThemeId, isThemed } from '../qqTheme';
 
@@ -965,6 +966,8 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
   brand: ReturnType<typeof summaryBrand>;
   nested?: boolean;
 }) {
+  // Cozy Quirks: eckige Kachel → Sieger-Coin quadratisch, ohne weißen Ring.
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   const locale = lang === 'de' ? 'de-DE' : 'en-GB';
   const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   if (!winner) {
@@ -1005,9 +1008,9 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
             zerfließen. Glow zurückgenommen (siehe qqWinnerGlow). */}
         <div style={{
           ['--wg' as string]: `${winner.color}99`,
-          width: 120, height: 120, borderRadius: '50%',
+          width: 120, height: 120, borderRadius: quirkSet ? '18%' : '50%',
           background: `radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 46%), ${winner.color}`,
-          border: `5px solid rgba(255,255,255,0.30)`,
+          border: quirkSet ? 'none' : `5px solid rgba(255,255,255,0.30)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'qqWinnerGlow 3.2s ease-in-out infinite',
         } as React.CSSProperties}>

@@ -16,6 +16,7 @@ import { useLangFlip, bt, COZY_CARD_BG, qqArenaGlass } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar } from './QQTeamAvatar';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { qqSortedGroups } from '../qqShared';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -27,6 +28,9 @@ import { isThemed, isQuietMotion } from '../qqTheme';
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
+  // Cozy Quirks: eckige Kachel → Sieger-Coin quadratisch, ohne weißen Ring; bg +
+  // Glow bleiben (= Kachel + Feier-Glow, wie im „ohne"-Beispiel).
+  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
   // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): brand-themed colors via Helper.
   const brand = getBrandColors(!!s.theme?.eurovisionMode);
   // 2026-05-10 (Wolf-Bug 'geteilter Spieler-Link wird beim nächsten Spiel
@@ -467,7 +471,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   <div style={{
                     ['--wg' as string]: `${winner.color}99`,
                     width: 'clamp(180px, 20cqw, 290px)', height: 'clamp(180px, 20cqw, 290px)',
-                    borderRadius: '50%',
+                    borderRadius: quirkSet ? '18%' : '50%',
                     // 2026-07-03 (Wolf 'glow komisch, wappen verschwommen'): Disc mit
                     // Tiefe (radiale Lichter/Schatten wie cozy3d) + hellem Rand, damit
                     // das Wappen als scharfe Münze gegen den Glow steht statt im
@@ -476,7 +480,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%),
                       radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 46%),
                       ${winner.color}`,
-                    border: `5px solid rgba(255,255,255,0.30)`,
+                    border: quirkSet ? 'none' : `5px solid rgba(255,255,255,0.30)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     animation: 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
                   } as React.CSSProperties}>

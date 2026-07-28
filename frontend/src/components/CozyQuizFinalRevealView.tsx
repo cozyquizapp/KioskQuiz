@@ -21,6 +21,8 @@ import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
+import { useAvatarSet } from '../avatarSetContext';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
@@ -38,6 +40,8 @@ import {
 export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const de = lang === 'de';
+  // Cozy Quirks: eckige Kachel → Avatar-Disc quadratisch (keine runde Umrandung).
+  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
   const wins = s.finalPhaseWins ?? {};
   const justWon = new Set(s.finalRecapJustWon ?? []);
   const totalPhases = s.totalPhases ?? 4;
@@ -200,7 +204,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
               boxSizing: 'border-box',
             }}>
               <div style={{
-                width: avatarSize, height: avatarSize, borderRadius: '50%',
+                width: avatarSize, height: avatarSize, borderRadius: quirkSet ? '18%' : '50%',
                 background: `${t.color}33`,
                 border: `2px solid ${t.color}`,
                 boxShadow: `0 0 14px ${t.color}55`,
@@ -2207,6 +2211,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
+  // Cozy Quirks: eckige Kachel → Avatar-Discs quadratisch (keine runde Coin).
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   const N = finalRanking.length;
   const winner = finalRanking[0];
 
@@ -2676,7 +2682,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
             }}>
               {medal && <span aria-hidden style={{ fontSize: 54, lineHeight: 1, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.5))' }}><QQEmojiIcon emoji={medal} size={54} /></span>}
               <div style={{
-                width: 92, height: 92, borderRadius: '50%', background: t.color,
+                width: 92, height: 92, borderRadius: quirkSet ? '18%' : '50%', background: t.color,
                 border: `4px solid ${t.color}`, boxShadow: `0 0 24px ${t.color}88, 0 4px 12px rgba(0,0,0,0.5)`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
@@ -2736,7 +2742,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               ['--r']: `${rX}px`, ['--ry']: `${rY}px`,
             } as CSSProperties}>
               <div style={{
-                width: AVF, height: AVF, borderRadius: '50%', background: team.color,
+                width: AVF, height: AVF, borderRadius: quirkSet ? '18%' : '50%', background: team.color,
                 border: `4px solid ${team.color}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 animation: 'qqFlightGlow 1.4s ease-in-out infinite',
@@ -2944,7 +2950,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                     </div>
                   )}
                   <div key={anon ? 'anon' : 'id'} style={{
-                    width: AV, height: AV, borderRadius: '50%',
+                    width: AV, height: AV, borderRadius: quirkSet ? '18%' : '50%',
                     background: anon ? '#2A2640' : entry.team.color,
                     border: `3px solid ${anon ? '#4A4460' : entry.team.color}`,
                     boxShadow: anon ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 16px ${entry.team.color}88, 0 3px 8px rgba(0,0,0,0.45)`,
@@ -3099,6 +3105,8 @@ export function RaceFinalSlide({ finalRanking, lang }: {
   finalRanking: RankingEntry[]; lang: 'de' | 'en';
 }) {
   const N = finalRanking.length;
+  // Cozy Quirks: eckige Kachel → gekrönte Sieger-Disc quadratisch (keine runde Coin).
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   const p1 = finalRanking[0];
   const p2 = finalRanking[1];
   const p3 = finalRanking[2];
@@ -3512,7 +3520,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                       }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                       <div style={{
                         width: config.avatarSize, height: config.avatarSize,
-                        borderRadius: '50%',
+                        borderRadius: quirkSet ? '18%' : '50%',
                         background: p1.team.color,
                         border: `4px solid ${p1.team.color}`,
                         boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
@@ -3649,6 +3657,8 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, bobVariant, bobDura
   falling: boolean;
 }) {
   const bobAnim = `qqRaceRocket${bobVariant} ${bobDuration}s ease-in-out ${bobDelay}s infinite`;
+  // Cozy Quirks: eckige Kachel → Avatar-Disc quadratisch (keine runde Coin).
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   return (
     <div style={{
       // yOffset-Wrapper: konstanter vertikaler Versatz pro Team (-60..+60px)
@@ -3671,7 +3681,7 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, bobVariant, bobDura
     }}>
       {/* Avatar — TOP des Stacks */}
       <div style={{
-        width: avatarSize, height: avatarSize, borderRadius: '50%',
+        width: avatarSize, height: avatarSize, borderRadius: quirkSet ? '18%' : '50%',
         background: team.color,
         border: `4px solid ${team.color}`,
         boxShadow: `0 0 30px ${team.color}99, 0 6px 18px rgba(0,0,0,0.5)`,
@@ -3914,6 +3924,8 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
   rankFontSize?: string;
 }) {
   const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : 'var(--qq-text-muted)';
+  // Cozy Quirks: eckige Kachel → Podest-Avatar-Disc quadratisch (keine runde Coin).
+  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
   const isMinor = rank >= 4;
   const effectiveSlotWidth = slotWidth ?? 'clamp(120px, 12cqw, 170px)';
   const effectiveFontSize = fontSize ?? 'clamp(13px, 1.3cqw, 19px)';
@@ -3925,7 +3937,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
       width: effectiveSlotWidth,
     }}>
       <div style={{
-        width: avatarSize, height: avatarSize, borderRadius: '50%',
+        width: avatarSize, height: avatarSize, borderRadius: quirkSet ? '18%' : '50%',
         background: entry.color,
         border: isMinor ? `2.5px solid ${entry.color}` : `4px solid ${entry.color}`,
         boxShadow: isMinor

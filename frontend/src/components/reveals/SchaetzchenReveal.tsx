@@ -22,6 +22,7 @@ import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shar
 import { qqDistanceFactionScores, qqSchaetzchenParse } from '../../../../shared/qqDistanceScore';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
+import { QUIRK_SET_ID } from '../../quirksAvatars';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
 import { useActiveThemeId } from '../../qqTheme';
@@ -50,6 +51,8 @@ function parseGuess(raw: unknown): number {
 export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
   const target = q.targetValue as number;
+  // Cozy Quirks: eckige Kachel → Ring hugt die Kachel (Radius 18%) statt rund.
+  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
 
   const unitStr = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
   const looksLikeYear = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;
@@ -408,7 +411,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   <div style={{
                     order: isWin ? 1 : (above ? 2 : 1),
                     position: 'relative',
-                    borderRadius: '50%',
+                    borderRadius: quirkSet ? '18%' : '50%',
                     transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
                     transition: 'transform 0.5s var(--qq-celebrate)',
                     boxShadow: isWin && lit ? `0 0 0 5px ${GOLD}, 0 0 0 9px ${GOLD}55, 0 0 48px 7px ${GOLD}aa` : `0 0 0 2px ${r.team.color}, 0 0 14px ${r.team.color}66`,

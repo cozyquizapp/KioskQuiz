@@ -4604,6 +4604,35 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   96%, 98%      { opacity: 1; }
 }
 
+/* Cozy Quirks (2026-07-28, Wolf) — animiertes slot-gebundenes Set. Frames als
+   Opacity-Overlays (open-Basis + closed-Blink + action-Quirk), Breathe auf dem
+   Wrapper. Timings pro Avatar inline (aus Wolfs animated-grid.html). Nur
+   transform/opacity → GPU. Bei reduced-motion global abgeschaltet (s. unten). */
+@keyframes qqQuirkBlink {
+  0%, 46%, 49%, 100% { opacity: 0; }
+  47%, 48%           { opacity: 1; }
+}
+/* translateY relativ (%) statt Wolfs -1px → skaliert mit der Avatar-Groesse. */
+@keyframes qqQuirkBreathe {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50%      { transform: translateY(-1.1%) scale(1.008); }
+}
+@keyframes qqQuirkActShort {
+  0%, 69%, 74%, 100% { opacity: 0; }
+  70%, 73%           { opacity: 1; }
+}
+@keyframes qqQuirkActHold {
+  0%, 64%, 75%, 100% { opacity: 0; }
+  65%, 74%           { opacity: 1; }
+}
+@keyframes qqQuirkActTalk {
+  0%, 64%, 67%, 70%, 73%, 100% { opacity: 0; }
+  65%, 66%, 68%, 69%, 71%, 72% { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .qqQuirkFrame, .qqQuirkBlink, .qqQuirkAction { animation: none !important; }
+}
+
 /* Landing-Demo (QQDemoShowcase): sanfte Szenen-Einblendung + Pop. */
 @keyframes demoIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
 @keyframes demoPop { from { opacity: 0; transform: scale(0.8); } to { opacity: 1; transform: scale(1); } }

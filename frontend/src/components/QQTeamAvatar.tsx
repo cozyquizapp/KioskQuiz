@@ -1,9 +1,10 @@
 import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
-import { getAvatarDisplay } from '../avatarSets';
+import { getAvatarDisplay, type AvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
+import { isQuirkSlug, quirkBySlug, quirkOpenSrc, quirkLabel } from '../quirksAvatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
@@ -137,6 +138,23 @@ export function QQTeamAvatar({
         eyes={eyes}
         teamId={teamId}
         discFill={display.discFill}
+      />
+    );
+  }
+
+  // ── Cozy Quirks (animierter Charakter auf eckiger Team-Kachel) ──────────
+  if (display.kind === 'quirk') {
+    return (
+      <QuirkAvatar
+        display={display}
+        size={size}
+        baseStyle={base}
+        className={className}
+        title={labelText}
+        square={square}
+        flat={flat}
+        blink={blink}
+        eyes={eyes}
       />
     );
   }
@@ -340,6 +358,28 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
       />
     );
   }
+  // Cozy Quirks: „Emoji" ist ein Quirk-Slug → Ruhe-Frame (open) inline. Die
+  // volle Animation + eckige Kachel laufen nur ueber QQTeamAvatar; hier (Picker-
+  // Grid) reicht das statische Motiv. Ohne diesen Zweig faellt der Slug auf Text.
+  if (isQuirkSlug(emoji)) {
+    const q = quirkBySlug(emoji);
+    return (
+      <img
+        src={quirkOpenSrc(q?.color ?? 'orange')}
+        alt={quirkLabel(emoji)}
+        draggable={false}
+        style={{
+          width: '1.32em',
+          height: '1.32em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
   // Party 3D: „Emoji" ist ein Party-Objekt-Slug → neutrales 3D-Objekt-PNG.
   // Ohne diesen Zweig faellt der Slug auf Text-Glyph durch (wie der Wappen-Bug
   // 2026-07-03) — sichtbar im /team-Avatar-Picker-Grid, das CountryFlagOrEmoji
@@ -523,6 +563,102 @@ function ImageAvatar({
           draggable={false}
           style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter }}
         />
+      )}
+    </span>
+  );
+}
+
+// ─── Cozy Quirks (animierter Charakter auf eckiger Team-Kachel) ───────────
+// 2026-07-28 (Wolf): slot-gebundenes animiertes Set. App rendert eine ECKIGE
+// Team-Kachel (Wolfs .cell) statt der runden Disc; darauf 3 gestapelte Frames
+// (open-Basis + closed-Blink + action-Quirk als Opacity-Overlays) + dezentes
+// Breathe auf dem Wrapper. Timings pro Avatar aus getAvatarDisplay (Wolfs
+// animated-grid.html). Nur im Idle (grosse Avatare, eyes='auto', !flat) laeuft
+// die volle Animation; im Grid (flat/eyes-gesteuert) statisch open/closed.
+function QuirkAvatar({
+  display, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto',
+}: {
+  display: Extract<AvatarDisplay, { kind: 'quirk' }>;
+  size: number | string; baseStyle: CSSProperties; className?: string; title: string;
+  square?: boolean; flat?: boolean; blink?: boolean; eyes?: 'auto' | 'open' | 'closed';
+}) {
+  const [failed, setFailed] = useState(false);
+  const { color, openSrc, closedSrc, actionSrc, actionType, delay, blink: blinkDur, actionTime, actionDelay } = display;
+  const actName = actionType === 'short' ? 'qqQuirkActShort' : actionType === 'hold' ? 'qqQuirkActHold' : 'qqQuirkActTalk';
+  // Volle Animation nur auf grossen Idle-Avataren; Grid (flat/explizit) bleibt ruhig.
+  const idle = eyes === 'auto' && blink && !flat;
+  const showClosedStatic = eyes === 'closed';
+
+  // Wolfs .cell: Team-Farbe + Sheen + heller Rand + Innenschatten. Kein color-mix
+  // (Browser-Support): bg = Team-Farbe (nahtlos zur eingebackenen Farbhaelfte),
+  // Sheen oben-links, Innenschatten dunkelt die Raender fuer Tiefe. Im flat-Modus
+  // (Grid-Cell traegt schon die Farbe) keine eigene Kachel.
+  const tileStyle: CSSProperties = flat
+    ? { background: 'transparent', boxShadow: 'none', border: 'none' }
+    : {
+        background: `linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 44%), ${color}`,
+        border: '2px solid rgba(255,255,255,0.30)',
+        boxShadow: `inset 0 -8% 15% rgba(0,0,0,0.20), 0 4px 12px ${color}47`,
+      };
+
+  const imgStyle: CSSProperties = {
+    position: 'absolute', inset: 0, width: '100%', height: '100%',
+    objectFit: 'contain', display: 'block', pointerEvents: 'none',
+  };
+
+  return (
+    <span
+      className={className}
+      title={title}
+      style={{
+        ...baseStyle,
+        ...tileStyle,
+        position: 'relative',
+        overflow: 'hidden',
+        // Eckige Kachel (nicht rund). square erzwingt scharfe Ecken.
+        borderRadius: square ? 0 : '18%',
+      }}
+    >
+      {failed ? (
+        <span style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'rgba(255,255,255,0.85)', fontSize: '60%', lineHeight: 1 }}>●</span>
+      ) : (
+        <span
+          className={idle ? 'qqQuirkFrame' : undefined}
+          style={{
+            position: 'absolute',
+            // Wolfs avatar-frame inset 7% (flat etwas knapper, Cell rahmt schon).
+            inset: flat ? '3%' : '7%',
+            transformOrigin: '50% 65%',
+            ...(idle ? { animation: `qqQuirkBreathe 8.5s ease-in-out ${delay}s infinite` } : {}),
+          }}
+        >
+          <img src={openSrc} alt={title} onError={() => setFailed(true)} draggable={false} style={imgStyle} />
+          {/* closed: Idle blinzelt per Keyframe; explizit = statischer Crossfade. */}
+          <img
+            className={idle ? 'qqQuirkBlink' : undefined}
+            src={closedSrc}
+            alt=""
+            aria-hidden="true"
+            draggable={false}
+            style={{
+              ...imgStyle,
+              ...(idle
+                ? { opacity: 0, animation: `qqQuirkBlink ${blinkDur}s linear ${delay}s infinite` }
+                : { opacity: showClosedStatic ? 1 : 0, transition: 'opacity 0.3s ease' }),
+            }}
+          />
+          {/* action-Quirk nur im Idle. */}
+          {idle && (
+            <img
+              className="qqQuirkAction"
+              src={actionSrc}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              style={{ ...imgStyle, opacity: 0, animation: `${actName} ${actionTime}s linear ${actionDelay}s infinite` }}
+            />
+          )}
+        </span>
       )}
     </span>
   );

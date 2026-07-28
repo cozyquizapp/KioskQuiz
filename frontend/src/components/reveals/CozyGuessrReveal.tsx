@@ -339,6 +339,9 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                   if (display.kind === 'image' || display.kind === 'crest') {
                     return makeTeamIcon(team.color, 'image', display.src, qqGetAvatar(team.avatarId).emoji);
                   }
+                  if (display.kind === 'quirk') {
+                    return makeTeamIcon(team.color, 'image', display.openSrc, qqGetAvatar(team.avatarId).emoji);
+                  }
                   return makeTeamIcon(team.color, 'emoji', display.emoji, display.emoji);
                 })()}
                 zIndexOffset={1000}

@@ -19,6 +19,7 @@ import { JokerIcon } from '../components/JokerIcon';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { isCozyWolfSlug, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
+import { isQuirkSlug } from '../quirksAvatars';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   CozyCard, CozyBtn, StepLabel, StatChip,
@@ -1258,6 +1259,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       onClick={() => {
                         if (taken) return;
                         setChosenEmoji(em);
+                        // Cozy Quirks: slot-gebunden (Farbe ins Motiv gebacken) →
+                        // den Farb-Slot an den gewaehlten Charakter koppeln, sonst
+                        // sitzt ein oranges Motiv auf gruener Kachel. Pool-Index i
+                        // = Slot-Index (QUIRK_SLUGS index-aligned zu QQ_AVATARS).
+                        if (isQuirkSlug(em)) {
+                          const slotId = QQ_AVATARS[i]?.id;
+                          if (slotId && !takenAvatarIds.includes(slotId)) setAvatarId(slotId);
+                        }
                         if (isCozyWolfSlug(em)) {
                           // 2026-07-20 (Wolf): slot-gebunden, der Wolf IST die
                           // Farbe. Der Render leitet den Wolf aus dem Farb-Slot ab

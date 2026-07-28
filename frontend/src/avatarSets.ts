@@ -11,6 +11,7 @@ import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvat
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
+import { QUIRK_SLUGS, isQuirkSlug, quirkBySlug, quirkLabel, quirkOpenSrc, quirkClosedSrc, quirkActionSrc, type QuirkActionType } from './quirksAvatars';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -120,6 +121,20 @@ export const AVATAR_SETS: AvatarSet[] = [
     preview: ['🐺', '🌙', '🔥'],
     source: 'emoji',
     avatars: COZY_WOLF_SLUGS,
+  },
+  // 2026-07-28 (Wolf): Cozy Quirks — 8 animierte, slot-gebundene Charaktere
+  // (Farbe ins Motiv gebacken, EINER je Farb-Slot wie Cozy Pack). Render =
+  // ECKIGE Team-Kachel (nicht runde Disc) + 3-Frame-Animation (open/blink/quirk)
+  // + Breathe. „avatars"=Quirk-Slugs (isQuirkSlug) → kind 'quirk'. Reihenfolge =
+  // QQ_AVATARS-Slots; der Charakter wird IMMER aus dem Farb-Slot abgeleitet.
+  {
+    id: 'cozyQuirks',
+    label: 'Cozy Quirks',
+    tint: '#EC4899',
+    leadEmoji: '😉',
+    preview: ['🟠', '🟣', '🔴'],
+    source: 'emoji',
+    avatars: QUIRK_SLUGS,
   },
   // 2026-07-28 (Wolf): Party 3D — 10 neutrale Party-Objekte (Discokugel, Sekt,
   // Cocktail, Torte, Geschenk, Ballons, Konfetti, Würfel, Partyhut, Mikrofon).
@@ -272,6 +287,10 @@ export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
   | { kind: 'image'; src: string;     color: string; label: string; blinkSrc?: string; discFill?: number }   // cozy3d / CozyWolf (blinkSrc = expliziter Blink-Frame; discFill = Disc-Fuellung, Default cozy3d 0.9)
   | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // CozyArena-Wappen (flach)
+  // Cozy Quirks: animierter slot-gebundener Charakter auf ECKIGER Team-Kachel.
+  // 3 Frames (open/closed/action) + Wolfs Per-Avatar-Timings.
+  | { kind: 'quirk'; color: string; label: string; openSrc: string; closedSrc: string; actionSrc: string;
+      actionType: QuirkActionType; delay: number; blink: number; actionTime: number; actionDelay: number }
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
 export function getAvatarDisplay(
@@ -336,6 +355,14 @@ export function getAvatarDisplay(
     if (isCozyWolfSlug(setWolf)) emoji = setWolf;
   }
 
+  // Cozy Quirks ist ebenfalls slot-gebunden: EIN Charakter je Farbe (Farbe ist
+  // ins Motiv gebacken). Charakter IMMER aus dem Farb-Slot ableiten, nie aus
+  // einem abweichenden teamEmoji (sonst oranges Motiv auf gruener Kachel).
+  if (set.id === 'cozyQuirks') {
+    const setQuirk = set.avatars[slotIdx];
+    if (isQuirkSlug(setQuirk)) emoji = setQuirk;
+  }
+
   // CozyArena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {
     return {
@@ -366,6 +393,24 @@ export function getAvatarDisplay(
       src: partySrc(emoji),
       color: slot.color,
       label: partyLabel(emoji),
+    };
+  }
+
+  // Cozy Quirks: animierter Charakter auf eckiger Team-Kachel (3 Frames + Timings).
+  if (isQuirkSlug(emoji)) {
+    const q = quirkBySlug(emoji)!;
+    return {
+      kind: 'quirk',
+      color: slot.color,
+      label: quirkLabel(emoji),
+      openSrc: quirkOpenSrc(q.color),
+      closedSrc: quirkClosedSrc(q.color),
+      actionSrc: quirkActionSrc(q.color),
+      actionType: q.action,
+      delay: q.delay,
+      blink: q.blink,
+      actionTime: q.actionTime,
+      actionDelay: q.actionDelay,
     };
   }
 

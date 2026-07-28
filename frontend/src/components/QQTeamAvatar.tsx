@@ -3,6 +3,7 @@ import { getAvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel } from '../cozyWolves';
+import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
@@ -326,6 +327,28 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
       <img
         src={cozy3dSrc(emoji)}
         alt={cozy3dLabel(emoji)}
+        draggable={false}
+        style={{
+          width: '1.15em',
+          height: '1.15em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
+  // Party 3D: „Emoji" ist ein Party-Objekt-Slug → neutrales 3D-Objekt-PNG.
+  // Ohne diesen Zweig faellt der Slug auf Text-Glyph durch (wie der Wappen-Bug
+  // 2026-07-03) — sichtbar im /team-Avatar-Picker-Grid, das CountryFlagOrEmoji
+  // direkt nutzt.
+  if (isPartySlug(emoji)) {
+    return (
+      <img
+        src={partySrc(emoji)}
+        alt={partyLabel(emoji)}
         draggable={false}
         style={{
           width: '1.15em',

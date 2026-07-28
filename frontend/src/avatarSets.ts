@@ -10,6 +10,7 @@ import { QQ_AVATARS } from '../../shared/quarterQuizTypes';
 import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvatars';
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
+import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -119,6 +120,21 @@ export const AVATAR_SETS: AvatarSet[] = [
     preview: ['🐺', '🌙', '🔥'],
     source: 'emoji',
     avatars: COZY_WOLF_SLUGS,
+  },
+  // 2026-07-28 (Wolf): Party 3D — 10 neutrale Party-Objekte (Discokugel, Sekt,
+  // Cocktail, Torte, Geschenk, Ballons, Konfetti, Würfel, Partyhut, Mikrofon).
+  // Modell = cozy3d: neutrales Objekt auf der Slot-Farb-Disc, FREI kombinierbar
+  // (kein slot-binding — teamEmoji gewinnt). „avatars"=Party-Slugs (isPartySlug)
+  // → image-Zweig rendert das PNG auf der Farb-Disc. Erwachsener Look für
+  // Geburtstage/Feiern. Die ersten 8 Slugs = Default-Belegung der 8 Farb-Slots.
+  {
+    id: 'cozyParty',
+    label: 'Party 3D',
+    tint: '#EC4899',
+    leadEmoji: '🎉',
+    preview: ['🪩', '🎂', '🎁'],
+    source: 'emoji',
+    avatars: PARTY_SLUGS,
   },
   {
     id: 'all',
@@ -338,6 +354,18 @@ export function getAvatarDisplay(
       src: cozy3dSrc(emoji),
       color: slot.color,
       label: cozy3dLabel(emoji),
+    };
+  }
+
+  // Party 3D: neutrales Party-Objekt auf der Slot-Farb-Disc. Frei kombinierbar
+  // (kein slot-binding wie cozy3d), daher KEIN Override oben — der teamEmoji-Slug
+  // gewinnt, Default = set.avatars[slotIdx].
+  if (isPartySlug(emoji)) {
+    return {
+      kind: 'image',
+      src: partySrc(emoji),
+      color: slot.color,
+      label: partyLabel(emoji),
     };
   }
 

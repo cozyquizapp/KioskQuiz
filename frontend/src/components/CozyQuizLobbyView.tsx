@@ -956,16 +956,22 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     // 4px-Farb-Akzent LINKS statt voll-bunter Rahmen. Team-Farbe
                     // lebt nur noch im Akzent + Avatar-Disc → weniger Color-Noise,
                     // Namen lesen sich auf neutralem BG besser.
-                    background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)'),
-                    border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
+                    // Quirks (2026-07-29, Wolf 'ausfüllend machen ohne den bg'): die
+                    // farbige Kachel trägt die Identität voll → dunkle Zeilen-Karte
+                    // (bg/border/shadow) weg, Kachel + Name schweben auf dem Seiten-BG.
+                    // Rund-Disc-Sets behalten die Karte (Struktur/Gruppierung).
+                    background: quirkSet ? 'transparent' : (isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)')),
+                    border: quirkSet ? 'none' : (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)'),
                     // 2026-07-01 (Wolf Mega-Event): bei vielen Teams wiederholen sich
                     // die 8 Slot-Farben → Farb-Border wäre Noise. Neutral, nur der
                     // Avatar trägt die Identität.
                     // Quirks tragen die Farbe in der Kachel → kein farbiger Akzent.
-                    borderLeft: (veryMany || quirkSet)
-                      ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)')
-                      : `4px solid ${t.color}`,
-                    boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
+                    borderLeft: quirkSet
+                      ? 'none'
+                      : (veryMany
+                        ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)')
+                        : `4px solid ${t.color}`),
+                    boxShadow: quirkSet ? 'none' : '0 8px 22px rgba(0,0,0,0.28)',
                     // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).
                     ['--gc' as string]: `${t.color}99`,
                     display: 'flex', alignItems: 'center',

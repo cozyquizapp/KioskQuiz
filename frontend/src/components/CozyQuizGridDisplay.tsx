@@ -708,7 +708,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   opacity: isFrozen ? 0.55 : undefined,
                   filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
-                  {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} square /> : (team && (() => {
+                  {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} quirk2={s.avatarSetId === 'cozyQuirks2'} square /> : (team && (() => {
                     // 2026-05-12 v2 (Wolf 'avatare ueberdecken sich STILL'):
                     // Vorheriger Fix war Math-Bug: `transform: translate(28%, 28%)`
                     // ist 28% von Avatar-Eigengroesse, NICHT von cellSize. Mit

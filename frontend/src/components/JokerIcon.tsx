@@ -11,6 +11,8 @@
 // generelle Joker-Indikatoren) und 'eu 2.png' (eckig, fuer Grid-Cells).
 
 import type { CSSProperties } from 'react';
+import { useAvatarSet } from '../avatarSetContext';
+import { QUIRK2_SET_ID } from '../quirks2Avatars';
 
 type Props = {
   /** Index zur Wechsel-Bestimmung. Gerade → Variante 1, ungerade → Variante 2. */
@@ -26,13 +28,24 @@ type Props = {
   /** Nur in ESC-Mode wirksam: square-Variante (eu 2.png) statt rund (eu 1.png).
    *  Grid-Cells nutzen square fuer den 90deg-Cell-Match, alles andere rund. */
   square?: boolean;
+  /** Cozy Quirks 2.0: eigener Joker (cremefarbene Kachel) statt Wolf-Joker
+   *  (Wolf 2026-07-29 „ersetzt in quirks 2.0 den wolf joker"). Ein Asset für
+   *  alle Slots, statisch (nur kurz sichtbar solange der Joker platziert wird). */
+  quirk2?: boolean;
 };
 
-export function JokerIcon({ i = 0, size = 24, alt = 'Joker', className, style, title, eurovisionMode, square }: Props) {
+export function JokerIcon({ i = 0, size = 24, alt = 'Joker', className, style, title, eurovisionMode, square, quirk2 }: Props) {
+  // Quirks 2.0 aktiv? Prop-Override, sonst aus dem Avatar-Set-Context (deckt alle
+  // Call-Sites automatisch; ohne Provider defaultet der Context safe → Wolf-Joker).
+  const activeSet = useAvatarSet();
+  const isQuirk2 = quirk2 ?? (activeSet === QUIRK2_SET_ID);
   let src: string;
   const visualScale = 1;
   if (eurovisionMode) {
     src = square ? '/images/jokers/eu%202.png' : '/images/jokers/eu%201.png';
+  } else if (isQuirk2) {
+    // Quirks 2.0: cremefarbener Kachel-Joker (ein Asset, eckig=rund identisch).
+    src = '/images/jokers/quirk2.webp';
   } else {
     // 2026-06-28 (Wolf): einheitlicher CozyWolf-Joker (pinker Wolf im Joker-
     // Kostüm) statt der alten m/w-Emoji-Jester (1.png/2.png). Ein Asset für

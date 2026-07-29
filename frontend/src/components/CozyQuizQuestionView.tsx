@@ -1865,11 +1865,17 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       <div style={{
                         position: 'relative', zIndex: 1,
                         flex: 1, minWidth: 0,
-                        fontSize: 'clamp(24px, 2.8cqw, 40px)', fontWeight: 900,
-                        color: isWrong ? QQ_COLORS.slate400 : 'var(--qq-card-text)', lineHeight: 1.25,
+                        // 2026-07-29 (Wolf 'schrift wird einfach abgeschnitten'): lange
+                        // DE-Labels (Wirbelstürme/Vulkanausbrüche) wurden vom
+                        // overflow:hidden der Card hart geclippt. Jetzt: kürzere Clamp
+                        // für lange Labels + Umbruch/Silbentrennung statt Clipping.
+                        fontSize: optText.length > 13 ? 'clamp(18px, 2.1cqw, 30px)' : 'clamp(24px, 2.8cqw, 40px)',
+                        fontWeight: 900,
+                        color: isWrong ? QQ_COLORS.slate400 : 'var(--qq-card-text)', lineHeight: 1.18,
+                        overflowWrap: 'break-word', wordBreak: 'break-word', hyphens: 'auto',
                         textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                         transition: 'color 0.3s ease',
-                      }}>{optText}</div>
+                      }} lang={lang}>{optText}</div>
                     </div>
                     {/* Top-Bet-Chips: haengen UNTER der Card (nur ein kleiner Lip
                         ueberlappt den Card-Rand). ZvZ-Cards sind flach → wenn
@@ -1927,15 +1933,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // konnte die Bet-Zahl (font-descender + ascender bei
                               // line-height normal ~1.2) unten in den Pill-Rand
                               // ragen — visuell "abgeschnitten" am border-radius:999.
-                              padding: `6px ${padR}px 6px 2px`,
+                              padding: quirkSet && !isFastest ? `2px ${padR}px 2px 2px` : `6px ${padR}px 6px 2px`,
                               borderRadius: 'var(--qq-pill-radius)',
+                              // Quirks: die eckige Kachel IST schon die farbige Identität
+                              // → team-farbige Pill drumherum ist doppelt (Wolf 'was mit
+                              // der umrandung überlegen' → 'Rahmen ganz weg'). Nur Kachel
+                              // + Punktzahl. Gold-Ring/Krone der Schnellsten/Sieger bleibt.
                               // Arena: kraeftigerer, opakerer Pill-Grund → die
                               // Fraktions-Wappen lesen klar (Wolf 'weniger transparent').
-                              background: isMegaTeams && !isThemed() ? 'rgba(15,23,42,0.92)' : 'var(--qq-overlay)',
-                              border: isFastest ? '3px solid var(--qq-accent)' : `2px solid ${tm.color}`,
+                              background: quirkSet && !isFastest ? 'transparent' : (isMegaTeams && !isThemed() ? 'rgba(15,23,42,0.92)' : 'var(--qq-overlay)'),
+                              border: isFastest ? `3px solid ${SPEED_GOLD}` : (quirkSet ? 'none' : `2px solid ${tm.color}`),
                               boxShadow: isFastest
-                                ? '0 0 22px rgba(var(--qq-accent-rgb),0.55), 0 6px 14px rgba(0,0,0,0.55)'
-                                : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`,
+                                ? `0 0 22px ${SPEED_GOLD}8c, 0 6px 14px rgba(0,0,0,0.55)`
+                                : (quirkSet ? 'none' : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`),
                               animation: `muchoVoterDrop 0.55s var(--qq-ease-bounce) ${0.1 + bi * 0.08}s both`,
                             }}>
                               {/* Beat 5 — Sieger-Krönung: Krone bouncet auf den

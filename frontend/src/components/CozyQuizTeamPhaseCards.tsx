@@ -171,13 +171,12 @@ export function RulesCard({ lang }: { lang: 'de' | 'en' }) {
             : 'We are explaining the rules now'}
           <span style={{ display: 'inline-block', width: 24, textAlign: 'left' }}>{dots}</span>
         </div>
-        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center', gap: 8 }}>
-          {['📖', '🗺️', '⭐'].map((e, i) => (
-            <div key={i} style={{
-              fontSize: 22,
-              animation: `tcwobble 2s ease-in-out ${i * 0.35}s infinite`,
-            }}>{e}</div>
-          ))}
+        {/* 2026-07-29 (Wolf): alte generische Emoji-Reihe (📖🗺️⭐) → EIN neues
+            Custom-Buch-Icon reicht. */}
+        <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
+          <div style={{ animation: 'tcwobble 2s ease-in-out infinite' }}>
+            <QQIcon slug="fx-book" size={30} />
+          </div>
         </div>
       </div>
     </CozyCard>

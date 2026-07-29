@@ -799,31 +799,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
       <MobileFireflies color={`${slotColor}66`} />
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
-          {/* 2026-05-04 (Wolf): Brand-Strip moderner — Mini-Wolf-Glyph + clean
-              wordmark statt Caveat-cursive '2003-Movie-Credits'-Look. */}
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', gap: 8,
-            padding: '4px 12px', marginBottom: 10,
-            borderRadius: 999,
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
-          }}>
-            <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>
-            <span style={{
-              fontSize: 10, fontWeight: 900,
-              color: QQ_COLORS.slate300, letterSpacing: '0.18em',
-              textTransform: 'uppercase',
-            }}>cozywolf</span>
-            <span style={{
-              width: 3, height: 3, borderRadius: '50%',
-              background: 'rgba(203,213,225,0.4)',
-            }} />
-            <span style={{
-              fontSize: 10, fontWeight: 700,
-              color: QQ_COLORS.slate400, letterSpacing: '0.16em',
-              textTransform: 'uppercase',
-            }}>live quiz</span>
-          </div>
+          {/* 2026-07-29 (Wolf): „cozywolf · live quiz"-Badge oben entfernt —
+              die COZYQUIZ-Wortmarke reicht, der Header wird ruhiger. */}
           {/* 2026-07-08 Konsistenz #2: Wordmark = Beamer-Look (League Spartan via
               --font-brand + Brand-Pink), und 'COZYARENA' im largeGroupMode wie
               der Beamer (CozyQuizLobbyView). Vorher slate-weiss + Nunito. */}

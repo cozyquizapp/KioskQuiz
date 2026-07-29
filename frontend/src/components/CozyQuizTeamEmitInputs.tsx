@@ -695,9 +695,12 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
   const pinDisplay = getAvatarDisplay((myTeam as any)?.avatarId ?? '', undefined, undefined, teamEmoji);
   const pinImgSrc = pinDisplay.kind === 'image' || pinDisplay.kind === 'crest'
     ? pinDisplay.src
-    : pinDisplay.kind === 'png'
-      ? pinDisplay.pngBase
-      : null;
+    : pinDisplay.kind === 'quirk'
+      ? pinDisplay.openSrc
+      : pinDisplay.kind === 'png'
+        ? pinDisplay.pngBase
+        : null;
+  const isQuirkPin = pinDisplay.kind === 'quirk';
   const customPinIcon = useMemo(() => {
     if (isFlag) {
       // Flaggen-Pin: 44×33 Rechteck (4:3) + Nadel-Spitze drunter. Total 44×64.
@@ -755,7 +758,7 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
         "></div>
         <div style="
           position: absolute; left: 4px; top: 0;
-          width: 40px; height: 40px; border-radius: 50%;
+          width: 40px; height: 40px; border-radius: ${isQuirkPin ? '22%' : '50%'};
           background: ${teamColor};
           border: 2px solid #1A1A1A;
           box-shadow: 0 0 18px ${teamColor}66, inset 0 -3px 5px rgba(0,0,0,0.18), inset 0 2px 3px rgba(255,255,255,0.22);
@@ -765,13 +768,13 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
           overflow: hidden;
           filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
         ">${pinImgSrc
-          ? `<img src="${pinImgSrc}" alt="" style="width: 34px; height: 34px; object-fit: contain; display: block;" />`
+          ? `<img src="${pinImgSrc}" alt="" style="width: ${isQuirkPin ? '38px' : '34px'}; height: ${isQuirkPin ? '38px' : '34px'}; object-fit: contain; display: block;" />`
           : teamEmoji}</div>
       </div>`,
       iconSize: [48, 64] as any,
       iconAnchor: [24, 60] as any,
     });
-  }, [teamColor, teamEmoji, isFlag, pinImgSrc]);
+  }, [teamColor, teamEmoji, isFlag, pinImgSrc, isQuirkPin]);
 
   // B7: Auto-Submit on Timer-End wenn Pin gesetzt; sonst nur Lock.
   const expired = useExpiry(timerEndsAt ?? null);

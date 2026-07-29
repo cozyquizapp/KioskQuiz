@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS, qqMegaFactionSlug, qqMegaFactionName, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
+import { isQuirkSlug } from '../quirksAvatars';
 import { crestSrc } from '../cozyArenaCrests';
 
 type Props = {
@@ -382,6 +383,10 @@ export function AvatarKarussellEditor({
                 fontSize={'clamp(72px, 19vw, 96px)'}
                 style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
               />
+            ) : needsEmoji && chosenEmoji && isQuirkSlug(chosenEmoji) ? (
+              // Cozy Quirks: Design in der GEWÄHLTEN Farbe (avatarId) rendern, nicht
+              // über CountryFlagOrEmoji (das kennt die Slot-Farbe nicht → wäre orange).
+              <QQTeamAvatar avatarId={avatarId} teamEmoji={chosenEmoji} size={'clamp(120px, 33vw, 160px)'} />
             ) : needsEmoji && chosenEmoji ? (
               <CountryFlagOrEmoji
                 emoji={chosenEmoji}

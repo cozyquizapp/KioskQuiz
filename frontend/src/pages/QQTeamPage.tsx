@@ -256,20 +256,30 @@ export default function QQTeamPage() {
   // 2026-05-04 (Wolf): Kick-Detection — wenn wir 'joined' waren und im
   // Lobby-State plötzlich nicht mehr in s.teams stehen, wurden wir gekickt.
   // Setup-Flow soll wieder erscheinen, sessionStorage wird geleert.
+  // 2026-07-29 (Wolf-Finding 'nach Namen eingeben ausgeloggt / du warst dabei',
+  // Repro: neues Team direkt nach Beitreten): der Kick-Check lief, sobald `joined`
+  // auf true sprang — MIT dem PRE-Join-State (unser Team noch nicht im Broadcast)
+  // → False-Kick → Rueckkehrer-Karte. Fix: erst als Kick werten, wenn wir uns
+  // MINDESTENS EINMAL bestaetigt im Raum gesehen haben. Ein echter Mod-Kick
+  // (Team war drin, dann weg) triggert weiterhin. wasInRoom wird bei jedem
+  // frischen Join/Resume zurueckgesetzt.
+  const wasInRoomRef = useRef(false);
   useEffect(() => {
     if (!joined || !state) return;
     if (state.phase !== 'LOBBY') return;
     const stillInRoom = !!state.teams.find(t => t.id === teamId);
-    if (!stillInRoom) {
-      // Wurden gekickt → fresh Setup mit neuen Daten.
-      setKicked(true);
-      setJoined(false);
-      localStorage.removeItem('qq_teamName');
-      localStorage.removeItem('qq_avatarId');
-      localStorage.removeItem('qq_emoji');
-      setTeamName('');
-      setStep('COLOR');
-    }
+    if (stillInRoom) { wasInRoomRef.current = true; return; }
+    // Noch nie bestaetigt im Raum → das ist der Join-Broadcast-Race, KEIN Kick.
+    if (!wasInRoomRef.current) return;
+    // Wurden gekickt → fresh Setup mit neuen Daten.
+    wasInRoomRef.current = false;
+    setKicked(true);
+    setJoined(false);
+    localStorage.removeItem('qq_teamName');
+    localStorage.removeItem('qq_avatarId');
+    localStorage.removeItem('qq_emoji');
+    setTeamName('');
+    setStep('COLOR');
   }, [state?.teams.map(t => t.id).join(','), state?.phase, joined, teamId]);
 
   // 2026-05-02: Late-Join "Wieder dabei als Team X" — wenn sessionStorage

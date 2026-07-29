@@ -213,14 +213,17 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
       transform-origin: 50% 100%;
       filter: drop-shadow(0 6px 8px rgba(0,0,0,0.55));
     ">
-      <!-- Schaft (schwarzer CSS-Cone unter Avatar-Disc) -->
+      <!-- Schaft (CSS-Cone unter Avatar-Disc). 2026-07-29 (Wolf 'stiele hell
+           oder in teamfarbe, kontrast schwarz auf schwarz'): war #1A1A1A →
+           verschwand auf der dunklen Karte. Jetzt Teamfarbe → Kopf+Schaft
+           bilden eine farbige Pin-Form, Drop-Shadow trennt vom Grund. -->
       <div style="
         position: absolute; left: 50%; top: 38px;
         transform: translateX(-50%);
         width: 0; height: 0;
         border-left: 9px solid transparent;
         border-right: 9px solid transparent;
-        border-top: 44px solid #1A1A1A;
+        border-top: 44px solid ${color};
         z-index: 1;
       "></div>
       <!-- Avatar-Disc Kopf (Team-Color BG, Avatar/Emoji drauf) -->

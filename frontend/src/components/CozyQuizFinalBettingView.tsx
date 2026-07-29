@@ -13,6 +13,7 @@ import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { isThemed } from '../qqTheme';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQIcon } from './QQIcon';
+import { QUIRK_SET_ID } from '../quirksAvatars';
 import { playGoodLuckFanfare, playTeamJoin } from '../utils/sounds';
 
 export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
@@ -183,10 +184,13 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           {s.teams.map(t => {
             const done = !!s.finalBettingSubmitted?.[t.id];
             const avatarSize: number = Math.max(64, Math.min(96, Math.round(700 / totalTeams)));
+            // Cozy Quirks: eckige Kachel → Status-Ring als Kachel-Radius (18%),
+            // nicht als Kreis (Wolf 'hier noch grüne ringe', 2026-07-29).
+            const quirkSet = s.avatarSetId === QUIRK_SET_ID;
             return (
               <div key={t.id} style={{
                 width: avatarSize + 12, height: avatarSize + 12,
-                borderRadius: '50%',
+                borderRadius: quirkSet ? '22%' : '50%',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 background: done ? 'rgba(34,197,94,0.18)' : 'transparent',
                 border: done ? '3px solid #22C55E' : '3px solid var(--qq-hairline)',

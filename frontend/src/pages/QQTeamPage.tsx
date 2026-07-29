@@ -66,7 +66,7 @@ import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode, parseStammCodeToTeamId } from '../utils/qqStammCode';
 import type { QQAck } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { setActiveThemeId, isThemed } from '../qqTheme';
+import { setActiveThemeId, isThemed, themeIdForState } from '../qqTheme';
 
 // safeEmit + ACK_ERROR_MESSAGES_* + broadcastAckError jetzt in '../utils/qqTeamAckBus'.
 
@@ -195,8 +195,8 @@ export default function QQTeamPage() {
   // byte-identisch). Tokens landen auf documentElement, /team-Komponenten
   // ziehen ueber var(--qq-*) mit. Re-Render via state-Update.
   useEffect(() => {
-    setActiveThemeId(state?.themeId ?? 'cozy');
-  }, [state?.themeId]);
+    setActiveThemeId(themeIdForState(state?.themeId, state?.avatarSetId));
+  }, [state?.themeId, state?.avatarSetId]);
 
   // Reset joined on disconnect so auto-rejoin fires on reconnect — aber mit
   // Grace-Period (Wolf: bei 1-2s WLAN-Aussetzer flackerte kurz die Rejoin-

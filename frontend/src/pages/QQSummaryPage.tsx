@@ -15,7 +15,7 @@ import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { setActiveThemeId, isThemed } from '../qqTheme';
+import { setActiveThemeId, isThemed, themeIdForState } from '../qqTheme';
 
 type Lang = 'de' | 'en';
 
@@ -479,7 +479,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   // nur einmal). In Produktion nie aktiv (mockSummary undefined).
   useEffect(() => {
     if (!mockSummary) return;
-    setActiveThemeId(mockSummary.themeId ?? 'cozy');
+    setActiveThemeId(themeIdForState(mockSummary.themeId, mockSummary.avatarSetId));
     setSummary(mockSummary);
     setSelectedTeamId(null);
     setLoading(false);
@@ -523,7 +523,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         if (!cancelled) {
           // Bühnen-Skin anwenden (analog Beamer): schreibt die --qq-Tokens auf
           // :root + macht isThemed() wahr → Summary trägt dieselbe Lackierung.
-          setActiveThemeId(s.themeId ?? 'cozy');
+          setActiveThemeId(themeIdForState(s.themeId, s.avatarSetId));
           setSummary(s);
           // 2026-05-11 (Wolf-Idee): wenn auf diesem Phone ein qq_teamId im
           // localStorage liegt UND dieses Team ist in der Summary, direkt zur

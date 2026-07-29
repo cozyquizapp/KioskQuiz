@@ -21,6 +21,7 @@
 import { useSyncExternalStore } from 'react';
 import type { CSSProperties } from 'react';
 import { QQ_COLORS } from '../../shared/qqColors';
+import { isQuirkTileSet } from './quirks2Avatars';
 
 /** Exakt das Shape, das getBrandColors zurückgibt. */
 export type ThemeBrand = {
@@ -140,12 +141,54 @@ const NEO_BRUTAL: ResolvedTheme = {
   },
 };
 
+// ── Quirks — In-Quiz-Theme für die Cozy-Quirks-Sets (Wolf 2026-07-29) ─────────
+// Stilrichtung „Creme-Bühne": der Akzent ist bewusst FARBLOS-WARM (Creme), damit
+// die bunten Quirk-/Team-/Kategorie-Farben die einzigen bedeutungstragenden Farben
+// bleiben (Farbe = Bedeutung, Akzent = neutral). Gold NUR im Finale (separate
+// Krönungs-Ausnahme, nicht hier als Dauer-Akzent). Font bleibt Nunito (Fredoka-
+// Display folgt in 1b mit dem Webfont). Dunkle, leicht warme Plum-Bühne, damit die
+// Kacheln leuchten.
+export const QUIRKS_THEME_ID = 'quirks';
+const QUIRKS: ResolvedTheme = {
+  id: QUIRKS_THEME_ID, label: 'Quirks',
+  brand: {
+    accentHex: '#F5ECD8', accentRgb: '245,236,216', accentSoft: '#EAD9B0',
+    accentWarm: '#FBF3E2',          // accent-light: helles Creme (NICHT Gold → kein Leak)
+    magenta: '#C9B78A',             // tiefes Sand als Sekundär/Gradient-Ende
+    gradientPill: 'linear-gradient(135deg, #FBF3E2 0%, #F5ECD8 50%, #E3D2A8 100%)',
+  },
+  surface: {
+    pageBg: 'radial-gradient(circle at 50% -5%, #1A1526 0%, #120E1C 58%, #0B0912 100%)',
+    text: '#F3EFE7', textMuted: '#B9B3C6', cardText: '#F3EFE7',
+    cardBg: 'linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02))',
+    cardBorder: '1px solid rgba(255,255,255,0.10)', cardRadius: '24px', pillRadius: '999px',
+    cardShadow: '0 16px 44px rgba(0,0,0,0.48)',
+    hairline: 'rgba(255,255,255,0.10)', surface: 'rgba(255,255,255,0.05)', overlay: 'rgba(0,0,0,0.30)',
+    font: "'Nunito', 'Geist', system-ui, sans-serif",
+    title: '#F3EFE7',               // warm-weißer Hero/Wortmark auf der Bühne
+  },
+};
+
 export const QQ_THEMES: Record<string, ResolvedTheme> = {
   cozy: COZY,
   studioMono: STUDIO_MONO,
   softPop: SOFT_POP,
   neoBrutal: NEO_BRUTAL,
+  quirks: QUIRKS,
 };
+
+/**
+ * Default-Kopplung Avatar-Set → Theme: läuft ein Quirk-Set und wurde KEIN
+ * explizit anderes Theme gewählt, zeigt die App automatisch das Quirks-Theme
+ * (einheitliches „Quirks Quiz"). Ein explizit gewähltes Nicht-cozy-Theme
+ * (studioMono/softPop/neoBrutal) gewinnt weiterhin. So bleibt der Picker frei,
+ * aber der Quirks-Look kommt ohne Extra-Klick.
+ */
+export function themeIdForState(themeId: string | undefined, avatarSetId: string | undefined): string {
+  if (themeId && themeId !== 'cozy' && QQ_THEMES[themeId]) return themeId;
+  if (isQuirkTileSet(avatarSetId)) return QUIRKS_THEME_ID;
+  return themeId ?? 'cozy';
+}
 
 export const QQ_THEME_IDS = Object.keys(QQ_THEMES);
 

@@ -407,30 +407,35 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           // Avatar-Cells, fused borders, joker-glow etc. — gleicher Look wie
           // in PlacementView/QuestionView. Pause-Slide zeigt das Spiel-Brett
           // jetzt so wie es waehrend des Spiels aussieht.
+          // 2026-07-29 (Wolf-Finding 'immernoch grid versetzt in pause'): vorher
+          // flex + justify:center → das Board+Pillen-PAAR war zentriert, das Brett
+          // selbst saß dadurch LINKS der Panel-Mitte (Pillen schoben es weg). Jetzt
+          // 3-Spalten-Grid `1fr auto 1fr` → das Brett (auto, Mittelspalte) ist echt
+          // panel-zentriert, die Pillen flankieren in gleich breiten 1fr-Spalten.
+          // maxSize 480→420: die Pause-Card ist niedriger als der Spiel-Screen, 480
+          // ließ die unterste Brett-Reihe unten rausclippen (überlappte „Kurze Pause").
+          const boardGridStyle: React.CSSProperties = {
+            display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+            alignItems: 'center', gap: 'clamp(16px, 2.2cqw, 32px)',
+            padding: 'clamp(14px, 2cqw, 28px)', width: '100%',
+          };
           if (splitMode) {
             const half = Math.ceil(sortedByCells.length / 2);
             const left = sortedByCells.slice(0, half);
             const right = sortedByCells.slice(half);
             return (
-              <div style={{
-                display: 'flex', justifyContent: 'center', alignItems: 'center',
-                gap: 'clamp(16px, 2.2cqw, 32px)',
-                padding: 'clamp(14px, 2cqw, 28px)',
-              }}>
-                <div style={colStyle}>{left.map(renderPill)}</div>
-                <GridDisplay state={s} maxSize={480} showJoker={false} />
-                <div style={colStyle}>{right.map(renderPill)}</div>
+              <div style={boardGridStyle}>
+                <div style={{ ...colStyle, justifySelf: 'end' }}>{left.map(renderPill)}</div>
+                <GridDisplay state={s} maxSize={390} showJoker={false} />
+                <div style={{ ...colStyle, justifySelf: 'start' }}>{right.map(renderPill)}</div>
               </div>
             );
           }
           return (
-            <div style={{
-              display: 'flex', justifyContent: 'center', alignItems: 'center',
-              gap: 'clamp(16px, 2.2cqw, 32px)',
-              padding: 'clamp(14px, 2cqw, 28px)',
-            }}>
-              <GridDisplay state={s} maxSize={480} showJoker={false} />
-              <div style={colStyle}>{sortedByCells.map(renderPill)}</div>
+            <div style={boardGridStyle}>
+              <div aria-hidden />
+              <GridDisplay state={s} maxSize={390} showJoker={false} />
+              <div style={{ ...colStyle, justifySelf: 'start' }}>{sortedByCells.map(renderPill)}</div>
             </div>
           );
         })()}

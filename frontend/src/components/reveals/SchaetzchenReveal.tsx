@@ -131,11 +131,23 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   useActiveThemeId();
 
   // Achse auf die Wahrheit zentriert, Ausreißer geclamped.
+  // 2026-07-29 (Wolf-Finding #12 'ziel sieht komisch positioniert, 61 wirkt näher
+  // als Sieger 62'): Root-Cause war die LINEARE Skala — ein Ausreißer (z.B. 129)
+  // bläht `span` auf, wodurch die nahen Tipps (61/62/68) auf ~0.5% zusammengequetscht
+  // wurden → der Sieger-Vorsprung war unsichtbar, 61 sah gleich nah aus. Fix:
+  // signed-sqrt-Mapping → vergrößert die Nähe-zum-Ziel-Unterschiede (wo Schätzchen
+  // spielt), staucht Ausreißer an die Ränder. Monoton in |v-target| → der Sieger
+  // (kleinstes |Δ|) liegt IMMER sichtbar am nächsten am Gold-Diamant. Endlabels
+  // „zu niedrig/hoch" bleiben stimmig (Skala zeigt Nähe, keine exakten Werte).
   const axisPct = useMemo(() => {
     let half = 1;
     for (const r of rankedFinal) half = Math.max(half, Math.abs(r.num - target));
-    const span = half * 1.18 || 1;
-    return (v: number) => Math.max(5, Math.min(95, 50 + ((v - target) / span) * 43));
+    const span = half || 1;
+    return (v: number) => {
+      const d = v - target;
+      const mag = Math.sqrt(Math.min(1, Math.abs(d) / span)); // 0..1, nahe Tipps gespreizt
+      return Math.max(5, Math.min(95, 50 + Math.sign(d) * mag * 43));
+    };
   }, [rankedFinal, target]);
   const tx = axisPct(target);
 

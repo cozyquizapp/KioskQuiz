@@ -5,7 +5,7 @@
  */
 import { chromium } from 'playwright';
 import { mkdirSync } from 'node:fs';
-const BASE = 'http://localhost:5173';
+const BASE = process.env.QQ_BASE ?? 'http://localhost:5173';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 mkdirSync('.shots-quirks', { recursive: true });
 

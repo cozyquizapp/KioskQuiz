@@ -891,18 +891,24 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                     return (
                       <div key={t.id} style={{
                         width: cardWidth,
-                        aspectRatio: '3 / 4',
+                        // Quirks: keine feste 3/4-Karte mehr — die Kachel füllt das
+                        // Feld (Wolf 'so groß wie das Feld dahinter'), Höhe = Kachel
+                        // + Name. Sonst die klassische Portrait-Karte.
+                        aspectRatio: quirkSet ? undefined : '3 / 4',
                         borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(14px, 1.4cqw, 22px)',
                         // Card-Stil bleibt exakt wie zuvor (Team-Tint 40%/20%),
                         // nur opacity .24 (gedämpft) → 1 beim Aufruf.
-                        background: `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
-                        border: revealed ? `2px solid ${t.color}` : '1.5px solid rgba(255,255,255,0.07)',
-                        boxShadow: revealed
+                        // Quirks: kein farbiger Gradient-Rahmen (die Kachel IST die
+                        // Farbe) → transparent, kein Padding, Glow trägt die Kachel.
+                        background: quirkSet ? 'transparent' : `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
+                        border: quirkSet ? 'none' : (revealed ? `2px solid ${t.color}` : '1.5px solid rgba(255,255,255,0.07)'),
+                        boxShadow: quirkSet ? 'none' : (revealed
                           ? `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
-                          : 'none',
+                          : 'none'),
                         opacity: revealed ? 1 : 0.24,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-                        gap: 'clamp(10px, 1.2cqw, 18px)', padding: 'clamp(16px, 1.8cqw, 26px)',
+                        gap: quirkSet ? 'clamp(10px, 1.2cqw, 16px)' : 'clamp(10px, 1.2cqw, 18px)',
+                        padding: quirkSet ? 0 : 'clamp(16px, 1.8cqw, 26px)',
                         transition: 'opacity 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease',
                       }}>
                         {/* Avatar-Disc = FLIP-Mess-Anker. Vor dem Aufruf gedämpft
@@ -910,7 +916,11 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                             Slot-M-Pattern: fontSize sitzt auf dem Flex-Parent. */}
                         <div ref={el => { cardDiscRefs.current[i] = el; }} style={{
                           position: 'relative',
-                          width: avatarSize, height: avatarSize,
+                          // Quirks: Kachel füllt die volle Kartenbreite (quadratisch),
+                          // sonst feste Disc-Größe.
+                          width: quirkSet ? '100%' : avatarSize,
+                          height: quirkSet ? 'auto' : avatarSize,
+                          aspectRatio: quirkSet ? '1' : undefined,
                           // Quirks: eckige Kachel (Team-Farbe = Kachel), sonst runde Disc.
                           borderRadius: quirkSet ? '18%' : '50%',
                           background: revealed ? t.color : 'transparent',

@@ -38,9 +38,10 @@ export type QuirkDesign = {
   actionDelay: number;
 };
 
-// 10 Designs (Wolf-Matrix-Reihenfolge). action-Typ aus dem Bewegungscharakter
+// 11 Designs (Wolf-Matrix-Reihenfolge). action-Typ aus dem Bewegungscharakter
 // (split/wink → short, glance/squint → hold, talk/mouth → talk). Orbit & Nook
-// (Cozy-Pass, wärmer) = short (kurzer Blick).
+// (Cozy-Pass, wärmer) = short (kurzer Blick). Joker (Harlekin, eigene Lieferung
+// in 8 Teamfarben) = hold (gehaltener Wink, ~600-750ms).
 export const QQ_QUIRKS: QuirkDesign[] = [
   { slug: 'quirk-flux',  design: 'flux',  label: 'Flux',  action: 'short', delay: -1.4, blink: 8.3,  actionTime: 16.8, actionDelay: -2.2 },
   { slug: 'quirk-bento', design: 'bento', label: 'Bento', action: 'hold',  delay: -3.8, blink: 10.7, actionTime: 19.6, actionDelay: -5.1 },
@@ -52,6 +53,7 @@ export const QQ_QUIRKS: QuirkDesign[] = [
   { slug: 'quirk-shift', design: 'shift', label: 'Shift', action: 'hold',  delay: -2.9, blink: 8.9,  actionTime: 20.2, actionDelay: -7.2 },
   { slug: 'quirk-orbit', design: 'orbit', label: 'Orbit', action: 'short', delay: -1.9, blink: 9.9,  actionTime: 16.1, actionDelay: -3.9 },
   { slug: 'quirk-nook',  design: 'nook',  label: 'Nook',  action: 'short', delay: -4.3, blink: 11.1, actionTime: 18.2, actionDelay: -5.6 },
+  { slug: 'quirk-joker', design: 'joker', label: 'Joker', action: 'hold',  delay: -3.6, blink: 9.7,  actionTime: 20.9, actionDelay: -6.8 },
 ];
 
 /** Alle Design-Slugs (= Set-`avatars` + Picker-Pool). Die ersten 8 sind die

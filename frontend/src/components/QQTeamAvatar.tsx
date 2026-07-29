@@ -607,7 +607,7 @@ function QuirkAvatar({
   square?: boolean; flat?: boolean; blink?: boolean; eyes?: 'auto' | 'open' | 'closed';
 }) {
   const [failed, setFailed] = useState(false);
-  const { color, openSrc, closedSrc, actionSrc, actionType, delay, blink: blinkDur, actionTime, actionDelay } = display;
+  const { color, openSrc, closedSrc, actionSrc, actionType, delay, blink: blinkDur, actionTime, actionDelay, fullBleed } = display;
   const actName = actionType === 'short' ? 'qqQuirkActShort' : actionType === 'hold' ? 'qqQuirkActHold' : 'qqQuirkActTalk';
   // Volle Animation nur auf grossen Idle-Avataren; Grid (flat/explizit) bleibt ruhig.
   const idle = eyes === 'auto' && blink && !flat;
@@ -617,13 +617,18 @@ function QuirkAvatar({
   // (Browser-Support): bg = Team-Farbe (nahtlos zur eingebackenen Farbhaelfte),
   // Sheen oben-links, Innenschatten dunkelt die Raender fuer Tiefe. Im flat-Modus
   // (Grid-Cell traegt schon die Farbe) keine eigene Kachel.
+  // fullBleed (cozyQuirks 2.0): das Motiv füllt die Kachel randlos (Farbe voll
+  // gebacken) → KEIN heller Rahmen, kein Sheen/Innenschatten-Ring (Wolf 2026-07-29
+  // „ausfüllend ohne bg"). Nur eine weiche Schlagschatten-Tiefe bleibt.
   const tileStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none', border: 'none' }
-    : {
-        background: `linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 44%), ${color}`,
-        border: '2px solid rgba(255,255,255,0.30)',
-        boxShadow: `inset 0 -8% 15% rgba(0,0,0,0.20), 0 4px 12px ${color}47`,
-      };
+    : fullBleed
+      ? { background: 'transparent', border: 'none', boxShadow: `0 4px 12px ${color}47` }
+      : {
+          background: `linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 44%), ${color}`,
+          border: '2px solid rgba(255,255,255,0.30)',
+          boxShadow: `inset 0 -8% 15% rgba(0,0,0,0.20), 0 4px 12px ${color}47`,
+        };
 
   const imgStyle: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',
@@ -651,7 +656,8 @@ function QuirkAvatar({
           style={{
             position: 'absolute',
             // Wolfs avatar-frame inset 7% (flat etwas knapper, Cell rahmt schon).
-            inset: flat ? '3%' : '7%',
+            // fullBleed (quirks2): Motiv füllt bündig bis zur Kante → inset 0.
+            inset: fullBleed ? 0 : flat ? '3%' : '7%',
             transformOrigin: '50% 65%',
             ...(idle ? { animation: `qqQuirkBreathe 8.5s ease-in-out ${delay}s infinite` } : {}),
           }}

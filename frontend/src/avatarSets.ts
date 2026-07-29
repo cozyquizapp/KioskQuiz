@@ -306,7 +306,10 @@ export type AvatarDisplay =
   // actionSrc & Co. optional: cozyQuirks (V2) hat 3 Frames (open/closed/action),
   // cozyQuirks2 nur 2 (base/blink) → kein action-Layer.
   | { kind: 'quirk'; color: string; label: string; openSrc: string; closedSrc: string; actionSrc?: string;
-      actionType?: QuirkActionType; delay: number; blink: number; actionTime?: number; actionDelay?: number }
+      actionType?: QuirkActionType; delay: number; blink: number; actionTime?: number; actionDelay?: number;
+      /** cozyQuirks 2.0: Motiv füllt die Kachel randlos (Farbe voll gebacken) →
+       *  QuirkAvatar rendert ohne Rahmen/Inset. V2-Motive sitzen AUF der Farbe. */
+      fullBleed?: boolean }
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
 export function getAvatarDisplay(
@@ -450,6 +453,7 @@ export function getAvatarDisplay(
       closedSrc: quirk2Src(q.id, 'closed'),
       delay: q.delay,
       blink: q.blink,
+      fullBleed: true,
     };
   }
 

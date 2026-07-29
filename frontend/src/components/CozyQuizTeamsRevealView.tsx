@@ -20,7 +20,7 @@ import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel, quirkColorForSlot } from '../quirksAvatars';
-import { isQuirkTileSet, isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
+import { isQuirkTileSet, isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label, quirk2ForSlot } from '../quirks2Avatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
@@ -846,11 +846,17 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={quirkSrc(color, q?.design ?? 'flux', 'open')} alt={quirkLabel(t.emoji)} draggable={false}
               style={{ width: '96%', height: '96%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
-          // Cozy Quirks 2.0 (slot-gebunden): Farbe fest gebacken, base-Frame.
+          // Cozy Quirks 2.0 (slot-gebunden): das Design IMMER aus dem Farb-Slot
+          // ableiten (Farbe fest gebacken), NIE aus t.emoji — sonst säße z.B. das
+          // pinke Motiv im orangen Slot (Wolf 2026-07-29 „falsch verdrahtet"),
+          // divergent zur Lobby, die via getAvatarDisplay slot-bindet. Matcht die
+          // Cozy-Pack-Regel im Wolf-Zweig darunter. full-bleed → 100%, kein Ring.
           if (isQuirk2Slug(t.emoji)) {
-            const q = quirk2BySlug(t.emoji);
-            return <img src={quirk2Src(q?.id ?? 'prisma', 'open')} alt={quirk2Label(t.emoji)} draggable={false}
-              style={{ width: '96%', height: '96%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+            const slotIdx = QQ_AVATARS.findIndex(a => a.id === t.avatarId);
+            const slug = slotIdx >= 0 ? quirk2ForSlot(slotIdx) : t.emoji;
+            const q = quirk2BySlug(slug);
+            return <img src={quirk2Src(q?.id ?? 'prisma', 'open')} alt={quirk2Label(slug)} draggable={false}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
           // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
           // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case

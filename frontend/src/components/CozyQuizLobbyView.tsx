@@ -16,7 +16,7 @@ import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
-import { QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
@@ -206,7 +206,7 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode, arena }: {
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // Cozy Quirks: die eckige Farb-Kachel IST der Avatar → in der Teamkarte füllt
   // sie bündig die volle Höhe links, der farbige Card-Akzent entfällt (Wolf).
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const fontFam = isThemed()
     ? 'var(--qq-font)'

@@ -5,6 +5,7 @@ import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } 
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel } from '../quirksAvatars';
+import { isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
@@ -382,6 +383,27 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
       />
     );
   }
+  // Cozy Quirks 2.0: „Emoji" ist ein Quirks-2.0-Slug → base-Frame inline (Farbe
+  // fest gebacken, kein Slot-Tint noetig). Ohne diesen Zweig faellt der Slug auf Text.
+  if (isQuirk2Slug(emoji)) {
+    const q = quirk2BySlug(emoji);
+    return (
+      <img
+        src={quirk2Src(q?.id ?? 'prisma', 'open')}
+        alt={quirk2Label(emoji)}
+        draggable={false}
+        style={{
+          width: '1.32em',
+          height: '1.32em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
   // Party 3D: „Emoji" ist ein Party-Objekt-Slug → neutrales 3D-Objekt-PNG.
   // Ohne diesen Zweig faellt der Slug auf Text-Glyph durch (wie der Wappen-Bug
   // 2026-07-03) — sichtbar im /team-Avatar-Picker-Grid, das CountryFlagOrEmoji
@@ -649,8 +671,9 @@ function QuirkAvatar({
                 : { opacity: showClosedStatic ? 1 : 0, transition: 'opacity 0.3s ease' }),
             }}
           />
-          {/* action-Quirk nur im Idle. */}
-          {idle && (
+          {/* action-Quirk nur im Idle — und nur wenn das Set einen 3. Frame hat
+              (cozyQuirks). cozyQuirks2 ist 2-Frame (base/blink) → kein actionSrc. */}
+          {idle && actionSrc && (
             <img
               className="qqQuirkAction"
               src={actionSrc}

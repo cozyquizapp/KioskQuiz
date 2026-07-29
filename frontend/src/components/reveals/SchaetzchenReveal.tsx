@@ -22,7 +22,7 @@ import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shar
 import { qqDistanceFactionScores, qqSchaetzchenParse } from '../../../../shared/qqDistanceScore';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
-import { QUIRK_SET_ID } from '../../quirksAvatars';
+import { isQuirkTileSet } from '../../quirks2Avatars';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
 import { useActiveThemeId } from '../../qqTheme';
@@ -52,7 +52,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const q = s.currentQuestion!;
   const target = q.targetValue as number;
   // Cozy Quirks: eckige Kachel → Ring hugt die Kachel (Radius 18%) statt rund.
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
 
   const unitStr = (lang === 'en' && q.unitEn ? q.unitEn : q.unit) ?? '';
   const looksLikeYear = (n: number) => Number.isInteger(n) && n >= 1000 && n <= 2100;

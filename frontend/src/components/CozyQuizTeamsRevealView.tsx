@@ -19,7 +19,8 @@ import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
-import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel, quirkColorForSlot, QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel, quirkColorForSlot } from '../quirksAvatars';
+import { isQuirkTileSet, isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
@@ -404,7 +405,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   const themed = isThemed();
   // Cozy Quirks: eckige Kachel statt runder Disc → keine runde Umrandung um den
   // Avatar. Bei aktivem Set wird die Avatar-Disc quadratisch (Team-Farbe = Kachel).
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
   const fontFam = themed
     ? 'var(--qq-font)'
     : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
@@ -845,6 +846,12 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={quirkSrc(color, q?.design ?? 'flux', 'open')} alt={quirkLabel(t.emoji)} draggable={false}
               style={{ width: '96%', height: '96%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
+          // Cozy Quirks 2.0 (slot-gebunden): Farbe fest gebacken, base-Frame.
+          if (isQuirk2Slug(t.emoji)) {
+            const q = quirk2BySlug(t.emoji);
+            return <img src={quirk2Src(q?.id ?? 'prisma', 'open')} alt={quirk2Label(t.emoji)} draggable={false}
+              style={{ width: '96%', height: '96%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+          }
           // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
           // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case
           // darunter → abgeschnittener Slug-Text in der Disc (Wolf 2026-07-03).
@@ -928,7 +935,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirkSlug(t.emoji)) ? 'visible' : 'hidden',
+                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirkSlug(t.emoji) || isQuirk2Slug(t.emoji)) ? 'visible' : 'hidden',
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>

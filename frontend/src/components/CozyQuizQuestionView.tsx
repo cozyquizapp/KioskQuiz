@@ -37,7 +37,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { BeamerTimer } from './CozyQuizBeamerTimer';
 import { getServerNow } from '../utils/serverTime';
 import { QQTeamAvatar } from './QQTeamAvatar';
-import { QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet';
@@ -111,7 +111,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   if (!q) return null;
   // Cozy Quirks (eckige Kachel): keine runde gruene „geantwortet"-Umrandung. Der
   // Status bleibt via Dimmen/Graustufe sichtbar (nicht farb-/rund-abhaengig).
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
   const cat = q.category as QQCategory;
   const catLabel = QQ_CATEGORY_LABELS[cat];
   const accent = CAT_ACCENT[cat] ?? QQ_COLORS.slate200;

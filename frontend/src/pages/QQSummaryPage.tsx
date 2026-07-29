@@ -13,7 +13,7 @@ import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
-import { QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { setActiveThemeId, isThemed } from '../qqTheme';
 
@@ -967,7 +967,7 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
   nested?: boolean;
 }) {
   // Cozy Quirks: eckige Kachel → Sieger-Coin quadratisch, ohne weißen Ring.
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   const locale = lang === 'de' ? 'de-DE' : 'en-GB';
   const date = new Date(playedAt).toLocaleDateString(locale, { day: '2-digit', month: '2-digit', year: 'numeric' });
   if (!winner) {

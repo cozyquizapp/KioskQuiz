@@ -20,6 +20,7 @@ import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { isCozyWolfSlug, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isQuirkSlug } from '../quirksAvatars';
+import { isQuirk2Slug, QUIRK2_SLUGS } from '../quirks2Avatars';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   CozyCard, CozyBtn, StepLabel, StatChip,
@@ -1248,6 +1249,15 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       onClick={() => {
                         if (taken) return;
                         setChosenEmoji(em);
+                        // Cozy Quirks 2.0 (slot-gebunden): das Design IST die Farbe →
+                        // den Farb-Slot an das gewählte Design koppeln (QUIRK2_SLUGS[i]
+                        // entspricht QQ_AVATARS[i]). Kein Name-Vorfüllen (Labels wie
+                        // „Prisma" sind keine Teamnamen).
+                        if (isQuirk2Slug(em)) {
+                          const qi = QUIRK2_SLUGS.indexOf(em);
+                          const slotId = qi >= 0 ? QQ_AVATARS[qi]?.id : undefined;
+                          if (slotId && !takenAvatarIds.includes(slotId)) setAvatarId(slotId);
+                        }
                         if (isCozyWolfSlug(em)) {
                           // 2026-07-20 (Wolf): slot-gebunden, der Wolf IST die
                           // Farbe. Der Render leitet den Wolf aus dem Farb-Slot ab

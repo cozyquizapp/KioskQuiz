@@ -16,7 +16,7 @@ import { useLangFlip, bt, COZY_CARD_BG, qqArenaGlass } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar } from './QQTeamAvatar';
-import { QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -30,7 +30,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const themed = isThemed();
   // Cozy Quirks: eckige Kachel → Sieger-Coin quadratisch, ohne weißen Ring; bg +
   // Glow bleiben (= Kachel + Feier-Glow, wie im „ohne"-Beispiel).
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
   // 2026-05-10 (Audit-P0 Eurovision-Konsistenz): brand-themed colors via Helper.
   const brand = getBrandColors(!!s.theme?.eurovisionMode);
   // 2026-05-10 (Wolf-Bug 'geteilter Spieler-Link wird beim nächsten Spiel

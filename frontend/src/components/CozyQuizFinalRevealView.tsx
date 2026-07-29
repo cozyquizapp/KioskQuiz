@@ -22,7 +22,7 @@ import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 import { useAvatarSet } from '../avatarSetContext';
-import { QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkTileSet } from '../quirks2Avatars';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
@@ -41,7 +41,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const de = lang === 'de';
   // Cozy Quirks: eckige Kachel → Avatar-Disc quadratisch (keine runde Umrandung).
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
   const wins = s.finalPhaseWins ?? {};
   const justWon = new Set(s.finalRecapJustWon ?? []);
   const totalPhases = s.totalPhases ?? 4;
@@ -2212,7 +2212,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
 }) {
   const de = lang === 'de';
   // Cozy Quirks: eckige Kachel → Avatar-Discs quadratisch (keine runde Coin).
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   const N = finalRanking.length;
   const winner = finalRanking[0];
 
@@ -3106,7 +3106,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
 }) {
   const N = finalRanking.length;
   // Cozy Quirks: eckige Kachel → gekrönte Sieger-Disc quadratisch (keine runde Coin).
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   const p1 = finalRanking[0];
   const p2 = finalRanking[1];
   const p3 = finalRanking[2];
@@ -3658,7 +3658,7 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, bobVariant, bobDura
 }) {
   const bobAnim = `qqRaceRocket${bobVariant} ${bobDuration}s ease-in-out ${bobDelay}s infinite`;
   // Cozy Quirks: eckige Kachel → Avatar-Disc quadratisch (keine runde Coin).
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   return (
     <div style={{
       // yOffset-Wrapper: konstanter vertikaler Versatz pro Team (-60..+60px)
@@ -3925,7 +3925,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
 }) {
   const podiumColor = rank === 2 ? '#C0C0C0' : rank === 3 ? '#CD7F32' : 'var(--qq-text-muted)';
   // Cozy Quirks: eckige Kachel → Podest-Avatar-Disc quadratisch (keine runde Coin).
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   const isMinor = rank >= 4;
   const effectiveSlotWidth = slotWidth ?? 'clamp(120px, 12cqw, 170px)';
   const effectiveFontSize = fontSize ?? 'clamp(13px, 1.3cqw, 19px)';

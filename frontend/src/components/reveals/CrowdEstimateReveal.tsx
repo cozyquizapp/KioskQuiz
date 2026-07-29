@@ -24,7 +24,7 @@ import { qqMegaFactionName } from '../../../../shared/quarterQuizTypes';
 import { qqFactionAvatarEmoji } from '../../qqShared';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon } from '../QQIcon';
-import { QUIRK_SET_ID } from '../../quirksAvatars';
+import { isQuirkTileSet } from '../../quirks2Avatars';
 import { playRevealHighlight, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
 import { useActiveThemeId } from '../../qqTheme';
@@ -34,7 +34,7 @@ const GOLD = '#EAB308', GOLD_BRIGHT = '#FDE68A', SWARM_BLUE = '#38bdf8';
 export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
   // Cozy Quirks: eckige Kachel → Sieger-Ring hugt die Kachel (Radius 18%).
-  const quirkSet = s.avatarSetId === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(s.avatarSetId);
   const isMega = !!(s as any).nestedTeams || !!(s as any).largeGroupMode;
   const def = q.bunteTuete as QQBunteTueteCrowdEstimate;
   const unit = (lang === 'en' && def.unitEn ? def.unitEn : def.unit) ?? '';

@@ -26,7 +26,7 @@ import { qqAwardPoints, qqFinalTotal } from '../utils/qqFinalScore';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { useAvatarSet } from '../avatarSetContext';
-import { QUIRK_SET_ID } from '../quirksAvatars';
+import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import {
@@ -82,7 +82,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   const reduce = prefersReducedMotion();
   // Cozy Quirks: eckige Kachel → Avatar-Discs quadratisch (Team-Farbe = Kachel),
   // keine runde Coin um den Avatar. Sieger-Glow bleibt.
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   const N = teams.length;
   const live = liveBeat != null;
 
@@ -453,7 +453,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
 function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; mystery: boolean; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
   // Cozy Quirks: eckige Kachel → Empfänger-Badge quadratisch (keine runde Coin).
-  const quirkSet = useAvatarSet() === QUIRK_SET_ID;
+  const quirkSet = isQuirkTileSet(useAvatarSet());
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 60% at 50% 45%, rgba(249,200,122,0.10), rgba(6,3,12,0.62) 70%)', animation: reduce ? 'none' : 'qqT2FadeUp 0.4s ease both' }} />

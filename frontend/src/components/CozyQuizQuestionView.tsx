@@ -115,6 +115,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const cat = q.category as QQCategory;
   const catLabel = QQ_CATEGORY_LABELS[cat];
   const accent = CAT_ACCENT[cat] ?? QQ_COLORS.slate200;
+  // „Schnellstes Team" = GOLD (Wolf 2026-07-29 'pink für schnellsten passt nicht
+  // so gut' → Gold). App-weit konsistent mit SchaetzchenReveal (dort ist „am
+  // schnellsten" schon Gold). Ersetzt die frühere Kategorie-/Pink-Färbung der
+  // Fastest-Zeit-Pille — Gold trägt die „Sieg/Speed"-Bedeutung eindeutiger.
+  const SPEED_GOLD = '#EAB308';
+  const SPEED_GOLD_BRIGHT = '#FDE68A';
   const badgeBg = CAT_BADGE_BG[cat] ?? '#374151';
   const glow = CAT_GLOW[cat] ?? 'transparent';
   // Dekorative Corner-Emojis pro Kategorie — aktuell ausgeblendet (Tester fanden sie
@@ -1124,9 +1130,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <span style={{
                           padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                           // Wolf 2026-07-18: Sieger-Pille in KATEGORIE-Farbe statt Pink-Akzent.
-                          background: isFastest ? `${accent}2e` : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)'),
-                          border: isFastest ? `1.5px solid ${accent}b0` : '1px solid var(--qq-hairline)',
-                          color: isFastest ? accent : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
+                          background: isFastest ? `${SPEED_GOLD}2e` : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)'),
+                          border: isFastest ? `1.5px solid ${SPEED_GOLD}b0` : '1px solid var(--qq-hairline)',
+                          color: isFastest ? SPEED_GOLD_BRIGHT : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
                           whiteSpace: 'nowrap',
@@ -1971,8 +1977,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   left: '50%', bottom: -8,
                                   transform: 'translate(-50%, 50%)',
                                   padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
-                                  background: isFastest ? 'rgba(var(--qq-accent-rgb),0.95)' : 'rgba(15,23,42,0.95)',
-                                  border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),1)' : `1.5px solid ${tm.color}`,
+                                  background: isFastest ? SPEED_GOLD : 'rgba(15,23,42,0.95)',
+                                  border: isFastest ? `1.5px solid ${SPEED_GOLD_BRIGHT}` : `1.5px solid ${tm.color}`,
                                   color: isFastest ? '#0A0814' : 'var(--qq-card-text)',
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2cqw, 15px)',
@@ -2203,9 +2209,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             {timeSec != null && (
                               <span style={{
                                 padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
-                                background: isFastest ? 'rgba(var(--qq-accent-rgb),0.22)' : 'rgba(0,0,0,0.55)',
-                                border: isFastest ? '1.5px solid rgba(var(--qq-accent-rgb),0.7)' : '1px solid var(--qq-hairline)',
-                                color: isFastest ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
+                                background: isFastest ? `${SPEED_GOLD}38` : 'rgba(0,0,0,0.55)',
+                                border: isFastest ? `1.5px solid ${SPEED_GOLD}b0` : '1px solid var(--qq-hairline)',
+                                color: isFastest ? SPEED_GOLD_BRIGHT : 'var(--qq-text-muted)',
                                 fontWeight: 900,
                                 fontSize: 'clamp(15px, 1.6cqw, 20px)',
                                 whiteSpace: 'nowrap',

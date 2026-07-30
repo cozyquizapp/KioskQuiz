@@ -1560,10 +1560,26 @@ export function playClimaxFinish() {
 // 2026-07-30 (Wolf Sound-Audit R1): playActionMenuReveal wieder verdrahtet — EIN
 // Stinger im 'Eure Aktion diese Runde'-Moment (Phase-Intro Step 3, wenn die
 // Aktions-Cards aufpoppen; ersetzt den bisherigen dezenten playTick dort).
-// playSlotOneShot = Custom-URL → Preset → Default-WAV → classic-Synth-Fallback,
-// respektiert _sfxMuted + per-Slot-enabled. Slot 'actionMenuReveal'.
+// Custom-/Default-URL gewinnt (Wolf kann eine MP3 hochladen); sonst designter
+// Synth-Aufblend. Respektiert _sfxMuted + per-Slot-enabled.
 export function playActionMenuReveal(): void {
-  playSlotOneShot('actionMenuReveal');
+  if (_sfxMuted) return;
+  if (!isSlotEnabled('actionMenuReveal')) return;
+  const url = resolveSlotUrl('actionMenuReveal');
+  if (url) { playUrlOneShot(url); return; }
+  const ac = getCtx();
+  if (!ac) return;
+  const t = ac.currentTime;
+  // Sound-Design R1: 'Eure Aktion diese Runde' — einladender, verspielter Aufblend
+  // (die Optionen oeffnen sich). Aufsteigende A-Dur-Arpeggio (Energie/Aufwaerts =
+  // verfuegbar) + Bloom + heller Shimmer. Kurz (~0.5s), warm ueber den Warm-Bus.
+  // Bewusst anders als revealHighlight (G-Dur, Antwort) und climaxFinish (C-Oktave,
+  // Sieger), damit der Aktions-Moment einen eigenen Klang-Fingerabdruck hat.
+  tone(440.00, 'triangle', t,        0.20, 0.30, 0.008, 0.10, ac); // A4
+  tone(554.37, 'triangle', t + 0.06, 0.20, 0.34, 0.008, 0.11, ac); // C#5
+  tone(659.25, 'sine',     t + 0.12, 0.24, 0.40, 0.008, 0.13, ac); // E5
+  tone(880.00, 'sine',     t + 0.18, 0.26, 0.42, 0.006, 0.18, ac); // A5 — Bloom
+  tone(1318.5, 'sine',     t + 0.26, 0.16, 0.32, 0.004, 0.22, ac); // E6 — Shimmer-Top
 }
 
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden.

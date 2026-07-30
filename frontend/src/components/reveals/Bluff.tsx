@@ -23,10 +23,6 @@ import { Fireflies } from '../CozyQuizAmbient';
 import { BeamerTimer } from '../CozyQuizBeamerTimer';
 import { formatRevealedAnswer } from '../../cozyQuizShared';
 import { getServerNow } from '../../utils/serverTime';
-import {
-  playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
-  playWoodKnock, playWinnerCardReveal, playFanfare, playTick,
-} from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
 
 // BluffBeamerView — Top-Level-Router fuer die 3 Phasen + Reveal:

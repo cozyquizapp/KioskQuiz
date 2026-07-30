@@ -849,9 +849,8 @@ export type QQSoundSlot =
   // erscheint + Fraktions-Fuehrungswechsel. Leer = Fallback auf bestehenden
   // Cue (gridReveal / scoreUp), Moderator kann eigene MP3 hochladen.
   | 'arenaStandings' | 'arenaLeadChange'
-  // Kategorie-spezifische Reveal-/Correct-/Wrong-Sounds. Fallen auf generische
-  // correct/wrong/reveal-Slots zurueck wenn nicht gesetzt.
-  | 'correctSchaetzchen' | 'correctMucho' | 'correctBunteTuete' | 'correctZehnVonZehn' | 'correctCheese'
+  // Kategorie-spezifische Wrong-/Reveal-/QuestionStart-Sounds. Fallen auf generische
+  // wrong/reveal/questionStart-Slots zurueck wenn nicht gesetzt.
   | 'wrongSchaetzchen'   | 'wrongMucho'   | 'wrongBunteTuete'   | 'wrongZehnVonZehn'   | 'wrongCheese'
   | 'revealSchaetzchen'  | 'revealMucho'  | 'revealBunteTuete'  | 'revealZehnVonZehn'  | 'revealCheese'
   | 'questionStartSchaetzchen' | 'questionStartMucho' | 'questionStartBunteTuete' | 'questionStartZehnVonZehn' | 'questionStartCheese';
@@ -906,8 +905,7 @@ export interface QQSoundConfig {
   // CozyArena-Cues (2026-07-04). Leer = Fallback auf gridReveal / scoreUp.
   arenaStandings?: string;      // Bar-Race/Gesamtwertung erscheint
   arenaLeadChange?: string;     // Fraktion ueberholt an die Spitze
-  // Kategorie-spezifische Sounds (fallen auf generic correct/wrong/reveal zurueck)
-  correctSchaetzchen?: string;  correctMucho?: string;  correctBunteTuete?: string;  correctZehnVonZehn?: string;  correctCheese?: string;
+  // Kategorie-spezifische Sounds (fallen auf generic wrong/reveal/questionStart zurueck)
   wrongSchaetzchen?: string;    wrongMucho?: string;    wrongBunteTuete?: string;    wrongZehnVonZehn?: string;    wrongCheese?: string;
   revealSchaetzchen?: string;   revealMucho?: string;   revealBunteTuete?: string;   revealZehnVonZehn?: string;   revealCheese?: string;
   questionStartSchaetzchen?: string; questionStartMucho?: string; questionStartBunteTuete?: string; questionStartZehnVonZehn?: string; questionStartCheese?: string;
@@ -965,11 +963,6 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   arenaStandings:      '📊 Arena-Gesamtwertung erscheint (Bar-Race)',
   arenaLeadChange:     '⚔️ Arena-Führungswechsel (Fraktion überholt an die Spitze)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
-  correctSchaetzchen:   '✅ Richtig · Schätzchen',
-  correctMucho:         '✅ Richtig · Mu-Cho',
-  correctBunteTuete:    '✅ Richtig · Bunte Tüte',
-  correctZehnVonZehn:   '✅ Richtig · Quizzichoice',
-  correctCheese:        '✅ Richtig · Cheese',
   wrongSchaetzchen:     '❌ Falsch · Schätzchen',
   wrongMucho:           '❌ Falsch · Mu-Cho',
   wrongBunteTuete:      '❌ Falsch · Bunte Tüte',
@@ -1037,8 +1030,8 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   catMusicBunteTuete: '',
   catMusicZehnVonZehn: '',
   catMusicCheese: '',
-  // Kategorie-spezifisch: leer = fallback auf generisches correct/wrong/reveal/questionStart.
-  correctSchaetzchen: '', correctMucho: '', correctBunteTuete: '', correctZehnVonZehn: '', correctCheese: '', wrongSchaetzchen: '', wrongMucho: '', wrongBunteTuete: '', wrongZehnVonZehn: '', wrongCheese: '', revealSchaetzchen: '', revealMucho: '', revealBunteTuete: '', revealZehnVonZehn: '', revealCheese: '', questionStartSchaetzchen: '', questionStartMucho: '', questionStartBunteTuete: '', questionStartZehnVonZehn: '', questionStartCheese: '',
+  // Kategorie-spezifisch: leer = fallback auf generisches wrong/reveal/questionStart.
+  wrongSchaetzchen: '', wrongMucho: '', wrongBunteTuete: '', wrongZehnVonZehn: '', wrongCheese: '', revealSchaetzchen: '', revealMucho: '', revealBunteTuete: '', revealZehnVonZehn: '', revealCheese: '', questionStartSchaetzchen: '', questionStartMucho: '', questionStartBunteTuete: '', questionStartZehnVonZehn: '', questionStartCheese: '',
 };
 
 // ── QQ Draft (builder) ────────────────────────────────────────────────────────

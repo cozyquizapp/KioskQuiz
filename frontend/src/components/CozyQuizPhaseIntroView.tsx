@@ -29,7 +29,7 @@ import { ActionCard, type ActionCardData } from './CozyQuizActionCard';
 import QQProgressTree from './QQProgressTree';
 import { ArenaCounterGem } from './ArenaCounterGem';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
-import { playRevealHighlight, playTick } from '../utils/sounds';
+import { playRevealHighlight, playActionMenuReveal } from '../utils/sounds';
 
 export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; catColor: string }) {
   const schedule = s.schedule ?? [];
@@ -580,8 +580,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Sub-Step-Sounds bei step-Transitionen.
   // - step 2 (Cat-Reveal): playRevealHighlight — kurzer Auflösungs-Akkord
   //   markiert „Kategorie ist da", anstelle bisheriger Stille.
-  // - step 3 (Cat-Explain): playTick — ganz dezenter Akzent zum Wechsel,
-  //   damit Spieler-Aufmerksamkeit auf die Erklärung zieht.
+  // - step 3 (Cat-Explain / Aktions-Cards): playActionMenuReveal — Stinger fuer den
+  //   'Eure Aktion diese Runde'-Moment (2026-07-30 Sound-Audit R1, ersetzt playTick).
   const prevIntroStepRef = useRef<number | null>(null);
   useEffect(() => {
     if (s.sfxMuted) { prevIntroStepRef.current = s.introStep; return; }
@@ -591,7 +591,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
       if (cur === 2 && prev !== null && prev < 2) {
         try { playRevealHighlight(); } catch {}
       } else if (cur === 3 && prev !== null && prev < 3) {
-        try { playTick(); } catch {}
+        try { playActionMenuReveal(); } catch {}
       }
       prevIntroStepRef.current = cur;
     }

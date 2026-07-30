@@ -999,6 +999,7 @@ export function playUrgentTick() {
 }
 
 export function playScoreUp() {
+  if (_sfxMuted) return; // 2026-07-30 Sound-Audit R1: Synth respektiert globalen Mute
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
@@ -1302,6 +1303,7 @@ export function playRoundStart()    { playSlotOneShot('roundStart'); }
 // Slot-Custom-Upload via QQSoundConfig hat Vorrang, sonst Synth-Fallback.
 
 export function playCozyGameIntro(): void {
+  if (_sfxMuted) return; // 2026-07-30 Sound-Audit R1: Synth-only-Slot respektiert Mute
   if (!isSlotEnabled('cozyGameIntro')) return;
   const url = resolveSlotUrl('cozyGameIntro');
   if (url) { playUrlOneShot(url); return; }
@@ -1324,6 +1326,7 @@ export function playCozyGameIntro(): void {
 }
 
 export function playCozyGameWheelTick(): void {
+  if (_sfxMuted) return; // 2026-07-30 Sound-Audit R1: Synth-only-Slot respektiert Mute
   if (!isSlotEnabled('cozyGameWheelTick')) return;
   const url = resolveSlotUrl('cozyGameWheelTick');
   if (url) { playUrlOneShot(url); return; }
@@ -1339,6 +1342,7 @@ export function playCozyGameWheelTick(): void {
 }
 
 export function playCozyGameWheelStop(): void {
+  if (_sfxMuted) return; // 2026-07-30 Sound-Audit R1: Synth-only-Slot respektiert Mute
   if (!isSlotEnabled('cozyGameWheelStop')) { playWinnerCardReveal(); return; }
   const url = resolveSlotUrl('cozyGameWheelStop');
   if (url) { playUrlOneShot(url); return; }
@@ -1355,6 +1359,7 @@ export function playCozyGameWheelStop(): void {
 }
 
 export function playCozyGameStart(): void {
+  if (_sfxMuted) return; // 2026-07-30 Sound-Audit R1: Synth-only-Slot respektiert Mute
   if (!isSlotEnabled('cozyGameStart')) { playFanfare(); return; }
   const url = resolveSlotUrl('cozyGameStart');
   if (url) { playUrlOneShot(url); return; }
@@ -1552,9 +1557,14 @@ export function playClimaxFinish() {
   tone(1568.0, 'sine',     t + 0.30,  0.14, 1.40, 0.01, 0.40, ac); // G6
 }
 
-// 2026-05-23 (Wolf): playActionMenuReveal entfernt — nirgends aufgerufen.
-// Action-Card-Reveal nutzt heute playWoodKnock (Slam) + playFieldPlaced/
-// playSteal/playStapelStamp (Flip). Slot 'actionMenuReveal' bleibt.
+// 2026-07-30 (Wolf Sound-Audit R1): playActionMenuReveal wieder verdrahtet — EIN
+// Stinger im 'Eure Aktion diese Runde'-Moment (Phase-Intro Step 3, wenn die
+// Aktions-Cards aufpoppen; ersetzt den bisherigen dezenten playTick dort).
+// playSlotOneShot = Custom-URL → Preset → Default-WAV → classic-Synth-Fallback,
+// respektiert _sfxMuted + per-Slot-enabled. Slot 'actionMenuReveal'.
+export function playActionMenuReveal(): void {
+  playSlotOneShot('actionMenuReveal');
+}
 
 /** URL-One-Shot (kein Slot-Check) — fuer interne Reuse in den Synth-Pfaden.
  *  2026-05-12 (Sound-Audit P0 #1+#3): vorher `new Audio(url)` jedes Mal frisch

@@ -184,13 +184,13 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
       position: relative; width: 88px; height: 110px;
       animation: mapTargetDrop 0.75s var(--qq-ease-bounce) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
       transform-origin: 50% 100%;
-      filter: drop-shadow(0 0 18px rgba(236,72,153,0.95)) drop-shadow(0 8px 16px rgba(0,0,0,0.6));
+      filter: drop-shadow(0 0 18px rgba(var(--qq-accent-rgb),0.95)) drop-shadow(0 8px 16px rgba(0,0,0,0.6));
     ">
       <span style="
         position: absolute; left: 50%; top: 0;
         transform: translateX(-50%);
         font-size: 96px; line-height: 1;
-        color: #EC4899;
+        color: var(--qq-accent);
       ">📍</span>
       <!-- 2026-05-09 (Wolf): pulsierender pinker Glow-Dot entfernt — war
            redundant zum 📍 selbst, sah aus wie ein Bug. -->
@@ -364,11 +364,11 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
             display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap',
             padding: '8px 16px', borderRadius: 'var(--qq-pill-radius)',
             background: 'rgba(13,10,6,0.85)',
-            border: '1.5px solid rgba(236,72,153,0.35)',
+            border: '1.5px solid rgba(var(--qq-accent-rgb),0.35)',
             zIndex: 1000, maxWidth: 'calc(100% - 80px)', justifyContent: 'center',
           }}>
             <span style={{
-              fontSize: 'clamp(14px, 1.3cqw, 20px)', fontWeight: 900, color: '#FBCFE8',
+              fontSize: 'clamp(14px, 1.3cqw, 20px)', fontWeight: 900, color: 'var(--qq-accent-soft)',
               letterSpacing: 0.3, textTransform: 'uppercase',
             }}>
               {lang === 'en' ? '✈ Far away' : '✈ Weit weg'}
@@ -400,9 +400,9 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         <div style={{
           position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)',
           padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
-          background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(236,72,153,0.4)',
-          color: '#FBCFE8', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(236,72,153,0.25)',
+          background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
+          color: 'var(--qq-accent-soft)', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
+          boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(var(--qq-accent-rgb),0.25)',
           zIndex: 1000, letterSpacing: 0.3,
         }}>
           <QQEmojiIcon emoji="🌍"/> {title}
@@ -430,7 +430,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         }}>
           <div style={{
             fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)',
-            color: '#FBCFE8', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
+            color: 'var(--qq-accent-soft)', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
           }}>
             <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>
@@ -476,7 +476,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.15 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(26px, 2.8cqw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? '#FBCFE8' : '#cbd5e1' }}>{medal}</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8cqw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? 'var(--qq-accent-soft)' : '#cbd5e1' }}>{medal}</span>
                   <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 3.8cqw, 54px)'} />
                   <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(20px, 2.2cqw, 30px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
                   {timeLabel && (
@@ -484,7 +484,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                       fontWeight: 900, fontSize: 'clamp(14px, 1.3cqw, 18px)',
                       padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                       background: deltaMs === 0 ? 'rgba(250,204,21,0.18)' : 'rgba(148,163,184,0.12)',
-                      color: deltaMs === 0 ? '#FBCFE8' : '#94a3b8',
+                      color: deltaMs === 0 ? 'var(--qq-accent-soft)' : '#94a3b8',
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}

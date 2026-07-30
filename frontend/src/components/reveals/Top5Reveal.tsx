@@ -226,10 +226,10 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               // neutraler Akzent-Rahmen + „Meiste Treffer"-Framing statt „Rundensieger".
               // Wolf 2026-07-16 (konsistent mit Kronen-raus im ganzen Batch).
               background: isMega
-                ? 'linear-gradient(135deg, rgba(236,72,153,0.14), rgba(162,18,71,0.08))'
-                : 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(236,72,153,0.10))',
-              border: isMega ? '2.5px solid rgba(236,72,153,0.6)' : '2.5px solid rgba(250,204,21,0.65)',
-              boxShadow: isMega ? '0 0 44px rgba(236,72,153,0.22)' : '0 0 48px rgba(250,204,21,0.25)',
+                ? 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.14), rgba(var(--qq-accent-magenta-rgb),0.08))'
+                : 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(var(--qq-accent-rgb),0.10))',
+              border: isMega ? '2.5px solid rgba(var(--qq-accent-rgb),0.6)' : '2.5px solid rgba(250,204,21,0.65)',
+              boxShadow: isMega ? '0 0 44px rgba(var(--qq-accent-rgb),0.22)' : '0 0 48px rgba(250,204,21,0.25)',
               animation: 'qqT5v2Rise 0.55s var(--qq-ease-bounce) both',
             }}>
               <span style={{ fontSize: 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>

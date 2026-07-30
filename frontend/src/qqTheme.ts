@@ -145,9 +145,10 @@ const NEO_BRUTAL: ResolvedTheme = {
 // Stilrichtung „Creme-Bühne": der Akzent ist bewusst FARBLOS-WARM (Creme), damit
 // die bunten Quirk-/Team-/Kategorie-Farben die einzigen bedeutungstragenden Farben
 // bleiben (Farbe = Bedeutung, Akzent = neutral). Gold NUR im Finale (separate
-// Krönungs-Ausnahme, nicht hier als Dauer-Akzent). Font bleibt Nunito (Fredoka-
-// Display folgt in 1b mit dem Webfont). Dunkle, leicht warme Plum-Bühne, damit die
-// Kacheln leuchten.
+// Krönungs-Ausnahme, nicht hier als Dauer-Akzent). Font = Fredoka global (verspielt,
+// runde CozyWolf-DNA) — via den Phase-Root (--qq-font) kaskadiert das auf ALLE Views
+// zugleich, keine Einzel-Verdrahtung noetig (Phase 1b, Webfont in index.html geladen).
+// Dunkle, leicht warme Plum-Bühne, damit die bunten Kacheln leuchten.
 export const QUIRKS_THEME_ID = 'quirks';
 const QUIRKS: ResolvedTheme = {
   id: QUIRKS_THEME_ID, label: 'Quirks',
@@ -164,7 +165,7 @@ const QUIRKS: ResolvedTheme = {
     cardBorder: '1px solid rgba(255,255,255,0.10)', cardRadius: '24px', pillRadius: '999px',
     cardShadow: '0 16px 44px rgba(0,0,0,0.48)',
     hairline: 'rgba(255,255,255,0.10)', surface: 'rgba(255,255,255,0.05)', overlay: 'rgba(0,0,0,0.30)',
-    font: "'Nunito', 'Geist', system-ui, sans-serif",
+    font: "'Fredoka', 'Nunito', 'Geist', system-ui, sans-serif", // global via Phase-Root
     title: '#F3EFE7',               // warm-weißer Hero/Wortmark auf der Bühne
   },
 };
@@ -204,6 +205,14 @@ export function getActiveTheme(): ResolvedTheme {
   return QQ_THEMES[_activeId] ?? COZY;
 }
 
+/** #RRGGBB -> "r,g,b" (fuer rgba(var(--…-rgb), a)). Abgeleitet aus vorhandenem
+ *  Hex → zero-change fuer bestehende Themes. */
+function hexToRgbTriple(hex: string): string {
+  const h = hex.replace('#', '');
+  const n = parseInt(h.length === 3 ? h.split('').map(c => c + c).join('') : h, 16);
+  return `${(n >> 16) & 255},${(n >> 8) & 255},${n & 255}`;
+}
+
 /** Schreibt die Akzent-CSS-Vars des Themes auf :root → alle auf
  *  `var(--qq-accent*)` migrierten Flaechen ziehen sofort mit. */
 export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
@@ -217,6 +226,7 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   r.setProperty('--qq-accent-soft', b.accentSoft);
   r.setProperty('--qq-accent-light', b.accentWarm);
   r.setProperty('--qq-accent-magenta', b.magenta);
+  r.setProperty('--qq-accent-magenta-rgb', hexToRgbTriple(b.magenta));
   // Flächen (Lackierung — Layout bleibt unangetastet)
   r.setProperty('--qq-bg', s.pageBg);
   r.setProperty('--qq-text', s.text);

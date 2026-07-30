@@ -249,7 +249,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(12px,1.4cqw,24px)', borderRadius: 20,
-              background: 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(236,72,153,0.10))',
+              background: 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(var(--qq-accent-rgb),0.10))',
               border: '2.5px solid rgba(250,204,21,0.65)', boxShadow: '0 0 48px rgba(250,204,21,0.25)',
               animation: 'qqOrdV2Rise 0.55s var(--qq-ease-bounce) both',
             }}>

@@ -142,7 +142,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
           // qqRooms.ts crowdTop-Branch). slot.points = Rang-Rohpunkte 5/4/3/2/1
           // (QQ_CROWDTOP_BOARD_POINTS) → ×20 = 100/80/60/40/20, unabhängig von n.
           const pts = slot.points * 20;
-          const badgeBg = rank === 1 ? 'linear-gradient(135deg,#fbcfe8,#ec4899)'
+          const badgeBg = rank === 1 ? 'linear-gradient(135deg,var(--qq-accent-soft),var(--qq-accent))'
             : rank === 2 ? 'linear-gradient(135deg,#f1f5f9,#94a3b8)'
             : rank === 3 ? 'linear-gradient(135deg,#fdba74,#b45309)'
             : 'linear-gradient(135deg,#64748b,#334155)';
@@ -183,7 +183,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
               {/* Stimmen-Balken als Hintergrund */}
               <div aria-hidden style={{
                 position: 'absolute', left: 0, top: 0, bottom: 0, width: `${(slot.count / maxVotes) * 100}%`,
-                background: 'linear-gradient(90deg, rgba(236,72,153,0.13), rgba(236,72,153,0.02))',
+                background: 'linear-gradient(90deg, rgba(var(--qq-accent-rgb),0.13), rgba(var(--qq-accent-rgb),0.02))',
                 transformOrigin: 'left center', animation: 'qqCT2Bar 0.7s var(--qq-ease-out-cubic) 0.2s both',
                 pointerEvents: 'none',
               }} />
@@ -193,7 +193,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#0a0814',
                 textShadow: '0 1px 2px rgba(255,255,255,0.2)', zIndex: 1,
-                boxShadow: rank === 1 ? '0 0 20px rgba(236,72,153,0.5)' : '0 3px 8px rgba(0,0,0,0.35)',
+                boxShadow: rank === 1 ? '0 0 20px rgba(var(--qq-accent-rgb),0.5)' : '0 3px 8px rgba(0,0,0,0.35)',
               }}>#{rank}</div>
               <div style={{ minWidth: 0, zIndex: 1 }}>
                 <div style={{
@@ -227,9 +227,9 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                   ×{slot.count}
                 </span>
                 <span style={{
-                  fontSize: 'clamp(13px,1.35cqw,21px)', fontWeight: 900, color: '#fbcfe8',
+                  fontSize: 'clamp(13px,1.35cqw,21px)', fontWeight: 900, color: 'var(--qq-accent-soft)',
                   padding: 'clamp(2px,0.25cqh,4px) clamp(7px,0.8cqw,13px)', borderRadius: 'var(--qq-pill-radius)',
-                  background: 'rgba(236,72,153,0.14)', border: '1.5px solid rgba(236,72,153,0.4)',
+                  background: 'rgba(var(--qq-accent-rgb),0.14)', border: '1.5px solid rgba(var(--qq-accent-rgb),0.4)',
                   fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
                 }}>{pts} P</span>
               </div>
@@ -265,8 +265,8 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
             <div style={{
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(12px,1.4cqw,24px)', borderRadius: 20,
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(250,204,21,0.08))',
-              border: '2.5px solid rgba(236,72,153,0.6)', boxShadow: '0 0 48px rgba(236,72,153,0.22)',
+              background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.16), rgba(250,204,21,0.08))',
+              border: '2.5px solid rgba(var(--qq-accent-rgb),0.6)', boxShadow: '0 0 48px rgba(var(--qq-accent-rgb),0.22)',
               animation: 'qqCT2Rise 0.55s var(--qq-ease-bounce) both', overflow: 'hidden',
             }}>
               <span style={{ fontSize: 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>

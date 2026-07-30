@@ -21,7 +21,7 @@ import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
 import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shared/quarterQuizTypes';
 import { qqDistanceFactionScores, qqSchaetzchenParse } from '../../../../shared/qqDistanceScore';
 import { QQTeamAvatar } from '../QQTeamAvatar';
-import { QQEmojiIcon } from '../QQIcon';
+import { QQEmojiIcon, QQIcon } from '../QQIcon';
 import { isQuirkTileSet } from '../../quirks2Avatars';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
@@ -209,6 +209,28 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
         else if (hi > 95) { const d = hi - 95; for (const c of above) c.cx -= d; }
       }
     }
+    // 2026-07-30 (Wolf 'blau hat exakt getroffen, aber teal wirkt naeher — darf
+    // nicht sein'): spread() konnte einen Nicht-Sieger in die Sieger-Spalte (~tx)
+    // druecken, wodurch ein Fast-Treffer optisch naeher am Gold-Diamant sass als
+    // der exakte Sieger. MOAT: kein Nicht-Sieger naeher als GAP an der Sieger-Spalte;
+    // Ueberlappungen werden nach AUSSEN (weg von der Wahrheit) aufgeloest → der
+    // Sieger besitzt die Mitte unmissverstaendlich. Nur wenn der Sieger auch der
+    // naechste Tipp ist (sonst waere ein naeherer Tipp legitim naeher — Arena-
+    // Punktesieger bleibt unberuehrt).
+    const winnerIsNearest = !!winner && rankedFinal.every(r => r.delta >= winner.delta);
+    if (winnerIsNearest) {
+      const wcx = above.find(c => c.r.teamId === winId)?.cx ?? tx;
+      const GAP = 14, STEP = 12;
+      const moat = (lane: typeof sorted) => {
+        const left  = lane.filter(c => c.r.teamId !== winId && c.cx <= wcx).sort((a, b) => b.cx - a.cx);
+        const right = lane.filter(c => c.r.teamId !== winId && c.cx >  wcx).sort((a, b) => a.cx - b.cx);
+        let e = wcx - GAP; for (const c of left)  { if (c.cx > e) c.cx = e; e = c.cx - STEP; }
+        e = wcx + GAP;     for (const c of right) { if (c.cx < e) c.cx = e; e = c.cx + STEP; }
+        for (const c of lane) if (c.r.teamId !== winId) c.cx = Math.max(5, Math.min(95, c.cx));
+      };
+      moat(above);
+      moat(sorted.filter(c => !c.above));
+    }
     return sorted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rankedFinal, axisPct, winner]);
@@ -281,7 +303,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
           letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 'clamp(3px, 0.5cqh, 7px)',
           display: 'flex', alignItems: 'center', gap: 8,
         }}>
-          <QQEmojiIcon emoji="🎯" /> {lang === 'en' ? 'Guess It · Reveal' : 'Schätzchen · Auflösung'}
+          <QQIcon slug="cat-schaetzchen" size="1.25em" /> {lang === 'en' ? 'Guess It · Reveal' : 'Schätzchen · Auflösung'}
         </div>
         <div key={lang} style={{
           fontSize: qText.length > 90 ? 'clamp(16px, 1.8cqw, 29px)' : 'clamp(18px, 2.3cqw, 37px)',

@@ -11,7 +11,6 @@ import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvat
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
-import { QUIRK_SLUGS, isQuirkSlug, quirkBySlug, quirkLabel, quirkColorForSlot, quirkSrc, type QuirkActionType } from './quirksAvatars';
 import { QUIRK2_SET_ID, QUIRK2_SLUGS, isQuirk2Slug, quirk2BySlug, quirk2Label, quirk2Src } from './quirks2Avatars';
 
 export type AvatarSetSource = 'png' | 'emoji';
@@ -123,23 +122,9 @@ export const AVATAR_SETS: AvatarSet[] = [
     source: 'emoji',
     avatars: COZY_WOLF_SLUGS,
   },
-  // 2026-07-28 (Wolf): Cozy Quirks — 8 animierte, slot-gebundene Charaktere
-  // (Farbe ins Motiv gebacken, EINER je Farb-Slot wie Cozy Pack). Render =
-  // ECKIGE Team-Kachel (nicht runde Disc) + 3-Frame-Animation (open/blink/quirk)
-  // + Breathe. „avatars"=Quirk-Slugs (isQuirkSlug) → kind 'quirk'. Reihenfolge =
-  // QQ_AVATARS-Slots; der Charakter wird IMMER aus dem Farb-Slot abgeleitet.
-  {
-    id: 'cozyQuirks',
-    label: 'Cozy Quirks',
-    tint: '#EC4899',
-    leadEmoji: '😉',
-    preview: ['🟠', '🟣', '🔴'],
-    source: 'emoji',
-    avatars: QUIRK_SLUGS,
-  },
   // 2026-07-29 (Wolf): Cozy Quirks 2.0 — 8 eckige Kachel-Quirks, SLOT-GEBUNDEN
   // (Farbe fest ins Motiv gebacken, EINER je Farb-Slot wie Cozy Pack). 2-Frame
-  // (base/blink), keine Action. Anderer Look als das freie V2-cozyQuirks.
+  // (base/blink), keine Action.
   // „avatars"=Quirks-2.0-Slugs (isQuirk2Slug) → kind 'quirk' ohne actionSrc.
   {
     id: QUIRK2_SET_ID,
@@ -301,14 +286,12 @@ export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
   | { kind: 'image'; src: string;     color: string; label: string; blinkSrc?: string; discFill?: number }   // cozy3d / CozyWolf (blinkSrc = expliziter Blink-Frame; discFill = Disc-Fuellung, Default cozy3d 0.9)
   | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // CozyArena-Wappen (flach)
-  // Cozy Quirks: animierter slot-gebundener Charakter auf ECKIGER Team-Kachel.
-  // 3 Frames (open/closed/action) + Wolfs Per-Avatar-Timings.
-  // actionSrc & Co. optional: cozyQuirks (V2) hat 3 Frames (open/closed/action),
-  // cozyQuirks2 nur 2 (base/blink) → kein action-Layer.
-  | { kind: 'quirk'; color: string; label: string; openSrc: string; closedSrc: string; actionSrc?: string;
-      actionType?: QuirkActionType; delay: number; blink: number; actionTime?: number; actionDelay?: number;
+  // Cozy Quirks 2.0: slot-gebundener Charakter auf ECKIGER Team-Kachel.
+  // 2 Frames (base/blink), Farbe fest ins Motiv gebacken.
+  | { kind: 'quirk'; color: string; label: string; openSrc: string; closedSrc: string;
+      delay: number; blink: number;
       /** cozyQuirks 2.0: Motiv füllt die Kachel randlos (Farbe voll gebacken) →
-       *  QuirkAvatar rendert ohne Rahmen/Inset. V2-Motive sitzen AUF der Farbe. */
+       *  QuirkAvatar rendert ohne Rahmen/Inset. */
       fullBleed?: boolean }
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
@@ -382,11 +365,6 @@ export function getAvatarDisplay(
     if (isQuirk2Slug(setQ2)) emoji = setQ2;
   }
 
-  // Cozy Quirks V2 (2026-07-28): FREI kombinierbar (10 Designs × 8 Farben). Das
-  // Design kommt aus teamEmoji (oder Set-Default je Slot), die Farbe IMMER vom
-  // Slot → KEIN slot-binding-Override (wie cozy3d/Party). Der teamEmoji-Design-
-  // Slug gewinnt; Default = set.avatars[slotIdx] (erste 8 Designs).
-
   // CozyArena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {
     return {
@@ -420,29 +398,9 @@ export function getAvatarDisplay(
     };
   }
 
-  // Cozy Quirks: animiertes Design auf eckiger Team-Kachel. Design aus emoji,
-  // Farbe (WebP-Ordner) aus dem Slot → frei kombinierbar. 3 Frames + Timings.
-  if (isQuirkSlug(emoji)) {
-    const q = quirkBySlug(emoji)!;
-    const colorToken = quirkColorForSlot(slotIdx);
-    return {
-      kind: 'quirk',
-      color: slot.color,
-      label: quirkLabel(emoji),
-      openSrc: quirkSrc(colorToken, q.design, 'open'),
-      closedSrc: quirkSrc(colorToken, q.design, 'closed'),
-      actionSrc: quirkSrc(colorToken, q.design, 'action'),
-      actionType: q.action,
-      delay: q.delay,
-      blink: q.blink,
-      actionTime: q.actionTime,
-      actionDelay: q.actionDelay,
-    };
-  }
-
   // Cozy Quirks 2.0: eckige Kachel mit fest gebackener Farbe (slot-gebunden),
-  // 2 Frames (base/blink), KEINE action. Gleicher kind 'quirk', nur ohne
-  // actionSrc → QuirkAvatar rendert nur open+blink.
+  // 2 Frames (base/blink), KEINE action. kind 'quirk' → QuirkAvatar rendert
+  // nur open+blink.
   if (isQuirk2Slug(emoji)) {
     const q = quirk2BySlug(emoji)!;
     return {

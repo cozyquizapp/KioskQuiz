@@ -19,7 +19,6 @@ import { isThemed } from '../qqTheme';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
-import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel, quirkColorForSlot } from '../quirksAvatars';
 import { isQuirkTileSet, isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label, quirk2ForSlot } from '../quirks2Avatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
@@ -838,14 +837,6 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={partySrc(t.emoji)} alt={partyLabel(t.emoji)} draggable={false}
               style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
-          // Cozy Quirks (frei): Design aus t.emoji, Farbe aus dem Farb-Slot.
-          if (isQuirkSlug(t.emoji)) {
-            const slotIdx = QQ_AVATARS.findIndex(a => a.id === t.avatarId);
-            const q = quirkBySlug(t.emoji);
-            const color = quirkColorForSlot(slotIdx >= 0 ? slotIdx : 0);
-            return <img src={quirkSrc(color, q?.design ?? 'flux', 'open')} alt={quirkLabel(t.emoji)} draggable={false}
-              style={{ width: '96%', height: '96%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
-          }
           // Cozy Quirks 2.0 (slot-gebunden): das Design IMMER aus dem Farb-Slot
           // ableiten (Farbe fest gebacken), NIE aus t.emoji — sonst säße z.B. das
           // pinke Motiv im orangen Slot (Wolf 2026-07-29 „falsch verdrahtet"),
@@ -941,7 +932,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirkSlug(t.emoji) || isQuirk2Slug(t.emoji)) ? 'visible' : 'hidden',
+                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirk2Slug(t.emoji)) ? 'visible' : 'hidden',
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>

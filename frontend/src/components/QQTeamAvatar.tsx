@@ -4,7 +4,6 @@ import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
-import { isQuirkSlug, quirkBySlug, quirkSrc, quirkLabel } from '../quirksAvatars';
 import { isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
@@ -359,30 +358,6 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
       />
     );
   }
-  // Cozy Quirks: „Emoji" ist ein Quirk-Slug → Ruhe-Frame (open) inline. Die
-  // volle Animation + eckige Kachel laufen nur ueber QQTeamAvatar; hier (Picker-
-  // Grid) reicht das statische Motiv. Ohne diesen Zweig faellt der Slug auf Text.
-  if (isQuirkSlug(emoji)) {
-    const q = quirkBySlug(emoji);
-    // Inline (ohne Slot-Farbe): Design in Default-Farbe. Der /team-Picker rendert
-    // Designs über QQTeamAvatar in der gewählten Farbe (nicht hierüber).
-    return (
-      <img
-        src={quirkSrc('orange', q?.design ?? 'flux', 'open')}
-        alt={quirkLabel(emoji)}
-        draggable={false}
-        style={{
-          width: '1.32em',
-          height: '1.32em',
-          fontSize: fontSizeStr,
-          objectFit: 'contain',
-          display: 'inline-block',
-          verticalAlign: 'middle',
-          ...style,
-        }}
-      />
-    );
-  }
   // Cozy Quirks 2.0: „Emoji" ist ein Quirks-2.0-Slug → base-Frame inline (Farbe
   // fest gebacken, kein Slot-Tint noetig). Ohne diesen Zweig faellt der Slug auf Text.
   if (isQuirk2Slug(emoji)) {
@@ -592,13 +567,13 @@ function ImageAvatar({
   );
 }
 
-// ─── Cozy Quirks (animierter Charakter auf eckiger Team-Kachel) ───────────
-// 2026-07-28 (Wolf): slot-gebundenes animiertes Set. App rendert eine ECKIGE
-// Team-Kachel (Wolfs .cell) statt der runden Disc; darauf 3 gestapelte Frames
-// (open-Basis + closed-Blink + action-Quirk als Opacity-Overlays) + dezentes
-// Breathe auf dem Wrapper. Timings pro Avatar aus getAvatarDisplay (Wolfs
-// animated-grid.html). Nur im Idle (grosse Avatare, eyes='auto', !flat) laeuft
-// die volle Animation; im Grid (flat/eyes-gesteuert) statisch open/closed.
+// ─── Cozy Quirks 2.0 (animierter Charakter auf eckiger Team-Kachel) ───────
+// 2026-07-29 (Wolf): slot-gebundenes animiertes Set. App rendert eine ECKIGE
+// Team-Kachel (Wolfs .cell) statt der runden Disc; darauf 2 gestapelte Frames
+// (open-Basis + closed-Blink als Opacity-Overlay) + dezentes Breathe auf dem
+// Wrapper. Timings pro Avatar aus getAvatarDisplay. Nur im Idle (grosse
+// Avatare, eyes='auto', !flat) laeuft die volle Animation; im Grid
+// (flat/eyes-gesteuert) statisch open/closed.
 function QuirkAvatar({
   display, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto',
 }: {
@@ -607,8 +582,7 @@ function QuirkAvatar({
   square?: boolean; flat?: boolean; blink?: boolean; eyes?: 'auto' | 'open' | 'closed';
 }) {
   const [failed, setFailed] = useState(false);
-  const { color, openSrc, closedSrc, actionSrc, actionType, delay, blink: blinkDur, actionTime, actionDelay, fullBleed } = display;
-  const actName = actionType === 'short' ? 'qqQuirkActShort' : actionType === 'hold' ? 'qqQuirkActHold' : 'qqQuirkActTalk';
+  const { color, openSrc, closedSrc, delay, blink: blinkDur, fullBleed } = display;
   // Volle Animation nur auf grossen Idle-Avataren; Grid (flat/explizit) bleibt ruhig.
   const idle = eyes === 'auto' && blink && !flat;
   const showClosedStatic = eyes === 'closed';
@@ -677,18 +651,6 @@ function QuirkAvatar({
                 : { opacity: showClosedStatic ? 1 : 0, transition: 'opacity 0.3s ease' }),
             }}
           />
-          {/* action-Quirk nur im Idle — und nur wenn das Set einen 3. Frame hat
-              (cozyQuirks). cozyQuirks2 ist 2-Frame (base/blink) → kein actionSrc. */}
-          {idle && actionSrc && (
-            <img
-              className="qqQuirkAction"
-              src={actionSrc}
-              alt=""
-              aria-hidden="true"
-              draggable={false}
-              style={{ ...imgStyle, opacity: 0, animation: `${actName} ${actionTime}s linear ${actionDelay}s infinite` }}
-            />
-          )}
         </span>
       )}
     </span>

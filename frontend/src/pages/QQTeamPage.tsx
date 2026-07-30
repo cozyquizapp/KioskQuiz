@@ -19,7 +19,6 @@ import { JokerIcon } from '../components/JokerIcon';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { isCozyWolfSlug, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
-import { isQuirkSlug } from '../quirksAvatars';
 import { isQuirk2Slug, QUIRK2_SLUGS } from '../quirks2Avatars';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
@@ -1238,9 +1237,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 paddingRight: pool.length > 16 ? 4 : undefined,
               }}>
                 {pool.map((em, i) => {
-                  // Cozy Quirks (frei): Designs sind NICHT vergeben (die Farbe/Slot
-                  // ist eindeutig, das Design frei mehrfach wählbar).
-                  const taken = isQuirkSlug(em) ? false : takenEmojis.includes(em);
+                  const taken = takenEmojis.includes(em);
                   const sel = chosenEmoji === em;
                   const myColor = QQ_AVATARS.find(a => a.id === avatarId)?.color ?? QQ_COLORS.brandPink;
                   return (
@@ -1294,12 +1291,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                       }}
                     >
-                      {isQuirkSlug(em) ? (
-                        // Design in der GEWÄHLTEN Farbe zeigen (frei kombinierbar).
-                        <QQTeamAvatar avatarId={avatarId} teamEmoji={em} size={46} avatarSetId={activeSetId} />
-                      ) : (
-                        <CountryFlagOrEmoji emoji={em} fontSize={36} />
-                      )}
+                      <CountryFlagOrEmoji emoji={em} fontSize={36} />
                     </button>
                   );
                 })}

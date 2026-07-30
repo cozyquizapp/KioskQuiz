@@ -12,7 +12,6 @@ import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS, qqMegaFactionSlug, qqMegaFactionName, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
-import { isQuirkSlug } from '../quirksAvatars';
 import { isQuirk2Slug } from '../quirks2Avatars';
 import { crestSrc } from '../cozyArenaCrests';
 
@@ -384,9 +383,9 @@ export function AvatarKarussellEditor({
                 fontSize={'clamp(72px, 19vw, 96px)'}
                 style={{ filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))' }}
               />
-            ) : needsEmoji && chosenEmoji && (isQuirkSlug(chosenEmoji) || isQuirk2Slug(chosenEmoji)) ? (
-              // Cozy Quirks (+2.0): Design als eckige Kachel über QQTeamAvatar rendern
-              // (cozyQuirks: Slot-Farbe; cozyQuirks2: Farbe fest gebacken/slot-gebunden).
+            ) : needsEmoji && chosenEmoji && isQuirk2Slug(chosenEmoji) ? (
+              // Cozy Quirks 2.0: Design als eckige Kachel über QQTeamAvatar rendern
+              // (Farbe fest gebacken/slot-gebunden).
               <QQTeamAvatar avatarId={avatarId} teamEmoji={chosenEmoji} size={'clamp(120px, 33vw, 160px)'} />
             ) : needsEmoji && chosenEmoji ? (
               <CountryFlagOrEmoji

@@ -14,15 +14,13 @@
 //
 // Slug (team.emoji) = DESIGN, z.B. 'quirk2-prisma'. isQuirk2Slug() unterscheidet.
 
-import { QUIRK_SET_ID } from './quirksAvatars';
-
 /** Set-ID von Cozy Quirks 2.0. */
 export const QUIRK2_SET_ID = 'cozyQuirks2';
 
-/** True für beide eckigen Quirk-Kachel-Sets (cozyQuirks + cozyQuirks2). Render-
- *  Stellen mit rundem Wrapper lassen dafür die runde Umrandung weg (Radius 18%). */
+/** True für das eckige Quirk-Kachel-Set (cozyQuirks2). Render-Stellen mit rundem
+ *  Wrapper lassen dafür die runde Umrandung weg (Radius 18%). */
 export function isQuirkTileSet(setId: string | undefined | null): boolean {
-  return setId === QUIRK_SET_ID || setId === QUIRK2_SET_ID;
+  return setId === QUIRK2_SET_ID;
 }
 
 export type Quirk2Design = {

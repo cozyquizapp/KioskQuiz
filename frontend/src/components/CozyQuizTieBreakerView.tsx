@@ -57,7 +57,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       // 2026-07-08 Konsistenz B5: einziger Beamer-View ohne eigenes overflow-
       // hidden — bei vielen Kandidaten/langen Namen sonst Clipping-Risiko.
       overflow: 'hidden',
-      background: 'radial-gradient(circle at 50% 28%, rgba(236,72,153,0.12), transparent 60%)',
+      background: 'radial-gradient(circle at 50% 28%, rgba(var(--qq-accent-rgb),0.12), transparent 60%)',
       // 2026-07-19 (Kolosseum-Font-Sweep): das Stechen ist der Drama-Moment des
       // Abends und lief bisher hart auf Nunito. qqArenaType statt dem lokalen
       // `arena` (Z. 18) — letzteres ist rohes largeGroupMode und wuerde auch in
@@ -69,7 +69,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ fontSize: '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: QQ_COLORS.brandPink, textTransform: 'uppercase' }}>
         {de ? 'Gleichstand' : 'Dead heat'}
       </div>
-      <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: '#fff', letterSpacing: '0.02em', textShadow: '0 4px 24px rgba(236,72,153,0.5)' }}>
+      <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: '#fff', letterSpacing: '0.02em', textShadow: '0 4px 24px rgba(var(--qq-accent-rgb),0.5)' }}>
         ⚔️ {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>

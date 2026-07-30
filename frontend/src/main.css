@@ -96,9 +96,10 @@
      qqTheme.ts ueberschreibt sie per Skin-Wechsel auf document.documentElement. */
   --qq-accent: #ec4899;          /* Haupt-Akzent (Brand-Pink) */
   --qq-accent-rgb: 236,72,153;   /* fuer rgba(var(--qq-accent-rgb), x) */
-  --qq-accent-soft: #fce7f3;     /* heller Glow */
+  --qq-accent-soft: #fbcfe8;     /* heller Glow (= COZY.accentSoft/brandPinkSoft) */
   --qq-accent-light: #f472b6;    /* helle Akzent-Variante (Gradient-Start) */
   --qq-accent-magenta: #a21247;  /* dunkler 2. Akzent (Gradient-Ende) */
+  --qq-accent-magenta-rgb: 162,18,71; /* fuer rgba(var(--qq-accent-magenta-rgb), x) = #a21247 */
   /* ── Skin-Flaechen-Tokens (2026-06-23) ─────────────────────────────────
      „Grundgeruest bleibt gleich, nur Lackierung aendert sich" (Wolf-Regel):
      Layout NIE ueber diese Tokens steuern — nur Farbe/Flaeche/Rand/Schrift.

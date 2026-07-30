@@ -515,7 +515,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             font-weight: 900;
             line-height: 1;
             letter-spacing: -0.02em;
-            color: #EC4899;
+            color: var(--qq-accent);
             display: inline-block;
             position: relative;
           }

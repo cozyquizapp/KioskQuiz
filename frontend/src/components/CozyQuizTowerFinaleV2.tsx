@@ -284,7 +284,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
       <style>{KEYFRAMES}</style>
 
       {/* Atmosphaere */}
-      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(130% 90% at 50% 120%, rgba(236,72,153,0.14), transparent 55%)' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, pointerEvents: 'none', background: 'radial-gradient(130% 90% at 50% 120%, rgba(var(--qq-accent-rgb),0.14), transparent 55%)' }} />
       <div aria-hidden style={{
         position: 'absolute', left: 0, right: 0, bottom: 0, height: 240, pointerEvents: 'none',
         background: crowned ? `radial-gradient(80% 130% at 50% 100%, ${winner.team.color}3a, transparent 70%)` : 'radial-gradient(90% 130% at 50% 100%, rgba(168,85,247,0.10), transparent 70%)',
@@ -297,7 +297,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
       }} />
       {!reduce && Array.from({ length: 6 }).map((_, i) => {
         const r = (n: number) => { const x = Math.sin(i * 12.9898 + n * 78.233) * 43758.5453; return x - Math.floor(x); };
-        return <div key={i} aria-hidden style={{ position: 'absolute', bottom: -10, left: `${8 + r(1) * 84}%`, width: 3 + r(2) * 4, height: 3 + r(2) * 4, borderRadius: '50%', background: '#EC4899', opacity: 0.1 + r(3) * 0.1, filter: 'blur(1px)', animation: `qqT2Drift ${13 + r(4) * 9}s linear ${-r(5) * 18}s infinite` }} />;
+        return <div key={i} aria-hidden style={{ position: 'absolute', bottom: -10, left: `${8 + r(1) * 84}%`, width: 3 + r(2) * 4, height: 3 + r(2) * 4, borderRadius: '50%', background: 'var(--qq-accent)', opacity: 0.1 + r(3) * 0.1, filter: 'blur(1px)', animation: `qqT2Drift ${13 + r(4) * 9}s linear ${-r(5) * 18}s infinite` }} />;
       })}
 
       {/* Titelband */}

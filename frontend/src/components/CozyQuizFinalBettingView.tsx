@@ -162,7 +162,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
         padding: 'clamp(28px, 4cqh, 48px) clamp(40px, 5cqw, 72px)',
         borderRadius: 32,
-        background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(162,18,71,0.06))',
+        background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(var(--qq-accent-magenta-rgb),0.06))',
         border: '2px solid rgba(var(--qq-accent-rgb),0.32)',
         boxShadow: '0 24px 64px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
       }}>

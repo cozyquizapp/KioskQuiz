@@ -102,7 +102,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
               color: '#FFEFC9',
               lineHeight: 1.1,
               letterSpacing: '-0.005em',
-              textShadow: '0 0 24px rgba(236,72,153,0.2)',
+              textShadow: '0 0 24px rgba(var(--qq-accent-rgb),0.2)',
               animation: 'qqSloganFade 0.7s ease-in-out both',
               willChange: 'opacity',
             }}
@@ -1432,7 +1432,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               fontWeight: 400,
               letterSpacing: '0.04em',
               color: 'var(--qq-accent)',
-              textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
+              textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(var(--qq-accent-rgb),0.6)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',

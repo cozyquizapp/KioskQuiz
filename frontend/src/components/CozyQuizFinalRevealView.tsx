@@ -122,8 +122,8 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
           100% { transform: translateY(var(--swapDiff)); }
         }
         @keyframes qqRecapWinnerGlow {
-          0%   { box-shadow: 0 0 0 rgba(236,72,153,0); border-color: rgba(255,255,255,0.10); }
-          100% { box-shadow: 0 0 36px rgba(236,72,153,0.55), 0 0 72px rgba(236,72,153,0.25); border-color: rgba(236,72,153,0.85); }
+          0%   { box-shadow: 0 0 0 rgba(var(--qq-accent-rgb),0); border-color: rgba(255,255,255,0.10); }
+          100% { box-shadow: 0 0 36px rgba(var(--qq-accent-rgb),0.55), 0 0 72px rgba(var(--qq-accent-rgb),0.25); border-color: rgba(var(--qq-accent-rgb),0.85); }
         }
       `}</style>
 
@@ -196,10 +196,10 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
               gap: 14, alignItems: 'center',
               padding: '0 18px', borderRadius: 14,
               background: isJust
-                ? 'linear-gradient(90deg, rgba(236,72,153,0.20), rgba(162,18,71,0.12))'
+                ? 'linear-gradient(90deg, rgba(var(--qq-accent-rgb),0.20), rgba(var(--qq-accent-magenta-rgb),0.12))'
                 : 'rgba(255,255,255,0.04)',
               border: isJust
-                ? '2px solid rgba(236,72,153,0.7)'
+                ? '2px solid rgba(var(--qq-accent-rgb),0.7)'
                 : '1.5px solid var(--qq-hairline)',
               boxSizing: 'border-box',
             }}>
@@ -3080,7 +3080,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
       {/* Boden-Linie */}
       <div style={{
         flexShrink: 0, height: 2, margin: '0 40px 22px',
-        background: 'linear-gradient(90deg, transparent, rgba(236,72,153,0.45), transparent)',
+        background: 'linear-gradient(90deg, transparent, rgba(var(--qq-accent-rgb),0.45), transparent)',
         zIndex: 1,
       }} />
 

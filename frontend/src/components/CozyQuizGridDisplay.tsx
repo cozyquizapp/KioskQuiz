@@ -311,7 +311,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 // + Goldglow. Leere Cells haben keinen 3D-Effekt.
                 transform: isStuck ? 'translateY(-3px)' : undefined,
                 filter: isStuck
-                  ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(236,72,153,0.45))'
+                  ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(var(--qq-accent-rgb),0.45))'
                   : team
                     ? 'drop-shadow(0 3px 3px rgba(0,0,0,0.45))'
                     : undefined,
@@ -402,7 +402,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     insetTop, insetBottom,
                     hardDrop, softDrop,
                     isAccent      ? `0 0 ${isFlash ? 28 : 24}px ${tColor}bb` : '',
-                    showStar      ? '0 0 10px rgba(236,72,153,0.5)' : '',
+                    showStar      ? '0 0 10px rgba(var(--qq-accent-rgb),0.5)' : '',
                     (!isAccent && !showStar && isHighlighted) ? `0 0 14px ${tColor}88` : '',
                   ].filter(Boolean).join(', ');
                   return (
@@ -417,7 +417,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Frozen keine. Stuck nutzt jetzt die per-edge Region-
                     // Fusion wie Standard — outer Goldborder weg.
                     ...(showStar
-                      ? { border: '2px solid rgba(236,72,153,0.9)' }
+                      ? { border: '2px solid rgba(var(--qq-accent-rgb),0.9)' }
                       : isFrozen
                         ? { border: 'none' }
                         : {
@@ -519,7 +519,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {isStuck && (
                   <div style={{
                     position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
-                    border: '2.5px solid rgba(236,72,153,0.8)',
+                    border: '2.5px solid rgba(var(--qq-accent-rgb),0.8)',
                     animation: 'stapelDustRing 0.6s ease-out 0.1s both',
                     pointerEvents: 'none', zIndex: 3,
                   }} />
@@ -582,15 +582,15 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   <>
                     <div style={{
                       position: 'absolute', inset: -2, borderRadius: cellRadius + 2,
-                      border: '2.5px solid rgba(236,72,153,0.9)',
-                      background: 'rgba(236,72,153,0.14)',
+                      border: '2.5px solid rgba(var(--qq-accent-rgb),0.9)',
+                      background: 'rgba(var(--qq-accent-rgb),0.14)',
                       animation: 'shieldGlow 2s ease-in-out infinite',
                       pointerEvents: 'none', zIndex: 2,
                     }} />
                     <div style={{
                       position: 'absolute', top: -5, right: -5,
                       zIndex: 5, lineHeight: 0,
-                      filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.9))',
+                      filter: 'drop-shadow(0 0 6px rgba(var(--qq-accent-rgb),0.9))',
                     }}>
                       <QQIcon slug="marker-shield" size={Math.max(16, cellSize * 0.48)} alt="Schild" />
                     </div>
@@ -895,7 +895,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
           <div style={{
             position: 'absolute', left: '50%', top: '50%', width: 560, height: 560,
             transform: 'translate(-50%,-50%) scale(0.32)', borderRadius: '50%',
-            border: '6px solid rgba(236,72,153,0.6)',
+            border: '6px solid rgba(var(--qq-accent-rgb),0.6)',
             animation: 'qqJokerRing 0.9s cubic-bezier(.2,.6,.3,1) both',
           }} />
           {/* Shockwave-Ring (Team-Farbe, leichter Versatz) */}

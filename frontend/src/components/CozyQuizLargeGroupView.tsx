@@ -77,7 +77,7 @@ const KEYFRAMES = `
 @keyframes qqRowIn { from { opacity: 0; transform: translateX(-34px); } to { opacity: 1; transform: none; } }
 @keyframes qqValuePop { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 /* 2026-07-12 (Showdown 2b): Finale-Multiplikator-Banner atmet. */
-@keyframes qqFinalePulse { 0%,100% { transform: scale(1); box-shadow: 0 0 30px -4px #EC4899, inset 0 1px 0 rgba(255,255,255,0.3); } 50% { transform: scale(1.035); box-shadow: 0 0 52px 2px #EC4899, inset 0 1px 0 rgba(255,255,255,0.4); } }
+@keyframes qqFinalePulse { 0%,100% { transform: scale(1); box-shadow: 0 0 30px -4px var(--qq-accent), inset 0 1px 0 rgba(255,255,255,0.3); } 50% { transform: scale(1.035); box-shadow: 0 0 52px 2px var(--qq-accent), inset 0 1px 0 rgba(255,255,255,0.4); } }
 `;
 
 // Finale-Multiplikator spiegelbildlich zur Backend-Wertung (qqMegaEventScore):

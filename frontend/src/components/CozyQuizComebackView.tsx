@@ -666,7 +666,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
         color: 'var(--qq-accent)', textAlign: 'center',
         // 2026-07-08 Konsistenz #9: Marke ist NICHT Gold — Glow von Gold auf
         // Brand-Pink (Beamer war hier off-brand vs Team-Pink).
-        textShadow: '0 0 50px rgba(236,72,153,0.55)',
+        textShadow: '0 0 50px rgba(var(--qq-accent-rgb),0.55)',
         letterSpacing: bamActive ? '0.04em' : 'normal',
         animation: bamActive
           ? 'comebackSlam 1s var(--qq-ease-bounce) both'

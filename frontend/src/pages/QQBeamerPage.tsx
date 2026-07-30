@@ -486,8 +486,8 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
         background: 'rgba(13,10,6,0.92)',
         borderRadius: 24,
         padding: 'clamp(20px, 2.4cqh, 32px) clamp(28px, 3cqw, 48px)',
-        border: '1.5px solid rgba(236,72,153,0.4)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(236,72,153,0.15)',
+        border: '1.5px solid rgba(var(--qq-accent-rgb),0.4)',
+        boxShadow: '0 20px 60px rgba(0,0,0,0.7), 0 0 80px rgba(var(--qq-accent-rgb),0.15)',
         backdropFilter: 'blur(14px)',
         maxWidth: 1100, width: '92%',
       }}>
@@ -495,7 +495,7 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
           fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
           color: QQ_COLORS.brandPink, letterSpacing: '0.1em', textTransform: 'uppercase',
           textAlign: 'center', marginBottom: 14,
-          textShadow: '0 0 18px rgba(236,72,153,0.55)',
+          textShadow: '0 0 18px rgba(var(--qq-accent-rgb),0.55)',
         }}>
           {lang === 'en' ? '⏱ Game Replay · Recap' : '⏱ Spielverlauf · Recap'}
         </div>
@@ -563,7 +563,7 @@ function FullscreenNudge({ onClick, de }: { onClick: () => void; de: boolean }) 
       style={{
         position: 'fixed', top: 14, right: 14, zIndex: 99999,
         padding: '8px 14px', borderRadius: 8,
-        border: '1px solid rgba(236,72,153,0.5)',
+        border: '1px solid rgba(var(--qq-accent-rgb),0.5)',
         background: 'rgba(20,16,31,0.85)', color: QQ_COLORS.brandPink,
         fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
         fontWeight: 900, fontSize: 13, cursor: 'pointer',
@@ -740,14 +740,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const isPaused = s.phase === 'PAUSED';
   const pauseBg = isPreGame
     ? [
-        'radial-gradient(ellipse at 22% 28%, rgba(236,72,153,0.30) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 22% 28%, rgba(var(--qq-accent-rgb),0.30) 0%, transparent 55%)',
         'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.32) 0%, transparent 55%)',
         'radial-gradient(ellipse at 50% 105%, rgba(190,24,93,0.18) 0%, transparent 60%)',
         '#0A0814',
       ].join(',')
     : isPaused
     ? [
-        'radial-gradient(ellipse at 28% 32%, rgba(236,72,153,0.26) 0%, transparent 55%)',
+        'radial-gradient(ellipse at 28% 32%, rgba(var(--qq-accent-rgb),0.26) 0%, transparent 55%)',
         'radial-gradient(ellipse at 78% 70%, rgba(30,42,90,0.30) 0%, transparent 55%)',
         'radial-gradient(ellipse at 55% 8%, rgba(244,114,182,0.16) 0%, transparent 55%)',
         '#0A0814',
@@ -2035,7 +2035,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           <div aria-hidden style={{
             position: 'absolute', inset: 0, zIndex: 0,
             pointerEvents: 'none',
-            background: 'linear-gradient(115deg, transparent 38%, rgba(236,72,153,0.10) 50%, transparent 62%)',
+            background: 'linear-gradient(115deg, transparent 38%, rgba(var(--qq-accent-rgb),0.10) 50%, transparent 62%)',
             backgroundSize: '220% 100%',
             backgroundPosition: '-120% 0',
             animation: 'qqPhaseSweep 1.0s cubic-bezier(0.5, 0, 0.5, 1) 0.05s both',
@@ -2181,7 +2181,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             fontFamily: fontFam,
             fontSize: 'clamp(18px, 1.8cqw, 26px)', fontWeight: 900,
             color: QQ_COLORS.brandPink, letterSpacing: '0.32em', textTransform: 'uppercase',
-            textShadow: '0 0 18px rgba(236,72,153,0.6)',
+            textShadow: '0 0 18px rgba(var(--qq-accent-rgb),0.6)',
             animation: 'qqGetReadyEyebrow 0.6s ease 0.1s both',
             display: 'inline-flex', alignItems: 'center', gap: 12, justifyContent: 'center',
           }}>
@@ -2204,9 +2204,9 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                 fontSize: 'clamp(140px, 18cqw, 240px)', fontWeight: 900, lineHeight: 1,
                 color: '#FCE7F3',
                 textShadow:
-                  '0 0 24px rgba(236,72,153,0.8), ' +
-                  '0 0 60px rgba(236,72,153,0.5), ' +
-                  '0 0 120px rgba(236,72,153,0.3), ' +
+                  '0 0 24px rgba(var(--qq-accent-rgb),0.8), ' +
+                  '0 0 60px rgba(var(--qq-accent-rgb),0.5), ' +
+                  '0 0 120px rgba(var(--qq-accent-rgb),0.3), ' +
                   '0 6px 0 rgba(0,0,0,0.5), ' +
                   '0 18px 32px rgba(0,0,0,0.6)',
                 // 2026-05-13 (Wolf 'back in countdown nach pause ueberlappt sich'):
@@ -3016,7 +3016,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
                     position: 'absolute', top: -32, left: '50%',
                     transform: 'translateX(-50%)',
                     fontSize: 36, lineHeight: 1, pointerEvents: 'none',
-                    filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.7))',
+                    filter: 'drop-shadow(0 0 8px rgba(var(--qq-accent-rgb),0.7))',
                     animation: 'hpPotatoDrop 1.3s cubic-bezier(0.4,1.4,0.6,1) both',
                     zIndex: 5,
                   }}><QQEmojiIcon emoji="🥔"/></span>
@@ -3669,7 +3669,7 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
       <div aria-hidden style={{
         position: 'absolute',
         inset: '8% 8% -2% 8%',
-        background: 'radial-gradient(ellipse at center 60%, rgba(236,72,153,0.35) 0%, rgba(236,72,153,0.15) 40%, transparent 70%)',
+        background: 'radial-gradient(ellipse at center 60%, rgba(var(--qq-accent-rgb),0.35) 0%, rgba(var(--qq-accent-rgb),0.15) 40%, transparent 70%)',
         filter: 'blur(18px)',
         pointerEvents: 'none',
         zIndex: 0,
@@ -5236,7 +5236,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
           fontFamily: 'var(--font-brand)',
           fontSize: 'clamp(56px, 7cqw, 112px)', fontWeight: 400,
           letterSpacing: '0.04em', color: 'var(--qq-accent)',
-          textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.6)',
+          textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(var(--qq-accent-rgb),0.6)',
           lineHeight: 0.96, textTransform: 'uppercase', display: 'inline-block',
           animation: 'qqNeutralFloat 4.2s ease-in-out 0.6s infinite',
         }}>{qqIsMega(s) ? 'COZYARENA' : 'COZYQUIZ'}</span>
@@ -5709,7 +5709,7 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         }}>
           <div style={{
             width: 36, height: 36, borderRadius: '50%',
-            border: '3px solid rgba(236,72,153,0.18)',
+            border: '3px solid rgba(var(--qq-accent-rgb),0.18)',
             borderTopColor: QQ_COLORS.brandPink,
             animation: 'spin 0.9s linear infinite',
           }} />

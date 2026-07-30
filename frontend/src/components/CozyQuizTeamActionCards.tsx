@@ -510,7 +510,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                         background: cellTeam ? cellTeam.color : 'rgba(255,255,255,0.04)',
                         border: cellTeam
                           ? (isStuckCell
-                              ? `1.5px solid rgba(236,72,153,0.9)`
+                              ? `1.5px solid rgba(var(--qq-accent-rgb),0.9)`
                               : `1px solid ${cellTeam.color}`)
                           : '1px solid rgba(255,255,255,0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -522,7 +522,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                               'inset 0 1px 0 rgba(255,255,255,0.22)',
                               'inset 0 -1.5px 0 rgba(0,0,0,0.20)',
                               '1px 1.5px 0 rgba(0,0,0,0.35)',
-                              isStuckCell ? '0 0 6px rgba(236,72,153,0.5)' :
+                              isStuckCell ? '0 0 6px rgba(var(--qq-accent-rgb),0.5)' :
                               isNew ? `0 0 10px ${cellTeam.color}aa` :
                               inStreak ? `0 0 6px ${cellTeam.color}55` : '',
                             ].filter(Boolean).join(', ')
@@ -832,8 +832,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                       : tColor ? tColor : 'rgba(255,255,255,0.04)',
                     border: isPending ? `2px dashed ${actionColor}`
                       : isSwapSelected ? `2px solid ${actionColor}`
-                      : isStuckCell ? `1.5px solid rgba(236,72,153,0.9)`
-                      : cell.jokerFormed ? `1.5px solid #EC4899`
+                      : isStuckCell ? `1.5px solid rgba(var(--qq-accent-rgb),0.9)`
+                      : cell.jokerFormed ? `1.5px solid var(--qq-accent)`
                       : isStuckCandidate ? `1.5px solid #EC4899`
                       : clickable ? `1.5px solid ${actionColor}`
                       : tColor ? `1px solid ${tColor}`
@@ -847,7 +847,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                       : isSwapSelected ? `0 0 12px ${actionColor}88${ownerShadow ? `, ${ownerShadow}` : ''}`
                       : isStuckCandidate ? `0 0 10px #EC489988${ownerShadow ? `, ${ownerShadow}` : ''}`
                       : isStuckCell
-                        ? `${ownerShadow}, 0 0 10px rgba(236,72,153,0.55)`
+                        ? `${ownerShadow}, 0 0 10px rgba(var(--qq-accent-rgb),0.55)`
                         : isFrozenCell ? `${ownerShadow}, 0 0 8px rgba(147,210,255,0.5)`
                         : isMine && tColor ? `${ownerShadow}, 0 0 8px ${tColor}77`
                         : team ? ownerShadow
@@ -881,7 +881,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                       <>
                         <div style={{
                           position: 'absolute', inset: -2, borderRadius: 8,
-                          border: '2px solid rgba(236,72,153,0.85)',
+                          border: '2px solid rgba(var(--qq-accent-rgb),0.85)',
                           background: 'rgba(236,72,153,0.12)',
                           animation: 'shieldGlow 2s ease-in-out infinite',
                           pointerEvents: 'none', zIndex: 1,
@@ -889,7 +889,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                         <div style={{
                           position: 'absolute', top: -4, right: -4,
                           zIndex: 3, lineHeight: 0,
-                          filter: 'drop-shadow(0 0 6px rgba(236,72,153,0.7))',
+                          filter: 'drop-shadow(0 0 6px rgba(var(--qq-accent-rgb),0.7))',
                         }}>
                           <QQIcon slug="marker-shield" size={Math.max(18, cellSize * 0.44)} alt="Schild" />
                         </div>
@@ -968,7 +968,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                     {isStuckCell && (
                       <div style={{
                         position: 'absolute', inset: -4, borderRadius: 8,
-                        border: '2px solid rgba(236,72,153,0.7)',
+                        border: '2px solid rgba(var(--qq-accent-rgb),0.7)',
                         animation: 'stapelDustRing 0.55s ease-out 0.1s both',
                         pointerEvents: 'none', zIndex: 4,
                       }} />

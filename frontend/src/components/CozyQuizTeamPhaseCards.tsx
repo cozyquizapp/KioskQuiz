@@ -247,7 +247,7 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
           fontSize: 22, fontWeight: 900,
           color: QQ_COLORS.brandPink, textAlign: 'center',
           letterSpacing: '0.04em',
-          textShadow: '0 2px 14px rgba(236,72,153,0.4)',
+          textShadow: '0 2px 14px rgba(var(--qq-accent-rgb),0.4)',
           animation: 'tcreveal 0.5s ease 0.4s both',
         }}>
           <QQEmojiIcon emoji="✨"/> {lang === 'en' ? 'Good luck!' : 'Viel Glück!'} <QQEmojiIcon emoji="✨"/>
@@ -923,7 +923,7 @@ export function FinalRecapHintCard({
             <span style={{
               fontSize: 22, fontWeight: 900, color: QQ_COLORS.brandPink,
               fontVariantNumeric: 'tabular-nums',
-              textShadow: '0 0 12px rgba(236,72,153,0.5)',
+              textShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.5)',
             }}>{targetWins} 🏆</span>
           </div>
         ) : (
@@ -1257,8 +1257,8 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             Sichtbar in GAME_OVER und THANKS — Spieler kann ihn abfotografieren. */}
         <div style={{
           marginTop: 14, padding: '10px 14px', borderRadius: 16,
-          background: 'rgba(236,72,153,0.08)',
-          border: '1px solid rgba(236,72,153,0.30)',
+          background: 'rgba(var(--qq-accent-rgb),0.08)',
+          border: '1px solid rgba(var(--qq-accent-rgb),0.30)',
           textAlign: 'center',
           animation: 'tcreveal 0.5s ease 0.4s both',
         }}>
@@ -1319,10 +1319,10 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
                 style={{
                   display: 'block', padding: '14px 16px',
                   borderRadius: 16, textAlign: 'center',
-                  background: 'linear-gradient(135deg, #EC4899, #EC4899)',
+                  background: 'linear-gradient(135deg, var(--qq-accent), var(--qq-accent))',
                   color: '#0A0814', fontWeight: 900, fontSize: 16,
                   textDecoration: 'none',
-                  boxShadow: '0 4px 0 #A21247, 0 0 24px rgba(236,72,153,0.35)',
+                  boxShadow: '0 4px 0 var(--qq-accent-magenta), 0 0 24px rgba(var(--qq-accent-rgb),0.35)',
                   animation: 'tcreveal 0.5s ease 0.7s both',
                 }}
               >
@@ -1475,7 +1475,7 @@ export function CozyGameCard({
           <div style={{
             display: 'inline-flex', alignItems: 'center', gap: 6,
             padding: '4px 12px', borderRadius: 999,
-            background: playMode === 'sequence' ? 'rgba(34,197,94,0.18)' : 'rgba(236,72,153,0.18)',
+            background: playMode === 'sequence' ? 'rgba(34,197,94,0.18)' : 'rgba(var(--qq-accent-rgb),0.18)',
             border: `1px solid ${playMode === 'sequence' ? '#22C55E55' : '#EC489955'}`,
             fontSize: 11, fontWeight: 800, letterSpacing: '0.04em', textTransform: 'uppercase',
             color: playMode === 'sequence' ? QQ_COLORS.green300 : '#F9A8D4',

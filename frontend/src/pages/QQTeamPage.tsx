@@ -103,7 +103,7 @@ const QQ_ROOM = 'default';
 // (Pink/Navy/Magenta) statt Amber/Indigo/Pink. Brand-Konsistenz CozyWolf-
 // Theme zwischen Beamer und Team-Phone-View.
 const BEAMER_LOBBY_BG =
-  'radial-gradient(ellipse at 50% -10%, rgba(236,72,153,0.18), transparent 55%), ' +
+  'radial-gradient(ellipse at 50% -10%, rgba(var(--qq-accent-rgb),0.18), transparent 55%), ' +
   'radial-gradient(ellipse at 85% 110%, rgba(30,42,90,0.20), transparent 55%), ' +
   'radial-gradient(ellipse at 15% 80%, rgba(190,24,93,0.10), transparent 50%), ' +
   '#0A0814';
@@ -818,8 +818,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           <div style={{
             fontSize: 40, fontWeight: 900,
             fontFamily: 'var(--font-brand)',
-            color: '#EC4899', letterSpacing: '0.03em',
-            textShadow: '0 2px 12px rgba(236,72,153,0.3)',
+            color: 'var(--qq-accent)', letterSpacing: '0.03em',
+            textShadow: '0 2px 12px rgba(var(--qq-accent-rgb),0.3)',
           }}>
             {largeGroup ? 'COZYARENA' : t.header[lang]}
           </div>
@@ -902,11 +902,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               zIndex: 999,
               background: 'rgba(20, 12, 38, 0.92)',
               color: '#FEF3C7',
-              border: '1.5px solid #EC4899',
+              border: '1.5px solid var(--qq-accent)',
               borderRadius: 14,
               padding: '10px 16px',
               fontSize: 13, fontWeight: 700,
-              boxShadow: '0 8px 24px rgba(0,0,0,0.45), 0 0 16px rgba(236,72,153,0.35)',
+              boxShadow: '0 8px 24px rgba(0,0,0,0.45), 0 0 16px rgba(var(--qq-accent-rgb),0.35)',
               backdropFilter: 'blur(8px)',
               WebkitBackdropFilter: 'blur(8px)',
               animation: 'qqToastIn 280ms ease-out',
@@ -1087,7 +1087,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     background: 'transparent', border: 'none',
                     color: QQ_COLORS.slate400, fontSize: 12, fontWeight: 700,
                     textDecoration: 'underline', textDecorationStyle: 'dotted',
-                    textDecorationColor: 'rgba(236,72,153,0.4)',
+                    textDecorationColor: 'rgba(var(--qq-accent-rgb),0.4)',
                     cursor: 'pointer', fontFamily: 'inherit',
                     padding: '4px 8px',
                   }}
@@ -1105,8 +1105,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 onClick={() => setStammExpanded(true)}
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 8,
-                  border: '1px dashed rgba(236,72,153,0.45)',
-                  background: 'rgba(236,72,153,0.06)',
+                  border: '1px dashed rgba(var(--qq-accent-rgb),0.45)',
+                  background: 'rgba(var(--qq-accent-rgb),0.06)',
                   color: QQ_COLORS.brandPinkSoft, fontWeight: 900, fontSize: 13,
                   cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
@@ -1130,7 +1130,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     placeholder="T-ABC123"
                     style={{
                       flex: 1, padding: '10px 12px', borderRadius: 8,
-                      border: '1px solid rgba(236,72,153,0.4)',
+                      border: '1px solid rgba(var(--qq-accent-rgb),0.4)',
                       background: 'rgba(0,0,0,0.3)', color: QQ_COLORS.brandPinkSoft,
                       fontFamily: 'monospace', fontSize: 16, fontWeight: 700,
                       letterSpacing: '0.04em',
@@ -1627,7 +1627,7 @@ function TeamGameView({
   const pageBg = usesBeamerCatBg
     ? (TC_CAT_BG[cat] ?? teamTintBg)
     : s.phase === 'GAME_OVER'
-    ? `radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.15) 0%, transparent 50%), #0A0814`
+    ? `radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.15) 0%, transparent 50%), #0A0814`
     : teamTintBg;
 
   // 2026-05-07 (Wolf 'wenn /team eurovision-spezifisch geht, gerne mit hearts +
@@ -1825,9 +1825,9 @@ function TeamGameView({
               zIndex: 1001,
               padding: '12px 18px',
               borderRadius: 22,
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.95), rgba(162,18,71,0.95))',
+              background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.95), rgba(var(--qq-accent-magenta-rgb),0.95))',
               border: '1px solid rgba(252,231,243,0.55)',
-              boxShadow: '0 16px 48px rgba(236,72,153,0.55), 0 0 32px rgba(236,72,153,0.30)',
+              boxShadow: '0 16px 48px rgba(var(--qq-accent-rgb),0.55), 0 0 32px rgba(var(--qq-accent-rgb),0.30)',
               color: '#FDF2F8', fontWeight: 900, fontSize: 14,
               display: 'flex', alignItems: 'center', gap: 12,
               animation: 'tcJokerBanner 3s ease-out both',

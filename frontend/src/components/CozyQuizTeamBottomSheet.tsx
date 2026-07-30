@@ -152,7 +152,7 @@ export function TeamBottomSheetMenu({
           background: 'rgba(20, 16, 31, 0.85)',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          borderTop: '1px solid rgba(236,72,153,0.32)',
+          borderTop: '1px solid rgba(var(--qq-accent-rgb),0.32)',
           boxShadow: '0 -16px 48px rgba(0,0,0,0.55)',
           zIndex: 999,
           animation: dragY === 0 ? 'tcMenuSlideUp 0.32s cubic-bezier(0.32, 0.72, 0, 1) both' : 'none',
@@ -194,7 +194,7 @@ export function TeamBottomSheetMenu({
             style={{
               display: 'inline-block',
               width: 44, height: 5,
-              background: dragY > 0 ? 'rgba(236,72,153,0.85)' : 'rgba(255,255,255,0.32)',
+              background: dragY > 0 ? 'rgba(var(--qq-accent-rgb),0.85)' : 'rgba(255,255,255,0.32)',
               borderRadius: 999,
               transition: 'background 0.15s',
             }} />
@@ -233,7 +233,7 @@ export function TeamBottomSheetMenu({
             {
               label: lang === 'de' ? 'Phase' : 'Phase',
               value: `${currentPhase}/${totalPhases}`,
-              accent: '#EC4899',
+              accent: 'var(--qq-accent)',
             },
             {
               label: lang === 'de' ? 'Position' : 'Position',
@@ -388,10 +388,10 @@ export function TeamBottomSheetMenu({
             </span>
           </span>
           <span style={{
-            fontSize: 11, fontWeight: 900, color: '#EC4899',
+            fontSize: 11, fontWeight: 900, color: 'var(--qq-accent)',
             padding: '4px 10px', borderRadius: 999,
-            background: 'rgba(236,72,153,0.12)',
-            border: '1px solid rgba(236,72,153,0.35)',
+            background: 'rgba(var(--qq-accent-rgb),0.12)',
+            border: '1px solid rgba(var(--qq-accent-rgb),0.35)',
             letterSpacing: 0.4,
           }}>
             {lang === 'de' ? 'EN' : 'DE'}

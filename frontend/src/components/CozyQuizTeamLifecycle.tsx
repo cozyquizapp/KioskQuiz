@@ -310,9 +310,9 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
           <div style={{
             width: 132, height: 132, borderRadius: '50%',
             display: 'grid', placeItems: 'center',
-            background: 'radial-gradient(circle at 50% 35%, rgba(236,72,153,0.20), rgba(236,72,153,0.04))',
-            border: '3px solid #EC4899',
-            boxShadow: '0 0 30px rgba(236,72,153,0.45), inset 0 0 22px rgba(236,72,153,0.15)',
+            background: 'radial-gradient(circle at 50% 35%, rgba(var(--qq-accent-rgb),0.20), rgba(var(--qq-accent-rgb),0.04))',
+            border: '3px solid var(--qq-accent)',
+            boxShadow: '0 0 30px rgba(var(--qq-accent-rgb),0.45), inset 0 0 22px rgba(var(--qq-accent-rgb),0.15)',
             animation: 'tcfloat 3.4s ease-in-out infinite',
           }}>
             <img
@@ -322,9 +322,9 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
           </div>
           <div style={{
             fontFamily: 'var(--font-brand)',
-            fontSize: 40, fontWeight: 400, color: '#EC4899',
+            fontSize: 40, fontWeight: 400, color: 'var(--qq-accent)',
             letterSpacing: '0.04em', textTransform: 'uppercase', lineHeight: 1,
-            textShadow: '0 2px 12px rgba(0,0,0,0.55), 0 0 26px rgba(236,72,153,0.55)',
+            textShadow: '0 2px 12px rgba(0,0,0,0.55), 0 0 26px rgba(var(--qq-accent-rgb),0.55)',
           }}>COZYQUIZ</div>
         </div>
 
@@ -443,11 +443,11 @@ export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: 
         {showStuckHint && (
           <div style={{
             marginTop: 20, padding: '14px 16px', borderRadius: 14,
-            background: 'rgba(236,72,153,0.08)',
-            border: '1.5px dashed rgba(236,72,153,0.4)',
+            background: 'rgba(var(--qq-accent-rgb),0.08)',
+            border: '1.5px dashed rgba(var(--qq-accent-rgb),0.4)',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: 13, color: '#FBCFE8', fontWeight: 700, marginBottom: 8 }}>
+            <div style={{ fontSize: 13, color: 'var(--qq-accent-soft)', fontWeight: 700, marginBottom: 8 }}>
               {lang === 'de'
                 ? 'Dauert lange? Server schlaeft eventuell, bitte warten oder neu laden.'
                 : 'Taking long? Server may be waking up, wait or reload.'}
@@ -456,9 +456,9 @@ export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: 
               onClick={() => window.location.reload()}
               style={{
                 padding: '8px 18px', borderRadius: 10,
-                border: '1px solid rgba(236,72,153,0.5)',
-                background: 'rgba(236,72,153,0.15)',
-                color: '#FBCFE8', fontSize: 13, fontWeight: 800,
+                border: '1px solid rgba(var(--qq-accent-rgb),0.5)',
+                background: 'rgba(var(--qq-accent-rgb),0.15)',
+                color: 'var(--qq-accent-soft)', fontSize: 13, fontWeight: 800,
                 cursor: 'pointer', fontFamily: 'inherit',
               }}
             >

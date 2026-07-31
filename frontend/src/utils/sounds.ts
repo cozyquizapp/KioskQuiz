@@ -1637,8 +1637,13 @@ export function playWolfHowl(): void {
   subGain.gain.setValueAtTime(0.0001, t);
   subGain.gain.exponentialRampToValueAtTime(0.18, t + 0.4);
   subGain.gain.exponentialRampToValueAtTime(0.0001, t + 2.6);
-  osc.connect(gain).connect(ac.destination);
-  sub.connect(subGain).connect(ac.destination);
+  // 2026-07-31: ging bisher direkt an die Destination und umging damit den
+  // Warm-Bus (Lowpass 2400 Hz + 22 % Reverb). Der Howl war also der einzige
+  // ungefilterte, trockene Cue im ganzen Spiel — genau die Weichzeichnung,
+  // um die Wolf am 2026-05-08 gebeten hatte („zu mechanisch/schrill"), hat
+  // ihn nie erreicht.
+  osc.connect(gain).connect(getWarmBus(ac));
+  sub.connect(subGain).connect(getWarmBus(ac));
   osc.start(t); lfo.start(t); sub.start(t);
   osc.stop(t + 2.9); lfo.stop(t + 2.9); sub.stop(t + 2.7);
 }
@@ -1673,7 +1678,12 @@ export function playWoodKnock(): void {
   const lp = ac.createBiquadFilter();
   lp.type = 'lowpass';
   lp.frequency.value = 580;
-  noise.connect(lp).connect(noiseGain).connect(ac.destination);
+  // 2026-07-31: ebenfalls am Warm-Bus vorbei. Der eigene 580-Hz-Lowpass hier
+  // nimmt zwar die Höhen, aber nicht den Raum: der Knock war trocken, während
+  // alles um ihn herum 22 % Reverb hat. Er feuert an fünf Stellen, im
+  // Team-Reveal pro Team und im Turm-Finale alle 340 ms — als Salve klang er
+  // dadurch vorne und hart statt im Raum.
+  noise.connect(lp).connect(noiseGain).connect(getWarmBus(ac));
   noise.start(t);
   noise.stop(t + 0.06);
 }

@@ -5,6 +5,7 @@ import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } 
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
+import { isBlockzSlug, blockzBySlug, blockzSrc, blockzLabel } from '../blockzAvatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
@@ -379,6 +380,27 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
       />
     );
   }
+  // Blockz: „Emoji" ist ein Blockz-Slug → base-Frame inline (Farbe fest
+  // gebacken, kein Slot-Tint noetig). Ohne diesen Zweig faellt der Slug auf Text.
+  if (isBlockzSlug(emoji)) {
+    const b = blockzBySlug(emoji);
+    return (
+      <img
+        src={blockzSrc(b?.id ?? 'solo', 'base')}
+        alt={blockzLabel(emoji)}
+        draggable={false}
+        style={{
+          width: '1.32em',
+          height: '1.32em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
   // Party 3D: „Emoji" ist ein Party-Objekt-Slug → neutrales 3D-Objekt-PNG.
   // Ohne diesen Zweig faellt der Slug auf Text-Glyph durch (wie der Wappen-Bug
   // 2026-07-03) — sichtbar im /team-Avatar-Picker-Grid, das CountryFlagOrEmoji
@@ -582,7 +604,7 @@ function QuirkAvatar({
   square?: boolean; flat?: boolean; blink?: boolean; eyes?: 'auto' | 'open' | 'closed';
 }) {
   const [failed, setFailed] = useState(false);
-  const { color, openSrc, closedSrc, delay, blink: blinkDur, fullBleed } = display;
+  const { color, openSrc, closedSrc, delay, blink: blinkDur, fullBleed, pose } = display;
   // Volle Animation nur auf grossen Idle-Avataren; Grid (flat/explizit) bleibt ruhig.
   const idle = eyes === 'auto' && blink && !flat;
   const showClosedStatic = eyes === 'closed';
@@ -646,8 +668,16 @@ function QuirkAvatar({
             draggable={false}
             style={{
               ...imgStyle,
+              // Blockz (pose): gehaltene Signature-Haltung mit weichem Ein-/
+              // Ausblenden statt des harten 180-ms-Blinzelns. Klasse bleibt
+              // qqQuirkBlink, damit die reduced-motion-Abschaltung greift.
               ...(idle
-                ? { opacity: 0, animation: `qqQuirkBlink ${blinkDur}s linear ${delay}s infinite` }
+                ? {
+                    opacity: 0,
+                    animation: pose
+                      ? `qqQuirkPose ${blinkDur}s ease-in-out ${delay}s infinite`
+                      : `qqQuirkBlink ${blinkDur}s linear ${delay}s infinite`,
+                  }
                 : { opacity: showClosedStatic ? 1 : 0, transition: 'opacity 0.3s ease' }),
             }}
           />

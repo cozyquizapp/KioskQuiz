@@ -20,6 +20,7 @@ import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { AVATAR_SETS, getSet } from '../avatarSets';
 import { isCozyWolfSlug, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isQuirk2Slug, QUIRK2_SLUGS } from '../quirks2Avatars';
+import { isBlockzSlug, BLOCKZ_SLUGS } from '../blockzAvatars';
 import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import {
   CozyCard, CozyBtn, StepLabel, StatChip,
@@ -1253,6 +1254,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         if (isQuirk2Slug(em)) {
                           const qi = QUIRK2_SLUGS.indexOf(em);
                           const slotId = qi >= 0 ? QQ_AVATARS[qi]?.id : undefined;
+                          if (slotId && !takenAvatarIds.includes(slotId)) setAvatarId(slotId);
+                        }
+                        // Blockz (slot-gebunden): gleiche Kopplung wie Quirks 2.0 —
+                        // die Kachel IST die Farbe. Kein Name-Vorfüllen (Labels wie
+                        // „Slash" sind keine Teamnamen).
+                        if (isBlockzSlug(em)) {
+                          const bi = BLOCKZ_SLUGS.indexOf(em);
+                          const slotId = bi >= 0 ? QQ_AVATARS[bi]?.id : undefined;
                           if (slotId && !takenAvatarIds.includes(slotId)) setAvatarId(slotId);
                         }
                         if (isCozyWolfSlug(em)) {

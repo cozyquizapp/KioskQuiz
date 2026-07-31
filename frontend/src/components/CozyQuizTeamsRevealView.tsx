@@ -20,6 +20,7 @@ import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirkTileSet, isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label, quirk2ForSlot } from '../quirks2Avatars';
+import { isBlockzSlug, blockzBySlug, blockzSrc, blockzLabel, blockzForSlot } from '../blockzAvatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
@@ -849,6 +850,15 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             return <img src={quirk2Src(q?.id ?? 'prisma', 'open')} alt={quirk2Label(slug)} draggable={false}
               style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
           }
+          // Blockz (slot-gebunden): gleiche Regel wie Quirks 2.0 darüber — das
+          // Design IMMER aus dem Farb-Slot ableiten, nie aus t.emoji.
+          if (isBlockzSlug(t.emoji)) {
+            const slotIdx = QQ_AVATARS.findIndex(a => a.id === t.avatarId);
+            const slug = slotIdx >= 0 ? blockzForSlot(slotIdx) : t.emoji;
+            const b = blockzBySlug(slug);
+            return <img src={blockzSrc(b?.id ?? 'solo', 'base')} alt={blockzLabel(slug)} draggable={false}
+              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+          }
           // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
           // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case
           // darunter → abgeschnittener Slug-Text in der Disc (Wolf 2026-07-03).
@@ -932,7 +942,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
-                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirk2Slug(t.emoji)) ? 'visible' : 'hidden',
+                          overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirk2Slug(t.emoji) || isBlockzSlug(t.emoji)) ? 'visible' : 'hidden',
                           fontSize: emojiFontSize, lineHeight: 1,
                           transition: 'background 0.45s ease, border-color 0.45s ease, box-shadow 0.45s ease',
                         }}>

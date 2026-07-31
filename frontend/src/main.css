@@ -4613,6 +4613,15 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   0%, 46%, 49%, 100% { opacity: 0; }
   47%, 48%           { opacity: 1; }
 }
+/* Blockz (2026-07-31): der zweite Frame ist der Hoehepunkt der Signature-Geste,
+   kein Blinzeln. qqQuirkBlink zeigt ihn nur ~2 % des Zyklus (bei 9 s rund
+   180 ms) — das zuckt. Hier stattdessen weich rein, kurz halten, weich raus:
+   bei 9 s sind das ~360 ms Blende und ~720 ms Haltung. */
+@keyframes qqQuirkPose {
+  0%, 62%   { opacity: 0; }
+  66%, 74%  { opacity: 1; }
+  78%, 100% { opacity: 0; }
+}
 /* translateY relativ (%) statt Wolfs -1px → skaliert mit der Avatar-Groesse. */
 @keyframes qqQuirkBreathe {
   0%, 100% { transform: translateY(0) scale(1); }

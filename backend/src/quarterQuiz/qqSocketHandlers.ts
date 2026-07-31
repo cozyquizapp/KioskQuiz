@@ -2191,7 +2191,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const id = String(payload.avatarSetId ?? 'all');
         // White-list, damit kein bloedsinn ankommt. Default ist 'all' (Emoji,
         // freie Wahl). 'cozyCast' = klassische PNG-Avatare als opt-in.
-        const allowed = ['cozy3d', 'cozyWolves', 'cozyParty', 'cozyQuirks2', 'all', 'cozyAnimals', 'cozyCast', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy', 'esc', 'cozyArena'];
+        const allowed = ['cozy3d', 'cozyWolves', 'cozyParty', 'cozyQuirks2', 'blockz', 'all', 'cozyAnimals', 'cozyCast', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy', 'esc', 'cozyArena'];
         const newId = allowed.includes(id) ? id : 'cozy3d';
         const wasAll = room.avatarSetId === 'all';
         room.avatarSetId = newId;

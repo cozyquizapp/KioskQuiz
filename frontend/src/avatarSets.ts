@@ -12,6 +12,7 @@ import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './coz
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
 import { QUIRK2_SET_ID, QUIRK2_SLUGS, isQuirk2Slug, quirk2BySlug, quirk2Label, quirk2Src } from './quirks2Avatars';
+import { BLOCKZ_SET_ID, BLOCKZ_SLUGS, isBlockzSlug, blockzBySlug, blockzLabel, blockzSrc } from './blockzAvatars';
 
 export type AvatarSetSource = 'png' | 'emoji';
 
@@ -134,6 +135,20 @@ export const AVATAR_SETS: AvatarSet[] = [
     preview: ['🟠', '🔵', '🩷'],
     source: 'emoji',
     avatars: QUIRK2_SLUGS,
+  },
+  // 2026-07-31 (Wolf): Blockz — 8 eckige Kacheln mit Gesicht, SLOT-GEBUNDEN
+  // (Farbe fest ins Motiv gebacken, EINE je Farb-Slot wie Cozy Pack). 2-Frame
+  // (base/mid), keine Action. Jedes Design hat einen eigenen SCHNITT, damit die
+  // acht auch dann unterscheidbar bleiben, wenn die Farbe auf Beamer-Distanz
+  // nicht mehr trägt. „avatars"=Blockz-Slugs (isBlockzSlug) → kind 'quirk'.
+  {
+    id: BLOCKZ_SET_ID,
+    label: 'Blockz',
+    tint: '#EC4899',
+    leadEmoji: '🟧',
+    preview: ['🟧', '🟩', '🟦'],
+    source: 'emoji',
+    avatars: BLOCKZ_SLUGS,
   },
   // 2026-07-28 (Wolf): Party 3D — 10 neutrale Party-Objekte (Discokugel, Sekt,
   // Cocktail, Torte, Geschenk, Ballons, Konfetti, Würfel, Partyhut, Mikrofon).
@@ -292,7 +307,12 @@ export type AvatarDisplay =
       delay: number; blink: number;
       /** cozyQuirks 2.0: Motiv füllt die Kachel randlos (Farbe voll gebacken) →
        *  QuirkAvatar rendert ohne Rahmen/Inset. */
-      fullBleed?: boolean }
+      fullBleed?: boolean;
+      /** Blockz: der zweite Frame ist keine Blinzel-Variante, sondern der
+       *  Höhepunkt der Signature-Geste. Der Blink-Keyframe zeigt ihn nur ~180 ms,
+       *  das läse sich als Zucken. `pose` schaltet auf einen weichen Keyframe,
+       *  der die Haltung kurz hält und sanft ein-/ausblendet. */
+      pose?: boolean }
   | { kind: 'emoji'; emoji: string;   color: string; label: string };
 
 export function getAvatarDisplay(
@@ -365,6 +385,13 @@ export function getAvatarDisplay(
     if (isQuirk2Slug(setQ2)) emoji = setQ2;
   }
 
+  // Blockz genauso: EINE Kachel je Farbe, Farbe fest gebacken → Design immer
+  // aus dem Slot ableiten, nie aus einem abweichenden teamEmoji.
+  if (set.id === BLOCKZ_SET_ID) {
+    const setBz = set.avatars[slotIdx];
+    if (isBlockzSlug(setBz)) emoji = setBz;
+  }
+
   // CozyArena: der „Emoji"-Kandidat ist ein Wappen-Slug → flaches Crest-Bild.
   if (isCrestSlug(emoji)) {
     return {
@@ -412,6 +439,23 @@ export function getAvatarDisplay(
       delay: q.delay,
       blink: q.blink,
       fullBleed: true,
+    };
+  }
+
+  // Blockz: eckige Kachel mit fest gebackener Farbe (slot-gebunden), 2 Frames
+  // (base/mid), KEINE action. Nutzt denselben kind 'quirk'-Renderpfad.
+  if (isBlockzSlug(emoji)) {
+    const b = blockzBySlug(emoji)!;
+    return {
+      kind: 'quirk',
+      color: slot.color,
+      label: blockzLabel(emoji),
+      openSrc: blockzSrc(b.id, 'base'),
+      closedSrc: blockzSrc(b.id, 'peak'),
+      delay: b.delay,
+      blink: b.blink,
+      fullBleed: true,
+      pose: true,
     };
   }
 

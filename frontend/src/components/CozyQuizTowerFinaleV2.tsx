@@ -134,15 +134,45 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   const [awardTick, setAwardTick] = useState(0);
   const [revealStep, setRevealStep] = useState(reduce ? 3 : 0); // 0 = niemand, 1..3 = Platz 3..1
   const [glided, setGlided] = useState(reduce); // Top-3 in der Mitte (nach Recede-Beat)
+  // 2026-07-31 (Wolf 'das kopf an kopf unter der top 3 muss spannender
+  // choreografiert werden'): die Top-3 fallen beim Glide auf null zurueck und
+  // bauen GLEICHZEITIG neu auf. Namen und Farben sind dabei offen — das
+  // Ratespiel „wer steckt hinter der grauen Saeule" war der schwache Teil.
+  // Die Spannung kommt stattdessen daher, dass niemand die Zielhoehen kennt:
+  // man sieht drei Tuerme klettern und weiss nicht, wann welcher stehenbleibt.
+  // Wer zuerst stoppt, ist Dritter. Der Letzte waechst allein weiter.
+  const [duelTick, setDuelTick] = useState(reduce ? Number.MAX_SAFE_INTEGER : 0);
 
   const hasAwards = awards.length > 0;
   const curAward = awards[awardIdx];
   const maxBase = useMemo(() => Math.max(1, ...teams.map(t => t.base)), [teams]);
 
-  // revealt: NICHT-Top-3 immer sichtbar; Top-3 erst in der Enthuellung.
+  // Platzierungs-Badge (🥉/🥈/Krone): erscheint, wenn dieser Turm stehenbleibt.
   const revealed = useCallback((rank: number) =>
     rank > 2 ? true : (phase === 'reveal' && revealStep >= (3 - rank)),
   [phase, revealStep]);
+
+  // Identitaet (Farbe, Avatar, Name): fuer die Top-3 offen, sobald sie in der
+  // Mitte stehen. Bewusst getrennt vom Badge — man soll wissen, WER klettert,
+  // und nicht wissen, WIE HOCH.
+  const identityShown = useCallback((rank: number) =>
+    rank > 2 ? true : (phase === 'reveal' && glided),
+  [phase, glided]);
+
+  // Zielhoehen der drei Finalisten, aufsteigend: erst faellt Platz 3, dann 2.
+  // ⚠️ finalRanking, NICHT ordered — `ordered` ist die Spalten-Anordnung auf der
+  // Buehne (hash-gemischt, damit die Reihenfolge nichts verraet). Mit `ordered`
+  // waeren hier drei zufaellige Teams gelandet und alle Tuerme haetten auf
+  // derselben Hoehe gestoppt.
+  const duelTargets = useMemo(() => {
+    const t = finalRanking.slice(0, 3).map(x => totalOf(x.team.id)).sort((a, b) => a - b);
+    return { third: t[0] ?? 0, second: t[1] ?? t[0] ?? 0, first: t[2] ?? t[1] ?? t[0] ?? 0 };
+  }, [finalRanking, totalOf]);
+
+  /** Bis wohin darf in diesem Beat geklettert werden? */
+  const duelTargetFor = useCallback((step: number) =>
+    step <= 0 ? duelTargets.third : step === 1 ? duelTargets.second : duelTargets.first,
+  [duelTargets]);
 
   // Space spult vor.
   const skip = useCallback(() => {
@@ -157,10 +187,15 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
       return;
     }
     if (phase === 'reveal') {
-      if (!glided) { setGlided(true); return; }
+      if (!glided) { setGlided(true); setDuelTick(0); return; }
+      // Erst das laufende Wettklettern zu Ende bringen, dann erst den naechsten
+      // Platz freigeben. Sonst friert ein schnelles Vorspulen die Tuerme auf
+      // halber Hoehe ein und das Schlussbild zeigt falsche Staende.
+      const target = duelTargetFor(revealStep);
+      if (duelTick < target) { setDuelTick(target); return; }
       setRevealStep(s => Math.min(3, s + 1));
     }
-  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided]);
+  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided, duelTick, revealStep, duelTargetFor]);
 
   useEffect(() => {
     // Live: der Moderator steuert ueber den Socket-Step (liveBeat), nicht ueber
@@ -212,18 +247,45 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length, live, liveBeat]);
 
   // Enthuellung: Recede-Beat (Plaetze 4..N dimmen) → Glide in die Mitte →
-  // Platz 3 → 2 → Atempause → 1.
+  // Wettklettern bis Platz 3 steht → bis Platz 2 steht → Sieger allein → Krone.
+  //
+  // Die Beat-Zahl bleibt unveraendert (qqTowerMaxBeat = Awards + Top + 1), damit
+  // das Streamdeck-Mapping des Moderators gleich bleibt. Neu ist nur, was
+  // INNERHALB eines Beats passiert: statt einen Namen umzudrehen klettern die
+  // Tuerme, bis der naechste stehenbleibt.
   useEffect(() => {
     if (phase !== 'reveal') return;
     // Glide (Recede → Mitte) laeuft innerhalb des Glide-Beats automatisch.
-    if (!glided) { const h = window.setTimeout(() => setGlided(true), 1600); return () => window.clearTimeout(h); }
-    if (revealStep >= 3) { try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ } return; }
-    // Hybrid: jede Platz-Enthuellung wartet auf den naechsten Moderator-Beat.
+    if (!glided) { const h = window.setTimeout(() => { setGlided(true); setDuelTick(0); }, 1600); return () => window.clearTimeout(h); }
+    if (revealStep >= 3) {
+      // Sicherheitsnetz: egal wie schnell vorgespult wurde, im Schlussbild
+      // stehen die Tuerme auf ihrer echten Hoehe. Ohne das froren sie auf dem
+      // Stand des letzten Ticks ein und alle drei zeigten dieselbe Zahl.
+      if (duelTick < duelTargets.first) setDuelTick(duelTargets.first);
+      try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ }
+      return;
+    }
+
+    const target = duelTargetFor(revealStep);
+    // 1) Noch nicht am Etappenziel → naechsten Baustein setzen.
+    if (duelTick < target) {
+      const left = target - duelTick;
+      // Bremsen zum Etappenende hin: die letzten drei Bausteine bekommen
+      // spuerbar mehr Zeit. Genau da entscheidet sich, ob einer stehenbleibt.
+      const step = left <= 1 ? 900 : left === 2 ? 620 : left === 3 ? 460 : 260;
+      const h = window.setTimeout(() => {
+        setDuelTick(t => t + 1);
+        try { playWoodKnock(); } catch { /* noop */ }
+      }, step);
+      return () => window.clearTimeout(h);
+    }
+    // 2) Etappenziel erreicht → ein Turm bleibt stehen. Atempause, dann Badge.
+    // Hybrid: im Live-Betrieb wartet der naechste Schritt auf den Moderator.
     if (live && (liveBeat ?? 0) < awards.length + 2 + revealStep) return;
-    const delay = live ? 200 : (revealStep === 0 ? 1300 : revealStep === 2 ? 2800 : 2200); // vor #1 laenger (Atempause)
-    const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, delay);
+    const hold = live ? 200 : (revealStep === 2 ? 1500 : 1100);
+    const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, hold);
     return () => window.clearTimeout(h);
-  }, [phase, glided, revealStep, live, liveBeat, awards.length]);
+  }, [phase, glided, revealStep, duelTick, duelTargetFor, duelTargets, live, liveBeat, awards.length]);
 
   const inReveal = phase === 'reveal';
   const crowned = inReveal && revealStep >= 3;
@@ -256,6 +318,12 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
     if (phase === 'award') {
       const add = curAward && awardStage === 'grow' && curAward.teamId === id ? Math.min(awardTick, curAward.bonus) : 0;
       return base + appliedBefore(id) + (curAward && curAward.teamId === id && awardStage === 'card' ? 0 : 0) + add;
+    }
+    // Reveal: sobald die Top-3 mittig stehen, klettern sie gemeinsam von null
+    // hoch. `min` sorgt dafuer, dass ein Turm bei seiner Zielhoehe von selbst
+    // stehenbleibt, waehrend die anderen weiterwachsen.
+    if (phase === 'reveal' && glided && rankById[id] <= 2) {
+      return Math.min(duelTick, totalOf(id));
     }
     return totalOf(id);
   };
@@ -309,6 +377,11 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
           </>
         ) : inReveal && glided && revealStep === 2 ? (
           <div style={{ fontSize: 32, fontWeight: 900, color: '#F8FAFC', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
+        ) : inReveal && glided ? (
+          <>
+            <div style={{ fontSize: 32, fontWeight: 900, color: '#F8FAFC', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Kopf an Kopf' : 'Neck and neck'}</div>
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#B9AEDA' }}>{de ? 'Wer bleibt zuerst stehen?' : 'Who stops first?'}</div>
+          </>
         ) : inReveal && !glided ? (
           <div style={{ fontSize: 32, fontWeight: 900, color: '#F8FAFC', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Die Top 3 stehen fest…' : 'The Top 3 are set…'}</div>
         ) : inReveal ? (
@@ -351,8 +424,12 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
         const base = baseOf(id);
         const shown = shownOf(id);
         const total = totalOf(id);
-        const show = revealed(rank);
-        const myst = isTop3 && !show;
+        const show = revealed(rank);            // Platzierung steht fest (Badge)
+        const ident = identityShown(rank);      // Farbe/Avatar/Name offen
+        // Grau bleibt nur noch bis zum Glide. Waehrend des Wettkletterns sind
+        // alle drei farbig — sonst wuerde der spannendste Moment zwischen
+        // anonymen Saeulen stattfinden und niemand wuesste, fuer wen er jubelt.
+        const myst = isTop3 && !ident;
         const colr = myst ? MYST : team.color;
         const edge = myst ? MYST_EDGE : team.color;
         const towerPx = shown * blockH + Math.max(0, shown - 1) * GAP;

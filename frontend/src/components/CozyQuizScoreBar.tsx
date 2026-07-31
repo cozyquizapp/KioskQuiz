@@ -323,6 +323,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   läuft jetzt smooth via FLIP-Animation auf der Row (siehe
                   useLayoutEffect rowRefs unten) — das vermittelt die
                   Rang-Änderung visuell ohne extra Indikator. */}
+              {/* eslint-disable-next-line no-constant-binary-expression -- `false &&` ist Absicht (Feature bewusst aus, s. Kommentar oben), nicht vergessener Debug-Code */}
               {false && rankChanges[t.id] && (
                 <span aria-hidden style={{
                   position: 'absolute',

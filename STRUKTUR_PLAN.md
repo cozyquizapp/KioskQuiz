@@ -34,7 +34,7 @@ gestellt werden, ohne dass erst 200 Altlasten abgeraeumt werden muessen.
 
 ---
 
-## 2. Die 5 echten Risiken (nach Schmerz sortiert)
+## 2. Die echten Risiken (nach Schmerz sortiert)
 
 ### R1: Der Socket-Vertrag ist komplett untypisiert
 `frontend/src/hooks/useQQSocket.ts:96`
@@ -94,7 +94,36 @@ davon mit `TODO(LEGACY)`-Kommentar in `components/moderator/ActionButtons.tsx:27
 Das heisst: ein sehr grosser Teil der 10.622 Zeilen ist Ballast, den man
 jedes Mal mitliest und mit-durchsucht, wenn man einen echten Bug jagt.
 
-### R5: Die grossen Dateien mischen Ebenen
+### R5: 41 bedingt aufgerufene React-Hooks
+Gefunden vom frisch eingerichteten Linter (Stufe 0), also erst nach dem
+ersten Durchgang dieses Dokuments.
+
+Betroffen unter anderem `CozyQuizQuestionView.tsx` (allein 24 Stellen),
+`QQProgressTree.tsx`, `CozyQuizFinalRevealView.tsx`, `CozyGameView.tsx`,
+`QQBeamerPage.tsx:2610`.
+
+Muster ist fast immer dasselbe: ein Guard-Return steht **vor** den Hooks.
+
+```tsx
+export function QuestionView({ state: s, revealed }) {
+  const q = s.currentQuestion;
+  if (!q) return null;          // <- Guard
+  const lang = useLangFlip(...) // <- ab hier ~20 Hooks
+  const [isCheesePortrait, setIsCheesePortrait] = useState(false);
+```
+
+Bleibt so eine Komponente montiert und die Bedingung kippt (Frage wird
+null oder wieder gesetzt), wirft React "Rendered more hooks than during the
+previous render" und die Ansicht faellt in die ErrorBoundary. Aktuell
+maskiert das meist ein `key`-Remount beim Phasenwechsel. Darauf verlassen
+kann man sich nicht, und es ist genau die Sorte Fehler, die auf dem Beamer
+auftritt und sich hinterher nicht reproduzieren laesst.
+
+Der Fix je Stelle ist mechanisch (Hooks ueber den Guard ziehen, im Hook
+selbst auf `q` pruefen), aber er beruehrt Render-Reihenfolge, deshalb einzeln
+und mit Blick auf den echten Beamer. Nicht als Sammel-Commit.
+
+### R6: Die grossen Dateien mischen Ebenen
 `qqRooms.ts` ist eigentlich sauber gebaut (Funktionen auf einem State-Objekt,
 kein Klassen-Wirrwarr), aber es sind eben 157 davon in einer Datei: Room-
 Lifecycle, Grid-Mechanik, Scoring, 6 Minispiele, Finale, Tiebreaker, Awards
@@ -125,25 +154,31 @@ Deshalb steht er hier ganz unten und nicht ganz oben.
 Regel fuer alle Stufen: **keine Verhaltensaenderung.** Jede Stufe ist einzeln
 deploybar und einzeln zurueckrollbar.
 
-### Stufe 0: Sicherheitsnetz (ca. 1 bis 2 Stunden, Risiko: null)
+### Stufe 0: Sicherheitsnetz ✅ ERLEDIGT 2026-07-31
 
-Kein Zeilchen Spiel-Logik wird angefasst.
+Kein Zeilchen Spiel-Logik angefasst.
 
-1. Root-Script `npm run typecheck` = `tsc --noEmit` fuer Frontend + Backend.
-   Laeuft heute schon gruen, kostet also nichts.
-2. `frontend/package.json`: `"build": "tsc --noEmit && vite build"`.
-   Ab da faellt ein Typfehler beim Build auf, nicht auf dem Beamer.
-3. `ci.yml`: `continue-on-error: true` raus, `typecheck` als Schritt rein.
-4. ESLint minimal fuer frontend+backend. Nicht die volle Dogmen-Konfig,
-   sondern 5 Regeln, die echte Bugs finden:
-   `react-hooks/exhaustive-deps` (Warnung), `no-unused-vars`,
-   `no-floating-promises`, `no-constant-condition`, `no-dupe-keys`.
-5. `CLAUDE.md` ins Repo-Root: Architektur in 30 Zeilen, die harten Regeln
-   (Beamer nie scrollen, Em-Dashes, DE+EN, `qqIsMega` statt `largeGroupMode`,
-   Design eingefroren). Das Repo hat aktuell keine, jede frische KI-Session
-   muss sich alles neu erarbeiten.
+1. ✅ `npm run typecheck` (Backend + Frontend, `tsc --noEmit`). Beide gruen.
+2. ✅ `npm run gate` = typecheck + tests + lint. Das ist der eine Befehl
+   vor dem Push.
+3. ✅ `frontend/package.json`: `"build": "tsc --noEmit && vite build"`.
+   Ein Typfehler faellt jetzt beim Vercel-Build auf, nicht auf dem Beamer.
+   (`build:fast` gibt es weiterhin ohne Typecheck.)
+4. ✅ `ci.yml`: `continue-on-error: true` ist raus, Tests / Lint / Typecheck
+   blockieren. Schnellstes Gate zuerst.
+5. ✅ `eslint.config.mjs` im Root, deckt frontend + backend + shared + tests
+   ab. Bewusst **kein Stil-Linter**: `any`, Formatierung, Namenskonventionen
+   sind aus. Fehler-Regeln sind nur die, bei denen ein Verstoss Verhalten
+   kaputt macht (`no-dupe-keys`, `no-unreachable`, `no-self-compare`,
+   `no-cond-assign`, `no-constant-binary-expression`, `use-isnan` ...).
+   Stand: **0 Fehler**, 464 Warnungen (325 ungenutzte Variablen, 67 fehlende
+   Hook-Dependencies, 41 bedingte Hooks). Warnungen blockieren nicht.
+6. ✅ `CLAUDE.md` im Root: Architektur in einem Absatz, das Gate, die
+   Fallen, die harten Regeln. Vorher musste sich jede frische KI-Session
+   alles neu erarbeiten.
 
-**Nutzen:** ab hier kann ein kaputter Stand nicht mehr unbemerkt live gehen.
+**Nutzen:** ein kaputter Stand kann nicht mehr unbemerkt live gehen.
+**Nebenertrag:** der Linter hat sofort R5 gefunden (41 bedingte Hooks).
 
 ### Stufe 1: Vertraege dicht machen (ca. 1 Tag, Risiko: sehr niedrig)
 
@@ -230,12 +265,16 @@ anfasst, laesst einen Test zurueck.
 
 ## 5. Empfohlene Reihenfolge
 
-1. **Stufe 0** sofort. Kostet fast nichts, verhindert ab morgen Live-Ausfaelle.
+1. ~~**Stufe 0**~~ ✅ erledigt 2026-07-31.
 2. **Stufe 1b** (Schatten-State), weil rein mechanisch und sofort spuerbar.
 3. **Stufe 1a** (Event-Vertrag) fuer die ~20 heissen Events.
-4. **Stufe 2a** (Legacy raus) mit Mess-Show dazwischen.
-5. **Stufe 2b** (qqRooms-Split), wenn 0 bis 2 stehen.
-6. Stufe 1a Rest + 2c nach Bedarf.
+4. **R5-Backlog**: die 41 bedingten Hooks, angefangen bei
+   `CozyQuizQuestionView` (24 Stellen) und `QQBeamerPage:2610`. Einzeln,
+   jeweils am echten Beamer gegengeprueft. Danach
+   `react-hooks/rules-of-hooks` in `eslint.config.mjs` auf `error` ziehen.
+5. **Stufe 2a** (Legacy raus) mit Mess-Show dazwischen.
+6. **Stufe 2b** (qqRooms-Split), wenn 1 bis 5 stehen.
+7. Stufe 1a Rest + 2c nach Bedarf.
 
 Was NICHT passiert: kein Big-Bang, keine neue Bibliothek, kein Rewrite,
 keine Design-Aenderung.

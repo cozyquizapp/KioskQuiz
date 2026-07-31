@@ -35,12 +35,24 @@ jobs:
       - name: Install frontend dependencies
         run: npm --prefix frontend ci --ignore-scripts
 
+      # ── Gates ───────────────────────────────────────────────────────────
+      # Reihenfolge nach Laufzeit: was schnell rot wird, laeuft zuerst.
+      # Alle Schritte blockieren. Bis 2026-07-31 lief nur der Build, und die
+      # Tests standen auf continue-on-error, d. h. ein roter Test hat nichts
+      # aufgehalten. Push auf main deployt automatisch, also gab es faktisch
+      # kein Netz. Siehe STRUKTUR_PLAN.md, Stufe 0.
+
+      - name: Unit-Tests
+        run: npm test
+
+      - name: Lint (nur Bug-Regeln, Warnungen blockieren nicht)
+        run: npm run lint
+
+      - name: Typecheck (backend + frontend)
+        run: npm run typecheck
+
       - name: Build backend
         run: npm --prefix backend run build
 
       - name: Build frontend
         run: npm --prefix frontend run build
-
-      - name: Run unit tests
-        run: npm test --if-present
-        continue-on-error: true

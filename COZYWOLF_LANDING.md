@@ -21,7 +21,10 @@ Public-Marketing-Site, separates Repo, separate Deploy-Pipeline.
 - Routing pathname-basiert ohne Router-Lib (`src/routes.tsx`), Navigation
   ueber echte `<a>`-Links, Vercel-Rewrites je Route (`vercel.json`)
 - Fonts selbst gehostet (Nunito + League Spartan via @fontsource, kein CDN)
-- Analytics: GoatCounter (cookiefrei, Dashboard: cozywolf.goatcounter.com)
+- Analytics: GoatCounter (cookiefrei, Dashboard: cozywolf.goatcounter.com).
+  Zaehlt auch Conversion-Events (`src/track.ts`): `cta-anfragen-*` (Hero/Ende
+  je Seite, Sticky, Mini-Quiz), `form-kontakt-gesendet`, `form-testteam-gesendet`.
+  Im Dashboard unter den Pfaden mit diesen Namen zu finden.
 - Kontakt-/Test-Team-Formular via Formspree, Fallback auf Mailto
 
 ## Routen

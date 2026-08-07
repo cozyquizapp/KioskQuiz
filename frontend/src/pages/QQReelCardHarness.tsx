@@ -31,7 +31,7 @@ export default function QQReelCardHarness() {
     fontFamily: "'Nunito','Inter',sans-serif",
   };
   return (
-    <AvatarSetProvider avatarSetId="cozy3d">
+    <AvatarSetProvider value="cozy3d">
       <DemoKeyframes />
       <div id="reel-phone" style={wrap}>
         <QuestionCard state={state} myTeamId={ME.id} emit={() => {}} roomCode="COZY" lang="de" />

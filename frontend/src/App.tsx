@@ -41,6 +41,7 @@ const QQBlinkTestPage     = React.lazy(() => import('./pages/QQBlinkTestPage'));
 const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
 const QQThanksTestPage = React.lazy(() => import('./pages/QQThanksTestPage'));
+const QQReelCardHarness = React.lazy(() => import('./pages/QQReelCardHarness'));
 const QQFinalRevealTestPage = React.lazy(() => import('./pages/QQFinalRevealTestPage'));
 const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
 const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
@@ -177,6 +178,8 @@ function App() {
           <Route path="/beamer"     element={<QQErrorBoundary source="beamer"><QQBeamerPage /></QQErrorBoundary>} />
           {/* Öffentlicher Showroom-Trailer (QR-Landing „was ist CozyQuiz") — nicht PIN-gegated. */}
           <Route path="/showroom"   element={<QQShowroomPage />} />
+          {/* Reel-Harness: echte QuestionCard fuer Social-Video-Aufnahmen (kein Backend). */}
+          <Route path="/reel-card"  element={<QQReelCardHarness />} />
           <Route path="/skins"      element={<QQSkinsPage />} />
           <Route path="/about"      element={<QQAboutPage />} />
           <Route path="/was-ist-cozyquiz" element={<QQAboutPage />} />

@@ -475,10 +475,10 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
     </div>
   );
 }
-export function RulesView({ state: s }: { state: QQStateUpdate }) {
-  const lang = useLangFlip(s.language);
-  // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
-  useRuleOverridesVersion();
+// Aktives Regel-Slide-Set fuer den aktuellen State (Mega/Flags beruecksichtigt).
+// Von RulesView genutzt UND von der Team-Seite (RulesCard zeigt "Regel X von Y",
+// UI-Review 2026-08-10 Punkt 4) — dieselbe Logik, damit die Zahl nie abweicht.
+export function qqActiveRulesSlides(s: QQStateUpdate, lang: 'de' | 'en'): RulesSlide[] {
   const totalPhases = (s.totalPhases ?? 4) as 3 | 4;
   // Mega Event (largeGroupMode): eigenes Grid-freies Regelset (Bar-Race statt
   // Spielfeld). Sonst das klassische Grid-Regelwerk.
@@ -494,12 +494,20 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const connEnabled = !!(s as any).connectionsEnabled;
   const cgEnabled = !!(s as any).cozyGamesEnabled;
   const cbEnabled = (s as any).comebackEnabled !== false;
-  const slides = allSlides.filter(sl => {
+  return allSlides.filter(sl => {
     if (sl.requiresConnections && !connEnabled) return false;
     if (sl.requiresCozyGames && !cgEnabled) return false;
     if (sl.requiresComeback && !cbEnabled) return false;
     return true;
   });
+}
+
+export function RulesView({ state: s }: { state: QQStateUpdate }) {
+  const lang = useLangFlip(s.language);
+  // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
+  useRuleOverridesVersion();
+  const slides = qqActiveRulesSlides(s, lang);
+  const mega = !!(s as any).largeGroupMode;
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
   // 2026-07-15 (Rules-Redesign): Slide-Richtung fuer den gerichteten Tiefen-

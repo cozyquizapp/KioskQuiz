@@ -159,31 +159,57 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Karten) explizit forcen kann was er will.
   const [isCheesePortrait, setIsCheesePortrait] = useState(false);
   const [imgReady, setImgReady] = useState(false);
+  // 2026-08-10 (UI-Review Punkt 1): Ladezustand des Fragen-Bilds. Vorher blieb
+  // bei fehlgeschlagenem Load (Kneipen-WLAN, CDN-Schluckauf) ein leerer dunkler
+  // Rahmen auf der Leinwand stehen. Jetzt: Status verfolgen, bei Fehler bis zu
+  // 2x mit Cache-Buster nachladen, solange nicht 'ok' zeigt der Rahmen ein
+  // lebendiges 📸-Ambiente (bewusst OHNE Fehlertext, siehe Entscheidung
+  // 2026-07-13: Entschuldigungen gehoeren nicht aufs Beamer-Bild).
+  const [imgStatus, setImgStatus] = useState<'loading' | 'ok' | 'error'>('loading');
   useEffect(() => {
     if ((!isCheese && !useMapPicture) || !img?.url) {
       setIsCheesePortrait(false);
       setImgReady(true); // kein Bild → kein Detection-Bedarf
+      setImgStatus('ok');
+      // Andere Layouts (window/cutout/fullscreen) trotzdem frueh anwaermen,
+      // damit das Bild beim Einblenden schon im Browser-Cache liegt.
+      if (img?.url) { const warm = new globalThis.Image(); warm.src = img.url; }
       return;
     }
-    // Manueller Override per Builder gewinnt vor Auto-Detection.
-    if (img.cheeseLayout === 'portrait') {
-      setIsCheesePortrait(true);
+    // Manueller Override per Builder gewinnt vor Auto-Detection (Layout sofort
+    // fix); der Loader unten laeuft trotzdem, nur fuer den Bild-Status.
+    const hasOverride = img.cheeseLayout === 'portrait' || img.cheeseLayout === 'landscape';
+    if (hasOverride) {
+      setIsCheesePortrait(img.cheeseLayout === 'portrait');
       setImgReady(true);
-      return;
+    } else {
+      setImgReady(false);
     }
-    if (img.cheeseLayout === 'landscape') {
-      setIsCheesePortrait(false);
-      setImgReady(true);
-      return;
-    }
-    setImgReady(false);
-    const tester = new globalThis.Image();
-    tester.onload = () => {
-      setIsCheesePortrait(tester.naturalHeight > tester.naturalWidth * 1.05); // 5% Toleranz
-      setImgReady(true);
+    setImgStatus('loading');
+    let cancelled = false;
+    let tries = 0;
+    let retryTimer: number | undefined;
+    const load = () => {
+      const tester = new globalThis.Image();
+      tester.onload = () => {
+        if (cancelled) return;
+        if (!hasOverride) setIsCheesePortrait(tester.naturalHeight > tester.naturalWidth * 1.05); // 5% Toleranz
+        setImgReady(true);
+        setImgStatus('ok');
+      };
+      tester.onerror = () => {
+        if (cancelled) return;
+        tries += 1;
+        if (tries <= 2) { retryTimer = window.setTimeout(load, tries * 1500); return; }
+        if (!hasOverride) setIsCheesePortrait(false);
+        setImgReady(true);
+        setImgStatus('error');
+      };
+      // Retry mit Cache-Buster: haengengebliebene Fehl-Responses umgehen.
+      tester.src = tries === 0 ? img.url : `${img.url}${img.url.includes('?') ? '&' : '?'}qqretry=${tries}`;
     };
-    tester.onerror = () => { setIsCheesePortrait(false); setImgReady(true); };
-    tester.src = img.url;
+    load();
+    return () => { cancelled = true; if (retryTimer) window.clearTimeout(retryTimer); };
   }, [isCheese, useMapPicture, img?.url, img?.cheeseLayout]);
 
   // 2026-05-04 v3 (Wolf): Timer-Outro-Animation klappt nicht bei Frueh-Abbruch
@@ -698,6 +724,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 filter: imgFilter(img!),
                 transition: 'background-position 0.4s ease, transform 0.4s ease',
               }} />
+              {/* 2026-08-10 (UI-Review Punkt 1): solange das Bild laedt oder der
+                  Load scheitert, statt totem dunklem Rahmen ein lebendiges
+                  Ambiente. Kein Text (Entscheidung 2026-07-13), nur das 📸 wie
+                  beim Bild-fehlt-Zustand. Verschwindet, sobald das Bild da ist. */}
+              {imgStatus !== 'ok' && (
+                <div style={{
+                  position: 'absolute', inset: 0,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  background: 'linear-gradient(165deg, rgba(255,255,255,0.045), rgba(0,0,0,0.28))',
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(90px, 12cqw, 170px)', opacity: 0.16,
+                    animation: 'cfloat 4s ease-in-out infinite',
+                  }}>📸</div>
+                </div>
+              )}
             </div>
           ) : (
             <div style={{
@@ -1312,7 +1354,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   <div style={{ width: '100%', textAlign: 'center', marginBottom: -2, visibility: s.allAnswered ? 'hidden' : 'visible' }}>
                     <span style={{
                       display: 'inline-block',
-                      fontSize: 'clamp(11px, 1.1cqw, 14px)', fontWeight: 900,
+                      // 2026-08-10 (UI-Review Punkt 2): clamp(11..14) → lesbar ab
+                      // Bar-Distanz, gleiche Chip-Optik.
+                      fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
                       letterSpacing: '0.04em', textTransform: 'uppercase',
                       // Mono/Themes (Wolf 2026-06-25 'zahl der teams grau auf weiß'):
                       // als solider Chip rendern → lesbar auf weißer Card UND auf Bild.
@@ -3159,8 +3203,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               {/* Progress text — verschwindet wenn alle dran sind (Avatare mit ✓ zeigen's eh) */}
               {!s.allAnswered && (
                 <div style={{
-                  fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+                  // 2026-08-10 (UI-Review Punkt 2): von clamp(14..20) hochgezogen —
+                  // der Zaehler ist die spannendste Info im Raum und war aus
+                  // Bar-Distanz nicht lesbar. Avatare waren schon gross genug.
+                  fontSize: 'clamp(20px, 2.2cqw, 30px)', fontWeight: 900,
                   color: 'var(--qq-text-muted)',
+                  fontVariantNumeric: 'tabular-nums',
                 }}>
                   {(s as any).nestedTeams
                     ? `${s.answers.length}/${s.teams.length} ${lang === 'en' ? 'submitted' : 'Abgaben'}`

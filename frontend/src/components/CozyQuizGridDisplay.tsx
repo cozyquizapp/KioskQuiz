@@ -328,8 +328,12 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {/* Empty cell base — with idle pulse for alive feel */}
                 <div style={{
                   position: 'absolute', inset: 0, borderRadius: cellRadius,
-                  background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.04)',
-                  border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,255,255,0.06)',
+                  // 2026-08-10 (UI-Review Punkt 3): leere Zellen von 0.04/0.06 auf
+                  // 0.07/0.11 angehoben. Projektoren in heller Umgebung waschen die
+                  // dunkelsten Toene als Erstes aus, dann war das leere Brett vom
+                  // Publikum aus kaum als Raster erkennbar. Bleibt bewusst dezent.
+                  background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.07)',
+                  border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,255,255,0.11)',
                   animation: !team && idleCells.has(`${r}-${c}`) ? 'cellIdlePulse 2.5s ease-in-out both' : undefined,
                 }} />
                 {/* Team color layer — ink fill for new cells, dim non-active teams */}

@@ -32,6 +32,7 @@ import { CozyCard, CozyBtn, CopyButton } from './CozyQuizTeamPrimitives';
 import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode } from '../utils/qqStammCode';
 import { qqFinalSortedTeams, qqFinalTotal } from '../utils/qqFinalScore';
+import { qqActiveRulesSlides } from './CozyQuizRulesView';
 import { QQ_COLORS } from '../../../shared/qqColors';
 
 // ── LobbyCard ────────────────────────────────────────────────────────────────
@@ -150,13 +151,22 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
 }
 
 // ── RulesCard ────────────────────────────────────────────────────────────────
-export function RulesCard({ lang }: { lang: 'de' | 'en' }) {
+// 2026-08-10 (UI-Review Punkt 4): zeigt jetzt den Regel-Fortschritt gespiegelt
+// ("Regel X von Y" + Punkte-Reihe). Die Karte war ueber Minuten praktisch
+// unveraendert und wirkte eingefroren; der Fortschritt zeigt Leben, ohne von
+// der Leinwand abzulenken. Gesamtzahl kommt aus qqActiveRulesSlides — exakt
+// dieselbe Logik wie auf dem Beamer, damit die Zahl nie abweicht.
+export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateUpdate }) {
   const [dot, setDot] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setDot(d => (d + 1) % 4), 500);
     return () => clearInterval(id);
   }, []);
   const dots = '.'.repeat(dot);
+
+  const total = state ? qqActiveRulesSlides(state, lang).length : 0;
+  // rulesSlideIndex startet vor der ersten Folie bei -1 → auf 1..total klemmen.
+  const step = state ? Math.min(Math.max((state.rulesSlideIndex ?? 0) + 1, 1), Math.max(total, 1)) : 0;
 
   return (
     <CozyCard>
@@ -171,6 +181,25 @@ export function RulesCard({ lang }: { lang: 'de' | 'en' }) {
             : 'We are explaining the rules now'}
           <span style={{ display: 'inline-block', width: 24, textAlign: 'left' }}>{dots}</span>
         </div>
+        {total > 0 && (
+          <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
+            <div style={{
+              fontSize: 13, fontWeight: 800, letterSpacing: '0.06em',
+              color: QQ_COLORS.slate400, fontVariantNumeric: 'tabular-nums',
+            }}>
+              {lang === 'de' ? `Regel ${step} von ${total}` : `Rule ${step} of ${total}`}
+            </div>
+            <div style={{ display: 'flex', gap: 6 }}>
+              {Array.from({ length: total }, (_, i) => (
+                <span key={i} style={{
+                  width: 7, height: 7, borderRadius: '50%',
+                  background: i < step ? QQ_COLORS.brandPink : 'rgba(255,255,255,0.14)',
+                  transition: 'background 0.4s ease',
+                }} />
+              ))}
+            </div>
+          </div>
+        )}
         {/* 2026-07-29 (Wolf): alte generische Emoji-Reihe (📖🗺️⭐) → EIN neues
             Custom-Buch-Icon reicht. */}
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>

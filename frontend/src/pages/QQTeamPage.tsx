@@ -1877,7 +1877,7 @@ function TeamGameView({
           key={`phase-${s.phase}`}
           style={{ animation: 'tcreveal 0.32s ease both' }}>
         {s.phase === 'LOBBY'           && <LobbyCard state={s} myTeam={myTeam} lang={lang} />}
-        {s.phase === 'RULES'           && <RulesCard lang={lang} />}
+        {s.phase === 'RULES'           && <RulesCard lang={lang} state={s} />}
         {s.phase === 'TEAMS_REVEAL'    && <TeamsRevealCard myTeam={myTeam} lang={lang} />}
         {s.phase === 'PHASE_INTRO'     && <PhaseIntroCard state={s} lang={lang} />}
         {/* 2026-05-09 (Wolf): während Final-Recap (zwischen Final-Fragen)

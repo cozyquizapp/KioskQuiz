@@ -510,12 +510,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const mega = !!(s as any).largeGroupMode;
   const totalSlides = slides.length;
   const rawIdx = s.rulesSlideIndex ?? 0;
-  // 2026-07-15 (Rules-Redesign): Slide-Richtung fuer den gerichteten Tiefen-
-  // Uebergang (vorwaerts = von rechts, rueckwaerts = von links). Hooks MUESSEN
-  // vor dem fruehen return stehen (Rules of Hooks).
-  const prevIdxRef = useRef<number>(rawIdx);
-  const slideDir: 'fwd' | 'back' = rawIdx >= prevIdxRef.current ? 'fwd' : 'back';
-  useEffect(() => { prevIdxRef.current = rawIdx; });
+  // 2026-08-10: die alte Richtungs-Ermittlung (prevIdxRef/slideDir aus dem
+  // Rules-Redesign 2026-07-15) war seit dem Zwei-Karten-Uebergang 2026-07-17d
+  // toter Code — die Richtung kommt jetzt aus view.raw im Push-Effekt unten.
+  // Entfernt, damit niemand sie fuer die aktive Logik haelt.
 
   // 2026-07-17d (Wolf „schieb das window mit der rule wirklich raus“): Zwei-
   // Karten-Uebergang. view = aktuell gezeigte Karte, outgoing = die verlassende.

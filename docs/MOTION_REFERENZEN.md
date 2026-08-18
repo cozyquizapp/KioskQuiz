@@ -185,7 +185,64 @@ gekippt, weicher Kontaktschatten").
 
 ---
 
+## Referenz 3: mana (Yerba-Mate-Marke)
+
+Bilder: `mana-bogen.webp`, `mana-drehung.webp`
+
+Produktseite einer Getraenkemarke. Wolf: „diese halbe Drehung finde ich auch
+super nice."
+
+### Was technisch passiert
+
+**Schrift laeuft auf einer Kreisbahn.** „ONLY THE BEST" sitzt auf dem Umfang
+eines grossen unsichtbaren Kreises, dessen Mittelpunkt ungefaehr in der Dose
+unten liegt. Der Satz faehrt rechts ein, wandert ueber den Scheitel und
+verlaesst das Bild links. Jeder Buchstabe steht dabei senkrecht auf der Bahn und
+dreht sich mit. Sichtbar ist etwa eine halbe Umdrehung, daher Wolfs Wort.
+
+**Die Dose bleibt stehen.** Sie ist der Anker in der Bildmitte unten und
+ueberlebt saemtliche Abschnittswechsel. Alles andere kreist, kippt oder zieht an
+ihr vorbei: Infokarten drehen herein und wieder heraus, die Schrift orbitiert,
+die Hintergrundfarbe wechselt.
+
+Damit ist es die **dritte eigenstaendige Uebergangsmechanik** in der Sammlung:
+
+* Superplay: durch den Betrachter hindurch **skalieren**
+* NODECK: mit gebogener Kante **wischen**
+* mana: um einen festen Anker **kreisen**
+
+Gemeinsam ist allen dreien dasselbe Prinzip, und das ist die eigentliche
+Erkenntnis: **etwas bleibt stehen, waehrend sich der Rest aendert.** Bei
+Superplay das Objektfeld, bei NODECK der Marker, hier die Dose. Kein Schnitt,
+nie ein leeres Bild.
+
+### Uebertragbar
+
+* **Schrift auf Kreisbahn** ist ohne Bibliothek machbar, entweder als
+  SVG-`textPath` mit animiertem `startOffset` oder als einzelne Buchstaben-Spans
+  mit `rotate` und `translate`. Beides reine CSS- beziehungsweise SMIL-Mittel.
+* **Das Anker-Prinzip.** Ein Element, das ueber den Wechsel hinweg stehen bleibt
+  und um das herum sich alles andere bewegt. Bei uns liegt der Wolf dafuer
+  bereit, er laeuft im Progress Tree ohnehin schon auf der Punktlinie.
+* **Karten, die herein- und herausdrehen**, statt zu erscheinen und zu
+  verschwinden.
+
+### Nicht uebernehmen
+
+* **Gedrehte Schrift fuer Inhalte.** Auf einer Kreisbahn liegende Buchstaben
+  sind aus zehn Metern deutlich schlechter lesbar als gerade gesetzte. Die
+  Drehung gehoert an Rahmen, Zierring oder Kategorie-Kranz, **nicht** an die
+  Frage oder die Antworten.
+* Die sehr hellen Grundtoene, gleiche Begruendung wie bei NODECK.
+
+---
+
 ## Bausteinliste, aus der gewaehlt wird
+
+**Das gemeinsame Prinzip aller drei Referenzen, in einem Satz:** etwas bleibt
+stehen, waehrend sich der Rest aendert. Die Mechanik unterscheidet sich
+(skalieren, wischen, kreisen), das Prinzip nicht. Wer nur den Effekt kopiert und
+den Anker weglaesst, bekommt wieder eine Diashow.
 
 Das ist die eigentliche Arbeitsliste fuer die naechsten Sitzungen.
 
@@ -198,6 +255,9 @@ Das ist die eigentliche Arbeitsliste fuer die naechsten Sitzungen.
 | B5 | Marker-Geste fuer die richtige Antwort | NODECK | klein | Aufloesung |
 | B6 | Wortweiser Textaufbau mit Platzhaltern | NODECK | klein | Frageanzeige |
 | B7 | Requisiten als Zustandstraeger (gekippt, Schatten) | NODECK | gross | zusammen mit dem Avatarset |
+| B8 | Anker-Prinzip: ein Element ueberlebt jeden Wechsel | mana | mittel | Wolf auf der Buehne |
+| B9 | Schrift auf Kreisbahn, halbe Umdrehung | mana | klein | Kategorie-Kranz, Runden-Intro |
+| B10 | Karten drehen herein statt zu erscheinen | mana | klein | Reveals, Kategorie-Karten |
 
 ### Erster Kandidat, wenn nichts dagegen spricht
 

@@ -167,6 +167,47 @@ physische Dinge.
 
 ---
 
+## Beamer-Tauglichkeit: messen statt meinen
+
+Wolf 2026-08-18 zu zehn Design-Entwuerfen: „es sieht nice aus, aber erfuellt es
+die Beamer-Bedingungen?" Werkzeug dafuer: `scripts/beamer-tauglichkeit.mjs`.
+
+**Zwei Pruefungen, beide noetig.** Lichtabgabe (mittlere Leuchtdichte des
+Bildes; blendet in einem dunklen Raum unabhaengig von der Lesbarkeit) und
+Lesbarkeit der ANTWORTEN aus 10m. Die Frage ist ueberall gross, entschieden wird
+an den Antworten, weil dort die Entwuerfe leise werden.
+
+**Ergebnis der zehn Entwuerfe vom 2026-08-18** (`.shots/x-01..10.png`,
+Distanz-Simulation `.shots/fern-*.png`):
+
+| Entwurf | Licht | Antworten aus 10m | Urteil |
+|---|---|---|---|
+| 06 Bauhaus | 8.4% | 17.7:1 | besteht beides |
+| 02 Swiss | 2.7% | 9.7:1 | besteht beides |
+| 05 Terminal | 1.6% | 4.7:1 | besteht beides |
+| 07 Museum | 1.4% | 3.6:1 | besteht, Antworten koennten kraeftiger |
+| 01 Kammerspiel | 1.2% | 3.1:1 | besteht knapp |
+| 09 Plakat | 10.2% | 2.7:1 | Frage top, Antworten zu leise |
+| 04 Neon | 1.9% | 2.6:1 | Antworten zu leise |
+| 08 Aurora | 2.8% | 2.1:1 | Antworten zu leise |
+| 10 Cinemascope | 1.1% | 1.7:1 | Antworten fallen durch |
+| 03 Riso | 47.1% | 9.2:1 | lesbar, aber BLENDET |
+
+**Die wichtigste Erkenntnis daraus:** bis auf Riso scheitert keiner der
+Entwuerfe an seiner Gestaltungssprache, sondern nur an der Behandlung der
+Antworten. Die sind in den leisen Entwuerfen bewusst klein und gedaempft
+gesetzt. Das laesst sich beheben, ohne die Sprache anzufassen. **Der Test sagt,
+was zu aendern ist, nicht was wegzuwerfen ist.** Riso ist der einzige
+strukturelle Ausfall, weil ein heller Grund im dunklen Raum nicht reparabel ist.
+
+**Messfalle, die einmal zugeschlagen hat:** den Kontrast NICHT ueber den ganzen
+Antwortbereich mitteln. Schrift belegt dort nur wenige Prozent der Flaeche.
+Gemittelt faellt jeder Entwurf durch, auch offensichtlich gut lesbare. Richtig
+ist Extremwert (1./99. Perzentil) gegen den Median, in beide Richtungen, weil es
+helle Schrift auf dunklem Grund und dunkle auf hellem gibt.
+
+---
+
 ## Referenz 1: superplay.co
 
 Bilder: `superplay-bogen.webp`, `superplay-uebergang-skalieren.webp`,

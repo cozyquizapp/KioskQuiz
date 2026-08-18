@@ -84,6 +84,40 @@ der Grund, warum „sieht geil aus" nicht reicht.
 
 ---
 
+## Warum Quiz-App-Vorbilder nicht weiterhelfen
+
+Wolf hat am 2026-08-18 auf Dribbble Mobile-Quiz-UIs durchgesehen: „mich hat
+keine wirklich komplett umgehauen, koennte gut sein wenn wir es schaffen es
+nicer zu machen, oder es geht nicht nicer, weil das maximum rausgeholt wurde."
+
+Es ist Ersteres, und der Grund ist strukturell.
+
+**Dribbble misst etwas anderes.** Die Entwuerfe dort sind Portfoliostuecke,
+optimiert auf Wirkung als Vorschaubild im Feed. Kein echter Inhalt, keine langen
+Fragen, keine 25 Teams, kein Moderator, keine zwei Stunden Laufzeit, kein
+dunkler Raum. Sie loesen ein anderes Problem.
+
+**Die Kategorie ist duenn, nicht ausgereizt.** Praktisch jede Quiz-App ist
+Einzelspieler auf dem Handy. CozyQuiz ist eine andere Gattung: ein geteilter
+grosser Screen, viele Handys, ein Mensch, der moderiert, alles im selben Raum.
+Dafuer gibt es kaum Vorbilder, weil es kaum jemand baut.
+
+**Daraus die Regel fuer alle kuenftigen Referenzen:** bei uns ist das Handy
+nicht die Show, sondern die Fernbedienung. Die Dribbble-Entwuerfe stecken ihre
+ganze Gestaltung ins Handy, weil dort ihre Show stattfindet. Wer sie uebernimmt,
+gestaltet den falschen Screen.
+
+Premium heisst auf dem Handy deshalb: mit dem Daumen erreichbar, im halbdunklen
+Raum auf einen Blick eindeutig, schnell, ansonsten unsichtbar. **Kein zweiter
+Schauplatz.** Die Dramaturgie gehoert an die Wand.
+
+Passend dazu die aeltere Erkenntnis aus derselben Sitzung: die Referenzklasse
+fuer die Buehne ist nicht der App Store, sondern der Raum. Bar- und
+Hotelgestaltung, Buehnenlicht, Titelsequenzen, Sendungsdesign, gut gemachte
+physische Dinge.
+
+---
+
 ## Referenz 1: superplay.co
 
 Bilder: `superplay-bogen.webp`, `superplay-uebergang-skalieren.webp`,

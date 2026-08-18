@@ -18,7 +18,6 @@ export const QQ_ALLOWED_THEME_IDS = [
   'softPop',    // warm, pastellig
   'neoBrutal',  // lila, knallig
   'quirks',     // In-Quiz-Theme der Cozy-Quirks-Sets
-  'holz',       // warme Nussbaum-Buehne fuer das Holz-Avatarset
 ] as const;
 
 export type QQThemeId = typeof QQ_ALLOWED_THEME_IDS[number];

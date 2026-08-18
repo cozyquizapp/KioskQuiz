@@ -64,7 +64,11 @@ export function useSceneTransition<T extends WithPhase>(live: T, enabled: boolea
     if (runningForRef.current === live.phase) return;
     runningForRef.current = live.phase;
     const doc = document as Document & {
-      startViewTransition: (cb: () => void) => { finished: Promise<void> };
+      startViewTransition: (cb: () => void) => {
+        ready: Promise<void>;
+        finished: Promise<void>;
+        updateCallbackDone: Promise<void>;
+      };
     };
     let done = false;
     const commit = () => {
@@ -73,11 +77,29 @@ export function useSceneTransition<T extends WithPhase>(live: T, enabled: boolea
       shownRef.current = liveRef.current;
       forceRender();
     };
+    // Nicht sichtbares Dokument (Beamer-Tab im Hintergrund, Fenster minimiert):
+    // startViewTransition bricht dort mit InvalidStateError ab. Gar nicht erst
+    // starten, direkt committen.
+    if (document.visibilityState !== 'visible') { commit(); return; }
     try {
-      doc.startViewTransition(() => { flushSync(commit); });
+      const vt = doc.startViewTransition(() => { flushSync(commit); });
+      // ── WICHTIG (Live-Fund Wolf 2026-08-18) ──────────────────────────────
+      // Die drei Zusagen der View-Transition werden REGULAER abgelehnt, wenn
+      // ein Wechsel abgebrochen wird: naechster Phasenwechsel waehrend die
+      // Transition noch laeuft, Tab wechselt in den Hintergrund, Dokument nicht
+      // mehr „fully active". Das ist kein Fehlerfall, sondern Normalbetrieb an
+      // einem Abend mit schnellem Durchsteppen.
+      // Ohne Fang landen sie im `unhandledrejection`-Listener aus main.tsx —
+      // und der legt ein bildschirmfuellendes Fehler-Overlay ueber die BUEHNE
+      // („Client error: Transition was aborted because of invalid state").
+      // Also: alle drei Zusagen still abfangen, und bei Abbruch sicherstellen,
+      // dass die neue Szene trotzdem steht.
+      vt?.ready?.catch(() => {});
+      vt?.updateCallbackDone?.catch(() => { commit(); });
+      vt?.finished?.catch(() => { commit(); });
     } catch {
-      // Wenn der Browser die Transition ablehnt (z.B. Seite im Hintergrund),
-      // darf die Buehne NICHT auf der alten Szene haengen bleiben.
+      // Synchroner Wurf (aeltere Implementierungen): Buehne darf NICHT auf der
+      // alten Szene haengen bleiben.
       commit();
     }
     // Sicherheitsnetz: bliebe der Callback aus irgendeinem Grund aus, waere die

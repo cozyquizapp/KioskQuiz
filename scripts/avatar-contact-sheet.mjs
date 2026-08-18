@@ -63,9 +63,12 @@ const SETS = [
   },
   {
     id: 'cozyarena', label: 'CozyArena-Wappen (Gegenprobe: Emblem statt Gesicht)',
-    note: 'Wappenform, eigene Silhouette je Fraktion. Vertritt eine GRUPPE.',
+    note: 'Wappenform mit Fraktionsfarbe, eigene Silhouette je Fraktion. Vertritt eine GRUPPE.',
+    // WICHTIG: `<slug>.png` = das FARBIGE Wappen. `<slug>-emblem.png` ist die
+    // flache Creme-Variante — die hatte ich am 2026-08-18 zuerst genommen und
+    // damit faelschlich behauptet, die Wappen truegen keine Teamfarbe.
     files: ['allwissen', 'bauchgefuehl', 'einspruch', 'feierabend', 'glueckstreffer', 'improvisation', 'letztesekunde', 'risiko']
-      .map((s) => `${PUB}cozyarena/${s}-emblem.png`),
+      .map((s) => `${PUB}cozyarena/${s}.png`),
     disc: false,
   },
 ];
@@ -99,10 +102,14 @@ for (const set of SETS) {
   const layers = [];
   let y = PAD + 54;
 
+  // Reihenfolge bewusst: erst BUEHNE mit ihrer Distanz-Probe, DANN Handy.
+  // Die Distanz-Probe gilt NUR fuer die Buehne. Das Handy wird 30 bis 40cm vor
+  // dem Gesicht gehalten, dort ist Detail erwuenscht (Wolf 2026-08-18: „wieso
+  // muss man auf dem Smartphone die Avatare aus 6m sehen?" — muss man nicht).
   const rows = [
-    { size: SIZE_STAGE, label: `68px — kleinste Marke auf der BUEHNE`, far: false },
-    { size: SIZE_PHONE, label: `32px — kleinste Marke auf dem HANDY`, far: false },
-    { size: SIZE_STAGE, label: `Distanz-Probe: dasselbe aus ~10 Metern`, far: true },
+    { size: SIZE_STAGE, label: `BUEHNE 68px — kleinste Groesse auf der Projektion`, far: false },
+    { size: SIZE_STAGE, label: `BUEHNE aus ~10 Metern — nur das bleibt im Raum uebrig`, far: true },
+    { size: SIZE_PHONE, label: `HANDY 32px — Nahsicht, hier darf Detail sein (keine Distanz-Probe)`, far: false },
   ];
 
   for (const row of rows) {

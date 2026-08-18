@@ -20,7 +20,12 @@ console.log(`Backend ok (uptime ${Math.round(health.uptime)}s, db=${health.db})`
 if (health.uptime > 600) console.log('⚠️  Uptime hoch — evtl. Raum aus altem Lauf. Frisch starten!');
 
 mkdirSync(OUT, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+// PW_CHROMIUM erlaubt ein vorinstalliertes Chromium (Container ohne
+// `playwright install`), sonst unveraendert.
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}),
+});
 const errors = [];
 
 // Beamer + Moderator: Admin-PINs

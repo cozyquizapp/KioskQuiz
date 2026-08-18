@@ -38,6 +38,13 @@ type Skin = {
   // Deko-Layer (absolute Elemente)
   deco?: 'tri' | 'corners' | 'confetti' | 'glow' | 'stars' | 'none';
   chrome: 'light' | 'dark'; // fuer QR-Kontrast etc.
+  /**
+   * Fuellung im Kern des Ring-Timers bei chrome 'dark'. Default ist das Navy
+   * #0c1024, das zu den blauen Skins passt. Ein warmer Skin (Holz) braucht hier
+   * einen warmen Ton, sonst sitzt mitten auf der Buehne ein kalter blauer Fleck
+   * (2026-08-18 im Holz-Entwurf aufgefallen).
+   */
+  ringInk?: string;
 };
 
 const SKINS: Skin[] = [
@@ -74,6 +81,23 @@ const SKINS: Skin[] = [
     cardBg: '#FFFFFF', cardBorder: '3px solid #16121F',
     cardRadius: 18, cardShadow: '6px 6px 0 #16121F',
     optionStyle: 'brutal', timerStyle: 'brutal', deco: 'stars', chrome: 'light',
+  },
+  {
+    // 2026-08-18 (Wolf): Holzoptik, passend zum Holz-Avatarset. Dunkler Nussbaum
+    // statt heller Birke — ein heller Grund waere im Beamer-Betrieb in einer Bar
+    // blendend. Akzent ist gedaempftes Rosé (Marken-Pink in warm), KEIN Gold:
+    // Gold bleibt der Kroenung vorbehalten.
+    id: 'holz', name: 'Holz', tagline: 'Warm · handgemacht · erwachsen',
+    bestFor: 'Bar-Abende · Firmenfeiern · das Holz-Avatarset',
+    font: "'Nunito', 'Geist', system-ui, sans-serif", titleWeight: 800,
+    bg: 'radial-gradient(circle at 50% -5%, #2E211B 0%, #211712 58%, #160F0C 100%)',
+    text: '#F4EBE1', muted: '#B7A79A',
+    accent: '#E8749B', accent2: '#8C2F4A',
+    cardBg: 'linear-gradient(180deg, rgba(255,240,225,0.07), rgba(255,240,225,0.025))',
+    cardBorder: '1px solid rgba(255,232,210,0.12)',
+    cardRadius: 20, cardShadow: '0 16px 44px rgba(0,0,0,0.50)',
+    optionStyle: 'soft', timerStyle: 'ring', deco: 'glow', chrome: 'dark',
+    ringInk: '#241A17',
   },
 ];
 
@@ -282,7 +306,7 @@ function TimerWidget({ skin }: { skin: Skin }) {
     }}>
       <div style={{
         width: 104, height: 104, borderRadius: '50%', display: 'grid', placeItems: 'center',
-        background: skin.chrome === 'light' ? 'rgba(255,255,255,0.85)' : '#0c1024',
+        background: skin.chrome === 'light' ? 'rgba(255,255,255,0.85)' : (skin.ringInk ?? '#0c1024'),
         textAlign: 'center',
       }}>
         <div>

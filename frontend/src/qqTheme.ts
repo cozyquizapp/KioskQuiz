@@ -185,6 +185,46 @@ const QUIRKS: ResolvedTheme = {
 // A/B vergleichen, ohne dass ein Live-Abend das Neue ungefragt faehrt.
 const COZY_KINO: ResolvedTheme = { ...COZY, id: 'cozyKino', label: 'Cozy Kino' };
 
+// ── Holz — warme Werkstatt-Buehne fuer das Holz-Avatarset (Wolf 2026-08-18) ──
+// Anlass: die Stilprobe hat die Motive auf den heutigen Grund (#0A0814, fast
+// schwarzes Navy) gestellt. Das Material stimmt, aber die Marken LIEGEN AUF dem
+// Grund statt darin zu sitzen: warmes Holz auf kaltem Blau ist ein Bruch, den
+// keine Motivwahl repariert. Wolf: „ich braeuchte dann ein Quiz-Design in
+// Holzoptik."
+//
+// Entscheidungen, die bewusst so und nicht anders sind:
+//  * Die Buehne bleibt DUNKEL. Ein heller Holzgrund waere im Beamer-Betrieb in
+//    einer Bar blendend; Nussbaum statt Birke.
+//  * KEIN Gold, KEIN Amber als Dauer-Akzent. Das ist der Kroenung vorbehalten
+//    (gleiche Regel wie im Quirks-Theme). Der Akzent ist ein gedaempftes Rosé,
+//    also das Marken-Pink in warm — so bleibt es auf den ersten Blick CozyQuiz
+//    und kippt nicht in ein beliebiges Herbst-Theme.
+//  * Die Maserung liegt NICHT im CSS, sondern in den Avataren. Eine gemalte
+//    Holztextur als Flaeche wuerde mit den Motiven konkurrieren und auf
+//    Beamer-Distanz zu Grieß zerfallen.
+const HOLZ: ResolvedTheme = {
+  id: 'holz', label: 'Holz',
+  brand: {
+    accentHex: '#E8749B', accentRgb: '232,116,155', accentSoft: '#F7D4DF',
+    // Gradient-Start bewusst nicht heller: bei #F2AEC4 faellt weisser Text auf
+    // der Pille auf 1.8:1 und damit UNTER den heutigen Cozy-Wert (2.65:1).
+    // #E4839F haelt 2.61:1, also Gleichstand mit Cozy statt Verschlechterung.
+    accentWarm: '#E4839F',          // helle Rosé-Variante (Gradient-Start)
+    magenta: '#8C2F4A',             // tiefer Wein, warmer Verwandter von #A21247
+    gradientPill: 'linear-gradient(135deg, #E4839F 0%, #E8749B 50%, #8C2F4A 100%)',
+  },
+  surface: {
+    pageBg: 'radial-gradient(circle at 50% -5%, #2E211B 0%, #211712 58%, #160F0C 100%)',
+    text: '#F4EBE1', textMuted: '#B7A79A', cardText: '#F4EBE1',
+    cardBg: 'linear-gradient(180deg, rgba(255,240,225,0.07), rgba(255,240,225,0.025))',
+    cardBorder: '1px solid rgba(255,232,210,0.12)', cardRadius: '20px', pillRadius: '999px',
+    cardShadow: '0 16px 44px rgba(0,0,0,0.50)',
+    hairline: 'rgba(255,232,210,0.12)', surface: 'rgba(255,240,225,0.05)', overlay: 'rgba(22,15,12,0.32)',
+    font: "'Nunito', 'Geist', system-ui, sans-serif",
+    title: '#F4EBE1',
+  },
+};
+
 export const QQ_THEMES: Record<string, ResolvedTheme> = {
   cozy: COZY,
   cozyKino: COZY_KINO,
@@ -192,6 +232,7 @@ export const QQ_THEMES: Record<string, ResolvedTheme> = {
   softPop: SOFT_POP,
   neoBrutal: NEO_BRUTAL,
   quirks: QUIRKS,
+  holz: HOLZ,
 };
 
 /**

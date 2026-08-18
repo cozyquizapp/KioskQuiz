@@ -15,6 +15,26 @@
 
 ---
 
+## 🎨 PREMIUM-DESIGN-GRUNDLAGE (Wolf 2026-08-18, laeuft)
+
+> Wolf: „wir brauchen premium design 2026 fuer eine quiz event app, darauf bauen
+> wir dann das emoji set bzw wir bauen es zusammen auf."
+
+Alles Weitere in **`docs/MOTION_REFERENZEN.md`**: ausgewertete Referenzen mit
+gemessenen Werten, die Bausteinliste B1 bis B7, und die Werkzeugkette zum
+Auswerten neuer Videos (Websites sind aus der Remote-Umgebung nicht erreichbar).
+
+- [ ] **Wolf sammelt weitere Referenz-Websites** (Video oder Screenshot liefern).
+- [ ] **Sechs Richtungsbilder sortieren** (`.shots/richtung-1..6.png`, ja/nein je Bild)
+      → daraus die Grundrichtung ableiten.
+- [ ] **Schrift entscheiden.** Groesster Einzelhebel auf der Buehne, bisher Platzhalter.
+- [ ] **Erster Baustein bauen:** B1 (Bogen-Wisch statt Schnitt) + B5 (Marker-Geste
+      fuer die richtige Antwort) an der Aufloesung, gegen den Ist-Zustand stellen.
+- [ ] **Avatarset** bleibt bewusst dahinter. Gelernt am verworfenen Holz-Versuch:
+      Design und Set muessen aus denselben Regeln entstehen, nicht nacheinander.
+
+---
+
 ## 🎯 TAGESZIEL + ROADMAP (Wolf 2026-07-19)
 > **Nordstern:** beide Modi (CozyQuiz + CozyArena/Colosseum) **vollständig spielbar**.
 1. **HEUTE:** CozyArena/Colosseum so weit fertig, dass es **spielbar** ist.

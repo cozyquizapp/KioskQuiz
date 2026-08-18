@@ -60,6 +60,55 @@ zeigt, was gerade laeuft.
 
 ---
 
+## Markenarchitektur (Wolf 2026-08-18) — aendert den Auftrag
+
+Wolf: „meine Idee ist es mich langfristig etwas von meiner Marke CozyWolf zu
+loesen und meine Produkte unter der Dachmarke anzubieten, wie wonky guess etc.,
+aber nicht mehr im Stil des Logos. Den Fehler habe ich am Anfang gemacht."
+
+**Der Fehler praezise:** nicht das Maskottchen war falsch, sondern dass sein
+ZEICHENSTIL zum Designsystem wurde. Ein Maskottchen ist eine Figur, ein
+Designsystem sind Regeln fuer Licht, Flaeche, Schrift, Abstand, Bewegung. Wird
+der Zeichenstil zur Regel, erbt jedes Produkt pink, rund, illustriert und kann
+nie erwachsen wirken. Das ist dieselbe Ursache, aus der `cozy3d` kindlich wirkt
+(siehe AVATAR_BRIEF.md Abschnitt 2): Material und Licht, nicht das Motiv.
+
+**Was die Dachmarke teilt:** Haltung, Tonfall, Qualitaetsversprechen, eine
+kleine Absenderzeile, hoechstens EINE strukturelle Signatur. Nicht: Farbe,
+Schrift, Illustrationsstil, Bewegungscharakter. Die muessen pro Produkt frei
+sein, sonst ist es wieder ein Masterbrand mit mehr Namen.
+
+**Passt zufaellig schon:** die Signatur, an der hier gearbeitet wird (warmes
+Eigenlicht, mattes Objekt, ein weiches Hauptlicht, Gluehwuermchen), ist eine
+LICHT-Idee, keine Wolf-Idee. Sie traegt ueber Produkte hinweg, ohne das
+Maskottchen mitzuschleppen.
+
+**Konsequenzen fuer die laufende Arbeit:**
+
+* **Wolf-Auftritte trennen in Marke und Funktion.** Er steckt in mindestens acht
+  Komponenten, ist ein eigenes Avatarset und laeuft im Progress Tree ueber die
+  Punktlinie. Die laufende Figur ist FUNKTION, naemlich der Anker (B8), der den
+  Szenenwechsel ueberlebt. Sie kann bleiben und anders angezogen werden.
+  Dekorativer Wolf auf End- und Dankebildschirmen ist MARKE und faellt weg.
+* **Buehnenentwuerfe nicht auf den Wolf stuetzen.** Die Ansicht 4 vom 2026-08-18
+  (`.shots/bv-4.png`) nutzt ihn als Anker im Mittelpunkt der Kreisbahn. Unter der
+  neuen Richtung waere dort ein neutraler Anker richtig: eine Lichtquelle, ein
+  Ring, ein Gluehwuermchen-Kern.
+* **Eigenes Avatarset wird wichtiger, nicht unwichtiger.** Es ist das eigene
+  Vokabular von CozyQuiz statt wolf-gebrandeter Deko.
+* **Offener Konflikt, Wolf entscheidet:** `CREATIVE_DIRECTION.md` fuehrt Pink
+  `#EC4899` als nicht verhandelbar. Das Pink stammt aus CozyWolf. Soll CozyQuiz
+  eine eigene Identitaet bekommen, steht diese Festlegung zur Debatte. **Nicht
+  eigenmaechtig aendern.**
+
+**Zwei Warnungen, damit sie nicht verlorengehen.** Eine Dachmarke rechnet sich
+erst ab genug Produkten, vorher kostet sie die vorhandene Wiedererkennung. Und
+beim Loesen vom Logo ist die Gefahr nicht Kitsch, sondern Beliebigkeit: das Ziel
+ist erwachsen, nicht neutral. Die Waerme ist das Kapital, die Niedlichkeit die
+Altlast.
+
+---
+
 ## Randbedingungen, an denen jede Referenz gefiltert wird
 
 Diese vier Punkte entscheiden, ob ein Effekt uebernommen werden kann. Sie sind

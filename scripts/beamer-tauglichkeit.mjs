@@ -59,8 +59,16 @@ const klein = await sharp(datei).resize(STUFEN_W, null, { kernel: 'lanczos3' }).
 const fern = await sharp(klein).resize(DESIGN_W, null, { kernel: 'cubic' })
   .blur(Math.max(0.5, DESIGN_W / STUFEN_W / 2.2)).png().toBuffer();
 
+// Die Distanz-Simulation kann durch das Runden beim Skalieren um einen Pixel
+// abweichen. Bereich deshalb auf die echte Bildgroesse klemmen, sonst bricht
+// extract() ab (2026-08-18 an S4/P2 passiert).
+const fernInfo = await sharp(fern).metadata();
+const cx = Math.max(0, Math.min(bx, fernInfo.width - 1));
+const cy = Math.max(0, Math.min(by, fernInfo.height - 1));
+const cw = Math.max(1, Math.min(bw, fernInfo.width - cx));
+const chh = Math.max(1, Math.min(bh, fernInfo.height - cy));
 const { data: d2, info: i2 } = await sharp(fern)
-  .extract({ left: bx, top: by, width: bw, height: bh }).raw().toBuffer({ resolveWithObject: true });
+  .extract({ left: cx, top: cy, width: cw, height: chh }).raw().toBuffer({ resolveWithObject: true });
 const L = [];
 for (let p = 0; p < d2.length; p += i2.channels) L.push(leucht(d2, p));
 L.sort((a, b) => a - b);

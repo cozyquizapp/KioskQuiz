@@ -15,7 +15,7 @@
  */
 import { useEffect, useState } from 'react';
 import { getServerNow } from '../utils/serverTime';
-import { useActiveThemeId } from '../qqTheme';
+import { useActiveThemeId, isCozyLook } from '../qqTheme';
 
 export function BeamerTimer({
   endsAt, durationSec, accent, expireNow,
@@ -86,7 +86,8 @@ export function BeamerTimer({
 
   // 2026-06-23 (Skin): pro Skin eigene Timer-Form (wie /skins-Mockups), gleiche
   // Position/Groesse (sz). Urgency-Farbe bleibt semantisch erhalten. Cozy = Ring.
-  if (skinId !== 'cozy') {
+  // isCozyLook: 'cozy' und 'cozyKino' teilen sich den Look (nur Motion unterscheidet).
+  if (!isCozyLook(skinId)) {
     const numFs = isCritical ? 'clamp(40px, 5.2cqw, 64px)' : 'clamp(34px, 4.6cqw, 56px)';
     const numBox = (
       <div style={{ textAlign: 'center', lineHeight: 1, fontFamily: 'var(--qq-font)' }}>

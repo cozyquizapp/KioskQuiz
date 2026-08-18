@@ -170,8 +170,24 @@ const QUIRKS: ResolvedTheme = {
   },
 };
 
+// ── Cozy Kino — gleicher Look wie Cozy, andere BEWEGUNG (Wolf 2026-08-18) ────
+// Wolf: „wenn ich mir anschaue was motion und designtechnisch so alles geht,
+// wuensche ich mir da mitzuhalten." Befund aus dem Video-Mitschnitt derselben
+// Session: zwischen zwei Szenen liegt auf der Buehne ein LEERBILD (bis ~250ms
+// Schwarz beim Wechsel Frage→Aufloesung), die alte Szene geht nicht ab, die neue
+// blendet als ein Block auf. Das ist das „wie PowerPoint"-Gefuehl aus Wolfs
+// Notiz vom 2026-07-17 (scripts/record-run.mjs).
+//
+// Cozy Kino ist deshalb KEIN neues Farbkleid, sondern eine Bewegungs-Variante:
+// Farben, Flaechen, Schrift sind byte-identisch mit Cozy (`isCozyLook` behandelt
+// beide gleich → alle 347 `isThemed()`-Stellen sehen weiterhin „cozy"). Der
+// Unterschied liegt allein im Szenenwechsel. So kann Wolf am ECHTEN Beamer
+// A/B vergleichen, ohne dass ein Live-Abend das Neue ungefragt faehrt.
+const COZY_KINO: ResolvedTheme = { ...COZY, id: 'cozyKino', label: 'Cozy Kino' };
+
 export const QQ_THEMES: Record<string, ResolvedTheme> = {
   cozy: COZY,
+  cozyKino: COZY_KINO,
   studioMono: STUDIO_MONO,
   softPop: SOFT_POP,
   neoBrutal: NEO_BRUTAL,
@@ -246,6 +262,9 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   // die dekorativen Dauer-Waves (qqCatNameWave) auf allen Hero-Titeln zugleich,
   // ohne jede Stelle einzeln zu gaten. SoftPop/Neo behalten die cozy-Motion.
   document.documentElement.setAttribute('data-quiet-motion', theme.id === 'studioMono' ? 'true' : 'false');
+  // Szenenwechsel-Sprache: 'kino' aktiviert die View-Transition-Ebene auf dem
+  // Beamer (QQBeamerPage), 'cut' ist das heutige harte Umschalten.
+  document.documentElement.setAttribute('data-scene-motion', theme.id === 'cozyKino' ? 'kino' : 'cut');
 }
 
 export function setActiveThemeId(id: string): void {
@@ -269,9 +288,21 @@ export function useActiveThemeId(): string {
   return useSyncExternalStore(subscribe, getActiveThemeId, getActiveThemeId);
 }
 
+/** Traegt diese Theme-ID den Cozy-LOOK? (Cozy + Cozy Kino: gleiche Farben/
+ *  Flaechen/Schrift, nur andere Bewegung.) Zentral, damit die 347 `isThemed()`-
+ *  Stellen und die zwei direkten `=== 'cozy'`-Vergleiche nicht auseinanderlaufen. */
+export function isCozyLook(id: string = _activeId): boolean {
+  return id === 'cozy' || id === 'cozyKino';
+}
+
 /** Ist gerade ein anderes Theme als der Cozy-Default aktiv? */
 export function isThemed(): boolean {
-  return _activeId !== 'cozy';
+  return !isCozyLook(_activeId);
+}
+
+/** Kino-Motion aktiv? (Szenenwechsel als Wechsel statt als Schnitt.) */
+export function isKinoMotion(): boolean {
+  return _activeId === 'cozyKino';
 }
 
 // ── Bewegungs-Sprache pro Skin ──────────────────────────────────────────────

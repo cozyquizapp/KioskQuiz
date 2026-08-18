@@ -20,6 +20,10 @@ const BASE = 'http://localhost:5173';
 const ARENA = process.argv.includes('--arena');
 const arg = (name, def) => Number((process.argv.find((a) => a.startsWith(`--${name}=`)) ?? `--${name}=${def}`).split('=')[1]);
 const STEPS = arg('steps', 16);
+// --theme=<id> setzt das Buehnen-Design vor dem Lauf (z.B. cozyKino), damit
+// Vorher/Nachher-Videos derselben Choreografie vergleichbar sind.
+const THEME = (process.argv.find((a) => a.startsWith('--theme=')) ?? '').split('=')[1] || '';
+const TAG = (process.argv.find((a) => a.startsWith('--tag=')) ?? '').split('=')[1] || (THEME || 'ist');
 const GAP = arg('gap', 2400);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -27,11 +31,23 @@ const health = await fetch('http://localhost:4000/api/health').then((r) => r.jso
 if (!health?.ok) { console.error('Backend nicht erreichbar (4000).'); process.exit(1); }
 if (health.uptime > 900) console.log('⚠️  Backend-Uptime hoch — Raum evtl. aus altem Lauf. Frisch starten!');
 
-mkdirSync('.shots/video/beamer', { recursive: true });
-mkdirSync('.shots/video/team', { recursive: true });
+const OUT_BEAMER = `.shots/video/beamer-${TAG}`;
+const OUT_TEAM = `.shots/video/team-${TAG}`;
+mkdirSync(OUT_BEAMER, { recursive: true });
+mkdirSync(OUT_TEAM, { recursive: true });
 
 // PW_CHROMIUM erlaubt ein vorinstalliertes Chromium (CI-/Container-Umgebungen,
 // in denen `playwright install` nicht laufen soll).
+// Theme VOR dem Oeffnen der Seiten setzen: der Beamer zieht room.themeId aus
+// dem State-Broadcast, ein spaeterer Wechsel wuerde mitten im Video passieren.
+// setRoomTheme wirft, wenn der Server ablehnt (Mod-PIN!) — ein stiller Fallback
+// auf 'cozy' wuerde zwei identische Videos als Vorher/Nachher ausgeben.
+if (THEME) {
+  const { setRoomTheme } = await import('./qqTheme-harness.mjs');
+  await setRoomTheme(THEME);
+  console.log('Theme gesetzt (Server bestaetigt):', THEME);
+}
+
 const browser = await chromium.launch({
   headless: true,
   ...(process.env.PW_CHROMIUM ? { executablePath: process.env.PW_CHROMIUM } : {}),
@@ -41,7 +57,7 @@ const browser = await chromium.launch({
 const ctxMain = await browser.newContext({
   viewport: { width: 1760, height: 990 },
   deviceScaleFactor: 1,
-  recordVideo: { dir: '.shots/video/beamer', size: { width: 1760, height: 990 } },
+  recordVideo: { dir: OUT_BEAMER, size: { width: 1760, height: 990 } },
 });
 await ctxMain.addInitScript(() => {
   try {
@@ -57,7 +73,7 @@ const ctxTeam = await browser.newContext({
   deviceScaleFactor: 2,
   isMobile: true,
   hasTouch: true,
-  recordVideo: { dir: '.shots/video/team', size: { width: 390, height: 844 } },
+  recordVideo: { dir: OUT_TEAM, size: { width: 390, height: 844 } },
 });
 await ctxTeam.addInitScript(() => {
   try {

@@ -4737,3 +4737,75 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   45%  { opacity: 1; }
   100% { opacity: 1; transform: scale(1); }
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SZENENWECHSEL — Skin „Cozy Kino" (Wolf 2026-08-18)
+
+   Befund am Video (8 Bilder/s, echte Session): zwischen zwei Buehnen-Szenen
+   liegt ein Leerbild. Beim Wechsel Frage -> Aufloesung sind es ZWEI volle
+   Bilder, also rund 250ms Schwarz. Die alte Szene geht nicht ab, die neue
+   blendet als ein Block auf. Genau das ist das „wie PowerPoint"-Gefuehl.
+
+   Hier liegt die Choreografie des Wechsels. Die Mechanik (Phasenwechsel einen
+   Frame halten, dann in document.startViewTransition committen) sitzt in
+   hooks/useSceneTransition.ts, verdrahtet in QQBeamerPage.
+
+   Regel dabei (CREATIVE_DIRECTION „ONE Hero Beat per screen"): der Wechsel
+   selbst ist KEIN Hero-Beat. Er traegt nur hinueber und darf nie mit dem
+   Hero-Beat der neuen Szene konkurrieren. Deshalb kein Overshoot, keine
+   Rotation, keine Slide-Richtung, sondern eine ruhige Kamera-Bewegung:
+   die alte Szene tritt minimal zurueck, die neue kommt minimal nach vorn.
+
+   Wichtig: beide laufen ab t=0 UEBERLAPPEND. Der Abgang ist kuerzer als der
+   Auftritt, damit zu keinem Zeitpunkt ein leerer Schirm entsteht — der Fehler,
+   den wir gerade beheben.
+   ───────────────────────────────────────────────────────────────────────────── */
+html[data-scene-motion="kino"]::view-transition-group(root) {
+  animation-duration: 520ms;
+}
+
+html[data-scene-motion="kino"]::view-transition-old(root),
+html[data-scene-motion="kino"]::view-transition-new(root) {
+  /* Beide Schnappschuesse liegen uebereinander statt sich gegenseitig zu
+     verdraengen — sonst blitzt der Seiten-Hintergrund durch. */
+  mix-blend-mode: normal;
+  animation-fill-mode: both;
+}
+
+html[data-scene-motion="kino"]::view-transition-old(root) {
+  animation: qqSceneExit 320ms var(--qq-ease-smooth) both;
+}
+
+html[data-scene-motion="kino"]::view-transition-new(root) {
+  animation: qqSceneEnter 520ms var(--qq-enter) both;
+}
+
+/* Abgang: leicht zuruecktreten und weich verschwinden. Kein Wegschieben —
+   die Buehne bleibt dieselbe, nur der Inhalt wechselt. */
+@keyframes qqSceneExit {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.988); }
+}
+
+/* Auftritt: von minimal weiter weg und ein Stueck tiefer heran. Die Werte sind
+   bewusst klein (1.2% Scale, 14px auf 1080px Buehnenhoehe = 1.3%), weil die
+   Buehne aus 10 Metern gelesen wird: grosse Bewegung liest sich dort als
+   Ruckeln, kleine als Kamerafahrt. */
+@keyframes qqSceneEnter {
+  0%   { opacity: 0; transform: scale(1.012) translateY(14px); }
+  55%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Funktions-Invariante: „respects prefers-reduced-motion". Der Wechsel bleibt
+   ein Wechsel (kein harter Schnitt), aber ohne Bewegung. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-scene-motion="kino"]::view-transition-old(root) {
+    animation: qqSceneExitFlat 200ms linear both;
+  }
+  html[data-scene-motion="kino"]::view-transition-new(root) {
+    animation: qqSceneEnterFlat 260ms linear both;
+  }
+}
+@keyframes qqSceneExitFlat  { to   { opacity: 0; } }
+@keyframes qqSceneEnterFlat { from { opacity: 0; } }

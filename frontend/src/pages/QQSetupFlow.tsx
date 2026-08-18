@@ -291,10 +291,11 @@ export function QQSetupFlow(props: Props) {
                   <div style={fieldLbl}>🎨 Bühnen-Design</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
                     {Object.values(QQ_THEMES).map(t => {
-                      const TINT: Record<string, string> = { cozy: '#ec4899', studioMono: '#cbd5e1', softPop: '#f472a0', neoBrutal: '#7c3aed' };
+                      const TINT: Record<string, string> = { cozy: '#ec4899', cozyKino: '#ec4899', studioMono: '#cbd5e1', softPop: '#f472a0', neoBrutal: '#7c3aed' };
                       const tint = TINT[t.id] ?? '#ec4899';
                       const active = (s.themeId ?? 'cozy') === t.id;
-                      const DESC: Record<string, string> = { cozy: 'Der Standard (Pink/Navy)', studioMono: 'Editorial, hell — Corporate', softPop: 'Warm, pastellig', neoBrutal: 'Lila, knallig, jung' };
+                      // cozyKino = identische Farben wie Cozy, nur andere Szenenwechsel (2026-08-18).
+                      const DESC: Record<string, string> = { cozy: 'Der Standard (Pink/Navy)', cozyKino: 'Wie Cozy, aber Szenen blenden ineinander statt zu schneiden', studioMono: 'Editorial, hell — Corporate', softPop: 'Warm, pastellig', neoBrutal: 'Lila, knallig, jung' };
                       return (
                         <button key={t.id} onClick={() => emit('qq:setTheme', { roomCode, themeId: t.id })}
                           style={{

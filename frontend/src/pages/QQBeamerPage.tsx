@@ -4,7 +4,8 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
-import { isThemed, getActiveTheme, setActiveThemeId, themeIdForState } from '../qqTheme';
+import { isThemed, getActiveTheme, setActiveThemeId, themeIdForState, useActiveThemeId } from '../qqTheme';
+import { useSceneTransition } from '../hooks/useSceneTransition';
 import {
   QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
@@ -880,7 +881,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     }
   }, [s.phase, s.gamePhaseIndex]);
   // Atomic: entweder frozen-Snapshot (während Countdown) oder live-State.
-  const renderState: QQStateUpdate = getReady ? getReady.frozenState : s;
+  const stageState: QQStateUpdate = getReady ? getReady.frozenState : s;
+  // Szenenwechsel-Ebene (Wolf 2026-08-18): im Skin „Cozy Kino" wird der
+  // Phasenwechsel EINEN Frame gehalten und in einer View-Transition committet →
+  // kein Leerbild mehr zwischen zwei Szenen. In allen anderen Skins (inkl. cozy)
+  // geht der State unveraendert durch. Details: hooks/useSceneTransition.ts.
+  const kinoMotion = useActiveThemeId() === 'cozyKino';
+  const renderState: QQStateUpdate = useSceneTransition(stageState, kinoMotion);
   // Arena-Beamer durchgaengig EN: setzt das Modul-Flag fuer useLangFlip, damit
   // im Mega-Modus kein DE/EN-Flip mehr durchrutscht (z.B. "Umfrage" statt "Survey").
   setBeamerMega(qqIsMega(renderState));

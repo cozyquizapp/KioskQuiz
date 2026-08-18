@@ -70,6 +70,7 @@ import {
   QQConnectionsPayload, QQ_COMEBACK_ENABLED,
 } from '../../../shared/quarterQuizTypes';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
+import { coerceQQThemeId } from '../../../shared/qqThemeIds';
 import { pickDummyAction, DummyActionChoice, DummyActionKind } from './qqDummyAI';
 import {
   bluffWriteTimeout, bluffVoteTimeout,
@@ -2213,9 +2214,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:setTheme', (payload: { roomCode: string; themeId: string }, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
-        const id = String(payload.themeId ?? 'cozy');
-        const allowed = ['cozy', 'studioMono', 'softPop', 'neoBrutal'];
-        room.themeId = allowed.includes(id) ? id : 'cozy';
+        // 2026-08-18: Liste liegt jetzt in shared/qqThemeIds.ts. Vorher stand sie
+        // hier lokal und war unvollstaendig ('quirks' und 'cozyKino' fehlten) →
+        // der Server setzte still auf 'cozy' zurueck, der Skin-Klick blieb wirkungslos.
+        room.themeId = coerceQQThemeId(payload.themeId);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

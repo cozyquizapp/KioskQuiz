@@ -37,7 +37,8 @@ const SLOT_COLORS = ['#F97316', '#22C55E', '#14B8A6', '#A855F7', '#FACC15', '#3B
 const BG = '#0A0814';        // Buehnen-Grund
 const SIZE_STAGE = 68;       // gemessen: kleinste Marke auf der Buehne
 const SIZE_PHONE = 32;       // gemessen: kleinste Marke auf dem Handy
-const SIZE_FAR = 22;         // 68px * (560/1760) = 10-Meter-Simulation
+// SIZE_FAR entfaellt: die Stufenzahl wird jetzt aus Bildbreite, Abstand und
+// Sehschaerfe gerechnet (siehe far()), statt pauschal aus einem Skalierungsfaktor.
 
 const SETS = [
   {
@@ -86,10 +87,39 @@ async function mark(file, size, color, disc) {
     .png().toBuffer();
 }
 
-/** Distanz-Probe: klein rechnen, wieder gross ziehen. Simuliert 10 Meter. */
+/**
+ * Distanz-Probe — was das AUGE aus der Entfernung noch aufloest.
+ *
+ * ⚠️ KORREKTUR 2026-08-18 (Wolf: „wenn ich meine Avatare per Beamer an die Wand
+ * werfe, sehen die doch nicht total verpixelt aus?"). Richtig, tun sie nicht.
+ * Die erste Fassung hat nach dem Verkleinern mit kernel 'nearest' wieder
+ * hochgezogen — das erzeugt Kloetzchen, die es an der Wand NICHT gibt. Das Bild
+ * dort ist scharf; verloren geht die Detail-Aufloesung im Auge, und die aeussert
+ * sich als UNSCHAERFE, nicht als Pixelraster. Jetzt wird glatt hochgezogen und
+ * zusaetzlich weichgezeichnet.
+ *
+ * Annahmen (ueber Umgebungsvariablen anpassbar):
+ *   BILD_BREITE_M   projizierte Bildbreite in Metern (Default 2.8)
+ *   ABSTAND_M       Betrachtungsabstand in Metern    (Default 10)
+ *   AUGE_BOGENMIN   aufloesbarer Winkel in Bogenminuten (Default 1.7)
+ * Daraus: mm je Design-Pixel = BILD_BREITE_M*1000 / 1760.
+ *         aufloesbare mm     = ABSTAND_M*1000 * AUGE_BOGENMIN/60 * PI/180.
+ */
+const BILD_BREITE_M = Number(process.env.BILD_BREITE_M ?? 2.8);
+const ABSTAND_M = Number(process.env.ABSTAND_M ?? 10);
+const AUGE_BOGENMIN = Number(process.env.AUGE_BOGENMIN ?? 1.7);
+const MM_PRO_PX = (BILD_BREITE_M * 1000) / 1760;
+const AUFLOESBAR_MM = ABSTAND_M * 1000 * (AUGE_BOGENMIN / 60) * (Math.PI / 180);
+/** Wie viele Design-Pixel fallen auf eine gerade noch aufloesbare Stufe? */
+const PX_PRO_STUFE = Math.max(1, AUFLOESBAR_MM / MM_PRO_PX);
+
 async function far(buf, size) {
-  const small = await sharp(buf).resize(SIZE_FAR, SIZE_FAR, { kernel: 'lanczos3' }).png().toBuffer();
-  return sharp(small).resize(size, size, { kernel: 'nearest' }).png().toBuffer();
+  const stufen = Math.max(6, Math.round(size / PX_PRO_STUFE));
+  const small = await sharp(buf).resize(stufen, stufen, { kernel: 'lanczos3' }).png().toBuffer();
+  return sharp(small)
+    .resize(size, size, { kernel: 'cubic' })   // glatt, KEINE Kloetzchen
+    .blur(Math.max(0.4, size / stufen / 2.2))  // Rest-Unschaerfe des Auges
+    .png().toBuffer();
 }
 
 const PAD = 26, GAP = 22, ROW_LBL = 22;
@@ -108,7 +138,7 @@ for (const set of SETS) {
   // muss man auf dem Smartphone die Avatare aus 6m sehen?" — muss man nicht).
   const rows = [
     { size: SIZE_STAGE, label: `BUEHNE 68px — kleinste Groesse auf der Projektion`, far: false },
-    { size: SIZE_STAGE, label: `BUEHNE aus ~10 Metern — nur das bleibt im Raum uebrig`, far: true },
+    { size: SIZE_STAGE, label: `BUEHNE aus ${ABSTAND_M}m — so loest das Auge sie auf (Bild scharf, Auge nicht)`, far: true },
     { size: SIZE_PHONE, label: `HANDY 32px — Nahsicht, hier darf Detail sein (keine Distanz-Probe)`, far: false },
   ];
 

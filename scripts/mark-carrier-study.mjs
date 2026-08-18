@@ -29,7 +29,7 @@ mkdirSync(OUT, { recursive: true });
 
 const BG = '#0A0814';
 const CREAM = '#F5ECD8';
-const SIZE_STAGE = 68, SIZE_PHONE = 32, SIZE_FAR = 22;
+const SIZE_STAGE = 68, SIZE_PHONE = 32;
 const SLOT_COLORS = ['#F97316', '#22C55E', '#14B8A6', '#A855F7', '#FACC15', '#3B82F6', '#EC4899', '#EF4444'];
 
 // Platzhalter-Motive in einem 100x100-Feld, bewusst grob und gross.
@@ -71,9 +71,27 @@ async function render(svgInner, size) {
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 100 100">${svgInner}</svg>`;
   return sharp(Buffer.from(svg)).png().toBuffer();
 }
+/**
+ * Distanz-Probe — was das AUGE aus der Entfernung noch aufloest.
+ * Korrektur 2026-08-18 (Wolf): das Bild an der Wand ist SCHARF, verloren geht
+ * die Detail-Aufloesung im Auge. Das aeussert sich als Unschaerfe, nicht als
+ * Pixelraster. Annahmen ueber Umgebungsvariablen anpassbar. Herleitung siehe
+ * scripts/avatar-contact-sheet.mjs.
+ */
+const BILD_BREITE_M = Number(process.env.BILD_BREITE_M ?? 2.8);
+const ABSTAND_M = Number(process.env.ABSTAND_M ?? 10);
+const AUGE_BOGENMIN = Number(process.env.AUGE_BOGENMIN ?? 1.7);
+const MM_PRO_PX = (BILD_BREITE_M * 1000) / 1760;
+const AUFLOESBAR_MM = ABSTAND_M * 1000 * (AUGE_BOGENMIN / 60) * (Math.PI / 180);
+const PX_PRO_STUFE = Math.max(1, AUFLOESBAR_MM / MM_PRO_PX);
+
 async function far(buf, size) {
-  const small = await sharp(buf).resize(SIZE_FAR, SIZE_FAR, { kernel: 'lanczos3' }).png().toBuffer();
-  return sharp(small).resize(size, size, { kernel: 'nearest' }).png().toBuffer();
+  const stufen = Math.max(6, Math.round(size / PX_PRO_STUFE));
+  const small = await sharp(buf).resize(stufen, stufen, { kernel: 'lanczos3' }).png().toBuffer();
+  return sharp(small)
+    .resize(size, size, { kernel: 'cubic' })
+    .blur(Math.max(0.4, size / stufen / 2.2))
+    .png().toBuffer();
 }
 
 const PAD = 26, GAP = 22, ROW_LBL = 22, COLS = 4;
@@ -86,7 +104,7 @@ for (const c of CARRIERS) {
 
   const rows = [
     { size: SIZE_STAGE, label: 'BUEHNE 68px', far: false },
-    { size: SIZE_STAGE, label: 'BUEHNE aus ~10 Metern', far: true },
+    { size: SIZE_STAGE, label: `BUEHNE aus ${ABSTAND_M}m`, far: true },
     { size: SIZE_PHONE, label: 'HANDY 32px (Nahsicht)', far: false },
   ];
   for (const row of rows) {

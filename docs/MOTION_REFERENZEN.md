@@ -309,6 +309,39 @@ bleiben. Aus einer Folge von Zustaenden wird ein Raum, durch den man faehrt.
 
 ---
 
+## Entschieden 2026-08-18: das Handy ist nicht die Baustelle
+
+Gegenprobe gemacht. Aus den Regeln („das Handy ist die Fernbedienung, nicht die
+Show") wurde ein Entwurf fuer fuenf echte Phasen gebaut, **ohne** vorher die
+bestehende `/team`-Seite anzusehen, nur anhand der Phasen aus
+`QQTeamPage.tsx`. Bild: `.shots/team-bedienteil.png`.
+
+Wolfs Urteil: „sieht jetzt nicht weltbewegend anders aus als meine jetzige
+Variante." Genau das ist das Ergebnis, und es zaehlt, weil beide Wege unabhaengig
+voneinander entstanden sind.
+
+Zusaetzlich im Code geprueft, weil es die Regel ist, die in dieser Kategorie am
+haeufigsten gebrochen wird: die Korrektheit wird in `QQTeamPage.tsx` erst bei
+`QUESTION_REVEAL` ausgewertet, nicht waehrend `QUESTION_ACTIVE`. **Das Handy
+spoilert nicht vor der Wand.** Wuerde es das tun, schaut der Raum nach unten und
+der Moment an der Projektion ist tot.
+
+**Folge: kein Redesign der Team-Seite.** Die Arbeit liegt auf der Buehne. Wenn
+spaeter doch am Handy gearbeitet wird, dann an Einzelheiten (Trefferflaechen,
+Lesbarkeit im Halbdunkel), nicht am Aufbau.
+
+Die Entwurfsregeln, die sich bestaetigt haben und fuer neue Handy-Screens gelten:
+
+* Die Frage steht auf dem Handy **klein**. Gross steht sie an der Wand.
+* Trefferflaechen unten, deutlich ueber 44 Punkt. Man soll nicht hinsehen muessen.
+* Nach dem Abgeben: Bestaetigung ohne Ergebnis. Die Wand hat immer zuerst.
+* Der Kopf mit Avatar, Teamfarbe und Name bleibt in jeder Phase gleich. Das ist
+  der Anker (B8) auf dem Handy und die Verbindung zum Team an der Wand.
+* Das Gitter beim Platzieren darf den ganzen Platz nehmen. Es ist die einzige
+  Stelle, an der das Handy etwas kann, was die Wand nicht kann.
+
+---
+
 ## Offene Entscheidungen
 
 * **Schrift.** Groesster Einzelhebel auf der Buehne und noch nicht entschieden.

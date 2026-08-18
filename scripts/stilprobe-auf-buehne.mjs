@@ -13,7 +13,8 @@
  *   links  — der heutige Buehnengrund (#0A0814)
  *   rechts — ein waermerer Grund, wie er zu den Marken passen wuerde
  *
- * VORAUSSETZUNG: die fuenf Reihen liegen als Dateien in .shots/stilprobe/:
+ * VORAUSSETZUNG: die fuenf Reihen liegen als Dateien in design-assets/stilprobe/
+ * (bevorzugt, weil im Repo teilbar) oder .shots/stilprobe/ (lokal, gitignored):
  *   A-ton.png  B-filz.png  C-papier.png  D-holz.png  E-vinyl.png
  * (Reihenfolge der Motive in jeder Reihe: Fuchs, Daumen, Herz, Krug, Drache.)
  *
@@ -25,7 +26,7 @@ const require = createRequire(new URL('../frontend/package.json', import.meta.ur
 const sharp = require('sharp');
 
 const IN = '.shots/stilprobe';
-const OUT = '.shots/stilprobe/auf-buehne';
+const OUT = '.shots/stilprobe-auf-buehne';
 if (!existsSync(IN)) {
   console.error(`Ordner ${IN} fehlt. Lege dort die fuenf Reihen ab (A-ton.png ... E-vinyl.png).`);
   process.exit(1);

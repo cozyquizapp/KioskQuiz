@@ -25,12 +25,20 @@ import { createRequire } from 'node:module';
 const require = createRequire(new URL('../frontend/package.json', import.meta.url));
 const sharp = require('sharp');
 
-const IN = '.shots/stilprobe';
+// design-assets/ ist im Repo und NICHT ignoriert — dorthin koennen die Proben
+// gelegt und gepusht werden. .shots/ bleibt als lokaler Ablageort moeglich,
+// steht aber in der .gitignore: Dateien dort kommen nie im Repo an und sind
+// fuer eine Remote-Session unsichtbar (Wolf 2026-08-18: „wo ist der Ordner?").
+const KANDIDATEN = ['design-assets/stilprobe', '.shots/stilprobe'];
+const IN = KANDIDATEN.find((d) => existsSync(d));
 const OUT = '.shots/stilprobe-auf-buehne';
-if (!existsSync(IN)) {
-  console.error(`Ordner ${IN} fehlt. Lege dort die fuenf Reihen ab (A-ton.png ... E-vinyl.png).`);
+if (!IN) {
+  console.error('Kein Proben-Ordner gefunden. Erwartet einen von:');
+  KANDIDATEN.forEach((d) => console.error('  ' + d));
+  console.error('Zum Teilen ueber Git: design-assets/stilprobe/ nehmen (.shots/ ist gitignored).');
   process.exit(1);
 }
+console.log('Lese aus:', IN);
 mkdirSync(OUT, { recursive: true });
 
 // Gemessene Darstellungsgroessen (scripts/measure-avatar-sizes.mjs).

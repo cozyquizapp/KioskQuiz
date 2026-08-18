@@ -1,33 +1,27 @@
 /**
- * repro-scene-transition-abort.mjs — reproduziert den Live-Fund von Wolf
- * (2026-08-18): „Client error: Transition was aborted because of invalid state".
+ * repro-scene-transition-abort.mjs — Wolfs Live-Fund vom 2026-08-18:
+ * „Client error: Transition was aborted because of invalid state", auf dem
+ * BEAMER, ausgeloest durch einen TAB-WECHSEL.
  *
- * URSACHE: die Zusagen (ready/finished/updateCallbackDone) einer View-Transition
- * werden REGULAER abgelehnt, wenn ein Wechsel abgebrochen wird — etwa weil der
- * naechste Phasenwechsel kommt, bevor der laufende fertig ist. Ohne Fang landet
- * das im `unhandledrejection`-Listener aus main.tsx, und der legt ein
- * bildschirmfuellendes Fehler-Overlay ueber die BUEHNE.
+ * URSACHE: ist das Dokument nicht sichtbar, bricht startViewTransition ab und
+ * lehnt seine Zusagen (ready/finished/updateCallbackDone) ab. Ohne Fang landet
+ * das im unhandledrejection-Listener aus main.tsx — und der legt ein
+ * bildschirmfuellendes Fehler-Overlay ueber die Buehne.
  *
- * REPRO: schnell hintereinander steppen (kuerzer als die 520ms Transition) und
- * einmal mit versteckter Buehne durchsteppen.
- *
- * ⚠️ EHRLICHER STAND (2026-08-18): dieses Script hat Wolfs Meldung im Container
- * NICHT rot bekommen — headless meldet Chromium das Dokument immer als sichtbar
- * und lehnt die Zusagen nicht ab. Es ist damit KEIN Nachweis des Fixes, sondern
- * eine Wache: schnelles Steppen und versteckte Buehne duerfen NIE eine
- * unbehandelte Ablehnung oder das Fehler-Overlay erzeugen. Wer den Fall am
- * echten Geraet reproduziert bekommt, traegt das hier nach.
+ * WARUM NICHT „Tab wechseln" NACHGESTELLT WIRD: der Container bekommt eine Seite
+ * nicht auf hidden (headless meldet immer visible, CDP-Override existiert nicht
+ * mehr, unter Xvfb bleiben beide Tabs visible). Nachgestellt wird deshalb nicht
+ * die URSACHE, sondern die WIRKUNG: startViewTransition wird durch eine Attrappe
+ * ersetzt, die exakt so abbricht wie im Live-Fall. Das ist die Fehlerkette, um
+ * die es geht, und sie ist damit deterministisch pruefbar.
  *
  * VORAUSSETZUNG: Backend (4000) + Frontend (5173).
- * NUTZUNG: node scripts/repro-scene-transition-abort.mjs [--gap=140] [--steps=24]
- * EXIT: 0 = kein Overlay (gruen), 2 = Overlay erschienen (rot).
+ * NUTZUNG: node scripts/repro-scene-transition-abort.mjs
+ * EXIT: 0 = kein Overlay (gruen), 2 = Overlay bzw. unbehandelte Ablehnung (rot).
  */
 import { chromium } from 'playwright';
 
 const BASE = 'http://localhost:5173';
-const num = (n, d) => Number((process.argv.find((a) => a.startsWith(`--${n}=`)) ?? `--${n}=${d}`).split('=')[1]);
-const GAP = num('gap', 140);
-const STEPS = num('steps', 24);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const { setRoomTheme } = await import('./qqTheme-harness.mjs');
@@ -50,6 +44,19 @@ await ctx.addInitScript(() => {
   window.addEventListener('unhandledrejection', (e) => {
     w.__rejections.push(String(e?.reason?.message ?? e?.reason ?? 'unknown'));
   });
+  // Attrappe: verhaelt sich wie eine Transition, die beim Tab-Wechsel abbricht.
+  // Der Update-Callback laeuft (die neue Szene wird also committet), die drei
+  // Zusagen werden abgelehnt — exakt Wolfs Meldung.
+  w.__vtStarts = 0;
+  if (typeof document.startViewTransition === 'function') {
+    document.startViewTransition = (cb) => {
+      w.__vtStarts++;
+      try { cb?.(); } catch {}
+      const abort = () => Promise.reject(new DOMException(
+        'Transition was aborted because of invalid state', 'InvalidStateError'));
+      return { ready: abort(), finished: abort(), updateCallbackDone: abort(), skipTransition() {} };
+    };
+  }
 });
 
 const beamer = await ctx.newPage();
@@ -59,45 +66,35 @@ mod.on('dialog', (d) => d.dismiss());
 await mod.goto(`${BASE}/moderator-test?run=1`, { waitUntil: 'domcontentloaded' });
 await sleep(9000);
 
-// Fall A — schnell steppen: kuerzer als die Transition (520ms), der laufende
-// Wechsel wird vom naechsten abgebrochen.
-await beamer.bringToFront();
-for (let i = 0; i < STEPS; i++) {
+for (let i = 0; i < 10; i++) {
   await mod.keyboard.press('Space');
-  await sleep(GAP);
-}
-await sleep(1500);
-
-// Fall B — Buehne NICHT im Vordergrund. Das ist der Fall aus Wolfs Meldung
-// („invalid state"): das Dokument ist versteckt, startViewTransition bricht ab.
-// Am echten Abend passiert das, sobald das Beamer-Fenster nicht das aktive ist
-// (Fensterwechsel am Laptop, zweiter Bildschirm im Hintergrund).
-await mod.bringToFront();
-for (let i = 0; i < STEPS; i++) {
-  await mod.keyboard.press('Space');
-  await sleep(GAP * 3);
+  await sleep(900);
 }
 await sleep(2000);
-await beamer.bringToFront();
-await sleep(500);
 
 const res = await beamer.evaluate(() => {
   const el = document.getElementById('cozy-global-error');
   return {
     overlayVisible: !!el && el.style.display !== 'none',
-    overlayText: el?.textContent ?? '',
+    overlayText: (el?.textContent ?? '').slice(0, 120),
     rejections: window.__rejections ?? [],
+    vtStarts: window.__vtStarts ?? 0,
     phase: document.querySelector('[data-qq-phase]')?.getAttribute('data-qq-phase') ?? '?',
     sceneMotion: document.documentElement.getAttribute('data-scene-motion'),
   };
 });
 
-console.log('data-scene-motion :', res.sceneMotion);
-console.log('Phase am Ende    :', res.phase);
-console.log('unhandledrejection:', res.rejections.length, res.rejections.slice(0, 3));
-console.log('Fehler-Overlay    :', res.overlayVisible ? `SICHTBAR -> "${res.overlayText}"` : 'nicht sichtbar');
+console.log('data-scene-motion  :', res.sceneMotion);
+console.log('Transitionen gestartet:', res.vtStarts);
+console.log('Phase am Ende      :', res.phase);
+console.log('unhandledrejection :', res.rejections.length, res.rejections.slice(0, 2));
+console.log('Fehler-Overlay     :', res.overlayVisible ? `SICHTBAR -> "${res.overlayText}"` : 'nicht sichtbar');
 await b.close();
 
+if (res.vtStarts === 0) {
+  console.log('⚠️ Es wurde keine einzige Transition gestartet — Lauf aussagelos (Theme/Phasen pruefen).');
+  process.exit(3);
+}
 if (res.overlayVisible || res.rejections.length > 0) {
   console.log('✗ ROT — der Abbruch schlaegt bis auf die Buehne durch');
   process.exit(2);

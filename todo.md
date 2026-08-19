@@ -25,8 +25,14 @@ gemessenen Werten, die Bausteinliste B1 bis B7, und die Werkzeugkette zum
 Auswerten neuer Videos (Websites sind aus der Remote-Umgebung nicht erreichbar).
 
 - [ ] **Wolf sammelt weitere Referenz-Websites** (Video oder Screenshot liefern).
-- [ ] **Sechs Richtungsbilder sortieren** (`.shots/richtung-1..6.png`, ja/nein je Bild)
-      → daraus die Grundrichtung ableiten.
+- [x] ~~Grundrichtung gefunden~~ — Wolfs Favoriten waren zweimal dasselbe Prinzip:
+      Schrift fuehrt, kein Dekor. Regeln stehen in **`docs/BUEHNEN_DESIGN.md`**,
+      Entwuerfe in `design-assets/buehnen-design/`.
+- [ ] **Welche Bunte-Tuete-Unterspiele sind aktiv?** Wolf: „nicht alle sind aktiv."
+      Erst danach lohnt es sich, dafuer zu bauen.
+- [ ] **Kategoriefarben nachziehen** (Tabelle in BUEHNEN_DESIGN.md, Abschnitt 6).
+- [ ] **Schaetzchen-Achse:** Grenzen aus den Schaetzungen ableiten statt fix 0-1000,
+      eigener Bereich bei `isYearAnswer`, Kollisionsversatz ab ~4% Abstand.
 - [ ] **Schrift entscheiden.** Groesster Einzelhebel auf der Buehne, bisher Platzhalter.
 - [ ] **Erster Baustein bauen:** B1 (Bogen-Wisch statt Schnitt) + B5 (Marker-Geste
       fuer die richtige Antwort) an der Aufloesung, gegen den Ist-Zustand stellen.

@@ -36,21 +36,23 @@ function relTime(ts?: number): string {
   return `vor ${Math.floor(s / 86400)} Tagen`;
 }
 
-export function MyQuizzesHub() {
+export function MyQuizzesHub({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
   const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
   const [error, setError] = useState(false);
   // 2026-07-19 (Wolf 'meine quizze einklappbar' + 'nehmen ausgeklappt zu viel raum'):
   // Kopfzeile bleibt, der Body (Schnellzugriff + Quiz-Karten) ist ein-/ausklappbar;
   // Zustand persistiert. DEFAULT = eingeklappt (nur offen, wenn Wolf es explizit
   // aufgeklappt hat, gespeichert als '0').
-  const [open, setOpen] = useState(() => {
+  const [storedOpen, setStoredOpen] = useState(() => {
     try { return localStorage.getItem('qqMyQuizzesCollapsed') === '0'; } catch { return false; }
   });
-  const toggleOpen = () => setOpen(v => {
-    const next = !v;
+  const open = controlledOpen ?? storedOpen;
+  const toggleOpen = () => {
+    const next = !open;
     try { localStorage.setItem('qqMyQuizzesCollapsed', next ? '0' : '1'); } catch { /* ignore */ }
-    return next;
-  });
+    onOpenChange?.(next);
+    if (controlledOpen === undefined) setStoredOpen(next);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -72,12 +74,16 @@ export function MyQuizzesHub() {
     <div>
       {/* Kopfzeile — klickbar zum Ein-/Ausklappen */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: open ? 16 : 0, flexWrap: 'wrap' }}>
-        <div
+        <button
+          type="button"
           onClick={toggleOpen}
-          role="button"
           aria-expanded={open}
           title={open ? 'Meine Quizze einklappen' : 'Meine Quizze ausklappen'}
-          style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0, cursor: 'pointer', userSelect: 'none' }}
+          style={{
+            display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0,
+            cursor: 'pointer', userSelect: 'none', padding: 0, border: 'none',
+            background: 'transparent', font: 'inherit', textAlign: 'left',
+          }}
         >
           <div style={{
             width: 44, height: 44, borderRadius: 13, flexShrink: 0,
@@ -95,7 +101,7 @@ export function MyQuizzesHub() {
                 : `${sorted.length} ${sorted.length === 1 ? 'Quiz' : 'Quizze'} — zum Anzeigen ausklappen`}
             </div>
           </div>
-        </div>
+        </button>
         <Link to="/builder" style={{
           textDecoration: 'none',
           display: 'inline-flex', alignItems: 'center', gap: 7,

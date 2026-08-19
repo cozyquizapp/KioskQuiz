@@ -223,6 +223,47 @@ body {
   position: relative;
 }
 
+/* Private host, preparation, recap and public companion routes share this
+   shell. /team and /beamer deliberately do not receive the class: their
+   live-game visuals stay isolated from product-chrome changes. */
+.cozy-app-shell {
+  --cq-page: #090b15;
+  --cq-surface: #14182a;
+  --cq-surface-raised: #1b2036;
+  --cq-border: rgba(226, 232, 240, 0.14);
+  --cq-border-strong: rgba(249, 168, 212, 0.56);
+  --cq-text: #f8fafc;
+  --cq-text-muted: #cbd5e1;
+  --cq-text-quiet: #94a3b8;
+  --cq-primary: #ec4899;
+  --cq-primary-strong: #a21247;
+  --cq-focus: #f9a8d4;
+  --cq-radius-control: 10px;
+  --cq-radius-panel: 18px;
+  --cq-shadow-panel: 0 12px 30px rgba(0, 0, 0, 0.28);
+  color: var(--cq-text);
+  font-family: var(--qq-font);
+}
+
+.cozy-app-shell :where(button, input, select, textarea) {
+  font: inherit;
+}
+
+.cozy-app-shell :where(a, button, input, select, textarea, [role='button']):focus-visible {
+  outline: 3px solid var(--cq-focus);
+  outline-offset: 3px;
+}
+
+.cozy-app-shell :where(button, a, [role='button']) {
+  -webkit-tap-highlight-color: transparent;
+}
+
+@media (forced-colors: active) {
+  .cozy-app-shell :where(a, button, input, select, textarea, [role='button']):focus-visible {
+    outline-color: Highlight;
+  }
+}
+
 /* Gaming font — headings, buttons, labels */
 #team-root h1,
 #team-root h2,

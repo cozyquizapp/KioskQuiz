@@ -1,7 +1,13 @@
 import { useState } from 'react';
 
 export default function PinGate({ children }: { children: React.ReactNode }) {
-  const [unlocked, setUnlocked] = useState(() => sessionStorage.getItem('qq_admin_unlocked') === '1');
+  // Die lokale Vite-Vorschau ist nur auf diesem Rechner erreichbar. Sie soll
+  // sich wie das künftige Desktop-Regiepult anfühlen und keinen künstlichen
+  // PIN-Schritt erzwingen. In jedem veröffentlichten Build bleibt PinGate
+  // unverändert aktiv.
+  const isLocalPreview = import.meta.env.DEV
+    && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1');
+  const [unlocked, setUnlocked] = useState(() => isLocalPreview || sessionStorage.getItem('qq_admin_unlocked') === '1');
   const [pin, setPin] = useState('');
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(false);

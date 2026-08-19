@@ -1,4 +1,4 @@
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import React, { useEffect, useState, Suspense } from 'react';
 import PinGate from './components/PinGate';
 import QQErrorBoundary, { installGlobalCrashHandlers } from './components/QQErrorBoundary';
@@ -145,6 +145,8 @@ function GlobalErrorOverlay() {
 
 // Zentrales Routing auf die getrennten Bereiche
 function App() {
+  const location = useLocation();
+  const isAudienceRoute = /^\/(team|beamer)(?:\/|$)/.test(location.pathname);
   useEffect(() => {
     // RoomCode aus localStorage holen (wird von QQ-Pages dort abgelegt); URL-Query als Fallback
     const getRoom = () => {
@@ -164,14 +166,15 @@ function App() {
 
   return (
     <AppErrorBoundary>
-      <GlobalErrorOverlay />
-      <Suspense fallback={
+      <div className={isAudienceRoute ? undefined : 'cozy-app-shell'}>
+        <GlobalErrorOverlay />
+        <Suspense fallback={
         <div style={{ minHeight: '100vh', background: '#0b0d14', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <div style={{ width: 36, height: 36, border: '3px solid rgba(255,255,255,0.1)', borderTopColor: '#F59E0B', borderRadius: '50%', animation: 'spin 0.8s linear infinite' }} />
           <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
         </div>
-      }>
-        <Routes>
+        }>
+          <Routes>
           {/* ── Quarter Quiz (Hauptapp) ───────────────────────────── */}
           <Route path="/" element={<QQLandingPage />} />
           <Route path="/team"       element={<QQErrorBoundary source="team"><QQTeamPage /></QQErrorBoundary>} />
@@ -251,8 +254,9 @@ function App() {
           <Route path="/alt/qrcode"            element={<Navigate to="/qrcode" replace />} />
 
           <Route path="*" element={<Navigate to="/team" replace />} />
-        </Routes>
-      </Suspense>
+          </Routes>
+        </Suspense>
+      </div>
     </AppErrorBoundary>
   );
 }

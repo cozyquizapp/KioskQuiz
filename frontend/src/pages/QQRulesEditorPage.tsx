@@ -7,7 +7,6 @@
  */
 
 import React, { useEffect, useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import {
   RULE_TEXT_GROUPS,
   RuleLang,
@@ -17,6 +16,7 @@ import {
   resetAllRuleTexts,
   useRuleOverridesVersion,
 } from '../qqRuleTexts';
+import PrepWorkspaceHeader from '../components/PrepWorkspaceHeader';
 
 const DARK_BG = '#0f172a';
 const CARD_BG = '#1e293b';
@@ -154,7 +154,6 @@ function FieldEditor({ ruleKey, label, defaultDe, defaultEn, multiline }: FieldE
 // ─────────────────────────────────────────────────────────────────────────────
 
 export default function QQRulesEditorPage() {
-  const navigate = useNavigate();
   const version = useRuleOverridesVersion();
 
   // Stats: wieviele Texte sind angepasst?
@@ -235,23 +234,11 @@ export default function QQRulesEditorPage() {
       padding: '32px clamp(20px, 4vw, 56px) 80px',
     }}>
       <div style={{ maxWidth: 1100, margin: '0 auto' }}>
-        {/* Header */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, gap: 16, flexWrap: 'wrap' }}>
-          <div>
-            <div style={{ fontSize: 13, fontWeight: 800, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 4 }}>
-              CozyQuiz · Extras
-            </div>
-            <div style={{ fontSize: 32, fontWeight: 900 }}>📜 Regeltexte anpassen</div>
-          </div>
-          <button onClick={() => navigate('/menu')} style={btn('#64748B')}>← Hauptmenü</button>
-        </div>
-
-        <div style={{ fontSize: 14, color: '#94a3b8', marginBottom: 20, maxWidth: 720, lineHeight: 1.5 }}>
-          Hier kannst du alle Texte auf den Spielregel-Folien, Kategorie-Intros und Runden-Hinweisen ändern.
-          Änderungen werden automatisch beim Verlassen des Felds gespeichert (kein Speichern-Knopf nötig).
-          Speicherung lokal im Browser (kein Backend), gilt für alle Spiele auf diesem Gerät.
-        </div>
-
+        <PrepWorkspaceHeader
+          eyebrow="Bauen & vorbereiten"
+          title="Regeltexte"
+          description="Passe Folien-, Kategorien- und Rundenhinweise für dieses Gerät an. Änderungen werden beim Verlassen eines Felds automatisch lokal gespeichert."
+        />
         {/* Stats + Actions */}
         <div style={{
           display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap',

@@ -1,11 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { QQDraft } from '../../../shared/quarterQuizTypes';
 import { exportHostCheatsheet } from './qqHostCheatsheet';
+import PrepWorkspaceHeader from '../components/PrepWorkspaceHeader';
 
 // ── /host-sheets — Übersicht aller Drafts, ein Klick druckt das Host-Sheet ──
 export default function QQHostSheetsPage() {
-  const navigate = useNavigate();
   const [drafts, setDrafts] = useState<QQDraft[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
@@ -30,26 +29,13 @@ export default function QQHostSheetsPage() {
       fontFamily: 'var(--font)',
       padding: '24px 20px 60px',
     }}>
-      {/* Header */}
-      <div style={{ maxWidth: 920, margin: '0 auto 20px', display: 'flex', alignItems: 'center', gap: 12 }}>
-        <button
-          onClick={() => navigate('/menu')}
-          style={{
-            padding: '8px 14px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.1)',
-            background: 'rgba(255,255,255,0.04)', color: '#cbd5e1', fontFamily: 'inherit',
-            fontWeight: 700, fontSize: 13, cursor: 'pointer',
-          }}
-        >
-          ← Menü
-        </button>
-        <div style={{ flex: 1 }}>
-          <div style={{ fontWeight: 900, fontSize: 22, color: '#f8fafc' }}>🎙️ Host-Sheets</div>
-          <div style={{ fontSize: 12, color: '#64748b', marginTop: 2 }}>
-            Druckbare Moderator-Spickzettel mit allen Fragen, Antworten, Notizen und Fun Facts
-          </div>
-        </div>
+      <div style={{ maxWidth: 920, margin: '0 auto' }}>
+        <PrepWorkspaceHeader
+          eyebrow="Bauen & vorbereiten"
+          title="Host-Sheets"
+          description="Drucke für den Spielabend einen klaren Moderator-Spickzettel mit Fragen, Antworten, Notizen und Fun Facts."
+        />
       </div>
-
       {/* Search */}
       <div style={{ maxWidth: 920, margin: '0 auto 16px' }}>
         <input

@@ -713,6 +713,10 @@ export default function QQLibraryPage() {
           />
         )}
 
+        <div style={{ marginTop: 12, maxWidth: 720, fontSize: 13, lineHeight: 1.45, color: QQ_COLORS.slate400 }}>
+          Dein Fragenbestand: finde frische Fragen, prüfe Wiederholungen und kopiere passende Inhalte gezielt in einen Fragensatz.
+        </div>
+
         {/* Stats */}
         <div style={{ display: 'flex', gap: 24, marginTop: 16, flexWrap: 'wrap' }}>
           <div style={{ fontSize: 13, color: QQ_COLORS.slate500 }}><span style={{ fontWeight: 900, color: QQ_COLORS.slate200, fontSize: 18 }}>{totalDrafts}</span> Fragensätze</div>

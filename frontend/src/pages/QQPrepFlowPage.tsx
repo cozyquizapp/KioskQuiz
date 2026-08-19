@@ -5,6 +5,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import type { QQDraft } from '../../../shared/quarterQuizTypes';
+import PrepWorkspaceHeader from '../components/PrepWorkspaceHeader';
 
 const PINK = '#EC4899';
 
@@ -89,18 +90,12 @@ export default function QQPrepFlowPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', color: '#e2e8f0', fontFamily: 'var(--font)', padding: '0 0 80px' }}>
-      {/* Header */}
-      <div style={{ borderBottom: '1px solid rgba(255,255,255,0.07)', padding: '22px 24px', display: 'flex', alignItems: 'center', gap: 14 }}>
-        <Link to="/menu" style={{ textDecoration: 'none', color: '#94a3b8', fontSize: 20 }}>←</Link>
-        <div>
-          <div style={{ fontWeight: 900, fontSize: 20, color: '#f8fafc', lineHeight: 1.1 }}>🧭 Quiz vorbereiten</div>
-          <div style={{ fontSize: 13, color: '#64748b', marginTop: 2 }}>
-            {state === 'ok' && draft ? draft.title : 'Fahrplan bis zum fertigen Abend'}
-          </div>
-        </div>
-      </div>
-
       <div style={{ maxWidth: 720, margin: '0 auto', padding: '24px' }}>
+        <PrepWorkspaceHeader
+          eyebrow="Bauen & vorbereiten"
+          title={state === 'ok' && draft ? draft.title : 'Quiz vorbereiten'}
+          description="Ein klarer Fahrplan von den Fragen bis zum druckfertigen Host-Sheet. Jeder Schritt bleibt frei überspringbar."
+        />
         {state === 'loading' && <div style={{ color: '#64748b', textAlign: 'center', padding: 40 }}>Lädt…</div>}
         {state === 'error' && (
           <div style={{ padding: 20, borderRadius: 14, background: 'rgba(255,255,255,0.03)', border: '1px dashed rgba(255,255,255,0.12)', color: '#94a3b8', textAlign: 'center' }}>

@@ -1257,6 +1257,10 @@ export default function QQBuilderPage() {
           Zurück, Grid|Wizard-Toggle, Sound, Save. Plus Read-Only-Title
           als Mini-Pille damit Wolf weiß welcher Draft offen ist. */}
       <div style={{ padding: '12px 24px', background: 'rgba(236,72,153,0.06)', borderBottom: `1px solid ${COZY_PINK}22`, display: 'flex', alignItems: 'center', gap: 16, flexWrap: 'wrap' }} className="qq-builder-header">
+        <div style={{ minWidth: 94 }}>
+          <div style={{ color: '#F9A8D4', fontSize: 10, fontWeight: 900, letterSpacing: '0.10em', textTransform: 'uppercase' }}>Vorbereiten</div>
+          <div style={{ color: '#F8FAFC', fontSize: 13, fontWeight: 900 }}>CozyBuilder</div>
+        </div>
         <button onClick={() => setActiveDraft(null)} style={btnStyle(QQ_COLORS.slate600)}>← Zurück</button>
         {wizardMode ? (
           // Wizard-Mode: nur kompakter Read-Only-Title (klein, kein Edit).

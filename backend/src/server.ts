@@ -91,7 +91,7 @@ import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
-import { getQQRoom, qqJoinTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories, qqAdvanceFinalReveal, qqBetSlotsCount } from './quarterQuiz/qqRooms';
+import { getQQRoom, qqJoinTeam, qqKickTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories, qqAdvanceFinalReveal, qqBetSlotsCount } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
 import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName, qqMegaFactionSlug, qqCozyWolfForSlot } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
@@ -10063,6 +10063,24 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   }
   broadcastQQ(io, roomCode);
   res.json({ added, total: Object.keys(room.teams).length });
+});
+
+// Entfernt ausschließlich Bot-Teams und nur vor dem Spielstart. Damit kann der
+// Test-Modus im Moderator wieder sauber in eine echte, leere Lobby wechseln.
+app.post('/api/qq/:roomCode/dev/clearBots', (req, res) => {
+  if (!assertDevAccess(req, res)) return;
+  const { roomCode } = req.params;
+  const room = getQQRoom(roomCode);
+  if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
+  if (room.phase !== 'LOBBY') return res.status(400).json({ error: 'Bots können nur in der Lobby entfernt werden' });
+
+  const botIds = Object.values(room.teams)
+    .filter((team: any) => team._dummy)
+    .map((team: any) => team.id);
+  for (const teamId of botIds) qqKickTeam(room, teamId);
+  (room as any).botsPaused = false;
+  broadcastQQ(io, roomCode);
+  res.json({ removed: botIds.length, total: Object.keys(room.teams).length });
 });
 
 app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {

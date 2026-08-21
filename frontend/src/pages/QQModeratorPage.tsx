@@ -160,6 +160,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   }, [drafts]);
 
   const { state, connected, emit, reconnect } = useQQSocket(roomCode);
+  const dummyBotCount = (state?.teams ?? []).filter((team: any) => team._dummy).length;
 
   // 2026-07-08 (Wolf): /moderator?draft=id&plan=1 oeffnet direkt den Show-Prep-
   // Wizard (Schritt aus dem „Quiz vorbereiten"-Fahrplan). Wartet bis der Socket-
@@ -570,6 +571,41 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       if (r.status === 403) { clearDevPin(); alert('Admin-PIN falsch — Seite neu laden + PIN eingeben.'); return; }
       if (!r.ok) { const d = await r.json().catch(() => ({})); alert(`Bots konnten nicht erstellt werden: ${d.error ?? 'unbekannt'}`); return; }
     } catch { alert('Netzwerkfehler beim Erstellen der Bots.'); return; }
+  }
+
+  async function removeBotsFromLobby(): Promise<boolean> {
+    const pin = getDevPin();
+    if (!pin) { alert('Bots entfernen braucht den Admin-PIN. Seite neu laden + PIN eingeben.'); return false; }
+    try {
+      const r = await fetch(`${API_BASE}/qq/${encodeURIComponent(roomCode)}/dev/clearBots`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ pin }),
+      });
+      if (r.status === 403) { clearDevPin(); alert('Admin-PIN falsch. Seite neu laden + PIN eingeben.'); return false; }
+      if (!r.ok) { const d = await r.json().catch(() => ({})); alert(`Bots konnten nicht entfernt werden: ${d.error ?? 'unbekannt'}`); return false; }
+      return true;
+    } catch { alert('Netzwerkfehler beim Entfernen der Bots.'); return false; }
+  }
+
+  async function toggleTestMode(): Promise<void> {
+    if (showTestTools) {
+      if (state && state.phase !== 'LOBBY') {
+        alert('Test-Modus bitte erst wieder in der Lobby beenden. Während eines Spiels bleiben Test-Bots erhalten.');
+        return;
+      }
+      if (dummyBotCount > 0 && !window.confirm(`${dummyBotCount} Test-Bot(s) aus der Lobby entfernen und Test-Modus beenden?`)) return;
+      if (dummyBotCount > 0 && !await removeBotsFromLobby()) return;
+      setShowTestTools(false);
+      return;
+    }
+
+    setShowTestTools(true);
+    if (!state || state.phase !== 'LOBBY') return;
+    const realTeamCount = (state.teams ?? []).filter((team: any) => !team._dummy).length;
+    if (realTeamCount > 0) {
+      alert('Test-Modus ist an. Wegen echter Teams wurden keine Bots hinzugefügt.');
+      return;
+    }
+    await addBotsToLobby(botCount);
   }
 
   function applyTimer() {
@@ -1892,8 +1928,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               rote Warnung + Leaderboard-Skip. AUS → sauberes Live-Panel. Damit
               ist auch „wo stelle ich Bots ein" klar: Test-Modus an. */}
           <button
-            onClick={() => setShowTestTools(!showTestTools)}
-            title={showTestTools ? 'Test-Modus AUS schalten (Live, echte Daten, Bestenliste zählt)' : 'Test-Modus AN schalten (Bots & Skip, keine echten Daten)'}
+            type="button"
+            aria-pressed={showTestTools}
+            onClick={() => { void toggleTestMode(); }}
+            title={showTestTools ? 'Test-Modus beenden und Bots aus der Lobby entfernen' : 'Test-Modus starten und Test-Bots zur leeren Lobby hinzufügen'}
             style={{
               padding: '4px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
               fontWeight: 900, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
@@ -1902,7 +1940,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               color: showTestTools ? '#FCA5A5' : '#94a3b8',
               animation: showTestTools ? 'pulse 2.4s ease-in-out infinite' : undefined,
             }}
-          >🧪 Test-Modus {showTestTools ? '· keine echten Daten' : 'aus'}</button>
+          >🧪 Test-Modus {showTestTools ? `· ${dummyBotCount} Bots` : 'aus'}</button>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* 2026-05-25 (Wolf 'mod-test-modus skip-buttons'): nur im Test-Modus

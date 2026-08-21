@@ -52,7 +52,7 @@ export default function QQPrepFlowPage() {
       desc: 'Fehlt dir Material? Zieh Fragen aus der Library — mit 📍 Ort-Filter für Stammorte, damit sich nichts wiederholt.',
       status: 'optional',
       statusLabel: 'optional',
-      to: '/library', cta: 'Library öffnen',
+      to: `/library?draft=${draftId}`, cta: 'Library öffnen',
     },
     {
       n: 3, emoji: '🎲', title: 'CozyGames',

@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   QQDraft, QQQuestion, QQCategory,
   QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
@@ -89,6 +89,7 @@ const PAGE_SIZE = 200;
 // ── Component ────────────────────────────────────────────────────────────────
 export default function QQLibraryPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [drafts, setDrafts] = useState<QQDraft[]>([]);
   const [poolItems, setPoolItems] = useState<any[]>([]);
   const [poolTotal, setPoolTotal] = useState(0);
@@ -164,6 +165,13 @@ export default function QQLibraryPage() {
     }).finally(() => setLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Der Vorbereitungsplan übergibt sein Quiz als ?draft=. Erst nachdem die
+  // Liste geladen ist, übernehmen wir den Wert und vermeiden ungültige Ziele.
+  useEffect(() => {
+    const draftId = searchParams.get('draft');
+    if (draftId && drafts.some(draft => draft.id === draftId)) setTargetDraftId(draftId);
+  }, [drafts, searchParams]);
 
   // Re-fetch wenn filter-relevante Inputs ändern (search/category/topic).
   // Andere Filter (useFilter/phaseFilter/mechFilter/sourceFilter) sind
@@ -729,8 +737,9 @@ export default function QQLibraryPage() {
 
         {/* Ziel-Draft Selektor */}
         <div style={{ marginTop: 14, display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate400 }}>📋 In Draft kopieren:</span>
+          <label htmlFor="library-target-draft" style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate400 }}>📋 In Draft kopieren:</label>
           <select
+            id="library-target-draft"
             value={targetDraftId ?? ''}
             onChange={e => setTargetDraftId(e.target.value || null)}
             style={{ padding: '7px 12px', borderRadius: 8, border: '1px solid rgba(255,255,255,0.12)', background: 'rgba(255,255,255,0.06)', color: QQ_COLORS.slate200, fontFamily: 'inherit', fontSize: 13, minWidth: 220 }}

@@ -22,6 +22,10 @@
   ],
   "rewrites": [
     {
+      "source": "/team",
+      "destination": "/team.html"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://backend.cozyquiz.app/api/:path*"
     },

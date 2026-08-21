@@ -1,0 +1,17 @@
+{
+  "id": "/regie-app",
+  "name": "CozyQuiz Regiepult",
+  "short_name": "CozyQuiz",
+  "description": "Private Regie-App für CozyQuiz",
+  "theme_color": "#160d23",
+  "background_color": "#160d23",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/",
+  "start_url": "/",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "1500x1500", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

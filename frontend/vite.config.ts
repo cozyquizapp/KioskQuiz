@@ -22,22 +22,9 @@ export default defineConfig({
       registerType: 'prompt',
       injectRegister: false,
       includeAssets: ['favicon.ico', 'logo.ico', 'logo.png', 'apple-touch-icon.png'],
-      manifest: {
-        name: 'Cozy Quiz Team',
-        short_name: 'CozyQuiz',
-        description: 'Cozy Wolf Quiz — Team View',
-        theme_color: '#0f172a',
-        background_color: '#0f172a',
-        display: 'standalone',
-        orientation: 'portrait',
-        scope: '/',
-        start_url: '/team',
-        icons: [
-          { src: '/logo.png', sizes: '192x192', type: 'image/png' },
-          { src: '/logo.png', sizes: '512x512', type: 'image/png' },
-          { src: '/logo.png', sizes: '1500x1500', type: 'image/png', purpose: 'any maskable' }
-        ]
-      },
+      // Zwei getrennte Manifeste ermöglichen zwei installierbare Apps:
+      // Team auf /team und das private Regiepult auf /.
+      manifest: false,
       workbox: {
         // Cache app shell (JS/CSS/HTML/fonts/images).
         // 2026-05-07: cozywolf-PNGs via sharp komprimiert (3000x3000 + 4-5 MB
@@ -105,6 +92,10 @@ export default defineConfig({
   },
   build: {
     rollupOptions: {
+      input: {
+        regie: path.resolve(__dirname, 'index.html'),
+        team: path.resolve(__dirname, 'team.html'),
+      },
       output: {
         // Vendor-Splitting fuer die schwersten Libs — durch separate Chunks
         // laedt /team auf Phones deutlich schneller, weil Browser-Cache pro

@@ -1,0 +1,17 @@
+{
+  "id": "/team-app",
+  "name": "CozyQuiz Team",
+  "short_name": "CozyQuiz Team",
+  "description": "Team-Ansicht für CozyQuiz",
+  "theme_color": "#0f172a",
+  "background_color": "#0f172a",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/team",
+  "start_url": "/team",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "1500x1500", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

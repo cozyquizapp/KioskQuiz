@@ -2433,16 +2433,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             </button>
             <style>{`@keyframes qqCockpitPulse { 0%,100% { box-shadow: 0 12px 30px -6px rgba(34,197,94,0.5); } 50% { box-shadow: 0 14px 40px -4px rgba(34,197,94,0.78); } }`}</style>
 
-            {/* Sekundär: Details / Beamer / Show planen */}
+            {/* Sekundär: Show-Planung. Einstellungen stehen direkt bei der
+                Quiz-Zusammenfassung, der Beamer bleibt dauerhaft im Header. */}
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, justifyContent: 'center', alignItems: 'center' }}>
-              <button onClick={() => setSetupDone(false)} title="Alle Einstellungen: Draft, Runden, Timer, Sprache, Sound, Look, Add-ons"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                ⚙ Einstellungen
-              </button>
-              <button onClick={() => { try { window.open(`/beamer?room=${encodeURIComponent(roomCode)}`, 'cozyquiz-beamer')?.focus(); } catch {} }} title="Beamer in eigenem Fenster öffnen"
-                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(236,72,153,0.35)', background: 'rgba(236,72,153,0.08)', color: '#f9d3e6', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
-                🖥️ Beamer öffnen
-              </button>
               <button onClick={() => setShowPrep(true)} title="Geführt vorbereiten: Material, Druck, Briefing, Technik"
                 style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 14px', borderRadius: 10, border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)', color: '#cbd5e1', fontWeight: 800, fontSize: 13, cursor: 'pointer', fontFamily: 'inherit' }}>
                 🎬 Show planen

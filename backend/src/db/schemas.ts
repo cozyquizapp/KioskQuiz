@@ -259,6 +259,27 @@ export async function deleteQQDraftFromDB(draftId: string): Promise<boolean> {
   }
 }
 
+// ============= QQ IDEA INBOX =============
+// Rohideen bleiben bewusst von spielbaren Fragen getrennt. So wird aus einem
+// Fundstück kein halbfertiger Eintrag im Fragenpool.
+const QQIdeaSchema = new mongoose.Schema({
+  id: { type: String, required: true, unique: true, index: true },
+  text: { type: String, required: true },
+  sourceUrl: { type: String, default: '' },
+  status: { type: String, default: 'new', index: true },
+  kind: { type: String, default: 'alltagsfund' },
+  notes: { type: String, default: '' },
+  createdAt: { type: Number, default: Date.now, index: true },
+  updatedAt: { type: Number, default: Date.now },
+}, { strict: false });
+export const QQIdeaModel = mongoose.model('QQIdea', QQIdeaSchema);
+export async function getQQIdeasFromDB(): Promise<any[]> { try { return await QQIdeaModel.find({}).lean().sort({ updatedAt: -1 }); } catch { return []; } }
+export async function saveQQIdeaToDB(idea: any): Promise<any> {
+  const saved = await QQIdeaModel.findOneAndUpdate({ id: idea.id }, { ...idea, updatedAt: Date.now() }, { upsert: true, new: true, setDefaultsOnInsert: true }).lean();
+  return saved ?? idea;
+}
+export async function deleteQQIdeaFromDB(id: string): Promise<boolean> { try { return (await QQIdeaModel.deleteOne({ id })).deletedCount > 0; } catch { return false; } }
+
 // ============= COZY GAMES (Mini-Game-Katalog) =============
 // 2026-05-17 (Wolf-Feature CozyGames): Katalog analoger Real-Life-Mini-Spiele
 // die als Brand-Differenziator ins Quiz eingebaut werden. Seed mit 12 V1-Spielen

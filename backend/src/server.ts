@@ -131,6 +131,9 @@ import {
   getQQDraftFromDB,
   saveQQDraftToDB,
   deleteQQDraftFromDB,
+  getQQIdeasFromDB,
+  saveQQIdeaToDB,
+  deleteQQIdeaFromDB,
   getAllCozyGamesFromDB,
   getCozyGameFromDB,
   saveCozyGameToDB,
@@ -10064,6 +10067,23 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   broadcastQQ(io, roomCode);
   res.json({ added, total: Object.keys(room.teams).length });
 });
+
+// Ideen-Inbox: mobil schnell erfassen, ohne daraus sofort eine Quizfrage zu machen.
+app.get('/api/qq/ideas', requirePin, async (_req, res) => res.json(await getQQIdeasFromDB()));
+app.post('/api/qq/ideas', requirePin, async (req, res) => {
+  const body = req.body ?? {};
+  if (typeof body.text !== 'string' || !body.text.trim() || body.text.length > 2000) return res.status(400).json({ error: 'Bitte beschreibe deine Idee.' });
+  const idea = { id: `qq-idea-${Date.now().toString(36)}`, text: body.text.trim(), sourceUrl: typeof body.sourceUrl === 'string' ? body.sourceUrl.trim() : '', kind: typeof body.kind === 'string' ? body.kind : 'alltagsfund', notes: typeof body.notes === 'string' ? body.notes : '', status: 'new', createdAt: Date.now(), updatedAt: Date.now() };
+  res.json(await saveQQIdeaToDB(idea));
+});
+app.put('/api/qq/ideas/:id', requirePin, async (req, res) => {
+  const existing = (await getQQIdeasFromDB()).find((idea: any) => idea.id === req.params.id);
+  if (!existing) return res.status(404).json({ error: 'Idee nicht gefunden' });
+  const body = req.body ?? {};
+  const status = ['new', 'research', 'playable', 'tested', 'gold', 'retired'].includes(body.status) ? body.status : existing.status;
+  res.json(await saveQQIdeaToDB({ ...existing, ...body, id: existing.id, status, updatedAt: Date.now() }));
+});
+app.delete('/api/qq/ideas/:id', requirePin, async (req, res) => res.json({ ok: await deleteQQIdeaFromDB(req.params.id) }));
 
 // Entfernt ausschließlich Bot-Teams und nur vor dem Spielstart. Damit kann der
 // Test-Modus im Moderator wieder sauber in eine echte, leere Lobby wechseln.

@@ -24,7 +24,6 @@ const CozyGamesEditorPage = React.lazy(() => import('./pages/CozyGamesEditorPage
 const CozyGameWheelTestPage = React.lazy(() => import('./pages/CozyGameWheelTestPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQRecapPage         = React.lazy(() => import('./pages/QQRecapPage'));
-const QQRecapIndexPage    = React.lazy(() => import('./pages/QQRecapIndexPage'));
 const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQSkinsPage         = React.lazy(() => import('./pages/QQSkinsPage'));
 const QQAboutPage         = React.lazy(() => import('./pages/QQAboutPage'));
@@ -208,7 +207,7 @@ function App() {
               (SINGLE_SESSION_MODE = MAIN) immer das jüngste Spiel mit dem
               Code geliefert — geteilte Links wurden überschrieben. */}
           <Route path="/summary/by-id/:gameId" element={<QQSummaryPage />} />
-          <Route path="/recap" element={<PinGate><QQRecapIndexPage /></PinGate>} />
+          <Route path="/recap" element={<Navigate to="/stats" replace />} />
           <Route path="/recap/:gameId" element={<PinGate><QQRecapPage /></PinGate>} />
           <Route path="/impressum" element={<LegalPage />} />
           <Route path="/datenschutz" element={<LegalPage />} />

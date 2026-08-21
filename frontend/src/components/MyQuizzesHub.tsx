@@ -123,13 +123,6 @@ export function MyQuizzesHub({ open: controlledOpen, onOpenChange, standalone = 
       </div>
 
       {open && <>
-      {/* Live-Abend-Schnellzugriff */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap' }}>
-        <QuickLink to="/beamer" emoji="📽️" label="Beamer öffnen" />
-        <QuickLink to="/qrcode" emoji="🔳" label="Team-Beitritts-QR" />
-        <QuickLink to="/team" emoji="📱" label="Team-Ansicht" />
-      </div>
-
       {/* Draft-Karten */}
       {drafts === null ? (
         <div style={{ padding: '28px 0', textAlign: 'center', color: '#64748b', fontSize: 14 }}>Lädt…</div>
@@ -148,20 +141,6 @@ export function MyQuizzesHub({ open: controlledOpen, onOpenChange, standalone = 
       )}
       </>}
     </div>
-  );
-}
-
-function QuickLink({ to, emoji, label }: { to: string; emoji: string; label: string }) {
-  return (
-    <Link to={to} style={{
-      textDecoration: 'none', color: '#cbd5e1',
-      display: 'inline-flex', alignItems: 'center', gap: 8,
-      padding: '8px 13px', borderRadius: 10,
-      background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.09)',
-      fontSize: 13, fontWeight: 700,
-    }}>
-      <span style={{ fontSize: 16 }}>{emoji}</span>{label}
-    </Link>
   );
 }
 

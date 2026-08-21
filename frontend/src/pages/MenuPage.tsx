@@ -9,15 +9,17 @@ const live: Item[] = [
   { path: '/qrcode', label: 'Beitritts-QR', icon: '🔳', note: 'Teams verbinden' },
   { path: '/mopo', label: 'MoPo', icon: '📱', note: 'Mobile Moderation' },
 ];
-const tools: Item[] = [
+const preparation: Item[] = [
   { path: '/cozygames', label: 'CozyGames', icon: '🎲', note: 'Mini-Spiele verwalten' },
-  { path: '/stats', label: 'Stats & Recap', icon: '📊', note: 'Vergangene Abende auswerten' },
-  { path: '/recap', label: 'Recap-Archiv', icon: '🗂️', note: 'Einzelne Abende öffnen' },
+  { path: '/rules-editor', label: 'Regeltexte', icon: '📜', note: 'Intros und Hinweise anpassen' },
+];
+const review: Item[] = [
+  { path: '/stats', label: 'Spiele & Recaps', icon: '📊', note: 'Vergangene Abende auswerten' },
   { path: '/feedback', label: 'Feedback', icon: '📋', note: 'Rückmeldungen sichten' },
-  { path: '/about', label: 'Was ist CozyQuiz?', icon: 'ℹ️', note: 'Öffentliche Erklärseite' },
-  { path: '/reels', label: 'Reels-Hub', icon: '📱', note: 'Trailer und Social Media' },
-  { path: '/showroom', label: 'Showroom', icon: '🖼️', note: 'Format-Showcase' },
+];
+const systemTools: Item[] = [
   { path: '/formats', label: 'Format-Roadmap', icon: '🗺️', note: 'Formate und Konzepte' },
+  { path: '/admin', label: 'Admin', icon: '⚙️', note: 'PIN und Systemeinstellungen' },
   { path: '/finalreveal-test', label: 'Final-Flow', icon: '🎬', note: 'Finale testen' },
   { path: '/race-finale', label: 'Race-Finale', icon: '🏁', note: 'Finale-Vorschau' },
   { path: '/barrace-test', label: 'Bar-Race', icon: '📊', note: 'CozyArena-Test' },
@@ -26,7 +28,6 @@ const tools: Item[] = [
   { path: '/hl-test', label: 'Mehr oder Weniger', icon: '⚡', note: 'Comeback testen' },
   { path: '/cozygame-test', label: 'CozyGame-Rad', icon: '🎡', note: 'Glücksrad testen' },
   { path: '/summary-test', label: 'Summary-Test', icon: '📊', note: 'Nachspielseite testen' },
-  { path: '/admin', label: 'Admin', icon: '⚙️', note: 'PIN und Systemeinstellungen' },
 ];
 
 function Card({ item, accent = '#f9a8d4', primary = false }: { item: Item; accent?: string; primary?: boolean }) {
@@ -54,14 +55,19 @@ export default function MenuPage() {
     { path: '/menu/quizze', label: 'Meine Quizze', icon: '🎯', note: 'Starten und bearbeiten', accent: '#ec4899', primary: true },
     { path: '/builder', label: 'Neues Quiz', icon: '＋', note: 'Fragen anlegen', accent: '#ec4899', primary: true },
     { path: '/library', label: 'Bibliothek', icon: '📚', note: 'Fragenpool', accent: '#f472b6' },
-    { path: '/rules-editor', label: 'Regeltexte', icon: '📜', note: 'Intros und Hinweise', accent: '#f472b6' },
+    { path: '/menu/vorbereiten', label: 'Vorbereiten', icon: '🧭', note: 'Regeln und CozyGames', accent: '#f472b6' },
     { path: '/host-sheets', label: 'Host-Sheets', icon: '🎙️', note: 'Spickzettel drucken', accent: '#f472b6' },
-    { path: '/stats', label: 'Rückblick', icon: '📊', note: 'Recaps und Feedback', accent: '#a78bfa' },
+    { path: '/menu/rueckblick', label: 'Rückblick', icon: '📊', note: 'Recaps und Feedback', accent: '#a78bfa' },
     { path: '/moderator-test', label: 'Moderator-Test', icon: '🧪', note: 'Ablauf und Design testen', accent: '#a78bfa' },
-    { path: '/menu/werkzeuge', label: 'Weitere Werkzeuge', icon: '•••', note: 'CozyGames, Vorschau und System', accent: '#94a3b8' },
+    { path: '/menu/werkzeuge', label: 'System & Tests', icon: '•••', note: 'Vorschau und Verwaltung', accent: '#94a3b8' },
   ];
-  const title = section === 'spielabend' ? 'Spielabend' : section === 'quizze' ? 'Meine Quizze' : 'Weitere Werkzeuge';
-  const description = section === 'spielabend' ? 'Öffne genau die Ansicht, die du für den laufenden Abend brauchst.' : section === 'quizze' ? 'Wähle einen Abend, bereite ihn vor oder starte ihn direkt.' : 'CozyGames, Rückblick, Vorschau und System. Alles Seltene bleibt außerhalb des täglichen Ablaufs.';
+  const sectionMeta: Record<string, { title: string; description: string; items: Item[] }> = {
+    spielabend: { title: 'Spielabend', description: 'Öffne genau die Ansicht, die du für den laufenden Abend brauchst.', items: live },
+    vorbereiten: { title: 'Vorbereiten', description: 'Alles, was ein Quiz vor dem Abend abrundet. Die konkreten Fragen bearbeitest du direkt in deinem Quiz.', items: preparation },
+    rueckblick: { title: 'Rückblick', description: 'Spiele, Detail-Recaps und Rückmeldungen an einem Ort.', items: review },
+    werkzeuge: { title: 'System & Tests', description: 'Seltene Verwaltungs- und Bühnenwerkzeuge. Für neue Design-Tests nimm zuerst den Moderator-Test.', items: systemTools },
+  };
+  const activeSection = section ? sectionMeta[section] : undefined;
   return <div className="qq-menu-page">
     <style>{`
       .qq-menu-page{min-height:100dvh;background:radial-gradient(circle at 18% -12%,#35112f 0%,#160d23 33%,#090b15 76%);color:#e2e8f0;font-family:var(--font)}
@@ -79,7 +85,7 @@ export default function MenuPage() {
     {intro && <Intro onDismiss={dismiss} />}
     <header className="qq-menu-head"><img src="/logo.png" alt="CozyQuiz" /><div><strong>CozyQuiz</strong><small>Regiepult</small></div></header>
     <main id="main" tabIndex={-1} className="qq-menu-main">
-      {section ? <><Link to="/" className="qq-menu-back">← Zum Menü</Link><h1>{title}</h1><p>{description}</p>{section === 'spielabend' ? <div className="qq-menu-grid">{live.map(item => <Card key={item.path} item={item} accent="#60a5fa" primary={item.path === '/moderator'} />)}</div> : section === 'quizze' ? <MyQuizzesHub standalone /> : <div className="qq-menu-link-grid">{tools.map(item => <Card key={item.path} item={item} />)}</div>}</> : <div className="qq-menu-grid">{mainCards.map(item => <Card key={item.path} item={item} accent={item.accent} primary={item.primary} />)}</div>}
+      {section ? <><Link to="/" className="qq-menu-back">← Zum Menü</Link>{section === 'quizze' ? <MyQuizzesHub standalone /> : activeSection ? <><h1>{activeSection.title}</h1><p>{activeSection.description}</p><div className={section === 'spielabend' ? 'qq-menu-grid' : 'qq-menu-link-grid'}>{activeSection.items.map(item => <Card key={item.path} item={item} accent={section === 'spielabend' ? '#60a5fa' : undefined} primary={item.path === '/moderator'} />)}</div></> : <><h1>Menü</h1><p>Dieser Bereich existiert nicht.</p></>}</> : <div className="qq-menu-grid">{mainCards.map(item => <Card key={item.path} item={item} accent={item.accent} primary={item.primary} />)}</div>}
     </main>
   </div>;
 }

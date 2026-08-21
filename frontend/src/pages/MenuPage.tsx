@@ -9,27 +9,10 @@ const live: Item[] = [
   { path: '/qrcode', label: 'Beitritts-QR', icon: '🔳', note: 'Teams verbinden' },
   { path: '/mopo', label: 'MoPo', icon: '📱', note: 'Mobile Moderation' },
 ];
-const preparation: Item[] = [
-  { path: '/cozygames', label: 'CozyGames', icon: '🎲', note: 'Mini-Spiele verwalten' },
-  { path: '/rules-editor', label: 'Regeltexte', icon: '📜', note: 'Intros und Hinweise anpassen' },
-];
 const review: Item[] = [
   { path: '/stats', label: 'Spiele & Recaps', icon: '📊', note: 'Vergangene Abende auswerten' },
   { path: '/feedback', label: 'Feedback', icon: '📋', note: 'Rückmeldungen sichten' },
 ];
-const systemTools: Item[] = [
-  { path: '/formats', label: 'Format-Roadmap', icon: '🗺️', note: 'Formate und Konzepte' },
-  { path: '/admin', label: 'Admin', icon: '⚙️', note: 'PIN und Systemeinstellungen' },
-  { path: '/finalreveal-test', label: 'Final-Flow', icon: '🎬', note: 'Finale testen' },
-  { path: '/race-finale', label: 'Race-Finale', icon: '🏁', note: 'Finale-Vorschau' },
-  { path: '/barrace-test', label: 'Bar-Race', icon: '📊', note: 'CozyArena-Test' },
-  { path: '/thanks-test', label: 'Thanks-View', icon: '🎉', note: 'Danke-Seite testen' },
-  { path: '/bet-test', label: 'Final-Wette', icon: '🎰', note: 'Wager-Ansicht testen' },
-  { path: '/hl-test', label: 'Mehr oder Weniger', icon: '⚡', note: 'Comeback testen' },
-  { path: '/cozygame-test', label: 'CozyGame-Rad', icon: '🎡', note: 'Glücksrad testen' },
-  { path: '/summary-test', label: 'Summary-Test', icon: '📊', note: 'Nachspielseite testen' },
-];
-
 function Card({ item, accent = '#f9a8d4', primary = false }: { item: Item; accent?: string; primary?: boolean }) {
   return <Link className="qq-menu-card" to={item.path} style={{
     minHeight: 118, padding: 18, borderRadius: 20, textDecoration: 'none', color: 'inherit',
@@ -55,17 +38,14 @@ export default function MenuPage() {
     { path: '/menu/quizze', label: 'Meine Quizze', icon: '🎯', note: 'Starten und bearbeiten', accent: '#ec4899', primary: true },
     { path: '/builder', label: 'Neues Quiz', icon: '＋', note: 'Fragen anlegen', accent: '#ec4899', primary: true },
     { path: '/library', label: 'Bibliothek', icon: '📚', note: 'Fragenpool', accent: '#f472b6' },
-    { path: '/menu/vorbereiten', label: 'Vorbereiten', icon: '🧭', note: 'Regeln und CozyGames', accent: '#f472b6' },
+    { path: '/cozygames', label: 'CozyGames', icon: '🎲', note: 'Mini-Spiele verwalten', accent: '#f472b6' },
     { path: '/host-sheets', label: 'Host-Sheets', icon: '🎙️', note: 'Spickzettel drucken', accent: '#f472b6' },
     { path: '/menu/rueckblick', label: 'Rückblick', icon: '📊', note: 'Recaps und Feedback', accent: '#a78bfa' },
     { path: '/moderator-test', label: 'Moderator-Test', icon: '🧪', note: 'Ablauf und Design testen', accent: '#a78bfa' },
-    { path: '/menu/werkzeuge', label: 'System & Tests', icon: '•••', note: 'Vorschau und Verwaltung', accent: '#94a3b8' },
   ];
   const sectionMeta: Record<string, { title: string; description: string; items: Item[] }> = {
     spielabend: { title: 'Spielabend', description: 'Öffne genau die Ansicht, die du für den laufenden Abend brauchst.', items: live },
-    vorbereiten: { title: 'Vorbereiten', description: 'Alles, was ein Quiz vor dem Abend abrundet. Die konkreten Fragen bearbeitest du direkt in deinem Quiz.', items: preparation },
     rueckblick: { title: 'Rückblick', description: 'Spiele, Detail-Recaps und Rückmeldungen an einem Ort.', items: review },
-    werkzeuge: { title: 'System & Tests', description: 'Seltene Verwaltungs- und Bühnenwerkzeuge. Für neue Design-Tests nimm zuerst den Moderator-Test.', items: systemTools },
   };
   const activeSection = section ? sectionMeta[section] : undefined;
   return <div className="qq-menu-page">
@@ -74,7 +54,7 @@ export default function MenuPage() {
       .qq-menu-head{display:flex;align-items:center;gap:16px;padding:14px clamp(20px,4vw,48px);border-bottom:1px solid rgba(255,255,255,.1);background:rgba(8,6,17,.72);backdrop-filter:blur(18px)}
       .qq-menu-head img{width:44px;height:44px;border-radius:13px;object-fit:contain}.qq-menu-head strong{display:block;color:#fff7fb;font-size:18px}.qq-menu-head small{color:#c084a5;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
       .qq-menu-main{max-width:1120px;margin:0 auto;padding:42px 28px 72px;outline:none}.qq-menu-main h1{margin:0 0 8px;color:#fff7fb;font-size:28px}.qq-menu-main>p{margin:0 0 24px;color:#c5b5c1;font-size:15px;font-weight:700}
-      .qq-menu-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.qq-menu-link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+      .qq-menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.qq-menu-link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
       .qq-menu-card{transition:transform .16s ease,border-color .16s ease,background .16s ease}.qq-menu-card:hover{transform:translateY(-2px);border-color:rgba(251,207,232,.48)!important;background:rgba(255,255,255,.075)!important}.qq-menu-card:active{transform:scale(.98)}
       .qq-menu-card:focus-visible,.qq-menu-back:focus-visible,.qq-intro button:focus-visible{outline:3px solid #f9a8d4;outline-offset:3px}
       .qq-menu-back{display:inline-flex;margin-bottom:24px;padding:10px 13px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fce7f3;font-size:14px;font-weight:900;text-decoration:none}

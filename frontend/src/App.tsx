@@ -4,7 +4,6 @@ import PinGate from './components/PinGate';
 import QQErrorBoundary, { installGlobalCrashHandlers } from './components/QQErrorBoundary';
 
 // Lazy load: Heavy pages
-const AdminPage = React.lazy(() => import('./pages/AdminPage'));
 const MenuPage = React.lazy(() => import('./pages/MenuPage'));
 const StatsPage = React.lazy(() => import('./pages/StatsPage'));
 const QrCodePage = React.lazy(() => import('./pages/QrCodePage'));
@@ -19,9 +18,7 @@ const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'))
 // 2026-07-08: Slide-Editor aus dem Workflow genommen (Wolf: „brauche ich nicht mehr,
 // die Vorschau ist fake"). Seite bleibt auf Platte, Route leitet auf /menu um.
 // Der echte /beamer rendert gespeicherte Custom-Templates unveraendert weiter.
-const QQRulesEditorPage   = React.lazy(() => import('./pages/QQRulesEditorPage'));
 const CozyGamesEditorPage = React.lazy(() => import('./pages/CozyGamesEditorPage'));
-const CozyGameWheelTestPage = React.lazy(() => import('./pages/CozyGameWheelTestPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQRecapPage         = React.lazy(() => import('./pages/QQRecapPage'));
 const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
@@ -33,20 +30,8 @@ const QQClipPage          = React.lazy(() => import('./pages/QQClipPage'));
 const QQFactionQuizPage   = React.lazy(() => import('./pages/QQFactionQuizPage'));
 const QQCarouselPage      = React.lazy(() => import('./pages/QQCarouselPage'));
 const QQBlinkTestPage     = React.lazy(() => import('./pages/QQBlinkTestPage'));
-const QQFormatsRoadmapPage = React.lazy(() => import('./pages/QQFormatsRoadmapPage'));
 const QQFeedbackDashboard = React.lazy(() => import('./pages/QQFeedbackDashboard'));
-const QQThanksTestPage = React.lazy(() => import('./pages/QQThanksTestPage'));
 const QQReelCardHarness = React.lazy(() => import('./pages/QQReelCardHarness'));
-const QQFinalRevealTestPage = React.lazy(() => import('./pages/QQFinalRevealTestPage'));
-const QQBetTestPage = React.lazy(() => import('./pages/QQBetTestPage'));
-const QQSummaryTestPage = React.lazy(() => import('./pages/QQSummaryTestPage'));
-const QQHigherLowerTestPage = React.lazy(() => import('./pages/QQHigherLowerTestPage'));
-const QQQuestionTestPage = React.lazy(() => import('./pages/QQQuestionTestPage'));
-const QQBarRaceTestPage = React.lazy(() => import('./pages/QQBarRaceTestPage'));
-const QQRevealTestPage = React.lazy(() => import('./pages/QQRevealTestPage'));
-const QQPhaseIntroTestPage = React.lazy(() => import('./pages/QQPhaseIntroTestPage'));
-const QQAwardTestPage = React.lazy(() => import('./pages/QQAwardTestPage'));
-const QQRaceFinaleTestPage = React.lazy(() => import('./pages/QQRaceFinaleTestPage'));
 const LegalPage = React.lazy(() => import('./pages/LegalPage'));
 
 class AppErrorBoundary extends React.Component<{ children: React.ReactNode }, { error: Error | null }> {
@@ -199,7 +184,7 @@ function App() {
           <Route path="/library"    element={<PinGate><QQLibraryPage /></PinGate>} />
           <Route path="/host-sheets" element={<PinGate><QQHostSheetsPage /></PinGate>} />
           <Route path="/slides"     element={<Navigate to="/menu" replace />} />
-          <Route path="/rules-editor" element={<PinGate><QQRulesEditorPage /></PinGate>} />
+          <Route path="/rules-editor" element={<Navigate to="/menu" replace />} />
           <Route path="/cozygames"   element={<PinGate><CozyGamesEditorPage /></PinGate>} />
           <Route path="/summary/:roomCode" element={<QQSummaryPage />} />
           {/* 2026-05-10 (Wolf-Fix stabile Spieler-Links): per-Game-ID-Lookup
@@ -211,24 +196,24 @@ function App() {
           <Route path="/recap/:gameId" element={<PinGate><QQRecapPage /></PinGate>} />
           <Route path="/impressum" element={<LegalPage />} />
           <Route path="/datenschutz" element={<LegalPage />} />
-          <Route path="/admin"      element={<PinGate><AdminPage /></PinGate>} />
-          <Route path="/formats"    element={<PinGate><QQFormatsRoadmapPage /></PinGate>} />
+          <Route path="/admin"      element={<Navigate to="/menu" replace />} />
+          <Route path="/formats"    element={<Navigate to="/menu" replace />} />
           <Route path="/feedback"   element={<PinGate><QQFeedbackDashboard /></PinGate>} />
-          <Route path="/thanks-test" element={<PinGate><QQThanksTestPage /></PinGate>} />
-          <Route path="/finalreveal-test" element={<PinGate><QQFinalRevealTestPage /></PinGate>} />
-          <Route path="/bet-test" element={<PinGate><QQBetTestPage /></PinGate>} />
-          <Route path="/summary-test" element={<PinGate><QQSummaryTestPage /></PinGate>} />
-          <Route path="/hl-test" element={<PinGate><QQHigherLowerTestPage /></PinGate>} />
-          <Route path="/cozygame-test" element={<PinGate><CozyGameWheelTestPage /></PinGate>} />
-          <Route path="/barrace-test" element={<PinGate><QQBarRaceTestPage /></PinGate>} />
-          <Route path="/reveal-test" element={<PinGate><QQRevealTestPage /></PinGate>} />
-          <Route path="/phaseintro-test" element={<PinGate><QQPhaseIntroTestPage /></PinGate>} />
-          <Route path="/question-test" element={<PinGate><QQQuestionTestPage /></PinGate>} />
-          <Route path="/award-test" element={<PinGate><QQAwardTestPage /></PinGate>} />
+          <Route path="/thanks-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/finalreveal-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/bet-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/summary-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/hl-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/cozygame-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/barrace-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/reveal-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/phaseintro-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/question-test" element={<Navigate to="/moderator-test" replace />} />
+          <Route path="/award-test" element={<Navigate to="/moderator-test" replace />} />
           {/* 2026-07-07: bewusst OHNE PinGate — reine Animations-Vorschau ohne
               Daten/Steuerung, damit Wolf sie ohne PIN (und unabhaengig vom
               Backend-Status waehrend Coolify-Redeploys) oeffnen kann. */}
-          <Route path="/race-finale" element={<QQRaceFinaleTestPage />} />
+          <Route path="/race-finale" element={<Navigate to="/moderator-test" replace />} />
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
           <Route path="/stats"        element={<PinGate><StatsPage /></PinGate>} />

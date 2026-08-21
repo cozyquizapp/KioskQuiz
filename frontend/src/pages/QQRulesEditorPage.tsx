@@ -9,7 +9,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   RULE_TEXT_GROUPS,
-  RuleLang,
   getRuleOverride,
   setRuleOverride,
   resetRuleText,

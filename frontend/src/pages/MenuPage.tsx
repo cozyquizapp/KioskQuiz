@@ -55,6 +55,7 @@ export default function MenuPage() {
       .qq-menu-head img{width:44px;height:44px;border-radius:13px;object-fit:contain}.qq-menu-head strong{display:block;color:#fff7fb;font-size:18px}.qq-menu-head small{color:#c084a5;font-weight:800;letter-spacing:.12em;text-transform:uppercase}
       .qq-menu-main{max-width:1120px;margin:0 auto;padding:42px 28px 72px;outline:none}.qq-menu-main h1{margin:0 0 8px;color:#fff7fb;font-size:28px}.qq-menu-main>p{margin:0 0 24px;color:#c5b5c1;font-size:15px;font-weight:700}
       .qq-menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.qq-menu-link-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px}
+      @media(min-width:721px){.qq-menu-main>.qq-menu-grid{min-height:clamp(430px,calc(100dvh - 210px),620px);grid-auto-rows:minmax(0,1fr)}.qq-menu-main>.qq-menu-grid .qq-menu-card{min-height:0!important}}
       .qq-menu-card{transition:transform .16s ease,border-color .16s ease,background .16s ease}.qq-menu-card:hover{transform:translateY(-2px);border-color:rgba(251,207,232,.48)!important;background:rgba(255,255,255,.075)!important}.qq-menu-card:active{transform:scale(.98)}
       .qq-menu-card:focus-visible,.qq-menu-back:focus-visible,.qq-intro button:focus-visible{outline:3px solid #f9a8d4;outline-offset:3px}
       .qq-menu-back{display:inline-flex;margin-bottom:24px;padding:10px 13px;border-radius:11px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.04);color:#fce7f3;font-size:14px;font-weight:900;text-decoration:none}

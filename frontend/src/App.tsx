@@ -3,9 +3,6 @@ import React, { useEffect, useState, Suspense } from 'react';
 import PinGate from './components/PinGate';
 import QQErrorBoundary, { installGlobalCrashHandlers } from './components/QQErrorBoundary';
 
-// Eager load: Fast paths
-import LandingPage from './pages/LandingPage';
-
 // Lazy load: Heavy pages
 const AdminPage = React.lazy(() => import('./pages/AdminPage'));
 const MenuPage = React.lazy(() => import('./pages/MenuPage'));
@@ -28,7 +25,6 @@ const CozyGameWheelTestPage = React.lazy(() => import('./pages/CozyGameWheelTest
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
 const QQRecapPage         = React.lazy(() => import('./pages/QQRecapPage'));
 const QQRecapIndexPage    = React.lazy(() => import('./pages/QQRecapIndexPage'));
-const QQLandingPage       = React.lazy(() => import('./pages/QQLandingPage'));
 const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQSkinsPage         = React.lazy(() => import('./pages/QQSkinsPage'));
 const QQAboutPage         = React.lazy(() => import('./pages/QQAboutPage'));
@@ -176,7 +172,7 @@ function App() {
         }>
           <Routes>
           {/* ── Quarter Quiz (Hauptapp) ───────────────────────────── */}
-          <Route path="/" element={<QQLandingPage />} />
+          <Route path="/" element={<PinGate><MenuPage /></PinGate>} />
           <Route path="/team"       element={<QQErrorBoundary source="team"><QQTeamPage /></QQErrorBoundary>} />
           <Route path="/beamer"     element={<QQErrorBoundary source="beamer"><QQBeamerPage /></QQErrorBoundary>} />
           {/* Öffentlicher Showroom-Trailer (QR-Landing „was ist CozyQuiz") — nicht PIN-gegated. */}
@@ -237,7 +233,7 @@ function App() {
 
           {/* ── Editor/Tools (vormals unter /alt/*) ───────────────── */}
           <Route path="/stats"        element={<PinGate><StatsPage /></PinGate>} />
-          <Route path="/menu"         element={<PinGate><MenuPage /></PinGate>} />
+          <Route path="/menu/*"       element={<PinGate><MenuPage /></PinGate>} />
           <Route path="/qrcode"       element={<QrCodePage />} />
 
           {/* ── Legacy-Redirects (alte QQ-URLs) ──────────────────── */}

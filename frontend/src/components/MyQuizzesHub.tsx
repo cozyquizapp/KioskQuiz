@@ -36,7 +36,7 @@ function relTime(ts?: number): string {
   return `vor ${Math.floor(s / 86400)} Tagen`;
 }
 
-export function MyQuizzesHub({ open: controlledOpen, onOpenChange }: { open?: boolean; onOpenChange?: (open: boolean) => void } = {}) {
+export function MyQuizzesHub({ open: controlledOpen, onOpenChange, standalone = false }: { open?: boolean; onOpenChange?: (open: boolean) => void; standalone?: boolean } = {}) {
   const [drafts, setDrafts] = useState<DraftSummary[] | null>(null);
   const [error, setError] = useState(false);
   // 2026-07-19 (Wolf 'meine quizze einklappbar' + 'nehmen ausgeklappt zu viel raum'):
@@ -46,7 +46,7 @@ export function MyQuizzesHub({ open: controlledOpen, onOpenChange }: { open?: bo
   const [storedOpen, setStoredOpen] = useState(() => {
     try { return localStorage.getItem('qqMyQuizzesCollapsed') === '0'; } catch { return false; }
   });
-  const open = controlledOpen ?? storedOpen;
+  const open = standalone || (controlledOpen ?? storedOpen);
   const toggleOpen = () => {
     const next = !open;
     try { localStorage.setItem('qqMyQuizzesCollapsed', next ? '0' : '1'); } catch { /* ignore */ }
@@ -74,7 +74,17 @@ export function MyQuizzesHub({ open: controlledOpen, onOpenChange }: { open?: bo
     <div>
       {/* Kopfzeile — klickbar zum Ein-/Ausklappen */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: open ? 16 : 0, flexWrap: 'wrap' }}>
-        <button
+        {standalone ? <div style={{ display: 'flex', alignItems: 'center', gap: 12, flex: 1, minWidth: 0 }}>
+          <div style={{
+            width: 44, height: 44, borderRadius: 13, flexShrink: 0,
+            background: `${PINK}22`, border: `1.5px solid ${PINK}55`,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 22,
+          }}>🎯</div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ fontWeight: 900, fontSize: 20, color: '#f8fafc', lineHeight: 1.15 }}>Meine Quizze</div>
+            <div style={{ fontSize: 13, color: '#94a3b8', marginTop: 2 }}>Bauen, vorbereiten oder direkt starten.</div>
+          </div>
+        </div> : <button
           type="button"
           onClick={toggleOpen}
           aria-expanded={open}
@@ -101,7 +111,7 @@ export function MyQuizzesHub({ open: controlledOpen, onOpenChange }: { open?: bo
                 : `${sorted.length} ${sorted.length === 1 ? 'Quiz' : 'Quizze'} — zum Anzeigen ausklappen`}
             </div>
           </div>
-        </button>
+        </button>}
         <Link to="/builder" style={{
           textDecoration: 'none',
           display: 'inline-flex', alignItems: 'center', gap: 7,

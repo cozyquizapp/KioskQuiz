@@ -26,6 +26,10 @@
       "destination": "/team.html"
     },
     {
+      "source": "/ideas",
+      "destination": "/ideas.html"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://backend.cozyquiz.app/api/:path*"
     },

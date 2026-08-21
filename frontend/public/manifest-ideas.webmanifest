@@ -1,0 +1,17 @@
+{
+  "id": "/ideas-app",
+  "name": "CozyQuiz Ideen-Inbox",
+  "short_name": "Quizideen",
+  "description": "Schneller Ideen-Eingang für CozyQuiz",
+  "theme_color": "#160d23",
+  "background_color": "#160d23",
+  "display": "standalone",
+  "orientation": "portrait",
+  "scope": "/ideas",
+  "start_url": "/ideas",
+  "icons": [
+    { "src": "/logo.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/logo.png", "sizes": "1500x1500", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

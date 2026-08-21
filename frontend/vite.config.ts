@@ -95,6 +95,7 @@ export default defineConfig({
       input: {
         regie: path.resolve(__dirname, 'index.html'),
         team: path.resolve(__dirname, 'team.html'),
+        ideas: path.resolve(__dirname, 'ideas.html'),
       },
       output: {
         // Vendor-Splitting fuer die schwersten Libs — durch separate Chunks

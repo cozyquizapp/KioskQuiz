@@ -18,7 +18,6 @@ import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
-import { cozy3dCrownTopPx } from '../cozy3dAvatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed } from '../qqTheme';
@@ -258,31 +257,13 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               borderRadius: '50%',
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} />
-              {isLeader && (
-                <span style={{
-                  position: 'absolute',
-                  // 2026-06-24 (Wolf 'Krone naeher am Kopf'): Offset reduziert
-                  // (-16/-12 -> -8/-6) damit die Kronenbasis auf der Disc-Oberkante
-                  // = auf dem Kopf sitzt statt darueber zu schweben.
-                  // 2026-06-28 (Wolf 'Krone sitzt bei einigen Tieren nicht auf
-                  // dem Kopf'): statt fix jetzt pro-Avatar berechnet — die
-                  // gemessene Kopf-Oberkante (cozy3dCrownTopPx) verschiebt die
-                  // Krone bei tief sitzenden Koepfen (Krabbe, Delfin, Wal, Orca,
-                  // Fledermaus …) entsprechend runter. Front-Portraits bleiben
-                  // praktisch unveraendert (frac 0 → ~-8/-6).
-                  top: cozy3dCrownTopPx(t.emoji, avatarSize),
-                  left: '50%',
-                  transform: 'translateX(-50%) rotate(-14deg)',
-                  fontSize: dense ? 24 : 30,
-                  pointerEvents: 'none',
-                  // Delight: beim Fuehrungswechsel poppt die Krone einmal freudig
-                  // rein (Rest-Winkel bleibt danach ruhig bei -14deg).
-                  filter: leadChangeId === t.id
-                    ? `drop-shadow(0 0 12px ${tColor})`
-                    : 'none',
-                  animation: leadChangeId === t.id ? 'qqCrownArrive 0.7s var(--qq-ease-bounce) both' : undefined,
-                }}><QQEmojiIcon emoji="👑" size="1em" /></span>
-              )}
+              {/* 2026-08-22 (Wolf: „kronen auf avataren rechts wuerde ich
+                  weglassen"): das Kroenchen sass auf der Avatar-Kachel UND
+                  stand nochmal als Medaillen-Spalte in derselben Zeile. Zwei
+                  Marken fuer dieselbe Aussage, und die auf der Kachel verdeckte
+                  ausserdem die obere Ecke des Motivs. Bleibt nur die Spalte,
+                  dafuer groesser. Der Fuehrungswechsel-Puls lebt weiter im
+                  Zeilen-Rahmen. */}
               {/* Joker komplett aus der ScoreBar raus (2026-06-28, Claude-Design-
                   Handoff #2): kein Stern-Flug, kein Impact-Pulse, keine statische
                   Spalte. „Der Joker ist ein Grid-Moment, kein Scoreboard-Stat" —
@@ -369,10 +350,15 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                 '='-Tie-Badge entfernt. Tied-Top-Teams bekommen 👑 (medalFor),
                 der Rest hat keinen extra Marker mehr. */}
             <span style={{
-              width: dense ? 32 : 38,
+              // 2026-08-22 (Wolf: „medaillen und kronen etwas groesser"): von
+              // 22/28 auf 30/40 px. Sie sind jetzt die EINZIGE Rangmarke der
+              // Zeile, seit das Kroenchen von der Avatar-Kachel weg ist, und
+              // muessen die Aufgabe allein tragen. Spaltenbreite zieht mit,
+              // sonst rutscht die Zahlenspalte.
+              width: dense ? 42 : 52,
               flexShrink: 0,
               textAlign: 'center',
-              fontSize: dense ? 22 : 28, lineHeight: 1,
+              fontSize: dense ? 30 : 40, lineHeight: 1,
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               position: 'relative',
             }}>

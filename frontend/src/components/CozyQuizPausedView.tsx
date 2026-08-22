@@ -839,7 +839,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // 2026-05-07 (Wolf 'mach die Schrift in den Lobby-Slides gerne teilweise
   // groesser, die Textfelder wirken etwas verloren in dem riesen Kasten'):
   // Title 36→52, Pill-Wert 30→44, Pill-Label 17→22.
-  const statTitle = (icon: string, titleDe: string, titleEn: string, accentColor?: string) => {
+  // 2026-08-22: `icon` nimmt jetzt auch ein fertiges Element. Grund ist der
+  // Joker: der hat seit 2026-06-28 einen eigenen Marken-Asset (pinker CozyWolf
+  // im Narrenkostuem, JokerIcon), und die Regel-Karte weiter oben nutzt ihn
+  // laengst. Nur die Joker-Koenig-Statistik hing noch am 🃏, das durch den
+  // Emoji-Mapper faellt und als OS-Glyphe erschien. Jetzt ueberall derselbe
+  // Joker.
+  const statTitle = (icon: string | React.ReactNode, titleDe: string, titleEn: string, accentColor?: string) => {
     // Mono: editorial — schwarzer Titel (kein Akzent-Farb-Leak), uppercase.
     const mono = isQuietMotion();
     return (
@@ -850,7 +856,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       textTransform: mono ? 'uppercase' : undefined,
       letterSpacing: mono ? '-0.01em' : undefined,
     }}>
-      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji={icon}/></span>
+      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>
+        {typeof icon === 'string' ? <QQEmojiIcon emoji={icon}/> : icon}
+      </span>
       {de ? titleDe : titleEn}
     </div>
     );
@@ -930,7 +938,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.jokerKing && funStats.jokerKing.total >= 2) {
     panels.push({ key: 'jokerKing', node: (
       <div>
-        {statTitle('🃏', 'Joker-König', 'Joker King', '#A855F7')}
+        {statTitle(
+          <JokerIcon i={0} size={'1em'} eurovisionMode={!!s.theme?.eurovisionMode} />,
+          'Joker-König', 'Joker King', '#A855F7',
+        )}
         {teamLine(funStats.jokerKing.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>

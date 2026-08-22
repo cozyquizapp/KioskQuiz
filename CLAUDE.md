@@ -61,8 +61,15 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
 
 ## Fallen, die schon mehrfach Zeit gekostet haben
 
-* **Der Raum lebt im RAM.** Fuer einen sauberen Repro-Lauf Backend neu
-  starten, sonst testet man gegen einen halb benutzten Zustand.
+* **Der Raum lebt im RAM — aber er wird auch auf Platte geschrieben.** Ein
+  Backend-Neustart allein reicht deshalb NICHT: `qqPersist` laedt den Raum
+  beim Start wieder ein (im Log: `[QQ-persist] restored room …`). Fuer einen
+  sauberen Repro-Lauf zusaetzlich `rm -f backend/.qq-rooms/*.json`.
+  Achtung auf den Pfad: die Konstante heisst `.qq-rooms/` relativ zu
+  `process.cwd()`, und `npm run start:backend` startet mit `--prefix backend`.
+  Der Ordner liegt also unter **`backend/.qq-rooms/`**, nicht im Repo-Wurzel-
+  verzeichnis. `rm` auf den Wurzelpfad loescht stillschweigend nichts, und man
+  testet weiter gegen den alten Zustand (2026-08-22 genau so passiert).
 * **Der Socket-Vertrag ist untypisiert.** `emit(event: string, payload?:
   unknown)`. Ein Tippfehler im Event-Namen faellt nirgends auf, der Knopf tut
   einfach nichts. Beim Umbenennen beide Seiten pruefen.

@@ -625,8 +625,25 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     : getRoundColor(Math.max(1, prevIdx), s.totalPhases ?? 4);
   // 2026-06-24 (Wolf 'schrift auch schwarz?'): Hero-„Runde N" auf dem Seiten-BG
   // → var(--qq-title) (Mono=Schwarz etc.) bei Skin. Cozy/ESC = Runden-Farbe.
-  const titleColor = isThemed() ? 'var(--qq-title)' : color;
-  const prevTitleColor = isThemed() ? 'var(--qq-title)' : prevColor;
+  // 2026-08-22 (Uebergabe 2a, VORSCHLAG — geht zurueck wenn Wolf ablehnt):
+  // Hero-"Runde N" auf Creme statt auf die Runden-Farbe.
+  //
+  // Gemessen gegen den Buehnen-Grund #120F18:
+  //   Runde 1  #F9A8D4  10.5:1
+  //   Runde 2  #F472B6   7.2:1
+  //   Runde 3  #EC4899   5.4:1
+  //   Finale   #A21247   2.5:1   ← unter der 4.5:1-Grenze der Uebergabe
+  //   Creme    #F6EFE6  16.6:1
+  // Die Rampe wird von Runde zu Runde dunkler, also hat ausgerechnet die
+  // wichtigste Folie des Abends den schlechtesten Kontrast. Auf 2,8 m
+  // Bildbreite aus 10 m im halbdunklen Raum verschwindet "Finale" fast.
+  //
+  // Die Runden-Identitaet geht nicht verloren: `color` traegt weiterhin Pille,
+  // Phasenlinie, Tree und Fireflies. Sie wandert nur vom Text auf die Marker.
+  // Nebeneffekt: dieselbe Regel wie auf den Frage-Folien, wo die Ueberschrift
+  // ebenfalls Creme ist und die Farbe am Rand sitzt.
+  const titleColor = isThemed() ? 'var(--qq-title)' : 'var(--qq-text)';
+  const prevTitleColor = isThemed() ? 'var(--qq-title)' : 'var(--qq-text)';
   const prevPhaseName = prevIdx < 1 ? phaseName : phaseNamesRaw[prevIdx];
   // Mega: alle Runden nutzen denselben grid-freien Subtitle → auch beim
   // Runden-Übergang keine „Klaut Felder!"-Zeile einblenden.
@@ -1344,7 +1361,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {/* Alter Subtitle fällt — synchron zur alten Ziffer */}
               <span style={{
                 position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
-                color: isThemed() ? 'var(--qq-title)' : `${prevColor}dd`,
+                color: isThemed() ? 'var(--qq-title)' : 'var(--qq-text-muted)',
                 animation: 'roundDigitFall 760ms var(--qq-ease-smooth-out) 1150ms both',
               }}>{prevPhaseDesc}</span>
               {/* Neuer Subtitle rollt von oben — synchron zur neuen Ziffer.
@@ -1352,7 +1369,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   der Outer-Digit-Span — im Skin aber Hero-Titel-Farbe. */}
               <span style={{
                 position: 'absolute', left: 0, right: 0, top: 0, textAlign: 'center',
-                color: isThemed() ? 'var(--qq-title)' : (colorTransitioning ? `${prevColor}dd` : `${color}dd`),
+                color: isThemed() ? 'var(--qq-title)' : 'var(--qq-text-muted)',
                 transition: 'color 600ms ease',
                 animation: 'roundDigitRoll 820ms cubic-bezier(0.16, 1, 0.3, 1) 1650ms both',
               }}>{phaseDesc}</span>

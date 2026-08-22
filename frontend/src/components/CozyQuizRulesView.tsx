@@ -13,7 +13,8 @@
  *
  * 1 externer Importer (QQBuiltinSlide).
  */
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useLayoutEffect } from 'react';
+import type { ReactNode } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
@@ -116,7 +117,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🗺',
-      title: t('rules.slide3.title', 'Dein Weg durchs Quiz'),
+      title: t('rules.slide3.title', 'Der Ablauf'),
       color: RULES_SLIDE_COLOR,
       // 2026-05-24 (Wolf): '4 Runden · 5 Kategorien' aufs Roadmap-Slide gezogen.
       lines: [
@@ -172,10 +173,8 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide_fairplay.line1', 'Kein Googeln · Handy nur fürs Antworten'),
-        t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
-        t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Hauptsache, ihr habt Spaß.'),
+      extra: t('rules.slide_fairplay.extra', 'Und jetzt: viel Spaß!'),
     },
     {
       icon: '🧩',
@@ -220,7 +219,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🗺',
-      title: t('rules.slide3.title', 'Your Quiz Roadmap'),
+      title: t('rules.slide3.title', 'The Flow'),
       color: RULES_SLIDE_COLOR,
       // 2026-05-24 (Wolf): rounds + categories info pulled onto roadmap slide.
       lines: [
@@ -272,10 +271,8 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide_fairplay.line1', 'No googling · phones only for answering'),
-        t('rules.slide_fairplay.line2', "Don't spoil answers between teams"),
-        t('rules.slide_fairplay.line3', 'When in doubt, the wolf decides 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Have fun! Points are just the side dish.'),
+      extra: t('rules.slide_fairplay.extra', 'And now: have fun!'),
     },
     {
       icon: '🧩',
@@ -311,7 +308,7 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🗺',
-      title: t('rules.mega.slide2.title', 'Dein Weg durchs Quiz'),
+      title: t('rules.mega.slide2.title', 'Der Ablauf'),
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.mega.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
@@ -334,10 +331,8 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide_fairplay.line1', 'Kein Googeln · Handy nur fürs Antworten'),
-        t('rules.slide_fairplay.line2', 'Antworten nicht zwischen Teams spoilern'),
-        t('rules.slide_fairplay.line3', 'Im Zweifel zählt der Moderator-Wolf 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Hauptsache, ihr habt Spaß.'),
+      extra: t('rules.slide_fairplay.extra', 'Und jetzt: viel Spaß!'),
     },
   ];
 }
@@ -356,7 +351,7 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🗺',
-      title: t('rules.mega.slide2.title', 'Your journey'),
+      title: t('rules.mega.slide2.title', 'The Flow'),
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.mega.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
@@ -379,10 +374,8 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       lines: [
         t('rules.slide_fairplay.line1', 'No googling · phones only for answering'),
-        t('rules.slide_fairplay.line2', "Don't spoil answers between teams"),
-        t('rules.slide_fairplay.line3', 'When in doubt, the wolf decides 🐺'),
       ],
-      extra: t('rules.slide_fairplay.extra', 'Have fun! Points are just the side dish.'),
+      extra: t('rules.slide_fairplay.extra', 'And now: have fun!'),
     },
   ];
 }
@@ -509,6 +502,48 @@ export function qqActiveRulesSlides(s: QQStateUpdate, lang: 'de' | 'en'): RulesS
   });
 }
 
+/**
+ * FitToWidth — skaliert seinen Inhalt herunter, bis er in die Breite passt.
+ *
+ * 2026-08-22. Gebaut fuer den Fortschrittsbaum auf der Ablauf-Regelseite: der
+ * ist so breit wie der ganze Abend und passt bei 15 Fragen in keine Karte.
+ * Statt ihn abzuschneiden oder durchzupannen wird er verkleinert — auf der
+ * Buehne darf nichts abgeschnitten sein, und der Blick soll die Form des
+ * Abends auf einmal bekommen.
+ *
+ * Bewusst per transform statt per Zoom auf die Schrift: so bleiben alle
+ * Abstaende im Baum im Verhaeltnis, und es gibt keinen zweiten Satz Werte,
+ * der auseinanderlaufen kann.
+ */
+function FitToWidth({ children }: { children: ReactNode }) {
+  const outer = useRef<HTMLDivElement | null>(null);
+  const inner = useRef<HTMLDivElement | null>(null);
+  const [scale, setScale] = useState(1);
+  useLayoutEffect(() => {
+    const measure = () => {
+      const cw = outer.current?.clientWidth ?? 0;
+      const sw = inner.current?.scrollWidth ?? 0;
+      setScale(cw > 0 && sw > cw ? cw / sw : 1);
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    if (outer.current) ro.observe(outer.current);
+    if (inner.current) ro.observe(inner.current);
+    return () => ro.disconnect();
+  }, [children]);
+  return (
+    <div ref={outer} style={{ width: '100%', overflow: 'hidden' }}>
+      <div ref={inner} style={{
+        transform: `scale(${scale})`, transformOrigin: 'center top',
+        // Hoehe mitziehen, sonst bleibt unter dem verkleinerten Baum Luft
+        // in der urspruenglichen Groesse stehen.
+        marginBottom: scale < 1 ? `${-(1 - scale) * 100}px` : undefined,
+        display: 'flex', justifyContent: 'center',
+      }}>{children}</div>
+    </div>
+  );
+}
+
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
@@ -597,6 +632,17 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
   };
   const renderCard = (cardSlide: RulesSlide, cardIdx: number, cardIsIntro: boolean, animName: string) => {
     const hasGridC = !!cardSlide.grid;
+    // 2026-08-22, KORREKTUR: die Schrift-Anhebung von vorhin galt pauschal und
+    // hat die DICHTEN Folien zerschossen — auf „Der Ablauf" brach die
+    // Ueberschrift mitten im Wort, der Tree lief rechts aus der Karte und die
+    // Fusszeile wurde unten abgeschnitten. Wolf hat es gesehen, ich hatte
+    // „nichts wird abgeschnitten" behauptet, ohne die Bilder anzusehen.
+    // Die Karte hat eine FESTE Hoehe (damit der Rahmen zwischen den Seiten
+    // nicht springt), also muss die Schrift der Fuellung folgen und nicht
+    // umgekehrt. `dense` ist wahr, sobald ausser Text noch etwas drin ist.
+    const dense = hasGridC || !!cardSlide.showTree || !!cardSlide.treeShowcase;
+    /** Obergrenze je nach Dichte: auf vollen Folien der alte Wert. */
+    const fs = (locker: number, voll: number) => (dense ? voll : locker);
     const isLastC = !cardIsIntro && cardIdx === totalSlides - 1;
     return (
       <div className="qqRulesCard" style={{
@@ -678,7 +724,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           ) : (
             <span style={{
               display: 'inline-block',
-              fontSize: 'clamp(64px,11cqw,140px)', lineHeight: 1,
+              fontSize: `clamp(56px,${dense ? 7 : 11}cqw,${fs(140, 92)}px)`, lineHeight: 1,
 
               animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><QQEmojiIcon emoji={cardSlide.icon}/></span>
@@ -695,7 +741,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             // 2026-07-17 (Cinzel-Rollout): Arena-Regel-Titel in Cinzel (nur mega+!skin).
             fontFamily: qqArenaType(s) ? 'var(--font-arena)' : undefined,
             letterSpacing: qqArenaType(s) ? '0.01em' : undefined,
-            fontSize: 'clamp(38px, 7cqw, 94px)', fontWeight: 900, lineHeight: 1.05,
+            fontSize: `clamp(34px, ${dense ? 4.6 : 7}cqw, ${fs(94, 62)}px)`, fontWeight: 900, lineHeight: 1.05,
             // 2026-08-22 (Uebergabe 2a, Wolf freigegeben): Ueberschrift auf
             // Creme, dieselbe Regel wie im Phasen-Intro und auf den
             // Frage-Folien. Die Folienfarbe traegt weiter die kleine
@@ -703,6 +749,19 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             // auf die Marker. Kontrast gegen den Buehnen-Grund: Creme 16.6:1
             // gegen 5.4:1 beim Marken-Pink.
             color: isThemed() ? 'var(--qq-title)' : 'var(--qq-text)',
+            // 2026-08-22: „Dein Weg durchs Q | uiz" — die Ueberschrift brach
+            // MITTEN IM WORT, sobald sie zu breit wurde. Derselbe Fehler wie
+            // bei den Teamnamen am Brett, und dieselbe Loesung:
+            //   overflowWrap  bricht nur in ein Wort hinein, wenn das Wort
+            //                 allein schon breiter als die Zeile ist
+            //   hyphens       macht aus einem erzwungenen Bruch einen mit
+            //                 sichtbarem Trennstrich (<html lang="de">)
+            //   textWrap      verteilt zwei Zeilen gleichmaessig, statt die
+            //                 erste vollaufen zu lassen
+            overflowWrap: 'break-word',
+            hyphens: 'auto',
+            WebkitHyphens: 'auto' as never,
+            textWrap: 'balance',
             // Der weite Farb-Schein hinter der Schrift faellt mit weg: auf
             // Projektionsdistanz macht er keine Tiefe, er frisst die Kante.
             textShadow: 'none',
@@ -767,7 +826,29 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.1s both',
               padding: 'clamp(8px, 1.5cqh, 24px) 0',
             }}>
-              <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2800} />
+              {/* 2026-08-22 (Wolf: „der progress tree in dein weg durchs quiz
+                  sieht nicht gut aus"): die Showcase-Variante ist eine
+                  KAMERAFAHRT — sie pant durch die Runden und schneidet dafuer
+                  absichtlich ab. Der Tree war also nicht kaputt, aber fuer
+                  diese Folie das falsche Mittel: die Aussage ist „3 Runden,
+                  5 Kategorien", also die FORM des Abends. Eine Fahrt laesst
+                  einen darauf warten, und ein am Kartenrand abgeschnittener
+                  Streifen liest sich als Fehler, nicht als Kamerabewegung.
+                  Jetzt die Inline-Variante, auf die Kartenbreite herunter-
+                  skaliert: der ganze Abend auf einen Blick, nichts
+                  abgeschnitten. */}
+              {/* 2026-08-22 (Wolf: „oder nur eine beispielrunde? spaeter kommt
+                  dann der ganze progress tree?"): ja, und das ist besser als
+                  meine erste Fassung. Der ganze Abend passte zwar hinein,
+                  schrumpfte die Kacheln dabei aber auf 28 px — unter der
+                  Lesbarkeitsgrenze fuer 8 m Distanz. Und die Aussage dieser
+                  Folie ist „so sieht EINE Runde aus", nicht „hier sind alle
+                  15 Fragen". Den ganzen Baum bekommt das Publikum im
+                  Runden-Intro, wo er echter Fortschritt ist.
+                  focusPhaseIdx spannt auf eine Runde. */}
+              <FitToWidth>
+                <QQProgressTree state={s} variant="inline" wolfAbove focusPhaseIdx={0} />
+              </FitToWidth>
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 12,
                 fontSize: 'clamp(18px, 2.4cqw, 34px)', fontWeight: 700,
@@ -846,13 +927,17 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {/* Extra callout — zentriert */}
         {cardSlide.extra && (
           <div style={{
-            marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-            background: isThemed() ? 'var(--qq-surface)' : `${cardSlide.color}15`,
-            border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${cardSlide.color}33`,
-            fontSize: 'clamp(18px,3cqw,44px)', fontWeight: 900,
+            // 2026-08-22 (Wolf: „hauptsache ihr habt spass ist in grauem kasten,
+            // ausserdem klingt es komisch"): der Kasten ist weg. Eine
+            // Schlusszeile braucht keine Umrandung — sie steht am Ende der
+            // Karte und ist dadurch schon abgesetzt. Der Kasten war ausserdem
+            // eine DRITTE Flaeche: Grund, Karte, Kasten. Die Flaechenleiter der
+            // Uebergabe hat drei Stufen, und die dritte ist fuer Bedeutung
+            // reserviert, nicht fuer eine Grussformel.
+            marginTop: 'clamp(20px, 3cqh, 40px)',
+            fontSize: `clamp(18px,${dense ? 2.2 : 3}cqw,${fs(44, 32)}px)`, fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : cardSlide.color,
-            /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
-            textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,
+            textShadow: 'none',
             textAlign: 'center',
           }}>
             {cardSlide.extra}
@@ -863,7 +948,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {isLastC && (
           <div style={{
             marginTop: 'clamp(16px, 2.5cqh, 32px)', textAlign: 'center',
-            fontSize: 'clamp(20px,3.5cqw,48px)', fontWeight: 900,
+            fontSize: `clamp(20px,${dense ? 2.4 : 3.5}cqw,${fs(48, 34)}px)`, fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : cardSlide.color,
             /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
             textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,

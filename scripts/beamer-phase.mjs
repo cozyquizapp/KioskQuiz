@@ -147,6 +147,19 @@ if (SLIDES) {
           .replace(/\s+/g, ' ').trim().slice(0, 400)).catch(() => '');
       const h = crypto.createHash('md5').update(txt).digest('hex');
       if (!hashes.has(h)) {
+        // 2026-08-22: NICHT sofort ausloesen. Der Textwechsel passiert am
+        // ANFANG des Uebergangs — die Regelseiten schieben sich seitlich ins
+        // Bild („ganze windows reingeschoben"). Wer hier knipst, bekommt ein
+        // Standbild aus der Bewegung, auf dem die Karte halb ausserhalb liegt.
+        // Genau so sind drei von fuenf Regelseiten „abgeschnitten" gewesen —
+        // ein Fehler der Aufnahme, nicht des Designs.
+        // Also warten, bis die Folie steht, und danach pruefen, ob es noch
+        // dieselbe ist (sonst war es nur ein Zwischenzustand).
+        await sleep(2200);
+        const txt2 = await beamer.evaluate(() =>
+          (document.querySelector('[data-qq-phase]')?.innerText ?? '')
+            .replace(/\s+/g, ' ').trim().slice(0, 400)).catch(() => '');
+        if (txt2 !== txt) continue;
         const buf = await beamer.screenshot();
         hashes.add(h); n++;
         const name = `${OUT}/S${String(n).padStart(2, '0')}-${SLIDES}.png`;

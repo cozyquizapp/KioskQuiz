@@ -37,7 +37,15 @@ console.log(`Backend ok (uptime ${Math.round(health.uptime)}s, db=${health.db})`
 if (health.uptime > 600) console.log('⚠️  Uptime hoch — Raum evtl. aus frueherem Lauf. Frisch starten!');
 
 mkdirSync(OUT, { recursive: true });
-const browser = await chromium.launch({ headless: true });
+// QQ_CHROME: Notausgang, wenn die lokal installierten Playwright-Browser nicht
+// zur gepinnten Version passen ("Executable doesn't exist at …chromium_headless
+// _shell-<n>"). Dann einmal den Pfad setzen statt npx playwright install:
+//   QQ_CHROME=/pfad/zu/chrome node scripts/beamer-shot.mjs
+// Ohne die Variable aendert sich nichts.
+const browser = await chromium.launch({
+  headless: true,
+  ...(process.env.QQ_CHROME ? { executablePath: process.env.QQ_CHROME } : {}),
+});
 const ctx = await browser.newContext({ viewport: STAGE, deviceScaleFactor: 1 });
 
 // ZWEI PINs: sessionStorage['qq_admin_pin'] → qq:joinModerator (ohne ihn joint der

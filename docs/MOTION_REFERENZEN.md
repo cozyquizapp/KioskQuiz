@@ -37,6 +37,21 @@ cd <scratchpad> && npm init -y && npm install @ffmpeg-installer/ffmpeg
 FF=<scratchpad>/node_modules/@ffmpeg-installer/linux-x64/ffmpeg
 ```
 
+**Schriften fuer Entwuerfe.** Der Browser hier laeuft nicht ueber den Proxy und
+zieht Google Fonts nicht selbst, alles faellt auf eine Serife zurueck. `curl`
+kommt aber durch. Also einmal holen und lokal verdrahten (Dateien NICHT ins Repo,
+das Rezept genuegt):
+
+```bash
+UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+curl -sS -A "$UA" "https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;700;900&family=Anton&display=swap" -o gf.css
+mkdir -p fonts; i=0
+for u in $(grep -o "https://fonts.gstatic.com/[^)]*" gf.css | sort -u); do
+  i=$((i+1)); curl -sS "$u" -o "fonts/f$i.woff2"
+done
+# danach die gstatic-URLs in gf.css durch fonts/fN.woff2 ersetzen
+```
+
 **Auswertung in zwei Schritten.** Erst der Gesamtverlauf, dann die Zeitlupe auf
 den interessanten Moment:
 

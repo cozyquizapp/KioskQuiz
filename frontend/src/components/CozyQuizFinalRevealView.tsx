@@ -1121,7 +1121,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     <span aria-hidden style={{
                       position: 'absolute', left: '50%', top: '50%',
                       width: 'clamp(76px, 7.4cqw, 108px)', height: 'clamp(76px, 7.4cqw, 108px)',
-                      borderRadius: '50%', border: `3px solid ${chipColor}`,
+                      borderRadius: 'var(--qq-team-mark-radius, 50%)', border: `3px solid ${chipColor}`,
                       animation: 'qqBetLockBurst 0.6s ease-out both', pointerEvents: 'none',
                     }} />
                   )}

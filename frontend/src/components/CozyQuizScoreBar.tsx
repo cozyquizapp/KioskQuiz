@@ -254,7 +254,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
           <div style={{ width: avatarBox, textAlign: 'center', flexShrink: 0 }}>
             <span style={{
               position: 'relative', display: 'inline-block',
-              borderRadius: '50%',
+              borderRadius: 'var(--qq-team-mark-radius, 50%)',
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize} />
               {/* 2026-08-22 (Wolf: „kronen auf avataren rechts wuerde ich

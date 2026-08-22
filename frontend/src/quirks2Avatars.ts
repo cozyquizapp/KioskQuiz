@@ -25,8 +25,27 @@ export const QUIRK2_SET_ID = 'cozyQuirks2';
  *  2026-07-31: Blockz kam dazu. Die Funktion wird an 12 Stellen importiert,
  *  deshalb hier erweitert statt eine zweite Prüfung überall einzubauen. Wer ein
  *  weiteres Kachel-Set anlegt, ergänzt nur diese Zeile. */
+/**
+ * Faehrt dieses Avatar-Set KACHELN statt runder Scheiben?
+ *
+ * 2026-08-22 (Uebergabe 2a): das CozyQuiz-Set kommt dazu, und damit ist die
+ * Kachel der Normalfall statt der Sonderfall — es ist seit dem 22.08. das
+ * Default-Set. Die Kachel-Zweige in TeamsReveal, QuestionView und Co. waren
+ * bisher an `quirkSet` gehaengt und liefen deshalb ins Leere: die Buehne zeigte
+ * eckige Marken auf Brett und Rangliste, aber runde Scheiben im Team-Reveal.
+ *
+ * Warum die Kachel die richtige Form ist: die Teammarke IST der Spielstein,
+ * der auf dem Brett gesetzt wird. Wer sie im Reveal als Kreis zeigt und
+ * zwanzig Sekunden spaeter als Kachel aufs Feld legt, zeigt zwei Dinge statt
+ * einem.
+ *
+ * NICHT betroffen ist das Handy: dort ist die Marke Avatar, also Identitaet,
+ * und bleibt rund (`--qq-team-mark-radius` gilt nur im Buehnen-Scope).
+ */
 export function isQuirkTileSet(setId: string | undefined | null): boolean {
-  return setId === QUIRK2_SET_ID || setId === BLOCKZ_SET_ID;
+  return setId === QUIRK2_SET_ID
+    || setId === BLOCKZ_SET_ID
+    || setId === 'cozyquiz';   // Default seit 2026-08-22, Objekt auf Farbkachel
 }
 
 export type Quirk2Design = {

@@ -1436,7 +1436,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       return (
                         <div key={id} style={{
                           ['--lit' as any]: litColor,
-                          position: 'relative', padding: 6, borderRadius: '50%',
+                          position: 'relative', padding: 6, borderRadius: 'var(--qq-team-mark-radius, 50%)',
                           display: 'inline-flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                           opacity: some ? 1 : 0.5,
                           filter: litFilter,

@@ -685,7 +685,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
     return (
       <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5cqh', animation: `qqPodRise ${isWin ? 0.84 : 0.7}s ${ease} ${delay} both`, willChange: 'transform, opacity' }}>
         {isWin && <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ width: 'clamp(34px, 3.4cqw, 60px)', height: 'auto', animation: 'finaleTrophyFloat 3.4s ease-in-out infinite' }} />}
-        <div style={{ position: 'relative', borderRadius: '50%', boxShadow: isWin ? `0 0 46px ${t.color}, 0 0 92px ${t.color}66` : `0 0 26px ${t.color}`, border: isWin ? '0.35cqw solid #f6d98a' : 'none' }}>
+        <div style={{ position: 'relative', borderRadius: 'var(--qq-team-mark-radius, 50%)', boxShadow: isWin ? `0 0 46px ${t.color}, 0 0 92px ${t.color}66` : `0 0 26px ${t.color}`, border: isWin ? '0.35cqw solid #f6d98a' : 'none' }}>
           <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={crestSz} />
         </div>
         <TeamNameLabel name={qqMegaFactionName(t.avatarId, de ? 'de' : 'en')} maxLines={1} shrinkAfter={12} color={t.color} fontWeight={900} fontSize={isWin ? 'clamp(22px, 3.2cqw, 48px)' : 'clamp(15px, 2cqw, 30px)'} fontSizeLong={isWin ? 'clamp(16px, 2.4cqw, 36px)' : 'clamp(12px, 1.6cqw, 22px)'} style={{}} />
@@ -889,7 +889,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6cqw, 24px)', animation: 'qqAwardDriveIn 0.7s cubic-bezier(0.2,1,0.4,1) 1.05s both' }}>
           <div style={{ position: 'relative', display: 'inline-flex' }}>
             <div aria-hidden style={{ position: 'absolute', top: '-8%', left: '50%', width: 'clamp(64px, 6.8cqw, 116px)', height: 'clamp(84px, 10.5cqh, 150px)', transform: 'translateX(-50%)', background: `linear-gradient(180deg, ${color}f0, ${color}88 82%, ${color}44)`, clipPath: 'polygon(0 0, 100% 0, 100% 88%, 50% 100%, 0 88%)', transformOrigin: 'top center', animation: 'qqBannerUnfurl 0.7s cubic-bezier(0.2,1,0.3,1) 1.0s both', boxShadow: `0 12px 40px ${color}55`, zIndex: -1 }} />
-            <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
+            <div style={{ position: 'relative', borderRadius: 'var(--qq-team-mark-radius, 50%)', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
               <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(66px, 7.4cqw, 116px)'} />
               {AWARD_SPARKS.map((sp, i) => (
                 <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(246, 239, 230,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${1.5 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
@@ -931,7 +931,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
       {winner && (
         <div style={S.goHero}>
           <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ width: 'clamp(60px, 6cqw, 96px)', height: 'auto', animation: 'finaleTrophyFloat 3.4s ease-in-out infinite' }} />
-          <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 60px ${wColor}66, 0 0 120px ${wColor}40` }}>
+          <div style={{ position: 'relative', borderRadius: 'var(--qq-team-mark-radius, 50%)', boxShadow: `0 0 60px ${wColor}66, 0 0 120px ${wColor}40` }}>
             <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={'clamp(110px, 11cqw, 170px)'} />
           </div>
           <TeamNameLabel name={winner.name} maxLines={1} shrinkAfter={12} color={wColor} fontWeight={900} fontSize="clamp(30px, 3.4cqw, 52px)" fontSizeLong="clamp(22px, 2.4cqw, 36px)" style={{ textAlign: 'center' }} />

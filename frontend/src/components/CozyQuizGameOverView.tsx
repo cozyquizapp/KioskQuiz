@@ -394,7 +394,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               das den Avatar enthaelt — Glow ist sichtbar UND clean rund. */}
           <div style={{
             position: 'relative', display: 'inline-block', marginTop: 2,
-            borderRadius: '50%',
+            borderRadius: 'var(--qq-team-mark-radius, 50%)',
             boxShadow: `0 0 60px ${winnerColor}66, 0 0 120px ${winnerColor}40`,
             animation: `celebShake 0.6s ease ${avatarShakeDelay}s both, finaleAvatarBreathe 4s ease-in-out ${avatarBreatheDelay}s infinite`,
           }}>

@@ -261,6 +261,30 @@
      Hungry Tiger und Apple fahren beide drei Stufen in EINER Farbfamilie. */
   --qq-surface-deep: rgba(9, 7, 13, 0.58);
 
+  /* ── Eine Ecke fuer die ganze Buehne ──────────────────────────────────────
+     2026-08-22 (Wolf: „ob wir alle runden ovalen formen eckiger machen, als
+     grundsaetzliche entscheidung").
+
+     Die Buehne fuhr sechs verschiedene Radien: 999px (Pillen), 50 % (Discs),
+     24px, 20px, 18 % und 16 % (Brettfeld). Ein Plakat vertraegt zwei.
+
+     Die Regel lautet jetzt: EINE weiche Ecke, im Verhaeltnis zum Element.
+     Grosse Flaechen bekommen einen kleinen festen Radius, kleine Flaechen
+     etwa 16 % — das ist derselbe Eindruck auf jeder Groesse.
+
+     Verworfen wurde die Idee, Pillen rund zu lassen und ihnen damit die
+     Bedeutung „Beschriftung, kein Objekt" zu geben. Das klingt sauber, aber
+     die Regel muesste der Zuschauer lernen, und aus acht Metern lernt niemand
+     eine Formen-Grammatik. Was ankommt ist nur: wirkt das wie EIN System.
+
+     Die Pille bleibt trotzdem breiter gerundet als eine Karte — sie ist
+     niedrig, ein 5-px-Radius saehe an ihr wie ein Versehen aus. 16 % ihrer
+     Hoehe trifft dieselbe Weichheit wie am Brettfeld.
+
+     NICHT betroffen: das Handy. Dort ist die Teammarke Avatar, also
+     Identitaet, und bleibt rund. Dieser Scope gilt nur fuer die Projektion. */
+  --qq-pill-radius: 16%;
+
   /* ── Die Hausfarbe auf der Buehne ────────────────────────────────────────
      2026-08-22 (Wolf: „wir lassen die Farbe und falls es nicht passt, aendern
      wir sie im Nachhinein, nur die Farbe").

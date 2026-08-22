@@ -164,7 +164,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         borderRadius: 32,
         background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(var(--qq-accent-magenta-rgb),0.06))',
         border: '2px solid rgba(var(--qq-accent-rgb),0.32)',
-        boxShadow: '0 24px 64px rgba(0,0,0,0.50), inset 0 1px 0 rgba(255,255,255,0.08)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.08)',
       }}>
         <div style={{
           fontSize: 'clamp(14px, 1.1cqw, 20px)', fontWeight: 900, color: 'var(--qq-text-muted)',

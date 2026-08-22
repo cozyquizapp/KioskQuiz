@@ -407,7 +407,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
           fontSize: 26, fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase',
           color: standingFlash === 'tie' ? '#1B1206' : '#0A2412',
           background: standingFlash === 'tie' ? GOLD : '#34D27B',
-          boxShadow: `0 10px 30px rgba(0,0,0,0.5), 0 0 26px ${standingFlash === 'tie' ? GOLD : '#34D27B'}66`,
+          boxShadow: `0 0 26px ${standingFlash === 'tie' ? GOLD : '#34D27B'}66`,
           animation: reduce ? 'none' : 'qqT2FlashPop 0.5s cubic-bezier(0.2,1.3,0.4,1) both',
         }}>{standingFlash === 'tie' ? (de ? '⚖ Gleichstand!' : '⚖ Tied!') : (de ? '▲ In Führung!' : '▲ In the lead!')}</div>
       )}
@@ -464,15 +464,15 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
               {/* Kletternder Avatar (Krone/Badge) */}
               <div style={{ position: 'absolute', left: '50%', bottom: towerPx + 7, zIndex: 5, width: AV, height: AV, transform: 'translateX(-50%)', transition: reduce ? 'none' : 'bottom 0.44s cubic-bezier(0.34,1.4,0.6,1)' }}>
                 {isWinner && crowned && (
-                  <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: AV - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
+                  <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: AV - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                 )}
                 {!isWinner && showBadge && (
                   <div style={{ position: 'absolute', left: '50%', bottom: AV - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
-                    {badge && <span aria-hidden style={{ fontSize: 28, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}><QQEmojiIcon emoji={badge} size={28} /></span>}
-                    <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.05em', color: '#F8FAFC', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: '2px 9px', boxShadow: '0 3px 10px rgba(0,0,0,0.5)' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+                    {badge && <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={badge} size={28} /></span>}
+                    <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.05em', color: '#F8FAFC', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                   </div>
                 )}
-                <div style={{ width: AV, height: AV, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: myst ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 14px ${colr}77, 0 3px 8px rgba(0,0,0,0.45)`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
+                <div style={{ width: AV, height: AV, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: myst ? 'none' : `0 0 14px ${colr}77`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
                   {myst
                     ? <span aria-hidden style={{ fontSize: 30, fontWeight: 900, color: '#B9AEDA', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>?</span>
                     : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV} flat />}
@@ -488,7 +488,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                   <div key={bi} style={{
                     width: blockW, height: blockH, borderRadius: 4, position: 'relative', zIndex: 1,
                     background: isAwardBlock ? `linear-gradient(180deg, #FCE3B0 0%, ${GOLD} 55%, ${GOLD_DEEP} 100%)` : `linear-gradient(180deg, ${colr} 0%, ${colr} 60%, rgba(0,0,0,0.24) 100%)`,
-                    boxShadow: isAwardBlock ? `inset 0 1.5px 0 rgba(255,255,255,0.5), inset 0 -2px 4px rgba(120,80,10,0.4), 0 0 14px ${GOLD}88, 0 1px 2px rgba(0,0,0,0.3)` : `inset 0 1.5px 0 rgba(255,255,255,0.28), inset 0 -2px 4px rgba(0,0,0,0.26), 0 1px 2px rgba(0,0,0,0.3)${(crowned && isWinner) ? `, 0 0 14px ${colr}66` : ''}`,
+                    boxShadow: isAwardBlock ? `inset 0 1.5px 0 rgba(255,255,255,0.5), inset 0 -2px 4px rgba(120,80,10,0.4), 0 0 14px ${GOLD}88` : `inset 0 1.5px 0 rgba(255,255,255,0.28)${(crowned && isWinner) ? `, 0 0 14px ${colr}66` : ''}`,
                     border: `1px solid ${isAwardBlock ? GOLD_DEEP : edge}`,
                     transformOrigin: 'bottom center',
                     transition: 'background 0.45s ease, border-color 0.45s ease',
@@ -538,17 +538,17 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
         position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         padding: '34px 56px', borderRadius: 26,
         background: 'linear-gradient(180deg, rgba(40,29,13,0.98), rgba(24,17,8,0.98))',
-        border: `2px solid ${GOLD_DEEP}`, boxShadow: `0 30px 90px rgba(0,0,0,0.6), 0 0 46px ${GOLD}40, inset 0 1px 0 rgba(255,255,255,0.08)`,
+        border: `2px solid ${GOLD_DEEP}`, boxShadow: `0 0 46px ${GOLD}40, inset 0 1px 0 rgba(255,255,255,0.08)`,
         animation: reduce ? 'none' : 'qqT2AwardIn 0.55s cubic-bezier(0.2,1.2,0.35,1) both',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span aria-hidden style={{ fontSize: 15, fontWeight: 900, letterSpacing: '0.28em', textTransform: 'uppercase', color: GOLD }}>{de ? 'Award' : 'Award'}</span>
           <span style={{ fontSize: 13, fontWeight: 900, color: '#1B1206', background: GOLD, borderRadius: 999, padding: '2px 10px' }}>+{award.bonus}</span>
         </div>
-        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: `drop-shadow(0 6px 16px rgba(0,0,0,0.5)) drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQEmojiIcon emoji={award.emoji} size={76} /></div>
+        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQEmojiIcon emoji={award.emoji} size={76} /></div>
         <div style={{ fontSize: 40, fontWeight: 900, color: '#F8FAFC', lineHeight: 1.02, textAlign: 'center', textShadow: `0 2px 20px ${GOLD}44` }}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-          <div style={{ width: 60, height: 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: mystery ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+          <div style={{ width: 60, height: 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: mystery ? 'none' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
             {mystery ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: '#B9AEDA' }}>?</span> : <QQTeamAvatar avatarId={recip.avatarId} teamEmoji={recip.emoji} size={60} flat />}
           </div>
           <div style={{ fontSize: 26, fontWeight: 900, color: mystery ? '#C9BEE6' : recip.color, maxWidth: 460 }}>

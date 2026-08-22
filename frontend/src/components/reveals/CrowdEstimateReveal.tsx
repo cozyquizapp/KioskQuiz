@@ -354,7 +354,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                   }}>
                     <div style={{
                       position: 'relative', borderRadius: quirkSet ? '18%' : '50%',
-                      boxShadow: isWin && lit ? `0 0 0 3px ${SWARM_BLUE}e6, 0 0 42px ${SWARM_BLUE}99, 0 8px 22px rgba(0,0,0,0.45)` : `0 0 14px ${col}44`,
+                      boxShadow: isWin && lit ? `0 0 0 3px ${SWARM_BLUE}e6, 0 0 42px ${SWARM_BLUE}99` : `0 0 14px ${col}44`,
                       transition: 'box-shadow 0.4s ease',
                     }}>
                       <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqFactionAvatarEmoji(f.avatarId, rep?.emoji, isMega)} size="clamp(44px, 5.6cqw, 100px)" />
@@ -366,7 +366,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                           fontFamily: 'var(--font-display)', fontSize: 'clamp(11px,1.05cqw,18px)', fontWeight: 700,
                           color: QQ_COLORS.bgPage,
                           background: rank === 1 ? QQ_COLORS.amber400 : rank === 2 ? QQ_COLORS.slate300 : QQ_COLORS.orange700,
-                          boxShadow: '0 3px 8px rgba(0,0,0,0.4)', opacity: lit ? 1 : 0, transition: 'opacity 0.4s ease',
+ opacity: lit ? 1 : 0, transition: 'opacity 0.4s ease',
                         }}>{rank}</div>
                       )}
                     </div>

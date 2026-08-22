@@ -188,7 +188,7 @@ export function BeamerTimer({
           <div style={{
             position: 'absolute', inset: 0, background: 'var(--qq-accent-light)',
             clipPath: 'polygon(50% 0,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)',
-            filter: 'drop-shadow(0 6px 0 rgba(0,0,0,0.12))',
+
           }} />
           <div style={{ position: 'relative', color: 'var(--qq-card-text)' }}>{numBox}</div>
         </div>

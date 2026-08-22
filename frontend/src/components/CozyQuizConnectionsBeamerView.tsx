@@ -513,12 +513,12 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
                   ? `3px solid ${tm.color}`
                   : `3px solid ${tm.color}55`,
             boxShadow: isWinner
-              ? '0 0 18px var(--qq-accent)77, 0 0 32px var(--qq-accent)44, 0 4px 10px rgba(0,0,0,0.55)'
+              ? '0 0 18px var(--qq-accent)77, 0 0 32px var(--qq-accent)44'
               : greenActive
                 ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)'
                 : isActiveTeam
                   ? `0 0 16px ${tm.color}aa`
-                  : '0 4px 10px rgba(0,0,0,0.55)',
+                  : 'none',
             transition: 'all 0.45s ease',
             animation: isActiveTeam ? 'activeTeamGlow 2s ease-in-out infinite' : undefined,
           }}>

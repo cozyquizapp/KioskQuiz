@@ -189,7 +189,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#0a0814',
                 textShadow: '0 1px 2px rgba(255,255,255,0.2)',
-                boxShadow: rank === 1 ? '0 0 20px rgba(250,204,21,0.5)' : '0 3px 8px rgba(0,0,0,0.35)',
+                boxShadow: rank === 1 ? '0 0 20px rgba(250,204,21,0.5)' : 'none',
               }}>#{rank}</div>
               <div style={{ display: 'flex', alignItems: 'baseline', gap: 'clamp(8px,1cqw,14px)', minWidth: 0 }}>
                 <span style={{

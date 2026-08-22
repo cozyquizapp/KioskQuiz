@@ -186,7 +186,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               borderRadius: 32,
               background: `linear-gradient(135deg, ${teamColor}28 0%, ${teamColor}10 100%)`,
               border: `3px solid ${teamColor}aa`,
-              boxShadow: `0 0 80px ${teamColor}55, 0 16px 60px rgba(0,0,0,0.55)`,
+              boxShadow: `0 0 80px ${teamColor}55`,
               animation: 'finaleWinner 0.7s var(--qq-ease-out-cubic) both',
               position: 'relative', zIndex: 5,
               maxWidth: 'min(900px, 90cqw)',
@@ -214,8 +214,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 size={'clamp(140px, 18cqw, 260px)'}
                 style={{
                   boxShadow: isWinner
-                    ? `0 0 0 4px var(--qq-accent), 0 0 60px rgba(var(--qq-accent-rgb),0.7), 0 12px 40px rgba(0,0,0,0.5)`
-                    : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa, 0 12px 36px rgba(0,0,0,0.5)`,
+                    ? `0 0 0 4px var(--qq-accent), 0 0 60px rgba(var(--qq-accent-rgb),0.7)`
+                    : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa`,
                 }}
               />
             </div>
@@ -326,7 +326,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
           background: isThemed() ? 'var(--qq-card-bg)' : 'var(--qq-surface)',
           border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${winnerColor}55`,
-          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 60px ${winnerColor}33, 0 12px 40px rgba(0,0,0,0.5)`,
+          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 60px ${winnerColor}33`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           <GridDisplay
@@ -537,7 +537,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                     borderRadius: 16,
                     background: `linear-gradient(90deg, ${tm.color}1a, ${tm.color}08)`,
                     border: `1.5px solid ${tm.color}55`,
-                    boxShadow: `0 4px 14px rgba(0,0,0,0.35)`,
+
                     animation: `finaleRank 0.55s var(--qq-ease-bounce) ${revealDelay}s both`,
                     ...(themedWindow() ?? {}),
                   }}>

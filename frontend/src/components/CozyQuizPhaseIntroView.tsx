@@ -197,7 +197,7 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
               draggable={false}
               style={{
                 width: '94%', height: '94%', objectFit: 'contain',
-                filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+
                 animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
               }}
             />
@@ -905,7 +905,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               display: 'inline-flex', alignItems: 'center', gap: 'clamp(8px, 1cqw, 14px)',
               padding: 'clamp(6px,0.9cqh,11px) clamp(14px,1.6cqw,24px)', borderRadius: 'var(--qq-pill-radius)',
               background: 'var(--qq-surface)', border: '2px solid var(--qq-hairline)',
-              boxShadow: '0 8px 30px rgba(0,0,0,0.3)',
+
               animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
             }}>
               <span aria-hidden style={{ fontSize: 'clamp(18px,2cqw,28px)', lineHeight: 1 }}>🔥</span>
@@ -929,7 +929,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             position: 'absolute', top: 'clamp(14px, 2.4cqh, 36px)', left: '50%', transform: 'translateX(-50%)',
             zIndex: 6, pointerEvents: 'none',
-            filter: 'drop-shadow(0 0 20px rgba(236,72,153,0.4)) drop-shadow(0 6px 16px rgba(0,0,0,0.45))',
+            filter: 'drop-shadow(0 0 20px rgba(236,72,153,0.4))',
             animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
           }}>
             {/* Facetten-Kante */}
@@ -951,7 +951,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   fontFamily: arenaTitleFont, fontWeight: 900, fontSize: 'clamp(16px,1.85cqw,26px)',
                   color: '#3a0f22', background: 'linear-gradient(180deg, #FBCFE8, #EC4899)', borderRadius: 8,
                   padding: '1px clamp(8px,0.9cqw,12px)', fontVariantNumeric: 'tabular-nums',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55), 0 2px 6px rgba(0,0,0,0.4)',
+                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)',
                 }}>×{arenaFinaleMult}</span>
                 {!isFinalQ && (
                   <span style={{
@@ -1120,7 +1120,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'relative', zIndex: 5, marginBottom: 28,
                 animation: hasRoundTransition ? undefined : 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
-                filter: `drop-shadow(0 0 18px ${displayColor}66) drop-shadow(0 4px 12px rgba(0,0,0,0.4))`,
+                filter: `drop-shadow(0 0 18px ${displayColor}66)`,
                 transition: 'filter 500ms ease',
               }}>
                 {/* Facetten-Kante (heller Rundton) */}
@@ -1135,7 +1135,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     background: `linear-gradient(180deg, ${displayColor}66 0%, rgba(18,10,26,0.92) 62%)`,
                     padding: '10px clamp(42px, 4.6cqw, 68px)',
                     fontSize: 'clamp(16px, 1.8cqw, 25px)', fontWeight: 900, letterSpacing: '0.14em',
-                    color: '#FFFFFF', textShadow: '0 1px 6px rgba(0,0,0,0.6)',
+                    color: '#FFFFFF',
                     textAlign: 'center', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                     transition: 'background 500ms ease',
                   }}>{roundCountText}</div>
@@ -1165,13 +1165,13 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             // 2026-05-13 Kontrast-Audit: #fde6f0 auf der hellen Seite des
             // Pill-BG matschte. #FFFFFF + Dark-Halo trennt den Round-Counter klar.
             color: isEsc ? '#FFFFFF' : isThemed() ? 'var(--qq-text-muted)' : '#FFFFFF',
-            textShadow: isEsc ? '0 1px 4px rgba(0,0,0,0.5)' : isThemed() ? 'none' : '0 1px 6px rgba(0,0,0,0.55)',
+            textShadow: isEsc ? 'none' : isThemed() ? 'none' : 'none',
             letterSpacing: '0.1em',
             marginBottom: 28,
             animation: hasRoundTransition ? undefined : 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.1s both',
             transition: 'background 500ms ease, border-color 500ms ease, color 500ms ease',
             position: 'relative', zIndex: 5,
-            boxShadow: isEsc ? '0 0 18px rgba(255,45,123,0.25)' : isThemed() ? 'none' : `0 0 24px ${displayColor}55, 0 4px 16px rgba(0,0,0,0.38)`,
+            boxShadow: isEsc ? '0 0 18px rgba(255,45,123,0.25)' : isThemed() ? 'none' : `0 0 24px ${displayColor}55`,
           }}>
             {lang === 'de'
               ? `Runde ${displayGpi} von ${s.totalPhases}`
@@ -1299,7 +1299,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 textShadow: isThemed()
                   ? 'none'
                   : isEsc
-                  ? `0 4px 22px rgba(0,0,0,0.7), 0 0 120px ${color}44`
+                  ? `0 0 120px ${color}44`
                   : `0 0 120px ${color}44`,
                 textAlign: 'center',
                 animation: 'roundBam 0.65s var(--qq-ease-out-cubic) 0.15s both, roundBreathe 4s ease-in-out 1.2s infinite',
@@ -1733,8 +1733,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     Zoomt sichtbar aus dem Runden-Tree-Dot heraus (CategoryHeroFlip). */}
                 <CategoryHeroFlip dotScreen={dotScreen} vpRef={camViewportRef} style={{
                   filter: isThemed()
-                    ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
-                    : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
+                    ? 'none'
+                    : `drop-shadow(0 0 46px ${catColor}66)`,
                 }}>
                   {heroIconSlug
                     ? <QQIcon slug={heroIconSlug} size="clamp(120px, 15cqw, 240px)" alt={info.title[lang]} />
@@ -1922,8 +1922,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               {/* HERO — zoomt sichtbar aus dem Runden-Tree-Dot heraus. */}
               <CategoryHeroFlip dotScreen={dotScreen} vpRef={camViewportRef} style={{
                 filter: isThemed()
-                  ? 'drop-shadow(0 16px 28px rgba(0,0,0,0.45))'
-                  : `drop-shadow(0 0 46px ${catColor}66) drop-shadow(0 16px 28px rgba(0,0,0,0.5))`,
+                  ? 'none'
+                  : `drop-shadow(0 0 46px ${catColor}66)`,
               }}>
                 {heroIconSlug
                   ? <QQIcon slug={heroIconSlug} size="clamp(140px, 17cqw, 280px)" alt={catLabel} />

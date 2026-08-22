@@ -603,7 +603,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${cardSlide.color}44`,
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
         padding: `clamp(24px, 4cqh, ${hasGridC ? 52 : 60}px) clamp(32px, 5cqw, ${hasGridC ? 64 : 72}px)`,
-        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${cardSlide.color}22, 0 16px 48px rgba(0,0,0,0.6)`,
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${cardSlide.color}22`,
         // 2026-07-17b (Wolf): horizontaler Einheits-Schwenk passend zum Progress-Tree
         // oben (vorwaerts von rechts, zurueck von links). Inhalt reist als Ganzes mit
         // (kein Per-Zeile-contentReveal), Opacity front-geladen → kein „totes Loch".
@@ -634,7 +634,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           {cardSlide.heroJokers ? (
             <div style={{
               display: 'inline-flex', alignItems: 'flex-end', gap: 'clamp(8px, 1cqw, 18px)',
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+
               animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}>
               <JokerIcon i={0} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
@@ -645,14 +645,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           ) : cardSlide.iconImg ? (
             <span style={{
               display: 'inline-block',
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+
               animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><CozyGameIcon id={cardSlide.iconImg} emoji={cardSlide.icon} size={'clamp(64px,9cqw,110px)'} /></span>
           ) : (
             <span style={{
               display: 'inline-block',
               fontSize: 'clamp(64px,9cqw,110px)', lineHeight: 1,
-              filter: 'drop-shadow(0 4px 16px rgba(0,0,0,0.5))',
+
               animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><QQEmojiIcon emoji={cardSlide.icon}/></span>
           )}
@@ -1020,7 +1020,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 <div className="qqRulesWolf" style={{
                   position: 'absolute', bottom: '50%', left: 0,
                   width: 'clamp(28px, 2.6cqw, 44px)',
-                  filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.5))',
+
                   animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
                 }}>
                   <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}

@@ -278,8 +278,8 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   // Delight: beim Fuehrungswechsel poppt die Krone einmal freudig
                   // rein (Rest-Winkel bleibt danach ruhig bei -14deg).
                   filter: leadChangeId === t.id
-                    ? `drop-shadow(0 2px 4px rgba(0,0,0,0.5)) drop-shadow(0 0 12px ${tColor})`
-                    : 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+                    ? `drop-shadow(0 0 12px ${tColor})`
+                    : 'none',
                   animation: leadChangeId === t.id ? 'qqCrownArrive 0.7s var(--qq-ease-bounce) both' : undefined,
                 }}><QQEmojiIcon emoji="👑" size="1em" /></span>
               )}
@@ -298,7 +298,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
                   width: dense ? 34 : 44,
                   height: dense ? 34 : 44,
                   pointerEvents: 'none',
-                  filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))',
+
                   animation: 'phasePop 0.45s var(--qq-ease-bounce) both',
                   zIndex: 11,
                 }}>

@@ -243,7 +243,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           style="width:${mode === 'image' ? '94%' : '100%'};height:${mode === 'image' ? '94%' : '100%'};object-fit:${mode === 'image' ? 'contain' : 'cover'};display:block;border-radius:${square ? '18%' : '50%'};" />
         <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;font-size:28px;line-height:1;">${emojiFallback}</span>
         ` : `
-        <span style="display:flex;align-items:center;justify-content:center;width:100%;height:100%;font-size:30px;line-height:1;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));">${srcOrEmoji}</span>
+        <span style="none">${srcOrEmoji}</span>
         `}
       </div>
     </div>`,
@@ -402,7 +402,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
           background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
           color: 'var(--qq-accent-soft)', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5), 0 0 28px rgba(var(--qq-accent-rgb),0.25)',
+          boxShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.25)',
           zIndex: 1000, letterSpacing: 0.3,
         }}>
           <QQEmojiIcon emoji="🌍"/> {title}
@@ -423,7 +423,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           // liefert die Waerme, das Panel nur den Kontrast fuer die Rangliste.
           background: 'linear-gradient(180deg, rgba(14,11,22,0.44), rgba(8,6,14,0.64))',
           borderLeft: '2px solid rgba(255,255,255,0.10)',
-          boxShadow: '-12px 0 40px rgba(0,0,0,0.5)',
+
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
           gap: 8, overflowY: 'hidden',
@@ -507,8 +507,8 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           background: 'rgba(13,10,6,0.92)',
           border: '2.5px solid rgba(34,197,94,0.7)',
           color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8cqw, 38px)',
-          boxShadow: '0 0 50px rgba(34,197,94,0.35), 0 8px 24px rgba(0,0,0,0.45)',
-          textShadow: '0 2px 4px rgba(0,0,0,0.5)',
+          boxShadow: '0 0 50px rgba(34,197,94,0.35)',
+
           textAlign: 'center',
           animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) both',
           zIndex: 1000, pointerEvents: 'none',

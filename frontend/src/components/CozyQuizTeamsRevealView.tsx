@@ -184,7 +184,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                 ? <img src={src} alt="" draggable={false} style={{
                     position: 'relative', width: cw, height: 'auto',
                     filter: on
-                      ? `drop-shadow(0 0 28px ${f.color}aa) drop-shadow(0 10px 20px rgba(0,0,0,0.55))`
+                      ? `drop-shadow(0 0 28px ${f.color}aa)`
                       : 'grayscale(0.75) brightness(0.55)',
                     animation: on ? 'qqRosterLand 0.62s var(--qq-ease-bounce-soft) both' : 'none',
                     transition: 'filter 0.45s ease',
@@ -197,7 +197,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
               background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
               fontSize: big ? 'clamp(13px, 1.4cqw, 22px)' : 'clamp(12px, 1.3cqw, 19px)',
               fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
-              textShadow: '0 1px 3px rgba(0,0,0,0.7)', boxShadow: '0 2px 8px rgba(0,0,0,0.5)',
+
               opacity: on ? 1 : 0.7,
             }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
           </div>
@@ -246,10 +246,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         {/* Titel + Eyebrow sitzen
             transparent ueber dem Arena-Foto-BG → Text-Shadow garantiert Lesbarkeit
             auch ueber hellen Bildstellen (themed = flacher Skin-BG, braucht keinen). */}
-        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', textShadow: themed ? 'none' : '0 2px 12px rgba(0,0,0,0.75)' }}>
+        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', textShadow: themed ? 'none' : 'none' }}>
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
-        <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : '0 3px 20px rgba(0,0,0,0.7), 0 1px 4px rgba(0,0,0,0.6)' }}>
+        <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : 'none' }}>
           CozyArena
         </div>
       </div>
@@ -272,7 +272,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           // — die Fraktions-Wappen fuellen die Buehne (nicht mehr als duenner Boden-
           // streifen), steigen gestaffelt gross rein und schweben ruhig.
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(16px, 3cqh, 44px)', width: '100%', animation: 'qqArenaFinale 0.7s cubic-bezier(0.2,1,0.4,1) both' }}>
-            <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'min(clamp(40px, 6.2cqw, 104px), 15cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 4px 24px rgba(0,0,0,0.6), 0 0 40px rgba(246,217,138,0.35)' }}>
+            <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'min(clamp(40px, 6.2cqw, 104px), 15cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 0 40px rgba(246,217,138,0.35)' }}>
               {de ? 'Los geht’s!' : 'Let’s go!'}
             </div>
             <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'flex-end', gap: 'clamp(0px, 0.4cqw, 12px)', width: '100%', flexWrap: 'nowrap', padding: '0 clamp(4px, 1cqw, 22px)', boxSizing: 'border-box' }}>
@@ -298,14 +298,14 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                       {/* Podest-Glut am Boden — „stellt" das Wappen auf die Buehne */}
                       <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: '-8%', transform: 'translateX(-50%)', width: '96%', height: '34%', borderRadius: '50%', background: `radial-gradient(ellipse, ${f.color}66, transparent 70%)`, filter: 'blur(7px)', zIndex: 0, pointerEvents: 'none' }} />
                       {src
-                        ? <img src={src} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, width: cw, height: 'auto', filter: `drop-shadow(0 0 30px ${f.color}aa) drop-shadow(0 12px 22px rgba(0,0,0,0.55))` }} />
+                        ? <img src={src} alt="" draggable={false} style={{ position: 'relative', zIndex: 1, width: cw, height: 'auto', filter: `drop-shadow(0 0 30px ${f.color}aa)` }} />
                         : <QQTeamAvatar avatarId={f.avatarId} teamEmoji={qqMegaFactionSlug(f.avatarId)} size={cw} />}
                     </div>
                     <div style={{
                       padding: '3px clamp(10px, 1.1cqw, 16px)', borderRadius: 'var(--qq-pill-radius)',
                       background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
                       fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
-                      textShadow: '0 1px 3px rgba(0,0,0,0.7)', boxShadow: `0 2px 10px rgba(0,0,0,0.5), 0 0 18px ${f.color}44`,
+ boxShadow: `0 0 18px ${f.color}44`,
                     }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
                   </div>
                 );
@@ -317,7 +317,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           return (
             <div key={enterIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(8px, 1.4cqh, 20px)', animation: 'qqArenaEnter 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
               {src
-                ? <img src={src} alt="" draggable={false} style={{ width: 'min(clamp(150px, 20cqw, 340px), 36cqh)', height: 'auto', filter: `drop-shadow(0 0 60px ${curColor}88) drop-shadow(0 16px 30px rgba(0,0,0,0.55))` }} />
+                ? <img src={src} alt="" draggable={false} style={{ width: 'min(clamp(150px, 20cqw, 340px), 36cqh)', height: 'auto', filter: `drop-shadow(0 0 60px ${curColor}88)` }} />
                 : <QQTeamAvatar avatarId={cur.avatarId} teamEmoji={qqMegaFactionSlug(cur.avatarId)} size={'min(clamp(150px, 20cqw, 340px), 36cqh)'} style={{ boxShadow: `0 0 60px ${curColor}88` }} />}
               {/* Name mit Unterstrich (zieht sich auf) + Slogan, der sich wie eine
                   Schreibmaschine eintippt = der Arena-Moment (Wolf 2026-07-04). */}
@@ -555,13 +555,13 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   const titleColor = isEsc ? '#FF2D7B' : themed ? 'var(--qq-title)' : '#f8fafc';
   // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg, Dark-Halo first auf BG-Image.
   const titleShadow = isEsc
-    ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
+    ? 'none'
     : '0 4px 20px rgba(var(--qq-accent-rgb),0.25)';
   // 2026-06-24 (Lesbarkeit): „Viel Glück" auf Seiten-BG → var(--qq-text) bei Skin
   // (Akzent waere auf Neo-Brutal blau-auf-lila). Cozy = Pink-Akzent.
   const goodLuckColor = isEsc ? '#FF2D7B' : themed ? 'var(--qq-title)' : 'var(--qq-accent)';
   const goodLuckShadow = isEsc
-    ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
+    ? 'none'
     : '0 4px 24px rgba(var(--qq-accent-rgb),0.5)';
   return (
     <div style={{
@@ -703,7 +703,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             style={{
               height: 'clamp(48px, 6cqh, 92px)',
               width: 'auto',
-              filter: 'drop-shadow(0 0 18px rgba(var(--qq-accent-rgb),0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+              filter: 'rgba(var(--qq-accent-rgb),0.55)',
               animation: 'qqStingerHover 4.2s ease-in-out 1.2s infinite',
             }}
           />
@@ -829,14 +829,14 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
           }
           if (isCozy3dSlug(t.emoji)) {
             return <img src={cozy3dSrc(t.emoji)} alt={cozy3dLabel(t.emoji)} draggable={false}
-              style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+              style={{ width: '90%', height: '90%', objectFit: 'contain' }} />;
           }
           // Party 3D: neutrales Objekt aus t.emoji (frei kombinierbar, kein
           // Slot-Binding wie cozy3d). Ohne diesen Zweig fiele der Slug in den
           // Roh-Text-Case → abgeschnittener Slug-Text in der Disc.
           if (isPartySlug(t.emoji)) {
             return <img src={partySrc(t.emoji)} alt={partyLabel(t.emoji)} draggable={false}
-              style={{ width: '90%', height: '90%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+              style={{ width: '90%', height: '90%', objectFit: 'contain' }} />;
           }
           // Cozy Quirks 2.0 (slot-gebunden): das Design IMMER aus dem Farb-Slot
           // ableiten (Farbe fest gebacken), NIE aus t.emoji — sonst säße z.B. das
@@ -848,7 +848,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             const slug = slotIdx >= 0 ? quirk2ForSlot(slotIdx) : t.emoji;
             const q = quirk2BySlug(slug);
             return <img src={quirk2Src(q?.id ?? 'prisma', 'open')} alt={quirk2Label(slug)} draggable={false}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
           }
           // Blockz (slot-gebunden): gleiche Regel wie Quirks 2.0 darüber — das
           // Design IMMER aus dem Farb-Slot ableiten, nie aus t.emoji.
@@ -857,14 +857,14 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             const slug = slotIdx >= 0 ? blockzForSlot(slotIdx) : t.emoji;
             const b = blockzBySlug(slug);
             return <img src={blockzSrc(b?.id ?? 'solo', 'base')} alt={blockzLabel(slug)} draggable={false}
-              style={{ width: '100%', height: '100%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+              style={{ width: '100%', height: '100%', objectFit: 'contain' }} />;
           }
           // CozyArena-Wappen-Slug → freigestelltes Emblem (cremes Symbol) auf
           // der Farb-Disc. Ohne diesen Zweig fiel der Slug in den Roh-Text-Case
           // darunter → abgeschnittener Slug-Text in der Disc (Wolf 2026-07-03).
           if (isCrestSlug(t.emoji)) {
             return <img src={crestSrc(t.emoji)} alt={crestLabel(t.emoji)} draggable={false}
-              style={{ width: '92%', height: '92%', objectFit: 'contain', filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.4))' }} />;
+              style={{ width: '92%', height: '92%', objectFit: 'contain' }} />;
           }
           // Cozy Pack (Wolf 2026-07-21 'text statt bilder der wölfe'): Slug fiel
           // sonst in den Roh-Text-Case → der Wolf-Slug wurde als Text gerendert.
@@ -874,7 +874,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             const slotIdx = QQ_AVATARS.findIndex(a => a.id === t.avatarId);
             const slug = (slotIdx >= 0 ? COZY_WOLVES[slotIdx]?.slug : undefined) ?? t.emoji;
             return <img src={cozyWolfSrc(slug)} alt={cozyWolfLabel(slug)} draggable={false}
-              style={{ width: '92%', height: '92%', objectFit: 'contain', filter: 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))' }} />;
+              style={{ width: '92%', height: '92%', objectFit: 'contain' }} />;
           }
           if (t.emoji) return <>{t.emoji}</>;
           return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;
@@ -917,7 +917,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                         background: quirkSet ? 'transparent' : `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
                         border: quirkSet ? 'none' : (revealed ? `2px solid ${t.color}` : '1.5px solid rgba(255,255,255,0.07)'),
                         boxShadow: quirkSet ? 'none' : (revealed
-                          ? `0 14px 36px rgba(0,0,0,0.55), inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
+                          ? `inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
                           : 'none'),
                         opacity: revealed ? 1 : 0.24,
                         display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -998,7 +998,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                               style={{
                                 textAlign: 'center',
                                 letterSpacing: '-0.01em',
-                                textShadow: '0 2px 8px rgba(0,0,0,0.7), 0 1px 3px rgba(0,0,0,0.55)',
+
                                 maxWidth: '95%',
                               }}
                             />
@@ -1045,7 +1045,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                 background: 'transparent',
                 border: 'none',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                filter: 'drop-shadow(0 18px 34px rgba(0,0,0,0.55))',
+
                 overflow: 'visible',
                 fontSize: 'clamp(150px, 17cqw, 252px)', lineHeight: 1,
               }}>
@@ -1056,7 +1056,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                 fontSize: 'clamp(34px, 5cqw, 64px)', color: '#fff', textAlign: 'center',
                 // 2026-07-02 (Wolf: Spotlight-Name schlecht lesbar/abgeschnitten):
                 // kräftigerer Dark-Halo für Kontrast + saubere Ellipsis statt Überlauf.
-                textShadow: '0 2px 6px rgba(0,0,0,0.85), 0 4px 24px rgba(0,0,0,0.6)',
+
                 whiteSpace: 'nowrap', maxWidth: 'min(80cqw, 640px)',
                 overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{spotTeam?.name}</div>

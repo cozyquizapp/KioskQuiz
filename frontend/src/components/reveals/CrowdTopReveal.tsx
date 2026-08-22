@@ -193,7 +193,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#0a0814',
                 textShadow: '0 1px 2px rgba(255,255,255,0.2)', zIndex: 1,
-                boxShadow: rank === 1 ? '0 0 20px rgba(var(--qq-accent-rgb),0.5)' : '0 3px 8px rgba(0,0,0,0.35)',
+                boxShadow: rank === 1 ? '0 0 20px rgba(var(--qq-accent-rgb),0.5)' : 'none',
               }}>#{rank}</div>
               <div style={{ minWidth: 0, zIndex: 1 }}>
                 <div style={{

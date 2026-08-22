@@ -292,7 +292,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               // sonst z.B. Neo-Brutal blau-auf-lila. Cozy behält den Pink-Akzent.
               color: themed ? 'var(--qq-title)' : brand.accentHex,
               // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + Outline.
-              textShadow: themed ? 'none' : '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
+              textShadow: themed ? 'none' : 'none',
               WebkitTextStroke: themed ? 'none' : '1px rgba(0,0,0,0.4)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
@@ -304,7 +304,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               fontSize: 'clamp(34px, 4.6cqw, 70px)',
               lineHeight: 1, height: '1em',
               color: '#fde6f0',
-              textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+
               animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
             }}>×</span>
             <span style={{ display: 'inline-flex', alignItems: 'center', animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite' }}>
@@ -315,7 +315,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 style={{
                   height: 'clamp(68px, 9.5cqh, 142px)',
                   width: 'auto',
-                  filter: `drop-shadow(0 0 18px rgba(${brand.accentRgb},0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))`,
+                  filter: `drop-shadow(0 0 18px rgba(${brand.accentRgb},0.55))`,
                 }}
               />
             </span>
@@ -331,7 +331,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               fontWeight: 400,
               letterSpacing: '0.06em',
               color: brand.accentHex,
-              textShadow: `0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(${brand.accentRgb},0.6)`,
+              textShadow: `0 0 32px rgba(${brand.accentRgb},0.6)`,
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
@@ -359,7 +359,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 textShadow: themed
                   ? 'none'
                   : isEsc
-                  ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
+                  ? 'none'
                   : `0 0 24px rgba(${brand.accentRgb},0.28), 0 0 56px rgba(${brand.accentRgb},0.28)`,
                 whiteSpace: 'nowrap',
                 display: 'inline-block',
@@ -464,7 +464,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     position: 'absolute', left: '50%', top: '-30%',
                     fontSize: 'clamp(64px, 7cqw, 110px)', lineHeight: 1,
                     pointerEvents: 'none',
-                    filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.9))',
+                    filter: 'drop-shadow(0 0 28px rgba(251,191,36,0.9))',
                     animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
                     zIndex: 5,
                   }}><QQEmojiIcon emoji="👑" size="1em" /></span>
@@ -510,7 +510,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       fontWeight: 900,
                       color: winner.color,
                       letterSpacing: '-0.01em',
-                      textShadow: `0 0 22px ${winner.color}77, 0 2px 8px rgba(0,0,0,0.7)`,
+                      textShadow: `0 0 22px ${winner.color}77`,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden', textOverflow: 'ellipsis',
                       maxWidth: '100%',
@@ -545,7 +545,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   borderRadius: themed ? 'var(--qq-card-radius)' : 18,
                   background: '#fff',
                   border: themed ? 'var(--qq-card-border)' : `3px solid rgba(${brand.accentRgb},0.75)`,
-                  boxShadow: themed ? 'var(--qq-card-shadow)' : `0 0 28px rgba(${brand.accentRgb},0.55), 0 6px 18px rgba(0,0,0,0.5)`,
+                  boxShadow: themed ? 'var(--qq-card-shadow)' : `0 0 28px rgba(${brand.accentRgb},0.55)`,
                   animation: isQuietMotion() ? undefined : 'qqThanksQrPulse 2.4s ease-in-out infinite',
                 }}>
                   <QRCodeSVG

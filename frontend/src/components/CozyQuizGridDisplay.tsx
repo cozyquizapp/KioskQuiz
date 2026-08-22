@@ -306,9 +306,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 // + Goldglow. Leere Cells haben keinen 3D-Effekt.
                 transform: isStuck ? 'translateY(-3px)' : undefined,
                 filter: isStuck
-                  ? 'drop-shadow(0 5px 6px rgba(0,0,0,0.55)) drop-shadow(0 0 8px rgba(var(--qq-accent-rgb),0.45))'
+                  ? 'rgba(var(--qq-accent-rgb),0.45)'
                   : team
-                    ? 'drop-shadow(0 3px 3px rgba(0,0,0,0.45))'
+                    ? 'none'
                     : undefined,
                 transition: 'transform 0.4s var(--qq-ease-bounce), filter 0.4s ease',
                 animation: isJustFormedJoker
@@ -732,19 +732,19 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                               {isStampSlot && stampCozy ? (
                                 <img src={cozy3dSrc(stampCozy)} alt="" draggable={false} style={{
                                   width: '92%', height: '92%', objectFit: 'contain',
-                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+
                                 }} />
                               ) : isStampSlot && stampIcon ? (
                                 <img src={`/icons/${stampIcon}.png`} alt="" draggable={false} style={{
                                   width: '92%', height: '92%', objectFit: 'contain',
-                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.5))',
+
                                 }} />
                               ) : isStampSlot && stampEmoji ? (
                                 <span style={{
                                   // 2026-05-25 v2 (Wolf 'münze viel größer als avatar'):
                                   // gleiche Größe wie das Team-Avatar-Emoji (size * 0.6).
                                   fontSize: avSize * 0.6, lineHeight: 1,
-                                  filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.55))',
+
                                 }}>{stampEmoji}</span>
                               ) : (
                                 <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avSize} flat

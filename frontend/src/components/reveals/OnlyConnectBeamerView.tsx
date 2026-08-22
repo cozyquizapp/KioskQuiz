@@ -268,8 +268,8 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                           style={{
                             border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
                             boxShadow: isFastest
-                              ? `0 0 0 3px ${tm.color}, 0 0 22px rgba(236,72,153,0.6), 0 6px 14px rgba(0,0,0,0.55)`
-                              : `0 0 0 3px ${tm.color}, 0 0 14px ${tm.color}88, 0 6px 14px rgba(0,0,0,0.55)`,
+                              ? `0 0 0 3px ${tm.color}, 0 0 22px rgba(236,72,153,0.6)`
+                              : `0 0 0 3px ${tm.color}, 0 0 14px ${tm.color}88`,
                             background: '#0A0814',
                             flexShrink: 0,
                           }}
@@ -286,7 +286,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                             fontWeight: 900,
                             fontSize: 'clamp(12px, 1.3cqw, 17px)',
                             whiteSpace: 'nowrap',
-                            boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+
                             lineHeight: 1.1,
                           }}>
                             {timeSec.toFixed(1)}s
@@ -336,8 +336,8 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5cqw, 72px)'} style={{
                 background: '#0A0814',
                 boxShadow: hasSubmitted
-                  ? `0 0 0 3px #22C55E, 0 4px 10px rgba(0,0,0,0.55)`
-                  : `0 0 0 2px ${tm.color}55, 0 4px 10px rgba(0,0,0,0.55)`,
+                  ? `0 0 0 3px #22C55E`
+                  : `0 0 0 2px ${tm.color}55`,
                 transition: 'box-shadow 0.45s ease',
               }} />
             </div>

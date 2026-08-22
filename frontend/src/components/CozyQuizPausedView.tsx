@@ -1432,7 +1432,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               fontWeight: 400,
               letterSpacing: '0.04em',
               color: 'var(--qq-accent)',
-              textShadow: '0 2px 14px rgba(0,0,0,0.65), 0 0 32px rgba(var(--qq-accent-rgb),0.6)',
+              textShadow: '0 0 32px rgba(var(--qq-accent-rgb),0.6)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
@@ -1457,7 +1457,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               color: '#FF2D7B',
               // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + dezente
               // Outline (Stinger Fit weight 400 verliert sonst auf Pink-BG).
-              textShadow: '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
+
               WebkitTextStroke: '1px rgba(0,0,0,0.4)',
               lineHeight: 0.96,
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
@@ -1476,7 +1476,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               lineHeight: 1,
               height: '1em',
               color: '#fde6f0',
-              textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+
               animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
             }}>×</span>
             {/* Eurovision-Logo — Hoehe gebumpt damit 'Eurovision Song Contest'-
@@ -1490,7 +1490,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   // 2026-05-07 v19: Logo proportional zu COZYQUIZ-Shrink.
                   height: 'clamp(68px, 9.5cqh, 142px)',
                   width: 'auto',
-                  filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55)) drop-shadow(0 4px 10px rgba(0,0,0,0.5))',
+                  filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55))',
                 }}
               />
             </span>
@@ -1546,7 +1546,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 // first (Pink-Glow konkurrierte mit Pink-BG). WCAG-fix:
                 // #FF2D7B auf 5.png/3.png Pink-Gradient war 3.0:1 (AA-Fail).
                 textShadow: isEsc
-                  ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
+                  ? 'none'
                   : `0 0 24px ${modeGlow}, 0 0 56px ${modeGlow}`,
                 whiteSpace: 'nowrap',
                 display: 'inline-block',
@@ -1604,7 +1604,6 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             padding: 'clamp(32px, 4cqw, 56px)',
             border: `1px solid ${modeAccentDim}`,
             boxShadow:
-              `0 14px 48px rgba(0,0,0,0.55),` +
               `0 0 64px ${modeGlow},` +
               `0 0 0 1px rgba(255,235,200,0.04) inset,` +
               `0 -3px 0 ${modeAccent} inset`,

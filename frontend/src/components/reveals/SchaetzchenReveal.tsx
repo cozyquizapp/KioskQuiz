@@ -454,7 +454,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                       <span aria-hidden style={{
                         position: 'absolute', top: '-52%', left: '50%', transform: 'translateX(-50%)',
                         fontSize: 'clamp(22px, 2.8cqw, 48px)', lineHeight: 1, zIndex: 9,
-                        filter: `drop-shadow(0 0 14px ${GOLD}) drop-shadow(0 3px 6px rgba(0,0,0,0.5))`,
+                        filter: `drop-shadow(0 0 14px ${GOLD})`,
                       }}><QQEmojiIcon emoji="👑" /></span>
                     )}
                     <QQTeamAvatar avatarId={r.team.avatarId} teamEmoji={r.team.emoji} size={av} />

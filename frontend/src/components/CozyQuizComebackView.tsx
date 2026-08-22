@@ -293,7 +293,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
           background: isThemed() ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',
           border: isThemed() ? 'var(--qq-card-border)' : '2px solid rgba(var(--qq-accent-rgb),0.32)',
-          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 4px 0 rgba(var(--qq-accent-rgb),0.18), 0 12px 36px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05)',
+          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 4px 0 rgba(var(--qq-accent-rgb),0.18), inset 0 1px 0 rgba(255,255,255,0.05)',
           minHeight: 'clamp(96px, 12cqh, 168px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.08s both',
@@ -303,7 +303,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             style={{
               fontSize: 'clamp(32px, 4.5cqw, 72px)', fontWeight: 900, color: isThemed() ? 'var(--qq-card-text)' : '#F8FAFC',
               textAlign: 'center', lineHeight: 1.18,
-              textShadow: isThemed() ? 'none' : '0 2px 18px rgba(0,0,0,0.4)',
+              textShadow: isThemed() ? 'none' : 'none',
               animation: 'qqHlQuestionFade 0.6s ease both',
             }}
           >
@@ -330,7 +330,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             minHeight: 'clamp(280px, 34cqh, 400px)',
             background: 'linear-gradient(135deg, rgba(34,197,94,0.14), rgba(34,197,94,0.04))',
             border: '2px solid rgba(34,197,94,0.42)',
-            boxShadow: '0 0 40px rgba(34,197,94,0.18), 0 8px 28px rgba(0,0,0,0.4)',
+            boxShadow: '0 0 40px rgba(34,197,94,0.18)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 14, justifyContent: 'center',
           }}>
@@ -519,7 +519,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             minHeight: 'clamp(280px, 34cqh, 400px)',
             background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.18), rgba(var(--qq-accent-rgb),0.05))',
             border: '3px solid rgba(var(--qq-accent-rgb),0.7)',
-            boxShadow: '0 0 44px rgba(var(--qq-accent-rgb),0.28), 0 8px 28px rgba(0,0,0,0.4)',
+            boxShadow: '0 0 44px rgba(var(--qq-accent-rgb),0.28)',
             textAlign: 'center',
             display: 'flex', flexDirection: 'column', gap: 14, justifyContent: 'center',
           }}>
@@ -718,8 +718,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
               ? '2px solid rgba(255,45,123,0.55)'
               : '2px solid rgba(var(--qq-accent-rgb),0.4)',
             boxShadow: s.theme?.eurovisionMode
-              ? '0 0 32px rgba(255,45,123,0.22), 0 6px 18px rgba(0,0,0,0.4)'
-              : '0 0 32px rgba(var(--qq-accent-rgb),0.18), 0 6px 18px rgba(0,0,0,0.4)',
+              ? '0 0 32px rgba(255,45,123,0.22)'
+              : '0 0 32px rgba(var(--qq-accent-rgb),0.18)',
             textAlign: 'center',
             // 2026-05-07 (Layout-Audit): 900 → 1100, sonst sitzt die Mechanik-Card
             // schmaler als der COMEBACK-Title darüber → wirkt zentriert-zu-eng.
@@ -769,7 +769,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           padding: '36px 48px', borderRadius: 24,
           background: 'rgba(var(--qq-accent-rgb),0.08)',
           border: '2px solid rgba(var(--qq-accent-rgb),0.35)',
-          boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.15), 0 8px 32px rgba(0,0,0,0.4)',
+          boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.15)',
           animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.4s both',
           position: 'relative', zIndex: 5,
         }}>
@@ -876,8 +876,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
             background: cardBg,
             border: hl ? '2.5px solid rgba(var(--qq-accent-rgb),0.55)' : `2.5px solid #EF444455`,
             boxShadow: hl
-              ? '0 0 44px rgba(var(--qq-accent-rgb),0.25), 0 8px 22px rgba(0,0,0,0.4)'
-              : `0 0 44px rgba(239,68,68,0.22), 0 8px 22px rgba(0,0,0,0.4)`,
+              ? '0 0 44px rgba(var(--qq-accent-rgb),0.25)'
+              : `0 0 44px rgba(239,68,68,0.22)`,
             fontSize: 'clamp(22px, 2.6cqw, 36px)', fontWeight: 900,
             color: hl ? QQ_COLORS.brandPink : '#fecaca',
             maxWidth: 1000,

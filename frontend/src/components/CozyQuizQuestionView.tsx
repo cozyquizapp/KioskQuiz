@@ -803,7 +803,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 : 'clamp(12px, 1.6cqw, 28px)',
               borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
               border: `4px solid ${accent}`,
-              boxShadow: `0 0 32px ${accent}55, inset 0 0 0 2px rgba(0,0,0,0.45), inset 0 0 20px rgba(0,0,0,0.35)`,
+              boxShadow: `0 0 32px ${accent}55`,
               pointerEvents: 'none',
               zIndex: 52,
               animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) 0.15s both',
@@ -824,7 +824,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             right: '8%', top: '15%',
             maxWidth: '35%', maxHeight: '70%',
             objectFit: 'contain',
-            filter: `drop-shadow(0 16px 40px rgba(0,0,0,0.6))${imgFilter(img) ? ' ' + imgFilter(img) : ''}`,
+            filter: `imgFilter(img) imgFilter(img)`,
             animation: imgAnim(img.animation, 'cutout', img.animDelay, img.animDuration),
             transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,
             opacity: img.opacity ?? 1,
@@ -837,7 +837,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position: 'absolute', pointerEvents: 'none', zIndex: 3,
           top: c.top, bottom: c.bottom, left: c.left, right: c.right,
           fontSize: c.size, lineHeight: 1, userSelect: 'none',
-          filter: 'drop-shadow(0 12px 28px rgba(0,0,0,0.5))',
+
           ['--r' as string]: `${c.rot}deg`,
           animation: c.alt ? `cfloata ${4 + i}s ease-in-out infinite` : `cfloat ${4 + i * 0.7}s ease-in-out infinite`,
         }}>
@@ -894,7 +894,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               border: isThemed() ? 'var(--qq-card-border)' : undefined,
               backdropFilter: isThemed() ? 'none' : 'blur(8px)',
               WebkitBackdropFilter: isThemed() ? 'none' : 'blur(8px)',
-              boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 4px 22px rgba(0,0,0,0.45)`,
+              boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `none`,
             }}>
               <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} variant="plain" />
             </div>
@@ -977,8 +977,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             boxShadow: isThemed()
               ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}, var(--qq-card-shadow)` : 'var(--qq-card-shadow)')
               : isCheeseReveal
-              ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88, 0 24px 80px rgba(0,0,0,0.5)`
-              : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 24px 80px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`,
+              ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88`
+              : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
             // 2026-05-05 (Wolf 'Cheese-Reveal-Card wiggelt beim Auftauchen,
             // wirkt chaotisch'): revealAnswerBam (scale+wiggle) entfernt —
             // die Card ist beim Reveal eh schon sichtbar (war im Question-
@@ -1171,8 +1171,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // Sieger nur durch weichen Glow in KATEGORIE-Farbe (kein Pink-Akzent).
                               border: 'none',
                               boxShadow: isFastest
-                                ? `0 0 26px ${accent}88, 0 4px 14px rgba(0,0,0,0.45)`
-                                : '0 4px 12px rgba(0,0,0,0.4)',
+                                ? `0 0 26px ${accent}88`
+                                : 'none',
                             }}
                           />
                         </div>
@@ -1261,7 +1261,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 borderRadius: 'var(--qq-pill-radius)',
                 background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
                 border: `2.5px solid ${winnerTeam.color}aa`,
-                boxShadow: `0 0 36px ${winnerTeam.color}55, 0 4px 14px rgba(0,0,0,0.45)`,
+                boxShadow: `0 0 36px ${winnerTeam.color}55`,
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
                 animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${cardDelaySec}s both`,
@@ -1806,7 +1806,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, padding: '22px 24px',
                       background: cardBg,
                       border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
-                      boxShadow: '0 4px 16px rgba(0,0,0,0.3), inset 0 0 0 1px rgba(255,255,255,0.04)',
+                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(20px, 2.4cqw, 34px)', fontWeight: 900, color: 'var(--qq-card-text)',
                       textAlign: 'center', lineHeight: 1.25,
@@ -2072,7 +2072,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               background: quirkSet && !isFastest ? 'transparent' : (isMegaTeams && !isThemed() ? 'rgba(15,23,42,0.92)' : 'var(--qq-overlay)'),
                               border: isFastest ? `3px solid ${SPEED_GOLD}` : (quirkSet ? 'none' : `2px solid ${tm.color}`),
                               boxShadow: isFastest
-                                ? `0 0 22px ${SPEED_GOLD}8c, 0 6px 14px rgba(0,0,0,0.55)`
+                                ? `0 0 22px ${SPEED_GOLD}8c`
                                 : (quirkSet ? 'none' : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`),
                               animation: `muchoVoterDrop 0.55s var(--qq-ease-bounce) ${0.1 + bi * 0.08}s both`,
                             }}>
@@ -2092,7 +2092,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   <span style={{
                                     display: 'inline-block',
                                     fontSize: 'clamp(22px, 2.6cqw, 38px)', lineHeight: 1,
-                                    filter: 'drop-shadow(0 3px 6px rgba(0,0,0,0.55))',
+
                                     animation: 'muchoVoterDrop 0.6s var(--qq-ease-bounce) 0.3s both',
                                   }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                                 </span>
@@ -2106,7 +2106,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 // dass font-ascent/descent die Pill-Hoehe sprengt.
                                 lineHeight: 1,
                                 color: tm.color, fontVariantNumeric: 'tabular-nums',
-                                textShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.45), 0 1px 2px rgba(0,0,0,0.6)',
+                                textShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.45)',
                               }}>{pts}</span>
                               {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
@@ -2121,7 +2121,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2cqw, 15px)',
                                   whiteSpace: 'nowrap',
-                                  boxShadow: '0 4px 10px rgba(0,0,0,0.5)',
+
                                   lineHeight: 1.1,
                                 }}>
                                   {timeSec.toFixed(1)}s
@@ -2192,14 +2192,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         borderRadius: 'var(--qq-pill-radius)',
                         background: 'var(--qq-overlay)',
                         border: `2px solid ${tm.color}`,
-                        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 8px ${tm.color}44`,
+                        boxShadow: `0 0 8px ${tm.color}44`,
                       }}>
                         <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(28px, 3cqw, 40px)'} />
                         <span style={{
                           fontSize: 'clamp(14px, 1.6cqw, 22px)',
                           fontWeight: 900,
                           color: tm.color, fontVariantNumeric: 'tabular-nums',
-                          textShadow: '0 0 10px rgba(var(--qq-accent-rgb),0.4), 0 1px 2px rgba(0,0,0,0.6)',
+                          textShadow: '0 0 10px rgba(var(--qq-accent-rgb),0.4)',
                         }}>{pts}</span>
                       </div>
                     ))}
@@ -2329,8 +2329,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 style={{
                                   border: isFastest ? '4px solid var(--qq-accent)' : 'none',
                                   boxShadow: isFastest
-                                    ? `0 0 28px rgba(var(--qq-accent-rgb),0.65), 0 4px 14px rgba(0,0,0,0.45)`
-                                    : '0 4px 12px rgba(0,0,0,0.4)',
+                                    ? `0 0 28px rgba(var(--qq-accent-rgb),0.65)`
+                                    : 'none',
                                 }}
                               />
                               {/* CozyArena: wie viele Handys dieser Fraktion richtig lagen */}
@@ -2684,7 +2684,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 background: 'var(--qq-surface)',
                 border: '1.5px solid var(--qq-hairline)',
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.3)',
+
                 animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) 0.3s both',
               }}>
                 {/* Axis line — mittig im Container, genug Luft oben/unten für die Pins */}
@@ -2717,7 +2717,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     padding: '4px 11px 4px 7px',
                     borderRadius: 'var(--qq-pill-radius)',
                     background: 'linear-gradient(135deg, #22C55E, #16A34A)',
-                    boxShadow: '0 0 14px rgba(34,197,94,0.55), 0 2px 8px rgba(0,0,0,0.38)',
+                    boxShadow: '0 0 14px rgba(34,197,94,0.55)',
                     border: '2px solid var(--qq-hairline)',
                     animation: 'pinRevealIn 0.55s var(--qq-ease-bounce) 0.5s both',
                     ['--pin-x' as any]: '0px',
@@ -2731,7 +2731,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     <span style={{
                       color: 'var(--qq-card-text)', fontWeight: 900,
                       fontSize: 'clamp(14px, 1.6cqw, 20px)', lineHeight: 1,
-                      textShadow: '0 1px 3px rgba(0,0,0,0.3)',
+
                     }}>{fmt(target)}</span>
                   </div>
 
@@ -2797,7 +2797,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           border: isWinner ? '3px solid var(--qq-accent)' : 'none',
                           boxShadow: isWinner
                             ? `0 0 24px ${tColor}aa, 0 0 44px rgba(var(--qq-accent-rgb),0.5)`
-                            : `0 4px 12px rgba(0,0,0,0.5)`,
+                            : `none`,
                         }} />
                         {/* Value-Chip mit DYNAMISCHER Kollisionsvermeidung.
                             Der Chip wird relativ zum Avatar-Zentrum in eine der
@@ -2848,7 +2848,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 color: 'var(--qq-card-text)', fontWeight: 900,
                                 fontSize: isWinner ? 'clamp(38px, 4cqw, 56px)' : 'clamp(30px, 3.2cqw, 44px)',
                                 whiteSpace: 'nowrap',
-                                boxShadow: `0 4px 12px rgba(0,0,0,0.6)`,
+
                                 zIndex: 1,
                               }}>
                                 {fmt(p.num)}
@@ -3090,7 +3090,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
-                  boxShadow: '0 0 60px rgba(34,197,94,0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  boxShadow: '0 0 60px rgba(34,197,94,0.25)',
                   animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   {/* Zeile 1: Kartoffel + alle Team-Chips (wrappt bei vielen Teams) */}
@@ -3143,7 +3143,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   width: '100%', maxWidth: QQ_QUESTION_MAX_W, flexWrap: 'wrap',
                   background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.15), rgba(var(--qq-accent-rgb),0.05))',
                   border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
-                  boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.25), 0 8px 24px rgba(0,0,0,0.4)',
+                  boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.25)',
                   animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -3184,7 +3184,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
                 background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: `3px solid ${team!.color}88`,
-                boxShadow: `0 0 60px ${team!.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
+                boxShadow: `0 0 60px ${team!.color}33`,
                 animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(56px, 7cqw, 92px)'} style={{
@@ -3438,9 +3438,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 objectFit: 'contain',
                 boxShadow: img.bgRemovedUrl
                   ? 'none'
-                  : `0 12px 48px rgba(0,0,0,0.6), 0 0 32px ${glow}`,
+                  : `0 0 32px ${glow}`,
                 filter: img.bgRemovedUrl
-                  ? `drop-shadow(0 16px 40px rgba(0,0,0,0.7))${imgFilter(img) ? ' ' + imgFilter(img) : ''}`
+                  ? `imgFilter(img) imgFilter(img)`
                   : imgFilter(img),
                 animation: imgAnim(img.animation, img.layout, img.animDelay, img.animDuration),
                 transform: `translate(${img.offsetX ?? 0}%, ${img.offsetY ?? 0}%) scale(${img.scale ?? 1}) rotate(${img.rotation ?? 0}deg)`,

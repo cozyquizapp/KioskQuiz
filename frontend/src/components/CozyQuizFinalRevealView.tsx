@@ -1056,7 +1056,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
           borderRadius: 32, boxSizing: 'border-box',
           background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
           border: `3px solid ${team.color}`,
-          boxShadow: `0 0 40px ${team.color}55, 0 16px 48px rgba(0,0,0,0.5)`,
+          boxShadow: `0 0 40px ${team.color}55`,
         }}>
           {/* Tippendes Team — sofort sichtbar (kein Geheimnis) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
@@ -1496,7 +1496,7 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
           ...cardCommonStyle,
           background: `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
           border: `3px solid ${a.accent}`,
-          boxShadow: `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
+          boxShadow: `0 0 80px ${a.accent}66`,
         }}>
           <div style={{
             fontSize: 'clamp(11px, 1.2cqw, 18px)', fontWeight: 900,
@@ -1533,8 +1533,8 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
             : `linear-gradient(160deg, ${a.accent}28, ${a.accent}10)`,
           border: winner ? `3px solid ${winner.color}` : `3px solid ${a.accent}`,
           boxShadow: winner
-            ? `0 0 100px ${winner.color}88, 0 16px 48px rgba(0,0,0,0.5)`
-            : `0 0 80px ${a.accent}66, 0 16px 48px rgba(0,0,0,0.5)`,
+            ? `0 0 100px ${winner.color}88`
+            : `0 0 80px ${a.accent}66`,
         }}>
           {/* 2026-05-25 v4: +1-Badge wurde auf den outer perspective-Wrapper
               verschoben (siehe AwardFlipCard outer div) — drinnen blockierte
@@ -1751,7 +1751,7 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
           color: QQ_COLORS.amber400,
           letterSpacing: '0.25em',
           textTransform: 'uppercase',
-          textShadow: '0 0 14px rgba(251,191,36,0.8), 0 2px 6px rgba(0,0,0,0.7)',
+          textShadow: '0 0 14px rgba(251,191,36,0.8)',
         }}>
           🏆 {lang === 'de' ? 'Sieger' : 'Winner'}
         </div>
@@ -1763,7 +1763,7 @@ function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' })
           lineHeight: 1.05,
           maxWidth: '80cqw',
           textAlign: 'center',
-          textShadow: `0 0 32px ${winner.color}cc, 0 0 64px ${winner.color}66, 0 4px 12px rgba(0,0,0,0.85)`,
+          textShadow: `0 0 32px ${winner.color}cc, 0 0 64px ${winner.color}66`,
           fontFamily: 'var(--font-game, system-ui)',
           whiteSpace: 'nowrap',
           overflow: 'hidden', textOverflow: 'ellipsis',
@@ -1923,7 +1923,7 @@ export function FinalEurovisionFinale({ finalRanking, lang }: {
                   left: '50%',
                   transform: 'translateX(-50%) rotate(-10deg)',
                   fontSize: 'clamp(44px, 5cqw, 80px)',
-                  filter: 'drop-shadow(0 4px 14px rgba(0,0,0,0.7))',
+
                   animation: 'celebShake 0.9s ease 0.25s both',
                   pointerEvents: 'none',
                   zIndex: 2,
@@ -2144,7 +2144,7 @@ export function SuspensePodiumFinale({ finalRanking, lang }: {
                 <span style={{
                   position: 'absolute', top: 'clamp(-46px, -4cqh, -34px)', left: '50%',
                   fontSize: 'clamp(44px, 5cqw, 78px)', zIndex: 4, pointerEvents: 'none',
-                  filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7))',
+
                   animation: 'qqSPCrownDrop 0.9s cubic-bezier(0.2,1.4,0.4,1) 0.2s both',
                 }}><QQEmojiIcon emoji="👑" size="1em" /></span>
               )}
@@ -2677,13 +2677,13 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               padding: '24px 46px', borderRadius: 24,
               background: isWin ? 'linear-gradient(160deg, rgba(60,45,10,0.97), rgba(30,20,5,0.97))' : 'linear-gradient(160deg, rgba(28,22,44,0.97), rgba(15,11,26,0.97))',
               border: `3px solid ${isWin ? '#FBBF24' : t.color}`,
-              boxShadow: `0 20px 60px rgba(0,0,0,0.6), 0 0 42px ${isWin ? 'rgba(251,191,36,0.5)' : t.color + '66'}`,
+              boxShadow: `0 0 42px ${isWin ? 'rgba(251,191,36,0.5)' : t.color + '66'}`,
               animation: 'qqTowerCardIn 0.5s cubic-bezier(0.3,1.4,0.5,1) both',
             }}>
-              {medal && <span aria-hidden style={{ fontSize: 54, lineHeight: 1, filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.5))' }}><QQEmojiIcon emoji={medal} size={54} /></span>}
+              {medal && <span aria-hidden style={{ fontSize: 54, lineHeight: 1 }}><QQEmojiIcon emoji={medal} size={54} /></span>}
               <div style={{
                 width: 92, height: 92, borderRadius: quirkSet ? '18%' : '50%', background: t.color,
-                border: `4px solid ${t.color}`, boxShadow: `0 0 24px ${t.color}88, 0 4px 12px rgba(0,0,0,0.5)`,
+                border: `4px solid ${t.color}`, boxShadow: `0 0 24px ${t.color}88`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={92} flat />
@@ -2750,7 +2750,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               } as CSSProperties}>
                 <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AVF} flat />
               </div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}, 0 2px 6px rgba(0,0,0,0.8)`, whiteSpace: 'nowrap' }}>{team.name}</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}`, whiteSpace: 'nowrap' }}>{team.name}</div>
             </div>
           );
           return <div key={key} style={{ display: 'contents' }}>{ghosts}{main}</div>;
@@ -2768,7 +2768,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           <>
             <div style={{
               fontSize: 52, fontWeight: 900, letterSpacing: '0.02em',
-              color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.4), 0 3px 18px rgba(0,0,0,0.6)',
+              color: '#FBBF24', textShadow: '0 0 30px rgba(251,191,36,0.4)',
               animation: 'qqTowerTitleIn 1.1s cubic-bezier(0.2,0.8,0.3,1) both',
             }}>
               {de ? '🏆 Das große Finale' : '🏆 The Grand Finale'}
@@ -2784,7 +2784,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           <>
             <div style={{
               fontSize: 40, fontWeight: 900, letterSpacing: '0.01em',
-              color: phase === 'flight' ? '#FBBF24' : '#F8FAFC', textShadow: '0 3px 18px rgba(0,0,0,0.6)',
+              color: phase === 'flight' ? '#FBBF24' : '#F8FAFC',
               animation: 'qqTowerTitleIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both',
             }}>
               {phase === 'flight'
@@ -2810,7 +2810,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
             </div>
             <div style={{
               fontSize: 46, fontWeight: 900, color: winner?.team.color ?? '#F8FAFC',
-              textShadow: `0 0 26px ${winner?.team.color ?? '#fff'}88, 0 3px 16px rgba(0,0,0,0.6)`,
+              textShadow: `0 0 26px ${winner?.team.color ?? '#fff'}88`,
             }}>
               {winner?.team.name}
             </div>
@@ -2925,7 +2925,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       position: 'absolute', left: '50%', bottom: AV - 8,
                       fontSize: 46, lineHeight: 1, pointerEvents: 'none', zIndex: 8,
                       transform: 'translateX(-50%)',
-                      filter: 'drop-shadow(0 3px 8px rgba(0,0,0,0.6)) drop-shadow(0 0 18px rgba(251,191,36,0.85))',
+                      filter: 'drop-shadow(0 0 18px rgba(251,191,36,0.85))',
                       animation: 'qqTowerCrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqTowerCrownFloat 2.4s ease-in-out 0.8s infinite',
                     }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                   )}
@@ -2938,14 +2938,14 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       animation: 'qqTowerBadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both',
                     }}>
                       {badge && (
-                        <span aria-hidden style={{ fontSize: 30, lineHeight: 1, filter: 'drop-shadow(0 2px 6px rgba(0,0,0,0.55))' }}><QQEmojiIcon emoji={badge} size={30} /></span>
+                        <span aria-hidden style={{ fontSize: 30, lineHeight: 1 }}><QQEmojiIcon emoji={badge} size={30} /></span>
                       )}
                       <span style={{
                         fontSize: 14, fontWeight: 900, letterSpacing: '0.04em',
                         color: '#fff', background: 'rgba(15,10,25,0.94)',
                         border: `2px solid ${entry.team.color}`,
                         borderRadius: 999, padding: '2px 9px',
-                        boxShadow: `0 3px 10px rgba(0,0,0,0.5), 0 0 12px ${entry.team.color}66`,
+                        boxShadow: `0 0 12px ${entry.team.color}66`,
                       }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                     </div>
                   )}
@@ -2953,7 +2953,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                     width: AV, height: AV, borderRadius: quirkSet ? '18%' : '50%',
                     background: anon ? '#2A2640' : entry.team.color,
                     border: `3px solid ${anon ? '#4A4460' : entry.team.color}`,
-                    boxShadow: anon ? '0 3px 8px rgba(0,0,0,0.45)' : `0 0 16px ${entry.team.color}88, 0 3px 8px rgba(0,0,0,0.45)`,
+                    boxShadow: anon ? 'none' : `0 0 16px ${entry.team.color}88`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     // Beim Enthuellen eines Top-3-Turms flackert die Scheibe kurz und rastet ein.
                     animation: (isTop3 && identityShown) ? 'qqTowerReveal 0.7s ease-out both' : 'none',
@@ -2976,8 +2976,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       background: `linear-gradient(160deg, rgba(255,255,255,0.30) 0%, ${colr} 34%, ${colr} 62%, rgba(0,0,0,0.28) 100%)`,
                       border: `2px solid ${colr}`,
                       boxShadow: (crowned && isWinner)
-                        ? `inset 0 2px 3px rgba(255,255,255,0.45), inset 0 -3px 5px rgba(0,0,0,0.28), 0 0 16px ${entry.team.color}88, 0 2px 4px rgba(0,0,0,0.3)`
-                        : `inset 0 2px 3px rgba(255,255,255,0.40), inset 0 -3px 5px rgba(0,0,0,0.28), 0 2px 4px rgba(0,0,0,0.3)`,
+                        ? `inset 0 2px 3px rgba(255,255,255,0.45), 0 0 16px ${entry.team.color}88`
+                        : `inset 0 2px 3px rgba(255,255,255,0.40)`,
                       // Nur der jeweils oberste (neueste) Block spielt die Drop-Animation.
                       transformOrigin: 'bottom center',
                       animation: isTopBlock ? 'qqTowerDrop 0.42s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
@@ -3514,7 +3514,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                         transform: 'translateX(-50%)',
                         fontSize: 'clamp(56px, 6.5cqw, 100px)', lineHeight: 1,
                         pointerEvents: 'none',
-                        filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.7)) drop-shadow(0 0 28px rgba(251,191,36,0.85))',
+                        filter: 'drop-shadow(0 0 28px rgba(251,191,36,0.85))',
                         animation: 'qqFRCrownDrop 0.6s var(--qq-ease-bounce) 0.2s both, qqFRCrownWobble 1.4s ease-in-out 0.85s infinite',
                         zIndex: 30,
                       }}><QQEmojiIcon emoji="👑" size="1em" /></span>
@@ -3523,7 +3523,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                         borderRadius: quirkSet ? '18%' : '50%',
                         background: p1.team.color,
                         border: `4px solid ${p1.team.color}`,
-                        boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45), 0 10px 28px rgba(0,0,0,0.55)`,
+                        boxShadow: `0 0 50px ${p1.team.color}cc, 0 0 100px rgba(251,191,36,0.45)`,
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         // 2026-05-10 v2 (Wolf 'fliegt direkt smooth, lässt sich
                         // langsam runter'): 0.85s → 1.1s, ease-out-soft.
@@ -3624,7 +3624,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                 fontSize: compactWolf ? 'clamp(14px, 1.6cqw, 26px)' : 'clamp(20px, 2.6cqw, 44px)',
                 fontWeight: 900,
                 color: QQ_COLORS.amber400,
-                textShadow: '0 0 14px rgba(251,191,36,0.85), 0 4px 10px rgba(0,0,0,0.7), 0 0 2px #0A0814',
+                textShadow: '0 0 14px rgba(251,191,36,0.85), 0 0 2px #0A0814',
                 letterSpacing: '0.04em',
                 fontFamily: 'var(--font-game, system-ui)',
                 animation: 'qqWolfTroeet 2.8s ease-in-out infinite',
@@ -3684,7 +3684,7 @@ function RaceTeamUnit({ team, avatarSize, yOffset, bobDelay, bobVariant, bobDura
         width: avatarSize, height: avatarSize, borderRadius: quirkSet ? '18%' : '50%',
         background: team.color,
         border: `4px solid ${team.color}`,
-        boxShadow: `0 0 30px ${team.color}99, 0 6px 18px rgba(0,0,0,0.5)`,
+        boxShadow: `0 0 30px ${team.color}99`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         position: 'relative', zIndex: 2,
         transform: inSlowMo ? 'scale(1.4)' : 'scale(1)',
@@ -3896,11 +3896,11 @@ function RaceCountdownOverlay() {
         border: `3px solid ${current.color}`,
         backdropFilter: 'blur(14px) saturate(160%)',
         WebkitBackdropFilter: 'blur(14px) saturate(160%)',
-        boxShadow: `0 0 40px ${current.glow}, 0 0 96px ${current.glow}, 0 16px 40px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.08)`,
+        boxShadow: `0 0 40px ${current.glow}, 0 0 96px ${current.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
         fontSize: current.size,
         fontWeight: 900,
         color: current.color,
-        textShadow: `0 0 24px ${current.glow}, 0 3px 8px rgba(0,0,0,0.9)`,
+        textShadow: `0 0 24px ${current.glow}`,
         letterSpacing: '-0.02em',
         animation: 'qqRaceCountdownPop 0.7s var(--qq-ease-bounce) both',
         fontFamily: 'var(--font-game, system-ui)',
@@ -3941,8 +3941,8 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
         background: entry.color,
         border: isMinor ? `2.5px solid ${entry.color}` : `4px solid ${entry.color}`,
         boxShadow: isMinor
-          ? `0 0 12px ${entry.color}66, 0 3px 10px rgba(0,0,0,0.4)`
-          : `0 0 24px ${entry.color}88, 0 6px 16px rgba(0,0,0,0.5)`,
+          ? `0 0 12px ${entry.color}66`
+          : `0 0 24px ${entry.color}88`,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
         <QQTeamAvatar avatarId={entry.avatarId} teamEmoji={entry.emoji}

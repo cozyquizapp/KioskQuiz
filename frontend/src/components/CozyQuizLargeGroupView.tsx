@@ -408,7 +408,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
             position: 'absolute', left: -6, top: -14, zIndex: 4,
             fontSize: 22, fontWeight: 900, letterSpacing: '0.02em',
             color: team.color, whiteSpace: 'nowrap',
-            textShadow: `0 2px 10px ${team.color}, 0 0 4px rgba(0,0,0,0.6)`,
+            textShadow: `0 2px 10px ${team.color}`,
             pointerEvents: 'none', animation: 'qqLeadCallout 1.2s ease-out both',
           }}><QQEmojiIcon emoji="🚀" /> {de ? 'Führung!' : 'Lead!'}</span>
         </>
@@ -439,7 +439,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
       <div style={{
         ...S.standBarTrack,
         overflow: 'hidden',
-        boxShadow: 'inset 0 2px 5px rgba(0,0,0,0.55), inset 0 -1px 0 rgba(255,255,255,0.04)',
+        boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.04)',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`,
@@ -449,7 +449,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
           borderRadius: 999,
           // Facetten-Tiefe: heller Grat oben, dunkle Schattenkante unten + weicher
           // Farbschein nach aussen (im Kanal gehalten, kein greller Web-Glow).
-          boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), inset 0 -3px 4px rgba(0,0,0,0.28), 0 0 12px ${team.color}55`,
+          boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), 0 0 12px ${team.color}55`,
           transition: 'width 0.8s cubic-bezier(0.34,1.05,0.5,1)',
         }} />
       </div>
@@ -684,11 +684,11 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
     const ease = isWin ? 'cubic-bezier(.2,1.28,.35,1)' : 'cubic-bezier(.23,1,.32,1)';
     return (
       <div key={t.id} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5cqh', animation: `qqPodRise ${isWin ? 0.84 : 0.7}s ${ease} ${delay} both`, willChange: 'transform, opacity' }}>
-        {isWin && <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ width: 'clamp(34px, 3.4cqw, 60px)', height: 'auto', animation: 'finaleTrophyFloat 3.4s ease-in-out infinite', filter: 'drop-shadow(0 6px 14px rgba(0,0,0,.55))' }} />}
+        {isWin && <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{ width: 'clamp(34px, 3.4cqw, 60px)', height: 'auto', animation: 'finaleTrophyFloat 3.4s ease-in-out infinite' }} />}
         <div style={{ position: 'relative', borderRadius: '50%', boxShadow: isWin ? `0 0 46px ${t.color}, 0 0 92px ${t.color}66` : `0 0 26px ${t.color}`, border: isWin ? '0.35cqw solid #f6d98a' : 'none' }}>
           <QQTeamAvatar avatarId={t.avatarId} teamEmoji={qqMegaFactionSlug(t.avatarId)} size={crestSz} />
         </div>
-        <TeamNameLabel name={qqMegaFactionName(t.avatarId, de ? 'de' : 'en')} maxLines={1} shrinkAfter={12} color={t.color} fontWeight={900} fontSize={isWin ? 'clamp(22px, 3.2cqw, 48px)' : 'clamp(15px, 2cqw, 30px)'} fontSizeLong={isWin ? 'clamp(16px, 2.4cqw, 36px)' : 'clamp(12px, 1.6cqw, 22px)'} style={{ textShadow: '0 2px 8px rgba(0,0,0,.6)' }} />
+        <TeamNameLabel name={qqMegaFactionName(t.avatarId, de ? 'de' : 'en')} maxLines={1} shrinkAfter={12} color={t.color} fontWeight={900} fontSize={isWin ? 'clamp(22px, 3.2cqw, 48px)' : 'clamp(15px, 2cqw, 30px)'} fontSizeLong={isWin ? 'clamp(16px, 2.4cqw, 36px)' : 'clamp(12px, 1.6cqw, 22px)'} style={{}} />
         <div style={{ fontWeight: 900, color: t.color, fontVariantNumeric: 'tabular-nums', fontSize: isWin ? 'clamp(16px, 2.4cqw, 34px)' : 'clamp(13px, 1.7cqw, 24px)' }}>{t.largestConnected}</div>
         <div style={{ width: '15cqw', maxWidth: 240, height: blockH, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '1cqh', background: isWin ? 'linear-gradient(180deg, #4a381c, #1a1109)' : 'linear-gradient(180deg, #2b2540, #171223)', borderTop: isWin ? '0.35cqw solid #f6d98a' : place === 1 ? '0.3cqw solid #9ca3c4' : '0.3cqw solid #b08d6a' }}>
           <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 3cqw, 44px)', color: 'rgba(255,255,255,0.82)' }}>{rankNum}</span>
@@ -731,7 +731,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
           fontFamily: ceremonyFont,
           fontSize: locked ? 'clamp(30px, 5.2cqw, 96px)' : 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900,
           color: locked ? wColor : '#f6d98a', letterSpacing: locked ? '-0.01em' : '0.04em',
-          textShadow: locked ? `0 3px 14px rgba(0,0,0,0.85), 0 0 40px ${wColor}77` : '0 2px 10px rgba(0,0,0,0.8), 0 0 26px rgba(233,196,106,0.4)',
+          textShadow: locked ? `0 0 40px ${wColor}77` : '0 0 26px rgba(233,196,106,0.4)',
           animation: locked ? 'qqChampSlam 0.6s cubic-bezier(.2,1.28,.35,1) both' : 'qqTensionPulse 1.1s ease-in-out infinite', pointerEvents: 'none',
           transition: 'top .5s var(--qq-ease-smooth)' }}>
           {locked ? qqMegaFactionName(winner.avatarId, de ? 'de' : 'en') : (de ? 'Wer krönt sich?' : 'Who takes the crown?')}
@@ -746,7 +746,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
               gesetzt (war 27cqh → traf den Pokal an der Spitze der Sieger-Saeule bei
               ~33cqh). Jetzt 18cqh mit klarem Abstand ueber dem Pokal. */}
           <div style={{ position: 'absolute', left: 0, right: 0, top: '18cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 2px 10px rgba(0,0,0,0.85), 0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
+            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
               {de ? 'Champions der Arena' : 'Arena Champions'}
             </div>
           </div>
@@ -944,7 +944,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
       <div style={{
         position: 'relative', zIndex: 5, width: '100%', maxWidth: 1080, marginTop: 6,
         background: 'rgba(10,8,22,0.60)', borderRadius: 26, border: '1px solid rgba(255,255,255,0.10)',
-        boxShadow: '0 20px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06)',
+        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
         backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' as any,
         padding: 'clamp(12px,1.6cqh,22px) clamp(18px,2.2cqw,38px)',
       }}>
@@ -1010,9 +1010,9 @@ const S: Record<string, React.CSSProperties> = {
   alsoChip: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
 
   goWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 48px', color: '#f4f6ff', position: 'relative', overflow: 'hidden' },
-  goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9, fontWeight: 900, color: '#e7e2f4', textShadow: '0 2px 8px rgba(0,0,0,0.85)', position: 'relative', zIndex: 5 },
+  goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9, fontWeight: 900, color: '#e7e2f4', position: 'relative', zIndex: 5 },
   goHero: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative', zIndex: 5 },
-  goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)', textShadow: '0 2px 10px rgba(0,0,0,0.8)' },
+  goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)' },
   goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 14, background: 'rgba(255,255,255,0.045)' },
   goRank: { width: 48, textAlign: 'center', fontWeight: 900, fontSize: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   goBarTrack: { flex: 1, height: 22, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },

@@ -79,7 +79,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
             background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
-            boxShadow: '0 4px 22px rgba(0,0,0,0.45)',
+
           }}>
             <BeamerTimer variant="plain" endsAt={ends} durationSec={duration} accent={accent} />
           </div>
@@ -229,7 +229,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
           borderRadius: 32,
           background: 'linear-gradient(135deg, rgba(34,197,94,0.28) 0%, rgba(34,197,94,0.08) 100%)',
           border: '3px solid rgba(34,197,94,0.85)',
-          boxShadow: '0 0 80px rgba(34,197,94,0.45), 0 14px 40px rgba(0,0,0,0.5)',
+          boxShadow: '0 0 80px rgba(34,197,94,0.45)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(10px, 1.4cqh, 18px)',
           animation: 'revealAnswerBam 0.7s var(--qq-ease-out-cubic) 0.15s both',
         }}>
@@ -262,7 +262,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
           borderRadius: 'var(--qq-pill-radius)',
           background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}0d)`,
           border: `2.5px solid ${winnerTeam.color}cc`,
-          boxShadow: `0 0 36px ${winnerTeam.color}66, 0 6px 18px rgba(0,0,0,0.5)`,
+          boxShadow: `0 0 36px ${winnerTeam.color}66`,
           animation: 'revealWinnerIn 0.55s var(--qq-ease-bounce) 0.5s both',
           flexWrap: 'wrap', justifyContent: 'center',
         }}>
@@ -368,7 +368,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                   borderRadius: 'var(--qq-pill-radius)',
                   background: `${cardColor}1a`,
                   border: `1.5px solid ${cardColor}66`,
-                  boxShadow: `0 4px 12px rgba(0,0,0,0.35), 0 0 12px ${cardColor}22`,
+                  boxShadow: `0 0 12px ${cardColor}22`,
                   animation: `contentReveal 0.5s var(--qq-ease-out-cubic) ${0.7 + i * 0.08}s both`,
                   maxWidth: 'min(440px, 90cqw)',
                 }}>
@@ -516,7 +516,7 @@ export function BluffWriteScreen({ state: s, accent, lang }: {
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   background: submitted ? 'rgba(34,197,94,0.18)' : 'transparent',
                   border: submitted ? '3px solid #22C55E' : `3px solid ${tm.color}55`,
-                  boxShadow: submitted ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : '0 4px 10px rgba(0,0,0,0.55)',
+                  boxShadow: submitted ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : 'none',
                   opacity: submitted ? 1 : 0.55,
                   filter: submitted ? 'none' : 'grayscale(0.4)',
                   transition: 'all 0.45s ease',
@@ -645,7 +645,7 @@ export function BluffVoteWaitingScreen({ state: s, accent, lang }: {
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               background: voted ? 'rgba(34,197,94,0.18)' : 'transparent',
               border: voted ? '3px solid #22C55E' : `3px solid ${tm.color}55`,
-              boxShadow: voted ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : '0 4px 10px rgba(0,0,0,0.55)',
+              boxShadow: voted ? '0 0 24px rgba(34,197,94,0.55), 0 0 48px rgba(34,197,94,0.25)' : 'none',
               opacity: voted ? 1 : 0.55,
               filter: voted ? 'none' : 'grayscale(0.4)',
               transition: 'all 0.45s ease',
@@ -724,8 +724,8 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 : `linear-gradient(135deg, ${cardColor}3a 0%, ${cardColor}10 100%)`,
               border: `2px solid ${cardColor}${isReal ? 'cc' : '99'}`,
               boxShadow: isReal
-                ? `0 0 28px ${cardColor}33, 0 6px 16px rgba(0,0,0,0.4)`
-                : `0 0 18px ${cardColor}28, 0 6px 14px rgba(0,0,0,0.4)`,
+                ? `0 0 28px ${cardColor}33`
+                : `0 0 18px ${cardColor}28`,
               display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 0.8cqh, 10px)',
               // 2026-05-05 (Wolf): minHeight reduziert (110-170 → 90-130) damit
               // leere Cards nicht so viel toten Platz unten haben — gewonnener
@@ -774,7 +774,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                   fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
                   display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                   flexShrink: 0,
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.4)',
+
                 }}>{String.fromCharCode(65 + i)}</span>
 
                 <span style={{
@@ -784,7 +784,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                   wordBreak: 'break-word', lineHeight: 1.18,
                   textShadow: isReal
                     ? '0 0 14px rgba(34,197,94,0.4)'
-                    : '0 1px 3px rgba(0,0,0,0.5)',
+                    : 'none',
                 }}>{opt.text}</span>
 
                 {isReal ? (

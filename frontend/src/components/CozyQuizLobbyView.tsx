@@ -429,7 +429,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
           background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.98))',
           border: `4px solid ${welcomedTeam.color}`,
-          boxShadow: `0 0 80px ${welcomedTeam.color}aa, 0 18px 60px rgba(0,0,0,0.7)`,
+          boxShadow: `0 0 80px ${welcomedTeam.color}aa`,
           animation: 'qqWelcomeBanner 3.2s var(--qq-ease-out-cubic) both',
           pointerEvents: 'none',
           display: 'flex', alignItems: 'center', gap: 'clamp(24px, 3cqw, 44px)',
@@ -574,7 +574,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   color: '#FF2D7B',
                   // 2026-05-13 Kontrast-Audit: Pink-Glow weg, Dark-Halo + dezente
                   // Outline (Stinger Fit weight 400 verliert sonst auf Pink-BG).
-                  textShadow: '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)',
+
                   WebkitTextStroke: '1px rgba(0,0,0,0.4)',
                   lineHeight: 0.96,
                   animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
@@ -594,7 +594,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   lineHeight: 1,
                   height: '1em',
                   color: '#fde6f0',
-                  textShadow: '0 2px 10px rgba(0,0,0,0.5)',
+
                   animation: 'qqStingerXShine 3.5s ease-in-out 0.6s infinite',
                 }}>×</span>
                 {/* Eurovision-Logo — Hoehe so dimensioniert dass die sichtbaren
@@ -613,7 +613,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       // 11cqh/166 -> 8.5cqh/126.
                       height: 'clamp(60px, 8.5cqh, 126px)',
                       width: 'auto',
-                      filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.6)) drop-shadow(0 4px 12px rgba(0,0,0,0.55))',
+                      filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.6))',
                     }}
                   />
                 </span>
@@ -645,7 +645,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 alt="CozyArena"
                 style={{
                   display: 'block', margin: '0 auto clamp(2px, 0.8cqh, 12px)',
-                  filter: 'drop-shadow(0 8px 22px rgba(0,0,0,0.5))',
+
                   animation: 'qqStingerHover 4.2s ease-in-out 0.4s infinite',
                 }}
               />
@@ -666,10 +666,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 color: s.theme?.eurovisionMode ? '#FF2D7B' : isThemed() ? 'var(--qq-title)' : '#EC4899',
                 // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg ueber 5.png-BG.
                 textShadow: s.theme?.eurovisionMode
-                  ? '0 4px 22px rgba(0,0,0,0.8), 0 2px 8px rgba(0,0,0,0.7)'
+                  ? 'none'
                   : isThemed()
                     ? 'none'
-                    : '0 3px 18px rgba(0,0,0,0.65), 0 0 32px rgba(236,72,153,0.40)',
+                    : '0 0 32px rgba(236,72,153,0.40)',
               }}
               aria-label={wordmark}
             >
@@ -714,7 +714,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             background: '#ffffff', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: 'clamp(14px, 2cqh, 24px)',
             // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
             animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
-            boxShadow: '0 16px 64px rgba(0,0,0,0.5), 0 0 50px rgba(255,255,255,0.1)',
+            boxShadow: '0 0 50px rgba(255,255,255,0.1)',
             width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <QRCodeSVG value={joinUrl} size={256} bgColor="#ffffff" fgColor="#0A0814" level="M"
@@ -755,12 +755,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
             background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(236,72,153,0.10))',
             border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(236,72,153,0.35)',
-            boxShadow: isThemed() ? 'none' : '0 4px 18px rgba(0,0,0,0.35), 0 0 18px rgba(236,72,153,0.12)',
+            boxShadow: isThemed() ? 'none' : '0 0 18px rgba(236,72,153,0.12)',
           }}>
             <img
               src="/logo.png"
               alt=""
-              style={{ width: 28, height: 28, objectFit: 'contain', filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))' }}
+              style={{ width: 28, height: 28, objectFit: 'contain' }}
             />
             <span style={{
               fontSize: 'clamp(12px, 1.1cqw, 15px)', fontWeight: 900,
@@ -771,7 +771,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             <span style={{
               fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-accent)' : '#EC4899', letterSpacing: '0.04em',
-              textShadow: isThemed() ? 'none' : '0 1px 2px rgba(0,0,0,0.6)',
+              textShadow: isThemed() ? 'none' : 'none',
             }}>
               CozyWolf
             </span>
@@ -799,7 +799,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               alignSelf: 'flex-start', width: 'auto',
               background: 'rgba(8,6,16,0.72)', padding: '6px 16px', borderRadius: 999,
               border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(232,236,244,0.95)',
-              boxShadow: '0 4px 16px rgba(0,0,0,0.45)',
+
             } : {}),
           }}>
             <span style={{ opacity: arenaLobbyBg ? 0.95 : 0.7 }}>{de ? 'Angemeldete Teams' : 'Joined Teams'}</span>
@@ -872,7 +872,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)'),
                   border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
                   borderLeft: `4px solid ${g.color}`,
-                  boxShadow: '0 8px 22px rgba(0,0,0,0.28)',
+
                   display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.3cqw, 18px)',
                   minWidth: 0, position: 'relative', minHeight: 'clamp(76px, 8.2cqh, 104px)',
                   animation: `teamCardIn 0.5s var(--qq-ease-bounce) ${0.35 + i * 0.06}s both`,
@@ -971,7 +971,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       : (veryMany
                         ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)')
                         : `4px solid ${t.color}`),
-                    boxShadow: quirkSet ? 'none' : '0 8px 22px rgba(0,0,0,0.28)',
+                    boxShadow: quirkSet ? 'none' : 'none',
                     // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).
                     ['--gc' as string]: `${t.color}99`,
                     display: 'flex', alignItems: 'center',

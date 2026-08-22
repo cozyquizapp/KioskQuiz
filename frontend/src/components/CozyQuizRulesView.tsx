@@ -598,12 +598,27 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
         // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
         // Slide-Color-Rand bleibt als Kategorie-Akzent.
-        background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(15,12,9,0.85)',
+        // 2026-08-22 (Uebergabe 2a): die Karte war unsichtbar. Gemessen am
+        // Screenshot: Karte #120e1a gegen Grund #110d1a = 1.01:1. Nicht „fast"
+        // unsichtbar, sondern nicht unterscheidbar.
+        //
+        // Ursache war ein Denkfehler in der Flaechenleiter: `rgba(15,12,9,0.85)`
+        // ist DUNKLER als der Grund. Eine Karte muss ueber dem Grund liegen,
+        // nicht darunter — sonst ist sie ein Loch statt einer Flaeche. Der
+        // Rahmen konnte das nicht auffangen, `${color}44` sind 27 % Deckkraft
+        // auf einem dunklen Ton.
+        //
+        // Jetzt die Buehnen-Tokens: 34-%-Flaeche und die Creme-Kontur bei 22 %.
+        // Die Kontur traegt die Kante, nicht die Fuellung — genau die
+        // Reihenfolge, die die Uebergabe fuer die Projektion vorgibt.
+        background: 'var(--qq-card-bg)',
         color: isThemed() ? 'var(--qq-card-text)' : undefined,
-        border: isThemed() ? 'var(--qq-card-border)' : `2px solid ${cardSlide.color}44`,
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+        border: 'var(--qq-card-border)',
+        borderRadius: 'var(--qq-card-radius)',
         padding: `clamp(24px, 4cqh, ${hasGridC ? 52 : 60}px) clamp(32px, 5cqw, ${hasGridC ? 64 : 72}px)`,
-        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 120px ${cardSlide.color}22`,
+        // Der weite Farb-Hof faellt weg (120 px Weichzeichnung um eine Karte,
+        // die dadurch keine Kante gewinnt, sondern eine verliert).
+        boxShadow: 'var(--qq-card-shadow)',
         // 2026-07-17b (Wolf): horizontaler Einheits-Schwenk passend zum Progress-Tree
         // oben (vorwaerts von rechts, zurueck von links). Inhalt reist als Ganzes mit
         // (kein Per-Zeile-contentReveal), Opacity front-geladen → kein „totes Loch".

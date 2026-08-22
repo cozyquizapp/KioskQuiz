@@ -1031,13 +1031,17 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                               }}
                             />
                           </div>
-                          <div style={{
-                            width: 'clamp(44px, 5cqw, 72px)', height: 4, borderRadius: 3,
-                            background: t.color, transformOrigin: 'center',
-                            opacity: revealed ? 1 : 0,
-                            transform: revealed ? 'scaleX(1)' : 'scaleX(0)',
-                            transition: 'transform 0.42s cubic-bezier(0.5,0,0.18,1) 0.26s, opacity 0.3s ease 0.26s',
-                          }} />
+                          {/* 2026-08-22 (Wolf: „findest du die linie unterhalb in
+                              teamfarbe passend zum neuen design?"): nein, raus.
+                              Die Teamfarbe steht als grosse gefuellte Kachel
+                              direkt darueber — die Linie sagt dasselbe ein
+                              drittes Mal. Ein dekorativer Unterstrich ist
+                              ausserdem ein Web-Idiom: auf einem Plakat
+                              unterstreicht man keine Bildunterschrift, die
+                              ohnehin schon farbcodiert ist. Und 4 px hoch
+                              verschwindet er auf 8 m Distanz ohnehin.
+                              Der Auftritts-Takt (scaleX beim Aufdecken) faellt
+                              mit weg; die Kachel selbst traegt den Moment. */}
                         </div>
                       </div>
                     );

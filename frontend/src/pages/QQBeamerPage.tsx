@@ -2050,6 +2050,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           // beobachtbar (Wolf: „IMMER der echte beamer, nie nur ein nachbau"). Ohne das
           // muesste die Harness blind auf Timings warten oder einen Nachbau rendern.
           data-qq-phase={renderState.phase}
+          // 2026-08-22: dazu der Raumcode. scripts/beamer-phase.mjs oeffnet
+          // einen eigenen Moderator-Socket, um gezielt in Pause, Danke oder
+          // Siegerehrung zu springen — ein normaler Testlauf erreicht die nie.
+          // Dafuer muss es wissen, welchen Raum der Beamer gerade zeigt.
+          data-qq-room={roomCode}
           data-qq-mega={renderState.largeGroupMode ? '1' : '0'}
           data-qq-standings-revealed={(renderState as any).megaStandingsRevealed ? '1' : '0'}
           style={{

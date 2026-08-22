@@ -669,8 +669,16 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             fontFamily: qqArenaType(s) ? 'var(--font-arena)' : undefined,
             letterSpacing: qqArenaType(s) ? '0.01em' : undefined,
             fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
-            color: isThemed() ? 'var(--qq-title)' : cardSlide.color,
-            textShadow: isThemed() ? 'none' : `0 0 60px ${cardSlide.color}44`,
+            // 2026-08-22 (Uebergabe 2a, Wolf freigegeben): Ueberschrift auf
+            // Creme, dieselbe Regel wie im Phasen-Intro und auf den
+            // Frage-Folien. Die Folienfarbe traegt weiter die kleine
+            // Ueberzeile darueber und den Kartenrand — sie wandert vom Text
+            // auf die Marker. Kontrast gegen den Buehnen-Grund: Creme 16.6:1
+            // gegen 5.4:1 beim Marken-Pink.
+            color: isThemed() ? 'var(--qq-title)' : 'var(--qq-text)',
+            // Der weite Farb-Schein hinter der Schrift faellt mit weg: auf
+            // Projektionsdistanz macht er keine Tiefe, er frisst die Kante.
+            textShadow: 'none',
           }}>
             {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
                 Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.

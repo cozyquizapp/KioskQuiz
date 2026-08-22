@@ -608,6 +608,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         // Rahmen konnte das nicht auffangen, `${color}44` sind 27 % Deckkraft
         // auf einem dunklen Ton.
         //
+        // 2026-08-22 (Wolf: „ja fuell die karte, mach ein optimiertes
+        // spacing"): der Inhalt belegte gemessene 55 % der Kartenhoehe und
+        // schwebte mit 157 px Luft oben und 198 unten in der Mitte. Alle
+        // Schrift-Obergrenzen rund ein Viertel hoch — die Untergrenzen bleiben,
+        // damit kleine Fenster im Steuerpult nicht brechen.
         // Jetzt die Buehnen-Tokens: 34-%-Flaeche und die Creme-Kontur bei 22 %.
         // Die Kontur traegt die Kante, nicht die Fuellung — genau die
         // Reihenfolge, die die Uebergabe fuer die Projektion vorgibt.
@@ -666,13 +671,13 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           ) : (
             <span style={{
               display: 'inline-block',
-              fontSize: 'clamp(64px,9cqw,110px)', lineHeight: 1,
+              fontSize: 'clamp(64px,11cqw,140px)', lineHeight: 1,
 
               animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><QQEmojiIcon emoji={cardSlide.icon}/></span>
           )}
           <div style={{
-            fontSize: 'clamp(13px,1.4cqw,18px)', fontWeight: 900, letterSpacing: '0.1em',
+            fontSize: 'clamp(13px,1.8cqw,24px)', fontWeight: 900, letterSpacing: '0.1em',
             textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : cardSlide.color,
           }}>
             {cardSlide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
@@ -683,7 +688,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             // 2026-07-17 (Cinzel-Rollout): Arena-Regel-Titel in Cinzel (nur mega+!skin).
             fontFamily: qqArenaType(s) ? 'var(--font-arena)' : undefined,
             letterSpacing: qqArenaType(s) ? '0.01em' : undefined,
-            fontSize: 'clamp(38px, 5.6cqw, 72px)', fontWeight: 900, lineHeight: 1.05,
+            fontSize: 'clamp(38px, 7cqw, 94px)', fontWeight: 900, lineHeight: 1.05,
             // 2026-08-22 (Uebergabe 2a, Wolf freigegeben): Ueberschrift auf
             // Creme, dieselbe Regel wie im Phasen-Intro und auf den
             // Frage-Folien. Die Folienfarbe traegt weiter die kleine
@@ -758,7 +763,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               <QQProgressTree state={s} variant="showcase" showcaseMode showcaseStepMs={2800} />
               <div style={{
                 display: 'inline-flex', alignItems: 'center', gap: 12,
-                fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 700,
+                fontSize: 'clamp(18px, 2.4cqw, 34px)', fontWeight: 700,
                 color: '#a8a395', letterSpacing: '0.04em',
                 animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.5s both',
               }}>
@@ -794,7 +799,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             {cardSlide.lines.map((line, i) => (
               <div key={i} style={{ maxWidth: 920 }}>
                 <span style={{
-                  fontSize: 'clamp(22px,3cqw,40px)', fontWeight: 700,
+                  fontSize: 'clamp(22px,3.5cqw,48px)', fontWeight: 700,
                   color: 'var(--qq-card-text)', lineHeight: 1.3,
                 }}>{line}</span>
               </div>
@@ -837,7 +842,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             marginTop: 'clamp(16px, 2.5cqh, 32px)', padding: 'clamp(12px, 1.8cqh, 20px) clamp(18px, 2.2cqw, 28px)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
             background: isThemed() ? 'var(--qq-surface)' : `${cardSlide.color}15`,
             border: isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${cardSlide.color}33`,
-            fontSize: 'clamp(18px,2.4cqw,34px)', fontWeight: 900,
+            fontSize: 'clamp(18px,3cqw,44px)', fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : cardSlide.color,
             /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
             textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,
@@ -851,7 +856,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         {isLastC && (
           <div style={{
             marginTop: 'clamp(16px, 2.5cqh, 32px)', textAlign: 'center',
-            fontSize: 'clamp(20px,2.8cqw,36px)', fontWeight: 900,
+            fontSize: 'clamp(20px,3.5cqw,48px)', fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : cardSlide.color,
             /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
             textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,
@@ -974,20 +979,43 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               return (
                 <div key={i} style={{
                   display: 'flex', alignItems: 'center',
-                  padding: 'clamp(5px,0.7cqh,9px) clamp(9px,1cqw,15px)',
-                  borderRadius: 999, minWidth: 0,
-                  background: active ? `rgba(${aRGB},0.18)` : 'rgba(246, 239, 230,0.03)',
-                  border: active ? `1.5px solid rgba(${aRGB},0.6)` : '1.5px solid rgba(246, 239, 230,0.08)',
+                  padding: 'clamp(7px,0.9cqh,12px) clamp(12px,1.3cqw,20px)',
+                  // 2026-08-22 (Wolf: „ich wuerde die pills oben eckiger machen"):
+                  // 999px stand hier fest im Code und hat den Token nie gelesen —
+                  // deshalb war die Leiste nach der Radius-Entscheidung der
+                  // einzige Ort auf der Buehne mit Kapselform.
+                  borderRadius: 'var(--qq-pill-radius)', minWidth: 0,
+                  // Aktive Pille in Creme gefuellt statt in einem 18-%-Farbschleier
+                  // (Wolf: „die pill farbig unterlegen zb mit beige"). Das ist der
+                  // gleiche Umkehr-Trick wie beim richtigen Mu-Cho-Plaettchen:
+                  // wo ein Zustand zaehlt, wird die FLAECHE zum Signal, und die
+                  // Schrift kippt auf dunkel. Traegt auf 8 m deutlich weiter als
+                  // ein leicht eingefaerbter Rahmen.
+                  background: active ? 'var(--qq-text)' : 'rgba(246, 239, 230,0.03)',
+                  border: active ? '1.5px solid var(--qq-text)' : '1.5px solid rgba(246, 239, 230,0.08)',
+                  color: active ? '#1a1420' : undefined,
                   // 2026-07-09 (Motion-Audit): 'all' → konkrete Properties (kein
                   // versehentliches Animieren von Layout-Werten).
                   transition: 'background 0.4s ease, border-color 0.4s ease',
                 }}>
                   <span style={{
                     flexShrink: 0, display: 'grid', placeItems: 'center',
-                    width: 'clamp(20px,1.9cqw,28px)', height: 'clamp(20px,1.9cqw,28px)',
-                    borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
-                    background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(246, 239, 230,0.08)',
-                    color: active ? '#1a0a14' : done ? 'var(--qq-text)' : '#aab0be',
+                    width: 'clamp(24px,2.2cqw,34px)', height: 'clamp(24px,2.2cqw,34px)',
+                    // 2026-08-22 (Wolf: „oder ganz anders machen? wie loesen wir
+                    // es zb bei mucho mit den zahlen?"): genau so, wie es die
+                    // Buehne bei den Antwort-Buchstaben schon macht — quadratische
+                    // Kachel, TRANSPARENTE Flaeche, farbige Kontur, Zeichen in
+                    // derselben Farbe. Gefuellt wird erst, wenn ein Zustand es
+                    // verlangt (bei Mu-Cho „richtig", hier „erledigt").
+                    // Damit gilt EIN Muster fuer jeden Zeichen-Marker der Buehne
+                    // statt Kreis hier, Kachel dort.
+                    borderRadius: 'var(--qq-card-radius)',
+                    fontWeight: 900, fontSize: 'clamp(13px,1.2cqw,19px)',
+                    background: done ? 'var(--qq-text)' : 'transparent',
+                    border: active
+                      ? '2px solid #1a1420'
+                      : `2px solid ${done ? 'var(--qq-text)' : 'rgba(246, 239, 230,0.28)'}`,
+                    color: active ? '#1a1420' : done ? '#1a1420' : 'var(--qq-text-muted)',
                     transition: 'background 0.4s ease, color 0.4s ease',
                   }}>{item.glyph}</span>
                   {/* 2026-07-27 (Wolf 'motion in der leiste abgehakt'): Label NICHT
@@ -1034,22 +1062,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   (translateX-% = % der Bandbreite, deckt sich mit dem alten left-calc)
                   statt left-Animation → kein Layout-Reflow, glatter Lauf. Der Bob
                   bleibt auf dem inneren Wolf (className qqRulesWolf → reduced-motion). */}
-              <div style={{
-                position: 'absolute', inset: 0, zIndex: 3, pointerEvents: 'none',
-                transform: `translateX(${(6 + activeFrac * 88).toFixed(1)}%)`,
-                transition: 'transform 0.6s cubic-bezier(0.16,1,0.3,1)',
-                willChange: 'transform',
-              }}>
-                <div className="qqRulesWolf" style={{
-                  position: 'absolute', bottom: '50%', left: 0,
-                  width: 'clamp(28px, 2.6cqw, 44px)',
-
-                  animation: 'qqRulesWolfBob 1.6s ease-in-out infinite',
-                }}>
-                  <img src="/avatars/cozywolf/pink.png" alt="" draggable={false}
-                    style={{ width: '100%', height: 'auto', display: 'block' }} />
-                </div>
-              </div>
+              {/* 2026-08-22 (Wolf: „anpassen, oder wegmachen und die pill
+                  farbig unterlegen"): der Wolf ist weg. Er sass mit 44 px
+                  halb unter der Pille und wurde von deren Kante gekappt — auf
+                  8 m war er ein pinker Fleck, kein Wolf. Die Position zeigt
+                  jetzt die creme-gefuellte Pille selbst an, und die traegt
+                  ueber die ganze Distanz. */}
             </div>
           </div>
         );

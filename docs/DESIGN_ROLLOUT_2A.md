@@ -1,6 +1,41 @@
 # Buehne 2a auf die ganze App ziehen
 
-Stand 2026-08-22. Gemessen, nicht geschaetzt. Die Zahlen unten stammen aus
+## Wo wir stehen (Stand 2026-08-22, Abend)
+
+Nichts davon ist live. Alles liegt auf `claude/buehne-2a-uebergabe`, und
+`main` deployt automatisch — der Merge ist bewusst noch nicht passiert.
+
+| Block | Stand |
+|---|---|
+| **0 · Fundament** | **fertig.** Alle sechs Farb-Haufen durch |
+| **Icons** | **fertig.** 80 Motive in zwei Lieferungen, 95 von 96 Slugs verdrahtet |
+| **Avatare** | **fertig.** 48 Objekte, Default, Splitter bereinigt |
+| **1 · Frage-Ansichten** | angefangen. Mu-Cho fertig, Frage linksbuendig, Handy nachgezogen. Offen: die Aufloesungen |
+| **2 · Brett** | **fertig.** Kachelform vereinheitlicht, Namen brechen sauber, Rangfolge ueber Helligkeit |
+| **3 · Rahmen des Abends** | angefangen. Runden-Ueberschrift auf Creme freigegeben, muss auf Regeln/Pause/Danke/Siegerehrung nachgezogen werden |
+| **4 · Finale** | nicht angefangen |
+| **5 · Handy** | teilweise. Kategorie-Grund und Mu-Cho-Optionen nachgezogen |
+| **6 · Arena** | nicht angefangen |
+| **7 · Motion** | nicht angefangen (bewusst zuletzt) |
+
+Zahlen der Buehne: Hex 542 → 418, rgba 932 → 637, `var(--qq-)` 1097 → 1268.
+
+### Offene Entscheidungen
+
+* Glanzkanten auf Karten (`inset`-Lichtkante) — Vorher-Nachher steht aus
+* Dekorative Scheine auf den Aufloesungen — dieselbe Regel wie beim Brett
+  anwenden: Schein mit Bedeutung bleibt, Schein als Schmuck geht
+* Eckige Tree-Felder (Vorschlag steht, Pillen bleiben rund)
+
+### Bekannte Luecke
+
+Pause, Danke, Siegerehrung und Final-Reveal sind noch nie im Bild geprueft
+worden — ein normaler Testlauf erreicht sie nicht. Vor der Umgestaltung
+braucht es einen Weg, diese Phasen gezielt anzusteuern.
+
+---
+
+Gemessen, nicht geschaetzt. Die Zahlen unten stammen aus
 `grep` ueber `frontend/src`, die Kommandos stehen jeweils dabei.
 
 ---

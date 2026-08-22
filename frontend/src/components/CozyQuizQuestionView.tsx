@@ -978,7 +978,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}, var(--qq-card-shadow)` : 'var(--qq-card-shadow)')
               : isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88`
-              : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
+              // 2026-08-22 (Uebergabe 2a, VORSCHLAG): der weite Kategorie-Schein
+              // vor der Aufloesung faellt weg. Nach der Regel, die wir am Brett
+              // festgelegt haben: ein Schein, der etwas BEDEUTET, bleibt — ein
+              // Schein, der nur schmueckt, geht. Welche Kategorie laeuft, sagen
+              // bereits die Pille, die Zeitleiste und der Grund; der Schein hat
+              // das nur ein viertes Mal wiederholt und dabei 80 px Weichzeichnung
+              // um die Karte gelegt. Der Sieger-Schein beim Reveal bleibt, der
+              // sagt "dieses Team hat gewonnen" und ist damit Spielsignal.
+              // Kontur statt Schein: die Karte hat ihren 2.5-px-Rand.
+              : `0 0 0 1px ${accent}33`,
             // 2026-05-05 (Wolf 'Cheese-Reveal-Card wiggelt beim Auftauchen,
             // wirkt chaotisch'): revealAnswerBam (scale+wiggle) entfernt —
             // die Card ist beim Reveal eh schon sichtbar (war im Question-
@@ -994,7 +1003,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             transformOrigin: 'center',
             transition: 'padding 0.7s var(--qq-ease-smooth), border-color 0.55s ease, min-height 0.7s var(--qq-ease-smooth), transform 0.7s var(--qq-ease-smooth), width 0.7s var(--qq-ease-smooth), min-width 0.7s var(--qq-ease-smooth), max-width 0.7s var(--qq-ease-smooth)',
             pointerEvents: 'auto',
-            textAlign: 'center',
+            // 2026-08-22: linksbuendig wie die uebrigen Frage-Folien. Schau mal
+            // hat ein eigenes Zweispalten-Layout und ist deshalb bei der
+            // Umstellung durchgerutscht.
+            textAlign: isThemed() ? 'center' : 'left',
             display: 'flex', flexDirection: 'column', justifyContent: 'center',
           }}>
             {/* Avatar-Reihe wurde 2026-05-04 v3 (Wolf-Feedback) RAUS aus der

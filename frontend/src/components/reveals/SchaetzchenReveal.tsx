@@ -347,13 +347,13 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
                 padding: 'clamp(6px,0.9cqh,13px) clamp(14px,1.6cqw,26px)', borderRadius: 18,
                 background: 'linear-gradient(180deg, rgba(30,24,58,0.94), rgba(10,8,24,0.94))',
-                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(246, 239, 230,0.10)`,
+                boxShadow: `0 0 0 2px ${GOLD}8c, inset 0 1px 0 rgba(246, 239, 230,0.10)`,
                 animation: struck && !reduce ? 'qqStr2Strike 0.5s var(--qq-celebrate) both' : 'none',
               }}>
                 <span style={{
                   fontFamily: 'var(--font-display)', fontSize: 'clamp(32px, 4.8cqw, 84px)', fontWeight: 700,
                   lineHeight: 0.92, color: GOLD_BRIGHT, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
-                  textShadow: `0 0 30px ${GOLD}8c`,
+                  textShadow: `none`,
                 }}>{fmt(shown)}</span>
                 {unitStr && (
                   <span style={{ fontSize: 'clamp(13px, 1.6cqw, 26px)', fontWeight: 900, color: GOLD }}>{unitStr}</span>
@@ -366,7 +366,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               position: 'absolute', left: `${tx}%`, top: '24%', height: `${RAIL - 24}%`, width: 'clamp(5px,0.62cqw,12px)', zIndex: 1,
               transform: `translateX(-50%) scaleY(${struck ? 1 : 0})`, transformOrigin: 'top center', borderRadius: 8,
               background: `linear-gradient(180deg, ${GOLD_BRIGHT} 0%, ${GOLD_BRIGHT} 65%, ${GOLD}1f 100%)`,
-              boxShadow: `0 0 40px 7px ${GOLD}80`,
+              boxShadow: `none`,
               transition: reduce ? 'none' : 'transform 0.7s var(--qq-enter)',
             }} />
 

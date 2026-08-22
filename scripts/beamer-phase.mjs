@@ -81,6 +81,17 @@ await new Promise((res, rej) => {
 await new Promise(res => sock.emit('qq:joinModerator', { roomCode, pin: PIN }, res));
 console.log('Moderator-Socket verbunden');
 
+// 2026-08-22: Fragedauer runterdrehen. Um die Siegerehrung zu sehen, muss das
+// Spiel wirklich zu Ende gespielt werden — es gibt keine Abkuerzung dorthin.
+// Mit den echten 26 s pro Frage sind 15 Fragen plus Aufloesungen plus
+// Runden-Intros ueber zehn Minuten, und drei Anlaeufe sind daran gescheitert.
+// `qq:setTimer` ist ein regulaeres Moderator-Ereignis (im Steuerpult stellt
+// Wolf damit die Dauer). Auf wenige Sekunden gesetzt laeuft derselbe Ablauf
+// in einem Bruchteil der Zeit, ohne dass am Spiel etwas anderes ist.
+const FAST = Number(process.env.QQ_TIMER_SEC || 4);
+await new Promise(res => sock.emit('qq:setTimer', { roomCode, durationSec: FAST }, res));
+console.log(`Fragedauer auf ${FAST}s gesetzt (sonst dauert ein Durchlauf 10+ Minuten)`);
+
 async function phaseNow() {
   return beamer.evaluate(() => document.querySelector('[data-qq-phase]')?.getAttribute('data-qq-phase') ?? null).catch(() => null);
 }
@@ -115,7 +126,7 @@ await sleep(8000);
  * Runden-Intro haengen. Also: zuschauen, und nur schubsen, wenn sich wirklich
  * nichts mehr bewegt.
  */
-async function waitFor(target, maxMs = 420000) {
+async function waitFor(target, maxMs = 600000) {
   const t = Date.now();
   let last = await phaseNow(), lastChange = Date.now();
   while (Date.now() - t < maxMs) {

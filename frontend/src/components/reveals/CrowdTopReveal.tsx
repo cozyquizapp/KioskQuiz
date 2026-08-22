@@ -266,7 +266,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
               position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(12px,1.4cqw,24px)', borderRadius: 20,
               background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.16), rgba(250,204,21,0.08))',
-              border: '2.5px solid rgba(var(--qq-accent-rgb),0.6)', boxShadow: '0 0 48px rgba(var(--qq-accent-rgb),0.22)',
+              border: '2.5px solid rgba(var(--qq-accent-rgb),0.6)', boxShadow: 'none',
               animation: 'qqCT2Rise 0.55s var(--qq-ease-bounce) both', overflow: 'hidden',
             }}>
               <span style={{ fontSize: 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>

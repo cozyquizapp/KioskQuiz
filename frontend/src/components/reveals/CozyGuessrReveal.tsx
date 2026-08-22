@@ -402,7 +402,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
           background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
           color: 'var(--qq-accent-soft)', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
-          boxShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.25)',
+          boxShadow: 'none',
           zIndex: 1000, letterSpacing: 0.3,
         }}>
           <QQEmojiIcon emoji="🌍"/> {title}
@@ -507,7 +507,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           background: 'rgba(13,10,6,0.92)',
           border: '2.5px solid rgba(34,197,94,0.7)',
           color: '#86efac', fontWeight: 900, fontSize: 'clamp(22px, 2.8cqw, 38px)',
-          boxShadow: '0 0 50px rgba(34,197,94,0.35)',
+          boxShadow: 'none',
 
           textAlign: 'center',
           animation: 'revealAnswerBam 0.6s var(--qq-ease-out-cubic) both',

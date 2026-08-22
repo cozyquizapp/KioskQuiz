@@ -13,8 +13,7 @@
  *
  * 1 externer Importer (QQBuiltinSlide).
  */
-import { useRef, useEffect, useState, useLayoutEffect } from 'react';
-import type { ReactNode } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
@@ -502,48 +501,6 @@ export function qqActiveRulesSlides(s: QQStateUpdate, lang: 'de' | 'en'): RulesS
   });
 }
 
-/**
- * FitToWidth — skaliert seinen Inhalt herunter, bis er in die Breite passt.
- *
- * 2026-08-22. Gebaut fuer den Fortschrittsbaum auf der Ablauf-Regelseite: der
- * ist so breit wie der ganze Abend und passt bei 15 Fragen in keine Karte.
- * Statt ihn abzuschneiden oder durchzupannen wird er verkleinert — auf der
- * Buehne darf nichts abgeschnitten sein, und der Blick soll die Form des
- * Abends auf einmal bekommen.
- *
- * Bewusst per transform statt per Zoom auf die Schrift: so bleiben alle
- * Abstaende im Baum im Verhaeltnis, und es gibt keinen zweiten Satz Werte,
- * der auseinanderlaufen kann.
- */
-function FitToWidth({ children }: { children: ReactNode }) {
-  const outer = useRef<HTMLDivElement | null>(null);
-  const inner = useRef<HTMLDivElement | null>(null);
-  const [scale, setScale] = useState(1);
-  useLayoutEffect(() => {
-    const measure = () => {
-      const cw = outer.current?.clientWidth ?? 0;
-      const sw = inner.current?.scrollWidth ?? 0;
-      setScale(cw > 0 && sw > cw ? cw / sw : 1);
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    if (outer.current) ro.observe(outer.current);
-    if (inner.current) ro.observe(inner.current);
-    return () => ro.disconnect();
-  }, [children]);
-  return (
-    <div ref={outer} style={{ width: '100%', overflow: 'hidden' }}>
-      <div ref={inner} style={{
-        transform: `scale(${scale})`, transformOrigin: 'center top',
-        // Hoehe mitziehen, sonst bleibt unter dem verkleinerten Baum Luft
-        // in der urspruenglichen Groesse stehen.
-        marginBottom: scale < 1 ? `${-(1 - scale) * 100}px` : undefined,
-        display: 'flex', justifyContent: 'center',
-      }}>{children}</div>
-    </div>
-  );
-}
-
 export function RulesView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   // Wolf 2026-05-05: triggert Re-Render wenn Wolf im Rules-Editor speichert.
@@ -845,32 +802,34 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   Folie ist „so sieht EINE Runde aus", nicht „hier sind alle
                   15 Fragen". Den ganzen Baum bekommt das Publikum im
                   Runden-Intro, wo er echter Fortschritt ist.
-                  focusPhaseIdx spannt auf eine Runde. */}
-              <FitToWidth>
-                <QQProgressTree state={s} variant="inline" wolfAbove focusPhaseIdx={0} />
-              </FitToWidth>
+                  `onlyPhase` laesst die anderen Runden aus dem LAYOUT fallen —
+                  `focusPhaseIdx` haette sie nur abgeblendet, und abgeblendet
+                  belegen sie weiter Breite. Genau daran hingen die 28 px.
+                  VORSCHLAG 2026-08-22, leicht zurueckzudrehen: der Wolf ist
+                  hier aus (`wolfHidden`). Er ist die Ich-bin-hier-Marke, und
+                  hier gibt es noch kein Hier — das Spiel wird gerade erst
+                  erklaert. Ausserdem ragte er bei dieser Kachelgroesse in die
+                  Ueberschriftenzeile.
+                  Kein FitToWidth mehr: eine Runde ist ~650 px breit und passt
+                  ohne Verkleinern in die Karte; sein overflow:hidden hat den
+                  Wolf zusaetzlich angeschnitten. */}
+              <QQProgressTree state={s} variant="inline" wolfHidden onlyPhase={1} bigIcons />
+              {/* 2026-08-22: der pulsende Punkt vor dieser Zeile ist raus.
+                  Er war 8 px gross (Regel 7 verlangt mindestens 12), rund
+                  (Regel 4) und hat nichts bedeutet — er hat gepulst, weil
+                  Pulsen huebsch aussieht. Genau der Fall aus Regel 5: ein
+                  Schein, der schmueckt, geht. Die Zeile selbst bleibt, sie ist
+                  ueber `rules.slide3.hint` von Wolf editierbar. */}
               <div style={{
-                display: 'inline-flex', alignItems: 'center', gap: 12,
                 fontSize: 'clamp(18px, 2.4cqw, 34px)', fontWeight: 700,
-                color: '#a8a395', letterSpacing: '0.04em',
+                color: 'var(--qq-text-muted)', letterSpacing: '0.04em',
+                textAlign: 'center',
                 animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.5s both',
               }}>
-                <span style={{
-                  display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                  background: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
-                  boxShadow: isThemed() ? '0 0 12px rgba(var(--qq-accent-rgb),0.65)' : '0 0 12px rgba(var(--qq-stage-brand-rgb), 0.65)',
-                  animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
-                }} />
                 {getRuleText('rules.slide3.hint', lang, lang === 'de'
                   ? '5 Kategorien pro Runde, jede mit eigenem Twist'
                   : '5 categories per round, each with its own twist')}
               </div>
-              <style>{`
-                @keyframes qqShowcaseHintPulse {
-                  0%, 100% { opacity: 0.5; transform: scale(0.85); }
-                  50% { opacity: 1; transform: scale(1.15); }
-                }
-              `}</style>
             </div>
           )}
 

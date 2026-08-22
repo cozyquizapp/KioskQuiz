@@ -47,6 +47,13 @@ interface Props {
    *  Border/Shadow/Padding und keine Phasen-Labels, nur Symbole + Linie + Wolf.
    *  Für die durchgehende Kamerafahrt-Welt, die in die Kategorie zoomt. */
   bare?: boolean;
+  /** 2026-08-22 (Wolf „oder nur eine beispielrunde?"): echter Einzelrunden-Modus.
+   *  Zeigt NUR diese eine Runde — keine anderen Cluster, kein Bieten, kein
+   *  CozyGame, kein Finale. Unterschied zu `focusPhaseIdx`: das blendet die
+   *  anderen Runden nur ab (sie belegen weiter Breite und druecken die Kacheln
+   *  klein), hier fallen sie aus dem Layout. Dadurch bleibt Platz fuer
+   *  buehnentaugliche Kachelgroessen. 1-basiert wie QQGamePhaseIndex. */
+  onlyPhase?: QQGamePhaseIndex | null;
 }
 
 // Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
@@ -76,6 +83,7 @@ export default function QQProgressTree({
   wolfHidden = false,
   focusPhaseIdx = null,
   bare = false,
+  onlyPhase = null,
 }: Props) {
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
@@ -122,8 +130,15 @@ export default function QQProgressTree({
   const isMini = variant === 'mini';
   const isShowcase = variant === 'showcase';
 
+  const isSingleRound = onlyPhase != null;
+
   // Skalen je nach Variant
-  const scale = isShowcase ? 2.4
+  // Einzelrunde: dieselbe Skala wie Showcase (2.4). Fuenf Kacheln statt
+  // fuenfzehn plus Sonderknoten heisst, die Breite ist da — und erst bei
+  // dieser Skala liegen die Kacheln ueber der Lesbarkeitsgrenze fuer 8 m
+  // (gemessen 28 px bei ganzem Baum, hier ~106 px).
+  const scale = isSingleRound ? 2.4
+    : isShowcase ? 2.4
     : variant === 'hero' ? 1
     : variant === 'panel' ? 0.8
     : isMini ? 0.42
@@ -133,25 +148,40 @@ export default function QQProgressTree({
     : variant === 'inline' ? 1.08
     : 0.95;
   const titleSize = isShowcase ? 44 : variant === 'hero' ? 34 : variant === 'panel' ? 22 : 20;
-  const phaseNameSize = isShowcase ? 34 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : variant === 'inline' ? 17 : 15;
+  const phaseNameSize = (isShowcase || isSingleRound) ? 34 : variant === 'hero' ? 18 : variant === 'panel' ? 14 : variant === 'inline' ? 17 : 15;
   // bigIcons (Round-Intro-Roadmap): Dots ~1.3× größer → die 3D-Kategorie-Icons
   // lesen sich aus Distanz deutlich besser (Beamer-Review 54px-Tiles vs. 34px).
   const dotSize = Math.round(34 * scale * (bigIcons ? 1.3 : 1));
   const dotGap = isMini ? 4 : Math.round(12 * scale);
   const phaseGap = isMini ? 14 : Math.round(40 * scale);
   const showLabels = !isMini && !bare;
+  // 2026-08-22: eigener Rahmen NUR wenn der Baum fuer sich steht. In der
+  // Einzelrunde sitzt er in der Regelkarte — ein Kasten im Kasten waere die
+  // dritte Flaeche uebereinander (Grund, Karte, Baum), und genau die haben wir
+  // auf der Fair-Play-Folie schon einmal weggenommen. Labels bleiben, anders
+  // als bei `bare`.
+  const chromeless = bare || isSingleRound;
 
   const phases: QQGamePhaseIndex[] = [];
-  for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
+  if (isSingleRound) {
+    phases.push(onlyPhase);
+  } else {
+    for (let p = 1 as QQGamePhaseIndex; p <= totalPhases; p = (p + 1) as QQGamePhaseIndex) phases.push(p);
+  }
 
   // ── Toggles (Bid/Finale/CozyGames) — vorgezogen, weil subSteps + Layout
   // beide darauf basieren. `=== true` statt `!== false`, sonst leakt
   // undefined-State (vor erstem State-Update) als „sichtbar" (Wolf 2026-05-11).
-  const showBidding = state.finalWagerEnabled === true;
-  const showFinale  = state.connectionsEnabled === true;
+  // Einzelrunde zeigt eine RUNDE, nicht den Abend: Bieten, CozyGame und
+  // Finale sitzen zwischen bzw. hinter den Runden und haetten hier keinen
+  // Bezugspunkt (das „Bieten"-Label saesse vor einer Runde, die gar nicht die
+  // letzte ist). Deshalb hart aus.
+  const showBidding = !isSingleRound && state.finalWagerEnabled === true;
+  const showFinale  = !isSingleRound && state.connectionsEnabled === true;
   // 2026-05-17 (Wolf-Feature CozyGames): Knoten nach JEDER Non-Final-Runde
   // (Wolf-Spec "nach jeder Runde"). Bei 4-Phasen: nach 1, 2, 3.
-  const showCozyGames = !!(state as any).cozyGamesEnabled
+  const showCozyGames = !isSingleRound
+    && !!(state as any).cozyGamesEnabled
     && Array.isArray((state as any).cozyGamesPool)
     && (state as any).cozyGamesPool.length > 0;
   const DEFAULT_DOTS_PER_PHASE = 5;
@@ -528,17 +558,17 @@ export default function QQProgressTree({
         gap: isShowcase ? 32 : variant === 'hero' ? 22 : isMini ? 0 : 14,
         // Showcase: kein horizontales Padding — der Pan-Container nimmt
         // die volle Breite ein und cliped durch overflow:hidden.
-        padding: bare ? 0
+        padding: chromeless ? 0
           : isShowcase ? '20px 0'
           : variant === 'hero' ? '28px 40px'
           : variant === 'inline' ? '20px 36px'
           : isMini ? '6px 14px'
           : '16px 24px',
         borderRadius: isMini ? 999 : 20,
-        background: bare ? 'transparent' : wrapperBg,
+        background: chromeless ? 'transparent' : wrapperBg,
         color: wrapperColor,
-        boxShadow: bare ? 'none' : wrapperBoxShadow,
-        border: bare ? 'none' : wrapperBorder,
+        boxShadow: chromeless ? 'none' : wrapperBoxShadow,
+        border: chromeless ? 'none' : wrapperBorder,
         // Soft transition damit Runden-Farb-Wechsel (Phase 1→2→3→4) smooth durchfaerbt.
         transition: 'border-color 0.6s ease, box-shadow 0.6s ease',
         // Showcase: volle Container-Breite (Pan-Camera fliegt smooth durch).
@@ -621,9 +651,15 @@ export default function QQProgressTree({
                     textAlign: 'center',
                     fontSize: phaseNameSize,
                     fontWeight: 900,
-                    color: isCurrentPhase
-                      ? (skinAccentHex ?? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247'))
-                      : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500),
+                    // 2026-08-22: in der Einzelrunde traegt das Label warme
+                    // Tinte statt Slate. Regel 1 — auf der Buehne ist kaltes
+                    // Grau ein Fremdkoerper, und hier steht es als einziger
+                    // Text neben creme-farbenen Zeilen.
+                    color: isSingleRound
+                      ? 'var(--qq-text-muted)'
+                      : isCurrentPhase
+                        ? (skinAccentHex ?? (isShowcase ? QQ_COLORS.brandPink : variant === 'inline' ? QQ_COLORS.brandPink : '#A21247'))
+                        : (isShowcase ? '#6b6555' : variant === 'inline' ? QQ_COLORS.slate400 : QQ_COLORS.slate500),
                     letterSpacing: 0.4,
                     textTransform: 'uppercase',
                     flexShrink: 0,
@@ -634,7 +670,11 @@ export default function QQProgressTree({
                 >
                   {/* 2026-06-28 (Beamer-Review): Puls-Marker vor dem Label der
                       aktuellen Runde (nur Round-Intro-Roadmap). */}
-                  {bigIcons && isCurrentPhase && (
+                  {/* Nicht in der Einzelrunde: dort ist der Baum ein BEISPIEL,
+                      kein Fortschritt. Ein „hier stehst du"-Puls auf einer
+                      Folie, die das Spiel erst erklaert, zeigt eine Position,
+                      die es noch nicht gibt. */}
+                  {bigIcons && isCurrentPhase && !isSingleRound && (
                     <span style={{
                       display: 'inline-block', verticalAlign: 'middle',
                       width: Math.round(phaseNameSize * 0.55), height: Math.round(phaseNameSize * 0.55),
@@ -855,7 +895,12 @@ export default function QQProgressTree({
                 {renderEntries.map((e, i) => {
                   const globalIdx = phaseStartIdx >= 0 ? phaseStartIdx + i : -1;
                   const isPast = !showcaseMode && globalIdx >= 0 && globalIdx < displayIdx;
-                  const isCurrent = globalIdx >= 0 && globalIdx === effectiveDisplayIdx;
+                  // Einzelrunde: KEINE aktuelle Kachel. Die Folie zeigt die
+                  // Form einer Runde, nicht einen Stand — und ein Highlight auf
+                  // Kachel 1 waere eine Position, die es beim Regeln-Erklaeren
+                  // noch nicht gibt. Fuenf gleichwertige Kacheln sagen genau
+                  // das, was die Zeile darunter sagt: fuenf Kategorien.
+                  const isCurrent = !isSingleRound && globalIdx >= 0 && globalIdx === effectiveDisplayIdx;
                   // 2026-05-09 (Wolf 'tree noch bunt'): Phasen-Farbe statt Kategorie-Farbe
                   const color = skinAccentHex ?? getRoundColor(p, totalPhases);
                   // Bei Placeholder (e=null): graues Dot ohne Emoji
@@ -950,7 +995,13 @@ export default function QQProgressTree({
               (klare Hierarchie: das ist DAS Highlight).
               User-Wunsch 2026-04-28-v2: Trenner-Strich raus, Dot mittig
               unter dem 'FINALE'-Label. */}
-          {state.connectionsEnabled === true && (() => {
+          {/* 2026-08-22: liest `showFinale` statt `state.connectionsEnabled` roh.
+              Label (oben) und Layout-Rechnung nutzten laengst showFinale, nur
+              der Knoten selbst nicht — bisher folgenlos, weil beide dasselbe
+              sagten. Mit dem Einzelrunden-Modus tun sie das nicht mehr, und
+              der Knoten waere ohne reservierte Breite und ohne Label
+              erschienen. */}
+          {showFinale && (() => {
             const finaleSize = Math.round(dotSize * 1.35);
             const finaleColor = QQ_COLORS.violet400;
             // Aktiv = real während CONNECTIONS_4X4 ODER Showcase-Last-Step.

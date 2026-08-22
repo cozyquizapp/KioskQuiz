@@ -19,7 +19,7 @@ import { isThemed } from '../qqTheme';
 export type ActionCardData = {
   count: number;
   emoji?: string;
-  slug?: 'marker-sanduhr' | 'marker-shield' | 'marker-swap';
+  slug?: 'marker-swap';   // 2026-08-22: Schild und Sanduhr ausgebaut, siehe QQ_BOARD_ACTIONS_RETIRED
   label: string;
   limit?: string;
   accent: string;

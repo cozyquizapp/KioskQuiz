@@ -17,7 +17,7 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, Fragment } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import {
-  QQ_CATEGORY_LABELS, QQ_BUNTE_TUETE_LABELS,
+  QQ_CATEGORY_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, qqArenaType } from '../cozyQuizShared';
 import { isThemed, isQuietMotion } from '../qqTheme';
@@ -113,15 +113,19 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
           Highlight-Ring; der Wolf schwebt darüber statt drauf zu sitzen. */}
       {phaseEntries.map((e, i) => {
         const label = QQ_CATEGORY_LABELS[e.category];
-        const subSlug = e.bunteTueteKind ? qqSubSlug(e.bunteTueteKind) : null;
         const catSlug = qqCatSlug(e.category);
         // 2026-05-11 (Wolf-Bug 'onlyConnect zeigt 🎁 statt 🧩'): bei Bunte-
         // Tüte-Subs OHNE eigenes PNG (onlyConnect, bluff, oneOfEight) NICHT
         // auf cat-bunte-tuete (= 🎁) fallback. Stattdessen Sub-Emoji nehmen
         // (passend zum Badge: 🧩 / 🎭 / 🕵️). Nur Quiz-Kategorien ohne Sub
         // dürfen catSlug nutzen.
-        const iconSlug = e.bunteTueteKind ? subSlug : catSlug;
-        const emojiFallback = e.bunteTueteKind ? QQ_BUNTE_TUETE_LABELS[e.bunteTueteKind].emoji : label.emoji;
+        // 2026-08-22 (Wolf): im Baum immer die Tüte, nie das Unterspiel. Der
+        // Baum verriet sonst die ganze Runde im Voraus, welches Spiel kommt —
+        // bei einer Wundertüte ist genau das die Pointe. Das spezifische Motiv
+        // kommt erst im Kategorie-Auftritt (heroIconSlug weiter unten), und
+        // dieser Wechsel IST der Reveal.
+        const iconSlug = catSlug;
+        const emojiFallback = label.emoji;
         const isPast = i < displayIdx;
         const isCurrent = i === displayIdx;
         const dotLeft = i * (DOT + GAP);

@@ -13,9 +13,6 @@ const QUIRK_CAT_SLUGS = new Set<string>([
 
 export type QQIconSlug =
   // Marker (Cell-Status / Action-Badges) — bestehende Custom-PNGs
-  | 'marker-frost'
-  | 'marker-shield'
-  | 'marker-sanduhr'
   | 'marker-swap'
   // Kategorien — bestehende Custom-PNGs
   | 'cat-schaetzchen'
@@ -81,24 +78,7 @@ export type QQIconSlug =
   | 'group'
   // Fluent Emoji 3D Kandidaten fuer bestehende Custom-PNGs (Kategorien/Subs/Marker).
   // Nicht automatisch im Einsatz — werden via qqCatSlug/qqSubSlug gesteuert.
-  | 'fx-cat-schaetzchen'
-  | 'fx-cat-mucho'
-  | 'fx-cat-bunte-tuete'
-  | 'fx-cat-zehn-von-zehn'
-  | 'fx-cat-cheese'
-  | 'fx-sub-hotpotato'
-  | 'fx-sub-top5'
-  | 'fx-sub-order'
-  | 'fx-sub-map'
-  | 'fx-marker-frost'
-  | 'fx-marker-shield'
-  | 'fx-marker-sanduhr'
-  | 'fx-marker-swap'
   // Alternative Kategorie-Varianten (optional)
-  | 'fx-mucho-alt-light'
-  | 'fx-mucho-alt-thought'
-  | 'fx-zvz-alt-100'
-  | 'fx-zvz-alt-dice'
   // ── CozyQuiz Icon Set, Wolf-Lieferung 2026-08-22 ──────────────────────────
   // 53 Motive im Stil des CozyQuiz-Avatarsets (weiche 3D-Objekte, warme Farben,
   // freigestellt, 512²). Ersetzt die geliehene Fluent-Emoji-3D-Reihe und macht
@@ -162,9 +142,6 @@ export type QQIconSlug =
   | 'react-laugh';
 
 const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
-  'marker-frost':      '❄️',
-  'marker-shield':     '🛡️',
-  'marker-sanduhr':    '⏳',
   'marker-swap':       '🔄',
   'cat-schaetzchen':   '🎯',
   'cat-mucho':         '🅰️',
@@ -215,23 +192,6 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'rocket':            '🚀',
   'anker':             '⚓',
   'group':             '👥',
-  'fx-cat-schaetzchen':   '🎯',
-  'fx-cat-mucho':         '🅰️',
-  'fx-cat-bunte-tuete':   '🎁',
-  'fx-cat-zehn-von-zehn': '🎰',
-  'fx-cat-cheese':        '📸',
-  'fx-sub-hotpotato':     '🥔',
-  'fx-sub-top5':          '🏆',
-  'fx-sub-order':         '🔀',
-  'fx-sub-map':           '🗺️',
-  'fx-marker-frost':      '❄️',
-  'fx-marker-shield':     '🛡️',
-  'fx-marker-sanduhr':    '⏳',
-  'fx-marker-swap':       '🔄',
-  'fx-mucho-alt-light':   '💡',
-  'fx-mucho-alt-thought': '💭',
-  'fx-zvz-alt-100':       '💯',
-  'fx-zvz-alt-dice':      '🎲',
   // CozyQuiz Icon Set 2026-08-22
   'award-thief':          '🦝',
   'award-heart':          '💛',

@@ -4,7 +4,7 @@ import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '.
 import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed, getActiveTheme } from '../qqTheme';
-import { QQIcon, qqCatSlug, qqSubSlug } from './QQIcon';
+import { QQIcon, qqCatSlug } from './QQIcon';
 import { CozyGameIcon } from './CozyGameIcon';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
@@ -867,9 +867,14 @@ export default function QQProgressTree({
                   // Dots zeigten rohe OS-Kategorie-Emoji statt der neuen cozy3d-
                   // Kategorie-Icons (PNG). Slug holen (Sub-Mechanik bevorzugt),
                   // Fallback = Emoji wenn kein Icon existiert (z.B. deaktivierte Subs).
-                  const catSlug = e
-                    ? (e.bunteTueteKind ? qqSubSlug(e.bunteTueteKind) : qqCatSlug(e.category))
-                    : null;
+                  // 2026-08-22 (Wolf): Bunte Tüte zeigt im Baum IMMER die Tüte,
+                  // nie das Unterspiel. Der Baum steht die ganze Runde sichtbar
+                  // auf der Wand — wer dort schon die Landkarte oder die Treppe
+                  // sieht, weiß vorab, welches Spiel kommt. Genau das ist bei
+                  // einer Wundertüte die Pointe. Das spezifische Motiv erscheint
+                  // erst im Kategorie-Auftritt direkt davor, und dieser Wechsel
+                  // IST der Reveal.
+                  const catSlug = e ? qqCatSlug(e.category) : null;
                   const isPlaceholder = e === null;
                   return (
                     <div

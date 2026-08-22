@@ -30,7 +30,7 @@ import QQProgressTree from './QQProgressTree';
 
 type AbilityBadge = {
   /** PNG-Slug aus QQIcon, falls vorhanden — sonst nur Emoji. */
-  slug?: 'marker-shield' | 'marker-sanduhr' | 'marker-swap';
+  slug?: 'marker-swap';   // 2026-08-22: Schild und Sanduhr ausgebaut, siehe QQ_BOARD_ACTIONS_RETIRED
   emoji: string;
   label: string;
   accent: string;

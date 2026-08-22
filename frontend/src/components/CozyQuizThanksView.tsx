@@ -120,7 +120,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         : `radial-gradient(ellipse at 50% -10%, rgba(${brand.accentRgb},0.10), transparent 55%), ` +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         `radial-gradient(ellipse at 15% 80%, rgba(${brand.accentRgb},0.05), transparent 50%), ` +
-        '#0A0814',
+        '#120F18',
       // 2026-07-19 (Kolosseum-Font-Sweep): Thanks-Root folgt im Kolosseum dem
       // Arena-Font-System (vorher immer Bricolage/Nunito).
       fontFamily: megaArena ? 'var(--font-arena-body)' : fontFam,
@@ -382,7 +382,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         <div style={{
           marginTop: 10,
           fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 700,
-          color: themed ? 'var(--qq-text-muted)' : '#CBD5E1', fontStyle: 'italic',
+          color: themed ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', fontStyle: 'italic',
           textAlign: 'center', lineHeight: 1.3,
           animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.55s both',
         }}>{de
@@ -519,7 +519,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     <div style={{
                       marginTop: 4,
                       fontSize: 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
-                      color: themed ? 'var(--qq-text-muted)' : '#CBD5E1',
+                      color: themed ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)',
                       letterSpacing: '0.04em',
                     }}>{de ? 'hat heute gewonnen' : 'won today'}</div>
                   </div>
@@ -551,7 +551,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   <QRCodeSVG
                     value={summaryUrl}
                     size={280}
-                    bgColor="#ffffff" fgColor="#0A0814"
+                    bgColor="#F6EFE6" fgColor="#120F18"
                     level="H"
                     imageSettings={{
                       src: '/logo.png',

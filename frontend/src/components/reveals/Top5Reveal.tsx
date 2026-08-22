@@ -136,7 +136,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           const isRevealed = idx >= revealedMinIdx;
           const hasHits = hitters.length > 0;
           const badgeBg = rank === 1 ? 'linear-gradient(135deg,#FDE68A,#FACC15)'
-            : rank === 2 ? 'linear-gradient(135deg,#f1f5f9,#94a3b8)'
+            : rank === 2 ? 'linear-gradient(135deg,#F6EFE6,#94a3b8)'
             : rank === 3 ? 'linear-gradient(135deg,#fdba74,#b45309)'
             : 'linear-gradient(135deg,#64748b,#334155)';
           if (!isRevealed) {
@@ -172,7 +172,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)',
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 14, background: badgeBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#0a0814',
+                fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#120F18',
                 textShadow: '0 1px 2px rgba(255,255,255,0.2)',
                 boxShadow: rank === 1 ? '0 0 20px rgba(250,204,21,0.5)' : 'none',
               }}>#{rank}</div>

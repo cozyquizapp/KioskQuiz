@@ -143,7 +143,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
           // (QQ_CROWDTOP_BOARD_POINTS) → ×20 = 100/80/60/40/20, unabhängig von n.
           const pts = slot.points * 20;
           const badgeBg = rank === 1 ? 'linear-gradient(135deg,var(--qq-accent-soft),var(--qq-accent))'
-            : rank === 2 ? 'linear-gradient(135deg,#f1f5f9,#94a3b8)'
+            : rank === 2 ? 'linear-gradient(135deg,#F6EFE6,#94a3b8)'
             : rank === 3 ? 'linear-gradient(135deg,#fdba74,#b45309)'
             : 'linear-gradient(135deg,#64748b,#334155)';
           if (!isRevealed) {
@@ -191,7 +191,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                 width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)',
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 14, background: badgeBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#0a0814',
+                fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#120F18',
                 textShadow: '0 1px 2px rgba(255,255,255,0.2)', zIndex: 1,
                 boxShadow: rank === 1 ? '0 0 20px rgba(var(--qq-accent-rgb),0.5)' : 'none',
               }}>#{rank}</div>

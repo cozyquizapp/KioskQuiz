@@ -53,7 +53,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
   // Icon gross + bob, Hero-Title (statt Meta-'So funktioniert's') als per-letter-
   // Wave, EINE Erklaer-Zeile. Damit verschwindet das Doppel-Heading + 2 Sub-
   // Zeilen-Stack der vorigen Variante.
-  const PINK = '#EC4899';
+  const PINK = 'var(--qq-stage-brand)';
   if (!introDone) {
     const titleText = de ? 'Final-Tipp' : 'Final tip';
     return (
@@ -141,13 +141,13 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
       </div>
 
       <div style={{
-        fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: isThemed() ? 'var(--qq-title)' : '#F1F5F9',
+        fontSize: 'clamp(48px, 6.5cqw, 110px)', fontWeight: 900, color: isThemed() ? 'var(--qq-title)' : 'var(--qq-text)',
         lineHeight: 1, letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 12,
       }}>{de ? 'Tippt jetzt!' : 'Place your tip!'}</div>
 
       <div style={{
-        fontSize: 'clamp(22px, 2.4cqw, 38px)', color: isThemed() ? 'var(--qq-text-muted)' : '#CBD5E1', fontWeight: 700,
+        fontSize: 'clamp(22px, 2.4cqw, 38px)', color: isThemed() ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', fontWeight: 700,
         textAlign: 'center', maxWidth: 1100, lineHeight: 1.3, marginBottom: 40,
       }}>
         {de
@@ -172,7 +172,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         }}>{de ? 'Tipps abgegeben' : 'Tips submitted'}</div>
         <div style={{
           fontSize: 'clamp(64px, 8cqw, 150px)', fontWeight: 900,
-          color: submittedCount === totalTeams ? '#22C55E' : '#F472B6',
+          color: submittedCount === totalTeams ? '#22C55E' : 'var(--qq-stage-brand-light)',
           letterSpacing: '-0.04em', lineHeight: 1,
           textShadow: `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(var(--qq-accent-rgb),0.45)'}`,
         }}>

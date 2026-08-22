@@ -261,7 +261,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
     if (valRef.current) {
       valRef.current.textContent = String(from);
       valRef.current.style.color = from > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)';
-      valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(236,72,153,0.5)' : 'none';
+      valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none';
     }
     if (deltaRef.current) deltaRef.current.style.opacity = '0';
 
@@ -276,7 +276,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
         if (valRef.current) {
           valRef.current.textContent = String(val);
           valRef.current.style.color = val > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)';
-          valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(236,72,153,0.5)' : 'none';
+          valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none';
         }
         if (deltaRef.current) {
           const showDelta = to > from && val > from && val < to;
@@ -300,7 +300,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
       <span ref={valRef} style={{
         fontSize: `clamp(34px, 4cqw, ${Math.round(rowH * 0.66)}px)`,
         color: from > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
-        textShadow: from > 0 ? '0 0 18px rgba(236,72,153,0.5)' : 'none',
+        textShadow: from > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
       }}>{from}</span>
     </span>
@@ -1685,7 +1685,7 @@ function getOrderedRanks(N: number): number[] {
 //   3. Headline-Banner („SIEGER: {Name}") gold/pink, slide-down
 // Greift NUR bei isFinish — kein Conflict mit der Race-Choreo davor.
 function RaceFinishHero({ winner, lang }: { winner: QQTeam; lang: 'de' | 'en' }) {
-  const pennantColors = [QQ_COLORS.brandPink, QQ_COLORS.amber400, '#A21247', QQ_COLORS.yellow300, QQ_COLORS.brandPink, QQ_COLORS.amber400, '#A21247', QQ_COLORS.yellow300, QQ_COLORS.brandPink];
+  const pennantColors = [QQ_COLORS.brandPink, QQ_COLORS.amber400, 'var(--qq-stage-brand-deep)', QQ_COLORS.yellow300, QQ_COLORS.brandPink, QQ_COLORS.amber400, 'var(--qq-stage-brand-deep)', QQ_COLORS.yellow300, QQ_COLORS.brandPink];
   return (
     <>
       {/* Layer 1 — Spotlight-Cone (z hinter Banner, vor BG) */}
@@ -2257,7 +2257,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
       delay: -r(4) * 20,            // s (negativ → gleich mittendrin, kein leerer Start)
       sway: (r(5) - 0.5) * 64,      // px seitliches Driften
       opac: 0.22 + r(6) * 0.4,
-      color: ['#EC4899', '#A855F7', '#FBBF24'][i % 3],
+      color: ['var(--qq-stage-brand)', '#A855F7', '#FBBF24'][i % 3],
     };
   }), []);
 
@@ -2565,7 +2565,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
         }} />
         <div style={{
           position: 'absolute', right: '20%', top: '18%', width: 560, height: 560, borderRadius: '50%',
-          background: 'radial-gradient(circle, rgba(236,72,153,0.18), transparent 68%)',
+          background: 'radial-gradient(circle, rgba(var(--qq-stage-brand-rgb), 0.18), transparent 68%)',
           filter: 'blur(18px)', animation: 'qqTowerAurora 11s ease-in-out 1.2s infinite',
         }} />
       </div>
@@ -2616,7 +2616,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           position: 'absolute', top: 0, bottom: 0, left: centerXOfTeam(winnerTeamId),
           width: Math.round(colW * 2.1), transform: 'translateX(-50%)',
           zIndex: 1, pointerEvents: 'none',
-          background: `linear-gradient(180deg, ${winner?.team.color ?? '#fff'}55 0%, ${winner?.team.color ?? '#fff'}22 45%, transparent 85%)`,
+          background: `linear-gradient(180deg, ${winner?.team.color ?? '#F6EFE6'}55 0%, ${winner?.team.color ?? '#F6EFE6'}22 45%, transparent 85%)`,
           WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent)',
           maskImage: 'linear-gradient(90deg, transparent, #000 30%, #000 70%, transparent)',
           animation: 'qqTowerBeam 2.6s ease-in-out infinite',
@@ -2688,7 +2688,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               }}>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={92} flat />
               </div>
-              <div style={{ fontSize: 32, fontWeight: 900, color: '#fff', textAlign: 'center', maxWidth: 540, lineHeight: 1.1 }}>{t.name}</div>
+              <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--qq-text)', textAlign: 'center', maxWidth: 540, lineHeight: 1.1 }}>{t.name}</div>
               <div style={{ fontSize: 26, fontWeight: 800, color: isWin ? '#FBBF24' : '#C9BEEA', textAlign: 'center' }}>
                 {isWin
                   ? (de ? `Mit ${pts} Punkten SIEGER! 🏆` : `WINNER with ${pts} points! 🏆`)
@@ -2750,7 +2750,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               } as CSSProperties}>
                 <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AVF} flat />
               </div>
-              <div style={{ fontSize: 17, fontWeight: 900, color: '#fff', textShadow: `0 0 10px ${team.color}`, whiteSpace: 'nowrap' }}>{team.name}</div>
+              <div style={{ fontSize: 17, fontWeight: 900, color: 'var(--qq-text)', textShadow: `0 0 10px ${team.color}`, whiteSpace: 'nowrap' }}>{team.name}</div>
             </div>
           );
           return <div key={key} style={{ display: 'contents' }}>{ghosts}{main}</div>;
@@ -2784,7 +2784,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           <>
             <div style={{
               fontSize: 40, fontWeight: 900, letterSpacing: '0.01em',
-              color: phase === 'flight' ? '#FBBF24' : '#F8FAFC',
+              color: phase === 'flight' ? '#FBBF24' : 'var(--qq-text)',
               animation: 'qqTowerTitleIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both',
             }}>
               {phase === 'flight'
@@ -2809,8 +2809,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
               {de ? '🏆 Sieger' : '🏆 Winner'}
             </div>
             <div style={{
-              fontSize: 46, fontWeight: 900, color: winner?.team.color ?? '#F8FAFC',
-              textShadow: `0 0 26px ${winner?.team.color ?? '#fff'}88`,
+              fontSize: 46, fontWeight: 900, color: winner?.team.color ?? 'var(--qq-text)',
+              textShadow: `0 0 26px ${winner?.team.color ?? '#F6EFE6'}88`,
             }}>
               {winner?.team.name}
             </div>
@@ -2942,7 +2942,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       )}
                       <span style={{
                         fontSize: 14, fontWeight: 900, letterSpacing: '0.04em',
-                        color: '#fff', background: 'rgba(15,10,25,0.94)',
+                        color: 'var(--qq-text)', background: 'rgba(15,10,25,0.94)',
                         border: `2px solid ${entry.team.color}`,
                         borderRadius: 999, padding: '2px 9px',
                         boxShadow: `0 0 12px ${entry.team.color}66`,
@@ -3066,7 +3066,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       name={entry.team.name}
                       maxLines={2}
                       shrinkAfter={12}
-                      color="#F1F5F9"
+                      color="#F6EFE6"
                       fontWeight={800}
                       fontSize="clamp(12px, 1cqw, 17px)"
                       style={{ maxWidth: colW + 12, textAlign: 'center', lineHeight: 1.05 }}
@@ -3559,7 +3559,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                     borderTop: 'none',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: config.rankFontSize, fontWeight: 900,
-                    color: '#0A0814',
+                    color: '#120F18',
                     boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
                   }}>1</div>
                 </div>
@@ -3624,7 +3624,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                 fontSize: compactWolf ? 'clamp(14px, 1.6cqw, 26px)' : 'clamp(20px, 2.6cqw, 44px)',
                 fontWeight: 900,
                 color: QQ_COLORS.amber400,
-                textShadow: '0 0 14px rgba(251,191,36,0.85), 0 0 2px #0A0814',
+                textShadow: '0 0 14px rgba(251,191,36,0.85), 0 0 2px #120F18',
                 letterSpacing: '0.04em',
                 fontFamily: 'var(--font-game, system-ui)',
                 animation: 'qqWolfTroeet 2.8s ease-in-out infinite',
@@ -3804,7 +3804,7 @@ function RaceStarryBackground() {
           left: `${s.x}%`, top: `${s.y}%`,
           width: s.size, height: s.size,
           borderRadius: '50%',
-          background: '#fff',
+          background: '#F6EFE6',
           ['--max-op' as string]: s.maxOpacity,
           opacity: s.maxOpacity,
           boxShadow: s.size > 2 ? `0 0 ${s.size * 2}px rgba(255,255,255,0.6)` : undefined,
@@ -3816,9 +3816,9 @@ function RaceStarryBackground() {
           position: 'absolute',
           left: `${ss.startX}%`, top: `${ss.startY}%`,
           width: 2, height: 2,
-          background: '#fff',
+          background: '#F6EFE6',
           borderRadius: '50%',
-          boxShadow: '0 0 4px #fff, -20px -10px 30px rgba(255,255,255,0.4)',
+          boxShadow: '0 0 4px #F6EFE6, -20px -10px 30px rgba(255,255,255,0.4)',
           animation: `raceShootingStar 2s ease-out ${ss.delay}s infinite`,
           opacity: 0,
         }} />
@@ -3971,7 +3971,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
         borderBottom: 'none',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: effectiveRankFontSize, fontWeight: 900,
-        color: isMinor ? 'var(--qq-card-text)' : '#0A0814',
+        color: isMinor ? 'var(--qq-card-text)' : '#120F18',
         boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 -4px 16px ${podiumColor}55`,
       }}>{rank}</div>
     </div>

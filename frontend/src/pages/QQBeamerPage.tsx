@@ -117,8 +117,8 @@ export function getBrandColors(eurovisionMode?: boolean) {
         accentRgb:  '236,72,153',
         accentSoft: QQ_COLORS.brandPinkSoft,
         accentWarm: '#F9A8D4',
-        magenta:    '#A21247',
-        gradientPill: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
+        magenta:    'var(--qq-stage-brand-deep)',
+        gradientPill: 'linear-gradient(135deg, var(--qq-stage-brand-light) 0%, var(--qq-stage-brand) 50%, var(--qq-stage-brand-deep) 100%)',
       };
 }
 
@@ -127,12 +127,12 @@ export function getBrandColors(eurovisionMode?: boolean) {
 // bekommen einen Pink-Glow-Border + subtle outer Aurora-Halo. Sub-Cards
 // (Options, Timer, Mini-Stats) behalten neutral-weiss-Border, sonst wird das
 // Pink omnipräsent.
-export const COZY_HERO_BORDER = '1.5px solid rgba(236,72,153,0.32)';
+export const COZY_HERO_BORDER = '1.5px solid rgba(var(--qq-stage-brand-rgb), 0.32)';
 export const COZY_HERO_SHADOW =
   'inset 0 1.5px 0 rgba(255,255,255,0.10), ' +
-  '0 0 0 1px rgba(236,72,153,0.08), ' +
+  '0 0 0 1px rgba(var(--qq-stage-brand-rgb), 0.08), ' +
   '0 16px 50px rgba(0,0,0,0.65), ' +
-  '0 0 36px rgba(236,72,153,0.14)';
+  '0 0 36px rgba(var(--qq-stage-brand-rgb), 0.14)';
 export const COZY_SUB_BORDER = '1px solid rgba(255,255,255,0.10)';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
@@ -745,20 +745,20 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         'radial-gradient(ellipse at 22% 28%, rgba(var(--qq-accent-rgb),0.30) 0%, transparent 55%)',
         'radial-gradient(ellipse at 78% 72%, rgba(30,42,90,0.32) 0%, transparent 55%)',
         'radial-gradient(ellipse at 50% 105%, rgba(190,24,93,0.18) 0%, transparent 60%)',
-        '#0A0814',
+        '#120F18',
       ].join(',')
     : isPaused
     ? [
         'radial-gradient(ellipse at 28% 32%, rgba(var(--qq-accent-rgb),0.26) 0%, transparent 55%)',
         'radial-gradient(ellipse at 78% 70%, rgba(30,42,90,0.30) 0%, transparent 55%)',
         'radial-gradient(ellipse at 55% 8%, rgba(244,114,182,0.16) 0%, transparent 55%)',
-        '#0A0814',
+        '#120F18',
       ].join(',')
     : null;
   // 2026-07-14 (Arena-Background-Set): im CozyArena-Modus das Kolosseum-Bild pro
   // Screen/Kategorie direkt in die Root-`bg` backen (Scrim + Bild + Fallback).
   // null bei Nicht-Arena/Skin/Custom-BG → alter Look exakt erhalten.
-  const bg = qqArenaRootBg(s) ?? pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#0A0814') : '#0A0814');
+  const bg = qqArenaRootBg(s) ?? pauseBg ?? s.theme?.bgColor ?? (cat ? (CAT_BG[cat] ?? '#120F18') : '#120F18');
   const textCol = s.theme?.textColor ?? QQ_COLORS.slate200;
   const accent = s.theme?.accentColor ?? QQ_COLORS.brandPink;
   // Cozy-warmer Card-Hintergrund (passend zum In-Game) statt kühlem Navy.
@@ -2407,9 +2407,9 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
       <div style={{
         display: 'flex', alignItems: 'center', gap: 18,
         padding: '10px 28px', borderRadius: 'var(--qq-pill-radius)',
-        background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(217,119,6,0.10))',
-        border: isThemed() ? '2px solid var(--qq-accent)' : '2px solid rgba(236,72,153,0.55)',
-        boxShadow: isThemed() ? 'none' : '0 0 36px rgba(236,72,153,0.35)',
+        background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(var(--qq-stage-brand-rgb), 0.22), rgba(217,119,6,0.10))',
+        border: isThemed() ? '2px solid var(--qq-accent)' : '2px solid rgba(var(--qq-stage-brand-rgb), 0.55)',
+        boxShadow: isThemed() ? 'none' : '0 0 36px rgba(var(--qq-stage-brand-rgb), 0.35)',
         animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
       }}>
         <span style={{ fontSize: 'clamp(28px, 3cqw, 44px)' }}>
@@ -2784,7 +2784,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         padding: 'clamp(5px,0.7cqh,9px) clamp(16px,1.8cqw,26px)',
                         borderRadius: 'var(--qq-pill-radius)',
                         background: urgent ? '#EF4444' : t.color,
-                        color: '#fff', fontWeight: 900,
+                        color: 'var(--qq-text)', fontWeight: 900,
                         fontSize: 'clamp(20px, 2.4cqw, 32px)', lineHeight: 1,
                         minWidth: 'clamp(56px, 6cqw, 88px)', textAlign: 'center',
                         boxShadow: `0 6px 18px ${urgent ? 'rgba(239,68,68,0.5)' : `${t.color}80`}`,
@@ -3142,7 +3142,7 @@ export function ArenaMageWolf({ widthCss, speaking, cheer, mirror }: {
       {/* Statischer Arkan-Halo (aendert sich nicht mit Frame → kein Flicker). */}
       <div aria-hidden style={{
         position: 'absolute', inset: '8% 8% -2% 8%',
-        background: 'radial-gradient(ellipse at center 60%, rgba(168,85,247,0.34) 0%, rgba(236,72,153,0.18) 42%, transparent 70%)',
+        background: 'radial-gradient(ellipse at center 60%, rgba(168,85,247,0.34) 0%, rgba(var(--qq-stage-brand-rgb), 0.18) 42%, transparent 70%)',
         filter: 'blur(18px)', pointerEvents: 'none', zIndex: 0,
       }} />
       {/* calm = statische Basis (immer sichtbar). hi/cheer nur als maskierte
@@ -3799,7 +3799,7 @@ function MegaOptionCrests({ teams, de, dim, correct }: {
             avatarId={b.avatarId} teamEmoji={b.slug} size={avatarSz}
             style={{
               boxShadow: `0 0 10px ${b.color}55`,
-              background: '#0A0814',
+              background: '#120F18',
             }}
           />
           <span style={{
@@ -3807,7 +3807,7 @@ function MegaOptionCrests({ teams, de, dim, correct }: {
             minWidth: badgeSz, height: badgeSz, padding: '0 6px', borderRadius: 999,
             background: correct ? '#22C55E' : 'rgba(10,8,20,0.92)',
             border: '2.5px solid rgba(255,255,255,0.2)',
-            color: correct ? '#0A0814' : '#fff',
+            color: correct ? '#120F18' : 'var(--qq-text)',
             fontSize: badgeFs, fontWeight: 900,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontVariantNumeric: 'tabular-nums', lineHeight: 1,
@@ -4211,13 +4211,13 @@ export function MuchoOptionsReveal({
                             // Kein Doppel-Rand mehr: das Avatar-Artwork hat eh
                             // einen farbigen Kapuzen-/Kreis-Rim. Nur der schnellste
                             // Voter bekommt den Gold-Ring als Winner-Indikator.
-                            border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
+                            border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid var(--qq-stage-brand)') : 'none',
                             boxShadow: isFastest
                               ? (isThemed()
                                   ? '0 0 22px rgba(var(--qq-accent-rgb),0.6)'
-                                  : '0 0 22px rgba(236,72,153,0.6)')
+                                  : '0 0 22px rgba(var(--qq-stage-brand-rgb), 0.6)')
                               : `0 0 10px ${tm.color}55`,
-                            background: '#0A0814',
+                            background: '#120F18',
                           }}
                         />
                         {/* Zeit-Pill: direkt unter dem Kreis, zentriert, leicht ueberlappend */}
@@ -4227,9 +4227,9 @@ export function MuchoOptionsReveal({
                             left: '50%', bottom: -8,
                             transform: 'translate(-50%, 50%)',
                             padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
-                            background: isFastest ? (isThemed() ? 'var(--qq-accent)' : 'rgba(236,72,153,0.95)') : 'rgba(15,23,42,0.95)',
-                            border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(236,72,153,1)') : `1.5px solid ${tm.color}`,
-                            color: isFastest ? (isThemed() ? '#fff' : '#0A0814') : QQ_COLORS.slate200,
+                            background: isFastest ? (isThemed() ? 'var(--qq-accent)' : 'rgba(var(--qq-stage-brand-rgb), 0.95)') : 'rgba(15,23,42,0.95)',
+                            border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(var(--qq-stage-brand-rgb), 1)') : `1.5px solid ${tm.color}`,
+                            color: isFastest ? (isThemed() ? 'var(--qq-text)' : '#120F18') : QQ_COLORS.slate200,
                             fontWeight: 900,
                             fontSize: 'clamp(11px, 1.2cqw, 15px)',
                             whiteSpace: 'nowrap',
@@ -4281,12 +4281,12 @@ function ArenaMasterSplash({ language, visible }: { language: QQLanguage; visibl
       zIndex={9990}
       hiddenScale={1.12}
       background={'linear-gradient(180deg, rgba(8,4,16,0.32) 0%, transparent 24%, transparent 50%, rgba(8,4,16,0.80) 100%), '
-        + 'url(/arena-bg/arena-master.webp) center / cover no-repeat, #0A0814'}
+        + 'url(/arena-bg/arena-master.webp) center / cover no-repeat, #120F18'}
     >
       <div style={{
         position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
         justifyContent: 'flex-end', alignItems: 'center',
-        padding: '0 6cqw clamp(28px, 6cqh, 76px)', textAlign: 'center', color: '#f4f6ff',
+        padding: '0 6cqw clamp(28px, 6cqh, 76px)', textAlign: 'center', color: 'var(--qq-text)',
       }}>
         <div style={{
           fontSize: 'clamp(12px, 1.4cqw, 22px)', fontWeight: 900, letterSpacing: '0.28em',
@@ -4310,7 +4310,7 @@ function ArenaMasterSplash({ language, visible }: { language: QQLanguage; visibl
         }} />
         <div style={{
           marginTop: 'clamp(10px, 1.6cqh, 22px)', fontSize: 'clamp(16px, 2cqw, 32px)', fontWeight: 800,
-          color: '#f4f6ff',
+          color: 'var(--qq-text)',
           animation: visible ? 'qqMasterSub 0.7s ease 0.9s both' : 'none',
         }}>{de ? 'Er führt euch durch die Arena' : 'He guides you through the Arena'}</div>
       </div>
@@ -4499,7 +4499,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
         transform: 'translate(-50%, -50%)',
         background: eurovisionMode
           ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.20) 0%, rgba(168,85,247,0.10) 38%, transparent 68%)'
-          : 'radial-gradient(ellipse at center, rgba(236,72,153,0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
+          : 'radial-gradient(ellipse at center, rgba(var(--qq-stage-brand-rgb), 0.20) 0%, rgba(249,115,22,0.10) 38%, transparent 68%)',
         filter: 'blur(34px)',
         animation: 'qqIntroAmbientPulse 6s ease-in-out infinite',
         pointerEvents: 'none',
@@ -4515,7 +4515,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
         position: 'absolute', inset: 0,
         background: eurovisionMode
           ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.42) 0%, rgba(168,85,247,0.18) 38%, rgba(59,130,246,0.06) 65%, transparent 80%)'
-          : 'radial-gradient(ellipse at center, rgba(236,72,153,0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(236,72,153,0.06) 65%, transparent 80%)',
+          : 'radial-gradient(ellipse at center, rgba(var(--qq-stage-brand-rgb), 0.42) 0%, rgba(249,115,22,0.18) 38%, rgba(var(--qq-stage-brand-rgb), 0.06) 65%, transparent 80%)',
         opacity: 0,
         transformOrigin: 'center',
         animation: 'qqIntroSunrise 1.6s cubic-bezier(0.16, 0.84, 0.44, 1) 1.4s both',
@@ -4578,7 +4578,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           // (0.92 → 0.5), Arena scheint durch — Rahmen/Glow tragen die Card weiter.
           background: themed
             ? 'var(--qq-card-bg)'
-            : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.20) 0%, transparent 60%),' +
+            : 'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-stage-brand-rgb), 0.20) 0%, transparent 60%),' +
             'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.14) 0%, transparent 55%),' +
             'linear-gradient(135deg, rgba(31,26,46,0.50) 0%, rgba(20,16,31,0.50) 60%, rgba(15,8,23,0.50) 100%)',
           border: `2.5px solid rgba(${accentRgb},0.6)`,
@@ -4677,7 +4677,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
                 ? 'none'
                 : eurovisionMode
                 ? `0 0 32px rgba(${accentRgb},0.35)`
-                : '0 0 28px rgba(236,72,153,0.65), 0 0 72px rgba(236,72,153,0.28)',
+                : '0 0 28px rgba(var(--qq-stage-brand-rgb), 0.65), 0 0 72px rgba(var(--qq-stage-brand-rgb), 0.28)',
               position: 'relative', zIndex: 1,
               animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
 
@@ -4758,7 +4758,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
                         // gleich gross sind wie 'COZYQUIZ'.
                         height: '1.7em',
                         width: 'auto',
-                        filter: 'drop-shadow(0 0 28px rgba(236,72,153,0.6))',
+                        filter: 'drop-shadow(0 0 28px rgba(var(--qq-stage-brand-rgb), 0.6))',
                         animation: 'qqIntroEurovisionPop 0.7s var(--qq-ease-bounce) 2.6s both',
                         opacity: 0,
                       }}
@@ -4786,11 +4786,11 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             <div style={{
               marginTop: 'clamp(8px, 1.4cqh, 20px)',
               padding: '8px 28px', borderRadius: 'var(--qq-pill-radius)',
-              background: 'linear-gradient(135deg, rgba(236,72,153,0.32), rgba(168,85,247,0.24))',
-              border: '2px solid rgba(236,72,153,0.65)',
+              background: 'linear-gradient(135deg, rgba(var(--qq-stage-brand-rgb), 0.32), rgba(168,85,247,0.24))',
+              border: '2px solid rgba(var(--qq-stage-brand-rgb), 0.65)',
               fontSize: 'clamp(16px, 1.7cqw, 24px)', fontWeight: 900,
               color: QQ_COLORS.yellow300, letterSpacing: '0.22em', textTransform: 'uppercase',
-              boxShadow: '0 0 30px rgba(236,72,153,0.45)',
+              boxShadow: '0 0 30px rgba(var(--qq-stage-brand-rgb), 0.45)',
               animation: 'qqIntroEurovisionPop 0.7s var(--qq-ease-bounce) 2.6s both',
               opacity: 0,
             }}>
@@ -4940,14 +4940,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           }
           25% {
             transform: scale(1.10) rotate(8deg);
-            color: #fff;
+            color: var(--qq-text);
             text-shadow: 0 2px 10px rgba(0,0,0,0.5),
                          0 0 14px rgba(255,255,255,0.85),
                          0 0 28px rgba(255,45,123,0.55);
           }
           50% {
             transform: scale(1.22) rotate(0deg);
-            color: #fff;
+            color: var(--qq-text);
             text-shadow: 0 2px 10px rgba(0,0,0,0.5),
                          0 0 28px rgba(255,255,255,0.95),
                          0 0 56px rgba(255,45,123,0.75),
@@ -4955,7 +4955,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           }
           75% {
             transform: scale(1.10) rotate(-8deg);
-            color: #fff;
+            color: var(--qq-text);
             text-shadow: 0 2px 10px rgba(0,0,0,0.5),
                          0 0 14px rgba(255,255,255,0.85),
                          0 0 28px rgba(255,45,123,0.55);
@@ -5306,7 +5306,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
         : arenaWelcomeBg
         ? 'transparent'
         : 'radial-gradient(ellipse at 50% -10%, rgba(var(--qq-accent-rgb),0.16), transparent 55%), '
-          + 'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), #0A0814',
+          + 'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), #120F18',
     }}>
       {bgUrl && (
         <div aria-hidden style={{
@@ -5560,7 +5560,7 @@ export function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSi
           : 'linear-gradient(140deg, rgba(28,20,10,0.94) 0%, rgba(38,28,14,0.94) 100%)',
         border: eurovisionMode
           ? '2px solid rgba(255,45,123,0.7)'
-          : '2px solid rgba(236,72,153,0.6)',
+          : '2px solid rgba(var(--qq-stage-brand-rgb), 0.6)',
         borderRadius: isLg ? 24 : 20,
         padding: isLg ? '14px 24px' : '10px 18px',
         fontSize: isLg ? 'clamp(20px, 2.1cqw, 30px)' : 'clamp(14px, 1.45cqw, 20px)',
@@ -5576,7 +5576,7 @@ export function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSi
         // Bubble hat genug visuelle Tiefe ueber Gradient+Border+Shadow ohne Blur.
         boxShadow: eurovisionMode
           ? '0 0 22px rgba(255,45,123,0.30), inset 0 1px 0 rgba(255,180,210,0.12)'
-          : '0 0 18px rgba(236,72,153,0.18), inset 0 1px 0 rgba(255,231,170,0.10)',
+          : '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.18), inset 0 1px 0 rgba(255,231,170,0.10)',
         // Animation: Enter-Bounce + lange Hold + Exit-Fade. Keyframe-Times
         // sind relativ zu totalLifeMs (CSS percentage).
         // 2026-07-09 (Wolf 'Sprechblase links abgeschnitten'): transform-origin
@@ -5612,7 +5612,7 @@ export function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSi
         <path
           d="M 0 0 L 11 13 L 22 0"
           fill={eurovisionMode ? 'rgb(38,18,57)' : 'rgb(33,24,12)'}
-          stroke={eurovisionMode ? 'rgba(255,45,123,0.7)' : 'rgba(236,72,153,0.6)'}
+          stroke={eurovisionMode ? 'rgba(255,45,123,0.7)' : 'rgba(var(--qq-stage-brand-rgb), 0.6)'}
           strokeWidth={2}
           strokeLinejoin="round"
           strokeLinecap="butt"
@@ -5778,7 +5778,7 @@ function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string
 function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: boolean }) {
   return (
     <div style={{
-      minHeight: '100cqh', background: '#0A0814',
+      minHeight: '100cqh', background: '#120F18',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: QQ_COLORS.slate200,
     }}>
@@ -5788,12 +5788,12 @@ function LoadingScreen({ roomCode, connected }: { roomCode: string; connected: b
         <div style={{
           fontFamily: "'Nunito', sans-serif",
           fontSize: 32, fontWeight: 900, marginBottom: 8,
-          background: 'linear-gradient(135deg, #e2e8f0, #94a3b8)',
+          background: 'linear-gradient(135deg, #F6EFE6, rgba(246,239,230,0.62))',
           WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
         }}>
           CozyQuiz
         </div>
-        {/* 2026-07-27 (Audit): slate700 (#334155) auf #0A0814 war ~1.6:1 — der
+        {/* 2026-07-27 (Audit): slate700 (#334155) auf #120F18 war ~1.6:1 — der
             Beitritts-Code war auf dem Beamer fast unsichtbar. slate400 = lesbar. */}
         <div style={{ color: QQ_COLORS.slate400, marginBottom: 20, fontWeight: 700 }}>{bt.loading.room.de}: {roomCode}</div>
         {/* 2026-05-04 (Wolf #10): Spinner + besserer Wakeup-Hint statt nur Text. */}

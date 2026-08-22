@@ -388,7 +388,7 @@ export function BluffRevealHero({ state: s, lang }: { state: QQStateUpdate; lang
                       {extraAuthors > 0 && (
                         <span style={{
                           position: 'absolute', right: -6, bottom: -4,
-                          background: '#0A0814', border: `1.5px solid ${authorTeam.color}`,
+                          background: '#120F18', border: `1.5px solid ${authorTeam.color}`,
                           borderRadius: 'var(--qq-pill-radius)', padding: '1px 5px',
                           fontSize: 9, fontWeight: 900, color: authorTeam.color,
                           lineHeight: 1.1,
@@ -461,7 +461,7 @@ export function BluffTimer({ endsAt, accent }: { endsAt: number; accent: string 
       background: urgent ? 'rgba(239,68,68,0.22)' : `${accent}22`,
       border: `2px solid ${urgent ? QQ_COLORS.red500 : `${accent}55`}`,
       fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
-      color: urgent ? QQ_COLORS.red300 : '#F8FAFC', fontVariantNumeric: 'tabular-nums',
+      color: urgent ? QQ_COLORS.red300 : 'var(--qq-text)', fontVariantNumeric: 'tabular-nums',
       animation: urgent ? 'pulse 0.8s ease-in-out infinite alternate' : undefined,
     }}>
       ⏱ {sec}s
@@ -780,7 +780,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 <span style={{
                   flex: 1, minWidth: 0,
                   fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 900,
-                  color: isReal ? QQ_COLORS.green300 : '#F8FAFC',
+                  color: isReal ? QQ_COLORS.green300 : 'var(--qq-text)',
                   wordBreak: 'break-word', lineHeight: 1.18,
                   textShadow: isReal
                     ? '0 0 14px rgba(34,197,94,0.4)'
@@ -858,7 +858,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                             <span aria-hidden style={{
                               position: 'absolute', top: -5, right: -5,
                               width: 18, height: 18, borderRadius: '50%',
-                              background: QQ_COLORS.green500, border: '2px solid #0A0814',
+                              background: QQ_COLORS.green500, border: '2px solid #120F18',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontSize: 10, fontWeight: 900, color: 'var(--qq-card-text)', lineHeight: 1,
                             }}>✓</span>

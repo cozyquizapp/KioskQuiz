@@ -261,7 +261,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // das rote Gradient als Bunte-Tuete-Ambiente. Karte links deckt ihr Feld selbst ab.
   const arenaBgVisible = isMega && (s as any).arenaBackgrounds !== false;
   return (
-    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: isThemed() ? 'var(--qq-bg)' : (arenaBgVisible ? 'transparent' : 'radial-gradient(ellipse 72% 118% at 100% 50%, rgba(127,20,32,0.9) 0%, #200409 58%, #0A0814 100%)') }}>
+    <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: isThemed() ? 'var(--qq-bg)' : (arenaBgVisible ? 'transparent' : 'radial-gradient(ellipse 72% 118% at 100% 50%, rgba(127,20,32,0.9) 0%, #200409 58%, #120F18 100%)') }}>
       {/* Karte */}
       <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s var(--qq-ease-smooth)' }}>
         <MapContainer
@@ -476,7 +476,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.15 + i * 0.08}s both`,
                 }}>
-                  <span style={{ fontSize: 'clamp(26px, 2.8cqw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? 'var(--qq-accent-soft)' : '#cbd5e1' }}>{medal}</span>
+                  <span style={{ fontSize: 'clamp(26px, 2.8cqw, 38px)', width: 52, textAlign: 'center', fontWeight: 900, fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif", color: isTop ? 'var(--qq-accent-soft)' : 'var(--qq-text-muted)' }}>{medal}</span>
                   <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(36px, 3.8cqw, 54px)'} />
                   <span title={team.name} style={{ flex: 1, minWidth: 0, fontWeight: 900, fontSize: 'clamp(20px, 2.2cqw, 30px)', color: team.color, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{team.name}</span>
                   {timeLabel && (
@@ -484,11 +484,11 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                       fontWeight: 900, fontSize: 'clamp(14px, 1.3cqw, 18px)',
                       padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                       background: deltaMs === 0 ? 'rgba(250,204,21,0.18)' : 'rgba(148,163,184,0.12)',
-                      color: deltaMs === 0 ? 'var(--qq-accent-soft)' : '#94a3b8',
+                      color: deltaMs === 0 ? 'var(--qq-accent-soft)' : 'var(--qq-text-muted)',
                       border: `1px solid ${deltaMs === 0 ? 'rgba(250,204,21,0.4)' : 'rgba(148,163,184,0.25)'}`,
                     }}>{timeLabel}</span>
                   )}
-                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9cqw, 26px)', color: isTop ? '#86efac' : '#94a3b8', fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
+                  <span style={{ fontWeight: 900, fontSize: 'clamp(19px, 1.9cqw, 26px)', color: isTop ? '#86efac' : 'var(--qq-text-muted)', fontFamily: "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif" }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             });

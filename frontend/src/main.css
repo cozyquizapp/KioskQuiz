@@ -257,6 +257,38 @@
      falschen Antworten stattdessen nach UNTEN und die richtige nach oben.
      Hungry Tiger und Apple fahren beide drei Stufen in EINER Farbfamilie. */
   --qq-surface-deep: rgba(9, 7, 13, 0.58);
+
+  /* ── Die Hausfarbe auf der Buehne ────────────────────────────────────────
+     2026-08-22 (Wolf: „wir lassen die Farbe und falls es nicht passt, aendern
+     wir sie im Nachhinein, nur die Farbe").
+
+     Genau dafuer stehen diese vier Zeilen. Das Marken-Pink lag vorher als
+     roher Hex-Wert an ueber hundert Stellen der Buehne; eine Farbaenderung
+     waere eine Suche ueber alle Views gewesen. Jetzt ist sie EIN Wert hier.
+
+     Wo die Hausfarbe ueberhaupt noch auftritt: auf den Folien ohne Kategorie,
+     also Lobby, Regeln, Team-Reveal, Phasen-Intro, Pause, Game Over, Danke.
+     Wo eine Kategorie laeuft, gewinnt `--qq-stage-accent` (in QQBeamerPage
+     gesetzt), nicht diese Variable.
+
+     Bewusst NICHT `--qq-accent`: die schreibt applyThemeVars auf
+     documentElement und faerbt Handy und Steuerpult mit. Diese hier gilt nur
+     innerhalb des Buehnen-Scopes.
+
+     Zum Aendern: alle vier Werte anfassen, sie gehoeren zusammen (Grundton,
+     helle Variante, Schein, dunkles Gradienten-Ende). Verdacht 2026-08-22:
+     #EC4899 ist ein kuehles Pink und koennte neben dem warmen Creme und dem
+     warmen Grund grell wirken. Der wahrscheinliche Fix ist derselbe Ton
+     waermer gezogen, Richtung Koralle — zu entscheiden am fertigen Bild.
+
+     Nicht erfasst: das ESC-Pink (#FF2D7B, #fde6f0) gehoert zum Eurovision-
+     Skin und haengt an `isEsc`/`eurovisionMode`, sowie die Konfetti-Paletten,
+     die als Partikel-Farbliste bewusst mehrere Toene mischen. */
+  --qq-stage-brand: #EC4899;
+  --qq-stage-brand-rgb: 236, 72, 153;
+  --qq-stage-brand-light: #F472B6;
+  --qq-stage-brand-soft: #FBCFE8;
+  --qq-stage-brand-deep: #A21247;
 }
 
 /* Aenderung 2 „Glühen entfernen", zweiter Teil: die Teammarken tragen ihren

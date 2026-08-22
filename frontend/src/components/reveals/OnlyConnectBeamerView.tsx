@@ -108,7 +108,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
       }}>
         <div style={{
           fontSize: 'clamp(26px, 3cqw, 44px)', fontWeight: 900,
-          color: isThemed() ? 'var(--qq-text)' : '#F1F5F9', lineHeight: 1.2, maxWidth: 1400, margin: '0 auto',
+          color: isThemed() ? 'var(--qq-text)' : 'var(--qq-text)', lineHeight: 1.2, maxWidth: 1400, margin: '0 auto',
         }}>
           {lang === 'en' && q.textEn ? q.textEn : (q.text || (lang === 'de' ? 'Was verbindet diese Hinweise?' : 'What connects these clues?'))}
         </div>
@@ -129,7 +129,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
         }}>
           {[0, 1, 2, 3].map(i => {
             const hintText = hintsAll[i] ?? `Hinweis ${i + 1}`;
-            const hintColor = i === 0 ? '#EC4899' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
+            const hintColor = i === 0 ? 'var(--qq-stage-brand)' : i === 1 ? '#22C55E' : i === 2 ? '#60A5FA' : '#A78BFA';
             return (
               <div key={i} style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -149,7 +149,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                 }}>{lang === 'de' ? `Hinweis ${i + 1}` : `Clue ${i + 1}`}</div>
                 <div style={{
                   fontSize: 'clamp(24px, 2.8cqw, 44px)', fontWeight: 900,
-                  color: isThemed() ? 'var(--qq-text)' : '#F1F5F9', lineHeight: 1.15,
+                  color: isThemed() ? 'var(--qq-text)' : 'var(--qq-text)', lineHeight: 1.15,
                 }}>{hintText}</div>
               </div>
             );
@@ -179,7 +179,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               .filter((t): t is NonNullable<typeof t> => !!t)
           : [];
         const primaryWinner = winnerTeams[0] ?? null;
-        const winnerColor = primaryWinner?.color ?? '#EC4899';
+        const winnerColor = primaryWinner?.color ?? 'var(--qq-stage-brand)';
         return (
           <div style={{
             display: 'grid',
@@ -266,11 +266,11 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                           avatarId={tm.avatarId} teamEmoji={tm.emoji}
                           size={avatarSize}
                           style={{
-                            border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid #EC4899') : 'none',
+                            border: isFastest ? (isThemed() ? '4px solid var(--qq-accent)' : '4px solid var(--qq-stage-brand)') : 'none',
                             boxShadow: isFastest
-                              ? `0 0 0 3px ${tm.color}, 0 0 22px rgba(236,72,153,0.6)`
+                              ? `0 0 0 3px ${tm.color}, 0 0 22px rgba(var(--qq-stage-brand-rgb), 0.6)`
                               : `0 0 0 3px ${tm.color}, 0 0 14px ${tm.color}88`,
-                            background: '#0A0814',
+                            background: '#120F18',
                             flexShrink: 0,
                           }}
                         />
@@ -280,9 +280,9 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                             left: '50%', bottom: -8,
                             transform: 'translate(-50%, 50%)',
                             padding: '3px 11px', borderRadius: 'var(--qq-pill-radius)',
-                            background: isFastest ? 'rgba(236,72,153,0.95)' : 'rgba(15,23,42,0.95)',
-                            border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(236,72,153,1)') : `1.5px solid ${tm.color}`,
-                            color: isFastest ? '#0A0814' : '#e2e8f0',
+                            background: isFastest ? 'rgba(var(--qq-stage-brand-rgb), 0.95)' : 'rgba(15,23,42,0.95)',
+                            border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(var(--qq-stage-brand-rgb), 1)') : `1.5px solid ${tm.color}`,
+                            color: isFastest ? '#120F18' : 'var(--qq-text-muted)',
                             fontWeight: 900,
                             fontSize: 'clamp(12px, 1.3cqw, 17px)',
                             whiteSpace: 'nowrap',
@@ -334,7 +334,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
               transition: 'opacity 0.4s ease, filter 0.4s ease',
             }}>
               <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(48px, 5cqw, 72px)'} style={{
-                background: '#0A0814',
+                background: '#120F18',
                 boxShadow: hasSubmitted
                   ? `0 0 0 3px #22C55E`
                   : `0 0 0 2px ${tm.color}55`,

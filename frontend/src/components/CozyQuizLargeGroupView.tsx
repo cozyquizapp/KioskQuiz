@@ -73,7 +73,7 @@ const KEYFRAMES = `
 /* 2026-07-12 (Wolf 'episches Event-Rennen'): Renn-Dynamik. */
 @keyframes qqCometPulse { 0%,100% { transform: translate(50%,-50%) scale(1); opacity: 1; } 50% { transform: translate(50%,-50%) scale(1.4); opacity: 0.82; } }
 @keyframes qqCrownBounce { 0%,100% { transform: translateY(0) rotate(-5deg); } 50% { transform: translateY(-6px) rotate(5deg); } }
-@keyframes qqLeaderGlow { 0%,100% { box-shadow: inset 0 0 0 1.5px var(--lc, #fff), 0 0 24px -6px var(--lc, #fff); } 50% { box-shadow: inset 0 0 0 2px var(--lc, #fff), 0 0 44px 2px var(--lc, #fff); } }
+@keyframes qqLeaderGlow { 0%,100% { box-shadow: inset 0 0 0 1.5px var(--lc, #F6EFE6), 0 0 24px -6px var(--lc, #F6EFE6); } 50% { box-shadow: inset 0 0 0 2px var(--lc, #F6EFE6), 0 0 44px 2px var(--lc, #F6EFE6); } }
 @keyframes qqRowIn { from { opacity: 0; transform: translateX(-34px); } to { opacity: 1; transform: none; } }
 @keyframes qqValuePop { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 /* 2026-07-12 (Showdown 2b): Finale-Multiplikator-Banner atmet. */
@@ -189,7 +189,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
       <div style={{ ...S.qrList, gap: dense ? 7 : 10 }}>
         {rows.map((r, i) => {
           const ava = AVA_BY_ID.get(r.avatarId);
-          const color = ava?.color ?? '#EC4899';
+          const color = ava?.color ?? 'var(--qq-stage-brand)';
           const name = qqMegaFactionName(r.avatarId, de ? 'de' : 'en');
           const medal = i < 3 && r.points > 0 ? MEDALS[i] : null;
           const scored = r.points > 0;
@@ -476,7 +476,7 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
     <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
       {items.map((it, i) => {
         const ava = AVA_BY_ID.get(it.av!);
-        const color = ava?.color ?? '#EC4899';
+        const color = ava?.color ?? 'var(--qq-stage-brand)';
         const name = qqMegaFactionName(it.av!, de ? 'de' : 'en');
         return (
           <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: `1px solid ${color}44` }}>
@@ -698,7 +698,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
   };
 
   return (
-    <div key="crown" data-qq-ceremony style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', color: '#f4f6ff' }}>
+    <div key="crown" data-qq-ceremony style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', color: 'var(--qq-text)' }}>
       {/* 2026-07-18 (Wolf bild 13): eigener Krönungs-BG „epic-moment" (zentraler
           Licht-Ausbruch, KEINE gemalten Banner → die Roulette-Fahnen fuellen den
           Screen ohne Kollision). Nur die Krönung; Award-Beats/Endstand behalten
@@ -784,7 +784,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   const GO_ROW_H = 62;
   const GO_LIST_BUDGET = 8 * GO_ROW_H; // 496px = Höhe der akzeptierten 8-Zeilen-Liste
   const rowPitch = Math.min(GO_ROW_H, Math.floor(GO_LIST_BUDGET / Math.max(1, shown.length)));
-  const wColor = winner?.color ?? '#EC4899';
+  const wColor = winner?.color ?? 'var(--qq-stage-brand)';
   const motto = winner ? qqMegaFactionMotto(winner.avatarId, de ? 'de' : 'en') : '';
 
   // Zeremonie-Step (geklemmt spiegelbildlich zum Backend).
@@ -844,7 +844,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
   // ── Beat 0..n-1: Special-Award-Spotlight ───────────────────────────────────
   if (step < crownStep && state.megaAwards) {
     const beat = megaAwardBeat(awardKeys[step], state.megaAwards, de);
-    const color = AVA_BY_ID.get(beat.av)?.color ?? '#EC4899';
+    const color = AVA_BY_ID.get(beat.av)?.color ?? 'var(--qq-stage-brand)';
     const name = qqMegaFactionName(beat.av, de ? 'de' : 'en');
     return (
       <div key={`award-${step}`} data-qq-ceremony style={{ ...S.goWrap, justifyContent: 'center', gap: 'clamp(8px, 1.5cqh, 20px)' }}>
@@ -882,8 +882,8 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           </div>
         </div>
         {/* Titel + Leistung ZUERST — dann (nach kurzer Pause) die Enthüllung. */}
-        <div style={{ position: 'relative', zIndex: 5, fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: '#f4f6ff', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
-        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: '#cbd5e1', animation: 'qqCrownFadeUp 0.5s ease 0.42s both' }}>{beat.stat}</div>
+        <div style={{ position: 'relative', zIndex: 5, fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.6cqw, 54px)', fontWeight: 900, textAlign: 'center', color: 'var(--qq-text)', animation: 'qqCrownFadeUp 0.5s ease 0.2s both' }}>{beat.title}</div>
+        <div style={{ position: 'relative', zIndex: 5, fontSize: 'clamp(15px, 1.9cqw, 28px)', fontWeight: 800, color: 'var(--qq-text-muted)', animation: 'qqCrownFadeUp 0.5s ease 0.42s both' }}>{beat.stat}</div>
         {/* Enthüllung: das Banner der Gewinnerfraktion entrollt sich (gleiche
             Banner-Geste wie in der Krönung), Wappen + Name fahren ein. */}
         <div style={{ position: 'relative', zIndex: 5, display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.6cqw, 24px)', animation: 'qqAwardDriveIn 0.7s cubic-bezier(0.2,1,0.4,1) 1.05s both' }}>
@@ -902,7 +902,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             (zaehlen zum Endstand + zur Kroenung). Pille in Fraktionsfarbe (Gold bleibt
             der Champion-Kroenung vorbehalten), erscheint nach der Enthuellung. */}
         <div style={{ position: 'relative', zIndex: 5, animation: 'qqCrownFadeUp 0.5s ease 1.5s both' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: 'clamp(4px,0.6cqh,9px) clamp(14px,1.5cqw,24px)', borderRadius: 999, background: `${color}26`, border: `2px solid ${color}99`, color: '#fff', fontWeight: 900, fontSize: 'clamp(17px, 2.1cqw, 32px)', boxShadow: `0 0 24px ${color}44`, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: 'clamp(4px,0.6cqh,9px) clamp(14px,1.5cqw,24px)', borderRadius: 999, background: `${color}26`, border: `2px solid ${color}99`, color: 'var(--qq-text)', fontWeight: 900, fontSize: 'clamp(17px, 2.1cqw, 32px)', boxShadow: `0 0 24px ${color}44`, fontVariantNumeric: 'tabular-nums' }}>
             +{QQ_MEGA_AWARD_BONUS} {de ? 'Punkte' : 'points'}
           </span>
         </div>
@@ -981,7 +981,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
 
 // ── Styles ───────────────────────────────────────────────────────────────────
 const S: Record<string, React.CSSProperties> = {
-  wrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 28, padding: '0 64px', color: '#f4f6ff' },
+  wrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 28, padding: '0 64px', color: 'var(--qq-text)' },
   correctBanner: { display: 'flex', alignItems: 'baseline', fontSize: 40, fontWeight: 800 },
   correctCount: { marginLeft: 'auto', fontSize: 26, fontWeight: 800, opacity: 0.6 },
   emptyReveal: { textAlign: 'center', fontSize: 40, fontWeight: 800, opacity: 0.7, padding: '60px 0' },
@@ -995,7 +995,7 @@ const S: Record<string, React.CSSProperties> = {
   // Akt 3 Beat A „Wertung dieser Frage" — sitzt IN der gemalten Tafel (MEGA_BOARD).
   // 2026-07-17: Padding-Nudges raus, Ueberschrift raus (Wolf). Die Tafel selbst ist
   // die Ueberschrift; der Inhalt fuellt sie jetzt exakt statt ungefaehr.
-  qrWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: '#f4f6ff', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
+  qrWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--qq-text)', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%' },
   qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
@@ -1009,7 +1009,7 @@ const S: Record<string, React.CSSProperties> = {
   alsoRow: { display: 'flex', flexWrap: 'wrap', gap: 12, marginTop: 12 },
   alsoChip: { display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
 
-  goWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 48px', color: '#f4f6ff', position: 'relative', overflow: 'hidden' },
+  goWrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, padding: '0 48px', color: 'var(--qq-text)', position: 'relative', overflow: 'hidden' },
   goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9, fontWeight: 900, color: '#e7e2f4', position: 'relative', zIndex: 5 },
   goHero: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative', zIndex: 5 },
   goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)' },
@@ -1020,7 +1020,7 @@ const S: Record<string, React.CSSProperties> = {
   goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
   // Gesamtstand: exakt dieselbe Tafel-Box wie qrWrap (ein Muster, zwei Beats).
-  standWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: '#f4f6ff', overflow: 'hidden' },
+  standWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--qq-text)', overflow: 'hidden' },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },

@@ -69,7 +69,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ fontSize: '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: QQ_COLORS.brandPink, textTransform: 'uppercase' }}>
         {de ? 'Gleichstand' : 'Dead heat'}
       </div>
-      <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: '#fff', letterSpacing: '0.02em', textShadow: '0 4px 24px rgba(var(--qq-accent-rgb),0.5)' }}>
+      <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: 'var(--qq-text)', letterSpacing: '0.02em', textShadow: '0 4px 24px rgba(var(--qq-accent-rgb),0.5)' }}>
         ⚔️ {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>
@@ -99,7 +99,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
                 {nameFor(id)} {isWinner && '🏆'}
               </div>
               {revealed
-                ? <div style={{ fontSize: '2.6cqh', fontWeight: 900, color: isWinner ? '#22C55E' : '#fff' }}>
+                ? <div style={{ fontSize: '2.6cqh', fontWeight: 900, color: isWinner ? '#22C55E' : 'var(--qq-text)' }}>
                     {best ? `${best.guess}${unit}` : (de ? '–' : '–')}
                     {best && <span style={{ fontSize: '1.7cqh', color: QQ_COLORS.slate400, fontWeight: 700 }}> ({de ? 'Δ' : 'off'} {best.dist})</span>}
                   </div>
@@ -112,7 +112,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       </div>
 
       {/* Frage */}
-      <div style={{ fontSize: '4.2cqh', fontWeight: 900, color: '#fff', maxWidth: '82cqw', lineHeight: 1.15, textWrap: 'balance' as any }}>
+      <div style={{ fontSize: '4.2cqh', fontWeight: 900, color: 'var(--qq-text)', maxWidth: '82cqw', lineHeight: 1.15, textWrap: 'balance' as any }}>
         {tb.prompt}
       </div>
 
@@ -136,7 +136,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
           {secsLeft !== null && (
             <div style={{
               fontSize: '5cqh', fontWeight: 900, lineHeight: 1,
-              color: secsLeft <= 5 ? '#EF4444' : '#fff',
+              color: secsLeft <= 5 ? '#EF4444' : 'var(--qq-text)',
               fontVariantNumeric: 'tabular-nums',
             }}>
               {secsLeft}s

@@ -214,7 +214,7 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
         ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
         : '0 0 16px rgba(var(--qq-accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
       fontSize: 'clamp(28px, 3cqw, 44px)', fontWeight: 900,
-      color: urgent ? '#FCA5A5' : (isThemed() ? 'var(--qq-card-text)' : '#FBCFE8'),
+      color: urgent ? '#FCA5A5' : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-stage-brand-soft)'),
       fontVariantNumeric: 'tabular-nums',
       letterSpacing: '0.04em',
       animation: urgent ? 'bTimerPulse 0.8s ease-in-out infinite' : undefined,
@@ -353,7 +353,7 @@ function ConnectionsGrid({ state: s }: {
             border: showColored && grp
               ? `2.5px solid ${grp.color}`
               : '2px solid var(--qq-hairline)',
-            color: showColored && grp ? '#fff' : '#e2e8f0',
+            color: showColored && grp ? 'var(--qq-text)' : 'var(--qq-text-muted)',
             boxShadow: showColored && grp ? `0 0 24px ${grp.color}44` : 'none',
             minHeight: 'clamp(80px, 10cqh, 130px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -528,7 +528,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
                 width: 28, height: 28, borderRadius: '50%',
-                background: 'var(--qq-accent)', border: '2px solid #0A0814',
+                background: 'var(--qq-accent)', border: '2px solid #120F18',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 14, fontWeight: 900, lineHeight: 1,
                 boxShadow: '0 0 14px rgba(var(--qq-accent-rgb),0.55)',
@@ -539,7 +539,7 @@ function ConnectionsAnswerStatus({ state: s }: { state: QQStateUpdate }) {
               <div style={{
                 position: 'absolute', bottom: -4, right: -4,
                 minWidth: 28, height: 28, padding: '0 6px', borderRadius: 16,
-                background: '#EF4444', border: '2px solid #0A0814',
+                background: '#EF4444', border: '2px solid #120F18',
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 12, fontWeight: 900, color: 'var(--qq-card-text)', lineHeight: 1,
                 animation: 'bAnswerCheck 0.35s var(--qq-ease-bounce) both',

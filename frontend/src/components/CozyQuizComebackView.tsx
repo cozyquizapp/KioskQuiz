@@ -301,7 +301,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           <div
             key={`hlq-${hl.round}`}
             style={{
-              fontSize: 'clamp(32px, 4.5cqw, 72px)', fontWeight: 900, color: isThemed() ? 'var(--qq-card-text)' : '#F8FAFC',
+              fontSize: 'clamp(32px, 4.5cqw, 72px)', fontWeight: 900, color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text)',
               textAlign: 'center', lineHeight: 1.18,
               textShadow: isThemed() ? 'none' : 'none',
               animation: 'qqHlQuestionFade 0.6s ease both',

@@ -167,7 +167,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             <div style={{
               padding: '4px 12px', borderRadius: 'var(--qq-pill-radius)',
               background: 'rgba(var(--qq-accent-rgb),0.18)', border: '1.5px solid rgba(var(--qq-accent-rgb),0.55)',
-              fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900, color: isThemed() ? 'var(--qq-accent)' : '#FBCFE8',
+              fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900, color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand-soft)',
               animation: 'pulse 1.4s ease-in-out infinite',
             }}>
               ⏸ {lang === 'en' ? 'Paused (P to resume)' : 'Pause (P zum Fortsetzen)'}
@@ -264,7 +264,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             }}>
               <span style={{
                 fontSize: 'clamp(80px, 11cqw, 180px)', fontWeight: 900,
-                color: isThemed() ? 'var(--qq-accent)' : '#FBCFE8',
+                color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand-soft)',
                 fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                 textShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.55)',
               }}>{team.largestConnected}</span>
@@ -571,7 +571,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                       fontWeight: 900, fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                       flexShrink: 0,
                     }}>
-                      <span style={{ fontSize: scoreFs, color: isThemed() ? 'var(--qq-accent)' : '#FBCFE8' }}>{tm.largestConnected}</span>
+                      <span style={{ fontSize: scoreFs, color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand-soft)' }}>{tm.largestConnected}</span>
                       <span style={{
                         fontSize: 'clamp(13px, 1.3cqw, 17px)', color: 'var(--qq-text-muted)', fontWeight: 700,
                       }}>· {tm.totalCells}</span>

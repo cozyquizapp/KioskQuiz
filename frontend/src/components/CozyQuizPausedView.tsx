@@ -1220,7 +1220,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         : `radial-gradient(ellipse at 50% -10%, ${modeAccent}1A, transparent 55%), ` +
         `radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ` +
         `radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ` +
-        '#0A0814',
+        '#120F18',
     }}>
       {bgUrl && (
         <div
@@ -1490,7 +1490,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   // 2026-05-07 v19: Logo proportional zu COZYQUIZ-Shrink.
                   height: 'clamp(68px, 9.5cqh, 142px)',
                   width: 'auto',
-                  filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55))',
+                  filter: 'drop-shadow(0 0 18px rgba(var(--qq-stage-brand-rgb), 0.55))',
                 }}
               />
             </span>
@@ -1498,11 +1498,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         ) : (
           <div style={{
             padding: '6px 22px', borderRadius: 'var(--qq-pill-radius)',
-            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.22), rgba(168,85,247,0.18))',
-            border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(236,72,153,0.55)',
+            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(var(--qq-stage-brand-rgb), 0.22), rgba(168,85,247,0.18))',
+            border: isThemed() ? '2px solid var(--qq-hairline)' : '2px solid rgba(var(--qq-stage-brand-rgb), 0.55)',
             fontSize: 'clamp(13px, 1.4cqw, 18px)', fontWeight: 900,
             color: isThemed() ? 'var(--qq-accent)' : QQ_COLORS.yellow300, letterSpacing: '0.18em', textTransform: 'uppercase',
-            boxShadow: isThemed() ? 'none' : '0 0 24px rgba(236,72,153,0.35)',
+            boxShadow: isThemed() ? 'none' : '0 0 24px rgba(var(--qq-stage-brand-rgb), 0.35)',
             marginBottom: 6,
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>

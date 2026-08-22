@@ -627,7 +627,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           position: 'absolute', inset: 0, zIndex: 1,
           background: isThemed()
             ? 'var(--qq-card-bg)'
-            : 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #0A0814',
+            : 'radial-gradient(ellipse at 50% 50%, rgba(139,92,246,0.18), transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(168,85,247,0.10), transparent 50%), #120F18',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           flexDirection: 'column', gap: 14,
           pointerEvents: 'none',
@@ -1440,7 +1440,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             // „fertig"-Signal traegt jetzt das erleuchtete Wappen. Wenn alle
                             // abgegeben haben, faerbt sich die Badge-Kante in Fraktionsfarbe.
                             // 2026-07-14 (Wolf 'X/Y zu klein von weitem'): 28→40px, 15→22.
-                            border: `2.5px solid ${done ? litColor : 'rgba(255,255,255,0.2)'}`, color: '#fff', fontSize: 24, fontWeight: 900,
+                            border: `2.5px solid ${done ? litColor : 'rgba(255,255,255,0.2)'}`, color: 'var(--qq-text)', fontSize: 24, fontWeight: 900,
                             boxShadow: done ? `0 0 12px ${litColor}88` : 'none',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                             // 2026-07-16 (Wolf): nur die ANZAHL der Subteams, die geantwortet haben.
@@ -2117,7 +2117,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                   padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
                                   background: isFastest ? SPEED_GOLD : 'rgba(15,23,42,0.95)',
                                   border: isFastest ? `1.5px solid ${SPEED_GOLD_BRIGHT}` : `1.5px solid ${tm.color}`,
-                                  color: isFastest ? '#0A0814' : 'var(--qq-card-text)',
+                                  color: isFastest ? '#120F18' : 'var(--qq-card-text)',
                                   fontWeight: 900,
                                   fontSize: 'clamp(11px, 1.2cqw, 15px)',
                                   whiteSpace: 'nowrap',
@@ -2337,8 +2337,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               {ct.count > 1 && (
                                 <span style={{
                                   position: 'absolute', right: -6, bottom: -6, minWidth: 22, height: 22, padding: '0 5px',
-                                  borderRadius: 11, background: '#0A0814', border: `2px solid ${ct.team.color}`,
-                                  color: '#fff', fontSize: 13, fontWeight: 900, lineHeight: 1,
+                                  borderRadius: 11, background: '#120F18', border: `2px solid ${ct.team.color}`,
+                                  color: 'var(--qq-text)', fontSize: 13, fontWeight: 900, lineHeight: 1,
                                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                                   fontVariantNumeric: 'tabular-nums',
                                 }}>×{ct.count}</span>
@@ -3351,7 +3351,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
                               border: '2.5px solid rgba(255,255,255,0.2)',
                               // F1 (color-contrast): dunkler Text auf gruenem Badge (8.67:1 statt 2.28:1).
-                              color: done ? '#0A0814' : '#fff', fontSize: 19, fontWeight: 900,
+                              color: done ? '#120F18' : 'var(--qq-text)', fontSize: 19, fontWeight: 900,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
                               fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                               // 2026-07-16 (Wolf): nur die Anzahl geantworteter Subteams (kein „1/5").

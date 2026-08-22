@@ -340,10 +340,10 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       // 2026-06-24 (Skin): aktiver Skin → flacher Skin-BG statt Pink-Glow-Dunkel.
       background: isThemed()
         ? 'var(--qq-bg)'
-        : 'radial-gradient(ellipse at 50% -10%, rgba(236,72,153,0.10), transparent 55%), ' +
+        : 'radial-gradient(ellipse at 50% -10%, rgba(var(--qq-stage-brand-rgb), 0.10), transparent 55%), ' +
         'radial-gradient(ellipse at 85% 110%, rgba(99,102,241,0.08), transparent 55%), ' +
         'radial-gradient(ellipse at 15% 80%, rgba(244,114,182,0.05), transparent 50%), ' +
-        '#0A0814',
+        '#120F18',
     }}>
       {lobbyBgUrl && (
         <div
@@ -504,7 +504,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             ? 'radial-gradient(ellipse at center, rgba(255,45,123,0.18) 0%, rgba(255,45,123,0.06) 45%, transparent 70%)'
             : isThemed()
               ? 'radial-gradient(ellipse at center, rgba(var(--qq-accent-rgb),0.18) 0%, rgba(var(--qq-accent-rgb),0.06) 45%, transparent 70%)'
-              : 'radial-gradient(ellipse at center, rgba(236,72,153,0.18) 0%, rgba(236,72,153,0.06) 45%, transparent 70%)',
+              : 'radial-gradient(ellipse at center, rgba(var(--qq-stage-brand-rgb), 0.18) 0%, rgba(var(--qq-stage-brand-rgb), 0.06) 45%, transparent 70%)',
           filter: 'blur(20px)',
           pointerEvents: 'none',
           zIndex: -1,
@@ -613,7 +613,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       // 11cqh/166 -> 8.5cqh/126.
                       height: 'clamp(60px, 8.5cqh, 126px)',
                       width: 'auto',
-                      filter: 'drop-shadow(0 0 24px rgba(236,72,153,0.6))',
+                      filter: 'drop-shadow(0 0 24px rgba(var(--qq-stage-brand-rgb), 0.6))',
                     }}
                   />
                 </span>
@@ -663,13 +663,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 fontSize: wordmark.length > 14 ? 'clamp(40px, 6.5cqw, 100px)' : 'clamp(56px, 9cqw, 140px)',
                 // Skin: Wortmark-Farbe folgt dem Skin (--qq-title), Font/Groesse
                 // bleiben = Wiedererkennung. ESC behaelt Hot-Pink.
-                color: s.theme?.eurovisionMode ? '#FF2D7B' : isThemed() ? 'var(--qq-title)' : '#EC4899',
+                color: s.theme?.eurovisionMode ? '#FF2D7B' : isThemed() ? 'var(--qq-title)' : 'var(--qq-stage-brand)',
                 // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg ueber 5.png-BG.
                 textShadow: s.theme?.eurovisionMode
                   ? 'none'
                   : isThemed()
                     ? 'none'
-                    : '0 0 32px rgba(236,72,153,0.40)',
+                    : '0 0 32px rgba(var(--qq-stage-brand-rgb), 0.40)',
               }}
               aria-label={wordmark}
             >
@@ -717,7 +717,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             boxShadow: '0 0 50px rgba(255,255,255,0.1)',
             width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
-            <QRCodeSVG value={joinUrl} size={256} bgColor="#ffffff" fgColor="#0A0814" level="M"
+            <QRCodeSVG value={joinUrl} size={256} bgColor="#F6EFE6" fgColor="#120F18" level="M"
               style={{ width: '100%', height: '100%' }} />
           </div>
           <div style={{ textAlign: 'center' }}>
@@ -753,9 +753,9 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10,
             padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
-            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(236,72,153,0.16), rgba(236,72,153,0.10))',
-            border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(236,72,153,0.35)',
-            boxShadow: isThemed() ? 'none' : '0 0 18px rgba(236,72,153,0.12)',
+            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(var(--qq-stage-brand-rgb), 0.16), rgba(var(--qq-stage-brand-rgb), 0.10))',
+            border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(var(--qq-stage-brand-rgb), 0.35)',
+            boxShadow: isThemed() ? 'none' : '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.12)',
           }}>
             <img
               src="/logo.png"
@@ -764,13 +764,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             />
             <span style={{
               fontSize: 'clamp(12px, 1.1cqw, 15px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1', letterSpacing: '0.04em',
+              color: isThemed() ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', letterSpacing: '0.04em',
             }}>
               {de ? 'präsentiert von' : 'presented by'}
             </span>
             <span style={{
               fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-accent)' : '#EC4899', letterSpacing: '0.04em',
+              color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)', letterSpacing: '0.04em',
               textShadow: isThemed() ? 'none' : 'none',
             }}>
               CozyWolf
@@ -807,8 +807,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
               minWidth: 'clamp(28px, 2.4cqw, 42px)', height: 'clamp(28px, 2.4cqw, 42px)',
               padding: '0 clamp(6px, 0.7cqw, 12px)', borderRadius: 11,
-              background: isThemed() ? 'var(--qq-accent)' : '#EC4899',
-              color: isThemed() ? '#ffffff' : '#1a0a14',
+              background: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
+              color: isThemed() ? 'var(--qq-text)' : '#1a0a14',
               fontSize: 'clamp(16px, 1.7cqw, 24px)', fontVariantNumeric: 'tabular-nums',
               animation: 'qqCountTick 0.4s cubic-bezier(0.34,1.56,0.64,1)',
             }}>{teamCount}</span>
@@ -832,7 +832,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   Marken-Pfeil in Akzentfarbe (zeigt zum QR links). */}
               <span style={{
                 fontSize: 'clamp(40px, 5.4cqw, 72px)', lineHeight: 1, fontWeight: 900,
-                color: isThemed() ? 'var(--qq-accent)' : '#EC4899',
+                color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
                 animation: 'qqEmptyArrowNudge 1.6s ease-in-out infinite',
                 display: 'inline-block', flexShrink: 0,
               }} aria-hidden>←</span>
@@ -841,8 +841,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   fontSize: 'clamp(20px, 2.4cqw, 32px)', fontWeight: 900,
                   // 2026-06-24 (Lesbarkeit): CTA-Text auf Seiten-BG → var(--qq-text)
                   // (sonst Akzent-blau auf Lila bei Neo-Brutal). Box-Tint = Akzent.
-                  color: isThemed() ? 'var(--qq-title)' : '#EC4899', letterSpacing: '0.02em',
-                  textShadow: isThemed() ? 'none' : '0 2px 12px rgba(236,72,153,0.3)',
+                  color: isThemed() ? 'var(--qq-title)' : 'var(--qq-stage-brand)', letterSpacing: '0.02em',
+                  textShadow: isThemed() ? 'none' : '0 2px 12px rgba(var(--qq-stage-brand-rgb), 0.3)',
                   animation: 'lobbyPulse 2.5s ease-in-out infinite',
                 }}>
                   {de ? 'Scannt den QR-Code!' : 'Scan the QR code!'}
@@ -893,7 +893,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{
                       // 2026-07-04 (Wolf 'Lobby-Namen vom Sofa schwer lesbar'): +~20%.
                       fontWeight: 900, fontSize: 'clamp(19px, 2cqw, 28px)',
-                      color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
+                      color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text)',
                       // Konzept-Namen sind kurz + bekannt → KEINE Silbentrennung
                       // (kein QQ_TEAM_NAME_WRAP). Umbruch nur an Leerzeichen; die
                       // erste Zeile hält Abstand zur „X/3"-Pill (paddingRight).
@@ -1018,7 +1018,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                             : (compact ? 'clamp(20px, 2.1cqw, 29px)' : 'clamp(22px, 2.3cqw, 33px)'),
                         // 2026-06-28 (Beamer-Review): Team-Name weiß statt Team-Farbe
                         // (Lesbarkeit; Farbe lebt im Card-Akzent + Avatar).
-                        color: isThemed() ? 'var(--qq-card-text)' : '#ffffff',
+                        color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text)',
                         lineHeight: 1.15,
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
@@ -1029,7 +1029,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       {!veryMany && (
                         <div style={{
                           fontSize: compact ? 'clamp(13px, 1.2cqw, 16px)' : 'clamp(13px, 1.25cqw, 17px)',
-                          fontWeight: 700, color: t.connected ? '#22C55E' : '#94a3b8',
+                          fontWeight: 700, color: t.connected ? '#22C55E' : 'var(--qq-text-muted)',
                           marginTop: 4,
                         }}>
                           {t.connected ? (de ? '● bereit' : '● ready') : '○ offline'}
@@ -1073,7 +1073,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               Stattdessen grüner Puls-Punkt + Readiness-Text wenn genug Teams da. */}
           <div style={{
             fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900, textAlign: 'center',
-            color: teamCount < 2 ? (isThemed() ? 'var(--qq-accent)' : '#EC4899') : '#22C55E',
+            color: teamCount < 2 ? (isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)') : '#22C55E',
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
             animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
           }}>

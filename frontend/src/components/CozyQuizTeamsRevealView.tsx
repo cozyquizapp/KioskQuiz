@@ -91,7 +91,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
       let g = byAv.get(t.avatarId);
       if (!g) {
         const meta = QQ_AVATARS.find(a => a.id === t.avatarId);
-        g = { avatarId: t.avatarId, color: meta?.color ?? t.color ?? '#EC4899', subs: 0 };
+        g = { avatarId: t.avatarId, color: meta?.color ?? t.color ?? 'var(--qq-stage-brand)', subs: 0 };
         byAv.set(t.avatarId, g); order.push(t.avatarId);
       }
       g.subs++;
@@ -138,7 +138,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
     return slug && isCrestSlug(slug) ? crestSrc(slug) : null;
   };
   const cur = (enterIdx >= 0 && enterIdx < n && !done) ? factions[enterIdx] : null;
-  const curColor = cur?.color ?? '#EC4899';
+  const curColor = cur?.color ?? 'var(--qq-stage-brand)';
 
   // 2026-07-17 (Wolf bild 2 „texte ueberlappen, wappen in 3d in den Vordergrund"):
   // Die alten Wand-Nameplates sassen an BANNER_ANCHORS (feste x% = gemalte, LINKS
@@ -196,7 +196,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
               padding: '3px clamp(9px, 1cqw, 15px)', borderRadius: 'var(--qq-pill-radius)',
               background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
               fontSize: big ? 'clamp(13px, 1.4cqw, 22px)' : 'clamp(12px, 1.3cqw, 19px)',
-              fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
+              fontWeight: 900, color: 'var(--qq-text)', whiteSpace: 'nowrap',
 
               opacity: on ? 1 : 0.7,
             }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
@@ -246,10 +246,10 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
         {/* Titel + Eyebrow sitzen
             transparent ueber dem Arena-Foto-BG → Text-Shadow garantiert Lesbarkeit
             auch ueber hellen Bildstellen (themed = flacher Skin-BG, braucht keinen). */}
-        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : '#cbd5e1', textShadow: themed ? 'none' : 'none' }}>
+        <div style={{ fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, letterSpacing: '0.18em', textTransform: 'uppercase', color: themed ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', textShadow: themed ? 'none' : 'none' }}>
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
-        <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : '#f8fafc', textShadow: themed ? 'none' : 'none' }}>
+        <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : 'var(--qq-text)', textShadow: themed ? 'none' : 'none' }}>
           CozyArena
         </div>
       </div>
@@ -304,7 +304,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
                     <div style={{
                       padding: '3px clamp(10px, 1.1cqw, 16px)', borderRadius: 'var(--qq-pill-radius)',
                       background: 'rgba(10,8,20,0.82)', border: `1.5px solid ${f.color}`,
-                      fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, color: '#fff', whiteSpace: 'nowrap',
+                      fontSize: 'clamp(13px, 1.5cqw, 24px)', fontWeight: 900, color: 'var(--qq-text)', whiteSpace: 'nowrap',
  boxShadow: `0 0 18px ${f.color}44`,
                     }}>{qqMegaFactionName(f.avatarId, de ? 'de' : 'en')}</div>
                   </div>
@@ -552,7 +552,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   const isEsc = !!s.theme?.eurovisionMode;
   const escBgUrl = isEsc ? s.theme?.lobbyBackgroundUrl : null;
   const escLogoUrl = isEsc ? s.theme?.logoUrl : null;
-  const titleColor = isEsc ? '#FF2D7B' : themed ? 'var(--qq-title)' : '#f8fafc';
+  const titleColor = isEsc ? '#FF2D7B' : themed ? 'var(--qq-title)' : '#F6EFE6';
   // 2026-05-13 Kontrast-Audit ESC: Pink-Glow weg, Dark-Halo first auf BG-Image.
   const titleShadow = isEsc
     ? 'none'
@@ -574,7 +574,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
       // 2026-06-23 (Skin): bei aktivem Skin flacher Skin-BG (var(--qq-bg)) statt
       // dem dunklen Pink-Glow-Untergrund — sonst bleibt diese Slide dunkel
       // waehrend der Rest hell lackiert ist.
-      backgroundColor: themed ? undefined : '#0A0814',
+      backgroundColor: themed ? undefined : '#120F18',
       background: themed ? 'var(--qq-bg)' : undefined,
       backgroundImage: themed ? undefined : isEsc
         ? 'radial-gradient(ellipse at 50% 30%, rgba(255,45,123,0.18), transparent 55%),' +
@@ -880,7 +880,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
           return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;
         };
         const spotTeam = spotIdx >= 0 ? teams[spotIdx] : teams[0];
-        const spotColor = spotTeam?.color ?? '#EC4899';
+        const spotColor = spotTeam?.color ?? 'var(--qq-stage-brand)';
         let cursor = 0;
         return (
           <div ref={stageRef} style={{
@@ -992,7 +992,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                               shrinkAfter={11}
                               // 2026-06-28 (Beamer-Review P0): Team-Namen weiß für
                               // bessere Distanz-Lesbarkeit. Dark-Halo-Shadow bleibt.
-                              color={themed ? 'var(--qq-card-text)' : '#ffffff'}
+                              color={themed ? 'var(--qq-card-text)' : '#F6EFE6'}
                               fontWeight={900}
                               fontSize={nameFont}
                               style={{
@@ -1053,7 +1053,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
               </div>
               <div style={{
                 marginTop: 'clamp(14px, 1.8cqw, 30px)', fontWeight: 900,
-                fontSize: 'clamp(34px, 5cqw, 64px)', color: '#fff', textAlign: 'center',
+                fontSize: 'clamp(34px, 5cqw, 64px)', color: 'var(--qq-text)', textAlign: 'center',
                 // 2026-07-02 (Wolf: Spotlight-Name schlecht lesbar/abgeschnitten):
                 // kräftigerer Dark-Halo für Kontrast + saubere Ellipsis statt Überlauf.
 

@@ -56,7 +56,7 @@ export function StageTimeBar({
   // damit Zahl und Leiste nie Verschiedenes behaupten.
   const color = remaining <= 3 ? '#EF4444'
     : remaining <= 5 ? '#F97316'
-    : remaining <= 10 ? '#EC4899'
+    : remaining <= 10 ? 'var(--qq-stage-brand)'
     : accent;
 
   return (
@@ -138,7 +138,7 @@ export function BeamerTimer({
 
   const color = isCritical ? '#EF4444'
     : isWarning ? '#F97316'
-    : isAlert ? '#EC4899'
+    : isAlert ? 'var(--qq-stage-brand)'
     : accent;
 
   // Hero timer: big ring
@@ -178,7 +178,7 @@ export function BeamerTimer({
       inner = (
         <div style={{
           width: sz * 0.62, height: sz * 0.62, display: 'grid', placeItems: 'center',
-          background: color, color: '#fff', border: '3px solid #16121F',
+          background: color, color: 'var(--qq-text)', border: '3px solid #16121F',
           boxShadow: '6px 6px 0 #16121F', borderRadius: 8,
         }}>{numBox}</div>
       );

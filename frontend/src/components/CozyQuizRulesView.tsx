@@ -71,7 +71,7 @@ type RulesSlide = {
 // 2026-05-08 (Wolf-Wunsch 'regelslides einheitlich im brand'): vorher hatte
 // jede Slide eine random-wirkende Farbe (Blau/Violett/Pink/Rot/Grün/Lila),
 // jetzt einheitlich Brand-Pink. Ueber alle Slides + sprachen.
-const RULES_SLIDE_COLOR = '#EC4899';
+const RULES_SLIDE_COLOR = 'var(--qq-stage-brand)';
 
 function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
   const t = (k: string, fb: string) => getRuleText(k, 'de', fb);
@@ -121,7 +121,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       // Joker explizit eigene Folie mit Mini-Grid-Beispiel.
       icon: '⭐',
       title: t('rules.slide4.title', 'Joker-Bonus'),
-      color: '#EC4899',
+      color: 'var(--qq-stage-brand)',
       heroJokers: true,
       lines: [
         t('rules.slide4.line1', '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld'),
@@ -224,7 +224,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '⭐',
       title: t('rules.slide4.title', 'Joker Bonus'),
-      color: '#EC4899',
+      color: 'var(--qq-stage-brand)',
       heroJokers: true,
       lines: [
         t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus cell'),
@@ -314,7 +314,7 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🎯',
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
-      color: '#EC4899',
+      color: 'var(--qq-stage-brand)',
       lines: [
         t('rules.mega.slide3.line1', 'Jede Antwort bringt eurer Fraktion 0–100 Punkte, je besser, desto mehr'),
         t('rules.mega.slide3.line2', 'Gewertet wird der Schnitt aller Handys'),
@@ -359,7 +359,7 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     {
       icon: '🎯',
       title: t('rules.mega.slide3.title', 'How to score'),
-      color: '#EC4899',
+      color: 'var(--qq-stage-brand)',
       lines: [
         t('rules.mega.slide3.line1', 'Every answer earns your faction 0–100 points, the better, the more'),
         t('rules.mega.slide3.line2', 'Scored as the average of all your phones'),
@@ -418,7 +418,7 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
               : (isTeamA || isTeamAP)
                 ? `${cellCol}aa`
                 : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.06)');
-          const borderColor = isStar ? (accentHex ?? '#EC4899')
+          const borderColor = isStar ? (accentHex ?? 'var(--qq-stage-brand)')
             : isPin ? (accentHex ?? '#10B981')
             : isTeamAP ? (accentHex ?? '#FBBF24')   // Gold-Border für Pattern-Zellen
             : cellCol;
@@ -568,7 +568,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 
   // 2026-06-28 (Beamer-Review): Stepper-Farben (persistente Bühne). Akzent ist
   // im Skin der Theme-Akzent, sonst Marken-Pink.
-  const aHex = isThemed() ? 'var(--qq-accent)' : '#EC4899';
+  const aHex = isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)';
   const aRGB = isThemed() ? 'var(--qq-accent-rgb)' : '236,72,153';
 
   // 2026-07-17d (Wolf „schieb das window mit der rule wirklich raus“): echter
@@ -741,8 +741,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               }}>
                 <span style={{
                   display: 'inline-block', width: 8, height: 8, borderRadius: '50%',
-                  background: isThemed() ? 'var(--qq-accent)' : '#EC4899',
-                  boxShadow: isThemed() ? '0 0 12px rgba(var(--qq-accent-rgb),0.65)' : '0 0 12px rgba(236,72,153,0.65)',
+                  background: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
+                  boxShadow: isThemed() ? '0 0 12px rgba(var(--qq-accent-rgb),0.65)' : '0 0 12px rgba(var(--qq-stage-brand-rgb), 0.65)',
                   animation: 'qqShowcaseHintPulse 1.6s ease-in-out infinite',
                 }} />
                 {getRuleText('rules.slide3.hint', lang, lang === 'de'
@@ -964,7 +964,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                     width: 'clamp(20px,1.9cqw,28px)', height: 'clamp(20px,1.9cqw,28px)',
                     borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
                     background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(255,255,255,0.08)',
-                    color: active ? '#1a0a14' : done ? '#fff' : '#aab0be',
+                    color: active ? '#1a0a14' : done ? 'var(--qq-text)' : '#aab0be',
                     transition: 'background 0.4s ease, color 0.4s ease',
                   }}>{item.glyph}</span>
                   {/* 2026-07-27 (Wolf 'motion in der leiste abgehakt'): Label NICHT
@@ -975,7 +975,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                       (animate-Skill: nur weiche Uebergaenge, kein Layout-Snap). */}
                   <span style={{
                     fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
-                    color: active ? (isThemed() ? 'var(--qq-title)' : '#fff') : done ? '#c9bcd8' : '#a8adba',
+                    color: active ? (isThemed() ? 'var(--qq-title)' : 'var(--qq-text)') : done ? '#c9bcd8' : '#a8adba',
                     whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
                     // inaktiver Cap 170->320px, damit die vollen Stepper-Labels passen.
                     maxWidth: showLabel ? (active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(120px, 17cqw, 320px)') : 0,

@@ -382,7 +382,7 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               // 2026-06-24 (Skin): Leader-Wert in Akzent (pop), Rest in Primaertext.
               // War brandPink/slate100 → auf hellen Skins washed bzw. unsichtbar.
               fontSize: valFs, color: isLeader ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : (isThemed() ? 'var(--qq-text)' : QQ_COLORS.slate100), fontWeight: 900,
-              textShadow: isLeader ? (isThemed() ? 'none' : '0 0 18px rgba(236,72,153,0.55)') : 'none',
+              textShadow: isLeader ? (isThemed() ? 'none' : '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.55)') : 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
               // Zahlen-Spalte breit genug fuer 2-stellige Werte (10+) — vorher

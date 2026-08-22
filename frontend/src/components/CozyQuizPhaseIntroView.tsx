@@ -312,7 +312,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // (kein Wechsel). Kein Gold (sah aus wie Schaetzchen) → Brand-Pink/Magenta,
   // passt zu den magenta Bannern im Kolosseum-BG. Gilt fuer Titel, Tree,
   // Umrahmung, Fireflies. Nur Arena — Cozy behaelt die pro-Runde-Farbe.
-  const ARENA_ROUND_COLOR = '#EC4899';
+  const ARENA_ROUND_COLOR = 'var(--qq-stage-brand)';
   const color = isEsc ? '#FF2D7B'
     : (s as any).largeGroupMode ? ARENA_ROUND_COLOR
     : getRoundColor(s.gamePhaseIndex, s.totalPhases ?? 4);
@@ -921,15 +921,15 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         const GEM = 'polygon(4% 0, 96% 0, 100% 50%, 96% 100%, 4% 100%, 0 50%)';
         // Facetten-Kante: heiss gluehender Gem (Pink→Ember), ×3 noch intensiver.
         const edge = isFinalQ
-          ? 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 46%, #B45309 100%)'
+          ? 'linear-gradient(180deg, var(--qq-stage-brand-soft) 0%, var(--qq-stage-brand) 46%, #B45309 100%)'
           : 'linear-gradient(180deg, #F9A8D4 0%, #DB2777 52%, #9A3412 100%)';
         // Text-Verlauf = geshippte FINALE-Wortmarke.
-        const goldText = 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 45%, #D97706 100%)';
+        const goldText = 'linear-gradient(180deg, var(--qq-stage-brand-soft) 0%, var(--qq-stage-brand) 45%, #D97706 100%)';
         return (
           <div style={{
             position: 'absolute', top: 'clamp(14px, 2.4cqh, 36px)', left: '50%', transform: 'translateX(-50%)',
             zIndex: 6, pointerEvents: 'none',
-            filter: 'drop-shadow(0 0 20px rgba(236,72,153,0.4))',
+            filter: 'drop-shadow(0 0 20px rgba(var(--qq-stage-brand-rgb), 0.4))',
             animation: 'qqFinaleHintIn 0.6s var(--qq-ease-bounce) 0.5s both',
           }}>
             {/* Facetten-Kante */}
@@ -941,7 +941,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 padding: 'clamp(7px,1cqh,12px) clamp(22px,2.6cqw,40px)',
                 display: 'inline-flex', alignItems: 'center', gap: 'clamp(9px,1cqw,15px)', whiteSpace: 'nowrap',
               }}>
-                <span aria-hidden style={{ fontSize: 'clamp(17px,1.9cqw,26px)', lineHeight: 1, filter: 'drop-shadow(0 0 8px rgba(236,72,153,0.7))' }}>🔥</span>
+                <span aria-hidden style={{ fontSize: 'clamp(17px,1.9cqw,26px)', lineHeight: 1, filter: 'drop-shadow(0 0 8px rgba(var(--qq-stage-brand-rgb), 0.7))' }}>🔥</span>
                 <span style={{
                   fontFamily: arenaTitleFont, fontWeight: 900, fontSize: 'clamp(15px,1.75cqw,25px)', letterSpacing: '0.1em',
                   backgroundImage: goldText, WebkitBackgroundClip: 'text', backgroundClip: 'text',
@@ -949,7 +949,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 }}>{label}</span>
                 <span style={{
                   fontFamily: arenaTitleFont, fontWeight: 900, fontSize: 'clamp(16px,1.85cqw,26px)',
-                  color: '#3a0f22', background: 'linear-gradient(180deg, #FBCFE8, #EC4899)', borderRadius: 8,
+                  color: '#3a0f22', background: 'linear-gradient(180deg, var(--qq-stage-brand-soft), var(--qq-stage-brand))', borderRadius: 8,
                   padding: '1px clamp(8px,0.9cqw,12px)', fontVariantNumeric: 'tabular-nums',
                   boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)',
                 }}>×{arenaFinaleMult}</span>
@@ -1135,7 +1135,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     background: `linear-gradient(180deg, ${displayColor}66 0%, rgba(18,10,26,0.92) 62%)`,
                     padding: '10px clamp(42px, 4.6cqw, 68px)',
                     fontSize: 'clamp(16px, 1.8cqw, 25px)', fontWeight: 900, letterSpacing: '0.14em',
-                    color: '#FFFFFF',
+                    color: 'var(--qq-text)',
                     textAlign: 'center', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                     transition: 'background 500ms ease',
                   }}>{roundCountText}</div>
@@ -1163,8 +1163,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               : isThemed() ? '2px solid var(--qq-hairline)' : `2px solid ${displayColor}9c`,
             fontSize: 'clamp(17px, 1.9cqw, 26px)', fontWeight: 900,
             // 2026-05-13 Kontrast-Audit: #fde6f0 auf der hellen Seite des
-            // Pill-BG matschte. #FFFFFF + Dark-Halo trennt den Round-Counter klar.
-            color: isEsc ? '#FFFFFF' : isThemed() ? 'var(--qq-text-muted)' : '#FFFFFF',
+            // Pill-BG matschte. #F6EFE6 + Dark-Halo trennt den Round-Counter klar.
+            color: isEsc ? 'var(--qq-text)' : isThemed() ? 'var(--qq-text-muted)' : 'var(--qq-text)',
             textShadow: isEsc ? 'none' : isThemed() ? 'none' : 'none',
             letterSpacing: '0.1em',
             marginBottom: 28,
@@ -1228,7 +1228,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 <span style={{
                   position: 'absolute', left: 0, top: 0, right: 0, textAlign: 'center',
                   // Skin: solider Hero-Titel statt Pink-Amber-Gradient
-                  backgroundImage: isThemed() ? 'none' : 'linear-gradient(180deg, #FBCFE8 0%, #EC4899 45%, #D97706 100%)',
+                  backgroundImage: isThemed() ? 'none' : 'linear-gradient(180deg, var(--qq-stage-brand-soft) 0%, var(--qq-stage-brand) 45%, #D97706 100%)',
                   WebkitBackgroundClip: isThemed() ? undefined : 'text',
                   backgroundClip: isThemed() ? undefined : 'text',
                   WebkitTextFillColor: isThemed() ? 'var(--qq-title)' : 'transparent',
@@ -1789,7 +1789,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     fontWeight: i === 0 ? (megaArena ? 700 : 800) : 600,
                     color: isThemed()
                       ? (i === 0 ? 'var(--qq-text)' : 'var(--qq-text-muted)')
-                      : (i === 0 ? '#F1F5F9' : '#CBD5E1'),
+                      : (i === 0 ? '#F6EFE6' : 'var(--qq-text-muted)'),
                     textAlign: 'center',
                     animation: `phasePop 0.6s var(--qq-ease-bounce) ${0.5 + i * 0.15}s both`,
                   }}>
@@ -1843,7 +1843,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                         }}>{opt.label}</span>
                         <span style={{
                           fontSize: 'clamp(28px, 3.2cqw, 50px)', fontWeight: 900,
-                          color: isThemed() ? 'var(--qq-text)' : '#F1F5F9', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
+                          color: isThemed() ? 'var(--qq-text)' : 'var(--qq-text)', lineHeight: 1, fontVariantNumeric: 'tabular-nums',
                         }}>{opt.pts}</span>
                         <span style={{
                           fontSize: 'clamp(11px, 1.1cqw, 15px)', fontWeight: 700,
@@ -1855,7 +1855,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                     ))}
                   </div>
                   <div style={{
-                    fontSize: 'clamp(14px, 1.4cqw, 20px)', color: isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1',
+                    fontSize: 'clamp(14px, 1.4cqw, 20px)', color: isThemed() ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)',
                     fontStyle: 'italic', textAlign: 'center', maxWidth: 700, lineHeight: 1.4,
                     animation: 'phasePop 0.6s var(--qq-ease-bounce) 1.4s both',
                   }}>

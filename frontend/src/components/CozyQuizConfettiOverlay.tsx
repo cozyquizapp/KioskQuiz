@@ -28,7 +28,7 @@ export function ConfettiOverlay({ eurovisionMode, accent }: { eurovisionMode?: b
   // Team-Farbe) → Palette wird accent-lastig + Marken-Pink. „Konfetti in
   // Team-Farbe + Pink" bei Gewinner-Reveals. Ohne accent: bestehende Palette.
   const palette = accent
-    ? [accent, accent, accent, '#EC4899', '#F472B6', '#FFFFFF', '#A78BFA', accent]
+    ? [accent, accent, accent, 'var(--qq-stage-brand)', 'var(--qq-stage-brand-light)', '#F6EFE6', '#A78BFA', accent]
     : (eurovisionMode ? CONFETTI_COLORS_ESC : CONFETTI_COLORS);
   const [particles] = useState(() =>
     Array.from({ length: CONFETTI_COUNT }, (_, i) => ({

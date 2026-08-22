@@ -49,7 +49,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
   // genutzt, auch auf Cells. Keine separate Brett-Palette mehr.
   const bc = (teamId: string): string => s.teams.find(t => t.id === teamId)?.color ?? '#94a3b8';
   const activeTeam = s.teams.find(t => t.id === highlightTeam);
-  const activeColor = activeTeam ? bc(activeTeam.id) : '#fff';
+  const activeColor = activeTeam ? bc(activeTeam.id) : '#F6EFE6';
 
   // ── Augen-Reaktion ──────────────────────────────────────────────────────
   // Re-render bei jeder Wake-Änderung (per-Team-Wakes, z.B. Lobby-Hallo / künftige
@@ -108,7 +108,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
     const prev = burstPrevJokerKeyRef.current;
     if (jokerKey === prev) return;
     let formed = false;
-    let color = '#EC4899';
+    let color = 'var(--qq-stage-brand)';
     s.grid.forEach((row, r) => row.forEach((cell, c) => {
       const idx = r * s.gridSize + c;
       if (cell.jokerFormed && prev[idx] !== '1') {
@@ -504,14 +504,14 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                       position: 'absolute',
                       width: Math.max(4, cellSize * 0.14), height: Math.max(4, cellSize * 0.14),
                       borderRadius: 2,
-                      background: team ? bc(team.id) : '#fff',
+                      background: team ? bc(team.id) : '#F6EFE6',
                       top: '50%', left: '50%',
                       marginTop: -Math.max(2, cellSize * 0.07),
                       marginLeft: -Math.max(2, cellSize * 0.07),
                       ['--shx' as string]: shx, ['--shy' as string]: shy, ['--shr' as string]: shr,
                       animation: `cellShard 0.7s ease-out ${0.05 + i * 0.02}s both`,
                       pointerEvents: 'none', zIndex: 6,
-                      boxShadow: `0 0 8px ${team ? bc(team.id) : '#fff'}`,
+                      boxShadow: `0 0 8px ${team ? bc(team.id) : '#F6EFE6'}`,
                     }} />
                   );
                 })}
@@ -520,13 +520,13 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   <>
                     <div style={{
                       position: 'absolute', inset: -6, borderRadius: cellRadius + 6,
-                      border: `2.5px solid ${team ? bc(team.id) : '#fff'}88`,
+                      border: `2.5px solid ${team ? bc(team.id) : '#F6EFE6'}88`,
                       animation: 'cellShockwave 0.7s ease-out both',
                       pointerEvents: 'none',
                     }} />
                     <div style={{
                       position: 'absolute', inset: -4, borderRadius: cellRadius + 4,
-                      border: `1.5px solid ${team?.color ?? '#fff'}44`,
+                      border: `1.5px solid ${team?.color ?? '#F6EFE6'}44`,
                       animation: 'cellShockwave 0.9s ease-out 0.15s both',
                       pointerEvents: 'none',
                     }} />
@@ -542,7 +542,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     <div key={`sp-${i}`} style={{
                       position: 'absolute',
                       width: 4, height: 4, borderRadius: '50%',
-                      background: team?.color ?? '#fff',
+                      background: team?.color ?? '#F6EFE6',
                       top: '50%', left: '50%', marginTop: -2, marginLeft: -2,
                       ['--sx' as string]: sx, ['--sy' as string]: sy,
                       animation: `cellSparkle 0.6s ease-out ${0.1 + i * 0.04}s both`,
@@ -554,7 +554,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                 {isFlash && !isNew && (
                   <div style={{
                     position: 'absolute', inset: -4, borderRadius: cellRadius + 3,
-                    border: `2px solid ${team?.color ?? '#fff'}88`,
+                    border: `2px solid ${team?.color ?? '#F6EFE6'}88`,
                     animation: 'cellShockwave 1s ease-out 2',
                     pointerEvents: 'none',
                   }} />
@@ -777,7 +777,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         }}>
           {/* Flash */}
           <div style={{
-            position: 'absolute', inset: 0, background: '#fff', opacity: 0,
+            position: 'absolute', inset: 0, background: '#F6EFE6', opacity: 0,
             animation: 'qqJokerFlash 0.5s ease both',
           }} />
           {/* 2026-07-08 (Wolf-Livetest 'Joker-Effekt laggt'): der rotierende

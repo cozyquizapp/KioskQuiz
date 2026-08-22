@@ -15,6 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { haptic } from '../utils/haptics';
+import { QQReactionIcon } from './QQIcon';
 import { ACK_ERROR_EVENT, type AckErrorEventDetail } from '../utils/qqTeamAckBus';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -297,7 +298,9 @@ export function ReactionPad({
             }}
             aria-label={`React ${e}`}
           >
-            {e}
+            {/* 2026-08-22: dasselbe Motiv wie auf der Buehne. Was das Publikum
+                antippt, soll oben genauso aussehen. */}
+            <QQReactionIcon emoji={e} size={26} />
           </button>
         ))}
       </div>

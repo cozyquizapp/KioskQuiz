@@ -128,7 +128,38 @@ export type QQIconSlug =
   | 'fx-signal'            // Netz-Status
   | 'fx-back'              // Zurueck
   | 'fx-sad'               // knapp verfehlt
-  | 'brand-wolf';          // der CozyQuiz-Wolf als Marke, nicht als OS-Emoji
+  | 'brand-wolf'           // der CozyQuiz-Wolf als Marke, nicht als OS-Emoji
+  // ── Zweite Lieferung, 2026-08-22 ──────────────────────────────────────────
+  // 27 Motive. Damit ist jede Stelle der App, an der ein Zeichen als Marke
+  // steht, im selben Stil. fx-check/-cross/-star/-dizzy/-confetti haben nur
+  // ihre Datei getauscht und ziehen automatisch nach.
+  | 'fx-sparkle'           // loest fx-sparkles ab (Dateiname jetzt Einzahl)
+  | 'fx-timer'             // ersetzt drei verschiedene Uhr-Glyphen
+  | 'fx-pause'
+  | 'fx-joker'             // Narrenhut. Spielmechanik, kein Schmuck
+  | 'fx-board'             // das Spielbrett
+  | 'fx-list'              // Ablauf des Abends
+  | 'fx-write'             // Eingabe, "eure Tipps"
+  | 'fx-blocked'           // nicht moeglich
+  | 'fx-warning'           // Verbindung unterbrochen
+  | 'fx-exit'
+  | 'fx-help'
+  | 'fx-play'
+  | 'fx-screen'            // "schau auf den Beamer"
+  | 'fx-wheel'             // Gluecksrad, CozyGame-Auslosung
+  | 'fx-tie'               // Gleichstand
+  | 'fx-tag'               // Stamm-Code
+  // Publikums-Reaktionen. Bewusst eigene Praefix-Familie: sie duerfen als
+  // einzige des Sets ein Gesicht zeigen, weil Gefuehl sich nicht als
+  // Gegenstand darstellen laesst. Nicht in EMOJI_TO_SLUG eintragen — dort
+  // wuerden sie generische Zeichen kapern (🔥 ist auch der Underdog-Award,
+  // 🎉 auch der Jubel-Effekt). Aufloesung laeuft ueber qqReactionSlug().
+  | 'react-applause'
+  | 'react-fire'
+  | 'react-shock'
+  | 'react-sad'
+  | 'react-party'
+  | 'react-laugh';
 
 const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'marker-frost':      '❄️',
@@ -226,6 +257,29 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-back':              '🔙',
   'fx-sad':               '😢',
   'brand-wolf':           '🐺',
+  // Zweite Lieferung 2026-08-22
+  'fx-sparkle':           '✨',
+  'fx-timer':             '⏱',
+  'fx-pause':             '⏸',
+  'fx-joker':             '🃏',
+  'fx-board':             '🎮',
+  'fx-list':              '📋',
+  'fx-write':             '📝',
+  'fx-blocked':           '🚫',
+  'fx-warning':           '⚠️',
+  'fx-exit':              '🚪',
+  'fx-help':              '❓',
+  'fx-play':              '▶',
+  'fx-screen':            '📺',
+  'fx-wheel':             '🎡',
+  'fx-tie':               '⚖️',
+  'fx-tag':               '🔖',
+  'react-applause':       '👏',
+  'react-fire':           '🔥',
+  'react-shock':          '😱',
+  'react-sad':            '😢',
+  'react-party':          '🎉',
+  'react-laugh':          '😂',
 };
 
 type Props = {
@@ -349,7 +403,56 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   // Turm-Finale, 🐢 im Final-Reveal). Alle drei meinen dieselbe Ehrung.
   '🐢': 'award-underdog',
   '🍀': 'award-underdog',
+  // 2026-08-22, zweite Lieferung: die letzten Bedienelemente, die noch als
+  // OS-Glyphe liefen. Mehrere Zeichen fuer dieselbe Sache laufen bewusst auf
+  // EIN Motiv zusammen — drei Uhren waren drei verschiedene Bilder fuer
+  // "die Zeit laeuft".
+  '⏱': 'fx-timer',  '⏱️': 'fx-timer',
+  '⏰': 'fx-timer',  '⏳': 'fx-timer',
+  '⏸': 'fx-pause',  '⏸️': 'fx-pause',
+  '🃏': 'fx-joker',
+  '🎮': 'fx-board',
+  '📋': 'fx-list',
+  '📝': 'fx-write',  '✍️': 'fx-write',  '✍': 'fx-write',
+  '🚫': 'fx-blocked',
+  '⚠️': 'fx-warning', '⚠': 'fx-warning',
+  '🚪': 'fx-exit',
+  '❓': 'fx-help',
+  '📺': 'fx-screen',
+  '🎡': 'fx-wheel',
+  '⚖️': 'fx-tie',   '⚖': 'fx-tie',
+  '🔖': 'fx-tag',
 };
+
+// ── Publikums-Reaktionen ─────────────────────────────────────────────────────
+// 2026-08-22. Bewusst getrennt von EMOJI_TO_SLUG. Drei der sechs Zeichen sind
+// mehrdeutig: 🔥 steht auch fuer den Underdog-Award, 🎉 auch fuer den
+// Jubel-Effekt bei einer Aufloesung, 😢 auch fuer "knapp verfehlt". Ein
+// globaler Eintrag haette diese Stellen mitgekapert. Nur die beiden echten
+// Reaktions-Aufrufer (Reaktions-Pad am Handy, Floater am Beamer) gehen hier
+// durch.
+const REACTION_TO_SLUG: Record<string, QQIconSlug> = {
+  '👏': 'react-applause',
+  '🔥': 'react-fire',
+  '😱': 'react-shock',
+  '😢': 'react-sad',
+  '🎉': 'react-party',
+  '😂': 'react-laugh',
+};
+
+/** Motiv fuer eine Publikums-Reaktion. null = unbekanntes Zeichen, dann Text. */
+export function qqReactionSlug(emoji: string): QQIconSlug | null {
+  return REACTION_TO_SLUG[emoji] ?? REACTION_TO_SLUG[emoji.trim()] ?? null;
+}
+
+/** Rendert eine Publikums-Reaktion als Motiv, sonst als Zeichen. */
+export function QQReactionIcon({ emoji, size = '1em', style, className }: {
+  emoji: string; size?: number | string; style?: CSSProperties; className?: string;
+}) {
+  const slug = qqReactionSlug(emoji);
+  if (!slug) return <span className={className} style={style}>{emoji}</span>;
+  return <QQIcon slug={slug} size={size} style={style} className={className} alt={emoji} />;
+}
 
 export function qqEmojiSlug(emoji: string): QQIconSlug | null {
   return EMOJI_TO_SLUG[emoji] ?? EMOJI_TO_SLUG[emoji.trim()] ?? null;
@@ -408,6 +511,8 @@ const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
   'rocket':            'fx-lead',           // Rakete = Fuehrungs-Callout
   'anker':             'award-anchor',
   'group':             'award-participation', // Rudel-Wolf = Award "Vollzaehlig"
+  // Zweite Lieferung: die Datei heisst jetzt in der Einzahl.
+  'fx-sparkles':       'fx-sparkle',
 };
 
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {

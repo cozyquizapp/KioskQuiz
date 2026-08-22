@@ -30,7 +30,7 @@ import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { qqArenaRootBg, qqArenaBgFor, qqArenaBgEnabled } from '../components/ArenaBeamerBg';
 import { getAvatarDisplay } from '../avatarSets';
-import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
+import { QQIcon, QQEmojiIcon, QQReactionIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
 import { WolfHeadIcon } from '../components/WolfHeadIcon';
 import { ActionCard, type ActionCardData } from '../components/CozyQuizActionCard';
@@ -395,7 +395,10 @@ export default function QQBeamerPage() {
               transform: 'translateX(-50%)',
               willChange: 'transform, opacity',
             }}>
-              {r.emoji}
+              {/* 2026-08-22: Reaktionen als Motiv aus dem CozyQuiz-Set statt als
+                  OS-Glyphe — die sah auf jedem Geraet anders aus und war der
+                  letzte stilfremde Rest auf der Buehne. */}
+              <QQReactionIcon emoji={r.emoji} size="1em" />
             </span>
           ))}
           <style>{`

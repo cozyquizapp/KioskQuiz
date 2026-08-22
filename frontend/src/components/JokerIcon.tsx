@@ -51,8 +51,16 @@ export function JokerIcon({ i = 0, size = 24, alt = 'Joker', className, style, t
     // Kostüm) statt der alten m/w-Emoji-Jester (1.png/2.png). Ein Asset für
     // alle Slots — der i-Index wechselt nichts mehr durch (bleibt in der
     // Signatur für Caller-Kompat).
+    //
+    // 2026-08-22 (Wolf „wir brauchen den joker neu"): jetzt der Narrenhut aus
+    // dem CozyQuiz-Icon-Set. Zwei Gründe. Erstens Stil: der Wolf im Kostüm ist
+    // flache Vektor-Grafik, der Rest der Bühne ist weiches Tonmaterial.
+    // Zweitens Distanz: auf dem Brett sitzt der Joker in einer Zelle von rund
+    // 40 px. Eine ganze Figur mit Gesicht, Armen und Beinen verliert dort ihre
+    // Zeichnung, ein Hut bleibt als Silhouette erkennbar. Der alte Wolf liegt
+    // weiter unter /images/jokers/wolf.png.
     void i;
-    src = '/images/jokers/wolf.png';
+    src = '/icons/fx-joker.png';
   }
   return (
     <img

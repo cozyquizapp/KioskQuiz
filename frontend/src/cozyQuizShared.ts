@@ -65,17 +65,21 @@ export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
 export const CAT_ACCENT = QQ_CAT_ACCENT;
 
 // ── Category themes (BG-Gradient pro Kategorie) ─────────────────────────────
-export const CAT_BG: Record<string, string> = {
-  SCHAETZCHEN:   ['radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%)','radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%)','#0A0814'].join(','),
-  MUCHO:         ['radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%)','radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%)','#0A0814'].join(','),
-  BUNTE_TUETE:   ['radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%)','radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%)','#0A0814'].join(','),
-  ZEHN_VON_ZEHN: ['repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px)','radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%)','#0A0814'].join(','),
-  CHEESE:        ['radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%)','radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%)','#0A0814'].join(','),
-};
+// 2026-08-22 (Uebergabe 2a, Aenderung 1 „Die Kategorie traegt den Grund"):
+// vorher lagen zwei schwache Ellipsen (0.10–0.42 Alpha, ausserhalb der Mitte)
+// auf einem konstanten #0A0814 — aus zehn Metern war das ein schwarzes Bild mit
+// einem Hauch Farbe, die Kategorie musste gelesen statt gesehen werden. Jetzt
+// traegt ein einziger radialer Verlauf von oben die ganze Leinwand. Die Form
+// steht in qqCategoryStageBg(), damit Beamer und Handy nicht auseinanderlaufen
+// (der alte Doppel-Ellipsen-String war in QQTeamPage als TC_CAT_BG kopiert).
+export const CAT_BG: Record<string, string> = Object.fromEntries(
+  (Object.keys(QQ_CATEGORY_THEME) as Array<keyof typeof QQ_CATEGORY_THEME>)
+    .map(cat => [cat, qqCategoryStageBg(cat) as string])
+);
 
 // ── Category-Glow (Question-Card Halo pro Kategorie) ────────────────────────
 // 2026-05-24 (Refactor #4): derived aus shared/qqCategoryTheme.ts.
-import { QQ_CATEGORY_THEME } from '@shared/qqCategoryTheme';
+import { QQ_CATEGORY_THEME, qqCategoryStageBg } from '@shared/qqCategoryTheme';
 export const CAT_GLOW: Record<string, string> = Object.fromEntries(
   (Object.keys(QQ_CATEGORY_THEME) as Array<keyof typeof QQ_CATEGORY_THEME>)
     .map(cat => [cat, QQ_CATEGORY_THEME[cat].glow])

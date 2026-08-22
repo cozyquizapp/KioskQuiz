@@ -25,9 +25,73 @@ export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; em
 };
 
 // ── Bunte Tüte sub-mechanics ──────────────────────────────────────────────────
+/**
+ * ⛔ VON DIESEN NEUN LAUFEN NUR VIER IM NORMALEN ABEND. ⛔
+ *
+ *   4 aktiv        hotPotato · top5 · order · map
+ *   2 nur Arena    crowdTop · crowdEstimate   (largeGroupMode)
+ *   3 deaktiviert  oneOfEight · onlyConnect · bluff
+ *
+ * Die drei Listen stehen als Konstanten direkt darunter.
+ *
+ * 2026-08-22: Der Status stand bisher nur verstreut — ein Kommentar in
+ * server.ts:8264, eine Zeile in todo.md, eine Tabelle in docs/archive/ — und
+ * nirgends dort, wo man ihn sucht, naemlich hier. Ergebnis: es ist mehrfach
+ * jemand darueber gestolpert und hat an Screens gearbeitet, die niemand zu
+ * sehen bekommt. Deshalb steht es jetzt am Typ und als Konstanten darunter,
+ * damit es nicht nur ein Kommentar ist, sondern pruefbar.
+ */
 export type QQBunteTueteKind =
   | 'hotPotato' | 'top5' | 'oneOfEight' | 'order' | 'map'
   | 'onlyConnect' | 'bluff' | 'crowdTop' | 'crowdEstimate';
+
+/**
+ * Die vier Unterspiele des normalen Abends:
+ * Heisse Kartoffel · Top 5 · Fix It · Pin It
+ */
+export const QQ_BUNTE_TUETE_ACTIVE = [
+  'hotPotato', 'top5', 'order', 'map',
+] as const satisfies readonly QQBunteTueteKind[];
+
+/**
+ * Nur CozyArena (largeGroupMode, bis 25 Teams, Bar-Race statt Brett).
+ * Im normalen Spiel kommen diese beiden nicht vor — wer die Buehne fuer den
+ * Standard-Abend gestaltet, kann sie ueberspringen. Ihre Wertung haengt an
+ * `CozyQuizLargeGroupView` (Ø-Prozent statt Brettpunkte).
+ *   crowdTop      → Umfrage
+ *   crowdEstimate → Schwarmintelligenz
+ */
+export const QQ_BUNTE_TUETE_ARENA_ONLY = [
+  'crowdTop', 'crowdEstimate',
+] as const satisfies readonly QQBunteTueteKind[];
+
+/**
+ * Deaktiviert — Wolf 2026-07-03 fuer onlyConnect und bluff, Imposter laut
+ * docs/UEBERGABE_DESIGN.md Abschnitt 5. Views und Server-Logik liegen
+ * weiterhin im Repo und funktionieren; sie werden nur nicht ausgespielt, und
+ * `draftHasDeactivatedMechanic()` in server.ts bereinigt Drafts, die sie noch
+ * enthalten.
+ *
+ * Vor Design- oder Umbauarbeit an einem dieser drei: erst fragen, ob es
+ * zurueckkommen soll. Sonst ist die Arbeit unsichtbar.
+ *   oneOfEight  → Imposter   · QQBeamerPage (inline)
+ *   onlyConnect → 4 gewinnt  · components/reveals/OnlyConnectBeamerView.tsx
+ *   bluff       → Bluff      · components/reveals/Bluff.tsx
+ */
+export const QQ_BUNTE_TUETE_DEACTIVATED = [
+  'oneOfEight', 'onlyConnect', 'bluff',
+] as const satisfies readonly QQBunteTueteKind[];
+
+/** Kommt dieses Unterspiel im normalen Abend vor? (Arena-only zaehlt hier nicht.) */
+export function qqBunteTueteIsActive(kind: QQBunteTueteKind | undefined | null): boolean {
+  return !!kind && (QQ_BUNTE_TUETE_ACTIVE as readonly string[]).includes(kind);
+}
+
+/** Laeuft dieses Unterspiel ueberhaupt irgendwo — normal ODER in der Arena? */
+export function qqBunteTueteIsPlayable(kind: QQBunteTueteKind | undefined | null): boolean {
+  return qqBunteTueteIsActive(kind)
+    || (!!kind && (QQ_BUNTE_TUETE_ARENA_ONLY as readonly string[]).includes(kind));
+}
 
 export const QQ_BUNTE_TUETE_LABELS: Record<QQBunteTueteKind, { de: string; en: string; emoji: string }> = {
   hotPotato:   { de: 'Heiße Kartoffel', en: 'Hot Potato', emoji: '🥔' },

@@ -75,6 +75,14 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
 * **Cozy-CSS-Variablen kommen aus `main.css` `:root`, nicht aus dem
   COZY-Theme-Objekt.** `setActiveThemeId('cozy')` ist ein No-Op. Wer Farben
   prueft, prueft gegen main.css.
+* **Von den neun Bunte-Tüte-Spielen laufen im normalen Abend nur vier.**
+  Aktiv: Heiße Kartoffel, Top 5, Fix It, Pin It. Nur CozyArena: Umfrage,
+  Schwarmintelligenz. Deaktiviert: Imposter, 4 gewinnt, Bluff — deren Views
+  und Server-Logik liegen weiter im Repo und funktionieren, sie werden nur
+  nicht ausgespielt. Wer daran baut, baut an etwas, das niemand zu sehen
+  bekommt; das ist schon mehrfach passiert. Single Source of Truth sind
+  `QQ_BUNTE_TUETE_ACTIVE` / `_ARENA_ONLY` / `_DEACTIVATED` in
+  `shared/quarterQuizTypes.ts`.
 * **Draft-Daten haben zwei Ebenen** (Datei-Startup + Mongo im
   `/api/qq/drafts`-Endpoint). Live liest Mongo. Gate ist
   `npm --prefix backend run check:en:live`.

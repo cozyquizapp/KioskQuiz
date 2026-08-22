@@ -96,7 +96,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
             ist eh durch Avatar-Cascade + Lösung-Card visuell klar. */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {!revealed && s.timerEndsAt && (
-            <BeamerTimer endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
+            <BeamerTimer variant="plain" endsAt={s.timerEndsAt} durationSec={s.timerDurationSec} accent={accent} />
           )}
         </div>
       </div>

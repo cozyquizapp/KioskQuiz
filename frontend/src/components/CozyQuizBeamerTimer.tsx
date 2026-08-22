@@ -17,13 +17,86 @@ import { useEffect, useState } from 'react';
 import { getServerNow } from '../utils/serverTime';
 import { useActiveThemeId, isCozyLook } from '../qqTheme';
 
+/**
+ * Zeitleiste ueber die ganze Bildbreite — Uebergabe 2a, Aenderung 7.
+ *
+ * Die Leiste ist der periphere Kanal: sie sagt aus dem Augenwinkel, wie viel
+ * Zeit noch da ist, ohne dass jemand hinsehen muss. Die genaue Zahl liefert
+ * die Anzeige rechts oben. Zwei Kanaele, zwei verschiedene Aufgaben — der
+ * frueher zusaetzlich vorhandene Ring war ein dritter, der dasselbe wie die
+ * Leiste erzaehlt hat (Anteil), nur auf 204px Ecke statt am Bildrand.
+ *
+ * Die Leiste liegt oben und nicht unten: unten sitzen die Teammarken, und der
+ * Blick soll dort nicht mit der Zeit konkurrieren.
+ */
+export function StageTimeBar({
+  endsAt, durationSec, accent,
+}: {
+  endsAt: number | null;
+  durationSec: number;
+  accent: string;
+}) {
+  const [remaining, setRemaining] = useState(
+    () => (endsAt == null ? 0 : Math.max(0, (endsAt - getServerNow()) / 1000)),
+  );
+
+  useEffect(() => {
+    if (endsAt == null) return;
+    const iv = setInterval(() => {
+      const r = Math.max(0, (endsAt - getServerNow()) / 1000);
+      setRemaining(r);
+      if (r === 0) clearInterval(iv);
+    }, 100);
+    return () => clearInterval(iv);
+  }, [endsAt]);
+
+  if (endsAt == null || durationSec <= 0) return null;
+  const pct = Math.min(100, Math.max(0, (remaining / durationSec) * 100));
+  // Dieselben Dringlichkeitsstufen wie am Ring — die Leiste erbt die Semantik,
+  // damit Zahl und Leiste nie Verschiedenes behaupten.
+  const color = remaining <= 3 ? '#EF4444'
+    : remaining <= 5 ? '#F97316'
+    : remaining <= 10 ? '#EC4899'
+    : accent;
+
+  return (
+    <div
+      aria-hidden
+      style={{
+        position: 'absolute', top: 0, left: 0, right: 0, height: 12,
+        background: 'var(--qq-hairline)', zIndex: 9,
+      }}
+    >
+      <div style={{
+        width: `${pct}%`, height: '100%', background: color,
+        // linear, nicht gefedert: die Zeit laeuft gleichmaessig ab, alles
+        // andere wuerde luegen. 0.1s deckt genau den Tick-Abstand.
+        transition: 'width 0.1s linear, background 0.3s ease',
+      }} />
+    </div>
+  );
+}
+
 export function BeamerTimer({
-  endsAt, durationSec, accent, expireNow,
+  endsAt, durationSec, accent, expireNow, variant = 'ring',
 }: {
   endsAt: number;
   durationSec: number;
   accent: string;
   expireNow?: boolean;
+  /**
+   * 'plain' — nur die ablaufende Zahl. Uebergabe 2a, Aenderung 7: den Anteil
+   *           traegt die Leiste am oberen Bildrand (`StageTimeBar`, haengt am
+   *           Phase-Root und laeuft deshalb in JEDEM Zustand mit, der einen
+   *           Timer hat), die Zahl liefert die Praezision.
+   *
+   * 'ring'   — Ring mit Zahl, der Zustand vor 2026-08-22. Wolf-Entscheidung an
+   *           diesem Tag: „ring brauchen wir nicht da leiste im header die
+   *           ablaeuft" — alle sechs Aufrufer stehen jetzt auf 'plain'. Der
+   *           Zweig bleibt als dokumentierte Alternative erhalten, wird aber
+   *           aktuell nirgends verwendet.
+   */
+  variant?: 'ring' | 'plain';
 }) {
   // 2026-05-19 (Wolf 'beamer timer +6s vs moderator'): Server-Clock statt
   // lokales Date.now(), damit alle Clients dasselbe Zeit-Referenzsystem
@@ -69,13 +142,18 @@ export function BeamerTimer({
     : accent;
 
   // Hero timer: big ring
+  // 2026-08-22 (Uebergabe 2a, Aenderung 2 „Glühen entfernen"): der Ring trug
+  // seine Dringlichkeit ueber Strichstaerke UND Glow. Auf 2,8 m Bildbreite wird
+  // jeder Glow zum Halo, das die Kante aufweicht — die Zahl wurde dadurch aus
+  // zehn Metern schlechter lesbar, nicht besser. Der Glow ist ersatzlos raus,
+  // die Grundstaerke steigt dafuer von 8 auf 12px: dieselbe Auffaelligkeit,
+  // aber als Flaeche statt als Streuung. Die Dringlichkeitsstufen bleiben.
   const radius = 80;
-  const stroke = isCritical ? 12 : isWarning ? 10 : 8;
-  const sz = radius * 2 + stroke * 2 + 20; // extra for glow
+  const stroke = isCritical ? 16 : isWarning ? 14 : 12;
+  const sz = radius * 2 + stroke * 2 + 20;
   const circumference = 2 * Math.PI * radius;
   const dashOffset = circumference * (1 - pct / 100);
 
-  const glowSize = isCritical ? 28 : isWarning ? 20 : isUrgent ? 14 : 8;
   const pulseAnim = isCritical ? 'bTimerPulse 0.5s ease-in-out infinite'
     : isWarning ? 'bTimerPulse 0.8s ease-in-out infinite'
     : undefined;
@@ -129,21 +207,42 @@ export function BeamerTimer({
     );
   }
 
+  // 2026-08-22 (Uebergabe 2a, Aenderung 7): nackte Zahl, kein Ring. Der Grad
+  // liegt bei 96px (Brief, Abschnitt 10: Zeitanzeige 62–96px) — deutlich
+  // groesser als im Ring, weil die Zahl jetzt allein steht. Der Puls bei ≤5s
+  // und die Outro-Animation bleiben, sie haengen am Wrapper.
+  if (variant === 'plain') {
+    return (
+      <div style={{
+        position: 'relative', minWidth: sz * 0.7, textAlign: 'right',
+        animation: outroAnim ?? pulseAnim,
+        pointerEvents: expired ? 'none' : 'auto',
+        fontWeight: 900, lineHeight: 1,
+        fontSize: isCritical ? 'clamp(72px, 8cqw, 112px)' : 'clamp(62px, 6.8cqw, 96px)',
+        // 2026-08-22 (Wolf-Entscheidung): die Zahl steht im Ruhezustand in der
+        // Kategoriefarbe. Sie ist auf der Buehne die einzige Zeitanzeige neben
+        // der Leiste — und die traegt die Kategoriefarbe ohnehin, also sind es
+        // nicht zwei Signale, sondern eines in zwei Formen. Ab 10 Sekunden
+        // uebernimmt unveraendert die Dringlichkeitsfarbe.
+        color: isUrgent ? color : 'var(--qq-stage-accent, var(--qq-text))',
+        fontVariantNumeric: 'tabular-nums',
+        letterSpacing: '-0.02em',
+        transition: 'font-size 0.3s ease, color 0.3s ease',
+      }}>
+        {secs}
+      </div>
+    );
+  }
+
   return (
     <div style={{
       position: 'relative', width: sz, height: sz,
       animation: outroAnim ?? pulseAnim,
       pointerEvents: expired ? 'none' : 'auto',
     }}>
-      {/* Outer glow ring */}
-      {isUrgent && (
-        <div style={{
-          position: 'absolute', inset: -8,
-          borderRadius: '50%',
-          background: `radial-gradient(circle, ${color}22 0%, transparent 70%)`,
-          animation: 'bTimerGlow 1.5s ease-in-out infinite',
-        }} />
-      )}
+      {/* 2026-08-22 (Uebergabe 2a): der aeussere Glow-Ring ist entfallen —
+          siehe Kommentar an `stroke`. Dringlichkeit traegt jetzt allein die
+          Farbe, die Strichstaerke und (ab 5s) der Puls. */}
       {/* SVG ring */}
       <svg width={sz} height={sz}
         style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
@@ -151,26 +250,26 @@ export function BeamerTimer({
             (rgba(255,255,255,..) waere auf hellen Skins unsichtbar). */}
         <circle cx={sz / 2} cy={sz / 2} r={radius}
           fill="none" style={{ stroke: 'var(--qq-hairline)' }} strokeWidth={stroke} />
-        {/* Progress ring */}
+        {/* Progress ring. Die Ruhefarbe bleibt der uebergebene Akzent — 2026-08-22
+            hatte ich sie unbeauftragt auf Creme gezogen und wieder
+            zurueckgenommen. Diesen Ring sehen nur noch Bluff, OnlyConnect,
+            Comeback und CozyGame; auf der Fragebuehne laeuft `variant="plain"`. */}
         <circle cx={sz / 2} cy={sz / 2} r={radius}
           fill="none" stroke={color} strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
           strokeDashoffset={dashOffset}
-          style={{
-            transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s ease',
-            filter: `drop-shadow(0 0 ${glowSize}px ${color}aa)`,
-          }}
+          style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.3s ease' }}
         />
       </svg>
-      {/* Number in center */}
+      {/* Number in center — 2026-08-22 (Uebergabe 2a, Aenderung 2): kein
+          text-shadow mehr. Die Farbe bleibt wie gehabt der Akzent. */}
       <div style={{
         position: 'absolute', inset: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontWeight: 900,
         fontSize: isCritical ? 'clamp(56px, 7cqw, 88px)' : 'clamp(48px, 6cqw, 76px)',
         color,
-        textShadow: isUrgent ? `0 0 24px ${color}88` : `0 0 12px ${color}44`,
         fontVariantNumeric: 'tabular-nums',
         transition: 'font-size 0.3s ease, color 0.3s ease',
       }}>

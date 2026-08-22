@@ -23,7 +23,7 @@
  */
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
-import { QQ_CATEGORY_LABELS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
+import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion } from '../qqTheme';
 import { SkinDeco } from './SkinDeco';
@@ -572,12 +572,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // 2026-07-04 (Wolf 'aktiv/Reveal nutzt den Platz nicht, alles zu klein'):
   // cqh-Faktoren + Deckel moderat hoch (~+15%). Der min(cqw,cqh)-Cap bleibt und
   // verhindert weiter Vertikal-Ueberlauf (langer Text waechst nicht ins Layout).
-  const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 52px)'
-    : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 66px)'
-    : qText.length > 80  ? 'clamp(40px, min(5cqw, 7.3cqh), 80px)'
-    : qText.length > 55  ? 'clamp(40px, min(4.6cqw, 6.8cqh), 72px)'
-    : qText.length > 40  ? 'clamp(46px, min(5.4cqw, 7.8cqh), 88px)'
-    : 'clamp(50px, min(6.2cqw, 8.4cqh), 104px)';
+  // 2026-08-22 (Uebergabe 2a, Aenderung 3 „Frage aus der Karte holen"): die
+  // Deckel steigen auf die abgenommenen Werte — 132px fuer kurze Fragen, 112px
+  // fuer die naechste Stufe. Moeglich wird das, weil die Frage nicht mehr in
+  // einer Kartenflaeche mit 36/56px Innenrand sitzt: der gewonnene Platz geht
+  // vollstaendig in den Schriftgrad. Die Bucket-Staffelung nach Textlaenge und
+  // der min(cqw,cqh)-Cap bleiben unveraendert — sie sind der Grund, warum lange
+  // Fragen nicht ins Layout wachsen.
+  const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 56px)'
+    : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 72px)'
+    : qText.length > 80  ? 'clamp(40px, min(5cqw, 7.3cqh), 92px)'
+    : qText.length > 55  ? 'clamp(40px, min(4.6cqw, 6.8cqh), 84px)'
+    : qText.length > 40  ? 'clamp(46px, min(5.4cqw, 7.8cqh), 112px)'
+    : 'clamp(50px, min(6.2cqw, 8.4cqh), 132px)';
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -889,7 +896,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               WebkitBackdropFilter: isThemed() ? 'none' : 'blur(8px)',
               boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 4px 22px rgba(0,0,0,0.45)`,
             }}>
-              <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
+              <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} variant="plain" />
             </div>
           )}
 
@@ -1548,11 +1555,63 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             top: 'clamp(14px, 1.6vh, 26px)',
             left: 'clamp(14px, 1.6vh, 26px)',
             right: 'clamp(14px, 1.6vh, 26px)',
-            display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 16,
             zIndex: 60,
             pointerEvents: 'none',
           }}>
+            {/* 2026-08-22 (Uebergabe 2a, Aenderung 9 „Statuszeile
+                vereinheitlichen"): eine Zeile oben links — Kategorie-Pille,
+                gefuellt in Kategoriefarbe mit dunkler Schrift, dahinter der
+                Fragezaehler in Kapitaelchen mit 0.26em Laufweite.
+
+                Die Pille war 2026-05-12 entfernt worden, weil die Kategorie
+                schon im PhaseIntro stand. Der Fall hat sich mit Aenderung 1
+                gedreht: die Kategorie traegt jetzt den Grund, also braucht das
+                Bild die Beschriftung dazu — sonst ist die Farbe da, aber
+                niemand kann sie benennen. Doppelt ist es trotzdem nicht, weil
+                das PhaseIntro ein eigener Zustand vor der Frage ist.
+
+                Der Grad steht bewusst nicht auf den 13px aus Abschnitt 10 des
+                Briefs: 13px sind ein Wert fuer eine Bildschirmseite; auf 1760px
+                Buehnenbreite waeren sie aus zehn Metern schlicht nicht da. Die
+                abgenommene Vorlage 2a faehrt hier 28–30px — der clamp trifft
+                das auf der Buehne und faellt auf kleineren Flaechen mit. */}
+            {q.category && !revealed && (
+              // 2026-08-22 (Wolf-Entscheidung): die Zeile bricht nie um. Weder
+              // die Pille noch der Zaehler duerfen schrumpfen oder umbrechen —
+              // `flexShrink: 0` an beiden und `flexWrap: nowrap` am Container.
+              // Die Groesse ist frei; wenn es eng wird, faellt der clamp ueber
+              // den cqw-Anteil von selbst kleiner, statt die Zeile zu brechen.
+              // Betrifft die langen Namen: SCHAETZCHEN, ZEHN VON ZEHN, BUNTE TUETE.
+              <div style={{
+                display: 'flex', alignItems: 'center', flexWrap: 'nowrap',
+                gap: 'clamp(10px, 1.2cqw, 20px)', flexShrink: 0,
+              }}>
+                <span style={{
+                  padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 28px)',
+                  borderRadius: 'var(--qq-pill-radius)',
+                  background: 'var(--qq-stage-accent)',
+                  color: '#12100E',
+                  fontWeight: 900, lineHeight: 1,
+                  fontSize: 'clamp(16px, 1.7cqw, 30px)',
+                  letterSpacing: '0.06em',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {(QQ_CATEGORY_LABELS[q.category]?.[lang] ?? q.category).toUpperCase()}
+                </span>
+                <span style={{
+                  fontWeight: 800, lineHeight: 1,
+                  fontSize: 'clamp(15px, 1.6cqw, 28px)',
+                  letterSpacing: '0.26em',
+                  color: 'var(--qq-text-muted)',
+                  whiteSpace: 'nowrap',
+                }}>
+                  {lang === 'en' ? 'QUESTION' : 'FRAGE'}{' '}
+                  {String((s.questionIndex ?? 0) + 1).padStart(2, '0')} / {QQ_TOTAL_QUESTIONS}
+                </span>
+              </div>
+            )}
             {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
                 per-Turn-Timer in HotPotatoBeamerView).
                 2026-05-12: Badge ist aus dieser Top-Bar raus (jetzt unten links). */}
@@ -1565,7 +1624,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     endsAt ~1s nachdem das Backend timerEndsAt nullt — sonst
                     unmountet die Component bevor qqTimerOutro durchlaeuft.
                     timerExpiring=true sobald Original-Prop weg ODER revealed. */}
-                <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} />
+                <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} variant="plain" />
               </div>
             )}
           </div>
@@ -1639,16 +1698,24 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 flexShrink: 0,
               }}>
                 <div style={{
-                  background: cardBg,
-                  // Skin: Treatment-Tokens (dicker Rand/harter Schatten etc.).
-                  // Cozy (isThemed=false): unveraendert der kategorie-gefaerbte Glow.
-                  border: isThemed() ? 'var(--qq-card-border)' : `2.5px solid ${revealed ? `${accent}55` : `${accent}88`}`,
-                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-                  boxShadow: isThemed()
-                    ? 'var(--qq-card-shadow)'
-                    : (revealed
-                      ? `0 0 0 1px ${accent}22, 0 0 50px ${accent}22, 0 0 22px ${accent}33, 0 8px 28px rgba(0,0,0,0.4)`
-                      : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, 0 12px 40px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.06)`),
+                  // 2026-08-22 (Uebergabe 2a, Aenderung 3 „Frage aus der Karte
+                  // holen" + Aenderung 2 „Glühen entfernen"): die Frage steht
+                  // frei auf dem Grund — keine Kartenflaeche, kein Rand, kein
+                  // Schatten und vor allem kein Kategorie-Halo mehr.
+                  //
+                  // Der Halo war `0 0 80px ${accent}33, 0 0 32px ${accent}55`.
+                  // Auf 2,8 m Bildbreite ist ein 80px-Schein kein Leuchten,
+                  // sondern ein Nebel um die Kante: er hat die Buchstaben
+                  // aufgeweicht und gleichzeitig Licht ins Bild geschoben. Die
+                  // Kategorie sagt jetzt der Grund (Aenderung 1) — sie braucht
+                  // den Rahmen nicht mehr, um erkennbar zu sein.
+                  //
+                  // Skins (isThemed) behalten ihr Karten-Treatment: dort ist die
+                  // Karte Teil der Skin-Sprache, nicht der Buehne.
+                  background: isThemed() ? cardBg : 'transparent',
+                  border: isThemed() ? 'var(--qq-card-border)' : 'none',
+                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 0,
+                  boxShadow: isThemed() ? 'var(--qq-card-shadow)' : 'none',
                   padding: cardPadding,
                   marginBottom: cardMarginBottom,
                   width: '100%',
@@ -1667,8 +1734,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       macht den Wechsel atomic, langFadeIn als saubere Entry-Anim. */}
                   <div key={`${lang}-${cardFontSize}`} style={{
                     fontSize: cardFontSize,
-                    fontWeight: 900, lineHeight: 1.22,
-                    color: 'var(--qq-card-text)',
+                    // 2026-08-22 (Uebergabe 2a, Aenderung 3): Laufweite -0.03em
+                    // und Zeilenabstand 0.86 statt 1.22. Beides gehoert zum
+                    // groesseren Grad: je groesser die Schrift, desto enger
+                    // gehoert sie gesetzt, sonst zerfaellt die Zeile in
+                    // Einzelwoerter. Bei 132px sind 1.22 Zeilen fast doppelt so
+                    // weit auseinander wie noetig — der Platz fehlt dann unten
+                    // bei den Antworten, auf die es laut Brief ankommt.
+                    //
+                    // 0.86 statt der 0.94 aus der Uebergabe (Referenz-Abgleich
+                    // 2026-08-22): die Plakat-Referenzen stauchen bei diesem
+                    // Grad haerter — Hungry Tiger faehrt 0.80 bei 213px,
+                    // Discord 0.86 bei 61px. Bei zwei Zeilen a 132px sind das
+                    // rund 21px weniger Hoehe, und die Frage liest sich als ein
+                    // Block statt als zwei Zeilen.
+                    fontWeight: 900, lineHeight: 0.86, letterSpacing: '-0.03em',
+                    // Auf dem Grund statt auf einer Karte: --qq-text, nicht
+                    // --qq-card-text. Bei Cozy sind beide Creme, bei hellen
+                    // Skins ist der Unterschied load-bearing.
+                    color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text)',
                     // 2026-07-12 (Delight): kleiner Versatz nach dem Karten-Bounce
                     // (bQuestionIn) — Karte landet, Text schreibt sich danach ein
                     // statt gleichzeitig. Weichere Kurve. Versatz bewusst klein,

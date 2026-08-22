@@ -9,6 +9,7 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { compareTeamsForRanking } from '../utils/qqTeamRanking';
 import { getServerNow } from '../utils/serverTime';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { qqOptionColors } from '../../../shared/qqCategoryTheme';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 const BEAMER_CSS = QQ_BEAMER_CSS;
@@ -854,7 +855,10 @@ function CustomSlideElement({
       if (cat === 'MUCHO' || cat === 'ZEHN_VON_ZEHN') {
         if (!q.options) return null;
         const muchoLabels = ['A', 'B', 'C', 'D'];
-        const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.amber500, QQ_COLORS.green500];
+        // 2026-08-22 (Uebergabe 2a, Aenderung 4): gemeinsame Quelle mit
+        // QQBeamerPage. Vorher stand hier amber500, dort brandPink — dieselbe
+        // Stelle, zwei Wahrheiten. Beide sind jetzt der Kategorie-Akzent.
+        const MUCHO_COLORS = qqOptionColors(cat, accent);
         return (
           <div style={{ ...baseStyle, overflow: 'auto', padding: 4 }}>
             {q.options.map((_, optIdx) => {
@@ -903,7 +907,8 @@ function CustomSlideElement({
     case 'ph_options': {
       if (!q?.options) return null;
       const muchoLabels  = ['A', 'B', 'C', 'D'];
-      const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.amber500, QQ_COLORS.green500];
+      // 2026-08-22 (Uebergabe 2a, Aenderung 4): siehe ph_voters oben.
+      const MUCHO_COLORS = qqOptionColors(cat, accent);
       const defaultCols = cat === 'MUCHO' ? 2 : 3;
       const cols = el.columns ?? defaultCols;
       const tileRadius = el.optionRadius ?? 14;

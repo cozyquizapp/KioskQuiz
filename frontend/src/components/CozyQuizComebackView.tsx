@@ -598,7 +598,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             position: 'absolute', top: 32, right: 48, zIndex: 8,
           }}>
-            <BeamerTimer endsAt={hl.timerEndsAt} durationSec={s.comebackHLTimerSec ?? 10} accent={QQ_COLORS.brandPink} />
+            <BeamerTimer variant="plain" endsAt={hl.timerEndsAt} durationSec={s.comebackHLTimerSec ?? 10} accent={QQ_COLORS.brandPink} />
           </div>
         )}
       </div>

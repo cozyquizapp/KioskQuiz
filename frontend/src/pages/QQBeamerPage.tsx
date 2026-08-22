@@ -34,7 +34,7 @@ import { QQIcon, QQEmojiIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon'
 import { CozyWolfImage } from '../components/CozyWolfImage';
 import { WolfHeadIcon } from '../components/WolfHeadIcon';
 import { ActionCard, type ActionCardData } from '../components/CozyQuizActionCard';
-import { BeamerTimer } from '../components/CozyQuizBeamerTimer';
+import { BeamerTimer, StageTimeBar } from '../components/CozyQuizBeamerTimer';
 import { Fireflies, EurovisionHearts } from '../components/CozyQuizAmbient';
 import { CategoryParticles } from '../components/CozyQuizCategoryParticles';
 import { UrgencyVignette } from '../components/CozyQuizUrgencyVignette';
@@ -150,6 +150,7 @@ import {
   qqCapOption, qqArenaType,
 } from '../cozyQuizShared';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { qqOptionColors, qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 
 export const BEAMER_CSS = QQ_BEAMER_CSS;
 export const CAT_BADGE_BG = QQ_CAT_BADGE_BG;
@@ -1930,7 +1931,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const teamTintColor = accentTeam?.color ?? null;
 
   return (
-    <div style={{
+    <div
+      // 2026-08-22 (Uebergabe 2a): der Phase-Root ist der Buehnen-Scope. Er
+      // traegt (a) die Flaechen-Tokens aus main.css `[data-qq-stage='2a']` und
+      // (b) `--qq-stage-accent`, die buehnen-eigene Kategoriefarbe. Bewusst
+      // NICHT `--qq-accent`: die schreibt applyThemeVars auf documentElement
+      // und wuerde Handy und Steuerpult mitfaerben. Nur Buehnen-Bausteine lesen
+      // die Stage-Variable, alles andere bleibt an der Marke.
+      data-qq-stage="2a"
+      style={{
+      '--qq-stage-accent': qqCategoryAccent(cat, 'var(--qq-accent)'),
       height: '100cqh', width: '100cqw',
       // 2026-06-23 (Skin): aktiver Skin lackiert den Phase-Root — Seiten-BG,
       // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen
@@ -1956,9 +1966,19 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Kein Wrapper-Padding — der eingebaute Sicherheitsrand zeichnete
       // sich optisch sichtbar ab. Inneres Padding handhaben die Views selber.
       transition: 'background 0.8s ease',
-    }}>
+    } as React.CSSProperties}>
       {/* CSS keyframes */}
       <style>{BEAMER_CSS}</style>
+
+      {/* 2026-08-22 (Uebergabe 2a, Aenderung 7 „Zeit doppelt anzeigen"): die
+          Leiste sitzt am Phase-Root, nicht in einer einzelnen View — sie
+          gehoert zur Buehne, nicht zur Frage, und laeuft dadurch ueber jeden
+          Zustand mit, der einen Timer hat. Die genaue Zahl steht in der View. */}
+      <StageTimeBar
+        endsAt={s.timerEndsAt}
+        durationSec={s.timerDurationSec}
+        accent="var(--qq-stage-accent)"
+      />
 
       {/* I2 Team-Farbwelt-Accent: radial-gradient in Team-Farbe,
           nur sichtbar wenn Team aktiv. Sehr subtil (~8% alpha), damit
@@ -3863,7 +3883,14 @@ export function MuchoOptionsReveal({
         return cv ? teams.find(t => t.id === cv.teamId) : undefined;
       })()
     : undefined;
-  const MUCHO_COLORS = [QQ_COLORS.blue500, QQ_COLORS.red500, QQ_COLORS.brandPink, QQ_COLORS.green500];
+  // 2026-08-22 (Uebergabe 2a, Aenderung 4 „Rot und Grün freistellen"): vorher
+  // [blue500, red500, brandPink, green500] — zwei davon sind im Quiz schon
+  // belegt. Jetzt vier Mal Kategorie-Akzent aus einer gemeinsamen Quelle, die
+  // sich QQCustomSlide teilt (dort stand amber statt pink, die beiden Listen
+  // waren also bereits auseinandergelaufen).
+  // (Die Komponente wird ausschliesslich unter `q.category === 'MUCHO'`
+  // gerendert, siehe CozyQuizQuestionView — daher die feste Kategorie.)
+  const MUCHO_COLORS = qqOptionColors('MUCHO');
   // 2026-05-09 (Wolf): Negative-Squared-Latin-Emojis statt Plain-Text.
   // 2026-05-09 v2 (Wolf): zurück auf Plain Text — Emoji-Version 🅰🅱🅲🅳
   // wurde auf Mac/iPhone als blaue OS-Squares mit weißem Buchstaben gerendert,
@@ -3899,8 +3926,13 @@ export function MuchoOptionsReveal({
         columnGap: 18,
         // 2026-05-12 (Wolf 'mucho runde 1 felder stehen unten aus slide raus'):
         // rowGap-Max von 120 → 90, paddingBottom-Max von 160 → 110 reduziert.
-        rowGap: expandedLayout ? 'clamp(60px, 8cqh, 90px)' : 18,
-        paddingBottom: expandedLayout ? 'clamp(70px, 9cqh, 110px)' : 0,
+        // 2026-08-22 (Referenz-Abgleich): die Marken haengen jetzt vollstaendig
+        // unter der Karte statt zu 20 Prozent darauf, brauchen also mehr Luft.
+        // Die Werte ziehen auf die Staffelung von ZEHN_VON_ZEHN nach, das
+        // dieselbe Mechanik hat und dort schon 100–140px fuehrt — MUCHO lag mit
+        // 60–90px deutlich enger, obwohl unter der Karte dasselbe passiert.
+        rowGap: expandedLayout ? 'clamp(100px, 12cqh, 140px)' : 18,
+        paddingBottom: expandedLayout ? 'clamp(100px, 11cqh, 140px)' : 0,
         marginBottom: 'clamp(10px, 1.4cqh, 22px)',
         width: '100%', maxWidth: 1400,
         // 2026-04-30 v2: 0.9s entspanntes Easing (User: 'cards verschieben sich zu hektisch').
@@ -3953,7 +3985,9 @@ export function MuchoOptionsReveal({
             <div style={{
               flex: 1,
               position: 'relative', overflow: 'hidden',
-              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+              // 2026-08-22 (Uebergabe 2a, Aenderung 5): Radius aus dem
+              // Buehnen-Token — auf der Buehne 5px, im Skin dessen eigener Wert.
+              borderRadius: 'var(--qq-card-radius)',
               // Arena: schlankeres Vertikal-Padding, damit die grossen Inline-Wappen
               // (bis 100px) in der gecappten Balken-Hoehe Platz haben (Wolf 2026-07-16).
               padding: isMega ? 'clamp(10px,1.4cqh,16px) clamp(16px,1.8cqw,28px)' : '24px 28px',
@@ -3974,17 +4008,44 @@ export function MuchoOptionsReveal({
               // erkennbar'): korrekte Karte deutlich staerker gruen (Fill 0.22→0.34
               // + Inset-Ring), Falsche zusaetzlich entsaettigt → die richtige Antwort
               // knallt jetzt auch aus Beamer-Distanz raus.
-              background: isCorrect ? 'rgba(34,197,94,0.34)' : cardBg,
-              // 2026-06-24 (Wolf 'option-rahmen auch schwarz'): bei Skin Card-Behandlung
-              // (Mono=schwarzer Rand+Hard-Shadow) statt Akzent-Rand.
-              border: isCorrect ? '3px solid #22C55E'
-                : isWrong ? (isThemed() ? '3px solid var(--qq-hairline)' : '3px solid rgba(255,255,255,0.06)')
-                : (isThemed() ? 'var(--qq-card-border)' : `3px solid ${optColor}55`),
-              boxShadow: isCorrect ? '0 0 64px rgba(34,197,94,0.6), 0 0 130px rgba(34,197,94,0.28), inset 0 0 0 2px rgba(34,197,94,0.55), inset 0 0 70px rgba(34,197,94,0.12)'
-                : (isThemed() ? 'var(--qq-card-shadow)' : '0 4px 16px rgba(0,0,0,0.3)'),
-              // Falsche Karten entsaettigen (kein „Bloßstellen" — es geht um Antwort-
-              // Optionen, nicht Teams), damit nur die korrekte farbig bleibt.
-              filter: isWrong ? 'grayscale(0.55)' : undefined,
+              // 2026-08-22 (Uebergabe 2a, Aenderung 5 „Antwortplaettchen
+              // entstapeln"): das Plaettchen liegt auf dem Grund, statt als
+              // Karte darueber zu schweben. Fuellung und Kontur kommen aus den
+              // Buehnen-Tokens (`[data-qq-stage='2a']` in main.css):
+              // rgba(18,15,24,.34) und 2px rgba(246,239,230,.22).
+              //
+              // Vorher trug jede Option eine eigene Akzentkontur `${optColor}55`
+              // — bei vier verschiedenen Positionsfarben waren das vier bunte
+              // Rahmen, die mit der Wertung konkurriert haben. Die Kategorie-
+              // farbe sitzt jetzt nur noch in der Buchstabenkachel; das
+              // Plaettchen selbst ist neutral. Gruen bleibt allein der
+              // richtigen Antwort.
+              // Referenz-Abgleich 2026-08-22 — die Aufloesung als Aufkleber
+              // statt als Gluehen. Vorher trug die richtige Antwort eine
+              // 34-%-Fuellung plus vier Schattenlagen (`0 0 64px`, `0 0 130px`
+              // und zwei Insets). Auf 2,8 m Bildbreite ist so ein Schein kein
+              // Leuchten, sondern ein Hof, der die Kante auffrisst — dasselbe
+              // Argument, mit dem Aenderung 2 den Ring und den Kategorie-Halo
+              // entglüht hat; die Aufloesung war die letzte Stelle, an der es
+              // noch stand.
+              //
+              // Jetzt volle Fuellung, dunkle Schrift, dicke Kontur — die
+              // Aufkleber-Sprache aus Duolingo, wo Gruen ohnehin „richtig"
+              // heisst. Dunkel auf #22C55E ergibt 8.4:1 statt der ~4.5:1 von
+              // Creme auf der halbtransparenten Fuellung, und die Flaeche
+              // traegt auf Distanz weiter als jeder Schein.
+              background: isCorrect ? '#22C55E'
+                : isWrong ? 'var(--qq-surface-deep)'
+                : 'var(--qq-card-bg)',
+              border: isCorrect ? '4px solid #16A34A'
+                : isWrong ? '2px solid var(--qq-hairline)'
+                : 'var(--qq-card-border)',
+              boxShadow: 'var(--qq-card-shadow)',
+              // Die Entsaettigung der falschen Karten ist entfallen: seit
+              // Aenderung 4 tragen alle vier Optionen denselben Kategorie-Ton,
+              // da ist keine Farbe mehr wegzunehmen. Den Rueckschritt macht
+              // jetzt die tiefere Flaeche (--qq-surface-deep) — sichtbar als
+              // Stufe, nicht als Matsch.
               display: 'flex', alignItems: 'center', gap: 16,
               transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
               animation: isCorrect
@@ -4006,40 +4067,53 @@ export function MuchoOptionsReveal({
               {optImg?.url && (
                 <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(90deg, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.3) 100%)', pointerEvents: 'none' }} />
               )}
-              {/* Beat 3 — Check-Pop: gruener Haken bouncet oben rechts auf die
-                  richtige Karte, zusaetzlich zum Green-Glow + Doppelblink. */}
-              {isCorrect && (
-                <span aria-hidden style={{
-                  position: 'absolute', top: 10, right: 12, zIndex: 2,
-                  // Groesser fuer Distanz-Lesbarkeit (Wolf 2026-07-12).
-                  width: 'clamp(38px, 3.6cqw, 56px)', height: 'clamp(38px, 3.6cqw, 56px)',
-                  borderRadius: '50%', background: QQ_COLORS.green500,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 'clamp(22px, 2.3cqw, 34px)', fontWeight: 900, color: '#fff',
-                  boxShadow: '0 0 20px rgba(34,197,94,0.7), 0 2px 8px rgba(0,0,0,0.4)',
-                  animation: 'revealCorrectPop 0.5s var(--qq-ease-bounce) 0.5s both',
-                }}>✓</span>
-              )}
+              {/* 2026-08-22 (Wolf-Entscheidung): der Haken ist ersatzlos raus.
+                  Er stammte aus 2026-07-12, als die richtige Karte nur eine
+                  34-%-Fuellung trug und ein zusaetzliches Zeichen brauchte, um
+                  auf Distanz zu tragen. Seit die Karte vollflaechig gruen ist,
+                  sagt die Flaeche es bereits — der Haken war die zweite Ansage
+                  derselben Sache und hat oben rechts Platz belegt. */}
+              {/* 2026-08-22 (Uebergabe 2a, Aenderung 5): der Buchstabe sitzt in
+                  einer 64px-Kachel mit 3px Kontur in Kategoriefarbe — Kontur
+                  statt Fuellung. Eine gefuellte Kachel ist eine leuchtende
+                  Flaeche pro Option, also vier davon; als Kontur traegt sie
+                  dieselbe Information bei einem Bruchteil des Lichts. Der
+                  Schatten `0 2px 8px` faellt weg (Brief, Abschnitt 11).
+                  Richtig/falsch bleiben gefuellt: dort ist die Flaeche das
+                  Signal und soll knallen. */}
               <div style={{
                 position: 'relative', zIndex: 1,
-                width: 56, height: 56, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-                background: isCorrect ? QQ_COLORS.green500 : isWrong ? '#374151' : optColor,
+                width: 64, height: 64, borderRadius: 'var(--qq-card-radius)',
+                // Auf der gefuellten gruenen Karte kehrt sich die Kachel um:
+                // dunkel gefuellt mit gruener Schrift. Sonst staende Gruen auf
+                // Gruen. Bei falsch bleibt sie eine Kontur, nur gedimmt.
+                background: isCorrect ? '#0A2E1C' : 'transparent',
+                border: isCorrect ? 'none'
+                  : `3px solid ${isWrong ? 'var(--qq-hairline)' : optColor}`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
-                fontSize: isCorrect ? 32 : 28, fontWeight: 900, color: '#fff', flexShrink: 0,
-                boxShadow: isCorrect
-                  ? '0 0 16px rgba(34,197,94,0.6)'
-                  : `0 2px 8px ${optColor}44`,
-                transition: 'background 0.3s ease, box-shadow 0.3s ease',
+                fontSize: isCorrect ? 34 : 30, fontWeight: 900, flexShrink: 0,
+                color: isCorrect ? '#22C55E' : isWrong ? 'var(--qq-text-muted)' : optColor,
+                boxShadow: 'none',
+                transition: 'background 0.3s ease, border-color 0.3s ease, color 0.3s ease',
               }}>{muchoLabels[i]}</div>
               <div style={{
                 position: 'relative', zIndex: 1,
                 flex: 1, minWidth: 0,
-                fontSize: 'clamp(26px, 3.2cqw, 44px)', fontWeight: 900,
+                // 2026-08-22 (Uebergabe 2a, Aenderung 5): Deckel von 44 auf
+                // 72px. Der Brief ist an dieser Stelle eindeutig — entscheidend
+                // sind die Antworten, nicht die Frage; leise werden Entwuerfe
+                // bei den Antworten. Der cqw-Anteil steigt mit, damit die
+                // Groesse an der Spaltenbreite haengt und nicht am Deckel.
+                fontSize: 'clamp(26px, 4.4cqw, 72px)', fontWeight: 900,
                 // Skin: Option-Label lesbar auf hellen Karten (slate100 war fast
-                // weiss -> unsichtbar auf Mono). isWrong bleibt gedimmt. Cozy gleich.
-                color: isWrong
-                  ? (isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate400)
-                  : (isThemed() ? 'var(--qq-card-text)' : QQ_COLORS.slate100), lineHeight: 1.3,
+                // weiss -> unsichtbar auf Mono). isWrong bleibt gedimmt.
+                // 2026-08-22: Cozy liest jetzt dieselben Tokens — slate100 war
+                // faktisch Weiss und damit der hellste Punkt im Bild.
+                // Auf der gruenen Fuellung dunkle Tinte (8.4:1), sonst Creme.
+                color: isCorrect ? '#08240F'
+                  : isWrong ? 'var(--qq-text-muted)'
+                  : 'var(--qq-card-text)',
+                lineHeight: 1.1,
                 textShadow: optImg?.url ? '0 2px 8px rgba(0,0,0,0.8)' : 'none',
                 transition: 'color 0.3s ease',
               }}>{optText}</div>
@@ -4064,7 +4138,19 @@ export function MuchoOptionsReveal({
             {!isMega && voterShow && voters.length > 0 && (
               <div style={{
                 position: 'absolute', left: 8, right: 8, bottom: 0,
-                transform: 'translateY(80%)',
+                // 2026-08-22 (Referenz-Abgleich): vorher `translateY(80%)` —
+                // 20 Prozent der Marke lagen AUF der Antwortkarte. Mit runden
+                // Avataren auf einer 24px-Karte war das eine Verbindung: der
+                // Kreis „klebte" an der weichen Kante. Seit Aenderung 5 und 6
+                // sind Karte und Marke beide eckig mit 5px Radius, und seit der
+                // Aufkleber-Aufloesung ist die richtige Karte vollflaechig
+                // gruen — eine team-farbene Kachel, die da hineinragt, liest
+                // sich als Kollision, nicht als Zugehoerigkeit.
+                //
+                // Jetzt stehen die Marken vollstaendig unter der Karte, mit
+                // 14px Luft. Die Zuordnung traegt die Position (mittig unter
+                // der Spalte), nicht die Ueberlappung.
+                transform: 'translateY(calc(100% + 14px))',
                 display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start',
                 justifyContent: 'center',
                 gap: voters.length > 4 ? 6 : 10,

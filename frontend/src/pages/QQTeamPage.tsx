@@ -66,6 +66,7 @@ import { safeEmit } from '../utils/qqTeamAckBus';
 import { formatStammCode, parseStammCodeToTeamId } from '../utils/qqStammCode';
 import type { QQAck } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { qqCategoryStageBg } from '../../../shared/qqCategoryTheme';
 import { setActiveThemeId, isThemed, themeIdForState } from '../qqTheme';
 
 // safeEmit + ACK_ERROR_MESSAGES_* + broadcastAckError jetzt in '../utils/qqTeamAckBus'.
@@ -743,7 +744,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
 
   // 2026-05-04 (Wolf): Page-BG nimmt jetzt aktuelle Slot-Farbe als sanften
   // Tint statt fixer goldbrauner Mix. Solange Setup/Lobby — sobald Quiz laeuft
-  // (Kategorie-spezifischer BG) uebernimmt TC_CAT_BG. Glow-Lagen subtil
+  // (Kategorie-spezifischer BG) uebernimmt qqCategoryStageBg(). Glow-Lagen subtil
   // gemischt damit Page nicht 'monochrom' wirkt.
   const slot = QQ_AVATARS.find(a => a.id === avatarId);
   const slotColor = slot?.color ?? QQ_COLORS.brandPink;
@@ -1598,16 +1599,19 @@ function TeamGameView({
   const ffColor = `${phaseAccent}55`;
 
   // 2026-05-02 (Wolfs Wunsch 'team view immer an die farbe anpassen die gerade
-  // auf dem beamer ist'): exakt die gleichen CAT_BG-Strings wie Beamer (siehe
-  // QQBeamerPage.tsx CAT_BG). Phone ist schmaler, radial-gradients skalieren
-  // mit %, also sieht's aehnlich aus.
-  const TC_CAT_BG: Record<string, string> = {
-    SCHAETZCHEN:   `radial-gradient(ellipse at 18% 68%, rgba(133,77,14,0.42) 0%, transparent 55%), radial-gradient(ellipse at 80% 20%, rgba(234,179,8,0.13) 0%, transparent 52%), #0A0814`,
-    MUCHO:         `radial-gradient(ellipse at 70% 28%, rgba(29,78,216,0.28) 0%, transparent 55%), radial-gradient(ellipse at 20% 78%, rgba(59,130,246,0.10) 0%, transparent 50%), #0A0814`,
-    BUNTE_TUETE:   `radial-gradient(ellipse at 50% 55%, rgba(185,28,28,0.25) 0%, transparent 58%), radial-gradient(ellipse at 14% 18%, rgba(220,38,38,0.11) 0%, transparent 45%), #0A0814`,
-    ZEHN_VON_ZEHN: `repeating-linear-gradient(transparent, transparent 39px, rgba(52,211,153,0.03) 39px, rgba(52,211,153,0.03) 40px), radial-gradient(ellipse at 28% 42%, rgba(6,78,59,0.32) 0%, transparent 55%), #0A0814`,
-    CHEESE:        `radial-gradient(ellipse at 30% 40%, rgba(91,33,182,0.30) 0%, transparent 55%), radial-gradient(ellipse at 80% 72%, rgba(139,92,246,0.12) 0%, transparent 50%), #0A0814`,
-  };
+  // auf dem beamer ist').
+  //
+  // 2026-08-22 (Uebergabe 2a): die Hand-Kopie der Beamer-Strings ist weg. Sie
+  // war eine wortgleiche Abschrift — und genau deshalb ist sie beim Umbau der
+  // Buehne stehengeblieben, waehrend der Beamer weiterzog: Handy und Wand
+  // zeigten fuer denselben Moment verschiedene Farben, obwohl der Kommentar
+  // hier „exakt die gleichen" behauptete.
+  //
+  // Jetzt lesen beide `qqCategoryStageBg()`. Farben und Stops sind identisch,
+  // nur die Geometrie unterscheidet sich: Ellipse statt Kreis, weil das Handy
+  // hochkant steht (Begruendung am Helper). Damit kann es nicht mehr
+  // auseinanderlaufen — eine neue Kategorie faerbt beide Flaechen zugleich.
+  const catStageBg = qqCategoryStageBg(cat, { shape: 'ellipse' });
 
   // Phase-Mapping: bei jeder Phase die Beamer-BG verwenden wenn Kategorie
   // bekannt ist. Sonst LOBBY_BG fallback (Setup/Lobby/Welcome ohne Kategorie).
@@ -1618,7 +1622,7 @@ function TeamGameView({
   );
   // 2026-05-04 (Wolf): vor Quiz-Start (Lobby/Pre-Game) BG in Team-Farbe
   // statt fixer goldbrauner Mix. Sobald Kategorie aktiv ist, uebernimmt
-  // TC_CAT_BG. GAME_OVER bleibt im Gold-Spotlight.
+  // der Kategorie-Grund. GAME_OVER bleibt im Gold-Spotlight.
   const myTeamColor = myTeam?.color ?? QQ_COLORS.brandPink;
   const teamTintBg =
     `radial-gradient(ellipse at 50% -10%, ${myTeamColor}28, transparent 55%), ` +
@@ -1626,7 +1630,7 @@ function TeamGameView({
     `radial-gradient(ellipse at 15% 80%, ${myTeamColor}10, transparent 50%), ` +
     `#0A0814`;
   const pageBg = usesBeamerCatBg
-    ? (TC_CAT_BG[cat] ?? teamTintBg)
+    ? (catStageBg ?? teamTintBg)
     : s.phase === 'GAME_OVER'
     ? `radial-gradient(ellipse at 50% 30%, rgba(var(--qq-accent-rgb),0.15) 0%, transparent 50%), #0A0814`
     : teamTintBg;

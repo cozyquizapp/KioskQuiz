@@ -81,7 +81,7 @@ export function BluffBeamerView({ state: s, lang, revealed }: {
             WebkitBackdropFilter: 'blur(8px)',
             boxShadow: '0 4px 22px rgba(0,0,0,0.45)',
           }}>
-            <BeamerTimer endsAt={ends} durationSec={duration} accent={accent} />
+            <BeamerTimer variant="plain" endsAt={ends} durationSec={duration} accent={accent} />
           </div>
         );
       })()}

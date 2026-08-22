@@ -24,7 +24,18 @@ type Props = {
   /** Avatare sind IMMER rund (auch in Themes) — die cozy3d-3D-Portraits sind für
    *  die runde Disc komponiert und sehen so am besten aus; runde Portraits in
    *  eckigen Skin-Cards = bewusster Editorial-Kontrast (Wolf-Entscheidung
-   *  2026-06-25). `square` erzwingt eckige Ecken (radius 0); aktuell ungenutzt. */
+   *  2026-06-25). `square` erzwingt eckige Ecken (radius 0); aktuell ungenutzt.
+   *
+   *  2026-08-22 (Uebergabe 2a, Aenderung 6 „Teams als Kacheln"): die runde Form
+   *  ist nicht mehr fest verdrahtet, sondern kommt aus
+   *  `--qq-team-mark-radius` (Default '50%' → unveraendert rund). Der
+   *  Buehnen-Scope in main.css setzt sie auf 5px: damit werden alle Teammarken
+   *  auf dem Beamer zu eckigen Kacheln, ohne dass jeder Aufrufer angefasst
+   *  werden muss — und das Handy bleibt rund.
+   *
+   *  Warum eckig: der Kreis ist die weiche App-Form und war der Grund, warum
+   *  das Set nach Handyspiel aussah. Die Kachel ist ausserdem dieselbe Form,
+   *  die auf dem Brett gesetzt wird — die Marke wird dadurch zur Spielfigur. */
   square?: boolean;
   /** Sprache für automatisch generierte title/alt-Texte (Tier-Name). */
   lang?: 'de' | 'en';
@@ -82,8 +93,12 @@ type Props = {
  * Fallback bei Bildlade-Fehler im PNG-Modus: Emoji-Glyph in farbigem Kreis.
  */
 export function QQTeamAvatar({
-  avatarId, size, style, className, title, square, lang, blink = true, eyes = 'auto', teamId, avatarSetId, teamEmoji, flat, bgColor,
+  avatarId, size, style, className: classNameProp, title, square, lang, blink = true, eyes = 'auto', teamId, avatarSetId, teamEmoji, flat, bgColor,
 }: Props) {
+  // 2026-08-22 (Uebergabe 2a): jede Teammarke traegt `qq-team-mark`. Das ist
+  // der Haken, an dem der Buehnen-Scope die inline gesetzten Glows loeschen
+  // kann (main.css), ohne die rund ein Dutzend Aufrufer einzeln anzufassen.
+  const className = classNameProp ? `qq-team-mark ${classNameProp}` : 'qq-team-mark';
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
   // serverEmojis nur ehrlich verwenden wenn das Set passt — bei explizitem
@@ -101,7 +116,7 @@ export function QQTeamAvatar({
     height: size,
     flexShrink: 0,
     display: 'block',
-    borderRadius: square ? 0 : '50%',
+    borderRadius: square ? 0 : 'var(--qq-team-mark-radius, 50%)',
     ...style,
   };
 
@@ -242,7 +257,7 @@ function PngAvatar({
 
   const inner: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',
-    borderRadius: square ? 0 : '50%',
+    borderRadius: square ? 0 : 'var(--qq-team-mark-radius, 50%)',
     display: 'block', pointerEvents: 'none',
   };
 
@@ -540,7 +555,7 @@ function ImageAvatar({
         // 2026-06-24 (Wolf 'avatare teilweise am kreisrand abgeschnitten'):
         // overflow sichtbar laesst das Motiv ungeschnitten; Disc + Ring bleiben rund.
         overflow: square ? 'hidden' : 'visible',
-        borderRadius: square ? 0 : '50%',
+        borderRadius: square ? 0 : 'var(--qq-team-mark-radius, 50%)',
       }}
     >
       {failed ? (
@@ -641,7 +656,7 @@ function QuirkAvatar({
         position: 'relative',
         overflow: 'hidden',
         // Eckige Kachel (nicht rund). square erzwingt scharfe Ecken.
-        borderRadius: square ? 0 : '18%',
+        borderRadius: square ? 0 : 'var(--qq-quirk-mark-radius, 18%)',
       }}
     >
       {failed ? (
@@ -781,7 +796,7 @@ function EmojiAvatar({
         fontSize: emojiFontSize,
         lineHeight: 1,
         userSelect: 'none',
-        borderRadius: square ? 0 : '50%',
+        borderRadius: square ? 0 : 'var(--qq-team-mark-radius, 50%)',
       }}
     >
       <span style={{

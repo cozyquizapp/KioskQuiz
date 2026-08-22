@@ -912,7 +912,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
             animation: 'cozyGameTimerSlotIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}
         >
-          <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
+          <BeamerTimer variant="plain" endsAt={gameEndsAt} durationSec={60} accent="#fff" />
         </div>
       )}
     </div>
@@ -989,7 +989,7 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
         opacity: 0,
         animation: 'cozyGameActiveTimerIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) 0.5s both',
       }}>
-        <BeamerTimer endsAt={gameEndsAt} durationSec={60} accent="#fff" />
+        <BeamerTimer variant="plain" endsAt={gameEndsAt} durationSec={60} accent="#fff" />
       </div>
     </div>
   );
@@ -1125,7 +1125,7 @@ function SequenceGameView({
           }}
         >
           {gameEndsAt ? (
-            <BeamerTimer endsAt={gameEndsAt} durationSec={timerDurationSec} accent="#fff" />
+            <BeamerTimer variant="plain" endsAt={gameEndsAt} durationSec={timerDurationSec} accent="#fff" />
           ) : isPaused ? (
             <div style={{
               fontSize: 'clamp(48px, 6vw, 96px)',

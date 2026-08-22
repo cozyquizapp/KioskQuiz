@@ -15,7 +15,27 @@
 
 ---
 
-## 🎨 PREMIUM-DESIGN-GRUNDLAGE (Wolf 2026-08-18, laeuft)
+## 🎨 PREMIUM-DESIGN-GRUNDLAGE (Wolf 2026-08-22, laeuft)
+
+> **Einstieg: `docs/UEBERGABE_DESIGN.md`** — dort steht der komplette Stand,
+> die Randbedingungen, das Messwerkzeug und die Reihenfolge.
+> Ziel laut Wolf: **`/beamer` bauen, `/team` zieht nach.**
+
+- [ ] **Zweite Serie Kompositionen** mit den Mitteln, die noch fehlen
+      (Uebergabe Abschnitt 8): Schrift ueber den Rand, etwas das aus dem Rahmen
+      bricht, Verlaufsflaechen, Farbe mit Bedeutung, Wasserzeichen-Ebene,
+      eine einzige Schrift, gepunktete Linien, Sequenzmittel.
+- [ ] **Schrift entscheiden.** Groesster Einzelhebel, bisher Platzhalter.
+- [ ] **Farbsystem:** Leinwand, Flaeche oder Marke traegt die Kategorie.
+      Gemessen gleichwertig, also Geschmacksentscheidung.
+- [ ] **Erster Bewegungs-Baustein:** B1 (Bogen-Wisch) + B5 (Marker statt
+      Einfaerbung) an der Aufloesung, gegen den Ist-Zustand stellen.
+- [ ] **`/team` erst danach**, nur Einzelheiten, nicht der Aufbau
+      (Gegenprobe hat gezeigt: Aufbau stimmt bereits).
+
+### Aeltere Punkte aus dem 18.08.
+
+## 🎨 (Vorlauf 2026-08-18)
 
 > Wolf: „wir brauchen premium design 2026 fuer eine quiz event app, darauf bauen
 > wir dann das emoji set bzw wir bauen es zusammen auf."

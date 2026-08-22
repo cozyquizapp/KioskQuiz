@@ -19,7 +19,9 @@
  *   cd frontend && VITE_API_BASE=http://localhost:4000/api \
  *     VITE_SOCKET_URL=http://localhost:4000 npm run dev   # Port 5173
  *
- * NUTZUNG: node scripts/beamer-shot.mjs [--secs 240]
+ * NUTZUNG: node scripts/beamer-shot.mjs [--secs=240] [--normal]
+ *   --normal   gewoehnlicher Abend statt Arena (Default bleibt Arena)
+ *   QQ_CHROME  Pfad zu chrome, falls die Playwright-Browser nicht passen
  * Viewport 1760x990 = STAGE_DESIGN → SlideStage-scale = 1 → pixelgenau der Beamer.
  */
 import { chromium } from 'playwright';
@@ -29,6 +31,11 @@ const BASE = process.env.QQ_BASE ?? 'http://localhost:5173';
 const OUT = '.shots';
 const STAGE = { width: 1760, height: 990 };
 const SECS = Number((process.argv.find((a) => a.startsWith('--secs=')) ?? '--secs=240').split('=')[1]);
+// --normal: der gewoehnliche Abend statt der Arena. Die Route stand hier fest
+// auf arena=1&mega=1 — wer die Buehne des Standard-Spiels pruefen wollte,
+// musste das Skript kopieren und aendern. Ohne den Schalter bleibt alles wie
+// vorher (Arena), damit bestehende Laeufe unveraendert weiterlaufen.
+const RUN_QUERY = process.argv.includes('--normal') ? 'run=1' : 'arena=1&mega=1&run=1';
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const health = await fetch('http://localhost:4000/api/health').then((r) => r.json()).catch(() => null);
@@ -65,7 +72,7 @@ await beamer.goto(`${BASE}/beamer`, { waitUntil: 'domcontentloaded' });
 
 const mod = await ctx.newPage();
 mod.on('dialog', async (d) => { console.log(`  [mod DIALOG] ${d.message()}`); await d.dismiss(); });
-await mod.goto(`${BASE}/moderator-test?arena=1&mega=1&run=1`, { waitUntil: 'domcontentloaded' });
+await mod.goto(`${BASE}/moderator-test?${RUN_QUERY}`, { waitUntil: 'domcontentloaded' });
 
 // Jede Station EINMAL knipsen, sobald sie erscheint. Key = Phase (+ Reveal-Beat,
 // weil PLACEMENT zwei sehr verschiedene Bilder hat: Wertung vs. Gesamtstand).

@@ -19,6 +19,7 @@ import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon } from './QQIcon';
+import { StageStepBar } from './CozyQuizBeamerTimer';
 import { CozyGameIcon } from './CozyGameIcon';
 import { JokerIcon } from './JokerIcon';
 import { Fireflies } from './CozyQuizAmbient';
@@ -568,8 +569,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
 
   // 2026-06-28 (Beamer-Review): Stepper-Farben (persistente Bühne). Akzent ist
   // im Skin der Theme-Akzent, sonst Marken-Pink.
-  const aHex = isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)';
-  const aRGB = isThemed() ? 'var(--qq-accent-rgb)' : '236,72,153';
+  // 2026-08-22: aHex/aRGB entfernt — sie faerbten nur die Chips der alten
+  // Navigationsleiste, die durch die StageStepBar ersetzt ist.
 
   // 2026-07-17d (Wolf „schieb das window mit der rule wirklich raus“): echter
   // Fenster-Schub - die Karte wird als Funktion gerendert, damit alte + neue Karte
@@ -953,124 +954,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           ...slides.map((sl, i) => ({ label: sl.title, glyph: String(i + 1) })),
         ];
         const activeStep = isIntro ? 0 : idx + 1;
-        const compact = stepList.length > 5;
         if (stepList.length <= 1) return null;
-        // 2026-07-15 (Rules-Redesign): Fortschritts-Anteil fuer Schiene + Wolf-Marker.
-        const activeFrac = stepList.length > 1 ? activeStep / (stepList.length - 1) : 0;
-        return (
-          <div style={{
-            position: 'relative', zIndex: 6, flexShrink: 0,
-            maxWidth: 1280, width: '96%', marginBottom: 'clamp(20px, 2.6cqh, 32px)',
-            // 2026-07-15 (Wolf 'Wolf liegt ueber der Schrift, Linie macht Text
-            // schwer lesbar'): Pillen OBEN, Schiene + Wolf als eigenes Band
-            // DARUNTER → keine Ueberlappung mehr mit den Pillen-Labels.
-            display: 'flex', flexDirection: 'column', gap: 'clamp(8px, 1.1cqh, 16px)',
-          }}>
-            {/* Pillen-Reihe (space-between → verteilt). */}
-            <div style={{
-              position: 'relative', zIndex: 1,
-              display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-              gap: 'clamp(6px, 0.8cqw, 12px)',
-            }}>
-            {stepList.map((item, i) => {
-              const active = i === activeStep;
-              const done = i < activeStep;
-              const showLabel = active || !compact;
-              return (
-                <div key={i} style={{
-                  display: 'flex', alignItems: 'center',
-                  padding: 'clamp(7px,0.9cqh,12px) clamp(12px,1.3cqw,20px)',
-                  // 2026-08-22 (Wolf: „ich wuerde die pills oben eckiger machen"):
-                  // 999px stand hier fest im Code und hat den Token nie gelesen —
-                  // deshalb war die Leiste nach der Radius-Entscheidung der
-                  // einzige Ort auf der Buehne mit Kapselform.
-                  borderRadius: 'var(--qq-pill-radius)', minWidth: 0,
-                  // Aktive Pille in Creme gefuellt statt in einem 18-%-Farbschleier
-                  // (Wolf: „die pill farbig unterlegen zb mit beige"). Das ist der
-                  // gleiche Umkehr-Trick wie beim richtigen Mu-Cho-Plaettchen:
-                  // wo ein Zustand zaehlt, wird die FLAECHE zum Signal, und die
-                  // Schrift kippt auf dunkel. Traegt auf 8 m deutlich weiter als
-                  // ein leicht eingefaerbter Rahmen.
-                  background: active ? 'var(--qq-text)' : 'rgba(246, 239, 230,0.03)',
-                  border: active ? '1.5px solid var(--qq-text)' : '1.5px solid rgba(246, 239, 230,0.08)',
-                  color: active ? '#1a1420' : undefined,
-                  // 2026-07-09 (Motion-Audit): 'all' → konkrete Properties (kein
-                  // versehentliches Animieren von Layout-Werten).
-                  transition: 'background 0.4s ease, border-color 0.4s ease',
-                }}>
-                  <span style={{
-                    flexShrink: 0, display: 'grid', placeItems: 'center',
-                    width: 'clamp(24px,2.2cqw,34px)', height: 'clamp(24px,2.2cqw,34px)',
-                    // 2026-08-22 (Wolf: „oder ganz anders machen? wie loesen wir
-                    // es zb bei mucho mit den zahlen?"): genau so, wie es die
-                    // Buehne bei den Antwort-Buchstaben schon macht — quadratische
-                    // Kachel, TRANSPARENTE Flaeche, farbige Kontur, Zeichen in
-                    // derselben Farbe. Gefuellt wird erst, wenn ein Zustand es
-                    // verlangt (bei Mu-Cho „richtig", hier „erledigt").
-                    // Damit gilt EIN Muster fuer jeden Zeichen-Marker der Buehne
-                    // statt Kreis hier, Kachel dort.
-                    borderRadius: 'var(--qq-card-radius)',
-                    fontWeight: 900, fontSize: 'clamp(13px,1.2cqw,19px)',
-                    background: done ? 'var(--qq-text)' : 'transparent',
-                    border: active
-                      ? '2px solid #1a1420'
-                      : `2px solid ${done ? 'var(--qq-text)' : 'rgba(246, 239, 230,0.28)'}`,
-                    color: active ? '#1a1420' : done ? '#1a1420' : 'var(--qq-text-muted)',
-                    transition: 'background 0.4s ease, color 0.4s ease',
-                  }}>{item.glyph}</span>
-                  {/* 2026-07-27 (Wolf 'motion in der leiste abgehakt'): Label NICHT
-                      per display-Toggle ein/ausblenden — das aenderte die Pillen-
-                      Breite schlagartig und space-between liess die ganze Reihe
-                      springen. Jetzt kollabiert das Label weich per max-width/opacity/
-                      margin -> Pille waechst/schrumpft fluessig, die Reihe gleitet mit
-                      (animate-Skill: nur weiche Uebergaenge, kein Layout-Snap). */}
-                  <span style={{
-                    fontWeight: 800, fontSize: 'clamp(12px,1.15cqw,18px)',
-                    color: active ? (isThemed() ? 'var(--qq-title)' : 'var(--qq-text)') : done ? '#c9bcd8' : '#a8adba',
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                    // inaktiver Cap 170->320px, damit die vollen Stepper-Labels passen.
-                    maxWidth: showLabel ? (active ? 'clamp(160px, 22cqw, 340px)' : 'clamp(120px, 17cqw, 320px)') : 0,
-                    opacity: showLabel ? 1 : 0,
-                    marginLeft: showLabel ? 'clamp(5px, 0.6cqw, 10px)' : 0,
-                    transition: 'max-width 0.55s var(--qq-ease-out-cubic), opacity 0.4s ease, margin-left 0.55s var(--qq-ease-out-cubic), color 0.4s ease',
-                  }}>{item.label}</span>
-                </div>
-              );
-            })}
-            </div>
-            {/* Fortschritts-Schiene + Wolf-Marker als eigenes Band UNTER den Pillen.
-                Kreuzt keinen Text mehr; der Wolf laeuft auf der Schiene = „du bist hier". */}
-            <div aria-hidden style={{ position: 'relative', height: 'clamp(26px, 2.8cqh, 40px)' }}>
-              <div style={{
-                position: 'absolute', left: '6%', right: '6%', top: '50%', transform: 'translateY(-50%)',
-                height: 3, borderRadius: 2, background: 'rgba(246, 239, 230,0.09)', zIndex: 0,
-              }}>
-                <div style={{
-                  // 2026-07-27 (Wolf-Finding 'motions oben in der leiste holprig'):
-                  // Fortschritt via GPU-transform scaleX statt width-Animation
-                  // (animate-Skill: nur transform/opacity animieren = kein Reflow).
-                  position: 'absolute', top: 0, bottom: 0, left: 0, width: '100%',
-                  transformOrigin: 'left center', transform: `scaleX(${activeFrac.toFixed(3)})`,
-                  borderRadius: 2, background: `linear-gradient(90deg, rgba(${aRGB},0.7), ${aHex})`,
-                  boxShadow: `0 0 12px rgba(${aRGB},0.6)`, transition: 'transform 0.6s cubic-bezier(0.16,1,0.3,1)',
-                  willChange: 'transform',
-                }} />
-              </div>
-              {/* CozyWolf steht auf der Schiene (bottom:50% = Fuesse auf der Linie).
-                  2026-07-27 (Wolf-Finding 'motions oben in der leiste holprig'):
-                  Position via GPU-transform translateX auf einer track-breiten Ebene
-                  (translateX-% = % der Bandbreite, deckt sich mit dem alten left-calc)
-                  statt left-Animation → kein Layout-Reflow, glatter Lauf. Der Bob
-                  bleibt auf dem inneren Wolf (className qqRulesWolf → reduced-motion). */}
-              {/* 2026-08-22 (Wolf: „anpassen, oder wegmachen und die pill
-                  farbig unterlegen"): der Wolf ist weg. Er sass mit 44 px
-                  halb unter der Pille und wurde von deren Kante gekappt — auf
-                  8 m war er ein pinker Fleck, kein Wolf. Die Position zeigt
-                  jetzt die creme-gefuellte Pille selbst an, und die traegt
-                  ueber die ganze Distanz. */}
-            </div>
-          </div>
-        );
+        // 2026-08-22 (Wolf: „die leiste oben gefaellt mir noch nicht"): die
+        // Reihe aus fuenf beschrifteten Chips ist weg, ersetzt durch die
+        // StageStepBar am oberen Buehnenrand. Begruendung steht dort.
+        return <StageStepBar total={stepList.length} current={activeStep} />;
       })()}
 
       {/* Fenster-Schub (Wolf „schieb das window wirklich raus“): outgoing faehrt

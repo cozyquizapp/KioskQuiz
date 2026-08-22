@@ -29,6 +29,54 @@ import { useActiveThemeId, isCozyLook } from '../qqTheme';
  * Die Leiste liegt oben und nicht unten: unten sitzen die Teammarken, und der
  * Blick soll dort nicht mit der Zeit konkurrieren.
  */
+/**
+ * StageStepBar — Schrittleiste am oberen Buehnenrand.
+ *
+ * 2026-08-22 (Wolf: „die leiste oben gefaellt mir noch nicht, hast du ne idee
+ * wie wir das besser machen koennen?").
+ *
+ * Ersetzt in den Regeln die Reihe aus fuenf beschrifteten Chips. Die war eine
+ * NAVIGATIONSLEISTE, und das ist auf einer Projektion das falsche Werkzeug:
+ *   - fuenf Chips von Rand zu Rand sind ein Bedien-Idiom, keine Buehne
+ *   - sie konkurrierte mit der Karte: unten eine riesige Ueberschrift, oben
+ *     fuenf Beschriftungen in aehnlicher Textgroesse — zwei Textzonen
+ *   - und sie war halb redundant. „Get ready" stand oben klein und direkt
+ *     darunter gross als Kartenueberschrift.
+ *
+ * Wofuer die Leiste wirklich da ist: zeigen wie weit wir sind, und beruhigen
+ * dass es kurz ist. Beides braucht POSITION, keine Beschriftungen.
+ *
+ * Geometrie bewusst identisch zur StageTimeBar darunter: ganz oben, volle
+ * Breite, 12 px. Damit hat die Buehne EIN Vokabular fuer „hier laeuft etwas
+ * am oberen Rand" statt zwei. Unterschied ist nur die Teilung: die Zeit
+ * laeuft stufenlos, Schritte sind gezaehlt und werden deshalb segmentiert.
+ */
+export function StageStepBar({ total, current, accent }: {
+  total: number;
+  /** 0-basiert: der Schritt, der gerade laeuft. */
+  current: number;
+  accent?: string;
+}) {
+  if (total <= 1) return null;
+  return (
+    <div aria-hidden style={{
+      position: 'absolute', top: 0, left: 0, right: 0, height: 12,
+      display: 'flex', gap: 3, zIndex: 9,
+    }}>
+      {Array.from({ length: total }, (_, i) => (
+        <div key={i} style={{
+          flex: 1, height: '100%',
+          // Erledigt und aktuell sind gefuellt, der Rest bleibt der Grund der
+          // Leiste. Die Kante zwischen gefuellt und leer IST die Position —
+          // sie braucht keine zusaetzliche Markierung.
+          background: i <= current ? (accent ?? 'var(--qq-text)') : 'var(--qq-hairline)',
+          transition: 'background 0.45s ease',
+        }} />
+      ))}
+    </div>
+  );
+}
+
 export function StageTimeBar({
   endsAt, durationSec, accent,
 }: {

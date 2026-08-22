@@ -8,6 +8,36 @@ gegen ALLE zehn Regeln geprueft wurde — nicht, wenn sie „neu aussieht".
 
 ---
 
+## Regel null, ueber allen anderen
+
+**Ist das fuer die BUEHNE gebaut?**
+
+Wolf 2026-08-22: „das ist wichtig fuer alle Views, ist es optimiert fuer die
+Buehne, wichtige Regel fuer die ganze Implementation."
+
+Das ist mehr als Lesbarkeit. Es heisst: ist diese Ansicht ein PROJIZIERTES
+BILD oder eine Bildschirm-Oberflaeche? Die Buehne hat kein Gegenueber, das
+klickt, scrollt, hovert oder in Ruhe liest. Sie hat einen Raum voller Leute
+mit einem Bier in der Hand, die von der Seite draufschauen.
+
+Woran man ein Bedien-Idiom erkennt, das dort nichts zu suchen hat:
+* Reiter- und Navigationsleisten, Chips von Rand zu Rand
+* zwei konkurrierende Textzonen — der Blick hat nur eine Hauptsache
+* Beschriftungen, die etwas wiederholen, was gross daneben steht
+* alles, was man LESEN muss, um die Position zu verstehen (Position gehoert
+  gezeigt, nicht beschriftet)
+* Zustaende, die nur durch eine feine Randfarbe unterschieden sind
+* Elemente unter etwa 12 px Hoehe oder 26 px Schrift
+
+Der erste Fall, an dem diese Regel angewandt wurde: die Reiterleiste in den
+Regeln. Fuenf beschriftete Chips, die mit der Kartenueberschrift um den Blick
+kaempften und deren aktiver Titel direkt darunter nochmal gross stand.
+Ersetzt durch eine Schrittleiste am oberen Rand — dieselbe Geometrie wie die
+Zeitleiste der Fragen, keine Beschriftungen, Position durch die Kante
+zwischen gefuellt und leer.
+
+---
+
 ## Die zehn Regeln
 
 **1 · Tinte ist warm.** `#F6EFE6`, kein Weiss. Gedaempft

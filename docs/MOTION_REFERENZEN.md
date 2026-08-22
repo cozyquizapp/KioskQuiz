@@ -376,6 +376,71 @@ nie ein leeres Bild.
 
 ---
 
+## Referenz 4: Twitch Turbo
+
+Bilder: `twitchturbo-bogen.webp`, `twitchturbo-grundwechsel.webp`
+
+### Was technisch passiert
+
+**Der Grund wechselt, der Inhalt laeuft weiter.** Ueber rund 0,4 bis 0,5
+Sekunden blendet die Hintergrundflaeche von Violett nach Limette. Es ist ein
+echter Kreuzblende der ganzen Flaeche, in den Zwischenbildern steht ein trueber
+Violett-Gruen-Ton. Der Text scrollt waehrenddessen ununterbrochen weiter und
+nimmt vom Wechsel keine Notiz.
+
+Damit ist es die **vierte eigenstaendige Uebergangsmechanik** der Sammlung und
+die mit Abstand leiseste:
+
+* Superplay: durch den Betrachter **skalieren**
+* NODECK: mit gebogener Kante **wischen**
+* mana: um einen Anker **kreisen**
+* Twitch Turbo: der Grund **blendet um**, waehrend der Inhalt weiterlaeuft
+
+**Schrift ist gross, aber normal geschnitten.** Kein fetter Grotesk, sondern
+Regular bis Medium, schwarz auf hell. Sehr ruhig und sehr gut lesbar.
+
+**Schwebende 3D-Objekte** (Palette, Flasche, Wuerfel) mit weichem Eigenglanz,
+dazu Funkel-Akzente. Sie gehoeren zum Abschnitt und wandern nicht ueber die
+Grenze, anders als Superplays Muenzfeld.
+
+**Farbe markiert den Abschnitt.** Gemessen: `#7E1AF7` Violett, `#C6FF7C`
+Limette, `#C3FFE0` Mint.
+
+### Uebertragbar
+
+* **Die Grundblende als leiseste Stufe.** Reines CSS, eine Farbanimation auf der
+  Flaeche, keine neue Abhaengigkeit. Passt genau auf den Kategoriewechsel, weil
+  jede Kategorie ohnehin eine eigene Farbwelt hat (siehe BUEHNEN_DESIGN.md
+  Abschnitt 6): der Grund blendet von Blau nach Bernstein, waehrend die Frage
+  schon steht.
+* Ruhige Schriftschnitte in grossem Grad, statt alles fett zu setzen.
+
+### Nicht uebernehmen
+
+* **Die hellen Vollflaechen.** Limette und Mint liegen jenseits dessen, was auf
+  2,8 Meter Projektion in einem dunklen Raum vertretbar ist. Das Prinzip
+  uebernehmen, die Helligkeit nicht.
+* Die 3D-Objekte als Deko. Das waere wieder ein zweiter Schauplatz neben der
+  Schrift.
+
+### Was diese Referenz beantwortet, und das ist der eigentliche Gewinn
+
+Bisher lagen drei Uebergaenge nebeneinander, ohne Regel, wann welcher kommt.
+Mit der leisen Stufe entsteht eine **Rangfolge nach Haeufigkeit**:
+
+| Anlass | pro Abend | Uebergang |
+|---|---|---|
+| Frage zu Frage | ~20 mal | Grundblende (leise, B11) |
+| Frage zu Aufloesung | ~20 mal | Bogen-Wisch (mittel, B1) |
+| Rundenwechsel | ~5 mal | Durchskalieren (laut, B3) |
+| Finale | 1 mal | volles Programm |
+
+**Je haeufiger, desto leiser.** Das ist die Antwort auf die
+Zwanzig-Wiederholungen-Randbedingung: nicht ein Uebergang fuer alles, sondern
+eine Lautstaerke-Treppe.
+
+---
+
 ## Bausteinliste, aus der gewaehlt wird
 
 **Das gemeinsame Prinzip aller drei Referenzen, in einem Satz:** etwas bleibt
@@ -397,6 +462,11 @@ Das ist die eigentliche Arbeitsliste fuer die naechsten Sitzungen.
 | B8 | Anker-Prinzip: ein Element ueberlebt jeden Wechsel | mana | mittel | Wolf auf der Buehne |
 | B9 | Schrift auf Kreisbahn, halbe Umdrehung | mana | klein | Kategorie-Kranz, Runden-Intro |
 | B10 | Karten drehen herein statt zu erscheinen | mana | klein | Reveals, Kategorie-Karten |
+| B11 | Grundblende: Flaeche wechselt, Inhalt laeuft weiter | Twitch Turbo | klein | Frage zu Frage |
+
+**Lautstaerke-Treppe (aus Referenz 4):** je haeufiger ein Uebergang laeuft, desto
+leiser gehoert er gesetzt. B11 fuer Frage zu Frage, B1 fuer die Aufloesung, B3
+fuer den Rundenwechsel.
 
 ### Erster Kandidat, wenn nichts dagegen spricht
 

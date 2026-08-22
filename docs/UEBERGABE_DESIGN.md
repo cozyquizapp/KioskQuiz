@@ -6,6 +6,10 @@
 >
 > Tiefer im Detail: `docs/BUEHNEN_DESIGN.md` (Regeln), `docs/MOTION_REFERENZEN.md`
 > (Bewegung und Referenzen). Bilder in `design-assets/buehnen-design/`.
+>
+> **Fuer Gestaltungsarbeit ausserhalb des Repos** (Claude Design, Figma, fremde
+> Sitzung): `docs/DESIGN_BRIEF_CANVAS.md`. Selbsttragend, setzt kein Repo-Wissen
+> voraus.
 
 ---
 

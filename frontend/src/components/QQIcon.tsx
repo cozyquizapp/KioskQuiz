@@ -98,7 +98,37 @@ export type QQIconSlug =
   | 'fx-mucho-alt-light'
   | 'fx-mucho-alt-thought'
   | 'fx-zvz-alt-100'
-  | 'fx-zvz-alt-dice';
+  | 'fx-zvz-alt-dice'
+  // ── CozyQuiz Icon Set, Wolf-Lieferung 2026-08-22 ──────────────────────────
+  // 53 Motive im Stil des CozyQuiz-Avatarsets (weiche 3D-Objekte, warme Farben,
+  // freigestellt, 512²). Ersetzt die geliehene Fluent-Emoji-3D-Reihe und macht
+  // das erste einheitliche Icon-Set der App. Die 29 Slugs, die es schon gab,
+  // laden dieselbe Datei und ziehen den neuen Stil automatisch nach; die 24
+  // hier sind neu dazugekommen.
+  | 'award-thief'          // Meisterklauer (+1)
+  | 'award-heart'          // Mit Herz dabei
+  | 'award-participation'  // Vollzaehlig
+  | 'award-anchor'         // Bestaendig
+  | 'fx-connect'           // Verbindungen / Connections-Finale
+  | 'fx-bluff'             // Bluff
+  | 'fx-duel'              // Duell
+  | 'fx-alliance'          // Buendnis
+  | 'fx-finish'            // Ziel / Rundenende
+  | 'fx-dice'              // Zufall / Auslosung
+  | 'fx-bet'               // Einsatz, Final-Wager
+  | 'fx-lock'              // Antwort abgegeben, nicht mehr aenderbar
+  | 'fx-idea'              // Tipp / Hinweis
+  | 'fx-thought'           // Nachdenkphase
+  | 'fx-hundred'           // volle Punktzahl
+  | 'fx-wave'              // Begruessung in der Lobby
+  | 'fx-mic'               // Moderation
+  | 'fx-clapper'           // Runde startet
+  | 'fx-faction'           // Fraktion (Arena)
+  | 'fx-lead'              // Fuehrung
+  | 'fx-signal'            // Netz-Status
+  | 'fx-back'              // Zurueck
+  | 'fx-sad'               // knapp verfehlt
+  | 'brand-wolf';          // der CozyQuiz-Wolf als Marke, nicht als OS-Emoji
 
 const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'marker-frost':      '❄️',
@@ -171,6 +201,31 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-mucho-alt-thought': '💭',
   'fx-zvz-alt-100':       '💯',
   'fx-zvz-alt-dice':      '🎲',
+  // CozyQuiz Icon Set 2026-08-22
+  'award-thief':          '🦝',
+  'award-heart':          '💛',
+  'award-participation':  '👥',
+  'award-anchor':         '⚓',
+  'fx-connect':           '🧩',
+  'fx-bluff':             '🎭',
+  'fx-duel':              '⚔️',
+  'fx-alliance':          '🤝',
+  'fx-finish':            '🏁',
+  'fx-dice':              '🎲',
+  'fx-bet':               '🪙',
+  'fx-lock':              '🔒',
+  'fx-idea':              '💡',
+  'fx-thought':           '💭',
+  'fx-hundred':           '💯',
+  'fx-wave':              '👋',
+  'fx-mic':               '🎤',
+  'fx-clapper':           '🎬',
+  'fx-faction':           '🛡️',
+  'fx-lead':              '🚀',
+  'fx-signal':            '📶',
+  'fx-back':              '🔙',
+  'fx-sad':               '😢',
+  'brand-wolf':           '🐺',
 };
 
 type Props = {
@@ -245,6 +300,41 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '👥': 'fx-teams',
   '📖': 'fx-book',
   '🚀': 'rocket',
+  // 2026-08-22 (CozyQuiz Icon Set): diese Emoji hatten bisher kein Motiv und
+  // wurden als OS-Glyphe gerendert — also in jedem Betriebssystem anders und
+  // stilfremd zum Rest. Jetzt haben sie eins.
+  '🧩': 'fx-connect',
+  '🎭': 'fx-bluff',
+  '⚔️': 'fx-duel',
+  '⚔': 'fx-duel',
+  '🤝': 'fx-alliance',
+  '🏁': 'fx-finish',
+  '🎲': 'fx-dice',
+  '🪙': 'fx-bet',
+  '🔒': 'fx-lock',
+  '💡': 'fx-idea',
+  '💭': 'fx-thought',
+  '💯': 'fx-hundred',
+  '👋': 'fx-wave',
+  '🎤': 'fx-mic',
+  '🎬': 'fx-clapper',
+  '📶': 'fx-signal',
+  '🔙': 'fx-back',
+  '😢': 'fx-sad',
+  '🐺': 'brand-wolf',
+  '🦝': 'award-thief',
+  '⚓': 'anker',
+  '🛡️': 'fx-faction',
+  '🛡': 'fx-faction',
+  '🏟️': 'fx-arena',
+  '🏟': 'fx-arena',
+  '🗳️': 'sub-umfrage',
+  '🗳': 'sub-umfrage',
+  '🧠': 'sub-schwarm',
+  '🔀': 'sub-order',
+  '🎁': 'cat-bunte-tuete',
+  '🎰': 'cat-zehn-von-zehn',
+  '📸': 'cat-cheese',
 };
 
 export function qqEmojiSlug(emoji: string): QQIconSlug | null {
@@ -283,22 +373,28 @@ export function QQEmojiIcon({ emoji, size = '1em', style, className, title, alt 
 // 2026-06-28: AUS — die fx-cat-*/fx-sub-* liegen im _archive/, und cat-*/sub-*
 // sind jetzt Wolfs neue cozy3d-Look-Icons (icons-v2). cat-*/sub-* laden also
 // direkt ihre eigenen, echten PNGs.
-const USE_FLUENT_FOR_CUSTOM = false;
-const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = USE_FLUENT_FOR_CUSTOM ? {
-  'cat-schaetzchen':   'fx-cat-schaetzchen',
-  'cat-mucho':         'fx-cat-mucho',
-  'cat-bunte-tuete':   'fx-cat-bunte-tuete',
-  'cat-zehn-von-zehn': 'fx-cat-zehn-von-zehn',
-  'cat-cheese':        'fx-cat-cheese',
-  'sub-hotpotato':     'fx-sub-hotpotato',
-  'sub-top5':          'fx-sub-top5',
-  'sub-order':         'fx-sub-order',
-  'sub-map':           'fx-sub-map',
-  'marker-frost':      'fx-marker-frost',
-  'marker-shield':     'fx-marker-shield',
-  'marker-sanduhr':    'fx-marker-sanduhr',
-  'marker-swap':       'fx-marker-swap',
-} : {};
+// 2026-08-22 (CozyQuiz Icon Set): der Alias hat jetzt eine echte Aufgabe. Von
+// den 70 gewachsenen Slugs haben 29 direkt eine neue Datei bekommen (gleicher
+// Name, neues Motiv — die ziehen ohne Zutun nach). Die hier unten heissen
+// historisch anders als ihr neues Motiv; statt 40 Aufrufstellen umzubenennen,
+// zeigen sie auf die neue Datei. Ein Slug bleibt also gueltig, das Bild ist neu.
+const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
+  // Historischer Name → neues Motiv aus dem Set
+  'stamp-speedy':      'award-speedy',      // Final-Reveal-Stempel = derselbe Blitz
+  'bieten':            'fx-bet',            // Auktionshammer → Einsatz-Motiv
+  'connect':           'fx-connect',
+  'fx-lightning':      'award-speedy',      // generisches ⚡ = Schnelligkeit
+  'fx-place':          'action-place',
+  'fx-stack':          'action-stack',
+  'fx-potato':         'sub-hotpotato',
+  'fx-target':         'cat-schaetzchen',   // Zielscheibe = Schaetzchen
+  'fx-fire':           'award-underdog',    // 🔥 stand fuer die Aufholjagd
+  'fx-map':            'fx-globe',          // 🗺️ und 🌍 fallen im Set zusammen
+  'fx-shield-faction': 'fx-faction',
+  'rocket':            'fx-lead',           // Rakete = Fuehrungs-Callout
+  'anker':             'award-anchor',
+  'group':             'award-participation', // Rudel-Wolf = Award "Vollzaehlig"
+};
 
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {
   const [failed, setFailed] = useState(false);

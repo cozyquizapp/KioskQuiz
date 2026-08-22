@@ -802,12 +802,24 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         // 2. Zeile. 165 + leicht aggressiveres TeamNameLabel.shrinkAfter (s.u.)
         // verhindert das ohne dass andere Cards merklich groesser werden.
         const cardWidth = multiRow
-          ? 'clamp(165px, 13cqw, 220px)'
-          : many ? 'clamp(160px, 15cqw, 240px)' : 'clamp(190px, 18cqw, 280px)';
+          ? 'clamp(175px, 14cqw, 240px)'
+          : many ? 'clamp(172px, 15.4cqw, 248px)' : 'clamp(206px, 17cqw, 300px)';
+        // 2026-08-22, KORREKTUR am eigenen Vorschlag: erst hatte ich 340 px
+        // gesetzt, und damit lief die Reihe links aus dem Bild — auf der Buehne
+        // wird nichts abgeschnitten (CLAUDE.md). Nachgerechnet statt geschaetzt:
+        // 1760 px minus zweimal Sicherheitsrand (40) = 1680 nutzbar, minus vier
+        // Luecken von bis zu 36 px = 1536 fuer fuenf Karten = 307 px. 300 als
+        // Obergrenze laesst Luft, auch wenn die Luecke ihr Maximum erreicht.
         // Quirks: die eckige Kachel füllt die Karte (Wolf „so groß wie das Feld
         // dahinter") → deutlich größer als die runde Disc der anderen Sets.
+        // 2026-08-22 (Wolf: „ist das spacing der seite gut?"): nein, war es
+        // nicht. Gemessen am Screenshot lag der Inhalt zwischen y=180 und
+        // y=700 einer 990-px-Buehne — 290 px tote Flaeche unten, fast ein
+        // Drittel. Bei fuenf Teams ist auf 1760 px Breite reichlich Platz;
+        // die Kachel war einfach zu klein fuer die Wand. Deshalb hoch,
+        // 262 -> 320 px bei bis zu fuenf Teams, entsprechend bei mehr.
         const avatarSize = quirkSet
-          ? (multiRow ? 'clamp(120px, 11.8cqw, 188px)' : many ? 'clamp(140px, 13.6cqw, 222px)' : 'clamp(168px, 16.6cqw, 262px)')
+          ? (multiRow ? 'clamp(130px, 12.8cqw, 205px)' : many ? 'clamp(152px, 14.2cqw, 232px)' : 'clamp(186px, 15.6cqw, 276px)')
           : (multiRow
             ? 'clamp(82px, 8cqw, 130px)'
             : many ? 'clamp(96px, 9.5cqw, 160px)' : 'clamp(118px, 12cqw, 196px)');
@@ -815,10 +827,18 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         // rendert `calc(clamp(...) * 0.78)` teilweise auf 0 — nested clamp-in-calc
         // mit Multiplikation ist fragil. Daher Emoji-Size als eigene Clamp
         // (~78% des Avatar-Clamps) statt calc-Multiplikation.
+        // zieht mit der Kachel mit (~78 % davon, siehe Kommentar oben)
         const emojiFontSize = multiRow
-          ? 'clamp(64px, 6.2cqw, 101px)'
-          : many ? 'clamp(75px, 7.4cqw, 125px)' : 'clamp(92px, 9.4cqw, 153px)';
-        const nameFont = multiRow ? 'clamp(16px, 1.7cqw, 24px)' : 'clamp(18px, 1.9cqw, 28px)';
+          ? 'clamp(70px, 6.8cqw, 110px)'
+          : many ? 'clamp(82px, 7.7cqw, 130px)' : 'clamp(102px, 8.8cqw, 158px)';
+        // 2026-08-22 (Wolf: „vlt koennte man so lange team namen 2 oder 3
+        // zeilig?"): ja, und das ist die bessere Loesung. Bisher wurde jeder
+        // lange Name auf EINE Zeile gequetscht — „Drei Halbe Ne Ganze" landete
+        // dadurch bei Briefmarkengroesse und war auf 8 m unlesbar. Ein Name in
+        // zwei Zeilen bei voller Groesse liest sich deutlich besser als einer
+        // in einer Zeile bei halber.
+        // Deshalb hier groesser, und in TeamNameLabel drei Zeilen statt zwei.
+        const nameFont = multiRow ? 'clamp(18px, 2cqw, 28px)' : 'clamp(24px, 2.6cqw, 40px)';
         // Größen-agnostischer Avatar-Inhalt (Flag-IMG / cozy3d-IMG / Emoji-Text /
         // cozyCast-PNG). Wiederverwendet von Karten-Disc UND Spotlight-Disc —
         // %/em/inherit-basiert, skaliert also mit der jeweiligen Disc-Größe.
@@ -988,8 +1008,16 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           }}>
                             <TeamNameLabel
                               name={t.name}
-                              maxLines={2}
-                              shrinkAfter={11}
+                              maxLines={3}
+                              // shrinkAfter von 11 auf 16 entschaerft. Die 11
+                              // waren der Notbehelf gegen den Umbruch mitten im
+                              // Wort („Pubquatsc|her", siehe Kommentar bei
+                              // cardWidth). Seit TeamNameLabel nach dem
+                              // LAENGSTEN WORT skaliert statt nach der
+                              // Gesamtlaenge, ist die Ursache weg — und mit ihr
+                              // der Grund, jeden mittellangen Namen praeventiv
+                              // zu schrumpfen.
+                              shrinkAfter={16}
                               // 2026-06-28 (Beamer-Review P0): Team-Namen weiß für
                               // bessere Distanz-Lesbarkeit. Dark-Halo-Shadow bleibt.
                               color={themed ? 'var(--qq-card-text)' : '#F6EFE6'}

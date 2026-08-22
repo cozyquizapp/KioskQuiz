@@ -1456,12 +1456,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     return (
                       <div key={tm.id} style={{
                         position: 'relative',
-                        padding: 5, borderRadius: quirkSet ? '20%' : '50%',
+                        // 2026-08-22 (Wolf: „gruener kreis muss auf kachelrahmen
+                        // angepasst werden"): der Rahmen war ein Kreis um eine
+                        // eckige Kachel. Er folgt jetzt derselben Variable wie die
+                        // Marke, plus dem eigenen Polster, damit die Ecken
+                        // konzentrisch laufen statt sich zu schneiden.
+                        // Die `!quirkSet`-Bedingung faellt weg: sie stammt aus der
+                        // Zeit, als nur Quirks eckig war. Seit dem CozyQuiz-Set
+                        // sind ALLE Marken Kacheln, also gilt der Rahmen fuer alle.
+                        padding: 5,
+                        borderRadius: 'calc(var(--qq-team-mark-radius, 50%) + 5px)',
                         display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0,
-                        background: (answered && !quirkSet) ? 'rgba(34,197,94,0.18)' : 'transparent',
-                        border: (answered && !quirkSet) ? '3px solid #22C55E' : '3px solid transparent',
-                        boxShadow: (answered && !quirkSet) ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
+                        background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
+                        border: answered ? '3px solid #22C55E' : '3px solid transparent',
+                        boxShadow: answered ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
                         opacity: answered ? 1 : 0.55,
                         filter: answered ? 'none' : 'grayscale(0.4)',
                         transition: 'all 0.45s ease',
@@ -1674,9 +1683,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const muchoArenaExpanded = q.category === 'MUCHO' && !!(s as any).largeGroupMode
               && revealed && ((s as any).muchoRevealStep ?? 0) >= 1;
             const compactCard = hpCompact || muchoArenaExpanded;
+            // 2026-08-22 (Wolf: „ja mach text links"): waagerechtes Polster auf
+            // 0, damit die Frage an derselben Kante beginnt wie die Kategorie-
+            // Pille darueber. Mit dem alten Polster von bis zu 120 px haette sie
+            // linksbuendig gestanden, aber 120 px eingerueckt — also weder
+            // mittig noch an einer Kante. Skins behalten ihr Polster, dort ist
+            // die Karte Teil der Skin-Sprache.
+            const cardSideP = isThemed() ? 'clamp(60px, 8cqw, 120px)' : '0px';
             const cardPadding = compactCard
-              ? 'clamp(10px, 1.4cqh, 18px) clamp(60px, 8cqw, 120px) clamp(10px, 1.4cqh, 18px)'
-              : 'clamp(18px, 2.6cqh, 32px) clamp(60px, 8cqw, 120px) clamp(18px, 2.6cqh, 32px)';
+              ? `clamp(10px, 1.4cqh, 18px) ${cardSideP} clamp(10px, 1.4cqh, 18px)`
+              : `clamp(18px, 2.6cqh, 32px) ${cardSideP} clamp(18px, 2.6cqh, 32px)`;
             const cardMarginBottom = compactCard ? 'clamp(8px, 1.2cqh, 16px)' : 'clamp(16px, 2.2cqh, 32px)';
             // v3 round 11 (User-Wunsch 'textgroesse muss nicht zwangsweise
             // kleiner werden'): Font-Size bleibt voll, nur Padding/Margin
@@ -1719,7 +1735,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   padding: cardPadding,
                   marginBottom: cardMarginBottom,
                   width: '100%',
-                  textAlign: 'center',
+                  // 2026-08-22 (Wolf-Entscheidung nach Vorher-Nachher): Frage
+                  // linksbuendig. Der Blick faengt beim Lesen links an, und bei
+                  // drei Zeilen mittig beginnt jede Zeile woanders. Skins
+                  // bleiben mittig.
+                  textAlign: isThemed() ? 'center' : 'left',
                   animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
                   // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                   // entspannt, damit hpCompact-Snap weniger hektisch wirkt.
@@ -3338,7 +3358,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             transition: 'opacity 0.4s ease, filter 0.4s ease',
                           }}>
                             <div style={{
-                              borderRadius: '50%',
+                              borderRadius: 'var(--qq-team-mark-radius, 50%)',
                               boxShadow: done ? '0 0 0 3px #22C55E' : some ? '0 0 0 3px rgba(34,197,94,0.45)' : 'none',
                               transition: 'box-shadow 0.45s ease', display: 'inline-flex',
                             }}>
@@ -3382,8 +3402,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           filter: answered ? 'none' : 'grayscale(0.5)',
                         }}>
                           <div style={{
-                            borderRadius: quirkSet ? '20%' : '50%',
-                            boxShadow: (answered && !quirkSet) ? '0 0 0 3px #22C55E' : 'none',
+                            borderRadius: 'var(--qq-team-mark-radius, 50%)',
+                            boxShadow: answered ? '0 0 0 3px #22C55E' : 'none',
                             transition: 'box-shadow 0.45s ease',
                             display: 'inline-flex',
                           }}>

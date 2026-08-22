@@ -240,16 +240,19 @@
   /* Aenderung 6 „Teams als Kacheln": QQTeamAvatar liest diese Variable statt
      eines festen '50%'. Nur auf der Buehne eckig — auf dem Handy bleibt die
      Marke rund, dort ist sie Avatar und nicht Spielfigur. */
-  --qq-team-mark-radius: 5px;
-  /* 2026-08-22 (Wolf-Entscheidung, offen): die Quirk-Kachel hat einen eigenen
-     Radius von 18 % — und das ist kein Zufallswert, sondern das Gegenstueck zum
-     Brettfeld, das bei Cozy auf `cellSize * 0.16` steht. Marke und Feld haben
-     absichtlich dieselbe Form, weil die Marke auf dem Brett gesetzt wird.
-     Sie hier auf 5px zu ziehen haette genau diese Paarung zerschlagen, also
-     bleibt sie vorerst bei 18 %.
-     Die Entscheidung haengt am Brett: wird das Feld flach (5px), zieht die
-     Kachel mit; bleibt es weich (16 %), bleibt sie wie sie ist. Ein Wert. */
-  --qq-quirk-mark-radius: 18%;
+  /* 2026-08-22 (Wolf: „brett wuerde ich so lassen und die kacheln genau so
+     auch in die questions etc uebernehmen"): 16 % statt fester 5 px, weil das
+     Brettfeld `cellSize * 0.16` faehrt. Ein fester Pixelwert waere auf einer
+     130-px-Brettzelle fast eckig und auf einer 40-px-Marke fast rund gewesen —
+     dieselbe Kachel haette je nach Ort anders ausgesehen. Prozent haelt die
+     Form ueber alle Groessen gleich. Damit ist auch die seit der ersten Folie
+     offene Radius-Frage entschieden: das Brett gibt die Form vor. */
+  --qq-team-mark-radius: 16%;
+  /* 2026-08-22 ENTSCHIEDEN (Wolf: Brett bleibt wie es ist): Quirk-Kachel und
+     Teammarke fahren jetzt denselben Wert wie das Brettfeld. Vorher standen
+     hier 18 % gegen 16 % am Feld — ein Unterschied, den niemand sehen kann,
+     der aber bedeutete, dass es drei Radien fuer dieselbe Form gab. Einer. */
+  --qq-quirk-mark-radius: 16%;
   /* Dritte Stufe der Flaechenleiter (Referenz-Abgleich 2026-08-22). Die Buehne
      hatte nur zwei: Grund und 34-%-Plaettchen. Dadurch blieb der richtigen
      Antwort beim Reveal nur Gluehen als Ausdrucksmittel — die letzte Stelle im

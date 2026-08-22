@@ -11,8 +11,7 @@ import {
   QQBuzzInPayload, QQSetTimerPayload, QQSetAvatarsPayload,
   QQSetMutedPayload, QQSetMusicMutedPayload, QQSetSfxMutedPayload, QQSetVolumePayload, QQUpdateSoundConfigPayload, QQSetEnable3DPayload,
   QQSubmitAnswerPayload, QQAck,
-  QQFreezeCellPayload, QQStapelCellPayload, QQSwapOneCellPayload,
-  QQShieldClusterPayload, QQShieldCellPayload, QQSandLockCellPayload,
+  QQStapelCellPayload,
   QQStartRulesPayload, QQRulesNextPayload, QQRulesPrevPayload, QQRulesFinishPayload,
   QQStartFinalBettingPayload, QQSubmitFinalBetPayload, QQFinishFinalBettingPayload, QQResolveFinalBetsPayload,
   QQSetFinalWagerEnabledPayload,
@@ -127,9 +126,11 @@ const QQ_PUBLIC_EVENTS = new Set<string>([
   // Team-Eingaben (Antwort / Buzzer / Reaktion)
   'qq:submitAnswer', 'qq:revokeAnswer', 'qq:buzzIn', 'qq:reaction',
   // Team-Grid-Aktionen (CozyQuizTeamActionCards)
-  'qq:placeCell', 'qq:stealCell', 'qq:chooseFreeAction',
-  'qq:sandLockCell', 'qq:shieldCell', 'qq:shieldCluster', 'qq:stapelCell',
-  'qq:swapCells', 'qq:swapOneCell', 'qq:freezeCell', 'qq:finalRevealPlaceStack',
+  'qq:placeCell', 'qq:stealCell', 'qq:chooseFreeAction', 'qq:stapelCell',
+  // qq:swapCells nur noch fuer die Comeback-Aktion SWAP_2 (schlaeft, s.
+  // QQ_COMEBACK_ENABLED). qq:sandLockCell/shieldCell/shieldCluster/
+  // swapOneCell/freezeCell sind 2026-08-22 ausgebaut.
+  'qq:swapCells', 'qq:finalRevealPlaceStack',
   // Minispiele (Team spielt aktiv mit)
   'qq:hotPotatoAnswer', 'qq:imposterChoose',
   'qq:comebackChoice', 'qq:comebackHLAnswer', 'qq:comebackUndo',

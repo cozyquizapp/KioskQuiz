@@ -83,6 +83,23 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   bekommt; das ist schon mehrfach passiert. Single Source of Truth sind
   `QQ_BUNTE_TUETE_ACTIVE` / `_ARENA_ONLY` / `_DEACTIVATED` in
   `shared/quarterQuizTypes.ts`.
+* **Ein Team am Zug hat drei Aktionen, nicht sieben.** Aktiv sind nur
+  Setzen, Klauen, Stapeln. Frost, Sanduhr/Bann, Schild und Tausch wurden
+  frueh gestrichen, liefen aber jahrelang unerreichbar im Backend weiter und
+  haben deshalb mehrfach zu falschen Annahmen gefuehrt; ihr Code ist seit
+  2026-08-22 raus. Register: `QQ_BOARD_ACTIONS_ACTIVE` / `_RETIRED` in
+  `shared/quarterQuizTypes.ts`. Merksatz fuer alle Mechaniken: es zaehlt, ob
+  etwas **angeboten** wird, nicht ob es implementiert ist.
+* **Die Comeback-Runde schlaeft, sie ist nicht tot.** 2026-07-07 deaktiviert
+  (buggy und mechanisch redundant zur Final-Wager-Phase, die dieselbe Aufgabe
+  uebernimmt). Der komplette Code liegt weiter da und ist ueber
+  `QQ_COMEBACK_ENABLED` reaktivierbar — nicht aufraeumen, aber auch keine
+  neuen Ansichten dafuer bauen, ohne vorher zu fragen.
+* **Feature-Status hat drei Zustaende: aktiv, schlafend, ausgebaut.** Die
+  Register stehen in `shared/quarterQuizTypes.ts` (Bunte Tuete, Brett-
+  Aktionen, Comeback). Nicht damit verwechseln: `connectionsEnabled`,
+  `cozyGamesEnabled`, `finalWagerEnabled`, `avatarsEnabled` sind pro Raum im
+  Wizard schaltbar — lebende Features, kein toter Code.
 * **Draft-Daten haben zwei Ebenen** (Datei-Startup + Mongo im
   `/api/qq/drafts`-Endpoint). Live liest Mongo. Gate ist
   `npm --prefix backend run check:en:live`.

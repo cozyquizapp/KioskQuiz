@@ -61,7 +61,9 @@ const t = {
   },
 };
 
-type FreeAction = 'PLACE' | 'STEAL' | 'SHIELD' | 'SWAP' | 'STAPEL' | 'SANDUHR';
+// 2026-08-22: SHIELD, SWAP und SANDUHR entfernt — siehe QQ_BOARD_ACTIONS_RETIRED
+// in shared/quarterQuizTypes.ts. Das FREE-Menue bot nur noch diese drei an.
+type FreeAction = 'PLACE' | 'STEAL' | 'STAPEL';
 
 /**
  * MegaScoringCard — Mega-Event-Ersatz für die grid-basierte PlacementCard.
@@ -121,7 +123,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   const [tappedCell, setTappedCell] = useState<string | null>(null);
   // Pending-Pick: erst Tap → Highlight + Bestaetigen-Button. Verhindert Misstaps
   // auf grossem Grid (8x8). Greift fuer alle Single-Cell-Aktionen.
-  type PendingKind = 'place' | 'steal' | 'ban' | 'shield' | 'stapel';
+  type PendingKind = 'place' | 'steal' | 'stapel';
   const [pendingPick, setPendingPick] = useState<{ r: number; c: number; kind: PendingKind } | null>(null);
   // 2026-05-07 (Wolf-Live-Test): Nach Place-Confirm springt /team sofort
   // auf "Team X waehlt"-Wartesicht — Spieler sieht das eigene Feld nicht
@@ -247,8 +249,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   useEffect(() => {
     const prev = prevPendingActionRef.current;
     prevPendingActionRef.current = pa;
-    const wasConcreteMode = prev === 'STAPEL_1' || prev === 'STEAL_1'
-      || prev === 'PLACE_1' || prev === 'SANDUHR_1' || prev === 'SHIELD_1' || prev === 'SWAP_1';
+    const wasConcreteMode = prev === 'STAPEL_1' || prev === 'STEAL_1' || prev === 'PLACE_1';
     if (wasConcreteMode && pa === 'FREE') {
       setFreeMode(null);
       setSelecting(false);
@@ -275,8 +276,6 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   async function chooseFreeAction(action: FreeAction) {
     setFreeMode(action);
     await safeEmit(emit, 'qq:chooseFreeAction', { roomCode, teamId: myTeamId, action });
-    // SHIELD: frueher Auto-Apply auf groesstes Cluster, jetzt 1-Feld-Pick
-    // (analog SANDUHR/STAPEL) — also einfach Grid oeffnen.
     setSelecting(true);
   }
 
@@ -343,15 +342,9 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   async function confirmPendingPick() {
     if (!pendingPick) return;
     const { r, c, kind } = pendingPick;
-    if (kind === 'ban') {
-      await safeEmit(emit, 'qq:sandLockCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([60, 30, 60, 30, 60]);
-    } else if (kind === 'stapel') {
+    if (kind === 'stapel') {
       await safeEmit(emit, 'qq:stapelCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([40, 20, 40]);
-    } else if (kind === 'shield') {
-      await safeEmit(emit, 'qq:shieldCell', { roomCode, teamId: myTeamId, row: r, col: c });
-      if (navigator.vibrate) navigator.vibrate([30, 20, 30, 20, 60]);
     } else if (kind === 'steal') {
       await safeEmit(emit, 'qq:stealCell', { roomCode, teamId: myTeamId, row: r, col: c });
       if (navigator.vibrate) navigator.vibrate([60, 30, 60]);
@@ -844,8 +837,6 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               <div style={{ marginBottom: 4 }}>
                 {pendingPick.kind === 'place'  ? (lang === 'de' ? '👉 Hier setzen?' : '👉 Place here?')
                 : pendingPick.kind === 'steal' ? (lang === 'de' ? '👉 Dieses Feld klauen?' : '👉 Steal this cell?')
-                : pendingPick.kind === 'ban'   ? (lang === 'de' ? '👉 Dieses Feld bannen?' : '👉 Ban this cell?')
-                : pendingPick.kind === 'shield'? (lang === 'de' ? '👉 Dieses Feld schützen?' : '👉 Shield this cell?')
                 :                                (lang === 'de' ? '👉 Dieses Feld stapeln?' : '👉 Stack this cell?')}
               </div>
               <div style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate400 }}>

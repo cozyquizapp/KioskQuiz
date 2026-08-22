@@ -151,14 +151,86 @@ export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_GAME   = 2;
 export const QQ_MAX_STAPELS_PER_GAME  = 3;  // Stapel-Cap pro Team pro Spiel (verhindert Snowball-Effekt)
-// 2026-07-07 (Wolf-Livetest): Comeback-Runde (Higher/Lower) global deaktiviert.
-// Sie war buggy und ist mechanisch redundant zur Final-Wager/Bet-Phase. Code
-// bleibt komplett erhalten — nur ge-gated. Zum Reaktivieren: auf true setzen
-// (dann kommen Trigger + Moderator/Wizard-Toggles automatisch zurueck).
-export const QQ_COMEBACK_ENABLED      = false;
 export const QQ_MAX_TEAMS             = 8;
 export const QQ_MAX_TEAMS_LARGE       = 40; // Groß-Gruppen-Modus (largeGroupMode): Bar-Race statt Grid. 40 = 5×8 Fraktionen (Live-Event-Notbremse, 2026-07-10)
 export const QQ_MIN_TEAMS             = 2;
+
+// ── Feature-Status: was laeuft, was schlaeft, was ist ausgebaut ──────────────
+/**
+ * ⛔ DREI ZUSTAENDE, UND SIE SEHEN IM CODE FAST GLEICH AUS. ⛔
+ *
+ *   aktiv      wird im normalen Abend ausgespielt.
+ *   schlafend  Code liegt vollstaendig da und funktioniert, wird aber nirgends
+ *              angeboten. Reaktivierbar, die Bedingung steht jeweils dabei.
+ *   ausgebaut  Code ist entfernt. Steht nur noch als Name in einer RETIRED-
+ *              Liste, damit man beim Suchen eine Antwort findet statt nichts.
+ *
+ * Die drei Register:
+ *   Unterspiele der Bunten Tuete → QQ_BUNTE_TUETE_ACTIVE / _ARENA_ONLY /
+ *                                  _DEACTIVATED (oben, ab Zeile ~50)
+ *   Brett-Aktionen               → QQ_BOARD_ACTIONS_ACTIVE / _RETIRED (hier)
+ *   Comeback-Runde               → QQ_COMEBACK_ENABLED (hier)
+ *
+ * ⚠️ NICHT VERWECHSELN mit den Abend-Einstellungen. `connectionsEnabled`,
+ * `cozyGamesEnabled`, `finalWagerEnabled`, `avatarsEnabled`, `largeGroupMode`
+ * u. a. sind pro Raum im Draft/Wizard schaltbar — das sind lebendige Features,
+ * die Wolf je nach Abend an- oder abwaehlt, keine toten Zweige. Wer sie
+ * "aufraeumt", nimmt dem Produkt Funktionen weg.
+ *
+ * Grundregel, die dieses Register ueberhaupt noetig gemacht hat: entscheidend
+ * ist, ob eine Mechanik ANGEBOTEN wird, nicht ob sie IMPLEMENTIERT ist. Vom
+ * Server aus sah Frost jahrelang wie ein laufendes Feature aus, obwohl das
+ * Handy den Knopf nie gezeigt hat.
+ */
+
+/**
+ * Die drei Aktionen, die ein Team am Zug tatsaechlich waehlen kann — das ist
+ * genau das, was `chooseFreeAction` im FREE-Menue anbietet.
+ *   PLACE   ein freies Feld besetzen
+ *   STEAL   ein gegnerisches Feld klauen
+ *   STAPEL  ein eigenes Feld stapeln (2 Pkt, danach unklaubar)
+ */
+export const QQ_BOARD_ACTIONS_ACTIVE = ['PLACE', 'STEAL', 'STAPEL'] as const;
+export type QQBoardAction = typeof QQ_BOARD_ACTIONS_ACTIVE[number];
+
+/**
+ * Ausgebaut — Code am 2026-08-22 entfernt (Frost, Sanduhr/Bann, Schild,
+ * Tausch). Gestrichen wurden die vier deutlich frueher: das FREE-Menue bot sie
+ * schon lange nicht mehr an, die Server-Logik lief aber unerreichbar weiter.
+ * Genau diese Luecke hat mehrfach zu falschen Annahmen gefuehrt ("Frost gibt
+ * es doch, steht doch im Backend"). Deshalb jetzt raus statt nur ge-gated.
+ *
+ * Diese Liste ist absichtlich nur eine Namensliste: sie existiert, damit eine
+ * Suche nach FREEZE/SHIELD/SWAP hier landet und eine Antwort bekommt.
+ * Einzige Ausnahme im lebenden Code: `qq:swapCells` gibt es weiterhin, aber
+ * ausschliesslich fuer die Comeback-Aktion SWAP_2 — und die schlaeft (s. u.).
+ */
+export const QQ_BOARD_ACTIONS_RETIRED = ['FREEZE', 'SANDUHR', 'SHIELD', 'SWAP'] as const;
+
+/** Kann ein Team diese Aktion am Zug tatsaechlich waehlen? */
+export function qqBoardActionIsActive(action: string | undefined | null): action is QQBoardAction {
+  return !!action && (QQ_BOARD_ACTIONS_ACTIVE as readonly string[]).includes(action);
+}
+
+/**
+ * Comeback-Runde (Higher/Lower fuer das letztplatzierte Team vor der
+ * Final-Phase) — SCHLAFEND, nicht ausgebaut.
+ *
+ * 2026-07-07 (Wolf-Livetest) global deaktiviert: sie war buggy und ist
+ * mechanisch redundant zur Final-Wager/Bet-Phase, die dieselbe Aufgabe
+ * uebernimmt (Rueckstand vor dem Ende noch aufholbar machen) und stabil
+ * laeuft. Die Wager-Phase hat sie also faktisch abgeloest.
+ *
+ * Code bleibt komplett erhalten — Phase `COMEBACK_CHOICE`, `QQComebackAction`,
+ * `comebackStealTargets`, die SWAP_2-Zweige in CozyQuizTeamActionCards und der
+ * Handler `qq:swapCells` haengen alle daran. Zum Reaktivieren: hier auf true
+ * setzen, dann kommen Trigger + Moderator/Wizard-Toggles automatisch zurueck.
+ *
+ * Wer Comeback-Code fuer tot haelt und aufraeumt, macht die Reaktivierung
+ * kaputt. Wer eine neue Ansicht dafuer baut, baut etwas, das niemand sieht.
+ * Vorher fragen.
+ */
+export const QQ_COMEBACK_ENABLED      = false;
 
 export function qqGridSize(teamCount: number): number {
   if (teamCount <= 2) return 4;   // 4×4 = 16
@@ -1611,15 +1683,9 @@ export interface QQStealCellPayload      { roomCode: string; teamId: string; row
  *  Mechaniken unerreichbar. */
 export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'STAPEL'; }
 export interface QQComebackChoicePayload { roomCode: string; teamId: string; action: QQComebackAction; }
+/** Nur noch fuer die Comeback-Aktion SWAP_2 in Gebrauch — und die schlaeft,
+ *  siehe QQ_COMEBACK_ENABLED. Die Brett-Aktion "Tausch" ist ausgebaut. */
 export interface QQSwapCellsPayload      { roomCode: string; teamId: string; rowA: number; colA: number; rowB: number; colB: number; }
-export interface QQSwapOneCellPayload    { roomCode: string; teamId: string; row: number; col: number; }  // Phase 4: pick own then enemy (2 calls)
-export interface QQFreezeCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
-export interface QQSandLockCellPayload   { roomCode: string; teamId: string; row: number; col: number; }
-/** Schild: schützt 1 eigenes Feld (Spieler wählt Target). Max 2 pro Team pro Spiel.
- *  Frühere Variante "shield largest cluster" ist abgelöst — daher row/col Pflicht.
- *  Alter Name `QQShieldClusterPayload` als Alias für Backward-Compat behalten. */
-export interface QQShieldCellPayload     { roomCode: string; teamId: string; row: number; col: number; }
-export type QQShieldClusterPayload = QQShieldCellPayload;
 export interface QQStapelCellPayload     { roomCode: string; teamId: string; row: number; col: number; }  // center of plus (Stapeln)
 export interface QQStartRulesPayload     { roomCode: string; }
 export interface QQRulesNextPayload      { roomCode: string; }

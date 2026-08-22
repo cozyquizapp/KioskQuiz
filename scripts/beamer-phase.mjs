@@ -114,55 +114,35 @@ while ((Date.now() - t0) / 1000 < SECS) {
 await sleep(8000);
 
 /**
- * Bis zu einer Phase warten. `qq:showThanks` verlangt GAME_OVER und
- * `qq:connectionsSkipToGameOver` verlangt die Connections-Phase — es gibt also
- * keine Abkuerzung dorthin. Es braucht auch keine: `/moderator-test?run=1`
- * schaltet Autoplay ein, und das faehrt den Abend von selbst bis zur
- * Siegerehrung durch (Halt nur bei LOBBY, PAUSED und THANKS).
+ * 2026-08-22, zweiter Anlauf. Der erste Entwurf steuerte EINE Phase an und
+ * wartete darauf. Das war falsch herum gedacht: ein Durchlauf kommt sowieso
+ * an allen Folien vorbei, und gezielt anzusteuern kostet pro Folie einen
+ * eigenen Lauf von mehreren Minuten. Jetzt wird EINMAL durchgespielt und
+ * dabei jede Phase geknipst, die noch nicht im Kasten ist — Ernte statt Jagd.
  *
- * Der erste Versuch hier war, mit `qq:nextQuestion` im Sekundentakt
- * nachzuhelfen. Das hat den Ablauf GESTOERT statt beschleunigt — Autoplay hat
- * eigene Taktzeiten pro Phase, und ein Fremd-Ereignis mittendrin laesst ihn im
- * Runden-Intro haengen. Also: zuschauen, und nur schubsen, wenn sich wirklich
- * nichts mehr bewegt.
+ * Der Pause-Bildschirm ist der Sonderfall: den erreicht kein Durchlauf von
+ * selbst, er wird am Ende gezielt ausgeloest.
  */
-async function waitFor(target, maxMs = 600000) {
-  const t = Date.now();
-  let last = await phaseNow(), lastChange = Date.now();
-  while (Date.now() - t < maxMs) {
-    const now = await phaseNow();
-    if (now === target) return true;
-    if (now !== last) { last = now; lastChange = Date.now(); }
-    else if (Date.now() - lastChange > 12000) {
-      // Zwoelf Sekunden dieselbe Phase: Autoplay haengt, einmal anstossen.
-      sock.emit('qq:nextQuestion', { roomCode });
-      lastChange = Date.now();
-    }
-    await sleep(1200);
+const seen = new Set();
+const t1 = Date.now();
+const RUN_MS = Number(process.env.QQ_RUN_MS || 480000);
+console.log(`\nErnte ${Math.round(RUN_MS / 1000)}s lang jede neue Phase …`);
+while (Date.now() - t1 < RUN_MS) {
+  const p = await phaseNow();
+  if (p && !seen.has(p)) {
+    seen.add(p);
+    await shoot(`E${String(seen.size).padStart(2, '0')}-${p}`);
   }
-  return (await phaseNow()) === target;
+  await sleep(800);
 }
 
-for (const want of PHASES) {
-  if (want === 'pause') {
-    sock.emit('qq:pause', { roomCode });
-    await shoot('P1-PAUSED');
-    sock.emit('qq:resume', { roomCode });
-    await sleep(1500);
-  }
-  if (want === 'gameover' || want === 'thanks') {
-    if (!(await waitFor('GAME_OVER'))) {
-      console.log('  ! GAME_OVER nicht erreicht — Phase bleibt', await phaseNow());
-      continue;
-    }
-    if (want === 'gameover') await shoot('P2-GAME_OVER');
-    if (want === 'thanks') {
-      sock.emit('qq:showThanks', { roomCode });
-      await shoot('P3-THANKS');
-    }
-  }
+// Pause zuletzt: sie haelt das Spiel an, danach waere nichts mehr zu ernten.
+if (PHASES.includes('pause')) {
+  sock.emit('qq:pause', { roomCode });
+  await shoot('E99-PAUSED');
 }
 
 sock.close();
 await browser.close();
-console.log(`\nfertig → ${OUT}/`);
+console.log(`\nfertig, ${seen.size} Phasen → ${OUT}/`);
+console.log(`  ${[...seen].join(', ')}`);

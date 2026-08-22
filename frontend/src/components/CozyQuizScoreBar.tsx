@@ -381,8 +381,21 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             <span style={{
               // 2026-06-24 (Skin): Leader-Wert in Akzent (pop), Rest in Primaertext.
               // War brandPink/slate100 → auf hellen Skins washed bzw. unsichtbar.
-              fontSize: valFs, color: isLeader ? (isThemed() ? 'var(--qq-accent)' : QQ_COLORS.brandPink) : (isThemed() ? 'var(--qq-text)' : QQ_COLORS.slate100), fontWeight: 900,
-              textShadow: isLeader ? (isThemed() ? 'none' : '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.55)') : 'none',
+              // 2026-08-22 (Uebergabe 2a): Cozy faehrt die Rangfolge jetzt ueber
+              // HELLIGKEIT statt ueber einen Farbton. Vorher war der Wert des
+              // Fuehrenden pink mit Glow — auf einer Liste, die komplett von
+              // Teamfarben lebt, war Pink die einzige Farbe ohne Bedeutung, und
+              // die Krone direkt daneben sagte ohnehin schon "fuehrt". Zwei
+              // Signale fuer dieselbe Aussage, eines davon konkurrierte mit der
+              // Teamfarbe. Jetzt: Zahlen alle in Creme, der Fuehrende in voller
+              // Staerke, der Rest gedaempft — dieselbe Flaechenleiter in EINER
+              // Farbfamilie wie beim Rest der Buehne. Skins bleiben unberuehrt.
+              fontSize: valFs,
+              color: isThemed()
+                ? (isLeader ? 'var(--qq-accent)' : 'var(--qq-text)')
+                : (isLeader ? 'var(--qq-text)' : 'var(--qq-text-muted)'),
+              fontWeight: 900,
+              textShadow: 'none',
               fontVariantNumeric: 'tabular-nums',
               lineHeight: 1,
               // Zahlen-Spalte breit genug fuer 2-stellige Werte (10+) — vorher

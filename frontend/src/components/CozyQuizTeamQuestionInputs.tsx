@@ -19,6 +19,7 @@ import { useEffect, useRef, useState } from 'react';
 import { useExpiry } from '../hooks/useExpiry';
 import { StandardInput, SubmitBtn } from './CozyQuizTeamInputs';
 import { qqCapOption } from '../cozyQuizShared';
+import { qqOptionColors } from '../../../shared/qqCategoryTheme';
 
 // ── Text input (Schaetzchen + Picture This fallback) ──────────────────────────
 export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnly, lang = 'de', timerEndsAt }: {
@@ -132,7 +133,19 @@ export function CrowdTopInput({ catColor, onSubmit, lang = 'de', timerEndsAt }: 
 // 2026-07-08 Konsistenz #4: exakt die Beamer-Reihenfolge (MuchoOptionsReveal
 // MUCHO_COLORS = blue/red/pink/green). Vorher blau/gruen/rot/orange — nur A
 // stimmte, Orange existierte am Beamer gar nicht.
-const MUCHO_COLORS = ['#3B82F6','#EF4444','#EC4899','#22C55E'];
+//
+// 2026-08-22 (Uebergabe 2a, Wolf "handy und beamer aneinander anpassen"): der
+// Beamer faehrt seit der 2a-Umstellung alle vier Optionen in der KATEGORIE-
+// farbe, das Buchstaben-Plaettchen traegt die Unterscheidung. Das Handy hing
+// noch an den vier festen Farben und lief damit auseinander.
+//
+// Der eigentliche Grund ist aber nicht Gleichmacherei, sondern Bedeutung:
+// Antwort D war gruen und Antwort B rot — und Gruen heisst im ganzen Spiel
+// "richtig", Rot "falsch". Wer D antippte und danach die Aufloesung sah, las
+// zwei widersprechende Signale. Jetzt tragen alle vier dieselbe Farbe, und
+// Gruen bleibt der Aufloesung vorbehalten.
+const muchoOptionColors = (cat: string | undefined | null, fallback: string) =>
+  qqOptionColors(cat ?? 'MUCHO', fallback);
 // 2026-05-09 (Wolf): A/B/C/D als Negative-Squared-Latin-Emojis statt Plain-Text.
 // 2026-05-09 v2 (Wolf): zurueck auf Plain Text — die OS-Emoji-Versions
 // 🅰🅱🅲🅳 wurden als blaue Squares gerendert, doppeln den existing Box-Look.
@@ -142,6 +155,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
   const [selected, setSelected] = useState<number | null>(null);
   const opts: string[] = q.options ?? [];
   const optsEn: string[] = q.optionsEn ?? [];
+  const optColors = muchoOptionColors(q.category, catColor);
 
   // B7: Auto-Submit on Timer-End wenn etwas ausgewaehlt; Buttons hart sperren.
   const expired = useExpiry(timerEndsAt ?? null);
@@ -158,7 +172,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
       {opts.map((opt: string, i: number) => {
-        const color = MUCHO_COLORS[i] ?? catColor;
+        const color = optColors[i] ?? catColor;
         const isSelected = selected === i;
         const label = qqCapOption(lang === 'en' && optsEn[i] ? optsEn[i] : opt);
         return (

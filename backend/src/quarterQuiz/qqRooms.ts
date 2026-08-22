@@ -516,7 +516,10 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       setupDone: false,
       formatSelected: false,   // 2026-07-02: Format (Cozy/Mega) erst im Wizard-Schritt 0 gewählt
-      avatarSetId: 'cozy3d',   // 2026-06-23: cozy3d-3D-Tiere sind der neue Default-Look
+      // 2026-08-22 (Wolf): CozyQuiz-Objektset zum Buehnen-Design 2a. Vorher
+      // 'cozy3d' (3D-Tiere, seit 2026-06-23). Muss mit DEFAULT_SET_ID in
+      // frontend/src/avatarSets.ts uebereinstimmen.
+      avatarSetId: 'cozyquiz',
       themeId: 'cozy',         // 2026-06-24: Buehnen-Design (Skin), Default = heutiger Look
       // avatarSetEmojis wird nur vom 'all'-Set genutzt (Server-gewuerfelter
       // Emoji-Mix). Bleibt fuer den Fall, dass der Mod auf 'all' wechselt.

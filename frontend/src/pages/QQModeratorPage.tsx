@@ -672,8 +672,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     const arena = last === 'arena';
     emitRef.current('qq:setQuizOptions', { roomCode, largeGroupMode: arena, nestedTeams: arena, formatSelected: true });
     const cur = (st as any).avatarSetId as string | undefined;
-    const nextSet = arena ? 'cozyArena' : 'cozy3d';
-    if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
+    const nextSet = arena ? 'cozyArena' : 'cozyquiz';
+    if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
       emitRef.current('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

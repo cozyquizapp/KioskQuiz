@@ -158,8 +158,8 @@ export function QQSetupFlow(props: Props) {
     try { window.localStorage.setItem('qqLastFormat', ar ? 'arena' : 'quiz'); } catch { /* ignore */ }
     emit('qq:setQuizOptions', { roomCode, largeGroupMode: ar, nestedTeams: ar, formatSelected: true });
     const cur = (s as any).avatarSetId as string | undefined;
-    const nextSet = ar ? 'cozyArena' : 'cozy3d';
-    if ((!cur || ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+    const nextSet = ar ? 'cozyArena' : 'cozyquiz';
+    if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
   };
 
   // ── Look-Vorschau-Bilder (Arena) ──

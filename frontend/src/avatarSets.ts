@@ -11,6 +11,7 @@ import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvat
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
+import { COZYQUIZ_SET_ID, COZYQUIZ_SLUGS, isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel } from './cozyquizAvatars';
 import { QUIRK2_SET_ID, QUIRK2_SLUGS, isQuirk2Slug, quirk2BySlug, quirk2Label, quirk2Src } from './quirks2Avatars';
 import { BLOCKZ_SET_ID, BLOCKZ_SLUGS, isBlockzSlug, blockzBySlug, blockzLabel, blockzSrc } from './blockzAvatars';
 
@@ -152,6 +153,19 @@ export const AVATAR_SETS: AvatarSet[] = [
   },
   // 2026-07-28 (Wolf): Party 3D — 10 neutrale Party-Objekte (Discokugel, Sekt,
   // Cocktail, Torte, Geschenk, Ballons, Konfetti, Würfel, Partyhut, Mikrofon).
+  // 2026-08-22 (Wolf-Lieferung „cozyquizavatarset", zum Buehnen-Design 2a):
+  // 48 Objekte, farbneutral, auf der Slot-Farb-Kachel. Modell = Party 3D, also
+  // FREI kombinierbar (kein slot-binding). Seit diesem Tag der System-Default,
+  // siehe DEFAULT_SET_ID — Begruendung im Kopf von cozyquizAvatars.ts.
+  {
+    id: COZYQUIZ_SET_ID,
+    label: 'CozyQuiz',
+    tint: '#F6EFE6',
+    leadEmoji: '🫖',
+    preview: ['🍄', '🚀', '🔮'],
+    source: 'emoji',
+    avatars: COZYQUIZ_SLUGS,
+  },
   // Modell = cozy3d: neutrales Objekt auf der Slot-Farb-Disc, FREI kombinierbar
   // (kein slot-binding — teamEmoji gewinnt). „avatars"=Party-Slugs (isPartySlug)
   // → image-Zweig rendert das PNG auf der Farb-Disc. Erwachsener Look für
@@ -284,7 +298,14 @@ export const AVATAR_SETS: AvatarSet[] = [
 export const AVATAR_SET_IDS = AVATAR_SETS.map(s => s.id);
 
 export const ALL_SET_ID = 'all';
-export const DEFAULT_SET_ID = 'cozy3d';   // <- 2026-06-23: cozy3d-Tiere sind der neue System-Default
+// 2026-06-23: cozy3d-Tiere waren der System-Default.
+// 2026-08-22 (Wolf, „sie passen am besten zum neuen Design"): das CozyQuiz-Set
+// uebernimmt. Grund steht im Kopf von cozyquizAvatars.ts — die Uebergabe 2a
+// macht die Teammarke zur eckigen Kachel in Teamfarbe, und ein farbneutrales
+// Objekt traegt diese Farbe unverfaelscht, waehrend ein Tier mit eigener
+// Fellfarbe eine zweite Farbe ins Bild bringt.
+// cozy3d bleibt vollstaendig erhalten und im Picker waehlbar.
+export const DEFAULT_SET_ID = COZYQUIZ_SET_ID;
 
 export function getSet(id: string | undefined): AvatarSet {
   if (!id) return AVATAR_SETS[0];
@@ -422,6 +443,18 @@ export function getAvatarDisplay(
       src: partySrc(emoji),
       color: slot.color,
       label: partyLabel(emoji),
+    };
+  }
+
+  // CozyQuiz-Set: dasselbe Modell wie Party 3D — farbneutrales Objekt auf der
+  // Slot-Farb-Kachel, frei kombinierbar. Kein Slot-Override oben, der
+  // teamEmoji-Slug gewinnt; Default = set.avatars[slotIdx].
+  if (isCozyQuizSlug(emoji)) {
+    return {
+      kind: 'image',
+      src: cozyQuizSrc(emoji),
+      color: slot.color,
+      label: cozyQuizLabel(emoji),
     };
   }
 

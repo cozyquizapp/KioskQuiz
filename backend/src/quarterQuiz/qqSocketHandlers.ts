@@ -2192,8 +2192,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
         const id = String(payload.avatarSetId ?? 'all');
         // White-list, damit kein bloedsinn ankommt. Default ist 'all' (Emoji,
         // freie Wahl). 'cozyCast' = klassische PNG-Avatare als opt-in.
-        const allowed = ['cozy3d', 'cozyWolves', 'cozyParty', 'cozyQuirks2', 'blockz', 'all', 'cozyAnimals', 'cozyCast', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy', 'esc', 'cozyArena'];
-        const newId = allowed.includes(id) ? id : 'cozy3d';
+        // 2026-08-22: 'cozyquiz' ergaenzt — ohne Eintrag lehnt der Server das
+        // neue Default-Set still ab und faellt auf den Fallback zurueck.
+        const allowed = ['cozyquiz', 'cozy3d', 'cozyWolves', 'cozyParty', 'cozyQuirks2', 'blockz', 'all', 'cozyAnimals', 'cozyCast', 'halloween', 'christmas', 'pub', 'scifi', 'sport', 'tropical', 'fantasy', 'esc', 'cozyArena'];
+        const newId = allowed.includes(id) ? id : 'cozyquiz';
         const wasAll = room.avatarSetId === 'all';
         room.avatarSetId = newId;
         // Bei Wechsel ZU 'all': neu wuerfeln (Mod will Variation).
@@ -3453,10 +3455,12 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // cozyArena sogar raus → unwaehlbarer <select>-Wert). Nur die auto-
           // verwalteten Sets umstellen; ein bewusst gewaehltes Theme-Set
           // (pub/halloween/esc/...) bleibt erhalten.
-          const autoSets = ['cozy3d', 'cozyArena', 'cozyAnimals', 'all'];
+          // 2026-08-22: 'cozyquiz' gehoert in die auto-verwaltete Liste, sonst
+          // bliebe das neue Default-Set beim Arena-Toggle haengen.
+          const autoSets = ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'];
           const curSet = room.avatarSetId;
           if (!curSet || autoSets.includes(curSet)) {
-            room.avatarSetId = room.largeGroupMode ? 'cozyArena' : 'cozy3d';
+            room.avatarSetId = room.largeGroupMode ? 'cozyArena' : 'cozyquiz';
           }
         }
         // Hinweis: CozyArena erzwingt KEIN Avatar-Set — die Fraktions-Wappen

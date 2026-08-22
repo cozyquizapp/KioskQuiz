@@ -305,7 +305,6 @@ export function TeamBottomSheetMenu({
                   const ownerTeam = cell?.ownerId ? state.teams.find(t => t.id === cell.ownerId) : null;
                   const ownerColor = ownerTeam?.color ?? null;
                   const isStacked = !!cell?.stuck;
-                  const isShielded = !!cell?.shielded;
                   return (
                     <div
                       key={`${r}-${c}`}
@@ -352,13 +351,6 @@ export function TeamBottomSheetMenu({
                           fontSize: 8, color: '#fff', lineHeight: 1,
                           textShadow: '0 0 3px rgba(0,0,0,0.8)',
                         }}>★</span>
-                      )}
-                      {isMine && isShielded && !isStacked && (
-                        <span style={{
-                          position: 'absolute', top: 0, right: 1,
-                          fontSize: 7, color: '#fff', lineHeight: 1,
-                          textShadow: '0 0 3px rgba(0,0,0,0.8)',
-                        }}>🛡</span>
                       )}
                     </div>
                   );

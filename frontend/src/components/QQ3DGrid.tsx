@@ -634,7 +634,6 @@ export function QQ3DGrid({ state, maxSize = 600, animateCell, interactive = fals
             const shouldAnimate = isTargetCell && animKey !== null && animKey !== lastAnimatedKey.current;
             const btype = cellBtype(r, c, gs);
             buildBuilding(tile, team, cellSize, btype, {
-              frozen: cell.frozen,
               stuck: cell.stuck,
               joker: cell.jokerFormed,
               wasSteal: animateCell?.wasSteal,

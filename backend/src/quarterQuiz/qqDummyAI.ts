@@ -7,20 +7,19 @@
 import { QQGrid, QQCell } from '../../../shared/quarterQuizTypes';
 import { computeTerritories } from './qqBfs';
 
-export type DummyActionKind = 'PLACE' | 'STEAL' | 'SHIELD' | 'STAPEL' | 'SWAP' | 'SANDUHR';
+// 2026-08-22: SHIELD, SWAP und SANDUHR entfernt — die Mechaniken wurden
+// gestrichen, der Bot konnte sie also nie mehr spielen.
+export type DummyActionKind = 'PLACE' | 'STEAL' | 'STAPEL';
 
 export interface DummyActionChoice {
   kind: DummyActionKind;
-  target?: { row: number; col: number };       // PLACE/STEAL/SANDUHR/STAPEL
-  ownTarget?: { row: number; col: number };    // SWAP step 1
-  enemyTarget?: { row: number; col: number };  // SWAP step 2
+  target?: { row: number; col: number };       // PLACE/STEAL/STAPEL
   score: number;
 }
 
 export interface DummyEnumerateOpts {
   availableKinds: DummyActionKind[];
   phase: number;
-  shieldsUsed?: number;
   // Beschränkt STEAL/COMEBACK auf bestimmte Zielzellen (z.B. nur Leader-Team)
   stealFilter?: (cell: QQCell, row: number, col: number) => boolean;
 }
@@ -65,8 +64,8 @@ function enumerateActions(
         ownCells.push({ row: r, col: c });
         if (!cell.stuck) ownStapable.push({ row: r, col: c });
       } else {
-        if (!cell.frozen && !cell.stuck && !cell.shielded) oppSteal.push({ row: r, col: c });
-        if (!cell.stuck && !cell.shielded) oppBombable.push({ row: r, col: c });
+        if (!cell.stuck) oppSteal.push({ row: r, col: c });
+        if (!cell.stuck) oppBombable.push({ row: r, col: c });
       }
     }
   }
@@ -92,42 +91,6 @@ function enumerateActions(
     }
   }
 
-  if (kinds.includes('SANDUHR') && opts.phase === 3) {
-    // Bann (intern SANDUHR): gegnerisches ODER leeres Feld neutralisieren + 3 Fragen blockieren.
-    // Frei wählbar pro Frage (kein Budget). Score-Modell: sofortiger Cluster-Schaden,
-    // zusätzlich kleiner Defensiv-Bonus bei leeren Feldern.
-    for (const t of oppBombable) {
-      if (grid[t.row][t.col].sandLockTtl) continue;
-      const g = cloneGrid(grid);
-      g[t.row][t.col].ownerId = null;
-      g[t.row][t.col].jokerFormed = false;
-      choices.push({ kind: 'SANDUHR', target: t, score: scoreFor(g, gridSize, teamId) - baseline });
-    }
-    for (const t of empty) {
-      if (grid[t.row][t.col].sandLockTtl) continue;
-      // Leeres Feld sperren: kein direkter Score-Gain (own.largest unverändert),
-      // aber Gegner kann's nicht setzen → kleiner Defensiv-Bonus.
-      choices.push({ kind: 'SANDUHR', target: t, score: 0.3 });
-    }
-  }
-
-  if (kinds.includes('SHIELD') && opts.phase === 3 && (opts.shieldsUsed ?? 0) < 2) {
-    // Seit "1 Schild = 1 Feld" braucht der Bot ein konkretes Ziel. Heuristik
-    // analog STAPEL: schütze das eigene Feld, dessen Verlust am meisten Cluster-
-    // Schaden verursacht (= Klau-Simulation, lossIfStolen). Wir bauen pro Zelle
-    // eine eigene Choice, der Wert-Mechanismus 0.5×lossIfStolen liegt im selben
-    // Range wie früher 0.5×ownLargest.
-    for (const t of ownCells) {
-      if (grid[t.row][t.col].shielded) continue;
-      const g = cloneGrid(grid);
-      g[t.row][t.col].ownerId = null;
-      g[t.row][t.col].jokerFormed = false;
-      const lossIfStolen = baseline - scoreFor(g, gridSize, teamId);
-      if (lossIfStolen <= 0) continue;
-      choices.push({ kind: 'SHIELD', target: t, score: lossIfStolen * 0.5 });
-    }
-  }
-
   if (kinds.includes('STAPEL') && opts.phase >= 3) {
     // Stapel ändert die Cluster-Größe nicht → naive scoreFor-Diff wäre 0.
     // Stattdessen: "Was verliere ich, wenn jemand mir dieses Feld wegnimmt?"
@@ -142,27 +105,6 @@ function enumerateActions(
       const lossIfStolen = baseline - scoreFor(g, gridSize, teamId); // ≥0 normalerweise
       const protectionValue = Math.max(0, lossIfStolen) * 0.6;
       choices.push({ kind: 'STAPEL', target: t, score: protectionValue });
-    }
-  }
-
-  if (kinds.includes('SWAP') && opts.phase >= 4) {
-    // Alle (eigenes, gegner) Paare. Cap bei 5×5 Grid = max 625 Kombinationen — vertretbar.
-    for (const own of ownCells) {
-      for (const opp of stealPool) {
-        const g = cloneGrid(grid);
-        const oppOwner = grid[opp.row][opp.col].ownerId;
-        const wasStuck = !!grid[own.row][own.col].stuck;
-        g[own.row][own.col].ownerId = oppOwner;
-        g[own.row][own.col].stuck = false;
-        g[own.row][own.col].jokerFormed = false;
-        g[opp.row][opp.col].ownerId = teamId;
-        g[opp.row][opp.col].stuck = wasStuck; // stuck zieht mit (Design-Vereinfachung)
-        g[opp.row][opp.col].jokerFormed = false;
-        choices.push({
-          kind: 'SWAP', ownTarget: own, enemyTarget: opp,
-          score: scoreFor(g, gridSize, teamId) - baseline,
-        });
-      }
     }
   }
 

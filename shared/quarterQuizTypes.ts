@@ -196,12 +196,11 @@ export interface QQCell {
   ownerId: string | null;  // teamId or null = unclaimed
   jokerFormed: boolean;    // VISUAL flag (Stern auf der Cell) — wird nach Placement zurueckgesetzt
   jokerCounted?: boolean;  // LOGISCHER Flag — verhindert Re-Detection desselben Patterns auf naechster Frage (B5/B13)
-  frozen?: boolean;        // frozen for 1 question (cannot be stolen)
+  // 2026-08-22: `frozen`, `shielded` und `sandLockTtl` entfernt. Frost, Schild
+  // und Bann wurden als Spielmechaniken frueh gestrichen; die Zustaende wurden
+  // seither zwar noch geschrieben, aber nie mehr gesetzt, weil das Handy die
+  // Aktionen nicht mehr anbietet (nur PLACE, STEAL, STAPEL).
   stuck?: boolean;         // permanently frozen via Stapeln (counts 2 pts, cannot be stolen)
-  shielded?: boolean;      // protected until end of game (cannot be stolen/swapped). Max 2 per team per game.
-  sandLockTtl?: number;    // Sanduhr-Sperre: cell is neutralized for N more questions
-                           //   (set to 3 on lock, decremented at each question advance,
-                           //   cleared when 0 — cell becomes a normal empty cell)
   stackBonus?: number;     // Connections-Finale Stapel-Bonus: jeder Stack +1 Pkt zur Team-Score.
                            //   Multi-Stack erlaubt (gleiche Cell mehrfach). Implizit auch stuck=true.
   /** 2026-05-25 (Wolf Final-Wager v4): Story-Stamps die in der FINAL_REVEAL-Phase
@@ -1295,10 +1294,6 @@ export interface QQStateUpdate {
   bluffRejected: string[];
   // Last placed cell — for beamer placement animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
-  // Cells temporarily frozen (expire after next placement), already reflected in grid.frozen
-  frozenCells: { row: number; col: number }[];
-  // Cells shielded until end of current phase, already reflected in grid.shielded
-  shieldedCells: { row: number; col: number }[];
   // Cells available to Stucken for pendingFor team (plus-centers)
   stuckCandidates: { row: number; col: number }[];
   // CHEESE (Picture This) — moderator-controlled image reveal
@@ -1593,11 +1588,7 @@ export type QQPendingAction =
   | 'PLACE_1'    // Phase 1: place 1 cell
   | 'PLACE_2'    // Phase 2+: place 2 cells (placementsLeft = 1 or 2)
   | 'STEAL_1'    // Phase 2 steal or Phase 3/4 steal
-  | 'FREE'       // Phase 3/4: team picks action (place/steal/bann/shield in R3, steal/swap/stapel in R4)
-  | 'FREEZE_1'   // (legacy, unused) freeze 1 own cell for next question
-  | 'SANDUHR_1'  // Phase 3: Bann — lock 1 enemy/empty cell for 3 questions (per-question free choice, no budget)
-  | 'SHIELD_1'   // Phase 3: shield 1 own cell (player picks target) until end of game (max 2 per team)
-  | 'SWAP_1'     // Phase 4: swap 1 own + 1 enemy cell (2-step: pick own, then enemy)
+  | 'FREE'       // Phase 3/4: team picks action (place/steal/stapel)
   | 'STAPEL_1'   // Phase 4: stapeln - pick own cell (permanently frozen, 2 pts)
   | 'STAPEL_BONUS' // Connections-Finale: Stapel-Bonus pro erratener Gruppe; eigene Cell, multi-stack erlaubt, +1 Pkt pro Stapel.
   | 'COMEBACK';  // before final phase: comeback team acts
@@ -1615,7 +1606,10 @@ export interface QQMarkWrongPayload      { roomCode: string; }
 export interface QQUndoMarkCorrectPayload { roomCode: string; }
 export interface QQPlaceCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
 export interface QQStealCellPayload      { roomCode: string; teamId: string; row: number; col: number; }
-export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SANDUHR' | 'SHIELD' | 'SWAP' | 'STAPEL'; }
+/** 2026-08-22: FREEZE, SANDUHR, SHIELD und SWAP entfernt — das Handy bot nur
+ *  noch PLACE, STEAL und STAPEL an, der Rest war seit dem Streichen der
+ *  Mechaniken unerreichbar. */
+export interface QQChooseFreeActionPayload { roomCode: string; teamId: string; action: 'PLACE' | 'STEAL' | 'STAPEL'; }
 export interface QQComebackChoicePayload { roomCode: string; teamId: string; action: QQComebackAction; }
 export interface QQSwapCellsPayload      { roomCode: string; teamId: string; rowA: number; colA: number; rowB: number; colB: number; }
 export interface QQSwapOneCellPayload    { roomCode: string; teamId: string; row: number; col: number; }  // Phase 4: pick own then enemy (2 calls)

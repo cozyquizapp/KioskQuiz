@@ -30,7 +30,6 @@ import { isThemed, getActiveTheme } from '../qqTheme';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { cozy3dSrc } from '../cozy3dAvatars';
 import { JokerIcon } from './JokerIcon';
-import { QQIcon } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
@@ -270,11 +269,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const showStar = showJoker && cell.jokerFormed;
             // Joker GERADE geformt → 2.2s Goldglow-Pulse als Beamer-Highlight.
             const isJustFormedJoker = justFormedJokerRef.current.has(`${r}-${c}`);
-            const isFrozen = cell.frozen;
             const isStuck = cell.stuck;
-            const isShielded = !!cell.shielded && !cell.stuck;
-            const sandTtl = cell.sandLockTtl ?? 0;
-            const isSandLocked = sandTtl > 0;
             // Skin-abhängiger Zell-Radius: in Themes folgt die Zelle der Design-Sprache
             // (Mono 4px = eckig, SoftPop 26px = rund). Numerisch bleiben, weil unten
             // cellRadius + N für Glow-/Bridge-Insets gerechnet wird.
@@ -352,7 +347,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   const rBR = (nBottom || nRight) ? 0 : cellRadius;
                   const rBL = (nBottom || nLeft ) ? 0 : cellRadius;
                   // Spezial-Cells (stuck/frozen/joker) behalten runde Kanten für eigenes Styling
-                  const specialBorder = isStuck || isFrozen || isShielded || showStar;
+                  const specialBorder = isStuck || showStar;
                   const fusedRadius = specialBorder
                     ? cellRadius
                     : `${rTL}px ${rTR}px ${rBR}px ${rBL}px` as any;
@@ -381,10 +376,10 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   // Goldlayer + dicker Glow, jetzt single-Layer + dezenter
                   // Glow) — Wolf-Bug 'gestapelte felder ueberladen'.
                   const borderColor = `${tColor}${isHighlighted || isAccent ? 'ff' : isDimmed ? '33' : '55'}`;
-                  const stdBorderTop    = (isFrozen || nTop)    ? 'none' : `1px solid ${borderColor}`;
-                  const stdBorderRight  = (isFrozen || nRight)  ? 'none' : `1px solid ${borderColor}`;
-                  const stdBorderBottom = (isFrozen || nBottom) ? 'none' : `1px solid ${borderColor}`;
-                  const stdBorderLeft   = (isFrozen || nLeft)   ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderTop    = nTop ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderRight  = nRight ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderBottom = nBottom ? 'none' : `1px solid ${borderColor}`;
+                  const stdBorderLeft   = nLeft ? 'none' : `1px solid ${borderColor}`;
                   // Inset-Effects: Top-Highlight nur an Region-Top-Kante, Bottom-
                   // Shadow nur an Region-Bottom-Kante, sonst durchlaufen die
                   // Light-/Dark-Streifen die Region und brechen den Block auf.
@@ -422,9 +417,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     // Fusion wie Standard — outer Goldborder weg.
                     ...(showStar
                       ? { border: '2px solid rgba(var(--qq-accent-rgb),0.9)' }
-                      : isFrozen
-                        ? { border: 'none' }
-                        : {
+                      : {
                             borderTop: stdBorderTop,
                             borderRight: stdBorderRight,
                             borderBottom: stdBorderBottom,
@@ -476,47 +469,6 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   </>
                   );
                 })()}
-                {/* Frozen overlay — ice tint + shimmer + frost corners */}
-                {isFrozen && (
-                  <>
-                    {/* Base ice tint */}
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: cellRadius,
-                      background: 'rgba(147,210,255,0.22)',
-                      border: '2px solid rgba(147,210,255,0.8)',
-                      animation: 'frostPulse 2.5s ease-in-out infinite',
-                      pointerEvents: 'none', zIndex: 2,
-                    }} />
-                    {/* Shimmer streak */}
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: cellRadius,
-                      background: 'linear-gradient(105deg, transparent 30%, rgba(200,230,255,0.35) 45%, rgba(255,255,255,0.45) 50%, rgba(200,230,255,0.35) 55%, transparent 70%)',
-                      backgroundSize: '200% 100%',
-                      animation: 'frostShimmer 3s ease-in-out infinite',
-                      pointerEvents: 'none', zIndex: 3,
-                    }} />
-                    {/* Frost corner accents */}
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: cellRadius,
-                      background: `
-                        radial-gradient(circle at 10% 10%, rgba(200,230,255,0.5) 0%, transparent 35%),
-                        radial-gradient(circle at 90% 10%, rgba(200,230,255,0.4) 0%, transparent 30%),
-                        radial-gradient(circle at 10% 90%, rgba(200,230,255,0.4) 0%, transparent 30%),
-                        radial-gradient(circle at 90% 90%, rgba(200,230,255,0.5) 0%, transparent 35%)
-                      `,
-                      pointerEvents: 'none', zIndex: 3,
-                    }} />
-                    {/* Frost-PNG badge top-right */}
-                    <div style={{
-                      position: 'absolute', top: -4, right: -4,
-                      zIndex: 5, lineHeight: 0,
-                      animation: 'frostCrystal 3s ease-in-out infinite',
-                      filter: 'drop-shadow(0 0 3px rgba(147,210,255,0.8))',
-                    }}>
-                      <QQIcon slug="marker-frost" size={Math.max(14, cellSize * 0.42)} alt="Frost" />
-                    </div>
-                  </>
-                )}
                 {/* Stuck overlay — 2026-05-05 v4 (Wolf 'nur innen stacken'):
                     Outer-Goldtint geloescht, nur noch der einmalige Dust-Ring
                     beim Setzen als feedback. */}
@@ -538,68 +490,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     geloescht. */}
                 {/* Bann-Overlay — purple tint + Sanduhr-PNG + Countdown auf der Zelle.
                     C7: Sanduhr droppt rein + tickt kontinuierlich. */}
-                {isSandLocked && (
-                  <>
-                    <div style={{
-                      position: 'absolute', inset: 0, borderRadius: cellRadius,
-                      border: '2px solid rgba(168,85,247,0.85)',
-                      background: 'linear-gradient(135deg, rgba(168,85,247,0.22), rgba(126,34,206,0.12))',
-                      boxShadow: 'inset 0 0 16px rgba(168,85,247,0.4)',
-                      animation: 'frostPulse 2.5s ease-in-out infinite',
-                      pointerEvents: 'none', zIndex: 2,
-                    }} />
-                    {/* Sanduhr-PNG zentriert — Drop-Anim beim Mount + dauer-Tick. */}
-                    <div style={{
-                      position: 'absolute', inset: 0,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      pointerEvents: 'none', zIndex: 4,
-                      filter: 'drop-shadow(0 2px 4px rgba(0,0,0,0.45))',
-                      animation: 'sanduhrDrop 0.65s var(--qq-ease-bounce) both, sanduhrTick 2.5s ease-in-out 0.7s infinite',
-                      transformOrigin: 'center',
-                    }}>
-                      <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.7)} alt="Bann" />
-                    </div>
-                    {/* Countdown-Chip oben rechts */}
-                    <div style={{
-                      position: 'absolute', top: -4, right: -4,
-                      minWidth: Math.max(16, cellSize * 0.32),
-                      height: Math.max(16, cellSize * 0.32),
-                      padding: `0 ${Math.max(3, cellSize * 0.05)}px`,
-                      borderRadius: 'var(--qq-pill-radius)',
-                      background: 'linear-gradient(135deg, #A855F7, #6B21A8)',
-                      border: '2px solid #2E1065',
-                      color: '#FFFFFF',
-                      fontSize: Math.max(10, cellSize * 0.22),
-                      fontWeight: 900,
-                      lineHeight: 1,
-                      letterSpacing: '-0.02em',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      boxShadow: '0 2px 6px rgba(0,0,0,0.35), 0 0 8px rgba(168,85,247,0.6)',
-                      zIndex: 6,
-                      fontVariantNumeric: 'tabular-nums',
-                    }}>{sandTtl}</div>
-                  </>
-                )}
                 {/* Shield overlay — goldener Ring mit shieldGlow-Puls.
                     Deutlich sichtbar aus Beamer-Distanz, Strategie klar. */}
-                {isShielded && (
-                  <>
-                    <div style={{
-                      position: 'absolute', inset: -2, borderRadius: cellRadius + 2,
-                      border: '2.5px solid rgba(var(--qq-accent-rgb),0.9)',
-                      background: 'rgba(var(--qq-accent-rgb),0.14)',
-                      animation: 'shieldGlow 2s ease-in-out infinite',
-                      pointerEvents: 'none', zIndex: 2,
-                    }} />
-                    <div style={{
-                      position: 'absolute', top: -5, right: -5,
-                      zIndex: 5, lineHeight: 0,
-                      filter: 'drop-shadow(0 0 6px rgba(var(--qq-accent-rgb),0.9))',
-                    }}>
-                      <QQIcon slug="marker-shield" size={Math.max(16, cellSize * 0.48)} alt="Schild" />
-                    </div>
-                  </>
-                )}
                 {/* Steal shatter — flying shards from stolen cell */}
                 {isStolen && [0, 1, 2, 3, 4, 5, 6, 7].map(i => {
                   const angle = i * 45 + Math.random() * 20;
@@ -709,8 +601,6 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                     : isNew
                       ? 'cellEmojiDrop 0.6s var(--qq-ease-bounce) 0.3s both'
                       : undefined,
-                  opacity: isFrozen ? 0.55 : undefined,
-                  filter: isFrozen ? 'saturate(0.4) brightness(1.2)' : undefined,
                 }}>
                   {showStar ? <JokerIcon i={r + c} size={Math.max(12, cellSize * 0.78)} eurovisionMode={!!s.theme?.eurovisionMode} quirk2={s.avatarSetId === 'cozyQuirks2'} square /> : (team && (() => {
                     // 2026-05-12 v2 (Wolf 'avatare ueberdecken sich STILL'):

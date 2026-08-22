@@ -186,9 +186,7 @@ export interface QQRoomState {
   // Last placed cell for beamer animation
   lastPlacedCell: { row: number; col: number; teamId: string; wasSteal?: boolean } | null;
   // Frozen cells (expire after next placement)
-  frozenCells: { row: number; col: number }[];
   // Shielded cells — protected against steal/swap/ban until end of current phase
-  shieldedCells: { row: number; col: number }[];
   // Internal round-robin index for Hot Potato (not sent to clients)
   _hotPotatoRoundRobinIdx?: number;
   // Internal: stored timer expiry callback for mid-round restarts
@@ -498,8 +496,6 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       _bluffWriteTimerHandle: null,
       _bluffVoteTimerHandle: null,
       lastPlacedCell: null,
-      frozenCells: [],
-      shieldedCells: [],
       imageRevealed: false,
       mapRevealStep: 0,
       _mapRevealTimerHandle: null,
@@ -1029,8 +1025,6 @@ export function qqStartGame(
   (room as any).imageRevealed = false;
   (room as any).mapRevealStep = 0;
   room.lastPlacedCell = null;
-  (room as any).frozenCells = [];
-  (room as any).shieldedCells = [];
   // ── Reveal Steps ──
   room.muchoRevealStep = 0;
   (room as any).zvzRevealStep = 0;
@@ -2903,7 +2897,7 @@ function pendingActionForPhase(
 export function qqChooseFreeAction(
   room: QQRoomState,
   teamId: string,
-  action: 'PLACE' | 'STEAL' | 'FREEZE' | 'SANDUHR' | 'SHIELD' | 'SWAP' | 'STAPEL'
+  action: 'PLACE' | 'STEAL' | 'STAPEL'
 ): void {
   assertPhase(room, ['PLACEMENT']);
   assertPendingFor(room, teamId);
@@ -2925,8 +2919,8 @@ export function qqChooseFreeAction(
 
   // 2026-05-02 (Mechanik-Audit P1 #17): Comeback-Steal-Phase erlaubt nur
   // PLACE oder STEAL. Sonst koennte das Comeback-Team via FREE-Menue
-  // SANDUHR/SHIELD/STAPEL/SWAP waehlen - das war nicht intendiert,
-  // Comeback-Slot soll nur "Setzen oder Klauen" sein.
+  // STAPEL waehlen — das war nicht intendiert, der Comeback-Slot soll nur
+  // "Setzen oder Klauen" sein.
   const isComebackContext = room.comebackHL?.phase === 'steal'
     && room.comebackTeamId === teamId;
   if (isComebackContext && action !== 'PLACE' && action !== 'STEAL') {
@@ -2972,34 +2966,10 @@ export function qqChooseFreeAction(
       }
     }
 
-  } else if (action === 'FREEZE') {
-    // Legacy — nicht mehr im FE-Menü, aber Handler bleibt für Abwärtskompatibilität.
-    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Einfrieren erst ab Phase 3.');
-    room.pendingAction = 'FREEZE_1';
-
-  } else if (action === 'SANDUHR') {
-    // Bann (intern SANDUHR): ab Phase 3, pro Frage frei wählbar (kein Budget).
-    // R4: Bann bleibt verfuegbar — additive Klimakurve (jede Runde +1 Tool).
-    if (room.gamePhaseIndex < 3) throw new QQError('WRONG_PHASE', 'Bann erst ab Runde 3.');
-    // Ziel: Gegnerfelder ODER leere Felder (jeweils nicht stuck/shielded/schon gesperrt).
-    const hasTarget = room.grid.some(row => row.some(cell =>
-      cell.ownerId !== teamId && !cell.stuck && !cell.shielded && !cell.sandLockTtl));
-    if (!hasTarget) throw new QQError('NO_TARGET', 'Kein bannbares Feld vorhanden.');
-    room.pendingAction = 'SANDUHR_1';
-
-  } else if (action === 'SHIELD') {
-    // Schild: nur Phase 3, max 2 pro Spiel pro Team, hält bis Spielende.
-    if (room.gamePhaseIndex !== 3) throw new QQError('WRONG_PHASE', 'Schild nur in Runde 3.');
-    const stats = room.teamPhaseStats[teamId];
-    if ((stats.shieldsUsed ?? 0) >= 2) throw new QQError('SHIELD_LIMIT', 'Bereits 2 Schilde verbraucht.');
-    const hasOwn = room.grid.some(row => row.some(cell => cell.ownerId === teamId));
-    if (!hasOwn) throw new QQError('NO_OWN_CELL', 'Keine eigenen Felder zum Schützen.');
-    room.pendingAction = 'SHIELD_1';
-
-  } else if (action === 'SWAP') {
-    if (room.gamePhaseIndex < 4) throw new QQError('WRONG_PHASE', 'Tauschen erst ab Phase 4.');
-    room.pendingAction = 'SWAP_1';
-    room.swapFirstCell = null;
+    // 2026-08-22: die Zweige fuer FREEZE, SANDUHR (Bann), SHIELD und SWAP sind
+    // entfernt. Alle vier waren seit dem Streichen der Mechaniken unerreichbar —
+    // das Handy bietet nur PLACE, STEAL und STAPEL an (chooseFreeAction), also
+    // konnte keiner dieser Zweige je betreten werden.
 
   } else if (action === 'STAPEL') {
     // Stapeln: ab Runde 3 — ODER in der letzten Runde eines 2-Runden-Showcase-Spiels.
@@ -3079,9 +3049,6 @@ export function qqPlaceCell(
   const cell = room.grid[row][col];
   if (cell.ownerId !== null) {
     throw new QQError('CELL_OCCUPIED', 'Dieses Feld ist bereits belegt.');
-  }
-  if (cell.sandLockTtl && cell.sandLockTtl > 0) {
-    throw new QQError('SAND_LOCKED', 'Feld ist gebannt.');
   }
 
   // 2026-05-24 (#7): Snapshot vor der Action für Undo.
@@ -3182,11 +3149,8 @@ export function qqStealCell(
   if (cell.ownerId === teamId) {
     throw new QQError('OWN_CELL', 'Du kannst dein eigenes Feld nicht klauen.');
   }
-  if (cell.frozen || cell.stuck) {
-    throw new QQError('FROZEN_CELL', 'Dieses Feld ist eingefroren und kann nicht geklaut werden.');
-  }
-  if (cell.shielded) {
-    throw new QQError('SHIELDED_CELL', 'Dieses Feld ist geschützt und kann nicht geklaut werden.');
+  if (cell.stuck) {
+    throw new QQError('FROZEN_CELL', 'Dieses Feld ist gestapelt und kann nicht geklaut werden.');
   }
 
   // 2026-05-24 (#7): Snapshot vor der Action für Undo.
@@ -3344,9 +3308,6 @@ export function qqSwapCells(
   if (cellA.ownerId === cellB.ownerId) {
     throw new QQError('SAME_TEAM', 'Felder müssen von verschiedenen Teams sein.');
   }
-  if (cellA.shielded || cellB.shielded) {
-    throw new QQError('SHIELDED_CELL', 'Ein geschütztes Feld kann nicht getauscht werden.');
-  }
 
   const tmpOwner = cellA.ownerId;
   cellA.ownerId  = cellB.ownerId;
@@ -3359,88 +3320,7 @@ export function qqSwapCells(
   finishPlacement(room);
 }
 
-// ── Phase 4: Swap 1 (own + enemy) — 2-step ───────────────────────────────────
-/**
- * Phase 4 Tauschen: team picks their own cell first, then an enemy cell.
- * Call twice — first with own cell, second with enemy cell to complete swap.
- */
-export function qqSwapOneCell(
-  room: QQRoomState,
-  teamId: string,
-  row: number,
-  col: number
-): { done: boolean } {
-  assertPhase(room, ['PLACEMENT']);
-  assertPendingFor(room, teamId);
-  assertValidCoord(room, row, col);
-  if (room.pendingAction !== 'SWAP_1') {
-    throw new QQError('WRONG_ACTION', 'Tauschen-Modus nicht aktiv.');
-  }
 
-  const cell = room.grid[row][col];
-
-  if (!room.swapFirstCell) {
-    // Step 1: pick own cell
-    if (cell.ownerId !== teamId) {
-      throw new QQError('NOT_OWN_CELL', 'Zuerst ein eigenes Feld auswählen.');
-    }
-    room.swapFirstCell = { row, col, ownerId: teamId };
-    room.lastActivityAt = Date.now();
-    return { done: false };
-  } else {
-    // Step 2: pick enemy cell
-    if (cell.ownerId === null) {
-      throw new QQError('EMPTY_CELL', 'Zielfeld muss einem anderen Team gehören.');
-    }
-    if (cell.ownerId === teamId) {
-      throw new QQError('OWN_CELL', 'Zielfeld muss einem anderen Team gehören.');
-    }
-    if (cell.stuck || cell.frozen) {
-      throw new QQError('FROZEN_CELL', 'Dieses Feld ist eingefroren.');
-    }
-    if (cell.shielded) {
-      throw new QQError('SHIELDED_CELL', 'Dieses Feld ist geschützt und kann nicht getauscht werden.');
-    }
-    const ownCell = room.grid[room.swapFirstCell.row][room.swapFirstCell.col];
-    const enemyOwner = cell.ownerId;
-    cell.ownerId     = teamId;
-    ownCell.ownerId  = enemyOwner;
-    // B13: Swap raeumt Joker-Marker auf beiden Cells.
-    cell.jokerFormed = false; cell.jokerCounted = false;
-    ownCell.jokerFormed = false; ownCell.jokerCounted = false;
-    room.lastPlacedCell = { row, col, teamId, wasSteal: false };
-    room.swapFirstCell  = null;
-    updateTerritories(room);
-    finishPlacement(room);
-    return { done: true };
-  }
-}
-
-// ── Phase 3/4: Freeze cell (1 question protection) ───────────────────────────
-export function qqFreezeCell(
-  room: QQRoomState,
-  teamId: string,
-  row: number,
-  col: number
-): void {
-  assertPhase(room, ['PLACEMENT']);
-  assertPendingFor(room, teamId);
-  assertValidCoord(room, row, col);
-  if (room.pendingAction !== 'FREEZE_1') {
-    throw new QQError('WRONG_ACTION', 'Einfrieren-Modus nicht aktiv.');
-  }
-  const cell = room.grid[row][col];
-  if (cell.ownerId !== teamId) {
-    throw new QQError('NOT_OWN_CELL', 'Nur eigene Felder einfrieren.');
-  }
-  if (cell.stuck) {
-    throw new QQError('ALREADY_STUCK', 'Dieses Feld ist bereits permanent eingefroren.');
-  }
-  cell.frozen = true;
-  room.frozenCells.push({ row, col });
-  updateTerritories(room);
-  finishPlacement(room);
-}
 
 // ── Phase 4: Stapeln (permanent-freeze eigenes Feld) ─────────────────────────
 // Historisch verlangte Stapeln ein Plus-Form-Zentrum. Ab CozyQuiz Option-C ist
@@ -3465,8 +3345,6 @@ export function qqStuckCell(
     throw new QQError('ALREADY_STUCK', 'Dieses Feld ist bereits gestapelt.');
   }
   cell.stuck    = true;
-  cell.frozen   = false;   // stuck supersedes frozen
-  cell.shielded = false;   // Stapeln löst Schild auf (permanenter Schutz reicht aus)
   // Stapel-Counter pro Spiel hochsetzen (Cap: QQ_MAX_STAPELS_PER_GAME).
   const stats = room.teamPhaseStats[teamId];
   stats.stapelsUsed = (stats.stapelsUsed ?? 0) + 1;
@@ -3521,97 +3399,13 @@ export function qqStapelBonusCell(
   // Multi-Stack erlaubt — kein cell.stuck-Block, kein Budget-Cap.
   cell.stackBonus = (cell.stackBonus ?? 0) + 1;
   cell.stuck      = true;   // optisch konsistent mit reguelaerem Stapel
-  cell.frozen     = false;
-  cell.shielded   = false;
   room.lastPlacedCell = { row, col, teamId, wasSteal: false };
   updateTerritories(room);  // recomputes largestConnected inkl. stackBonus
   room.lastActivityAt = Date.now();
 }
 
-// ── Phase 3: Bann (intern SANDUHR — frei wählbar pro Frage, kein Budget) ──
-// Ziel: gegnerisches ODER leeres Feld. Stuck/Shielded blockt. Nach 3 Fragen wird
-// die Sperre aufgehoben → Feld ist leer und kann normal besetzt werden.
-export function qqSandLockCell(
-  room: QQRoomState,
-  teamId: string,
-  row: number,
-  col: number
-): void {
-  assertPhase(room, ['PLACEMENT']);
-  assertPendingFor(room, teamId);
-  assertValidCoord(room, row, col);
-  if (room.pendingAction !== 'SANDUHR_1') {
-    throw new QQError('WRONG_ACTION', 'Bann-Modus nicht aktiv.');
-  }
-  const cell = room.grid[row][col];
-  if (cell.ownerId === teamId) {
-    throw new QQError('OWN_CELL', 'Eigenes Feld kann nicht gebannt werden.');
-  }
-  if (cell.stuck) {
-    throw new QQError('STUCK_CELL', 'Gestapeltes Feld lässt sich nicht bannen.');
-  }
-  if (cell.shielded) {
-    throw new QQError('SHIELDED_CELL', 'Feld ist geschützt — Bann prallt ab.');
-  }
-  if (cell.sandLockTtl && cell.sandLockTtl > 0) {
-    throw new QQError('ALREADY_LOCKED', 'Feld ist bereits gebannt.');
-  }
-  cell.ownerId     = null;
-  cell.frozen      = false;
-  cell.jokerFormed = false;
-  cell.jokerCounted = false; // B13: Bann raeumt Cell auf — fuer neue Patterns frei.
-  cell.sandLockTtl = 3;
-  room.lastPlacedCell = { row, col, teamId, wasSteal: false };
-  updateTerritories(room);
-  finishPlacement(room);
-}
 
-// ── Phase 3: Schild (max 2 pro Spiel: 1 spezifisches eigenes Feld schützen) ──
-// Spieler wählt das Ziel-Feld; nur diese eine Zelle wird `shielded = true`.
-// Schild hält bis Spielende. Frühere Variante "schütze ganzes Cluster" wurde
-// abgelöst — fühlte sich pay-to-win-mäßig an, weil 1 Schild 6+ Felder absicherte.
-export function qqShieldCell(
-  room: QQRoomState,
-  teamId: string,
-  row: number,
-  col: number
-): void {
-  assertPhase(room, ['PLACEMENT']);
-  assertPendingFor(room, teamId);
-  if (room.pendingAction !== 'SHIELD_1') {
-    throw new QQError('WRONG_ACTION', 'Schild-Modus nicht aktiv.');
-  }
-  if (row < 0 || row >= room.gridSize || col < 0 || col >= room.gridSize) {
-    throw new QQError('OUT_OF_RANGE', 'Feld außerhalb des Spielbretts.');
-  }
-  const cell = room.grid[row][col];
-  if (cell.ownerId !== teamId) {
-    throw new QQError('NOT_OWN_CELL', 'Schild nur auf eigenen Feldern.');
-  }
-  if (cell.shielded) {
-    throw new QQError('ALREADY_SHIELDED', 'Feld ist bereits geschützt.');
-  }
-  cell.shielded = true;
-  room.shieldedCells.push({ row, col });
-  const stats = room.teamPhaseStats[teamId];
-  stats.shieldsUsed = (stats.shieldsUsed ?? 0) + 1;
-  updateTerritories(room);
-  finishPlacement(room);
-}
 
-/** @deprecated Backwards-compat: jetzt verlangt `qqShieldCell` row/col.
- *  Alte Aufrufer sollten die spezifische Zelle übergeben. */
-export function qqShieldCluster(
-  room: QQRoomState,
-  teamId: string,
-  row?: number,
-  col?: number
-): void {
-  if (row == null || col == null) {
-    throw new QQError('TARGET_REQUIRED', 'Schild benötigt jetzt ein Ziel-Feld (row/col).');
-  }
-  qqShieldCell(room, teamId, row, col);
-}
 
 // ── Comeback (before Phase 3) ─────────────────────────────────────────────────
 export function qqTriggerComeback(room: QQRoomState): void {
@@ -4003,10 +3797,10 @@ export function qqComebackStealStartNext(room: QQRoomState): void {
   room.comebackStealTargets = leaders;
   room.comebackStealsDone = [];
   // B15 (2026-04-29): Auto-Skip wenn (a) keine Leader, (b) keine Steals offen
-  // ODER (c) kein klaubares Leader-Feld (alle stuck/shielded/frozen).
+  // ODER (c) kein klaubares Leader-Feld (alle gestapelt).
   const hasStealable = leaders.length > 0 && room.grid.some(row => row.some(cell =>
     cell.ownerId !== null && leaders.includes(cell.ownerId)
-    && !cell.stuck && !cell.shielded && !cell.frozen
+    && !cell.stuck
   ));
   if (leaders.length === 0 || hl.currentStealerRemaining === 0 || !hasStealable) {
     // Kein Klau moeglich → naechster Stealer.
@@ -4050,7 +3844,7 @@ export function qqComebackStealAfterOne(room: QQRoomState): void {
     room.comebackStealsDone = [];
     const hasStealable = leaders.length > 0 && room.grid.some(row => row.some(cell =>
       cell.ownerId !== null && leaders.includes(cell.ownerId)
-      && !cell.stuck && !cell.shielded && !cell.frozen
+      && !cell.stuck
     ));
     if (leaders.length === 0 || !hasStealable) {
       // Nichts mehr fuer das aktuelle Team — naechstes Team in der Queue.
@@ -4090,7 +3884,7 @@ export function qqComebackStealResume(room: QQRoomState): void {
   // existieren (alle stuck/shielded/frozen). Sonst haengt das Spiel.
   const hasStealable = leaders.length > 0 && room.grid.some(row => row.some(cell =>
     cell.ownerId !== null && leaders.includes(cell.ownerId)
-    && !cell.stuck && !cell.shielded && !cell.frozen
+    && !cell.stuck
   ));
   if (leaders.length === 0 || !hasStealable) {
     qqComebackStealStartNext(room);
@@ -4287,14 +4081,6 @@ export function qqBeginPhase(room: QQRoomState, phaseIndex: QQGamePhaseIndex): v
   // B13 (2026-04-29): Joker-Visuals beim Phase-Wechsel komplett aufraeumen.
   // jokerCounted bleibt erhalten (Re-Detection-Schutz), nur die Sterne weg.
   clearAllJokerVisuals(room);
-  for (const fc of room.frozenCells) {
-    const cell = room.grid[fc.row]?.[fc.col];
-    if (cell && !cell.stuck) cell.frozen = false;
-  }
-  room.frozenCells     = [];
-  // Schilde halten bis Spielende (max 2 pro Team) — kein Reset am Phasenende mehr.
-  // Bann-TTL läuft pro Frage runter, nicht pro Phase — kein Reset hier.
-
   // Reset per-phase stats — jokersEarned (game-wide) + shieldsUsed/stapelsUsed
   // (game-wide) erhalten. jokersThisPhase wird IMPLIZIT durch emptyPhaseStats
   // auf undefined → 0 gesetzt (Wolf 2026-05-05: 'pro Runde max 1 Joker').
@@ -4524,25 +4310,6 @@ export function qqNextQuestion(room: QQRoomState): void {
       qqBeginPhase(room, next);
     }
     return;
-  }
-
-  // Einfrieren wirkt genau eine Frage — beim Übergang zur nächsten Frage auftauen.
-  for (const fc of room.frozenCells) {
-    const cell = room.grid[fc.row]?.[fc.col];
-    if (cell && !cell.stuck) cell.frozen = false;
-  }
-  room.frozenCells = [];
-
-  // Sanduhr-Sperre: Countdown auf allen gesperrten Feldern um 1 reduzieren.
-  // Bei TTL=0 wird die Sperre aufgehoben → Feld ist normal leer.
-  for (let r = 0; r < room.gridSize; r++) {
-    for (let c = 0; c < room.gridSize; c++) {
-      const cell = room.grid[r][c];
-      if (cell.sandLockTtl && cell.sandLockTtl > 0) {
-        cell.sandLockTtl -= 1;
-        if (cell.sandLockTtl <= 0) delete cell.sandLockTtl;
-      }
-    }
   }
 
   room.questionIndex   = nextIndex;
@@ -4988,8 +4755,6 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     bluffModeratorReview:        room.bluffModeratorReview ?? false,
     bluffRejected:               room.bluffRejected ?? [],
     lastPlacedCell:        room.lastPlacedCell,
-    frozenCells:      room.frozenCells,
-    shieldedCells:    room.shieldedCells,
     stuckCandidates:  [],
     imageRevealed:    room.imageRevealed,
     mapRevealStep:    room.mapRevealStep,
@@ -5434,9 +5199,6 @@ export function qqResetRoom(room: QQRoomState): void {
   room.imposterChosenIndices = [];
   room.imposterEliminated    = [];
   room.lastPlacedCell        = null;
-  room.frozenCells           = [];
-  for (const row of room.grid) for (const cell of row) cell.shielded = false;
-  room.shieldedCells         = [];
   room.imageRevealed         = false;
   room.mapRevealStep         = 0;
   if (room._mapRevealTimerHandle) { clearTimeout(room._mapRevealTimerHandle); room._mapRevealTimerHandle = null; }

@@ -26,7 +26,7 @@ import {
   qqChooseFreeAction, qqApplyComebackChoice, qqComebackAutoApplySteal, qqSwapCells,
   qqComebackHLStartRound, qqComebackHLSubmitAnswer, qqComebackHLReveal, qqComebackHLAdvance,
   qqComebackFinishAllAndGoToFinale,
-  qqSwapOneCell, qqFreezeCell, qqStuckCell, qqStapelBonusCell, qqSandLockCell, qqShieldCell,
+  qqStuckCell, qqStapelBonusCell,
   qqStartRules, qqRulesNext, qqRulesPrev,
   qqStartTeamsReveal, qqFinishTeamsReveal,
   qqUndoComebackChoice,
@@ -883,14 +883,14 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
       const stapelsUsedNow = stats?.stapelsUsed ?? 0;
       if (phase >= 3 && stapelsUsedNow < 3) kinds.push('STAPEL');
       let choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: kinds, phase, shieldsUsed,
+        availableKinds: kinds, phase,
       });
       // Throttle: STEAL nur 35% wenn freie Felder noch da sind. Sonst PLACE/STAPEL.
       if (choice && choice.kind === 'STEAL' && hasFreeCellNow && Math.random() > 0.35) {
         const fallbackKinds: DummyActionKind[] = ['PLACE'];
         if (phase >= 3 && stapelsUsedNow < 3) fallbackKinds.push('STAPEL');
         const placeAlt = pickDummyAction(live.grid, live.gridSize, teamId, {
-          availableKinds: fallbackKinds, phase, shieldsUsed,
+          availableKinds: fallbackKinds, phase,
         });
         if (placeAlt) choice = placeAlt;
       }
@@ -900,32 +900,9 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
     }
 
     // ── Follow-up-Steps nach chooseFreeAction (falls Flow aus User-UI käme) ──
-    if (action === 'SANDUHR_1') {
-      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['SANDUHR'], phase,
-      });
-      if (!choice) { skipStuckDummy(); return; }
-      try {
-        qqSandLockCell(live, teamId, choice.target!.row, choice.target!.col);
-        broadcastQQ(io, roomCode);
-        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-      } catch { /* skip */ }
-      return;
-    }
-    if (action === 'SHIELD_1') {
-      // Dummy braucht jetzt ein konkretes Ziel (1 Schild = 1 Feld).
-      const shieldsUsed = live.teamPhaseStats[teamId]?.shieldsUsed ?? 0;
-      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['SHIELD'], phase, shieldsUsed,
-      });
-      if (!choice || !choice.target) { skipStuckDummy(); return; }
-      try {
-        qqShieldCell(live, teamId, choice.target.row, choice.target.col);
-        broadcastQQ(io, roomCode);
-        if (live.phase === 'PLACEMENT' && live.pendingFor) maybeAutoPlace(io, roomCode);
-      } catch { /* skip */ }
-      return;
-    }
+    // 2026-08-22: die Dummy-Zweige fuer SANDUHR_1, SHIELD_1 und SWAP_1 sind
+    // entfernt — die Mechaniken wurden gestrichen, diese pendingActions kann
+    // es nicht mehr geben.
     if (action === 'STAPEL_1') {
       const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
         availableKinds: ['STAPEL'], phase,
@@ -940,29 +917,6 @@ export function maybeAutoPlace(io: SocketIOServer, roomCode: string): void {
         // skippen statt im STAPEL_1-State haengen zu lassen.
         skipStuckDummy();
       }
-      return;
-    }
-    if (action === 'SWAP_1') {
-      // Step 1: eigenes Feld auswählen (wir nutzen SWAP-Enumeration und das ownTarget).
-      const choice = pickDummyAction(live.grid, live.gridSize, teamId, {
-        availableKinds: ['SWAP'], phase,
-      });
-      if (!choice || !choice.ownTarget || !choice.enemyTarget) { skipStuckDummy(); return; }
-      try {
-        qqSwapOneCell(live, teamId, choice.ownTarget.row, choice.ownTarget.col);
-        broadcastQQ(io, roomCode);
-        // Step 2 nach kurzer Verzögerung
-        setTimeout(() => {
-          const live2 = getQQRoom(roomCode);
-          if (!live2 || live2.phase !== 'PLACEMENT') return;
-          if (live2.pendingFor !== teamId || live2.pendingAction !== 'SWAP_1') return;
-          try {
-            qqSwapOneCell(live2, teamId, choice.enemyTarget!.row, choice.enemyTarget!.col);
-            broadcastQQ(io, roomCode);
-            if (live2.phase === 'PLACEMENT' && live2.pendingFor) maybeAutoPlace(io, roomCode);
-          } catch { /* skip */ }
-        }, 900);
-      } catch { /* skip */ }
       return;
     }
   }, 1200);
@@ -1033,38 +987,6 @@ function dispatchFreeChoice(
       }, 700);
       return;
     }
-    if (choice.kind === 'SANDUHR') {
-      qqChooseFreeAction(live, teamId, 'SANDUHR');
-      broadcastQQ(io, roomCode);
-      setTimeout(() => {
-        const live2 = getQQRoom(roomCode);
-        if (!live2 || !isPlacementCtx(live2)) return;
-        if (live2.pendingFor !== teamId || live2.pendingAction !== 'SANDUHR_1') return;
-        try {
-          qqSandLockCell(live2, teamId, choice.target!.row, choice.target!.col);
-          broadcastQQ(io, roomCode);
-          afterDispatchTick(io, roomCode);
-        } catch { /* skip */ }
-      }, 900);
-      return;
-    }
-    if (choice.kind === 'SHIELD') {
-      qqChooseFreeAction(live, teamId, 'SHIELD');
-      broadcastQQ(io, roomCode);
-      setTimeout(() => {
-        const live2 = getQQRoom(roomCode);
-        if (!live2 || !isPlacementCtx(live2)) return;
-        if (live2.pendingFor !== teamId) return;
-        try {
-          if (live2.pendingAction === 'SHIELD_1' && choice.target) {
-            qqShieldCell(live2, teamId, choice.target.row, choice.target.col);
-          }
-          broadcastQQ(io, roomCode);
-          afterDispatchTick(io, roomCode);
-        } catch { /* skip */ }
-      }, 900);
-      return;
-    }
     if (choice.kind === 'STAPEL') {
       qqChooseFreeAction(live, teamId, 'STAPEL');
       broadcastQQ(io, roomCode);
@@ -1079,7 +1001,7 @@ function dispatchFreeChoice(
         } catch {
           // 2026-05-12 (Wolf-Screenshot-1 'nach stack kein auto-place/steal'):
           // Wenn qqStuckCell throwt (Target wurde zwischenzeitlich von einem
-          // anderen Team modifiziert: stolen / shielded / bereits stuck), war
+          // anderen Team modifiziert: stolen / bereits gestapelt), war
           // der Dummy vorher fuer immer in STAPEL_1 gestuckt. Jetzt: nochmal
           // ticken — STAPEL_1-Handler in maybeAutoPlace versucht andere
           // Targets oder skippt das Team sauber, statt das Spiel haengen
@@ -1087,32 +1009,6 @@ function dispatchFreeChoice(
           maybeAutoPlace(io, roomCode);
         }
       }, 900);
-      return;
-    }
-    if (choice.kind === 'SWAP') {
-      qqChooseFreeAction(live, teamId, 'SWAP');
-      broadcastQQ(io, roomCode);
-      // Step 1: eigenes Feld
-      setTimeout(() => {
-        const live2 = getQQRoom(roomCode);
-        if (!live2 || live2.phase !== 'PLACEMENT') return;
-        if (live2.pendingFor !== teamId || live2.pendingAction !== 'SWAP_1') return;
-        try {
-          qqSwapOneCell(live2, teamId, choice.ownTarget!.row, choice.ownTarget!.col);
-          broadcastQQ(io, roomCode);
-          // Step 2: gegnerisches Feld
-          setTimeout(() => {
-            const live3 = getQQRoom(roomCode);
-            if (!live3 || live3.phase !== 'PLACEMENT') return;
-            if (live3.pendingFor !== teamId || live3.pendingAction !== 'SWAP_1') return;
-            try {
-              qqSwapOneCell(live3, teamId, choice.enemyTarget!.row, choice.enemyTarget!.col);
-              broadcastQQ(io, roomCode);
-              if (live3.phase === 'PLACEMENT' && live3.pendingFor) maybeAutoPlace(io, roomCode);
-            } catch { /* skip */ }
-          }, 900);
-        } catch { /* skip */ }
-      }, 700);
       return;
     }
   } catch { /* Fallback: kein dispatch */ }
@@ -2254,7 +2150,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
           let stillHasPlacements = (stats?.placementsLeft ?? 0) > 0
             || (stats?.pendingMultiSlot ?? 0) > 0;
           if (stillHasPlacements) {
-            const hasFreeCell = room.grid.some(r => r.some(cell => cell.ownerId === null && !cell.sandLockTtl));
+            const hasFreeCell = room.grid.some(r => r.some(cell => cell.ownerId === null));
             if (!hasFreeCell) {
               // Reste verwerfen, Action gilt als verbraucht.
               if (stats) { stats.placementsLeft = 0; stats.pendingMultiSlot = 0; }
@@ -2385,36 +2281,6 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // Phase 4: Tauschen (1 own + 1 enemy, 2-step)
-    socket.on('qq:swapOneCell', (payload: QQSwapOneCellPayload, ack?: unknown) => {
-      try {
-        assertOwnTeam(socket, payload.teamId);
-        const room = ensureQQRoom(payload.roomCode);
-        const result = qqSwapOneCell(room, payload.teamId, payload.row, payload.col);
-        // Connections-Placement: Cursor erst NACH dem 2. Swap-Step advancen
-        // (result.done === true). Nach 1. Step (own cell) noch warten.
-        if (result.done && room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
-          qqConnectionsAfterPlacement(room);
-        }
-        broadcast(io, payload.roomCode);
-        if (result.done && room.phase === 'CONNECTIONS_4X4' && room.connections?.phase === 'placement') {
-          maybeAutoConnections(io, payload.roomCode);
-        }
-        if (typeof ack === 'function') (ack as AckFn)({ ok: true, ...result } as any);
-      } catch (e) { fail(ack, e); }
-    });
-
-    // Phase 3/4: Einfrieren (1 own cell, 1 question)
-    socket.on('qq:freezeCell', (payload: QQFreezeCellPayload, ack?: unknown) => {
-      try {
-        assertOwnTeam(socket, payload.teamId);
-        const room = ensureQQRoom(payload.roomCode);
-        qqFreezeCell(room, payload.teamId, payload.row, payload.col);
-        broadcast(io, payload.roomCode);
-        ok(ack);
-      } catch (e) { fail(ack, e); }
-    });
-
     // Phase 4: Stapeln (eigenes Feld, permanent) ODER Connections-Finale:
     // Stapel-Bonus (multi-stack erlaubt, +1 Pkt pro Stapel).
     // 2026-05-05 (Wolf-Konzept): pendingAction='STAPEL_BONUS' route geht in
@@ -2451,31 +2317,10 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
-    // Phase 3: Bann (Gegner-/Leerfeld → 3 Fragen blockiert, frei wählbar pro Frage)
-    socket.on('qq:sandLockCell', (payload: QQSandLockCellPayload, ack?: unknown) => {
-      try {
-        assertOwnTeam(socket, payload.teamId);
-        const room = ensureQQRoom(payload.roomCode);
-        qqSandLockCell(room, payload.teamId, payload.row, payload.col);
-        broadcast(io, payload.roomCode);
-        ok(ack);
-      } catch (e) { fail(ack, e); }
-    });
-
-    // Phase 3: Schild (1 spezifisches eigenes Feld, max 2 pro Team, hält bis Spielende).
-    // Neuer Event-Name `qq:shieldCell` mit row/col; alter `qq:shieldCluster` bleibt als
-    // Backward-Compat (Payload jetzt aliased auf {row,col}-Variante).
-    function shieldHandler(payload: QQShieldCellPayload, ack?: unknown) {
-      try {
-        assertOwnTeam(socket, payload.teamId);
-        const room = ensureQQRoom(payload.roomCode);
-        qqShieldCell(room, payload.teamId, payload.row, payload.col);
-        broadcast(io, payload.roomCode);
-        ok(ack);
-      } catch (e) { fail(ack, e); }
-    }
-    socket.on('qq:shieldCell',    shieldHandler);
-    socket.on('qq:shieldCluster', shieldHandler);
+    // 2026-08-22: die Socket-Handler qq:swapOneCell, qq:freezeCell,
+    // qq:sandLockCell, qq:shieldCell und qq:shieldCluster sind entfernt.
+    // Frost, Schild, Bann und Tausch wurden als Mechaniken gestrichen; die
+    // Events konnten seither von keinem Client mehr ausgeloest werden.
 
     // ── Rules presentation ──────────────────────────────────────────────────
     socket.on('qq:startRules', (payload: QQStartRulesPayload, ack?: unknown) => {

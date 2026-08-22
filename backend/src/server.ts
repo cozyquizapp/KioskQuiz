@@ -10213,7 +10213,7 @@ app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {
     for (let c = 0; c < room.grid[r].length; c++) {
       const cell = room.grid[r][c];
       if (cell.ownerId === null) free.push({ row: r, col: c });
-      else if (cell.ownerId !== teamId && !cell.frozen && !cell.stuck) oppFree.push({ row: r, col: c });
+      else if (cell.ownerId !== teamId && !cell.stuck) oppFree.push({ row: r, col: c });
     }
   }
 

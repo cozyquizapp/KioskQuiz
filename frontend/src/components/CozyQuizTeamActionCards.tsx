@@ -168,15 +168,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   // Klauen wuerde ins Leere fuehren (STEAL_1 ohne tapbares Ziel → nur Skip). Dann
   // den Klauen-Button gar nicht erst anbieten.
   const hasStealable = s.grid.some(row => row.some(cell =>
-    cell.ownerId != null && cell.ownerId !== myTeamId && !cell.stuck && !cell.frozen && !cell.shielded
+    cell.ownerId != null && cell.ownerId !== myTeamId && !cell.stuck
   ));
-  const hasSandTarget = s.grid.some(row => row.some(cell =>
-    !(cell.sandLockTtl && cell.sandLockTtl > 0) && (
-      cell.ownerId === null
-      || (cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded)
-    )));
-  const shieldsUsed = myStats?.shieldsUsed ?? 0;
-  const shieldsLeft = Math.max(0, 2 - shieldsUsed);
   const stapelsUsed = myStats?.stapelsUsed ?? 0;
   const stapelsLeft = Math.max(0, 3 - stapelsUsed);
 
@@ -194,13 +187,10 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   // jokerBonusPending ist im Backend true NUR während der Bonus-Slot offen ist
   // (self-resetting), daher hier präzise. (Ersetzt den 2026-05-10-Pragma-Patch.)
   const isJoker     = pa === 'PLACE_1' && phase >= 2 && !isConnectionsPlacement && !!(myStats as any)?.jokerBonusPending; // Joker bonus placement
-  const isShield    = pa === 'SHIELD_1' || (isFree && freeMode === 'SHIELD');
-  const isSwapOne   = pa === 'SWAP_1'   || (isFree && freeMode === 'SWAP');
   // 2026-05-05 (Wolf-Konzept): STAPEL_BONUS = Connections-Finale-Stack-Mode.
   // Selber Cell-Picker wie regulaeres Stapeln, Multi-Stack erlaubt (Backend
   // entscheidet via pendingAction, Frontend nutzt einheitlichen Picker).
   const isStuck     = pa === 'STAPEL_1' || pa === 'STAPEL_BONUS' || (isFree && freeMode === 'STAPEL');
-  const isSandLock  = pa === 'SANDUHR_1' || (isFree && freeMode === 'SANDUHR');
   const isSwapComeback = s.comebackAction === 'SWAP_2' && pa === 'COMEBACK';
   const isSteal     = pa === 'STEAL_1'
     || (pa === 'COMEBACK' && s.comebackAction === 'STEAL_1')
@@ -321,42 +311,12 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       setSelecting(false); setSwapFirst(null); return;
     }
 
-    // Phase 4 SWAP_1: pick own cell first, then enemy
-    if (isSwapOne) {
-      if (!swapFirst) {
-        if (cell.ownerId !== myTeamId) return;
-        setSwapFirst({ r, c });
-        await safeEmit(emit, 'qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
-        return;
-      } else {
-        if (!cell.ownerId || cell.ownerId === myTeamId) return;
-        await safeEmit(emit, 'qq:swapOneCell', { roomCode, teamId: myTeamId, row: r, col: c });
-        setSelecting(false); setSwapFirst(null); return;
-      }
-    }
-
-    // BANN: lock enemy or empty cell for 3 questions
-    if (isSandLock) {
-      if (cell.sandLockTtl && cell.sandLockTtl > 0) return;
-      if (cell.ownerId === myTeamId) return;
-      if (cell.stuck || cell.shielded) return;
-      setPendingPick({ r, c, kind: 'ban' });
-      return;
-    }
-
     // STAPEL: any own non-stuck cell. Bei STAPEL_BONUS (Connections-Finale)
     // ist Multi-Stack erlaubt — stuck-Block entfaellt.
     if (isStuck) {
       if (cell.ownerId !== myTeamId) return;
       if (cell.stuck && !isStapelBonusMode) return;
       setPendingPick({ r, c, kind: 'stapel' });
-      return;
-    }
-
-    // SCHILD: 1 eigenes Feld auswaehlen (nicht bereits geschuetzt)
-    if (isShield) {
-      if (cell.ownerId !== myTeamId || cell.shielded) return;
-      setPendingPick({ r, c, kind: 'shield' });
       return;
     }
 
@@ -367,16 +327,6 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       if (!cell.ownerId || cell.ownerId === myTeamId) return;
       if (cell.stuck) {
         setBlockedHint(lang === 'en' ? 'This cell is stacked, can’t be stolen.' : 'Dieses Feld ist gestapelt, nicht klaubar.');
-        if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
-        return;
-      }
-      if (cell.shielded) {
-        setBlockedHint(lang === 'en' ? 'This cell is shielded, can’t be stolen.' : 'Dieses Feld ist geschützt, nicht klaubar.');
-        if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
-        return;
-      }
-      if (cell.frozen) {
-        setBlockedHint(lang === 'en' ? 'This cell is frozen, can’t be stolen.' : 'Dieses Feld ist eingefroren, nicht klaubar.');
         if (navigator.vibrate) navigator.vibrate([20, 40, 20]);
         return;
       }
@@ -560,10 +510,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     );
   }
 
-  const actionColor = isSwapComeback || isSwapOne ? QQ_COLORS.violet400
-    : isShield   ? '#06B6D4'
+  const actionColor = isSwapComeback ? QQ_COLORS.violet400
     : isStuck    ? QQ_COLORS.brandPink
-    : isSandLock ? '#A855F7'
     : isSteal    ? QQ_COLORS.red500
     : isJoker    ? QQ_COLORS.brandPink
     : QQ_COLORS.green500;
@@ -572,12 +520,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   function isCellClickable(r: number, c: number): boolean {
     const cell = s.grid[r][c];
     if (isSwapComeback) return !!cell.ownerId && cell.ownerId !== myTeamId && (!swapFirst || s.grid[swapFirst.r][swapFirst.c].ownerId !== cell.ownerId);
-    if (isSwapOne) return swapFirst ? (!!cell.ownerId && cell.ownerId !== myTeamId && !cell.shielded) : cell.ownerId === myTeamId;
     if (isStuck)    return cell.ownerId === myTeamId && (isStapelBonusMode || !cell.stuck);
-    if (isShield)   return cell.ownerId === myTeamId && !cell.shielded;
-    if (isSandLock) return !(cell.sandLockTtl && cell.sandLockTtl > 0)
-      && cell.ownerId !== myTeamId && !cell.stuck && !cell.shielded;
-    if (isSteal)    return !!cell.ownerId && cell.ownerId !== myTeamId && !cell.frozen && !cell.stuck && !cell.shielded;
+    if (isSteal)    return !!cell.ownerId && cell.ownerId !== myTeamId && !cell.stuck;
     return !cell.ownerId;
   }
 
@@ -588,10 +532,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
         {text}
       </span>
     );
-    if (isSwapComeback || isSwapOne) return wrap('marker-swap', lang === 'de' ? 'Tauschen' : 'Swap');
-    if (isShield)   return wrap('marker-shield', lang === 'de' ? 'Schild' : 'Shield');
+    if (isSwapComeback) return wrap('marker-swap', lang === 'de' ? 'Tauschen' : 'Swap');
     if (isStuck)    return wrap('action-stack', lang === 'de' ? 'Stapeln' : 'Stack');
-    if (isSandLock) return wrap('marker-sanduhr', lang === 'de' ? 'Bann' : 'Ban');
     if (isSteal)  return wrap('action-steal', lang === 'de' ? 'Klau ein fremdes Feld!' : 'Steal an opponent\'s cell!');
     if (isPhase2Choice) return t.placement.titlePhase2[lang];
     if (isJoker) return lang === 'de' ? '⭐ Joker!' : '⭐ Joker!';
@@ -600,18 +542,9 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
 
   const instructionText = (() => {
     if (isSwapComeback) return swapFirst ? t.placement.swap2nd[lang] : t.placement.tapOpponent12[lang];
-    if (isSwapOne) return swapFirst
-      ? (lang === 'de' ? 'Jetzt ein Gegner-Feld tippen' : 'Now tap an opponent\'s cell')
-      : (lang === 'de' ? 'Erst ein eigenes Feld tippen' : 'First tap one of your own cells');
     if (isStuck) return isStapelBonusMode
       ? (lang === 'de' ? 'Eigenes Feld tippen (Bonus-Stapel, +1 Pkt, gleiches Feld mehrfach erlaubt)' : 'Tap one of your cells (bonus stack, +1 pt, same cell allowed multiple times)')
       : (lang === 'de' ? 'Eigenes Feld tippen (wird gestapelt, 2 Punkte)' : 'Tap one of your cells (stacked, 2 pts)');
-    if (isShield) return lang === 'de'
-      ? 'Eigenes Feld tippen, wird bis Spielende geschützt'
-      : 'Tap one of your cells, shielded till end of game';
-    if (isSandLock) return lang === 'de'
-      ? 'Feld tippen (Gegner oder leer): 3 Fragen gebannt'
-      : 'Tap a cell (enemy or empty): banned for 3 questions';
     if (isSteal) return t.placement.tapOpponent[lang];
     if (isJoker) return lang === 'de' ? '⭐ Bonus! Tippe auf ein freies Feld' : '⭐ Bonus! Tap an empty cell';
     return t.placement.tapEmpty[lang];
@@ -733,7 +666,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
       {/* Confirm button before grid appears */}
       {!showFreeMenu && !isPhase2Choice && !selecting && (
         <CozyBtn color={actionColor} onClick={() => setSelecting(true)}>
-          {isSwapComeback || isSwapOne ? (
+          {isSwapComeback ? (
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
               <QQIcon slug="marker-swap" size={24} alt="Swap" />
               {lang === 'de' ? 'Felder wählen' : 'Choose cells'}
@@ -742,18 +675,6 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
                 <QQIcon slug="action-stack" size={24} alt="Stapeln" />
                 {lang === 'de' ? 'Feld auswählen' : 'Select cell to stack'}
-              </span>
-            )
-            : isShield ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <QQIcon slug="marker-shield" size={24} alt="Schild" />
-                {lang === 'de' ? 'Feld zum Schützen wählen' : 'Select cell to shield'}
-              </span>
-            )
-            : isSandLock ? (
-              <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
-                <QQIcon slug="marker-sanduhr" size={24} alt="Bann" />
-                {lang === 'de' ? 'Feld zum Bannen wählen' : 'Select cell to ban'}
               </span>
             )
             : isSteal    ? iconLabel('action-steal', lang === 'de' ? 'Klauen' : 'Steal')
@@ -797,14 +718,10 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                 // Wenn pendingPick existiert: andere Cells sind quasi 'gelocked'
                 // (nur die pending Cell + ggf. Cancel-Button reagieren).
                 const clickable = isCellClickable(r, c) && (!pendingPick || isPending === true);
-                const isFrozenCell = cell.frozen && !cell.stuck;
                 const isStuckCell = cell.stuck;
-                const isShieldedCell = !!cell.shielded && !cell.stuck;
                 const justStolen = stolenCells.has(`${r}-${c}`);
                 const isStuckCandidate = isStuck && cell.ownerId === myTeamId && !cell.stuck;
                 const isMine = cell.ownerId === myTeamId;
-                const sandTtl = cell.sandLockTtl ?? 0;
-                const isSandLocked = sandTtl > 0;
                 // Wolf 2026-05-05 (Klaerung): team.color ist die EINE Farbe
                 // pro Team, ueberall in der App identisch. 3D-Plaettchen-Look
                 // bleibt (Inset-Highlight + Inset-Shadow + Hard-Edge-Drop + Soft-Drop).
@@ -823,7 +740,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                   : '';
                 return (
                   <div key={`${r}-${c}`} role={clickable ? 'button' : undefined} tabIndex={clickable ? 0 : undefined}
-                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isFrozenCell ? ` (${lang === 'de' ? 'eingefroren' : 'frozen'})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt, Bestätigen' : 'selected, confirm'})` : ''}`}
+                    aria-label={`${lang === 'de' ? 'Feld' : 'Cell'} ${r+1},${c+1}${team ? ` (${team.name})` : ''}${isPending ? ` (${lang === 'de' ? 'ausgewählt, Bestätigen' : 'selected, confirm'})` : ''}`}
                     onClick={() => handleCell(r, c)} onKeyDown={clickable ? (e) => { if (e.key === 'Enter' || e.key === ' ') handleCell(r, c); } : undefined} style={{
                     // aspectRatio raus — Grid garantiert square cells via gridTemplateRows: 1fr
                     minWidth: 0, minHeight: 0, borderRadius: 4,
@@ -848,7 +765,6 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                       : isStuckCandidate ? `0 0 10px #EC489988${ownerShadow ? `, ${ownerShadow}` : ''}`
                       : isStuckCell
                         ? `${ownerShadow}, 0 0 10px rgba(var(--qq-accent-rgb),0.55)`
-                        : isFrozenCell ? `${ownerShadow}, 0 0 8px rgba(147,210,255,0.5)`
                         : isMine && tColor ? `${ownerShadow}, 0 0 8px ${tColor}77`
                         : team ? ownerShadow
                         : clickable ? `0 0 6px ${actionColor}44` : 'none',
@@ -860,83 +776,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                     ...(pendingPick && !isPending ? { opacity: team ? 0.55 : 0.22 } : {}),
                     position: 'relative' as const, overflow: 'visible' as const,
                   }}>
-                    {isFrozenCell && (
-                      <>
-                        <div style={{
-                          position: 'absolute', inset: 0, borderRadius: 6,
-                          border: '2px solid rgba(147,210,255,0.7)',
-                          background: 'rgba(147,210,255,0.2)',
-                          animation: 'frostPulse 2.5s ease-in-out infinite',
-                          pointerEvents: 'none', zIndex: 1,
-                        }} />
-                        <div style={{
-                          position: 'absolute', top: -3, right: -3,
-                          zIndex: 3, lineHeight: 0,
-                        }}>
-                          <QQIcon slug="marker-frost" size={Math.max(18, cellSize * 0.42)} alt="Frost" />
-                        </div>
-                      </>
-                    )}
-                    {isShieldedCell && (
-                      <>
-                        <div style={{
-                          position: 'absolute', inset: -2, borderRadius: 8,
-                          border: '2px solid rgba(var(--qq-accent-rgb),0.85)',
-                          background: 'rgba(236,72,153,0.12)',
-                          animation: 'shieldGlow 2s ease-in-out infinite',
-                          pointerEvents: 'none', zIndex: 1,
-                        }} />
-                        <div style={{
-                          position: 'absolute', top: -4, right: -4,
-                          zIndex: 3, lineHeight: 0,
-                          filter: 'drop-shadow(0 0 6px rgba(var(--qq-accent-rgb),0.7))',
-                        }}>
-                          <QQIcon slug="marker-shield" size={Math.max(18, cellSize * 0.44)} alt="Schild" />
-                        </div>
-                      </>
-                    )}
-                    {isSandLocked && (
-                      <>
-                        <div style={{
-                          position: 'absolute', inset: 0, borderRadius: 6,
-                          border: '2px solid rgba(168,85,247,0.85)',
-                          background: 'linear-gradient(135deg, rgba(168,85,247,0.22), rgba(126,34,206,0.12))',
-                          boxShadow: 'inset 0 0 10px rgba(168,85,247,0.4)',
-                          animation: 'frostPulse 2.5s ease-in-out infinite',
-                          pointerEvents: 'none', zIndex: 1,
-                        }} />
-                        <div style={{
-                          position: 'absolute', inset: 0,
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          pointerEvents: 'none', zIndex: 3,
-                          filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.45))',
-                          // C7: Sanduhr droppt + tickt kontinuierlich.
-                          animation: 'sanduhrDrop 0.6s var(--qq-ease-bounce) both, sanduhrTick 2.5s ease-in-out 0.65s infinite',
-                          transformOrigin: 'center',
-                        }}>
-                          <QQIcon slug="marker-sanduhr" size={Math.max(20, cellSize * 0.6)} alt="Bann" />
-                        </div>
-                        <div style={{
-                          position: 'absolute', top: -4, right: -4,
-                          minWidth: Math.max(14, cellSize * 0.34),
-                          height: Math.max(14, cellSize * 0.34),
-                          padding: `0 ${Math.max(2, cellSize * 0.04)}px`,
-                          borderRadius: '999px',
-                          background: 'linear-gradient(135deg, #A855F7, #6B21A8)',
-                          border: '2px solid #2E1065',
-                          color: '#FFFFFF',
-                          fontSize: Math.max(9, cellSize * 0.22),
-                          fontWeight: 900, lineHeight: 1, letterSpacing: '-0.02em',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center',
-                          boxShadow: '0 2px 4px rgba(0,0,0,0.35), 0 0 6px rgba(168,85,247,0.6)',
-                          zIndex: 5, fontVariantNumeric: 'tabular-nums',
-                        }}>{sandTtl}</div>
-                      </>
-                    )}
                     <span style={{
                       position: 'relative', zIndex: 2,
-                      opacity: isFrozenCell ? 0.5 : undefined,
-                      filter: isFrozenCell ? 'saturate(0.4) brightness(1.2)' : undefined,
                       display: 'inline-block',
                       animation: isStuckCell
                         ? 'stapelDrop 0.6s var(--qq-ease-bounce) both'

@@ -151,7 +151,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
               <div key={idx} style={{
                 flex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center',
                 gap: 'clamp(12px,1.4cqw,22px)', padding: '0 clamp(14px,1.6cqw,24px)', borderRadius: 18,
-                minHeight: 'clamp(52px,6.5cqh,84px)', background: 'rgba(255,255,255,0.03)',
+                minHeight: 'clamp(52px,6.5cqh,84px)', background: 'rgba(246, 239, 230,0.03)',
                 border: '2px solid rgba(148,163,184,0.14)',
               }}>
                 <div style={{
@@ -192,7 +192,7 @@ export function CrowdTopReveal({ state: s, lang }: { state: QQStateUpdate; lang:
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 14, background: badgeBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#120F18',
-                textShadow: '0 1px 2px rgba(255,255,255,0.2)', zIndex: 1,
+                textShadow: '0 1px 2px rgba(246, 239, 230,0.2)', zIndex: 1,
                 boxShadow: rank === 1 ? '0 0 20px rgba(var(--qq-accent-rgb),0.5)' : 'none',
               }}>#{rank}</div>
               <div style={{ minWidth: 0, zIndex: 1 }}>

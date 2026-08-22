@@ -244,12 +244,12 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         // 2026-06-24 (Wolf 'rahmen verschwindet beim grid-design'): weiss-transparente
         // Container-Flaeche/Rahmen sind auf hellen Skins unsichtbar → Skin-Tokens.
         // Highlight-Rahmen (Team-Farbe) bleibt unangetastet (Spielsignal).
-        background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.03)',
+        background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.03)',
         padding: 10, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-        border: `3px solid ${highlightTeam ? `${activeColor}cc` : (isThemed() ? 'var(--qq-hairline)' : 'rgba(255,255,255,0.06)')}`,
+        border: `3px solid ${highlightTeam ? `${activeColor}cc` : (isThemed() ? 'var(--qq-hairline)' : 'rgba(246, 239, 230,0.06)')}`,
         boxShadow: highlightTeam
-          ? `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(255,255,255,0.04)`
-          : (isThemed() ? 'var(--qq-card-shadow)' : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(255,255,255,0.03)'),
+          ? `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(246, 239, 230,0.04)`
+          : (isThemed() ? 'var(--qq-card-shadow)' : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(246, 239, 230,0.03)'),
         animation: highlightTeam
           ? 'gridActiveTeamGlow 2.4s ease-in-out infinite'
           : 'gridIdle 4s ease-in-out infinite',
@@ -327,8 +327,8 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   // 0.07/0.11 angehoben. Projektoren in heller Umgebung waschen die
                   // dunkelsten Toene als Erstes aus, dann war das leere Brett vom
                   // Publikum aus kaum als Raster erkennbar. Bleibt bewusst dezent.
-                  background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.07)',
-                  border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,255,255,0.11)',
+                  background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.07)',
+                  border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(246, 239, 230,0.11)',
                   animation: !team && idleCells.has(`${r}-${c}`) ? 'cellIdlePulse 2.5s ease-in-out both' : undefined,
                 }} />
                 {/* Team color layer — ink fill for new cells, dim non-active teams */}
@@ -383,7 +383,7 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
                   // Inset-Effects: Top-Highlight nur an Region-Top-Kante, Bottom-
                   // Shadow nur an Region-Bottom-Kante, sonst durchlaufen die
                   // Light-/Dark-Streifen die Region und brechen den Block auf.
-                  const insetTop    = nTop    ? '' : 'inset 0 1px 0 rgba(255,255,255,0.22)';
+                  const insetTop    = nTop    ? '' : 'inset 0 1px 0 rgba(246, 239, 230,0.22)';
                   const insetBottom = nBottom ? '' : 'inset 0 -3px 0 rgba(0,0,0,0.20)';
                   // Hard-Drop nur an Region-Aussen-Edges (rechts + unten = Lichtquelle).
                   const hardDropX = nRight  ? 0 : 2;

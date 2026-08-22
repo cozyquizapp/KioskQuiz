@@ -915,7 +915,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                         // Quirks: kein farbiger Gradient-Rahmen (die Kachel IST die
                         // Farbe) → transparent, kein Padding, Glow trägt die Kachel.
                         background: quirkSet ? 'transparent' : `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
-                        border: quirkSet ? 'none' : (revealed ? `2px solid ${t.color}` : '1.5px solid rgba(255,255,255,0.07)'),
+                        border: quirkSet ? 'none' : (revealed ? `2px solid ${t.color}` : '1.5px solid rgba(246, 239, 230,0.07)'),
                         boxShadow: quirkSet ? 'none' : (revealed
                           ? `inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
                           : 'none'),
@@ -938,7 +938,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           // Quirks: eckige Kachel (Team-Farbe = Kachel), sonst runde Disc.
                           borderRadius: quirkSet ? '18%' : '50%',
                           background: revealed ? t.color : 'transparent',
-                          border: revealed ? `2.5px solid ${t.color}` : '2.5px dashed rgba(255,255,255,0.18)',
+                          border: revealed ? `2.5px solid ${t.color}` : '2.5px dashed rgba(246, 239, 230,0.18)',
                           boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
@@ -1035,7 +1035,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                 position: 'absolute', top: '42%', left: '50%', transform: 'translate(-50%,-50%)',
                 width: 'clamp(360px, 42cqw, 620px)', height: 'clamp(360px, 42cqw, 620px)',
                 borderRadius: '50%',
-                background: 'radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 62%)',
+                background: 'radial-gradient(circle, rgba(246, 239, 230,0.05) 0%, transparent 62%)',
                 filter: 'blur(12px)', pointerEvents: 'none',
               }} />
               <div ref={spotDiscRef} style={{

@@ -247,7 +247,7 @@ export function BeamerTimer({
       <svg width={sz} height={sz}
         style={{ transform: 'rotate(-90deg)', position: 'absolute', inset: 0 }}>
         {/* Background ring — 2026-06-23: Skin-sichtbar via Hairline-Token
-            (rgba(255,255,255,..) waere auf hellen Skins unsichtbar). */}
+            (rgba(246, 239, 230,..) waere auf hellen Skins unsichtbar). */}
         <circle cx={sz / 2} cy={sz / 2} r={radius}
           fill="none" style={{ stroke: 'var(--qq-hairline)' }} strokeWidth={stroke} />
         {/* Progress ring. Die Ruhefarbe bleibt der uebergebene Akzent — 2026-08-22

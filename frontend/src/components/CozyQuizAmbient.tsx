@@ -145,7 +145,7 @@ export const EurovisionHearts = memo(function EurovisionHearts() {
             draggable={false}
             style={{
               width: '100%', height: '100%', display: 'block',
-              filter: 'drop-shadow(0 0 12px rgba(255,45,123,0.55)) drop-shadow(0 0 4px rgba(255,255,255,0.25))',
+              filter: 'drop-shadow(0 0 12px rgba(255,45,123,0.55)) drop-shadow(0 0 4px rgba(246, 239, 230,0.25))',
               animation: `qqEscHeartPulse ${h.pulseDur}s ease-in-out ${h.pulseDel}s infinite`,
               willChange: 'opacity',
             }}

@@ -232,7 +232,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         width: 48px; height: 48px; border-radius: ${square ? '18%' : '50%'};
         background: ${color};
         border: 2.5px solid #1A1A1A;
-        box-shadow: 0 0 22px ${color}66, inset 0 -3px 6px rgba(0,0,0,0.18), inset 0 2px 4px rgba(255,255,255,0.22);
+        box-shadow: 0 0 22px ${color}66, inset 0 -3px 6px rgba(0,0,0,0.18), inset 0 2px 4px rgba(246, 239, 230,0.22);
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
         z-index: 2;
@@ -422,7 +422,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           // doppelte das Rot (Stich). Panel daher NEUTRAL-DUNKEL → der rote Arena-BG
           // liefert die Waerme, das Panel nur den Kontrast fuer die Rangliste.
           background: 'linear-gradient(180deg, rgba(14,11,22,0.44), rgba(8,6,14,0.64))',
-          borderLeft: '2px solid rgba(255,255,255,0.10)',
+          borderLeft: '2px solid rgba(246, 239, 230,0.10)',
 
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',
           display: 'flex', flexDirection: 'column', justifyContent: 'center',
@@ -471,8 +471,8 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                 <div key={p.teamId} style={{
                   display: 'flex', alignItems: 'center', gap: 12,
                   padding: '10px 14px', borderRadius: 16,
-                  background: isTop ? `linear-gradient(90deg, ${team.color}22, ${team.color}0a)` : 'rgba(255,255,255,0.04)',
-                  border: `2px solid ${isTop ? team.color + '88' : 'rgba(255,255,255,0.08)'}`,
+                  background: isTop ? `linear-gradient(90deg, ${team.color}22, ${team.color}0a)` : 'rgba(246, 239, 230,0.04)',
+                  border: `2px solid ${isTop ? team.color + '88' : 'rgba(246, 239, 230,0.08)'}`,
                   boxShadow: isTop ? `0 0 24px ${team.color}44` : 'none',
                   animation: `contentReveal 0.45s var(--qq-ease-pop-fast) ${0.15 + i * 0.08}s both`,
                 }}>

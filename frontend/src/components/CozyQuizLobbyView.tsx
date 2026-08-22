@@ -714,7 +714,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             background: '#ffffff', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: 'clamp(14px, 2cqh, 24px)',
             // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
             animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
-            boxShadow: '0 0 50px rgba(255,255,255,0.1)',
+            boxShadow: '0 0 50px rgba(246, 239, 230,0.1)',
             width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
           }}>
             <QRCodeSVG value={joinUrl} size={256} bgColor="#F6EFE6" fgColor="#120F18" level="M"
@@ -741,7 +741,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             <div style={{
               display: 'inline-flex', alignItems: 'center', gap: 8,
               padding: '7px 16px', borderRadius: 'var(--qq-pill-radius)',
-              background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.06)',
+              background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.06)',
               border: '1.5px solid var(--qq-hairline)',
               fontSize: 'clamp(13px, 1.35cqw, 18px)', fontWeight: 800, color: 'var(--qq-text)',
             }}>
@@ -798,7 +798,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             ...(arenaLobbyBg ? {
               alignSelf: 'flex-start', width: 'auto',
               background: 'rgba(8,6,16,0.72)', padding: '6px 16px', borderRadius: 999,
-              border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(232,236,244,0.95)',
+              border: '1px solid rgba(246, 239, 230,0.12)', color: 'rgba(232,236,244,0.95)',
 
             } : {}),
           }}>
@@ -869,8 +869,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 <div key={g.avatarId} style={{
                   padding: 'clamp(12px, 1.4cqh, 18px) clamp(14px, 1.5cqw, 20px)',
                   borderRadius: isThemed() ? 'var(--qq-card-radius)' : 20,
-                  background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)'),
-                  border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)',
+                  background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(246, 239, 230,0.04)'),
+                  border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(246, 239, 230,0.09)',
                   borderLeft: `4px solid ${g.color}`,
 
                   display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.3cqw, 18px)',
@@ -914,7 +914,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         <span key={st.id} style={{
                           width: 'clamp(10px, 1cqw, 14px)', height: 'clamp(10px, 1cqw, 14px)', borderRadius: '50%',
                           background: st.connected ? g.color : 'transparent',
-                          border: `2px solid ${st.connected ? g.color : 'rgba(255,255,255,0.3)'}`,
+                          border: `2px solid ${st.connected ? g.color : 'rgba(246, 239, 230,0.3)'}`,
                           boxShadow: st.connected ? `0 0 8px ${g.color}88` : 'none',
                         }} />
                       ))}
@@ -960,8 +960,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     // farbige Kachel trägt die Identität voll → dunkle Zeilen-Karte
                     // (bg/border/shadow) weg, Kachel + Name schweben auf dem Seiten-BG.
                     // Rund-Disc-Sets behalten die Karte (Struktur/Gruppierung).
-                    background: quirkSet ? 'transparent' : (isThemed() ? cardBg : (arenaCardBg ?? 'rgba(255,255,255,0.04)')),
-                    border: quirkSet ? 'none' : (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)'),
+                    background: quirkSet ? 'transparent' : (isThemed() ? cardBg : (arenaCardBg ?? 'rgba(246, 239, 230,0.04)')),
+                    border: quirkSet ? 'none' : (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(246, 239, 230,0.09)'),
                     // 2026-07-01 (Wolf Mega-Event): bei vielen Teams wiederholen sich
                     // die 8 Slot-Farben → Farb-Border wäre Noise. Neutral, nur der
                     // Avatar trägt die Identität.
@@ -969,7 +969,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                     borderLeft: quirkSet
                       ? 'none'
                       : (veryMany
-                        ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(255,255,255,0.09)')
+                        ? (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(246, 239, 230,0.09)')
                         : `4px solid ${t.color}`),
                     boxShadow: quirkSet ? 'none' : 'none',
                     // --gc: Glow-Farbe für den Join-Pop-Flash (Beamer-Review-Spec).

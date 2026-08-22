@@ -284,6 +284,11 @@
      Nicht erfasst: das ESC-Pink (#FF2D7B, #fde6f0) gehoert zum Eurovision-
      Skin und haengt an `isEsc`/`eurovisionMode`, sowie die Konfetti-Paletten,
      die als Partikel-Farbliste bewusst mehrere Toene mischen. */
+  /* Sub-Karten und Chips auf dem Grund. :root faehrt hier rgba(255,255,255,
+     0.04) — ein kaltes Weiss, das neben dem warmen Creme und dem warmen Grund
+     blaeulich absticht. Auf der Buehne dieselbe Deckkraft, nur warm. */
+  --qq-surface: rgba(246, 239, 230, 0.05);
+
   --qq-stage-brand: #EC4899;
   --qq-stage-brand-rgb: 236, 72, 153;
   --qq-stage-brand-light: #F472B6;

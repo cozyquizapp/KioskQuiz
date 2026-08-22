@@ -413,7 +413,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
       )}
 
       {/* Boden-Linie */}
-      <div aria-hidden style={{ position: 'absolute', left: SIDE_PAD - 30, right: SIDE_PAD - 30, bottom: BASE_H + BOTTOM - 1, height: 1, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.14) 12%, rgba(255,255,255,0.14) 88%, transparent)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: SIDE_PAD - 30, right: SIDE_PAD - 30, bottom: BASE_H + BOTTOM - 1, height: 1, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(246, 239, 230,0.14) 12%, rgba(246, 239, 230,0.14) 88%, transparent)' }} />
 
       {/* Tuerme (absolut positioniert → Glide in die Mitte moeglich) */}
       {ordered.map(({ team }) => {
@@ -488,7 +488,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                   <div key={bi} style={{
                     width: blockW, height: blockH, borderRadius: 4, position: 'relative', zIndex: 1,
                     background: isAwardBlock ? `linear-gradient(180deg, #FCE3B0 0%, ${GOLD} 55%, ${GOLD_DEEP} 100%)` : `linear-gradient(180deg, ${colr} 0%, ${colr} 60%, rgba(0,0,0,0.24) 100%)`,
-                    boxShadow: isAwardBlock ? `inset 0 1.5px 0 rgba(255,255,255,0.5), inset 0 -2px 4px rgba(120,80,10,0.4), 0 0 14px ${GOLD}88` : `inset 0 1.5px 0 rgba(255,255,255,0.28)${(crowned && isWinner) ? `, 0 0 14px ${colr}66` : ''}`,
+                    boxShadow: isAwardBlock ? `inset 0 1.5px 0 rgba(246, 239, 230,0.5), inset 0 -2px 4px rgba(120,80,10,0.4), 0 0 14px ${GOLD}88` : `inset 0 1.5px 0 rgba(246, 239, 230,0.28)${(crowned && isWinner) ? `, 0 0 14px ${colr}66` : ''}`,
                     border: `1px solid ${isAwardBlock ? GOLD_DEEP : edge}`,
                     transformOrigin: 'bottom center',
                     transition: 'background 0.45s ease, border-color 0.45s ease',
@@ -496,7 +496,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {isAwardBlock
-                      ? <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(255,255,255,0.4))' }}>★</span>
+                      ? <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(246, 239, 230,0.4))' }}>★</span>
                       : myst ? null : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avInBlock} flat />}
                     {isTopBlock && !reduce && !(inReveal && !isTop3) && (
                       <div aria-hidden style={{ position: 'absolute', inset: -1, borderRadius: 5, pointerEvents: 'none', boxShadow: `0 0 ${isCrownBlock ? 22 : isAwardBlock ? 18 : 12}px ${(isAwardBlock ? GOLD : colr)}${isCrownBlock ? 'ee' : 'aa'}`, animation: `qqT2Spark ${isCrownBlock ? 0.7 : 0.5}s ease-out both` }} />
@@ -538,7 +538,7 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
         position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         padding: '34px 56px', borderRadius: 26,
         background: 'linear-gradient(180deg, rgba(40,29,13,0.98), rgba(24,17,8,0.98))',
-        border: `2px solid ${GOLD_DEEP}`, boxShadow: `0 0 46px ${GOLD}40, inset 0 1px 0 rgba(255,255,255,0.08)`,
+        border: `2px solid ${GOLD_DEEP}`, boxShadow: `0 0 46px ${GOLD}40, inset 0 1px 0 rgba(246, 239, 230,0.08)`,
         animation: reduce ? 'none' : 'qqT2AwardIn 0.55s cubic-bezier(0.2,1.2,0.35,1) both',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

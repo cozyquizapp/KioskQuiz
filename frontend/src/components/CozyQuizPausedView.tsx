@@ -248,7 +248,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 // fast transparenten Warm-Fläche, damit der Akzent-Titel Kontrast hat.
                 background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',
                 border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,235,200,0.10)',
-                boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
+                boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.04)',
                 animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
               }}>
                 {isJoker ? (
@@ -335,7 +335,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             borderRadius: isQuietMotion() ? 'var(--qq-card-radius)' : 'var(--qq-pill-radius)',
             background: isQuietMotion() ? 'var(--qq-accent-light)' : `${roundColor}20`,
             border: isQuietMotion() ? '2px solid var(--qq-card-text)' : `2.5px solid ${roundColor}`,
-            boxShadow: isQuietMotion() ? '5px 5px 0 var(--qq-card-text)' : `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+            boxShadow: isQuietMotion() ? '5px 5px 0 var(--qq-card-text)' : `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
           }}>
             <span style={{
               fontSize: 'clamp(36px, 4.5cqw, 64px)', fontWeight: 900,
@@ -696,7 +696,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               border: `1.5px solid ${teamColor}55`,
               color: teamColor, fontWeight: 900, fontSize: 'clamp(15px, 1.7cqw, 21px)',
               flexShrink: 0,
-              boxShadow: `0 0 14px ${teamColor}22, inset 0 1px 0 rgba(255,255,255,0.05)`,
+              boxShadow: `0 0 14px ${teamColor}22, inset 0 1px 0 rgba(246, 239, 230,0.05)`,
             }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
           </div>
           );
@@ -870,7 +870,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       border: themed ? '2px solid var(--qq-card-text)' : `1.5px solid ${accent}55`,
       color: 'var(--qq-card-text)',
       fontSize: 'clamp(22px, 2.4cqw, 32px)', fontWeight: 900,
-      boxShadow: themed ? '4px 4px 0 var(--qq-card-text)' : `0 0 18px ${accent}22, inset 0 1px 0 rgba(255,255,255,0.06)`,
+      boxShadow: themed ? '4px 4px 0 var(--qq-card-text)' : `0 0 18px ${accent}22, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
     }}>
       <span style={{ color: themed ? 'var(--qq-card-text)' : accent, fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1 }}>{value}</span>
       <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
@@ -1284,7 +1284,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <div aria-hidden style={{
             position: 'absolute', top: '-30%', left: '-20%',
             width: '50%', height: '160%',
-            background: `linear-gradient(110deg, transparent 30%, ${modeAccent}1c 48%, rgba(255,255,255,0.10) 50%, ${modeAccent}1c 52%, transparent 70%)`,
+            background: `linear-gradient(110deg, transparent 30%, ${modeAccent}1c 48%, rgba(246, 239, 230,0.10) 50%, ${modeAccent}1c 52%, transparent 70%)`,
             filter: 'blur(20px)',
             opacity: 0.7,
             transformOrigin: 'top left',
@@ -1305,7 +1305,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 top: '-5%', left: `${left}%`,
                 width: size, height: size, borderRadius: '50%',
                 background: i % 2 ? 'var(--qq-accent)' : 'var(--qq-accent-soft)',
-                boxShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(255,255,255,0.5)',
+                boxShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.7), 0 0 4px rgba(246, 239, 230,0.5)',
                 opacity: 0,
                 animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
                 pointerEvents: 'none', zIndex: 3,

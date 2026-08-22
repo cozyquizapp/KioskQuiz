@@ -220,7 +220,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                 display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
                 padding: 'clamp(7px,1.1cqh,15px) clamp(15px,1.7cqw,28px)', borderRadius: 18,
                 background: 'linear-gradient(180deg, rgba(30,24,58,0.94), rgba(10,8,24,0.94))',
-                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(255,255,255,0.10)`,
+                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(246, 239, 230,0.10)`,
                 animation: struck && !reduce ? 'qqCE2Strike 0.5s var(--qq-celebrate) both' : 'none',
               }}>
                 <span style={{
@@ -379,7 +379,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
                     <div style={{
                       display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.45cqw,8px)',
                       padding: 'clamp(3px,0.5cqh,6px) clamp(8px,0.95cqw,15px)', borderRadius: 'var(--qq-pill-radius)',
-                      background: 'rgba(12,10,30,0.72)', border: '1.5px solid rgba(255,255,255,0.14)',
+                      background: 'rgba(12,10,30,0.72)', border: '1.5px solid rgba(246, 239, 230,0.14)',
                     }}>
                       <span style={{ fontFamily: 'var(--font-display)', fontSize: 'clamp(14px, 1.7cqw, 28px)', fontWeight: 700, color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums' }}>{fmt(f.median)}</span>
                       <span style={{ fontSize: 'clamp(9px, 1cqw, 16px)', fontWeight: 900, color: 'var(--qq-text-muted)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap' }}>

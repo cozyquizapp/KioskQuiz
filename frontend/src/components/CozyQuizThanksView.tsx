@@ -159,8 +159,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           50%      { transform: translate(-50%, -4px) rotate(3deg); }
         }
         @keyframes qqThanksWinnerGlow {
-          0%, 100% { box-shadow: 0 0 30px var(--wg, rgba(255,255,255,0.4)), 0 0 64px rgba(251,191,36,0.14), 0 12px 30px rgba(0,0,0,0.55), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(255,255,255,0.12); }
-          50%      { box-shadow: 0 0 46px var(--wg, rgba(255,255,255,0.55)), 0 0 88px rgba(251,191,36,0.22), 0 12px 30px rgba(0,0,0,0.55), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(255,255,255,0.12); }
+          0%, 100% { box-shadow: 0 0 30px var(--wg, rgba(246, 239, 230,0.4)), 0 0 64px rgba(251,191,36,0.14), 0 12px 30px rgba(0,0,0,0.55), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(246, 239, 230,0.12); }
+          50%      { box-shadow: 0 0 46px var(--wg, rgba(246, 239, 230,0.55)), 0 0 88px rgba(251,191,36,0.22), 0 12px 30px rgba(0,0,0,0.55), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(246, 239, 230,0.12); }
         }
         /* 2026-05-10 (Designer-Recherche): subtler QR-Pulse signalisiert
            „interaktiv/scannbar" ohne zu nerven. Scale 1.00→1.03, 2.4s. Kein
@@ -239,7 +239,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             top: '-5%', left: `${left}%`,
             width: size, height: size, borderRadius: '50%',
             background: i % 2 ? brand.accentHex : brand.accentSoft,
-            boxShadow: `0 0 12px rgba(${brand.accentRgb},0.7), 0 0 4px rgba(255,255,255,0.5)`,
+            boxShadow: `0 0 12px rgba(${brand.accentRgb},0.7), 0 0 4px rgba(246, 239, 230,0.5)`,
             opacity: 0,
             animation: `qqPreGameFallParticle ${dur}s linear ${delay}s infinite`,
             pointerEvents: 'none', zIndex: 3,
@@ -478,9 +478,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     // gleichfarbigen Halo zu zerfließen. Glow selbst zurückgenommen.
                     background: `
                       radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%),
-                      radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 46%),
+                      radial-gradient(circle at 32% 28%, rgba(246, 239, 230,0.22) 0%, rgba(246, 239, 230,0) 46%),
                       ${winner.color}`,
-                    border: quirkSet ? 'none' : `5px solid rgba(255,255,255,0.30)`,
+                    border: quirkSet ? 'none' : `5px solid rgba(246, 239, 230,0.30)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     animation: 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
                   } as React.CSSProperties}>
@@ -580,7 +580,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   }}>📱 {de ? 'QR scannen' : 'Scan the code'}</div>
                   <div style={{
                     fontSize: 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
-                    color: themed ? 'var(--qq-text-muted)' : 'rgba(255,255,255,0.82)',
+                    color: themed ? 'var(--qq-text-muted)' : 'rgba(246, 239, 230,0.82)',
                   }}>{de ? 'Feedback geben + auf Insta folgen' : 'Leave feedback + follow on Insta'}</div>
                 </div>
               </div>

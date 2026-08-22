@@ -417,7 +417,7 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
               ? (accentHex ? `${accentHex}cc` : `linear-gradient(135deg, ${grid.colorA}cc, #10B981cc)`)
               : (isTeamA || isTeamAP)
                 ? `${cellCol}aa`
-                : (isThemed() ? 'var(--qq-surface)' : 'rgba(255,255,255,0.06)');
+                : (isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.06)');
           const borderColor = isStar ? (accentHex ?? 'var(--qq-stage-brand)')
             : isPin ? (accentHex ?? '#10B981')
             : isTeamAP ? (accentHex ?? '#FBBF24')   // Gold-Border für Pattern-Zellen
@@ -953,8 +953,8 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   display: 'flex', alignItems: 'center',
                   padding: 'clamp(5px,0.7cqh,9px) clamp(9px,1cqw,15px)',
                   borderRadius: 999, minWidth: 0,
-                  background: active ? `rgba(${aRGB},0.18)` : 'rgba(255,255,255,0.03)',
-                  border: active ? `1.5px solid rgba(${aRGB},0.6)` : '1.5px solid rgba(255,255,255,0.08)',
+                  background: active ? `rgba(${aRGB},0.18)` : 'rgba(246, 239, 230,0.03)',
+                  border: active ? `1.5px solid rgba(${aRGB},0.6)` : '1.5px solid rgba(246, 239, 230,0.08)',
                   // 2026-07-09 (Motion-Audit): 'all' → konkrete Properties (kein
                   // versehentliches Animieren von Layout-Werten).
                   transition: 'background 0.4s ease, border-color 0.4s ease',
@@ -963,7 +963,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                     flexShrink: 0, display: 'grid', placeItems: 'center',
                     width: 'clamp(20px,1.9cqw,28px)', height: 'clamp(20px,1.9cqw,28px)',
                     borderRadius: '50%', fontWeight: 900, fontSize: 'clamp(11px,1cqw,15px)',
-                    background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(255,255,255,0.08)',
+                    background: active ? aHex : done ? `rgba(${aRGB},0.35)` : 'rgba(246, 239, 230,0.08)',
                     color: active ? '#1a0a14' : done ? 'var(--qq-text)' : '#aab0be',
                     transition: 'background 0.4s ease, color 0.4s ease',
                   }}>{item.glyph}</span>
@@ -992,7 +992,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             <div aria-hidden style={{ position: 'relative', height: 'clamp(26px, 2.8cqh, 40px)' }}>
               <div style={{
                 position: 'absolute', left: '6%', right: '6%', top: '50%', transform: 'translateY(-50%)',
-                height: 3, borderRadius: 2, background: 'rgba(255,255,255,0.09)', zIndex: 0,
+                height: 3, borderRadius: 2, background: 'rgba(246, 239, 230,0.09)', zIndex: 0,
               }}>
                 <div style={{
                   // 2026-07-27 (Wolf-Finding 'motions oben in der leiste holprig'):

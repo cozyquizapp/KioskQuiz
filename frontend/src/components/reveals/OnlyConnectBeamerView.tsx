@@ -239,7 +239,7 @@ export function OnlyConnectBeamerView({ state: s, lang, revealed }: {
                   minHeight: 'clamp(140px, 18cqh, 220px)',
                   background: `linear-gradient(135deg, ${winnerColor}26, ${winnerColor}08)`,
                   border: `2.5px solid ${winnerColor}aa`,
-                  boxShadow: `0 0 40px ${winnerColor}55, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                  boxShadow: `0 0 40px ${winnerColor}55, inset 0 1px 0 rgba(246, 239, 230,0.05)`,
                   animation: revealed ? `revealAnswerBam 0.6s var(--qq-ease-out-cubic) ${SOLUTION_DELAY + 0.15}s both` : undefined,
                 }}>
                   {winnerTeams.map((tm, idx) => {

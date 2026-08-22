@@ -77,7 +77,7 @@ const KEYFRAMES = `
 @keyframes qqRowIn { from { opacity: 0; transform: translateX(-34px); } to { opacity: 1; transform: none; } }
 @keyframes qqValuePop { 0% { transform: scale(1); } 40% { transform: scale(1.22); } 100% { transform: scale(1); } }
 /* 2026-07-12 (Showdown 2b): Finale-Multiplikator-Banner atmet. */
-@keyframes qqFinalePulse { 0%,100% { transform: scale(1); box-shadow: 0 0 30px -4px var(--qq-accent), inset 0 1px 0 rgba(255,255,255,0.3); } 50% { transform: scale(1.035); box-shadow: 0 0 52px 2px var(--qq-accent), inset 0 1px 0 rgba(255,255,255,0.4); } }
+@keyframes qqFinalePulse { 0%,100% { transform: scale(1); box-shadow: 0 0 30px -4px var(--qq-accent), inset 0 1px 0 rgba(246, 239, 230,0.3); } 50% { transform: scale(1.035); box-shadow: 0 0 52px 2px var(--qq-accent), inset 0 1px 0 rgba(246, 239, 230,0.4); } }
 `;
 
 // Finale-Multiplikator spiegelbildlich zur Backend-Wertung (qqMegaEventScore):
@@ -203,7 +203,7 @@ function MegaQuestionRanking({ state, ranking, de }: { state: QQStateUpdate; ran
                 <Dots correct={r.correct} total={r.total} color={color} de={de} avgSec={r.avgSec ?? null} baseDelay={i * 0.32} label={sub.label} showDots={sub.showDots} />
               </div>
               <span style={{
-                ...S.qrPts, color: scored ? color : 'rgba(255,255,255,0.4)',
+                ...S.qrPts, color: scored ? color : 'rgba(246, 239, 230,0.4)',
                 animation: scored ? 'brPtsPop 0.5s ease both' : undefined, animationDelay: `${i * 0.32 + 0.25}s`,
               }}>
                 {scored ? `+${r.points}` : '±0'}
@@ -391,7 +391,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
       // oben — sonst clobbert React den translateY-Glide bei jedem Countup-Frame.
       ...(isLeader ? {
         zIndex: 3,
-        background: `linear-gradient(90deg, ${team.color}22, rgba(255,255,255,0.06))`,
+        background: `linear-gradient(90deg, ${team.color}22, rgba(246, 239, 230,0.06))`,
         // CSS-Var für den Glow-Keyframe.
         ['--lc' as any]: team.color,
         animation: 'qqLeaderGlow 2.4s ease-in-out infinite',
@@ -422,7 +422,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
         {/* Modell B: was diese Farbe DIESE Frage geholt hat — +Punkte + ✓-Zahl. */}
         {qEntry && (
           <div style={{ marginTop: 2, fontSize: 17, fontWeight: 800, display: 'flex', alignItems: 'baseline', gap: 10 }}>
-            <span style={{ color: qEntry.points > 0 ? team.color : 'rgba(255,255,255,0.35)' }}>
+            <span style={{ color: qEntry.points > 0 ? team.color : 'rgba(246, 239, 230,0.35)' }}>
               {qEntry.points > 0 ? `+${qEntry.points}` : '±0'}
             </span>
             <span style={{ opacity: 0.55, fontSize: 15 }}>{qqScoreSub(sc, qEntry, fm, de).label}</span>
@@ -439,7 +439,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
       <div style={{
         ...S.standBarTrack,
         overflow: 'hidden',
-        boxShadow: 'inset 0 -1px 0 rgba(255,255,255,0.04)',
+        boxShadow: 'inset 0 -1px 0 rgba(246, 239, 230,0.04)',
       }}>
         <div style={{
           position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`,
@@ -449,7 +449,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
           borderRadius: 999,
           // Facetten-Tiefe: heller Grat oben, dunkle Schattenkante unten + weicher
           // Farbschein nach aussen (im Kanal gehalten, kein greller Web-Glow).
-          boxShadow: `inset 0 1.5px 0 rgba(255,255,255,0.4), 0 0 12px ${team.color}55`,
+          boxShadow: `inset 0 1.5px 0 rgba(246, 239, 230,0.4), 0 0 12px ${team.color}55`,
           transition: 'width 0.8s cubic-bezier(0.34,1.05,0.5,1)',
         }} />
       </div>
@@ -479,7 +479,7 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
         const color = ava?.color ?? 'var(--qq-stage-brand)';
         const name = qqMegaFactionName(it.av!, de ? 'de' : 'en');
         return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 16, background: 'rgba(255,255,255,0.05)', border: `1px solid ${color}44` }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 16, background: 'rgba(246, 239, 230,0.05)', border: `1px solid ${color}44` }}>
             <QQIcon slug={it.slug} size={40} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{it.label}</div>
@@ -691,7 +691,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
         <TeamNameLabel name={qqMegaFactionName(t.avatarId, de ? 'de' : 'en')} maxLines={1} shrinkAfter={12} color={t.color} fontWeight={900} fontSize={isWin ? 'clamp(22px, 3.2cqw, 48px)' : 'clamp(15px, 2cqw, 30px)'} fontSizeLong={isWin ? 'clamp(16px, 2.4cqw, 36px)' : 'clamp(12px, 1.6cqw, 22px)'} style={{}} />
         <div style={{ fontWeight: 900, color: t.color, fontVariantNumeric: 'tabular-nums', fontSize: isWin ? 'clamp(16px, 2.4cqw, 34px)' : 'clamp(13px, 1.7cqw, 24px)' }}>{t.largestConnected}</div>
         <div style={{ width: '15cqw', maxWidth: 240, height: blockH, borderRadius: '6px 6px 0 0', display: 'flex', alignItems: 'flex-start', justifyContent: 'center', paddingTop: '1cqh', background: isWin ? 'linear-gradient(180deg, #4a381c, #1a1109)' : 'linear-gradient(180deg, #2b2540, #171223)', borderTop: isWin ? '0.35cqw solid #f6d98a' : place === 1 ? '0.3cqw solid #9ca3c4' : '0.3cqw solid #b08d6a' }}>
-          <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 3cqw, 44px)', color: 'rgba(255,255,255,0.82)' }}>{rankNum}</span>
+          <span style={{ fontWeight: 900, fontSize: 'clamp(20px, 3cqw, 44px)', color: 'rgba(246, 239, 230,0.82)' }}>{rankNum}</span>
         </div>
       </div>
     );
@@ -722,7 +722,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
       </div>
 
       {/* Weiß-Flash beim Einrasten */}
-      {locked && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 9, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 30%, rgba(255,255,255,0.9), rgba(255,255,255,0.2) 42%, transparent 60%)', animation: 'qqFlashPulse 0.55s ease both' }} />}
+      {locked && <div aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 9, pointerEvents: 'none', background: 'radial-gradient(circle at 50% 30%, rgba(246, 239, 230,0.9), rgba(246, 239, 230,0.2) 42%, transparent 60%)', animation: 'qqFlashPulse 0.55s ease both' }} />}
 
       {/* Spannungstext während Roulette/Blink → beim Lock der GROSSE Sieger-Name
           (Wolf 2026-07-16: „es ist doch DER Reveal-Moment"). */}
@@ -871,14 +871,14 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           </div>
           <div style={{ display: 'flex', gap: 7 }}>
             {awardKeys.map((_, i) => (
-              <span key={i} aria-hidden style={{ width: i === step ? 24 : 9, height: 9, borderRadius: 999, background: i === step ? color : (i < step ? `${color}99` : 'rgba(255,255,255,0.18)'), transition: 'width .3s ease, background .3s ease' }} />
+              <span key={i} aria-hidden style={{ width: i === step ? 24 : 9, height: 9, borderRadius: 999, background: i === step ? color : (i < step ? `${color}99` : 'rgba(246, 239, 230,0.18)'), transition: 'width .3s ease, background .3s ease' }} />
             ))}
           </div>
         </div>
         <div style={{ position: 'relative', zIndex: 5, animation: 'qqAwardIconPop 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
           <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, display: 'inline-flex' }}>
             <QQIcon slug={beat.slug} size={'clamp(72px, 8.8cqw, 138px)'} />
-            <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 34%, rgba(255,255,255,0.5) 50%, transparent 66%)', transform: 'translateX(-130%)', animation: 'qqAwardShine 1.1s ease 0.5s both' }} />
+            <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 34%, rgba(246, 239, 230,0.5) 50%, transparent 66%)', transform: 'translateX(-130%)', animation: 'qqAwardShine 1.1s ease 0.5s both' }} />
           </div>
         </div>
         {/* Titel + Leistung ZUERST — dann (nach kurzer Pause) die Enthüllung. */}
@@ -892,7 +892,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             <div style={{ position: 'relative', borderRadius: '50%', boxShadow: `0 0 44px ${color}88, 0 0 90px ${color}44` }}>
               <QQTeamAvatar avatarId={beat.av as QQTeam['avatarId']} teamEmoji={qqMegaFactionSlug(beat.av)} size={'clamp(66px, 7.4cqw, 116px)'} />
               {AWARD_SPARKS.map((sp, i) => (
-                <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(255,255,255,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${1.5 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
+                <span key={i} aria-hidden style={{ position: 'absolute', top: sp.top, left: sp.left, fontSize: sp.size, lineHeight: 1, color, textShadow: `0 0 10px ${color}, 0 0 4px rgba(246, 239, 230,0.6)`, animation: `finaleSparklePop ${sp.dur}s ease-in-out ${1.5 + sp.delay}s infinite`, pointerEvents: 'none', zIndex: 6 }}>✦</span>
               ))}
             </div>
           </div>
@@ -943,8 +943,8 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           Zeilen sitzen auf konsistentem dunklem Grund statt ueber der busy Halle. */}
       <div style={{
         position: 'relative', zIndex: 5, width: '100%', maxWidth: 1080, marginTop: 6,
-        background: 'rgba(10,8,22,0.60)', borderRadius: 26, border: '1px solid rgba(255,255,255,0.10)',
-        boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.06)',
+        background: 'rgba(10,8,22,0.60)', borderRadius: 26, border: '1px solid rgba(246, 239, 230,0.10)',
+        boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.06)',
         backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' as any,
         padding: 'clamp(12px,1.6cqh,22px) clamp(18px,2.2cqw,38px)',
       }}>
@@ -989,7 +989,7 @@ const S: Record<string, React.CSSProperties> = {
   // Akt 2 nested „Auflösung"
   megaReveal: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, padding: '30px 0 10px' },
   megaRevealBig: { fontSize: 46, fontWeight: 900, textAlign: 'center' },
-  megaRevealTrack: { width: 'min(720px, 80%)', height: 26, background: 'rgba(255,255,255,0.08)', borderRadius: 999, overflow: 'hidden' },
+  megaRevealTrack: { width: 'min(720px, 80%)', height: 26, background: 'rgba(246, 239, 230,0.08)', borderRadius: 999, overflow: 'hidden' },
   megaRevealHint: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
 
   // Akt 3 Beat A „Wertung dieser Frage" — sitzt IN der gemalten Tafel (MEGA_BOARD).
@@ -1001,7 +1001,7 @@ const S: Record<string, React.CSSProperties> = {
   qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   qrPts: { fontWeight: 900, fontSize: 42, minWidth: 116, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
   podium: { display: 'flex', flexDirection: 'column', gap: 14 },
-  podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 18, background: 'rgba(255,255,255,0.05)' },
+  podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 18, background: 'rgba(246, 239, 230,0.05)' },
   podMedal: { fontSize: 44, width: 56, textAlign: 'center', fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   podPts: { fontWeight: 900, fontSize: 46, minWidth: 90, textAlign: 'right' },
   alsoWrap: { marginTop: 10 },
@@ -1013,9 +1013,9 @@ const S: Record<string, React.CSSProperties> = {
   goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9, fontWeight: 900, color: '#e7e2f4', position: 'relative', zIndex: 5 },
   goHero: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative', zIndex: 5 },
   goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)' },
-  goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 14, background: 'rgba(255,255,255,0.045)' },
+  goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 14, background: 'rgba(246, 239, 230,0.045)' },
   goRank: { width: 48, textAlign: 'center', fontWeight: 900, fontSize: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  goBarTrack: { flex: 1, height: 22, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },
+  goBarTrack: { flex: 1, height: 22, background: 'rgba(246, 239, 230,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },
   goVal: { width: 74, textAlign: 'right', fontWeight: 900, fontSize: 32, fontVariantNumeric: 'tabular-nums' },
   goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
@@ -1024,7 +1024,7 @@ const S: Record<string, React.CSSProperties> = {
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
   standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  standBarTrack: { flex: 1, height: 32, background: 'rgba(255,255,255,0.06)', borderRadius: 999, position: 'relative', overflow: 'visible' },
+  standBarTrack: { flex: 1, height: 32, background: 'rgba(246, 239, 230,0.06)', borderRadius: 999, position: 'relative', overflow: 'visible' },
   standVal: { width: 132, textAlign: 'right', fontWeight: 900, fontSize: 40, fontVariantNumeric: 'tabular-nums' },
   standUnit: { width: 60, textAlign: 'left', fontSize: 22, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
 };

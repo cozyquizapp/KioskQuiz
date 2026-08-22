@@ -347,7 +347,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
                 padding: 'clamp(6px,0.9cqh,13px) clamp(14px,1.6cqw,26px)', borderRadius: 18,
                 background: 'linear-gradient(180deg, rgba(30,24,58,0.94), rgba(10,8,24,0.94))',
-                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(255,255,255,0.10)`,
+                boxShadow: `0 0 0 2px ${GOLD}8c, 0 0 52px 10px ${GOLD}61, inset 0 1px 0 rgba(246, 239, 230,0.10)`,
                 animation: struck && !reduce ? 'qqStr2Strike 0.5s var(--qq-celebrate) both' : 'none',
               }}>
                 <span style={{
@@ -465,7 +465,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     display: 'flex', flexDirection: 'column', alignItems: 'center', lineHeight: 1.05,
                     background: 'rgba(12,10,30,0.66)', borderRadius: 'clamp(8px,0.9cqw,14px)',
                     padding: 'clamp(2px,0.4cqh,5px) clamp(6px,0.8cqw,12px)',
-                    border: `1.5px solid ${isWin && lit ? GOLD + 'aa' : 'rgba(255,255,255,0.12)'}`,
+                    border: `1.5px solid ${isWin && lit ? GOLD + 'aa' : 'rgba(246, 239, 230,0.12)'}`,
                   }}>
                     <span style={{
                       fontFamily: 'var(--font-display)', fontSize: 'clamp(14px,1.5cqw,26px)', fontWeight: 700,

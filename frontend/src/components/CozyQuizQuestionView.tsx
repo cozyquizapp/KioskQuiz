@@ -739,7 +739,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 <div style={{
                   position: 'absolute', inset: 0,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  background: 'linear-gradient(165deg, rgba(255,255,255,0.045), rgba(0,0,0,0.28))',
+                  background: 'linear-gradient(165deg, rgba(246, 239, 230,0.045), rgba(0,0,0,0.28))',
                 }}>
                   <div style={{
                     fontSize: 'clamp(90px, 12cqw, 170px)', opacity: 0.16,
@@ -978,7 +978,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}, var(--qq-card-shadow)` : 'var(--qq-card-shadow)')
               : isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88`
-              : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, inset 0 1px 0 rgba(255,255,255,0.06)`,
+              : `0 0 0 1px ${accent}33, 0 0 80px ${accent}33, 0 0 32px ${accent}55, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
             // 2026-05-05 (Wolf 'Cheese-Reveal-Card wiggelt beim Auftauchen,
             // wirkt chaotisch'): revealAnswerBam (scale+wiggle) entfernt —
             // die Card ist beim Reveal eh schon sichtbar (war im Question-
@@ -1051,7 +1051,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }}>
                 <div style={{
                   position: 'absolute', top: 0, width: '60%', height: '100%',
-                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent)',
+                  background: 'linear-gradient(90deg, transparent, rgba(246, 239, 230,0.18), transparent)',
                   animation: 'revealShimmer 0.8s ease 0.5s both',
                   pointerEvents: 'none',
                 }} />
@@ -1440,7 +1440,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                             // „fertig"-Signal traegt jetzt das erleuchtete Wappen. Wenn alle
                             // abgegeben haben, faerbt sich die Badge-Kante in Fraktionsfarbe.
                             // 2026-07-14 (Wolf 'X/Y zu klein von weitem'): 28→40px, 15→22.
-                            border: `2.5px solid ${done ? litColor : 'rgba(255,255,255,0.2)'}`, color: 'var(--qq-text)', fontSize: 24, fontWeight: 900,
+                            border: `2.5px solid ${done ? litColor : 'rgba(246, 239, 230,0.2)'}`, color: 'var(--qq-text)', fontSize: 24, fontWeight: 900,
                             boxShadow: done ? `0 0 12px ${litColor}88` : 'none',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', fontVariantNumeric: 'tabular-nums', lineHeight: 1,
                             // 2026-07-16 (Wolf): nur die ANZAHL der Subteams, die geantwortet haben.
@@ -1806,7 +1806,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16, padding: '22px 24px',
                       background: cardBg,
                       border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
-                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.04)',
+                      boxShadow: 'inset 0 0 0 1px rgba(246, 239, 230,0.04)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       fontSize: 'clamp(20px, 2.4cqw, 34px)', fontWeight: 900, color: 'var(--qq-card-text)',
                       textAlign: 'center', lineHeight: 1.25,
@@ -2278,7 +2278,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {/* Shimmer sweep */}
                   <div style={{
                     position: 'absolute', top: 0, width: '60%', height: '100%',
-                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent)',
+                    background: 'linear-gradient(90deg, transparent, rgba(246, 239, 230,0.15), transparent)',
                     animation: 'revealShimmer 0.8s ease 0.5s both',
                     pointerEvents: 'none',
                   }} />
@@ -3349,7 +3349,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               position: 'absolute', bottom: -4, right: -4,
                               minWidth: 34, height: 34, padding: '0 8px', borderRadius: 999,
                               background: done ? '#22C55E' : 'rgba(10,8,20,0.92)',
-                              border: '2.5px solid rgba(255,255,255,0.2)',
+                              border: '2.5px solid rgba(246, 239, 230,0.2)',
                               // F1 (color-contrast): dunkler Text auf gruenem Badge (8.67:1 statt 2.28:1).
                               color: done ? '#120F18' : 'var(--qq-text)', fontSize: 19, fontWeight: 900,
                               display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -122,7 +122,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
           100% { transform: translateY(var(--swapDiff)); }
         }
         @keyframes qqRecapWinnerGlow {
-          0%   { box-shadow: 0 0 0 rgba(var(--qq-accent-rgb),0); border-color: rgba(255,255,255,0.10); }
+          0%   { box-shadow: 0 0 0 rgba(var(--qq-accent-rgb),0); border-color: rgba(246, 239, 230,0.10); }
           100% { box-shadow: 0 0 36px rgba(var(--qq-accent-rgb),0.55), 0 0 72px rgba(var(--qq-accent-rgb),0.25); border-color: rgba(var(--qq-accent-rgb),0.85); }
         }
       `}</style>
@@ -197,7 +197,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
               padding: '0 18px', borderRadius: 14,
               background: isJust
                 ? 'linear-gradient(90deg, rgba(var(--qq-accent-rgb),0.20), rgba(var(--qq-accent-magenta-rgb),0.12))'
-                : 'rgba(255,255,255,0.04)',
+                : 'rgba(246, 239, 230,0.04)',
               border: isJust
                 ? '2px solid rgba(var(--qq-accent-rgb),0.7)'
                 : '1.5px solid var(--qq-hairline)',
@@ -744,9 +744,9 @@ function FinalRevealSharedKeyframes() {
       /* 2026-05-24 (Wolf Award-Reveal-Choreo): kurzer Pulse-Flash fuer die
          Standings-Row sobald das Team einen Award bekommt. */
       @keyframes qqAwardRowFlash {
-        0%   { box-shadow: 0 0 12px var(--qqFlashColor, rgba(255,255,255,0.2)); }
+        0%   { box-shadow: 0 0 12px var(--qqFlashColor, rgba(246, 239, 230,0.2)); }
         40%  { box-shadow: 0 0 64px rgba(251,191,36,0.6), 0 0 24px rgba(251,191,36,0.5); }
-        100% { box-shadow: 0 0 36px var(--qqFlashColor, rgba(255,255,255,0.3)); }
+        100% { box-shadow: 0 0 36px var(--qqFlashColor, rgba(246, 239, 230,0.3)); }
       }
       @keyframes qqFRDrumroll {
         0%, 100% { transform: rotate(-2deg); }
@@ -1905,7 +1905,7 @@ export function FinalEurovisionFinale({ finalRanking, lang }: {
               borderRadius: isWinner ? 24 : 16,
               background: isWinner
                 ? `linear-gradient(135deg, ${tColor}40, ${tColor}12)`
-                : 'rgba(255,255,255,0.04)',
+                : 'rgba(246, 239, 230,0.04)',
               border: isWinner
                 ? `3px solid ${tColor}`
                 : '1.5px solid var(--qq-hairline)',
@@ -2408,8 +2408,8 @@ export function TowerFinalSlide({ finalRanking, lang }: {
           to   { transform: translateY(0); opacity: 1; }
         }
         @keyframes qqTowerCapGlow {
-          0%, 100% { box-shadow: 0 0 0 rgba(255,255,255,0); }
-          50%      { box-shadow: 0 -2px 14px rgba(255,255,255,0.28); }
+          0%, 100% { box-shadow: 0 0 0 rgba(246, 239, 230,0); }
+          50%      { box-shadow: 0 -2px 14px rgba(246, 239, 230,0.28); }
         }
         @keyframes qqTowerNumPop {
           0%   { transform: scale(1.7); }
@@ -2645,7 +2645,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
       {crowned && (
         <div aria-hidden style={{
           position: 'absolute', inset: 0, zIndex: 7, pointerEvents: 'none',
-          background: 'radial-gradient(circle at 50% 40%, rgba(255,240,205,0.95), rgba(255,255,255,0) 60%)',
+          background: 'radial-gradient(circle at 50% 40%, rgba(255,240,205,0.95), rgba(246, 239, 230,0) 60%)',
           animation: 'qqTowerFlash 0.9s ease-out both',
         }} />
       )}
@@ -2973,11 +2973,11 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                     <div key={bi} style={{
                       width: blockW, height: blockH,
                       borderRadius: Math.min(8, Math.round(blockH * 0.16)),  // quadratisch wie Grid-Feld
-                      background: `linear-gradient(160deg, rgba(255,255,255,0.30) 0%, ${colr} 34%, ${colr} 62%, rgba(0,0,0,0.28) 100%)`,
+                      background: `linear-gradient(160deg, rgba(246, 239, 230,0.30) 0%, ${colr} 34%, ${colr} 62%, rgba(0,0,0,0.28) 100%)`,
                       border: `2px solid ${colr}`,
                       boxShadow: (crowned && isWinner)
-                        ? `inset 0 2px 3px rgba(255,255,255,0.45), 0 0 16px ${entry.team.color}88`
-                        : `inset 0 2px 3px rgba(255,255,255,0.40)`,
+                        ? `inset 0 2px 3px rgba(246, 239, 230,0.45), 0 0 16px ${entry.team.color}88`
+                        : `inset 0 2px 3px rgba(246, 239, 230,0.40)`,
                       // Nur der jeweils oberste (neueste) Block spielt die Drop-Animation.
                       transformOrigin: 'bottom center',
                       animation: isTopBlock ? 'qqTowerDrop 0.42s cubic-bezier(0.3,1.3,0.5,1) both' : 'none',
@@ -3003,7 +3003,7 @@ export function TowerFinalSlide({ finalRanking, lang }: {
                       {isTop3 && identityShown && (
                         <div aria-hidden style={{
                           position: 'absolute', inset: 0, borderRadius: 'inherit',
-                          background: 'rgba(255,255,255,0.9)', pointerEvents: 'none', zIndex: 3,
+                          background: 'rgba(246, 239, 230,0.9)', pointerEvents: 'none', zIndex: 3,
                           animation: `qqWaveFlash 0.5s ease-out ${waveDelay}ms both`,
                         }} />
                       )}
@@ -3560,7 +3560,7 @@ export function RaceFinalSlide({ finalRanking, lang }: {
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: config.rankFontSize, fontWeight: 900,
                     color: '#120F18',
-                    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
+                    boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.30), 0 -8px 32px rgba(251,191,36,0.55)',
                   }}>1</div>
                 </div>
               );
@@ -3807,7 +3807,7 @@ function RaceStarryBackground() {
           background: '#F6EFE6',
           ['--max-op' as string]: s.maxOpacity,
           opacity: s.maxOpacity,
-          boxShadow: s.size > 2 ? `0 0 ${s.size * 2}px rgba(255,255,255,0.6)` : undefined,
+          boxShadow: s.size > 2 ? `0 0 ${s.size * 2}px rgba(246, 239, 230,0.6)` : undefined,
           animation: `raceStarTwinkle ${s.twinkleDuration}s ease-in-out ${s.twinkleDelay}s infinite`,
         }} />
       ))}
@@ -3818,7 +3818,7 @@ function RaceStarryBackground() {
           width: 2, height: 2,
           background: '#F6EFE6',
           borderRadius: '50%',
-          boxShadow: '0 0 4px #F6EFE6, -20px -10px 30px rgba(255,255,255,0.4)',
+          boxShadow: '0 0 4px #F6EFE6, -20px -10px 30px rgba(246, 239, 230,0.4)',
           animation: `raceShootingStar 2s ease-out ${ss.delay}s infinite`,
           opacity: 0,
         }} />
@@ -3896,7 +3896,7 @@ function RaceCountdownOverlay() {
         border: `3px solid ${current.color}`,
         backdropFilter: 'blur(14px) saturate(160%)',
         WebkitBackdropFilter: 'blur(14px) saturate(160%)',
-        boxShadow: `0 0 40px ${current.glow}, 0 0 96px ${current.glow}, inset 0 1px 0 rgba(255,255,255,0.08)`,
+        boxShadow: `0 0 40px ${current.glow}, 0 0 96px ${current.glow}, inset 0 1px 0 rgba(246, 239, 230,0.08)`,
         fontSize: current.size,
         fontWeight: 900,
         color: current.color,
@@ -3972,7 +3972,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         fontSize: effectiveRankFontSize, fontWeight: 900,
         color: isMinor ? 'var(--qq-card-text)' : '#120F18',
-        boxShadow: `inset 0 1px 0 rgba(255,255,255,0.25), 0 -4px 16px ${podiumColor}55`,
+        boxShadow: `inset 0 1px 0 rgba(246, 239, 230,0.25), 0 -4px 16px ${podiumColor}55`,
       }}>{rank}</div>
     </div>
   );

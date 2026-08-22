@@ -176,7 +176,7 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
         <div style={{
           position: 'absolute', top: 0, bottom: 0,
           width: '40%',
-          background: 'linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.18) 45%, rgba(255,255,255,0.28) 50%, rgba(255,255,255,0.18) 55%, transparent 100%)',
+          background: 'linear-gradient(90deg, transparent 0%, rgba(246, 239, 230,0.18) 45%, rgba(246, 239, 230,0.28) 50%, rgba(246, 239, 230,0.18) 55%, transparent 100%)',
           animation: 'placementSweep 1.1s var(--qq-ease-smooth) 0.15s both',
         }} />
       </div>

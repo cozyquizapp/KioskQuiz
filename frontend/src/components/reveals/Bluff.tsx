@@ -562,8 +562,8 @@ export function BluffReviewScreen({ state: s, accent, lang }: {
           return (
             <div key={teamId} style={{
               padding: '10px 14px', borderRadius: 16,
-              background: rejected ? 'rgba(239,68,68,0.10)' : 'rgba(255,255,255,0.04)',
-              border: `1.5px solid ${rejected ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.08)'}`,
+              background: rejected ? 'rgba(239,68,68,0.10)' : 'rgba(246, 239, 230,0.04)',
+              border: `1.5px solid ${rejected ? 'rgba(239,68,68,0.4)' : 'rgba(246, 239, 230,0.08)'}`,
               opacity: rejected ? 0.6 : 1,
               display: 'flex', flexDirection: 'column', gap: 6,
             }}>
@@ -822,7 +822,7 @@ export function BluffVoteScreen({ state: s, accent, lang, revealed }: {
                 flexWrap: 'wrap',
                 position: 'relative', zIndex: 2,
                 paddingTop: voters.length > 0 ? 'clamp(6px, 0.8cqh, 10px)' : 0,
-                borderTop: voters.length > 0 ? '1px dashed rgba(255,255,255,0.16)' : 'none',
+                borderTop: voters.length > 0 ? '1px dashed rgba(246, 239, 230,0.16)' : 'none',
                 minHeight: 'clamp(76px, 7.5cqw, 116px)',
               }}>
                 {voters.length > 0 ? (

@@ -144,7 +144,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               <div key={idx} style={{
                 flex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center',
                 gap: 'clamp(12px,1.4cqw,22px)', padding: '0 clamp(14px,1.6cqw,24px)', borderRadius: 18,
-                minHeight: 'clamp(56px,7cqh,88px)', background: 'rgba(255,255,255,0.03)',
+                minHeight: 'clamp(56px,7cqh,88px)', background: 'rgba(246, 239, 230,0.03)',
                 border: '2px solid rgba(148,163,184,0.14)',
               }}>
                 <div style={{
@@ -173,7 +173,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 14, background: badgeBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#120F18',
-                textShadow: '0 1px 2px rgba(255,255,255,0.2)',
+                textShadow: '0 1px 2px rgba(246, 239, 230,0.2)',
                 boxShadow: rank === 1 ? '0 0 20px rgba(250,204,21,0.5)' : 'none',
               }}>#{rank}</div>
               <div style={{

@@ -335,6 +335,20 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '🎁': 'cat-bunte-tuete',
   '🎰': 'cat-zehn-von-zehn',
   '📸': 'cat-cheese',
+  // 2026-08-22: acht Emoji, die kein eigenes Motiv brauchen, weil im Set
+  // bereits eins fuer dieselbe Sache liegt. Vorher liefen sie als OS-Glyphe.
+  '🏅': 'fx-medal-gold',   // Medaille im Pause-Panel
+  '💰': 'fx-bet',          // "die meisten Punkte auf die richtige Antwort"
+  '🔍': 'cat-cheese',      // Lupe in den Schau-mal-Partikeln
+  '🌊': 'sub-schwarm',     // Schwarm-Median bei Schwarmintelligenz
+  '🗡️': 'award-thief',     // Steal-Master im Pause-Panel = Meisterklauer
+  '🗡': 'award-thief',
+  '🦅': 'fx-lead',         // Comeback-King im Pause-Panel
+  // 2026-08-22: Glyph-Drift geradegezogen. Der Underdog-Award trug drei
+  // verschiedene Zeichen an drei Stellen (🔥 in der Registry, 🍀 im
+  // Turm-Finale, 🐢 im Final-Reveal). Alle drei meinen dieselbe Ehrung.
+  '🐢': 'award-underdog',
+  '🍀': 'award-underdog',
 };
 
 export function qqEmojiSlug(emoji: string): QQIconSlug | null {

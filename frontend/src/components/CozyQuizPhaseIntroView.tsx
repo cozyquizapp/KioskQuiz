@@ -133,7 +133,7 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontSize: Math.round(DOT * 0.55),
             background: isPast ? 'rgba(148,163,184,0.18)'
-              : isCurrent ? (themed ? 'rgba(255,255,255,0.05)' : `${catColor}1f`)
+              : isCurrent ? (themed ? 'rgba(246, 239, 230,0.05)' : `${catColor}1f`)
               : 'rgba(30,41,59,0.55)',
             border: isCurrent ? `2.5px solid ${lineCol}` : '1.5px solid rgba(148,163,184,0.35)',
             boxShadow: isCurrent
@@ -951,7 +951,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   fontFamily: arenaTitleFont, fontWeight: 900, fontSize: 'clamp(16px,1.85cqw,26px)',
                   color: '#3a0f22', background: 'linear-gradient(180deg, var(--qq-stage-brand-soft), var(--qq-stage-brand))', borderRadius: 8,
                   padding: '1px clamp(8px,0.9cqw,12px)', fontVariantNumeric: 'tabular-nums',
-                  boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.55)',
+                  boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.55)',
                 }}>×{arenaFinaleMult}</span>
                 {!isFinalQ && (
                   <span style={{

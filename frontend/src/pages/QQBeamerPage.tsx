@@ -129,11 +129,11 @@ export function getBrandColors(eurovisionMode?: boolean) {
 // Pink omnipräsent.
 export const COZY_HERO_BORDER = '1.5px solid rgba(var(--qq-stage-brand-rgb), 0.32)';
 export const COZY_HERO_SHADOW =
-  'inset 0 1.5px 0 rgba(255,255,255,0.10), ' +
+  'inset 0 1.5px 0 rgba(246, 239, 230,0.10), ' +
   '0 0 0 1px rgba(var(--qq-stage-brand-rgb), 0.08), ' +
   '0 16px 50px rgba(0,0,0,0.65), ' +
   '0 0 36px rgba(var(--qq-stage-brand-rgb), 0.14)';
-export const COZY_SUB_BORDER = '1px solid rgba(255,255,255,0.10)';
+export const COZY_SUB_BORDER = '1px solid rgba(246, 239, 230,0.10)';
 
 // ── CSS keyframes ─────────────────────────────────────────────────────────────
 import { QQ_BEAMER_CSS, QQ_CAT_BADGE_BG, QQ_CAT_ACCENT, qqFactionBuckets } from '../qqShared';
@@ -522,10 +522,10 @@ function ReplayOverlay({ state }: { state: QQStateUpdate }) {
                 borderRadius: 16,
                 background: shown && team
                   ? `linear-gradient(135deg, ${teamColor}88, ${teamColor}33)`
-                  : 'rgba(255,255,255,0.04)',
+                  : 'rgba(246, 239, 230,0.04)',
                 border: shown
                   ? `2px solid ${team ? teamColor : QQ_COLORS.slate600}`
-                  : '1px solid rgba(255,255,255,0.08)',
+                  : '1px solid rgba(246, 239, 230,0.08)',
                 display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                 gap: 4,
                 opacity: shown ? 1 : 0.25,
@@ -2283,7 +2283,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {/* Soft-Zoom: heller Blur-Schleier pulst kurz auf */}
           <div style={{
             position: 'absolute', inset: 0,
-            background: 'radial-gradient(ellipse at center, rgba(255,255,255,0.32) 0%, rgba(255,255,255,0.08) 45%, transparent 75%)',
+            background: 'radial-gradient(ellipse at center, rgba(246, 239, 230,0.32) 0%, rgba(246, 239, 230,0.08) 45%, transparent 75%)',
             animation: 'qqSoftZoom 520ms var(--qq-ease-smooth) both',
             transformOrigin: 'center center',
           }} />
@@ -2440,8 +2440,8 @@ export function HotPotatoSlotMachine({ teams, chosenTeamId, lang }: {
         padding: 'clamp(20px, 2.5cqh, 32px) clamp(24px, 2.5cqw, 40px)',
         borderRadius: isThemed() ? 'var(--qq-card-radius)' : 28,
         background: isThemed() ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, rgba(15,23,42,0.55), rgba(15,23,42,0.30))',
-        border: isThemed() ? 'var(--qq-card-border)' : '2px solid rgba(255,255,255,0.08)',
-        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : 'inset 0 1px 0 rgba(255,255,255,0.05)',
+        border: isThemed() ? 'var(--qq-card-border)' : '2px solid rgba(246, 239, 230,0.08)',
+        boxShadow: isThemed() ? 'var(--qq-card-shadow)' : 'inset 0 1px 0 rgba(246, 239, 230,0.05)',
       }}>
         {teams.map((t, i) => {
           const active = i === cursor;
@@ -3806,7 +3806,7 @@ function MegaOptionCrests({ teams, de, dim, correct }: {
             position: 'absolute', bottom: -4, right: -4,
             minWidth: badgeSz, height: badgeSz, padding: '0 6px', borderRadius: 999,
             background: correct ? '#22C55E' : 'rgba(10,8,20,0.92)',
-            border: '2.5px solid rgba(255,255,255,0.2)',
+            border: '2.5px solid rgba(246, 239, 230,0.2)',
             color: correct ? '#120F18' : 'var(--qq-text)',
             fontSize: badgeFs, fontWeight: 900,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -4487,7 +4487,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
       <div aria-hidden style={{
         position: 'absolute', top: 0, left: '-30%',
         width: '60%', height: '100%',
-        background: `linear-gradient(115deg, transparent 35%, rgba(${accentRgb},0.18) 48%, rgba(255,255,255,0.22) 50%, rgba(${accentRgb},0.18) 52%, transparent 65%)`,
+        background: `linear-gradient(115deg, transparent 35%, rgba(${accentRgb},0.18) 48%, rgba(246, 239, 230,0.22) 50%, rgba(${accentRgb},0.18) 52%, transparent 65%)`,
         animation: 'qqIntroEntrySweep 1.4s cubic-bezier(0.2, 0.7, 0.3, 1) 0.1s both',
         pointerEvents: 'none', zIndex: 1,
         filter: 'blur(2px)',
@@ -4531,7 +4531,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           left: `${f.left}%`, top: `${f.top}%`,
           width: f.size * 1.8, height: f.size * 1.8, borderRadius: '50%',
           background: i % 3 === 0 ? accentSoftHex : i % 3 === 1 ? accentHex : accentWarmHex,
-          boxShadow: `0 0 24px rgba(${accentRgb},0.85), 0 0 6px rgba(255,255,255,0.7)`,
+          boxShadow: `0 0 24px rgba(${accentRgb},0.85), 0 0 6px rgba(246, 239, 230,0.7)`,
           opacity: 0,
           animation: `qqIntroFireflyBurst 1.4s var(--qq-ease-pop-fast) ${1.5 + (i % 6) * 0.04}s both`,
           pointerEvents: 'none',
@@ -4545,7 +4545,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           left: `${f.left}%`, top: `${f.top}%`,
           width: f.size, height: f.size, borderRadius: '50%',
           background: i % 2 ? accentHex : accentSoftHex,
-          boxShadow: `0 0 10px rgba(${accentRgb},0.55), 0 0 2px rgba(255,255,255,0.4)`,
+          boxShadow: `0 0 10px rgba(${accentRgb},0.55), 0 0 2px rgba(246, 239, 230,0.4)`,
           opacity: 0.65,
           animation: `qqIntroFireflyDrift ${f.dur}s ease-in-out ${f.delay}s infinite`,
           pointerEvents: 'none',
@@ -4838,7 +4838,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             backdropFilter: 'blur(8px)',
             WebkitBackdropFilter: 'blur(8px)',
             border: `2px solid rgba(${accentRgb},0.55)`,
-            boxShadow: `0 0 0 3px rgba(${accentRgb},0.12), inset 0 1px 0 rgba(255,255,255,0.06)`,
+            boxShadow: `0 0 0 3px rgba(${accentRgb},0.12), inset 0 1px 0 rgba(246, 239, 230,0.06)`,
             color: QQ_COLORS.slate100,
             fontSize: 'clamp(17px, 1.9cqw, 28px)', fontWeight: 900,
             maxWidth: '30cqw',
@@ -4942,14 +4942,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             transform: scale(1.10) rotate(8deg);
             color: var(--qq-text);
             text-shadow: 0 2px 10px rgba(0,0,0,0.5),
-                         0 0 14px rgba(255,255,255,0.85),
+                         0 0 14px rgba(246, 239, 230,0.85),
                          0 0 28px rgba(255,45,123,0.55);
           }
           50% {
             transform: scale(1.22) rotate(0deg);
             color: var(--qq-text);
             text-shadow: 0 2px 10px rgba(0,0,0,0.5),
-                         0 0 28px rgba(255,255,255,0.95),
+                         0 0 28px rgba(246, 239, 230,0.95),
                          0 0 56px rgba(255,45,123,0.75),
                          0 0 96px rgba(168,85,247,0.45);
           }
@@ -4957,14 +4957,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             transform: scale(1.10) rotate(-8deg);
             color: var(--qq-text);
             text-shadow: 0 2px 10px rgba(0,0,0,0.5),
-                         0 0 14px rgba(255,255,255,0.85),
+                         0 0 14px rgba(246, 239, 230,0.85),
                          0 0 28px rgba(255,45,123,0.55);
           }
         }
         /* Backwards-compat alias falls noch wo verwendet. */
         @keyframes qqStingerXShimmer {
           0%, 100% { transform: scale(1);    text-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-          50%      { transform: scale(1.18); text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 24px rgba(255,255,255,0.85); }
+          50%      { transform: scale(1.18); text-shadow: 0 2px 10px rgba(0,0,0,0.5), 0 0 24px rgba(246, 239, 230,0.85); }
         }
         /* Subtle vertical hover-float fuer Stinger-Logos. */
         @keyframes qqStingerHover {
@@ -5763,7 +5763,7 @@ function ComebackOption({ icon, label, desc, color, cardBg: bg }: { icon: string
       display: 'flex', alignItems: 'center', gap: 24, padding: '28px 36px', borderRadius: 24,
       background: bg ?? '#1B1510',
       border: `2px solid ${color}44`,
-      boxShadow: `inset 0 1px 0 rgba(255,255,255,0.04), 0 0 30px ${color}12`,
+      boxShadow: `inset 0 1px 0 rgba(246, 239, 230,0.04), 0 0 30px ${color}12`,
       flex: '1 1 0', minWidth: 200,
     }}>
       <span style={{ fontSize: 48, lineHeight: 1 }}><QQEmojiIcon emoji={icon}/></span>

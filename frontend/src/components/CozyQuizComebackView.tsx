@@ -293,7 +293,7 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
           borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
           background: isThemed() ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, rgba(15,23,42,0.78), rgba(11,16,28,0.72))',
           border: isThemed() ? 'var(--qq-card-border)' : '2px solid rgba(var(--qq-accent-rgb),0.32)',
-          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 4px 0 rgba(var(--qq-accent-rgb),0.18), inset 0 1px 0 rgba(255,255,255,0.05)',
+          boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 4px 0 rgba(var(--qq-accent-rgb),0.18), inset 0 1px 0 rgba(246, 239, 230,0.05)',
           minHeight: 'clamp(96px, 12cqh, 168px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) 0.08s both',
@@ -424,8 +424,8 @@ export function ComebackView({ state: s }: { state: QQStateUpdate }) {
                         background: isCorrect ? `${accentCol}33` : `${accentCol}14`,
                         border: `2.5px solid ${isCorrect ? accentCol : `${accentCol}66`}`,
                         boxShadow: isCorrect
-                          ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(255,255,255,0.10)`
-                          : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(255,255,255,0.05)`,
+                          ? `0 0 44px ${accentCol}aa, 0 0 14px ${accentCol}88, inset 0 1px 0 rgba(246, 239, 230,0.10)`
+                          : `0 0 22px ${accentCol}33, inset 0 1px 0 rgba(246, 239, 230,0.05)`,
                         backdropFilter: 'blur(10px)',
                         WebkitBackdropFilter: 'blur(10px)',
                         transform: isCorrect ? 'scale(1.08)' : isWrong ? 'scale(0.94)' : 'scale(1)',

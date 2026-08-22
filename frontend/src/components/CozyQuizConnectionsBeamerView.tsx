@@ -211,8 +211,8 @@ function ConnectionsTimer({ endsAt }: { endsAt: number }) {
         : 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.22), rgba(var(--qq-accent-rgb),0.08))',
       border: `2.5px solid ${urgent ? '#EF4444' : 'rgba(var(--qq-accent-rgb),0.55)'}`,
       boxShadow: urgent
-        ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(255,255,255,0.1)'
-        : '0 0 16px rgba(var(--qq-accent-rgb),0.35), inset 0 1px 0 rgba(255,255,255,0.08)',
+        ? '0 0 22px rgba(239,68,68,0.55), inset 0 1px 0 rgba(246, 239, 230,0.1)'
+        : '0 0 16px rgba(var(--qq-accent-rgb),0.35), inset 0 1px 0 rgba(246, 239, 230,0.08)',
       fontSize: 'clamp(28px, 3cqw, 44px)', fontWeight: 900,
       color: urgent ? '#FCA5A5' : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-stage-brand-soft)'),
       fontVariantNumeric: 'tabular-nums',
@@ -349,7 +349,7 @@ function ConnectionsGrid({ state: s }: {
             fontSize: 'clamp(22px, 2.4cqw, 34px)', fontWeight: 900,
             background: showColored && grp
               ? `linear-gradient(135deg, ${grp.color}38, ${grp.color}18)`
-              : 'rgba(255,255,255,0.05)',
+              : 'rgba(246, 239, 230,0.05)',
             border: showColored && grp
               ? `2.5px solid ${grp.color}`
               : '2px solid var(--qq-hairline)',

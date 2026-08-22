@@ -416,7 +416,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 fontSize: sp.size,
                 lineHeight: 1,
                 color: 'var(--qq-accent)',
-                textShadow: `0 0 12px ${winnerColor}, 0 0 4px rgba(255,255,255,0.6)`,
+                textShadow: `0 0 12px ${winnerColor}, 0 0 4px rgba(246, 239, 230,0.6)`,
                 animation: `finaleSparklePop ${sp.dur}s ease-in-out ${sparkleStartDelay + sp.delay}s infinite`,
                 pointerEvents: 'none',
                 zIndex: 6,

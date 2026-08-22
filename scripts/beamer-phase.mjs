@@ -123,6 +123,46 @@ await sleep(8000);
  * Der Pause-Bildschirm ist der Sonderfall: den erreicht kein Durchlauf von
  * selbst, er wird am Ende gezielt ausgeloest.
  */
+// 2026-08-22: Sondermodus `--slides=PHASE`. Manche Phasen zeigen NACHEINANDER
+// mehrere Bilder — die Regeln haben fuenf Seiten, die Aufloesung mehrere Takte.
+// Ein Schuss pro Phase erwischt davon genau eines, und dann prueft man vier
+// Seiten nie. Hier wird waehrend der Phase wiederholt geknipst und ueber eine
+// Pruefsumme entdoppelt, damit nur echte Wechsel im Ordner landen.
+const SLIDES = (process.argv.find(a => a.startsWith('--slides=')) || '').split('=')[1];
+if (SLIDES) {
+  const crypto = await import('node:crypto');
+  const fs = await import('node:fs');
+  const hashes = new Set();
+  let n = 0;
+  const until = Date.now() + Number(process.env.QQ_RUN_MS || 120000);
+  console.log(`\nKnipse jede neue Folie der Phase ${SLIDES} …`);
+  while (Date.now() < until) {
+    if (await phaseNow() === SLIDES) {
+      // Nicht ueber die Bild-Pruefsumme entdoppeln: die Gluehwuermchen im
+      // Hintergrund animieren, damit ist JEDES Bild verschieden und man
+      // bekommt 22 Aufnahmen statt fuenf. Schluessel ist der sichtbare TEXT
+      // der Folie — der wechselt genau dann, wenn die Folie wechselt.
+      const txt = await beamer.evaluate(() =>
+        (document.querySelector('[data-qq-phase]')?.innerText ?? '')
+          .replace(/\s+/g, ' ').trim().slice(0, 400)).catch(() => '');
+      const h = crypto.createHash('md5').update(txt).digest('hex');
+      if (!hashes.has(h)) {
+        const buf = await beamer.screenshot();
+        hashes.add(h); n++;
+        const name = `${OUT}/S${String(n).padStart(2, '0')}-${SLIDES}.png`;
+        fs.writeFileSync(name, buf);
+        console.log(`  ✓ ${name}`);
+        console.log(`      „${txt.slice(0, 110)}…"`);
+      }
+    }
+    await sleep(1200);
+  }
+  sock.close();
+  await browser.close();
+  console.log(`\nfertig, ${n} Folien → ${OUT}/`);
+  process.exit(0);
+}
+
 const seen = new Set();
 const t1 = Date.now();
 const RUN_MS = Number(process.env.QQ_RUN_MS || 480000);

@@ -19,6 +19,12 @@ import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon } from './QQIcon';
+// 2026-08-22 (Wolf: „wird der text auch ueberprueft?"): die Regel-Ansicht las
+// bis heute KEINE einzige Spielkonstante — jede Zahl stand als Text da. Heute
+// stimmen sie alle, aber nichts haelt sie richtig: wer QQ_MAX_JOKERS_PER_GAME
+// aendert, laesst die Regelfolie unbemerkt luegen, und das faellt erst
+// abends vor Publikum auf. Deshalb wenigstens die Joker-Zahl gebunden.
+import { QQ_MAX_JOKERS_PER_GAME } from '../../../shared/quarterQuizTypes';
 import { StageStepBar } from './CozyQuizBeamerTimer';
 import { CozyGameIcon } from './CozyGameIcon';
 import { JokerIcon } from './JokerIcon';
@@ -126,7 +132,7 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       heroJokers: true,
       lines: [
         t('rules.slide4.line1', '2×2-Block oder 4 in einer Reihe = 1 Bonus-Feld'),
-        t('rules.slide4.line2', 'Max. 2 Joker pro Team'),
+        t('rules.slide4.line2', `Max. ${QQ_MAX_JOKERS_PER_GAME} Joker pro Team`),
       ],
       grid: {
         cells: [
@@ -229,7 +235,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       heroJokers: true,
       lines: [
         t('rules.slide4.line1', '2×2 block or 4 in a row = 1 bonus cell'),
-        t('rules.slide4.line2', 'Max 2 jokers per team'),
+        t('rules.slide4.line2', `Max ${QQ_MAX_JOKERS_PER_GAME} jokers per team`),
       ],
       grid: {
         cells: [

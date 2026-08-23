@@ -9,6 +9,7 @@ import { useSceneTransition } from '../hooks/useSceneTransition';
 import {
   QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
+  QQPhase,
   QQQuestionImage,
   QQOptionImage,
   QQSlideTemplates,
@@ -712,6 +713,22 @@ export function SlideStage({ children, bg }: { children: React.ReactNode; bg?: s
     </div>
   );
 }
+
+// Auf diesen Folien traegt die Kategorie den Grund.
+//
+// 2026-08-23, beim Nachschauen aufgefallen: `cat` haengt an
+// `s.currentQuestion` und ist gesetzt, sobald das Spiel laeuft — auch waehrend
+// der REGELN. Die Ablauf-Folie stand deshalb ploetzlich auf gelbem Grund.
+// Die Regel steht im Kommentar von `qqCategoryStageBg()` und ist bewusst:
+// „Ohne Kategorie (Lobby, Regeln, Pause) bleibt der Grund neutral: dort ist die
+// einzige Farbe die der Teams, damit jedes Beitreten ein Ereignis bleibt."
+// Nur reicht es nicht, auf `cat` zu pruefen — es muss die PHASE sein.
+// Draussen bleiben damit: Lobby, Regeln, Team-Reveal, Pause, Stechen,
+// Spielende und Danke. Das Finale (Connections, Final-Tipp, Final-Reveal) ist
+// keine Kategorie und bleibt ebenfalls neutral.
+const QQ_KATEGORIE_GRUND_PHASEN = new Set<QQPhase>([
+  'PHASE_INTRO', 'QUESTION_ACTIVE', 'QUESTION_REVEAL', 'PLACEMENT', 'COMEBACK_CHOICE',
+]);
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // Beamer view — top-level router
@@ -1967,7 +1984,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Regeln, Team-Reveal, Pause, Ende) bleibt der Grund neutral — das ist so
       // gewollt, dort ist die einzige Farbe die der Teams.
       background: isThemed()
-        ? (cat ? (CAT_BG[cat] ?? 'var(--qq-bg)') : 'var(--qq-bg)')
+        ? ((cat && QQ_KATEGORIE_GRUND_PHASEN.has(s.phase)) ? (CAT_BG[cat] ?? 'var(--qq-bg)') : 'var(--qq-bg)')
         : (activeTemplate ? (activeTemplate.background || bg) : bg),
       // 2026-07-19 (Wolf „ist Cinzel/Garamond WIRKLICH überall umgestellt?"): nein,
       // war es nicht. Die Wurzel vererbte im Kolosseum weiter Bricolage/Nunito an

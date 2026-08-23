@@ -1,11 +1,17 @@
 import { useState, type CSSProperties } from 'react';
-import { useActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 
-// Kategorie-Slugs mit eigener Quirks-Variante (chunky Clay-Kachel, /icons/quirks/).
-// Im Quirks-Theme laden diese die Kachel-Version statt des freistehenden Icons.
-const QUIRK_CAT_SLUGS = new Set<string>([
-  'cat-schaetzchen', 'cat-mucho', 'cat-bunte-tuete', 'cat-zehn-von-zehn', 'cat-cheese',
-]);
+// 2026-08-23 (Wolf: „der schaetzchen emoji ist in einer kachel, das soll nicht
+// sein — die nicht-Teamemojis sollen eigentlich nie in kacheln stehen, sie
+// stehen ja mit farbe und form schon fuer sich"):
+// Die fuenf Kategorie-Symbole luden im Quirks-Theme eine zweite Fassung aus
+// /icons/quirks/, bei der die Kachel ins PNG gebacken ist. Gemessen: die
+// Kachel-Fassungen decken 79 bis 81 % der Bildflaeche, die freistehenden 32
+// bis 55 % — die Kachel IST also der Grossteil des Bildes.
+// Die Kachel gehoert dem Team: sie ist der Rahmen, in dem ein Avatar sitzt und
+// eine Teamfarbe traegt. Ein Kategorie-Symbol braucht sie nicht, es hat eigene
+// Farbe und eigene Silhouette, und seit die Kategorie den Grund traegt, steht
+// die Farbe ohnehin schon auf der ganzen Leinwand.
+// Die Dateien unter /icons/quirks/ bleiben liegen, geloescht wird nichts.
 
 // ── Icon-Registry ────────────────────────────────────────────────────────────
 // Custom Canva-Style PNGs unter /icons/. Slug = Dateiname ohne Extension.
@@ -477,11 +483,8 @@ const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
 
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {
   const [failed, setFailed] = useState(false);
-  const themeId = useActiveThemeId();
-  // Quirks-Theme: Kategorie-Icons als chunky Clay-Kacheln aus /icons/quirks/.
-  const quirkCat = themeId === QUIRKS_THEME_ID && QUIRK_CAT_SLUGS.has(slug);
   const effectiveSlug = SLUG_ALIAS[slug] ?? slug;
-  const src = quirkCat ? `/icons/quirks/${slug}.png` : `/icons/${effectiveSlug}.png`;
+  const src = `/icons/${effectiveSlug}.png`;
   const base: CSSProperties = {
     width: size,
     height: size,

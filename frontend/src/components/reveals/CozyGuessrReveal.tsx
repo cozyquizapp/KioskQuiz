@@ -16,6 +16,8 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { getAvatarDisplay } from '../../avatarSets';
 import { formatRevealedAnswer } from '../../cozyQuizShared';
+import { getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
 } from '../../utils/sounds';
@@ -253,6 +255,14 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
 
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
 
+  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): auch Pin It hatte keine
+  // Statuszeile - die Karte fuellte das Bild und oben stand mittig ein eigener
+  // Titel-Kasten. Auf der Buehne rueckt der nach oben LINKS und bekommt die
+  // Kategorie-Pille davor, wie auf allen anderen Folien. Der Kasten bleibt:
+  // anders als beim Kategorie-Grund liegt hier eine Landkarte darunter, und
+  // Text auf einer Karte braucht eine Flaeche.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+
   // 2026-07-16 (Wolf 'kategorie background nicht sichtbar, zwischen-bg blockiert'):
   // die Root-Div malte ein FAST OPAKES rotes Gradient (0.9 rechts) → das verdeckte
   // in der Arena das gemalte Kolosseum-Kategorie-BG (cat-buntetuete). In der Arena
@@ -385,7 +395,12 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
                 }}>
                   <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={28} />
                   <span style={{
-                    fontWeight: 900, color: team.color, fontSize: 'clamp(14px, 1.3cqw, 20px)',
+                    // 2026-08-23: die Entfernung steht auf der Buehne in Creme.
+                    // Welches Team gemeint ist, sagt die Marke direkt daneben;
+                    // Teamfarben sind fuer Flaechen gemacht, nicht fuer Ziffern.
+                    fontWeight: 900,
+                    color: istBuehne ? 'var(--qq-text)' : team.color,
+                    fontSize: istBuehne ? 'clamp(17px, 1.6cqw, 26px)' : 'clamp(14px, 1.3cqw, 20px)',
                     fontVariantNumeric: 'tabular-nums', letterSpacing: 0.2,
                   }}>
                     {(p.distKm ?? 0) >= 1000 ? `${((p.distKm ?? 0) / 1000).toFixed(1)} Mm` : `${Math.round(p.distKm ?? 0)} km`}
@@ -397,16 +412,46 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         )}
 
         {/* Title-Overlay oben */}
-        <div style={{
-          position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)',
-          padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
-          background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
-          color: 'var(--qq-accent-soft)', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
-          boxShadow: 'none',
-          zIndex: 1000, letterSpacing: 0.3,
-        }}>
-          <QQEmojiIcon emoji="🌍"/> {title}
-        </div>
+        {istBuehne ? (
+          <div style={{
+            position: 'absolute',
+            top: 'clamp(14px, 1.6vh, 26px)', left: 'clamp(14px, 1.6vh, 26px)',
+            display: 'flex', alignItems: 'center', gap: 'clamp(10px, 1.2cqw, 20px)',
+            zIndex: 1000, pointerEvents: 'none',
+          }}>
+            <span style={{
+              padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 28px)',
+              borderRadius: 'var(--qq-pill-radius)',
+              background: 'var(--qq-stage-accent)',
+              color: '#12100E',
+              fontWeight: 900, lineHeight: 1,
+              fontSize: 'clamp(16px, 1.7cqw, 30px)',
+              letterSpacing: '0.06em', whiteSpace: 'nowrap',
+            }}>
+              {(QQ_CATEGORY_LABELS.BUNTE_TUETE?.[lang] ?? 'Bunte Tüte').toUpperCase()}
+            </span>
+            <span style={{
+              padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 24px)',
+              borderRadius: 'var(--qq-pill-radius)',
+              background: 'rgba(13,10,6,0.82)',
+              color: 'var(--qq-text)', fontWeight: 900, lineHeight: 1,
+              fontSize: 'clamp(17px, 1.8cqw, 30px)', whiteSpace: 'nowrap',
+            }}>
+              {title}
+            </span>
+          </div>
+        ) : (
+          <div style={{
+            position: 'absolute', top: 28, left: '50%', transform: 'translateX(-50%)',
+            padding: '12px 28px', borderRadius: 'var(--qq-pill-radius)',
+            background: 'rgba(15,23,42,0.85)', border: '2px solid rgba(var(--qq-accent-rgb),0.4)',
+            color: 'var(--qq-accent-soft)', fontWeight: 900, fontSize: 'clamp(20px, 2.4cqw, 32px)',
+            boxShadow: 'none',
+            zIndex: 1000, letterSpacing: 0.3,
+          }}>
+            <QQEmojiIcon emoji="🌍"/> {title}
+          </div>
+        )}
 
       </div>
 
@@ -430,7 +475,8 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         }}>
           <div style={{
             fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)',
-            color: 'var(--qq-accent-soft)', marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
+            color: istBuehne ? 'var(--qq-text)' : 'var(--qq-accent-soft)',
+            marginBottom: 6, textAlign: 'center', letterSpacing: 0.4,
           }}>
             <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
           </div>

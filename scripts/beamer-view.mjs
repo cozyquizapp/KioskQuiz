@@ -130,7 +130,7 @@ const ANSICHTEN = {
   aufloesung: { ruhe: 6000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.antworten(); await sleep(600); await h.emit('qq:revealAnswer'); } },
   aufloesung2:{ ruhe: 6000, aufbau: 'spiel', weg: async (h) => {
     await h.zurFrage(); await h.antworten(); await sleep(600); await h.emit('qq:revealAnswer'); await sleep(1600);
-    for (const ev of ['qq:muchoRevealStep', 'qq:zvzRevealStep', 'qq:cheeseRevealStep']) {
+    for (const ev of ['qq:muchoRevealStep', 'qq:zvzRevealStep', 'qq:cheeseRevealStep', 'qq:mapRevealStep']) {
       await h.emit(ev); await sleep(200); await h.emit(ev); await sleep(200);
     }
   } },

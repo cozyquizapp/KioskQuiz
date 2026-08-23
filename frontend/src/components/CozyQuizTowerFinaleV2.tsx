@@ -98,6 +98,21 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
     return m;
   }, [awards]);
   const totalOf = useCallback((id: string) => baseOf(id) + (bonusByTeam[id] ?? 0), [baseOf, bonusByTeam]);
+  // 2026-08-23 (Wolf: „die kacheln fuer sonderpreise ist ein stern? ist das
+  // extra?"). Der Stern war Absicht, aber die schwaechere Loesung: er sagt nur
+  // DASS es ein Award war, nicht WELCHER. Die drei Awards haben eigene Zeichen
+  // im gelieferten Set - Blitz, Muenze, Kleeblatt - und die stehen zwei Minuten
+  // vorher gross auf der Award-Karte. Wer sie dort gesehen hat, erkennt sie im
+  // Turm wieder, und die Tuerme erzaehlen dann, WOFUER die Punkte kamen.
+  // Ein Award mit bonus 2 (Underdog) belegt zwei Bausteine, deshalb aufgefaltet.
+  const awardZeichenProTeam = useMemo(() => {
+    const m: Record<string, string[]> = {};
+    for (const a of awards) {
+      const liste = m[a.teamId] ?? (m[a.teamId] = []);
+      for (let i = 0; i < a.bonus; i++) liste.push(a.emoji);
+    }
+    return m;
+  }, [awards]);
 
   const finalRanking = useMemo(() => [...teams].sort((a, b) => {
     // 2026-07-27 (Audit): identische Sieger-Logik wie qqFinalSortedTeams (Handy):
@@ -330,7 +345,9 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   // noch auf dem alten 96px-Sockel, der Turm wurde entsprechend zu hoch und der
   // Avatar auf der Spitze stand mitten im Titelband.
   const SOCKEL_H = istBuehne ? 134 : BASE_H;
-  const KOPF_H = istBuehne ? 160 : CROWN_H;
+  // Ohne den kletternden Avatar (siehe unten) braucht der Kopf nur noch Platz
+  // fuer die Platz-Pille. Das kommt den Bausteinen zugute.
+  const KOPF_H = istBuehne ? 84 : CROWN_H;
   const zoneH = STAGE_H - TITLE_H - KOPF_H - SOCKEL_H - BOTTOM;
   const blockSeite = Math.max(15, Math.min(
     colW - 10,
@@ -528,7 +545,19 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
               <div aria-hidden style={{ position: 'absolute', left: '50%', bottom: -12, transform: 'translateX(-50%)', width: Math.round(blockW * 2.1), height: 26, borderRadius: '50%', background: `radial-gradient(ellipse, ${colr}${crowned && isWinner ? '55' : '30'}, transparent 70%)`, filter: 'blur(6px)', zIndex: 0, pointerEvents: 'none', transition: 'background 0.4s ease' }} />
 
               {/* Kletternder Avatar (Krone/Badge) */}
-              <div style={{ position: 'absolute', left: '50%', bottom: towerPx + 7, zIndex: 5, width: AV_OBEN, height: AV_OBEN, transform: 'translateX(-50%)', transition: reduce ? 'none' : 'bottom 0.44s cubic-bezier(0.34,1.4,0.6,1)' }}>
+              {/* 2026-08-23 (Wolf: „die oberste kachel ist anders gross - ist
+                  das extra?"). Absicht war es, aber die Absicht kam nicht an:
+                  das ist gar keine Kachel, sondern der kletternde Team-Avatar,
+                  der die Turmspitze markiert. Frueher war er mit 54px GROESSER
+                  als ein 46px-Baustein und damit klar etwas anderes. Seit die
+                  Bausteine bis 132px gross sind, ist er kleiner und liest sich
+                  als geschrumpfte oberste Kachel.
+                  Auf der Buehne faellt er weg, denn er hat keine Aufgabe mehr:
+                  JEDER Baustein traegt inzwischen Teamfarbe und Teammarke, die
+                  Spitze ist ohnehin die Spitze, und die Platz-Pille haengt jetzt
+                  direkt ueber dem obersten Baustein. Leicht rueckgaengig zu
+                  machen - `AV_OBEN` und der Block hier stehen unveraendert. */}
+              <div style={{ position: 'absolute', left: '50%', bottom: towerPx + 7, zIndex: 5, width: istBuehne ? blockW : AV_OBEN, height: istBuehne ? 0 : AV_OBEN, transform: 'translateX(-50%)', transition: reduce ? 'none' : 'bottom 0.44s cubic-bezier(0.34,1.4,0.6,1)' }}>
                 {/* 2026-08-23 (Wolf: „die krone ist alt"). Sie war ausserdem
                     die einzige Stelle, an der der Sieger eine ANDERE Form bekam
                     als Platz 2 und 3 - die tragen eine Platz-Pille. Jetzt tragen
@@ -538,15 +567,15 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     Sonderfall. Wer gewonnen hat, sagen ausserdem Hoehe, Mitte
                     und die Sieger-Zeile im Titelband. */}
                 {isWinner && crowned && istBuehne && (
-                  <div style={{ position: 'absolute', left: '50%', bottom: AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
+                  <div style={{ position: 'absolute', left: '50%', bottom: istBuehne ? 8 : AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
                     <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: '0.06em', color: '#12100E', background: 'var(--qq-stage-accent, var(--qq-accent))', borderRadius: 999, padding: '4px 16px' }}>{de ? 'PLATZ 1' : '#1'}</span>
                   </div>
                 )}
                 {isWinner && crowned && !istBuehne && (
-                  <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: AV_OBEN - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
+                  <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: istBuehne ? 8 : AV_OBEN - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                 )}
                 {!isWinner && showBadge && (
-                  <div style={{ position: 'absolute', left: '50%', bottom: AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
+                  <div style={{ position: 'absolute', left: '50%', bottom: istBuehne ? 8 : AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
                     {/* 2026-08-23 (2a): Silber und Bronze waren rohe Systemzeichen
                         und eine fuenfte und sechste Farbe fuer etwas, das die
                         Pille direkt darunter schon in Worten sagt. */}
@@ -554,11 +583,13 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                   </div>
                 )}
+                {!istBuehne && (
                 <div style={{ width: AV_OBEN, height: AV_OBEN, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: (myst || istBuehne) ? 'none' : `0 0 14px ${colr}77`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
                   {myst
                     ? <span aria-hidden style={{ fontSize: Math.round(AV_OBEN * 0.55), fontWeight: 900, color: 'var(--qq-text-muted)', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>?</span>
                     : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV_OBEN} flat />}
                 </div>
+                )}
               </div>
 
               {/* Kacheln */}
@@ -586,7 +617,12 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {isAwardBlock
-                      ? <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(246, 239, 230,0.4))' }}>★</span>
+                      ? (istBuehne
+                          ? <QQEmojiIcon
+                              emoji={awardZeichenProTeam[id]?.[bi - base] ?? '⚡'}
+                              size={Math.round(blockW * 0.66)}
+                            />
+                          : <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(246, 239, 230,0.4))' }}>★</span>)
                       : myst ? null : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avInBlock} flat />}
                     {/* Der Lande-Blitz bleibt: er ist transient und sagt
                         „dieser Baustein ist GERADE gefallen". Ein Schein mit

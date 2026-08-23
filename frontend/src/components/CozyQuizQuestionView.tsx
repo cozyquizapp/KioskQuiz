@@ -25,7 +25,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
-import { isThemed, isQuietMotion } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import { SkinDeco } from './SkinDeco';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
@@ -580,6 +580,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // vollstaendig in den Schriftgrad. Die Bucket-Staffelung nach Textlaenge und
   // der min(cqw,cqh)-Cap bleiben unveraendert — sie sind der Grund, warum lange
   // Fragen nicht ins Layout wachsen.
+  // 2026-08-23 (Wolf: „die frage war doch nicht in einem kasten als wir das
+  // neue design besprochen haben?"). Richtig, und der Kasten war ein
+  // Verdrahtungsfehler, kein Rueckschritt.
+  // Aenderung 3 der Uebergabe 2a heisst „Frage aus der Karte holen", und der
+  // Code dazu steht weiter unten wortwoertlich da. Er haengt nur an
+  // `!isThemed()` — also am ALTEN Cozy-Look. Die Buehne laeuft aber im
+  // Quirks-Theme und ist damit `isThemed() === true`; sie bekam den Kasten,
+  // fuer den die Aenderung gar nicht gedacht war. Genau derselbe Dreher wie
+  // beim Kategorie-Grund (Aenderung 1), nur andersherum.
+  // `isThemed()` taugt hier nicht als Unterscheidung, weil auch Studio Mono,
+  // Soft Pop und Neo-Brutalism darunter fallen — und bei denen IST die Karte
+  // Teil der Skin-Sprache. Also wird die Buehne benannt statt umschrieben.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const kartenLook = isThemed() && !istBuehne;
+
   const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 56px)'
     : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 72px)'
     : qText.length > 80  ? 'clamp(40px, min(5cqw, 7.3cqh), 92px)'
@@ -1697,7 +1712,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // linksbuendig gestanden, aber 120 px eingerueckt — also weder
             // mittig noch an einer Kante. Skins behalten ihr Polster, dort ist
             // die Karte Teil der Skin-Sprache.
-            const cardSideP = isThemed() ? 'clamp(60px, 8cqw, 120px)' : '0px';
+            // 2026-08-23: dieselbe Verdrahtung wie beim Kasten daneben — die
+            // Entscheidung von 2026-08-22 haengt an `isThemed()` und erreichte
+            // die Buehne nie. Der Kommentar darueber beschreibt genau das, was
+            // Wolf heute im Bild gesehen hat: „weder mittig noch an einer Kante".
+            const cardSideP = kartenLook ? 'clamp(60px, 8cqw, 120px)' : '0px';
             const cardPadding = compactCard
               ? `clamp(10px, 1.4cqh, 18px) ${cardSideP} clamp(10px, 1.4cqh, 18px)`
               : `clamp(18px, 2.6cqh, 32px) ${cardSideP} clamp(18px, 2.6cqh, 32px)`;
@@ -1736,10 +1755,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   //
                   // Skins (isThemed) behalten ihr Karten-Treatment: dort ist die
                   // Karte Teil der Skin-Sprache, nicht der Buehne.
-                  background: isThemed() ? cardBg : 'transparent',
-                  border: isThemed() ? 'var(--qq-card-border)' : 'none',
-                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 0,
-                  boxShadow: isThemed() ? 'var(--qq-card-shadow)' : 'none',
+                  background: kartenLook ? cardBg : 'transparent',
+                  border: kartenLook ? 'var(--qq-card-border)' : 'none',
+                  borderRadius: kartenLook ? 'var(--qq-card-radius)' : 0,
+                  boxShadow: kartenLook ? 'var(--qq-card-shadow)' : 'none',
                   padding: cardPadding,
                   marginBottom: cardMarginBottom,
                   width: '100%',
@@ -1747,7 +1766,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   // linksbuendig. Der Blick faengt beim Lesen links an, und bei
                   // drei Zeilen mittig beginnt jede Zeile woanders. Skins
                   // bleiben mittig.
-                  textAlign: isThemed() ? 'center' : 'left',
+                  textAlign: kartenLook ? 'center' : 'left',
                   animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
                   // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                   // entspannt, damit hpCompact-Snap weniger hektisch wirkt.

@@ -1839,7 +1839,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // haelt der Inhalt auf JEDER Frage die Hoehe der Zeile frei, und zwar
           // oben wie unten: die Buehne hat damit ein klares Feld zwischen
           // Statuszeile und Team-Reihe, in dem alles mittig steht.
-          padding: `calc(16px + ${QQ_KOPFZEILE_H}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`,
+          // 2026-08-23, nachgemessen statt vermutet: bei Zehn von Zehn lief die
+          // Sieger-Karte unten aus dem Bild. Gemessen im DOM: der Inhaltsblock
+          // ist 795px hoch, die Karte reicht bis y 1003 bei 990px Buehne. Frei
+          // waren nur 990 minus 220 oben minus 100 unten = 670px.
+          // Die 204px oben sind meine eigene Regel von heute Morgen, und sie
+          // stimmt - solange die Statuszeile DA ist. Bei der Aufloesung ist sie
+          // das nicht: die Kategorie-Pille haengt an `!revealed`, der Timer ist
+          // abgelaufen. Es wurde also Platz fuer eine leere Zeile freigehalten,
+          // und der fehlte dem Inhalt.
+          // Die Regel bekommt deshalb ihre Bedingung dazu: reserviert wird,
+          // solange oben etwas steht. Der Timer haelt nach der Aufloesung noch
+          // rund eine Sekunde nach (stickyTimer), also faellt die Reserve erst,
+          // wenn auch er weg ist - sonst rutschte der Inhalt eine Sekunde lang
+          // unter die noch sichtbare Zahl. Die Ueberblendung macht daraus eine
+          // Bewegung statt eines Sprungs.
+          padding: `calc(16px + ${(!revealed || !!kopfTimer) ? QQ_KOPFZEILE_H : 'clamp(30px, 4cqh, 48px)'}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`,
+          transition: 'padding-top 0.5s var(--qq-ease-smooth)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
           // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen
@@ -2343,15 +2359,32 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // Arena: kraeftigerer, opakerer Pill-Grund → die
                               // Fraktions-Wappen lesen klar (Wolf 'weniger transparent').
                               background: quirkSet && !isFastest ? 'transparent' : (isMegaTeams && !isThemed() ? 'rgba(15,23,42,0.92)' : 'var(--qq-overlay)'),
-                              border: isFastest ? `3px solid ${SPEED_GOLD}` : (quirkSet ? 'none' : `2px solid ${tm.color}`),
+                              // 2026-08-23: der schnellste Chip bekam einen
+                              // Gold-Rand mit 22px Schein. Gold ist auf der Buehne
+                              // keine Farbe des Vokabulars, und der Schein ist die
+                              // dritte Wiederholung. Statt dessen die Haarlinie in
+                              // Creme - kraeftig genug, um den Chip zu heben, ohne
+                              // eine vierte Farbe einzufuehren.
+                              border: isFastest
+                                ? (istBuehne ? '3px solid var(--qq-text)' : `3px solid ${SPEED_GOLD}`)
+                                : (quirkSet ? 'none' : `2px solid ${tm.color}`),
                               boxShadow: isFastest
-                                ? `0 0 22px ${SPEED_GOLD}8c`
+                                ? (istBuehne ? 'none' : `0 0 22px ${SPEED_GOLD}8c`)
                                 : (quirkSet ? 'none' : `0 6px 14px rgba(0,0,0,0.55), 0 0 14px ${tm.color}55`),
                               animation: `muchoVoterDrop 0.55s var(--qq-ease-bounce) ${0.1 + bi * 0.08}s both`,
                             }}>
                               {/* Beat 5 — Sieger-Krönung: Krone bouncet auf den
                                   höchsten Bet der korrekten Option. */}
-                              {isWinnerChip && (
+                              {/* 2026-08-23 (VORSCHLAG, umgesetzt): die Krone
+                                  faellt auf der Buehne weg. Kronen sind im Juli aus
+                                  dem restlichen Quiz genommen worden, hier und bei
+                                  Schaetzchen sind die letzten beiden stehen
+                                  geblieben - und es sind rohe Systemzeichen, also
+                                  auf jedem Rechner ein anderes Bild. Wer den
+                                  hoechsten Einsatz auf die richtige Antwort gesetzt
+                                  hat, sagt schon die gruen gerahmte Karte, die
+                                  Reihenfolge der Chips und das Siegerband unten. */}
+                              {isWinnerChip && !istBuehne && (
                                 /* 2026-06-29 (Wolf 'krone oft offset'): Lift in einen
                                    statischen Wrapper — der muchoVoterDrop-100%-Frame
                                    (transform reset, fill both) hatte sonst die
@@ -2378,8 +2411,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                                 // lineHeight 1 statt browser-default. Verhindert
                                 // dass font-ascent/descent die Pill-Hoehe sprengt.
                                 lineHeight: 1,
-                                color: tm.color, fontVariantNumeric: 'tabular-nums',
-                                textShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.45)',
+                                // 2026-08-23: der Einsatz steht auf der Buehne in
+                                // Creme. Rohe Teamfarben als Ziffern sind genau der
+                                // Fall, den wir am Brett gemessen und verworfen
+                                // haben; welches Team gemeint ist, sagt die Kachel
+                                // direkt daneben.
+                                color: istBuehne ? 'var(--qq-text)' : tm.color,
+                                fontVariantNumeric: 'tabular-nums',
+                                textShadow: istBuehne ? 'none' : '0 0 12px rgba(var(--qq-accent-rgb),0.45)',
                               }}>{pts}</span>
                               {/* Zeit-Pill immer auf korrekter Option (konsistent mit Mucho/Cheese) */}
                               {showTimePills && timeSec != null && (
@@ -3479,14 +3518,25 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 padding: 'clamp(12px, 1.6cqh, 22px) clamp(20px, 2.6cqw, 36px)',
                 width: '100%', maxWidth: QQ_QUESTION_MAX_W,
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
-                background: `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
-                border: `3px solid ${team!.color}88`,
-                boxShadow: `0 0 60px ${team!.color}33`,
+                // 2026-08-23: dasselbe Aufraeumen wie bei Schau mal und Top 5.
+                // Verlauf in Teamfarbe plus farbiger Rand plus 60px Schein sind
+                // drei Traeger fuer eine Aussage; die Marke links traegt die
+                // Teamfarbe schon als Flaeche. Auf der Buehne ruhiges Feld im
+                // tiefen Kategorie-Ton, Haarlinie, kein Schein.
+                // Der Grund der Folie IST der tiefe Kategorie-Ton, ein Band in
+                // derselben Farbe waere je nach Verlaufsstelle unsichtbar. Also
+                // ein Hauch Creme darueber, wie bei Top 5 und Fix It - dieselbe
+                // Flaeche fuer dieselbe Sache.
+                background: istBuehne
+                  ? 'rgba(246,239,230,0.06)'
+                  : `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
+                border: istBuehne ? '2px solid var(--qq-hairline)' : `3px solid ${team!.color}88`,
+                boxShadow: istBuehne ? 'none' : `0 0 60px ${team!.color}33`,
                 animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(56px, 7cqw, 92px)'} style={{
                   flexShrink: 0,
-                  boxShadow: `0 0 24px ${team!.color}88`,
+                  boxShadow: istBuehne ? 'none' : `0 0 24px ${team!.color}88`,
                   animation: `celebShake 0.6s ease ${avatarDelay}s both`,
                 }} />
                 <div style={{ minWidth: 0 }}>

@@ -25,7 +25,8 @@ import { QQEmojiIcon, QQIcon } from '../QQIcon';
 import { isQuirkTileSet } from '../../quirks2Avatars';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { useActiveThemeId } from '../../qqTheme';
+import { useActiveThemeId, getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 
 const MINT = QQ_COLORS.green300;
 const GOLD = '#EAB308';
@@ -86,7 +87,22 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // ~95%) schob Content in den dunklen Rand bzw. schnitt das rechte Wappen ab.
   // Darum die gesamte Strahl-Bühne in ein zentrales Band ziehen, das auf der Schale
   // sitzt. Nur Arena (der dunkle Default-BG braucht das nicht).
-  const CONTENT_INSET = isMega ? 11 : 0; // % Rand je Seite
+  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang). Der Strahl selbst bleibt, wie
+  // er ist - er IST die Mechanik dieser Kategorie, und sein Gold ist die
+  // Kategoriefarbe von Schaetzchen, nicht die Fremdfarbe, die bei Top 5
+  // rausgeflogen ist. Was fehlte, ist die Statuszeile, und was zu klein war,
+  // sind die Beschriftungen: die Antwort-Ueberschrift lief auf 14px, die
+  // Skalen-Enden auf 17px, das Delta am Wappen auf 16px. Das sind Werte fuer
+  // eine Bildschirmseite, nicht fuer acht Meter.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+
+  // 2026-08-23, im Bild gemessen: ohne Rand (0%) klemmt der aeusserste Tipp an
+  // der Bildkante. Die Wappen werden auf 5..95% der Flaeche geklemmt, das sind
+  // bei 1760px noch 88px bis zum Rand - die Marke ist 64px breit, das
+  // Wert-Kaestchen darunter breiter, und beides ist mittig ueber der Position.
+  // Also lief die rechte Haelfte aus dem Bild. Auf der Buehne bekommt die
+  // Flaeche 4% Rand je Seite, damit die Klemmung Platz zum Klemmen hat.
+  const CONTENT_INSET = isMega ? 11 : (istBuehne ? 4 : 0); // % Rand je Seite
   // Arena-Wertung EXAKT wie Backend (per Handy, Ø über verbundene Handys) — nur
   // mega. Marker bleibt der beste Tipp (Visual), aber Ranking/Sieger = Punkte, so
   // matcht der Sieger 1:1 das Standing (Wolf 2026-07-14). qqSchaetzchenParse =
@@ -129,6 +145,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   }, [rankedFinal, isMega, factionScores]);
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   useActiveThemeId();
+
 
   // Achse auf die Wahrheit zentriert, Ausreißer geclamped.
   // 2026-07-29 (Wolf-Finding #12 'ziel sieht komisch positioniert, 61 wirkt näher
@@ -298,15 +315,31 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
 
       {/* Kopf */}
       <div style={{ flexShrink: 0, position: 'relative', zIndex: 6 }}>
-        <div style={{
-          fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)',
-          letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 'clamp(3px, 0.5cqh, 7px)',
-          display: 'flex', alignItems: 'center', gap: 8,
-        }}>
-          <QQIcon slug="cat-schaetzchen" size="1.25em" /> {lang === 'en' ? 'Guess It · Reveal' : 'Schätzchen · Auflösung'}
-        </div>
+        {istBuehne ? (
+          <span style={{
+            display: 'inline-block', marginBottom: 'clamp(3px, 0.5cqh, 7px)',
+            padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 28px)',
+            borderRadius: 'var(--qq-pill-radius)',
+            background: 'var(--qq-stage-accent)',
+            color: '#12100E', fontWeight: 900, lineHeight: 1,
+            fontSize: 'clamp(16px, 1.7cqw, 30px)',
+            letterSpacing: '0.06em', whiteSpace: 'nowrap',
+          }}>
+            {(QQ_CATEGORY_LABELS.SCHAETZCHEN?.[lang] ?? 'Schätzchen').toUpperCase()}
+          </span>
+        ) : (
+          <div style={{
+            fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)',
+            letterSpacing: '0.16em', textTransform: 'uppercase', marginBottom: 'clamp(3px, 0.5cqh, 7px)',
+            display: 'flex', alignItems: 'center', gap: 8,
+          }}>
+            <QQIcon slug="cat-schaetzchen" size="1.25em" /> {lang === 'en' ? 'Guess It · Reveal' : 'Schätzchen · Auflösung'}
+          </div>
+        )}
         <div key={lang} style={{
-          fontSize: qText.length > 90 ? 'clamp(16px, 1.8cqw, 29px)' : 'clamp(18px, 2.3cqw, 37px)',
+          fontSize: istBuehne
+            ? (qText.length > 90 ? 'clamp(24px, 2.5cqw, 40px)' : 'clamp(28px, 3cqw, 50px)')
+            : (qText.length > 90 ? 'clamp(16px, 1.8cqw, 29px)' : 'clamp(18px, 2.3cqw, 37px)'),
           fontWeight: 900, lineHeight: 1.12, letterSpacing: '-0.01em', color: 'var(--qq-card-text)',
           maxWidth: '62%', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
           animation: 'langFadeIn 0.4s ease both', textWrap: 'pretty',
@@ -340,8 +373,9 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               opacity: struck ? 1 : 0, transition: 'opacity 0.35s var(--qq-enter)',
             }}>
               <span style={{
-                fontSize: 'clamp(9px, 0.95cqw, 14px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-                letterSpacing: '0.2em', textTransform: 'uppercase', marginBottom: 4,
+                fontSize: istBuehne ? 'clamp(15px, 1.6cqw, 26px)' : 'clamp(9px, 0.95cqw, 14px)',
+                fontWeight: 900, color: 'var(--qq-text-muted)',
+                letterSpacing: istBuehne ? '0.26em' : '0.2em', textTransform: 'uppercase', marginBottom: 4,
               }}>{lang === 'en' ? 'Answer' : 'Antwort'}</span>
               <div style={{
                 display: 'inline-flex', alignItems: 'baseline', gap: 'clamp(3px,0.5cqw,9px)',
@@ -371,14 +405,27 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             }} />
 
             {/* Skalen-Endlabels (auf Schienen-Höhe) */}
+            {/* 2026-08-23, im Bild gefunden: die Skalen-Enden sassen auf
+                Schienenhoehe, also in genau dem Band, in dem auch die Wappen der
+                oberen Bahn ihre Wert-Kaestchen abstellen. Ein Tipp am Rand (hier
+                252 bei 95%) lief mitten durch „zu hoch". Auf der Buehne wandern
+                die beiden Beschriftungen an den unteren Rand: sie beschriften die
+                ganze Achse, nicht die Schienenhoehe, und dort unten ist ohnehin
+                Platz. Kollision damit baulich ausgeschlossen statt weggerueckt. */}
             <div aria-hidden style={{
-              position: 'absolute', left: 0, top: `${RAIL - 6}%`, zIndex: 2,
-              fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+              position: 'absolute', left: 0,
+              ...(istBuehne ? { bottom: 0 } : { top: `${RAIL - 6}%` }),
+              zIndex: 2,
+              fontSize: istBuehne ? 'clamp(15px, 1.6cqw, 26px)' : 'clamp(10px, 1.05cqw, 17px)',
+              fontWeight: 900, color: 'var(--qq-text-muted)',
               letterSpacing: '0.12em', textTransform: 'uppercase',
             }}>← {lang === 'en' ? 'too low' : 'zu niedrig'}</div>
             <div aria-hidden style={{
-              position: 'absolute', right: 0, top: `${RAIL - 6}%`, zIndex: 2,
-              fontSize: 'clamp(10px, 1.05cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)',
+              position: 'absolute', right: 0,
+              ...(istBuehne ? { bottom: 0 } : { top: `${RAIL - 6}%` }),
+              zIndex: 2,
+              fontSize: istBuehne ? 'clamp(15px, 1.6cqw, 26px)' : 'clamp(10px, 1.05cqw, 17px)',
+              fontWeight: 900, color: 'var(--qq-text-muted)',
               letterSpacing: '0.12em', textTransform: 'uppercase',
             }}>{lang === 'en' ? 'too high' : 'zu hoch'} →</div>
 
@@ -448,9 +495,21 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     borderRadius: quirkSet ? '18%' : '50%',
                     transform: isWin && lit ? 'scale(1.14)' : 'scale(1)',
                     transition: 'transform 0.5s var(--qq-celebrate)',
-                    boxShadow: isWin && lit ? `0 0 0 5px ${GOLD}, 0 0 0 9px ${GOLD}55, 0 0 48px 7px ${GOLD}aa` : `0 0 0 2px ${r.team.color}, 0 0 14px ${r.team.color}66`,
+                    // 2026-08-23: auf der Buehne EIN Ring statt drei Lagen. Der
+                    // 48px-Schein war die dritte Wiederholung neben Groesse und
+                    // Gold-Messstrecke.
+                    boxShadow: istBuehne
+                      ? (isWin && lit ? `0 0 0 5px ${GOLD}` : `0 0 0 2px ${r.team.color}`)
+                      : (isWin && lit ? `0 0 0 5px ${GOLD}, 0 0 0 9px ${GOLD}55, 0 0 48px 7px ${GOLD}aa` : `0 0 0 2px ${r.team.color}, 0 0 14px ${r.team.color}66`),
                   }}>
-                    {isWin && lit && (
+                    {/* 2026-08-23 (VORSCHLAG, umgesetzt): die Krone faellt auf der
+                        Buehne weg. Kronen waren im Juli aus dem restlichen Quiz
+                        genommen worden („Kronen-raus im ganzen Batch"), hier ist
+                        die letzte stehen geblieben - und sie ist ausserdem wieder
+                        ein rohes Systemzeichen. Wer gewonnen hat, sagen der
+                        Gold-Ring, die groessere Marke und die Gold-Messstrecke
+                        zur Wahrheit; das reicht dreifach. */}
+                    {isWin && lit && !istBuehne && (
                       <span aria-hidden style={{
                         position: 'absolute', top: '-52%', left: '50%', transform: 'translateX(-50%)',
                         fontSize: 'clamp(22px, 2.8cqw, 48px)', lineHeight: 1, zIndex: 9,
@@ -468,11 +527,14 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                     border: `1.5px solid ${isWin && lit ? GOLD + 'aa' : 'rgba(246, 239, 230,0.12)'}`,
                   }}>
                     <span style={{
-                      fontFamily: 'var(--font-display)', fontSize: 'clamp(14px,1.5cqw,26px)', fontWeight: 700,
+                      fontFamily: 'var(--font-display)',
+                      fontSize: istBuehne ? 'clamp(20px,2cqw,34px)' : 'clamp(14px,1.5cqw,26px)',
+                      fontWeight: 700,
                       color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
                     }}>{fmt(r.num)}</span>
                     <span style={{
-                      fontSize: 'clamp(10px,1cqw,16px)', fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
+                      fontSize: istBuehne ? 'clamp(15px,1.5cqw,25px)' : 'clamp(10px,1cqw,16px)',
+                      fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                       color: exact ? MINT : 'var(--qq-text-muted)',
                     }}>
                       {exact ? (lang === 'en' ? '✨ spot on' : '✨ getroffen') : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
@@ -486,9 +548,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                       <span style={{
                         marginTop: 'clamp(2px,0.35cqh,5px)',
                         display: 'inline-flex', alignItems: 'center', gap: 5,
-                        fontSize: 'clamp(9px,0.95cqw,15px)', fontWeight: 900, whiteSpace: 'nowrap',
+                        fontSize: istBuehne ? 'clamp(14px,1.4cqw,23px)' : 'clamp(9px,0.95cqw,15px)',
+                        fontWeight: 900, whiteSpace: 'nowrap',
                         letterSpacing: '0.02em', color: GOLD_BRIGHT,
-                        textShadow: `0 0 10px ${GOLD}aa`,
+                        textShadow: istBuehne ? 'none' : `0 0 10px ${GOLD}aa`,
                       }}>
                         <img src="/fx-blitz.png" alt="" aria-hidden style={{
                           height: 'clamp(15px,1.5cqw,24px)', width: 'auto', display: 'block',

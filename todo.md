@@ -169,6 +169,29 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🔴 WARTET AUF WOLF — Entscheidungen
 
+- [ ] **Namensfrage Grossformat** (Wolf 2026-08-23, ausdruecklich VERTAGT:
+      „wir brainstormen spaeter nochmal einen anderen namen, wenn die
+      implementation bei cozyquiz und die motion durch ist... falscher
+      zeitpunkt"). Also erst NACH Design und Motion aufmachen.
+      Stand des Gespraechs, damit man nicht bei null anfaengt:
+      * Wolfs Frage war, ob „cozy" ueberhaupt traegt. Antwort aus dem Produkt:
+        ja. Das Avatarset hat sechs Kategorien, eine heisst `cozy-home`
+        (Teekanne, Strickstrumpf, Nachttischlampe, Sessel, Kissen, Kerze).
+        Keine heisst Buero, Sport oder Wissen. Dazu: warme Tinte statt Weiss
+        als Regel, und im Hauptspiel scheidet niemand aus (Ausscheiden gibt es
+        nur in der Heissen Kartoffel und im abgeschalteten Imposter).
+      * Was das Gefuehl macht, in dieser Reihenfolge: ein Handy pro Team
+        (Leute reden miteinander statt nebeneinander), niemand fliegt raus,
+        Wolfs Moderation, und erst dann der Beamer. Der Beamer ist der
+        schwaechste der vier fuers Gefuehl im Raum, aber der einzige, den ein
+        Kunde vor der Buchung sieht.
+      * Der offene Punkt ist NUR das Grossformat: „CozyQuiz Arena" verlangt
+        von einem Wort zwei Bedeutungen (Kolosseum, Fraktionen, 160 Leute).
+        Vorschlag zum Weiterdenken war, Cozy beim kleinen Format zu lassen und
+        das grosse unter der Dachmarke zu fuehren, also CozyWolf Arena.
+      * Kein eigenes Logo je Format: Cozy und Arena sind Groessen desselben
+        Produkts (32 gegen 160 Spielende), keine zwei Produkte.
+
 - ✅ **Backend-Refactor `qqDistanceScore` GEBAUT (2026-07-19):** `qqMegaEventScore`-Distanzzweige
       (SCHAETZCHEN + Schwarm) auf einen `scoreDistanceCat`-Helfer gezogen (Drift-Killer). Selfcheck
       10/10, tsc clean, vitest 49/49. Liegt auf Branch `design/material-pass-standings-bar` (`3ecf264b`),

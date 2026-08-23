@@ -942,7 +942,13 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
       {/* 2026-06-30 (Wolf-Lieferung fx-trophy.png): 3D-Pokal statt OS-Emoji. */}
       <img src="/icons/fx-trophy.png" alt="" aria-hidden draggable={false} style={{
         width: 'clamp(140px, 16cqw, 280px)', height: 'auto',
-        filter: 'drop-shadow(0 8px 24px rgba(251,191,36,0.45))',
+        // 2026-08-23 (2a): der goldene Hof hinter dem Pokal war ein Schein in
+        // einer fuenften Farbe. Der Pokal ist selbst gold und 280px gross, er
+        // faellt auf. Ein Schlagschatten nach unten bleibt: der setzt ihn auf
+        // den Grund, statt ihn leuchten zu lassen.
+        filter: getActiveThemeId() === QUIRKS_THEME_ID
+          ? 'drop-shadow(0 10px 26px rgba(0,0,0,0.55))'
+          : 'drop-shadow(0 8px 24px rgba(251,191,36,0.45))',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
       }} />
       <div style={{
@@ -1019,7 +1025,10 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
 
   if (!team) return null;
   const de = lang === 'de';
-  const sympathyColor = eurovisionMode ? '#C084FC' : QQ_COLORS.brandPinkMid;
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  // 2026-08-23 (2a): der Sympathie-Bonus stand in Marken-Pink, einer fuenften
+  // Farbe. Er ist ein Zusatz, keine Wertung - Creme reicht, das Wort sagt es.
+  const sympathyColor = istBuehne ? 'var(--qq-text)' : (eurovisionMode ? '#C084FC' : QQ_COLORS.brandPinkMid);
   const targetTeam = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
   const isMutual = !!resolution?.mutualWith;
   const totalBonus = resolution?.totalBonus ?? 0;
@@ -1042,7 +1051,9 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
       <div style={{
         width: '100%', maxWidth: 'clamp(360px, 42cqw, 560px)',
         height: '100%',
-        filter: `drop-shadow(0 0 28px ${team.color}66)`,
+        // 2026-08-23 (2a): 28px Teamfarben-Hof um die ganze Karte, dazu unten
+        // nochmal 40px als box-shadow. Zwei Schein-Ebenen fuer dieselbe Aussage.
+        filter: istBuehne ? 'none' : `drop-shadow(0 0 28px ${team.color}66)`,
         display: 'flex',
       }}>
         {/* 2026-06-29 (Wolf): kein 3D-Flip mehr — die Karte steht von Anfang an,
@@ -1054,9 +1065,13 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
           gap: 'clamp(14px, 1.8cqh, 22px)',
           padding: 'clamp(24px, 3cqh, 44px) clamp(28px, 3cqw, 48px)',
           borderRadius: 32, boxSizing: 'border-box',
-          background: `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
-          border: `3px solid ${team.color}`,
-          boxShadow: `0 0 40px ${team.color}55`,
+          // Die Karte traegt die Teamfarbe nicht mehr in Flaeche, Rahmen und
+          // Schein zugleich. Wer gemeint ist, sagt die Marke darueber - sie ist
+          // hier 120 bis 200px gross, also der mit Abstand deutlichste Traeger
+          // auf der Folie.
+          background: istBuehne ? 'var(--qq-surface)' : `linear-gradient(135deg, ${team.color}22, ${team.color}10)`,
+          border: istBuehne ? '1px solid var(--qq-hairline)' : `3px solid ${team.color}`,
+          boxShadow: istBuehne ? 'none' : `0 0 40px ${team.color}55`,
         }}>
           {/* Tippendes Team — sofort sichtbar (kein Geheimnis) */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, width: '100%' }}>
@@ -1065,7 +1080,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               <TeamNameLabel
                 name={team.name}
                 fontSize="clamp(30px, 3.2cqw, 52px)"
-                color={team.color}
+                color={istBuehne ? 'var(--qq-text)' : team.color}
                 fontWeight={900}
                 maxLines={2}
                 shrinkAfter={14}
@@ -1083,14 +1098,16 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               border: '1.5px solid var(--qq-hairline)',
               animation: 'qqFRTitleIn 0.6s ease 0.2s both',
             }}>
-              <div style={{ fontSize: 'clamp(44px, 5cqw, 72px)', lineHeight: 1, opacity: 0.5 }}>—</div>
+              {/* 2026-08-23: hier stand ein Em-Dash als Grafik. Em-Dashes sind
+                  im Projekt raus, und die Zeile darunter sagt dasselbe. */}
               <div style={{
                 fontSize: 'clamp(20px, 2cqw, 30px)', fontWeight: 800,
                 color: 'var(--qq-text-muted)', textAlign: 'center',
               }}>{de ? 'Kein Tipp abgegeben' : 'No tip submitted'}</div>
               <div style={{
-                fontSize: 'clamp(15px, 1.4cqw, 20px)', fontWeight: 700,
-                color: 'var(--qq-text-muted)', fontStyle: 'italic',
+                fontSize: istBuehne ? 'clamp(17px, 1.6cqw, 26px)' : 'clamp(15px, 1.4cqw, 20px)',
+                fontWeight: 700,
+                color: 'var(--qq-text-muted)', fontStyle: istBuehne ? 'normal' : 'italic',
               }}>{de ? '0 Bonus-Punkte' : '0 bonus points'}</div>
             </div>
           ) : (
@@ -1111,9 +1128,9 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 padding: 'clamp(16px, 1.9cqh, 26px) clamp(18px, 2.4cqw, 36px)',
                 borderRadius: 28, boxSizing: 'border-box',
                 width: 'clamp(240px, 28cqw, 380px)', maxWidth: '100%',
-                background: `${chipColor}1a`,
-                border: `2.5px solid ${chipColor}`,
-                boxShadow: locked ? `0 0 30px ${chipColor}77` : 'none',
+                background: istBuehne ? 'rgba(246,239,230,0.05)' : `${chipColor}1a`,
+                border: istBuehne ? '2px solid var(--qq-hairline)' : `2.5px solid ${chipColor}`,
+                boxShadow: (locked && !istBuehne) ? `0 0 30px ${chipColor}77` : 'none',
                 transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.35s ease',
               }}>
                 <div style={{ position: 'relative', display: 'flex' }}>
@@ -1141,7 +1158,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     <TeamNameLabel
                       name={targetTeam.name}
                       fontSize="clamp(24px, 2.5cqw, 38px)"
-                      color={targetTeam.color}
+                      color={istBuehne ? 'var(--qq-text)' : targetTeam.color}
                       fontWeight={900}
                       maxLines={2}
                       shrinkAfter={12}
@@ -1169,7 +1186,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     color: sympathyColor, display: 'flex', alignItems: 'center', gap: 8,
                     animation: 'qqFRTitleIn 0.6s ease 0.28s both',
                   }}>
-                    <span style={{ fontSize: 'clamp(22px, 2.2cqw, 34px)' }}>💞</span>
+                    {/* 2026-08-23 (2a): das Herz war ein rohes Systemzeichen und
+                        wurde auf jedem Rechner anders gemalt. Im gelieferten Set
+                        liegt `award-heart`, dieselbe Bildsprache wie alles andere
+                        auf der Folie. */}
+                    <QQEmojiIcon emoji="💛" size="clamp(22px, 2.2cqw, 34px)" />
                     {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
                   </div>
                 )}
@@ -1178,16 +1199,25 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
                     animation: 'qqFRTitleIn 0.7s ease 0.5s both',
                   }}>
+                    {/* 2026-08-23 (2a): das Traenen-Smiley war ein Systemzeichen.
+                        Es bekommt keinen Ersatz: „oooh …" und die Zeile darunter
+                        sagen dasselbe, und ein Gesicht ist auf der Buehne der
+                        lauteste Traeger fuer die leiseste Aussage der Folie. */}
+                    {!istBuehne && (
+                      <div style={{
+                        fontSize: 'clamp(48px, 5.8cqw, 92px)', lineHeight: 1,
+                        animation: 'qqFROohBob 1.6s ease-in-out 0.5s infinite',
+                      }}>🥲</div>
+                    )}
                     <div style={{
-                      fontSize: 'clamp(48px, 5.8cqw, 92px)', lineHeight: 1,
-                      animation: 'qqFROohBob 1.6s ease-in-out 0.5s infinite',
-                    }}>🥲</div>
-                    <div style={{
-                      fontSize: 'clamp(26px, 2.8cqw, 42px)', fontWeight: 900,
-                      color: 'var(--qq-text-muted)', textAlign: 'center', fontStyle: 'italic',
+                      fontSize: istBuehne ? 'clamp(32px, 3.4cqw, 52px)' : 'clamp(26px, 2.8cqw, 42px)',
+                      fontWeight: 900,
+                      color: 'var(--qq-text-muted)', textAlign: 'center',
+                      fontStyle: istBuehne ? 'normal' : 'italic',
                     }}>oooh …</div>
                     <div style={{
-                      fontSize: 'clamp(14px, 1.3cqw, 20px)', fontWeight: 700,
+                      fontSize: istBuehne ? 'clamp(17px, 1.6cqw, 27px)' : 'clamp(14px, 1.3cqw, 20px)',
+                      fontWeight: 700,
                       color: 'var(--qq-text-muted)', textAlign: 'center',
                     }}>{de ? '0 Bonus, Tipp ging nicht auf' : '0 bonus, tip didn\'t pay off'}</div>
                   </div>
@@ -1197,7 +1227,10 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     borderRadius: 24,
                     background: 'rgba(34,197,94,0.18)',
                     border: '3px solid rgba(34,197,94,0.65)',
-                    boxShadow: '0 0 36px rgba(34,197,94,0.35)',
+                    // Gruen bleibt, es ist eine der vier Farben und heisst hier
+                    // „dazubekommen". Nur der 36px-Schein geht: die Zahl ist
+                    // 88px gross, sie braucht keinen Hof, um aufzufallen.
+                    boxShadow: istBuehne ? 'none' : '0 0 36px rgba(34,197,94,0.35)',
                     fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
                     color: QQ_COLORS.green500, letterSpacing: '-0.02em',
                     lineHeight: 1,
@@ -1340,7 +1373,10 @@ function BetZeroGroupSlide({ teams, lang }: {
       padding: 'clamp(20px, 2cqh, 36px) clamp(24px, 3cqw, 48px)',
     }}>
       <div style={{
-        fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
+        // 2026-08-23 (2a): 22px waren auf acht Metern keine Zeile mehr. Der
+        // kleinste sinnvolle Grad auf der Buehne liegt bei rund 26px.
+        fontSize: istBuehne ? 'clamp(16px, 1.7cqw, 28px)' : 'clamp(13px, 1.4cqw, 22px)',
+        fontWeight: 900,
         color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       }}>
@@ -1400,8 +1436,9 @@ function BetZeroGroupSlide({ teams, lang }: {
         ))}
       </div>
       <div style={{
-        fontSize: 'clamp(15px, 1.5cqw, 22px)', color: 'var(--qq-text-muted)',
-        fontStyle: 'italic', textAlign: 'center',
+        fontSize: istBuehne ? 'clamp(18px, 1.8cqw, 28px)' : 'clamp(15px, 1.5cqw, 22px)',
+        color: 'var(--qq-text-muted)',
+        fontStyle: istBuehne ? 'normal' : 'italic', textAlign: 'center',
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
       }}>

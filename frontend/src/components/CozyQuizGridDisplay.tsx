@@ -26,12 +26,16 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { isThemed, getActiveTheme } from '../qqTheme';
+import { isThemed, getActiveTheme, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { cozy3dSrc } from '../cozy3dAvatars';
 import { JokerIcon } from './JokerIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
+
+// 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
+// umschrieben - darunter fallen auch Studio Mono, Soft Pop und Neo-Brutalism.
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 
 export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true, flashCellKey }: {
   state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean; flashCellKey?: string | null;
@@ -247,12 +251,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.03)',
         padding: 10, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
         border: `3px solid ${highlightTeam ? `${activeColor}cc` : (isThemed() ? 'var(--qq-hairline)' : 'rgba(246, 239, 230,0.06)')}`,
+        // 2026-08-23 (Uebergabe 2a): das fokussierte Team hatte 80px und 32px
+        // Schein in Teamfarbe um das ganze Brett, dazu einen Puls. Auf der
+        // Aufnahme der Final-Aufloesung war das ein handbreiter Farbhof um die
+        // halbe Buehne. Was er sagt - „dieses Team ist gemeint" - sagt der 3px
+        // Rahmen in Teamfarbe schon, und der bleibt. Der Schein sagt es nicht
+        // deutlicher, er weicht auf Projektionsdistanz nur die Kante auf.
         boxShadow: highlightTeam
-          ? `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(246, 239, 230,0.04)`
+          ? (istBuehneG()
+              ? `0 0 0 1px ${activeColor}55, inset 0 1px 0 rgba(246, 239, 230,0.04)`
+              : `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(246, 239, 230,0.04)`)
           : (isThemed() ? 'var(--qq-card-shadow)' : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(246, 239, 230,0.03)'),
-        animation: highlightTeam
-          ? 'gridActiveTeamGlow 2.4s ease-in-out infinite'
-          : 'gridIdle 4s ease-in-out infinite',
+        animation: istBuehneG()
+          ? 'none'
+          : (highlightTeam
+              ? 'gridActiveTeamGlow 2.4s ease-in-out infinite'
+              : 'gridIdle 4s ease-in-out infinite'),
         transition: 'border-color 0.5s ease, box-shadow 0.5s ease',
         // CSS-Var für Animation-Pulse (Team-Color als Pulse-Farbe).
         ['--active-team-color' as any]: activeColor || 'transparent',

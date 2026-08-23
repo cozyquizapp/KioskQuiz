@@ -1749,6 +1749,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 gap: 'clamp(6px, 1.2cqh, 16px)',
                 width: '100%', maxWidth: 1500,
                 paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
+                // 2026-08-23 (Buehnen-Durchgang): die Runde/Frage-Pille ist
+                // `position: absolute` oben angepinnt, diese Spalte steht im
+                // normalen Fluss und wird mittig gesetzt. Bei hohem Inhalt (die
+                // Kategorie-Erklaerung mit Beispielreihe ist 754 px hoch) wandert
+                // ihre Oberkante ueber die Unterkante der Pille — gemessen lag
+                // die Pille bei y 50..122 und die Kachel begann bei y 111, die
+                // Kachel deckte die Pille also 11 px weit zu.
+                // Der Platz fuer die Pille wird jetzt reserviert. Als Aussenabstand
+                // und nicht als Innenabstand, weil `justify-content: center` den
+                // Aussenabstand mitzentriert: die Spalte rutscht um die Haelfte
+                // nach unten, statt hart nach unten geschoben zu werden, und bleibt
+                // bei kurzem Inhalt trotzdem angenehm mittig.
+                marginTop: 'clamp(56px, 8cqh, 100px)',
                 animation: 'qqStationFade 0.5s ease 0.2s both',
               }}>
                 {/* HERO — Kategorie-Emoji (Quelle = Tree-Dots, Emoji-Fallback).
@@ -1939,6 +1952,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               gap: 'clamp(8px, 1.4cqh, 20px)',
               width: '100%', maxWidth: 1500,
               paddingInline: 'var(--qq-safe-margin)', boxSizing: 'border-box',
+              // Gleicher Grund wie in der Erklaer-Variante darueber: der Platz
+              // fuer die oben angepinnte Runde/Frage-Pille wird reserviert.
+              marginTop: 'clamp(56px, 8cqh, 100px)',
               animation: 'qqStationFade 0.5s ease 0.2s both',
             }}>
               {/* HERO — zoomt sichtbar aus dem Runden-Tree-Dot heraus. */}

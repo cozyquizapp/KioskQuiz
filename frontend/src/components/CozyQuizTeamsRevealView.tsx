@@ -1112,25 +1112,14 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
           transform: showGoodLuck ? 'scale(1)' : 'scale(0.7)',
           animation: showGoodLuck ? 'qqTrGood 900ms cubic-bezier(.2,.8,.2,1) both' : 'none',
         }}>
-          {/* 2026-06-28 (Beamer-Review P2): OS-Emoji ✨ → Marken-Sparkle
-              (CSS clip-path-Stern in Akzentfarbe, dezenter Puls). */}
-          <span aria-hidden style={{
-            display: 'inline-block', width: '0.46em', height: '0.46em',
-            marginRight: '0.34em', verticalAlign: '0.08em',
-            background: goodLuckColor,
-            clipPath: 'polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%)',
-            filter: 'drop-shadow(0 0 10px rgba(var(--qq-accent-rgb),0.6))',
-            animation: 'qqTrSpark 2.4s ease-in-out infinite',
-          }} />
+          {/* 2026-08-23 (Wolf: „ja mach die sterne raus"): die beiden
+              Marken-Sparkles sind weg. Sie kamen 2026-06-28 als Ersatz fuer
+              das OS-Emoji ✨ und waren als CSS-Stern sauberer gebaut, aber auf
+              der Projektion sind sie 29 px gross (0,46 em von 64 px) und
+              haben vier duenne Zacken — sie lesen sich als zwei graue × und
+              damit wie kaputte Zeichen. Dazu haben sie gepulst, ohne etwas zu
+              bedeuten. Der Satz traegt sich allein. */}
           {lang === 'en' ? 'Good luck!' : 'Viel Glück!'}
-          <span aria-hidden style={{
-            display: 'inline-block', width: '0.46em', height: '0.46em',
-            marginLeft: '0.34em', verticalAlign: '0.08em',
-            background: goodLuckColor,
-            clipPath: 'polygon(50% 0, 61% 39%, 100% 50%, 61% 61%, 50% 100%, 39% 61%, 0 50%, 39% 39%)',
-            filter: 'drop-shadow(0 0 10px rgba(var(--qq-accent-rgb),0.6))',
-            animation: 'qqTrSpark 2.4s ease-in-out infinite 0.8s',
-          }} />
         </div>
       </div>
 

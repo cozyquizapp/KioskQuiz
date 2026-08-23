@@ -79,7 +79,20 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           lineHeight: 1, textAlign: 'center',
           animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.25s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
           filter: `drop-shadow(0 8px 24px ${PINK}55)`,
-        }}><QQIcon slug="bieten" size={'clamp(120px, 18cqw, 240px)'} /></div>
+        }}>
+          {/* 2026-08-23 (Wolf: „ist alt, genau wie der Hammer - wir brauchen
+              fuer den Final-Tipp ein neues Logo"). Gemessen bestaetigt:
+              bieten.png ist 500x500 und 45 kB, das gelieferte Set ist
+              durchgaengig 512x512 und 110-232 kB. Es stammt also aus einer
+              anderen Lieferung.
+              Bis das neue Zeichen da ist, steht hier KEINS. Ein altes Bild auf
+              der Buehne ist schlechter als kein Bild: der Titel „Final-Tipp"
+              und die Zeile darunter tragen die Folie allein, und nach der Regel
+              „Schmuck, der nichts traegt, geht" ist das ohnehin die
+              zurueckhaltendere Loesung. Wieder einsetzen: hier den neuen Slug
+              eintragen, dann kommt er an beiden Stellen zurueck. */}
+          {!istBuehneG() && <QQIcon slug="bieten" size={'clamp(120px, 18cqw, 240px)'} />}
+        </div>
 
         {/* Hero-Title — analog Cat-Name, gross + per-letter Wave + Pink-Glow. */}
         <div style={{
@@ -140,7 +153,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         marginBottom: 18, opacity: 0.85,
         display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center',
       }}>
-        <QQIcon slug="bieten" size={'1.4em'} />
+        {!istBuehneG() && <QQIcon slug="bieten" size={'1.4em'} />}
         {de ? 'Final-Tipp' : 'Final tip'}
       </div>
 

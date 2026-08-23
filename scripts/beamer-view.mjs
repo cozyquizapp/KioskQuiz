@@ -147,7 +147,12 @@ const ANSICHTEN = {
   // nachzuspielen. Das fuellt das Brett mit, sonst stehen die Endfolien auf
   // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
   pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
-  cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' }); } },
+  // CozyGame hat fuenf Stufen: INTRO, Rad dreht, Rad steht (Spiel-Karte),
+  // Spiel laeuft (Timer), Sieger waehlen. `--stufe=n` schaltet n mal weiter.
+  cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
+    await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
+    for (let i = 0; i < STUFE - 1; i++) { await sleep(1200); await h.emit('qq:cozyGameAdvance'); }
+  } },
   // 2026-08-23: die Ansichten `connections` / `connections2` sind wieder raus.
   // Das 4x4-Finale („Grosses Finale") ist abgeschaltet - siehe
   // QQ_CONNECTIONS_ENABLED in shared/quarterQuizTypes.ts. Eine Aufnahme davon

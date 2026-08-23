@@ -68,7 +68,13 @@ if (!health?.ok) { console.error('Backend nicht erreichbar auf 4000.'); process.
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({
-  args: ['--no-sandbox'],
+  // 2026-08-23: `--disable-gpu-compositing` ist noetig, seit auf der
+  // Willkommen-Folie ein Video laeuft. Ohne den Schalter liegt das Video in
+  // einer eigenen, hardwarebeschleunigten Ebene; `page.screenshot()` bekommt
+  // davon immer nur das ERSTE Bild zu sehen, waehrend `currentTime` munter
+  // weiterlaeuft. Gemessen: der Wolf-Bereich aenderte sich ueber fuenf
+  // Aufnahmen um 0,09 bis 0,20 %, obwohl das Video bei 3,3 s stand.
+  args: ['--no-sandbox', '--disable-gpu-compositing'],
   ...(process.env.QQ_CHROME ? { executablePath: process.env.QQ_CHROME } : {}),
 });
 const ctx = await browser.newContext({ viewport: { width: 1760, height: 990 }, deviceScaleFactor: 1 });
@@ -143,14 +149,30 @@ async function aufbauen(stufe) {
   }
 }
 
+// --serie=800,2000,3400  knipst mehrere Zeitpunkte NACH dem Auftritt statt nur
+// den Endzustand. Fuer Bewegung ist ein einzelnes Bild nutzlos, und ein Video
+// pro Durchgang waere wieder teuer — eine Handvoll Marken reicht.
+const SERIE = (process.argv.find(a => a.startsWith('--serie=')) || '').split('=')[1];
+const marken = SERIE ? SERIE.split(',').map(Number) : null;
+
 for (const name of liste) {
   const a = ANSICHTEN[name];
   await aufbauen(a.aufbau);
   await a.weg(helfer);
-  await sleep(a.ruhe);
-  const datei = `${OUT}/V-${name}.png`;
-  writeFileSync(datei, await beamer.screenshot());
-  console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
+  if (marken) {
+    let stand = 0;
+    for (const ms of marken) {
+      await sleep(Math.max(0, ms - stand)); stand = ms;
+      const datei = `${OUT}/V-${name}-${ms}.png`;
+      writeFileSync(datei, await beamer.screenshot());
+      console.log(`  ✓ ${datei}`);
+    }
+  } else {
+    await sleep(a.ruhe);
+    const datei = `${OUT}/V-${name}.png`;
+    writeFileSync(datei, await beamer.screenshot());
+    console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
+  }
 }
 
 sock.close();

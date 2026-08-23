@@ -4336,6 +4336,60 @@ function ArenaMasterSplash({ language, visible }: { language: QQLanguage; visibl
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// WelcomeWolfVideo — der 3D-Wolf auf der Willkommen-Folie.
+//
+// 2026-08-23 (Wolf: „den haette ich gerne auf dieser seite"). Geliefert wurde
+// erst ein Bild mit Gruenwand, dann eine WebM-Datei. GEMESSEN, bevor gebaut:
+// vp9, 768x768, 30 fps, 5,19 s, dazu eine Opus-Tonspur. Der Container traegt
+// `alpha_mode: 1`, aber das ist leere Metadata — dekodiert waren 0,0 % der
+// Pixel durchsichtig, der Grund war schlicht WEISS. Freigestellt hat das
+// `scripts/key-white-video.mjs` (Flutung von aussen, damit Zaehne und
+// Augenweiss stehen bleiben); danach sind 62 % der Flaeche durchsichtig.
+//
+// Drei Entscheidungen, jeweils mit Grund:
+//  * EINMAL laufen, dann auf dem letzten Bild stehen bleiben. Erstes und
+//    letztes Bild unterscheiden sich um 3,8 % — eine Schleife wuerde also
+//    sichtbar springen, und eine Begruessungsgeste alle fuenf Sekunden zu
+//    wiederholen waere ohnehin aufdringlich. Die Endpose ist ruhig (Arme
+//    leicht offen, freundlich), das ist ein guter Standbild-Zustand.
+//  * Der Start haengt an der Choreographie, nicht am Mount. Der Wolf-Block
+//    blendet erst bei 2,6 s ein; ohne Verzoegerung waere die halbe Geste
+//    hinter `opacity: 0` verpufft.
+//  * Der Ton bleibt aus. Er ist da (mono, Spitze 0 dB), aber ein Video, das
+//    von selbst losredet, waehrend Wolf ins Publikum spricht, ist eine
+//    Doppelmoderation. Das gehoert an einen Knopf im Moderator, nicht an den
+//    Seitenaufbau.
+// ─────────────────────────────────────────────────────────────────────────────
+const WELCOME_WOLF_VIDEO = '/videos/willkommen-wolf.webm';
+
+function WelcomeWolfVideo({ widthCss, delayMs, fallback }: {
+  widthCss: string; delayMs: number; fallback: React.ReactNode;
+}) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [failed, setFailed] = useState(false);
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    const t = window.setTimeout(() => { void v.play().catch(() => { /* stummes Video, blockt nicht */ }); }, delayMs);
+    return () => window.clearTimeout(t);
+  }, [delayMs]);
+  // Faellt das Video aus (Codec, 404), steht der gezeichnete Wolf da wie
+  // bisher. Auf einer Folie, die nur aus Marke besteht, darf kein Loch sein.
+  if (failed) return <>{fallback}</>;
+  return (
+    <video
+      ref={ref}
+      src={WELCOME_WOLF_VIDEO}
+      muted
+      playsInline
+      preload="auto"
+      onError={() => setFailed(true)}
+      style={{ width: widthCss, height: 'auto', display: 'block' }}
+    />
+  );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // QuizIntroOverlay — epische Begrüßungs-Folie "Willkommen beim BLOCK QUIZ
 // / QUARTER QUIZ by cozywolf". Spielt einmal pro Session beim ersten Wechsel
 // in RULES-Phase und blendet dann in die Rules-Ansicht über.
@@ -4841,11 +4895,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             // Blase). Der Magier gehoert zur Kolosseum-Auswahl — bei „Schlicht" bleibt
             // der normale Wolf. (arenaBg = isMega && arenaBackgrounds-Toggle an.)
             <ArenaMageWolf widthCss="clamp(170px, 19cqw, 300px)" speaking={visible} />
+          ) : eurovisionMode ? (
+            <AnimatedCozyWolf widthCss="clamp(170px, 19cqw, 300px)" mode="flagge" speaking={visible} />
           ) : (
-            <AnimatedCozyWolf
-              widthCss="clamp(170px, 19cqw, 300px)"
-              mode={eurovisionMode ? 'flagge' : undefined}
-              speaking={visible}
+            // Standardfall: der 3D-Wolf. Der gezeichnete bleibt als Rueckfall.
+            <WelcomeWolfVideo
+              widthCss="clamp(190px, 21cqw, 330px)"
+              delayMs={2600}
+              fallback={<AnimatedCozyWolf widthCss="clamp(170px, 19cqw, 300px)" speaking={visible} />}
             />
           )}
 

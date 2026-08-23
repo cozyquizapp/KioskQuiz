@@ -4587,16 +4587,21 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           borderRadius: themed ? 'var(--qq-card-radius)' : 'clamp(20px, 2.4cqw, 32px)',
           // 2026-07-14 (Wolf „window transparenter"): Fuellung deutlich durchsichtiger
           // (0.92 → 0.5), Arena scheint durch — Rahmen/Glow tragen die Card weiter.
-          background: themed
-            ? 'var(--qq-card-bg)'
-            : 'radial-gradient(ellipse at 50% 30%, rgba(var(--qq-stage-brand-rgb), 0.20) 0%, transparent 60%),' +
-            'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.14) 0%, transparent 55%),' +
-            'linear-gradient(135deg, rgba(31,26,46,0.50) 0%, rgba(20,16,31,0.50) 60%, rgba(15,8,23,0.50) 100%)',
-          border: `2.5px solid rgba(${accentRgb},0.6)`,
-          boxShadow: `0 0 80px rgba(${accentRgb},0.3), inset 0 0 48px rgba(${accentRgb},0.12)`,
-          backdropFilter: 'blur(7px)',
-          WebkitBackdropFilter: 'blur(7px)',
-          overflow: 'hidden',
+          // 2026-08-23 (Regel null, „ist das fuer die BUEHNE gebaut?"): der
+          // Kasten ist aufgeloest. Er war laut Kommentar vom 2026-05-09
+          // ausdruecklich „eine typische App-Card" — und genau das ist auf
+          // einer Projektion das Problem: ein Fenster mit Rahmen, Fuellung und
+          // Weichzeichner ist ein Bedien-Idiom. Der Vorhang geht hier auf, da
+          // steht kein Dialogfeld.
+          // Dazu drei messbare Punkte: die Fuellung war DUNKLER als der Grund
+          // (falsche Richtung auf der Flaechenleiter, eine Karte muss heller
+          // sein), der Rahmen umrahmte nichts, was ohne ihn nicht schon stuende,
+          // und `0 0 80px` ist ein Schein, der nur schmueckt (Regel 5).
+          // Der weiche Spotlight-Schein HINTER dem Schriftzug bleibt: der hebt
+          // das Wort, er bedeutet etwas.
+          background: 'transparent',
+          border: 'none',
+          boxShadow: 'none',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           gap: 'clamp(10px, 1.6cqh, 22px)',
           animation: 'qqIntroWelcomeCard 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) 1.2s both',
@@ -4817,14 +4822,17 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             wird zusätzlich Word-Stagger animiert (qqWordFadeUp pro Wort) statt
             statisch — wirkt lebendig wie der Wolf wirklich spricht. */}
         <div style={{
-          // 2026-07-14 (Wolf „Wolf nicht ueber den Text"): Wolf sitzt UNTER dem
-          // Window unten-links und ueberlappt nur den unteren Rand leicht (top:100%
-          // = Card-Unterkante, dann leicht hoch), Sprechblase rechts daneben unter
-          // der Card (Tail zeigt links zum Mund). Deckt so nicht mehr den Titel.
-          position: 'absolute', left: '3%', top: '100%',
-          transform: 'translate(0, -22%)',
-          display: 'flex', flexDirection: 'row', alignItems: 'center',
-          gap: 'clamp(2px, 0.6cqw, 10px)',
+          // 2026-07-14 (Wolf „Wolf nicht ueber den Text"): Wolf sass UNTER dem
+          // Window unten-links und ueberlappte dessen Rand leicht.
+          // 2026-08-23: der Kasten ist weg, damit hatte der Wolf keinen Bezug
+          // mehr — er hing links im Nichts, weder auf einer Kante noch mittig.
+          // Auf der einen Folie, auf der er die HAUPTROLLE hat (Marke, nicht
+          // Produkt), gehoert er in die Achse der Wortmarke. Also mittig
+          // darunter, im normalen Fluss statt absolut, und der Satz als Zeile
+          // unter ihm statt als Blase daneben.
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(6px, 1cqh, 16px)',
+          marginTop: 'clamp(10px, 2cqh, 30px)',
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0, zIndex: 6,
         }}>
@@ -4832,43 +4840,28 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             // Arena MIT Kolosseum-BG: Magier-Wolf begruesst (Mund-Flap synchron zur
             // Blase). Der Magier gehoert zur Kolosseum-Auswahl — bei „Schlicht" bleibt
             // der normale Wolf. (arenaBg = isMega && arenaBackgrounds-Toggle an.)
-            <ArenaMageWolf widthCss="clamp(150px, 16cqw, 240px)" speaking={visible} />
+            <ArenaMageWolf widthCss="clamp(170px, 19cqw, 300px)" speaking={visible} />
           ) : (
             <AnimatedCozyWolf
-              widthCss="clamp(150px, 16cqw, 240px)"
+              widthCss="clamp(170px, 19cqw, 300px)"
               mode={eurovisionMode ? 'flagge' : undefined}
               speaking={visible}
             />
           )}
 
+          {/* 2026-08-23: die Sprechblase ist raus. Dunkler Kasten mit Rand,
+              Weichzeichner und Zipfel — das ist eine Chat-Blase, also ein
+              Bedien-Idiom auf einer Kinofolie (Regel null). Der Satz steht
+              jetzt einfach da, in warmer Tinte, mittig unter dem Wolf.
+              Dass er vom Wolf kommt, muss nicht gezeigt werden: er ist der
+              einzige, der auf dieser Folie spricht.
+              Die Wort-fuer-Wort-Einblendung bleibt, sie gehoert zum Auftritt. */}
           <div style={{
-            position: 'relative',
-            padding: 'clamp(12px, 1.6cqh, 22px) clamp(20px, 2.4cqw, 34px)',
-            borderRadius: 24,
-            background: 'linear-gradient(180deg, rgba(15,23,42,0.82) 0%, rgba(11,16,28,0.82) 100%)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            border: `2px solid rgba(${accentRgb},0.55)`,
-            boxShadow: `0 0 0 3px rgba(${accentRgb},0.12), inset 0 1px 0 rgba(246, 239, 230,0.06)`,
-            color: QQ_COLORS.slate100,
-            fontSize: 'clamp(17px, 1.9cqw, 28px)', fontWeight: 900,
-            maxWidth: '30cqw',
-            lineHeight: 1.28,
-            animation: 'qqIntroBubbleBob 5s ease-in-out 4s infinite',
+            color: 'var(--qq-text)',
+            fontSize: 'clamp(20px, 2.2cqw, 34px)', fontWeight: 900,
+            textAlign: 'center', lineHeight: 1.28,
+            maxWidth: '60cqw',
           }}>
-            {/* Tail — zeigt nach LINKS auf den Wolf-Mund (Wolf steht links daneben). */}
-            <div style={{
-              position: 'absolute', left: -13, top: '46%',
-              width: 0, height: 0, transform: 'translateY(-50%)',
-              borderTop: '11px solid transparent', borderBottom: '11px solid transparent',
-              borderRight: `14px solid rgba(${accentRgb},0.55)`,
-            }} />
-            <div style={{
-              position: 'absolute', left: -10, top: '46%',
-              width: 0, height: 0, transform: 'translateY(-50%)',
-              borderTop: '9px solid transparent', borderBottom: '9px solid transparent',
-              borderRight: '12px solid rgba(15,23,42,0.86)',
-            }} />
             {greeting.split(' ').map((word, i) => (
               <span key={i} style={{
                 display: 'inline-block',

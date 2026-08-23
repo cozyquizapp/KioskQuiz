@@ -62,7 +62,14 @@ const ANSICHTEN = {
   ablauf:     { ruhe: 1500, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(1); } },
   joker:      { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(2); } },
   regel4:     { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(3); } },
-  teams:      { ruhe: 3500, aufbau: 'spiel', weg: async (h) => { await h.emit('qq:rulesFinish'); } },
+  // Der Team-Auftritt braucht bei acht Teams rund 18 s, bis er steht.
+  teams:      { ruhe: 18000, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(0); await h.emit('qq:rulesFinish'); } },
+  // Das Runden-Intro hat drei Stufen, der Moderator schaltet mit Space weiter
+  // (`qq:activateQuestion`): 0 = ganzer Abend im Blick, 1 = Kamera faehrt auf
+  // die laufende Runde, 2 = Baum blendet aus, Kategorie kommt.
+  rundenintro:{ ruhe: 4000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); } },
+  rundenintro2:{ruhe: 3000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); await sleep(1800); await h.emit('qq:activateQuestion'); } },
+  rundenintro3:{ruhe: 3000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); await sleep(1800); await h.emit('qq:activateQuestion'); await sleep(900); await h.emit('qq:activateQuestion'); } },
 };
 
 if (process.argv.includes('--liste')) {
@@ -121,6 +128,12 @@ const phase = () => beamer.evaluate(() =>
 let regelStand = -2;
 const helfer = {
   emit,
+  async zumRundenIntro() {
+    await this.zuRegelIndex(0);
+    await emit('qq:rulesFinish');
+    await sleep(400);
+    await emit('qq:teamsRevealFinish');
+  },
   async zuRegelIndex(ziel) {
     while (regelStand > ziel) { await emit('qq:rulesPrev'); regelStand--; await sleep(120); }
     while (regelStand < ziel) { await emit('qq:rulesNext'); regelStand++; await sleep(120); }

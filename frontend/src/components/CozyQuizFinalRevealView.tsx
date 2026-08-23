@@ -322,7 +322,7 @@ import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalRev
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
 import { qqFinalTotal } from '../utils/qqFinalScore';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.
@@ -1325,6 +1325,7 @@ function BetZeroGroupSlide({ teams, lang }: {
 }) {
   const de = lang === 'de';
   const N = teams.length;
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
   // Avatar-Größe skaliert mit Team-Anzahl
   const avatarSize = N <= 3
     ? 'clamp(110px, 11cqw, 160px)'
@@ -1342,11 +1343,16 @@ function BetZeroGroupSlide({ teams, lang }: {
         fontSize: 'clamp(13px, 1.4cqw, 22px)', fontWeight: 900,
         color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
-      }}>{de ? '🎯 Tipps abgegeben' : '🎯 Tips placed'}</div>
+      }}>
+        {/* 2026-08-23: rohes Systemzeichen raus, geliefertes Set rein. */}
+        <QQEmojiIcon emoji="🎯" size="1em" /> {de ? 'Tipps abgegeben' : 'Tips placed'}
+      </div>
       <div style={{
         fontSize: 'clamp(30px, 3.6cqw, 56px)', fontWeight: 900,
         color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
-        textShadow: '0 0 28px rgba(var(--qq-accent-rgb),0.35)',
+        // 2026-08-23: der weite Schein hinter der Ueberschrift weicht auf
+        // Projektionsdistanz die Kante der Schrift auf und sagt nichts.
+        textShadow: istBuehne ? 'none' : '0 0 28px rgba(var(--qq-accent-rgb),0.35)',
         animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
         maxWidth: '92cqw',
       }}>{de
@@ -1378,9 +1384,13 @@ function BetZeroGroupSlide({ teams, lang }: {
                 maxWidth + ellipsis raus, dafuer 2-zeilig erlauben + leicht
                 kleiner skalieren bei langen Namen. */}
             <div style={{
-              fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
-              color: t.color,
-              textShadow: `0 0 12px ${t.color}55`,
+              // 2026-08-23 (Uebergabe 2a): Teamnamen in Creme, wie am Brett und
+              // auf allen Siegerbaendern. Die Marke direkt darueber traegt die
+              // Teamfarbe bereits als volle Flaeche.
+              fontSize: istBuehne ? 'clamp(17px, 1.7cqw, 26px)' : 'clamp(14px, 1.4cqw, 20px)',
+              fontWeight: 900,
+              color: istBuehne ? 'var(--qq-text)' : t.color,
+              textShadow: istBuehne ? 'none' : `0 0 12px ${t.color}55`,
               textAlign: 'center',
               maxWidth: 'min(220px, 22cqw)',
               lineHeight: 1.15,
@@ -1394,9 +1404,9 @@ function BetZeroGroupSlide({ teams, lang }: {
         fontStyle: 'italic', textAlign: 'center',
         animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
         opacity: 0,
-      }}>{de
-        ? 'Schade, der Tipp ging daneben 🤞'
-        : 'Tough luck, the tip went sideways 🤞'}
+      }}>
+        {de ? 'Schade, der Tipp ging daneben ' : 'Tough luck, the tip went sideways '}
+        <QQEmojiIcon emoji="🤞" size="1em" />
       </div>
     </div>
   );

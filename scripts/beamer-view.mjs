@@ -78,6 +78,8 @@ const ANTWORTEN = Number((process.argv.find(a => a.startsWith('--antworten=')) |
 const ENTWURF = (process.argv.find(a => a.startsWith('--entwurf=')) || '=').split('=')[1] || null;
 // --ruhe=15000  ueberschreibt die Ruhezeit. Einzelne Kaskaden laufen laenger
 // als die Vorgabe der Ansicht (Top 5 braucht 5 x 2400 ms plus Siegerband).
+// --stufe=3  welcher Schritt der Final-Aufloesung geknipst wird.
+const STUFE = Number((process.argv.find(a => a.startsWith('--stufe=')) || '--stufe=1').split('=')[1]);
 const RUHE = process.argv.find(a => a.startsWith('--ruhe='))
   ? Number(process.argv.find(a => a.startsWith('--ruhe=')).split('=')[1]) : null;
 const QUELLE_HOCH = '/images/Johannes.jpeg';
@@ -132,6 +134,35 @@ const ANSICHTEN = {
     await h.zurFrage(); await h.antworten(); await sleep(600); await h.emit('qq:revealAnswer'); await sleep(1600);
     for (const ev of ['qq:muchoRevealStep', 'qq:zvzRevealStep', 'qq:cheeseRevealStep', 'qq:mapRevealStep']) {
       await h.emit(ev); await sleep(200); await h.emit(ev); await sleep(200);
+    }
+  } },
+  // Ab hier der Abend NACH dem Brett. Diese Stationen liegen weit hinten,
+  // deshalb springt der Harness ueber `dev/skipTo` dorthin, statt vier Runden
+  // nachzuspielen. Das fuellt das Brett mit, sonst stehen die Endfolien auf
+  // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
+  pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
+  cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' }); } },
+  connections:{ ruhe: 3500, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('phase-4'); await h.emit('qq:connectionsStart'); await sleep(600); await h.emit('qq:connectionsBegin');
+  } },
+  finalwette: { ruhe: 3500, aufbau: 'spiel', weg: async (h) => { await h.springe('final-bet'); } },
+  finalaufloesung: { ruhe: 4000, aufbau: 'spiel', weg: async (h) => { await h.springe('final-reveal'); } },
+  // Die Siegerehrung ist NICHT die Phase GAME_OVER. 2026-08-23 im Code
+  // nachgelesen: der letzte Schritt der Final-Aufloesung geht direkt auf THANKS
+  // („kein GAME_OVER mehr - Wolfs Wunsch, die Punkte nicht wieder und wieder
+  // zeigen"). GAME_OVER erreicht man nur ueber das 4x4-Finale oder das Stechen.
+  // Die Ehrung selbst laeuft also als Schritt-Folge INNERHALB von FINAL_REVEAL:
+  // Brett, Wetten, Auszeichnungen, Rangliste. `--stufe=n` waehlt den Schritt.
+  siegerehrung: { ruhe: 4000, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('final-reveal'); await sleep(900);
+    for (let i = 0; i < STUFE; i++) { await h.emit('qq:nextQuestion'); await sleep(950); }
+  } },
+  danke:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('final-reveal'); await sleep(900);
+    for (let i = 0; i < 20; i++) {
+      await h.emit('qq:nextQuestion');
+      await sleep(950);
+      if (await phase() === 'THANKS') break;
     }
   } },
   brett:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
@@ -210,6 +241,18 @@ const phase = () => beamer.evaluate(() =>
 let regelStand = -2;
 const helfer = {
   emit,
+  /** Weit nach hinten springen, ohne vier Runden nachzuspielen.
+   *  `dev/skipTo` fuellt dabei das Brett mit Besitz, damit die Endfolien nicht
+   *  auf einem leeren Spielfeld stehen. Ziele: phase-2/3/4, final-bet,
+   *  final-reveal. */
+  async springe(ziel) {
+    const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/skipTo`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ target: ziel, pin: PIN }),
+    });
+    if (!r.ok) console.log('  skipTo:', r.status, (await r.text()).slice(0, 140));
+    await sleep(900);
+  },
   /** Antworten der Bots erzwingen, statt auf den Zufall zu hoffen.
    *  2026-08-23: die Aufloesung zeigt Siegerband, Zeit-Pillen und Sieger-Rahmen
    *  nur, wenn ueberhaupt jemand richtig lag. Drei Laeufe hintereinander hatte

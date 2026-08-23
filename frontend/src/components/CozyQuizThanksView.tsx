@@ -19,6 +19,7 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
+import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import { TeamNameLabel } from './TeamNameLabel';
 import { WolfHeadIcon } from './WolfHeadIcon';
 import { CozyWolfImage } from './CozyWolfImage';
@@ -28,6 +29,9 @@ import { isThemed, isQuietMotion } from '../qqTheme';
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
+  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): die Danke-Folie ist das
+  // letzte Bild des Abends und hatte den Durchgang noch nicht gesehen.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
   // Cozy Quirks: eckige Kachel → Sieger-Coin quadratisch, ohne weißen Ring; bg +
   // Glow bleiben (= Kachel + Feier-Glow, wie im „ohne"-Beispiel).
   const quirkSet = isQuirkTileSet(s.avatarSetId);
@@ -460,6 +464,12 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             }}>
               {winner && (
                 <div style={{ position: 'relative' }}>
+                  {/* 2026-08-23: dritte und letzte Krone des Abends, gleiche
+                      Entscheidung wie bei Schaetzchen und Zehn von Zehn. Wer
+                      gewonnen hat, steht direkt darunter im Klartext („hat heute
+                      gewonnen"), und die Marke ist ohnehin die groesste Flaeche
+                      der Folie. */}
+                  {!istBuehne && (
                   <span aria-hidden style={{
                     position: 'absolute', left: '50%', top: '-30%',
                     fontSize: 'clamp(64px, 7cqw, 110px)', lineHeight: 1,
@@ -468,6 +478,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     animation: 'qqThanksCrownBob 2.4s ease-in-out infinite',
                     zIndex: 5,
                   }}><QQEmojiIcon emoji="👑" size="1em" /></span>
+                  )}
                   <div style={{
                     ['--wg' as string]: `${winner.color}99`,
                     width: 'clamp(180px, 20cqw, 290px)', height: 'clamp(180px, 20cqw, 290px)',
@@ -482,7 +493,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       ${winner.color}`,
                     border: quirkSet ? 'none' : `5px solid rgba(246, 239, 230,0.30)`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    animation: 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
+                    // 2026-08-23: der pulsierende Schein um die Sieger-Marke faellt
+                    // auf der Buehne weg. Er sagt nichts, was Groesse und Text
+                    // nicht schon sagen, und auf Projektionsdistanz weicht er die
+                    // Kante der Kachel auf.
+                    animation: istBuehne ? 'none' : 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
                   } as React.CSSProperties}>
                     <QQTeamAvatar
                       avatarId={winner.avatarId}
@@ -508,9 +523,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     <div style={{
                       fontSize: isLong ? 'clamp(28px, 3cqw, 46px)' : 'clamp(36px, 3.8cqw, 58px)',
                       fontWeight: 900,
-                      color: winner.color,
+                      // 2026-08-23: Siegername in Creme, wie am Brett und auf allen
+                      // Siegerbaendern. Die Farbe traegt die Marke darueber, und
+                      // zwar auf 290px Kantenlaenge - das ist die deutlichste
+                      // Teamfarbe des ganzen Abends.
+                      color: istBuehne ? 'var(--qq-text)' : winner.color,
                       letterSpacing: '-0.01em',
-                      textShadow: `0 0 22px ${winner.color}77`,
+                      textShadow: istBuehne ? 'none' : `0 0 22px ${winner.color}77`,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden', textOverflow: 'ellipsis',
                       maxWidth: '100%',
@@ -577,7 +596,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     fontSize: 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
                     color: brand.accentHex, letterSpacing: '0.02em',
                     textShadow: `0 0 12px rgba(${brand.accentRgb},0.5)`,
-                  }}>📱 {de ? 'QR scannen' : 'Scan the code'}</div>
+                  }}>
+                    {/* 2026-08-23: rohes Systemzeichen raus, das gelieferte Set
+                        rein - wie ueberall sonst im Quiz. */}
+                    <QQEmojiIcon emoji="📱" size="1em" /> {de ? 'QR scannen' : 'Scan the code'}
+                  </div>
                   <div style={{
                     fontSize: 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
                     color: themed ? 'var(--qq-text-muted)' : 'rgba(246, 239, 230,0.82)',

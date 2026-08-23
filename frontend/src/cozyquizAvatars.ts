@@ -167,7 +167,7 @@ export const COZYQUIZ_FILL: Record<string, number> = {
   'hot-air-balloon': 0.92,
   'houseplant': 0.92,
   'key': 0.92,
-  'knitted-sock': 0.92,
+  'knitted-sock': 0.90,
   'lemonade': 0.92,
   'light-bulb': 0.92,
   'magnet': 0.92,
@@ -199,6 +199,7 @@ export const COZYQUIZ_NUDGE: Record<string, [number, number]> = {
   'croissant': [1.7, 1.9],
   'hot-air-balloon': [-1.6, 3.8],
   'houseplant': [0.5, -2.8],
+  'knitted-sock': [-1.9, -1.3],
   'lemonade': [0.1, -2.0],
   'light-bulb': [-0.1, 2.5],
   'paper-boat': [-0.8, -2.2],
@@ -206,5 +207,5 @@ export const COZYQUIZ_NUDGE: Record<string, [number, number]> = {
   'puzzle': [1.1, -1.8],
   'rocket': [-2.2, -1.4],
   'tent': [-0.6, -6.3],
-  'wizard-hat': [-0.3, -4.0],
+  'wizard-hat': [-1.1, -4.5],
 };

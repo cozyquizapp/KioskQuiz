@@ -154,6 +154,7 @@ export function QQTeamAvatar({
         eyes={eyes}
         teamId={teamId}
         discFill={display.discFill}
+        nudge={display.nudge}
       />
     );
   }
@@ -497,9 +498,11 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId, discFill,
+  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId, discFill, nudge,
 }: {
   src: string; blinkSrc?: string; color: string; size: number | string;
+  /** [dx, dy] in Prozent der KACHELKANTE — optischer Sitz (COZYQUIZ_NUDGE). */
+  nudge?: [number, number];
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
   /** Disc-Fuellung (0..~1.1). Default COZY3D_DISC_FILL (0.9). CozyWoelfe: 1.0
    *  (groesser, overflow bleibt sichtbar → kein Anschnitt). */
@@ -547,6 +550,14 @@ function ImageAvatar({
   const rawFill = discFill ?? COZY3D_DISC_FILL;
   const effFill = flat ? Math.min(rawFill, 1) : rawFill;
   const fillPct = `${(effFill * 100).toFixed(0)}%`;
+  // 2026-08-23: der Schubs ist in Prozent der KACHEL gemessen, das Bild ist aber
+  // nur `effFill` davon breit. Also umrechnen, sonst faellt der Ausgleich bei
+  // kleinen Motiven zu schwach und bei grossen zu stark aus.
+  // Im Brett kein Schubs: dort stossen die Felder aneinander, jede Verschiebung
+  // liefe auf die Nachbarkante zu.
+  const nudgeCss = (!flat && nudge && effFill > 0)
+    ? `translate(${(nudge[0] / effFill).toFixed(2)}%, ${(nudge[1] / effFill).toFixed(2)}%)`
+    : undefined;
   const imgFilter = 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))';
 
   return (
@@ -572,7 +583,7 @@ function ImageAvatar({
         // Zwei gestapelte Frames: offen (Basis) + geschlossen (Overlay).
         // idle → Overlay blinzelt per Keyframe; explicit → Overlay-Opacity per
         // State mit weichem Crossfade (Aufwachen/Einschlafen).
-        <span style={{ position: 'relative', width: fillPct, height: fillPct, display: 'block' }}>
+        <span style={{ position: 'relative', width: fillPct, height: fillPct, display: 'block', transform: nudgeCss }}>
           {/* @keyframes qqCozy3dBlink ist global in main.css (kein per-Instanz-<style>). */}
           <img
             src={src}
@@ -604,7 +615,7 @@ function ImageAvatar({
           alt={title}
           onError={() => setFailed(true)}
           draggable={false}
-          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter }}
+          style={{ width: fillPct, height: fillPct, objectFit: 'contain', filter: imgFilter, transform: nudgeCss }}
         />
       )}
     </span>

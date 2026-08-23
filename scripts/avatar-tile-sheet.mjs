@@ -36,8 +36,14 @@ const COLORS = ['#F97316', '#22C55E', '#14B8A6', '#A855F7', '#FACC15', '#3B82F6'
 // Die gemessene Tabelle direkt aus der Quelle lesen, damit das Blatt nicht
 // gegen eine veraltete Kopie prueft.
 const src = readFileSync('frontend/src/cozyquizAvatars.ts', 'utf8');
+const fillBlock = src.slice(src.indexOf('COZYQUIZ_FILL'), src.indexOf('COZYQUIZ_NUDGE'));
 const table = Object.fromEntries(
-  [...src.matchAll(/'([a-z0-9-]+)':\s*([0-9.]+),/g)].map(m => [m[1], Number(m[2])])
+  [...fillBlock.matchAll(/'([a-z0-9-]+)':\s*([0-9.]+),/g)].map(m => [m[1], Number(m[2])])
+);
+const nudgeBlock = src.slice(src.indexOf('COZYQUIZ_NUDGE'));
+const nudges = Object.fromEntries(
+  [...nudgeBlock.matchAll(/'([a-z0-9-]+)':\s*\[(-?[0-9.]+),\s*(-?[0-9.]+)\]/g)]
+    .map(m => [m[1], [Number(m[2]), Number(m[3])]])
 );
 
 const files = readdirSync(DIR).filter(f => f.endsWith('.png')).sort();
@@ -45,7 +51,7 @@ const rows = Math.ceil(files.length / COLS);
 const halfW = COLS * TILE + (COLS + 1) * PAD;
 const H = rows * (TILE + LABEL_H + PAD) + PAD + 40;
 
-async function half(fillFor, title) {
+async function half(fillFor, title, withNudge) {
   const layers = [];
   for (let i = 0; i < files.length; i++) {
     const slug = files[i].replace('.png', '');
@@ -54,13 +60,15 @@ async function half(fillFor, title) {
     const col = i % COLS, row = (i / COLS) | 0;
     const x = PAD + col * (TILE + PAD);
     const y = 40 + PAD + row * (TILE + LABEL_H + PAD);
+    const motif = await sharp(path.join(DIR, files[i]))
+      .resize(inner, inner, { fit: 'inside' }).png().toBuffer();
+    const mm = await sharp(motif).metadata();
+    const nu = withNudge ? (nudges[slug] ?? [0, 0]) : [0, 0];
+    const left = Math.round((TILE - mm.width) / 2 + nu[0] / 100 * TILE);
+    const top = Math.round((TILE - mm.height) / 2 + nu[1] / 100 * TILE);
     const tile = await sharp({
       create: { width: TILE, height: TILE, channels: 4, background: COLORS[i % COLORS.length] },
-    }).composite([{
-      input: await sharp(path.join(DIR, files[i]))
-        .resize(inner, inner, { fit: 'inside' }).toBuffer(),
-      gravity: 'centre',
-    }]).png().toBuffer();
+    }).composite([{ input: motif, left: Math.max(0, left), top: Math.max(0, top) }]).png().toBuffer();
     // Ecken abrunden wie die echte Kachel (16 %).
     const r = Math.round(TILE * 0.16);
     const mask = Buffer.from(
@@ -87,8 +95,8 @@ async function half(fillFor, title) {
 }
 
 mkdirSync('.shots', { recursive: true });
-const links = await half(() => OLD_FILL, 'vorher: 0.90 fuer alle');
-const rechts = await half(s => table[s] ?? OLD_FILL, 'nachher: gemessener Ausgleich');
+const links = await half(() => OLD_FILL, 'vorher: 0.90 fuer alle, ohne Ausgleich', false);
+const rechts = await half(s => table[s] ?? OLD_FILL, 'nachher: Groesse + Sitz ausgeglichen', true);
 const sheet = await sharp({ create: { width: halfW * 2 + PAD, height: H, channels: 4, background: '#120F18' } })
   .composite([{ input: links, left: 0, top: 0 }, { input: rechts, left: halfW + PAD, top: 0 }])
   .png().toBuffer();

@@ -1,0 +1,192 @@
+/**
+ * repair-avatar-alpha.mjs — repariert zwei Fehler in den Avatar-PNGs.
+ *
+ * Anlass (Wolf 2026-08-23): „bei rot kamera und wizard hut haben die emojis
+ * auch Flecken" und „bei candle ist irgendwas links im bild, rueckstaende
+ * eines alten nachbaremojis vermute ich".
+ *
+ * Beides bestaetigt, beides messbar:
+ *
+ * 1) FLECKEN = halbdurchsichtige Stellen MITTEN im Motiv. Der Alphakanal hat
+ *    dort Loecher, wo volle Deckung sein muesste. Auf einer Kachel scheint die
+ *    Kachelfarbe durch, also sieht man auf Rot rote Flecken, auf Gruen gruene.
+ *    Deshalb faellt es genau dann auf, wenn Motiv und Kachel sich beissen.
+ *    Gemessen: 21 von 48 Motiven betroffen, Kamera 14.8 % der Motivflaeche,
+ *    Kassette 9.5 %, Fernglas 9.0 %, Wuerfel 6.6 %.
+ *
+ *    Reparatur: von den Bildraendern durch alles fluten, was nicht voll deckt.
+ *    Was danach NICHT geflutet ist, liegt innen. Innenliegende Pixel mit
+ *    Teil-Alpha werden voll deckend gemacht.
+ *    Zwei Dinge bleiben dabei ausdruecklich unangetastet:
+ *      * die Kante selbst (sie ist von aussen erreichbar) — sonst waere das
+ *        Motiv hart ausgeschnitten und flimmert beim Skalieren;
+ *      * echte Loecher (Kaeseloecher, Donutloch, Daumenloch der Palette).
+ *        Die sind VOLL transparent, nicht teilweise, und werden per
+ *        `ALPHA_LOCH` verschont.
+ *
+ * 2) RUECKSTAENDE = losgeloeste Splitter von einem Nachbarmotiv, die beim
+ *    Zerschneiden der Liefer-Tafel mitgekommen sind. Erkennbar an: winzig
+ *    gegen das Hauptmotiv UND entweder sehr schmal-lang ODER am Bildrand
+ *    klebend.
+ *    Die Signatur ist bewusst eng: das Motiv-Set hat auch LEGITIME abgeloeste
+ *    Teile (die untere Wolkenlage 329x67, ein Sonnen-Element 93x93, die
+ *    Zipfel von Socke und Schneeflocke). Die duerfen nicht mit weg.
+ *    Gemessen greift die Regel bei genau zwei Dateien: candle (5x37 am linken
+ *    Rand) und paint-palette (4x21, klebt an x=0).
+ *
+ * Die Originale liegen in Git. Wer zurueck will: `git checkout` auf den Ordner.
+ *
+ * NUTZUNG:
+ *   node scripts/repair-avatar-alpha.mjs           # nur berichten
+ *   node scripts/repair-avatar-alpha.mjs --write   # reparieren
+ */
+import { createRequire } from 'node:module';
+import fs from 'node:fs';
+import path from 'node:path';
+
+const req = createRequire(new URL('../frontend/package.json', import.meta.url));
+const sharp = req('sharp');
+
+const DIR = 'frontend/public/avatars/cozyquiz';
+const WRITE = process.argv.includes('--write');
+
+const ALPHA_VOLL = 240;   // ab hier gilt ein Pixel als deckend
+const ALPHA_LOCH = 20;    // darunter gilt es als echtes Loch und bleibt
+// Grenze fuer die Flutung von aussen. 2026-08-23 von 240 auf 60 gesenkt:
+// mit 240 galt jedes halbdurchsichtige Pixel als „aussen erreichbar", und das
+// Gestrick der Socke und die Hutfalte blieben dadurch stehen (gemessen 6.5 %
+// und 4.7 % Rest). Die echte Aussenkante hat einen vollen Verlauf von 0 nach
+// 255, die Flutung findet also weiterhin ueber die Pixel unter 60 hinaus —
+// aber eine Flaeche mit Alpha 100 gilt jetzt als Koerper und wird gefuellt.
+const ALPHA_FLUT = 60;
+const SPLITTER_ANTEIL = 0.005;  // Rueckstand ist winzig gegen das Hauptmotiv
+const SPLITTER_SCHLANK = 4;     // ... und deutlich schmal-lang
+// 2026-08-23, am Probelauf nachgezogen: ohne Untergrenze griff die Regel bei
+// 44 von 48 Dateien und fasste 1x3- und 3x1-Kruemel an. Das sind Reste der
+// Kantenglaettung, kein Nachbarmotiv. Sie zu loeschen waere harmlos, sie als
+// „Rueckstand" zu melden waere gelogen. Untergrenze 60 px, und Schlankheit 4
+// statt 3 — damit bleibt z.B. der 22x6-Strich im Papierboot (Verhaeltnis 3.7)
+// unangetastet, der plausibel zum Motiv gehoert.
+const SPLITTER_MIN = 60;
+// Radius fuer das Schliessen feiner Durchsicht-Kanaele. 5 px auf 512 px Kante
+// (etwa 1 %) schliesst das Gestrick der Socke und die Hutfalte, laesst den
+// Spalt zwischen den Fernglas-Rohren aber offen (der ist deutlich breiter).
+const SCHLIESS_RADIUS = 5;
+
+let repariert = 0;
+for (const file of fs.readdirSync(DIR).filter(f => f.endsWith('.png')).sort()) {
+  const p = path.join(DIR, file);
+  const { data, info } = await sharp(p).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+  const { width: w, height: h, channels: c } = info;
+  const A = (i) => data[i * c + 3];
+
+  // ── 1) Flecken ────────────────────────────────────────────────────────────
+  const aussen = new Uint8Array(w * h);
+  const stack = [];
+  const start = (i) => { if (!aussen[i] && A(i) < ALPHA_FLUT) { aussen[i] = 1; stack.push(i); } };
+  for (let x = 0; x < w; x++) { start(x); start((h - 1) * w + x); }
+  for (let y = 0; y < h; y++) { start(y * w); start(y * w + w - 1); }
+  while (stack.length) {
+    const q = stack.pop(); const x = q % w, y = (q / w) | 0;
+    if (x > 0) start(q - 1);
+    if (x < w - 1) start(q + 1);
+    if (y > 0) start(q - w);
+    if (y < h - 1) start(q + w);
+  }
+  let flecken = 0;
+  for (let i = 0; i < w * h; i++) {
+    const a = A(i);
+    if (a < ALPHA_VOLL && a > ALPHA_LOCH && !aussen[i]) { data[i * c + 3] = 255; flecken++; }
+  }
+
+  // 2026-08-23, zweite Stufe. Die erste erwischt nur EINGESCHLOSSENE Loecher.
+  // Zaubererhut und Strickstrumpf lassen aber weiter durch: ihre durchsichtigen
+  // Stellen haengen ueber haarfeine Kanaele am Rand, die Flutung erreicht sie
+  // also und laesst sie stehen. Auf einer roten Kachel sieht man dadurch rot
+  // durch das Gestrick.
+  // Loesung: die Deckungs-Maske morphologisch SCHLIESSEN (erst weiten, dann
+  // wieder schrumpfen). Kanaele, die schmaler sind als der Radius, verschwinden
+  // dabei; echte Zwischenraeume (zwischen den beiden Fernglas-Rohren) bleiben,
+  // weil sie breiter sind.
+  // Gefuellt wird auch hier NUR, was Teil-Alpha hat — voll transparente Loecher
+  // (Kaese, Donut) sind davon unberuehrt.
+  {
+    const R = SCHLIESS_RADIUS;
+    const deckend = new Uint8Array(w * h);
+    for (let i = 0; i < w * h; i++) deckend[i] = A(i) >= ALPHA_VOLL ? 1 : 0;
+    // Weiten und Schrumpfen getrennt je Achse (separierbar, also 4 Durchlaeufe
+    // statt eines quadratischen Fensters).
+    const morph = (src, grow) => {
+      const tmp = new Uint8Array(w * h), out = new Uint8Array(w * h);
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let v = grow ? 0 : 1;
+        for (let d = -R; d <= R; d++) {
+          const nx = x + d; if (nx < 0 || nx >= w) { if (!grow) v = 0; continue; }
+          const s = src[y * w + nx];
+          if (grow) { if (s) { v = 1; break; } } else if (!s) { v = 0; break; }
+        }
+        tmp[y * w + x] = v;
+      }
+      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
+        let v = grow ? 0 : 1;
+        for (let d = -R; d <= R; d++) {
+          const ny = y + d; if (ny < 0 || ny >= h) { if (!grow) v = 0; continue; }
+          const s = tmp[ny * w + x];
+          if (grow) { if (s) { v = 1; break; } } else if (!s) { v = 0; break; }
+        }
+        out[y * w + x] = v;
+      }
+      return out;
+    };
+    const geschlossen = morph(morph(deckend, true), false);
+    for (let i = 0; i < w * h; i++) {
+      const a = A(i);
+      if (geschlossen[i] && a < ALPHA_VOLL && a > ALPHA_LOCH) { data[i * c + 3] = 255; flecken++; }
+    }
+  }
+
+  // ── 2) Rueckstaende ───────────────────────────────────────────────────────
+  const gesehen = new Uint8Array(w * h);
+  const teile = [];
+  for (let i = 0; i < w * h; i++) {
+    if (gesehen[i] || A(i) <= ALPHA_LOCH) continue;
+    let n = 0, x0 = w, y0 = h, x1 = -1, y1 = -1;
+    const st = [i]; gesehen[i] = 1; const px = [];
+    while (st.length) {
+      const q = st.pop(); const x = q % w, y = (q / w) | 0;
+      n++; px.push(q);
+      if (x < x0) x0 = x; if (x > x1) x1 = x;
+      if (y < y0) y0 = y; if (y > y1) y1 = y;
+      for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        const nx = x + dx, ny = y + dy;
+        if (nx < 0 || ny < 0 || nx >= w || ny >= h) continue;
+        const r = ny * w + nx;
+        if (!gesehen[r] && A(r) > ALPHA_LOCH) { gesehen[r] = 1; st.push(r); }
+      }
+    }
+    teile.push({ n, x0, y0, x1, y1, px });
+  }
+  teile.sort((a, b) => b.n - a.n);
+  const haupt = teile[0];
+  let splitter = 0;
+  for (const t of teile.slice(1)) {
+    const bw = t.x1 - t.x0 + 1, bh = t.y1 - t.y0 + 1;
+    const winzig = t.n >= SPLITTER_MIN && t.n < haupt.n * SPLITTER_ANTEIL;
+    const schlank = Math.max(bw, bh) / Math.min(bw, bh) >= SPLITTER_SCHLANK;
+    const amRand = t.x0 === 0 || t.y0 === 0 || t.x1 === w - 1 || t.y1 === h - 1;
+    if (winzig && (schlank || amRand)) {
+      for (const q of t.px) data[q * c + 3] = 0;
+      splitter += t.n;
+      console.log(`  ${file}: Rueckstand ${bw}x${bh} (${t.n} px) bei x ${t.x0} y ${t.y0} entfernt`);
+    }
+  }
+
+  if (flecken || splitter) {
+    repariert++;
+    console.log(`${file.padEnd(20)} Flecken ${String(flecken).padStart(6)} px   Rueckstand ${String(splitter).padStart(5)} px`);
+    if (WRITE) {
+      await sharp(data, { raw: { width: w, height: h, channels: c } }).png().toFile(p);
+    }
+  }
+}
+console.log(`\n${repariert} von 48 Dateien betroffen${WRITE ? ' und geschrieben' : ' (Probelauf, nichts geschrieben)'}`);

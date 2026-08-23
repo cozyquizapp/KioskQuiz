@@ -46,6 +46,7 @@ const MIN_FILL = 0.70; // darunter wird selbst ein Kissen zu klein
 // als das Kissen" gar keiner ist. Duenne Gegenstaende DUERFEN leichter wirken.
 // 0.92 ist der alte Einheitswert 0.90 plus ein Hauch.
 const MAX_FILL = 0.92;
+const NUDGE_AB = 4;   // ab diesem Versatz (% der Kante) wird geschoben
 const PROBE = 128;     // Messaufloesung; 512 waere genauer und 16x langsamer,
                        // der Unterschied liegt unter 0.5 % (nachgerechnet).
 
@@ -55,12 +56,13 @@ for (const file of fs.readdirSync(DIR).filter(f => f.endsWith('.png')).sort()) {
     .ensureAlpha().resize(PROBE, PROBE, { fit: 'inside' })
     .raw().toBuffer({ resolveWithObject: true });
   const { width: w, height: h, channels: c } = info;
-  let covered = 0, x0 = w, y0 = h, x1 = -1, y1 = -1;
+  let covered = 0, x0 = w, y0 = h, x1 = -1, y1 = -1, sx = 0, sy = 0, mass = 0;
   for (let y = 0; y < h; y++) {
     for (let x = 0; x < w; x++) {
-      const a = data[(y * w + x) * c + 3];
-      if (a > 16) {
-        covered += a / 255;
+      const a = data[(y * w + x) * c + 3] / 255;
+      if (a > 0.06) {
+        covered += a;
+        sx += x * a; sy += y * a; mass += a;
         if (x < x0) x0 = x; if (x > x1) x1 = x;
         if (y < y0) y0 = y; if (y > y1) y1 = y;
       }
@@ -69,7 +71,17 @@ for (const file of fs.readdirSync(DIR).filter(f => f.endsWith('.png')).sort()) {
   const box = Math.max(x1 - x0 + 1, y1 - y0 + 1);
   const areaInTile = covered / (box * box);       // Anteil der Kachelflaeche
   const fill = Math.min(MAX_FILL, Math.max(MIN_FILL, Math.sqrt(TARGET / areaInTile)));
-  rows.push({ slug: file.replace('.png', ''), area: areaInTile, fill: Math.round(fill * 100) / 100 });
+  // Schwerpunkt gegen die Mitte der Bounding-Box, in Prozent der Kachelkante.
+  // `objectFit: contain` zentriert auf die BOX. Ein Motiv, dessen Masse woanders
+  // liegt (Zelt unten schwer, Ballon oben schwer), sitzt dadurch optisch schief.
+  const cx = sx / mass, cy = sy / mass;
+  const dx = (cx - (x0 + x1) / 2) / box * 100;
+  const dy = (cy - (y0 + y1) / 2) / box * 100;
+  rows.push({
+    slug: file.replace('.png', ''), area: areaInTile,
+    fill: Math.round(fill * 100) / 100,
+    dx: Math.round(dx * 10) / 10, dy: Math.round(dy * 10) / 10,
+  });
 }
 
 const w1 = Math.max(...rows.map(r => r.slug.length));
@@ -86,15 +98,33 @@ if (process.argv.includes('--write')) {
   const target = 'frontend/src/cozyquizAvatars.ts';
   const src = fs.readFileSync(target, 'utf8');
   const body = rows.map(r => `  '${r.slug}': ${r.fill.toFixed(2)},`).join('\n');
+  // Nur wer deutlich daneben liegt, bekommt einen Schubs — und nur um die
+  // HAELFTE. Bounding-Box und Schwerpunkt sind zwei legitime Bezugspunkte;
+  // ein Zelt ist von Natur aus unten schwer, voll auf den Schwerpunkt
+  // geschoben saeckt es im Kasten ab. Die Mitte zwischen beiden ist der
+  // uebliche Kompromiss.
+  const nudged = rows.filter(r => Math.hypot(r.dx, r.dy) >= NUDGE_AB);
+  const nbody = nudged.map(r =>
+    `  '${r.slug}': [${(-r.dx / 2).toFixed(1)}, ${(-r.dy / 2).toFixed(1)}],`).join('\n');
   const block = `// ── Optischer Ausgleich (erzeugt von scripts/measure-avatar-fill.mjs) ───────\n`
     + `// NICHT von Hand pflegen: neu erzeugen, wenn Motive dazukommen.\n`
-    + `// Wert = Anteil der Kachelkante, den das Motiv einnimmt. Begruendung und\n`
-    + `// Messverfahren stehen im Kopf des Skripts.\n`
-    + `export const COZYQUIZ_FILL: Record<string, number> = {\n${body}\n};\n`;
+    + `// FILL  = Anteil der Kachelkante, den das Motiv einnimmt (Groesse).\n`
+    + `// NUDGE = Verschiebung in Prozent der Kachelkante (Sitz), nur fuer die\n`
+    + `//         Motive, deren Schwerpunkt deutlich neben der Bounding-Box-Mitte\n`
+    + `//         liegt. Begruendung und Messverfahren im Kopf des Skripts.\n`
+    + `export const COZYQUIZ_FILL: Record<string, number> = {\n${body}\n};\n\n`
+    + `export const COZYQUIZ_NUDGE: Record<string, [number, number]> = {\n${nbody}\n};\n`;
   const marker = '// ── Optischer Ausgleich';
-  const next = src.includes(marker)
-    ? src.slice(0, src.indexOf(marker)) + block + src.slice(src.indexOf('\n};\n', src.indexOf(marker)) + 4)
-    : src.trimEnd() + '\n\n' + block;
+  // Beim Ersetzen bis zum ENDE des zweiten Blocks schneiden, seit es zwei sind.
+  let next;
+  if (src.includes(marker)) {
+    const from = src.indexOf(marker);
+    const erstes = src.indexOf('\n};\n', from);
+    const zweites = src.indexOf('\n};\n', erstes + 4);
+    next = src.slice(0, from) + block + src.slice((zweites >= 0 ? zweites : erstes) + 4);
+  } else {
+    next = src.trimEnd() + '\n\n' + block;
+  }
   fs.writeFileSync(target, next);
   console.log(`\n${rows.length} Werte -> ${target}`);
 }

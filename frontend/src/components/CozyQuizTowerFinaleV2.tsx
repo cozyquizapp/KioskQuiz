@@ -29,6 +29,7 @@ import { useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
+import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import {
   playWoodKnock, playClimaxFinish, playFanfare, playTick, playReveal, playSpecialAwardReveal,
 } from '../utils/sounds';
@@ -80,6 +81,9 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
 }) {
   const de = lang === 'de';
   const reduce = prefersReducedMotion();
+  // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
+  // umschrieben - darunter fallen auch Studio Mono, Soft Pop und Neo-Brutalism.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
   // Cozy Quirks: eckige Kachel → Avatar-Discs quadratisch (Team-Farbe = Kachel),
   // keine runde Coin um den Avatar. Sieger-Glow bleibt.
   const quirkSet = isQuirkTileSet(useAvatarSet());
@@ -291,13 +295,46 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   const crowned = inReveal && revealStep >= 3;
 
   // ── Geometrie ─────────────────────────────────────────────────────────────
-  const blockH = Math.max(15, Math.min(46, Math.floor((TOWER_ZONE - (maxTotal - 1) * GAP) / maxTotal)));
-  const blockW = blockH;
+  // 2026-08-23 (Uebergabe 2a, Wolf: „was meinst du mit dem zwischenstand").
+  // Gemessen an der Aufnahme des Zwischenstand-Beats: zwischen Ueberschrift und
+  // Turmspitze lagen 516 durchgehend leere Pixel, 52 Prozent der Buehnenhoehe.
+  //
+  // Ursache war EINE Zahl: die Bausteinhoehe war hart auf 46px gedeckelt. Der
+  // Deckel bedeutet, dass der hoechste Turm die Zone auch am ENDE nicht fuellt,
+  // sobald ein Team weniger als rund vierzehn Felder hat. Der Platz oben ist
+  // dann keine Reserve zum Wachsen mehr, sondern einfach Leere.
+  //
+  // Neu, in dieser Reihenfolge, damit die Rechnung nicht mehr im Kreis laeuft
+  // (vorher hing colW an blockW und blockW an blockH):
+  //   1. Spaltenbreite allein aus der Teamzahl,
+  //   2. Baustein so breit, wie die Spalte erlaubt,
+  //   3. Bausteinhoehe fuellt die Zone, gedeckelt durch das SEITENVERHAELTNIS
+  //      statt durch eine feste Zahl. Ein Ziegel ist breiter als hoch; 0.62
+  //      haelt ihn als Ziegel lesbar, auch wenn nur drei gestapelt sind.
   const SIDE_PAD = 90;
   const usable = STAGE_W - SIDE_PAD * 2;
-  const colW = Math.max(blockW, Math.min(150, Math.floor(usable / N) - 16));
+  const colW = Math.max(56, Math.min(150, Math.floor(usable / N) - 16));
+  const blockW = Math.min(colW - 10, 132);
+  const blockH = Math.max(15, Math.min(
+    Math.round(blockW * 0.62),
+    Math.floor((TOWER_ZONE - (maxTotal - 1) * GAP) / maxTotal),
+  ));
+  // Bleibt trotzdem Luft ueber dem hoechsten Turm (wenige Bausteine, breite
+  // Ziegel), dann klebt die ganze Anordnung nicht mehr am unteren Rand, sondern
+  // steht mittig im Feld unter dem Titelband. Der Wert haengt an maxTotal, also
+  // am ENDstand inklusive Awards - er springt waehrend des Wachsens nicht.
+  const maxTowerPx = maxTotal * blockH + Math.max(0, maxTotal - 1) * GAP;
+  // Der Sockel traegt Zahl und Teamname. Auf der Buehne ist die Zahl 42px statt
+  // 30 und der Name bis 25px statt 16 - gemessen an der Aufnahme lief
+  // „Kaese-Kenner" zweizeilig unten aus den 96px raus und war abgeschnitten.
+  const SOCKEL_H = istBuehne ? 134 : BASE_H;
+  const freiUnterTitel = STAGE_H - TITLE_H;
+  const BODEN = Math.max(BOTTOM, Math.round((freiUnterTitel - (maxTowerPx + SOCKEL_H)) / 2));
   const colGap = N > 1 ? Math.max(8, Math.floor((usable - N * colW) / (N - 1))) : 0;
   const avInBlock = Math.round(blockW * 0.82);
+  // Der Avatar auf der Turmspitze war fest 54px und wirkte neben einem 132px
+  // breiten Ziegel wie ein Knopf. Er folgt jetzt der Ziegelbreite.
+  const AV_OBEN = Math.max(44, Math.min(96, Math.round(blockW * 0.72)));
   const rowWidth = N * colW + (N - 1) * colGap;
   const startX = (STAGE_W - rowWidth) / 2;
   const baseX = (i: number) => startX + i * (colW + colGap);
@@ -346,7 +383,10 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   return (
     <div style={{
       position: 'absolute', inset: 0, overflow: 'hidden',
-      background: `radial-gradient(120% 100% at 50% 8%, #1B1230 0%, #140C22 42%, ${INK} 100%)`,
+      // 2026-08-23 (2a): eigener Lila-Verlauf nur fuer diese eine Folie. Auf der
+      // Buehne der Grund, den auch jede Frage traegt - das Finale ist der
+      // Hoehepunkt desselben Abends, nicht ein anderes Programm.
+      background: istBuehne ? 'var(--qq-bg)' : `radial-gradient(120% 100% at 50% 8%, #1B1230 0%, #140C22 42%, ${INK} 100%)`,
       fontFamily: "var(--qq-font, 'Nunito', system-ui, sans-serif)",
     }}>
       <style>{KEYFRAMES}</style>
@@ -372,29 +412,33 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
       <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: TITLE_H, zIndex: 6, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 4, textAlign: 'center', padding: '0 40px' }}>
         {crowned ? (
           <>
-            <div style={{ fontSize: 15, fontWeight: 900, letterSpacing: '0.34em', textTransform: 'uppercase', color: GOLD, animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Sieger' : 'Winner'}</div>
-            <div style={{ fontSize: 46, fontWeight: 900, lineHeight: 1.02, color: 'var(--qq-text)', textShadow: `0 2px 24px ${winner.team.color}66`, animation: reduce ? 'none' : 'qqT2WinnerIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>{winner.team.name}</div>
+            {/* 2026-08-23 (2a): Gold ist auf der Buehne den Award-Bausteinen
+                vorbehalten, dort heisst es etwas. Als Farbe fuer das Wort
+                „Sieger" waere es eine fuenfte Farbe fuer eine Aussage, die das
+                Wort selbst schon macht. */}
+            <div style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.34em', textTransform: 'uppercase', color: istBuehne ? 'var(--qq-text-muted)' : GOLD, animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Sieger' : 'Winner'}</div>
+            <div style={{ fontSize: istBuehne ? 62 : 46, fontWeight: 900, lineHeight: 1.02, color: 'var(--qq-text)', textShadow: istBuehne ? 'none' : `0 2px 24px ${winner.team.color}66`, animation: reduce ? 'none' : 'qqT2WinnerIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>{winner.team.name}</div>
           </>
         ) : inReveal && glided && revealStep === 2 ? (
-          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
+          <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
         ) : inReveal && glided ? (
           <>
-            <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Kopf an Kopf' : 'Neck and neck'}</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#B9AEDA' }}>{de ? 'Wer bleibt zuerst stehen?' : 'Who stops first?'}</div>
+            <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Kopf an Kopf' : 'Neck and neck'}</div>
+            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Wer bleibt zuerst stehen?' : 'Who stops first?'}</div>
           </>
         ) : inReveal && !glided ? (
-          <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Die Top 3 stehen fest…' : 'The Top 3 are set…'}</div>
+          <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Die Top 3 stehen fest…' : 'The Top 3 are set…'}</div>
         ) : inReveal ? (
-          <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--qq-text)' }}>{de ? 'Die Top 3' : 'The Top 3'}</div>
+          <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)' }}>{de ? 'Die Top 3' : 'The Top 3'}</div>
         ) : phase === 'baseHold' ? (
           <>
-            <div style={{ fontSize: 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Zwischenstand' : 'Standings'}</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#B9AEDA' }}>{de ? 'Jetzt zählen noch die Awards…' : 'Now the awards count…'}</div>
+            <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Zwischenstand' : 'Standings'}</div>
+            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Jetzt zählen noch die Awards…' : 'Now the awards count…'}</div>
           </>
         ) : (
           <>
-            <div style={{ fontSize: 34, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every conquered cell is a brick'}</div>
+            <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
+            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every conquered cell is a brick'}</div>
           </>
         )}
       </div>
@@ -404,16 +448,23 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
         <div key={standingFlash} style={{
           position: 'absolute', top: TITLE_H + 8, left: '50%', transform: 'translateX(-50%)', zIndex: 13,
           padding: '10px 28px', borderRadius: 999, whiteSpace: 'nowrap',
-          fontSize: 26, fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase',
-          color: standingFlash === 'tie' ? '#1B1206' : '#0A2412',
-          background: standingFlash === 'tie' ? GOLD : '#34D27B',
-          boxShadow: `0 0 26px ${standingFlash === 'tie' ? GOLD : '#34D27B'}66`,
+          fontSize: istBuehne ? 34 : 26, fontWeight: 900, letterSpacing: '0.06em', textTransform: 'uppercase',
+          color: standingFlash === 'tie' ? '#12100E' : '#0A2412',
+          // Gleichstand faellt auf der Buehne auf den Akzent, nicht auf Gold:
+          // Gold gehoert hier den Award-Bausteinen. Gruen bleibt fuer „in
+          // Fuehrung", das ist eine der vier Farben und heisst „gut fuer dich".
+          background: standingFlash === 'tie' ? (istBuehne ? 'var(--qq-stage-accent, var(--qq-accent))' : GOLD) : '#34D27B',
+          boxShadow: istBuehne ? 'none' : `0 0 26px ${standingFlash === 'tie' ? GOLD : '#34D27B'}66`,
           animation: reduce ? 'none' : 'qqT2FlashPop 0.5s cubic-bezier(0.2,1.3,0.4,1) both',
-        }}>{standingFlash === 'tie' ? (de ? '⚖ Gleichstand!' : '⚖ Tied!') : (de ? '▲ In Führung!' : '▲ In the lead!')}</div>
+          // Waage und Dreieck waren Schriftzeichen aus der Systemschrift und
+          // wurden auf jedem Rechner anders gemalt. Der Text sagt es selbst.
+        }}>{standingFlash === 'tie'
+          ? (de ? 'Gleichstand!' : 'Tied!')
+          : (de ? 'In Führung!' : 'In the lead!')}</div>
       )}
 
       {/* Boden-Linie */}
-      <div aria-hidden style={{ position: 'absolute', left: SIDE_PAD - 30, right: SIDE_PAD - 30, bottom: BASE_H + BOTTOM - 1, height: 1, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(246, 239, 230,0.14) 12%, rgba(246, 239, 230,0.14) 88%, transparent)' }} />
+      <div aria-hidden style={{ position: 'absolute', left: SIDE_PAD - 30, right: SIDE_PAD - 30, bottom: SOCKEL_H + BODEN - 1, height: 1, zIndex: 3, background: 'linear-gradient(90deg, transparent, rgba(246, 239, 230,0.14) 12%, rgba(246, 239, 230,0.14) 88%, transparent)' }} />
 
       {/* Tuerme (absolut positioniert → Glide in die Mitte moeglich) */}
       {ordered.map(({ team }) => {
@@ -452,7 +503,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
 
         return (
           <div key={id} style={{
-            position: 'absolute', bottom: BOTTOM, left: baseX(i), width: colW, zIndex: z,
+            position: 'absolute', bottom: BODEN, left: baseX(i), width: colW, zIndex: z,
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             transform: `translateX(${tx}px) translateY(${ty}px)`, opacity,
             transition: reduce ? 'none' : `transform 0.75s cubic-bezier(0.4,0,0.2,1)${isTop3 ? ' 0.35s' : ''}, opacity 0.5s ease`,
@@ -462,20 +513,36 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
               <div aria-hidden style={{ position: 'absolute', left: '50%', bottom: -12, transform: 'translateX(-50%)', width: Math.round(blockW * 2.1), height: 26, borderRadius: '50%', background: `radial-gradient(ellipse, ${colr}${crowned && isWinner ? '55' : '30'}, transparent 70%)`, filter: 'blur(6px)', zIndex: 0, pointerEvents: 'none', transition: 'background 0.4s ease' }} />
 
               {/* Kletternder Avatar (Krone/Badge) */}
-              <div style={{ position: 'absolute', left: '50%', bottom: towerPx + 7, zIndex: 5, width: AV, height: AV, transform: 'translateX(-50%)', transition: reduce ? 'none' : 'bottom 0.44s cubic-bezier(0.34,1.4,0.6,1)' }}>
-                {isWinner && crowned && (
-                  <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: AV - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
-                )}
-                {!isWinner && showBadge && (
-                  <div style={{ position: 'absolute', left: '50%', bottom: AV - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
-                    {badge && <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={badge} size={28} /></span>}
-                    <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+              <div style={{ position: 'absolute', left: '50%', bottom: towerPx + 7, zIndex: 5, width: AV_OBEN, height: AV_OBEN, transform: 'translateX(-50%)', transition: reduce ? 'none' : 'bottom 0.44s cubic-bezier(0.34,1.4,0.6,1)' }}>
+                {/* 2026-08-23 (Wolf: „die krone ist alt"). Sie war ausserdem
+                    die einzige Stelle, an der der Sieger eine ANDERE Form bekam
+                    als Platz 2 und 3 - die tragen eine Platz-Pille. Jetzt tragen
+                    alle drei dieselbe Form, und der Sieger bekommt sie gefuellt
+                    im Akzent mit dunkler Schrift. Das ist dieselbe Pille wie die
+                    Kategorie-Pille auf jeder Frage, also Buehnen-Vokabular statt
+                    Sonderfall. Wer gewonnen hat, sagen ausserdem Hoehe, Mitte
+                    und die Sieger-Zeile im Titelband. */}
+                {isWinner && crowned && istBuehne && (
+                  <div style={{ position: 'absolute', left: '50%', bottom: AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
+                    <span style={{ fontSize: 20, fontWeight: 900, letterSpacing: '0.06em', color: '#12100E', background: 'var(--qq-stage-accent, var(--qq-accent))', borderRadius: 999, padding: '4px 16px' }}>{de ? 'PLATZ 1' : '#1'}</span>
                   </div>
                 )}
-                <div style={{ width: AV, height: AV, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: myst ? 'none' : `0 0 14px ${colr}77`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
+                {isWinner && crowned && !istBuehne && (
+                  <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: AV_OBEN - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
+                )}
+                {!isWinner && showBadge && (
+                  <div style={{ position: 'absolute', left: '50%', bottom: AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
+                    {/* 2026-08-23 (2a): Silber und Bronze waren rohe Systemzeichen
+                        und eine fuenfte und sechste Farbe fuer etwas, das die
+                        Pille direkt darunter schon in Worten sagt. */}
+                    {badge && !istBuehne && <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={badge} size={28} /></span>}
+                    <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+                  </div>
+                )}
+                <div style={{ width: AV_OBEN, height: AV_OBEN, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: (myst || istBuehne) ? 'none' : `0 0 14px ${colr}77`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
                   {myst
-                    ? <span aria-hidden style={{ fontSize: 30, fontWeight: 900, color: '#B9AEDA', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>?</span>
-                    : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV} flat />}
+                    ? <span aria-hidden style={{ fontSize: Math.round(AV_OBEN * 0.55), fontWeight: 900, color: 'var(--qq-text-muted)', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>?</span>
+                    : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV_OBEN} flat />}
                 </div>
               </div>
 
@@ -488,7 +555,15 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                   <div key={bi} style={{
                     width: blockW, height: blockH, borderRadius: 4, position: 'relative', zIndex: 1,
                     background: isAwardBlock ? `linear-gradient(180deg, #FCE3B0 0%, ${GOLD} 55%, ${GOLD_DEEP} 100%)` : `linear-gradient(180deg, ${colr} 0%, ${colr} 60%, rgba(0,0,0,0.24) 100%)`,
-                    boxShadow: isAwardBlock ? `inset 0 1.5px 0 rgba(246, 239, 230,0.5), inset 0 -2px 4px rgba(120,80,10,0.4), 0 0 14px ${GOLD}88` : `inset 0 1.5px 0 rgba(246, 239, 230,0.28)${(crowned && isWinner) ? `, 0 0 14px ${colr}66` : ''}`,
+                    // 2026-08-23 (2a): Gold BLEIBT auf den Award-Bausteinen, das
+                    // ist Mechanik (Wolf: „die goldenen bausteine sind die
+                    // awards"). Nur der Hof AUSSERHALB des Bausteins geht - der
+                    // 14px-Schein weichte auf Projektionsdistanz die Kante auf,
+                    // und die Kante ist es, die den Stapel als Stapel lesbar
+                    // macht. Die inneren Lichtkanten bleiben, die sitzen drin.
+                    boxShadow: isAwardBlock
+                      ? `inset 0 1.5px 0 rgba(246, 239, 230,0.5), inset 0 -2px 4px rgba(120,80,10,0.4)${istBuehne ? '' : `, 0 0 14px ${GOLD}88`}`
+                      : `inset 0 1.5px 0 rgba(246, 239, 230,0.28)${(crowned && isWinner && !istBuehne) ? `, 0 0 14px ${colr}66` : ''}`,
                     border: `1px solid ${isAwardBlock ? GOLD_DEEP : edge}`,
                     transformOrigin: 'bottom center',
                     transition: 'background 0.45s ease, border-color 0.45s ease',
@@ -498,8 +573,11 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     {isAwardBlock
                       ? <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(246, 239, 230,0.4))' }}>★</span>
                       : myst ? null : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avInBlock} flat />}
+                    {/* Der Lande-Blitz bleibt: er ist transient und sagt
+                        „dieser Baustein ist GERADE gefallen". Ein Schein mit
+                        Bedeutung bleibt, einer der nur schmueckt geht. */}
                     {isTopBlock && !reduce && !(inReveal && !isTop3) && (
-                      <div aria-hidden style={{ position: 'absolute', inset: -1, borderRadius: 5, pointerEvents: 'none', boxShadow: `0 0 ${isCrownBlock ? 22 : isAwardBlock ? 18 : 12}px ${(isAwardBlock ? GOLD : colr)}${isCrownBlock ? 'ee' : 'aa'}`, animation: `qqT2Spark ${isCrownBlock ? 0.7 : 0.5}s ease-out both` }} />
+                      <div aria-hidden style={{ position: 'absolute', inset: -1, borderRadius: 5, pointerEvents: 'none', boxShadow: `0 0 ${istBuehne ? 10 : (isCrownBlock ? 22 : isAwardBlock ? 18 : 12)}px ${(isAwardBlock ? GOLD : colr)}${isCrownBlock ? 'ee' : 'aa'}`, animation: `qqT2Spark ${isCrownBlock ? 0.7 : 0.5}s ease-out both` }} />
                     )}
                   </div>
                 );
@@ -507,13 +585,16 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
             </div>
 
             {/* Sockel */}
-            <div style={{ height: BASE_H, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 10, gap: 4 }}>
-              <div style={{ fontSize: 30, fontWeight: 900, lineHeight: 1, color: capped && !myst ? colr : '#E2D6FF', fontVariantNumeric: 'tabular-nums', textShadow: capped && !myst ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
+            <div style={{ height: SOCKEL_H, flexShrink: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'flex-start', paddingTop: 10, gap: 4 }}>
+              {/* 2026-08-23 (2a): die Zahl stand am Ende in Teamfarbe mit Schein.
+                  Teamfarbe lebt auf der Kachel, nicht in der Schrift - und die
+                  Kachel steht hier direkt darueber, den ganzen Turm hoch. */}
+              <div style={{ fontSize: istBuehne ? 42 : 30, fontWeight: 900, lineHeight: 1, color: istBuehne ? 'var(--qq-text)' : (capped && !myst ? colr : '#E2D6FF'), fontVariantNumeric: 'tabular-nums', textShadow: (capped && !myst && !istBuehne) ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
                 <span key={shown} style={{ display: 'inline-block', animation: (shown > 0 && !crowned && !reduce) ? 'qqT2NumPop 0.3s ease-out' : 'none' }}>{shown}</span>
               </div>
               {myst
-                ? <div style={{ fontSize: 16, fontWeight: 900, color: '#6B6480', letterSpacing: '0.12em' }}>???</div>
-                : <TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} fontSize="clamp(12px, 1cqw, 16px)" style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
+                ? <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.12em' }}>???</div>
+                : <TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} fontSize={istBuehne ? 'clamp(17px, 1.5cqw, 25px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
             </div>
           </div>
         );
@@ -529,6 +610,12 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
 
 function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; mystery: boolean; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  // 2026-08-23 (2a): Gold BLEIBT auf dieser Karte. Sie kuendigt den goldenen
+  // Baustein an, der gleich faellt, und Wolf hat bestaetigt: die goldenen
+  // Bausteine SIND die Awards. Gold ist hier also Mechanik und nicht Schmuck.
+  // Was geht, sind die vier Schein-Ebenen darum: 46px um die Karte, 22px hinter
+  // dem Zeichen, 20px hinter der Ueberschrift, 16px um die Empfaenger-Marke.
   // Cozy Quirks: eckige Kachel → Empfänger-Badge quadratisch (keine runde Coin).
   const quirkSet = isQuirkTileSet(useAvatarSet());
   return (
@@ -538,20 +625,26 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
         position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         padding: '34px 56px', borderRadius: 26,
         background: 'linear-gradient(180deg, rgba(40,29,13,0.98), rgba(24,17,8,0.98))',
-        border: `2px solid ${GOLD_DEEP}`, boxShadow: `0 0 46px ${GOLD}40, inset 0 1px 0 rgba(246, 239, 230,0.08)`,
+        border: `2px solid ${GOLD_DEEP}`,
+        boxShadow: istBuehne
+          ? 'inset 0 1px 0 rgba(246, 239, 230,0.08), 0 24px 60px rgba(0,0,0,0.55)'
+          : `0 0 46px ${GOLD}40, inset 0 1px 0 rgba(246, 239, 230,0.08)`,
         animation: reduce ? 'none' : 'qqT2AwardIn 0.55s cubic-bezier(0.2,1.2,0.35,1) both',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span aria-hidden style={{ fontSize: 15, fontWeight: 900, letterSpacing: '0.28em', textTransform: 'uppercase', color: GOLD }}>{de ? 'Award' : 'Award'}</span>
-          <span style={{ fontSize: 13, fontWeight: 900, color: '#1B1206', background: GOLD, borderRadius: 999, padding: '2px 10px' }}>+{award.bonus}</span>
+          <span aria-hidden style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.28em', textTransform: 'uppercase', color: GOLD }}>{de ? 'Award' : 'Award'}</span>
+          <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, color: '#1B1206', background: GOLD, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 10px' }}>+{award.bonus}</span>
         </div>
-        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQEmojiIcon emoji={award.emoji} size={76} /></div>
-        <div style={{ fontSize: 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: `0 2px 20px ${GOLD}44` }}>{label}</div>
+        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: istBuehne ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))' : `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQEmojiIcon emoji={award.emoji} size={76} /></div>
+        <div style={{ fontSize: istBuehne ? 50 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-          <div style={{ width: 60, height: 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: mystery ? 'none' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {mystery ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: '#B9AEDA' }}>?</span> : <QQTeamAvatar avatarId={recip.avatarId} teamEmoji={recip.emoji} size={60} flat />}
+          <div style={{ width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: (mystery || istBuehne) ? 'none' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
+            {mystery ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>?</span> : <QQTeamAvatar avatarId={recip.avatarId} teamEmoji={recip.emoji} size={istBuehne ? 76 : 60} flat />}
           </div>
-          <div style={{ fontSize: 26, fontWeight: 900, color: mystery ? '#C9BEE6' : recip.color, maxWidth: 460 }}>
+          {/* Empfaengername in Creme: die Marke links davon traegt die Teamfarbe
+              schon als volle Flaeche, und in Creme steht er bei jedem Team
+              gleich gut lesbar da. */}
+          <div style={{ fontSize: istBuehne ? 34 : 26, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : (mystery ? '#C9BEE6' : recip.color), maxWidth: 460 }}>
             {mystery ? (de ? 'Einer der Spitzentürme!' : 'One of the top towers!') : recip.name}
           </div>
         </div>

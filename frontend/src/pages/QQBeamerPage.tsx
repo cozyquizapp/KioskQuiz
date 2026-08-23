@@ -1966,13 +1966,19 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // die Stage-Variable, alles andere bleibt an der Marke.
       data-qq-stage="2a"
       style={{
-      // 2026-08-23 (2a, CozyGame): waehrend eines CozyGames laeuft KEINE
-      // Kategorie, aber `s.currentQuestion` steht noch auf der zuletzt
-      // gespielten. Der Akzent hat deshalb die Farbe der Kategorie davor
-      // getragen - auf der Aufnahme war der Rad-Zeiger Schaetzchen-Gold, ohne
-      // dass Schaetzchen etwas mit dem Rad zu tun haette. Der Akzent bedeutet
-      // „welche Kategorie laeuft"; laeuft keine, faellt er auf die Hausfarbe.
-      '--qq-stage-accent': qqCategoryAccent(s.phase === 'COZY_GAME' ? undefined : cat, 'var(--qq-accent)'),
+      // 2026-08-23 (2a): der Akzent haengt an DERSELBEN Phasen-Liste wie der
+      // Grund, nicht mehr allein an `cat`. Grund: `s.currentQuestion` bleibt
+      // auf der zuletzt gespielten Frage stehen, auch wenn laengst keine
+      // Kategorie mehr laeuft. Auf der Aufnahme war deshalb der Rad-Zeiger im
+      // CozyGame Schaetzchen-Gold und die Platz-1-Pille im Finale ebenfalls,
+      // ohne dass Schaetzchen mit beidem etwas zu tun haette. Der Akzent
+      // bedeutet „welche Kategorie laeuft"; laeuft keine, ist es die Hausfarbe.
+      // Genau diese Unterscheidung stand schon in QQ_KATEGORIE_GRUND_PHASEN,
+      // nur hat der Akzent sie nicht gelesen.
+      '--qq-stage-accent': qqCategoryAccent(
+        QQ_KATEGORIE_GRUND_PHASEN.has(s.phase) ? cat : undefined,
+        'var(--qq-accent)',
+      ),
       height: '100cqh', width: '100cqw',
       // 2026-06-23 (Skin): aktiver Skin lackiert den Phase-Root — Seiten-BG,
       // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen

@@ -378,6 +378,30 @@ Geschmacks-Politur mehr vorschlagen.
 **Danach:** UX-Delight- & Motion-Elevation-Pass („Boden fertig, dann Delight"), Screen für Screen,
 Wolf im Loop, via `animate` + `ui-ux-pro-max` + `web-design-guidelines`.
 
+> **Erster Punkt des Motion-Blocks: „Das Brett fällt".** 2026-08-23 mit Wolf
+> besprochen und bewusst vertagt, damit die Flugbahn nicht auf den alten Look
+> gebaut wird.
+>
+> Heute verschwindet das Brett in dem Moment, in dem das Finale beginnt, und
+> wird durch acht abstrakte Säulen ersetzt. Der Turm sagt „vier", aber nicht
+> mehr, WELCHE vier. Der Gegenstand, an dem der ganze Abend hängt, wird
+> weggeräumt, kurz bevor er sich auszahlt.
+>
+> Stattdessen: das Brett bleibt stehen, die Kacheln lösen sich zeilenweise von
+> unten nach oben und fallen in die Spalte ihres Teams, wo sie sich zum Turm
+> stapeln. Der Turm wird AUS dem Brett gebaut, nicht daneben. Die Zahl darunter
+> zählt mit. Danach wie gehabt: goldene Award-Bausteine oben drauf, Top-3-Glide,
+> 3-2-1. Letztes Bild: nur der Siegerturm behält seine Kacheln in Farbe.
+>
+> Kostet kein neues Asset, die Kacheln liegen schon auf dem Schirm. Gewinnt
+> Reihenfolge und damit Spannung: heute steht das Ergebnis fest, sobald die
+> Türme stehen. Aufwand ehrlich ein Tagwerk. Einziges echte Risiko ist die
+> Bildrate bei bis zu 64 gleichzeitig fliegenden Kacheln auf dem Beamer-Rechner
+> — messen, notfalls in Wellen fallen lassen statt alle auf einmal.
+> Der 2a-Durchgang am Turm (Krone raus, Gold nur für Awards, Schein runter)
+> bleibt davon unberührt gültig: der Turm bleibt derselbe, nur die Herkunft der
+> Bausteine ändert sich.
+
 **Theme-/Skin-System** — **Studio Mono** ist live durchgeklickt + poliert (Shape-Tokens, Quiet-Motion,
 Cheese-Mono-Redesign, Summary skin-aware). Offen:
 - [ ] **SoftPop + Neo-Brutal** noch NIE am Live-Screen durchgesehen — kommen laut Wolf **erst wenn

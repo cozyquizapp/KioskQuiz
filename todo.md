@@ -32,6 +32,16 @@
       Einfaerbung) an der Aufloesung, gegen den Ist-Zustand stellen.
 - [ ] **`/team` erst danach**, nur Einzelheiten, nicht der Aufbau
       (Gegenprobe hat gezeigt: Aufbau stimmt bereits).
+- [ ] **Hotkeys + Stream-Deck komplett durchgehen** (Wolf 2026-08-23:
+      „P zu druecken in moderator geht aktuell nicht, vlt sollten nochmal alle
+      hotkeys auch stream deck buttons ueberprueft werden nach design und
+      motion"). Ausdruecklich NACH Design und Motion, weil beide noch
+      Ansichten verschieben und Tasten an Ansichten haengen. Reihenfolge:
+      erst `P` reproduzieren (welche Phase, welcher Fokus), dann die
+      vollstaendige Liste Taste -> Aktion -> Phase aufstellen, dann gegen die
+      Stream-Deck-Belegung halten. Wichtig: eine Taste, die im Steuerpult
+      nichts tut, faellt nirgends auf — der Socket-Vertrag ist untypisiert
+      (siehe CLAUDE.md), ein Tippfehler im Ereignisnamen bleibt still.
 
 ### Aeltere Punkte aus dem 18.08.
 

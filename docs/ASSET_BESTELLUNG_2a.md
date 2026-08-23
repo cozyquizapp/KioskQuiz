@@ -74,6 +74,13 @@ Subject: <HIER DAS MOTIV EINSETZEN>
 Bildmodellen unzuverlässig raus. Reines Weiß lässt sich sauber freistellen,
 und das mache ich hier mit einem Skript in einem Rutsch für alle Dateien.
 
+**Eine Ausnahme, an der die erste Lieferung gescheitert ist:** ist das Motiv
+selbst **weiß oder sehr hell** (Wattebausch, Tischtennisball, Marshmallow),
+dann NICHT auf Weiß rendern. Dort lässt sich nichts trennen, weil die weiche
+Kante stufenlos in den Grund übergeht. Für diese Motive im Prompt-Block den
+Hintergrund-Satz austauschen gegen:
+`Plain solid mid-grey background (#808080), nothing else in the image.`
+
 ---
 
 ## Die achtzehn Spiel-Zeichen
@@ -119,10 +126,26 @@ Spiel abbilden.
 Die stehen groß und allein auf ihrer Folie, bis 240 px. Bis sie da sind, steht
 dort **kein** Zeichen, weil ein altes Bild schlechter ist als keins.
 
-| Datei | Wofür | `Subject:` |
-|---|---|---|
-| `final-tipp.png` | Wetten-Phase: jedes Team tippt, welches ANDERE Team die Final-Runde gewinnt. | one round gaming chip being placed flat onto a small square field |
-| `cozygames.png` | Marken-Moment vor der Drehscheibe: „Jetzt: CozyGame". | one dice and one cup standing side by side |
+| Datei | Wofür | `Subject:` | Stand |
+|---|---|---|---|
+| `final-tipp.png` | Wetten-Phase: jedes Team tippt, welches ANDERE Team die Final-Runde gewinnt. | one round gaming chip being placed flat onto a small square field | **fertig, eingebaut** |
+| ~~`cozygames.png`~~ | | | **entfaellt, siehe unten** |
+
+**`cozygames.png` wird nicht mehr gebraucht.** Die erste Bestellung hiess
+woertlich „one dice and one cup standing side by side", und genau das kam
+zurueck: ein Wuerfelbecher. Der sagt Brettspiel, nicht CozyGames - von den
+achtzehn Spielen benutzt kein einziges einen Wuerfel, die Silhouette ist ein
+beiger Klumpen ohne Wiedererkennung, und ein Becher steht ausserdem schon in
+zwei Spiel-Zeichen. Der Fehler lag in der Bestellung, nicht im Bild.
+Es braucht dafuer gar kein neues Zeichen: `fx-wheel.png` liegt seit jeher im
+Set, im richtigen Stil, mit der klarsten Silhouette weit und breit, und war
+nirgends benutzt. Es zeigt genau das, was auf der Folie als naechstes passiert.
+
+**Lehre fuer die naechste Runde:** die Regel „ein Ding, keine Szene" gilt fuer
+die Spiel-Zeichen auf dem Rad, die mit 90 bis 110 px laufen. Ein Logo laeuft
+mit 200 bis 240 px und darf mehr Motiv tragen. Wichtiger als die Anzahl der
+Gegenstaende ist bei einem Logo die **Silhouette**: sie muss sich von allem
+anderen im Set unterscheiden und in einer Farbe erkennbar bleiben.
 
 **Ausdrücklich nicht:** kein Auktionshammer (das heißt Versteigerung), kein
 Rettungsring (das heißt Hilfe), kein Maskottchen, kein Tier. Beides stand dort

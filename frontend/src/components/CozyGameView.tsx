@@ -512,11 +512,20 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
         filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))',
         animation: 'qqCatNameWave 2.8s ease-in-out infinite',
       }}>
-        {/* 2026-08-23: das alte Zeichen war selbst der rosa Wolf und kam aus
-            derselben anderen Lieferung wie die Spiel-Zeichen auf dem Rad
-            (640x640 statt 512x512). Das neue heisst `cozygames` - Becher und
-            Wuerfel, kein Maskottchen. */}
-        <CozyGameIcon id="cozygames" emoji="🎲" size="clamp(80px, 12vw, 200px)" />
+        {/* 2026-08-23 (Wolf: „das CozyGames-Logo ist nichts"). Stimmt, und der
+            Fehler lag bei mir: meine Bestell-Zeile hiess woertlich „one dice and
+            one cup standing side by side", und genau das kam zurueck - ein
+            Wuerfelbecher. Der sagt Brettspiel, nicht CozyGames. Von den
+            achtzehn Spielen benutzt kein einziges einen Wuerfel, die Silhouette
+            ist ein beiger Klumpen ohne Wiedererkennung, und ein Becher steht
+            ausserdem schon in zwei Spiel-Zeichen (Becher-Pyramide, Gummi).
+            Es braucht dafuer gar kein neues Zeichen: `fx-wheel.png` liegt seit
+            jeher im gelieferten Set, im richtigen Stil, und der Kommentar an
+            seinem Slug sagt woertlich „Gluecksrad, CozyGame-Auslosung". Es war
+            nur nirgends benutzt. Es hat die klarste Silhouette des Sets und
+            zeigt genau das, was auf dieser Folie als naechstes passiert: das
+            Rad entscheidet. */}
+        <CozyGameIcon id="fx-wheel" emoji="🎡" size="clamp(80px, 12vw, 200px)" />
       </div>
       <div style={{
         fontSize: 'clamp(48px, 6vw, 96px)',

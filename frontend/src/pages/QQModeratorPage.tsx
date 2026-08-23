@@ -1921,6 +1921,28 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               title="Zurück zum Setup (Fragenset, Runden, Timer)"
             >⚙ Setup</button>
           )}
+          {/* 2026-08-23 (Wolf): Beitritts-Link temporär auf den Beamer legen.
+              Der Link stand dort dauerhaft unter dem QR-Code. Kaum ein Handy
+              scheitert heute am Scannen; wenn doch, betrifft es eine Person,
+              und dann legst du ihn für die eine Person kurz auf. Nur in der
+              Lobby sichtbar, weil er nur dort etwas bewirkt. */}
+          {joined && s && s.phase === 'LOBBY' && s.setupDone && (
+            <button
+              type="button"
+              aria-pressed={!!s.showJoinLink}
+              onClick={() => emit('qq:setJoinLink', { roomCode, value: !s.showJoinLink })}
+              title={s.showJoinLink
+                ? 'Beitritts-Link wieder vom Beamer nehmen'
+                : 'Beitritts-Link auf dem Beamer einblenden (für Gäste, deren Kamera keinen QR liest)'}
+              style={{
+                padding: '4px 12px', borderRadius: 999, cursor: 'pointer', fontFamily: 'inherit',
+                fontWeight: 900, fontSize: 12, letterSpacing: '0.08em', textTransform: 'uppercase',
+                border: s.showJoinLink ? '1.5px solid rgba(34,197,94,0.55)' : '1px solid rgba(148,163,184,0.3)',
+                background: s.showJoinLink ? 'rgba(34,197,94,0.18)' : 'rgba(148,163,184,0.06)',
+                color: s.showJoinLink ? '#86EFAC' : '#94a3b8',
+              }}
+            >🔗 Link {s.showJoinLink ? 'an' : 'aus'}</button>
+          )}
           <span style={badgeStyle(QQ_COLORS.blue500)}>COZYQUIZ</span>
           <span style={{ fontWeight: 900, fontSize: 18, color: 'var(--qm-text)' }}>Moderator</span>
           {/* 2026-07-19 (Wolf 'ein Panel + Test-Modus-Toggle'): EIN sichtbarer

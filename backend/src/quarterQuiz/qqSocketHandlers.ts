@@ -2081,6 +2081,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // 2026-08-23 — Beitritts-Link temporaer auf der Buehne zeigen. Nur ein
+    // Anzeige-Schalter, keine Spiel-Logik; deshalb hier und nicht in qqRooms.
+    socket.on('qq:setJoinLink', (payload: { roomCode: string; value: boolean }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.showJoinLink = !!payload.value;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // 2026-05-04 — Mod waehlt Avatar-Theme im Setup (Phase 1: nur State-Propagation,
     // Renderer respektiert es noch nicht — siehe avatarSets.ts im Frontend).
     socket.on('qq:setAvatarSet', (payload: { roomCode: string; avatarSetId: string }, ack?: unknown) => {

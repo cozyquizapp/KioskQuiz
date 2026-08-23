@@ -80,12 +80,18 @@ await new Promise((res, rej) => {
 await new Promise(res => sock.emit('qq:joinModerator', { roomCode, pin: PIN }, res));
 await sleep(800);
 
-const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ count: BOTS, pin: PIN }),
-});
-console.log(`fillTeams: ${r.status} ${r.ok ? 'ok' : await r.text()}`);
+// --bots=0: gar keine Bots. Das ist der Zustand, den Wolf zu Beginn des Abends
+// wirklich sieht, und er hat ein eigenes Bild (leere Plaetze, Statuszeile).
+if (BOTS > 0) {
+  const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ count: BOTS, pin: PIN }),
+  });
+  console.log(`fillTeams: ${r.status} ${r.ok ? 'ok' : await r.text()}`);
+} else {
+  console.log('fillTeams: uebersprungen (--bots=0)');
+}
 await sleep(1500);
 
 // Ohne `setupDone` haengt der Beamer im Vor-Setup-Bild („Das Event wird

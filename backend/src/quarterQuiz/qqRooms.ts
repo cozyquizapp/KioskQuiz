@@ -247,6 +247,8 @@ export interface QQRoomState {
   volume: number; // 0–1
   // Setup/Lobby split — false means moderator is still in Setup; Beamer shows pre-game wait-screen.
   setupDone: boolean;
+  /** 2026-08-23: Beitritts-Link temporaer auf der Buehne einblenden (Steuerpult). */
+  showJoinLink?: boolean;
   // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
   // false → Beamer zeigt neutralen Welcome (kein Grid/keine Faktion).
   formatSelected: boolean;
@@ -511,6 +513,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       sfxMuted: false,
       volume: 0.8,
       setupDone: false,
+      showJoinLink: false,
       formatSelected: false,   // 2026-07-02: Format (Cozy/Mega) erst im Wizard-Schritt 0 gewählt
       // 2026-08-22 (Wolf): CozyQuiz-Objektset zum Buehnen-Design 2a. Vorher
       // 'cozy3d' (3D-Tiere, seit 2026-06-23). Muss mit DEFAULT_SET_ID in
@@ -4778,6 +4781,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     volume:           room.volume,
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
+    showJoinLink:     room.showJoinLink === true,
     formatSelected:   room.formatSelected,
     avatarSetId:      room.avatarSetId ?? 'all',
     themeId:          room.themeId ?? 'cozy',
@@ -5174,6 +5178,7 @@ export function qqResetRoom(room: QQRoomState): void {
   const gs = room.gridSize;
   room.phase           = 'LOBBY';
   room.setupDone       = false;
+  room.showJoinLink    = false;
   room.formatSelected  = false;  // 2026-07-02: nach Restart wieder Format wählen (neutraler Welcome)
   room.gamePhaseIndex  = 1;
   room.questionIndex   = 0;

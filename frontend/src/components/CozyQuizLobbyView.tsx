@@ -207,6 +207,16 @@ function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode, arena }: {
     </div>
   );
 }
+/**
+ * Freie Plaetze in der Lobby.
+ *
+ * 2026-08-23. Ein normaler Raum hat genau acht Team-Slots: QQ_AVATARS zaehlt
+ * acht, und das Backend deckelt `/dev/fillTeams` ausserhalb des Gross-Modus
+ * ebenfalls bei acht. Der Wert steht deshalb hier neben der Ansicht, die ihn
+ * zeichnet, und nicht als blanke 8 mitten im JSX.
+ */
+const LOBBY_SLOTS = 8;
+
 export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // Cozy Quirks: die eckige Farb-Kachel IST der Avatar → in der Teamkarte füllt
   // sie bündig die volle Höhe links, der farbige Card-Akzent entfällt (Wolf).
@@ -302,7 +312,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // + CozyWolf-Branding und der grosse COZYARENA-Header frisst oben Hoehe → das
   // fixe 420px-QR liess die unterste Pill unten aus overflow:hidden rausclippen.
   // Kleineres QR im nested/veryMany-Modus, damit die ganze Spalte reinpasst.
-  const qrSize = (nested || veryMany) ? 'min(34cqh, 340px)' : 'min(44cqh, 420px)';
+  // 2026-08-23: nur noch ein DECKEL, keine Vorgabe. Die tatsaechliche Groesse
+  // kommt aus der Rasterzeile, also aus der Hoehe des Kachelblocks (Wolf:
+  // „qr code + teams als ein element"). Der Deckel war mit 420 px zu niedrig,
+  // seit die Kacheln groesser sind und acht Plaetze immer stehen — er haette
+  // die Gleichheit der beiden Bloecke wieder gebrochen.
+  const qrSize = (nested || veryMany) ? 'min(40cqh, 400px)' : 'min(66cqh, 640px)';
 
   // 2026-05-07 (Wolf-Sidequest): pro-Draft optionales Lobby-BG-Bild — wird
   // hinter den Standard-Glow-Layer gelegt, damit das Bild dezent durchscheint
@@ -707,11 +722,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
         //   Zeile 3, Spalte 1  Beschriftung, Link, Marke
         // Weil Zeile 2 ihre Hoehe vom Kachelblock bekommt und der QR sie ganz
         // einnimmt, stehen Ober- und Unterkante beider Bloecke exakt aufeinander.
-        gridTemplateColumns: 'auto auto',
+        // Spalte 2 darf schrumpfen (minmax(0, auto)), sonst schiebt ein sehr
+        // langer Teamname das ganze Element ueber den Buehnenrand. Der Name
+        // kuerzt dann mit Auslassungspunkten, wie er es schon immer tut.
+        gridTemplateColumns: 'auto minmax(0, auto)',
         // Alle drei Zeilen `auto`: Zeile 2 ist damit exakt so hoch wie ihr
         // Inhalt, also wie der Kachelblock. Mit `1fr` waere sie auf den
         // uebrigen Platz gedehnt worden und der QR mit ihr.
-        gridTemplateRows: 'auto auto auto',
+        // Zeile 3 haelt ihre Hoehe frei, auch wenn nichts drinsteht: die
+        // Statuszeile verschwindet beim zweiten Team, und ohne diese Reserve
+        // ruckte das ganze Element in dem Moment um 18 px nach oben (gemessen:
+        // Oberkante 362 bei null Teams, 380 bei acht).
+        gridTemplateRows: 'auto auto minmax(clamp(30px, 3.4cqh, 46px), auto)',
         alignItems: 'stretch',
         justifyContent: 'center',
         alignContent: 'center',
@@ -741,8 +763,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
           animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite, phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
           boxShadow: '0 0 50px rgba(246, 239, 230,0.1)',
-          aspectRatio: '1', minHeight: 0, height: '100%',
-          maxHeight: qrSize, maxWidth: qrSize,
+          // 2026-08-23: der QR darf KEINE eigene Groesse mitbringen, sonst
+          // bestimmt er die Zeilenhoehe statt sie zu uebernehmen. `width: 0` +
+          // `minWidth: 100%`… waere ein Trick; sauberer ist: Hoehe von der
+          // Zeile (`height: 100%`), Breite aus dem Seitenverhaeltnis, und der
+          // Deckel NUR auf der Hoehe. Mit einem Deckel auf der Breite haette
+          // er eine intrinsische Groesse und wuerde die Zeile aufziehen —
+          // genau das ist beim ersten Versuch passiert (QR 467 px hoch neben
+          // einem 337 px hohen Kachelblock).
+          aspectRatio: '1', minHeight: 0, height: '100%', width: 'auto',
+          maxHeight: qrSize,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           alignSelf: 'center', justifySelf: 'center',
         }}>
@@ -750,71 +780,66 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             style={{ width: '100%', height: '100%' }} />
         </div>
 
-        {/* Zeile 3, Spalte 1: alles, was zum QR GEHOERT, aber nicht seine
-            Hoehe mitbestimmen darf. */}
+        {/* Zeile 1, Spalte 1: die Ueberschrift des QR — in derselben Zeile und
+            derselben Groesse wie „Angemeldete Teams" rechts.
+            2026-08-23 (Wolf: „wenn du scannen und mitspielen hoch machst ueber
+            den qr code und gleich gross wie angemeldete teams, dann kannst du
+            qr code und teams noch besser zentrieren"). Genau so: beide Spalten
+            haben jetzt dieselbe Kopfzeile, darunter beide denselben Block. Das
+            Element ist damit symmetrisch statt „QR mit Bildunterschrift neben
+            Tabelle mit Ueberschrift". */}
         <div style={{
-          gridColumn: 1, gridRow: 3,
-          display: 'flex', flexDirection: 'column', alignItems: 'center',
-          gap: 'clamp(8px, 1.2cqh, 16px)', minWidth: 0,
-          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.4s both',
+          gridColumn: 1, gridRow: 1,
+          fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+          color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
+          textAlign: 'center', alignSelf: 'end',
         }}>
-          <div style={{ textAlign: 'center' }}>
-            <div style={{
-              fontSize: 'clamp(18px, 2cqw, 28px)', color: 'var(--qq-card-text)', fontWeight: 900, marginBottom: 4,
-            }}>
-              {de ? 'Scannen & mitspielen!' : 'Scan & join!'}
-            </div>
-            <div style={{
-              fontSize: 'clamp(13px, 1.4cqw, 18px)', color: 'var(--qq-text-muted)', fontFamily: 'monospace',
-              background: cardBg, padding: '6px 16px', borderRadius: 'var(--qq-pill-radius)',
-              border: '1px solid var(--qq-hairline)',
-              display: 'inline-block',
-            }}>
-              {joinUrl.replace('https://', '').replace('http://', '')}
-            </div>
-          </div>
-          {/* Arena/nested (2026-07-11): eine Gruppe teilt sich EIN Handy → sonst
-              loggen sich 40 Einzelpersonen ein. Nur im nested-Modus, bilingual. */}
-          {nested && (
-            <div style={{
-              display: 'inline-flex', alignItems: 'center', gap: 8,
-              padding: '7px 16px', borderRadius: 'var(--qq-pill-radius)',
-              background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.06)',
-              border: '1.5px solid var(--qq-hairline)',
-              fontSize: 'clamp(13px, 1.35cqw, 18px)', fontWeight: 800, color: 'var(--qq-text)',
-            }}>
-              <span aria-hidden style={{ fontSize: '1.2em' }}>👥</span>
-              {de ? 'Ein Handy pro Gruppe' : 'One phone per group'}
-            </div>
-          )}
-          {/* CozyWolf Branding — prominent unterhalb des QR-Codes */}
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: '8px 18px', borderRadius: 'var(--qq-pill-radius)',
-            background: isThemed() ? 'var(--qq-surface)' : 'linear-gradient(135deg, rgba(var(--qq-stage-brand-rgb), 0.16), rgba(var(--qq-stage-brand-rgb), 0.10))',
-            border: isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(var(--qq-stage-brand-rgb), 0.35)',
-            boxShadow: isThemed() ? 'none' : '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.12)',
-          }}>
-            <img
-              src="/logo.png"
-              alt=""
-              style={{ width: 28, height: 28, objectFit: 'contain' }}
-            />
-            <span style={{
-              fontSize: 'clamp(12px, 1.1cqw, 15px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', letterSpacing: '0.04em',
-            }}>
-              {de ? 'präsentiert von' : 'presented by'}
-            </span>
-            <span style={{
-              fontSize: 'clamp(14px, 1.4cqw, 18px)', fontWeight: 900,
-              color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)', letterSpacing: '0.04em',
-              textShadow: isThemed() ? 'none' : 'none',
-            }}>
-              CozyWolf
-            </span>
-          </div>
+          {de ? 'Scannen & mitspielen' : 'Scan & join'}
         </div>
+
+        {/* Zeile 3, Spalte 1: der Beitritts-Link, aber nur auf Zuruf.
+            2026-08-23 (Wolf: „wie oft kommt es vor dass ein handy in der
+            heutigen zeit keinen qr code lesen kann? brauchen wir den link
+            wirklich als fallback? wie waere dann ein button nur in dem state im
+            moderator"). Der Link stand dauerhaft an der Wand fuer den einen
+            Gast, dessen Kamera-App gesperrt ist. Jetzt legt Wolf ihn auf, wenn
+            jemand fragt (Steuerpult, Knopf „Link an").
+            Die Marken-Pille „praesentiert von CozyWolf" ist hier ersatzlos raus:
+            die Wortmarke COZYQUIZ steht schon gross darueber, das war eine
+            zweite Marke in derselben Ansicht. Sie gehoert auf Willkommen und
+            Danke, wo der Wolf Absender ist. */}
+        {s.showJoinLink && (
+          <div style={{
+            gridColumn: 1, gridRow: 3,
+            justifySelf: 'center', alignSelf: 'start',
+            fontSize: 'clamp(15px, 1.6cqw, 22px)', color: 'var(--qq-text-muted)', fontFamily: 'monospace',
+            background: cardBg, padding: '8px 20px', borderRadius: 'var(--qq-pill-radius)',
+            border: '1px solid var(--qq-hairline)',
+            animation: 'phasePop 0.4s var(--qq-ease-bounce) both',
+          }}>
+            {joinUrl.replace('https://', '').replace('http://', '')}
+          </div>
+        )}
+
+        {/* Arena/nested (2026-07-11): eine Gruppe teilt sich EIN Handy → sonst
+            loggen sich 40 Einzelpersonen ein. Nur im nested-Modus, bilingual.
+            2026-08-23: sitzt jetzt in Zeile 3 unter dem QR (wo vorher der Link
+            stand). Das ist echte Ansage an den Raum, nicht Marke, und muss
+            deshalb bleiben. */}
+        {nested && !s.showJoinLink && (
+          <div style={{
+            gridColumn: 1, gridRow: 3,
+            justifySelf: 'center', alignSelf: 'start',
+            display: 'inline-flex', alignItems: 'center', gap: 8,
+            padding: '8px 20px', borderRadius: 'var(--qq-pill-radius)',
+            background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.06)',
+            border: '1.5px solid var(--qq-hairline)',
+            fontSize: 'clamp(15px, 1.5cqw, 20px)', fontWeight: 800, color: 'var(--qq-text)',
+          }}>
+            <span aria-hidden style={{ fontSize: '1.2em' }}>👥</span>
+            {de ? 'Ein Handy pro Gruppe' : 'One phone per group'}
+          </div>
+        )}
 
         {/* Right: Teams + status. Kopfzeile sitzt in Zeile 1, damit sie die
             Hoehe von Zeile 2 nicht mitbestimmt — sonst waere der QR genau um
@@ -863,49 +888,23 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             }}>{teamCount}</span>
           </div>
 
-          {teamCount === 0 ? (
-            // Empty-State: prominenter Hinweis mit wackelndem Pfeil zum QR-Code links.
-            // Loest 'Beamer-Lobby zeigt bei 0 Teams nichts Auffaelliges' aus dem
-            // UI-Polish-Audit (C1). Pfeil ist Marken-Gold, damit er als Akzent zwischen
-            // QR (links) und kommendem Team-Grid (rechts) ueber dem Slate-Hintergrund
-            // klar liest.
-            <div style={{
-              gridColumn: 2,
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              gap: 'clamp(14px, 2cqw, 26px)',
-              padding: 'clamp(28px, 4cqh, 56px) clamp(20px, 3cqw, 40px)',
-              border: '2px dashed rgba(var(--qq-accent-rgb),0.4)', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-              background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.06), rgba(var(--qq-accent-rgb),0.04))',
-              boxShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.12)',
-            }}>
-              {/* 2026-06-28 (Beamer-Review 'kein Emoji'): OS-Hand 👈 → schlichter
-                  Marken-Pfeil in Akzentfarbe (zeigt zum QR links). */}
-              <span style={{
-                fontSize: 'clamp(40px, 5.4cqw, 72px)', lineHeight: 1, fontWeight: 900,
-                color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
-                animation: 'qqEmptyArrowNudge 1.6s ease-in-out infinite',
-                display: 'inline-block', flexShrink: 0,
-              }} aria-hidden>←</span>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, textAlign: 'center' }}>
-                <span style={{
-                  fontSize: 'clamp(20px, 2.4cqw, 32px)', fontWeight: 900,
-                  // 2026-06-24 (Lesbarkeit): CTA-Text auf Seiten-BG → var(--qq-text)
-                  // (sonst Akzent-blau auf Lila bei Neo-Brutal). Box-Tint = Akzent.
-                  color: isThemed() ? 'var(--qq-title)' : 'var(--qq-stage-brand)', letterSpacing: '0.02em',
-                  textShadow: isThemed() ? 'none' : '0 2px 12px rgba(var(--qq-stage-brand-rgb), 0.3)',
-                  animation: 'lobbyPulse 2.5s ease-in-out infinite',
-                }}>
-                  {de ? 'Scannt den QR-Code!' : 'Scan the QR code!'}
-                </span>
-                <span style={{
-                  fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 700,
-                  color: 'var(--qq-text-muted)', letterSpacing: '0.06em',
-                }}>
-                  {de ? 'Eure Teams erscheinen hier.' : 'Teams appear here.'}
-                </span>
-              </div>
-            </div>
-          ) : nested ? (
+          {/* 2026-08-23, ERSATZLOS GESTRICHEN und deshalb hier vermerkt: bei
+              null Teams stand hier ein eigener Kasten mit gestricheltem Rand,
+              einem wackelnden Pfeil nach links und „Scannt den QR-Code! / Eure
+              Teams erscheinen hier."
+              Er faellt weg, weil die acht leeren Plaetze jetzt von Anfang an
+              stehen und dasselbe zeigen, nur ohne Worte — die Teams erscheinen
+              sichtbar DORT. Dazu sagte der Kasten zum dritten Mal auf derselben
+              Folie „scannt den Code": die Ueberschrift ueber dem QR sagt es,
+              die Statuszeile darunter sagt es.
+              Und er war eine eigene Flaeche mit eigenem Rahmen, die es nur in
+              diesem einen Zustand gab — der Block waere also beim ersten
+              Beitritt komplett umgesprungen.
+              Wiederherstellen: dieser Zweig lag im Git-Stand vor diesem Commit.
+              (Der Zustand „niemand da" bleibt beschriftet, ueber die
+              Statuszeile „Scannt den Code um beizutreten".) */}
+          {nested ? (
+
             /* 2026-07-01 (Idee 2): Eltern-Karten. Jede zeigt Avatar + Label +
                „X/3"-Pill + kleine Sub-Team-Namen-Chips. */
             <div style={{
@@ -991,14 +990,62 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               // sein Inhalt; die 1fr-Spalten bleiben dabei gleich breit (beide
               // so breit wie die breiteste Karte). Damit fallen Kiste und Tinte
               // zusammen und alle drei Zeilen stehen auf derselben Mitte.
-              width: 'max-content', maxWidth: '100%', marginInline: 'auto',
+              // 2026-08-23, zweiter Anlauf. `width: max-content` hat die Kiste
+              // an die Tinte gebunden und damit das Zentrierungsproblem
+              // geloest — aber die Tinte haengt an den TEAMNAMEN. Bei null
+              // Teams war der Block schmal, mit jedem Beitritt wuchs er, und
+              // der QR daneben wanderte mit. Ein Element, das waehrend des
+              // Einloggens ueber die Wand rutscht, ist schlimmer als ein
+              // Element, das ein paar Pixel Luft rechts hat.
+              // Feste Spaltenbreite statt max-content: der Block ist damit von
+              // null bis acht Teams gleich breit und gleich hoch, und Kopfzeile
+              // wie Statuszeile sitzen ueber derselben Mitte. Zu lange Namen
+              // kuerzen mit Auslassungspunkten, wie sie es schon immer tun.
+              marginInline: 'auto',
               gridTemplateColumns: veryMany
                 ? 'repeat(auto-fill, minmax(clamp(150px, 15cqw, 210px), 1fr))'
-                : 'repeat(2, minmax(0, 1fr))',
-              gap: veryMany ? 'clamp(6px, 0.7cqw, 10px)' : (teamCount > 6 ? 10 : 'clamp(8px, 1.2cqw, 14px)'),
+                : 'repeat(2, clamp(300px, 26cqw, 470px))',
+              // 2026-08-23 (Wolf: „nutze den raum und machs vom spacing gerne
+              // nicht zu klein"): der Abstand war auf 10 px festgenagelt,
+              // sobald mehr als sechs Teams da waren — also genau dann, wenn
+              // die Buehne am vollsten aussieht und Luft am meisten hilft.
+              gap: veryMany ? 'clamp(6px, 0.7cqw, 10px)' : 'clamp(14px, 1.8cqh, 30px)',
             }}>
-              {s.teams.map((t, i) => {
+              {/* 2026-08-23 (Wolf: leere Plaetze zeigen, „ja"): ein normaler
+                  Raum hat genau acht Slots (QQ_AVATARS, Backend deckelt bei
+                  acht ausserhalb des Gross-Modus). Die freien werden als dünn
+                  umrissene Kachel ohne Text mitgezeichnet.
+                  Der Gewinn ist nicht nur „noch Platz frei": der Block hat
+                  damit von der ersten Sekunde an DIESELBE Hoehe. Vorher wuchs
+                  er bei jedem Beitritt, und weil der QR daneben an dieser Hoehe
+                  haengt, sprang die halbe Seite mit. */}
+              {[...s.teams, ...Array.from({ length: Math.max(0, LOBBY_SLOTS - teamCount) }, () => null)].map((t, i) => {
                 const compact = teamCount > 6;
+                if (!t) {
+                  return (
+                    // 2026-08-23: die Deckkraft steckt IM Randwert, nicht in
+                    // einem opacity-Deckel darueber. Erster Versuch war
+                    // `opacity: 0.16` auf `var(--qq-hairline)` — und die
+                    // Haarlinie hat selbst nur 0.10 Alpha, macht 0.016. Der
+                    // Platzhalter war im Bild schlicht nicht vorhanden.
+                    // Jetzt gemessen: 0.14 Creme auf dem Grund #120F18 ergibt
+                    // rund 2.6:1. Sichtbar, ohne mit den belegten Plaetzen um
+                    // Aufmerksamkeit zu streiten.
+                    <div key={`slot-${i}`} aria-hidden style={{
+                      display: 'flex', alignItems: 'center',
+                      gap: 'clamp(8px, 1cqw, 14px)',
+                    }}>
+                      <div style={{
+                        height: veryMany
+                          ? 'clamp(38px, 3.6cqw, 52px)'
+                          : 'clamp(72px, 6.2cqw, 96px)',
+                        aspectRatio: '1', flexShrink: 0,
+                        borderRadius: 'var(--qq-team-mark-radius, 16%)',
+                        border: '2px dashed rgba(246, 239, 230, 0.14)',
+                      }} />
+                    </div>
+                  );
+                }
                 const isFreshJoin = waveIds.has(t.id);
                 // Schon mal gerendert? Dann KEINE Entry-Animation mehr feuern,
                 // sonst flackert die Karte beim Wave-End (Animation-Property
@@ -1100,9 +1147,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         opacity: t.connected ? 1 : 0.45,
                         filter: t.connected ? 'none' : 'grayscale(1)',
                         transition: 'opacity 0.45s ease, filter 0.45s ease',
+                        // 2026-08-23: NICHT mehr von `compact` (also von der
+                        // Teamzahl) abhaengig. Sonst schrumpfen ab dem siebten
+                        // Team alle Kacheln, der Block wird niedriger und der
+                        // QR daneben springt mit — genau das, was die festen
+                        // Slots verhindern sollen.
+                        // Deckel 96 statt 104: das Element aus QR + Kachelblock
+                        // ist so breit wie die Buehne hergibt. Bei 104 mass es
+                        // 1634 px gegen 1620 px verfuegbare Breite und rutschte
+                        // 7 px in den Sicherheitsrand. Gemessen mit 96: 1602.
                         height: veryMany
                           ? 'clamp(38px, 3.6cqw, 52px)'
-                          : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)',
+                          : 'clamp(72px, 6.2cqw, 96px)',
                         boxSizing: 'content-box',
                         aspectRatio: '1',
                         marginLeft: quirkSet ? 'clamp(8px, 1cqw, 14px)' : 0,

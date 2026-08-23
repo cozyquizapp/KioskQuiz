@@ -1398,6 +1398,14 @@ export interface QQStateUpdate {
   soundConfig?: QQSoundConfig;  // custom sound URLs (override synth)
   // Setup/Lobby-Zweiteilung: wenn false und phase === LOBBY, zeigt der Beamer den Pre-Game-Wartescreen (Leaderboard/Rekorde).
   setupDone: boolean;
+  // 2026-08-23 (Wolf: „wie waere dann ein button nur in dem state im moderator
+  // um temporaer den link anzuzeigen"): der Beitritts-Link stand dauerhaft
+  // unter dem QR-Code. Praktisch scheitert heute kaum ein Handy am Scannen —
+  // wenn doch, dann an einer gesperrten Kamera-App oder einem Firmengeraet,
+  // und das betrifft eine Person, nicht den Raum. Fuer eine Person eine Zeile
+  // dauerhaft an die Wand zu schreiben ist das falsche Verhaeltnis. Wolf legt
+  // sie jetzt im Steuerpult auf, wenn jemand fragt.
+  showJoinLink?: boolean;
   // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
   // false, zeigt der Beamer den neutralen Welcome (Brand, kein Grid/keine Faktion) —
   // erst nach der Wahl kippt er auf die format-spezifische Pre-Game-Ansicht.

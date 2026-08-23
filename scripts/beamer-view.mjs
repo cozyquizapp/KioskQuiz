@@ -343,22 +343,30 @@ if (marken) { await knipsen(beamer); takt('aufgewaermt'); }
  *  im Bild suchen: das Bild kann eine Compositing-Ebene veraltet zeigen, das
  *  DOM nie. */
 async function messen(page, selektoren) {
-  const werte = await page.evaluate((sel) => sel.split(',').map(s => s.trim()).filter(Boolean).map(s => {
-    const e = document.querySelector(s);
-    if (!e) return { sel: s, fehlt: true };
-    const r = e.getBoundingClientRect();
-    const cs = getComputedStyle(e);
-    return {
-      sel: s,
-      kasten: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
-      farbe: cs.color,
-      grund: cs.backgroundImage !== 'none' ? cs.backgroundImage.slice(0, 60) : cs.backgroundColor,
-      schrift: cs.fontSize,
-    };
+  const werte = await page.evaluate((sel) => sel.split(',').flatMap(s0 => {
+    const s = s0.trim();
+    if (!s) return [];
+    // Alle Treffer, nicht nur den ersten: fuer Layout-Fragen („wo kommt der
+    // leere Streifen her?") braucht man die Geschwister, nicht ein Element.
+    const treffer = Array.from(document.querySelectorAll(s)).slice(0, 12);
+    if (!treffer.length) return [{ sel: s, fehlt: true }];
+    return treffer.map((e, i) => {
+      const r = e.getBoundingClientRect();
+      const cs = getComputedStyle(e);
+      return {
+        sel: treffer.length > 1 ? `${s} #${i}` : s,
+        kasten: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+        farbe: cs.color,
+        grund: cs.backgroundImage !== 'none' ? cs.backgroundImage.slice(0, 40) : cs.backgroundColor,
+        schrift: cs.fontSize,
+        text: (e.textContent || '').trim().slice(0, 40),
+        stil: (e.getAttribute('style') || '').slice(0, 120),
+      };
+    });
   }), selektoren);
   for (const w of werte) {
     if (w.fehlt) { console.log(`     ${w.sel}: nicht da`); continue; }
-    console.log(`     ${w.sel}: x${w.kasten[0]} y${w.kasten[1]} ${w.kasten[2]}x${w.kasten[3]}  Schrift ${w.schrift}  Farbe ${w.farbe}  Grund ${w.grund}`);
+    console.log(`     ${w.sel}: x${w.kasten[0]} y${w.kasten[1]} ${w.kasten[2]}x${w.kasten[3]}  Schrift ${w.schrift}  Farbe ${w.farbe}  Grund ${w.grund}${w.text ? '  Text „' + w.text + '"' : '  (leer)'}${w.stil ? '\n        stil: ' + w.stil : ''}`);
   }
 }
 

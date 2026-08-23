@@ -2983,8 +2983,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               width: '100%', maxWidth: QQ_QUESTION_MAX_W,
               // HP: waehrend aktiver Frage 0 (nichts reservieren), erst bei Reveal
               // die volle Slot-Hoehe fuer die Ueberlebenden-/Sieger-Card.
-              height: (isHotPotatoCat && !revealed) ? 0 : 'clamp(150px, 16cqh, 210px)',
-              marginBottom: (isHotPotatoCat && !revealed) ? 0 : 12,
+              // 2026-08-23 (Wolf: „das layout muss ja nicht springen, aber dann
+              // mach eine nice motion dazwischen — so sieht die frageview kacke
+              // aus, mit dem riesen leeren streifen"): der Slot war waehrend der
+              // LAUFENDEN Frage bereits auf voller Hoehe reserviert. Gemessen
+              // 158 px leerer Streifen zwischen den Antwortkarten (Unterkante
+              // 633) und dem Ende des Slots (806) — und weil der Block im Fluss
+              // steht, schob er den ganzen zentrierten Inhalt nach oben.
+              // Der Preis dafuer war Sprungfreiheit beim Auftauchen der
+              // Sieger-Karte. Der ist zu hoch: die leere Flaeche sieht jeder
+              // Gast die ganze Frage lang, den Sprung sieht er eine Zehntel-
+              // sekunde. Also faellt der Slot waehrend der Frage zusammen und
+              // faehrt bei der Aufloesung auf. Bis die richtige Motion kommt,
+              // haelt eine schlichte Hoehen-Ueberblendung den Uebergang weich.
+              height: !revealed ? 0 : 'clamp(150px, 16cqh, 210px)',
+              marginBottom: !revealed ? 0 : 12,
+              transition: 'height 0.5s var(--qq-ease-smooth), margin-bottom 0.5s var(--qq-ease-smooth)',
               pointerEvents: 'none',
             }}>
               <div style={{
@@ -3156,7 +3170,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           name={tm.name}
                           maxLines={1}
                           shrinkAfter={16}
-                          color={tm.color}
+                          // 2026-08-23: wie am Brett — Name in Creme, Farbe auf
+                          // der Kachel daneben. Rohe Teamfarben auf dunklem
+                          // Grund lagen dort bei 2,6 bis 2,9:1.
+                          color={isThemed() ? 'var(--qq-text)' : tm.color}
                           fontWeight={900}
                           fontSize="clamp(16px, 2cqw, 26px)"
                           style={{
@@ -3201,8 +3218,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                           animation: `celebShake 0.6s ease ${avatarDelay + i * 0.1}s both`,
                         }} />
                         <div style={{
-                          fontWeight: 900, fontSize: 'clamp(26px, 3.4cqw, 48px)', color: tm.color, lineHeight: 1.1,
-                          textShadow: `0 0 24px ${tm.color}44`,
+                          fontWeight: 900, fontSize: 'clamp(26px, 3.4cqw, 48px)', lineHeight: 1.1,
+                          // 2026-08-23: siehe oben, Creme statt roher Teamfarbe.
+                          color: isThemed() ? 'var(--qq-text)' : tm.color,
+                          textShadow: isThemed() ? 'none' : `0 0 24px ${tm.color}44`,
                         }}>{tm.name}</div>
                       </div>
                     ))}
@@ -3244,11 +3263,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     name={team!.name}
                     maxLines={2}
                     shrinkAfter={18}
-                    color={team!.color}
+                    // 2026-08-23: wie am Brett. Der Rahmen dieser Karte traegt
+                    // die Teamfarbe bereits doppelt (Rand und Fuellung), der
+                    // Name muss sie nicht ein drittes Mal tragen — er muss
+                    // lesbar sein. Der farbige Schein hinter der Schrift faellt
+                    // mit weg: auf Projektionsdistanz weicht er die Kante auf.
+                    color={isThemed() ? 'var(--qq-text)' : team!.color}
                     fontWeight={900}
                     fontSize="clamp(30px, 4.2cqw, 60px)"
                     style={{
-                      textShadow: `0 0 24px ${team!.color}55`,
+                      textShadow: isThemed() ? 'none' : `0 0 24px ${team!.color}55`,
                       padding: '0 0.3em',
                     }}
                   />

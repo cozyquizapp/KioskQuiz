@@ -9,6 +9,7 @@ import { BeamerTimer } from './CozyQuizBeamerTimer';
 import { Fireflies } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { CozyGameIcon, CozyGameWheelIcon } from './CozyGameIcon';
+import { QQEmojiIcon } from './QQIcon';
 import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 import { useLangFlip } from '../cozyQuizShared';
 import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
@@ -70,6 +71,44 @@ const COZY_WHEEL_PALETTE = [
   '#8B5CF6', // Violet
 ];
 const SLICE_PALETTE_DARK = COZY_WHEEL_PALETTE.map(mixToDark);
+
+// ── Uebergabe 2a: das Rad auf der Buehne ─────────────────────────────────────
+// 2026-08-23. Die acht Juwel-Toene oben sind der alte Look, und sie brechen die
+// Grundregel der Buehne: Farbe bedeutet etwas. Ein pinkes Feld neben einem
+// tuerkisen sagt NICHTS ueber die beiden Spiele darauf - die Zeichen sagen
+// alles, die Farben sind Dekoration. Dazu leckt die Palette weiter als nur
+// aufs Rad: sie faerbt Zeiger, Nabe, Funken und den Grund der drei folgenden
+// Folien, und dort steht sie dann neben dem Creme der Schrift.
+//
+// Auf der Buehne ist das Rad deshalb zweitoenig, zwei Stufen desselben Grundes.
+// Es liest sich als eine Scheibe, und die achtzehn Zeichen sind das Bunte
+// darauf - genau die Rolle, fuer die sie bestellt wurden. Der Akzent bleibt
+// dem vorbehalten, was er ueberall sonst auf der Buehne markiert: der Stelle,
+// auf die es ankommt. Das ist hier der Zeiger.
+const BUEHNE_FELD_A = '#221B33';
+const BUEHNE_FELD_B = '#191426';
+// Die Trennlinie zwischen zwei Feldern ist eine Haarlinie, kein Rahmen. Der
+// alte Wert war ein 1,5px-Strich in Marine (#0F1736) - auf dunklem Grund eine
+// zweite Linie neben der Feldkante, siehe „Nie zwei Linien uebereinander".
+const BUEHNE_FELD_LINIE = 'rgba(246,239,230,0.10)';
+
+/**
+ * Akzentfarben fuer eine CozyGame-Folie. Auf der Buehne gibt es genau einen
+ * Akzent, ausserhalb bleibt die Rad-Palette unveraendert.
+ *
+ * `funken` ist bewusst getrennt: die Fireflies bekommen ihre Deckkraft als
+ * Hex-Suffix angehaengt (`${farbe}66`), und an eine CSS-Variable laesst sich
+ * kein Suffix haengen. Deshalb dort der aufgeloeste Creme-Wert.
+ */
+const funkenFarbe = (accent: string) => (istBuehneG() ? '#F5ECD844' : `${accent}66`);
+
+function cgAkzent(idx: number): { akzent: string; dunkel: string; funken: string } {
+  if (istBuehneG()) {
+    return { akzent: 'var(--qq-stage-accent)', dunkel: BUEHNE_FELD_B, funken: '#F5ECD8' };
+  }
+  const hell = COZY_WHEEL_PALETTE[idx % COZY_WHEEL_PALETTE.length];
+  return { akzent: hell, dunkel: SLICE_PALETTE_DARK[idx % SLICE_PALETTE_DARK.length], funken: hell };
+}
 
 // 2026-05-17 v11 (Wolf 'CG-slides fallen aus dem raster, andere bgs sind dunkler
 // mit fireflies'): Standard-Brand-BG analog PausedView etc. — dunkler Grund
@@ -282,8 +321,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
       const isSpin = round.phase === 'WHEEL_SPIN';
       const showDetail = !isSpin && resultStage === 'detail';
       const targetIdx = round.wheelTargetSliceIndex ?? 0;
-      const sliceColor = COZY_WHEEL_PALETTE[targetIdx % COZY_WHEEL_PALETTE.length];
-      const darkSliceColor = SLICE_PALETTE_DARK[targetIdx % SLICE_PALETTE_DARK.length];
+      const { akzent: sliceColor, dunkel: darkSliceColor } = cgAkzent(targetIdx);
       phaseContent = showDetail ? (
         <GameDetailView
           width={width} height={height}
@@ -308,8 +346,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
 
     case 'GAME_ACTIVE': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
-      const accent = COZY_WHEEL_PALETTE[tIdx % COZY_WHEEL_PALETTE.length];
-      const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
+      const { akzent: accent, dunkel: darkAccent } = cgAkzent(tIdx);
       if (round.playMode === 'sequence') {
         phaseContent = (
           <SequenceGameView
@@ -335,6 +372,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
             accentColor={accent}
             darkAccentColor={darkAccent}
             gameEndsAt={round.gameEndsAt}
+            timerDurationSec={round.timerDurationSec ?? 60}
             lang={lang}
           />
         );
@@ -344,8 +382,7 @@ export default function CozyGameView({ round, width, height, teams, language }: 
 
     case 'WINNER_SELECT': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
-      const accent = COZY_WHEEL_PALETTE[tIdx % COZY_WHEEL_PALETTE.length];
-      const darkAccent = SLICE_PALETTE_DARK[tIdx % SLICE_PALETTE_DARK.length];
+      const { akzent: accent, dunkel: darkAccent } = cgAkzent(tIdx);
       phaseContent = (
         <WinnerSelectView
           width={width} height={height}
@@ -487,7 +524,7 @@ function FullScreenLayout({ children, width, height, accent = COZY_PINK, solid }
       overflow: 'hidden',
       position: 'relative',
     }}>
-      <Fireflies color={`${accent}66`} />
+      <Fireflies color={funkenFarbe(accent)} />
       {children}
     </div>
   );
@@ -495,9 +532,15 @@ function FullScreenLayout({ children, width, height, accent = COZY_PINK, solid }
 
 // ── INTRO ────────────────────────────────────────────────────────────────────
 function IntroView({ width, height, slotKind, lang }: { width: number; height: number; slotKind: 'roundPause' | 'finalSlot'; lang: 'de' | 'en' }) {
-  const subtitle = slotKind === 'finalSlot'
-    ? (lang === 'en' ? '🏆 Final category' : '🏆 Final-Kategorie')
+  // 2026-08-23 (2a, „keine rohen Systemzeichen"): der Pokal stand als Zeichen
+  // MITTEN IM STRING und wurde damit von der Zeichensatzdatei des jeweiligen
+  // Rechners gemalt. Jetzt als Marke aus dem gelieferten Set daneben.
+  const subtitleText = slotKind === 'finalSlot'
+    ? (lang === 'en' ? 'Final category' : 'Final-Kategorie')
     : (lang === 'en' ? 'Energy reset between rounds' : 'Energy-Reset zwischen den Runden');
+  const subtitle = slotKind === 'finalSlot'
+    ? (<><QQEmojiIcon emoji="🏆" size="1em" /> {subtitleText}</>)
+    : subtitleText;
   const hint = lang === 'en'
     ? "Get ready, the wheel decides which game you play."
     : "Gleich geht's los, das Glücksrad entscheidet, welches Spiel ihr spielt.";
@@ -544,9 +587,15 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
       }}>
         {subtitle}
       </div>
+      {/* 2026-08-23 (2a): 22px sind auf acht Metern keine Zeile mehr, sondern
+          Dekoration - der kleinste sinnvolle Grad auf der Buehne liegt bei
+          rund 26px. Kursiv faellt weg: eine geneigte Schrift ist auf einer
+          Projektion schlechter zu lesen und markiert hier nichts. */}
       <div style={{
         marginTop: 32,
-        fontSize: 'clamp(14px, 1.3vw, 22px)', color: (isThemed() ? 'var(--qq-text-muted)' : '#64748b'), fontStyle: 'italic',
+        fontSize: istBuehneG() ? 'clamp(18px, 1.7vw, 30px)' : 'clamp(14px, 1.3vw, 22px)',
+        color: (isThemed() ? 'var(--qq-text-muted)' : '#64748b'),
+        fontStyle: istBuehneG() ? 'normal' : 'italic',
       }}>
         {hint}
       </div>
@@ -576,8 +625,13 @@ function WheelView({
   if (slices.length <= 1) {
     return (
       <FullScreenLayout width={width} height={height}>
+        {/* 2026-08-23 (2a): die Pinata war ein Systemzeichen und ausserdem das
+            falsche Bild - hier dreht ein Rad, keine Pinata. `fx-wheel` liegt im
+            Set und steht seit dem CozyGames-Logo fuer genau diesen Moment. */}
         {spinning && (
-          <div style={{ fontSize: 'clamp(80px, 12vw, 200px)', lineHeight: 1, animation: 'qqSpinSlow 1.2s ease-in-out infinite' }}>🪅</div>
+          <div style={{ lineHeight: 1, animation: 'qqSpinSlow 1.2s ease-in-out infinite' }}>
+            <CozyGameIcon id="fx-wheel" emoji="🎡" size="clamp(80px, 12vw, 200px)" />
+          </div>
         )}
         {!spinning && revealedGame && (
           <div style={{
@@ -649,13 +703,16 @@ function WheelView({
   // direkt auf die SOLIDE dunkle Slice-Farbe (kein Radial-Tint mehr). Ab dem
   // Moment der Wahl bis zum Grid-Öffnen ist die BG-Farbe identisch.
   // Fireflies-Akzent folgt der hellen Slice-Color für sichtbaren Kontrast.
-  const sliceColorBright = COZY_WHEEL_PALETTE[targetIdx % COZY_WHEEL_PALETTE.length];
+  const sliceColorBright = cgAkzent(targetIdx).akzent;
   const revealed = !spinning && !!revealedGame;
+  const istBuehne = istBuehneG();
   // 2026-07-09 (Wolf 'designtechnisch geht noch was'): kein solider dunkler
   // Slice-BG (wurde muddy-braun) mehr — IMMER Cozy-Brand-BG (dunkler Grund +
   // Glow via darkBgWithAccent). Der Glow folgt nach dem Reveal der Slice-Farbe,
   // davor Brand-Pink. Konsistent mit dem GameDetail-Reveal-Screen.
-  const bgAccent = revealed ? sliceColorBright : COZY_PINK;
+  // Auf der Buehne malt `darkBgWithAccent` ohnehin den flachen Skin-Grund, der
+  // Wert wird dort nie gelesen. Ausserhalb bleibt alles wie gehabt.
+  const bgAccent = istBuehne ? 'var(--qq-stage-accent)' : (revealed ? sliceColorBright : COZY_PINK);
   return (
     <FullScreenLayout width={width} height={height} accent={bgAccent}>
       {/* Wheel-Container: exakt size×size, Pointer ragt absolut nach oben raus
@@ -672,7 +729,7 @@ function WheelView({
           width: 0, height: 0,
           borderLeft: '26px solid transparent',
           borderRight: '26px solid transparent',
-          borderTop: `44px solid ${COZY_PINK}`,
+          borderTop: `44px solid ${istBuehne ? 'var(--qq-stage-accent)' : COZY_PINK}`,
           zIndex: 2,
           // 2026-05-17 v7 (Wolf 'lichtkegel über feld sieht weird aus'):
           // Pink-Glow nach Stop entfernt — Pointer bleibt clean ohne Strahl
@@ -714,7 +771,13 @@ function WheelView({
             // 'mm strohhalm zeigt auf rad dunkelblau, bg rot').
             const slicePoolIdx = poolGameIds.indexOf(g.id);
             const safePoolIdx = slicePoolIdx >= 0 ? slicePoolIdx : i;
-            const fillColor = SLICE_PALETTE[safePoolIdx % SLICE_PALETTE.length];
+            // Buehne: zweitoenig. Bei ungerader Feldzahl bekaeme das letzte
+            // Feld sonst denselben Ton wie das erste und die Naht waere weg -
+            // deshalb faellt das letzte Feld auf den dritten Zustand zurueck,
+            // eine Spur zwischen den beiden Toenen.
+            const fillColor = istBuehne
+              ? (n % 2 === 1 && i === n - 1 ? '#1D172C' : (i % 2 === 0 ? BUEHNE_FELD_A : BUEHNE_FELD_B))
+              : SLICE_PALETTE[safePoolIdx % SLICE_PALETTE.length];
             const isWinnerSlice = !spinning && i === visibleTargetIdx;
             // Slice-Label Position
             const midAngle = ((a0 + a1) / 2 - 90) * Math.PI / 180;
@@ -727,11 +790,18 @@ function WheelView({
                     entfernt — die V-Form aus schwarzem Stroke wirkte wie
                     Lichtkegel-Strahlung. Slice ist clean, Slice-Color-Wave
                     übernimmt den Reveal-Moment. */}
+                {/* 2026-08-23 (2a): auf der Buehne markiert das Gefaelle, nicht
+                    die Farbe. Das getroffene Feld wird eine Stufe heller - das
+                    reicht neben dem Zeiger und laesst das Zeichen darauf in
+                    Ruhe. Ein Fuellen im Akzent haette Creme unter die Zeichen
+                    gelegt, und zwei davon (Wattebausch, TT-Ball) sind selbst
+                    hell und waeren darin verschwunden. */}
                 <path
                   d={path}
-                  fill={fillColor}
-                  stroke="#0F1736"
-                  strokeWidth={1.5}
+                  fill={istBuehne && isWinnerSlice ? '#2E2542' : fillColor}
+                  stroke={istBuehne ? BUEHNE_FELD_LINIE : '#0F1736'}
+                  strokeWidth={istBuehne ? 1 : 1.5}
+                  style={istBuehne ? { transition: 'fill 0.5s var(--qq-ease-smooth)' } : undefined}
                 />
                 <CozyGameWheelIcon
                   id={g.id}
@@ -745,16 +815,34 @@ function WheelView({
             );
           })}
           {/* Center hub mit Glow */}
-          <circle cx={0} cy={0} r={14} fill="#0F1736" stroke="#fff" strokeWidth={2.5} />
-          <circle cx={0} cy={0} r={6} fill={COZY_PINK} />
+          <circle
+            cx={0} cy={0} r={14}
+            fill={istBuehne ? BUEHNE_FELD_B : '#0F1736'}
+            stroke={istBuehne ? 'var(--qq-stage-accent)' : '#fff'}
+            strokeWidth={2.5}
+          />
+          {/* Der pinke Punkt in der Mitte war der einzige Zweck der Hausfarbe
+              hier. Auf der Buehne bleibt die Nabe leer: sie ist ein Lager, kein
+              Signal, und der Zeiger sagt schon, worauf es ankommt. */}
+          {!istBuehne && <circle cx={0} cy={0} r={6} fill={COZY_PINK} />}
         </svg>
         {/* 2026-07-09 (Wolf 'designtechnisch geht noch was'): nicht-rotierender
             Dome-Sheen + Rand-Vignette über dem Rad → Licht von oben, plastische
             Tiefe statt flacher Farbscheiben. Unter dem Pointer (zIndex 2). */}
+        {/* 2026-08-23 (2a): der Schein bleibt, er ist Licht auf einer Flaeche
+            und kein Schmuck-Glow um etwas herum. Nur die Farbe wechselt von
+            kaltem Weiss auf warmes Creme - dieselbe Umstellung wie bei den
+            Flaechen-Tokens in main.css, ein kaltes Weiss wirkt neben dem warmen
+            Grund blaeulich. Und schwaecher, weil zwei ruhige Toene sich
+            schneller zuwaschen als acht kraeftige. */}
         <div aria-hidden style={{
           position: 'absolute', inset: 0, borderRadius: '50%', pointerEvents: 'none', zIndex: 1,
-          background: 'radial-gradient(ellipse 72% 62% at 50% 30%, rgba(255,255,255,0.17), rgba(255,255,255,0.04) 46%, rgba(0,0,0,0.30) 100%)',
-          boxShadow: 'inset 0 2px 12px rgba(255,255,255,0.12), inset 0 -16px 44px rgba(0,0,0,0.38)',
+          background: istBuehne
+            ? 'radial-gradient(ellipse 72% 62% at 50% 30%, rgba(246,239,230,0.09), rgba(246,239,230,0.02) 46%, rgba(0,0,0,0.34) 100%)'
+            : 'radial-gradient(ellipse 72% 62% at 50% 30%, rgba(255,255,255,0.17), rgba(255,255,255,0.04) 46%, rgba(0,0,0,0.30) 100%)',
+          boxShadow: istBuehne
+            ? 'inset 0 2px 10px rgba(246,239,230,0.07), inset 0 -16px 44px rgba(0,0,0,0.42)'
+            : 'inset 0 2px 12px rgba(255,255,255,0.12), inset 0 -16px 44px rgba(0,0,0,0.38)',
         }} />
       </div>
       {/* 2026-05-17 v18 (Wolf 'wheel kommt nochmal rein, helle farbe später'):
@@ -782,12 +870,17 @@ function WheelView({
 // Eine gemeinsame Reveal-View für beide Phasen. Card + Description bleiben
 // stable mounted, beim Wechsel WHEEL_RESULT→GAME_ACTIVE fadet nur der Timer
 // rein. React-Instanz bleibt gleich → keine erneute Card-Animation.
-function GameDetailView({ width, height, game, accentColor, darkAccentColor, gameEndsAt, lang }: {
+function GameDetailView({ width, height, game, accentColor, darkAccentColor, gameEndsAt, timerDurationSec = 60, lang }: {
   width: number; height: number;
   game: CozyGame | null;
   accentColor: string;
   darkAccentColor: string;
   gameEndsAt?: number | null;
+  /** 2026-08-23: stand hier fest auf 60. Wolf kann die Dauer am Pult
+   *  verstellen (`qq:cozyGameTimerAdjust`), und dann log der Ring: die Zahl
+   *  zaehlte richtig, der Anteil rechnete weiter gegen 60 Sekunden.
+   *  SequenceGameView reicht den Wert seit jeher durch, diese Ansicht nicht. */
+  timerDurationSec?: number;
   lang: 'de' | 'en';
 }) {
   if (!game) {
@@ -815,7 +908,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
       position: 'relative',
     }}>
       {/* Fireflies in heller Slice-Farbe für Kontrast auf dunklem Slice-BG. */}
-      <Fireflies color={`${accentColor}66`} />
+      <Fireflies color={funkenFarbe(accentColor)} />
       <style>{`
         @keyframes cozyGameLogoPop {
           0%   { transform: scale(0.6); opacity: 0; }
@@ -863,12 +956,25 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
           <CozyGameIcon id={game.id} emoji={game.emoji} size="clamp(150px, 19vw, 340px)" />
         </div>
       </div>
+      {/* 2026-08-23 (2a): 6,2vw sind auf der Buehne 109px, und dabei lief der
+          laengste der achtzehn Namen in die zweite Zeile - „Sport-Stacking
+          Becher-\nPyramide", mit Trennstrich mitten im Wort und einer
+          Ueberschrift, die den halben Schirm nahm.
+          Nachgemessen im Browser mit der echten Schrift, verfuegbar sind 1648px:
+            Sport-Stacking Becher-Pyramide   92px -> 1641px   100px -> 1784px
+            Luftballon-Pusten-Hochhalten     92px -> 1503px
+            Getraenk perfekt halbieren       92px -> 1307px
+          92px passt also gerade eben, 88px mit 78px Luft. Deshalb 5vw. Die
+          kurzen Namen verlieren dabei ein paar Grad, dafuer stehen alle
+          achtzehn Folien gleich - und das ist auf einer Reihe gleicher Folien
+          mehr wert als die letzten 24 Pixel beim kuerzesten Namen. */}
       <div style={{
-        fontSize: 'clamp(52px, 6.2vw, 112px)',
+        fontSize: 'clamp(52px, 5vw, 88px)',
         fontWeight: 900,
         letterSpacing: '-0.02em',
         textAlign: 'center',
-        textShadow: '0 4px 24px rgba(0,0,0,0.5)',
+        textWrap: 'balance',
+        textShadow: istBuehneG() ? 'none' : '0 4px 24px rgba(0,0,0,0.5)',
         opacity: 0,
         animation: 'cozyGameDetailFade 0.4s ease-out 0.15s both',
       }}>
@@ -876,7 +982,7 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
       </div>
       <div style={{
         fontSize: 'clamp(20px, 2.1vw, 36px)',
-        color: 'rgba(255,255,255,0.92)',
+        color: istBuehneG() ? 'var(--qq-text-muted)' : 'rgba(255,255,255,0.92)',
         maxWidth: 1180,
         textAlign: 'center',
         lineHeight: 1.4,
@@ -923,16 +1029,23 @@ function GameDetailView({ width, height, game, accentColor, darkAccentColor, gam
             top: 'var(--qq-safe-margin, 32px)',
             right: 'var(--qq-safe-margin, 32px)',
             zIndex: 30,
-            padding: 12,
-            borderRadius: '50%',
-            background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
-            backdropFilter: 'blur(8px)',
-            WebkitBackdropFilter: 'blur(8px)',
-            boxShadow: '0 4px 22px rgba(0,0,0,0.45)',
+            // 2026-08-23 (2a): die schwarze Scheibe mit Weichzeichner und
+            // 22px-Schatten war ein Traeger fuer die Zahl auf einem BUNTEN
+            // Slice-Grund. Den gibt es auf der Buehne nicht mehr, der Grund ist
+            // ruhig und dunkel - die Scheibe traegt dort nichts und ist nur die
+            // dritte Form in der Ecke. Die Zahl steht frei, wie auf jeder Frage.
+            ...(istBuehneG() ? {} : {
+              padding: 12,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(13,10,6,0.82) 55%, rgba(13,10,6,0.55) 78%, transparent 100%)',
+              backdropFilter: 'blur(8px)',
+              WebkitBackdropFilter: 'blur(8px)',
+              boxShadow: '0 4px 22px rgba(0,0,0,0.45)',
+            }),
             animation: 'cozyGameTimerSlotIn 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}
         >
-          <BeamerTimer variant="plain" endsAt={gameEndsAt} durationSec={60} accent="#fff" />
+          <BeamerTimer variant="plain" endsAt={gameEndsAt} durationSec={timerDurationSec} accent="#fff" />
         </div>
       )}
     </div>
@@ -1058,7 +1171,7 @@ function SequenceGameView({
       position: 'relative',
       gap: 'clamp(16px, 2vh, 28px)',
     }}>
-      <Fireflies color={`${accentColor}66`} />
+      <Fireflies color={funkenFarbe(accentColor)} />
       <style>{`
         @keyframes cozyGameSeqTeamIn {
           0%   { opacity: 0; transform: translateX(-30px) scale(0.95); }
@@ -1321,7 +1434,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
       boxSizing: 'border-box',
       position: 'relative',
     }}>
-      <Fireflies color={`${accentColor}66`} />
+      <Fireflies color={funkenFarbe(accentColor)} />
       <style>{`
         @keyframes cozyGameTimerSlotIn {
           0%   { opacity: 0; transform: scale(0.4); }
@@ -1358,7 +1471,7 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
             textShadow: '0 6px 28px rgba(0,0,0,0.55)',
             animation: 'cozyGameWinnerHeadline 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) both',
           }}>
-            🏆 {winners.length === 1
+            <QQEmojiIcon emoji="🏆" size="1em" /> {winners.length === 1
               ? (lang === 'en' ? 'You won!' : 'Gewonnen!')
               : (lang === 'en' ? `${winners.length} winners!` : `${winners.length} Sieger!`)}
           </div>
@@ -1455,11 +1568,19 @@ function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, dar
               textAlign: 'center',
               animation: 'cozyGameTimerSlotIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) both',
             }}>
-              <div style={{ fontSize: 'clamp(22px, 2.4vw, 38px)', fontWeight: 900 }}>
-                ⏱️ {lang === 'en' ? "Time's up!" : 'Zeit abgelaufen!'}
+              {/* 2026-08-23 (2a): hier standen Stoppuhr und Sanduhr als rohe
+                  Systemzeichen. Beide erzaehlen genau das, was direkt daneben
+                  schon in Worten steht - fuer die Marken-Regel waeren sie zu
+                  ersetzen gewesen, fuer die Buehne sind sie schlicht ueberfluessig.
+                  Die Schrift ist dafuer groesser, sie ist das eigentliche Signal. */}
+              <div style={{ fontSize: 'clamp(26px, 2.8vw, 44px)', fontWeight: 900 }}>
+                {lang === 'en' ? "Time's up!" : 'Zeit abgelaufen!'}
               </div>
-              <div style={{ fontSize: 'clamp(14px, 1.3vw, 22px)', marginTop: 6, opacity: 0.9 }}>
-                ⏳ {lang === 'en' ? 'Moderator picks the winner …' : 'Moderator wählt den Sieger …'}
+              <div style={{
+                fontSize: 'clamp(17px, 1.6vw, 28px)', marginTop: 8,
+                color: 'var(--qq-text-muted)',
+              }}>
+                {lang === 'en' ? 'Moderator picks the winner …' : 'Moderator wählt den Sieger …'}
               </div>
             </div>
           </div>

@@ -148,10 +148,23 @@ const ANSICHTEN = {
   // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
   pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
   // CozyGame hat fuenf Stufen: INTRO, Rad dreht, Rad steht (Spiel-Karte),
-  // Spiel laeuft (Timer), Sieger waehlen. `--stufe=n` schaltet n mal weiter.
+  // Spiel laeuft (Timer), Sieger waehlen. `--stufe=n` waehlt den Schritt.
+  //
+  // 2026-08-23: hier lag ein Fehler, der drei Aufnahmen still gefaelscht hat.
+  // Die Schleife hat einfach n mal `qq:cozyGameAdvance` im Abstand von 1,2
+  // Sekunden geschickt. Das Rad LANDET aber nicht auf Zuruf: der Server setzt
+  // beim Verlassen von INTRO einen Timer auf 6,5 Sekunden (passend zur
+  // CSS-Dauer im WheelView) und schaltet erst dann auf WHEEL_RESULT. Jedes
+  // Advance, das waehrend WHEEL_SPIN ankommt, faellt im Handler durch alle
+  // Zweige und tut nichts. Ergebnis: --stufe=2, 3 und 4 zeigten alle dasselbe
+  // drehende Rad, und es sah aus wie „die Aufnahmen kommen nicht".
+  // Deshalb jetzt eine echte Treppe, die auf das Landen wartet.
   cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
-    for (let i = 0; i < STUFE - 1; i++) { await sleep(1200); await h.emit('qq:cozyGameAdvance'); }
+    if (STUFE >= 2) { await sleep(600); await h.emit('qq:cozyGameAdvance'); }  // INTRO -> Rad dreht
+    if (STUFE >= 3) await sleep(7200);                                          // Server landet selbst
+    if (STUFE >= 4) { await h.emit('qq:cozyGameAdvance'); await sleep(600); }   // -> Spiel laeuft
+    if (STUFE >= 5) { await h.emit('qq:cozyGameAdvance'); await sleep(600); }   // -> Sieger waehlen
   } },
   // 2026-08-23: die Ansichten `connections` / `connections2` sind wieder raus.
   // Das 4x4-Finale („Grosses Finale") ist abgeschaltet - siehe

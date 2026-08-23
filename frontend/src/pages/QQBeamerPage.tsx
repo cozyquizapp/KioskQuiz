@@ -1966,7 +1966,13 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // die Stage-Variable, alles andere bleibt an der Marke.
       data-qq-stage="2a"
       style={{
-      '--qq-stage-accent': qqCategoryAccent(cat, 'var(--qq-accent)'),
+      // 2026-08-23 (2a, CozyGame): waehrend eines CozyGames laeuft KEINE
+      // Kategorie, aber `s.currentQuestion` steht noch auf der zuletzt
+      // gespielten. Der Akzent hat deshalb die Farbe der Kategorie davor
+      // getragen - auf der Aufnahme war der Rad-Zeiger Schaetzchen-Gold, ohne
+      // dass Schaetzchen etwas mit dem Rad zu tun haette. Der Akzent bedeutet
+      // „welche Kategorie laeuft"; laeuft keine, faellt er auf die Hausfarbe.
+      '--qq-stage-accent': qqCategoryAccent(s.phase === 'COZY_GAME' ? undefined : cat, 'var(--qq-accent)'),
       height: '100cqh', width: '100cqw',
       // 2026-06-23 (Skin): aktiver Skin lackiert den Phase-Root — Seiten-BG,
       // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen
@@ -2014,9 +2020,16 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Leiste sitzt am Phase-Root, nicht in einer einzelnen View — sie
           gehoert zur Buehne, nicht zur Frage, und laeuft dadurch ueber jeden
           Zustand mit, der einen Timer hat. Die genaue Zahl steht in der View. */}
+      {/* 2026-08-23 (Uebergabe 2a, CozyGame): waehrend eines CozyGames zeigte
+          die Leiste den ZURUECKGEBLIEBENEN Fragen-Timer des Raums. Auf der
+          Aufnahme stand rechts oben „57 SEK" und die Leiste war gleichzeitig
+          pink, also die Dringlichkeitsstufe „unter zehn Sekunden" — zwei
+          Zeitanzeigen auf einem Bild, die Verschiedenes behaupten. Die Leiste
+          folgt hier deshalb der Uhr, die auch auf der Folie laeuft, und steht
+          still, solange gar kein Spiel laeuft. */}
       <StageTimeBar
-        endsAt={s.timerEndsAt}
-        durationSec={s.timerDurationSec}
+        endsAt={s.phase === 'COZY_GAME' ? (s.cozyGame?.gameEndsAt ?? null) : s.timerEndsAt}
+        durationSec={s.phase === 'COZY_GAME' ? (s.cozyGame?.timerDurationSec ?? 60) : s.timerDurationSec}
         accent="var(--qq-stage-accent)"
       />
 

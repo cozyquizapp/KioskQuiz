@@ -1,119 +1,177 @@
 # Zeichen-Bestellung für die Bühne (Übergabe 2a)
 
-Zum Weitergeben. Stand 23.08.2026.
+Zum Weitergeben. Stand 23.08.2026, zweite Fassung.
+
+> **Warum eine zweite Fassung:** die erste war zu vage. Sie hat beschrieben,
+> WAS auf dem Bild sein soll, aber nicht, WIE es aussehen muss. Dabei ist das
+> Wie der ganze Punkt: die Zeichen müssen neben 84 bestehenden stehen können,
+> ohne dass jemand merkt, dass sie später dazugekommen sind.
 
 ---
 
-## Worum es geht
+## Das Wichtigste zuerst
 
-CozyQuiz läuft auf einem Beamer, fix 1760 × 990, gelesen aus bis zu acht
-Metern. Das gelieferte Zeichen-Set trägt inzwischen den ganzen Abend. Beim
-Durchgang sind 27 Dateien übrig geblieben, die aus einer anderen Lieferung
-stammen und daneben auffallen.
+**Vor dem ersten Prompt zwei bis drei der bestehenden Dateien in den Chat
+hochladen** und dazuschreiben: „Das ist der Stil. Alles Neue muss daneben
+stehen können, ohne aufzufallen."
 
-Das ist nicht geschätzt, sondern gemessen. Alle 109 Dateien im Icon-Ordner
-ausgewertet:
+Gute Referenzen aus `frontend/public/icons/`:
+`fx-trophy.png`, `fx-wheel.png`, `fx-lock.png`, `cat-cheese.png`
 
-| | Anzahl | Kantenlänge | Dateigröße |
-|---|---|---|---|
-| **Geliefertes Set** | 84 | ausnahmslos 512 × 512 | 110–232 kB, Median 169 |
-| **Andere Lieferung** | 25 | 640 × 640, 500 × 500, 400 × 400, 256 × 256 | 18–101 kB |
-| **Auffällig leicht** | 3 | zwar 512 × 512 | 42–47 kB |
+Als Uebersicht liegt ein Blatt mit acht Beispielen bei:
+`docs/bilder/stil-referenz.png`. Das reicht als Anhang.
 
----
-
-## Technische Vorgabe für alles Neue
-
-* **PNG mit Transparenz, 512 × 512.** Keine andere Kantenlänge.
-* **Freigestellt**, kein Hintergrund, kein Rahmen, keine Kachel. Die Zeichen
-  stehen frei auf dunklem Grund (rund #16121F bis #241C3C) und müssen sich
-  davon lösen.
-* Motiv **zentriert** mit etwas Luft ringsum, damit nichts an der Kante klebt.
-* Stil wie das bestehende Set: **weiches 3D, matte Oberfläche, ein warmes
-  Licht von links oben, weicher Schlagschatten unter dem Objekt.**
-* Dateigröße landet damit von selbst bei 110–230 kB. Deutlich darunter heißt
-  meist: zu flach oder zu wenig Material.
-* Dateiname genau wie in der Liste unten, kleingeschrieben, mit Bindestrichen.
+Ohne Referenzbild rät das Modell, und dann kommt genau das raus, was Wolf
+gesehen hat. Mit Referenzbild trifft es.
 
 ---
 
-## Die wichtigste Regel: EIN Ding, nicht eine Szene
+## Der Stil, in Worten
 
-Auf der Drehscheibe werden die Spiel-Zeichen mit rund **90 bis 110 Pixeln**
-dargestellt. Die jetzigen Dateien sind gebaute Szenen, und bei dieser Größe
-zerfallen sie: das M&M-Spiel ist ein Häufchen bunter Punkte neben einem
-undeutlichen Stab, das Kartenhaus ein Gewirr. Aus acht Metern erkennt niemand,
-welches Spiel gleich läuft.
+Das bestehende Set ist **Knete, nicht Plastik**:
 
-Deshalb pro Spiel: **ein Gegenstand, höchstens ein zweiter als Beigabe.**
-Beispiel Becher-Pyramide mit Gummis: nicht die ganze Pyramide, sondern **ein
-Becher und ein Gummiband.** Das Zeichen muss die Frage „welches Spiel ist das"
-beantworten, nicht das Spiel abbilden.
-
-Prüfung vor der Abgabe: auf 100 px verkleinern und anschauen. Wenn man es dann
-nicht mehr benennen kann, ist es zu viel drin.
+* **Material:** matte Modelliermasse. Weiche, samtige Oberfläche. **Keine
+  Glanzlichter, keine spiegelnden Flächen, kein Metall-Look.** Das ist der
+  Hauptunterschied zu den alten Spiel-Zeichen, die glänzend und fotorealistisch
+  sind.
+* **Form:** dick, rund, gedrungen. Kanten sind abgerundet, nichts ist dünn oder
+  spitz. Ein Stift ist ein dicker Stift, kein Strich.
+* **Farbe:** gedeckt und warm. Senfgelb, Staubrot, Salbeigrün, Petrolblau,
+  Lavendel, Creme. **Kein Neon, kein Pink, kein Magenta, keine kräftigen
+  Sättigungen.**
+* **Farbanzahl:** zwei bis vier Farbflächen pro Objekt, mehr nicht.
+* **Licht:** ein weiches Licht von oben links, sanfte Schattierung in den
+  Vertiefungen. Kein harter Schlagschatten, kein Glühen, kein Leuchten.
+* **Kontur:** keine. Keine Outline, kein Strich um das Objekt.
+* **Kamera:** leicht von schräg oben, Dreiviertel-Ansicht, Objekt aufrecht.
+* **Bildaufbau:** ein einzelner Gegenstand, zentriert, füllt etwa 80 Prozent
+  der Fläche, ringsum etwas Luft.
 
 ---
 
-## 1) Zwei Logos (dringend)
+## Fester Prompt-Block
 
-Beide stehen groß und allein auf ihrer Folie, bis zu 240 px. Sie tragen den
-Moment, nicht die Bühne. Bis sie da sind, steht auf beiden Folien **kein**
-Zeichen, weil ein altes Bild dort schlechter ist als keins.
+Diesen Block **wörtlich vor jede Bestellung setzen**, nur den letzten Satz
+austauschen. Immer derselbe Wortlaut, sonst driftet der Stil von Bild zu Bild.
 
-| Datei | Wofür | Vorschlag |
+```
+A single 3D icon in soft matte clay style, like colored plasticine.
+Chunky rounded shapes, thick forms, no thin or sharp parts.
+Muted warm palette: mustard yellow, dusty red, sage green, teal blue,
+lavender, cream. No neon, no pink, no magenta, no saturated colors.
+Matte surface only — no gloss, no specular highlights, no metallic sheen,
+no glow. Soft light from the top left, gentle shading, no hard drop shadow.
+No outline. Three-quarter view, slightly from above, object upright,
+centered, filling about 80 percent of the frame.
+Plain solid pure white background (#FFFFFF), nothing else in the image.
+No text, no letters, no numbers, no hands, no people, no table, no room,
+no scene, no props beyond what is named.
+
+Subject: <HIER DAS MOTIV EINSETZEN>
+```
+
+**Hintergrund bewusst weiß, nicht transparent.** Transparenz kommt aus
+Bildmodellen unzuverlässig raus. Reines Weiß lässt sich sauber freistellen,
+und das mache ich hier mit einem Skript in einem Rutsch für alle Dateien.
+
+---
+
+## Die achtzehn Spiel-Zeichen
+
+Für jedes Spiel steht unten die Zeile, die hinter `Subject:` gehört. Sie ist
+absichtlich knapp: **ein Gegenstand, höchstens ein zweiter als Beigabe.**
+
+Der Grund dafür ist gemessen: auf der Drehscheibe werden diese Zeichen mit
+**90 bis 110 Pixeln** dargestellt. Bei der Größe zerfällt eine gebaute Szene.
+Das Zeichen muss die Frage „welches Spiel ist das" beantworten, nicht das
+Spiel abbilden.
+
+| Datei | Spiel | `Subject:` |
 |---|---|---|
-| `final-tipp.png` | Die Wetten-Phase am Ende. Jedes Team tippt, welches andere Team die Final-Runde gewinnt. Zurzeit stand dort versehentlich ein Rettungsring, davor ein Auktionshammer. | Etwas, das **Einsatz auf jemand anderen** sagt: ein Spielchip oder eine Münze, die auf ein Feld gesetzt wird. Kein Hammer (das ist Versteigerung), kein Rettungsring (das ist Hilfe). |
-| `cozygames.png` | Der Marken-Moment vor der Drehscheibe: „Jetzt: CozyGame". Zurzeit der alte rosa Wolf. | Etwas, das **Mini-Spiel am Tisch** sagt: ein Würfel und ein Becher, oder ein Glücksrad-Ausschnitt. Kein Maskottchen. |
+| `cg-watt-puste.png` | Wattebausch-Pusten | one cotton ball and one drinking straw lying next to it |
+| `cg-mm-strohhalm.png` | M&M-Strohhalm-Transport | one drinking straw held upright with a single round candy stuck to its lower tip |
+| `cg-ballon-puste.png` | Luftballon hochhalten | one balloon floating, with a short curled string |
+| `cg-muenzturm.png` | Münzturm einhändig | a small stack of four coins |
+| `cg-muenz-kante.png` | Münz-Schnippen zur Kante | one coin standing on the edge of a small flat slab |
+| `cg-karten-haus.png` | Karten-Haus | two playing cards leaning against each other like a roof |
+| `cg-sport-stacking.png` | Becher-Pyramide | three stacked plastic cups forming a small pyramid |
+| `cg-bierdeckel-muenzen.png` | Bierdeckel-Rettungsringe | one round beer coaster with a single coin resting on it |
+| `cg-staebchen-eimer.png` | Stäbchen-Eimer | one pair of chopsticks holding a small ball between the tips |
+| `cg-ringwurf.png` | Ringwurf auf Flaschenhals | one ring hanging around the neck of a bottle |
+| `cg-waescheklammer-glas.png` | Wäscheklammer in Glas | one clothespin above the rim of a drinking glass |
+| `cg-gummi-pyramide.png` | Gummi-Pyramide | one plastic cup with a single rubber band around it |
+| `cg-tt-ball-sammeln.png` | TT-Ball-Sammeln | one table tennis ball |
+| `cg-mengen-schaetzen.png` | Mengen schätzen | one glass jar filled with small round beads |
+| `cg-getraenk-halbieren.png` | Getränk halbieren | one drinking glass half filled with liquid |
+| `cg-schnur-halbieren.png` | Genau in der Mitte teilen | one straight piece of string with a pair of scissors at its middle |
+| `cg-stift-fang.png` | Stift-Fang-Reaktion | one thick pencil falling, tilted diagonally |
+| `cg-marshmallow-fang.png` | Marshmallow-Fang | one marshmallow above an open cup |
+
+> Vier davon existieren heute **überhaupt nicht** und laufen auf ein
+> Systemzeichen: `cg-muenzturm`, `cg-getraenk-halbieren`,
+> `cg-schnur-halbieren`, `cg-marshmallow-fang`.
+> Der Datenbestand kennt achtzehn Spiele, im Ordner liegen vierzehn.
 
 ---
 
-## 2) Achtzehn Spiel-Zeichen für die Drehscheibe
+## Die zwei Logos
 
-Alle 512 × 512, ein Gegenstand plus höchstens eine Beigabe.
-Die letzten vier haben **noch gar kein Zeichen** und fallen aktuell auf ein
-Systemzeichen zurück.
+Die stehen groß und allein auf ihrer Folie, bis 240 px. Bis sie da sind, steht
+dort **kein** Zeichen, weil ein altes Bild schlechter ist als keins.
 
-| Datei | Spiel | Vorschlag Motiv |
+| Datei | Wofür | `Subject:` |
 |---|---|---|
-| `cg-watt-puste.png` | Wattebausch-Pusten | ein Wattebausch, daneben ein Strohhalm |
-| `cg-mm-strohhalm.png` | M&M-Strohhalm-Transport | ein Strohhalm mit **einem** bunten Dragee an der Spitze |
-| `cg-ballon-puste.png` | Luftballon hochhalten | ein einzelner Luftballon, schwebend |
-| `cg-muenzturm.png` | Münzturm einhändig | drei bis vier gestapelte Münzen |
-| `cg-muenz-kante.png` | Münz-Schnippen zur Kante | eine Münze halb über einer Tischkante |
-| `cg-karten-haus.png` | Karten-Haus | zwei aneinandergelehnte Spielkarten, ein Giebel |
-| `cg-sport-stacking.png` | Becher-Pyramide | drei gestapelte Becher |
-| `cg-bierdeckel-muenzen.png` | Bierdeckel-Rettungsringe | ein Bierdeckel mit einer Münze darauf |
-| `cg-staebchen-eimer.png` | Stäbchen-Eimer | ein Paar Stäbchen, dazwischen ein Ball |
-| `cg-ringwurf.png` | Ringwurf auf Flaschenhals | ein Ring, der über einem Flaschenhals hängt |
-| `cg-waescheklammer-glas.png` | Wäscheklammer in Glas | eine Wäscheklammer über einem Glasrand |
-| `cg-gummi-pyramide.png` | Gummi-Pyramide | **ein Becher und ein Gummiband** |
-| `cg-tt-ball-sammeln.png` | TT-Ball-Sammeln | ein Tischtennisball |
-| `cg-mengen-schaetzen.png` | Mengen schätzen | ein Glas voller Kugeln |
-| `cg-getraenk-halbieren.png` | Getränk perfekt halbieren | ein halb gefülltes Glas mit einer Markierungslinie |
-| `cg-schnur-halbieren.png` | Genau in der Mitte teilen | eine Schnur mit einer Schere in der Mitte |
-| `cg-stift-fang.png` | Stift-Fang-Reaktion | ein fallender Stift |
-| `cg-marshmallow-fang.png` | Marshmallow-Fang | ein Marshmallow über einem offenen Becher |
+| `final-tipp.png` | Wetten-Phase: jedes Team tippt, welches ANDERE Team die Final-Runde gewinnt. | one round gaming chip being placed flat onto a small square field |
+| `cozygames.png` | Marken-Moment vor der Drehscheibe: „Jetzt: CozyGame". | one dice and one cup standing side by side |
+
+**Ausdrücklich nicht:** kein Auktionshammer (das heißt Versteigerung), kein
+Rettungsring (das heißt Hilfe), kein Maskottchen, kein Tier. Beides stand dort
+schon und war falsch.
 
 ---
 
-## 3) Elf Nachzügler (zweite Priorität)
+## Elf Nachzügler, zweite Priorität
 
-Diese stammen ebenfalls aus der anderen Lieferung. Sie stehen an kleineren
-Stellen, fallen also weniger auf, gehören aber der Vollständigkeit halber
-mitgetauscht. Gleiche Vorgabe: 512 × 512, freigestellt, gleicher Stil.
+Gleicher Prompt-Block, gleiche Regeln.
 
-`connect.png` · `anker.png` · `rocket.png` · `group.png` ·
-`fx-fire.png` · `fx-map.png` · `fx-place.png` · `fx-potato.png` ·
-`fx-sparkles.png` · `fx-target.png` · `fx-lightning.png`
-
-Die vier zuerst genannten sind im Abend direkt im Einsatz, die sieben
-`fx-*` laufen über die zentrale Zeichen-Zuordnung.
+| Datei | `Subject:` |
+|---|---|
+| `connect.png` | four puzzle pieces joined into a square |
+| `anker.png` | one ship anchor |
+| `rocket.png` | one small rocket standing upright |
+| `group.png` | three simple rounded figures standing side by side |
+| `fx-fire.png` | one flame |
+| `fx-map.png` | one folded paper map |
+| `fx-place.png` | one map pin standing upright |
+| `fx-potato.png` | one potato |
+| `fx-sparkles.png` | three four-pointed sparkles of different sizes |
+| `fx-target.png` | one round target with a dart in the center |
+| `fx-lightning.png` | one lightning bolt |
 
 ---
+
+## Abnahme: vier Fragen pro Bild
+
+1. **Auf 100 Pixel verkleinern.** Kann man noch benennen, was es ist? Wenn
+   nein: zu viel drin, noch weiter vereinfachen.
+2. **Neben `fx-trophy.png` legen.** Sieht es aus wie aus derselben Schachtel?
+   Wenn es glänzt, kräftiger gefärbt oder feiner detailliert ist: nein.
+3. **Ist der Hintergrund wirklich reines Weiß**, ohne Verlauf, ohne Schatten,
+   der ins Weiß ausläuft? Ein Schatten auf dem Weiß ist in Ordnung, solange er
+   unter dem Objekt bleibt.
+4. **Steht Text im Bild?** Auch kleine Beschriftungen auf Bechern, Karten oder
+   Münzen. Dann neu.
+
+---
+
+## Was ich brauche, wenn die Bilder kommen
+
+Einfach die PNGs, so wie sie rauskommen, mit Weiß hinten. Größe egal.
+Freistellen, auf 512 × 512 bringen, benennen und einbauen mache ich hier — das
+Skript dafür steht (`scripts/freistellen.mjs`).
 
 ## Was NICHT gebraucht wird
 
-* Keine Kacheln, keine Hintergründe, keine Rahmen. Die baut die Anwendung.
+* Keine Kacheln, keine Rahmen, keine Hintergründe. Baut die Anwendung.
 * Keine Beschriftung im Bild. Der Name steht daneben im Text.
-* Keine Varianten in mehreren Größen. 512 × 512 reicht, alles andere skaliert.
+* Keine Varianten in mehreren Größen. Eine Datei pro Zeichen reicht.

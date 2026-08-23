@@ -1130,7 +1130,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // 2026-07-18 (Wolf 'bild 10'): in der ARENA soll der Reveal-Card-Rahmen
             // die KATEGORIE-Farbe tragen, nicht die Sieger-Fraktions-Farbe (blau war
             // die Gewinner-Fraktion). Nicht-Arena behaelt den Team-Farb-Rahmen.
-            const revealGlowColor = isMegaTeams ? accent : (fastestColor ?? QQ_COLORS.green500);
+            // 2026-08-23: auf der Buehne ist dieser Rahmen IMMER gruen.
+            // Vorher wechselte er die Farbe je nachdem, wer gewonnen hat -
+            // blau, wenn ein blaues Team schnell war, gruen, wenn niemand
+            // richtig lag. Aus dem Saal ist das nicht als „Team X" lesbar,
+            // sondern nur als „der Rahmen ist heute anders", und die Aussage
+            // „so lautet die Antwort" ist auf jeder Folie dieselbe. Wer
+            // gewonnen hat, sagt das Band direkt darunter, mit Namen und
+            // Marke. Gruen ist im ganzen Quiz die Farbe fuer richtig, also
+            // traegt sie auch hier.
+            const revealGlowColor = istBuehne
+              ? QQ_COLORS.green500
+              : (isMegaTeams ? accent : (fastestColor ?? QQ_COLORS.green500));
             return (
           <div style={{
             position: 'relative',
@@ -1188,8 +1199,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
             // Reveal-Padding kompakter (20 statt 28) damit das Bild oben mehr Platz behaelt.
             padding: isCheeseReveal ? '20px 48px' : '36px 56px',
+            // 2026-08-23: bei der Aufloesung lagen hier zwei Linien
+            // uebereinander - der 3px-Rand der Karte und ein 2px-Ring als
+            // Schatten daneben. Aus acht Metern ist das ein unsauberer
+            // 5px-Rand, kein Signal. Der Rand allein macht die Aussage.
             boxShadow: istBuehne
-              ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}` : 'none')
+              ? 'none'
               : isThemed()
               ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}, var(--qq-card-shadow)` : 'var(--qq-card-shadow)')
               : isCheeseReveal
@@ -1272,9 +1287,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 fontSize: 'clamp(28px, 3.8cqw, 56px)', fontWeight: 900,
                 // Themed Skins haben eine weisse Card -> green400 (#4ade80) faellt auf 1.6:1.
                 // Kraeftiges Dunkelgruen bei isThemed(), in Cozy (dunkle Card) weiter green400.
-                color: isThemed() ? '#15803d' : QQ_COLORS.green400,
+                // 2026-08-23: das Lesefeld der Buehne ist seit heute DUNKEL
+                // (tiefer Kategorie-Ton), nicht mehr weiss. Damit dreht sich
+                // die Rechnung um: #15803d auf #241C3C sind 3,2:1, das
+                // helle green400 kommt auf 9,3:1. Also faellt die Buehne
+                // zurueck auf denselben Gruenton wie Cozy.
+                color: istBuehne ? QQ_COLORS.green400 : (isThemed() ? '#15803d' : QQ_COLORS.green400),
                 animation: 'langFadeIn 0.5s var(--qq-ease-out-cubic) 0.15s both',
-                textShadow: '0 0 30px rgba(34,197,94,0.4)',
+                // 2026-08-23: der Schein sagt nichts, was die Farbe nicht
+                // schon sagt. Auf der Buehne weg, wie ueberall sonst.
+                textShadow: istBuehne ? 'none' : '0 0 30px rgba(34,197,94,0.4)',
                 marginBottom: 6,
               }}>
                 <div style={{
@@ -1398,7 +1420,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                               // Wolf 2026-07-18 (bild 10): keine Sieger-Umrandung mehr,
                               // Sieger nur durch weichen Glow in KATEGORIE-Farbe (kein Pink-Akzent).
                               border: 'none',
-                              boxShadow: isFastest
+                              // 2026-08-23: wer der schnellste ist, sagen auf
+                              // der Buehne schon zwei Dinge - die Marke ist
+                              // groesser und die Zeitpille ist gefuellt. Der
+                              // Schein ist die dritte Wiederholung.
+                              boxShadow: (isFastest && !istBuehne)
                                 ? `0 0 26px ${accent}88`
                                 : 'none',
                             }}
@@ -1407,9 +1433,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         <span style={{
                           padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
                           // Wolf 2026-07-18: Sieger-Pille in KATEGORIE-Farbe statt Pink-Akzent.
-                          background: isFastest ? `${SPEED_GOLD}2e` : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)'),
-                          border: isFastest ? `1.5px solid ${SPEED_GOLD}b0` : '1px solid var(--qq-hairline)',
-                          color: isFastest ? SPEED_GOLD_BRIGHT : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)'),
+                          // 2026-08-23: Gold ist auf der Buehne eine dritte
+                          // Akzentfarbe neben Kategorie und Creme, und sie
+                          // bedeutet nichts, was die Reihenfolge nicht schon
+                          // sagt. Die schnellste Zeit bekommt deshalb dieselbe
+                          // Form wie die Kategorie-Pille oben links: gefuellt
+                          // im Buehnen-Akzent, dunkle Schrift. Die uebrigen
+                          // bleiben die ruhige Umriss-Pille.
+                          background: istBuehne
+                            ? (isFastest ? 'var(--qq-stage-accent)' : 'rgba(0,0,0,0.35)')
+                            : (isFastest ? `${SPEED_GOLD}2e` : (isThemed() ? 'rgba(0,0,0,0.06)' : 'rgba(0,0,0,0.55)')),
+                          border: istBuehne
+                            ? (isFastest ? 'none' : '1px solid var(--qq-hairline)')
+                            : (isFastest ? `1.5px solid ${SPEED_GOLD}b0` : '1px solid var(--qq-hairline)'),
+                          color: istBuehne
+                            ? (isFastest ? '#12100E' : 'var(--qq-text-muted)')
+                            : (isFastest ? SPEED_GOLD_BRIGHT : (isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)')),
                           fontWeight: 900,
                           fontSize: 'clamp(15px, 1.6cqw, 20px)',
                           whiteSpace: 'nowrap',
@@ -1487,9 +1526,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 gap: 'clamp(12px, 1.6cqw, 20px)',
                 padding: 'clamp(10px, 1.4cqh, 16px) clamp(20px, 2.4cqw, 32px)',
                 borderRadius: 'var(--qq-pill-radius)',
-                background: `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
-                border: `2.5px solid ${winnerTeam.color}aa`,
-                boxShadow: `0 0 36px ${winnerTeam.color}55`,
+                // 2026-08-23: dasselbe Aufraeumen wie am Brett. Das Band war
+                // ein Farbverlauf in Teamfarbe mit farbigem Rand und 36px
+                // Schein darum - drei Traeger fuer eine Aussage. Die Marke
+                // links traegt die Teamfarbe schon, und zwar als Flaeche, die
+                // aus acht Metern erkennbar ist. Das Band selbst wird ruhig:
+                // derselbe tiefe Kategorie-Ton wie das Lesefeld darueber,
+                // keine Kontur, kein Schein.
+                background: istBuehne
+                  ? `${QQ_CATEGORY_THEME.CHEESE.deep}e0`
+                  : `linear-gradient(135deg, ${winnerTeam.color}33, ${winnerTeam.color}10)`,
+                border: istBuehne ? 'none' : `2.5px solid ${winnerTeam.color}aa`,
+                boxShadow: istBuehne ? 'none' : `0 0 36px ${winnerTeam.color}55`,
                 backdropFilter: 'blur(8px)',
                 WebkitBackdropFilter: 'blur(8px)',
                 animation: `revealWinnerIn 0.6s var(--qq-ease-bounce) ${cardDelaySec}s both`,
@@ -1503,12 +1551,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   avatarId={winnerTeam.avatarId}
                   teamEmoji={winnerTeam.emoji}
                   size={'clamp(40px, 4cqw, 56px)'}
-                  style={{ flexShrink: 0, boxShadow: `0 0 18px ${winnerTeam.color}88` }}
+                  style={{ flexShrink: 0, boxShadow: istBuehne ? 'none' : `0 0 18px ${winnerTeam.color}88` }}
                 />
                 <div style={{
                   fontSize: 'clamp(22px, 2.4cqw, 32px)', fontWeight: 900,
-                  color: winnerTeam.color, lineHeight: 1.1,
-                  textShadow: `0 0 18px ${winnerTeam.color}55`,
+                  // 2026-08-23: Teamnamen stehen auf der Buehne in Creme, nicht
+                  // in Teamfarbe - dieselbe Entscheidung wie am Brett und aus
+                  // demselben Grund. Die Teamfarben sind fuer eine Flaeche
+                  // gemacht, nicht fuer Schrift; gemessen lagen die Namen am
+                  // Brett zwischen 2,6:1 und 9,2:1, in Creme sind es 14,1:1
+                  // im schlechtesten Fall. Die Farbe traegt die Marke daneben.
+                  color: istBuehne ? 'var(--qq-text)' : winnerTeam.color,
+                  lineHeight: 1.1,
+                  textShadow: istBuehne ? 'none' : `0 0 18px ${winnerTeam.color}55`,
                 }}>
                   {teamDisplayName(winnerTeam.name, true)}
                 </div>
@@ -2501,7 +2556,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     pointerEvents: 'none',
                   }} />
                   <span style={{
-                    fontSize: 'clamp(28px, 4cqw, 64px)', fontWeight: 900, color: isThemed() ? '#15803d' : QQ_COLORS.green400,
+                    // 2026-08-23: gleiche Rechnung wie bei Schau mal. Das
+                    // dunkle #15803d ist fuer eine WEISSE Karte gebaut; die
+                    // Buehne hat einen dunklen Kategorie-Grund, dort faellt es
+                    // auf rund 3:1. Helles green400 kommt auf ueber 9:1.
+                    fontSize: 'clamp(28px, 4cqw, 64px)', fontWeight: 900,
+                    color: istBuehne ? QQ_COLORS.green400 : (isThemed() ? '#15803d' : QQ_COLORS.green400),
                     flexShrink: 1, minWidth: 0,
                     overflow: 'hidden', textOverflow: 'ellipsis',
                     position: 'relative', zIndex: 1,

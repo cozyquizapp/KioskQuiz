@@ -69,6 +69,8 @@ const DOM = (process.argv.find(a => a.startsWith('--dom=')) || '=').split('=').s
 // --bild=hoch|quer  legt allen Schau-mal-Fragen ein Testfoto unter, damit sich
 // beide Layouts (Hochkant/Querformat) gezielt anschauen lassen.
 const BILD = (process.argv.find(a => a.startsWith('--bild=')) || '=').split('=')[1] || null;
+// --antworten=0.6  Quote der richtigen Bot-Antworten vor einer Aufloesung.
+const ANTWORTEN = Number((process.argv.find(a => a.startsWith('--antworten=')) || '--antworten=0.6').split('=')[1]);
 const QUELLE_HOCH = '/images/Johannes.jpeg';
 const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
 // --zeiten  schreibt auf, wo die Zeit hingeht.
@@ -116,9 +118,9 @@ const ANSICHTEN = {
   // markiert sie die richtige Antwort. Der zweite Schritt haengt an einem
   // kategorie-eigenen Ereignis (`qq:muchoRevealStep`, `qq:zvzRevealStep`,
   // `qq:cheeseRevealStep`) — ohne das sieht man nur das halbe Bild.
-  aufloesung: { ruhe: 3000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await sleep(600); await h.emit('qq:revealAnswer'); } },
-  aufloesung2:{ ruhe: 3500, aufbau: 'spiel', weg: async (h) => {
-    await h.zurFrage(); await sleep(600); await h.emit('qq:revealAnswer'); await sleep(1600);
+  aufloesung: { ruhe: 6000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.antworten(); await sleep(600); await h.emit('qq:revealAnswer'); } },
+  aufloesung2:{ ruhe: 6000, aufbau: 'spiel', weg: async (h) => {
+    await h.zurFrage(); await h.antworten(); await sleep(600); await h.emit('qq:revealAnswer'); await sleep(1600);
     for (const ev of ['qq:muchoRevealStep', 'qq:zvzRevealStep', 'qq:cheeseRevealStep']) {
       await h.emit(ev); await sleep(200); await h.emit(ev); await sleep(200);
     }
@@ -199,6 +201,21 @@ const phase = () => beamer.evaluate(() =>
 let regelStand = -2;
 const helfer = {
   emit,
+  /** Antworten der Bots erzwingen, statt auf den Zufall zu hoffen.
+   *  2026-08-23: die Aufloesung zeigt Siegerband, Zeit-Pillen und Sieger-Rahmen
+   *  nur, wenn ueberhaupt jemand richtig lag. Drei Laeufe hintereinander hatte
+   *  kein einziges Bot-Team die richtige Antwort, also war die halbe Folie im
+   *  Bild gar nicht zu sehen. `dev/simAnswers` setzt eine Quote, damit die
+   *  Aufnahme zeigt, was auf der Buehne wirklich steht. */
+  async antworten(quote = ANTWORTEN) {
+    if (quote <= 0) return;
+    const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/simAnswers`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correctRate: quote, stagger: true, pin: PIN }),
+    });
+    if (!r.ok) console.log('  simAnswers:', r.status, (await r.text()).slice(0, 120));
+    await sleep(700);
+  },
   /** Eine Frage weiter. Der Server verlangt erst `nextQuestion`, danach
    *  fuehrt `activateQuestion` durch das kurze Zwischenbild (Kategorie) bis
    *  die Frage steht. Wie viele Schritte das sind, haengt daran, ob die

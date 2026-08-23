@@ -52,13 +52,23 @@ const WRITE = process.argv.includes('--write');
 
 const ALPHA_VOLL = 240;   // ab hier gilt ein Pixel als deckend
 const ALPHA_LOCH = 20;    // darunter gilt es als echtes Loch und bleibt
-// Grenze fuer die Flutung von aussen. 2026-08-23 von 240 auf 60 gesenkt:
-// mit 240 galt jedes halbdurchsichtige Pixel als „aussen erreichbar", und das
-// Gestrick der Socke und die Hutfalte blieben dadurch stehen (gemessen 6.5 %
-// und 4.7 % Rest). Die echte Aussenkante hat einen vollen Verlauf von 0 nach
-// 255, die Flutung findet also weiterhin ueber die Pixel unter 60 hinaus —
-// aber eine Flaeche mit Alpha 100 gilt jetzt als Koerper und wird gefuellt.
-const ALPHA_FLUT = 60;
+// Grenze fuer die Flutung von aussen.
+//
+// 2026-08-23, ZWEIMAL falsch gemacht und deshalb ausfuehrlich:
+// Der Reiz ist, sie zu senken (ich hatte 60), weil dann auch breitflaechige
+// Durchsicht als „innen" gilt und gefuellt wird — Hutfalte und Gestrick gehen
+// damit zu. Der Preis ist aber der EIGENSCHATTEN: ein weicher Schatten hat
+// einen Kern mit Alpha weit ueber 60, der von aussen dann nicht mehr
+// erreichbar ist. Er wird mitgefuellt und aus dem Verlauf wird eine harte
+// dunkle Kante. Gemessen an der Socke: von 35 141 Pixeln, die dabei deckend
+// wurden, waren 33 764 dunkel — 96 % Schatten.
+// Also zurueck auf 240: gefuellt wird nur, was RINGSUM von deckendem Material
+// eingeschlossen ist. Das erwischt die 21 Motive mit echten Alpha-Loechern und
+// laesst Schatten und Kanten in Ruhe.
+// Was dadurch NICHT repariert wird (Gestrick der Socke, Falte im Hut), ist im
+// Motiv so GEZEICHNET und gehoert in eine neue Ausgabe der Datei, nicht in ein
+// Skript.
+const ALPHA_FLUT = 240;
 const SPLITTER_ANTEIL = 0.005;  // Rueckstand ist winzig gegen das Hauptmotiv
 const SPLITTER_SCHLANK = 4;     // ... und deutlich schmal-lang
 // 2026-08-23, am Probelauf nachgezogen: ohne Untergrenze griff die Regel bei

@@ -2800,11 +2800,22 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         den gruenen glow' / 'quadratisches feld ums aktive team'):
                         der harte Rand verschwindet, es glueht weich aus, Timer-
                         Bahn bleibt sichtbar. */}
+                    {/* 2026-08-23 (Wolf: „doppelter rahmen um spielendes team"):
+                        der weiche Farbkreis ist auf der Buehne raus. Er stammt aus
+                        der Zeit, als der Avatar frei schwebte und die Teamfarbe
+                        sonst nirgends stand (Kommentar 2026-07-09: „KEIN bgColor
+                        mehr"). Seit dem neuen Avatar-Satz bringt jeder Avatar seine
+                        eigene farbige Kachel mit — der Kreis wiederholt sie also
+                        nur, und weil er rund und die Kachel eckig ist, liest man
+                        zwei Rahmen uebereinander. Die Timer-Bahn ringsum bleibt,
+                        die traegt die einzige Information hier. */}
+                    {!isThemed() && (
                     <div aria-hidden style={{
                       position: 'absolute', inset: 'clamp(5px, 0.6cqw, 9px)', borderRadius: '50%',
                       background: `radial-gradient(circle, ${t.color}dd 0%, ${t.color}66 52%, ${t.color}22 68%, transparent 78%)`,
                       filter: 'blur(7px)', pointerEvents: 'none',
                     }} />
+                    )}
                     {/* Avatar zentriert im Ring. 2026-07-09 (Wolf 'noch leicht
                         quadratischer Rand ums Team + bg verdeckt Timer'): KEIN
                         bgColor mehr — der eckige Farb-Tile ragte über den Timer-
@@ -2812,10 +2823,18 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         der Avatar schwebt frei mittig, Timer-Ring bleibt frei. */}
                     <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 14.5cqw, 200px)'} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
-                    <img src="/icons/fx-potato.png" alt="" aria-hidden draggable={false} style={{
+                    {/* 2026-08-23 (Wolf: „alte kartoffel"): `fx-potato.png` ist
+                        die alte Fluent-Knolle in 256 px, blass und ohne Flamme.
+                        Die Lieferung enthaelt `sub-hotpotato.png` in 512 px —
+                        dieselbe Kartoffel, die im Runden-Intro als Kategorie-
+                        Symbol steht. Damit zeigt die Folie jetzt dasselbe Objekt
+                        wie die Ankuendigung davor.
+                        Der rot-orange Doppelschein faellt mit weg: die Flamme ist
+                        gezeichnet, sie braucht keinen gemalten Schein dahinter. */}
+                    <img src="/icons/sub-hotpotato.png" alt="" aria-hidden draggable={false} style={{
                       position: 'absolute', top: '2%', right: '0%',
                       width: 'clamp(58px, 6cqw, 92px)', height: 'auto',
-                      filter: 'drop-shadow(0 6px 12px rgba(239,68,68,0.55)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
+                      filter: isThemed() ? 'drop-shadow(0 6px 14px rgba(0,0,0,0.45))' : 'drop-shadow(0 6px 12px rgba(239,68,68,0.55)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
                       transformOrigin: 'center center',
                       animation: isThrowing
                         ? 'qqHpRingPotatoThrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both'
@@ -2852,26 +2871,40 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                     }}>
                       {lang === 'en' ? 'Your turn' : 'Jetzt dran'}
                     </span>
-                    <span title={t.name} style={{
-                      fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900,
-                      color: isThemed() ? 'var(--qq-text)' : t.color,
-                      maxWidth: 'min(80cqw, 560px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                    }}>
-                      {truncName(t.name, 22)}
-                    </span>
+                    {/* 2026-08-23 (Wolf: „teamnamen links und rechts
+                        abgeschnitten"): statt hart auf 22 Zeichen zu kuerzen und
+                        den Rest mit Ellipse zu schlucken, dieselbe Komponente wie
+                        ueberall sonst — sie schrumpft gemessen und darf zwei
+                        Zeilen nutzen, bevor etwas verloren geht. */}
+                    <TeamNameLabel
+                      name={t.name}
+                      // EINE Zeile: der Name steht in einem schmalen Mittel-Slot
+                      // zwischen den beiden Nachbar-Teams, zwei Zeilen schoben
+                      // ihn unten aus dem Bild. Die Komponente schrumpft
+                      // gemessen (Untergrenze 62 %), lange Namen passen also
+                      // trotzdem hinein.
+                      maxLines={1}
+                      shrinkAfter={12}
+                      fontSize="clamp(30px, 3.2cqw, 48px)"
+                      fontWeight={900}
+                      color={isThemed() ? 'var(--qq-text)' : t.color}
+                      style={{ maxWidth: 'min(80cqw, 560px)', textAlign: 'center' }}
+                    />
                   </div>
                 </>
               ) : (
                 // SIDE-SLOT — Avatar + Name + Richtungs-Label
                 <>
                   <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(84px, 9cqw, 138px)'} bgColor={t.color} />
-                  <span title={t.name} style={{
-                    fontSize: 'clamp(16px, 1.8cqw, 26px)', fontWeight: 900,
-                    color: isThemed() ? 'var(--qq-text-muted)' : t.color,
-                    maxWidth: 'clamp(120px, 16cqw, 240px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-                  }}>
-                    {truncName(t.name, 14)}
-                  </span>
+                  <TeamNameLabel
+                    name={t.name}
+                    maxLines={2}
+                    shrinkAfter={12}
+                    fontSize="clamp(16px, 1.8cqw, 26px)"
+                    fontWeight={900}
+                    color={isThemed() ? 'var(--qq-text-muted)' : t.color}
+                    style={{ maxWidth: 'clamp(140px, 18cqw, 260px)', textAlign: 'center' }}
+                  />
                   <span style={{
                     fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 800, letterSpacing: '0.1em',
                     textTransform: 'uppercase', color: QQ_COLORS.slate400,

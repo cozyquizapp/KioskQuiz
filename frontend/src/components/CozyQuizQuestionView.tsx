@@ -604,6 +604,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
   const kartenLook = isThemed() && !istBuehne;
 
+  // 2026-08-23 (Wolf: „der fragetext bei schaetzchen sieht komisch aus,
+  // linkszentriert auf leerem raum"). Stimmt, und das entlarvt meine eigene
+  // Begruendung von heute morgen als halbe Wahrheit: linksbuendig ist richtig,
+  // WEIL darunter eine Spalte aus Antwortkarten steht, die dieselbe Kante teilt
+  // und die Zeile ausbalanciert. Wo diese Spalte fehlt, fehlt auch das
+  // Gegengewicht — dann haengt der Satz an einer Kante, die nichts traegt.
+  // Also: linksbuendig nur, wenn wirklich ein Antwortblock folgt. Das sind
+  // Mu-Cho, 10 von 10 und Fix It. Schaetzchen, Schau mal, Heisse Kartoffel,
+  // Top 5 und Pin It stellen nur die Frage — die steht mittig.
+  const frageHatSpalte = !!q.options?.length
+    || (q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order');
+
   const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 56px)'
     : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 72px)'
     : qText.length > 80  ? 'clamp(40px, min(5cqw, 7.3cqh), 92px)'
@@ -1562,7 +1574,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // Chips folgen mit gap, Active-Card-Slot weiter unten. Kein
           // symmetrisches Overspill mehr. Andere Kategorien bleiben bei
           // center weil sie weniger vertikale Stacks haben.
-          const innerJustify = isHotPotatoActive ? 'flex-start' : 'center';
+          // 2026-08-23: auf der Buehne steht auch die Heisse Kartoffel mittig.
+          // Oben-buendig war der Grund fuer zwei Folgefehler an einem Tag: erst
+          // lief die Frage durch die Statuszeile, dann (nachdem ich Platz dafuer
+          // reserviert hatte) rutschte der Team-Name unten aus dem Bild. Der
+          // Inhalt ist gar nicht hoch genug, um oben-buendig zu muessen — mittig
+          // haelt er von beiden Kanten von selbst Abstand.
+          const innerJustify = (isHotPotatoActive && !istBuehne) ? 'flex-start' : 'center';
           const innerGap = isHotPotatoActive ? 'clamp(24px, 3.2cqh, 44px)' : 0;
           return (
         <div style={{
@@ -1570,15 +1588,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // 2026-05-12 (Wolf 'kategorie-badge nach links UNTEN, fragecard oben');
           // 2026-05-12 v2 (Wolf 'safe-margin im ganzen quiz'): jede Achse
           // floor() auf var(--qq-safe-margin) um Mindest-Rand zu garantieren.
-          // 2026-08-23: Heisse Kartoffel setzt den Inhalt oben-buendig
-          // (`innerJustify: flex-start`) statt mittig. Die Statuszeile liegt
-          // absolut darueber, also muss der Inhalt ihre Hoehe abwarten — sonst
-          // laeuft die Frage durch die Kategorie-Pille hindurch, wie am
-          // 2026-08-23 im Bild gesehen. 16 px Abstand vom Rand plus Zeilenhoehe
-          // plus etwas Luft.
-          padding: isHotPotatoActive
-            ? `calc(16px + ${QQ_KOPFZEILE_H} + clamp(16px, 2cqh, 28px)) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`
-            : 'max(var(--qq-safe-margin), clamp(40px, 5.5cqh, 70px)) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))',
+          // 2026-08-23, dritter Anlauf und diesmal als REGEL statt als Sonderfall:
+          // die Statuszeile liegt absolut ueber dem Inhalt, nimmt also keinen
+          // Platz weg. Solange der Inhalt kurz ist, faellt das nicht auf; sobald
+          // er waechst (Heisse Kartoffel: Frage plus Avatar-Reihe plus Name),
+          // zentriert er sich mitten durch die Kategorie-Pille hindurch.
+          // Zwei Sonderfaelle davor waren jeweils nur die halbe Loesung. Jetzt
+          // haelt der Inhalt auf JEDER Frage die Hoehe der Zeile frei, und zwar
+          // oben wie unten: die Buehne hat damit ein klares Feld zwischen
+          // Statuszeile und Team-Reihe, in dem alles mittig steht.
+          padding: `calc(16px + ${QQ_KOPFZEILE_H}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`,
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
           // hart auf hidden — Beamer darf NIE scrollen, lieber Inhalt clippen
@@ -1808,7 +1827,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   // linksbuendig. Der Blick faengt beim Lesen links an, und bei
                   // drei Zeilen mittig beginnt jede Zeile woanders. Skins
                   // bleiben mittig.
-                  textAlign: kartenLook ? 'center' : 'left',
+                  textAlign: (kartenLook || !frageHatSpalte) ? 'center' : 'left',
                   animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
                   // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                   // entspannt, damit hpCompact-Snap weniger hektisch wirkt.

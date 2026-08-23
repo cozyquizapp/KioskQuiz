@@ -11,7 +11,7 @@ import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvat
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
-import { COZYQUIZ_SET_ID, COZYQUIZ_SLUGS, isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel } from './cozyquizAvatars';
+import { COZYQUIZ_SET_ID, COZYQUIZ_SLUGS, isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel, COZYQUIZ_FILL } from './cozyquizAvatars';
 import { QUIRK2_SET_ID, QUIRK2_SLUGS, isQuirk2Slug, quirk2BySlug, quirk2Label, quirk2Src } from './quirks2Avatars';
 import { BLOCKZ_SET_ID, BLOCKZ_SLUGS, isBlockzSlug, blockzBySlug, blockzLabel, blockzSrc } from './blockzAvatars';
 
@@ -455,32 +455,27 @@ export function getAvatarDisplay(
       src: cozyQuizSrc(emoji),
       color: slot.color,
       label: cozyQuizLabel(emoji),
-      // 2026-08-23 (Wolf, mit Bild): das Motiv RAGT ueber die Kachel hinaus,
-      // solange es nicht im Brett sitzt. Solange es eingesperrt ist, liest es
-      // sich als Aufkleber; sobald es die Kante ueberschreitet, wird es ein
-      // Gegenstand, der auf einer Flaeche liegt — Tiefe ohne einen einzigen
-      // Schatten.
-      // Wert nicht geschaetzt: die PNGs sind auf ihre Alpha-Box beschnitten
-      // (gemessen an acht Motiven: 512 x 512 Leinwand, Motiv 362..512 breit,
-      // oben und unten 0 bis 2 px Rand). Bei `objectFit: contain` in einer
-      // quadratischen Kachel bestimmt also die HOEHE die Skalierung, und
-      // discFill ist damit direkt der Ueberstand: 1.10 = 10 % groesser als die
-      // Kachel, also 5 % oben und 5 % unten drueber.
+      // 2026-08-23 (Wolf: „wuerfel wirkt zu gross, wie machen wir das?" /
+      // „einzeln einmal alle avatare in den kacheln anschauen und
+      // positionieren?"). Ja, einzeln — aber gemessen statt nach Augenmass.
       //
-      // Warum 1.10 und nicht mehr (Wolf 2026-08-23: „mir faellt aber auf, dass
-      // das mit der gruenen umrandung schwierig werden kann" — zu Recht):
-      // ueberall dort, wo die Marke einen Zustands-Rahmen traegt, gilt
-      //     Ueberstand_px = Kachel * (discFill - 1) / 2
-      // und der Rahmen liegt `padding` weit draussen. Kollision also genau
-      // dann, wenn Kachel * (discFill - 1) / 2 > padding.
-      // Geringelte Marken sind 60 bis 96 px gross (Lobby 64-88, Frage-Fussleiste
-      // 80/88/96). Bei 1.10 und der groessten davon: 96 * 0.05 = 4.8 px. Mit
-      // padding 7 in `qqDeliveredFrame` bleibt das unter dem Ring, bis 140 px
-      // Kachelgroesse. Bei 1.18 waeren es 8.6 px gewesen, und der Ring haette
-      // geschnitten — auf dem Bild war das an Erdbeere und Kompass zu sehen.
-      // Im Brett greift der Ueberstand gar nicht — siehe die flat-Klammer in
-      // ImageAvatar.
-      discFill: 1.10,
+      // Die PNGs sind auf ihre Alpha-Box beschnitten, und `objectFit: contain`
+      // skaliert in einer quadratischen Kachel nach der groesseren Seite. Ein
+      // Wuerfel ist quadratisch und fuellt sie damit fast ganz, ein Schluessel
+      // ist schmal und belegt nur einen Streifen. Ueber alle 48 Motive
+      // gemessen: 21.6 % bis 87.1 % der Kachelflaeche, Faktor 4. Genau das
+      // sieht man.
+      // COZYQUIZ_FILL gleicht das aus (Herleitung im Kopf von
+      // scripts/measure-avatar-fill.mjs). Nachher: Faktor 2.3, und der Rest
+      // ist die Form der Gegenstaende selbst — ein Schluessel DARF leichter
+      // wirken als ein Kissen, nur nicht viermal.
+      //
+      // Der Ueberstand ueber die Kachel (discFill > 1) ist damit vom Tisch.
+      // Er war ohnehin unsichtbar, weil die Lobby-Karte `overflow: hidden`
+      // traegt, und er vertraegt sich nicht mit dem Ausgleich: ein
+      // einheitlicher Ueberstand fuer alle wuerde die Groessenunterschiede
+      // wieder hereinholen, die er gerade beseitigt.
+      discFill: COZYQUIZ_FILL[emoji] ?? 0.9,
     };
   }
 

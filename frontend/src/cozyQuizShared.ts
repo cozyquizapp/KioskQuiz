@@ -147,10 +147,11 @@ export function qqPlural(n: number, one: string, many: string): string {
  */
 export function qqDeliveredFrame(delivered: boolean): CSSProperties {
   return {
-    // 2026-08-23: 5 -> 7. Die Motive ragen jetzt ueber ihre Kachel hinaus
-    // (discFill 1.10, Begruendung in avatarSets.ts). Bei der groessten
-    // geringelten Marke (96 px) sind das 4.8 px; 7 px Polster halten den Ring
-    // davon frei, bis zu 140 px Kachelgroesse.
+    // 2026-08-23: 5 -> 7. Kam vom Ueberstands-Versuch (discFill > 1) und ist
+    // geblieben, nachdem der zurueckgenommen wurde: der Ring saß mit 5 px sehr
+    // dicht auf der Kachel und las sich auf der Projektion wie ein zweiter
+    // Kachelrand statt wie ein Zustand. Mit 7 px ist er als eigenes Zeichen
+    // erkennbar.
     padding: 7,
     borderRadius: 'calc(var(--qq-team-mark-radius, 50%) + 7px)',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',

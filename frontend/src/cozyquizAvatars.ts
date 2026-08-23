@@ -134,3 +134,58 @@ export function cozyQuizLabel(slug: string, lang: 'de' | 'en' = 'de'): string {
 export function cozyQuizBySlug(slug: string): CozyQuizAvatar | undefined {
   return BY_SLUG.get(slug);
 }
+
+// ── Optischer Ausgleich (erzeugt von scripts/measure-avatar-fill.mjs) ───────
+// NICHT von Hand pflegen: neu erzeugen, wenn Motive dazukommen.
+// Wert = Anteil der Kachelkante, den das Motiv einnimmt. Begruendung und
+// Messverfahren stehen im Kopf des Skripts.
+export const COZYQUIZ_FILL: Record<string, number> = {
+  'acorn': 0.92,
+  'alarm-clock': 0.92,
+  'armchair': 0.82,
+  'autumn-leaf': 0.92,
+  'backpack': 0.86,
+  'binoculars': 0.83,
+  'book': 0.89,
+  'camera': 0.83,
+  'candle': 0.92,
+  'cassette': 0.81,
+  'cheese': 0.82,
+  'cloud': 0.89,
+  'compass': 0.92,
+  'controller': 0.88,
+  'cookie': 0.80,
+  'croissant': 0.84,
+  'crystal-ball': 0.86,
+  'cushion': 0.72,
+  'daisy': 0.92,
+  'disco-ball': 0.81,
+  'donut': 0.82,
+  'game-die': 0.75,
+  'hot-air-balloon': 0.92,
+  'houseplant': 0.92,
+  'key': 0.92,
+  'knitted-sock': 0.92,
+  'lemonade': 0.92,
+  'light-bulb': 0.92,
+  'magnet': 0.92,
+  'mushroom': 0.88,
+  'paint-palette': 0.91,
+  'paper-boat': 0.92,
+  'playing-card': 0.88,
+  'popcorn': 0.92,
+  'potion': 0.92,
+  'puzzle': 0.92,
+  'ringed-planet': 0.92,
+  'rocket': 0.92,
+  'seashell': 0.85,
+  'snowflake': 0.92,
+  'star': 0.91,
+  'strawberry': 0.92,
+  'sun': 0.92,
+  'table-lamp': 0.92,
+  'teapot': 0.90,
+  'tent': 0.92,
+  'treasure-chest': 0.80,
+  'wizard-hat': 0.92,
+};

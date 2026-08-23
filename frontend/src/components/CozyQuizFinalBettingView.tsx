@@ -85,13 +85,10 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
               bieten.png ist 500x500 und 45 kB, das gelieferte Set ist
               durchgaengig 512x512 und 110-232 kB. Es stammt also aus einer
               anderen Lieferung.
-              Bis das neue Zeichen da ist, steht hier KEINS. Ein altes Bild auf
-              der Buehne ist schlechter als kein Bild: der Titel „Final-Tipp"
-              und die Zeile darunter tragen die Folie allein, und nach der Regel
-              „Schmuck, der nichts traegt, geht" ist das ohnehin die
-              zurueckhaltendere Loesung. Wieder einsetzen: hier den neuen Slug
-              eintragen, dann kommt er an beiden Stellen zurueck. */}
-          {!istBuehneG() && <QQIcon slug="bieten" size={'clamp(120px, 18cqw, 240px)'} />}
+              Es war eine Weile ganz abgehaengt, weil ein altes Bild auf der
+              Buehne schlechter ist als kein Bild. Seit dem 23.08. ist das neue
+              da: ein Spielchip, der auf ein Feld gesetzt wird. */}
+          <QQIcon slug="bieten" size={'clamp(120px, 18cqw, 240px)'} />
         </div>
 
         {/* Hero-Title — analog Cat-Name, gross + per-letter Wave + Pink-Glow. */}
@@ -153,7 +150,7 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         marginBottom: 18, opacity: 0.85,
         display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center',
       }}>
-        {!istBuehneG() && <QQIcon slug="bieten" size={'1.4em'} />}
+        <QQIcon slug="bieten" size={'1.4em'} />
         {de ? 'Final-Tipp' : 'Final tip'}
       </div>
 

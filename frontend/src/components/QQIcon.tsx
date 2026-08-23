@@ -471,7 +471,12 @@ const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
   // eindeutig. Auf der Final-Tipp-Folie stand deshalb ein Rettungsring ueber
   // „Tippt jetzt!", also ein Motiv fuer Hilfe statt fuer Einsatz, und
   // ausserdem eines aus der alten Bildsprache statt aus dem gelieferten Set.
-  'bieten':            'bieten',            // Auktionshammer → Einsatz-Motiv
+  // 2026-08-23: der Alias fuer 'bieten' ist WEG. Er zeigte auf `fx-bet.png`,
+  // und das ist ein Rettungsring - auf der Final-Tipp-Folie stand deshalb ein
+  // Motiv fuer Hilfe statt fuer Einsatz. Der Slug laedt jetzt wieder seine
+  // eigene Datei `bieten.png`, und die ist seit heute das neue Zeichen: ein
+  // Spielchip, der auf ein Feld gesetzt wird. Der Slug-Name ist historisch,
+  // das Motiv stimmt.
   'connect':           'fx-connect',
   'fx-lightning':      'award-speedy',      // generisches ⚡ = Schnelligkeit
   'fx-place':          'action-place',

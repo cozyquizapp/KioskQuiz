@@ -47,8 +47,49 @@ const RAMPE_OBEN = 250;
 const RAMPE_UNTEN = 150;
 const ZIEL = 512;
 
-/** Ist das Pixel hell genug, um als Grund zu gelten? */
-const hell = (d, o) => d[o] >= FLUT && d[o + 1] >= FLUT && d[o + 2] >= FLUT;
+/**
+ * 2026-08-23, an der ersten echten Lieferung gelernt: „hell genug" reicht als
+ * Regel nicht.
+ *
+ * Zwei Faelle sind aufgelaufen, die beide daran scheitern:
+ *   1. Ein WEISSES Motiv auf weissem Grund (der Tischtennisball, der
+ *      Wattebausch). Mit einer festen Schwelle frisst die Flut das Motiv mit.
+ *   2. Ein eingebrannter Karo-Grund statt echter Transparenz - zwei feste
+ *      Werte, 244 und 254. Eine Schwelle, die beide erwischt, erwischt auch
+ *      helle Motivflaechen.
+ *
+ * Die Loesung liest den Grund aus dem Bild selbst: welche neutralen Werte
+ * kommen am RAND vor? Genau die sind Hintergrund, alles andere ist Motiv.
+ * Bei weissem Grund ist das {255}, beim Karo {244, 254} - und ein schattierter
+ * weisser Ball hat einen Verlauf ueber viele Werte und faellt nicht darunter.
+ */
+function grundwerteLesen(d, W, H, K) {
+  const zaehler = new Map();
+  const merke = (x, y) => {
+    const o = (y * W + x) * K;
+    const r = d[o], g = d[o + 1], b = d[o + 2];
+    if (Math.max(r, g, b) - Math.min(r, g, b) > 4) return;   // nicht neutral
+    if (Math.max(r, g, b) < 200) return;                      // zu dunkel fuer Grund
+    const v = Math.round((r + g + b) / 3);
+    zaehler.set(v, (zaehler.get(v) ?? 0) + 1);
+  };
+  for (let x = 0; x < W; x++) { merke(x, 0); merke(x, H - 1); }
+  for (let y = 0; y < H; y++) { merke(0, y); merke(W - 1, y); }
+  // Nur Werte behalten, die wirklich haeufig sind - Ausreisser am Rand
+  // (Kompressions-Unruhe) sollen den Grund nicht aufweichen.
+  const rand = 2 * (W + H);
+  return [...zaehler.entries()].filter(([, n]) => n > rand * 0.02).map(([v]) => v);
+}
+
+const TOLERANZ = 3;
+function machHell(grundwerte) {
+  return (d, o) => {
+    const r = d[o], g = d[o + 1], b = d[o + 2];
+    if (Math.max(r, g, b) - Math.min(r, g, b) > 6) return false;
+    const v = (r + g + b) / 3;
+    return grundwerte.some(w => Math.abs(v - w) <= TOLERANZ);
+  };
+}
 
 // 2026-08-23, beim ersten Testlauf im Kontaktblatt gesehen: unter jedem Zeichen
 // blieb ein grauer Schmier stehen. Das ist der weiche Schlagschatten, den das
@@ -71,6 +112,9 @@ async function einsFreistellen(datei) {
   const { data, info } = await roh.raw().toBuffer({ resolveWithObject: true });
   const { width: W, height: H, channels: K } = info;
   const grund = new Uint8Array(W * H);      // 1 = gehoert zum Hintergrund
+  const grundwerte = grundwerteLesen(data, W, H, K);
+  const hell = grundwerte.length ? machHell(grundwerte)
+    : (d, o) => d[o] >= FLUT && d[o + 1] >= FLUT && d[o + 2] >= FLUT;
   const stapel = [];
 
   // Von allen vier Raendern starten.
@@ -112,6 +156,37 @@ async function einsFreistellen(datei) {
     if (x < W - 1) stapel2.push(p + 1);
     if (y > 0) stapel2.push(p - W);
     if (y < H - 1) stapel2.push(p + W);
+  }
+
+  // Eingeschlossene Grundflaechen. 2026-08-23 am Karten-Pin gesehen: sein Loch
+  // ist optisch Hintergrund, wird von der Flut aber nie erreicht, weil es
+  // ringsum vom Motiv umschlossen ist. Also alle Flaechen mitnehmen, die
+  // dieselben Grundwerte tragen und gross genug sind, um kein Glanzlicht zu
+  // sein.
+  const MIN_LOCH = 60;
+  const gesehen = new Uint8Array(W * H);
+  for (let start = 0; start < W * H; start++) {
+    if (grund[start] || gesehen[start]) continue;
+    if (!hell(data, start * K)) continue;
+    const flaeche = [];
+    const st = [start];
+    gesehen[start] = 1;
+    while (st.length) {
+      const p = st.pop();
+      flaeche.push(p);
+      const x = p % W, y = (p - x) / W;
+      const nb = [];
+      if (x > 0) nb.push(p - 1);
+      if (x < W - 1) nb.push(p + 1);
+      if (y > 0) nb.push(p - W);
+      if (y < H - 1) nb.push(p + W);
+      for (const q of nb) {
+        if (gesehen[q] || grund[q]) continue;
+        if (!hell(data, q * K)) continue;
+        gesehen[q] = 1; st.push(q);
+      }
+    }
+    if (flaeche.length >= MIN_LOCH) for (const p of flaeche) grund[p] = 1;
   }
 
   // Alpha setzen: Grund weg, Rest bleibt. In einem schmalen Band an der Kante

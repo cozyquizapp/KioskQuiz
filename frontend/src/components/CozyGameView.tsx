@@ -512,12 +512,11 @@ function IntroView({ width, height, slotKind, lang }: { width: number; height: n
         filter: 'drop-shadow(0 12px 24px rgba(0,0,0,0.5))',
         animation: 'qqCatNameWave 2.8s ease-in-out infinite',
       }}>
-        {/* 2026-08-23 (Wolf: „ist alt"): das CozyGame-Zeichen ist selbst der
-            rosa Wolf, und gemessen kommt es aus derselben anderen Lieferung wie
-            die Spiel-Zeichen auf dem Rad - 640x640 statt 512x512, 73 kB statt
-            im Schnitt 169 kB. Bis ein neues Logo da ist, steht hier keins; der
-            Titel „CozyGame" traegt die Folie. */}
-        {!istBuehneG() && <CozyGameIcon id="cg-cozygames" emoji="🪅" size="clamp(80px, 12vw, 200px)" />}
+        {/* 2026-08-23: das alte Zeichen war selbst der rosa Wolf und kam aus
+            derselben anderen Lieferung wie die Spiel-Zeichen auf dem Rad
+            (640x640 statt 512x512). Das neue heisst `cozygames` - Becher und
+            Wuerfel, kein Maskottchen. */}
+        <CozyGameIcon id="cozygames" emoji="🎲" size="clamp(80px, 12vw, 200px)" />
       </div>
       <div style={{
         fontSize: 'clamp(48px, 6vw, 96px)',

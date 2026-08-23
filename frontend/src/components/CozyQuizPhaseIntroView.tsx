@@ -161,13 +161,18 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
 
       {/* Pfeil-Spitze (zeigt vom Wolf nach unten auf den aktuellen Dot) — slidet
           horizontal mit dem Wolf mit. */}
+      {/* 2026-08-23 (2a): auf der Buehne ist dieser Pfeil die ganze Standortmarke,
+          deshalb doppelt so gross und im Akzent. Er sitzt dann direkt ueber der
+          Punktreihe statt ueber einer leeren Wolf-Zone. */}
       <div aria-hidden style={{
-        position: 'absolute', top: WOLF - 1, left: wolfLeft,
+        position: 'absolute',
+        top: istBuehneG() ? WOLF + POINTER - 2 : WOLF - 1,
+        left: wolfLeft,
         transform: 'translateX(-50%)',
         width: 0, height: 0,
-        borderLeft: `${POINTER}px solid transparent`,
-        borderRight: `${POINTER}px solid transparent`,
-        borderTop: `${POINTER}px solid ${lineCol}`,
+        borderLeft: `${istBuehneG() ? POINTER * 1.8 : POINTER}px solid transparent`,
+        borderRight: `${istBuehneG() ? POINTER * 1.8 : POINTER}px solid transparent`,
+        borderTop: `${istBuehneG() ? POINTER * 1.8 : POINTER}px solid ${istBuehneG() ? 'var(--qq-stage-accent)' : lineCol}`,
         filter: themed ? 'none' : `drop-shadow(0 2px 4px ${catColor}66)`,
         transition: 'left 560ms cubic-bezier(0.34, 1.25, 0.64, 1), border-top-color 400ms ease',
         zIndex: 3,
@@ -196,14 +201,16 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
               war. Kein Doppelring, kein Schein: die gefuellte Flaeche IST das
               Signal, und die Zeitleiste ist ohnehin nur eine Handbreit gross.
               Die uebrigen Skins behalten den Wolf. */}
-          {istBuehneG() ? (
-            <div style={{
-              width: '68%', height: '68%', margin: '16% auto',
-              borderRadius: 'var(--qq-card-radius)',
-              background: 'var(--qq-stage-accent)',
-              transition: 'background 400ms ease',
-            }} />
-          ) : (
+          {/* 2026-08-23, nachgebessert: die gefuellte Kachel war als Ersatz fuer
+              den Wolfskopf gedacht, sah auf der Aufnahme aber aus wie ein leeres
+              Feld - eine 65px grosse cremefarbene Flaeche ohne Inhalt, die nach
+              „hier fehlt etwas" aussieht statt nach „hier stehen wir".
+              Die Marke braucht gar keine Flaeche: der Pfeil DARUNTER war schon
+              immer da und zeigt auf den aktuellen Punkt. Er bekommt jetzt nur
+              die richtige Groesse und den Akzent, und die Flaeche faellt weg.
+              Damit ist die Standortmarke ein Zeiger, so wie der Zeiger am
+              Gluecksrad, statt ein zweites Objekt in einer Reihe von Objekten. */}
+          {istBuehneG() ? null : (
           <div style={{
             width: '100%', height: '100%', borderRadius: '50%',
             background: themed ? 'var(--qq-surface)' : 'rgba(20,16,31,0.92)',

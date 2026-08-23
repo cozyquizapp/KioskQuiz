@@ -478,19 +478,32 @@ const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
   // Spielchip, der auf ein Feld gesetzt wird. Der Slug-Name ist historisch,
   // das Motiv stimmt.
   'connect':           'fx-connect',
-  'fx-lightning':      'award-speedy',      // generisches ⚡ = Schnelligkeit
+  // 2026-08-23 (Uebergabe 2a): 'fx-lightning' zeigte auf die gefluegelte
+  // Stoppuhr des Speedy-Awards. Das war richtig, solange keine eigene Datei
+  // existierte - jetzt liegt `fx-lightning.png` im Set, ein schlichter Blitz.
+  // Ein generisches Blitz-Zeichen im Text (Comeback-Ansicht: "Mehr oder
+  // Weniger") als Stoppuhr zu malen, war eine Bedeutungsverschiebung.
   'fx-place':          'action-place',
   'fx-stack':          'action-stack',
   'fx-potato':         'sub-hotpotato',
   'fx-target':         'cat-schaetzchen',   // Zielscheibe = Schaetzchen
-  'fx-fire':           'award-underdog',    // 🔥 stand fuer die Aufholjagd
-  'fx-map':            'fx-globe',          // 🗺️ und 🌍 fallen im Set zusammen
+  // 2026-08-23: 'fx-fire' zeigte auf das Underdog-Hufeisen. Nachgesehen, wo
+  // das Feuer wirklich benutzt wird: an der Serien-Anzeige in der Punkteleiste
+  // ("3x in Folge") und als FACKELN links und rechts im Kolosseum. Dort brannte
+  // also bis heute ein Hufeisen. `fx-fire.png` liegt im Set.
+  // 2026-08-23: 'fx-map' zeigte auf `fx-globe`, weil die Karte im Set fehlte.
+  // Die zweite Lieferung hat sie gebracht. Der Globus ist ausserdem das einzige
+  // glaenzende, gesaettigte Zeichen unter allen dreizehn Umleitungen - er
+  // stammt sichtbar aus der alten Bildsprache. Auf den Pause-Folien
+  // ("Wo sind wir?", "Aktuelles Brett") stand er zweimal gross im Bild.
   'fx-shield-faction': 'fx-faction',
   'rocket':            'fx-lead',           // Rakete = Fuehrungs-Callout
   'anker':             'award-anchor',
   'group':             'award-participation', // Rudel-Wolf = Award "Vollzaehlig"
-  // Zweite Lieferung: die Datei heisst jetzt in der Einzahl.
-  'fx-sparkles':       'fx-sparkle',
+  // 2026-08-23: 'fx-sparkles' zeigte auf die Einzahl-Datei, als es die Mehrzahl
+  // noch nicht gab. Beide liegen jetzt da, und die Mehrzahl ist die ruhigere:
+  // drei goldene Funken statt gold-pink-lila. Pink und Lila stehen nicht in der
+  // Palette.
 };
 
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {

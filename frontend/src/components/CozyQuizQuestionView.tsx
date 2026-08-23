@@ -31,6 +31,7 @@ import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
   CAT_ACCENT, CAT_BADGE_BG, CAT_GLOW, CAT_CUTOUTS, COZY_CARD_BG,
   qqCapOption,
+  qqDeliveredFrame,
 } from '../cozyQuizShared';
 import { Fireflies } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -1476,16 +1477,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                         // Die `!quirkSet`-Bedingung faellt weg: sie stammt aus der
                         // Zeit, als nur Quirks eckig war. Seit dem CozyQuiz-Set
                         // sind ALLE Marken Kacheln, also gilt der Rahmen fuer alle.
-                        padding: 5,
-                        borderRadius: 'calc(var(--qq-team-mark-radius, 50%) + 5px)',
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        flexShrink: 0,
-                        background: answered ? 'rgba(34,197,94,0.18)' : 'transparent',
-                        border: answered ? '3px solid #22C55E' : '3px solid transparent',
-                        boxShadow: answered ? '0 0 18px rgba(34,197,94,0.5), 0 0 36px rgba(34,197,94,0.2)' : 'none',
-                        opacity: answered ? 1 : 0.55,
-                        filter: answered ? 'none' : 'grayscale(0.4)',
-                        transition: 'all 0.45s ease',
+                        // 2026-08-23: der Rahmen lebt jetzt in
+                        // `qqDeliveredFrame` (cozyQuizShared), weil die Lobby
+                        // denselben braucht. Zwei Kopien laufen auseinander,
+                        // eine nicht.
+                        ...qqDeliveredFrame(answered),
                       }}>
                         <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={av} />
                       </div>

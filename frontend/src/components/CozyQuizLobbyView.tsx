@@ -13,7 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { FactionCrest } from './QQFactionCrest';
-import { useLangFlip, COZY_CARD_BG, qqPlural } from '../cozyQuizShared';
+import { useLangFlip, COZY_CARD_BG, qqPlural, qqDeliveredFrame } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
@@ -399,23 +399,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
       {/* 2026-07-01 (Wolf Mega-Event): bei vielen Teams füllt das Grid die
           Fläche bis oben rechts → Wolf-Greeter würde die erste Karten-Reihe
           überlappen. Im Groß-Modus daher ausgeblendet. */}
-      {!veryMany && (
-      <div style={{
-        position: 'absolute',
-        right: 'clamp(20px, 2.5cqw, 48px)',
-        top: 'clamp(16px, 2.5cqh, 32px)',
-        zIndex: 7,
-        pointerEvents: 'none',
-        animation: 'panelSlideIn 0.7s var(--qq-ease-bounce) 0.5s both',
-      }}>
-        <WolfLobbyGreeter
-          lang={de ? 'de' : 'en'}
-          welcomedTeamName={welcomedTeam?.name ?? null}
-          eurovisionMode={s.theme?.eurovisionMode}
-          arena={qqIsMega(s) && qqArenaBgEnabled(s)}
-        />
-      </div>
-      )}
+      {/* 2026-08-23 (Wolf: „aber der wolf sagt unterschiedliche dinge, weisst
+          du was, wir nehmen den wolf hier raus!"): Greeter ist aus der Lobby
+          raus. Er rotierte sechs Slogans, die alle dasselbe sagten wie der
+          QR-Block darunter („Scannt euch rein", „QR-Code scannen", „Mit dem
+          Handy joinen") — also genau die Wiederholung aus Regel null, nur
+          jedes Mal anders formuliert, was die Wiederholung nicht kleiner
+          macht, sondern unruhiger.
+          Passt zu Wolfs Trennung Marke != Produkt: der Wolf begruesst und
+          verabschiedet, er kommentiert nicht die Bedienung.
+          `WolfLobbyGreeter` bleibt als Komponente stehen — die Slogan-Listen
+          und das Anti-Sprung-Layout sind Arbeit, die man nicht wegwirft, wenn
+          die Entscheidung noch frisch ist. Wiedereinbau = dieser Block. */}
 
       {/* Welcome-Team-Banner — overlayt zentral wenn neues Team joint.
           B8 (2026-04-29): User-Wunsch 'noch groesser, mittig'. top:50%,
@@ -936,6 +931,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               display: 'grid',
               // Standard 2-spaltig; Groß-Modus/viele Teams → auto-fill dichte
               // Chips (25 Teams passen so in ~4-5 Spalten ohne Scroll).
+              // 2026-08-23 (Wolf: „joined teams und all set here we go, wirkt
+              // nicht mittig"). Gemessen: die Spalte lief von 591 bis 1637,
+              // Mitte 1114 — Kopf- und Fusszeile sassen also exakt mittig auf
+              // ihrer KISTE. Die Tinte der Karten endete aber schon bei ~1480,
+              // weil die Karten auf volle Spaltenbreite gedehnt waren und ihr
+              // Inhalt sie nicht fuellt. Optische Mitte ~1037, also rund 77 px
+              // Versatz. Das Auge zentriert auf die Tinte, nicht auf die Kiste.
+              // `width: max-content` laesst das Gitter nur so breit werden wie
+              // sein Inhalt; die 1fr-Spalten bleiben dabei gleich breit (beide
+              // so breit wie die breiteste Karte). Damit fallen Kiste und Tinte
+              // zusammen und alle drei Zeilen stehen auf derselben Mitte.
+              width: 'max-content', maxWidth: '100%', marginInline: 'auto',
               gridTemplateColumns: veryMany
                 ? 'repeat(auto-fill, minmax(clamp(150px, 15cqw, 210px), 1fr))'
                 : 'repeat(2, minmax(0, 1fr))',
@@ -1023,10 +1030,17 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       // links, und kein Bild kann mehr seine Rohgroesse
                       // durchdruecken.
                       <div style={{
+                        // 2026-08-23 (Wolf): derselbe gruene Rahmen wie im Quiz.
+                        // Der Rahmen traegt 5 px Polster + 3 px Linie, deshalb
+                        // die Hoehe um 16 px kleiner ansetzen, damit die Zeile
+                        // genauso hoch bleibt wie vorher.
+                        ...qqDeliveredFrame(!!t.connected),
                         height: veryMany
                           ? 'clamp(38px, 3.6cqw, 52px)'
                           : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)',
-                        aspectRatio: '1', flexShrink: 0, display: 'flex',
+                        boxSizing: 'content-box',
+                        aspectRatio: '1',
+                        marginLeft: quirkSet ? 'clamp(8px, 1cqw, 14px)' : 0,
                       }}>
                         <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size="100%" />
                       </div>
@@ -1063,15 +1077,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       }} title={t.name}>
                         {t.name}
                       </div>
-                      {!veryMany && (
-                        <div style={{
-                          fontSize: compact ? 'clamp(13px, 1.2cqw, 16px)' : 'clamp(13px, 1.25cqw, 17px)',
-                          fontWeight: 700, color: t.connected ? '#22C55E' : 'var(--qq-text-muted)',
-                          marginTop: 4,
-                        }}>
-                          {t.connected ? (de ? '● bereit' : '● ready') : '○ offline'}
-                        </div>
-                      )}
+                      {/* 2026-08-23: „● bereit" / „○ offline" ist raus. Der
+                          gruene Rahmen um die Kachel sagt dasselbe, und Regel
+                          null verlangt, den Zustand zu ZEIGEN statt ihn zu
+                          beschriften. Bei acht Teams standen hier acht Mal
+                          dieselben sechs Buchstaben. */}
                       {/* 2026-05-06 (Wolf 'in der Lobby anzeigen wenn Team mit
                           Code eingeloggt ist zum X. Mal dabei, willkommen
                           zurueck'): Stamm-Code-Returner-Hint. gamesPlayed wird

@@ -128,6 +128,41 @@ export function qqPlural(n: number, one: string, many: string): string {
   return `${n} ${n === 1 ? one : many}`;
 }
 
+/**
+ * Der gruene Rahmen um eine Teammarke: „dieses Team hat geliefert".
+ *
+ * 2026-08-23 (Wolf: „im quiz umranden wir gruen fuer teams die antworten
+ * eingereicht haben, sollten wir das hier auch machen?"). Ja — und dann muss
+ * es DERSELBE Rahmen sein, sonst zeigt man zweimal dasselbe auf zwei Arten
+ * (Regel 6). Deshalb hier einmal statt zweimal inline.
+ *
+ * Der Rahmen laeuft konzentrisch zur Kachel: derselbe Radius plus das eigene
+ * Polster, sonst schneiden sich die Ecken.
+ *
+ * In der Lobby heisst „geliefert" = Handy verbunden, in der Frage = Antwort
+ * abgegeben. Das ist bewusst dieselbe Aussage auf zwei Zeitpunkten: das Team
+ * ist da und hat getan, was gerade dran war. Deshalb faellt in der Lobby die
+ * Textzeile „bereit" weg — der Zustand wird gezeigt, nicht beschriftet
+ * (Regel null).
+ */
+export function qqDeliveredFrame(delivered: boolean): CSSProperties {
+  return {
+    padding: 5,
+    borderRadius: 'calc(var(--qq-team-mark-radius, 50%) + 5px)',
+    display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+    flexShrink: 0,
+    background: delivered ? 'rgba(34,197,94,0.18)' : 'transparent',
+    border: delivered ? '3px solid #22C55E' : '3px solid transparent',
+    // Der Schein bleibt: er BEDEUTET etwas (Regel 5). Nur die zweite, weit
+    // ausgelaufene Lage ist raus — auf der Projektion legt sie einen gruenen
+    // Hof auf den Nachbarn statt Tiefe zu machen.
+    boxShadow: delivered ? '0 0 18px rgba(34,197,94,0.5)' : 'none',
+    opacity: delivered ? 1 : 0.55,
+    filter: delivered ? 'none' : 'grayscale(0.4)',
+    transition: 'all 0.45s ease',
+  };
+}
+
 /** In 'both' mode, alternate between de and en with a fade transition.
  *  Intervall war frueher 8s — fuehlte sich hektisch an, weil DE und EN oft
  *  unterschiedlich lange Texte sind und der Container bei jedem Wechsel

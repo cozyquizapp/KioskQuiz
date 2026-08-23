@@ -13,7 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { FactionCrest } from './QQFactionCrest';
-import { useLangFlip, COZY_CARD_BG, qqPlural, qqDeliveredFrame } from '../cozyQuizShared';
+import { useLangFlip, COZY_CARD_BG, qqPlural } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
@@ -268,7 +268,6 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
 
   // Dynamic status text
   const teamCount = s.teams.length;
-  const connectedCount = s.teams.filter(t => t.connected).length;
   // 2026-07-01: Groß-Modus / viele Teams → dichtes Multi-Spalten-Grid mit
   // kompakten Chips (25 Teams passen nicht in 2 Spalten; Beamer scrollt nie).
   const veryMany = (s as any).largeGroupMode || teamCount > 12;
@@ -692,33 +691,73 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           gleicher Abstand zum Viewport-Rand auf beiden Seiten. ── */}
       <div style={{
         flex: 1, display: 'grid',
-        gridTemplateColumns: 'auto 1fr',
-        // stretch statt center: beide Spalten teilen sich die Zeilenhoehe, damit
-        // die QR-Spalte nicht kuerzer/„hoeher" als die Teams-Spalte steht
-        // (Wolf: „rechte Spalte tiefer als linke → QR-Hoehe = Tabellenhoehe angleichen").
+        // 2026-08-23 (Wolf: „es saehe besser aus wenn der qr code die gleiche
+        // hoehe hat und auf der gleichen position sitzt wie 4 teams hoch sind
+        // im layout ... generell wenn qr code + teams als ein element gelesen
+        // werden").
+        // Vorher waren es ZWEI Spalten, jede mit eigenem Inhaltsstapel. Die
+        // Zeilenhoehe war damit das Maximum aus beiden Stapeln, und der QR
+        // bekam davon ab, was Beschriftung und Marken-Pille uebrig liessen —
+        // er stand also zufaellig zum Kachelblock.
+        // Jetzt ein Raster mit DREI Zeilen, und alle Bausteine sitzen als
+        // eigene Kinder darin:
+        //   Zeile 1, Spalte 2  Kopfzeile „Angemeldete Teams"
+        //   Zeile 2, Spalte 1  QR   ] diese Zeile ist genau so hoch
+        //   Zeile 2, Spalte 2  Kacheln ] wie der Kachelblock
+        //   Zeile 3, Spalte 1  Beschriftung, Link, Marke
+        // Weil Zeile 2 ihre Hoehe vom Kachelblock bekommt und der QR sie ganz
+        // einnimmt, stehen Ober- und Unterkante beider Bloecke exakt aufeinander.
+        gridTemplateColumns: 'auto auto',
+        // Alle drei Zeilen `auto`: Zeile 2 ist damit exakt so hoch wie ihr
+        // Inhalt, also wie der Kachelblock. Mit `1fr` waere sie auf den
+        // uebrigen Platz gedehnt worden und der QR mit ihr.
+        gridTemplateRows: 'auto auto auto',
         alignItems: 'stretch',
+        justifyContent: 'center',
+        alignContent: 'center',
         columnGap: 'clamp(24px, 3cqw, 48px)',
+        rowGap: 'clamp(8px, 1.2cqh, 16px)',
         position: 'relative', zIndex: 5,
         width: '100%',
         padding: '0 clamp(24px, 4cqw, 80px)',
         minHeight: 0,
       }}>
-        {/* Left: QR Code */}
+        {/* Left: QR Code
+            2026-08-23 (Wolf: „es saehe besser aus wenn der qr code die gleiche
+            hoehe hat und auf der gleichen position sitzt wie 4 teams hoch sind
+            im layout ... generell wenn qr code + teams als ein element gelesen
+            werden").
+            Vorher war der QR auf eine feste Groesse geklemmt (min(44cqh,420px))
+            und die Spalte zentrierte ihn in der Zeile. Kachelblock und QR
+            standen damit zufaellig zueinander, und oben rechts blieb Luft
+            uebrig. Jetzt streckt sich die Spalte auf die Zeilenhoehe und der
+            QR nimmt sie ganz ein (aspect-ratio 1 haelt ihn quadratisch), also
+            steht seine Oberkante auf der Oberkante des Kachelblocks und seine
+            Unterkante auf dessen Unterkante. `maxHeight` bleibt als Deckel, damit
+            er bei wenigen Teams nicht ins Absurde waechst. */}
         <div style={{
-          display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 'clamp(10px, 1.5cqh, 18px)',
-          flexShrink: 0, justifySelf: 'start',
-          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
+          gridColumn: 1, gridRow: 2,
+          background: '#ffffff', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: 'clamp(14px, 2cqh, 24px)',
+          // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
+          animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite, phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
+          boxShadow: '0 0 50px rgba(246, 239, 230,0.1)',
+          aspectRatio: '1', minHeight: 0, height: '100%',
+          maxHeight: qrSize, maxWidth: qrSize,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          alignSelf: 'center', justifySelf: 'center',
         }}>
-          <div style={{
-            background: '#ffffff', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: 'clamp(14px, 2cqh, 24px)',
-            // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
-            animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite',
-            boxShadow: '0 0 50px rgba(246, 239, 230,0.1)',
-            width: qrSize, height: qrSize, display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}>
-            <QRCodeSVG value={joinUrl} size={256} bgColor="#F6EFE6" fgColor="#120F18" level="M"
-              style={{ width: '100%', height: '100%' }} />
-          </div>
+          <QRCodeSVG value={joinUrl} size={256} bgColor="#F6EFE6" fgColor="#120F18" level="M"
+            style={{ width: '100%', height: '100%' }} />
+        </div>
+
+        {/* Zeile 3, Spalte 1: alles, was zum QR GEHOERT, aber nicht seine
+            Hoehe mitbestimmen darf. */}
+        <div style={{
+          gridColumn: 1, gridRow: 3,
+          display: 'flex', flexDirection: 'column', alignItems: 'center',
+          gap: 'clamp(8px, 1.2cqh, 16px)', minWidth: 0,
+          animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.4s both',
+        }}>
           <div style={{ textAlign: 'center' }}>
             <div style={{
               fontSize: 'clamp(18px, 2cqw, 28px)', color: 'var(--qq-card-text)', fontWeight: 900, marginBottom: 4,
@@ -777,15 +816,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
         </div>
 
-        {/* Right: Teams + status — nimmt verfügbare Breite voll aus */}
-        <div style={{
-          minWidth: 0, width: '100%',
-          display: 'flex', flexDirection: 'column', gap: 'clamp(10px, 1.5cqh, 18px)',
-          alignItems: 'stretch', justifyContent: 'center',
-        }}>
+        {/* Right: Teams + status. Kopfzeile sitzt in Zeile 1, damit sie die
+            Hoehe von Zeile 2 nicht mitbestimmt — sonst waere der QR genau um
+            die Kopfzeile kuerzer als der Kachelblock. */}
+        {/* `display: contents` loest diese Huelle auf: ihre drei Kinder werden
+            selbst zu Zellen des Aussenrasters und landen per Auto-Platzierung
+            in Spalte 2, Zeilen 1 bis 3. Nur so bestimmt der Kachelblock allein
+            die Hoehe von Zeile 2 — und damit die Hoehe des QR daneben. */}
+        <div style={{ display: 'contents' }}>
           {/* 2026-06-28 (Beamer-Review): einmaliger Count als Pink-Chip; tickt
               per key-Remount bei jedem neuen Team (Count-Tick). */}
           <div style={{
+            gridColumn: 2,
             fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
             // 2026-07-13 (Wolf: „joined-Zaehler aus der Mitte"): im Arena-BG-Modus
@@ -828,6 +870,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             // QR (links) und kommendem Team-Grid (rechts) ueber dem Slate-Hintergrund
             // klar liest.
             <div style={{
+              gridColumn: 2,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(14px, 2cqw, 26px)',
               padding: 'clamp(28px, 4cqh, 56px) clamp(20px, 3cqw, 40px)',
@@ -866,6 +909,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             /* 2026-07-01 (Idee 2): Eltern-Karten. Jede zeigt Avatar + Label +
                „X/3"-Pill + kleine Sub-Team-Namen-Chips. */
             <div style={{
+              gridColumn: 2,
               display: 'grid',
               // 2026-07-03 (Wolf): 2 Spalten × 4 Reihen (statt 4×2) — größere,
               // breitere Karten, Namen sitzen mit viel Luft, Wappen prominenter.
@@ -932,6 +976,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             </div>
           ) : (
             <div style={{
+              gridColumn: 2,
               display: 'grid',
               // Standard 2-spaltig; Groß-Modus/viele Teams → auto-fill dichte
               // Chips (25 Teams passen so in ~4-5 Spalten ohne Scroll).
@@ -1034,11 +1079,27 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       // links, und kein Bild kann mehr seine Rohgroesse
                       // durchdruecken.
                       <div style={{
-                        // 2026-08-23 (Wolf): derselbe gruene Rahmen wie im Quiz.
-                        // Der Rahmen traegt 5 px Polster + 3 px Linie, deshalb
-                        // die Hoehe um 16 px kleiner ansetzen, damit die Zeile
-                        // genauso hoch bleibt wie vorher.
-                        ...qqDeliveredFrame(!!t.connected),
+                        // 2026-08-23, zweiter Anlauf. Der gruene Ring aus dem
+                        // Quiz ist hier wieder RAUS, und zwar aus einem
+                        // gemessenen Grund, nicht aus Geschmack:
+                        // `connected` wird im Backend beim Anlegen des Teams
+                        // auf true gesetzt (qqRooms.ts, qqAddTeam), und ein
+                        // Team taucht in der Lobby erst auf, NACHDEM es Name
+                        // und Avatar gewaehlt hat. Ein sichtbares Team ist also
+                        // immer verbunden. Der Ring waere bei jedem Team vom
+                        // ersten Bild an gruen und ginge nur bei einem
+                        // Wlan-Abriss aus — ein Zustand mit genau einem Wert
+                        // ist kein Zustand, sondern Dekoration (Regel 5).
+                        // Es gibt im /team auch keinen „Ich bin bereit"-Knopf,
+                        // der ihm eine zweite Bedeutung geben koennte.
+                        // Was BLEIBT, ist die Gegenrichtung: ein Handy, das
+                        // rausfliegt, wird blass und grau. Das ist selten und
+                        // sagt deshalb etwas.
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        flexShrink: 0,
+                        opacity: t.connected ? 1 : 0.45,
+                        filter: t.connected ? 'none' : 'grayscale(1)',
+                        transition: 'opacity 0.45s ease, filter 0.45s ease',
                         height: veryMany
                           ? 'clamp(38px, 3.6cqw, 52px)'
                           : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)',
@@ -1122,27 +1183,29 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           {/* Dynamic status — 2026-06-28 (Beamer-Review): kein Emoji, KEINE
               zweite Zahl (der Count lebt einmalig im „Angemeldete Teams"-Header).
               Stattdessen grüner Puls-Punkt + Readiness-Text wenn genug Teams da. */}
-          <div style={{
-            fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900, textAlign: 'center',
-            color: teamCount < 2 ? (isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)') : '#22C55E',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-            animation: teamCount >= 2 ? 'lobbyPulse 2.5s ease-in-out infinite' : undefined,
-          }}>
-            {teamCount >= 2 && (
-              <span style={{
-                width: 11, height: 11, borderRadius: '50%', flexShrink: 0,
-                background: '#22C55E', boxShadow: '0 0 9px #22C55E',
-                animation: 'qqTreePulse 1.6s ease-in-out infinite',
-              }} />
-            )}
-            {teamCount === 0
-              ? (de ? 'Scannt den Code um beizutreten' : 'Scan to join')
-              : teamCount < 2
-                ? (de ? 'Noch 1 Team fehlt!' : '1 more team needed!')
-                : connectedCount === teamCount
-                  ? (de ? "Alle bereit · gleich geht's los!" : "All set · here we go!")
-                  : (de ? "Gleich geht's los!" : 'Almost ready!')}
-          </div>
+          {/* 2026-08-23 (Wolf: „alle bereit kann hier eigentlich auch raus, das
+              braeuchte ich wenn dann in moderator"): die Zeile erscheint nur
+              noch, solange etwas FEHLT. „Alle bereit" und „Gleich geht's los"
+              sind weg — bei acht Kacheln auf der Wand sagt die Zeile nichts,
+              was das Bild nicht schon sagt, und sie war die dritte gruene
+              Sache auf derselben Folie.
+              Der pulsende 11-px-Punkt davor faellt damit auch weg: rund
+              (Regel 4), knapp ueber der Groessengrenze (Regel 7) und rein
+              schmueckend (Regel 5).
+              Der Gegenwert fuer Wolf gehoert ins Steuerpult, nicht auf die
+              Buehne — dort will er wissen, ob alle verbunden sind, das
+              Publikum nicht. */}
+          {teamCount < 2 && (
+            <div style={{
+              gridColumn: 2,
+              fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 900, textAlign: 'center',
+              color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
+            }}>
+              {teamCount === 0
+                ? (de ? 'Scannt den Code um beizutreten' : 'Scan to join')
+                : (de ? 'Noch 1 Team fehlt!' : '1 more team needed!')}
+            </div>
+          )}
         </div>
       </div>
     </div>

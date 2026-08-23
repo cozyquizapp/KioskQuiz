@@ -455,6 +455,32 @@ export function getAvatarDisplay(
       src: cozyQuizSrc(emoji),
       color: slot.color,
       label: cozyQuizLabel(emoji),
+      // 2026-08-23 (Wolf, mit Bild): das Motiv RAGT ueber die Kachel hinaus,
+      // solange es nicht im Brett sitzt. Solange es eingesperrt ist, liest es
+      // sich als Aufkleber; sobald es die Kante ueberschreitet, wird es ein
+      // Gegenstand, der auf einer Flaeche liegt — Tiefe ohne einen einzigen
+      // Schatten.
+      // Wert nicht geschaetzt: die PNGs sind auf ihre Alpha-Box beschnitten
+      // (gemessen an acht Motiven: 512 x 512 Leinwand, Motiv 362..512 breit,
+      // oben und unten 0 bis 2 px Rand). Bei `objectFit: contain` in einer
+      // quadratischen Kachel bestimmt also die HOEHE die Skalierung, und
+      // discFill ist damit direkt der Ueberstand: 1.10 = 10 % groesser als die
+      // Kachel, also 5 % oben und 5 % unten drueber.
+      //
+      // Warum 1.10 und nicht mehr (Wolf 2026-08-23: „mir faellt aber auf, dass
+      // das mit der gruenen umrandung schwierig werden kann" — zu Recht):
+      // ueberall dort, wo die Marke einen Zustands-Rahmen traegt, gilt
+      //     Ueberstand_px = Kachel * (discFill - 1) / 2
+      // und der Rahmen liegt `padding` weit draussen. Kollision also genau
+      // dann, wenn Kachel * (discFill - 1) / 2 > padding.
+      // Geringelte Marken sind 60 bis 96 px gross (Lobby 64-88, Frage-Fussleiste
+      // 80/88/96). Bei 1.10 und der groessten davon: 96 * 0.05 = 4.8 px. Mit
+      // padding 7 in `qqDeliveredFrame` bleibt das unter dem Ring, bis 140 px
+      // Kachelgroesse. Bei 1.18 waeren es 8.6 px gewesen, und der Ring haette
+      // geschnitten — auf dem Bild war das an Erdbeere und Kompass zu sehen.
+      // Im Brett greift der Ueberstand gar nicht — siehe die flat-Klammer in
+      // ImageAvatar.
+      discFill: 1.10,
     };
   }
 

@@ -147,8 +147,12 @@ export function qqPlural(n: number, one: string, many: string): string {
  */
 export function qqDeliveredFrame(delivered: boolean): CSSProperties {
   return {
-    padding: 5,
-    borderRadius: 'calc(var(--qq-team-mark-radius, 50%) + 5px)',
+    // 2026-08-23: 5 -> 7. Die Motive ragen jetzt ueber ihre Kachel hinaus
+    // (discFill 1.10, Begruendung in avatarSets.ts). Bei der groessten
+    // geringelten Marke (96 px) sind das 4.8 px; 7 px Polster halten den Ring
+    // davon frei, bis zu 140 px Kachelgroesse.
+    padding: 7,
+    borderRadius: 'calc(var(--qq-team-mark-radius, 50%) + 7px)',
     display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
     flexShrink: 0,
     background: delivered ? 'rgba(34,197,94,0.18)' : 'transparent',

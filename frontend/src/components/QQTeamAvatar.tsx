@@ -539,7 +539,14 @@ function ImageAvatar({
         boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
       };
 
-  const fillPct = `${((discFill ?? COZY3D_DISC_FILL) * 100).toFixed(0)}%`;
+  // 2026-08-23: im BRETT darf nichts ueberstehen. Dort stossen die Felder
+  // aneinander; ein Motiv, das ueber seine Kante ragt, laege im Nachbarfeld
+  // und zerstoert genau die Frage, die das Brett beantwortet — wem gehoert
+  // welches Feld. `flat` ist der vorhandene Marker fuer „sitzt in einer Zelle,
+  // die Farbe traegt schon die Zelle", also deckelt er hier den Ueberstand.
+  const rawFill = discFill ?? COZY3D_DISC_FILL;
+  const effFill = flat ? Math.min(rawFill, 1) : rawFill;
+  const fillPct = `${(effFill * 100).toFixed(0)}%`;
   const imgFilter = 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))';
 
   return (

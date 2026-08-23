@@ -22,7 +22,12 @@
  */
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync } from 'node:fs';
+import { createRequire } from 'node:module';
 import crypto from 'node:crypto';
+
+// socket.io-client liegt in den Unterprojekten, nicht im Wurzel-node_modules.
+const req = createRequire(new URL('../backend/package.json', import.meta.url));
+const { io } = req('socket.io-client');
 
 const BASE = process.env.QQ_BASE ?? 'http://localhost:5173';
 const API = 'http://localhost:4000';
@@ -63,13 +68,34 @@ const roomCode = await beamer.evaluate(() => {
 }).catch(() => 'default');
 console.log(`Raum: ${roomCode}`);
 
-// Bots in die Lobby. Kein Setup-Abschluss, kein Start — der Raum bleibt stehen.
+// 2026-08-23: Reihenfolge zaehlt. `/dev/fillTeams` antwortet mit 404 „Raum
+// nicht gefunden", solange nur der Beamer verbunden ist — den Raum legt erst
+// der Moderator-Join an. Also erst joinen, dann fuellen.
+const sock = io(API, { transports: ['websocket'] });
+await new Promise((res, rej) => {
+  sock.on('connect', res);
+  sock.on('connect_error', rej);
+  setTimeout(() => rej(new Error('Socket-Timeout')), 8000);
+});
+await new Promise(res => sock.emit('qq:joinModerator', { roomCode, pin: PIN }, res));
+await sleep(800);
+
 const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ count: BOTS, pin: PIN }),
 });
 console.log(`fillTeams: ${r.status} ${r.ok ? 'ok' : await r.text()}`);
+await sleep(1500);
+
+// Ohne `setupDone` haengt der Beamer im Vor-Setup-Bild („Das Event wird
+// vorbereitet") und die eigentliche Lobby mit QR-Block und Team-Liste bekommt
+// man nie zu sehen. Beides ist Phase LOBBY, nur mit unterschiedlichen Flags —
+// das ist Wolfs Unterscheidung „pre setup" vs. „wenn quizart gewaehlt".
+if (!process.argv.includes('--presetup')) {
+  await new Promise(res => sock.emit('qq:setSetupDone', { roomCode, value: true }, res));
+  console.log('setupDone gesetzt (--presetup laesst den Vor-Setup-Screen stehen)');
+}
 await sleep(2000);
 
 // Wie in beamer-phase.mjs ueber den sichtbaren TEXT entdoppeln: die
@@ -104,5 +130,6 @@ while (Date.now() < until) {
   await sleep(1200);
 }
 
+sock.close();
 await browser.close();
 console.log(`\nfertig, ${n} Takte → ${OUT}/`);

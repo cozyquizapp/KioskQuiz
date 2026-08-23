@@ -13,7 +13,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { FactionCrest } from './QQFactionCrest';
-import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
+import { useLangFlip, COZY_CARD_BG, qqPlural } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
@@ -808,7 +808,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               minWidth: 'clamp(28px, 2.4cqw, 42px)', height: 'clamp(28px, 2.4cqw, 42px)',
               padding: '0 clamp(6px, 0.7cqw, 12px)', borderRadius: 11,
               background: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
-              color: isThemed() ? 'var(--qq-text)' : '#1a0a14',
+              // 2026-08-23, gemessen: 1.02:1. Auf der Creme-Buehne ist
+              // `--qq-accent` selbst CREME (bewusst farblos-warm, damit Farbe
+              // Bedeutung bleibt) — die Plakette war also creme auf creme und
+              // die Zahl schlicht unsichtbar. Der Zweig war fuer Skins mit
+              // BUNTEM Akzent geschrieben.
+              // Auf einer gefuellten Flaeche traegt der Text den Grund, nicht
+              // die Tinte. `#1a0a14` liest auf Creme wie auf Pink (gemessen
+              // 5.4:1 auf #EC4899), also brauchen beide Zweige denselben Wert.
+              color: '#1a0a14',
               fontSize: 'clamp(16px, 1.7cqw, 24px)', fontVariantNumeric: 'tabular-nums',
               animation: 'qqCountTick 0.4s cubic-bezier(0.34,1.56,0.64,1)',
             }}>{teamCount}</span>
@@ -990,7 +998,36 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   }}>
                     {quirkSet ? (
                       // Kachel füllt die volle Kartenhöhe bündig links (kein Padding).
-                      <div style={{ alignSelf: 'stretch', aspectRatio: '1', flexShrink: 0, display: 'flex' }}>
+                      //
+                      // 2026-08-23, REGRESSION gefixt. Vorher stand hier nur
+                      // `alignSelf: 'stretch'` + `aspectRatio: 1` ohne Hoehe.
+                      // Das funktioniert nur, solange die Avatar-Komponente
+                      // KEINE eigene Breite mitbringt: bei cozyQuirks liegt das
+                      // Bild `position: absolute; inset: 0` und traegt damit
+                      // 0 px zur max-content-Breite bei, also loest
+                      // `aspect-ratio` die Breite aus der gestreckten Hoehe.
+                      // Der CozyQuiz-Standardsatz rendert aber ueber
+                      // ImageAvatar mit einem normalen <img> — und dessen
+                      // INTRINSISCHE Groesse ist 512 x 512. Gemessen im
+                      // Browser: Kachel 512 x 512 in einer 518 px breiten
+                      // Karte, Textspalte auf 56 px gequetscht, das Gitter
+                      // 2078 px hoch in einer 990 px hohen Buehne.
+                      // Ursache war meine Aenderung an `isQuirkTileSet` vom
+                      // 2026-08-22 (e1a05215), die den Standardsatz in diesen
+                      // Zweig geholt hat, ohne dass ich die Lobby danach im
+                      // Bild geprueft habe.
+                      // Eine definite Hoehe macht `stretch` wirkungslos (es
+                      // greift nur bei auto) und `aspect-ratio` loest die
+                      // Breite verlaesslich aus ihr. Die Karte ist damit so
+                      // hoch wie die Kachel, die Kachel sitzt weiter buendig
+                      // links, und kein Bild kann mehr seine Rohgroesse
+                      // durchdruecken.
+                      <div style={{
+                        height: veryMany
+                          ? 'clamp(38px, 3.6cqw, 52px)'
+                          : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)',
+                        aspectRatio: '1', flexShrink: 0, display: 'flex',
+                      }}>
                         <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size="100%" />
                       </div>
                     ) : (
@@ -1053,8 +1090,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                           maxWidth: '100%',
                           animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
                         }} title={de
-                          ? `${t.gamesPlayed} Spiele · ${t.wins ?? 0} Siege`
-                          : `${t.gamesPlayed} games · ${t.wins ?? 0} wins`}>
+                          ? `${qqPlural(t.gamesPlayed ?? 0, 'Spiel', 'Spiele')} · ${qqPlural(t.wins ?? 0, 'Sieg', 'Siege')}`
+                          : `${qqPlural(t.gamesPlayed ?? 0, 'game', 'games')} · ${qqPlural(t.wins ?? 0, 'win', 'wins')}`}>
                           {/* 2026-06-28 (Beamer-Review 'kein Emoji'): 👋 raus. */}
                           {de
                             ? `Willkommen zurück: ${t.gamesPlayed}. Mal dabei`

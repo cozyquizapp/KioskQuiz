@@ -14,7 +14,7 @@ import { useState, useEffect, useRef, useMemo, cloneElement, isValidElement } fr
 import type { ReactElement } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { QQ_AVATARS, QQ_MEGA_FACTIONS, qqIsMega } from '../../../shared/quarterQuizTypes';
-import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
+import { useLangFlip, COZY_CARD_BG, qqPlural } from '../cozyQuizShared';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { GridDisplay } from './CozyQuizGridDisplay';
@@ -563,7 +563,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           paddingBottom: isQuietMotion() ? 'clamp(10px,1.2cqh,16px)' : undefined,
         }}>
           <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏆"/></span> {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: isQuietMotion() ? 'clamp(15px, 1.7cqw, 22px)' : 'clamp(16px, 1.8cqw, 22px)', fontWeight: isQuietMotion() ? 900 : 700, color: 'var(--qq-text-muted)', letterSpacing: isQuietMotion() ? '0.08em' : undefined, marginLeft: isQuietMotion() ? 'auto' : undefined }}>({totalGames} {de ? 'Spiele' : 'games'})</span>}
+          {totalGames > 0 && <span style={{ fontSize: isQuietMotion() ? 'clamp(15px, 1.7cqw, 22px)' : 'clamp(16px, 1.8cqw, 22px)', fontWeight: isQuietMotion() ? 900 : 700, color: 'var(--qq-text-muted)', letterSpacing: isQuietMotion() ? '0.08em' : undefined, marginLeft: isQuietMotion() ? 'auto' : undefined }}>({de ? qqPlural(totalGames, 'Spiel', 'Spiele') : qqPlural(totalGames, 'game', 'games')})</span>}
         </div>
         {realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
@@ -621,7 +621,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                     <span style={{
                       fontSize: 'clamp(12px, 1.3cqw, 16px)', color: 'var(--qq-text-muted)',
                       fontWeight: 800, letterSpacing: '0.06em', textTransform: 'uppercase',
-                    }}>{de ? `zuletzt ${lastPlayedLabel} · ${entry.games} Spiele` : `last ${lastPlayedLabel} · ${entry.games} games`}</span>
+                    }}>{de ? `zuletzt ${lastPlayedLabel} · ${qqPlural(entry.games, 'Spiel', 'Spiele')}` : `last ${lastPlayedLabel} · ${qqPlural(entry.games, 'game', 'games')}`}</span>
                   )}
                 </div>
                 {/* Siege als grosse Editorial-Zahl statt Dunkel-Pille */}
@@ -670,7 +670,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   fontSize: 'clamp(11px, 1.1cqw, 14px)', color: 'var(--qq-text-muted)',
                   fontWeight: 700, letterSpacing: '0.04em',
                 }}>
-                  {de ? `zuletzt: ${lastPlayedLabel} · ${entry.games} Spiele` : `last: ${lastPlayedLabel} · ${entry.games} games`}
+                  {de ? `zuletzt: ${lastPlayedLabel} · ${qqPlural(entry.games, 'Spiel', 'Spiele')}` : `last: ${lastPlayedLabel} · ${qqPlural(entry.games, 'game', 'games')}`}
                 </span>
               )}
             </div>
@@ -697,7 +697,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               color: teamColor, fontWeight: 900, fontSize: 'clamp(15px, 1.7cqw, 21px)',
               flexShrink: 0,
               boxShadow: `0 0 14px ${teamColor}22, inset 0 1px 0 rgba(246, 239, 230,0.05)`,
-            }}>{entry.wins} {de ? 'Siege' : 'wins'}</span>
+            }}>{de ? qqPlural(entry.wins, 'Sieg', 'Siege') : qqPlural(entry.wins, 'win', 'wins')}</span>
           </div>
           );
         })}

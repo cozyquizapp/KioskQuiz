@@ -4237,7 +4237,10 @@ export function MuchoOptionsReveal({
                             padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
                             background: isFastest ? (isThemed() ? 'var(--qq-accent)' : 'rgba(var(--qq-stage-brand-rgb), 0.95)') : 'rgba(15,23,42,0.95)',
                             border: isFastest ? (isThemed() ? '1.5px solid var(--qq-accent)' : '1.5px solid rgba(var(--qq-stage-brand-rgb), 1)') : `1.5px solid ${tm.color}`,
-                            color: isFastest ? (isThemed() ? 'var(--qq-text)' : '#120F18') : QQ_COLORS.slate200,
+                            // 2026-08-23: wie in der Lobby — auf der Creme-Buehne
+                            // ist `--qq-accent` creme, `var(--qq-text)` darauf waere
+                            // unlesbar. Gefuellte Flaeche traegt den Grund als Text.
+                            color: isFastest ? '#120F18' : QQ_COLORS.slate200,
                             fontWeight: 900,
                             fontSize: 'clamp(11px, 1.2cqw, 15px)',
                             whiteSpace: 'nowrap',
@@ -5337,18 +5340,21 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
           fontFamily: 'var(--font-brand)',
           fontSize: 'clamp(56px, 7cqw, 112px)', fontWeight: 400,
           letterSpacing: '0.04em', color: 'var(--qq-accent)',
-          textShadow: '0 0 32px rgba(var(--qq-accent-rgb),0.6)',
+          // 2026-08-23: Wortmarken-Schein raus (Regel 5). Auf der Projektion
+          // malt ein 32-px-Blur um Buchstaben keine Leuchtschrift, sondern
+          // einen weichen Rand — der Schriftschnitt wird dadurch matschig
+          // statt strahlend, und bedeuten tut er nichts.
           lineHeight: 0.96, textTransform: 'uppercase', display: 'inline-block',
           animation: 'qqNeutralFloat 4.2s ease-in-out 0.6s infinite',
         }}>{qqIsMega(s) ? 'COZYARENA' : 'COZYQUIZ'}</span>
+        {/* 2026-08-23: die zwei pulsenden Punkte links und rechts sind raus.
+            8 px (Regel 7 verlangt mindestens 12), rund (Regel 4), und sie
+            haben nichts bedeutet. Derselbe Befund wie auf der Ablauf-Folie. */}
         <div style={{
-          display: 'inline-flex', alignItems: 'center', gap: 12,
           fontSize: 'clamp(22px, 2.6cqw, 40px)', fontWeight: 900,
           color: 'var(--qq-text-muted)', letterSpacing: '0.01em',
         }}>
-          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--qq-accent)', animation: 'qqNeutralDot 1.6s ease-in-out infinite' }} />
           {de ? 'Das Event wird vorbereitet' : 'Setting up the event'}
-          <span style={{ display: 'inline-block', width: 8, height: 8, borderRadius: '50%', background: 'var(--qq-accent)', animation: 'qqNeutralDot 1.6s ease-in-out 0.3s infinite' }} />
         </div>
       </div>
 
@@ -5356,7 +5362,6 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
           PausedView/Welcome (mit ihren globalen <style>-Blöcken) gemountet ist. */}
       <style>{`
         @keyframes qqNeutralFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
-        @keyframes qqNeutralDot { 0%, 100% { opacity: 0.4; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.15); } }
       `}</style>
 
       {/* ── PROMO-SLOT (später: „Nächstes Event / Instagram", Wolf-Idee) ──────────

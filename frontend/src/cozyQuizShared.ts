@@ -112,6 +112,22 @@ export function truncName(name: string, max = 28): string {
   return name.length > max ? name.slice(0, max - 1) + '…' : name;
 }
 
+/**
+ * Zahl mit Einheit, in der richtigen Form.
+ *
+ * 2026-08-23. In der Bestenliste stand bei einem einzigen Sieg „1 Siege", und
+ * daneben „3 Spiele" bei drei Spielen und „1 Spiele" bei einem. Auf der Buehne
+ * steht so ein Satz gross und minutenlang; ein Grammatikfehler dort liest sich
+ * als Schlamperei am ganzen Abend, nicht als Detail.
+ *
+ * Bewusst eine winzige eigene Funktion statt Intl.PluralRules: DE und EN
+ * brauchen hier nur eins/viele, und der Aufruf soll an der Stelle lesbar
+ * bleiben, an der der Text steht.
+ */
+export function qqPlural(n: number, one: string, many: string): string {
+  return `${n} ${n === 1 ? one : many}`;
+}
+
 /** In 'both' mode, alternate between de and en with a fade transition.
  *  Intervall war frueher 8s — fuehlte sich hektisch an, weil DE und EN oft
  *  unterschiedlich lange Texte sind und der Container bei jedem Wechsel

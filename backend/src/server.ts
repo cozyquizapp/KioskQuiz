@@ -10141,6 +10141,15 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
       }
       return pts.join(',');
     } else if (q!.category === 'CHEESE' || q!.category === 'BUNTE_TUETE') {
+      // 2026-08-23: bei Top 5 und Fix It liegt die Loesung NICHT in `answer`,
+      // sondern als Liste in `bunteTuete.answers`. Der Fallback lief deshalb
+      // immer auf 'Test', kein Bot hat je getroffen, und die Aufloesungs-Tafel
+      // stand in jeder Aufnahme auf null Treffern - also war genau der Teil
+      // der Folie unsichtbar, den man pruefen wollte. Wer richtig sein soll,
+      // zieht jetzt einen echten Eintrag aus der Liste.
+      const liste: string[] = ((q as any).bunteTuete?.answers ?? [])
+        .map((x: unknown) => String(x).trim()).filter(Boolean);
+      if (beCorrect && liste.length) return liste[Math.floor(Math.random() * liste.length)];
       const fallback = (q as any).correctAnswer || (q as any).answer || 'Test';
       return beCorrect ? String(fallback) : `Dummy ${Math.random().toString(36).slice(2, 6)}`;
     }

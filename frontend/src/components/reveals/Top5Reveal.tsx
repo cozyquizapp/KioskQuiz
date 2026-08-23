@@ -22,7 +22,9 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish, playRevealHighlight } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed, themedWindow } from '../../qqTheme';
+import { isThemed, themedWindow, getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { QQ_CATEGORY_THEME } from '../../../../shared/qqCategoryTheme';
+import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS } from '../../../../shared/quarterQuizTypes';
 
 export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;
@@ -94,12 +96,31 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
       setWinnerLit(true);
       if (!s.sfxMuted) { try { playClimaxFinish(); } catch {} }
     }, INITIAL_DELAY_MS + n * STEP_MS + 200));
-    return () => { timers.forEach(clearTimeout); };
+    // 2026-08-23: der Wachposten muss beim Aufraeumen ZURUECKGESETZT werden.
+    // React ruft im Entwicklungsmodus (StrictMode) jeden Effekt doppelt auf:
+    // erster Lauf setzt den Wachposten und die Zeitgeber, das Aufraeumen
+    // loescht die Zeitgeber, der zweite Lauf sieht den gesetzten Wachposten
+    // und steigt aus. Ergebnis: die Kaskade lief nie los, die Tafel stand
+    // dauerhaft auf „0 / 5 aufgedeckt". Gemessen ueber 16 s: keine einzige
+    // Aenderung im DOM. Auf der echten Buehne (Produktion, ohne StrictMode)
+    // faellt das nicht auf, im Test aber immer - und ein Muster, das nur
+    // zufaellig funktioniert, ist eins zu viel.
+    return () => { timers.forEach(clearTimeout); cascadeStartedRef.current = false; };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [n]);
 
   const qText = (lang === 'en' && q.textEn ? q.textEn : q.text) ?? '';
   const revealedCount = n - revealedMinIdx;
+
+  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): diese Tafel hatte den
+  // Durchgang noch nicht gesehen. Sie fuehrte eine dritte Kopfzeilen-Sprache
+  // (winzige Augenbraue plus Frage plus Fortschritt, alles um 13px), eine
+  // eigene Medaillen-Palette fuer die Plaetze 1-3 und ein Siegerband in Gold
+  // mit 48px Schein. Auf der Buehne wird daraus dieselbe Statuszeile wie auf
+  // allen anderen Folien, ein ruhiges Raster und ein Band ohne Metall.
+  // Die uebrigen Skins bleiben unveraendert.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const grund = QQ_CATEGORY_THEME.BUNTE_TUETE.deep;
 
   return (
     <div style={{
@@ -115,16 +136,50 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
       {/* Kopf: Frage + Fortschritt */}
       <div style={{ flexShrink: 0, display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 'clamp(14px,2cqw,32px)' }}>
         <div style={{ minWidth: 0 }}>
-          <div style={{ fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)', letterSpacing: '0.16em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <QQEmojiIcon emoji="🎁" /> {lang === 'en' ? 'Top 5 · Reveal' : 'Top 5 · Auflösung'}
-          </div>
+          {istBuehne ? (
+            // Dieselbe Pille wie auf jeder Frage-Folie: gefuellt im
+            // Buehnen-Akzent, dunkle Schrift, Kategorie in Versalien. Sie
+            // ersetzt die eigene Augenbraue („Top 5 · Aufloesung") - welches
+            // Unterspiel laeuft, sagt das Zwischenbild vor der Frage, und der
+            // Zaehler rechts sagt, dass hier aufgedeckt wird.
+            <span style={{
+              display: 'inline-block',
+              padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 28px)',
+              borderRadius: 'var(--qq-pill-radius)',
+              background: 'var(--qq-stage-accent)',
+              color: '#12100E',
+              fontWeight: 900, lineHeight: 1,
+              fontSize: 'clamp(16px, 1.7cqw, 30px)',
+              letterSpacing: '0.06em',
+              whiteSpace: 'nowrap',
+            }}>
+              {(QQ_CATEGORY_LABELS.BUNTE_TUETE?.[lang] ?? 'Bunte Tüte').toUpperCase()}
+            </span>
+          ) : (
+            <div style={{ fontSize: 'clamp(11px, 1.05cqw, 16px)', fontWeight: 900, color: 'var(--qq-accent)', letterSpacing: '0.16em', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 8 }}>
+              <QQEmojiIcon emoji="🎁" /> {lang === 'en' ? 'Top 5 · Reveal' : 'Top 5 · Auflösung'}
+            </div>
+          )}
           <div key={lang} style={{
-            fontSize: qText.length > 120 ? 'clamp(20px, 2cqw, 32px)' : 'clamp(22px, 2.3cqw, 37px)',
-            fontWeight: 900, lineHeight: 1.12, color: 'var(--qq-card-text)', marginTop: 'clamp(4px,0.8cqh,10px)',
+            // 2026-08-23: 22-37px sind ein Wert fuer eine Bildschirmseite. Auf
+            // 1760px Buehnenbreite ist die Frage der Anker der Folie und faehrt
+            // auf die Groesse, die die uebrigen Reveal-Folien auch fahren.
+            fontSize: istBuehne
+              ? (qText.length > 120 ? 'clamp(26px, 2.6cqw, 42px)' : 'clamp(30px, 3.1cqw, 52px)')
+              : (qText.length > 120 ? 'clamp(20px, 2cqw, 32px)' : 'clamp(22px, 2.3cqw, 37px)'),
+            fontWeight: 900, lineHeight: 1.18, color: 'var(--qq-card-text)', marginTop: 'clamp(4px,0.8cqh,10px)',
             animation: 'langFadeIn 0.4s ease both', textWrap: 'pretty' as any,
           }}>{qText}</div>
         </div>
-        <div style={{ fontSize: 'clamp(12px, 1.1cqw, 17px)', fontWeight: 900, color: 'var(--qq-text-muted)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums' }}>
+        <div style={{
+          // Gleiche Schreibweise wie der Fragezaehler oben rechts auf den
+          // anderen Folien: Versalien, 0.26em Laufweite, gedaempft.
+          fontSize: istBuehne ? 'clamp(15px, 1.6cqw, 28px)' : 'clamp(12px, 1.1cqw, 17px)',
+          fontWeight: istBuehne ? 800 : 900,
+          letterSpacing: istBuehne ? '0.26em' : undefined,
+          textTransform: istBuehne ? 'uppercase' : undefined,
+          color: 'var(--qq-text-muted)', whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
+        }}>
           {revealedCount} / {n} {lang === 'en' ? 'revealed' : 'aufgedeckt'}
         </div>
       </div>
@@ -135,10 +190,23 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
           const rank = idx + 1;
           const isRevealed = idx >= revealedMinIdx;
           const hasHits = hitters.length > 0;
-          const badgeBg = rank === 1 ? 'linear-gradient(135deg,#FDE68A,#FACC15)'
+          // 2026-08-23: Gold/Silber/Bronze fuer die Plaetze 1-3 sind eine
+          // vierte Palette neben Kategorie, Creme und Gruen, und sie sagen
+          // nichts, was die Ziffer nicht schon sagt - die Tafel IST eine
+          // Rangliste, jede Zeile traegt ihre Nummer. Auf der Buehne bekommen
+          // alle fuenf dieselbe ruhige Kachel; der Rang steht in der Ziffer.
+          const badgeBg = istBuehne ? 'transparent'
+            : rank === 1 ? 'linear-gradient(135deg,#FDE68A,#FACC15)'
             : rank === 2 ? 'linear-gradient(135deg,#F6EFE6,#94a3b8)'
             : rank === 3 ? 'linear-gradient(135deg,#fdba74,#b45309)'
             : 'linear-gradient(135deg,#64748b,#334155)';
+          // Kachel-Grundriss, an beiden Stellen gleich (verdeckt wie aufgedeckt),
+          // damit beim Umschlagen nur der Inhalt wechselt, nicht die Form.
+          const rangKachel = istBuehne ? {
+            border: '2px solid var(--qq-hairline)',
+            color: 'var(--qq-text)',
+            borderRadius: 'var(--qq-card-radius)',
+          } : null;
           if (!isRevealed) {
             return (
               <div key={idx} style={{
@@ -151,7 +219,8 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)', borderRadius: 14,
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: 'var(--qq-card-text)',
-                  background: 'linear-gradient(135deg,#334155,#1e293b)',
+                  background: istBuehne ? 'transparent' : 'linear-gradient(135deg,#334155,#1e293b)',
+                  ...(rangKachel ?? {}),
                 }}>#{rank}</div>
                 <div style={{ fontSize: 'clamp(20px,2.4cqw,36px)', fontWeight: 900, color: 'rgba(148,163,184,0.5)', letterSpacing: '0.5em' }}>· · ·</div>
                 <div /><div />
@@ -163,22 +232,40 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               flex: 1, display: 'grid', gridTemplateColumns: 'auto 1fr auto auto', alignItems: 'center',
               gap: 'clamp(12px,1.4cqw,22px)', padding: '0 clamp(14px,1.6cqw,24px)', borderRadius: 18,
               minHeight: 'clamp(56px,7cqh,88px)', transformOrigin: 'center bottom',
-              background: hasHits ? 'linear-gradient(135deg, rgba(34,197,94,0.13), rgba(22,163,74,0.05))' : 'rgba(148,163,184,0.06)',
-              border: `2px solid ${hasHits ? 'rgba(34,197,94,0.42)' : 'rgba(148,163,184,0.18)'}`,
+              // 2026-08-23, im Bild nachgemessen: das dunkle Gruen (0,42 Deckung)
+              // auf dem roten Kategorie-Grund wurde braun - die getroffene Zeile
+              // war von den nicht getroffenen kaum zu unterscheiden. Auf der
+              // Buehne traegt deshalb die KONTUR das Signal, kraeftig und in
+              // demselben hellen Gruen wie die Antwort auf den anderen Folien.
+              // Die Fuellung bleibt fast durchsichtig, sonst mischt sie sich mit
+              // dem Grund. Nicht getroffene Zeilen sind Haarlinie auf Creme.
+              background: istBuehne
+                ? (hasHits ? 'rgba(74,222,128,0.10)' : 'rgba(246,239,230,0.04)')
+                : (hasHits ? 'linear-gradient(135deg, rgba(34,197,94,0.13), rgba(22,163,74,0.05))' : 'rgba(148,163,184,0.06)'),
+              border: istBuehne
+                ? (hasHits ? '2.5px solid rgba(74,222,128,0.85)' : '2px solid var(--qq-hairline)')
+                : `2px solid ${hasHits ? 'rgba(34,197,94,0.42)' : 'rgba(148,163,184,0.18)'}`,
               animation: 'qqT5v2Flip 0.55s var(--qq-ease-out-cubic) both',
-              ...(themedWindow({ ok: hasHits }) ?? {}),
+              // themedWindow legt die Fenster-Optik der jeweiligen Skin drueber
+              // (Quirks-Rahmen). Auf der Buehne bleibt die Zeile die Zeile.
+              ...(istBuehne ? {} : (themedWindow({ ok: hasHits }) ?? {})),
             }}>
               <div style={{
                 width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)',
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 14, background: badgeBg,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 fontSize: 'clamp(20px,2cqw,32px)', fontWeight: 900, color: '#120F18',
-                textShadow: '0 1px 2px rgba(246, 239, 230,0.2)',
-                boxShadow: rank === 1 ? '0 0 20px rgba(250,204,21,0.5)' : 'none',
+                textShadow: istBuehne ? 'none' : '0 1px 2px rgba(246, 239, 230,0.2)',
+                boxShadow: (rank === 1 && !istBuehne) ? '0 0 20px rgba(250,204,21,0.5)' : 'none',
+                ...(rangKachel ?? {}),
               }}>#{rank}</div>
               <div style={{
                 fontSize: 'clamp(20px,2.4cqw,36px)', fontWeight: 900, lineHeight: 1.1,
-                color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)',
+                // 2026-08-23: die nicht getroffenen Antworten sind trotzdem die
+                // Aufloesung - sie stehen auf der Buehne in Creme, nicht
+                // gedaempft. Was sie von den Treffern unterscheidet, ist das
+                // Gruen der Zeile daneben, nicht ein verschluckter Text.
+                color: hasHits ? QQ_COLORS.green300 : (istBuehne ? 'var(--qq-text)' : 'var(--qq-text-muted)'),
                 minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
               }}>{correct}</div>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0 }}>
@@ -187,12 +274,18 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                     : hitters.map((tm, hi) => (
                       <QQTeamAvatar key={tm.id} avatarId={tm.avatarId} teamEmoji={tm.emoji}
                         size={'clamp(48px, 4.8cqw, 72px)'} title={tm.name}
-                        style={{ boxShadow: `0 0 12px ${tm.color}55`, animation: `top5AvatarPop 0.5s var(--qq-ease-bounce) ${0.25 + hi * 0.09}s both` }} />
+                        style={{ boxShadow: istBuehne ? 'none' : `0 0 12px ${tm.color}55`, animation: `top5AvatarPop 0.5s var(--qq-ease-bounce) ${0.25 + hi * 0.09}s both` }} />
                     ))
                 ) : (
                   <div style={{
-                    width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)', borderRadius: '50%',
-                    background: 'rgba(148,163,184,0.12)', border: '2px dashed rgba(148,163,184,0.4)',
+                    // 2026-08-23: gestrichelt ist eine Bausprache fuer Entwuerfe,
+                    // nicht fuer eine Leinwand - und der Kreis stand neben lauter
+                    // eckigen Marken. Auf der Buehne dieselbe Kachel wie die
+                    // Rangnummer, durchgezogen.
+                    width: 'clamp(44px,4.4cqw,66px)', height: 'clamp(44px,4.4cqw,66px)',
+                    borderRadius: istBuehne ? 'var(--qq-card-radius)' : '50%',
+                    background: istBuehne ? 'transparent' : 'rgba(148,163,184,0.12)',
+                    border: istBuehne ? '2px solid var(--qq-hairline)' : '2px dashed rgba(148,163,184,0.4)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: 'clamp(18px,1.8cqw,26px)', fontWeight: 900, color: 'var(--qq-text-muted)',
                     animation: 'top5AvatarPop 0.5s var(--qq-ease-bounce) 0.3s both',
@@ -200,7 +293,11 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                 )}
               </div>
               <div style={{
-                fontSize: 'clamp(12px,1.15cqw,18px)', fontWeight: 900, minWidth: 'clamp(30px,3.2cqw,48px)', textAlign: 'right',
+                // 2026-08-23: 18px sind auf 1760px Buehnenbreite aus acht Metern
+                // nicht mehr da. Der Treffer-Zaehler ist die Zahl, aus der sich
+                // die Handy-Punkte erklaeren, also muss er lesbar sein.
+                fontSize: istBuehne ? 'clamp(18px,1.9cqw,30px)' : 'clamp(12px,1.15cqw,18px)',
+                fontWeight: 900, minWidth: 'clamp(30px,3.2cqw,48px)', textAlign: 'right',
                 color: hasHits ? QQ_COLORS.green300 : 'var(--qq-text-muted)', fontVariantNumeric: 'tabular-nums',
               }}>{hitters.length}×</div>
             </div>
@@ -225,14 +322,26 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
               // Arena: KEINE Gold-Kroenung (anteilige Punkte, kein Rundensieger) →
               // neutraler Akzent-Rahmen + „Meiste Treffer"-Framing statt „Rundensieger".
               // Wolf 2026-07-16 (konsistent mit Kronen-raus im ganzen Batch).
-              background: isMega
+              // 2026-08-23: dasselbe Aufraeumen wie am Siegerband von Schau
+              // mal. Gold-Verlauf, Gold-Rand und 48px Gold-Schein waren drei
+              // Traeger fuer eine Aussage, und Gold ist eine Farbe, die im
+              // 2a-Vokabular sonst nirgends vorkommt. Auf der Buehne: ruhiges
+              // Feld im tiefen Kategorie-Ton, keine Kontur, kein Schein.
+              // Der Grund der Folie IST bereits der tiefe Kategorie-Ton, ein
+              // Band in derselben Farbe waere unsichtbar. Es bekommt deshalb
+              // dieselbe ruhige Flaeche wie die Zeilen darueber - eine Haarlinie
+              // und ein Hauch Creme. Den Nachdruck traegt die gefuellte Pille
+              // mit der Trefferquote, nicht der Rahmen.
+              background: istBuehne
+                ? 'rgba(246,239,230,0.06)'
+                : isMega
                 ? 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.14), rgba(var(--qq-accent-magenta-rgb),0.08))'
                 : 'linear-gradient(135deg, rgba(250,204,21,0.16), rgba(var(--qq-accent-rgb),0.10))',
-              border: isMega ? '2.5px solid rgba(var(--qq-accent-rgb),0.6)' : '2.5px solid rgba(250,204,21,0.65)',
-              boxShadow: isMega ? '0 0 44px rgba(var(--qq-accent-rgb),0.22)' : '0 0 48px rgba(250,204,21,0.25)',
+              border: istBuehne ? '2px solid var(--qq-hairline)' : (isMega ? '2.5px solid rgba(var(--qq-accent-rgb),0.6)' : '2.5px solid rgba(250,204,21,0.65)'),
+              boxShadow: istBuehne ? 'none' : (isMega ? '0 0 44px rgba(var(--qq-accent-rgb),0.22)' : '0 0 48px rgba(250,204,21,0.25)'),
               animation: 'qqT5v2Rise 0.55s var(--qq-ease-bounce) both',
             }}>
-              <span style={{ fontSize: 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+              <span style={{ fontSize: istBuehne ? 'clamp(15px,1.6cqw,26px)' : 'clamp(11px,1.05cqw,16px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
                 {isMega
                   ? <><QQEmojiIcon emoji="🎯" /> {lang === 'en' ? 'Most hits' : 'Meiste Treffer'}</>
                   : <><QQEmojiIcon emoji="🏆" /> {winners.length > 1 ? (lang === 'en' ? 'Round winners' : 'Rundensieger') : (lang === 'en' ? 'Round winner' : 'Rundensieger')}</>}
@@ -248,26 +357,41 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
                   <div key={tm.id} style={{ display: 'flex', alignItems: 'center', gap: 'clamp(8px,1cqw,16px)', minWidth: 0 }}>
                     <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={'clamp(56px,7cqh,96px)'}
                       style={{ animation: 'celebShake 0.6s ease 0.5s both' }} />
+                    {/* 2026-08-23: Teamnamen auf der Buehne in Creme, wie am
+                        Brett und bei Schau mal. Die Marke daneben traegt die
+                        Farbe. */}
                     <TeamNameLabel name={tm.name} maxLines={1} shrinkAfter={14}
-                      fontSize={'clamp(22px,2.4cqw,40px)'} color={tm.color} fontWeight={900} />
+                      fontSize={'clamp(22px,2.4cqw,40px)'}
+                      color={istBuehne ? 'var(--qq-text)' : tm.color} fontWeight={900} />
                   </div>
                 );
               })}
               <span style={{
+                // Die Trefferquote ist die Zahl, um die es geht. Auf der Buehne
+                // bekommt sie dieselbe Form wie die Kategorie-Pille und die
+                // schnellste Zeit bei Schau mal: gefuellt im Akzent, dunkle
+                // Schrift, keine Kontur. Ein Idiom fuer „das ist der Wert".
                 fontSize: 'clamp(16px,1.7cqw,28px)', fontWeight: 900,
-                color: isMega ? 'var(--qq-accent)' : QQ_COLORS.yellow300,
+                color: istBuehne ? '#12100E' : (isMega ? 'var(--qq-accent)' : QQ_COLORS.yellow300),
                 padding: 'clamp(5px,0.7cqh,10px) clamp(12px,1.3cqw,22px)', borderRadius: 'var(--qq-pill-radius)',
-                background: isMega ? 'rgba(var(--qq-accent-rgb),0.16)' : 'rgba(250,204,21,0.14)',
-                border: isMega ? '1.5px solid rgba(var(--qq-accent-rgb),0.5)' : '1.5px solid rgba(250,204,21,0.5)',
+                background: istBuehne
+                  ? 'var(--qq-stage-accent)'
+                  : (isMega ? 'rgba(var(--qq-accent-rgb),0.16)' : 'rgba(250,204,21,0.14)'),
+                border: istBuehne ? 'none' : (isMega ? '1.5px solid rgba(var(--qq-accent-rgb),0.5)' : '1.5px solid rgba(250,204,21,0.5)'),
                 fontVariantNumeric: 'tabular-nums',
               }}>{topHits} / {n} {lang === 'en' ? 'correct' : 'richtig'}</span>
             </div>
           )
         ) : (
           <div style={{
-            position: 'absolute', inset: 0, borderRadius: 20, border: '2px dashed rgba(148,163,184,0.2)',
+            // 2026-08-23: gestrichelt raus, Groesse hoch. Die Zeile haelt den
+            // Platz fuer das Siegerband frei und ist waehrend der ganzen
+            // Kaskade sichtbar - bei 13px war sie auf der Buehne nicht da.
+            position: 'absolute', inset: 0, borderRadius: 20,
+            border: istBuehne ? '1.5px solid var(--qq-hairline)' : '2px dashed rgba(148,163,184,0.2)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 'clamp(11px,1.1cqw,17px)', fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.18em', textTransform: 'uppercase',
+            fontSize: istBuehne ? 'clamp(15px,1.6cqw,26px)' : 'clamp(11px,1.1cqw,17px)',
+            fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.18em', textTransform: 'uppercase',
           }}>{lang === 'en' ? 'Who has the most hits?' : 'Wer hat die meisten Treffer?'}</div>
         )}
       </div>

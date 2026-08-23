@@ -31,6 +31,9 @@
  *   --zeiten               wo die Zeit hingeht
  *   --bots=8               Zahl der Bot-Teams
  *   --bild=hoch|quer       Testfoto fuer Schau mal (Hochkant/Querformat)
+ *   --antworten=0.6        Quote richtiger Bot-Antworten vor einer Aufloesung
+ *   --entwurf=qq-vol-1     Entwurf per Teil-Id waehlen
+ *   --ruhe=15000           Ruhezeit ueberschreiben (lange Kaskaden)
  *
  * MEHRERE ANSICHTEN IN EINEM AUFRUF. Browser, Raum und Spielaufbau kosten
  * zusammen rund 12 s und fallen dann EINMAL an; jede weitere Ansicht kostet nur
@@ -71,6 +74,12 @@ const DOM = (process.argv.find(a => a.startsWith('--dom=')) || '=').split('=').s
 const BILD = (process.argv.find(a => a.startsWith('--bild=')) || '=').split('=')[1] || null;
 // --antworten=0.6  Quote der richtigen Bot-Antworten vor einer Aufloesung.
 const ANTWORTEN = Number((process.argv.find(a => a.startsWith('--antworten=')) || '--antworten=0.6').split('=')[1]);
+// --entwurf=qq-vol-1  waehlt den Entwurf per Teil-Id.
+const ENTWURF = (process.argv.find(a => a.startsWith('--entwurf=')) || '=').split('=')[1] || null;
+// --ruhe=15000  ueberschreibt die Ruhezeit. Einzelne Kaskaden laufen laenger
+// als die Vorgabe der Ansicht (Top 5 braucht 5 x 2400 ms plus Siegerband).
+const RUHE = process.argv.find(a => a.startsWith('--ruhe='))
+  ? Number(process.argv.find(a => a.startsWith('--ruhe=')).split('=')[1]) : null;
 const QUELLE_HOCH = '/images/Johannes.jpeg';
 const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
 // --zeiten  schreibt auf, wo die Zeit hingeht.
@@ -274,7 +283,13 @@ async function aufbauen(stufe) {
   if (stufe === 'spiel' && aufbauStand === 'lobby') {
     const drafts = await fetch(`${API}/api/qq/drafts`).then(r => r.json());
     takt('  Entwuerfe geladen');
-    const d = drafts.find(x => !/arena/i.test(x.id)) ?? drafts[0];
+    // 2026-08-23: --entwurf waehlt gezielt einen Entwurf. Ohne das nimmt der
+    // Harness den ersten Nicht-Arena-Entwurf, und der hat nicht jedes
+    // Bunte-Tuete-Unterspiel. Fuer Top 5, Fix It und Pin It braucht man einen
+    // Entwurf, in dem sie ueberhaupt vorkommen (qq-vol-1 hat alle vier).
+    const d = (ENTWURF ? drafts.find(x => x.id.includes(ENTWURF)) : null)
+      ?? drafts.find(x => !/arena/i.test(x.id)) ?? drafts[0];
+    if (ENTWURF && !d.id.includes(ENTWURF)) console.log(`  Entwurf „${ENTWURF}" nicht gefunden, nehme ${d.id}`);
     // 2026-08-23: der Raum mischt die fuenf Fragen einer Runde standardmaessig
     // (`shuffleQuestionsInRound`, Vorgabe true). Deshalb wuerfelte jeder Lauf
     // eine andere Kategorie, und mein Vorziehen lief ins Leere. Fuer eine
@@ -459,7 +474,7 @@ for (const name of liste) {
       console.log(`  ✓ ${datei}   (Wunsch ${ms} ms)`);
     }
   } else {
-    await sleep(a.ruhe);
+    await sleep(RUHE ?? a.ruhe);
     const datei = `${OUT}/V-${name}.png`;
     writeFileSync(datei, await knipsen(beamer));
     console.log(`  ✓ ${datei}   (Phase ${await phase()})`);

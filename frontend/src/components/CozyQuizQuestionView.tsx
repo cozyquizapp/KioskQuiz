@@ -71,6 +71,9 @@ import { qqFactionBuckets, qqFactionAvatarEmoji } from '../qqShared';
 // (1760-1300)/2 → Timer-Ecke (212px) ueberlappt die Frage-Card nicht mehr.
 // Ein gemeinsamer Wert haelt alle Card-/Antwort-Grid-Kanten buendig.
 const QQ_QUESTION_MAX_W = 1300;
+// Die Breite des Antwort-Rasters. Frage und Antworten teilen sich dieselbe
+// Spalte, damit die Folie EINE linke Kante hat (siehe Kommentar am Fragefeld).
+const QQ_OPTIONS_MAX_W = 1400;
 
 
 // 2026-05-24 (Refactor #5): Reveals + Helpers in components/reveals/ extrahiert:
@@ -1737,7 +1740,21 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // keine willChange. Vereinfacht den Wrapper.
             return (
               <div style={{
-                width: '100%', maxWidth: QQ_QUESTION_MAX_W,
+                width: '100%',
+                // 2026-08-23 (Wolf: „wie wuerdest du den fragetext zentrieren
+                // aus design gruenden?"): die ehrliche Antwort ist, dass hier
+                // nicht die Zentrierung das Problem war, sondern die KANTE.
+                // Gemessen standen auf der Folie drei linke Kanten dicht
+                // nebeneinander: Antwortkarten bei x 180, Frage bei x 230,
+                // Fragezaehler bei x 244. Ein Versatz von 50 px liest sich
+                // nicht als Gestaltung, sondern als Ungenauigkeit — er ist zu
+                // klein, um Absicht zu sein, und zu gross, um zu verschwinden.
+                // Die Antwortkarten sind das starrste Element der Folie (festes
+                // 2x2-Raster), also geben sie die Spalte vor. Die Frage zieht
+                // auf dieselbe Breite: eine Kante links, eine rechts, und das
+                // symmetrische Raster darunter balanciert die linksbuendige
+                // Zeile aus.
+                maxWidth: QQ_OPTIONS_MAX_W,
                 flexShrink: 0,
               }}>
                 <div style={{
@@ -1796,6 +1813,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     // rund 21px weniger Hoehe, und die Frage liest sich als ein
                     // Block statt als zwei Zeilen.
                     fontWeight: 900, lineHeight: 0.86, letterSpacing: '-0.03em',
+                    // 2026-08-23: seit die Frage die volle Spaltenbreite hat,
+                    // laeuft die erste Zeile voll und die zweite haengt als
+                    // Rest daran („… der Familie | Malfoy?"). `balance` verteilt
+                    // die Zeilen gleichmaessig — bei Anzeigengroesse ist das
+                    // kein Feinschliff, sondern der Unterschied zwischen einem
+                    // Satz und einem Umbruchunfall. Wirkt nur bei wenigen
+                    // Zeilen, also genau hier.
+                    textWrap: 'balance',
                     // Auf dem Grund statt auf einer Karte: --qq-text, nicht
                     // --qq-card-text. Bei Cozy sind beide Creme, bei hellen
                     // Skins ist der Unterschied load-bearing.

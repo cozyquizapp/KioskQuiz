@@ -333,7 +333,18 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               maxLines={2}
               shrinkAfter={14}
               fontSize={nameFs}
-              color={tColor}
+              // 2026-08-23 (Buehnen-Durchgang, am Brett gemessen): die Namen
+              // standen in der rohen Teamfarbe auf dem dunklen Grund. Fuenf von
+              // acht lagen damit unter 4,5:1, drei sogar unter 3:1 — Wolfsrudel
+              // 2,61, Bierdeckel 2,70, Pub-Crawl-Profis 2,82, Frag-Tiger 2,89.
+              // Auf Projektionsdistanz ist das kein Name mehr, sondern ein
+              // Farbfleck.
+              // Die Regel steht schon zwei Zeilen weiter unten, sie war nur nie
+              // auf die Namen angewandt: die Rangfolge faehrt ueber HELLIGKEIT,
+              // nicht ueber einen Farbton. Die Teamfarbe sitzt weiter da, wo sie
+              // gross und ohne Text ist — auf der Avatar-Kachel direkt daneben.
+              // Creme gegen den Buehnengrund: 14,4:1.
+              color={isThemed() ? 'var(--qq-text)' : tColor}
               fontWeight={900}
               style={{ textShadow: isActive ? `0 0 16px ${tColor}55` : 'none' }}
             />

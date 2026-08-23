@@ -95,6 +95,24 @@ const ANSICHTEN = {
   rundenintro:{ ruhe: 4000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); } },
   rundenintro2:{ruhe: 3000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); await sleep(1800); await h.emit('qq:activateQuestion'); } },
   rundenintro3:{ruhe: 3000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); await sleep(1800); await h.emit('qq:activateQuestion'); await sleep(900); await h.emit('qq:activateQuestion'); } },
+  // Ab hier der eigentliche Abend. `zurFrage` steppt durch das Runden-Intro
+  // bis die Frage steht; danach reicht ein Ereignis pro Station.
+  frage:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); } },
+  // Die Auflösung hat zwei Bilder: erst zeigt sie, WER was getippt hat, dann
+  // markiert sie die richtige Antwort. Der zweite Schritt haengt an einem
+  // kategorie-eigenen Ereignis (`qq:muchoRevealStep`, `qq:zvzRevealStep`,
+  // `qq:cheeseRevealStep`) — ohne das sieht man nur das halbe Bild.
+  aufloesung: { ruhe: 3000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await sleep(600); await h.emit('qq:revealAnswer'); } },
+  aufloesung2:{ ruhe: 3500, aufbau: 'spiel', weg: async (h) => {
+    await h.zurFrage(); await sleep(600); await h.emit('qq:revealAnswer'); await sleep(1600);
+    for (const ev of ['qq:muchoRevealStep', 'qq:zvzRevealStep', 'qq:cheeseRevealStep']) {
+      await h.emit(ev); await sleep(200); await h.emit(ev); await sleep(200);
+    }
+  } },
+  brett:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
+    await h.zurFrage(); await sleep(600); await h.emit('qq:revealAnswer'); await sleep(900);
+    await h.emit('qq:startPlacement');
+  } },
 };
 
 if (process.argv.includes('--liste')) {
@@ -167,6 +185,13 @@ const phase = () => beamer.evaluate(() =>
 let regelStand = -2;
 const helfer = {
   emit,
+  /** Bis die Frage wirklich sichtbar ist. Das Runden-Intro hat drei Stufen,
+   *  jede kostet ein `qq:activateQuestion`; das vierte startet die Frage. */
+  async zurFrage() {
+    await this.zumRundenIntro();
+    await sleep(1600);
+    for (let i = 0; i < 3; i++) { await emit('qq:activateQuestion'); await sleep(700); }
+  },
   async zumRundenIntro() {
     await this.zuRegelIndex(0);
     await emit('qq:rulesFinish');

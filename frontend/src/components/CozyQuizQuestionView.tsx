@@ -74,6 +74,12 @@ const QQ_QUESTION_MAX_W = 1300;
 // Die Breite des Antwort-Rasters. Frage und Antworten teilen sich dieselbe
 // Spalte, damit die Folie EINE linke Kante hat (siehe Kommentar am Fragefeld).
 const QQ_OPTIONS_MAX_W = 1400;
+// Hoehe der Statuszeile am oberen Rand (Kategorie-Pille, Fragezaehler, Timer).
+// Gemessen 204 px MIT Timer; als cqh notiert, damit sie auf kleineren Flaechen
+// mitfaellt. Steht hier, weil zwei Stellen sie brauchen: die Zeile selbst haelt
+// damit ihre Hoehe (sonst springt die Pille, wenn der Timer fehlt), und
+// oben-buendige Layouts halten damit Abstand zu ihr.
+const QQ_KOPFZEILE_H = 'clamp(120px, 20.6cqh, 204px)';
 
 
 // 2026-05-24 (Refactor #5): Reveals + Helpers in components/reveals/ extrahiert:
@@ -1564,8 +1570,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // 2026-05-12 (Wolf 'kategorie-badge nach links UNTEN, fragecard oben');
           // 2026-05-12 v2 (Wolf 'safe-margin im ganzen quiz'): jede Achse
           // floor() auf var(--qq-safe-margin) um Mindest-Rand zu garantieren.
+          // 2026-08-23: Heisse Kartoffel setzt den Inhalt oben-buendig
+          // (`innerJustify: flex-start`) statt mittig. Die Statuszeile liegt
+          // absolut darueber, also muss der Inhalt ihre Hoehe abwarten — sonst
+          // laeuft die Frage durch die Kategorie-Pille hindurch, wie am
+          // 2026-08-23 im Bild gesehen. 16 px Abstand vom Rand plus Zeilenhoehe
+          // plus etwas Luft.
           padding: isHotPotatoActive
-            ? 'max(var(--qq-safe-margin), clamp(36px, 5cqh, 64px)) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))'
+            ? `calc(16px + ${QQ_KOPFZEILE_H} + clamp(16px, 2cqh, 28px)) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`
             : 'max(var(--qq-safe-margin), clamp(40px, 5.5cqh, 70px)) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
@@ -1592,6 +1604,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             right: 'clamp(14px, 1.6vh, 26px)',
             display: 'flex', alignItems: 'center', justifyContent: 'space-between',
             gap: 16,
+            // 2026-08-23 (Buehnen-Durchgang): die Zeile ist der Anker des
+            // Abends — sie sagt auf jeder Frage, welche Kategorie laeuft und
+            // die wievielte Frage es ist. Genau die sprang aber um 80 px.
+            // Ursache: der Timer sitzt in derselben Zeile und ist viel hoeher
+            // als die Pille. Bei Heisser Kartoffel ist er ausgeblendet (das
+            // Spiel hat einen eigenen Timer pro Zug), die Zeile fiel damit von
+            // 204 px auf 44 px zusammen, und die mittig gesetzte Pille rutschte
+            // mit nach oben. Gemessen: Fragezaehler bei y 104 auf vier Folien,
+            // bei y 24 auf der fuenften.
+            // Die Hoehe wird jetzt gehalten, egal ob der Timer da ist. 204 px
+            // sind die gemessene Zeilenhoehe MIT Timer, als cqh notiert, damit
+            // sie auf kleineren Flaechen mitfaellt.
+            minHeight: QQ_KOPFZEILE_H,
             zIndex: 60,
             pointerEvents: 'none',
           }}>
@@ -1856,7 +1881,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             return (
               <div style={{
                 display: 'flex', flexDirection: 'column', gap: 14,
-                width: '100%', maxWidth: QQ_QUESTION_MAX_W, marginBottom: 16,
+                // 2026-08-23: dieselbe Spalte wie Frage und Mu-Cho-Raster,
+                // damit die Folie eine linke Kante hat.
+                width: '100%', maxWidth: QQ_OPTIONS_MAX_W, marginBottom: 16,
                 animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
               }}>
                 {criteria && (
@@ -1967,7 +1994,8 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               alignContent: 'center',
               marginTop: 16,
               marginBottom: 16,
-              width: '100%', maxWidth: QQ_QUESTION_MAX_W,
+              // 2026-08-23: siehe oben, eine Spalte fuer Frage und Antworten.
+              width: '100%', maxWidth: QQ_OPTIONS_MAX_W,
               animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) 0.1s both',
               // 2026-04-30 v2: 0.6s → 0.9s entspanntes Easing analog MUCHO.
               transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth)',

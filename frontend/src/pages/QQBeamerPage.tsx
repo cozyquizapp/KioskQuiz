@@ -2843,12 +2843,18 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, lineHeight: 1.05 }}>
                     <span style={{
                       fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900, letterSpacing: '0.16em',
-                      textTransform: 'uppercase', color: urgent ? '#EF4444' : t.color,
+                      // 2026-08-23 (Buehnen-Durchgang, gleiche Regel wie am
+                      // Brett): rohe Teamfarbe auf dunklem Grund liegt je nach
+                      // Team bei 2,6 bis 9:1. Die Farbe steht gross auf der
+                      // Avatar-Kachel daneben, die Schrift muss lesbar sein.
+                      // Rot bei Zeitnot bleibt, das ist ein Signal.
+                      textTransform: 'uppercase', color: urgent ? '#EF4444' : (isThemed() ? 'var(--qq-text-muted)' : t.color),
                     }}>
                       {lang === 'en' ? 'Your turn' : 'Jetzt dran'}
                     </span>
                     <span title={t.name} style={{
-                      fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900, color: t.color,
+                      fontSize: 'clamp(30px, 3.2cqw, 48px)', fontWeight: 900,
+                      color: isThemed() ? 'var(--qq-text)' : t.color,
                       maxWidth: 'min(80cqw, 560px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                     }}>
                       {truncName(t.name, 22)}
@@ -2860,7 +2866,8 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                 <>
                   <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(84px, 9cqw, 138px)'} bgColor={t.color} />
                   <span title={t.name} style={{
-                    fontSize: 'clamp(16px, 1.8cqw, 26px)', fontWeight: 900, color: t.color,
+                    fontSize: 'clamp(16px, 1.8cqw, 26px)', fontWeight: 900,
+                    color: isThemed() ? 'var(--qq-text-muted)' : t.color,
                     maxWidth: 'clamp(120px, 16cqw, 240px)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                   }}>
                     {truncName(t.name, 14)}

@@ -98,6 +98,14 @@ const ANSICHTEN = {
   // Ab hier der eigentliche Abend. `zurFrage` steppt durch das Runden-Intro
   // bis die Frage steht; danach reicht ein Ereignis pro Station.
   frage:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); } },
+  // frage2..frage5 bauen AUF der vorigen Ansicht auf: in einem Aufruf
+  // (`frage frage2 frage3 frage4 frage5`) laeuft eine Runde durch und man sieht
+  // alle fuenf Kategorien, ohne fuenfmal ein Spiel aufzusetzen. Mit
+  // abgeschaltetem Mischen ist die Reihenfolge die des Entwurfs.
+  frage2:     { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.naechsteFrage(); } },
+  frage3:     { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.naechsteFrage(); } },
+  frage4:     { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.naechsteFrage(); } },
+  frage5:     { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.naechsteFrage(); } },
   // Die Auflösung hat zwei Bilder: erst zeigt sie, WER was getippt hat, dann
   // markiert sie die richtige Antwort. Der zweite Schritt haengt an einem
   // kategorie-eigenen Ereignis (`qq:muchoRevealStep`, `qq:zvzRevealStep`,
@@ -185,6 +193,24 @@ const phase = () => beamer.evaluate(() =>
 let regelStand = -2;
 const helfer = {
   emit,
+  /** Eine Frage weiter. Der Server verlangt erst `nextQuestion`, danach
+   *  fuehrt `activateQuestion` durch das kurze Zwischenbild (Kategorie) bis
+   *  die Frage steht. Wie viele Schritte das sind, haengt daran, ob die
+   *  Kategorie schon dran war — also wird gefragt statt geraten. */
+  async naechsteFrage() {
+    // `qq:nextQuestion` verlangt PLACEMENT oder QUESTION_REVEAL. Aus der
+    // laufenden Frage heraus muss also erst aufgeloest werden, sonst passiert
+    // nichts und man knipst dreimal dieselbe Folie (2026-08-23 genau so
+    // passiert, der Fragezaehler stand dreimal auf 01/15).
+    if (await phase() === 'QUESTION_ACTIVE') { await emit('qq:revealAnswer'); await sleep(600); }
+    await emit('qq:nextQuestion');
+    await sleep(700);
+    for (let i = 0; i < 4; i++) {
+      if (await phase() === 'QUESTION_ACTIVE') break;
+      await emit('qq:activateQuestion');
+      await sleep(800);
+    }
+  },
   /** Bis die Frage wirklich sichtbar ist. Das Runden-Intro hat drei Stufen,
    *  jede kostet ein `qq:activateQuestion`; das vierte startet die Frage. */
   async zurFrage() {

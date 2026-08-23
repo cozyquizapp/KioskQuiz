@@ -4,7 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
-import { isThemed, getActiveTheme, setActiveThemeId, themeIdForState, useActiveThemeId } from '../qqTheme';
+import { isThemed, getActiveTheme, setActiveThemeId, themeIdForState, useActiveThemeId, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import { useSceneTransition } from '../hooks/useSceneTransition';
 import {
   QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
@@ -3294,6 +3294,17 @@ export function AnimatedCozyWolf({ widthCss, speaking, mode, wink, mirror, troet
    */
   troeteBoost?: boolean;
 }) {
+  // 2026-08-23 (Wolf: „der Wolf ist alt, ueberall raus - alles ist Buehne"):
+  // der gezeichnete rosa Wolf gehoert zur alten Bildsprache. Er sitzt an
+  // ueber einem Dutzend Stellen im Abend (Lobby, Regeln, Team-Auftritt, Pause,
+  // Comeback, CozyGame, Final-Aufloesung, Danke), und jede einzeln
+  // auszubauen waere ein Dutzend Gelegenheiten, eine zu vergessen.
+  // Deshalb steht der Schnitt hier, an der Quelle: auf der Buehne rendert die
+  // Komponente nichts. Die uebrigen Skins behalten ihn unveraendert.
+  // NICHT betroffen ist der gelieferte 3D-Wolf auf der Willkommen-Folie - der
+  // laeuft als eigenes Video (`WelcomeWolfVideo`) und wurde fuer die Buehne
+  // gebaut.
+  if (getActiveThemeId() === QUIRKS_THEME_ID) return null;
   // Default-Mode: 'speaking' (alte API). Wenn mode gesetzt, ignoriert speaking-Prop
   // (Ausnahme: winken/jubel/daumen-Modes lesen speaking als externes Mund-Flap-Gate).
   const effectiveMode: WolfMode = mode ?? 'speaking';
@@ -5578,6 +5589,9 @@ export function WolfCoModerator({ lang, variant, widthCss, eurovisionMode }: {
   /** 2026-05-07 (Wolf-ESC): bei true → Wolf haelt EU-Flagge (statt trinken/winken). */
   eurovisionMode?: boolean;
 }) {
+  // 2026-08-23: siehe AnimatedCozyWolf - der alte Wolf ist auf der Buehne raus,
+  // und mit ihm sein Sprechblasen-Paar.
+  if (getActiveThemeId() === QUIRKS_THEME_ID) return null;
   // 2026-05-07 v8 (Wolf 'gib dem wolf eurovision sprueche'): ESC-Slogan-Pool
   // pro variant. Pause = Watchparty-Pause-Witze, preGame = Show-Anmoderation.
   const slogans: Slogan[] = eurovisionMode

@@ -20,7 +20,11 @@ import {
   QQ_CATEGORY_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, qqArenaType } from '../cozyQuizShared';
-import { isThemed, isQuietMotion } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+// 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
+// umschrieben - unter isThemed() fallen auch Studio Mono, Soft Pop und Neo.
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -184,6 +188,22 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
           width: '100%', height: '100%',
           animation: 'qqWolfHopArc 560ms var(--qq-ease-out-cubic) both',
         }}>
+          {/* 2026-08-23 (Wolf: „der Wolf ist alt, ueberall raus"): der rosa
+              Wolfskopf war die Standortmarke auf der Zeitleiste. Auf der Buehne
+              markiert stattdessen eine gefuellte Kachel im Buehnen-Akzent, wo
+              wir gerade stehen - dieselbe Form und dieselbe Farbe wie die
+              Kategorie-Pille oben links, mit dem Pfeil darunter, der schon da
+              war. Kein Doppelring, kein Schein: die gefuellte Flaeche IST das
+              Signal, und die Zeitleiste ist ohnehin nur eine Handbreit gross.
+              Die uebrigen Skins behalten den Wolf. */}
+          {istBuehneG() ? (
+            <div style={{
+              width: '68%', height: '68%', margin: '16% auto',
+              borderRadius: 'var(--qq-card-radius)',
+              background: 'var(--qq-stage-accent)',
+              transition: 'background 400ms ease',
+            }} />
+          ) : (
           <div style={{
             width: '100%', height: '100%', borderRadius: '50%',
             background: themed ? 'var(--qq-surface)' : 'rgba(20,16,31,0.92)',
@@ -206,6 +226,7 @@ export function RoundMiniTree({ state: s, catColor }: { state: QQStateUpdate; ca
               }}
             />
           </div>
+          )}
         </div>
       </div>
     </div>

@@ -29,7 +29,12 @@ import {
 } from '../pages/QQBeamerPage';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed, isQuietMotion } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+// 2026-08-23 (Uebergabe 2a): die Pause besteht aus mehreren kleinen
+// Komponenten in dieser Datei. Damit nicht jede ihre eigene Pruefung baut,
+// steht sie einmal hier oben.
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 
 function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   const [idx, setIdx] = useState(0);
@@ -53,7 +58,11 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
       // Pinnt das Grid horizontal in die Panel-Mitte
       justifyContent: 'center',
     }}>
-      <AnimatedCozyWolf widthCss="clamp(110px, 12cqw, 180px)" speaking={true} />
+      {/* 2026-08-23 (Wolf: „der Wolf ist alt, ueberall raus"): der gezeichnete
+          Wolf gehoert zur alten Bildsprache. Der gelieferte 3D-Wolf auf der
+          Willkommen-Folie bleibt, der wurde fuer die Buehne gebaut - dieser
+          hier nicht. */}
+      {!istBuehneG() && <AnimatedCozyWolf widthCss="clamp(110px, 12cqw, 180px)" speaking={true} />}
       <div style={{
         // Feste Breite — egal wie kurz/lang der Slogan ist
         width: 'clamp(260px, 38cqw, 540px)',
@@ -72,7 +81,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
           border: '1px solid var(--qq-hairline)',
           alignSelf: 'flex-start',
         }}>
-          <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>
+          {!istBuehneG() && <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>}
           <span style={{
             fontSize: 'clamp(10px, 1cqw, 13px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.18em',
@@ -138,10 +147,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // beide Modi auf ESC-Pink (#FF2D7B) — trifft Card-Border, Shimmer, Inner-Glow,
   // Round-Pille, Pause-Dot etc. Hoechster Hebel mit einer Variable.
   const isEsc = !!s.theme?.eurovisionMode;
-  const modeAccent     = isEsc ? '#FF2D7B' : (mode === 'preGame' ? 'var(--qq-accent)' : QQ_COLORS.violet400);
+  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): die Pause lief noch komplett
+  // im alten Cozy-Look - Violett als eigene Akzentfarbe, runde Kreise, rohe
+  // Systemzeichen, Scheine an allem. Auf der Buehne gilt dasselbe Vokabular wie
+  // auf jeder anderen Folie: EIN Akzent, Creme fuer Text, Kacheln statt Kreise,
+  // kein Schmuck-Schein.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const modeAccent     = istBuehne ? 'var(--qq-stage-accent)' : (isEsc ? '#FF2D7B' : (mode === 'preGame' ? 'var(--qq-accent)' : QQ_COLORS.violet400));
   // preGame-Dim/Glow ziehen den Skin-Akzent (accent-rgb-Default = altes Pink → cozy gleich).
   const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(var(--qq-accent-rgb),0.38)' : 'rgba(167,139,250,0.42)');
-  const modeGlow       = isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(var(--qq-accent-rgb),0.28)' : 'rgba(167,139,250,0.28)');
+  const modeGlow       = istBuehne ? 'transparent' : (isEsc ? 'rgba(255,45,123,0.30)' : (mode === 'preGame' ? 'rgba(var(--qq-accent-rgb),0.28)' : 'rgba(167,139,250,0.28)'));
   // 2026-04-30: Sprache aus Server-State (s.language) statt lokalem Auto-Flip.
   // Vorher floppte 'de' alle 8s automatisch unabhaengig vom Mod-Schalter.
   // Jetzt: 'de' sticky bei DE, 'en' sticky bei EN, 'both' flippt alle 12s
@@ -256,7 +271,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                     <JokerIcon i={i} size={42} eurovisionMode={!!s.theme?.eurovisionMode} />
                   </span>
                 ) : (
-                  <span style={{ fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1, flexShrink: 0 }}>{it.icon}</span>
+                  <span style={{ fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1, flexShrink: 0 }}>
+                    {/* 2026-08-23: geliefertes Set statt rohem Systemzeichen. */}
+                    <QQEmojiIcon emoji={it.icon} size="1em" />
+                  </span>
                 )}
                 <div style={{ minWidth: 0 }}>
                   <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-accent)', marginBottom: 6 }}>{it.title}</div>
@@ -333,26 +351,30 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             display: 'inline-flex', alignItems: 'center', gap: 14,
             padding: '14px 32px',
             borderRadius: isQuietMotion() ? 'var(--qq-card-radius)' : 'var(--qq-pill-radius)',
-            background: isQuietMotion() ? 'var(--qq-accent-light)' : `${roundColor}20`,
-            border: isQuietMotion() ? '2px solid var(--qq-card-text)' : `2.5px solid ${roundColor}`,
-            boxShadow: isQuietMotion() ? '5px 5px 0 var(--qq-card-text)' : `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
+            // 2026-08-23: die Runden-Pille lief in der Rundenfarbe mit 28px
+            // Schein und einem zweiten Schein hinter der Ziffer. Auf der Buehne
+            // dieselbe Form wie die Kategorie-Pille: gefuellt im Buehnen-Akzent,
+            // dunkle Schrift, keine Kontur, kein Schein.
+            background: istBuehne ? 'var(--qq-stage-accent)' : (isQuietMotion() ? 'var(--qq-accent-light)' : `${roundColor}20`),
+            border: istBuehne ? 'none' : (isQuietMotion() ? '2px solid var(--qq-card-text)' : `2.5px solid ${roundColor}`),
+            boxShadow: istBuehne ? 'none' : (isQuietMotion() ? '5px 5px 0 var(--qq-card-text)' : `0 0 28px ${roundColor}55, inset 0 1px 0 rgba(246, 239, 230,0.06)`),
           }}>
             <span style={{
               fontSize: 'clamp(36px, 4.5cqw, 64px)', fontWeight: 900,
-              color: isQuietMotion() ? 'var(--qq-card-text)' : roundColor, lineHeight: 1,
-              textShadow: isQuietMotion() ? 'none' : `0 0 16px ${roundColor}88`,
+              color: istBuehne ? '#12100E' : (isQuietMotion() ? 'var(--qq-card-text)' : roundColor), lineHeight: 1,
+              textShadow: istBuehne ? 'none' : (isQuietMotion() ? 'none' : `0 0 16px ${roundColor}88`),
               fontVariantNumeric: 'tabular-nums', letterSpacing: isQuietMotion() ? '-0.03em' : undefined,
             }}>{s.gamePhaseIndex}</span>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1.1 }}>
               <span style={{
                 fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900,
-                color: isQuietMotion() ? 'var(--qq-card-text)' : `${roundColor}cc`, letterSpacing: '0.1em', textTransform: 'uppercase',
+                color: istBuehne ? '#12100E' : (isQuietMotion() ? 'var(--qq-card-text)' : `${roundColor}cc`), letterSpacing: '0.1em', textTransform: 'uppercase',
               }}>
                 {de ? `Runde ${s.gamePhaseIndex} von ${s.totalPhases}` : `Round ${s.gamePhaseIndex} of ${s.totalPhases}`}
               </span>
               <span style={{
                 fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
-                color: 'var(--qq-card-text)',
+                color: istBuehne ? '#12100E' : 'var(--qq-card-text)',
               }}>
                 {de ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
               </span>
@@ -1549,7 +1571,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 // clamp-Max bewusst kleiner als CozyQuiz (88 vs 112) damit
                 // CozyQuiz visuell dominant bleibt.
                 fontSize: 'clamp(42px, 5.5cqw, 88px)', fontWeight: 900,
-                color: modeAccent,
+                // 2026-08-23: der Titel steht auf der Buehne in Creme. Der
+                // Akzent gehoert der Kategorie und den gefuellten Pillen, nicht
+                // einer 88px-Ueberschrift.
+                color: istBuehne ? 'var(--qq-text)' : modeAccent,
                 letterSpacing: '-0.01em',
                 lineHeight: 1.05,
                 // 2026-05-13 (Wolf 'NUR EUROVISION EDITION: hintergrund und text
@@ -1613,11 +1638,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             background: cardBg,
             borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
             padding: 'clamp(32px, 4cqw, 56px)',
-            border: `1px solid ${modeAccentDim}`,
-            boxShadow:
-              `0 0 64px ${modeGlow},` +
-              `0 0 0 1px rgba(255,235,200,0.04) inset,` +
-              `0 -3px 0 ${modeAccent} inset`,
+            // 2026-08-23: der Rahmen lief in der Modus-Farbe, mit 64px Schein
+            // darum und einem 3px-Balken in derselben Farbe an der Unterkante -
+            // drei Traeger fuer „hier ist die Karte". Auf der Buehne eine
+            // Haarlinie, mehr braucht eine Flaeche nicht, die ohnehin 1500px
+            // breit ist.
+            border: istBuehne ? '1px solid var(--qq-hairline)' : `1px solid ${modeAccentDim}`,
+            boxShadow: istBuehne
+              ? 'none'
+              : `0 0 64px ${modeGlow},` +
+                `0 0 0 1px rgba(255,235,200,0.04) inset,` +
+                `0 -3px 0 ${modeAccent} inset`,
             // 2026-04-30 (User-Wunsch): Card-Groesse FIX, nur Text-Inhalt
             // wechselt. Vorher minHeight -> Card konnte sich vergroessern bei
             // mehr Content; jetzt height fixiert + overflow:hidden, sodass
@@ -1716,21 +1747,35 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       {mode === 'pause' && (
         <div style={{
           display: 'inline-flex', alignItems: 'center', gap: 10,
-          fontSize: 'clamp(15px, 1.6cqw, 22px)', color: isThemed() ? 'var(--qq-text-muted)' : '#a8a395', fontWeight: 700,
+          // 2026-08-23 (Wolf: „gleich gehts weiter wird in Pause leicht
+          // verdeckt"). Im Bild nachgemessen: die Seitenanzeige (der aktive
+          // Balken plus zwei Kaestchen) sass direkt auf der Zeile - ihre
+          // Unterkante beruehrte die Versalhoehe von „geht's". Beide sind
+          // Geschwister in derselben Spalte, und zwischen ihnen stand kein
+          // Abstand. Jetzt steht einer da.
+          marginTop: 'clamp(14px, 1.8cqh, 26px)',
+          fontSize: istBuehne ? 'clamp(17px, 1.8cqw, 26px)' : 'clamp(15px, 1.6cqw, 22px)',
+          color: isThemed() ? 'var(--qq-text-muted)' : '#a8a395', fontWeight: 700,
           position: 'relative', zIndex: 5,
           letterSpacing: '0.04em',
         }}>
-          <span style={{
-            display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-            background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
-            animation: 'qqPauseDot 1.6s ease-in-out infinite',
-          }} />
+          {/* Die beiden leuchtenden Punkte links und rechts sagen nichts. Auf
+              der Buehne faellt Schmuck weg, der nichts traegt. */}
+          {!istBuehne && (
+            <span style={{
+              display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+              background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
+              animation: 'qqPauseDot 1.6s ease-in-out infinite',
+            }} />
+          )}
           {de ? "Gleich geht's weiter…" : 'Continuing soon…'}
-          <span style={{
-            display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
-            background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
-            animation: 'qqPauseDot 1.6s ease-in-out 0.3s infinite',
-          }} />
+          {!istBuehne && (
+            <span style={{
+              display: 'inline-block', width: 6, height: 6, borderRadius: '50%',
+              background: modeAccent, boxShadow: `0 0 10px ${modeGlow}`,
+              animation: 'qqPauseDot 1.6s ease-in-out 0.3s infinite',
+            }} />
+          )}
         </div>
       )}
 

@@ -68,10 +68,6 @@ const SPLITTER_SCHLANK = 4;     // ... und deutlich schmal-lang
 // statt 3 — damit bleibt z.B. der 22x6-Strich im Papierboot (Verhaeltnis 3.7)
 // unangetastet, der plausibel zum Motiv gehoert.
 const SPLITTER_MIN = 60;
-// Radius fuer das Schliessen feiner Durchsicht-Kanaele. 5 px auf 512 px Kante
-// (etwa 1 %) schliesst das Gestrick der Socke und die Hutfalte, laesst den
-// Spalt zwischen den Fernglas-Rohren aber offen (der ist deutlich breiter).
-const SCHLIESS_RADIUS = 5;
 
 let repariert = 0;
 for (const file of fs.readdirSync(DIR).filter(f => f.endsWith('.png')).sort()) {
@@ -99,51 +95,17 @@ for (const file of fs.readdirSync(DIR).filter(f => f.endsWith('.png')).sort()) {
     if (a < ALPHA_VOLL && a > ALPHA_LOCH && !aussen[i]) { data[i * c + 3] = 255; flecken++; }
   }
 
-  // 2026-08-23, zweite Stufe. Die erste erwischt nur EINGESCHLOSSENE Loecher.
-  // Zaubererhut und Strickstrumpf lassen aber weiter durch: ihre durchsichtigen
-  // Stellen haengen ueber haarfeine Kanaele am Rand, die Flutung erreicht sie
-  // also und laesst sie stehen. Auf einer roten Kachel sieht man dadurch rot
-  // durch das Gestrick.
-  // Loesung: die Deckungs-Maske morphologisch SCHLIESSEN (erst weiten, dann
-  // wieder schrumpfen). Kanaele, die schmaler sind als der Radius, verschwinden
-  // dabei; echte Zwischenraeume (zwischen den beiden Fernglas-Rohren) bleiben,
-  // weil sie breiter sind.
-  // Gefuellt wird auch hier NUR, was Teil-Alpha hat — voll transparente Loecher
-  // (Kaese, Donut) sind davon unberuehrt.
-  {
-    const R = SCHLIESS_RADIUS;
-    const deckend = new Uint8Array(w * h);
-    for (let i = 0; i < w * h; i++) deckend[i] = A(i) >= ALPHA_VOLL ? 1 : 0;
-    // Weiten und Schrumpfen getrennt je Achse (separierbar, also 4 Durchlaeufe
-    // statt eines quadratischen Fensters).
-    const morph = (src, grow) => {
-      const tmp = new Uint8Array(w * h), out = new Uint8Array(w * h);
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        let v = grow ? 0 : 1;
-        for (let d = -R; d <= R; d++) {
-          const nx = x + d; if (nx < 0 || nx >= w) { if (!grow) v = 0; continue; }
-          const s = src[y * w + nx];
-          if (grow) { if (s) { v = 1; break; } } else if (!s) { v = 0; break; }
-        }
-        tmp[y * w + x] = v;
-      }
-      for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) {
-        let v = grow ? 0 : 1;
-        for (let d = -R; d <= R; d++) {
-          const ny = y + d; if (ny < 0 || ny >= h) { if (!grow) v = 0; continue; }
-          const s = tmp[ny * w + x];
-          if (grow) { if (s) { v = 1; break; } } else if (!s) { v = 0; break; }
-        }
-        out[y * w + x] = v;
-      }
-      return out;
-    };
-    const geschlossen = morph(morph(deckend, true), false);
-    for (let i = 0; i < w * h; i++) {
-      const a = A(i);
-      if (geschlossen[i] && a < ALPHA_VOLL && a > ALPHA_LOCH) { data[i * c + 3] = 255; flecken++; }
-    }
-  }
+  // 2026-08-23, zweite Stufe — WIEDER RAUS, siehe unten.
+  //
+  // Sie hat die Deckungsmaske morphologisch geschlossen, um haarfeine
+  // Durchsicht-Kanaele zuzumachen. Das hat funktioniert, aber einen sichtbaren
+  // Schaden angerichtet (Wolf: „aber jetzt sind dicke schwarze raender hinter
+  // den items?"): das Schliessen weitet die Maske um den Radius, und damit
+  // wurden die ersten 5 px des weichen EIGENSCHATTENS voll deckend. Aus einem
+  // Verlauf wird so eine harte dunkle Kante um das Motiv.
+  // Gebraucht wird sie ohnehin nicht mehr: seit die Flutgrenze bei 60 statt
+  // 240 liegt, erwischt schon die erste Stufe die Hutfalte. Zwei Werkzeuge
+  // fuer dasselbe Problem, eines davon mit Nebenwirkung — also das eine weg.
 
   // ── 2) Rueckstaende ───────────────────────────────────────────────────────
   const gesehen = new Uint8Array(w * h);

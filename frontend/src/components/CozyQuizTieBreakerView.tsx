@@ -87,7 +87,16 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
         {istBuehne ? '' : '⚔️ '}{de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: gedaempft }}>
-        {de ? 'Schätzfrage, am nächsten dran gewinnt!' : 'Estimate, closest guess wins!'}
+        {/* 2026-08-23 (Wolf: „stechen mit schaetzchen unlogisch, ist ja eigene
+            quiz kategorie"). Der Einwand trifft die BESCHRIFTUNG, nicht die
+            Mechanik. Nachgesehen in QQ_TIEBREAKER_POOL: dort steht keine
+            einzige Schaetzfrage. „Wie viele Sterne hat die EU-Flagge",
+            „Wie viele Tasten hat ein Klavier" - das weiss man oder nicht, da
+            schaetzt niemand. Es sind Wissensfragen, deren Antwort zufaellig
+            eine Zahl ist, und die Zahl ist nur das Mittel, um immer einen
+            Sieger zu bekommen. Schaetzchen dagegen fragt echte Schaetzwerte.
+            Das Wort „Schaetzfrage" hat die zwei zu einem gemacht. */}
+        {de ? 'Eine Zahl entscheidet. Wer am nächsten dran ist, gewinnt.' : 'One number decides. Closest wins.'}
       </div>
 
       {/* Kandidaten mit Wappen (+ Schätzung nach Reveal) */}

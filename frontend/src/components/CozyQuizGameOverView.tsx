@@ -154,7 +154,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
           background: istBuehne ? 'none' : `radial-gradient(ellipse at center, ${teamColor}33 0%, transparent 60%)`,
           transition: 'background 0.6s ease',
         }} />
-        <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />
+        {/* 2026-08-23 (Wolf: „konfetti nur beim sieger"). Die Aufloesung laeuft
+            von hinten nach vorne, Platz acht zuerst. Konfetti fiel dabei auf
+            JEDER Karte, also auch auf dem letzten Platz - und damit bedeutete
+            es nichts mehr, wenn es beim Sieger fiel. Jetzt faellt es einmal,
+            und dann heisst es etwas. */}
+        {(isWinner || !istBuehne) && <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />}
         <Fireflies color={istBuehne ? '#F5ECD844' : `${teamColor}55`} />
         {s.theme?.eurovisionMode && <EurovisionHearts />}
 

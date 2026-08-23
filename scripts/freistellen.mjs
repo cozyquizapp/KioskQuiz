@@ -43,8 +43,12 @@ const FLUT = 244;
 // So weit reicht der weiche Verlauf nach innen. Ohne den bekommt jede Kante
 // eine harte Treppe, die auf der Projektion als Fransen sichtbar wird.
 const BAND = 3;
-const RAMPE_OBEN = 250;
-const RAMPE_UNTEN = 150;
+// Kantenband, gemessen als Abstand zur Helligkeit des Grundes: bis TOTZONE
+// gilt ein Pixel noch als Grund, ueber TOTZONE + RAMPE_WEITE als volles Motiv.
+// Die Zahlen sind 1:1 die alte Rampe 250 -> 150 auf weissem Grund, nur eben
+// relativ statt absolut, damit sie auf grauem Grund genauso stimmt.
+const TOTZONE = 5;
+const RAMPE_WEITE = 100;
 const ZIEL = 512;
 
 /**
@@ -62,6 +66,14 @@ const ZIEL = 512;
  * kommen am RAND vor? Genau die sind Hintergrund, alles andere ist Motiv.
  * Bei weissem Grund ist das {255}, beim Karo {244, 254} - und ein schattierter
  * weisser Ball hat einen Verlauf ueber viele Werte und faellt nicht darunter.
+ *
+ * NACHTRAG 2026-08-23, Nachbestellung: die Bestellung fragt fuer weisse Motive
+ * inzwischen bewusst nach MITTELGRAUEM Grund (#808080). Die alte Schranke
+ * „unter 200 ist zu dunkel fuer Grund" hat den nicht mehr erkannt, die Flut
+ * lief ins Leere und beide Zeichen kamen mit 100 Prozent Deckung raus, also
+ * unveraendert. Die Schranke ist weg; was Grund ist, entscheidet allein, ob
+ * ein neutraler Wert am Rand HAEUFIG vorkommt. Die Zeichen stehen mittig mit
+ * Luft ringsum, der Rand ist also immer Grund.
  */
 function grundwerteLesen(d, W, H, K) {
   const zaehler = new Map();
@@ -69,7 +81,6 @@ function grundwerteLesen(d, W, H, K) {
     const o = (y * W + x) * K;
     const r = d[o], g = d[o + 1], b = d[o + 2];
     if (Math.max(r, g, b) - Math.min(r, g, b) > 4) return;   // nicht neutral
-    if (Math.max(r, g, b) < 200) return;                      // zu dunkel fuer Grund
     const v = Math.round((r + g + b) / 3);
     zaehler.set(v, (zaehler.get(v) ?? 0) + 1);
   };
@@ -99,13 +110,29 @@ function machHell(grundwerte) {
 // NEUTRALGRAU und hell sind. Neutral heisst, dass Rot, Gruen und Blau dicht
 // beieinander liegen - genau das trifft einen Schatten auf Weiss und verschont
 // jede farbige Motivflaeche, auch eine helle wie Creme oder Gelb.
-const SCHATTEN_HELL = 196;   // ab hier gilt ein grauer Pixel als Schatten
+//
+// NACHTRAG 2026-08-23: die feste Untergrenze 196 war die Zahl fuer weissen
+// Grund (255 minus knapp 60). Auf grauem Grund (126) liegt der Schatten
+// darunter und blieb stehen. Die Grenze wird deshalb aus dem Grund abgeleitet.
+// Wichtig ist dabei die zweite, neue Schranke nach OBEN: ein Schatten ist
+// immer DUNKLER als sein Grund. Ohne die haette die Flut auf grauem Grund den
+// weissen Wattebausch mitgenommen, denn der ist neutral und hell - genau die
+// beiden Zeichen, um die es hier ueberhaupt geht. Auf weissem Grund aendert
+// die Obergrenze nichts, dort liegt sie ueber 255.
+// 59 statt einer runden Zahl, damit auf weissem Grund exakt die alte Schwelle
+// 196 rauskommt und die erste Lieferung Pixel fuer Pixel gleich bleibt.
+const SCHATTEN_TIEFE = 59;   // so weit unter den Grund reicht ein Schatten
 const SCHATTEN_BUNT = 16;    // groesster erlaubter Abstand zwischen den Kanaelen
-const schattig = (d, o) => {
-  const r = d[o], g = d[o + 1], b = d[o + 2];
-  const max = Math.max(r, g, b), min = Math.min(r, g, b);
-  return max >= SCHATTEN_HELL && (max - min) <= SCHATTEN_BUNT;
-};
+function machSchattig(grundwerte) {
+  const grund = grundwerte.length ? Math.max(...grundwerte) : 255;
+  const unten = grund - SCHATTEN_TIEFE;
+  const oben = grund + TOLERANZ;
+  return (d, o) => {
+    const r = d[o], g = d[o + 1], b = d[o + 2];
+    const max = Math.max(r, g, b), min = Math.min(r, g, b);
+    return max >= unten && max <= oben && (max - min) <= SCHATTEN_BUNT;
+  };
+}
 
 async function einsFreistellen(datei) {
   const roh = sharp(path.join(ein, datei)).ensureAlpha();
@@ -115,6 +142,16 @@ async function einsFreistellen(datei) {
   const grundwerte = grundwerteLesen(data, W, H, K);
   const hell = grundwerte.length ? machHell(grundwerte)
     : (d, o) => d[o] >= FLUT && d[o + 1] >= FLUT && d[o + 2] >= FLUT;
+  const schattig = machSchattig(grundwerte);
+  // Helligkeit des Grundes. Das Kantenband weiter unten leitet die Deckung aus
+  // dem ABSTAND dazu ab, nicht mehr daraus, wie dunkel ein Pixel ist.
+  // Bewusst der HOECHSTE Grundwert, nicht der Mittelwert. Beim eingebrannten
+  // Karo-Grund {244, 254} steht daneben immer auch das reine 255, und genau
+  // damit faellt die neue relative Rampe rechnerisch auf die alte absolute
+  // zurueck. Mit dem Mittelwert waere sie um ein paar Stufen verrutscht.
+  // Nachgemessen an den 31 Zeichen der ersten Lieferung: 30 kommen Pixel fuer
+  // Pixel gleich raus, final-tipp.png weicht auf 0,08 Prozent der Pixel ab.
+  const grundHell = grundwerte.length ? Math.max(...grundwerte) : 255;
   const stapel = [];
 
   // Von allen vier Raendern starten.
@@ -208,7 +245,10 @@ async function einsFreistellen(datei) {
     }
     if (!nah) continue;
     const l = (data[o] * 0.299 + data[o + 1] * 0.587 + data[o + 2] * 0.114);
-    const t = Math.min(1, Math.max(0, (RAMPE_OBEN - l) / (RAMPE_OBEN - RAMPE_UNTEN)));
+    // Deckung aus dem Abstand zum Grund. Auf weissem Grund ist das rechnerisch
+    // exakt die alte Rampe 250 -> 150; auf grauem Grund zaehlt jetzt auch ein
+    // Motiv, das HELLER ist als der Grund, und genau das war der Wattebausch.
+    const t = Math.min(1, Math.max(0, (Math.abs(l - grundHell) - TOTZONE) / RAMPE_WEITE));
     out[o + 3] = Math.round(255 * t);
   }
 

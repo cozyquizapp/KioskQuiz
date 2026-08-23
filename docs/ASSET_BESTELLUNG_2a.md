@@ -114,10 +114,9 @@ Spiel abbilden.
 | `cg-stift-fang.png` | Stift-Fang-Reaktion | one thick pencil falling, tilted diagonally |
 | `cg-marshmallow-fang.png` | Marshmallow-Fang | one marshmallow above an open cup |
 
-> Vier davon existieren heute **überhaupt nicht** und laufen auf ein
-> Systemzeichen: `cg-muenzturm`, `cg-getraenk-halbieren`,
-> `cg-schnur-halbieren`, `cg-marshmallow-fang`.
-> Der Datenbestand kennt achtzehn Spiele, im Ordner liegen vierzehn.
+> **Stand 23.08.2026: alle achtzehn liegen im Ordner und sind eingebaut.**
+> Dreizehn kamen aus der ersten Lieferung, fünf aus der Nachbestellung
+> (`ASSET_NACHBESTELLUNG_2a.md`). Kein Spiel läuft mehr auf ein Systemzeichen.
 
 ---
 

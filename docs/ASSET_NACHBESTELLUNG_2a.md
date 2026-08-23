@@ -1,5 +1,10 @@
 # Nachbestellung: fünf Zeichen
 
+> **Erledigt am 23.08.2026.** Alle fünf sind geliefert, freigestellt und
+> eingebaut. Das Dokument bleibt stehen, weil darin steht, WARUM sie neu
+> mussten. Die zwei Regeln daraus gelten weiter für alles Kommende: helles
+> Motiv auf grauem Grund, und keine Zuckerstangen-Ringel.
+
 Zum Weitergeben. Stand 23.08.2026.
 Ergänzt `ASSET_BESTELLUNG_2a.md` — die Vorgaben von dort gelten unverändert.
 

@@ -411,12 +411,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               // neben dem grossen Brett) — cqw-basiert wie der Rest der Pause.
               display: 'inline-flex', alignItems: 'center', gap: 'clamp(7px, 0.8cqw, 11px)',
               padding: 'clamp(6px,0.7cqh,9px) clamp(11px,1.1cqw,16px)', borderRadius: 'var(--qq-pill-radius)',
-              background: `${t.color}15`,
-              border: `1.5px solid ${t.color}55`,
+              // 2026-08-23: die Pille lief in Teamfarbe - Fuellung, Rand UND
+              // Ziffer. Die Marke links ist die Teamfarbe, dreimal daneben
+              // braucht es nicht, und die Ziffer muss lesbar sein.
+              background: istBuehne ? 'rgba(246,239,230,0.05)' : `${t.color}15`,
+              border: istBuehne ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${t.color}55`,
               flexShrink: 0,
             }}>
               <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(30px, 3cqw, 42px)'} />
-              <span style={{ fontWeight: 900, color: t.color, fontSize: 'clamp(15px, 1.7cqw, 22px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
+              <span style={{ fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : t.color, fontSize: 'clamp(15px, 1.7cqw, 22px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
             </div>
           );
           const colStyle: React.CSSProperties = {
@@ -480,7 +483,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const avSize   = getStandingAvatarSize(sortedTeams.length, twoCol);
     const nameSize = twoCol ? 'clamp(18px, 2cqw, 26px)'  : 'clamp(22px, 2.6cqw, 32px)';
     const valSize  = twoCol ? 'clamp(18px, 2cqw, 26px)'  : 'clamp(22px, 2.6cqw, 32px)';
-    const unitSize = twoCol ? 'clamp(12px, 1.3cqw, 16px)' : 'clamp(14px, 1.6cqw, 20px)';
+    // 2026-08-23: die Nebenzahl lief zweispaltig auf 16px. Das ist auf 1760px
+    // Buehnenbreite aus acht Metern nicht mehr da, und sie sagt, wie viele
+    // Felder ein Team insgesamt haelt - keine Fussnote.
+    const unitSize = istBuehne
+      ? (twoCol ? 'clamp(15px, 1.6cqw, 24px)' : 'clamp(17px, 1.8cqw, 26px)')
+      : (twoCol ? 'clamp(12px, 1.3cqw, 16px)' : 'clamp(14px, 1.6cqw, 20px)');
     panels.push({ key: 'standings', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
@@ -541,12 +549,33 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 borderBottom: nextInCol ? '1px solid var(--qq-hairline)' : 'none',
                 minWidth: 0,
               }}>
-                <span style={{ fontSize: rankSize, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0 }}>
-                  {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
+                {/* 2026-08-23 (Uebergabe 2a): Medaillen fuer die Plaetze 1-3
+                    raus, dieselbe Entscheidung wie an der Top-5- und der
+                    Fix-It-Tafel. Die Liste IST eine Rangliste, und drei
+                    Metall-Farben neben Kategorie, Creme und Gruen sind eine
+                    vierte Palette fuer eine Aussage, die die Ziffer schon
+                    macht. Auf der Buehne stehen alle acht Plaetze als Ziffer,
+                    in derselben Schrift und in derselben Spalte - damit
+                    fluchten die Zeilen auch, was mit Bildern nicht ging. */}
+                <span style={{
+                  fontSize: rankSize, width: twoCol ? 36 : 48, textAlign: 'center', flexShrink: 0,
+                  ...(istBuehne ? {
+                    fontWeight: 900, color: 'var(--qq-text-muted)',
+                    fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
+                  } : {}),
+                }}>
+                  {istBuehne
+                    ? `${i + 1}.`
+                    : (i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`)}
                 </span>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avSize} style={{ flexShrink: 0 }} />
                 <span style={{
-                  flex: 1, fontWeight: 900, fontSize: nameSize, color: t.color,
+                  // 2026-08-23: Teamnamen in Creme. Am Brett gemessen lagen die
+                  // rohen Teamfarben als Schrift zwischen 2,6:1 und 9,2:1; hier
+                  // stehen acht davon untereinander, das ist die dichteste
+                  // Stelle des Abends. Die Marke links traegt die Farbe.
+                  flex: 1, fontWeight: 900, fontSize: nameSize,
+                  color: istBuehne ? 'var(--qq-text)' : t.color,
                   overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', minWidth: 0,
                 }}>{t.name}</span>
                 {/* Score-Format IDENTISCH zu GameOverView: 'largestConnected · totalCells'.
@@ -555,7 +584,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   display: 'inline-flex', alignItems: 'baseline', gap: 5, flexShrink: 0,
                   fontVariantNumeric: 'tabular-nums',
                 }}>
-                  <span style={{ fontSize: valSize, fontWeight: 900, color: 'var(--qq-accent-soft)' }}>{t.largestConnected}</span>
+                  <span style={{ fontSize: valSize, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : 'var(--qq-accent-soft)' }}>{t.largestConnected}</span>
                   <span style={{ fontSize: unitSize, color: 'var(--qq-text-muted)', fontWeight: 700 }}>{largeGroup ? (de ? 'Pkt' : 'pts') : `· ${t.totalCells}`}</span>
                 </span>
               </div>

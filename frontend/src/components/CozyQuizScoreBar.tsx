@@ -20,7 +20,11 @@ import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+// 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
+// umschrieben - darunter fallen auch die anderen Skins.
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 
 export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, activeActionSlug, eurovisionMode, lang }: {
   teams: QQStateUpdate['teams'];
@@ -168,7 +172,14 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   const isTieAtTop = sorted.length > 1
     && sorted[0].largestConnected > 0
     && sorted[1].largestConnected === sorted[0].largestConnected;
+  // 2026-08-23 (Uebergabe 2a, „alles ist Buehne"): Medaillen und Krone sind auf
+  // der Buehne raus - dieselbe Entscheidung wie an der Top-5-Tafel, bei Fix It,
+  // in der Pausen-Rangliste, bei Schaetzchen und auf der Danke-Folie. Die
+  // Leiste IST nach Rang sortiert, und wer fuehrt, steht oben und traegt seinen
+  // Wert bereits in hellerer Schrift. Metall waere eine fuenfte Farbe fuer eine
+  // Aussage, die die Reihenfolge schon macht.
   const medalFor = (i: number, val: number, teamId: string): string | null => {
+    if (istBuehneG()) return null;
     if (val === 0) return null;
     if (isTieAtTop && val === topScore) return '👑';
     if (i === 0) return '🥇';

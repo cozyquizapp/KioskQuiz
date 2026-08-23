@@ -276,7 +276,16 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
             const themeCellRadius = isThemed()
               ? (parseInt(getActiveTheme().surface.cardRadius, 10) || 4)
               : null;
-            const cellRadius = themeCellRadius != null ? themeCellRadius : Math.max(4, cellSize * 0.16);
+            // 2026-08-23 (Uebergabe 2a, in der Pause aufgefallen): der Skin gibt
+            // einen ABSOLUTEN Radius vor (Buehne: 24px). Auf dem grossen Brett
+            // mit rund 90px Zellen liest sich das als Kachel, auf dem
+            // Mini-Brett der Pause mit rund 40px Zellen als Kreis - dieselbe
+            // Zahl, zwei verschiedene Formen. Der Radius folgt deshalb der
+            // Zellgroesse und wird vom Skin-Wert nur noch gedeckelt. Damit ist
+            // eine Zelle ueberall dieselbe Form, egal wie gross sie gerade ist.
+            const cellRadius = themeCellRadius != null
+              ? Math.min(themeCellRadius, Math.max(4, cellSize * 0.22))
+              : Math.max(4, cellSize * 0.16);
             // 2026-05-13 (Wolf 'gestapelte emojis sehen nicht aus wie skizziert,
             // 8. Anfrage' + 'oben 1x stapeln unten 2x stapeln'): Root-Cause der
             // wiederholten Beschwerde. Connections-Stapel (qqStapelBonusCell)

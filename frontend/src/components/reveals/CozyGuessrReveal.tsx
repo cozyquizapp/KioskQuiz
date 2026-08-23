@@ -173,6 +173,15 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
     return b;
   }, [bestFirst, tLat, tLng, displayPos]);
 
+
+  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): auch Pin It hatte keine
+  // Statuszeile - die Karte fuellte das Bild und oben stand mittig ein eigener
+  // Titel-Kasten. Auf der Buehne rueckt der nach oben LINKS und bekommt die
+  // Kategorie-Pille davor, wie auf allen anderen Folien. Der Kasten bleibt:
+  // anders als beim Kategorie-Grund liegt hier eine Landkarte darunter, und
+  // Text auf einer Karte braucht eine Flaeche.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+
   // 2026-04-30 v3 round 10 (User-Wunsch 'kannst du nicht den 📍-emote
   // nutzen' + 'auflösung etwas unpraktisch, ziel sieht man gar nicht'):
   // Target nutzt jetzt das 📍-Pin-Emoji XL mit Glow. Team-Markers haben
@@ -180,9 +189,32 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // iconAnchor sitzt am unteren Tip damit die Nadel exakt auf lat/lng landet.
   // Geoguessr-Style: Target deutlich groesser & dauerhaft pulsierend, plus
   // Distanz-Polylines vom Team-Pin zum Ziel (siehe Render unten).
+  // 2026-08-23 (Wolf: „der Pin passt noch nicht zum neuen Design, ist der
+  // rote neu?"). Nein, im Gegenteil - der rote Pin ist gar keine Grafik von
+  // uns. Es ist das Systemzeichen 📍 in 96px. `color: var(--qq-accent)` daran
+  // ist wirkungslos, weil Farbzeichen ihre eigenen Farben mitbringen; was auf
+  // der Leinwand steht, malt die Zeichensatz-Datei des Rechners, also auf
+  // jedem Rechner etwas anderes. Roter Kopf mit grauer Nadel ist die
+  // Noto-Fassung. Damit ist es die letzte Stelle im Quiz, an der noch ein
+  // rohes Systemzeichen steht statt einer eigenen Marke.
+  // Auf der Buehne wird daraus eine gezeichnete Marke: eine Tropfenform in
+  // Gruen, der Farbe, die im ganzen Quiz „richtig" heisst - und direkt darunter
+  // steht die Antwort in genau demselben Gruen. Kein Schein, nur ein Schatten,
+  // damit sie sich von der Karte loest.
   const targetIcon = useMemo(() => L.divIcon({
     className: 'qq-target-pin',
-    html: `<div style="
+    html: istBuehne ? `<div style="
+      position: relative; width: 76px; height: 100px;
+      animation: mapTargetDrop 0.75s var(--qq-ease-bounce) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
+      transform-origin: 50% 100%;
+      filter: drop-shadow(0 10px 14px rgba(0,0,0,0.65));
+    ">
+      <svg width="76" height="100" viewBox="0 0 76 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M38 99 C38 99 7 58 7 36 A31 31 0 1 1 69 36 C69 58 38 99 38 99 Z"
+              fill="#4ADE80" stroke="#0B140E" stroke-width="3" stroke-linejoin="round"/>
+        <circle cx="38" cy="36" r="12" fill="#0B140E"/>
+      </svg>
+    </div>` : `<div style="
       position: relative; width: 88px; height: 110px;
       animation: mapTargetDrop 0.75s var(--qq-ease-bounce) both, qqTargetPulse 2.1s ease-in-out 0.8s infinite;
       transform-origin: 50% 100%;
@@ -197,9 +229,11 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
       <!-- 2026-05-09 (Wolf): pulsierender pinker Glow-Dot entfernt — war
            redundant zum 📍 selbst, sah aus wie ein Bug. -->
     </div>`,
-    iconSize: [88, 110] as any,
-    iconAnchor: [44, 105] as any, // Pin-Tip an lat/lng (5px Offset, da Emoji-Tip nicht ganz unten)
-  }), []);
+    iconSize: (istBuehne ? [76, 100] : [88, 110]) as any,
+    // Buehne: die gezeichnete Spitze sitzt exakt auf 99 von 100, also 99.
+    // Zeichensatz-Fassung: der Tip des Zeichens liegt nicht ganz unten, daher 105.
+    iconAnchor: (istBuehne ? [38, 99] : [44, 105]) as any,
+  }), [istBuehne]);
 
   // 2026-05-05 (Wolf-Skizze): Pin-Kopf = runder Team-Color-Disc mit Avatar
   // drauf (Emoji-Mode: Emoji-Glyph; PNG-Mode: cozyCast-PNG). Schaft = sauberer
@@ -223,18 +257,21 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
         position: absolute; left: 50%; top: 38px;
         transform: translateX(-50%);
         width: 0; height: 0;
-        border-left: 9px solid transparent;
-        border-right: 9px solid transparent;
+        border-left: ${istBuehne ? 7 : 9}px solid transparent;
+        border-right: ${istBuehne ? 7 : 9}px solid transparent;
         border-top: 44px solid ${color};
         z-index: 1;
       "></div>
       <!-- Avatar-Disc Kopf (Team-Color BG, Avatar/Emoji drauf) -->
       <div style="
         position: absolute; left: 4px; top: 0;
-        width: 48px; height: 48px; border-radius: ${square ? '18%' : '50%'};
+        width: 48px; height: 48px;
+        border-radius: ${istBuehne ? '22%' : (square ? '18%' : '50%')};
         background: ${color};
-        border: 2.5px solid #1A1A1A;
-        box-shadow: 0 0 22px ${color}66, inset 0 -3px 6px rgba(0,0,0,0.18), inset 0 2px 4px rgba(246, 239, 230,0.22);
+        border: 2.5px solid ${istBuehne ? 'var(--qq-text)' : '#1A1A1A'};
+        box-shadow: ${istBuehne
+          ? '0 6px 10px rgba(0,0,0,0.55)'
+          : `0 0 22px ${color}66, inset 0 -3px 6px rgba(0,0,0,0.18), inset 0 2px 4px rgba(246, 239, 230,0.22)`};
         display: flex; align-items: center; justify-content: center;
         overflow: hidden;
         z-index: 2;
@@ -254,14 +291,6 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   });
 
   const title = (lang === 'en' ? 'Where on the map?' : 'Wo auf der Karte?');
-
-  // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): auch Pin It hatte keine
-  // Statuszeile - die Karte fuellte das Bild und oben stand mittig ein eigener
-  // Titel-Kasten. Auf der Buehne rueckt der nach oben LINKS und bekommt die
-  // Kategorie-Pille davor, wie auf allen anderen Folien. Der Kasten bleibt:
-  // anders als beim Kategorie-Grund liegt hier eine Landkarte darunter, und
-  // Text auf einer Karte braucht eine Flaeche.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
 
   // 2026-07-16 (Wolf 'kategorie background nicht sichtbar, zwischen-bg blockiert'):
   // die Root-Div malte ein FAST OPAKES rotes Gradient (0.9 rechts) → das verdeckte

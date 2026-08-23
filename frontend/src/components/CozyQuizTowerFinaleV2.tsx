@@ -308,26 +308,41 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   // (vorher hing colW an blockW und blockW an blockH):
   //   1. Spaltenbreite allein aus der Teamzahl,
   //   2. Baustein so breit, wie die Spalte erlaubt,
-  //   3. Bausteinhoehe fuellt die Zone, gedeckelt durch das SEITENVERHAELTNIS
-  //      statt durch eine feste Zahl. Ein Ziegel ist breiter als hoch; 0.62
-  //      haelt ihn als Ziegel lesbar, auch wenn nur drei gestapelt sind.
+  //   3. Bausteinseite so gross wie moeglich: begrenzt entweder von der
+  //      Spaltenbreite oder davon, was die Zone bei maxTotal Bausteinen hergibt.
+  //
+  // 2026-08-23, direkt danach korrigiert (Wolf: „die tuerme sollen aus
+  // quadratischen kacheln gebildet werden und nicht gequetschten kacheln").
+  // Mein erster Wurf hatte hier einen Ziegel gebaut, breiter als hoch, um die
+  // Zone auch bei wenigen Bausteinen zu fuellen. Das war die falsche Antwort auf
+  // die richtige Frage: die Kacheln sind ueberall im Quiz quadratisch, auf dem
+  // Brett und in jeder Teammarke, und ein Turm aus gequetschten Kacheln bricht
+  // genau die Form, aus der er entstehen soll. Quadrat bleibt Quadrat, es wird
+  // nur GROESSER - bei vier Bausteinen sind das 132px statt der frueheren 46,
+  // und der Turm fuellt die Zone dabei besser als der Ziegel es tat.
   const SIDE_PAD = 90;
   const usable = STAGE_W - SIDE_PAD * 2;
   const colW = Math.max(56, Math.min(150, Math.floor(usable / N) - 16));
-  const blockW = Math.min(colW - 10, 132);
-  const blockH = Math.max(15, Math.min(
-    Math.round(blockW * 0.62),
-    Math.floor((TOWER_ZONE - (maxTotal - 1) * GAP) / maxTotal),
+  // Der Sockel traegt Zahl und Teamname, der Kopf den Avatar auf der Turmspitze
+  // und darueber die Platz-Pille. Beide sind auf der Buehne groesser als vorher,
+  // und beide muessen VOR der Bausteinseite feststehen - sonst rechnet die Zone
+  // mit alten Werten. Genau das ist beim ersten Anlauf passiert: die Zone stand
+  // noch auf dem alten 96px-Sockel, der Turm wurde entsprechend zu hoch und der
+  // Avatar auf der Spitze stand mitten im Titelband.
+  const SOCKEL_H = istBuehne ? 134 : BASE_H;
+  const KOPF_H = istBuehne ? 160 : CROWN_H;
+  const zoneH = STAGE_H - TITLE_H - KOPF_H - SOCKEL_H - BOTTOM;
+  const blockSeite = Math.max(15, Math.min(
+    colW - 10,
+    Math.floor((zoneH - (maxTotal - 1) * GAP) / maxTotal),
   ));
+  const blockW = blockSeite;
+  const blockH = blockSeite;
   // Bleibt trotzdem Luft ueber dem hoechsten Turm (wenige Bausteine, breite
   // Ziegel), dann klebt die ganze Anordnung nicht mehr am unteren Rand, sondern
   // steht mittig im Feld unter dem Titelband. Der Wert haengt an maxTotal, also
   // am ENDstand inklusive Awards - er springt waehrend des Wachsens nicht.
   const maxTowerPx = maxTotal * blockH + Math.max(0, maxTotal - 1) * GAP;
-  // Der Sockel traegt Zahl und Teamname. Auf der Buehne ist die Zahl 42px statt
-  // 30 und der Name bis 25px statt 16 - gemessen an der Aufnahme lief
-  // „Kaese-Kenner" zweizeilig unten aus den 96px raus und war abgeschnitten.
-  const SOCKEL_H = istBuehne ? 134 : BASE_H;
   const freiUnterTitel = STAGE_H - TITLE_H;
   const BODEN = Math.max(BOTTOM, Math.round((freiUnterTitel - (maxTowerPx + SOCKEL_H)) / 2));
   const colGap = N > 1 ? Math.max(8, Math.floor((usable - N * colW) / (N - 1))) : 0;

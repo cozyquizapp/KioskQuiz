@@ -937,7 +937,16 @@ export default function QQProgressTree({
                         // Skin: inaktive/zukuenftige Dots nutzen Skin-Surface +
                         // Hairline statt Dunkel-Navy (sah auf hellen Skins wie
                         // schwere graue Kloetze aus — Wolf 2026-06-24).
-                        background: isCurrent
+                        // 2026-08-23 (Wolf-Vorschlag mit Bild): kein Kasten um
+                        // das Kategorie-Icon in der Einzelrunde. Die cozy3d-PNGs
+                        // BRINGEN ihre farbige Kachel selbst mit (gemessen: bei
+                        // cat-mucho ist sie 316 px breit mit abgerundeten,
+                        // transparenten Ecken, das Motiv ragt oben darueber
+                        // hinaus). Ein dunkler Slot mit Haarlinie darum ist also
+                        // Kachel in Kachel. Weg damit — das Icon IST die Marke.
+                        background: isSingleRound
+                          ? 'transparent'
+                          : isCurrent
                           // Wolf schwebt jetzt ÜBER der Linie (wolfAbove) → der
                           // aktuelle Dot bleibt SICHTBAR mit Highlight statt leer
                           // (sonst ist das Kategorie-Emoji unsichtbar). Legacy
@@ -953,7 +962,9 @@ export default function QQProgressTree({
                           : isPast
                             ? QQ_COLORS.slate400
                             : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate300) : QQ_COLORS.slate500),
-                        border: isCurrent
+                        border: isSingleRound
+                          ? 'none'
+                          : isCurrent
                           ? (wolfAbove ? `2.5px solid ${skinAccentHex ?? color}` : 'none')
                           : isShowcasedPhase
                             ? `2px solid ${color}`
@@ -972,7 +983,12 @@ export default function QQProgressTree({
                       }}
                     >
                       {catSlug
-                        ? <QQIcon slug={catSlug} size={Math.round(dotSize * (bigIcons ? 0.82 : 0.62))} alt={label ? label[lang] : undefined} />
+                        ? <QQIcon
+                            slug={catSlug}
+                            // Ohne Kasten darf das Icon den ganzen Platz haben.
+                            size={Math.round(dotSize * (isSingleRound ? 1 : bigIcons ? 0.82 : 0.62))}
+                            alt={label ? label[lang] : undefined}
+                          />
                         : emoji}
                     </div>
                   );

@@ -119,8 +119,12 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.slide3.title', 'Der Ablauf'),
       color: RULES_SLIDE_COLOR,
       // 2026-05-24 (Wolf): '4 Runden · 5 Kategorien' aufs Roadmap-Slide gezogen.
+      // 2026-08-23 (Wolf „3 runden 5 kategorien koennte aber auch
+      // missverstaendlich sein"): stimmt. Der Mittelpunkt liest sich als
+      // Aufzaehlung — „drei Runden UND fuenf Kategorien", also 5 im ganzen
+      // Abend statt 5 pro Runde. „mit je" macht die Multiplikation eindeutig.
       lines: [
-        t('rules.slide3.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
+        t('rules.slide3.line1', `${totalPhases} Runden mit je 5 Kategorien`).replace('{phases}', String(totalPhases)),
       ],
       treeShowcase: true,
     },
@@ -222,7 +226,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       color: RULES_SLIDE_COLOR,
       // 2026-05-24 (Wolf): rounds + categories info pulled onto roadmap slide.
       lines: [
-        t('rules.slide3.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
+        t('rules.slide3.line1', `${totalPhases} rounds, 5 categories each`).replace('{phases}', String(totalPhases)),
       ],
       treeShowcase: true,
     },
@@ -310,7 +314,7 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide2.title', 'Der Ablauf'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.mega.slide2.line1', `${totalPhases} Runden · 5 Kategorien`).replace('{phases}', String(totalPhases)),
+        t('rules.mega.slide2.line1', `${totalPhases} Runden mit je 5 Kategorien`).replace('{phases}', String(totalPhases)),
       ],
       treeShowcase: true,
     },
@@ -353,7 +357,7 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       title: t('rules.mega.slide2.title', 'The Flow'),
       color: RULES_SLIDE_COLOR,
       lines: [
-        t('rules.mega.slide2.line1', `${totalPhases} rounds · 5 categories`).replace('{phases}', String(totalPhases)),
+        t('rules.mega.slide2.line1', `${totalPhases} rounds, 5 categories each`).replace('{phases}', String(totalPhases)),
       ],
       treeShowcase: true,
     },
@@ -826,9 +830,13 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                 textAlign: 'center',
                 animation: 'contentReveal 0.6s var(--qq-ease-pop-fast) 0.5s both',
               }}>
+                {/* 2026-08-23: die Zeile sagte „5 Kategorien pro Runde" und
+                    stand damit direkt ueber „N Runden mit je 5 Kategorien" —
+                    dieselbe Aussage zweimal, einmal klein und grau. Uebrig
+                    bleibt der Teil, den sonst niemand sagt: der Twist. */}
                 {getRuleText('rules.slide3.hint', lang, lang === 'de'
-                  ? '5 Kategorien pro Runde, jede mit eigenem Twist'
-                  : '5 categories per round, each with its own twist')}
+                  ? 'Jede Kategorie hat ihren eigenen Twist'
+                  : 'Every category has its own twist')}
               </div>
             </div>
           )}

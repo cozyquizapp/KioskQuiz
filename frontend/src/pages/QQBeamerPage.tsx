@@ -4941,19 +4941,25 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           unten bleiben 16 px Luft. Wuerde er auf `bottom: 0` sitzen,
           schwebte er also gut zwei Prozent ueber der Kante und der Schnitt
           waere sichtbar.
-          2026-08-23, nachgezogen (Wolf: „wolf muss noch etwas runter, man soll
-          nicht sehen, dass er nur bis zum pullover existiert"): die Luft
-          wegzurechnen reicht nicht. Das Motiv endet unten mit einer GERADEN
-          Kante quer durch den Pullover, und die sieht man auch dann noch, wenn
-          sie genau auf der Buehnenkante liegt. Sie muss unter die Kante. 13 %
-          der Breite sind 69 px bei voller Groesse — dort ist der Rumpf noch in
-          voller Breite, es wird also nichts verjuengt abgeschnitten. */}
+          2026-08-23, ausgemessen statt geschaetzt (Wolf: „man soll nicht sehen,
+          dass er nur bis zum pullover existiert" und danach „seine haende gehen
+          jetzt unter die map"). Zwei Bedingungen, die sich widersprechen, wenn
+          man sie nicht nachrechnet:
+            * der Kapuzensaum, mit dem die Figur endet, muss UNTER die Kante,
+            * die Haende duerfen NICHT unter die Kante.
+          Ueber alle 155 Bilder gemessen (tiefster Hautpixel gegen tiefsten
+          Pixel ueberhaupt): Saum bei 751 von 768, tiefste Hand bei 695. Auf
+          die Elementhoehe gerechnet sind das 516 und 478 — ein Fenster von
+          38 px, in dem beides stimmt. Die Oberkante muss also zwischen 474 und
+          512 liegen. 6,25 % der Breite legen sie auf 495: der Saum liegt 21 px
+          unter der Kante, die Haende 17 px darueber. Beides skaliert mit, weil
+          es aus der Breite gerechnet ist. */}
       {!arenaBg && !eurovisionMode && (
         <div style={{
           ['--qq-welcome-wolf-w' as string]: 'clamp(300px, 30cqw, 530px)',
           position: 'absolute',
           left: 'clamp(8px, 1.6cqw, 32px)',
-          bottom: 'calc(var(--qq-welcome-wolf-w) * -0.13)',
+          bottom: 'calc(var(--qq-welcome-wolf-w) * -0.0625)',
           zIndex: 6,
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0,

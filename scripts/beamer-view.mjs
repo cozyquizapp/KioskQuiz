@@ -38,6 +38,12 @@ const API = 'http://localhost:4000';
 const PIN = process.env.ADMIN_PIN || '2506';
 const OUT = '.shots';
 const BOTS = Number((process.argv.find(a => a.startsWith('--bots=')) || '--bots=8').split('=')[1]);
+// 2026-08-23: Aufnahmen laufen in EINER Sprache, nicht im DE/EN-Wechsel.
+// Der Wechsel kommt alle 12 s, und zwischen Seiten- und Element-Aufnahme liegt
+// gut eine Sekunde: faellt der Wechsel dazwischen, steht im Bild die halbe
+// alte Zeile neben der neuen („Ma        Get comfy, here we go!"). Das sah aus
+// wie ein Fehler auf der Buehne und war keiner.
+const SPRACHE = (process.argv.find(a => a.startsWith('--sprache=')) || '--sprache=de').split('=')[1];
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -142,7 +148,7 @@ async function aufbauen(stufe) {
     const d = drafts.find(x => !/arena/i.test(x.id)) ?? drafts[0];
     await emit('qq:setTestMode', { value: true });
     await emit('qq:startGame', {
-      questions: d.questions, language: d.language ?? 'both', phases: d.phases ?? 4,
+      questions: d.questions, language: SPRACHE, phases: d.phases ?? 4,
       draftId: d.id, draftTitle: d.title,
     });
     console.log(`Spiel gestartet mit „${d.title}"`);

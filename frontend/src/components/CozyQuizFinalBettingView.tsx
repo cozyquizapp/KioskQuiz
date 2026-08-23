@@ -10,7 +10,11 @@
 import { useEffect, useMemo, useRef } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+// 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
+// umschrieben - darunter fallen auch die anderen Skins.
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQIcon } from './QQIcon';
 import { isQuirkTileSet } from '../quirks2Avatars';
@@ -162,19 +166,36 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22,
         padding: 'clamp(28px, 4cqh, 48px) clamp(40px, 5cqw, 72px)',
         borderRadius: 32,
-        background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(var(--qq-accent-magenta-rgb),0.06))',
-        border: '2px solid rgba(var(--qq-accent-rgb),0.32)',
+        // 2026-08-23: das Feld lief in einem Akzent-Magenta-Verlauf. Auf der
+        // Buehne dieselbe ruhige Flaeche wie alle anderen Sammel-Felder:
+        // ein Hauch Creme und eine Haarlinie.
+        background: istBuehneG()
+          ? 'rgba(246,239,230,0.05)'
+          : 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.10), rgba(var(--qq-accent-magenta-rgb),0.06))',
+        border: istBuehneG() ? '2px solid var(--qq-hairline)' : '2px solid rgba(var(--qq-accent-rgb),0.32)',
         boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.08)',
       }}>
         <div style={{
-          fontSize: 'clamp(14px, 1.1cqw, 20px)', fontWeight: 900, color: 'var(--qq-text-muted)',
-          textTransform: 'uppercase', letterSpacing: '0.15em',
+          // 2026-08-23 (Uebergabe 2a): 20px fuer die Zeile, die sagt, WAS die
+          // grosse Zahl darunter zaehlt.
+          fontSize: istBuehneG() ? 'clamp(16px, 1.7cqw, 28px)' : 'clamp(14px, 1.1cqw, 20px)',
+          fontWeight: 900, color: 'var(--qq-text-muted)',
+          textTransform: 'uppercase', letterSpacing: istBuehneG() ? '0.26em' : '0.15em',
         }}>{de ? 'Tipps abgegeben' : 'Tips submitted'}</div>
         <div style={{
           fontSize: 'clamp(64px, 8cqw, 150px)', fontWeight: 900,
-          color: submittedCount === totalTeams ? '#22C55E' : 'var(--qq-stage-brand-light)',
+          // 2026-08-23: der Zaehler steht auf der Buehne in Creme, nicht in
+          // Gruen. Gruen heisst im ganzen Quiz „richtig"; hier zaehlt er
+          // Abgaben. Wer schon abgegeben hat, sagen die gruenen Ringe an den
+          // Marken direkt darunter - dasselbe Muster wie auf jeder Frage-Folie,
+          // wo „2/8 Teams" ebenfalls gedaempft steht und die Ringe gruen sind.
+          color: istBuehneG()
+            ? 'var(--qq-text)'
+            : (submittedCount === totalTeams ? '#22C55E' : 'var(--qq-stage-brand-light)'),
           letterSpacing: '-0.04em', lineHeight: 1,
-          textShadow: `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(var(--qq-accent-rgb),0.45)'}`,
+          textShadow: istBuehneG()
+            ? 'none'
+            : `0 0 32px ${submittedCount === totalTeams ? 'rgba(34,197,94,0.55)' : 'rgba(var(--qq-accent-rgb),0.45)'}`,
         }}>
           {submittedCount} / {totalTeams}
         </div>

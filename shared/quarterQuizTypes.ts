@@ -170,6 +170,7 @@ export const QQ_MIN_TEAMS             = 2;
  *                                  _DEACTIVATED (oben, ab Zeile ~50)
  *   Brett-Aktionen               → QQ_BOARD_ACTIONS_ACTIVE / _RETIRED (hier)
  *   Comeback-Runde               → QQ_COMEBACK_ENABLED (hier)
+ *   4x4-Finale („Grosses Finale") → QQ_CONNECTIONS_ENABLED (hier)
  *
  * ⚠️ NICHT VERWECHSELN mit den Abend-Einstellungen. `connectionsEnabled`,
  * `cozyGamesEnabled`, `finalWagerEnabled`, `avatarsEnabled`, `largeGroupMode`
@@ -231,6 +232,27 @@ export function qqBoardActionIsActive(action: string | undefined | null): action
  * Vorher fragen.
  */
 export const QQ_COMEBACK_ENABLED      = false;
+
+/**
+ * ── Das 4x4-Finale („Grosses Finale", Connections) ──────────────────────────
+ *
+ * 2026-08-23 (Wolf: „das grosse Finale gibt's nicht mehr - das wurde
+ * deaktiviert"). Damit ist es SCHLAFEND im Sinne der drei Zustaende oben:
+ * die Phase `CONNECTIONS_4X4`, `CozyQuizConnectionsBeamerView`, die
+ * `qq:connections*`-Handler und `qqConnections*` in qqRooms liegen
+ * vollstaendig da und funktionieren - sie werden am Abend nur nicht mehr
+ * ausgespielt.
+ *
+ * WARUM DAS HIER STEHT: `connectionsEnabled` ist ein Raum-Feld und liest sich
+ * im Code wie eine lebende Abend-Einstellung. Genau daran habe ich am
+ * 2026-08-23 angefangen, die Ansicht fuer die Buehne umzubauen, bevor Wolf
+ * gesagt hat, dass es sie nicht mehr gibt. Wer hier nachsieht, findet die
+ * Antwort, bevor er Arbeit in etwas steckt, das niemand zu sehen bekommt.
+ *
+ * Zum Reaktivieren: hier auf true setzen und pruefen, ob der Wizard den
+ * Schalter wieder anbietet.
+ */
+export const QQ_CONNECTIONS_ENABLED   = false;
 
 export function qqGridSize(teamCount: number): number {
   if (teamCount <= 2) return 4;   // 4×4 = 16

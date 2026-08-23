@@ -90,6 +90,8 @@ const t0Lauf = Date.now();
 const takt = (was) => { if (ZEITEN) console.log(`  ⏱  ${String(Date.now() - t0Lauf).padStart(6)} ms  ${was}`); };
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+// Der 4x4-Satz des gewaehlten Entwurfs, gefuellt beim Spielaufbau.
+let verbindungen = null;
 
 /**
  * Die Ansichten. `weg` bekommt einen Helfer und schickt die Ereignisse, die
@@ -142,10 +144,17 @@ const ANSICHTEN = {
   // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
   pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
   cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' }); } },
-  connections:{ ruhe: 3500, aufbau: 'spiel', weg: async (h) => {
-    await h.springe('phase-4'); await h.emit('qq:connectionsStart'); await sleep(600); await h.emit('qq:connectionsBegin');
-  } },
+  // 2026-08-23: die Ansichten `connections` / `connections2` sind wieder raus.
+  // Das 4x4-Finale („Grosses Finale") ist abgeschaltet - siehe
+  // QQ_CONNECTIONS_ENABLED in shared/quarterQuizTypes.ts. Eine Aufnahme davon
+  // waere eine Aufnahme von etwas, das am Abend niemand sieht.
+  // Die Wetten-Phase hat zwei Bilder: erst die Titelkarte („Final-Tipp"), dann
+  // die Tafel, auf der die Teams setzen. Der Wechsel haengt an
+  // `qq:finishFinalBettingIntro`.
   finalwette: { ruhe: 3500, aufbau: 'spiel', weg: async (h) => { await h.springe('final-bet'); } },
+  finalwette2:{ ruhe: 4000, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('final-bet'); await sleep(900); await h.emit('qq:finishFinalBettingIntro');
+  } },
   finalaufloesung: { ruhe: 4000, aufbau: 'spiel', weg: async (h) => { await h.springe('final-reveal'); } },
   // Die Siegerehrung ist NICHT die Phase GAME_OVER. 2026-08-23 im Code
   // nachgelesen: der letzte Schritt der Final-Aufloesung geht direkt auf THANKS
@@ -370,6 +379,15 @@ async function aufbauen(stufe) {
       questions: fragen, language: SPRACHE, phases: d.phases ?? 4,
       draftId: d.id, draftTitle: d.title,
     });
+    // 2026-08-23: CozyGame und das 4x4-Finale sind pro Raum schaltbar und im
+    // Testentwurf aus - `qq:cozyGameStart` lief deshalb in einen Fehler
+    // („Pool ist leer") und die Folien waren gar nicht erreichbar.
+    // WICHTIG: erst NACH `startGame` setzen. `startGame` schreibt die Optionen
+    // aus seinem eigenen Payload und wuerde ein vorher gesetztes Flag wieder
+    // ueberschreiben; genau daran lief mein erster Versuch ins Leere.
+    await emit('qq:setQuizOptions', { cozyGamesEnabled: true, connectionsEnabled: true });
+    // Den 4x4-Satz aus dem Entwurf merken, die Ansicht braucht ihn als Payload.
+    verbindungen = d.connections ?? null;
     console.log(`Spiel gestartet mit „${d.title}"`);
     takt('Spiel gestartet');
     aufbauStand = 'spiel';

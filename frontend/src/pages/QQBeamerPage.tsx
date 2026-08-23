@@ -5755,6 +5755,13 @@ export function SpeechBubble({ text, bubbleKey, enterMs, speakMs, exitMs, tailSi
    *  die Lobby (Beamer-Distanz lesbar), 'md' fuer Wolf-Co-Mod (Pause/PreGame). */
   size?: 'md' | 'lg';
 }) {
+  // 2026-08-23, direkte Folge des Wolf-Ausbaus und im Bild aufgefallen: die
+  // Sprechblase ist die STIMME des Wolfs. Alle fuenf Fundstellen (Lobby,
+  // CozyGame, Siegerehrung, Pause, PreGame) rendern sie direkt ueber ihm.
+  // Ohne Wolf stand auf der CozyGame-Folie unten rechts eine Blase mit einem
+  // Zipfel, der auf nichts zeigte. Also faellt sie auf der Buehne mit ihm
+  // zusammen weg, an derselben Stelle wie er - nicht an fuenf einzelnen.
+  if (getActiveThemeId() === QUIRKS_THEME_ID) return null;
   const totalLifeMs = enterMs + speakMs + exitMs;
   const isLg = size === 'lg';
   return (

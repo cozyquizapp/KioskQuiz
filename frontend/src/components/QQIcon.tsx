@@ -464,7 +464,14 @@ export function QQEmojiIcon({ emoji, size = '1em', style, className, title, alt 
 const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
   // Historischer Name → neues Motiv aus dem Set
   'stamp-speedy':      'award-speedy',      // Final-Reveal-Stempel = derselbe Blitz
-  'bieten':            'fx-bet',            // Auktionshammer → Einsatz-Motiv
+  // 2026-08-23 (Wolf: „gefaellt dir das Emoji von Final-Tipp?"). Nachgesehen:
+  // die Zuordnung zeigte auf die falsche Datei. `fx-bet.png` ist ein
+  // RETTUNGSRING, der Auktionshammer heisst `bieten.png` - und der Kommentar
+  // hier daneben sagt seit jeher „Auktionshammer", die Absicht war also
+  // eindeutig. Auf der Final-Tipp-Folie stand deshalb ein Rettungsring ueber
+  // „Tippt jetzt!", also ein Motiv fuer Hilfe statt fuer Einsatz, und
+  // ausserdem eines aus der alten Bildsprache statt aus dem gelieferten Set.
+  'bieten':            'bieten',            // Auktionshammer → Einsatz-Motiv
   'connect':           'fx-connect',
   'fx-lightning':      'award-speedy',      // generisches ⚡ = Schnelligkeit
   'fx-place':          'action-place',

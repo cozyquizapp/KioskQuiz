@@ -48,6 +48,10 @@ import { createRequire } from 'node:module';
 const req = createRequire(new URL('../backend/package.json', import.meta.url));
 const { io } = req('socket.io-client');
 const sharp = createRequire(new URL('../frontend/package.json', import.meta.url))('sharp');
+// Die CozyGame-Ids aus dem Repo-Seed - ohne Datenbank.
+const COZY_SEED_IDS = (await import('../shared/cozyGameTypes.ts').catch(() => null))?.COZY_GAME_V1_SEED_IDS
+  ?? ['cg-ringwurf', 'cg-stift-fang', 'cg-muenz-kante', 'cg-karten-haus',
+      'cg-ballon-puste', 'cg-bierdeckel-muenzen', 'cg-waescheklammer-glas', 'cg-tt-ball-sammeln'];
 
 const BASE = process.env.QQ_BASE ?? 'http://localhost:5173';
 const API = 'http://localhost:4000';
@@ -385,7 +389,16 @@ async function aufbauen(stufe) {
     // WICHTIG: erst NACH `startGame` setzen. `startGame` schreibt die Optionen
     // aus seinem eigenen Payload und wuerde ein vorher gesetztes Flag wieder
     // ueberschreiben; genau daran lief mein erster Versuch ins Leere.
-    await emit('qq:setQuizOptions', { cozyGamesEnabled: true, connectionsEnabled: true });
+    // 2026-08-23 (Wolf: „man kann die CozyGames im Moderator-Panel
+    // aktivieren"). Stimmt - der Schalter fuellt den Pool aber aus MongoDB, und
+    // hier laeuft der In-Memory-Fallback, also blieb er leer. Der Ausweg stand
+    // die ganze Zeit im Repo: `COZY_GAME_V1_SEED_IDS` in shared/cozyGameTypes.
+    // Die Ids gehen direkt als Pool mit, dann braucht der Aufbau keine
+    // Datenbank.
+    await emit('qq:setQuizOptions', {
+      cozyGamesEnabled: true,
+      cozyGamesPool: COZY_SEED_IDS.slice(0, 8),
+    });
     // Den 4x4-Satz aus dem Entwurf merken, die Ansicht braucht ihn als Payload.
     verbindungen = d.connections ?? null;
     console.log(`Spiel gestartet mit „${d.title}"`);

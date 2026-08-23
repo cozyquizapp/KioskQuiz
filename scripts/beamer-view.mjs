@@ -23,6 +23,18 @@
  *   node scripts/beamer-view.mjs willkommen regeln teams brett
  *   node scripts/beamer-view.mjs --liste
  *
+ * Optionen:
+ *   --serie=2800,4200      mehrere Zeitpunkte je Ansicht (Bewegung pruefen)
+ *   --sprache=de|en|both   Vorgabe de, damit kein DE/EN-Wechsel ins Bild faellt
+ *   --kategorie=MUCHO      zieht diese Kategorie nach vorn statt zu wuerfeln
+ *   --dom="h1, .x"         Kaesten/Farben aus dem DOM statt aus dem Bild
+ *   --zeiten               wo die Zeit hingeht
+ *   --bots=8               Zahl der Bot-Teams
+ *
+ * MEHRERE ANSICHTEN IN EINEM AUFRUF. Browser, Raum und Spielaufbau kosten
+ * zusammen rund 12 s und fallen dann EINMAL an; jede weitere Ansicht kostet nur
+ * noch ihre eigene Ruhezeit. Einzeln aufgerufen zahlt man die 12 s jedes Mal.
+ *
  * Voraussetzung wie immer: Backend frisch, `rm -f backend/.qq-rooms/*.json`.
  */
 import { chromium } from 'playwright';
@@ -44,6 +56,19 @@ const BOTS = Number((process.argv.find(a => a.startsWith('--bots=')) || '--bots=
 // alte Zeile neben der neuen („Ma        Get comfy, here we go!"). Das sah aus
 // wie ein Fehler auf der Buehne und war keiner.
 const SPRACHE = (process.argv.find(a => a.startsWith('--sprache=')) || '--sprache=de').split('=')[1];
+// --kategorie=MUCHO  sortiert die Fragen so, dass die gewuenschte Kategorie
+// zuerst drankommt. 2026-08-23 (Wolf: „momentan dauert es zu lange"): ohne das
+// wuerfelt jeder Lauf eine andere Kategorie, und ich habe drei Laeufe gebraucht,
+// bis endlich die gewuenschte kam. Drei Laeufe sind zwei Minuten.
+const KATEGORIE = (process.argv.find(a => a.startsWith('--kategorie=')) || '=').split('=')[1] || null;
+// --dom="sel,sel"  liest Kasten und Farben direkt aus dem DOM, statt sie
+// hinterher im Bild zu suchen. Beim Willkommen-Wolf war das um ein Vielfaches
+// schneller UND genauer (das Bild kann eine Ebene veraltet zeigen, das DOM nie).
+const DOM = (process.argv.find(a => a.startsWith('--dom=')) || '=').split('=').slice(1).join('=') || null;
+// --zeiten  schreibt auf, wo die Zeit hingeht.
+const ZEITEN = process.argv.includes('--zeiten');
+const t0Lauf = Date.now();
+const takt = (was) => { if (ZEITEN) console.log(`  ⏱  ${String(Date.now() - t0Lauf).padStart(6)} ms  ${was}`); };
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
@@ -84,11 +109,20 @@ const health = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => 
 if (!health?.ok) { console.error('Backend nicht erreichbar auf 4000.'); process.exit(1); }
 mkdirSync(OUT, { recursive: true });
 
-const browser = await chromium.launch({
+takt('Backend geprueft');
+// 2026-08-23 gemessen: das erste `goto` kostete 15 s. Nicht der Server (ein
+// `curl` auf dieselbe Seite braucht 15 ms), sondern der Browser, der bei Vite
+// im Entwicklungsmodus mehrere hundert Module einzeln holt. Ein frischer
+// Kontext hat jedes Mal einen leeren Zwischenspeicher.
+// Also ein Profil auf der Platte, das ueber Laeufe hinweg bestehen bleibt.
+const PROFIL = '.shots/.browser-profil';
+const ctx = await chromium.launchPersistentContext(PROFIL, {
   args: ['--no-sandbox'],
   ...(process.env.QQ_CHROME ? { executablePath: process.env.QQ_CHROME } : {}),
+  viewport: { width: 1760, height: 990 },
+  deviceScaleFactor: 1,
 });
-const ctx = await browser.newContext({ viewport: { width: 1760, height: 990 }, deviceScaleFactor: 1 });
+const browser = ctx.browser() ?? { close: () => ctx.close() };
 await ctx.addInitScript(({ pin }) => {
   try {
     sessionStorage.setItem('qq_admin_unlocked', '1');
@@ -97,11 +131,15 @@ await ctx.addInitScript(({ pin }) => {
   } catch { /* ignore */ }
 }, { pin: PIN });
 
-const beamer = await ctx.newPage();
+takt('Browser gestartet');
+const beamer = ctx.pages()[0] ?? await ctx.newPage();
 beamer.on('pageerror', e => console.log('  [beamer PAGEERROR]', String(e).slice(0, 160)));
 await beamer.goto(`${BASE}/beamer`, { waitUntil: 'domcontentloaded' });
-await sleep(2000);
+takt('goto zurueck');
+// Warten, bis der Raum wirklich steht, statt pauschal zwei Sekunden.
+await beamer.waitForSelector('[data-qq-room]', { timeout: 20000 }).catch(() => {});
 
+takt('Seite geladen');
 const roomCode = await beamer.evaluate(() =>
   document.querySelector('[data-qq-room]')?.getAttribute('data-qq-room') ?? 'default').catch(() => 'default');
 
@@ -114,6 +152,7 @@ const emit = (ev, extra = {}) =>
   new Promise(res => sock.emit(ev, { roomCode, ...extra }, res));
 await emit('qq:joinModerator', { pin: PIN });
 console.log(`Raum ${roomCode} verbunden`);
+takt('Socket verbunden');
 
 const phase = () => beamer.evaluate(() =>
   document.querySelector('[data-qq-phase]')?.getAttribute('data-qq-phase') ?? null).catch(() => null);
@@ -152,19 +191,38 @@ async function aufbauen(stufe) {
       body: JSON.stringify({ count: BOTS, pin: PIN }),
     });
     if (!r.ok) console.log('  fillTeams:', r.status, await r.text());
+    takt('  fillTeams');
     await emit('qq:setSetupDone', { value: true });
+    takt('  setSetupDone');
     aufbauStand = 'lobby';
     await sleep(800);
   }
   if (stufe === 'spiel' && aufbauStand === 'lobby') {
     const drafts = await fetch(`${API}/api/qq/drafts`).then(r => r.json());
+    takt('  Entwuerfe geladen');
     const d = drafts.find(x => !/arena/i.test(x.id)) ?? drafts[0];
+    // 2026-08-23: der Raum mischt die fuenf Fragen einer Runde standardmaessig
+    // (`shuffleQuestionsInRound`, Vorgabe true). Deshalb wuerfelte jeder Lauf
+    // eine andere Kategorie, und mein Vorziehen lief ins Leere. Fuer eine
+    // Aufnahme will man das Gegenteil von Zufall.
+    await emit('qq:setQuizOptions', { shuffleQuestionsInRound: false });
+    let fragen = d.questions;
+    if (KATEGORIE) {
+      // Nicht filtern, sondern VORZIEHEN: der Spielplan braucht weiterhin alle
+      // Fragen, sonst stimmen Rundenlaenge und Baum nicht mehr.
+      const passt = (q) => (q.bunteTuete?.kind ?? q.category) === KATEGORIE || q.category === KATEGORIE;
+      const vorn = fragen.filter(passt);
+      if (!vorn.length) console.log(`  Kategorie „${KATEGORIE}" kommt im Entwurf nicht vor.`);
+      else fragen = [...vorn, ...fragen.filter(q => !passt(q))];
+    }
     await emit('qq:setTestMode', { value: true });
+    takt('  Testmodus');
     await emit('qq:startGame', {
-      questions: d.questions, language: SPRACHE, phases: d.phases ?? 4,
+      questions: fragen, language: SPRACHE, phases: d.phases ?? 4,
       draftId: d.id, draftTitle: d.title,
     });
     console.log(`Spiel gestartet mit „${d.title}"`);
+    takt('Spiel gestartet');
     aufbauStand = 'spiel';
     await sleep(1200);
   }
@@ -248,15 +306,42 @@ async function knipsen(page) {
 }
 
 // Einmal leer knipsen und wegwerfen. Die ERSTE Aufnahme einer Sitzung kostet
-// rund sieben Sekunden (Schriften, erster Anstrich, sharp kalt), jede weitere
-// gut eine. Ohne dieses Aufwaermen faellt der ganze Aufschlag auf die erste
-// Marke einer Serie, und alles danach liegt hinter dem Ende der Bewegung.
-await knipsen(beamer);
+// gemessen 11,8 s (Schriften, erster Anstrich, sharp kalt), jede weitere gut
+// eine. Ohne dieses Aufwaermen faellt der ganze Aufschlag auf die erste Marke
+// einer Serie, und alles danach liegt hinter dem Ende der Bewegung.
+// 2026-08-23: nur noch BEI EINER SERIE. Fuer eine einzelne Aufnahme ist die
+// Zeit egal, da wird nur ein Endzustand geknipst — und 11,8 s waren fast ein
+// Drittel jedes Laufs.
+if (marken) { await knipsen(beamer); takt('aufgewaermt'); }
+
+/** Kaesten und Farben direkt aus dem DOM lesen. Schneller und ehrlicher als
+ *  im Bild suchen: das Bild kann eine Compositing-Ebene veraltet zeigen, das
+ *  DOM nie. */
+async function messen(page, selektoren) {
+  const werte = await page.evaluate((sel) => sel.split(',').map(s => s.trim()).filter(Boolean).map(s => {
+    const e = document.querySelector(s);
+    if (!e) return { sel: s, fehlt: true };
+    const r = e.getBoundingClientRect();
+    const cs = getComputedStyle(e);
+    return {
+      sel: s,
+      kasten: [Math.round(r.x), Math.round(r.y), Math.round(r.width), Math.round(r.height)],
+      farbe: cs.color,
+      grund: cs.backgroundImage !== 'none' ? cs.backgroundImage.slice(0, 60) : cs.backgroundColor,
+      schrift: cs.fontSize,
+    };
+  }), selektoren);
+  for (const w of werte) {
+    if (w.fehlt) { console.log(`     ${w.sel}: nicht da`); continue; }
+    console.log(`     ${w.sel}: x${w.kasten[0]} y${w.kasten[1]} ${w.kasten[2]}x${w.kasten[3]}  Schrift ${w.schrift}  Farbe ${w.farbe}  Grund ${w.grund}`);
+  }
+}
 
 for (const name of liste) {
   const a = ANSICHTEN[name];
   await aufbauen(a.aufbau);
   await a.weg(helfer);
+  takt(`${name}: Ereignisse geschickt`);
   if (marken) {
     // Gegen die echte Uhr, nicht gegen die Summe der Pausen: eine Aufnahme
     // dauert selbst ueber eine Sekunde (Seite + Videoelement + Zusammenbau).
@@ -280,8 +365,10 @@ for (const name of liste) {
     writeFileSync(datei, await knipsen(beamer));
     console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
   }
+  if (DOM) await messen(beamer, DOM);
+  takt(`${name}: fertig`);
 }
 
 sock.close();
-await browser.close();
+await ctx.close();
 console.log(`\nfertig, ${liste.length} Ansichten → ${OUT}/`);

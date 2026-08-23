@@ -55,6 +55,10 @@ interface Props {
    *  klein), hier fallen sie aus dem Layout. Dadurch bleibt Platz fuer
    *  buehnentaugliche Kachelgroessen. 1-basiert wie QQGamePhaseIndex. */
   onlyPhase?: QQGamePhaseIndex | null;
+  /** 2026-08-23: die Sprache der UMGEBENDEN Folie. Ohne sie hat der Baum eine
+   *  eigene DE/EN-Uhr, und die laeuft mit dem eigenen Einbau los statt mit der
+   *  Folie — siehe den langen Kommentar unten. Immer mitgeben. */
+  lang?: 'de' | 'en';
 }
 
 // Quiz-Runden heißen immer „Runde N". Das echte Finale ist seit Connections
@@ -85,15 +89,26 @@ export default function QQProgressTree({
   focusPhaseIdx = null,
   bare = false,
   onlyPhase = null,
+  lang: langProp,
 }: Props) {
   // 2026-08-23, auf der Ablauf-Folie gesehen: „GAME RULES / The Flow /
-  // RUNDE 1 / Every category has its own twist". Der Baum las `state.language`
-  // roh. Bei einem zweisprachigen Abend steht dort `'both'`, und
-  // `=== 'en'` ist damit fuer immer falsch: das Rundenschild blieb deutsch,
-  // waehrend die Folie ringsum alle 12 s auf Englisch wechselte.
+  // RUNDE 1 / Every category has its own twist".
+  //
+  // Zwei Ursachen hintereinander, beide gemessen:
+  //  1. Der Baum las `state.language` roh. Bei einem zweisprachigen Abend
+  //     steht dort `'both'`, und `=== 'en'` ist damit fuer immer falsch: das
+  //     Rundenschild blieb deutsch, egal was die Folie tat.
+  //  2. `useLangFlip` allein reicht nicht. Der Haken haelt seine Uhr PRO
+  //     EINBAU und startet sie beim Einhaengen bewusst auf Deutsch („always
+  //     start with DE on new slide"). Die Regelansicht haengt seit Beginn der
+  //     RULES-Phase, der Baum erst seit der Ablauf-Folie — beim Knipsen war
+  //     die eine Uhr also schon bei Englisch und die andere noch bei Deutsch.
+  //     Deshalb nimmt der Baum die Sprache der Folie entgegen, statt sich eine
+  //     eigene zu bauen. `useLangFlip` bleibt nur als Rueckfall.
   // Der Haken steht VOR dem fruehen Ausstieg, sonst haengt die Reihenfolge der
   // Hooks an der Laenge des Spielplans.
-  const lang = useLangFlip(state.language);
+  const eigeneSprache = useLangFlip(state.language);
+  const lang = langProp ?? eigeneSprache;
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
 

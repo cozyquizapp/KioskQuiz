@@ -1103,6 +1103,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         }}>
           <QQProgressTree
             state={displayTreeState}
+            lang={lang}
             variant="inline"
             bigIcons
             bare

@@ -53,6 +53,9 @@ const ANSICHTEN = {
   willkommen: { ruhe: 5200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(-2); } },
   regelintro: { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(-1); } },
   regeln:     { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(0); } },
+  ablauf:     { ruhe: 1500, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(1); } },
+  joker:      { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(2); } },
+  regel4:     { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(3); } },
   teams:      { ruhe: 3500, aufbau: 'spiel', weg: async (h) => { await h.emit('qq:rulesFinish'); } },
 };
 
@@ -105,12 +108,16 @@ const phase = () => beamer.evaluate(() =>
 /** Regel-Index anfahren. Der Server kennt nur weiter/zurueck, also zaehlen wir
  *  von einem bekannten Ende aus: `rulesFinish` setzt auf 0, davor liegen -1
  *  (Regel-Intro) und -2 (Willkommen). */
+// 2026-08-23, sonst laufen mehrere Ansichten in einem Durchgang auseinander:
+// der Stand muss mitgezaehlt werden. Vorher rechnete jede Ansicht von -2 los,
+// also landete `regeln` nach `regelintro` auf Index 1 statt 0 — und ich habe
+// zweimal die falsche Folie angeschaut, ohne es zu merken.
+let regelStand = -2;
 const helfer = {
   emit,
   async zuRegelIndex(ziel) {
-    // Vom Spielstart aus steht der Index auf -2. Von dort nur vorwaerts.
-    const schritte = ziel - (-2);
-    for (let i = 0; i < schritte; i++) { await emit('qq:rulesNext'); await sleep(120); }
+    while (regelStand > ziel) { await emit('qq:rulesPrev'); regelStand--; await sleep(120); }
+    while (regelStand < ziel) { await emit('qq:rulesNext'); regelStand++; await sleep(120); }
     // Ziel -2 heisst: gar nicht weiter, aber die Einblendung neu ausloesen,
     // damit die Choreographie frisch abspielt statt im Endzustand zu haengen.
     if (ziel === -2) { await emit('qq:rulesNext'); await sleep(200); await emit('qq:rulesPrev'); }

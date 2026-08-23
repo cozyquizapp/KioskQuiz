@@ -775,7 +775,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               {/* 2026-06-29 (Wolf 'Wolf auch über den normalen Tree'): wolfAbove
                   → Wolf schwebt über der Linie (Pin), aktuelle Kategorie bleibt
                   sichtbar — konsistent mit dem Journey-Look. */}
-              <QQProgressTree state={s} variant="inline" wolfAbove />
+              <QQProgressTree state={s} variant="inline" wolfAbove lang={lang} />
             </div>
           )}
 
@@ -817,7 +817,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   Kein FitToWidth mehr: eine Runde ist ~650 px breit und passt
                   ohne Verkleinern in die Karte; sein overflow:hidden hat den
                   Wolf zusaetzlich angeschnitten. */}
-              <QQProgressTree state={s} variant="inline" wolfHidden onlyPhase={1} bigIcons />
+              <QQProgressTree state={s} variant="inline" wolfHidden onlyPhase={1} bigIcons lang={lang} />
               {/* 2026-08-22: der pulsende Punkt vor dieser Zeile ist raus.
                   Er war 8 px gross (Regel 7 verlangt mindestens 12), rund
                   (Regel 4) und hat nichts bedeutet — er hat gepulst, weil

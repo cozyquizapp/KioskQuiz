@@ -726,6 +726,33 @@ export function SlideStage({ children, bg }: { children: React.ReactNode; bg?: s
 // Draussen bleiben damit: Lobby, Regeln, Team-Reveal, Pause, Stechen,
 // Spielende und Danke. Das Finale (Connections, Final-Tipp, Final-Reveal) ist
 // keine Kategorie und bleibt ebenfalls neutral.
+/**
+ * Welche Uhr die Zeitleiste am oberen Bildrand zeigt.
+ *
+ * 2026-08-23 (Uebergabe 2a): die Leiste hing fest am Fragen-Timer des Raums.
+ * Auf Folien mit einer EIGENEN Uhr - CozyGame, Stechen - stand deshalb oben
+ * eine andere Zeit als in der Mitte, im CozyGame sogar in der Dringlichkeits-
+ * farbe „unter zehn Sekunden", waehrend die Anzeige daneben 57 Sekunden sagte.
+ * Zwei Uhren auf einem Bild, die Verschiedenes behaupten.
+ *
+ * Neue Uhren gehoeren hier rein, nicht in die Leiste selbst.
+ */
+function qqLeistenUhr(s: QQStateUpdate): { endsAt: number | null; durationSec: number } {
+  if (s.phase === 'COZY_GAME') {
+    return { endsAt: s.cozyGame?.gameEndsAt ?? null, durationSec: s.cozyGame?.timerDurationSec ?? 60 };
+  }
+  if (s.phase === 'TIEBREAKER_QUESTION') {
+    const tb = (s as any).tieBreaker as { endsAt?: number | null; startedAt?: number } | null;
+    if (!tb?.endsAt) return { endsAt: null, durationSec: 0 };
+    // Das Stechen speichert kein Dauer-Feld, nur Start und Ende. Die Dauer ist
+    // die Differenz - so stimmt der Anteil auch, wenn Wolf 20 statt 30 Sekunden
+    // gesetzt hat.
+    const dauer = tb.startedAt ? Math.max(1, Math.round((tb.endsAt - tb.startedAt) / 1000)) : 30;
+    return { endsAt: tb.endsAt, durationSec: dauer };
+  }
+  return { endsAt: s.timerEndsAt, durationSec: s.timerDurationSec };
+}
+
 const QQ_KATEGORIE_GRUND_PHASEN = new Set<QQPhase>([
   'PHASE_INTRO', 'QUESTION_ACTIVE', 'QUESTION_REVEAL', 'PLACEMENT', 'COMEBACK_CHOICE',
 ]);
@@ -2033,9 +2060,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Zeitanzeigen auf einem Bild, die Verschiedenes behaupten. Die Leiste
           folgt hier deshalb der Uhr, die auch auf der Folie laeuft, und steht
           still, solange gar kein Spiel laeuft. */}
+      {/* 2026-08-23 (2a, Stechen): dieselbe Sache nochmal. Das Stechen hat einen
+          eigenen Countdown (`tieBreaker.endsAt`), den die Leiste nicht kannte -
+          sie zeigte weiter den Fragen-Timer von vorhin oder gar nichts, waehrend
+          auf der Folie eine ganz andere Zahl runterlief. Die Leiste folgt der
+          Uhr, die auf der Folie steht, egal welche das gerade ist. */}
       <StageTimeBar
-        endsAt={s.phase === 'COZY_GAME' ? (s.cozyGame?.gameEndsAt ?? null) : s.timerEndsAt}
-        durationSec={s.phase === 'COZY_GAME' ? (s.cozyGame?.timerDurationSec ?? 60) : s.timerDurationSec}
+        endsAt={qqLeistenUhr(s).endsAt}
+        durationSec={qqLeistenUhr(s).durationSec}
         accent="var(--qq-stage-accent)"
       />
 

@@ -188,6 +188,17 @@ const ANSICHTEN = {
     await h.springe('final-reveal'); await sleep(900);
     for (let i = 0; i < STUFE; i++) { await h.emit('qq:nextQuestion'); await sleep(950); }
   } },
+  // 2026-08-23: Spielende und Stechen. Beide waren bis dahin NIE aufgenommen,
+  // weil sie im echten Ablauf nur ueber einen Gleichstand am Spielende
+  // erreichbar sind - und den kann man nicht bestellen. `dev/skipTo` kennt
+  // dafuer jetzt zwei eigene Ziele. Beim Stechen schaltet `--stufe=2` auf die
+  // Aufloesung (Zahlen + Sieger) weiter, `--stufe=3` von dort auf das
+  // Spielende, genau wie Wolfs Leertaste es tut.
+  spielende:  { ruhe: 3500, aufbau: 'spiel', weg: async (h) => { await h.springe('game-over'); } },
+  stechen:    { ruhe: 3500, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('stechen');
+    for (let i = 1; i < STUFE; i++) { await sleep(1400); await h.emit('qq:nextQuestion'); }
+  } },
   danke:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.springe('final-reveal'); await sleep(900);
     for (let i = 0; i < 20; i++) {

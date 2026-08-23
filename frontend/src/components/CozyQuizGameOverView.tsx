@@ -29,7 +29,7 @@ import {
 import {
   playAvatarCascadeNote, playClimaxFinish, playWolfHowl, playFanfare,
 } from '../utils/sounds';
-import { isThemed, themedWindow } from '../qqTheme';
+import { isThemed, themedWindow, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
@@ -129,7 +129,14 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     const team = reverseSorted[revealIdx];
     const rank = sorted.length - revealIdx;
     const isWinner = rank === 1;
-    const medal = rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null;
+    // 2026-08-23 (Uebergabe 2a): diese Folie war nie angesehen worden. Sie ist
+    // seit dem Abschalten des 4x4-Finales nur noch ueber das Stechen
+    // erreichbar - selten, aber dann live vor Publikum.
+    const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+    // Medaillen sind auf der Buehne raus: eine fuenfte und sechste Farbe fuer
+    // etwas, das die Zahl daneben schon sagt. Auf der Buehne steht ueberall
+    // „#N" in derselben Form, von Platz acht bis Platz eins.
+    const medal = istBuehne ? null : (rank === 1 ? '🥇' : rank === 2 ? '🥈' : rank === 3 ? '🥉' : null);
     const teamColor = team?.color ?? 'var(--qq-accent)';
     return (
       <div style={{
@@ -144,11 +151,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         {/* Ambient glow in Team-Farbe */}
         <div aria-hidden style={{
           position: 'absolute', inset: 0, pointerEvents: 'none',
-          background: `radial-gradient(ellipse at center, ${teamColor}33 0%, transparent 60%)`,
+          background: istBuehne ? 'none' : `radial-gradient(ellipse at center, ${teamColor}33 0%, transparent 60%)`,
           transition: 'background 0.6s ease',
         }} />
         <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />
-        <Fireflies color={`${teamColor}55`} />
+        <Fireflies color={istBuehne ? '#F5ECD844' : `${teamColor}55`} />
         {s.theme?.eurovisionMode && <EurovisionHearts />}
 
         {/* Header — Rang + Pause-Indikator */}
@@ -170,7 +177,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900, color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand-soft)',
               animation: 'pulse 1.4s ease-in-out infinite',
             }}>
-              ⏸ {lang === 'en' ? 'Paused (P to resume)' : 'Pause (P zum Fortsetzen)'}
+              {istBuehne ? '' : '⏸ '}{lang === 'en' ? 'Paused (P to resume)' : 'Pause (P zum Fortsetzen)'}
             </div>
           )}
         </div>
@@ -184,9 +191,12 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               gap: 'clamp(14px, 2cqh, 28px)',
               padding: 'clamp(28px, 4cqh, 56px) clamp(40px, 5cqw, 90px)',
               borderRadius: 32,
-              background: `linear-gradient(135deg, ${teamColor}28 0%, ${teamColor}10 100%)`,
-              border: `3px solid ${teamColor}aa`,
-              boxShadow: `0 0 80px ${teamColor}55`,
+              // Die Karte trug die Teamfarbe in Flaeche, Rahmen und 80px Schein
+              // zugleich, und der Name darunter nochmal. Vier Traeger fuer eine
+              // Aussage. Es bleibt die Marke - sie ist hier bis 260px gross.
+              background: istBuehne ? 'var(--qq-surface)' : `linear-gradient(135deg, ${teamColor}28 0%, ${teamColor}10 100%)`,
+              border: istBuehne ? '1px solid var(--qq-hairline)' : `3px solid ${teamColor}aa`,
+              boxShadow: istBuehne ? 'none' : `0 0 80px ${teamColor}55`,
               animation: 'finaleWinner 0.7s var(--qq-ease-out-cubic) both',
               position: 'relative', zIndex: 5,
               maxWidth: 'min(900px, 90cqw)',
@@ -198,7 +208,8 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             }}>
               {medal ? <QQEmojiIcon emoji={medal}/> : (
                 <span style={{
-                  fontSize: 'clamp(32px, 4cqw, 60px)', fontWeight: 900,
+                  fontSize: istBuehne ? 'clamp(44px, 5.4cqw, 88px)' : 'clamp(32px, 4cqw, 60px)',
+                  fontWeight: 900,
                   color: 'var(--qq-text-muted)', letterSpacing: '-0.02em',
                 }}>#{rank}</span>
               )}
@@ -213,9 +224,11 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                 teamEmoji={team.emoji}
                 size={'clamp(140px, 18cqw, 260px)'}
                 style={{
-                  boxShadow: isWinner
-                    ? `0 0 0 4px var(--qq-accent), 0 0 60px rgba(var(--qq-accent-rgb),0.7)`
-                    : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa`,
+                  boxShadow: istBuehne
+                    ? (isWinner ? '0 0 0 4px var(--qq-stage-accent, var(--qq-accent))' : 'none')
+                    : (isWinner
+                        ? `0 0 0 4px var(--qq-accent), 0 0 60px rgba(var(--qq-accent-rgb),0.7)`
+                        : `0 0 0 3px ${teamColor}, 0 0 40px ${teamColor}aa`),
                 }}
               />
             </div>
@@ -229,7 +242,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
               const baseFs = isLong ? 'clamp(34px, 4.7cqw, 75px)' : 'clamp(40px, 5.5cqw, 88px)';
               return (
                 <div style={{
-                  filter: `drop-shadow(0 0 18px ${teamColor}55)`,
+                  filter: istBuehne ? 'none' : `drop-shadow(0 0 18px ${teamColor}55)`,
                   animation: 'phasePop 0.55s var(--qq-ease-bounce) 0.5s both',
                   textAlign: 'center',
                   display: 'flex', flexWrap: 'wrap',
@@ -237,7 +250,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
                   gap: '0',
                   maxWidth: '100%',
                   fontSize: baseFs,
-                  color: teamColor,
+                  color: istBuehne ? 'var(--qq-text)' : teamColor,
                   fontWeight: 900,
                   lineHeight: 1.05,
                   wordBreak: 'break-word',
@@ -264,9 +277,9 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
             }}>
               <span style={{
                 fontSize: 'clamp(80px, 11cqw, 180px)', fontWeight: 900,
-                color: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand-soft)',
+                color: istBuehne ? 'var(--qq-text)' : (isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand-soft)'),
                 fontVariantNumeric: 'tabular-nums', lineHeight: 1,
-                textShadow: '0 0 40px rgba(var(--qq-accent-rgb),0.55)',
+                textShadow: istBuehne ? 'none' : '0 0 40px rgba(var(--qq-accent-rgb),0.55)',
               }}>{team.largestConnected}</span>
               <span style={{
                 fontSize: 'clamp(20px, 2.4cqw, 36px)', fontWeight: 700,

@@ -91,7 +91,7 @@ import { questions, questionById } from './data/questions';
 import { defaultBlitzPool } from './data/quizzes';
 import { QuizMeta, Language } from '../../shared/quizTypes';
 import { registerQQHandlers, broadcastQQ } from './quarterQuiz/qqSocketHandlers';
-import { getQQRoom, qqJoinTeam, qqKickTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories, qqAdvanceFinalReveal, qqBetSlotsCount } from './quarterQuiz/qqRooms';
+import { getQQRoom, qqJoinTeam, qqKickTeam, qqSubmitAnswer, qqPlaceCell, qqStealCell, qqStartFinalBetting, qqSubmitFinalBet, qqResolveFinalBets, updateTerritories, qqAdvanceFinalReveal, qqBetSlotsCount, detectTieBreakerCandidates, qqStartTieBreaker } from './quarterQuiz/qqRooms';
 import { flushAllPendingSaves } from './quarterQuiz/qqPersist';
 import { QQ_AVATARS, getRandomFunnyNames, QQ_MAX_TEAMS_LARGE, qqMegaFactionName, qqMegaFactionSlug, qqCozyWolfForSlot } from '../../shared/quarterQuizTypes';
 import { defaultQuizzes } from './data/quizzes';
@@ -10264,6 +10264,14 @@ app.post('/api/qq/:roomCode/dev/autoPlace', (req, res) => {
 //   'phase-2' | 'phase-3' | 'phase-4'  → PHASE_INTRO der Ziel-Phase
 //   'final-bet'                         → FINAL_BETTING (Intro-Slide aktiv)
 //   'final-reveal'                      → FINAL_REVEAL Step 0 (Title-Hold)
+//   'game-over'                         → GAME_OVER mit aufgeloestem Endstand
+//   'stechen'                           → TIEBREAKER_QUESTION (Schaetz-Stechen)
+//
+// 2026-08-23: 'game-over' und 'stechen' sind dazugekommen, weil beide Folien
+// bis dahin NIE angesehen worden waren. Erreichbar sind sie im echten Ablauf
+// nur ueber einen Gleichstand am Spielende, und den kann man nicht bestellen.
+// 'stechen' erzwingt deshalb zwei Kandidaten und startet das Stechen; ohne das
+// wirft qqStartTieBreaker 'Kein Gleichstand zum Stechen vorhanden'.
 //
 // KEIN DB-Save — TestMode disabled persistGameResult via separatem Flag.
 app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
@@ -10343,7 +10351,7 @@ app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
     // Dann FINAL_BETTING starten (qqStartFinalBetting cleart Grid nicht, nur Bet-State)
     try { qqStartFinalBetting(room); } catch {}
     (room as any)._pendingAutoFinalBets = true;
-  } else if (target === 'final-reveal') {
+  } else if (target === 'final-reveal' || target === 'game-over' || target === 'stechen') {
     // Full skip bis FINAL_REVEAL Step 0
     goToPhaseIntro(room.totalPhases ?? 4);
     try { qqStartFinalBetting(room); } catch {}
@@ -10369,8 +10377,32 @@ app.post('/api/qq/:roomCode/dev/skipTo', (req, res) => {
         room.finalPhaseWins[winner] = (room.finalPhaseWins[winner] ?? 0) + 1;
       }
     }
-    // Final-Wager auflösen → setzt phase=FINAL_REVEAL, step=0
+    // Final-Wager auflösen → setzt phase=FINAL_REVEAL, step=0. Nebenbei fuellt
+    // das room.endAwards, und genau die braucht die Siegerehrung.
     try { qqResolveFinalBets(room); } catch {}
+
+    // 2026-08-23: Spielende und Stechen setzen auf demselben Zustand auf. Sie
+    // ueberspringen nur die Final-Aufloesung, statt sie nachzubauen - sonst
+    // haetten sie eine zweite, leicht abweichende Simulation des Abends.
+    if (target === 'game-over' || target === 'stechen') {
+      updateTerritories(room);
+      room.phase = 'GAME_OVER';
+      detectTieBreakerCandidates(room);
+    }
+    if (target === 'stechen') {
+      // Gleichstand erzwingen: die zwei staerksten Teams sind die Kandidaten.
+      // Im echten Spiel kommt das aus detectTieBreakerCandidates, hier aus der
+      // Rangliste - sonst haengt die Aufnahme daran, ob der Zufall einen Tie
+      // erzeugt hat.
+      if ((room.tieBreakerCandidates ?? []).length < 2) {
+        const nachStaerke = [...allTeamIds].sort(
+          (a, b) => ((room.teams as any)[b]?.largestConnected ?? 0)
+                  - ((room.teams as any)[a]?.largestConnected ?? 0),
+        );
+        room.tieBreakerCandidates = nachStaerke.slice(0, 2);
+      }
+      qqStartTieBreaker(room, 20);
+    }
   } else {
     return res.status(400).json({ error: `Unbekanntes target: ${target}` });
   }

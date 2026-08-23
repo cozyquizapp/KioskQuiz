@@ -9,6 +9,8 @@ import { QQ_COLORS } from '../../../shared/qqColors';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { getServerNow } from '../utils/serverTime';
+import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { QQEmojiIcon } from './QQIcon';
 
 export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
   const tb = (s as any).tieBreaker as import('../../../shared/quarterQuizTypes').QQTieBreakerState | null;
@@ -16,6 +18,11 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
   // Beamer-Screens (vorher `s.language !== 'en'` = blieb bei 'both' immer DE).
   const de = useLangFlip(s.language) === 'de';
   const arena = !!(s as any).largeGroupMode;
+  // 2026-08-23 (Uebergabe 2a): diese Folie war bis dahin NIE angesehen worden.
+  // Sie laeuft nur bei Gleichstand am Spielende - selten, aber dann live vor
+  // Publikum, und dann ist sie der Drama-Moment des Abends.
+  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const gedaempft = istBuehne ? 'var(--qq-text-muted)' : QQ_COLORS.slate400;
 
   // Live-Countdown (nur Anzeige — Auto-Reveal macht der Server).
   // 2026-07-08 T4: getServerNow statt Date.now (Server-Clock, kein Drift).
@@ -62,17 +69,24 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       // Abends und lief bisher hart auf Nunito. qqArenaType statt dem lokalen
       // `arena` (Z. 18) — letzteres ist rohes largeGroupMode und wuerde auch in
       // „Schlicht" feuern, was Wolf ausdruecklich nicht will.
-      fontFamily: qqArenaType(s) ? 'var(--font-arena-body)' : "'Nunito', 'Geist', system-ui, sans-serif",
+      // Auf der Buehne die Quiz-Schrift ueber den Phase-Root, nicht hart Nunito -
+      // sonst steht ausgerechnet der Drama-Moment in einer anderen Schrift als
+      // der ganze Abend davor.
+      fontFamily: qqArenaType(s) ? 'var(--font-arena-body)'
+        : (istBuehne ? 'var(--qq-font)' : "'Nunito', 'Geist', system-ui, sans-serif"),
       textAlign: 'center',
     }}>
       {/* Eyebrow + Titel */}
-      <div style={{ fontSize: '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: QQ_COLORS.brandPink, textTransform: 'uppercase' }}>
+      <div style={{ fontSize: istBuehne ? '2.6cqh' : '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: istBuehne ? gedaempft : QQ_COLORS.brandPink, textTransform: 'uppercase' }}>
         {de ? 'Gleichstand' : 'Dead heat'}
       </div>
-      <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: 'var(--qq-text)', letterSpacing: '0.02em', textShadow: '0 4px 24px rgba(var(--qq-accent-rgb),0.5)' }}>
-        ⚔️ {de ? 'STECHEN' : 'SUDDEN DEATH'}
+      {/* 2026-08-23 (2a): die gekreuzten Schwerter waren ein rohes Systemzeichen
+          und wurden auf jedem Rechner anders gemalt. Sie bekommen keinen Ersatz:
+          das Wort STECHEN steht hier in 6,6cqh, das ist das Signal. */}
+      <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: 'var(--qq-text)', letterSpacing: '0.02em', textShadow: istBuehne ? 'none' : '0 4px 24px rgba(var(--qq-accent-rgb),0.5)' }}>
+        {istBuehne ? '' : '⚔️ '}{de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
-      <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>
+      <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: gedaempft }}>
         {de ? 'Schätzfrage, am nächsten dran gewinnt!' : 'Estimate, closest guess wins!'}
       </div>
 
@@ -92,18 +106,25 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.6cqh',
               opacity: dim ? 0.4 : 1, transition: 'opacity 0.5s ease', transform: isWinner ? 'scale(1.08)' : 'none',
             }}>
-              <div style={{ filter: isWinner ? 'drop-shadow(0 0 18px rgba(34,197,94,0.7))' : 'none' }}>
+              {/* Der Sieger ist schon durch drei Dinge markiert: 8 Prozent
+                  groesser, gruener Name, der andere auf 40 Prozent gedimmt. Ein
+                  vierter Traeger als 18px-Hof weicht auf Projektionsdistanz nur
+                  die Kante der Marke auf. */}
+              <div style={{ filter: (isWinner && !istBuehne) ? 'drop-shadow(0 0 18px rgba(34,197,94,0.7))' : 'none' }}>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(84px, 10cqw, 156px)'} bgColor={t.color} />
               </div>
-              <div style={{ fontSize: '2.4cqh', fontWeight: 900, color: isWinner ? '#22C55E' : t.color }}>
-                {nameFor(id)} {isWinner && '🏆'}
+              {/* Teamname in Creme: die Marke direkt darueber ist bis 156px gross
+                  und traegt die Teamfarbe als volle Flaeche. Gruen bleibt fuer den
+                  Sieger, das ist eine der vier Farben und heisst hier „richtig". */}
+              <div style={{ fontSize: istBuehne ? '2.8cqh' : '2.4cqh', fontWeight: 900, color: isWinner ? '#22C55E' : (istBuehne ? 'var(--qq-text)' : t.color) }}>
+                {nameFor(id)} {isWinner && (istBuehne ? <QQEmojiIcon emoji="🏆" size="1em" /> : '🏆')}
               </div>
               {revealed
                 ? <div style={{ fontSize: '2.6cqh', fontWeight: 900, color: isWinner ? '#22C55E' : 'var(--qq-text)' }}>
                     {best ? `${best.guess}${unit}` : (de ? '–' : '–')}
-                    {best && <span style={{ fontSize: '1.7cqh', color: QQ_COLORS.slate400, fontWeight: 700 }}> ({de ? 'Δ' : 'off'} {best.dist})</span>}
+                    {best && <span style={{ fontSize: '1.7cqh', color: gedaempft, fontWeight: 700 }}> ({de ? 'Δ' : 'off'} {best.dist})</span>}
                   </div>
-                : <div style={{ fontSize: '2cqh', fontWeight: 800, color: hasAnswered ? '#22C55E' : QQ_COLORS.slate400 }}>
+                : <div style={{ fontSize: '2cqh', fontWeight: 800, color: hasAnswered ? '#22C55E' : gedaempft }}>
                     {hasAnswered ? '✓' : '…'}
                   </div>}
             </div>
@@ -119,10 +140,13 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       {/* Reveal: Ziel-Zahl / sonst Countdown + Status */}
       {revealed ? (
         <>
-          <div style={{ fontSize: '2.2cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>
+          <div style={{ fontSize: istBuehne ? '2.6cqh' : '2.2cqh', fontWeight: 800, color: gedaempft }}>
             {de ? 'Richtige Antwort' : 'Correct answer'}
           </div>
-          <div style={{ fontSize: '6cqh', fontWeight: 900, color: QQ_COLORS.brandPink, lineHeight: 1 }}>
+          {/* Die Ziel-Zahl stand in Marken-Pink, einer fuenften Farbe. Sie ist
+              die richtige Antwort, und richtig ist auf der Buehne gruen - genau
+              wie die Loesung auf jeder anderen Frage des Abends. */}
+          <div style={{ fontSize: '6cqh', fontWeight: 900, color: istBuehne ? QQ_COLORS.green400 : QQ_COLORS.brandPink, lineHeight: 1 }}>
             {tb.target}{unit}
           </div>
           {tb.winnerId && (
@@ -142,8 +166,12 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
               {secsLeft}s
             </div>
           )}
-          <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: QQ_COLORS.slate400 }}>
-            {de ? `⚡ Auf die Handys, tippt eure Zahl! (${answeredCount} abgegeben)` : `⚡ Grab your phones, enter your number! (${answeredCount} in)`}
+          {/* Der Blitz war ein rohes Systemzeichen vor einer Aufforderung, die
+              sich selbst erklaert. */}
+          <div style={{ fontSize: istBuehne ? '2.7cqh' : '2.3cqh', fontWeight: 800, color: gedaempft }}>
+            {istBuehne
+              ? (de ? `Auf die Handys, tippt eure Zahl! (${answeredCount} abgegeben)` : `Grab your phones, enter your number! (${answeredCount} in)`)
+              : (de ? `⚡ Auf die Handys, tippt eure Zahl! (${answeredCount} abgegeben)` : `⚡ Grab your phones, enter your number! (${answeredCount} in)`)}
           </div>
         </>
       )}

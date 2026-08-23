@@ -13,7 +13,7 @@
  *
  * 1 externer Importer (QQBuiltinSlide).
  */
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, Fragment } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { isThemed, getActiveTheme } from '../qqTheme';
@@ -690,12 +690,21 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
             }}><QQEmojiIcon emoji={cardSlide.icon}/></span>
           )}
-          <div style={{
-            fontSize: 'clamp(13px,1.8cqw,24px)', fontWeight: 900, letterSpacing: '0.1em',
-            textTransform: 'uppercase', color: isThemed() ? 'var(--qq-text-muted)' : cardSlide.color,
-          }}>
-            {cardSlide.eyebrow ?? getRuleText('rules.header', lang, lang === 'de' ? 'Spielregeln' : 'Game Rules')}
-          </div>
+          {/* 2026-08-23 (Wolf: „diese mini unterschriften der emojis koennen
+              eigentlich weg, sie sind kommentar aber nicht notwendig"):
+              stimmt, und auf der Buehne kostet sie sogar etwas. „SPIELREGELN"
+              stand ueber einer Folie, auf der schon oben eine Schrittleiste
+              laeuft und darunter in doppelter Groesse „Das Ziel" steht — sie
+              hat wiederholt, was der Zusammenhang ohnehin sagt.
+              Der alte Grund, sie zu behalten, gilt hier nicht mehr: der
+              Kommentar von 2026-08-22 sagt, die Folienfarbe trage sich „ueber
+              die kleine Ueberzeile und den Kartenrand". Im Buehnen-Look ist
+              beides nicht mehr wahr — die Ueberzeile war `--qq-text-muted`,
+              der Rand ist `--qq-card-border` und der Trenner `--qq-accent`.
+              Die Folienfarbe war auf dieser Folie also ohnehin nirgends mehr
+              zu sehen; entfernt wird eine graue Zeile, keine Farbe.
+              `cardSlide.eyebrow` bleibt, die Schrittleiste beschriftet damit
+              die Intro-Station. */}
           <div style={{
             // 2026-07-04 (Wolf 'Titel oben abgeschnitten'): etwas kleiner, damit
             // lange Titel ('Dein Weg durchs Quiz') in die feste Card passen.
@@ -727,23 +736,45 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             // Projektionsdistanz macht er keine Tiefe, er frisst die Kante.
             textShadow: 'none',
           }}>
-            {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe — gleiche
+            {/* 2026-05-05 (Wolf): Wave-Animation pro Buchstabe, gleiche
                 Bewegungs-Sprache wie Cat-Intro-Headline. Stagger 0.08s.
-                Spaces als &nbsp; damit Word-Spacing erhalten bleibt. */}
-            {cardSlide.title.split('').map((char, i) => (
-              <span key={`${cardIdx}-${i}`} style={{
-                display: 'inline-block',
-                // 2026-05-05 v2 (Wolf 'jetzt kommen die regeln auch wave?'):
-                // Entry-Letter-Cascade (scaleIn + blur-clear, stagger 0.05s —
-                // gleiche Sprache wie Welcome-Title), DANN continuous
-                // qqCatNameWave als sanftes Wiegen.
-                // 2026-07-17c (Wolf „ganze windows reingeschoben"): Titel STARR, faehrt
-                // mit dem geschobenen Fenster mit (keine Buchstaben-Kaskade); nur das
-                // ambiente Wiegen bleibt.
-                animation: `qqCatNameWave 2.4s ease-in-out ${1.0 + i * 0.08}s infinite`,
-                whiteSpace: 'pre',
-              }}>{char === ' ' ? ' ' : char}</span>
-            ))}
+
+                2026-08-23: „Jetzt komme | n die Regeln". Der Bruch mitten im
+                Wort war NIE ueber `overflowWrap`/`hyphens` zu beheben, und der
+                Kommentar von 2026-08-22 weiter oben ist deshalb falsch: die
+                Ueberschrift besteht aus einem `inline-block` PRO BUCHSTABE.
+                Fuer den Umbruch sind das lauter eigenstaendige Kaesten und
+                kein Wort, der Browser darf also zwischen je zwei von ihnen
+                brechen, und die Silbentrennung hat gar nichts, woran sie
+                greifen koennte. Aufgefallen ist es erst jetzt, weil meine
+                Aufnahmen bis eben auf Englisch liefen („Now the rules" ist
+                kurz genug).
+                Jetzt kommen die Buchstaben eines Wortes in eine gemeinsame
+                Huelle mit `nowrap`. Innen wiegt weiter jeder Buchstabe fuer
+                sich, gebrochen wird nur noch zwischen den Woertern. */}
+            {(() => {
+              const woerter = cardSlide.title.split(' ');
+              let n = 0;
+              return woerter.map((wort, w) => (
+                <Fragment key={`${cardIdx}-w${w}`}>
+                  {w > 0 && ' '}
+                  <span style={{ display: 'inline-block', whiteSpace: 'nowrap' }}>
+                    {wort.split('').map((char, i) => {
+                      const idx = n++;
+                      return (
+                        <span key={i} style={{
+                          display: 'inline-block',
+                          // 2026-07-17c (Wolf „ganze windows reingeschoben"): Titel STARR,
+                          // faehrt mit dem geschobenen Fenster mit (keine Buchstaben-
+                          // Kaskade); nur das ambiente Wiegen bleibt.
+                          animation: `qqCatNameWave 2.4s ease-in-out ${1.0 + idx * 0.08}s infinite`,
+                        }}>{char}</span>
+                      );
+                    })}
+                  </span>
+                </Fragment>
+              ));
+            })()}
           </div>
         </div>
 

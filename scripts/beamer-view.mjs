@@ -31,6 +31,7 @@ import { createRequire } from 'node:module';
 
 const req = createRequire(new URL('../backend/package.json', import.meta.url));
 const { io } = req('socket.io-client');
+const sharp = createRequire(new URL('../frontend/package.json', import.meta.url))('sharp');
 
 const BASE = process.env.QQ_BASE ?? 'http://localhost:5173';
 const API = 'http://localhost:4000';
@@ -68,13 +69,7 @@ if (!health?.ok) { console.error('Backend nicht erreichbar auf 4000.'); process.
 mkdirSync(OUT, { recursive: true });
 
 const browser = await chromium.launch({
-  // 2026-08-23: `--disable-gpu-compositing` ist noetig, seit auf der
-  // Willkommen-Folie ein Video laeuft. Ohne den Schalter liegt das Video in
-  // einer eigenen, hardwarebeschleunigten Ebene; `page.screenshot()` bekommt
-  // davon immer nur das ERSTE Bild zu sehen, waehrend `currentTime` munter
-  // weiterlaeuft. Gemessen: der Wolf-Bereich aenderte sich ueber fuenf
-  // Aufnahmen um 0,09 bis 0,20 %, obwohl das Video bei 3,3 s stand.
-  args: ['--no-sandbox', '--disable-gpu-compositing'],
+  args: ['--no-sandbox'],
   ...(process.env.QQ_CHROME ? { executablePath: process.env.QQ_CHROME } : {}),
 });
 const ctx = await browser.newContext({ viewport: { width: 1760, height: 990 }, deviceScaleFactor: 1 });
@@ -155,22 +150,66 @@ async function aufbauen(stufe) {
 const SERIE = (process.argv.find(a => a.startsWith('--serie=')) || '').split('=')[1];
 const marken = SERIE ? SERIE.split(',').map(Number) : null;
 
+/**
+ * Aufnahme, die auch laufende Videos richtig zeigt.
+ *
+ * 2026-08-23, zweimal reingefallen: `page.screenshot()` liefert bei einem
+ * Video, das in einer eigenen Compositing-Ebene liegt, hartnaeckig das ERSTE
+ * Bild, waehrend `currentTime` weiterlaeuft. Gemessen im Wolf-Bereich: 0,2 bis
+ * 0,6 % Aenderung ueber die ganze Folie, obwohl das Video bei 4,0 s stand.
+ * `--disable-gpu-compositing` half beim Wolf im Textfluss, nicht mehr, sobald
+ * er `position: absolute` bekam; `--disable-gpu` half gar nicht.
+ * Was zuverlaessig funktioniert, ist die Aufnahme des ELEMENTS: dieselbe
+ * Messung ergab dort 55 % und 23 %. Also beides knipsen und das Element an
+ * seiner gemessenen Stelle ueber die Seitenaufnahme legen. Die Element-
+ * Aufnahme enthaelt den Hintergrund hinter dem Video mit, der Zusammenbau ist
+ * damit deckungsgleich und nicht geraten.
+ */
+async function knipsen(page) {
+  const seite = await page.screenshot();
+  const videos = await page.locator('video').all();
+  if (!videos.length) return seite;
+  const stellen = [];
+  for (const v of videos) {
+    const box = await v.boundingBox();
+    if (!box || box.width < 2 || box.height < 2) continue;
+    stellen.push({ input: await v.screenshot(), left: Math.round(box.x), top: Math.round(box.y) });
+  }
+  if (!stellen.length) return seite;
+  return sharp(seite).composite(stellen).png().toBuffer();
+}
+
+// Einmal leer knipsen und wegwerfen. Die ERSTE Aufnahme einer Sitzung kostet
+// rund sieben Sekunden (Schriften, erster Anstrich, sharp kalt), jede weitere
+// gut eine. Ohne dieses Aufwaermen faellt der ganze Aufschlag auf die erste
+// Marke einer Serie, und alles danach liegt hinter dem Ende der Bewegung.
+await knipsen(beamer);
+
 for (const name of liste) {
   const a = ANSICHTEN[name];
   await aufbauen(a.aufbau);
   await a.weg(helfer);
   if (marken) {
-    let stand = 0;
+    // Gegen die echte Uhr, nicht gegen die Summe der Pausen: eine Aufnahme
+    // dauert selbst ueber eine Sekunde (Seite + Videoelement + Zusammenbau).
+    // Mit `sleep(ms - vorheriges_ms)` verschieben sich die spaeteren Marken
+    // um genau diese Zeit, und man knipst ein Video, das laengst zu Ende ist.
+    // Die Datei traegt die ECHTE Zeit, nicht die gewuenschte. Eine Aufnahme
+    // kostet selbst gut eine Sekunde (Seite + Videoelement + Zusammenbau), eng
+    // gesetzte Marken sind also gar nicht erreichbar. Sie als „4300" zu
+    // beschriften, obwohl es 6453 waren, waere eine Luege im Dateinamen.
+    const t0 = Date.now();
     for (const ms of marken) {
-      await sleep(Math.max(0, ms - stand)); stand = ms;
-      const datei = `${OUT}/V-${name}-${ms}.png`;
-      writeFileSync(datei, await beamer.screenshot());
-      console.log(`  ✓ ${datei}`);
+      await sleep(Math.max(0, ms - (Date.now() - t0)));
+      const echt = Date.now() - t0;
+      const datei = `${OUT}/V-${name}-${echt}.png`;
+      writeFileSync(datei, await knipsen(beamer));
+      console.log(`  ✓ ${datei}   (Wunsch ${ms} ms)`);
     }
   } else {
     await sleep(a.ruhe);
     const datei = `${OUT}/V-${name}.png`;
-    writeFileSync(datei, await beamer.screenshot());
+    writeFileSync(datei, await knipsen(beamer));
     console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
   }
 }

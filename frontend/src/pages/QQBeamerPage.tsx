@@ -4884,6 +4884,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           // Produkt), gehoert er in die Achse der Wortmarke. Also mittig
           // darunter, im normalen Fluss statt absolut, und der Satz als Zeile
           // unter ihm statt als Blase daneben.
+          // 2026-08-23, zweiter Durchgang (Wolf: „ich wuerde den wolf links
+          // unten hinpacken, groesser und so, dass seine schnittkante unten im
+          // unteren rand verschwindet — dafuer wurde er erstellt"): das gilt
+          // fuer den 3D-Wolf, der steht jetzt als eigener Auftritt an der
+          // unteren Buehnenkante (siehe unten). Hier bleibt nur noch der Satz.
+          // Der gezeichnete Wolf (Arena-Magier, Eurovision-Flagge) bleibt
+          // mittig im Stapel: er ist ein rundes Wappen, eine angeschnittene
+          // Scheibe an der Kante waere ein Fehler, kein Auftritt.
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           gap: 'clamp(6px, 1cqh, 16px)',
           marginTop: 'clamp(10px, 2cqh, 30px)',
@@ -4897,14 +4905,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             <ArenaMageWolf widthCss="clamp(170px, 19cqw, 300px)" speaking={visible} />
           ) : eurovisionMode ? (
             <AnimatedCozyWolf widthCss="clamp(170px, 19cqw, 300px)" mode="flagge" speaking={visible} />
-          ) : (
-            // Standardfall: der 3D-Wolf. Der gezeichnete bleibt als Rueckfall.
-            <WelcomeWolfVideo
-              widthCss="clamp(190px, 21cqw, 330px)"
-              delayMs={2600}
-              fallback={<AnimatedCozyWolf widthCss="clamp(170px, 19cqw, 300px)" speaking={visible} />}
-            />
-          )}
+          ) : null}
 
           {/* 2026-08-23: die Sprechblase ist raus. Dunkler Kasten mit Rand,
               Weichzeichner und Zipfel — das ist eine Chat-Blase, also ein
@@ -4931,6 +4932,34 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
         </div>
         </div>{/* /card-wrapper (Wolf-Overlap) */}
       </div>
+      {/* 2026-08-23 (Wolf: „links unten, groesser, und so dass seine
+          schnittkante unten im unteren rand verschwindet — dafuer wurde er
+          erstellt"): der 3D-Wolf steht nicht im Textstapel, sondern auf der
+          Buehne. Er ist kein Bild neben dem Text, er ist der Moderator, der
+          links im Bild steht und sagt, was in der Mitte geschrieben steht.
+          Gemessen an der Datei: die Motivkante fuellt 724x701 von 768x768,
+          unten bleiben 16 px Luft. Wuerde er auf `bottom: 0` sitzen,
+          schwebte er also gut zwei Prozent ueber der Kante und der Schnitt
+          waere sichtbar. Deshalb wird er um diese Luft nach unten geschoben,
+          gerechnet aus seiner eigenen Breite (das Motiv ist quadratisch). */}
+      {!arenaBg && !eurovisionMode && (
+        <div style={{
+          ['--qq-welcome-wolf-w' as string]: 'clamp(300px, 30cqw, 530px)',
+          position: 'absolute',
+          left: 'clamp(8px, 1.6cqw, 32px)',
+          bottom: 'calc(var(--qq-welcome-wolf-w) * -0.035)',
+          zIndex: 6,
+          animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
+          opacity: 0,
+          pointerEvents: 'none',
+        }}>
+          <WelcomeWolfVideo
+            widthCss="var(--qq-welcome-wolf-w)"
+            delayMs={2600}
+            fallback={<AnimatedCozyWolf widthCss="var(--qq-welcome-wolf-w)" speaking={visible} />}
+          />
+        </div>
+      )}
       <style>{`
         @keyframes qqIntroAmbientPulse {
           0%, 100% { opacity: 0.65; transform: translate(-50%, -50%) scale(1); }

@@ -11,7 +11,7 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto, qqIsMega } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
 import { FactionCrest } from './QQFactionCrest';
 import { useLangFlip, COZY_CARD_BG, qqPlural, qqDeliveredFrame } from '../cozyQuizShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
@@ -21,13 +21,17 @@ import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed } from '../qqTheme';
-import { ArenaMainVideo, qqArenaBgEnabled } from './ArenaBeamerBg';
+import { ArenaMainVideo } from './ArenaBeamerBg';
 
+// 2026-08-23: NICHT gerendert (Wolf: „wir nehmen den wolf hier raus!").
+// Der Bauplan bleibt bewusst stehen; Wiedereinbau ist der auskommentierte
+// Block in LobbyView. Deshalb hier eslint stumm statt die Datei zu leeren.
 // WolfLobbyGreeter — kleiner Wolf top-right in der Lobby, winkt hereinkommende
 // Teams herein. Idle: 'QR-Code scannen!' / 'Genau den da!' / etc. Wenn Parent
 // `welcomedTeamName` setzt (kommt von welcomeTeamId in LobbyView, ~3.2s aktiv
 // nach Team-Join), uebernimmt 'Hallo {teamName}!' bis zum Timeout, dann zurueck
 // zur Idle-Rotation.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function WolfLobbyGreeter({ lang, welcomedTeamName, eurovisionMode, arena }: {
   lang: 'de' | 'en';
   welcomedTeamName: string | null;

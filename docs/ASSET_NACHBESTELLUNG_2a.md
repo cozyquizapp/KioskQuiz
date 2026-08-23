@@ -52,6 +52,10 @@ Plain solid mid-grey background (#808080), nothing else in the image.
 
 > Beim Wattebausch bitte **ohne Gesicht.** Der gelieferte hatte Augen und einen
 > pustenden Mund. Es ist ein Wattebausch, keine Figur.
+>
+> Und der Strohhalm daneben war **rot-weiss geringelt wie eine Zuckerstange.**
+> Ein Trinkhalm in einer ruhigen Farbe reicht, ohne Ringel. Kraeftiges Rot
+> steht ohnehin nicht in der Palette.
 
 ---
 
@@ -69,9 +73,12 @@ nicht unterscheidbar.
 Im Spiel saugt man ein Dragee an den Strohhalm an und trägt es hinüber. Das
 Dragee muss **unten am Ende hängen** und als bunter Knopf erkennbar sein.
 
+Auch hier: **keine Ringel.** Der gelieferte Halm war eine Zuckerstange.
+
 ```
-Subject: one drinking straw standing at a slight angle, with a single small
-round colorful candy button stuck to its lower end, as if held by suction
+Subject: one plain drinking straw in a single muted color, standing at a
+slight angle, with a single small round colorful candy button stuck to its
+lower end, as if held by suction
 ```
 
 ### `cg-bierdeckel-muenzen.png` · Bierdeckel-Rettungsringe

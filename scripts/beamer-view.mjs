@@ -153,6 +153,12 @@ const marken = SERIE ? SERIE.split(',').map(Number) : null;
 /**
  * Aufnahme, die auch laufende Videos richtig zeigt.
  *
+ * EINSCHRAENKUNG, die man kennen muss: zwischen Seiten- und Element-Aufnahme
+ * liegt rund eine Sekunde. Faellt in dieses Fenster der DE/EN-Wechsel (alle
+ * 12 s), zeigt das zusammengesetzte Bild im Videokasten schon die neue Sprache
+ * und daneben noch die alte. Das ist ein Aufnahme-Artefakt, kein Fehler auf
+ * der Buehne.
+ *
  * 2026-08-23, zweimal reingefallen: `page.screenshot()` liefert bei einem
  * Video, das in einer eigenen Compositing-Ebene liegt, hartnaeckig das ERSTE
  * Bild, waehrend `currentTime` weiterlaeuft. Gemessen im Wolf-Bereich: 0,2 bis
@@ -169,11 +175,47 @@ async function knipsen(page) {
   const seite = await page.screenshot();
   const videos = await page.locator('video').all();
   if (!videos.length) return seite;
+  const { width: BW, height: BH } = await sharp(seite).metadata();
   const stellen = [];
   for (const v of videos) {
     const box = await v.boundingBox();
     if (!box || box.width < 2 || box.height < 2) continue;
-    stellen.push({ input: await v.screenshot(), left: Math.round(box.x), top: Math.round(box.y) });
+    const roh = await v.screenshot();
+    // `elementHandle.screenshot()` ruft intern `scrollIntoViewIfNeeded`. Der
+    // Willkommen-Wolf haengt absichtlich unter die Buehnenkante, also gilt er
+    // als „nicht ganz sichtbar" — und Playwright scrollt dafuer das Overlay,
+    // obwohl das `overflow: hidden` hat (per Skript geht das trotzdem).
+    // Gemessen: `boundingBox().y` sprang durch die Aufnahme von 531 auf 462,
+    // und die NAECHSTE Aufnahme zeigte dann die um 69 px verschobene Seite.
+    // Die Buehne selbst bleibt dabei sauber (scrollHeight 990 = clientHeight
+    // 990, scrollY 0), es ist rein die Aufnahme, die den Zustand verbiegt.
+    // Also hinterher aufraeumen.
+    await page.evaluate(() => {
+      window.scrollTo(0, 0);
+      for (const e of document.querySelectorAll('*')) {
+        if (e.scrollTop) e.scrollTop = 0;
+        if (e.scrollLeft) e.scrollLeft = 0;
+      }
+    });
+    const rm = await sharp(roh).metadata();
+    // 2026-08-23, genau hier reingefallen: der Willkommen-Wolf haengt absichtlich
+    // ueber die untere Buehnenkante hinaus. Die Element-Aufnahme umfasst das
+    // GANZE Element, also auch den Teil unter der Kante. Legt man sie bei
+    // `top = box.y` auf, schneidet sharp unten ab — und damit sieht man im Bild
+    // den oberen Teil des Wolfs, wo in Wirklichkeit der untere steht. Der Wolf
+    // schien 30 px ueber der Kante zu enden, obwohl er sie im Browser beruehrt.
+    // Also erst auf den sichtbaren Ausschnitt beschneiden, dann auflegen.
+    const l = Math.max(0, Math.round(box.x));
+    const t = Math.max(0, Math.round(box.y));
+    const r = Math.min(BW, Math.round(box.x + box.width));
+    const b = Math.min(BH, Math.round(box.y + box.height));
+    if (r - l < 2 || b - t < 2) continue;
+    const sx = Math.max(0, Math.min(rm.width - 1, l - Math.round(box.x)));
+    const sy = Math.max(0, Math.min(rm.height - 1, t - Math.round(box.y)));
+    const sw = Math.min(r - l, rm.width - sx);
+    const sh = Math.min(b - t, rm.height - sy);
+    const input = await sharp(roh).extract({ left: sx, top: sy, width: sw, height: sh }).png().toBuffer();
+    stellen.push({ input, left: l, top: t });
   }
   if (!stellen.length) return seite;
   return sharp(seite).composite(stellen).png().toBuffer();

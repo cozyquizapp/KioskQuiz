@@ -4940,14 +4940,20 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           Gemessen an der Datei: die Motivkante fuellt 724x701 von 768x768,
           unten bleiben 16 px Luft. Wuerde er auf `bottom: 0` sitzen,
           schwebte er also gut zwei Prozent ueber der Kante und der Schnitt
-          waere sichtbar. Deshalb wird er um diese Luft nach unten geschoben,
-          gerechnet aus seiner eigenen Breite (das Motiv ist quadratisch). */}
+          waere sichtbar.
+          2026-08-23, nachgezogen (Wolf: „wolf muss noch etwas runter, man soll
+          nicht sehen, dass er nur bis zum pullover existiert"): die Luft
+          wegzurechnen reicht nicht. Das Motiv endet unten mit einer GERADEN
+          Kante quer durch den Pullover, und die sieht man auch dann noch, wenn
+          sie genau auf der Buehnenkante liegt. Sie muss unter die Kante. 13 %
+          der Breite sind 69 px bei voller Groesse — dort ist der Rumpf noch in
+          voller Breite, es wird also nichts verjuengt abgeschnitten. */}
       {!arenaBg && !eurovisionMode && (
         <div style={{
           ['--qq-welcome-wolf-w' as string]: 'clamp(300px, 30cqw, 530px)',
           position: 'absolute',
           left: 'clamp(8px, 1.6cqw, 32px)',
-          bottom: 'calc(var(--qq-welcome-wolf-w) * -0.035)',
+          bottom: 'calc(var(--qq-welcome-wolf-w) * -0.13)',
           zIndex: 6,
           animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
           opacity: 0,

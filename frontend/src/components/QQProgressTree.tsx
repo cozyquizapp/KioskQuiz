@@ -6,6 +6,7 @@ import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed, getActiveTheme } from '../qqTheme';
 import { QQIcon, qqCatSlug } from './QQIcon';
 import { CozyGameIcon } from './CozyGameIcon';
+import { useLangFlip } from '../cozyQuizShared';
 
 type Variant = 'hero' | 'inline' | 'panel' | 'mini' | 'showcase';
 
@@ -85,10 +86,17 @@ export default function QQProgressTree({
   bare = false,
   onlyPhase = null,
 }: Props) {
+  // 2026-08-23, auf der Ablauf-Folie gesehen: „GAME RULES / The Flow /
+  // RUNDE 1 / Every category has its own twist". Der Baum las `state.language`
+  // roh. Bei einem zweisprachigen Abend steht dort `'both'`, und
+  // `=== 'en'` ist damit fuer immer falsch: das Rundenschild blieb deutsch,
+  // waehrend die Folie ringsum alle 12 s auf Englisch wechselte.
+  // Der Haken steht VOR dem fruehen Ausstieg, sonst haengt die Reihenfolge der
+  // Hooks an der Laenge des Spielplans.
+  const lang = useLangFlip(state.language);
   const schedule = state.schedule ?? [];
   if (schedule.length === 0) return null;
 
-  const lang = state.language === 'en' ? 'en' : 'de';
   const phaseLabels = lang === 'en' ? PHASE_LABELS_EN : PHASE_LABELS_DE;
   const totalPhases = state.totalPhases || 4;
 

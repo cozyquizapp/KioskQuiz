@@ -386,14 +386,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
   // Wolf 2026-05-05: Texte sind editierbar im /rules-editor.
   // Defaults bleiben hier als Fallback erhalten.
   const CAT_EXPLAIN: Record<string, { de: string; en: string }> = {
-    SCHAETZCHEN:   { de: getRuleText('cat.SCHAETZCHEN.explain', 'de', 'Wer schätzt am nächsten dran?'),
+    SCHAETZCHEN:   { de: getRuleText('cat.SCHAETZCHEN.explain', 'de', 'Wer kommt am nächsten dran?'),
                      en: getRuleText('cat.SCHAETZCHEN.explain', 'en', 'Who can guess the closest?') },
-    MUCHO:         { de: getRuleText('cat.MUCHO.explain', 'de', 'Wählt die richtige Antwort'),
-                     en: getRuleText('cat.MUCHO.explain', 'en', 'Pick the right answer') },
+    MUCHO:         { de: getRuleText('cat.MUCHO.explain', 'de', 'Wählt die richtige Antwort.'),
+                     en: getRuleText('cat.MUCHO.explain', 'en', 'Pick the right answer.') },
     BUNTE_TUETE:   { de: getRuleText('cat.BUNTE_TUETE.explain', 'de', 'Immer eine Überraschung. Jedes Mal anders.'),
                      en: getRuleText('cat.BUNTE_TUETE.explain', 'en', 'Always a surprise. Different every time.') },
-    ZEHN_VON_ZEHN: { de: getRuleText('cat.ZEHN_VON_ZEHN.explain', 'de', '3 Antworten, 10 Punkte vergeben'),
-                     en: getRuleText('cat.ZEHN_VON_ZEHN.explain', 'en', '3 answers, distribute 10 points') },
+    ZEHN_VON_ZEHN: { de: getRuleText('cat.ZEHN_VON_ZEHN.explain', 'de', 'Verteilt 10 Punkte auf 3 Antworten.'),
+                     en: getRuleText('cat.ZEHN_VON_ZEHN.explain', 'en', 'Spread 10 points across 3 answers.') },
     CHEESE:        { de: getRuleText('cat.CHEESE.explain', 'de', 'Was ist das?'),
                      en: getRuleText('cat.CHEESE.explain', 'en', 'What is this?') },
   };
@@ -418,14 +418,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     hotPotato: {
       emoji: '🔥',
       de: { name:    getRuleText('bunte.hotPotato.name',    'de', 'Heiße Kartoffel'),
-            explain: getRuleText('bunte.hotPotato.explain', 'de', 'Reihum antworten, keine Antwort vor Zeitende = raus.') },
+            explain: getRuleText('bunte.hotPotato.explain', 'de', 'Reihum antworten. Wer die Zeit verstreichen lässt, ist raus.') },
       en: { name:    getRuleText('bunte.hotPotato.name',    'en', 'Hot Potato'),
-            explain: getRuleText('bunte.hotPotato.explain', 'en', 'Take turns, no answer before time runs out = out.') },
+            explain: getRuleText('bunte.hotPotato.explain', 'en', 'Take turns. Miss the clock and you are out.') },
     },
     top5: {
       emoji: '🏆',
       de: { name:    getRuleText('bunte.top5.name',    'de', 'Top 5'),
-            explain: getRuleText('bunte.top5.explain', 'de', 'Nennt die häufigsten Antworten, je oben desto mehr Punkte.') },
+            explain: getRuleText('bunte.top5.explain', 'de', 'Nennt die häufigsten Antworten. Je weiter oben, desto mehr Punkte.') },
       en: { name:    getRuleText('bunte.top5.name',    'en', 'Top 5'),
             explain: getRuleText('bunte.top5.explain', 'en', 'Guess the most common answers, higher rank means more points.') },
     },
@@ -446,23 +446,23 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     map: {
       emoji: '🗺️',
       de: { name:    getRuleText('bunte.map.name',    'de', 'CozyGuessr'),
-            explain: getRuleText('bunte.map.explain', 'de', 'Errate den Ort auf der Karte. Nächstes Team gewinnt.') },
+            explain: getRuleText('bunte.map.explain', 'de', 'Tippt den Ort auf der Karte. Wer am nächsten liegt, gewinnt.') },
       en: { name:    getRuleText('bunte.map.name',    'en', 'CozyGuessr'),
             explain: getRuleText('bunte.map.explain', 'en', 'Guess the location on the map. Closest team wins.') },
     },
     crowdTop: {
       emoji: '🗳️',
       de: { name:    getRuleText('bunte.crowdTop.name',    'de', 'Umfrage'),
-            explain: getRuleText('bunte.crowdTop.explain', 'de', 'Jedes Handy tippt EIN Stichwort, nennt was die meisten nennen.') },
+            explain: getRuleText('bunte.crowdTop.explain', 'de', 'Jedes Handy tippt EIN Stichwort. Gesucht ist, was die meisten nennen.') },
       en: { name:    getRuleText('bunte.crowdTop.name',    'en', 'Survey'),
-            explain: getRuleText('bunte.crowdTop.explain', 'en', 'Each phone types ONE word, name what most people name.') },
+            explain: getRuleText('bunte.crowdTop.explain', 'en', 'Each phone types ONE word. Name what most people name.') },
     },
     crowdEstimate: {
       emoji: '🧠',
       de: { name:    getRuleText('bunte.crowdEstimate.name',    'de', 'Schwarmintelligenz'),
-            explain: getRuleText('bunte.crowdEstimate.explain', 'de', 'Jedes Handy schätzt eine Zahl, gemeinsam liegt der Schwarm goldrichtig.') },
+            explain: getRuleText('bunte.crowdEstimate.explain', 'de', 'Jedes Handy schätzt eine Zahl. Zusammen trifft der Schwarm erstaunlich genau.') },
       en: { name:    getRuleText('bunte.crowdEstimate.name',    'en', 'Hive Mind'),
-            explain: getRuleText('bunte.crowdEstimate.explain', 'en', 'Each phone guesses a number, together the swarm nails it.') },
+            explain: getRuleText('bunte.crowdEstimate.explain', 'en', 'Each phone guesses a number. Together the swarm gets remarkably close.') },
     },
   };
   const bunteKind = cat === 'BUNTE_TUETE'
@@ -1602,14 +1602,14 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             SCHAETZCHEN: {
               emoji: catEmoji, title: { de: 'Schätzchen', en: 'Close Call' },
               lines: {
-                de: ['Wer am nächsten dran liegt, gewinnt. Knapp dran zählt auch.'],
+                de: ['Wer am nächsten dran liegt, gewinnt. Auch knapp daneben zählt.'],
                 en: ['Closest guess wins, near misses also count.'],
               },
             },
             MUCHO: {
               emoji: catEmoji, title: { de: 'Mu-Cho', en: 'Mu-Cho' },
               lines: {
-                de: ['4 Antworten, 1 richtige. Speed entscheidet.'],
+                de: ['4 Antworten, 1 richtige. Das Tempo entscheidet.'],
                 en: ['4 options, 1 right. Speed decides.'],
               },
             },
@@ -1623,7 +1623,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             CHEESE: {
               emoji: catEmoji, title: { de: 'Schau mal!', en: 'Picture This' },
               lines: {
-                de: ['Erkennt das Bild, tippt die Antwort ins Handy.'],
+                de: ['Erkennt das Bild und tippt die Antwort ein.'],
                 en: ['Spot the image, type your answer.'],
               },
             },
@@ -1631,8 +1631,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:top5': {
               emoji: '🏆', title: { de: 'Top 5', en: 'Top 5' },
               lines: {
-                de: ['Bis zu 5 Antworten, meiste Treffer gewinnt.'],
-                en: ['Up to 5 answers, most hits wins.'],
+                de: ['Bis zu 5 Antworten. Die meisten Treffer gewinnen.'],
+                en: ['Up to 5 answers. Most hits wins.'],
               },
             },
             'BUNTE_TUETE:oneOfEight': {
@@ -1645,22 +1645,22 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:order': {
               emoji: '📊', title: { de: 'Reihenfolge', en: 'Order' },
               lines: {
-                de: ['Sortiert richtig, meiste Treffer gewinnt.'],
-                en: ['Sort correctly, most hits wins.'],
+                de: ['Sortiert richtig. Die meisten Treffer gewinnen.'],
+                en: ['Sort correctly. Most hits wins.'],
               },
             },
             'BUNTE_TUETE:map': {
               emoji: '🗺️', title: { de: 'CozyGuessr', en: 'CozyGuessr' },
               lines: {
-                de: ['Tippt den Ort auf der Karte. Nächstes Team gewinnt.'],
+                de: ['Tippt den Ort auf der Karte. Wer am nächsten liegt, gewinnt.'],
                 en: ['Pin the spot on the map. Closest team wins.'],
               },
             },
             'BUNTE_TUETE:hotPotato': {
               emoji: '🥔', title: { de: 'Heiße Kartoffel', en: 'Hot Potato' },
               lines: {
-                de: ['Reihum antworten, keine Antwort vor Zeitende = raus'],
-                en: ['Take turns, no answer before time runs out = out'],
+                de: ['Reihum antworten. Wer die Zeit verstreichen lässt, ist raus.'],
+                en: ['Take turns. Miss the clock and you are out.'],
               },
             },
             'BUNTE_TUETE:onlyConnect': {
@@ -1687,8 +1687,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             'BUNTE_TUETE:crowdEstimate': {
               emoji: '🧠', title: { de: 'Schwarmintelligenz', en: 'Hive Mind' },
               lines: {
-                de: ['Jedes Handy schätzt eine Zahl, gemeinsam liegt der Schwarm goldrichtig.'],
-                en: ['Each phone guesses a number, together the swarm nails it.'],
+                de: ['Jedes Handy schätzt eine Zahl. Zusammen trifft der Schwarm erstaunlich genau.'],
+                en: ['Each phone guesses a number. Together the swarm gets remarkably close.'],
               },
             },
           };
@@ -1812,6 +1812,24 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
 
+              {/* 2026-08-23 (Wolf: „warte, das rot fehlt aus der kategorie?"):
+                  richtig, und die Ursache ist eine Luecke in der Uebergabe 2a.
+                  Damals wanderte die Kategoriefarbe „vom Text auf die Marker" —
+                  Ueberschriften wurden creme, weil Creme 16,6:1 gegen den
+                  Buehnengrund steht und die Markenfarbe nur 5,4:1. Auf DIESER
+                  Folie gibt es aber gar keine Marker, also blieb die Farbe nur
+                  noch im 3D-Symbol uebrig und die Folie war farblos.
+                  Der Strich ist der fehlende Marker: er traegt die Farbe, ohne
+                  sie unter Text zu legen. Er liest `--qq-stage-accent`, also die
+                  Buehnenvariable, die der Phasen-Root ohnehin pro Kategorie
+                  setzt (bisher nutzten sie nur Timer und Frageleiste). */}
+              <div aria-hidden style={{
+                width: 'clamp(120px, 14cqw, 240px)', height: 4, borderRadius: 2,
+                background: 'var(--qq-stage-accent)',
+                marginTop: 'clamp(10px, 1.6cqh, 22px)',
+                animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.45s both',
+              }} />
+
               {/* Explanation lines */}
               <div style={{
                 display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
@@ -1826,6 +1844,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                       ? (i === 0 ? 'var(--qq-text)' : 'var(--qq-text-muted)')
                       : (i === 0 ? '#F6EFE6' : 'var(--qq-text-muted)'),
                     textAlign: 'center',
+                    // 2026-08-23 (Wolf: „der text ist komisch umgebrochen"): der
+                    // Satz lief bis zur vollen Spaltenbreite von 1500 px und brach
+                    // dort, wo er zufaellig zu Ende war — „Wer am naechsten dran
+                    // liegt, gewinnt. Knapp dran | zaehlt auch." Eine lange erste
+                    // und eine kurze zweite Zeile.
+                    // `maxWidth` in Zeichen statt Pixeln, weil die Zeile mit der
+                    // Buehnenbreite mitwaechst; `balance` verteilt die Zeilen
+                    // gleichmaessig, statt die erste vollaufen zu lassen.
+                    // 40ch, nicht enger: „Verteilt 10 Punkte auf 3 Antworten."
+                    // sind 35 Zeichen und sollen in EINE Zeile passen. Erst was
+                    // laenger ist, bricht — und dann gleichmaessig.
+                    maxWidth: '40ch',
+                    textWrap: 'balance',
                     animation: `phasePop 0.6s var(--qq-ease-bounce) ${0.5 + i * 0.15}s both`,
                   }}>
                     {line}
@@ -1988,6 +2019,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 ))}
               </div>
 
+              {/* Kategorie-Strich — siehe die ausfuehrliche Begruendung in der
+                  Erklaer-Variante weiter oben: er ist der Marker, auf dem die
+                  Kategoriefarbe seit der Uebergabe 2a sitzen soll. Ohne ihn ist
+                  diese Folie im Buehnen-Look farblos ausser dem 3D-Symbol. */}
+              <div aria-hidden style={{
+                width: 'clamp(120px, 14cqw, 240px)', height: 4, borderRadius: 2,
+                background: 'var(--qq-stage-accent)',
+                marginTop: 'clamp(10px, 1.6cqh, 22px)',
+                animation: 'phasePop 0.6s var(--qq-ease-bounce) 0.45s both',
+              }} />
+
               {/* Category explanation — 1 line. */}
               {catExplain && (
                 <div style={{
@@ -1996,6 +2038,11 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   letterSpacing: '0.02em',
                   marginTop: 14,
                   textAlign: 'center',
+                  // Gleicher Grund wie in der Erklaer-Variante: sonst laeuft der
+                  // Satz bis zur vollen Spaltenbreite und bricht dort, wo er
+                  // zufaellig zu Ende ist.
+                  maxWidth: '40ch',
+                  textWrap: 'balance',
                 }}>
                   {catExplain}
                 </div>

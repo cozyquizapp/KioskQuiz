@@ -30,6 +30,7 @@
  *   --dom="h1, .x"         Kaesten/Farben aus dem DOM statt aus dem Bild
  *   --zeiten               wo die Zeit hingeht
  *   --bots=8               Zahl der Bot-Teams
+ *   --bild=hoch|quer       Testfoto fuer Schau mal (Hochkant/Querformat)
  *
  * MEHRERE ANSICHTEN IN EINEM AUFRUF. Browser, Raum und Spielaufbau kosten
  * zusammen rund 12 s und fallen dann EINMAL an; jede weitere Ansicht kostet nur
@@ -65,6 +66,11 @@ const KATEGORIE = (process.argv.find(a => a.startsWith('--kategorie=')) || '=').
 // hinterher im Bild zu suchen. Beim Willkommen-Wolf war das um ein Vielfaches
 // schneller UND genauer (das Bild kann eine Ebene veraltet zeigen, das DOM nie).
 const DOM = (process.argv.find(a => a.startsWith('--dom=')) || '=').split('=').slice(1).join('=') || null;
+// --bild=hoch|quer  legt allen Schau-mal-Fragen ein Testfoto unter, damit sich
+// beide Layouts (Hochkant/Querformat) gezielt anschauen lassen.
+const BILD = (process.argv.find(a => a.startsWith('--bild=')) || '=').split('=')[1] || null;
+const QUELLE_HOCH = '/images/Johannes.jpeg';
+const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
 // --zeiten  schreibt auf, wo die Zeit hingeht.
 const ZEITEN = process.argv.includes('--zeiten');
 const t0Lauf = Date.now();
@@ -265,6 +271,23 @@ async function aufbauen(stufe) {
       const vorn = fragen.filter(passt);
       if (!vorn.length) console.log(`  Kategorie „${KATEGORIE}" kommt im Entwurf nicht vor.`);
       else fragen = [...vorn, ...fragen.filter(q => !passt(q))];
+    }
+    if (BILD) {
+      // 2026-08-23: Schau mal hat zwei Layouts, und welches laeuft, entscheidet
+      // das Seitenverhaeltnis des Fotos. In den Test-Entwuerfen haengen an den
+      // Schau-mal-Fragen entweder gar keine Bilder oder Wikimedia-URLs, und
+      // Wikimedia ist von hier aus gesperrt (403 ueber den Proxy). Also legen
+      // wir fuer die Aufnahme ein Bild aus dem eigenen Ordner unter, hochkant
+      // oder quer, und setzen `cheeseLayout` mit — die Auto-Erkennung misst
+      // sonst erst nach dem Laden und das Layout springt im Bild.
+      const quelle = BILD === 'hoch' ? QUELLE_HOCH : QUELLE_QUER;
+      let n = 0;
+      fragen = fragen.map(q => {
+        if (q.category !== 'CHEESE') return q;
+        n++;
+        return { ...q, image: { ...(q.image ?? {}), url: quelle, layout: 'fullscreen', cheeseLayout: BILD === 'hoch' ? 'portrait' : 'landscape' } };
+      });
+      console.log(`  ${n} Schau-mal-Fragen auf ${quelle} gesetzt (${BILD})`);
     }
     await emit('qq:setTestMode', { value: true });
     takt('  Testmodus');

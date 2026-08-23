@@ -26,6 +26,7 @@ import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { QQ_CATEGORY_THEME } from '../../../shared/qqCategoryTheme';
 import { SkinDeco } from './SkinDeco';
 import {
   useLangFlip, bt, formatRevealedAnswer, imgAnim, imgFilter,
@@ -243,6 +244,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     }
   }, [s.timerEndsAt, stickyTimer]);
   const timerExpiring = stickyTimer !== null && (!s.timerEndsAt || revealed);
+  // 2026-08-23: EIN Timer, EINE Stelle. Normalerweise der Frage-Timer; bei
+  // Heisser Kartoffel der Zug-Timer, der bisher nur als Ring um den Avatar lief.
+  const hpTurnEndsAt = (s as any).hotPotatoTurnEndsAt as number | null | undefined;
+  const kopfTimer = (q?.category === 'BUNTE_TUETE' && (q as any)?.bunteTuete?.kind === 'hotPotato'
+    && !(s as any).largeGroupMode)
+    ? (hpTurnEndsAt ? { endsAt: hpTurnEndsAt, duration: 15, expiring: revealed } : null)
+    : (stickyTimer ? { endsAt: stickyTimer.endsAt, duration: stickyTimer.duration, expiring: timerExpiring } : null);
 
   // ── CHEESE Cascade-Audit (2026-05-01): vorher fielen alle Treffer-Avatare
   // gleichzeitig + stumm rein. Jetzt 850ms-Stagger pro Avatar (CSS) + synchron
@@ -604,17 +612,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
   const kartenLook = isThemed() && !istBuehne;
 
-  // 2026-08-23 (Wolf: „der fragetext bei schaetzchen sieht komisch aus,
-  // linkszentriert auf leerem raum"). Stimmt, und das entlarvt meine eigene
-  // Begruendung von heute morgen als halbe Wahrheit: linksbuendig ist richtig,
-  // WEIL darunter eine Spalte aus Antwortkarten steht, die dieselbe Kante teilt
-  // und die Zeile ausbalanciert. Wo diese Spalte fehlt, fehlt auch das
-  // Gegengewicht — dann haengt der Satz an einer Kante, die nichts traegt.
-  // Also: linksbuendig nur, wenn wirklich ein Antwortblock folgt. Das sind
-  // Mu-Cho, 10 von 10 und Fix It. Schaetzchen, Schau mal, Heisse Kartoffel,
-  // Top 5 und Pin It stellen nur die Frage — die steht mittig.
-  const frageHatSpalte = !!q.options?.length
-    || (q.category === 'BUNTE_TUETE' && (q.bunteTuete as any)?.kind === 'order');
+  // 2026-08-23, gemessen statt geschaetzt: am oberen Rand standen zwei
+  // Linien in derselben Kategoriefarbe uebereinander. Die obere (y 0-11) ist
+  // die Zeitleiste der Buehne, 12px hoch ueber die volle Breite; die untere
+  // (y 14-17) ist der Bilderrahmen. Zwei Pixel Abstand zwischen zwei gleich
+  // gefaerbten Balken liest sich als doppelter Rahmen, genau wie bei der
+  // Heissen Kartoffel. Der Bilderrahmen rueckt deshalb auf der Buehne unter
+  // die Zeitleiste, mit einem Abstand, der als Abstand erkennbar ist.
+  const BILD_OBEN = istBuehne ? 'clamp(24px, 3.2cqh, 34px)' : 'clamp(10px, 1.4cqh, 22px)';
+
 
   const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 56px)'
     : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 72px)'
@@ -622,6 +628,121 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     : qText.length > 55  ? 'clamp(40px, min(4.6cqw, 6.8cqh), 84px)'
     : qText.length > 40  ? 'clamp(46px, min(5.4cqw, 7.8cqh), 112px)'
     : 'clamp(50px, min(6.2cqw, 8.4cqh), 132px)';
+
+
+  // 2026-08-23 (Wolf: „Statusleiste kann rein, die Frage ist wohin?" fuer
+  // Schau mal). Die Zeile stand bisher fest im Inhalts-Block, und der ist bei
+  // Schau mal komplett abgeschaltet (display none statt flex, weil die Frage
+  // dort in der Bild-Ebene sitzt)
+  // — deshalb war die Kategorie dort als einzige Frage des Abends nicht
+  // benannt. Sie liegt jetzt als eigener Bauteil hier oben und wird an zwei
+  // Stellen eingesetzt: im Inhalts-Block wie bisher, und bei Schau mal als
+  // eigene Ebene ueber dem Bild. Eine Quelle, zwei Einsatzorte — nicht zwei
+  // Kopien, die auseinanderlaufen.
+  const kopfzeile = (
+    <div style={{
+      position: 'absolute',
+      // 2026-07-07 (Wolf-Livetest 'timer hängt halb übers fragefeld'):
+      // Timer-Inset von der Content-Margin ENTKOPPELT — eigener enger
+      // Eck-Abstand rueckt den Timer rechts an der Frage-Karte vorbei.
+      // 2026-07-13 (A1): Karte jetzt QQ_QUESTION_MAX_W=1300 (statt 1400)
+      // → 230px Gutter, Timer (196px) ueberlappt die Ecke nicht mehr.
+      top: 'clamp(14px, 1.6vh, 26px)',
+      left: 'clamp(14px, 1.6vh, 26px)',
+      right: 'clamp(14px, 1.6vh, 26px)',
+      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+      gap: 16,
+      // 2026-08-23 (Buehnen-Durchgang): die Zeile ist der Anker des
+      // Abends — sie sagt auf jeder Frage, welche Kategorie laeuft und
+      // die wievielte Frage es ist. Genau die sprang aber um 80 px.
+      // Ursache: der Timer sitzt in derselben Zeile und ist viel hoeher
+      // als die Pille. Bei Heisser Kartoffel ist er ausgeblendet (das
+      // Spiel hat einen eigenen Timer pro Zug), die Zeile fiel damit von
+      // 204 px auf 44 px zusammen, und die mittig gesetzte Pille rutschte
+      // mit nach oben. Gemessen: Fragezaehler bei y 104 auf vier Folien,
+      // bei y 24 auf der fuenften.
+      // Die Hoehe wird jetzt gehalten, egal ob der Timer da ist. 204 px
+      // sind die gemessene Zeilenhoehe MIT Timer, als cqh notiert, damit
+      // sie auf kleineren Flaechen mitfaellt.
+      minHeight: QQ_KOPFZEILE_H,
+      zIndex: 60,
+      pointerEvents: 'none',
+    }}>
+      {/* 2026-08-22 (Uebergabe 2a, Aenderung 9 „Statuszeile
+          vereinheitlichen"): eine Zeile oben links — Kategorie-Pille,
+          gefuellt in Kategoriefarbe mit dunkler Schrift, dahinter der
+          Fragezaehler in Kapitaelchen mit 0.26em Laufweite.
+
+          Die Pille war 2026-05-12 entfernt worden, weil die Kategorie
+          schon im PhaseIntro stand. Der Fall hat sich mit Aenderung 1
+          gedreht: die Kategorie traegt jetzt den Grund, also braucht das
+          Bild die Beschriftung dazu — sonst ist die Farbe da, aber
+          niemand kann sie benennen. Doppelt ist es trotzdem nicht, weil
+          das PhaseIntro ein eigener Zustand vor der Frage ist.
+
+          Der Grad steht bewusst nicht auf den 13px aus Abschnitt 10 des
+          Briefs: 13px sind ein Wert fuer eine Bildschirmseite; auf 1760px
+          Buehnenbreite waeren sie aus zehn Metern schlicht nicht da. Die
+          abgenommene Vorlage 2a faehrt hier 28–30px — der clamp trifft
+          das auf der Buehne und faellt auf kleineren Flaechen mit. */}
+      {q.category && !revealed && (
+        // 2026-08-22 (Wolf-Entscheidung): die Zeile bricht nie um. Weder
+        // die Pille noch der Zaehler duerfen schrumpfen oder umbrechen —
+        // `flexShrink: 0` an beiden und `flexWrap: nowrap` am Container.
+        // Die Groesse ist frei; wenn es eng wird, faellt der clamp ueber
+        // den cqw-Anteil von selbst kleiner, statt die Zeile zu brechen.
+        // Betrifft die langen Namen: SCHAETZCHEN, ZEHN VON ZEHN, BUNTE TUETE.
+        <div style={{
+          display: 'flex', alignItems: 'center', flexWrap: 'nowrap',
+          gap: 'clamp(10px, 1.2cqw, 20px)', flexShrink: 0,
+        }}>
+          <span style={{
+            padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 28px)',
+            borderRadius: 'var(--qq-pill-radius)',
+            background: 'var(--qq-stage-accent)',
+            color: '#12100E',
+            fontWeight: 900, lineHeight: 1,
+            fontSize: 'clamp(16px, 1.7cqw, 30px)',
+            letterSpacing: '0.06em',
+            whiteSpace: 'nowrap',
+          }}>
+            {(QQ_CATEGORY_LABELS[q.category]?.[lang] ?? q.category).toUpperCase()}
+          </span>
+          <span style={{
+            fontWeight: 800, lineHeight: 1,
+            fontSize: 'clamp(15px, 1.6cqw, 28px)',
+            letterSpacing: '0.26em',
+            color: 'var(--qq-text-muted)',
+            whiteSpace: 'nowrap',
+          }}>
+            {lang === 'en' ? 'QUESTION' : 'FRAGE'}{' '}
+            {String((s.questionIndex ?? 0) + 1).padStart(2, '0')} / {QQ_TOTAL_QUESTIONS}
+          </span>
+        </div>
+      )}
+      {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
+          per-Turn-Timer in HotPotatoBeamerView).
+          2026-05-12: Badge ist aus dieser Top-Bar raus (jetzt unten links). */}
+      {/* 2026-08-23 (Wolf: „mach den timer da auch nach oben wie bei
+          allen anderen fragen"): Heisse Kartoffel hat keinen Frage-Timer,
+          sondern einen pro Zug (`hotPotatoTurnEndsAt`). Der lief bisher
+          als Ring um den Avatar und war damit der einzige Timer des
+          Abends an einer anderen Stelle. Jetzt speist er dieselbe Zahl
+          oben rechts wie ueberall sonst. */}
+      {kopfTimer && (
+        <div style={{
+          pointerEvents: revealed ? 'none' : 'auto',
+          flexShrink: 0,
+        }}>
+          {/* 2026-05-04 v3 (Wolf): stickyTimer haelt das letzte gueltige
+              endsAt ~1s nachdem das Backend timerEndsAt nullt — sonst
+              unmountet die Component bevor qqTimerOutro durchlaeuft.
+              timerExpiring=true sobald Original-Prop weg ODER revealed. */}
+          <BeamerTimer endsAt={kopfTimer.endsAt} durationSec={kopfTimer.duration} accent={accent} expireNow={kopfTimer.expiring} variant="plain" />
+        </div>
+      )}
+    </div>
+  );
 
   // Category intro overlay removed — category is already shown in PHASE_INTRO
 
@@ -737,7 +858,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {cheeseFullscreen ? (
             <div style={{
               position: 'fixed',
-              top: 'clamp(10px, 1.4cqh, 22px)',
+              top: BILD_OBEN,
               bottom: 'clamp(10px, 1.4cqh, 22px)',
               left: 'clamp(12px, 1.6cqw, 28px)',
               right: isCheesePortrait
@@ -817,7 +938,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             inset: 0,
             zIndex: cheeseFullscreen ? 51 : 2,
             background: cheeseFullscreen
-              ? 'linear-gradient(180deg, rgba(13,10,6,0.15) 0%, rgba(13,10,6,0.06) 30%, rgba(13,10,6,0.06) 70%, rgba(13,10,6,0.20) 100%)'
+              // 2026-08-23: die Statuszeile oben und die Team-Reihe unten
+              // liegen jetzt auf dem Foto. Was fuer eine Fragekarte gilt, gilt
+              // hier auch: Text braucht einen verlaesslichen Grund. Statt einen
+              // Balken einzuziehen (der das Bild beschneiden wuerde) wird der
+              // ohnehin vorhandene Verlauf oben und unten dunkler gezogen. Auf
+              // dem Foto liest sich das als Vignette, nicht als Bedienflaeche,
+              // und die Bildmitte bleibt vollstaendig unangetastet. Die Marken
+              // folgen der Kopfzeilenhoehe: 20,6cqh sind auf der Buehne 204px,
+              // also endet der obere Verlauf bei rund 26% der Hoehe.
+              ? (istBuehne
+                ? 'linear-gradient(180deg, rgba(13,10,6,0.68) 0%, rgba(13,10,6,0.34) 12%, rgba(13,10,6,0.06) 26%, rgba(13,10,6,0.06) 60%, rgba(13,10,6,0.30) 82%, rgba(13,10,6,0.52) 100%)'
+                : 'linear-gradient(180deg, rgba(13,10,6,0.15) 0%, rgba(13,10,6,0.06) 30%, rgba(13,10,6,0.06) 70%, rgba(13,10,6,0.20) 100%)')
               : [
                 'linear-gradient(90deg, rgba(13,10,6,0.92) 0%, rgba(13,10,6,0.78) 45%, rgba(13,10,6,0.45) 100%)',
                 'linear-gradient(180deg, rgba(13,10,6,0.5) 0%, transparent 25%, transparent 70%, rgba(13,10,6,0.6) 100%)',
@@ -832,7 +964,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {cheeseFullscreen && (
             <div aria-hidden style={{
               position: 'fixed',
-              top: 'clamp(10px, 1.4cqh, 22px)',
+              top: BILD_OBEN,
               bottom: 'clamp(10px, 1.4cqh, 22px)',
               left: 'clamp(12px, 1.6cqw, 28px)',
               right: isCheesePortrait
@@ -840,7 +972,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 : 'clamp(12px, 1.6cqw, 28px)',
               borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
               border: `4px solid ${accent}`,
-              boxShadow: `0 0 32px ${accent}55`,
+              // 2026-08-23: derselbe Massstab wie am Brett und an der
+              // Fragekarte — ein Schein, der etwas bedeutet, bleibt; einer, der
+              // nur schmueckt, geht. Der Rahmen sagt bereits „gerahmtes Foto",
+              // die 32px Weichzeichnung darum sagen nichts.
+              boxShadow: istBuehne ? 'none' : `0 0 32px ${accent}55`,
               pointerEvents: 'none',
               zIndex: 52,
               animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) 0.15s both',
@@ -888,6 +1024,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {/* ── CHEESE overlay cards (Phase 2 + Reveal) ── */}
       {/* 2026-05-05 v2 (Wolf-Bug): Cards warten auf imgReady damit Portrait-Layout
           nicht erst landscape-aligned reinpoppt und dann nach rechts springt. */}
+      {/* 2026-08-23 (Wolf: „Statusleiste kann rein, die Frage ist wohin?"):
+          oben links, genau da, wo sie auf den anderen vierzehn Fragen steht.
+          Sie liegt als eigene Ebene ueber dem Bild, NICHT im Card-Container:
+          der beginnt bei Hochkant erst bei 50% Breite, die Zeile gehoert aber
+          an die linke Bildschirmkante. Der Grund, warum sie ueberhaupt fehlte,
+          ist derselbe Verdrahtungsfehler wie dreimal zuvor — der Inhalts-Block,
+          in dem sie steckt, ist bei Schau mal ganz abgeschaltet. */}
+      {cheeseOverlay && istBuehne && imgReady && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 70, pointerEvents: 'none' }}>
+          {kopfzeile}
+        </div>
+      )}
       {(cheeseWithQuestion || isCheeseReveal) && imgReady && (
         <div style={{
           // 2026-04-30 v3: Bei Portrait-Foto wandert der Card-Container in den
@@ -903,8 +1051,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           alignItems: 'center',
           // 2026-05-04 (Wolf): kleinere Raender auf der Schau-Mal-Seite
           // damit das Bild mehr Bildflaeche bekommt. Vorher: 40-92px Padding.
+          // 2026-08-23: auf der Buehne haelt auch Schau mal die Hoehe der
+          // Statuszeile frei — dieselbe Regel wie auf den anderen Fragen. Bei
+          // Hochkant sitzt die Karte in der rechten Haelfte vertikal mittig;
+          // ohne den reservierten Streifen zentriert sie sich mitten durch die
+          // Kategorie-Pille hindurch, sobald der Text zwei Zeilen lang wird.
           padding: isCheesePortrait
-            ? 'clamp(12px, 2cqh, 24px) clamp(12px, 1.6cqw, 24px)'
+            ? (istBuehne
+              ? `calc(12px + ${QQ_KOPFZEILE_H}) clamp(12px, 1.6cqw, 24px) clamp(12px, 2cqh, 24px)`
+              : 'clamp(12px, 2cqh, 24px) clamp(12px, 1.6cqw, 24px)')
             : (revealed ? '20px 24px 16px' : '20px 24px clamp(28px, 4cqh, 48px)'),
           transition: 'padding 0.55s var(--qq-ease-bounce), left 0.5s ease',
           pointerEvents: 'none',
@@ -918,7 +1073,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               v3 round 8 (User-Bug 'timer auch bei hellem hintergrund schwer
               sichtbar'): zusaetzlicher dunkler Kreis-Backdrop hinter dem
               Timer-Ring fuer Kontrast auf hellen Fotos. */}
-          {stickyTimer && (
+          {/* 2026-08-23: auf der Buehne faellt dieser eigene Timer weg. Er ist
+              die zweite Zeitanzeige an einer zweiten Stelle in einem zweiten
+              Material (weisser Kasten), und die Kopfzeile eine Ebene weiter
+              oben zeigt dieselbe Zahl schon dort, wo sie auf allen anderen
+              Fragen steht. Die uebrigen Skins behalten ihn unveraendert. */}
+          {stickyTimer && !istBuehne && (
             <div style={{
               // 2026-05-12 (Slide-Boundary-System): clamps → --qq-safe-margin Token.
               position: 'fixed', top: 'var(--qq-safe-margin)', right: 'var(--qq-safe-margin)', zIndex: 70,
@@ -999,19 +1159,38 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Mono/Themes: solide weiße Card (card-bg) statt dunkel-frosted —
             // sonst liest sich der schwarze card-text unsichtbar. Reveal behält
             // den Team-Farb-Rahmen als Sieger-Signal (Farb-Pop auf weiß).
-            background: isThemed() ? 'var(--qq-card-bg)' : 'rgba(13,10,6,0.38)',
-            backdropFilter: isThemed() ? 'none' : 'blur(18px) saturate(1.25)',
-            WebkitBackdropFilter: isThemed() ? 'none' : 'blur(18px) saturate(1.25)',
+            // 2026-08-23 (Wolf: „die Frage war doch nicht in einem Kasten"),
+            // vierter Fundort desselben Verdrahtungsfehlers. Auf der Buehne war
+            // hier eine Kartenflaeche mit sichtbarem Rand zu sehen, die gar
+            // nichts trug: der 2a-Kartengrund ist fast durchsichtig, also stand
+            // ein leerer heller Rahmen um den Fragetext.
+            // Ganz weglassen geht bei Schau mal aber NICHT, und das ist der
+            // Unterschied zu den anderen vierzehn Fragen: dort steht der Text
+            // auf dem Kategorie-Grund, hier auf einem beliebigen Foto. Ein
+            // helles Motiv (Schnee, weisse Wand, Papier) laesst cremefarbene
+            // Schrift verschwinden, und welches Foto kommt, entscheidet der
+            // Entwurf, nicht das Design.
+            // Also kein Kasten, sondern ein Lesefeld: derselbe tiefe
+            // Kategorie-Ton, den die anderen Folien als Grund benutzen, mit
+            // 88% Deckung und ohne Kontur. Es liest sich als Bauchbinde, nicht
+            // als Karte, und die Farbe sagt weiterhin, welche Kategorie laeuft.
+            background: istBuehne
+              ? `${QQ_CATEGORY_THEME.CHEESE.deep}e0`
+              : (isThemed() ? 'var(--qq-card-bg)' : 'rgba(13,10,6,0.38)'),
+            backdropFilter: istBuehne ? 'blur(6px)' : (isThemed() ? 'none' : 'blur(18px) saturate(1.25)'),
+            WebkitBackdropFilter: istBuehne ? 'blur(6px)' : (isThemed() ? 'none' : 'blur(18px) saturate(1.25)'),
             // Vor Reveal: kräftiger Kategorie-Glow wie bei MUCHO/ZvZ. (User-Wunsch
             // 2026-04-28: 'bei cheese darf die frage vor reveal umrandet sein
             // von kategorie farben glow wie bei anderen').
             border: isCheeseReveal
               ? `3px solid ${revealGlowColor}cc`
-              : (isThemed() ? 'var(--qq-card-border)' : `2.5px solid ${accent}88`),
+              : (istBuehne ? 'none' : (isThemed() ? 'var(--qq-card-border)' : `2.5px solid ${accent}88`)),
             borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
             // Reveal-Padding kompakter (20 statt 28) damit das Bild oben mehr Platz behaelt.
             padding: isCheeseReveal ? '20px 48px' : '36px 56px',
-            boxShadow: isThemed()
+            boxShadow: istBuehne
+              ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}` : 'none')
+              : isThemed()
               ? (isCheeseReveal ? `0 0 0 2px ${revealGlowColor}, var(--qq-card-shadow)` : 'var(--qq-card-shadow)')
               : isCheeseReveal
               ? `0 0 0 1px ${revealGlowColor}55, 0 0 80px ${revealGlowColor}55, 0 0 32px ${revealGlowColor}88`
@@ -1392,7 +1571,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             const morphOut = isCheeseReveal && isMegaTeams;
             return (
               <div style={{
-                ...(isCheesePortrait ? portraitFlow : landscapeAbs),
+                // 2026-08-23 (Wolf: „die Avatarreihe wandert nach unten wie bei
+                // allen anderen Fragen"): bei Querformat klebte sie oben am
+                // Bildrand — als einzige Team-Reihe des Abends, und genau da,
+                // wo jetzt die Statuszeile steht. Auf der Buehne laeuft sie
+                // deshalb im normalen Fluss unter der Karte mit, also unten.
+                // Damit ist die Leseordnung auf allen fuenfzehn Fragen dieselbe:
+                // Status oben, Inhalt in der Mitte, Teams unten. Die uebrigen
+                // Skins bleiben beim alten Aufbau.
+                ...((isCheesePortrait || istBuehne) ? portraitFlow : landscapeAbs),
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
                 gap, flexWrap: 'wrap',
                 pointerEvents: 'none', zIndex: 65,
@@ -1611,102 +1798,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               Badge in eigene Bottom-Left-Container (siehe unten am Ende von
               dem Wrapper). Vorher saßen beide in einer absoluten Top-Bar.
               Diese Wrapper-Div haelt jetzt nur noch den Top-Right Timer. */}
-          <div style={{
-            position: 'absolute',
-            // 2026-07-07 (Wolf-Livetest 'timer hängt halb übers fragefeld'):
-            // Timer-Inset von der Content-Margin ENTKOPPELT — eigener enger
-            // Eck-Abstand rueckt den Timer rechts an der Frage-Karte vorbei.
-            // 2026-07-13 (A1): Karte jetzt QQ_QUESTION_MAX_W=1300 (statt 1400)
-            // → 230px Gutter, Timer (196px) ueberlappt die Ecke nicht mehr.
-            top: 'clamp(14px, 1.6vh, 26px)',
-            left: 'clamp(14px, 1.6vh, 26px)',
-            right: 'clamp(14px, 1.6vh, 26px)',
-            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-            gap: 16,
-            // 2026-08-23 (Buehnen-Durchgang): die Zeile ist der Anker des
-            // Abends — sie sagt auf jeder Frage, welche Kategorie laeuft und
-            // die wievielte Frage es ist. Genau die sprang aber um 80 px.
-            // Ursache: der Timer sitzt in derselben Zeile und ist viel hoeher
-            // als die Pille. Bei Heisser Kartoffel ist er ausgeblendet (das
-            // Spiel hat einen eigenen Timer pro Zug), die Zeile fiel damit von
-            // 204 px auf 44 px zusammen, und die mittig gesetzte Pille rutschte
-            // mit nach oben. Gemessen: Fragezaehler bei y 104 auf vier Folien,
-            // bei y 24 auf der fuenften.
-            // Die Hoehe wird jetzt gehalten, egal ob der Timer da ist. 204 px
-            // sind die gemessene Zeilenhoehe MIT Timer, als cqh notiert, damit
-            // sie auf kleineren Flaechen mitfaellt.
-            minHeight: QQ_KOPFZEILE_H,
-            zIndex: 60,
-            pointerEvents: 'none',
-          }}>
-            {/* 2026-08-22 (Uebergabe 2a, Aenderung 9 „Statuszeile
-                vereinheitlichen"): eine Zeile oben links — Kategorie-Pille,
-                gefuellt in Kategoriefarbe mit dunkler Schrift, dahinter der
-                Fragezaehler in Kapitaelchen mit 0.26em Laufweite.
-
-                Die Pille war 2026-05-12 entfernt worden, weil die Kategorie
-                schon im PhaseIntro stand. Der Fall hat sich mit Aenderung 1
-                gedreht: die Kategorie traegt jetzt den Grund, also braucht das
-                Bild die Beschriftung dazu — sonst ist die Farbe da, aber
-                niemand kann sie benennen. Doppelt ist es trotzdem nicht, weil
-                das PhaseIntro ein eigener Zustand vor der Frage ist.
-
-                Der Grad steht bewusst nicht auf den 13px aus Abschnitt 10 des
-                Briefs: 13px sind ein Wert fuer eine Bildschirmseite; auf 1760px
-                Buehnenbreite waeren sie aus zehn Metern schlicht nicht da. Die
-                abgenommene Vorlage 2a faehrt hier 28–30px — der clamp trifft
-                das auf der Buehne und faellt auf kleineren Flaechen mit. */}
-            {q.category && !revealed && (
-              // 2026-08-22 (Wolf-Entscheidung): die Zeile bricht nie um. Weder
-              // die Pille noch der Zaehler duerfen schrumpfen oder umbrechen —
-              // `flexShrink: 0` an beiden und `flexWrap: nowrap` am Container.
-              // Die Groesse ist frei; wenn es eng wird, faellt der clamp ueber
-              // den cqw-Anteil von selbst kleiner, statt die Zeile zu brechen.
-              // Betrifft die langen Namen: SCHAETZCHEN, ZEHN VON ZEHN, BUNTE TUETE.
-              <div style={{
-                display: 'flex', alignItems: 'center', flexWrap: 'nowrap',
-                gap: 'clamp(10px, 1.2cqw, 20px)', flexShrink: 0,
-              }}>
-                <span style={{
-                  padding: 'clamp(6px, 0.7cqh, 12px) clamp(14px, 1.6cqw, 28px)',
-                  borderRadius: 'var(--qq-pill-radius)',
-                  background: 'var(--qq-stage-accent)',
-                  color: '#12100E',
-                  fontWeight: 900, lineHeight: 1,
-                  fontSize: 'clamp(16px, 1.7cqw, 30px)',
-                  letterSpacing: '0.06em',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {(QQ_CATEGORY_LABELS[q.category]?.[lang] ?? q.category).toUpperCase()}
-                </span>
-                <span style={{
-                  fontWeight: 800, lineHeight: 1,
-                  fontSize: 'clamp(15px, 1.6cqw, 28px)',
-                  letterSpacing: '0.26em',
-                  color: 'var(--qq-text-muted)',
-                  whiteSpace: 'nowrap',
-                }}>
-                  {lang === 'en' ? 'QUESTION' : 'FRAGE'}{' '}
-                  {String((s.questionIndex ?? 0) + 1).padStart(2, '0')} / {QQ_TOTAL_QUESTIONS}
-                </span>
-              </div>
-            )}
-            {/* Timer auf der rechten Seite — versteckt fuer HotPotato (eigener
-                per-Turn-Timer in HotPotatoBeamerView).
-                2026-05-12: Badge ist aus dieser Top-Bar raus (jetzt unten links). */}
-            {stickyTimer && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && !(s as any).largeGroupMode) && (
-              <div style={{
-                pointerEvents: revealed ? 'none' : 'auto',
-                flexShrink: 0,
-              }}>
-                {/* 2026-05-04 v3 (Wolf): stickyTimer haelt das letzte gueltige
-                    endsAt ~1s nachdem das Backend timerEndsAt nullt — sonst
-                    unmountet die Component bevor qqTimerOutro durchlaeuft.
-                    timerExpiring=true sobald Original-Prop weg ODER revealed. */}
-                <BeamerTimer endsAt={stickyTimer.endsAt} durationSec={stickyTimer.duration} accent={accent} expireNow={timerExpiring} variant="plain" />
-              </div>
-            )}
-          </div>
+          {kopfzeile}
           {/* 2026-05-12 v3 (Wolf 'kartoffel unten links — ganz weglassen die
               badge'): Kategorie-Badge in QuestionView komplett entfernt.
               Kategorie wird via PhaseIntro vor jeder Frage prominent
@@ -1827,7 +1919,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   // linksbuendig. Der Blick faengt beim Lesen links an, und bei
                   // drei Zeilen mittig beginnt jede Zeile woanders. Skins
                   // bleiben mittig.
-                  textAlign: (kartenLook || !frageHatSpalte) ? 'center' : 'left',
+                  // 2026-08-23 (Wolf: „text muss auf allen frageviews gleich
+                  // ausgerichtet sein"). Also mittig, ueberall. Meine Regel von
+                  // heute morgen — linksbuendig, wenn eine Antwortspalte folgt —
+                  // war typografisch begruendbar, hat aber zur Folge, dass die
+                  // Ausrichtung von der Kategorie abhaengt. Auf einer Buehne, die
+                  // fuenfzehnmal hintereinander dieselbe Folie zeigt, wiegt die
+                  // Gleichheit schwerer als das Argument fuer die einzelne Folie.
+                  textAlign: 'center',
                   animation: 'bQuestionIn 0.5s var(--qq-ease-bounce) both',
                   // 2026-04-30 v2: padding/margin-Transition 0.4s -> 0.7s
                   // entspannt, damit hpCompact-Snap weniger hektisch wirkt.

@@ -2778,23 +2778,45 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                     width: 'clamp(184px, 17.5cqw, 244px)', height: 'clamp(184px, 17.5cqw, 244px)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
-                    {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben) */}
+                    {/* Ring (SVG, viewBox 100×100; rotate -90 → Start oben).
+                        2026-08-23 (Wolf: „mach den timer da auch nach oben wie
+                        bei allen anderen fragen"): auf der Buehne ist er raus.
+                        Er war der zweite Rahmen, den Wolf zweimal gemeldet hat —
+                        in Teamfarbe, direkt an der gleichfarbigen Avatar-Kachel.
+                        Und er war der einzige Timer des Abends an einer anderen
+                        Stelle als oben rechts. Die Zeit steht jetzt dort, wo sie
+                        auf den anderen vierzehn Fragen auch steht. */}
+                    {!isThemed() && (
                     <svg viewBox="0 0 100 100" aria-hidden style={{
                       position: 'absolute', inset: 0, width: '100%', height: '100%',
                       transform: 'rotate(-90deg)',
                     }}>
-                      <circle cx="50" cy="50" r="44" fill="none" stroke="rgba(148,163,184,0.16)" strokeWidth="5" />
+                      {/* 2026-08-23 (Wolf, zweimal: „doppelter rahmen um das
+                          spielende team"). Der zweite Rahmen war DIESER Ring.
+                          Zwei Ursachen, beide gemessen:
+                          * Er lief in der TEAMFARBE — also in derselben Farbe wie
+                            die Avatar-Kachel direkt darunter. Zwei gleichfarbige
+                            Rahmen ineinander liest niemand als Uhr.
+                          * Er lag praktisch auf der Kachel: Ring-Innenkante bei
+                            203 px, Avatar 200 px breit, macht 1,4 px Spalt.
+                          Der Ring zeigt ZEIT, nicht Identitaet — die Identitaet
+                          steht auf der Kachel. Also creme statt Teamfarbe, Rot
+                          nur bei Zeitnot, und der Schein faellt weg (er hat den
+                          Ring zusaetzlich verdickt). Die Kachel darunter wird
+                          kleiner, damit ein Spalt sichtbar bleibt. */}
+                      <circle cx="50" cy="50" r="44" fill="none" stroke="var(--qq-hairline)" strokeWidth="5" />
                       <circle
                         cx="50" cy="50" r="44" fill="none"
-                        stroke={urgent ? '#EF4444' : t.color} strokeWidth="5" strokeLinecap="round"
+                        stroke={urgent ? '#EF4444' : (isThemed() ? 'var(--qq-text)' : t.color)} strokeWidth="5" strokeLinecap="round"
                         strokeDasharray={RING_CIRC}
                         strokeDashoffset={RING_CIRC * (1 - ringFraction)}
                         style={{
                           transition: 'stroke-dashoffset 1s linear, stroke 0.3s ease',
-                          filter: `drop-shadow(0 0 9px ${urgent ? 'rgba(239,68,68,0.85)' : `${t.color}d9`})`,
+                          filter: isThemed() ? 'none' : `drop-shadow(0 0 9px ${urgent ? 'rgba(239,68,68,0.85)' : `${t.color}d9`})`,
                         }}
                       />
                     </svg>
+                    )}
                     {/* Weicher Team-Farb-Glow fuellt den dunklen Spalt zwischen
                         Farb-Disc und Timer-Ring (2026-07-08 Wolf 'starrer rand um
                         den gruenen glow' / 'quadratisches feld ums aktive team'):
@@ -2821,7 +2843,7 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         bgColor mehr — der eckige Farb-Tile ragte über den Timer-
                         Ring. Der weiche runde Glow (oben) liefert die Team-Farbe,
                         der Avatar schwebt frei mittig, Timer-Ring bleibt frei. */}
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(150px, 14.5cqw, 200px)'} />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(126px, 12.2cqw, 170px)'} />
                     {/* Kartoffel oben rechts am Ring (fx-potato.png, kein OS-Emoji) */}
                     {/* 2026-08-23 (Wolf: „alte kartoffel"): `fx-potato.png` ist
                         die alte Fluent-Knolle in 256 px, blass und ohne Flamme.
@@ -2841,8 +2863,9 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                         : 'qqHpRingPotatoWobble 1.6s ease-in-out infinite',
                       zIndex: 6, pointerEvents: 'none',
                     }} />
-                    {/* Countdown-Chip unten am Ring (pulsiert; urgent = rot) */}
-                    {remaining !== null && (
+                    {/* Countdown-Chip unten am Ring (pulsiert; urgent = rot).
+                        Auf der Buehne raus, gleicher Grund wie beim Ring. */}
+                    {remaining !== null && !isThemed() && (
                       <div style={{
                         position: 'absolute', bottom: 'clamp(-14px, -1.4cqh, -8px)', left: '50%',
                         padding: 'clamp(5px,0.7cqh,9px) clamp(16px,1.8cqw,26px)',

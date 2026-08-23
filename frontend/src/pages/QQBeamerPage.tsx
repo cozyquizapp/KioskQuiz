@@ -681,7 +681,13 @@ export function SlideStage({ children, bg }: { children: React.ReactNode; bg?: s
       // 2026-07-14 (Arena-Background-Set): im CozyArena-Modus deckt hier das
       // Kolosseum-Bild die volle Buehne (Views sind transparent → scheint durch).
       // bg = qqArenaRootBg(s) oder null → dann der normale dunkle Aussenring.
-      background: isThemed() ? 'var(--qq-bg)' : (bg ?? '#0F0817'),
+      // 2026-08-23: im Buehnen-Look DURCHSICHTIG statt `--qq-bg`. Der Ring ist
+      // die Flaeche um die skalierte 1760x990-Buehne; er malte den neutralen
+      // Grund noch einmal ueber den Phasen-Root und hat damit den
+      // Kategorie-Grund von dort zugedeckt. Sein Zweck (kein dunkler Rahmen um
+      // eine hell lackierte Buehne) ist mit `transparent` sogar besser erfuellt:
+      // der Grund des Roots laeuft dann ohne Kante durch.
+      background: isThemed() ? 'transparent' : (bg ?? '#0F0817'),
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>
@@ -1948,7 +1954,21 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // 2026-06-23 (Skin): aktiver Skin lackiert den Phase-Root — Seiten-BG,
       // Font und Primaertext ziehen alle Child-Views mit (auch die, die keinen
       // eigenen BG malen). Cozy bleibt 1:1 (Kategorie-BG/Template-BG/fontFam).
-      background: isThemed() ? 'var(--qq-bg)' : (activeTemplate ? (activeTemplate.background || bg) : bg),
+      // 2026-08-23 (Wolf: „im gesamten quiz ist der bg so? nie in den
+      // kategoriefarben?"). Nein, war er nicht — und das war ein Fehler, kein
+      // Entwurf. Aenderung 1 der Uebergabe 2a heisst woertlich „Die Kategorie
+      // traegt den Grund", `qqCategoryStageBg()` ist gebaut, pro Kategorie ein
+      // `deep`-Ton hinterlegt, und `CAT_BG` steckt seit jeher in `bg`. Nur hat
+      // der Buehnen-Zweig `bg` gar nicht angefasst und stattdessen die feste
+      // `--qq-bg` gemalt. Nachgemessen an fuenf Aufnahmen: der Grund war
+      // Byte fuer Byte derselbe, oben (25,21,38) und unten (15,11,24), egal ob
+      // rote oder violette Kategorie lief.
+      // Jetzt gewinnt die Kategorie, wenn eine laeuft. Ohne Kategorie (Lobby,
+      // Regeln, Team-Reveal, Pause, Ende) bleibt der Grund neutral — das ist so
+      // gewollt, dort ist die einzige Farbe die der Teams.
+      background: isThemed()
+        ? (cat ? (CAT_BG[cat] ?? 'var(--qq-bg)') : 'var(--qq-bg)')
+        : (activeTemplate ? (activeTemplate.background || bg) : bg),
       // 2026-07-19 (Wolf „ist Cinzel/Garamond WIRKLICH überall umgestellt?"): nein,
       // war es nicht. Die Wurzel vererbte im Kolosseum weiter Bricolage/Nunito an
       // JEDE View ohne eigenen Font (Reveals, Lobby, Stechen, Thanks …) — deshalb

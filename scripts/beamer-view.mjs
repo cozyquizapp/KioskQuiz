@@ -433,6 +433,11 @@ async function aufbauen(stufe) {
     // eine andere Kategorie, und mein Vorziehen lief ins Leere. Fuer eine
     // Aufnahme will man das Gegenteil von Zufall.
     await emit('qq:setQuizOptions', { shuffleQuestionsInRound: false });
+    // 2026-08-24 (Wolf: „cozygames nicht im autoplay"): CozyGames sind im Raum
+    // per Vorgabe AUS und kein Entwurf schaltet sie an. Ohne diese Zeile fehlt
+    // im Harness die CozyGame-Regelfolie und die ganze CozyGame-Phase - man
+    // prueft dann eine Folie, die es im Lauf gar nicht gibt.
+    await emit('qq:setQuizOptions', { cozyGamesEnabled: true });
     let fragen = d.questions;
     if (KATEGORIE) {
       // Nicht filtern, sondern VORZIEHEN: der Spielplan braucht weiterhin alle

@@ -29,7 +29,7 @@ import { isThemed, getActiveTheme, getActiveThemeId, BUEHNE_THEME_ID } from '../
  */
 const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
-import { QQIcon, QQEmojiIcon, QQEmojiText } from './QQIcon';
+import { QQIcon, QQEmojiIcon, QQEmojiText, type QQIconSlug } from './QQIcon';
 // 2026-08-22 (Wolf: „wird der text auch ueberprueft?"): die Regel-Ansicht las
 // bis heute KEINE einzige Spielkonstante — jede Zahl stand als Text da. Heute
 // stimmen sie alle, aber nichts haelt sie richtig: wer QQ_MAX_JOKERS_PER_GAME
@@ -58,6 +58,10 @@ type RulesSlide = {
   /** 2026-07-09 (Motion-Audit): optionales Custom-3D-Icon (/icons/<id>.png) statt
    *  Emoji — z.B. cg-cozygames auf der CozyGame-Slide, konsistent zum Rad-Intro. */
   iconImg?: string;
+  /** 2026-08-24: Zeichen aus dem gelieferten Satz (QQIcon-Slug). Anders als
+   *  `iconImg` laeuft es ueber dieselbe Groessen- und Fallback-Logik wie alle
+   *  anderen Zeichen im Quiz. */
+  iconSlug?: QQIconSlug;
   title: string;
   color: string;
   lines: string[];
@@ -169,8 +173,19 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     // Final-Tipp → als Intro-Slide vor Bets, Bunte Tüte → ohnehin pro Frage
     // mit eigener Regelpille erklaert).
     {
-      icon: '🪅',
-      iconImg: 'cg-cozygames',
+      icon: '🎡',
+      // 2026-08-24 (Wolf: „cozygames emoji in rules falsch"). Hier stand
+      // `cg-cozygames`, und das ist der PINKE COZYWOLF mit Ring, Becher und
+      // Wuerfel - das Maskottchen. Auf der Buehne ist der Wolf ausgebaut
+      // (2026-08-23, Wolf: „wir nehmen den wolf hier raus"), und alle anderen
+      // Regelfolien tragen ein Zeichen aus dem gelieferten 3D-Satz. Diese eine
+      // sprach dadurch eine andere Sprache als die vier daneben.
+      // `fx-wheel` ist das Gluecksrad aus demselben Satz - und es zeigt genau
+      // das, was die Zeile darunter sagt: „Nach jeder Runde dreht das
+      // Gluecksrad". Zurueck geht es, indem `iconImg` wieder auf
+      // 'cg-cozygames' steht; die Datei bleibt liegen (Fortschrittsbaum
+      // benutzt sie weiter).
+      iconSlug: 'fx-wheel',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
@@ -269,8 +284,9 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     // before Comeback-phase, Final Tip as intro-slide before bets, Lucky Bag
     // per-question with its own rules-pill).
     {
-      icon: '🪅',
-      iconImg: 'cg-cozygames',
+      icon: '🎡',
+      // Siehe die Begruendung an der deutschen Fassung weiter oben.
+      iconSlug: 'fx-wheel',
       title: t('rules.slide_cozygames.title', 'CozyGame'),
       color: RULES_SLIDE_COLOR,
       requiresCozyGames: true,
@@ -692,6 +708,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
               <JokerIcon i={1} size={'clamp(72px, 10cqw, 130px)'} eurovisionMode={!!s.theme?.eurovisionMode}
                 style={{ animation: 'qqJokerWiggle 2.4s ease-in-out 1.7s infinite' }} />
             </div>
+          ) : cardSlide.iconSlug ? (
+            <span style={{
+              display: 'inline-block',
+              animation: 'qqCatNameWave 2.4s ease-in-out 1.3s infinite',
+            }}><QQIcon slug={cardSlide.iconSlug} size={`clamp(72px,${dense ? 8 : 11}cqw,${fs(150, 100)}px)`} alt={cardSlide.title} /></span>
           ) : cardSlide.iconImg ? (
             <span style={{
               display: 'inline-block',

@@ -288,6 +288,16 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     (async () => {
       // Autoplay an damit Test-Quizze durchlaufen ohne Mod-Space
       setAutoplayEnabled(true);
+      // 2026-08-24 (Wolf: „cozygames nicht im autoplay"). Und er hat recht:
+      // der Raum steht per Vorgabe auf cozyGamesEnabled=false, KEIN Entwurf
+      // setzt das Feld, und die Vorrang-Logik weiter unten kann den Entwurf
+      // gar nicht gewinnen lassen (`typeof liveCozyToggle === 'boolean'` ist
+      // durch die Vorgabe IMMER wahr). Ergebnis: im Testlauf gab es weder die
+      // CozyGame-Regelfolie noch die CozyGame-Phase - man prueft dann etwas,
+      // das im Lauf gar nicht vorkommt.
+      // Der Testlauf soll den ganzen Abend zeigen, also hier ausdruecklich an.
+      // Was am ECHTEN Abend voreingestellt ist, bleibt davon unberuehrt.
+      try { await emit('qq:setQuizOptions', { roomCode, cozyGamesEnabled: true }); } catch { /* ignore */ }
       // Test-Mode-Flag setzen → Backend skipt persistGameResult
       try { await emit('qq:setTestMode', { roomCode, value: true }); } catch {}
       // 2026-07-16 (Wolf 'Test startet immer automatisch in CozyQuiz'): der Auto-

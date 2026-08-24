@@ -260,6 +260,17 @@ if (marken) { await knipsen(beamer); takt('aufgewaermt'); }
  * Ergebnis pro Ansicht: der Kasten um alles Tragende, und die vier Abstaende
  * zur Buehnenkante. Vier verschiedene Abstaende sind ein Fund, gleich grosse
  * sind eine Entscheidung.
+ *
+ * WAS DIE ZAHLEN NICHT SAGEN, und das habe ich beim ersten Lauf selbst falsch
+ * gelesen: ein NEGATIVER Abstand heisst nicht, dass Inhalt abgeschnitten wird.
+ * Gemessen wird der KASTEN eines Elements, und der ist bei Schrift die Zeilen-
+ * box, nicht die Buchstaben - bei 64 px Grad steht sie leicht ueber die Glyphen
+ * hinaus. Dazu kommen endlose Bewegungen: der Team-Auftritt laesst seine
+ * Titelbuchstaben dauerhaft wippen (`qqTrTitleWave`), der Kasten wandert also
+ * staendig ein paar Pixel ueber die Kante, ohne dass je etwas fehlt.
+ * Beim Team-Auftritt bin ich genau darauf hereingefallen und habe die Kacheln
+ * verkleinert, um ein Problem zu loesen, das es nicht gab. Wieder ausgebaut.
+ * Ein negativer Wert ist ein Anlass NACHZUSEHEN, kein Befund.
  */
 async function rahmen(page, name) {
   const r = await page.evaluate(() => {

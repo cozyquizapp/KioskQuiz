@@ -948,7 +948,12 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         return (
           <div ref={stageRef} style={{
             display: 'flex', flexDirection: 'column',
-            gap: 'clamp(18px, 2.4cqw, 36px)',
+            // 2026-08-24: der Abstand ZWISCHEN den Reihen wurde in `cqw`
+            // gerechnet, also aus der BREITE - fuer einen senkrechten Abstand.
+            // Auf 1760x990 sind 2.4cqw 42 px, wo 2.4cqh 24 waeren. Derselbe
+            // Fehler wie heute frueh am Schau-mal-Rahmen, nur an anderer
+            // Stelle: wer senkrecht misst, muss senkrecht rechnen.
+            gap: 'clamp(14px, 2.4cqh, 26px)',
             alignItems: 'center', maxWidth: '92cqw',
             position: 'relative', zIndex: 2,
             animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',

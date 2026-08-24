@@ -20,11 +20,11 @@ import {
   QQ_CATEGORY_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, qqArenaType } from '../cozyQuizShared';
-import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
 // umschrieben - unter isThemed() fallen auch Studio Mono, Soft Pop und Neo.
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 import { getRoundColor, QQ_PHASE_COLORS } from '../qqDesignTokens';
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';

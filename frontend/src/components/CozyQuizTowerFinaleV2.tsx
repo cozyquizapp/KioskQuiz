@@ -30,7 +30,7 @@ import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import { qqLargestClusterCells, type ClusterKachel } from '../utils/qqLargestCluster';
-import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import {
   playWoodKnock, playClimaxFinish, playFanfare, playTick, playReveal, playSpecialAwardReveal,
 } from '../utils/sounds';
@@ -109,7 +109,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const reduce = prefersReducedMotion();
   // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
   // umschrieben - darunter fallen auch Studio Mono, Soft Pop und Neo-Brutalism.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // Cozy Quirks: eckige Kachel → Avatar-Discs quadratisch (Team-Farbe = Kachel),
   // keine runde Coin um den Avatar. Sieger-Glow bleibt.
   const quirkSet = isQuirkTileSet(useAvatarSet());
@@ -935,7 +935,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
 
 function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; mystery: boolean; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // 2026-08-23 (2a): Gold BLEIBT auf dieser Karte. Sie kuendigt den goldenen
   // Baustein an, der gleich faellt, und Wolf hat bestaetigt: die goldenen
   // Bausteine SIND die Awards. Gold ist hier also Mechanik und nicht Schmuck.

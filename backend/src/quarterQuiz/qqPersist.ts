@@ -152,7 +152,26 @@ export async function loadAllRooms(): Promise<RestoredRoom[]> {
 }
 
 // Runtime-only Felder nach dem Einlesen zuruecksetzen.
+/**
+ * Kachelsets, an die vor dem 24.08.2026 automatisch das Buehnen-Design haengte.
+ * Bewusst hier als Liste und nicht ueber den Frontend-Helfer `isQuirkTileSet`:
+ * das ist eine EINMALIGE Umstellung fuer gespeicherte Raeume, kein lebender
+ * Zusammenhang. Waechst die Frontend-Liste, soll diese hier NICHT mitwachsen.
+ */
+const ALTE_BUEHNEN_SETS = ['cozyquiz', 'cozyQuirks2', 'blockz'];
+
 function rehydrate(room: QQRoomState): QQRoomState {
+  // 2026-08-24: Design und Avatar-Set sind entkoppelt (siehe qqTheme.ts).
+  // Bis dahin galt: laeuft ein Quirk-Kachelset, zeigt der Beamer das
+  // Buehnen-Design - egal was in `themeId` stand. Gespeicherte Raeume tragen
+  // deshalb 'cozy' oder gar nichts, HABEN aber das Buehnen-Design gezeigt.
+  // Ohne diese Umstellung waeren sie beim naechsten Oeffnen auf Pink/Navy
+  // zurueckgesprungen. Die Zeile bewahrt also das, was Wolf gesehen hat, sie
+  // aendert es nicht.
+  if ((!room.themeId || room.themeId === 'cozy')
+      && ALTE_BUEHNEN_SETS.includes(String(room.avatarSetId ?? ''))) {
+    room.themeId = 'buehne';
+  }
   room.timerHandle             = null;
   room._timerOnExpire          = null;
   room._hotPotatoTimerHandle   = null;

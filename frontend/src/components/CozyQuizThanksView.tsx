@@ -19,7 +19,7 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
-import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { TeamNameLabel } from './TeamNameLabel';
 import { WolfHeadIcon } from './WolfHeadIcon';
 import { CozyWolfImage } from './CozyWolfImage';
@@ -31,7 +31,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const themed = isThemed();
   // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): die Danke-Folie ist das
   // letzte Bild des Abends und hatte den Durchgang noch nicht gesehen.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // Cozy Quirks: eckige Kachel → Sieger-Coin quadratisch, ohne weißen Ring; bg +
   // Glow bleiben (= Kachel + Feier-Glow, wie im „ohne"-Beispiel).
   const quirkSet = isQuirkTileSet(s.avatarSetId);

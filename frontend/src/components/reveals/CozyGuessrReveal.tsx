@@ -16,7 +16,7 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { getAvatarDisplay } from '../../avatarSets';
 import { formatRevealedAnswer } from '../../cozyQuizShared';
-import { getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { getActiveThemeId, BUEHNE_THEME_ID } from '../../qqTheme';
 import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 import {
   playAvatarCascadeNote, playClimaxFinish, playRevealHighlight,
@@ -180,7 +180,7 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // Kategorie-Pille davor, wie auf allen anderen Folien. Der Kasten bleibt:
   // anders als beim Kategorie-Grund liegt hier eine Landkarte darunter, und
   // Text auf einer Karte braucht eine Flaeche.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
 
   // 2026-04-30 v3 round 10 (User-Wunsch 'kannst du nicht den 📍-emote
   // nutzen' + 'auflösung etwas unpraktisch, ziel sieht man gar nicht'):

@@ -15,7 +15,7 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
-import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 /**
  * Die Buehne beim Namen nennen, 2026-08-24.
@@ -28,7 +28,7 @@ import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
  * `quirkSet === true` bei abgeschalteter Buehne. Ein Test, der fast stimmt,
  * ist schlimmer als keiner: er haelt jahrelang und faellt dann einmal um.
  */
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';

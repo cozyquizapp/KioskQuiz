@@ -14,11 +14,11 @@
  */
 import { useEffect, useState } from 'react';
 import { playFieldPlaced, playSteal, playStapelStamp, playWoodKnock } from '../utils/sounds';
-import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // Die Buehne beim Namen nennen, 2026-08-24. `isThemed()` deckt auch Studio
 // Mono, Soft Pop und Neo-Brutalism ab und taugt deshalb nicht als Buehnen-Test.
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 
 export type ActionCardData = {
   count: number;

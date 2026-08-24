@@ -9,7 +9,7 @@ import { QQ_COLORS } from '../../../shared/qqColors';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
 import { getServerNow } from '../utils/serverTime';
-import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { QQEmojiIcon } from './QQIcon';
 
 export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
@@ -21,7 +21,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
   // 2026-08-23 (Uebergabe 2a): diese Folie war bis dahin NIE angesehen worden.
   // Sie laeuft nur bei Gleichstand am Spielende - selten, aber dann live vor
   // Publikum, und dann ist sie der Drama-Moment des Abends.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   const gedaempft = istBuehne ? 'var(--qq-text-muted)' : QQ_COLORS.slate400;
 
   // Live-Countdown (nur Anzeige — Auto-Reveal macht der Server).

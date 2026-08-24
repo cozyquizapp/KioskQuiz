@@ -29,7 +29,7 @@ import {
 import {
   playAvatarCascadeNote, playClimaxFinish, playWolfHowl, playFanfare,
 } from '../utils/sounds';
-import { isThemed, themedWindow, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, themedWindow, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
@@ -132,7 +132,7 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
     // 2026-08-23 (Uebergabe 2a): diese Folie war nie angesehen worden. Sie ist
     // seit dem Abschalten des 4x4-Finales nur noch ueber das Stechen
     // erreichbar - selten, aber dann live vor Publikum.
-    const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+    const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
     // Medaillen sind auf der Buehne raus: eine fuenfte und sechste Farbe fuer
     // etwas, das die Zahl daneben schon sagt. Auf der Buehne steht ueberall
     // „#N" in derselben Form, von Platz acht bis Platz eins.

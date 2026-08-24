@@ -13,11 +13,11 @@ import { QQEmojiIcon } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 import { useLangFlip } from '../cozyQuizShared';
-import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
 // umschrieben - darunter fallen auch die anderen Skins.
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 
 /** Helper: lang-aware Spiel-Name + Beschreibung mit Fallback. */
 function cgName(game: CozyGame | null, lang: 'de' | 'en'): string {

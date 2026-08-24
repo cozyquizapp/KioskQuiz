@@ -30,12 +30,12 @@ import {
 } from '../pages/QQBeamerPage';
 import { getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // 2026-08-23 (Uebergabe 2a): die Pause besteht aus mehreren kleinen
 // Komponenten in dieser Datei. Damit nicht jede ihre eigene Pruefung baut,
 // steht sie einmal hier oben.
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 
 function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
   const [idx, setIdx] = useState(0);
@@ -153,7 +153,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Systemzeichen, Scheine an allem. Auf der Buehne gilt dasselbe Vokabular wie
   // auf jeder anderen Folie: EIN Akzent, Creme fuer Text, Kacheln statt Kreise,
   // kein Schmuck-Schein.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   const modeAccent     = istBuehne ? 'var(--qq-stage-accent)' : (isEsc ? '#FF2D7B' : (mode === 'preGame' ? 'var(--qq-accent)' : QQ_COLORS.violet400));
   // preGame-Dim/Glow ziehen den Skin-Akzent (accent-rgb-Default = altes Pink → cozy gleich).
   const modeAccentDim  = isEsc ? 'rgba(255,45,123,0.42)' : (mode === 'preGame' ? 'rgba(var(--qq-accent-rgb),0.38)' : 'rgba(167,139,250,0.42)');

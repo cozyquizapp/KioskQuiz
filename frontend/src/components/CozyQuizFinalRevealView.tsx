@@ -322,7 +322,7 @@ import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalRev
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
 import { qqFinalTotal } from '../utils/qqFinalScore';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.
@@ -947,7 +947,7 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
         // einer fuenften Farbe. Der Pokal ist selbst gold und 280px gross, er
         // faellt auf. Ein Schlagschatten nach unten bleibt: der setzt ihn auf
         // den Grund, statt ihn leuchten zu lassen.
-        filter: getActiveThemeId() === QUIRKS_THEME_ID
+        filter: getActiveThemeId() === BUEHNE_THEME_ID
           ? 'drop-shadow(0 10px 26px rgba(0,0,0,0.55))'
           : 'drop-shadow(0 8px 24px rgba(251,191,36,0.45))',
         animation: 'phasePop 0.7s var(--qq-ease-bounce) 0.2s both, qqCatNameWave 2.8s ease-in-out 1.4s infinite',
@@ -1026,7 +1026,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
 
   if (!team) return null;
   const de = lang === 'de';
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // 2026-08-23 (2a): der Sympathie-Bonus stand in Marken-Pink, einer fuenften
   // Farbe. Er ist ein Zusatz, keine Wertung - Creme reicht, das Wort sagt es.
   const sympathyColor = istBuehne ? 'var(--qq-text)' : (eurovisionMode ? '#C084FC' : QQ_COLORS.brandPinkMid);
@@ -1361,7 +1361,7 @@ function BetZeroGroupSlide({ teams, lang }: {
 }) {
   const de = lang === 'de';
   const N = teams.length;
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // Avatar-Größe skaliert mit Team-Anzahl
   const avatarSize = N <= 3
     ? 'clamp(110px, 11cqw, 160px)'

@@ -149,9 +149,26 @@ const NEO_BRUTAL: ResolvedTheme = {
 // runde CozyWolf-DNA) — via den Phase-Root (--qq-font) kaskadiert das auf ALLE Views
 // zugleich, keine Einzel-Verdrahtung noetig (Phase 1b, Webfont in index.html geladen).
 // Dunkle, leicht warme Plum-Bühne, damit die bunten Kacheln leuchten.
-export const QUIRKS_THEME_ID = 'quirks';
-const QUIRKS: ResolvedTheme = {
-  id: QUIRKS_THEME_ID, label: 'Quirks',
+/**
+ * Das Buehnen-Design. Sichtbar heisst es „CozyQuiz", intern `buehne`.
+ *
+ * 2026-08-24, Wolf: „hae aber wieso quirks? das war irgendein waehlbares set,
+ * warum wurde darauf gebaut? ich wollte es als zusaetzliches standard set".
+ * Der Einwand trifft den NAMEN, nicht die Sache. Am 29.07. hat Wolf ein
+ * durchgaengiges In-Quiz-Theme bestellt; dabei entstand dieses Theme mit der
+ * Entscheidung, auf der die ganze Uebergabe 2a spaeter aufbaut - der Akzent ist
+ * absichtlich farblos-warm, damit Team-, Kategorie- und Phasenfarben die
+ * einzigen Farben mit Bedeutung bleiben. Die Tokens hier sind seit 2a
+ * neugeschrieben. Uebrig war nur die Id aus einer Zeit, in der das Theme zu
+ * genau einem Avatar-Set gehoerte.
+ *
+ * Warum die Id nicht 'cozyquiz' lautet, obwohl das Label es tut: so heisst
+ * bereits das Avatar-Set. Zwei Felder mit demselben Wert heissen, dass ein
+ * verwechselter Vergleich zufaellig stimmt. Siehe shared/qqThemeIds.ts.
+ */
+export const BUEHNE_THEME_ID = 'buehne';
+const BUEHNE: ResolvedTheme = {
+  id: BUEHNE_THEME_ID, label: 'CozyQuiz',
   brand: {
     accentHex: '#F5ECD8', accentRgb: '245,236,216', accentSoft: '#EAD9B0',
     accentWarm: '#FBF3E2',          // accent-light: helles Creme (NICHT Gold → kein Leak)
@@ -186,12 +203,14 @@ const QUIRKS: ResolvedTheme = {
 const COZY_KINO: ResolvedTheme = { ...COZY, id: 'cozyKino', label: 'Cozy Kino' };
 
 export const QQ_THEMES: Record<string, ResolvedTheme> = {
+  // Der Standard steht vorn: die Reihenfolge hier ist die Reihenfolge der
+  // Kacheln im Moderator.
+  buehne: BUEHNE,
   cozy: COZY,
   cozyKino: COZY_KINO,
   studioMono: STUDIO_MONO,
   softPop: SOFT_POP,
   neoBrutal: NEO_BRUTAL,
-  quirks: QUIRKS,
 };
 
 /**
@@ -202,9 +221,19 @@ export const QQ_THEMES: Record<string, ResolvedTheme> = {
  * aber der Quirks-Look kommt ohne Extra-Klick.
  */
 export function themeIdForState(themeId: string | undefined, avatarSetId: string | undefined): string {
-  if (themeId && themeId !== 'cozy' && QQ_THEMES[themeId]) return themeId;
-  if (isQuirkTileSet(avatarSetId)) return QUIRKS_THEME_ID;
-  return themeId ?? 'cozy';
+  // Alte Raeume tragen die Id von vor dem 24.08. noch auf Platte.
+  if (themeId === 'quirks') return BUEHNE_THEME_ID;
+  if (themeId && QQ_THEMES[themeId]) return themeId;
+  // 2026-08-24: die Ableitung „Quirk-Kachelset laeuft, also Buehne" greift nur
+  // noch, wenn GAR KEIN Design gesetzt ist. Vorher gewann sie auch gegen ein
+  // ausdruecklich gewaehltes 'cozy', und damit waren Design und Avatar-Set
+  // aneinandergekettet: das Design erschien, ohne dass jemand es gewaehlt hat,
+  // und im Moderator stand trotzdem „Cozy" angehakt.
+  // Wolf wollte beides als eigenen Standard, nicht eines aus dem anderen
+  // abgeleitet - jetzt sind es zwei freie Schalter. Die Buehne laeuft damit
+  // auch mit dem Halloween-Set, und das CozyQuiz-Set laeuft auch unter Cozy.
+  if (!themeId && isQuirkTileSet(avatarSetId)) return BUEHNE_THEME_ID;
+  return themeId ?? BUEHNE_THEME_ID;
 }
 
 export const QQ_THEME_IDS = Object.keys(QQ_THEMES);

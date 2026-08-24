@@ -519,7 +519,15 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       // 'cozy3d' (3D-Tiere, seit 2026-06-23). Muss mit DEFAULT_SET_ID in
       // frontend/src/avatarSets.ts uebereinstimmen.
       avatarSetId: 'cozyquiz',
-      themeId: 'cozy',         // 2026-06-24: Buehnen-Design (Skin), Default = heutiger Look
+      // 2026-08-24 (Wolf: „ich wollte sie beide als standard - sowohl design als
+      // auch emojis"). Vorher stand hier 'cozy', und das Buehnen-Design kam nur
+      // ueber eine Ableitung zustande: laeuft ein Quirk-Kachelset, schaltet das
+      // Frontend beim Rendern selbst um. Der Beamer zeigte dadurch zwar das neue
+      // Design, im Moderator war aber „Cozy" angehakt - eine Einstellung, die
+      // niemand getroffen hat. Jetzt ist es eine gesetzte Entscheidung.
+      // Sichtbar heisst 'buehne' im Moderator „CozyQuiz"; warum die Id anders
+      // lautet als das Label, steht in shared/qqThemeIds.ts.
+      themeId: 'buehne',
       // avatarSetEmojis wird nur vom 'all'-Set genutzt (Server-gewuerfelter
       // Emoji-Mix). Bleibt fuer den Fall, dass der Mod auf 'all' wechselt.
       avatarSetEmojis: getRandomDummyEmojis(8),

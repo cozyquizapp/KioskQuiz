@@ -16,7 +16,7 @@
 import { useRef, useEffect, useState, Fragment } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
-import { isThemed, getActiveTheme, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveTheme, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 /**
  * Die Buehne beim Namen nennen, 2026-08-24.
@@ -27,7 +27,7 @@ import { isThemed, getActiveTheme, getActiveThemeId, QUIRKS_THEME_ID } from '../
  * Die Regeln sahen deshalb nicht falsch aus - sie konnten nur nichts absichtlich
  * richtig machen.
  */
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
 import { QQIcon, QQEmojiIcon, QQEmojiText } from './QQIcon';
 // 2026-08-22 (Wolf: „wird der text auch ueberprueft?"): die Regel-Ansicht las

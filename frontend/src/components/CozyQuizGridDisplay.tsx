@@ -26,7 +26,7 @@
 import { useState, useEffect, useRef } from 'react';
 import type { CSSProperties } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { isThemed, getActiveTheme, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveTheme, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { cozy3dSrc } from '../cozy3dAvatars';
 import { JokerIcon } from './JokerIcon';
@@ -35,7 +35,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
 // umschrieben - darunter fallen auch Studio Mono, Soft Pop und Neo-Brutalism.
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 
 export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker = true, flashCellKey }: {
   state: QQStateUpdate; maxSize?: number; highlightTeam?: string | null; showJoker?: boolean; flashCellKey?: string | null;

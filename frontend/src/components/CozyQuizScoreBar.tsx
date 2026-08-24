@@ -20,11 +20,11 @@ import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
 // umschrieben - darunter fallen auch die anderen Skins.
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 
 export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, activeActionLabel, activeActionDesc, activeActionSlug, eurovisionMode, lang }: {
   teams: QQStateUpdate['teams'];

@@ -22,7 +22,7 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish, playRevealHighlight } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed, themedWindow, getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { isThemed, themedWindow, getActiveThemeId, BUEHNE_THEME_ID } from '../../qqTheme';
 import { QQ_CATEGORY_THEME } from '../../../../shared/qqCategoryTheme';
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS } from '../../../../shared/quarterQuizTypes';
 
@@ -119,7 +119,7 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   // mit 48px Schein. Auf der Buehne wird daraus dieselbe Statuszeile wie auf
   // allen anderen Folien, ein ruhiges Raster und ein Band ohne Metall.
   // Die uebrigen Skins bleiben unveraendert.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   const grund = QQ_CATEGORY_THEME.BUNTE_TUETE.deep;
 
   return (

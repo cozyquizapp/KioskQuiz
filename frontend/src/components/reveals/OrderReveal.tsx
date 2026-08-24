@@ -23,7 +23,7 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish, playRevealHighlight } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed, themedWindow, getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { isThemed, themedWindow, getActiveThemeId, BUEHNE_THEME_ID } from '../../qqTheme';
 import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 
 export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
@@ -119,7 +119,7 @@ export function OrderReveal({ state: s, lang }: { state: QQStateUpdate; lang: 'd
   // deshalb dieselben vier Befunde - eigene winzige Kopfzeile, Medaillen fuer
   // die Plaetze 1-3, Gold am Siegerband, gestrichelte Rahmen. Auf der Buehne
   // dieselbe Behandlung; die uebrigen Skins bleiben unveraendert.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   const rangKachel = istBuehne ? {
     border: '2px solid var(--qq-hairline)',
     color: 'var(--qq-text)',

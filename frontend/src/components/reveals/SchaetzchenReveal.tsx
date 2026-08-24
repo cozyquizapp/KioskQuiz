@@ -25,7 +25,7 @@ import { QQEmojiIcon, QQIcon } from '../QQIcon';
 import { isQuirkTileSet } from '../../quirks2Avatars';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { useActiveThemeId, getActiveThemeId, QUIRKS_THEME_ID } from '../../qqTheme';
+import { useActiveThemeId, getActiveThemeId, BUEHNE_THEME_ID } from '../../qqTheme';
 import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 
 const MINT = QQ_COLORS.green300;
@@ -94,7 +94,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // sind die Beschriftungen: die Antwort-Ueberschrift lief auf 14px, die
   // Skalen-Enden auf 17px, das Delta am Wappen auf 16px. Das sind Werte fuer
   // eine Bildschirmseite, nicht fuer acht Meter.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
 
   // 2026-08-23, im Bild gemessen: ohne Rand (0%) klemmt der aeusserste Tipp an
   // der Bildkante. Die Wappen werden auf 5..95% der Flaeche geklemmt, das sind

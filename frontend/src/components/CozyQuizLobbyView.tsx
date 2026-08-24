@@ -20,7 +20,7 @@ import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
-import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { ArenaMainVideo } from './ArenaBeamerBg';
 
 /**
@@ -34,7 +34,7 @@ import { ArenaMainVideo } from './ArenaBeamerBg';
  * richtig sein konnte: jede Regel des Briefs war nur so lange erfuellt, wie sie
  * zufaellig mit dem Skin-Standard zusammenfiel.
  */
-const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 
 // 2026-08-23: NICHT gerendert (Wolf: „wir nehmen den wolf hier raus!").
 // Der Bauplan bleibt bewusst stehen; Wiedereinbau ist der auskommentierte

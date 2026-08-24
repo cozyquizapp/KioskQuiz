@@ -25,7 +25,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
-import { isThemed, isQuietMotion, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { QQ_CATEGORY_THEME } from '../../../shared/qqCategoryTheme';
 import { SkinDeco } from './SkinDeco';
 import {
@@ -609,7 +609,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // `isThemed()` taugt hier nicht als Unterscheidung, weil auch Studio Mono,
   // Soft Pop und Neo-Brutalism darunter fallen — und bei denen IST die Karte
   // Teil der Skin-Sprache. Also wird die Buehne benannt statt umschrieben.
-  const istBuehne = getActiveThemeId() === QUIRKS_THEME_ID;
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   const kartenLook = isThemed() && !istBuehne;
 
   // 2026-08-23, gemessen statt geschaetzt: am oberen Rand standen zwei

@@ -160,6 +160,13 @@ export function QQSetupFlow(props: Props) {
     const cur = (s as any).avatarSetId as string | undefined;
     const nextSet = ar ? 'cozyArena' : 'cozyquiz';
     if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
+    // 2026-08-24: das Format bestimmt jetzt auch das Buehnen-Design mit. Grund:
+    // seit die Raum-Vorgabe 'buehne' ist (CozyQuiz-Design), wuerde CozyArena
+    // dieses Design erben - und das ist ein anderes Produkt mit eigenem Look.
+    // Vorher hat das die Ableitung ueber das Avatar-Set miterledigt, die es
+    // nicht mehr gibt. Wer danach im Wizard bewusst ein anderes Design waehlt,
+    // behaelt es; hier wird nur die Vorwahl zum Format gesetzt.
+    emit('qq:setTheme', { roomCode, themeId: ar ? 'cozy' : 'buehne' });
   };
 
   // ── Look-Vorschau-Bilder (Arena) ──
@@ -167,7 +174,7 @@ export function QQSetupFlow(props: Props) {
 
   // ── Summary-Werte für die Bereit-Folie ──
   const langLabel = s.language === 'en' ? 'English' : s.language === 'both' ? 'DE + EN' : 'Deutsch';
-  const lookLabel = arena ? (arenaLookBg ? 'Mit Kolosseum' : 'Schlicht') : (QQ_THEMES[(s.themeId ?? 'cozy') as keyof typeof QQ_THEMES]?.label ?? 'Cozy');
+  const lookLabel = arena ? (arenaLookBg ? 'Mit Kolosseum' : 'Schlicht') : (QQ_THEMES[(s.themeId ?? 'buehne') as keyof typeof QQ_THEMES]?.label ?? 'CozyQuiz');
 
   // ── Start-Voraussetzungen ──
   const issues: string[] = [];
@@ -291,11 +298,16 @@ export function QQSetupFlow(props: Props) {
                   <div style={fieldLbl}>🎨 Bühnen-Design</div>
                   <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
                     {Object.values(QQ_THEMES).map(t => {
-                      const TINT: Record<string, string> = { cozy: '#ec4899', cozyKino: '#ec4899', studioMono: '#cbd5e1', softPop: '#f472a0', neoBrutal: '#7c3aed' };
+                      // 2026-08-24: „buehne" fehlte in beiden Karten. Folge: die
+                      // Kachel des Standard-Designs stand ohne Beschreibung da,
+                      // als einzige von sechs, und fiel bei der Farbmarke auf
+                      // Pink zurueck - ausgerechnet auf die Farbe, die auf
+                      // dieser Buehne „unter zehn Sekunden" bedeutet.
+                      const TINT: Record<string, string> = { buehne: '#E3D2A8', cozy: '#ec4899', cozyKino: '#ec4899', studioMono: '#cbd5e1', softPop: '#f472a0', neoBrutal: '#7c3aed' };
                       const tint = TINT[t.id] ?? '#ec4899';
-                      const active = (s.themeId ?? 'cozy') === t.id;
+                      const active = (s.themeId ?? 'buehne') === t.id;
                       // cozyKino = identische Farben wie Cozy, nur andere Szenenwechsel (2026-08-18).
-                      const DESC: Record<string, string> = { cozy: 'Der Standard (Pink/Navy)', cozyKino: 'Wie Cozy, aber Szenen blenden ineinander statt zu schneiden', studioMono: 'Editorial, hell — Corporate', softPop: 'Warm, pastellig', neoBrutal: 'Lila, knallig, jung' };
+                      const DESC: Record<string, string> = { buehne: 'Der Standard. Gebaut für die Projektion: dunkler Grund, Creme-Schrift, Farbe nur wo sie etwas bedeutet', cozy: 'Der frühere Look (Pink/Navy)', cozyKino: 'Wie Cozy, aber Szenen blenden ineinander statt zu schneiden', studioMono: 'Editorial, hell — Corporate', softPop: 'Warm, pastellig', neoBrutal: 'Lila, knallig, jung' };
                       return (
                         <button key={t.id} onClick={() => emit('qq:setTheme', { roomCode, themeId: t.id })}
                           style={{

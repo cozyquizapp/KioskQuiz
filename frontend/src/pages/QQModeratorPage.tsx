@@ -676,6 +676,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
       emitRef.current('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
     }
+    // 2026-08-24: das Format bestimmt jetzt auch das Buehnen-Design mit. Grund:
+    // seit die Raum-Vorgabe 'buehne' ist (CozyQuiz-Design), wuerde CozyArena
+    // dieses Design erben - und das ist ein anderes Produkt mit eigenem Look.
+    // Vorher hat das die Ableitung ueber das Avatar-Set miterledigt, die es
+    // nicht mehr gibt. Wer danach im Wizard bewusst ein anderes Design waehlt,
+    // behaelt es; hier wird nur die Vorwahl zum Format gesetzt.
+    emitRef.current('qq:setTheme', { roomCode, themeId: arena ? 'cozy' : 'buehne' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, joined, state?.phase]);
 

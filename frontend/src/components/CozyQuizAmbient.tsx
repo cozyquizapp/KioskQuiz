@@ -16,7 +16,7 @@
  * EurovisionHearts gemounted (gehoert zu nur dieser Component).
  */
 import { memo } from 'react';
-import { isQuietMotion } from '../qqTheme';
+import { isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 
 // ── Static firefly positions ───────────────────────────────────────────────
 // 8 vorgenerierte Positionen + Animations-Offsets. Vorher inline in
@@ -57,10 +57,27 @@ const FF_DEEP = [
   { x:60, y:52, dx:-22, dy:-42, dur:17, del:0.6, sz:14 },
 ];
 
-export const Fireflies = memo(function Fireflies({ color }: { color?: string } = {}) {
+// ── Anker-Ebene (2026-08-24, Baustein B4) ──────────────────────────────────
+// Gemessen an diesem Tag: `<Fireflies />` steht an 24 Aufrufstellen, alle
+// INNERHALB der einzelnen Ansichten - und die liegen im Phasen-Wrapper, der bei
+// jedem Wechsel per `key={phaseGroup}` neu aufgebaut wird. Das Feld ueberlebt
+// den Szenenwechsel deshalb nicht: es verschwindet und startet neu.
+//
+// Das ist die Umkehrung des Bausteins, den Wolf aus Superplay mitgebracht hat.
+// Ein Objektfeld, das ueber die Szenengrenze weiterlaeuft, ist der Faden, der
+// aus Einzelbildern einen Raum macht. Eines, das an jedem Schnitt neu anfaengt,
+// betont den Schnitt sogar noch - und weil es die verbreitetste Bewegung des
+// Hauses ist, arbeitet damit ausgerechnet sie am meisten gegen den Zusammenhalt.
+//
+// Auf der Buehne liegt das Feld deshalb EINMAL ganz aussen (`<AnkerFeld />` im
+// Phasen-Root, ausserhalb des Wrappers). Die 24 Aufrufstellen bleiben stehen und
+// werden hier still zu Platzhaltern - kein Umbau an zwanzig Ansichten, und die
+// anderen Skins behalten ihr Verhalten unveraendert.
+export const Fireflies = memo(function Fireflies({ color, ankerEbene }: { color?: string; ankerEbene?: boolean } = {}) {
   // Quiet Motion (Studio Mono): editoriale Ruhe — keine schwebenden Ambient-
   // Partikel (Wolf 2026-06-25). Single-Point-Gate deckt alle 17+ Verwendungen.
   if (isQuietMotion()) return null;
+  if (!ankerEbene && getActiveThemeId() === BUEHNE_THEME_ID) return null;
   const c = color ?? '#FEF08A';
   return (
     <>
@@ -97,6 +114,37 @@ export const Fireflies = memo(function Fireflies({ color }: { color?: string } =
         }} />
       ))}
     </>
+  );
+});
+
+/**
+ * Die durchlaufende Anker-Ebene der Buehne. Gehoert in den Phasen-Root, NICHT
+ * in den Wrapper mit `key={phaseGroup}` - sonst startet sie wieder bei jedem
+ * Schnitt neu und der ganze Zweck ist weg.
+ *
+ * `ruhig` faehrt sie herunter, ohne sie anzuhalten. Waehrend Frage und
+ * Aufloesung wird auf 2,8 m Bildbreite gelesen; ein Funke, der alle paar
+ * Sekunden durchs Bild zieht, ist dann ein zweiter Sender auf derselben
+ * Frequenz. Anhalten waere falsch (der Faden risse), abdunkeln ist richtig.
+ */
+export const AnkerFeld = memo(function AnkerFeld({ ruhig }: { ruhig?: boolean } = {}) {
+  if (getActiveThemeId() !== BUEHNE_THEME_ID) return null;
+  return (
+    <div
+      aria-hidden
+      data-qq-anker-feld={ruhig ? 'ruhig' : 'an'}
+      style={{
+        position: 'absolute', inset: 0, zIndex: 0, pointerEvents: 'none',
+        overflow: 'hidden',
+        opacity: ruhig ? 0.28 : 1,
+        // Kein Sprung beim Umschalten: die Ebene faehrt herunter, sie schaltet
+        // nicht. 900 ms sind laenger als jeder Szenenwechsel, damit das
+        // Abdunkeln nicht als Teil des Wechsels gelesen wird.
+        transition: 'opacity 900ms var(--qq-ease-smooth)',
+      }}
+    >
+      <Fireflies ankerEbene />
+    </div>
   );
 });
 

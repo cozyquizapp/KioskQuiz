@@ -36,7 +36,7 @@ import { CozyWolfImage } from '../components/CozyWolfImage';
 import { WolfHeadIcon } from '../components/WolfHeadIcon';
 import { ActionCard, type ActionCardData } from '../components/CozyQuizActionCard';
 import { BeamerTimer, StageTimeBar } from '../components/CozyQuizBeamerTimer';
-import { Fireflies, EurovisionHearts } from '../components/CozyQuizAmbient';
+import { Fireflies, EurovisionHearts, AnkerFeld } from '../components/CozyQuizAmbient';
 import { CategoryParticles } from '../components/CozyQuizCategoryParticles';
 import { UrgencyVignette } from '../components/CozyQuizUrgencyVignette';
 import { ConfettiOverlay } from '../components/CozyQuizConfettiOverlay';
@@ -2266,6 +2266,17 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         // wrap'd den Phase-Render in SlideStage (1920×1080 transform:scale).
         return useStage ? <SlideStage bg={qqArenaRootBg(s)}>{phaseRender}</SlideStage> : phaseRender;
       })()}
+
+      {/* 2026-08-24 (Baustein B4, „durchlaufendes Objektfeld ueber
+          Szenengrenzen"): die Anker-Ebene liegt HIER, im Phasen-Root, und damit
+          bewusst AUSSERHALB des Wrappers mit `key={phaseGroup}`. Genau daran
+          hing der Fehler: das Feld lag bisher in den einzelnen Ansichten, wurde
+          an jedem Wechsel mit abgeraeumt und startete neu.
+          Nachweisbar ueber getAnimations(): die startTime der Funken muss ueber
+          einen Szenenwechsel hinweg gleich bleiben.
+          Waehrend Frage und Aufloesung faehrt sie herunter - dort wird
+          gelesen. */}
+      <AnkerFeld ruhig={renderState.phase === 'QUESTION_ACTIVE' || renderState.phase === 'QUESTION_REVEAL'} />
 
       {/* 2026-05-07: TwelvePoints-Sticker entfernt (Wolf-Feedback 'wirkt
           random eingesetzt, raus'). Plus dieser Aufruf hatte useLangFlip()

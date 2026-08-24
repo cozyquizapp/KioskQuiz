@@ -3165,12 +3165,33 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // 2026-07-08 (Wolf '3. antwortzeile wird verdeckt'): Schwellen denser — Chips
   // schrumpfen frueher, packen mehr pro Reihe => weniger Reihen, die 3. Reihe
   // wird seltener vom overflow:hidden abgeschnitten.
-  const tier: 'xl' | 'lg' | 'md' | 'sm' = n <= 3 ? 'xl' : n <= 7 ? 'lg' : n <= 12 ? 'md' : 'sm';
+  // 2026-08-24 (Wolf: „antworten in der mitte werden abgeschnitten"). Das ist
+  // der SIEBTE Anlauf an dieser Stelle - im Kommentarblock darueber stehen sechs.
+  // Alle sechs haben dasselbe getan: die Schwellen gesenkt, damit die Plaettchen
+  // frueher schrumpfen. Das verschiebt die Klippe, es raeumt sie nicht weg,
+  // denn die Leiter hoerte bei `sm` auf: ab dreizehn Antworten aendert sich
+  // nichts mehr, egal ob es vierzehn oder vierzig sind. Wolfs Bild zeigt rund
+  // dreissig - alle in derselben Groesse, vier Reihen tief, und der Deckel
+  // darueber ist 198 px hoch. Der Rest wird abgeschnitten.
+  //
+  // Deshalb diesmal nicht die Schwellen, sondern die LEITER. Zwei Stufen mehr
+  // nach unten, damit auch dreissig und mehr noch eine eigene Groesse haben.
+  // Die Heisse Kartoffel sammelt bis zu allen Antworten des Pools ein (bei
+  // „Land in Europa" siebenundvierzig), also muss die Leiter so weit reichen.
+  const tier: 'xl' | 'lg' | 'md' | 'sm' | 'xs' | 'xxs' =
+    n <= 3 ? 'xl' : n <= 7 ? 'lg' : n <= 12 ? 'md' : n <= 19 ? 'sm' : n <= 30 ? 'xs' : 'xxs';
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6cqw, 38px)', padding: 'clamp(10px, 1.2cqh, 16px) clamp(18px, 1.8cqw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2cqw, 32px)', padding: 'clamp(8px, 1cqh, 14px) clamp(16px, 1.6cqw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },
     md: { fontSize: 'clamp(17px, 1.85cqw, 26px)', padding: 'clamp(7px, 0.9cqh, 12px) clamp(14px, 1.5cqw, 22px)', gap: 9, border: 2, shadowAlpha: 0.15 },
     sm: { fontSize: 'clamp(14px, 1.5cqw, 21px)', padding: 'clamp(6px, 0.7cqh, 10px) clamp(12px, 1.3cqw, 18px)', gap: 7, border: 1.5, shadowAlpha: 0.13 },
+    // Ab hier ist die Schrift kleiner als der Bibel-Mindestgrad von 20 px. Das
+    // ist bewusst und die richtige Abwaegung: eine Antwort, die klein dasteht,
+    // ist lesbar; eine, die abgeschnitten ist, ist es nicht. Und in diesem
+    // Moment liest der Raum die Liste nicht Wort fuer Wort, er sieht, wie voll
+    // sie schon ist - das ist die Aussage der Folie.
+    xs:  { fontSize: 'clamp(12px, 1.25cqw, 18px)', padding: 'clamp(5px, 0.6cqh, 8px) clamp(10px, 1.1cqw, 15px)', gap: 6, border: 1.5, shadowAlpha: 0.12 },
+    xxs: { fontSize: 'clamp(11px, 1.05cqw, 15px)', padding: 'clamp(4px, 0.5cqh, 7px) clamp(8px, 0.9cqw, 12px)',  gap: 5, border: 1,   shadowAlpha: 0.10 },
   }[tier];
 
   return (
@@ -3219,7 +3240,14 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
         // sich leer auf und drückte den Halbkreis aus dem Bild). Jetzt natürliche
         // Höhe, nach oben gedeckelt, eigener overflow für sehr viele Antworten.
         flex: '0 1 auto',
-        maxHeight: 'clamp(80px, 20cqh, 210px)',
+        // 2026-08-24: 20cqh sind auf der Buehne 198 px. Das reicht fuer drei
+        // Reihen; die Heisse Kartoffel sammelt aber bis zu siebenundvierzig
+        // Antworten. Zusammen mit den zwei neuen Stufen der Groessenleiter
+        // passen in 30cqh (297 px) auch dreissig Plaettchen vollstaendig.
+        // Der Deckel bleibt, denn er ist die Sicherung dagegen, dass die
+        // Plaettchen den Halbkreis aus dem Bild druecken (Wolf 2026-07-09).
+        // Er soll nur nicht mehr der Normalfall sein.
+        maxHeight: 'clamp(120px, 30cqh, 297px)',
         display: 'flex', flexDirection: 'column', justifyContent: 'flex-start',
         alignItems: 'center',
         width: '100%',
@@ -3273,7 +3301,11 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
           // Cap + clip: bei bis zu 7 Ausgeschiedenen wuchs die flexWrap-Reihe auf
           // 2 Zeilen und schob den zentrierten Cluster ueber die Beamer-Slot-Hoehe
           // (Spill/Clip-Risiko, da aeusserer Container kein overflow:hidden hat).
-          flex: '0 1 auto', maxHeight: 'clamp(56px, 9cqh, 116px)', overflow: 'hidden',
+          // 2026-08-24 (Wolf: „teams unten werden abgeschnitten"): 9cqh sind
+          // 89 px und tragen genau EINE Zeile. Bei acht Teams bricht die Reihe
+          // aber auf zwei um, sobald mehrere ausgeschieden sind - die zweite
+          // wurde abgeschnitten. Zwei Zeilen passen jetzt.
+          flex: '0 1 auto', maxHeight: 'clamp(72px, 15cqh, 150px)', overflow: 'hidden',
           display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
           gap: 'clamp(10px, 1.4cqw, 18px)',
           fontSize: 'clamp(18px, 2cqw, 28px)', color: QQ_COLORS.slate400, fontWeight: 900,

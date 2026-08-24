@@ -37,6 +37,7 @@ import { QQIcon, QQEmojiIcon, QQEmojiText, type QQIconSlug } from './QQIcon';
 // abends vor Publikum auf. Deshalb wenigstens die Joker-Zahl gebunden.
 import { QQ_MAX_JOKERS_PER_GAME } from '../../../shared/quarterQuizTypes';
 import { StageStepBar } from './CozyQuizBeamerTimer';
+import { QQ_RULES_SLIDE_SEC } from '../../../shared/quarterQuizTypes';
 import { CozyGameIcon } from './CozyGameIcon';
 import { JokerIcon } from './JokerIcon';
 import { Fireflies } from './CozyQuizAmbient';
@@ -1099,7 +1100,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         // 2026-08-22 (Wolf: „die leiste oben gefaellt mir noch nicht"): die
         // Reihe aus fuenf beschrifteten Chips ist weg, ersetzt durch die
         // StageStepBar am oberen Buehnenrand. Begruendung steht dort.
-        return <StageStepBar total={stepList.length} current={activeStep} />;
+        return (
+          <StageStepBar
+            total={stepList.length}
+            current={activeStep}
+            endsAt={(s as any).rulesSlideEndsAt ?? null}
+            durationSec={QQ_RULES_SLIDE_SEC}
+          />
+        );
       })()}
 
       {/* Fenster-Schub (Wolf „schieb das window wirklich raus“): outgoing faehrt

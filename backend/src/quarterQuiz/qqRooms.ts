@@ -15,6 +15,7 @@ import {
   getRandomDummyEmojis,
   QQ_TIEBREAKER_POOL, QQTieBreakerState,
   qqIsMega, qqMegaAwardKeys,
+  QQ_RULES_SLIDE_SEC,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -361,6 +362,11 @@ export interface QQRoomState {
   cozyGameFinalSlotPlayed: boolean;
   /** Timer-Handle für 60s-Spiel-Countdown. Not persisted. */
   _cozyGameTimerHandle: ReturnType<typeof setTimeout> | null;
+  /** 2026-08-24: wann die laufende Regel-Folie voll ist (Zeitstempel, ms). */
+  rulesSlideEndsAt: number | null;
+  _rulesTimerHandle: ReturnType<typeof setTimeout> | null;
+  /** Wird von den Socket-Handlern gesetzt, weil nur die broadcasten koennen. */
+  _rulesOnExpire: (() => void) | null;
   /** Pause-Resume: Restzeit-ms wenn Timer beim PAUSE eingefroren wurde. */
   _cozyGameRemainingMs?: number;
   /** Pause-Resume: gespeicherter onExpire-Callback. */
@@ -569,6 +575,9 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       cozyGamesPlayedAfterPhases: [],
       cozyGameFinalSlotPlayed: false,
       _cozyGameTimerHandle: null,
+      rulesSlideEndsAt: null,
+      _rulesTimerHandle: null,
+      _rulesOnExpire: null,
     };
     qqRooms.set(roomCode, room);
   }
@@ -4791,6 +4800,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     setupDone:        room.setupDone,
     showJoinLink:     room.showJoinLink === true,
     formatSelected:   room.formatSelected,
+    rulesSlideEndsAt: room.rulesSlideEndsAt ?? null,
     avatarSetId:      room.avatarSetId ?? 'all',
     themeId:          room.themeId ?? 'cozy',
     // Lazy-Init fuer Bestands-Rooms: wenn Set 'all' aber noch keine Emojis
@@ -4883,22 +4893,68 @@ export function qqStartRules(room: QQRoomState): void {
   room.phase = 'RULES';
   room.rulesSlideIndex = qqRulesMinIndex(room);
   room.lastActivityAt = Date.now();
+  qqRulesArmTimer(room);
 }
 
 /** Advance to next rules slide (wraps at end). */
+/**
+ * Uhr fuer die laufende Regel-Folie stellen. Bewusst NICHT auf der letzten
+ * Folie: dort wuerde das Ablaufen die Phase wechseln (Team-Auftritt, eine
+ * 18-Sekunden-Choreographie), und ein Phasenwechsel gehoert dem Moderator.
+ * Wolfs Satz sagt „kommt ein neuer regelslide" - eine neue FOLIE, nicht ein
+ * neuer Abschnitt.
+ */
+export function qqRulesArmTimer(room: QQRoomState): void {
+  if (room._rulesTimerHandle) { clearTimeout(room._rulesTimerHandle); room._rulesTimerHandle = null; }
+  room.rulesSlideEndsAt = null;
+  if (room.phase !== 'RULES') return;
+  // -2 ist die Willkommen-Folie: dort begruesst Wolf den Raum und steht so
+  // lange, wie er will. Ab -1 (Regel-Intro) laeuft die Uhr - das ist genau der
+  // Bereich, den die Schrittleiste am oberen Rand abbildet.
+  if (room.rulesSlideIndex < -1) return;
+  if (room.rulesSlideIndex >= qqRulesMaxIndex(room)) return;   // letzte Folie: keine Uhr
+  const onExpire = room._rulesOnExpire;
+  if (!onExpire) return;
+  const ms = QQ_RULES_SLIDE_SEC * 1000;
+  room.rulesSlideEndsAt = Date.now() + ms;
+  room._rulesTimerHandle = setTimeout(() => {
+    room._rulesTimerHandle = null;
+    onExpire();
+  }, ms);
+}
+
+/**
+ * Letzter gueltiger Folienindex.
+ *
+ * 2026-08-24, beim Bauen der Regel-Uhr gefunden: hier standen DREI verschiedene
+ * Rechnungen fuer dieselbe Zahl.
+ *   Server (qqRulesNext):  7 + Comeback + CozyGames  -> bis zu 9 Folien
+ *   Moderator (Space):     4 + CozyGames             -> 4 oder 5
+ *   Frontend (die Wahrheit, qqActiveRulesSlides): das gefilterte Slide-Set
+ * Gezaehlt: das Regelset hat SECHS Folien, zwei davon gegatet (CozyGames,
+ * Connections), also vier feste. Der Server liess damit Indizes bis 8 zu, wo es
+ * hoechstens 5 Folien gibt. Aufgefallen ist es nie, weil der Moderator schon
+ * vorher `rulesFinish` schickt und die Ansicht den Index deckelt - eine
+ * Automatik, die selbst weiterschaltet, waere aber stumpf ins Leere gelaufen.
+ *
+ * Der Comeback-Kegel ist raus: die Comeback-Runde schlaeft seit 2026-07-07 und
+ * hat im Regelset gar keine eigene Folie mehr.
+ */
+export function qqRulesMaxIndex(room: QQRoomState): number {
+  if ((room as any).largeGroupMode) return 4 - 1;   // Arena hat ein eigenes Set
+  const hasCozyGames = !!(room as any).cozyGamesEnabled;
+  const hasConnections = !!(room as any).connectionsEnabled;
+  return (4 + (hasCozyGames ? 1 : 0) + (hasConnections ? 1 : 0)) - 1;
+}
+
 export function qqRulesNext(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
   // 2026-05-10 (Audit-P0 State-Race): Max-Index-Clamp.
-  // 2026-05-24 (Wolf 'connections raus'): hasFinale entfaellt — kein 4×4-Slide.
-  const hasCozyGames = !!(room as any).cozyGamesEnabled;
-  // 2026-05-17: Comeback-Slide ausblenden wenn Toggle aus.
-  const hasComeback = (room as any).comebackEnabled !== false;
-  // Base 7 (war 8 inkl. Comeback) + jeweils +1 für aktive Module
-  const totalSlides = 7 + (hasComeback ? 1 : 0) + (hasCozyGames ? 1 : 0);
-  const maxIndex = totalSlides - 1;
-  if (room.rulesSlideIndex >= maxIndex) return; // silent no-op statt unendlich
+  // 2026-08-24: die Rechnung liegt jetzt in qqRulesMaxIndex, siehe dort.
+  if (room.rulesSlideIndex >= qqRulesMaxIndex(room)) return; // silent no-op
   room.rulesSlideIndex += 1;
   room.lastActivityAt = Date.now();
+  qqRulesArmTimer(room);
 }
 
 /** Go back to previous rules slide.
@@ -4908,6 +4964,9 @@ export function qqRulesPrev(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
   room.rulesSlideIndex = Math.max(qqRulesMinIndex(room), room.rulesSlideIndex - 1);
   room.lastActivityAt = Date.now();
+  // Zurueckgehen stellt die Uhr neu: wer zurueckblaettert, will die Folie noch
+  // einmal sehen, nicht die Restzeit der vorigen erben.
+  qqRulesArmTimer(room);
 }
 
 // ── Teams reveal (one-time, nach Rules vor Phase 1) ───────────────────────────
@@ -4915,6 +4974,9 @@ export function qqRulesPrev(room: QQRoomState): void {
 /** Start the epic team-reveal animation. Called when moderator finishes rules. */
 export function qqStartTeamsReveal(room: QQRoomState): void {
   assertPhase(room, ['RULES']);
+  // Die Regel-Uhr laeuft sonst in eine Phase hinein, in der es keine Folien gibt.
+  if (room._rulesTimerHandle) { clearTimeout(room._rulesTimerHandle); room._rulesTimerHandle = null; }
+  room.rulesSlideEndsAt = null;
   room.phase = 'TEAMS_REVEAL';
   room.teamsRevealStartedAt = Date.now();
   room.lastActivityAt = Date.now();

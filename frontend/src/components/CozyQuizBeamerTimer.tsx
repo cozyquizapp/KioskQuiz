@@ -51,28 +51,68 @@ import { useActiveThemeId, isCozyLook } from '../qqTheme';
  * am oberen Rand" statt zwei. Unterschied ist nur die Teilung: die Zeit
  * laeuft stufenlos, Schritte sind gezaehlt und werden deshalb segmentiert.
  */
-export function StageStepBar({ total, current, accent }: {
+export function StageStepBar({ total, current, accent, endsAt, durationSec }: {
   total: number;
   /** 0-basiert: der Schritt, der gerade laeuft. */
   current: number;
   accent?: string;
+  /**
+   * 2026-08-24 (Wolf: „waere nice wenn die einzelnen segmente oben quasi wie
+   * der timer ablaeuft nur gegenteilig vollaufen, sobald ein teilbalken voll
+   * kommt ein neuer regelslide").
+   *
+   * Wenn gesetzt, LAEUFT das aktuelle Segment voll statt sofort gefuellt zu
+   * sein. Die Zahl kommt vom Server (`rulesSlideEndsAt`), nicht von hier: sonst
+   * wuerde ein Neuladen des Beamers die Folie neu starten, und Wand und
+   * Moderator haetten verschiedene Restzeiten.
+   *
+   * Ohne die beiden Werte verhaelt sich die Leiste wie vorher - der Aufruf in
+   * anderen Ansichten bleibt unveraendert gueltig.
+   */
+  endsAt?: number | null;
+  durationSec?: number;
 }) {
+  const laeuft = endsAt != null && (durationSec ?? 0) > 0;
+  const [anteil, setAnteil] = useState(0);
+  useEffect(() => {
+    if (!laeuft) { setAnteil(0); return; }
+    const tick = () => {
+      const rest = Math.max(0, (endsAt! - getServerNow()) / 1000);
+      setAnteil(Math.min(1, Math.max(0, 1 - rest / durationSec!)));
+    };
+    tick();
+    const iv = setInterval(tick, 100);
+    return () => clearInterval(iv);
+  }, [laeuft, endsAt, durationSec]);
+
   if (total <= 1) return null;
+  const farbe = accent ?? 'var(--qq-text)';
   return (
     <div aria-hidden style={{
       position: 'absolute', top: 0, left: 0, right: 0, height: 12,
       display: 'flex', gap: 3, zIndex: 9,
     }}>
-      {Array.from({ length: total }, (_, i) => (
-        <div key={i} style={{
-          flex: 1, height: '100%',
-          // Erledigt und aktuell sind gefuellt, der Rest bleibt der Grund der
-          // Leiste. Die Kante zwischen gefuellt und leer IST die Position —
-          // sie braucht keine zusaetzliche Markierung.
-          background: i <= current ? (accent ?? 'var(--qq-text)') : 'var(--qq-hairline)',
-          transition: 'background 0.45s ease',
-        }} />
-      ))}
+      {Array.from({ length: total }, (_, i) => {
+        // Erledigte Segmente stehen voll, kommende bleiben der Grund der
+        // Leiste. Das aktuelle laeuft - oder steht voll, wenn keine Uhr laeuft
+        // (letzte Folie, Willkommen).
+        const erledigt = i < current;
+        const aktuell = i === current;
+        const fuellung = erledigt ? 1 : aktuell ? (laeuft ? anteil : 1) : 0;
+        return (
+          <div key={i} style={{
+            flex: 1, height: '100%', background: 'var(--qq-hairline)',
+            overflow: 'hidden',
+          }}>
+            <div style={{
+              width: `${fuellung * 100}%`, height: '100%', background: farbe,
+              // Linear und kurz: die Zeit laeuft gleichmaessig, alles andere
+              // wuerde luegen. 0.1s deckt genau den Tick-Abstand.
+              transition: aktuell && laeuft ? 'width 0.1s linear' : 'width 0.45s ease',
+            }} />
+          </div>
+        );
+      })}
     </div>
   );
 }

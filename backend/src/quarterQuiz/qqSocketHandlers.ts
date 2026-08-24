@@ -2336,9 +2336,22 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // Events konnten seither von keinem Client mehr ausgeloest werden.
 
     // ── Rules presentation ──────────────────────────────────────────────────
+    // 2026-08-24 (Wolf: „sobald ein teilbalken voll kommt ein neuer regelslide"):
+    // Der Ablauf gehoert dem SERVER, nicht dem Beamer. Sonst wuerde ein
+    // Neuladen des Beamers die Folie neu starten, und Moderator und Wand
+    // haetten verschiedene Restzeiten. Der Raum haelt den Zeitstempel, die
+    // Leiste zeigt ihn nur an.
+    const macheRegelAblauf = (roomCode: string) => () => {
+      const live = getQQRoom(roomCode);
+      if (!live || live.phase !== 'RULES') return;
+      qqRulesNext(live);           // stellt die Uhr selbst wieder
+      broadcast(io, roomCode);
+    };
+
     socket.on('qq:startRules', (payload: QQStartRulesPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        room._rulesOnExpire = macheRegelAblauf(payload.roomCode);
         qqStartRules(room);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -2348,6 +2361,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:rulesNext', (payload: QQRulesNextPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        room._rulesOnExpire = macheRegelAblauf(payload.roomCode);
         qqRulesNext(room);
         broadcast(io, payload.roomCode);
         ok(ack);
@@ -2357,6 +2371,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
     socket.on('qq:rulesPrev', (payload: QQRulesPrevPayload, ack?: unknown) => {
       try {
         const room = ensureQQRoom(payload.roomCode);
+        room._rulesOnExpire = macheRegelAblauf(payload.roomCode);
         qqRulesPrev(room);
         broadcast(io, payload.roomCode);
         ok(ack);

@@ -1446,6 +1446,11 @@ export interface QQStateUpdate {
   // 3D grid
   enable3DTransition: boolean; // moderator toggle: 2D→3D "drive" animation on first placement per question
   rulesSlideIndex: number;  // current slide index during RULES phase (0-based)
+  /** 2026-08-24: wann die laufende Regel-Folie voll ist (Zeitstempel, ms).
+   *  Die Schrittleiste am oberen Buehnenrand fuellt daraus ihr aktives Segment;
+   *  laeuft sie voll, schaltet der SERVER auf die naechste Folie. Null auf der
+   *  letzten Folie und auf der Willkommen-Folie - dort gehoert der Takt Wolf. */
+  rulesSlideEndsAt?: number | null;
   teamsRevealStartedAt: number | null;  // timestamp for TEAMS_REVEAL animation anchor
   introStep: number;  // sub-step within PHASE_INTRO (see backend qqActivateQuestion for flow)
   categoryIsNew: boolean; // true when introStep is showing category explanation for first time
@@ -2068,3 +2073,23 @@ export function teamDisplayName(name: string, withPrefix = false): string {
   if (!/^\p{Letter}/u.test(trimmed)) return trimmed;
   return `Team ${trimmed}`;
 }
+
+
+/**
+ * Wie lange steht eine Regel-Folie, bevor die naechste kommt?
+ *
+ * 2026-08-24 (Wolf: „in den rules slides waere es nice wenn die einzelnen
+ * segmente oben quasi wie der timer ablaeuft nur gegenteilig vollaufen, sobald
+ * ein teilbalken voll kommt ein neuer regelslide" - Dauer auf Nachfrage:
+ * „15 sekunden pro regelfolie").
+ *
+ * Bis dahin hatten die Regeln UEBERHAUPT keine Uhr: sie liefen allein auf
+ * Wolfs Leertaste. Die Leiste am oberen Rand zeigte nur, an welcher Stelle man
+ * steht; jetzt zeigt sie zusaetzlich, wie lange die Folie noch steht.
+ *
+ * Die Zahl steht hier und nicht im Backend, weil BEIDE Seiten sie brauchen:
+ * der Server stellt die Uhr, der Beamer rechnet daraus die Fuellung. Zwei
+ * Kopien waeren zwei Wahrheiten - genau das Muster, das in diesem Repo schon
+ * bei den Theme-Ids und bei der Regel-Folienzahl Zeit gekostet hat.
+ */
+export const QQ_RULES_SLIDE_SEC = 15;

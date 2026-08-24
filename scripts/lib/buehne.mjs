@@ -107,13 +107,57 @@ return {
   // nachzuspielen. Das fuellt das Brett mit, sonst stehen die Endfolien auf
   // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
   pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
+  // Die Heisse Kartoffel im Lauf, mit vielen Antworten auf dem Tisch.
+  // `--stufe=n` sagt, wie viele Antworten liegen sollen (Vorgabe 1).
+  //
+  // 2026-08-24, das fehlende Stueck: nach `zurFrage` steht die Kartoffel-Frage
+  // zwar, aber der Zug hat noch nicht begonnen. Der Slot steht auf `landed`,
+  // und erst `qq:hotPotatoFinishSlot` startet die Uhr und gibt die Bots frei
+  // (so kann Wolf muendlich ansagen, wer anfaengt). Ohne dieses Ereignis
+  // passierte in JEDEM Kartoffel-Lauf des Harness gar nichts: keine Antworten,
+  // keine Ausgeschiedenen, kein Timer - und genau deshalb liessen sich Wolfs
+  // Bilder („antworten werden abgeschnitten") hier nie nachstellen.
+  //
+  // Danach reicht `qq:hotPotatoCorrect` als Taktgeber: die Bots tippen von
+  // selbst (auch daneben), und was zuletzt getippt wurde, wird damit als
+  // gueltige Antwort abgelegt und weitergereicht. So fuellt sich das Feld in
+  // Sekunden statt in Minuten Turn-Timer.
+  kartoffel: {
+    ruhe: 2500, aufbau: 'spiel',
+    weg: async (h) => {
+      await h.zurFrage();
+      await sleep(1200);
+      await h.emit('qq:hotPotatoFinishSlot');
+      for (let i = 0; i < cfg.stufe; i++) {
+        await sleep(1500);                       // Bot tippt (900-2400 ms)
+        await h.emit('qq:hotPotatoCorrect');
+      }
+    },
+  },
+  // Dieselbe Frage, aber mit vollem Feld UND Ausgeschiedenen: `--stufe=n`
+  // Antworten, danach scheiden vier Teams aus. Damit steht die Raus-Reihe
+  // unter dem Halbkreis, die Wolf am 24.08. abgeschnitten gesehen hat.
+  kartoffelraus: {
+    ruhe: 2500, aufbau: 'spiel',
+    weg: async (h) => {
+      await h.zurFrage();
+      await sleep(1200);
+      await h.emit('qq:hotPotatoFinishSlot');
+      for (let i = 0; i < cfg.stufe; i++) { await sleep(1500); await h.emit('qq:hotPotatoCorrect'); }
+      // So viele scheiden aus, dass drei uebrig bleiben. Bei zweien greift die
+      // Sieger-Pruefung und die Frage ist vorbei - dann steht die Aufloesung im
+      // Bild und nicht die Reihe, die geprueft werden soll.
+      const raus = Math.max(1, cfg.bots - 3);
+      for (let i = 0; i < raus; i++) { await sleep(900); await h.emit('qq:hotPotatoWrong'); }
+    },
+  },
   // Die Weitergabe bei der Heissen Kartoffel - die einzige Station, deren
   // Sinn ganz in der Bewegung liegt, und die man ohne Ausloeser nie sieht.
   // Braucht `--kategorie=hotPotato`, sonst laeuft eine andere Frage.
   // `vor` faehrt zur Frage, `weg` gibt weiter; im Film ist nur das Weitergeben.
   kartoffelwurf: {
     ruhe: 1500, aufbau: 'spiel',
-    vor: async (h) => { await h.zurFrage(); },
+    vor: async (h) => { await h.zurFrage(); await sleep(1200); await h.emit('qq:hotPotatoFinishSlot'); },
     vorRuhe: 2000,
     // `qq:hotPotatoCorrect` faellt still durch, solange das aktive Team noch
     // keine Antwort abgeschickt hat (Doppelklick-Schutz im Handler, geprueft

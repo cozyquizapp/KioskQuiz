@@ -292,17 +292,29 @@ async function rahmen(page, name) {
       const hatRand = parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0;
       return hatGrund || hatBild || hatRand;
     };
+    // 2026-08-24: bei einem negativen Rand half die blosse Zahl nicht weiter -
+    // man wusste, dass etwas ueber die Kante steht, aber nicht was. Deshalb
+    // merkt sich die Messung zu jeder Kante das Element, das sie setzt.
+    const wer = { l: null, o: null, re: null, u: null };
+    const zeichnen = (el) => {
+      const klasse = typeof el.className === 'string' && el.className ? `.${el.className.split(' ')[0]}` : '';
+      const text = (el.textContent || '').trim().replace(/\s+/g, ' ').slice(0, 46);
+      const stil = (el.getAttribute('style') || '').slice(0, 120);
+      return `${el.tagName.toLowerCase()}${klasse}  „${text}"  ${stil}`;
+    };
     document.querySelectorAll('[data-qq-phase] *').forEach(el => {
       const cs = getComputedStyle(el);
       const rect = el.getBoundingClientRect();
       if (!traegt(el, cs, rect)) return;
       n++;
-      l = Math.min(l, rect.left); o = Math.min(o, rect.top);
-      re = Math.max(re, rect.right); u = Math.max(u, rect.bottom);
+      if (rect.left   < l)  { l  = rect.left;   wer.l  = zeichnen(el); }
+      if (rect.top    < o)  { o  = rect.top;    wer.o  = zeichnen(el); }
+      if (rect.right  > re) { re = rect.right;  wer.re = zeichnen(el); }
+      if (rect.bottom > u)  { u  = rect.bottom; wer.u  = zeichnen(el); }
     });
     if (!n) return null;
     return {
-      n,
+      n, wer,
       kasten: [Math.round(l), Math.round(o), Math.round(re - l), Math.round(u - o)],
       links: Math.round(l), oben: Math.round(o),
       rechts: Math.round(B.w - re), unten: Math.round(B.h - u),
@@ -315,6 +327,15 @@ async function rahmen(page, name) {
   console.log(`     Rand  links ${String(r.links).padStart(4)}  oben ${String(r.oben).padStart(4)}`
     + `  rechts ${String(r.rechts).padStart(4)}  unten ${String(r.unten).padStart(4)}`
     + `   nutzt ${r.nutzungB}% x ${r.nutzungH}%${gleich ? '   (alle gleich)' : ''}`);
+  // Nur die Kanten nennen, die wirklich ueber den Rand stehen. Ein negativer
+  // Wert ist eine Einladung zum Hinsehen, kein Befund - Zeilenkaesten und
+  // laufende Bewegungen schieben Kaesten ueber die Kante, ohne dass etwas
+  // abgeschnitten waere. Mit dem Element daneben ist das in Sekunden geklaert.
+  for (const [kante, wert] of [['links', r.links], ['oben', r.oben], ['rechts', r.rechts], ['unten', r.unten]]) {
+    if (wert >= 0) continue;
+    const schluessel = { links: 'l', oben: 'o', rechts: 're', unten: 'u' }[kante];
+    console.log(`       ueber die Kante ${kante} (${wert}): ${r.wer[schluessel]}`);
+  }
   return r;
 }
 

@@ -754,6 +754,10 @@ function qqLeistenUhr(s: QQStateUpdate): { endsAt: number | null; durationSec: n
   return { endsAt: s.timerEndsAt, durationSec: s.timerDurationSec };
 }
 
+// Die Buehne beim Namen nennen. `isThemed()` deckt auch Studio Mono, Soft Pop
+// und Neo-Brutalism ab und taugt deshalb nicht als Buehnen-Test.
+const istBuehneB = () => getActiveThemeId() === BUEHNE_THEME_ID;
+
 const QQ_KATEGORIE_GRUND_PHASEN = new Set<QQPhase>([
   'PHASE_INTRO', 'QUESTION_ACTIVE', 'QUESTION_REVEAL', 'PLACEMENT', 'COMEBACK_CHOICE',
 ]);
@@ -2877,7 +2881,18 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
       // 2026-07-08 (Wolf-Livetest 'name IMMER NOCH abgeschnitten'): Container
       // nochmal höher + Ring/Gap unten weiter gestrafft (s.u.), damit die
       // Namenszeile garantiert im Container bleibt (Stage-overflow schnitt sie ab).
-      width: '100%', height: 'clamp(336px, 36cqh, 430px)',
+      // 2026-08-24: die 430 px reservieren Platz fuer den Timer-Ring um die
+      // Kachel und den Countdown-Chip darunter. Beides ist auf der Buehne seit
+      // dem 23.08. aus (die Zeit steht oben rechts wie auf allen anderen
+      // vierzehn Fragen), der Platz wurde aber weiter freigehalten - und er
+      // fehlte genau dort, wo die Antworten und die Raus-Reihe ihn brauchen.
+      // Gemessen bleiben Kachel, „Jetzt dran" und Name zusammen unter 300 px.
+      // Gemessen bei 300: die Namenszeile ragte 20 px unter den Block und
+      // beruehrte die Raus-Reihe darunter. Die Spalten liegen absolut in
+      // diesem Kasten, er ist also ein reiner Platzhalter - zu klein heisst
+      // hier nicht „schrumpft", sondern „ueberlappt". 324 traegt Kachel,
+      // „Jetzt dran" und zweizeilige Namen.
+      width: '100%', height: istBuehneB() ? 'clamp(300px, 32.7cqh, 324px)' : 'clamp(336px, 36cqh, 430px)',
       pointerEvents: 'none',
     }}>
       {/* Heat-Glow (Ambient) — Orange = Hitze, NICHT Marken-Akzent.
@@ -3157,6 +3172,19 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // Last-Team-Wins koennen am Ende auch 2+ fast simultan eliminiert werden.
   const prevElimRef = useRef<string[]>([]);
   const [justEliminated, setJustEliminated] = useState<Set<string>>(new Set());
+  // 2026-08-24: die weiche Kante am Antwort-Block soll nur da sein, wenn
+  // wirklich etwas darunter liegt. Sonst blendet sie die letzte Reihe aus,
+  // obwohl darunter noch Platz ist (im Bild gesehen: eine einzelne Antwort in
+  // Reihe vier, halb durchsichtig, mit 40 px Luft darunter). Gemessen statt
+  // geraten: laeuft der Inhalt ueber die eigene Hoehe hinaus?
+  const chipsRef = useRef<HTMLDivElement>(null);
+  const [chipsUeberlauf, setChipsUeberlauf] = useState(false);
+  useLayoutEffect(() => {
+    const el = chipsRef.current;
+    if (!el) return;
+    const ueber = el.scrollHeight > el.clientHeight + 2;
+    if (ueber !== chipsUeberlauf) setChipsUeberlauf(ueber);
+  });
   useEffect(() => {
     const cur: string[] = s.hotPotatoEliminated ?? [];
     const prev = prevElimRef.current;
@@ -3242,6 +3270,16 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
       justifyContent: 'center',
       pointerEvents: 'none',
       width: '100%', height: '100%',
+      // 2026-08-24 (Wolf: „teams unten werden abgeschnitten"), dritte und
+      // letzte Stufe derselben Kette: dieser Block ist selbst ein Flex-Kind und
+      // hatte `min-height: auto`. Er schrumpfte damit nicht unter seinen
+      // Inhalt, sondern stand mit 640 px in einem Feld, das 507 px hoch ist -
+      // die Raus-Reihe lag bei y939 bis y1044, das Feld endet bei y911. Sie war
+      // also nicht abgeschnitten, sie war ganz weg.
+      // Mit dem Boden bei 0 schrumpft der Block auf das Feld, und die Kuerzung
+      // landet dort, wo sie hingehoert: im Antwort-Block, der genau dafuer
+      // seinen eigenen Deckel und `overflow: hidden` hat.
+      minHeight: 0,
       maxWidth: 'min(94cqw, 1500px)',
       gap: 'clamp(16px, 2.5cqh, 36px)',
     }}>
@@ -3259,7 +3297,7 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
           HotPotatoSemicircle gefixt auf 30cqh. Extra paddingBottom hier als
           zweite Sicherung: Chips können maximal X px über der Block-Unterkante
           enden, darunter ist Safe-Zone für die Active-Card-Border + Spotlight). */}
-      <div style={{
+      <div ref={chipsRef} style={{
         // 2026-05-12 (Wolf 'hot potato: bei mehr antworten rutschen
         // disqualifizierte unten aus der slide'): flex-basis von auto → 0
         // damit der Chips-Block AGGRESSIV shrinkt bevor die eliminated-row
@@ -3285,6 +3323,22 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
         paddingTop: 8,
         paddingBottom: 'clamp(16px, 2cqh, 28px)',
         overflow: 'hidden',
+        // 2026-08-24: wenn wirklich alles zusammenkommt (fuenfzig Antworten,
+        // fuenf Ausgeschiedene, das laufende Team), reicht die Hoehe nicht mehr
+        // fuer alle Reihen - und dann schnitt die harte Kante die letzte Reihe
+        // waagerecht durch. Dann blendet sie auf den letzten 34 px aus: eine
+        // angeschnittene Reihe liest sich als „da geht es weiter", eine
+        // halbierte als kaputt. Nur dann - passt alles, bleibt die Kante hart
+        // (s. `chipsUeberlauf`).
+        // Der Verlauf endet dort, wo der Inhalt endet: die unteren 20 px des
+        // Blocks sind sein eigenes Polster, dort steht nie ein Plaettchen. Ohne
+        // diesen Versatz lag die Blende ueber der letzten, vollstaendig
+        // sichtbaren Reihe und machte sie halb durchsichtig, obwohl an ihr gar
+        // nichts fehlte (im Bild gesehen, 24.08.).
+        ...(chipsUeberlauf ? {
+          maskImage: 'linear-gradient(to bottom, #000 calc(100% - 52px), transparent calc(100% - 20px))',
+          WebkitMaskImage: 'linear-gradient(to bottom, #000 calc(100% - 52px), transparent calc(100% - 20px))',
+        } : null),
         // 2026-07-07 (Wolf-Livetest 'lösungen 2. reihe hinter den teams'):
         // Chips über der Halbkreis-Bühne — falls die Bühne doch mal hochblutet,
         // bleiben die Antworten lesbar statt dahinter zu verschwinden.
@@ -3335,12 +3389,24 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
           // 89 px und tragen genau EINE Zeile. Bei acht Teams bricht die Reihe
           // aber auf zwei um, sobald mehrere ausgeschieden sind - die zweite
           // wurde abgeschnitten. Zwei Zeilen passen jetzt.
-          flex: '0 1 auto', maxHeight: 'clamp(72px, 15cqh, 150px)', overflow: 'hidden',
+          // 2026-08-24, zweiter Teil des Fundes: `0 1 auto` hiess, dass diese
+          // Reihe mitschrumpft, wenn es eng wird - und `overflow: hidden`
+          // schnitt sie dann waagerecht mittendurch. Eine halbe Zeile Text ist
+          // schlimmer als eine fehlende. Die Reihe gibt jetzt nicht mehr nach;
+          // wenn es eng wird, gibt der Antwort-Block nach (der hat dafuer eine
+          // weiche Kante bekommen, s. dort).
+          flex: '0 0 auto', maxHeight: 'clamp(72px, 15cqh, 150px)', overflow: 'hidden',
           display: 'flex', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center',
-          gap: 'clamp(10px, 1.4cqw, 18px)',
-          fontSize: 'clamp(18px, 2cqw, 28px)', color: QQ_COLORS.slate400, fontWeight: 900,
+          gap: istBuehneB() ? 'clamp(8px, 1.1cqw, 14px)' : 'clamp(10px, 1.4cqw, 18px)',
+          // 2026-08-24: auf der Buehne eine Stufe kompakter. Mit fuenf
+          // Ausgeschiedenen brach die Reihe sonst auf zwei Zeilen um und
+          // brauchte 105 statt 52 px - der Platz fehlte genau dem Antwort-Block
+          // darueber, der daraufhin ganz leer blieb. Die Liste sagt WER raus
+          // ist, sie muss nicht so gross sein wie die Frage.
+          fontSize: istBuehneB() ? 'clamp(16px, 1.7cqw, 22px)' : 'clamp(18px, 2cqw, 28px)',
+          color: QQ_COLORS.slate400, fontWeight: 900,
         }}>
-          <span style={{ fontSize: 'clamp(20px, 2.2cqw, 30px)' }}>
+          <span style={{ fontSize: istBuehneB() ? 'clamp(17px, 1.9cqw, 24px)' : 'clamp(20px, 2.2cqw, 30px)' }}>
             <QQEmojiIcon emoji="❌"/> {lang === 'en' ? 'Out:' : 'Raus:'}
           </span>
           {s.hotPotatoEliminated.map((id: string) => {
@@ -3354,8 +3420,8 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
                 position: 'relative',
                 animation: fresh ? 'hpEliminate 1.2s ease-out both' : undefined,
               }}>
-                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(28px, 3cqw, 42px)'} />
-                <span style={{ fontSize: 'clamp(16px, 1.8cqw, 24px)' }}>{t.name}</span>
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={istBuehneB() ? 'clamp(24px, 2.4cqw, 32px)' : 'clamp(28px, 3cqw, 42px)'} />
+                <span style={{ fontSize: istBuehneB() ? 'clamp(15px, 1.6cqw, 21px)' : 'clamp(16px, 1.8cqw, 24px)' }}>{t.name}</span>
                 {fresh && (
                   <span aria-hidden style={{
                     position: 'absolute', top: -32, left: '50%',

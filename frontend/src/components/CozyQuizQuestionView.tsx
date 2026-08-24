@@ -840,6 +840,20 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   return (
     <div style={{
       flex: 1, display: 'flex', position: 'relative',
+      // 2026-08-24 (Wolf: „teams unten werden abgeschnitten"), nachgemessen und
+      // hier ist die Ursache, nicht an der Reihe selbst:
+      // Diese Wurzel ist ein Flex-Kind mit `flex: 1`, und ein Flex-Kind hat von
+      // sich aus `min-height: auto`. Es schrumpft also NICHT unter seinen
+      // Inhalt, sondern waechst mit ihm - im gemessenen Fall auf 1117 px in
+      // einer 990 px hohen Buehne. Alles darunter erbt diese Hoehe und rechnet
+      // mit Platz, den es nicht gibt; die Raus-Reihe der Heissen Kartoffel
+      // stand dadurch bei y960 bis y1065, also 75 px unter der Bildkante.
+      // Die Innenschichten hatten `minHeight: 0` laengst, sie half nur nichts,
+      // solange die Wurzel darueber ueberlief.
+      // Mit dem Boden bei 0 gilt wieder, was die ganze Buehne annimmt: 990 px
+      // sind alles, was es gibt, und was nicht passt, schrumpft (die
+      // Antwort-Plaettchen haben genau dafuer ihren eigenen Deckel).
+      minHeight: 0,
       // 2026-06-23 (Skin): Schrift-Family vom aktiven Skin — vererbt sich auf
       // alle Texte der View. Layout-neutral (nur Glyph-Form, fixe Schriftgrössen).
       // 2026-07-19: Arena-Font wird NICHT hier entschieden, sondern an der Beamer-
@@ -1871,6 +1885,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       {/* Main content (non-CHEESE or hidden during CHEESE overlay) */}
       <div style={{
         flex: 1, display: cheeseOverlay ? 'none' : 'flex', gap: 0,
+        // Zweite Stufe derselben Kette (s. Wurzel oben): ohne Boden bei 0
+        // reicht dieses Kind die zu grosse Inhaltshoehe einfach weiter.
+        minHeight: 0,
         flexDirection: (hasImg && img.layout === 'window-left') ? 'row-reverse' : 'row',
         animation: 'contentReveal 0.35s var(--qq-ease-pop-fast) both',
       }}>
@@ -1944,6 +1961,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           return (
         <div style={{
           flex: 1, display: 'flex', flexDirection: 'column',
+          // Dritte und letzte Stufe der Kette (s. Wurzel): erst hier darunter
+          // stand `minHeight: 0` schon.
+          minHeight: 0,
           // 2026-05-12 (Wolf 'kategorie-badge nach links UNTEN, fragecard oben');
           // 2026-05-12 v2 (Wolf 'safe-margin im ganzen quiz'): jede Achse
           // floor() auf var(--qq-safe-margin) um Mindest-Rand zu garantieren.

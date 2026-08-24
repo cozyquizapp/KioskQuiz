@@ -34,12 +34,19 @@
  *   --antworten=0.6        Quote richtiger Bot-Antworten vor einer Aufloesung
  *   --entwurf=qq-vol-1     Entwurf per Teil-Id waehlen
  *   --ruhe=15000           Ruhezeit ueberschreiben (lange Kaskaden)
+ *   --frisch               Raum vor dem Aufbau ueber den Socket zuruecksetzen
+ *   --fenster=1470x908     andere Fenstergroesse (Vorgabe die Buehne, 1760x990)
  *
  * MEHRERE ANSICHTEN IN EINEM AUFRUF. Browser, Raum und Spielaufbau kosten
  * zusammen rund 12 s und fallen dann EINMAL an; jede weitere Ansicht kostet nur
  * noch ihre eigene Ruhezeit. Einzeln aufgerufen zahlt man die 12 s jedes Mal.
  *
- * Voraussetzung wie immer: Backend frisch, `rm -f backend/.qq-rooms/*.json`.
+ * Voraussetzung: der Raum steht in der Lobby. Dafuer `--frisch` benutzen, NICHT
+ * `rm -f backend/.qq-rooms/*.json` - der Server schreibt seine offenen
+ * Speicherungen beim Herunterfahren noch einmal weg, ein `rm` davor ist damit
+ * wirkungslos (Kommentarkopf von scripts/moderator-view.mjs). Ohne Reset
+ * scheitert `dev/fillTeams` still mit „Nur in Lobby moeglich" und der Lauf
+ * knipst den alten Zustand.
  */
 import { chromium } from 'playwright';
 import { mkdirSync, writeFileSync, statSync } from 'node:fs';
@@ -85,6 +92,17 @@ const BILD = (process.argv.find(a => a.startsWith('--bild=')) || '=').split('=')
 const ANTWORTEN = Number((process.argv.find(a => a.startsWith('--antworten=')) || '--antworten=0.6').split('=')[1]);
 // --entwurf=qq-vol-1  waehlt den Entwurf per Teil-Id.
 const ENTWURF = (process.argv.find(a => a.startsWith('--entwurf=')) || '=').split('=')[1] || null;
+// --fenster=1470x908  eine andere Fenstergroesse als die Buehne.
+// 2026-08-24 (Wolf: „hier auch der rahmen unten und oben"): der Beamer ist fix
+// 1760x990, aber Wolf schaut sich das im Browser an, und sein Fenster hat ein
+// anderes Seitenverhaeltnis. SlideStage skaliert dann mit min(w/1760, h/990)
+// und laesst oben und unten Platz. Ob dieser Platz auffaellt, kann man nur bei
+// einem NICHT-16:9-Fenster sehen - bei 1760x990 ist er per Definition null.
+const FENSTER = (() => {
+  const s = (process.argv.find(a => a.startsWith('--fenster=')) || '=').split('=')[1];
+  const m = s && s.match(/^(\d+)x(\d+)$/);
+  return m ? { width: Number(m[1]), height: Number(m[2]) } : { width: 1760, height: 990 };
+})();
 // --ruhe=15000  ueberschreibt die Ruhezeit. Einzelne Kaskaden laufen laenger
 // als die Vorgabe der Ansicht (Top 5 braucht 5 x 2400 ms plus Siegerband).
 // --stufe=3  welcher Schritt der Final-Aufloesung geknipst wird.
@@ -211,6 +229,29 @@ const ANSICHTEN = {
   // Die Wetten-Phase hat zwei Bilder: erst die Titelkarte („Final-Tipp"), dann
   // die Tafel, auf der die Teams setzen. Der Wechsel haengt an
   // `qq:finishFinalBettingIntro`.
+  // 2026-08-24 (Wolf: „hier auch der rahmen unten und oben", Screenshot der
+  // Zwischenstand-Folie). Die Folie liegt ZWISCHEN zwei Fragen der Finalrunde
+  // und ist nur ueber einen zweiten `nextQuestion` erreichbar: der erste setzt
+  // finalRecapStep auf 1 (Recap zeigt), der zweite raeumt sie wieder weg.
+  // 2026-08-24 v2: der erste Anlauf sprang auf `phase-3` und landete im
+  // Runden-Intro. Die Folie haengt an drei Bedingungen gleichzeitig
+  // (QQBeamerPage.tsx:2175): Final-Wette an, gamePhaseIndex === totalPhases
+  // und finalRecapStep === 1. Nur die Finalrunde erfuellt das, und
+  // finalLastSnapshot wird erst in qqStartFinalBetting gesetzt - ohne den
+  // Umweg ueber die Wetten-Phase kommt der Recap-Zweig gar nicht in Frage.
+  zwischenstand: { ruhe: 2500, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('final-bet'); await sleep(900);
+    await h.emit('qq:finishFinalBettingIntro'); await sleep(2600); // Bots setzen gestaffelt
+    await h.emit('qq:finishFinalBetting'); await sleep(900);       // -> PHASE_INTRO der Finalrunde
+    for (let i = 0; i < 4; i++) {
+      if (await h.phase() === 'QUESTION_ACTIVE') break;
+      await h.emit('qq:activateQuestion'); await sleep(700);
+    }
+    await h.antworten(); await sleep(400);
+    await h.emit('qq:revealAnswer'); await sleep(900);
+    await h.platziere();
+    await h.emit('qq:nextQuestion'); await sleep(900);
+  } },
   finalwette: { ruhe: 3500, aufbau: 'spiel', weg: async (h) => { await h.springe('final-bet'); } },
   finalwette2:{ ruhe: 4000, aufbau: 'spiel', weg: async (h) => {
     await h.springe('final-bet'); await sleep(900); await h.emit('qq:finishFinalBettingIntro');
@@ -288,7 +329,7 @@ const PROFIL = '.shots/.browser-profil';
 const ctx = await chromium.launchPersistentContext(PROFIL, {
   args: ['--no-sandbox'],
   ...(process.env.QQ_CHROME ? { executablePath: process.env.QQ_CHROME } : {}),
-  viewport: { width: 1760, height: 990 },
+  viewport: FENSTER,
   deviceScaleFactor: 1,
 });
 const browser = ctx.browser() ?? { close: () => ctx.close() };
@@ -323,6 +364,18 @@ await emit('qq:joinModerator', { pin: PIN });
 console.log(`Raum ${roomCode} verbunden`);
 takt('Socket verbunden');
 
+// --frisch: den Raum vor dem Aufbau zuruecksetzen.
+// 2026-08-24: ohne das scheitert `dev/fillTeams` mit „Nur in Lobby moeglich",
+// sobald ein voriger Lauf den Raum stehen gelassen hat - der Lauf knipst dann
+// den ALTEN Zustand und meldet trotzdem Erfolg. Reset MUSS ueber den Socket
+// laufen, nicht ueber `rm backend/.qq-rooms/*.json`: der Server schreibt seine
+// offenen Speicherungen beim Herunterfahren noch einmal weg (siehe den
+// Kommentarkopf von scripts/moderator-view.mjs).
+if (process.argv.includes('--frisch')) {
+  console.log('reset:', JSON.stringify(await emit('qq:resetRoom', { confirm: true })));
+  await sleep(900);
+}
+
 const phase = () => beamer.evaluate(() =>
   document.querySelector('[data-qq-phase]')?.getAttribute('data-qq-phase') ?? null).catch(() => null);
 
@@ -336,6 +389,21 @@ const phase = () => beamer.evaluate(() =>
 let regelStand = -2;
 const helfer = {
   emit,
+  phase,
+  /** Offene Platzierungen wegraeumen. `qq:nextQuestion` wirft sonst
+   *  PLACEMENT_PENDING (qqRooms.ts:4205) und der Lauf bleibt still auf der
+   *  Frage stehen - ohne Fehlermeldung im Bild. */
+  async platziere() {
+    for (let i = 0; i < 8; i++) {
+      if (await phase() !== 'PLACEMENT') return;
+      const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/autoPlace`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: PIN }),
+      });
+      if (!r.ok) { console.log('  autoPlace:', r.status, (await r.text()).slice(0, 120)); return; }
+      await sleep(700);
+    }
+  },
   /** Weit nach hinten springen, ohne vier Runden nachzuspielen.
    *  `dev/skipTo` fuellt dabei das Brett mit Besitz, damit die Endfolien nicht
    *  auf einem leeren Spielfeld stehen. Ziele: phase-2/3/4, final-bet,

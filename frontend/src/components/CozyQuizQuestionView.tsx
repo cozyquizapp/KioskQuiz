@@ -621,6 +621,33 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // die Zeitleiste, mit einem Abstand, der als Abstand erkennbar ist.
   const BILD_OBEN = istBuehne ? 'clamp(24px, 3.2cqh, 34px)' : 'clamp(10px, 1.4cqh, 22px)';
 
+  // 2026-08-24 (Wolf: „bei schau mal gibts oben und unten komische raender").
+  //
+  // Gemessen am Beamer: der Rahmen sass bei x28 y32 auf 1704x944 - also links
+  // und rechts 28px, OBEN 32px, UNTEN 14px. Drei verschiedene Abstaende an
+  // einem Rahmen, und der Blick liest so etwas als Versehen, nicht als Form.
+  //
+  // Zustande kam es aus zwei richtigen Einzelentscheidungen, die nie
+  // zusammengerechnet wurden: die Seiten kommen aus `1.6cqw` (Breite), oben und
+  // unten aus `cqh` (Hoehe) - zwei verschiedene Bezugsgroessen auf einem
+  // 16:9-Bild ergeben zwangslaeufig verschiedene Pixel. Und am 23.08. habe ich
+  // die Oberkante zusaetzlich nach unten geschoben, damit der Rahmen nicht
+  // direkt an der 12px-Zeitleiste klebt. Beides einzeln begruendet, zusammen
+  // ein schiefer Rahmen.
+  //
+  // Jetzt EIN Abstand fuer alle vier Seiten, in derselben Bezugsgroesse. Der
+  // Abstand zur Zeitleiste bleibt erhalten und ist mit 16px als Abstand
+  // erkennbar (12px Leiste + 16px Luft = Rahmenoberkante bei 28).
+  const BILD_RAND = istBuehne ? 'clamp(20px, 1.6cqw, 28px)' : null;
+  const bildKasten = istBuehne
+    ? { top: BILD_RAND!, bottom: BILD_RAND!, left: BILD_RAND!, right: BILD_RAND! }
+    : {
+        top: BILD_OBEN,
+        bottom: 'clamp(10px, 1.4cqh, 22px)',
+        left: 'clamp(12px, 1.6cqw, 28px)',
+        right: 'clamp(12px, 1.6cqw, 28px)',
+      };
+
 
   const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 56px)'
     : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 72px)'
@@ -858,12 +885,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {cheeseFullscreen ? (
             <div style={{
               position: 'fixed',
-              top: BILD_OBEN,
-              bottom: 'clamp(10px, 1.4cqh, 22px)',
-              left: 'clamp(12px, 1.6cqw, 28px)',
+              ...bildKasten,
               right: isCheesePortrait
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
-                : 'clamp(12px, 1.6cqw, 28px)',
+                : bildKasten.right,
               zIndex: 50,
               borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
               overflow: 'hidden',
@@ -964,12 +989,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           {cheeseFullscreen && (
             <div aria-hidden style={{
               position: 'fixed',
-              top: BILD_OBEN,
-              bottom: 'clamp(10px, 1.4cqh, 22px)',
-              left: 'clamp(12px, 1.6cqw, 28px)',
+              ...bildKasten,
               right: isCheesePortrait
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
-                : 'clamp(12px, 1.6cqw, 28px)',
+                : bildKasten.right,
               borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
               border: `4px solid ${accent}`,
               // 2026-08-23: derselbe Massstab wie am Brett und an der

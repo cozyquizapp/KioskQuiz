@@ -1983,6 +1983,32 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   const accentTeam = accentTeamId ? s.teams.find(t => t.id === accentTeamId) : null;
   const teamTintColor = accentTeam?.color ?? null;
 
+  // 2026-08-24 (Wolf: „hier auch der rahmen unten und oben", Screenshot der
+  // Zwischenstand-Folie). Nachgemessen bei einem Fenster von 1470x908:
+  // der Phasen-Root fuellt das ganze Fenster (1470x908) und malt den
+  // Kategorie-Grund, die skalierte Buehne darin ist nur 1470x827 hoch. Oben und
+  // unten bleiben je 41 Pixel Kategorie-Gold stehen — und genau die sieht Wolf
+  // als Rahmen. Auf einem exakt 16:9-Beamer sind diese Streifen null Pixel
+  // hoch, deshalb ist es nie aufgefallen.
+  //
+  // Der Streifen ist aber nur das Symptom. Die Ursache: der Zwischenstand ist
+  // eine EIGENSTAENDIGE Seite (Wolf 2026-05-09: „standings sollen eigenstaendige
+  // seite sein nicht im vordergrund") und malt deshalb selbst einen neutralen
+  // Grund — waehrend der Root darunter noch auf QUESTION_REVEAL steht und den
+  // Kategorie-Grund traegt. Zwei Ebenen, zwei Meinungen. Also: waehrend der
+  // Zwischenstand laeuft, laeuft KEINE Kategorie. Ein Wert fuer Grund UND
+  // Akzent, damit die beiden nicht wieder auseinanderlaufen.
+  const zwischenstandLaeuft = !!renderState.finalWagerEnabled
+    && renderState.gamePhaseIndex === renderState.totalPhases
+    && renderState.finalRecapStep === 1
+    && renderState.phase !== 'FINAL_BETTING'
+    && renderState.phase !== 'FINAL_REVEAL'
+    && renderState.phase !== 'GAME_OVER'
+    && renderState.phase !== 'THANKS'
+    && renderState.phase !== 'PAUSED'
+    && renderState.phase !== 'LOBBY';
+  const kategorieLaeuft = QQ_KATEGORIE_GRUND_PHASEN.has(s.phase) && !zwischenstandLaeuft;
+
   return (
     <div
       // 2026-08-22 (Uebergabe 2a): der Phase-Root ist der Buehnen-Scope. Er
@@ -2003,7 +2029,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Genau diese Unterscheidung stand schon in QQ_KATEGORIE_GRUND_PHASEN,
       // nur hat der Akzent sie nicht gelesen.
       '--qq-stage-accent': qqCategoryAccent(
-        QQ_KATEGORIE_GRUND_PHASEN.has(s.phase) ? cat : undefined,
+        kategorieLaeuft ? cat : undefined,
         'var(--qq-accent)',
       ),
       height: '100cqh', width: '100cqw',
@@ -2023,7 +2049,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       // Regeln, Team-Reveal, Pause, Ende) bleibt der Grund neutral — das ist so
       // gewollt, dort ist die einzige Farbe die der Teams.
       background: isThemed()
-        ? ((cat && QQ_KATEGORIE_GRUND_PHASEN.has(s.phase)) ? (CAT_BG[cat] ?? 'var(--qq-bg)') : 'var(--qq-bg)')
+        ? ((cat && kategorieLaeuft) ? (CAT_BG[cat] ?? 'var(--qq-bg)') : 'var(--qq-bg)')
         : (activeTemplate ? (activeTemplate.background || bg) : bg),
       // 2026-07-19 (Wolf „ist Cinzel/Garamond WIRKLICH überall umgestellt?"): nein,
       // war es nicht. Die Wurzel vererbte im Kolosseum weiter Bricolage/Nunito an
@@ -2172,15 +2198,10 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               eigenständige seite sein nicht im vordergrund'): Final-Recap
               (zwischen Final-Fragen) ist jetzt eigene Vollbild-Seite ANSTELLE
               der Question/Placement-View — kein Overlay mehr. */}
-          {renderState.finalWagerEnabled
-           && renderState.gamePhaseIndex === renderState.totalPhases
-           && renderState.finalRecapStep === 1
-           && renderState.phase !== 'FINAL_BETTING'
-           && renderState.phase !== 'FINAL_REVEAL'
-           && renderState.phase !== 'GAME_OVER'
-           && renderState.phase !== 'THANKS'
-           && renderState.phase !== 'PAUSED'
-           && renderState.phase !== 'LOBBY' ? (
+          {/* 2026-08-24: Bedingung steht als `zwischenstandLaeuft` weiter oben.
+              Der Phasen-Root braucht sie fuer seinen Grund, diese Stelle fuer
+              die Folie — zweimal dieselbe Kette waere zweimal Pflegeaufwand. */}
+          {zwischenstandLaeuft ? (
             <FinalRoundRecapSlide state={renderState} />
           ) : (
             <>

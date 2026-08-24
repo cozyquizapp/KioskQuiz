@@ -27,6 +27,9 @@
  *   --serie=2800,4200      mehrere Zeitpunkte je Ansicht (Bewegung pruefen)
  *   --sprache=de|en|both   Vorgabe de, damit kein DE/EN-Wechsel ins Bild faellt
  *   --kategorie=MUCHO      zieht diese Kategorie nach vorn statt zu wuerfeln
+ *                          nimmt auch die Unterspiele der Bunten Tuete:
+ *                          top5, order, map, hotPotato. Ohne das kommt man an
+ *                          deren Aufloesungen nicht gezielt heran.
  *   --dom="h1, .x"         Kaesten/Farben aus dem DOM statt aus dem Bild
  *   --zeiten               wo die Zeit hingeht
  *   --bots=8               Zahl der Bot-Teams

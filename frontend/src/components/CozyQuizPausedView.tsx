@@ -458,11 +458,51 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           // panel-zentriert, die Pillen flankieren in gleich breiten 1fr-Spalten.
           // maxSize 480→420: die Pause-Card ist niedriger als der Spiel-Screen, 480
           // ließ die unterste Brett-Reihe unten rausclippen (überlappte „Kurze Pause").
-          const boardGridStyle: React.CSSProperties = {
-            display: 'grid', gridTemplateColumns: '1fr auto 1fr',
-            alignItems: 'center', gap: 'clamp(16px, 2.2cqw, 32px)',
-            padding: 'clamp(14px, 2cqw, 28px)', width: '100%',
-          };
+          // 2026-08-23 (Wolf: „Grid-Ansicht immer links, Tabelle rechts - ist
+          // das ein Problem?"). Ja, ein kleines. Auf jeder Frage und beim Setzen
+          // steht das Brett links und die Teams rechts; in der Pause stand das
+          // Brett mittig mit Teams links UND rechts. Wer eine Stunde lang eine
+          // Leseordnung gelernt hat, sucht in der Pause neu, und zwar genau in
+          // dem Moment, in dem er nur kurz schauen will, wie er steht.
+          // Auf der Buehne also dieselbe Ordnung wie im Spiel: Brett links,
+          // Teams rechts, in EINER Spalte. Gerechnet: acht Pillen zu rund 52px
+          // plus 10px Abstand sind 486px, die Pausen-Karte gibt rund 590px her.
+          // Die uebrigen Skins behalten die mittige Anordnung.
+          const boardGridStyle: React.CSSProperties = istBuehne
+            ? {
+                display: 'grid', gridTemplateColumns: 'auto 1fr',
+                alignItems: 'center', gap: 'clamp(24px, 3cqw, 48px)',
+                padding: 'clamp(14px, 2cqw, 28px)', width: '100%',
+              }
+            : {
+                display: 'grid', gridTemplateColumns: '1fr auto 1fr',
+                alignItems: 'center', gap: 'clamp(16px, 2.2cqw, 32px)',
+                padding: 'clamp(14px, 2cqw, 28px)', width: '100%',
+              };
+          if (istBuehne) {
+            // 2026-08-23, nachgerechnet und korrigiert: mein erster Anlauf hat
+            // acht Pillen in EINE Spalte gestellt, mit 52px pro Pille gerechnet.
+            // Gemessen sind es rund 68px, macht 8 x 68 + 7 x 10 = 614px bei rund
+            // 560px Karteninnenhoehe - die siebte Pille lief unten raus und das
+            // Brett war unten abgeschnitten.
+            // Die Tabelle bleibt rechts, bricht dort aber ab sieben Teams in
+            // zwei Spalten. Vier Pillen sind 302px hoch und passen sicher.
+            const zweiSpalten = sortedByCells.length >= 7;
+            return (
+              <div style={boardGridStyle}>
+                <GridDisplay state={s} maxSize={380} showJoker={false} />
+                <div style={{
+                  justifySelf: 'start',
+                  display: 'grid',
+                  gridTemplateColumns: zweiSpalten ? 'auto auto' : 'auto',
+                  gridAutoFlow: 'column',
+                  gridTemplateRows: `repeat(${Math.ceil(sortedByCells.length / (zweiSpalten ? 2 : 1))}, auto)`,
+                  gap: 'clamp(8px, 1cqh, 12px) clamp(12px, 1.4cqw, 20px)',
+                  alignContent: 'center',
+                }}>{sortedByCells.map(renderPill)}</div>
+              </div>
+            );
+          }
           if (splitMode) {
             const half = Math.ceil(sortedByCells.length / 2);
             const left = sortedByCells.slice(0, half);
@@ -1609,7 +1649,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {(() => {
           const titleText = mode === 'preGame'
             ? (de ? "Gleich geht's los" : 'Starting soon')
-            : (de ? 'Kurze Pause' : 'Short Break');
+            // 2026-08-23 (Wolf): „Kurze Pause" beschreibt den Zustand, und der
+            // ist ohnehin offensichtlich - es steht ja gerade nichts an. Die
+            // groesste Zeile der Folie sagte damit am wenigsten. „Kurz
+            // durchatmen" ist eine Handlung, der der Raum folgen kann, und
+            // trifft den Ton des Abends.
+            : (de ? 'Kurz durchatmen' : 'Take a breather');
           return (
             <div
               aria-label={titleText}

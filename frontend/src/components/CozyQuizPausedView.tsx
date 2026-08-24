@@ -23,8 +23,9 @@ import { FactionCrest } from './QQFactionCrest';
 import { QQEmojiIcon, QQIcon, qqCatSlug } from './QQIcon';
 import { TeamNameLabel } from './TeamNameLabel';
 import { JokerIcon } from './JokerIcon';
+import QQProgressTree from './QQProgressTree';
 import {
-  AnimatedCozyWolf, WolfCoModerator, RoundMiniTree, getStandingAvatarSize,
+  AnimatedCozyWolf, WolfCoModerator, getStandingAvatarSize,
   type Slogan, type LeaderEntry, type FunStats,
 } from '../pages/QQBeamerPage';
 import { getRoundColor } from '../qqDesignTokens';
@@ -380,8 +381,26 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               </span>
             </div>
           </div>
-          {/* Mini-Tree der aktuellen Runde */}
-          <RoundMiniTree state={s} catColor={roundColor} />
+          {/* 2026-08-23 (Wolf: „Wo sind wir soll den original fertigen progress
+              tree ziehen, bzw den rangezoomten der aktuellen Runde - Form
+              entsprechend wie progress tree und regel progress tree, alle
+              gleich"). Vorher lief hier ein EIGENER Mini-Baum (RoundMiniTree)
+              mit eigener Geometrie, eigenen Punktgroessen und eigener
+              Standortmarke. Zwei Baeume, die dasselbe erzaehlen, aber
+              verschieden aussehen - genau das, was die Buehne nicht will.
+              Jetzt derselbe Baum wie ueberall, `variant="panel"` ist die
+              Pausen-Groesse, `onlyPhase` zoomt auf die laufende Runde (die
+              anderen Runden fallen aus dem Layout, statt es nur abzublenden -
+              so bleiben die Kacheln buehnentauglich gross).
+              Die Sprache wird mitgegeben, sonst hat der Baum eine eigene
+              DE/EN-Uhr und laeuft gegen die der Folie. */}
+          <QQProgressTree
+            state={s}
+            variant="panel"
+            onlyPhase={s.gamePhaseIndex}
+            bigIcons
+            lang={de ? 'de' : 'en'}
+          />
         </div>
       </div>
     )});

@@ -2,6 +2,7 @@
 
 import { Server as SocketIOServer } from 'socket.io';
 import { saveQQGameResult, getQQRegularTeam, upsertQQRegularTeams, getAllCozyGamesFromDB } from '../db/schemas';
+import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
 import {
   QQJoinModeratorPayload, QQJoinBeamerPayload, QQJoinTeamPayload,
   QQStartGamePayload, QQRevealAnswerPayload, QQShowImagePayload, QQMarkCorrectPayload,
@@ -2619,7 +2620,16 @@ export function registerQQHandlers(io: SocketIOServer): void {
           let parallel = true;
           try {
             const allGames = await getAllCozyGamesFromDB();
-            const active = (allGames ?? []).find((g: any) => g.id === cg.activeGameId);
+            let active = (allGames ?? []).find((g: any) => g.id === cg.activeGameId);
+            // 2026-08-23: fehlt der Eintrag in der Datenbank, wurde bisher
+            // stillschweigend auf 'parallel' zurueckgefallen. Das trifft zwei
+            // Faelle: OHNE MONGODB_URI liefert getAllCozyGamesFromDB immer ein
+            // leeres Feld, dann ist der Sequence-Modus lokal gar nicht
+            // erreichbar - und wenn die Datenbank waehrend eines Abends
+            // stolpert, wird aus einem Reihum-Spiel unbemerkt ein
+            // Gleichzeitig-Spiel. Der Seed-Katalog im Repo kennt `parallel`
+            // fuer alle achtzehn Spiele und ist damit die richtige Rueckfallebene.
+            if (!active) active = COZY_GAME_V1_SEED.find(g => g.id === cg.activeGameId);
             parallel = active?.parallel !== false;
           } catch { /* fall back to parallel */ }
           const playMode = parallel ? 'parallel' : 'sequence';

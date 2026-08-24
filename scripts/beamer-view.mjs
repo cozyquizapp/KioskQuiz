@@ -84,6 +84,10 @@ const ENTWURF = (process.argv.find(a => a.startsWith('--entwurf=')) || '=').spli
 // als die Vorgabe der Ansicht (Top 5 braucht 5 x 2400 ms plus Siegerband).
 // --stufe=3  welcher Schritt der Final-Aufloesung geknipst wird.
 const STUFE = Number((process.argv.find(a => a.startsWith('--stufe=')) || '--stufe=1').split('=')[1]);
+// Setzt der Aufruf eine Ansicht mit `nurReihum`, bekommt der Pool nur Spiele
+// mit `parallel: false` - sonst entscheidet der Zufall am Rad, ob die
+// Reihum-Ansicht ueberhaupt drankommt.
+const NUR_REIHUM = process.argv.some(a => a === 'cozyseq');
 const RUHE = process.argv.find(a => a.startsWith('--ruhe='))
   ? Number(process.argv.find(a => a.startsWith('--ruhe=')).split('=')[1]) : null;
 const QUELLE_HOCH = '/images/Johannes.jpeg';
@@ -159,6 +163,16 @@ const ANSICHTEN = {
   // Zweige und tut nichts. Ergebnis: --stufe=2, 3 und 4 zeigten alle dasselbe
   // drehende Rad, und es sah aus wie „die Aufnahmen kommen nicht".
   // Deshalb jetzt eine echte Treppe, die auf das Landen wartet.
+  // 2026-08-23: acht der achtzehn Spiele laufen REIHUM statt gleichzeitig
+  // (`parallel: false`), und die haben eine eigene Ansicht mit Warteschlange.
+  // Das Rad wuerfelt, welches Spiel kommt - deshalb bekommt der Pool hier nur
+  // Reihum-Spiele, sonst braucht man mehrere Laeufe, bis eines davon faellt.
+  cozyseq:    { ruhe: 3500, aufbau: 'spiel', nurReihum: true, weg: async (h) => {
+    await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
+    await sleep(600); await h.emit('qq:cozyGameAdvance');   // INTRO -> Rad dreht
+    await sleep(7200);                                       // Server landet selbst
+    await h.emit('qq:cozyGameAdvance'); await sleep(900);    // -> Spiel laeuft
+  } },
   cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
     if (STUFE >= 2) { await sleep(600); await h.emit('qq:cozyGameAdvance'); }  // INTRO -> Rad dreht
@@ -426,7 +440,10 @@ async function aufbauen(stufe) {
     // Datenbank.
     await emit('qq:setQuizOptions', {
       cozyGamesEnabled: true,
-      cozyGamesPool: COZY_SEED_IDS.slice(0, 8),
+      cozyGamesPool: NUR_REIHUM
+        ? ['cg-ballon-puste', 'cg-muenz-kante', 'cg-karten-haus', 'cg-sport-stacking',
+           'cg-bierdeckel-muenzen', 'cg-ringwurf', 'cg-gummi-pyramide', 'cg-getraenk-halbieren']
+        : COZY_SEED_IDS.slice(0, 8),
     });
     // Den 4x4-Satz aus dem Entwurf merken, die Ansicht braucht ihn als Payload.
     verbindungen = d.connections ?? null;

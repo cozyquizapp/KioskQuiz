@@ -10,6 +10,7 @@ import { Fireflies } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { CozyGameIcon, CozyGameWheelIcon } from './CozyGameIcon';
 import { QQEmojiIcon } from './QQIcon';
+import { TeamNameLabel } from './TeamNameLabel';
 import { QQ_TEAM_NAME_WRAP } from '../qqShared';
 import { useLangFlip } from '../cozyQuizShared';
 import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
@@ -1271,7 +1272,7 @@ function SequenceGameView({
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               opacity: 0.7,
             }}>
-              ⏸
+              {istBuehneG() ? '' : '⏸'}
             </div>
           ) : (
             <div style={{
@@ -1327,8 +1328,17 @@ function SequenceGameView({
 
       {/* BOTTOM: Queue (alle Teams mit Status) */}
       <div style={{
+        // 2026-08-23 (2a): bei acht Teams brach die Warteschlange in eine
+        // zweite Zeile um, und dort stand ein einzelnes Team allein und
+        // versetzt unter den sieben darueber. Gemessen: acht Pillen zu rund
+        // 230px sind 1840px, die Buehne ist 1760 breit. Auf der Buehne bleibt
+        // die Reihe deshalb EINE Reihe; die Pillen werden schmaler statt
+        // umzubrechen. Eine Warteschlange ist eine Reihenfolge, und die liest
+        // man nur dann als Reihenfolge, wenn sie eine Linie ist.
         flex: '0 0 auto',
-        display: 'flex', flexWrap: 'wrap', gap: 'clamp(8px, 1vw, 16px)',
+        display: 'flex',
+        flexWrap: istBuehneG() ? 'nowrap' : 'wrap',
+        gap: istBuehneG() ? 'clamp(4px, 0.5vw, 10px)' : 'clamp(8px, 1vw, 16px)',
         justifyContent: 'center', alignItems: 'center',
         padding: 'clamp(12px, 1.5vh, 20px)',
         background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.20)'),
@@ -1345,13 +1355,21 @@ function SequenceGameView({
               display: 'flex', alignItems: 'center', gap: 8,
               padding: '6px 14px 6px 6px',
               borderRadius: 999,
-              background: isCurrent ? `${accentColor}33` : isCompleted ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)',
-              border: isCurrent ? `2px solid ${accentColor}` : '2px solid transparent',
+              background: istBuehneG()
+                ? (isCurrent ? 'rgba(246,239,230,0.12)' : isCompleted ? 'rgba(246,239,230,0.04)' : 'rgba(246,239,230,0.08)')
+                : (isCurrent ? `${accentColor}33` : isCompleted ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'),
+              border: isCurrent
+                ? `2px solid ${istBuehneG() ? 'var(--qq-stage-accent, var(--qq-accent))' : accentColor}`
+                : '2px solid transparent',
               opacity: isCompleted ? 0.5 : 1,
               filter: isCompleted ? 'grayscale(0.5)' : 'none',
               transition: 'all 0.3s ease',
             }}>
-              <div style={{ width: 'clamp(32px, 3vw, 48px)', height: 'clamp(32px, 3vw, 48px)' }}>
+              <div style={{
+                width: istBuehneG() ? 'clamp(28px, 2.4vw, 40px)' : 'clamp(32px, 3vw, 48px)',
+                height: istBuehneG() ? 'clamp(28px, 2.4vw, 40px)' : 'clamp(32px, 3vw, 48px)',
+                flexShrink: 0,
+              }}>
                 <QQTeamAvatar
                   avatarId={t.avatarId}
                   teamEmoji={t.emoji}
@@ -1359,14 +1377,22 @@ function SequenceGameView({
                   bgColor={t.color}
                 />
               </div>
-              <div style={{
-                fontSize: 'clamp(13px, 1.1vw, 18px)',
-                fontWeight: 800,
-                color: isCompleted ? 'rgba(255,255,255,0.55)' : '#fff',
-                maxWidth: 'clamp(80px, 10vw, 160px)',
-                whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-              }}>
-                {isCompleted ? '✓ ' : ''}{t.name}
+              {/* 2026-08-23 (2a): der Name lief ueber eigenes Kuerzen mit
+                  Ellipse („Die Couch-Qui…"). Teamnamen laufen im Projekt ueber
+                  TeamNameLabel, das schrumpft statt abzuschneiden - ein
+                  abgeschnittener Teamname ist auf der Buehne ein Team, das
+                  seinen Namen nicht wiedererkennt. */}
+              <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
+                {isCompleted && <span aria-hidden style={{ opacity: 0.7 }}>✓</span>}
+                <TeamNameLabel
+                  name={t.name}
+                  fontSize={istBuehneG() ? 'clamp(12px, 0.95vw, 17px)' : 'clamp(13px, 1.1vw, 18px)'}
+                  color={isCompleted ? 'var(--qq-text-muted)' : 'var(--qq-text)'}
+                  fontWeight={800}
+                  maxLines={1}
+                  shrinkAfter={11}
+                  style={{ maxWidth: istBuehneG() ? 'clamp(64px, 7vw, 120px)' : 'clamp(80px, 10vw, 160px)' }}
+                />
               </div>
             </div>
           );

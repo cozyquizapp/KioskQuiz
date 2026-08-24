@@ -81,6 +81,22 @@ const QQ_OPTIONS_MAX_W = 1400;
 // damit ihre Hoehe (sonst springt die Pille, wenn der Timer fehlt), und
 // oben-buendige Layouts halten damit Abstand zu ihr.
 const QQ_KOPFZEILE_H = 'clamp(120px, 20.6cqh, 204px)';
+// 2026-08-24 (Wolf: „timer und badge links oben koennten besser platziert
+// sein", fuer alle Fragen). Nachgemessen auf fuenf Folien: die Zeile sass auf
+// x16 y16 und war 1728x204 gross - fuer eine 44 px hohe Pille und eine 96 px
+// hohe Zahl. Beide standen mittig in diesen 204 px, die Pille also erst bei
+// y96. Ueber ihr lagen 80 px Nichts, und deshalb liest sie sich weder als
+// „oben" noch als an etwas ausgerichtet.
+// Die 204 px waren nie eine Gestaltungsentscheidung, sondern eine Reserve: die
+// Zeile sollte ihre Hoehe halten, auch wenn der Timer fehlt (Heisse Kartoffel),
+// sonst sprang die Pille um 80 px. Das Halten bleibt richtig, die Zahl war zu
+// gross. Jetzt ist die Zeile so hoch wie ihr hoechstes Teil, der Timer.
+const QQ_KOPFZEILE_H_BUEHNE = 'clamp(64px, 9.7cqh, 96px)';
+// Der Abstand der Buehne zur Kante. EIN Wert, EIN Bezug, alle vier Seiten -
+// genau das war heute frueh der Fehler am Schau-mal-Rahmen (Seiten aus cqw,
+// oben und unten aus cqh, also drei verschiedene Raender). Hergeleitet ist er
+// aus der Zeitleiste: 12 px Leiste plus 16 px Luft, Oberkante bei 28.
+const QQ_STAGE_RAND = 'clamp(20px, 1.6cqw, 28px)';
 
 
 // 2026-05-24 (Refactor #5): Reveals + Helpers in components/reveals/ extrahiert:
@@ -638,7 +654,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Jetzt EIN Abstand fuer alle vier Seiten, in derselben Bezugsgroesse. Der
   // Abstand zur Zeitleiste bleibt erhalten und ist mit 16px als Abstand
   // erkennbar (12px Leiste + 16px Luft = Rahmenoberkante bei 28).
-  const BILD_RAND = istBuehne ? 'clamp(20px, 1.6cqw, 28px)' : null;
+  // 2026-08-24: derselbe Wert traegt jetzt auch die Statuszeile, damit Rahmen
+  // und Pille an derselben Kante beginnen. Deshalb steht er oben als Konstante.
+  const BILD_RAND = istBuehne ? QQ_STAGE_RAND : null;
+  // Hoehe der Statuszeile. Drei Stellen brauchen sie: die Zeile selbst, das
+  // Polster des Inhalts darunter und die Schau-mal-Ebene. Ein Wert, damit sie
+  // nicht auseinanderlaufen.
+  const kopfH = istBuehne ? QQ_KOPFZEILE_H_BUEHNE : QQ_KOPFZEILE_H;
   const bildKasten = istBuehne
     ? { top: BILD_RAND!, bottom: BILD_RAND!, left: BILD_RAND!, right: BILD_RAND! }
     : {
@@ -667,16 +689,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // eigene Ebene ueber dem Bild. Eine Quelle, zwei Einsatzorte — nicht zwei
   // Kopien, die auseinanderlaufen.
   const kopfzeile = (
-    <div style={{
+    <div
+      // 2026-08-24: Messanker fuer scripts/beamer-view.mjs (`--dom`). Reines
+      // data-Attribut, aendert nichts am Bild. Ohne den war die Zeile nur
+      // ueber ihren Inline-Stil zu greifen, und der aendert sich bei jeder
+      // Politur - man misst dann still das falsche Element oder gar keins.
+      data-qq-kopf=""
+      style={{
       position: 'absolute',
       // 2026-07-07 (Wolf-Livetest 'timer hängt halb übers fragefeld'):
       // Timer-Inset von der Content-Margin ENTKOPPELT — eigener enger
       // Eck-Abstand rueckt den Timer rechts an der Frage-Karte vorbei.
       // 2026-07-13 (A1): Karte jetzt QQ_QUESTION_MAX_W=1300 (statt 1400)
       // → 230px Gutter, Timer (196px) ueberlappt die Ecke nicht mehr.
-      top: 'clamp(14px, 1.6vh, 26px)',
-      left: 'clamp(14px, 1.6vh, 26px)',
-      right: 'clamp(14px, 1.6vh, 26px)',
+      // 2026-08-24: auf der Buehne derselbe Kantenabstand wie der
+      // Schau-mal-Rahmen, damit die Folie EINE Kante hat statt drei. Gemessen
+      // standen hier 16 px, am Rahmen 28 px und am --qq-safe-margin 24 px.
+      // Ausserdem war die Einheit `vh`, also das echte Browserfenster - die
+      // Buehne wird aber skaliert. Auf einem kleineren Fenster lief der Abstand
+      // deshalb gegen die Skalierung statt mit ihr.
+      top: istBuehne ? QQ_STAGE_RAND : 'clamp(14px, 1.6vh, 26px)',
+      left: istBuehne ? QQ_STAGE_RAND : 'clamp(14px, 1.6vh, 26px)',
+      right: istBuehne ? QQ_STAGE_RAND : 'clamp(14px, 1.6vh, 26px)',
       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
       gap: 16,
       // 2026-08-23 (Buehnen-Durchgang): die Zeile ist der Anker des
@@ -691,7 +725,11 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       // Die Hoehe wird jetzt gehalten, egal ob der Timer da ist. 204 px
       // sind die gemessene Zeilenhoehe MIT Timer, als cqh notiert, damit
       // sie auf kleineren Flaechen mitfaellt.
-      minHeight: QQ_KOPFZEILE_H,
+      // 2026-08-24: das Halten bleibt, die 204 px waren zu viel - siehe
+      // QQ_KOPFZEILE_H_BUEHNE oben. Auf der Buehne ist die Zeile jetzt so
+      // hoch wie ihr hoechstes Teil (der Timer, gemessen 96 px), nicht mehr
+      // ein Fuenftel der Buehnenhoehe.
+      minHeight: kopfH,
       zIndex: 60,
       pointerEvents: 'none',
     }}>
@@ -1081,7 +1119,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // Kategorie-Pille hindurch, sobald der Text zwei Zeilen lang wird.
           padding: isCheesePortrait
             ? (istBuehne
-              ? `calc(12px + ${QQ_KOPFZEILE_H}) clamp(12px, 1.6cqw, 24px) clamp(12px, 2cqh, 24px)`
+              ? `calc(${QQ_STAGE_RAND} + ${kopfH}) clamp(12px, 1.6cqw, 24px) clamp(12px, 2cqh, 24px)`
               : 'clamp(12px, 2cqh, 24px) clamp(12px, 1.6cqw, 24px)')
             : (revealed ? '20px 24px 16px' : '20px 24px clamp(28px, 4cqh, 48px)'),
           transition: 'padding 0.55s var(--qq-ease-bounce), left 0.5s ease',
@@ -1845,7 +1883,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // reserviert hatte) rutschte der Team-Name unten aus dem Bild. Der
           // Inhalt ist gar nicht hoch genug, um oben-buendig zu muessen — mittig
           // haelt er von beiden Kanten von selbst Abstand.
-          const innerJustify = (isHotPotatoActive && !istBuehne) ? 'flex-start' : 'center';
+          // 2026-08-24 (Wolf: „fragehoehe vom text ... koennte besser platziert
+          // sein (in allen fragen)"). Nachgemessen ueber vier aufeinander
+          // folgende Fragen einer Runde: die Oberkante des Fragetextes stand bei
+          // y246 (Bunte Tuete), y284 (10 von 10), y341 (Mu-Cho) und y483
+          // (Schaetzchen). 237 px Unterschied auf einer 990 px hohen Buehne, also
+          // fast ein Viertel der Hoehe - und das fuenfzehnmal an einem Abend.
+          // Ursache ist keine Einstellung an der Frage, sondern die Zentrierung
+          // des Inhalts: was UNTER der Frage steht, entscheidet, wo sie landet.
+          // Schaetzchen hat nichts darunter, also faellt die Frage in die Mitte;
+          // Bunte Tuete hat viel darunter, also rutscht sie nach oben.
+          // Auf der Buehne beginnt der Inhalt deshalb oben. Die Frage steht dann
+          // auf jeder Folie an derselben Stelle, und was folgt, fuellt nach
+          // unten. Wolf hat dieselbe Abwaegung am 23.08. schon fuer die
+          // waagerechte Ausrichtung entschieden („text muss auf allen frageviews
+          // gleich ausgerichtet sein") - Gleichheit ueber alle Folien wiegt
+          // schwerer als die beste Loesung fuer die einzelne.
+          const innerJustify = (isHotPotatoActive || istBuehne) ? 'flex-start' : 'center';
           const innerGap = isHotPotatoActive ? 'clamp(24px, 3.2cqh, 44px)' : 0;
           return (
         <div style={{
@@ -1877,7 +1931,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // wenn auch er weg ist - sonst rutschte der Inhalt eine Sekunde lang
           // unter die noch sichtbare Zahl. Die Ueberblendung macht daraus eine
           // Bewegung statt eines Sprungs.
-          padding: `calc(16px + ${(!revealed || !!kopfTimer) ? QQ_KOPFZEILE_H : 'clamp(30px, 4cqh, 48px)'}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`,
+          // 2026-08-24: das obere Polster ist die Unterkante der Statuszeile
+          // plus ein Abstand. Beide Summanden kommen jetzt aus denselben
+          // Konstanten wie die Zeile selbst, statt aus einer festen 16 - sonst
+          // driftet das Polster, sobald die Zeile sich aendert (heute genau so
+          // passiert: die Zeile wurde von 204 auf 96 gekuerzt).
+          padding: `calc(${istBuehne ? QQ_STAGE_RAND : '16px'} + ${(!revealed || !!kopfTimer) ? kopfH : 'clamp(30px, 4cqh, 48px)'}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`,
           transition: 'padding-top 0.5s var(--qq-ease-smooth)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
@@ -2033,7 +2092,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   {/* 2026-05-07 (Audit P0): font-size-transition liess Buchstaben
                       bei qFontSize/hpCompact-Wechsel sichtbar wandern. Key-Remount
                       macht den Wechsel atomic, langFadeIn als saubere Entry-Anim. */}
-                  <div key={`${lang}-${cardFontSize}`} style={{
+                  <div key={`${lang}-${cardFontSize}`} data-qq-frage="" style={{
                     fontSize: cardFontSize,
                     // 2026-08-22 (Uebergabe 2a, Aenderung 3): Laufweite -0.03em
                     // und Zeilenabstand 0.86 statt 1.22. Beides gehoert zum

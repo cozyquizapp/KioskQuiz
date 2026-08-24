@@ -107,6 +107,21 @@ return {
   // nachzuspielen. Das fuellt das Brett mit, sonst stehen die Endfolien auf
   // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
   pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
+  // Die Weitergabe bei der Heissen Kartoffel - die einzige Station, deren
+  // Sinn ganz in der Bewegung liegt, und die man ohne Ausloeser nie sieht.
+  // Braucht `--kategorie=hotPotato`, sonst laeuft eine andere Frage.
+  // `vor` faehrt zur Frage, `weg` gibt weiter; im Film ist nur das Weitergeben.
+  kartoffelwurf: {
+    ruhe: 1500, aufbau: 'spiel',
+    vor: async (h) => { await h.zurFrage(); },
+    vorRuhe: 2000,
+    // `qq:hotPotatoCorrect` faellt still durch, solange das aktive Team noch
+    // keine Antwort abgeschickt hat (Doppelklick-Schutz im Handler, geprueft
+    // 2026-08-24: der Wurf blieb aus, das Team blieb dasselbe). Fuers Ansehen
+    // der Bewegung reicht `qq:hotPotatoWrong` - auch dort wechselt der aktive
+    // Halter, nur scheidet das alte Team dabei aus.
+    weg: async (h) => { await h.emit('qq:hotPotatoWrong'); },
+  },
   // CozyGame hat fuenf Stufen: INTRO, Rad dreht, Rad steht (Spiel-Karte),
   // Spiel laeuft (Timer), Sieger waehlen. `--stufe=n` waehlt den Schritt.
   //
@@ -506,6 +521,10 @@ export async function buehneStarten(teilCfg = {}) {
     const st = stationen[name];
     if (!st) throw new Error(`Unbekannte Station: ${name}`);
     await aufbauen(st.aufbau);
+    // `vor` ist der Anlauf, `weg` der Ausloeser. Getrennt, weil motion.mjs nur
+    // den Ausloeser IN der Aufnahme haben will (der Anlauf wuerde den halben
+    // Streifen fuellen). Wer nur knipst, macht beides hintereinander.
+    if (st.vor) { await st.vor(helfer); await sleep(st.vorRuhe ?? 1200); }
     await st.weg(helfer);
     cfg.takt(`${name}: Ereignisse geschickt`);
     return st;

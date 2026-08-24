@@ -290,6 +290,9 @@ for (const name of liste) {
   // vorspulen) darf nicht mit im Streifen landen, der Ausloeser muss es.
   const st = buehne.stationen[name];
   await buehne.aufbauen(st.aufbau);
+  // Der Anlauf (`vor`) laeuft VOR der Aufnahme - sonst zeigt der halbe Streifen
+  // das Hinnavigieren. Nur der Ausloeser (`weg`) gehoert hinein.
+  if (st.vor) { await st.vor(buehne.helfer); await sleep(st.vorRuhe ?? 1200); }
   const fenster = FENSTER_MS ?? st.ruhe;
   if (FILM) {
     await film(seite, name, fenster, () => st.weg(buehne.helfer));

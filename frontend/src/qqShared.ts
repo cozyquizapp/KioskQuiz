@@ -322,13 +322,33 @@ export const QQ_BEAMER_CSS = `
   }
   @keyframes qqHpRingPotatoThrow {
     /* 2026-07-08 (Wolf 'fliegt beim Teamwechsel komische Kreise, sieht buggy
-       aus'): frueher 1080deg (3 volle Spins) = wirbelte wie ein Bug. Jetzt EIN
-       sauberer Wurf-Bogen: Kartoffel kommt vom vorherigen Team (rechts oben)
-       reingeflogen, kleiner Squash beim Fangen, settelt in die Wobble-Ruhelage
-       (-16deg). Keine Mehrfach-Rotation mehr. */
-    0%   { transform: translate(64px, -34px) rotate(96deg) scale(0.72); }
-    58%  { transform: translate(-6px, 6px) rotate(-24deg) scale(1.14); }
-    100% { transform: translate(0, 0) rotate(-16deg) scale(1); }
+       aus'): frueher 1080deg (3 volle Spins) = wirbelte wie ein Bug. Seitdem EIN
+       sauberer Wurf-Bogen, kleiner Squash beim Fangen, Ruhelage -16deg.
+
+       2026-08-24 (Wolf: „kartoffel soll von team zu team fliegen, von aktivem
+       zum naechsten das reinkommt"). Der Bogen war 64 px lang - eine Handbreit
+       innerhalb derselben Kachel. Von Team zu Team sind es aber
+       clamp(220px, 23cqw, 380px), derselbe Wert, mit dem die Spalten ihre
+       Slots anfahren. (Keine schraegen Anfuehrungsstriche um den Wert: diese
+       CSS steht in einem Template-Literal, ein Backtick beendet es mitten im
+       Kommentar - genau so hat es sich am 24.08. einmal weggeschossen.)
+
+       Der Trick liegt im Bezugssystem: die Kartoffel haengt in der Kachel des
+       AKTIVEN Teams, und diese Kachel ist beim Wechsel gerade selbst unterwegs
+       vom linken Slot in die Mitte (0.85 s, dieselbe Dauer). Bei 0 % steht sie
+       also links, und ein oertlicher Versatz von +D setzt die Kartoffel genau
+       dorthin, wo der alte Halter in diesem Moment noch steht: in die Mitte.
+       Von dort fliegt sie im Bogen auf den neuen Halter (oertlich 0), waehrend
+       der von links nachrueckt - und faehrt die letzte Strecke mit ihm ein.
+       Fuer den Raum sieht das aus wie ein Wurf von Team zu Team.
+
+       Wer D aendert, muss den Slot-Abstand in QQBeamerPage mitaendern. */
+    0%   { transform: translate(clamp(220px, 23cqw, 380px), 0) rotate(-16deg) scale(1); }
+    22%  { transform: translate(calc(clamp(220px, 23cqw, 380px) * 0.62), -66px) rotate(58deg) scale(0.94); }
+    44%  { transform: translate(calc(clamp(220px, 23cqw, 380px) * 0.18), -42px) rotate(152deg) scale(0.9); }
+    58%  { transform: translate(0, 10px) rotate(300deg) scale(1.14); }
+    74%  { transform: translate(0, -5px) rotate(332deg) scale(0.98); }
+    100% { transform: translate(0, 0) rotate(344deg) scale(1); }
   }
   /* Countdown-Chip unten am Ring pulsiert (dezent). */
   @keyframes qqHpCountPulse {

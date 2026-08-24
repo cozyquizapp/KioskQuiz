@@ -3019,7 +3019,13 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                       filter: isThemed() ? 'drop-shadow(0 6px 14px rgba(0,0,0,0.45))' : 'drop-shadow(0 6px 12px rgba(239,68,68,0.55)) drop-shadow(0 0 22px rgba(245,158,11,0.6))',
                       transformOrigin: 'center center',
                       animation: isThrowing
-                        ? 'qqHpRingPotatoThrow 0.8s cubic-bezier(0.22, 1, 0.36, 1) both'
+                        // 0.85 s = exakt die Dauer, mit der die Spalten ihre
+                        // Slots anfahren. Der Wurf und das Nachruecken sind
+                        // dieselbe Bewegung, sie muessen zusammen enden.
+                        // `linear`, weil die Form in den Keyframes steckt: mit
+                        // einer Kurve obendrauf wird jeder Abschnitt einzeln
+                        // gedehnt und der Bogen bekommt Stufen.
+                        ? 'qqHpRingPotatoThrow 0.85s linear both'
                         : 'qqHpRingPotatoWobble 1.6s ease-in-out infinite',
                       zIndex: 6, pointerEvents: 'none',
                     }} />
@@ -3079,19 +3085,31 @@ export function HotPotatoSemicircle({ state: s, lang, activeTeam, remaining, urg
                 // SIDE-SLOT — Avatar + Name + Richtungs-Label
                 <>
                   <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(84px, 9cqw, 138px)'} bgColor={t.color} />
+                  {/* 2026-08-24 (Wolf: „teams rechts und links mit schrift
+                      etwas groesser"). Der Grund, warum sie so klein wirkten,
+                      steht nicht hier, sondern eine Ebene hoeher: die Seiten-
+                      Spalten werden mit `scale(0.66)` bzw. `0.62` gerendert.
+                      Die 26 px kamen also als 17 px an, und bei einem langen
+                      Namen (TeamNameLabel schrumpft ab 12 Zeichen auf bis zu
+                      62 %) als 10,6 px - auf 2,8 m Bildbreite aus 10 m Abstand
+                      ist das nichts. Schrift und Kastenbreite steigen deshalb
+                      so, dass nach der Skalierung wieder rund 22 px stehen. */}
                   <TeamNameLabel
                     name={t.name}
                     maxLines={2}
                     shrinkAfter={12}
-                    fontSize="clamp(16px, 1.8cqw, 26px)"
+                    fontSize="clamp(22px, 2.4cqw, 34px)"
                     fontWeight={900}
                     color={isThemed() ? 'var(--qq-text-muted)' : t.color}
-                    style={{ maxWidth: 'clamp(140px, 18cqw, 260px)', textAlign: 'center' }}
+                    style={{ maxWidth: 'clamp(180px, 22cqw, 320px)', textAlign: 'center' }}
                   />
                   <span style={{
-                    fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 800, letterSpacing: '0.1em',
+                    fontSize: 'clamp(14px, 1.5cqw, 21px)', fontWeight: 800, letterSpacing: '0.1em',
                     textTransform: 'uppercase', color: QQ_COLORS.slate400,
-                    display: 'inline-flex', alignItems: 'center', gap: 4,
+                    // Mit der groesseren Schrift brach „Als Naechstes" in zwei
+                    // Zeilen und der Pfeil rutschte unter den Text - er zeigt
+                    // dann in die Bewegungsrichtung von gar nichts.
+                    display: 'inline-flex', alignItems: 'center', gap: 4, whiteSpace: 'nowrap',
                   }}>
                     {slot > 0 ? (
                       <>

@@ -53,20 +53,56 @@ const sharp = createRequire(new URL('../frontend/package.json', import.meta.url)
 
 /** Ab hier gilt ein Pixel als deckend und liefert Farbe an seine Nachbarn. */
 const DECKEND = 250;
+/**
+ * Wie weit vom deckenden Pixel darf ausgeblutet werden?
+ *
+ * 2026-08-24, an dieser Zahl haengt alles. Mein erster Wurf lief sechs
+ * Durchgaenge weit, und das waere ein Fehler gewesen: viele Zeichen tragen
+ * einen grossen WEICHEN SCHATTEN, und der besteht ebenfalls aus
+ * halbtransparenten Pixeln. Gemessen ueber den Abstand zum naechsten deckenden
+ * Pixel:
+ *
+ *     camera.png     54 % der halbtransparenten Pixel liegen WEITER als 10 px
+ *     croissant.png  61 %
+ *     potion.png     12 %
+ *
+ * Ein sechs Pixel weiter Lauf haette die ersten sechs Pixel dieses Schattens
+ * in Objektfarbe getaucht und den Rest dunkel gelassen - eine sichtbare Naht
+ * und ein farbiger Schleier, wo ein Schatten sein soll.
+ *
+ * Die beiden Faelle trennen sich sauber ueber die Deckkraft:
+ *
+ *     Abstand 1-2 (Anti-Aliasing-Saum)   Median-Alpha 197 bis 234
+ *     Abstand > 10 (weicher Schatten)    Median-Alpha   9 bis 123
+ *
+ * Zwei Pixel Reichweite trifft also genau den Saum. Was weiter aussen liegt,
+ * ist Schatten und bleibt, wie er gemalt wurde.
+ */
+const REICHWEITE = 2;
+/**
+ * Nur aufhellen, und nur deutlich. Ein Pixel wird nur angefasst, wenn die
+ * Nachbarfarbe merklich heller ist als seine eigene. Damit macht der Lauf
+ * genau das, was er verspricht - dunkle Saeume wegnehmen - und laesst alles
+ * andere in Ruhe, auch absichtlich dunkle Konturen.
+ */
+const MINDEST_AUFHELLUNG = 20;
+
+const luminanz = (r, g, b) => 0.2126 * r + 0.7152 * g + 0.0722 * b;
 
 /**
- * Farbe von innen nach aussen schieben. Iterative Dilatation: in jedem Durchgang
- * bekommen alle noch nicht versorgten Pixel mit mindestens einem versorgten
- * Nachbarn dessen Mittelwert. Nach wenigen Durchgaengen ist der ganze Saum
- * erreicht - er ist nur ein bis drei Pixel breit.
+ * Farbe vom deckenden Rand nach aussen schieben, hoechstens REICHWEITE Pixel
+ * weit, und nur dort, wo es aufhellt. Die DECKKRAFT bleibt unangetastet: die
+ * Kante behaelt ihre weiche Form, sie verliert nur ihren schwarzen Kern.
  */
-function ausbluten(data, width, height, durchgaenge = 6) {
+function ausbluten(data, width, height) {
+  const saum = [];
   const versorgt = new Uint8Array(width * height);
   for (let i = 0, p = 0; i < data.length; i += 4, p++) {
     if (data[i + 3] >= DECKEND) versorgt[p] = 1;
   }
   const nachbarn = [[-1, 0], [1, 0], [0, -1], [0, 1], [-1, -1], [1, -1], [-1, 1], [1, 1]];
-  for (let d = 0; d < durchgaenge; d++) {
+  let geaendert = 0;
+  for (let d = 0; d < REICHWEITE; d++) {
     const neu = [];
     for (let y = 0; y < height; y++) {
       for (let x = 0; x < width; x++) {
@@ -81,26 +117,34 @@ function ausbluten(data, width, height, durchgaenge = 6) {
           if (!versorgt[q]) continue;
           r += data[q * 4]; g += data[q * 4 + 1]; b += data[q * 4 + 2]; n++;
         }
-        if (n) neu.push([p, Math.round(r / n), Math.round(g / n), Math.round(b / n)]);
+        if (!n) continue;
+        neu.push([p, Math.round(r / n), Math.round(g / n), Math.round(b / n)]);
       }
     }
     if (!neu.length) break;
     for (const [p, r, g, b] of neu) {
+      versorgt[p] = 1;   // auch wenn nicht aufgehellt wird: Welle laeuft weiter
+      saum.push(p);
+      const alt = luminanz(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]);
+      if (luminanz(r, g, b) - alt < MINDEST_AUFHELLUNG) continue;
       data[p * 4] = r; data[p * 4 + 1] = g; data[p * 4 + 2] = b;
-      versorgt[p] = 1;
+      geaendert++;
     }
   }
-  return data;
+  return { geaendert, saum };
 }
 
-/** Kennzahl fuer den Bericht: wie dunkel ist der Saum im Median? */
-function randMedian(data) {
-  const lum = [];
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    if (a === 0 || a === 255) continue;
-    lum.push(0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]);
-  }
+/**
+ * Median-Luminanz ueber GENAU die Pixel, die der Lauf anfasst.
+ *
+ * 2026-08-24, sonst waere der Filter unten falsch: bei camera.png liegen 54 %
+ * der halbtransparenten Pixel im weichen Schatten, weit ausserhalb der
+ * Reichweite. Ein Median ueber ALLE halbtransparenten Pixel misst dort
+ * ueberwiegend Schatten und bewegt sich kaum (32 -> 33), obwohl der Saum sehr
+ * wohl repariert wurde. Die Datei waere durchgerutscht.
+ */
+function saumMedian(data, saum) {
+  const lum = saum.map(p => luminanz(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]));
   lum.sort((a, b) => a - b);
   return lum.length ? Math.round(lum[Math.floor(lum.length / 2)]) : -1;
 }
@@ -110,35 +154,41 @@ const PROBE = process.argv.includes('--probe');
 const LAUF = process.argv.includes('--lauf');
 const MESSEN = process.argv.includes('--messen');
 
-/** Anteil dunkler Randpixel - die Kennzahl, an der der Befund haengt. */
-function randBefund(data) {
-  let rand = 0, dunkel = 0;
-  for (let i = 0; i < data.length; i += 4) {
-    const a = data[i + 3];
-    if (a === 0 || a === 255) continue;
-    rand++;
-    if (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2] < 60) dunkel++;
+/**
+ * Anteil dunkler Pixel IM SAUM - die Kennzahl, an der der Befund haengt.
+ *
+ * 2026-08-24: bewusst nur der Saum, nicht alle halbtransparenten Pixel. Ein
+ * weicher Schatten ist auch halbtransparent und auch dunkel, aber er SOLL
+ * dunkel sein. Eine Kennzahl, die ihn mitzaehlt, faellt nach der Reparatur
+ * kaum - sie misst dann ueberwiegend etwas, das gar nicht das Problem war.
+ */
+function saumBefund(data, saum) {
+  let dunkel = 0;
+  for (const p of saum) {
+    if (luminanz(data[p * 4], data[p * 4 + 1], data[p * 4 + 2]) < 60) dunkel++;
   }
-  return { rand, anteil: rand ? Math.round((dunkel / rand) * 100) : 0 };
+  return { rand: saum.length, anteil: saum.length ? Math.round((dunkel / saum.length) * 100) : 0 };
 }
 
 async function einzeln(pfad) {
   const roh = sharp(pfad).ensureAlpha();
   const { width, height } = await roh.metadata();
   const { data } = await roh.raw().toBuffer({ resolveWithObject: true });
-  const vorher = randMedian(data);
   const kopie = Buffer.from(data);
-  ausbluten(kopie, width, height);
-  const nachher = randMedian(kopie);
-  return { width, height, vorher, nachher, data, kopie };
+  const { geaendert, saum } = ausbluten(kopie, width, height);
+  return {
+    width, height, data, kopie, geaendert,
+    vorher: saumMedian(data, saum),
+    nachher: saumMedian(kopie, saum),
+  };
 }
 
 if (PROBE) {
   const name = process.argv[process.argv.indexOf('--probe') + 1] ?? 'potion.png';
   const pfad = `frontend/public/avatars/cozyquiz/${name}`;
-  const { width, height, vorher, nachher, data, kopie } = await einzeln(pfad);
+  const { width, height, vorher, nachher, data, kopie, geaendert } = await einzeln(pfad);
   console.log(`${name}  ${width}x${height}`);
-  console.log(`  Median-Luminanz am Rand:  vorher ${vorher}  ->  nachher ${nachher}`);
+  console.log(`  Median-Luminanz IM SAUM:  vorher ${vorher}  ->  nachher ${nachher}   (${geaendert} Pixel geaendert)`);
   mkdirSync('.shots', { recursive: true });
   // Beide Fassungen auf dieselbe helle Kachel legen, wie auf der Buehne.
   const KACHEL = 320;
@@ -159,10 +209,10 @@ if (LAUF) {
   for (const ordner of ORDNER) {
     for (const f of readdirSync(ordner).filter(x => x.endsWith('.png'))) {
       const pfad = `${ordner}/${f}`;
-      const { width, height, vorher, nachher, kopie } = await einzeln(pfad);
-      if (nachher <= vorher + 2) continue;   // nichts gewonnen, Datei in Ruhe lassen
+      const { width, height, vorher, nachher, kopie, geaendert } = await einzeln(pfad);
+      if (geaendert === 0) continue;   // nichts zu holen, Datei in Ruhe lassen
       await sharp(kopie, { raw: { width, height, channels: 4 } }).png().toFile(pfad);
-      console.log(`  ${f.padEnd(26)} Rand-Luminanz ${String(vorher).padStart(3)} -> ${String(nachher).padStart(3)}`);
+      console.log(`  ${f.padEnd(26)} Saum-Luminanz ${String(vorher).padStart(3)} -> ${String(nachher).padStart(3)}   ${String(geaendert).padStart(6)} Pixel`);
       n++;
     }
   }
@@ -174,18 +224,22 @@ if (MESSEN) {
   for (const ordner of ORDNER) {
     for (const f of readdirSync(ordner).filter(x => x.endsWith('.png'))) {
       const roh = sharp(`${ordner}/${f}`).ensureAlpha();
+      const { width, height } = await roh.metadata();
       const { data } = await roh.raw().toBuffer({ resolveWithObject: true });
-      const { rand, anteil } = randBefund(data);
-      zeilen.push({ ordner, f, rand, anteil, median: randMedian(data) });
+      // Denselben Saum bestimmen, den auch der Lauf anfassen wuerde - an einer
+      // Kopie, damit `--messen` nichts veraendert.
+      const { saum } = ausbluten(Buffer.from(data), width, height);
+      const { rand, anteil } = saumBefund(data, saum);
+      zeilen.push({ ordner, f, rand, anteil, median: saumMedian(data, saum) });
     }
   }
   zeilen.sort((a, b) => b.anteil - a.anteil);
-  console.log('Datei                        dunkler Rand   Median-Luminanz');
+  console.log('Datei                        dunkler Saum   Median-Luminanz');
   for (const z of zeilen) {
     console.log(`${(z.f).padEnd(30)} ${String(z.anteil).padStart(9)} %   ${String(z.median).padStart(14)}`);
   }
   const schlimm = zeilen.filter(z => z.anteil > 40).length;
-  console.log(`\n${schlimm} von ${zeilen.length} Dateien mit mehr als 40 % dunklen Randpixeln.`);
+  console.log(`\n${schlimm} von ${zeilen.length} Dateien mit mehr als 40 % dunklen Saumpixeln.`);
 }
 
 if (!PROBE && !LAUF && !MESSEN) console.log('Nichts zu tun. --messen, --probe <datei> oder --lauf.');

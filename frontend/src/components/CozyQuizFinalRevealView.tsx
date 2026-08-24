@@ -669,11 +669,12 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           (Hybrid): 1 finalRevealStep = 1 beat. Alte TowerFinalSlide/
           FinalEurovisionFinale bleiben als Dead-Code im File darunter. */}
       {phase.kind === 'race-final' && (() => {
-        const { teams: towerTeams, awards: towerAwards } = buildTowerFinaleData(s);
+        const { teams: towerTeams, awards: towerAwards, brett: towerBrett } = buildTowerFinaleData(s);
         return (
           <TowerFinaleV2
             teams={towerTeams}
             awards={towerAwards}
+            brett={towerBrett}
             lang={lang}
             liveBeat={phase.beat}
             tieBreakerWinnerId={s.tieBreakerWinnerId}

@@ -237,6 +237,21 @@ const ANSICHTEN = {
     await h.springe('stechen');
     for (let i = 1; i < STUFE; i++) { await sleep(1400); await h.emit('qq:nextQuestion'); }
   } },
+  // 2026-08-24: der Turmbau selbst. Er liegt nicht auf einem festen Schritt -
+  // vor ihm liegen so viele Wett-Slots, wie Teams gesetzt haben. Deshalb wird
+  // weitergeschaltet, BIS der Turm da ist, und nicht n mal blind. Danach setzt
+  // eine Serie sofort an, ohne Wartezeit: die Bewegung faengt an, sobald die
+  // Folie steht, und eine feste Ruhezeit haette sie halb verpasst.
+  turmfinale: { ruhe: 500, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('final-reveal'); await sleep(700);
+    for (let i = 0; i < 24; i++) {
+      const da = await beamer.evaluate(() => !!document.body.innerText.match(/höchsten Turm|tallest tower/));
+      if (da) return;
+      await h.emit('qq:nextQuestion');
+      await sleep(700);
+    }
+    console.log('  Turm-Finale nicht erreicht.');
+  } },
   danke:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.springe('final-reveal'); await sleep(900);
     for (let i = 0; i < 20; i++) {

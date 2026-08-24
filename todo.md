@@ -410,29 +410,31 @@ Wolf im Loop, via `animate` + `ui-ux-pro-max` + `web-design-guidelines`.
 > H/L-Phase fahren und den Bug reproduzieren. Erst rot, dann grün. Ohne
 > Repro wäre es Raten, ob der Fehler beim Stechen überhaupt auftritt.
 
-> **Erster Punkt des Motion-Blocks: „Das Brett fällt".** 2026-08-23 mit Wolf
-> besprochen und bewusst vertagt, damit die Flugbahn nicht auf den alten Look
-> gebaut wird.
+> **„Das Brett fällt" ist gebaut** (2026-08-24). Die drei Sekunden leerer
+> Vorspann vor dem Turmbau sind weg; stattdessen steht das Brett noch einmal
+> still, dann lösen sich die Kacheln zeilenweise von unten nach oben und
+> fliegen in die Spalte ihres Teams, wo sie sich zum Turm stapeln.
 >
-> Heute verschwindet das Brett in dem Moment, in dem das Finale beginnt, und
-> wird durch acht abstrakte Säulen ersetzt. Der Turm sagt „vier", aber nicht
-> mehr, WELCHE vier. Der Gegenstand, an dem der ganze Abend hängt, wird
-> weggeräumt, kurz bevor er sich auszahlt.
+> Zwei Entscheidungen, die beim Bauen dazukamen:
+> * Es fliegen nur die Kacheln des **größten zusammenhängenden Gebiets**
+>   (`utils/qqLargestCluster.ts`, dieselbe 4er-Nachbarschaft wie der Server).
+>   Die Turmhöhe IST dieses Gebiet — flögen alle Kacheln, wäre der Turm am Ende
+>   niedriger als die Zahl der geflogenen Kacheln. So erzählt die Bewegung die
+>   Regel mit: verstreute Felder sinken ab und verblassen, nur das Gebiet steigt
+>   auf. Der Untertitel sagt jetzt entsprechend „Euer größtes Gebiet wird zum
+>   Turm" statt „Jedes eroberte Feld ist ein Baustein" — das stimmte nie.
+> * Die Kacheln der Top 3 verlieren ihre Farbe **im Flug**. Sonst wäre die
+>   Anonymität der Spitzentürme in dem Moment hinfällig, in dem das Brett fällt.
 >
-> Stattdessen: das Brett bleibt stehen, die Kacheln lösen sich zeilenweise von
-> unten nach oben und fallen in die Spalte ihres Teams, wo sie sich zum Turm
-> stapeln. Der Turm wird AUS dem Brett gebaut, nicht daneben. Die Zahl darunter
-> zählt mit. Danach wie gehabt: goldene Award-Bausteine oben drauf, Top-3-Glide,
-> 3-2-1. Letztes Bild: nur der Siegerturm behält seine Kacheln in Farbe.
+> Bildrate: das war das einzige echte Risiko. Die Flüge laufen in Wellen, eine
+> Brettzeile pro Welle, jede Kachel als reine CSS-Transform mit eigener
+> Verzögerung. In der Luft sind höchstens zwei Zeilen, also rund sechzehn
+> Kacheln, und gelandete Kacheln werden abgeräumt. Auf dem Testrechner keine
+> sichtbaren Aussetzer; **auf dem echten Beamer-Rechner noch nicht gemessen**.
 >
-> Kostet kein neues Asset, die Kacheln liegen schon auf dem Schirm. Gewinnt
-> Reihenfolge und damit Spannung: heute steht das Ergebnis fest, sobald die
-> Türme stehen. Aufwand ehrlich ein Tagwerk. Einziges echte Risiko ist die
-> Bildrate bei bis zu 64 gleichzeitig fliegenden Kacheln auf dem Beamer-Rechner
-> — messen, notfalls in Wellen fallen lassen statt alle auf einmal.
-> Der 2a-Durchgang am Turm (Krone raus, Gold nur für Awards, Schein runter)
-> bleibt davon unberührt gültig: der Turm bleibt derselbe, nur die Herkunft der
-> Bausteine ändert sich.
+> Offen geblieben: der Final-Tipp-Bonus und doppelt zählende Klebefelder fallen
+> weiter als anonyme Bausteine in der alten Bau-Phase nach, statt eine eigene
+> Geste zu bekommen.
 
 **Theme-/Skin-System** — **Studio Mono** ist live durchgeklickt + poliert (Shape-Tokens, Quiet-Motion,
 Cheese-Mono-Redesign, Summary skin-aware). Offen:

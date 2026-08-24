@@ -29,12 +29,24 @@ import { useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
+import { qqLargestClusterCells, type ClusterKachel } from '../utils/qqLargestCluster';
 import { getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import {
   playWoodKnock, playClimaxFinish, playFanfare, playTick, playReveal, playSpecialAwardReveal,
 } from '../utils/sounds';
 
 export type TowerTeam = { team: QQTeam; base: number };
+/**
+ * Das Brett, aus dem die Tuerme gebaut werden.
+ * `kachelnProTeam` sind die Felder des GROESSTEN Gebiets - nur die fliegen,
+ * siehe utils/qqLargestCluster.ts.
+ */
+export type TowerBrett = {
+  groesse: number;
+  kachelnProTeam: Record<string, ClusterKachel[]>;
+  /** Belegte Felder, die zu KEINEM groessten Gebiet gehoeren. Sie fliegen nicht. */
+  streu: Array<{ r: number; c: number; ownerId: string }>;
+};
 export type TowerAward = { key: string; label: string; labelEn?: string; emoji: string; teamId: string; bonus: number };
 
 // Mapping State → Turm-Daten (Live-Wiring): base = Quiz-Cluster + Bet-Bonus
@@ -42,7 +54,7 @@ export type TowerAward = { key: string; label: string; labelEn?: string; emoji: 
 // (Underdog +2, Speedy/Meisterklauer +1). Underdog zuletzt (= +2-Climax, wie die
 // bestehende Award-Dramaturgie). Score bleibt identisch zu qqFinalTotal — die
 // Awards zaehlen weiter, nur ihre PRAESENTATION wandert in den Turm.
-export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; awards: TowerAward[] } {
+export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; awards: TowerAward[]; brett: TowerBrett } {
   const ap = qqAwardPoints(s);
   const teams: TowerTeam[] = s.teams.map(t => ({ team: t, base: qqFinalTotal(s, t.id, ap) - (ap[t.id] ?? 0) }));
   const a = s.endAwards;
@@ -50,7 +62,19 @@ export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; aw
   if (a?.speedy) awards.push({ key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: a.speedy, bonus: 1 });
   if (a?.meisterklauer) awards.push({ key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: a.meisterklauer, bonus: 1 });
   if (a?.underdog) awards.push({ key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: a.underdog, bonus: 2 });
-  return { teams, awards };
+  const groesse = s.gridSize ?? 0;
+  const kachelnProTeam = qqLargestClusterCells(s.grid, groesse);
+  const imGebiet = new Set<string>();
+  for (const liste of Object.values(kachelnProTeam)) for (const k of liste) imGebiet.add(`${k.r}:${k.c}`);
+  const streu: TowerBrett['streu'] = [];
+  for (let r = 0; r < groesse; r++) {
+    for (let c = 0; c < groesse; c++) {
+      const owner = s.grid?.[r]?.[c]?.ownerId;
+      if (owner && !imGebiet.has(`${r}:${c}`)) streu.push({ r, c, ownerId: owner });
+    }
+  }
+  const brett: TowerBrett = { groesse, kachelnProTeam, streu };
+  return { teams, awards, brett };
 }
 
 const STAGE_W = 1760;
@@ -68,8 +92,10 @@ const GOLD_DEEP = '#E0A94E';
 const MYST = '#4A4560';
 const MYST_EDGE = '#655C82';
 
-export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerId }: {
+export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreakerWinnerId }: {
   teams: TowerTeam[]; awards: TowerAward[]; lang: 'de' | 'en';
+  /** 2026-08-24 „Das Brett faellt": ohne diese Daten laeuft der alte Vorspann. */
+  brett?: TowerBrett;
   // Hybrid-Live-Steuerung: wenn gesetzt, gaten die Auto-Play-Uebergaenge an den
   // Beat-Grenzen auf diesen (Moderator-getriebenen) Wert. Beats:
   //   0 = Aufbau + Zwischenstand · 1..A = Award i · A+1 = Glide (Top 3) ·
@@ -145,8 +171,43 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
     return m;
   }, [ordered]);
 
+  // ── „Das Brett faellt" ────────────────────────────────────────────────────
+  //
+  // 2026-08-23 mit Wolf besprochen und bewusst vertagt, damit die Flugbahn nicht
+  // auf den alten Look gebaut wird; 2026-08-24 gebaut.
+  //
+  // Vorher verschwand das Brett in dem Moment, in dem das Finale begann, und
+  // wurde durch acht abstrakte Saeulen ersetzt. Der Turm sagte „vier", aber
+  // nicht mehr WELCHE vier - der Gegenstand, an dem der ganze Abend haengt,
+  // wurde weggeraeumt, kurz bevor er sich auszahlt. Und der Vorspann davor
+  // waren drei Sekunden leere Buehne.
+  //
+  // Jetzt: das Brett steht, die Kacheln loesen sich zeilenweise von unten nach
+  // oben und fliegen in die Spalte ihres Teams, wo sie sich zum Turm stapeln.
+  // Der Turm wird AUS dem Brett gebaut, nicht daneben.
+  //
+  // Es fliegen nur die Kacheln des GROESSTEN GEBIETS (qqLargestCluster). Das ist
+  // keine Vereinfachung, sondern die Wahrheit: die Turmhoehe IST das groesste
+  // zusammenhaengende Gebiet. Wuerden alle Kacheln fliegen, waere der Turm am
+  // Ende niedriger als die Zahl der geflogenen Kacheln. So herum erzaehlt die
+  // Bewegung sogar die Regel mit - die verstreuten Felder bleiben liegen und
+  // verblassen, nur das zusammenhaengende Gebiet steigt auf.
+  //
+  // Bildrate: das war das einzige echte Risiko (bis zu 64 Kacheln). Deshalb
+  // laufen die Fluege in WELLEN, eine Brettzeile pro Welle, und jede Kachel
+  // fliegt als reine CSS-Transform mit eigener Verzoegerung. In der Luft sind
+  // damit hoechstens zwei Zeilen gleichzeitig, also rund sechzehn Kacheln, und
+  // der Browser komponiert sie auf der GPU statt sie neu zu setzen.
+  const BRETT_HALT = 900;   // das Brett steht noch einmal still
+  const WELLE = 380;        // Abstand zwischen zwei Brettzeilen
+  const FLUG = 620;         // Flugdauer einer Kachel
+  const LANDE_VERZUG = Math.ceil(FLUG / WELLE);
+
   // ── Choreo ────────────────────────────────────────────────────────────────
-  const [phase, setPhase] = useState<'intro' | 'base' | 'baseHold' | 'award' | 'reveal'>(reduce ? 'reveal' : 'intro');
+  const brettAktiv = !!brett && brett.groesse > 0 && Object.keys(brett.kachelnProTeam).length > 0 && !reduce;
+  const [phase, setPhase] = useState<'intro' | 'brett' | 'base' | 'baseHold' | 'award' | 'reveal'>(
+    reduce ? 'reveal' : (brettAktiv ? 'brett' : 'intro'));
+  const [brettWelle, setBrettWelle] = useState(0);
   const [baseTick, setBaseTick] = useState(reduce ? maxTotal : 0);
   const [awardIdx, setAwardIdx] = useState(reduce ? awards.length : 0);
   const [awardStage, setAwardStage] = useState<'card' | 'grow'>('card');
@@ -161,6 +222,40 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   // man sieht drei Tuerme klettern und weiss nicht, wann welcher stehenbleibt.
   // Wer zuerst stoppt, ist Dritter. Der Letzte waechst allein weiter.
   const [duelTick, setDuelTick] = useState(reduce ? Number.MAX_SAFE_INTEGER : 0);
+
+  /**
+   * Der Flugplan. Pro Team seine Gebiets-Kacheln in LANDEREIHENFOLGE: unterste
+   * Brettzeile zuerst, innerhalb einer Zeile von links nach rechts. Damit
+   * landet die Kachel, die am Brett unten lag, auch im Turm unten - der Stapel
+   * behaelt die Ordnung des Bretts, statt sie zu wuerfeln.
+   */
+  const flugplan = useMemo(() => {
+    if (!brett) return {} as Record<string, Array<ClusterKachel & { welle: number; platz: number }>>;
+    const m: Record<string, Array<ClusterKachel & { welle: number; platz: number }>> = {};
+    for (const [id, kacheln] of Object.entries(brett.kachelnProTeam)) {
+      const sortiert = [...kacheln].sort((x, y) => (y.r - x.r) || (x.c - y.c));
+      m[id] = sortiert.map((k, i) => ({ ...k, welle: (brett.groesse - 1) - k.r, platz: i }));
+    }
+    return m;
+  }, [brett]);
+
+  /** Belegte Felder ausserhalb der groessten Gebiete - sie bleiben liegen. */
+  const streuRest = brett?.streu ?? [];
+
+  const letzteWelle = useMemo(() => {
+    let m = 0;
+    for (const liste of Object.values(flugplan)) for (const k of liste) m = Math.max(m, k.welle);
+    return m;
+  }, [flugplan]);
+
+  /** Wie viele Kacheln dieses Teams sind schon GELANDET? */
+  const gelandet = useCallback((id: string) => {
+    const liste = flugplan[id];
+    if (!liste) return 0;
+    let n = 0;
+    for (const k of liste) if (k.welle <= brettWelle - LANDE_VERZUG) n++;
+    return n;
+  }, [flugplan, brettWelle, LANDE_VERZUG]);
 
   const hasAwards = awards.length > 0;
   const curAward = awards[awardIdx];
@@ -196,6 +291,10 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   // Space spult vor.
   const skip = useCallback(() => {
     if (phase === 'intro') { setPhase('base'); return; }
+    // Vorspulen ueberspringt den Brettfall nicht halb, sondern ganz: alles
+    // landet, der Bau-Takt setzt dort an. Ein halb geflogenes Brett waere ein
+    // Standbild mit Kacheln in der Luft.
+    if (phase === 'brett') { setBrettWelle(letzteWelle + LANDE_VERZUG + 1); return; }
     if (phase === 'baseHold') { setAwardIdx(0); setAwardStage('card'); setAwardTick(0); setPhase(hasAwards ? 'award' : 'reveal'); return; }
     if (phase === 'award') {
       if (awardStage === 'card') { setAwardStage('grow'); setAwardTick(0); return; }
@@ -214,7 +313,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
       if (duelTick < target) { setDuelTick(target); return; }
       setRevealStep(s => Math.min(3, s + 1));
     }
-  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided, duelTick, revealStep, duelTargetFor]);
+  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided, duelTick, revealStep, duelTargetFor, letzteWelle, LANDE_VERZUG]);
 
   useEffect(() => {
     // Live: der Moderator steuert ueber den Socket-Step (liveBeat), nicht ueber
@@ -228,6 +327,27 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   }, [skip, reduce, live]);
 
   useEffect(() => { if (phase !== 'intro') return; const h = window.setTimeout(() => setPhase('base'), 3000); return () => window.clearTimeout(h); }, [phase]);
+
+  // Taktgeber der Brett-Wellen. Die erste Welle startet erst nach BRETT_HALT,
+  // damit das volle Brett einen Moment steht, bevor es sich aufloest.
+  useEffect(() => {
+    if (phase !== 'brett') return;
+    if (brettWelle > letzteWelle + LANDE_VERZUG) {
+      // Alles gelandet. Der Rest des Sockels (Final-Tipp-Bonus, doppelt
+      // zaehlende Klebefelder) faellt in der gewohnten Bau-Phase nach - sie
+      // faengt dort an, wo das Brett aufgehoert hat, statt bei null.
+      let hoechsteLandung = 0;
+      for (const t of teams) hoechsteLandung = Math.max(hoechsteLandung, gelandet(t.team.id));
+      setBaseTick(hoechsteLandung);
+      setPhase('base');
+      return;
+    }
+    const h = window.setTimeout(() => {
+      setBrettWelle(w => w + 1);
+      if (brettWelle <= letzteWelle) { try { playWoodKnock(); } catch { /* noop */ } }
+    }, brettWelle === 0 ? BRETT_HALT : WELLE);
+    return () => window.clearTimeout(h);
+  }, [phase, brettWelle, letzteWelle, LANDE_VERZUG, BRETT_HALT, WELLE, teams, gelandet]);
 
   useEffect(() => {
     if (phase !== 'base') return;
@@ -375,6 +495,28 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   const centerX = STAGE_W / 2 - colW / 2;
   const podiumX = (rank: number) => rank === 0 ? centerX : rank === 1 ? centerX - (colW + PGAP) : centerX + (colW + PGAP);
 
+  // ── Geometrie des fallenden Bretts ────────────────────────────────────────
+  // Das Brett steht oben unter dem Titelband, die Tuerme wachsen unten. Die
+  // Kacheln fliegen also ueberwiegend nach UNTEN, und „faellt" ist keine
+  // Metapher, sondern die tatsaechliche Richtung.
+  const BRETT_LUECKE = 6;
+  const BRETT_SEITE = 600;
+  const brettOben = TITLE_H + 26;
+  const brettLinks = Math.round((STAGE_W - BRETT_SEITE) / 2);
+  const gGroesse = brett?.groesse ?? 0;
+  const brettZelle = gGroesse > 0
+    ? Math.floor((BRETT_SEITE - (gGroesse - 1) * BRETT_LUECKE) / gGroesse) : 0;
+  /** Mittelpunkt einer Brettzelle auf der Buehne. */
+  const brettMitte = (r: number, c: number) => ({
+    x: brettLinks + c * (brettZelle + BRETT_LUECKE) + brettZelle / 2,
+    y: brettOben + r * (brettZelle + BRETT_LUECKE) + brettZelle / 2,
+  });
+  /** Mittelpunkt des Bausteins, auf dem eine Kachel landen wird. */
+  const turmMitte = (id: string, platz: number) => ({
+    x: baseX(orderIndex[id]) + colW / 2,
+    y: STAGE_H - (BODEN + SOCKEL_H + platz * (blockH + GAP)) - blockH / 2,
+  });
+
   const appliedBefore = useCallback((id: string) => {
     let s = 0; for (let i = 0; i < awardIdx; i++) if (awards[i].teamId === id) s += awards[i].bonus; return s;
   }, [awardIdx, awards]);
@@ -382,6 +524,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
   const shownOf = (id: string) => {
     const base = baseOf(id);
     if (phase === 'intro') return 0;
+    if (phase === 'brett') return Math.min(gelandet(id), base);
     if (phase === 'base') return Math.min(baseTick, base);
     if (phase === 'baseHold') return base;
     if (phase === 'award') {
@@ -467,6 +610,15 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Zwischenstand' : 'Standings'}</div>
             <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Jetzt zählen noch die Awards…' : 'Now the awards count…'}</div>
           </>
+        ) : phase === 'brett' ? (
+          <>
+            {/* Der Untertitel sagt jetzt die Regel, die man gerade SIEHT.
+                „Jedes eroberte Feld ist ein Baustein" stimmte naemlich nie:
+                es zaehlt das groesste zusammenhaengende Gebiet, und genau das
+                fliegt auch. */}
+            <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
+            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Euer größtes Gebiet wird zum Turm' : 'Your largest area becomes the tower'}</div>
+          </>
         ) : (
           <>
             <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
@@ -493,6 +645,116 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
         }}>{standingFlash === 'tie'
           ? (de ? 'Gleichstand!' : 'Tied!')
           : (de ? 'In Führung!' : 'In the lead!')}</div>
+      )}
+
+      {/* ── Das Brett faellt ─────────────────────────────────────────────────
+          Zwei Ebenen: das ruhende Brett (Raster, verstreute Kacheln, Rahmen)
+          und darueber die fliegenden Kacheln. Jede fliegende Kachel sitzt
+          bereits an ihrem ZIEL im Turm und wird per Transform von ihrer
+          Brettposition dorthin gefahren - so steht sie am Ende der Bewegung
+          pixelgenau da, wo gleich der echte Baustein steht, und der Uebergang
+          zwischen Flug und Turm ist unsichtbar. Der umgekehrte Weg (vom Start
+          aus animieren und am Ziel abrunden) haette an der Uebergabe geruckelt. */}
+      {phase === 'brett' && brett && brettZelle > 0 && (
+        <>
+          {/* Das ruhende Brett */}
+          <div aria-hidden style={{
+            position: 'absolute', left: brettLinks, top: brettOben,
+            width: BRETT_SEITE, height: BRETT_SEITE, zIndex: 2,
+            display: 'grid',
+            gridTemplateColumns: `repeat(${gGroesse}, ${brettZelle}px)`,
+            gridAutoRows: `${brettZelle}px`, gap: BRETT_LUECKE,
+          }}>
+            {/* Das Raster loest sich ZEILENWEISE auf, den Kacheln hinterher.
+                Vorher verschwand es am Stueck, und die Tuerme wuchsen eine
+                Weile durch ein noch stehendes Brett hindurch. Jetzt raeumt sich
+                die Flaeche von unten nach oben ab, in derselben Welle, in der
+                die Kacheln aufsteigen. */}
+            {Array.from({ length: gGroesse * gGroesse }, (_, i) => {
+              const r = Math.floor(i / gGroesse);
+              const welle = (gGroesse - 1) - r;
+              return (
+                <div key={i} style={{
+                  borderRadius: 4,
+                  border: '1px solid var(--qq-hairline)',
+                  background: 'rgba(246,239,230,0.03)',
+                  animation: `qqT2BrettAus 0.45s ease ${BRETT_HALT + welle * WELLE + 220}ms both`,
+                }} />
+              );
+            })}
+          </div>
+
+          {/* Die verstreuten Kacheln: sichtbar, aber sie fliegen nicht mit. */}
+          {streuRest.map(k => {
+            const m = brettMitte(k.r, k.c);
+            const t = teamById(k.ownerId);
+            return (
+              <div key={`streu-${k.r}-${k.c}`} aria-hidden style={{
+                position: 'absolute', zIndex: 3,
+                left: Math.round(m.x - brettZelle / 2), top: Math.round(m.y - brettZelle / 2),
+                width: brettZelle, height: brettZelle, borderRadius: 4,
+                border: `1px solid ${t?.color ?? 'var(--qq-hairline)'}`,
+                background: t ? `linear-gradient(180deg, ${t.color} 0%, ${t.color} 60%, rgba(0,0,0,0.24) 100%)` : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                animation: `qqT2StreuAus 0.7s ease ${BRETT_HALT - 250}ms both`,
+              }}>
+                {t && <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={Math.round(brettZelle * 0.8)} flat />}
+              </div>
+            );
+          })}
+
+          {/* Die fliegenden Kacheln */}
+          {Object.entries(flugplan).flatMap(([id, liste]) => {
+            const t = teamById(id);
+            if (!t) return [];
+            // Die Spitzenreiter bauen anonym (siehe `myst` weiter unten). Ihre
+            // Kacheln starten in Teamfarbe und verlieren sie IM FLUG - sonst
+            // waere die ganze Anonymitaet der Top 3 hinfaellig, sobald das Brett
+            // faellt, und der Farbwechsel am Boden waere ein Sprung.
+            const anonym = rankById[id] <= 2;
+            return liste.filter(k => k.welle > brettWelle - LANDE_VERZUG).map(k => {
+              // Gelandete Kacheln werden abgeraeumt, sobald der echte Baustein
+              // steht. 2026-08-24 an der Aufnahme gesehen: der Baustein verlaeuft
+              // unten nach `rgba(0,0,0,0.24)`, ist dort also DURCHSICHTIG - die
+              // liegengebliebene Flugkachel schien als Schmutzfleck durch die
+              // grauen Tuerme der Spitzenreiter durch. Nebenbei bleibt der Baum
+              // klein: in der Luft sind nur noch die Kacheln, die auch fliegen.
+              const von = brettMitte(k.r, k.c);
+              const zu = turmMitte(id, k.platz);
+              const dx = Math.round(von.x - zu.x);
+              const dy = Math.round(von.y - zu.y);
+              const sc = (brettZelle / blockH).toFixed(3);
+              const verzug = BRETT_HALT + k.welle * WELLE;
+              return (
+                <div key={`flug-${id}-${k.platz}`} style={{
+                  position: 'absolute', zIndex: 4,
+                  left: Math.round(zu.x - blockW / 2),
+                  top: Math.round(zu.y - blockH / 2),
+                  width: blockW, height: blockH, borderRadius: 4,
+                  border: `1px solid ${t.color}`,
+                  background: `linear-gradient(180deg, ${t.color} 0%, ${t.color} 60%, rgba(0,0,0,0.24) 100%)`,
+                  boxShadow: 'inset 0 1.5px 0 rgba(246, 239, 230,0.28)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                  willChange: 'transform',
+                  ['--qq-dx' as string]: `${dx}px`,
+                  ['--qq-dy' as string]: `${dy}px`,
+                  ['--qq-sc' as string]: sc,
+                  animation: `qqT2Flug ${FLUG}ms cubic-bezier(0.34,0.02,0.28,1) ${verzug}ms both`,
+                }}>
+                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avInBlock} flat />
+                  {anonym && (
+                    <span aria-hidden style={{
+                      position: 'absolute', inset: 0, borderRadius: 4,
+                      background: `linear-gradient(180deg, ${MYST} 0%, ${MYST} 60%, rgba(0,0,0,0.24) 100%)`,
+                      border: `1px solid ${MYST_EDGE}`,
+                      animation: `qqT2Anonym ${FLUG}ms ease ${verzug}ms both`,
+                    }} />
+                  )}
+                </div>
+              );
+            });
+          })}
+        </>
       )}
 
       {/* Boden-Linie */}
@@ -613,7 +875,13 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     border: `1px solid ${isAwardBlock ? GOLD_DEEP : edge}`,
                     transformOrigin: 'bottom center',
                     transition: 'background 0.45s ease, border-color 0.45s ease',
-                    animation: (isTopBlock && !reduce) ? (isCrownBlock ? 'qqT2CrownBlock 0.8s cubic-bezier(0.3,1.5,0.4,1) both' : 'qqT2Drop 0.46s cubic-bezier(0.3,1.35,0.5,1) both') : 'none',
+                    // 2026-08-24: waehrend „Das Brett faellt" bringt die
+                    // fliegende Kachel ihre eigene Bewegung mit und liegt beim
+                    // Aufsetzen exakt hier. Der Fall-Effekt des Bausteins wuerde
+                    // dieselbe Kachel ein zweites Mal fallen lassen - und weil
+                    // qqT2Drop bei opacity 0 beginnt, saehe man dabei die
+                    // fliegende Kachel durch den Baustein hindurch.
+                    animation: (isTopBlock && !reduce && phase !== 'brett') ? (isCrownBlock ? 'qqT2CrownBlock 0.8s cubic-bezier(0.3,1.5,0.4,1) both' : 'qqT2Drop 0.46s cubic-bezier(0.3,1.35,0.5,1) both') : 'none',
                     overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {isAwardBlock
@@ -627,7 +895,7 @@ export function TowerFinaleV2({ teams, awards, lang, liveBeat, tieBreakerWinnerI
                     {/* Der Lande-Blitz bleibt: er ist transient und sagt
                         „dieser Baustein ist GERADE gefallen". Ein Schein mit
                         Bedeutung bleibt, einer der nur schmueckt geht. */}
-                    {isTopBlock && !reduce && !(inReveal && !isTop3) && (
+                    {isTopBlock && !reduce && phase !== 'brett' && !(inReveal && !isTop3) && (
                       <div aria-hidden style={{ position: 'absolute', inset: -1, borderRadius: 5, pointerEvents: 'none', boxShadow: `0 0 ${istBuehne ? 10 : (isCrownBlock ? 22 : isAwardBlock ? 18 : 12)}px ${(isAwardBlock ? GOLD : colr)}${isCrownBlock ? 'ee' : 'aa'}`, animation: `qqT2Spark ${isCrownBlock ? 0.7 : 0.5}s ease-out both` }} />
                     )}
                   </div>
@@ -708,6 +976,23 @@ const KEYFRAMES = `
 @keyframes qqT2FadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes qqT2WinnerIn { 0% { opacity: 0; transform: translateY(14px) scale(0.96); } 60% { transform: translateY(0) scale(1.02); } 100% { opacity: 1; transform: none; } }
 @keyframes qqT2Drop { 0% { opacity: 0; transform: translateY(-22px) scaleY(0.7); } 70% { transform: translateY(0) scaleY(1.06); } 100% { opacity: 1; transform: none; } }
+/* „Das Brett faellt", 2026-08-24.
+   Die Kachel sitzt bereits an ihrem Ziel im Turm; --qq-dx/--qq-dy tragen sie
+   zurueck auf ihren Platz am Brett, --qq-sc auf Brett-Groesse. Von dort faehrt
+   sie ueber die Nullstellung nach Hause. Nur transform und opacity - beides
+   komponiert die GPU, deshalb halten auch sechzehn gleichzeitige Kacheln die
+   Bildrate. Der kleine Ueberschwung bei 82 Prozent gibt dem Aufsetzen Gewicht. */
+@keyframes qqT2Flug {
+  0%   { transform: translate(var(--qq-dx), var(--qq-dy)) scale(var(--qq-sc)); }
+  82%  { transform: translate(0, -7px) scale(1.04); }
+  100% { transform: none; }
+}
+/* Die Spitzenreiter verlieren ihre Farbe im Flug, nicht erst am Boden. */
+@keyframes qqT2Anonym { 0%, 34% { opacity: 0; } 100% { opacity: 1; } }
+/* Verstreute Felder: sie gehoeren zu keinem groessten Gebiet und steigen
+   deshalb nicht auf. Sie sinken ein Stueck und verblassen. */
+@keyframes qqT2StreuAus { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(16px) scale(0.86); } }
+@keyframes qqT2BrettAus { from { opacity: 1; } to { opacity: 0; } }
 @keyframes qqT2CrownBlock { 0% { opacity: 0; transform: translateY(-40px) scale(0.8); } 55% { transform: translateY(3px) scale(1.14); } 100% { opacity: 1; transform: none; } }
 @keyframes qqT2Spark { 0% { opacity: 0.95; } 100% { opacity: 0; } }
 @keyframes qqT2NumPop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }

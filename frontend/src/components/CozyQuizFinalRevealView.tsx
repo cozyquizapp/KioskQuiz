@@ -101,7 +101,17 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       // 2026-06-24 (Skin): aktiver Skin → flacher Skin-BG statt Lila-Dunkel.
       background: isThemed() ? 'var(--qq-bg)' : 'radial-gradient(ellipse at center, rgba(31,16,46,0.94) 0%, rgba(15,8,23,0.98) 70%, #0d0716 100%)',
       display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
-      padding: 'clamp(40px, 5cqh, 80px) clamp(48px, 6cqw, 120px)',
+      // 2026-08-24 (Wolf: „rahmen ganz oft ... ich find den rahmen zu gross").
+      // Gemessen mit `beamer-view.mjs --rahmen`: diese Folie nutzte 68,2 % der
+      // Buehnenbreite. 280 px blieben links und rechts leer, auf 2,8 m
+      // Bildbreite je knapp ein halber Meter - fuer acht Zeilen, deren Namen
+      // und Zahlen genau diesen Platz gut gebrauchen koennen.
+      // Das seitliche Polster lag auf 6cqw (105 px) und dahinter kappte ein
+      // `maxWidth: 1200` noch einmal. Beides zusammen ergab die 280.
+      // Jetzt die gemeinsame Buehnenkante wie auf der Fragefolie.
+      padding: istBuehneG()
+        ? `clamp(30px, 4cqh, 56px) ${QQ_BUEHNE_RAND}`
+        : 'clamp(40px, 5cqh, 80px) clamp(48px, 6cqw, 120px)',
       animation: 'qqFinalRecapIn 0.5s cubic-bezier(0.2, 0.85, 0.3, 1) both',
       minHeight: 0,
       overflow: 'hidden',
@@ -129,8 +139,15 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
 
       {/* Title */}
       <div style={{
-        fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900,
-        color: QQ_COLORS.brandPink, textTransform: 'uppercase', letterSpacing: '0.18em',
+        // 2026-08-24 (Wolf: „pinke schrift passt hier nicht mehr so gut ins
+        // design"). Stimmt, und der Grund ist eine Regel, die 2a schon gesetzt
+        // hat: Pink ist auf der Buehne die Dringlichkeitsfarbe (der Timer unter
+        // zehn Sekunden). Eine Augenbraue, die nur sagt, WO man ist, hat keine
+        // Dringlichkeit - sie gehoert in den gedaempften Ton, wie der
+        // Fragezaehler auf der Fragefolie.
+        fontSize: istBuehneG() ? 28 : 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900,
+        color: istBuehneG() ? 'var(--qq-text-muted)' : QQ_COLORS.brandPink,
+        textTransform: 'uppercase', letterSpacing: '0.18em',
         opacity: 0.92, marginBottom: 10,
         animation: 'qqRecapTitleLetter 0.6s cubic-bezier(0.16, 1.2, 0.3, 1) 0.05s both',
       }}>
@@ -140,7 +157,11 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         fontSize: 'clamp(32px, 4.2cqw, 72px)', fontWeight: 900,
         color: 'var(--qq-card-text)', letterSpacing: '-0.025em', textAlign: 'center',
         marginBottom: 'clamp(20px, 2.5cqh, 40px)',
-        textShadow: '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
+        // 2026-08-24: der 36-px-Schein faellt auf der Buehne weg. Aenderung 2
+        // der Uebergabe 2a hat ihn ueberall sonst schon entfernt; hier stand er
+        // noch. Auf 2,8 m ist so ein Schein kein Leuchten, sondern ein Hof, der
+        // die Kante auffrisst - und der Satz traegt sich bei 72 px von selbst.
+        textShadow: istBuehneG() ? 'none' : '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
       }}>
         {(() => {
           const t = isLastFinalQuestion
@@ -161,7 +182,12 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       {/* Team-Reihen — absolute am before-Slot, Tickup + Position-Swap.
           2026-05-09 v2: maxWidth 920 → 1200 für mehr Tabellen-Breite. */}
       <div style={{
-        position: 'relative', width: '100%', maxWidth: 1200, height: containerH,
+        // 2026-08-24: 1200 waren auf 1760 Buehnenbreite ein Deckel, kein
+        // Lesemass - die Zeile besteht aus Kachel, Name und einer Zahl ganz
+        // rechts, sie wird durch Breite nicht schwerer lesbar, sondern
+        // ruhiger. Auf der Buehne darf sie die Flaeche nehmen, die das
+        // Polster uebrig laesst.
+        position: 'relative', width: '100%', maxWidth: istBuehneG() ? 1560 : 1200, height: containerH,
       }}>
         {s.teams.map(t => {
           const beforeRank = beforeOrder.indexOf(t.id);
@@ -260,7 +286,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
     // Initial-Setup: from-Wert sichtbar, Delta hidden.
     if (valRef.current) {
       valRef.current.textContent = String(from);
-      valRef.current.style.color = from > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)';
+      valRef.current.style.color = from > 0 ? SIEG_FARBE() : 'var(--qq-text-muted)';
       valRef.current.style.textShadow = from > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none';
     }
     if (deltaRef.current) deltaRef.current.style.opacity = '0';
@@ -275,7 +301,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
         lastVal = val;
         if (valRef.current) {
           valRef.current.textContent = String(val);
-          valRef.current.style.color = val > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)';
+          valRef.current.style.color = val > 0 ? SIEG_FARBE() : 'var(--qq-text-muted)';
           valRef.current.style.textShadow = val > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none';
         }
         if (deltaRef.current) {
@@ -299,7 +325,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
       }}>+{to - from}</span>
       <span ref={valRef} style={{
         fontSize: `clamp(34px, 4cqw, ${Math.round(rowH * 0.66)}px)`,
-        color: from > 0 ? QQ_COLORS.brandPink : 'var(--qq-text-muted)',
+        color: from > 0 ? SIEG_FARBE() : 'var(--qq-text-muted)',
         textShadow: from > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',
       }}>{from}</span>
@@ -322,7 +348,28 @@ import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalRev
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
 import { qqFinalTotal } from '../utils/qqFinalScore';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
+import { isThemed, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../qqTheme';
+
+/** Laeuft der Buehnen-Look? Ausgeschrieben, weil `isThemed()` etwas anderes
+ *  heisst - naemlich „nicht Cozy", also auch Studio Mono, Soft Pop und
+ *  Neo-Brutalism. Der Unterschied hat in diesem Repo schon mehrfach Zeit
+ *  gekostet. */
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
+
+/** Die Farbe der gewonnenen Kategorien im Zwischenstand.
+ *
+ * 2026-08-24 (Wolf: „pinke schrift passt hier nicht mehr so gut ins design").
+ * Der Einwand trifft eine Regel, die 2a schon gesetzt hat: Pink ist auf der
+ * Buehne die DRINGLICHKEITSFARBE - der Timer unter zehn Sekunden. Eine Zahl,
+ * die sagt „dieses Team hat zwei Kategorien geholt", ist nicht dringlich, sie
+ * ist ein Stand. Sie in Pink zu setzen laesst den Stand nach Alarm aussehen und
+ * nimmt dem Timer gleichzeitig seine Ausnahmestellung.
+ *
+ * Auf der Buehne traegt die Zahl deshalb den normalen Textton. Wer fuehrt,
+ * sagt die Reihe selbst: sie hat Kontur und Schein. Ein zweites Signal an
+ * derselben Stelle ist keine Verstaerkung, sondern Laerm.
+ */
+const SIEG_FARBE = () => (istBuehneG() ? 'var(--qq-text)' : QQ_COLORS.brandPink);
 
 // RankingEntry aus Legacy-Block hochgezogen (2026-05-10 Audit-P2 Cleanup),
 // wird von RaceFinalSlide + PodiumStepFinal genutzt.

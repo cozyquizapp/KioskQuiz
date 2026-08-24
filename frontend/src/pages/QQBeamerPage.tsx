@@ -940,8 +940,17 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Phasenwechsel EINEN Frame gehalten und in einer View-Transition committet →
   // kein Leerbild mehr zwischen zwei Szenen. In allen anderen Skins (inkl. cozy)
   // geht der State unveraendert durch. Details: hooks/useSceneTransition.ts.
-  const kinoMotion = useActiveThemeId() === 'cozyKino';
-  const renderState: QQStateUpdate = useSceneTransition(stageState, kinoMotion);
+  const aktivesThema = useActiveThemeId();
+  const kinoMotion = aktivesThema === 'cozyKino';
+  // 2026-08-24 (B2): die Buehne bekommt den Szenenwechsel dazu. Gemessen lief
+  // bei jedem Wechsel ein Stapel aus VIER gleichzeitigen Auftritten (qqSlideIn
+  // 720, qqPhaseSweep 1000, qqFlashDim 520, qqSoftZoom 520, vier verschiedene
+  // Kurven) - und trotzdem gab es keinen Abgang, weil die alte Szene sofort
+  // abgeraeumt wird. Vier Stimmen fuer eine Aussage, und die eigentliche
+  // Aussage fehlte. Der Szenenwechsel macht daraus einen ueberlappenden
+  // Wechsel: die alte Szene tritt ab, waehrend die neue schon kommt.
+  const buehnenMotion = aktivesThema === BUEHNE_THEME_ID;
+  const renderState: QQStateUpdate = useSceneTransition(stageState, kinoMotion || buehnenMotion);
   // Arena-Beamer durchgaengig EN: setzt das Modul-Flag fuer useLangFlip, damit
   // im Mega-Modus kein DE/EN-Flip mehr durchrutscht (z.B. "Umfrage" statt "Survey").
   setBeamerMega(qqIsMega(renderState));
@@ -2151,6 +2160,14 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           // --qq-ease-out-cubic. Der Phasen-Entry ('landet + settlet') liest
           // dezelerierend sauberer und ist konsistent mit Card-Reveal/Hero-Entry.
           : 'qqSlideIn 720ms var(--qq-ease-out-cubic) both';
+        // 2026-08-24 (B2): auf der Buehne traegt den Wechsel jetzt der
+        // Szenenwechsel (View Transition), der ALTE und NEUE Szene ueberlappend
+        // fuehrt. Der Auftritt des Wrappers liefe dann ein zweites Mal ueber
+        // dieselbe Bewegung - gemessen waren es vier gleichzeitige Auftritte auf
+        // demselben Bereich. Einer reicht, und es ist der, der auch einen Abgang
+        // hat. Der Frage-zu-Frage-Schub von rechts bleibt: der sagt etwas
+        // ANDERES („naechste Frage kommt"), nicht dasselbe noch einmal.
+        const wrapperAnimEff = (buehnenMotion && !isQuestionToQuestion) ? 'none' : wrapperAnim;
         // 2026-05-12 (Wolf 'Option A — Fixed Canvas Stage'): wenn ?stage=1
         // gesetzt, wird der Phase-Render-Bereich in einem 1920×1080 Canvas
         // gerendert und per transform:scale auf die echte Viewport-Groesse
@@ -2173,7 +2190,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           data-qq-standings-revealed={(renderState as any).megaStandingsRevealed ? '1' : '0'}
           style={{
             flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0,
-            animation: wrapperAnim,
+            animation: wrapperAnimEff,
             willChange: 'transform, opacity',
             position: 'relative',
           }}
@@ -2181,6 +2198,15 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           {/* Pink-Sweep — Diagonale Lichtkante die einmalig beim Phase-Mount
               über den Wrapper streicht. Pointer-events:none, animiert
               background-position (GPU-cheap). 2026-05-08. */}
+          {/* 2026-08-24 (B2 + Lautstaerke-Treppe): der rosa Diagonalstreifen
+              faellt auf der Buehne weg. Er war der LAUTESTE Uebergang und lief
+              zugleich am HAEUFIGSTEN - bei fuenfzehn Fragen mit je Frage,
+              Aufloesung und Setzen ueber fuenfzig Mal am Abend, jedes Mal eine
+              volle Sekunde ueber die ganze Buehne. Wolfs eigene Regel aus der
+              Referenz-Auswertung sagt das Gegenteil: je haeufiger ein Uebergang
+              laeuft, desto leiser gehoert er gesetzt. Die anderen Skins behalten
+              ihn. */}
+          {!buehnenMotion && (
           <div aria-hidden style={{
             position: 'absolute', inset: 0, zIndex: 0,
             pointerEvents: 'none',
@@ -2191,6 +2217,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
             mixBlendMode: 'screen',
             opacity: 0.85,
           }} />
+          )}
           {/* Während Countdown: renderState ist Snapshot der vorherigen Phase
               (PausedView / RulesView bleiben sichtbar und gefreezed). Nach
               Countdown schwenkt automatisch zum Live-State.
@@ -2394,7 +2421,11 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           2026-05-07 (Wolf 'art blitz der ueber cozy quiz zieht sieht nicht
           gut aus'): in LOBBY-Phase ueberspringen — Lobby ist statische
           Welcome-Seite, kein Action-Moment. Flash wirkt da uebertrieben. */}
-      {flashKey > 0 && s.phase !== 'LOBBY' && (
+      {/* 2026-08-24 (B2): der Blitz (Dim + heller Schleier, zusammen 520 ms ueber
+          die volle Buehne) faellt auf der Buehne weg. Er ist die dritte und
+          vierte Stimme desselben Satzes - „hier ist etwas Neues" - und der
+          Szenenwechsel sagt ihn jetzt vollstaendig. */}
+      {flashKey > 0 && s.phase !== 'LOBBY' && !buehnenMotion && (
         <div
           key={flashKey}
           style={{

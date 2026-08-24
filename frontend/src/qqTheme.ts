@@ -316,7 +316,17 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   document.documentElement.setAttribute('data-quiet-motion', theme.id === 'studioMono' ? 'true' : 'false');
   // Szenenwechsel-Sprache: 'kino' aktiviert die View-Transition-Ebene auf dem
   // Beamer (QQBeamerPage), 'cut' ist das heutige harte Umschalten.
-  document.documentElement.setAttribute('data-scene-motion', theme.id === 'cozyKino' ? 'kino' : 'cut');
+  // 2026-08-24 (Bewegungs-Einschaetzung, Baustein B2): die Buehne bekommt
+  // denselben Szenenwechsel wie Cozy Kino. Die Mechanik lag seit dem 18.08.
+  // fertig da (hooks/useSceneTransition.ts plus die Choreografie in main.css),
+  // war aber nur fuer EINEN Skin freigeschaltet - waehrend genau der Befund,
+  // fuer den sie gebaut wurde („fuehlt sich wie PowerPoint an", Leerbild
+  // zwischen zwei Szenen), auf der Buehne unveraendert bestand.
+  // Eigener Wert statt `kino`, weil die Buehne ihre eigene Laenge fahren darf.
+  document.documentElement.setAttribute(
+    'data-scene-motion',
+    theme.id === 'cozyKino' ? 'kino' : theme.id === BUEHNE_THEME_ID ? 'buehne' : 'cut',
+  );
 }
 
 export function setActiveThemeId(id: string): void {

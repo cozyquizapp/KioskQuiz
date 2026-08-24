@@ -5015,3 +5015,81 @@ html[data-scene-motion="kino"]::view-transition-new(root) {
    Nur die Buehne traegt die Klasse; die anderen Skins zentrieren weiter alles
    zusammen, dort ist die Frage Teil einer Karte. */
 .qq-frage-fluss > :not(:first-child) { margin-block: auto !important; }
+
+/* ── Szenenwechsel auf der BUEHNE (2026-08-24, Baustein B2) ──────────────────
+   Wolfs Referenzen haben alle dasselbe Prinzip: etwas bleibt stehen, waehrend
+   sich der Rest aendert. Der Wechsel selbst gehoert deshalb zum Ruhigsten der
+   Folie, nicht zum Lautesten.
+
+   Gemessen vorher: bei jedem Wechsel liefen VIER Auftritte gleichzeitig auf
+   demselben Bereich (qqSlideIn 720, qqPhaseSweep 1000, qqFlashDim 520,
+   qqSoftZoom 520, vier verschiedene Kurven) - und trotzdem gab es keinen
+   Abgang, weil die alte Szene sofort abgeraeumt wird. Am Uebergang Lobby zu
+   Willkommen standen dadurch 835 ms lang praktisch leer auf 2,8 m Bildbreite.
+
+   Jetzt fuehrt EINE Bewegung den Wechsel, und sie hat beide Haelften.
+
+   Die Zahlen sind nicht von Kino uebernommen, sondern fuer die Buehne gesetzt:
+   * Abgang 280 ms, Auftritt 380 ms. Die Faustregel „Abgang etwa drei Viertel
+     des Auftritts" ist damit eingehalten (74 %), und beide sind deutlich
+     kuerzer als bei Kino (320/520). Grund: der Wechsel laeuft hier ueber
+     fuenfzig Mal am Abend. Was oft laeuft, muss kurz sein, sonst wird es zur
+     Wartezeit.
+   * Beide starten bei t=0 und ueberlappen. Zu keinem Zeitpunkt ist die Buehne
+     leer - genau der Fehler, der behoben wird.
+   * Auftritt `ease-out`, Abgang `ease-in`. Die Regel aus dem animate-Skill,
+     und hier ist sie besonders sichtbar: der Abgang beschleunigt weg, der
+     Auftritt bremst ein. Zusammen liest es sich als EINE Bewegung, die
+     durchlaeuft, nicht als zwei Ereignisse.
+   * Kein Overshoot, keine Richtung, keine Rotation. Der Wechsel traegt nur
+     hinueber und darf nie mit dem Hauptmoment der neuen Szene konkurrieren.
+   ───────────────────────────────────────────────────────────────────────── */
+html[data-scene-motion="buehne"]::view-transition-group(root) {
+  animation-duration: 380ms;
+}
+
+html[data-scene-motion="buehne"]::view-transition-old(root),
+html[data-scene-motion="buehne"]::view-transition-new(root) {
+  /* Beide Schnappschuesse liegen uebereinander statt sich zu verdraengen -
+     sonst blitzt der Seiten-Hintergrund zwischen ihnen durch, und man haette
+     das Leerbild an genau der Stelle wieder, an der man es gerade abgeschafft
+     hat. */
+  mix-blend-mode: normal;
+  animation-fill-mode: both;
+}
+
+html[data-scene-motion="buehne"]::view-transition-old(root) {
+  animation: qqBuehneAbgang 280ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+
+html[data-scene-motion="buehne"]::view-transition-new(root) {
+  animation: qqBuehneAuftritt 380ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Abgang: die alte Szene tritt zurueck und gibt den Raum frei. 0.6 % Massstab
+   sind auf 1760 px rund 10 px - aus zehn Metern keine Bewegung, die man
+   benennen kann, aber der Unterschied zwischen „geht" und „ist weg". */
+@keyframes qqBuehneAbgang {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.994); }
+}
+
+/* Auftritt: von minimal weiter weg heran. Die Deckkraft ist bei 45 % schon
+   voll da, damit die neue Szene lesbar steht, waehrend die Bewegung noch
+   ausklingt. Lesbarkeit zuerst, Bewegung darf nachlaufen. */
+@keyframes qqBuehneAuftritt {
+  0%   { opacity: 0; transform: scale(1.006); }
+  45%  { opacity: 1; }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+/* Funktions-Invariante: „respects prefers-reduced-motion". Der Wechsel bleibt
+   ein Wechsel, aber ohne Bewegung. */
+@media (prefers-reduced-motion: reduce) {
+  html[data-scene-motion="buehne"]::view-transition-old(root) {
+    animation: qqSceneExitFlat 180ms linear both;
+  }
+  html[data-scene-motion="buehne"]::view-transition-new(root) {
+    animation: qqSceneEnterFlat 220ms linear both;
+  }
+}

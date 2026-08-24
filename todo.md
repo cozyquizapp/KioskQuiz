@@ -28,8 +28,27 @@
 - [ ] **Schrift entscheiden.** Groesster Einzelhebel, bisher Platzhalter.
 - [ ] **Farbsystem:** Leinwand, Flaeche oder Marke traegt die Kategorie.
       Gemessen gleichwertig, also Geschmacksentscheidung.
-- [ ] **Erster Bewegungs-Baustein:** B1 (Bogen-Wisch) + B5 (Marker statt
-      Einfaerbung) an der Aufloesung, gegen den Ist-Zustand stellen.
+- [ ] **BEWEGUNG, laeuft seit 2026-08-24. Einstieg: `docs/UEBERGABE_MOTION.md`.**
+      Dort stehen die Bausteinliste B1-B11, der gemessene Ist-Zustand von
+      Station 1, das Werkzeug (`scripts/motion.mjs`) und die Reihenfolge.
+      - [ ] **Station 1 entscheiden:** K1 (B2), K2 (B11+B8) oder K3 (B3) fuer den
+            Wechsel Lobby → Willkommen. Gemessen liegen dort 835 ms, in denen
+            die Buehne leer ist. Kandidaten laufen in der Motion-Werkstatt.
+      - [ ] **Dann Station fuer Station durch den Abend** (`motion.mjs --liste`).
+      - [ ] **B1 (Bogen-Wisch) + B5 (Marker statt Einfaerbung) an der
+            Aufloesung**, gegen den Ist-Zustand stellen. Laut
+            `MOTION_REFERENZEN.md` der erste Kandidat, wenn nichts dagegen
+            spricht: beide klein, an einer Stelle, die zwanzigmal am Abend
+            laeuft und heute hart schneidet.
+      - [ ] **„Das Brett faellt"** (`55db717d`) liegt gebaut auf dem Zweig, wurde
+            aber vorgezogen und ist nie abgenommen. Im Motion-Durchgang
+            einreihen und beurteilen.
+- [ ] **Skills verfuegbar machen** (blockiert Design-/Motion-Arbeit in
+      Web-Sitzungen). CLAUDE.md verlangt `ui-ux-pro-max`, `animate`,
+      `color-contrast`; in einer Web-Sitzung sind sie nicht da, weil dorthin nur
+      claude.ai-Konto-Skills synchronisiert werden. Zwei Wege, beide geprueft:
+      ins Repo unter `.claude/skills/<name>/SKILL.md`, oder lokal arbeiten.
+      Begruendung und Messung in `docs/UEBERGABE_MOTION.md`, Abschnitt 7.
 - [ ] **`/team` erst danach**, nur Einzelheiten, nicht der Aufbau
       (Gegenprobe hat gezeigt: Aufbau stimmt bereits).
 - [ ] **Hotkeys + Stream-Deck komplett durchgehen** (Wolf 2026-08-23:

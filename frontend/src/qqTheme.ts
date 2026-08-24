@@ -214,11 +214,22 @@ export const QQ_THEMES: Record<string, ResolvedTheme> = {
 };
 
 /**
- * Default-Kopplung Avatar-Set → Theme: läuft ein Quirk-Set und wurde KEIN
- * explizit anderes Theme gewählt, zeigt die App automatisch das Quirks-Theme
- * (einheitliches „Quirks Quiz"). Ein explizit gewähltes Nicht-cozy-Theme
- * (studioMono/softPop/neoBrutal) gewinnt weiterhin. So bleibt der Picker frei,
- * aber der Quirks-Look kommt ohne Extra-Klick.
+ * Welches Bühnen-Design zeigt der Raum? Ein gesetztes Design gewinnt immer.
+ *
+ * 2026-08-24: dieser Kopf beschrieb bis eben noch das ALTE Verhalten
+ * („Default-Kopplung Avatar-Set → Theme … kommt ohne Extra-Klick"). Genau die
+ * Kopplung ist weg — sie hat das Design aus dem Avatar-Set abgeleitet, auch
+ * gegen ein ausdrücklich gewähltes, und dadurch stand im Moderator „Cozy"
+ * angehakt, während der Beamer die Bühne zeigte.
+ *
+ * Ein Kommentar, der das Gegenteil des Codes behauptet, ist schlimmer als
+ * keiner: er wird geglaubt. Deshalb hier neu und knapp.
+ *
+ * Reihenfolge:
+ *   1. alte Id 'quirks' → 'buehne' (gespeicherte Räume, siehe qqThemeIds.ts)
+ *   2. ein gesetztes, bekanntes Design gewinnt
+ *   3. NUR wenn gar nichts gesetzt ist, entscheidet noch das Kachelset
+ *   4. sonst die Bühne
  */
 export function themeIdForState(themeId: string | undefined, avatarSetId: string | undefined): string {
   // Alte Raeume tragen die Id von vor dem 24.08. noch auf Platte.

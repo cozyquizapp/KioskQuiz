@@ -4972,3 +4972,46 @@ html[data-scene-motion="kino"]::view-transition-new(root) {
 }
 @keyframes qqSceneExitFlat  { to   { opacity: 0; } }
 @keyframes qqSceneEnterFlat { from { opacity: 0; } }
+
+/* ── Fragefolie: Frage oben fest, Antwortbereich mittig ──────────────────────
+   2026-08-24 (Wolf: „zieh den antwortbereich in die mitte").
+
+   Vorgeschichte in zwei Schritten. Gemessen stand die Oberkante des
+   Fragetextes auf vier aufeinander folgenden Fragen bei y246, y284, y341 und
+   y483 - 237 px Unterschied auf einer 990 px hohen Buehne. Ursache war die
+   Zentrierung des ganzen Inhalts: was UNTER der Frage steht, entscheidet, wo
+   die Frage landet. Schritt eins war deshalb `justify-content: flex-start`,
+   damit die Frage ueberall gleich sitzt. Das stimmte, hat den Leerraum aber
+   komplett nach unten geschoben.
+
+   Schritt zwei ist diese Regel. Die Frage bleibt das erste Kind und damit
+   oben fest; der Antwortbereich danach bekommt oben und unten je einen
+   automatischen Abstand und sitzt damit mittig im verbleibenden Raum. Freier
+   Raum verteilt sich in Flexbox gleichmaessig auf alle `auto`-Abstaende.
+
+   Zwei Anlaeufe davor lagen daneben, beide Male gemessen und verworfen:
+
+   1. `:nth-child(2) { margin-top: auto }` plus `:last-child { margin-bottom:
+      auto }`. Das letzte Kind ist aber die Team-Reihe, und die liegt absolut
+      (gemessen x0 y839, 1760 breit - ausserhalb des Polsters). Ein
+      automatischer Abstand tut dort nichts, also blieb nur der obere, und der
+      hat den Antwortbereich nach ganz unten in die Team-Reihe gedrueckt.
+   2. Beide Abstaende am zweiten Kind. Wirkte nicht: das Antwortraster traegt
+      inline `margin-bottom: clamp(10px, 1.4cqh, 22px)`, und ein Inline-Wert
+      schlaegt eine Klassenregel. Es blieb wieder nur der obere Abstand, und
+      der Antwortbereich stand wieder bei y617 statt bei y485.
+
+   Deshalb: ALLE Geschwister nach der Frage, und mit `!important`, weil genau
+   ein Inline-Wert ueberstimmt werden muss. Der freie Raum verteilt sich in
+   Flexbox gleichmaessig auf alle automatischen Abstaende - die Gruppe sitzt
+   damit mittig, und die Abstaende innerhalb der Gruppe werden gleich gross.
+   Die Regel muss dafuer nicht wissen, welches Kind das Antwortraster ist und
+   welches ein Platzhalter; das unterscheidet sich je Kategorie.
+
+   Warum als CSS-Regel und nicht als Inline-Stil: es geht um die Lage von
+   Geschwistern, nicht um ein Element. Die Alternative waere ein zusaetzlicher
+   Wrapper um rund 1600 Zeilen JSX - viel Risiko fuer eine Zeile Wirkung.
+
+   Nur die Buehne traegt die Klasse; die anderen Skins zentrieren weiter alles
+   zusammen, dort ist die Frage Teil einer Karte. */
+.qq-frage-fluss > :not(:first-child) { margin-block: auto !important; }

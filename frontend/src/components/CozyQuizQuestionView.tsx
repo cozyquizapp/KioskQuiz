@@ -1968,7 +1968,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               (Phase 1 Option A, ?stage=1). Bei Stage AUS: Layout-Content
               im Standard-Flex-Flow mit min-height:0 + overflow:hidden.
               Bei Stage AN: SlideStage haelt Layout immer in 1080px Canvas. */}
-          <div style={{
+          <div
+            // 2026-08-24 (Wolf: „zieh den antwortbereich in die mitte").
+            // Die Klasse traegt zwei Zeilen aus main.css: das erste Kind (die
+            // Frage) bleibt oben stehen, alles danach bekommt oben und unten je
+            // einen automatischen Abstand und sitzt damit als Gruppe mittig im
+            // Rest. Regel statt Inline-Stil, weil es um die Lage von
+            // Geschwistern geht - die Alternative waere ein zusaetzlicher
+            // Wrapper um rund 1600 Zeilen JSX gewesen.
+            className={istBuehne ? 'qq-frage-fluss' : undefined}
+            style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             justifyContent: innerJustify,
             gap: innerGap,

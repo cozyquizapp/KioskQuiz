@@ -66,11 +66,21 @@ Aufloesung genauso oft, darf aber eine Geste haben (B5). Der Rundenwechsel
 viermal, darf gross sein (B3). Der Auftritt am Anfang laeuft einmal und darf
 alles.
 
-**Zweite Quelle, aelter:** die Seite `/animations` (`AnimationsLabPage.tsx`) mit
-Demo-Slots A bis P. Dort steht in `SESSION_LOG.md` (Zeilen um 360-375), welche
-Wolf angenommen und welche er abgelehnt hat, zum Beispiel „M (Game-Show, live)"
-und „N (Spark - Wolf abgelehnt)". Wer neue Kandidaten sucht, findet dort
-gebaute.
+**Zweite Quelle, aelter, und ACHTUNG: die Seite gibt es nicht mehr.** Die frueher
+hier empfohlene Seite `/animations` (`AnimationsLabPage.tsx`) wurde am
+2026-07-08 mit `9d028288` geloescht („tote Lab-/Demo-Seiten loeschen"). Diese
+Uebergabe hat bis zum 24.08. weiter darauf verwiesen; nachgeprueft und
+korrigiert.
+
+Der INHALT ist trotzdem noch da, nur nicht mehr als Seite:
+
+* Wolfs Urteile ueber die einzelnen Demos stehen in `SESSION_LOG.md`
+  (Zeilen um 360-375), zum Beispiel „**M (Game-Show, live)**" und
+  „N (Spark - Wolf abgelehnt)". Slot P ist die Fliegende Kartoffel, die als
+  Hot-Potato-Bild die Slot-Machine ersetzt hat.
+* Der gebaute Code der 28 Kandidaten laesst sich mit
+  `git show 9d028288^:frontend/src/pages/AnimationsLabPage.tsx` wieder
+  herausholen.
 
 **Die Motion-Werkstatt (Artefakt):**
 https://claude.ai/code/artifact/6f1e7fc4-460e-422f-975a-9a883c8e2cc6

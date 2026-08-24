@@ -200,7 +200,7 @@ return {
   turmfinale: { ruhe: 500, aufbau: 'spiel', weg: async (h) => {
     await h.springe('final-reveal'); await sleep(700);
     for (let i = 0; i < 24; i++) {
-      const da = await beamer.evaluate(() => !!document.body.innerText.match(/höchsten Turm|tallest tower/));
+      const da = await h.seite().evaluate(() => !!document.body.innerText.match(/höchsten Turm|tallest tower/));
       if (da) return;
       await h.emit('qq:nextQuestion');
       await sleep(700);
@@ -212,7 +212,7 @@ return {
     for (let i = 0; i < 20; i++) {
       await h.emit('qq:nextQuestion');
       await sleep(950);
-      if (await phase() === 'THANKS') break;
+      if (await h.phase() === 'THANKS') break;
     }
   } },
   brett:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
@@ -309,6 +309,13 @@ export async function buehneStarten(teilCfg = {}) {
   const helfer = {
     emit,
     phase,
+    // 2026-08-24, Nachtrag zum Umzug hierher: zwei Stationen griffen direkt auf
+    // `beamer` und `phase()` aus dem alten Modul-Sichtbereich zu. Nach dem Umzug
+    // lagen beide ausserhalb, `turmfinale` und `danke` brachen ab - und weil sie
+    // die LETZTEN Stationen des Abends sind, war der Schluss des Abends
+    // unmessbar, ohne dass ein Lauf das deutlich gemeldet haette. Die Stationen
+    // bekommen die Seite jetzt ueber den Helfer, wie alles andere auch.
+    seite: () => beamer,
     /** Offene Platzierungen wegraeumen. `qq:nextQuestion` wirft sonst
      *  PLACEMENT_PENDING (qqRooms.ts:4205) und der Lauf bleibt still auf der
      *  Frage stehen - ohne Fehlermeldung im Bild. */

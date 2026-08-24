@@ -478,6 +478,16 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   const sfxMutedRef = useRef(s.sfxMuted);
   sfxMutedRef.current = s.sfxMuted;
   const [spotIdx, setSpotIdx] = useState(-1);
+  // 2026-08-24 (Wolf: „passt die teamvorstellung design und motion noch zum
+  // neuen design?"). Das Design passt, die Bewegung hatte einen Fehler: die
+  // aufgerufene Karte steht gross in der Bildmitte, und die Bildmitte ist ab
+  // dem dritten Team belegt. Gemessen an der Aufnahme nach 9 s lag die grosse
+  // Karte ueber zwei bereits vorgestellten Teams und deckte deren Namen zur
+  // Haelfte zu („Dre... Ne...", „...cher"). Ein Scheinwerfer, der die halbe
+  // Buehne verdeckt, ist keiner. Jetzt geht das Feld dahinter zurueck, solange
+  // einer im Licht steht - das Verdecken liest sich dann als Tiefe, nicht als
+  // Fehler, und der Blick hat genau eine Stelle.
+  const [imLicht, setImLicht] = useState(false);
   const [revealedSet, setRevealedSet] = useState<Set<number>>(() => new Set());
   const [allRevealed, setAllRevealed] = useState(false);
   const showGoodLuck = allRevealed;
@@ -523,6 +533,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         return;
       }
       setSpotIdx(i);
+      setImLicht(true);
       if (spot) {
         spot.style.transition = 'none';
         spot.style.transform = 'translate(-50%,-50%) scale(0.55)';
@@ -556,6 +567,8 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         // Ankunft (~0.52s nach Fly-Start): Karte zündet.
         T(() => {
           setRevealedSet(prev => { const nx = new Set(prev); nx.add(i); return nx; });
+          // Karte ist angekommen: das Feld kommt zurueck ins Licht.
+          setImLicht(false);
           if (!sfxMutedRef.current) { try { playAvatarCascadeNote(i, n + 1); } catch {} }
         }, 520);
         // Nächstes Team
@@ -827,6 +840,18 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
         // 'Pubquatscher' war 140px-Card zu eng → das letzte 'r' brach in die
         // 2. Zeile. 165 + leicht aggressiveres TeamNameLabel.shrinkAfter (s.u.)
         // verhindert das ohne dass andere Cards merklich groesser werden.
+        // 2026-08-24, nachgemessen und WIEDER VERWORFEN: bei acht Teams nutzt
+        // der Block 64.9 % der Buehnenbreite (--rahmen: 1143 von 1760 px), und
+        // 240 px Kachel sahen nach einem zu niedrig gesetzten Deckel aus - die
+        // Einzelreihe wurde am 22.08. schon auf 300 gezogen. Vier mal 280 plus
+        // Luecken waeren mit 1256 px quer locker drin.
+        // Der Deckel ist hier aber nicht die Breite, sondern die HOEHE: zwei
+        // Reihen aus Kachel plus Name, dazu Kopfzeile, Fussband und der
+        // Streifen, den der Name im Scheinwerfer belegt. Mit 280 stand das Bild
+        // bei 108.3 % Hoehe - oben schnitt es die Ueberschrift an, unten „Viel
+        // Glueck" (gemessen: oben -38, unten -45). Bei 240 bleiben 14 px oben
+        // und 9 unten uebrig, also gut 11 px Luft je Reihe. Die Kachel ist so
+        // gross, wie sie sein kann; die freie Breite ist der Preis dafuer.
         const cardWidth = multiRow
           ? 'clamp(175px, 14cqw, 240px)'
           : many ? 'clamp(172px, 15.4cqw, 248px)' : 'clamp(206px, 17cqw, 300px)';
@@ -957,6 +982,11 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             alignItems: 'center', maxWidth: '92cqw',
             position: 'relative', zIndex: 2,
             animation: 'contentReveal 0.5s var(--qq-ease-pop-fast) both',
+            // Scheinwerfer-Regel (s. `imLicht` oben). Ueber `filter`, nicht ueber
+            // `opacity`: die Einblend-Animation darueber traegt `both` und
+            // schreibt am Ende opacity 1 fest - ein Inline-Wert daneben haette
+            // keine Wirkung. `brightness(1)` als Ruhewert, damit der Uebergang
+            // laeuft (von und nach `none` blendet nicht).
           }}>
             {rowSizes.map((size, rIdx) => {
               const slice = teams.slice(cursor, cursor + size);
@@ -966,6 +996,18 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                 <div key={rIdx} style={{
                   display: 'flex', gap: 'clamp(14px, 2cqw, 32px)',
                   justifyContent: 'center', flexWrap: 'nowrap',
+                  // Scheinwerfer-Regel (s. `imLicht` oben): das Feld geht
+                  // zurueck, solange einer im Licht steht. Sitzt auf den Reihen
+                  // und nicht auf dem Feld darum, weil der Scheinwerfer selbst
+                  // ein Kind dieses Feldes ist - er wuerde sich sonst
+                  // mitdunkeln. Ueber `filter`, nicht ueber `opacity`: die
+                  // Einblend-Animation des Feldes traegt `both` und schreibt am
+                  // Ende opacity 1 fest. `brightness(1)` als Ruhewert, damit der
+                  // Uebergang laeuft - von und nach `none` blendet nicht.
+                  filter: istBuehne
+                    ? (imLicht ? 'brightness(0.42) saturate(0.85)' : 'brightness(1) saturate(1)')
+                    : undefined,
+                  transition: istBuehne ? 'filter 0.45s ease' : undefined,
                 }}>
                   {slice.map((t, j) => {
                     const i = startI + j;
@@ -1154,7 +1196,14 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                 // 2026-07-02 (Wolf: Spotlight-Name schlecht lesbar/abgeschnitten):
                 // kräftigerer Dark-Halo für Kontrast + saubere Ellipsis statt Überlauf.
 
-                whiteSpace: 'nowrap', maxWidth: 'min(80cqw, 640px)',
+                // 2026-08-24, im Bild gesehen: „Frag-Mich-Was-…" - der Name des
+                // Teams, das gerade im Licht steht, endete in drei Punkten. Die
+                // Grenze war `min(80cqw, 640px)`, und auf 1760 px Buehne gewinnt
+                // immer die 640: knapp zehn Zeichen bei 64 px. Der Name ist das
+                // Einzige, was auf dieser Folie gelesen werden muss. Die
+                // Kachelreihe darunter ist 1360 px breit, so viel darf er haben.
+                whiteSpace: 'nowrap',
+                maxWidth: istBuehne ? 'min(86cqw, 1360px)' : 'min(80cqw, 640px)',
                 overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{spotTeam?.name}</div>
             </div>

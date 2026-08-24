@@ -423,13 +423,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
         {(() => {
           const sortedByCells = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
-          const renderPill = (t: typeof sortedByCells[number]) => (
+          const renderPill = (t: typeof sortedByCells[number], kompakt = false) => (
             <div key={t.id} style={{
               // 2026-07-27 (Wolf-Finding 'grid in pause komisch'): Seiten-Pillen
               // beamer-lesbar skaliert (Avatar/Zahl waren mit 28px/14px winzig
               // neben dem grossen Brett) — cqw-basiert wie der Rest der Pause.
               display: 'inline-flex', alignItems: 'center', gap: 'clamp(7px, 0.8cqw, 11px)',
-              padding: 'clamp(6px,0.7cqh,9px) clamp(11px,1.1cqw,16px)', borderRadius: 'var(--qq-pill-radius)',
+              padding: kompakt ? '3px 14px 3px 4px' : 'clamp(6px,0.7cqh,9px) clamp(11px,1.1cqw,16px)',
+              borderRadius: 'var(--qq-pill-radius)',
               // 2026-08-23: die Pille lief in Teamfarbe - Fuellung, Rand UND
               // Ziffer. Die Marke links ist die Teamfarbe, dreimal daneben
               // braucht es nicht, und die Ziffer muss lesbar sein.
@@ -437,8 +438,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               border: istBuehne ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${t.color}55`,
               flexShrink: 0,
             }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={'clamp(30px, 3cqw, 42px)'} />
-              <span style={{ fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : t.color, fontSize: 'clamp(15px, 1.7cqw, 22px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={kompakt ? '34px' : 'clamp(30px, 3cqw, 42px)'} />
+              <span style={{ fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : t.color, fontSize: kompakt ? '20px' : 'clamp(15px, 1.7cqw, 22px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
             </div>
           );
           const colStyle: React.CSSProperties = {
@@ -470,8 +471,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           // Die uebrigen Skins behalten die mittige Anordnung.
           const boardGridStyle: React.CSSProperties = istBuehne
             ? {
-                display: 'grid', gridTemplateColumns: 'auto 1fr',
-                alignItems: 'center', gap: 'clamp(24px, 3cqw, 48px)',
+                // 2026-08-23, zweite Korrektur (Wolf: „die Tabelle und das Grid
+                // liegen nicht mittig, im Spiel ist das Grid gleich hoch wie die
+                // Tabelle, auch bei 8 in einer Reihe").
+                // Nachgesehen, wie es im Spiel wirklich gebaut ist
+                // (CozyQuizPlacementView): eine zentrierte Flex-Reihe, das Brett
+                // ein Quadrat der Kantenlaenge `gridMaxSize`, die Tabelle
+                // daneben mit GENAU derselben Hoehe. Nicht zwei Spalten, nicht
+                // gestreckt, sondern ein Paar gleicher Hoehe, mittig im Bild.
+                // Mein `auto 1fr` hat das Paar linksbuendig gemacht, weil die
+                // zweite Spalte den Rest gefressen hat.
+                display: 'flex', flexDirection: 'row',
+                alignItems: 'center', justifyContent: 'center',
+                gap: 'clamp(24px, 3cqw, 48px)',
                 padding: 'clamp(14px, 2cqw, 28px)', width: '100%',
               }
             : {
@@ -480,26 +492,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 padding: 'clamp(14px, 2cqw, 28px)', width: '100%',
               };
           if (istBuehne) {
-            // 2026-08-23, nachgerechnet und korrigiert: mein erster Anlauf hat
-            // acht Pillen in EINE Spalte gestellt, mit 52px pro Pille gerechnet.
-            // Gemessen sind es rund 68px, macht 8 x 68 + 7 x 10 = 614px bei rund
-            // 560px Karteninnenhoehe - die siebte Pille lief unten raus und das
-            // Brett war unten abgeschnitten.
-            // Die Tabelle bleibt rechts, bricht dort aber ab sieben Teams in
-            // zwei Spalten. Vier Pillen sind 302px hoch und passen sicher.
-            const zweiSpalten = sortedByCells.length >= 7;
+            // Die Kantenlaenge des Bretts ist zugleich die Hoehe der Tabelle -
+            // wie im Spiel. 380px sind das, was die Pausen-Karte hergibt (sie
+            // ist niedriger als der Spiel-Screen).
+            // Acht Zeilen auf 380px heisst 47px pro Zeile. Die Pille war mit
+            // Avatar 42px plus Polster rund 68px hoch und passte deshalb nicht;
+            // sie ist auf der Buehne jetzt entsprechend flacher gebaut
+            // (`pillKompakt`), statt die Tabelle in zwei Spalten zu brechen.
+            const BRETT = 380;
             return (
               <div style={boardGridStyle}>
-                <GridDisplay state={s} maxSize={380} showJoker={false} />
+                <div style={{ width: BRETT, height: BRETT, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <GridDisplay state={s} maxSize={BRETT} showJoker={false} />
+                </div>
                 <div style={{
-                  justifySelf: 'start',
-                  display: 'grid',
-                  gridTemplateColumns: zweiSpalten ? 'auto auto' : 'auto',
-                  gridAutoFlow: 'column',
-                  gridTemplateRows: `repeat(${Math.ceil(sortedByCells.length / (zweiSpalten ? 2 : 1))}, auto)`,
-                  gap: 'clamp(8px, 1cqh, 12px) clamp(12px, 1.4cqw, 20px)',
-                  alignContent: 'center',
-                }}>{sortedByCells.map(renderPill)}</div>
+                  height: BRETT, flexShrink: 0,
+                  display: 'flex', flexDirection: 'column',
+                  justifyContent: 'space-between',
+                }}>{sortedByCells.map(t => renderPill(t, true))}</div>
               </div>
             );
           }
@@ -509,9 +519,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             const right = sortedByCells.slice(half);
             return (
               <div style={boardGridStyle}>
-                <div style={{ ...colStyle, justifySelf: 'end' }}>{left.map(renderPill)}</div>
+                <div style={{ ...colStyle, justifySelf: 'end' }}>{left.map(t => renderPill(t))}</div>
                 <GridDisplay state={s} maxSize={390} showJoker={false} />
-                <div style={{ ...colStyle, justifySelf: 'start' }}>{right.map(renderPill)}</div>
+                <div style={{ ...colStyle, justifySelf: 'start' }}>{right.map(t => renderPill(t))}</div>
               </div>
             );
           }
@@ -519,7 +529,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div style={boardGridStyle}>
               <div aria-hidden />
               <GridDisplay state={s} maxSize={390} showJoker={false} />
-              <div style={{ ...colStyle, justifySelf: 'start' }}>{sortedByCells.map(renderPill)}</div>
+              <div style={{ ...colStyle, justifySelf: 'start' }}>{sortedByCells.map(t => renderPill(t))}</div>
             </div>
           );
         })()}

@@ -1328,18 +1328,29 @@ function SequenceGameView({
 
       {/* BOTTOM: Queue (alle Teams mit Status) */}
       <div style={{
-        // 2026-08-23 (2a): bei acht Teams brach die Warteschlange in eine
-        // zweite Zeile um, und dort stand ein einzelnes Team allein und
-        // versetzt unter den sieben darueber. Gemessen: acht Pillen zu rund
-        // 230px sind 1840px, die Buehne ist 1760 breit. Auf der Buehne bleibt
-        // die Reihe deshalb EINE Reihe; die Pillen werden schmaler statt
-        // umzubrechen. Eine Warteschlange ist eine Reihenfolge, und die liest
-        // man nur dann als Reihenfolge, wenn sie eine Linie ist.
+        // 2026-08-23 (2a): bei acht Teams brach die Warteschlange bei sieben um
+        // und liess das achte Team allein und versetzt in der zweiten Zeile
+        // stehen. Gemessen: acht Pillen zu rund 230px sind 1840px, die Buehne
+        // ist 1760 breit.
+        // Zweiter Anlauf (Wolf: „2x4 Reihe unten statt 7x1 umbrechen"): nicht
+        // eine gequetschte Achterreihe, sondern zwei saubere Reihen zu vier.
+        // Der Umbruch bleibt damit sichtbar gewollt statt zufaellig - vier und
+        // vier liest man als Block, sieben und eins als Unfall.
         flex: '0 0 auto',
-        display: 'flex',
-        flexWrap: istBuehneG() ? 'nowrap' : 'wrap',
-        gap: istBuehneG() ? 'clamp(4px, 0.5vw, 10px)' : 'clamp(8px, 1vw, 16px)',
-        justifyContent: 'center', alignItems: 'center',
+        ...(istBuehneG()
+          ? {
+              display: 'grid',
+              gridTemplateColumns: sequenceOrder.length > 4 ? 'repeat(4, 1fr)' : `repeat(${sequenceOrder.length}, auto)`,
+              gap: 'clamp(8px, 0.9vw, 14px)',
+              justifyItems: 'stretch',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }
+          : {
+              display: 'flex', flexWrap: 'wrap' as const,
+              gap: 'clamp(8px, 1vw, 16px)',
+              justifyContent: 'center', alignItems: 'center',
+            }),
         padding: 'clamp(12px, 1.5vh, 20px)',
         background: (isThemed() ? 'var(--qq-surface)' : 'rgba(0,0,0,0.20)'),
         borderRadius: 16,
@@ -1366,8 +1377,8 @@ function SequenceGameView({
               transition: 'all 0.3s ease',
             }}>
               <div style={{
-                width: istBuehneG() ? 'clamp(28px, 2.4vw, 40px)' : 'clamp(32px, 3vw, 48px)',
-                height: istBuehneG() ? 'clamp(28px, 2.4vw, 40px)' : 'clamp(32px, 3vw, 48px)',
+                width: 'clamp(32px, 3vw, 48px)',
+                height: 'clamp(32px, 3vw, 48px)',
                 flexShrink: 0,
               }}>
                 <QQTeamAvatar
@@ -1386,12 +1397,12 @@ function SequenceGameView({
                 {isCompleted && <span aria-hidden style={{ opacity: 0.7 }}>✓</span>}
                 <TeamNameLabel
                   name={t.name}
-                  fontSize={istBuehneG() ? 'clamp(12px, 0.95vw, 17px)' : 'clamp(13px, 1.1vw, 18px)'}
+                  fontSize={istBuehneG() ? 'clamp(15px, 1.25vw, 22px)' : 'clamp(13px, 1.1vw, 18px)'}
                   color={isCompleted ? 'var(--qq-text-muted)' : 'var(--qq-text)'}
                   fontWeight={800}
                   maxLines={1}
                   shrinkAfter={11}
-                  style={{ maxWidth: istBuehneG() ? 'clamp(64px, 7vw, 120px)' : 'clamp(80px, 10vw, 160px)' }}
+                  style={{ maxWidth: istBuehneG() ? 'clamp(120px, 14vw, 250px)' : 'clamp(80px, 10vw, 160px)' }}
                 />
               </div>
             </div>

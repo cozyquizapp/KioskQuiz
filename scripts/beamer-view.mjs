@@ -42,7 +42,8 @@
  * Voraussetzung wie immer: Backend frisch, `rm -f backend/.qq-rooms/*.json`.
  */
 import { chromium } from 'playwright';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync, statSync } from 'node:fs';
+
 import { createRequire } from 'node:module';
 
 const req = createRequire(new URL('../backend/package.json', import.meta.url));
@@ -96,6 +97,25 @@ const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
 const ZEITEN = process.argv.includes('--zeiten');
 const t0Lauf = Date.now();
 const takt = (was) => { if (ZEITEN) console.log(`  ⏱  ${String(Date.now() - t0Lauf).padStart(6)} ms  ${was}`); };
+
+/**
+ * 2026-08-23: zweimal an derselben Falle verloren. Der Harness hat „fertig"
+ * gemeldet, aber gar nichts geschrieben - einmal weil das Frontend tot war,
+ * einmal weil das Browser-Profil mitten im Lauf geloescht wurde. Beide Male
+ * lag noch eine ALTE Datei mit demselben Namen da, ich habe sie angesehen und
+ * fast einen veralteten Stand als aktuellen gemeldet.
+ *
+ * Deshalb: nach jedem Schreiben pruefen, ob die Datei wirklich aus DIESEM Lauf
+ * stammt. Eine Aufnahme, die es nicht gibt, muss laut sein.
+ */
+const LAUF_START = Date.now();
+function schreibenUndPruefen(datei, daten) {
+  writeFileSync(datei, daten);
+  const st = statSync(datei);
+  if (st.mtimeMs < LAUF_START || st.size < 1000) {
+    throw new Error(`Aufnahme ${datei} ist nicht aus diesem Lauf (mtime ${new Date(st.mtimeMs).toISOString()}, ${st.size} Bytes).`);
+  }
+}
 
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 // Der 4x4-Satz des gewaehlten Entwurfs, gefuellt beim Spielaufbau.
@@ -590,13 +610,13 @@ for (const name of liste) {
       await sleep(Math.max(0, ms - (Date.now() - t0)));
       const echt = Date.now() - t0;
       const datei = `${OUT}/V-${name}-${echt}.png`;
-      writeFileSync(datei, await knipsen(beamer));
+      schreibenUndPruefen(datei, await knipsen(beamer));
       console.log(`  ✓ ${datei}   (Wunsch ${ms} ms)`);
     }
   } else {
     await sleep(RUHE ?? a.ruhe);
     const datei = `${OUT}/V-${name}.png`;
-    writeFileSync(datei, await knipsen(beamer));
+    schreibenUndPruefen(datei, await knipsen(beamer));
     console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
   }
   if (DOM) await messen(beamer, DOM);

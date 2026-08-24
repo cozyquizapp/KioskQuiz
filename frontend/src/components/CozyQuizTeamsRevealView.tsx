@@ -35,6 +35,7 @@ import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirkTileSet, isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label, quirk2ForSlot } from '../quirks2Avatars';
 import { isBlockzSlug, blockzBySlug, blockzSrc, blockzLabel, blockzForSlot } from '../blockzAvatars';
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
+import { isCozyQuizSlug } from '../cozyquizAvatars';
 import { wakeAllAvatars } from '../avatarAwake';
 
 // AUSSER-WERTUNG-ANFANG: CozyArena-Einzug, laeuft nur im Arena-Modus
@@ -920,6 +921,23 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
             const slug = (slotIdx >= 0 ? COZY_WOLVES[slotIdx]?.slug : undefined) ?? t.emoji;
             return <img src={cozyWolfSrc(slug)} alt={cozyWolfLabel(slug)} draggable={false}
               style={{ width: '92%', height: '92%', objectFit: 'contain' }} />;
+          }
+          // CozyQuiz (Wolf 2026-08-24: „heute spielen text statt avatar ... es
+          // waren alle 1-8 teams"). Derselbe Fehler zum dritten Mal an dieser
+          // Kette: 2026-07-03 die Wappen, 2026-07-21 die Woelfe („text statt
+          // bilder der wölfe"), jetzt das CozyQuiz-Set. Wer ein Set einzieht und
+          // diese Liste nicht anfasst, bekommt den Kuerzel-Text in der Kachel.
+          // Nachgestellt und geknipst: alle acht Kacheln zeigten „tent",
+          // „teapot", „hot-air-balloon" ... jeweils am Kachelrand abgeschnitten.
+          //
+          // Bewusst ueber QQTeamAvatar statt als eigenes <img>: das Set hat pro
+          // Objekt einen eigenen Fuellgrad und teils einen Versatz
+          // (COZYQUIZ_FILL / COZYQUIZ_NUDGE). Ein handgeschriebenes img hier
+          // muesste beides kopieren und wuerde beim naechsten Nachjustieren
+          // auseinanderlaufen. Die Zeile darunter macht fuer den Fall ohne
+          // Kuerzel laengst dasselbe.
+          if (isCozyQuizSlug(t.emoji)) {
+            return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size="100%" />;
           }
           if (t.emoji) return <>{t.emoji}</>;
           return <QQTeamAvatar avatarId={t.avatarId} teamEmoji={undefined} size="100%" />;

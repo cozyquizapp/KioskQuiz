@@ -7,6 +7,7 @@ import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
 import { isBlockzSlug, blockzBySlug, blockzSrc, blockzLabel } from '../blockzAvatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
+import { isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel } from '../cozyquizAvatars';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
 
@@ -452,6 +453,31 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
         style={{
           width: '1.3em',
           height: '1.3em',
+          fontSize: fontSizeStr,
+          objectFit: 'contain',
+          display: 'inline-block',
+          verticalAlign: 'middle',
+          ...style,
+        }}
+      />
+    );
+  }
+  // CozyQuiz: „Emoji" ist ein Objekt-Slug → neutrales Objekt-PNG.
+  // 2026-08-24 (Wolf: „heute spielen text statt avatar"). Der Fund dort war die
+  // Buehne, aber dieselbe Kette fehlt hier - und diese Kette treibt das
+  // Avatar-Raster auf dem HANDY (QQTeamPage). Das CozyQuiz-Set ist seit
+  // 2026-08-22 der Standard, also sahen die Teams beim Auswaehlen 48 Kuerzel
+  // als Text statt der Objekte. Vierter Fundort desselben Musters nach Wappen
+  // (2026-07-03), Party (2026-07-20) und Woelfen (2026-07-21).
+  if (isCozyQuizSlug(emoji)) {
+    return (
+      <img
+        src={cozyQuizSrc(emoji)}
+        alt={cozyQuizLabel(emoji)}
+        draggable={false}
+        style={{
+          width: '1.15em',
+          height: '1.15em',
           fontSize: fontSizeStr,
           objectFit: 'contain',
           display: 'inline-block',

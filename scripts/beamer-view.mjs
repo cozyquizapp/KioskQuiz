@@ -59,6 +59,10 @@ import { createRequire } from 'node:module';
 const req = createRequire(new URL('../backend/package.json', import.meta.url));
 const { io } = req('socket.io-client');
 const sharp = createRequire(new URL('../frontend/package.json', import.meta.url))('sharp');
+// Die Kuerzel des Standard-Avatar-Sets (CozyQuiz). Der Moderator schickt sie
+// beim Bot-Fuellen mit; ohne sie testet der Harness einen anderen Avatar-Pfad
+// als der Abend. Direkt aus dem Set-Modul, damit die Liste nicht doppelt lebt.
+const SET_AVATARS = (await import('../frontend/src/cozyquizAvatars.ts').catch(() => null))?.COZYQUIZ_SLUGS ?? [];
 // Die CozyGame-Ids aus dem Repo-Seed - ohne Datenbank.
 const COZY_SEED_IDS = (await import('../shared/cozyGameTypes.ts').catch(() => null))?.COZY_GAME_V1_SEED_IDS
   ?? ['cg-ringwurf', 'cg-stift-fang', 'cg-muenz-kante', 'cg-karten-haus',
@@ -377,6 +381,18 @@ takt('Socket verbunden');
 if (process.argv.includes('--frisch')) {
   console.log('reset:', JSON.stringify(await emit('qq:resetRoom', { confirm: true })));
   await sleep(900);
+  // 2026-08-24, zweiter Fund am selben Tag: `qq:resetRoom` setzt das SPIEL
+  // zurueck, behaelt die Teams aber. `dev/fillTeams` fuegt dann nichts mehr
+  // hinzu („added: 0, total: 8") und meldet trotzdem 200 - jeder Lauf erbte
+  // stillschweigend die Teams des allerersten Laufs, samt deren Avataren.
+  // Genau deshalb war der Avatar-Fehler hier nicht ausloesbar: die alten Teams
+  // hatten gar keinen Avatar-Slug, sondern nur den Slot-Default.
+  const rc = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/clearBots`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ pin: PIN }),
+  });
+  console.log('  Bots entfernt:', rc.status, (await rc.text()).slice(0, 60));
+  await sleep(400);
 }
 
 const phase = () => beamer.evaluate(() =>
@@ -478,9 +494,16 @@ let aufbauStand = 'roh';
 async function aufbauen(stufe) {
   if (stufe === 'roh' || aufbauStand === stufe) return;
   if (aufbauStand === 'roh' && (stufe === 'lobby' || stufe === 'spiel')) {
+    // 2026-08-24 (Wolf: „heute spielen text statt avatar, es waren alle 1-8
+    // teams"): genau hier lag der blinde Fleck des Harness. `setAvatars` kommt
+    // im echten Ablauf vom Moderator-Frontend und enthaelt die Kuerzel des
+    // AKTIVEN Sets. Der Harness hat das Feld nie mitgeschickt, der Bot-Pool war
+    // damit leer, und die Bots bekamen den Fallback statt der echten Kuerzel.
+    // Ergebnis: jede Aufnahme zeigte einen Avatar-Pfad, den am Abend niemand
+    // sieht - und der Fehler, den Wolf gemeldet hat, war hier nicht ausloesbar.
     const r = await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/fillTeams`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ count: BOTS, pin: PIN }),
+      body: JSON.stringify({ count: BOTS, pin: PIN, setAvatars: SET_AVATARS }),
     });
     if (!r.ok) console.log('  fillTeams:', r.status, await r.text());
     takt('  fillTeams');

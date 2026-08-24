@@ -16,9 +16,20 @@
 import { useRef, useEffect, useState, Fragment } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, qqArenaType } from '../cozyQuizShared';
-import { isThemed, getActiveTheme } from '../qqTheme';
+import { isThemed, getActiveTheme, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+/**
+ * Die Buehne beim Namen nennen, 2026-08-24.
+ *
+ * Diese Datei lief bisher komplett ueber `isThemed()` und Flaechen-Tokens. Das
+ * funktioniert, macht aber jede Ausnahme fuer die Buehne unmoeglich: `isThemed()`
+ * ist wahr fuer vier Skins, und was man darueber baut, baut man fuer alle vier.
+ * Die Regeln sahen deshalb nicht falsch aus - sie konnten nur nichts absichtlich
+ * richtig machen.
+ */
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 import { getRuleText, useRuleOverridesVersion } from '../qqRuleTexts';
-import { QQIcon, QQEmojiIcon } from './QQIcon';
+import { QQIcon, QQEmojiIcon, QQEmojiText } from './QQIcon';
 // 2026-08-22 (Wolf: „wird der text auch ueberprueft?"): die Regel-Ansicht las
 // bis heute KEINE einzige Spielkonstante — jede Zahl stand als Text da. Heute
 // stimmen sie alle, aber nichts haelt sie richtig: wer QQ_MAX_JOKERS_PER_GAME
@@ -423,11 +434,14 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
                 : (isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.06)');
           const borderColor = isStar ? (accentHex ?? 'var(--qq-stage-brand)')
             : isPin ? (accentHex ?? '#10B981')
-            : isTeamAP ? (accentHex ?? '#FBBF24')   // Gold-Border für Pattern-Zellen
+            // 2026-08-24: der Gold-Rueckfall greift auf der Buehne nie (dort ist
+            // accentHex gesetzt), aber er stand ungegatet da und las sich wie
+            // erlaubtes Gold. Jetzt sagt der Code, was gilt.
+            : isTeamAP ? (accentHex ?? (istBuehneG() ? 'var(--qq-stage-accent)' : '#FBBF24'))
             : cellCol;
           const glowColor = isStar ? (accentHex ? `${accentHex}88` : '#EC489988')
             : isPin ? (accentHex ? `${accentHex}44` : '#10B98144')
-            : isTeamAP ? (accentHex ? `${accentHex}77` : '#FBBF2477')  // Gold-Glow für Pattern-Zellen
+            : isTeamAP ? (accentHex ? `${accentHex}77` : (istBuehneG() ? 'transparent' : '#FBBF2477'))
             : cellCol + '44';
           // 2026-05-09 (Wolf-Wunsch): Joker-Cells nutzen die echten Joker-PNGs
           // (boy/girl alternierend per row+col-index) statt 🃏-Emoji + Wiggle-
@@ -443,7 +457,9 @@ function RulesMiniGrid({ grid, slideColor, eurovisionMode }: { grid: NonNullable
               border: filled ? `2px solid ${borderColor}` : '1px solid var(--qq-hairline)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
               fontSize: cellSz * 0.5,
-              boxShadow: filled ? `0 0 12px ${glowColor}` : 'none',
+              // 2026-08-24 (2a): kein Hof um die Beispielzellen. Am echten
+              // Brett hat auch keine Kachel einen.
+              boxShadow: (filled && !istBuehneG()) ? `0 0 12px ${glowColor}` : 'none',
               animation: filled
                 ? isStar
                   // Joker: erst rein-fade, dann wiggle-Pulse infinite
@@ -791,7 +807,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           // 2026-07-17c (Wolf „ganze windows reingeschoben"): Divider STARR (kein
           // Aufzieh-Draw mehr), faehrt mit dem Fenster mit; nur der Shimmer laeuft.
           animation: 'lineShimmer 3s linear 0.9s infinite',
-          boxShadow: isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${cardSlide.color}44`,
+          // 2026-08-24 (2a): hier zog `isThemed()` die Buehne ausgerechnet in den
+          // Zweig MIT dem Hof - der klassische Verdrahtungsfehler. Eine 3px hohe
+          // Trennlinie mit 18px Hof ist auf acht Metern nur ein Schleier.
+          boxShadow: istBuehneG() ? 'none' : (isThemed() ? '0 0 18px rgba(var(--qq-accent-rgb),0.27)' : `0 0 18px ${cardSlide.color}44`),
         }} />
 
         {/* Content: text left, grid right (if grid exists) */}
@@ -900,8 +919,10 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                   <div key={`${b.label}-${i}`} style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
                     padding: 'clamp(10px, 1.2cqh, 16px) clamp(14px, 1.6cqw, 22px)', borderRadius: 16,
-                    background: `${b.accent}1a`, border: `2px solid ${b.accent}55`,
-                    boxShadow: `0 0 18px ${b.accent}33`, minWidth: 'clamp(96px, 11cqw, 140px)',
+                    background: istBuehneG() ? 'rgba(246,239,230,0.05)' : `${b.accent}1a`,
+                    border: istBuehneG() ? '1.5px solid var(--qq-hairline)' : `2px solid ${b.accent}55`,
+                    boxShadow: istBuehneG() ? 'none' : `0 0 18px ${b.accent}33`,
+                    minWidth: 'clamp(96px, 11cqw, 140px)',
                     // 2026-07-17c (Wolf „ganze windows reingeschoben"): starr, faehrt mit
                     // dem geschobenen Fenster mit (kein eigener Fade).
                   }}>
@@ -909,8 +930,11 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
                       ? <QQIcon slug={b.slug} size={'clamp(40px, 5.5cqw, 72px)'} alt={b.label} />
                       : <span style={{ fontSize: 'clamp(36px, 5cqw, 64px)', lineHeight: 1 }}><QQEmojiIcon emoji={b.emoji}/></span>}
                     <div style={{
-                      fontSize: 'clamp(14px, 1.6cqw, 22px)', fontWeight: 900,
-                      color: b.accent, letterSpacing: '0.04em',
+                      // 2026-08-24: 22px lagen unter dem Grad-Boden, und die
+                      // Beschriftung stand in derselben Farbe wie ihr Rahmen.
+                      fontSize: istBuehneG() ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(14px, 1.6cqw, 22px)',
+                      fontWeight: 900,
+                      color: istBuehneG() ? 'var(--qq-text)' : b.accent, letterSpacing: '0.04em',
                     }}>{b.label}</div>
                   </div>
                 ))}
@@ -938,7 +962,12 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             textShadow: 'none',
             textAlign: 'center',
           }}>
-            {cardSlide.extra}
+            {/* 2026-08-24: die Schlusszeile trug ein rohes „🏆" mitten im Satz -
+                also die Systemschrift des Rechners auf unserer Buehne.
+                QQEmojiText ersetzt jedes bekannte Zeichen durch das gelieferte
+                und laesst den Rest Text. Gilt auch fuer ueberschriebene
+                Regeltexte, in denen das Zeichen woanders stehen kann. */}
+            <QQEmojiText text={cardSlide.extra} />
           </div>
         )}
 
@@ -951,7 +980,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
             /* Wolf „ganze windows reingeschoben": starr, faehrt mit dem Fenster mit. */
             textShadow: isThemed() ? 'none' : `0 0 24px ${cardSlide.color}33`,
           }}>
-            {getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')}
+            <QQEmojiText text={getRuleText('rules.lastSlideHint', lang, lang === 'de' ? '🎬 Los geht\'s!' : '🎬 Let\'s go!')} />
           </div>
         )}
       </div>
@@ -1016,6 +1045,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         }
       `}</style>
 
+      {/* AUSSER-WERTUNG-ANFANG: CozyArena-Glut, nur im Arena-Modus */}
       {/* Arena-Glut: nur im Mega-Modus, aufsteigende Funken vor dem Kolosseum-BG. */}
       {mega && (
         <div aria-hidden className="qqRulesEmberLayer" style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none', zIndex: 0 }}>
@@ -1029,6 +1059,7 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
           ))}
         </div>
       )}
+      {/* AUSSER-WERTUNG-ENDE (CozyArena-Glut) */}
 
       {/* 2026-06-28 (Beamer-Review): persistenter Stepper — Übersicht aller
           Regeln, aktuelle aktiv. Steht AUSSERHALB des key={idx}-Fensters, bleibt

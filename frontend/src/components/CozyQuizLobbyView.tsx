@@ -20,8 +20,21 @@ import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQIcon } from './QQIcon';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
 import { ArenaMainVideo } from './ArenaBeamerBg';
+
+/**
+ * Die Buehne beim Namen nennen, 2026-08-24.
+ *
+ * Bis heute kannte diese Datei die Buehne nicht. Sie lief ueber Flaechen-Tokens
+ * und `isThemed()`, und das sah auch weitgehend richtig aus - aber `isThemed()`
+ * heisst „nicht Cozy" und gilt fuer vier Skins zugleich. Wer darueber eine
+ * Ausnahme fuer die Buehne bauen will, baut sie fuer alle vier. Die Folge war
+ * nicht, dass hier etwas falsch aussah, sondern dass hier nichts ABSICHTLICH
+ * richtig sein konnte: jede Regel des Briefs war nur so lange erfuellt, wie sie
+ * zufaellig mit dem Skin-Standard zusammenfiel.
+ */
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 
 // 2026-08-23: NICHT gerendert (Wolf: „wir nehmen den wolf hier raus!").
 // Der Bauplan bleibt bewusst stehen; Wiedereinbau ist der auskommentierte
@@ -221,6 +234,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // Cozy Quirks: die eckige Farb-Kachel IST der Avatar → in der Teamkarte füllt
   // sie bündig die volle Höhe links, der farbige Card-Akzent entfällt (Wolf).
   const quirkSet = isQuirkTileSet(s.avatarSetId);
+  const istBuehne = istBuehneG();
   const cardBg = s.theme?.cardBg ?? COZY_CARD_BG;
   const fontFam = isThemed()
     ? 'var(--qq-font)'
@@ -285,6 +299,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // (= Eltern-Team). In der Lobby als 8 Eltern-Karten mit „X/3 Sub-Teams"
   // gruppieren, sonst sähen 3 gleiche Avatare wie ein Bug aus.
   const nested = !!(s as any).nestedTeams;
+  // AUSSER-WERTUNG-ANFANG: CozyArena-Gruppierung, nur bei nestedTeams
   const nestedGroups = useMemo(() => {
     if (!nested) return [] as Array<{ avatarId: string; emoji?: string; color: string; label: string; subs: typeof s.teams }>;
     const byAvatar = new Map<string, { avatarId: string; emoji?: string; color: string; label: string; subs: typeof s.teams }>();
@@ -306,6 +321,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
     }
     return [...byAvatar.values()];
   }, [nested, s.teams, de]);
+  // AUSSER-WERTUNG-ENDE (CozyArena-Gruppierung)
 
   // QR size responsive to viewport height (avoid clipping on laptops)
   // Arena/viele Teams: linke Spalte traegt eine Extra-Pill ("Ein Handy pro Gruppe")
@@ -441,22 +457,27 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           padding: 'clamp(32px, 4cqh, 60px) clamp(56px, 7cqw, 120px)',
           borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
           background: 'linear-gradient(180deg, rgba(26,19,12,0.96), rgba(15,12,9,0.98))',
-          border: `4px solid ${welcomedTeam.color}`,
-          boxShadow: `0 0 80px ${welcomedTeam.color}aa`,
+          // 2026-08-24 (2a): auf der Buehne traegt die Teamfarbe die MARKE
+          // links, und die ist hier bis 200px gross. Ein zweiter Traeger als
+          // 4px-Rand plus ein dritter als 80px-Hof sagen dasselbe noch zweimal,
+          // und der Hof weicht auf Projektionsabstand nur die Kante auf.
+          border: istBuehne ? '1.5px solid var(--qq-hairline)' : `4px solid ${welcomedTeam.color}`,
+          boxShadow: istBuehne ? 'none' : `0 0 80px ${welcomedTeam.color}aa`,
           animation: 'qqWelcomeBanner 3.2s var(--qq-ease-out-cubic) both',
           pointerEvents: 'none',
           display: 'flex', alignItems: 'center', gap: 'clamp(24px, 3cqw, 44px)',
           maxWidth: '90cqw',
         }}>
           <QQTeamAvatar avatarId={welcomedTeam.avatarId} teamEmoji={welcomedTeam.emoji} teamId={welcomedTeam.id} size={'clamp(120px, 14cqw, 200px)'} style={{
-            boxShadow: `0 0 32px ${welcomedTeam.color}aa`,
+            boxShadow: istBuehne ? 'none' : `0 0 32px ${welcomedTeam.color}aa`,
             flexShrink: 0,
           }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, minWidth: 0 }}>
             <div style={{
-              fontSize: 'clamp(18px, 1.8cqw, 26px)', fontWeight: 900,
-              color: welcomedTeam.color, letterSpacing: '0.22em', textTransform: 'uppercase',
-              textShadow: `0 0 18px ${welcomedTeam.color}88`,
+              fontSize: istBuehne ? 'clamp(24px, 2.2cqw, 32px)' : 'clamp(18px, 1.8cqw, 26px)', fontWeight: 900,
+              color: istBuehne ? 'var(--qq-text-muted)' : welcomedTeam.color,
+              letterSpacing: '0.22em', textTransform: 'uppercase',
+              textShadow: istBuehne ? 'none' : `0 0 18px ${welcomedTeam.color}88`,
             }}>
               {de ? 'Willkommen' : 'Welcome'}
             </div>
@@ -470,12 +491,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               // darf auf 2 Zeilen brechen), Cinzel gilt nur kurzen Hero-Worten.
               fontFamily: arenaLobbyBg ? 'var(--font-arena-body)' : fontFam,
               fontSize: 'clamp(40px, 5.6cqw, 92px)', fontWeight: 900,
-              color: '#FFEFC9', lineHeight: 1.04,
+              color: istBuehne ? 'var(--qq-text)' : '#FFEFC9', lineHeight: 1.04,
               letterSpacing: '-0.005em',
               overflowWrap: 'anywhere', wordBreak: 'break-word',
               display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
               maxWidth: '70cqw',
-              textShadow: `0 0 36px ${welcomedTeam.color}88`,
+              textShadow: istBuehne ? 'none' : `0 0 36px ${welcomedTeam.color}88`,
             }}>
               {welcomedTeam.name}!
             </div>
@@ -626,7 +647,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       // 11cqh/166 -> 8.5cqh/126.
                       height: 'clamp(60px, 8.5cqh, 126px)',
                       width: 'auto',
-                      filter: 'drop-shadow(0 0 24px rgba(var(--qq-stage-brand-rgb), 0.6))',
+                      // 2026-08-24 (2a): kein Hof. Das Kundenlogo steht auf
+                      // dunklem Grund und braucht keinen, und der Hof lief in
+                      // `--qq-stage-brand` - also in der Farbe, die auf der
+                      // Buehne „unter zehn Sekunden" heisst. Ein Signalton als
+                      // Dekoration am Logo ist genau die Verwaesserung, gegen
+                      // die der Brief die vier Farben festgelegt hat.
+                      filter: istBuehne ? 'none' : 'drop-shadow(0 0 24px rgba(var(--qq-stage-brand-rgb), 0.6))',
                     }}
                   />
                 </span>
@@ -761,8 +788,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           gridColumn: 1, gridRow: 2,
           background: '#ffffff', borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: 'clamp(14px, 2cqh, 24px)',
           // C5 „Scan-me"-Breath: sanftes gruenes Box-Shadow-Puls signalisiert Interaktivitaet.
-          animation: 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite, phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
-          boxShadow: '0 0 50px rgba(246, 239, 230,0.1)',
+          // 2026-08-24 (2a): der QR ist eine weisse Flaeche auf dunklem Grund,
+          // das ist der hoechste Kontrast der ganzen Folie. Er braucht keinen
+          // Hof, um aufzufallen, und `qrGlow` atmete genau so einen. Der
+          // Einzugs-Pop bleibt.
+          animation: istBuehne
+            ? 'phasePop 0.6s var(--qq-ease-bounce) 0.3s both'
+            : 'qrScanBreath 3s ease-in-out infinite, qrGlow 3s ease-in-out infinite, phasePop 0.6s var(--qq-ease-bounce) 0.3s both',
+          boxShadow: istBuehne ? 'none' : '0 0 50px rgba(246, 239, 230,0.1)',
           // 2026-08-23: der QR darf KEINE eigene Groesse mitbringen, sonst
           // bestimmt er die Zeilenhoehe statt sie zu uebernehmen. `width: 0` +
           // `minWidth: 100%`… waere ein Trick; sauberer ist: Hoehe von der
@@ -790,7 +823,13 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             Tabelle mit Ueberschrift". */}
         <div style={{
           gridColumn: 1, gridRow: 1,
-          fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+          // 2026-08-24, gemessen auf der Buehne: beide Kopfzeilen standen bei
+          // 20px, die Zaehler-Plakette bei 24px. Der Brief nennt rund 26px als
+          // kleinsten sinnvollen Grad, und das hier ist die ERSTE Folie des
+          // Abends - die Zeile ueber dem QR ist die Aufforderung, ohne die
+          // niemand mitspielt. Platz ist reichlich: unterhalb der Kacheln lagen
+          // rund 190px leere Buehne.
+          fontSize: istBuehne ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
           color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
           textAlign: 'center', alignSelf: 'end',
         }}>
@@ -821,6 +860,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           </div>
         )}
 
+        {/* AUSSER-WERTUNG-ANFANG: CozyArena-Hinweis, nur im Arena-Modus */}
         {/* Arena/nested (2026-07-11): eine Gruppe teilt sich EIN Handy → sonst
             loggen sich 40 Einzelpersonen ein. Nur im nested-Modus, bilingual.
             2026-08-23: sitzt jetzt in Zeile 3 unter dem QR (wo vorher der Link
@@ -840,6 +880,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             {de ? 'Ein Handy pro Gruppe' : 'One phone per group'}
           </div>
         )}
+        {/* AUSSER-WERTUNG-ENDE (CozyArena-Hinweis) */}
 
         {/* Right: Teams + status. Kopfzeile sitzt in Zeile 1, damit sie die
             Hoehe von Zeile 2 nicht mitbestimmt — sonst waere der QR genau um
@@ -853,7 +894,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               per key-Remount bei jedem neuen Team (Count-Tick). */}
           <div style={{
             gridColumn: 2,
-            fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+            // Grad wie die Kopfzeile links, siehe dort.
+            fontSize: istBuehne ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
             // 2026-07-13 (Wolf: „joined-Zaehler aus der Mitte"): im Arena-BG-Modus
             // links ausgerichtet, damit er nicht mittig ueberm Arena-Tor schwebt.
@@ -871,7 +913,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
             <span style={{ opacity: arenaLobbyBg ? 0.95 : 0.7 }}>{de ? 'Angemeldete Teams' : 'Joined Teams'}</span>
             <span key={teamCount} style={{
               display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-              minWidth: 'clamp(28px, 2.4cqw, 42px)', height: 'clamp(28px, 2.4cqw, 42px)',
+              minWidth: istBuehne ? 'clamp(36px, 3cqw, 50px)' : 'clamp(28px, 2.4cqw, 42px)',
+              height: istBuehne ? 'clamp(36px, 3cqw, 50px)' : 'clamp(28px, 2.4cqw, 42px)',
               padding: '0 clamp(6px, 0.7cqw, 12px)', borderRadius: 11,
               background: isThemed() ? 'var(--qq-accent)' : 'var(--qq-stage-brand)',
               // 2026-08-23, gemessen: 1.02:1. Auf der Creme-Buehne ist
@@ -883,7 +926,8 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               // die Tinte. `#1a0a14` liest auf Creme wie auf Pink (gemessen
               // 5.4:1 auf #EC4899), also brauchen beide Zweige denselben Wert.
               color: '#1a0a14',
-              fontSize: 'clamp(16px, 1.7cqw, 24px)', fontVariantNumeric: 'tabular-nums',
+              fontSize: istBuehne ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(16px, 1.7cqw, 24px)',
+              fontVariantNumeric: 'tabular-nums',
               animation: 'qqCountTick 0.4s cubic-bezier(0.34,1.56,0.64,1)',
             }}>{teamCount}</span>
           </div>
@@ -904,6 +948,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               (Der Zustand „niemand da" bleibt beschriftet, ueber die
               Statuszeile „Scannt den Code um beizutreten".) */}
           {nested ? (
+          /* AUSSER-WERTUNG-ANFANG: CozyArena-Fraktionskarten, nur im Arena-Modus */
 
             /* 2026-07-01 (Idee 2): Eltern-Karten. Jede zeigt Avatar + Label +
                „X/3"-Pill + kleine Sub-Team-Namen-Chips. */
@@ -973,6 +1018,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                 </div>
               ))}
             </div>
+          /* AUSSER-WERTUNG-ENDE (CozyArena-Fraktionskarten) */
           ) : (
             <div style={{
               gridColumn: 2,
@@ -1041,7 +1087,11 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                           : 'clamp(72px, 6.2cqw, 96px)',
                         aspectRatio: '1', flexShrink: 0,
                         borderRadius: 'var(--qq-team-mark-radius, 16%)',
-                        border: '2px dashed rgba(246, 239, 230, 0.14)',
+                        // 2026-08-24 (2a): keine gestrichelten Raender. Ein
+                        // leerer Platz ist auf der Buehne eine ruhige Flaeche,
+                        // kein Bauzaun.
+                        border: istBuehne ? '1.5px solid var(--qq-hairline)' : '2px dashed rgba(246, 239, 230, 0.14)',
+                        background: istBuehne ? 'rgba(246,239,230,0.03)' : undefined,
                       }} />
                     </div>
                   );
@@ -1213,11 +1263,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                           marginTop: 4,
                           display: 'inline-flex', alignItems: 'center', gap: 6,
                           padding: '3px 10px', borderRadius: 'var(--qq-pill-radius)',
-                          background: `${t.color}1c`,
-                          border: `1px solid ${t.color}55`,
-                          fontSize: compact ? 'clamp(11px, 1cqw, 14px)' : 'clamp(12px, 1.1cqw, 16px)',
+                          // 2026-08-24 (2a): Teamfarbe lebt auf der Kachel, nicht
+                          // in der Schrift - und die Kachel steht direkt daneben.
+                          // Der Grad lag bei 14 bis 16px, also unter dem Boden.
+                          background: istBuehne ? 'rgba(246,239,230,0.05)' : `${t.color}1c`,
+                          border: istBuehne ? '1.5px solid var(--qq-hairline)' : `1px solid ${t.color}55`,
+                          fontSize: istBuehne
+                            ? (compact ? 'clamp(20px, 1.9cqw, 26px)' : 'clamp(22px, 2cqw, 28px)')
+                            : (compact ? 'clamp(11px, 1cqw, 14px)' : 'clamp(12px, 1.1cqw, 16px)'),
                           fontWeight: 800,
-                          color: t.color,
+                          color: istBuehne ? 'var(--qq-text-muted)' : t.color,
                           maxWidth: '100%',
                           animation: 'qqPauseEyebrowFloat 4s ease-in-out infinite',
                         }} title={de

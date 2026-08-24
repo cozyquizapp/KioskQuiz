@@ -506,6 +506,38 @@ const SLUG_ALIAS: Partial<Record<QQIconSlug, QQIconSlug>> = {
   // Palette.
 };
 
+/**
+ * QQEmojiText — ein SATZ, in dem jedes bekannte Emoji durch das gelieferte
+ * Zeichen ersetzt wird. Der Rest bleibt Text.
+ *
+ * WARUM (2026-08-24): `QQEmojiIcon` kann ein Zeichen, aber viele Texte im Repo
+ * tragen das Zeichen MITTEN im String: „🏆 Groesstes Gebiet gewinnt",
+ * „🎬 Los geht's!". Die standen damit als rohes Systemzeichen auf der Buehne,
+ * also in der Schrift des jeweiligen Rechners statt in unserer.
+ *
+ * Sie einzeln aufzutrennen waere ausserdem nicht haltbar: die Regeltexte sind
+ * ueber `getRuleText` ueberschreibbar, Wolf kann also jederzeit ein Zeichen an
+ * eine andere Stelle setzen. Deshalb ein Laeufer ueber den ganzen Satz statt
+ * einer Handvoll aufgetrennter Konstanten.
+ *
+ * Unbekannte Zeichen bleiben als Text stehen - so wie bei QQEmojiIcon auch.
+ */
+const EMOJI_LAUF = /(\p{Extended_Pictographic}(?:️)?(?:‍\p{Extended_Pictographic}(?:️)?)*)/gu;
+
+export function QQEmojiText({ text, size = '1em', style }: {
+  text: string; size?: number | string; style?: CSSProperties;
+}) {
+  const teile = text.split(EMOJI_LAUF).filter(t => t !== '');
+  return (
+    <>
+      {teile.map((t, i) =>
+        qqEmojiSlug(t)
+          ? <QQEmojiIcon key={i} emoji={t} size={size} style={style} />
+          : <span key={i}>{t}</span>)}
+    </>
+  );
+}
+
 export function QQIcon({ slug, size, style, className, title, alt }: Props) {
   const [failed, setFailed] = useState(false);
   const effectiveSlug = SLUG_ALIAS[slug] ?? slug;

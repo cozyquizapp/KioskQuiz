@@ -15,7 +15,20 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar, isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
 import { TeamNameLabel } from './TeamNameLabel';
 import { playAvatarCascadeNote, playGoodLuckFanfare, playWoodKnock } from '../utils/sounds';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+/**
+ * Die Buehne beim Namen nennen, 2026-08-24.
+ *
+ * Diese Datei kannte die Buehne nicht - sie lief ueber `themed` und ueber
+ * `quirkSet`. Das zweite ist besonders tueckisch, weil es fast stimmt:
+ * `isQuirkTileSet(avatarSetId)` fuehrt normalerweise zum Quirks-Theme, aber
+ * eben nur, solange kein anderes Theme ausdruecklich gewaehlt ist
+ * (themeIdForState in qqTheme.ts). Quirk-Kacheln mit Studio Mono ergeben
+ * `quirkSet === true` bei abgeschalteter Buehne. Ein Test, der fast stimmt,
+ * ist schlimmer als keiner: er haelt jahrelang und faellt dann einmal um.
+ */
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel } from '../cozy3dAvatars';
 import { isCozyWolfSlug, cozyWolfSrc, cozyWolfLabel, COZY_WOLVES } from '../cozyWolves';
 import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
@@ -415,6 +428,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
   // Cozy Quirks: eckige Kachel statt runder Disc → keine runde Umrandung um den
   // Avatar. Bei aktivem Set wird die Avatar-Disc quadratisch (Team-Farbe = Kachel).
   const quirkSet = isQuirkTileSet(s.avatarSetId);
+  const istBuehne = istBuehneG();
   const fontFam = themed
     ? 'var(--qq-font)'
     : s.theme?.fontFamily ? `'${s.theme.fontFamily}', 'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif` : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif";
@@ -772,9 +786,11 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
               ? 'linear-gradient(90deg, transparent 0%, rgba(255,45,123,0.7) 25%, #FF2D7B 50%, rgba(255,45,123,0.7) 75%, transparent 100%)'
               : 'linear-gradient(90deg, transparent 0%, rgba(var(--qq-accent-rgb),0.7) 25%, var(--qq-accent) 50%, rgba(var(--qq-accent-rgb),0.7) 75%, transparent 100%)',
             backgroundSize: '200% 100%',
-            boxShadow: isEsc
+            // 2026-08-24 (2a): kein Hof unter dem Titelstrich. Der Strich ist
+            // 3px hoch, der Hof 14px - aus acht Metern sieht man nur den Hof.
+            boxShadow: istBuehneG() ? 'none' : (isEsc
               ? '0 0 14px rgba(255,45,123,0.55)'
-              : '0 0 14px rgba(var(--qq-accent-rgb),0.55)',
+              : '0 0 14px rgba(var(--qq-accent-rgb),0.55)'),
             transformOrigin: 'center',
             opacity: 0,
             animation:
@@ -943,9 +959,13 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                         // nur opacity .24 (gedämpft) → 1 beim Aufruf.
                         // Quirks: kein farbiger Gradient-Rahmen (die Kachel IST die
                         // Farbe) → transparent, kein Padding, Glow trägt die Kachel.
-                        background: quirkSet ? 'transparent' : `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
-                        border: quirkSet ? 'none' : (revealed ? `2px solid ${t.color}` : '1.5px solid rgba(246, 239, 230,0.07)'),
-                        boxShadow: quirkSet ? 'none' : (revealed
+                        // 2026-08-24: `quirkSet` stand hier als Buehnen-Test, und
+                        // das ist er nicht ganz (siehe Kopf der Datei). Auf der
+                        // Buehne gilt dasselbe Ergebnis, aber jetzt aus dem
+                        // richtigen Grund.
+                        background: (istBuehne || quirkSet) ? 'transparent' : `linear-gradient(180deg, ${t.color}66, ${t.color}33)`,
+                        border: (istBuehne || quirkSet) ? 'none' : (revealed ? `2px solid ${t.color}` : '1.5px solid rgba(246, 239, 230,0.07)'),
+                        boxShadow: (istBuehne || quirkSet) ? 'none' : (revealed
                           ? `inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
                           : 'none'),
                         opacity: revealed ? 1 : 0.24,
@@ -966,9 +986,15 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           aspectRatio: quirkSet ? '1' : undefined,
                           // Quirks: eckige Kachel (Team-Farbe = Kachel), sonst runde Disc.
                           borderRadius: quirkSet ? '18%' : '50%',
-                          background: revealed ? t.color : 'transparent',
-                          border: revealed ? `2.5px solid ${t.color}` : '2.5px dashed rgba(246, 239, 230,0.18)',
-                          boxShadow: revealed ? `0 0 28px ${t.color}99` : 'none',
+                          background: revealed ? t.color : (istBuehne ? 'rgba(246,239,230,0.04)' : 'transparent'),
+                          // 2026-08-24 (2a): kein gestrichelter Platzhalter und kein
+                          // Hof um die Kachel. Die Kachel IST auf der Buehne die
+                          // Teamfarbe, in voller Flaeche - ein 28px-Hof daneben
+                          // sagt dasselbe noch einmal, nur unscharf.
+                          border: revealed
+                            ? (istBuehne ? 'none' : `2.5px solid ${t.color}`)
+                            : (istBuehne ? '1.5px solid var(--qq-hairline)' : '2.5px dashed rgba(246, 239, 230,0.18)'),
+                          boxShadow: (revealed && !istBuehne) ? `0 0 28px ${t.color}99` : 'none',
                           display: 'flex', alignItems: 'center', justifyContent: 'center',
                           flexShrink: 0,
                           overflow: (isCozy3dSlug(t.emoji) || isCrestSlug(t.emoji) || isCozyWolfSlug(t.emoji) || isPartySlug(t.emoji) || isQuirk2Slug(t.emoji) || isBlockzSlug(t.emoji)) ? 'visible' : 'hidden',
@@ -981,7 +1007,7 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                             <>
                               <span aria-hidden style={{
                                 position: 'absolute', inset: 0, borderRadius: '50%',
-                                boxShadow: `0 0 18px 5px ${t.color}`, pointerEvents: 'none',
+                                boxShadow: istBuehne ? 'none' : `0 0 18px 5px ${t.color}`, pointerEvents: 'none',
                                 animation: 'qqCrestAura 3.2s ease-in-out infinite',
                               }} />
                               <span aria-hidden style={{

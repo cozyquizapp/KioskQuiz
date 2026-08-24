@@ -82,27 +82,28 @@ const DIREKT_AUFGERUFEN = process.argv[1]
 
 /** Die Ansichten, die auf der Buehne wirklich laufen, in Ablauf-Reihenfolge. */
 const ANSICHTEN = [
-  ['Lobby',              'frontend/src/components/CozyQuizLobbyView.tsx',
-    'Kennt die Buehne nicht beim Namen.'],
+  ['Lobby',              'frontend/src/components/CozyQuizLobbyView.tsx'],
   ['Regeln',             'frontend/src/components/CozyQuizRulesView.tsx',
-    'Kennt die Buehne nicht beim Namen: alles laeuft ueber Flaechen-Tokens. Funktioniert, macht aber jede Ausnahme unmoeglich.'],
-  ['Team-Auftritt',      'frontend/src/components/CozyQuizTeamsRevealView.tsx',
-    'Kennt die Buehne nicht beim Namen.'],
+    'Die fuenf Zeichen-Treffer sind Datenfelder (Zellen-Marker, Motiv-Zuordnung), keine '
+    + 'gerenderten Systemzeichen. Die beiden, die WIRKLICH auf der Buehne standen, laufen '
+    + 'seit 2026-08-24 ueber QQEmojiText.'],
+  ['Team-Auftritt',      'frontend/src/components/CozyQuizTeamsRevealView.tsx'],
   ['Runden-Intro',       'frontend/src/components/CozyQuizPhaseIntroView.tsx'],
   ['Frage + Aufloesung', 'frontend/src/components/CozyQuizQuestionView.tsx'],
-  ['Brett / Setzen',     'frontend/src/components/CozyQuizPlacementView.tsx'],
+  ['Brett / Setzen',     'frontend/src/components/CozyQuizPlacementView.tsx',
+    'Kennt die Buehne nicht beim Namen, und das ist hier richtig: die Datei setzt nur '
+    + 'Brett, Punkteleiste und Kopfzeile zusammen. Jede Farb- und Grad-Entscheidung liegt '
+    + 'in den Kindern, die die Buehne sehr wohl kennen.'],
   ['Punkteleiste',       'frontend/src/components/CozyQuizScoreBar.tsx'],
   ['Brett-Anzeige',      'frontend/src/components/CozyQuizGridDisplay.tsx'],
   ['Top 5',              'frontend/src/components/reveals/Top5Reveal.tsx'],
   ['Fix It',             'frontend/src/components/reveals/OrderReveal.tsx'],
   ['Pin It',             'frontend/src/components/reveals/CozyGuessrReveal.tsx'],
   ['Schaetzchen',        'frontend/src/components/reveals/SchaetzchenReveal.tsx'],
-  ['Pause',              'frontend/src/components/CozyQuizPausedView.tsx',
-    'Enthaelt auch den CozyArena-Aufbau (Fraktionen), der nur im Arena-Modus laeuft.'],
+  ['Pause',              'frontend/src/components/CozyQuizPausedView.tsx'],
   ['CozyGame',           'frontend/src/components/CozyGameView.tsx'],
   ['Final-Tipp',         'frontend/src/components/CozyQuizFinalBettingView.tsx'],
-  ['Final-Aufloesung',   'frontend/src/components/CozyQuizFinalRevealView.tsx',
-    'Datei enthaelt VIER Finale-Varianten (Eurovision, Podium, Turm, Race). Auf der Buehne laeuft nur das Turm-Finale; ein grosser Teil der Treffer steht in Varianten, die niemand sieht.'],
+  ['Final-Aufloesung',   'frontend/src/components/CozyQuizFinalRevealView.tsx'],
   ['Turm-Finale',        'frontend/src/components/CozyQuizTowerFinaleV2.tsx'],
   ['Stechen',            'frontend/src/components/CozyQuizTieBreakerView.tsx'],
   ['Spielende',          'frontend/src/components/CozyQuizGameOverView.tsx'],
@@ -302,8 +303,22 @@ const REGELN = [
     titel: 'Teamfarbe als Schriftfarbe',
     bibel: 'Farbe: Teamfarbe lebt auf der Kachel, nie in der Schrift',
     finde: /\bcolor:\s*([^,;}\n]{0,80})/g,
-    zusatz: (_src, m) => /\b(t|team|winner|recip|entry\.team|teamColor|colr)\.?color\b/.test(m[1])
-                      && !/var\(/.test(m[1]),
+    zusatz: (src, m) => {
+      if (!/\b(t|team|winner|recip|entry\.team|teamColor|colr)\.?color\b/.test(m[1])) return false;
+      if (/var\(/.test(m[1])) return false;
+      // 2026-08-24, sechster Durchgang: gemeldet wurde
+      //     g = { ...t, id: `grp-${id}`, name: …, color: meta?.color ?? t.color }
+      // Das ist ein DATENOBJEKT, kein Stil - dort ist `color` das Feld eines
+      // Teams, keine Schriftfarbe. Der Unterschied ist von aussen nicht am
+      // Namen ablesbar, wohl aber an den Nachbarn: `id`, `name`, `emoji`,
+      // `avatarId` sind keine CSS-Eigenschaften, und wo sie im selben Objekt
+      // stehen, ist das Objekt keines.
+      const zeilenAnfang = src.lastIndexOf('\n', m.index) + 1;
+      const zeilenEnde = src.indexOf('\n', m.index);
+      const zeile = src.slice(zeilenAnfang, zeilenEnde < 0 ? src.length : zeilenEnde);
+      if (/\b(id|name|emoji|avatarId|slug|teamId|_subNames):/.test(zeile)) return false;
+      return true;
+    },
   },
   {
     key: 'klein',
@@ -429,6 +444,8 @@ const FAELLE = [
   ['Teamfarbe als Schrift zaehlt',  `x = { color: t.color }`,                                 'teamfarbe', 1],
   ['Teamfarbe gegated zaehlt nicht',`x = { color: istBuehne ? 'var(--qq-text)' : t.color }`,  'teamfarbe', 0],
   ['Token-Farbe zaehlt nicht',      `x = { color: 'var(--qq-text)' }`,                        'teamfarbe', 0],
+  ['Teamfarbe im Datenobjekt zaehlt nicht',
+    "g = { ...t, id: `grp-${a}`, name: n, color: meta?.color ?? t.color };",                   'teamfarbe', 0],
   ['Kleiner Grad zaehlt',           `x = { fontSize: 'clamp(10px, 1cqw, 13px)' }`,            'klein', 1],
   ['Grosser Grad zaehlt nicht',     `x = { fontSize: 'clamp(18px, 2cqw, 30px)' }`,            'klein', 0],
   ['Gold zaehlt',                   `const GOLD = '#FBBF24';`,                                'gold', 1],

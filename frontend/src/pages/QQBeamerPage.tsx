@@ -16,6 +16,7 @@ import {
   QQLanguage,
   QQSoundSlot,
   QQ_MAX_JOKERS_PER_GAME,
+  QQ_QUESTIONS_PER_PHASE,
   teamDisplayName,
   qqIsMega,
 } from '../../../shared/quarterQuizTypes';
@@ -2016,7 +2017,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     && renderState.phase !== 'THANKS'
     && renderState.phase !== 'PAUSED'
     && renderState.phase !== 'LOBBY';
-  const kategorieLaeuft = QQ_KATEGORIE_GRUND_PHASEN.has(s.phase) && !zwischenstandLaeuft;
+  // 2026-08-24 (Wolf: „progress tree hat kategorie background"). Im Runden-
+  // Intro laeuft die Kategorie noch nicht - sie wird dort erst aufgedeckt. Die
+  // erste Frage einer Runde hat davor zwei Schritte (Runden-Titel, Aktion),
+  // und in beiden lag der Grund schon in der Farbe der kommenden Kategorie.
+  // Damit stand die Antwort auf „welche Kategorie kommt" auf der Wand, bevor
+  // die Folie sie stellt. Die Stufe, ab der die Kategorie sichtbar ist, steht
+  // im Backend (`catRevealStep`): erste Frage einer Runde 2, sonst 0.
+  const vorKategorieAufdeckung = s.phase === 'PHASE_INTRO'
+    && (s.introStep ?? 0) < ((s.questionIndex % QQ_QUESTIONS_PER_PHASE) === 0 ? 2 : 0);
+  const kategorieLaeuft = QQ_KATEGORIE_GRUND_PHASEN.has(s.phase)
+    && !zwischenstandLaeuft
+    && !vorKategorieAufdeckung;
 
   return (
     <div

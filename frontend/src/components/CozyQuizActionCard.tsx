@@ -54,10 +54,19 @@ function SlotOuter({
   children: React.ReactNode;
 }) {
   return (
-    <div style={{
-      flex: cardCount === 1 ? '0 1 auto' : '1 1 0',
+    <div data-qq-aktionskarte style={{
+      // 2026-08-24, gemessen: die aufgedeckte Karte stand 277 px breit auf der
+      // Buehne, die Karten daneben 428. Grund: bei `isNew` liegen Vorder- und
+      // Rueckseite `position:absolute` im Dreh-Wrapper, der Slot hat also
+      // keinen Inhalt im Fluss - `flex-basis:auto` fiel auf `minWidth` zurueck.
+      // In 277 px passt „1x Platzieren" nicht in eine Zeile, die Karte brauchte
+      // eine Zeile mehr als hoch war, und `overflow:hidden` schnitt „pro
+      // richtige Antwort" mittendurch ab. Eine feste Breite trifft beide
+      // Varianten gleich - genau das, wofuer es diesen Slot gibt.
+      flex: cardCount === 1 ? '0 0 auto' : '1 1 0',
+      width: cardCount === 1 ? 'min(480px, 100%)' : undefined,
       minWidth: cardCount === 1 ? 280 : 200,
-      maxWidth: cardCount === 1 ? 480 : 480,
+      maxWidth: 480,
       minHeight: 360,
       boxSizing: 'border-box',
       position: 'relative',
@@ -173,10 +182,18 @@ function BackFace({ lang }: { lang: 'de' | 'en' }) {
       backfaceVisibility: 'hidden',
       WebkitBackfaceVisibility: 'hidden',
       borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-      background:
-        'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
-        'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
-        'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
+      // 2026-08-24 (Wolf: „sind die karten noch passend zum neuen design?").
+      // Die Vorderseite war es laengst (Karten-Token), die Rueckseite nicht:
+      // zwei pinke Radial-Verlaeufe, pinker Rand, pinker Schein und ein pinkes
+      // NEU. Auf der Buehne ist Pink seit dem 24.08. auch aus dem Zwischenstand
+      // raus - die Rueckseite war die letzte Flaeche, auf der es noch lag.
+      // Sie nimmt jetzt dieselbe Karte wie die Vorderseite; das Aufdecken lebt
+      // von der Drehung, nicht von der Farbe.
+      background: istBuehneG()
+        ? 'var(--qq-card-bg)'
+        : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
+          'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
+          'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
       border: isThemed() ? 'var(--qq-card-border)' : '3px solid rgba(236,72,153,0.65)',
       boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
       display: 'flex', flexDirection: 'column',
@@ -186,20 +203,23 @@ function BackFace({ lang }: { lang: 'de' | 'en' }) {
     }}>
       <div aria-hidden style={{
         position: 'absolute', inset: 0,
-        backgroundImage:
-          'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
-          'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
+        backgroundImage: istBuehneG()
+          ? 'repeating-linear-gradient(45deg, rgba(255,255,255,0.045) 0 2px, transparent 2px 22px),' +
+            'repeating-linear-gradient(-45deg, rgba(255,255,255,0.03) 0 2px, transparent 2px 22px)'
+          : 'repeating-linear-gradient(45deg, rgba(236,72,153,0.06) 0 2px, transparent 2px 22px),' +
+            'repeating-linear-gradient(-45deg, rgba(236,72,153,0.04) 0 2px, transparent 2px 22px)',
         pointerEvents: 'none',
       }} />
       <div style={{
         fontSize: 'clamp(32px, 3.6cqw, 56px)', fontWeight: 900,
-        color: '#FBCFE8', letterSpacing: '0.18em',
-        textShadow: '0 0 24px rgba(236,72,153,0.7)',
+        color: istBuehneG() ? 'var(--qq-card-text)' : '#FBCFE8',
+        letterSpacing: '0.18em',
+        textShadow: istBuehneG() ? 'none' : '0 0 24px rgba(236,72,153,0.7)',
         position: 'relative',
       }}>{lang === 'en' ? 'NEW' : 'NEU'}</div>
       <div style={{
         fontSize: 'clamp(56px, 6.5cqw, 96px)', lineHeight: 1,
-        filter: 'drop-shadow(0 0 18px rgba(236,72,153,0.55))',
+        filter: istBuehneG() ? 'drop-shadow(0 4px 12px rgba(0,0,0,0.35))' : 'drop-shadow(0 0 18px rgba(236,72,153,0.55))',
         position: 'relative',
       }}>✨</div>
     </div>

@@ -365,7 +365,12 @@ export default function QQProgressTree({
   // Wolf 2026-05-12 'bid muss auf progress tree genau vor finalrunde
   // angezeigt werden'.
   const biddingDotSize = Math.round(dotSize * 1.2);
-  const cozyGameDotSize = Math.round(dotSize * 1.2);
+  // 2026-08-24 (Wolf: „cozy games emoji in progress tree gleich gross"): im
+  // ganzen Baum darf der Knoten groesser sein, dort steht er als eigener Block
+  // zwischen zwei Runden. In der Einzelrunde steht er in EINER Reihe mit den
+  // fuenf Kategorien - dort ist jede Abweichung eine Aussage, und die stimmt
+  // nicht: das CozyGame ist nicht wichtiger als eine Kategorie.
+  const cozyGameDotSize = Math.round(dotSize * (isSingleRound ? 1 : 1.2));
   let biddingCenter = 0;
   // Pro Phase-Übergang ein eigener CG-Center. Index = Phase-Index VOR dem CG.
   // Z.B. cozyGameCentersByPi[1] = CG zwischen Phase 0 und Phase 1 (= nach Runde 1).
@@ -528,7 +533,12 @@ export default function QQProgressTree({
   // Ohne focusPhaseIdx (Live-Tree, Step-0-Uebersicht) unveraendert: ganzer Journey-Track.
   const focusSpan = (focusPhaseIdx != null && phaseDotSpans[focusPhaseIdx]) ? phaseDotSpans[focusPhaseIdx] : null;
   const trackStart = focusSpan ? focusSpan.first : firstCenter;
-  const trackEnd = focusSpan ? focusSpan.last
+  // 2026-08-24 (Wolf: „mit verbindung zum rest"): in der Einzelrunde laeuft die
+  // Linie bis zum CozyGame durch. Ohne sie stand das Rad daneben statt dahinter.
+  const einzelCgCenter = einzelCozyGame
+    ? (cozyGameCentersByPi.get(onlyPhase as number) ?? 0) : 0;
+  const trackEnd = einzelCozyGame ? einzelCgCenter
+    : focusSpan ? focusSpan.last
     : wolfOnFinale ? finaleCenter
     : wolfOnBidding ? biddingCenter
     : wolfOnCozyGame ? activeCozyGameCenter
@@ -896,7 +906,10 @@ export default function QQProgressTree({
                       der Raum Sekunden spaeter auch: das Rad dreht sich und
                       waehlt das Spiel. Zeichen und Moment sagen damit dasselbe.
                       Der Fortschrittsbaum war die letzte Stelle mit dem Wolf. */}
-                  <CozyGameIcon id="fx-wheel" emoji="🎡" size={Math.round(cozyGameDotSize * 0.74)} />
+                  {/* Ohne Kasten gilt fuer das Rad dieselbe Rechnung wie fuer
+                      die Kategorien darueber: das Zeichen IST die Kachel. Mit
+                      0.74 sass es sichtbar kleiner in derselben Reihe. */}
+                  <CozyGameIcon id="fx-wheel" emoji="🎡" size={Math.round(cozyGameDotSize * (chromeless ? 1 : 0.74))} />
                 </div>
               </div>
             ) : null;

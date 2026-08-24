@@ -515,8 +515,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     gap: 4, lineHeight: 1.05, textAlign: 'center', maxWidth: '100%',
                   }}>
+                    {/* 2026-08-24: auf der Buehne nachgemessen. Der Satz um den
+                        Siegernamen („TEAM" / „hat heute gewonnen") stand bei 22px,
+                        die QR-Zeile bei 22px, die Nutzen-Zeile darunter bei 17px.
+                        Das ist die letzte Folie des Abends und die einzige, die
+                        etwas VERLANGT (scannen) - ausgerechnet dort war die
+                        Aufforderung der kleinste Text der Folie. Platz ist reichlich
+                        da, die Karte ist 1500px breit und rechts wie links leer. */}
                     <div style={{
-                      fontSize: 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
+                      fontSize: istBuehne ? 'clamp(20px, 2cqw, 28px)' : 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
                       color: 'var(--qq-text-muted)',
                       letterSpacing: '0.22em', textTransform: 'uppercase',
                     }}>{nested ? (de ? 'Fraktion' : 'Faction') : 'Team'}</div>
@@ -537,7 +544,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     }}>{winner.name}</div>
                     <div style={{
                       marginTop: 4,
-                      fontSize: 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
+                      fontSize: istBuehne ? 'clamp(20px, 2cqw, 28px)' : 'clamp(15px, 1.55cqw, 22px)', fontWeight: 800,
                       color: themed ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)',
                       letterSpacing: '0.04em',
                     }}>{de ? 'hat heute gewonnen' : 'won today'}</div>
@@ -587,13 +594,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 <div style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center',
                   gap: 3, lineHeight: 1.2, textAlign: 'center',
-                  maxWidth: 'clamp(220px, 22cqw, 340px)',
+                  // Mit 26px statt 17px braucht „Feedback geben + auf Insta
+                  // folgen" mehr Zeile, sonst bricht der Satz dreifach um.
+                  maxWidth: istBuehne ? 'clamp(320px, 32cqw, 520px)' : 'clamp(220px, 22cqw, 340px)',
                 }}>
                   {/* 2026-07-13 (Skill-Review CRO): Scan-Verb ergaenzt. Vorher nur
                       der Benefit ohne Aufforderung → QR-Aktion (scannen) war nicht
                       angesagt. Jetzt Aktions-Zeile + Benefit-Zeile. */}
                   <div style={{
-                    fontSize: 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
+                    fontSize: istBuehne ? 'clamp(22px, 2.2cqw, 30px)' : 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
                     color: brand.accentHex, letterSpacing: '0.02em',
                     textShadow: `0 0 12px rgba(${brand.accentRgb},0.5)`,
                   }}>
@@ -602,7 +611,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     <QQEmojiIcon emoji="📱" size="1em" /> {de ? 'QR scannen' : 'Scan the code'}
                   </div>
                   <div style={{
-                    fontSize: 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
+                    fontSize: istBuehne ? 'clamp(20px, 1.9cqw, 26px)' : 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
                     color: themed ? 'var(--qq-text-muted)' : 'rgba(246, 239, 230,0.82)',
                   }}>{de ? 'Feedback geben + auf Insta folgen' : 'Leave feedback + follow on Insta'}</div>
                 </div>

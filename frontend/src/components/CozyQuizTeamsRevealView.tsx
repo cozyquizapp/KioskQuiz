@@ -24,6 +24,13 @@ import { isBlockzSlug, blockzBySlug, blockzSrc, blockzLabel, blockzForSlot } fro
 import { isCrestSlug, crestSrc, crestLabel } from '../cozyArenaCrests';
 import { wakeAllAvatars } from '../avatarAwake';
 
+// AUSSER-WERTUNG-ANFANG: CozyArena-Einzug, laeuft nur im Arena-Modus
+// 2026-08-24, Wolf: „teile die nicht zu cozyquiz gehoeren (zb cozyarena)
+// duerfen nicht mit in die bewertung zaehlen". Alles von hier bis zum
+// Phase-Router unten haengt an `nestedTeams` (siehe TeamsRevealView): der
+// Fraktions-Einzug mit Wappen, Bannern und Schreibmaschinen-Slogan. Ein
+// CozyQuiz-Abend sieht davon nichts, der geht in CozyRollCall.
+//
 // Arena-Moment (Wolf 2026-07-04): der Fraktions-Slogan tippt sich wie eine
 // Schreibmaschine ein (erst NACH dem Namens-Einzug). Remountet pro Fraktion
 // (key=enterIdx im Aufrufer) → startet jedes Mal frisch.
@@ -389,6 +396,8 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
     </div>
   );
 }
+
+// AUSSER-WERTUNG-ENDE (CozyArena-Einzug)
 
 // ─────────────────────────────────────────────────────────────────────────
 // Phase-Router (Wolf 2026-07-04 'mehr Arena-Vibe bei der Team-Vorstellung',
@@ -1018,6 +1027,13 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                               // der Grund, jeden mittellangen Namen praeventiv
                               // zu schrumpfen.
                               shrinkAfter={16}
+                              // 2026-08-24: harte Untergrenze bei 26px. Auf dieser
+                              // Folie stellt sich jedes Team einmal vor - der Name
+                              // IST der Inhalt. Gemessen lagen „Pubquatscher" bei
+                              // 21px und „Halbwissen Gold Wert" bei 22,4px. Drei
+                              // Zeilen sind erlaubt (maxLines), Platz ist da: die
+                              // Folie war unterhalb der Kacheln leer.
+                              minFontSize="26px"
                               // 2026-06-28 (Beamer-Review P0): Team-Namen weiß für
                               // bessere Distanz-Lesbarkeit. Dark-Halo-Shadow bleibt.
                               color={themed ? 'var(--qq-card-text)' : '#F6EFE6'}

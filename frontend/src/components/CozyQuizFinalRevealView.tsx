@@ -1644,6 +1644,26 @@ function AwardFlipCard({ awardIndex, isFlipped, winner, awards, lang }: {
   );
 }
 
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║  AUSSER-WERTUNG-ANFANG: alte Finale-Varianten, nicht auf der Buehne       ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝
+//
+// Alles ab hier bis zum Dateiende sind die VIER Vorgaenger des heutigen
+// Finales: Race, Eurovision, Suspense-Podium und das alte Turm-Finale
+// (TowerFinalSlide, nicht zu verwechseln mit dem lebenden TowerFinaleV2 in
+// CozyQuizTowerFinaleV2.tsx). Sie haengen ausschliesslich an der Testseite
+// /race-finale (QQRaceFinaleTestPage). Aus dem lebenden Teil dieser Datei
+// (Zeile 1 bis hier) referenziert sie nichts ausser Kommentaren.
+//
+// 2026-08-24, Wolf: „sind anderes produkt, klar labeln, nicht loeschen".
+// Genau das ist diese Markierung. Der Code bleibt lauffaehig und erreichbar,
+// er wird nur nicht mehr mit der Buehne verwechselt - weder vom Pruefwerkzeug
+// (scripts/buehne-audit.mjs klammert die Strecke aus und meldet das) noch von
+// jemandem, der hier hineinliest und annimmt, er repariere den Abend.
+//
+// WER HIER ETWAS AENDERN WILL: erst pruefen, ob die Aenderung nicht eigentlich
+// ins lebende Finale gehoert. Vier von fuenf Malen gehoert sie das.
+//
 // ═══════════════════════════════════════════════════════════════════════════════
 // RACE-FINALE — Wolf 2026-05-09 v5 (nach Brainstorm + Speed-Lines-Mockup)
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -4024,3 +4044,7 @@ function PodiumStepFinal({ entry, rank, podiumHeight, avatarSize, slotWidth, fon
     </div>
   );
 }
+
+// ╔═══════════════════════════════════════════════════════════════════════════╗
+// ║  AUSSER-WERTUNG-ENDE (alte Finale-Varianten)                             ║
+// ╚═══════════════════════════════════════════════════════════════════════════╝

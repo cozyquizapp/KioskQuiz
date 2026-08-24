@@ -213,7 +213,24 @@ export function BeamerTimer({
   // 2026-06-23 (Skin): pro Skin eigene Timer-Form (wie /skins-Mockups), gleiche
   // Position/Groesse (sz). Urgency-Farbe bleibt semantisch erhalten. Cozy = Ring.
   // isCozyLook: 'cozy' und 'cozyKino' teilen sich den Look (nur Motion unterscheidet).
-  if (!isCozyLook(skinId)) {
+  //
+  // 2026-08-24: `variant !== 'plain'` ist neu, und dahinter steckt ein Fehler,
+  // der die 2a-Zeitanzeige auf der Buehne komplett unwirksam gemacht hat.
+  // Wieder derselbe: `isCozyLook()` heisst „Cozy", nicht „nicht die Buehne".
+  // Die Buehne laeuft im Quirks-Theme, also ist isCozyLook(skinId) dort FALSCH,
+  // also lief dieser Zweig - und er kehrt zurueck, bevor der plain-Zweig
+  // darunter je erreicht wird. Ergebnis: die Fragebuehne bat ausdruecklich um
+  // `variant="plain"` und bekam trotzdem die Skin-Form.
+  //
+  // Gemessen am 24.08.2026 auf der Fragefolie: die Zahl stand bei 56px in
+  // Cremeweiss (clamp(34px, 4.6cqw, 56px)), darunter „SEK" bei 14px. Gebaut
+  // und gemeint war die nackte Zahl bei 96px in der Kategoriefarbe. Das kleine
+  // „SEK" war also nur das SYMPTOM, an dem die Grad-Messung haengen blieb -
+  // ein Label aus einer Timer-Form, die auf der Buehne nie haette laufen sollen.
+  //
+  // Ein ausdruecklich angeforderter `variant` schlaegt jetzt die Skin-Form.
+  // Die Skin-Formen (Stern, Brutal-Kasten, Mono) gelten weiter fuer `ring`.
+  if (!isCozyLook(skinId) && variant !== 'plain') {
     const numFs = isCritical ? 'clamp(40px, 5.2cqw, 64px)' : 'clamp(34px, 4.6cqw, 56px)';
     const numBox = (
       <div style={{ textAlign: 'center', lineHeight: 1, fontFamily: 'var(--qq-font)' }}>

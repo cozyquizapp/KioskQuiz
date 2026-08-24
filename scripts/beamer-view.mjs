@@ -74,6 +74,10 @@ const KATEGORIE = (process.argv.find(a => a.startsWith('--kategorie=')) || '=').
 // hinterher im Bild zu suchen. Beim Willkommen-Wolf war das um ein Vielfaches
 // schneller UND genauer (das Bild kann eine Ebene veraltet zeigen, das DOM nie).
 const DOM = (process.argv.find(a => a.startsWith('--dom=')) || '=').split('=').slice(1).join('=') || null;
+// --grade[=26]  jeden sichtbaren Text unter dieser Grenze melden, mit dem
+// GERECHNETEN Grad. Siehe die Begruendung an der Funktion `grade` weiter unten.
+const GRADE = process.argv.some(a => a === '--grade' || a.startsWith('--grade='))
+  ? Number((process.argv.find(a => a.startsWith('--grade=')) || '--grade=26').split('=')[1]) : null;
 // --bild=hoch|quer  legt allen Schau-mal-Fragen ein Testfoto unter, damit sich
 // beide Layouts (Hochkant/Querformat) gezielt anschauen lassen.
 const BILD = (process.argv.find(a => a.startsWith('--bild=')) || '=').split('=')[1] || null;
@@ -591,6 +595,52 @@ async function messen(page, selektoren) {
   }
 }
 
+/**
+ * Jeden SICHTBAREN Text auf der Buehne mit seinem gerechneten Grad melden.
+ *
+ * WARUM (2026-08-24): das Pruefwerkzeug zaehlt `fontSize: clamp(11px, 1.1cqw,
+ * 15px)` als „unter 20px". Das ist aber nur die UNTERGRENZE. Was wirklich
+ * ankommt, haengt an der Breite des Containers: in einer 1040px breiten Karte
+ * sind 1.1cqw = 11,4px, in der vollen Buehne waeren es 19,4px. Aus dem Code
+ * allein ist der Grad also nicht ablesbar - er ist eine Messung, keine Zahl im
+ * Quelltext. Und „Assets ausmessen, nicht schaetzen" gilt fuer Schriftgrade
+ * genauso wie fuer Bilder.
+ *
+ * Gemeldet wird nur, was ein Gast auch sehen kann: sichtbar, nicht leer, nicht
+ * transparent, nicht hinter opacity 0. Und nur BLATT-Knoten, sonst meldet jeder
+ * Container den Grad seines Kindes noch einmal mit.
+ */
+async function grade(page, grenze) {
+  const funde = await page.evaluate((G) => {
+    const raus = [];
+    for (const e of document.querySelectorAll('*')) {
+      // Nur Elemente, deren eigener Text direkt in ihnen steht.
+      const eigen = Array.from(e.childNodes)
+        .filter(n => n.nodeType === 3 && n.textContent.trim())
+        .map(n => n.textContent.trim()).join(' ');
+      if (!eigen) continue;
+      const cs = getComputedStyle(e);
+      if (cs.visibility === 'hidden' || cs.display === 'none') continue;
+      const px = parseFloat(cs.fontSize);
+      if (!(px < G)) continue;
+      const r = e.getBoundingClientRect();
+      if (r.width < 1 || r.height < 1) continue;
+      // Deckkraft ueber die ganze Kette: ein Element in einem ausgeblendeten
+      // Vorfahren ist nicht auf der Buehne, auch wenn es selbst sichtbar ist.
+      let deck = 1, p = e;
+      while (p && p !== document.documentElement) { deck *= parseFloat(getComputedStyle(p).opacity || '1'); p = p.parentElement; }
+      if (deck < 0.05) continue;
+      raus.push({ px: Math.round(px * 10) / 10, text: eigen.slice(0, 46), farbe: cs.color, x: Math.round(r.x), y: Math.round(r.y) });
+    }
+    return raus.sort((a, b) => a.px - b.px);
+  }, grenze);
+  if (!funde.length) { console.log(`     Grade: nichts unter ${grenze}px.`); return; }
+  console.log(`     Grade unter ${grenze}px: ${funde.length} Stellen`);
+  for (const f of funde) {
+    console.log(`       ${String(f.px).padStart(5)}px  x${String(f.x).padStart(4)} y${String(f.y).padStart(3)}  „${f.text}"`);
+  }
+}
+
 for (const name of liste) {
   const a = ANSICHTEN[name];
   await aufbauen(a.aufbau);
@@ -612,6 +662,10 @@ for (const name of liste) {
       const datei = `${OUT}/V-${name}-${echt}.png`;
       schreibenUndPruefen(datei, await knipsen(beamer));
       console.log(`  ✓ ${datei}   (Wunsch ${ms} ms)`);
+      // Auch bei einer Serie pro Marke messen: die Pause dreht ihre Tafeln
+      // durch, und jede Tafel bringt eigene Grade mit. Nur am Ende zu messen
+      // hiesse, achtzehn Zwanzigstel der Folie nie anzusehen.
+      if (GRADE) await grade(beamer, GRADE);
     }
   } else {
     await sleep(RUHE ?? a.ruhe);
@@ -620,6 +674,7 @@ for (const name of liste) {
     console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
   }
   if (DOM) await messen(beamer, DOM);
+  if (GRADE) await grade(beamer, GRADE);
   takt(`${name}: fertig`);
 }
 

@@ -33,6 +33,22 @@
  *      `isThemed()` ist kein Fehler, es ist nur kein Buehnen-Test. Ob eine
  *      Datei die Buehne ueberhaupt kennt, steht jetzt als eigene Spalte.
  *
+ *   4. AUSSER WERTUNG (2026-08-24, Wolf: „deaktivierte dinge oder teile die
+ *      nicht zu cozyquiz gehoeren (zb cozyarena) duerfen beim naechsten
+ *      durchlauf nicht mit in die bewertung zaehlen"). Zwei Dateien tragen
+ *      grosse Bloecke, die auf der CozyQuiz-Buehne nie laufen: die vier alten
+ *      Finale-Varianten (nur ueber /race-finale erreichbar) und der
+ *      CozyArena-Aufbau in der Pause. Sie mitzuzaehlen heisst, ein anderes
+ *      Produkt zu benoten. Der Ausschluss steht jetzt IM CODE, als Markierung:
+ *
+ *          // AUSSER-WERTUNG-ANFANG: <Grund>
+ *          …
+ *          // AUSSER-WERTUNG-ENDE
+ *
+ *      Nichts wird geloescht, nichts verschwindet still: das Werkzeug meldet
+ *      jede ausgeklammerte Strecke mit Zeilenspanne und Grund, und eine
+ *      Markierung ohne Gegenstueck ist ein Abbruch, kein Achselzucken.
+ *
  * ── Was das Werkzeug NICHT kann ────────────────────────────────────────────
  * Layout, Leseordnung, Rhythmus, Gewichtung, ob eine Folie ueberhaupt etwas
  * erzaehlt. Eine 0 heisst „hier klemmt nichts ZAEHLBARES", nicht „gut".
@@ -44,15 +60,25 @@
  * NUTZUNG:
  *   node scripts/buehne-audit.mjs
  *   node scripts/buehne-audit.mjs --details        Fundstellen mit Zeilennummer
+ *   node scripts/buehne-audit.mjs --details --regel=klein   nur eine Regel, alle Fundstellen
  *   node scripts/buehne-audit.mjs --json
  *   node scripts/buehne-audit.mjs --selbsttest
  */
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 const ALS_JSON = process.argv.includes('--json');
 const DETAILS = process.argv.includes('--details');
 const SELBSTTEST = process.argv.includes('--selbsttest');
+const NUR_REGEL = (process.argv.find(a => a.startsWith('--regel=')) || '').slice(8) || null;
+
+// 2026-08-24: die Datei exportiert Funktionen (ohneKommentare, zaehle …) und
+// hatte den Hauptlauf frei im Modulrumpf stehen. Wer sie importierte, um eine
+// Zahl nachzurechnen, loeste den kompletten Durchlauf aus. Ab hier laeuft der
+// Hauptteil nur, wenn die Datei auch direkt aufgerufen wurde.
+const DIREKT_AUFGERUFEN = process.argv[1]
+  && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url);
 
 /** Die Ansichten, die auf der Buehne wirklich laufen, in Ablauf-Reihenfolge. */
 const ANSICHTEN = [
@@ -83,7 +109,49 @@ const ANSICHTEN = [
   ['Danke',              'frontend/src/components/CozyQuizThanksView.tsx'],
 ];
 
-// ── Vorbereitung: Kommentare ausblenden, Offsets erhalten ────────────────────
+// ── Vorbereitung: ausgeklammerte Strecken, Kommentare ausblenden ─────────────
+
+/**
+ * Schneidet die als AUSSER-WERTUNG markierten Strecken aus der Pruefung heraus.
+ *
+ * Zeilenweise, und der Inhalt wird durch Leerzeichen ersetzt statt geloescht:
+ * so bleiben Zeilennummern stimmen, und eine Fundstelle bei Zeile 2100 heisst
+ * im Bericht auch 2100.
+ *
+ * Eine Markierung ohne Gegenstueck ist ein FEHLER, kein Achselzucken. Ein
+ * vergessenes ENDE wuerde sonst den halben Rest einer Datei stillschweigend
+ * aus der Wertung nehmen, und eine 0 in der Tabelle hiesse dann nicht mehr
+ * „hier klemmt nichts", sondern „hier hat niemand hingesehen".
+ */
+export function ausserWertung(src) {
+  const zeilen = src.split('\n');
+  const strecken = [];
+  let offen = null;
+  for (let i = 0; i < zeilen.length; i++) {
+    // Der Grund laeuft bis zum Zeilenende oder bis zur naechsten Rahmenkante.
+    // Die Markierungen stehen in Kaesten (// ║ … ║), die duerfen nicht in den
+    // Grund rutschen.
+    const anfang = zeilen[i].match(/AUSSER-WERTUNG-ANFANG:\s*(.+?)\s*(?:[║│|]|\*\/|-{3,}|$)/);
+    if (anfang) {
+      if (offen) throw new Error(`Zeile ${i + 1}: AUSSER-WERTUNG-ANFANG, aber Zeile ${offen.von} ist noch offen.`);
+      offen = { grund: anfang[1].trim(), von: i + 1 };
+      continue;
+    }
+    if (/AUSSER-WERTUNG-ENDE/.test(zeilen[i])) {
+      if (!offen) throw new Error(`Zeile ${i + 1}: AUSSER-WERTUNG-ENDE ohne Anfang.`);
+      strecken.push({ ...offen, bis: i + 1, zeilen: i + 1 - offen.von + 1 });
+      offen = null;
+    }
+  }
+  if (offen) throw new Error(`AUSSER-WERTUNG-ANFANG in Zeile ${offen.von} wurde nie geschlossen.`);
+
+  const raus = new Set();
+  for (const s of strecken) for (let z = s.von; z <= s.bis; z++) raus.add(z);
+  const gekuerzt = zeilen.map((z, i) => (raus.has(i + 1) ? ' '.repeat(z.length) : z)).join('\n');
+  return { quelle: gekuerzt, strecken, ausgeklammert: raus.size };
+}
+
+// ── Kommentare ausblenden, Offsets erhalten ─────────────────────────────────
 
 /**
  * Ersetzt den INHALT von Kommentaren durch Leerzeichen. Laenge und Zeilenumbrueche
@@ -300,7 +368,7 @@ const REGELN = [
  * der einen anderen Weg prueft als der Echtlauf, prueft gar nichts.
  */
 export function zaehle(roh, regel, gesehen = new Set()) {
-  const heuhaufen = ohneKommentare(roh);
+  const heuhaufen = ohneKommentare(ausserWertung(roh).quelle);
   const fundstellen = [];
   for (const m of heuhaufen.matchAll(regel.finde)) {
     if (regel.zusatz && !regel.zusatz(heuhaufen, m)) continue;
@@ -321,16 +389,25 @@ export function zaehle(roh, regel, gesehen = new Set()) {
 
 function pruefeDatei(datei) {
   const roh = readFileSync(path.resolve(datei), 'utf8');
+  const { quelle, strecken, ausgeklammert } = ausserWertung(roh);
   const treffer = {}, belege = {};
   const gesehen = new Set();
   for (const r of REGELN) {
     const f = zaehle(roh, r, gesehen);
     treffer[r.key] = f.length;
-    belege[r.key] = f.slice(0, 8);
+    // Ohne Regel-Filter reichen acht Belege pro Regel, um eine Zahl zu
+    // beurteilen. Fragt jemand nach EINER Regel, will er alle Fundstellen.
+    belege[r.key] = NUR_REGEL ? f : f.slice(0, 8);
   }
+  const alle = roh.split('\n').length;
   return {
-    zeilen: roh.split('\n').length,
-    benannt: BUEHNE_TEST.test(roh),
+    zeilen: alle - ausgeklammert,
+    zeilenGesamt: alle,
+    ausgeklammert,
+    strecken,
+    // Wichtig: gegen die GEWERTETE Quelle. Sonst wuerde ein CozyArena-Block,
+    // der die Buehne benennt, die ganze Datei als „benannt" durchgehen lassen.
+    benannt: BUEHNE_TEST.test(ohneKommentare(quelle)),
     treffer,
     belege,
     summe: Object.values(treffer).reduce((a, b) => a + b, 0),
@@ -361,6 +438,22 @@ const FAELLE = [
   ['Schein im themed-Sonst-Zweig zaehlt nicht', `x = { textShadow: themed ? 'none' : '0 0 24px red' }`, 'schein', 0],
   ['Gold im themed-JA-Zweig zaehlt',           `x = { color: isThemed() ? '#FBBF24' : 'red' }`,        'gold',   1],
   ['Zwei Schein-Ebenen zaehlen als eine',      `x = { boxShadow: '0 0 30px red, 0 0 64px blue' }`,     'schein', 1],
+  ['Ausgeklammertes zaehlt nicht',
+    `// AUSSER-WERTUNG-ANFANG: CozyArena\nx = { boxShadow: '0 0 40px red' }\n// AUSSER-WERTUNG-ENDE`, 'schein', 0],
+  ['Vor der Klammer zaehlt weiter',
+    `y = { boxShadow: '0 0 40px red' }\n// AUSSER-WERTUNG-ANFANG: CozyArena\n// AUSSER-WERTUNG-ENDE`, 'schein', 1],
+  ['Nach der Klammer zaehlt weiter',
+    `// AUSSER-WERTUNG-ANFANG: CozyArena\n// AUSSER-WERTUNG-ENDE\ny = { boxShadow: '0 0 40px red' }`, 'schein', 1],
+  ['Gold in einer zweiten Strecke zaehlt nicht',
+    `a = '#FBBF24';\n// AUSSER-WERTUNG-ANFANG: alt\nb = '#FCD34D';\n// AUSSER-WERTUNG-ENDE`,          'gold',   1],
+];
+
+// Faelle, in denen das Werkzeug abbrechen MUSS. Eine stillschweigend
+// verschluckte Datei waere der teuerste Fehler, den dieses Werkzeug machen kann.
+const ABBRUCH_FAELLE = [
+  ['Anfang ohne Ende bricht ab',   `// AUSSER-WERTUNG-ANFANG: x\nconst a = 1;`],
+  ['Ende ohne Anfang bricht ab',   `const a = 1;\n// AUSSER-WERTUNG-ENDE`],
+  ['Anfang im Anfang bricht ab',   `// AUSSER-WERTUNG-ANFANG: x\n// AUSSER-WERTUNG-ANFANG: y\n// AUSSER-WERTUNG-ENDE`],
 ];
 
 function selbsttest() {
@@ -371,6 +464,12 @@ function selbsttest() {
     if (n === erwartet) { ok++; console.log(`  ok    ${name}`); }
     else { fehler++; console.log(`  FEHLT ${name}: erwartet ${erwartet}, gezaehlt ${n}`); }
   }
+  for (const [name, quelle] of ABBRUCH_FAELLE) {
+    let brach = false;
+    try { ausserWertung(quelle); } catch { brach = true; }
+    if (brach) { ok++; console.log(`  ok    ${name}`); }
+    else { fehler++; console.log(`  FEHLT ${name}: lief durch, statt abzubrechen`); }
+  }
   console.log(`\n${ok} von ${ok + fehler} Faellen richtig.`);
   return fehler === 0;
 }
@@ -380,35 +479,62 @@ function selbsttest() {
 if (SELBSTTEST) {
   process.exit(selbsttest() ? 0 : 1);
 }
+if (!DIREKT_AUFGERUFEN) {
+  // Importiert. Nur die Exporte, kein Durchlauf.
+} else {
 
 const berichte = [];
 for (const [name, datei, hinweis] of ANSICHTEN) {
   try { berichte.push({ name, datei, hinweis, ...pruefeDatei(datei) }); }
-  catch { berichte.push({ name, datei, hinweis, fehlt: true }); }
+  catch (e) {
+    // Eine kaputte AUSSER-WERTUNG-Markierung darf nicht als „Datei fehlt"
+    // durchrutschen: das waere eine falsche 0 in der Tabelle.
+    if (/AUSSER-WERTUNG/.test(String(e?.message))) {
+      console.error(`ABBRUCH in ${datei}: ${e.message}`);
+      process.exit(1);
+    }
+    berichte.push({ name, datei, hinweis, fehlt: true });
+  }
 }
 
 if (ALS_JSON) {
   console.log(JSON.stringify(berichte, null, 2));
 } else {
-  const spalten = REGELN.map(r => r.key);
-  const kopf = ['Ansicht'.padEnd(20), 'Zeilen'.padStart(7), 'benannt'.padStart(9),
+  const spalten = REGELN.map(r => r.key).filter(k => !NUR_REGEL || k === NUR_REGEL);
+  const kopf = ['Ansicht'.padEnd(20), 'gewertet'.padStart(9), 'a.W.'.padStart(7), 'benannt'.padStart(9),
                 ...spalten.map(k => k.slice(0, 11).padStart(12)), 'Summe'.padStart(7)];
   console.log(kopf.join(''));
   console.log('-'.repeat(kopf.join('').length));
   for (const b of berichte) {
     if (b.fehlt) { console.log(`${b.name.padEnd(20)}  DATEI FEHLT: ${b.datei}`); continue; }
     console.log([
-      b.name.padEnd(20), String(b.zeilen).padStart(7), (b.benannt ? 'ja' : 'NEIN').padStart(9),
+      b.name.padEnd(20), String(b.zeilen).padStart(9),
+      (b.ausgeklammert ? String(b.ausgeklammert) : '·').padStart(7),
+      (b.benannt ? 'ja' : 'NEIN').padStart(9),
       ...spalten.map(k => String(b.treffer[k] || '·').padStart(12)),
-      String(b.summe).padStart(7),
+      String(spalten.reduce((a, k) => a + (b.treffer[k] || 0), 0)).padStart(7),
     ].join(''));
   }
   const gesamt = {};
   for (const k of spalten) gesamt[k] = berichte.reduce((a, b) => a + (b.treffer?.[k] ?? 0), 0);
+  const summeZeilen = berichte.reduce((a, b) => a + (b.zeilen ?? 0), 0);
+  const summeAus = berichte.reduce((a, b) => a + (b.ausgeklammert ?? 0), 0);
   console.log('-'.repeat(kopf.join('').length));
-  console.log(['SUMME'.padEnd(20), ''.padStart(7), ''.padStart(9),
+  console.log(['SUMME'.padEnd(20), String(summeZeilen).padStart(9), String(summeAus).padStart(7), ''.padStart(9),
     ...spalten.map(k => String(gesamt[k]).padStart(12)),
     String(Object.values(gesamt).reduce((a, b) => a + b, 0)).padStart(7)].join(''));
+
+  // Was ausgeklammert wurde, steht hier. Ein Ausschluss, den man nicht sieht,
+  // ist kein Ausschluss, sondern eine geschoente Zahl.
+  const mitStrecken = berichte.filter(b => b.strecken?.length);
+  if (mitStrecken.length) {
+    console.log('\nAusser Wertung (laeuft nicht auf der CozyQuiz-Buehne):');
+    for (const b of mitStrecken) {
+      for (const s of b.strecken) {
+        console.log(`  ${b.name.padEnd(20)} Zeile ${String(s.von).padStart(4)}-${String(s.bis).padEnd(5)} ${String(s.zeilen).padStart(4)} Zeilen   ${s.grund}`);
+      }
+    }
+  }
 
   const mitHinweis = berichte.filter(b => b.hinweis);
   if (mitHinweis.length) {
@@ -425,15 +551,17 @@ if (ALS_JSON) {
 
   if (DETAILS) {
     for (const b of berichte) {
-      if (b.fehlt || b.summe === 0) continue;
+      if (b.fehlt) continue;
+      const dazu = REGELN.filter(r => spalten.includes(r.key) && b.belege[r.key]?.length);
+      if (!dazu.length) continue;
       console.log(`\n=== ${b.name}  (${b.datei})`);
-      for (const r of REGELN) {
+      for (const r of dazu) {
         const bs = b.belege[r.key];
-        if (!bs?.length) continue;
         console.log(`  ${r.titel} (${b.treffer[r.key]}):`);
         for (const x of bs) console.log(`    ${String(x.zeile).padStart(5)}: ${x.text}`);
         if (b.treffer[r.key] > bs.length) console.log(`    … und ${b.treffer[r.key] - bs.length} weitere`);
       }
     }
   }
+}
 }

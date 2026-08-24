@@ -77,7 +77,13 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       textAlign: 'center',
     }}>
       {/* Eyebrow + Titel */}
-      <div style={{ fontSize: istBuehne ? '2.6cqh' : '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: istBuehne ? gedaempft : QQ_COLORS.brandPink, textTransform: 'uppercase' }}>
+      {/* 2026-08-24, auf der Buehne nachgemessen statt im Code geschaetzt:
+          „Gleichstand" stand bei 25,7px, der Untertitel bei 22,8px, das
+          Warte-Zeichen „…" unter den Wappen bei 19,8px. Die Folie hat 1cqh =
+          9,9px, die Grade im Code sagen das aber nicht - sie sind erst auf der
+          Buehne eine Zahl. Alles drei liegt jetzt ueber dem Grad-Boden von rund
+          26px. Nur die Buehne, die uebrigen Skins behalten ihre Groessen. */}
+      <div style={{ fontSize: istBuehne ? '2.8cqh' : '2cqh', fontWeight: 900, letterSpacing: '0.3em', color: istBuehne ? gedaempft : QQ_COLORS.brandPink, textTransform: 'uppercase' }}>
         {de ? 'Gleichstand' : 'Dead heat'}
       </div>
       {/* 2026-08-23 (2a): die gekreuzten Schwerter waren ein rohes Systemzeichen
@@ -86,7 +92,7 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
       <div style={{ fontSize: '6.6cqh', fontWeight: 900, lineHeight: 1, color: 'var(--qq-text)', letterSpacing: '0.02em', textShadow: istBuehne ? 'none' : '0 4px 24px rgba(var(--qq-accent-rgb),0.5)' }}>
         {istBuehne ? '' : '⚔️ '}{de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
-      <div style={{ fontSize: '2.3cqh', fontWeight: 800, color: gedaempft }}>
+      <div style={{ fontSize: istBuehne ? '2.8cqh' : '2.3cqh', fontWeight: 800, color: gedaempft }}>
         {/* 2026-08-23 (Wolf: „stechen mit schaetzchen unlogisch, ist ja eigene
             quiz kategorie"). Der Einwand trifft die BESCHRIFTUNG, nicht die
             Mechanik. Nachgesehen in QQ_TIEBREAKER_POOL: dort steht keine
@@ -131,9 +137,9 @@ export function TieBreakerView({ state: s }: { state: QQStateUpdate }) {
               {revealed
                 ? <div style={{ fontSize: '2.6cqh', fontWeight: 900, color: isWinner ? '#22C55E' : 'var(--qq-text)' }}>
                     {best ? `${best.guess}${unit}` : (de ? '–' : '–')}
-                    {best && <span style={{ fontSize: '1.7cqh', color: gedaempft, fontWeight: 700 }}> ({de ? 'Δ' : 'off'} {best.dist})</span>}
+                    {best && <span style={{ fontSize: istBuehne ? '2.7cqh' : '1.7cqh', color: gedaempft, fontWeight: 700 }}> ({de ? 'Δ' : 'off'} {best.dist})</span>}
                   </div>
-                : <div style={{ fontSize: '2cqh', fontWeight: 800, color: hasAnswered ? '#22C55E' : gedaempft }}>
+                : <div style={{ fontSize: istBuehne ? '3cqh' : '2cqh', fontWeight: 800, color: hasAnswered ? '#22C55E' : gedaempft }}>
                     {hasAnswered ? '✓' : '…'}
                   </div>}
             </div>

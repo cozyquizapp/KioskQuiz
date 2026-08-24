@@ -205,6 +205,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // 2026-07-02 (Cozy Universe): CozyArena hat kein Brett/keine Joker — eigene
     // 4 Mini-Cards (Konzept-Fraktionen mit Wappen, Punkte, Tempo/Trefferquote).
     const howItems = largeGroup
+      // AUSSER-WERTUNG-ANFANG: CozyArena-Erklaertexte, laufen nur im Arena-Modus
+      // 2026-08-24, Wolf: „deaktivierte dinge oder teile die nicht zu cozyquiz
+      // gehoeren (zb cozyarena) duerfen nicht mit in die bewertung zaehlen".
+      // Diese vier Karten sieht ein CozyQuiz-Abend nie: sie haengen an
+      // qqIsMega(s). Der Code bleibt, er wird nur nicht mitbenotet.
       ? (de
         ? [
             { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Handy spielt mit, mehrere Handys pro Fraktion.' },
@@ -218,6 +223,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             { icon: '🎯', title: 'Collect points', desc: 'Every correct answer scores points for your faction. No grid, no cells.' },
             { icon: '⚡', title: 'Speed & accuracy', desc: 'Faster correct = more points. Hit-rate keeps it fair across factions.' },
           ])
+      // AUSSER-WERTUNG-ENDE (CozyArena-Erklaertexte)
       : (de
         ? [
           { icon: '📱', title: 'Auf dem Handy', desc: 'Jedes Team spielt am eigenen Smartphone.' },
@@ -288,6 +294,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       </div>
     )});
 
+    // AUSSER-WERTUNG-ANFANG: CozyArena-Fraktionsroster, laeuft nur im Arena-Modus
     // 2026-07-02 (Cozy Universe): Fraktions-Roster — die 8 Tier-Fraktionen mit
     // Wappen + Motto als Identitäts-Screen. Zeigt live die Anzahl beigetretener
     // Handys je Fraktion. Ersetzt die Grid-lastige „Aktueller Stand"-Folie im Setup.
@@ -324,6 +331,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       )});
     }
+    // AUSSER-WERTUNG-ENDE (CozyArena-Fraktionsroster)
   }
 
   // 2026-05-06 (Wolf 'in der pause den trinkenden'): Pause-BrandLoopPanel mit
@@ -366,15 +374,23 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               textShadow: istBuehne ? 'none' : (isQuietMotion() ? 'none' : `0 0 16px ${roundColor}88`),
               fontVariantNumeric: 'tabular-nums', letterSpacing: isQuietMotion() ? '-0.03em' : undefined,
             }}>{s.gamePhaseIndex}</span>
+            {/* 2026-08-24: die Pille sagte dieselbe Sache dreimal. Gross die
+                Ziffer „1", daneben „RUNDE 1 VON 3", und darunter im Baum noch
+                einmal „RUNDE 1". Die mittlere Zeile lag dabei gemessen bei
+                16px - der kleinste Grad der ganzen Folie, ausgerechnet an der
+                Stelle, die sagt, wo wir sind.
+                Jetzt liest die Pille als EIN Satz: die grosse Ziffer ist das
+                Subjekt, die Zeile daneben ergaenzt es („1 von 3 Runden"). Kein
+                Wort doppelt, und beide Zeilen liegen ueber dem Grad-Boden. */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 2, lineHeight: 1.1 }}>
               <span style={{
-                fontSize: 'clamp(12px, 1.2cqw, 16px)', fontWeight: 900,
-                color: istBuehne ? '#12100E' : (isQuietMotion() ? 'var(--qq-card-text)' : `${roundColor}cc`), letterSpacing: '0.1em', textTransform: 'uppercase',
+                fontSize: 'clamp(20px, 2cqw, 26px)', fontWeight: 900,
+                color: istBuehne ? '#12100E' : (isQuietMotion() ? 'var(--qq-card-text)' : `${roundColor}cc`), letterSpacing: '0.08em', textTransform: 'uppercase',
               }}>
-                {de ? `Runde ${s.gamePhaseIndex} von ${s.totalPhases}` : `Round ${s.gamePhaseIndex} of ${s.totalPhases}`}
+                {de ? `von ${s.totalPhases} Runden` : `of ${s.totalPhases} rounds`}
               </span>
               <span style={{
-                fontSize: 'clamp(18px, 2cqw, 26px)', fontWeight: 900,
+                fontSize: 'clamp(22px, 2.3cqw, 30px)', fontWeight: 900,
                 color: istBuehne ? '#12100E' : 'var(--qq-card-text)',
               }}>
                 {de ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
@@ -438,8 +454,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               border: istBuehne ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${t.color}55`,
               flexShrink: 0,
             }}>
-              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={kompakt ? '34px' : 'clamp(30px, 3cqw, 42px)'} />
-              <span style={{ fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : t.color, fontSize: kompakt ? '20px' : 'clamp(15px, 1.7cqw, 22px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
+              {/* 2026-08-24: die Ziffer der Kompakt-Pille lag gemessen bei
+                  20px, die der grossen bei 22px - beide unter dem Grad-Boden
+                  von rund 26px, und das direkt neben einem 380px hohen Brett.
+                  Gerechnet: acht Pillen zu 26px Ziffer sind rund 44px hoch,
+                  8 x 44 = 352px in einer 380px hohen Spalte. Passt. */}
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={kompakt ? '36px' : 'clamp(32px, 3cqw, 42px)'} />
+              <span style={{ fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : t.color, fontSize: kompakt ? '26px' : 'clamp(20px, 1.9cqw, 26px)', fontVariantNumeric: 'tabular-nums' }}>{t.totalCells}</span>
             </div>
           );
           const colStyle: React.CSSProperties = {

@@ -161,7 +161,12 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
   const avatarBox = dense ? 82 : 108;
   const nameFs = dense ? 37 : 52;
   const valFs = dense ? 46 : 66;
-  const unitFs = dense ? 19 : 26;
+  // 2026-08-24: Einheit („Feld"/„Felder") lag bei acht Teams auf 19px.
+  // Gemessen auf der Buehne, nicht geschaetzt - und 19px sind aus acht Metern
+  // weg. Der Brief nennt rund 26px als kleinsten sinnvollen Grad, also 26px.
+  // Platz ist da: die Zeile endete bei x1675 von 1760, die breitere Einheit
+  // braucht rund 25px davon.
+  const unitFs = dense ? 26 : 30;
 
   // Medaillen-Style für Top 3 (nur wenn Wert > 0 und eindeutig).
   // 2026-05-24 (Wolf-Feedback): Bei Tie an der Spitze bekommen ALLE
@@ -423,7 +428,10 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
             <span style={{
               opacity: 0.5, fontSize: unitFs, fontWeight: 700, color: isThemed() ? 'var(--qq-text-muted)' : QQ_COLORS.slate400,
               flexShrink: 0,
-              minWidth: dense ? 62 : 78,
+              // Mit dem groesseren Grad (26/30 statt 19/26) braucht der feste
+              // Einheiten-Slot mehr Platz, sonst startet „Felder" nicht mehr an
+              // derselben Kante wie „Feld" und die Zahlenspalte wackelt wieder.
+              minWidth: dense ? 84 : 96,
               textAlign: 'left',
               fontVariantNumeric: 'tabular-nums',
             }}>

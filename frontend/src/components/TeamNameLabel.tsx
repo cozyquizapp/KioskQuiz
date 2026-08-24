@@ -29,6 +29,10 @@ type Props = {
   fontSizeLong?: string | number;
   /** Ab wieviel Zeichen gilt der Name als „lang". Default 16. */
   shrinkAfter?: number;
+  /** Harte Untergrenze als CSS-Laenge, z.B. '26px'. Das Schrumpfen hoert dort
+   *  auf, egal wie lang der Name ist; danach umbricht oder kuerzt der Name.
+   *  Siehe die Begruendung an `scale` weiter unten. */
+  minFontSize?: string;
   /** Farbe (Slot- oder Team-Farbe). */
   color?: string;
   fontWeight?: number;
@@ -46,6 +50,7 @@ export function TeamNameLabel({
   fontSize,
   fontSizeLong,
   shrinkAfter = 16,
+  minFontSize,
   color,
   fontWeight,
   title = true,
@@ -76,15 +81,27 @@ export function TeamNameLabel({
   );
   // Nach unten gedeckelt: unter 62 % wird es auf 2,8 m Bildbreite unlesbar,
   // dann ist Abschneiden mit Ellipse die ehrlichere Loesung.
+  //
+  // 2026-08-24: 62 % sind eine RELATIVE Grenze, und die weiss nichts davon, wie
+  // gross die Schrift vorher war. Auf dem Team-Auftritt stand die Grundgroesse
+  // bei 28px - „Pubquatscher" landete damit gemessen bei 21px, „Halbwissen Gold
+  // Wert" bei 22,4px, und die Grenze haette bis 17,4px runtergelassen. Der
+  // Brief nennt rund 26px als kleinsten sinnvollen Grad. Eine Prozentgrenze
+  // kann so eine Zusage gar nicht einhalten; dafuer braucht es eine Laenge.
+  // `minFontSize` ist genau das, und es laeuft ueber CSS `max()`, damit es
+  // auch mit einem clamp()-Ausdruck als Grundgroesse funktioniert.
   const scale = Math.max(0.62, Math.min(1, 1 / overflow));
 
   const finalFontSize = (() => {
     if (fontSizeLong != null && isLong) return fontSizeLong;
     if (fontSize == null) return undefined;
-    if (scale >= 1) return fontSize;
-    return typeof fontSize === 'number'
-      ? Math.max(10, Math.round(fontSize * scale))
-      : `calc(${fontSize} * ${scale.toFixed(3)})`;
+    const geschrumpft = scale >= 1
+      ? fontSize
+      : (typeof fontSize === 'number'
+        ? Math.max(10, Math.round(fontSize * scale))
+        : `calc(${fontSize} * ${scale.toFixed(3)})`);
+    if (!minFontSize) return geschrumpft;
+    return `max(${minFontSize}, ${typeof geschrumpft === 'number' ? `${geschrumpft}px` : geschrumpft})`;
   })();
 
   const merged: CSSProperties = {

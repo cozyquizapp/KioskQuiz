@@ -2164,10 +2164,44 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
         // Szenenwechsel (View Transition), der ALTE und NEUE Szene ueberlappend
         // fuehrt. Der Auftritt des Wrappers liefe dann ein zweites Mal ueber
         // dieselbe Bewegung - gemessen waren es vier gleichzeitige Auftritte auf
-        // demselben Bereich. Einer reicht, und es ist der, der auch einen Abgang
-        // hat. Der Frage-zu-Frage-Schub von rechts bleibt: der sagt etwas
-        // ANDERES („naechste Frage kommt"), nicht dasselbe noch einmal.
-        const wrapperAnimEff = (buehnenMotion && !isQuestionToQuestion) ? 'none' : wrapperAnim;
+        // demselben Bereich.
+        //
+        // 2026-08-24 v2, Korrektur an mir selbst: beim ersten Anlauf habe ich
+        // den Frage-zu-Frage-Schub von rechts stehen lassen, mit dem Argument,
+        // er sage etwas anderes („naechste Frage kommt"). Das Argument stimmt,
+        // die Umsetzung war trotzdem falsch: der Schub lief ZUSAETZLICH zum
+        // Szenenwechsel, also genau die Dopplung, die ich eine Zeile darueber
+        // abgeschafft habe - und ausgerechnet an der Stelle, die mit rund
+        // fuenfzehn Auftritten pro Abend am haeufigsten laeuft und laut
+        // Lautstaerke-Treppe die LEISESTE sein muesste. 550 ms mit
+        // Ueberschwingen (1.30) sind das Gegenteil davon.
+        //
+        // Die Richtung ist die Information, nicht die Wucht. Sie wandert
+        // deshalb in den Szenenwechsel selbst: `data-scene-dir="vor"` laesst die
+        // neue Szene aus derselben Bewegung heraus von rechts kommen. Eine
+        // Bewegung, mit Richtung, ohne zweite Stimme.
+        // 2026-08-24 v3, und das ist ein Fund, kein Feinschliff: der
+        // Frage-zu-Frage-Schub von rechts ist im echten Ablauf NICHT
+        // ERREICHBAR. Nachgespielt und die Phasenfolge mitgeschrieben:
+        //
+        //   QUESTION_ACTIVE -> QUESTION_REVEAL -> PLACEMENT -> PHASE_INTRO
+        //   -> QUESTION_ACTIVE
+        //
+        // Aufloesung und Frage teilen sich dieselbe phaseGroup (`Q-<id>`),
+        // dazwischen liegen aber immer Setzen und Runden-Intro. Die Bedingung
+        // „vorige Gruppe faengt mit Q- an UND ist eine andere" trifft damit nie
+        // zu. Sie stammt vom 2026-05-08, als zwischen zwei Fragen noch nichts
+        // lag; Setzen und Intro sind spaeter dazugekommen und haben sie still
+        // ausgehebelt.
+        //
+        // Ich habe daraufhin versucht, die Richtung in den Szenenwechsel selbst
+        // zu legen (`data-scene-dir`). Auch das wieder ausgebaut: es gibt keinen
+        // Wechsel, der sie tragen wuerde. Jeder Wechsel eine Richtung zu geben
+        // waere genau die Diashow, die wir gerade abschaffen.
+        //
+        // Der Zweig bleibt fuer die anderen Skins stehen (dort laeuft er
+        // genauso wenig, aber sein Ausbau gehoert nicht in diesen Commit).
+        const wrapperAnimEff = buehnenMotion ? 'none' : wrapperAnim;
         // 2026-05-12 (Wolf 'Option A — Fixed Canvas Stage'): wenn ?stage=1
         // gesetzt, wird der Phase-Render-Bereich in einem 1920×1080 Canvas
         // gerendert und per transform:scale auf die echte Viewport-Groesse

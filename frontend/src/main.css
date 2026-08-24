@@ -337,6 +337,19 @@
   box-sizing: border-box;
 }
 
+/* 2026-08-24 (Wolf: „beim view wechsel blitzt jetzt ein weisser rahmen auf, vor
+   allem unten und rechts"). Nachgesehen: `html` hatte in dieser ganzen Datei
+   NIE einen Grund. Solange die Seite normal rendert, faellt das nicht auf - der
+   Grund von `body` faerbt die Leinwand mit ein. Waehrend eines Szenenwechsels
+   stimmt das nicht mehr: die alte Szene wird als Bild aufgenommen und in einer
+   eigenen Ebene ueber der Seite gefuehrt. Wo dieses Bild die Flaeche nicht
+   deckt, sieht man die Leinwand - und die ist ohne eigenen Grund weiss.
+   Unten und rechts zuerst, weil dort die Rundung des Massstabs zuerst greift.
+   Ein Grund am `html` kostet nichts und kann nie wieder weiss blitzen. */
+html {
+  background: #0F0817;
+}
+
 body {
   margin: 0;
   font-family: var(--font);
@@ -5048,6 +5061,13 @@ html[data-scene-motion="buehne"]::view-transition-group(root) {
   animation-duration: 380ms;
 }
 
+/* Guertel und Hosentraeger zum Grund am `html`: auch die Wechsel-Ebene selbst
+   traegt den Buehnengrund. Sie liegt ueber der ganzen Seite; alles, was sie
+   nicht deckt, waere sonst wieder die nackte Leinwand. */
+html[data-scene-motion="buehne"]::view-transition {
+  background: #0F0817;
+}
+
 html[data-scene-motion="buehne"]::view-transition-old(root),
 html[data-scene-motion="buehne"]::view-transition-new(root) {
   /* Beide Schnappschuesse liegen uebereinander statt sich zu verdraengen -
@@ -5070,8 +5090,15 @@ html[data-scene-motion="buehne"]::view-transition-new(root) {
    sind auf 1760 px rund 10 px - aus zehn Metern keine Bewegung, die man
    benennen kann, aber der Unterschied zwischen „geht" und „ist weg". */
 @keyframes qqBuehneAbgang {
-  0%   { opacity: 1; transform: scale(1); }
-  100% { opacity: 0; transform: scale(0.994); }
+  /* 2026-08-24 v2: der Massstab ist raus. Ein Bild, das auf 99,4 % schrumpft,
+     gibt an allen vier Kanten einen Streifen frei - und was dahinter zu sehen
+     ist, entscheidet dann nicht mehr diese Datei. Der Rueckzug war ein huebscher
+     Gedanke, aber er kostet Deckung, und Deckung ist hier die ganze Aufgabe:
+     zu keinem Zeitpunkt darf etwas anderes durchscheinen als die Buehne selbst.
+     Der Auftritt behaelt seinen Massstab - der kommt von 100,6 % und deckt
+     dabei ueber, statt frei zu geben. */
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* Auftritt: von minimal weiter weg heran. Die Deckkraft ist bei 45 % schon
@@ -5093,3 +5120,4 @@ html[data-scene-motion="buehne"]::view-transition-new(root) {
     animation: qqSceneEnterFlat 220ms linear both;
   }
 }
+

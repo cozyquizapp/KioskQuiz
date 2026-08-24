@@ -532,12 +532,26 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                       fontWeight: 700,
                       color: 'var(--qq-card-text)', fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
                     }}>{fmt(r.num)}</span>
+                    {/* 2026-08-24, auf der Buehne nachgemessen: diese Zeile stand
+                        bei 25px, also knapp unter dem Grad-Boden, und sie trug
+                        zwei rohe Systemzeichen. ▲ und ▼ sind Geometrie-Glyphen
+                        aus der Systemschrift und werden auf jedem Rechner anders
+                        gemalt - mal als schmale Pfeilspitze, mal als fetter
+                        Klotz. Das Vorzeichen sagt dieselbe Sache und ist Teil
+                        unserer Schrift: „+1" und „−7" brauchen kein Dreieck
+                        daneben. Die Farbe traegt den Rest. */}
                     <span style={{
-                      fontSize: istBuehne ? 'clamp(15px,1.5cqw,25px)' : 'clamp(10px,1cqw,16px)',
+                      fontSize: istBuehne ? 'clamp(20px,1.9cqw,28px)' : 'clamp(10px,1cqw,16px)',
                       fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                       color: exact ? MINT : 'var(--qq-text-muted)',
                     }}>
-                      {exact ? (lang === 'en' ? '✨ spot on' : '✨ getroffen') : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
+                      {exact
+                        ? (istBuehne
+                            ? <><QQEmojiIcon emoji="✨" size="1em" /> {lang === 'en' ? 'spot on' : 'getroffen'}</>
+                            : (lang === 'en' ? '✨ spot on' : '✨ getroffen'))
+                        : istBuehne
+                          ? (diff > 0 ? `+${fmt(diff)}` : `−${fmt(Math.abs(diff))}`)
+                          : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
                       {isMega && <span style={{ color: isWin && lit ? GOLD_BRIGHT : GOLD, marginLeft: 6 }}>· {ptsOfAvatar(r.team.avatarId)}P</span>}
                     </span>
                     {/* „am schnellsten": nur beim Sieger, nur wenn der Sieg per

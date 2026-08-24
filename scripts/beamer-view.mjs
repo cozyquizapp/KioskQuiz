@@ -645,7 +645,7 @@ async function grade(page, grenze) {
       let deck = 1, p = e;
       while (p && p !== document.documentElement) { deck *= parseFloat(getComputedStyle(p).opacity || '1'); p = p.parentElement; }
       if (deck < 0.05) continue;
-      raus.push({ px: Math.round(px * 10) / 10, text: eigen.slice(0, 46), farbe: cs.color, x: Math.round(r.x), y: Math.round(r.y) });
+      raus.push({ px: Math.round(px * 10) / 10, text: eigen.slice(0, 46), farbe: cs.color, x: Math.round(r.x), y: Math.round(r.y), stil: (e.getAttribute('style') || '').slice(0, 150) });
     }
     return raus.sort((a, b) => a.px - b.px);
   }, grenze);
@@ -653,6 +653,9 @@ async function grade(page, grenze) {
   console.log(`     Grade unter ${grenze}px: ${funde.length} Stellen`);
   for (const f of funde) {
     console.log(`       ${String(f.px).padStart(5)}px  x${String(f.x).padStart(4)} y${String(f.y).padStart(3)}  „${f.text}"`);
+    // Der inline-Stil sagt, WO im Code die Stelle steht. Ohne ihn sucht man
+    // eine Zahl, die als clamp() im Quelltext gar nicht vorkommt.
+    if (f.stil) console.log(`              ${f.stil}`);
   }
 }
 

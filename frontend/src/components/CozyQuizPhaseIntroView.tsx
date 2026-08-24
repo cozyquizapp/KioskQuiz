@@ -1444,7 +1444,9 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               padding: '6px 20px', borderRadius: 'var(--qq-pill-radius)',
               background: isThemed() ? 'var(--qq-surface)' : `${color}15`,
               border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${color}33`,
-              fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+              // 2026-08-24, gemessen: 20px. Dritte Fundstelle derselben
+              // Standortanzeige („Runde 1") - diese hier laeuft im Zoom-Schritt.
+              fontSize: istBuehneG() ? 28 : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.04em',
             }}>
               {phaseName}
@@ -1479,7 +1481,10 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
           }}>
             {/* Schlankes Label statt riesiger Regel-Texte */}
             <div style={{
-              fontSize: 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,
+              // 2026-08-24, gemessen: 20px. „Eure Aktion diese Runde:" ist die
+              // Ueberschrift ueber der Aktionskarte, also die Ansage, was neu
+              // ist - und stand kleiner als alles darunter.
+              fontSize: istBuehneG() ? 30 : 'clamp(13px, 1.4cqw, 20px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-accent)' : color, letterSpacing: '0.1em', textTransform: 'uppercase',
               textAlign: 'center',
               animation: 'phasePop 0.5s var(--qq-ease-bounce) 0.4s both',
@@ -1752,14 +1757,23 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                   border: isThemed() ? '1.5px solid var(--qq-hairline)' : `1.5px solid ${catColor}33`,
                   color: isThemed() ? 'var(--qq-text-muted)' : catColor, letterSpacing: '0.04em',
                 }}>
+                  {/* 2026-08-24, gemessen: „RUNDE 1" stand bei 16px, „Frage 1
+                      von 5" bei 20px. Das ist die Standortanzeige des Abends,
+                      und sie stand oben in der Mitte einer sonst leeren
+                      Buehnenhaelfte - Platz war nicht das Problem. */}
                   <div style={{
-                    fontSize: 'clamp(11px, 1.2cqw, 16px)', fontWeight: 900,
+                    // Fester Grad statt clamp: die Buehne ist fix 1760x990, und
+                    // der cqw-Bezug ist hier eine rund 1000px breite Huelle -
+                    // 2cqw landeten dadurch wieder auf 20px statt auf 27.
+                    fontSize: istBuehneG() ? 27 : 'clamp(11px, 1.2cqw, 16px)',
+                    fontWeight: 900,
                     textTransform: 'uppercase',
                   }}>
                     {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
                   </div>
                   <div style={{
-                    fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+                    fontSize: istBuehneG() ? 34 : 'clamp(14px, 1.5cqw, 20px)',
+                    fontWeight: 900,
                   }}>
                     {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
                   </div>
@@ -1987,14 +2001,20 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
                 text={lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}
               />
             ) : (<>
+            {/* Zweite Fundstelle derselben Standortanzeige - diese hier laeuft
+                im Kategorie-Reveal (introStep 2). 2026-08-24 zuerst nur die
+                andere angefasst und dann nachgemessen: „Runde 1" stand weiter
+                bei 20px, weil auf dieser Stufe DIESER Block auf der Buehne ist.
+                Zwei Bloecke, die dasselbe sagen - wer einen aendert, muss beide
+                messen. */}
             <div style={{
-              fontSize: 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
+              fontSize: istBuehneG() ? 27 : 'clamp(13px, 1.6cqw, 20px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-text-muted)' : catColor, letterSpacing: '0.1em', textTransform: 'uppercase',
             }}>
               {lang === 'de' ? `Runde ${s.gamePhaseIndex}` : `Round ${s.gamePhaseIndex}`}
             </div>
             <div style={{
-              fontSize: 'clamp(22px, 2.8cqw, 36px)', fontWeight: 900,
+              fontSize: istBuehneG() ? 40 : 'clamp(22px, 2.8cqw, 36px)', fontWeight: 900,
               color: isThemed() ? 'var(--qq-title)' : catColor, letterSpacing: '0.1em',
             }}>
               {lang === 'de' ? `Frage ${questionInPhase} von 5` : `Question ${questionInPhase} of 5`}

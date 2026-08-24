@@ -14,7 +14,11 @@
  */
 import { useEffect, useState } from 'react';
 import { playFieldPlaced, playSteal, playStapelStamp, playWoodKnock } from '../utils/sounds';
-import { isThemed } from '../qqTheme';
+import { isThemed, getActiveThemeId, QUIRKS_THEME_ID } from '../qqTheme';
+
+// Die Buehne beim Namen nennen, 2026-08-24. `isThemed()` deckt auch Studio
+// Mono, Soft Pop und Neo-Brutalism ab und taugt deshalb nicht als Buehnen-Test.
+const istBuehneG = () => getActiveThemeId() === QUIRKS_THEME_ID;
 
 export type ActionCardData = {
   count: number;
@@ -127,8 +131,11 @@ function FrontFace({
             color: isThemed() ? 'var(--qq-card-text)' : '#F1F5F9', letterSpacing: '0.01em',
           }}>{c.label}</span>
         </div>
+        {/* 2026-08-24, gemessen: 19px unter einer 64px grossen Zahl. Die Zeile
+            sagt, WOFUER die Zahl gilt - ohne sie ist „2x Klauen" eine Angabe
+            ohne Einheit. */}
         <div style={{
-          fontSize: 'clamp(13px, 1.4cqw, 19px)',
+          fontSize: istBuehneG() ? 26 : 'clamp(13px, 1.4cqw, 19px)',
           fontWeight: 700, color: isThemed() ? 'var(--qq-text-muted)' : '#cbd5e1',
           textAlign: 'center', lineHeight: 1.25, opacity: 0.85,
         }}>{lang === 'en' ? 'per correct answer' : 'pro richtige Antwort'}</div>

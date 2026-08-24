@@ -1113,8 +1113,10 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
             </div>
           ) : (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(12px, 1.6cqh, 20px)', width: '100%' }}>
+              {/* 2026-08-24, gemessen: 20px. Die Zeile sagt, was gleich kommt -
+                  ohne sie ist der Chip darunter eine Marke ohne Aussage. */}
               <div style={{
-                fontSize: 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
+                fontSize: istBuehne ? 28 : 'clamp(14px, 1.4cqw, 20px)', fontWeight: 900,
                 color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
               }}>{de ? 'tippte auf' : 'tipped on'}</div>
 

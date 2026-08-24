@@ -1224,8 +1224,11 @@ function SequenceGameView({
                 bgColor={currentTeam.color}
               />
               <div style={{ minWidth: 0 }}>
+                {/* 2026-08-24, gemessen: 22px. Diese Zeile sagt, an welcher
+                    Stelle der Reihe wir stehen - neben einer 200px grossen
+                    Teammarke war sie der kleinste Text der Folie. */}
                 <div style={{
-                  fontSize: 'clamp(14px, 1.4vw, 22px)',
+                  fontSize: istBuehneG() ? 30 : 'clamp(14px, 1.4vw, 22px)',
                   fontWeight: 800,
                   color: 'rgba(255,255,255,0.7)',
                   letterSpacing: '0.05em', textTransform: 'uppercase',
@@ -1315,8 +1318,11 @@ function SequenceGameView({
         }}>
           {cgName(game, lang)}
         </div>
+        {/* 2026-08-24, gemessen: 22px. Das ist die SPIELANLEITUNG - der Satz,
+            nach dem sich acht Teams richten sollen. Er stand unter einem
+            56px-Titel bei 22px. */}
         <div style={{
-          fontSize: 'clamp(14px, 1.3vw, 22px)',
+          fontSize: istBuehneG() ? 30 : 'clamp(14px, 1.3vw, 22px)',
           color: 'rgba(255,255,255,0.88)',
           maxWidth: '80%',
           textAlign: 'center',
@@ -1397,7 +1403,11 @@ function SequenceGameView({
                 {isCompleted && <span aria-hidden style={{ opacity: 0.7 }}>✓</span>}
                 <TeamNameLabel
                   name={t.name}
-                  fontSize={istBuehneG() ? 'clamp(15px, 1.25vw, 22px)' : 'clamp(13px, 1.1vw, 18px)'}
+                  // 2026-08-24, gemessen: die Namen in der Warteschlange lagen
+                  // zwischen 16,5 und 22px - der lange schrumpfte am staerksten,
+                  // also war ausgerechnet der schwerste Name der kleinste.
+                  fontSize={istBuehneG() ? 'clamp(22px, 1.7vw, 28px)' : 'clamp(13px, 1.1vw, 18px)'}
+                  minFontSize={istBuehneG() ? '26px' : undefined}
                   color={isCompleted ? 'var(--qq-text-muted)' : 'var(--qq-text)'}
                   fontWeight={800}
                   maxLines={1}

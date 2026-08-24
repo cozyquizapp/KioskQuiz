@@ -599,7 +599,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         ) : inReveal && glided ? (
           <>
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Kopf an Kopf' : 'Neck and neck'}</div>
-            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Wer bleibt zuerst stehen?' : 'Who stops first?'}</div>
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Wer bleibt zuerst stehen?' : 'Who stops first?'}</div>
           </>
         ) : inReveal && !glided ? (
           <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Die Top 3 stehen fest…' : 'The Top 3 are set…'}</div>
@@ -608,7 +608,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         ) : phase === 'baseHold' ? (
           <>
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Zwischenstand' : 'Standings'}</div>
-            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Jetzt zählen noch die Awards…' : 'Now the awards count…'}</div>
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Jetzt zählen noch die Awards…' : 'Now the awards count…'}</div>
           </>
         ) : phase === 'brett' ? (
           <>
@@ -617,12 +617,12 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                 es zaehlt das groesste zusammenhaengende Gebiet, und genau das
                 fliegt auch. */}
             <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
-            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Euer größtes Gebiet wird zum Turm' : 'Your largest area becomes the tower'}</div>
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Euer größtes Gebiet wird zum Turm' : 'Your largest area becomes the tower'}</div>
           </>
         ) : (
           <>
             <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease both' }}>{de ? 'Wer baut den höchsten Turm?' : 'Who builds the tallest tower?'}</div>
-            <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every conquered cell is a brick'}</div>
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA', animation: reduce ? 'none' : 'qqT2FadeUp 0.6s ease 0.1s both' }}>{de ? 'Jedes eroberte Feld ist ein Baustein' : 'Every conquered cell is a brick'}</div>
           </>
         )}
       </div>
@@ -911,9 +911,15 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               <div style={{ fontSize: istBuehne ? 42 : 30, fontWeight: 900, lineHeight: 1, color: istBuehne ? 'var(--qq-text)' : (capped && !myst ? colr : '#E2D6FF'), fontVariantNumeric: 'tabular-nums', textShadow: (capped && !myst && !istBuehne) ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
                 <span key={shown} style={{ display: 'inline-block', animation: (shown > 0 && !crowned && !reduce) ? 'qqT2NumPop 0.3s ease-out' : 'none' }}>{shown}</span>
               </div>
+              {/* 2026-08-24, gemessen: die Teamnamen im Sockel standen zwischen
+                  22,5 und 25px, das „???" der noch anonymen Tuerme bei 24px.
+                  Unter einem 140px breiten Baustein-Turm ist das der kleinste
+                  Text der Folie - ausgerechnet der Name, um den es geht.
+                  minFontSize haelt ihn auch bei langen Namen ueber dem Boden;
+                  zwei Zeilen sind erlaubt und darunter ist Platz. */}
               {myst
-                ? <div style={{ fontSize: istBuehne ? 24 : 16, fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.12em' }}>???</div>
-                : <TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} fontSize={istBuehne ? 'clamp(17px, 1.5cqw, 25px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
+                ? <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.12em' }}>???</div>
+                : <TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} minFontSize={istBuehne ? '26px' : undefined} fontSize={istBuehne ? 'clamp(22px, 1.8cqw, 30px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
             </div>
           </div>
         );

@@ -145,7 +145,8 @@ export function FinalBettingView({ state: s }: { state: QQStateUpdate }) {
           Tipp-Variante. Vorher: alte Cell-Picker-Beschreibung (irreführend).
           Jetzt: 3 prominente Bullets + großes Submit-Status. */}
       <div style={{
-        fontSize: 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: isThemed() ? 'var(--qq-text-muted)' : '#F9A8D4',
+        // 2026-08-24, gemessen: 22px. Eyebrow ueber dem Titel der Folie.
+        fontSize: istBuehneG() ? 28 : 'clamp(14px, 1.3cqw, 22px)', fontWeight: 900, color: isThemed() ? 'var(--qq-text-muted)' : '#F9A8D4',
         textTransform: 'uppercase', letterSpacing: '0.18em',
         marginBottom: 18, opacity: 0.85,
         display: 'inline-flex', alignItems: 'center', gap: 8, justifyContent: 'center',

@@ -378,6 +378,38 @@ Geschmacks-Politur mehr vorschlagen.
 **Danach:** UX-Delight- & Motion-Elevation-Pass („Boden fertig, dann Delight"), Screen für Screen,
 Wolf im Loop, via `animate` + `ui-ux-pro-max` + `web-design-guidelines`.
 
+> **Higher/Lower als Stechen.** 2026-08-23 mit Wolf besprochen, Befund
+> nachgetragen, Entscheidung offen.
+>
+> Wolf: „Ich fände Higher/Lower für ein Stechen super, auf jeden Fall besser
+> als Schätzen, da es Main-Kategorie ist." Ich bin dafür, und zwar aus einem
+> zweiten Grund: Schätzen ist eine STILLE Mechanik. Beide tippen, dann wird
+> aufgedeckt, dazwischen passiert im Raum nichts. Für den letzten Moment des
+> Abends ist das die falsche Kurve. Higher/Lower ist laut: Karte liegt, alle
+> rufen mit, dann kippt sie.
+>
+> **Was der Code hergibt, nachgesehen statt vermutet.** `QQComebackHLState`
+> trägt `teamIds: string[]` mit dem Kommentar „alle Teams, die gleichzeitig
+> mitspielen (1 bei Solo-Last, ≥2 bei Tied-Last)". Der Mehrspieler-Fall ist
+> also schon gebaut: Antworten pro Team, Richtig-Zähler pro Team, ein Timer für
+> alle. Ein Zwei-Team-Duell ist genau dieser Fall.
+> Nicht passend ist nur das Ende: heute mündet `done` in eine `steal`-Phase,
+> in der die Gewinne in geklaute Felder umgesetzt werden. Fürs Stechen endet es
+> bei `done`, `winnings` wird verglichen, und bei Gleichstand läuft eine weitere
+> Runde. Das ist ein umschriebenes Ende, kein Neubau.
+>
+> **Was der Code NICHT hergibt: die Begründung.** Der Abschalt-Commit
+> (a218886d, 07.07.2026) nennt zwei Gründe. Der zweite, „mechanisch redundant
+> zur Final-Wager-Phase", trifft ein Stechen NICHT: die Wager-Phase macht
+> Rückstand aufholbar, ein Stechen trennt zwei Gleichstehende. Verschiedene
+> Aufgaben. Der erste Grund ist wörtlich nur „war buggy" — welcher Bug, steht
+> nirgends, weder im Commit noch als Marker im Code. Alle Bug-Kommentare in
+> `CozyQuizComebackView.tsx` sind datierte, erledigte Fixes.
+>
+> **Konsequenz:** vor dem Umhängen einmal einen Livetest-Durchlauf der
+> H/L-Phase fahren und den Bug reproduzieren. Erst rot, dann grün. Ohne
+> Repro wäre es Raten, ob der Fehler beim Stechen überhaupt auftritt.
+
 > **Erster Punkt des Motion-Blocks: „Das Brett fällt".** 2026-08-23 mit Wolf
 > besprochen und bewusst vertagt, damit die Flugbahn nicht auf den alten Look
 > gebaut wird.

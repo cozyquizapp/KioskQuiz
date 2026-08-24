@@ -21,7 +21,7 @@
  * ~6.273 Zeilen Code — der GROESSTE Single-Extract bisher.
  * 7 externe Importer.
  */
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
@@ -191,6 +191,34 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // lebendiges 📸-Ambiente (bewusst OHNE Fehlertext, siehe Entscheidung
   // 2026-07-13: Entschuldigungen gehoeren nicht aufs Beamer-Bild).
   const [imgStatus, setImgStatus] = useState<'loading' | 'ok' | 'error'>('loading');
+  // 2026-08-24 (Wolf: „bei fragekategorien wo nur die frage in der mitte steht
+  // zb schaetzchen und teilweise bei bunte tuete, waere es besser den fragetext
+  // sowohl horizontal als auch vertikal mittig zu positionieren, sonst zu viel
+  // freiraum auf seite").
+  //
+  // Auf der Buehne beginnt der Inhalt oben, damit die Frage auf allen fuenfzehn
+  // Folien auf derselben Hoehe steht (Entscheidung von heute Morgen). Das gilt
+  // aber nur, solange etwas darunter kommt und die Flaeche fuellt. Bei
+  // Schaetzchen kommt nichts: gemessen stand die Frage bei y124 und die
+  // naechste Kante war die Team-Reihe bei y839 - 500 px Nichts dazwischen.
+  //
+  // Welche Folie etwas unter der Frage hat, haengt nicht an der Kategorie,
+  // sondern am Unterspiel (die Bunte Tuete hat neun davon). Deshalb wird es
+  // gemessen statt aufgezaehlt: zaehlt nach dem Aufbau, ob unter der Frage
+  // ueberhaupt ein Geschwister im Fluss steht, das Hoehe hat. Absolut
+  // positionierte (die Team-Reihe) und leere Platzhalter zaehlen nicht.
+  const flussRef = useRef<HTMLDivElement>(null);
+  const [nurFrage, setNurFrage] = useState(false);
+  useLayoutEffect(() => {
+    const el = flussRef.current;
+    if (!el) return;
+    const traegt = Array.from(el.children).slice(1).some((k) => {
+      const st = window.getComputedStyle(k);
+      if (st.position === 'absolute' || st.position === 'fixed' || st.display === 'none') return false;
+      return (k as HTMLElement).getBoundingClientRect().height > 1;
+    });
+    if (traegt === nurFrage) setNurFrage(!traegt);
+  });
   useEffect(() => {
     if ((!isCheese && !useMapPicture) || !img?.url) {
       setIsCheesePortrait(false);
@@ -1030,7 +1058,16 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
                 : bildKasten.right,
               borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
-              border: `4px solid ${accent}`,
+              // 2026-08-24 (Wolf: „sichtbarer rahmen bei vertikal schau mal soll
+              // raus"). Der Strich stammt vom 04.05. und sollte das Foto als
+              // „gerahmtes Bild" lesbar machen. Auf der Buehne tut er das
+              // Gegenteil: hochkant steht er als vierte Kante mitten im Bild,
+              // quer laeuft er 4 px innerhalb der Buehnenkante einmal aussen
+              // herum - unter der Zeitleiste, die dieselbe Farbe hat. Zwei
+              // gleichfarbige Linien mit zwei Pixeln Abstand lesen sich als
+              // doppelter Rahmen; genau das ist der Rahmen, den Wolf sieht.
+              // Das Foto hat eine eigene Kante, die reicht.
+              border: istBuehne ? 'none' : `4px solid ${accent}`,
               // 2026-08-23: derselbe Massstab wie am Brett und an der
               // Fragekarte — ein Schein, der etwas bedeutet, bleibt; einer, der
               // nur schmueckt, geht. Der Rahmen sagt bereits „gerahmtes Foto",
@@ -1897,7 +1934,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // waagerechte Ausrichtung entschieden („text muss auf allen frageviews
           // gleich ausgerichtet sein") - Gleichheit ueber alle Folien wiegt
           // schwerer als die beste Loesung fuer die einzelne.
-          const innerJustify = (isHotPotatoActive || istBuehne) ? 'flex-start' : 'center';
+          // 2026-08-24 (Wolf, zweite Runde): oben-buendig gilt nur, wenn unter
+          // der Frage etwas steht. Steht dort nichts (`nurFrage`, gemessen
+          // statt geraten - s. Kommentar bei `flussRef`), faellt sie in die
+          // Mitte des freien Feldes. Waagerecht ist sie ohnehin schon zentriert.
+          const innerJustify = ((isHotPotatoActive || istBuehne) && !(istBuehne && nurFrage))
+            ? 'flex-start' : 'center';
           const innerGap = isHotPotatoActive ? 'clamp(24px, 3.2cqh, 44px)' : 0;
           return (
         <div style={{
@@ -1974,6 +2016,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Rest. Regel statt Inline-Stil, weil es um die Lage von
             // Geschwistern geht - die Alternative waere ein zusaetzlicher
             // Wrapper um rund 1600 Zeilen JSX gewesen.
+            ref={flussRef}
             className={istBuehne ? 'qq-frage-fluss' : undefined}
             style={{
             flex: 1, display: 'flex', flexDirection: 'column',

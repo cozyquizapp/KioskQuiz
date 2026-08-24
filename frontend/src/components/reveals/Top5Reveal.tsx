@@ -22,7 +22,7 @@ import { QQEmojiIcon } from '../QQIcon';
 import { TeamNameLabel } from '../TeamNameLabel';
 import { playAvatarCascadeNote, playClimaxFinish, playRevealHighlight } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { isThemed, themedWindow, getActiveThemeId, BUEHNE_THEME_ID } from '../../qqTheme';
+import { isThemed, themedWindow, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../../qqTheme';
 import { QQ_CATEGORY_THEME } from '../../../../shared/qqCategoryTheme';
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS } from '../../../../shared/quarterQuizTypes';
 
@@ -125,7 +125,14 @@ export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      padding: 'clamp(16px, 2.2cqh, 30px) clamp(20px, 3cqw, 48px) clamp(14px, 2cqh, 26px)',
+      // 2026-08-24: dieselbe Kante wie die Fragefolie und die
+      // Schaetzchen-Aufloesung. Gemessen sass die Kategorie-Pille hier auf
+      // x48 y22, auf der Fragefolie auf x28 y28 - das Polster kam oben aus
+      // `cqh` (Hoehe) und seitlich aus `cqw` (Breite), also zwei
+      // Bezugsgroessen und zwei verschiedene Raender.
+      padding: istBuehne
+        ? `${QQ_BUEHNE_RAND} ${QQ_BUEHNE_RAND} clamp(14px, 2cqh, 26px)`
+        : 'clamp(16px, 2.2cqh, 30px) clamp(20px, 3cqw, 48px) clamp(14px, 2cqh, 26px)',
       animation: 'contentReveal 0.45s var(--qq-ease-pop-fast) both', minHeight: 0,
     }}>
       <style>{`

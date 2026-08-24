@@ -25,7 +25,7 @@ import { QQEmojiIcon, QQIcon } from '../QQIcon';
 import { isQuirkTileSet } from '../../quirks2Avatars';
 import { playAvatarCascadeNote, playClimaxFinish } from '../../utils/sounds';
 import { QQ_COLORS } from '../../../../shared/qqColors';
-import { useActiveThemeId, getActiveThemeId, BUEHNE_THEME_ID } from '../../qqTheme';
+import { useActiveThemeId, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../../qqTheme';
 import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 
 const MINT = QQ_COLORS.green300;
@@ -303,7 +303,15 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   return (
     <div style={{
       flex: 1, display: 'flex', flexDirection: 'column',
-      padding: 'clamp(14px, 2cqh, 26px) clamp(20px, 3cqw, 52px) clamp(10px, 1.4cqh, 20px)',
+      // 2026-08-24 (Wolf: „gleich die schaetzchen aufloesung mit an"). Gemessen
+      // sass die Kategorie-Pille hier auf x50 y26, auf der Fragefolie derselben
+      // Kategorie dagegen auf x28 y28 - das Polster war oben 2cqh (Hoehe) und
+      // seitlich 3cqw (Breite), also wieder zwei Bezugsgroessen und zwei
+      // verschiedene Raender. Auf der Buehne jetzt derselbe eine Wert wie
+      // ueberall. Unten bleibt es enger: dort steht der Strahl, kein Text.
+      padding: istBuehne
+        ? `${QQ_BUEHNE_RAND} ${QQ_BUEHNE_RAND} clamp(10px, 1.4cqh, 20px)`
+        : 'clamp(14px, 2cqh, 26px) clamp(20px, 3cqw, 52px) clamp(10px, 1.4cqh, 20px)',
       animation: 'contentReveal 0.5s var(--qq-enter) both',
       minHeight: 0, position: 'relative', overflow: 'hidden',
     }}>

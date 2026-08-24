@@ -25,7 +25,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
 import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
-import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
+import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../qqTheme';
 import { QQ_CATEGORY_THEME } from '../../../shared/qqCategoryTheme';
 import { SkinDeco } from './SkinDeco';
 import {
@@ -92,11 +92,9 @@ const QQ_KOPFZEILE_H = 'clamp(120px, 20.6cqh, 204px)';
 // sonst sprang die Pille um 80 px. Das Halten bleibt richtig, die Zahl war zu
 // gross. Jetzt ist die Zeile so hoch wie ihr hoechstes Teil, der Timer.
 const QQ_KOPFZEILE_H_BUEHNE = 'clamp(64px, 9.7cqh, 96px)';
-// Der Abstand der Buehne zur Kante. EIN Wert, EIN Bezug, alle vier Seiten -
-// genau das war heute frueh der Fehler am Schau-mal-Rahmen (Seiten aus cqw,
-// oben und unten aus cqh, also drei verschiedene Raender). Hergeleitet ist er
-// aus der Zeitleiste: 12 px Leiste plus 16 px Luft, Oberkante bei 28.
-const QQ_STAGE_RAND = 'clamp(20px, 1.6cqw, 28px)';
+// Der Abstand der Buehne zur Kante. Liegt seit 2026-08-24 in qqTheme.ts, weil
+// ihn inzwischen auch die Schaetzchen-Aufloesung braucht.
+const QQ_STAGE_RAND = QQ_BUEHNE_RAND;
 
 
 // 2026-05-24 (Refactor #5): Reveals + Helpers in components/reveals/ extrahiert:

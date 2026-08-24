@@ -167,6 +167,18 @@ const NEO_BRUTAL: ResolvedTheme = {
  * verwechselter Vergleich zufaellig stimmt. Siehe shared/qqThemeIds.ts.
  */
 export const BUEHNE_THEME_ID = 'buehne';
+/** Abstand der Buehne zur Kante. EIN Wert, EIN Bezug, alle vier Seiten.
+ *
+ *  2026-08-24: genau daran ist an einem Tag zweimal etwas schief gegangen. Am
+ *  Schau-mal-Rahmen kamen die Seiten aus `cqw` und oben/unten aus `cqh` - zwei
+ *  Bezugsgroessen, also drei verschiedene Raender (gemessen links/rechts 28,
+ *  oben 32, unten 14). Und auf derselben Folie sass die Statuszeile auf 16, der
+ *  Rahmen auf 28 und `--qq-safe-margin` auf 24.
+ *
+ *  Hergeleitet ist der Wert aus der Zeitleiste: 12 px Leiste plus 16 px Luft,
+ *  Oberkante bei 28. Steht hier und nicht in einer der Ansichten, weil ihn
+ *  inzwischen mehrere brauchen (Fragefolie, Schaetzchen-Aufloesung). */
+export const QQ_BUEHNE_RAND = 'clamp(20px, 1.6cqw, 28px)';
 const BUEHNE: ResolvedTheme = {
   id: BUEHNE_THEME_ID, label: 'CozyQuiz',
   brand: {

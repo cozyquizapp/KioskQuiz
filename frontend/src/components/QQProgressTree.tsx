@@ -3,7 +3,11 @@ import type { QQStateUpdate, QQScheduleEntry, QQGamePhaseIndex } from '../../../
 import { QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS } from '../../../shared/quarterQuizTypes';
 import { QQ_PHASE_COLORS, getRoundColor } from '../qqDesignTokens';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { isThemed, getActiveTheme } from '../qqTheme';
+import { isThemed, getActiveTheme, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
+
+/** Laeuft der Buehnen-Look? Ausgeschrieben, weil `isThemed()` „nicht Cozy"
+ *  heisst und damit auch Studio Mono, Soft Pop und Neo-Brutalism umfasst. */
+const istBuehneT = () => getActiveThemeId() === BUEHNE_THEME_ID;
 import { QQIcon, qqCatSlug } from './QQIcon';
 import { CozyGameIcon } from './CozyGameIcon';
 import { useLangFlip } from '../cozyQuizShared';
@@ -203,10 +207,22 @@ export default function QQProgressTree({
   const showFinale  = !isSingleRound && state.connectionsEnabled === true;
   // 2026-05-17 (Wolf-Feature CozyGames): Knoten nach JEDER Non-Final-Runde
   // (Wolf-Spec "nach jeder Runde"). Bei 4-Phasen: nach 1, 2, 3.
-  const showCozyGames = !isSingleRound
-    && !!(state as any).cozyGamesEnabled
+  const cozyGamesDa = !!(state as any).cozyGamesEnabled
     && Array.isArray((state as any).cozyGamesPool)
     && (state as any).cozyGamesPool.length > 0;
+  const showCozyGames = !isSingleRound && cozyGamesDa;
+  // 2026-08-24 (Wolf: „cozygames haben falsches emoji und stehen weg von runde
+  // obwohl sie zu runde gehoeren"). Im ganzen Baum sitzt der CozyGame-Knoten
+  // VOR der naechsten Runde, mit vollem Phasen-Abstand auf beiden Seiten - er
+  // liest sich damit als eigener Block zwischen zwei Runden. In der
+  // Einzelrunde stimmt das nicht: dort ist nur EINE Runde zu sehen, und das
+  // CozyGame, das ihr folgt, gehoert zu ihr. Also haengt es HINTER die fuenf
+  // Kacheln, mit dem kleinen Gruppen-Abstand statt dem Phasen-Abstand.
+  // Nach der letzten Runde gibt es keins (dort geht es ins Finale).
+  const einzelCozyGame = isSingleRound && cozyGamesDa && (onlyPhase as number) < totalPhases;
+  // Abstand zwischen den Bloecken einer Reihe. In der Einzelrunde ist der
+  // einzige Block-Uebergang der zum CozyGame - und der soll nah sein.
+  const gruppenGap = isSingleRound ? Math.round(dotGap * 2) : phaseGap;
   const DEFAULT_DOTS_PER_PHASE = 5;
 
   // ── Showcase-Sweep „Option B" (Wolf 2026-05-17): per-Dot SubSteps ────────
@@ -383,6 +399,12 @@ export default function QQProgressTree({
     phaseWidths.push(cursor - phaseStart);
     phaseCenters.push(phaseStart + (cursor - phaseStart) / 2);
     phaseDotSpans.push({ first: dotCenters[dotIdxStart], last: dotCenters[dotCenters.length - 1] });
+    // Einzelrunde: CozyGame-Knoten HINTER der Runde (siehe `einzelCozyGame`).
+    if (einzelCozyGame) {
+      cursor += gruppenGap;
+      cozyGameCentersByPi.set(onlyPhase as number, cursor + cozyGameDotSize / 2);
+      cursor += cozyGameDotSize;
+    }
   });
   // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28
   // entfernt (User-Wunsch: 'den - hintendran weg'). Dot sitzt jetzt mittig
@@ -625,7 +647,7 @@ export default function QQProgressTree({
             2026-05-12 (Wolf 'bid vor finalrunde'): Bieten-Label wird zwischen
             den letzten zwei Phase-Labels eingeschoben statt am Ende. */}
         {showLabels && (
-        <div style={{ display: 'flex', gap: phaseGap, width: totalWidth }}>
+        <div style={{ display: 'flex', gap: gruppenGap, width: totalWidth }}>
           {(() => {
             const items: React.ReactNode[] = [];
             const isBiddingActive = state.phase === 'FINAL_BETTING' || state.phase === 'FINAL_REVEAL' || showcaseOnBidding;
@@ -710,6 +732,11 @@ export default function QQProgressTree({
                   {phaseLabels[p]}
                 </div>
               );
+              // Einzelrunde: Spalte fuer den CozyGame-Knoten hinter der Runde,
+              // damit Label-Reihe und Kachel-Reihe dieselben Spalten haben.
+              if (einzelCozyGame) {
+                items.push(<div key={`cg-label-spacer-einzel-${p}`} style={{ width: cozyGameDotSize, flexShrink: 0 }} />);
+              }
             });
             return items;
           })()}
@@ -749,7 +776,7 @@ export default function QQProgressTree({
           position: 'relative',
           display: 'flex',
           alignItems: 'center',
-          gap: phaseGap,
+          gap: gruppenGap,
           width: totalWidth,
           height: Math.round(dotSize * 1.3), // Platz für Scale 1.15 + Glow
         }}>
@@ -804,21 +831,24 @@ export default function QQProgressTree({
             const isBiddingPast = (state.phase === 'CONNECTIONS_4X4' || state.phase === 'GAME_OVER' || state.phase === 'THANKS') && !isBiddingActive;
             // CozyGame-Knoten — vor jedem pi >= 1 (= zwischen Runde N-1 und N).
             // Wolf-Spec: nach JEDER Runde ein CG (außer der letzten = Final).
-            const insertCozyGameHere = showCozyGames && pi >= 1;
+            const insertCozyGameHere = (showCozyGames && pi >= 1) || einzelCozyGame;
+            // Slot-Nummer des Knotens: im ganzen Baum die Runde, VOR der er
+            // steht; in der Einzelrunde die Runde, HINTER der er steht.
+            const cgSlotPi = einzelCozyGame ? (onlyPhase as number) : pi;
             const cozyGameColor = skinAccentHex ?? QQ_COLORS.brandPink;
             // Active = state.phase=COZY_GAME UND der Slot zwischen aktueller
             // Phase und nächster (= pi === state.gamePhaseIndex).
             // 2026-05-17 (Option B): auch im Showcase aktivieren wenn Wolf auf
             // diesem CG-Knoten sitzt, damit Pulse-Animation in der Rules-Roadmap
             // mitspielt (vorher nur live highlighted).
-            const isCozyGameActive = (state.phase === 'COZY_GAME' && pi === state.gamePhaseIndex)
-              || (showcaseOnCozyGame && showcaseActiveCgPi === pi);
+            const isCozyGameActive = (state.phase === 'COZY_GAME' && cgSlotPi === state.gamePhaseIndex)
+              || (showcaseOnCozyGame && showcaseActiveCgPi === cgSlotPi);
             // "Past" = der CG-Slot vor pi wurde bereits gespielt
             // (state.cozyGamesPlayedAfterPhases enthält die Phase-Indizes vor diesem Slot).
             const playedSlots = (state as any).cozyGamesPlayedAfterPhases ?? [];
-            const isCozyGamePast = !isCozyGameActive && playedSlots.includes(pi);
+            const isCozyGamePast = !isCozyGameActive && playedSlots.includes(cgSlotPi);
             const cozyGameNode = insertCozyGameHere ? (
-              <div key={`cg-knoten-${pi}`} style={{
+              <div key={`cg-knoten-${cgSlotPi}`} style={{
                 width: cozyGameDotSize,
                 flexShrink: 0,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -832,14 +862,19 @@ export default function QQProgressTree({
                     borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.round(cozyGameDotSize * 0.55),
+                    // Ohne Chrome (Einzelrunde, bare) stehen die Kategorien als
+                    // blanke Zeichen da. Ein Kasten nur um das CozyGame waere
+                    // genau das „steht weg", das wir gerade weggeraeumt haben.
                     background: isCozyGameActive
                       ? cozyGameColor
-                      : isCozyGamePast
-                        ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(148,163,184,0.18)')
-                        : (isThemed() ? 'var(--qq-card-bg)' : 'rgba(30,41,59,0.85)'),
-                    border: isCozyGameActive
+                      : chromeless
+                        ? 'transparent'
+                        : isCozyGamePast
+                          ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(148,163,184,0.18)')
+                          : (isThemed() ? 'var(--qq-card-bg)' : 'rgba(30,41,59,0.85)'),
+                    border: (isCozyGameActive && !chromeless)
                       ? '2.5px solid #fff'
-                      : isCozyGamePast
+                      : (isCozyGamePast || chromeless)
                         ? 'none'
                         : (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)'),
                     boxShadow: isCozyGameActive
@@ -853,7 +888,15 @@ export default function QQProgressTree({
                 >
                   {/* 2026-07-09 (Wolf 'Tree zeigt noch altes Cozygames-Logo'):
                       3D-Dach-Icon cg-cozygames statt 🪅-Emoji. */}
-                  <CozyGameIcon id="cg-cozygames" emoji="🪅" size={Math.round(cozyGameDotSize * 0.74)} />
+                  {/* 2026-08-24 (Wolf: „cozygames haben falsches emoji"). Dritter
+                      Fundort desselben Zeichens: `cg-cozygames` ist der PINKE
+                      COZYWOLF mit Ring und Becher - also eine Figur, keine
+                      Ansage. Auf der Regelfolie und im CozyGame-Intro steht seit
+                      dem 24.08. `fx-wheel`, das Gluecksrad, und genau das sieht
+                      der Raum Sekunden spaeter auch: das Rad dreht sich und
+                      waehlt das Spiel. Zeichen und Moment sagen damit dasselbe.
+                      Der Fortschrittsbaum war die letzte Stelle mit dem Wolf. */}
+                  <CozyGameIcon id="fx-wheel" emoji="🎡" size={Math.round(cozyGameDotSize * 0.74)} />
                 </div>
               </div>
             ) : null;
@@ -1023,9 +1066,11 @@ export default function QQProgressTree({
             // CozyGame ist VOR Phase 1 (zwischen Runde 1 und Runde 2),
             // Bid ist VOR letzter Phase. Beide vor der Phase rendern.
             const nodes: React.ReactNode[] = [];
-            if (cozyGameNode) nodes.push(cozyGameNode);
+            if (cozyGameNode && !einzelCozyGame) nodes.push(cozyGameNode);
             if (biddingNode) nodes.push(biddingNode);
             nodes.push(phaseElem);
+            // Einzelrunde: der Knoten haengt hinten dran, nicht davor.
+            if (cozyGameNode && einzelCozyGame) nodes.push(cozyGameNode);
             return nodes;
           })}
 
@@ -1099,7 +1144,11 @@ export default function QQProgressTree({
             const currentSchedule = schedule[wolfDotIdx];
             // 2026-05-09: Phasen-Farbe statt Kategorie-Farbe (Brand-konsistent).
             const wolfColor = skinAccentHex ?? (currentSchedule ? getRoundColor(currentSchedule.phase, totalPhases) : QQ_COLORS.brandPink);
-            const wolfSize = Math.round(dotSize * 1.35);
+            // Ohne Wolfskopf darin braucht die Marke die Kopfgroesse nicht
+            // mehr: sie ist dann ein Rahmen um den Punkt, kein Traeger fuer ein
+            // Bild. 1.35 liess sie deutlich groesser wirken als der Punkt, auf
+            // den sie zeigt.
+            const wolfSize = Math.round(dotSize * (istBuehneT() ? 1.12 : 1.35));
             return (
               <div style={{
                 position: 'absolute',
@@ -1109,7 +1158,14 @@ export default function QQProgressTree({
                 height: wolfSize,
                 // wolfAbove: über die Dot-Linie heben (optional). wolfHidden:
                 // beim Kategorie-Emoji-Zoom sanft ausblenden → nur Emoji im Dot.
-                transform: wolfAbove ? 'translate(-50%, -160%)' : 'translate(-50%, -50%)',
+                // 2026-08-24 v2: ohne den Wolfskopf darin ergibt ein Kasten, der
+                // ueber der Linie SCHWEBT, keinen Sinn mehr - er war der Traeger
+                // fuer die Figur. Leer gelassen liest er sich als weisses
+                // Rechteck ohne Bedeutung (im ersten Anlauf genau so passiert).
+                // Auf der Buehne sitzt die Marke deshalb AUF dem aktuellen
+                // Punkt und rahmt sein Zeichen ein. Das ist praeziser als ein
+                // Zeiger von oben, und es ist dasselbe Bild wie in der Pause.
+                transform: (wolfAbove && !istBuehneT()) ? 'translate(-50%, -160%)' : 'translate(-50%, -50%)',
                 opacity: wolfHidden ? 0 : 1,
                 transition: 'left 620ms cubic-bezier(0.34, 1.25, 0.64, 1), transform 520ms cubic-bezier(0.34, 1.25, 0.64, 1), opacity 420ms ease',
                 zIndex: 3,
@@ -1123,27 +1179,47 @@ export default function QQProgressTree({
                     borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
                     background: 'transparent',
                     border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
-                    boxShadow: `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
+                    // Auf der Buehne ohne den weiten Hof: 2a hat den Schein
+                    // ueberall abgeschafft, wo er nur schmueckt. Hier traegt die
+                    // Kontur allein, sie sitzt ja direkt am Zeichen.
+                    boxShadow: istBuehneT()
+                      ? `0 0 0 2px ${wolfColor}33`
+                      : `0 0 0 ${isMini ? 3 : 4}px ${wolfColor}40, 0 6px 16px ${wolfColor}66`,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     overflow: 'hidden',
                     animation: isHopping ? 'qqWolfBowHop 0.65s cubic-bezier(0.5, 0, 0.5, 1)' : undefined,
                   }}
                 >
-                  <img
-                    src="/avatars/cozywolf/pink.png"
-                    alt=""
-                    draggable={false}
-                    style={{
-                      width: '94%', height: '94%', objectFit: 'contain',
-                      filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
-                      animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
-                    }}
-                  />
+                  {/* 2026-08-24 (Wolf: „wolf darf hier raus, nur pfeil und
+                      umrandung (wie in pause oder rules) fuer den progress
+                      tree"): auf der Buehne bleibt die MARKE - Umrandung in der
+                      Rundenfarbe plus die Spitze, die auf den aktuellen Punkt
+                      zeigt. Der pinke Wolfskopf faellt weg.
+                      Der Grund ist derselbe, aus dem 2a die Marke ueberall zur
+                      Kachel gemacht hat: der Wolf ist eine zweite Figur neben
+                      den Kategorie-Zeichen, und er ist die einzige, die nichts
+                      ueber den Spielstand sagt. Er zeigt nur, wo man ist - und
+                      das sagt die Umrandung praeziser, weil sie GENAU auf einem
+                      Punkt sitzt statt darueber zu schweben.
+                      Andere Skins behalten ihn, dort gehoert die Figur zur
+                      Sprache. */}
+                  {!istBuehneT() && (
+                    <img
+                      src="/avatars/cozywolf/pink.png"
+                      alt=""
+                      draggable={false}
+                      style={{
+                        width: '94%', height: '94%', objectFit: 'contain',
+                        filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.55))',
+                        animation: 'qqWolfHeadBob 1.6s ease-in-out infinite',
+                      }}
+                    />
+                  )}
                 </div>
                 {/* Pin-Spitze nach unten (nur wenn der Wolf ÜBER der Linie
                     schwebt) → zeigt auf den aktuellen Dot, dessen Emoji frei
                     bleibt. (Wolf 2026-06-29, wie RoundMiniTree.) */}
-                {wolfAbove && (() => {
+                {wolfAbove && !istBuehneT() && (() => {
                   const ptr = Math.round(wolfSize * 0.16);
                   return (
                     <div aria-hidden style={{

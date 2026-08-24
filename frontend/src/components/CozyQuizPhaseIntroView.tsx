@@ -15,12 +15,26 @@
  * 4 externe Importer.
  */
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, Fragment } from 'react';
-import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
+import type { QQStateUpdate, QQCategory, QQGamePhaseIndex } from '../../../shared/quarterQuizTypes';
 import {
   QQ_CATEGORY_LABELS,
 } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, bt, qqArenaType } from '../cozyQuizShared';
 import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
+
+/** Laeuft der Buehnen-Look? `isThemed()` heisst „nicht Cozy" und umfasst auch
+ *  Studio Mono, Soft Pop und Neo-Brutalism - der Unterschied hat hier schon
+ *  mehrfach Zeit gekostet, deshalb ausgeschrieben. */
+const istBuehneP = () => getActiveThemeId() === BUEHNE_THEME_ID;
+// 2026-08-24 (Wolf: „hier ueberlappt tree"): Der Wert 0.42-0.5, auf dem das
+// Runden-Cluster in Schritt 1 liegt, ist die Hoehe, die der Wolf-Pin braucht -
+// er sitzt gut zwei Kachelhoehen UEBER der Linie, also musste die Linie tief.
+// Auf der Buehne ist der Pin raus (nur noch Ring um die laufende Kachel), und
+// damit ist der Platz oben frei. Das Cluster wandert nach oben, und die
+// Aktions-Zeile darunter bekommt ihr eigenes Band.
+// Beide Rechnungen (Kamera + `dotScreen`) muessen denselben Wert nehmen, sonst
+// startet der Kategorie-Flip an der falschen Stelle.
+const BUEHNE_CLUSTER_V = 0.3;
 
 // 2026-08-23 (Uebergabe 2a): die Buehne wird benannt, nicht ueber isThemed()
 // umschrieben - unter isThemed() fallen auch Studio Mono, Soft Pop und Neo.
@@ -850,6 +864,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
         const megaClear = 0.09 + (2.1 * dotSize * S) / camVp.h;
         vAnchor = Math.min(0.6, Math.max(0.52, megaClear));
       }
+      if (istBuehneP() && !(s as any).largeGroupMode) vAnchor = BUEHNE_CLUSTER_V;
     }
     // Step >= 2 (Kategorie-Seite): KEIN weiterer Dive in den Mini-Dot mehr.
     // Der Dot-Zoom schleifte Linie + Nachbar-Kacheln + Ring ins Bild und das
@@ -900,6 +915,8 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
     if ((s as any).largeGroupMode) {
       S1 = Math.min(2.9, Math.max(2.1, (camVp.w * 0.7) / (phaseWidths[pi] || camVp.w)));
       vA = Math.min(0.6, Math.max(0.52, 0.09 + (2.1 * dotSize * S1) / camVp.h));
+    } else if (istBuehneP()) {
+      vA = BUEHNE_CLUSTER_V;
     }
     const sx = camVp.w / 2 + (dotCenters[qi] - (phaseCenters[pi] ?? 0)) * S1;
     const sy = camVp.h * vA;
@@ -1139,6 +1156,17 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             wolfAbove
             wolfHidden={zoomStep >= 2}
             focusPhaseIdx={zoomStep >= 1 ? Math.max(0, (displayGpi ?? 1) - 1) : null}
+            // 2026-08-24 (Wolf: „in der ansicht brauchen wir nur die 5
+            // kategorie + cozygames (rundenuebersicht)"). Der Baum zeigte hier
+            // ALLE Runden, bei drei Runden also fuenfzehn Kacheln plus die
+            // CozyGames dazwischen - eine Landkarte des ganzen Abends an einer
+            // Stelle, die den Anfang EINER Runde ankuendigt.
+            // `onlyPhase` gibt es seit dem 22.08. und wird auf der Regelfolie
+            // schon genutzt; hier fehlte es. Jetzt steht die Runde, die gleich
+            // laeuft, und was zu ihr gehoert.
+            // `displayGpi` kann waehrend des Uebergangs 0 werden (prevIdx vor
+            // Runde 1), deshalb der Boden bei 1.
+            onlyPhase={istBuehneP() ? (Math.max(1, displayGpi ?? 1) as QQGamePhaseIndex) : null}
           />
         </div>
       </div>

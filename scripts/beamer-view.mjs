@@ -37,6 +37,7 @@
  *   --antworten=0.6        Quote richtiger Bot-Antworten vor einer Aufloesung
  *   --entwurf=qq-vol-1     Entwurf per Teil-Id waehlen
  *   --ruhe=15000           Ruhezeit ueberschreiben (lange Kaskaden)
+ *   --rahmen               wie viel von der Buehne die Folie wirklich nutzt
  *   --frisch               Raum vor dem Aufbau ueber den Socket zuruecksetzen
  *   --fenster=1470x908     andere Fenstergroesse (Vorgabe die Buehne, 1760x990)
  *
@@ -76,6 +77,8 @@ const KATEGORIE = (process.argv.find(a => a.startsWith('--kategorie=')) || '=').
 // hinterher im Bild zu suchen. Beim Willkommen-Wolf war das um ein Vielfaches
 // schneller UND genauer (das Bild kann eine Ebene veraltet zeigen, das DOM nie).
 const DOM = (process.argv.find(a => a.startsWith('--dom=')) || '=').split('=').slice(1).join('=') || null;
+// --rahmen  wie viel von der Buehne die Folie wirklich nutzt (siehe Funktion `rahmen`).
+const RAHMEN = process.argv.includes('--rahmen');
 // --grade[=26]  jeden sichtbaren Text unter dieser Grenze melden, mit dem
 // GERECHNETEN Grad. Siehe die Begruendung an der Funktion `grade` weiter unten.
 const GRADE = process.argv.some(a => a === '--grade' || a.startsWith('--grade='))
@@ -240,6 +243,70 @@ if (marken) { await knipsen(beamer); takt('aufgewaermt'); }
 /** Kaesten und Farben direkt aus dem DOM lesen. Schneller und ehrlicher als
  *  im Bild suchen: das Bild kann eine Compositing-Ebene veraltet zeigen, das
  *  DOM nie. */
+/**
+ * --rahmen: wie viel von der Buehne nutzt die Folie wirklich?
+ *
+ * WARUM (Wolf 2026-08-24: „rahmen ganz oft, auch grid hat rahmen? nicht
+ * sichtbar aber rahmen"): der Eindruck ist richtig, aber „zu viel Rand" ist
+ * kein Befund, solange niemand sagt, wie viel. Also wird es gezaehlt.
+ *
+ * Gezaehlt wird, was TRAEGT: Text, Bilder, und Flaechen mit eigenem Grund oder
+ * eigener Kontur. Ausdruecklich NICHT mitgezaehlt:
+ *   * alles, was die volle Buehne deckt (Grund, Schleier, Funken-Ebene) - sonst
+ *     nutzt jede Folie per Definition 100 % und die Messung sagt nichts;
+ *   * unsichtbares (Deckkraft 0, Groesse 0, `visibility: hidden`);
+ *   * die Zeitleiste ganz oben, die laeuft absichtlich von Kante zu Kante.
+ *
+ * Ergebnis pro Ansicht: der Kasten um alles Tragende, und die vier Abstaende
+ * zur Buehnenkante. Vier verschiedene Abstaende sind ein Fund, gleich grosse
+ * sind eine Entscheidung.
+ */
+async function rahmen(page, name) {
+  const r = await page.evaluate(() => {
+    const B = { w: 1760, h: 990 };
+    let l = 1e9, o = 1e9, re = -1e9, u = -1e9, n = 0;
+    const traegt = (el, cs, rect) => {
+      if (rect.width < 2 || rect.height < 2) return false;
+      if (cs.visibility === 'hidden' || Number(cs.opacity) === 0) return false;
+      // Vollflaechige Ebenen zaehlen nicht - sie sagen nichts ueber die Nutzung.
+      if (rect.width >= B.w * 0.985 && rect.height >= B.h * 0.985) return false;
+      // Zeitleiste: laeuft absichtlich randlos.
+      if (rect.width >= B.w * 0.985 && rect.height <= 16) return false;
+      const eigenerText = [...el.childNodes].some(k => k.nodeType === 3 && k.textContent.trim());
+      if (eigenerText) return true;
+      if (el.tagName === 'IMG' || el.tagName === 'VIDEO' || el.tagName === 'CANVAS') return true;
+      const grund = cs.backgroundColor;
+      const hatGrund = grund && grund !== 'transparent' && !/rgba\(0, 0, 0, 0\)/.test(grund);
+      const hatBild = cs.backgroundImage && cs.backgroundImage !== 'none';
+      const hatRand = parseFloat(cs.borderTopWidth) > 0 || parseFloat(cs.borderLeftWidth) > 0;
+      return hatGrund || hatBild || hatRand;
+    };
+    document.querySelectorAll('[data-qq-phase] *').forEach(el => {
+      const cs = getComputedStyle(el);
+      const rect = el.getBoundingClientRect();
+      if (!traegt(el, cs, rect)) return;
+      n++;
+      l = Math.min(l, rect.left); o = Math.min(o, rect.top);
+      re = Math.max(re, rect.right); u = Math.max(u, rect.bottom);
+    });
+    if (!n) return null;
+    return {
+      n,
+      kasten: [Math.round(l), Math.round(o), Math.round(re - l), Math.round(u - o)],
+      links: Math.round(l), oben: Math.round(o),
+      rechts: Math.round(B.w - re), unten: Math.round(B.h - u),
+      nutzungB: Math.round(1000 * (re - l) / B.w) / 10,
+      nutzungH: Math.round(1000 * (u - o) / B.h) / 10,
+    };
+  });
+  if (!r) { console.log(`     ${name}: nichts Tragendes gefunden`); return null; }
+  const gleich = new Set([r.links, r.oben, r.rechts, r.unten]).size === 1;
+  console.log(`     Rand  links ${String(r.links).padStart(4)}  oben ${String(r.oben).padStart(4)}`
+    + `  rechts ${String(r.rechts).padStart(4)}  unten ${String(r.unten).padStart(4)}`
+    + `   nutzt ${r.nutzungB}% x ${r.nutzungH}%${gleich ? '   (alle gleich)' : ''}`);
+  return r;
+}
+
 async function messen(page, selektoren) {
   const werte = await page.evaluate((sel) => sel.split(',').flatMap(s0 => {
     const s = s0.trim();
@@ -343,6 +410,7 @@ for (const name of liste) {
     schreibenUndPruefen(datei, await knipsen(beamer));
     console.log(`  ✓ ${datei}   (Phase ${await phase()})`);
   }
+  if (RAHMEN) await rahmen(beamer, name);
   if (DOM) await messen(beamer, DOM);
   if (GRADE) await grade(beamer, GRADE);
   takt(`${name}: fertig`);

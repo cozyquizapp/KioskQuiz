@@ -1517,7 +1517,12 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
     // playStapelStamp. Sonst Doppel-Sound.
     const isStapel = !!s.grid[c.row]?.[c.col]?.stuck;
     if (c.wasSteal) playSteal();
-    else if (!isStapel) playFieldPlaced();
+    // 2026-08-25: die Stapel-Ausnahme gilt nur waehrend des Setzens. Der
+    // Stapel-Ton kommt aus einem anderen Effekt, und DER feuert ausdruecklich
+    // nur in PLACEMENT. Ausserhalb hiess „gestapelte Zelle" deshalb schlicht
+    // gar kein Ton - zum Beispiel beim Bonus-Stein in der Tipp-Aufloesung,
+    // wenn er auf einem gestapelten Feld landete.
+    else if (!isStapel || s.phase !== 'PLACEMENT') playFieldPlaced();
     // Im Finale: zusaetzlich Cascade-Ton pro gesetztem Avatar.
     if (s.phase === 'CONNECTIONS_4X4' && s.connections?.phase === 'placement') {
       // Reset counter when entering finale or new round

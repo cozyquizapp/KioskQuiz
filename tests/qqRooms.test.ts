@@ -11,7 +11,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqIstKroenungsBeat } from '../shared/qqFinalReveal';
-import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues } from '../backend/src/quarterQuiz/qqRooms';
+import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues, qqFlushPendingStacks } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
 // ── Test-Helpers ─────────────────────────────────────────────────────────────
@@ -581,5 +581,51 @@ describe('CozyGames: Sieg zaehlt', () => {
     expect(room.cozyGame.winnerTeamIds).toEqual(['a']);
     qqCozyGameFinish(room);
     expect(room.teamCozyGameWins.a).toBe(1);
+  });
+});
+
+// ════════════════════════════════════════════════════════════════════════════
+// qqFlushPendingStacks — der Bonus-Stein meldet, dass er gesetzt wurde
+// ════════════════════════════════════════════════════════════════════════════
+// 2026-08-25 (Wolf: „wenn coin symbol in grid platziert wird bei tipp reveal
+// kein sound"). Am Beamer haengen Setz-Ton UND das Aufblitzen der Zelle an
+// `lastPlacedCell`. Der Weg ueber das Handy setzt es, dieser Weg hier - das
+// automatische Setzen, wenn niemand am Handy waehlt - schrieb den Stempel
+// direkt ins Feld und liess das Feld unberuehrt. Also: kein Ton, kein Blitz.
+describe('qqFlushPendingStacks — meldet die gesetzte Zelle', () => {
+  function raumMitFeld() {
+    const grid = buildEmptyGrid(3);
+    grid[1][1].ownerId = 'a';
+    grid[1][2].ownerId = 'a';
+    return makeRoom({
+      gridSize: 3,
+      grid,
+      teams: { a: makeTeam('a') },
+      lastPlacedCell: null,
+      finalRevealPendingStacks: { teamId: 'a', kinds: ['bet'] },
+    });
+  }
+
+  it('setzt lastPlacedCell auf eine eigene Zelle', () => {
+    const room = raumMitFeld();
+    qqFlushPendingStacks(room);
+    expect(room.lastPlacedCell).not.toBeNull();
+    expect(room.lastPlacedCell.teamId).toBe('a');
+    expect(room.grid[room.lastPlacedCell.row][room.lastPlacedCell.col].ownerId).toBe('a');
+  });
+
+  it('der Stempel liegt auf genau der gemeldeten Zelle', () => {
+    const room = raumMitFeld();
+    qqFlushPendingStacks(room);
+    const c = room.grid[room.lastPlacedCell.row][room.lastPlacedCell.col];
+    expect(c.revealStamps?.some((s: any) => s.kind === 'bet' && s.teamId === 'a')).toBe(true);
+  });
+
+  it('ohne eigene Felder passiert nichts', () => {
+    const room = raumMitFeld();
+    room.grid[1][1].ownerId = null;
+    room.grid[1][2].ownerId = null;
+    qqFlushPendingStacks(room);
+    expect(room.lastPlacedCell).toBeNull();
   });
 });

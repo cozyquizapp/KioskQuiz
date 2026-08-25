@@ -7448,7 +7448,7 @@ function qqPickAutoPlaceCell(room: QQRoomState, teamId: string): { row: number; 
 }
 
 /** Spuele alle restlichen pending-Stacks: vom Team unerledigt → Bot-Auto-Place. */
-function qqFlushPendingStacks(room: QQRoomState): void {
+export function qqFlushPendingStacks(room: QQRoomState): void {
   const pending = room.finalRevealPendingStacks;
   if (!pending || pending.kinds.length === 0) {
     room.finalRevealPendingStacks = null;
@@ -7492,6 +7492,14 @@ function qqFlushPendingStacks(room: QQRoomState): void {
     const cell = room.grid[bestCell.row][bestCell.col];
     if (!cell.revealStamps) cell.revealStamps = [];
     cell.revealStamps.push({ kind, teamId: pending.teamId });
+    // 2026-08-25 (Wolf: „wenn coin symbol in grid platziert wird bei tipp
+    // reveal kein sound"). Der Grund lag hier: dieser Weg - das automatische
+    // Setzen, wenn kein Team am Handy eine Zelle gewaehlt hat - schrieb den
+    // Stempel direkt ins Feld und liess `lastPlacedCell` unberuehrt. Am
+    // Beamer haengt daran BEIDES, der Setz-Ton und der Aufblitzer der Zelle.
+    // Der Weg ueber das Handy (`qqFinalRevealPlaceStack`) setzt es laengst,
+    // deshalb war der Ton beim Von-Hand-Setzen da und im Autoplay weg.
+    room.lastPlacedCell = { row: bestCell.row, col: bestCell.col, teamId: pending.teamId, wasSteal: false };
   }
   pending.kinds.length = 0;
   room.finalRevealPendingStacks = null;

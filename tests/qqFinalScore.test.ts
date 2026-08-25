@@ -36,6 +36,22 @@ describe('qqFinalSortedTeams — tieBreakerWinnerId (Fix A)', () => {
     } as any;
     expect(qqFinalSortedTeams(s)[0].id).toBe('B');
   });
+
+  // 2026-08-25, an der Schluss-Choreo gemessen: bei Gleichstand ohne Stechen
+  // blieb die Reihenfolge der Eingabe ueberlassen. Das Turm-Finale entschied an
+  // derselben Stelle nach Namen - und so kroente der Turm ein anderes Team als
+  // die Siegerfolie eine Sekunde spaeter. Beide Rechnungen waren fuer sich
+  // richtig, es fehlte nur ein letztes, eindeutiges Kriterium.
+  it('bei Gleichstand ohne Stechen entscheidet der Name, und zwar immer gleich', () => {
+    const bau = (reihenfolge: string[]) => ({
+      teams: reihenfolge.map(id => team(id, 4, 4)),
+      endAwards: null, finalBetResolution: null, tieBreakerWinnerId: null,
+    } as any);
+    expect(qqFinalSortedTeams(bau(['Halbwissen', 'Brain-Trust']))[0].id).toBe('Brain-Trust');
+    // Und derselbe Sieger, egal wie die Teams hereinkommen. Genau das war der
+    // Fehler: die Eingabereihenfolge unterschied sich zwischen den Ansichten.
+    expect(qqFinalSortedTeams(bau(['Brain-Trust', 'Halbwissen']))[0].id).toBe('Brain-Trust');
+  });
 });
 
 // ── Fix B: detectTieBreakerCandidates nutzt die Endscore-Metrik ───────────────

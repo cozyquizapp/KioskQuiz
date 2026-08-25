@@ -262,6 +262,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // man sieht drei Tuerme klettern und weiss nicht, wann welcher stehenbleibt.
   // Wer zuerst stoppt, ist Dritter. Der Letzte waechst allein weiter.
   const [duelTick, setDuelTick] = useState(reduce ? Number.MAX_SAFE_INTEGER : 0);
+  // Ist der Dritte schon abgetreten? Siehe die Geometrie der Finalisten weiter
+  // unten. Bei abgeschalteter Bewegung tritt niemand ab: dort gibt es kein
+  // Wettklettern, und ein verschwundener Turm waere dann nur ein fehlender.
+  const [dritterWeg, setDritterWeg] = useState(false);
 
   /**
    * Der Flugplan. Pro Team seine Gebiets-Kacheln in LANDEREIHENFOLGE: unterste
@@ -469,6 +473,17 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const inReveal = phase === 'reveal';
   const crowned = inReveal && revealStep >= 3;
 
+  // Der Dritte steht, seine Pille ist zu lesen, dann geht er. Die 1100 ms sind
+  // kein Zierrat: die Pille faehrt selbst 500 ms ein, und ein Turm, der im
+  // selben Moment abtritt, in dem sein Platz erscheint, nimmt die Aussage mit.
+  useEffect(() => {
+    if (reduce) return;
+    if (!(inReveal && glided && revealStep >= 1)) { if (dritterWeg) setDritterWeg(false); return; }
+    if (dritterWeg) return;
+    const h = window.setTimeout(() => setDritterWeg(true), 1100);
+    return () => window.clearTimeout(h);
+  }, [inReveal, glided, revealStep, dritterWeg, reduce]);
+
   // ── Geometrie ─────────────────────────────────────────────────────────────
   // 2026-08-23 (Uebergabe 2a, Wolf: „was meinst du mit dem zwischenstand").
   // Gemessen an der Aufnahme des Zwischenstand-Beats: zwischen Ueberschrift und
@@ -533,7 +548,40 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Podium in der Mitte: Sieger zentral, 2. links, 3. rechts.
   const PGAP = 46;
   const centerX = STAGE_W / 2 - colW / 2;
-  const podiumX = (rank: number) => rank === 0 ? centerX : rank === 1 ? centerX - (colW + PGAP) : centerX + (colW + PGAP);
+
+  // ── Wo die drei Finalisten stehen ─────────────────────────────────────────
+  // 2026-08-25 (Wolf: „3. platz turm soll absinken, sonst weiss man schon, dass
+  // mittlerer turm gewinnt, dann noch duell am ende, ist spannender").
+  //
+  // Er hat recht, und es war ein handfester Verrat: die Anordnung war
+  // Sieger-Mitte, Zweiter-links, Dritter-rechts. Sie stand VOR dem
+  // Wettklettern fest. Wer die Regel einmal gesehen hat, weiss ab dem Glide,
+  // wer gewonnen hat - und das Klettern danach entscheidet nichts mehr, es
+  // holt nur noch nach.
+  //
+  // Jetzt sagt die Stellung nichts. Die drei stehen in ihrer BUEHNENreihenfolge
+  // nebeneinander, also so, wie sie ohnehin am Brett standen (`ordered` ist
+  // hash-gemischt). Dann klettern sie. Wer zuerst stehenbleibt, ist Dritter,
+  // bekommt seine Pille und SINKT AB - und die letzten zwei ruecken zum Duell
+  // zusammen. Ab da ist es ein Zweikampf, und bis zum Schluss sagt keine
+  // Position, wer ihn gewinnt.
+  const finalisten = useMemo(
+    () => finalRanking.slice(0, 3).map(x => x.team.id).sort((a, b) => orderIndex[a] - orderIndex[b]),
+    [finalRanking, orderIndex],
+  );
+  /** Zu dritt: links, Mitte, rechts - nach Buehnenreihenfolge. */
+  const dreierX = (id: string) => {
+    const platz = finalisten.indexOf(id);
+    return centerX + (platz - 1) * (colW + PGAP);
+  };
+  /** Zu zweit: symmetrisch um die Mitte, in derselben Links-rechts-Ordnung. */
+  const dritterId = finalRanking[2]?.team.id ?? null;
+  const duellX = (id: string) => {
+    const uebrig = finalisten.filter(x => x !== dritterId);
+    const platz = uebrig.indexOf(id);
+    if (platz < 0) return dreierX(id);
+    return centerX + (platz - 0.5) * (colW + PGAP);
+  };
 
   // ── Geometrie des fallenden Bretts ────────────────────────────────────────
   // Das Brett steht oben unter dem Titelband, die Tuerme wachsen unten. Die
@@ -879,9 +927,22 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         const i = orderIndex[id];
 
         // Position + Glide (sequenziert: Nicht-Top-3 erst raus, dann Top-3 rein).
+        // Der Dritte tritt nach seiner Pille ab und die letzten zwei ruecken
+        // zum Duell zusammen - siehe `dreierX` / `duellX` oben.
+        const abtritt = inReveal && glided && dritterWeg && rank === 2;
         let tx = 0, ty = 0, opacity = 1, z = 4;
         if (inReveal) {
-          if (isTop3) { if (glided) { tx = podiumX(rank) - baseX(i); } z = isWinner ? 7 : 6; }
+          if (isTop3) {
+            if (glided) {
+              tx = (dritterWeg && rank !== 2 ? duellX(id) : dreierX(id)) - baseX(i);
+              // Absinken: nach unten weg UND ausblenden. Nur nach unten reicht
+              // nicht - ein Turm kann siebenhundert Pixel hoch sein, der waere
+              // mit einer sichtbaren Strecke nie ganz aus dem Bild. Die
+              // Richtung erzaehlt „er geht", die Deckkraft raeumt ihn weg.
+              if (abtritt) { ty = 340; opacity = 0; }
+            }
+            z = isWinner ? 7 : 6;
+          }
           else {
             // Recede-Beat: kurz mit Platz dimmen, dann beim Glide voll ausblenden.
             if (glided) { opacity = 0; ty = 40; } else { opacity = 0.4; }
@@ -893,11 +954,34 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         const capped = inReveal;
 
         return (
-          <div key={id} style={{
+          <div key={id}
+            // Kennungen fuer die Messung: `scripts/duell-messen.mjs` liest damit
+            // die Kaesten der Tuerme aus, statt sie auf einem Kontaktblatt
+            // abzuschaetzen. Ob ein Turm absinkt oder nur ausblendet, sieht man
+            // auf einem 300-Pixel-Bild naemlich nicht.
+            data-qq-turm={id} data-qq-platz={rank}
+            style={{
             position: 'absolute', bottom: BODEN, left: baseX(i), width: colW, zIndex: z,
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             transform: `translateX(${tx}px) translateY(${ty}px)`, opacity,
-            transition: reduce ? 'none' : `transform 0.75s cubic-bezier(0.4,0,0.2,1)${isTop3 ? ' 0.35s' : ''}, opacity 0.5s ease`,
+            // Der Abtritt hat eine eigene Kurve: beschleunigend statt weich
+            // ausklingend. Etwas, das absinkt, wird schneller, nicht langsamer.
+            // Die zwei Verbleibenden ruecken mit 250 ms Verzug nach, damit man
+            // erst das Abtreten sieht und dann das Zusammenruecken - zwei
+            // Aussagen hintereinander lesen sich, gleichzeitig verwischen sie.
+            // Die Deckkraft faellt ERST NACH einer halben Sekunde. Beim ersten
+            // Anlauf lief sie parallel, und weil die Kurve beschleunigt, war der
+            // Turm schon fast durchsichtig, bevor er sich sichtbar bewegt hatte -
+            // aus „er sinkt ab" wurde „er ist weg".
+            //
+            // Am Baum gemessen (`data-qq-turm`, siehe scripts/duell-messen.mjs):
+            // beim zweiten Anlauf legte er in der sichtbaren Zeit 46 Bildpunkte
+            // zurueck, keine fuenf Prozent der Buehnenhoehe. Das ist eine
+            // Andeutung, kein Abgang. Jetzt sind es rund 190 Bildpunkte bei
+            // voller Deckkraft, und erst danach raeumt das Verblassen den Rest.
+            transition: reduce ? 'none' : abtritt
+              ? 'transform 1s cubic-bezier(0.34,0,0.5,0.9), opacity 0.5s ease 0.5s'
+              : `transform 0.75s cubic-bezier(0.4,0,0.2,1)${isTop3 ? (dritterWeg ? ' 0.25s' : ' 0.35s') : ''}, opacity 0.5s ease`,
             // 2026-08-25: waehrend das Brett heranfaehrt, stellen sich die
             // Sockel darunter auf, von links nach rechts. Vorher standen sie im
             // ersten Bild alle schon da - acht leere Kaesten, die aus dem Nichts
@@ -906,11 +990,23 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             // Der Versatz von 45ms je Spalte liegt in dem Bereich, den Material
             // fuer Listen empfiehlt; bei acht Spalten steht die letzte nach
             // 495ms, also noch bevor das Brett seinen Platz erreicht.
+            // ⚠️ Hier darf NUR eine Animation stehen, die das Verschieben nicht
+            // stoert. Eine laufende CSS-Animation auf `transform` ersetzt den
+            // Inline-Transform vollstaendig - und der traegt hier die ganze
+            // Choreo. Der Herzschlag des Siegers stand genau hier und hat
+            // deshalb den Siegerturm zurueck in seine alte Spalte springen
+            // lassen, sobald „Und der Sieger ist…" kam. Er sitzt jetzt eine
+            // Ebene tiefer, auf dem Stapel selbst, wo er nichts ueberschreibt.
+            // (Das Aufstellen der Sockel darf bleiben: in der Brett-Phase ist
+            // die Verschiebung null, da gibt es nichts zu ueberschreiben.)
             animation: (phase === 'brett' && !reduce)
               ? `qqT2FadeUp 0.5s ease ${140 + i * 45}ms both`
-              : ((isWinner && inReveal && revealStep === 2 && !reduce) ? 'qqT2Heartbeat 1.5s ease-in-out infinite' : 'none'),
+              : 'none',
           }}>
-            <div style={{ position: 'relative', width: blockW, display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: GAP }}>
+            <div style={{
+              position: 'relative', width: blockW, display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: GAP,
+              animation: (isWinner && inReveal && revealStep === 2 && !reduce) ? 'qqT2Heartbeat 1.5s ease-in-out infinite' : 'none',
+            }}>
               <div aria-hidden style={{ position: 'absolute', left: '50%', bottom: -12, transform: 'translateX(-50%)', width: Math.round(blockW * 2.1), height: 26, borderRadius: '50%', background: `radial-gradient(ellipse, ${colr}${crowned && isWinner ? '55' : '30'}, transparent 70%)`, filter: 'blur(6px)', zIndex: 0, pointerEvents: 'none', transition: 'background 0.4s ease' }} />
 
               {/* Kletternder Avatar (Krone/Badge) */}

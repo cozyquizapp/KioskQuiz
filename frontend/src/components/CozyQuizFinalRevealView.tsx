@@ -371,7 +371,7 @@ import { qqDecodeFinalStep as decodeFinalStep, qqIstKroenungsBeat, qqTowerAwardC
 // 2026-07-19 (Turm-Finale V2): Live-Finale rendert die TowerFinaleV2, moderator-
 // getaktet per beat (liveBeat). buildTowerFinaleData = reines State->Turm-Mapping.
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
-import { qqFinalTotal } from '../utils/qqFinalScore';
+import { qqFinalTotal, qqFinalSortedTeams } from '../utils/qqFinalScore';
 import { merkeBrettQuelle } from '../qqBrettUebergabe';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../qqTheme';
@@ -871,15 +871,20 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     // gesetzt"), wird aber nicht mehr fuer Score-Sortierung benutzt.
     // 2026-07-09: total über den SHARED-Helper (qqFinalTotal) — identisch zur
     // Handy-GameOverCard, damit beide Geräte denselben Sieger küren (Drift-Bug).
-    const finalRanking = [...s.teams]
+    // ⚠️ Sortiert wird mit `qqFinalSortedTeams`, nicht mit einem eigenen
+    // Vergleich. 2026-08-25 an der Aufnahme gesehen: hier stand
+    // `.sort((a, b) => b.total - a.total)`, also OHNE Stechen-Sieger und ohne
+    // eindeutiges letztes Kriterium. Bei Gleichstand kroente der Turm deshalb
+    // ein anderes Team als die Siegerfolie eine Sekunde spaeter. Dieselbe
+    // Reihenfolge benutzt auch das Handy - drei Ansichten, eine Regel.
+    const finalRanking = qqFinalSortedTeams(s)
       .map(t => ({
         team: t,
         score: t.largestConnected ?? 0,
         bonus: s.finalBetResolution?.[t.id]?.totalBonus ?? 0,
         awards: awardPoints[t.id] ?? 0,
         total: qqFinalTotal(s, t.id, awardPoints),
-      }))
-      .sort((a, b) => b.total - a.total);
+      }));
 
     // 2026-05-25 v4: Story-Stamps pro Team aus Grid aggregieren (live Update
     // waehrend Teams ihre Stacks setzen).
@@ -893,7 +898,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     }
 
     return { betSlots, cellsByTeam, awardPoints, finalRanking, stampsByTeam };
-  }, [s.teams, s.grid, s.finalBetResolution, s.endAwards]);
+  }, [s.teams, s.grid, s.finalBetResolution, s.endAwards, s.tieBreakerWinnerId, s.cozyGameWins]);
   // cellsByTeam war fuer GridRevealSlide, das nach Race-Redesign 2026-05-24
   // raus ist. awardPoints jetzt fuer FinalLeaderboard waehrend Bet-Phase.
   void cellsByTeam;

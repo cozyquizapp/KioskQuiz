@@ -18,6 +18,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
+import { qqFinalSortedTeams } from '../utils/qqFinalScore';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -60,21 +61,21 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   if (awards?.underdog) awardPoints[awards.underdog] = (awardPoints[awards.underdog] ?? 0) + 1;
   if (awards?.meisterklauer) awardPoints[awards.meisterklauer] = (awardPoints[awards.meisterklauer] ?? 0) + 1;
   if (awards?.speedy) awardPoints[awards.speedy] = (awardPoints[awards.speedy] ?? 0) + 1;
-  const winnerEntry = [...s.teams]
-    .map(t => ({
-      team: t,
-      total: (t.largestConnected ?? 0)
-        + (s.finalBetResolution?.[t.id]?.totalBonus ?? 0)
-        + (awardPoints[t.id] ?? 0),
-    }))
-    .sort((a, b) => b.total - a.total)[0];
+  // 2026-08-25, an der Aufnahme der Schluss-Strecke gefunden: hier stand eine
+  // EIGENE Endabrechnung, und sie war die vierte im Haus. Sie kannte die
+  // CozyGame-Punkte nicht, den Stechen-Sieger nicht und hatte bei Gleichstand
+  // kein letztes Kriterium. Ergebnis auf der Wand: der Turm kroente ein Team,
+  // die Siegerfolie ein zweites und die Danke-Folie ein drittes - alle drei
+  // innerhalb von zehn Sekunden. `qqFinalSortedTeams` ist die Rechnung, die
+  // auch Handy und Turm benutzen.
+  const winnerTeam = qqFinalSortedTeams(s)[0];
   // 2026-07-03 (Wolf-Audit 'name der teams hier falsch'): In CozyArena
   // (nestedTeams) darf NICHT ein einzelnes Sub-Team gewinnen — Sieger ist die
   // FRAKTION mit den meisten summierten Punkten. qqSortedGroups liefert schon
   // synthetische Fraktions-Teams (Name = Fraktionsname, emoji = Wappen-Slug),
   // sodass der restliche Hero-Render 1:1 korrekt die Fraktion zeigt.
   const nested = !!(s as any).nestedTeams;
-  const winner = nested ? (qqSortedGroups(s)[0] ?? winnerEntry?.team) : winnerEntry?.team;
+  const winner = nested ? (qqSortedGroups(s)[0] ?? winnerTeam) : winnerTeam;
 
   // 2026-05-10 v6 (Wolf 'pages sollen identisch sein, thanks soll wie setup
   // aussehen, nur mit anderen inhalten'): Komplettes Layout-Refactor — spiegelt

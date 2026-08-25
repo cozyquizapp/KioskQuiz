@@ -72,6 +72,13 @@ export function qqFinalSortedTeams(s: QQStateUpdate): QQTeam[] {
     const ta = qqFinalTotal(s, a.id, ap);
     const tb = qqFinalTotal(s, b.id, ap);
     if (tb !== ta) return tb - ta;
-    return (b.totalCells ?? 0) - (a.totalCells ?? 0);
+    // 2026-08-25 (gemessen an der Schluss-Choreo): bei Gleichstand OHNE Stechen
+    // blieb die Reihenfolge bisher der Eingabe ueberlassen. Das Turm-Finale
+    // sortiert an derselben Stelle nach Namen - und prompt kroente der Turm
+    // „Brain-Trust", waehrend die Siegerfolie eine Sekunde spaeter
+    // „Halbwissen Gold Wert" zeigte. Beide hatten vier Punkte, beide hatten
+    // recht, und keiner von beiden war falsch programmiert: es fehlte schlicht
+    // ein letztes, eindeutiges Kriterium. Der Name ist eines.
+    return ((b.totalCells ?? 0) - (a.totalCells ?? 0)) || a.name.localeCompare(b.name);
   });
 }

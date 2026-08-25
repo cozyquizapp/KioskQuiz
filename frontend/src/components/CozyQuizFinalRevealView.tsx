@@ -372,6 +372,7 @@ import { qqDecodeFinalStep as decodeFinalStep, qqIstKroenungsBeat, qqTowerAwardC
 // getaktet per beat (liveBeat). buildTowerFinaleData = reines State->Turm-Mapping.
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
 import { qqFinalTotal } from '../utils/qqFinalScore';
+import { merkeBrettQuelle } from '../qqBrettUebergabe';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { isThemed, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../qqTheme';
 
@@ -595,9 +596,12 @@ function BetSlotTransition({ slotIndex, slotCount, slot, state: s, lang }: {
 // jetzt das echte App-GridDisplay (mit Team-Avataren, Territorium-Fusion,
 // Stack-Avataren). Stamps wurden direkt in GridDisplay integriert (slots ab
 // baseCopies rendern Stamp-Emoji statt Team-Avatar).
-function FinalRevealGridSlot({ state: s, focusTeamId }: {
+function FinalRevealGridSlot({ state: s, focusTeamId, ausgeblendet = false }: {
   state: QQStateUpdate;
   focusTeamId: string | null;
+  /** Waehrend des Abgangs zum Turm: unsichtbar, aber weiter eingehaengt.
+   *  Ausgehaengt waere die Karte daneben auch weg, und die soll ausblenden. */
+  ausgeblendet?: boolean;
 }) {
   // 2026-08-25 (Wolf: „billige motions und langweiliger ablauf" am Finale).
   //
@@ -622,6 +626,7 @@ function FinalRevealGridSlot({ state: s, focusTeamId }: {
     return () => clearTimeout(t);
   }, [s.lastPlacedCell?.row, s.lastPlacedCell?.col, s.lastPlacedCell?.teamId]);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const gitterRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState<number>(640);
   useEffect(() => {
     const update = () => {
@@ -636,15 +641,61 @@ function FinalRevealGridSlot({ state: s, focusTeamId }: {
     window.addEventListener('resize', update);
     return () => { ro.disconnect(); window.removeEventListener('resize', update); };
   }, []);
+
+  // 2026-08-25 (Wolf: „das finale von grid zu turm muss smoother werden").
+  //
+  // Hier wird gemessen, wo das Brett steht - fuer die Folie DANACH. Das
+  // Turm-Finale faehrt sein eigenes Brett von genau dieser Stelle an seinen
+  // Platz, statt es dort einfach hinzustellen. Siehe `qqBrettUebergabe`.
+  //
+  // Gemessen wird nicht die Wurzel von `GridDisplay`, sondern deren ZELLENFELD.
+  // Das Raster traegt 10px Innenabstand und 3px Rahmen; das Turm-Brett traegt
+  // beides nicht. Ohne den Abzug haetten die Zellen am Ende der Bewegung um
+  // dreizehn Pixel danebengelegen, und genau dieser Rest ist es, den man als
+  // „Sprung am Ende" sieht. Der Abzug muss durch die Buehnenskalierung, weil
+  // `getBoundingClientRect` Wand-Pixel liefert und `offsetWidth` Layout-Pixel.
+  const RASTER_RAND = 13;
+  const abgangRef = useRef(ausgeblendet);
+  abgangRef.current = ausgeblendet;
+  useEffect(() => {
+    const el = gitterRef.current?.firstElementChild as HTMLElement | null;
+    if (!el) return;
+    const messen = () => {
+      // Waehrend des Abgangs steht das Brett schon auf der Turmfolie. Eine
+      // Messung von hier waere ein Stand von gestern.
+      if (abgangRef.current) return;
+      const bezug = gitterRef.current?.closest('[data-qq-finale-buehne]') as HTMLElement | null;
+      if (!bezug || !el.offsetWidth) return;
+      const b = bezug.getBoundingClientRect();
+      const r = el.getBoundingClientRect();
+      if (!b.width || !b.height || !r.width) return;
+      const skala = r.width / el.offsetWidth;
+      const rand = RASTER_RAND * skala;
+      merkeBrettQuelle({
+        x: (r.left + rand - b.left) / b.width,
+        y: (r.top + rand - b.top) / b.height,
+        w: (r.width - 2 * rand) / b.width,
+      });
+    };
+    messen();
+    // Bei jedem Tipp-Beat neu: die Folie bleibt stehen, aber `box` kann sich
+    // aendern, und gemerkt werden soll der Stand kurz vor dem Wechsel.
+    const iv = window.setInterval(messen, 400);
+    return () => window.clearInterval(iv);
+  }, [box]);
+
   return (
     <div ref={wrapRef} style={{
       width: '100%', height: '100%',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       position: 'relative', minHeight: 0,
+      opacity: ausgeblendet ? 0 : 1,
     }}>
       {/* 2026-05-25 (Wolf 'teamname unter grid kann weg'): Focus-Name-Pille
           entfernt — die Card rechts zeigt den Team-Namen schon prominent. */}
-      <GridDisplay state={s} maxSize={box} highlightTeam={focusTeamId} showJoker={false} flashCellKey={blitzFeld} />
+      <div ref={gitterRef} style={{ position: 'relative', lineHeight: 0 }}>
+        <GridDisplay state={s} maxSize={box} highlightTeam={focusTeamId} showJoker={false} flashCellKey={blitzFeld} />
+      </div>
     </div>
   );
 }
@@ -811,8 +862,44 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
   // (title, award, bet) behalten die safe-margin.
   const fullBleed = phase.kind === 'race-final';
 
+  // ── Abgang der Tipp-Karte ────────────────────────────────────────────────
+  // 2026-08-25 (Wolf: „das finale von grid zu turm muss smoother werden").
+  //
+  // Das Brett faehrt seit heute von der Tipp-Folie in den Turm (siehe
+  // `qqBrettUebergabe`). An der Aufnahme danach blieb genau eine Sache uebrig,
+  // die noch springt: die Tipp-Karte rechts war von einem Bild auf das naechste
+  // weg. Solange alles gleichzeitig sprang, ist das nicht aufgefallen; neben
+  // einer Bewegung faellt es sofort auf.
+  //
+  // Sie bleibt deshalb 220 ms laenger stehen und sinkt dabei weg. Ein Abgang
+  // ist kuerzer als der Auftritt gegenueber (620 ms), das ist die Regel:
+  // Hereinkommendes darf sich Zeit nehmen, Weggehendes nicht.
+  //
+  // ⚠️ WICHTIG UND DER GRUND FUER DEN UMBAU DARUNTER: die Karte darf dafuer
+  // NICHT neu eingehaengt werden. `BetRevealSlide` spielt beim Einhaengen
+  // `playTeamReveal()`. Eine abgehende Kopie waere also ein zweiter Ton mitten
+  // im Uebergang. Deshalb steht der Tipp-Block jetzt IMMER an derselben Stelle
+  // im Baum, und nur seine Huelle wechselt von „im Fluss" auf „daruebergelegt".
+  const ABGANG_MS = 220;
+  const [abgang, setAbgang] = useState(false);
+  const warTipp = useRef(false);
+  const letzterTipp = useRef(0);
+  if (phase.kind === 'bet') letzterTipp.current = phase.slotIndex;
+  useEffect(() => {
+    if (phase.kind === 'bet') { warTipp.current = true; setAbgang(false); return; }
+    const ausTipp = warTipp.current;
+    warTipp.current = false;
+    if (!ausTipp || phase.kind !== 'race-final' || phase.beat !== 0) { setAbgang(false); return; }
+    setAbgang(true);
+    const t = window.setTimeout(() => setAbgang(false), ABGANG_MS);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+  const tippSichtbar = phase.kind === 'bet' || abgang;
+  const tippSlot = phase.kind === 'bet' ? phase.slotIndex : letzterTipp.current;
+
   return (
-    <div style={{
+    <div data-qq-finale-buehne style={{
       width: '100%', height: '100%',
       display: 'flex', flexDirection: 'column', alignItems: 'center',
       padding: fullBleed ? 0 : 'max(var(--qq-safe-margin), 4cqh) max(var(--qq-safe-margin), 4cqw)',
@@ -824,35 +911,52 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     }}>
       <FinalRevealSharedKeyframes />
       {phase.kind === 'title' && <TitleHoldSlide lang={lang} />}
-      {phase.kind === 'bet' && (
-        // 2026-05-25 (Wolf 'links grid, rechts cards, tabelle erst am ende'):
-        // GridSnapshot LINKS (Story-Stamps landen darauf live), Bet-Card RECHTS.
-        // Tabelle ist komplett aus — kommt erst beim Eurovision-Endstand zurueck.
-        <div style={{
-          flex: 1, width: '100%', minHeight: 0,
-          padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
-          display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
-          gap: 'clamp(20px, 2.5cqw, 40px)',
-          position: 'relative',
-        }}>
-          <FinalRevealGridSlot
-            state={s}
-            focusTeamId={(() => {
-              const fs = betSlots[phase.slotIndex];
-              return fs?.kind === 'positive' ? fs.team.id : null;
-            })()}
-          />
-          <div style={{ display: 'flex', minHeight: 0 }}>
-            <BetSlotTransition
-              slotIndex={phase.slotIndex}
-              slotCount={betSlots.length}
-              slot={betSlots[phase.slotIndex]}
+      {/* Die Huelle steht IMMER hier, damit der Tipp-Block beim Wechsel auf den
+          Turm an derselben Stelle im Baum bleibt und nicht neu einhaengt (siehe
+          `abgang` oben). `display: contents` heisst: im Tipp-Betrieb ist die
+          Huelle fuer das Layout gar nicht da, der Block liegt genau so im Fluss
+          wie vorher. Beim Abgang wird sie zur Auflage ueber dem Turm. */}
+      <div style={abgang
+        ? {
+            position: 'absolute', inset: 0, zIndex: 20, pointerEvents: 'none',
+            padding: 'max(var(--qq-safe-margin), 4cqh) max(var(--qq-safe-margin), 4cqw)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+          }
+        : { display: phase.kind === 'bet' ? 'contents' : 'none' }}>
+        {tippSichtbar && (
+          // 2026-05-25 (Wolf 'links grid, rechts cards, tabelle erst am ende'):
+          // GridSnapshot LINKS (Story-Stamps landen darauf live), Bet-Card RECHTS.
+          // Tabelle ist komplett aus — kommt erst beim Eurovision-Endstand zurueck.
+          <div style={{
+            flex: 1, width: '100%', minHeight: 0,
+            padding: 'clamp(16px, 2cqh, 28px) clamp(20px, 2.5cqw, 40px)',
+            display: 'grid', gridTemplateColumns: 'minmax(0, 1.1fr) minmax(0, 1fr)',
+            gap: 'clamp(20px, 2.5cqw, 40px)',
+            position: 'relative',
+          }}>
+            <FinalRevealGridSlot
               state={s}
-              lang={lang}
+              ausgeblendet={abgang}
+              focusTeamId={(() => {
+                const fs = betSlots[tippSlot];
+                return fs?.kind === 'positive' ? fs.team.id : null;
+              })()}
             />
+            <div style={{
+              display: 'flex', minHeight: 0,
+              animation: abgang ? `qqFRKarteAb ${ABGANG_MS}ms cubic-bezier(0.4, 0, 1, 1) both` : undefined,
+            }}>
+              <BetSlotTransition
+                slotIndex={tippSlot}
+                slotCount={betSlots.length}
+                slot={betSlots[tippSlot]}
+                state={s}
+                lang={lang}
+              />
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
       {/* 2026-07-19 (Turm-Finale V2, Wolf 'awards ganz in den turm'): der frühere
           separate Award-Screen (phase.kind==='award' + AwardSlotTransition) ist
           entfallen. Awards leben jetzt als goldene Bausteine IM Turm.
@@ -891,6 +995,13 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 function FinalRevealSharedKeyframes() {
   return (
     <style>{`
+      /* 2026-08-25: Abgang der Tipp-Karte, waehrend das Brett in den Turm
+         faehrt. Sie sinkt und wird kleiner, geht also nach hinten weg statt
+         zur Seite - vorne ist jetzt das Brett. */
+      @keyframes qqFRKarteAb {
+        from { opacity: 1; transform: none; }
+        to   { opacity: 0; transform: translateY(16px) scale(0.965); }
+      }
       @keyframes qqFRTitleIn {
         0%   { opacity: 0; transform: translateY(20px) scale(0.94); filter: blur(8px); }
         100% { opacity: 1; transform: translateY(0)    scale(1);    filter: blur(0); }

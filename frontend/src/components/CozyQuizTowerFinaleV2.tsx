@@ -20,7 +20,7 @@
  * "Nicer": EINE ruhige Atmosphaere (Vignette + Boden-Glow); reduced-motion
  * respektiert. Auto-Play + Space zum Vorspulen. Vorschau /race-finale.
  */
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import type { QQTeam, QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { qqAwardPoints, qqCozyPoints, qqFinalTotal } from '../utils/qqFinalScore';
 import { prefersReducedMotion } from '../utils/reducedMotion';
@@ -31,6 +31,7 @@ import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import { qqLargestClusterCells, type ClusterKachel } from '../utils/qqLargestCluster';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
+import { holeBrettQuelle, vergissBrettQuelle } from '../qqBrettUebergabe';
 import {
   playWoodKnock, playClimaxFinish, playFanfare, playTick, playReveal, playSpecialAwardReveal,
 } from '../utils/sounds';
@@ -219,10 +220,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // fliegt als reine CSS-Transform mit eigener Verzoegerung. In der Luft sind
   // damit hoechstens zwei Zeilen gleichzeitig, also rund sechzehn Kacheln, und
   // der Browser komponiert sie auf der GPU statt sie neu zu setzen.
-  const BRETT_HALT = 900;   // das Brett steht noch einmal still
+  // Kommt das Brett von der Tipp-Folie herangefahren? Das muss beim ERSTEN Bild
+  // feststehen, nicht erst im Layout-Effekt: `BRETT_HALT` steckt in den
+  // Verzoegerungen von rund siebzig CSS-Animationen. Wuerde sich der Wert nach
+  // dem ersten Bild aendern, schriebe React neue Verzoegerungen, und alle
+  // Animationen fingen sichtbar von vorne an.
+  const [uebergabe] = useState(() => (prefersReducedMotion() ? null : holeBrettQuelle()));
+  // Das Brett steht noch einmal still. Nach einer Uebergabe laenger: es ist
+  // gerade erst angekommen, und ein Gegenstand, der im selben Moment ankommt
+  // und zerfaellt, hat nie dagestanden.
+  const BRETT_HALT = uebergabe ? 1180 : 900;
   const WELLE = 380;        // Abstand zwischen zwei Brettzeilen
   const FLUG = 620;         // Flugdauer einer Kachel
   const LANDE_VERZUG = Math.ceil(FLUG / WELLE);
+  // Die Uebergabe von der Tipp-Folie (siehe unten, `uebergabe`). Bewusst
+  // dieselbe Dauer wie ein Kachelflug: es ist dieselbe Bewegung in gross, und
+  // zwei verschiedene Tempi fuer denselben Gegenstand lesen sich als zwei
+  // verschiedene Gegenstaende. Sie muss ausserdem VOR BRETT_HALT fertig sein,
+  // sonst startet die erste Welle, waehrend das Brett noch faehrt - dann
+  // fliegen die Kacheln in einen Turm, der gerade noch verschoben ist.
+  const UEBERGABE = 620;
 
   // ── Choreo ────────────────────────────────────────────────────────────────
   const brettAktiv = !!brett && brett.groesse > 0 && Object.keys(brett.kachelnProTeam).length > 0 && !reduce;
@@ -538,6 +555,60 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     y: STAGE_H - (BODEN + SOCKEL_H + platz * (blockH + GAP)) - blockH / 2,
   });
 
+  // ── Die Uebergabe von der Tipp-Aufloesung ─────────────────────────────────
+  // 2026-08-25 (Wolf: „aber das finale von grid zu turm muss smoother werden,
+  // diese motion sieht noch total altmodisch aus").
+  //
+  // Gemessen an der alten Aufnahme (0/120/240/400/600/900/1300/1800 ms): bei
+  // 0 ms stand das Brett klein links neben der Tipp-Karte, bei 120 ms gross in
+  // der Mitte. Ein Schnitt. Der Flug der Kacheln danach war in Ordnung, aber er
+  // begann mit einem Gegenstand, den der Blick erst wiederfinden musste.
+  //
+  // Jetzt faehrt das Brett von seiner Tipp-Position an seinen Platz: FLIP, also
+  // Endstand bauen, ins Erste zuruecksetzen, losfahren. Bewegt wird die HUELLE
+  // ueber allen drei Ebenen (ruhendes Raster, verstreute Kacheln, Flugkacheln),
+  // damit sie zusammenbleiben - eine Kachel, die einzeln faehrt, waere zwei
+  // Bewegungen statt einer.
+  //
+  // Nur `transform`, keine Breite und keine Position: das komponiert die GPU,
+  // und die vierundsechzig Felder darin werden dabei kein einziges Mal neu
+  // gesetzt. Genau deshalb faehrt die Huelle und nicht das Raster selbst.
+  const wurzelRef = useRef<HTMLDivElement | null>(null);
+  const brettHuelleRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    const huelle = brettHuelleRef.current;
+    const wurzel = wurzelRef.current;
+    if (!huelle || !wurzel) return;
+    if (reduce || phase !== 'brett' || brettZelle <= 0) return;
+    const q = uebergabe;
+    if (!q) return;
+    vergissBrettQuelle();
+    // Bruchteile mal Layout-Breite ergibt wieder Buehnen-Pixel, unabhaengig
+    // davon, auf welche Wandgroesse der Beamer den Rahmen gerade zieht.
+    const bw = wurzel.offsetWidth;
+    const bh = wurzel.offsetHeight;
+    if (!bw || !bh) return;
+    const vonX = q.x * bw;
+    const vonY = q.y * bh;
+    const faktor = (q.w * bw) / BRETT_SEITE;
+    // Sicherheitsgurt gegen eine Messung aus einem ganz anderen Layout: ein
+    // Brett, das um mehr als das Dreifache danebenliegt, faehrt lieber gar
+    // nicht, als quer ueber die Buehne zu schiessen.
+    if (!(faktor > 0.15 && faktor < 3)) return;
+    const dx = vonX - faktor * brettLinks;
+    const dy = vonY - faktor * brettOben;
+    huelle.style.transformOrigin = '0 0';
+    huelle.style.willChange = 'transform';
+    huelle.style.transform = `translate(${Math.round(dx)}px, ${Math.round(dy)}px) scale(${faktor.toFixed(4)})`;
+    // Ein Bild spaeter losfahren. Ohne das rAF setzt der Browser Anfangs- und
+    // Endwert in derselben Rechnung und es gibt gar keinen Uebergang.
+    const bild = requestAnimationFrame(() => {
+      huelle.style.transition = `transform ${UEBERGABE}ms cubic-bezier(0.22, 0.61, 0.24, 1)`;
+      huelle.style.transform = 'none';
+    });
+    return () => cancelAnimationFrame(bild);
+  }, [phase, brettZelle, brettLinks, brettOben, reduce, uebergabe]);
+
   const appliedBefore = useCallback((id: string) => {
     let s = 0; for (let i = 0; i < awardIdx; i++) if (awards[i].teamId === id) s += awards[i].bonus; return s;
   }, [awardIdx, awards]);
@@ -577,7 +648,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   }
 
   return (
-    <div style={{
+    <div ref={wurzelRef} style={{
       position: 'absolute', inset: 0, overflow: 'hidden',
       // 2026-08-23 (2a): eigener Lila-Verlauf nur fuer diese eine Folie. Auf der
       // Buehne der Grund, den auch jede Frage traegt - das Finale ist der
@@ -677,7 +748,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
           zwischen Flug und Turm ist unsichtbar. Der umgekehrte Weg (vom Start
           aus animieren und am Ziel abrunden) haette an der Uebergabe geruckelt. */}
       {phase === 'brett' && brett && brettZelle > 0 && (
-        <>
+        // Die Huelle traegt alle drei Ebenen und fuehrt die Uebergabe aus (siehe
+        // `useLayoutEffect` weiter oben). Sie liegt deckungsgleich auf der
+        // Buehne, also aendern sich die Koordinaten der Kinder nicht.
+        <div ref={brettHuelleRef} aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
           {/* Das ruhende Brett */}
           <div aria-hidden style={{
             position: 'absolute', left: brettLinks, top: brettOben,
@@ -775,7 +849,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               );
             });
           })}
-        </>
+        </div>
       )}
 
       {/* Boden-Linie */}
@@ -822,7 +896,17 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             display: 'flex', flexDirection: 'column', alignItems: 'center',
             transform: `translateX(${tx}px) translateY(${ty}px)`, opacity,
             transition: reduce ? 'none' : `transform 0.75s cubic-bezier(0.4,0,0.2,1)${isTop3 ? ' 0.35s' : ''}, opacity 0.5s ease`,
-            animation: (isWinner && inReveal && revealStep === 2 && !reduce) ? 'qqT2Heartbeat 1.5s ease-in-out infinite' : 'none',
+            // 2026-08-25: waehrend das Brett heranfaehrt, stellen sich die
+            // Sockel darunter auf, von links nach rechts. Vorher standen sie im
+            // ersten Bild alle schon da - acht leere Kaesten, die aus dem Nichts
+            // erscheinen, waehrend daneben etwas anderes passiert. Gestaffelt
+            // gelesen sagt dieselbe Sekunde jetzt „hier wird gleich gebaut".
+            // Der Versatz von 45ms je Spalte liegt in dem Bereich, den Material
+            // fuer Listen empfiehlt; bei acht Spalten steht die letzte nach
+            // 495ms, also noch bevor das Brett seinen Platz erreicht.
+            animation: (phase === 'brett' && !reduce)
+              ? `qqT2FadeUp 0.5s ease ${140 + i * 45}ms both`
+              : ((isWinner && inReveal && revealStep === 2 && !reduce) ? 'qqT2Heartbeat 1.5s ease-in-out infinite' : 'none'),
           }}>
             <div style={{ position: 'relative', width: blockW, display: 'flex', flexDirection: 'column-reverse', alignItems: 'center', gap: GAP }}>
               <div aria-hidden style={{ position: 'absolute', left: '50%', bottom: -12, transform: 'translateX(-50%)', width: Math.round(blockW * 2.1), height: 26, borderRadius: '50%', background: `radial-gradient(ellipse, ${colr}${crowned && isWinner ? '55' : '30'}, transparent 70%)`, filter: 'blur(6px)', zIndex: 0, pointerEvents: 'none', transition: 'background 0.4s ease' }} />

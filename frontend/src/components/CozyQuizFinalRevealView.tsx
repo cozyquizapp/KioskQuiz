@@ -165,7 +165,11 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
       }}>
         {(() => {
           const t = isLastFinalQuestion
-            ? (de ? `Frage ${completed}/5 · gleich kommt das Wager-Reveal!` : `Question ${completed}/5 · wager reveal next!`)
+            // 2026-08-25 (Wolf: „name muss in deutsch geaendert werden"). Hier
+            // stand „Wager-Reveal" mitten in einem deutschen Satz. Der Rest der
+            // Mechanik heisst im Produkt „Final-Tipp" (so steht es auf der
+            // Titelkarte der Wett-Phase), also heisst auch dieser Hinweis so.
+            ? (de ? `Frage ${completed}/5 · gleich kommt die Tipp-Auflösung!` : `Question ${completed}/5 · tip reveal next!`)
             : (de
                 ? `Frage ${completed}/5 · noch ${remaining} ${remaining === 1 ? 'Kategorie' : 'Kategorien'}`
                 : `Question ${completed}/5 · ${remaining} ${remaining === 1 ? 'category' : 'categories'} left`);

@@ -40,6 +40,71 @@ export const COZY_GAME_SCORING_LABELS: Record<CozyGameScoringType, { de: string;
   closestToTarget:{ de: 'Am nächsten dran',    en: 'Closest guess' },
 };
 
+// ── Drei Fragen an eine Wertungsart ──────────────────────────────────────────
+// 2026-08-25 (Wolf: „cozygames stoppuhr"). Beim Bauen der Stoppuhr stand der
+// Vergleich `scoringType === 'timeToFinish' || scoringType === 'lastStanding'`
+// woertlich an vier Stellen: Backend-Stopp, Steuerpult-Knopf, Autoplay und
+// Beamer. Vier Kopien einer Regel sind drei zu viel - kommt eine sechste
+// Wertungsart dazu, zieht garantiert eine davon nicht nach. Ab hier fragt jede
+// Seite dieselbe Funktion.
+
+/**
+ * Ist der Wert dieses Spiels eine ZEIT? Dann kommt er aus der Uhr und nicht
+ * aus der Tastatur, und auf der Buehne laeuft eine Stoppuhr statt eines
+ * Countdowns.
+ */
+export function cozyGameIstZeit(scoringType?: string | null): boolean {
+  return scoringType === 'timeToFinish' || scoringType === 'lastStanding';
+}
+
+/**
+ * Gewinnt die kleinere Zahl? Nur bei `timeToFinish`. Wichtig ueber die
+ * Rangfolge hinaus: bei `lastStanding` ist das Erreichen der 60 Sekunden das
+ * BESTE Ergebnis, bei `timeToFinish` das schlechteste. Eine Uhr, die in beiden
+ * Faellen gleich rot wird, behauptet an einer der beiden Stellen das Gegenteil
+ * von dem, was passiert.
+ */
+export function cozyGameKleinerIstBesser(scoringType?: string | null): boolean {
+  return scoringType === 'timeToFinish';
+}
+
+/** Einheit hinter der Zahl. Leer, wo die Zahl fuer sich steht (Anzahl, Punkte). */
+export function cozyGameEinheit(scoringType?: string | null): string {
+  if (cozyGameIstZeit(scoringType)) return 's';
+  if (scoringType === 'distance' || scoringType === 'height') return 'cm';
+  return '';
+}
+
+/**
+ * Ein Wert, wie er auf der Buehne steht.
+ *
+ * 2026-08-25, am fertigen Bild gefunden: die Stoppuhr schrieb „3,0", die
+ * Warteschlange „3,0s" und die Tabelle eine Folie spaeter „3 s". Drei
+ * Schreibweisen fuer dieselbe Zahl auf zwei aufeinanderfolgenden Folien. Bei
+ * Zeiten steht die Nachkommastelle deshalb IMMER da, auch wenn sie null ist -
+ * sonst sieht „3 s" neben „1,2 s" nach einer groberen Messung aus, obwohl
+ * beide auf Zehntel gestoppt wurden.
+ */
+export function cozyGameWertText(
+  wert: number | null | undefined,
+  scoringType?: string | null,
+  lang: 'de' | 'en' = 'de',
+  /**
+   * Ohne Einheit, wo der Zusammenhang sie schon traegt. Konkret die
+   * Warteschlange am unteren Buehnenrand: dort steht in jeder Pille dieselbe
+   * Einheit, die grosse Uhr darueber sagt sie ohnehin, und das angehaengte
+   * „ s" hat die Pille im Test in eine zweite Zeile gedrueckt.
+   */
+  mitEinheit = true,
+): string {
+  if (wert === null || wert === undefined) return '—';
+  const einheit = mitEinheit ? cozyGameEinheit(scoringType) : '';
+  const zahl = cozyGameIstZeit(scoringType)
+    ? (lang === 'de' ? wert.toFixed(1).replace('.', ',') : wert.toFixed(1))
+    : String(wert);
+  return einheit ? `${zahl} ${einheit}` : zahl;
+}
+
 /** Globaler Material-Tag-Pool (V1). Editor kann via Tag-Editor erweitert werden. */
 export const COZY_GAME_MATERIAL_TAGS_V1 = [
   'TT-Ball', 'Stäbchen', 'Eimer', 'Magnete', 'Ballon', 'Gabel',

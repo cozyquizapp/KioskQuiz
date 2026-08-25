@@ -60,7 +60,7 @@ import {
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
-  qqCozyGameSetValue, qqCozyGameConfirmValues, qqCozyGameStopTurn,
+  qqCozyGameSetValue, qqCozyGameConfirmValues, qqCozyGameStopTurn, qqCozyGameTurnAbgelaufen,
   qqCozyGameFinish, qqCozyGameCancel,
   qqCozyGameNextSequenceTeam,
   qqCozyGameTimerPause, qqCozyGameTimerResume,
@@ -2623,6 +2623,9 @@ export function registerQQHandlers(io: SocketIOServer): void {
           clearTimeout(live._cozyGameTimerHandle);
           live._cozyGameTimerHandle = null;
         }
+        // 2026-08-25: bei Zeit-Spielen den vollen Wert festhalten, bevor die
+        // Uhr aus dem Zustand verschwindet. Begruendung an der Funktion.
+        qqCozyGameTurnAbgelaufen(live);
         live.cozyGame.gameEndsAt = null;
       } else {
         qqCozyGameStopGame(live);

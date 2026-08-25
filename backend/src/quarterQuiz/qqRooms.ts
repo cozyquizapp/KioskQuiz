@@ -23,7 +23,7 @@ import {
 } from './qqBfs';
 import { qqHLPickPair, qqHLCorrectAnswer, qqComebackHLRounds } from './qqHLData';
 import { isEurovisionDraftTitle } from '../../../shared/eurovisionTheme';
-import { COZY_GAME_V1_SEED } from '../../../shared/cozyGameTypes';
+import { COZY_GAME_V1_SEED, cozyGameKleinerIstBesser, cozyGameIstZeit } from '../../../shared/cozyGameTypes';
 import { similarityScore, normalizeText } from '../../../shared/textNormalization';
 import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
 import { qqParseEstimate } from '../../../shared/qqSwarm';
@@ -6827,10 +6827,10 @@ export function qqCozyGameStartGame(
  *
  * Ein Druck macht beides: Zeit festhalten und zum naechsten Team.
  *
- * Laeuft die Zeit ohne Stopp ab, bleibt der volle Wert stehen. Das ist in
- * beiden Richtungen die richtige Aussage: beim Ballon hat das Team die ganze
- * Zeit durchgehalten (bestmoeglich), beim Kartenhaus hat es nicht fertig
- * gebaut (schlechtestmoeglich).
+ * Laeuft die Zeit ohne Stopp ab, uebernimmt `qqCozyGameTurnAbgelaufen` und
+ * schreibt den vollen Wert. Das ist in beiden Richtungen die richtige Aussage:
+ * beim Ballon hat das Team die ganze Zeit durchgehalten (bestmoeglich), beim
+ * Kartenhaus hat es nicht fertig gebaut (schlechtestmoeglich).
  */
 export function qqCozyGameStopTurn(
   room: QQRoomState,
@@ -6848,6 +6848,33 @@ export function qqCozyGameStopTurn(
     cg.values[teamId] = Math.round(sekunden * 10) / 10;
   }
   qqCozyGameNextSequenceTeam(room, onExpire);
+}
+
+/**
+ * Der Versuch ist durchgelaufen, ohne dass jemand gestoppt hat.
+ *
+ * 2026-08-25, beim Bauen der Stoppuhr gefunden: der Ablauf-Pfad hat den Wert
+ * gar nicht geschrieben. Er setzte nur `gameEndsAt` auf null und wartete auf
+ * Wolf. Das Team stand danach mit einem leeren Feld in der Tabelle - beim
+ * Ballon ausgerechnet das Team, das als einziges die vollen sechzig Sekunden
+ * durchgehalten hat, also der beste Versuch des Abends als Luecke.
+ *
+ * Beide Richtungen bekommen denselben Wert und meinen Verschiedenes, und das
+ * ist genau richtig: bei `lastStanding` ist die volle Dauer das Maximum, bei
+ * `timeToFinish` das Minimum. Die Rangfolge dreht das von selbst um.
+ */
+export function qqCozyGameTurnAbgelaufen(room: QQRoomState): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE' || cg.playMode !== 'sequence') return;
+  if (!cozyGameIstZeit(cg.scoringType)) return;
+  const teamId = (cg.sequenceOrder ?? [])[cg.sequenceCurrentIdx ?? 0];
+  if (!teamId) return;
+  if (!cg.values) cg.values = {};
+  // Nur setzen, wenn noch nichts dasteht. Ein bereits gestoppter Wert darf
+  // nicht von einem nachlaufenden Timer ueberschrieben werden.
+  if ((cg.values[teamId] ?? null) === null) {
+    cg.values[teamId] = cg.timerDurationSec ?? COZY_GAME_TIMER_MS / 1000;
+  }
 }
 
 /** Bei Sequence-Mode: aktuelles Team beenden, nächstes Team starten.
@@ -7044,7 +7071,7 @@ export function qqCozyGameRanking(
 ): Array<{ teamId: string; value: number | null }> {
   const cg = room.cozyGame;
   const werte = cg?.values ?? {};
-  const kleinerIstBesser = scoringType === 'timeToFinish';
+  const kleinerIstBesser = cozyGameKleinerIstBesser(scoringType);
   const eintraege = Object.keys(room.teams).map(id => ({ teamId: id, value: werte[id] ?? null }));
   return eintraege.sort((a, b) => {
     if (a.value === null && b.value === null) return 0;

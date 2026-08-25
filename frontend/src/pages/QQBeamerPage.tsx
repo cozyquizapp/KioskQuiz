@@ -20,6 +20,7 @@ import {
   teamDisplayName,
   qqIsMega,
 } from '../../../shared/quarterQuizTypes';
+import { cozyGameIstZeit } from '@shared/cozyGameTypes';
 import { BeamerOverlay } from '../components/BeamerOverlay';
 import { JokerIcon } from '../components/JokerIcon';
 import { CustomSlide } from '../components/QQCustomSlide';
@@ -730,9 +731,21 @@ export function SlideStage({ children, bg }: { children: React.ReactNode; bg?: s
  *
  * Neue Uhren gehoeren hier rein, nicht in die Leiste selbst.
  */
-function qqLeistenUhr(s: QQStateUpdate): { endsAt: number | null; durationSec: number } {
+function qqLeistenUhr(s: QQStateUpdate): {
+  endsAt: number | null; durationSec: number; richtung?: 'ablaufen' | 'volllaufen';
+} {
   if (s.phase === 'COZY_GAME') {
-    return { endsAt: s.cozyGame?.gameEndsAt ?? null, durationSec: s.cozyGame?.timerDurationSec ?? 60 };
+    // 2026-08-25 (Wolf: „cozygames stoppuhr"): bei Reihum-Spielen, deren Wert
+    // eine Zeit ist, zaehlt die Uhr auf der Folie HOCH. Die Leiste muss dann
+    // mitwachsen. Eine schrumpfende Leiste ueber einer steigenden Zahl waeren
+    // zwei Anzeigen derselben Sekunde mit entgegengesetzter Aussage.
+    const cg = s.cozyGame;
+    const hoch = cg?.playMode === 'sequence' && cozyGameIstZeit(cg?.scoringType);
+    return {
+      endsAt: cg?.gameEndsAt ?? null,
+      durationSec: cg?.timerDurationSec ?? 60,
+      richtung: hoch ? 'volllaufen' : 'ablaufen',
+    };
   }
   if (s.phase === 'TIEBREAKER_QUESTION') {
     const tb = (s as any).tieBreaker as { endsAt?: number | null; startedAt?: number } | null;
@@ -2111,6 +2124,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
       <StageTimeBar
         endsAt={qqLeistenUhr(s).endsAt}
         durationSec={qqLeistenUhr(s).durationSec}
+        richtung={qqLeistenUhr(s).richtung}
         accent="var(--qq-stage-accent)"
       />
 

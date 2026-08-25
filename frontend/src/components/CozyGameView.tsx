@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState, CozyGameScoringType } from '@shared/cozyGameTypes';
-import { COZY_GAME_SCORING_LABELS } from '@shared/cozyGameTypes';
+import { COZY_GAME_SCORING_LABELS, cozyGameIstZeit, cozyGameKleinerIstBesser, cozyGameWertText } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
 import { startTimerLoop, stopTimerLoop, playCozyGameIntro, playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal, playTick, playUrgentTick, playTimesUp } from '../utils/sounds';
 import { getServerNow } from '../utils/serverTime';
@@ -378,6 +378,9 @@ export default function CozyGameView({ round, width, height, teams, language, mu
             gameEndsAt={round.gameEndsAt}
             timerPausedRemainingMs={round.timerPausedRemainingMs}
             timerDurationSec={round.timerDurationSec ?? 60}
+            turnStartedAt={round.turnStartedAt}
+            scoringType={round.scoringType}
+            values={round.values}
             sequenceOrder={round.sequenceOrder ?? []}
             sequenceCurrentIdx={round.sequenceCurrentIdx ?? 0}
             sequenceCompletedTeamIds={round.sequenceCompletedTeamIds ?? []}
@@ -1171,9 +1174,85 @@ function GameActiveView({ width, height, game, gameEndsAt, accentColor }: {
 // ── SEQUENCE GAME VIEW (Wolf 2026-05-17): Layout für playMode='sequence' ────
 // Teams spielen nacheinander. Aktuelles Team groß links (Avatar + Name),
 // Timer rechts. Queue unten zeigt alle Teams mit Status (gespielt/aktuell/wartend).
+/**
+ * Stoppuhr — die Uhr, die AUFWAERTS laeuft.
+ *
+ * 2026-08-25 (Wolf: „danach cozygames stoppuhr").
+ *
+ * Der Fund, an dem das haengt: bei Sport-Stacking („schnellste Zeit gewinnt")
+ * stand auf der Wand eine 57. Der Wert des Teams war 3,4 Sekunden. Die Zahl im
+ * Bild war also nicht die Zahl, um die gespielt wird - sie war ihr Rest. Bei
+ * `lastStanding` dasselbe umgekehrt. Wer im Raum sitzt, muesste subtrahieren,
+ * um zu wissen, was gerade passiert.
+ *
+ * Also zaehlt die Uhr bei Zeit-Spielen hoch, und zwar genau die Zahl, die
+ * hinterher in der Tabelle steht: gerundet auf Zehntel, so wie es
+ * qqCozyGameStopTurn im Backend tut. Zehntel bleiben drin, aber im kleineren
+ * Grad - eine Ziffer, die zehnmal pro Sekunde springt, darf nicht so gross
+ * sein wie die, die man liest.
+ *
+ * Die Dringlichkeitsfarbe haengt an der RICHTUNG der Wertung. Bei „schnellste
+ * Zeit" ist das Volllaufen der Uhr das schlechteste Ergebnis, da faerbt sie
+ * sich zum Ende hin rot. Bei „wer haelt am laengsten durch" ist dieselbe Zahl
+ * das beste Ergebnis - dort waere Rot eine Luege, die Uhr bleibt ruhig.
+ */
+function Stoppuhr({ gestartetAm, deckelSec, kleinerIstBesser, lang }: {
+  gestartetAm: number;
+  /** Nach so vielen Sekunden endet der Versuch von selbst. */
+  deckelSec: number;
+  kleinerIstBesser: boolean;
+  lang: 'de' | 'en';
+}) {
+  const [sec, setSec] = useState(() => Math.max(0, (getServerNow() - gestartetAm) / 1000));
+  useEffect(() => {
+    const iv = setInterval(() => {
+      setSec(Math.max(0, (getServerNow() - gestartetAm) / 1000));
+    }, 100);
+    return () => clearInterval(iv);
+  }, [gestartetAm]);
+
+  const gedeckelt = Math.min(sec, deckelSec);
+  // Genau die Rundung aus qqCozyGameStopTurn. Sonst zeigt die Wand 12,4 und
+  // die Tabelle danach 12,5, und niemand weiss, welche gilt.
+  const zehntel = Math.round(gedeckelt * 10);
+  const ganze = Math.floor(zehntel / 10);
+  const rest = zehntel % 10;
+
+  // Nur wo Volllaufen schlecht ist, wird es dringlich. Stufen wie am Countdown.
+  const uebrig = Math.max(0, deckelSec - gedeckelt);
+  const farbe = !kleinerIstBesser ? 'var(--qq-stage-accent, var(--qq-text))'
+    : uebrig <= 3 ? '#EF4444'
+    : uebrig <= 5 ? '#F97316'
+    : uebrig <= 10 ? 'var(--qq-stage-brand)'
+    : 'var(--qq-stage-accent, var(--qq-text))';
+  const puls = kleinerIstBesser && uebrig <= 5
+    ? `bTimerPulse ${uebrig <= 3 ? '0.5s' : '0.8s'} ease-in-out infinite`
+    : undefined;
+
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end',
+      animation: puls,
+      fontWeight: 900, lineHeight: 1, color: farbe,
+      fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
+      transition: 'color 0.3s ease',
+    }}>
+      {/* Derselbe Grad wie die nackte Countdown-Zahl der Buehne (2a,
+          Aenderung 7). Die Uhr ersetzt sie an genau dieser Stelle, also darf
+          sie nicht kleiner sein, nur weil eine Nachkommastelle daneben steht. */}
+      <span style={{ fontSize: 'clamp(62px, 6.8cqw, 96px)' }}>{ganze}</span>
+      <span style={{ fontSize: 'clamp(30px, 3.2cqw, 46px)', opacity: 0.75 }}>{lang === 'de' ? ',' : '.'}{rest}</span>
+      <span style={{
+        fontSize: 'clamp(16px, 1.6cqw, 24px)', fontWeight: 800,
+        letterSpacing: '0.12em', opacity: 0.7, marginLeft: 8,
+      }}>SEK</span>
+    </div>
+  );
+}
+
 function SequenceGameView({
   width, height, game, accentColor, darkAccentColor, gameEndsAt,
-  timerPausedRemainingMs, timerDurationSec,
+  timerPausedRemainingMs, timerDurationSec, turnStartedAt, scoringType, values,
   sequenceOrder, sequenceCurrentIdx, sequenceCompletedTeamIds, teams, lang,
 }: {
   width: number; height: number;
@@ -1183,6 +1262,11 @@ function SequenceGameView({
   gameEndsAt: number | null;
   timerPausedRemainingMs?: number;
   timerDurationSec: number;
+  /** Beginn des laufenden Versuchs. Bei Zeit-Spielen die Basis der Stoppuhr. */
+  turnStartedAt?: number | null;
+  scoringType?: string;
+  /** Schon gestoppte Zeiten. Stehen in der Warteschlange bei den Teams. */
+  values?: Record<string, number | null>;
   sequenceOrder: string[];
   sequenceCurrentIdx: number;
   sequenceCompletedTeamIds: string[];
@@ -1197,6 +1281,9 @@ function SequenceGameView({
   const teamById = new Map(teams.map(t => [t.id, t]));
   const currentTeam = teamById.get(sequenceOrder[sequenceCurrentIdx]);
   const isPaused = gameEndsAt == null && (timerPausedRemainingMs ?? 0) > 0;
+  // Bei Zeit-Spielen laeuft die Uhr hoch, siehe Kommentar an `Stoppuhr`.
+  const zeitSpiel = cozyGameIstZeit(scoringType ?? game.scoringType);
+  const kleinerBesser = cozyGameKleinerIstBesser(scoringType ?? game.scoringType);
 
   return (
     <div style={{
@@ -1300,8 +1387,35 @@ function SequenceGameView({
             animation: 'cozyGameSeqTimerIn 0.5s cubic-bezier(0.22, 1, 0.36, 1) 0.15s both',
           }}
         >
-          {gameEndsAt ? (
+          {gameEndsAt && zeitSpiel && turnStartedAt ? (
+            <Stoppuhr
+              key={`uhr-${turnStartedAt}`}
+              gestartetAm={turnStartedAt}
+              deckelSec={timerDurationSec}
+              kleinerIstBesser={kleinerBesser}
+              lang={lang}
+            />
+          ) : gameEndsAt ? (
             <BeamerTimer variant="plain" endsAt={gameEndsAt} durationSec={timerDurationSec} accent="#fff" />
+          ) : zeitSpiel && !isPaused ? (
+            // 2026-08-25: die Zeit ist durchgelaufen, ohne dass jemand gestoppt
+            // hat. Der Zweig darunter zeigte hier eine „0" in einem Kreis - bei
+            // einer Uhr, die hochzaehlt, ist das die falsche Zahl an der
+            // richtigen Stelle. Stehen bleibt die volle Dauer, denn genau die
+            // schreibt qqCozyGameTurnAbgelaufen in die Tabelle.
+            <div style={{
+              display: 'flex', alignItems: 'baseline', justifyContent: 'flex-end',
+              fontWeight: 900, lineHeight: 1, opacity: 0.75,
+              color: 'var(--qq-stage-accent, var(--qq-text))',
+              fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.02em',
+            }}>
+              <span style={{ fontSize: 'clamp(62px, 6.8cqw, 96px)' }}>{Math.floor(timerDurationSec)}</span>
+              <span style={{ fontSize: 'clamp(30px, 3.2cqw, 46px)', opacity: 0.75 }}>{lang === 'de' ? ',' : '.'}0</span>
+              <span style={{
+                fontSize: 'clamp(16px, 1.6cqw, 24px)', fontWeight: 800,
+                letterSpacing: '0.12em', opacity: 0.7, marginLeft: 8,
+              }}>SEK</span>
+            </div>
           ) : isPaused ? (
             <div style={{
               fontSize: 'clamp(48px, 6vw, 96px)',
@@ -1417,8 +1531,12 @@ function SequenceGameView({
               border: isCurrent
                 ? `2px solid ${istBuehneG() ? 'var(--qq-stage-accent, var(--qq-accent))' : accentColor}`
                 : '2px solid transparent',
-              opacity: isCompleted ? 0.5 : 1,
-              filter: isCompleted ? 'grayscale(0.5)' : 'none',
+              // 2026-08-25: erledigt hiess bisher „halb durchsichtig und grau".
+              // Richtig, solange dort nur ein Haken steht. Sobald die gestoppte
+              // Zeit drinsteht, waere es falsch: dann traegt gerade die
+              // erledigte Pille die Zahl, die alle lesen sollen.
+              opacity: isCompleted && !zeitSpiel ? 0.5 : 1,
+              filter: isCompleted && !zeitSpiel ? 'grayscale(0.5)' : 'none',
               transition: 'all 0.3s ease',
             }}>
               <div style={{
@@ -1439,7 +1557,25 @@ function SequenceGameView({
                   abgeschnittener Teamname ist auf der Buehne ein Team, das
                   seinen Namen nicht wiedererkennt. */}
               <div style={{ minWidth: 0, display: 'flex', alignItems: 'center', gap: 4 }}>
-                {isCompleted && <span aria-hidden style={{ opacity: 0.7 }}>✓</span>}
+                {/* 2026-08-25 (Wolf: „cozygames stoppuhr"): bis hierher trugen
+                    die erledigten Teams einen grauen Haken und sonst nichts.
+                    Damit sah der Raum, DASS jemand dran war, aber nicht, was er
+                    geschafft hat - und genau das ist bei einem Reihum-Spiel die
+                    ganze Spannung. Wer als Sechster antritt, muss wissen, dass
+                    17,4 zu schlagen sind. Die Zeit ersetzt den Haken, sie sagt
+                    dasselbe („war dran") und zusaetzlich das Ergebnis. */}
+                {isCompleted && zeitSpiel && (values?.[tid] ?? null) !== null ? (
+                  <span style={{
+                    fontWeight: 900, fontVariantNumeric: 'tabular-nums',
+                    fontSize: istBuehneG() ? 'clamp(22px, 1.7vw, 28px)' : 'clamp(13px, 1.1vw, 18px)',
+                    color: 'var(--qq-stage-accent, var(--qq-text))',
+                    marginRight: 2, whiteSpace: 'nowrap',
+                  }}>
+                    {cozyGameWertText(values![tid], scoringType ?? game.scoringType, lang, false)}
+                  </span>
+                ) : isCompleted ? (
+                  <span aria-hidden style={{ opacity: 0.7 }}>✓</span>
+                ) : null}
                 <TeamNameLabel
                   name={t.name}
                   // 2026-08-24, gemessen: die Namen in der Warteschlange lagen
@@ -1451,7 +1587,16 @@ function SequenceGameView({
                   fontWeight={800}
                   maxLines={1}
                   shrinkAfter={11}
-                  style={{ maxWidth: istBuehneG() ? 'clamp(120px, 14vw, 250px)' : 'clamp(80px, 10vw, 160px)' }}
+                  // 2026-08-25, gemessen: die Pille war 398px breit und der
+                  // Name darin auf 246px gedeckelt. „Anonyme Allwisser"
+                  // braucht am Grad-Boden von 26px rund 270px, also stand dort
+                  // „Anonyme Allwi…" - genau das, was der Kommentar zwei
+                  // Absaetze weiter oben als Fehler benennt. Der Deckel war zu
+                  // eng, nicht der Name zu lang: die Reihe nutzte 1372 von
+                  // 1700 verfuegbaren Pixeln. Mit 300px passen alle acht
+                  // Testnamen, und bei acht Teams (vier Spalten zu 1fr) begrenzt
+                  // ohnehin die Spalte, nicht dieser Wert.
+                  style={{ maxWidth: istBuehneG() ? 'clamp(160px, 17vw, 300px)' : 'clamp(80px, 10vw, 160px)' }}
                 />
               </div>
             </div>
@@ -1491,11 +1636,7 @@ function WerteTabelle({ width, height, spiel, werte, teams, akzent, lang }: {
   const de = lang === 'de';
   const art = spiel?.scoringType ?? 'countIn60s';
   const ziel = (spiel as any)?.targetValue ?? null;
-  const kleinerBesser = art === 'timeToFinish';
-  const einheit = art === 'timeToFinish' || art === 'lastStanding' ? 's'
-    : art === 'distance' ? 'cm'
-    : art === 'height' ? 'cm'
-    : '';
+  const kleinerBesser = cozyGameKleinerIstBesser(art);
   const rang = [...teams].sort((a, b) => {
     const va = werte[a.id] ?? null, vb = werte[b.id] ?? null;
     if (va === null && vb === null) return 0;
@@ -1552,7 +1693,7 @@ function WerteTabelle({ width, height, spiel, werte, teams, akzent, lang }: {
                 color: v === null ? 'var(--qq-text-muted)' : 'var(--qq-text)',
                 fontVariantNumeric: 'tabular-nums',
               }}>
-                {v === null ? (de ? '—' : '—') : `${v}${einheit ? ' ' + einheit : ''}`}
+                {cozyGameWertText(v, art, lang)}
               </span>
             </div>
           );

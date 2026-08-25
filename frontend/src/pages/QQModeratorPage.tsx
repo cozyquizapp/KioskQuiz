@@ -17,6 +17,7 @@ import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
 import { CozyGameWerteFeld } from '../components/CozyGameWerteFeld';
+import { cozyGameIstZeit } from '@shared/cozyGameTypes';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
@@ -1074,7 +1075,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           delayMs = 3000;
           action = () => emit('qq:cozyGameAdvance', { roomCode });
         } else if (cg.phase === 'GAME_ACTIVE' && cg.playMode === 'sequence'
-          && (cg.scoringType === 'timeToFinish' || cg.scoringType === 'lastStanding')) {
+          && cozyGameIstZeit(cg.scoringType)) {
           // 2026-08-25: Zeit-Spiele werden gestoppt, nicht abgewartet. Im
           // Testlauf drueckt niemand, also nach vier Sekunden selbst stoppen -
           // dann steht am Ende eine Tabelle mit echten, verschiedenen Zeiten.
@@ -3657,7 +3658,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   // Druck haelt sie fest UND schaltet zum naechsten Team - die
                   // Zeit soll in dem Moment stehen, in dem der Ballon faellt,
                   // nicht wenn Wolf danach noch einen zweiten Knopf sucht.
-                  const zeitSpiel = cg.scoringType === 'timeToFinish' || cg.scoringType === 'lastStanding';
+                  const zeitSpiel = cozyGameIstZeit(cg.scoringType);
                   if (cg.phase === 'GAME_ACTIVE' && cg.playMode === 'sequence' && zeitSpiel) {
                     const reihe: string[] = cg.sequenceOrder ?? [];
                     const idx: number = cg.sequenceCurrentIdx ?? 0;

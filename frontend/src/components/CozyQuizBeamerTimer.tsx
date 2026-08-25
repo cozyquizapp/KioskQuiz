@@ -118,11 +118,22 @@ export function StageStepBar({ total, current, accent, endsAt, durationSec }: {
 }
 
 export function StageTimeBar({
-  endsAt, durationSec, accent,
+  endsAt, durationSec, accent, richtung = 'ablaufen',
 }: {
   endsAt: number | null;
   durationSec: number;
   accent: string;
+  /**
+   * 2026-08-25 (Wolf: „cozygames stoppuhr").
+   *
+   * 'ablaufen'  — die Leiste schrumpft, wie ueberall sonst: es wird weniger.
+   * 'volllaufen'— die Leiste waechst. Nur dort, wo auf der Folie eine Stoppuhr
+   *   HOCH zaehlt. Sonst stuenden zwei Zeitanzeigen im selben Bild, von denen
+   *   die eine „mehr" und die andere „weniger" sagt. Genau dieser Fehler stand
+   *   hier schon einmal (23.08., der zurueckgebliebene Fragen-Timer waehrend
+   *   eines CozyGames) und ist der Grund fuer den Absatz darueber.
+   */
+  richtung?: 'ablaufen' | 'volllaufen';
 }) {
   const [remaining, setRemaining] = useState(
     () => (endsAt == null ? 0 : Math.max(0, (endsAt - getServerNow()) / 1000)),
@@ -139,10 +150,15 @@ export function StageTimeBar({
   }, [endsAt]);
 
   if (endsAt == null || durationSec <= 0) return null;
-  const pct = Math.min(100, Math.max(0, (remaining / durationSec) * 100));
+  const anteil = Math.min(100, Math.max(0, (remaining / durationSec) * 100));
+  const pct = richtung === 'volllaufen' ? 100 - anteil : anteil;
   // Dieselben Dringlichkeitsstufen wie am Ring — die Leiste erbt die Semantik,
   // damit Zahl und Leiste nie Verschiedenes behaupten.
-  const color = remaining <= 3 ? '#EF4444'
+  // Beim Volllaufen faellt die Dringlichkeit weg: dort zaehlt eine Stoppuhr
+  // hoch, und ob das Erreichen des Deckels gut oder schlecht ist, weiss die
+  // Leiste nicht. Die Uhr auf der Folie weiss es und faerbt sich selbst.
+  const color = richtung === 'volllaufen' ? accent
+    : remaining <= 3 ? '#EF4444'
     : remaining <= 5 ? '#F97316'
     : remaining <= 10 ? 'var(--qq-stage-brand)'
     : accent;

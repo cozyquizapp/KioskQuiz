@@ -11,7 +11,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat } from '../shared/qqFinalReveal';
-import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories } from '../backend/src/quarterQuiz/qqRooms';
+import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
 // ── Test-Helpers ─────────────────────────────────────────────────────────────
@@ -383,5 +383,67 @@ describe('qqGoBackSlide — Phasen-Snapshot (Fund 3 Teil 1)', () => {
     qqGoBackSlide(room); // jetzt normaler PHASE_INTRO-Back: introStep 1→0
     expect(room.introStep).toBe(0);
     expect(room.phase).toBe('PHASE_INTRO');
+  });
+});
+
+// ── CozyGames: die Stoppuhr ──────────────────────────────────────────────────
+// 2026-08-25 (Wolf: „danach cozygames stoppuhr"). Getestet wird der Pfad, den
+// im Testlauf niemand trifft, weil er sechzig Sekunden dauert: der Versuch
+// laeuft durch, ohne dass jemand stoppt. Genau dort fehlte der Wert.
+
+function makeCozyRaum(over: Record<string, any> = {}): any {
+  return makeRoom({
+    phase: 'COZY_GAME',
+    teams: { a: makeTeam('a'), b: makeTeam('b') },
+    cozyGame: {
+      poolGameIds: [], playedGameIds: [], phase: 'GAME_ACTIVE',
+      activeGameId: 'cg-ballon-puste', wheelTargetSliceIndex: 0,
+      gameEndsAt: Date.now() + 1000, slotKind: 'roundPause', winnerTeamIds: [],
+      playMode: 'sequence', sequenceOrder: ['a', 'b'], sequenceCurrentIdx: 0,
+      sequenceCompletedTeamIds: [], timerDurationSec: 60,
+      scoringType: 'lastStanding', values: {},
+      ...over,
+    },
+  });
+}
+
+describe('CozyGames Stoppuhr', () => {
+  it('der Ablauf-Pfad ALLEIN schreibt nichts — das war der Fehler', () => {
+    // Zeuge fuer den roten Zustand: `qqCozyGameNextSequenceTeam` schaltet nur
+    // weiter. Vor dem 25.08. haengte der Ablauf-Handler genau hier, und das
+    // Team stand mit einem leeren Feld in der Tabelle.
+    const room = makeCozyRaum();
+    qqCozyGameNextSequenceTeam(room, () => {});
+    expect(room.cozyGame.values.a ?? null).toBeNull();
+  });
+
+  it('Zeit laeuft durch: das Team bekommt die volle Dauer, kein leeres Feld', () => {
+    const room = makeCozyRaum();
+    qqCozyGameTurnAbgelaufen(room);
+    expect(room.cozyGame.values.a).toBe(60);
+  });
+
+  it('schon gestoppter Wert wird vom nachlaufenden Timer nicht ueberschrieben', () => {
+    const room = makeCozyRaum({ values: { a: 12.4 } });
+    qqCozyGameTurnAbgelaufen(room);
+    expect(room.cozyGame.values.a).toBe(12.4);
+  });
+
+  it('Zaehl-Spiel: der Ablauf schreibt nichts, dort tippt Wolf', () => {
+    const room = makeCozyRaum({ scoringType: 'countIn60s' });
+    qqCozyGameTurnAbgelaufen(room);
+    expect(room.cozyGame.values.a ?? null).toBeNull();
+  });
+
+  it('Rangfolge: bei „laengste Zeit" gewinnt die groesste Zahl', () => {
+    const room = makeCozyRaum({ values: { a: 12.4, b: 60 } });
+    const rang = qqCozyGameRanking(room, 'lastStanding');
+    expect(rang[0].teamId).toBe('b');
+  });
+
+  it('Rangfolge: bei „schnellste Zeit" verliert genau dieselbe 60', () => {
+    const room = makeCozyRaum({ values: { a: 12.4, b: 60 } });
+    const rang = qqCozyGameRanking(room, 'timeToFinish');
+    expect(rang[0].teamId).toBe('a');
   });
 });

@@ -318,14 +318,36 @@ return {
   // der Stopp-Knopf erscheint gar nicht.
   cozystopp: { ruhe: 3500, aufbau: 'spiel', nurReihum: true, weg: async (h) => {
     await h.zurFrage();
-    await h.emit('qq:setQuizOptions', { cozyGamesPool: ['cg-ballon-puste', 'cg-karten-haus', 'cg-sport-stacking'] });
+    await h.emit('qq:setQuizOptions', { cozyGamesPool: ['cg-karten-haus', 'cg-sport-stacking'] });
     await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
     await sleep(600); await h.emit('qq:cozyGameAdvance');
     await sleep(7200);
     await h.emit('qq:cozyGameAdvance'); await sleep(900);   // -> erstes Team laeuft
+    // `--stufe=n` haelt nach n gestoppten Teams an. Stufe 0 heisst: gar nicht
+    // stoppen, also die laufende Uhr des ersten Teams knipsen. Ohne das trifft
+    // man den Moment nie, um den es hier geht.
     const teams = h.teamIds();
-    for (let i = 0; i < teams.length; i++) {
+    const bis = cfg.stufe >= 1 ? Math.min(cfg.stufe, teams.length) : 0;
+    for (let i = 0; i < bis; i++) {
       await sleep(700 + i * 450);                            // jedes Team haelt anders lange durch
+      await h.emit('qq:cozyGameStopTurn');
+    }
+  } },
+  // Die andere Richtung derselben Uhr. Beim Ballon gewinnt, wer AM LAENGSTEN
+  // durchhaelt - das Volllaufen der Uhr ist dort das beste Ergebnis, nicht das
+  // schlechteste. Eigene Station, weil sich genau daran entscheidet, ob die
+  // Stoppuhr rot werden darf. `--stufe` wie bei cozystopp.
+  cozyballon: { ruhe: 3500, aufbau: 'spiel', nurReihum: true, weg: async (h) => {
+    await h.zurFrage();
+    await h.emit('qq:setQuizOptions', { cozyGamesPool: ['cg-ballon-puste'] });
+    await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
+    await sleep(600); await h.emit('qq:cozyGameAdvance');
+    await sleep(7200);
+    await h.emit('qq:cozyGameAdvance'); await sleep(900);
+    const teams = h.teamIds();
+    const bis = cfg.stufe >= 1 ? Math.min(cfg.stufe, teams.length) : 0;
+    for (let i = 0; i < bis; i++) {
+      await sleep(700 + i * 450);
       await h.emit('qq:cozyGameStopTurn');
     }
   } },

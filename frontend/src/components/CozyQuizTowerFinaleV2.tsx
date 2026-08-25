@@ -1620,17 +1620,23 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
   // Nachgerechnet gegen die 990px Buehnenhoehe:
   // 56 Rand + 26 Zeile „Award" + 150 Zeichen + 80 Award-Name + 56 Frage +
   // 172 Rad + 104 Teamname + 5*18 Abstaende + 56 Rand = 790px. Passt mit Luft.
-  const ZEICHEN = istBuehne ? 150 : 76;
-  const MARKE = istBuehne ? 148 : 62;
+  // 2026-08-25 (Wolf: „siegerteam wird abgeschnitten im kasten"). Nachgemessen
+  // mit einer Kennung am Kasten: 847 von 990 Bildpunkten, oben 72 und unten 71
+  // Rand. Das passt rechnerisch, aber es hat keine Reserve - ein Teamname, der
+  // auf zwei Zeilen bricht, oder das CozyGames-Rad (das mit zoom 1.18 als
+  // einziges Zeichen 184 statt 150 hoch wird) kippen die Karte ueber die Kante.
+  // Jetzt rund 790 hoch, also gut hundert Bildpunkte Luft oben und unten.
+  const ZEICHEN = istBuehne ? 140 : 76;
+  const MARKE = istBuehne ? 138 : 62;
   const MARKE_KLEIN = Math.round(MARKE * 0.62);
   const zelle = MARKE + 22;
 
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
       <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 60% at 50% 45%, rgba(249,200,122,0.10), rgba(6,3,12,0.72) 70%)', animation: reduce ? 'none' : 'qqT2FadeUp 0.4s ease both' }} />
-      <div style={{
-        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: istBuehne ? 16 : 12,
-        padding: istBuehne ? '52px 84px' : '30px 48px', borderRadius: 30,
+      <div data-qq-awardkarte style={{
+        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: istBuehne ? 15 : 12,
+        padding: istBuehne ? '46px 84px' : '30px 48px', borderRadius: 30,
         minWidth: istBuehne ? 1000 : undefined,
         background: 'linear-gradient(180deg, rgba(40,29,13,0.98), rgba(24,17,8,0.98))',
         border: `2px solid ${GOLD_DEEP}`,
@@ -1648,7 +1654,7 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
           animation: reduce ? 'none' : (takt === 'rollt' ? 'qqT2AwardWippe 0.9s ease-in-out infinite' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both'),
         }}><QQIcon slug={award.slug} size={Math.round(ZEICHEN * (award.zoom ?? 1))} /></div>
 
-        <div style={{ fontSize: istBuehne ? 80 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
+        <div style={{ fontSize: istBuehne ? 76 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
 
         {/* Die Frage bleibt stehen, den ganzen Weg.
             Erster Entwurf liess sie ausblenden, sobald das Team steht. An der
@@ -1740,14 +1746,14 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
             schrumpft hinein, statt die Karte zu schieben. */}
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20,
-          height: istBuehne ? 150 : 40, flexShrink: 0,
+          height: istBuehne ? 132 : 40, flexShrink: 0,
         }}>
           {steht && (
             <>
               <TeamNameLabel
                 name={recip.name}
-                fontSize={istBuehne ? '92px' : '26px'}
-                minFontSize={istBuehne ? '52px' : '18px'}
+                fontSize={istBuehne ? '84px' : '26px'}
+                minFontSize={istBuehne ? '48px' : '18px'}
                 color={istBuehne ? 'var(--qq-text)' : recip.color}
                 fontWeight={900}
                 maxLines={2}

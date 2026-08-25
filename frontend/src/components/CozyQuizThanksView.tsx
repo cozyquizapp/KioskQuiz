@@ -7,7 +7,7 @@
  * Extrahiert aus QQBeamerPage.tsx 2026-05-12 (Refactor Phase 4).
  * 2 externe Importer (QQBuiltinSlide + ThanksTestPage).
  */
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { cozyCard } from '../qqStyleTokens';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
@@ -19,6 +19,7 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
 import { qqFinalSortedTeams } from '../utils/qqFinalScore';
+import { holeSiegerQuelle } from '../qqSiegerUebergabe';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -26,9 +27,22 @@ import { WolfHeadIcon } from './WolfHeadIcon';
 import { CozyWolfImage } from './CozyWolfImage';
 import { AnimatedCozyWolf, WolfCoModerator, getBrandColors } from '../pages/QQBeamerPage';
 import { isThemed, isQuietMotion } from '../qqTheme';
+import { prefersReducedMotion } from '../utils/reducedMotion';
 
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
+  // ── Die Sieger-Marke kommt von der Kroenung herueber ──────────────────────
+  // 2026-08-25, aufgenommen mit scripts/danke-uebergang.mjs: bei 9 ms stand die
+  // Siegerfolie, bei 161 ms war die Buehne LEER, und erst ab 641 ms baute sich
+  // das Danke Stueck fuer Stueck auf. Rund eine halbe Sekunde Schwarz, an der
+  // Naht zwischen dem groessten Moment des Abends und dem letzten Bild.
+  //
+  // Statt dort etwas EINZUBLENDEN faehrt die Marke von ihrer alten Position
+  // herueber: sie steht also schon im ersten Bild, und der Rest der Folie baut
+  // sich um sie herum auf. Ein Gegenstand, eine Bewegung, kein Schnitt.
+  // FLIP: Endstand bauen, ins Erste zuruecksetzen, losfahren. Nur `transform`,
+  // damit nichts neu gesetzt wird.
+  const siegerRef = useRef<HTMLDivElement | null>(null);
   const themed = isThemed();
   // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): die Danke-Folie ist das
   // letzte Bild des Abends und hatte den Durchgang noch nicht gesehen.
@@ -77,6 +91,34 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const nested = !!(s as any).nestedTeams;
   const winner = nested ? (qqSortedGroups(s)[0] ?? winnerTeam) : winnerTeam;
 
+  // Der FLIP selbst. `useLayoutEffect`, damit die Marke nie einen Frame lang an
+  // ihrem Zielort steht, bevor sie zurueckgesetzt wird - das waere ein Sprung.
+  useLayoutEffect(() => {
+    if (prefersReducedMotion() || isQuietMotion()) return;
+    const el = siegerRef.current;
+    if (!el || !winner?.id) return;
+    const quelle = holeSiegerQuelle(winner.id);
+    if (!quelle) return;
+    const buehne = el.closest('[data-qq-danke-buehne]') as HTMLElement | null;
+    const b = (buehne ?? el.ownerDocument.body).getBoundingClientRect();
+    if (b.width <= 0 || b.height <= 0) return;
+    const r = el.getBoundingClientRect();
+    const zielX = r.left + r.width / 2 - b.left;
+    const zielY = r.top + r.height / 2 - b.top;
+    const vonX = quelle.x * b.width;
+    const vonY = quelle.y * b.height;
+    // Der Massstab: die Kroenungs-Marke ist deutlich groesser als die hier.
+    const skala = r.width > 0 ? (quelle.groesse * b.width) / r.width : 1;
+    el.style.transformOrigin = 'center center';
+    el.style.transform = `translate(${vonX - zielX}px, ${vonY - zielY}px) scale(${skala})`;
+    el.style.transition = 'none';
+    const bild = requestAnimationFrame(() => {
+      el.style.transition = 'transform 720ms cubic-bezier(0.22, 0.72, 0.2, 1)';
+      el.style.transform = 'none';
+    });
+    return () => cancelAnimationFrame(bild);
+  }, [winner?.id]);
+
   // 2026-05-10 v6 (Wolf 'pages sollen identisch sein, thanks soll wie setup
   // aussehen, nur mit anderen inhalten'): Komplettes Layout-Refactor — spiegelt
   // jetzt PausedView/PreGameView-Struktur (= Wolfs „Setup-Page"):
@@ -105,7 +147,9 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   // bei der Score-Modell-Bereinigung mit entfernt.
 
   return (
-    <div style={{
+    // Die Kennung ist der Bezugsrahmen der Uebergabe: die Kroenung merkt sich
+    // die Position ihrer Marke als Anteil DIESER Flaeche, nicht in Bildpunkten.
+    <div data-qq-danke-buehne style={{
       flex: 1, display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       // 2026-05-12 (Wolf 'safe-margin im ganzen quiz'): floor auf Safe-Margin.
@@ -162,6 +206,14 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         @keyframes qqThanksCrownBob {
           0%, 100% { transform: translate(-50%, 0) rotate(-3deg); }
           50%      { transform: translate(-50%, -4px) rotate(3deg); }
+        }
+        /* 2026-08-25: die Sieger-Marke atmet leicht, statt zu leuchten.
+           Bewusst nur eine transform-Bewegung, damit die Kante scharf bleibt und
+           die GPU sie komponiert. (Kein Backtick in diesem Kommentar - er wuerde
+           das umgebende Template beenden.) */
+        @keyframes qqThanksSiegerSchweben {
+          0%, 100% { transform: translateY(0) scale(1); }
+          50%      { transform: translateY(-8px) scale(1.012); }
         }
         @keyframes qqThanksWinnerGlow {
           0%, 100% { box-shadow: 0 0 30px var(--wg, rgba(246, 239, 230,0.4)), 0 0 64px rgba(251,191,36,0.14), 0 12px 30px rgba(0,0,0,0.55), inset 0 -8% 16% rgba(0,0,0,0.30), inset 0 4% 10% rgba(246, 239, 230,0.12); }
@@ -264,7 +316,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         bottom: 0,
         zIndex: 6,
         pointerEvents: 'none',
-        animation: 'panelSlideIn 0.8s var(--qq-ease-bounce) 1.2s both',
+        // 2026-08-25, an der Aufnahme korrigiert (scripts/danke-uebergang.mjs):
+        // die Folie baute sich ueber 1,7 s auf, der letzte Block startete erst
+        // bei 1,2 s. Weil der Phasenwechsel selbst eine Kreuzblende ist
+        // (View-Transition, siehe main.css), blendete sie damit auf ein LEERES
+        // Bild - gemessen von 186 bis 460 ms schwarze Buehne. Die Verzoegerungen
+        // sind jetzt so kurz, dass die Folie waehrend der Blende schon steht.
+        animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.34s both',
       }}>
         <AnimatedCozyWolf
           widthCss="clamp(160px, 15cqw, 240px)"
@@ -389,7 +447,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 700,
           color: themed ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', fontStyle: 'italic',
           textAlign: 'center', lineHeight: 1.3,
-          animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) 0.55s both',
+          animation: 'panelSlideIn 0.55s var(--qq-ease-out-cubic) 0.14s both',
         }}>{de
           ? 'Wir hoffen ihr hattet Spaß! Bis zum nächsten Mal!'
           : 'We hope you had fun! See you next time!'}</div>
@@ -461,10 +519,13 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               alignItems: 'center', justifyContent: 'center',
               gap: 'clamp(14px, 1.8cqh, 26px)',
               minWidth: 0,
-              animation: 'qqThanksColIn 0.7s ease 0.4s both',
+              // Ohne Verzoegerung: das ist der Gegenstand, der von der
+              // Kroenung herueberfaehrt (siehe die Uebergabe oben). Eine
+              // Verzoegerung haette ihn unsichtbar fahren lassen.
+              animation: 'qqThanksColIn 0.5s ease both',
             }}>
               {winner && (
-                <div style={{ position: 'relative' }}>
+                <div ref={siegerRef} style={{ position: 'relative' }}>
                   {/* 2026-08-23: dritte und letzte Krone des Abends, gleiche
                       Entscheidung wie bei Schaetzchen und Zehn von Zehn. Wer
                       gewonnen hat, steht direkt darunter im Klartext („hat heute
@@ -480,25 +541,49 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     zIndex: 5,
                   }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                   )}
+                  {/* 2026-08-25 (Wolf: „koennte die kachel nicht mehr 3d effekt
+                      haben?"). Die Marke war eine Flaeche in Teamfarbe mit zwei
+                      weichen radialen Lichtern - das liest sich als Aufkleber,
+                      nicht als Gegenstand. Sie bekommt jetzt dieselbe Sprache
+                      wie die Bausteine im Turm: eine Lichtkante oben, eine
+                      Schattenkante unten, eine dunkle Fuge an der Unterseite und
+                      einen SCHATTEN AUF DEN BODEN. Der Bodenschatten ist der
+                      Teil, der aus einer Flaeche einen Koerper macht - ohne ihn
+                      schwebt jede noch so gut beleuchtete Kachel im Nichts.
+                      Alles davon liegt auf der KACHEL, nicht auf der gelieferten
+                      PNG darin: kein Filter, keine Deckkraft, keine
+                      Farbrechnung am Motiv. */}
+                  {istBuehne && !isQuietMotion() && (
+                    <div aria-hidden style={{
+                      position: 'absolute', left: '50%', bottom: -26,
+                      width: '86%', height: 26, transform: 'translateX(-50%)',
+                      background: 'radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 72%)',
+                      pointerEvents: 'none',
+                    }} />
+                  )}
                   <div style={{
                     ['--wg' as string]: `${winner.color}99`,
                     width: 'clamp(180px, 20cqw, 290px)', height: 'clamp(180px, 20cqw, 290px)',
                     borderRadius: quirkSet ? '18%' : '50%',
-                    // 2026-07-03 (Wolf 'glow komisch, wappen verschwommen'): Disc mit
-                    // Tiefe (radiale Lichter/Schatten wie cozy3d) + hellem Rand, damit
-                    // das Wappen als scharfe Münze gegen den Glow steht statt im
-                    // gleichfarbigen Halo zu zerfließen. Glow selbst zurückgenommen.
-                    background: `
+                    background: istBuehne
+                      ? `linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.07) 16%, rgba(255,255,255,0) 48%, rgba(0,0,0,0.14) 76%, rgba(0,0,0,0.34) 100%), ${winner.color}`
+                      : `
                       radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%),
                       radial-gradient(circle at 32% 28%, rgba(246, 239, 230,0.22) 0%, rgba(246, 239, 230,0) 46%),
                       ${winner.color}`,
                     border: quirkSet ? 'none' : `5px solid rgba(246, 239, 230,0.30)`,
+                    boxShadow: istBuehne
+                      ? 'inset 0 2px 0 rgba(255,255,255,0.42), inset 3px 0 0 rgba(255,255,255,0.08), inset -3px 0 0 rgba(0,0,0,0.20), inset 0 -3px 0 rgba(0,0,0,0.26), 0 14px 22px rgba(0,0,0,0.48)'
+                      : undefined,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     // 2026-08-23: der pulsierende Schein um die Sieger-Marke faellt
                     // auf der Buehne weg. Er sagt nichts, was Groesse und Text
                     // nicht schon sagen, und auf Projektionsdistanz weicht er die
-                    // Kante der Kachel auf.
-                    animation: istBuehne ? 'none' : 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
+                    // Kante der Kachel auf. Stattdessen atmet sie leicht, das
+                    // haelt den Gegenstand lebendig, ohne die Kante zu ruehren.
+                    animation: istBuehne
+                      ? (isQuietMotion() ? 'none' : 'qqThanksSiegerSchweben 4.2s ease-in-out infinite')
+                      : 'qqThanksWinnerGlow 3.6s ease-in-out infinite',
                   } as React.CSSProperties}>
                     <QQTeamAvatar
                       avatarId={winner.avatarId}
@@ -565,7 +650,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
                 gap: 14, minWidth: 0,
-                animation: 'qqThanksColIn 0.7s ease 0.5s both',
+                animation: 'qqThanksColIn 0.6s ease 0.22s both',
               }}>
                 <div style={{
                   padding: 'clamp(10px, 1.2cqw, 16px)',

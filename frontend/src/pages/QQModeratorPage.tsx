@@ -4948,6 +4948,32 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
             <div>🏆 Final-Reveal · Step {step}/{max}</div>
             <div style={{ color: '#FCD34D', opacity: 0.92 }}>Jetzt: {labelFor(step)}</div>
             <div style={{ color: '#FCD34D', opacity: 0.65, fontSize: 11 }}>Space → {next}</div>
+            {/* ── Wenn Server und Buehne nicht dieselbe Rechnung haben ──────
+                2026-08-25 (Wolf: „nach step 13/17 springts auf die thank you
+                folie" und danach „final szene mit tuermen endet wieder bei
+                12... problem nicht geloest. skipped einfach zur thank you").
+
+                Beides war dasselbe, und es war KEIN Fehler in der Choreografie:
+                das Frontend geht nach Vercel, das Backend nach Coolify, und die
+                beiden sind nicht zur selben Sekunde da. Solange der Server aelter
+                ist, rechnet er mit der alten Formel und beendet die Phase frueher,
+                als das Steuerpult anzeigt. Von aussen sieht das aus wie ein
+                Sprung auf die Danke-Folie, und man sucht ihn in der falschen Datei.
+
+                `finalRevealMaxStep` schickt der Server seit demselben Tag mit.
+                Fehlt das Feld, ist der Server alt - und das steht jetzt hier,
+                statt sich als „skipped einfach" zu tarnen. */}
+            {(s as any).finalRevealMaxStep == null && (
+              <div style={{
+                marginTop: 4, padding: '6px 8px', borderRadius: 6,
+                background: 'rgba(248,113,113,0.16)', color: '#FCA5A5',
+                fontSize: 11, fontWeight: 800, lineHeight: 1.35,
+              }}>
+                ⚠️ Server ist älter als die Bühne. Er beendet die Auflösung früher,
+                als hier steht ({max} ist die Rechnung dieser Seite, nicht seine).
+                Backend-Deploy abwarten.
+              </div>
+            )}
           </div>
         );
       })()}

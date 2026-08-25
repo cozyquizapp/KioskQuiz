@@ -17,6 +17,7 @@
 import { useState, useEffect, useLayoutEffect, useRef, useMemo, useCallback } from 'react';
 import type { CSSProperties } from 'react';
 import { prefersReducedMotion } from '../utils/reducedMotion';
+import { merkeSiegerQuelle } from '../qqSiegerUebergabe';
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG } from '../cozyQuizShared';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -769,6 +770,36 @@ function KroenungsSlide({ eintrag, lang }: {
   const de = lang === 'de';
   const reduce = prefersReducedMotion();
   useEffect(() => { playClimaxFinish(); }, []);
+  // ── Die Marke merken, damit die Danke-Folie sie uebernehmen kann ──────────
+  // 2026-08-25, aufgenommen mit scripts/danke-uebergang.mjs: zwischen dieser
+  // Folie und dem Danke lagen rund fuenfhundert Millisekunden komplett leere
+  // Buehne. Statt dort etwas einzublenden faehrt die Sieger-Marke jetzt
+  // hinueber - der Gegenstand, um den es geht, ueberlebt den Wechsel.
+  // Siehe `qqSiegerUebergabe.ts`.
+  const markeRef = useRef<HTMLDivElement | null>(null);
+  const teamId = eintrag?.team.id;
+  useEffect(() => {
+    if (!teamId || reduce) return;
+    const merken = () => {
+      const el = markeRef.current;
+      if (!el) return;
+      const r = el.getBoundingClientRect();
+      const buehne = el.closest('[data-qq-finale-buehne]') ?? el.ownerDocument.body;
+      const b = buehne.getBoundingClientRect();
+      if (b.width <= 0 || b.height <= 0) return;
+      merkeSiegerQuelle({
+        x: (r.left + r.width / 2 - b.left) / b.width,
+        y: (r.top + r.height / 2 - b.top) / b.height,
+        groesse: r.width / b.width,
+        teamId,
+      });
+    };
+    // Zweimal: einmal sofort und einmal, wenn die Einblend-Animation steht.
+    // Waehrend `qqFRTitleIn` laeuft, ist die Marke noch verschoben und kleiner.
+    merken();
+    const h = window.setTimeout(merken, 1000);
+    return () => window.clearTimeout(h);
+  }, [teamId, reduce]);
   if (!eintrag) return null;
   const t = eintrag.team;
   const an = (verzug: number) => reduce
@@ -786,7 +817,7 @@ function KroenungsSlide({ eintrag, lang }: {
       <div style={{ lineHeight: 1, animation: an(0) }}>
         <QQIcon slug="fx-crown" size="clamp(84px, 9cqw, 150px)" />
       </div>
-      <div style={{ animation: an(0.14) }}>
+      <div ref={markeRef} style={{ animation: an(0.14) }}>
         <QQTeamAvatar
           avatarId={t.avatarId}
           teamEmoji={t.emoji}

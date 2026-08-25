@@ -349,11 +349,27 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           {/* 2026-07-16 (Wolf 'nicere, ruhigere Karte fuer die Arena'): CartoDB
               Dark Matter — dunkle, ruhige Karte, beisst sich nicht mit dem roten
               Arena-Kolosseum und die pinken Pins + das Ziel leuchten deutlich raus.
-              (Frueher Voyager = knallbunt; davor dark_all/grau-schwarz.) */}
+              (Frueher Voyager = knallbunt; davor dark_all/grau-schwarz.)
+              2026-08-25 (Wolf: „wir nehmen deinen Vorschlag fuer die Karte"):
+              bis das Ziel steht laeuft die Karte OHNE Ortsnamen. Auf 2,8 m
+              Bildbreite liest der Saal die Loesung sonst mit, bevor Wolf sie
+              ansagt. Sobald das Ziel gesetzt ist (`showTarget`) kommt die
+              Beschriftung dazu - dann ist sie Information statt Verrat.
+              Zwei Ebenen statt Austausch: `dark_nolabels` bleibt liegen und
+              die Namen-Ebene blendet darueber ein, sonst flackert beim
+              Umschalten die ganze Karte. */}
           <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+            url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
             subdomains={['a', 'b', 'c', 'd']}
           />
+          {showTarget && (
+            <TileLayer
+              key="namen"
+              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
+              subdomains={['a', 'b', 'c', 'd']}
+              className="qq-karten-namen"
+            />
+          )}
           {/* Geoguessr-Style: erst Welt-Level (zoom 3), dann smoothes Reinzoomen
               auf den Zielbereich beim ersten Reveal-Schritt. */}
           <QQInitialTargetZoom lat={tLat} lng={tLng} />

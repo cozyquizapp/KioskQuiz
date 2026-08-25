@@ -454,6 +454,7 @@ function SlotTransition({
   exitMs = 550,
   enterAnimation,
   containerStyle,
+  exitChildren,
   children,
 }: {
   /** Key that identifies the current slot. Change triggers the transition. */
@@ -468,24 +469,50 @@ function SlotTransition({
   enterAnimation?: string;
   /** Optional container style overrides. Default: flex:1 width:100% position:relative. */
   containerStyle?: React.CSSProperties;
+  /**
+   * Was die ABGEHENDE Ebene zeigen soll, solange dieser Slot der aktuelle ist.
+   *
+   * 2026-08-25 (Wolf: „die motion wenn das fenster rechts reinkommt rausgeht
+   * und das neue kommt ist noch nicht so nice"). Der Grund stand hier: die
+   * abgehende Ebene bekam bisher `children` des vorigen Slots. Das ist zwar
+   * derselbe Baum, haengt aber unter einem ANDEREN Elternknoten - React sieht
+   * einen Neuzugang und haengt die Karte neu ein. Damit lief bei der
+   * Tipp-Karte der Slot-Machine-Lauf im Weggehen noch einmal von vorne los,
+   * inklusive `playTeamReveal()`. Aufgenommen und nachgezaehlt: die alte Karte
+   * rasselte 200 ms lang wieder durch vier fremde Teams, waehrend sie ausblendete.
+   *
+   * Wer hier eine eingefrorene Fassung derselben Folie hereinreicht, bekommt
+   * einen Abgang, der stillsteht. Ohne diese Angabe bleibt es beim alten
+   * Verhalten (die vorigen `children`).
+   */
+  exitChildren?: React.ReactNode;
   children: React.ReactNode;
 }) {
   const [exitingNode, setExitingNode] = useState<React.ReactNode | null>(null);
   const [enterTick, setEnterTick] = useState(0);
   const prevKeyRef = useRef(slotKey);
   const prevChildrenRef = useRef(children);
+  const prevExitRef = useRef(exitChildren);
   useEffect(() => {
     if (slotKey !== prevKeyRef.current) {
-      setExitingNode(prevChildrenRef.current);
+      setExitingNode(prevExitRef.current ?? prevChildrenRef.current);
       setEnterTick(t => t + 1);
       prevKeyRef.current = slotKey;
-      prevChildrenRef.current = children;
-      const t = window.setTimeout(() => setExitingNode(null), exitMs);
-      return () => window.clearTimeout(t);
     }
     prevChildrenRef.current = children;
-    return;
-  }, [slotKey, children, exitMs]);
+    prevExitRef.current = exitChildren;
+  }, [slotKey, children, exitChildren]);
+  // Der Aufraeum-Wecker haengt am abgehenden Knoten, NICHT am Effekt darueber.
+  // Vorher stand er dort, und `children` bekommt bei jedem Rendern des Eltern
+  // eine neue Identitaet - also lief die Aufraeumfunktion des Effekts, loeschte
+  // den Wecker, und die alte Karte blieb stehen, bis der naechste Slot kam. Im
+  // Finale trudeln waehrend der 220 ms regelmaessig Socket-Updates ein, das
+  // war also kein theoretischer Fall.
+  useEffect(() => {
+    if (!exitingNode) return;
+    const t = window.setTimeout(() => setExitingNode(null), exitMs);
+    return () => window.clearTimeout(t);
+  }, [exitingNode, exitMs]);
 
   return (
     <div style={{
@@ -531,10 +558,13 @@ function BetSlotTransition({ slotIndex, slotCount, slot, state: s, lang }: {
   state: QQStateUpdate;
   lang: 'de' | 'en';
 }) {
-  const renderSlot = (sl: BetSlotType) => {
+  // `eingefroren` ist die Fassung fuer die abgehende Ebene: dieselbe Folie im
+  // Endzustand, ohne Slot-Machine, ohne Ton, ohne Auftritts-Animationen ihrer
+  // Teile. Siehe `exitChildren` in `SlotTransition`.
+  const renderSlot = (sl: BetSlotType, eingefroren = false) => {
     if (!sl) return null;
     if (sl.kind === 'zero-group') {
-      return <BetZeroGroupSlide key="zero-group" teams={sl.teams} lang={lang} />;
+      return <BetZeroGroupSlide key="zero-group" teams={sl.teams} lang={lang} eingefroren={eingefroren} />;
     }
     // 2026-05-25 (Wolf-Bug 'cards flippen nicht im live'): key={team.id}
     // erzwingt frischen Mount pro Bet-Card. Ohne key reuste React die
@@ -548,6 +578,7 @@ function BetSlotTransition({ slotIndex, slotCount, slot, state: s, lang }: {
         allTeams={s.teams}
         lang={lang}
         eurovisionMode={s.theme?.eurovisionMode}
+        eingefroren={eingefroren}
       />
     );
   };
@@ -575,14 +606,29 @@ function BetSlotTransition({ slotIndex, slotCount, slot, state: s, lang }: {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0 }}>
       {fortschritt}
+    {/* 2026-08-25 (Wolf: „die motion wenn das fenster rechts reinkommt rausgeht
+        und das neue kommt ist noch nicht so nice").
+        EINE Achse, EINE Richtung: die alte Karte geht nach oben weg, die neue
+        kommt von unten nach. Das ist dieselbe Geste wie beim Weiterblaettern in
+        einer Liste, und die Folien SIND eine Liste („Tipp 3 von 5").
+        Der Auftritt beginnt 120 ms vor dem Ende des Abgangs. 2026-07-08 war das
+        Ueberlappen einmal verboten worden (Wolf: „alte+neue Card ueberlappen"),
+        aber der Grund dafuer war nicht die Ueberlappung, sondern dass die alte
+        Karte im Weggehen noch einmal loslegte und deshalb gar nicht wie eine
+        abgehende Karte aussah. Das ist mit `exitChildren` behoben.
+        Die alte Strecke: 220 ms Abgang, dann 220 ms Pause bis der Auftritt
+        begann, dann 340 ms. Fast 200 ms davon war rechts einfach nichts. */}
     <SlotTransition
       slotKey={String(slotIndex)}
-      exitAnimation="qqFRSlamOutDown 0.22s cubic-bezier(0.4, 0, 0.7, 0.3) both"
-      exitMs={220}
-      // 2026-07-08 (Wolf-Livetest 'alte+neue Card ueberlappen'): Enter erst NACH
-      // dem Exit (0.22s delay) + richtungs-Slide von unten statt in-place-Pop,
-      // damit die neue Card nicht auf der noch fadenden alten sitzt.
-      enterAnimation="qqFRSlotEnterV2 0.34s cubic-bezier(0.34, 1.36, 0.64, 1) 0.22s both"
+      exitAnimation="qqFRTippAb 0.18s cubic-bezier(0.4, 0, 1, 1) both"
+      exitMs={180}
+      // Der Auftritt beginnt 30 ms vor dem Ende des Abgangs. Gemessen: bei
+      // 120 ms Vorlauf waren beide Karten fuer ein Bild gleichzeitig LESBAR,
+      // und zwei lesbare Karten uebereinander sind ein Fehlerbild. 30 ms
+      // reichen, damit rechts nie nichts steht, und beide sind in dem Moment
+      // unter einem Fuenftel Deckkraft.
+      enterAnimation="qqFRTippAn 0.32s cubic-bezier(0.22, 1.08, 0.36, 1) 0.15s both"
+      exitChildren={renderSlot(slot, true)}
     >
       {renderSlot(slot)}
     </SlotTransition>
@@ -1029,6 +1075,23 @@ function FinalRevealSharedKeyframes() {
          Exit-Anim deutlich schneller (0.35→0.20s) + dramatic scale-down
          + blur, damit die alte Card schnell unsichtbar wird bevor die neue
          ihre Drumroll startet. */
+      /* 2026-08-25: Tipp-Wechsel auf EINER Achse. Die alte Karte geht nach
+         oben weg, die neue kommt von unten nach.
+         Kein Weichzeichner mehr im Abgang: auf 2,8 m Bildbreite liest sich
+         eine unscharfe Karte nicht als „weg", sondern als „unscharf", und auf
+         dieser Groesse kostet er eine ganze Rasterebene.
+         (Hier standen die Klammern des Weichzeichners einmal als Codezeichen.
+         Dieser ganze Block ist ein Template-Literal - ein Backtick im
+         Kommentar beendet es, und die Datei ist ab hier kaputt.) */
+      @keyframes qqFRTippAb {
+        from { opacity: 1; transform: translateY(0)   scale(1); }
+        to   { opacity: 0; transform: translateY(-9%) scale(0.94); }
+      }
+      @keyframes qqFRTippAn {
+        0%   { opacity: 0; transform: translateY(16%) scale(0.965); }
+        55%  { opacity: 1; }
+        100% { opacity: 1; transform: translateY(0)   scale(1); }
+      }
       @keyframes qqFRSlamOutDown {
         0%   { opacity: 1; transform: scale(1)    translateY(0);   filter: blur(0); }
         100% { opacity: 0; transform: scale(0.82) translateY(-8%); filter: blur(4px); }
@@ -1292,12 +1355,19 @@ function TitleHoldSlide({ lang }: { lang: 'de' | 'en' }) {
 
 
 // ─── BetRevealSlide ─────────────────────────────────────────────────────────
-function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
+function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode, eingefroren = false }: {
   team?: QQTeam;
   resolution: import('../../../shared/quarterQuizTypes').QQFinalBetResolution | null;
   allTeams: QQTeam[];
   lang: 'de' | 'en';
   eurovisionMode?: boolean;
+  /**
+   * Die Fassung fuer den Abgang: Endzustand, kein Slot-Machine-Lauf, kein Ton,
+   * keine Auftritts-Animationen der einzelnen Teile. Siehe `exitChildren` in
+   * `SlotTransition`. Eine abgehende Karte, die noch einmal loslegt, sieht aus
+   * wie ein Fehler, nicht wie ein Abgang.
+   */
+  eingefroren?: boolean;
 }) {
   // 2026-06-29 (Wolf 'kein Flip mehr — Slot-Machine'): Die Karte steht von
   // Anfang an (das tippende Team ist oben sofort sichtbar). Nur das GETIPPTE
@@ -1308,7 +1378,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
   const [spinTeam, setSpinTeam] = useState<QQTeam | null>(null);
   const [locked, setLocked] = useState(false);
   useEffect(() => {
-    if (!team) return;
+    if (!team || eingefroren) return;
     const tgt = resolution?.targetTeamId ? allTeams.find(t => t.id === resolution.targetTeamId) : null;
     if (!tgt) { setSpinTeam(null); setLocked(true); return; }
     setLocked(false);
@@ -1351,8 +1421,14 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
 
   // Slot-Chip-Inhalt: während des Spins das aktuell durchrasselnde Team, nach
   // dem Lock das echte Target. Farbe (Chip-BG/Border) folgt mit.
-  const chipTeam = locked ? targetTeam : (spinTeam ?? targetTeam);
+  const chipTeam = (locked || eingefroren) ? targetTeam : (spinTeam ?? targetTeam);
   const chipColor = chipTeam?.color ?? team.color;
+  // `steht` heisst „das Ergebnis ist zu sehen" - beim echten Lauf nach dem
+  // Einrasten, beim eingefrorenen Abgang von Anfang an. `an()` liefert die
+  // Auftritts-Animation eines Kartenteils, im Abgang nichts: eine Karte, deren
+  // Teile im Weggehen noch einmal einfliegen, wirkt kaputt.
+  const steht = locked || eingefroren;
+  const an = (kurz: string) => (eingefroren ? undefined : kurz);
 
   return (
     <div style={{
@@ -1411,7 +1487,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
               padding: '22px 36px', borderRadius: 18,
               background: 'var(--qq-surface)',
               border: '1.5px solid var(--qq-hairline)',
-              animation: 'qqFRTitleIn 0.6s ease 0.2s both',
+              animation: an('qqFRTitleIn 0.6s ease 0.2s both'),
             }}>
               {/* 2026-08-23: hier stand ein Em-Dash als Grafik. Em-Dashes sind
                   im Projekt raus, und die Zeile darunter sagt dasselbe. */}
@@ -1447,11 +1523,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 width: 'clamp(240px, 28cqw, 380px)', maxWidth: '100%',
                 background: istBuehne ? 'rgba(246,239,230,0.05)' : `${chipColor}1a`,
                 border: istBuehne ? '2px solid var(--qq-hairline)' : `2.5px solid ${chipColor}`,
-                boxShadow: (locked && !istBuehne) ? `0 0 30px ${chipColor}77` : 'none',
+                boxShadow: (steht && !istBuehne) ? `0 0 30px ${chipColor}77` : 'none',
                 transition: 'background 0.18s ease, border-color 0.18s ease, box-shadow 0.35s ease',
               }}>
                 <div style={{ position: 'relative', display: 'flex' }}>
-                  {locked && (
+                  {locked && !eingefroren && (
                     <span aria-hidden style={{
                       position: 'absolute', left: '50%', top: '50%',
                       width: 'clamp(76px, 7.4cqw, 108px)', height: 'clamp(76px, 7.4cqw, 108px)',
@@ -1463,7 +1539,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     key={(chipTeam ?? targetTeam).id}
                     avatarId={(chipTeam ?? targetTeam).avatarId} teamEmoji={(chipTeam ?? targetTeam).emoji}
                     size={'clamp(76px, 7.4cqw, 108px)'} bgColor={chipColor}
-                    style={{ animation: locked ? 'qqBetLockPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : undefined }}
+                    style={{ animation: (locked && !eingefroren) ? 'qqBetLockPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : undefined }}
                   />
                 </div>
                 {/* Name-Slot mit reservierter Höhe → kein Reflow beim Lock */}
@@ -1471,7 +1547,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                   minHeight: 'clamp(38px, 4.4cqh, 68px)', width: '100%',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                 }}>
-                  {locked ? (
+                  {steht ? (
                     <TeamNameLabel
                       name={targetTeam.name}
                       fontSize="clamp(24px, 2.5cqw, 38px)"
@@ -1479,7 +1555,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                       fontWeight={900}
                       maxLines={2}
                       shrinkAfter={12}
-                      style={{ textAlign: 'center', animation: 'qqFRTitleIn 0.4s ease both' }}
+                      style={{ textAlign: 'center', animation: an('qqFRTitleIn 0.4s ease both') }}
                     />
                   ) : (
                     <div style={{
@@ -1497,11 +1573,11 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                 display: 'flex', flexDirection: 'column', alignItems: 'center',
                 justifyContent: 'flex-start', gap: 'clamp(10px, 1.4cqh, 18px)',
               }}>
-                {locked && isMutual && (
+                {steht && isMutual && (
                   <div style={{
                     fontSize: 'clamp(17px, 1.7cqw, 26px)', fontWeight: 800,
                     color: sympathyColor, display: 'flex', alignItems: 'center', gap: 8,
-                    animation: 'qqFRTitleIn 0.6s ease 0.28s both',
+                    animation: an('qqFRTitleIn 0.6s ease 0.28s both'),
                   }}>
                     {/* 2026-08-23 (2a): das Herz war ein rohes Systemzeichen und
                         wurde auf jedem Rechner anders gemalt. Im gelieferten Set
@@ -1511,10 +1587,10 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     {de ? '+ Sympathie-Bonus' : '+ Sympathy bonus'}
                   </div>
                 )}
-                {locked && (isZero ? (
+                {steht && (isZero ? (
                   <div style={{
                     display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-                    animation: 'qqFRTitleIn 0.7s ease 0.5s both',
+                    animation: an('qqFRTitleIn 0.7s ease 0.5s both'),
                   }}>
                     {/* 2026-08-23 (2a): das Traenen-Smiley war ein Systemzeichen.
                         Es bekommt keinen Ersatz: „oooh …" und die Zeile darunter
@@ -1523,7 +1599,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     {!istBuehne && (
                       <div style={{
                         fontSize: 'clamp(48px, 5.8cqw, 92px)', lineHeight: 1,
-                        animation: 'qqFROohBob 1.6s ease-in-out 0.5s infinite',
+                        animation: an('qqFROohBob 1.6s ease-in-out 0.5s infinite'),
                       }}>🥲</div>
                     )}
                     <div style={{
@@ -1551,7 +1627,7 @@ function BetRevealSlide({ team, resolution, allTeams, lang, eurovisionMode }: {
                     fontSize: 'clamp(44px, 5.4cqw, 88px)', fontWeight: 900,
                     color: QQ_COLORS.green500, letterSpacing: '-0.02em',
                     lineHeight: 1,
-                    animation: 'qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 0.5s both',
+                    animation: an('qqFRTitleIn 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) 0.5s both'),
                   }}>
                     + {totalBonus}
                   </div>
@@ -1670,10 +1746,18 @@ function AwardHeroSlide({ awardIndex, state: s, lang }: {
 // Tonalität: warm-bedauernd, nicht spöttisch — keine großen 🥲-Drama-Avatare,
 // stattdessen mittlere Avatare in Reihe, klein-statt-groß-im-Spotlight.
 // Erscheint VOR den Positiv-Teams (Crescendo: schwach → stark).
-function BetZeroGroupSlide({ teams, lang }: {
+function BetZeroGroupSlide({ teams, lang, eingefroren = false }: {
   teams: QQTeam[]; lang: 'de' | 'en';
+  /** Fassung fuer den Abgang: fertig aufgebaut, ohne Auftritt. Siehe
+   *  `exitChildren` in `SlotTransition`. */
+  eingefroren?: boolean;
 }) {
   const de = lang === 'de';
+  // ⚠️ Die Teile hier stehen auf `opacity: 0` und werden erst von ihrer
+  // Auftritts-Animation sichtbar (`both`). Wer die Animation weglaesst, muss
+  // die Deckkraft also mitliefern, sonst ist die abgehende Folie unsichtbar.
+  const an = (kurz: string) => (eingefroren ? undefined : kurz);
+  const deck = eingefroren ? 1 : 0;
   const N = teams.length;
   const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // Avatar-Größe skaliert mit Team-Anzahl
@@ -1695,7 +1779,7 @@ function BetZeroGroupSlide({ teams, lang }: {
         fontSize: istBuehne ? 'clamp(16px, 1.7cqw, 28px)' : 'clamp(13px, 1.4cqw, 22px)',
         fontWeight: 900,
         color: 'var(--qq-text-muted)', textTransform: 'uppercase', letterSpacing: '0.18em',
-        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both',
+        animation: an('qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) both'),
       }}>
         {/* 2026-08-23: rohes Systemzeichen raus, geliefertes Set rein. */}
         <QQEmojiIcon emoji="🎯" size="1em" /> {de ? 'Tipps abgegeben' : 'Tips placed'}
@@ -1706,7 +1790,7 @@ function BetZeroGroupSlide({ teams, lang }: {
         // 2026-08-23: der weite Schein hinter der Ueberschrift weicht auf
         // Projektionsdistanz die Kante der Schrift auf und sagt nichts.
         textShadow: istBuehne ? 'none' : '0 0 28px rgba(var(--qq-accent-rgb),0.35)',
-        animation: 'qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both',
+        animation: an('qqFRTitleIn 0.7s cubic-bezier(0.2, 0.85, 0.3, 1) 0.1s both'),
         maxWidth: '92cqw',
       }}>{de
         ? 'Diese Teams haben mitgetippt'
@@ -1720,8 +1804,8 @@ function BetZeroGroupSlide({ teams, lang }: {
         {teams.map((t, i) => (
           <div key={t.id} style={{
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-            animation: `qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.25 + i * 0.10}s both`,
-            opacity: 0,
+            animation: an(`qqFRSlamFromTop 0.8s cubic-bezier(0.34, 1.46, 0.64, 1) ${0.25 + i * 0.10}s both`),
+            opacity: deck,
           }}>
             {/* 2026-05-25 v3 (Wolf 'so ist die zugehörigkeit nicht eindeutig'):
                 Outer-Ring raus — der Avatar selbst bekommt jetzt team.color
@@ -1756,8 +1840,8 @@ function BetZeroGroupSlide({ teams, lang }: {
         fontSize: istBuehne ? 'clamp(18px, 1.8cqw, 28px)' : 'clamp(15px, 1.5cqw, 22px)',
         color: 'var(--qq-text-muted)',
         fontStyle: istBuehne ? 'normal' : 'italic', textAlign: 'center',
-        animation: `qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`,
-        opacity: 0,
+        animation: an(`qqFRTitleIn 0.6s ease ${0.25 + N * 0.10 + 0.4}s both`),
+        opacity: deck,
       }}>
         {de ? 'Schade, der Tipp ging daneben ' : 'Tough luck, the tip went sideways '}
         <QQEmojiIcon emoji="🤞" size="1em" />

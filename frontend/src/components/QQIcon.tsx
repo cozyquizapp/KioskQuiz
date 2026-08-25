@@ -150,7 +150,10 @@ export type QQIconSlug =
   // `fx-alliance`, die zwei ineinander gehaengten Ringe. Das ist Buendnis, ein
   // anderes Wort, und es wird anderswo gebraucht.
   | 'fx-fairplay'          // Schiedsrichterpfeife. Steht auf der Fair-Play-Folie
-  | 'fx-fairplay-phone'    // Handy mit dem Bildschirm nach unten. Zweite Fassung
+  // Es gab eine zweite Fassung, ein Handy mit dem Bildschirm nach unten. Wolf
+  // am 25.08.: „fx fairplay phone kann weg". Die Pfeife traegt die Folie, und
+  // eine zweite Fassung ohne Platz ist nur ein Slug, der irgendwann jemanden
+  // zu der Frage verleitet, wo sie denn hin soll. Datei ist geloescht.
   | 'react-applause'
   | 'react-fire'
   | 'react-shock'
@@ -208,7 +211,6 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-rules':          '📖',
   'fx-wheel-pointer':  '🔻',
   'fx-fairplay':       '🤝',
-  'fx-fairplay-phone': '📵',
   'fx-shield-faction': '🛡️',
   'rocket':            '🚀',
   'anker':             '⚓',

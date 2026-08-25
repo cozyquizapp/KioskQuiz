@@ -1,6 +1,6 @@
 // 2026-08-22 — CozyQuiz Avatar Set: Wolfs Objekt-Avatare zum Buehnen-Design 2a.
 //
-// 48 PNGs unter /avatars/cozyquiz/<slug>.png. Seit 2026-08-25 der HD-Satz:
+// 48 Motive unter /avatars/cozyquiz/. Seit 2026-08-25 der HD-Satz:
 // 1024², RGBA, unveraendert so eingebaut, wie Wolf ihn geliefert hat — nicht
 // getrimmt, nicht neu skaliert, nicht durch sharp gelaufen. Der Eigenschatten
 // steckt im Alpha, deshalb setzt QQTeamAvatar auf diesen Satz KEINEN
@@ -121,9 +121,24 @@ export function isCozyQuizSlug(s: string | undefined | null): s is string {
   return !!s && SLUG_SET.has(s);
 }
 
-/** Bildpfad zu einem Slug. */
+/**
+ * Bildpfad zu einem Slug.
+ *
+ * 2026-08-25 (Wolf: „kannst hd satz komprimieren, solange die qualitaet so
+ * bleibt"): ausgeliefert wird WebP, verlustfrei. Das ist woertlich zu nehmen -
+ * gemessen ueber alle 48 Motive, auf dunklem und auf gesaettigtem Grund, bei
+ * 828 px Anzeigegroesse: Abweichung 0 von 255. Kein einziges Pixel anders,
+ * nur ein besser gepackter Behaelter. Spart 34 Prozent (31 MB auf 21 MB).
+ *
+ * Die PNG bleiben im selben Ordner liegen. Sie sind Wolfs Originallieferung
+ * und die Grundlage, auf der die Mess-Skripte arbeiten
+ * (measure-avatar-fill, pruef-avatar-ausrisse). Ausgeliefert wird davon nichts
+ * mehr, es fragt sie niemand ab.
+ *
+ * Erzeugt mit `node scripts/avatare-packen.mjs --schreib`.
+ */
 export function cozyQuizSrc(slug: string): string {
-  return `/avatars/cozyquiz/${slug}.png`;
+  return `/avatars/cozyquiz/${slug}.webp`;
 }
 
 /** Anzeige-Label, Fallback = Slug. */

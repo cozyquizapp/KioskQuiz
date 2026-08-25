@@ -256,16 +256,28 @@ return {
   // weitergeschaltet, BIS der Turm da ist, und nicht n mal blind. Danach setzt
   // eine Serie sofort an, ohne Wartezeit: die Bewegung faengt an, sobald die
   // Folie steht, und eine feste Ruhezeit haette sie halb verpasst.
-  turmfinale: { ruhe: 500, aufbau: 'spiel', weg: async (h) => {
-    await h.springe('final-reveal'); await sleep(700);
-    for (let i = 0; i < 24; i++) {
-      const da = await h.seite().evaluate(() => !!document.body.innerText.match(/höchsten Turm|tallest tower/));
-      if (da) return;
-      await h.emit('qq:nextQuestion');
-      await sleep(700);
-    }
-    console.log('  Turm-Finale nicht erreicht.');
-  } },
+  // 2026-08-24: Anlauf und Ausloeser getrennt, damit motion.mjs den FALL
+  // filmen kann und nicht das Hinnavigieren. `vor` faehrt bis EINEN Schritt
+  // vor das Turm-Finale, `weg` schickt genau diesen Schritt - der Einbau der
+  // Ansicht (und damit der Fall) liegt dann in der Aufnahme.
+  turmfinale: {
+    ruhe: 6000, aufbau: 'spiel',
+    vor: async (h) => {
+      await h.springe('final-reveal'); await sleep(700);
+      for (let i = 0; i < 24; i++) {
+        const da = await h.seite().evaluate(() => !!document.body.innerText.match(/höchsten Turm|tallest tower/));
+        if (da) return;
+        // Einen Schritt vor dem Ziel anhalten: der naechste waere der, der die
+        // Ansicht einbaut. Erkennbar daran, dass die Vorschau der letzten
+        // Frage schon steht - hier reicht das Zaehlen, gemessen sind es fuenf.
+        if (i >= 4) return;
+        await h.emit('qq:nextQuestion');
+        await sleep(700);
+      }
+    },
+    vorRuhe: 900,
+    weg: async (h) => { await h.emit('qq:nextQuestion'); },
+  },
   danke:      { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.springe('final-reveal'); await sleep(900);
     for (let i = 0; i < 20; i++) {

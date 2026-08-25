@@ -1166,7 +1166,19 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
             // laeuft, und was zu ihr gehoert.
             // `displayGpi` kann waehrend des Uebergangs 0 werden (prevIdx vor
             // Runde 1), deshalb der Boden bei 1.
-            onlyPhase={istBuehneP() ? (Math.max(1, displayGpi ?? 1) as QQGamePhaseIndex) : null}
+            // 2026-08-25 (Wolf: „waehrend runde x da steht hat man eigentlich
+            // den ganzen progress tree gesehen, erst in der naechsten zoom
+            // stufe nur runde x spezifisch"). Stimmt, und mein Fix vom 24.08.
+            // hat die Reise kaputtgemacht: `onlyPhase` stand ueber ALLE Stufen,
+            // also zeigte schon die erste Stufe nur noch die laufende Runde.
+            // Damit war die Kamerafahrt von Stufe 0 nach 1 eine Fahrt von
+            // nichts nach nichts - es gab keinen Abend mehr, aus dem man
+            // heranfahren konnte.
+            // Jetzt haengt es an derselben Stufe wie die Kamera: Stufe 0 zeigt
+            // den ganzen Abend, ab Stufe 1 nur die Runde, die gleich laeuft.
+            onlyPhase={(istBuehneP() && zoomStep >= 1)
+              ? (Math.max(1, displayGpi ?? 1) as QQGamePhaseIndex)
+              : null}
           />
         </div>
       </div>

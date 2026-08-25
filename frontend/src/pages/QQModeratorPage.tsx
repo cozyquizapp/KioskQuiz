@@ -12,8 +12,9 @@ import {
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
 // shared/qqFinalReveal.ts). Ersetzt das alte betSlotsCount+4 (3 feste Awards).
-import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat } from '../../../shared/qqFinalReveal';
-import { qqTurmBeatDauer, qqTurmAwardBeatDauer } from '../components/CozyQuizTowerFinaleV2';
+import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqTurmRennplan } from '../../../shared/qqFinalReveal';
+import { qqTurmBeatDauer, qqTurmAwardBeatDauer, qqTurmRennBeatDauer } from '../components/CozyQuizTowerFinaleV2';
+import { qqFinalSortedTeams } from '../utils/qqFinalScore';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -1223,13 +1224,24 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // baut.
             const beatListe = qqTowerAwardBeats(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins);
             delayMs = qqTurmAwardBeatDauer(beatListe[beat - 1]?.bonus ?? 1);
-          } else if (beat === awardCount + 1) {
-            // Top-3 gleiten anonym in die Mitte.
-            delayMs = 3800;
+          } else if (beat === towerMaxBeat) {
+            // Die eigene Siegerfolie, mit langer Celebration.
+            delayMs = 8000;
           } else {
-            // Reveal Platz 3→2→1; Krone (letzter Beat) bekommt lange Celebration.
-            const isCrown = beat === towerMaxBeat;
-            delayMs = isCrown ? 8000 : 3400;
+            // ── Das Rennen ────────────────────────────────────────────────
+            // 2026-08-25 (Wolf: „immer nur eine kachel bauen ... nacheinander
+            // fliegen die raus die nicht mitkommen"). Vier Beats, und jeder
+            // dauert so lange, wie er Bausteine setzt. Vorher standen hier
+            // feste 3800 und 3400 ms - mit einem Rennen, dessen Laenge am
+            // Wett-Bonus haengt, waere das Steuerpult mal zu schnell und mal
+            // zu langsam. Die Takte kommen aus derselben Rechnung, aus der
+            // der Beamer sie baut (`qqTurmRennplan` in shared).
+            const tipp: Record<string, number> = {};
+            for (const t of s.teams) tipp[t.id] = s.finalBetResolution?.[t.id]?.totalBonus ?? 0;
+            const plan = qqTurmRennplan(qqFinalSortedTeams(s).map(t => t.id), tipp);
+            const etappe = beat - (awardCount + 1);   // 0..3
+            const marken = [0, plan.raus, plan.dritter, plan.zweiter, plan.erster];
+            delayMs = qqTurmRennBeatDauer(marken[etappe] ?? 0, marken[etappe + 1] ?? 0);
           }
           action = () => emit('qq:nextQuestion', { roomCode });
         }

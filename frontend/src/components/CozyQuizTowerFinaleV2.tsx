@@ -30,14 +30,31 @@ import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { qqLargestClusterCells, type ClusterKachel } from '../utils/qqLargestCluster';
-import { qqTowerAwardBeats, type QQTowerAwardBeat } from '../../../shared/qqFinalReveal';
+import { qqTowerAwardBeats, qqTurmRennplan, type QQTowerAwardBeat } from '../../../shared/qqFinalReveal';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { holeBrettQuelle, vergissBrettQuelle } from '../qqBrettUebergabe';
 import {
   playWoodKnock, playClimaxFinish, playFanfare, playTick, playReveal, playSpecialAwardReveal,
 } from '../utils/sounds';
 
-export type TowerTeam = { team: QQTeam; base: number };
+/**
+ * Ein Turm in Teilen. `base` ist der Sockel, der aus dem BRETT kommt (das
+ * groesste zusammenhaengende Gebiet), `tipp` sind die Bausteine aus der
+ * Final-Wette.
+ *
+ * 2026-08-25 (Wolf: „aber es ist weird erst tuerme zu haben, dann wieder auf
+ * 0? ... wenn dann wuerde ich immer nur eine kachel bauen, solange bis das
+ * letzte team raus ist (fliegt raus)"). Bis hierher steckte der Tipp-Bonus mit
+ * im Sockel und fiel nach dem Brettfall stumm nach, und ganz am Ende fielen
+ * die drei Spitzentuerme auf null zurueck, um noch einmal zu klettern. Beides
+ * ist raus: der Tipp ist jetzt der Einsatz IM RENNEN und faellt zuletzt.
+ *
+ * Warum ausgerechnet der Tipp: durchgerechnet ueber 4000 Abende
+ * (scratchpad/rennen.mjs) dreht er in 41 Prozent der Abende den Sieg, und in
+ * 69 Prozent trennt Sieger und Zweiten am Ende hoechstens ein Baustein. Was
+ * zuletzt faellt, soll das sein, was auch entscheidet.
+ */
+export type TowerTeam = { team: QQTeam; base: number; tipp: number };
 /**
  * Das Brett, aus dem die Tuerme gebaut werden.
  * `kachelnProTeam` sind die Felder des GROESSTEN Gebiets - nur die fliegen,
@@ -59,13 +76,15 @@ export type TowerAward = { key: string; label: string; labelEn?: string; slug: Q
 export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; awards: TowerAward[]; brett: TowerBrett } {
   const ap = qqAwardPoints(s);
   const cp = qqCozyPoints(s);
-  // Der Sockel ist alles, was NICHT als eigener Baustein einfliegt: Brett und
-  // Wetten-Bonus. Awards und CozyGame-Punkte kommen als Steine dazu, sonst
-  // zaehlten sie doppelt.
-  const teams: TowerTeam[] = s.teams.map(t => ({
-    team: t,
-    base: qqFinalTotal(s, t.id, ap) - (ap[t.id] ?? 0) - (cp[t.id] ?? 0),
-  }));
+  // Der Sockel ist genau das, was aus dem Brett fliegt: das groesste Gebiet.
+  // Alles andere kommt als eigener Baustein dazu - CozyGames und Awards in
+  // ihren Zeremonien, der Tipp-Bonus zuletzt im Rennen. Zusammen ergibt das
+  // wieder qqFinalTotal, nichts zaehlt doppelt.
+  const teams: TowerTeam[] = s.teams.map(t => {
+    const gesamt = qqFinalTotal(s, t.id, ap);
+    const tipp = s.finalBetResolution?.[t.id]?.totalBonus ?? 0;
+    return { team: t, base: gesamt - (ap[t.id] ?? 0) - (cp[t.id] ?? 0) - tipp, tipp };
+  });
   // 2026-08-25 (Wolf: „sie kommen bei der siegerehrung dazu wie die awards"):
   // die CozyGame-Punkte laufen zuerst ein, ein Beat je Team mit Siegen. Sie
   // sind der bekannte Teil - der Saal hat die Spiele gesehen -, die Awards
@@ -168,6 +187,24 @@ export function qqTurmAwardBeatDauer(bonus: number): number {
   return AWARD_KARTE + AWARD_TICK_ERST + Math.max(0, bonus - 1) * AWARD_TICK + 1200;
 }
 
+/** Wie lange EIN Baustein im Rennen braucht, wenn danach noch `uebrig` Steine
+ *  bis zum Etappenziel kommen. Zum Ende hin wird gebremst: genau da entscheidet
+ *  sich, wer stehenbleibt. Dieselbe Treppe steht im Renn-Effekt. */
+function rennSchritt(uebrig: number): number {
+  return uebrig <= 1 ? 900 : uebrig === 2 ? 620 : uebrig === 3 ? 460 : 300;
+}
+/**
+ * Wie lange ein Renn-Beat am Stueck laeuft, von Takt `von` bis Takt `bis`.
+ * Das Steuerpult holt sich die Dauer hier, statt sie nachzubauen - der Beamer
+ * bremst zum Etappenende hin, und ein Autoplay mit fester Zahl liefe ihm davon.
+ * Der Zuschlag ist die Atempause, in der der Platz faellt.
+ */
+export function qqTurmRennBeatDauer(von: number, bis: number): number {
+  let ms = 0;
+  for (let uebrig = Math.max(0, bis - von); uebrig >= 1; uebrig--) ms += rennSchritt(uebrig);
+  return ms + 1400;
+}
+
 const TITLE_H = 118;
 const CROWN_H = 96;
 const BASE_H = 96;
@@ -214,7 +251,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     for (const a of awards) m[a.teamId] = (m[a.teamId] ?? 0) + a.bonus;
     return m;
   }, [awards]);
-  const totalOf = useCallback((id: string) => baseOf(id) + (bonusByTeam[id] ?? 0), [baseOf, bonusByTeam]);
+  const tippOf = useCallback((id: string) => teams.find(t => t.team.id === id)?.tipp ?? 0, [teams]);
+  /** Stand VOR dem Rennen: Brett-Gebiet plus alle Award-Bausteine. */
+  const sockelOf = useCallback((id: string) => baseOf(id) + (bonusByTeam[id] ?? 0), [baseOf, bonusByTeam]);
+  const totalOf = useCallback((id: string) => sockelOf(id) + tippOf(id), [sockelOf, tippOf]);
   // 2026-08-23 (Wolf: „die kacheln fuer sonderpreise ist ein stern? ist das
   // extra?"). Der Stern war Absicht, aber die schwaechere Loesung: er sagt nur
   // DASS es ein Award war, nicht WELCHER. Die drei Awards haben eigene Zeichen
@@ -329,19 +369,28 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const [awardStage, setAwardStage] = useState<'card' | 'grow'>('card');
   const [awardTick, setAwardTick] = useState(0);
   const [revealStep, setRevealStep] = useState(reduce ? 3 : 0); // 0 = niemand, 1..3 = Platz 3..1
-  const [glided, setGlided] = useState(reduce); // Top-3 in der Mitte (nach Recede-Beat)
-  // 2026-07-31 (Wolf 'das kopf an kopf unter der top 3 muss spannender
-  // choreografiert werden'): die Top-3 fallen beim Glide auf null zurueck und
-  // bauen GLEICHZEITIG neu auf. Namen und Farben sind dabei offen — das
-  // Ratespiel „wer steckt hinter der grauen Saeule" war der schwache Teil.
-  // Die Spannung kommt stattdessen daher, dass niemand die Zielhoehen kennt:
-  // man sieht drei Tuerme klettern und weiss nicht, wann welcher stehenbleibt.
-  // Wer zuerst stoppt, ist Dritter. Der Letzte waechst allein weiter.
-  const [duelTick, setDuelTick] = useState(reduce ? Number.MAX_SAFE_INTEGER : 0);
-  // Ist der Dritte schon abgetreten? Siehe die Geometrie der Finalisten weiter
-  // unten. Bei abgeschalteter Bewegung tritt niemand ab: dort gibt es kein
-  // Wettklettern, und ein verschwundener Turm waere dann nur ein fehlender.
-  const [dritterWeg, setDritterWeg] = useState(false);
+  // ── Das Rennen ────────────────────────────────────────────────────────────
+  // 2026-08-25 (Wolf: „aber es ist weird erst tuerme zu haben, dann wieder auf
+  // 0? oder? ... wenn dann wuerde ich immer nur eine kachel bauen, solange bis
+  // das letzte team raus ist (fliegt raus) dann weiter bauen, nacheinander
+  // fliegen die raus die nicht mitkommen? am ende sind nur 2 uebrig").
+  //
+  // Er hat recht, und es war der letzte harte Schnitt im Finale: die drei
+  // Spitzentuerme fielen beim Glide auf null zurueck und bauten sich noch
+  // einmal auf. Ein Turm, der gerade gebaut wurde und dann wieder bei null
+  // steht, nimmt seine eigene Aussage zurueck.
+  //
+  // Jetzt gibt es keinen Ruecksetzer mehr. Alle acht Tuerme stehen auf ihrem
+  // Sockel (Brett + Awards), und dann faellt Takt fuer Takt EIN Tipp-Baustein
+  // bei jedem, der noch welche hat. Wer leer ist und ueberholt wird, fliegt
+  // raus. Am Ende stehen zwei, dann einer.
+  //
+  // Nachgerechnet ueber 4000 Abende (scratchpad/rennen.mjs): das Rennen laeuft
+  // im Schnitt 4,3 Takte, es gibt dabei 1,8 echte Ueberholvorgaenge, und die
+  // Teams scheiden ueber alle Takte verteilt aus (0,5 / 1,2 / 2,0 / 2,0 / 0,9).
+  // Die naheliegende Variante - alle bei null anfangen lassen - waere 11,9
+  // Takte lang gewesen, davon die ersten 6,5 ohne ein einziges Ausscheiden.
+  const [rennTick, setRennTick] = useState(reduce ? Number.MAX_SAFE_INTEGER : 0);
 
   /**
    * Der Flugplan. Pro Team seine Gebiets-Kacheln in LANDEREIHENFOLGE: unterste
@@ -382,6 +431,9 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const maxBase = useMemo(() => Math.max(1, ...teams.map(t => t.base)), [teams]);
 
   // Platzierungs-Badge (🥉/🥈/Krone): erscheint, wenn dieser Turm stehenbleibt.
+  // ⚠️ Der Sieger (rank 0) haengt zusaetzlich am letzten Baustein, siehe
+  // `crowned` weiter unten - deshalb wird `revealed` dort noch einmal
+  // eingeschraenkt, statt hier schon alles zu wissen.
   const revealed = useCallback((rank: number) =>
     rank > 2 ? true : (phase === 'reveal' && revealStep >= (3 - rank)),
   [phase, revealStep]);
@@ -402,20 +454,39 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Das ist auch die ehrlichere Luecke: zwischen Platz eins und drei liegen
   // meist ein, zwei Bausteine, und die zaehlt auf zehn Metern niemand mit.
 
-  // Zielhoehen der drei Finalisten, aufsteigend: erst faellt Platz 3, dann 2.
-  // ⚠️ finalRanking, NICHT ordered — `ordered` ist die Spalten-Anordnung auf der
-  // Buehne (hash-gemischt, damit die Reihenfolge nichts verraet). Mit `ordered`
-  // waeren hier drei zufaellige Teams gelandet und alle Tuerme haetten auf
-  // derselben Hoehe gestoppt.
-  const duelTargets = useMemo(() => {
-    const t = finalRanking.slice(0, 3).map(x => totalOf(x.team.id)).sort((a, b) => a - b);
-    return { third: t[0] ?? 0, second: t[1] ?? t[0] ?? 0, first: t[2] ?? t[1] ?? t[0] ?? 0 };
-  }, [finalRanking, totalOf]);
+  // ── Der Rennplan ──────────────────────────────────────────────────────────
+  // Ein Team ist FERTIG, wenn seine Tipp-Bausteine aufgebraucht sind, also nach
+  // `tipp` Takten. Danach kann es nur noch zusehen. Wann es RAUSFLIEGT, haengt
+  // an seinem Platz, nicht am Takt: die Plaetze 4 und tiefer verlassen die
+  // Buehne im ersten Renn-Beat, sobald sie fertig sind (einer nach dem
+  // anderen, das ist die Staffelung, die Wolf beschrieben hat). Platz 3 und
+  // Platz 2 gehen erst, wenn ihr Beat sie freigibt - sonst waere die Pille mit
+  // dem Platz weg, bevor sie jemand gelesen hat.
+  //
+  // ⚠️ finalRanking, NICHT ordered - `ordered` ist die Spalten-Anordnung auf der
+  // Buehne (hash-gemischt, damit die Reihenfolge nichts verraet).
+  const rennZiele = useMemo(() => qqTurmRennplan(
+    finalRanking.map(x => x.team.id),
+    Object.fromEntries(teams.map(t => [t.team.id, t.tipp])),
+  ), [finalRanking, teams]);
 
-  /** Bis wohin darf in diesem Beat geklettert werden? */
-  const duelTargetFor = useCallback((step: number) =>
-    step <= 0 ? duelTargets.third : step === 1 ? duelTargets.second : duelTargets.first,
-  [duelTargets]);
+  /** Bis zu welchem Takt darf in diesem Beat gebaut werden? */
+  const rennZielFuer = useCallback((step: number) =>
+    step <= 0 ? rennZiele.raus : step === 1 ? rennZiele.dritter : step === 2 ? rennZiele.zweiter : rennZiele.erster,
+  [rennZiele]);
+
+  /** Steht dieser Turm noch auf der Buehne? */
+  const nochDrin = useCallback((id: string) => {
+    const rank = rankById[id];
+    if (rank == null) return true;
+    // Das `max(1, …)` ist Absicht: ein Team ohne Tipp-Bausteine waere sonst
+    // schon bei Takt 0 weg, also bevor ueberhaupt ein Stein gefallen ist. So
+    // faellt erst der erste Stein, dann geht es.
+    if (rank >= 3) return !(phase === 'reveal' && rennTick >= Math.max(1, tippOf(id)));
+    if (rank === 2) return revealStep < 2;   // Platz 3 geht, wenn Platz 2 dran ist
+    if (rank === 1) return revealStep < 3;   // Platz 2 geht zur Kroenung
+    return true;
+  }, [rankById, phase, rennTick, tippOf, revealStep]);
 
   // Space spult vor.
   const skip = useCallback(() => {
@@ -434,15 +505,14 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
       return;
     }
     if (phase === 'reveal') {
-      if (!glided) { setGlided(true); setDuelTick(0); return; }
-      // Erst das laufende Wettklettern zu Ende bringen, dann erst den naechsten
-      // Platz freigeben. Sonst friert ein schnelles Vorspulen die Tuerme auf
-      // halber Hoehe ein und das Schlussbild zeigt falsche Staende.
-      const target = duelTargetFor(revealStep);
-      if (duelTick < target) { setDuelTick(target); return; }
+      // Erst das laufende Rennen zu Ende bringen, dann erst den naechsten Platz
+      // freigeben. Sonst friert ein schnelles Vorspulen die Tuerme auf halber
+      // Hoehe ein und das Schlussbild zeigt falsche Staende.
+      const target = rennZielFuer(revealStep);
+      if (rennTick < target) { setRennTick(target); return; }
       setRevealStep(s => Math.min(3, s + 1));
     }
-  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, glided, duelTick, revealStep, duelTargetFor, letzteWelle, LANDE_VERZUG]);
+  }, [phase, hasAwards, awardStage, awardIdx, awardTick, curAward, awards.length, rennTick, revealStep, rennZielFuer, letzteWelle, LANDE_VERZUG]);
 
   useEffect(() => {
     // Live: der Moderator steuert ueber den Socket-Step (liveBeat), nicht ueber
@@ -547,72 +617,55 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     return () => window.clearTimeout(h);
   }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length, live, wartetAuf, laeuftHinterher]);
 
-  // Enthuellung: Recede-Beat (Plaetze 4..N dimmen) → Glide in die Mitte →
-  // Wettklettern bis Platz 3 steht → bis Platz 2 steht → Sieger allein → Krone.
-  //
-  // Die Beat-Zahl folgt `qqTowerMaxBeat` in shared, damit das Streamdeck-Mapping
-  // des Moderators und der Beamer dieselbe Rechnung benutzen. Neu ist nur, was
-  // INNERHALB eines Beats passiert: statt einen Namen umzudrehen klettern die
-  // Tuerme, bis der naechste stehenbleibt.
+  // ── Das Rennen, Beat fuer Beat ────────────────────────────────────────────
+  // Takt fuer Takt faellt bei jedem Team, das noch Tipp-Bausteine hat, einer.
+  // Wer leer ist, bleibt stehen und fliegt raus. Vier Etappen, dieselbe Zahl
+  // Beats wie vorher - `qqTowerMaxBeat` in shared bleibt unveraendert, und
+  // damit auch das Streamdeck-Mapping des Steuerpults:
+  //   A+1  Rennen, bis nur noch die Top 3 stehen (die anderen fliegen raus)
+  //   A+2  weiter, bis Platz 3 stehenbleibt  → seine Pille
+  //   A+3  weiter, bis Platz 2 stehenbleibt  → seine Pille, Platz 3 tritt ab
+  //   A+4  der letzte Baustein des Siegers   → Krone, Platz 2 tritt ab
+  // (A+5 ist die eigene Siegerfolie, die haengt nicht am Turm.)
   useEffect(() => {
     if (phase !== 'reveal') return;
-    // Der Glide gehoert zum Beat nach dem letzten Award.
-    const glideBeat = awards.length + 1;
-    // Glide (Recede → Mitte) laeuft innerhalb des Glide-Beats automatisch.
-    if (!glided) {
-      const h = window.setTimeout(() => { setGlided(true); setDuelTick(0); },
-        laeuftHinterher(glideBeat) ? 0 : 1600);
-      return () => window.clearTimeout(h);
-    }
-    if (revealStep >= 3) {
-      // Sicherheitsnetz: egal wie schnell vorgespult wurde, im Schlussbild
-      // stehen die Tuerme auf ihrer echten Hoehe. Ohne das froren sie auf dem
-      // Stand des letzten Ticks ein und alle drei zeigten dieselbe Zahl.
-      if (duelTick < duelTargets.first) setDuelTick(duelTargets.first);
-      try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ }
-      return;
-    }
-
-    const target = duelTargetFor(revealStep);
-    // Liegt der Moderator schon hinter diesem Etappenziel, wird geklettert
-    // statt getickt: die Bausteine stehen sofort, der Platz wird sofort
-    // freigegeben. Sonst braucht allein eine Etappe bis zu drei Sekunden, und
-    // bei drei Etappen ist der Turm neun Sekunden hinter dem Steuerpult.
-    const meinBeat = glideBeat + 1 + revealStep;
-    if (laeuftHinterher(meinBeat) && duelTick < target) { setDuelTick(target); return; }
+    const rennBeat = awards.length + 1;
+    const target = rennZielFuer(revealStep);
+    // Liegt der Moderator schon hinter dieser Etappe, wird gebaut statt
+    // getickt: die Bausteine stehen sofort. Sonst braucht eine Etappe bis zu
+    // drei Sekunden, und bei vier Etappen ist der Turm zwoelf Sekunden hinter
+    // dem Steuerpult.
+    const meinBeat = rennBeat + revealStep;
+    if (laeuftHinterher(meinBeat) && rennTick < target) { setRennTick(target); return; }
     // 1) Noch nicht am Etappenziel → naechsten Baustein setzen.
-    if (duelTick < target) {
-      const left = target - duelTick;
+    if (rennTick < target) {
       // Bremsen zum Etappenende hin: die letzten drei Bausteine bekommen
-      // spuerbar mehr Zeit. Genau da entscheidet sich, ob einer stehenbleibt.
-      const step = left <= 1 ? 900 : left === 2 ? 620 : left === 3 ? 460 : 260;
+      // spuerbar mehr Zeit. Genau da entscheidet sich, wer stehenbleibt.
+      // Dieselbe Treppe steckt in `qqTurmRennBeatDauer` fuers Steuerpult.
+      const step = rennSchritt(target - rennTick);
       const h = window.setTimeout(() => {
-        setDuelTick(t => t + 1);
+        setRennTick(t => t + 1);
         try { playWoodKnock(); } catch { /* noop */ }
       }, step);
       return () => window.clearTimeout(h);
     }
-    // 2) Etappenziel erreicht → ein Turm bleibt stehen. Atempause, dann Badge.
+    // 2) Der Sieger steht. Fanfare, und hier endet die Choreo.
+    if (revealStep >= 3) {
+      try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ }
+      return;
+    }
+    // 3) Etappenziel erreicht → Atempause, dann der naechste Platz.
     // Hybrid: im Live-Betrieb wartet der naechste Schritt auf den Moderator.
-    if (wartetAuf(meinBeat)) return;
+    if (wartetAuf(meinBeat + 1)) return;
     const hold = live ? (laeuftHinterher(meinBeat) ? 0 : 200) : (revealStep === 2 ? 1500 : 1100);
     const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, hold);
     return () => window.clearTimeout(h);
-  }, [phase, glided, revealStep, duelTick, duelTargetFor, duelTargets, live, awards.length, wartetAuf, laeuftHinterher]);
+  }, [phase, revealStep, rennTick, rennZielFuer, live, awards.length, wartetAuf, laeuftHinterher]);
 
   const inReveal = phase === 'reveal';
-  const crowned = inReveal && revealStep >= 3;
-
-  // Der Dritte steht, seine Pille ist zu lesen, dann geht er. Die 1100 ms sind
-  // kein Zierrat: die Pille faehrt selbst 500 ms ein, und ein Turm, der im
-  // selben Moment abtritt, in dem sein Platz erscheint, nimmt die Aussage mit.
-  useEffect(() => {
-    if (reduce) return;
-    if (!(inReveal && glided && revealStep >= 1)) { if (dritterWeg) setDritterWeg(false); return; }
-    if (dritterWeg) return;
-    const h = window.setTimeout(() => setDritterWeg(true), 1100);
-    return () => window.clearTimeout(h);
-  }, [inReveal, glided, revealStep, dritterWeg, reduce]);
+  // Gekroent wird erst, wenn der letzte Baustein liegt. Vorher waere die Krone
+  // die Ansage des Ergebnisses, und der Stein danach nur noch Nachtrag.
+  const crowned = inReveal && revealStep >= 3 && rennTick >= rennZiele.erster;
 
   // ── Geometrie ─────────────────────────────────────────────────────────────
   // 2026-08-23 (Uebergabe 2a, Wolf: „was meinst du mit dem zwischenstand").
@@ -679,38 +732,36 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const PGAP = 46;
   const centerX = STAGE_W / 2 - colW / 2;
 
-  // ── Wo die drei Finalisten stehen ─────────────────────────────────────────
+  // ── Wo die Tuerme stehen, waehrend das Feld schrumpft ─────────────────────
   // 2026-08-25 (Wolf: „3. platz turm soll absinken, sonst weiss man schon, dass
-  // mittlerer turm gewinnt, dann noch duell am ende, ist spannender").
+  // mittlerer turm gewinnt", und dann: „nacheinander fliegen die raus die nicht
+  // mitkommen? am ende sind nur 2 uebrig").
   //
-  // Er hat recht, und es war ein handfester Verrat: die Anordnung war
-  // Sieger-Mitte, Zweiter-links, Dritter-rechts. Sie stand VOR dem
-  // Wettklettern fest. Wer die Regel einmal gesehen hat, weiss ab dem Glide,
-  // wer gewonnen hat - und das Klettern danach entscheidet nichts mehr, es
-  // holt nur noch nach.
+  // Frueher war die Anordnung Sieger-Mitte, Zweiter-links, Dritter-rechts, und
+  // sie stand VOR dem Klettern fest - wer die Regel kannte, wusste ab dem Glide
+  // Bescheid. Dann kam eine Zwischenstufe mit fester Dreier- und Zweierbank.
   //
-  // Jetzt sagt die Stellung nichts. Die drei stehen in ihrer BUEHNENreihenfolge
-  // nebeneinander, also so, wie sie ohnehin am Brett standen (`ordered` ist
-  // hash-gemischt). Dann klettern sie. Wer zuerst stehenbleibt, ist Dritter,
-  // bekommt seine Pille und SINKT AB - und die letzten zwei ruecken zum Duell
-  // zusammen. Ab da ist es ein Zweikampf, und bis zum Schluss sagt keine
-  // Position, wer ihn gewinnt.
-  const finalisten = useMemo(
-    () => finalRanking.slice(0, 3).map(x => x.team.id).sort((a, b) => orderIndex[a] - orderIndex[b]),
-    [finalRanking, orderIndex],
+  // Jetzt braucht es gar keine Sonderfaelle mehr: die verbleibenden Tuerme
+  // stehen IMMER mittig verteilt, egal ob es acht sind oder zwei. Fliegt einer
+  // raus, ruecken die anderen in die Luecke. Das ist eine einzige, durchgehende
+  // Bewegung ueber das ganze Rennen statt drei geschnittener Zustaende, und die
+  // Stellung verraet bis zum letzten Baustein nichts.
+  const verbleibend = useMemo(
+    () => ordered.map(t => t.team.id).filter(id => nochDrin(id)),
+    [ordered, nochDrin],
   );
-  /** Zu dritt: links, Mitte, rechts - nach Buehnenreihenfolge. */
-  const dreierX = (id: string) => {
-    const platz = finalisten.indexOf(id);
-    return centerX + (platz - 1) * (colW + PGAP);
-  };
-  /** Zu zweit: symmetrisch um die Mitte, in derselben Links-rechts-Ordnung. */
-  const dritterId = finalRanking[2]?.team.id ?? null;
-  const duellX = (id: string) => {
-    const uebrig = finalisten.filter(x => x !== dritterId);
-    const platz = uebrig.indexOf(id);
-    if (platz < 0) return dreierX(id);
-    return centerX + (platz - 0.5) * (colW + PGAP);
+  /** Mittig verteilt, in Buehnenreihenfolge. Zu dritt und zu zweit rueckt die
+   *  Reihe enger zusammen (PGAP), damit sie als Podest liest und nicht als
+   *  Rest einer Achterreihe. */
+  const platzX = (id: string) => {
+    const n = verbleibend.length;
+    const i = verbleibend.indexOf(id);
+    // Wer gerade abtritt, bleibt stehen, wo er stand - er faellt nach unten
+    // weg, er soll nicht auch noch seitlich rutschen.
+    if (i < 0 || n === 0) return baseX(orderIndex[id]);
+    const luecke = n <= 3 ? PGAP : colGap;
+    const breite = n * colW + (n - 1) * luecke;
+    return (STAGE_W - breite) / 2 + i * (colW + luecke);
   };
 
   // ── Geometrie des fallenden Bretts ────────────────────────────────────────
@@ -823,13 +874,11 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
       const add = curAward && awardStage === 'grow' && curAward.teamId === id ? Math.min(awardTick, curAward.bonus) : 0;
       return base + appliedBefore(id) + (curAward && curAward.teamId === id && awardStage === 'card' ? 0 : 0) + add;
     }
-    // Reveal: sobald die Top-3 mittig stehen, klettern sie gemeinsam von null
-    // hoch. `min` sorgt dafuer, dass ein Turm bei seiner Zielhoehe von selbst
-    // stehenbleibt, waehrend die anderen weiterwachsen.
-    if (phase === 'reveal' && glided && rankById[id] <= 2) {
-      return Math.min(duelTick, totalOf(id));
-    }
-    return totalOf(id);
+    // Das Rennen: jeder baut von SEINEM Sockel aus weiter, einen Baustein je
+    // Takt. Das `min` sorgt dafuer, dass ein Turm bei seiner Zielhoehe von
+    // selbst stehenbleibt, waehrend die anderen weiterwachsen - genau daran
+    // sieht man, wer nicht mehr mitkommt.
+    return Math.min(totalOf(id), sockelOf(id) + rennTick);
   };
 
   const recipTeam = curAward ? teamById(curAward.teamId) : undefined;
@@ -884,17 +933,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             <div style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.34em', textTransform: 'uppercase', color: istBuehne ? 'var(--qq-text-muted)' : GOLD, animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Sieger' : 'Winner'}</div>
             <div style={{ fontSize: istBuehne ? 62 : 46, fontWeight: 900, lineHeight: 1.02, color: 'var(--qq-text)', textShadow: istBuehne ? 'none' : `0 2px 24px ${winner.team.color}66`, animation: reduce ? 'none' : 'qqT2WinnerIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>{winner.team.name}</div>
           </>
-        ) : inReveal && glided && revealStep === 2 ? (
+        ) : inReveal && revealStep >= 3 ? (
           <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
-        ) : inReveal && glided ? (
+        ) : inReveal && revealStep === 2 ? (
+          <>
+            <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Nur noch zwei' : 'Just two left'}</div>
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Ein Baustein entscheidet' : 'One block decides it'}</div>
+          </>
+        ) : inReveal && revealStep === 1 ? (
           <>
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Kopf an Kopf' : 'Neck and neck'}</div>
             <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Wer bleibt zuerst stehen?' : 'Who stops first?'}</div>
           </>
-        ) : inReveal && !glided ? (
-          <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Die Top 3 stehen fest…' : 'The Top 3 are set…'}</div>
         ) : inReveal ? (
-          <div style={{ fontSize: istBuehne ? 46 : 34, fontWeight: 900, color: 'var(--qq-text)' }}>{de ? 'Die Top 3' : 'The Top 3'}</div>
+          // 2026-08-25: der Renn-Beat sagt die Regel, die man gerade sieht.
+          // Vorher stand hier „Die Top 3 stehen fest" - eine Ansage, die dem
+          // Saal das Ergebnis vorwegnahm, waehrend die Tuerme noch bauten.
+          <>
+            <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.7s ease-in-out infinite' }}>{de ? 'Und jetzt die Tipps' : 'And now the bets'}</div>
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Wer nicht mitkommt, fliegt raus' : 'Whoever runs out is out'}</div>
+          </>
         ) : phase === 'baseHold' ? (
           <>
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Zwischenstand' : 'Standings'}</div>
@@ -1099,42 +1157,39 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         const base = baseOf(id);
         const shown = shownOf(id);
         const total = totalOf(id);
-        const show = revealed(rank);            // Platzierung steht fest (Badge)
+        // Der Sieger wird erst mit dem LETZTEN Baustein gekroent, nicht schon
+        // zu Beginn seines Beats - sonst stuende die Krone da, waehrend der
+        // Stein, der sie verdient, noch faellt.
+        const show = rank === 0 ? crowned : revealed(rank);
         const colr = team.color;
         const edge = team.color;
-        // Die Zahl der Finalisten bleibt zu, bis ihr Platz faellt. Alle
-        // anderen zeigen ihren Stand wie immer. Drei Tuerme mit „???" sagen
-        // dem Saal genau das Richtige: diese drei sind noch im Rennen.
-        const zahlOffen = !isTop3 || show;
+        // 2026-08-25: hier stand `zahlOffen`, das die Zahl der drei Spitzen-
+        // tuerme bis zur Enthuellung auf „???" hielt. Das war die Spannung, die
+        // es brauchte, SOLANGE alle Tuerme fertig dastanden. Im Rennen erzeugt
+        // die Bewegung sie selbst: eine Zahl, die mitklettert und dann
+        // stehenbleibt, sagt genau das, was der Saal wissen soll - dieser hier
+        // ist fertig. Verdeckt waere sie nur noch eine fehlende Information.
         const towerPx = shown * blockH + Math.max(0, shown - 1) * GAP;
         const badge = rank === 1 ? '🥈' : rank === 2 ? '🥉' : null;
         const i = orderIndex[id];
 
-        // Position + Glide (sequenziert: Nicht-Top-3 erst raus, dann Top-3 rein).
-        // Der Dritte tritt nach seiner Pille ab und die letzten zwei ruecken
-        // zum Duell zusammen - siehe `dreierX` / `duellX` oben.
-        const abtritt = inReveal && glided && dritterWeg && rank === 2;
+        // Stellung und Abtritt. Beides folgt jetzt EINER Regel: wer noch drin
+        // ist, steht mittig in der Reihe der Verbleibenden; wer raus ist, sinkt
+        // ab. Siehe `verbleibend` / `platzX` oben.
+        const abtritt = inReveal && !nochDrin(id);
         let tx = 0, ty = 0, opacity = 1, z = 4;
         if (inReveal) {
-          if (isTop3) {
-            if (glided) {
-              tx = (dritterWeg && rank !== 2 ? duellX(id) : dreierX(id)) - baseX(i);
-              // Absinken: nach unten weg UND ausblenden. Nur nach unten reicht
-              // nicht - ein Turm kann siebenhundert Pixel hoch sein, der waere
-              // mit einer sichtbaren Strecke nie ganz aus dem Bild. Die
-              // Richtung erzaehlt „er geht", die Deckkraft raeumt ihn weg.
-              if (abtritt) { ty = 340; opacity = 0; }
-            }
-            z = isWinner ? 7 : 6;
-          }
-          else {
-            // Recede-Beat: kurz mit Platz dimmen, dann beim Glide voll ausblenden.
-            if (glided) { opacity = 0; ty = 40; } else { opacity = 0.4; }
-            z = 3;
-          }
+          tx = platzX(id) - baseX(i);
+          // Absinken: nach unten weg UND ausblenden. Nur nach unten reicht
+          // nicht - ein Turm kann siebenhundert Pixel hoch sein, der waere
+          // mit einer sichtbaren Strecke nie ganz aus dem Bild. Die
+          // Richtung erzaehlt „er geht", die Deckkraft raeumt ihn weg.
+          if (abtritt) { ty = 340; opacity = 0; }
+          z = isWinner ? 7 : isTop3 ? 6 : 4;
         }
-        // Badge: Nicht-Top-3 nur im Recede-Beat (vor Glide); Top-3 sobald enthuellt.
-        const showBadge = inReveal && (rank > 2 ? !glided : show);
+        // Die Platz-Pille tragen nur die drei, deren Platz feststeht. Wer im
+        // Rennen ausscheidet, geht ohne - seinen Platz sagt der Turm.
+        const showBadge = inReveal && rank <= 2 && show;
         const capped = inReveal;
 
         return (
@@ -1165,7 +1220,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             // voller Deckkraft, und erst danach raeumt das Verblassen den Rest.
             transition: reduce ? 'none' : abtritt
               ? 'transform 1s cubic-bezier(0.34,0,0.5,0.9), opacity 0.5s ease 0.5s'
-              : `transform 0.75s cubic-bezier(0.4,0,0.2,1)${isTop3 ? (dritterWeg ? ' 0.25s' : ' 0.35s') : ''}, opacity 0.5s ease`,
+              // Die Verbleibenden ruecken mit 250 ms Verzug nach: erst sieht
+              // man den Abtritt, dann das Zusammenruecken. Zwei Aussagen
+              // hintereinander lesen sich, gleichzeitig verwischen sie.
+              : 'transform 0.75s cubic-bezier(0.4,0,0.2,1) 0.25s, opacity 0.5s ease',
             // 2026-08-25: waehrend das Brett heranfaehrt, stellen sich die
             // Sockel darunter auf, von links nach rechts. Vorher standen sie im
             // ersten Bild alle schon da - acht leere Kaesten, die aus dem Nichts
@@ -1291,11 +1349,8 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               {/* 2026-08-23 (2a): die Zahl stand am Ende in Teamfarbe mit Schein.
                   Teamfarbe lebt auf der Kachel, nicht in der Schrift - und die
                   Kachel steht hier direkt darueber, den ganzen Turm hoch. */}
-              <div style={{ fontSize: istBuehne ? 42 : 30, fontWeight: 900, lineHeight: 1, color: zahlOffen ? (istBuehne ? 'var(--qq-text)' : (capped ? colr : '#E2D6FF')) : 'var(--qq-text-muted)', fontVariantNumeric: 'tabular-nums', textShadow: (capped && zahlOffen && !istBuehne) ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
-                {zahlOffen
-                  ? <span key={shown} style={{ display: 'inline-block', animation: (shown > 0 && !crowned && !reduce) ? 'qqT2NumPop 0.3s ease-out' : 'none' }}>{shown}</span>
-                  // Der Platz faellt, und im selben Moment schnappt die Zahl ein.
-                  : <span style={{ display: 'inline-block', letterSpacing: '0.08em', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>???</span>}
+              <div style={{ fontSize: istBuehne ? 42 : 30, fontWeight: 900, lineHeight: 1, color: istBuehne ? 'var(--qq-text)' : (capped ? colr : '#E2D6FF'), fontVariantNumeric: 'tabular-nums', textShadow: (capped && !istBuehne) ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
+                <span key={shown} style={{ display: 'inline-block', animation: (shown > 0 && !crowned && !reduce) ? 'qqT2NumPop 0.3s ease-out' : 'none' }}>{shown}</span>
               </div>
               {/* 2026-08-24, gemessen: die Teamnamen im Sockel standen zwischen
                   22,5 und 25px, das „???" der noch anonymen Tuerme bei 24px.

@@ -43,9 +43,14 @@ function buildRanking(n: number) {
 // Basis so gesetzt, dass Pubquatscher (t2) nach Quiz vorn liegt, ZBuB (t1) durch
 // 2 Awards vorbeizieht.
 const V2_BASE: Record<string, number> = { t1: 10, t2: 11, t3: 7, t4: 5, t5: 6, t6: 3, t7: 8, t8: 4 };
-function buildTowerData(n: number): { teams: { team: typeof ALL[number]; base: number }[]; awards: TowerAward[] } {
+// 2026-08-25: die Tipp-Bausteine des Rennens. Bewusst so gesetzt, dass alle
+// Faelle einmal vorkommen: ein Team ohne Tipp (t2 - der Gebietsfuehrer bleibt
+// gleich im ersten Takt stehen), ein Team, das von hinten vorbeizieht (t5), und
+// ein Duell, das erst der letzte Baustein entscheidet (t1 gegen t7).
+const V2_TIPP: Record<string, number> = { t1: 4, t2: 0, t3: 2, t4: 3, t5: 5, t6: 1, t7: 5, t8: 2 };
+function buildTowerData(n: number): { teams: { team: typeof ALL[number]; base: number; tipp: number }[]; awards: TowerAward[] } {
   const slice = ALL.slice(0, n);
-  const teams = slice.map(team => ({ team, base: V2_BASE[team.id] ?? 5 }));
+  const teams = slice.map(team => ({ team, base: V2_BASE[team.id] ?? 5, tipp: V2_TIPP[team.id] ?? 2 }));
   const has = (id: string) => slice.some(t => t.id === id);
   const awards: TowerAward[] = ([
     { key: 'underdog', label: 'Underdog', labelEn: 'Underdog', slug: 'award-underdog', teamId: 't6', bonus: 1 },

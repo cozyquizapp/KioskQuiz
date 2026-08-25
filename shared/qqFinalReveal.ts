@@ -107,9 +107,47 @@ export function qqTowerAwardCount(
 }
 
 /**
- * Hoechster gueltiger Turm-Beat (0-basiert): 0 Aufbau · 1..A Awards · A+1 Glide ·
- * A+2..A+1+top Reveals · A+2+top KROENUNG. top = min(3, Teams).
- * → maxBeat = A + top + 2.
+ * Der Rennplan des Turm-Finales: bis zu welchem TAKT in jedem der vier
+ * Renn-Beats gebaut werden darf.
+ *
+ * 2026-08-25 (Wolf: „wenn dann wuerde ich immer nur eine kachel bauen, solange
+ * bis das letzte team raus ist (fliegt raus) dann weiter bauen").
+ *
+ * Ein Takt ist ein Tipp-Baustein. Jedes Team, das noch welche hat, setzt pro
+ * Takt einen; wer leer ist, bleibt stehen und fliegt raus. Die vier Etappen:
+ *   raus     alle ausser den Top 3 sind fertig und verlassen die Buehne
+ *   dritter  Platz 3 ist fertig
+ *   zweiter  Platz 2 ist fertig
+ *   erster   Platz 1 setzt seinen letzten Baustein
+ *
+ * ⚠️ Das steht hier und nicht im Beamer, weil das Steuerpult dieselbe Rechnung
+ * fuer die Autoplay-Dauern braucht. Zwei Rechnungen mit eigenen Zahlen sind
+ * genau der Fehler, der beim Award-Zaehler schon einmal passiert ist: der Turm
+ * baute Bausteine, die das Step-Mapping nicht kannte.
+ *
+ * `rangfolge` ist die Endreihenfolge der Team-Ids, Sieger zuerst
+ * (qqFinalSortedTeams). `tipp` ist der Wett-Bonus je Team.
+ */
+export type QQTurmRennplan = { raus: number; dritter: number; zweiter: number; erster: number };
+export function qqTurmRennplan(
+  rangfolge: readonly string[],
+  tipp: Readonly<Record<string, number>>,
+): QQTurmRennplan {
+  const t = (id: string | undefined) => (id ? (tipp[id] ?? 0) : 0);
+  const hinten = rangfolge.slice(3).map(t);
+  const raus = hinten.length ? Math.max(...hinten) : 0;
+  // Monoton halten: ein Beat darf nie weniger Takte zulassen als der davor,
+  // sonst schruempfte ein Turm beim Weiterschalten.
+  const dritter = Math.max(raus, t(rangfolge[2]));
+  const zweiter = Math.max(dritter, t(rangfolge[1]));
+  const erster = Math.max(zweiter, t(rangfolge[0]));
+  return { raus, dritter, zweiter, erster };
+}
+
+/**
+ * Hoechster gueltiger Turm-Beat (0-basiert): 0 Aufbau · 1..A Awards ·
+ * A+1..A+top+1 Rennen (siehe `qqTurmRennplan`) · A+2+top KROENUNG.
+ * top = min(3, Teams). → maxBeat = A + top + 2.
  *
  * 2026-08-25 (Wolf: „4 ja eigene"). Der letzte Beat ist neu. Bis hierher ging
  * es vom Podest direkt auf die Danke-Folie, und der Sieger stand dort als

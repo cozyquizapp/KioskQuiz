@@ -10,7 +10,7 @@
  * ohne Socket/DB/Timer-Side-Effects.
  */
 import { describe, it, expect } from 'vitest';
-import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqIstKroenungsBeat } from '../shared/qqFinalReveal';
+import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqIstKroenungsBeat, qqTurmRennplan } from '../shared/qqFinalReveal';
 import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues, qqFlushPendingStacks } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
@@ -138,6 +138,41 @@ describe('qqTowerAwardBeats — CozyGames sind Beats wie die Awards', () => {
     const ohne = qqTowerMaxBeat(qqTowerAwardCount(TEAMS, { speedy: 't1' }), 3);
     const mit = qqTowerMaxBeat(qqTowerAwardCount(TEAMS, { speedy: 't1' }, { t2: 1, t3: 1 }), 3);
     expect(mit).toBe(ohne + 2);
+  });
+});
+
+// 2026-08-25 (Wolf: „aber es ist weird erst tuerme zu haben, dann wieder auf 0?
+// ... wenn dann wuerde ich immer nur eine kachel bauen, solange bis das letzte
+// team raus ist (fliegt raus)"). Der Rennplan sagt, bis zu welchem Takt in
+// jedem der vier Renn-Beats gebaut wird. Er MUSS monoton sein: ein Beat, der
+// weniger Takte zulaesst als der davor, wuerde die Tuerme beim Weiterschalten
+// schrumpfen lassen. Und Beamer und Steuerpult holen ihn beide hier, sonst
+// laeuft der Autoplay dem Turm davon - genau der Fehler, der beim Award-Zaehler
+// schon einmal passiert ist.
+describe('qqTurmRennplan — die vier Etappen des Rennens', () => {
+  it('die Etappen wachsen nie rueckwaerts', () => {
+    const p = qqTurmRennplan(['a', 'b', 'c', 'd', 'e'], { a: 1, b: 2, c: 0, d: 5, e: 3 });
+    expect(p.raus).toBe(5);              // hoechster Tipp unter den Plaetzen 4+
+    expect(p.dritter).toBe(5);           // Platz 3 hat nur 0, bleibt aber bei 5
+    expect(p.zweiter).toBe(5);
+    expect(p.erster).toBe(5);
+  });
+  it('der Sieger setzt den letzten Baustein', () => {
+    const p = qqTurmRennplan(['a', 'b', 'c', 'd'], { a: 6, b: 2, c: 3, d: 1 });
+    expect(p).toEqual({ raus: 1, dritter: 3, zweiter: 3, erster: 6 });
+  });
+  it('ohne Wetten laeuft kein Rennen', () => {
+    expect(qqTurmRennplan(['a', 'b', 'c'], {})).toEqual({ raus: 0, dritter: 0, zweiter: 0, erster: 0 });
+  });
+  it('drei Teams oder weniger: es gibt keine Plaetze 4 und tiefer', () => {
+    const p = qqTurmRennplan(['a', 'b', 'c'], { a: 4, b: 2, c: 1 });
+    expect(p.raus).toBe(0);
+    expect(p.erster).toBe(4);
+  });
+  it('unbekannte Ids zaehlen als null Bausteine, nicht als NaN', () => {
+    const p = qqTurmRennplan(['a', 'weg'], { a: 2 });
+    expect(p.erster).toBe(2);
+    expect(Number.isFinite(p.raus)).toBe(true);
   });
 });
 

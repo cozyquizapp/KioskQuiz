@@ -283,7 +283,14 @@ function getWarmBus(ac: AudioContext): GainNode {
  * Ein schoener Hall um einen nackten Sinus bleibt ein nackter Sinus im Hall.
  */
 
-/** Anschlag: sehr kurzes gefiltertes Rauschen. Gibt dem Ton einen Koerper. */
+/**
+ * Anschlag: sehr kurzes gefiltertes Rauschen. Gibt dem Ton einen Koerper.
+ *
+ * ACHTUNG bei `farbe`: der warme Bus haengt einen Tiefpass bei 2400 Hz
+ * dazwischen. Alles darueber wird weggeschnitten. Am 25.08. beim Messen
+ * aufgefallen - der Rad-Tick stand auf 3200 Hz und kam mit Spitze 0,007
+ * heraus, also praktisch lautlos. Farben zwischen 700 und 2000 Hz.
+ */
 function anschlag(
   startTime: number,
   dauer = 0.012,
@@ -1423,28 +1430,50 @@ export function playRoundStart()    { playSlotOneShot('roundStart'); }
 // 2026-05-17 (P1 #5): CozyGames Sound-Trigger.
 // Tick = kurzer pointer-Klick. Stop = Final-Snap (Bell/Chime). Start = Cue.
 // Slot-Custom-Upload via QQSoundConfig hat Vorrang, sonst Synth-Fallback.
+//
+// 2026-08-25 (Wolf: „ja mach mal eigene klaenge"). Alle vier bestanden bis
+// hierher aus reinen `tone()`-Aufrufen, also aus je EINEM Oszillator ohne
+// Anschlag. Das ist genau die Bauart, die Wolf am 25.08. als „flach, generisch,
+// technisch" beschrieben hat. Sie laufen jetzt ueber `anschlag` und
+// `koerperTon` (Begruendung an deren Definition weiter oben).
+//
+// Der Leitgedanke pro Klang ist der physikalische Vorgang, nicht die Melodie:
+//   Tick  = ein Stift schnippt an einem Zapfen vorbei  -> Transient, kaum Ton
+//   Stop  = der Zeiger rastet ein                      -> harter Anschlag + Nachklang
+//   Intro = jemand klopft an, dann steigt die Erwartung-> Klopfen + Aufstieg
+//   Start = Startsignal                                -> Schlag + Dreiklang
 
 export function playCozyGameIntro(): void {
   if (_sfxMuted) return; // 2026-07-30 Sound-Audit R1: Synth-only-Slot respektiert Mute
   if (!isSlotEnabled('cozyGameIntro')) return;
   const url = resolveSlotUrl('cozyGameIntro');
   if (url) { playUrlOneShot(url); return; }
-  // 2026-05-19 (Wolf): Anticipation-Chime beim 🪅-Pinata-Mount. Soll Lust
-  // auf das Mini-Spiel machen ohne den eigentlichen Spin-Moment zu klauen.
-  // Charakter: warmer Wood-Knock ("Pinata wackelt") + zarter aufsteigender
-  // Bell-Glissando — F4 → A4 → C5 → F5-Sparkle. Bewusst leiser als wheel-
-  // stop/card-reveal, damit Choreo gestaffelt wirkt: leise → laut → laut.
+  // 2026-05-19 (Wolf): Anticipation-Chime. Soll Lust auf das Mini-Spiel machen,
+  // ohne den eigentlichen Spin-Moment zu klauen. Bewusst leiser als
+  // wheel-stop/card-reveal, damit die Choreographie gestaffelt bleibt:
+  // leise → laut → laut. Der Aufstieg F-A-C stimmt hier, anders als beim Stop:
+  // dies ist eine Ankuendigung, und die darf steigen.
+  //
+  // 2026-08-25: das „Wood-Knock" war ein 180-Hz-Sinus. Ein Sinus ist keine
+  // Holzoberflaeche, sondern eine reine Schwingung - deshalb klang das Klopfen
+  // wie ein Brummen. Jetzt traegt ein gefilterter Anschlag das Klopfen, und
+  // jede Stufe des Aufstiegs bekommt einen eigenen kleinen Anschlag. Ohne den
+  // beginnt jeder Ton aus dem Nichts, und genau das hoert man als „technisch".
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Wood-Knock (kurzer Bass-Thud)
-  tone(180, 'sine',     t,        0.18, 0.12, 0.004, 0.05, ac);
-  // Bell-Glissando aufsteigend
-  tone(349.23, 'triangle', t + 0.10, 0.08, 0.22, 0.01, 0.10, ac); // F4
-  tone(440.00, 'triangle', t + 0.20, 0.08, 0.24, 0.01, 0.10, ac); // A4
-  tone(523.25, 'sine',     t + 0.30, 0.10, 0.30, 0.01, 0.14, ac); // C5
-  // High-Bell-Sparkle obenauf
-  tone(1396.9, 'sine',     t + 0.40, 0.06, 0.30, 0.005, 0.16, ac); // F6
+  // Klopfen: der Anschlag ist das Klopfen, der Ton nur sein Ausklang.
+  anschlag(t, 0.022, 0.090, 700, ac);
+  koerperTon(174.61, t, 0.17, 0.095, 0.003, 0.11, ac); // F3
+  // Aufstieg F4 - A4 - C5, jede Stufe angeschlagen.
+  const stufen = [349.23, 440.00, 523.25];
+  for (let i = 0; i < stufen.length; i++) {
+    const zeit = t + 0.12 + i * 0.10;
+    anschlag(zeit, 0.008, 0.055, 1900, ac);
+    koerperTon(streu(stufen[i], 0.008), zeit, 0.26 + i * 0.05, 0.100, 0.004, 0.17, ac);
+  }
+  // Funkeln obendrauf, F6. Kein Anschlag: das soll schweben, nicht schlagen.
+  tone(1396.9, 'sine', t + 0.42, 0.30, 0.045, 0.006, 0.22, ac);
 }
 
 export function playCozyGameWheelTick(): void {
@@ -1452,15 +1481,19 @@ export function playCozyGameWheelTick(): void {
   if (!isSlotEnabled('cozyGameWheelTick')) return;
   const url = resolveSlotUrl('cozyGameWheelTick');
   if (url) { playUrlOneShot(url); return; }
-  // 2026-05-17: triangle 360Hz mit weichem Decay (satter Wood-Click).
-  // 2026-05-19 (Wolf 'spinning wheel sound?'): gain 0.015 war nahezu lautlos
-  // gegenueber Confetti/Voice. Auf 0.05 (3.3x) + leichte Pitch-Variation pro
-  // Tick (350-380Hz) damit Spin-Sequenz lebendiger wirkt statt monoton.
+  // 2026-08-25: der Tick war ein 50-ms-Dreieckston auf 350 bis 380 Hz. Das ist
+  // eine NOTE, und deshalb klang das drehende Rad wie ein Metronom. Ein Zapfen,
+  // an dem ein Stift vorbeischnippt, ist zuerst ein Knacken und erst danach
+  // ganz kurz ein Ton. Also traegt jetzt der Anschlag das Ereignis, und der
+  // Ton ist nur noch der Nachhall von 30 Millisekunden.
+  //
+  // Streuung hochgesetzt auf 9 %: der Tick laeuft beim Drehen rund hundert Mal
+  // hintereinander. Bei 4 % hoert das Ohr immer noch dieselbe Aufnahme.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  const pitch = 350 + Math.random() * 30;
-  tone(pitch, 'triangle', t, 0.05, 0.055, 0.001, 0.02, ac);
+  anschlag(t, 0.006, 0.30, streu(1900, 0.16), ac);
+  koerperTon(streu(520, 0.09), t + 0.001, 0.034, 0.090, 0.001, 0.020, ac);
 }
 
 export function playCozyGameWheelStop(): void {
@@ -1468,16 +1501,25 @@ export function playCozyGameWheelStop(): void {
   if (!isSlotEnabled('cozyGameWheelStop')) { playWinnerCardReveal(); return; }
   const url = resolveSlotUrl('cozyGameWheelStop');
   if (url) { playUrlOneShot(url); return; }
-  // 2026-05-17 (Wolf): Triade reicht — die zusätzliche playFanfare-Layerung
-  // im CozyGameView ist raus (siehe dort). Triade selbst leicht warmer/voller
-  // mit längerem Decay für „angekommen"-Feeling.
+  // 2026-08-25: der Dreiklang stieg AUF (587, dann 740, dann 880, je 60 ms
+  // versetzt). Aufsteigend heisst „es geht weiter" - das ist die Aussage einer
+  // Eroeffnung, nicht die eines Halts. Hier rastet der Zeiger ein, und das ist
+  // eine ANKUNFT. Also wird der Akkord angeschlagen statt buchstabiert: die
+  // drei Toene kommen innerhalb von 16 ms, mit einem dumpfen Anschlag davor
+  // (das Einrasten selbst) und einem tiefen D darunter, damit die Ankunft
+  // Gewicht hat. D-Dur bleibt, das ist der Marken-Dreiklang.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  // Aufsteigende Triade D-F#-A (Wolf-Brand-Sound) mit längerem Tail
-  tone(587, 'triangle', t,        0.10, 0.32, 0.008, 0.12, ac);
-  tone(740, 'triangle', t + 0.06, 0.10, 0.30, 0.008, 0.12, ac);
-  tone(880, 'sine',     t + 0.12, 0.12, 0.28, 0.008, 0.16, ac);
+  // Das Einrasten. Tiefer und laenger als der Tick, denn hier steht etwas still.
+  anschlag(t, 0.020, 0.095, 850, ac);
+  // Grundton D3 als Boden. Beamer-Lautsprecher schneiden viel davon weg, was
+  // uebrig bleibt, traegt trotzdem.
+  tone(146.83, 'sine', t, 0.34, 0.085, 0.004, 0.24, ac);
+  // Der Akkord, praktisch gleichzeitig.
+  koerperTon(587.33, t + 0.004, 0.44, 0.150, 0.004, 0.32, ac); // D5
+  tone(739.99, 'triangle', t + 0.010, 0.42, 0.105, 0.004, 0.30, ac); // F#5
+  koerperTon(880.00, t + 0.016, 0.48, 0.095, 0.004, 0.36, ac); // A5
 }
 
 export function playCozyGameStart(): void {
@@ -1486,14 +1528,21 @@ export function playCozyGameStart(): void {
   const url = resolveSlotUrl('cozyGameStart');
   if (url) { playUrlOneShot(url); return; }
   // 2026-05-17 (Wolf): Doppel-Bell wirkte zu zart für „GO!"-Moment. Jetzt
-  // 3-Ton-Arpeggio C-E-G aufsteigend (positiver Start-Cue) mit triangle-
-  // Wave für warm-energetisches „Spiel los"-Gefühl.
+  // 3-Ton-Arpeggio C-E-G aufsteigend (positiver Start-Cue).
+  //
+  // 2026-08-25: das Arpeggio bleibt, es ist die richtige Geste fuer „los".
+  // Was fehlte, war der Startschuss davor - drei Toene ohne Anschlag sind eine
+  // Melodie, kein Signal. Dazu ein Grundton C3 darunter, damit der Moment
+  // Koerper hat, und die Staffelung von 80 auf 55 ms enger: bei 80 ms hoert
+  // man drei Ereignisse, bei 55 ms eine Geste.
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(523, 'triangle', t,        0.10, 0.20, 0.008, 0.10, ac); // C5
-  tone(659, 'triangle', t + 0.08, 0.10, 0.22, 0.008, 0.10, ac); // E5
-  tone(784, 'sine',     t + 0.16, 0.14, 0.26, 0.008, 0.14, ac); // G5 (sine = bell-tail)
+  anschlag(t, 0.014, 0.100, 1600, ac);
+  tone(130.81, 'sine', t, 0.28, 0.095, 0.004, 0.20, ac); // C3 als Boden
+  koerperTon(523.25, t,         0.22, 0.135, 0.004, 0.12, ac); // C5
+  koerperTon(659.25, t + 0.055, 0.25, 0.125, 0.004, 0.15, ac); // E5
+  koerperTon(783.99, t + 0.110, 0.36, 0.135, 0.004, 0.24, ac); // G5
 }
 // BC-2: Music-Ducking fuer Game-Over-Cue (laut + dramatisch).
 // 2026-05-23 (Wolf): playGameOver entfernt — nirgends aufgerufen (startGameOverLoop

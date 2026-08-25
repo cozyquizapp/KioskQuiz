@@ -1697,19 +1697,23 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
               const t = folge[(pos + k) % folge.length];
               const mitte = k === MITTE;
               const seite = mitte ? MARKE : MARKE_KLEIN;
+              // 2026-08-25 (Wolf: „rand um gewinnendes team ist komisch").
+              // Es waren zwei Raender uebereinander: die Marke trug einen
+              // 3px-Rand in der EIGENEN Farbe - also gar keinen sichtbaren
+              // Rand, sondern nur eine dickere Flaeche - und darueber lag beim
+              // Sieger ein 30px weicher Schein in derselben Farbe. Bei einem
+              // gelben Team ergab das einen ausgefransten gelben Hof um eine
+              // gelbe Kachel. Jetzt: kein Rand in Teamfarbe, kein Schein, nur
+              // der goldene Ring, der vorher schon als Fenster ueber der Mitte
+              // lag. Dieselbe Aussage, nur scharf.
+              //
+              // ⚠️ Dieser Kommentar steht hier oben und NICHT zwischen den
+              // Tags. Zwischen JSX-Tags ist „//" kein Kommentar, sondern TEXT:
+              // genau so stand er am 2026-08-25 als Fliesstext im Rad, quer
+              // ueber allen fuenf Teammarken. Kommentare im JSX-Rumpf nur als
+              // geschweifte Klammer mit Sternchen.
               return (
                 <div key={k} style={{ width: zelle, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                  // 2026-08-25 (Wolf: „rand um gewinnendes team ist komisch").
-                  // Er hatte recht, und es waren zwei Raender uebereinander: die
-                  // Marke trug einen 3px-Rand in der EIGENEN Farbe - also gar
-                  // keinen sichtbaren Rand, sondern nur eine dickere Flaeche -
-                  // und darueber lag beim Sieger ein 30px weicher Schein in
-                  // derselben Farbe. Bei einem gelben Team ergab das einen
-                  // ausgefransten gelben Hof um eine gelbe Kachel.
-                  // Jetzt: kein Rand in Teamfarbe, kein Schein. Der Gewinner
-                  // bekommt denselben goldenen Ring, der vorher als Fenster ueber
-                  // der Mitte lag - eine harte Linie mit Abstand, dieselbe
-                  // Aussage wie vorher, nur scharf.
                   <div style={{
                     width: seite, height: seite, borderRadius: quirkSet ? '18%' : '50%',
                     background: t.color,

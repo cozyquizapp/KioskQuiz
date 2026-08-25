@@ -248,9 +248,22 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
         // 2026-06-24 (Wolf 'rahmen verschwindet beim grid-design'): weiss-transparente
         // Container-Flaeche/Rahmen sind auf hellen Skins unsichtbar → Skin-Tokens.
         // Highlight-Rahmen (Team-Farbe) bleibt unangetastet (Spielsignal).
-        background: isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.03)',
+        // 2026-08-24 (Wolf: „rahmen ganz oft, auch grid hat rahmen? nicht
+        // sichtbar aber rahmen"). Stimmt: um das Brett lag eine eigene Karte -
+        // Flaeche, 3px Rand und Schatten - und darin noch einmal vierundsechzig
+        // gerahmte Felder. Das Raster IST schon eine Form, es braucht keinen
+        // Kasten darum; auf der Buehne traegt der Grund, nicht die Karte.
+        // Der Rand in Teamfarbe bleibt: der sagt „dieses Team setzt gerade" und
+        // ist ein Spielsignal, kein Schmuck. Er bleibt deshalb auch als
+        // durchsichtiger 3px-Rand stehen, wenn kein Team dran ist - sonst
+        // springt das Brett in dem Moment, in dem er auftaucht.
+        background: istBuehneG()
+          ? 'transparent'
+          : (isThemed() ? 'var(--qq-surface)' : 'rgba(246, 239, 230,0.03)'),
         padding: 10, borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-        border: `3px solid ${highlightTeam ? `${activeColor}cc` : (isThemed() ? 'var(--qq-hairline)' : 'rgba(246, 239, 230,0.06)')}`,
+        border: `3px solid ${highlightTeam
+          ? `${activeColor}cc`
+          : (istBuehneG() ? 'transparent' : (isThemed() ? 'var(--qq-hairline)' : 'rgba(246, 239, 230,0.06)'))}`,
         // 2026-08-23 (Uebergabe 2a): das fokussierte Team hatte 80px und 32px
         // Schein in Teamfarbe um das ganze Brett, dazu einen Puls. Auf der
         // Aufnahme der Final-Aufloesung war das ein handbreiter Farbhof um die
@@ -261,7 +274,9 @@ export function GridDisplay({ state: s, maxSize = 320, highlightTeam, showJoker 
           ? (istBuehneG()
               ? `0 0 0 1px ${activeColor}55, inset 0 1px 0 rgba(246, 239, 230,0.04)`
               : `0 0 0 1px ${activeColor}55, 0 0 80px ${activeColor}55, 0 0 32px ${activeColor}88, inset 0 1px 0 rgba(246, 239, 230,0.04)`)
-          : (isThemed() ? 'var(--qq-card-shadow)' : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(246, 239, 230,0.03)'),
+          : (istBuehneG()
+              ? 'none'
+              : (isThemed() ? 'var(--qq-card-shadow)' : '0 0 30px rgba(0,0,0,0.3), inset 0 1px 0 rgba(246, 239, 230,0.03)')),
         animation: istBuehneG()
           ? 'none'
           : (highlightTeam

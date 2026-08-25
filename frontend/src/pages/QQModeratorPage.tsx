@@ -1241,7 +1241,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             const plan = qqTurmRennplan(qqFinalSortedTeams(s).map(t => t.id), tipp);
             const etappe = beat - (awardCount + 1);   // 0..3
             const marken = [0, plan.raus, plan.dritter, plan.zweiter, plan.erster];
-            delayMs = qqTurmRennBeatDauer(marken[etappe] ?? 0, marken[etappe + 1] ?? 0);
+            // Im ersten Renn-Beat verabschieden sich alle ausser den Top 3, und
+            // jedes Team einzeln (Wolf: „der letzte platz soll nicht in 1
+            // sekunde abgehandelt sein"). Bewusst der schlechteste Fall: alle
+            // gleichzeitig leer. Zu lang heisst, der Turm steht einen Moment
+            // laenger; zu kurz heisst, der Autoplay schneidet die Ansage ab.
+            const abgaenge = etappe === 0 ? Math.max(1, N - 3) : 1;
+            delayMs = qqTurmRennBeatDauer(marken[etappe] ?? 0, marken[etappe + 1] ?? 0, abgaenge);
           }
           action = () => emit('qq:nextQuestion', { roomCode });
         }

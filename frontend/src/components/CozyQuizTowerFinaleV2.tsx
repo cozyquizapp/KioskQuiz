@@ -193,16 +193,28 @@ export function qqTurmAwardBeatDauer(bonus: number): number {
 function rennSchritt(uebrig: number): number {
   return uebrig <= 1 ? 900 : uebrig === 2 ? 620 : uebrig === 3 ? 460 : 300;
 }
+// Der Abgang: Abstand zwischen zwei ausscheidenden Tuermen, und wie lange die
+// Platz-Pille steht, bevor ihr Turm absinkt. Modulweit, weil die Dauer-Rechnung
+// fuers Steuerpult sie braucht - der Beat muss laenger sein als die Zeremonie,
+// die in ihm stattfindet.
+const ABGANG_TAKT = 620;
+const ABGANG_ANSAGE = 820;
+const ABGANG_SINKT = 1000;
 /**
- * Wie lange ein Renn-Beat am Stueck laeuft, von Takt `von` bis Takt `bis`.
- * Das Steuerpult holt sich die Dauer hier, statt sie nachzubauen - der Beamer
- * bremst zum Etappenende hin, und ein Autoplay mit fester Zahl liefe ihm davon.
- * Der Zuschlag ist die Atempause, in der der Platz faellt.
+ * Wie lange ein Renn-Beat am Stueck laeuft, von Takt `von` bis Takt `bis`, mit
+ * `abgaenge` Tuermen, die am Ende gleichzeitig leer werden.
+ *
+ * Das Steuerpult holt sich die Dauer hier, statt sie nachzubauen: der Beamer
+ * bremst zum Etappenende hin und verabschiedet danach jedes Team einzeln. Ein
+ * Autoplay mit fester Zahl liefe ihm davon - und dann faende genau das nicht
+ * statt, worum Wolf gebeten hat („der letzte platz soll nicht in 1 sekunde
+ * abgehandelt sein").
  */
-export function qqTurmRennBeatDauer(von: number, bis: number): number {
+export function qqTurmRennBeatDauer(von: number, bis: number, abgaenge = 1): number {
   let ms = 0;
   for (let uebrig = Math.max(0, bis - von); uebrig >= 1; uebrig--) ms += rennSchritt(uebrig);
-  return ms + 1400;
+  const zeremonie = Math.max(0, abgaenge - 1) * ABGANG_TAKT + ABGANG_ANSAGE + ABGANG_SINKT;
+  return ms + zeremonie + 600;
 }
 
 const TITLE_H = 118;
@@ -431,9 +443,9 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const maxBase = useMemo(() => Math.max(1, ...teams.map(t => t.base)), [teams]);
 
   // Platzierungs-Badge (🥉/🥈/Krone): erscheint, wenn dieser Turm stehenbleibt.
-  // ⚠️ Der Sieger (rank 0) haengt zusaetzlich am letzten Baustein, siehe
-  // `crowned` weiter unten - deshalb wird `revealed` dort noch einmal
-  // eingeschraenkt, statt hier schon alles zu wissen.
+  // ⚠️ Fuer die Plaetze 1 bis 3 gilt `platzSteht` weiter unten: die Pille
+  // faellt erst, wenn der Turm auch wirklich stehenbleibt. Hier bleibt nur der
+  // Fall „gehoert nicht zum Podest".
   const revealed = useCallback((rank: number) =>
     rank > 2 ? true : (phase === 'reveal' && revealStep >= (3 - rank)),
   [phase, revealStep]);
@@ -474,6 +486,21 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const rennZielFuer = useCallback((step: number) =>
     step <= 0 ? rennZiele.raus : step === 1 ? rennZiele.dritter : step === 2 ? rennZiele.zweiter : rennZiele.erster,
   [rennZiele]);
+
+  // 2026-08-25, an der Aufnahme gemessen (scripts/rennen-messen.mjs): die Pille
+  // „PLATZ 3" stand schon bei 1074 ms da, waehrend der Beat, der Platz 3
+  // ueberhaupt erst entscheidet, noch lief. Der Grund war, dass sie nur am
+  // Beat hing (`revealStep`) und nicht daran, ob der Turm auch STEHT. Damit
+  // sagte die Buehne das Ergebnis an, bevor die Bausteine es zeigten - genau
+  // der Verrat, den das Rennen abschaffen soll.
+  /** Steht der Platz dieses Rangs fest, also: ist sein Turm fertig? */
+  const platzSteht = useCallback((rank: number) => {
+    if (phase !== 'reveal') return false;
+    if (rank === 2) return revealStep >= 1 && rennTick >= rennZiele.dritter;
+    if (rank === 1) return revealStep >= 2 && rennTick >= rennZiele.zweiter;
+    if (rank === 0) return revealStep >= 3 && rennTick >= rennZiele.erster;
+    return false;
+  }, [phase, revealStep, rennTick, rennZiele]);
 
   /** Steht dieser Turm noch auf der Buehne? */
   const nochDrin = useCallback((id: string) => {
@@ -654,18 +681,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
       try { playClimaxFinish(); } catch { /* noop */ } try { playFanfare(); } catch { /* noop */ }
       return;
     }
-    // 3) Etappenziel erreicht → Atempause, dann der naechste Platz.
+    // 3) Etappenziel erreicht → jetzt die Abgangs-Zeremonie, dann der naechste
+    // Platz. Die Pause muss LAENGER sein als die Zeremonie, sonst schaltet die
+    // Vorschau weiter, waehrend noch jemand verabschiedet wird.
     // Hybrid: im Live-Betrieb wartet der naechste Schritt auf den Moderator.
     if (wartetAuf(meinBeat + 1)) return;
-    const hold = live ? (laeuftHinterher(meinBeat) ? 0 : 200) : (revealStep === 2 ? 1500 : 1100);
+    // Wer wird in DIESEM Beat zuletzt leer? Nur die haengen noch in der Luft,
+    // die frueheren sind laengst weg.
+    const gleichzeitig = revealStep === 0
+      ? Math.max(1, teams.filter(t => (rankById[t.team.id] ?? 0) >= 3 && Math.max(1, t.tipp) === target).length)
+      : 1;
+    const zeremonie = (gleichzeitig - 1) * ABGANG_TAKT + ABGANG_ANSAGE + ABGANG_SINKT;
+    const hold = live ? (laeuftHinterher(meinBeat) ? 0 : 200) : zeremonie + (revealStep === 2 ? 900 : 500);
     const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, hold);
     return () => window.clearTimeout(h);
-  }, [phase, revealStep, rennTick, rennZielFuer, live, awards.length, wartetAuf, laeuftHinterher]);
+  }, [phase, revealStep, rennTick, rennZielFuer, live, awards.length, teams, rankById, wartetAuf, laeuftHinterher]);
 
   const inReveal = phase === 'reveal';
   // Gekroent wird erst, wenn der letzte Baustein liegt. Vorher waere die Krone
   // die Ansage des Ergebnisses, und der Stein danach nur noch Nachtrag.
-  const crowned = inReveal && revealStep >= 3 && rennTick >= rennZiele.erster;
+  const crowned = platzSteht(0);
 
   // ── Geometrie ─────────────────────────────────────────────────────────────
   // 2026-08-23 (Uebergabe 2a, Wolf: „was meinst du mit dem zwischenstand").
@@ -753,6 +788,38 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   /** Mittig verteilt, in Buehnenreihenfolge. Zu dritt und zu zweit rueckt die
    *  Reihe enger zusammen (PGAP), damit sie als Podest liest und nicht als
    *  Rest einer Achterreihe. */
+  // ── Der Abgang ist eine Ansage, kein Verschwinden ─────────────────────────
+  // 2026-08-25, an der Aufnahme gemessen (scripts/rennen-messen.mjs): bei
+  // 944 ms verliessen FUENF Tuerme gleichzeitig die Buehne, in einem einzigen
+  // Bild. Wolf, direkt danach: „der letzte platz soll nicht in 1 sekunde
+  // abgehandelt sein, es soll schon sowas kommen wie team x auf platz 8,
+  // weisst du damit die teams sich nicht komplett uebersehen fuehlen?"
+  //
+  // Er hat recht, und es ist mehr als Hoeflichkeit: ein Turm, der wortlos
+  // absackt, sagt „du warst egal". Jedes ausscheidende Team bekommt deshalb
+  // erst seine Platz-Pille ueber die Turmspitze, die zusammen mit dem Namen im
+  // Sockel den Satz ergibt, den Wolf meint - „Hirnsturm, Platz 8" -, und erst
+  // danach sinkt der Turm ab. Und wer im selben Takt leer wird, geht trotzdem
+  // hintereinander, der schlechteste zuerst.
+  //
+  // 620 ms Abstand und 820 ms Standzeit sind deutlich mehr als die 30 bis 50 ms,
+  // die Material fuer Listen vorsieht. Das hier ist aber kein Aufklappen einer
+  // Liste, sondern ein Abgang auf einer Buehne, die aus zehn Metern gelesen
+  // wird: die Pille muss gelesen werden koennen, bevor ihr Traeger geht.
+  const abgangVerzug = (id: string) => {
+    const rank = rankById[id];
+    // Platz 3 und 2 gehen einzeln in ihrem eigenen Beat, sie brauchen keinen
+    // Abstand zu jemandem.
+    if (rank == null || rank < 3) return 0;
+    const meinTakt = Math.max(1, tippOf(id));
+    const gleichzeitig = ordered
+      .map(t => t.team.id)
+      .filter(x => rankById[x] >= 3 && Math.max(1, tippOf(x)) === meinTakt)
+      .sort((a, b) => rankById[b] - rankById[a]);
+    const i = gleichzeitig.indexOf(id);
+    return i < 0 ? 0 : i * ABGANG_TAKT;
+  };
+
   const platzX = (id: string) => {
     const n = verbleibend.length;
     const i = verbleibend.indexOf(id);
@@ -933,9 +1000,13 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             <div style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.34em', textTransform: 'uppercase', color: istBuehne ? 'var(--qq-text-muted)' : GOLD, animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease both' }}>{de ? 'Sieger' : 'Winner'}</div>
             <div style={{ fontSize: istBuehne ? 62 : 46, fontWeight: 900, lineHeight: 1.02, color: 'var(--qq-text)', textShadow: istBuehne ? 'none' : `0 2px 24px ${winner.team.color}66`, animation: reduce ? 'none' : 'qqT2WinnerIn 0.6s cubic-bezier(0.2,0.8,0.3,1) both' }}>{winner.team.name}</div>
           </>
-        ) : inReveal && revealStep >= 3 ? (
+        // 2026-08-25, an der Aufnahme gemessen: bei 5520 ms stand „Nur noch
+        // zwei" da, waehrend noch DREI Tuerme auf der Buehne waren. Der Titel
+        // hing am Beat, nicht am Bild. Jetzt zaehlt er, was tatsaechlich
+        // steht - eine Ansage, die man nachzaehlen kann und die dann stimmt.
+        ) : inReveal && verbleibend.length <= 1 ? (
           <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Und der Sieger ist…' : 'And the winner is…'}</div>
-        ) : inReveal && revealStep === 2 ? (
+        ) : inReveal && verbleibend.length === 2 ? (
           <>
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Nur noch zwei' : 'Just two left'}</div>
             <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Ein Baustein entscheidet' : 'One block decides it'}</div>
@@ -1160,7 +1231,9 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         // Der Sieger wird erst mit dem LETZTEN Baustein gekroent, nicht schon
         // zu Beginn seines Beats - sonst stuende die Krone da, waehrend der
         // Stein, der sie verdient, noch faellt.
-        const show = rank === 0 ? crowned : revealed(rank);
+        const show = rank <= 2 ? platzSteht(rank) : revealed(rank);
+        // Wer im selben Takt leer wird, geht trotzdem nacheinander.
+        const verzug = abgangVerzug(id);
         const colr = team.color;
         const edge = team.color;
         // 2026-08-25: hier stand `zahlOffen`, das die Zahl der drei Spitzen-
@@ -1187,9 +1260,9 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
           if (abtritt) { ty = 340; opacity = 0; }
           z = isWinner ? 7 : isTop3 ? 6 : 4;
         }
-        // Die Platz-Pille tragen nur die drei, deren Platz feststeht. Wer im
-        // Rennen ausscheidet, geht ohne - seinen Platz sagt der Turm.
-        const showBadge = inReveal && rank <= 2 && show;
+        // Jeder bekommt seine Pille: das Podest, sobald sein Platz feststeht,
+        // und jedes ausscheidende Team beim Abgang. Siehe `abgangVerzug` oben.
+        const showBadge = inReveal && (rank <= 2 ? show : abtritt);
         const capped = inReveal;
 
         return (
@@ -1219,7 +1292,8 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             // Andeutung, kein Abgang. Jetzt sind es rund 190 Bildpunkte bei
             // voller Deckkraft, und erst danach raeumt das Verblassen den Rest.
             transition: reduce ? 'none' : abtritt
-              ? 'transform 1s cubic-bezier(0.34,0,0.5,0.9), opacity 0.5s ease 0.5s'
+              // Erst steht die Pille (ABGANG_ANSAGE), dann sinkt der Turm.
+              ? `transform 1s cubic-bezier(0.34,0,0.5,0.9) ${verzug + ABGANG_ANSAGE}ms, opacity 0.5s ease ${verzug + ABGANG_ANSAGE + 500}ms`
               // Die Verbleibenden ruecken mit 250 ms Verzug nach: erst sieht
               // man den Abtritt, dann das Zusammenruecken. Zwei Aussagen
               // hintereinander lesen sich, gleichzeitig verwischen sie.
@@ -1282,7 +1356,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                   <span aria-hidden style={{ position: 'absolute', left: '50%', bottom: istBuehne ? 8 : AV_OBEN - 10, transform: 'translateX(-50%)', fontSize: 44, lineHeight: 1, pointerEvents: 'none', zIndex: 8, filter: 'drop-shadow(0 0 16px rgba(249,200,122,0.8))', animation: reduce ? 'none' : 'qqT2CrownDrop 0.7s cubic-bezier(0.3,1.5,0.5,1) both, qqT2CrownFloat 2.6s ease-in-out 0.8s infinite' }}><QQEmojiIcon emoji="👑" size="1em" /></span>
                 )}
                 {!isWinner && showBadge && (
-                  <div style={{ position: 'absolute', left: '50%', bottom: istBuehne ? 8 : AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : 'qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) both' }}>
+                  // Die Verzoegerung ist die Staffelung des Abgangs: wer im
+                  // selben Takt leer wird, bekommt seine Pille trotzdem
+                  // nacheinander. `both` haelt sie vorher auf null Deckkraft.
+                  <div style={{ position: 'absolute', left: '50%', bottom: istBuehne ? 8 : AV_OBEN - 6, transform: 'translateX(-50%)', zIndex: 8, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 1, whiteSpace: 'nowrap', animation: reduce ? 'none' : `qqT2BadgeIn 0.5s cubic-bezier(0.3,1.5,0.5,1) ${verzug}ms both` }}>
                     {/* 2026-08-23 (2a): Silber und Bronze waren rohe Systemzeichen
                         und eine fuenfte und sechste Farbe fuer etwas, das die
                         Pille direkt darunter schon in Worten sagt. */}

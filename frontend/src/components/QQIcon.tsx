@@ -146,6 +146,11 @@ export type QQIconSlug =
   // Wolf: „ich wollte buch, cozygames rad und top 5 und die kaputten".
   | 'fx-rules'             // aufgeschlagenes Buch. Loest fx-book bei den Regeln ab
   | 'fx-wheel-pointer'     // der Zeiger des Rades, eigene Datei weil er NICHT mitdreht
+  // Fair Play hatte bis hierher kein eigenes Zeichen und borgte sich
+  // `fx-alliance`, die zwei ineinander gehaengten Ringe. Das ist Buendnis, ein
+  // anderes Wort, und es wird anderswo gebraucht.
+  | 'fx-fairplay'          // Schiedsrichterpfeife. Steht auf der Fair-Play-Folie
+  | 'fx-fairplay-phone'    // Handy mit dem Bildschirm nach unten. Zweite Fassung
   | 'react-applause'
   | 'react-fire'
   | 'react-shock'
@@ -202,6 +207,8 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-book':           '📖',
   'fx-rules':          '📖',
   'fx-wheel-pointer':  '🔻',
+  'fx-fairplay':       '🤝',
+  'fx-fairplay-phone': '📵',
   'fx-shield-faction': '🛡️',
   'rocket':            '🚀',
   'anker':             '⚓',

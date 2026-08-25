@@ -145,6 +145,11 @@ return {
   ablauf:     { ruhe: 1500, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(1); } },
   joker:      { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(2); } },
   regel4:     { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(3); } },
+  // 2026-08-25: Fair Play liegt hinter der CozyGame-Folie, also auf Index 4,
+  // solange CozyGames aktiv sind. Eigene Station, weil die Folie ein neues
+  // Zeichen bekommen hat und sonst nur ueber zweimal Weiterschalten erreichbar
+  // waere.
+  fairplay:   { ruhe: 1200, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(4); } },
   // Der Team-Auftritt braucht bei acht Teams rund 18 s, bis er steht.
   teams:      { ruhe: 18000, aufbau: 'spiel', weg: async (h) => { await h.zuRegelIndex(0); await h.emit('qq:rulesFinish'); } },
   // Das Runden-Intro hat drei Stufen, der Moderator schaltet mit Space weiter

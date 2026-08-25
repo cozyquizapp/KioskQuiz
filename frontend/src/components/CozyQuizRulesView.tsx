@@ -203,6 +203,12 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     {
       // 2026-05-09 (Rules-Audit Wolf): Fair Play / Anti-Google
       icon: '🤝',
+      // 2026-08-25 (Wolf: „ja bau fairplay und phone auch ein"): 🤝 loest ueber
+      // EMOJI_TO_SLUG `fx-alliance` auf, und das ist das Zeichen fuer BUENDNIS.
+      // Fair Play hatte damit nie ein eigenes Bild, sondern lieh sich das einer
+      // anderen Bedeutung. Die Pfeife sagt Regel und Schiedsrichter ohne Text
+      // und ist im Set sonst nicht vergeben. `icon` bleibt als Rueckfall stehen.
+      iconSlug: 'fx-fairplay',
       title: t('rules.slide_fairplay.title', 'Fair Play'),
       color: RULES_SLIDE_COLOR,
       lines: [
@@ -302,6 +308,8 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🤝',
+      // Siehe die Begruendung an der deutschen Fassung weiter oben.
+      iconSlug: 'fx-fairplay',
       title: t('rules.slide_fairplay.title', 'Fair Play'),
       color: RULES_SLIDE_COLOR,
       lines: [
@@ -362,6 +370,8 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🤝',
+      // Siehe die Begruendung an der deutschen Fassung weiter oben.
+      iconSlug: 'fx-fairplay',
       title: t('rules.slide_fairplay.title', 'Fair Play'),
       color: RULES_SLIDE_COLOR,
       lines: [
@@ -405,6 +415,8 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
     },
     {
       icon: '🤝',
+      // Siehe die Begruendung an der deutschen Fassung weiter oben.
+      iconSlug: 'fx-fairplay',
       title: t('rules.slide_fairplay.title', 'Fair Play'),
       color: RULES_SLIDE_COLOR,
       lines: [

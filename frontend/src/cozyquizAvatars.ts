@@ -152,7 +152,7 @@ export const COZYQUIZ_FILL: Record<string, number> = {
   'backpack': 0.88,
   'binoculars': 0.83,
   'book': 0.92,
-  'camera': 0.84,
+  'camera': 0.80,
   'candle': 0.92,
   'cassette': 0.80,
   'cheese': 0.84,

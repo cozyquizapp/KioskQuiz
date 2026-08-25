@@ -148,6 +148,26 @@ export function qqTurmBeatDauer(gridSize: number, mitUebergabe = true): number {
   return halt + wellen * WELLE + FLUG + 1500;
 }
 
+/**
+ * Wie lange die Award-Karte steht, bevor der Baustein waechst.
+ *
+ * Aufgenommen und nachgezaehlt: die Karte ist 340 ms nach dem Beat da, die
+ * Marke rattert ab 260 ms und rastet nach rund 1,6 s ein. Bei 2600 ms blieben
+ * danach 740 ms, und in 740 ms liest niemand einen Teamnamen auf zehn Metern.
+ * 3200 ms lassen gut eine Sekunde stehen, und der Name ist danach weg - der
+ * Baustein waechst, ohne dass jemand mehr sagt, wem er gehoert.
+ */
+const AWARD_KARTE = 3200;
+/** Ein Tick je Punkt, der erste etwas laenger. */
+const AWARD_TICK_ERST = 650;
+const AWARD_TICK = 460;
+
+/** Wie lange ein Award-Beat am Stueck laeuft. Das Steuerpult holt sich die
+ *  Zahl hier ab, statt sie ein zweites Mal zu schaetzen. */
+export function qqTurmAwardBeatDauer(bonus: number): number {
+  return AWARD_KARTE + AWARD_TICK_ERST + Math.max(0, bonus - 1) * AWARD_TICK + 1200;
+}
+
 const TITLE_H = 118;
 const CROWN_H = 96;
 const BASE_H = 96;
@@ -466,7 +486,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     if (phase !== 'award' || !curAward) return;
     if (awardStage === 'card') {
       try { playSpecialAwardReveal(); } catch { /* noop */ }
-      const h = window.setTimeout(() => { setAwardStage('grow'); setAwardTick(0); }, 2100);
+      const h = window.setTimeout(() => { setAwardStage('grow'); setAwardTick(0); }, AWARD_KARTE);
       return () => window.clearTimeout(h);
     }
     // grow
@@ -479,7 +499,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
       }, live ? 200 : 1500);
       return () => window.clearTimeout(h);
     }
-    const h = window.setTimeout(() => { setAwardTick(t => t + 1); try { playTick(); } catch { /* noop */ } }, awardTick === 0 ? 650 : 460);
+    const h = window.setTimeout(() => { setAwardTick(t => t + 1); try { playTick(); } catch { /* noop */ } }, awardTick === 0 ? AWARD_TICK_ERST : AWARD_TICK);
     return () => window.clearTimeout(h);
   }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length, live, liveBeat]);
 
@@ -1239,14 +1259,58 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
 
       {/* Grosse Award-Zeremonie (Akt 2, Stage 'card') */}
       {phase === 'award' && curAward && awardStage === 'card' && recipTeam && (
-        <AwardCelebration award={curAward} recip={recipTeam} mystery={awardRecipMystery} de={de} reduce={reduce} />
+        <AwardCelebration award={curAward} recip={recipTeam} alle={teams.map(t => t.team)} mystery={awardRecipMystery} de={de} reduce={reduce} />
       )}
     </div>
   );
 }
 
-function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; mystery: boolean; de: boolean; reduce: boolean }) {
+function AwardCelebration({ award, recip, alle, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; alle: QQTeam[]; mystery: boolean; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
+  // ── Wer bekommt ihn? ──────────────────────────────────────────────────────
+  // 2026-08-25 (Wolf: „die award reveals zu langweilig award zeigen dann
+  // drummroll, dann fliegen unten die verschiedenen teams durch und es bleibt
+  // auf einem stehen").
+  //
+  // Vorher stand der Empfaenger von der ersten Millisekunde an da. Die Karte
+  // hatte damit gar keinen Moment: sie erschien, und alles war schon gesagt.
+  // Jetzt rattert die Marke unten durch die Teams und rastet ein - dieselbe
+  // Geste wie bei der Tipp-Karte, wo sie sich seit Monaten bewaehrt.
+  //
+  // Die Verzoegerungen werden laenger, das ist das ganze Geheimnis: ein
+  // gleichmaessiges Durchblaettern liest sich als Ladebalken, ein bremsendes
+  // als Entscheidung. Summe rund 1,6 s, danach bleiben 1,0 s zum Lesen -
+  // die Karte steht 2,6 s (siehe `awardStage`).
+  const [ratterTeam, setRatterTeam] = useState<QQTeam | null>(null);
+  const [steht, setSteht] = useState(reduce);
+  useEffect(() => {
+    if (reduce) { setSteht(true); return; }
+    setSteht(false);
+    const ring = alle.filter(t => t.id !== recip.id);
+    if (ring.length === 0) { setSteht(true); return; }
+    const takte = [60, 60, 62, 66, 72, 80, 92, 110, 136, 172, 220, 290];
+    let i = 0;
+    let handle = 0;
+    let weg = false;
+    setRatterTeam(ring[0]);
+    const tick = () => {
+      if (weg) return;
+      if (i >= takte.length) {
+        setSteht(true);
+        try { playReveal(); } catch { /* noop */ }
+        return;
+      }
+      // Sprung um drei, damit nicht zweimal hintereinander dieselbe Marke
+      // kommt, wenn der Ring kurz ist.
+      setRatterTeam(ring[(i * 3 + 1) % ring.length]);
+      handle = window.setTimeout(tick, takte[i]);
+      i++;
+    };
+    handle = window.setTimeout(tick, 260);
+    return () => { weg = true; window.clearTimeout(handle); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [award.key, recip.id, reduce]);
+  const zeigTeam = steht ? recip : (ratterTeam ?? recip);
   const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // 2026-08-23 (2a): Gold BLEIBT auf dieser Karte. Sie kuendigt den goldenen
   // Baustein an, der gleich faellt, und Wolf hat bestaetigt: die goldenen
@@ -1275,14 +1339,43 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
         <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: istBuehne ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))' : `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQIcon slug={award.slug} size={Math.round(76 * (award.zoom ?? 1))} /></div>
         <div style={{ fontSize: istBuehne ? 50 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-          <div style={{ width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: (mystery || istBuehne) ? 'none' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-            {mystery ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>?</span> : <QQTeamAvatar avatarId={recip.avatarId} teamEmoji={recip.emoji} size={istBuehne ? 76 : 60} flat />}
+          {/* Die Marke rattert, bis sie einrastet. Waehrend des Ratterns steht
+              hier IMMER ein Team - erst beim Einrasten entscheidet sich, ob der
+              echte Empfaenger gezeigt wird oder das Fragezeichen, weil er einer
+              der noch anonymen Spitzentuerme ist. */}
+          <div style={{ position: 'relative', display: 'flex' }}>
+            {steht && !reduce && (
+              <span aria-hidden style={{
+                position: 'absolute', left: '50%', top: '50%',
+                width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60,
+                borderRadius: quirkSet ? '18%' : '50%',
+                border: `3px solid ${mystery ? MYST_EDGE : recip.color}`,
+                animation: 'qqT2AwardRaste 0.6s ease-out both', pointerEvents: 'none',
+              }} />
+            )}
+            <div style={{
+              width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60, borderRadius: quirkSet ? '18%' : '50%',
+              background: (steht && mystery) ? MYST : zeigTeam.color,
+              border: `3px solid ${(steht && mystery) ? MYST_EDGE : zeigTeam.color}`,
+              boxShadow: ((steht && mystery) || istBuehne) ? 'none' : `0 0 16px ${zeigTeam.color}88`,
+              display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+              transition: 'background 0.12s ease, border-color 0.12s ease',
+              animation: (steht && !reduce) ? 'qqT2AwardPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
+            }}>
+              {(steht && mystery)
+                ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>?</span>
+                : <QQTeamAvatar key={zeigTeam.id} avatarId={zeigTeam.avatarId} teamEmoji={zeigTeam.emoji} size={istBuehne ? 76 : 60} flat />}
+            </div>
           </div>
           {/* Empfaengername in Creme: die Marke links davon traegt die Teamfarbe
               schon als volle Flaeche, und in Creme steht er bei jedem Team
               gleich gut lesbar da. */}
-          <div style={{ fontSize: istBuehne ? 34 : 26, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : (mystery ? '#C9BEE6' : recip.color), maxWidth: 460 }}>
-            {mystery ? (de ? 'Einer der Spitzentürme!' : 'One of the top towers!') : recip.name}
+          {/* Feste Mindestbreite, damit die Karte beim Einrasten nicht springt:
+              waehrend des Ratterns stehen hier drei Punkte, danach ein Name. */}
+          <div style={{ fontSize: istBuehne ? 34 : 26, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : (mystery ? '#C9BEE6' : recip.color), maxWidth: 460, minWidth: istBuehne ? 300 : 220 }}>
+            {!steht
+              ? <span style={{ letterSpacing: '0.3em', color: 'var(--qq-text-muted)' }}>…</span>
+              : mystery ? (de ? 'Einer der Spitzentürme!' : 'One of the top towers!') : recip.name}
           </div>
         </div>
       </div>
@@ -1349,6 +1442,12 @@ const KEYFRAMES = `
 @keyframes qqT2Breathe { 0%, 100% { transform: scale(1); opacity: 0.92; } 50% { transform: scale(1.03); opacity: 1; } }
 @keyframes qqT2Heartbeat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.025); } }
 @keyframes qqT2AwardIn { 0% { opacity: 0; transform: translateY(20px) scale(0.9); } 100% { opacity: 1; transform: none; } }
+/* Der Ring, der beim Einrasten nach aussen laeuft. Er sagt „hier ist es
+   stehengeblieben" und ist danach weg. */
+@keyframes qqT2AwardRaste {
+  0%   { opacity: 0.9; transform: translate(-50%,-50%) scale(0.5); }
+  100% { opacity: 0;   transform: translate(-50%,-50%) scale(2.2); }
+}
 @keyframes qqT2AwardPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes qqT2FlashPop { 0% { transform: translateX(-50%) scale(0.7); opacity: 0; } 60% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }
 @keyframes qqT2Drift { 0% { transform: translateY(0); opacity: 0; } 12% { opacity: 0.18; } 88% { opacity: 0.18; } 100% { transform: translateY(-800px) translateX(24px); opacity: 0; } }

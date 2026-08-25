@@ -12,8 +12,8 @@ import {
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
 // shared/qqFinalReveal.ts). Ersetzt das alte betSlotsCount+4 (3 feste Awards).
-import { qqTowerAwardCount, qqTowerMaxBeat } from '../../../shared/qqFinalReveal';
-import { qqTurmBeatDauer } from '../components/CozyQuizTowerFinaleV2';
+import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat } from '../../../shared/qqFinalReveal';
+import { qqTurmBeatDauer, qqTurmAwardBeatDauer } from '../components/CozyQuizTowerFinaleV2';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -1216,8 +1216,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // kurz heisst, es gibt ihn nicht.
             delayMs = qqTurmBeatDauer((s as any).gridSize ?? 8) + 2200;
           } else if (beat <= awardCount) {
-            // Award-Zeremonie — goldener Baustein wächst in den Turm.
-            delayMs = 5200;
+            // Award-Zeremonie: Karte mit rasselnder Empfaenger-Marke, dann
+            // waechst der goldene Baustein in den Turm. Ein Award mit mehr
+            // Punkten braucht laenger, also wird die Dauer aus SEINEM Bonus
+            // geholt - und zwar aus derselben Liste, aus der der Beamer sie
+            // baut.
+            const beatListe = qqTowerAwardBeats(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins);
+            delayMs = qqTurmAwardBeatDauer(beatListe[beat - 1]?.bonus ?? 1);
           } else if (beat === awardCount + 1) {
             // Top-3 gleiten anonym in die Mitte.
             delayMs = 3800;

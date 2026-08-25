@@ -10,6 +10,7 @@
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
 import { QQ_AVATARS, qqMegaFactionSlug, qqMegaFactionName, qqMegaFactionMotto } from '../../../shared/quarterQuizTypes';
+import { QQEmojiIcon } from './QQIcon';
 import { getSet, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
 import { QQTeamAvatar, CountryFlagOrEmoji } from './QQTeamAvatar';
 import { isQuirk2Slug } from '../quirks2Avatars';
@@ -136,7 +137,14 @@ export function AvatarKarussellEditor({
         background: 'rgba(148,163,184,0.08)',
         border: '1px dashed rgba(148,163,184,0.3)',
       }}>
-        <div style={{ fontSize: 56, lineHeight: 1, marginBottom: 10 }}>🐺</div>
+        {/* 2026-08-25 (Wolf: „in lobby habe ich alte emojis gefunden"). Hier
+            stand der Wolf als Systemzeichen, also in jedem Betriebssystem
+            anders und stilfremd zum Rest. Der Satz hat ihn als `brand-wolf`,
+            und der Kommentar an diesem Slug sagt woertlich „der CozyQuiz-Wolf
+            als Marke, nicht als OS-Emoji". */}
+        <div style={{ lineHeight: 1, marginBottom: 10 }}>
+          <QQEmojiIcon emoji="🐺" size={56} />
+        </div>
         <div style={{ fontSize: 22, fontWeight: 900, color: '#FDE68A', marginBottom: 6 }}>
           {lang === 'de' ? 'Schade, alle Plätze sind voll!' : 'All seats taken!'}
         </div>
@@ -441,7 +449,8 @@ export function AvatarKarussellEditor({
         }}
         title={lang === 'de' ? 'Zufällige freie Farbe' : 'Random free color'}
       >
-        🎲 {factionMode
+        <QQEmojiIcon emoji="🎲" size={18} style={{ marginRight: 6, verticalAlign: '-3px' }} />
+        {factionMode
           ? (lang === 'de' ? 'Zufalls-Fraktion' : 'Random faction')
           : (lang === 'de' ? 'Zufalls-Farbe' : 'Random color')}
       </button>

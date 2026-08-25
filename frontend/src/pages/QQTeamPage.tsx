@@ -1020,7 +1020,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   color: QQ_COLORS.brandPinkSoft, fontSize: 18,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
-              >🎲</button>
+              ><QQEmojiIcon emoji="🎲" size={22} alt={lang === 'de' ? 'Zufalls-Name' : 'Random name'} /></button>
             </div>
             <div style={{
               fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700,
@@ -1093,7 +1093,8 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     padding: '4px 8px',
                   }}
                 >
-                  {lang === 'de' ? '🔖 Schon mal hier gewesen? Stamm-Code →' : '🔖 Been here before? Regular code →'}
+                  <QQEmojiIcon emoji="🔖" size={16} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                  {lang === 'de' ? 'Schon mal hier gewesen? Stamm-Code →' : 'Been here before? Regular code →'}
                 </button>
               </div>
             );
@@ -1114,13 +1115,15 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 }}
                 title={lang === 'de' ? 'Stamm-Code von letzter Woche eingeben' : 'Enter regular code'}
               >
-                🔖 {lang === 'de' ? 'Stamm-Code von letzter Woche?' : 'Regular code from last time?'}
+                <QQEmojiIcon emoji="🔖" size={16} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                {lang === 'de' ? 'Stamm-Code von letzter Woche?' : 'Regular code from last time?'}
               </button>
             )}
             {stammExpanded && !stammResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
-                  🔖 {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
+                  <QQEmojiIcon emoji="🔖" size={16} style={{ marginRight: 6, verticalAlign: '-2px' }} />
+                  {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
                 </div>
                 <div style={{ display: 'flex', gap: 6 }}>
                   <input
@@ -1370,7 +1373,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   color: QQ_COLORS.brandPinkSoft, fontSize: 18,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
-              >🎲</button>
+              ><QQEmojiIcon emoji="🎲" size={22} alt={lang === 'de' ? 'Zufalls-Name' : 'Random name'} /></button>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
               <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('AVATAR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>

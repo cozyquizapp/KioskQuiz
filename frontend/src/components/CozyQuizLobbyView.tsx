@@ -829,7 +829,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // Abends - die Zeile ueber dem QR ist die Aufforderung, ohne die
           // niemand mitspielt. Platz ist reichlich: unterhalb der Kacheln lagen
           // rund 190px leere Buehne.
-          fontSize: istBuehne ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+          fontSize: istBuehne ? 'clamp(26px, 2.5cqw, 36px)' : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
           color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
           textAlign: 'center', alignSelf: 'end',
         }}>
@@ -895,7 +895,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           <div style={{
             gridColumn: 2,
             // Grad wie die Kopfzeile links, siehe dort.
-            fontSize: istBuehne ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
+            fontSize: istBuehne ? 'clamp(26px, 2.5cqw, 36px)' : 'clamp(14px, 1.5cqw, 20px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.1em', textTransform: 'uppercase',
             // 2026-07-13 (Wolf: „joined-Zaehler aus der Mitte"): im Arena-BG-Modus
             // links ausgerichtet, damit er nicht mittig ueberm Arena-Tor schwebt.
@@ -926,7 +926,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               // die Tinte. `#1a0a14` liest auf Creme wie auf Pink (gemessen
               // 5.4:1 auf #EC4899), also brauchen beide Zweige denselben Wert.
               color: '#1a0a14',
-              fontSize: istBuehne ? 'clamp(22px, 2.1cqw, 30px)' : 'clamp(16px, 1.7cqw, 24px)',
+              fontSize: istBuehne ? 'clamp(26px, 2.5cqw, 36px)' : 'clamp(16px, 1.7cqw, 24px)',
               fontVariantNumeric: 'tabular-nums',
               animation: 'qqCountTick 0.4s cubic-bezier(0.34,1.56,0.64,1)',
             }}>{teamCount}</span>
@@ -1048,9 +1048,16 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               // wie Statuszeile sitzen ueber derselben Mitte. Zu lange Namen
               // kuerzen mit Auslassungspunkten, wie sie es schon immer tun.
               marginInline: 'auto',
+              // 2026-08-25: die Spalten waren auf 26cqw genagelt, also 458 px.
+              // Davon gehen Kachel, Luecke und Polster ab, fuer den Namen
+              // blieben 276. Mit dem groesseren Grad kuerzten dadurch sechs von
+              // acht Namen mit Auslassungspunkten - schlimmer als zu klein.
+              // Nachgemessen, was auf der Buehne frei ist: QR 490 plus Luecke 48
+              // plus Kachelblock 945 sind 1483 von 1600 nutzbarer Breite, also
+              // 117 px Luft. Die gehen jetzt in die Spalten.
               gridTemplateColumns: veryMany
                 ? 'repeat(auto-fill, minmax(clamp(150px, 15cqw, 210px), 1fr))'
-                : 'repeat(2, clamp(300px, 26cqw, 470px))',
+                : 'repeat(2, clamp(300px, 28.5cqw, 505px))',
               // 2026-08-23 (Wolf: „nutze den raum und machs vom spacing gerne
               // nicht zu klein"): der Abstand war auf 10 px festgenagelt,
               // sobald mehr als sechs Teams da waren — also genau dann, wenn
@@ -1066,7 +1073,18 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                   er bei jedem Beitritt, und weil der QR daneben an dieser Hoehe
                   haengt, sprang die halbe Seite mit. */}
               {[...s.teams, ...Array.from({ length: Math.max(0, LOBBY_SLOTS - teamCount) }, () => null)].map((t, i) => {
-                const compact = teamCount > 6;
+                // 2026-08-25 (Wolf: „ist jetzt nicht auf dem beamer aber auf
+                // tv etwas klein?"). Ja, gemessen: Teamnamen 29 px, Kopfzeilen
+                // 30 px, und unter dem Block lagen 185 px leere Buehne plus
+                // 130 px Luft zur Wortmarke.
+                // `compact` war ein Ueberbleibsel. Es kam aus der Zeit, als der
+                // Block mit jedem Team wuchs; seit dem 23.08. zeichnet die
+                // Lobby immer alle acht Plaetze, ist also IMMER vier Zeilen
+                // hoch. Die kleinere Stufe hat seitdem nur noch Schrift
+                // weggenommen, ohne Platz zu sparen. Auf der Buehne faellt sie
+                // deshalb weg; ausserhalb bleibt sie, dort ist die Ansicht
+                // nicht auf Projektionsdistanz gebaut.
+                const compact = teamCount > 6 && !istBuehne;
                 if (!t) {
                   return (
                     // 2026-08-23: die Deckkraft steckt IM Randwert, nicht in
@@ -1084,7 +1102,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       <div style={{
                         height: veryMany
                           ? 'clamp(38px, 3.6cqw, 52px)'
-                          : 'clamp(72px, 6.2cqw, 96px)',
+                          : istBuehne ? 'clamp(76px, 7cqw, 108px)' : 'clamp(72px, 6.2cqw, 96px)',
                         aspectRatio: '1', flexShrink: 0,
                         borderRadius: 'var(--qq-team-mark-radius, 16%)',
                         // 2026-08-24 (2a): keine gestrichelten Raender. Ein
@@ -1208,7 +1226,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         // 7 px in den Sicherheitsrand. Gemessen mit 96: 1602.
                         height: veryMany
                           ? 'clamp(38px, 3.6cqw, 52px)'
-                          : 'clamp(72px, 6.2cqw, 96px)',
+                          : istBuehne ? 'clamp(76px, 7cqw, 108px)' : 'clamp(72px, 6.2cqw, 96px)',
                         boxSizing: 'content-box',
                         aspectRatio: '1',
                         marginLeft: quirkSet ? 'clamp(8px, 1cqw, 14px)' : 0,
@@ -1216,7 +1234,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size="100%" />
                       </div>
                     ) : (
-                      <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={veryMany ? 'clamp(38px, 3.6cqw, 52px)' : compact ? 'clamp(56px, 5.4cqw, 76px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
+                      <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} teamId={t.id} size={veryMany ? 'clamp(38px, 3.6cqw, 52px)' : compact ? 'clamp(56px, 5.4cqw, 76px)' : istBuehne ? 'clamp(76px, 7cqw, 108px)' : 'clamp(64px, 6cqw, 88px)'} style={{ flexShrink: 0 }} />
                     )}
                     {/* 2026-06-28 (Beamer-Review 'kein Emoji'): Wink-Hand 👋 raus —
                         das Join-Feedback trägt jetzt der Card-Pop + Glow-Flash. */}
@@ -1233,18 +1251,48 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                         // die Karten gleichmaessiger gross wirken.
                         // 2026-07-04 (Wolf 'Lobby-Namen vom Sofa schwer lesbar'):
                         // alle Stufen ~+15-20% fuer Beamer/TV-Distanz.
+                        // 2026-08-25: auf der Buehne drei Stufen statt zwei.
+                        // Gemessen an der Spaltenbreite von 505 px, davon rund
+                        // 363 fuer den Namen: bei 40 px passen 14 Zeichen, bei
+                        // 34 px neunzehn, bei 29 px zweiundzwanzig. Die Stufen
+                        // stehen genau dort. Laenger als das kuerzt weiter mit
+                        // Auslassungspunkten, das ist bei „Zwischen Bier und
+                        // Bildung" auch vorher schon so gewesen.
                         fontSize: veryMany
                           ? (t.name.length > 14 ? 'clamp(15px, 1.5cqw, 20px)' : 'clamp(17px, 1.7cqw, 23px)')
-                          : t.name.length > 16
-                            ? (compact ? 'clamp(18px, 1.85cqw, 25px)' : 'clamp(19px, 2cqw, 28px)')
-                            : (compact ? 'clamp(20px, 2.1cqw, 29px)' : 'clamp(22px, 2.3cqw, 33px)'),
+                          : istBuehne
+                            ? (t.name.length > 19 ? 'clamp(21px, 2.1cqw, 29px)'
+                              : t.name.length > 14 ? 'clamp(24px, 2.4cqw, 34px)'
+                              : 'clamp(28px, 2.8cqw, 40px)')
+                            : t.name.length > 16
+                              ? (compact ? 'clamp(18px, 1.85cqw, 25px)' : 'clamp(19px, 2cqw, 28px)')
+                              : (compact ? 'clamp(20px, 2.1cqw, 29px)' : 'clamp(22px, 2.3cqw, 33px)'),
                         // 2026-06-28 (Beamer-Review): Team-Name weiß statt Team-Farbe
                         // (Lesbarkeit; Farbe lebt im Card-Akzent + Avatar).
                         color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text)',
                         lineHeight: 1.15,
-                        whiteSpace: 'nowrap',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
+                        // 2026-08-25: sehr lange Namen bekommen auf der Buehne
+                        // zwei Zeilen statt Auslassungspunkte. Das ist dieselbe
+                        // Entscheidung wie bei der Teamvorstellung am 22.08.
+                        // (Wolf: „vlt koennte man so lange team namen 2 oder 3
+                        // zeilig?") - ein Name in zwei Zeilen bei voller Groesse
+                        // liest sich besser als einer, von dem die Haelfte fehlt.
+                        // Ab der mittleren Stufe: „Schlaubi-Schluempfe" hat
+                        // achtzehn Zeichen und kuerzte auch bei 34 px noch, die
+                        // Rechnung „ein Zeichen ist eine halbe Geviertbreite"
+                        // ist bei fetter Schrift zu optimistisch. Gemessen am
+                        // Bild wickelt jetzt alles ab fuenfzehn Zeichen.
+                        ...(istBuehne && !veryMany && t.name.length > 14 ? {
+                          whiteSpace: 'normal',
+                          display: '-webkit-box',
+                          WebkitBoxOrient: 'vertical' as const,
+                          WebkitLineClamp: 2,
+                          overflow: 'hidden',
+                        } : {
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }),
                       }} title={t.name}>
                         {t.name}
                       </div>

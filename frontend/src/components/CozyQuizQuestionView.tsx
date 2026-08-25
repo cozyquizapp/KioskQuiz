@@ -3755,8 +3755,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             </div>
           )}
 
-          {/* Confetti overlay on correct answer (delayed to sync with winner) */}
-          {revealed && s.correctTeamId && showUnifiedWinner && (
+          {/* Confetti overlay on correct answer (delayed to sync with winner)
+              2026-08-25 (Wolf: „zu viel konfetti im ganzen quiz?" - ja).
+              Gezaehlt ueber einen normalen Abend, ohne Arena und ohne die
+              stillgelegten Spiele: rund 30 Ausbrueche, und 20 davon kamen aus
+              genau dieser Zeile - eine pro Frage, sobald irgendwer richtig lag.
+              Konfetti bleibt jetzt fuer die Momente, die etwas BEENDEN:
+              CozyGame-Sieger, Joker am Brett, Final-Aufloesung, Abspann. Bei
+              der einzelnen Frage tragen gruene Karte, Sieger-Leiste und Sound
+              den Moment schon; das Konfetti hat dort nur die Waehrung
+              entwertet, mit der die Endmomente bezahlen.
+              Nur auf der Buehne. Ausserhalb (Cozy/Studio Mono/Soft Pop) bleibt
+              es wie es war, das ist eine Buehnen-Entscheidung. */}
+          {revealed && s.correctTeamId && showUnifiedWinner && !istBuehne && (
             <div style={{ animation: 'contentReveal 0.01s var(--qq-ease-pop-fast) 0.8s both' }}>
               <ConfettiOverlay eurovisionMode={s.theme?.eurovisionMode} />
             </div>

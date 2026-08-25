@@ -156,6 +156,7 @@ export function QQTeamAvatar({
         teamId={teamId}
         discFill={display.discFill}
         nudge={display.nudge}
+        eigenerSchatten={display.eigenerSchatten}
       />
     );
   }
@@ -524,9 +525,13 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
 export const COZY3D_DISC_FILL = 0.9;
 
 function ImageAvatar({
-  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId, discFill, nudge,
+  src, blinkSrc, color, size, baseStyle, className, title, square, flat, blink = true, eyes = 'auto', teamId, discFill, nudge, eigenerSchatten,
 }: {
   src: string; blinkSrc?: string; color: string; size: number | string;
+  /** 2026-08-25 (HD-Satz): das Motiv bringt seinen Eigenschatten im Alpha schon
+   *  mit. Dann KEIN CSS-Schatten — sonst liegen zwei Schatten uebereinander,
+   *  und die Spezifikation verbietet drop-shadow() auf diesen Dateien. */
+  eigenerSchatten?: boolean;
   /** [dx, dy] in Prozent der KACHELKANTE — optischer Sitz (COZYQUIZ_NUDGE). */
   nudge?: [number, number];
   baseStyle: CSSProperties; className?: string; title: string; square?: boolean; flat?: boolean; blink?: boolean;
@@ -584,7 +589,11 @@ function ImageAvatar({
   const nudgeCss = (!flat && nudge && effFill > 0)
     ? `translate(${(nudge[0] / effFill).toFixed(2)}%, ${(nudge[1] / effFill).toFixed(2)}%)`
     : undefined;
-  const imgFilter = 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))';
+  // 2026-08-25 (Spezifikation HD-Satz: „Keine CSS-Filter wie drop-shadow()
+  // verwenden", „Vorhandene Eigenschatten gehoeren zum Motiv"). Die HD-Motive
+  // bringen ihren Schatten mit; ein CSS-Schatten darunter waere der zweite.
+  // Der cozy3d-Satz hat keinen eigenen und behaelt ihn.
+  const imgFilter = eigenerSchatten ? undefined : 'drop-shadow(0 2px 3px rgba(0,0,0,0.32))';
 
   return (
     <span

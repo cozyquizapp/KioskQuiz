@@ -321,6 +321,13 @@ export function getSet(id: string | undefined): AvatarSet {
 export type AvatarDisplay =
   | { kind: 'png';   pngBase: string; pngClosed: string; color: string; label: string }
   | { kind: 'image'; src: string;     color: string; label: string; blinkSrc?: string; discFill?: number;
+      /**
+       * 2026-08-25: das Motiv bringt seinen Schatten selbst mit. Dann darf die
+       * Ansicht KEINEN CSS-Schatten daruntersetzen, sonst stehen zwei
+       * Schatten unter einem Gegenstand. Gilt fuer den HD-Satz, dessen
+       * Spezifikation genau das verlangt.
+       */
+      eigenerSchatten?: boolean;
       /** [dx, dy] in Prozent der Kachelkante — optischer Sitz, siehe COZYQUIZ_NUDGE. */
       nudge?: [number, number] }   // cozy3d / CozyWolf (blinkSrc = expliziter Blink-Frame; discFill = Disc-Fuellung, Default cozy3d 0.9)
   | { kind: 'crest'; slug: string; src: string; color: string; label: string }  // CozyArena-Wappen (flach)
@@ -478,6 +485,7 @@ export function getAvatarDisplay(
       // einheitlicher Ueberstand fuer alle wuerde die Groessenunterschiede
       // wieder hereinholen, die er gerade beseitigt.
       discFill: COZYQUIZ_FILL[emoji] ?? 0.9,
+      eigenerSchatten: true,
       // Sitz: Verschiebung in Prozent der Kachelkante, nur fuer die Motive,
       // deren Masse deutlich neben der Mitte ihrer Bounding-Box liegt.
       nudge: COZYQUIZ_NUDGE[emoji],

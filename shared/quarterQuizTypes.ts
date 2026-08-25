@@ -302,7 +302,7 @@ export interface QQCell {
    *  visuelle Marker (🐢/⚡/🦝/🪙/💞). Pro Stamp +1 zum largestConnected (kein
    *  Multiplier — linear). Stack-Cap der normalen Phase gilt hier nicht. */
   revealStamps?: Array<{
-    kind: 'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy';
+    kind: 'underdog' | 'speedy' | 'meisterklauer' | 'cozyChampion' | 'bet' | 'sympathy';
     teamId: string;
   }>;
 }
@@ -1514,7 +1514,7 @@ export interface QQStateUpdate {
    *  qq:finalRevealPlaceStack abgearbeitet. null = kein pending Placement. */
   finalRevealPendingStacks?: {
     teamId: string;
-    kinds: Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'>;
+    kinds: Array<'underdog' | 'speedy' | 'meisterklauer' | 'cozyChampion' | 'bet' | 'sympathy'>;
   } | null;
   finalRoundWinners: string[] | null;                 // Legacy/optional: bei Tie alle gemeinsam — UI-Hinweis nur
   finalBetResolution: Record<string, QQFinalBetResolution> | null; // teamId → resolved bonus
@@ -1674,6 +1674,12 @@ export interface QQEndAwards {
    *  Korrekt-Submitter". Primärer Award-Wert. Optional für Backward-Compat
    *  mit alten Game-Results vor diesem Date. */
   speedyFirstCount?: number;
+  /** 2026-08-25 (Wolf: „vlt machen wir noch einen fuer die cozygames"):
+   *  Team mit den meisten CozyGame-Siegen. null wenn CozyGames aus waren oder
+   *  niemand gewonnen hat. Optional fuer Backward-Compat mit alten Ergebnissen. */
+  cozyChampion?: string | null;
+  /** Anzahl Siege des Cozy-Champions (zur Anzeige). */
+  cozyChampionCount?: number;
 }
 
 /** Pro Team aufgelöstes Final-Tipp-Ergebnis.

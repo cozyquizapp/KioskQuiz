@@ -15,7 +15,12 @@
  */
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 
-/** Award-Punkte pro Team am Spielende: Underdog +2, Meisterklauer +1, Speedy +1. */
+/** Award-Punkte pro Team am Spielende: Underdog +2, Meisterklauer +1,
+ *  Speedy +1, Cozy-Champion +1.
+ *  2026-08-25: der Cozy-Champion liegt bewusst auf +1, also auf derselben
+ *  Stufe wie Meisterklauer und Speedy. Ein CozyGame-Sieg gibt im Spiel schon
+ *  ein Feld, und ein Feld ist bei einem Siegerstand von fuenf bis sieben rund
+ *  ein Fuenftel. Der Award soll den Abend ehren, nicht ihn drehen. */
 export function qqAwardPoints(s: QQStateUpdate): Record<string, number> {
   const awards = s.endAwards;
   const pts: Record<string, number> = {};
@@ -23,6 +28,7 @@ export function qqAwardPoints(s: QQStateUpdate): Record<string, number> {
   if (awards?.underdog) pts[awards.underdog] = (pts[awards.underdog] ?? 0) + 2;
   if (awards?.meisterklauer) pts[awards.meisterklauer] = (pts[awards.meisterklauer] ?? 0) + 1;
   if (awards?.speedy) pts[awards.speedy] = (pts[awards.speedy] ?? 0) + 1;
+  if (awards?.cozyChampion) pts[awards.cozyChampion] = (pts[awards.cozyChampion] ?? 0) + 1;
   return pts;
 }
 

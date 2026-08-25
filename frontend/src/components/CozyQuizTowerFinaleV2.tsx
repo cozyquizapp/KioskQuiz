@@ -61,6 +61,7 @@ export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; aw
   const awards: TowerAward[] = [];
   if (a?.speedy) awards.push({ key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: a.speedy, bonus: 1 });
   if (a?.meisterklauer) awards.push({ key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: a.meisterklauer, bonus: 1 });
+  if (a?.cozyChampion) awards.push({ key: 'cozyChampion', label: 'Cozy-Champion', labelEn: 'Cozy Champion', emoji: '🎡', teamId: a.cozyChampion, bonus: 1 });
   if (a?.underdog) awards.push({ key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: a.underdog, bonus: 2 });
   const groesse = s.gridSize ?? 0;
   const kachelnProTeam = qqLargestClusterCells(s.grid, groesse);

@@ -53,6 +53,10 @@ export interface QQRoomState {
    *  `teamPhaseStats[id].stealsUsed` resettet pro Phase und ist nur fuer
    *  den Phase-2-Cap zustaendig — fuer Summary brauchen wir den Lifetime-Wert. */
   teamTotalSteals: Record<string, number>;
+  /** 2026-08-25 (Wolf: „vlt machen wir noch einen [Award] fuer die
+   *  cozygames"): CozyGame-Siege pro Team, Grundlage fuer den
+   *  Cozy-Champion. Wird in qqCozyGameSelectWinner hochgezaehlt. */
+  teamCozyGameWins: Record<string, number>;
   questions: QQQuestion[];      // ordered 0-14
   currentQuestion: QQQuestion | null;
   revealedAnswer: string | null;
@@ -434,6 +438,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       joinOrder: [],
       teamPhaseStats: {},
       teamTotalSteals: {},
+      teamCozyGameWins: {},
       questions: [],
       currentQuestion: null,
       revealedAnswer: null,
@@ -702,6 +707,7 @@ export function qqJoinTeam(
   room.joinOrder.push(teamId);
   room.teamPhaseStats[teamId] = emptyPhaseStats();
   room.teamTotalSteals[teamId] = 0;
+  room.teamCozyGameWins[teamId] = 0;
 }
 
 export function qqSetTeamConnected(
@@ -1058,6 +1064,7 @@ export function qqStartGame(
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id] = emptyPhaseStats();
     room.teamTotalSteals[id] = 0;
+    room.teamCozyGameWins[id] = 0;
   }
   room.lastActivityAt = Date.now();
 }
@@ -3027,6 +3034,7 @@ export function qqSnapshotForUndo(room: QQRoomState): void {
     correctTeamId: room.correctTeamId,
     lastPlacedCell: room.lastPlacedCell ? { ...room.lastPlacedCell } : null,
     teamTotalSteals: { ...(room.teamTotalSteals ?? {}) },
+    teamCozyGameWins: { ...(room.teamCozyGameWins ?? {}) },
     capturedAt: Date.now(),
   };
 }
@@ -3049,6 +3057,7 @@ export function qqUndoLastAction(room: QQRoomState): void {
   room.correctTeamId = snap.correctTeamId;
   room.lastPlacedCell = snap.lastPlacedCell;
   room.teamTotalSteals = snap.teamTotalSteals;
+  room.teamCozyGameWins = snap.teamCozyGameWins ?? {};
   delete (room as any)._undoSnapshot;
   room.lastActivityAt = Date.now();
 }
@@ -5284,6 +5293,7 @@ export function qqResetRoom(room: QQRoomState): void {
   for (const id of room.joinOrder) {
     room.teamPhaseStats[id]       = emptyPhaseStats();
     room.teamTotalSteals[id]      = 0;
+    room.teamCozyGameWins[id]     = 0;
     room.teams[id].totalCells     = 0;
     room.teams[id].largestConnected = 0;
   }
@@ -6575,6 +6585,16 @@ export function qqResolveFinalBets(room: QQRoomState): void {
     }
   }
   if (meisterklauerCount === 0) meisterklauer = null;
+  // Cozy-Champion: die meisten CozyGame-Siege. null wenn niemand gewonnen hat
+  // (CozyGames aus) oder wenn ALLE gleich viele haben - dann sagt der Award
+  // nichts, und eine Auszeichnung, die jeder bekommt, ist keine.
+  let cozyChampion: string | null = null;
+  let cozyChampionCount = 0;
+  for (const id of teamIds) {
+    const c = room.teamCozyGameWins?.[id] ?? 0;
+    if (c > cozyChampionCount) { cozyChampionCount = c; cozyChampion = id; }
+  }
+  if (cozyChampionCount === 0) cozyChampion = null;
   // Speedy Gonzales: am OEFTESTEN am schnellsten. Pro Frage zaehlt, wer
   // als ERSTER eingereicht hat (nur korrekte Antworten zaehlen). Team mit
   // hoechstem Count gewinnt.
@@ -6635,6 +6655,7 @@ export function qqResolveFinalBets(room: QQRoomState): void {
     // speedyAvgMs als Legacy-Feld behalten (Frontend-Backward-Compat),
     // speedyFirstCount als primaerer Award-Wert ("X × zuerst").
     speedy, speedyAvgMs, speedyFirstCount,
+    cozyChampion, cozyChampionCount,
   };
 
   // KEIN Cell-Removal mehr — alle Felder bleiben am Brett (Tipp-Variante).
@@ -6948,6 +6969,12 @@ export function qqCozyGameSelectWinner(
     }
   }
   room.cozyGame.winnerTeamIds = validIds.slice();
+  // Cozy-Champion (2026-08-25): jeder Sieg zaehlt. Bei mehreren Siegern zaehlt
+  // er fuer alle - das Spiel kennt geteilte Siege, der Award muss das auch.
+  if (!room.teamCozyGameWins) room.teamCozyGameWins = {};
+  for (const id of validIds) {
+    room.teamCozyGameWins[id] = (room.teamCozyGameWins[id] ?? 0) + 1;
+  }
 
   // Bei Final-Slot: Sieger zählen als Final-Kat-Win (siehe COZYGAMES.md).
   // 2026-07-21 (Perfektionist-Audit, Scoring Finding 1): finalPhaseWins hier NICHT

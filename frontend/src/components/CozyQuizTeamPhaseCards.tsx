@@ -973,10 +973,13 @@ export function FinalRecapHintCard({
 // 2026-05-25 (Wolf Final-Wager v4): Wenn der Reveal-Step Bonus-Stacks fuer das
 // eigene Team vergibt, picked das Team eigene Cells fuer Story-Stamps. Mini-
 // Grid mit Tap-to-Place. Pro Tap 1 Stamp aus der pending-Queue.
-const STAMP_EMOJI: Record<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy', string> = {
+const STAMP_EMOJI: Record<'underdog' | 'speedy' | 'meisterklauer' | 'cozyChampion' | 'bet' | 'sympathy', string> = {
   underdog: '🐢',
   speedy: '⚡',
   meisterklauer: '🦝',
+  // 2026-08-25: das Rad ist schon das Zeichen der CozyGames im Baum und in
+  // den Regeln. Derselbe Gegenstand, dieselbe Bedeutung.
+  cozyChampion: '🎡',
   bet: '🪙',
   sympathy: '💞',
 };
@@ -1003,11 +1006,13 @@ export function FinalRevealStackPlacementCard({
   const titleDe = nextKind === 'underdog' ? '🐢 Trostpreis verteilen!'
     : nextKind === 'speedy' ? '⚡ Speedy-Bonus setzen!'
     : nextKind === 'meisterklauer' ? '🦝 Klauer-Bonus setzen!'
+    : nextKind === 'cozyChampion' ? '🎡 CozyGame-Bonus setzen!'
     : nextKind === 'sympathy' ? '💞 Sympathie-Bonus setzen!'
     : '🪙 Tipp-Bonus setzen!';
   const titleEn = nextKind === 'underdog' ? '🐢 Place underdog bonus!'
     : nextKind === 'speedy' ? '⚡ Place speedy bonus!'
     : nextKind === 'meisterklauer' ? '🦝 Place steal bonus!'
+    : nextKind === 'cozyChampion' ? '🎡 Place CozyGame bonus!'
     : nextKind === 'sympathy' ? '💞 Place sympathy bonus!'
     : '🪙 Place tip bonus!';
 

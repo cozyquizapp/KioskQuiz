@@ -180,7 +180,19 @@ export default function QQProgressTree({
   // lesen sich aus Distanz deutlich besser (Beamer-Review 54px-Tiles vs. 34px).
   const dotSize = Math.round(34 * scale * (bigIcons ? 1.3 : 1));
   const dotGap = isMini ? 4 : Math.round(12 * scale);
-  const phaseGap = isMini ? 14 : Math.round(40 * scale);
+  // ⚠️ ES GIBT NUR EINEN ABSTAND ZWISCHEN DEN GRUPPEN, und er heisst
+  // `gruppenGap` (weiter unten). Hier stand frueher zusaetzlich ein `phaseGap`,
+  // und beide waren verschieden: die Rechnung unten addierte `phaseGap`, der
+  // Flex-Container setzte `gruppenGap`. Seit 0e4f078b („Rundenuebersicht: eine
+  // Runde, ein Rad, kein Wolf") lagen sie 17 Bildpunkte auseinander, und weil
+  // sich das je Rundenwechsel AUFADDIERT, wanderte die Marke immer weiter von
+  // ihrer Kachel weg - im Runden-Intro von Runde 2 gemessen: Kachelmitte 691,
+  // Marke 708. Was Wolf als „rahmen bugt" gesehen hat, war die Marke neben dem
+  // Kasten des aktuellen Punkts.
+  //
+  // Wer hier einen zweiten Abstand einfuehrt, baut denselben Fehler noch
+  // einmal. Die Reihenfolge im Baum steht an genau zwei Stellen (Rechnung und
+  // Darstellung), und beide muessen dieselbe Zahl benutzen.
   const showLabels = !isMini && !bare;
   // 2026-08-22: eigener Rahmen NUR wenn der Baum fuer sich steht. In der
   // Einzelrunde sitzt er in der Regelkarte — ein Kasten im Kasten waere die
@@ -397,11 +409,11 @@ export default function QQProgressTree({
     }
     // Vor der letzten Phase: Bieten-Dot einfuegen (nur wenn showBidding).
     if (showBidding && pIdx === phases.length - 1 && pIdx > 0) {
-      cursor += phaseGap;
+      cursor += gruppenGap;
       biddingCenter = cursor + biddingDotSize / 2;
       cursor += biddingDotSize;
     }
-    if (pIdx > 0) cursor += phaseGap;
+    if (pIdx > 0) cursor += gruppenGap;
     const entries = byPhase.get(p) ?? [];
     const renderCount = entries.length > 0 ? entries.length : DEFAULT_DOTS_PER_PHASE;
     const phaseStart = cursor;
@@ -455,7 +467,7 @@ export default function QQProgressTree({
   const finaleDotSize = Math.round(dotSize * 1.35);
   let finaleCenter = 0;
   if (showFinale) {
-    cursor += phaseGap;
+    cursor += gruppenGap;
     finaleCenter = cursor + finaleDotSize / 2;
     cursor += finaleDotSize;
   }
@@ -588,6 +600,36 @@ export default function QQProgressTree({
     : wolfOnCozyGame ? activeCozyGameCenter
     : lastCenter;
   const progressEnd = Math.max(trackStart, Math.min(currentCenter, trackEnd));
+
+  // ── Das Gleis liegt ZWISCHEN den Stationen, nicht durch sie hindurch ───────
+  // 2026-08-25 (Wolf: „graue linie verdeckt, wenn background blurry").
+  //
+  // Gemessen in der Rundenuebersicht: die Kacheln haben dort gar keinen
+  // Hintergrund (`rgba(0, 0, 0, 0)`) - das ist Absicht, die cozy3d-Bilder
+  // bringen ihre farbige Kachel selbst mit (2026-08-23). Das durchgehende
+  // Gleis lief damit quer durch jedes Motiv und war, weil die Kacheln im
+  // Zoom weich und zurueckgenommen wirken, das schaerfste Element im Bild.
+  //
+  // Statt die Kacheln wieder zuzukleben liegt das Gleis jetzt in Abschnitten:
+  // von der Kante einer Station bis zur Kante der naechsten. Wo eine Kachel
+  // undurchsichtig ist, aendert das nichts (sie hat es ohnehin verdeckt), wo
+  // sie durchsichtig ist, hoert das Gleis vor ihr auf.
+  // Kein zusaetzlicher Abstand: der Abschnitt laeuft bis an die Kante der
+  // Station. Mit drei Pixeln Luft blieben zwischen zwei Kacheln nur sieben
+  // Pixel Strich uebrig, und das las sich als Bindestrich statt als Gleis.
+  const LUFT = 0;
+  const stationen: Array<{ mitte: number; halb: number }> = [];
+  for (const c of dotCenters) stationen.push({ mitte: c, halb: dotSize / 2 });
+  for (const c of cozyGameCentersByPi.values()) stationen.push({ mitte: c, halb: cozyGameDotSize / 2 });
+  if (showBidding && biddingCenter) stationen.push({ mitte: biddingCenter, halb: biddingDotSize / 2 });
+  if (showFinale && finaleCenter) stationen.push({ mitte: finaleCenter, halb: finaleDotSize / 2 });
+  stationen.sort((x, y) => x.mitte - y.mitte);
+  const abschnitte: Array<{ von: number; bis: number }> = [];
+  for (let i = 0; i + 1 < stationen.length; i++) {
+    const von = Math.max(trackStart, stationen[i].mitte + stationen[i].halb + LUFT);
+    const bis = Math.min(trackEnd, stationen[i + 1].mitte - stationen[i + 1].halb - LUFT);
+    if (bis > von) abschnitte.push({ von, bis });
+  }
 
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
   // 2026-05-09 (Wolf 'tree noch bunt'): Progress-Strich + Dots nutzen jetzt
@@ -836,34 +878,43 @@ export default function QQProgressTree({
           width: totalWidth,
           height: Math.round(dotSize * 1.3), // Platz für Scale 1.15 + Glow
         }}>
-          {/* Track: grau, von erstem bis letztem Dot-Center */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: trackStart,
-            width: Math.max(0, trackEnd - trackStart),
-            height: isMini ? 2 : 3,
-            background: trackBg,
-            borderRadius: 2,
-            transform: 'translateY(-50%)',
-            zIndex: 0,
-          }} />
+          {/* Track: grau, in Abschnitten zwischen den Stationen (siehe oben) */}
+          {abschnitte.map((a, i) => (
+            <div key={`gleis-${i}`} style={{
+              position: 'absolute',
+              top: '50%',
+              left: a.von,
+              width: Math.max(0, a.bis - a.von),
+              height: isMini ? 2 : 3,
+              background: trackBg,
+              borderRadius: 2,
+              transform: 'translateY(-50%)',
+              zIndex: 0,
+            }} />
+          ))}
           {/* Progress: nimmt aktuelle Kategorie-Farbe (Wolf-Wunsch 2026-05-04
               — vorher immer gold). Color + Box-Shadow mit transition damit der
               Wechsel beim Wolf-Hop smooth durchfaerbt. */}
-          <div style={{
-            position: 'absolute',
-            top: '50%',
-            left: trackStart,
-            width: Math.max(0, progressEnd - trackStart),
-            height: isMini ? 2 : 3,
-            background: `linear-gradient(90deg, ${progressColor}, ${progressColorEnd})`,
-            borderRadius: 2,
-            transform: 'translateY(-50%)',
-            boxShadow: isThemed() ? 'none' : `0 0 10px ${progressColor}99`,
-            transition: 'width 600ms var(--qq-ease-smooth), background 500ms ease, box-shadow 500ms ease',
-            zIndex: 1,
-          }} />
+          {abschnitte.map((a, i) => {
+            // Derselbe Abschnitt, nur bis zur aktuellen Kachel gefuellt.
+            const bis = Math.min(a.bis, progressEnd);
+            if (bis <= a.von) return null;
+            return (
+              <div key={`fortschritt-${i}`} style={{
+                position: 'absolute',
+                top: '50%',
+                left: a.von,
+                width: Math.max(0, bis - a.von),
+                height: isMini ? 2 : 3,
+                background: `linear-gradient(90deg, ${progressColor}, ${progressColorEnd})`,
+                borderRadius: 2,
+                transform: 'translateY(-50%)',
+                boxShadow: isThemed() ? 'none' : `0 0 10px ${progressColor}99`,
+                transition: 'width 600ms var(--qq-ease-smooth), background 500ms ease, box-shadow 500ms ease',
+                zIndex: 1,
+              }} />
+            );
+          })}
 
           {/* Dots — Flex-Layout, genau mit Berechnung oben synchron.
               Current = unsichtbarer Platzhalter (Wolf sitzt drauf).
@@ -1090,7 +1141,13 @@ export default function QQProgressTree({
                         border: isSingleRound
                           ? 'none'
                           : isCurrent
-                          ? (wolfAbove ? `2.5px solid ${skinAccentHex ?? color}` : 'none')
+                          // Auf der Buehne rahmt die MARKE den aktuellen Punkt
+                          // ein (sie sitzt seit 2026-08-24 auf ihm statt darueber
+                          // zu schweben). Ein eigener Rand hier waere ein zweiter
+                          // Ring drei Pixel innerhalb des ersten - und genau so
+                          // sah es aus. Anderswo schwebt die Marke weiter, dort
+                          // braucht der Punkt seine eigene Kontur.
+                          ? ((wolfAbove && !istBuehneT()) ? `2.5px solid ${skinAccentHex ?? color}` : 'none')
                           : isShowcasedPhase
                             ? `2px solid ${color}`
                             : isPast
@@ -1098,7 +1155,7 @@ export default function QQProgressTree({
                               : ((variant === 'inline' || isMini || isShowcase) ? (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)') : '2px solid #e2e8f0'),
                         boxShadow: isShowcasedPhase
                           ? `0 0 18px ${color}88, 0 0 36px ${color}44`
-                          : (isCurrent && wolfAbove)
+                          : (isCurrent && wolfAbove && !istBuehneT())
                             ? `0 0 18px ${skinAccentHex ?? color}88`
                             : 'none',
                         opacity: isCurrent ? (wolfAbove ? 1 : 0) : isPast ? 0.55 : isPlaceholder ? 0.5 : 1,

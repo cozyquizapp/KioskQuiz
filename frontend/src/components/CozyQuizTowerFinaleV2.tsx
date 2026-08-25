@@ -225,8 +225,14 @@ function rennSchritt(uebrig: number): number {
 // Platz-Pille steht, bevor ihr Turm absinkt. Modulweit, weil die Dauer-Rechnung
 // fuers Steuerpult sie braucht - der Beat muss laenger sein als die Zeremonie,
 // die in ihm stattfindet.
-const ABGANG_TAKT = 620;
-const ABGANG_ANSAGE = 820;
+// ⚠️ ABGANG_TAKT muss GROESSER sein als die Standzeit des Bandes
+// (ABGANG_ANSAGE + ABGANG_BAND_AUS), sonst stehen zwei Ansagen uebereinander.
+// Genau so aufgenommen: bei 1498 ms lagen „PLATZ 7 Wolfsrudel" und der Name
+// des naechsten Teams uebereinander auf demselben Band.
+const ABGANG_TAKT = 1200;
+const ABGANG_ANSAGE = 900;
+/** Wie lange das Band nach der Standzeit noch hinausfaehrt. */
+const ABGANG_BAND_AUS = 250;
 const ABGANG_SINKT = 1000;
 /**
  * Wie lange ein Renn-Beat am Stueck laeuft, von Takt `von` bis Takt `bis`, mit
@@ -538,10 +544,21 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // schon bei Takt 0 weg, also bevor ueberhaupt ein Stein gefallen ist. So
     // faellt erst der erste Stein, dann geht es.
     if (rank >= 3) return !(phase === 'reveal' && rennTick >= Math.max(1, tippOf(id)));
-    if (rank === 2) return revealStep < 2;   // Platz 3 geht, wenn Platz 2 dran ist
-    if (rank === 1) return revealStep < 3;   // Platz 2 geht zur Kroenung
+    // 2026-08-25 (Wolf: „aber bei step 13 war noch gar nicht der siegerturm
+    // alleine da?").
+    //
+    // Er hat recht, und es war ein Taktfehler. Platz 3 ging vorher erst, wenn
+    // der Beat von Platz 2 begann, und Platz 2 erst im Beat des SIEGERS. Damit
+    // fiel der Abgang des Zweiten in genau den Beat, in dem der Turm des
+    // Siegers allein stehen soll - und wer weiterklickt, bevor der Abgang durch
+    // ist (rund zwei Sekunden), sieht diesen Moment nie.
+    //
+    // Jetzt geht jeder in SEINEM eigenen Beat, direkt nachdem sein Platz
+    // feststeht. Am Anfang des naechsten Beats ist die Buehne schon geraeumt,
+    // und der Sieger steht allein da, egal wie schnell weitergeschaltet wird.
+    if (rank === 2 || rank === 1) return !platzSteht(rank);
     return true;
-  }, [rankById, phase, rennTick, tippOf, revealStep]);
+  }, [rankById, phase, rennTick, tippOf, platzSteht]);
 
   // Space spult vor.
   const skip = useCallback(() => {
@@ -1476,6 +1493,49 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         );
       })}
 
+      {/* ── Die Ansage beim Ausscheiden ──────────────────────────────────
+          2026-08-25 (Wolf: „teams die plaetze niedriger als top 3 haben, fallen
+          einfach runter ohne eigene siegerehrung").
+
+          Die Platz-Pille ueber der Turmspitze war der erste Versuch, und sie
+          reicht nicht: bei acht Tuermen ist sie ein Detail am Rand des Bildes,
+          und der Teamname steht klein im Sockel darunter. Aus zehn Metern liest
+          das niemand als Ehrung.
+
+          Jetzt bekommt jedes ausscheidende Team ein Band quer ueber der Buehne,
+          gross, mit Platz und Namen - dieselbe Aussage, aber an der Stelle, an
+          der der Blick ohnehin ist. Eines nach dem anderen: der Abstand
+          (ABGANG_TAKT) ist groesser als die Standzeit des Bandes, also stehen
+          nie zwei gleichzeitig da.
+
+          Die Sichtbarkeit macht die Animation selbst, nicht der Zustand - damit
+          braucht es keinen Timer, der mitzaehlen muesste. */}
+      {inReveal && !reduce && ordered.map(({ team }) => {
+        const rank = rankById[team.id];
+        // Auch Platz 3 und Platz 2 bekommen ihr Band. Es ist dieselbe Ehrung,
+        // und ohne sie waeren ausgerechnet die beiden, die am weitesten kamen,
+        // die einzigen ohne Ansage.
+        if (rank == null || rank < 1 || nochDrin(team.id)) return null;
+        return (
+          <div key={`ansage-${team.id}`} aria-hidden style={{
+            position: 'absolute', left: 0, right: 0, top: TITLE_H + 30, zIndex: 12,
+            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22,
+            pointerEvents: 'none',
+            animation: `qqT2AnsageBand ${ABGANG_ANSAGE + ABGANG_BAND_AUS}ms ease ${abgangVerzug(team.id)}ms both`,
+          }}>
+            <span style={{
+              fontSize: istBuehne ? 34 : 20, fontWeight: 900, letterSpacing: '0.06em',
+              color: '#12100E', background: team.color, borderRadius: 999,
+              padding: istBuehne ? '8px 26px' : '4px 14px',
+            }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+            <span style={{
+              fontSize: istBuehne ? 62 : 32, fontWeight: 900, lineHeight: 1,
+              color: 'var(--qq-text)', maxWidth: 1100, textAlign: 'center',
+            }}>{team.name}</span>
+          </div>
+        );
+      })}
+
       {/* Grosse Award-Zeremonie (Akt 2, Stage 'card') */}
       {phase === 'award' && curAward && awardStage === 'card' && recipTeam && (
         <AwardCelebration award={curAward} recip={recipTeam} alle={teams.map(t => t.team)} de={de} reduce={reduce} />
@@ -1639,11 +1699,23 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
               const seite = mitte ? MARKE : MARKE_KLEIN;
               return (
                 <div key={k} style={{ width: zelle, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  // 2026-08-25 (Wolf: „rand um gewinnendes team ist komisch").
+                  // Er hatte recht, und es waren zwei Raender uebereinander: die
+                  // Marke trug einen 3px-Rand in der EIGENEN Farbe - also gar
+                  // keinen sichtbaren Rand, sondern nur eine dickere Flaeche -
+                  // und darueber lag beim Sieger ein 30px weicher Schein in
+                  // derselben Farbe. Bei einem gelben Team ergab das einen
+                  // ausgefransten gelben Hof um eine gelbe Kachel.
+                  // Jetzt: kein Rand in Teamfarbe, kein Schein. Der Gewinner
+                  // bekommt denselben goldenen Ring, der vorher als Fenster ueber
+                  // der Mitte lag - eine harte Linie mit Abstand, dieselbe
+                  // Aussage wie vorher, nur scharf.
                   <div style={{
                     width: seite, height: seite, borderRadius: quirkSet ? '18%' : '50%',
-                    background: t.color, border: `3px solid ${t.color}`,
+                    background: t.color,
                     display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                    boxShadow: mitte && steht ? `0 0 30px ${t.color}88` : 'none',
+                    outline: mitte && steht ? `4px solid ${GOLD}` : 'none',
+                    outlineOffset: mitte && steht ? 6 : 0,
                     animation: (mitte && steht && !reduce) ? 'qqT2AwardPop 0.5s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
                   }}>
                     <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={seite} flat />
@@ -1755,6 +1827,14 @@ const KEYFRAMES = `
    faehrt auf null - so BEWEGT sich das Rad, statt nur sein Bild zu tauschen.
    Die Zelle ist ueber eine CSS-Variable gesetzt, weil ihre Breite an der
    Markengroesse haengt und die auf der Buehne eine andere ist. */
+/* Das Band beim Ausscheiden: herein, stehen, hinaus. Die Standzeit in der
+   Mitte ist die Zeit, in der der Turm darunter noch steht. */
+@keyframes qqT2AnsageBand {
+  0%   { opacity: 0; transform: translateY(16px) scale(0.94); }
+  12%  { opacity: 1; transform: none; }
+  74%  { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: translateY(-14px); }
+}
 @keyframes qqT2RadRuck {
   0%   { transform: translateX(var(--qq-radzelle, 130px)); }
   100% { transform: translateX(0); }

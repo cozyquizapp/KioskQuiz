@@ -13,6 +13,7 @@ import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
 // shared/qqFinalReveal.ts). Ersetzt das alte betSlotsCount+4 (3 feste Awards).
 import { qqTowerAwardCount, qqTowerMaxBeat } from '../../../shared/qqFinalReveal';
+import { qqTurmBeatDauer } from '../components/CozyQuizTowerFinaleV2';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -1206,17 +1207,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // und war weg. Der Beat, den das Steuerpult „Tuerme wachsen +
             // Zwischenstand" nennt, hatte seinen Zwischenstand nicht.
             //
-            // Die Dauer haengt am Brett, deshalb wird sie gerechnet statt
-            // geraten (die Werte stehen in CozyQuizTowerFinaleV2.tsx):
-            //   Uebergabe + Halt      1800 ms
-            //   eine Welle je Zeile    380 ms, plus zwei Wellen Nachlauf
-            //   Flug der letzten Kachel 620 ms
-            //   Sockel-Ticks          1800 ms (grosszuegig, haengt am Vorsprung)
-            //   Zwischenstand lesen   2200 ms
-            // Grosszuegig ist hier richtig: zu lang heisst, der Zwischenstand
-            // steht einen Moment laenger, zu kurz heisst, es gibt ihn nicht.
-            const felder = (s as any).gridSize ?? 8;
-            delayMs = 1800 + (felder + 1) * 380 + 620 + 1800 + 2200;
+            // Die Dauer haengt am Brett und am Takt des Falls. Beides steht in
+            // CozyQuizTowerFinaleV2.tsx, und von dort kommt sie auch - eine
+            // zweite Rechnung mit eigenen Zahlen hier waere genau der Grund,
+            // aus dem der Zwischenstand ueberhaupt verlorenging.
+            // Dazu die Lesezeit fuer den Zwischenstand selbst. Grosszuegig ist
+            // hier richtig: zu lang heisst, er steht einen Moment laenger, zu
+            // kurz heisst, es gibt ihn nicht.
+            delayMs = qqTurmBeatDauer((s as any).gridSize ?? 8) + 2200;
           } else if (beat <= awardCount) {
             // Award-Zeremonie — goldener Baustein wächst in den Turm.
             delayMs = 5200;

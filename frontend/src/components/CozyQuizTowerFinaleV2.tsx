@@ -103,6 +103,31 @@ export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; aw
 
 const STAGE_W = 1760;
 const STAGE_H = 990;
+// ── Der Takt des Brettfalls ────────────────────────────────────────────────
+// Modulweit, weil der Autoplay im Steuerpult ihn braucht: er muss wissen, wie
+// lange Beat 0 laeuft, sonst schaltet er mitten hinein weiter. Vorher stand
+// dort eine eigene Rechnung mit eigenen Zahlen, und genau so faellt beim
+// naechsten Umbau der Zwischenstand wieder weg.
+const WELLE = 460;         // Abstand zwischen zwei Brettzeilen
+const FLUG = 950;          // Flugdauer einer Kachel
+const SPALTEN_VERZUG = 48; // Versatz je Spalte innerhalb einer Zeile
+
+/**
+ * Wie lange der Beat 0 des Turm-Finales am Stueck laeuft: Brett steht,
+ * Brett faellt, Sockel wachsen nach, Zwischenstand.
+ *
+ * `mitUebergabe` heisst: das Brett ist von der Tipp-Folie hereingefahren
+ * (siehe `qqBrettUebergabe`), dann steht es laenger still, bevor es faellt.
+ */
+export function qqTurmBeatDauer(gridSize: number, mitUebergabe = true): number {
+  const halt = mitUebergabe ? 1180 : 900;
+  const landeVerzug = Math.ceil((FLUG + SPALTEN_VERZUG * 7) / WELLE);
+  const wellen = Math.max(0, gridSize - 1) + landeVerzug + 1;
+  // Der Sockelbau danach faengt dort an, wo das Brett aufgehoert hat; sein
+  // Rest ist grosszuegig geschaetzt, er haengt am Vorsprung der Teams.
+  return halt + wellen * WELLE + FLUG + 1500;
+}
+
 const TITLE_H = 118;
 const CROWN_H = 96;
 const BASE_H = 96;
@@ -232,9 +257,18 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // gerade erst angekommen, und ein Gegenstand, der im selben Moment ankommt
   // und zerfaellt, hat nie dagestanden.
   const BRETT_HALT = uebergabe ? 1180 : 900;
-  const WELLE = 380;        // Abstand zwischen zwei Brettzeilen
-  const FLUG = 620;         // Flugdauer einer Kachel
-  const LANDE_VERZUG = Math.ceil(FLUG / WELLE);
+  // 2026-08-25 (Wolf: „koennten die kacheln noch etwas smoother fliegen
+  // langsamer epischer und weniger linear? ... der absink moment aus dem grid
+  // soll episch sein"). Der Takt ist deshalb langsamer geworden: eine Zeile
+  // alle 460 statt 380 ms, ein Flug 950 statt 620 ms. Dazu faellt eine Zeile
+  // nicht mehr am Stueck, sondern von links nach rechts durch (`SPALTEN_VERZUG`).
+  //
+  // ⚠️ Die drei Zahlen haengen zusammen. Der Baustein im Turm erscheint, wenn
+  // `gelandet()` die Kachel zaehlt, also LANDE_VERZUG Wellen nach dem Start.
+  // Diese Zeitspanne muss laenger sein als Flug PLUS Spaltenverzug, sonst steht
+  // der Baustein da, waehrend die Kachel noch fliegt - man saehe sie doppelt.
+  //   3 * 460 = 1380 ms  gegen  950 + 7 * 48 = 1286 ms.  Passt.
+  const LANDE_VERZUG = Math.ceil((FLUG + SPALTEN_VERZUG * 7) / WELLE);
   // Die Uebergabe von der Tipp-Folie (siehe unten, `uebergabe`). Bewusst
   // dieselbe Dauer wie ein Kachelflug: es ist dieselbe Bewegung in gross, und
   // zwei verschiedene Tempi fuer denselben Gegenstand lesen sich als zwei
@@ -587,6 +621,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Das Brett steht oben unter dem Titelband, die Tuerme wachsen unten. Die
   // Kacheln fliegen also ueberwiegend nach UNTEN, und „faellt" ist keine
   // Metapher, sondern die tatsaechliche Richtung.
+  // ── Wie ein Baustein aussieht ─────────────────────────────────────────────
+  // 2026-08-25 (Wolf: „die kacheln der tuerme sehen etwas billig aus").
+  // Er hat recht, und der Grund war schnell gefunden: die Kachel war eine
+  // Flaeche in Teamfarbe mit einem dunklen Verlauf am Fuss und einer Haarlinie
+  // als Rand. Das ist ein farbiges Rechteck, kein Baustein - es fehlt jede
+  // Kante, an der Licht steht, und jede Fuge zum Nachbarn darunter.
+  //
+  // Bewusst OHNE Farbrechnung: die Lichter und Schatten liegen als
+  // Schwarz-Weiss-Verlauf UEBER der Teamfarbe. Damit bleibt der Farbton exakt
+  // der der Marke, egal welches Team, und es braucht kein `color-mix`.
+  // Der Schatten nach unten ist der wichtigste Teil: er legt eine Fuge zwischen
+  // zwei gestapelte Bausteine, und erst die Fuge macht aus zwei Rechtecken
+  // einen Stapel.
+  const kachelFlaeche = (farbe: string, rand: string) => ({
+    borderRadius: 6,
+    border: `1px solid ${rand}`,
+    background: 'linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.34) 100%), ' + farbe,
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.38), inset 2px 0 0 rgba(255,255,255,0.07), inset -2px 0 0 rgba(0,0,0,0.18), 0 3px 4px rgba(0,0,0,0.42)',
+  });
+
   const BRETT_LUECKE = 6;
   const BRETT_SEITE = 600;
   const brettOben = TITLE_H + 26;
@@ -803,7 +857,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         // Buehne, also aendern sich die Koordinaten der Kinder nicht.
         <div ref={brettHuelleRef} aria-hidden style={{ position: 'absolute', inset: 0, zIndex: 2, pointerEvents: 'none' }}>
           {/* Das ruhende Brett */}
-          <div aria-hidden style={{
+          <div aria-hidden data-qq-brett="" style={{
             position: 'absolute', left: brettLinks, top: brettOben,
             width: BRETT_SEITE, height: BRETT_SEITE, zIndex: 2,
             display: 'grid',
@@ -823,7 +877,13 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                   borderRadius: 4,
                   border: '1px solid var(--qq-hairline)',
                   background: 'rgba(246,239,230,0.03)',
-                  animation: `qqT2BrettAus 0.45s ease ${BRETT_HALT + welle * WELLE + 220}ms both`,
+                  // Die Zeile raeumt sich, SOBALD ihre Kacheln weg sind, nicht
+                  // erst eine Fuenftelsekunde spaeter. 2026-08-25 gemessen: der
+                  // hoechste Turm waechst in den Brettbereich hinein, und jede
+                  // Zeile, die laenger als noetig steht, ist eine Zeile, durch
+                  // die er hindurchwaechst. Gemessen blieb danach genau eine
+                  // Kachel Ueberdeckung uebrig, kurz, und der Turm liegt davor.
+                  animation: `qqT2BrettAus 0.5s ease ${BRETT_HALT + welle * WELLE + 60}ms both`,
                 }} />
               );
             })}
@@ -834,12 +894,11 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             const m = brettMitte(k.r, k.c);
             const t = teamById(k.ownerId);
             return (
-              <div key={`streu-${k.r}-${k.c}`} aria-hidden style={{
+              <div key={`streu-${k.r}-${k.c}`} aria-hidden data-qq-streu="" style={{
                 position: 'absolute', zIndex: 3,
                 left: Math.round(m.x - brettZelle / 2), top: Math.round(m.y - brettZelle / 2),
-                width: brettZelle, height: brettZelle, borderRadius: 4,
-                border: `1px solid ${t?.color ?? 'var(--qq-hairline)'}`,
-                background: t ? `linear-gradient(180deg, ${t.color} 0%, ${t.color} 60%, rgba(0,0,0,0.24) 100%)` : 'transparent',
+                width: brettZelle, height: brettZelle,
+                ...(t ? kachelFlaeche(t.color, t.color) : { borderRadius: 6, border: '1px solid var(--qq-hairline)' }),
                 display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
                 animation: `qqT2StreuAus 0.7s ease ${BRETT_HALT - 250}ms both`,
               }}>
@@ -869,32 +928,64 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               const dx = Math.round(von.x - zu.x);
               const dy = Math.round(von.y - zu.y);
               const sc = (brettZelle / blockH).toFixed(3);
-              const verzug = BRETT_HALT + k.welle * WELLE;
+              // Innerhalb einer Zeile faellt es von links nach rechts durch.
+              // Vorher loeste sich die ganze Zeile im selben Bild - acht Kacheln,
+              // die wie ein Block abgehen. Eine Kaskade liest sich als Bewegung,
+              // ein Block als Schnitt.
+              const verzug = BRETT_HALT + k.welle * WELLE + k.c * SPALTEN_VERZUG;
+              // Kleine Eigendrehung, aus Zeile und Spalte gerechnet statt
+              // gewuerfelt: derselbe Abend sieht bei jeder Aufnahme gleich aus,
+              // und man kann Bewegung ueberhaupt messen.
+              const dreh = (((k.r * 7 + k.c * 13) % 5) - 2) * 3.5;
               return (
+                // ZWEI Ebenen, und das ist der ganze Trick an der Flugbahn:
+                // aussen die Waagerechte, innen die Senkrechte. Beide laufen
+                // gleich lang, aber mit verschiedenen Kurven - waagerecht weich
+                // auslaufend, senkrecht beschleunigend wie ein Fall. Zusammen
+                // ergibt das einen Bogen. Eine einzelne Transform-Animation von
+                // A nach B kann nur eine GERADE beschreiben, und genau die sah
+                // „linear" aus.
                 <div key={`flug-${id}-${k.platz}`} style={{
                   position: 'absolute', zIndex: 4,
                   left: Math.round(zu.x - blockW / 2),
                   top: Math.round(zu.y - blockH / 2),
-                  width: blockW, height: blockH, borderRadius: 4,
-                  border: `1px solid ${t.color}`,
-                  background: `linear-gradient(180deg, ${t.color} 0%, ${t.color} 60%, rgba(0,0,0,0.24) 100%)`,
-                  boxShadow: 'inset 0 1.5px 0 rgba(246, 239, 230,0.28)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                  width: blockW, height: blockH,
                   willChange: 'transform',
                   ['--qq-dx' as string]: `${dx}px`,
-                  ['--qq-dy' as string]: `${dy}px`,
-                  ['--qq-sc' as string]: sc,
-                  animation: `qqT2Flug ${FLUG}ms cubic-bezier(0.34,0.02,0.28,1) ${verzug}ms both`,
+                  animation: `qqT2FlugX ${FLUG}ms cubic-bezier(0.22,0.55,0.24,1) ${verzug}ms both`,
                 }}>
-                  <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avInBlock} flat />
-                  {anonym && (
-                    <span aria-hidden style={{
-                      position: 'absolute', inset: 0, borderRadius: 4,
-                      background: `linear-gradient(180deg, ${MYST} 0%, ${MYST} 60%, rgba(0,0,0,0.24) 100%)`,
-                      border: `1px solid ${MYST_EDGE}`,
-                      animation: `qqT2Anonym ${FLUG}ms ease ${verzug}ms both`,
-                    }} />
-                  )}
+                  <div style={{
+                    width: '100%', height: '100%',
+                    willChange: 'transform',
+                    ['--qq-dy' as string]: `${dy}px`,
+                    ['--qq-sc' as string]: sc,
+                    animation: `qqT2FlugY ${FLUG}ms cubic-bezier(0.5,0,0.6,1) ${verzug}ms both`,
+                  }}>
+                    {/* Dritte Ebene nur fuer die Eigendrehung. Sie MUSS getrennt
+                        sein: die Drehung faengt bei null an, geht in der Luft
+                        auf ihren Ausschlag und kommt zum Aufsetzen wieder auf
+                        null. Steckte sie im Flug-Bild, waere ihr Anfangswert
+                        auch der Ruhezustand - und dann liegen die Kacheln schon
+                        auf dem BRETT schief herum. Genau so sah es aus. */}
+                    <div style={{
+                      width: '100%', height: '100%', position: 'relative',
+                      ...kachelFlaeche(t.color, t.color),
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                      willChange: 'transform',
+                      ['--qq-dreh' as string]: `${dreh}deg`,
+                      animation: `qqT2FlugDreh ${FLUG}ms ease-in-out ${verzug}ms both`,
+                    }}>
+                      <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avInBlock} flat />
+                      {anonym && (
+                        <span aria-hidden style={{
+                          position: 'absolute', inset: 0, borderRadius: 6,
+                          background: `linear-gradient(180deg, ${MYST} 0%, ${MYST} 60%, rgba(0,0,0,0.24) 100%)`,
+                          border: `1px solid ${MYST_EDGE}`,
+                          animation: `qqT2Anonym ${FLUG}ms ease ${verzug}ms both`,
+                        }} />
+                      )}
+                    </div>
+                  </div>
                 </div>
               );
             });
@@ -1064,18 +1155,16 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                 const isCrownBlock = isWinner && crowned && isTopBlock;
                 return (
                   <div key={bi} style={{
-                    width: blockW, height: blockH, borderRadius: 4, position: 'relative', zIndex: 1,
-                    background: isAwardBlock ? `linear-gradient(180deg, #FCE3B0 0%, ${GOLD} 55%, ${GOLD_DEEP} 100%)` : `linear-gradient(180deg, ${colr} 0%, ${colr} 60%, rgba(0,0,0,0.24) 100%)`,
+                    width: blockW, height: blockH, position: 'relative', zIndex: 1,
+                    ...kachelFlaeche(isAwardBlock ? GOLD : colr, isAwardBlock ? GOLD_DEEP : edge),
                     // 2026-08-23 (2a): Gold BLEIBT auf den Award-Bausteinen, das
                     // ist Mechanik (Wolf: „die goldenen bausteine sind die
                     // awards"). Nur der Hof AUSSERHALB des Bausteins geht - der
                     // 14px-Schein weichte auf Projektionsdistanz die Kante auf,
                     // und die Kante ist es, die den Stapel als Stapel lesbar
                     // macht. Die inneren Lichtkanten bleiben, die sitzen drin.
-                    boxShadow: isAwardBlock
-                      ? `inset 0 1.5px 0 rgba(246, 239, 230,0.5), inset 0 -2px 4px rgba(120,80,10,0.4)${istBuehne ? '' : `, 0 0 14px ${GOLD}88`}`
-                      : `inset 0 1.5px 0 rgba(246, 239, 230,0.28)${(crowned && isWinner && !istBuehne) ? `, 0 0 14px ${colr}66` : ''}`,
-                    border: `1px solid ${isAwardBlock ? GOLD_DEEP : edge}`,
+                    // Der Hof AUSSERHALB des Bausteins bleibt weg (2026-08-23,
+                    // siehe oben), die Kanten sitzen jetzt IN der Kachel.
                     transformOrigin: 'bottom center',
                     transition: 'background 0.45s ease, border-color 0.45s ease',
                     // 2026-08-24: waehrend „Das Brett faellt" bringt die
@@ -1181,6 +1270,10 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
   );
 }
 
+// ⚠️ Dieser ganze Block ist EIN Template-Literal. Ein Backtick in einem
+// Kommentar darin beendet es, und die Datei ist ab dort kaputt - der
+// Uebersetzer zeigt dann auf eine Zeile weit unten, nicht auf die Ursache.
+// Also: hier drin keine Codezeichen in Kommentaren.
 const KEYFRAMES = `
 @keyframes qqT2FadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 @keyframes qqT2WinnerIn { 0% { opacity: 0; transform: translateY(14px) scale(0.96); } 60% { transform: translateY(0) scale(1.02); } 100% { opacity: 1; transform: none; } }
@@ -1191,17 +1284,40 @@ const KEYFRAMES = `
    sie ueber die Nullstellung nach Hause. Nur transform und opacity - beides
    komponiert die GPU, deshalb halten auch sechzehn gleichzeitige Kacheln die
    Bildrate. Der kleine Ueberschwung bei 82 Prozent gibt dem Aufsetzen Gewicht. */
-@keyframes qqT2Flug {
-  0%   { transform: translate(var(--qq-dx), var(--qq-dy)) scale(var(--qq-sc)); }
-  82%  { transform: translate(0, -7px) scale(1.04); }
+/* Die Waagerechte: weich auslaufend, sie ist am Anfang am schnellsten. */
+@keyframes qqT2FlugX {
+  0%   { transform: translateX(var(--qq-dx)); }
   100% { transform: none; }
+}
+/* Die Senkrechte: beschleunigend wie ein Fall, mit kurzem Aufsetzen am Ende.
+   Dazu dreht sich die Kachel in ihre Lage und waechst von Brett- auf
+   Bausteingroesse. Alles nur ueber transform, also auf der Rasterebene. */
+@keyframes qqT2FlugY {
+  0%   { transform: translateY(var(--qq-dy)) scale(var(--qq-sc)); }
+  78%  { transform: translateY(-9px) scale(1.06); }
+  90%  { transform: translateY(2px) scale(0.97); }
+  100% { transform: none; }
+}
+/* Die Eigendrehung: aus der Ruhe heraus, in der Luft am groessten, beim
+   Aufsetzen wieder gerade. */
+@keyframes qqT2FlugDreh {
+  0%   { transform: rotate(0deg); }
+  42%  { transform: rotate(var(--qq-dreh)); }
+  100% { transform: rotate(0deg); }
 }
 /* Die Spitzenreiter verlieren ihre Farbe im Flug, nicht erst am Boden. */
 @keyframes qqT2Anonym { 0%, 34% { opacity: 0; } 100% { opacity: 1; } }
 /* Verstreute Felder: sie gehoeren zu keinem groessten Gebiet und steigen
    deshalb nicht auf. Sie sinken ein Stueck und verblassen. */
 @keyframes qqT2StreuAus { 0% { opacity: 1; transform: none; } 100% { opacity: 0; transform: translateY(16px) scale(0.86); } }
-@keyframes qqT2BrettAus { from { opacity: 1; } to { opacity: 0; } }
+/* Eine leergefallene Brettzeile bleibt nicht stehen, sie hebt ab. 2026-08-25:
+   die Tuerme wachsen in genau diesen Bereich hinein (gemessen bis 566
+   Bildpunkte Ueberdeckung), und ein Raster, das dabei einfach nur ausblendet,
+   liegt zu lange im Weg. */
+@keyframes qqT2BrettAus {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: translateY(-26px) scale(0.97); }
+}
 @keyframes qqT2CrownBlock { 0% { opacity: 0; transform: translateY(-40px) scale(0.8); } 55% { transform: translateY(3px) scale(1.14); } 100% { opacity: 1; transform: none; } }
 @keyframes qqT2Spark { 0% { opacity: 0.95; } 100% { opacity: 0; } }
 @keyframes qqT2NumPop { 0% { transform: scale(1); } 40% { transform: scale(1.28); } 100% { transform: scale(1); } }

@@ -448,8 +448,35 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
 
   // Taktgeber der Brett-Wellen. Die erste Welle startet erst nach BRETT_HALT,
   // damit das volle Brett einen Moment steht, bevor es sich aufloest.
+  // ── Der Moderator ist die Uhr ─────────────────────────────────────────────
+  // 2026-08-25 (Wolf: „ich kann den finalen turmbaum nicht anschauen, er
+  // skippt bei 13/16 steps").
+  //
+  // Aufgenommen: bei Beat 7 stand die Siegerfolie, waehrend der Turm noch bei
+  // den Awards war. Podest, Duell und Enthuellung fielen ersatzlos weg.
+  //
+  // Der Grund war einseitig gebaut: der Turm WARTETE auf den Moderator
+  // (`liveBeat < X` → nichts tun), aber er holte nie auf, wenn er hinterherlag.
+  // Jede Stufe braucht ihre feste Zeit - eine Award-Karte allein 3,2 s -, und
+  // wer schneller klickt, laeuft dem Turm einfach davon. Die Folien-Umschaltung
+  // auf die Kroenung haengt dagegen NUR am Beat, die kommt puenktlich.
+  //
+  // Jetzt gilt in beide Richtungen: liegt der Moderator vor der Stufe, wartet
+  // der Turm. Liegt er dahinter, faehrt der Turm die Stufe im Schnelldurchlauf
+  // zu Ende. Die Choreografie bleibt vollstaendig, sie wird nur gestaucht.
+  /** Wartet diese Stufe noch auf ihren Beat? */
+  const wartetAuf = useCallback((beat: number) => live && (liveBeat ?? 0) < beat, [live, liveBeat]);
+  /** Ist der Moderator schon WEITER als diese Stufe? Dann aufholen. */
+  const laeuftHinterher = useCallback((beat: number) => live && (liveBeat ?? 0) > beat, [live, liveBeat]);
+
   useEffect(() => {
     if (phase !== 'brett') return;
+    // Der Brettfall gehoert zu Beat 0. Ist der Moderator schon weiter, wird er
+    // in einem Rutsch fertig gefallen statt Welle fuer Welle.
+    if (laeuftHinterher(0) && brettWelle <= letzteWelle + LANDE_VERZUG) {
+      setBrettWelle(letzteWelle + LANDE_VERZUG + 1);
+      return;
+    }
     if (brettWelle > letzteWelle + LANDE_VERZUG) {
       // Alles gelandet. Der Rest des Sockels (Final-Tipp-Bonus, doppelt
       // zaehlende Klebefelder) faellt in der gewohnten Bau-Phase nach - sie
@@ -469,39 +496,45 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
 
   useEffect(() => {
     if (phase !== 'base') return;
-    if (baseTick >= maxBase) { const h = window.setTimeout(() => setPhase('baseHold'), 500); return () => window.clearTimeout(h); }
+    // Auch der Sockelbau gehoert zu Beat 0.
+    if (laeuftHinterher(0) && baseTick < maxBase) { setBaseTick(maxBase); return; }
+    if (baseTick >= maxBase) { const h = window.setTimeout(() => setPhase('baseHold'), live ? 200 : 500); return () => window.clearTimeout(h); }
     const h = window.setTimeout(() => { setBaseTick(t => t + 1); try { playWoodKnock(); } catch { /* noop */ } }, 340);
     return () => window.clearTimeout(h);
-  }, [phase, baseTick, maxBase]);
+  }, [phase, baseTick, maxBase, laeuftHinterher, live]);
 
   useEffect(() => {
     if (phase !== 'baseHold') return;
-    if (live && (liveBeat ?? 0) < 1) return; // Hybrid: warte auf Moderator-Beat 1
-    const h = window.setTimeout(() => { setAwardIdx(0); setAwardStage('card'); setAwardTick(0); setPhase(hasAwards ? 'award' : 'reveal'); }, live ? 300 : 2200);
+    if (wartetAuf(1)) return; // Hybrid: warte auf Moderator-Beat 1
+    const h = window.setTimeout(() => { setAwardIdx(0); setAwardStage('card'); setAwardTick(0); setPhase(hasAwards ? 'award' : 'reveal'); }, live ? (laeuftHinterher(1) ? 0 : 300) : 2200);
     return () => window.clearTimeout(h);
-  }, [phase, hasAwards, live, liveBeat]);
+  }, [phase, hasAwards, live, wartetAuf, laeuftHinterher]);
 
   // Award-Zeremonie: grosse Karte → Turm waechst → Pause → naechster.
   useEffect(() => {
     if (phase !== 'award' || !curAward) return;
+    // Award i gehoert zu Beat i+1.
+    const meinBeat = awardIdx + 1;
+    const eile = laeuftHinterher(meinBeat);
     if (awardStage === 'card') {
       try { playSpecialAwardReveal(); } catch { /* noop */ }
-      const h = window.setTimeout(() => { setAwardStage('grow'); setAwardTick(0); }, AWARD_KARTE);
+      const h = window.setTimeout(() => { setAwardStage('grow'); setAwardTick(0); }, eile ? 600 : AWARD_KARTE);
       return () => window.clearTimeout(h);
     }
     // grow
+    if (eile && awardTick < curAward.bonus) { setAwardTick(curAward.bonus); return; }
     if (awardTick >= curAward.bonus) {
       // Hybrid: der naechste Award / die Enthuellung wartet auf den Moderator-Beat.
-      if (live && (liveBeat ?? 0) < awardIdx + 2) return;
+      if (wartetAuf(meinBeat + 1)) return;
       const h = window.setTimeout(() => {
         if (awardIdx + 1 >= awards.length) setPhase('reveal');
         else { setAwardIdx(i => i + 1); setAwardStage('card'); setAwardTick(0); }
-      }, live ? 200 : 1500);
+      }, live ? (eile ? 0 : 200) : 1500);
       return () => window.clearTimeout(h);
     }
     const h = window.setTimeout(() => { setAwardTick(t => t + 1); try { playTick(); } catch { /* noop */ } }, awardTick === 0 ? AWARD_TICK_ERST : AWARD_TICK);
     return () => window.clearTimeout(h);
-  }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length, live, liveBeat]);
+  }, [phase, curAward, awardStage, awardTick, awardIdx, awards.length, live, wartetAuf, laeuftHinterher]);
 
   // Enthuellung: Recede-Beat (Plaetze 4..N dimmen) → Glide in die Mitte →
   // Wettklettern bis Platz 3 steht → bis Platz 2 steht → Sieger allein → Krone.
@@ -512,8 +545,14 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Tuerme, bis der naechste stehenbleibt.
   useEffect(() => {
     if (phase !== 'reveal') return;
+    // Der Glide gehoert zum Beat nach dem letzten Award.
+    const glideBeat = awards.length + 1;
     // Glide (Recede → Mitte) laeuft innerhalb des Glide-Beats automatisch.
-    if (!glided) { const h = window.setTimeout(() => { setGlided(true); setDuelTick(0); }, 1600); return () => window.clearTimeout(h); }
+    if (!glided) {
+      const h = window.setTimeout(() => { setGlided(true); setDuelTick(0); },
+        laeuftHinterher(glideBeat) ? 0 : 1600);
+      return () => window.clearTimeout(h);
+    }
     if (revealStep >= 3) {
       // Sicherheitsnetz: egal wie schnell vorgespult wurde, im Schlussbild
       // stehen die Tuerme auf ihrer echten Hoehe. Ohne das froren sie auf dem
@@ -524,6 +563,12 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     }
 
     const target = duelTargetFor(revealStep);
+    // Liegt der Moderator schon hinter diesem Etappenziel, wird geklettert
+    // statt getickt: die Bausteine stehen sofort, der Platz wird sofort
+    // freigegeben. Sonst braucht allein eine Etappe bis zu drei Sekunden, und
+    // bei drei Etappen ist der Turm neun Sekunden hinter dem Steuerpult.
+    const meinBeat = glideBeat + 1 + revealStep;
+    if (laeuftHinterher(meinBeat) && duelTick < target) { setDuelTick(target); return; }
     // 1) Noch nicht am Etappenziel → naechsten Baustein setzen.
     if (duelTick < target) {
       const left = target - duelTick;
@@ -538,11 +583,11 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     }
     // 2) Etappenziel erreicht → ein Turm bleibt stehen. Atempause, dann Badge.
     // Hybrid: im Live-Betrieb wartet der naechste Schritt auf den Moderator.
-    if (live && (liveBeat ?? 0) < awards.length + 2 + revealStep) return;
-    const hold = live ? 200 : (revealStep === 2 ? 1500 : 1100);
+    if (wartetAuf(meinBeat)) return;
+    const hold = live ? (laeuftHinterher(meinBeat) ? 0 : 200) : (revealStep === 2 ? 1500 : 1100);
     const h = window.setTimeout(() => { setRevealStep(s => s + 1); try { playReveal(); } catch { /* noop */ } }, hold);
     return () => window.clearTimeout(h);
-  }, [phase, glided, revealStep, duelTick, duelTargetFor, duelTargets, live, liveBeat, awards.length]);
+  }, [phase, glided, revealStep, duelTick, duelTargetFor, duelTargets, live, awards.length, wartetAuf, laeuftHinterher]);
 
   const inReveal = phase === 'reveal';
   const crowned = inReveal && revealStep >= 3;
@@ -929,7 +974,16 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             })}
           </div>
 
-          {/* Die verstreuten Kacheln: sichtbar, aber sie fliegen nicht mit. */}
+          {/* Die verstreuten Kacheln: sichtbar, aber sie fliegen nicht mit.
+              Sie gehen in DERSELBEN Welle wie die Kacheln ihrer Zeile.
+              2026-08-25 (Wolf: „am anfang wenn die kacheln auf die tuerme fallen
+              werden nicht alle gezeigt"). Gezaehlt: bei 1780 ms verschwanden 45
+              von 64 Kacheln auf einen Schlag, weil alle verstreuten Felder
+              denselben festen Verzug hatten. Uebrig blieben die neunzehn, die
+              fliegen - und genau so sah es aus, als fehlten Kacheln.
+              Zeilenweise erzaehlt dieselbe Bewegung jetzt die Regel mit: in
+              jeder Zeile steigt das zusammenhaengende Gebiet auf, der Rest
+              sinkt weg. */}
           {streuRest.map(k => {
             const m = brettMitte(k.r, k.c);
             const t = teamById(k.ownerId);
@@ -940,7 +994,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                 width: brettZelle, height: brettZelle,
                 ...(t ? kachelFlaeche(t.color, t.color) : { borderRadius: 6, border: '1px solid var(--qq-hairline)' }),
                 display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-                animation: `qqT2StreuAus 0.7s ease ${BRETT_HALT - 250}ms both`,
+                animation: `qqT2StreuAus 0.62s ease ${BRETT_HALT + ((gGroesse - 1) - k.r) * WELLE + k.c * SPALTEN_VERZUG}ms both`,
               }}>
                 {t && <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={Math.round(brettZelle * 0.8)} flat />}
               </div>

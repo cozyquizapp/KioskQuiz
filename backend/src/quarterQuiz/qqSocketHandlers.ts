@@ -61,7 +61,7 @@ import {
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
   qqCozyGameSetValue, qqCozyGameConfirmValues,
-  qqCozyGameAdvanceToPlacement, qqCozyGameCancel,
+  qqCozyGameFinish, qqCozyGameCancel,
   qqCozyGameNextSequenceTeam,
   qqCozyGameTimerPause, qqCozyGameTimerResume,
   qqCozyGameTimerReset, qqCozyGameTimerAdjust,
@@ -2675,11 +2675,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
           // 2026-05-17 v9 (Wolf 'erst Avatar zeigen, dann Mod-Weiter zum Grid'):
           // Mod hat „Weiter zum Grid" gedrückt → Action-Pipeline starten +
           // maybeAutoPlace (Dummies setzen automatisch).
-          qqCozyGameAdvanceToPlacement(room);
+          // 2026-08-25: kein Feld mehr fuer den CozyGame-Sieger, der Sieg
+          // zaehlt als Punkt bei der Siegerehrung. Also auch keine
+          // Placement-Pipeline und kein maybeAutoPlace.
+          qqCozyGameFinish(room);
           broadcast(io, payload.roomCode);
-          if (room.phase === 'PLACEMENT' && room.pendingFor) {
-            maybeAutoPlace(io, payload.roomCode);
-          }
           ok(ack);
           return;
         }

@@ -664,7 +664,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
 
     // 2026-05-25 v4: Story-Stamps pro Team aus Grid aggregieren (live Update
     // waehrend Teams ihre Stacks setzen).
-    const stampsByTeam: Record<string, Array<'underdog' | 'speedy' | 'meisterklauer' | 'cozyChampion' | 'bet' | 'sympathy'>> = {};
+    const stampsByTeam: Record<string, Array<'underdog' | 'speedy' | 'meisterklauer' | 'bet' | 'sympathy'>> = {};
     for (const t of s.teams) stampsByTeam[t.id] = [];
     for (const row of s.grid) for (const cell of row) {
       if (!cell.revealStamps) continue;

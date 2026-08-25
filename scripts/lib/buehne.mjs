@@ -316,7 +316,18 @@ return {
     if (cfg.stufe >= 2) { await sleep(600); await h.emit('qq:cozyGameAdvance'); }  // INTRO -> Rad dreht
     if (cfg.stufe >= 3) await sleep(7200);                                          // Server landet selbst
     if (cfg.stufe >= 4) { await h.emit('qq:cozyGameAdvance'); await sleep(600); }   // -> Spiel laeuft
-    if (cfg.stufe >= 5) { await h.emit('qq:cozyGameAdvance'); await sleep(600); }   // -> Sieger waehlen
+    if (cfg.stufe >= 5) { await h.emit('qq:cozyGameAdvance'); await sleep(600); }   // -> Werte-Tabelle
+    // 2026-08-25: Stufe 6 fuellt die Tabelle. Ohne Werte zeigt sie acht leere
+    // Zeilen - richtig fuer den Moment vor der Eingabe, aber nicht das Bild,
+    // das man pruefen will. Die Zahlen sind gewuerfelt, aber stabil gestaffelt.
+    if (cfg.stufe >= 6) {
+      const teams = await h.teamIds();
+      for (let i = 0; i < teams.length; i++) {
+        await h.emit('qq:cozyGameSetValue', { teamId: teams[i], value: 14 - i * 2 + (i % 3) });
+        await sleep(220);
+      }
+    }
+    if (cfg.stufe >= 7) { await h.emit('qq:cozyGameConfirmValues'); await sleep(800); }
   } },
   // 2026-08-23: die Ansichten `connections` / `connections2` sind wieder raus.
   // Das 4x4-Finale („Grosses Finale") ist abgeschaltet - siehe
@@ -472,6 +483,10 @@ export async function buehneStarten(teilCfg = {}) {
     sock.on('connect', res); sock.on('connect_error', rej);
     setTimeout(() => rej(new Error('Socket-Timeout')), 8000);
   });
+  // Jeden Zustand mitschneiden. Manche Stationen brauchen die Team-Ids, und
+  // ein eigener REST-Weg dafuer existiert nicht.
+  let letzterZustand = null;
+  sock.on('qq:stateUpdate', (st) => { letzterZustand = st; });
   const emit = (ev, extra = {}) => new Promise(res => sock.emit(ev, { roomCode, ...extra }, res));
   await emit('qq:joinModerator', { pin: PIN });
   console.log(`Raum ${roomCode} verbunden`);
@@ -521,6 +536,11 @@ export async function buehneStarten(teilCfg = {}) {
     // unmessbar, ohne dass ein Lauf das deutlich gemeldet haette. Die Stationen
     // bekommen die Seite jetzt ueber den Helfer, wie alles andere auch.
     seite: () => beamer,
+    /** Die Team-Ids des Raums. Der Harness-Socket ist ein Moderator-Socket und
+     *  bekommt jeden `qq:stateUpdate` mit; wir merken uns einfach den letzten. */
+    teamIds() {
+      return (letzterZustand?.teams ?? []).map(t => t.id);
+    },
     /** Offene Platzierungen wegraeumen. `qq:nextQuestion` wirft sonst
      *  PLACEMENT_PENDING (qqRooms.ts:4205) und der Lauf bleibt still auf der
      *  Frage stehen - ohne Fehlermeldung im Bild. */

@@ -176,7 +176,10 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       // Slide CozyGame (zwischen Bunte Tüte und Comeback, nur sichtbar wenn cozyGamesEnabled)
       { key: 'rules.slide_cozygames.title', label: 'CozyGame — Titel', defaultDe: 'CozyGame', defaultEn: 'CozyGame' },
       { key: 'rules.slide_cozygames.line1', label: 'CozyGame — Zeile 1', defaultDe: 'Nach jeder Runde dreht das Glücksrad: ein analoges Mini-Spiel', defaultEn: 'After every round the wheel spins: one analog mini-game' },
-      { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen', defaultEn: 'Winner places 1 action on the board · skill > knowledge' },
+      // 2026-08-25 (Wolf: „punkte am ende ohne award"): der Sieger bekommt kein
+      // Feld mehr, jeder CozyGame-Sieg ist EIN PUNKT bei der Siegerehrung.
+      // Die Regelfolie muss das sagen, sonst warten acht Teams auf eine Aktion.
+      { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: 'Jeder Sieg = 1 Punkt bei der Siegerehrung · Geschick > Wissen', defaultEn: 'Each win = 1 point at the awards · skill > knowledge' },
 
       // Slide 7 „Comeback" 2026-07-15 (Design-Sweep-Audit) aus dem Editor entfernt
       // — Comeback ist global deaktiviert (QQ_COMEBACK_ENABLED=false) und hat keine

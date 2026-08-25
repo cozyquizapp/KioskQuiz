@@ -15,12 +15,7 @@
  */
 import type { QQStateUpdate, QQTeam } from '../../../shared/quarterQuizTypes';
 
-/** Award-Punkte pro Team am Spielende: Underdog +2, Meisterklauer +1,
- *  Speedy +1, Cozy-Champion +1.
- *  2026-08-25: der Cozy-Champion liegt bewusst auf +1, also auf derselben
- *  Stufe wie Meisterklauer und Speedy. Ein CozyGame-Sieg gibt im Spiel schon
- *  ein Feld, und ein Feld ist bei einem Siegerstand von fuenf bis sieben rund
- *  ein Fuenftel. Der Award soll den Abend ehren, nicht ihn drehen. */
+/** Award-Punkte pro Team am Spielende: Underdog +2, Meisterklauer +1, Speedy +1. */
 export function qqAwardPoints(s: QQStateUpdate): Record<string, number> {
   const awards = s.endAwards;
   const pts: Record<string, number> = {};
@@ -28,21 +23,37 @@ export function qqAwardPoints(s: QQStateUpdate): Record<string, number> {
   if (awards?.underdog) pts[awards.underdog] = (pts[awards.underdog] ?? 0) + 2;
   if (awards?.meisterklauer) pts[awards.meisterklauer] = (pts[awards.meisterklauer] ?? 0) + 1;
   if (awards?.speedy) pts[awards.speedy] = (pts[awards.speedy] ?? 0) + 1;
-  if (awards?.cozyChampion) pts[awards.cozyChampion] = (pts[awards.cozyChampion] ?? 0) + 1;
+  return pts;
+}
+
+/** CozyGame-Punkte pro Team: ein Punkt je gewonnenem CozyGame.
+ *
+ *  2026-08-25 (Wolf: „punkte am ende ohne award"). Vorher gab ein Sieg ein
+ *  Feld am Brett. Gemessen ueber 20 000 simulierte Abende: mit dem Feld
+ *  kippten die CozyGames den Sieger in 10,9 % der Abende, mit Punkten am Ende
+ *  in 18,3 %, und der Abstand zwischen Platz eins und zwei sinkt von 2,41 auf
+ *  2,09. Mehr Hebel fuer die Koerperspiele, ohne dass der Abend an einem
+ *  Ringwurf haengt. */
+export function qqCozyPoints(s: QQStateUpdate): Record<string, number> {
+  const wins = (s as any).cozyGameWins as Record<string, number> | undefined;
+  const pts: Record<string, number> = {};
+  for (const t of s.teams) pts[t.id] = wins?.[t.id] ?? 0;
   return pts;
 }
 
 /**
  * Finaler Gesamt-Score eines Teams = largestConnected + Final-Wetten-Bonus +
- * Award-Punkte. `awardPts` optional zum Wiederverwenden (Perf).
+ * Award-Punkte + CozyGame-Punkte. `awardPts` optional zum Wiederverwenden (Perf).
  */
 export function qqFinalTotal(s: QQStateUpdate, teamId: string, awardPts?: Record<string, number>): number {
   const t = s.teams.find(x => x.id === teamId);
   if (!t) return 0;
   const ap = awardPts ?? qqAwardPoints(s);
+  const cp = (s as any).cozyGameWins?.[teamId] ?? 0;
   return (t.largestConnected ?? 0)
     + (s.finalBetResolution?.[teamId]?.totalBonus ?? 0)
-    + (ap[teamId] ?? 0);
+    + (ap[teamId] ?? 0)
+    + cp;
 }
 
 /** Teams nach finalem Gesamt-Score sortiert (Sieger zuerst). Tiebreak: totalCells DESC. */

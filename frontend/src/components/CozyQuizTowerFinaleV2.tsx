@@ -22,7 +22,7 @@
  */
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import type { QQTeam, QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { qqAwardPoints, qqFinalTotal } from '../utils/qqFinalScore';
+import { qqAwardPoints, qqCozyPoints, qqFinalTotal } from '../utils/qqFinalScore';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { useAvatarSet } from '../avatarSetContext';
@@ -56,12 +56,32 @@ export type TowerAward = { key: string; label: string; labelEn?: string; emoji: 
 // Awards zaehlen weiter, nur ihre PRAESENTATION wandert in den Turm.
 export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; awards: TowerAward[]; brett: TowerBrett } {
   const ap = qqAwardPoints(s);
-  const teams: TowerTeam[] = s.teams.map(t => ({ team: t, base: qqFinalTotal(s, t.id, ap) - (ap[t.id] ?? 0) }));
+  const cp = qqCozyPoints(s);
+  // Der Sockel ist alles, was NICHT als eigener Baustein einfliegt: Brett und
+  // Wetten-Bonus. Awards und CozyGame-Punkte kommen als Steine dazu, sonst
+  // zaehlten sie doppelt.
+  const teams: TowerTeam[] = s.teams.map(t => ({
+    team: t,
+    base: qqFinalTotal(s, t.id, ap) - (ap[t.id] ?? 0) - (cp[t.id] ?? 0),
+  }));
   const a = s.endAwards;
   const awards: TowerAward[] = [];
+  // 2026-08-25 (Wolf: „sie kommen bei der siegerehrung dazu wie die awards"):
+  // die CozyGame-Punkte laufen zuerst ein, ein Beat je Team mit Siegen. Sie
+  // sind der bekannte Teil - der Saal hat die Spiele gesehen -, die Awards
+  // danach sind die Ueberraschung. Ein Award ist es NICHT: kein Bonus obendrauf,
+  // nur die gewonnenen Siege als Bausteine.
+  for (const t of s.teams) {
+    const n = cp[t.id] ?? 0;
+    if (n > 0) {
+      awards.push({
+        key: `cozy-${t.id}`, label: 'CozyGames', labelEn: 'CozyGames',
+        emoji: '🎡', teamId: t.id, bonus: n,
+      });
+    }
+  }
   if (a?.speedy) awards.push({ key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: a.speedy, bonus: 1 });
   if (a?.meisterklauer) awards.push({ key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: a.meisterklauer, bonus: 1 });
-  if (a?.cozyChampion) awards.push({ key: 'cozyChampion', label: 'Cozy-Champion', labelEn: 'Cozy Champion', emoji: '🎡', teamId: a.cozyChampion, bonus: 1 });
   if (a?.underdog) awards.push({ key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: a.underdog, bonus: 2 });
   const groesse = s.gridSize ?? 0;
   const kachelnProTeam = qqLargestClusterCells(s.grid, groesse);

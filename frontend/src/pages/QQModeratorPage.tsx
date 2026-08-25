@@ -1101,7 +1101,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             }
           } else {
             // 2026-05-17 v9: Winner steht → kurze Reveal-Pause, dann auto-
-            // advance zum Grid (entspricht „Weiter zum Grid"-Klick des Mods).
+            // advance (entspricht „Weiter"-Klick des Mods). 2026-08-25: fuehrt
+            // nicht mehr ans Brett, der Sieg zaehlt als Punkt am Ende.
             delayMs = 2500;
             action = () => emit('qq:cozyGameAdvance', { roomCode });
           }
@@ -3660,15 +3661,17 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     );
                   }
                   if (cg.phase === 'WINNER_SELECT') {
-                    // 2026-05-17 v9 (Wolf 'erst Avatar zeigen, dann Mod-Weiter
-                    // zum Grid'): Nach Winner-Pick erscheint statt des Pickers
-                    // ein „Weiter zum Grid"-Button — gleicher Flow wie sonst
-                    // im Quiz (Mod kontrolliert den Übergang manuell).
+                    // 2026-05-17 v9 (Wolf 'erst Avatar zeigen, dann Mod-Weiter'):
+                    // Nach Winner-Pick erscheint statt des Pickers ein
+                    // „Weiter"-Button — Mod kontrolliert den Übergang manuell.
+                    // 2026-08-25: der Weg fuehrt nicht mehr ans Brett. Der Sieg
+                    // ist ein Punkt bei der Siegerehrung, danach geht die Runde
+                    // normal weiter.
                     const winnerIds: string[] = cg.winnerTeamIds ?? [];
                     if (winnerIds.length > 0) {
                       return (
                         <PrimaryBtn color={QQ_COLORS.green500} onClick={() => emit('qq:cozyGameAdvance', { roomCode })} hotkey="Space">
-                          ▶ Weiter zum Grid
+                          ▶ Weiter
                         </PrimaryBtn>
                       );
                     }

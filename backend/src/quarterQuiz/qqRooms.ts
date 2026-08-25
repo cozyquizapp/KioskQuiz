@@ -4726,6 +4726,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     cozyGamesEnabled:     room.cozyGamesEnabled ?? false,
     cozyGamesPool:        room.cozyGamesPool ?? [],
     cozyGame:             room.cozyGame ?? null,
+    cozyGameWins:         { ...(room.teamCozyGameWins ?? {}) },
     comebackEnabled:      room.comebackEnabled !== false,
     largeGroupMode:       room.largeGroupMode ?? false,
     nestedTeams:          room.nestedTeams ?? false,
@@ -6585,16 +6586,11 @@ export function qqResolveFinalBets(room: QQRoomState): void {
     }
   }
   if (meisterklauerCount === 0) meisterklauer = null;
-  // Cozy-Champion: die meisten CozyGame-Siege. null wenn niemand gewonnen hat
-  // (CozyGames aus) oder wenn ALLE gleich viele haben - dann sagt der Award
-  // nichts, und eine Auszeichnung, die jeder bekommt, ist keine.
-  let cozyChampion: string | null = null;
-  let cozyChampionCount = 0;
-  for (const id of teamIds) {
-    const c = room.teamCozyGameWins?.[id] ?? 0;
-    if (c > cozyChampionCount) { cozyChampionCount = c; cozyChampion = id; }
-  }
-  if (cozyChampionCount === 0) cozyChampion = null;
+  // 2026-08-25: der Cozy-Champion-Award ist wieder raus (Wolf: „punkte am ende
+  // ohne award"). Sonst zahlt derselbe Sieg zweimal: der Champion ist per
+  // Definition der mit den meisten Cozy-Punkten, ein Award obendrauf ist ein
+  // Bonus auf einen Bonus. Gemessen ueber 20 000 Abende hob genau das die Quote
+  // „Sieger war am Brett nicht unter den besten drei" von 8,8 auf 11,3 Prozent.
   // Speedy Gonzales: am OEFTESTEN am schnellsten. Pro Frage zaehlt, wer
   // als ERSTER eingereicht hat (nur korrekte Antworten zaehlen). Team mit
   // hoechstem Count gewinnt.
@@ -6655,7 +6651,6 @@ export function qqResolveFinalBets(room: QQRoomState): void {
     // speedyAvgMs als Legacy-Feld behalten (Frontend-Backward-Compat),
     // speedyFirstCount als primaerer Award-Wert ("X × zuerst").
     speedy, speedyAvgMs, speedyFirstCount,
-    cozyChampion, cozyChampionCount,
   };
 
   // KEIN Cell-Removal mehr — alle Felder bleiben am Brett (Tipp-Variante).
@@ -6721,6 +6716,7 @@ export function qqCozyGameStart(
   }
   // PlayedGameIds aus bestehendem State preserven (für mehrere Slots im Quiz).
   const existingPlayed = room.cozyGame?.playedGameIds ?? [];
+  const vorher = room.phase;
   room.cozyGame = {
     poolGameIds: room.cozyGamesPool.slice(),
     playedGameIds: existingPlayed.slice(),
@@ -6731,6 +6727,11 @@ export function qqCozyGameStart(
     slotKind,
     winnerTeamIds: [],
   };
+  // 2026-08-25: wohin nach dem CozyGame? Frueher fuehrte der Weg immer in die
+  // PLACEMENT-Phase, das Feld war der Preis. Seit die CozyGames in Punkten
+  // zaehlen, gibt es kein Feld mehr - also muss der Raum dorthin zurueck, wo er
+  // vor dem Einschub stand, und Wolfs naechstes Space schaltet die Runde weiter.
+  (room as any)._cozyGameReturnPhase = vorher;
   room.phase = 'COZY_GAME';
   room.lastActivityAt = Date.now();
 }
@@ -7049,19 +7050,21 @@ export function qqCozyGameSelectWinner(
     }
   }
   room.cozyGame.winnerTeamIds = validIds.slice();
-  // Cozy-Champion (2026-08-25): jeder Sieg zaehlt. Bei mehreren Siegern zaehlt
-  // er fuer alle - das Spiel kennt geteilte Siege, der Award muss das auch.
+  // 2026-08-25 (Wolf: „punkte am ende ohne award"): jeder Sieg ist ein Punkt
+  // im Endstand. Bei mehreren Siegern zaehlt er fuer alle - das Spiel kennt
+  // geteilte Siege, die Wertung muss das auch.
   if (!room.teamCozyGameWins) room.teamCozyGameWins = {};
   for (const id of validIds) {
     room.teamCozyGameWins[id] = (room.teamCozyGameWins[id] ?? 0) + 1;
   }
 
-  // Bei Final-Slot: Sieger zählen als Final-Kat-Win (siehe COZYGAMES.md).
-  // 2026-07-21 (Perfektionist-Audit, Scoring Finding 1): finalPhaseWins hier NICHT
-  // mehr direkt hochzaehlen — qqCozyGameAdvanceToPlacement legt die Sieger in
-  // _currentQuestionWinners, und qqTickFinalPhaseWinReturn (die „Quelle der
-  // Wahrheit") zaehlt sie danach. Die frühere Direkt-Zaehlung war ein DOPPELTER
-  // Count (cozy-Sieger bekam 2 statt 1 Final-Kat-Win → verfaelschte Wett-Boni).
+  // Bei Final-Slot: frueher zaehlte der Sieger hier als Final-Kat-Win und
+  // hob damit die Wett-Boni der Teams, die auf ihn getippt hatten.
+  // 2026-08-25: das faellt weg. Der Weg lief ueber die Placement-Pipeline
+  // (`_currentQuestionWinners` -> qqTickFinalPhaseWinReturn), und die gibt es
+  // fuer CozyGames nicht mehr. Das ist auch stimmig: ein CozyGame ist keine
+  // Frage-Kategorie mehr, sondern eine eigene Waehrung. Wer auf ein Team
+  // tippt, tippt auf sein WISSEN in der Final-Runde.
   if (room.cozyGame.slotKind === 'finalSlot') {
     room.cozyGameFinalSlotPlayed = true;
   } else {
@@ -7078,43 +7081,32 @@ export function qqCozyGameSelectWinner(
   room.lastActivityAt = Date.now();
 }
 
-/** 2026-05-17 v8: nach Winner-Reveal-Pause → Action-Pipeline starten.
- *  Setzt pendingFor + pendingAction analog zu qqStartPlacement,
- *  Phase wechselt zu PLACEMENT. */
-export function qqCozyGameAdvanceToPlacement(room: QQRoomState): void {
+/**
+ * CozyGame beenden. 2026-08-25 (Wolf: „punkte am ende ohne award, bau um").
+ *
+ * Bis heute fuehrte dieser Schritt in die PLACEMENT-Phase: der Sieger bekam
+ * ein Feld am Brett. Das ist raus. Ein CozyGame-Sieg zaehlt jetzt als EIN
+ * PUNKT, der erst bei der Siegerehrung dazukommt (`teamCozyGameWins`, siehe
+ * qqFinalScore.ts).
+ *
+ * Warum: 20 000 simulierte Abende. Mit dem Feld kippten die CozyGames den
+ * Sieger in 10,9 % der Abende, mit Punkten am Ende in 18,3 %, und der
+ * Fuehrende nach dem Brett war in 30,4 statt 24,2 % nicht der Sieger. Der
+ * Abstand zwischen Platz eins und zwei sinkt von 2,41 auf 2,09. Genau der
+ * Hebel, den Wolf wollte, ohne dass der Abend an einem Ringwurf haengt.
+ *
+ * Der Raum kehrt in die Phase zurueck, aus der der Einschub kam. Wolfs
+ * naechstes Space ruft dann qqNextQuestion, das Flag
+ * `cozyGamesPlayedAfterPhases` steht, und die Runde schaltet normal weiter.
+ */
+export function qqCozyGameFinish(room: QQRoomState): void {
   if (!room.cozyGame || room.cozyGame.phase !== 'WINNER_SELECT') return;
-  const validIds = room.cozyGame.winnerTeamIds.filter(id => !!room.teams[id]);
-  if (validIds.length === 0) {
-    // 2026-05-19 (Reliability-Audit R2): Phase-Reset wie in
-    // qqCozyGameAdvanceFromIntro — sonst strandet die App.
-    room.cozyGame = null;
-    room.phase = 'PAUSED';
-    return;
-  }
-
-  // Action-Pipeline (analog zu qqStartPlacement):
-  room._currentQuestionWinners = validIds.slice();
-  room.correctTeamId = validIds[0];
-  if (validIds.length > 1) {
-    room._placementQueue = validIds.slice(1);
-  }
-
-  const firstWinner = validIds[0];
-  room.pendingFor = firstWinner;
-  let action = pendingActionForPhase(room, firstWinner);
-  if (action === 'PLACE_2') {
-    const freeCells = room.grid.reduce(
-      (sum, row) => sum + row.filter(c => c.ownerId === null).length, 0
-    );
-    if (freeCells <= 1) {
-      action = 'PLACE_1';
-      room.teamPhaseStats[firstWinner].placementsLeft = 0;
-    } else {
-      room.teamPhaseStats[firstWinner].placementsLeft = 2;
-    }
-  }
-  room.pendingAction = action;
-  room.phase = 'PLACEMENT';
+  const zurueck = (room as any)._cozyGameReturnPhase as QQPhase | undefined;
+  room.cozyGame = null;
+  (room as any)._cozyGameReturnPhase = null;
+  // 2026-05-19 (Reliability-Audit R2): ohne Phase-Reset strandet die App.
+  // PAUSED ist der Notausgang, wenn wir nicht wissen, woher wir kamen.
+  room.phase = zurueck && zurueck !== 'COZY_GAME' ? zurueck : 'PAUSED';
   room.lastActivityAt = Date.now();
 }
 

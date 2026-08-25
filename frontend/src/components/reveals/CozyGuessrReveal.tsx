@@ -28,14 +28,31 @@ import { prefersReducedMotion } from '../../utils/reducedMotion';
 // Vorher inline in CozyQuizQuestionView.tsx — beim Extract mit hierher gewandert,
 // weil CozyGuessr der einzige Consumer ist.
 
-const QQFitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number }> = ({ bounds, trigger }) => {
+/**
+ * 2026-08-25 (Wolf: „bei cozyguessr waere es nice wenn rechts hinter der
+ * tabelle die karte blurry weitergehen wuerde"): die Karte liegt jetzt ueber
+ * die volle Buehnenbreite, das Ranking-Panel liegt als milchige Scheibe
+ * darueber. Damit das Geschehen trotzdem links im FREIEN Teil landet, bekommt
+ * jeder Fit eine Polsterung nach rechts in Hoehe der Panel-Breite.
+ * `rechtsFrei` ist der Anteil der Breite, den das Panel verdeckt (0 = keins).
+ */
+const polster = (map: L.Map, rechtsFrei: number) => {
+  const rechts = Math.round(map.getSize().x * rechtsFrei);
+  return {
+    paddingTopLeft: [100, 100] as [number, number],
+    paddingBottomRight: [100 + rechts, 100] as [number, number],
+  };
+};
+
+const QQFitBoundsOnTrigger: React.FC<{ bounds: L.LatLngBounds; trigger: number; rechtsFrei?: number }> = ({ bounds, trigger, rechtsFrei = 0 }) => {
   const map = useMap();
   useEffect(() => {
     if (bounds.isValid()) {
       // flyToBounds = smoother Cinematic-Zoom (vs. fitBounds = harter Sprung).
       // reduced-motion: harter fitBounds statt Kamerafahrt.
-      if (prefersReducedMotion()) map.fitBounds(bounds, { padding: [100, 100], maxZoom: 8 });
-      else map.flyToBounds(bounds, { padding: [100, 100], maxZoom: 8, duration: 1.4 });
+      const opt = { ...polster(map, rechtsFrei), maxZoom: 8 };
+      if (prefersReducedMotion()) map.fitBounds(bounds, opt);
+      else map.flyToBounds(bounds, { ...opt, duration: 1.4 });
     }
   }, [trigger]); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
@@ -55,6 +72,9 @@ const QQInitialTargetZoom: React.FC<{ lat: number; lng: number }> = ({ lat, lng 
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
   return null;
 };
+
+/** Breitenanteil, den das Ranking-Panel rechts verdeckt. */
+const PANEL_ANTEIL = 0.38;
 
 const QQMapResizer: React.FC<{ trigger: boolean }> = ({ trigger }) => {
   const map = useMap();
@@ -299,10 +319,22 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
   // das transluzente Ranking-Panel (wie 'Schau mal'). Ausserhalb der Arena bleibt
   // das rote Gradient als Bunte-Tuete-Ambiente. Karte links deckt ihr Feld selbst ab.
   const arenaBgVisible = isMega && (s as any).arenaBackgrounds !== false;
+  // Nur auf der Buehne laeuft die Karte unter das Ranking-Panel weiter.
+  const karteUnterPanel = istBuehne;
   return (
     <div style={{ flex: 1, display: 'flex', position: 'relative', overflow: 'hidden', background: isThemed() ? 'var(--qq-bg)' : (arenaBgVisible ? 'transparent' : 'radial-gradient(ellipse 72% 118% at 100% 50%, rgba(127,20,32,0.9) 0%, #200409 58%, #120F18 100%)') }}>
-      {/* Karte */}
-      <div style={{ flex: 1, position: 'relative', transition: 'flex 0.7s var(--qq-ease-smooth)' }}>
+      {/* Kartenschicht. Auf der BUEHNE laeuft sie ueber die volle Breite und
+          damit unter dem Ranking-Panel milchig weiter (Wolf 2026-08-25). In der
+          Arena bleibt sie an der Panel-Kante stehen: dort soll das Kolosseum
+          durch das Panel scheinen (Entscheidung vom 2026-07-16, Kommentar am
+          Panel weiter unten) - eine deckende Karte wuerde es zudecken.
+          Die Pillen liegen in der Spalte darunter, damit sie weiter im freien
+          Teil mittig sitzen. */}
+      <div style={{
+        position: 'absolute', top: 0, bottom: 0, left: 0, zIndex: 0,
+        right: (karteUnterPanel || !showRanking) ? 0 : `${PANEL_ANTEIL * 100}%`,
+        transition: 'right 0.7s var(--qq-ease-smooth)',
+      }}>
         <MapContainer
           center={[tLat, tLng] as any}
           zoom={3}
@@ -326,12 +358,12 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
               auf den Zielbereich beim ersten Reveal-Schritt. */}
           <QQInitialTargetZoom lat={tLat} lng={tLng} />
           <QQMapResizer trigger={showRanking} />
-          <QQFitBoundsOnTrigger bounds={bounds} trigger={step} />
+          <QQFitBoundsOnTrigger bounds={bounds} trigger={step} rechtsFrei={karteUnterPanel && showRanking ? PANEL_ANTEIL : 0} />
           {/* v3 round 11: Wenn Ranking sichtbar ist (alle Pins revealed),
               zoom rein auf Ziel + Top 3 closest. Geoguessr-Style 'wie knapp
               war es'-Moment. Trigger ist showRanking-Bool als 0/1 */}
           {showRanking && (
-            <QQFitBoundsOnTrigger bounds={closeUpBounds} trigger={1000 + step} />
+            <QQFitBoundsOnTrigger bounds={closeUpBounds} trigger={1000 + step} rechtsFrei={karteUnterPanel ? PANEL_ANTEIL : 0} />
           )}
           {showTarget && (
             // 2026-05-03 (Wolf-Bug 'Pin verdeckt Team-Avatare'): Leaflet
@@ -393,6 +425,10 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
             );
           })}
         </MapContainer>
+      </div>
+
+      {/* Freie Spalte links: traegt nur die Pillen, die Karte liegt darunter. */}
+      <div style={{ flex: 1, position: 'relative', zIndex: 1, pointerEvents: 'none' }}>
 
         {/* Off-Map Indikator: Pins die >2500km vom Ziel weg sind, werden auf
             der Map nicht eingerahmt (sonst zoomt sie auf Welt-Level raus).
@@ -490,12 +526,27 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           /beamer NIE eine Scrollbar erscheint (harte Regel). */}
       {showRanking && (
         <div style={{
-          flex: '0 0 38%', padding: '34px 22px 22px',
+          flex: `0 0 ${PANEL_ANTEIL * 100}%`, padding: '34px 22px 22px',
+          position: 'relative', zIndex: 1,
           // 2026-07-16 (Wolf 'noch ein roter Stich'): das rote Kolosseum-Kategorie-BG
           // scheint jetzt hinter dem Panel durch → ein zusaetzlich ROTES Panel-Gradient
           // doppelte das Rot (Stich). Panel daher NEUTRAL-DUNKEL → der rote Arena-BG
           // liefert die Waerme, das Panel nur den Kontrast fuer die Rangliste.
-          background: 'linear-gradient(180deg, rgba(14,11,22,0.44), rgba(8,6,14,0.64))',
+          // 2026-08-25 (Wolf: „die karte blurry weitergehen"): dahinter liegt jetzt
+          // die Karte selbst. Der Weichzeichner macht daraus eine Milchglasscheibe.
+          // Gemessen: mit dem alten Verlauf (0,58 bis 0,74 Schwarz) hob sich der
+          // rechte Streifen um 1,2 von 255 vom leeren Grund ab - die Karte war
+          // rechnerisch da und mit dem Auge nicht zu sehen. Eine dunkle Karte
+          // unter einem dunklen Schleier ergibt Schwarz. Deshalb halb so viel
+          // Schleier und ein Aufhellen im Weichzeichner: das Kartenbild traegt,
+          // der Verlauf haelt nur noch die Leserichtung von oben nach unten.
+          background: karteUnterPanel
+            ? 'linear-gradient(180deg, rgba(10,8,18,0.30), rgba(6,4,12,0.48))'
+            : 'linear-gradient(180deg, rgba(14,11,22,0.44), rgba(8,6,14,0.64))',
+          ...(karteUnterPanel ? {
+            backdropFilter: 'blur(22px) saturate(1.25) brightness(1.5)',
+            WebkitBackdropFilter: 'blur(22px) saturate(1.25) brightness(1.5)',
+          } : null),
           borderLeft: '2px solid rgba(246, 239, 230,0.10)',
 
           animation: 'qqMapRankSlideIn 0.7s var(--qq-ease-out-cubic) both',

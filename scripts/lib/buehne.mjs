@@ -17,6 +17,23 @@
  */
 import { chromium } from 'playwright';
 import { createRequire } from 'node:module';
+import zlib from 'node:zlib';
+
+/** CRC32 fuer die PNG-Brocken der Ersatzkachel (Node vor 22 hat kein zlib.crc32). */
+const CRC_TAB = (() => {
+  const t = new Int32Array(256);
+  for (let n = 0; n < 256; n++) {
+    let c = n;
+    for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c;
+  }
+  return t;
+})();
+const crc32 = (buf) => {
+  let c = -1;
+  for (let i = 0; i < buf.length; i++) c = CRC_TAB[(c ^ buf[i]) & 0xff] ^ (c >>> 8);
+  return (c ^ -1) >>> 0;
+};
 
 const req = createRequire(new URL('../../backend/package.json', import.meta.url));
 const { io } = req('socket.io-client');
@@ -34,6 +51,62 @@ const SET_AVATARS = (await import('../../frontend/src/cozyquizAvatars.ts').catch
 const COZY_SEED_IDS = (await import('../../shared/cozyGameTypes.ts').catch(() => null))?.COZY_GAME_V1_SEED_IDS
   ?? ['cg-ringwurf', 'cg-stift-fang', 'cg-muenz-kante', 'cg-karten-haus',
       'cg-ballon-puste', 'cg-bierdeckel-muenzen', 'cg-waescheklammer-glas', 'cg-tt-ball-sammeln'];
+
+/**
+ * Ersatzkachel fuer CozyGuessr. Selbst gezeichnet, weil der Kachel-Dienst von
+ * hier aus gesperrt ist (siehe `beamer.route` weiter unten). 256x256, dunkel,
+ * mit Landflaechen und Strassen - genug Struktur, damit man sieht, was ein
+ * Weichzeichner darueber macht. Eigener PNG-Schreiber statt einer Bibliothek:
+ * `zlib` liegt in Node, und der Harness soll keine Abhaengigkeit dazubekommen.
+ */
+const ERSATZKACHEL = (() => {
+  const N = 256;
+  const px = Buffer.alloc(N * N * 3);
+  const setz = (x, y, r, g, b) => {
+    if (x < 0 || y < 0 || x >= N || y >= N) return;
+    const i = (y * N + x) * 3; px[i] = r; px[i + 1] = g; px[i + 2] = b;
+  };
+  for (let y = 0; y < N; y++) for (let x = 0; x < N; x++) {
+    // Zwei ueberlagerte Wellen ergeben Flecken wie Land und Wasser.
+    const w = Math.sin(x / 41) * Math.cos(y / 33) + 0.6 * Math.sin((x + y) / 57);
+    const land = w > 0.15;
+    const t = Math.min(1, Math.max(0, (w + 0.4) / 1.4));
+    const g0 = land ? 26 + t * 12 : 15 + t * 5;
+    setz(x, y, Math.round(g0 * 0.78), Math.round(g0 * 0.92), Math.round(g0 * 1.35));
+  }
+  // Strassen: ein paar gerade und schraege Linien in hellerem Grau.
+  const strasse = (x0, y0, dx, dy, hell) => {
+    for (let t = 0; t < N * 2; t++) {
+      const x = Math.round(x0 + dx * t), y = Math.round(y0 + dy * t);
+      if (x < -2 || y < -2 || x > N + 2 || y > N + 2) break;
+      setz(x, y, hell, hell + 4, hell + 12);
+      setz(x + 1, y, hell - 6, hell - 2, hell + 6);
+    }
+  };
+  strasse(0, 74, 1, 0.18, 58); strasse(0, 196, 1, -0.35, 46);
+  strasse(58, 0, 0.22, 1, 52); strasse(190, 0, -0.12, 1, 44);
+  // PNG bauen: Filter 0 pro Zeile, dann deflate.
+  const roh = Buffer.alloc(N * (N * 3 + 1));
+  for (let y = 0; y < N; y++) {
+    roh[y * (N * 3 + 1)] = 0;
+    px.copy(roh, y * (N * 3 + 1) + 1, y * N * 3, (y + 1) * N * 3);
+  }
+  const brocken = (typ, daten) => {
+    const laenge = Buffer.alloc(4); laenge.writeUInt32BE(daten.length);
+    const koerper = Buffer.concat([Buffer.from(typ, 'ascii'), daten]);
+    const pruef = Buffer.alloc(4); pruef.writeUInt32BE(zlib.crc32 ? zlib.crc32(koerper) : crc32(koerper));
+    return Buffer.concat([laenge, koerper, pruef]);
+  };
+  const ihdr = Buffer.alloc(13);
+  ihdr.writeUInt32BE(N, 0); ihdr.writeUInt32BE(N, 4);
+  ihdr[8] = 8; ihdr[9] = 2; ihdr[10] = 0; ihdr[11] = 0; ihdr[12] = 0;
+  return Buffer.concat([
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]),
+    brocken('IHDR', ihdr),
+    brocken('IDAT', zlib.deflateSync(roh)),
+    brocken('IEND', Buffer.alloc(0)),
+  ]);
+})();
 
 const QUELLE_HOCH = '/images/Johannes.jpeg';
 const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
@@ -114,6 +187,22 @@ return {
       await h.emit(ev); await sleep(200); await h.emit(ev); await sleep(200);
     }
   } },
+  // CozyGuessr, die Rangliste. Die Karten-Aufloesung hat einen Schritt pro
+  // Team plus zwei: Schritt 1 zeigt das Ziel, dann kommt Pin fuer Pin, und erst
+  // beim Schritt DANACH faehrt die Rangliste rechts ein
+  // (`showRanking = step >= 1 + Teams + 1`, CozyGuessrReveal.tsx). Mit acht
+  // Bots sind das zehn Schritte - `aufloesung2` schickt zwei und trifft die
+  // Rangliste deshalb nie. Braucht `--kategorie=map --entwurf=qq-vol-1`.
+  guessr: {
+    ruhe: 3500, aufbau: 'spiel',
+    weg: async (h) => {
+      await h.zurFrage(); await h.antworten(); await sleep(600);
+      await h.emit('qq:revealAnswer'); await sleep(1400);
+      // Zwei Schritte mehr als noetig: die Rangliste soll sicher stehen, und
+      // ueber den letzten Schritt hinaus passiert nichts.
+      for (let i = 0; i < cfg.bots + 4; i++) { await h.emit('qq:mapRevealStep'); await sleep(320); }
+    },
+  },
   // Ab hier der Abend NACH dem Brett. Diese Stationen liegen weit hinten,
   // deshalb springt der Harness ueber `dev/skipTo` dorthin, statt vier Runden
   // nachzuspielen. Das fuellt das Brett mit, sonst stehen die Endfolien auf
@@ -352,6 +441,17 @@ export async function buehneStarten(teilCfg = {}) {
 
   const beamer = ctx.pages()[0] ?? await ctx.newPage();
   beamer.on('pageerror', e => console.log('  [beamer PAGEERROR]', String(e).slice(0, 160)));
+  // 2026-08-25: der Kachel-Dienst von CozyGuessr (basemaps.cartocdn.com) ist von
+  // hier aus gesperrt (403 am Proxy beim CONNECT). Ohne Ersatz zeigt die
+  // Karten-Aufloesung eine LEERE Flaeche - man prueft dann eine Ansicht, die es
+  // am Abend so nie gibt. Dieselbe Lage wie bei den Wikimedia-Bildern von
+  // „Schau mal", derselbe Ausweg: etwas Eigenes unterlegen. Die Kachel ist
+  // gezeichnet, nicht geografisch - sie zeigt Struktur und Helligkeit einer
+  // dunklen Karte, mehr braucht eine Layout-Pruefung nicht. Am Abend laeuft die
+  // echte Kachel, der Harness sieht sie nur nicht.
+  await beamer.route(/basemaps\.cartocdn\.com/, async (route) => {
+    await route.fulfill({ status: 200, contentType: 'image/png', body: ERSATZKACHEL });
+  });
   await beamer.goto(`${BASE}/beamer`, { waitUntil: 'domcontentloaded' });
   cfg.takt('goto zurueck');
   await beamer.waitForSelector('[data-qq-room]', { timeout: 20000 }).catch(() => {});

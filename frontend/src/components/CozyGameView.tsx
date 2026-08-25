@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
+import type { CozyGame, CozyGameRoundState, CozyGameScoringType } from '@shared/cozyGameTypes';
+import { COZY_GAME_SCORING_LABELS } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
 import { startTimerLoop, stopTimerLoop, playCozyGameIntro, playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal, playTick, playUrgentTick, playTimesUp } from '../utils/sounds';
 import { getServerNow } from '../utils/serverTime';
@@ -400,6 +401,22 @@ export default function CozyGameView({ round, width, height, teams, language, mu
       break;
     }
 
+    case 'VALUES': {
+      const tIdx = round.wheelTargetSliceIndex ?? 0;
+      const { akzent: accent } = cgAkzent(tIdx);
+      phaseContent = (
+        <WerteTabelle
+          width={width} height={height}
+          spiel={activeGame}
+          werte={round.values ?? {}}
+          teams={teams ?? []}
+          akzent={accent}
+          lang={lang}
+        />
+      );
+      break;
+    }
+
     case 'WINNER_SELECT': {
       const tIdx = round.wheelTargetSliceIndex ?? 0;
       const { akzent: accent, dunkel: darkAccent } = cgAkzent(tIdx);
@@ -445,6 +462,7 @@ function wolfModeForPhase(phase: CozyGameRoundState['phase']): WolfMode {
     case 'WHEEL_SPIN':    return 'ueberrascht';
     case 'WHEEL_RESULT':  return 'jubel';
     case 'GAME_ACTIVE':   return 'ueberrascht';
+    case 'VALUES':        return 'ueberrascht';
     case 'WINNER_SELECT': return 'jubel';
     default:              return 'winken';
   }
@@ -461,6 +479,7 @@ function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame |
       case 'WHEEL_SPIN':    return 'So exciting!';
       case 'WHEEL_RESULT':  return game ? `Oho, ${cgName(game, 'en')}!` : 'Aha!';
       case 'GAME_ACTIVE':   return "Let's go: 60 seconds!";
+      case 'VALUES':        return 'And the numbers are …';
       case 'WINNER_SELECT': return 'Who won?';
       default:              return "Let's play!";
     }
@@ -470,6 +489,7 @@ function wolfSpeechForPhase(phase: CozyGameRoundState['phase'], game: CozyGame |
     case 'WHEEL_SPIN':    return 'Spannend, spannend!';
     case 'WHEEL_RESULT':  return game ? `Oho, ${cgName(game, 'de')}!` : 'Aha!';
     case 'GAME_ACTIVE':   return 'Los geht\'s, 60 Sekunden!';
+    case 'VALUES':        return 'Und die Zahlen sind …';
     case 'WINNER_SELECT': return 'Wer hat gewonnen?';
     default:              return 'Lasst uns spielen!';
   }
@@ -1449,6 +1469,102 @@ function SequenceGameView({
 //      mit Game-Info als Kontext.
 //   2. winnerTeamIds.length > 0 → Winner-Hero-Slide: große Avatar(e) + Name(n)
 //      mit 🏆-Headline + Game-Caption. Game-Info tritt zurück.
+/**
+ * Werte-Tabelle (2026-08-25, Wolf: „es waere nice wenn man da einen wert
+ * eingeben koennte und am ende eine tabelle sieht? anhand der werte wird dann
+ * auch der sieger entschieden").
+ *
+ * Die Tabelle sortiert sich mit jeder Eingabe neu. Die Richtung kommt aus der
+ * Wertungsart des Spiels: bei „schnellste Zeit" ist klein besser, bei „am
+ * naechsten am Ziel" zaehlt der Abstand, sonst gewinnt die groesste Zahl.
+ * Teams ohne Zahl stehen unten und bleiben sichtbar - ein leeres Feld auf der
+ * Wand ist die Aufforderung an Wolf, es zu fuellen.
+ */
+function WerteTabelle({ width, height, spiel, werte, teams, akzent, lang }: {
+  width: number; height: number;
+  spiel: CozyGame | null;
+  werte: Record<string, number | null>;
+  teams: QQTeam[];
+  akzent: string;
+  lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const art = spiel?.scoringType ?? 'countIn60s';
+  const ziel = (spiel as any)?.targetValue ?? null;
+  const kleinerBesser = art === 'timeToFinish';
+  const einheit = art === 'timeToFinish' || art === 'lastStanding' ? 's'
+    : art === 'distance' ? 'cm'
+    : art === 'height' ? 'cm'
+    : '';
+  const rang = [...teams].sort((a, b) => {
+    const va = werte[a.id] ?? null, vb = werte[b.id] ?? null;
+    if (va === null && vb === null) return 0;
+    if (va === null) return 1;
+    if (vb === null) return -1;
+    if (art === 'closestToTarget' && ziel != null) return Math.abs(va - ziel) - Math.abs(vb - ziel);
+    return kleinerBesser ? va - vb : vb - va;
+  });
+  const mitWert = rang.filter(t => (werte[t.id] ?? null) !== null).length;
+  const zeilenHoehe = Math.min(88, Math.max(52, Math.floor((height * 0.62) / Math.max(1, teams.length))));
+
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(10px, 1.4cqh, 22px)', padding: '0 clamp(40px, 6cqw, 110px)',
+    }}>
+      <div style={{
+        fontWeight: 900, letterSpacing: '0.09em', textTransform: 'uppercase',
+        fontSize: 'clamp(20px, 2.1cqw, 30px)', color: 'var(--qq-text-muted)',
+      }}>
+        {spiel ? cgName(spiel, lang) : (de ? 'Ergebnisse' : 'Results')}
+        {' · '}
+        {COZY_GAME_SCORING_LABELS[art as CozyGameScoringType]?.[de ? 'de' : 'en'] ?? ''}
+      </div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 'clamp(6px, 0.8cqh, 12px)', width: '100%', maxWidth: 1180 }}>
+        {rang.map((t, i) => {
+          const v = werte[t.id] ?? null;
+          const fuehrt = i === 0 && v !== null;
+          return (
+            <div key={t.id} style={{
+              display: 'flex', alignItems: 'center', gap: 'clamp(14px, 1.6cqw, 24px)',
+              height: zeilenHoehe,
+              padding: '0 clamp(16px, 1.8cqw, 26px)',
+              borderRadius: 'var(--qq-card-radius, 18px)',
+              background: fuehrt ? `${akzent}22` : 'rgba(246,239,230,0.045)',
+              border: fuehrt ? `2px solid ${akzent}` : '2px solid var(--qq-hairline)',
+              opacity: v === null ? 0.5 : 1,
+              transition: 'background 0.4s ease, border-color 0.4s ease, opacity 0.4s ease',
+            }}>
+              <span style={{
+                width: 54, textAlign: 'center', fontWeight: 900,
+                fontSize: 'clamp(22px, 2.3cqw, 32px)',
+                color: fuehrt ? akzent : 'var(--qq-text-muted)',
+                fontVariantNumeric: 'tabular-nums',
+              }}>{v === null ? '·' : `#${i + 1}`}</span>
+              <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={Math.round(zeilenHoehe * 0.72)} />
+              <TeamNameLabel name={t.name} maxLines={1} shrinkAfter={18}
+                color="var(--qq-text)" fontWeight={900}
+                fontSize="clamp(22px, 2.4cqw, 34px)"
+                style={{ flex: 1, minWidth: 0 }} />
+              <span style={{
+                fontWeight: 900, fontSize: 'clamp(26px, 2.9cqw, 42px)',
+                color: v === null ? 'var(--qq-text-muted)' : 'var(--qq-text)',
+                fontVariantNumeric: 'tabular-nums',
+              }}>
+                {v === null ? (de ? '—' : '—') : `${v}${einheit ? ' ' + einheit : ''}`}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+      <div style={{ fontWeight: 800, fontSize: 'clamp(16px, 1.6cqw, 22px)', color: 'var(--qq-text-muted)' }}>
+        {mitWert}/{teams.length} {de ? 'Werte' : 'values'}
+      </div>
+    </div>
+  );
+}
+
 function WinnerSelectView({ width, height, game, winnerTeamIds, accentColor, darkAccentColor, teams, lang }: {
   width: number; height: number;
   game: CozyGame | null;

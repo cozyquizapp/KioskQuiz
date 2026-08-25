@@ -6943,8 +6943,88 @@ export function qqCozyGameStopGame(room: QQRoomState): void {
     room._cozyGameTimerHandle = null;
   }
   room._cozyGameOnExpire = null;
-  room.cozyGame.phase = 'WINNER_SELECT';
+  // 2026-08-25 (Wolf: „bei den meisten cozygames sollte ein wert eingetragen
+  // werden koennen"): nach dem Spiel kommt erst die Werte-Tabelle, dann der
+  // Sieger. Bei gleichzeitigen Spielen duerfen die Teams selbst tippen - dort
+  // hat jedes Team sein eigenes Ergebnis am eigenen Tisch, und acht Zahlen
+  // einzusammeln kostet Wolf mehr Zeit als das Spiel gedauert hat. Bei
+  // Reihum-Spielen tippt Wolf, weil der ganze Raum den Versuch gesehen hat.
+  room.cozyGame.phase = 'VALUES';
   room.cozyGame.gameEndsAt = null;
+  if (!room.cozyGame.values) room.cozyGame.values = {};
+  for (const id of Object.keys(room.teams)) {
+    if (room.cozyGame.values[id] === undefined) room.cozyGame.values[id] = null;
+  }
+  room.cozyGame.valuesOpen = room.cozyGame.playMode !== 'sequence';
+  room.lastActivityAt = Date.now();
+}
+
+/** Einen Wert eintragen oder loeschen. `wert = null` macht das Feld wieder leer. */
+export function qqCozyGameSetValue(
+  room: QQRoomState,
+  teamId: string,
+  wert: number | null,
+): void {
+  const cg = room.cozyGame;
+  if (!cg) return;
+  // Waehrend eines Reihum-Spiels darf der Wert schon eingetragen werden, sobald
+  // das Team dran war - sonst muesste Wolf sich acht Zahlen merken.
+  if (cg.phase !== 'VALUES' && cg.phase !== 'GAME_ACTIVE') return;
+  if (!room.teams[teamId]) return;
+  if (!cg.values) cg.values = {};
+  cg.values[teamId] = (wert === null || !Number.isFinite(wert)) ? null : wert;
+  room.lastActivityAt = Date.now();
+}
+
+/**
+ * Rangfolge aus den Werten. `scoringType` sagt, in welche Richtung gewertet
+ * wird, `zielwert` nur bei `closestToTarget`.
+ * Rueckgabe ist von Platz eins abwaerts; Teams ohne Wert stehen hinten.
+ */
+export function qqCozyGameRanking(
+  room: QQRoomState,
+  scoringType: string,
+  zielwert?: number | null,
+): Array<{ teamId: string; value: number | null }> {
+  const cg = room.cozyGame;
+  const werte = cg?.values ?? {};
+  const kleinerIstBesser = scoringType === 'timeToFinish';
+  const eintraege = Object.keys(room.teams).map(id => ({ teamId: id, value: werte[id] ?? null }));
+  return eintraege.sort((a, b) => {
+    if (a.value === null && b.value === null) return 0;
+    if (a.value === null) return 1;
+    if (b.value === null) return -1;
+    if (scoringType === 'closestToTarget' && zielwert != null) {
+      return Math.abs(a.value - zielwert) - Math.abs(b.value - zielwert);
+    }
+    return kleinerIstBesser ? a.value - b.value : b.value - a.value;
+  });
+}
+
+/**
+ * VALUES → WINNER_SELECT. Der Sieger steht in den Zahlen, nicht in Wolfs Kopf:
+ * die Rangfolge bestimmt ihn, Gleichstand an der Spitze teilt den Sieg.
+ * Wenn gar kein Wert eingetragen ist, bleibt die alte Hand-Auswahl.
+ */
+export function qqCozyGameConfirmValues(
+  room: QQRoomState,
+  scoringType: string,
+  zielwert?: number | null,
+): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'VALUES') return;
+  cg.valuesOpen = false;
+  cg.phase = 'WINNER_SELECT';
+  const rang = qqCozyGameRanking(room, scoringType, zielwert);
+  const bester = rang[0];
+  if (bester && bester.value !== null) {
+    const vergleich = (v: number) => scoringType === 'closestToTarget' && zielwert != null
+      ? Math.abs(v - zielwert) : v;
+    const ziel = vergleich(bester.value);
+    cg.winnerTeamIds = rang
+      .filter(e => e.value !== null && vergleich(e.value) === ziel)
+      .map(e => e.teamId);
+  }
   room.lastActivityAt = Date.now();
 }
 

@@ -60,6 +60,7 @@ import {
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
+  qqCozyGameSetValue, qqCozyGameConfirmValues,
   qqCozyGameAdvanceToPlacement, qqCozyGameCancel,
   qqCozyGameNextSequenceTeam,
   qqCozyGameTimerPause, qqCozyGameTimerResume,
@@ -2598,6 +2599,22 @@ export function registerQQHandlers(io: SocketIOServer): void {
     // 2026-05-17 (Wolf Sequence-Mode): Helper für mode-aware onExpire.
     // parallel: Timer-Ende → WINNER_SELECT (alle gleichzeitig gespielt).
     // sequence: Timer-Ende → nur Timer stoppen, Mod muss „Nächstes Team" klicken.
+    /** Wertungsart des aktiven Spiels. Wie bei `parallel`: erst Datenbank,
+     *  dann der Seed-Katalog im Repo - ohne MONGODB_URI ist die Datenbank leer. */
+    const cozyGameWertung = async (gameId: string | null): Promise<{ scoringType: string; targetValue: number | null }> => {
+      if (!gameId) return { scoringType: 'countIn60s', targetValue: null };
+      let spiel: any = null;
+      try {
+        const alle = await getAllCozyGamesFromDB();
+        spiel = (alle ?? []).find((g: any) => g.id === gameId) ?? null;
+      } catch { /* Datenbank stolpert, Seed faengt es auf */ }
+      if (!spiel) spiel = COZY_GAME_V1_SEED.find(g => g.id === gameId) ?? null;
+      return {
+        scoringType: spiel?.scoringType ?? 'countIn60s',
+        targetValue: (spiel as any)?.targetValue ?? null,
+      };
+    };
+
     const makeCozyGameOnExpire = (roomCode: string) => () => {
       const live = getQQRoom(roomCode);
       if (!live || !live.cozyGame) return;
@@ -2666,6 +2683,40 @@ export function registerQQHandlers(io: SocketIOServer): void {
           ok(ack);
           return;
         }
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-08-25 (Wolf): Werte zu einem CozyGame eintragen. Kommt entweder vom
+    // Steuerpult (Reihum-Spiele) oder vom Handy (gleichzeitige Spiele). Der
+    // Weg vom Handy geht nur, solange `valuesOpen` steht, und nur fuer das
+    // eigene Team - sonst traegt ein Gast Zahlen fuer alle anderen ein.
+    socket.on('qq:cozyGameSetValue', (payload: { roomCode: string; teamId: string; value: number | null; fromTeam?: boolean }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        if (payload.fromTeam) {
+          if (!room.cozyGame?.valuesOpen) { ok(ack); return; }
+          // `_teamSockets` ist nach teamId geschluesselt, nicht nach Socket
+          // (qqSocketHandlers.ts:1154). Der Absender muss also DER Socket sein,
+          // der fuer dieses Team eingetragen ist.
+          const besitzer = (room as any)._teamSockets?.[payload.teamId];
+          if (besitzer && besitzer !== socket.id) { ok(ack); return; }
+        }
+        qqCozyGameSetValue(room, payload.teamId, payload.value);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // Werte bestaetigen: die Tabelle kuert den Sieger, nicht der Moderator.
+    socket.on('qq:cozyGameConfirmValues', async (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        const cg = room.cozyGame;
+        if (!cg) { ok(ack); return; }
+        const { scoringType, targetValue } = await cozyGameWertung(cg.activeGameId);
+        qqCozyGameConfirmValues(room, scoringType, targetValue);
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

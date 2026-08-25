@@ -101,6 +101,7 @@ export type CozyGameRoundPhase =
   | 'WHEEL_SPIN'      // Glücksrad spinnt — keine Mod-Aktion außer "warte"
   | 'WHEEL_RESULT'    // Rad ist gelandet, Spiel-Card wird angezeigt — Mod startet als nächstes Spiel
   | 'GAME_ACTIVE'     // 60s Spiel läuft, Timer zeigt Countdown — Mod kann jederzeit "Stop" drücken
+  | 'VALUES'          // Werte eintragen (Zeit/Anzahl/…), Tabelle sortiert sich live
   | 'WINNER_SELECT';  // Spiel zu Ende, Mod wählt Sieger-Team(s) → setzt pendingAction → PLACEMENT
 
 export interface CozyGameRoundState {
@@ -144,6 +145,24 @@ export interface CozyGameRoundState {
   timerPausedRemainingMs?: number;
   /** Initiale Timer-Dauer in Sekunden (für Reset-Button). Default 60. */
   timerDurationSec?: number;
+
+  // ── Werte-Eingabe (2026-08-25 Wolf: „bei den meisten cozygames sollte ein
+  //    wert eingetragen werden können ... am ende eine tabelle") ────────────
+  /**
+   * Ergebnis pro Team in der Einheit des Spiels (`CozyGame.scoringType`).
+   * null = noch nichts eingetragen. Wer die Zahl liefert, haengt am Spielmodus:
+   * gleichzeitig → die Teams tippen selbst am Handy, Wolf kann korrigieren;
+   * nacheinander → Wolf tippt, weil der ganze Raum den Versuch gesehen hat.
+   */
+  values?: Record<string, number | null>;
+  /**
+   * Bei zeitbasierten Spielen nacheinander (`timeToFinish`, `lastStanding`):
+   * die gestoppte Zeit kommt aus der Uhr, nicht aus der Tastatur. Hier steht,
+   * wann der Turn des Teams begonnen hat, damit „Stopp" rechnen kann.
+   */
+  turnStartedAt?: number | null;
+  /** Duerfen die Teams gerade Werte schicken? Nur bei gleichzeitigen Spielen. */
+  valuesOpen?: boolean;
 }
 
 // ── Seed-Katalog: 15 aktive Spiele (+3 archiviert) ───────────────────────────

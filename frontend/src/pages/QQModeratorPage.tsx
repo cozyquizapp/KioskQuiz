@@ -16,6 +16,7 @@ import { qqTowerAwardCount } from '../../../shared/qqFinalReveal';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
+import { CozyGameWerteFeld } from '../components/CozyGameWerteFeld';
 import { QQTeamAvatar } from '../components/QQTeamAvatar';
 import { QQEmojiIcon } from '../components/QQIcon';
 import { AVATAR_SETS, MEGA_EMOJI_POOL, ESC_FLAG_POOL } from '../avatarSets';
@@ -1079,6 +1080,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             delayMs = 1000;
             action = () => emit('qq:cozyGameNextSequenceTeam', { roomCode });
           }
+        } else if (cg.phase === 'VALUES') {
+          // 2026-08-25: die Werte-Tabelle ist ein Halt-Punkt fuer Wolf, aber
+          // nicht fuer den Testlauf - dort tippt niemand Zahlen ein. Nach einer
+          // Lesepause bestaetigen; ohne Werte bleibt `winnerTeamIds` leer und
+          // der Zufallssieger unten greift wie bisher.
+          delayMs = 4000;
+          action = () => emit('qq:cozyGameConfirmValues', { roomCode });
         } else if (cg.phase === 'WINNER_SELECT') {
           const winnerIds: string[] = cg.winnerTeamIds ?? [];
           if (winnerIds.length === 0) {
@@ -3634,6 +3642,21 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                           )}
                         </div>
                       </div>
+                    );
+                  }
+                  if (cg.phase === 'VALUES') {
+                    // 2026-08-25 (Wolf): Werte eintragen. Bei gleichzeitigen
+                    // Spielen tippen die Teams am Handy und Wolf korrigiert nur;
+                    // bei Reihum-Spielen tippt er selbst. Die Felder sehen in
+                    // beiden Faellen gleich aus, damit er nicht umdenken muss.
+                    return (
+                      <CozyGameWerteFeld
+                        teamList={teamList}
+                        werte={cg.values ?? {}}
+                        offen={!!cg.valuesOpen}
+                        onSet={(teamId, value) => emit('qq:cozyGameSetValue', { roomCode, teamId, value })}
+                        onFertig={() => emit('qq:cozyGameConfirmValues', { roomCode })}
+                      />
                     );
                   }
                   if (cg.phase === 'WINNER_SELECT') {

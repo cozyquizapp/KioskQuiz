@@ -31,6 +31,7 @@ import { QQTeamAvatar, CountryFlagOrEmoji } from '../components/QQTeamAvatar';
 import { Confetti } from '../components/Confetti';
 import { AvatarSetProvider } from '../avatarSetContext';
 import { qqArenaRootBg, qqArenaBgFor, qqArenaBgEnabled } from '../components/ArenaBeamerBg';
+import { QQ_BUEHNE_BREITE, QQ_BUEHNE_HOEHE, qqBuehneAn } from '../qqBuehnenMass';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQIcon, QQEmojiIcon, QQReactionIcon, qqCatSlug, qqSubSlug } from '../components/QQIcon';
 import { CozyWolfImage } from '../components/CozyWolfImage';
@@ -608,22 +609,13 @@ function FullscreenNudge({ onClick, de }: { onClick: () => void; de: boolean }) 
 // EINE Stelle zum Tunen: naeher an 1920 = kleiner, kleiner = groesser. Muss
 // exakt 16:9 bleiben (sonst Letterbox-Rand auf 16:9-Beamern). Falls eine Folie
 // an den Kanten blutet: Wert Richtung 1840x1035 (~+4%) zuruecknehmen.
-const STAGE_DESIGN_WIDTH = 1760;
-const STAGE_DESIGN_HEIGHT = 990;
-function isStageEnabled(): boolean {
-  if (typeof window === 'undefined') return false;
-  try {
-    const url = new URLSearchParams(window.location.search);
-    const v = url.get('stage');
-    if (v === '1' || v === 'on' || v === 'true') return true;
-    if (v === '0' || v === 'off' || v === 'false') return false;
-    // Persistente Escape-Luke: qq_useStage='0' → aus. Sonst Default AN.
-    if (localStorage.getItem('qq_useStage') === '0') return false;
-    return true;
-  } catch {
-    return true;
-  }
-}
+// 2026-08-25: Rahmen und Schalter wohnen jetzt in qqBuehnenMass.ts, damit auch
+// Ansichten INNERHALB der Buehne danach fragen koennen, ohne sich diese Seite
+// zu importieren. Anlass war ein Brett, das mit `window.innerHeight` gerechnet
+// hat und deshalb auf jedem Fenster ausser genau 1760x990 aus dem Bild lief.
+const STAGE_DESIGN_WIDTH = QQ_BUEHNE_BREITE;
+const STAGE_DESIGN_HEIGHT = QQ_BUEHNE_HOEHE;
+const isStageEnabled = qqBuehneAn;
 // 2026-07-17: exportiert fuer die Arena-Lab-Harness (`/arena-lab`). WICHTIG: die
 // Harness MUSS diese echte Stage benutzen und darf sie nicht nachbauen — der
 // Arena-BG haengt am AEUSSEREN Div (nicht an der 1760x990-Buehne), und genau

@@ -348,6 +348,13 @@ export function ScoreBar({ teams, activeTeamId, teamPhaseStats, correctTeamId, a
               name={t.name}
               maxLines={2}
               shrinkAfter={14}
+              // 2026-08-25, im DOM gemessen: die Namensspalte am Brett ist
+              // 276 px breit und die Schrift steht auf 47 px. Ein Wort mit
+              // zehn Zeichen braucht dort rund 282 px - „Wolfsrudel" brach
+              // deshalb zu „Wolfsrude" + „l". Die allgemeine Regel geht von
+              // neun Zeichen pro Zeile aus, was fuer breitere Spalten stimmt;
+              // hier passen acht.
+              laengstesWortPasst={8}
               fontSize={nameFs}
               // 2026-08-23 (Buehnen-Durchgang, am Brett gemessen): die Namen
               // standen in der rohen Teamfarbe auf dem dunklen Grund. Fuenf von

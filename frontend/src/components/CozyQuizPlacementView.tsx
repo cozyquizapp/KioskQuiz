@@ -17,6 +17,7 @@ import { ScoreBar } from './CozyQuizScoreBar';
 import type { QQIconSlug } from './QQIcon';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQ3DGrid } from './QQ3DGrid';
+import { qqBuehnenMass } from '../qqBuehnenMass';
 
 export function PlacementView({ state: s, flashCell, use3D = false, enable3DTransition = false }: {
   state: QQStateUpdate;
@@ -135,9 +136,15 @@ export function PlacementView({ state: s, flashCell, use3D = false, enable3DTran
   // 1080p bindet die Hoehe → Grid 928→972 (+4.7%). Vertikales Budget (≈1004px
   // = Viewport − 2×safe-margin − Banner − Row-Padding) bleibt gewahrt, kein
   // /beamer-Scroll. Horizontal passt weiter neben die 740px-ScoreBar.
-  const gridMaxSize = typeof window !== 'undefined'
-    ? Math.min(1150, window.innerHeight * 0.90, window.innerWidth * 0.57)
-    : 800;
+  // 2026-08-25 (Wolf: „was ist mit dem grid passiert?"). Hier stand
+  // `window.innerHeight`, und das ist das FENSTER, nicht die Buehne. Der
+  // Beamer rendert in einen festen Rahmen von 1760x990 und skaliert den erst
+  // danach aufs Fenster. Auf einem Fenster, das hoeher ist als 990, kam
+  // deshalb eine Zahl heraus, die groesser war als der Rahmen: das Brett lief
+  // links, oben und unten aus dem Bild. Bei exakt 1760x990 faellt es nicht
+  // auf, deshalb war es im Harness unsichtbar und auf jedem echten Beamer da.
+  const mass = qqBuehnenMass();
+  const gridMaxSize = Math.min(1150, mass.hoehe * 0.90, mass.breite * 0.57);
 
   // Manual flyover hotkey (F): trigger a cinematic orbit over the grid
   const [flyoverSignal, setFlyoverSignal] = useState(0);

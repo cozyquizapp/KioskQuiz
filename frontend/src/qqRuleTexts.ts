@@ -179,7 +179,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       // 2026-08-25 (Wolf: „punkte am ende ohne award"): der Sieger bekommt kein
       // Feld mehr, jeder CozyGame-Sieg ist EIN PUNKT bei der Siegerehrung.
       // Die Regelfolie muss das sagen, sonst warten acht Teams auf eine Aktion.
-      { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: 'Jeder Sieg = 1 Punkt bei der Siegerehrung · Geschick > Wissen', defaultEn: 'Each win = 1 point at the awards · skill > knowledge' },
+      { key: 'rules.slide_cozygames.line2', label: 'CozyGame — Zeile 2', defaultDe: '1 Punkt pro Sieg · zählt am Ende', defaultEn: '1 point per win · counts at the end' },
 
       // Slide 7 „Comeback" 2026-07-15 (Design-Sweep-Audit) aus dem Editor entfernt
       // — Comeback ist global deaktiviert (QQ_COMEBACK_ENABLED=false) und hat keine

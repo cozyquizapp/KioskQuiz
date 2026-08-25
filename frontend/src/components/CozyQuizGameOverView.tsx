@@ -15,6 +15,7 @@ import { useLangFlip, bt, COZY_CARD_BG } from '../cozyQuizShared';
 import { qqSortedTeams } from '../qqShared';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
+import { qqBuehnenMass } from '../qqBuehnenMass';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
@@ -349,9 +350,9 @@ export function GameOverView({ state: s }: { state: QQStateUpdate; roomCode?: st
         }}>
           <GridDisplay
             state={s}
-            maxSize={typeof window !== 'undefined'
-              ? Math.min(window.innerHeight * 0.82, window.innerWidth * 0.55)
-              : 700}
+            // 2026-08-25: wie in der Setz-Phase - `window.inner*` misst das
+            // Fenster, nicht die Buehne. Siehe qqBuehnenMass.ts.
+            maxSize={Math.min(qqBuehnenMass().hoehe * 0.82, qqBuehnenMass().breite * 0.55)}
             highlightTeam={winner?.id ?? null}
             showJoker
           />

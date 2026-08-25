@@ -192,7 +192,11 @@ function buildRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       requiresCozyGames: true,
       lines: [
         t('rules.slide_cozygames.line1', 'Nach jeder Runde dreht das Glücksrad: ein analoges Mini-Spiel'),
-        t('rules.slide_cozygames.line2', 'Sieger setzt 1 Aktion auf dem Brett · Geschick > Wissen'),
+        // 2026-08-25 (Wolf: „neue cozygames regelung in die rule slides"):
+        // der Sieger bekommt kein Feld mehr, jeder Sieg ist ein Punkt bei der
+        // Siegerehrung. Die Folie laeuft nur, wenn CozyGames an sind
+        // (`requiresCozyGames`).
+        t('rules.slide_cozygames.line2', '1 Punkt pro Sieg · zählt am Ende'),
       ],
       // 2026-05-17 (Wolf): extra-Beschreibung raus — Moderator erklärt das selbst.
     },
@@ -293,7 +297,7 @@ function buildRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       requiresCozyGames: true,
       lines: [
         t('rules.slide_cozygames.line1', 'After every round the wheel spins: one analog mini-game'),
-        t('rules.slide_cozygames.line2', 'Winner places 1 action on the board · skill > knowledge'),
+        t('rules.slide_cozygames.line2', '1 point per win · counts at the end'),
       ],
     },
     {

@@ -38,6 +38,13 @@ type Props = {
   fontWeight?: number;
   /** Wenn true: Title-Attribut mit vollem Namen (Hover-Tooltip auf Desktop). */
   title?: boolean;
+  /**
+   * Wie viele Zeichen des laengsten Wortes passen in EINE Zeile der Spalte?
+   * 2026-08-25: war eine feste 9 im Rumpf und damit fuer alle Ansichten
+   * dieselbe Zahl, obwohl die Spalten verschieden breit sind. Wer eine
+   * schmalere Spalte hat, setzt sie herunter - gemessen, nicht geraten.
+   */
+  laengstesWortPasst?: number;
   /** Mergen weiterer Styles (z.B. textShadow, letterSpacing). */
   style?: CSSProperties;
   className?: string;
@@ -50,6 +57,7 @@ export function TeamNameLabel({
   fontSize,
   fontSizeLong,
   shrinkAfter = 16,
+  laengstesWortPasst = 9,
   minFontSize,
   color,
   fontWeight,
@@ -73,7 +81,7 @@ export function TeamNameLabel({
   //   laengstes Wort → das Wort passt in KEINE Zeile. Das ist der Fall, der
   //                    mitten im Wort zerschneidet.
   // Wir schrumpfen genau so weit, wie der schlimmere der beiden es verlangt.
-  const LONGEST_WORD_FIT = 9;
+  const LONGEST_WORD_FIT = laengstesWortPasst;
   const longestWord = display.split(/[\s\-–—/]+/).reduce((m, w) => Math.max(m, w.length), 0);
   const overflow = Math.max(
     display.length / Math.max(1, shrinkAfter),

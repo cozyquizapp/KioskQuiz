@@ -1248,6 +1248,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // laenger; zu kurz heisst, der Autoplay schneidet die Ansage ab.
             const abgaenge = etappe === 0 ? Math.max(1, N - 3) : 1;
             delayMs = qqTurmRennBeatDauer(marken[etappe] ?? 0, marken[etappe + 1] ?? 0, abgaenge);
+            // Der letzte Renn-Beat ist die Kroenung am Turm. Gemessen im
+            // Autoplay stand der gekroente Turm 2,7 s, dann kam schon die
+            // Siegerfolie. Das ist der Moment, auf den zwei Stunden zulaufen,
+            // und bei Gleichstand (kein letzter Baustein mehr zu setzen) faellt
+            // er sonst auf die blosse Zeremoniendauer zusammen.
+            if (etappe === 3) delayMs += 3000;
           }
           action = () => emit('qq:nextQuestion', { roomCode });
         }

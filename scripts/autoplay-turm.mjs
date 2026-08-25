@@ -55,16 +55,30 @@ for (let i = 0; i < 120; i++) {
   await sleep(500);
 }
 if (!turmAb) { console.error('Turm kam nie.'); process.exit(1); }
-console.log('Turm ist da. Jetzt 14 Sekunden mitschneiden.');
-await sleep(14000);
+// 2026-08-25: aus 14 s wurden 80 s. Das Finale ist seit dem Rennen und der
+// laengeren Award-Zeremonie deutlich laenger, und genau die Beats am Ende sind
+// die, die zuletzt verlorengingen. Parallel wird die Ueberschrift mitgelesen -
+// ein Kontaktblatt zeigt, WIE es aussieht, aber nicht, ob eine Stufe fehlt.
+console.log('Turm ist da. Jetzt 80 Sekunden mitschneiden.');
+const folge = [];
+const folgeTakt = setInterval(async () => {
+  try {
+    const txt = await seite.evaluate(() => document.body.innerText.split('\n').filter(Boolean).slice(0, 2).join(' | '));
+    if (folge.at(-1)?.txt !== txt) folge.push({ t: Date.now(), txt });
+  } catch { /* Seite beschaeftigt */ }
+}, 250);
+await sleep(80000);
+clearInterval(folgeTakt);
 await cdp.send('Page.stopScreencast');
 const zeit = [];
 for (const bd of bilder) { bd.t -= turmAb; if (bd.t >= -600) zeit.push(bd); }
 console.log(`${zeit.length} Bilder von ${zeit[0]?.t} bis ${zeit.at(-1)?.t} ms`);
+console.log('\nWas der Autoplay zeigt, Stufe fuer Stufe:');
+for (const f of folge) console.log(`  ${String(f.t - turmAb).padStart(7)} ms  ${f.txt}`);
 
 // Alle 600 ms ein Bild, damit man den ganzen Ablauf sieht statt eines Ausschnitts.
 fs.mkdirSync('.shots', { recursive: true });
-const MARKEN = Array.from({ length: 24 }, (_, i) => i * 600);
+const MARKEN = Array.from({ length: 30 }, (_, i) => i * 2700);
 const gewaehlt = MARKEN.map(m => {
   let best = null;
   for (const bd of zeit) if (!best || Math.abs(bd.t - m) < Math.abs(best.t - m)) best = bd;

@@ -118,6 +118,21 @@ return {
   // deshalb springt der Harness ueber `dev/skipTo` dorthin, statt vier Runden
   // nachzuspielen. Das fuellt das Brett mit, sonst stehen die Endfolien auf
   // einem leeren Spielfeld und zeigen nicht, was sie am Abend zeigen.
+  // 2026-08-24 (Wolf: „gewinnerkarte wird unten abgeschnitten", „siegerleiste
+  // komplett abgeschnitten und ueberlappt"). Beides passiert nur, wenn die
+  // RICHTIGE Antwort in der unteren Reihe steht (C oder D): die Wappen-Reihe
+  // haengt unter ihrer Karte und trifft dort auf die Sieger-Leiste, die am
+  // Fuss klebt. Im Test-Entwurf steht die richtige Antwort der ersten
+  // Mu-Cho-Frage oben; in `qq-vol-1` hat die Frage der zweiten Runde
+  // `correctOptionIndex: 2`. Deshalb erst in Runde 2 springen.
+  aufloesungUnten: { ruhe: 6000, aufbau: 'spiel', weg: async (h) => {
+    await h.springe('phase-2'); await sleep(600);
+    await h.zurFrage(); await h.antworten(); await sleep(400);
+    await h.emit('qq:revealAnswer'); await sleep(1600);
+    for (const ev of ['qq:muchoRevealStep']) {
+      await h.emit(ev); await sleep(300); await h.emit(ev); await sleep(300);
+    }
+  } },
   pause:      { ruhe: 2500, aufbau: 'spiel', weg: async (h) => { await h.zurFrage(); await h.emit('qq:pause'); } },
   // Die Heisse Kartoffel im Lauf, mit vielen Antworten auf dem Tisch.
   // `--stufe=n` sagt, wie viele Antworten liegen sollen (Vorgabe 1).
@@ -438,7 +453,23 @@ export async function buehneStarten(teilCfg = {}) {
         body: JSON.stringify({ correctRate: quote, stagger: true, pin: PIN }),
       });
       if (!r.ok) console.log('  simAnswers:', r.status, (await r.text()).slice(0, 120));
-      await sleep(700);
+      // 2026-08-24: die Abgaben laufen GESTAFFELT ein (der Server verteilt sie
+      // ueber das Zeitfenster, damit die Zeit-Pillen echte Abstaende zeigen).
+      // Nach 700 ms war deshalb regelmaessig erst ein Drittel da, und die
+      // Aufloesung zeigte zwei Wappen statt acht - genau der volle Fall, den
+      // man pruefen will, kam nie ins Bild. Jetzt wird gewartet, bis alle
+      // abgegeben haben (gedeckelt, damit ein stummer Bot den Lauf nicht haelt).
+      const bis = Date.now() + 9000;
+      while (Date.now() < bis) {
+        await sleep(400);
+        const st = await beamer.evaluate(() => {
+          const t = document.body.innerText.match(/(\d+)\s*\/\s*(\d+)\s*Teams/);
+          return t ? [Number(t[1]), Number(t[2])] : null;
+        }).catch(() => null);
+        if (st && st[0] >= st[1]) break;
+        if (!st) break;
+      }
+      await sleep(300);
     },
     /** Eine Frage weiter. Der Server verlangt erst `nextQuestion`, danach
      *  fuehrt `activateQuestion` durch das kurze Zwischenbild (Kategorie) bis

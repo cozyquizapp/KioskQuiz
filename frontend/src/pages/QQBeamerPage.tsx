@@ -4326,8 +4326,20 @@ export function MuchoOptionsReveal({
         // Die Werte ziehen auf die Staffelung von ZEHN_VON_ZEHN nach, das
         // dieselbe Mechanik hat und dort schon 100–140px fuehrt — MUCHO lag mit
         // 60–90px deutlich enger, obwohl unter der Karte dasselbe passiert.
-        rowGap: expandedLayout ? 'clamp(100px, 12cqh, 140px)' : 18,
-        paddingBottom: expandedLayout ? 'clamp(100px, 11cqh, 140px)' : 0,
+        // 2026-08-24 (Wolf: „gewinnerkarte wird unten abgeschnitten",
+        // „siegerleiste komplett abgeschnitten und ueberlappt"). Der Platz
+        // unter den Karten war zu knapp fuer das, was dort steht. Nachgerechnet
+        // an der breitesten Marke: Kachel des schnellsten Teams 92 px, Krone
+        // ragt nach oben (kostet nichts), Zeit-Pille darunter rund 30, dazu die
+        // 14 px Luft zur Karte - macht 136. Reserviert waren 11cqh, auf 990 px
+        // Buehne also 109. Die fehlenden 27 px landeten in der Sieger-Leiste,
+        // die am Fuss klebt; bei der unteren Kartenreihe (richtige Antwort C
+        // oder D) lag die Marke dann mitten darauf.
+        // Beide Werte reichen jetzt bis 140 px auf der Buehne. Sie muessen
+        // gleich sein: derselbe Marken-Block haengt unter der oberen Reihe (in
+        // die Luecke) und unter der unteren (in das Polster).
+        rowGap: expandedLayout ? 'clamp(104px, 14.2cqh, 150px)' : 18,
+        paddingBottom: expandedLayout ? 'clamp(104px, 14.2cqh, 150px)' : 0,
         marginBottom: 'clamp(10px, 1.4cqh, 22px)',
         width: '100%', maxWidth: 1400,
         // 2026-04-30 v2: 0.9s entspanntes Easing (User: 'cards verschieben sich zu hektisch').

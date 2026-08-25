@@ -216,8 +216,27 @@ function getWarmBus(ac: AudioContext): GainNode {
   lowpass.type = 'lowpass';
   lowpass.frequency.value = 2400;  // schneidet harsche Höhen (war 3500)
   lowpass.Q.value = 0.7;            // sanfterer Roll-off (war 0.5)
+
+  // 2026-08-25 (Wolf: „einige sind flach oder generisch, technisch").
+  // Nachgerechnet, und das hier ist der zweite Grund: der Bus hatte KEINE
+  // Bremse. Der Kroenungs-Akkord (playClimaxFinish) legt sechs Toene
+  // uebereinander, deren Spitzen sich bei t+0,30 auf 0,70 + 0,85 + 1,10 + 1,40
+  // summieren. Mal masterVolume 0,8 sind das rund 3,2 - der Ausgang macht bei
+  // 1,0 dicht. Der groesste Moment des Abends lief also uebersteuert, und
+  // Uebersteuerung klingt genau so: hart, blechern, technisch.
+  // Ein Limiter am Ende der Kette faengt das ab, egal welcher Klang kommt.
+  // Er ist eine Versicherung, kein Effekt: solange nichts ueber die Schwelle
+  // geht, tut er nichts.
+  const bremse = ac.createDynamicsCompressor();
+  bremse.threshold.value = -6;   // greift erst kurz vor Vollausschlag
+  bremse.knee.value = 6;         // weicher Einsatz, kein hoerbares Zupacken
+  bremse.ratio.value = 12;       // ab da praktisch Deckel
+  bremse.attack.value = 0.003;
+  bremse.release.value = 0.25;
+
   input.connect(lowpass);
-  lowpass.connect(ac.destination);
+  lowpass.connect(bremse);
+  bremse.connect(ac.destination);
 
   // Wet path: input → reverbSend → convolver → reverbReturn → destination
   // Synthetic IR: white noise mit ~0.6s exponential decay → mehr Raum.
@@ -244,6 +263,86 @@ function getWarmBus(ac: AudioContext): GainNode {
 
   warmBusInput = input;
   return input;
+}
+
+/**
+ * 2026-08-25 (Wolf: „einige sind etwas flach oder generisch, technisch").
+ *
+ * Warum sie flach klingen, und warum der Versuch vom 08.05. es nicht geloest
+ * hat: damals wurde der RAUM warm gemacht (Lowpass 2400 Hz, 22 % Hall). Der
+ * Raum war nie das Problem. Fast jeder Synth-Klang hier besteht aus EINEM
+ * Oszillator, also aus einer einzigen Teilschwingung. Ein echtes Geraeusch hat
+ * zwei Dinge, die hier fehlen:
+ *
+ *   1. einen ANSCHLAG - das kurze Rauschen, mit dem ein Gegenstand angestossen
+ *      wird. Ohne ihn beginnt der Ton aus dem Nichts, und genau das hoert man
+ *      als „technisch".
+ *   2. OBERTOENE - eine Saite schwingt nicht nur auf ihrer Grundfrequenz. Ein
+ *      nackter Sinus klingt deshalb wie ein Messgeraet, nicht wie ein Ding.
+ *
+ * Ein schoener Hall um einen nackten Sinus bleibt ein nackter Sinus im Hall.
+ */
+
+/** Anschlag: sehr kurzes gefiltertes Rauschen. Gibt dem Ton einen Koerper. */
+function anschlag(
+  startTime: number,
+  dauer = 0.012,
+  lautstaerke = 0.06,
+  farbe = 1800,
+  c?: AudioContext,
+) {
+  const ac = c ?? getCtx();
+  if (!ac) return;
+  const laenge = Math.max(64, Math.floor(ac.sampleRate * dauer));
+  const buf = ac.createBuffer(1, laenge, ac.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < laenge; i++) {
+    // Steiler Abfall: der Anschlag ist ein Ereignis, kein Klang.
+    data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / laenge, 2.5);
+  }
+  const quelle = ac.createBufferSource();
+  quelle.buffer = buf;
+  const bp = ac.createBiquadFilter();
+  bp.type = 'bandpass';
+  bp.frequency.value = farbe;
+  bp.Q.value = 0.9;
+  const g = ac.createGain();
+  g.gain.value = lautstaerke * masterVolume;
+  quelle.connect(bp); bp.connect(g); g.connect(getWarmBus(ac));
+  quelle.start(startTime);
+}
+
+/**
+ * Ton mit Obertoenen. Grundton plus Oktave und Quinte, beide deutlich leiser.
+ * Das ist der Unterschied zwischen „Piep" und „Ding".
+ */
+function koerperTon(
+  freq: number,
+  startTime: number,
+  dauer: number,
+  lautstaerke: number,
+  attack = 0.006,
+  release = 0.12,
+  c?: AudioContext,
+) {
+  const ac = c ?? getCtx();
+  if (!ac) return;
+  tone(freq, 'triangle', startTime, dauer, lautstaerke, attack, release, ac);
+  // Oktave: gibt Glanz, ohne die Grundlage zu verschieben.
+  tone(freq * 2, 'sine', startTime + 0.004, dauer * 0.55, lautstaerke * 0.20, attack, release * 0.6, ac);
+  // Quinte darunter: gibt Masse. Auf Beamer-Lautsprechern der wichtigste Teil,
+  // die schneiden alles unter 200 Hz sowieso weg.
+  tone(freq * 0.75, 'sine', startTime + 0.002, dauer * 0.8, lautstaerke * 0.12, attack, release, ac);
+}
+
+/**
+ * Tonhoehe leicht streuen. Ein Klang, den man mehr als fuenfzehn Mal pro Stunde
+ * hoert, nutzt sich ab, egal wie schoen er ist - und der Tick laeuft rund
+ * hundert Mal pro Abend. Vier Prozent Streuung reichen, damit das Ohr ihn
+ * nicht als dieselbe Aufnahme wiedererkennt.
+ */
+function streu(freq: number, weite = 0.04): number {
+  return freq * (1 + (Math.random() - 0.5) * 2 * weite);
 }
 
 function tone(
@@ -963,9 +1062,15 @@ export function playTick() {
   const t = ac.currentTime;
   // 2026-05-07 (Wolf 'mach cozy'): Square → Triangle. Square hat scharfe
   // ungeradzahlige Obertoene (klingt "harsch"), Triangle ist weicher aber
-  // immer noch klar abgrenzbar als Tick. Pitch 880 → 760 leicht runter, das
-  // sitzt komfortabler im warmen Filter-Bus.
-  tone(760, 'triangle', t, 0.055, 0.13, 0.004, 0.04, ac);
+  // immer noch klar abgrenzbar als Tick.
+  // 2026-08-25 (Wolf: „flach, generisch, technisch"). Der Tick war EIN
+  // Dreiecks-Ton auf fester Tonhoehe. Er laeuft rund hundert Mal pro Abend
+  // (die letzten zehn Sekunden von zwanzig Fragen), also oefter als alles
+  // andere - und genau dort war null Variation und null Anschlag.
+  // Jetzt: kurzer Anschlag davor, Grundton mit Obertoenen, Tonhoehe leicht
+  // gestreut. Derselbe Ton, aber als Gegenstand statt als Messsignal.
+  anschlag(t, 0.008, 0.045, 2200, ac);
+  koerperTon(streu(760, 0.03), t, 0.055, 0.11, 0.004, 0.04, ac);
 }
 
 /** 2026-05-05 (Phase-7 Bucket-1 BC-1): Audio-Feedback für Mod-Hotkey-Press.
@@ -976,10 +1081,21 @@ export function playTick() {
  *  Nicht-blockend, nicht laut — soll sich nicht in Live-Show drücken. */
 export function playHotkeyFeedback() {
   if (_sfxMuted) return;
+  // 2026-08-25: der meistgehoerte Klang des ganzen Abends. Wolf schaltet jede
+  // Folie, jede Frage, jede Aufloesung damit weiter - gut zweihundert Mal.
+  // Er hatte als einziger KEINEN Slot, war also weder abschaltbar noch
+  // austauschbar, und bestand aus einem einzigen Dreiecks-Ton.
+  // Jetzt: eigener Slot, und wenn er auf Synth laeuft, ein sehr leiser
+  // Anschlag statt eines Tons. Eine Bestaetigung fuer den Moderator darf man
+  // fuehlen, nicht hoeren - der Saal soll sie gar nicht bemerken.
+  if (!isSlotEnabled('hotkey')) return;
+  const url = resolveSlotUrl('hotkey');
+  if (url) { playUrlOneShot(url); return; }
   const ac = getCtx();
   if (!ac) return;
   const t = ac.currentTime;
-  tone(440, 'triangle', t, 0.04, 0.05, 0.002, 0.025, ac);
+  anschlag(t, 0.009, 0.035, 1100, ac);
+  tone(streu(440, 0.05), 'sine', t, 0.035, 0.028, 0.002, 0.025, ac);
 }
 
 export function playUrgentTick() {
@@ -994,8 +1110,14 @@ export function playUrgentTick() {
   // 2026-05-07 (Wolf 'mach cozy'): Square → Triangle, Pitch 1100 → 950 leicht
   // runter. UrgentTick bleibt Doppel-Hit fuers Endspurt-Drama, klingt aber
   // weniger schrill mit dem warmen Filter.
-  tone(950, 'triangle', t, 0.06, 0.18, 0.003, 0.04, ac);
-  tone(950, 'triangle', t + 0.1, 0.06, 0.18, 0.003, 0.04, ac);
+  // 2026-08-25: wie beim normalen Tick Anschlag und Obertoene dazu. Der zweite
+  // Schlag sitzt jetzt eine Idee hoeher als der erste - zwei exakt gleiche
+  // Schlaege lesen sich als Wiederholung, zwei steigende als Draengen.
+  const f = streu(950, 0.025);
+  anschlag(t, 0.007, 0.05, 2600, ac);
+  koerperTon(f, t, 0.06, 0.15, 0.003, 0.04, ac);
+  anschlag(t + 0.1, 0.007, 0.05, 2600, ac);
+  koerperTon(f * 1.06, t + 0.1, 0.06, 0.15, 0.003, 0.04, ac);
 }
 
 export function playScoreUp() {
@@ -1548,13 +1670,23 @@ export function playClimaxFinish() {
   const t = ac.currentTime;
   // Krönungs-Akkord: C-Dur Octave-Stack (C4-G4-C5-E5) mit warmer Bell-Form.
   // ADSR: schneller Attack 0.02s, sustained ~2s mit langem decay.
-  tone(261.63, 'sine',     t,         0.32, 0.45, 0.02, 0.18, ac); // C4
-  tone(392.00, 'sine',     t + 0.05,  0.30, 0.55, 0.02, 0.20, ac); // G4
-  tone(523.25, 'triangle', t + 0.10,  0.34, 0.70, 0.02, 0.22, ac); // C5 — Hauptton
-  tone(659.25, 'sine',     t + 0.15,  0.28, 0.85, 0.02, 0.25, ac); // E5
+  // 2026-08-25: die Pegel waren auf dem Kopf. Je hoeher der Ton, desto lauter
+  // stand er - G6 auf 1,40, also allein schon ueber Vollausschlag. Das war der
+  // Versuch, den 2400-Hz-Lowpass zu ueberschreien, der genau diese Toene
+  // daempft. Filter und Pegel haben also gegeneinander gearbeitet, und heraus
+  // kam Uebersteuerung.
+  // Jetzt andersherum und in einer Summe, die passt: das Ohr ist bei 2 bis
+  // 4 kHz am empfindlichsten, hohe Toene brauchen WENIGER Pegel, nicht mehr.
+  // Ein Anschlag davor gibt dem Akkord den Koerper, den vorher die Verzerrung
+  // vorgetaeuscht hat.
+  anschlag(t, 0.02, 0.05, 900, ac);
+  tone(261.63, 'sine',     t,         0.32, 0.30, 0.02, 0.18, ac); // C4
+  tone(392.00, 'sine',     t + 0.05,  0.30, 0.26, 0.02, 0.20, ac); // G4
+  tone(523.25, 'triangle', t + 0.10,  0.34, 0.30, 0.02, 0.22, ac); // C5 — Hauptton
+  tone(659.25, 'sine',     t + 0.15,  0.28, 0.22, 0.02, 0.25, ac); // E5
   // Sparkle-Top (high octave bell decay)
-  tone(1046.5, 'sine',     t + 0.20,  0.20, 1.10, 0.01, 0.30, ac); // C6
-  tone(1568.0, 'sine',     t + 0.30,  0.14, 1.40, 0.01, 0.40, ac); // G6
+  tone(1046.5, 'sine',     t + 0.20,  0.20, 0.16, 0.01, 0.30, ac); // C6
+  tone(1568.0, 'sine',     t + 0.30,  0.14, 0.11, 0.01, 0.40, ac); // G6
 }
 
 // 2026-07-30 (Wolf Sound-Audit R1): playActionMenuReveal wieder verdrahtet — EIN

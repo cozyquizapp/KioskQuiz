@@ -992,6 +992,10 @@ export type QQSoundSlot =
   // 2026-05-07 (Sound-Audit P2.1): Timer-Ticks customizable. Vorher Synth-only,
   // nicht im Mod-Panel sichtbar. Default leer = Synth-Fallback wie bisher.
   | 'timerTick' | 'timerUrgent'
+  // 2026-08-25: die Moderator-Bestaetigung am Stream Deck. Feuert oefter als
+  // jeder andere Klang des Abends und hatte bis dahin keinen Slot, war also
+  // weder abschaltbar noch austauschbar.
+  | 'hotkey'
   // 2026-05-13 (Wolf 'fuer die race phase, sowohl countdown als auch rennen,
   // aber auch der moment wo das treppchen reinkommt, brauche ich eigene mp3
   // slots'): Final-Reveal Race-Phase 3-Slot-Trio. Alle drei mit Fallback auf
@@ -1064,6 +1068,7 @@ export interface QQSoundConfig {
   cozyGameWheelStop?: string;  // Final-Snap beim Rad-Stopp
   cozyGameStart?: string;       // 60s-Timer-Start ("Los geht's"-Cue)
   cozyGameMusic?: string;       // Hintergrundmusik waehrend der Spielzeit
+  hotkey?: string;              // Moderator-Bestaetigung (Stream Deck)
   // CozyArena-Cues (2026-07-04). Leer = Fallback auf gridReveal / scoreUp.
   arenaStandings?: string;      // Bar-Race/Gesamtwertung erscheint
   arenaLeadChange?: string;     // Fraktion ueberholt an die Spitze
@@ -1123,6 +1128,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   cozyGameWheelStop:   '🎲 CozyGame-Rad-Stop (Final-Snap-Sound bei Rad-Landung)',
   cozyGameStart:       '🎲 CozyGame-Start (Los-geht\'s-Cue bei Timer-Start)',
   cozyGameMusic:       '🎲 CozyGame-Musik (läuft während der Spielzeit, leer = Frage-Musik)',
+  hotkey:              '⌨️ Moderator-Bestätigung (bei jedem Tastendruck, sehr leise)',
   arenaStandings:      '📊 Arena-Gesamtwertung erscheint (Bar-Race)',
   arenaLeadChange:     '⚔️ Arena-Führungswechsel (Fraktion überholt an die Spitze)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
@@ -1186,6 +1192,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   cozyGameWheelStop: '',
   cozyGameStart: '',
   cozyGameMusic: '',
+  hotkey: '',
   arenaStandings: '',
   arenaLeadChange: '',
   // Kategorie-Musik: leer = fallback auf timerLoop. Moderator kann pro Kategorie eigene MP3 laden.

@@ -1166,7 +1166,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         const awardCount = qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins);
         const top = Math.min(3, N);
         const towerMaxBeat = qqTowerMaxBeat(awardCount, N);
-        const maxStep = betSlotsCount + 1 + towerMaxBeat;
+        const maxStep = (s as any).finalRevealMaxStep ?? (betSlotsCount + 1 + towerMaxBeat);
         // Auto-Advance fuer ALLE Steps wenn Autoplay aktiv:
         //  - Title (step 0)   → ~3.5s (Wolf-Bouncer + 'Die Auflösung'-Lese)
         //  - Bet-Slot (1..B)  → ~6s (Drumroll + Flip + Sub-Step-Stagger + Read),
@@ -1228,32 +1228,29 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
             // Die eigene Siegerfolie, mit langer Celebration.
             delayMs = 8000;
           } else {
-            // ── Das Rennen ────────────────────────────────────────────────
-            // 2026-08-25 (Wolf: „immer nur eine kachel bauen ... nacheinander
-            // fliegen die raus die nicht mitkommen"). Vier Beats, und jeder
-            // dauert so lange, wie er Bausteine setzt. Vorher standen hier
-            // feste 3800 und 3400 ms - mit einem Rennen, dessen Laenge am
-            // Wett-Bonus haengt, waere das Steuerpult mal zu schnell und mal
-            // zu langsam. Die Takte kommen aus derselben Rechnung, aus der
-            // der Beamer sie baut (`qqTurmRennplan` in shared).
+            // ── Die Siegerehrung ──────────────────────────────────────────
+            // 2026-08-25, zweite Fassung (Wolf: „machs steuerbar, turmbau bis
+            // letztes team alle kacheln hat, dann badge auf screen team x ist
+            // platz y, dann erst weiter, schritt fuer schritt").
+            //
+            // Ein Beat je Team, von hinten nach vorne. Jeder dauert so lange,
+            // wie er Bausteine setzt, plus die Zeit, in der das Band mit Platz
+            // und Namen steht. Die Takte kommen aus derselben Rechnung, aus der
+            // der Beamer sie baut (`qqTurmRennplan` in shared) - eine zweite
+            // Rechnung hier waere genau der Drift, der schon zweimal drin war.
+            //
+            // Das ist der AUTOPLAY, also die Vorschau. Am Abend taktet Wolf von
+            // Hand und kann an jeder Etappe stehenbleiben; das ist der Sinn der
+            // Umstellung.
             const tipp: Record<string, number> = {};
             for (const t of s.teams) tipp[t.id] = s.finalBetResolution?.[t.id]?.totalBonus ?? 0;
-            const plan = qqTurmRennplan(qqFinalSortedTeams(s).map(t => t.id), tipp);
-            const etappe = beat - (awardCount + 1);   // 0..3
-            const marken = [0, plan.raus, plan.dritter, plan.zweiter, plan.erster];
-            // Im ersten Renn-Beat verabschieden sich alle ausser den Top 3, und
-            // jedes Team einzeln (Wolf: „der letzte platz soll nicht in 1
-            // sekunde abgehandelt sein"). Bewusst der schlechteste Fall: alle
-            // gleichzeitig leer. Zu lang heisst, der Turm steht einen Moment
-            // laenger; zu kurz heisst, der Autoplay schneidet die Ansage ab.
-            const abgaenge = etappe === 0 ? Math.max(1, N - 3) : 1;
-            delayMs = qqTurmRennBeatDauer(marken[etappe] ?? 0, marken[etappe + 1] ?? 0, abgaenge);
-            // Der letzte Renn-Beat ist die Kroenung am Turm. Gemessen im
-            // Autoplay stand der gekroente Turm 2,7 s, dann kam schon die
-            // Siegerfolie. Das ist der Moment, auf den zwei Stunden zulaufen,
-            // und bei Gleichstand (kein letzter Baustein mehr zu setzen) faellt
-            // er sonst auf die blosse Zeremoniendauer zusammen.
-            if (etappe === 3) delayMs += 3000;
+            const marken = qqTurmRennplan(qqFinalSortedTeams(s).map(t => t.id), tipp);
+            const etappe = beat - awardCount;        // 1..N
+            delayMs = qqTurmRennBeatDauer(marken[etappe - 1] ?? 0, marken[etappe] ?? 0);
+            // Die letzte Etappe ist die Kroenung am Turm. Gemessen im Autoplay
+            // stand der gekroente Turm 2,7 s, dann kam schon die Siegerfolie.
+            // Das ist der Moment, auf den zwei Stunden zulaufen.
+            if (etappe >= N) delayMs += 3000;
           }
           action = () => emit('qq:nextQuestion', { roomCode });
         }
@@ -2747,7 +2744,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     s.teams.length,
                   );
                   const step = (s as any).finalRevealStep ?? 0;
-                  const max = betSlotsCount + 1 + towerMaxBeat;
+                  // 2026-08-25 (Wolf: „nach step 13/17 springts auf die thank you folie").
+                  // Die Zahl kommt jetzt vom BACKEND, das den Phasenwechsel
+                  // auch ausloest. Die eigene Rechnung bleibt nur als Rueckfall,
+                  // falls ein alter Server das Feld noch nicht schickt.
+                  const max = (s as any).finalRevealMaxStep ?? (betSlotsCount + 1 + towerMaxBeat);
                   const isLast = step >= max;
                   return (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, minWidth: 220 }}>
@@ -4920,12 +4921,21 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
           const beat = st - betSlotsCount - 1;
           if (beat === 0) return `${st} · 🏗️ Türme wachsen + Zwischenstand`;
           if (beat <= awardCount) return `${st} · 🏅 Award ${beat}/${awardCount} (Turm steigt)`;
-          if (beat === awardCount + 1) return `${st} · ✨ Top-3 gleiten in die Mitte`;
-          if (beat === towerMaxBeat) return `${st} · 👑 Sieger + Krönung`;
-          const platz = top - (beat - awardCount - 1) + 1;
+          if (beat === towerMaxBeat) return `${st} · 🏆 Siegerfolie`;
+          // 2026-08-25, zweite Fassung: ein Beat je Team, von hinten nach vorne
+          // (Wolf: „machs steuerbar ... schritt fuer schritt"). Etappe k ehrt
+          // Platz N-k+1, die letzte Etappe ist die Kroenung am Turm.
+          const etappe = beat - awardCount;               // 1..N
+          const N2 = s.teams.length;
+          if (etappe >= N2) return `${st} · 👑 Sieger + Krönung am Turm`;
+          const platz = N2 - etappe + 1;
           return `${st} · 🔓 Reveal Platz ${platz}`;
         };
-        const max = betSlotsCount + 1 + towerMaxBeat;
+        // 2026-08-25 (Wolf: „nach step 13/17 springts auf die thank you folie").
+                  // Die Zahl kommt jetzt vom BACKEND, das den Phasenwechsel
+                  // auch ausloest. Die eigene Rechnung bleibt nur als Rueckfall,
+                  // falls ein alter Server das Feld noch nicht schickt.
+                  const max = (s as any).finalRevealMaxStep ?? (betSlotsCount + 1 + towerMaxBeat);
         const isLast = step >= max;
         const next = isLast ? '→ THANKS' : labelFor(step + 1);
         return (

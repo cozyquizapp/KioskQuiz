@@ -30,7 +30,7 @@ const wartetAuf = async (muster, hoechstens = 5000) => {
   }
   return false;
 };
-const RENNEN = /jetzt die Tipps|now the bets/;
+const RENNEN = /Die Siegerehrung|The awards/;
 for (let i = 0; i < 30; i++) {
   if (await wartetAuf(RENNEN, 300)) break;
   await h.emit('qq:nextQuestion');
@@ -68,7 +68,7 @@ const t0 = Date.now();
 bilder.length = 0;
 // Vier Renn-Beats, danach die Siegerfolie. Grosszuegig getaktet, damit jeder
 // Beat wirklich durchlaeuft.
-for (let i = 0; i < 5; i++) { await h.emit("qq:nextQuestion"); await sleep(7000); }
+for (let i = 0; i < 10; i++) { await h.emit("qq:nextQuestion"); await sleep(4200); }
 await cdp.send('Page.stopScreencast');
 clearInterval(spurTakt);
 for (const bd of bilder) bd.t -= t0;
@@ -110,6 +110,6 @@ async function blatt(marken, spalten, breite, datei) {
   await sharp({ create: { width: w, height: hh, channels: 3, background: '#111' } }).composite(teile).png().toFile(datei);
   console.log(`${datei} geschrieben`);
 }
-await blatt(Array.from({ length: 24 }, (_, i) => i * 1500), 6, 300, '.shots/RENNEN.png');
+await blatt(Array.from({ length: 24 }, (_, i) => i * 1900), 6, 300, '.shots/RENNEN.png');
 await b.schliessen?.();
 process.exit(0);

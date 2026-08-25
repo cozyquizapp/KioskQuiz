@@ -1516,6 +1516,21 @@ export interface QQStateUpdate {
    *  Avatar-Punkt), N+8..2N+7 = Ranking-Slides last→first (single bis #4,
    *  Treppchen ab #3), 2N+8 = → Thanks. Mod-Space increments. */
   finalRevealStep: number;
+  /**
+   * Der hoechste gueltige Schritt der Final-Aufloesung, wie das BACKEND ihn
+   * rechnet. Ab hier geht es auf die Danke-Folie.
+   *
+   * 2026-08-25 (Wolf: „nach step 13/17 springts auf die thank you folie").
+   * Das Steuerpult hat diese Zahl bis dahin selbst gerechnet, aus derselben
+   * Formel, aber aus SEINEM Zustand. Weichen die beiden auseinander - weil ein
+   * Deployment aelter ist, weil ein Feld fehlt, weil sich die Formel aendert -,
+   * zeigt der Moderator 17 an und das Spiel endet bei 13. Er sieht also einen
+   * Fortschritt, den es nicht gibt.
+   *
+   * Jetzt schickt das Backend seine eigene Zahl mit. Wer sie anzeigt, zeigt
+   * genau das, wonach das Spiel auch handelt.
+   */
+  finalRevealMaxStep?: number;
   /** 2026-05-25 (Wolf Final-Wager v4): Pending Stack-Placement waehrend
    *  FINAL_REVEAL. Wird beim Step-Advance gesetzt, vom Team via
    *  qq:finalRevealPlaceStack abgearbeitet. null = kein pending Placement. */

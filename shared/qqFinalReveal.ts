@@ -107,18 +107,25 @@ export function qqTowerAwardCount(
 }
 
 /**
- * Der Rennplan des Turm-Finales: bis zu welchem TAKT in jedem der vier
- * Renn-Beats gebaut werden darf.
+ * Der Rennplan des Turm-Finales: bis zu welchem TAKT in jeder Etappe gebaut
+ * werden darf. `ziele[k]` gehoert der Etappe k, und Etappe k gehoert dem Team
+ * auf Platz n-k - also von hinten nach vorne. `ziele[0]` ist immer 0.
  *
- * 2026-08-25 (Wolf: „wenn dann wuerde ich immer nur eine kachel bauen, solange
- * bis das letzte team raus ist (fliegt raus) dann weiter bauen").
+ * 2026-08-25, zweite Fassung (Wolf: „ne die teams fallen zu frueh runter, das
+ * ist keine siegerehrung, die fallen einfach durch andere teams runter, wir
+ * brauchen viel mehr zeit dafuer, das ist ein event, eventuell werden preise
+ * vergeben, das darf nicht so runterrattern, machs steuerbar, turmbau bis
+ * letztes team alle kacheln hat, dann badge auf screen team x ist platz y,
+ * dann erst weiter, schritt fuer schritt").
+ *
+ * Die erste Fassung hatte vier feste Etappen, in denen mehrere Teams
+ * gleichzeitig ausschieden. Jetzt hat JEDES Team seine eigene Etappe: gebaut
+ * wird, bis genau ein Team fertig ist, dann steht sein Platz auf der Buehne,
+ * und erst der naechste Beat des Moderators laesst es abtreten und baut
+ * weiter.
  *
  * Ein Takt ist ein Tipp-Baustein. Jedes Team, das noch welche hat, setzt pro
- * Takt einen; wer leer ist, bleibt stehen und fliegt raus. Die vier Etappen:
- *   raus     alle ausser den Top 3 sind fertig und verlassen die Buehne
- *   dritter  Platz 3 ist fertig
- *   zweiter  Platz 2 ist fertig
- *   erster   Platz 1 setzt seinen letzten Baustein
+ * Takt einen.
  *
  * ⚠️ Das steht hier und nicht im Beamer, weil das Steuerpult dieselbe Rechnung
  * fuer die Autoplay-Dauern braucht. Zwei Rechnungen mit eigenen Zahlen sind
@@ -128,26 +135,35 @@ export function qqTowerAwardCount(
  * `rangfolge` ist die Endreihenfolge der Team-Ids, Sieger zuerst
  * (qqFinalSortedTeams). `tipp` ist der Wett-Bonus je Team.
  */
-export type QQTurmRennplan = { raus: number; dritter: number; zweiter: number; erster: number };
 export function qqTurmRennplan(
   rangfolge: readonly string[],
   tipp: Readonly<Record<string, number>>,
-): QQTurmRennplan {
+): number[] {
+  const n = rangfolge.length;
   const t = (id: string | undefined) => (id ? (tipp[id] ?? 0) : 0);
-  const hinten = rangfolge.slice(3).map(t);
-  const raus = hinten.length ? Math.max(...hinten) : 0;
-  // Monoton halten: ein Beat darf nie weniger Takte zulassen als der davor,
-  // sonst schruempfte ein Turm beim Weiterschalten.
-  const dritter = Math.max(raus, t(rangfolge[2]));
-  const zweiter = Math.max(dritter, t(rangfolge[1]));
-  const erster = Math.max(zweiter, t(rangfolge[0]));
-  return { raus, dritter, zweiter, erster };
+  const ziele: number[] = [0];
+  let bisher = 0;
+  // Etappe k gehoert dem Team auf Platz n-k, also von hinten nach vorne.
+  for (let k = 1; k <= n; k++) {
+    // Monoton halten: eine Etappe darf nie weniger Takte zulassen als die
+    // davor, sonst schruempfte ein Turm beim Weiterschalten.
+    bisher = Math.max(bisher, t(rangfolge[n - k]));
+    ziele.push(bisher);
+  }
+  return ziele;
 }
 
 /**
  * Hoechster gueltiger Turm-Beat (0-basiert): 0 Aufbau · 1..A Awards ·
- * A+1..A+top+1 Rennen (siehe `qqTurmRennplan`) · A+2+top KROENUNG.
- * top = min(3, Teams). → maxBeat = A + top + 2.
+ * A+1..A+N Siegerehrung, ein Beat je Team von hinten nach vorne, der letzte
+ * ist die Kroenung (siehe `qqTurmRennplan`) · A+N+1 SIEGERFOLIE.
+ * N = Teams. → maxBeat = A + N + 1.
+ *
+ * 2026-08-25, zweite Fassung. Vorher A + min(3, Teams) + 2: nur die Top 3
+ * hatten einen eigenen Beat, alle anderen verschwanden gemeinsam in einem.
+ * Wolf: „machs steuerbar ... schritt fuer schritt". Mit acht Teams sind das
+ * fuenf Beats mehr, und genau die sind der Punkt: an jedem davon kann er
+ * stehenbleiben, reden und einen Preis uebergeben.
  *
  * 2026-08-25 (Wolf: „4 ja eigene"). Der letzte Beat ist neu. Bis hierher ging
  * es vom Podest direkt auf die Danke-Folie, und der Sieger stand dort als
@@ -156,8 +172,7 @@ export function qqTurmRennplan(
  * Danke kommt.
  */
 export function qqTowerMaxBeat(awardCount: number, teamCount: number): number {
-  const top = Math.min(3, Math.max(0, teamCount));
-  return awardCount + top + 2;
+  return awardCount + Math.max(1, teamCount) + 1;
 }
 
 /**

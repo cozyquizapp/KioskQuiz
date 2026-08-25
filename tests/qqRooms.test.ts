@@ -149,52 +149,67 @@ describe('qqTowerAwardBeats — CozyGames sind Beats wie die Awards', () => {
 // schrumpfen lassen. Und Beamer und Steuerpult holen ihn beide hier, sonst
 // laeuft der Autoplay dem Turm davon - genau der Fehler, der beim Award-Zaehler
 // schon einmal passiert ist.
-describe('qqTurmRennplan — die vier Etappen des Rennens', () => {
-  it('die Etappen wachsen nie rueckwaerts', () => {
+describe('qqTurmRennplan — eine Etappe je Team, von hinten nach vorne', () => {
+  it('Etappe k gehoert dem Team auf Platz n-k', () => {
+    // Reihenfolge: a ist Sieger, e ist Letzter.
     const p = qqTurmRennplan(['a', 'b', 'c', 'd', 'e'], { a: 1, b: 2, c: 0, d: 5, e: 3 });
-    expect(p.raus).toBe(5);              // hoechster Tipp unter den Plaetzen 4+
-    expect(p.dritter).toBe(5);           // Platz 3 hat nur 0, bleibt aber bei 5
-    expect(p.zweiter).toBe(5);
-    expect(p.erster).toBe(5);
+    expect(p[0]).toBe(0);   // vor der ersten Etappe steht nichts
+    expect(p[1]).toBe(3);   // Etappe 1: der Letzte (e) hat 3 Bausteine
+    expect(p[2]).toBe(5);   // Etappe 2: d hat 5
+    expect(p[3]).toBe(5);   // Etappe 3: c hat 0, bleibt also bei 5
+    expect(p[4]).toBe(5);   // Etappe 4: b hat 2, bleibt bei 5
+    expect(p[5]).toBe(5);   // Etappe 5: der Sieger a hat 1, bleibt bei 5
   });
-  it('der Sieger setzt den letzten Baustein', () => {
+  it('die Etappen wachsen nie rueckwaerts', () => {
+    // Das ist die Bedingung, an der alles haengt: eine Etappe, die WENIGER
+    // Takte zulaesst als die davor, wuerde die Tuerme beim Weiterschalten
+    // schrumpfen lassen.
     const p = qqTurmRennplan(['a', 'b', 'c', 'd'], { a: 6, b: 2, c: 3, d: 1 });
-    expect(p).toEqual({ raus: 1, dritter: 3, zweiter: 3, erster: 6 });
+    for (let i = 1; i < p.length; i++) expect(p[i]).toBeGreaterThanOrEqual(p[i - 1]);
+    expect(p).toEqual([0, 1, 3, 3, 6]);
+  });
+  it('eine Etappe je Team, plus die Null am Anfang', () => {
+    expect(qqTurmRennplan(['a', 'b', 'c'], { a: 4, b: 2, c: 1 })).toHaveLength(4);
+    expect(qqTurmRennplan([], {})).toEqual([0]);
   });
   it('ohne Wetten laeuft kein Rennen', () => {
-    expect(qqTurmRennplan(['a', 'b', 'c'], {})).toEqual({ raus: 0, dritter: 0, zweiter: 0, erster: 0 });
-  });
-  it('drei Teams oder weniger: es gibt keine Plaetze 4 und tiefer', () => {
-    const p = qqTurmRennplan(['a', 'b', 'c'], { a: 4, b: 2, c: 1 });
-    expect(p.raus).toBe(0);
-    expect(p.erster).toBe(4);
+    expect(qqTurmRennplan(['a', 'b', 'c'], {})).toEqual([0, 0, 0, 0]);
   });
   it('unbekannte Ids zaehlen als null Bausteine, nicht als NaN', () => {
     const p = qqTurmRennplan(['a', 'weg'], { a: 2 });
-    expect(p.erster).toBe(2);
-    expect(Number.isFinite(p.raus)).toBe(true);
+    expect(p).toEqual([0, 0, 2]);
+    expect(p.every(x => Number.isFinite(x))).toBe(true);
   });
 });
 
-// 2026-08-25 (Wolf: „4 ja eigene"): alle Erwartungen hier sind um EINS
-// gewachsen. Der Grund ist der neue letzte Beat, die Kroenung auf einer eigenen
-// Folie. Vorher ging es vom Podest direkt auf die Danke-Folie.
-describe('qqTowerMaxBeat = A + min(3, Teams) + 2 (Aufbau · Awards · Glide · Reveals · Kroenung)', () => {
-  it('3 Awards, 8 Teams → 8', () => expect(qqTowerMaxBeat(3, 8)).toBe(8));
-  it('0 Awards, 2 Teams → 4', () => expect(qqTowerMaxBeat(0, 2)).toBe(4));
-  it('3 Awards, 1 Team → 6 (top = min(3,1) = 1)', () => expect(qqTowerMaxBeat(3, 1)).toBe(6));
+// 2026-08-25, zweite Fassung (Wolf: „machs steuerbar, turmbau bis letztes team
+// alle kacheln hat, dann badge auf screen team x ist platz y, dann erst weiter,
+// schritt fuer schritt"). Vorher A + min(3, Teams) + 2: nur die Top 3 hatten
+// einen eigenen Beat, alle anderen verschwanden gemeinsam in einem. Jetzt hat
+// JEDES Team seinen Beat, damit Wolf an jedem stehenbleiben und einen Preis
+// uebergeben kann.
+describe('qqTowerMaxBeat = A + Teams + 1 (Aufbau · Awards · ein Beat je Team · Siegerfolie)', () => {
+  it('3 Awards, 8 Teams → 12', () => expect(qqTowerMaxBeat(3, 8)).toBe(12));
+  it('0 Awards, 2 Teams → 3', () => expect(qqTowerMaxBeat(0, 2)).toBe(3));
+  it('3 Awards, 1 Team → 5', () => expect(qqTowerMaxBeat(3, 1)).toBe(5));
+  it('mehr Teams heisst mehr Beats, eins zu eins', () => {
+    expect(qqTowerMaxBeat(2, 9) - qqTowerMaxBeat(2, 6)).toBe(3);
+  });
+  it('null Teams faellt nicht unter einen Beat', () => expect(qqTowerMaxBeat(0, 0)).toBe(2));
 });
 
 describe('qqFinalMaxStep = B + 1 + qqTowerMaxBeat(A, Teams)', () => {
-  it('0 bets, 3 awards, 8 teams → 9', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(9));
-  it('3 bets, 3 awards, 8 teams → 12', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(12));
-  it('8 bets, 3 awards, 8 teams → 17', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(17));
-  it('3 bets, 0 awards, 8 teams → 9 (Awards weggefallen komprimiert)', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(9));
+  it('0 bets, 3 awards, 8 teams → 13', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(13));
+  it('3 bets, 3 awards, 8 teams → 16', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(16));
+  it('8 bets, 3 awards, 8 teams → 21', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(21));
+  it('3 bets, 0 awards, 8 teams → 13', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(13));
 });
 
 describe('qqIstKroenungsBeat — der letzte Beat und nur der', () => {
-  it('genau auf dem Maximum', () => expect(qqIstKroenungsBeat(8, 3, 8)).toBe(true));
-  it('einer davor ist noch das Podest', () => expect(qqIstKroenungsBeat(7, 3, 8)).toBe(false));
+  // 3 Awards, 8 Teams → maxBeat 12. Ein Beat davor laeuft noch die Kroenung am
+  // Turm, erst 12 ist die eigene Siegerfolie.
+  it('genau auf dem Maximum', () => expect(qqIstKroenungsBeat(12, 3, 8)).toBe(true));
+  it('einer davor ist noch der Turm', () => expect(qqIstKroenungsBeat(11, 3, 8)).toBe(false));
   it('der Aufbau ist es nicht', () => expect(qqIstKroenungsBeat(0, 3, 8)).toBe(false));
 });
 

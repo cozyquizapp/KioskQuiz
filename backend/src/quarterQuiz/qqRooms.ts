@@ -4700,6 +4700,10 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     gridSize:         room.gridSize,
     grid:             room.grid,
     teams:            Object.values(room.teams),
+    // ⚠️ Diese Zahl MUSS aus derselben Funktion kommen, die den Phasenwechsel
+    // ausloest (qqFinalRevealMaxStep, siehe qqAdvanceFinalReveal). Sonst ist
+    // sie wieder nur eine zweite Meinung.
+    finalRevealMaxStep: room.phase === 'FINAL_REVEAL' ? qqFinalRevealMaxStep(room) : undefined,
     sortedTeamIds:    qqSortedTeamIds(room),
     botsPaused:       (room as any).botsPaused ?? false,
     teamPhaseStats:   room.teamPhaseStats,

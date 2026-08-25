@@ -2037,7 +2037,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // Geschwistern geht - die Alternative waere ein zusaetzlicher
             // Wrapper um rund 1600 Zeilen JSX gewesen.
             ref={flussRef}
-            className={istBuehne ? 'qq-frage-fluss' : undefined}
+            // 2026-08-24 (Wolf: „frage kann hier mittig zentriert sein", Bild
+            // von Top 5). Die Regel gibt JEDEM Geschwister nach dem ersten
+            // `margin-block: auto` - und ein leerer Platzhalter von 0 px Hoehe
+            // ist auch ein Geschwister. Er hat den ganzen freien Platz
+            // aufgesaugt, und die Frage stand oben, obwohl unter ihr nichts
+            // steht. Steht dort wirklich nichts (gemessen, s. `nurFrage`),
+            // laeuft die Regel gar nicht erst mit; dann zentriert die Spalte.
+            className={(istBuehne && !nurFrage) ? 'qq-frage-fluss' : undefined}
             style={{
             flex: 1, display: 'flex', flexDirection: 'column',
             justifyContent: innerJustify,

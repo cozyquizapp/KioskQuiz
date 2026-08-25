@@ -641,7 +641,18 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
     return (
       <div className="qqRulesCard" style={{
         position: 'relative', zIndex: 5,
-        maxWidth: 1200, width: '94%', overflow: 'hidden',
+        // 2026-08-24 (Wolf: „rand oben und unten und schwarze karte, findest
+        // du sie passt?" und „leiste oben nicht header buendig"). Beides
+        // dieselbe Sache: die Karte war 1200 px breit und sass damit 280 px
+        // von der Buehnenkante entfernt, waehrend die Schrittleiste darueber
+        // von Kante zu Kante laeuft. Zwei Kanten, die nichts miteinander zu tun
+        // haben. Und die Karte ist die letzte grosse Flaeche auf der Buehne -
+        // Brett, Zwischenstand und Fragefolie stehen seit heute ohne.
+        // Jetzt steht der Inhalt auf dem Grund, und er nimmt die Breite, die
+        // die Buehne hergibt. Damit ist der Abstand zur Leiste derselbe wie auf
+        // den Fragefolien: die Leiste laeuft randlos, der Inhalt haelt den
+        // Buehnenrand.
+        maxWidth: istBuehneG() ? 1560 : 1200, width: '94%', overflow: 'hidden',
         // 2026-06-24 (Skin): Regel-Card traegt bei Skin card-bg + card-text
         // (sonst dunkle Card + geerbter dunkler Text = unlesbar auf hellen Skins).
         // Slide-Color-Rand bleibt als Kategorie-Akzent.
@@ -663,14 +674,14 @@ export function RulesView({ state: s }: { state: QQStateUpdate }) {
         // Jetzt die Buehnen-Tokens: 34-%-Flaeche und die Creme-Kontur bei 22 %.
         // Die Kontur traegt die Kante, nicht die Fuellung — genau die
         // Reihenfolge, die die Uebergabe fuer die Projektion vorgibt.
-        background: 'var(--qq-card-bg)',
+        background: istBuehneG() ? 'transparent' : 'var(--qq-card-bg)',
         color: isThemed() ? 'var(--qq-card-text)' : undefined,
-        border: 'var(--qq-card-border)',
+        border: istBuehneG() ? 'none' : 'var(--qq-card-border)',
         borderRadius: 'var(--qq-card-radius)',
         padding: `clamp(24px, 4cqh, ${hasGridC ? 52 : 60}px) clamp(32px, 5cqw, ${hasGridC ? 64 : 72}px)`,
         // Der weite Farb-Hof faellt weg (120 px Weichzeichnung um eine Karte,
         // die dadurch keine Kante gewinnt, sondern eine verliert).
-        boxShadow: 'var(--qq-card-shadow)',
+        boxShadow: istBuehneG() ? 'none' : 'var(--qq-card-shadow)',
         // 2026-07-17b (Wolf): horizontaler Einheits-Schwenk passend zum Progress-Tree
         // oben (vorwaerts von rechts, zurueck von links). Inhalt reist als Ganzes mit
         // (kein Per-Zeile-contentReveal), Opacity front-geladen → kein „totes Loch".

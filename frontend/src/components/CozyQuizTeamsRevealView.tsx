@@ -1034,7 +1034,19 @@ function CozyRollCall({ state: s }: { state: QQStateUpdate }) {
                           ? `inset 0 0 44px ${t.color}33, 0 0 40px ${t.color}55`
                           : 'none'),
                         opacity: revealed ? 1 : 0.24,
-                        display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                        // 2026-08-24 (Wolf: „kacheln nicht gleich hoch").
+                        // Gemessen waren alle Kacheln 240x240 - gleich gross
+                        // also. Verschieden war ihre HOEHE im Bild: 201, 202,
+                        // 201 und 187 in der ersten Reihe. Die Karten einer
+                        // Reihe sind gleich hoch (die Reihe streckt sie), und
+                        // sie zentrieren ihren Inhalt. Ein Name, der auf zwei
+                        // Zeilen geht, macht die Spalte hoeher - und schiebt
+                        // beim Zentrieren die Kachel nach oben.
+                        // Auf der Buehne stehen die Kacheln deshalb oben
+                        // buendig, der Name haengt darunter, egal wie viele
+                        // Zeilen er braucht.
+                        display: 'flex', flexDirection: 'column', alignItems: 'center',
+                        justifyContent: istBuehne ? 'flex-start' : 'center',
                         gap: quirkSet ? 'clamp(10px, 1.2cqw, 16px)' : 'clamp(10px, 1.2cqw, 18px)',
                         padding: quirkSet ? 0 : 'clamp(16px, 1.8cqw, 26px)',
                         transition: 'opacity 0.5s ease, box-shadow 0.5s ease, border-color 0.5s ease',

@@ -353,6 +353,8 @@ export default function QQProgressTree({
   // (DEFAULT_DOTS_PER_PHASE / showBidding / showCozyGames / showFinale sind
   // jetzt oben deklariert — werden vom SubStep-Sweep + Layout beide gebraucht.)
   const dotCenters: number[] = [];
+  // Zu jeder Kachel ihre Nummer im Abend (siehe Kommentar in der Schleife).
+  const dotGlobalIdx: number[] = [];
   const phaseWidths: number[] = [];
   const phaseCenters: number[] = [];
   // 2026-07-17 (Wolf bild 3): erster/letzter Dot-Center JE Phase — damit der Track
@@ -396,7 +398,17 @@ export default function QQProgressTree({
     const renderCount = entries.length > 0 ? entries.length : DEFAULT_DOTS_PER_PHASE;
     const phaseStart = cursor;
     const dotIdxStart = dotCenters.length;
+    // 2026-08-24 (Wolf: „kasten auf progress tree ist stuck nach runde 1").
+    // Die Marke suchte ihre Kachel ueber `state.questionIndex` - eine Nummer
+    // aus dem GANZEN Abend (0..14). Solange der Baum alle Runden zeigt, ist das
+    // dasselbe wie die Position in der Kachelreihe. In der Einzelrunde stehen
+    // aber nur fuenf Kacheln da, und ab Runde 2 liegt die Nummer (5..9)
+    // ausserhalb - geklemmt landete sie auf der letzten Kachel und blieb dort.
+    // Deshalb merkt sich die Rechnung jetzt zu jeder Kachel ihre Nummer im
+    // Abend; die Marke sucht danach, statt zu zaehlen.
+    const dotPlanIdx = schedule.findIndex(e => e.phase === p);
     for (let i = 0; i < renderCount; i++) {
+      dotGlobalIdx.push(dotPlanIdx >= 0 ? dotPlanIdx + i : -1);
       if (i > 0) cursor += dotGap;
       dotCenters.push(cursor + dotSize / 2);
       cursor += dotSize;
@@ -474,7 +486,13 @@ export default function QQProgressTree({
     return 0;
   })();
   const effectiveDisplayIdx = showcaseMode ? showcaseWolfIdx : displayIdx;
-  const wolfDotIdx = Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
+  // Position der Marke: die Kachel SUCHEN, deren Nummer im Abend die aktuelle
+  // ist. Nur wenn keine passt (Endphasen, leerer Plan), auf die letzte klemmen.
+  const wolfDotIdx = (() => {
+    const gefunden = dotGlobalIdx.indexOf(effectiveDisplayIdx);
+    if (gefunden >= 0) return gefunden;
+    return Math.max(0, Math.min(effectiveDisplayIdx, dotCenters.length - 1));
+  })();
   // Wolf-Position: explizite Phase→Target-Map (statt Fallthrough-Hierarchie),
   // damit Endphasen NIE auf einen frueheren Step zuruecksacken.
   //
@@ -550,8 +568,10 @@ export default function QQProgressTree({
   // Pink-Eskalation pro Phase (getRoundColor) statt Kategorie-Farben — bleibt
   // Brand-konsistent. Kategorien werden weiter durch Emojis erkannt (groß im
   // Dot). Finale-Dot bleibt Lila als Highlight.
-  const wolfDotIdxForColor = Math.max(0, Math.min(showcaseMode ? showcaseWolfIdx : displayIdx, dotCenters.length - 1));
-  const currentScheduleEntry = schedule[wolfDotIdxForColor];
+  // Farbe der laufenden Kachel: dieselbe Suche wie bei der Marke, sonst zeigt
+  // die Einzelrunde ab Runde 2 die Farbe der falschen Frage.
+  const currentScheduleEntry = schedule[dotGlobalIdx[wolfDotIdx] ?? wolfDotIdx]
+    ?? schedule[Math.max(0, Math.min(showcaseMode ? showcaseWolfIdx : displayIdx, schedule.length - 1))];
   // Skin: alle Runden-Palette-Farben (Linie/Dots/Wolf-Ring) ziehen den Skin-
   // Akzent-Hex (Hex noetig, weil im Baum ueberall Alpha angehaengt wird: ${c}99).
   const skinAccentHex = isThemed() ? getActiveTheme().brand.accentHex : null;

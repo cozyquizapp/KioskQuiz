@@ -79,6 +79,18 @@ return {
   // die laufende Runde, 2 = Baum blendet aus, Kategorie kommt.
   rundenintro:{ ruhe: 4000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); } },
   rundenintro2:{ruhe: 3000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); await sleep(1800); await h.emit('qq:activateQuestion'); } },
+  // 2026-08-24 (Wolf: „kasten auf progress tree ist stuck nach runde 1"): das
+  // Runden-Intro der ZWEITEN Runde. Nur dort faellt auf, wenn die Marke ihre
+  // Kachel ueber die Nummer im Abend statt ueber die Nummer in der Reihe sucht.
+  rundenintroR2:{ruhe: 4000, aufbau: 'spiel', weg: async (h) => {
+    await h.zumRundenIntro(); await sleep(600);
+    await h.springe('phase-2');
+  } },
+  rundenintroR2b:{ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
+    await h.zumRundenIntro(); await sleep(600);
+    await h.springe('phase-2'); await sleep(900);
+    await h.emit('qq:activateQuestion');
+  } },
   rundenintro3:{ruhe: 3000,  aufbau: 'spiel', weg: async (h) => { await h.zumRundenIntro(); await sleep(1800); await h.emit('qq:activateQuestion'); await sleep(900); await h.emit('qq:activateQuestion'); } },
   // Ab hier der eigentliche Abend. `zurFrage` steppt durch das Runden-Intro
   // bis die Frage steht; danach reicht ein Ereignis pro Station.

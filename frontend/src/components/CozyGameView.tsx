@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { CozyGame, CozyGameRoundState } from '@shared/cozyGameTypes';
 import type { QQTeam } from '@shared/quarterQuizTypes';
-import { playCozyGameIntro, playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal, playTick, playUrgentTick, playTimesUp } from '../utils/sounds';
+import { startTimerLoop, stopTimerLoop, playCozyGameIntro, playCozyGameWheelTick, playCozyGameWheelStop, playCozyGameStart, playFanfare, playClimaxFinish, playWinnerCardReveal, playTick, playUrgentTick, playTimesUp } from '../utils/sounds';
 import { getServerNow } from '../utils/serverTime';
 import { AnimatedCozyWolf, SpeechBubble } from '../pages/QQBeamerPage';
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
@@ -145,9 +145,12 @@ export interface CozyGameViewProps {
   /** 2026-05-20 (i18n-Audit): aus QQStateUpdate.language. 'both' wechselt
    *  via useLangFlip alle 12s. Default 'de' wenn Parent nicht weitergibt. */
   language?: string;
+  /** 2026-08-25: aus QQStateUpdate.musicMuted. Ohne das spielt die Spielzeit-
+   *  Musik weiter, obwohl der Moderator sie stumm geschaltet hat. */
+  musikStumm?: boolean;
 }
 
-export default function CozyGameView({ round, width, height, teams, language }: CozyGameViewProps) {
+export default function CozyGameView({ round, width, height, teams, language, musikStumm }: CozyGameViewProps) {
   const lang = useLangFlip(language ?? 'de');
   const [games, setGames] = useState<CozyGame[]>([]);
   // 2026-07-09 (Wolf-Bug 'Lade Spiel-Details… hängt'): komplette DB-Liste
@@ -208,6 +211,22 @@ export default function CozyGameView({ round, width, height, teams, language }: 
     scheduleNext();
     return () => { handles.forEach(h => clearTimeout(h)); };
   }, [round.phase]);
+
+  // 2026-08-25 (Wolf: „in cozygames laeuft keine musik waehrend timer").
+  // Stimmt: der Loop haengt in QQBeamerPage an `s.phase === 'QUESTION_ACTIVE'`,
+  // und ein CozyGame ist eine andere Phase - die Bedingung war also nie wahr.
+  // Die Ticks der letzten zehn Sekunden liefen (siehe unten), die Musik nicht.
+  // Eigener Slot `cozyGameMusic`, leer faellt er auf `timerLoop` zurueck, also
+  // auf dieselbe Musik wie bei einer Frage. Aus bei Pause (gameEndsAt=null)
+  // und wenn der Moderator die Musik stumm geschaltet hat.
+  useEffect(() => {
+    if (round.phase !== 'GAME_ACTIVE' || !round.gameEndsAt || musikStumm) {
+      stopTimerLoop();
+      return;
+    }
+    startTimerLoop('cozyGameMusic');
+    return () => stopTimerLoop();
+  }, [round.phase, round.gameEndsAt, musikStumm]);
 
   // 2026-05-19 (Wolf 'timer waehrend cozygame hat keinen sound'):
   // GAME_ACTIVE Timer-Ticks analog zum Standard-Quiz — rem<=10 normaler Tick,

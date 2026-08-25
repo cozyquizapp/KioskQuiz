@@ -2323,6 +2323,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   height={useStage ? STAGE_DESIGN_HEIGHT : (typeof window !== 'undefined' ? window.innerHeight : 1080)}
                   teams={renderState.teams}
                   language={renderState.language}
+                  musikStumm={!!renderState.musicMuted}
                 />
               ) : (
                 // Transient: phase === COZY_GAME, aber cozyGame kurz null (Reconnect

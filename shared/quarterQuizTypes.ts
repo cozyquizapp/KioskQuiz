@@ -1002,6 +1002,10 @@ export type QQSoundSlot =
   // 2026-05-17 (Wolf-Feature CozyGames): Glücksrad-Spin + Stop-Snap.
   // 2026-05-19 (Wolf): cozyGameIntro = Anticipation-Chime beim 🪅-Mount.
   | 'cozyGameIntro' | 'cozyGameWheelTick' | 'cozyGameWheelStop' | 'cozyGameStart'
+  // 2026-08-25 (Wolf: „in cozygames laeuft keine musik waehrend timer"):
+  // Hintergrundmusik fuer die laufende Spielzeit. Leer = Fallback auf timerLoop,
+  // also dieselbe Musik wie bei einer Frage.
+  | 'cozyGameMusic'
   // 2026-07-04 (Wolf Sound-Audit): CozyArena-Cues. Bar-Race/Gesamtwertung
   // erscheint + Fraktions-Fuehrungswechsel. Leer = Fallback auf bestehenden
   // Cue (gridReveal / scoreUp), Moderator kann eigene MP3 hochladen.
@@ -1059,6 +1063,7 @@ export interface QQSoundConfig {
   cozyGameWheelTick?: string;  // tickender Pointer waehrend Spin
   cozyGameWheelStop?: string;  // Final-Snap beim Rad-Stopp
   cozyGameStart?: string;       // 60s-Timer-Start ("Los geht's"-Cue)
+  cozyGameMusic?: string;       // Hintergrundmusik waehrend der Spielzeit
   // CozyArena-Cues (2026-07-04). Leer = Fallback auf gridReveal / scoreUp.
   arenaStandings?: string;      // Bar-Race/Gesamtwertung erscheint
   arenaLeadChange?: string;     // Fraktion ueberholt an die Spitze
@@ -1117,6 +1122,7 @@ export const QQ_SOUND_SLOT_LABELS: Record<QQSoundSlot, string> = {
   cozyGameWheelTick:   '🎲 CozyGame-Rad-Tick (Pointer-Tick während Spin)',
   cozyGameWheelStop:   '🎲 CozyGame-Rad-Stop (Final-Snap-Sound bei Rad-Landung)',
   cozyGameStart:       '🎲 CozyGame-Start (Los-geht\'s-Cue bei Timer-Start)',
+  cozyGameMusic:       '🎲 CozyGame-Musik (läuft während der Spielzeit, leer = Frage-Musik)',
   arenaStandings:      '📊 Arena-Gesamtwertung erscheint (Bar-Race)',
   arenaLeadChange:     '⚔️ Arena-Führungswechsel (Fraktion überholt an die Spitze)',
   // Kategorie-spezifisch (Fallback auf generisch wenn nicht gesetzt)
@@ -1179,6 +1185,7 @@ export const QQ_SOUND_DEFAULT_URLS: Record<QQSoundSlot, string> = {
   cozyGameWheelTick: '',
   cozyGameWheelStop: '',
   cozyGameStart: '',
+  cozyGameMusic: '',
   arenaStandings: '',
   arenaLeadChange: '',
   // Kategorie-Musik: leer = fallback auf timerLoop. Moderator kann pro Kategorie eigene MP3 laden.

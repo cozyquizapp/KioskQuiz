@@ -6673,7 +6673,7 @@ export function qqResolveFinalBets(room: QQRoomState): void {
 export function qqFinalRevealMaxStep(room: QQRoomState): number {
   return qqSharedFinalMaxStep(
     qqBetSlotsCount(room),
-    qqTowerAwardCount(room.endAwards),
+    qqTowerAwardCount(Object.keys(room.teams), room.endAwards, room.teamCozyGameWins),
     Object.keys(room.teams).length,
   );
 }

@@ -12,7 +12,7 @@ import {
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
 // shared/qqFinalReveal.ts). Ersetzt das alte betSlotsCount+4 (3 feste Awards).
-import { qqTowerAwardCount } from '../../../shared/qqFinalReveal';
+import { qqTowerAwardCount, qqTowerMaxBeat } from '../../../shared/qqFinalReveal';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -1161,9 +1161,9 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         // (Turm baut sich moderator-getaktet auf), kein Einzel-Step + separater
         // Award-Screen mehr. Step-Layout: 0 title · 1..B bets · B+1..maxStep
         // race-final beats (0 Aufbau · 1..A Awards · A+1 Glide · Reveals+Krone).
-        const awardCount = qqTowerAwardCount(s.endAwards);
+        const awardCount = qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins);
         const top = Math.min(3, N);
-        const towerMaxBeat = awardCount + top + 1;
+        const towerMaxBeat = qqTowerMaxBeat(awardCount, N);
         const maxStep = betSlotsCount + 1 + towerMaxBeat;
         // Auto-Advance fuer ALLE Steps wenn Autoplay aktiv:
         //  - Title (step 0)   → ~3.5s (Wolf-Bouncer + 'Die Auflösung'-Lese)
@@ -1198,7 +1198,25 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           const beat = step - betSlotsCount - 1;
           if (beat === 0) {
             // Basis-Türme wachsen aus den Quiz-Punkten + Zwischenstand.
-            delayMs = 6000;
+            //
+            // 2026-08-25 (Wolf: „im autoplay wird turmbauen geskipped").
+            // Nachgemessen an der Buehne, ab dem Klick: Turm steht nach 0,7 s,
+            // das Brett faellt bis 5,1 s, der Zwischenstand kommt bei 5,6 s.
+            // Bei festen 6000 ms blieb er also 376 ms stehen - er blitzte auf
+            // und war weg. Der Beat, den das Steuerpult „Tuerme wachsen +
+            // Zwischenstand" nennt, hatte seinen Zwischenstand nicht.
+            //
+            // Die Dauer haengt am Brett, deshalb wird sie gerechnet statt
+            // geraten (die Werte stehen in CozyQuizTowerFinaleV2.tsx):
+            //   Uebergabe + Halt      1800 ms
+            //   eine Welle je Zeile    380 ms, plus zwei Wellen Nachlauf
+            //   Flug der letzten Kachel 620 ms
+            //   Sockel-Ticks          1800 ms (grosszuegig, haengt am Vorsprung)
+            //   Zwischenstand lesen   2200 ms
+            // Grosszuegig ist hier richtig: zu lang heisst, der Zwischenstand
+            // steht einen Moment laenger, zu kurz heisst, es gibt ihn nicht.
+            const felder = (s as any).gridSize ?? 8;
+            delayMs = 1800 + (felder + 1) * 380 + 620 + 1800 + 2200;
           } else if (beat <= awardCount) {
             // Award-Zeremonie — goldener Baustein wächst in den Turm.
             delayMs = 5200;
@@ -2697,7 +2715,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
                   const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
                   const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
-                  const towerMaxBeat = qqTowerAwardCount(s.endAwards) + Math.min(3, s.teams.length) + 1;
+                  const towerMaxBeat = qqTowerMaxBeat(
+                    qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins),
+                    s.teams.length,
+                  );
                   const step = (s as any).finalRevealStep ?? 0;
                   const max = betSlotsCount + 1 + towerMaxBeat;
                   const isLast = step >= max;
@@ -4857,9 +4878,9 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
         const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
         const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
         const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
-        const awardCount = qqTowerAwardCount(s.endAwards);
+        const awardCount = qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins);
         const top = Math.min(3, s.teams.length);
-        const towerMaxBeat = awardCount + top + 1;
+        const towerMaxBeat = qqTowerMaxBeat(awardCount, s.teams.length);
         const step = s.finalRevealStep ?? 0;
         const labelFor = (st: number): string => {
           if (st <= 0) return '0 · Title-Hold „Die Auflösung"';

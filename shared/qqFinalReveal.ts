@@ -44,16 +44,66 @@ export function qqDecodeFinalStep(step: number, betSlotsCount: number): QQFinalS
   return { kind: 'race-final', beat: step - betSlotsCount - 1 };
 }
 
-/** Anzahl Award-Empfänger = Anzahl Award-Beats im Turm (jeder Award = 1 beat,
- *  auch Underdog obwohl der +2 Punkte gibt). Muss exakt zu buildTowerFinaleData
- *  (CozyQuizTowerFinaleV2.tsx) passen — dort werden dieselben 3 Felder gepusht. */
-export function qqTowerAwardCount(endAwards: QQAwardRecipients): number {
-  if (!endAwards) return 0;
-  let n = 0;
-  if (endAwards.speedy) n += 1;
-  if (endAwards.meisterklauer) n += 1;
-  if (endAwards.underdog) n += 1;
-  return n;
+/** Ein Baustein-Beat im Turm: ein Empfaenger, ein Beat, so viele Punkte. */
+export type QQTowerAwardBeat = {
+  key: string;
+  kind: 'cozy' | 'speedy' | 'meisterklauer' | 'underdog';
+  teamId: string;
+  /** Punkte, die dieser Beat in den Turm legt. Underdog gibt 2, bleibt 1 Beat. */
+  bonus: number;
+};
+
+/**
+ * Welche Bausteine wachsen im Turm, in welcher Reihenfolge.
+ *
+ * ⚠️ DIESE LISTE IST DIE EINZIGE QUELLE. Der Beamer baut daraus seine
+ * Zeremonie, das Steuerpult und das Backend zaehlen daraus ihre Beats. Wer sie
+ * an zwei Stellen rechnet, bekommt genau den Fehler, der hier zweimal drin war:
+ *
+ *  - 2026-05-24 lagen Step-Decode und Max-Step auseinander (deshalb zog dieser
+ *    ganze Bereich ueberhaupt nach shared).
+ *  - 2026-08-25, also derselbe Fehler noch einmal: die CozyGame-Siege kamen als
+ *    eigene Bausteine dazu (Wolf: „sie kommen bei der siegerehrung dazu wie die
+ *    awards"), aber gezaehlt wurden weiter nur die drei Endawards. Der Turm
+ *    brauchte also mehr Beats, als das Step-Mapping vorsah, und die Kroenung
+ *    schob sich davor: gemessen fiel im Autoplay die Enthuellung des Siegers
+ *    weg. Je mehr CozyGames gespielt wurden, desto mehr Schluss fehlte.
+ *
+ * `teamIds` sind die Teams, die JETZT im Raum sind. Ohne diese Einschraenkung
+ * zaehlen ausgetretene Teams mit: `cozyGameWins` traegt im Testbetrieb
+ * hunderte alter Bot-Kennungen, und jede davon waere ein Beat, den niemand
+ * spielt.
+ */
+export function qqTowerAwardBeats(
+  teamIds: readonly string[],
+  endAwards: QQAwardRecipients,
+  cozyGameWins?: Record<string, number> | null,
+): QQTowerAwardBeat[] {
+  const beats: QQTowerAwardBeat[] = [];
+  // Zuerst die CozyGames: der Saal hat die Spiele gesehen, das ist der bekannte
+  // Teil. Die Awards danach sind die Ueberraschung.
+  for (const id of teamIds) {
+    const n = cozyGameWins?.[id] ?? 0;
+    if (n > 0) beats.push({ key: `cozy-${id}`, kind: 'cozy', teamId: id, bonus: n });
+  }
+  const dabei = (id: string | null | undefined): id is string => !!id && teamIds.includes(id);
+  if (dabei(endAwards?.speedy)) beats.push({ key: 'speedy', kind: 'speedy', teamId: endAwards!.speedy!, bonus: 1 });
+  if (dabei(endAwards?.meisterklauer)) beats.push({ key: 'meisterklauer', kind: 'meisterklauer', teamId: endAwards!.meisterklauer!, bonus: 1 });
+  if (dabei(endAwards?.underdog)) beats.push({ key: 'underdog', kind: 'underdog', teamId: endAwards!.underdog!, bonus: 2 });
+  return beats;
+}
+
+/** Anzahl Award-Beats im Turm. Siehe `qqTowerAwardBeats` - dort steht, warum
+ *  das nicht noch einmal gerechnet werden darf. */
+// `teamIds` ist mit Absicht PFLICHT und steht mit Absicht vorne: so faellt jede
+// Aufrufstelle, die den Raum nicht mitgibt, beim Uebersetzen auf. Mit einem
+// Vorgabewert waere der Zaehler stillschweigend auf null gefallen.
+export function qqTowerAwardCount(
+  teamIds: readonly string[],
+  endAwards: QQAwardRecipients,
+  cozyGameWins?: Record<string, number> | null,
+): number {
+  return qqTowerAwardBeats(teamIds, endAwards, cozyGameWins).length;
 }
 
 /**

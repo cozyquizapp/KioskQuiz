@@ -1016,7 +1016,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
         // Steuerpult sich nicht widersprechen.
         const kroenung = qqIstKroenungsBeat(
           phase.beat,
-          qqTowerAwardCount(s.endAwards as never),
+          qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards as never, s.cozyGameWins),
           s.teams.length,
         );
         if (kroenung) {

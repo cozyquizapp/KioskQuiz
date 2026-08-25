@@ -30,6 +30,7 @@ import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
 import { QQEmojiIcon } from './QQIcon';
 import { qqLargestClusterCells, type ClusterKachel } from '../utils/qqLargestCluster';
+import { qqTowerAwardBeats, type QQTowerAwardBeat } from '../../../shared/qqFinalReveal';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { holeBrettQuelle, vergissBrettQuelle } from '../qqBrettUebergabe';
 import {
@@ -65,25 +66,26 @@ export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; aw
     team: t,
     base: qqFinalTotal(s, t.id, ap) - (ap[t.id] ?? 0) - (cp[t.id] ?? 0),
   }));
-  const a = s.endAwards;
-  const awards: TowerAward[] = [];
   // 2026-08-25 (Wolf: „sie kommen bei der siegerehrung dazu wie die awards"):
   // die CozyGame-Punkte laufen zuerst ein, ein Beat je Team mit Siegen. Sie
   // sind der bekannte Teil - der Saal hat die Spiele gesehen -, die Awards
   // danach sind die Ueberraschung. Ein Award ist es NICHT: kein Bonus obendrauf,
   // nur die gewonnenen Siege als Bausteine.
-  for (const t of s.teams) {
-    const n = cp[t.id] ?? 0;
-    if (n > 0) {
-      awards.push({
-        key: `cozy-${t.id}`, label: 'CozyGames', labelEn: 'CozyGames',
-        emoji: '🎡', teamId: t.id, bonus: n,
-      });
-    }
-  }
-  if (a?.speedy) awards.push({ key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: a.speedy, bonus: 1 });
-  if (a?.meisterklauer) awards.push({ key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: a.meisterklauer, bonus: 1 });
-  if (a?.underdog) awards.push({ key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: a.underdog, bonus: 2 });
+  //
+  // WELCHE Bausteine es sind und in welcher Reihenfolge, entscheidet
+  // `qqTowerAwardBeats` in shared. Hier stand das frueher noch einmal, und
+  // genau daran ist es auseinandergelaufen: der Turm baute CozyGame-Bausteine,
+  // die das Step-Mapping nicht kannte, und die Kroenung schob sich vor die
+  // Enthuellung des Siegers. Hier bleibt nur, wie ein Beat AUSSIEHT.
+  const AUFSCHRIFT: Record<QQTowerAwardBeat['kind'], { label: string; labelEn: string; emoji: string }> = {
+    cozy:          { label: 'CozyGames',       labelEn: 'CozyGames',       emoji: '🎡' },
+    speedy:        { label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡' },
+    meisterklauer: { label: 'Meisterklauer',   labelEn: 'Master Thief',    emoji: '🪙' },
+    underdog:      { label: 'Underdog',        labelEn: 'Underdog',        emoji: '🍀' },
+  };
+  const awards: TowerAward[] = qqTowerAwardBeats(
+    s.teams.map(t => t.id), s.endAwards, s.cozyGameWins,
+  ).map(b => ({ key: b.key, teamId: b.teamId, bonus: b.bonus, ...AUFSCHRIFT[b.kind] }));
   const groesse = s.gridSize ?? 0;
   const kachelnProTeam = qqLargestClusterCells(s.grid, groesse);
   const imGebiet = new Set<string>();
@@ -426,8 +428,8 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Enthuellung: Recede-Beat (Plaetze 4..N dimmen) → Glide in die Mitte →
   // Wettklettern bis Platz 3 steht → bis Platz 2 steht → Sieger allein → Krone.
   //
-  // Die Beat-Zahl bleibt unveraendert (qqTowerMaxBeat = Awards + Top + 1), damit
-  // das Streamdeck-Mapping des Moderators gleich bleibt. Neu ist nur, was
+  // Die Beat-Zahl folgt `qqTowerMaxBeat` in shared, damit das Streamdeck-Mapping
+  // des Moderators und der Beamer dieselbe Rechnung benutzen. Neu ist nur, was
   // INNERHALB eines Beats passiert: statt einen Namen umzudrehen klettern die
   // Tuerme, bis der naechste stehenbleibt.
   useEffect(() => {

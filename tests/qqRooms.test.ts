@@ -10,7 +10,7 @@
  * ohne Socket/DB/Timer-Side-Effects.
  */
 import { describe, it, expect } from 'vitest';
-import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat, qqIstKroenungsBeat } from '../shared/qqFinalReveal';
+import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqIstKroenungsBeat } from '../shared/qqFinalReveal';
 import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
@@ -89,14 +89,55 @@ describe('qqDecodeFinalStep — v5 (2026-07-19, Turm-Finale V2: title → bets �
 });
 
 describe('qqTowerAwardCount (jeder Award-Empfänger = 1 Turm-Beat)', () => {
+  const DREI = ['t1', 't2', 't3'];
   it('zählt nur gesetzte Empfänger', () => {
-    expect(qqTowerAwardCount(null)).toBe(0);
-    expect(qqTowerAwardCount({})).toBe(0);
-    expect(qqTowerAwardCount({ speedy: 't1' })).toBe(1);
-    expect(qqTowerAwardCount({ speedy: 't1', meisterklauer: 't2' })).toBe(2);
-    expect(qqTowerAwardCount({ speedy: 't1', meisterklauer: 't2', underdog: 't3' })).toBe(3);
+    expect(qqTowerAwardCount(DREI, null)).toBe(0);
+    expect(qqTowerAwardCount(DREI, {})).toBe(0);
+    expect(qqTowerAwardCount(DREI, { speedy: 't1' })).toBe(1);
+    expect(qqTowerAwardCount(DREI, { speedy: 't1', meisterklauer: 't2' })).toBe(2);
+    expect(qqTowerAwardCount(DREI, { speedy: 't1', meisterklauer: 't2', underdog: 't3' })).toBe(3);
     // Underdog gibt +2 PUNKTE, aber trotzdem nur 1 beat.
-    expect(qqTowerAwardCount({ underdog: 't3' })).toBe(1);
+    expect(qqTowerAwardCount(DREI, { underdog: 't3' })).toBe(1);
+  });
+});
+
+// ── Der Drift, der zweimal drin war ─────────────────────────────────────────
+// 2026-08-25: die CozyGame-Siege wachsen seit diesem Tag als eigene Bausteine
+// im Turm (Wolf: „sie kommen bei der siegerehrung dazu wie die awards"), aber
+// gezaehlt wurden weiter nur die drei Endawards. Der Turm brauchte damit mehr
+// Beats, als das Step-Mapping vorsah, und die Kroenung schob sich vor die
+// Enthuellung des Siegers: gemessen im Autoplay fehlte der Schluss.
+// Diese Tests sperren beides zusammen ab - Liste und Zaehler kommen aus
+// derselben Funktion, und wer die Liste erweitert, sieht hier sofort rot.
+describe('qqTowerAwardBeats — CozyGames sind Beats wie die Awards', () => {
+  const TEAMS = ['t1', 't2', 't3'];
+  it('ein Team mit Siegen ist ein eigener Beat', () => {
+    const b = qqTowerAwardBeats(TEAMS, null, { t2: 3 });
+    expect(b.map(x => x.kind)).toEqual(['cozy']);
+    expect(b[0]).toMatchObject({ teamId: 't2', bonus: 3 });
+  });
+  it('CozyGames laufen VOR den Awards ein', () => {
+    const b = qqTowerAwardBeats(TEAMS, { speedy: 't1', underdog: 't3' }, { t2: 1 });
+    expect(b.map(x => x.kind)).toEqual(['cozy', 'speedy', 'underdog']);
+  });
+  it('null Siege ist kein Beat', () => {
+    expect(qqTowerAwardBeats(TEAMS, null, { t1: 0, t2: 0 })).toEqual([]);
+  });
+  it('ausgetretene Teams zaehlen nicht mit', () => {
+    // `cozyGameWins` traegt im Testbetrieb hunderte alter Bot-Kennungen. Ohne
+    // die Einschraenkung auf die Teams im Raum waere jede davon ein Beat.
+    expect(qqTowerAwardCount(TEAMS, { speedy: 'weg' }, { weg: 5, t1: 1 })).toBe(1);
+  });
+  it('Zaehler und Liste sind dasselbe', () => {
+    const ea = { speedy: 't1', meisterklauer: 't2', underdog: 't3' };
+    const w = { t1: 2, t3: 1 };
+    expect(qqTowerAwardCount(TEAMS, ea, w)).toBe(qqTowerAwardBeats(TEAMS, ea, w).length);
+    expect(qqTowerAwardCount(TEAMS, ea, w)).toBe(5);
+  });
+  it('mehr CozyGames heisst mehr Beats bis zur Kroenung', () => {
+    const ohne = qqTowerMaxBeat(qqTowerAwardCount(TEAMS, { speedy: 't1' }), 3);
+    const mit = qqTowerMaxBeat(qqTowerAwardCount(TEAMS, { speedy: 't1' }, { t2: 1, t3: 1 }), 3);
+    expect(mit).toBe(ohne + 2);
   });
 });
 

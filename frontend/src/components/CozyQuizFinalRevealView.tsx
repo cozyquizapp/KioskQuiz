@@ -202,7 +202,11 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
           const swapAnim = beforeRank !== afterRank
             ? `qqRecapSwap ${SWAP_MS}ms cubic-bezier(0.34, 1.18, 0.64, 1) ${SWAP_DELAY_MS}ms both`
             : '';
-          const glowAnim = isTopAfter && isJust
+          // Der Sieger-Schein ist auf der Buehne aus: er endete bei 36 und
+          // 72 px Streuung in der Akzentfarbe, und die ist hier Creme - auf
+          // der Aufnahme war das ein heller Hof um die halbe Zeile, das
+          // Lauteste auf einer sonst ruhigen Folie.
+          const glowAnim = (isTopAfter && isJust && !istBuehneG())
             ? `qqRecapWinnerGlow 0.8s ease-out ${GLOW_DELAY_MS}ms both`
             : '';
           const animation = [swapAnim, glowAnim].filter(Boolean).join(', ');
@@ -221,19 +225,36 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
               gridTemplateColumns: `${avatarSize + 8}px 1fr auto`,
               gap: 14, alignItems: 'center',
               padding: '0 18px', borderRadius: 14,
+              // 2026-08-24 (Wolf: „zwischenstand rahmen raus"). Acht Zeilen,
+              // acht Kaesten, und um die zuletzt punktenden noch ein heller
+              // Schein - das war die rahmenreichste Folie des Abends. Auf der
+              // Buehne stehen die Zeilen jetzt auf dem Grund; getrennt werden
+              // sie durch den Abstand und durch die Kachel links, die ohnehin
+              // in Teamfarbe leuchtet.
+              // Wer gerade gepunktet hat, bekommt eine leise Tönung statt
+              // Rand und Schein. Der Moment selbst wird weiter von der
+              // hochzaehlenden Zahl und vom Platztausch getragen.
               background: isJust
-                ? 'linear-gradient(90deg, rgba(var(--qq-accent-rgb),0.20), rgba(var(--qq-accent-magenta-rgb),0.12))'
-                : 'rgba(246, 239, 230,0.04)',
-              border: isJust
-                ? '2px solid rgba(var(--qq-accent-rgb),0.7)'
-                : '1.5px solid var(--qq-hairline)',
+                ? (istBuehneG()
+                    ? 'rgba(var(--qq-accent-rgb),0.10)'
+                    : 'linear-gradient(90deg, rgba(var(--qq-accent-rgb),0.20), rgba(var(--qq-accent-magenta-rgb),0.12))')
+                : (istBuehneG() ? 'transparent' : 'rgba(246, 239, 230,0.04)'),
+              border: istBuehneG()
+                ? '2px solid transparent'
+                : (isJust
+                    ? '2px solid rgba(var(--qq-accent-rgb),0.7)'
+                    : '1.5px solid var(--qq-hairline)'),
               boxSizing: 'border-box',
             }}>
               <div style={{
                 width: avatarSize, height: avatarSize, borderRadius: quirkSet ? '18%' : '50%',
                 background: `${t.color}33`,
-                border: `2px solid ${t.color}`,
-                boxShadow: `0 0 14px ${t.color}55`,
+                // Auf der Buehne traegt die Kachel selbst die Teamfarbe (das
+                // Set ist seit dem 22.08. das Objekt auf der Farbkachel) - ein
+                // Ring in derselben Farbe darum ist ein zweiter Rahmen um
+                // dasselbe, und der Schein weicht ihn auf Distanz nur auf.
+                border: istBuehneG() ? 'none' : `2px solid ${t.color}`,
+                boxShadow: istBuehneG() ? 'none' : `0 0 14px ${t.color}55`,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize - 8} />

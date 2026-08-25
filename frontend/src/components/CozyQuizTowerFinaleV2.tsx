@@ -66,7 +66,15 @@ export type TowerBrett = {
   /** Belegte Felder, die zu KEINEM groessten Gebiet gehoeren. Sie fliegen nicht. */
   streu: Array<{ r: number; c: number; ownerId: string }>;
 };
-export type TowerAward = { key: string; label: string; labelEn?: string; slug: QQIconSlug; zoom?: number; teamId: string; bonus: number };
+export type TowerAward = {
+  key: string; label: string; labelEn?: string; slug: QQIconSlug; zoom?: number;
+  teamId: string; bonus: number;
+  /** Die Frage, mit der die Zeremonie aufgeht. Wolf: „Wer war der Underdog
+   *  heute, dann rollt das rad die teams wackeln durch". Ohne die Frage ist die
+   *  Karte nur eine Bekanntgabe; mit ihr ist es ein Moment, in dem der Saal
+   *  raten kann. */
+  frage: string; frageEn: string;
+};
 
 // Mapping State → Turm-Daten (Live-Wiring): base = Quiz-Cluster + Bet-Bonus
 // (also OHNE Award-Punkte), Awards separat aus endAwards mit echten Werten
@@ -113,14 +121,18 @@ export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; aw
   // ihrer laengsten Kante, das Rad nur 74. Bei gleicher Kachelgroesse stuende
   // es also 15 Prozent kleiner in der Reihe. Die Datei bleibt unangetastet -
   // ausgeglichen wird ausschliesslich in der Darstellung.
-  const AUFSCHRIFT: Record<QQTowerAwardBeat['kind'], { label: string; labelEn: string; slug: QQIconSlug; zoom: number }> = {
+  const AUFSCHRIFT: Record<QQTowerAwardBeat['kind'], { label: string; labelEn: string; slug: QQIconSlug; zoom: number; frage: string; frageEn: string }> = {
     // Das Rad, nicht die CozyGames-Wortmarke: `cg-cozygames` ist gar kein
     // gefuehrter Slug, und das Rad ist ohnehin das Zeichen, das der Saal aus
     // der Auslosung kennt.
-    cozy:          { label: 'CozyGames',       labelEn: 'CozyGames',       slug: 'fx-wheel', zoom: 1.18 },
-    speedy:        { label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', slug: 'award-speedy', zoom: 1 },
-    meisterklauer: { label: 'Meisterklauer',   labelEn: 'Master Thief',    slug: 'award-thief', zoom: 1 },
-    underdog:      { label: 'Underdog',        labelEn: 'Underdog',        slug: 'award-underdog', zoom: 1 },
+    cozy:          { label: 'CozyGames',       labelEn: 'CozyGames',       slug: 'fx-wheel', zoom: 1.18,
+                     frage: 'Wer hat heute bei den CozyGames gepunktet?', frageEn: 'Who scored in the CozyGames today?' },
+    speedy:        { label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', slug: 'award-speedy', zoom: 1,
+                     frage: 'Wer war heute am schnellsten?', frageEn: 'Who was fastest today?' },
+    meisterklauer: { label: 'Meisterklauer',   labelEn: 'Master Thief',    slug: 'award-thief', zoom: 1,
+                     frage: 'Wer hat heute am meisten geklaut?', frageEn: 'Who stole the most today?' },
+    underdog:      { label: 'Underdog',        labelEn: 'Underdog',        slug: 'award-underdog', zoom: 1,
+                     frage: 'Wer war heute der Underdog?', frageEn: 'Who was the underdog today?' },
   };
   const awards: TowerAward[] = qqTowerAwardBeats(
     s.teams.map(t => t.id), s.endAwards, s.cozyGameWins,
@@ -167,16 +179,32 @@ export function qqTurmBeatDauer(gridSize: number, mitUebergabe = true): number {
   return halt + wellen * WELLE + FLUG + 1500;
 }
 
-/**
- * Wie lange die Award-Karte steht, bevor der Baustein waechst.
- *
- * Aufgenommen und nachgezaehlt: die Karte ist 340 ms nach dem Beat da, die
- * Marke rattert ab 260 ms und rastet nach rund 1,6 s ein. Bei 2600 ms blieben
- * danach 740 ms, und in 740 ms liest niemand einen Teamnamen auf zehn Metern.
- * 3200 ms lassen gut eine Sekunde stehen, und der Name ist danach weg - der
- * Baustein waechst, ohne dass jemand mehr sagt, wem er gehoert.
- */
-const AWARD_KARTE = 3200;
+// ── Der Takt der Award-Zeremonie ──────────────────────────────────────────
+// 2026-08-25 (Wolf: „ich finde auch immernoch die awards zu wenig zelebriert
+// ich haette gerne sowas wie: Wer war der Underdog heute, dann rollt das rad
+// die teams wackeln durch, bis langsam das team stehen bleibt +x und dann den
+// turm, das soll zelebriert werden, nicht gerusht" und „auch gerne groesser
+// als bisher oder epischer").
+//
+// Vorher war die Karte ein Aushang: Zeichen, Name des Awards, und die Marke
+// ratterte 1,6 s. Danach blieb eine Sekunde. Zusammen 3,2 s fuer den Moment,
+// in dem der Abend jemanden auszeichnet.
+//
+// Jetzt sind es drei Takte, und der erste ist der wichtigste: die FRAGE steht
+// allein da, ohne Antwort. Erst dann rollt das Rad.
+/** Die Frage steht allein: „Wer war heute der Underdog?" */
+const AWARD_FRAGE = 2000;
+// Die Takte des Rades. Sie werden laenger, das ist das ganze Geheimnis: ein
+// gleichmaessiges Durchblaettern liest sich als Ladebalken, ein bremsendes als
+// Entscheidung. Modulweit, weil AWARD_ROLLT daraus GERECHNET wird - beim ersten
+// Anlauf stand hier eine gerundete Zahl, und die war 162 ms zu kurz.
+const AWARD_ROLL_TAKTE = [95, 95, 98, 104, 112, 124, 140, 162, 192, 232, 288, 360, 460, 600];
+/** Das Rad rollt und wird langsamer. */
+const AWARD_ROLLT = AWARD_ROLL_TAKTE.reduce((a, b) => a + b, 0);
+/** Das Team steht, +X springt heraus, der Saal darf klatschen. */
+const AWARD_STEHT = 1900;
+/** Wie lange die Award-Karte insgesamt steht, bevor der Baustein waechst. */
+const AWARD_KARTE = AWARD_FRAGE + AWARD_ROLLT + AWARD_STEHT;
 /** Ein Tick je Punkt, der erste etwas laenger. */
 const AWARD_TICK_ERST = 650;
 const AWARD_TICK = 460;
@@ -1364,7 +1392,14 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                         und eine fuenfte und sechste Farbe fuer etwas, das die
                         Pille direkt darunter schon in Worten sagt. */}
                     {badge && !istBuehne && <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={badge} size={28} /></span>}
-                    <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `2px solid ${colr}`, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+                    {/* 2026-08-25: auf der Buehne 30px statt 20px, wenn die
+                        Pille einen Abgang begleitet. Wolf: „es soll schon sowas
+                        kommen wie team x auf platz 8, weisst du damit die teams
+                        sich nicht komplett uebersehen fuehlen?" - eine Ansage,
+                        die aus zehn Metern nicht zu lesen ist, ist keine. Die
+                        Podest-Pillen bleiben, wo sie waren; die stehen lange
+                        genug und haben den Turm daneben als Aussage. */}
+                    <span style={{ fontSize: istBuehne ? (abtritt ? 30 : 20) : 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `${abtritt ? 3 : 2}px solid ${colr}`, borderRadius: 999, padding: istBuehne ? (abtritt ? '7px 22px' : '4px 14px') : '2px 9px', boxShadow: abtritt ? `0 0 26px ${colr}55` : 'none' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                   </div>
                 )}
                 {!istBuehne && (
@@ -1456,64 +1491,98 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
 // `zahlOffen`), also steht hier immer ein Name.
 function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAward; recip: QQTeam; alle: QQTeam[]; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
-  // ── Wer bekommt ihn? ──────────────────────────────────────────────────────
-  // 2026-08-25 (Wolf: „die award reveals zu langweilig award zeigen dann
-  // drummroll, dann fliegen unten die verschiedenen teams durch und es bleibt
-  // auf einem stehen").
+  const frage = de ? award.frage : award.frageEn;
+  // ── Drei Takte statt einem ────────────────────────────────────────────────
+  // 2026-08-25 (Wolf: „Wer war der Underdog heute, dann rollt das rad die teams
+  // wackeln durch, bis langsam das team stehen bleibt +x und dann den turm, das
+  // soll zelebriert werden, nicht gerusht").
   //
-  // Vorher stand der Empfaenger von der ersten Millisekunde an da. Die Karte
-  // hatte damit gar keinen Moment: sie erschien, und alles war schon gesagt.
-  // Jetzt rattert die Marke unten durch die Teams und rastet ein - dieselbe
-  // Geste wie bei der Tipp-Karte, wo sie sich seit Monaten bewaehrt.
+  //   frage  Die Frage steht allein da. Der Saal kann raten. Das ist der Takt,
+  //          der vorher komplett fehlte - die alte Karte zeigte Frage und
+  //          Antwort im selben Bild, und damit gab es nichts zu raten.
+  //   rollt  Ein Streifen aus Teammarken laeuft durch das Fenster und wird
+  //          langsamer. Nicht eine Marke, die ihr Bild tauscht: ein Streifen,
+  //          der sich BEWEGT - das ist der Unterschied zwischen einem Rad und
+  //          einem Ladebalken.
+  //   steht  Das Team rastet in der Mitte ein, sein Name steht gross darunter,
+  //          und +X springt heraus.
   //
   // Die Verzoegerungen werden laenger, das ist das ganze Geheimnis: ein
   // gleichmaessiges Durchblaettern liest sich als Ladebalken, ein bremsendes
-  // als Entscheidung. Summe rund 1,6 s, danach bleiben 1,0 s zum Lesen -
-  // die Karte steht 2,6 s (siehe `awardStage`).
-  const [ratterTeam, setRatterTeam] = useState<QQTeam | null>(null);
-  const [steht, setSteht] = useState(reduce);
+  // als Entscheidung.
+  const ROLL_TAKTE = AWARD_ROLL_TAKTE;
+  const [takt, setTakt] = useState<'frage' | 'rollt' | 'steht'>(reduce ? 'steht' : 'frage');
+  const [pos, setPos] = useState(0);
+  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
+  // Cozy Quirks: eckige Kachel -> Marken quadratisch (keine runde Coin).
+  const quirkSet = isQuirkTileSet(useAvatarSet());
+
+  // Der Streifen. `folge` ist die Reihe, durch die das Rad laeuft, und der
+  // Startpunkt ist so gewaehlt, dass nach GENAU `ROLL_TAKTE.length` Schritten
+  // der Empfaenger in der Mitte steht. Ohne diese Rechnung muesste am Ende
+  // jemand von Hand einrasten, und man saehe den Sprung.
+  const FENSTER = 5;
+  const MITTE = 2;
+  const folge = alle.length > 0 ? alle : [recip];
+  const zielPos = ((folge.findIndex(t => t.id === recip.id) - MITTE) % folge.length + folge.length) % folge.length;
+  const startPos = ((zielPos - ROLL_TAKTE.length) % folge.length + folge.length) % folge.length;
+
   useEffect(() => {
-    if (reduce) { setSteht(true); return; }
-    setSteht(false);
-    const ring = alle.filter(t => t.id !== recip.id);
-    if (ring.length === 0) { setSteht(true); return; }
-    const takte = [60, 60, 62, 66, 72, 80, 92, 110, 136, 172, 220, 290];
-    let i = 0;
-    let handle = 0;
+    if (reduce) { setTakt('steht'); setPos(zielPos); return; }
+    setTakt('frage');
+    setPos(startPos);
     let weg = false;
-    setRatterTeam(ring[0]);
-    const tick = () => {
+    let handle = 0;
+    let i = 0;
+    const rollen = () => {
       if (weg) return;
-      if (i >= takte.length) {
-        setSteht(true);
+      if (i >= ROLL_TAKTE.length) {
+        setTakt('steht');
         try { playReveal(); } catch { /* noop */ }
         return;
       }
-      // Sprung um drei, damit nicht zweimal hintereinander dieselbe Marke
-      // kommt, wenn der Ring kurz ist.
-      setRatterTeam(ring[(i * 3 + 1) % ring.length]);
-      handle = window.setTimeout(tick, takte[i]);
+      setPos(p => p + 1);
+      try { playTick(); } catch { /* noop */ }
+      handle = window.setTimeout(rollen, ROLL_TAKTE[i]);
       i++;
     };
-    handle = window.setTimeout(tick, 260);
+    handle = window.setTimeout(() => {
+      if (weg) return;
+      setTakt('rollt');
+      rollen();
+    }, AWARD_FRAGE);
     return () => { weg = true; window.clearTimeout(handle); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [award.key, recip.id, reduce]);
-  const zeigTeam = steht ? recip : (ratterTeam ?? recip);
-  const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
-  // 2026-08-23 (2a): Gold BLEIBT auf dieser Karte. Sie kuendigt den goldenen
-  // Baustein an, der gleich faellt, und Wolf hat bestaetigt: die goldenen
-  // Bausteine SIND die Awards. Gold ist hier also Mechanik und nicht Schmuck.
-  // Was geht, sind die vier Schein-Ebenen darum: 46px um die Karte, 22px hinter
-  // dem Zeichen, 20px hinter der Ueberschrift, 16px um die Empfaenger-Marke.
-  // Cozy Quirks: eckige Kachel → Empfänger-Badge quadratisch (keine runde Coin).
-  const quirkSet = isQuirkTileSet(useAvatarSet());
+
+  const steht = takt === 'steht';
+  // ── Groessen ──────────────────────────────────────────────────────────────
+  // 2026-08-25, an der Aufnahme (scripts/award-zeremonie-messen.mjs) korrigiert.
+  // Zwei Dinge stimmten nicht, und das zweite war das schlimmere:
+  //
+  // 1. Die Karte stand als Dialog auf der Buehne, rund ein Viertel der Breite.
+  //    Wolf: „auch gerne groesser als bisher oder epischer".
+  // 2. Der TEAMNAME war kleiner als der Award-Name. Die Frage lautet „Wer war
+  //    heute der Underdog?" - die Antwort darauf ist der Teamname, und der war
+  //    mit 46px die kleinste Zeile der Karte, unter einem 74px-„Underdog".
+  //    Jetzt ist der Name die groesste Zeile, und die Frage macht ihm Platz:
+  //    sie steht ueber dem Rad und blendet aus, wenn der Name kommt.
+  //
+  // Nachgerechnet gegen die 990px Buehnenhoehe:
+  // 56 Rand + 26 Zeile „Award" + 150 Zeichen + 80 Award-Name + 56 Frage +
+  // 172 Rad + 104 Teamname + 5*18 Abstaende + 56 Rand = 790px. Passt mit Luft.
+  const ZEICHEN = istBuehne ? 150 : 76;
+  const MARKE = istBuehne ? 148 : 62;
+  const MARKE_KLEIN = Math.round(MARKE * 0.62);
+  const zelle = MARKE + 22;
+
   return (
     <div style={{ position: 'absolute', inset: 0, zIndex: 14, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 60% at 50% 45%, rgba(249,200,122,0.10), rgba(6,3,12,0.62) 70%)', animation: reduce ? 'none' : 'qqT2FadeUp 0.4s ease both' }} />
+      <div aria-hidden style={{ position: 'absolute', inset: 0, background: 'radial-gradient(60% 60% at 50% 45%, rgba(249,200,122,0.10), rgba(6,3,12,0.72) 70%)', animation: reduce ? 'none' : 'qqT2FadeUp 0.4s ease both' }} />
       <div style={{
-        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
-        padding: '34px 56px', borderRadius: 26,
+        position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: istBuehne ? 16 : 12,
+        padding: istBuehne ? '52px 84px' : '30px 48px', borderRadius: 30,
+        minWidth: istBuehne ? 1000 : undefined,
         background: 'linear-gradient(180deg, rgba(40,29,13,0.98), rgba(24,17,8,0.98))',
         border: `2px solid ${GOLD_DEEP}`,
         boxShadow: istBuehne
@@ -1521,49 +1590,96 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
           : `0 0 46px ${GOLD}40, inset 0 1px 0 rgba(246, 239, 230,0.08)`,
         animation: reduce ? 'none' : 'qqT2AwardIn 0.55s cubic-bezier(0.2,1.2,0.35,1) both',
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span aria-hidden style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.28em', textTransform: 'uppercase', color: GOLD }}>{de ? 'Award' : 'Award'}</span>
-          <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, color: '#1B1206', background: GOLD, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 10px' }}>+{award.bonus}</span>
+        <span aria-hidden style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.28em', textTransform: 'uppercase', color: GOLD }}>Award</span>
+
+        {/* Das Zeichen. Keine Filter darauf, das ist der gelieferte Satz - nur
+            eine Bewegung der HUELLE, wenn das Rad rollt. */}
+        <div aria-hidden style={{
+          lineHeight: 0,
+          animation: reduce ? 'none' : (takt === 'rollt' ? 'qqT2AwardWippe 0.9s ease-in-out infinite' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both'),
+        }}><QQIcon slug={award.slug} size={Math.round(ZEICHEN * (award.zoom ?? 1))} /></div>
+
+        <div style={{ fontSize: istBuehne ? 80 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
+
+        {/* Die Frage bleibt stehen, den ganzen Weg.
+            Erster Entwurf liess sie ausblenden, sobald das Team steht. An der
+            Aufnahme fiel zweierlei auf: sie blendete gar nicht aus, weil die
+            Einblend-Animation mit `both` die Deckkraft festhaelt (dieselbe
+            Falle wie eine transform-Animation ueber einem Inline-Transform) -
+            und sie soll es auch gar nicht. Frage und Antwort untereinander
+            ergeben den Satz, um den Wolf gebeten hat: „Wer war heute der
+            Underdog? - Nicht Zuhause." Wer sie wegnimmt, laesst einen Namen
+            ohne Grund stehen. Die Zeile bleibt deshalb, ohne Deckkraft-Spiel. */}
+        <div style={{
+          fontSize: istBuehne ? 38 : 20, fontWeight: 800, color: 'var(--qq-text-muted)', textAlign: 'center',
+          minHeight: istBuehne ? 50 : 26,
+          animation: reduce ? 'none' : 'qqT2FadeUp 0.5s ease 0.25s both',
+        }}>{frage}</div>
+
+        {/* ── Das Rad ──────────────────────────────────────────────────────
+            Ein Fenster ueber einem Streifen aus Teammarken. Der Streifen faehrt
+            bei jedem Takt um eine Zelle weiter; die Bewegung selbst macht die
+            CSS-Animation, die an `pos` haengt und deshalb bei jedem Takt neu
+            startet. Die Marken links und rechts stehen kleiner und dunkler da:
+            so liest man, dass die Mitte die Entscheidung ist. */}
+        <div style={{
+          position: 'relative', width: zelle * FENSTER, height: MARKE + 12,
+          overflow: 'hidden',
+          maskImage: 'linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent)',
+          WebkitMaskImage: 'linear-gradient(90deg, transparent, #000 18%, #000 82%, transparent)',
+        }}>
+          <div key={pos} style={{
+            position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
+            ['--qq-radzelle' as string]: `${zelle}px`,
+            animation: (reduce || steht) ? 'none' : 'qqT2RadRuck 0.16s cubic-bezier(0.2,0.7,0.3,1) both',
+          }}>
+            {Array.from({ length: FENSTER }).map((_, k) => {
+              const t = folge[(pos + k) % folge.length];
+              const mitte = k === MITTE;
+              const seite = mitte ? MARKE : MARKE_KLEIN;
+              return (
+                <div key={k} style={{ width: zelle, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  <div style={{
+                    width: seite, height: seite, borderRadius: quirkSet ? '18%' : '50%',
+                    background: t.color, border: `3px solid ${t.color}`,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                    boxShadow: mitte && steht ? `0 0 30px ${t.color}88` : 'none',
+                    animation: (mitte && steht && !reduce) ? 'qqT2AwardPop 0.5s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
+                  }}>
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={seite} flat />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {/* Der Rahmen ueber der Mitte sagt, wo die Entscheidung faellt,
+              solange noch keine gefallen ist. */}
+          {!steht && (
+            <div aria-hidden style={{
+              position: 'absolute', left: zelle * MITTE, top: 0, width: zelle, height: '100%',
+              border: `3px solid ${GOLD}`, borderRadius: 18, pointerEvents: 'none',
+              animation: reduce ? 'none' : 'qqT2Breathe 1.4s ease-in-out infinite',
+            }} />
+          )}
         </div>
-        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: istBuehne ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))' : `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQIcon slug={award.slug} size={Math.round(76 * (award.zoom ?? 1))} /></div>
-        <div style={{ fontSize: istBuehne ? 50 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
-          {/* Die Marke rattert, bis sie einrastet. Waehrend des Ratterns steht
-              hier IMMER ein Team - erst beim Einrasten entscheidet sich, ob der
-              echte Empfaenger gezeigt wird oder das Fragezeichen, weil er einer
-              der noch anonymen Spitzentuerme ist. */}
-          <div style={{ position: 'relative', display: 'flex' }}>
-            {steht && !reduce && (
-              <span aria-hidden style={{
-                position: 'absolute', left: '50%', top: '50%',
-                width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60,
-                borderRadius: quirkSet ? '18%' : '50%',
-                border: `3px solid ${recip.color}`,
-                animation: 'qqT2AwardRaste 0.6s ease-out both', pointerEvents: 'none',
-              }} />
-            )}
-            <div style={{
-              width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60, borderRadius: quirkSet ? '18%' : '50%',
-              background: zeigTeam.color,
-              border: `3px solid ${zeigTeam.color}`,
-              boxShadow: istBuehne ? 'none' : `0 0 16px ${zeigTeam.color}88`,
-              display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-              transition: 'background 0.12s ease, border-color 0.12s ease',
-              animation: (steht && !reduce) ? 'qqT2AwardPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
-            }}>
-              <QQTeamAvatar key={zeigTeam.id} avatarId={zeigTeam.avatarId} teamEmoji={zeigTeam.emoji} size={istBuehne ? 76 : 60} flat />
-            </div>
-          </div>
-          {/* Empfaengername in Creme: die Marke links davon traegt die Teamfarbe
-              schon als volle Flaeche, und in Creme steht er bei jedem Team
-              gleich gut lesbar da. */}
-          {/* Feste Mindestbreite, damit die Karte beim Einrasten nicht springt:
-              waehrend des Ratterns stehen hier drei Punkte, danach ein Name. */}
-          <div style={{ fontSize: istBuehne ? 34 : 26, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : recip.color, maxWidth: 460, minWidth: istBuehne ? 300 : 220 }}>
-            {!steht
-              ? <span style={{ letterSpacing: '0.3em', color: 'var(--qq-text-muted)' }}>…</span>
-              : recip.name}
-          </div>
+
+        {/* Der Name. Feste Hoehe, damit die Karte beim Einrasten nicht springt. */}
+        {/* Die Antwort. Groesser als die Frage darueber und groesser als der
+            Award-Name - sie ist der Grund, warum die ganze Karte da ist. */}
+        <div style={{
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20, flexWrap: 'wrap',
+          minHeight: istBuehne ? 104 : 34,
+        }}>
+          {steht && (
+            <>
+              <div style={{ fontSize: istBuehne ? 92 : 26, fontWeight: 900, lineHeight: 1.0, color: istBuehne ? 'var(--qq-text)' : recip.color, maxWidth: 820, textAlign: 'center', animation: reduce ? 'none' : 'qqT2WinnerIn 0.5s cubic-bezier(0.2,0.8,0.3,1) both' }}>{recip.name}</div>
+              <span style={{
+                fontSize: istBuehne ? 52 : 18, fontWeight: 900, color: '#1B1206', background: GOLD,
+                borderRadius: 999, padding: istBuehne ? '8px 30px' : '2px 10px',
+                animation: reduce ? 'none' : 'qqT2AwardPop 0.55s cubic-bezier(0.3,1.6,0.4,1) 0.22s both',
+              }}>+{award.bonus}</span>
+            </>
+          )}
         </div>
       </div>
     </div>
@@ -1634,6 +1750,22 @@ const KEYFRAMES = `
 @keyframes qqT2AwardRaste {
   0%   { opacity: 0.9; transform: translate(-50%,-50%) scale(0.5); }
   100% { opacity: 0;   transform: translate(-50%,-50%) scale(2.2); }
+}
+/* Das Rad rueckt eine Zelle weiter. Der Streifen kommt von rechts herein und
+   faehrt auf null - so BEWEGT sich das Rad, statt nur sein Bild zu tauschen.
+   Die Zelle ist ueber eine CSS-Variable gesetzt, weil ihre Breite an der
+   Markengroesse haengt und die auf der Buehne eine andere ist. */
+@keyframes qqT2RadRuck {
+  0%   { transform: translateX(var(--qq-radzelle, 130px)); }
+  100% { transform: translateX(0); }
+}
+/* Waehrend das Rad rollt, wippt das Award-Zeichen leicht mit. Bewusst nur eine
+   transform-Bewegung auf der HUELLE: die gelieferte PNG bleibt unangetastet,
+   kein Filter, keine Deckkraft, keine Farbrechnung.
+   (Und kein Backtick in diesem Kommentar - er wuerde das Template beenden.) */
+@keyframes qqT2AwardWippe {
+  0%, 100% { transform: rotate(-3.5deg) scale(1); }
+  50%      { transform: rotate(3.5deg) scale(1.04); }
 }
 @keyframes qqT2AwardPop { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.18); } 100% { transform: scale(1); opacity: 1; } }
 @keyframes qqT2FlashPop { 0% { transform: translateX(-50%) scale(0.7); opacity: 0; } 60% { transform: translateX(-50%) scale(1.1); } 100% { transform: translateX(-50%) scale(1); opacity: 1; } }

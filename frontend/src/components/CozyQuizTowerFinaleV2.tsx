@@ -178,8 +178,10 @@ const TOWER_ZONE = STAGE_H - TITLE_H - CROWN_H - BASE_H - BOTTOM;
 const INK = '#0F0817';
 const GOLD = '#F9C87A';
 const GOLD_DEEP = '#E0A94E';
-const MYST = '#4A4560';
-const MYST_EDGE = '#655C82';
+// 2026-08-25: hier standen zwei Grautoene, MYST und MYST_EDGE. Sie waren die
+// Farbe der anonymen Spitzentuerme. Die Anonymitaet ist raus - alle Tuerme
+// tragen ihre Teamfarbe, von der ersten Kachel an. Was stattdessen zubleibt,
+// ist die ZAHL der drei Finalisten; siehe `zahlOffen` weiter unten.
 
 export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreakerWinnerId }: {
   teams: TowerTeam[]; awards: TowerAward[]; lang: 'de' | 'en';
@@ -384,12 +386,21 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     rank > 2 ? true : (phase === 'reveal' && revealStep >= (3 - rank)),
   [phase, revealStep]);
 
-  // Identitaet (Farbe, Avatar, Name): fuer die Top-3 offen, sobald sie in der
-  // Mitte stehen. Bewusst getrennt vom Badge — man soll wissen, WER klettert,
-  // und nicht wissen, WIE HOCH.
-  const identityShown = useCallback((rank: number) =>
-    rank > 2 ? true : (phase === 'reveal' && glided),
-  [phase, glided]);
+  // 2026-08-25 (Wolf: „alle tuerme in farbe, mach das. Aber wir brauchen den
+  // spannungsmoment am ende").
+  //
+  // Bis hierher bauten die Spitzenreiter ANONYM: graue Tuerme, „???" statt
+  // Name, und der Award ging an „Einen der Spitzentuerme". Das hat mehr
+  // gekostet als gebracht. Die HOEHE verraet die Reihenfolge ohnehin - grau
+  // versteckte also nicht, wer vorn liegt, sondern nur, wer es ist. Und das
+  // ist ausgerechnet der Teil, der Spass macht: die Kacheln fliegen in
+  // Teamfarbe ein, wer hinschaut weiss es sowieso, und die Award-Zeremonie
+  // verlor ihre Pointe fuer genau die drei interessantesten Teams.
+  //
+  // Statt der Identitaet bleibt jetzt die ZAHL zu (`zahlOffen` weiter unten).
+  // Wer oben mitspielt, ist offen - wie weit oben, sagt erst der Schluss.
+  // Das ist auch die ehrlichere Luecke: zwischen Platz eins und drei liegen
+  // meist ein, zwei Bausteine, und die zaehlt auf zehn Metern niemand mit.
 
   // Zielhoehen der drei Finalisten, aufsteigend: erst faellt Platz 3, dann 2.
   // ⚠️ finalRanking, NICHT ordered — `ordered` ist die Spalten-Anordnung auf der
@@ -492,7 +503,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
       if (brettWelle <= letzteWelle) { try { playWoodKnock(); } catch { /* noop */ } }
     }, brettWelle === 0 ? BRETT_HALT : WELLE);
     return () => window.clearTimeout(h);
-  }, [phase, brettWelle, letzteWelle, LANDE_VERZUG, BRETT_HALT, WELLE, teams, gelandet]);
+  }, [phase, brettWelle, letzteWelle, LANDE_VERZUG, BRETT_HALT, teams, gelandet, laeuftHinterher]);
 
   useEffect(() => {
     if (phase !== 'base') return;
@@ -821,8 +832,6 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     return totalOf(id);
   };
 
-  // Award-Empfaenger anonym? (Top-3 + noch nicht enthuellt)
-  const awardRecipMystery = curAward ? !revealed(rankById[curAward.teamId]) : false;
   const recipTeam = curAward ? teamById(curAward.teamId) : undefined;
 
   // Spannungs-Flash (C): waehrend ein Award-Baustein faellt, vergleiche die Hoehe
@@ -1005,11 +1014,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
           {Object.entries(flugplan).flatMap(([id, liste]) => {
             const t = teamById(id);
             if (!t) return [];
-            // Die Spitzenreiter bauen anonym (siehe `myst` weiter unten). Ihre
-            // Kacheln starten in Teamfarbe und verlieren sie IM FLUG - sonst
-            // waere die ganze Anonymitaet der Top 3 hinfaellig, sobald das Brett
-            // faellt, und der Farbwechsel am Boden waere ein Sprung.
-            const anonym = rankById[id] <= 2;
+            // 2026-08-25: die Kacheln der Spitzenreiter verloren hier im Flug
+            // ihre Teamfarbe, damit die Tuerme oben anonym bleiben konnten.
+            // Die Anonymitaet ist raus (siehe oben), also fliegt jede Kachel in
+            // der Farbe, in der sie am Brett lag.
             return liste.filter(k => k.welle > brettWelle - LANDE_VERZUG).map(k => {
               // Gelandete Kacheln werden abgeraeumt, sobald der echte Baustein
               // steht. 2026-08-24 an der Aufnahme gesehen: der Baustein verlaeuft
@@ -1070,14 +1078,6 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                       animation: `qqT2FlugDreh ${FLUG}ms ease-in-out ${verzug}ms both`,
                     }}>
                       <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avInBlock} flat />
-                      {anonym && (
-                        <span aria-hidden style={{
-                          position: 'absolute', inset: 0, borderRadius: 6,
-                          background: `linear-gradient(180deg, ${MYST} 0%, ${MYST} 60%, rgba(0,0,0,0.24) 100%)`,
-                          border: `1px solid ${MYST_EDGE}`,
-                          animation: `qqT2Anonym ${FLUG}ms ease ${verzug}ms both`,
-                        }} />
-                      )}
                     </div>
                   </div>
                 </div>
@@ -1100,13 +1100,12 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         const shown = shownOf(id);
         const total = totalOf(id);
         const show = revealed(rank);            // Platzierung steht fest (Badge)
-        const ident = identityShown(rank);      // Farbe/Avatar/Name offen
-        // Grau bleibt nur noch bis zum Glide. Waehrend des Wettkletterns sind
-        // alle drei farbig — sonst wuerde der spannendste Moment zwischen
-        // anonymen Saeulen stattfinden und niemand wuesste, fuer wen er jubelt.
-        const myst = isTop3 && !ident;
-        const colr = myst ? MYST : team.color;
-        const edge = myst ? MYST_EDGE : team.color;
+        const colr = team.color;
+        const edge = team.color;
+        // Die Zahl der Finalisten bleibt zu, bis ihr Platz faellt. Alle
+        // anderen zeigen ihren Stand wie immer. Drei Tuerme mit „???" sagen
+        // dem Saal genau das Richtige: diese drei sind noch im Rennen.
+        const zahlOffen = !isTop3 || show;
         const towerPx = shown * blockH + Math.max(0, shown - 1) * GAP;
         const badge = rank === 1 ? '🥈' : rank === 2 ? '🥉' : null;
         const i = orderIndex[id];
@@ -1230,14 +1229,12 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                         und eine fuenfte und sechste Farbe fuer etwas, das die
                         Pille direkt darunter schon in Worten sagt. */}
                     {badge && !istBuehne && <span aria-hidden style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={badge} size={28} /></span>}
-                    <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `2px solid ${myst ? MYST_EDGE : colr}`, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+                    <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, letterSpacing: '0.05em', color: 'var(--qq-text)', background: 'rgba(15,8,23,0.94)', border: `2px solid ${colr}`, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 9px' }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
                   </div>
                 )}
                 {!istBuehne && (
-                <div style={{ width: AV_OBEN, height: AV_OBEN, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: (myst || istBuehne) ? 'none' : `0 0 14px ${colr}77`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
-                  {myst
-                    ? <span aria-hidden style={{ fontSize: Math.round(AV_OBEN * 0.55), fontWeight: 900, color: 'var(--qq-text-muted)', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>?</span>
-                    : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV_OBEN} flat />}
+                <div style={{ width: AV_OBEN, height: AV_OBEN, borderRadius: quirkSet ? '18%' : '50%', background: colr, border: `3px solid ${edge}`, boxShadow: istBuehne ? 'none' : `0 0 14px ${colr}77`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', animation: (isTop3 && show && !reduce) ? 'qqT2Reveal 0.6s ease-out both' : 'none' }}>
+                  <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={AV_OBEN} flat />
                 </div>
                 )}
               </div>
@@ -1277,7 +1274,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                               return <QQIcon slug={z.slug} size={Math.round(blockW * 0.66 * z.zoom)} />;
                             })()
                           : <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(246, 239, 230,0.4))' }}>★</span>)
-                      : myst ? null : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avInBlock} flat />}
+                      : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avInBlock} flat />}
                     {/* Der Lande-Blitz bleibt: er ist transient und sagt
                         „dieser Baustein ist GERADE gefallen". Ein Schein mit
                         Bedeutung bleibt, einer der nur schmueckt geht. */}
@@ -1294,8 +1291,11 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               {/* 2026-08-23 (2a): die Zahl stand am Ende in Teamfarbe mit Schein.
                   Teamfarbe lebt auf der Kachel, nicht in der Schrift - und die
                   Kachel steht hier direkt darueber, den ganzen Turm hoch. */}
-              <div style={{ fontSize: istBuehne ? 42 : 30, fontWeight: 900, lineHeight: 1, color: istBuehne ? 'var(--qq-text)' : (capped && !myst ? colr : '#E2D6FF'), fontVariantNumeric: 'tabular-nums', textShadow: (capped && !myst && !istBuehne) ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
-                <span key={shown} style={{ display: 'inline-block', animation: (shown > 0 && !crowned && !reduce) ? 'qqT2NumPop 0.3s ease-out' : 'none' }}>{shown}</span>
+              <div style={{ fontSize: istBuehne ? 42 : 30, fontWeight: 900, lineHeight: 1, color: zahlOffen ? (istBuehne ? 'var(--qq-text)' : (capped ? colr : '#E2D6FF')) : 'var(--qq-text-muted)', fontVariantNumeric: 'tabular-nums', textShadow: (capped && zahlOffen && !istBuehne) ? `0 0 14px ${colr}66` : 'none', transition: 'color 0.3s ease' }}>
+                {zahlOffen
+                  ? <span key={shown} style={{ display: 'inline-block', animation: (shown > 0 && !crowned && !reduce) ? 'qqT2NumPop 0.3s ease-out' : 'none' }}>{shown}</span>
+                  // Der Platz faellt, und im selben Moment schnappt die Zahl ein.
+                  : <span style={{ display: 'inline-block', letterSpacing: '0.08em', animation: reduce ? 'none' : 'qqT2Q 1.8s ease-in-out infinite' }}>???</span>}
               </div>
               {/* 2026-08-24, gemessen: die Teamnamen im Sockel standen zwischen
                   22,5 und 25px, das „???" der noch anonymen Tuerme bei 24px.
@@ -1303,9 +1303,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                   Text der Folie - ausgerechnet der Name, um den es geht.
                   minFontSize haelt ihn auch bei langen Namen ueber dem Boden;
                   zwei Zeilen sind erlaubt und darunter ist Platz. */}
-              {myst
-                ? <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 900, color: 'var(--qq-text-muted)', letterSpacing: '0.12em' }}>???</div>
-                : <TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} minFontSize={istBuehne ? '26px' : undefined} fontSize={istBuehne ? 'clamp(22px, 1.8cqw, 30px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
+              {<TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} minFontSize={istBuehne ? '26px' : undefined} fontSize={istBuehne ? 'clamp(22px, 1.8cqw, 30px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
             </div>
           </div>
         );
@@ -1313,13 +1311,18 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
 
       {/* Grosse Award-Zeremonie (Akt 2, Stage 'card') */}
       {phase === 'award' && curAward && awardStage === 'card' && recipTeam && (
-        <AwardCelebration award={curAward} recip={recipTeam} alle={teams.map(t => t.team)} mystery={awardRecipMystery} de={de} reduce={reduce} />
+        <AwardCelebration award={curAward} recip={recipTeam} alle={teams.map(t => t.team)} de={de} reduce={reduce} />
       )}
     </div>
   );
 }
 
-function AwardCelebration({ award, recip, alle, mystery, de, reduce }: { award: TowerAward; recip: QQTeam; alle: QQTeam[]; mystery: boolean; de: boolean; reduce: boolean }) {
+// 2026-08-25: der Parameter `mystery` ist raus. Er hat den Empfaenger als
+// „Einen der Spitzentuerme" verschleiert, solange die Top 3 anonym bauten -
+// und damit ausgerechnet den drei interessantesten Teams ihre Zeremonie
+// genommen. Die Anonymitaet gibt es nicht mehr (siehe CozyQuizTowerFinaleV2,
+// `zahlOffen`), also steht hier immer ein Name.
+function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAward; recip: QQTeam; alle: QQTeam[]; de: boolean; reduce: boolean }) {
   const label = de ? award.label : (award.labelEn ?? award.label);
   // ── Wer bekommt ihn? ──────────────────────────────────────────────────────
   // 2026-08-25 (Wolf: „die award reveals zu langweilig award zeigen dann
@@ -1403,22 +1406,20 @@ function AwardCelebration({ award, recip, alle, mystery, de, reduce }: { award: 
                 position: 'absolute', left: '50%', top: '50%',
                 width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60,
                 borderRadius: quirkSet ? '18%' : '50%',
-                border: `3px solid ${mystery ? MYST_EDGE : recip.color}`,
+                border: `3px solid ${recip.color}`,
                 animation: 'qqT2AwardRaste 0.6s ease-out both', pointerEvents: 'none',
               }} />
             )}
             <div style={{
               width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60, borderRadius: quirkSet ? '18%' : '50%',
-              background: (steht && mystery) ? MYST : zeigTeam.color,
-              border: `3px solid ${(steht && mystery) ? MYST_EDGE : zeigTeam.color}`,
-              boxShadow: ((steht && mystery) || istBuehne) ? 'none' : `0 0 16px ${zeigTeam.color}88`,
+              background: zeigTeam.color,
+              border: `3px solid ${zeigTeam.color}`,
+              boxShadow: istBuehne ? 'none' : `0 0 16px ${zeigTeam.color}88`,
               display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
               transition: 'background 0.12s ease, border-color 0.12s ease',
               animation: (steht && !reduce) ? 'qqT2AwardPop 0.45s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
             }}>
-              {(steht && mystery)
-                ? <span aria-hidden style={{ fontSize: 34, fontWeight: 900, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>?</span>
-                : <QQTeamAvatar key={zeigTeam.id} avatarId={zeigTeam.avatarId} teamEmoji={zeigTeam.emoji} size={istBuehne ? 76 : 60} flat />}
+              <QQTeamAvatar key={zeigTeam.id} avatarId={zeigTeam.avatarId} teamEmoji={zeigTeam.emoji} size={istBuehne ? 76 : 60} flat />
             </div>
           </div>
           {/* Empfaengername in Creme: die Marke links davon traegt die Teamfarbe
@@ -1426,10 +1427,10 @@ function AwardCelebration({ award, recip, alle, mystery, de, reduce }: { award: 
               gleich gut lesbar da. */}
           {/* Feste Mindestbreite, damit die Karte beim Einrasten nicht springt:
               waehrend des Ratterns stehen hier drei Punkte, danach ein Name. */}
-          <div style={{ fontSize: istBuehne ? 34 : 26, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : (mystery ? '#C9BEE6' : recip.color), maxWidth: 460, minWidth: istBuehne ? 300 : 220 }}>
+          <div style={{ fontSize: istBuehne ? 34 : 26, fontWeight: 900, color: istBuehne ? 'var(--qq-text)' : recip.color, maxWidth: 460, minWidth: istBuehne ? 300 : 220 }}>
             {!steht
               ? <span style={{ letterSpacing: '0.3em', color: 'var(--qq-text-muted)' }}>…</span>
-              : mystery ? (de ? 'Einer der Spitzentürme!' : 'One of the top towers!') : recip.name}
+              : recip.name}
           </div>
         </div>
       </div>

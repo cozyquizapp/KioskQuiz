@@ -4307,6 +4307,10 @@ export function MuchoOptionsReveal({
   // = smooth. Harte Hoehen-Caps (kleiner beim Reveal) halten alle 4 Zeilen + Frage
   // im Bild. Nicht-Arena bleibt beim festen 2x2-Grid (unveraendert).
   const ARENA_GAP = 14; // px, fix → calc(50% - GAP/2) fuer sauberes 2x2
+  // Haengen unter dieser Reihe ueberhaupt Marken? Nur dann kostet sie Platz.
+  const hatMarken = (i: number) => answers.some(a => a.text === String(i));
+  const markenOben = hatMarken(0) || hatMarken(1);
+  const markenUnten = hatMarken(2) || hatMarken(3);
   const containerStyle: React.CSSProperties = isMega
     ? {
         display: 'flex', flexWrap: 'wrap',
@@ -4338,8 +4342,23 @@ export function MuchoOptionsReveal({
         // Beide Werte reichen jetzt bis 140 px auf der Buehne. Sie muessen
         // gleich sein: derselbe Marken-Block haengt unter der oberen Reihe (in
         // die Luecke) und unter der unteren (in das Polster).
-        rowGap: expandedLayout ? 'clamp(104px, 14.2cqh, 150px)' : 18,
-        paddingBottom: expandedLayout ? 'clamp(104px, 14.2cqh, 150px)' : 0,
+        // 2026-08-25 (Wolf: „immernoch abgeschnitten"). Stimmt, und diesmal war
+        // ich es selbst: 27 px mehr Reserve pro Reihe sind 54 px mehr Hoehe,
+        // und die hatte die Folie nicht. Nachgemessen im DOM: der Fluss ist
+        // 843 px hoch, der Inhalt braucht 871, die Sieger-Leiste wird um 27
+        // gekappt. Die Reserve war aber gar nicht ueberall noetig - im Bild
+        // hatten A und B keine einzige Marke, und trotzdem stand die volle
+        // Luecke zwischen den Reihen. Reserviert wird jetzt pro Reihe, und nur
+        // wo wirklich Marken haengen. Basis sind die abgegebenen Antworten
+        // (nicht die schon eingeflogenen Marken), damit sich waehrend der
+        // Kaskade nichts mehr bewegt.
+        // Und die Reserve selbst ist jetzt gemessen statt gerechnet: der
+        // Marken-Block der Gewinner-Reihe (Kachel mit Krone plus Zeit-Pille)
+        // haengt im DOM 113 px unter der Karte. 14,2cqh waren 141 - also 28
+        // zu viel, und genau die fehlten unten. 12,2cqh sind 121 px, also 113
+        // plus acht Luft.
+        rowGap: (expandedLayout && markenOben) ? 'clamp(96px, 12.2cqh, 132px)' : 18,
+        paddingBottom: (expandedLayout && markenUnten) ? 'clamp(96px, 12.2cqh, 132px)' : 0,
         marginBottom: 'clamp(10px, 1.4cqh, 22px)',
         width: '100%', maxWidth: 1400,
         // 2026-04-30 v2: 0.9s entspanntes Easing (User: 'cards verschieben sich zu hektisch').

@@ -214,9 +214,16 @@ return {
   // Fuss klebt. Im Test-Entwurf steht die richtige Antwort der ersten
   // Mu-Cho-Frage oben; in `qq-vol-1` hat die Frage der zweiten Runde
   // `correctOptionIndex: 2`. Deshalb erst in Runde 2 springen.
+  // 2026-08-25: der Sprung nach `phase-2` landete auf der ERSTEN Frage der
+  // zweiten Runde, und die ist im Entwurf ein Schaetzchen - die Station hat
+  // also nie das gezeigt, was sie zeigen sollte. Jetzt ueber das Vorziehen:
+  // mit `--kategorie=MUCHO` stehen die vier Mu-Cho-Fragen vorn, und die
+  // ZWEITE davon hat `correctOptionIndex: 2`, also die richtige Antwort unten
+  // links. Braucht `--kategorie=MUCHO --entwurf=qq-vol-1`.
   aufloesungUnten: { ruhe: 6000, aufbau: 'spiel', weg: async (h) => {
-    await h.springe('phase-2'); await sleep(600);
-    await h.zurFrage(); await h.antworten(); await sleep(400);
+    await h.zurFrage(); await sleep(300);
+    await h.naechsteFrage(); await sleep(300);
+    await h.antworten(); await sleep(400);
     await h.emit('qq:revealAnswer'); await sleep(1600);
     for (const ev of ['qq:muchoRevealStep']) {
       await h.emit(ev); await sleep(300); await h.emit(ev); await sleep(300);

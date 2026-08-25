@@ -204,7 +204,10 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
             Custom-Buch-Icon reicht. */}
         <div style={{ marginTop: 16, display: 'flex', justifyContent: 'center' }}>
           <div style={{ animation: 'tcwobble 2s ease-in-out infinite' }}>
-            <QQIcon slug="fx-book" size={30} />
+            {/* 2026-08-25: mit der Buehne mitgezogen. Dort steht auf der
+                Regelfolie jetzt das aufgeschlagene Buch, und Handy und Wand
+                sollen im selben Moment dasselbe Zeichen zeigen. */}
+            <QQIcon slug="fx-rules" size={30} />
           </div>
         </div>
       </div>

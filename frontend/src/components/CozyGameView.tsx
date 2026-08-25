@@ -671,9 +671,36 @@ function WheelView({
         {/* 2026-08-23 (2a): die Pinata war ein Systemzeichen und ausserdem das
             falsche Bild - hier dreht ein Rad, keine Pinata. `fx-wheel` liegt im
             Set und steht seit dem CozyGames-Logo fuer genau diesen Moment. */}
+        {/* 2026-08-25 (Wolf: „qqSpinSlow fixen"): das Keyframe steht jetzt in
+            main.css, Begruendung dort. 1,2s pro Umdrehung waren 50 Umdrehungen
+            pro Minute - das liest sich als Ladekringel, nicht als Gluecksrad.
+            2,4s sind 25 U/min, das Tempo, mit dem ein echtes Rad ausrollt.
+
+            Zwei Ebenen, und genau dafuer gibt es die zweite Datei: die Scheibe
+            dreht, der Zeiger steht. Der erste Anlauf drehte das ganze Bild, und
+            im alten Zeichen hing ein Staender daran - der schwang dann mit nach
+            oben links. Wolfs Nachlieferung liefert die Scheibe ohne Staender
+            und den Zeiger einzeln, beide auf derselben 1024er-Leinwand an
+            derselben Stelle. Uebereinandergelegt passen sie ohne Rechnerei.
+
+            Die Achse steht auf der gemessenen Radachse: die breiteste Zeile der
+            Scheibe liegt bei y=500 von 1024, also 48,83 %. Auf der Bildmitte
+            gedreht wuerde sie um 12px eiern. */}
         {spinning && (
-          <div style={{ lineHeight: 1, animation: 'qqSpinSlow 1.2s ease-in-out infinite' }}>
-            <CozyGameIcon id="fx-wheel" emoji="🎡" size="clamp(80px, 12vw, 200px)" />
+          <div style={{
+            position: 'relative', lineHeight: 1,
+            width: 'clamp(80px, 12vw, 200px)', height: 'clamp(80px, 12vw, 200px)',
+          }}>
+            <div style={{
+              position: 'absolute', inset: 0,
+              transformOrigin: '50% 48.83%',
+              animation: 'qqSpinSlow 2.4s linear infinite',
+            }}>
+              <CozyGameIcon id="fx-wheel" emoji="🎡" size="100%" />
+            </div>
+            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none' }}>
+              <CozyGameIcon id="fx-wheel-pointer" emoji="" size="100%" />
+            </div>
           </div>
         )}
         {!spinning && revealedGame && (

@@ -351,6 +351,17 @@ return {
       await h.emit('qq:cozyGameStopTurn');
     }
   } },
+  // 2026-08-25 (Wolf: „qqSpinSlow fixen"): der Ersatz-Zweig des Rades. Ab zwei
+  // Spielen dreht sich ein echtes Rad; bei EINEM Spiel gibt es nichts zu
+  // wuerfeln, und statt des Rades laeuft dort nur das Zeichen. Genau dieses
+  // Zeichen trug die Animation, die es nicht gab. Der Pool wird deshalb auf
+  // ein einziges Spiel verengt, sonst ist der Zweig nicht erreichbar.
+  cozyrad: { ruhe: 2200, aufbau: 'spiel', weg: async (h) => {
+    await h.zurFrage();
+    await h.emit('qq:setQuizOptions', { cozyGamesPool: ['cg-sport-stacking'] });
+    await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
+    await sleep(600); await h.emit('qq:cozyGameAdvance');   // INTRO -> WHEEL_SPIN
+  } },
   cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
     if (cfg.stufe >= 2) { await sleep(600); await h.emit('qq:cozyGameAdvance'); }  // INTRO -> Rad dreht

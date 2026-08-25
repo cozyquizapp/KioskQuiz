@@ -4789,6 +4789,32 @@ html[data-quiet-motion="true"] *[style*="qqCatNameWave"] {
   96%, 98%      { opacity: 1; }
 }
 
+/* Das drehende Rad im CozyGame-Ersatzzweig (Pool mit nur einem Spiel).
+   2026-08-25 (Wolf: „qqSpinSlow fixen").
+
+   Der Fehler: `CozyGameView` setzte seit jeher `animation: qqSpinSlow ...`,
+   und dieses Keyframe gab es im ganzen Repo nicht. CSS verwirft einen
+   unbekannten Animationsnamen stillschweigend - kein Fehler in der Konsole,
+   kein roter Test, das Rad stand einfach still, waehrend der Zustand
+   „WHEEL_SPIN" hiess. Nachgemessen am 25.08.: das Element ist da, traegt die
+   Animation, und im ganzen Quelltext steht null mal `@keyframes qqSpinSlow`.
+
+   `linear`, nicht `ease-in-out`: die Schleife laeuft endlos, und eine weiche
+   Kurve pro Umdrehung bremst an jeder 360-Grad-Grenze. Das liest sich als
+   Stocken, nicht als Rad. Ein echtes Rad bremst zwar ab, aber hier laeuft es,
+   bis der Moderator weiterschaltet - also gleichmaessig.
+
+   `transform-origin` steht am Aufrufer auf der GEMESSENEN Radachse, nicht auf
+   der Bildmitte. Im Zeichen vom 25.08. liegt die breiteste Zeile der Scheibe
+   bei y=500 von 1024, also 48,83 %; um die Bildmitte gedreht wuerde sie um
+   12px eiern. Das Zeichen davor hatte einen Staender, der beim Drehen nach
+   oben links schwang - Wolf hat es deshalb ohne Staender neu liefern lassen,
+   den Zeiger als eigene Datei, weil der stehen bleiben muss. */
+@keyframes qqSpinSlow {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
 /* Cozy Quirks (2026-07-28, Wolf) — animiertes slot-gebundenes Set. Frames als
    Opacity-Overlays (open-Basis + closed-Blink + action-Quirk), Breathe auf dem
    Wrapper. Timings pro Avatar inline (aus Wolfs animated-grid.html). Nur

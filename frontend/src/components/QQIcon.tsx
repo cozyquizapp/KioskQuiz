@@ -75,6 +75,8 @@ export type QQIconSlug =
   | 'fx-arena'
   | 'fx-teams'
   // Wolf-Lieferung 2026-07-15 (Arena): 3D-Buch (Regeln) + neutrales Wappen.
+  // `fx-book` traegt die Regeln seit dem 25.08. nicht mehr, siehe `fx-rules`.
+  // Die Datei bleibt liegen, geloescht wird nichts.
   | 'fx-book'
   | 'fx-shield-faction'
   // Wolf-Lieferung 2026-07-16: Rakete (Führungs-Callout), Anker-Wolf (Award
@@ -140,6 +142,10 @@ export type QQIconSlug =
   // Gegenstand darstellen laesst. Nicht in EMOJI_TO_SLUG eintragen — dort
   // wuerden sie generische Zeichen kapern (🔥 ist auch der Underdog-Award,
   // 🎉 auch der Jubel-Effekt). Aufloesung laeuft ueber qqReactionSlug().
+  // ── Nachbestellung, 2026-08-25 ────────────────────────────────────────────
+  // Wolf: „ich wollte buch, cozygames rad und top 5 und die kaputten".
+  | 'fx-rules'             // aufgeschlagenes Buch. Loest fx-book bei den Regeln ab
+  | 'fx-wheel-pointer'     // der Zeiger des Rades, eigene Datei weil er NICHT mitdreht
   | 'react-applause'
   | 'react-fire'
   | 'react-shock'
@@ -194,6 +200,8 @@ const FALLBACK_EMOJI: Record<QQIconSlug, string> = {
   'fx-arena':          '🏟️',
   'fx-teams':          '👥',
   'fx-book':           '📖',
+  'fx-rules':          '📖',
+  'fx-wheel-pointer':  '🔻',
   'fx-shield-faction': '🛡️',
   'rocket':            '🚀',
   'anker':             '⚓',
@@ -318,7 +326,12 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '🗺': 'fx-map',
   '👑': 'fx-crown',
   '👥': 'fx-teams',
-  '📖': 'fx-book',
+  // 2026-08-25 (Wolf): 📖 zeigt jetzt das aufgeschlagene Buch. Das alte
+  // `fx-book` war ein geschlossenes Buch mit cremefarbenem Deckel und blauem
+  // Ruecken - dieselben zwei Farben und fast dieselbe stehende Silhouette wie
+  // das MUCHO-Klemmbrett, auf 2,8 m Bildbreite kaum zu unterscheiden. Deshalb
+  // las es sich als Notizbuch und nicht als Regelwerk.
+  '📖': 'fx-rules',
   '🚀': 'rocket',
   // 2026-08-22 (CozyQuiz Icon Set): diese Emoji hatten bisher kein Motiv und
   // wurden als OS-Glyphe gerendert — also in jedem Betriebssystem anders und

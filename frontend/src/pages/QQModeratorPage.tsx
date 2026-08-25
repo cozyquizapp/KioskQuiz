@@ -1073,6 +1073,13 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         } else if (cg.phase === 'WHEEL_RESULT') {
           delayMs = 3000;
           action = () => emit('qq:cozyGameAdvance', { roomCode });
+        } else if (cg.phase === 'GAME_ACTIVE' && cg.playMode === 'sequence'
+          && (cg.scoringType === 'timeToFinish' || cg.scoringType === 'lastStanding')) {
+          // 2026-08-25: Zeit-Spiele werden gestoppt, nicht abgewartet. Im
+          // Testlauf drueckt niemand, also nach vier Sekunden selbst stoppen -
+          // dann steht am Ende eine Tabelle mit echten, verschiedenen Zeiten.
+          delayMs = 4000;
+          action = () => emit('qq:cozyGameStopTurn', { roomCode });
         } else if (cg.phase === 'GAME_ACTIVE' && cg.playMode === 'sequence') {
           // Bei sequence + abgelaufenem Timer: Auto-Nächstes-Team
           // (parallel: Backend auto-stops via onExpire)
@@ -3642,6 +3649,28 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                             </Btn>
                           )}
                         </div>
+                      </div>
+                    );
+                  }
+                  // 2026-08-25 (Wolf: „cozygames stoppuhr"): bei Reihum-Spielen,
+                  // deren Wert eine Zeit ist, kommt die Zahl aus der Uhr. Ein
+                  // Druck haelt sie fest UND schaltet zum naechsten Team - die
+                  // Zeit soll in dem Moment stehen, in dem der Ballon faellt,
+                  // nicht wenn Wolf danach noch einen zweiten Knopf sucht.
+                  const zeitSpiel = cg.scoringType === 'timeToFinish' || cg.scoringType === 'lastStanding';
+                  if (cg.phase === 'GAME_ACTIVE' && cg.playMode === 'sequence' && zeitSpiel) {
+                    const reihe: string[] = cg.sequenceOrder ?? [];
+                    const idx: number = cg.sequenceCurrentIdx ?? 0;
+                    const dran = s.teams.find((t: any) => t.id === reihe[idx]);
+                    const letzter = idx >= reihe.length - 1;
+                    return (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                        <span style={{ fontSize: 13, color: '#94a3b8', fontWeight: 800 }}>
+                          {dran ? `${dran.name} ist dran` : 'Reihum'} · {idx + 1}/{reihe.length}
+                        </span>
+                        <PrimaryBtn color={QQ_COLORS.brandPink} onClick={() => emit('qq:cozyGameStopTurn', { roomCode })} hotkey="Space">
+                          {letzter ? '⏱ Stopp · zur Tabelle' : '⏱ Stopp · nächstes Team'}
+                        </PrimaryBtn>
                       </div>
                     );
                   }

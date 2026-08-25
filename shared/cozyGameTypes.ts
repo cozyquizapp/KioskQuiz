@@ -163,6 +163,15 @@ export interface CozyGameRoundState {
   turnStartedAt?: number | null;
   /** Duerfen die Teams gerade Werte schicken? Nur bei gleichzeitigen Spielen. */
   valuesOpen?: boolean;
+  /**
+   * Die Wertungsart des laufenden Spiels, aus dem Katalog uebernommen. Beamer
+   * und Steuerpult brauchen sie, um Einheit und Richtung anzuzeigen, und der
+   * Stopp-Knopf haengt daran: bei `timeToFinish` und `lastStanding` ist der
+   * Wert eine Zeit und kommt aus der Uhr, nicht aus der Tastatur.
+   */
+  scoringType?: string;
+  /** Zielwert bei `closestToTarget`. */
+  targetValue?: number | null;
 }
 
 // ── Seed-Katalog: 15 aktive Spiele (+3 archiviert) ───────────────────────────

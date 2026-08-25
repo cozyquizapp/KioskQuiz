@@ -311,6 +311,24 @@ return {
     await sleep(7200);                                       // Server landet selbst
     await h.emit('qq:cozyGameAdvance'); await sleep(900);    // -> Spiel laeuft
   } },
+  // 2026-08-25 (Wolf: „cozygames stoppuhr"): ein Reihum-Spiel komplett
+  // durchgestoppt. Jedes Team bekommt eine andere Zeit, damit die Tabelle am
+  // Ende echte Abstaende zeigt statt achtmal derselben Zahl. Der Pool ist auf
+  // die drei ZEIT-Spiele verengt, sonst wuerfelt das Rad ein Zaehl-Spiel und
+  // der Stopp-Knopf erscheint gar nicht.
+  cozystopp: { ruhe: 3500, aufbau: 'spiel', nurReihum: true, weg: async (h) => {
+    await h.zurFrage();
+    await h.emit('qq:setQuizOptions', { cozyGamesPool: ['cg-ballon-puste', 'cg-karten-haus', 'cg-sport-stacking'] });
+    await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
+    await sleep(600); await h.emit('qq:cozyGameAdvance');
+    await sleep(7200);
+    await h.emit('qq:cozyGameAdvance'); await sleep(900);   // -> erstes Team laeuft
+    const teams = h.teamIds();
+    for (let i = 0; i < teams.length; i++) {
+      await sleep(700 + i * 450);                            // jedes Team haelt anders lange durch
+      await h.emit('qq:cozyGameStopTurn');
+    }
+  } },
   cozygame:   { ruhe: 3000, aufbau: 'spiel', weg: async (h) => {
     await h.zurFrage(); await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
     if (cfg.stufe >= 2) { await sleep(600); await h.emit('qq:cozyGameAdvance'); }  // INTRO -> Rad dreht

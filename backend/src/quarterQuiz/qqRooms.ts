@@ -6787,6 +6787,7 @@ export function qqCozyGameStartGame(
   room: QQRoomState,
   playMode: 'parallel' | 'sequence',
   onExpire: () => void,
+  wertung?: { scoringType: string; targetValue: number | null },
 ): void {
   if (!room.cozyGame || room.cozyGame.phase !== 'WHEEL_RESULT') return;
   if (room._cozyGameTimerHandle) clearTimeout(room._cozyGameTimerHandle);
@@ -6794,11 +6795,18 @@ export function qqCozyGameStartGame(
   room.cozyGame.playMode = playMode;
   room.cozyGame.timerDurationSec = COZY_GAME_TIMER_MS / 1000;
   room.cozyGame.timerPausedRemainingMs = undefined;
+  // 2026-08-25: die Wertungsart wandert in den Zustand, damit Beamer und
+  // Steuerpult sie kennen, ohne selbst in den Katalog zu greifen.
+  if (wertung) {
+    room.cozyGame.scoringType = wertung.scoringType;
+    room.cozyGame.targetValue = wertung.targetValue;
+  }
   if (playMode === 'sequence') {
     room.cozyGame.sequenceOrder = sortTeamsForSequence(room.teams);
     room.cozyGame.sequenceCurrentIdx = 0;
     room.cozyGame.sequenceCompletedTeamIds = [];
   }
+  room.cozyGame.turnStartedAt = Date.now();
   room.cozyGame.gameEndsAt = Date.now() + COZY_GAME_TIMER_MS;
   room._cozyGameOnExpire = onExpire;
   room._cozyGameTimerHandle = setTimeout(() => {
@@ -6806,6 +6814,40 @@ export function qqCozyGameStartGame(
     onExpire();
   }, COZY_GAME_TIMER_MS);
   room.lastActivityAt = Date.now();
+}
+
+/**
+ * Stoppuhr fuer die Reihum-Spiele, deren Wert eine ZEIT ist.
+ *
+ * 2026-08-25 (Wolf: „danach cozygames stoppuhr"). Drei der sieben
+ * Reihum-Spiele werden in Sekunden gewertet: Luftballon-Hochhalten
+ * (`lastStanding`, laenger ist besser), Karten-Haus und Sport-Stacking
+ * (`timeToFinish`, kuerzer ist besser). Dort waere Tippen doppelte Arbeit -
+ * die Zahl steht schon auf der Uhr, die im Bild laeuft.
+ *
+ * Ein Druck macht beides: Zeit festhalten und zum naechsten Team.
+ *
+ * Laeuft die Zeit ohne Stopp ab, bleibt der volle Wert stehen. Das ist in
+ * beiden Richtungen die richtige Aussage: beim Ballon hat das Team die ganze
+ * Zeit durchgehalten (bestmoeglich), beim Kartenhaus hat es nicht fertig
+ * gebaut (schlechtestmoeglich).
+ */
+export function qqCozyGameStopTurn(
+  room: QQRoomState,
+  onExpire: () => void,
+): void {
+  const cg = room.cozyGame;
+  if (!cg || cg.phase !== 'GAME_ACTIVE' || cg.playMode !== 'sequence') return;
+  const order = cg.sequenceOrder ?? [];
+  const teamId = order[cg.sequenceCurrentIdx ?? 0];
+  if (teamId && cg.turnStartedAt) {
+    const sekunden = Math.max(0, (Date.now() - cg.turnStartedAt) / 1000);
+    if (!cg.values) cg.values = {};
+    // Eine Nachkommastelle. Zehntel entscheiden bei diesen Spielen wirklich,
+    // Hundertstel sind auf 2,8 m Bildbreite nur noch Rauschen.
+    cg.values[teamId] = Math.round(sekunden * 10) / 10;
+  }
+  qqCozyGameNextSequenceTeam(room, onExpire);
 }
 
 /** Bei Sequence-Mode: aktuelles Team beenden, nächstes Team starten.
@@ -6839,6 +6881,7 @@ export function qqCozyGameNextSequenceTeam(
     // Nächstes Team — Timer neu starten (volle Dauer)
     cg.sequenceCurrentIdx = curIdx + 1;
     const durationMs = (cg.timerDurationSec ?? COZY_GAME_TIMER_MS / 1000) * 1000;
+    cg.turnStartedAt = Date.now();
     cg.gameEndsAt = Date.now() + durationMs;
     cg.timerPausedRemainingMs = undefined;
     room._cozyGameOnExpire = onExpire;
@@ -6847,10 +6890,22 @@ export function qqCozyGameNextSequenceTeam(
       onExpire();
     }, durationMs);
   } else {
-    // Alle Teams durch → WINNER_SELECT
-    cg.phase = 'WINNER_SELECT';
+    // Alle Teams durch → Werte-Tabelle.
+    // 2026-08-25: ging vorher direkt auf WINNER_SELECT und sprang damit an der
+    // neuen VALUES-Stufe vorbei. Reihum-Spiele haetten also nie eine Tabelle
+    // gesehen - im Testlauf sofort aufgefallen: nach dem letzten Stopp stand
+    // „Zeit abgelaufen, Moderator waehlt den Sieger" auf der Wand, obwohl
+    // acht Zeiten im Zustand lagen.
+    cg.phase = 'VALUES';
     cg.gameEndsAt = null;
+    cg.turnStartedAt = null;
     cg.timerPausedRemainingMs = undefined;
+    // Bei Reihum tippt Wolf, die Teams schicken nichts.
+    cg.valuesOpen = false;
+    if (!cg.values) cg.values = {};
+    for (const id of Object.keys(room.teams)) {
+      if (cg.values[id] === undefined) cg.values[id] = null;
+    }
     room._cozyGameOnExpire = null;
   }
   room.lastActivityAt = Date.now();

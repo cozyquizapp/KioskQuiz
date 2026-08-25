@@ -60,7 +60,7 @@ import {
   qqSetFinalWagerEnabled,
   qqCozyGameStart, qqCozyGameAdvanceFromIntro, qqCozyGameWheelLanded,
   qqCozyGameStartGame, qqCozyGameStopGame, qqCozyGameSelectWinner,
-  qqCozyGameSetValue, qqCozyGameConfirmValues,
+  qqCozyGameSetValue, qqCozyGameConfirmValues, qqCozyGameStopTurn,
   qqCozyGameFinish, qqCozyGameCancel,
   qqCozyGameNextSequenceTeam,
   qqCozyGameTimerPause, qqCozyGameTimerResume,
@@ -2665,7 +2665,8 @@ export function registerQQHandlers(io: SocketIOServer): void {
             parallel = active?.parallel !== false;
           } catch { /* fall back to parallel */ }
           const playMode = parallel ? 'parallel' : 'sequence';
-          qqCozyGameStartGame(room, playMode, makeCozyGameOnExpire(payload.roomCode));
+          const wertung = await cozyGameWertung(cg.activeGameId);
+          qqCozyGameStartGame(room, playMode, makeCozyGameOnExpire(payload.roomCode), wertung);
         } else if (cg.phase === 'GAME_ACTIVE') {
           // Mod stoppt früher (Hybrid-Timer-Stop). In sequence-mode überspringt
           // das die übrigen Teams direkt zu WINNER_SELECT — bewusst (Notlösung
@@ -2717,6 +2718,17 @@ export function registerQQHandlers(io: SocketIOServer): void {
         if (!cg) { ok(ack); return; }
         const { scoringType, targetValue } = await cozyGameWertung(cg.activeGameId);
         qqCozyGameConfirmValues(room, scoringType, targetValue);
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
+    // 2026-08-25 (Wolf: „cozygames stoppuhr"): Zeit festhalten und weiter.
+    // Nur fuer Reihum-Spiele, deren Wert eine Zeit ist.
+    socket.on('qq:cozyGameStopTurn', (payload: { roomCode: string }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        qqCozyGameStopTurn(room, makeCozyGameOnExpire(payload.roomCode));
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

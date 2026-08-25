@@ -212,17 +212,25 @@ export default function QQProgressTree({
     && (state as any).cozyGamesPool.length > 0;
   const showCozyGames = !isSingleRound && cozyGamesDa;
   // 2026-08-24 (Wolf: „cozygames haben falsches emoji und stehen weg von runde
-  // obwohl sie zu runde gehoeren"). Im ganzen Baum sitzt der CozyGame-Knoten
-  // VOR der naechsten Runde, mit vollem Phasen-Abstand auf beiden Seiten - er
-  // liest sich damit als eigener Block zwischen zwei Runden. In der
-  // Einzelrunde stimmt das nicht: dort ist nur EINE Runde zu sehen, und das
-  // CozyGame, das ihr folgt, gehoert zu ihr. Also haengt es HINTER die fuenf
-  // Kacheln, mit dem kleinen Gruppen-Abstand statt dem Phasen-Abstand.
-  // Nach der letzten Runde gibt es keins (dort geht es ins Finale).
+  // obwohl sie zu runde gehoeren"), 2026-08-25 nachgezogen (Wolf: „cozygames
+  // sitzt nicht bei runde 1, auch nicht in rules und pause").
+  //
+  // Der Fix vom 24.08. galt nur fuer die Einzelrunde. Im ganzen Baum stand der
+  // Knoten weiterhin mit vollem Phasen-Abstand auf BEIDEN Seiten und las sich
+  // dadurch als eigener Block zwischen zwei Runden - also als etwas, das zu
+  // keiner von beiden gehoert. Er gehoert aber zu der Runde, die gerade vorbei
+  // ist: er kommt NACH ihr und wird mit ihr zusammen ausgegraut.
+  //
+  // Deshalb gilt jetzt ueberall dieselbe Regel: kleiner Gruppen-Abstand nach
+  // links (zur Runde, zu der er gehoert), voller Phasen-Abstand nach rechts
+  // (zur naechsten Runde). Nach der letzten Runde gibt es keins, dort geht es
+  // ins Finale.
   const einzelCozyGame = isSingleRound && cozyGamesDa && (onlyPhase as number) < totalPhases;
-  // Abstand zwischen den Bloecken einer Reihe. In der Einzelrunde ist der
-  // einzige Block-Uebergang der zum CozyGame - und der soll nah sein.
-  const gruppenGap = isSingleRound ? Math.round(dotGap * 2) : phaseGap;
+  // Der Abstand, mit dem der CozyGame-Knoten an SEINER Runde haengt. Deutlich
+  // enger als der Phasen-Abstand, damit die Zugehoerigkeit sichtbar ist, aber
+  // weiter als der Abstand zwischen zwei Kacheln derselben Runde - er ist ja
+  // keine Kategorie.
+  const gruppenGap = Math.round(dotGap * 2);
   const DEFAULT_DOTS_PER_PHASE = 5;
 
   // ── Showcase-Sweep „Option B" (Wolf 2026-05-17): per-Dot SubSteps ────────
@@ -379,11 +387,11 @@ export default function QQProgressTree({
   const cozyGameCentersByPi = new Map<number, number>();
   let cursor = 0;
   phases.forEach((p, pIdx) => {
-    // CG-Knoten zwischen Runde N-1 und N (vor jedem Phase-Render außer dem ersten).
-    // pIdx > 0 = wir sind ab Phase 1 (2. Runde). Bei `pIdx === phases.length - 1`
-    // (= vor Final) kommt CG zuerst, dann Bidding, dann Final-Phase.
+    // 2026-08-25: der CozyGame-Knoten haengt an der Runde DAVOR (siehe
+    // `gruppenGap`), also wird er beim Rendern der Folgephase zuerst gesetzt -
+    // aber mit dem engen Abstand nach links und dem vollen nach rechts.
     if (showCozyGames && pIdx >= 1) {
-      cursor += phaseGap;
+      cursor += gruppenGap;
       cozyGameCentersByPi.set(pIdx, cursor + cozyGameDotSize / 2);
       cursor += cozyGameDotSize;
     }
@@ -421,6 +429,24 @@ export default function QQProgressTree({
       cursor += gruppenGap;
       cozyGameCentersByPi.set(onlyPhase as number, cursor + cozyGameDotSize / 2);
       cursor += cozyGameDotSize;
+      // 2026-08-25 (Wolf: „wenn nur rundenuebersicht sitzt der progress tree
+      // oben mit cozygames nicht mittig (6 items)").
+      //
+      // Gemessen im Runden-Intro, Stufe 1: die Reihe lief von x363 bis x1660,
+      // Mitte also 1012 - die Buehnenmitte liegt bei 880. Die Reihe stand 131px
+      // zu weit rechts.
+      //
+      // Der Grund liegt nicht am Baum, sondern an dem, was er nach aussen
+      // meldet. Die Kamera in CozyQuizPhaseIntroView zentriert auf
+      // `phaseCenters[pi]` und zoomt nach `phaseWidths[pi]`, und beide waren
+      // schon geschrieben, BEVOR der CozyGame-Knoten drankam. Die Kamera hat
+      // also sauber auf fuenf Kacheln zentriert, und die sechste hing daneben.
+      //
+      // In der Einzelrunde gehoert der Knoten zum Cluster, also wird er
+      // nachtraeglich eingerechnet. Im ganzen Baum bleibt es wie es war: dort
+      // ist er ein Uebergang zwischen zwei Runden und gehoert in keinen Cluster.
+      phaseWidths[phaseWidths.length - 1] = cursor - phaseStart;
+      phaseCenters[phaseCenters.length - 1] = phaseStart + (cursor - phaseStart) / 2;
     }
   });
   // Finale-Knoten am Ende: 35% größeres Dot — Trenner-Linie 2026-04-28

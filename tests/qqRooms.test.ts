@@ -11,7 +11,7 @@
  */
 import { describe, it, expect } from 'vitest';
 import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat } from '../shared/qqFinalReveal';
-import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam } from '../backend/src/quarterQuiz/qqRooms';
+import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
 // ── Test-Helpers ─────────────────────────────────────────────────────────────
@@ -445,5 +445,91 @@ describe('CozyGames Stoppuhr', () => {
     const room = makeCozyRaum({ values: { a: 12.4, b: 60 } });
     const rang = qqCozyGameRanking(room, 'timeToFinish');
     expect(rang[0].teamId).toBe('a');
+  });
+});
+
+// ── CozyGames: der Sieg muss ankommen ────────────────────────────────────────
+// 2026-08-25 (Wolf mit Screenshot: „nicht alle grauen aus wenn vorbei"). Beim
+// Nachgehen kamen drei Fehler heraus, die alle dieselbe Wurzel hatten: der
+// Umbau auf die Werte-Tabelle am selben Tag hat den Weg ueber
+// `qqCozyGameSelectWinner` ersetzt, und an dieser Funktion hingen zwei Dinge,
+// die niemand mitgenommen hat - der Vermerk „nach dieser Runde lief ein
+// CozyGame" und der PUNKT fuer den Sieger.
+//
+// Der Punkt ist der schwerere: die Regel, die Wolf am selben Tag entschieden
+// hat, waere am Abend nie eingetreten, und es waere niemandem aufgefallen,
+// weil sich das Brett dadurch absichtlich nicht aendert.
+
+function makeFertigesCozyGame(over: Record<string, any> = {}): any {
+  return makeRoom({
+    phase: 'COZY_GAME',
+    gamePhaseIndex: 1,
+    teams: { a: makeTeam('a'), b: makeTeam('b') },
+    teamCozyGameWins: {},
+    cozyGamesPlayedAfterPhases: [],
+    _cozyGameReturnPhase: 'PLACEMENT',
+    cozyGame: {
+      poolGameIds: [], playedGameIds: [], phase: 'WINNER_SELECT',
+      activeGameId: 'cg-karten-haus', wheelTargetSliceIndex: 0,
+      gameEndsAt: null, slotKind: 'roundPause', winnerTeamIds: ['a'],
+      values: { a: 12.4, b: 30 }, scoringType: 'timeToFinish',
+      ...over,
+    },
+  });
+}
+
+describe('CozyGames: Sieg zaehlt', () => {
+  it('der Sieger bekommt genau einen Punkt', () => {
+    const room = makeFertigesCozyGame();
+    qqCozyGameFinish(room);
+    expect(room.teamCozyGameWins.a).toBe(1);
+    expect(room.teamCozyGameWins.b ?? 0).toBe(0);
+  });
+
+  it('geteilter Sieg zaehlt fuer alle', () => {
+    const room = makeFertigesCozyGame({ winnerTeamIds: ['a', 'b'] });
+    qqCozyGameFinish(room);
+    expect(room.teamCozyGameWins.a).toBe(1);
+    expect(room.teamCozyGameWins.b).toBe(1);
+  });
+
+  it('die Runde wird als gespielt vermerkt, damit der Baum sie ausgraut', () => {
+    const room = makeFertigesCozyGame();
+    qqCozyGameFinish(room);
+    expect(room.cozyGamesPlayedAfterPhases).toContain(1);
+  });
+
+  it('zweimal beenden zaehlt nicht doppelt', () => {
+    const room = makeFertigesCozyGame();
+    qqCozyGameFinish(room);
+    qqCozyGameFinish(room); // cozyGame ist jetzt null -> no-op
+    expect(room.teamCozyGameWins.a).toBe(1);
+    expect(room.cozyGamesPlayedAfterPhases).toEqual([1]);
+  });
+
+  it('der Final-Slot vermerkt sich getrennt, nicht als Runden-Slot', () => {
+    const room = makeFertigesCozyGame({ slotKind: 'finalSlot' });
+    qqCozyGameFinish(room);
+    expect(room.cozyGameFinalSlotPlayed).toBe(true);
+    expect(room.cozyGamesPlayedAfterPhases).toEqual([]);
+  });
+
+  it('die Werte-Tabelle kuert den Sieger, ohne Handauswahl', () => {
+    // Der Weg, der den Fehler ausgeloest hat: Sieger kommt aus der Rangfolge.
+    const room = makeRoom({
+      phase: 'COZY_GAME', gamePhaseIndex: 1,
+      teams: { a: makeTeam('a'), b: makeTeam('b') },
+      teamCozyGameWins: {}, cozyGamesPlayedAfterPhases: [],
+      cozyGame: {
+        poolGameIds: [], playedGameIds: [], phase: 'VALUES',
+        activeGameId: 'cg-karten-haus', wheelTargetSliceIndex: 0,
+        gameEndsAt: null, slotKind: 'roundPause', winnerTeamIds: [],
+        values: { a: 12.4, b: 30 },
+      },
+    });
+    qqCozyGameConfirmValues(room, 'timeToFinish');
+    expect(room.cozyGame.winnerTeamIds).toEqual(['a']);
+    qqCozyGameFinish(room);
+    expect(room.teamCozyGameWins.a).toBe(1);
   });
 });

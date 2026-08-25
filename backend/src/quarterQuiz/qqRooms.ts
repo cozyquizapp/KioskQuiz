@@ -4725,6 +4725,10 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     connectionsEnabled:   room.connectionsEnabled ?? false,
     cozyGamesEnabled:     room.cozyGamesEnabled ?? false,
     cozyGamesPool:        room.cozyGamesPool ?? [],
+    // 2026-08-25: fehlte hier seit Mai. Ohne diese Zeile bekommt der
+    // Fortschrittsbaum immer eine leere Liste und graut keinen gespielten
+    // CozyGame-Knoten aus. Begruendung am Feld in shared/quarterQuizTypes.ts.
+    cozyGamesPlayedAfterPhases: [...(room.cozyGamesPlayedAfterPhases ?? [])],
     cozyGame:             room.cozyGame ?? null,
     cozyGameWins:         { ...(room.teamCozyGameWins ?? {}) },
     comebackEnabled:      room.comebackEnabled !== false,
@@ -7132,13 +7136,9 @@ export function qqCozyGameSelectWinner(
     }
   }
   room.cozyGame.winnerTeamIds = validIds.slice();
-  // 2026-08-25 (Wolf: „punkte am ende ohne award"): jeder Sieg ist ein Punkt
-  // im Endstand. Bei mehreren Siegern zaehlt er fuer alle - das Spiel kennt
-  // geteilte Siege, die Wertung muss das auch.
-  if (!room.teamCozyGameWins) room.teamCozyGameWins = {};
-  for (const id of validIds) {
-    room.teamCozyGameWins[id] = (room.teamCozyGameWins[id] ?? 0) + 1;
-  }
+  // 2026-08-25, zweiter Durchgang: die Punktvergabe stand hier und ist nach
+  // `qqCozyGameFinish` gewandert. Begruendung dort. Kurz: seit die Werte-
+  // Tabelle den Sieger kuert, laeuft der Normalfall an dieser Funktion vorbei.
 
   // Bei Final-Slot: frueher zaehlte der Sieger hier als Final-Kat-Win und
   // hob damit die Wett-Boni der Teams, die auf ihn getippt hatten.
@@ -7183,6 +7183,42 @@ export function qqCozyGameSelectWinner(
  */
 export function qqCozyGameFinish(room: QQRoomState): void {
   if (!room.cozyGame || room.cozyGame.phase !== 'WINNER_SELECT') return;
+  // 2026-08-25 (Wolf mit Screenshot: „nicht alle grauen aus wenn vorbei").
+  //
+  // Zweiter Teil desselben Fehlers, und diesmal war es meiner. Der Vermerk
+  // „nach dieser Runde lief ein CozyGame" stand bis eben NUR in
+  // `qqCozyGameSelectWinner`. Seit dem Umbau auf die Werte-Tabelle am selben
+  // Tag kommt der Sieger aber aus der Rangfolge, nicht mehr aus Wolfs
+  // Handauswahl - `qqCozyGameConfirmValues` setzt `winnerTeamIds` direkt und
+  // laeuft an dieser Funktion vorbei. Gemessen im Harness: nach einem komplett
+  // durchgespielten CozyGame stand die Liste immer noch leer.
+  //
+  // Deshalb steht der Vermerk jetzt hier: das ist die EINE Stelle, an der ein
+  // CozyGame endet, egal auf welchem Weg der Sieger zustande kam.
+  if (room.cozyGame.slotKind === 'finalSlot') {
+    room.cozyGameFinalSlotPlayed = true;
+  } else {
+    if (!Array.isArray(room.cozyGamesPlayedAfterPhases)) room.cozyGamesPlayedAfterPhases = [];
+    if (!room.cozyGamesPlayedAfterPhases.includes(room.gamePhaseIndex)) {
+      room.cozyGamesPlayedAfterPhases.push(room.gamePhaseIndex);
+    }
+  }
+  // Und der Punkt selbst, aus demselben Grund an derselben Stelle.
+  //
+  // Das war der schwerste der drei Funde vom 25.08. und wieder mein eigener:
+  // die Punktvergabe stand in `qqCozyGameSelectWinner`, also im Weg ueber
+  // Wolfs Handauswahl. Seit dem Umbau auf die Werte-Tabelle am selben Tag
+  // kuert die Rangfolge den Sieger, und dieser Weg lief daran vorbei. Gemessen
+  // im Harness: CozyGame komplett durchgespielt, Sieger stand fest, und in
+  // `cozyGameWins` hatte JEDES Team eine Null. Die Regel, die Wolf am selben
+  // Tag entschieden hat („1 Punkt pro Sieg, zaehlt am Ende"), waere am Abend
+  // also nie eingetreten - und es waere niemandem aufgefallen, weil sich das
+  // Brett dadurch absichtlich nicht aendert.
+  if (!room.teamCozyGameWins) room.teamCozyGameWins = {};
+  for (const id of room.cozyGame.winnerTeamIds) {
+    if (!room.teams[id]) continue;
+    room.teamCozyGameWins[id] = (room.teamCozyGameWins[id] ?? 0) + 1;
+  }
   const zurueck = (room as any)._cozyGameReturnPhase as QQPhase | undefined;
   room.cozyGame = null;
   (room as any)._cozyGameReturnPhase = null;

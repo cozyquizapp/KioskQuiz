@@ -385,6 +385,30 @@ return {
     }
     if (cfg.stufe >= 7) { await h.emit('qq:cozyGameConfirmValues'); await sleep(800); }
   } },
+  // 2026-08-25 (Wolf mit Screenshot: „nicht alle grauen aus wenn vorbei"). Ein
+  // CozyGame KOMPLETT durchspielen und danach ins Runden-Intro der naechsten
+  // Runde gehen. Nur so steht `cozyGamesPlayedAfterPhases` wirklich gefuellt im
+  // Zustand - in `rundenintroR2` wird das CozyGame uebersprungen, dort ist der
+  // Knoten zu Recht bunt, weil er gar nicht gelaufen ist. Genau daran waere die
+  // Pruefung fast gescheitert.
+  cozydanach: { ruhe: 2600, aufbau: 'spiel', weg: async (h) => {
+    await h.zurFrage();
+    await h.emit('qq:cozyGameStart', { slotKind: 'roundPause' });
+    await sleep(600); await h.emit('qq:cozyGameAdvance');   // -> Rad dreht
+    await sleep(7200);                                      // Server landet selbst
+    await h.emit('qq:cozyGameAdvance'); await sleep(600);   // -> Spiel laeuft
+    await h.emit('qq:cozyGameAdvance'); await sleep(600);   // -> Werte-Tabelle
+    const teams = h.teamIds();
+    for (let i = 0; i < teams.length; i++) {
+      await h.emit('qq:cozyGameSetValue', { teamId: teams[i], value: 14 - i * 2 + (i % 3) });
+      await sleep(120);
+    }
+    await h.emit('qq:cozyGameConfirmValues'); await sleep(900);  // -> Sieger steht
+    await h.emit('qq:cozyGameAdvance'); await sleep(1200);       // -> CozyGame fertig
+    // Und dann in die Pause: dort steht der Baum in voller Breite, und man
+    // sieht, ob der gerade gespielte CozyGame-Knoten ausgegraut ist.
+    await h.emit('qq:pause'); await sleep(600);
+  } },
   // 2026-08-23: die Ansichten `connections` / `connections2` sind wieder raus.
   // Das 4x4-Finale („Grosses Finale") ist abgeschaltet - siehe
   // QQ_CONNECTIONS_ENABLED in shared/quarterQuizTypes.ts. Eine Aufnahme davon
@@ -597,6 +621,10 @@ export async function buehneStarten(teilCfg = {}) {
     teamIds() {
       return (letzterZustand?.teams ?? []).map(t => t.id);
     },
+    /** Der letzte Zustand, wie ihn der Beamer bekommt. Zum Nachsehen, ob ein
+     *  Feld ueberhaupt gebroadcastet wird - genau daran ist der CozyGame-Knoten
+     *  im Fortschrittsbaum am 25.08. gescheitert. */
+    zustand() { return letzterZustand; },
     /** Offene Platzierungen wegraeumen. `qq:nextQuestion` wirft sonst
      *  PLACEMENT_PENDING (qqRooms.ts:4205) und der Lauf bleibt still auf der
      *  Frage stehen - ohne Fehlermeldung im Bild. */

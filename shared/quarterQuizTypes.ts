@@ -1558,6 +1558,18 @@ export interface QQStateUpdate {
   cozyGamesEnabled?: boolean;
   /** Aktive CozyGame-IDs (Builder-Auswahl, max 8). */
   cozyGamesPool?: string[];
+  /**
+   * Nach welchen Runden schon ein CozyGame gelaufen ist (Phasen-Index).
+   *
+   * 2026-08-25 (Wolf mit Screenshot: „nicht alle grauen aus wenn vorbei"). Das
+   * Feld liegt seit Mai auf dem Raum und wurde nie in `buildQQStateUpdate`
+   * eingetragen - genau die Falle, die in CLAUDE.md steht. Der Fortschritts-
+   * baum fragt danach, um einen gespielten CozyGame-Knoten auszugrauen, bekam
+   * am Beamer aber immer eine leere Liste und hat den Knoten deshalb NIE
+   * ausgegraut. Auf der Wand stand also ein bunter Knoten mitten zwischen
+   * grauen, erledigten Kacheln.
+   */
+  cozyGamesPlayedAfterPhases?: number[];
   /** Setup-Toggle: aktiviert Comeback-Mechanik (H/L vor Final). Default true. */
   comebackEnabled?: boolean;
   /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race-Score statt Grid,

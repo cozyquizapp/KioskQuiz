@@ -28,7 +28,7 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { TeamNameLabel } from './TeamNameLabel';
-import { QQEmojiIcon } from './QQIcon';
+import { QQEmojiIcon, QQIcon, type QQIconSlug } from './QQIcon';
 import { qqLargestClusterCells, type ClusterKachel } from '../utils/qqLargestCluster';
 import { qqTowerAwardBeats, type QQTowerAwardBeat } from '../../../shared/qqFinalReveal';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
@@ -49,7 +49,7 @@ export type TowerBrett = {
   /** Belegte Felder, die zu KEINEM groessten Gebiet gehoeren. Sie fliegen nicht. */
   streu: Array<{ r: number; c: number; ownerId: string }>;
 };
-export type TowerAward = { key: string; label: string; labelEn?: string; emoji: string; teamId: string; bonus: number };
+export type TowerAward = { key: string; label: string; labelEn?: string; slug: QQIconSlug; zoom?: number; teamId: string; bonus: number };
 
 // Mapping State → Turm-Daten (Live-Wiring): base = Quiz-Cluster + Bet-Bonus
 // (also OHNE Award-Punkte), Awards separat aus endAwards mit echten Werten
@@ -77,11 +77,31 @@ export function buildTowerFinaleData(s: QQStateUpdate): { teams: TowerTeam[]; aw
   // genau daran ist es auseinandergelaufen: der Turm baute CozyGame-Bausteine,
   // die das Step-Mapping nicht kannte, und die Kroenung schob sich vor die
   // Enthuellung des Siegers. Hier bleibt nur, wie ein Beat AUSSIEHT.
-  const AUFSCHRIFT: Record<QQTowerAwardBeat['kind'], { label: string; labelEn: string; emoji: string }> = {
-    cozy:          { label: 'CozyGames',       labelEn: 'CozyGames',       emoji: '🎡' },
-    speedy:        { label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡' },
-    meisterklauer: { label: 'Meisterklauer',   labelEn: 'Master Thief',    emoji: '🪙' },
-    underdog:      { label: 'Underdog',        labelEn: 'Underdog',        emoji: '🍀' },
+  // ⚠️ Das Zeichen steht als SLUG hier, nicht als Emoji.
+  //
+  // 2026-08-25 (Wolf: „die awardemojis muessen glaub ich ueberarbeitet werden,
+  // sie passen nicht zueinander?"). Es war kein Geschmacksproblem. Karte und
+  // Baustein haben ihr Bild ueber ein EMOJI gesucht, und die Rueckwaerts-Suche
+  // ist nicht eindeutig: „⚡" haengt an vier Slugs (action-steal, stamp-speedy,
+  // award-speedy, fx-lightning), „🪙" an zweien. Gezeigt wurde also nicht das
+  // Award-Zeichen, sondern irgendeines davon. Und „🍀" hat ueberhaupt keine
+  // Zuordnung - der Underdog erschien als rohes Systemzeichen, vom Betriebs-
+  // system gemalt, neben zwei Bildern aus dem gelieferten Satz. Genau das
+  // sieht man als „passt nicht zueinander".
+  //
+  // `zoom` gleicht aus, wie viel Leinwand ein Motiv belegt. Gemessen mit
+  // scripts/award-zeichen-messen.mjs: die drei Award-Zeichen fuellen 87 Prozent
+  // ihrer laengsten Kante, das Rad nur 74. Bei gleicher Kachelgroesse stuende
+  // es also 15 Prozent kleiner in der Reihe. Die Datei bleibt unangetastet -
+  // ausgeglichen wird ausschliesslich in der Darstellung.
+  const AUFSCHRIFT: Record<QQTowerAwardBeat['kind'], { label: string; labelEn: string; slug: QQIconSlug; zoom: number }> = {
+    // Das Rad, nicht die CozyGames-Wortmarke: `cg-cozygames` ist gar kein
+    // gefuehrter Slug, und das Rad ist ohnehin das Zeichen, das der Saal aus
+    // der Auslosung kennt.
+    cozy:          { label: 'CozyGames',       labelEn: 'CozyGames',       slug: 'fx-wheel', zoom: 1.18 },
+    speedy:        { label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', slug: 'award-speedy', zoom: 1 },
+    meisterklauer: { label: 'Meisterklauer',   labelEn: 'Master Thief',    slug: 'award-thief', zoom: 1 },
+    underdog:      { label: 'Underdog',        labelEn: 'Underdog',        slug: 'award-underdog', zoom: 1 },
   };
   const awards: TowerAward[] = qqTowerAwardBeats(
     s.teams.map(t => t.id), s.endAwards, s.cozyGameWins,
@@ -181,10 +201,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Turm wieder, und die Tuerme erzaehlen dann, WOFUER die Punkte kamen.
   // Ein Award mit bonus 2 (Underdog) belegt zwei Bausteine, deshalb aufgefaltet.
   const awardZeichenProTeam = useMemo(() => {
-    const m: Record<string, string[]> = {};
+    const m: Record<string, Array<{ slug: QQIconSlug; zoom: number }>> = {};
     for (const a of awards) {
       const liste = m[a.teamId] ?? (m[a.teamId] = []);
-      for (let i = 0; i < a.bonus; i++) liste.push(a.emoji);
+      for (let i = 0; i < a.bonus; i++) liste.push({ slug: a.slug, zoom: a.zoom ?? 1 });
     }
     return m;
   }, [awards]);
@@ -1178,10 +1198,10 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                   }}>
                     {isAwardBlock
                       ? (istBuehne
-                          ? <QQEmojiIcon
-                              emoji={awardZeichenProTeam[id]?.[bi - base] ?? '⚡'}
-                              size={Math.round(blockW * 0.66)}
-                            />
+                          ? (() => {
+                              const z = awardZeichenProTeam[id]?.[bi - base] ?? { slug: 'award-speedy' as QQIconSlug, zoom: 1 };
+                              return <QQIcon slug={z.slug} size={Math.round(blockW * 0.66 * z.zoom)} />;
+                            })()
                           : <span aria-hidden style={{ fontSize: Math.round(blockW * 0.6), lineHeight: 1, color: '#7A5A1E', filter: 'drop-shadow(0 1px 1px rgba(246, 239, 230,0.4))' }}>★</span>)
                       : myst ? null : <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={avInBlock} flat />}
                     {/* Der Lande-Blitz bleibt: er ist transient und sagt
@@ -1252,7 +1272,7 @@ function AwardCelebration({ award, recip, mystery, de, reduce }: { award: TowerA
           <span aria-hidden style={{ fontSize: istBuehne ? 22 : 15, fontWeight: 900, letterSpacing: '0.28em', textTransform: 'uppercase', color: GOLD }}>{de ? 'Award' : 'Award'}</span>
           <span style={{ fontSize: istBuehne ? 20 : 13, fontWeight: 900, color: '#1B1206', background: GOLD, borderRadius: 999, padding: istBuehne ? '4px 14px' : '2px 10px' }}>+{award.bonus}</span>
         </div>
-        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: istBuehne ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))' : `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQEmojiIcon emoji={award.emoji} size={76} /></div>
+        <div aria-hidden style={{ fontSize: 76, lineHeight: 1, filter: istBuehne ? 'drop-shadow(0 8px 18px rgba(0,0,0,0.5))' : `drop-shadow(0 0 22px ${GOLD}66)`, animation: reduce ? 'none' : 'qqT2AwardPop 0.7s cubic-bezier(0.3,1.5,0.4,1) both' }}><QQIcon slug={award.slug} size={Math.round(76 * (award.zoom ?? 1))} /></div>
         <div style={{ fontSize: istBuehne ? 50 : 40, fontWeight: 900, color: 'var(--qq-text)', lineHeight: 1.02, textAlign: 'center', textShadow: istBuehne ? 'none' : `0 2px 20px ${GOLD}44` }}>{label}</div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 4 }}>
           <div style={{ width: istBuehne ? 76 : 60, height: istBuehne ? 76 : 60, borderRadius: quirkSet ? '18%' : '50%', background: mystery ? MYST : recip.color, border: `3px solid ${mystery ? MYST_EDGE : recip.color}`, boxShadow: (mystery || istBuehne) ? 'none' : `0 0 16px ${recip.color}88`, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>

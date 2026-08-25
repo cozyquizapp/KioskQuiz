@@ -47,11 +47,11 @@ function buildTowerData(n: number): { teams: { team: typeof ALL[number]; base: n
   const slice = ALL.slice(0, n);
   const teams = slice.map(team => ({ team, base: V2_BASE[team.id] ?? 5 }));
   const has = (id: string) => slice.some(t => t.id === id);
-  const awards: TowerAward[] = [
-    { key: 'underdog', label: 'Underdog', labelEn: 'Underdog', emoji: '🍀', teamId: 't6', bonus: 1 },
-    { key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', emoji: '⚡', teamId: 't1', bonus: 1 },
-    { key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', emoji: '🪙', teamId: 't1', bonus: 1 },
-  ].filter(a => has(a.teamId));
+  const awards: TowerAward[] = ([
+    { key: 'underdog', label: 'Underdog', labelEn: 'Underdog', slug: 'award-underdog', teamId: 't6', bonus: 1 },
+    { key: 'speedy', label: 'Speedy Gonzales', labelEn: 'Speedy Gonzales', slug: 'award-speedy', teamId: 't1', bonus: 1 },
+    { key: 'meisterklauer', label: 'Meisterklauer', labelEn: 'Master Thief', slug: 'award-thief', teamId: 't1', bonus: 1 },
+  ] as TowerAward[]).filter(a => has(a.teamId));
   return { teams, awards };
 }
 

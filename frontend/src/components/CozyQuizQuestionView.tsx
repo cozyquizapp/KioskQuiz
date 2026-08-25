@@ -687,8 +687,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Polster des Inhalts darunter und die Schau-mal-Ebene. Ein Wert, damit sie
   // nicht auseinanderlaufen.
   const kopfH = istBuehne ? QQ_KOPFZEILE_H_BUEHNE : QQ_KOPFZEILE_H;
+  // 2026-08-25 (Wolf: „oberhalb und unterhalb immernoch dieser streifen, der
+  // soll raus"). Das Foto sass auf der Buehne im normalen Buehnenrand, also
+  // 28 px von jeder Kante. Auf einer Folie, deren ganzer Inhalt DAS BILD ist,
+  // liest sich dieser Rand nicht als Ordnung, sondern als Streifen - im dunklen
+  // Raum sieht man ihn als vierte Linie um das Foto herum.
+  // Das Foto laeuft jetzt bis an die Kante. Nach INNEN, also zur Frage hin,
+  // bleibt der Abstand: dort trifft es auf Inhalt und braucht die Kante.
   const bildKasten = istBuehne
-    ? { top: BILD_RAND!, bottom: BILD_RAND!, left: BILD_RAND!, right: BILD_RAND! }
+    ? { top: 0, bottom: 0, left: 0, right: 0 }
     : {
         top: BILD_OBEN,
         bottom: 'clamp(10px, 1.4cqh, 22px)',
@@ -968,7 +975,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
                 : bildKasten.right,
               zIndex: 50,
-              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
+              // Randlos heisst auch: keine gerundeten Ecken an der Buehnenkante,
+              // sonst schaut der Grund durch die Rundung. Hochkant bleibt die
+              // INNERE Kante rund, die zeigt zur Frage.
+              borderRadius: istBuehne
+                ? (isCheesePortrait ? '0 22px 22px 0' : '0')
+                : (isThemed() ? 'var(--qq-card-radius)' : 22),
               overflow: 'hidden',
               clipPath: (revealed && !cheeseOverlay) ? 'inset(8% 8% 8% 52% round 18px)' : undefined,
               animation: 'contentReveal 0.7s var(--qq-ease-pop-fast) both',
@@ -1071,7 +1083,9 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               right: isCheesePortrait
                 ? `calc(50% + clamp(6px, 0.8cqw, 14px))`
                 : bildKasten.right,
-              borderRadius: isThemed() ? 'var(--qq-card-radius)' : 22,
+              borderRadius: istBuehne
+                ? (isCheesePortrait ? '0 22px 22px 0' : '0')
+                : (isThemed() ? 'var(--qq-card-radius)' : 22),
               // 2026-08-24 (Wolf: „sichtbarer rahmen bei vertikal schau mal soll
               // raus"). Der Strich stammt vom 04.05. und sollte das Foto als
               // „gerahmtes Bild" lesbar machen. Auf der Buehne tut er das

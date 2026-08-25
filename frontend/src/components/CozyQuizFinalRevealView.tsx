@@ -25,7 +25,7 @@ import { useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { TeamNameLabel } from './TeamNameLabel';
-import { QQEmojiIcon } from './QQIcon';
+import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 import {
   startFinaleLoop, stopLobbyLoop,
@@ -367,7 +367,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
 // 2026-05-24 (Refactor #1 Drift-Killer): Step-Decode lebt jetzt in
 // shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
 // (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
-import { qqDecodeFinalStep as decodeFinalStep } from '../../../shared/qqFinalReveal';
+import { qqDecodeFinalStep as decodeFinalStep, qqIstKroenungsBeat, qqTowerAwardCount } from '../../../shared/qqFinalReveal';
 // 2026-07-19 (Turm-Finale V2): Live-Finale rendert die TowerFinaleV2, moderator-
 // getaktet per beat (liveBeat). buildTowerFinaleData = reines State->Turm-Mapping.
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
@@ -522,8 +522,10 @@ type BetSlotType =
   | { kind: 'zero-group'; teams: QQTeam[] }
   | { kind: 'positive'; team: QQTeam; bonus: number }
   | undefined;
-function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
+function BetSlotTransition({ slotIndex, slotCount, slot, state: s, lang }: {
   slotIndex: number;
+  /** Wie viele Tipp-Folien insgesamt kommen. Siehe `fortschritt` unten. */
+  slotCount: number;
   slot: BetSlotType;
   state: QQStateUpdate;
   lang: 'de' | 'en';
@@ -548,7 +550,30 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
       />
     );
   };
+  // 2026-08-25 (Wolf: „langweiliger ablauf"). Bei acht Teams kommen acht
+  // Tipp-Folien hintereinander, und keine sagte, die wievielte sie ist. Ohne
+  // diese Zahl weiss im Raum niemand, ob noch zwei oder noch sechs folgen -
+  // und eine Strecke ohne absehbares Ende fuehlt sich immer lang an, egal wie
+  // schoen die einzelne Folie ist. Die Reihenfolge steigt ausserdem im Bonus,
+  // die Zahl sagt also auch: es wird noch groesser.
+  const fortschritt = (
+    <div style={{
+      textAlign: 'center',
+      fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase',
+      fontSize: 'clamp(13px, 1.3cqw, 20px)',
+      color: 'var(--qq-text-muted)',
+      marginBottom: 'clamp(8px, 1cqh, 14px)',
+      flex: '0 0 auto',
+    }}>
+      {lang === 'de'
+        ? `Tipp ${slotIndex + 1} von ${slotCount}`
+        : `Tip ${slotIndex + 1} of ${slotCount}`}
+    </div>
+  );
+
   return (
+    <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0, minHeight: 0 }}>
+      {fortschritt}
     <SlotTransition
       slotKey={String(slotIndex)}
       exitAnimation="qqFRSlamOutDown 0.22s cubic-bezier(0.4, 0, 0.7, 0.3) both"
@@ -560,6 +585,7 @@ function BetSlotTransition({ slotIndex, slot, state: s, lang }: {
     >
       {renderSlot(slot)}
     </SlotTransition>
+    </div>
   );
 }
 
@@ -573,6 +599,28 @@ function FinalRevealGridSlot({ state: s, focusTeamId }: {
   state: QQStateUpdate;
   focusTeamId: string | null;
 }) {
+  // 2026-08-25 (Wolf: „billige motions und langweiliger ablauf" am Finale).
+  //
+  // Der Befund: in der Tipp-Aufloesung setzt jedes Team seinen Bonus-Stein
+  // live auf ein Feld, und das Brett links zeigte davon nur den farbigen
+  // Rahmen um das ganze Team. Die eigentliche Handlung - DIESES Feld gehoert
+  // jetzt mir - war auf 2,8 m nicht zu sehen. Acht Folien nacheinander ohne
+  // sichtbare Folge sind genau der Grund, warum sich die Strecke lang anfuehlt.
+  //
+  // `GridDisplay` kann das seit jeher (`flashCellKey`), es wurde hier nur nie
+  // benutzt. Die Logik ist dieselbe wie in der Setz-Phase: nur bei einem NEUEN
+  // Feld ausloesen, sonst blitzt bei jedem Socket-Update derselbe Stein.
+  const [blitzFeld, setBlitzFeld] = useState<string | null>(null);
+  const letzterSchluessel = useRef<string | null>(null);
+  useEffect(() => {
+    const lp = s.lastPlacedCell;
+    const schluessel = lp ? `${lp.row}-${lp.col}-${lp.teamId}` : null;
+    if (!schluessel || schluessel === letzterSchluessel.current) return;
+    letzterSchluessel.current = schluessel;
+    setBlitzFeld(`${lp!.row}-${lp!.col}`);
+    const t = setTimeout(() => setBlitzFeld(null), 1400);
+    return () => clearTimeout(t);
+  }, [s.lastPlacedCell?.row, s.lastPlacedCell?.col, s.lastPlacedCell?.teamId]);
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState<number>(640);
   useEffect(() => {
@@ -596,7 +644,77 @@ function FinalRevealGridSlot({ state: s, focusTeamId }: {
     }}>
       {/* 2026-05-25 (Wolf 'teamname unter grid kann weg'): Focus-Name-Pille
           entfernt — die Card rechts zeigt den Team-Namen schon prominent. */}
-      <GridDisplay state={s} maxSize={box} highlightTeam={focusTeamId} showJoker={false} />
+      <GridDisplay state={s} maxSize={box} highlightTeam={focusTeamId} showJoker={false} flashCellKey={blitzFeld} />
+    </div>
+  );
+}
+
+
+// ─── KroenungsSlide ──────────────────────────────────────────────────────────
+/**
+ * Die eigene Siegerfolie. Letzter Beat des Turm-Finales.
+ *
+ * 2026-08-25 (Wolf: „4 ja eigene"). Bis hierher ging es vom Podest direkt auf
+ * die Danke-Folie, und der Sieger stand dort als Zeile neben einem QR-Code -
+ * der groesste Moment des Abends als Fussnote einer Verabschiedung.
+ *
+ * Was die Folie bewusst NICHT tut: Zahlen erklaeren. Die Rechnung ist beim
+ * Podest schon gelaufen, hier steht nur noch, WER. Ein Name, eine Marke, eine
+ * Krone. Alles andere waere ein zweiter Ergebnisschirm.
+ *
+ * Der Aufbau ist gestaffelt und endet auf dem Namen, nicht auf dem Schmuck:
+ * Krone, dann Marke, dann Name, dann die Zeile darunter.
+ */
+function KroenungsSlide({ eintrag, lang }: {
+  eintrag: { team: QQTeam; total: number } | null;
+  lang: 'de' | 'en';
+}) {
+  const de = lang === 'de';
+  const reduce = prefersReducedMotion();
+  useEffect(() => { playClimaxFinish(); }, []);
+  if (!eintrag) return null;
+  const t = eintrag.team;
+  const an = (verzug: number) => reduce
+    ? undefined
+    : `qqFRTitleIn 0.62s cubic-bezier(0.22, 1.2, 0.32, 1) ${verzug}s both`;
+  return (
+    <div style={{
+      position: 'absolute', inset: 0,
+      display: 'flex', flexDirection: 'column',
+      alignItems: 'center', justifyContent: 'center',
+      gap: 'clamp(10px, 1.4cqh, 22px)',
+      textAlign: 'center',
+    }}>
+      <ConfettiOverlay accent={t.color} />
+      <div style={{ lineHeight: 1, animation: an(0) }}>
+        <QQIcon slug="fx-crown" size="clamp(84px, 9cqw, 150px)" />
+      </div>
+      <div style={{ animation: an(0.14) }}>
+        <QQTeamAvatar
+          avatarId={t.avatarId}
+          teamEmoji={t.emoji}
+          size="clamp(150px, 16cqw, 260px)"
+          bgColor={t.color}
+        />
+      </div>
+      <TeamNameLabel
+        name={t.name}
+        fontSize="clamp(56px, 7.4cqw, 128px)"
+        minFontSize="48px"
+        color="var(--qq-text)"
+        fontWeight={900}
+        maxLines={2}
+        shrinkAfter={12}
+        style={{ maxWidth: '86cqw', animation: an(0.3) }}
+      />
+      <div style={{
+        fontWeight: 900, letterSpacing: '0.16em', textTransform: 'uppercase',
+        fontSize: 'clamp(18px, 2cqw, 34px)',
+        color: t.color,
+        animation: an(0.46),
+      }}>
+        {de ? 'Sieger des Abends' : 'Winner of the night'}
+      </div>
     </div>
   );
 }
@@ -727,6 +845,7 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           <div style={{ display: 'flex', minHeight: 0 }}>
             <BetSlotTransition
               slotIndex={phase.slotIndex}
+              slotCount={betSlots.length}
               slot={betSlots[phase.slotIndex]}
               state={s}
               lang={lang}
@@ -741,6 +860,18 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
           (Hybrid): 1 finalRevealStep = 1 beat. Alte TowerFinalSlide/
           FinalEurovisionFinale bleiben als Dead-Code im File darunter. */}
       {phase.kind === 'race-final' && (() => {
+        // 2026-08-25 (Wolf: „4 ja eigene"): der LETZTE Beat ist nicht mehr der
+        // Turm, sondern die Kroenung auf einer eigenen Folie. Welcher Beat das
+        // ist, entscheidet `qqIstKroenungsBeat` in shared - damit Beamer und
+        // Steuerpult sich nicht widersprechen.
+        const kroenung = qqIstKroenungsBeat(
+          phase.beat,
+          qqTowerAwardCount(s.endAwards as never),
+          s.teams.length,
+        );
+        if (kroenung) {
+          return <KroenungsSlide eintrag={finalRanking[0] ?? null} lang={lang} />;
+        }
         const { teams: towerTeams, awards: towerAwards, brett: towerBrett } = buildTowerFinaleData(s);
         return (
           <TowerFinaleV2

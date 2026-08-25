@@ -56,11 +56,34 @@ export function qqTowerAwardCount(endAwards: QQAwardRecipients): number {
   return n;
 }
 
-/** Höchster gültiger Turm-Beat (0-basiert): 0 Aufbau · 1..A Awards · A+1 Glide ·
- *  A+2..A+1+top Reveals. top = min(3, Teams). → maxBeat = A + top + 1. */
+/**
+ * Hoechster gueltiger Turm-Beat (0-basiert): 0 Aufbau · 1..A Awards · A+1 Glide ·
+ * A+2..A+1+top Reveals · A+2+top KROENUNG. top = min(3, Teams).
+ * → maxBeat = A + top + 2.
+ *
+ * 2026-08-25 (Wolf: „4 ja eigene"). Der letzte Beat ist neu. Bis hierher ging
+ * es vom Podest direkt auf die Danke-Folie, und der Sieger stand dort als
+ * Zeile neben einem QR-Code - der groesste Moment des Abends als Fussnote
+ * einer Verabschiedung. Jetzt haelt eine eigene Folie ihn fest, bevor das
+ * Danke kommt.
+ */
 export function qqTowerMaxBeat(awardCount: number, teamCount: number): number {
   const top = Math.min(3, Math.max(0, teamCount));
-  return awardCount + top + 1;
+  return awardCount + top + 2;
+}
+
+/**
+ * Ist dieser Beat die Kroenung, also die eigene Siegerfolie?
+ * Eine Funktion statt einer Rechnung an drei Stellen: Beamer, Steuerpult und
+ * Backend muessen sich hier einig sein, sonst zeigt der eine noch den Turm,
+ * waehrend der andere schon weiterschaltet.
+ */
+export function qqIstKroenungsBeat(
+  beat: number,
+  awardCount: number,
+  teamCount: number,
+): boolean {
+  return beat >= qqTowerMaxBeat(awardCount, teamCount);
 }
 
 /** Highest valid step index. step > max → transition to THANKS.

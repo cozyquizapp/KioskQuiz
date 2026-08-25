@@ -10,7 +10,7 @@
  * ohne Socket/DB/Timer-Side-Effects.
  */
 import { describe, it, expect } from 'vitest';
-import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat } from '../shared/qqFinalReveal';
+import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerMaxBeat, qqIstKroenungsBeat } from '../shared/qqFinalReveal';
 import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
@@ -100,17 +100,26 @@ describe('qqTowerAwardCount (jeder Award-Empfänger = 1 Turm-Beat)', () => {
   });
 });
 
-describe('qqTowerMaxBeat = A + min(3, Teams) + 1 (Aufbau · Awards · Glide · Reveals)', () => {
-  it('3 Awards, 8 Teams → 7', () => expect(qqTowerMaxBeat(3, 8)).toBe(7));
-  it('0 Awards, 2 Teams → 3', () => expect(qqTowerMaxBeat(0, 2)).toBe(3));
-  it('3 Awards, 1 Team → 5 (top = min(3,1) = 1)', () => expect(qqTowerMaxBeat(3, 1)).toBe(5));
+// 2026-08-25 (Wolf: „4 ja eigene"): alle Erwartungen hier sind um EINS
+// gewachsen. Der Grund ist der neue letzte Beat, die Kroenung auf einer eigenen
+// Folie. Vorher ging es vom Podest direkt auf die Danke-Folie.
+describe('qqTowerMaxBeat = A + min(3, Teams) + 2 (Aufbau · Awards · Glide · Reveals · Kroenung)', () => {
+  it('3 Awards, 8 Teams → 8', () => expect(qqTowerMaxBeat(3, 8)).toBe(8));
+  it('0 Awards, 2 Teams → 4', () => expect(qqTowerMaxBeat(0, 2)).toBe(4));
+  it('3 Awards, 1 Team → 6 (top = min(3,1) = 1)', () => expect(qqTowerMaxBeat(3, 1)).toBe(6));
 });
 
 describe('qqFinalMaxStep = B + 1 + qqTowerMaxBeat(A, Teams)', () => {
-  it('0 bets, 3 awards, 8 teams → 8', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(8));
-  it('3 bets, 3 awards, 8 teams → 11', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(11));
-  it('8 bets, 3 awards, 8 teams → 16', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(16));
-  it('3 bets, 0 awards, 8 teams → 8 (Awards weggefallen komprimiert)', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(8));
+  it('0 bets, 3 awards, 8 teams → 9', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(9));
+  it('3 bets, 3 awards, 8 teams → 12', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(12));
+  it('8 bets, 3 awards, 8 teams → 17', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(17));
+  it('3 bets, 0 awards, 8 teams → 9 (Awards weggefallen komprimiert)', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(9));
+});
+
+describe('qqIstKroenungsBeat — der letzte Beat und nur der', () => {
+  it('genau auf dem Maximum', () => expect(qqIstKroenungsBeat(8, 3, 8)).toBe(true));
+  it('einer davor ist noch das Podest', () => expect(qqIstKroenungsBeat(7, 3, 8)).toBe(false));
+  it('der Aufbau ist es nicht', () => expect(qqIstKroenungsBeat(0, 3, 8)).toBe(false));
 });
 
 // ════════════════════════════════════════════════════════════════════════════

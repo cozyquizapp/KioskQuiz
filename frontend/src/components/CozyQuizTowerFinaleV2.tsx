@@ -21,6 +21,7 @@
  * respektiert. Auto-Play + Space zum Vorspulen. Vorschau /race-finale.
  */
 import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
+import { qqKachelFlaeche } from '../qqKachel';
 import type { QQTeam, QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { qqAwardPoints, qqCozyPoints, qqFinalTotal } from '../utils/qqFinalScore';
 import { prefersReducedMotion } from '../utils/reducedMotion';
@@ -938,12 +939,11 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Der Schatten nach unten ist der wichtigste Teil: er legt eine Fuge zwischen
   // zwei gestapelte Bausteine, und erst die Fuge macht aus zwei Rechtecken
   // einen Stapel.
-  const kachelFlaeche = (farbe: string, rand: string) => ({
-    borderRadius: 6,
-    border: `1px solid ${rand}`,
-    background: 'linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.06) 18%, rgba(255,255,255,0) 50%, rgba(0,0,0,0.16) 78%, rgba(0,0,0,0.34) 100%), ' + farbe,
-    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.38), inset 2px 0 0 rgba(255,255,255,0.07), inset -2px 0 0 rgba(0,0,0,0.18), 0 3px 4px rgba(0,0,0,0.42)',
-  });
+  // 2026-08-26: die Flaeche steht jetzt in frontend/src/qqKachel.ts. Sie war
+  // hier zu Hause und wurde deshalb ueberall sonst NICHT benutzt - der Turm
+  // hatte Bausteine, die Teamkacheln daneben etwas anderes. Wolf: „Kacheln
+  // immer mit 3D-Effekt".
+  const kachelFlaeche = (farbe: string, rand: string) => qqKachelFlaeche({ farbe, rand });
 
   const BRETT_LUECKE = 6;
   const BRETT_SEITE = 600;

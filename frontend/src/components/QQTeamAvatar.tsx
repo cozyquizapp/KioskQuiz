@@ -1,4 +1,5 @@
 import { useMemo, useState, useSyncExternalStore, type CSSProperties } from 'react';
+import { qqKachelFlaeche } from '../qqKachel';
 import { getAvatarDisplay, type AvatarDisplay } from '../avatarSets';
 import { useAvatarSetCtx } from '../avatarSetContext';
 import { isCozy3dSlug, cozy3dSrc, cozy3dLabel, cozy3dBlinkSrc, cozy3dHasBlink } from '../cozy3dAvatars';
@@ -688,11 +689,19 @@ function QuirkAvatar({
     ? { background: 'transparent', boxShadow: 'none', border: 'none' }
     : fullBleed
       ? { background: 'transparent', border: 'none', boxShadow: `0 4px 12px ${color}47` }
-      : {
-          background: `linear-gradient(145deg, rgba(255,255,255,0.16), rgba(255,255,255,0) 44%), ${color}`,
-          border: '2px solid rgba(255,255,255,0.30)',
-          boxShadow: `inset 0 -8% 15% rgba(0,0,0,0.20), 0 4px 12px ${color}47`,
-        };
+      // 2026-08-26 (Wolf: „Kacheln immer mit 3D-Effekt"): dieselbe Flaeche wie
+      // die Bausteine im Turm, aus frontend/src/qqKachel.ts. Vorher stand hier
+      // eine eigene, flachere Fassung - schraeger Schein, weisser Rahmen,
+      // weicher farbiger Schein. Nebeneinander waren das zwei Gegenstaende,
+      // obwohl der Abend von einem erzaehlt: die Kachel vom Brett wird der
+      // Baustein im Turm.
+      //
+      // Der Radius bleibt bei der Marke (18 Prozent statt 6 px), deshalb wird
+      // er hier nicht mitgegeben - er steht weiter unten am Element selbst.
+      // Und der Rand bleibt weg: eine Teammarke steht oft dicht an dicht mit
+      // anderen, und zwei Raender nebeneinander lesen sich als doppelt dicke
+      // Linie.
+      : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
 
   const imgStyle: CSSProperties = {
     position: 'absolute', inset: 0, width: '100%', height: '100%',

@@ -12,7 +12,7 @@ import {
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
 // shared/qqFinalReveal.ts). Ersetzt das alte betSlotsCount+4 (3 feste Awards).
-import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqTurmRennplan } from '../../../shared/qqFinalReveal';
+import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqTurmRennplan , qqBetSlotPlan } from '../../../shared/qqFinalReveal';
 import { qqTurmBeatDauer, qqTurmAwardBeatDauer, qqTurmRennBeatDauer } from '../components/CozyQuizTowerFinaleV2';
 import { qqFinalSortedTeams } from '../utils/qqFinalScore';
 import { qqBuildKurz } from '../qqBuild';
@@ -1156,10 +1156,14 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         // Step-Mapping siehe shared/qqFinalReveal.ts (Single-Source-of-Truth).
         const N = s.teams.length;
         const step = (s as any).finalRevealStep ?? 0;
-        const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
-        const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
-        const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
-        const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+        // 2026-08-26: die Reihenfolge der Tipp-Folien kam hier aus einer
+        // EIGENEN Rechnung - der dritten im Haus, neben der Aufloesungs-Ansicht
+        // und der Buehne. Aus ihr faellt die Grenze, ab der der Turm uebernimmt;
+        // drei Kopien sind drei Grenzen. Jetzt kommt sie aus
+        // shared/qqFinalReveal.ts, genau wie beim Beamer.
+        const betPlan = qqBetSlotPlan(s.teams, s.finalBetResolution);
+        const betSlotsCount = betPlan.length;
+        const zeroExists = betPlan[0]?.kind === 'zero-group';
         // 2026-07-19 (Turm-Finale V2): Race-Final ist jetzt eine Beat-Sequenz
         // (Turm baut sich moderator-getaktet auf), kein Einzel-Step + separater
         // Award-Screen mehr. Step-Layout: 0 title · 1..B bets · B+1..maxStep
@@ -1179,22 +1183,18 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
           action = () => emit('qq:nextQuestion', { roomCode });
         } else if (step >= 1 && step <= betSlotsCount) {
           // Bet-Slot — Mutual-Pair = sympathy = extra Time.
+          // 2026-08-26: auch hier stand die Sortierregel noch einmal komplett
+          // nachgebaut. Der Plan sagt jetzt direkt, welches Team an diesem
+          // Platz dran ist - die Nullrunde hat gar keins.
           const slotIdx = step - 1;
-          const isZeroGroupAtSlot0 = zeroExists && slotIdx === 0;
-          const positiveSlotIdx = isZeroGroupAtSlot0 ? -1 : (zeroExists ? slotIdx - 1 : slotIdx);
-          const positiveTeams = betted
-            .filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0)
-            .sort((a, b) => {
-              const ba = s.finalBetResolution![a.id].totalBonus;
-              const bb = s.finalBetResolution![b.id].totalBonus;
-              if (ba !== bb) return ba - bb;
-              return a.name.localeCompare(b.name);
-            });
-            const teamAtSlot = positiveSlotIdx >= 0 ? positiveTeams[positiveSlotIdx] : null;
+          const eintrag = betPlan[slotIdx];
+          const teamAtSlot = eintrag && eintrag.kind === 'positive'
+            ? (s.teams.find(t => t.id === eintrag.teamId) ?? null)
+            : null;
           const hasSympathy = teamAtSlot
             ? !!s.finalBetResolution?.[teamAtSlot.id]?.mutualWith
             : false;
-          delayMs = isZeroGroupAtSlot0 ? 5500 : (hasSympathy ? 7200 : 6000);
+          delayMs = eintrag?.kind === 'zero-group' ? 5500 : (hasSympathy ? 7200 : 6000);
           action = () => emit('qq:nextQuestion', { roomCode });
         } else if (step > betSlotsCount && step <= maxStep) {
           // Turm-Finale-Beats (Hybrid-getaktet). beat = step - betSlotsCount - 1.
@@ -2736,10 +2736,8 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 {s.phase === 'FINAL_REVEAL' && (() => {
                   // 2026-07-19 (Turm-Finale V2): Step-Layout = 0 title · 1..B bets ·
                   // B+1..max race-final beats (Turm baut sich moderator-getaktet auf).
-                  const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
-                  const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
-                  const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
-                  const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+                  // 2026-08-26: gemeinsame Quelle, siehe shared/qqFinalReveal.ts.
+                  const betSlotsCount = qqBetSlotPlan(s.teams, s.finalBetResolution).length;
                   const towerMaxBeat = qqTowerMaxBeat(
                     qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins),
                     s.teams.length,
@@ -4903,10 +4901,13 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
       {s.phase === 'FINAL_REVEAL' && (() => {
         // 2026-07-19 (Turm-Finale V2): title → bet-slots (B) → race-final BEATS
         // (Turm baut sich auf: Aufbau → Awards → Glide → Reveals + Krone).
-        const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
-        const zeroExists = betted.some(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
-        const positiveCount = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0).length;
-        const betSlotsCount = positiveCount + (zeroExists ? 1 : 0);
+        // 2026-08-26: die Reihenfolge der Tipp-Folien kam hier aus einer EIGENEN
+        // Rechnung. Sie stand allein in dieser Datei dreimal, dazu einmal in der
+        // Aufloesungs-Ansicht und einmal auf der Buehne. Aus ihr faellt die
+        // Grenze, ab der der Turm uebernimmt; fuenf Kopien sind fuenf Grenzen.
+        const betPlanLabel = qqBetSlotPlan(s.teams, s.finalBetResolution);
+        const betSlotsCount = betPlanLabel.length;
+        const zeroExists = betPlanLabel[0]?.kind === 'zero-group';
         const awardCount = qqTowerAwardCount(s.teams.map(t => t.id), s.endAwards, s.cozyGameWins);
         const top = Math.min(3, s.teams.length);
         const towerMaxBeat = qqTowerMaxBeat(awardCount, s.teams.length);
@@ -4916,8 +4917,13 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
           if (st <= betSlotsCount) {
             const slotIdx = st - 1;
             const isZeroFirst = zeroExists && slotIdx === 0;
-            if (isZeroFirst) return `${st} · 🪙 Bet-Zero-Group (0-Bonus-Tipps)`;
-            return `${st} · 🪙 Bet-Reveal Slot ${slotIdx + 1}/${betSlotsCount} (Stack-Placement)`;
+            // 2026-08-26: dieselben Worte wie auf der Wand. Vorher stand hier
+            // „Bet-Reveal Slot 6/7 (Stack-Placement)", waehrend der Beamer
+            // „TIPP 6 VON 7" zeigte - Innenjargon auf Englisch neben deutscher
+            // Buehnensprache, und dazu eine dritte Zaehlung. Wer vom Laptop auf
+            // die Wand schaut, soll dasselbe lesen.
+            if (isZeroFirst) return `${st} · 🪙 Tipps ohne Bonus`;
+            return `${st} · 🪙 Tipp ${slotIdx + 1} von ${betSlotsCount}`;
           }
           const beat = st - betSlotsCount - 1;
           if (beat === 0) return `${st} · 🏗️ Türme wachsen + Zwischenstand`;

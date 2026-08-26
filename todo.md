@@ -103,7 +103,20 @@ Auswerten neuer Videos (Websites sind aus der Remote-Umgebung nicht erreichbar).
       Nur Arena: `_ARENA_ONLY` = Umfrage, Schwarmintelligenz. Abgeschaltet:
       `_DEACTIVATED` = Imposter, 4 gewinnt, Bluff - deren Code liegt weiter da
       und funktioniert, wird aber nicht ausgespielt. Steht so auch in CLAUDE.md.
-- [ ] **Kategoriefarben nachziehen** (Tabelle in BUEHNEN_DESIGN.md, Abschnitt 6).
+- ✅ **Kategoriefarben nachgezogen** (Wolf 2026-08-26: „auf jeden fall der
+      vorschlag"). Vorher entschieden am Bild: `scripts/farbwelten-probe.mjs`
+      stellt beide Fassungen je Kategorie nebeneinander UND misst zu beiden die
+      Lichtabgabe.
+      Der eigentliche Unterschied lag nicht im Akzent, sondern im Grund: die
+      AEUSSERE Stufe war bei allen fuenf Kategorien dieselbe (#120F18), ein
+      roter und ein blauer Abend endeten an derselben Kante. Jetzt hat jede
+      Kategorie drei eigene Stufen (`grund` in shared/qqCategoryTheme.ts).
+      Nebenwirkung, gemessen: die Lichtabgabe faellt um rund 1,2 Prozentpunkte
+      je Kategorie. Auf einer Buehne mit harter Lichtgrenze ist das ein Gewinn.
+      ⚠️ Die Spalte „heute" im Brief nannte QQ_CATEGORY_COLORS - Werte, die die
+      Buehne nie benutzt hat. Sie liest QQ_CATEGORY_THEME.
+      Gegengeprueft: Kontrast (72 Zeilen, keine unter der Schwelle),
+      Ueberlauf (12 Stationen), Lichtabgabe (alle unter 6,5 Prozent).
 - [ ] **Schaetzchen-Achse:** Grenzen aus den Schaetzungen ableiten statt fix 0-1000,
       eigener Bereich bei `isYearAnswer`, Kollisionsversatz ab ~4% Abstand.
 - → **Schrift entscheiden** stand hier ein zweites Mal und ist am 2026-08-26

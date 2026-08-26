@@ -312,7 +312,14 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         // (View-Transition, siehe main.css), blendete sie damit auf ein LEERES
         // Bild - gemessen von 186 bis 460 ms schwarze Buehne. Die Verzoegerungen
         // sind jetzt so kurz, dass die Folie waehrend der Blende schon steht.
-        animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.34s both',
+        // 2026-08-25, gemessen: die Folie blendet sich SELBST ein, und das ist auf der
+        // Buehne genau falsch herum. Der Phasenwechsel ist bereits eine Blende (View
+        // Transition, siehe main.css). Wenn die neue Szene darin noch einmal von
+        // Deckkraft null hochfaehrt, liegen zwei Einblendungen uebereinander - und
+        // zwischen 190 und 620 ms steht nichts als der Grund und ein paar Funken.
+        // Auf der Buehne laeuft deshalb KEINE eigene Einblendung: die Folie ist mit dem
+        // ersten Bild da, und die Blende des Wechsels traegt sie herein.
+        animation: istBuehne ? 'none' : 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.34s both',
       }}>
         <AnimatedCozyWolf
           widthCss="clamp(160px, 15cqw, 240px)"
@@ -437,7 +444,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           fontSize: 'clamp(18px, 1.9cqw, 28px)', fontWeight: 700,
           color: themed ? 'var(--qq-text-muted)' : 'var(--qq-text-muted)', fontStyle: 'italic',
           textAlign: 'center', lineHeight: 1.3,
-          animation: 'panelSlideIn 0.55s var(--qq-ease-out-cubic) 0.14s both',
+          animation: istBuehne ? 'none' : 'panelSlideIn 0.55s var(--qq-ease-out-cubic) 0.14s both',
         }}>{de
           ? 'Wir hoffen ihr hattet Spaß! Bis zum nächsten Mal!'
           : 'We hope you had fun! See you next time!'}</div>
@@ -464,7 +471,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           ...(megaArena ? qqArenaGlass() : {}),
           padding: 'clamp(32px, 4cqw, 56px)',
           height: 'clamp(460px, 60cqh, 660px)',
-          animation: 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',
+          animation: istBuehne ? 'none' : 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',
           overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}>
@@ -512,7 +519,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               // Ohne Verzoegerung: das ist der Gegenstand, der von der
               // Kroenung herueberfaehrt (siehe die Uebergabe oben). Eine
               // Verzoegerung haette ihn unsichtbar fahren lassen.
-              animation: 'qqThanksColIn 0.5s ease both',
+              animation: istBuehne ? 'none' : 'qqThanksColIn 0.5s ease both',
             }}>
               {winner && (
                 <div data-qq-sieger style={{ position: 'relative' }}>
@@ -640,7 +647,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
                 gap: 14, minWidth: 0,
-                animation: 'qqThanksColIn 0.6s ease 0.22s both',
+                animation: istBuehne ? 'none' : 'qqThanksColIn 0.6s ease 0.22s both',
               }}>
                 <div style={{
                   padding: 'clamp(10px, 1.2cqw, 16px)',

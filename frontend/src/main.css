@@ -5104,8 +5104,32 @@ html[data-scene-motion="buehne"]::view-transition-new(root) {
   animation-fill-mode: both;
 }
 
+/* 2026-08-25 v3, gemessen statt vermutet (scripts/wechsel-messen.mjs, neu, und
+   scripts/danke-uebergang.mjs).
+
+   Der Befund: der SCHNAPPSCHUSS DER ALTEN SZENE ist leer. Nachgewiesen, indem
+   die alte Ebene testweise die ganze Blende ueber voll deckend stehen blieb -
+   das Bild war trotzdem dunkel. Es lag also nie an den Zeiten, und jede
+   Korrektur an den Kurven war Arbeit an der falschen Stelle.
+
+   Solange das so ist, darf die Deckung NICHT von der alten Ebene kommen. Also
+   umgekehrt: die neue Ebene ist von der ersten Millisekunde an voll deckend -
+   sie ist kein Schnappschuss, sondern die echte, lebende Szene -, und die alte
+   liegt DARUEBER und blendet weg. Damit steht zu jedem Zeitpunkt ein volles
+   Bild auf der Leinwand: erst das alte, dann das neue.
+
+   Ist der alte Schnappschuss leer (der heutige Fall), wird daraus ein sauberer
+   Schnitt. Ist er es nicht (anderer Browser, andere Szene), wird daraus eine
+   echte Kreuzblende. Beides ist besser als das Blinzeln, und keines der beiden
+   haengt davon ab, dass der Schnappschuss gelingt.
+
+   ⚠️ Die Reihenfolge der Ebenen NICHT umdrehen. Ein Versuch mit der alten Ebene
+   obenauf (z-index) hat es schlimmer gemacht: eine leere Ebene, die voll deckt,
+   deckt eben auch die neue Szene zu. Die neue Ebene gehoert nach oben - dort
+   liegt sie ohnehin von selbst -, und sie ist die lebende Szene, nicht der
+   Schnappschuss. */
 html[data-scene-motion="buehne"]::view-transition-old(root) {
-  animation: qqBuehneAbgang 280ms cubic-bezier(0.4, 0, 1, 1) both;
+  animation: qqBuehneAbgang 300ms cubic-bezier(0.4, 0, 1, 1) both;
 }
 
 html[data-scene-motion="buehne"]::view-transition-new(root) {
@@ -5122,7 +5146,24 @@ html[data-scene-motion="buehne"]::view-transition-new(root) {
      Gedanke, aber er kostet Deckung, und Deckung ist hier die ganze Aufgabe:
      zu keinem Zeitpunkt darf etwas anderes durchscheinen als die Buehne selbst.
      Der Auftritt behaelt seinen Massstab - der kommt von 100,6 % und deckt
-     dabei ueber, statt frei zu geben. */
+     dabei ueber, statt frei zu geben.
+
+     2026-08-25 v3, und das ist der eigentliche Fund (Wolf: „generell der thank
+     you screen ist etwas lame"; gemessen mit scripts/danke-uebergang.mjs und
+     scripts/wechsel-messen.mjs).
+
+     Die alte Fassung liess BEIDE Ebenen gleichzeitig durchsichtig werden: die
+     alte ging von 1 auf 0, die neue kam von 0 auf 1. In der Mitte stand also
+     zum Beispiel 0,5 ueber 0,55 - und dahinter der dunkle Grund der
+     Wechsel-Ebene. Zwei halbe Deckkraefte ergeben keine ganze, sie ergeben ein
+     duesteres Bild. Auf 2,8 Metern im dunklen Raum liest sich das als Blinzeln,
+     und genau das war die „schwarze Buehne" zwischen 190 und 460 ms.
+
+     Jetzt bleibt die alte Szene VOLL DECKEND stehen, bis die neue oben drueber
+     fertig eingeblendet ist (die ist bei 45 % ihrer 380 ms bei voller
+     Deckkraft, also nach 171 ms), und geht erst danach. Der neue Schnappschuss
+     liegt ohnehin ueber dem alten - man sieht also durchgehend ein volles Bild,
+     erst das alte, dann das neue. Deckung ist die ganze Aufgabe. */
   0%   { opacity: 1; }
   100% { opacity: 0; }
 }
@@ -5131,8 +5172,11 @@ html[data-scene-motion="buehne"]::view-transition-new(root) {
    voll da, damit die neue Szene lesbar steht, waehrend die Bewegung noch
    ausklingt. Lesbarkeit zuerst, Bewegung darf nachlaufen. */
 @keyframes qqBuehneAuftritt {
-  0%   { opacity: 0; transform: scale(1.006); }
-  45%  { opacity: 1; }
+  /* 2026-08-25 v3: die Deckkraft startet bei EINS, nicht bei null. Diese Ebene
+     traegt jetzt die Deckung (siehe oben), sie darf also nie durchsichtig sein.
+     Die Bewegung bleibt: von 100,6 % heran, und die deckt dabei ueber, statt
+     frei zu geben. */
+  0%   { opacity: 1; transform: scale(1.006); }
   100% { opacity: 1; transform: scale(1); }
 }
 

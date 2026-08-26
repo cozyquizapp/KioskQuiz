@@ -190,6 +190,17 @@ const BUEHNE: ResolvedTheme = {
   surface: {
     pageBg: 'radial-gradient(circle at 50% -5%, #1A1526 0%, #120E1C 58%, #0B0912 100%)',
     text: '#F3EFE7', textMuted: '#B9B3C6', cardText: '#F3EFE7',
+    // ⚠️ Diese vier Werte gelten NUR ausserhalb der Buehne (Testseiten,
+    // Showroom). Auf der Buehne selbst gewinnt der Block
+    // `[data-qq-stage='2a']` in main.css, weil er auf dem Buehnen-Wurzel-
+    // element sitzt und damit alles darin uebersteuert. Wer die Karten-
+    // sprache der Buehne aendern will, aendert sie DORT.
+    //
+    // 2026-08-26 am eigenen Leib gelernt: hier stand zuerst die Aenderung
+    // „kein Kasten mehr", und auf der Danke-Folie blieb der Rahmen trotzdem
+    // stehen. Gefunden mit scripts/danke-probe.mjs, das die Flaechen und
+    // Kanten der Folie nach Groesse auflistet: ein 1500x594 Kasten mit
+    // rgba(18,15,24,0.34) und 2px Rand - exakt die Werte aus main.css.
     cardBg: 'linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.02))',
     cardBorder: '1px solid rgba(255,255,255,0.10)', cardRadius: '24px', pillRadius: '999px',
     cardShadow: '0 16px 44px rgba(0,0,0,0.48)',

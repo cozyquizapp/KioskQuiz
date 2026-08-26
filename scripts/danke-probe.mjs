@@ -48,6 +48,30 @@ const befund = await seite.evaluate(() => {
     themeAttr: wurzel.dataset.qqTheme ?? wurzel.getAttribute('data-theme') ?? '(nichts)',
     dankeGefunden: !!danke,
     animationen: zaehler,
+    // Welche Elemente malen ueberhaupt eine FLAECHE oder KANTE? Nach Groesse
+    // sortiert. So findet man den Kasten, statt ihn zu suchen.
+    flaechen: (() => {
+      const raus = [];
+      const wurzel2 = document.querySelector('[data-qq-danke-buehne]') || document.body;
+      for (const el of wurzel2.querySelectorAll('*')) {
+        const r = el.getBoundingClientRect();
+        if (r.width < 300 || r.height < 200) continue;
+        const st = getComputedStyle(el);
+        const bg = st.backgroundColor, bi = st.backgroundImage;
+        const hatBg = (bg && bg !== 'rgba(0, 0, 0, 0)' && bg !== 'transparent') || (bi && bi !== 'none');
+        const hatRand = st.borderTopWidth !== '0px' && st.borderTopStyle !== 'none';
+        const hatSchatten = st.boxShadow && st.boxShadow !== 'none';
+        if (!hatBg && !hatRand && !hatSchatten) continue;
+        raus.push({
+          tag: el.tagName.toLowerCase(),
+          gr: `${Math.round(r.width)}x${Math.round(r.height)}`,
+          bg: hatBg ? (bi !== 'none' ? bi.slice(0, 42) : bg) : '-',
+          rand: hatRand ? `${st.borderTopWidth} ${st.borderTopColor}` : '-',
+          schatten: hatSchatten ? st.boxShadow.slice(0, 38) : '-',
+        });
+      }
+      return raus.slice(0, 8);
+    })(),
     endstand: (() => {
       const sp = document.querySelector('[data-qq-endstand]');
       if (!sp) return null;
@@ -75,6 +99,10 @@ console.log('  Danke-Wurzel da   :', befund.dankeGefunden);
 console.log('  laufende Animationen in der Folie:');
 for (const [n, z] of Object.entries(befund.animationen).sort((a, c) => c[1] - a[1])) {
   console.log(`    ${String(z).padStart(3)}x  ${n}`);
+}
+console.log('\n── Wer malt eine Flaeche oder Kante ───────────────────────────');
+for (const f of befund.flaechen ?? []) {
+  console.log(`  ${f.gr.padEnd(10)} ${f.tag.padEnd(4)} bg=${String(f.bg).padEnd(44)} rand=${f.rand}  schatten=${f.schatten}`);
 }
 console.log('\n── Endstand-Spalte ───────────────────────────────────────────');
 if (!befund.endstand) console.log('  (nicht vorhanden)');

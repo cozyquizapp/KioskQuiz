@@ -519,20 +519,25 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           overflow: 'hidden',
           display: 'flex', flexDirection: 'column',
         }}>
-          {/* Akzent-Streifen oben (animated shimmer) */}
-          {!isQuietMotion() && <div style={{
+          {/* Akzent-Streifen oben (animated shimmer).
+              2026-08-26: auf der Buehne aus. Er laeuft ueber die ganze Breite
+              der Karte und zeichnet damit genau die Oberkante nach, die gerade
+              verschwinden soll - ein Kasten, der nur noch aus seinem Glanz
+              besteht, ist immer noch ein Kasten. */}
+          {!isQuietMotion() && !istBuehne && <div style={{
             position: 'absolute', top: 0, left: 0, right: 0, height: 3,
             background: `linear-gradient(90deg, transparent, ${brand.accentHex}, transparent)`,
             animation: 'qqPauseShimmer 6s linear infinite',
             backgroundSize: '200% 100%',
           }} />}
-          {/* Subtle Inner-Glow oben-rechts */}
-          <div style={{
+          {/* Subtle Inner-Glow oben-rechts. Auf der Buehne aus, gleicher Grund:
+              der Schein endet an der Kante der Karte und macht sie sichtbar. */}
+          {!istBuehne && <div style={{
             position: 'absolute', top: -120, right: -120, width: 320, height: 320,
             borderRadius: '50%',
             background: `radial-gradient(circle, ${brand.accentHex}1c 0%, transparent 70%)`,
             pointerEvents: 'none',
-          }} />
+          }} />}
 
           {/* Inner content — 2-col grid: Sieger · QR-Co-Hero. Sieger und QR
               gleich-prominent als 2-Co-Heroes.

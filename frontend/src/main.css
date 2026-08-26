@@ -232,9 +232,30 @@
    Der Schatten faellt weg, weil Weichzeichnung auf Projektionsdistanz keine
    Tiefe erzeugt, sondern nur die Kante frisst (Brief, Abschnitt 11). Tiefe
    kommt jetzt aus der Flaechenleiter: Grund → 34-%-Karte → Kontur. */
+/* ── 2026-08-26: der Kasten ist raus ────────────────────────────────────────
+   Wolf, zur Danke-Folie: „ich finde es ist kein nices design, keine buehne,
+   kein 2026 web app design?" und direkt danach: „wenn du den kasten
+   rausnimmst musst du es aber auch bei lobby und pause machen, da ist er auch
+   noch. und wo er sonst ist." Dazu, als Rahmen fuer alles: „denk dran es ist
+   eine Event Quiz app, die beamerview ist die Buehne."
+
+   Das dreht die Entscheidung des Absatzes darueber um, und zwar bewusst. Der
+   Brief argumentierte: Tiefe kommt aus der Flaechenleiter Grund → 34-%-Karte →
+   Kontur. Das ist die Logik einer SEITE, auf der ein Fenster liegt. Auf einer
+   Buehne ist das Bild selbst der Rahmen; ein zweiter Rahmen darin macht aus dem
+   Endbild ein Widget. Tiefe kommt hier stattdessen aus Groessenunterschieden,
+   Abstand und Ausrichtung.
+
+   Der Radius bleibt stehen, obwohl nichts mehr zu runden ist: mehrere Ansichten
+   schneiden mit `overflow: hidden` an dieser Kante, und ein Radius von 0 wuerde
+   dort sichtbar eckige Ecken erzeugen, wo vorher weiche waren.
+
+   Zurueckgenommen wird das an genau dieser Stelle - die vier Werte hier sind
+   die einzige Quelle fuer die Kartensprache der Buehne. Die Werte in
+   qqTheme.ts gelten nur ausserhalb (Testseiten, Showroom). */
 [data-qq-stage='2a'] {
-  --qq-card-bg: rgba(18, 15, 24, 0.34);
-  --qq-card-border: 2px solid rgba(246, 239, 230, 0.22);
+  --qq-card-bg: transparent;
+  --qq-card-border: none;
   --qq-card-radius: 5px;
   --qq-card-shadow: none;
   /* Aenderung 6 „Teams als Kacheln": QQTeamAvatar liest diese Variable statt

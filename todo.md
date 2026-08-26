@@ -47,14 +47,28 @@
 - [ ] **BEWEGUNG, laeuft seit 2026-08-24. Einstieg: `docs/UEBERGABE_MOTION.md`.**
       Dort stehen die Bausteinliste B1-B11, der gemessene Ist-Zustand von
       Station 1, das Werkzeug (`scripts/motion.mjs`) und die Reihenfolge.
-      - [ ] **Motion-Konsistenz messbar machen** (Wolf 2026-08-26: „app
-            Konsistenz von Anfang bis Ende, dass keine Motion völlig aus der
-            Reihe fällt"). Ein Durchgang ueber ALLE Stationen, der Dauern und
-            Kurven einsammelt und meldet, was ausserhalb des Hausbestands
-            liegt. Ohne das bleibt Konsistenz ein Vorsatz statt einer Pruefung,
-            und sie wird mit jeder eingebauten Bewegung schwerer nachzuholen.
-            Erster Bestand steht schon in `motion.mjs --inventar`, es fehlt der
-            Vergleich ueber die Stationen hinweg.
+      - ✅ **Motion-Konsistenz ist messbar** (Wolf 2026-08-26: „app Konsistenz
+            von Anfang bis Ende, dass keine Motion völlig aus der Reihe
+            fällt"). `scripts/motion-konsistenz.mjs` misst gegen den
+            Hausbestand, der seit dem 2026-07-12 in `main.css` steht - Rollen
+            und Dauerbereiche inklusive. Erster Durchgang, 13 Stationen:
+            75 Bewegungen, davon 13 auf einer Hauskurve.
+      - [ ] **Die drei Befunde des ersten Durchgangs abarbeiten.** Jeder ist
+            eine eigene Entscheidung, keiner ist Geschmack:
+            - [ ] **22 Kurven sind BEINAHE eine Hauskurve** (Abstand unter 0,2,
+                  die naechsten bei 0,05). Vier Bounce-Kurven nebeneinander:
+                  1,4 / 1,46 / 1,5 / 1,56. Das ist Streuung, nicht Gestaltung.
+                  Zusammenlegen ist mechanisch, aber es ist Bewegung - deshalb
+                  einmal am Bild abnehmen, nicht blind ersetzen.
+            - [ ] **Eine Entscheidung steht an:** `cubic-bezier(0.16, 1, 0.3, 1)`
+                  laeuft an sechs Stellen und ist damit faktisch die
+                  Auftrittskurve des Hauses, waehrend `--qq-enter` auf
+                  `(0.22, 1, 0.36, 1)` steht. Eine von beiden gewinnt.
+            - [ ] **Sieben Folien haben mehr als einen Overshoot gleichzeitig**,
+                  die Aufloesung fuenf: `bQuestionIn`, `revealCorrectPop`,
+                  `muchoVoterDrop`, `revealWrongShake`, `revealWinnerIn`. Die
+                  Hausregel sagt: einer je Folie. Welcher es ist, entscheidet
+                  Wolf.
       - [ ] **Dann Station fuer Station durch den Abend** (`motion.mjs --liste`).
       - ✅ **Station 1 entschieden und gebaut: K2** (Wolf 2026-08-26, „Probier
             mal K2"). Grundblende mit Anker, die Wortmarke traegt von der Lobby

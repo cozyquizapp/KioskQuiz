@@ -43,6 +43,45 @@
 @font-face { font-family: 'League Spartan'; font-style: normal; font-weight: 800; font-display: swap; src: url('/fonts/league-spartan-latin-800-normal.woff2') format('woff2'); }
 @font-face { font-family: 'League Spartan'; font-style: normal; font-weight: 900; font-display: swap; src: url('/fonts/league-spartan-latin-900-normal.woff2') format('woff2'); }
 
+/* 2026-08-26 (Wolf: „ja die isses bricolage"). Die Arbeitsschrift der Buehne.
+   Der Punkt „Schrift entscheiden" stand seit dem 18.08. in todo.md als
+   „groesster Einzelhebel, bisher Platzhalter" - der Platzhalter war Nunito.
+   Entschieden wurde am Bild: `scripts/schrift-probe.mjs` hat dieselbe
+   Fragefolie viermal gerendert (Nunito, Familjen Grotesk, Bricolage, Fraunces).
+
+   Warum diese: sie war die einzige mit einem Grund, der nicht Geschmack ist.
+   Bei gleicher Groesse passt die Testfrage auf EINE Zeile statt auf zwei - auf
+   einer festen Flaeche von 1760 px ist das Platz, den man in Groesse
+   zurueckverwandeln kann. Dazu hat sie eigene Formen (G, a), und der 2a-Brief
+   verlangt „Schrift fuehrt, kein Dekor"; eine neutrale Grotesk kann nicht
+   fuehren. Und sie stand ohnehin schon im Fallback von --font-brand.
+
+   ⚠️ Sie ersetzt NICHT League Spartan. Die bleibt die Wortmarke (--font-brand),
+   entschieden am 2026-07-08 und deckungsgleich mit cozywolf.de.
+
+   Variabel, Achsen wght 200-800 und opsz 12-96. `font-optical-sizing: auto`
+   greift damit von selbst: grosse Groessen bekommen engere Formen, kleine
+   offenere. Genau das braucht eine Buehne, auf der 96px und 22px nebeneinander
+   stehen. Zwei Dateien, weil Google nach Zeichenvorrat trennt; die
+   unicode-range sorgt dafuer, dass die zweite nur geladen wird, wenn ein
+   Zeichen daraus wirklich vorkommt. */
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/bricolage-grotesque-latin-variable.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: 'Bricolage Grotesque';
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url('/fonts/bricolage-grotesque-latin-ext-variable.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -132,7 +171,10 @@
      Metern schlicht nicht da (Brief, Abschnitt 11). */
   --qq-surface: rgba(255,255,255,0.04);   /* Sub-Karten/Chips auf BG */
   --qq-overlay: rgba(0,0,0,0.28);         /* dunkle Inset-Overlays */
-  --qq-font: 'Nunito', 'Geist', system-ui, sans-serif;
+  /* 2026-08-26: Bricolage Grotesque vorn, Nunito bleibt als Auffangnetz stehen.
+     Faellt die Datei einmal aus, sieht die Buehne aus wie vorher statt wie
+     ein Systemschriftschnitt. */
+  --qq-font: 'Bricolage Grotesque', 'Nunito', 'Geist', system-ui, sans-serif;
   --qq-title: #ec4899;                    /* Hero-/Wortmark-Farbe auf BG (cozy: pink) */
   /* Cozy-Easing-Tokens — JS-Pendant in qqDesignTokens.ts (EASING.*).
      Inline-`cubic-bezier(...)` schrittweise auf diese Vars migrieren. */
@@ -161,11 +203,14 @@
   --cat-stimmts: #72ac78;
   --cat-cheese: #e2a9f1;
   --cat-gemischte: #d85f58;
-  --font: 'Twemoji Country Flags', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  --font: 'Twemoji Country Flags', 'Bricolage Grotesque', 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   /* 2026-05-07: 'Twemoji Country Flags' an erster Stelle — durch unicode-range
      greift der Font NUR fuer Flag-Codepoints, alle anderen Glyphen kommen aus
-     'Nunito'/'Geist'/system-ui. Ergibt Windows einheitliche Flagen-Darstellung. */
-  --font-game: 'Twemoji Country Flags', 'Nunito', 'Geist', system-ui, sans-serif;
+     'Nunito'/'Geist'/system-ui. Ergibt Windows einheitliche Flagen-Darstellung.
+     ⚠️ 2026-08-26: Bricolage steht DAHINTER, nicht davor. Wer die Reihenfolge
+     dreht, nimmt Windows die einheitlichen Flaggen wieder weg - das war der
+     Bug vom 2026-05-07 („Edge zeigt HR/CH/MC statt Flaggen"). */
+  --font-game: 'Twemoji Country Flags', 'Bricolage Grotesque', 'Nunito', 'Geist', system-ui, sans-serif;
   /* 2026-07-08 (Wolf): EINE Marken-Wordmark-Font ueber Web + App. League Spartan
      (wie cozywolf.de). Steuert alle Marken-Namen (COZYQUIZ/COZYARENA/COZYGAMES/
      COZYWOLF) + Finale-Sieger-Name zentral. Rueckgaengig = hier auf
@@ -414,6 +459,13 @@ html {
 body {
   margin: 0;
   font-family: var(--font);
+  /* 2026-08-26: Bricolage Grotesque hat eine opsz-Achse (12 bis 96). `auto`
+     laesst den Browser sie selbst nach Schriftgroesse fahren - grosse Zeilen
+     bekommen engere, straffere Formen, kleine offenere. Auf einer Buehne, auf
+     der 96px-Titel und 22px-Zeilen nebeneinander stehen, ist das der halbe
+     Grund fuer eine variable Schrift. Kostet nichts, wenn die Schrift keine
+     opsz-Achse hat. */
+  font-optical-sizing: auto;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;

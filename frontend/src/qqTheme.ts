@@ -205,7 +205,23 @@ const BUEHNE: ResolvedTheme = {
     cardBorder: '1px solid rgba(255,255,255,0.10)', cardRadius: '24px', pillRadius: '999px',
     cardShadow: '0 16px 44px rgba(0,0,0,0.48)',
     hairline: 'rgba(255,255,255,0.10)', surface: 'rgba(255,255,255,0.05)', overlay: 'rgba(0,0,0,0.30)',
-    font: "'Fredoka', 'Nunito', 'Geist', system-ui, sans-serif", // global via Phase-Root
+    // 2026-08-26 (Wolf: „ja die isses bricolage"). Hier stand Fredoka, und
+    // DAS war der eigentliche Platzhalter der Buehne - nicht Nunito. Der
+    // Phase-Root setzt diesen Wert auf `--qq-font`, und `--qq-font` traegt die
+    // grossen Zeilen: die Frage mit 83 px kam von hier, nicht aus --font-game.
+    // Wer die Buehnenschrift wechseln will und nur main.css anfasst, wechselt
+    // deshalb alles ausser dem, was man zuerst sieht.
+    //
+    // Entschieden wurde am Bild (`scripts/schrift-probe.mjs`, vier Fassungen
+    // derselben Fragefolie). Bricolage war die einzige mit einem Grund, der
+    // nicht Geschmack ist: bei gleicher Groesse passt die Frage auf eine Zeile
+    // statt auf zwei. Auf 1760 fixen Bildpunkten ist das Platz, den man in
+    // Groesse zurueckverwandeln kann.
+    //
+    // Die Wortmarke bleibt League Spartan (--font-brand), entschieden
+    // 2026-07-08, deckungsgleich mit cozywolf.de. Fredoka steht als Auffangnetz
+    // dahinter: faellt die Schrift aus, sieht die Buehne aus wie vorher.
+    font: "'Bricolage Grotesque', 'Fredoka', 'Nunito', 'Geist', system-ui, sans-serif", // global via Phase-Root
     title: '#F3EFE7',               // warm-weißer Hero/Wortmark auf der Bühne
   },
 };

@@ -112,6 +112,10 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
     [s, nested],
   );
   const zeigeTabelle = !nested && rangliste.length >= 2;
+  // Funktions-Invariante: wer Bewegung reduziert haben will, bekommt die Liste
+  // fertig statt gestaffelt. Beide Schalter, der System-Wunsch und der eigene
+  // Ruhe-Modus des Quiz.
+  const ruhigeBewegung = isQuietMotion() || prefersReducedMotion();
 
   // ── Die Uebergabe der Sieger-Marke: gebaut, aber NICHT scharf ────────────
   // 2026-08-25. Der Plan war, die Marke von der Kroenung herueberfahren zu
@@ -213,6 +217,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       <Fireflies />
       {isEsc && <EurovisionHearts />}
       <style>{`
+        /* Der Endstand baut sich auf, von hinten nach vorne.
+           2026-08-26 (Wolf: „koennte man in der thank you nicht eine nice
+           motion machen fuer die rangliste?").
+           Die Zeile kommt von rechts herein, 22 px, und wird dabei sichtbar.
+           Nur transform und opacity, damit die GPU sie traegt und die Zeile
+           darunter nicht neu gesetzt wird. */
+        @keyframes qqEndstandZeile {
+          0%   { opacity: 0; transform: translate3d(22px, 0, 0); }
+          100% { opacity: 1; transform: translate3d(0, 0, 0); }
+        }
         @keyframes qqThanksColIn {
           0%   { opacity: 0; transform: translateY(14px); }
           100% { opacity: 1; transform: translateY(0); }
@@ -770,6 +784,24 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       borderBottom: i === rangliste.length - 1
                         ? 'none'
                         : '1px solid rgba(255,255,255,0.09)',
+                      // ── Der Aufbau, von hinten nach vorne ──────────────────
+                      // Der letzte Platz kommt zuerst, der Sieger zuletzt -
+                      // dieselbe Richtung, in der der Turm die Teams geehrt hat
+                      // („von hinten nach vorne"). Der Blick landet am Ende
+                      // oben, wo auch der Siegername steht.
+                      //
+                      // 260 ms je Zeile, 55 ms Versatz: acht Teams sind damit
+                      // nach 645 ms fertig. Kurz genug, dass niemand wartet,
+                      // lang genug, dass man die Reihenfolge sieht. Der Rest
+                      // der Folie steht die ganze Zeit - das hier ist ein
+                      // Aufbau, kein Leerbild.
+                      //
+                      // ⚠️ `both` ist noetig, nicht Zierrat: ohne Fuellmodus
+                      // stuende die Zeile vor ihrer Verzoegerung schon sichtbar
+                      // da, und aus dem Aufbau wuerde ein Zucken.
+                      animation: ruhigeBewegung
+                        ? 'none'
+                        : `qqEndstandZeile 260ms cubic-bezier(0.16, 1, 0.3, 1) ${(rangliste.length - 1 - i) * 55}ms both`,
                     }}>
                       <span style={{
                         fontSize: zeile, fontWeight: 900,

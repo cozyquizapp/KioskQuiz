@@ -43,12 +43,15 @@
       - [ ] **„Das Brett faellt"** (`55db717d`) liegt gebaut auf dem Zweig, wurde
             aber vorgezogen und ist nie abgenommen. Im Motion-Durchgang
             einreihen und beurteilen.
-- [ ] **Skills verfuegbar machen** (blockiert Design-/Motion-Arbeit in
-      Web-Sitzungen). CLAUDE.md verlangt `ui-ux-pro-max`, `animate`,
-      `color-contrast`; in einer Web-Sitzung sind sie nicht da, weil dorthin nur
-      claude.ai-Konto-Skills synchronisiert werden. Zwei Wege, beide geprueft:
-      ins Repo unter `.claude/skills/<name>/SKILL.md`, oder lokal arbeiten.
-      Begruendung und Messung in `docs/UEBERGABE_MOTION.md`, Abschnitt 7.
+- ✅ **Skills verfuegbar machen** — ERLEDIGT von selbst, geprueft 2026-08-26.
+      `ui-ux-pro-max` und `animate` sind in Web-Sitzungen da (aus den
+      claude.ai-Konto-Skills, ohne dass etwas ins Repo musste; `.claude/skills/`
+      existiert im Repo bis heute nicht). Der ganze Buehnen- und
+      Motion-Durchgang der letzten Tage lief in Web-Sitzungen, die Behauptung
+      „blockiert Design-/Motion-Arbeit" stimmt also nicht mehr.
+      Offen bleibt nur `color-contrast`, und dafuer gibt es seit heute etwas
+      Besseres: `scripts/design-audit-cozyquiz.mjs` misst den Kontrast an den
+      echten Bildpunkten der Buehne statt an Farbwerten aus einem Stylesheet.
 - [ ] **`/team` erst danach**, nur Einzelheiten, nicht der Aufbau
       (Gegenprobe hat gezeigt: Aufbau stimmt bereits).
 - [ ] **Hotkeys + Stream-Deck komplett durchgehen** (Wolf 2026-08-23:
@@ -77,14 +80,21 @@ Auswerten neuer Videos (Websites sind aus der Remote-Umgebung nicht erreichbar).
 - [x] ~~Grundrichtung gefunden~~ — Wolfs Favoriten waren zweimal dasselbe Prinzip:
       Schrift fuehrt, kein Dekor. Regeln stehen in **`docs/BUEHNEN_DESIGN.md`**,
       Entwuerfe in `design-assets/buehnen-design/`.
-- [ ] **Welche Bunte-Tuete-Unterspiele sind aktiv?** Wolf: „nicht alle sind aktiv."
-      Erst danach lohnt es sich, dafuer zu bauen.
+- ✅ **Welche Bunte-Tuete-Unterspiele sind aktiv?** BEANTWORTET, 2026-08-26.
+      Die Frage hat eine harte Antwort im Code, und die ist seither auch die
+      Single Source of Truth: `QQ_BUNTE_TUETE_ACTIVE` in shared/quarterQuizTypes.ts
+      = hotPotato, top5, order, map (Heisse Kartoffel, Top 5, Fix It, Pin It).
+      Nur Arena: `_ARENA_ONLY` = Umfrage, Schwarmintelligenz. Abgeschaltet:
+      `_DEACTIVATED` = Imposter, 4 gewinnt, Bluff - deren Code liegt weiter da
+      und funktioniert, wird aber nicht ausgespielt. Steht so auch in CLAUDE.md.
 - [ ] **Kategoriefarben nachziehen** (Tabelle in BUEHNEN_DESIGN.md, Abschnitt 6).
 - [ ] **Schaetzchen-Achse:** Grenzen aus den Schaetzungen ableiten statt fix 0-1000,
       eigener Bereich bei `isYearAnswer`, Kollisionsversatz ab ~4% Abstand.
-- [ ] **Schrift entscheiden.** Groesster Einzelhebel auf der Buehne, bisher Platzhalter.
-- [ ] **Erster Baustein bauen:** B1 (Bogen-Wisch statt Schnitt) + B5 (Marker-Geste
-      fuer die richtige Antwort) an der Aufloesung, gegen den Ist-Zustand stellen.
+- → **Schrift entscheiden** stand hier ein zweites Mal und ist am 2026-08-26
+      zusammengefuehrt worden. Der Punkt lebt oben in der Premium-Design-Grundlage.
+      Zwei Kaestchen fuer denselben Punkt sind zwei schlechte Gewissen.
+- → **Erster Baustein B1 + B5** stand hier doppelt und ist am 2026-08-26
+      zusammengefuehrt worden. Der Punkt lebt oben unter BEWEGUNG.
 - [ ] **Avatarset** bleibt bewusst dahinter. Gelernt am verworfenen Holz-Versuch:
       Design und Set muessen aus denselben Regeln entstehen, nicht nacheinander.
 

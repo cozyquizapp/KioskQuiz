@@ -329,18 +329,30 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
 
 
       {/* ── HERO: kleines CozyQuiz-Eyebrow + großer „Danke fürs Spielen"-Title
-          mit Letter-Cascade + Wave (mirror „Gleich geht's los"-Block). ── */}
+          mit Letter-Cascade + Wave (mirror „Gleich geht's los"-Block). ──
+
+          2026-08-26 (Wolf: „der uebergang von sieger zu danke seite ist nicht
+          clean?"). Aufgenommen mit scripts/danke-uebergang.mjs: bei 452 ms ist
+          die Buehne SCHWARZ, der Kasten kommt bei 740 ms, die Ueberschrift
+          schreibt sich bis 1996 ms Buchstabe fuer Buchstabe zusammen.
+          Ursache war nicht der Wechsel - scripts/schwarz-messen.mjs zeigt an
+          allen anderen Stationen kein einziges dunkles Bild. Es waren diese
+          drei Einblendungen: sie wurden am 2026-08-23 uebersehen, als der Rest
+          der Folie fuer die Buehne stillgelegt wurde, und halten mit `both`
+          ihre Startdeckkraft null, bis ihre Verzoegerung abgelaufen ist.
+          Auf der Buehne IST der Phasenwechsel die Einblendung; was danach noch
+          einmal von null hochfaehrt, ist auf 2,8 Metern ein Loch. ── */}
       <div style={{
         position: 'relative', zIndex: 5,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
-        animation: 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
+        animation: istBuehne ? 'none' : 'panelSlideIn 0.7s var(--qq-ease-out-cubic) both',
       }}>
         {/* CozyQuiz-Eyebrow — Standard: Stinger-Wordmark, ESC: COZYQUIZ × Logo */}
         {isEsc && s.theme?.logoUrl ? (
           <div style={{
             display: 'inline-flex', alignItems: 'center',
             gap: 'clamp(14px, 1.6cqw, 28px)', marginBottom: 12,
-            animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
+            animation: istBuehne ? 'none' : 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
             <span style={{
               fontFamily: 'var(--font-brand)',
@@ -383,7 +395,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
         ) : (
           <div style={{
             marginBottom: 12,
-            animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
+            animation: istBuehne ? 'none' : 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
             <span style={{
               fontFamily: 'var(--font-brand)',
@@ -430,7 +442,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   style={{
                     display: 'inline-block',
                     whiteSpace: ch === ' ' ? 'pre' : 'normal',
-                    animation: `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
+                    // 2026-08-26: auf der Buehne keine Kaskade. Neunzehn
+                    // Buchstaben mal 50 ms Versatz plus 700 ms Laufzeit sind
+                    // 1,75 s, in denen sich die Ueberschrift vor dem Publikum
+                    // erst zusammensetzt - gemessen fertig bei 1996 ms. Die
+                    // Welle bleibt: sie ist Dauerbewegung ohne Fuellmodus, vor
+                    // ihrer Verzoegerung steht der Buchstabe also ganz normal.
+                    animation: istBuehne
+                      ? `qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`
+                      : `qqRulesTitleLetter 0.7s cubic-bezier(0.16, 1.2, 0.3, 1) ${0.15 + i * 0.05}s both, qqCatNameWave 2.6s ease-in-out ${0.85 + i * 0.07}s infinite`,
                   }}
                 >{ch}</span>
               ))}

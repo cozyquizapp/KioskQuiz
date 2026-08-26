@@ -738,6 +738,46 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     : qText.length > 40  ? 'clamp(60px, min(6.8cqw, 11.0cqh), 152px)'
     : 'clamp(64px, min(7.4cqw, 11.8cqh), 172px)';
 
+  // 2026-08-26 (Wolf, Bild einer MUCHO-Aufloesung: der Kasten unten mit
+  // „Fakt oder Fiktion / richtig!" ist an der Unterkante abgeschnitten).
+  //
+  // ⚠️ Ursache war die Leiter darueber. Sie ist heute morgen um rund 40%
+  // gewachsen, und was oben waechst, drueckt unten hinaus. Gemessen an der
+  // engsten Folie des Abends (MUCHO-Aufloesung, vier Antworten UND
+  // Gewinnerkarte, `scripts/gewinnerkarte-unterkante.mjs`):
+  //
+  //     Frage 1 Zeile   Karte unten 898 von 990   Reserve  92 px
+  //     Frage 2 Zeilen  Karte unten 942 von 990   Reserve  48 px
+  //     Frage 3 Zeilen  Karte unten 1092          Reserve -102 px
+  //
+  // Zwei Zeilen sind der Normalfall, und 48 px sind auf einem Beamer mit
+  // Ueberscan nichts. Drei Zeilen sind schlicht raus.
+  //
+  // Der Ort der Karte ist nicht neu. Im Code steht seit dem 10. Mai
+  // „Wolf-Live-Test L8 'Mu-Cho untere Card abgeschnitten'" - damals wurde die
+  // Karte kleiner gemacht. Sie noch kleiner zu machen waere der falsche Hebel:
+  // sie ist der Jubel der Folie.
+  //
+  // Der richtige Hebel ist die Frage, und zwar NUR auf der Aufloesung. Dort
+  // steht sie schon heute auf `opacity: 0.55` - sie tritt also bereits zurueck,
+  // weil der Blick zur gruenen Antwort und zur Gewinnerkarte geht. Was
+  // zuruecktritt, darf auch kleiner sein. Waehrend der Frage, also in dem
+  // Moment, in dem sie wirklich gelesen wird, bleibt sie unveraendert gross.
+  //
+  // Die Stufen sind nicht geschaetzt, sondern aus der Messung gerechnet.
+  // Gemessen laufen rund 2900/Grad Zeichen auf eine Zeile, eine Zeile ist
+  // 0,86 x Grad hoch (lineHeight 0.86), und die Reserve faellt mit rund der
+  // Haelfte jedes Bildpunkts, den die Frage waechst. Ziel ist ein Fragenkasten
+  // von hoechstens ~145 px, dann bleiben rund 70 px Reserve. Jede Stufe endet
+  // dort, wo bei ihrem Grad die naechste Zeile anfinge.
+  const qRevealFontSize = qText.length > 200 ? 'clamp(26px, min(2.6cqw, 4.4cqh), 46px)'
+    : qText.length > 115 ? 'clamp(30px, min(3.2cqw, 5.4cqh), 56px)'
+    : qText.length > 70  ? 'clamp(34px, min(3.9cqw, 6.6cqh), 66px)'
+    // Bis 26 Zeichen steht die Frage auf einer Zeile und passt ohnehin - dort
+    // waere ein Sprung reine Unruhe ohne Gegenwert.
+    : qText.length > 26  ? 'clamp(40px, min(5.1cqw, 8.6cqh), 88px)'
+    : qFontSize;
+
 
   // 2026-08-23 (Wolf: „Statusleiste kann rein, die Frage ist wohin?" fuer
   // Schau mal). Die Zeile stand bisher fest im Inhalts-Block, und der ist bei
@@ -2138,7 +2178,14 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // MUCHO-Arena-Reveal: Frage-Font zusaetzlich verkleinert (Wolf 2026-07-16).
             // key-Remount unten (key inkl. cardFontSize) macht den Wechsel atomic →
             // kein Buchstaben-Wandern, nur ein sauberes langFadeIn.
-            const cardFontSize = muchoArenaExpanded ? 'clamp(22px, min(3.2cqw, 4.6cqh), 46px)' : qFontSize;
+            // 2026-08-26: auf der Aufloesung die gedeckelte Leiter, sonst
+            // schiebt die Frage die Gewinnerkarte unter die Kante (Begruendung
+            // und Messwerte bei `qRevealFontSize`). Der Wechsel ist durch den
+            // Key-Remount unten atomar, die Frage ist dort ohnehin schon
+            // gedimmt.
+            const cardFontSize = muchoArenaExpanded ? 'clamp(22px, min(3.2cqw, 4.6cqh), 46px)'
+              : revealed ? qRevealFontSize
+              : qFontSize;
             // 2026-05-12 (Audit-A 'Dead-Code chipShiftVh entfernt'): die
             // chipShiftVh-Variable war seit 2026-05-07 immer 0 (Comment
             // beschrieb Legacy aus 2026-04-29 als Chips position:absolute

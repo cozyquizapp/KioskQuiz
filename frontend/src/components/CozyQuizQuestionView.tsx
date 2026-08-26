@@ -704,12 +704,39 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
       };
 
 
-  const qFontSize = qText.length > 200 ? 'clamp(28px, min(3.4cqw, 5.2cqh), 56px)'
-    : qText.length > 120 ? 'clamp(34px, min(4.2cqw, 6.5cqh), 72px)'
-    : qText.length > 80  ? 'clamp(40px, min(5cqw, 7.3cqh), 92px)'
-    : qText.length > 55  ? 'clamp(40px, min(4.6cqw, 6.8cqh), 84px)'
-    : qText.length > 40  ? 'clamp(46px, min(5.4cqw, 7.8cqh), 112px)'
-    : 'clamp(50px, min(6.2cqw, 8.4cqh), 132px)';
+  // ── Wie gross die Frage steht ─────────────────────────────────────────────
+  // 2026-08-26 (Wolf: „das spacing in fragen darf optimiert sein, der text auf
+  // beamer darf nicht zu klein sein? einfach nach optimiertem spacing").
+  //
+  // Ausgemessen mit `scripts/frage-spacing-messen.mjs`. Das Werkzeug raet
+  // keinen Faktor, es SUCHT die Obergrenze: es dreht die Schriftgroesse
+  // schrittweise hoch und prueft nach jedem Schritt, ob etwas ueberlaeuft, das
+  // vorher nicht uebergelaufen ist. Gemessen auf fuenf Fragestationen:
+  //
+  //   frage   83 px  ->  167 moeglich      frage4  77 px  ->  129 moeglich
+  //   frage2  77 px  ->  165 moeglich      frage5  84 px  ->  156 moeglich
+  //   frage3  83 px  ->  143 moeglich
+  //
+  // Der engste Fall ist frage4 mit Faktor 1,68. Die Leiter unten geht auf rund
+  // 1,4 - also mit Reserve, denn die Obergrenze gilt fuer DIESE Fragetexte,
+  // und der naechste Entwurf bringt laengere.
+  //
+  // Warum ueberhaupt so viel Luft da war: der bindende Wert ist der
+  // Hoehen-Term (cqh), nicht die Breite. Die alte Leiter war auf Fredoka
+  // eingestellt; Bricolage Grotesque (seit heute die Buehnenschrift) laeuft
+  // schmaler und brauchte den Deckel nicht mehr.
+  //
+  // ⚠️ Ausserdem war die Leiter NICHT MONOTON: eine Frage mit 56 bis 80
+  // Zeichen landete auf 4,6cqw / 6,8cqh / 84px, eine LAENGERE mit 81 bis 120
+  // Zeichen auf 5cqw / 7,3cqh / 92px. Die kuerzere Frage stand also kleiner
+  // als die laengere - genau verkehrt herum, und niemandem aufgefallen, weil
+  // man beide nie nebeneinander sieht. Die Leiter faellt jetzt durchgehend.
+  const qFontSize = qText.length > 200 ? 'clamp(34px, min(4.0cqw, 7.0cqh), 74px)'
+    : qText.length > 120 ? 'clamp(42px, min(4.8cqw, 8.4cqh), 96px)'
+    : qText.length > 80  ? 'clamp(50px, min(5.6cqw, 9.8cqh), 120px)'
+    : qText.length > 55  ? 'clamp(56px, min(6.2cqw, 10.6cqh), 136px)'
+    : qText.length > 40  ? 'clamp(60px, min(6.8cqw, 11.0cqh), 152px)'
+    : 'clamp(64px, min(7.4cqw, 11.8cqh), 172px)';
 
 
   // 2026-08-23 (Wolf: „Statusleiste kann rein, die Frage ist wohin?" fuer

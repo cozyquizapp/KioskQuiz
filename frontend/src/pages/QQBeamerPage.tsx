@@ -5555,9 +5555,11 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           opacity: 0,
           pointerEvents: 'none',
         }}>
+          {/* Dieselbe Verschiebung wie die Huelle darueber: ohne sie startet
+              das Video 1,2 s spaeter, als sein eigener Kasten einblendet. */}
           <WelcomeWolfVideo
             widthCss="var(--qq-welcome-wolf-w)"
-            delayMs={2600}
+            delayMs={2600 - vor * 1000}
             fallback={<AnimatedCozyWolf widthCss="var(--qq-welcome-wolf-w)" speaking={visible} />}
           />
         </div>

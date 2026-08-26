@@ -117,7 +117,16 @@ export function BeamerOverlay({
           pointerEvents: 'none',
         }} />
       )}
-      {shouldRender ? <div key={mountKey} style={sofort ? { position: 'relative' } : undefined}>{children}</div> : null}
+      {/* ⚠️ Der Kasten der Kinder bleibt UNPOSITIONIERT, auch mit Grundblende.
+          Ein `position: relative` hier waere der naechste Bezugsrahmen fuer
+          alles, was innen absolut sitzt - und auf der Willkommen-Folie sitzt
+          genau so der Wolf (`bottom` gegen die volle Buehne gerechnet). Mit
+          einem relativen Elternteil bezieht er sich ploetzlich auf den
+          Inhaltsblock und rutscht mitten ins Bild. Wolf hat das am 2026-08-26
+          im Kontaktbogen sofort gesehen: „als wäre der wolf völlig falsch
+          platziert". Die Grundflaeche liegt darum als eigene absolute Ebene
+          davor im Baum und wird von den Kindern schlicht ueberdeckt. */}
+      {shouldRender ? <div key={mountKey}>{children}</div> : null}
     </div>
   );
 }

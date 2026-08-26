@@ -70,6 +70,33 @@ for (const ziel of MARKEN) {
 }
 await lauf.catch(() => {});
 
+/* Wo steht der Wolf?
+ *
+ * ⚠️ Das ist keine Zierde, sondern die Gegenprobe zu einem Fehler, den dieser
+ * Umbau schon einmal gemacht hat. Fuer die Grundblende bekam der Kasten der
+ * Kinder ein `position: relative` - und damit bezog sich der absolut gesetzte
+ * Wolf ploetzlich auf den Inhaltsblock statt auf die volle Buehne und rutschte
+ * mitten ins Bild. Wolf hat es am Kontaktbogen sofort gesehen.
+ *
+ * Richtig steht er unten links, und zwar mit dem Kapuzensaum UNTER der Kante:
+ * `bottom` ist -6,25 % seiner Breite. Seine Unterkante muss also TIEFER als
+ * 990 liegen. Genau das wird hier geprueft. */
+const wolf = await seite.evaluate(() => {
+  const el = document.querySelector('video[src], img[alt*="Wolf" i]')?.closest('div[style*="absolute"]')
+    ?? [...document.querySelectorAll('div')].find(d => {
+      const st = getComputedStyle(d);
+      return st.position === 'absolute' && st.getPropertyValue('--qq-welcome-wolf-w');
+    });
+  if (!el) return null;
+  const r = el.getBoundingClientRect();
+  return { links: Math.round(r.left), oben: Math.round(r.top), unten: Math.round(r.bottom), breite: Math.round(r.width) };
+});
+console.log('\n══ Der Wolf ════════════════════════════════════════════════════');
+console.log(wolf
+  ? `  links ${wolf.links}, oben ${wolf.oben}, unten ${wolf.unten}, breit ${wolf.breite}`
+    + `\n  ${wolf.unten > 990 ? '✓ Saum unter der Buehnenkante, wie vorgesehen.' : '✗ Er steht zu hoch - der Bezugsrahmen stimmt nicht.'}`
+  : '  nicht gefunden');
+
 const flug = await seite.evaluate(() => globalThis.__qqWillkommenFlug ?? null);
 console.log('\n══ Die Uebergabe ═══════════════════════════════════════════════');
 console.log(flug

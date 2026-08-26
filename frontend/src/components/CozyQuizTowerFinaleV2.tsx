@@ -1790,15 +1790,26 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
               // geschweifte Klammer mit Sternchen.
               return (
                 <div key={k} style={{ width: zelle, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+                  {/* 2026-08-26 (Wolf: „hier auch immernoch bug um gewinner
+                      team"). Nach dem ersten Anlauf vom 2026-08-25 war es eine
+                      KACHEL ZU VIEL: die Zelle malte die Teamfarbe selbst und
+                      setzte die Marke `flat` darauf, aber das gelieferte Motiv
+                      bringt seine eigene Kachel mit. Zwei Flaechen derselben
+                      Farbe uebereinander, deren Kanten sich um ein paar
+                      Bildpunkte unterscheiden - das las sich als doppelter
+                      Rand, und der goldene Ring kam als dritte Kante dazu.
+
+                      Jetzt traegt die Marke ihre eigene Kachel (seit heute mit
+                      derselben 3D-Flaeche wie die Bausteine im Turm), die Zelle
+                      ist nur noch Platz und Ring. Eine Kachel, eine Kante. */}
                   <div style={{
                     width: seite, height: seite, borderRadius: quirkSet ? '18%' : '50%',
-                    background: t.color,
-                    display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
                     outline: mitte && steht ? `4px solid ${GOLD}` : 'none',
                     outlineOffset: mitte && steht ? 6 : 0,
                     animation: (mitte && steht && !reduce) ? 'qqT2AwardPop 0.5s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={seite} flat />
+                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={seite} />
                   </div>
                 </div>
               );

@@ -202,8 +202,21 @@ const AWARD_FRAGE = 2000;
 const AWARD_ROLL_TAKTE = [95, 95, 98, 104, 112, 124, 140, 162, 192, 232, 288, 360, 460, 600];
 /** Das Rad rollt und wird langsamer. */
 const AWARD_ROLLT = AWARD_ROLL_TAKTE.reduce((a, b) => a + b, 0);
-/** Das Team steht, +X springt heraus, der Saal darf klatschen. */
-const AWARD_STEHT = 1900;
+/** Das Team steht, +X springt heraus, der Saal darf klatschen.
+ *
+ * 2026-08-26 (Wolf: „auch die Awards waren bisher etwas schnell weg, Awards rad
+ * drehte sich, zack weg, das ging alles etwas schnell").
+ *
+ * 1900 ms waren von 2026-08-25, als die Zeremonie ueberhaupt erst entstand.
+ * Sie reichen, um zu LESEN, wer gewonnen hat - aber nicht, um zu klatschen.
+ * Bei einem Abend, an dem hier Preise uebergeben werden, ist das der Moment,
+ * in dem der Moderator redet, und der braucht Luft. 3600 ms sind zwei tiefe
+ * Atemzuege.
+ *
+ * ⚠️ Diese Zahl treibt auch das Steuerpult: `qqTurmAwardBeatDauer` rechnet die
+ * Autoplay-Dauer daraus. Wer sie aendert, aendert beide Seiten zugleich - genau
+ * dafuer steht sie hier und nicht zweimal im Haus. */
+const AWARD_STEHT = 3600;
 /** Wie lange die Award-Karte insgesamt steht, bevor der Baustein waechst. */
 const AWARD_KARTE = AWARD_FRAGE + AWARD_ROLLT + AWARD_STEHT;
 /** Ein Tick je Punkt, der erste etwas laenger. */
@@ -1582,26 +1595,69 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         const t = eintrag.team;
         return (
           <div key={`ansage-${t.id}`} data-qq-ansage={t.id} style={{
-            position: 'absolute', left: 0, right: 0, top: TITLE_H + 26, zIndex: 12,
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
+            // 2026-08-26 (Wolf: „Platz 8 soll mehr zelebriert werden, nicht nur
+            // eine sekunde zack geskippt ... Grosses Fenster in der Mitte Team x
+            // ist mit y punkten Platz Z").
+            //
+            // Bis hierher war das ein schmales Band oben unter dem Titel: eine
+            // Pille mit dem Platz und der Name daneben, ohne Punkte. Das ist
+            // eine Beschriftung, keine Ehrung. Wenn an diesem Punkt des Abends
+            // ein Preis uebergeben wird, steht der Moderator davor und redet -
+            // und dann muss das Bild ihn tragen, nicht nur mitlaufen.
+            //
+            // Es sitzt bewusst in der OBEREN Mitte und nicht in der Bildmitte:
+            // die Tuerme stehen unten, und der Turm dieses Teams sinkt gerade
+            // ab. Ein Fenster mitten im Bild wuerde genau die Bewegung
+            // verdecken, um die es geht.
+            position: 'absolute', left: '50%', top: TITLE_H + 40, zIndex: 12,
+            transform: 'translateX(-50%)',
+            display: 'flex', flexDirection: 'column', alignItems: 'center',
+            gap: istBuehne ? 14 : 8,
+            padding: istBuehne ? '34px 76px 30px' : '18px 34px',
+            borderRadius: 30,
+            background: 'linear-gradient(180deg, rgba(24,19,34,0.97), rgba(14,11,20,0.97))',
+            border: `2px solid ${t.color}`,
+            minWidth: istBuehne ? 760 : undefined,
             pointerEvents: 'none',
-            animation: reduce ? 'none' : 'qqT2AnsageBand 0.55s cubic-bezier(0.2,1.2,0.35,1) both',
+            animation: reduce ? 'none' : 'qqT2EhrungAuf 0.5s cubic-bezier(0.2,1.2,0.35,1) both',
           }}>
             <span style={{
-              fontSize: istBuehne ? 36 : 20, fontWeight: 900, letterSpacing: '0.06em',
-              color: '#12100E', background: t.color, borderRadius: 999,
-              padding: istBuehne ? '9px 28px' : '4px 14px', whiteSpace: 'nowrap',
-            }}>{de ? `PLATZ ${rank + 1}` : `#${rank + 1}`}</span>
+              fontSize: istBuehne ? 30 : 18, fontWeight: 900, letterSpacing: '0.24em',
+              textTransform: 'uppercase', color: 'var(--qq-text-muted)', whiteSpace: 'nowrap',
+            }}>{de ? `Platz ${rank + 1}` : `Place ${rank + 1}`}</span>
+            <QQTeamAvatar
+              avatarId={t.avatarId}
+              teamEmoji={t.emoji}
+              size={istBuehne ? 150 : 74}
+              blink={false}
+            />
             <TeamNameLabel
               name={t.name}
-              fontSize={istBuehne ? '66px' : '32px'}
-              minFontSize={istBuehne ? '40px' : '20px'}
+              fontSize={istBuehne ? '76px' : '34px'}
+              minFontSize={istBuehne ? '44px' : '20px'}
               color="var(--qq-text)"
               fontWeight={900}
               maxLines={1}
               shrinkAfter={13}
-              style={{ maxWidth: 1000, lineHeight: 1.05 }}
+              style={{ maxWidth: 1000, lineHeight: 1.02 }}
             />
+            {/* Die Punkte gehoeren dazu: ohne sie ist der Platz eine Behauptung.
+                Mit ihnen sieht der Saal, wie knapp es war.
+                ⚠️ Gezaehlt wird wie der Turm zaehlt - Brett-Gebiet plus Awards
+                plus Tipp-Bausteine. Das ist genau die Zahl, die unten im Sockel
+                steht; eine eigene Rechnung waere hier die naechste Quelle fuer
+                zwei verschiedene Ergebnisse auf derselben Buehne. */}
+            {(() => {
+              const punkte = eintrag.base + (bonusByTeam[t.id] ?? 0) + eintrag.tipp;
+              return (
+                <span style={{
+                  fontSize: istBuehne ? 40 : 20, fontWeight: 800, color: 'var(--qq-text-muted)',
+                  fontVariantNumeric: 'tabular-nums', whiteSpace: 'nowrap',
+                }}>{de
+                  ? `mit ${punkte} ${punkte === 1 ? 'Punkt' : 'Punkten'}`
+                  : `with ${punkte} ${punkte === 1 ? 'point' : 'points'}`}</span>
+              );
+            })()}
           </div>
         );
       })()}
@@ -1941,6 +1997,30 @@ const KEYFRAMES = `
   12%  { opacity: 1; transform: none; }
   74%  { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateY(-14px); }
+}
+/* Die Ehrung eines ausscheidenden Teams. Sie KOMMT nur, sie geht nicht.
+ *
+ * 2026-08-26 (Wolf: „Platz 8 soll mehr zelebriert werden, nicht nur eine
+ * sekunde zack geskippt ... erst durch space im moderator weiter").
+ *
+ * qqT2AnsageBand darueber endet bei Deckkraft 0 - die Ehrung war nach 550 ms
+ * weg, gleich wie lange der Beat noch stand. Fuer ein Band, das nebenbei
+ * mitlaeuft, war das richtig; fuer den Moment, in dem ein Preis uebergeben
+ * wird, ist es genau verkehrt. Das Fenster bleibt jetzt stehen, bis der
+ * Moderator weiterschaltet.
+ *
+ * ⚠️ Die Verschiebung um die halbe eigene Breite steht in JEDEM Schritt.
+ * Eine laufende Animation auf transform ersetzt den inline gesetzten Wert
+ * vollstaendig - ein einzelnes transform-none im Keyframe wuerde das Fenster
+ * aus der Mitte an den linken Rand ziehen. Genau diese Falle hat in dieser
+ * Uebergabe schon dreimal Zeit gekostet.
+ *
+ * ⚠️ Und kein Backtick in diesem Kommentar: er steht in einem Template-Literal,
+ * ein Backtick beendet es mitten im Stylesheet. Auch das ist hier schon dreimal
+ * passiert. */
+@keyframes qqT2EhrungAuf {
+  0%   { opacity: 0; transform: translateX(-50%) translateY(18px) scale(0.94); }
+  100% { opacity: 1; transform: translateX(-50%) translateY(0) scale(1); }
 }
 @keyframes qqT2RadRuck {
   0%   { transform: translateX(var(--qq-radzelle, 130px)); }

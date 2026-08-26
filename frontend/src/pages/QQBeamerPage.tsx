@@ -686,7 +686,13 @@ export function SlideStage({ children, bg }: { children: React.ReactNode; bg?: s
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       minHeight: 0,
     }}>
-      <div style={{
+      {/* 2026-08-25: die Kennung ist der EINE Bezugsrahmen fuer Uebergaben
+          zwischen zwei Phasen (siehe qqSiegerUebergabe.ts). Vorher hat die
+          Kroenung ihre Marke als Anteil des Finale-Roots gemerkt und die
+          Danke-Folie sie als Anteil IHRES Roots gelesen - zwei verschieden
+          grosse Kaesten. Gemessen kam dabei ein Flug von 6,7 Bildpunkten
+          heraus statt der halben Buehne. Ein Bezug, beide Seiten. */}
+      <div data-qq-buehne style={{
         width: STAGE_DESIGN_WIDTH,
         height: STAGE_DESIGN_HEIGHT,
         transform: `scale(${scale})`,

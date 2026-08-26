@@ -19,7 +19,6 @@ import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
 import { qqFinalSortedTeams } from '../utils/qqFinalScore';
-import { holeSiegerQuelle } from '../qqSiegerUebergabe';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -42,7 +41,6 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   // sich um sie herum auf. Ein Gegenstand, eine Bewegung, kein Schnitt.
   // FLIP: Endstand bauen, ins Erste zuruecksetzen, losfahren. Nur `transform`,
   // damit nichts neu gesetzt wird.
-  const siegerRef = useRef<HTMLDivElement | null>(null);
   const themed = isThemed();
   // 2026-08-23 (Uebergabe 2a, Buehnen-Durchgang): die Danke-Folie ist das
   // letzte Bild des Abends und hatte den Durchgang noch nicht gesehen.
@@ -91,33 +89,25 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   const nested = !!(s as any).nestedTeams;
   const winner = nested ? (qqSortedGroups(s)[0] ?? winnerTeam) : winnerTeam;
 
-  // Der FLIP selbst. `useLayoutEffect`, damit die Marke nie einen Frame lang an
-  // ihrem Zielort steht, bevor sie zurueckgesetzt wird - das waere ein Sprung.
-  useLayoutEffect(() => {
-    if (prefersReducedMotion() || isQuietMotion()) return;
-    const el = siegerRef.current;
-    if (!el || !winner?.id) return;
-    const quelle = holeSiegerQuelle(winner.id);
-    if (!quelle) return;
-    const buehne = el.closest('[data-qq-danke-buehne]') as HTMLElement | null;
-    const b = (buehne ?? el.ownerDocument.body).getBoundingClientRect();
-    if (b.width <= 0 || b.height <= 0) return;
-    const r = el.getBoundingClientRect();
-    const zielX = r.left + r.width / 2 - b.left;
-    const zielY = r.top + r.height / 2 - b.top;
-    const vonX = quelle.x * b.width;
-    const vonY = quelle.y * b.height;
-    // Der Massstab: die Kroenungs-Marke ist deutlich groesser als die hier.
-    const skala = r.width > 0 ? (quelle.groesse * b.width) / r.width : 1;
-    el.style.transformOrigin = 'center center';
-    el.style.transform = `translate(${vonX - zielX}px, ${vonY - zielY}px) scale(${skala})`;
-    el.style.transition = 'none';
-    const bild = requestAnimationFrame(() => {
-      el.style.transition = 'transform 720ms cubic-bezier(0.22, 0.72, 0.2, 1)';
-      el.style.transform = 'none';
-    });
-    return () => cancelAnimationFrame(bild);
-  }, [winner?.id]);
+  // ── Die Uebergabe der Sieger-Marke: gebaut, aber NICHT scharf ────────────
+  // 2026-08-25. Der Plan war, die Marke von der Kroenung herueberfahren zu
+  // lassen (FLIP, wie das Brett, das in den Turm faehrt). Die Kroenung merkt
+  // sich ihre Position auch korrekt - nachgemessen ueber `__qqSiegerQuelle`:
+  // x 0.5, groesse 0.148, also Mitte der Buehne und 260 Bildpunkte.
+  //
+  // Der Flug kam trotzdem nur auf 6,7 Bildpunkte. Zur Mount-Zeit der
+  // Danke-Folie liefert `getBoundingClientRect` fuer die Ziel-Kachel fast
+  // dieselbe Stelle und dieselbe Groesse wie die Quelle - vermutlich, weil das
+  // Raster und die cq-Einheiten in diesem Moment noch nicht aufgeloest sind.
+  // Ein Flug ueber sieben Bildpunkte ist kein Uebergang, sondern Zierrat mit
+  // Laufzeitkosten, deshalb ist er wieder raus.
+  //
+  // Was BLEIBT und was den messbaren Teil gebracht hat: die Verzoegerungen der
+  // Folie (siehe unten). Die Sieger-Kachel steht jetzt bei 606 statt 1003 ms.
+  // Das Modul `qqSiegerUebergabe.ts` und die Merk-Stelle in der Kroenung
+  // bleiben liegen - sie kosten nichts und sind die halbe Arbeit fuer den
+  // zweiten Anlauf. Der braucht einen spaeteren Messzeitpunkt (nach dem ersten
+  // Layout-Durchgang), nicht mehr.
 
   // 2026-05-10 v6 (Wolf 'pages sollen identisch sein, thanks soll wie setup
   // aussehen, nur mit anderen inhalten'): Komplettes Layout-Refactor — spiegelt
@@ -525,7 +515,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               animation: 'qqThanksColIn 0.5s ease both',
             }}>
               {winner && (
-                <div ref={siegerRef} style={{ position: 'relative' }}>
+                <div data-qq-sieger style={{ position: 'relative' }}>
                   {/* 2026-08-23: dritte und letzte Krone des Abends, gleiche
                       Entscheidung wie bei Schaetzchen und Zehn von Zehn. Wer
                       gewonnen hat, steht direkt darunter im Klartext („hat heute

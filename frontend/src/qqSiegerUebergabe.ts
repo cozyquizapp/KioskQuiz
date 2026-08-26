@@ -33,6 +33,9 @@ let quelle: SiegerQuelle | null = null;
 
 export function merkeSiegerQuelle(q: Omit<SiegerQuelle, 'zeit'>): void {
   quelle = { ...q, zeit: Date.now() };
+  // Sichtbar fuer die Messwerkzeuge. Sonst laesst sich von aussen nicht
+  // pruefen, WAS gemerkt wurde - und genau daran haengt, ob der Flug stimmt.
+  (globalThis as unknown as { __qqSiegerQuelle?: SiegerQuelle }).__qqSiegerQuelle = quelle;
 }
 
 /**

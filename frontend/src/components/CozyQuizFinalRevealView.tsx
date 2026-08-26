@@ -784,7 +784,11 @@ function KroenungsSlide({ eintrag, lang }: {
       const el = markeRef.current;
       if (!el) return;
       const r = el.getBoundingClientRect();
-      const buehne = el.closest('[data-qq-finale-buehne]') ?? el.ownerDocument.body;
+      // ⚠️ `data-qq-buehne` (die skalierte 1760x990-Flaeche in QQBeamerPage),
+      // NICHT der Finale-Root. Die Danke-Folie liest denselben Bezug; zwei
+      // verschieden grosse Kaesten ergeben Bruchteile, die nicht zueinander
+      // passen - gemessen ein Flug von 6,7 statt rund 600 Bildpunkten.
+      const buehne = el.closest('[data-qq-buehne]') ?? el.ownerDocument.body;
       const b = buehne.getBoundingClientRect();
       if (b.width <= 0 || b.height <= 0) return;
       merkeSiegerQuelle({

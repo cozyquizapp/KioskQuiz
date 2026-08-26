@@ -10,7 +10,7 @@
  * ohne Socket/DB/Timer-Side-Effects.
  */
 import { describe, it, expect } from 'vitest';
-import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqIstKroenungsBeat, qqTurmRennplan } from '../shared/qqFinalReveal';
+import { qqDecodeFinalStep, qqFinalMaxStep, qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqIstKroenungsBeat, qqTurmRennplan, qqTurmEhrungsBeat } from '../shared/qqFinalReveal';
 import { qqSortedTeamIds, qqGoBackSlide, qqBetSlotsCount, updateTerritories, qqCozyGameTurnAbgelaufen, qqCozyGameRanking, qqCozyGameNextSequenceTeam, qqCozyGameFinish, qqCozyGameConfirmValues, qqFlushPendingStacks } from '../backend/src/quarterQuiz/qqRooms';
 import { buildEmptyGrid } from '../backend/src/quarterQuiz/qqBfs';
 
@@ -170,7 +170,28 @@ describe('qqTurmRennplan — eine Etappe je Team, von hinten nach vorne', () => 
   });
   it('eine Etappe je Team, plus die Null am Anfang', () => {
     expect(qqTurmRennplan(['a', 'b', 'c'], { a: 4, b: 2, c: 1 })).toHaveLength(4);
-    expect(qqTurmRennplan([], {})).toEqual([0]);
+    expect(qqTurmRennplan([], {})).toEqual([0, 0]);
+  });
+
+  // 2026-08-25 (Wolf: „ich komme gerade nicht in coolify rein"). Gibt der Server
+  // weniger Beats her als die Buehne braucht, brach die Zeremonie mittendrin ab.
+  // Mit dem Budget passt sie sich an, statt abgeschnitten zu werden.
+  it('kleineres Budget: der Sieger behaelt die letzte Etappe, hinten wird gebuendelt', () => {
+    expect(qqTurmEhrungsBeat(0, 5)).toBe(5);   // Sieger, letzte Etappe
+    expect(qqTurmEhrungsBeat(1, 5)).toBe(4);
+    expect(qqTurmEhrungsBeat(3, 5)).toBe(2);
+    expect(qqTurmEhrungsBeat(4, 5)).toBe(1);   // ab hier alles in die erste
+    expect(qqTurmEhrungsBeat(7, 5)).toBe(1);
+  });
+  it('Budget gleich Teamzahl heisst wieder eine Etappe je Team', () => {
+    for (let r = 0; r < 8; r++) expect(qqTurmEhrungsBeat(r, 8)).toBe(8 - r);
+  });
+  it('der Rennplan folgt dem Budget', () => {
+    // 4 Teams, Budget 3: Etappe 1 buendelt die Plaetze 3 und 4.
+    const p = qqTurmRennplan(['a', 'b', 'c', 'd'], { a: 6, b: 2, c: 3, d: 1 }, 3);
+    expect(p).toHaveLength(4);                 // Null plus drei Etappen
+    expect(p).toEqual([0, 3, 3, 6]);
+    for (let i = 1; i < p.length; i++) expect(p[i]).toBeGreaterThanOrEqual(p[i - 1]);
   });
   it('ohne Wetten laeuft kein Rennen', () => {
     expect(qqTurmRennplan(['a', 'b', 'c'], {})).toEqual([0, 0, 0, 0]);

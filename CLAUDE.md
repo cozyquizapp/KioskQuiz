@@ -20,7 +20,20 @@ Einzeln: `npm run typecheck` · `npm test` · `npm run lint`
 
 CI blockiert bei Typfehlern, roten Tests und Lint-**Fehlern**.
 Lint-**Warnungen** blockieren nicht (Bestand: ~464, siehe STRUKTUR_PLAN.md).
-Push auf `main` deployt automatisch: Backend nach Coolify, Frontend nach Vercel.
+Push auf `main` deployt **nur das Frontend** automatisch (Vercel).
+
+> ⚠️ **Das Backend deployt sich NICHT von selbst.** Es laeuft auf Coolify
+> (self-hosted) und braucht dort einen **manuellen Redeploy in der UI**
+> (siehe README.md, Abschnitt Architektur). Diese Zeile stand hier bis
+> 2026-08-25 falsch als „deployt automatisch" - und hat genau das gekostet,
+> wovor sie haette schuetzen sollen: einen halben Tag Fehlersuche im Code,
+> waehrend der Server schlicht eine alte Fassung lief. Wolf: „das problem
+> besteht seit 10 pushes".
+>
+> Woran man es erkennt, ohne zu raten: das Steuerpult zeigt unter der
+> Step-Anzeige „Buehne <kennung> · Server <kennung>". Meldet der Server keine
+> Kennung, ist er aelter als dieser Stand. Dasselbe steht in `/api/health`
+> als Feld `build`.
 
 ## Lokal starten
 

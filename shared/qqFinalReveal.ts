@@ -135,19 +135,44 @@ export function qqTowerAwardCount(
  * `rangfolge` ist die Endreihenfolge der Team-Ids, Sieger zuerst
  * (qqFinalSortedTeams). `tipp` ist der Wett-Bonus je Team.
  */
+/**
+ * In welcher Etappe wird Platz `rank` (0-basiert, 0 = Sieger) geehrt?
+ *
+ * 2026-08-25 (Wolf: „ich komme gerade nicht in coolify rein"). Bis dahin galt
+ * fest „eine Etappe je Team". Das stimmt aber nur, wenn der Server auch so
+ * viele Beats hergibt. Gibt er weniger - weil er aelter ist, oder weil sich die
+ * Rechnung irgendwann wieder aendert -, dann brach die Zeremonie mittendrin ab
+ * und der Saal sah die halbe Siegerehrung nicht.
+ *
+ * Mit dem Budget passt sie sich an: der Sieger bekommt immer die LETZTE Etappe,
+ * darunter je einer, und was dann noch uebrig ist, faellt in die erste. Bei
+ * `budget = n` ist das wieder genau eine Etappe je Team.
+ *
+ * Beispiel, 8 Teams, Budget 5:
+ *   Etappe 1: Plaetze 8 bis 5   ·   2: Platz 4   ·   3: Platz 3
+ *   Etappe 4: Platz 2           ·   5: der Sieger
+ */
+export function qqTurmEhrungsBeat(rank: number, budget: number): number {
+  return Math.max(1, budget - rank);
+}
+
 export function qqTurmRennplan(
   rangfolge: readonly string[],
   tipp: Readonly<Record<string, number>>,
+  budget: number = rangfolge.length,
 ): number[] {
   const n = rangfolge.length;
+  const b = Math.max(1, Math.min(n || 1, budget));
   const t = (id: string | undefined) => (id ? (tipp[id] ?? 0) : 0);
   const ziele: number[] = [0];
   let bisher = 0;
-  // Etappe k gehoert dem Team auf Platz n-k, also von hinten nach vorne.
-  for (let k = 1; k <= n; k++) {
-    // Monoton halten: eine Etappe darf nie weniger Takte zulassen als die
-    // davor, sonst schruempfte ein Turm beim Weiterschalten.
-    bisher = Math.max(bisher, t(rangfolge[n - k]));
+  for (let k = 1; k <= b; k++) {
+    // Alle Plaetze, die in DIESER Etappe fertig sein muessen. Monoton halten:
+    // eine Etappe darf nie weniger Takte zulassen als die davor, sonst
+    // schruempfte ein Turm beim Weiterschalten.
+    for (let r = 0; r < n; r++) {
+      if (qqTurmEhrungsBeat(r, b) === k) bisher = Math.max(bisher, t(rangfolge[r]));
+    }
     ziele.push(bisher);
   }
   return ziele;

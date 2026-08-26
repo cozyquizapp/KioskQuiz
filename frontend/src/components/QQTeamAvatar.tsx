@@ -8,7 +8,7 @@ import { isPartySlug, partySrc, partyLabel } from '../partyAvatars';
 import { isQuirk2Slug, quirk2BySlug, quirk2Src, quirk2Label } from '../quirks2Avatars';
 import { isBlockzSlug, blockzBySlug, blockzSrc, blockzLabel } from '../blockzAvatars';
 import { isCrestSlug, crestEmblemSrc, crestSrc, crestLabel } from '../cozyArenaCrests';
-import { isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel } from '../cozyquizAvatars';
+import { isCozyQuizSlug, cozyQuizSrcKlein, cozyQuizLabel } from '../cozyquizAvatars';
 import { isAvatarAwake, subscribeAwake } from '../avatarAwake';
 import { isThemed } from '../qqTheme';
 
@@ -484,8 +484,14 @@ export function CountryFlagOrEmoji({ emoji, fontSize, style }: {
   // (2026-07-03), Party (2026-07-20) und Woelfen (2026-07-21).
   if (isCozyQuizSlug(emoji)) {
     return (
+      // 2026-08-26 (Avatarsatz V5): KLEINE Fassung. Dieser Zweig rendert die
+      // Inline-Zeichen mit 1,15em - im Avatar-Raster auf dem Handy stehen hier
+      // alle 48 gleichzeitig. Gemessen macht das den Unterschied zwischen
+      // 1,3 MB und 17,7 MB fuer eine einzige Bildschirmseite. Die grossen
+      // Kacheln laufen weiter ueber cozyQuizSrc (ImageAvatar), da waere die
+      // kleine Fassung sichtbar weich.
       <img
-        src={cozyQuizSrc(emoji)}
+        src={cozyQuizSrcKlein(emoji)}
         alt={cozyQuizLabel(emoji)}
         draggable={false}
         style={{

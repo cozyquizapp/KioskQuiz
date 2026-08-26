@@ -137,8 +137,37 @@ export function isCozyQuizSlug(s: string | undefined | null): s is string {
  *
  * Erzeugt mit `node scripts/avatare-packen.mjs --schreib`.
  */
+/**
+ * Der Pfad zum Avatarbild, grosse Fassung (640 px).
+ *
+ * 2026-08-26 (Avatarsatz V5). Bis heute stand hier `.webp`, und das war ein
+ * Widerspruch zu Wolfs Asset-Regeln: „Nicht ueber JPEG, WebP oder ein anderes
+ * verlustbehaftetes Format zwischenkonvertieren." Jetzt PNG, verlustfrei,
+ * abgeleitet aus den Originalen mit `scripts/avatare-v5-ableiten.mjs`.
+ *
+ * 640 px, weil das der groesste Einsatzort verlangt: die Siegerkachel auf der
+ * Danke-Folie steht bei `clamp(180px, 20cqw, 290px)`, und die Buehne wird als
+ * festes 1760x990-Feld auf den Beamer hochskaliert - auf einem 4K-Projektor
+ * sind das rund 630 echte Bildpunkte.
+ */
 export function cozyQuizSrc(slug: string): string {
-  return `/avatars/cozyquiz/${slug}.webp`;
+  return `/avatars/cozyquiz/${slug}.png`;
+}
+
+/**
+ * Dasselbe Bild in klein (160 px). Fuer Stellen, an denen VIELE Avatare
+ * gleichzeitig stehen.
+ *
+ * Der Grund ist gemessen: die Avatarwahl auf dem Handy zeigt alle 48 auf
+ * einmal. In der grossen Fassung sind das 17,7 MB ueber ein Bar-WLAN, fuer
+ * Kacheln von rund 72 Bildpunkten. In der kleinen sind es 1,3 MB. Vorher, als
+ * WebP in voller Aufloesung, waren es 20,4 MB.
+ *
+ * ⚠️ Nicht fuer grosse Kacheln nehmen. Ab etwa 160 CSS-Punkten wird es weich,
+ * und auf dem Beamer faellt das sofort auf.
+ */
+export function cozyQuizSrcKlein(slug: string): string {
+  return `/avatars/cozyquiz/klein/${slug}.png`;
 }
 
 /** Anzeige-Label, Fallback = Slug. */

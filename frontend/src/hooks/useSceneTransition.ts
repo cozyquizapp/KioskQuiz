@@ -41,7 +41,24 @@ function prefersReducedMotion(): boolean {
     && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-export function useSceneTransition<T extends WithPhase>(live: T, enabled: boolean): T {
+/**
+ * Womit wird ein Wechsel erkannt?
+ *
+ * 2026-08-26 (Wolf: „nach letztem reveal und punkte vergabe wechselt die view
+ * abrupt und unclean"). Bis hierher war das die PHASE - und das reicht nicht.
+ * In FINAL_REVEAL wechselt die Ansicht dreimal komplett (Titel, Tipps, Turm),
+ * ohne dass die Phase sich ruehrt. Genau dort wurde deshalb geschnitten statt
+ * ueberblendet, und zwar an der Naht zwischen der letzten Tipp-Aufloesung und
+ * dem Turm - dem Moment, in dem der Abend seine Punkte vergeben hat.
+ *
+ * `szene` ist optional. Ohne sie verhaelt sich der Haken exakt wie vorher.
+ */
+export function useSceneTransition<T extends WithPhase>(
+  live: T,
+  enabled: boolean,
+  szene?: (s: T) => string,
+): T {
+  const schluessel = (s: T) => (szene ? szene(s) : s.phase);
   const [, forceRender] = useReducer((n: number) => n + 1, 0);
   const liveRef = useRef(live);
   liveRef.current = live;
@@ -55,14 +72,15 @@ export function useSceneTransition<T extends WithPhase>(live: T, enabled: boolea
   const runningForRef = useRef<string | null>(null);
 
   const active = enabled && supportsViewTransitions() && !prefersReducedMotion();
-  const holding = active && live.phase !== shownRef.current.phase;
+  const holding = active && schluessel(live) !== schluessel(shownRef.current);
   if (!holding) shownRef.current = live;
   const out = holding ? shownRef.current : live;
 
   useLayoutEffect(() => {
     if (!holding) { runningForRef.current = null; return; }
-    if (runningForRef.current === live.phase) return;
-    runningForRef.current = live.phase;
+    const ziel = schluessel(live);
+    if (runningForRef.current === ziel) return;
+    runningForRef.current = ziel;
     const doc = document as Document & {
       startViewTransition: (cb: () => void) => {
         ready: Promise<void>;

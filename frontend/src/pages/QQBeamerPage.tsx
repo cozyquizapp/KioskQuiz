@@ -6,6 +6,7 @@ import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
 import { isThemed, getActiveTheme, setActiveThemeId, themeIdForState, useActiveThemeId, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { useSceneTransition } from '../hooks/useSceneTransition';
+import { qqFinalSzene, qqBetSlotPlan } from '../../../shared/qqFinalReveal';
 import {
   QQStateUpdate, QQTeam, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS, QQ_BUNTE_TUETE_LABELS,
   qqGetAvatar, QQCategory,
@@ -966,7 +967,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
   // Aussage fehlte. Der Szenenwechsel macht daraus einen ueberlappenden
   // Wechsel: die alte Szene tritt ab, waehrend die neue schon kommt.
   const buehnenMotion = aktivesThema === BUEHNE_THEME_ID;
-  const renderState: QQStateUpdate = useSceneTransition(stageState, kinoMotion || buehnenMotion);
+  // 2026-08-26 (Wolf: „nach letztem reveal und punkte vergabe wechselt die view
+  // abrupt und unclean"). Gemessen mit scripts/wagerschluss-messen.mjs: auf der
+  // ganzen Strecke der Tipp-Aufloesung KEIN dunkles Bild - der Wechsel war also
+  // nie ein Leerbild, sondern ein harter Schnitt. Ursache: FINAL_REVEAL zeigt
+  // drei voellig verschiedene Ansichten (Titel, Tipps, Turm), aber die Phase
+  // bleibt dieselbe, und die Wechsel-Ebene haengt am Phasenwechsel. Der
+  // Szenen-Schluessel macht die drei unterscheidbar.
+  const szeneSchluessel = useCallback((st: QQStateUpdate) => {
+    if (st.phase !== 'FINAL_REVEAL') return st.phase;
+    return qqFinalSzene(st.finalRevealStep ?? 0, qqBetSlotPlan(st.teams, st.finalBetResolution).length);
+  }, []);
+  const renderState: QQStateUpdate = useSceneTransition(stageState, kinoMotion || buehnenMotion, szeneSchluessel);
   // Arena-Beamer durchgaengig EN: setzt das Modul-Flag fuer useLangFlip, damit
   // im Mega-Modus kein DE/EN-Flip mehr durchrutscht (z.B. "Umfrage" statt "Survey").
   setBeamerMega(qqIsMega(renderState));

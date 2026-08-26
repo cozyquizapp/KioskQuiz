@@ -368,7 +368,7 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
 // 2026-05-24 (Refactor #1 Drift-Killer): Step-Decode lebt jetzt in
 // shared/qqFinalReveal.ts. Vorher war dieselbe Logik in 3 Stellen dupliziert
 // (Backend qqRooms.ts + dieser File + QQFinalRevealTestPage.tsx).
-import { qqDecodeFinalStep as decodeFinalStep, qqIstKroenungsBeat, qqTowerAwardCount } from '../../../shared/qqFinalReveal';
+import { qqDecodeFinalStep as decodeFinalStep, qqIstKroenungsBeat, qqTowerAwardCount, qqBetSlotPlan } from '../../../shared/qqFinalReveal';
 // 2026-07-19 (Turm-Finale V2): Live-Finale rendert die TowerFinaleV2, moderator-
 // getaktet per beat (liveBeat). buildTowerFinaleData = reines State->Turm-Mapping.
 import { TowerFinaleV2, buildTowerFinaleData } from './CozyQuizTowerFinaleV2';
@@ -867,20 +867,22 @@ export function FinalRevealView({ state: s }: { state: QQStateUpdate }) {
     type BetSlot =
       | { kind: 'zero-group'; teams: QQTeam[] }
       | { kind: 'positive'; team: QQTeam; bonus: number };
+    // 2026-08-26: die Reihenfolge steht jetzt in shared/qqFinalReveal.ts
+    // (`qqBetSlotPlan`) und nicht mehr hier. Sie entscheidet naemlich auch,
+    // AB WELCHEM Schritt der Turm uebernimmt - und das muss die Buehne wissen,
+    // um dort ueberblenden zu koennen statt zu schneiden. Zwei Kopien dieser
+    // Regel waeren zwei Grenzen. Hier werden nur noch die Team-Objekte
+    // nachgeschlagen.
+    const nachId = new Map(s.teams.map(t => [t.id, t]));
     const betSlots: BetSlot[] = [];
-    const betted = s.teams.filter(t => s.finalBetResolution?.[t.id]?.targetTeamId);
-    const zeroTeams = betted.filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) === 0);
-    const positiveTeams = betted
-      .filter(t => (s.finalBetResolution?.[t.id]?.totalBonus ?? 0) > 0)
-      .sort((a, b) => {
-        const ba = s.finalBetResolution![a.id].totalBonus;
-        const bb = s.finalBetResolution![b.id].totalBonus;
-        if (ba !== bb) return ba - bb; // aufsteigend
-        return a.name.localeCompare(b.name);
-      });
-    if (zeroTeams.length > 0) betSlots.push({ kind: 'zero-group', teams: zeroTeams });
-    for (const t of positiveTeams) {
-      betSlots.push({ kind: 'positive', team: t, bonus: s.finalBetResolution![t.id].totalBonus });
+    for (const eintrag of qqBetSlotPlan(s.teams, s.finalBetResolution)) {
+      if (eintrag.kind === 'zero-group') {
+        const teams = eintrag.teamIds.map(id => nachId.get(id)).filter((t): t is QQTeam => !!t);
+        if (teams.length) betSlots.push({ kind: 'zero-group', teams });
+      } else {
+        const team = nachId.get(eintrag.teamId);
+        if (team) betSlots.push({ kind: 'positive', team, bonus: eintrag.bonus });
+      }
     }
 
     const cellsByTeam: Record<string, number> = {};

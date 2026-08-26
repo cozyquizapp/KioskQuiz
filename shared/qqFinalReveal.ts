@@ -34,6 +34,59 @@ export type QQAwardRecipients = {
   underdog?: string | null;
 } | null | undefined;
 
+/** Ein Tipp-Auftritt in der Aufloesung: erst die Nullrunde, dann je ein Team. */
+export type QQBetSlotPlan =
+  | { kind: 'zero-group'; teamIds: string[] }
+  | { kind: 'positive'; teamId: string; bonus: number };
+
+/**
+ * Welche Tipp-Folien kommen, in welcher Reihenfolge.
+ *
+ * ⚠️ DIESE FUNKTION IST DIE EINZIGE QUELLE fuer die Anzahl der Tipp-Folien.
+ * Aus ihr faellt das `betSlotsCount`, das `qqDecodeFinalStep` braucht - und
+ * damit die Grenze, ab der der Turm uebernimmt. Wer sie hier aendert, aendert
+ * sie ueberall; wer sie woanders nachbaut, bekommt zwei Wahrheiten und eine
+ * Buehne, die an der falschen Stelle umschaltet.
+ *
+ * 2026-08-26 herausgezogen (Wolf: „nach letztem reveal und punkte vergabe
+ * wechselt die view abrupt und unclean"). Vorher stand die Regel nur im
+ * useMemo der Aufloesungs-Ansicht. Die Buehne konnte deshalb nicht wissen, WO
+ * eine Szene endet und die naechste beginnt - und hat den Uebergang von der
+ * letzten Tipp-Karte in den Turm ohne Wechsel geschnitten, weil die PHASE
+ * dabei dieselbe bleibt.
+ *
+ * Regel (Wolf 2026-05-10, „BetReveal Variante D"): Teams ohne Tipp kommen gar
+ * nicht vor. Alle Teams mit Tipp und null Bonus teilen sich EINE Folie. Danach
+ * je ein Team mit Bonus, aufsteigend, bei Gleichstand nach Namen.
+ */
+export function qqBetSlotPlan(
+  teams: readonly { id: string; name: string }[],
+  aufloesung: Readonly<Record<string, { targetTeamId?: string | null; totalBonus?: number }>> | null | undefined,
+): QQBetSlotPlan[] {
+  const mitTipp = teams.filter(t => aufloesung?.[t.id]?.targetTeamId);
+  const bonus = (id: string) => aufloesung?.[id]?.totalBonus ?? 0;
+  const plan: QQBetSlotPlan[] = [];
+  const nullen = mitTipp.filter(t => bonus(t.id) === 0);
+  if (nullen.length > 0) plan.push({ kind: 'zero-group', teamIds: nullen.map(t => t.id) });
+  const positive = mitTipp
+    .filter(t => bonus(t.id) > 0)
+    .sort((a, c) => (bonus(a.id) !== bonus(c.id) ? bonus(a.id) - bonus(c.id) : a.name.localeCompare(c.name)));
+  for (const t of positive) plan.push({ kind: 'positive', teamId: t.id, bonus: bonus(t.id) });
+  return plan;
+}
+
+/**
+ * Welche SZENE zeigt die Buehne bei diesem Stand der Aufloesung?
+ *
+ * Die Wechsel-Ebene der Buehne haengt am Phasenwechsel. Innerhalb von
+ * FINAL_REVEAL wechselt die Ansicht aber dreimal komplett - Titel, Tipps,
+ * Turm - ohne dass die Phase sich ruehrt. Dieser Schluessel macht die drei
+ * unterscheidbar, damit dazwischen ueberblendet wird statt geschnitten.
+ */
+export function qqFinalSzene(step: number, betSlotsCount: number): string {
+  return `FINAL_REVEAL:${qqDecodeFinalStep(step, betSlotsCount).kind}`;
+}
+
 /** Decode the current step index into a typed phase + sub-info. */
 export function qqDecodeFinalStep(step: number, betSlotsCount: number): QQFinalStep {
   if (step <= 0) return { kind: 'title' };

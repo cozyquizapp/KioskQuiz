@@ -20,7 +20,7 @@
  * "Nicer": EINE ruhige Atmosphaere (Vignette + Boden-Glow); reduced-motion
  * respektiert. Auto-Play + Space zum Vorspulen. Vorschau /race-finale.
  */
-import { useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
+import { Fragment, useState, useEffect, useLayoutEffect, useMemo, useCallback, useRef } from 'react';
 import { qqKachelFlaeche } from '../qqKachel';
 import type { QQTeam, QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { qqAwardPoints, qqCozyPoints, qqFinalTotal } from '../utils/qqFinalScore';
@@ -1594,7 +1594,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         if (!eintrag || !platzSteht(rank)) return null;
         const t = eintrag.team;
         return (
-          <div key={`ansage-${t.id}`} data-qq-ansage={t.id} style={{
+          <Fragment key={`ansage-${t.id}`}>
+          {/* Der Vorhang. 2026-08-26 (Wolf, mit Bild: „schau das geht bisschen
+              unter so"). Gemessen mit scripts/kachel-3d-messen.mjs war das
+              Fenster selbst deckend - der Grund lag woanders: bei acht Teams
+              stehen die Tuerme vier Kacheln hoch und reichen bis in die Hoehe
+              des Fensters. Neben sechs leuchtenden Farbsaeulen verliert ein
+              dunkler Kasten, egal wie deckend er ist. Also nicht das Fenster
+              heller machen, sondern den Saal abdunkeln.
+
+              Der Verlauf ist Absicht: oben, wo das Fenster steht, dunkelt er
+              kraeftig; unten, wo der Turm dieses Teams gerade absinkt, laeuft
+              er auf null aus. Die Bewegung, um die es geht, bleibt in voller
+              Helligkeit stehen. */}
+          <div aria-hidden="true" style={{
+            position: 'absolute', inset: 0, zIndex: 11, pointerEvents: 'none',
+            background: 'linear-gradient(180deg, rgba(8,5,13,0.86) 0%, rgba(8,5,13,0.82) 46%, '
+              + 'rgba(8,5,13,0.5) 72%, rgba(8,5,13,0) 92%)',
+            animation: reduce ? 'none' : 'qqT2VorhangAuf 0.42s ease-out both',
+          }} />
+          <div data-qq-ansage={t.id} style={{
             // 2026-08-26 (Wolf: „Platz 8 soll mehr zelebriert werden, nicht nur
             // eine sekunde zack geskippt ... Grosses Fenster in der Mitte Team x
             // ist mit y punkten Platz Z").
@@ -1617,13 +1636,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
             borderRadius: 30,
             background: 'linear-gradient(180deg, rgba(24,19,34,0.97), rgba(14,11,20,0.97))',
             border: `2px solid ${t.color}`,
+            // Ein kurzer, harter Schatten setzt das Fenster VOR die Tuerme,
+            // statt es auf gleicher Ebene mit ihnen liegen zu lassen.
+            boxShadow: '0 18px 44px rgba(0,0,0,0.62)',
             minWidth: istBuehne ? 760 : undefined,
             pointerEvents: 'none',
             animation: reduce ? 'none' : 'qqT2EhrungAuf 0.5s cubic-bezier(0.2,1.2,0.35,1) both',
           }}>
+            {/* Der Platz ist die Ehrung, nicht die Beschriftung. Bis 2026-08-26
+                stand er hier als kleinste Zeile des Fensters in Grau: 30 px
+                gegen 52 px Teamname, gemessen. Wolf: „das platz x oben ist
+                sehr klein geht etwas unter". Jetzt traegt er eine gefuellte
+                Plakette in der Teamfarbe - Groesse allein reicht auf 2,8
+                Metern nicht, Masse und Farbe schon. Dunkler Text auf der
+                Teamfarbe, weil die Palette durchweg helle Toene fuehrt. */}
             <span style={{
-              fontSize: istBuehne ? 30 : 18, fontWeight: 900, letterSpacing: '0.24em',
-              textTransform: 'uppercase', color: 'var(--qq-text-muted)', whiteSpace: 'nowrap',
+              fontSize: istBuehne ? 46 : 20, fontWeight: 900, letterSpacing: '0.14em',
+              textTransform: 'uppercase', whiteSpace: 'nowrap',
+              color: '#12100E', background: t.color,
+              borderRadius: 999, padding: istBuehne ? '8px 34px' : '4px 16px',
+              lineHeight: 1.1,
             }}>{de ? `Platz ${rank + 1}` : `Place ${rank + 1}`}</span>
             <QQTeamAvatar
               avatarId={t.avatarId}
@@ -1659,6 +1691,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               );
             })()}
           </div>
+          </Fragment>
         );
       })()}
 
@@ -1700,8 +1733,10 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
   const [takt, setTakt] = useState<'frage' | 'rollt' | 'steht'>(reduce ? 'steht' : 'frage');
   const [pos, setPos] = useState(0);
   const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
-  // Cozy Quirks: eckige Kachel -> Marken quadratisch (keine runde Coin).
-  const quirkSet = isQuirkTileSet(useAvatarSet());
+  // 2026-08-26: `quirkSet` ist hier raus. Er entschied die Rundung der Radzelle
+  // (18 Prozent gegen 50), und genau diese zweite Rundung neben der Rundung der
+  // Kachel war der „komische Rand" um das Gewinner-Team. Der Ring haengt jetzt
+  // an der Kachel selbst und braucht die Auskunft nicht mehr.
 
   // Der Streifen. `folge` ist die Reihe, durch die das Rad laeuft, und der
   // Startpunkt ist so gewaehlt, dass nach GENAU `ROLL_TAKTE.length` Schritten
@@ -1858,14 +1893,35 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
                       Jetzt traegt die Marke ihre eigene Kachel (seit heute mit
                       derselben 3D-Flaeche wie die Bausteine im Turm), die Zelle
                       ist nur noch Platz und Ring. Eine Kachel, eine Kante. */}
+                  {/* 2026-08-26, dritter Anlauf (Wolf: „DAS PROBLEM BESTEHT
+                      NOCH?"). Gemessen mit scripts/kachel-3d-messen.mjs: die
+                      ZELLE rundete mit 18 Prozent, die Kachel darin mit 16.
+                      Der goldene Ring hing an der Zelle, also an der falschen
+                      Rundung - an den Ecken klaffte er rund drei Bildpunkte
+                      weiter als an den Kanten, und genau das liest sich als
+                      „komischer Rand".
+
+                      Die Rundung hier noch einmal hinzuschreiben waere der
+                      dritte Ort, an dem dieselbe Zahl steht, und beim naechsten
+                      Wechsel wieder auseinandergelaufen. Deshalb haengt der
+                      Ring jetzt an der KACHEL SELBST: eine `outline` folgt der
+                      border-radius ihres eigenen Elements, welche auch immer
+                      das gerade ist. Damit kann er gar nicht mehr schief
+                      stehen - egal ob rund (Handy), 16 Prozent (Buehne) oder
+                      was ein spaeteres Set mitbringt. */}
                   <div style={{
-                    width: seite, height: seite, borderRadius: quirkSet ? '18%' : '50%',
+                    width: seite, height: seite,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
-                    outline: mitte && steht ? `4px solid ${GOLD}` : 'none',
-                    outlineOffset: mitte && steht ? 6 : 0,
                     animation: (mitte && steht && !reduce) ? 'qqT2AwardPop 0.5s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
                   }}>
-                    <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={seite} />
+                    <QQTeamAvatar
+                      avatarId={t.avatarId}
+                      teamEmoji={t.emoji}
+                      size={seite}
+                      style={mitte && steht
+                        ? { outline: `4px solid ${GOLD}`, outlineOffset: 6 }
+                        : undefined}
+                    />
                   </div>
                 </div>
               );
@@ -1997,6 +2053,14 @@ const KEYFRAMES = `
   12%  { opacity: 1; transform: none; }
   74%  { opacity: 1; transform: none; }
   100% { opacity: 0; transform: translateY(-14px); }
+}
+/* Der Vorhang hinter der Ehrung. Er faehrt schneller hoch als das Fenster
+   aufgeht, damit der Saal schon dunkel ist, wenn das Fenster ankommt - und
+   nicht beides gleichzeitig passiert und sich gegenseitig die Aufmerksamkeit
+   nimmt. Nur Deckkraft, damit die Ebene nicht neu gezeichnet werden muss. */
+@keyframes qqT2VorhangAuf {
+  0%   { opacity: 0; }
+  100% { opacity: 1; }
 }
 /* Die Ehrung eines ausscheidenden Teams. Sie KOMMT nur, sie geht nicht.
  *

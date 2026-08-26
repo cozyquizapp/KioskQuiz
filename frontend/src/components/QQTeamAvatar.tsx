@@ -100,7 +100,18 @@ export function QQTeamAvatar({
   // 2026-08-22 (Uebergabe 2a): jede Teammarke traegt `qq-team-mark`. Das ist
   // der Haken, an dem der Buehnen-Scope die inline gesetzten Glows loeschen
   // kann (main.css), ohne die rund ein Dutzend Aufrufer einzeln anzufassen.
-  const className = classNameProp ? `qq-team-mark ${classNameProp}` : 'qq-team-mark';
+  // 2026-08-26: `qq-kachel` markiert die Marken, die ihre Flaeche aus
+  // qqKachelFlaeche beziehen und deren Innenschatten die Tiefe traegt. Der
+  // Buehnen-Scope nimmt genau diese von seinem `box-shadow: none !important`
+  // aus (main.css) - er soll die alten Aussenscheine loeschen, nicht die
+  // gewollte Tiefe. Im flat-Modus traegt der Container die Farbe, dann gibt es
+  // keine Flaeche und die Klasse gehoert nicht dran.
+  const kachel = !flat;
+  const className = [
+    'qq-team-mark',
+    kachel ? 'qq-kachel' : null,
+    classNameProp || null,
+  ].filter(Boolean).join(' ');
   const ctx = useAvatarSetCtx();
   const setId = avatarSetId ?? ctx.id;
   // serverEmojis nur ehrlich verwenden wenn das Set passt — bei explizitem
@@ -563,16 +574,18 @@ function ImageAvatar({
   // genau dieses Team) blinzeln Avatare kurz schneller = sichtbare Reaktion.
   const awake = useSyncExternalStore(subscribeAwake, () => isAvatarAwake(teamId));
 
+  // 2026-08-26 (Wolf zur Siegerfolie: „kein 3d effekt auf kachel, oder?").
+  // Gemessen mit scripts/kachel-3d-messen.mjs: Gefaelle oben gegen unten 5,2
+  // von 255, also flach. Zwei Ursachen lagen uebereinander. Erstens baute
+  // dieser Pfad seine Flaeche weiter selbst - zwei Radialverlaeufe, ein
+  // farbiger Aussenschein. Das „Kacheln immer 3D" vom selben Tag hatte nur
+  // QuirkAvatar erreicht. Zweitens loescht die Buehne jeden box-shadow an
+  // `.qq-team-mark` (main.css, „Gluehen entfernen"), und der Innenschatten IST
+  // die Tiefe - deshalb traegt die Kachel jetzt `qq-kachel` und ist von jener
+  // Regel ausgenommen.
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }
-    : {
-        background: `
-          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
-          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
-          ${color}
-        `,
-        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
-      };
+    : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
 
   // 2026-08-23: im BRETT darf nichts ueberstehen. Dort stossen die Felder
   // aneinander; ein Motiv, das ueber seine Kante ragt, laege im Nachbarfeld
@@ -834,16 +847,10 @@ function EmojiAvatar({
   // Flat-Mode: kein BG / kein Glow / kein Inset — nur das Emoji-Glyph.
   // Genutzt z.B. auf Beamer-Grid-Cells, wo die Cell selbst schon Slot-Farbe
   // traegt und die Disc visuell redundant ist.
+  // Sonst dieselbe Flaeche wie ueberall (2026-08-26, siehe ImageAvatar).
   const flatStyle: CSSProperties = flat
     ? { background: 'transparent', boxShadow: 'none' }
-    : {
-        background: `
-          radial-gradient(circle at 50% 58%, rgba(0,0,0,0.28) 0%, rgba(0,0,0,0) 58%),
-          radial-gradient(circle at 32% 30%, rgba(255,255,255,0.18) 0%, rgba(255,255,255,0) 45%),
-          ${color}
-        `,
-        boxShadow: `0 4px 14px ${color}55, inset 0 -10% 18% rgba(0,0,0,0.28)`,
-      };
+    : qqKachelFlaeche({ farbe: color, randStaerke: 0 });
 
   return (
     <span

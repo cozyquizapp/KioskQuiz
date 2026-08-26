@@ -381,8 +381,16 @@
    einzeln zu entschaerfen, loescht die Buehne ihn zentral — inline-Styles
    schlagen jede normale Regel, deshalb hier ausnahmsweise !important. Der
    Sieger-Glow der richtigen Antwort haengt nicht an dieser Klasse und bleibt.
-   2026-08-22. */
-[data-qq-stage='2a'] .qq-team-mark {
+   2026-08-22.
+
+   2026-08-26 (Wolf zur Siegerfolie: „kein 3d effekt auf kachel, oder?"):
+   `:not(.qq-kachel)` ist dazugekommen. Diese Regel war der zweite Grund fuer
+   die flache Kachel - sie loescht JEDEN box-shadow, auch den INNEREN, und der
+   innere ist die Tiefe. Gemessen mit scripts/kachel-3d-messen.mjs: Gefaelle
+   oben gegen unten 5,2 von 255. Marken, die ihre Flaeche aus qqKachelFlaeche
+   beziehen, tragen jetzt `qq-kachel` und bleiben aussen vor; alles andere
+   (die alten inline gesetzten Aussenscheine) faengt die Regel weiter ab. */
+[data-qq-stage='2a'] .qq-team-mark:not(.qq-kachel) {
   box-shadow: none !important;
 }
 

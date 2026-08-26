@@ -143,8 +143,14 @@ oder Nachdreh-Wunsch dranschreiben.
 
 ### Betrifft CozyQuiz (offen)
 
-- [ ] **Kategorie-Intro-Farben** — jede Kategorie in ihrer Eigenfarbe, NUR Progress-Tree pink?
-- [ ] **Toggle „Schlicht"** wirklich überall sauber (Beamer/Lobby/Welcome-Overlay)?
+- ✅ **Kategorie-Intro-Farben** — GEPRUEFT 2026-08-26 (Wolf: „passt, war eh alt").
+      Blatt mit vier Kategorien nebeneinander: `scripts/kategoriefarben-blatt.mjs`.
+      Jede Kategorie traegt ihre Eigenfarbe im GRUND und in der Akzentlinie, der
+      Titel ist ueberall Creme - das ist die 2a-Regel „warme Tinte statt Weiss"
+      vom 2026-08-22, kein Fehler. Der zweite Teil der Frage („NUR Progress-Tree
+      pink") war ueberholt: der Baum steht gar nicht auf der Intro-Folie.
+(Der Punkt „Toggle Schlicht" stand bis 2026-08-26 hier und ist eine Zeile tiefer
+gewandert, zu den Arena-Punkten. Grund siehe dort.)
 - [ ] **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion) auch im **klassischen**
       CozyQuiz gegenchecken, nicht nur Arena.
 
@@ -184,6 +190,14 @@ oder Nachdreh-Wunsch dranschreiben.
       in eine Zeile (54% Breite)? Falls zu eng: `avatarSz`/`gap` in `MegaOptionCrests`.
 - ⏸ **Kontrast am echten Beamer** — Fraktion „Wing It" (Blau) + „Objection" (Pink) auf Dunkel.
 - ⏸ **Lobby bei 40 Handys** — kein Scroll am Projektor.
+- ⏸ **Toggle „Schlicht"** wirklich überall sauber (Beamer/Lobby/Welcome-Overlay)?
+      ⚠️ 2026-08-26 nachgesehen und UMSORTIERT: der Schalter ist Arena-only, er stand
+      vorher faelschlich bei den CozyQuiz-Punkten. Belege: im Setup wird er nur unter
+      `{arena ? ...}` angeboten (QQSetupFlow), das Steuerpult zeigt die Look-Zeile nur
+      `arena ? [...]` (QQModeratorPage), und JEDER Leser gated auf largeGroupMode bzw.
+      isMega (cozyQuizShared `qqArenaLook`, ArenaBeamerBg, LobbyView, ThanksView,
+      CozyGuessrReveal). Im klassischen CozyQuiz tut der Schalter nichts, weil es dort
+      keine Kolosseum-Bilder zum Abschalten gibt.
 
 **🟡 Judgment-Calls (nur du kannst entscheiden, ob's stört):** Schätzchen-Antwort in Gold
 (wirkt bewusst?) · CHEESE-Kategorie-Titel violett (= Kategorie-Eigenfarbe) ·

@@ -1498,7 +1498,30 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                     // dieselbe Kachel ein zweites Mal fallen lassen - und weil
                     // qqT2Drop bei opacity 0 beginnt, saehe man dabei die
                     // fliegende Kachel durch den Baustein hindurch.
-                    animation: (isTopBlock && !reduce && phase !== 'brett') ? (isCrownBlock ? 'qqT2CrownBlock 0.8s cubic-bezier(0.3,1.5,0.4,1) both' : 'qqT2Drop 0.46s cubic-bezier(0.3,1.35,0.5,1) both') : 'none',
+                    // ⚠️ 2026-08-26 (Wolf: „die kacheln kommen alle an und dann
+                    // blitzen sie kurz noch einmal, nachdem alle auf ihrer
+                    // position sind").
+                    //
+                    // Hier stand `phase !== 'brett'`. Die Absicht war richtig
+                    // und steht im Absatz darueber: waehrend der Brettfall
+                    // laeuft, bringt die fliegende Kachel ihre eigene Bewegung
+                    // mit, der Baustein soll nicht ein zweites Mal fallen.
+                    //
+                    // Der Ausdruck taugt dafuer aber nicht. Er ist an die PHASE
+                    // gebunden, und die kippt fuer ALLE Tuerme in derselben
+                    // Sekunde. In diesem Moment wechselt die Bedingung fuer
+                    // jeden obersten Baustein von falsch auf wahr, React montiert
+                    // ihn neu, und acht Tuerme fallen und blitzen gleichzeitig -
+                    // obwohl gerade nichts gelandet ist.
+                    //
+                    // Richtig ist die Herkunft des Bausteins, nicht der Zeitpunkt:
+                    // die Bausteine unter `base` sind das Brett-Gebiet, die sind
+                    // GEFLOGEN. Alles darueber (Awards, Rennen) wird gesetzt und
+                    // darf fallen. `bi >= base` sagt das direkt und haengt an
+                    // nichts, das sich fuer alle gleichzeitig aendert.
+                    animation: (isTopBlock && bi >= base && !reduce && phase !== 'brett')
+                      ? (isCrownBlock ? 'qqT2CrownBlock 0.8s cubic-bezier(0.3,1.5,0.4,1) both' : 'qqT2Drop 0.46s cubic-bezier(0.3,1.35,0.5,1) both')
+                      : 'none',
                     overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center',
                   }}>
                     {isAwardBlock
@@ -1512,7 +1535,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                     {/* Der Lande-Blitz bleibt: er ist transient und sagt
                         „dieser Baustein ist GERADE gefallen". Ein Schein mit
                         Bedeutung bleibt, einer der nur schmueckt geht. */}
-                    {isTopBlock && !reduce && phase !== 'brett' && !(inReveal && !isTop3) && (
+                    {isTopBlock && bi >= base && !reduce && phase !== 'brett' && !(inReveal && !isTop3) && (
                       <div aria-hidden style={{ position: 'absolute', inset: -1, borderRadius: 5, pointerEvents: 'none', boxShadow: `0 0 ${istBuehne ? 10 : (isCrownBlock ? 22 : 12)}px ${colr}${isCrownBlock ? 'ee' : 'aa'}`, animation: `qqT2Spark ${isCrownBlock ? 0.7 : 0.5}s ease-out both` }} />
                     )}
                   </div>

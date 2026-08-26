@@ -79,7 +79,17 @@ await seite.evaluate(() => {
       const r = el.getBoundingClientRect();
       tuerme[el.getAttribute('data-qq-turm') || '?'] = { oben: Math.round(r.top), hoehe: Math.round(r.height) };
     }
-    w.__qqTurmSpur.push({ t: Math.round(performance.now() - t0), tuerme });
+    // Der eigentliche Zeuge: wie viele Lande-Blitze und Fall-Bewegungen laufen
+    // in DIESEM Bild gleichzeitig? Blitzen alle Tuerme zusammen, steht hier die
+    // Zahl der Tuerme - und genau das ist der Fehler, den Wolf sieht.
+    let blitze = 0, faelle = 0;
+    for (const a of document.getAnimations()) {
+      const n = a.animationName || '';
+      if (a.playState !== 'running') continue;
+      if (n === 'qqT2Spark') blitze++;
+      if (n === 'qqT2Drop') faelle++;
+    }
+    w.__qqTurmSpur.push({ t: Math.round(performance.now() - t0), tuerme, blitze, faelle });
     if (performance.now() - t0 < 7000) requestAnimationFrame(schritt);
   };
   requestAnimationFrame(schritt);
@@ -148,6 +158,18 @@ for (const s of spur) {
     const balken = '█'.repeat(Math.min(60, Math.round(d.d * 2)));
     console.log(`  ${String(d.t).padStart(5)} ms  ${d.d.toFixed(2).padStart(6)}  ${balken}`);
   }
+}
+
+{
+  let maxB = 0, maxBt = 0, maxF = 0, maxFt = 0;
+  for (const p of spur) {
+    if ((p.blitze ?? 0) > maxB) { maxB = p.blitze; maxBt = p.t; }
+    if ((p.faelle ?? 0) > maxF) { maxF = p.faelle; maxFt = p.t; }
+  }
+  console.log('\n── Gleichzeitige Lande-Bewegungen ────────────────────────────');
+  console.log(`  hoechstens ${maxB} Blitze gleichzeitig (bei ${maxBt} ms)`);
+  console.log(`  hoechstens ${maxF} Faelle gleichzeitig (bei ${maxFt} ms)`);
+  console.log('  Zum Vergleich: acht Tuerme. Alles ab 4 ist ein gemeinsames Blitzen.');
 }
 
 console.log('\n── Gemeinsame Spruenge ───────────────────────────────────────');

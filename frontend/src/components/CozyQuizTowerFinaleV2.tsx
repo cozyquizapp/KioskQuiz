@@ -1783,6 +1783,33 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
   const ROLL_TAKTE = AWARD_ROLL_TAKTE;
   const [takt, setTakt] = useState<'frage' | 'rollt' | 'steht'>(reduce ? 'steht' : 'frage');
   const [pos, setPos] = useState(0);
+  /**
+   * Wie lange der GERADE laufende Takt dauert. Das ist kein Beiwerk, sondern
+   * der Fix fuer Wolfs „leider immer noch der bug" vom 2026-08-26.
+   *
+   * ⚠️ Die Ruck-Bewegung des Streifens stand fest auf 160 ms. Die Takte des
+   * Rades sind aber 95, 95, 98, 104, 112, 124, 140, 162, 192, 232, 288, 360,
+   * 460, 600 ms lang - ACHT von vierzehn sind kuerzer als die Bewegung. In
+   * diesen acht Takten kam der Streifen nie bei translateX(0) an: er wurde
+   * mitten im Weg neu gestartet und stand deshalb dauerhaft bis zu eine ganze
+   * Zelle zu weit rechts. Der goldene Rahmen ueber der Mitte bewegt sich
+   * nicht mit (er markiert das Fenster, nicht den Inhalt), also lag er
+   * waehrend des ganzen schnellen Teils ueber der NACHBARKACHEL.
+   *
+   * Gemessen mit scripts/award-rad-messen.mjs: Rahmen bei x 800, grosse
+   * Kachel bei x 971. 171 Bildpunkte auseinander, eine Zelle ist 160 breit.
+   *
+   * Das erklaert auch, warum die beiden ersten Anlaeufe nichts geholfen
+   * haben: beide haben an der Rundung und an der Verschachtelung gearbeitet.
+   * Der Rahmen sass nie schief, er sass am falschen Ort - und zwar nur,
+   * solange das Rad schnell lief. Im Standbild danach war alles korrekt,
+   * also war er in jedem Screenshot, den ich selbst gemacht habe, in Ordnung.
+   *
+   * Jetzt dauert die Bewegung genau so lange wie der Takt, der sie ausgeloest
+   * hat. Damit kommt der Streifen in JEDEM Takt punktgenau an, und Rahmen und
+   * Kachel koennen nicht mehr auseinanderlaufen.
+   */
+  const [taktMs, setTaktMs] = useState(ROLL_TAKTE[0]);
   const istBuehne = getActiveThemeId() === BUEHNE_THEME_ID;
   // 2026-08-26: `quirkSet` ist hier raus. Er entschied die Rundung der Radzelle
   // (18 Prozent gegen 50), und genau diese zweite Rundung neben der Rundung der
@@ -1813,6 +1840,9 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
         try { playReveal(); } catch { /* noop */ }
         return;
       }
+      // Erst die Dauer, dann die Position: beide gehen in denselben Render,
+      // und der Streifen bekommt die Bewegung, die zu SEINEM Takt gehoert.
+      setTaktMs(ROLL_TAKTE[i]);
       setPos(p => p + 1);
       try { playTick(); } catch { /* noop */ }
       handle = window.setTimeout(rollen, ROLL_TAKTE[i]);
@@ -1909,12 +1939,39 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
           <div key={pos} style={{
             position: 'absolute', inset: 0, display: 'flex', alignItems: 'center',
             ['--qq-radzelle' as string]: `${zelle}px`,
-            animation: (reduce || steht) ? 'none' : 'qqT2RadRuck 0.16s cubic-bezier(0.2,0.7,0.3,1) both',
+            // Die Dauer kommt vom Takt selbst, nicht aus einer festen Zahl.
+            // Warum das der eigentliche Fix ist: siehe `taktMs` oben.
+            animation: (reduce || steht) ? 'none' : `qqT2RadRuck ${taktMs}ms cubic-bezier(0.2,0.7,0.3,1) both`,
           }}>
             {Array.from({ length: FENSTER }).map((_, k) => {
               const t = folge[(pos + k) % folge.length];
               const mitte = k === MITTE;
-              const seite = mitte ? MARKE : MARKE_KLEIN;
+              /**
+               * ⚠️ Die grosse Kachel gibt es NUR im Standbild. Das ist der
+               * eigentliche Fix fuer Wolfs „leider immer noch der bug"
+               * (2026-08-26), und er sitzt eine Ebene tiefer als die zwei
+               * Anlaeufe davor.
+               *
+               * Der Streifen faehrt bei jedem Takt um eine ganze Zelle
+               * (`qqT2RadRuck`, translateX von 160 auf 0). Gemessen mit
+               * scripts/award-rad-messen.mjs steht er waehrend der Fahrt auf
+               * `matrix(1,0,0,1,160,0)`: die Zelle mit dem Index MITTE liegt
+               * dann bei x 960 bis 1120, der goldene Rahmen aber fest bei 798
+               * bis 962. Eine ganze Zelle daneben.
+               *
+               * Die Vergroesserung haengt an einem INDEX, der Rahmen an einer
+               * POSITION. Solange der Streifen faehrt, sind das zwei
+               * verschiedene Orte, und zwar systematisch: die grosse Kachel
+               * ist immer rechts vom Rahmen, nie links. Genau das liest sich
+               * als „der Rahmen sitzt um die falsche Kachel".
+               *
+               * Ein Spielautomat macht es andersherum, und das ist auch die
+               * richtige Antwort hier: die Symbole laufen alle gleich gross
+               * durch, der Rahmen markiert die Gewinnlinie, und ERST wenn das
+               * Rad steht, waechst das Symbol darin. Damit kann nichts mehr
+               * driften, und das Wachsen wird zum Moment statt zum Dauerzustand.
+               */
+              const seite = (mitte && steht) ? MARKE : MARKE_KLEIN;
               // 2026-08-25 (Wolf: „rand um gewinnendes team ist komisch").
               // Es waren zwei Raender uebereinander: die Marke trug einen
               // 3px-Rand in der EIGENEN Farbe - also gar keinen sichtbaren
@@ -1965,14 +2022,41 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     animation: (mitte && steht && !reduce) ? 'qqT2AwardPop 0.5s cubic-bezier(0.34,1.5,0.5,1) both' : 'none',
                   }}>
-                    <QQTeamAvatar
-                      avatarId={t.avatarId}
-                      teamEmoji={t.emoji}
-                      size={seite}
-                      style={mitte && steht
-                        ? { outline: `4px solid ${GOLD}`, outlineOffset: 6 }
-                        : undefined}
-                    />
+                    {/* 2026-08-26 (Wolf: „bisschen verwirrend bei den awards
+                        ist, dass schon am anfang eine teamkachel eines teams
+                        drin steht, da sollte eine neutrale drin stehen wenns
+                        losdreht").
+
+                        Er hat recht, und es ist keine Kleinigkeit: waehrend
+                        der Frage „Wer war heute der Underdog?" stand zwei
+                        Sekunden lang ein echtes Team im Fenster. Wer den
+                        Ablauf kennt, liest das als Antwort - und in der Haelfte
+                        der Faelle ist es die falsche. Die Karte nimmt sich
+                        damit die eigene Spannung, noch bevor das Rad laeuft.
+
+                        Solange die Frage steht, stehen deshalb NEUTRALE
+                        Kacheln im Fenster. Erst wenn das Rad losdreht, kommen
+                        die Teams. Die Flaeche ist dieselbe wie ueberall
+                        (qqKachelFlaeche), nur in einem gedeckten Ton - damit
+                        es als dieselbe Kachel liest, nur eben ohne Team. */}
+                    {takt === 'frage' ? (
+                      <div aria-hidden style={{
+                        width: seite, height: seite,
+                        ...qqKachelFlaeche({ farbe: '#3A3129', rand: '#4A4038', radius: Math.round(seite * 0.16) }),
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        fontSize: Math.round(seite * 0.5), fontWeight: 900, lineHeight: 1,
+                        color: 'rgba(246,239,230,0.34)',
+                      }}>?</div>
+                    ) : (
+                      <QQTeamAvatar
+                        avatarId={t.avatarId}
+                        teamEmoji={t.emoji}
+                        size={seite}
+                        style={mitte && steht
+                          ? { outline: `4px solid ${GOLD}`, outlineOffset: 6 }
+                          : undefined}
+                      />
+                    )}
                   </div>
                 </div>
               );
@@ -1980,10 +2064,23 @@ function AwardCelebration({ award, recip, alle, de, reduce }: { award: TowerAwar
           </div>
           {/* Der Rahmen ueber der Mitte sagt, wo die Entscheidung faellt,
               solange noch keine gefallen ist. */}
+          {/* 2026-08-26: der Rahmen umschliesst die Kachel, die gerade unter
+              ihm durchlaeuft, statt die ganze Zelle zu fuellen. Vorher war er
+              so breit wie die Zelle (160) und so hoch wie das Fenster - das
+              passte, solange die mittlere Kachel 138 gross war. Seit die
+              Kacheln waehrend der Fahrt alle gleich klein sind (86), haette
+              ein 160er Rahmen lose um sie herumgestanden. Die 20 Bildpunkte
+              Luft sind dieselben, die der Ring im Standbild hat (4 Strich plus
+              6 Abstand, beidseitig), damit der Uebergang vom Rahmen zum Ring
+              nicht springt. */}
           {!steht && (
             <div aria-hidden style={{
-              position: 'absolute', left: zelle * MITTE, top: 0, width: zelle, height: '100%',
-              border: `3px solid ${GOLD}`, borderRadius: 18, pointerEvents: 'none',
+              position: 'absolute',
+              left: zelle * MITTE + Math.round((zelle - MARKE_KLEIN) / 2) - 10,
+              top: '50%', marginTop: -Math.round(MARKE_KLEIN / 2) - 10,
+              width: MARKE_KLEIN + 20, height: MARKE_KLEIN + 20,
+              border: `3px solid ${GOLD}`, borderRadius: Math.round(MARKE_KLEIN * 0.16) + 10,
+              pointerEvents: 'none',
               animation: reduce ? 'none' : 'qqT2Breathe 1.4s ease-in-out infinite',
             }} />
           )}

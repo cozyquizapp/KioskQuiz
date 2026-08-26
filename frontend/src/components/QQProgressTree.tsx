@@ -1264,7 +1264,17 @@ export default function QQProgressTree({
             // mehr: sie ist dann ein Rahmen um den Punkt, kein Traeger fuer ein
             // Bild. 1.35 liess sie deutlich groesser wirken als der Punkt, auf
             // den sie zeigt.
-            const wolfSize = Math.round(dotSize * (istBuehneT() ? 1.12 : 1.35));
+            // 2026-08-26 (Wolf mit Bild vom Runden-Intro: „bug"). Der Kasten
+            // auf der Buehne war 1,12 mal so gross wie der Punkt - das Zeichen
+            // darin wird aber nur mit 0,82 gezeichnet (siehe QQIcon weiter
+            // unten). Zwischen Kontur und Motiv lag also fast ein Drittel der
+            // Kachelbreite Luft, und der Rahmen las sich als leerer Kasten
+            // neben dem Zeichen statt als Marke darum.
+            //
+            // Jetzt haengt er an der GROESSE DES ZEICHENS und nicht an der des
+            // Punkts: 0,82 plus eine Handbreit Luft.
+            const zeichenAnteil = isSingleRound ? 1 : bigIcons ? 0.82 : 0.62;
+            const wolfSize = Math.round(dotSize * (istBuehneT() ? zeichenAnteil + 0.1 : 1.35));
             return (
               <div style={{
                 position: 'absolute',
@@ -1292,7 +1302,13 @@ export default function QQProgressTree({
                   style={{
                     width: '100%',
                     height: '100%',
-                    borderRadius: isThemed() ? 'var(--qq-card-radius)' : '50%',
+                    // Und dieselbe FORM wie das Zeichen. Der Karten-Radius sind
+                    // 5 px, also praktisch eckig; die gelieferten Kategorie-
+                    // Kacheln sind stark gerundet. Ein eckiger Rahmen um ein
+                    // rundes Motiv sieht aus wie ein Fehler, und genau als
+                    // solcher wurde er gemeldet. 22 Prozent liegen auf der
+                    // Rundung der Kacheln.
+                    borderRadius: istBuehneT() ? '22%' : (isThemed() ? 'var(--qq-card-radius)' : '50%'),
                     background: 'transparent',
                     border: `${isMini ? 2 : 3}px solid ${wolfColor}`,
                     // Auf der Buehne ohne den weiten Hof: 2a hat den Schein

@@ -2402,14 +2402,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       // Sieger-Card kommt (war 2/3/2 = +2px höher → andere Cards
                       // schoben mit).
                       boxSizing: 'border-box',
-                      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24, padding: '20px 24px',
-                      background: isCorrect ? 'rgba(34,197,94,0.2)' : cardBg,
+                      // 2026-08-26 (Wolf: „in allen fragekategorien"): dieselbe
+                      // Umstellung von `card` auf `feld` wie bei MUCHO. Ein
+                      // Antwortplaettchen ist ein Gegenstand mit Form, kein
+                      // Rahmen um die Folie - siehe --qq-feld-* in main.css.
+                      borderRadius: isThemed() ? 'var(--qq-feld-radius)' : 24, padding: '20px 24px',
+                      background: isCorrect ? 'rgba(34,197,94,0.2)' : (isThemed() ? 'var(--qq-feld-bg)' : cardBg),
                       // 2026-06-24 (Wolf 'option-rahmen auch schwarz'): bei Skin die
                       // Card-Behandlung (Mono=schwarzer Rand+Hard-Shadow) statt Akzent-Rand.
-                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `3px solid var(--qq-hairline)` : (isThemed() ? 'var(--qq-card-border)' : `3px solid ${optColor}55`),
+                      border: isCorrect ? '3px solid #22C55E' : isWrong ? `3px solid var(--qq-hairline)` : (isThemed() ? 'var(--qq-feld-border)' : `3px solid ${optColor}55`),
                       boxShadow: isCorrect
                         ? '0 0 40px rgba(34,197,94,0.35), 0 0 80px rgba(34,197,94,0.15)'
-                        : (isThemed() ? 'var(--qq-card-shadow)' : `0 4px 16px rgba(0,0,0,0.3)`),
+                        : (isThemed() ? 'var(--qq-feld-shadow)' : `0 4px 16px rgba(0,0,0,0.3)`),
                       display: 'flex', alignItems: 'center', gap: 16,
                       transition: 'background 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease',
                       animation: isCorrect

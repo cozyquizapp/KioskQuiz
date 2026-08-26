@@ -119,6 +119,12 @@
   --qq-card-bg: linear-gradient(180deg, #1F1A2E, #14101F);
   --qq-card-border: 1px solid rgba(255,255,255,0.10);
   --qq-card-radius: 20px;
+  /* Feld-Tokens (siehe [data-qq-stage='2a']): ausserhalb der Buehne spiegeln
+     sie die Karte, damit nichts ohne Wert dasteht. */
+  --qq-feld-bg: linear-gradient(180deg, #1F1A2E, #14101F);
+  --qq-feld-border: 1px solid rgba(255,255,255,0.10);
+  --qq-feld-radius: 20px;
+  --qq-feld-shadow: 0 16px 50px rgba(0,0,0,0.45);
   --qq-pill-radius: 999px;             /* Pills/Badges/Chips (Mono ueberschreibt auf eckig) */
   --qq-card-shadow: 0 16px 50px rgba(0,0,0,0.45);
   --qq-hairline: rgba(246,239,230,0.20); /* dezente Linien/Divider — 2026-08-22:
@@ -258,6 +264,32 @@
   --qq-card-border: none;
   --qq-card-radius: 5px;
   --qq-card-shadow: none;
+
+  /* ── Feld statt Karte ─────────────────────────────────────────────────────
+     2026-08-26, direkt nach dem Kasten-Durchgang (Wolf: „hier die kaesten um
+     die antwortfelder sollen wieder zurueck", „in allen fragekategorien").
+
+     Er hat recht, und der Fehler war meiner: `--qq-card-*` hat zwei ganz
+     verschiedene Rollen getragen.
+
+       1. RAHMEN einer ganzen Folie - ein Fenster, das auf der Buehne liegt.
+          Das ist der Kasten, der wegsollte.
+       2. FELD um einen einzelnen Gegenstand - ein Antwortplaettchen, eine
+          Zeile, eine Kachel. Das ist keine Verpackung, sondern die Form des
+          Gegenstands selbst. Ohne Kontur ist eine Antwort kein Plaettchen
+          mehr, sondern Text, der im Raum haengt.
+
+     Als beide Rollen an denselben vier Werten hingen, hat die eine Aenderung
+     zwangslaeufig die andere mitgenommen. Jetzt gibt es zwei Saetze: `card`
+     ist leer (Rahmen weg), `feld` traegt die alte 2a-Sprache weiter.
+
+     ⚠️ Wer hier etwas aendert, entscheidet zuerst, welche der beiden Rollen
+     gemeint ist. Im Zweifel: liegt der Inhalt DARIN (Feld) oder DARUNTER
+     (Rahmen)? */
+  --qq-feld-bg: rgba(18, 15, 24, 0.34);
+  --qq-feld-border: 2px solid rgba(246, 239, 230, 0.22);
+  --qq-feld-radius: 5px;
+  --qq-feld-shadow: none;
   /* Aenderung 6 „Teams als Kacheln": QQTeamAvatar liest diese Variable statt
      eines festen '50%'. Nur auf der Buehne eckig — auf dem Handy bleibt die
      Marke rund, dort ist sie Avatar und nicht Spielfigur. */

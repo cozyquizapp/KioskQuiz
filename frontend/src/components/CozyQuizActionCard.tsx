@@ -105,10 +105,12 @@ function FrontFace({
           }
         : { flex: 1, width: '100%' }),
       boxSizing: 'border-box',
-      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-      background: isThemed() ? 'var(--qq-card-bg)' : `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
-      border: isThemed() ? 'var(--qq-card-border)' : `3px solid ${c.accent}aa`,
-      boxShadow: isThemed() ? 'var(--qq-card-shadow)' : `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
+      borderRadius: isThemed() ? 'var(--qq-feld-radius)' : 24,
+      // 2026-08-26: `feld` statt `card`. Die Aktionskarte ist ein Gegenstand
+      // auf der Folie, kein Rahmen um sie herum (siehe --qq-feld-* in main.css).
+      background: isThemed() ? 'var(--qq-feld-bg)' : `linear-gradient(180deg, ${c.accent}28, ${c.accent}10)`,
+      border: isThemed() ? 'var(--qq-feld-border)' : `3px solid ${c.accent}aa`,
+      boxShadow: isThemed() ? 'var(--qq-feld-shadow)' : `0 0 40px ${c.accent}44, 0 8px 28px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.08)`,
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'space-between',
       padding: 'clamp(20px, 2.4cqh, 36px) clamp(20px, 2cqw, 32px)',
@@ -181,7 +183,7 @@ function BackFace({ lang }: { lang: 'de' | 'en' }) {
       boxSizing: 'border-box',
       backfaceVisibility: 'hidden',
       WebkitBackfaceVisibility: 'hidden',
-      borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
+      borderRadius: isThemed() ? 'var(--qq-feld-radius)' : 24,
       // 2026-08-24 (Wolf: „sind die karten noch passend zum neuen design?").
       // Die Vorderseite war es laengst (Karten-Token), die Rueckseite nicht:
       // zwei pinke Radial-Verlaeufe, pinker Rand, pinker Schein und ein pinkes
@@ -190,12 +192,12 @@ function BackFace({ lang }: { lang: 'de' | 'en' }) {
       // Sie nimmt jetzt dieselbe Karte wie die Vorderseite; das Aufdecken lebt
       // von der Drehung, nicht von der Farbe.
       background: istBuehneG()
-        ? 'var(--qq-card-bg)'
+        ? 'var(--qq-feld-bg)'
         : 'radial-gradient(ellipse at 50% 30%, rgba(236,72,153,0.32) 0%, transparent 60%),' +
           'radial-gradient(ellipse at 50% 80%, rgba(162,18,71,0.28) 0%, transparent 55%),' +
           'linear-gradient(135deg, #1F1A2E 0%, #14101F 60%, #0F0817 100%)',
-      border: isThemed() ? 'var(--qq-card-border)' : '3px solid rgba(236,72,153,0.65)',
-      boxShadow: isThemed() ? 'var(--qq-card-shadow)' : '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
+      border: isThemed() ? 'var(--qq-feld-border)' : '3px solid rgba(236,72,153,0.65)',
+      boxShadow: isThemed() ? 'var(--qq-feld-shadow)' : '0 0 40px rgba(236,72,153,0.27), 0 8px 28px rgba(0,0,0,0.55), inset 0 0 36px rgba(236,72,153,0.18)',
       display: 'flex', flexDirection: 'column',
       alignItems: 'center', justifyContent: 'center',
       gap: 14,

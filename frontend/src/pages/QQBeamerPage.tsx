@@ -4443,7 +4443,7 @@ export function MuchoOptionsReveal({
               position: 'relative', overflow: 'hidden',
               // 2026-08-22 (Uebergabe 2a, Aenderung 5): Radius aus dem
               // Buehnen-Token — auf der Buehne 5px, im Skin dessen eigener Wert.
-              borderRadius: 'var(--qq-card-radius)',
+              borderRadius: 'var(--qq-feld-radius)',
               // Arena: schlankeres Vertikal-Padding, damit die grossen Inline-Wappen
               // (bis 100px) in der gecappten Balken-Hoehe Platz haben (Wolf 2026-07-16).
               padding: isMega ? 'clamp(10px,1.4cqh,16px) clamp(16px,1.8cqw,28px)' : '24px 28px',
@@ -4490,13 +4490,16 @@ export function MuchoOptionsReveal({
               // heisst. Dunkel auf #22C55E ergibt 8.4:1 statt der ~4.5:1 von
               // Creme auf der halbtransparenten Fuellung, und die Flaeche
               // traegt auf Distanz weiter als jeder Schein.
+              // 2026-08-26: von `card` auf `feld` umgestellt. Das Plaettchen ist
+              // kein Rahmen um die Folie, sondern die Form der Antwort selbst -
+              // siehe die Begruendung an --qq-feld-* in main.css.
               background: isCorrect ? '#22C55E'
                 : isWrong ? 'var(--qq-surface-deep)'
-                : 'var(--qq-card-bg)',
+                : 'var(--qq-feld-bg)',
               border: isCorrect ? '4px solid #16A34A'
                 : isWrong ? '2px solid var(--qq-hairline)'
-                : 'var(--qq-card-border)',
-              boxShadow: 'var(--qq-card-shadow)',
+                : 'var(--qq-feld-border)',
+              boxShadow: 'var(--qq-feld-shadow)',
               // Die Entsaettigung der falschen Karten ist entfallen: seit
               // Aenderung 4 tragen alle vier Optionen denselben Kategorie-Ton,
               // da ist keine Farbe mehr wegzunehmen. Den Rueckschritt macht

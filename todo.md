@@ -151,8 +151,20 @@ oder Nachdreh-Wunsch dranschreiben.
       pink") war ueberholt: der Baum steht gar nicht auf der Intro-Folie.
 (Der Punkt „Toggle Schlicht" stand bis 2026-08-26 hier und ist eine Zeile tiefer
 gewandert, zu den Arena-Punkten. Grund siehe dort.)
-- [ ] **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion) auch im **klassischen**
-      CozyQuiz gegenchecken, nicht nur Arena.
+- ✅ **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion) im **klassischen**
+      CozyQuiz gegengecheckt, 2026-08-26. Werkzeug: `scripts/design-audit-cozyquiz.mjs`,
+      wiederholbar. Der Punkt klang nach Handarbeit, ist aber messbar:
+      * Kontrast (WCAG 1.4.3): 72 Textzeilen auf 8 Stationen, KEINE unter der
+        Schwelle. Der Grund wird aus Bildpunkten geschaetzt, nicht aus
+        `backgroundColor` der Eltern - die Buehne stapelt Verlaeufe und
+        halbdurchsichtige Flaechen, da luegt der berechnete Stil regelmaessig.
+      * Bewegung (prefers-reduced-motion): 38 laufende Animationen normal,
+        0 mit `reduce`. Der Schalter greift.
+      * Touch (WCAG 2.5.5): EIN Fund. Das Namensfeld auf dem Handy kam auf
+        248 x 43, es fehlte genau ein Bildpunkt. Gefixt per `minHeight: 44`
+        an `cozyInput` und am Stamm-Code-Feld. Nachgemessen: alle 44+.
+      ⚠️ Automatisch pruefbar sind rund 30 Prozent der WCAG-Kriterien.
+      Tastaturbedienung und Screenreader sieht weiter nur ein Mensch.
 
 ### Betrifft CozyArena — SCHLAFEND seit 2026-08-26 (kein Termin)
 

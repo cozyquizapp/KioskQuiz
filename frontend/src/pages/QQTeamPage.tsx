@@ -1138,6 +1138,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                       background: 'rgba(0,0,0,0.3)', color: QQ_COLORS.brandPinkSoft,
                       fontFamily: 'monospace', fontSize: 16, fontWeight: 700,
                       letterSpacing: '0.04em',
+                      // 2026-08-26, gleiche Regel wie bei cozyInput (WCAG 2.5.5).
+                      // Dieses Feld stand nicht im Messlauf, weil es auf der
+                      // Code-Eingabe liegt und die Messung auf der Anmeldemaske
+                      // war. Gerechnet kommt es auf rund 39 px: 10 + 10
+                      // Polsterung, eine Zeile 16er-Schrift, zwei Raender.
+                      // Also dieselbe Untergrenze, aus demselben Grund.
+                      minHeight: 44,
                     }}
                     autoCapitalize="characters"
                     autoCorrect="off"
@@ -2091,6 +2098,16 @@ const cozyInput: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)',
   color: QQ_COLORS.slate100, fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
   boxSizing: 'border-box',
+  // 2026-08-26, gemessen mit scripts/design-audit-cozyquiz.mjs auf einem
+  // iPhone-14-Fenster: das Namensfeld kam auf 248 x 43. Die WCAG fordert
+  // 44 x 44 (2.5.5), es fehlte also genau ein Bildpunkt - 14 + 14 Polsterung,
+  // eine Zeile 17er-Schrift und zwei Raender ergeben 43.
+  //
+  // `minHeight` statt mehr Polsterung: die Polsterung bestimmt, wo der Text
+  // sitzt, und der sitzt richtig. Es fehlt nur Flaeche zum Antippen, und die
+  // gehoert an die Untergrenze, nicht in den Innenabstand. Ausserdem ist das
+  // das Feld, in das an einem Abend jeder Gast als Erstes tippt.
+  minHeight: 44,
   // 2026-05-04 (UI-Audit P0-2): outline:none entfernt — Browser-Default-Outline
   // bleibt beim Focus sichtbar (Tab-Navigation lesbar). focusring im /team-CSS
   // (qq-team-input) hat zusaetzlich einen amber-Outline mit offset 2px.

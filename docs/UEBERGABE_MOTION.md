@@ -124,7 +124,30 @@ Die drei Kandidaten dagegen (alle im Artefakt spielbar):
 * **K3 · B3 · Durchskalieren** — die alte Szene faehrt auf den Betrachter zu und
   loest sich im Grund auf, die neue kommt aus der Tiefe nach. 1560 ms.
 
-**Wolf hat noch nicht entschieden.** Das ist der naechste Schritt.
+**Entschieden am 2026-08-26: K2** (Wolf: „Probier mal K2"). Gebaut und
+gemessen, siehe `frontend/src/qqWillkommenUebergabe.ts` und
+`scripts/naht-lobby-willkommen.mjs`.
+
+Was daran gebaut wurde:
+
+* Die Lobby merkt sich, wo ihre Wortmarke steht (Bruchteile der Buehne, nicht
+  Bildpunkte) und fuehrt das alle drei Sekunden nach.
+* Die Willkommen-Folie faehrt ihren Titel von dort an seinen Platz: 417 px
+  herunter, vom 0,75-fachen auf volle Groesse, 860 ms.
+* Die Buchstaben-Kaskade entfaellt in diesem Fall - der Titel ist dann kein
+  Auftritt, sondern derselbe Gegenstand, der eben in der Lobby stand.
+* Alles Uebrige rueckt um 1,2 s nach vorn, weil die Wartezeit fuer das
+  Abraeumen der alten Szene entfaellt. Die Folie steht bei rund 0,9 s statt
+  4,15 s.
+* B11 kommt ueber `sofort` an `BeamerOverlay`: bei laufender Uebergabe steht
+  der Inhalt sofort, nur der Grund blendet.
+
+⚠️ Drei Messfallen, die dabei je einen Anlauf gekostet haben und in
+`scripts/naht-lobby-willkommen.mjs` ausfuehrlich stehen: die View-Transition
+versteckt das echte DOM hinter Schnappschuessen (Deckkraft am Element luegt),
+ein Abtaster von aussen haengt genau waehrend des Wechsels, und die
+Ueberblendung haengt ihre Kinder spaeter ein als der Effekt laeuft, der sie
+vermessen will.
 
 ---
 
@@ -267,9 +290,10 @@ Socket (`qq:resetRoom`), Bots ueber `dev/clearBots`.
 
 ## 6. Was jetzt ansteht
 
-1. **Station 1 entscheiden.** K1, K2 oder K3 aus der Motion-Werkstatt. Danach
-   einbauen und mit `motion.mjs --film` gegenpruefen: der Streifen muss zeigen,
-   dass die 835 ms Leere weg sind.
+1. ~~**Station 1 entscheiden.**~~ ERLEDIGT 2026-08-26: K2, gebaut und gemessen.
+   Gegenprobe: `node scripts/naht-lobby-willkommen.mjs` legt einen
+   Kontaktbogen an. Bei 120 ms steht die Wortmarke noch auf ihrem Lobby-Platz,
+   bei 260 ms ist sie unterwegs, ab 600 ms sitzt sie.
 2. **Weiter durch den Abend**, Station fuer Station, in derselben Schleife.
    Reihenfolge der Stationen siehe `motion.mjs --liste`.
 3. **B1 + B5 an der Aufloesung.** Steht in `MOTION_REFERENZEN.md` als „erster

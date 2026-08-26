@@ -33,6 +33,19 @@ export type BeamerOverlayProps = {
   children: ReactNode;
   /** Optionale Style-Overrides (z.B. fontFamily ueberschreiben). */
   style?: CSSProperties;
+  /**
+   * B11 „Grundblende" (Wolf 2026-08-26, K2): der INHALT steht sofort, nur der
+   * GRUND blendet.
+   *
+   * Der Normalfall blendet die ganze Ueberblendung von Deckkraft null herein
+   * (0,7 s) und schiebt sie dabei. Das ist richtig, solange die Folie neu
+   * anfaengt. Bei einer Uebergabe ist sie das nicht: dort faehrt ein
+   * Gegenstand aus der vorigen Szene weiter, und wenn seine Huelle bei null
+   * Deckkraft startet, ist er trotzdem eine halbe Sekunde unsichtbar.
+   * Gemessen blieben genau so rund 500 ms Luecke uebrig, nachdem der Anker
+   * schon lief.
+   */
+  sofort?: boolean;
 };
 
 export function BeamerOverlay({
@@ -43,6 +56,7 @@ export function BeamerOverlay({
   hiddenOffsetY = 24,
   children,
   style,
+  sofort = false,
 }: BeamerOverlayProps) {
   // Wolf 2026-05-05: Children werden bei jedem visible→true Wechsel via
   // mountKey re-mountet — CSS-Animationen mit `both` fill-mode spielen damit
@@ -73,11 +87,16 @@ export function BeamerOverlay({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
-        background,
+        // Mit Grundblende traegt eine eigene Ebene den Grund (siehe unten),
+        // damit der Inhalt sofort stehen kann, waehrend nur die Flaeche
+        // wechselt.
+        background: sofort ? undefined : background,
         overflow: 'hidden',
         fontFamily: "'Nunito', system-ui, sans-serif",
-        opacity: visible ? 1 : 0,
-        transform: visible
+        opacity: sofort ? 1 : (visible ? 1 : 0),
+        transform: sofort
+          ? 'none'
+          : visible
           ? 'scale(1) translateY(0)'
           : `scale(${hiddenScale}) translateY(${hiddenOffsetY}px)`,
         // 2026-05-08 (Wolf-Audit): Duration 0.55/0.65s → 0.7/0.8s,
@@ -90,7 +109,15 @@ export function BeamerOverlay({
         ...style,
       }}
     >
-      {shouldRender ? <div key={mountKey}>{children}</div> : null}
+      {sofort && (
+        <div aria-hidden style={{
+          position: 'absolute', inset: 0, background,
+          opacity: visible ? 1 : 0,
+          transition: 'opacity 0.55s cubic-bezier(0.16, 1, 0.3, 1)',
+          pointerEvents: 'none',
+        }} />
+      )}
+      {shouldRender ? <div key={mountKey} style={sofort ? { position: 'relative' } : undefined}>{children}</div> : null}
     </div>
   );
 }

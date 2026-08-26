@@ -18,6 +18,8 @@ import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQIcon } from './QQIcon';
+import { merkeWillkommenQuelle, stempleLobbyEnde } from '../qqWillkommenUebergabe';
+import { QQ_BUEHNE_BREITE, QQ_BUEHNE_HOEHE } from '../qqBuehnenMass';
 import { wakeTeamAvatar } from '../avatarAwake';
 import { AnimatedCozyWolf, ArenaMageWolf, SpeechBubble, type Slogan } from '../pages/QQBeamerPage';
 import { isThemed, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
@@ -260,6 +262,61 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // bleibt im Hintergrund sichtbar.
   const [welcomeTeamId, setWelcomeTeamId] = useState<string | null>(null);
   const welcomeTimerRef = useRef<number | null>(null);
+
+  /**
+   * Der Anker fuer den Wechsel auf die Willkommen-Folie (K2, Wolf 2026-08-26).
+   *
+   * Gemerkt wird waehrend die Lobby steht, nicht erst beim Abgang: beim
+   * Phasenwechsel ist der Teilbaum schon weg, wenn das Aufraeumen laeuft, und
+   * `getBoundingClientRect` liefert dann Nullen. Die Wortmarke bewegt sich
+   * ausserdem nicht, ein Messpunkt genuegt also - er wird nur nachgefuehrt,
+   * falls jemand das Fenster zieht.
+   *
+   * ⚠️ Bruchteile, keine Bildpunkte. Die Buehne wird auf den Beamer skaliert
+   * (1,09 auf 1080p, 2,18 auf 4K); ein Pixelwert waere dort falsch.
+   */
+  const wortmarkeRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const messen = () => {
+      const el = wortmarkeRef.current;
+      if (!el) return;
+      const buehne = el.closest('[data-qq-buehne]') as HTMLElement | null;
+      const r = el.getBoundingClientRect();
+      if (r.width < 4 || r.height < 4) return;
+      const br = buehne ? buehne.getBoundingClientRect() : null;
+      // Der Massstab der Buehne, aus ihrer eigenen Breite gegen ihre
+      // Entwurfsbreite. Ohne den waere `hoehe` auf einem 4K-Beamer doppelt.
+      const skala = br && buehne ? (br.width / (buehne.offsetWidth || QQ_BUEHNE_BREITE)) : 1;
+      const ox = br ? br.left : 0;
+      const oy = br ? br.top : 0;
+      merkeWillkommenQuelle({
+        mx: ((r.left + r.right) / 2 - ox) / skala / QQ_BUEHNE_BREITE,
+        my: ((r.top + r.bottom) / 2 - oy) / skala / QQ_BUEHNE_HOEHE,
+        hoehe: (r.height / skala) / QQ_BUEHNE_HOEHE,
+      });
+    };
+    // Nach dem Auftritt messen, nicht waehrend: `qqLobbyWordmarkEntry` laeuft
+    // 0,85 s und schiebt die Marke dabei. Wer mittendrin misst, merkt sich
+    // einen Ort, an dem sie nie steht.
+    const h = window.setTimeout(messen, 1200);
+    // ⚠️ Und danach nachfuehren, alle drei Sekunden. Nicht wegen der Position
+    // (die Marke steht still), sondern wegen des ZEITSTEMPELS: die Uebergabe
+    // gilt nur zwoelf Sekunden, und diese Frist soll bedeuten „die Lobby war
+    // eben noch zu sehen". Ohne Nachfuehren bedeutet sie „die Lobby ist vor
+    // zwoelf Sekunden AUFGEBAUT worden" - und eine Lobby steht am Abend
+    // minutenlang, waehrend Teams beitreten. Gemessen mit
+    // scripts/naht-lobby-willkommen.mjs war die Quelle beim Umschalten 14
+    // Sekunden alt, die Uebergabe fiel deshalb still aus.
+    const iv = window.setInterval(messen, 3000);
+    window.addEventListener('resize', messen);
+    return () => {
+      window.clearTimeout(h);
+      window.clearInterval(iv);
+      window.removeEventListener('resize', messen);
+      // Das eine Ende der Naht: hier verlaesst die Lobby die Buehne.
+      stempleLobbyEnde();
+    };
+  }, []);
   useEffect(() => {
     const curIds = new Set(s.teams.map(t => t.id));
     const prev = prevTeamIdsRef.current;
@@ -518,7 +575,12 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           phasePop raus, nur qqLobbyWordmarkEntry mit reinem Fade. Plus
           radialer Glow-BG hinter dem Wort fuer Atmosphaere ohne rechteckige
           Form-Sichtbarkeit. */}
-      <div style={{
+      {/* 2026-08-26 (Wolf: „Probier mal K2"): diese Wortmarke ist der ANKER
+          fuer den Wechsel auf die Willkommen-Folie. Sie merkt sich, wo sie
+          steht; die Willkommen-Folie faehrt ihren Titel von dort an seinen
+          Platz, statt nach 1,2 s aus dem Nichts aufzublenden. Siehe
+          `frontend/src/qqWillkommenUebergabe.ts`. */}
+      <div ref={wortmarkeRef} data-qq-wortmarke="" style={{
         textAlign: 'center', position: 'relative', zIndex: 5, flexShrink: 0,
         animation: 'qqLobbyWordmarkEntry 0.85s cubic-bezier(0.16, 1, 0.3, 1) 0.15s both',
         paddingTop: 'clamp(6px, 1cqh, 14px)',

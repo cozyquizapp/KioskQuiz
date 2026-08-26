@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, Marker, Polyline, useMap } from 'react-leaflet
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useQQSocket } from '../hooks/useQQSocket';
+import { holeWillkommenQuelle, stempleWillkommenStart } from '../qqWillkommenUebergabe';
 import { isThemed, getActiveTheme, setActiveThemeId, themeIdForState, useActiveThemeId, getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { useSceneTransition } from '../hooks/useSceneTransition';
 import { qqFinalSzene, qqBetSlotPlan } from '../../../shared/qqFinalReveal';
@@ -4874,6 +4875,109 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
     return () => window.clearTimeout(t);
   }, [hasIntroVideo, welcomeVideoUrl]);
   const cascadeReady = !hasIntroVideo || videoEnded;
+
+  /**
+   * ── K2: Grundblende mit Anker (Wolf 2026-08-26: „Probier mal K2") ─────────
+   *
+   * Gemessen an dieser Naht (`scripts/motion.mjs willkommen --film`):
+   *
+   *    365 ms   die alte Szene ist weg
+   *   1200 ms   erstes Element der neuen Szene
+   *   4154 ms   Folie steht
+   *
+   * Die 835 ms dazwischen waren keine Vermutung, sondern zwei Zeilen Code:
+   * der Inhalts-Block traegt `opacity: 0` und wartet 1,2 Sekunden.
+   *
+   * Mit Uebergabe faengt die Folie sofort an - und zwar nicht mit einem
+   * Aufblenden, sondern mit dem GEGENSTAND, der eben noch da war. Die
+   * Wortmarke der Lobby hat sich gemerkt, wo sie steht; der Titel faehrt von
+   * dort an seinen Platz. Ein Objekt, eine Bewegung, kein Schnitt. Dasselbe
+   * Verfahren wie beim Brett, das in den Turm faehrt, und bei der Kroenung,
+   * die auf die Danke-Folie fliegt.
+   *
+   * ⚠️ Ohne frische Quelle bleibt ALLES wie bisher. Wer die Folie direkt
+   * aufruft (Testseite, Neuladen, Showroom), hat keine Lobby gesehen; eine
+   * Wortmarke, die aus dem Nichts von irgendwoher hereinfaehrt, waere
+   * schlechter als gar keine Bewegung.
+   */
+  // ⚠️ Beim SICHTBARWERDEN lesen, nicht beim Einhaengen. Diese Ueberblendung
+  // haengt dauerhaft im Baum und wird nur ueber `visible` auf- und zugezogen.
+  // Ein Lesen beim ersten Aufbau faellt in den Moment, in dem es noch gar
+  // keine Lobby gegeben hat - gemessen blieb die Uebergabe deshalb still, und
+  // die Luecke an der Naht war unveraendert 1371 ms.
+  // ⚠️ WAEHREND des Renderns lesen, nicht in einem Effekt. Der erste Versuch
+  // hat die Quelle in einem `useLayoutEffect` geholt - dann ist das ERSTE Bild
+  // mit `visible` aber schon gemalt, und zwar ohne Uebergabe. Die Ueberblendung
+  // hat in diesem Bild ihre 0,7-Sekunden-Blende gestartet, und die lief weiter,
+  // auch als `sofort` einen Tick spaeter wahr wurde. Bildgenau gemessen
+  // (requestAnimationFrame-Mitschrift) waren dadurch 110 bis 567 ms beide
+  // Szenen unsichtbar: 457 ms Leere, trotz laufendem Anker.
+  // `holeWillkommenQuelle` liest nur, es aendert nichts - ein Lesen im Render
+  // ist hier also sauber und der einzige Weg, im ERSTEN Bild richtig zu liegen.
+  const uebergabe = useMemo(
+    () => (typeof window === 'undefined' || !visible ? null : holeWillkommenQuelle()),
+    [visible],
+  );
+  useEffect(() => {
+    // Das andere Ende der Naht: hier betritt die Folie die Buehne.
+    if (visible) stempleWillkommenStart();
+  }, [visible]);
+  // ⚠️ Rueckruf-Ref, kein `useRef` allein. Die Ueberblendung (`BeamerOverlay`)
+  // haengt ihre Kinder SPAETER ein, als der Effekt hier laeuft: gemessen stand
+  // `[data-qq-anker-wortmarke]` im Baum, waehrend `ankerRef.current` null war
+  // und der Effekt danach nie wieder ansprang, weil sich keine seiner
+  // Abhaengigkeiten mehr aenderte. Der Rueckruf macht das Einhaengen selbst zur
+  // Abhaengigkeit.
+  const ankerRef = useRef<HTMLDivElement | null>(null);
+  const [ankerDa, setAnkerDa] = useState(false);
+  const setzeAnker = useCallback((el: HTMLDivElement | null) => {
+    ankerRef.current = el;
+    setAnkerDa(!!el);
+  }, []);
+  const [ankerFlug, setAnkerFlug] = useState<{ dx: number; dy: number; skala: number } | null>(null);
+  useLayoutEffect(() => {
+    const notiz = (grund: string) => {
+      (globalThis as unknown as { __qqWillkommenGrund?: string }).__qqWillkommenGrund = grund;
+    };
+    if (!visible) return notiz('nicht sichtbar');
+    if (!cascadeReady) return notiz('Kaskade wartet auf Video');
+    if (!uebergabe) return notiz('keine frische Quelle');
+    const el = ankerRef.current;
+    if (!el) return notiz('kein Anker im Baum');
+    const buehne = el.closest('[data-qq-buehne]') as HTMLElement | null;
+    const r = el.getBoundingClientRect();
+    if (r.width < 4 || r.height < 4) return notiz(`Anker ohne Groesse (${Math.round(r.width)}x${Math.round(r.height)})`);
+    const br = buehne ? buehne.getBoundingClientRect() : null;
+    const skalaBuehne = br && buehne ? (br.width / (buehne.offsetWidth || QQ_BUEHNE_BREITE)) : 1;
+    const ox = br ? br.left : 0;
+    const oy = br ? br.top : 0;
+    // Wo der Titel LANDET, in Buehnenpunkten.
+    const zielX = ((r.left + r.right) / 2 - ox) / skalaBuehne;
+    const zielY = ((r.top + r.bottom) / 2 - oy) / skalaBuehne;
+    const zielH = r.height / skalaBuehne;
+    // Wo die Wortmarke STAND.
+    const vonX = uebergabe.mx * QQ_BUEHNE_BREITE;
+    const vonY = uebergabe.my * QQ_BUEHNE_HOEHE;
+    const vonH = uebergabe.hoehe * QQ_BUEHNE_HOEHE;
+    if (zielH < 1 || vonH < 1) return notiz('Hoehen unbrauchbar');
+    const flug = { dx: vonX - zielX, dy: vonY - zielY, skala: vonH / zielH };
+    setAnkerFlug(flug);
+    // Messpunkt fuer die Werkzeuge: nur lesen, nie steuern. Ohne ihn laesst
+    // sich von aussen nicht unterscheiden, ob die Uebergabe ausgefallen ist
+    // oder ob sie lief und nur nicht zu sehen war.
+    (globalThis as unknown as { __qqWillkommenFlug?: unknown }).__qqWillkommenFlug = flug;
+  }, [uebergabe, visible, cascadeReady, ankerDa]);
+
+  /**
+   * Um wie viel alles frueher kommt, wenn die Uebergabe laeuft.
+   *
+   * Die 1,2 s Wartezeit des Blocks waren dafuer da, dass die alte Szene erst
+   * abraeumt. Genau das erledigt jetzt der Anker, also entfaellt die Wartezeit
+   * - und alles, was danach gestaffelt ist, rueckt um denselben Betrag nach
+   * vorn. Es wird nichts schneller, es faengt nur frueher an: die Folie steht
+   * bei rund 2,95 statt 4,15 Sekunden.
+   */
+  const vor = uebergabe ? 1.2 : 0;
   // 2026-05-07 v9 (Wolf 'in der lobby hast du gelb fuer den text? wieso?'):
   // Der Welcome-Cascade hat sein eigenes Farb-Schema in Gold (Subtitle,
   // Goldlinien, Ambient-Glow, Sunrise, Fireflies). Mein Pink-Pass hatte das
@@ -4917,6 +5021,11 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
   return (
     <BeamerOverlay
       visible={visible}
+      // B11: bei laufender Uebergabe steht der Inhalt sofort, nur der Grund
+      // blendet. Ohne das startet die Huelle des Ankers bei Deckkraft null
+      // und die Marke ist trotz Flug eine halbe Sekunde unsichtbar - gemessen
+      // blieben genau so 501 ms Luecke uebrig.
+      sofort={!!uebergabe}
       zIndex={9990}
       // Wolf 2026-05-05 'sehe da aktuell nichts': Mount-Anim deutlich
       // dramatischer — Folie zoomt aus 1.18 → 1 (war 1.04, kaum sichtbar).
@@ -5109,8 +5218,12 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           boxShadow: 'none',
           display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
           gap: 'clamp(10px, 1.6cqh, 22px)',
-          animation: 'qqIntroWelcomeCard 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) 1.2s both',
-          opacity: 0,
+          // Mit Uebergabe faengt der Block sofort an (der Anker traegt den
+          // Auftritt), ohne bleibt es beim Aufblenden nach 1,2 s.
+          animation: uebergabe
+            ? 'none'
+            : 'qqIntroWelcomeCard 0.9s cubic-bezier(0.2, 0.85, 0.3, 1) 1.2s both',
+          opacity: uebergabe ? 1 : 0,
         }}>
           {/* Weicher Spotlight-Glow hinter dem Schriftzug — ersetzt das
               Karo-Gitter (Wolf 2026-07-04 'Gitter etwas unruhig'). Der
@@ -5172,6 +5285,8 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
               Letters, Logo poppt nach X. Gemeinsame baseline ueber
               alignItems:center. */}
           <div
+            ref={setzeAnker}
+            data-qq-anker-wortmarke=""
             aria-label={eurovisionMode ? `${title} × Eurovision Song Contest` : title}
             style={{
               display: 'inline-flex',
@@ -5200,8 +5315,26 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
                 ? `0 0 32px rgba(${accentRgb},0.35)`
                 : '0 0 28px rgba(var(--qq-stage-brand-rgb), 0.65), 0 0 72px rgba(var(--qq-stage-brand-rgb), 0.28)',
               position: 'relative', zIndex: 1,
-              animation: 'qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) 2.5s both',
-
+              // ── Der Anker (K2) ────────────────────────────────────────────
+              // Solange der Flug noch nicht ausgerechnet ist, steht die Marke
+              // schon an ihrer QUELLE, nicht an ihrem Ziel: sonst blitzt sie
+              // fuer einen Bildaufbau am neuen Platz auf und springt dann
+              // zurueck. Deshalb `useLayoutEffect` und deshalb hier ein
+              // Startwert aus derselben Rechnung.
+              ...(uebergabe ? {
+                ['--qq-anker-dx' as string]: `${ankerFlug?.dx ?? 0}px`,
+                ['--qq-anker-dy' as string]: `${ankerFlug?.dy ?? 0}px`,
+                ['--qq-anker-skala' as string]: `${ankerFlug?.skala ?? 1}`,
+                transformOrigin: 'center center',
+                animation: ankerFlug
+                  ? 'qqIntroAnkerFlug 0.86s cubic-bezier(0.16, 1, 0.3, 1) both'
+                  : 'none',
+                transform: ankerFlug
+                  ? undefined
+                  : 'translate(var(--qq-anker-dx), var(--qq-anker-dy)) scale(var(--qq-anker-skala))',
+              } : {
+                animation: `qqIntroTitleSettle 1.1s cubic-bezier(0.16, 1, 0.3, 1) ${2.5 - vor}s both`,
+              }),
             }}
           >
             {/* CozyQuiz-Wordmark als Letter-Cascade-Container.
@@ -5210,7 +5343,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
             <span style={{
               position: 'relative',
               display: 'inline-flex',
-              animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite',
+              animation: `qqStingerHover 4.2s ease-in-out ${3.4 - vor}s infinite`,
             }}>
               {/* 2026-05-08 (Wolf 'shimmer-effekt wirkt billig'): Sweep-Overlay
                   entfernt. Vorher zog ein weißer Linear-Gradient diagonal
@@ -5220,8 +5353,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
               {Array.from(eurovisionMode ? title.toUpperCase() : title).map((ch, i) => (
                 <span key={i} style={{
                   display: 'inline-block',
-                  opacity: 0,
-                  animation: `qqIntroTitleLetter 0.85s cubic-bezier(0.16, 1.2, 0.3, 1) ${1.6 + i * 0.06}s both`,
+                  // ⚠️ Mit Uebergabe KEINE Buchstaben-Kaskade. Der Titel ist
+                  // dann kein Auftritt, sondern derselbe Gegenstand, der eben
+                  // in der Lobby stand - er wird nicht buchstabiert, er faehrt.
+                  // Beides zugleich waere zweimal derselbe Satz.
+                  opacity: uebergabe ? 1 : 0,
+                  animation: uebergabe
+                    ? 'none'
+                    : `qqIntroTitleLetter 0.85s cubic-bezier(0.16, 1.2, 0.3, 1) ${1.6 + i * 0.06}s both`,
                   whiteSpace: 'pre',
                 }}>{ch}</span>
               ))}
@@ -5264,7 +5403,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
                   <span style={{
                     display: 'inline-flex',
                     alignItems: 'center',
-                    animation: 'qqStingerHover 4.2s ease-in-out 3.4s infinite',
+                    animation: `qqStingerHover 4.2s ease-in-out ${3.4 - vor}s infinite`,
                   }}>
                     <img
                       src={logoUrl}
@@ -5346,7 +5485,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           display: 'flex', flexDirection: 'column', alignItems: 'center',
           gap: 'clamp(6px, 1cqh, 16px)',
           marginTop: 'clamp(10px, 2cqh, 30px)',
-          animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
+          animation: `qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) ${2.6 - vor}s both`,
           opacity: 0, zIndex: 6,
         }}>
           {arenaBg ? (
@@ -5375,7 +5514,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
               <span key={i} style={{
                 display: 'inline-block',
                 opacity: 0,
-                animation: `qqWordFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${3.2 + i * 0.08}s both`,
+                animation: `qqWordFadeUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) ${3.2 - vor + i * 0.08}s both`,
                 marginRight: 6,
               }}>{word}</span>
             ))}
@@ -5412,7 +5551,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
           left: 'clamp(8px, 1.6cqw, 32px)',
           bottom: 'calc(var(--qq-welcome-wolf-w) * -0.0625)',
           zIndex: 6,
-          animation: 'qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) 2.6s both',
+          animation: `qqIntroWolfStack 0.95s cubic-bezier(0.2, 1, 0.3, 1) ${2.6 - vor}s both`,
           opacity: 0,
           pointerEvents: 'none',
         }}>
@@ -5527,6 +5666,14 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
         @keyframes qqIntroAccentShimmer {
           0%   { background-position: -200% 0; }
           100% { background-position:  200% 0; }
+        }
+        /* K2, der Anker (Wolf 2026-08-26 „Probier mal K2"). Die Wortmarke
+           faehrt von ihrem Platz in der Lobby an ihren Platz auf der
+           Willkommen-Folie. Nur transform, also auf der Grafikkarte - eine
+           Bewegung ueber 2,8 Meter darf kein Neuzeichnen ausloesen. */
+        @keyframes qqIntroAnkerFlug {
+          from { transform: translate(var(--qq-anker-dx, 0px), var(--qq-anker-dy, 0px)) scale(var(--qq-anker-skala, 1)); }
+          to   { transform: translate(0, 0) scale(1); }
         }
         @keyframes qqIntroTitleLetter {
           0%   { opacity: 0; transform: translateY(40px) scale(0.4); filter: blur(14px); }

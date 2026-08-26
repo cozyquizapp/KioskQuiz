@@ -29,6 +29,7 @@ import { QQEmojiIcon } from './QQIcon';
 import { isCountryFlagGlyph, getCountryFlagUrl } from './QQTeamAvatar';
 import { getAvatarDisplay } from '../avatarSets';
 import { QQ_COLORS } from '../../../shared/qqColors';
+import { qqKartenQuelle, QQ_KARTE_HANDY } from '../qqKarte';
 
 // ── Hot Potato team input with countdown ──────────────────────────────────────
 export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = 'de' }: {
@@ -799,6 +800,8 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
 
   const tapLabel = lang === 'de' ? '📍 Tippe auf die Karte um einen Pin zu setzen' : '📍 Tap the map to place a pin';
   const noPinLabel = lang === 'de' ? 'Noch kein Pin gesetzt' : 'No pin placed yet';
+  // Eine Quelle fuer alle Karten im Haus, siehe frontend/src/qqKarte.ts.
+  const handyKarte = qqKartenQuelle(QQ_KARTE_HANDY);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
@@ -820,10 +823,25 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
           zoom={zoom}
           style={{ width: '100%', height: '100%' }}
           zoomControl={true}
-          attributionControl={false}
+          attributionControl
         >
-          {/* 2026-05-07 (Wolf): CartoDB Voyager statt Default-OSM. */}
-          <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png" />
+          {/* 2026-05-07 (Wolf): CartoDB Voyager statt Default-OSM.
+              2026-08-26: Carto verlangt inzwischen einen Schluessel und schreibt
+              „API KEY REQUIRED" IN die Kacheln - auf dem Beamer war die Karte
+              damit flaechendeckend ueberschrieben, und dieselbe Adresse steckte
+              hier. Die Quelle steht jetzt in frontend/src/qqKarte.ts.
+              Das Handy faehrt bewusst eine HELLE Karte: hier tippt jemand einen
+              Ort, auf der Wand schaut der Saal einen an. Helligkeit hilft beim
+              Treffen und schadet auf der Leinwand.
+              Nennung ist an, sie war es vorher nicht. */}
+          <TileLayer
+            url={handyKarte.url}
+            maxZoom={handyKarte.maxZoom}
+            attribution={handyKarte.nennung}
+          />
+          {handyKarte.beschriftung && (
+            <TileLayer key="namen" url={handyKarte.beschriftung} maxZoom={handyKarte.maxZoom} />
+          )}
           <MapClickHandler onPick={(lat, lng) => { if (!expired) setPin([lat, lng]); }} />
           {pin && <Marker position={pin} icon={customPinIcon} />}
         </MapContainer>

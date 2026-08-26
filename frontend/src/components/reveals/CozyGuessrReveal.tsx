@@ -23,6 +23,7 @@ import {
 } from '../../utils/sounds';
 import { isThemed } from '../../qqTheme';
 import { prefersReducedMotion } from '../../utils/reducedMotion';
+import { qqKartenQuelle, QQ_KARTE_BUEHNE } from '../../qqKarte';
 
 // ── Leaflet-Map Helpers ─────────────────────────────────────────────────────
 // Vorher inline in CozyQuizQuestionView.tsx — beim Extract mit hierher gewandert,
@@ -139,6 +140,10 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
     }
     return out;
   }, [scoredEff]);
+
+  // Die Kartenquelle steht in frontend/src/qqKarte.ts, an EINER Stelle fuer
+  // alle Karten im Haus (2026-08-26, „API KEY REQUIRED" quer ueber der Karte).
+  const buehnenKarte = qqKartenQuelle(QQ_KARTE_BUEHNE);
 
   const showTarget  = step >= 1;
   const revealedCnt = Math.max(0, step - 1); // Step 2 = 1 Pin, Step 3 = 2 Pins, ...
@@ -339,7 +344,11 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
           center={[tLat, tLng] as any}
           zoom={3}
           zoomControl={false}
-          attributionControl={false}
+          // 2026-08-26: Nennung AN. Sie stand auf false, also lief die Karte
+          // ganz ohne Quellenangabe - schon bei Carto nicht sauber und bei
+          // jedem freien Anbieter erst recht nicht. Leaflet setzt sie klein
+          // unten rechts, wo sie auf 2,8 Metern niemanden stoert.
+          attributionControl
           scrollWheelZoom={false}
           doubleClickZoom={false}
           dragging={false}
@@ -358,15 +367,19 @@ export function CozyGuessrReveal({ state: s, lang }: { state: QQStateUpdate; lan
               Zwei Ebenen statt Austausch: `dark_nolabels` bleibt liegen und
               die Namen-Ebene blendet darueber ein, sonst flackert beim
               Umschalten die ganze Karte. */}
-          <TileLayer
-            url="https://{s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}{r}.png"
-            subdomains={['a', 'b', 'c', 'd']}
-          />
-          {showTarget && (
+          {/* 2026-08-26 (Wolf, mit Bild: „ich glaube wir brauchen eine neue map
+              fuer cozyguessr"). Quer ueber der Karte stand „API KEY REQUIRED".
+              Nicht kaputt gegangen, sondern Carto verlangt inzwischen einen
+              Schluessel und schreibt den Hinweis IN die Kacheln. Die Adresse
+              steht jetzt in frontend/src/qqKarte.ts, EINMAL statt dreimal.
+              Die Zwei-Ebenen-Idee darueber bleibt unveraendert: Esri trennt
+              genauso in Grundkarte ohne Namen und eine Namen-Ebene darueber. */}
+          <TileLayer url={buehnenKarte.url} maxZoom={buehnenKarte.maxZoom} attribution={buehnenKarte.nennung} />
+          {showTarget && buehnenKarte.beschriftung && (
             <TileLayer
               key="namen"
-              url="https://{s}.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}{r}.png"
-              subdomains={['a', 'b', 'c', 'd']}
+              url={buehnenKarte.beschriftung}
+              maxZoom={buehnenKarte.maxZoom}
               className="qq-karten-namen"
             />
           )}

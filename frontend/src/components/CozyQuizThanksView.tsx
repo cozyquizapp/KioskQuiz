@@ -27,6 +27,7 @@ import { CozyWolfImage } from './CozyWolfImage';
 import { AnimatedCozyWolf, WolfCoModerator, getBrandColors } from '../pages/QQBeamerPage';
 import { isThemed, isQuietMotion } from '../qqTheme';
 import { prefersReducedMotion } from '../utils/reducedMotion';
+import { holeSiegerQuelle, vergissSiegerQuelle } from '../qqSiegerUebergabe';
 
 export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomCode?: string }) {
   const lang = useLangFlip(s.language);
@@ -117,7 +118,94 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   // Ruhe-Modus des Quiz.
   const ruhigeBewegung = isQuietMotion() || prefersReducedMotion();
 
-  // ── Die Uebergabe der Sieger-Marke: gebaut, aber NICHT scharf ────────────
+  // ── Die Uebergabe der Sieger-Marke, zweiter Anlauf ───────────────────────
+  // 2026-08-26 (todo #44). Der erste Anlauf am 2026-08-25 flog gemessene
+  // 6,7 Bildpunkte und wurde deshalb wieder ausgebaut. Zwei Dinge haben sich
+  // seither geaendert, und beide sind gemessen (scripts/sieger-uebergabe-
+  // messen.mjs, neu):
+  //
+  //   1. Die Danke-Folie ist umgebaut, der Sieger steht LINKS statt mittig.
+  //      Quelle x 880 y 464 (Mitte der Buehne), Ziel x 330 y 561.
+  //      Das sind 558 Bildpunkte Strecke statt sieben.
+  //   2. Der Grund fuer das Scheitern steht jetzt schwarz auf weiss: zwei
+  //      Bilder nach dem Klick ist [data-qq-sieger] noch `null`. Wer dort
+  //      misst, misst nichts - und bekommt einen Flug ueber fast nichts.
+  //
+  // Deshalb wird nicht zu einem festen Zeitpunkt gemessen, sondern gewartet,
+  // BIS die Kachel steht: je Bild nachsehen, ob sie da ist und ob ihr Kasten
+  // sich gegenueber dem Bild davor nicht mehr ruehrt. Erst dann faehrt sie los.
+  //
+  // ⚠️ Der Flug haengt am WRAPPER, nicht an der Kachel selbst. Auf der Kachel
+  // laeuft `qqThanksSiegerSchweben`, und eine laufende CSS-Animation auf
+  // `transform` ersetzt jeden inline gesetzten Wert vollstaendig. Genau diese
+  // Falle hat in dieser Uebergabe schon zweimal Zeit gekostet.
+  const siegerRef = useRef<HTMLDivElement | null>(null);
+  useLayoutEffect(() => {
+    if (!istBuehne || !winner) return;
+    const quelle = holeSiegerQuelle(winner.id);
+    if (!quelle) return;
+    if (ruhigeBewegung) { vergissSiegerQuelle(); return; }
+    let abgebrochen = false;
+    let versuche = 0;
+    let vorher: DOMRect | null = null;
+    // ⚠️ Die Kachel wird ZUERST unsichtbar gemacht, und zwar hier im
+    // Layout-Effekt, der noch vor dem ersten Malen laeuft.
+    //
+    // Ohne das sieht man auf der Wand einen Sprung: gemessen stand die Marke
+    // bei 232 ms schon an ihrem Zielplatz und sprang bei 295 ms zurueck an den
+    // Start des Fluges. Das sind die Bilder, die vergehen, bis ihr Kasten
+    // stillsteht und gemessen werden darf. Unsichtbar sind sie ein kurzes
+    // Fehlen, sichtbar waeren sie ein Zucken - und ein Zucken sieht kaputt aus,
+    // ein Fehlen nur schnell.
+    const zeigen = (el: HTMLElement) => { el.style.opacity = ''; };
+    if (siegerRef.current) siegerRef.current.style.opacity = '0';
+    const probiere = () => {
+      if (abgebrochen) return;
+      const el = siegerRef.current;
+      const buehne = document.querySelector('[data-qq-buehne]');
+      const bb = buehne ? buehne.getBoundingClientRect() : null;
+      const r = el ? el.getBoundingClientRect() : null;
+      const steht = r && vorher
+        && r.width > 8
+        && Math.abs(r.left - vorher.left) < 1
+        && Math.abs(r.width - vorher.width) < 1;
+      vorher = r;
+      if (!steht || !bb || bb.width < 1) {
+        if (versuche++ < 90) requestAnimationFrame(probiere);
+        else { if (el) zeigen(el); vergissSiegerQuelle(); }
+        return;
+      }
+      const qx = bb.left + quelle.x * bb.width;
+      const qy = bb.top + quelle.y * bb.height;
+      const dx = qx - (r.left + r.width / 2);
+      const dy = qy - (r.top + r.height / 2);
+      const skala = (quelle.groesse * bb.width) / r.width;
+      // Unter 40 Bildpunkten ist es kein Uebergang, sondern ein Zucken. Dann
+      // lieber gar nichts - genau daran ist der erste Anlauf gescheitert.
+      if (Math.hypot(dx, dy) < 40) { if (el) zeigen(el); vergissSiegerQuelle(); return; }
+      const wrapper = el as HTMLDivElement;
+      wrapper.style.transition = 'none';
+      wrapper.style.transform = `translate3d(${dx}px, ${dy}px, 0) scale(${skala})`;
+      zeigen(wrapper);            // erst jetzt sichtbar, und zwar am Startpunkt
+      void wrapper.offsetWidth;   // Zwischenstand erzwingen, sonst gibt es keinen Weg
+      wrapper.style.transition = 'transform 620ms cubic-bezier(0.16, 1, 0.3, 1)';
+      wrapper.style.transform = 'translate3d(0, 0, 0) scale(1)';
+      wrapper.addEventListener('transitionend', () => {
+        wrapper.style.transition = '';
+        wrapper.style.transform = '';
+      }, { once: true });
+      vergissSiegerQuelle();
+    };
+    requestAnimationFrame(probiere);
+    return () => {
+      abgebrochen = true;
+      // Wer die Folie verlaesst, waehrend die Marke noch wartet, soll sie beim
+      // naechsten Mal nicht unsichtbar vorfinden.
+      if (siegerRef.current) siegerRef.current.style.opacity = '';
+    };
+  }, [istBuehne, winner?.id, ruhigeBewegung]);
+
+  // ── Der erste Anlauf, und warum er nicht reichte ─────────────────────────
   // 2026-08-25. Der Plan war, die Marke von der Kroenung herueberfahren zu
   // lassen (FLIP, wie das Brett, das in den Turm faehrt). Die Kroenung merkt
   // sich ihre Position auch korrekt - nachgemessen ueber `__qqSiegerQuelle`:
@@ -599,7 +687,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               animation: istBuehne ? 'none' : 'qqThanksColIn 0.5s ease both',
             }}>
               {winner && (
-                <div data-qq-sieger style={{ position: 'relative' }}>
+                <div data-qq-sieger ref={siegerRef} style={{ position: 'relative', willChange: 'transform' }}>
                   {/* 2026-08-23: dritte und letzte Krone des Abends, gleiche
                       Entscheidung wie bei Schaetzchen und Zehn von Zehn. Wer
                       gewonnen hat, steht direkt darunter im Klartext („hat heute

@@ -25,7 +25,23 @@
       (Uebergabe Abschnitt 8): Schrift ueber den Rand, etwas das aus dem Rahmen
       bricht, Verlaufsflaechen, Farbe mit Bedeutung, Wasserzeichen-Ebene,
       eine einzige Schrift, gepunktete Linien, Sequenzmittel.
-- [ ] **Schrift entscheiden.** Groesster Einzelhebel, bisher Platzhalter.
+- ✅ **Schrift entschieden: Bricolage Grotesque** (Wolf 2026-08-26, „ja die isses
+      bricolage"). Entschieden am Bild, nicht an einer Namensliste:
+      `scripts/schrift-probe.mjs` rendert dieselbe Fragefolie in mehreren
+      Schriften, ohne etwas am Repo zu aendern. Bricolage war die einzige mit
+      einem Grund, der nicht Geschmack ist - bei gleicher Groesse eine Zeile
+      statt zwei.
+      ⚠️ Zwei Korrekturen, die im Code stehen: der Platzhalter war NICHT Nunito,
+      sondern FREDOKA (qqTheme.ts, ueber den Phase-Root auf --qq-font). Und
+      Bricolage wurde bereits ueber Google Fonts geladen; sie liegt jetzt selbst
+      gehostet in /fonts/, wie League Spartan. League Spartan bleibt Wortmarke.
+      Gegengeprueft: `scripts/schrift-durchgang.mjs`, 12 Stationen ohne Ueberlauf.
+- ✅ **Fragen groesser** (Wolf 2026-08-26, „der text auf beamer darf nicht zu klein
+      sein, einfach nach optimiertem spacing"). 77-84 px sind jetzt 109-117 px.
+      Ausgemessen mit `scripts/frage-spacing-messen.mjs`, das die Obergrenze
+      SUCHT statt einen Faktor zu raten. Nebenbefund mitgefixt: die
+      Groessenleiter war nicht monoton, eine kuerzere Frage stand kleiner als
+      eine laengere.
 - [ ] **Farbsystem:** Leinwand, Flaeche oder Marke traegt die Kategorie.
       Gemessen gleichwertig, also Geschmacksentscheidung.
 - [ ] **BEWEGUNG, laeuft seit 2026-08-24. Einstieg: `docs/UEBERGABE_MOTION.md`.**

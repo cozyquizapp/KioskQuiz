@@ -557,6 +557,50 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   /** Welcher Platz (0-basiert) wird in Etappe `step` geehrt? */
   const platzInEtappe = useCallback((step: number) => N - step, [N]);
 
+  /**
+   * ── Das Duell ─────────────────────────────────────────────────────────────
+   * 2026-08-26 (Wolf): „literally kein finale zwischen 1 und 2, es kommt
+   * einfach nur platz 2 team x, gar keine spannung"
+   *
+   * ⚠️ Vorher habe ich an derselben Stelle die GEOMETRIE geaendert (die beiden
+   * Tuerme an die Raender, die Ansage dazwischen) und geglaubt, damit sei das
+   * Duell gebaut. Wolfs Satz sagt, dass das am Problem vorbeiging. Mit
+   * scripts/finale-drehbuch.mjs nachgemessen, was die Buehne wirklich zeigt,
+   * wenn sie auf den Moderator WARTET:
+   *
+   *   Beat  9   3 Tuerme   „Platz 3 · Quiz-Asse mit 3 Punkten"
+   *   Beat 10   2 Tuerme   „Platz 2 · Quiz Khalifa mit 3 Punkten"   „Nur noch zwei"
+   *   Beat 11   2 Tuerme   „Platz 2 · Quiz Khalifa mit 3 Punkten"   „Nur noch zwei"
+   *   Beat 12   1 Turm 👑
+   *
+   * Zwei Dinge stehen da schwarz auf weiss:
+   *
+   *   1. Der Moment, in dem nur noch zwei Tuerme stehen, IST der Moment, in dem
+   *      Platz 2 schon genannt ist. Die Ueberschrift „Nur noch zwei" stellt eine
+   *      Frage, die in derselben Sekunde beantwortet wird. Es gibt keinen Beat,
+   *      in dem zwei Tuerme stehen und noch nichts entschieden ist.
+   *   2. Beat 11 ist LEER. Das war mein eigener Zusatz-Beat von heute morgen
+   *      (`qqTowerMaxBeat` von A+N+1 auf A+N+2). Er hat einen Tastendruck
+   *      gekostet und nichts gezeigt - schlimmer als keiner.
+   *
+   * Jetzt bekommt dieser Beat seinen Inhalt, und er liegt an der richtigen
+   * Stelle: der dritte Turm sinkt, zwei bleiben stehen, und die Buehne nennt
+   * BEIDE Namen nebeneinander, ohne zu sagen, wer von beiden gewonnen hat.
+   * Erst der naechste Tastendruck oeffnet das Fenster fuer Platz 2. Damit hat
+   * der Saal einen Moment, in dem die Frage offen im Raum steht, und Wolf hat
+   * einen Beat, an dem er reden kann.
+   *
+   * Die Zahl der Tastendruecke bleibt gleich (A+N+2), der leere Beat wird nur
+   * gefuellt und verschoben.
+   */
+  const [duell, setDuell] = useState(false);
+  /** In welcher Etappe das Duell liegt: der Schritt, in dem genau zwei Tuerme
+   *  uebrig bleiben, also der Schritt von Platz 2. Bei zwei Teams gibt es kein
+   *  Vorher, dann entfaellt es.
+   *  ⚠️ `platzInEtappe(step) = N - step` liefert einen NULLBASIERTEN Rang.
+   *  Platz 2 ist Index 1, also ist die Etappe N - 1. */
+  const DUELL_STUFE = N >= 3 ? N - 1 : -1;
+
   // 2026-08-25, an der Aufnahme gemessen (scripts/rennen-messen.mjs): die Pille
   // „PLATZ 3" stand schon bei 1074 ms da, waehrend der Beat, der Platz 3
   // ueberhaupt erst entscheidet, noch lief. Der Grund war, dass sie nur am
@@ -570,9 +614,18 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
    */
   const platzSteht = useCallback((rank: number) => {
     if (phase !== 'reveal') return false;
+    // 2026-08-26 (Wolf: „literally kein finale zwischen 1 und 2, es kommt
+    // einfach nur platz 2 team x, gar keine spannung"). Waehrend des Duells
+    // ist Platz 2 rechnerisch schon erreicht - gesagt ist er aber noch nicht.
+    // Genau dieser Unterschied IST das Duell. Siehe `duell`.
+    // ⚠️ `rank` ist NULLBASIERT (die Ansage schreibt `Platz ${rank + 1}`).
+    // Platz 2 ist also Index 1. Der erste Anlauf hat hier 2 geprueft und damit
+    // das Fenster von Platz 3 unterdrueckt - gemessen im Drehbuch als ein
+    // stummer Beat mit drei Tuermen.
+    if (duell && rank === 1) return false;
     const meineEtappe = N - rank;
     return revealStep >= meineEtappe && rennTick >= rennZielFuer(meineEtappe);
-  }, [phase, revealStep, rennTick, rennZielFuer, N]);
+  }, [phase, revealStep, rennTick, rennZielFuer, N, duell]);
 
   /**
    * Steht dieser Turm noch auf der Buehne?
@@ -772,7 +825,13 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // Etappe 0 gibt es nicht mehr: die Ehrung beginnt sofort mit dem letzten
     // Platz. Ohne das stuende ein Beat lang ein fertiges Bild ohne Aussage.
     if (revealStep === 0) { setRevealStep(1); return; }
-    const meinBeat = rennBeat + revealStep - 1;
+    // Das Duell schiebt alles danach um genau einen Beat nach hinten, und es
+    // teilt seine eigene Etappe in zwei: erst der Zweikampf, dann der Name.
+    // Ohne diese Rechnung wuerde `laeuftHinterher` den Moderator faelschlich
+    // fuer voraus halten und die restliche Ehrung durchrattern.
+    const extraVor = revealStep > DUELL_STUFE ? 1 : 0;
+    const nachDemDuell = revealStep === DUELL_STUFE && !duell ? 1 : 0;
+    const meinBeat = rennBeat + revealStep - 1 + extraVor + nachDemDuell;
     const target = rennZielFuer(revealStep);
     // Liegt der Moderator schon hinter dieser Etappe, wird gebaut statt
     // getickt: die Bausteine stehen sofort.
@@ -798,20 +857,28 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // Live wartet der naechste Schritt auf den Moderator, und zwar OHNE
     // Zeitdruck. In der Vorschau laeuft er nach einer Lesepause weiter.
     //
-    // 2026-08-26 (Wolf: „das finale zwischen platz 1 und 2 ist etwas
-    // langweilig"). Der Schritt AUF den Sieger braucht einen Beat mehr als die
-    // anderen. Gemessen mit scripts/finale-beats-probe.mjs: das Fenster fuer
-    // Platz 2 und die Enthuellung des Siegers lagen auf DEMSELBEN Beat, die
-    // Enthuellung nur 3,6 Sekunden spaeter als Nachlauf. Wer vorher
-    // weiterschaltete, sah sie nie - und weiterschalten tut der Moderator
-    // natuerlich, weil Platz 2 zu dem Zeitpunkt schon ausgelesen ist.
-    // Ein Beat, ein Moment. Beim Sieger erst recht.
-    const naechster = revealStep + 1 >= N ? meinBeat + 2 : meinBeat + 1;
+    // 2026-08-26, zweite Fassung (Wolf: „literally kein finale zwischen 1 und
+    // 2"). Der erste Anlauf gab dem Schritt AUF den Sieger einen Beat mehr -
+    // gemessen war das ein LEERER Beat, siehe `duell` oben. Der Zusatz-Beat
+    // liegt jetzt eine Etappe frueher und hat Inhalt: erst der Zweikampf,
+    // dann der Name von Platz 2.
+    const naechster = meinBeat + 1;
     if (wartetAuf(naechster)) return;
     const hold = live && laeuftHinterher(meinBeat) ? 0 : EHRUNG_STAND;
-    const h = window.setTimeout(() => { setRevealStep(x => x + 1); try { playReveal(); } catch { /* noop */ } }, hold);
+    const h = window.setTimeout(() => {
+      if (revealStep === DUELL_STUFE && duell) {
+        // Der Zweikampf ist gestanden. Jetzt faellt der Name von Platz 2,
+        // ohne dass die Etappe weiterlaeuft.
+        setDuell(false);
+      } else {
+        const naechsteStufe = revealStep + 1;
+        setRevealStep(naechsteStufe);
+        setDuell(naechsteStufe === DUELL_STUFE);
+      }
+      try { playReveal(); } catch { /* noop */ }
+    }, hold);
     return () => window.clearTimeout(h);
-  }, [phase, revealStep, rennTick, rennZielFuer, live, awards.length, N, wartetAuf, laeuftHinterher]);
+  }, [phase, revealStep, rennTick, rennZielFuer, live, awards.length, N, wartetAuf, laeuftHinterher, duell, DUELL_STUFE]);
 
   const inReveal = phase === 'reveal';
   // Gekroent wird erst, wenn der letzte Baustein liegt. Vorher waere die Krone
@@ -835,9 +902,14 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // Bei welchem Beat steht die Buehne gerade selbst? Damit sieht ein
     // Werkzeug, ob der Moderator vorgemerkt hat (ein Beat voraus) oder
     // uebersprungen (zwei und mehr, dann wird gerafft).
-    eigenerBeat: phase === 'reveal' ? awards.length + revealStep
+    // Der Duell-Beat zaehlt mit, sonst meldet das Werkzeug einen Takt zu wenig.
+    eigenerBeat: phase === 'reveal'
+      ? awards.length + revealStep
+        + (revealStep > DUELL_STUFE ? 1 : 0)
+        + (revealStep === DUELL_STUFE && !duell ? 1 : 0)
       : phase === 'award' ? awardIdx + 1
       : 0,
+    duell,
     teams: N, awards: awards.length, crowned,
   };
 
@@ -1148,7 +1220,12 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         ) : inReveal && verbleibend.length === 2 ? (
           <>
             <div style={{ fontSize: istBuehne ? 44 : 32, fontWeight: 900, color: 'var(--qq-text)', animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite' }}>{de ? 'Nur noch zwei' : 'Just two left'}</div>
-            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Ein Baustein entscheidet' : 'One block decides it'}</div>
+            {/* 2026-08-26: hier stand „Ein Baustein entscheidet". Das war
+                gemessen falsch - an diesem Punkt sind beide Tuerme fertig
+                gebaut (im Drehbuch standen sie mit 3 zu 3 Bausteinen da), es
+                faellt kein Stein mehr. Eine Zeile, die dem Bild widerspricht,
+                nimmt dem Moment die Ernsthaftigkeit. */}
+            <div style={{ fontSize: istBuehne ? 28 : 16, fontWeight: 700, color: istBuehne ? 'var(--qq-text-muted)' : '#B9AEDA' }}>{de ? 'Einer von beiden gewinnt den Abend' : 'One of these two wins the night'}</div>
           </>
         ) : inReveal ? (
           <>
@@ -1625,6 +1702,103 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
           war nach anderthalb Sekunden weg, egal wie lange der Beat noch stand -
           bei einem Abend, an dem hier Preise uebergeben werden, ist das genau
           verkehrt herum. */}
+      {/* ── Das Duell ────────────────────────────────────────────────────────
+          2026-08-26 (Wolf: „literally kein finale zwischen 1 und 2, es kommt
+          einfach nur platz 2 team x, gar keine spannung").
+
+          Dieser Beat ist der einzige des Abends, in dem die Buehne eine Frage
+          stellt und die Antwort NICHT mitliefert. Der dritte Turm ist gesunken,
+          zwei stehen noch, und beide Namen stehen nebeneinander - ohne Platz,
+          ohne Punkte, ohne Reihenfolge. Wer hier gewinnt, sagt erst der
+          naechste Tastendruck.
+
+          Deshalb stehen die beiden auch in BUEHNENREIHENFOLGE (`ordered`,
+          also so, wie ihre Tuerme stehen) und nicht in Rangfolge. Nach Rang
+          sortiert waere links immer der Sieger, und nach zwei Abenden haette
+          es jeder raus. */}
+      {inReveal && duell && (() => {
+        const zwei = ordered.filter(e => verbleibend.includes(e.team.id));
+        if (zwei.length !== 2) return null;
+        return (
+          <div style={{
+            // Wie das Ehrenfenster in der oberen Mitte: die Tuerme stehen
+            // unten und sind hier der Grund, warum jemand hinschaut. Bei zwei
+            // Tuermen gehen sie an die Raender (siehe DUELL_LUECKE), die Mitte
+            // ist also frei.
+            position: 'absolute', left: '50%', top: TITLE_H + 40, zIndex: 12,
+            transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            // ⚠️ Breite ist hier nicht Geschmack, sondern Rechnung. Bei zwei
+            // verbleibenden Tuermen gehen die beiden an die Raender (siehe
+            // DUELL_LUECKE) und stehen gemessen bei x 265 bis 405 und 1355 bis
+            // 1495. Der erste Entwurf war 1300 breit und lag damit ueber
+            // beiden Turmspitzen - ausgerechnet ueber dem, worum es geht.
+            // Die Spalten sind deshalb fest 270 breit; mit Abstand, „gegen"
+            // und Polster ergibt das rund 850 und laesst beide Tuerme frei.
+            gap: istBuehne ? 34 : 18,
+            padding: istBuehne ? '30px 44px' : '18px 24px',
+            borderRadius: 30,
+            background: 'linear-gradient(180deg, rgba(24,19,34,0.97), rgba(14,11,20,0.97))',
+            border: `2px solid ${GOLD_DEEP}`,
+            boxShadow: '0 18px 44px rgba(0,0,0,0.62)',
+            pointerEvents: 'none',
+            animation: reduce ? 'none' : 'qqT2EhrungAuf 0.5s cubic-bezier(0.2,1.2,0.35,1) both',
+          }}>
+            {zwei.map((e, i) => (
+              <Fragment key={e.team.id}>
+                {i === 1 && (
+                  <span style={{
+                    fontSize: istBuehne ? 38 : 18, fontWeight: 900, color: GOLD,
+                    letterSpacing: '0.16em', textTransform: 'uppercase', whiteSpace: 'nowrap',
+                    flexShrink: 0,
+                    animation: reduce ? 'none' : 'qqT2Breathe 1.6s ease-in-out infinite',
+                  }}>{de ? 'gegen' : 'vs'}</span>
+                )}
+                {/* Feste Spaltenbreite. Ohne sie teilt der Flexkasten den
+                    Platz nach der Namenslaenge auf: gemessen stand „Fakt oder
+                    Fiktion" auf 
+                    einer schmaleren Spalte als „Pubquatscher" und wurde zu
+                    „Fakt oder.." gekuerzt, waehrend links Platz frei blieb.
+                    Bei einem Zweikampf muessen beide Seiten gleich viel Raum
+                    bekommen, sonst sieht einer von beiden schon wie der
+                    Verlierer aus. */}
+                <div style={{
+                  width: istBuehne ? 270 : 150, flexShrink: 0,
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: istBuehne ? 14 : 8,
+                  justifyContent: 'flex-start',
+                }}>
+                  <QQTeamAvatar
+                    avatarId={e.team.avatarId}
+                    teamEmoji={e.team.emoji}
+                    size={istBuehne ? 118 : 60}
+                    blink={false}
+                  />
+                  {/* Feste Hoehe fuer den Namen. Ein einzeiliger Name neben
+                      einem zweizeiligen liess die beiden Kacheln auf
+                      unterschiedlicher Hoehe stehen - bei einem Zweikampf
+                      liest sich schon das als Rangfolge. */}
+                  <div style={{
+                    height: istBuehne ? 100 : 46, width: '100%',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  }}>
+                    <TeamNameLabel
+                      name={e.team.name}
+                      fontSize={istBuehne ? '46px' : '22px'}
+                      minFontSize={istBuehne ? '28px' : '14px'}
+                      color="var(--qq-text)"
+                      fontWeight={900}
+                      maxLines={2}
+                      shrinkAfter={13}
+                      style={{ maxWidth: '100%', lineHeight: 1.02, textAlign: 'center' }}
+                    />
+                  </div>
+                </div>
+              </Fragment>
+            ))}
+          </div>
+        );
+      })()}
+
       {inReveal && (() => {
         const rank = platzInEtappe(revealStep);
         if (rank < 1 || rank >= N) return null;      // 0 ist der Sieger, der bekommt die Krone

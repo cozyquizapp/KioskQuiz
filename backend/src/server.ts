@@ -272,12 +272,35 @@ const uploadDir = path.join(uploadRoot, 'questions');
 const blitzUploadDir = path.join(uploadRoot, 'blitz');
 
 // Healthcheck / Room-Check
+// ── Welche Fassung laeuft auf diesem Server? ────────────────────────────────
+// 2026-08-25 (Wolf: „das problem besteht seit 10 pushes... wie machen wirs?").
+// Backend und Frontend werden getrennt ausgeliefert (Coolify und Vercel) und
+// sind nie zur selben Sekunde da. Wessen Fassung gerade laeuft, war von aussen
+// nicht zu sehen - und ohne das sucht man Fehler im Code, die im Deployment
+// liegen. Einmal beim Start bestimmt, danach unveraenderlich.
+export const QQ_SERVER_BUILD: string = (() => {
+  const ausUmgebung = process.env.SOURCE_COMMIT
+    ?? process.env.GIT_COMMIT
+    ?? process.env.RAILWAY_GIT_COMMIT_SHA
+    ?? process.env.COOLIFY_GIT_COMMIT;
+  if (ausUmgebung) return ausUmgebung.slice(0, 8);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('child_process')
+      .execSync('git rev-parse --short=8 HEAD', { encoding: 'utf8' })
+      .trim();
+  } catch {
+    return 'unbekannt';
+  }
+})();
+
 app.get('/api/health', (_req, res) => {
   res.json({
     ok: true,
     timestamp: new Date().toISOString(),
     db: isDBConnected() ? 'connected' : 'fallback',
-    uptime: process.uptime()
+    uptime: process.uptime(),
+    build: QQ_SERVER_BUILD,
   });
 });
 

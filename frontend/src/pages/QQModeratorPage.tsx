@@ -15,6 +15,7 @@ import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 import { qqTowerAwardCount, qqTowerAwardBeats, qqTowerMaxBeat, qqTurmRennplan } from '../../../shared/qqFinalReveal';
 import { qqTurmBeatDauer, qqTurmAwardBeatDauer, qqTurmRennBeatDauer } from '../components/CozyQuizTowerFinaleV2';
 import { qqFinalSortedTeams } from '../utils/qqFinalScore';
+import { qqBuildKurz } from '../qqBuild';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { CozyGameWinnerPicker } from '../components/CozyGameWinnerPicker';
@@ -4974,6 +4975,14 @@ function FinalWagerControls({ state: s }: { state: QQStateUpdate; emit: any; roo
                 Backend-Deploy abwarten.
               </div>
             )}
+            {/* Welche Fassung laeuft hier eigentlich? (Wolf 2026-08-25: „das
+                problem besteht seit 10 pushes... wie machen wirs?") Zwischen
+                `main` und dem Bildschirm liegen ein Build, ein CDN und ein
+                Service Worker. Ohne diese zwei Zeichenfolgen sucht man den
+                Fehler im Code, wo er nicht ist. */}
+            <div style={{ color: '#FCD34D', opacity: 0.55, fontSize: 10, marginTop: 2 }}>
+              Bühne {qqBuildKurz()} · Server {(s as any).serverBuild ?? 'alt (meldet keine Fassung)'}
+            </div>
           </div>
         );
       })()}

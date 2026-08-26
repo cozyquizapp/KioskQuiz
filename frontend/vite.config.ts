@@ -1,10 +1,38 @@
 import path from 'path';
+import { execSync } from 'child_process';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 import { visualizer } from 'rollup-plugin-visualizer';
 
+// ── Welche Fassung laeuft da eigentlich? ─────────────────────────────────────
+// 2026-08-25 (Wolf: „das problem besteht seit 10 pushes... wie machen wirs?").
+//
+// Genau das war die Frage, die sich von aussen nicht beantworten liess: die
+// Aenderung lag auf `main`, aber ob sie auch auf dem Bildschirm ankam, konnte
+// niemand sehen. Zwischen `main` und der Leinwand liegen ein Build, ein CDN und
+// ein Service Worker, und jeder davon kann eine alte Fassung festhalten.
+//
+// Deshalb steht die Fassung jetzt IM BUILD. Auf Vercel liefert
+// `VERCEL_GIT_COMMIT_SHA` den Commit, lokal `git rev-parse`. Das Steuerpult
+// zeigt sie an, daneben die des Servers - und wer sich fragt, ob eine Aenderung
+// schon da ist, vergleicht zwei kurze Zeichenfolgen statt zu raten.
+const buildKennung = (): string => {
+  const ausUmgebung = process.env.VERCEL_GIT_COMMIT_SHA
+    ?? process.env.GIT_COMMIT
+    ?? process.env.SOURCE_COMMIT;
+  if (ausUmgebung) return ausUmgebung.slice(0, 8);
+  try {
+    return execSync('git rev-parse --short=8 HEAD', { encoding: 'utf8' }).trim();
+  } catch {
+    return 'unbekannt';
+  }
+};
+
 export default defineConfig({
+  define: {
+    __QQ_BUILD__: JSON.stringify({ sha: buildKennung(), zeit: new Date().toISOString() }),
+  },
   plugins: [
     react(),
     visualizer({

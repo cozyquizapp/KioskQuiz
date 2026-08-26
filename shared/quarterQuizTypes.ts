@@ -1531,6 +1531,8 @@ export interface QQStateUpdate {
    * genau das, wonach das Spiel auch handelt.
    */
   finalRevealMaxStep?: number;
+  /** Kurzkennung der Server-Fassung. Siehe QQ_SERVER_BUILD in server.ts. */
+  serverBuild?: string;
   /** 2026-05-25 (Wolf Final-Wager v4): Pending Stack-Placement waehrend
    *  FINAL_REVEAL. Wird beim Step-Advance gesetzt, vom Team via
    *  qq:finalRevealPlaceStack abgearbeitet. null = kein pending Placement. */

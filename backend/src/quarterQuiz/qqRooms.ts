@@ -4688,6 +4688,18 @@ export function qqSortedTeamIds(room: QQRoomState): string[] {
     .map(t => t.id);
 }
 
+/** Dieselbe Kennung wie in server.ts, hier eigenstaendig bestimmt: qqRooms darf
+ *  server.ts nicht importieren, das waere ein Ringschluss. */
+const QQ_SERVER_BUILD: string = (() => {
+  const ausUmgebung = process.env.SOURCE_COMMIT ?? process.env.GIT_COMMIT
+    ?? process.env.RAILWAY_GIT_COMMIT_SHA ?? process.env.COOLIFY_GIT_COMMIT;
+  if (ausUmgebung) return ausUmgebung.slice(0, 8);
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    return require('child_process').execSync('git rev-parse --short=8 HEAD', { encoding: 'utf8' }).trim();
+  } catch { return 'unbekannt'; }
+})();
+
 export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
   return {
     // 2026-05-19 (Wolf 'beamer-timer +6s'): Server-Clock-Stempel pro Update.
@@ -4700,6 +4712,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     gridSize:         room.gridSize,
     grid:             room.grid,
     teams:            Object.values(room.teams),
+    serverBuild:      QQ_SERVER_BUILD,
     // ⚠️ Diese Zahl MUSS aus derselben Funktion kommen, die den Phasenwechsel
     // ausloest (qqFinalRevealMaxStep, siehe qqAdvanceFinalReveal). Sonst ist
     // sie wieder nur eine zweite Meinung.

@@ -209,28 +209,35 @@ describe('qqTurmRennplan — eine Etappe je Team, von hinten nach vorne', () => 
 // einen eigenen Beat, alle anderen verschwanden gemeinsam in einem. Jetzt hat
 // JEDES Team seinen Beat, damit Wolf an jedem stehenbleiben und einen Preis
 // uebergeben kann.
-describe('qqTowerMaxBeat = A + Teams + 1 (Aufbau · Awards · ein Beat je Team · Siegerfolie)', () => {
-  it('3 Awards, 8 Teams → 12', () => expect(qqTowerMaxBeat(3, 8)).toBe(12));
-  it('0 Awards, 2 Teams → 3', () => expect(qqTowerMaxBeat(0, 2)).toBe(3));
-  it('3 Awards, 1 Team → 5', () => expect(qqTowerMaxBeat(3, 1)).toBe(5));
+// 2026-08-26 (Wolf: „das finale zwischen platz 1 und 2 ist etwas langweilig").
+// Ein Beat mehr, also A + Teams + 2. Gemessen mit
+// scripts/finale-beats-probe.mjs: die Enthuellung des Siegers hatte gar keinen
+// eigenen Beat, sie lag als 3,6-Sekunden-Nachlauf auf dem Beat von Platz 2 -
+// und war damit weg, sobald der Moderator weiterschaltete. Diese Zahlen sind
+// deshalb nicht nur Buchhaltung: der letzte Beat IST der groesste Moment des
+// Abends.
+describe('qqTowerMaxBeat = A + Teams + 2 (Aufbau · Awards · ein Beat je Team · Sieger am Turm · Siegerfolie)', () => {
+  it('3 Awards, 8 Teams → 13', () => expect(qqTowerMaxBeat(3, 8)).toBe(13));
+  it('0 Awards, 2 Teams → 4', () => expect(qqTowerMaxBeat(0, 2)).toBe(4));
+  it('3 Awards, 1 Team → 6', () => expect(qqTowerMaxBeat(3, 1)).toBe(6));
   it('mehr Teams heisst mehr Beats, eins zu eins', () => {
     expect(qqTowerMaxBeat(2, 9) - qqTowerMaxBeat(2, 6)).toBe(3);
   });
-  it('null Teams faellt nicht unter einen Beat', () => expect(qqTowerMaxBeat(0, 0)).toBe(2));
+  it('null Teams faellt nicht unter einen Beat', () => expect(qqTowerMaxBeat(0, 0)).toBe(3));
 });
 
 describe('qqFinalMaxStep = B + 1 + qqTowerMaxBeat(A, Teams)', () => {
-  it('0 bets, 3 awards, 8 teams → 13', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(13));
-  it('3 bets, 3 awards, 8 teams → 16', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(16));
-  it('8 bets, 3 awards, 8 teams → 21', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(21));
-  it('3 bets, 0 awards, 8 teams → 13', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(13));
+  it('0 bets, 3 awards, 8 teams → 14', () => expect(qqFinalMaxStep(0, 3, 8)).toBe(14));
+  it('3 bets, 3 awards, 8 teams → 17', () => expect(qqFinalMaxStep(3, 3, 8)).toBe(17));
+  it('8 bets, 3 awards, 8 teams → 22', () => expect(qqFinalMaxStep(8, 3, 8)).toBe(22));
+  it('3 bets, 0 awards, 8 teams → 14', () => expect(qqFinalMaxStep(3, 0, 8)).toBe(14));
 });
 
 describe('qqIstKroenungsBeat — der letzte Beat und nur der', () => {
-  // 3 Awards, 8 Teams → maxBeat 12. Ein Beat davor laeuft noch die Kroenung am
-  // Turm, erst 12 ist die eigene Siegerfolie.
-  it('genau auf dem Maximum', () => expect(qqIstKroenungsBeat(12, 3, 8)).toBe(true));
-  it('einer davor ist noch der Turm', () => expect(qqIstKroenungsBeat(11, 3, 8)).toBe(false));
+  // 3 Awards, 8 Teams → maxBeat 13. Beat 12 gehoert dem Sieger allein auf der
+  // Turmbuehne (Krone, letzter Baustein), erst 13 ist die eigene Siegerfolie.
+  it('genau auf dem Maximum', () => expect(qqIstKroenungsBeat(13, 3, 8)).toBe(true));
+  it('einer davor gehoert dem Sieger am Turm', () => expect(qqIstKroenungsBeat(12, 3, 8)).toBe(false));
   it('der Aufbau ist es nicht', () => expect(qqIstKroenungsBeat(0, 3, 8)).toBe(false));
 });
 

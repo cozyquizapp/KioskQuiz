@@ -233,9 +233,9 @@ export function qqTurmRennplan(
 
 /**
  * Hoechster gueltiger Turm-Beat (0-basiert): 0 Aufbau · 1..A Awards ·
- * A+1..A+N Siegerehrung, ein Beat je Team von hinten nach vorne, der letzte
- * ist die Kroenung (siehe `qqTurmRennplan`) · A+N+1 SIEGERFOLIE.
- * N = Teams. → maxBeat = A + N + 1.
+ * A+1..A+N-1 Siegerehrung, ein Beat je ausscheidendem Team von hinten nach
+ * vorne · A+N+1 der Sieger allein auf der Turmbuehne, letzter Baustein, Krone ·
+ * A+N+2 SIEGERFOLIE. N = Teams. → maxBeat = A + N + 2.
  *
  * 2026-08-25, zweite Fassung. Vorher A + min(3, Teams) + 2: nur die Top 3
  * hatten einen eigenen Beat, alle anderen verschwanden gemeinsam in einem.
@@ -248,9 +248,21 @@ export function qqTurmRennplan(
  * Zeile neben einem QR-Code - der groesste Moment des Abends als Fussnote
  * einer Verabschiedung. Jetzt haelt eine eigene Folie ihn fest, bevor das
  * Danke kommt.
+ *
+ * 2026-08-26 (Wolf: „das finale zwischen platz 1 und 2 ist etwas langweilig").
+ * Ein Beat mehr. Gemessen mit scripts/finale-beats-probe.mjs, an dem Messpunkt,
+ * den die Turmansicht selbst schreibt: bei acht Teams und einem Award stand das
+ * Fenster fuer Platz 2 auf liveBeat 9, und der naechste Druck war schon die
+ * Siegerfolie. Der Beat, den der Kopfkommentar der Turmansicht ausdruecklich
+ * vorsieht - „A+N der Sieger, allein auf der Buehne, letzter Baustein, Krone" -
+ * existierte nur als 3,6-Sekunden-Nachlauf am Beat von Platz 2. Wer vorher
+ * weiterschaltete, und das tut jeder Moderator, hat ihn nie gesehen.
+ *
+ * Der groesste Moment des Abends haing damit an einer Wartezeit statt an einem
+ * Tastendruck. Jetzt hat er einen eigenen Beat wie jeder andere Platz auch.
  */
 export function qqTowerMaxBeat(awardCount: number, teamCount: number): number {
-  return awardCount + Math.max(1, teamCount) + 1;
+  return awardCount + Math.max(1, teamCount) + 2;
 }
 
 /**

@@ -797,7 +797,17 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // 3) Etappenziel erreicht → das Band mit Platz und Namen steht.
     // Live wartet der naechste Schritt auf den Moderator, und zwar OHNE
     // Zeitdruck. In der Vorschau laeuft er nach einer Lesepause weiter.
-    if (wartetAuf(meinBeat + 1)) return;
+    //
+    // 2026-08-26 (Wolf: „das finale zwischen platz 1 und 2 ist etwas
+    // langweilig"). Der Schritt AUF den Sieger braucht einen Beat mehr als die
+    // anderen. Gemessen mit scripts/finale-beats-probe.mjs: das Fenster fuer
+    // Platz 2 und die Enthuellung des Siegers lagen auf DEMSELBEN Beat, die
+    // Enthuellung nur 3,6 Sekunden spaeter als Nachlauf. Wer vorher
+    // weiterschaltete, sah sie nie - und weiterschalten tut der Moderator
+    // natuerlich, weil Platz 2 zu dem Zeitpunkt schon ausgelesen ist.
+    // Ein Beat, ein Moment. Beim Sieger erst recht.
+    const naechster = revealStep + 1 >= N ? meinBeat + 2 : meinBeat + 1;
+    if (wartetAuf(naechster)) return;
     const hold = live && laeuftHinterher(meinBeat) ? 0 : EHRUNG_STAND;
     const h = window.setTimeout(() => { setRevealStep(x => x + 1); try { playReveal(); } catch { /* noop */ } }, hold);
     return () => window.clearTimeout(h);
@@ -894,6 +904,16 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   const baseX = (i: number) => startX + i * (colW + colGap);
   // Podium in der Mitte: Sieger zentral, 2. links, 3. rechts.
   const PGAP = 46;
+  /**
+   * Der Abstand im Duell, also wenn nur noch zwei Tuerme stehen.
+   *
+   * 2026-08-26. Gerechnet, nicht geschaetzt: das Ehrungsfenster ist auf der
+   * Buehne mindestens 760 breit und steht mittig, es belegt also 500 bis 1260
+   * von 1760. Damit beide Tuerme daneben frei stehen, muss der linke vor 500
+   * enden und der rechte nach 1260 beginnen. Bei einer Spaltenbreite von
+   * hoechstens 150 heisst das eine Luecke von rund 900.
+   */
+  const DUELL_LUECKE = Math.max(PGAP, Math.min(940, STAGE_W - 2 * colW - 260));
   const centerX = STAGE_W / 2 - colW / 2;
 
   // ── Wo die Tuerme stehen, waehrend das Feld schrumpft ─────────────────────
@@ -930,7 +950,19 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // Wer gerade abtritt, bleibt stehen, wo er stand - er faellt nach unten
     // weg, er soll nicht auch noch seitlich rutschen.
     if (i < 0 || n === 0) return baseX(orderIndex[id]);
-    const luecke = n <= 3 ? PGAP : colGap;
+    // 2026-08-26 (Wolf: „das finale zwischen platz 1 und 2 ist etwas
+    // langweilig"). Aufgenommen mit scripts/finale-zwei-schuss.mjs: zu zweit
+    // standen die beiden bei x 707 und 903, also mittig - und das
+    // Ehrungsfenster spannt von 500 bis 1260. Die beiden Tuerme, um die es im
+    // ganzen Finale geht, lagen vollstaendig HINTER der Ansage; sichtbar war
+    // nur ihre unterste Kachel.
+    //
+    // Zu zweit gehen sie deshalb auseinander statt zusammen. Das loest nicht
+    // nur die Verdeckung, es sagt auch etwas: acht Tuerme in einer Reihe sind
+    // ein Feld, zwei Tuerme an den Raendern sind ein Duell, und die Ansage
+    // steht zwischen ihnen. Die Bewegung dorthin faellt genau auf den Moment,
+    // in dem Platz 3 abtritt.
+    const luecke = n === 2 ? DUELL_LUECKE : n <= 3 ? PGAP : colGap;
     const breite = n * colW + (n - 1) * luecke;
     return (STAGE_W - breite) / 2 + i * (colW + luecke);
   };
@@ -1570,7 +1602,13 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
                   Text der Folie - ausgerechnet der Name, um den es geht.
                   minFontSize haelt ihn auch bei langen Namen ueber dem Boden;
                   zwei Zeilen sind erlaubt und darunter ist Platz. */}
-              {<TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} minFontSize={istBuehne ? '26px' : undefined} fontSize={istBuehne ? 'clamp(22px, 1.8cqw, 30px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
+              {/* 2026-08-26: im Duell darf der Name breiter werden. Solange
+                  acht Tuerme nebeneinander stehen, muss er in die Spalte
+                  passen, sonst laufen die Namen ineinander. Zu zweit stehen sie
+                  an den Raendern mit hunderten Bildpunkten Luft daneben - und
+                  „Gluehbirnen" brach dort mitten im Wort auf „Gluehbirne / n".
+                  Ausgerechnet auf dem Bild, das den ganzen Abend entscheidet. */}
+              {<TeamNameLabel name={team.name} maxLines={2} shrinkAfter={12} color="#F6EFE6" fontWeight={800} minFontSize={istBuehne ? '26px' : undefined} fontSize={istBuehne ? 'clamp(22px, 1.8cqw, 30px)' : 'clamp(12px, 1cqw, 16px)'} style={{ maxWidth: verbleibend.length <= 2 ? colW + 200 : colW + 8, textAlign: 'center', lineHeight: 1.05 }} />}
             </div>
           </div>
         );
@@ -1607,10 +1645,23 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
               kraeftig; unten, wo der Turm dieses Teams gerade absinkt, laeuft
               er auf null aus. Die Bewegung, um die es geht, bleibt in voller
               Helligkeit stehen. */}
+          {/* 2026-08-26, zweite Fassung: im Duell faellt der Vorhang milder aus.
+              Sobald nur noch zwei Tuerme stehen, gehen sie an die Raender
+              (siehe platzX / DUELL_LUECKE) und liegen gar nicht mehr hinter der
+              Ansage. Dann gibt es nichts abzudunkeln - im Gegenteil, die beiden
+              sind ab hier der Grund, warum jemand zuschaut. */}
           <div aria-hidden="true" style={{
-            position: 'absolute', inset: 0, zIndex: 11, pointerEvents: 'none',
-            background: 'linear-gradient(180deg, rgba(8,5,13,0.86) 0%, rgba(8,5,13,0.82) 46%, '
-              + 'rgba(8,5,13,0.5) 72%, rgba(8,5,13,0) 92%)',
+            // Der Vorhang beginnt UNTER dem Titelband. Dort steht, was gerade
+            // passiert („Die Siegerehrung", „Nur noch zwei", „Und der Sieger
+            // ist…"), und im ersten Anlauf hat der Vorhang genau diese Zeile
+            // mit abgedunkelt - ausgerechnet die, die dem Saal sagt, warum er
+            // hinschauen soll. Abgedunkelt wird das Feld, nicht die Ansage.
+            position: 'absolute', top: TITLE_H, left: 0, right: 0, bottom: 0,
+            zIndex: 11, pointerEvents: 'none',
+            background: verbleibend.length <= 2
+              ? 'linear-gradient(180deg, rgba(8,5,13,0.42) 0%, rgba(8,5,13,0.34) 52%, rgba(8,5,13,0) 88%)'
+              : 'linear-gradient(180deg, rgba(8,5,13,0.86) 0%, rgba(8,5,13,0.82) 46%, '
+                + 'rgba(8,5,13,0.5) 72%, rgba(8,5,13,0) 92%)',
             animation: reduce ? 'none' : 'qqT2VorhangAuf 0.42s ease-out both',
           }} />
           <div data-qq-ansage={t.id} style={{

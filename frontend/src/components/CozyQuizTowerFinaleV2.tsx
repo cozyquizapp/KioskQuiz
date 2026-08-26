@@ -212,7 +212,7 @@ const AWARD_TICK = 460;
 /** Wie lange ein Award-Beat am Stueck laeuft. Das Steuerpult holt sich die
  *  Zahl hier ab, statt sie ein zweites Mal zu schaetzen. */
 export function qqTurmAwardBeatDauer(bonus: number): number {
-  return AWARD_KARTE + AWARD_TICK_ERST + Math.max(0, bonus - 1) * AWARD_TICK + 1200;
+  return AWARD_KARTE + AWARD_TICK_ERST + Math.max(0, bonus - 1) * AWARD_TICK + AWARD_NACHKLANG;
 }
 
 /** Wie lange EIN Baustein im Rennen braucht, wenn danach noch `uebrig` Steine
@@ -235,6 +235,23 @@ const ABGANG_ANSAGE = 900;
 const ABGANG_BAND_AUS = 250;
 const ABGANG_SINKT = 1000;
 /**
+ * Wie lange die Platz-Ansage MINDESTENS steht, auch wenn der Moderator schon
+ * weitergeklickt hat.
+ *
+ * 2026-08-26 (Wolf: „kein schoenes window mit dein team wurde 8 was
+ * stehenbleibt"). Vorher waren es an dieser Stelle 200 ms - der Klick des
+ * Moderators kam ja fast immer vor dem Etappenende, und dann fiel die Ansage
+ * dem Vormerken zum Opfer. Ein Team, das den Abend ueber gespielt hat,
+ * bekommt seinen Platz jetzt so lange, wie ein Applaus dauert.
+ *
+ * Steht der Moderator noch nicht weiter, bleibt die Ansage ohnehin unbegrenzt
+ * stehen (siehe `wartetAuf` im Renn-Effekt) - er kann reden und einen Preis
+ * uebergeben. Diese Zahl ist nur die Untergrenze.
+ */
+const EHRUNG_STAND = ABGANG_ANSAGE + ABGANG_SINKT + 900;
+/** Nachklang nach einer Award-Vergabe, bevor der naechste Takt beginnt. */
+const AWARD_NACHKLANG = 1500;
+/**
  * Wie lange ein Renn-Beat am Stueck laeuft, von Takt `von` bis Takt `bis`, mit
  * `abgaenge` Tuermen, die am Ende gleichzeitig leer werden.
  *
@@ -247,7 +264,7 @@ const ABGANG_SINKT = 1000;
 export function qqTurmRennBeatDauer(von: number, bis: number, abgaenge = 1): number {
   let ms = 0;
   for (let uebrig = Math.max(0, bis - von); uebrig >= 1; uebrig--) ms += rennSchritt(uebrig);
-  const zeremonie = Math.max(0, abgaenge - 1) * ABGANG_TAKT + ABGANG_ANSAGE + ABGANG_SINKT;
+  const zeremonie = Math.max(0, abgaenge - 1) * ABGANG_TAKT + EHRUNG_STAND;
   return ms + zeremonie + 600;
 }
 
@@ -629,8 +646,26 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // zu Ende. Die Choreografie bleibt vollstaendig, sie wird nur gestaucht.
   /** Wartet diese Stufe noch auf ihren Beat? */
   const wartetAuf = useCallback((beat: number) => live && (liveBeat ?? 0) < beat, [live, liveBeat]);
-  /** Ist der Moderator schon WEITER als diese Stufe? Dann aufholen. */
-  const laeuftHinterher = useCallback((beat: number) => live && (liveBeat ?? 0) > beat, [live, liveBeat]);
+  /** Ist der Moderator schon WEITER als diese Stufe? Dann aufholen.
+   *
+   * 2026-08-26 (Wolf: „die einzelnen teams die rausfliegen werden eine
+   * millisekunde gefeiert ... das ist alles etwas ueberhastet und kein episches
+   * finale. das muss event maximiert werden BUEHNE das ist der MOMENT des
+   * abends").
+   *
+   * Hier stand `> beat`, und das war der ganze Fehler. Einen Beat voraus ist
+   * der Moderator IMMER, sobald er waehrend einer laufenden Etappe schon
+   * weiterklickt - und das ist der normale Griff am Steuerpult, nicht die
+   * Ausnahme. Jeder dieser Klicks hat die gerade laufende Zeremonie auf null
+   * gerafft: die Award-Karte von 6,3 s auf 0,6 s, die Platz-Ansage von ihrer
+   * Standzeit auf 200 ms. Deshalb war alles „eine Millisekunde".
+   *
+   * Ein Klick heisst jetzt VORMERKEN: die laufende Etappe spielt zu Ende,
+   * danach geht es ohne Warten weiter. Erst wer ZWEI Beats voraus ist, hat
+   * bewusst uebersprungen - oder der Beamer ist mitten im Finale dazugekommen
+   * und muss aufholen. Nur dann wird gerafft.
+   */
+  const laeuftHinterher = useCallback((beat: number) => live && (liveBeat ?? 0) > beat + 1, [live, liveBeat]);
 
   useEffect(() => {
     if (phase !== 'brett') return;
@@ -692,7 +727,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
       const h = window.setTimeout(() => {
         if (awardIdx + 1 >= awards.length) setPhase('reveal');
         else { setAwardIdx(i => i + 1); setAwardStage('card'); setAwardTick(0); }
-      }, live ? (eile ? 0 : 200) : 1500);
+      }, live && eile ? 0 : AWARD_NACHKLANG);
       return () => window.clearTimeout(h);
     }
     const h = window.setTimeout(() => { setAwardTick(t => t + 1); try { playTick(); } catch { /* noop */ } }, awardTick === 0 ? AWARD_TICK_ERST : AWARD_TICK);
@@ -749,7 +784,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
     // Live wartet der naechste Schritt auf den Moderator, und zwar OHNE
     // Zeitdruck. In der Vorschau laeuft er nach einer Lesepause weiter.
     if (wartetAuf(meinBeat + 1)) return;
-    const hold = live ? (laeuftHinterher(meinBeat) ? 0 : 200) : ABGANG_ANSAGE + ABGANG_SINKT + 900;
+    const hold = live && laeuftHinterher(meinBeat) ? 0 : EHRUNG_STAND;
     const h = window.setTimeout(() => { setRevealStep(x => x + 1); try { playReveal(); } catch { /* noop */ } }, hold);
     return () => window.clearTimeout(h);
   }, [phase, revealStep, rennTick, rennZielFuer, live, awards.length, N, wartetAuf, laeuftHinterher]);
@@ -758,6 +793,29 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
   // Gekroent wird erst, wenn der letzte Baustein liegt. Vorher waere die Krone
   // die Ansage des Ergebnisses, und der Stein danach nur noch Nachtrag.
   const crowned = platzSteht(0);
+
+  // ── Messpunkt fuer die Werkzeuge ──────────────────────────────────────────
+  // 2026-08-26 (Wolf: „optimier bitte mal den messaufbau").
+  //
+  // Die Skripte haben den Zustand des Finales bisher aus dem Bildschirmtext
+  // geraten und dann blind nachgeklickt - dabei sind in einem Durchlauf drei
+  // Ehrungen uebersprungen worden, und die Messung mass am Ende ihr eigenes
+  // Klicken statt der Buehne. Wer den Takt eines Ablaufs pruefen will, muss
+  // sehen, bei welchem Takt der Ablauf steht.
+  //
+  // Nur lesen, nie schreiben: das hier steuert nichts, es berichtet. Kosten
+  // sind ein Objekt je Render, kein Effekt und kein Zustand.
+  (globalThis as unknown as { __qqTurm?: unknown }).__qqTurm = {
+    phase, revealStep, rennTick, awardIdx, awardStage, awardTick,
+    liveBeat: liveBeat ?? null, live,
+    // Bei welchem Beat steht die Buehne gerade selbst? Damit sieht ein
+    // Werkzeug, ob der Moderator vorgemerkt hat (ein Beat voraus) oder
+    // uebersprungen (zwei und mehr, dann wird gerafft).
+    eigenerBeat: phase === 'reveal' ? awards.length + revealStep
+      : phase === 'award' ? awardIdx + 1
+      : 0,
+    teams: N, awards: awards.length, crowned,
+  };
 
   // ── Geometrie ─────────────────────────────────────────────────────────────
   // 2026-08-23 (Uebergabe 2a, Wolf: „was meinst du mit dem zwischenstand").
@@ -1500,7 +1558,7 @@ export function TowerFinaleV2({ teams, awards, brett, lang, liveBeat, tieBreaker
         if (!eintrag || !platzSteht(rank)) return null;
         const t = eintrag.team;
         return (
-          <div key={`ansage-${t.id}`} style={{
+          <div key={`ansage-${t.id}`} data-qq-ansage={t.id} style={{
             position: 'absolute', left: 0, right: 0, top: TITLE_H + 26, zIndex: 12,
             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 24,
             pointerEvents: 'none',

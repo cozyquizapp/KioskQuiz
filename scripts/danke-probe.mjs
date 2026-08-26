@@ -48,6 +48,24 @@ const befund = await seite.evaluate(() => {
     themeAttr: wurzel.dataset.qqTheme ?? wurzel.getAttribute('data-theme') ?? '(nichts)',
     dankeGefunden: !!danke,
     animationen: zaehler,
+    endstand: (() => {
+      const sp = document.querySelector('[data-qq-endstand]');
+      if (!sp) return null;
+      const r = sp.getBoundingClientRect();
+      // Der Beamer skaliert die feste 1760x990-Flaeche. getBoundingClientRect
+      // liefert BILDPUNKTE AUF DEM SCHIRM, also schon skaliert - genau das,
+      // was zaehlt, wenn man fragt, ob es aus zehn Metern lesbar ist.
+      const zeilen = [...sp.children].slice(1);
+      const erste = zeilen[0];
+      const name = erste ? erste.querySelector('span:nth-child(2), div') : null;
+      return {
+        breite: Math.round(r.width), hoehe: Math.round(r.height),
+        zeilen: zeilen.length,
+        zeilenhoehe: erste ? Math.round(erste.getBoundingClientRect().height) : 0,
+        schrift: name ? Math.round(parseFloat(getComputedStyle(name).fontSize)) : 0,
+        buehne: (() => { const b = document.querySelector('[data-qq-buehne]'); return b ? Math.round(b.getBoundingClientRect().width) : 0; })(),
+      };
+    })(),
   };
 });
 console.log('\n── Was der Browser auf der Danke-Folie sagt ──────────────────');
@@ -57,6 +75,14 @@ console.log('  Danke-Wurzel da   :', befund.dankeGefunden);
 console.log('  laufende Animationen in der Folie:');
 for (const [n, z] of Object.entries(befund.animationen).sort((a, c) => c[1] - a[1])) {
   console.log(`    ${String(z).padStart(3)}x  ${n}`);
+}
+console.log('\n── Endstand-Spalte ───────────────────────────────────────────');
+if (!befund.endstand) console.log('  (nicht vorhanden)');
+else {
+  const e = befund.endstand;
+  console.log(`  Buehnenbreite auf dem Schirm : ${e.buehne} px`);
+  console.log(`  Spalte                       : ${e.breite} x ${e.hoehe} px`);
+  console.log(`  ${e.zeilen} Zeilen, je ${e.zeilenhoehe} px hoch, Name ${e.schrift} px`);
 }
 await b.schliessen?.();
 process.exit(0);

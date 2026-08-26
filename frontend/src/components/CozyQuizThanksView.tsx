@@ -18,7 +18,7 @@ import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 import { QQTeamAvatar } from './QQTeamAvatar';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { qqSortedGroups } from '../qqShared';
-import { qqFinalSortedTeams } from '../utils/qqFinalScore';
+import { qqFinalSortedTeams, qqFinalTotal } from '../utils/qqFinalScore';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { TeamNameLabel } from './TeamNameLabel';
@@ -88,6 +88,30 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   // sodass der restliche Hero-Render 1:1 korrekt die Fraktion zeigt.
   const nested = !!(s as any).nestedTeams;
   const winner = nested ? (qqSortedGroups(s)[0] ?? winnerTeam) : winnerTeam;
+
+  // ── Die Endtabelle ────────────────────────────────────────────────────────
+  // 2026-08-26 (Wolf: „ja zur endtabelle").
+  //
+  // Warum sie hierhin gehoert: gemessen war die grosse Karte 1500 px breit mit
+  // dem Siegerturm links, dem QR-Code rechts und einem leeren Drittel
+  // dazwischen. Aus zehn Metern liest sich das als unfertiges Layout. Und
+  // inhaltlich fehlt genau hier das, was acht Teams den ganzen Abend erspielt
+  // haben: ihr Platz. Der Turm hat sie alle gezeigt, das letzte Bild zeigte
+  // nur noch den Sieger - und fotografiert wird dieses letzte Bild.
+  //
+  // Gerechnet wird mit `qqFinalSortedTeams` und `qqFinalTotal`, denselben
+  // beiden Funktionen, aus denen auch der Turm, das Handy und der Sieger oben
+  // fallen. Eine eigene Endabrechnung an dieser Stelle hat schon einmal drei
+  // verschiedene Sieger innerhalb von zehn Sekunden erzeugt (siehe oben).
+  //
+  // In CozyArena bleibt es beim alten Bild: dort gewinnt eine FRAKTION, und
+  // `qqFinalTotal` rechnet je Team. Eine Fraktionstabelle waere eine zweite
+  // Rechnung, und das ist genau der Fehler, den der Absatz darueber beschreibt.
+  const rangliste = useMemo(
+    () => (nested ? [] : qqFinalSortedTeams(s).map(t => ({ team: t, punkte: qqFinalTotal(s, t.id) }))),
+    [s, nested],
+  );
+  const zeigeTabelle = !nested && rangliste.length >= 2;
 
   // ── Die Uebergabe der Sieger-Marke: gebaut, aber NICHT scharf ────────────
   // 2026-08-25. Der Plan war, die Marke von der Kroenung herueberfahren zu
@@ -522,7 +546,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             position: 'relative', zIndex: 2,
             flex: 1, minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: '1.2fr 1.1fr',
+            gridTemplateColumns: zeigeTabelle ? '1fr 1.25fr 1fr' : '1.2fr 1.1fr',
             gap: 'clamp(20px, 2.5cqw, 40px)',
             alignItems: 'stretch',
           }}>
@@ -655,6 +679,95 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 );
               })()}
             </div>
+
+            {/* MITTE: Endtabelle — Wolf 2026-08-26 („ja zur endtabelle").
+                Alle Teams, Platz und Punkte, in der Reihenfolge, die auch der
+                Turm gebaut hat. Sie steht bewusst NEBEN dem Sieger und nicht
+                unter ihm: der Sieger bleibt der Held des Bildes, die Tabelle
+                gibt allen anderen ihren Platz.
+
+                Groessen: bei acht Teams sind die Zeilen 30 px hoch und die
+                Schrift 30 px. Ab zehn Teams wird beides kleiner, damit die
+                Karte nicht waechst - der Beamer bekommt nie eine Scrollbar. */}
+            {zeigeTabelle && (() => {
+              // Drei Stufen statt zwei, und die Grenze liegt bei ACHT.
+              //
+              // Gemessen mit scripts/danke-probe.mjs: acht Zeilen in der grossen
+              // Stufe sind 606 px hoch, die Karte gibt innen rund 660 her. Bei
+              // neun Zeilen waere die Spalte hoeher als die Karte - und die Karte
+              // schneidet ab (overflow hidden), was auf der Buehne heisst: das
+              // letzte Team faellt aus dem Bild. Deshalb wird die Zeile kleiner,
+              // sobald es eng wird, statt dass etwas verschwindet.
+              //
+              // Warum die grosse Stufe ueberhaupt so gross ist: bei 30 px Schrift
+              // sind das auf 2,8 m Bildbreite rund 34 mm Versalhoehe, und die
+              // Faustregel fuer zehn Meter verlangt etwa 50 mm. Bei acht Teams
+              // ist der Platz da, also wird die Zeile groesser statt die Spalte
+              // leerer. Gemessen stehen jetzt 35 px auf dem Schirm.
+              const n = rangliste.length;
+              const stufe = n <= 8 ? 'gross' : n <= 11 ? 'mittel' : 'dicht';
+              const zeile = stufe === 'gross' ? 'clamp(22px, 2.4cqw, 40px)'
+                : stufe === 'mittel' ? 'clamp(18px, 1.9cqw, 30px)'
+                : 'clamp(15px, 1.6cqw, 24px)';
+              const luft = stufe === 'gross' ? 'clamp(4px, 0.7cqh, 10px)'
+                : stufe === 'mittel' ? 'clamp(3px, 0.5cqh, 7px)'
+                : 'clamp(2px, 0.35cqh, 5px)';
+              const marke = stufe === 'gross' ? 44 : stufe === 'mittel' ? 34 : 27;
+              const markeSchrift = stufe === 'gross' ? 23 : stufe === 'mittel' ? 18 : 14;
+              const kleinste = stufe === 'gross' ? '19px' : stufe === 'mittel' ? '15px' : '12px';
+              return (
+                <div data-qq-endstand style={{
+                  display: 'flex', flexDirection: 'column',
+                  justifyContent: 'center', minWidth: 0,
+                  gap: luft,
+                  animation: istBuehne ? 'none' : 'qqThanksColIn 0.55s ease 0.12s both',
+                }}>
+                  <div style={{
+                    fontSize: 'clamp(13px, 1.25cqw, 21px)', fontWeight: 900,
+                    letterSpacing: '0.16em', textTransform: 'uppercase',
+                    color: 'var(--qq-text-muted)', marginBottom: luft,
+                    textAlign: 'center',
+                  }}>{de ? 'Endstand' : 'Final standings'}</div>
+                  {rangliste.map((r, i) => (
+                    <div key={r.team.id} style={{
+                      display: 'grid',
+                      gridTemplateColumns: 'auto 1fr auto',
+                      alignItems: 'center',
+                      gap: 'clamp(8px, 1cqw, 16px)',
+                      // Der Sieger bekommt eine ruhige Unterlegung statt einer
+                      // zweiten Krone. Er steht links schon gross im Bild.
+                      background: i === 0 ? 'rgba(255,255,255,0.07)' : 'transparent',
+                      borderRadius: 999,
+                      padding: i === 0 ? `2px clamp(8px, 1cqw, 14px)` : '2px 0',
+                    }}>
+                      <span style={{
+                        width: marke, height: marke,
+                        borderRadius: '50%', flexShrink: 0,
+                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+                        background: r.team.color, color: '#12100E',
+                        fontSize: markeSchrift, fontWeight: 900,
+                        fontVariantNumeric: 'tabular-nums',
+                      }}>{i + 1}</span>
+                      <TeamNameLabel
+                        name={r.team.name}
+                        fontSize={zeile}
+                        minFontSize={kleinste}
+                        color="var(--qq-text)"
+                        fontWeight={i === 0 ? 900 : 800}
+                        maxLines={1}
+                        shrinkAfter={15}
+                        style={{ minWidth: 0, lineHeight: 1.15, textAlign: 'left' }}
+                      />
+                      <span style={{
+                        fontSize: zeile, fontWeight: 900,
+                        color: i === 0 ? 'var(--qq-text)' : 'var(--qq-text-muted)',
+                        fontVariantNumeric: 'tabular-nums', flexShrink: 0,
+                      }}>{r.punkte}</span>
+                    </div>
+                  ))}
+                </div>
+              );
+            })()}
 
             {/* RECHTS: QR-Co-Hero — Wolf 2026-05-10 nach Designer-Recherche.
                 Statt 104px-Mini-Marker in der Page-Ecke (= Decoration-Footer-

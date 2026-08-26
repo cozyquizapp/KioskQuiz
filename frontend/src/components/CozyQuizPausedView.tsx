@@ -1759,15 +1759,33 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               Re-Aktivierung später. */}
           <div style={{
             position: 'relative', zIndex: 1,
-            background: cardBg,
+            // 2026-08-26 (Wolf, mit Bild von der Setup-Folie: „hier ist noch der
+            // rahmen.. den wir vorhin ausgebaut haben? machen wir den noch
+            // ueberall raus"). Er hat recht, und der Grund, warum dieser eine
+            // ueberlebt hat, steht in einer Zeile weiter unten: der Kasten holt
+            // seine Werte NICHT aus `--qq-card-*`, sondern schreibt sie selbst
+            // hin. Die Token-Umstellung vom 2026-08-22 ist deshalb an ihm
+            // vorbeigelaufen.
+            //
+            // Was hier verschwindet, ist der aeussere Rahmen: Flaeche, Linie,
+            // der wandernde Streifen an der Oberkante und der Schein oben
+            // rechts. Was BLEIBT, ist die feste Hoehe - und das ist wichtig,
+            // denn sie ist es, die das Karussell ruhig haelt, nicht der Rahmen.
+            // Sieben Folien unterschiedlicher Laenge in einem Kasten fester
+            // Hoehe wechseln, ohne dass etwas springt.
+            //
+            // Die Felder INNEN bleiben ebenfalls (die vier Kacheln von „Wie
+            // funktioniert's", die Tabellenzeilen). Das ist die Unterscheidung
+            // vom 2026-08-25: der Rahmen um eine ganze Folie geht, das Feld um
+            // einen einzelnen Gegenstand bleibt.
+            background: istBuehne ? 'transparent' : cardBg,
             borderRadius: isThemed() ? 'var(--qq-card-radius)' : 24,
-            padding: 'clamp(32px, 4cqw, 56px)',
+            padding: istBuehne ? 'clamp(8px, 1cqw, 18px)' : 'clamp(32px, 4cqw, 56px)',
             // 2026-08-23: der Rahmen lief in der Modus-Farbe, mit 64px Schein
             // darum und einem 3px-Balken in derselben Farbe an der Unterkante -
-            // drei Traeger fuer „hier ist die Karte". Auf der Buehne eine
-            // Haarlinie, mehr braucht eine Flaeche nicht, die ohnehin 1500px
-            // breit ist.
-            border: istBuehne ? '1px solid var(--qq-hairline)' : `1px solid ${modeAccentDim}`,
+            // drei Traeger fuer „hier ist die Karte". Auf der Buehne erst eine
+            // Haarlinie, seit dem 2026-08-26 gar nichts mehr.
+            border: istBuehne ? 'none' : `1px solid ${modeAccentDim}`,
             boxShadow: istBuehne
               ? 'none'
               : `0 0 64px ${modeGlow},` +
@@ -1788,20 +1806,29 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             // wachsen + sich vertikal zentrieren.
             display: 'flex', flexDirection: 'column',
           }}>
-            {/* Akzent-Streifen oben (animated shimmer) */}
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: 3,
-              background: `linear-gradient(90deg, transparent, ${modeAccent}, transparent)`,
-              animation: 'qqPauseShimmer 6s linear infinite',
-              backgroundSize: '200% 100%',
-            }} />
+            {/* Akzent-Streifen oben (animated shimmer).
+                2026-08-26: auf der Buehne weg. Auf Wolfs Bild von der
+                Setup-Folie war genau dieser wandernde Streifen das Hellste am
+                ganzen Kasten - eine Zierde, die lauter war als die Ueberschrift
+                darunter. Ohne Rahmen haette er ausserdem an einer Kante geklebt,
+                die es nicht mehr gibt. */}
+            {!istBuehne && (
+              <div style={{
+                position: 'absolute', top: 0, left: 0, right: 0, height: 3,
+                background: `linear-gradient(90deg, transparent, ${modeAccent}, transparent)`,
+                animation: 'qqPauseShimmer 6s linear infinite',
+                backgroundSize: '200% 100%',
+              }} />
+            )}
             {/* Subtle Inner-Glow oben-rechts */}
-            <div style={{
-              position: 'absolute', top: -120, right: -120, width: 320, height: 320,
-              borderRadius: '50%',
-              background: `radial-gradient(circle, ${modeAccent}1c 0%, transparent 70%)`,
-              pointerEvents: 'none',
-            }} />
+            {!istBuehne && (
+              <div style={{
+                position: 'absolute', top: -120, right: -120, width: 320, height: 320,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, ${modeAccent}1c 0%, transparent 70%)`,
+                pointerEvents: 'none',
+              }} />
+            )}
             {/* Inner content — key sorgt für Re-Mount + Cross-Fade-Animation
                 bei Panel-Wechsel. Card-Hülle bleibt stabil. flex:1 + justify
                 center → Inhalt sitzt vertikal mittig in der Card (User-Wunsch

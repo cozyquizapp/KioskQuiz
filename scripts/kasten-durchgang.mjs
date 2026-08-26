@@ -37,6 +37,13 @@ for (const st of STATIONEN) {
   try {
     await b.zurStation(st);
     await sleep(2200);   // Auftritts-Bewegung ausklingen lassen
+    // Harte Regel: der Beamer bekommt NIE eine Scrollbar (CLAUDE.md). Wer
+    // feste Hoehen entfernt, muss das pruefen und nicht hoffen.
+    const ueber = await seite.evaluate(() => ({
+      b: document.documentElement.scrollWidth - document.documentElement.clientWidth,
+      h: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+    }));
+    if (ueber.b > 1 || ueber.h > 1) console.log(`    ⚠️ laeuft ueber: ${ueber.b} px breit, ${ueber.h} px hoch`);
     const roh = await seite.screenshot({ type: 'jpeg', quality: 82 });
     const bild = await sharp(roh).resize(BREITE).toBuffer();
     kacheln.push({ name: st, bild, h: (await sharp(bild).metadata()).height });

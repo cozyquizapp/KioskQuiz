@@ -471,6 +471,23 @@ Cheese-Mono-Redesign, Summary skin-aware). Offen:
 Trailer-Tempo nach Review. ⚠️ Bei Mechanik-Änderungen **beide Seiten mitziehen** (Inhalt ist aus
 den Regeln abgeleitet).
 
+## Langzeit, nach dem Buehnen-Durchgang (Wolf 2026-08-26)
+
+Explizit als „LONGTIME TO DOS fuer spaeter" angesagt, also nicht in diesem
+Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
+
+- [ ] **Summary anschauen und anpassen.** Die Seite hinter dem QR-Code der
+      Danke-Folie. Sie ist das einzige Stueck CozyQuiz, das die Gaeste am
+      naechsten Tag noch sehen, und war beim Buehnen-Durchgang nicht dabei.
+- [ ] **Teamview an das Beamerdesign angleichen.** Das Handy folgt noch dem
+      alten Cozy-Look. ⚠️ Nicht blind uebernehmen: die Buehne ist auf zehn
+      Meter gebaut, das Handy auf dreissig Zentimeter. Gleiche Sprache,
+      andere Groessen.
+- [ ] **CozyQuiz-Design zum Standard machen**, explizit umstellen. Heute
+      entscheidet `themeIdForState` ueber den Avatarsatz, ob die Buehne
+      laeuft. Das ist ein Nebeneffekt, keine Entscheidung.
+- [ ] **cozywolf.de-Landing an das neue Design anpassen.**
+
 ---
 
 *Erledigte Punkte stehen in der Git-History (`git log --oneline`), nicht hier.

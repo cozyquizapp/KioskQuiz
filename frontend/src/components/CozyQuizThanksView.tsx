@@ -497,11 +497,22 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
       {/* ── Big Card (mirror PausedView Hero-Card-Wrapper) — fixe Höhe,
           SVG-Star-Border-Trace außen, Inner-Card mit Shimmer-Strip + Inner-Glow,
           Inhalt: 3-col Events · Sieger · Insta+QR. ── */}
+      {/* 2026-08-26 (Wolf: „und jetzt schweben da noch items die mit dem kasten
+          in verbindung standen"). Stimmt: der Kasten hat vorher die Arbeit
+          gemacht, die das Layout machen muesste. Er gab drei Bloecken eine
+          gemeinsame Kante, ohne dass sie je aufeinander ausgerichtet waren.
+          Auf der Buehne faellt der Behaelter jetzt ganz weg - keine feste Hoehe,
+          keine Polsterung, keine Flaeche - und die Ordnung kommt aus dem Raster
+          darunter: zwei Spalten mit gemeinsamer Grundlinie, der QR-Code als
+          kleines Zeichen unten rechts statt als dritter gleich grosser Block. */}
       <div style={{
-        width: '100%', maxWidth: 'min(94cqw, 1500px)', position: 'relative', zIndex: 5,
+        width: '100%',
+        maxWidth: istBuehne ? 'min(96cqw, 1660px)' : 'min(94cqw, 1500px)',
+        position: 'relative', zIndex: 5,
         borderRadius: themed ? 'var(--qq-card-radius)' : 26,
         isolation: 'isolate',
-        height: 'clamp(460px, 60cqh, 660px)',
+        flex: istBuehne ? 1 : undefined,
+        height: istBuehne ? 'auto' : 'clamp(460px, 60cqh, 660px)',
       }}>
         {/* 2026-05-17 (Wolf): Star-Border-Sweep auch hier raus — too much.
             Card-Glow + soft Border reichen. Keyframe bleibt in qqShared.ts. */}
@@ -509,14 +520,14 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
           position: 'relative', zIndex: 1,
           // Hebel 1 (Style-Tokens): kanonisches Card-Muster via cozyCard() —
           // byte-identisch zum vorherigen Inline-Block (bg/radius/border/shadow).
-          ...cozyCard({ bg: cardBg, accentHex: brand.accentHex, accentRgb: brand.accentRgb }),
+          ...(istBuehne ? {} : cozyCard({ bg: cardBg, accentHex: brand.accentHex, accentRgb: brand.accentRgb })),
           // 2026-07-18 (Wolf bild 16): Arena → translucentes Glas statt opaker
           // Card, damit das Kolosseum durchscheint (allgemeine Regel qqArenaGlass).
           ...(megaArena ? qqArenaGlass() : {}),
-          padding: 'clamp(32px, 4cqw, 56px)',
-          height: 'clamp(460px, 60cqh, 660px)',
+          padding: istBuehne ? 'clamp(8px, 1cqw, 18px) 0 0' : 'clamp(32px, 4cqw, 56px)',
+          height: istBuehne ? '100%' : 'clamp(460px, 60cqh, 660px)',
           animation: istBuehne ? 'none' : 'panelSlideIn 0.6s var(--qq-ease-out-cubic) both',
-          overflow: 'hidden',
+          overflow: istBuehne ? 'visible' : 'hidden',
           display: 'flex', flexDirection: 'column',
         }}>
           {/* Akzent-Streifen oben (animated shimmer).
@@ -551,9 +562,12 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
             position: 'relative', zIndex: 2,
             flex: 1, minHeight: 0,
             display: 'grid',
-            gridTemplateColumns: zeigeTabelle ? '1fr 1.25fr 1fr' : '1.2fr 1.1fr',
-            gap: 'clamp(20px, 2.5cqw, 40px)',
-            alignItems: 'stretch',
+            gridTemplateColumns: istBuehne
+              ? (zeigeTabelle ? '0.95fr 1.1fr auto' : '1fr auto')
+              : (zeigeTabelle ? '1fr 1.25fr 1fr' : '1.2fr 1.1fr'),
+            gap: istBuehne ? 'clamp(40px, 5cqw, 96px)' : 'clamp(20px, 2.5cqw, 40px)',
+            alignItems: 'center',
+            paddingBottom: istBuehne ? 'clamp(10px, 1.2cqh, 22px)' : undefined,
           }}>
 
             {/* MITTE: Sieger-Hero — Wolf 2026-05-10: Avatar etwas größer,
@@ -669,8 +683,16 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       color: istBuehne ? 'var(--qq-text)' : winner.color,
                       letterSpacing: '-0.01em',
                       textShadow: istBuehne ? 'none' : `0 0 22px ${winner.color}77`,
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden', textOverflow: 'ellipsis',
+                      // 2026-08-26 (Wolf am Livebild): hier stand `nowrap` mit
+                      // Ellipse. Auf der Wand las sich das als
+                      // „Frag-Mich-Was-L..." - waehrend derselbe Name in der
+                      // Endtabelle daneben VOLLSTAENDIG stand. Der groesste Text
+                      // der Folie konnte weniger als der kleinste. Auf der
+                      // Buehne darf der Name deshalb umbrechen; Platz ist da,
+                      // die Zeile steht allein in ihrer Spalte.
+                      ...(istBuehne
+                        ? { whiteSpace: 'normal' as const, wordBreak: 'break-word' as const, lineHeight: 1.02 }
+                        : { whiteSpace: 'nowrap' as const, overflow: 'hidden', textOverflow: 'ellipsis' }),
                       maxWidth: '100%',
                       marginTop: 2,
                     }}>{winner.name}</div>
@@ -718,7 +740,6 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 : stufe === 'mittel' ? 'clamp(3px, 0.5cqh, 7px)'
                 : 'clamp(2px, 0.35cqh, 5px)';
               const marke = stufe === 'gross' ? 44 : stufe === 'mittel' ? 34 : 27;
-              const markeSchrift = stufe === 'gross' ? 23 : stufe === 'mittel' ? 18 : 14;
               const kleinste = stufe === 'gross' ? '19px' : stufe === 'mittel' ? '15px' : '12px';
               return (
                 <div data-qq-endstand style={{
@@ -736,22 +757,25 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   {rangliste.map((r, i) => (
                     <div key={r.team.id} style={{
                       display: 'grid',
-                      gridTemplateColumns: 'auto 1fr auto',
-                      alignItems: 'center',
-                      gap: 'clamp(8px, 1cqw, 16px)',
-                      // Der Sieger bekommt eine ruhige Unterlegung statt einer
-                      // zweiten Krone. Er steht links schon gross im Bild.
-                      background: i === 0 ? 'rgba(255,255,255,0.07)' : 'transparent',
-                      borderRadius: 999,
-                      padding: i === 0 ? `2px clamp(8px, 1cqw, 14px)` : '2px 0',
+                      gridTemplateColumns: `${marke}px 1fr auto`,
+                      alignItems: 'baseline',
+                      gap: 'clamp(10px, 1.2cqw, 22px)',
+                      // 2026-08-26: Haarlinie statt Pille. Acht farbige Kreise
+                      // neben acht farbigen Namen sind sechzehn Farbereignisse
+                      // in einer Spalte - das liest sich als Widget. Eine Linie
+                      // ordnet, ohne selbst gesehen werden zu wollen. Die letzte
+                      // Zeile bekommt keine, sonst haengt unten eine Kante ohne
+                      // etwas darunter.
+                      paddingBottom: luft,
+                      borderBottom: i === rangliste.length - 1
+                        ? 'none'
+                        : '1px solid rgba(255,255,255,0.09)',
                     }}>
                       <span style={{
-                        width: marke, height: marke,
-                        borderRadius: '50%', flexShrink: 0,
-                        display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-                        background: r.team.color, color: '#12100E',
-                        fontSize: markeSchrift, fontWeight: 900,
+                        fontSize: zeile, fontWeight: 900,
+                        color: r.team.color,
                         fontVariantNumeric: 'tabular-nums',
+                        textAlign: 'right', lineHeight: 1.15,
                       }}>{i + 1}</span>
                       <TeamNameLabel
                         name={r.team.name}
@@ -784,7 +808,20 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               <div style={{
                 display: 'flex', flexDirection: 'column',
                 alignItems: 'center', justifyContent: 'center',
-                gap: 14, minWidth: 0,
+                gap: istBuehne ? 8 : 14, minWidth: 0,
+                // 2026-08-26: auf der Buehne faellt der QR-Code aus dem Raster.
+                // Er war dort die dritte gleich grosse Spalte - reine Zweckinfo
+                // mit demselben Gewicht wie der Sieger. Jetzt sitzt er als
+                // kleines Zeichen unten rechts, wo man ihn findet, wenn man ihn
+                // sucht, und wo er den Moment nicht teilt.
+                // Zwei Versuche mit absoluter Position, beide falsch: unten rechts
+                // lag der Code auf den Punkten der letzten vier Tabellenzeilen,
+                // unten links auf dem Siegernamen. Wer etwas aus dem Fluss nimmt,
+                // nimmt ihm auch den Anspruch auf Platz - und dann kollidiert es.
+                // Er bleibt jetzt im Raster, bekommt aber eine EIGENE, schmale
+                // Spalte und sitzt unten: die Rangordnung kommt aus der Groesse
+                // (170 px gegen 230 px Siegermarke), nicht aus einem Trick.
+                ...(istBuehne ? { alignSelf: 'end' as const, paddingBottom: 4 } : {}),
                 animation: istBuehne ? 'none' : 'qqThanksColIn 0.6s ease 0.22s both',
               }}>
                 <div style={{
@@ -807,8 +844,8 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       excavate: true,
                     }}
                     style={{
-                      width: 'clamp(220px, 22cqw, 320px)',
-                      height: 'clamp(220px, 22cqw, 320px)',
+                      width: istBuehne ? 'clamp(120px, 11cqw, 170px)' : 'clamp(220px, 22cqw, 320px)',
+                      height: istBuehne ? 'clamp(120px, 11cqw, 170px)' : 'clamp(220px, 22cqw, 320px)',
                     }}
                   />
                 </div>
@@ -823,7 +860,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                       der Benefit ohne Aufforderung → QR-Aktion (scannen) war nicht
                       angesagt. Jetzt Aktions-Zeile + Benefit-Zeile. */}
                   <div style={{
-                    fontSize: istBuehne ? 'clamp(22px, 2.2cqw, 30px)' : 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
+                    fontSize: istBuehne ? 'clamp(13px, 1.25cqw, 19px)' : 'clamp(14px, 1.5cqw, 22px)', fontWeight: 900,
                     color: brand.accentHex, letterSpacing: '0.02em',
                     textShadow: `0 0 12px rgba(${brand.accentRgb},0.5)`,
                   }}>
@@ -832,7 +869,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                     <QQEmojiIcon emoji="📱" size="1em" /> {de ? 'QR scannen' : 'Scan the code'}
                   </div>
                   <div style={{
-                    fontSize: istBuehne ? 'clamp(20px, 1.9cqw, 26px)' : 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
+                    fontSize: istBuehne ? 'clamp(11px, 1.05cqw, 16px)' : 'clamp(12px, 1.2cqw, 17px)', fontWeight: 800,
                     color: themed ? 'var(--qq-text-muted)' : 'rgba(246, 239, 230,0.82)',
                   }}>{de ? 'Feedback geben + auf Insta folgen' : 'Leave feedback + follow on Insta'}</div>
                 </div>

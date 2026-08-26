@@ -141,31 +141,49 @@ Auswerten neuer Videos (Websites sind aus der Remote-Umgebung nicht erreichbar).
 Gebaut, typecheck-grün, aber **nie am Projektor gesehen**. Nach dem Check: Punkt hier löschen
 oder Nachdreh-Wunsch dranschreiben.
 
-- [ ] **Siegerehrung/Krönung** (größter neuer Block) — Roulette-Timing + Blink-Tempo · Treppchen
-      sitzt (KEINE Scrollbar) · 8-Banner-Zeile passt · Award-Banner-Entrollung überlappt die
-      Stat-Zeile nicht · Award-Stat-Texte DE/EN · Streamdeck Weiter/Zurück durch die Beats.
-- [ ] **Schätzchen v4 „nur Strahl"** — Zwei-Lane überlappungsfrei bei 8 Fraktionen mit engen
-      Tipps? Falls nicht: `spread` MIN (12%) / Wappen-Größe nachdrehen.
-- [ ] **MUCHO** — 2×2 → 4-Reihen-Morph smooth, kein Overflow? · Farb-Balken-Segmente aus der
-      Distanz lesbar bei 8 Fraktionen? (falls Matsch → „bild 4"-Umbau unten greift eh)
+### Betrifft CozyQuiz (offen)
+
 - [ ] **Kategorie-Intro-Farben** — jede Kategorie in ihrer Eigenfarbe, NUR Progress-Tree pink?
-- [ ] **Arena-Nudges** (Konstanten, nur am Projektor justierbar):
+- [ ] **Toggle „Schlicht"** wirklich überall sauber (Beamer/Lobby/Welcome-Overlay)?
+- [ ] **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion) auch im **klassischen**
+      CozyQuiz gegenchecken, nicht nur Arena.
+
+### Betrifft CozyArena — SCHLAFEND seit 2026-08-26 (kein Termin)
+
+> Wolf am 2026-08-26 auf die Frage, ob ein Arena-Event ansteht: **„Nein, aktuell kein
+> Termin."** Diese neun Punkte sind damit nicht erledigt und nicht verworfen, sie sind
+> schlafend. Sie tragen bewusst KEIN Kästchen mehr, damit sie die Zahl der offenen
+> Punkte nicht mehr aufblähen und kein Druck ohne Termin entsteht. Sobald ein Datum
+> steht: Kästchen zurück, dann sind sie wieder echt.
+>
+> Warum sie hier so lange mitliefen: sie standen unter derselben Überschrift wie die
+> CozyQuiz-Punkte, und „Siegerehrung/Krönung" klingt nach der Siegerehrung, die im
+> August umgebaut wurde. Es ist aber eine andere: die Kolosseum-Krönung in
+> `CozyQuizLargeGroupView.tsx` (Banner-Roulette, Treppchen), nicht das Turm-Finale.
+> Genauso sind „Wing It" und „Objection" Arena-FRAKTIONEN, keine CozyQuiz-Kategorien.
+
+- ⏸ **Siegerehrung/Krönung Arena** (größter neuer Block) — Roulette-Timing + Blink-Tempo ·
+      Treppchen sitzt (KEINE Scrollbar) · 8-Banner-Zeile passt · Award-Banner-Entrollung
+      überlappt die Stat-Zeile nicht · Award-Stat-Texte DE/EN · Streamdeck Weiter/Zurück
+      durch die Beats.
+- ⏸ **Schätzchen v4 „nur Strahl"** — Zwei-Lane überlappungsfrei bei 8 Fraktionen mit engen
+      Tipps? Falls nicht: `spread` MIN (12%) / Wappen-Größe nachdrehen.
+- ⏸ **MUCHO bei 8 Fraktionen** — 2×2 → 4-Reihen-Morph smooth, kein Overflow? · Farb-Balken-
+      Segmente aus der Distanz lesbar? (falls Matsch → „bild 4"-Umbau unten greift eh)
+- ⏸ **Arena-Nudges** (Konstanten, nur am Projektor justierbar):
       `BANNER_ANCHORS` (Wappen deckungsgleich auf dem gemalten Banner?) ·
       `ARENA_BG_FOCUS` (`rundenintro: 'center 66% / 116%'`) ·
       `FACE_MASK`-Ellipse am Magier-Wolf (sitzt sie aufs Gesicht?)
-- [ ] **Arena-Meister-Splash + Rules-Redesign** — Pacing/Titel ok?
-- [ ] **Toggle „Schlicht"** wirklich überall sauber (Beamer/Lobby/Welcome-Overlay)?
-- [ ] **Scoring/Standings auf der Tafel** (17.7. neu gebaut) — Überschriften sind raus, BG ist
+- ⏸ **Arena-Meister-Splash + Rules-Redesign** — Pacing/Titel ok?
+- ⏸ **Scoring/Standings auf der Tafel** (17.7. neu gebaut) — Überschriften sind raus, BG ist
       auf 110% gezoomt und der Inhalt sitzt in der **ausgemessenen** Tafel (Pixel-Scan von
       `standing.webp`, nicht mehr geschätzt). Sitzt es am echten Projektor? Bleibt der
       Edelstein-Zapfen oben mittig frei? ⚠️ Falls nachdrehen: `ARENA_BG_FOCUS['standing']`
       (ArenaBeamerBg) und `MEGA_BOARD` (CozyQuizLargeGroupView) gehören **zusammen**.
-- [ ] **bild 4 — Wappen-Wahltafel** (17.7. gebaut) — passen 8 Fraktions-Wappen mit Zahl-Badge
+- ⏸ **bild 4 — Wappen-Wahltafel** (17.7. gebaut) — passen 8 Fraktions-Wappen mit Zahl-Badge
       in eine Zeile (54% Breite)? Falls zu eng: `avatarSz`/`gap` in `MegaOptionCrests`.
-- [ ] **Kontrast am echten Beamer** — „Wing It" (Blau) + „Objection" (Pink) auf Dunkel.
-- [ ] **Lobby bei 40 Handys** — kein Scroll am Projektor.
-- [ ] **Design-Audit-Fixes** (Kontrast/Touch-44px/reduced-motion) auch im **klassischen**
-      CozyQuiz gegenchecken, nicht nur Arena.
+- ⏸ **Kontrast am echten Beamer** — Fraktion „Wing It" (Blau) + „Objection" (Pink) auf Dunkel.
+- ⏸ **Lobby bei 40 Handys** — kein Scroll am Projektor.
 
 **🟡 Judgment-Calls (nur du kannst entscheiden, ob's stört):** Schätzchen-Antwort in Gold
 (wirkt bewusst?) · CHEESE-Kategorie-Titel violett (= Kategorie-Eigenfarbe) ·
@@ -275,7 +293,12 @@ Tier 2-4 = gestrichen, nicht bauen.
 
 ---
 
-## 🎯 CozyArena LIVE-EVENT (~Anfang Aug 2026) — HÖCHSTE PRIO
+## ⏸ CozyArena LIVE-EVENT — SCHLAFEND (Termin abgelaufen)
+
+> Der Block hiess bis 2026-08-26 „~Anfang Aug 2026 — HÖCHSTE PRIO". Das Datum ist
+> vorbei, und Wolf hat bestaetigt, dass aktuell kein Arena-Event ansteht. Die Punkte
+> bleiben stehen, aber „hoechste Prio" ohne Termin ist nur noch Druck. Sobald ein
+> Datum steht, wird die Ueberschrift zurueckgedreht.
 
 **Kontext:** Erstes Event mit echten Geräten. Firma lädt ein, 50–100 Leute (theoret. bis 200),
 Tech- + UX-Publikum (kritisch!), komplett **Englisch**, kostenloses Testevent, **Wolf moderiert
@@ -297,12 +320,12 @@ Beamer + Fraktionen komplett EN (Mod-Konsole bleibt DE).
 **Server ist NICHT der Flaschenhals** (Lasttest `backend/scripts/loadtest-arena.mjs`: 40/40 Joins,
 Broadcast-Fan-out 33 ms, Payload 15,3 KB) → Broadcast-Throttle vorerst nicht nötig.
 
-- [ ] **Kompletter Trockenlauf** mit mehreren echten Geräten, voller Durchlauf, EN. ← der große
+- ⏸ **Kompletter Trockenlauf** mit mehreren echten Geräten, voller Durchlauf, EN. ← der große
       Brocken, deckt die meisten Punkte unten mit ab.
-- [ ] **Setup-Flow am echten Gerät** in EN durchklicken (Fraktion wählen → beitreten).
-- [ ] **Venue-WLAN-Latenz + in-Frage-Payload** gegenprüfen. Bei Lag: Broadcast drosseln/Delta.
-- [ ] **Fraktions-Soft-Cap live validieren** im 40-Geräte-Lauf (Backend-Safety-Net ist gebaut).
-- [ ] **EN-Content-Verify:** ✅ **automatisiert (2026-07-20):** `npm run check:en` (Repo) / `check:en:live`
+- ⏸ **Setup-Flow am echten Gerät** in EN durchklicken (Fraktion wählen → beitreten).
+- ⏸ **Venue-WLAN-Latenz + in-Frage-Payload** gegenprüfen. Bei Lag: Broadcast drosseln/Delta.
+- ⏸ **Fraktions-Soft-Cap live validieren** im 40-Geräte-Lauf (Backend-Safety-Net ist gebaut).
+- ⏸ **EN-Content-Verify:** ✅ **automatisiert (2026-07-20):** `npm run check:en` (Repo) / `check:en:live`
       (echte Mongo-Drafts), Exit 1 bei Fehlern → als Gate vorm Event nutzbar. Trennt „zeigt garantiert Deutsch"
       (Fehler) von „meist sprachneutral" (Warnung), überspringt deaktivierte Mechaniken.
       ✅ **Die 6 Fehler sind GEFIXT (2026-07-20, `bd8c59d1`)** — Quelle gefüllt + Migration, die fehlende
@@ -324,11 +347,11 @@ Broadcast-Fan-out 33 ms, Payload 15,3 KB) → Broadcast-Throttle vorerst nicht n
       gewinnen über den Source (`createSampleQQDrafts` läuft nur bei `length===0`) → NIE das JSON
       editieren, sondern Quelle **plus** Migration, oder den `/api/qq/drafts/:id/translate`-Endpoint.
       Für den EIGENTLICHEN Event-Draft gilt das weiter, sobald du ihn baust.
-- [ ] **Stechen-Trockentest** beide Modi (normal + Arena) + Auto-Reveal-Timer. Fummelig ist nur,
+- ⏸ **Stechen-Trockentest** beide Modi (normal + Arena) + Auto-Reveal-Timer. Fummelig ist nur,
       künstlich einen Gleichstand herzustellen.
-- [ ] **Wertungs-Tuning am Trockenlauf:** Finale = „letzte Phase" richtig? · Nähe-Kurve K=3 /
+- ⏸ **Wertungs-Tuning am Trockenlauf:** Finale = „letzte Phase" richtig? · Nähe-Kurve K=3 /
       Map-Cap 25° am echten Content justieren.
-- [ ] **Progressives Fraktions-Öffnen** entscheiden (nur falls die Bars bei wenig Andrang dünn wirken).
+- ⏸ **Progressives Fraktions-Öffnen** entscheiden (nur falls die Bars bei wenig Andrang dünn wirken).
 
 **🧨 Schlafende Landminen** (deaktivierte Features, kein Live-Risiko — NICHT jetzt fixen): falls
 Bluff/OnlyConnect je reaktiviert werden → `Bluff.tsx:511/640` + `OnlyConnectBeamerView.tsx:321`

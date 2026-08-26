@@ -843,6 +843,11 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                 : 'clamp(2px, 0.35cqh, 5px)';
               const marke = stufe === 'gross' ? 44 : stufe === 'mittel' ? 34 : 27;
               const kleinste = stufe === 'gross' ? '19px' : stufe === 'mittel' ? '15px' : '12px';
+              // Die Kachel folgt der Zeilenhoehe: gemessen sind die Zeilen in
+              // der grossen Stufe 64 px hoch, also passt eine 44er Marke mit
+              // Luft darum. Groesser wuerde die Spalte hoeher machen als die
+              // Karte, und dann faellt das letzte Team aus dem Bild.
+              const kachel = stufe === 'gross' ? 44 : stufe === 'mittel' ? 34 : 26;
               return (
                 <div data-qq-endstand style={{
                   display: 'flex', flexDirection: 'column',
@@ -859,7 +864,12 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   {rangliste.map((r, i) => (
                     <div key={r.team.id} style={{
                       display: 'grid',
-                      gridTemplateColumns: `${marke}px 1fr auto`,
+                      // 2026-08-26 (Wolf: „in endrangliste auch avatar kacheln
+                      // der teams rein"). Vier Spalten: Platz, Marke, Name,
+                      // Punkte. Die Marke steht zwischen Ziffer und Name, weil
+                      // sie im ganzen Abend die Teamfarbe traegt - die Ziffer
+                      // wiederholt sie nur, die Kachel IST das Team.
+                      gridTemplateColumns: `${marke}px ${kachel}px 1fr auto`,
                       alignItems: 'baseline',
                       gap: 'clamp(10px, 1.2cqw, 22px)',
                       // 2026-08-26: Haarlinie statt Pille. Acht farbige Kreise
@@ -897,6 +907,14 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                         fontVariantNumeric: 'tabular-nums',
                         textAlign: 'right', lineHeight: 1.15,
                       }}>{i + 1}</span>
+                      <QQTeamAvatar
+                        avatarId={r.team.avatarId}
+                        teamEmoji={r.team.emoji}
+                        avatarSetId={s.avatarSetId}
+                        size={kachel}
+                        blink={false}
+                        style={{ alignSelf: 'center' }}
+                      />
                       <TeamNameLabel
                         name={r.team.name}
                         fontSize={zeile}

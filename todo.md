@@ -47,10 +47,20 @@
 - [ ] **BEWEGUNG, laeuft seit 2026-08-24. Einstieg: `docs/UEBERGABE_MOTION.md`.**
       Dort stehen die Bausteinliste B1-B11, der gemessene Ist-Zustand von
       Station 1, das Werkzeug (`scripts/motion.mjs`) und die Reihenfolge.
-      - [ ] **Station 1 entscheiden:** K1 (B2), K2 (B11+B8) oder K3 (B3) fuer den
-            Wechsel Lobby → Willkommen. Gemessen liegen dort 835 ms, in denen
-            die Buehne leer ist. Kandidaten laufen in der Motion-Werkstatt.
+      - [ ] **Motion-Konsistenz messbar machen** (Wolf 2026-08-26: „app
+            Konsistenz von Anfang bis Ende, dass keine Motion völlig aus der
+            Reihe fällt"). Ein Durchgang ueber ALLE Stationen, der Dauern und
+            Kurven einsammelt und meldet, was ausserhalb des Hausbestands
+            liegt. Ohne das bleibt Konsistenz ein Vorsatz statt einer Pruefung,
+            und sie wird mit jeder eingebauten Bewegung schwerer nachzuholen.
+            Erster Bestand steht schon in `motion.mjs --inventar`, es fehlt der
+            Vergleich ueber die Stationen hinweg.
       - [ ] **Dann Station fuer Station durch den Abend** (`motion.mjs --liste`).
+      - ✅ **Station 1 entschieden und gebaut: K2** (Wolf 2026-08-26, „Probier
+            mal K2"). Grundblende mit Anker, die Wortmarke traegt von der Lobby
+            auf die Willkommen-Folie. Die 835 ms Leere sind weg, die Folie steht
+            bei rund 0,9 statt 4,15 s. Gegenprobe:
+            `node scripts/naht-lobby-willkommen.mjs`.
       - [ ] **B1 (Bogen-Wisch) + B5 (Marker statt Einfaerbung) an der
             Aufloesung**, gegen den Ist-Zustand stellen. Laut
             `MOTION_REFERENZEN.md` der erste Kandidat, wenn nichts dagegen

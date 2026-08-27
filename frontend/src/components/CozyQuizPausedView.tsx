@@ -162,7 +162,27 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Vorher floppte 'de' alle 8s automatisch unabhaengig vom Mod-Schalter.
   // Jetzt: 'de' sticky bei DE, 'en' sticky bei EN, 'both' flippt alle 12s
   // (wie ueberall sonst im Beamer via useLangFlip).
-  const lang = useLangFlip(s.language);
+  // ── EINE Uhr fuer Karte und Sprache ───────────────────────────────────────
+  // 2026-08-27 (Wolf: „die slideshow ist noch etwas chaotisch, also die
+  // verschiedenen slides passen nicht so gut zu einander").
+  //
+  // Gemessen war der Grund nicht Vielfalt, sondern Gegentakt: die Karte
+  // wechselte alle 8 s (unten), die Sprache alle 12 s (`useLangFlip`,
+  // cozyQuizShared.ts:192). Kleinstes gemeinsames Vielfaches 24 s - also
+  // standen bei zwei Inhalten SECHS verschiedene Bilder auf der Wand, und die
+  // Ueberschrift („Gleich geht's los" / „Starting soon") kippte mal ueber der
+  // deutschen, mal ueber der englischen Karte.
+  //
+  // Jetzt zaehlt EIN Taktgeber. Jede Karte steht zweimal: erst deutsch, dann
+  // englisch, dann die naechste. Je Takt aendert sich genau eine Sache, und
+  // niemand verpasst einen Inhalt, weil seine Sprache gerade nicht dran war.
+  //
+  // ⚠️ `useLangFlip` bleibt unangetastet - es haengt an fuenfzehn anderen
+  // Ansichten, und deren Takt hat mit dieser Folie nichts zu tun.
+  const [panelIdx, setPanelIdx] = useState(0);
+  const zweisprachig = s.language === 'both';
+  const autoLang = useLangFlip(s.language);
+  const lang: 'de' | 'en' = zweisprachig ? (panelIdx % 2 === 0 ? 'de' : 'en') : autoLang;
   const de = lang === 'de';
 
   // 2026-07-02 (Wolf 'extra setup screen für große Events'): Mega Event ist ein
@@ -188,6 +208,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
   // Build rotating panels
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
+  // 2026-08-27 hierher vorgezogen: die Ankommen-Karte „Schon da" braucht die
+  // Teams schon im preGame-Block, und der laeuft weiter oben als die
+  // Standings-Karte, fuer die die Zeile urspruenglich stand.
+  const sortedTeams = qqSortedTeams(s);
 
   // ── How-To — nur in PreGame (füllen leeren Vor-Spiel-State) ──
   // 2026-05-06 (Wolf 'doppelter Wolf — Card-Wolf raus seit Bottom-Right-Wolf
@@ -293,6 +317,56 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         </div>
       </div>
     )});
+
+    // ── Wer schon da ist ──────────────────────────────────────────────────
+    // 2026-08-27. Zwei Wuensche von Wolf treffen sich hier:
+    //   „bereits eingeloggte teams oder sowas?" (26.8., zum Ankommen)
+    //   „wie sinnvoll sind sie beim ersten durchlauf (keine daten)" (27.8.)
+    //
+    // Die Teamliste gab es laengst - sie steckte in „Aktueller Stand", nur als
+    // Punktetabelle etikettiert, und zeigte vor der ersten Frage acht Nullen.
+    // Dieselben Teams ohne Punkte sind vor dem Spiel die richtige Karte: sie
+    // stimmt bei null Daten, sie waechst im Lauf des Ankommens, und wer sein
+    // Team auf der Wand sieht, weiss dass es geklappt hat.
+    //
+    // Nur wenn wirklich jemand da ist. Eine leere Karte waere schlechter als
+    // keine (dieselbe Regel wie bei der Bestenliste).
+    if (!largeGroup && sortedTeams.length > 0) {
+      panels.push({ key: 'schonDa', node: (
+        // Breiter als die Erklaerkarte: dort tragen vier Mini-Karten Text, hier
+        // acht Kacheln je einen Namen. Bei 900 px blieben pro Kachel 210 px, und
+        // „Halbwissen Gold Wert" schrumpfte auf eine Groesse, die aus acht Metern
+        // niemand mehr liest (2026-08-27 am Kontaktbogen gesehen).
+        <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
+          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>👋</span>
+            {de ? 'Schon da' : 'Already here'}
+          </div>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: `repeat(${sortedTeams.length <= 4 ? sortedTeams.length : 4}, 1fr)`,
+            gap: 14,
+          }}>
+            {sortedTeams.map((t, i) => (
+              <div key={t.id} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
+                padding: '20px 14px',
+                minHeight: 190,
+                justifyContent: 'center',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',
+                border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,235,200,0.10)',
+                boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.04)',
+                animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.06 * i}s both`,
+              }}>
+                <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={104} />
+                <TeamNameLabel name={t.name} maxLines={2} shrinkAfter={16} fontSize={30} color={'var(--qq-card-text)'} fontWeight={900} />
+              </div>
+            ))}
+          </div>
+        </div>
+      )});
+    }
 
     // AUSSER-WERTUNG-ANFANG: CozyArena-Fraktionsroster, laeuft nur im Arena-Modus
     // 2026-07-02 (Cozy Universe): Fraktions-Roster — die 8 Tier-Fraktionen mit
@@ -560,12 +634,20 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
 
   // 2026-05-24 (Refactor #2): qqSortedTeams nutzt Backend-sortedTeamIds —
   // identisch zu GameOverView. Vorher 3 verschiedene Sort-Stellen im Frontend.
-  const sortedTeams = qqSortedTeams(s);
   // Mega Event: nach Faktion gruppieren (Punkte summiert) statt Sub-Teams einzeln.
   // Im Setup (preGame) übernimmt der Faktions-Roster die Identität → Standings nur
   // in der Pause zeigen (dann mit echten Punkten).
+  // 2026-08-27 (Wolf: „ausserdem ist die frage wie sinnvoll sie beim ersten
+  // oeffentlichen durchlauf sind (keine daten)").
+  //
+  // Der Kommentar zwei Zeilen darueber sagt seit Langem „Standings nur in der
+  // Pause zeigen (dann mit echten Punkten)" - die Bedingung hat das aber nur
+  // fuer den Arena-Modus durchgesetzt. Im normalen CozyQuiz lief die Tabelle
+  // auch beim Ankommen, und dort steht bei jedem Team 0 · 0.
+  // Gemessen: von zwei Karten, die es vor dem Spiel ueberhaupt gibt, war das
+  // die zweite. Die Haelfte der Schleife war eine Tabelle aus Nullen.
   const standingsSource = largeGroup ? qqSortedGroups(s) : sortedTeams;
-  if (standingsSource.length > 0 && (!largeGroup || mode === 'pause')) {
+  if (standingsSource.length > 0 && mode === 'pause') {
     const sortedTeams = standingsSource;
     const twoCol = sortedTeams.length >= 5;
     const rankSize = twoCol ? 'clamp(22px, 2.4cqw, 32px)' : 'clamp(28px, 3.2cqw, 42px)';
@@ -1329,7 +1411,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     )});
   }
 
-  const [panelIdx, setPanelIdx] = useState(0);
+
   // 2026-05-13 (Wolf-Bug 'autoplay funktioniert nicht mehr, bei standings +
   // teams-heute kein switch danach'): vorher useEffect mit deps
   // `[panels.length]` — beim asynchronen funStats-Load (Z. 148-155) wuchs
@@ -1338,15 +1420,23 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Fix: setInterval einmalig bei Mount, panels-Laenge ueber Ref auslesen.
   const panelsLenRef = useRef(panels.length);
   panelsLenRef.current = panels.length;
+  // 2026-08-27: der Zaehler laeuft jetzt ueber Karten MAL Sprachen, weil beide
+  // an derselben Uhr haengen (siehe oben). Bei zwei Sprachen steht jede Karte
+  // also zwei Takte, einmal deutsch und einmal englisch.
+  // ⚠️ Der Modulo braucht den GESAMTumlauf, nicht die Kartenzahl - sonst
+  // springt die Sprache am Rundenende, ohne dass die Karte wechselt.
+  const zweiRef = useRef(zweisprachig);
+  zweiRef.current = zweisprachig;
   useEffect(() => {
     const id = setInterval(() => {
-      const len = panelsLenRef.current;
-      if (len > 1) setPanelIdx(p => (p + 1) % len);
+      const umlauf = panelsLenRef.current * (zweiRef.current ? 2 : 1);
+      if (umlauf > 1) setPanelIdx(p => (p + 1) % umlauf);
     }, 8000);
     return () => clearInterval(id);
   }, []);
 
-  const activePanel = panels[panelIdx % Math.max(panels.length, 1)];
+  const kartenIdx = zweisprachig ? Math.floor(panelIdx / 2) : panelIdx;
+  const activePanel = panels[kartenIdx % Math.max(panels.length, 1)];
 
   // 2026-05-07 (Wolf-ESC-Sidequest): Pro-Draft Lobby-BG auch hier in PreGame
   // (Welcome-Page) anwenden — sonst sieht man den ESC-BG erst in der echten

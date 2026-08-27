@@ -2319,8 +2319,18 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                   (undefined) verhält sich wie bisher (Pre-Game direkt), damit ein
                   Frontend-Deploy vor dem Backend-Redeploy nichts kaputt macht. */}
               {renderState.phase === 'LOBBY' && !renderState.setupDone && renderState.formatSelected === false && <NeutralWelcomeView state={renderState} />}
-              {renderState.phase === 'LOBBY' && !renderState.setupDone && renderState.formatSelected !== false && <PausedView state={renderState} mode="preGame" />}
-              {renderState.phase === 'LOBBY' && renderState.setupDone  && <LobbyView state={renderState} />}
+              {/* 2026-08-27 (Wolf: „hier muesste es einen schritt davor geben sowas
+                  wie lobby oeffnen, von der slide show zum qr lobby screen"):
+                  Der Ankommen-Zustand endet nicht mehr mit dem Wizard, sondern
+                  mit „Lobby oeffnen" am Steuerpult. Bis dahin laeuft die
+                  Diaschau weiter, auch wenn der Moderator laengst im Cockpit
+                  sitzt.
+                  `lobbyOpen !== false` (nicht `=== true`) → ein altes Backend
+                  ohne das Feld liefert undefined und verhaelt sich wie bisher.
+                  Gleiche Vorsicht wie bei formatSelected zwei Zeilen weiter
+                  oben. */}
+              {renderState.phase === 'LOBBY' && (!renderState.setupDone || renderState.lobbyOpen === false) && renderState.formatSelected !== false && <PausedView state={renderState} mode="preGame" />}
+              {renderState.phase === 'LOBBY' && renderState.setupDone && renderState.lobbyOpen !== false && <LobbyView state={renderState} />}
               {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
               {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
               {renderState.phase === 'PHASE_INTRO'     && <PhaseIntroView state={renderState} />}

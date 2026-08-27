@@ -254,6 +254,26 @@ export interface QQRoomState {
   setupDone: boolean;
   /** 2026-08-23: Beitritts-Link temporaer auf der Buehne einblenden (Steuerpult). */
   showJoinLink?: boolean;
+  /**
+   * 2026-08-27 (Wolf: „hier muesste es einen schritt davor geben sowas wie
+   * lobby oeffnen, von der slide show zum qr lobby screen").
+   *
+   * Bis heute war `setupDone` EIN Schalter fuer ZWEI Dinge: er hat das
+   * Steuerpult vom Wizard ins Cockpit geschoben UND im selben Moment den QR auf
+   * die Leinwand geworfen. Der Moderator konnte also nicht ins Cockpit, ohne
+   * die Lobby zu oeffnen.
+   *
+   * Jetzt trennt `lobbyOpen` das zweite vom ersten. `setupDone` heisst
+   * weiterhin „der Wizard ist durch" (und ueberlebt einen Reload, deshalb liegt
+   * es hier und nicht im Frontend-State), `lobbyOpen` heisst „auf der Leinwand
+   * laeuft der QR".
+   *
+   * ⚠️ Optional, und das ist Absicht: ein Frontend, das vor dem Backend
+   * ausgeliefert wird, sieht `undefined` und verhaelt sich wie bisher (QR
+   * sofort). Dieselbe Vorsichtsmassnahme wie bei `formatSelected`
+   * (`QQBeamerPage.tsx:2318`).
+   */
+  lobbyOpen?: boolean;
   // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
   // false → Beamer zeigt neutralen Welcome (kein Grid/keine Faktion).
   formatSelected: boolean;
@@ -525,6 +545,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       volume: 0.8,
       setupDone: false,
       showJoinLink: false,
+      lobbyOpen: false,
       formatSelected: false,   // 2026-07-02: Format (Cozy/Mega) erst im Wizard-Schritt 0 gewählt
       // 2026-08-22 (Wolf): CozyQuiz-Objektset zum Buehnen-Design 2a. Vorher
       // 'cozy3d' (3D-Tiere, seit 2026-06-23). Muss mit DEFAULT_SET_ID in
@@ -4830,6 +4851,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     soundConfig:      room.soundConfig,
     setupDone:        room.setupDone,
     showJoinLink:     room.showJoinLink === true,
+    lobbyOpen:        room.lobbyOpen === true,
     formatSelected:   room.formatSelected,
     rulesSlideEndsAt: room.rulesSlideEndsAt ?? null,
     avatarSetId:      room.avatarSetId ?? 'all',
@@ -5280,6 +5302,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.phase           = 'LOBBY';
   room.setupDone       = false;
   room.showJoinLink    = false;
+  room.lobbyOpen       = false;
   room.formatSelected  = false;  // 2026-07-02: nach Restart wieder Format wählen (neutraler Welcome)
   room.gamePhaseIndex  = 1;
   room.questionIndex   = 0;

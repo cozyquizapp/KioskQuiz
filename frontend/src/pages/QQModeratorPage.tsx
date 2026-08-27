@@ -191,6 +191,27 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   const setupDone = state?.setupDone ?? false;
   const setSetupDone = (v: boolean) => {
     emit('qq:setSetupDone', { roomCode, value: v });
+    // 2026-08-27: zurueck in den Wizard heisst auch zurueck vor die offene
+    // Lobby. Sonst haengt der QR beim zweiten Durchgang sofort wieder an der
+    // Wand, und der Ankommen-Zustand waere nur beim allerersten Mal erreichbar.
+    if (!v) emit('qq:setLobbyOpen', { roomCode, value: false });
+  };
+
+  // 2026-08-27 (Wolf: „hier muesste es einen schritt davor geben sowas wie lobby
+  // oeffnen, von der slide show zum qr lobby screen").
+  //
+  // `setupDone` hiess bisher zweierlei: „Wizard durch" UND „QR an der Wand".
+  // Jetzt traegt `lobbyOpen` das zweite. Der Moderator sitzt also im Cockpit,
+  // waehrend auf der Leinwand noch die Ankommen-Diaschau laeuft, und oeffnet die
+  // Lobby auf Stichwort.
+  //
+  // ⚠️ `!== false`, nicht `=== true`: ein Backend ohne das Feld liefert
+  // undefined, und dann soll sich alles verhalten wie vorher (Lobby gilt als
+  // offen, ein Klick auf „Quiz starten" bleibt der erste Klick). Das ist die
+  // Absicherung fuer den Zeitraum zwischen Vercel-Deploy und Coolify-Redeploy.
+  const lobbyOpen = (state as { lobbyOpen?: boolean } | null)?.lobbyOpen !== false;
+  const setLobbyOpen = (v: boolean) => {
+    emit('qq:setLobbyOpen', { roomCode, value: v });
   };
 
   // J1 Moderator-Toast-System: stack-basiert, zeigt Phase-Wechsel + Mark-Events.
@@ -353,6 +374,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       await new Promise(r => setTimeout(r, 600));
       // 2. Setup als done markieren
       try { await emit('qq:setSetupDone', { roomCode, value: true }); } catch {}
+      // 2026-08-27: seit „Lobby oeffnen" ein eigener Schritt ist, muss der
+      // Testweg ihn mitgehen - sonst haelt `?hold=1` auf der Ankommen-Diaschau
+      // statt auf der Lobby, und man prueft die falsche Ansicht.
+      try { await emit('qq:setLobbyOpen', { roomCode, value: true }); } catch {}
       await new Promise(r => setTimeout(r, 300));
       // 2026-07-28 (Test-Harness): ?hold=1 → Setup fertig + Bots da, aber NICHT
       // starten → der echte Beamer zeigt die LOBBY und haelt sie (zum Sichten).
@@ -562,6 +587,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     } catch { alert('Netzwerkfehler beim Erstellen der Bots.'); return; }
     await new Promise(res => setTimeout(res, 600));
     try { await emit('qq:setSetupDone', { roomCode, value: true }); } catch {}
+    try { await emit('qq:setLobbyOpen', { roomCode, value: true }); } catch {}
     await new Promise(res => setTimeout(res, 300));
     try { await startGame(draftId); } catch {}
   }
@@ -705,6 +731,10 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   setupDoneRef.current = setupDone;
   const setSetupDoneRef = useRef(setSetupDone);
   setSetupDoneRef.current = setSetupDone;
+  const lobbyOpenRef = useRef(lobbyOpen);
+  lobbyOpenRef.current = lobbyOpen;
+  const setLobbyOpenRef = useRef(setLobbyOpen);
+  setLobbyOpenRef.current = setLobbyOpen;
   const selectedDraftIdRef = useRef(selectedDraftId);
   selectedDraftIdRef.current = selectedDraftId;
   // 2026-07-09 (Wolf 'nach Pause geht Weiter-Button nicht'): qq:resume wurde
@@ -1541,8 +1571,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
         // 2026-07-08 (Cockpit): Mit vorgewaehltem Draft IST die Landing schon das
         // fertige Cockpit → Space startet direkt. Ohne Draft (Format-Wahl-Landing)
         // weiterhin zweistufig: erst Setup abschliessen, dann in der Lobby starten.
-        if (selectedDraftIdRef.current) startGameRef.current();
-        else if (!setupDoneRef.current) setSetupDoneRef.current(true);
+        // 2026-08-27: „Lobby oeffnen" haengt sich VOR den Start, nicht
+        // dazwischen. Wolf hat den zusaetzlichen Tastendruck ausdruecklich
+        // in Kauf genommen, weil er vor der Begruessung faellt und nicht
+        // mitten in einer Choreographie.
+        if (!setupDoneRef.current) setSetupDoneRef.current(true);
+        else if (!lobbyOpenRef.current) setLobbyOpenRef.current(true);
         else startGameRef.current();
       }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
@@ -1728,6 +1762,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
       }
       if (s.phase === 'LOBBY') {
         if (!setupDoneRef.current) setSetupDoneRef.current(true);
+        else if (!lobbyOpenRef.current) setLobbyOpenRef.current(true);
         else startGameRef.current();
       }
       else if (s.phase === 'TEAMS_REVEAL') emitRef.current('qq:teamsRevealFinish', { roomCode });
@@ -2003,7 +2038,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               scheitert heute am Scannen; wenn doch, betrifft es eine Person,
               und dann legst du ihn für die eine Person kurz auf. Nur in der
               Lobby sichtbar, weil er nur dort etwas bewirkt. */}
-          {joined && s && s.phase === 'LOBBY' && s.setupDone && (
+          {joined && s && s.phase === 'LOBBY' && s.setupDone && lobbyOpen && (
             <button
               type="button"
               aria-pressed={!!s.showJoinLink}
@@ -2469,7 +2504,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               <span style={{ color: '#64748b' }}>·</span>
               <span style={{ color: '#94a3b8' }}>Raum <span style={{ color: accent, fontVariantNumeric: 'tabular-nums' }}>{roomCode}</span></span>
               <span style={{ color: '#64748b' }}>·</span>
-              <span style={{ color: '#64748b', fontWeight: 700 }}>Beitritts-QR läuft über den Beamer</span>
+              {/* 2026-08-27: die Zeile behauptete den QR auch dann, wenn die
+                  Lobby noch gar nicht offen war. Jetzt sagt sie, was wirklich
+                  auf der Leinwand steht. */}
+              <span style={{ color: lobbyOpen ? '#64748b' : '#fbbf24', fontWeight: 700 }}>
+                {lobbyOpen ? 'Beitritts-QR läuft über den Beamer' : 'Beamer zeigt noch die Ankommen-Folien'}
+              </span>
             </div>
 
             {/* Teams — 2026-07-19 (Wolf 'Lobby ins Cockpit falten'): Team-Verwaltung
@@ -2522,7 +2562,37 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               </div>
             )}
 
+            {/* 2026-08-27 (Wolf: „hier muesste es einen schritt davor geben sowas
+                wie lobby oeffnen, von der slide show zum qr lobby screen").
+
+                Ein Bildschirm, ein Hauptknopf - deshalb TAUSCHT der Knopf seine
+                Aufgabe, statt einen zweiten gruenen daneben zu stellen. Solange
+                die Lobby zu ist, heisst er „Lobby oeffnen"; danach „Quiz
+                starten". Beide liegen auf SPACE, in genau dieser Reihenfolge.
+
+                Der Ton ist ein anderer: Oeffnen ist ein Ankuendigen (Bernstein,
+                der Akzent des Ankommens), Starten ist der Startschuss (Gruen).
+                Wer aus Gewohnheit zweimal SPACE drueckt, hat den Abend nicht
+                versehentlich gestartet, sondern erst die Lobby geoeffnet. */}
+            {!lobbyOpen && (
+              <button
+                onClick={() => setLobbyOpen(true)}
+                title="Beitritts-QR auf den Beamer legen. Danach koennen alle scannen."
+                style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 40px', borderRadius: 16, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900, fontSize: 'clamp(18px, 2.4vh, 23px)', color: '#1F1710', background: 'linear-gradient(135deg, #F5C451, #E0A32E)', boxShadow: '0 12px 30px -6px rgba(224,163,46,0.5)', animation: 'qqCockpitPulseAmber 2.2s ease-in-out infinite' }}
+              >
+                📣 Lobby öffnen
+                <span style={{ fontSize: 12, marginLeft: 4, padding: '3px 10px', borderRadius: 6, background: 'rgba(0,0,0,0.18)', opacity: 0.9, fontWeight: 700 }}>SPACE</span>
+              </button>
+            )}
+            {!lobbyOpen && (
+              <div style={{ textAlign: 'center', fontSize: 12, color: '#94a3b8', fontWeight: 700, marginTop: -8 }}>
+                Der Beamer zeigt bis dahin die Ankommen-Folien. Danach: QR und Teamliste.
+              </div>
+            )}
+            <style>{`@keyframes qqCockpitPulseAmber { 0%,100% { box-shadow: 0 12px 30px -6px rgba(224,163,46,0.5); } 50% { box-shadow: 0 14px 40px -4px rgba(224,163,46,0.78); } }`}</style>
+
             {/* Start */}
+            {lobbyOpen && (
             <button
               onClick={() => startGame()}
               style={{ margin: '0 auto', display: 'inline-flex', alignItems: 'center', gap: 10, padding: '15px 40px', borderRadius: 16, border: 'none', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 900, fontSize: 'clamp(18px, 2.4vh, 23px)', color: '#fff', background: 'linear-gradient(135deg, #22C55E, #16A34A)', boxShadow: '0 12px 30px -6px rgba(34,197,94,0.5)', animation: 'qqCockpitPulse 2.2s ease-in-out infinite' }}
@@ -2530,6 +2600,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               ▶ Quiz starten
               <span style={{ fontSize: 12, marginLeft: 4, padding: '3px 10px', borderRadius: 6, background: 'rgba(0,0,0,0.22)', opacity: 0.9, fontWeight: 700 }}>SPACE</span>
             </button>
+            )}
             <style>{`@keyframes qqCockpitPulse { 0%,100% { box-shadow: 0 12px 30px -6px rgba(34,197,94,0.5); } 50% { box-shadow: 0 14px 40px -4px rgba(34,197,94,0.78); } }`}</style>
 
             {/* Sekundär: Show-Planung. Einstellungen stehen direkt bei der

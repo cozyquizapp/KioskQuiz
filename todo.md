@@ -56,68 +56,79 @@
 
 ---
 
-## 🚪 ANKOMMEN: der QR wird freigeschaltet (Wolf 2026-08-26)
+## 🚪 ANKOMMEN: der QR wird freigeschaltet (Wolf 2026-08-26/27)
 
 Die Folie „Gleich geht's los" taucht im echten Ablauf nie auf. Wolf: „diese
 page taucht realistisch nie auf ... denke ich an ein event, waere diese page
 gut zum ankommen etc, das einlogen nach begruessung etc?"
 
-Der Moment existiert wirklich und hat heute keinen Bildschirm: Leute kommen an,
-bestellen, setzen sich.
+- ✅ **„Lobby oeffnen" gebaut** (2026-08-27). Wolf: „hier muesste es einen
+      schritt davor geben sowas wie lobby oeffnen, von der slide show zum qr
+      lobby screen".
 
-- [ ] **Drei Zustaende statt zwei, der QR ist der Schalter.**
+      Die Ursache war ein Schalter fuer zwei Aufgaben: `setupDone` hat das
+      Steuerpult vom Wizard ins Cockpit geschoben UND im selben Moment den QR
+      auf die Leinwand geworfen. Der Moderator kam also nicht ins Cockpit, ohne
+      die Lobby zu oeffnen. Jetzt traegt `lobbyOpen` das zweite:
 
       ```
-      Ankommen        Karussell, volle Breite. Kein QR.
-      Lobby oeffnen   QR und Teamliste, volle Breite. Kein Karussell.
-      Spielstart      wie heute.
+      setupDone false                  Wizard
+      setupDone true, lobbyOpen false  Cockpit, Buehne zeigt Ankommen-Folien
+      setupDone true, lobbyOpen true   Cockpit, Buehne zeigt QR + Teamliste
       ```
 
-      ⚠️ Der Weg dorthin ging ueber zwei verworfene Entwuerfe, und beide
-      Gruende gehoeren hierher:
+      Am Steuerpult TAUSCHT der Hauptknopf seine Aufgabe, statt sich zu
+      verdoppeln: „📣 Lobby oeffnen" (Bernstein), danach „▶ Quiz starten"
+      (Gruen). Beide auf SPACE, in dieser Reihenfolge. Die Statuszeile sagt jetzt
+      die Wahrheit, sie behauptete den QR vorher auch dann, wenn er nicht lief.
+      Zurueck in den Wizard schliesst die Lobby wieder, sonst waere der
+      Ankommen-Zustand nur beim allerersten Mal erreichbar.
 
-      1. Mein erster Vorschlag war ein Wechsel zwischen Beitrittsbild und
-         Karussell auf EINER Ansicht, mit dem QR in einer festen Spalte.
-         Wolfs Einwand: „aber dann wird es ziemlich voll auf der view?" Er hat
-         recht. Die Buehne ist 1760 breit, das Karussell ist fuer die volle
-         Breite gebaut, und eine Spalte abzuzwacken macht beides schlechter.
-      2. Mein Einwand gegen einen zusaetzlichen Schritt war „das kostet einen
-         Tastendruck im hektischsten Moment". Zurueckgenommen: das gilt fuers
-         Finale, wo eine Taste mitten in eine Choreographie faellt. Hier liegt
-         der Druck VOR der Begruessung, wenn Wolf ohnehin steht und redet.
+      Beweis: `node scripts/lobby-oeffnen.mjs` → `.shots/LOBBY-OEFFNEN.png`.
+      Das Bild zeigt zwei Buehnen, in beiden ist `setupDone` true.
 
-      Der Schritt verdient sich sogar doppelt: ein QR, der auf Stichwort
-      erscheint, ist ein Moment. Einmal „Handys raus", alle scannen zugleich,
-      statt ein Rinnsal ueber zwanzig Minuten.
+      ⚠️ **Das Backend deployt sich nicht von selbst.** `lobbyOpen` ist ein
+      neues Raumfeld, also braucht Coolify einen manuellen Redeploy. Bis dahin
+      liefert der Server `undefined`, und beide Seiten sind darauf ausgelegt
+      (`!== false`): es verhaelt sich exakt wie vorher, der QR kommt sofort.
+      Kein kaputter Zwischenzustand, nur kein neuer Schritt.
 
-- ✅ **Nachzuegler sind geklaert** (2026-08-26). Die Sorge war, ob „Lobby
-      oeffnen" ein Einbahnschritt sein darf. Sie ist gegenstandslos: das
-      Steuerpult hat den Beitritts-QR dauerhaft als Popover im Kopf
-      (`QQModeratorPage.tsx:124`, „QR neben Beamer, immer sichtbar", seit
-      2026-07-08) UND einen Schalter, der den Beitritts-Link auf der Buehne
-      einblendet (Zeile 2013). Der Rueckweg existiert also und liegt dort, wo
-      er hingehoert: beim Moderator, nicht auf der Leinwand.
+- [ ] **Die Ankommen-Folien selbst.** Wolf: „die slideshow ist noch etwas
+      chaotisch, also die verschiedenen slides passen nicht so gut zu einander
+      und vlt nicht zum neuen design? ausserdem ist die frage wie sinnvoll sie
+      beim ersten oeffentlichen durchlauf sind (keine daten)".
 
-- ✅ **Gedruckter QR pro Tisch: geht heute, ohne eine Zeile Code**
-      (Wolf 2026-08-27, „ich koennte auch einen ausgedruckten qr code pro team
-      mitbringen? zb"). Nachgesehen: es gibt genau **einen** Raum,
-      `QQ_ROOM = 'default'` in allen vier Seiten. Der Beitritts-Link im
-      Steuerpult ist `${origin}/team?room=default`
-      (`QQModeratorPage.tsx:2255`), und die Teamseite liest den Parameter gar
-      nicht, sie nimmt die Konstante. Der Link ist also **immer derselbe** und
-      auf Vorrat druckbar, heute und in einem Jahr.
-      ⚠️ Was NICHT geht: dass die Karte das Team schon festlegt. Jede Karte
-      traegt denselben QR, das Team wird danach in der App gewaehlt. „Pro Team"
-      heisst also „eine Karte je Tisch", nicht „diese Karte ist Team 3".
-      Wenn die Karte das Team wirklich mitbringen soll, waere das neue Arbeit an
-      drei Stellen (Parameter im Link, Teamseite liest ihn, Server nimmt ein
-      vorgewaehltes Team an). Fuer den ersten Abend nicht noetig.
-      **Folge fuer den Entwurf oben:** gedruckte Karten machen den Zustand
-      „Ankommen ohne QR" staerker, nicht schwaecher. Wer frueh da ist, kann vom
-      Tisch aus rein, ohne dass die Leinwand etwas dafuer tun muss.
-      „Lobby oeffnen" ist dann der Moment, in dem der Bildschirm zu den Tischen
-      aufschliesst, und der einzige Weg fuer alle, die keine Karte in der Hand
-      haben.
+      Gemessen mit `node scripts/ankommen-folien.mjs` (frischer Raum, 8 Teams,
+      keine Historie) → `.shots/ANKOMMEN-FOLIEN.png`:
+
+      ```
+      Karten mit Inhalt        2   „Wie funktioniert's?" und „Aktueller Stand"
+      verschiedene Bilder      6   weil die Sprache DE/EN unabhaengig kippt
+      Umlauf                  48 s
+      Kartentakt               8 s (CozyQuizPausedView.tsx:1345)
+      ```
+
+      Damit sind alle drei Beobachtungen belegt, eine davon anders als vermutet:
+
+      1. **„Chaotisch" ist kein Zuviel, sondern ein Zuwenig.** Es gibt nur zwei
+         Karten. Was nach Unruhe aussieht, ist dieselbe Karte in zwei Sprachen,
+         und die Ueberschrift („Gleich geht's los" / „Starting soon") kippt nicht
+         im selben Takt wie die Karte darunter. Sechs Bilder, zwei Inhalte.
+      2. **„Passt nicht zum neuen Design" stimmt und ist datierbar.** Sternenfeld,
+         Wortmarke und Ueberschrift sind 2a. Die Karten darunter sind es nicht:
+         graue `rgba`-Raender statt `qqKachelFlaeche`, Emoji als Zeichen
+         (📖 📱 🎯 🃏 🎲 📊), eigene Panel-Optik. Der Bruch laeuft quer durchs Bild.
+      3. **„Keine Daten" ist der schaerfste Punkt.** Die zweite von zwei Karten
+         ist „Aktueller Stand" und zeigt vor der ersten Frage acht Teams mit
+         0 · 0. Am ersten oeffentlichen Abend ist also die Haelfte der Schleife
+         eine Tabelle aus Nullen.
+
+      ⚠️ Nichts davon ist gebaut. Erst entscheiden, was die Ankommen-Ansicht
+      ueberhaupt zeigen soll, dann bauen. Die Teamliste, die Wolf sich als
+      eigene Folie gewuenscht hat („bereits eingeloggte teams oder sowas"),
+      steckt uebrigens schon in „Aktueller Stand" drin, nur als Punktetabelle
+      etikettiert.
+
 - [ ] **Beim Bauen beachten: eine Folie nur zeigen, wenn sie heute Inhalt hat.**
       Die Bestenliste meldet „46 Spiele" und Stammteams mit elf Siegen. In der
       Stammkneipe grossartig, bei einem Firmenevent, wo niemand je gespielt

@@ -1442,6 +1442,14 @@ export interface QQStateUpdate {
   // dauerhaft an die Wand zu schreiben ist das falsche Verhaeltnis. Wolf legt
   // sie jetzt im Steuerpult auf, wenn jemand fragt.
   showJoinLink?: boolean;
+  // 2026-08-27 (Wolf: „hier muesste es einen schritt davor geben sowas wie lobby
+  // oeffnen, von der slide show zum qr lobby screen"): trennt „der Wizard ist
+  // durch" (setupDone) von „der QR haengt an der Wand" (lobbyOpen). Vorher war
+  // das ein Schalter fuer beides, der Moderator kam also nicht ins Cockpit, ohne
+  // gleichzeitig die Lobby zu oeffnen.
+  // ⚠️ Optional: ein Frontend vor dem Backend-Redeploy sieht undefined und
+  // verhaelt sich wie bisher. Gleiche Vorsicht wie bei formatSelected.
+  lobbyOpen?: boolean;
   // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
   // false, zeigt der Beamer den neutralen Welcome (Brand, kein Grid/keine Faktion) —
   // erst nach der Wahl kippt er auf die format-spezifische Pre-Game-Ansicht.

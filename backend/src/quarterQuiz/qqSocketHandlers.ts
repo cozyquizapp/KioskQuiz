@@ -2083,6 +2083,18 @@ export function registerQQHandlers(io: SocketIOServer): void {
       } catch (e) { fail(ack, e); }
     });
 
+    // 2026-08-27 (Wolf) — „Lobby oeffnen": der QR geht auf die Leinwand.
+    // Getrennt von `qq:setSetupDone`, weil das Steuerpult ins Cockpit darf,
+    // ohne dass der Saal schon scannen soll. Reine Anzeige, keine Spiel-Logik.
+    socket.on('qq:setLobbyOpen', (payload: { roomCode: string; value: boolean }, ack?: unknown) => {
+      try {
+        const room = ensureQQRoom(payload.roomCode);
+        room.lobbyOpen = !!payload.value;
+        broadcast(io, payload.roomCode);
+        ok(ack);
+      } catch (e) { fail(ack, e); }
+    });
+
     // 2026-08-23 — Beitritts-Link temporaer auf der Buehne zeigen. Nur ein
     // Anzeige-Schalter, keine Spiel-Logik; deshalb hier und nicht in qqRooms.
     socket.on('qq:setJoinLink', (payload: { roomCode: string; value: boolean }, ack?: unknown) => {

@@ -739,6 +739,11 @@ export async function buehneStarten(teilCfg = {}) {
       if (!r.ok) console.log('  fillTeams:', r.status, await r.text());
       cfg.takt('  fillTeams');
       await emit('qq:setSetupDone', { value: true });
+      // 2026-08-27: „Lobby oeffnen" ist ein eigener Schritt geworden
+      // (`lobbyOpen`, QQBeamerPage.tsx:2322). Ohne diese Zeile bliebe die
+      // Buehne im Ankommen-Zustand stehen und jede Lobby-Aufnahme zeigte die
+      // Diaschau statt des QR.
+      await emit('qq:setLobbyOpen', { value: true });
       cfg.takt('  setSetupDone');
       aufbauStand = 'lobby';
       await sleep(800);

@@ -47,6 +47,12 @@
  *    gemeint, wenn etwas „aus der Reihe faellt" - nicht die eine bewusst
  *    andere Kurve, sondern die dreissig fast gleichen.
  *
+ * ⚠️ Die Zahlen schwanken zwischen zwei Laeufen um ein paar Bewegungen. Das
+ * ist kein Fehler: gemessen wird, was in genau diesem Moment LAEUFT, und
+ * einzelne Stationen sind je nach Entwurf und Zufall unterschiedlich weit.
+ * Ein Unterschied von zwei oder drei ist Rauschen; eine neue Kurve oder eine
+ * neue Folie in der Overshoot-Liste ist es nicht.
+ *
  * NUTZUNG:
  *   node scripts/motion-konsistenz.mjs          # der Abend in 13 Stationen
  *   node scripts/motion-konsistenz.mjs --alle   # alle Stationen (dauert lange)
@@ -68,6 +74,58 @@ const HAUS = [
   { rolle: 'pop-fast',    kurve: 'cubic-bezier(0.2, 0.8, 0.3, 1)',   von: null, bis: null, was: 'kurzer Pop' },
   { rolle: 'smooth-out',  kurve: 'cubic-bezier(0.3, 0, 0.5, 1)',     von: null, bis: null, was: 'ruhiger Abgang' },
 ];
+
+/**
+ * ── Was BEWUSST so ist ────────────────────────────────────────────────────
+ *
+ * ⚠️ Ein Messwerkzeug, das entschiedene Fragen jedes Mal neu als Befund
+ * meldet, erzieht dazu, seine Meldungen zu ueberlesen. Und in diesem Haus
+ * gilt ohnehin: bewusste Design-Entscheidungen sind keine Bugs (CLAUDE.md).
+ * Deshalb stehen die Entscheidungen hier, mit Datum und Zitat, und der Bericht
+ * trennt sie von dem, was noch offen ist.
+ *
+ * Wer eine davon wieder aufmachen will, braucht einen neuen Grund - nicht die
+ * blosse Tatsache, dass die Messung sie findet.
+ */
+const ENTSCHIEDEN = {
+  /**
+   * BESTANDSSCHUTZ, kein Freibrief.
+   *
+   * Wolfs Entscheidung war grundsaetzlich, nicht folienweise: der heutige Stand
+   * ist abgenommen, die Regel gilt ab jetzt. Deshalb steht hier der Bestand vom
+   * 2026-08-26, und das Werkzeug meldet nur noch, was NEU dazukommt. Genau so
+   * bleibt die Regel fuer den restlichen Motion-Durchgang scharf, ohne dass
+   * jemand rueckwirkend aufraeumen muss.
+   *
+   * Wer eine Folie hier eintraegt, ohne dass Wolf sie gesehen hat, hebelt genau
+   * das aus. Neue Zeilen also nur mit Datum und Zitat.
+   */
+  overshoot: {
+    stationen: ['aufloesungUnten', 'lobby', 'zwischenstand', 'cozygame', 'brett',
+      'turmfinale', 'siegerehrung', 'teams'],
+    am: '2026-08-26',
+    zitat: 'Ich fands bisher überhaupt nicht unruhig, ich denke wir können es lassen '
+      + 'anstatt kontext für das erstellen von alternativen zu verbrauchen, die vlt nicht besser sind',
+    grund: 'Die Hausregel „ein Overshoot je Folie" bleibt als Richtwert stehen, aber sie '
+      + 'wird nicht rueckwirkend durchgesetzt. Wolf sieht die Aufloesung seit Monaten '
+      + 'jeden Abend; sein Urteil dazu wiegt mehr als eine Zahl aus einem Kommentar.',
+  },
+  nachbarn: {
+    am: '2026-08-26',
+    grund: 'Die 22 Kurven, die knapp neben einer Hauskurve liegen, bleiben. Der Unterschied '
+      + 'liegt unter der Wahrnehmungsschwelle (naechste bei 0,05), das Zusammenlegen waere '
+      + 'also Aufwand ohne sichtbaren Gewinn - mit einem kleinen Risiko, dass eine Bewegung '
+      + 'danach anders wirkt.',
+  },
+  enterKurve: {
+    am: '2026-08-26',
+    grund: 'cubic-bezier(0.16, 1, 0.3, 1) und --qq-enter (0.22, 1, 0.36, 1) bleiben '
+      + 'nebeneinander bestehen. ⚠️ Ich hatte behauptet, den Token umzuschreiben aendere '
+      + 'nichts am Bild. Das war falsch: `var(--qq-enter)` steht an 16 Stellen, unter '
+      + 'anderem im Szenenwechsel selbst. In beide Richtungen bewegt sich also etwas, und '
+      + 'damit gilt dieselbe Abwaegung wie bei den Nachbarn.',
+  },
+};
 
 /** Der Abend in 13 Stationen. Nicht willkuerlich: je eine je Folienart, die
  *  im normalen Ablauf wirklich vorkommt. */
@@ -207,8 +265,13 @@ for (const e of fremde) {
   if (beste && beste.d < 0.2) nachbarn.push({ e, ...beste });
 }
 nachbarn.sort((a, z) => a.d - z.d);
-console.log('\n══ 1b. Kurven, die BEINAHE eine Hauskurve sind ═════════════════');
+console.log('\n══ 1b. Kurven, die BEINAHE eine Hauskurve sind ════════════════');
 console.log('  Abstand unter 0,2 heisst: dieselbe Absicht, nur nicht dasselbe Mittel.');
+console.log(`  ENTSCHIEDEN am ${ENTSCHIEDEN.nachbarn.am}: bleiben, wie sie sind.`);
+console.log(`  ${ENTSCHIEDEN.nachbarn.grund.replace(/\s+/g, ' ')}`);
+console.log(`  Dasselbe fuer die Auftrittskurve: ${ENTSCHIEDEN.enterKurve.grund.replace(/\s+/g, ' ')}`);
+console.log('  Die Liste bleibt trotzdem stehen - sie ist die Landkarte, falls es doch');
+console.log('  einmal zusammengelegt wird.');
 if (!nachbarn.length) console.log('  Keine.');
 for (const n of nachbarn.slice(0, 14)) {
   console.log(`  ${n.d.toFixed(3)}  ${n.e.name.padEnd(22)} ${n.e.roh}`);
@@ -234,18 +297,30 @@ if (!danebenGesamt) console.log('  Alle Bewegungen auf Hauskurven liegen in ihre
 console.log('\n══ 3. Ein Overshoot je Folie? ══════════════════════════════════');
 console.log('  Regel aus main.css: „Overshoot nur fuer den EINEN Hero-Beat pro Screen."');
 console.log('  Gezaehlt werden Bewegungen, nicht Elemente.');
-for (const { st, hero } of [...heroProStation].sort((a, z) => z.hero - a.hero)) {
-  if (hero <= 1) continue;
+const offen = [], entschieden = [];
+for (const x of [...heroProStation].sort((a, z) => z.hero - a.hero)) {
+  if (x.hero <= 1) continue;
+  (ENTSCHIEDEN.overshoot.stationen.includes(x.st) ? entschieden : offen).push(x);
+}
+for (const { st, hero } of offen) {
   console.log(`  ✗ ${st.padEnd(16)} ${hero}: ${(heroNamen.get(st) ?? []).join(', ')}`);
 }
+if (!offen.length) console.log('  Keine offenen Faelle.');
+if (entschieden.length) {
+  console.log(`\n  Bewusst so, entschieden am ${ENTSCHIEDEN.overshoot.am}:`);
+  console.log(`  Wolf: „${ENTSCHIEDEN.overshoot.zitat}"`);
+  for (const { st, hero } of entschieden) {
+    console.log(`    · ${st.padEnd(16)} ${hero}: ${(heroNamen.get(st) ?? []).join(', ')}`);
+  }
+}
 const brav = heroProStation.filter(x => x.hero <= 1).length;
-console.log(`  ✓ ${brav} von ${heroProStation.length} Stationen halten die Regel.`);
+console.log(`\n  ${brav} von ${heroProStation.length} Stationen halten die Regel von sich aus.`);
 
 console.log('\n══ Urteil ══════════════════════════════════════════════════════');
 console.log(`  ${erreicht.length} Stationen gemessen.`);
 console.log(`  ${ausserHaus} von ${liste.length} Bewegungen laufen auf einer eigenen Kurve.`);
-console.log(`  davon ${nachbarn.length} nur knapp neben einer Hauskurve (Abstand unter 0,2).`);
+console.log(`  davon ${nachbarn.length} nur knapp neben einer Hauskurve - bewusst so seit ${ENTSCHIEDEN.nachbarn.am}.`);
 console.log(`  ${danebenGesamt} Dauern liegen ausserhalb des Bereichs ihrer eigenen Rolle.`);
-console.log(`  ${heroProStation.length - brav} Stationen mit mehr als einem Overshoot.`);
+console.log(`  ${offen.length} Stationen mit mehr als einem Overshoot, die NICHT entschieden sind.`);
 
 await b.schliessen?.();

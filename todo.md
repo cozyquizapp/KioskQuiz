@@ -53,28 +53,19 @@
             Hausbestand, der seit dem 2026-07-12 in `main.css` steht - Rollen
             und Dauerbereiche inklusive. Erster Durchgang, 13 Stationen:
             75 Bewegungen, davon 13 auf einer Hauskurve.
-      - [ ] **Die drei Befunde des ersten Durchgangs abarbeiten.** Jeder ist
-            eine eigene Entscheidung, keiner ist Geschmack:
-            - [ ] **22 Kurven sind BEINAHE eine Hauskurve** (Abstand unter 0,2,
-                  die naechsten bei 0,05). Vier Bounce-Kurven nebeneinander:
-                  1,4 / 1,46 / 1,5 / 1,56. Das ist Streuung, nicht Gestaltung.
-                  Zusammenlegen ist mechanisch, aber es ist Bewegung - deshalb
-                  einmal am Bild abnehmen, nicht blind ersetzen.
-            - [ ] **Eine Entscheidung steht an:** `cubic-bezier(0.16, 1, 0.3, 1)`
-                  laeuft an sechs Stellen und ist damit faktisch die
-                  Auftrittskurve des Hauses, waehrend `--qq-enter` auf
-                  `(0.22, 1, 0.36, 1)` steht. Eine von beiden gewinnt.
-            - [ ] **Sieben Folien haben mehr als einen Overshoot gleichzeitig**,
-                  die Aufloesung fuenf: `bQuestionIn`, `revealCorrectPop`,
-                  `muchoVoterDrop`, `revealWrongShake`, `revealWinnerIn`. Die
-                  Hausregel sagt: einer je Folie. Welcher es ist, entscheidet
-                  Wolf.
-      - [ ] **Dann Station fuer Station durch den Abend** (`motion.mjs --liste`).
-      - ✅ **Station 1 entschieden und gebaut: K2** (Wolf 2026-08-26, „Probier
-            mal K2"). Grundblende mit Anker, die Wortmarke traegt von der Lobby
-            auf die Willkommen-Folie. Die 835 ms Leere sind weg, die Folie steht
-            bei rund 0,9 statt 4,15 s. Gegenprobe:
-            `node scripts/naht-lobby-willkommen.mjs`.
+      - ✅ **Die drei Befunde des ersten Durchgangs sind entschieden**
+            (Wolf 2026-08-26: „Ich fands bisher überhaupt nicht unruhig, ich
+            denke wir können es lassen anstatt kontext für das erstellen von
+            alternativen zu verbrauchen, die vlt nicht besser sind"). Alle drei
+            bleiben, wie sie sind: die 22 Nachbarkurven, die zwei
+            Auftrittskurven nebeneinander, und die Folien mit mehr als einem
+            Overshoot. Der Grund ist in allen drei Faellen derselbe - der
+            Unterschied liegt unter der Wahrnehmungsschwelle, das Aendern waere
+            Aufwand mit Risiko und ohne sichtbaren Gewinn.
+            Im Werkzeug steht das als BESTANDSSCHUTZ mit Datum und Zitat: der
+            heutige Stand ist abgenommen, gemeldet wird nur noch, was NEU
+            dazukommt. Damit bleibt die Regel fuer den restlichen
+            Motion-Durchgang scharf, ohne rueckwirkendes Aufraeumen.
       - [ ] **B1 (Bogen-Wisch) + B5 (Marker statt Einfaerbung) an der
             Aufloesung**, gegen den Ist-Zustand stellen. Laut
             `MOTION_REFERENZEN.md` der erste Kandidat, wenn nichts dagegen

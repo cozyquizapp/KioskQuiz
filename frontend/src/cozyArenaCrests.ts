@@ -33,13 +33,23 @@ export function isCrestSlug(s: string | undefined | null): s is string {
   return !!s && CREST_SET.has(s);
 }
 
-/** Pfad zum vollen Wappen-PNG (Schild + Farbe + Emblem).
- *  2026-07-17 (Wolf): Kolosseum-Wappen (Gold-Rahmen, Glut-Rand, gemeisselter Stein)
- *  statt der alten glossy-Variante — passen zur Arena-Material-Sprache. Freigestellt
- *  aus `<slug> colloseum.png` (schwarzer BG) nach `<slug>-colosseum.png` (transparent,
- *  Glow erhalten). Alte glossy `<slug>.png` bleiben liegen (Rueckkehr = eine Zeile). */
+/** Pfad zum vollen Wappen-PNG (Schild + Emblem).
+ *
+ *  2026-08-27 (Wolf: „neue arena wappen passend zum neuen design"): cremefarbenes
+ *  Schild mit farbigem Zeichen, im selben Knet-Look wie der Team-Avatarsatz V5.
+ *  Loest die Kolosseum-Wappen vom 2026-07-17 ab (farbiges Schild mit Gold-Rahmen)
+ *  - die stammten noch aus der Arena-Material-Sprache und standen im neuen
+ *  Design allein.
+ *
+ *  ⚠️ Die Fraktionsfarbe steckt jetzt NICHT mehr im Wappen. Sie kommt von der
+ *  Flaeche darunter, genau wie beim Avatarsatz V5. Wo ein Wappen ohne farbigen
+ *  Grund steht, unterscheiden die Fraktionen sich nur noch am Zeichen.
+ *
+ *  Originale unveraendert unter `design-assets/arena-wappen-original/`, von dort
+ *  in EINEM Schritt auf 512 px (Lanczos, PNG, RGBA) - dieselbe Regel wie beim
+ *  Avatarsatz. */
 export function crestSrc(slug: string): string {
-  return `/avatars/cozyarena/${slug}-colosseum.webp`;
+  return `/avatars/cozyarena/${slug}-wappen.png`;
 }
 
 /** Pfad zum freigestellten Emblem-PNG (nur cremefarbenes Symbol, ohne Schild) —

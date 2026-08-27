@@ -2341,16 +2341,22 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
                 // Offen heisst: Wizard durch UND Moderator hat freigeschaltet.
                 // `!== false`, damit ein Backend ohne das Feld sich wie frueher
                 // verhaelt (QR sofort).
+                // 2026-08-27: die Kennung macht von aussen sichtbar, WELCHE der
+                // drei Ansichten steht. Ohne sie laesst sich „die Ankommen-Seite
+                // kommt nicht" nicht messen, sondern nur ansehen.
+                const zeige = (name: string, node: React.ReactNode) => (
+                  <div data-qq-lobby-ansicht={name} style={{ display: 'contents' }}>{node}</div>
+                );
                 if (renderState.setupDone && renderState.lobbyOpen !== false) {
-                  return <LobbyView state={renderState} />;
+                  return zeige('lobby', <LobbyView state={renderState} />);
                 }
                 // 2026-07-02 (Wolf): vor der Format-Wahl ein neutraler Welcome,
                 // ohne Grid und ohne Fraktion.
                 if (renderState.formatSelected === false) {
-                  return <NeutralWelcomeView state={renderState} />;
+                  return zeige('neutral', <NeutralWelcomeView state={renderState} />);
                 }
                 // Alles andere ist Ankommen: Diaschau, kein QR.
-                return <PausedView state={renderState} mode="preGame" />;
+                return zeige('ankommen', <PausedView state={renderState} mode="preGame" />);
               })()}
               {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
               {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}

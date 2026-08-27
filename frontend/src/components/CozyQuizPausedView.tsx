@@ -238,7 +238,7 @@ function AvatarWand({ de, lang, spalten, zeilen }: {
               radius: 20,
             }),
             // Die Welle: je weiter rechts und unten, desto spaeter. 70 ms je
-            // Schritt, bei 6x2 also 350 ms von der ersten bis zur letzten
+            // Schritt, bei 4x2 also 280 ms von der ersten bis zur letzten
             // Kachel - langsam genug, dass man ihr folgen kann, kurz genug,
             // dass sie vor dem naechsten Farbschritt durch ist.
             transitionProperty: 'background, border-color',
@@ -621,14 +621,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       }
       panels.push({ key: 'heuteAbend', node: (
         <div style={{ width: 'min(100%, 1100px)', margin: '0 auto' }}>
-          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            {/* 2026-08-27: 🗓️ hat im Satz kein Bild und waere ein rohes Systemzeichen
-                geblieben - genau der Fehler, den ich an diesem Tag bei drei
-                anderen Folien gefunden habe und hier selbst gemacht hatte.
-                `fx-clapper` ist die Klappe: heute Abend geht es los. */}
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQIcon slug="fx-clapper" size="1em" /></span>
-            {de ? 'Heute Abend' : 'Tonight'}
-          </div>
+          {/* 2026-08-27, dritter Durchgang: auch die Ankommen-Plakate laufen jetzt
+              durch `statTitle`. Sie hatten eine eigene Groesse (46 statt 52) und
+              einen eigenen Abstand darunter - drei Werte neben denen aller
+              anderen Folien, im selben Acht-Sekunden-Umlauf. */}
+          {statTitle(<QQIcon slug="fx-clapper" size="1em" />, 'Heute Abend', 'Tonight')}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
             {zeilen.map((z, i) => (
               <div key={z.de} style={{
@@ -685,13 +682,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         // „Halbwissen Gold Wert" schrumpfte auf eine Groesse, die aus acht Metern
         // niemand mehr liest (2026-08-27 am Kontaktbogen gesehen).
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
-          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            {/* Bewusst ein Slug statt eines Zeichens: 👋 hat im Satz kein Bild
-                (`fx-wave` ist eine Flagge, siehe QQIcon.tsx). `fx-teams` sagt
-                genau, worum es geht. */}
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQIcon slug="fx-teams" size="1em" /></span>
-            {de ? 'Schon da' : 'Already here'}
-          </div>
+          {/* Bewusst ein Slug statt eines Zeichens: 👋 hat im Satz kein Bild
+              (`fx-wave` ist eine Flagge, siehe QQIcon.tsx). `fx-teams` sagt
+              genau, worum es geht. */}
+          {statTitle(<QQIcon slug="fx-teams" size="1em" />, 'Schon da', 'Already here')}
           <div style={{
             display: 'grid',
             gridTemplateColumns: `repeat(${sortedTeams.length <= 4 ? sortedTeams.length : 4}, 1fr)`,
@@ -741,20 +735,33 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // 2026-08-27 (Wolf: „mach ein paar weniger felder vlt?"): 12 statt 16.
       // Groessere Kacheln, ruhigere Wand, und die Farbwelle laeuft ueber sechs
       // Spalten statt acht - dadurch ist sie eher als Welle zu lesen.
-      const SPALTEN = 6, ZEILEN = 2;
+      //
+      // 2026-08-27, dritter Durchgang (Wolf: „da es maximal 8 teams mit 8
+      // farben sind ingame, wuerde ich nur 8 kacheln machen?"). Das ist mehr
+      // als eine Zahl: bei ACHT Kacheln und ACHT Farben steht jede Farbe genau
+      // einmal im Bild, und die Wand zeigt damit nebenbei die zweite Haelfte
+      // der Aussage - so viele Teams passen an einen Abend. Der Farbschritt
+      // dreht alle acht Farben durch alle acht Objekte, also sieht man auch
+      // weiter, dass die Paarung frei ist.
+      const SPALTEN = 4, ZEILEN = 2;
       panels.push({ key: 'avatare', node: (
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
-          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            {/* 2026-08-27: 🎨 hat im Satz kein Bild. `fx-sparkles` statt eines
-                rohen Zeichens - die Karte zeigt ohnehin die Objekte selbst,
-                die Ueberschrift braucht kein zweites Motiv. */}
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQIcon slug="fx-sparkles" size="1em" /></span>
-            {de ? 'Sucht euch einen aus' : 'Pick your avatar'}
-          </div>
+          {/* 2026-08-27: 🎨 hat im Satz kein Bild. `fx-sparkles` statt eines
+              rohen Zeichens - die Karte zeigt ohnehin die Objekte selbst,
+              die Ueberschrift braucht kein zweites Motiv. */}
+          {statTitle(<QQIcon slug="fx-sparkles" size="1em" />, 'Sucht euch einen aus', 'Pick your avatar')}
           {/* Eigene Komponente, siehe ihren Kopf: der Takt darf nicht im State
               der PausedView liegen, sonst baut die zweimal je Sekunde ihre
               zwanzig Karten neu. */}
-          <AvatarWand de={de} lang={lang} spalten={SPALTEN} zeilen={ZEILEN} />
+          {/* ⚠️ Die Breite muss mit: vier Spalten auf 1280 px ergeben Kacheln von
+              rund 305 px, zwei Reihen also ueber 620 px - mehr als das
+              Koerperband der Karte (gemessen 559 px) hergibt, und der Kasten
+              schneidet ab. Bei 800 px sind die Kacheln 190 px, zwei Reihen 394,
+              und mit Ueberschrift und Bildunterschrift bleibt die Folie unter
+              den 559. Nachgemessen, nicht gerechnet: bei 840 px waren es 567. */}
+          <div style={{ width: 'min(100%, 800px)', margin: '0 auto' }}>
+            <AvatarWand de={de} lang={lang} spalten={SPALTEN} zeilen={ZEILEN} />
+          </div>
           <div style={{ textAlign: 'center', marginTop: 16, fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 800, color: 'var(--qq-text-muted)' }}>
             {de ? `${COZYQUIZ_HEILE.length} Objekte × 8 Farben, frei kombinierbar` : `${COZYQUIZ_HEILE.length} objects × 8 colours, mix freely`}
           </div>
@@ -2329,12 +2336,20 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                       // genutzt (Wolf 2026-06-25 „nutzt den Platz nicht smart"),
                       // nur eben mit fester Kopfzeile statt gleichmaessiger
                       // Verteilung.
-                      // Erste Reihe: der Kopf, so hoch wie er ist. Alle
-                      // weiteren Reihen teilen sich den Rest zu gleichen
-                      // Teilen - das haelt auch die Folien in Form, die drei
-                      // oder vier Bloecke haben.
-                      display: 'grid', gridTemplateRows: 'auto',
-                      gridAutoRows: 'minmax(0, 1fr)', alignItems: 'center',
+                      // Drei Rollen, drei Reihen-Arten:
+                      //   1. Kopf     `auto`  - so hoch wie die Ueberschrift
+                      //   2. Koerper  `1fr`   - fuellt den Rest
+                      //   3. alles Weitere `auto` - Fussnoten, Unterzeilen
+                      //
+                      // ⚠️ Vorher stand hier `gridAutoRows: minmax(0, 1fr)` fuer
+                      // ALLE Folgereihen. Bei zwei Bloecken ist das harmlos, bei
+                      // DREI kippt es: gemessen an der Avatar-Folie bekam die
+                      // einzeilige Bildunterschrift dieselbe Hoehe wie die
+                      // Kachelwand darueber (413 px), und die Folie wurde 928 px
+                      // hoch statt 559. Der Kasten schneidet das ab, ohne dass
+                      // irgendwo etwas meldet.
+                      display: 'grid', gridTemplateRows: 'auto minmax(0, 1fr)',
+                      gridAutoRows: 'auto', alignItems: 'center',
                     },
                   })
                 : activePanel.node}

@@ -153,7 +153,30 @@ export function QQSetupFlow(props: Props) {
   const isLast = step === STEPS.length - 1;
 
   const setFormat = (ar: boolean) => {
-    if (arena === ar) return;
+    // 2026-08-27 (Wolf: „die prepage wird nicht immer durch ins cockpit
+    // getriggert ... erst nach reload erscheint es").
+    //
+    // Hier stand `if (arena === ar) return;` als erste Zeile, und damit ist der
+    // Normalfall stillschweigend durchgefallen: `arena` kommt aus
+    // `largeGroupMode` und ist auf einem frischen Raum FALSE. Wer CozyQuiz
+    // waehlt, waehlt `ar = false` - gleicher Wert, also Abbruch, kein Senden.
+    // `formatSelected` blieb false, und die Buehne blieb beim neutralen
+    // Welcome. Auch nach „Ins Cockpit", denn die Bedingung dort prueft
+    // `formatSelected === false` VOR dem Ankommen-Zweig. Wer CozyArena waehlte,
+    // hat den Fehler nie gesehen.
+    // Der Reload half, weil das Steuerpult beim Aufbau `qqLastFormat` aus dem
+    // Browser liest und dann von sich aus `formatSelected: true` sendet - es
+    // holt nach, was der Klick nicht getan hat.
+    //
+    // Die Abkuerzung war nicht sinnlos, sie verhindert Rueckfrage und
+    // Team-Reset bei gleichem Format. Sie hat nur zwei Dinge vermischt: „das
+    // Format ist ein ANDERES" und „es wurde ueberhaupt eins GEWAEHLT". Das
+    // zweite muss immer ankommen.
+    if (arena === ar) {
+      try { window.localStorage.setItem('qqLastFormat', ar ? 'arena' : 'quiz'); } catch { /* ignore */ }
+      emit('qq:setQuizOptions', { roomCode, formatSelected: true });
+      return;
+    }
     if (s.teams.length > 0 && !window.confirm('Format wechseln? Beigetretene Teams/Bots werden zurückgesetzt.')) return;
     try { window.localStorage.setItem('qqLastFormat', ar ? 'arena' : 'quiz'); } catch { /* ignore */ }
     emit('qq:setQuizOptions', { roomCode, largeGroupMode: ar, nestedTeams: ar, formatSelected: true });

@@ -85,8 +85,17 @@ const bau = (T) => ({
 const b = await buehneStarten({ bots: 8, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
 const seite = b.seite;
 
-await b.zurStation('pause');
-await sleep(1200);
+// ── Erst die Ankommen-Karten, dann die Pause ──────────────────────────────
+// ⚠️ Die vier Ankommen-Karten waren lange nicht gemessen („eigene Plakate"),
+// und genau dort ist es dann passiert: die Avatar-Folie war 928 px hoch, wo
+// der Kasten 559 zeigt. 369 px unsichtbar abgeschnitten, ohne Meldung. Was
+// nicht gemessen wird, faellt auf, wenn jemand hinsieht - und das war Wolf.
+await b.aufbauen('lobby');
+await sleep(800);
+await b.emit('qq:setQuizOptions', { formatSelected: true });
+await b.emit('qq:setSetupDone', { value: true });
+await b.emit('qq:setLobbyOpen', { value: false });
+await sleep(2000);
 
 // Der Harness-Socket ist ein Moderator-Socket und bekommt jeden Zustand mit.
 const namen = (b.helfer.zustand()?.teams ?? []).map(t => t.name);
@@ -126,29 +135,35 @@ const messen = () => {
     key: halter.getAttribute('data-qq-folie'),
     breite: Math.round(r.width), hoehe: Math.round(r.height),
     mitteX: Math.round(r.left + r.width / 2),
-    titelOben: tr ? Math.round(tr.top) : null,
+    // ⚠️ Abstand zur OBERKANTE DER FOLIE, nicht zum Fensterrand. Der erste
+    // Anlauf hat gegen das Fenster gemessen und die Ankommen-Karten deshalb um
+    // 43 px danebenliegen lassen - dort steht ueber der Karte noch der
+    // Marken-Schriftzug, die Karte selbst sitzt also tiefer. Das ist ein
+    // Unterschied zwischen den MODI, nicht zwischen den Folien.
+    titelOben: tr ? Math.round(tr.top - r.top) : null,
     titelGroesse: titel ? Math.round(parseFloat(getComputedStyle(titel).fontSize)) : null,
     rahmen,
   };
 };
 
 const gesehen = new Map();
-for (let i = 0; i < 120 && gesehen.size < 20; i++) {
-  const roh = await seite.evaluate(messen);
-  if (roh && roh.key && !gesehen.has(roh.key)) {
-    // ⚠️ Erst die Blende abwarten. `qqPanelContentFade` laeuft 0.7 s und
-    // beginnt bei Deckkraft 0 - ein Bild sofort nach dem Wechsel zeigt eine
-    // LEERE Buehne. Die Messwerte waeren zwar trotzdem richtig (Deckkraft
-    // aendert kein Layout), das Bild aber unbrauchbar, und beim ersten Anlauf
-    // sah es aus, als sei die Folie kaputt.
-    await sleep(900);
-    const m = await seite.evaluate(messen);
-    if (!m || m.key !== roh.key) continue;
-    gesehen.set(m.key, m);
-    if (BILDER) await seite.screenshot({ path: `${BILDER}/folie-${String(gesehen.size).padStart(2, '0')}-${m.key}.png` });
+async function sammeln(runden) {
+  for (let i = 0; i < runden; i++) {
+    const roh = await seite.evaluate(messen);
+    if (roh && roh.key && !gesehen.has(roh.key)) {
+      await sleep(900);
+      const m = await seite.evaluate(messen);
+      if (!m || m.key !== roh.key) continue;
+      gesehen.set(m.key, m);
+      if (BILDER) await seite.screenshot({ path: `${BILDER}/folie-${String(gesehen.size).padStart(2, '0')}-${m.key}.png` });
+    }
+    await sleep(700);
   }
-  await sleep(700);
 }
+await sammeln(52);          // Ankommen: vier Karten, zweisprachig also 64 s Umlauf
+await b.zurStation('pause');
+await sleep(1500);
+await sammeln(90);          // Pause: alles Uebrige
 
 const alle = [...gesehen.values()];
 console.log(`\n══ ${alle.length} Folien gesehen ═══════════════════════════════════════`);

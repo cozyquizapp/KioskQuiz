@@ -2078,6 +2078,15 @@ export function registerQQHandlers(io: SocketIOServer): void {
       try {
         const room = ensureQQRoom(payload.roomCode);
         room.setupDone = !!payload.value;
+        // 2026-08-27: Wizard durch heisst, ein Format wurde gewaehlt. Dieselbe
+        // Folgerung wie beim Spielstart (qqRooms.ts: „Spielstart impliziert
+        // Format-Wahl"). Grund ist Wolfs Fund „die prepage wird nicht immer
+        // durch ins cockpit getriggert": der eigentliche Fehler sass im Wizard
+        // und ist dort behoben, aber die Buehne hat bei `formatSelected: false`
+        // den neutralen Welcome gezeigt, OBWOHL der Moderator schon im Cockpit
+        // sass. Dieser Zustand ergibt nie ein richtiges Bild, egal wie er
+        // zustande kommt. Also hier zumachen, fuer alle Wege.
+        if (room.setupDone) room.formatSelected = true;
         broadcast(io, payload.roomCode);
         ok(ack);
       } catch (e) { fail(ack, e); }

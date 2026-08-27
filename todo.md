@@ -66,11 +66,18 @@
             heutige Stand ist abgenommen, gemeldet wird nur noch, was NEU
             dazukommt. Damit bleibt die Regel fuer den restlichen
             Motion-Durchgang scharf, ohne rueckwirkendes Aufraeumen.
-      - [ ] **B1 (Bogen-Wisch) + B5 (Marker statt Einfaerbung) an der
-            Aufloesung**, gegen den Ist-Zustand stellen. Laut
-            `MOTION_REFERENZEN.md` der erste Kandidat, wenn nichts dagegen
-            spricht: beide klein, an einer Stelle, die zwanzigmal am Abend
-            laeuft und heute hart schneidet.
+      - ✅ **B1 + B5 an der Aufloesung: Praemisse widerlegt, nicht gebaut.**
+            Im Plan stand „schneidet heute hart". Gemessen mit
+            `scripts/naht-frage-aufloesung.mjs` (Mitschrift je Bildaufbau)
+            stimmt das nicht mehr: im Moment der Umstellung laufen NEUN
+            Bewegungen (`revealFlash`, `muchoVoterDrop`, die Polster- und
+            Hoehenuebergaenge der Karte). Es schneidet nichts, es blendet ueber.
+            B5 (Marker statt Einfaerbung) waere eine Alternative zu etwas, das
+            Wolf am selben Tag ausdruecklich in Ordnung fand - also nicht
+            gebaut.
+            ⚠️ Die Messung hat dafuer einen echten Fehler gefunden, meinen
+            eigenen von heute Morgen: die Frage war bei jeder Aufloesung 140 ms
+            unsichtbar. Behoben.
       - [ ] **„Das Brett faellt"** (`55db717d`) liegt gebaut auf dem Zweig, wurde
             aber vorgezogen und ist nie abgenommen. Im Motion-Durchgang
             einreihen und beurteilen.

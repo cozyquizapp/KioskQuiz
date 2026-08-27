@@ -308,11 +308,25 @@
          **37 px** ueber der Kante. Nicht abgeschnitten, aber auf einem Beamer
          mit Ueberscan knapp. Das ist keine Einpass-Frage, sondern der eigene
          Abstand der Karte. Wenn es dir am Livebild auffaellt, sag Bescheid.
-      2. `qRevealFontSize` (die Zeichenzahl-Leiter vom Morgen des 26.8.) macht
-         jetzt dieselbe Arbeit schlechter als der Einpasser. Sie kann raus,
-         dann wird die Frage in der Aufloesung so gross, wie wirklich Platz ist.
-         Bewusst NICHT in diesem Durchgang: eine gepruefte Verbesserung ist mehr
-         wert als zwei, von denen eine ungeprueft ist.
+      2. ~~`qRevealFontSize` kann raus~~ - **ausprobiert und wieder verworfen
+         (2026-08-27).** Meine Begruendung („der Einpasser macht dieselbe Arbeit
+         besser") klang schluessig und war falsch. Gemessen mit
+         `node scripts/gewinnerkarte-unterkante.mjs`, fuenf Fragenlaengen:
+
+         ```
+                              mit Leiter     ohne Leiter
+           kleinste Reserve      98 px          67 px
+           kurze Frage (24 Z.)   85 px Schrift  64 px Schrift
+         ```
+
+         Beides schlechter. Der Grund: der Einpasser kennt als Sperre nur die
+         Teamleiste. Die Gewinnerkarte laeuft IM Fluss, sie ist keine Sperre und
+         kann auch keine sein - sie ist selbst das tiefste Kind, der Vergleich
+         ginge gegen sich selbst. Die Leiter schaetzt zwar aus der Zeichenzahl,
+         aber sie schaetzt das Richtige.
+         Wer es doch angehen will, muss zuerst dem Einpasser eine zweite Art
+         Sperre beibringen: „Abstand zur Unterkante der BUEHNE", nicht „Abstand
+         zu einem absolut gesetzten Element".
 
 ---
 
@@ -496,7 +510,20 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
       Fuer die erste Fehlerart liefert es weiter nur eine Kandidatenliste, das
       bleibt richtig so.
 
-- [ ] **Die uebrigen 47 einmal auf dem Blatt durchsehen.**
+- ✅ **Alle 48 auf dem Blatt durchgesehen** (2026-08-27, nach der Lieferung von
+      Gaensebluemchen und Wolke). Sechs Gruende, jeder einzeln angesehen:
+      kein heller Saum auf Schwarz, kein dunkler auf Weiss, kein Loch in einer
+      geschlossenen Flaeche, keine abgeschnittene Aussenkante. Die Loecher, die
+      es gibt, gehoeren zum Motiv (Schluesselbart, Donut, Henkel, Ringplanet).
+      Blaetter: `.shots/avatare-grund/`.
+
+      Eine Beobachtung ohne Fehlerwert, damit sie nicht zweimal auffaellt: die
+      cremeweissen Motive (Wolke, Kissen, Papierboot, Muschel, Gaensebluemchen)
+      stehen auf WEISS naturgemaess kontrastarm. Das ist kein Asset-Fehler, und
+      auf der Buehne kommt es nicht vor - dort sitzt jedes Motiv auf einer
+      gesaettigten Teamkachel.
+
+- [ ] **~~Die uebrigen 47 einmal auf dem Blatt durchsehen.~~** (erledigt, siehe oben)
       `node scripts/avatare-auf-grund.mjs` legt alle 48 auf Schwarz, Weiss,
       Orange, Gruen, Blau und Teamrot - genau die Kontrolle, die in den
       Asset-Regeln steht und fuer die es bis heute kein Werkzeug gab.

@@ -2290,7 +2290,31 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                     // (bQuestionIn) — Karte landet, Text schreibt sich danach ein
                     // statt gleichzeitig. Weichere Kurve. Versatz bewusst klein,
                     // damit Font-Snaps (hpCompact) nicht laggy wirken.
-                    animation: 'langFadeIn 0.45s var(--qq-ease-out-cubic) 0.16s both',
+                    // 2026-08-26: beim AUFLOESEN keine Einblendung.
+                    //
+                    // ⚠️ Das ist die Gegenmassnahme zu einer Nebenwirkung meiner
+                    // eigenen Aenderung von heute Morgen. Der Kasten traegt
+                    // `key={lang-cardFontSize}`, damit ein Groessenwechsel
+                    // atomar passiert statt die Buchstaben wandern zu lassen.
+                    // Seit die Aufloesung eine eigene, kleinere Leiter hat
+                    // (`qRevealFontSize`, damit die Gewinnerkarte unten Platz
+                    // hat), aendert sich die Groesse bei JEDER Aufloesung - der
+                    // Key wechselt, React haengt ein neues Element ein, und das
+                    // faengt seine Einblendung bei Deckkraft null an.
+                    //
+                    // Gemessen mit scripts/naht-frage-aufloesung.mjs, Mitschrift
+                    // je Bildaufbau: die Frage war von 181 bis 318 ms
+                    // unsichtbar. Rund 140 ms Blinken, zwanzigmal am Abend, an
+                    // einer Stelle, an der der Saal gerade hinschaut.
+                    //
+                    // Die Frage stand vorher schon da. Ein zweiter Auftritt ist
+                    // also ohnehin falsch: sie tritt nicht auf, sie wird nur
+                    // kleiner. Der Groessenwechsel selbst faellt in denselben
+                    // Moment wie `revealFlash` und die Bewegung der
+                    // Antwortkarten und geht darin unter.
+                    animation: revealed
+                      ? 'none'
+                      : 'langFadeIn 0.45s var(--qq-ease-out-cubic) 0.16s both',
                   }}>
                     {qText}
                   </div>

@@ -118,7 +118,30 @@ const messen = () => {
       gefuellt, bruecke,
     });
   }
-  return { anzahl: reihe.length, kachelBreite: reihe[0]?.breite ?? null, reihe, luecken };
+  // ── Und: sieht der CozyGame-Knoten aus wie eine Kategorie? ───────────────
+  // 2026-08-27 (Wolf: „das cozygame logo ist zu gross und nicht umrandet
+  // obwohl es teil der kategorien ist wenn aktiviert").
+  // Der Knoten traegt keine eigene Kennung, ist aber der einzige runde/eckige
+  // Kasten zwischen den Kacheln, der kein `data-qq-baum-punkt` hat und auf
+  // derselben Hoehe sitzt.
+  const kr = kacheln[0].getBoundingClientRect();
+  const kMitte = kr.top + kr.height / 2;
+  // ⚠️ Ueber die Kennung, nicht ueber Groesse und Lage. Der erste Anlauf hat
+  // „alle quadratischen Kaesten auf Kachelhoehe" genommen und dabei Huellen,
+  // Abstandhalter und den Bieten-Knoten mitgezaehlt - zehn Treffer fuer drei
+  // Knoten, und kein Wort darueber, welcher welcher ist.
+  const kandidaten = [...buehne.querySelectorAll('[data-qq-baum-knoten]')].map(d => {
+    const r = d.getBoundingClientRect();
+    const cs = getComputedStyle(d);
+    return {
+      art: d.getAttribute('data-qq-baum-knoten'),
+      breite: px(r.width),
+      rand: parseFloat(cs.borderTopWidth) > 0 && cs.borderTopStyle !== 'none'
+        && !/rgba\(0, 0, 0, 0\)|transparent/.test(cs.borderTopColor),
+    };
+  });
+
+  return { anzahl: reihe.length, kachelBreite: px(kr.width), reihe, luecken, kandidaten };
 };
 
 const b = await buehneStarten({
@@ -163,7 +186,23 @@ console.log('   ' + m.luecken.map(l =>
 const gefuellteGrenzen = m.luecken.filter(l => l.grenze && l.gefuellt).length;
 const gefuellteInnen = m.luecken.filter(l => !l.grenze && l.gefuellt).length;
 
+// ── Der CozyGame-Knoten neben den Kategorie-Kacheln ──────────────────────────
+// Der CozyGame gehoert zur Runde (Wolf 2026-08-24), er ist also eine Station wie
+// die anderen und muss aussehen wie eine. Bieten und Finale gehoeren zu KEINER
+// Runde, sie stehen bewusst frei - dort ist eine andere Groesse richtig.
+const cgKnoten = (m.kandidaten ?? []).filter(k => k.art === 'cozygame');
+const cgFremd = cgKnoten.filter(k => Math.abs(k.breite - m.kachelBreite) > 2 || !k.rand);
+console.log(`\n══ Knoten zwischen den Kacheln ═════════════════════════════════`);
+console.log(`  Kategorie-Kachel : ${m.kachelBreite} px, mit Rand`);
+if (!m.kandidaten?.length) console.log('  (keine Knoten mit Kennung gefunden)');
+for (const k of m.kandidaten ?? []) {
+  console.log(`  ${String(k.art).padEnd(16)} : ${k.breite} px, ${k.rand ? 'mit' : 'OHNE'} Rand`);
+}
+
 console.log('\n══ Urteil ══════════════════════════════════════════════════════');
+console.log(cgFremd.length === 0
+  ? `  ✓ Die ${cgKnoten.length} CozyGame-Knoten sehen aus wie eine Kategorie-Kachel.`
+  : `  ✗ ${cgFremd.length} von ${cgKnoten.length} CozyGame-Knoten weichen ab (Groesse oder Rand).`);
 if (faktor != null && faktor < 2) {
   console.log(`  ✗ Faktor ${faktor.toFixed(2)}: schon die Abstaende trennen nicht.`);
 } else {

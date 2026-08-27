@@ -392,7 +392,13 @@ export default function QQProgressTree({
   // zwischen zwei Runden. In der Einzelrunde steht er in EINER Reihe mit den
   // fuenf Kategorien - dort ist jede Abweichung eine Aussage, und die stimmt
   // nicht: das CozyGame ist nicht wichtiger als eine Kategorie.
-  const cozyGameDotSize = Math.round(dotSize * (isSingleRound ? 1 : 1.2));
+  // 2026-08-27 (Wolf: „das cozygame logo ist zu gross und nicht umrandet obwohl
+  // es teil der kategorien ist wenn aktiviert").
+  // Gemessen in der Rundenuebersicht: Kategorie-Kachel 48 px mit Rand, der
+  // CozyGame-Knoten 58 px ohne. Der Faktor 1.2 stand ohne Begruendung da. Wenn
+  // das Spiel zur Runde gehoert - und das ist Wolfs Entscheidung vom
+  // 2026-08-24 -, dann ist es eine Station wie die anderen und keine groessere.
+  const cozyGameDotSize = dotSize;
   let biddingCenter = 0;
   // Pro Phase-Übergang ein eigener CG-Center. Index = Phase-Index VOR dem CG.
   // Z.B. cozyGameCentersByPi[1] = CG zwischen Phase 0 und Phase 1 (= nach Runde 1).
@@ -1060,6 +1066,7 @@ export default function QQProgressTree({
                 position: 'relative', zIndex: 2,
               }}>
                 <div
+                  data-qq-baum-knoten="cozygame"
                   title={lang === 'de' ? 'CozyGame — analoges Mini-Spiel' : 'CozyGame — analog mini-game'}
                   style={{
                     width: cozyGameDotSize,
@@ -1070,16 +1077,22 @@ export default function QQProgressTree({
                     // Ohne Chrome (Einzelrunde, bare) stehen die Kategorien als
                     // blanke Zeichen da. Ein Kasten nur um das CozyGame waere
                     // genau das „steht weg", das wir gerade weggeraeumt haben.
+                    // ⚠️ 2026-08-27: hier stand `chromeless` (= bare ODER
+                    // Einzelrunde), bei den Kategorie-Kacheln daneben aber
+                    // `isSingleRound`. Zwei verschiedene Bedingungen fuer
+                    // dieselbe Entscheidung - und im Runden-Intro (bare) war
+                    // genau das der Unterschied: die Kacheln behielten ihren
+                    // Rahmen, das Rad verlor ihn. Jetzt dieselbe Bedingung.
                     background: isCozyGameActive
                       ? cozyGameColor
-                      : chromeless
+                      : isSingleRound
                         ? 'transparent'
                         : isCozyGamePast
                           ? (isThemed() ? 'var(--qq-card-bg)' : 'rgba(148,163,184,0.18)')
                           : (isThemed() ? 'var(--qq-card-bg)' : 'rgba(30,41,59,0.85)'),
-                    border: (isCozyGameActive && !chromeless)
+                    border: (isCozyGameActive && !isSingleRound)
                       ? '2.5px solid #fff'
-                      : (isCozyGamePast || chromeless)
+                      : (isCozyGamePast || isSingleRound)
                         ? 'none'
                         : (isThemed() ? '1.5px solid var(--qq-hairline)' : '1.5px solid rgba(148,163,184,0.35)'),
                     boxShadow: isCozyGameActive
@@ -1102,9 +1115,11 @@ export default function QQProgressTree({
                       waehlt das Spiel. Zeichen und Moment sagen damit dasselbe.
                       Der Fortschrittsbaum war die letzte Stelle mit dem Wolf. */}
                   {/* Ohne Kasten gilt fuer das Rad dieselbe Rechnung wie fuer
-                      die Kategorien darueber: das Zeichen IST die Kachel. Mit
-                      0.74 sass es sichtbar kleiner in derselben Reihe. */}
-                  <CozyGameIcon id="fx-wheel" emoji="🎡" size={Math.round(cozyGameDotSize * (chromeless ? 1 : 0.74))} />
+                      die Kategorien darueber: das Zeichen IST die Kachel.
+                      2026-08-27: und MIT Kasten gilt sie auch - dieselben
+                      Faktoren wie bei den Kategorie-Kacheln, damit das Rad in
+                      der Reihe nicht heraussticht. */}
+                  <CozyGameIcon id="fx-wheel" emoji="🎡" size={Math.round(cozyGameDotSize * (isSingleRound ? 1 : bigIcons ? 0.82 : 0.62))} />
                 </div>
               </div>
             ) : null;
@@ -1119,6 +1134,7 @@ export default function QQProgressTree({
                 position: 'relative', zIndex: 2,
               }}>
                 <div
+                  data-qq-baum-knoten="bieten"
                   title={lang === 'de' ? 'Bieten — Tipp auf anderes Team' : 'Bid — guess another team'}
                   style={{
                     width: biddingDotSize,

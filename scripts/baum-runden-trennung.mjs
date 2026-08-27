@@ -72,19 +72,50 @@ const messen = () => {
     // der Kachelmitte.
     const kr0 = kacheln[0].getBoundingClientRect();
     const mitteY = kr0.top + kr0.height / 2;
-    const gefuellt = [...buehne.querySelectorAll('div')].some(d => {
+    // ⚠️ Seit dem 2026-08-27 gibt es ZWEI Arten Strich: das Gleis innerhalb einer
+    // Runde und die schwache Bruecke darueber hinweg (Wolf: „jetzt sieht es
+    // nicht mehr wie ein tree aus"). Von aussen sind beide flache Kaesten.
+    // Ohne Kennung haette diese Pruefung die Bruecke als Gleis gezaehlt und
+    // gemeldet, die Rundengrenze traege wieder einen Strich - also genau das
+    // Gegenteil dessen, was gebaut wurde. Deshalb wird nach der Kennung gesucht.
+    const deckt = (d) => {
       const r = d.getBoundingClientRect();
-      if (r.height > 8 || r.height < 1 || r.width < 6) return false;          // nur flache Striche
+      // ⚠️ Untergrenze 0.4, nicht 1. Der Baum laeuft im Runden-Intro unter einem
+      // Zoom; eine 1-px-Bruecke misst sich dort als 0,7 px und faellt sonst
+      // durch. Genau so ist beim ersten Anlauf „nur 1 von 3 Bruecken" heraus-
+      // gekommen, obwohl alle drei da waren.
+      if (r.height > 8 || r.height < 0.4 || r.width < 6) return false;        // nur flache Striche
       if (r.top > mitteY || r.bottom < mitteY) return false;                  // auf Kachelhoehe
       const l = px(r.left - br.left), re = px(r.right - br.left);
       return l < mitteX + 2 && re > mitteX - 2;                               // deckt die Luecke
-    });
+    };
+    // ⚠️ Zwei Fragen, zwei Messpunkte, und das ist kein Versehen.
+    //
+    // Das GLEIS wird an der Mitte der Luecke geprueft: laeuft eine durchgehende
+    // Linie ueber die Rundengrenze? Genau dort waere sie am auffaelligsten.
+    //
+    // Die BRUECKE dagegen darf irgendwo in der Luecke liegen, und muss es sogar:
+    // seit der CozyGame-Knoten an seiner Runde haengt (2026-08-27), sitzt er
+    // links in der Luecke, und die Bruecke laeuft rechts von ihm zur naechsten
+    // Runde. Die Mitte der Luecke liegt dann AUF dem Knoten - dort ist weder
+    // Gleis noch Bruecke. Der erste Anlauf hat genau deshalb „nur 1 von 3
+    // Bruecken" gemeldet, obwohl alle drei im Bild stehen; die einzige, die er
+    // fand, war die an der breiteren Bieten-Grenze.
+    const inDerLuecke = (d) => {
+      const r = d.getBoundingClientRect();
+      if (r.height > 8 || r.height < 0.4 || r.width < 6) return false;
+      if (r.top > mitteY || r.bottom < mitteY) return false;
+      const l = px(r.left - br.left), re = px(r.right - br.left);
+      return re > links.rechts + 1 && l < rechts.links - 1;
+    };
+    const gefuellt = [...buehne.querySelectorAll('[data-qq-baum-gleis]')].some(deckt);
+    const bruecke = [...buehne.querySelectorAll('[data-qq-baum-bruecke]')].some(inDerLuecke);
     luecken.push({
       nach: i - 1,
       vonPhase: links.phase, zuPhase: rechts.phase,
       grenze: links.phase !== rechts.phase,
       luecke: rechts.links - links.rechts,
-      gefuellt,
+      gefuellt, bruecke,
     });
   }
   return { anzahl: reihe.length, kachelBreite: reihe[0]?.breite ?? null, reihe, luecken };
@@ -125,8 +156,9 @@ console.log(`  zwischen den Runden   : ${mittel(aussen)} px  (${aussen.length} S
 const faktor = mittel(innen) ? (mittel(aussen) / mittel(innen)) : null;
 console.log(`  Faktor                : ${faktor ? faktor.toFixed(2) : '?'}`);
 
-console.log('\n  Strich im Zwischenraum (▬ = ja, · = nein):');
-console.log('   ' + m.luecken.map(l => `${l.grenze ? '|' : ' '}  ${l.gefuellt ? '▬' : '·'}`).join(''));
+console.log('\n  Strich im Zwischenraum (▬ = Gleis, ┄ = Bruecke, · = nichts):');
+console.log('   ' + m.luecken.map(l =>
+  `${l.grenze ? '|' : ' '}  ${l.gefuellt ? '▬' : l.bruecke ? '┄' : '·'}`).join(''));
 
 const gefuellteGrenzen = m.luecken.filter(l => l.grenze && l.gefuellt).length;
 const gefuellteInnen = m.luecken.filter(l => !l.grenze && l.gefuellt).length;
@@ -142,7 +174,12 @@ if (gefuellteGrenzen) {
   console.log('    Und weil die Luecke dort am groessten ist, ist er dort am laengsten -');
   console.log('    die Stelle, die trennen soll, hat die auffaelligste Verbindung im Bild.');
 } else {
-  console.log(`  ✓ Keine der ${aussen.length} Rundengrenzen traegt einen Strich.`);
+  console.log(`  ✓ Keine der ${aussen.length} Rundengrenzen traegt ein GLEIS.`);
+  const mitBruecke = m.luecken.filter(l => l.grenze && l.bruecke).length;
+  console.log(mitBruecke === aussen.length
+    ? `  ✓ Alle ${aussen.length} tragen die schwache Bruecke - der Weg geht durch,`
+      + '\n    die Trennung bleibt, weil die Bruecke im Rang darunter liegt.'
+    : `  ⚠ Nur ${mitBruecke} von ${aussen.length} tragen die Bruecke.`);
   console.log(`    Innerhalb der Runden laeuft er weiter (${gefuellteInnen} von ${innen.length} Stellen),`);
   console.log('    das Gleis bindet also die Runde zusammen statt den Abend.');
 }

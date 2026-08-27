@@ -678,15 +678,42 @@ export default function QQProgressTree({
   // Jetzt laeuft das Gleis nur noch innerhalb einer Runde (und weiter zu ihrem
   // CozyGame, denn das gehoert zu ihr). Zwischen den Runden liegen 138 px
   // Nichts, und Nichts trennt.
+  //
+  // ── Und danach: die Bruecke (Wolf 2026-08-27) ─────────────────────────────
+  // „die striche zwischen den runden fehlen (ich weiss extra) aber jetzt sieht
+  // es nicht mehr wie ein tree aus, was denkst du?"
+  //
+  // Er hat den Kern getroffen. Eine Linie macht ZWEI Dinge auf einmal: sie sagt
+  // „das ist ein Weg" und sie sagt „die gehoeren zusammen". Ich habe sie an der
+  // Rundengrenze weggenommen, damit das Zweite stimmt, und dabei das Erste mit
+  // weggenommen.
+  //
+  // Der Ausweg ist nicht, sie zurueckzuholen, sondern sie im RANG zu senken.
+  // Ueber die Grenze laeuft jetzt eine schwaechere Linie: duenner, gepunktet,
+  // blasser. Damit ist der Weg wieder durchgehend, und die Gruppen bleiben
+  // lesbar, weil der Unterschied in der Staerke liegt statt im Vorhandensein.
+  //
+  // ⚠️ Die Bruecke wird NIE vom Fortschritt eingefaerbt. Der farbige Kanal ist
+  // der staerkste im Bild; wuerde er ueber die Grenze laufen, waere die Trennung
+  // wieder weg. Also: der starke, farbige Kanal gruppiert, der schwache, graue
+  // verbindet.
   const abschnitte: Array<{ von: number; bis: number }> = [];
+  const bruecken: Array<{ von: number; bis: number }> = [];
   for (let i = 0; i + 1 < stationen.length; i++) {
-    if (stationen[i].gruppe !== stationen[i + 1].gruppe) continue;
     const von = Math.max(trackStart, stationen[i].mitte + stationen[i].halb + LUFT);
     const bis = Math.min(trackEnd, stationen[i + 1].mitte - stationen[i + 1].halb - LUFT);
-    if (bis > von) abschnitte.push({ von, bis });
+    if (bis <= von) continue;
+    if (stationen[i].gruppe === stationen[i + 1].gruppe) abschnitte.push({ von, bis });
+    else bruecken.push({ von, bis });
   }
 
   const trackBg = variant === 'inline' ? 'rgba(148,163,184,0.28)' : 'rgba(148,163,184,0.35)';
+  // Die Bruecke traegt rund ein Drittel der Tinte des Gleises: blasser (0.30
+  // statt 0.35 bzw. 0.24 statt 0.28), duenner (2 statt 3) und nur zu 30 %
+  // gefuellt (3 px Strich, 7 px Luft). Drei Kanaele in dieselbe Richtung -
+  // damit liest sie sich als untergeordnet, nicht als zweite gleichwertige
+  // Linie.
+  const brueckeBg = variant === 'inline' ? 'rgba(148,163,184,0.24)' : 'rgba(148,163,184,0.30)';
   // 2026-05-09 (Wolf 'tree noch bunt'): Progress-Strich + Dots nutzen jetzt
   // Pink-Eskalation pro Phase (getRoundColor) statt Kategorie-Farben — bleibt
   // Brand-konsistent. Kategorien werden weiter durch Emojis erkannt (groß im
@@ -934,8 +961,24 @@ export default function QQProgressTree({
           height: Math.round(dotSize * 1.3), // Platz für Scale 1.15 + Glow
         }}>
           {/* Track: grau, in Abschnitten zwischen den Stationen (siehe oben) */}
+          {/* Die Bruecke ueber die Rundengrenze: duenner, gepunktet, blasser.
+              Ranghierarchie statt An/Aus - siehe die Begruendung bei
+              `bruecken`. Die Kennung braucht die Messung, sonst laesst sich
+              Gleis und Bruecke von aussen nicht auseinanderhalten. */}
+          {bruecken.map((a, i) => (
+            <div key={`bruecke-${i}`} data-qq-baum-bruecke="" style={{
+              position: 'absolute',
+              top: '50%',
+              left: a.von,
+              width: Math.max(0, a.bis - a.von),
+              height: isMini ? 1 : 2,
+              background: `repeating-linear-gradient(90deg, ${brueckeBg} 0 3px, transparent 3px 10px)`,
+              transform: 'translateY(-50%)',
+              zIndex: 0,
+            }} />
+          ))}
           {abschnitte.map((a, i) => (
-            <div key={`gleis-${i}`} style={{
+            <div key={`gleis-${i}`} data-qq-baum-gleis="" style={{
               position: 'absolute',
               top: '50%',
               left: a.von,

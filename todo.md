@@ -186,6 +186,34 @@
       Nachher: 0 von 3 Rundengrenzen mit Strich, 16 von 16 Stellen innerhalb.
       Bild: `.shots/BAUM-TRENNUNG.png`.
 
+- ✅ **Die Bruecke ueber die Rundengrenze** (2026-08-27, Wolf: „die striche
+      zwischen den runden fehlen (ich weiss extra) aber jetzt sieht es nicht mehr
+      wie ein tree aus, was denkst du?").
+
+      Er hat den Kern getroffen: eine Linie macht ZWEI Dinge auf einmal. Sie
+      sagt „das ist ein Weg" und sie sagt „die gehoeren zusammen". Ich hatte sie
+      an der Grenze weggenommen, damit das Zweite stimmt, und dabei das Erste
+      mit weggenommen.
+
+      Der Ausweg war nicht, sie zurueckzuholen, sondern sie im RANG zu senken:
+      duenner (2 statt 3 px), gepunktet (3 px Strich, 7 px Luft) und blasser
+      (0.30 statt 0.35). Drei Kanaele in dieselbe Richtung, zusammen rund ein
+      Drittel der Tinte.
+
+      ⚠️ Die Bruecke wird NIE vom Fortschritt eingefaerbt. Der farbige Kanal ist
+      der staerkste im Bild; liefe er ueber die Grenze, waere die Trennung wieder
+      weg. Der starke, farbige Kanal gruppiert, der schwache, graue verbindet.
+
+      Gemessen: 0 von 3 Grenzen mit Gleis, 3 von 3 mit Bruecke, 16 von 16
+      Stellen innerhalb der Runden mit Gleis.
+
+      ⚠️ Das Werkzeug brauchte dafuer zwei verschiedene Messpunkte, und der
+      erste Anlauf hat „nur 1 von 3 Bruecken" gemeldet, obwohl alle drei im Bild
+      standen. Grund: seit der CozyGame-Knoten an seiner Runde haengt, sitzt er
+      links in der Luecke, und die Mitte der Luecke liegt AUF ihm. Das Gleis
+      wird weiter an der Mitte geprueft (dort waere ein durchgehender Strich am
+      auffaelligsten), die Bruecke irgendwo in der Luecke.
+
 - [ ] **Zwei weitere Hebel, beide sind Wolfs eigene Entscheidungen.**
       Deshalb nicht angefasst, sondern zur Wahl gestellt:
       1. **Beschriftung unter den Gruppen.** Im Runden-Intro laeuft der Baum als

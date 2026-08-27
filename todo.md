@@ -56,26 +56,53 @@
 
 ---
 
-## 🚪 LOBBY: das zweite Gesicht (Wolf 2026-08-26)
+## 🚪 ANKOMMEN: der QR wird freigeschaltet (Wolf 2026-08-26)
 
-- [ ] **Die Folie „Gleich geht's los" taucht im echten Ablauf nie auf.**
-      Wolf: „diese page taucht realistisch nie auf, sie ist zwischen lobby und
-      es wird vorbereitet? ... denke ich an ein event, waere diese page gut zum
-      ankommen etc, das einlogen nach begruessung etc?"
-      Der Moment, den er beschreibt, existiert wirklich und hat heute keinen
-      Bildschirm: Leute kommen an, bestellen, setzen sich. Er braucht dabei
-      ZWEI Dinge gleichzeitig - „wie komme ich rein" (QR, Teamliste) und „was
-      passiert hier gleich" (das Regelkarussell). Die Lobby kann das Erste,
-      diese Folie das Zweite, und beide stehen sich im Weg.
-      **Vorschlag: kein neuer Schritt im Ablauf, sondern ein zweites Gesicht
-      der Lobby.** Solange die Lobby offen ist, wechselt der Beamer zwischen
-      Beitrittsbild und Karussell. Der Inhalt wird endlich gesehen, der
-      Ankommens-Moment ist bespielt, und es kostet keinen zusaetzlichen
-      Tastendruck.
-      ⚠️ Das Letzte ist der Punkt: ein Schritt mehr im Ablauf kostet Wolf einen
-      Tastendruck im hektischsten Moment des Abends. Am 2026-08-26 haben wir
-      aus genau diesem Grund einen leeren Beat aus dem Finale geworfen. Ein
-      Schritt muss sich verdienen.
+Die Folie „Gleich geht's los" taucht im echten Ablauf nie auf. Wolf: „diese
+page taucht realistisch nie auf ... denke ich an ein event, waere diese page
+gut zum ankommen etc, das einlogen nach begruessung etc?"
+
+Der Moment existiert wirklich und hat heute keinen Bildschirm: Leute kommen an,
+bestellen, setzen sich.
+
+- [ ] **Drei Zustaende statt zwei, der QR ist der Schalter.**
+
+      ```
+      Ankommen        Karussell, volle Breite. Kein QR.
+      Lobby oeffnen   QR und Teamliste, volle Breite. Kein Karussell.
+      Spielstart      wie heute.
+      ```
+
+      ⚠️ Der Weg dorthin ging ueber zwei verworfene Entwuerfe, und beide
+      Gruende gehoeren hierher:
+
+      1. Mein erster Vorschlag war ein Wechsel zwischen Beitrittsbild und
+         Karussell auf EINER Ansicht, mit dem QR in einer festen Spalte.
+         Wolfs Einwand: „aber dann wird es ziemlich voll auf der view?" Er hat
+         recht. Die Buehne ist 1760 breit, das Karussell ist fuer die volle
+         Breite gebaut, und eine Spalte abzuzwacken macht beides schlechter.
+      2. Mein Einwand gegen einen zusaetzlichen Schritt war „das kostet einen
+         Tastendruck im hektischsten Moment". Zurueckgenommen: das gilt fuers
+         Finale, wo eine Taste mitten in eine Choreographie faellt. Hier liegt
+         der Druck VOR der Begruessung, wenn Wolf ohnehin steht und redet.
+
+      Der Schritt verdient sich sogar doppelt: ein QR, der auf Stichwort
+      erscheint, ist ein Moment. Einmal „Handys raus", alle scannen zugleich,
+      statt ein Rinnsal ueber zwanzig Minuten.
+
+- ✅ **Nachzuegler sind geklaert** (2026-08-26). Die Sorge war, ob „Lobby
+      oeffnen" ein Einbahnschritt sein darf. Sie ist gegenstandslos: das
+      Steuerpult hat den Beitritts-QR dauerhaft als Popover im Kopf
+      (`QQModeratorPage.tsx:124`, „QR neben Beamer, immer sichtbar", seit
+      2026-07-08) UND einen Schalter, der den Beitritts-Link auf der Buehne
+      einblendet (Zeile 2013). Der Rueckweg existiert also und liegt dort, wo
+      er hingehoert: beim Moderator, nicht auf der Leinwand.
+
+- [ ] **Beim Bauen beachten: eine Folie nur zeigen, wenn sie heute Inhalt hat.**
+      Die Bestenliste meldet „46 Spiele" und Stammteams mit elf Siegen. In der
+      Stammkneipe grossartig, bei einem Firmenevent, wo niemand je gespielt
+      hat, leer oder verwirrend. Sonst rotiert das Karussell an manchen Abenden
+      durch drei leere Bilder, und das faellt mehr auf als eine kurze Schleife.
 
 ---
 

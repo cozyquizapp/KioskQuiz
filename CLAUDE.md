@@ -34,6 +34,16 @@ Push auf `main` deployt **nur das Frontend** automatisch (Vercel).
 > Step-Anzeige „Buehne <kennung> · Server <kennung>". Meldet der Server keine
 > Kennung, ist er aelter als dieser Stand. Dasselbe steht in `/api/health`
 > als Feld `build`.
+>
+> 2026-08-27, Wolf: „coolify hat automatisch deployt, button ist schon da".
+> Beim `lobbyOpen`-Feld kam der Redeploy also von selbst. Diese Warnung bleibt
+> trotzdem stehen: sie hat einmal einen halben Tag gekostet, und ein Lauf, der
+> gut ging, beweist nicht, dass der naechste es auch tut. Was der Fall aber
+> zeigt, ist die beste Art zu pruefen: **ein neues Feld sichtbar machen**. Der
+> Knopf „Lobby oeffnen" rendert nur, wenn der Server `lobbyOpen: false`
+> schickt; bei einem alten Server ist das Feld undefined und der Knopf fehlt.
+> Wer ein Feld hinzufuegt und es an EINER Stelle sichtbar macht, hat damit
+> gratis eine Anzeige fuer den Deploy-Stand.
 
 ## Lokal starten
 

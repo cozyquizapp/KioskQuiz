@@ -341,6 +341,133 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   }, [largeGroup]);
 
   // Build rotating panels
+  // ⚠️ Diese Helfer stehen ABSICHTLICH vor der ersten Folie. `const` wird
+  // nicht hochgezogen, also kann eine Folie nur benutzen, was ueber ihr
+  // steht - und seit dem 2026-08-27 benutzen sie ALLE dieselben.
+  // ── Ein Kasten fuer alles ────────────────────────────────────────────────
+  // 2026-08-27, Wolf an zwei Bildern (Rekorde, Schnellste Minute):
+  //   „die infos haben kaesten, die teamavatare kacheln, kategorie meister hat
+  //    kaesten, aber andere zwischen pages nicht"
+  //
+  // Genau so war es, und zwar gemessen: von dreizehn Statistik-Folien setzten
+  // ZWEI ihren Inhalt in einen getoenten Kasten (Kategorie-Meister, Perfekte
+  // Runden), die uebrigen elf liessen ihn frei im Dunkeln stehen. Bei acht
+  // Sekunden je Folie sieht man den Wechsel der BAUFORM staerker als den
+  // Wechsel des Inhalts - deshalb wirkten sie „nicht gleich (gut)".
+  //
+  // Das hier ist KEINE neue Form. Es ist die Kategorie-Meister-Zeile, die Wolf
+  // selbst als die richtige benannt hat, einmal ausgelagert und danach ueberall
+  // benutzt. Das Design bleibt eingefroren, es verteilt sich nur.
+  //
+  // ⚠️ `color-mix` statt `${accent}12`. Die Akzente sind teils Hex und teils
+  // `var(--qq-accent)`; die Zeichenkettenrechnung ergab bei den Variablen
+  // stillschweigend Unsinn („var(--qq-accent)12"), also gar keinen Grund. Genau
+  // deshalb stand das Fragezeichen auf dem „Schnellste Minute"-Bild ohne Kachel
+  // da, waehrend es auf dem Rekorde-Bild eine hatte.
+  const statKasten = (
+    inhalt: React.ReactNode,
+    accent: string = QQ_COLORS.brandPink,
+    opts?: { weit?: boolean; mitte?: boolean; k?: React.Key },
+  ) => {
+    const mono = isQuietMotion();
+    return (
+      <div key={opts?.k} style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: opts?.mitte ? 'center' : undefined,
+        gap: opts?.weit ? 22 : 14,
+        // Die Karte setzt `textAlign: center` fuer alle Folien. In einer
+        // linksbuendigen Zeile heisst das: das Zeichen sitzt links, der Text
+        // daneben schwebt in der Mitte seiner Restbreite. Auf einem 1465 px
+        // breiten Kasten sieht das aus wie ein Fehler, und es war einer.
+        textAlign: opts?.mitte ? 'center' : 'left',
+        padding: opts?.weit ? '18px 26px' : '12px 18px',
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+        background: mono ? 'var(--qq-card-bg)' : `color-mix(in oklab, ${accent} 12%, transparent)`,
+        border: mono ? '2px solid var(--qq-card-text)' : `1.5px solid color-mix(in oklab, ${accent} 42%, transparent)`,
+        boxShadow: mono ? '4px 4px 0 var(--qq-card-text)' : undefined,
+      }}>{inhalt}</div>
+    );
+  };
+
+  // Wert-Band: die Zeile mit der Kennzahl, in derselben Form wie die
+  // Team-Zeile darueber. Vorher stand sie frei unter dem Kasten - drei
+  // Baender je Folie, aber nur zwei davon mit Form. Die Pille INNEN bleibt;
+  // Kasten mit Pille darin ist genau das, was Kategorie-Meister seit jeher
+  // macht.
+  const statWertBand = (accent: string, kinder: React.ReactNode) => statKasten(
+    <span style={{ display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>{kinder}</span>,
+    accent, { mitte: true },
+  );
+
+  // Kasten-Stapel: der Rahmen, in dem eine Folie ihre Kaesten untereinander
+  // setzt. Damit haben auch die Abstaende zwischen den Kaesten ueberall
+  // denselben Wert.
+  const statStapel = (kinder: React.ReactNode, eng = false) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: eng ? 10 : 14 }}>{kinder}</div>
+  );
+
+  // Ersatzfarbe fuer Teams ohne eigene. Vorher stand hier `var(--qq-accent)`,
+  // und das war der Grund fuer das nackte Fragezeichen auf Wolfs „Schnellste
+  // Minute"-Bild: die Kachel rechnet mit der Farbe, eine CSS-Variable liess
+  // sich nicht verrechnen, und uebrig blieb die Glyphe ohne Flaeche. Jetzt aus
+  // dem Namen gezogen, damit dasselbe Team immer dieselbe Kachel bekommt.
+  const farbeAusName = (name: string) => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    return QQ_TEAM_PALETTE[h % QQ_TEAM_PALETTE.length];
+  };
+  // ── Style-Helpers für die neuen Stat-Panels ──────────────────────────────
+  // 2026-05-07 (Wolf 'mach die Schrift in den Lobby-Slides gerne teilweise
+  // groesser, die Textfelder wirken etwas verloren in dem riesen Kasten'):
+  // Title 36→52, Pill-Wert 30→44, Pill-Label 17→22.
+  // 2026-08-22: `icon` nimmt jetzt auch ein fertiges Element. Grund ist der
+  // Joker: der hat seit 2026-06-28 einen eigenen Marken-Asset (pinker CozyWolf
+  // im Narrenkostuem, JokerIcon), und die Regel-Karte weiter oben nutzt ihn
+  // laengst. Nur die Joker-Koenig-Statistik hing noch am 🃏, das durch den
+  // Emoji-Mapper faellt und als OS-Glyphe erschien. Jetzt ueberall derselbe
+  // Joker.
+  const statTitle = (icon: string | React.ReactNode, titleDe: string, titleEn: string, accentColor?: string, zusatz?: React.ReactNode) => {
+    // Mono: editorial — schwarzer Titel (kein Akzent-Farb-Leak), uppercase.
+    const mono = isQuietMotion();
+    return (
+    <div style={{
+      fontSize: mono ? 'clamp(34px, 3.8cqw, 56px)' : 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900,
+      color: mono ? 'var(--qq-card-text)' : (accentColor ?? 'var(--qq-card-text)'),
+      marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
+      textTransform: mono ? 'uppercase' : undefined,
+      letterSpacing: mono ? '-0.01em' : undefined,
+    }}>
+      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>
+        {typeof icon === 'string' ? <QQEmojiIcon emoji={icon}/> : icon}
+      </span>
+      {de ? titleDe : titleEn}
+      {zusatz}
+    </div>
+    );
+  };
+
+  // Stat-Pille. Cozy: warmer Dark-Card-bg + Akzent-Border. Skin (Mono etc.):
+  // eckiger Hard-Shadow-Chip mit schwarzem Wert (kein Cyan/Pink-Leak, lesbar
+  // auf hellem BG) — passt zum Editorial-Look der Bestenliste.
+  const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => {
+    const themed = isQuietMotion(); // Editorial-Chip NUR in Mono; Cozy/SoftPop/Neo = Original
+    return (
+    <span style={{
+      display: 'inline-flex', alignItems: 'center', gap: 12,
+      padding: '12px 24px',
+      borderRadius: themed ? 'var(--qq-card-radius)' : 'var(--qq-pill-radius)',
+      background: themed ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, #241a10, #1a120a)',
+      border: themed ? '2px solid var(--qq-card-text)' : `1.5px solid ${accent}55`,
+      color: 'var(--qq-card-text)',
+      fontSize: 'clamp(22px, 2.4cqw, 32px)', fontWeight: 900,
+      boxShadow: themed ? '4px 4px 0 var(--qq-card-text)' : `0 0 18px ${accent}22, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
+    }}>
+      <span style={{ color: themed ? 'var(--qq-card-text)' : accent, fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1 }}>{value}</span>
+      <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
+    </span>
+    );
+  };
+
   const panels: Array<{ key: string; node: React.ReactNode }> = [];
   // 2026-08-27 hierher vorgezogen: die Ankommen-Karte „Schon da" braucht die
   // Teams schon im preGame-Block, und der laeuft weiter oben als die
@@ -418,10 +545,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // der Text: die vier Erklaerungen wurden am 2026-05-06 auf Wolfs Ansage
       // hin inhaltlich richtiggestellt, die fasse ich nicht an.
       <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
-        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="📖" size="1em" /></span>
-          {de ? 'Wie funktioniert’s?' : 'How it works'}
-        </div>
+        {statTitle('📖', 'Wie funktioniert’s?', 'How it works')}
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
@@ -645,10 +769,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (largeGroup) {
       panels.push({ key: 'megaFactions', node: (
         <div style={{ width: 'min(100%, 1040px)', margin: '0 auto' }}>
-          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🛡️"/></span>
-            {de ? 'Die Fraktionen' : 'The Factions'}
-          </div>
+          {statTitle('🛡️', 'Die Fraktionen', 'The Factions')}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
             {QQ_MEGA_FACTIONS.map((f, i) => {
               const count = s.teams.filter(t => t.avatarId === f.avatarId).length;
@@ -692,10 +813,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const questionInPhase = (s.questionIndex % 5) + 1;
     panels.push({ key: 'progress', node: (
       <div>
-        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
-          {de ? 'Wo sind wir?' : 'Where are we?'}
-        </div>
+        {/* // 2026-08-27, zweiter Durchgang. Wolf: „manche sind eher hochkant manche mit
+      // rahmen etc, wirkt nicht wie eins, das hat der kasten damals gemacht, aber
+      // den will ich nicht zurueck". Gemessen war die Breite in Ordnung (Spanne
+      // 15 px), die UEBERSCHRIFT nicht: vier verschiedene Groessen und eine
+      // Oberkante, die um 98 px wanderte. Jetzt derselbe Titel wie ueberall. */}
+        {statTitle('🗺️', 'Wo sind wir?', 'Where are we?')}
         <div style={{
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 18,
         }}>
@@ -777,10 +900,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // Grid + Spalte(n) als Block horizontal mittig.
     if (!largeGroup) panels.push({ key: 'currentGrid', node: (
       <div>
-        <div style={{ fontSize: 'clamp(28px, 3.2cqw, 42px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗺️"/></span>
-          {de ? 'Aktuelles Brett' : 'Current Board'}
-        </div>
+        {statTitle('🗺️', 'Aktuelles Brett', 'Current Board')}
         {(() => {
           const sortedByCells = [...s.teams].sort((a, b) => b.totalCells - a.totalCells);
           const renderPill = (t: typeof sortedByCells[number], kompakt = false) => (
@@ -933,9 +1053,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       : (twoCol ? 'clamp(12px, 1.3cqw, 16px)' : 'clamp(14px, 1.6cqw, 20px)');
     panels.push({ key: 'standings', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="📊"/></span> {de ? 'Aktueller Stand' : 'Current Standings'}
-        </div>
+        {statTitle('📊', 'Aktueller Stand', 'Current Standings')}
         <div style={{
           display: 'grid',
           gridTemplateColumns: twoCol ? '1fr 1fr' : '1fr',
@@ -1045,19 +1163,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const maxWins = Math.max(...realLeaderboard.slice(0, 5).map(e => e.wins));
     panels.push({ key: 'leaderboard', node: (
       <div>
-        <div style={{
-          fontSize: isQuietMotion() ? 'clamp(30px, 3.6cqw, 50px)' : 'clamp(24px, 2.8cqw, 36px)',
-          fontWeight: 900, color: 'var(--qq-card-text)',
-          marginBottom: isQuietMotion() ? 'clamp(14px,1.8cqh,24px)' : 20,
-          display: 'flex', alignItems: 'center', gap: 14,
-          textTransform: isQuietMotion() ? 'uppercase' : undefined,
-          letterSpacing: isQuietMotion() ? '-0.01em' : undefined,
-          borderBottom: isQuietMotion() ? '3px solid var(--qq-card-text)' : undefined,
-          paddingBottom: isQuietMotion() ? 'clamp(10px,1.2cqh,16px)' : undefined,
-        }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏆"/></span> {de ? 'Bestenliste' : 'Leaderboard'}
-          {totalGames > 0 && <span style={{ fontSize: isQuietMotion() ? 'clamp(15px, 1.7cqw, 22px)' : 'clamp(16px, 1.8cqw, 22px)', fontWeight: isQuietMotion() ? 900 : 700, color: 'var(--qq-text-muted)', letterSpacing: isQuietMotion() ? '0.08em' : undefined, marginLeft: isQuietMotion() ? 'auto' : undefined }}>({de ? qqPlural(totalGames, 'Spiel', 'Spiele') : qqPlural(totalGames, 'game', 'games')})</span>}
-        </div>
+        {/* 2026-08-27: auch dieser Titel laeuft jetzt durch `statTitle`. Der
+            eigene Unterstrich im Mono-Skin faellt damit weg - er war der
+            einzige im ganzen Umlauf, und genau solche Einzelstuecke meint
+            Wolf mit „wirkt nicht wie eins". Die Klammer mit der Spielzahl
+            bleibt, als Zusatz. */}
+        {statTitle('🏆', 'Bestenliste', 'Leaderboard', undefined,
+          totalGames > 0 ? (
+            <span style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', fontWeight: 700, color: 'var(--qq-text-muted)' }}>
+              ({de ? qqPlural(totalGames, 'Spiel', 'Spiele') : qqPlural(totalGames, 'game', 'games')})
+            </span>
+          ) : undefined)}
         {realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
           const teamColor = sessionTeam?.color ?? (i === 0 ? 'var(--qq-accent)' : i === 1 ? 'var(--qq-text-muted)' : i === 2 ? '#F97316' : 'var(--qq-text-muted)');
@@ -1202,9 +1318,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Lookup-Helper sucht erst in Session-Teams, dann in Leaderboard-Cache.
   // Damit zeigen sich Avatare auch fuer historische Teams die gerade nicht
   // in der aktuellen Session sind.
-  const findTeamMeta = (name: string): { avatarId?: string | null; color?: string } => {
+  // 2026-08-27: `emoji` kommt dazu. Der Team-Slug liegt seit dem Avatarsatz V5
+  // in genau diesem freien Feld, und `QQTeamAvatar` nimmt ihn als `teamEmoji`.
+  // Kategorie-Meister und Perfekte Runden haben ihn immer mitgegeben, die
+  // Rekord- und Team-Zeilen NICHT - deshalb stand dort die Ersatzkachel, obwohl
+  // das Team ein Motiv hat. Genau das war auf Wolfs Rekorde-Bild zu sehen: ein
+  // Team mit Avatar, zwei mit Fragezeichen, alle drei in derselben Zeile.
+  const findTeamMeta = (name: string): { avatarId?: string | null; color?: string; emoji?: string } => {
     const session = s.teams.find(t => t.name === name);
-    if (session) return { avatarId: session.avatarId, color: session.color };
+    if (session) return { avatarId: session.avatarId, color: session.color, emoji: session.emoji };
     const leader = leaderboard.find(e => e.name === name);
     if (leader?.avatarId) return { avatarId: leader.avatarId };
     return {};
@@ -1251,63 +1373,6 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       }}>?</div>
     );
   };
-  // ── Ein Kasten fuer alles ────────────────────────────────────────────────
-  // 2026-08-27, Wolf an zwei Bildern (Rekorde, Schnellste Minute):
-  //   „die infos haben kaesten, die teamavatare kacheln, kategorie meister hat
-  //    kaesten, aber andere zwischen pages nicht"
-  //
-  // Genau so war es, und zwar gemessen: von dreizehn Statistik-Folien setzten
-  // ZWEI ihren Inhalt in einen getoenten Kasten (Kategorie-Meister, Perfekte
-  // Runden), die uebrigen elf liessen ihn frei im Dunkeln stehen. Bei acht
-  // Sekunden je Folie sieht man den Wechsel der BAUFORM staerker als den
-  // Wechsel des Inhalts - deshalb wirkten sie „nicht gleich (gut)".
-  //
-  // Das hier ist KEINE neue Form. Es ist die Kategorie-Meister-Zeile, die Wolf
-  // selbst als die richtige benannt hat, einmal ausgelagert und danach ueberall
-  // benutzt. Das Design bleibt eingefroren, es verteilt sich nur.
-  //
-  // ⚠️ `color-mix` statt `${accent}12`. Die Akzente sind teils Hex und teils
-  // `var(--qq-accent)`; die Zeichenkettenrechnung ergab bei den Variablen
-  // stillschweigend Unsinn („var(--qq-accent)12"), also gar keinen Grund. Genau
-  // deshalb stand das Fragezeichen auf dem „Schnellste Minute"-Bild ohne Kachel
-  // da, waehrend es auf dem Rekorde-Bild eine hatte.
-  const statKasten = (
-    inhalt: React.ReactNode,
-    accent: string = QQ_COLORS.brandPink,
-    opts?: { weit?: boolean; mitte?: boolean; k?: React.Key },
-  ) => {
-    const mono = isQuietMotion();
-    return (
-      <div key={opts?.k} style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: opts?.mitte ? 'center' : undefined,
-        gap: opts?.weit ? 22 : 14,
-        padding: opts?.weit ? '18px 26px' : '12px 18px',
-        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-        background: mono ? 'var(--qq-card-bg)' : `color-mix(in oklab, ${accent} 12%, transparent)`,
-        border: mono ? '2px solid var(--qq-card-text)' : `1.5px solid color-mix(in oklab, ${accent} 42%, transparent)`,
-        boxShadow: mono ? '4px 4px 0 var(--qq-card-text)' : undefined,
-      }}>{inhalt}</div>
-    );
-  };
-
-  // Kasten-Stapel: der Rahmen, in dem eine Folie ihre Kaesten untereinander
-  // setzt. Damit haben auch die Abstaende zwischen den Kaesten ueberall
-  // denselben Wert.
-  const statStapel = (kinder: React.ReactNode, eng = false) => (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: eng ? 10 : 14 }}>{kinder}</div>
-  );
-
-  // Ersatzfarbe fuer Teams ohne eigene. Vorher stand hier `var(--qq-accent)`,
-  // und das war der Grund fuer das nackte Fragezeichen auf Wolfs „Schnellste
-  // Minute"-Bild: die Kachel rechnet mit der Farbe, eine CSS-Variable liess
-  // sich nicht verrechnen, und uebrig blieb die Glyphe ohne Flaeche. Jetzt aus
-  // dem Namen gezogen, damit dasselbe Team immer dieselbe Kachel bekommt.
-  const farbeAusName = (name: string) => {
-    let h = 0;
-    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
-    return QQ_TEAM_PALETTE[h % QQ_TEAM_PALETTE.length];
-  };
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
     const c = color ?? meta.color ?? farbeAusName(name);
@@ -1319,8 +1384,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     // Kategorie-Meister-Zeile.
     return statKasten(
       <>
-        {av
-          ? <QQTeamAvatar avatarId={av} size={'clamp(64px, 7cqw, 100px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 28px ${c}55` }} />
+        {(av || meta.emoji)
+          ? <QQTeamAvatar avatarId={av ?? ''} teamEmoji={meta.emoji} size={'clamp(64px, 7cqw, 100px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 28px ${c}55` }} />
           : fallbackAvatarCircle('clamp(64px, 7cqw, 100px)', c)}
         <span style={{ fontWeight: 900, fontSize: 'clamp(36px, 4.2cqw, 64px)', color: mono ? 'var(--qq-card-text)' : c, textShadow: mono ? 'none' : `0 0 22px ${c}44` }}>{name}</span>
       </>,
@@ -1334,8 +1399,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const mono = isQuietMotion();
     return (
       <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, verticalAlign: 'middle' }}>
-        {meta.avatarId
-          ? <QQTeamAvatar avatarId={meta.avatarId} size={'clamp(28px, 2.8cqw, 36px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 10px ${c}55` }} />
+        {(meta.avatarId || meta.emoji)
+          ? <QQTeamAvatar avatarId={meta.avatarId ?? ''} teamEmoji={meta.emoji} size={'clamp(28px, 2.8cqw, 36px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 10px ${c}55` }} />
           : fallbackAvatarCircle('clamp(28px, 2.8cqw, 36px)', c)}
         <strong style={{ color: mono ? 'var(--qq-card-text)' : c }}>{name}</strong>
       </span>
@@ -1374,15 +1439,20 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     if (records.length > 0) {
       panels.push({ key: 'records', node: (
         <div>
-          <div style={{ fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, textTransform: isQuietMotion() ? 'uppercase' : undefined, letterSpacing: isQuietMotion() ? '-0.01em' : undefined }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏅"/></span> {de ? 'Rekorde' : 'Records'}
-          </div>
+          {statTitle('🏅', 'Rekorde', 'Records')}
           {statStapel(records.map(r => statKasten(
             <>
-              <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)', flexShrink: 0 }}><QQEmojiIcon emoji={r.zeichen}/></span>
+              {/* 2026-08-27, zweiter Durchgang: dieselbe Zeilen-Typografie wie
+                  bei Kategorie-Meister und Perfekten Runden. Vorher war die
+                  Rekord-Zeile fast doppelt so gross wie jede andere Zeile im
+                  Umlauf, und die Folie damit 680 px hoch, wo alle anderen 559
+                  belegen. Der Kasten ist aber nur 660 hoch und schneidet ab -
+                  die vierte Rekord-Zeile war schlicht nicht zu sehen. Das ist
+                  auch das „hochkant", das Wolf gemeldet hat. */}
+              <span style={{ fontSize: 'clamp(30px, 3.2cqw, 44px)', flexShrink: 0 }}><QQEmojiIcon emoji={r.zeichen}/></span>
               <div style={{ minWidth: 0 }}>
-                <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{r.titel}</div>
-                <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-card-text)' }}>{r.titel}</div>
+                <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
                   {r.wert}
                 </div>
               </div>
@@ -1393,57 +1463,6 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       )});
     }
   }
-
-  // ── Style-Helpers für die neuen Stat-Panels ──────────────────────────────
-  // 2026-05-07 (Wolf 'mach die Schrift in den Lobby-Slides gerne teilweise
-  // groesser, die Textfelder wirken etwas verloren in dem riesen Kasten'):
-  // Title 36→52, Pill-Wert 30→44, Pill-Label 17→22.
-  // 2026-08-22: `icon` nimmt jetzt auch ein fertiges Element. Grund ist der
-  // Joker: der hat seit 2026-06-28 einen eigenen Marken-Asset (pinker CozyWolf
-  // im Narrenkostuem, JokerIcon), und die Regel-Karte weiter oben nutzt ihn
-  // laengst. Nur die Joker-Koenig-Statistik hing noch am 🃏, das durch den
-  // Emoji-Mapper faellt und als OS-Glyphe erschien. Jetzt ueberall derselbe
-  // Joker.
-  const statTitle = (icon: string | React.ReactNode, titleDe: string, titleEn: string, accentColor?: string) => {
-    // Mono: editorial — schwarzer Titel (kein Akzent-Farb-Leak), uppercase.
-    const mono = isQuietMotion();
-    return (
-    <div style={{
-      fontSize: mono ? 'clamp(34px, 3.8cqw, 56px)' : 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900,
-      color: mono ? 'var(--qq-card-text)' : (accentColor ?? 'var(--qq-card-text)'),
-      marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18,
-      textTransform: mono ? 'uppercase' : undefined,
-      letterSpacing: mono ? '-0.01em' : undefined,
-    }}>
-      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>
-        {typeof icon === 'string' ? <QQEmojiIcon emoji={icon}/> : icon}
-      </span>
-      {de ? titleDe : titleEn}
-    </div>
-    );
-  };
-
-  // Stat-Pille. Cozy: warmer Dark-Card-bg + Akzent-Border. Skin (Mono etc.):
-  // eckiger Hard-Shadow-Chip mit schwarzem Wert (kein Cyan/Pink-Leak, lesbar
-  // auf hellem BG) — passt zum Editorial-Look der Bestenliste.
-  const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => {
-    const themed = isQuietMotion(); // Editorial-Chip NUR in Mono; Cozy/SoftPop/Neo = Original
-    return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 12,
-      padding: '12px 24px',
-      borderRadius: themed ? 'var(--qq-card-radius)' : 'var(--qq-pill-radius)',
-      background: themed ? 'var(--qq-card-bg)' : 'linear-gradient(180deg, #241a10, #1a120a)',
-      border: themed ? '2px solid var(--qq-card-text)' : `1.5px solid ${accent}55`,
-      color: 'var(--qq-card-text)',
-      fontSize: 'clamp(22px, 2.4cqw, 32px)', fontWeight: 900,
-      boxShadow: themed ? '4px 4px 0 var(--qq-card-text)' : `0 0 18px ${accent}22, inset 0 1px 0 rgba(246, 239, 230,0.06)`,
-    }}>
-      <span style={{ color: themed ? 'var(--qq-card-text)' : accent, fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1 }}>{value}</span>
-      <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.5cqw, 22px)', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{label}</span>
-    </span>
-    );
-  };
 
   // Mono-Hero-Stat: die Kennzahl RIESIG rausgespielt (Magazin-Stil), damit der
   // Slide die ganze Karte füllt statt als kleiner Cluster in der Mitte zu kleben
@@ -1481,12 +1500,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             {teamLine(leader.name, leader.color, leader.avatarId)}
             {isQuietMotion()
               ? <div style={{ marginTop: 0 }}>{statHero(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`)}</div>
-              : <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+              : statWertBand('#F97316', <>
                   {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
                   <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
                     {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
                   </span>
-                </div>}
+                </>)}
           </div>
         </div>
       )});
@@ -1504,9 +1523,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.jokerKing.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
-          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          : statWertBand('#A855F7', <>
               {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
-            </div>}
+            </>)}
       </div>
     )});
   }
@@ -1519,12 +1538,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.comebackKing.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
-          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+          : statWertBand('#38BDF8', <>
               {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
               <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
                 {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
               </span>
-            </div>}
+            </>)}
       </div>
     )});
   }
@@ -1537,9 +1556,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.stealMaster.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
-          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          : statWertBand(QQ_COLORS.red500, <>
               {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
-            </div>}
+            </>)}
       </div>
     )});
   }
@@ -1552,13 +1571,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.underdog.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
-          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          : statWertBand('#22D3EE', <>
               {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
               {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
               <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
                 {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
               </span>
-            </div>}
+            </>)}
       </div>
     )});
   }
@@ -1634,12 +1653,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.speedDemon.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
-          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
+          : statWertBand('#FACC15', <>
               {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
               <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
                 {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
               </span>
-            </div>}
+            </>)}
       </div>
     )});
   }
@@ -1653,9 +1672,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         {teamLine(funStats.potatoBoss.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
-          : <div style={{ marginTop: 14, display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'center' }}>
+          : statWertBand(btColor, <>
               {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
-            </div>}
+            </>)}
       </div>
     )});
   }
@@ -1737,9 +1756,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.funnyAnswers && funStats.funnyAnswers.length > 0) {
     panels.push({ key: 'funny', node: (
       <div>
-        <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="😂"/></span> {de ? 'Lustigste Antworten' : 'Funniest Answers'}
-        </div>
+        {statTitle('😂', 'Lustigste Antworten', 'Funniest Answers')}
         {/* 2026-08-27: Haarlinien raus, Kaesten rein - dieselbe Zeile wie in
             Rekorden und Kategorie-Meistern. */}
         {statStapel(funStats.funnyAnswers.map((fa, i) => statKasten(
@@ -2267,6 +2284,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 'Wolf und Text zentriert mittig'). */}
             <div
               key={activePanel.key}
+              // 2026-08-27: Kennung fuer die Messung. Ohne sie laesst sich von
+              // aussen nicht sagen, WELCHE Folie gerade steht - der Text allein
+              // reicht nicht, weil zwei Folien dieselbe Ueberschrift tragen
+              // koennen und die Tabellen gar keine haben.
+              data-qq-folie={activePanel.key}
               style={{
                 position: 'relative',
                 flex: 1,
@@ -2295,7 +2317,24 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                     style: {
                       ...((activePanel.node as ReactElement<{ style?: React.CSSProperties }>).props.style || {}),
                       height: '100%', width: '100%', boxSizing: 'border-box',
-                      display: 'flex', flexDirection: 'column', justifyContent: 'space-evenly',
+                      // 2026-08-27 (Wolf: „wirkt nicht wie eins"). Vorher
+                      // `space-evenly`. Das verteilt nach ANZAHL der Kinder:
+                      // eine Folie mit zwei Bloecken setzt ihre Ueberschrift
+                      // tief, eine mit fuenf setzt sie hoch. Gemessen wanderte
+                      // die Titel-Oberkante ueber den Umlauf um 98 px - das ist
+                      // der Grund, warum die Folien nicht wie eine Familie
+                      // wirkten, und nicht der fehlende Rahmen.
+                      // Jetzt zwei Baender: Kopf oben (immer dieselbe Linie),
+                      // Koerper darunter mittig. Der Platz wird weiter voll
+                      // genutzt (Wolf 2026-06-25 „nutzt den Platz nicht smart"),
+                      // nur eben mit fester Kopfzeile statt gleichmaessiger
+                      // Verteilung.
+                      // Erste Reihe: der Kopf, so hoch wie er ist. Alle
+                      // weiteren Reihen teilen sich den Rest zu gleichen
+                      // Teilen - das haelt auch die Folien in Form, die drei
+                      // oder vier Bloecke haben.
+                      display: 'grid', gridTemplateRows: 'auto',
+                      gridAutoRows: 'minmax(0, 1fr)', alignItems: 'center',
                     },
                   })
                 : activePanel.node}

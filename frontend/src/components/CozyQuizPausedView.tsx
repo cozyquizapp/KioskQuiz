@@ -136,6 +136,89 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
   ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10',    labelEn: 'All In' },
   CHEESE:        { color: QQ_COLORS.violet400, emoji: '📸', label: 'Schau mal!',   labelEn: 'Picture This' },
 };
+/**
+ * AvatarWand — die Avatare wechseln durch.
+ *
+ * 2026-08-27 (Wolf: „wenn du die avatare vorstellen willst machs satisfyinger
+ * mit etwas motion, zb dass sie durchwechseln oder so").
+ *
+ * ── Drei Entscheidungen, und jede hat einen Grund ──────────────────────────
+ *
+ * 1. **Eigene Komponente.** Der Takt laeuft alle 420 ms. Laege er im State der
+ *    PausedView, wuerde die zweimal je Sekunde ihre ~20 Karten neu bauen -
+ *    fuer eine Folie, die zwanzig Minuten steht. So rendert nur dieses Raster.
+ *
+ * 2. **Immer nur EINE Kachel auf einmal.** Sechzehn gleichzeitig waeren ein
+ *    Flackern, kein Wechsel. Reihum ergibt eine Welle, die das Auge verfolgen
+ *    kann, ohne dass es muss. Ein voller Durchlauf dauert 16 x 420 ms, also
+ *    knapp sieben Sekunden - die Karte steht acht.
+ *
+ * 3. **Sprung um genau die Kachelzahl.** Kachel i zeigt i, dann i+16, dann
+ *    i+32, dann wieder i. Weil 48 durch 16 teilbar ist, stehen dadurch NIE
+ *    zwei gleiche Motive gleichzeitig im Bild. Das ist keine Wahrscheinlichkeit,
+ *    das ist Arithmetik - ein zufaelliger Sprung haette Doppel erzeugt, und
+ *    zwei gleiche Kacheln nebeneinander liest man sofort als Fehler.
+ */
+function AvatarWand({ de, lang, spalten, zeilen }: {
+  de: boolean; lang: 'de' | 'en'; spalten: number; zeilen: number;
+}) {
+  const anzahl = spalten * zeilen;
+  const gesamt = COZYQUIZ_HEILE.length;
+  const [zeiger, setZeiger] = useState<number[]>(
+    () => Array.from({ length: anzahl }, (_, i) => i % Math.max(gesamt, 1)),
+  );
+  useEffect(() => {
+    // Ruhiger Modus: kein Wechsel. Die Karte bleibt stehen und zeigt sechzehn.
+    if (isQuietMotion() || gesamt <= anzahl) return;
+    let n = 0;
+    const id = setInterval(() => {
+      const k = n % anzahl;
+      setZeiger(vorher => {
+        const nachher = [...vorher];
+        nachher[k] = (nachher[k] + anzahl) % gesamt;
+        return nachher;
+      });
+      n++;
+    }, 420);
+    return () => clearInterval(id);
+  }, [anzahl, gesamt]);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${spalten}, 1fr)`, gap: 12 }}>
+      {zeiger.map((z, i) => {
+        const slug = COZYQUIZ_HEILE[z % Math.max(gesamt, 1)];
+        return (
+          <div key={i} style={{
+            aspectRatio: '1 / 1',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            overflow: 'hidden',
+            ...qqKachelFlaeche({
+              farbe: QQ_TEAM_PALETTE[i % QQ_TEAM_PALETTE.length],
+              radius: 18,
+            }),
+            animation: `panelSlideIn 0.5s var(--qq-ease-out-cubic) ${0.02 * i}s both`,
+          }}>
+            {/* `key` = der Slug: ein neues Motiv ist ein neues Element und
+                bringt seine Einblendung mit. Ohne das wuerde nur die Quelle
+                getauscht und das Bild sprang hart um. */}
+            <img
+              key={slug}
+              src={cozyQuizSrcKlein(slug)}
+              alt={cozyQuizLabel(slug, lang)}
+              draggable={false}
+              style={{
+                width: '78%', height: '78%', objectFit: 'contain', display: 'block',
+                animation: isQuietMotion() ? 'none' : 'qqAvatarTausch 0.22s var(--qq-state) both',
+              }}
+            />
+          </div>
+        );
+      })}
+      <span style={{ display: 'none' }}>{de ? '' : ''}</span>
+    </div>
+  );
+}
+
 export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate; mode?: 'pause' | 'preGame' }) {
   // 2026-05-07 (Wolf 'mach mal die card bei eurovision etwas durchsichtiger,
   // gerne auch bei pause wenn es passt'): im ESC-Mode translucent Card-BG aus

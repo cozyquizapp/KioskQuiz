@@ -56,6 +56,41 @@
 
 ---
 
+## 🩹 BUEHNE WAR LEER (Wolf 2026-08-27) — behoben
+
+- ✅ **Meine Luecke, und sie war unsichtbar.** Wolf: „seite ist momentan leer",
+      Bild: nur Sternenfeld, kein einziges Zeichen, keine Fehlermeldung.
+
+      Der Lobby-Zustand haengt an drei Feldern, also an ACHT Kombinationen. Im
+      Code standen drei Bedingungen nebeneinander, jede mit eigenen
+      Anforderungen, und eine Kombination traf keine davon:
+
+      ```
+      setupDone      = true    Moderator ist im Cockpit
+      lobbyOpen      = false   Lobby noch nicht geoeffnet     <- neu von heute
+      formatSelected = false   Format-Schritt nie durchlaufen
+      ```
+
+      NeutralWelcome verlangte `!setupDone`, PausedView `formatSelected !== false`,
+      LobbyView `lobbyOpen !== false`. Niemand war zustaendig.
+
+      ⚠️ **Ein Absturz meldet sich, eine Luecke nicht.** Genau deshalb ist das
+      durchgerutscht: kein Fehler in der Konsole, keine rote Box, nur nichts.
+      Und das Feld, das die Luecke aufgemacht hat, war meins.
+
+      Der Fix ist nicht die eine zusaetzliche Klammer, sondern die BAUFORM: eine
+      Kette mit Rueckfall, deren letzter Zweig keine Bedingung hat. Damit kann
+      es strukturell keine Luecke mehr geben.
+      Beweis: `node scripts/lobby-lueckenlos.mjs` faehrt alle acht an.
+
+      ⚠️ Zweite Falle im Werkzeug selbst: `formatSelected` kennt nur EINE
+      Richtung, der Server setzt es ausschliesslich auf true. Ein naiver
+      Dreifach-Schleifendurchlauf testet ab der zweiten Zeile etwas anderes, als
+      er in die Tabelle schreibt - der erste Anlauf hat trotzdem acht Haken
+      gemeldet. Jetzt erst alle vier mit false, dann umschalten.
+
+---
+
 ## 🚪 ANKOMMEN, Schritt 3 (Wolf 2026-08-27)
 
 - ✅ **„Heute Abend" und die Avatare gebaut.**

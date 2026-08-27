@@ -2318,19 +2318,40 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
               {/* `=== false` (nicht `!…`) → altes Backend ohne formatSelected-Feld
                   (undefined) verhält sich wie bisher (Pre-Game direkt), damit ein
                   Frontend-Deploy vor dem Backend-Redeploy nichts kaputt macht. */}
-              {renderState.phase === 'LOBBY' && !renderState.setupDone && renderState.formatSelected === false && <NeutralWelcomeView state={renderState} />}
-              {/* 2026-08-27 (Wolf: „hier muesste es einen schritt davor geben sowas
-                  wie lobby oeffnen, von der slide show zum qr lobby screen"):
-                  Der Ankommen-Zustand endet nicht mehr mit dem Wizard, sondern
-                  mit „Lobby oeffnen" am Steuerpult. Bis dahin laeuft die
-                  Diaschau weiter, auch wenn der Moderator laengst im Cockpit
-                  sitzt.
-                  `lobbyOpen !== false` (nicht `=== true`) → ein altes Backend
-                  ohne das Feld liefert undefined und verhaelt sich wie bisher.
-                  Gleiche Vorsicht wie bei formatSelected zwei Zeilen weiter
-                  oben. */}
-              {renderState.phase === 'LOBBY' && (!renderState.setupDone || renderState.lobbyOpen === false) && renderState.formatSelected !== false && <PausedView state={renderState} mode="preGame" />}
-              {renderState.phase === 'LOBBY' && renderState.setupDone && renderState.lobbyOpen !== false && <LobbyView state={renderState} />}
+              {/* ── Der Lobby-Zustand, in DREI Faellen und lueckenlos ──────────
+                  2026-08-27, nach einem Fehler von mir. Vorher standen hier
+                  drei unabhaengige Bedingungen nebeneinander, und mit dem neuen
+                  `lobbyOpen` gab es eine Kombination, die KEINE davon traf:
+
+                      setupDone = true      (Moderator ist im Cockpit)
+                      lobbyOpen = false     (Lobby noch nicht geoeffnet)
+                      formatSelected = false (Format-Schritt nie durchlaufen)
+
+                  NeutralWelcome verlangte `!setupDone`, PausedView verlangte
+                  `formatSelected !== false`, LobbyView verlangte
+                  `lobbyOpen !== false`. Ergebnis: die Buehne zeigte nur den
+                  Grund. Wolf: „seite ist momentan leer".
+
+                  Deshalb jetzt eine Kette mit Rueckfall statt drei Bedingungen
+                  nebeneinander. Der letzte Zweig hat keine Bedingung, also kann
+                  es keine Luecke mehr geben - das ist der eigentliche Fix, nicht
+                  die eine zusaetzliche Klammer.
+                  Reihenfolge: das Speziellste zuerst. */}
+              {renderState.phase === 'LOBBY' && (() => {
+                // Offen heisst: Wizard durch UND Moderator hat freigeschaltet.
+                // `!== false`, damit ein Backend ohne das Feld sich wie frueher
+                // verhaelt (QR sofort).
+                if (renderState.setupDone && renderState.lobbyOpen !== false) {
+                  return <LobbyView state={renderState} />;
+                }
+                // 2026-07-02 (Wolf): vor der Format-Wahl ein neutraler Welcome,
+                // ohne Grid und ohne Fraktion.
+                if (renderState.formatSelected === false) {
+                  return <NeutralWelcomeView state={renderState} />;
+                }
+                // Alles andere ist Ankommen: Diaschau, kein QR.
+                return <PausedView state={renderState} mode="preGame" />;
+              })()}
               {renderState.phase === 'RULES'           && <RulesView state={renderState} />}
               {renderState.phase === 'TEAMS_REVEAL'    && <TeamsRevealView state={renderState} />}
               {renderState.phase === 'PHASE_INTRO'     && <PhaseIntroView state={renderState} />}

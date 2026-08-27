@@ -1158,6 +1158,19 @@ export const QQ_BEAMER_CSS = `
     0%   { transform: rotateX(90deg)  translateY(50%);  opacity: 0; }
     100% { transform: rotateX(0deg)   translateY(0);    opacity: 1; }
   }
+  /* 2026-08-27 (Wolf: „wenn du die avatare vorstellen willst machs
+     satisfyinger mit etwas motion, zb dass sie durchwechseln oder so").
+     Bewusst OHNE Ueberschwung: die Hausregel gibt Overshoot dem EINEN
+     Hero-Beat je Folie, und ein Kachelwechsel laeuft auf der Ankommen-Karte
+     rund achtzehnmal. Rolle ist --qq-state (Zustandswechsel, 160-240 ms),
+     nicht --qq-enter.
+     ACHTUNG: dieser ganze Block ist EIN Template-Literal. Keine Backticks in
+     die Kommentare schreiben, sie beenden die Zeichenkette und die Buehne
+     bleibt leer (2026-08-27 genau so passiert). */
+  @keyframes qqAvatarTausch {
+    0%   { transform: translateY(7%) scale(0.86); opacity: 0; }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+  }
   @keyframes panelIconPop {
     0%   { transform: scale(0.5) rotate(-18deg); opacity: 0; }
     55%  { transform: scale(1.25) rotate(8deg); opacity: 1; }

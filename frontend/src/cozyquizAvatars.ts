@@ -173,7 +173,12 @@ export const COZYQUIZ_DEFEKT: readonly string[] = [
   // Hintergrundentfernung nicht sauber trennen, also frisst sie mit. Dieselbe
   // Ursache wie bei der alten Discokugel. Das ist eine Beobachtungsliste, kein
   // Pruefwert - und die Kontrolle bleibt das Blatt auf Pink.
-  'daisy', 'cloud',
+  // Beide am selben Abend neu ausgeleitet und wieder drin. Gegengeprueft auf
+  // Teamrot und auf Weiss (`node scripts/avatare-auf-grund.mjs`): die
+  // Blaetter des Gaensebluemchens sind vollstaendig, die Wolkenkante ist oben
+  // rechts geschlossen. Die alten Dateien liegen unter
+  // `design-assets/avatare-v5-original/defekt/`.
+  //
   // 2026-08-27, erste Runde: Wolf hat alle fuenf neu ausgeleitet.
   // Gemessen mit `node scripts/avatare-loecher.mjs`, und die Lochzahlen passen
   // diesmal zu den Motiven statt zu Zufall:

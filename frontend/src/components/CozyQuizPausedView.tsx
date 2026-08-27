@@ -426,7 +426,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // laengst. Nur die Joker-Koenig-Statistik hing noch am 🃏, das durch den
   // Emoji-Mapper faellt und als OS-Glyphe erschien. Jetzt ueberall derselbe
   // Joker.
-  const statTitle = (icon: string | React.ReactNode, titleDe: string, titleEn: string, accentColor?: string, zusatz?: React.ReactNode) => {
+  // `icon` darf null sein: manche Folien zeigen die Zeichen selbst, dann waere
+  // ein zweites in der Ueberschrift eins zu viel (2026-08-27, Wolf zur
+  // Avatar-Folie: „ohne den stern er passt nicht zu unserem set").
+  const statTitle = (icon: string | React.ReactNode | null, titleDe: string, titleEn: string, accentColor?: string, zusatz?: React.ReactNode) => {
     // Mono: editorial — schwarzer Titel (kein Akzent-Farb-Leak), uppercase.
     const mono = isQuietMotion();
     return (
@@ -437,9 +440,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       textTransform: mono ? 'uppercase' : undefined,
       letterSpacing: mono ? '-0.01em' : undefined,
     }}>
-      <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>
-        {typeof icon === 'string' ? <QQEmojiIcon emoji={icon}/> : icon}
-      </span>
+      {icon !== null && (
+        <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>
+          {typeof icon === 'string' ? <QQEmojiIcon emoji={icon}/> : icon}
+        </span>
+      )}
       {de ? titleDe : titleEn}
       {zusatz}
     </div>
@@ -746,10 +751,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       const SPALTEN = 4, ZEILEN = 2;
       panels.push({ key: 'avatare', node: (
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
-          {/* 2026-08-27: 🎨 hat im Satz kein Bild. `fx-sparkles` statt eines
-              rohen Zeichens - die Karte zeigt ohnehin die Objekte selbst,
-              die Ueberschrift braucht kein zweites Motiv. */}
-          {statTitle(<QQIcon slug="fx-sparkles" size="1em" />, 'Sucht euch einen aus', 'Pick your avatar')}
+          {/* 2026-08-27: hier stand erst ein rohes 🎨, dann `fx-sparkles`.
+              Wolf: „ohne den stern er passt nicht zu unserem set (oder ist er
+              aus dem set?)". Nein, ist er nicht - `fx-sparkles` gehoert zum
+              Effekt-Satz (`/icons/fx-*.png`), nicht zum Team-Avatarsatz V5.
+              Zwei verschiedene Bildwelten, und auf DIESER Folie stehen acht
+              Beispiele aus dem richtigen Satz direkt darunter. Also gar kein
+              Zeichen: die Kacheln sind das Zeichen. */}
+          {statTitle(null, 'Sucht euch ein Team-Emoji aus', 'Pick your team emoji')}
           {/* Eigene Komponente, siehe ihren Kopf: der Takt darf nicht im State
               der PausedView liegen, sonst baut die zweimal je Sekunde ihre
               zwanzig Karten neu. */}

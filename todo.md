@@ -586,6 +586,40 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
             heutige Stand ist abgenommen, gemeldet wird nur noch, was NEU
             dazukommt. Damit bleibt die Regel fuer den restlichen
             Motion-Durchgang scharf, ohne rueckwirkendes Aufraeumen.
+      - ✅ **Die drei Dauern ausserhalb ihrer Rolle: Fehlalarm, Werkzeug
+            nachgeschaerft** (2026-08-27). Gemeldet waren `phasePop` 450 ms auf
+            `--qq-celebrate` (500-700), `langFadeIn` 450 ms auf `--qq-enter`
+            (480-680) und eine 900-ms-Blende auf `--qq-state` (160-240).
+
+            ⚠️ Keine davon war ein Verstoss, und der Grund ist strukturell: die
+            sechs Rollen in `main.css` sind ALIASSE auf die rohe Kurvenpalette.
+
+            ```css
+            --qq-celebrate: var(--qq-ease-bounce);
+            --qq-enter:     var(--qq-ease-out-cubic);
+            --qq-state:     var(--qq-ease-smooth);
+            ```
+
+            Nach dem Berechnen im Browser sind beide Schreibweisen dieselbe
+            Zeichenkette. Alle drei Fundstellen schreiben die ROHE Kurve, nicht
+            das Rollen-Token - sie nehmen also nur die Kurve und beanspruchen
+            weder Hero-Beat noch Auftritt. Und in allen drei Faellen zu Recht:
+            450 ms auf kleinen Kachel-Chips sind kein Hero-Beat, und die
+            900-ms-Blende der Anker-Ebene ist ausdruecklich so gebaut („laenger
+            als jeder Szenenwechsel, damit das Abdunkeln nicht als Teil des
+            Wechsels gelesen wird").
+
+            `scripts/motion-konsistenz.mjs` sieht jetzt nach, welches Token im
+            QUELLTEXT steht, und trennt die beiden Faelle. Gemessen wird weiter
+            am laufenden Bild; der Quelltext beantwortet nur die Anschlussfrage
+            „welches Token war gemeint". Ergebnis: 0 echte Verstoesse, 3
+            Rohkurven-Faelle, ausgewiesen statt versteckt.
+
+            Offen und bewusst nicht entschieden: wer den Bereich einer Rolle
+            meint, muss das Rollen-Token schreiben. Solange beides erlaubt ist,
+            ist der Bereich umgehbar. Das ist eine Regel-Frage, keine
+            Code-Frage - fuer Wolf, nicht fuer mich.
+
       - ✅ **B1 + B5 an der Aufloesung: Praemisse widerlegt, nicht gebaut.**
             Im Plan stand „schneidet heute hart". Gemessen mit
             `scripts/naht-frage-aufloesung.mjs` (Mitschrift je Bildaufbau)

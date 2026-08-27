@@ -280,18 +280,90 @@ for (const n of nachbarn.slice(0, 14)) {
 if (nachbarn.length > 14) console.log(`  ... und ${nachbarn.length - 14} weitere.`);
 
 // ── 2. Dauer gegen Rolle ──────────────────────────────────────────────────
+/**
+ * ⚠️ EIN BLINDER FLECK, und er erzeugt Fehlalarme, keine Fehler.
+ *
+ * Die sechs Rollen in `main.css` sind ALIASSE auf die rohe Kurvenpalette:
+ *
+ *     --qq-celebrate: var(--qq-ease-bounce);
+ *     --qq-enter:     var(--qq-ease-out-cubic);
+ *     --qq-state:     var(--qq-ease-smooth);
+ *
+ * Nach dem Berechnen im Browser sind beide Schreibweisen dieselbe Zeichenkette.
+ * Wer `var(--qq-ease-bounce)` schreibt, beansprucht damit NICHT den Hero-Beat
+ * und seinen Bereich von 500-700 ms - er nimmt nur die Kurve. Von aussen sieht
+ * das Werkzeug den Unterschied nicht und meldet einen Verstoss, wo keiner ist.
+ *
+ * 2026-08-27 waren ALLE DREI gemeldeten Dauern genau dieser Fall:
+ *   phasePop   450 ms auf var(--qq-ease-bounce)      (kleine Kachel-Chips)
+ *   langFadeIn 450 ms auf var(--qq-ease-out-cubic)   (Fragentext)
+ *   opacity    900 ms auf var(--qq-ease-smooth)      (Anker-Ebene abdunkeln)
+ *
+ * Deshalb wird jetzt nachgesehen, was im QUELLTEXT wirklich steht. Das ist
+ * bewusst der zweite Schritt und nicht der erste: gemessen wird weiter am
+ * laufenden Bild, der Quelltext beantwortet nur die Anschlussfrage „welches
+ * Token war gemeint". Und nur wenn dort das ROLLEN-Token steht, ist es ein
+ * Verstoss gegen den Bereich dieser Rolle.
+ */
+const QUELLEN = ['frontend/src'];
+const quellText = (() => {
+  const teile = [];
+  const lauf = (ordner) => {
+    for (const e of fs.readdirSync(ordner, { withFileTypes: true })) {
+      const pfad = `${ordner}/${e.name}`;
+      if (e.isDirectory()) lauf(pfad);
+      else if (/\.(tsx?|css)$/.test(e.name)) teile.push(fs.readFileSync(pfad, 'utf8'));
+    }
+  };
+  for (const q of QUELLEN) { try { lauf(q); } catch { /* egal */ } }
+  return teile.join('\n');
+})();
+
+/** Welches Token steht im Quelltext bei dieser Bewegung und dieser Dauer? */
+function tokenImQuelltext(name, ms) {
+  const sek = (ms / 1000).toString().replace(/^0\./, '0.');
+  const muster = new RegExp(
+    `${name}\\s+(?:${sek}s|${ms}ms)\\s+var\\(--qq-([a-z-]+)\\)`, 'g');
+  const treffer = new Set();
+  for (const m of quellText.matchAll(muster)) treffer.add(m[1]);
+  // Auch die Schreibweise als `transition: opacity 900ms var(--qq-...)`.
+  if (!treffer.size) {
+    const m2 = new RegExp(`${name}\\s+(?:${sek}s|${ms}ms)\\s+var\\(--qq-([a-z-]+)\\)`, 'g');
+    for (const m of quellText.matchAll(m2)) treffer.add(m[1]);
+  }
+  return [...treffer];
+}
+
 console.log('\n══ 2. Passen die Dauern zu ihrer Rolle? ════════════════════════');
-let danebenGesamt = 0;
+let danebenGesamt = 0, rohGesamt = 0;
 for (const e of liste) {
   const haus = HAUS_INDEX.get(normal(e.roh));
   if (!haus || haus.von == null || !e.dauern.size) continue;
   const daneben = [...e.dauern].filter(d => d < haus.von || d > haus.bis);
   if (!daneben.length) continue;
-  danebenGesamt += daneben.length;
-  console.log(`  ✗ ${e.name.padEnd(22)} ${daneben.join(', ')} ms`);
-  console.log(`      laeuft auf --qq-${haus.rolle}, und das soll ${haus.von}-${haus.bis} ms (${haus.was})`);
+  for (const ms of daneben) {
+    const tokens = tokenImQuelltext(e.name, ms);
+    const rolle = `--qq-${haus.rolle}`;
+    const beansprucht = tokens.length === 0 || tokens.includes(haus.rolle);
+    if (beansprucht) {
+      danebenGesamt++;
+      console.log(`  ✗ ${e.name.padEnd(22)} ${ms} ms`);
+      console.log(`      laeuft auf ${rolle}, und das soll ${haus.von}-${haus.bis} ms (${haus.was})`);
+      if (!tokens.length) console.log('      (im Quelltext nicht gefunden - bitte von Hand nachsehen)');
+    } else {
+      rohGesamt++;
+      console.log(`  · ${e.name.padEnd(22)} ${ms} ms auf var(--qq-${tokens.join('/')})`);
+      console.log(`      Rohe Kurve, nicht die Rolle ${rolle}. Kein Verstoss gegen deren Bereich.`);
+    }
+  }
 }
-if (!danebenGesamt) console.log('  Alle Bewegungen auf Hauskurven liegen in ihrem Bereich.');
+if (!danebenGesamt) console.log('  Keine Bewegung, die eine Rolle beansprucht, faellt aus deren Bereich.');
+if (rohGesamt) {
+  console.log(`\n  ⚠️ ${rohGesamt} Dauern laufen auf einer rohen Kurve statt auf dem Rollen-Token.`);
+  console.log('     Das ist erlaubt und oft richtig (ein kleiner Akzent ist kein Hero-Beat),');
+  console.log('     macht den Bereich der Rolle aber unpruefbar. Wer den Bereich meint,');
+  console.log('     schreibt das Rollen-Token.');
+}
 
 // ── 3. Ein Hero-Beat je Folie ─────────────────────────────────────────────
 console.log('\n══ 3. Ein Overshoot je Folie? ══════════════════════════════════');
@@ -321,6 +393,7 @@ console.log(`  ${erreicht.length} Stationen gemessen.`);
 console.log(`  ${ausserHaus} von ${liste.length} Bewegungen laufen auf einer eigenen Kurve.`);
 console.log(`  davon ${nachbarn.length} nur knapp neben einer Hauskurve - bewusst so seit ${ENTSCHIEDEN.nachbarn.am}.`);
 console.log(`  ${danebenGesamt} Dauern liegen ausserhalb des Bereichs ihrer eigenen Rolle.`);
+console.log(`  ${rohGesamt} davon getrennt: Dauern auf einer rohen Kurve, die keine Rolle beansprucht.`);
 console.log(`  ${offen.length} Stationen mit mehr als einem Overshoot, die NICHT entschieden sind.`);
 
 await b.schliessen?.();

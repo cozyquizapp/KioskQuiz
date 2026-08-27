@@ -164,8 +164,13 @@ function AvatarWand({ de, lang, spalten, zeilen }: {
 }) {
   const anzahl = spalten * zeilen;
   const gesamt = COZYQUIZ_HEILE.length;
-  const [zeiger, setZeiger] = useState<number[]>(
-    () => Array.from({ length: anzahl }, (_, i) => i % Math.max(gesamt, 1)),
+  const farben = QQ_TEAM_PALETTE.length;
+  // Objekt UND Farbe je Kachel. Beide wandern, siehe der Kommentar am Wechsel.
+  const [zeiger, setZeiger] = useState<Array<{ obj: number; farbe: number }>>(
+    () => Array.from({ length: anzahl }, (_, i) => ({
+      obj: i % Math.max(gesamt, 1),
+      farbe: i % farben,
+    })),
   );
   useEffect(() => {
     // Ruhiger Modus: kein Wechsel. Die Karte bleibt stehen und zeigt sechzehn.
@@ -175,27 +180,48 @@ function AvatarWand({ de, lang, spalten, zeilen }: {
       const k = n % anzahl;
       setZeiger(vorher => {
         const nachher = [...vorher];
-        nachher[k] = (nachher[k] + anzahl) % gesamt;
+        nachher[k] = {
+          obj: (nachher[k].obj + anzahl) % gesamt,
+          // ⚠️ 2026-08-27 (Wolf: „die aktuelle darstellung koennte als
+          // missverstaendnis sagen, dass ein emoji nur mit einer bestimmten
+          // farbe kombiniert werden kann").
+          //
+          // Er hat recht, und die Karte behauptete damit das Gegenteil der
+          // Wahrheit. Der Satz ist genau deshalb farbneutral gebaut: 48 Objekte
+          // MAL 8 Farben, kein Slot-Binding (siehe Kopf von cozyquizAvatars.ts).
+          // Wenn nur das Objekt wechselt und die Farbe klebt, lehrt die Folie
+          // eine Regel, die es nicht gibt.
+          //
+          // Deshalb wandert die Farbe mit, und zwar um EINS, waehrend das Objekt
+          // um sechzehn springt. Dadurch zeigt dieselbe Kachel nacheinander drei
+          // Objekte auf drei verschiedenen Farben, und ein Objekt taucht im Lauf
+          // der Zeit auf verschiedenen Gruenden auf. Die Kombination ist damit
+          // sichtbar frei, nicht nur in der Bildunterschrift behauptet.
+          farbe: (nachher[k].farbe + 1) % farben,
+        };
         return nachher;
       });
       n++;
     }, 420);
     return () => clearInterval(id);
-  }, [anzahl, gesamt]);
+  }, [anzahl, gesamt, farben]);
 
   return (
     <div style={{ display: 'grid', gridTemplateColumns: `repeat(${spalten}, 1fr)`, gap: 12 }}>
       {zeiger.map((z, i) => {
-        const slug = COZYQUIZ_HEILE[z % Math.max(gesamt, 1)];
+        const slug = COZYQUIZ_HEILE[z.obj % Math.max(gesamt, 1)];
         return (
           <div key={i} style={{
             aspectRatio: '1 / 1',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
             ...qqKachelFlaeche({
-              farbe: QQ_TEAM_PALETTE[i % QQ_TEAM_PALETTE.length],
+              farbe: QQ_TEAM_PALETTE[z.farbe % farben],
               radius: 18,
             }),
+            // Die Farbe wechselt weich, das Objekt springt mit seiner eigenen
+            // kurzen Bewegung. Zwei Dinge, ein Takt.
+            transition: 'background 0.42s var(--qq-ease-out-cubic), border-color 0.42s var(--qq-ease-out-cubic)',
             animation: `panelSlideIn 0.5s var(--qq-ease-out-cubic) ${0.02 * i}s both`,
           }}>
             {/* `key` = der Slug: ein neues Motiv ist ein neues Element und
@@ -356,15 +382,27 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // 2026-05-07 v13 (Wolf 'mach das 2x2 grid mittig zentriert + die ueber-
       // schrift einfach drueber, plus eigene Joker-Grafik'): Panel margin 0
       // auto. JokerIcon (Spiel-Asset) statt 🃏 Emoji.
-      <div style={{ width: 'min(100%, 900px)', margin: '0 auto' }}>
+      // 2026-08-27 (Schritt 4 des Ankommen-Plans). Meine urspruengliche
+      // Begruendung („die einzige Karte in der alten Panel-Optik") war falsch:
+      // die Flaechen sind laengst dieselben Tokens, ich hatte die drei neuen ja
+      // danach gebaut. Der echte Unterschied ist die DICHTE, und der ist
+      // messbar:
+      //     Wie funktioniert's   900 px breit, Zeichen bis  44 px, links
+      //     Heute Abend         1100 px,       Zahl        84 px, mittig
+      //     Schon da            1280 px,       Kachel     104 px, mittig
+      //     Avatare             1280 px,       volle Kachel,      mittig
+      // Drei Plakate und eine Handbuchseite. Angeglichen wird die FORM, nicht
+      // der Text: die vier Erklaerungen wurden am 2026-05-06 auf Wolfs Ansage
+      // hin inhaltlich richtiggestellt, die fasse ich nicht an.
+      <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
         <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>📖</span>
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="📖" size="1em" /></span>
           {de ? 'Wie funktioniert’s?' : 'How it works'}
         </div>
         <div style={{
           display: 'grid',
           gridTemplateColumns: 'repeat(2, 1fr)',
-          gap: 14,
+          gap: 16,
           textAlign: 'left', // Mini-Cards bleiben links-buendig fuer Lesbarkeit
         }}>
           {howItems.map((it, i) => {
@@ -372,8 +410,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             const isJoker = it.title === 'Joker';
             return (
               <div key={i} style={{
-                display: 'flex', alignItems: 'flex-start', gap: 14,
-                padding: '15px 18px',
+                display: 'flex', alignItems: 'center', gap: 20,
+                padding: '22px 26px',
                 borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
                 // 2026-06-24 (Lesbarkeit): Skin → echte Surface-Chip statt der
                 // fast transparenten Warm-Fläche, damit der Akzent-Titel Kontrast hat.
@@ -384,17 +422,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               }}>
                 {isJoker ? (
                   <span style={{ flexShrink: 0, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-                    <JokerIcon i={i} size={42} eurovisionMode={!!s.theme?.eurovisionMode} />
+                    <JokerIcon i={i} size={68} eurovisionMode={!!s.theme?.eurovisionMode} />
                   </span>
                 ) : (
-                  <span style={{ fontSize: 'clamp(30px, 3.2cqw, 44px)', lineHeight: 1, flexShrink: 0 }}>
+                  <span style={{ fontSize: 'clamp(44px, 4.6cqw, 68px)', lineHeight: 1, flexShrink: 0 }}>
                     {/* 2026-08-23: geliefertes Set statt rohem Systemzeichen. */}
                     <QQEmojiIcon emoji={it.icon} size="1em" />
                   </span>
                 )}
                 <div style={{ minWidth: 0 }}>
-                  <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.4cqw, 32px)', color: 'var(--qq-accent)', marginBottom: 6 }}>{it.title}</div>
-                  <div style={{ fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-text-muted)', lineHeight: 1.35 }}>{it.desc}</div>
+                  <div style={{ fontWeight: 900, fontSize: 'clamp(24px, 2.7cqw, 36px)', color: 'var(--qq-accent)', marginBottom: 6 }}>{it.title}</div>
+                  <div style={{ fontSize: 'clamp(19px, 2.1cqw, 28px)', color: 'var(--qq-text-muted)', lineHeight: 1.35 }}>{it.desc}</div>
                 </div>
               </div>
             );
@@ -437,7 +475,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       panels.push({ key: 'heuteAbend', node: (
         <div style={{ width: 'min(100%, 1100px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🗓️</span>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗓️" size="1em" /></span>
             {de ? 'Heute Abend' : 'Tonight'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
@@ -497,7 +535,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         // niemand mehr liest (2026-08-27 am Kontaktbogen gesehen).
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>👋</span>
+            {/* Bewusst ein Slug statt eines Zeichens: 👋 hat im Satz kein Bild
+                (`fx-wave` ist eine Flagge, siehe QQIcon.tsx). `fx-teams` sagt
+                genau, worum es geht. */}
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQIcon slug="fx-teams" size="1em" /></span>
             {de ? 'Schon da' : 'Already here'}
           </div>
           <div style={{
@@ -547,35 +588,18 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // ist nicht die ganze Buehne - darueber steht die Wortmarke, darunter
       // „Gleich geht's los" und der Wolf. Zwei Reihen passen.
       const SPALTEN = 8, ZEILEN = 2;
-      const gezeigt = COZYQUIZ_HEILE.slice(0, SPALTEN * ZEILEN);
       panels.push({ key: 'avatare', node: (
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🎨</span>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🎨" size="1em" /></span>
             {de ? 'Sucht euch einen aus' : 'Pick your avatar'}
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${SPALTEN}, 1fr)`, gap: 12 }}>
-            {gezeigt.map((slug, i) => (
-              <div key={slug} style={{
-                aspectRatio: '1 / 1',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                ...qqKachelFlaeche({
-                  farbe: QQ_TEAM_PALETTE[i % QQ_TEAM_PALETTE.length],
-                  radius: 18,
-                }),
-                animation: `panelSlideIn 0.5s var(--qq-ease-out-cubic) ${0.02 * i}s both`,
-              }}>
-                <img
-                  src={cozyQuizSrcKlein(slug)}
-                  alt={cozyQuizLabel(slug, lang)}
-                  draggable={false}
-                  style={{ width: '78%', height: '78%', objectFit: 'contain', display: 'block' }}
-                />
-              </div>
-            ))}
-          </div>
+          {/* Eigene Komponente, siehe ihren Kopf: der Takt darf nicht im State
+              der PausedView liegen, sonst baut die zweimal je Sekunde ihre
+              zwanzig Karten neu. */}
+          <AvatarWand de={de} lang={lang} spalten={SPALTEN} zeilen={ZEILEN} />
           <div style={{ textAlign: 'center', marginTop: 16, fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 800, color: 'var(--qq-text-muted)' }}>
-            {de ? `${COZYQUIZ_HEILE.length} Objekte, 8 Farben` : `${COZYQUIZ_HEILE.length} objects, 8 colours`}
+            {de ? `${COZYQUIZ_HEILE.length} Objekte × 8 Farben, frei kombinierbar` : `${COZYQUIZ_HEILE.length} objects × 8 colours, mix freely`}
           </div>
         </div>
       )});

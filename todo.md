@@ -107,8 +107,48 @@
 
       Umlauf jetzt: 4 Karten, 8 Bilder, 64 Sekunden.
 
-- [ ] **Schritt 4: „Wie funktioniert's" auf 2a nachziehen.** Die Karte ist die
-      einzige der vier, die noch die alte Panel-Optik traegt.
+- ✅ **Schritt 4 gemacht, aber anders als angekuendigt** (2026-08-27).
+      Meine Begruendung war falsch: ich hatte gesagt, „Wie funktioniert's" sei
+      „die einzige in der alten Panel-Optik". Beim Nebeneinanderlegen der vier
+      stimmte das nicht mehr - die Flaechen sind laengst dieselben Tokens, ich
+      hatte die drei neuen ja danach gebaut.
+
+      Der echte Unterschied ist die DICHTE, und er ist messbar:
+
+      ```
+      Wie funktioniert's    900 px breit, Zeichen bis  44 px, links
+      Heute Abend          1100 px,       Zahl        84 px, mittig
+      Schon da             1280 px,       Kachel     104 px, mittig
+      Avatare              1280 px,       volle Kachel,      mittig
+      ```
+
+      Drei Plakate und eine Handbuchseite. Angeglichen wurde die Form (1280 px,
+      Zeichen 68 px, mehr Luft), **nicht der Text**: die vier Erklaerungen
+      wurden am 2026-05-06 auf Wolfs Ansage hin inhaltlich richtiggestellt.
+
+- ✅ **Zwei Funde nebenbei, einer echt und einer meiner.**
+      1. **`fx-wave` ist eine wehende FLAGGE, kein Winken.** Die Zuordnung
+         `'👋': 'fx-wave'` hat den Namen als Gruss gelesen. Ueberall, wo jemand
+         ein Winken gemeint hat, stand eine Flagge. Zuordnung raus, die
+         Ankommen-Karte nimmt jetzt bewusst `fx-teams`.
+      2. Ich hatte an derselben Datei eine gepunktete Kante zu sehen geglaubt
+         und einen zweiten Karo-Fall vermutet. Nachgemessen: **null** helle
+         deckende Pixel. Das Karo war das des Bildbetrachters, nicht der Datei.
+
+- ✅ **Avatar-Karte: die Farbe wandert mit** (Wolf: „die aktuelle darstellung
+      koennte als missverstaendnis sagen, dass ein emoji nur mit einer
+      bestimmten farbe kombiniert werden kann"). Er hat recht, und die Karte
+      behauptete das Gegenteil der Wahrheit: der Satz ist farbneutral gebaut,
+      48 Objekte MAL 8 Farben, ohne Bindung.
+      Jetzt springt das Objekt um sechzehn und die Farbe wandert um eins.
+      Bewiesen mit `node scripts/ankommen-avatare-motion.mjs`:
+      48 Objekte gesehen, **33 davon auf mehr als einer Farbe**, und immer nur
+      eine Kachel auf einmal.
+      ⚠️ Das Werkzeug hat mich dabei zweimal erwischt: die Karte rendete
+      anfangs ihr eigenes statisches Raster statt der neuen Komponente (nichts
+      bewegte sich), und beim Zaehlen der gleichzeitigen Wechsel muss NUR das
+      Objekt verglichen werden - die Farbe blendet ueber 420 ms um, und
+      abgetastet wird alle 210 ms.
 
 ---
 

@@ -357,7 +357,12 @@ const EMOJI_TO_SLUG: Record<string, QQIconSlug> = {
   '💡': 'fx-idea',
   '💭': 'fx-thought',
   '💯': 'fx-hundred',
-  '👋': 'fx-wave',
+  // 2026-08-27: RAUS. `fx-wave` ist eine wehende FLAGGE, der Name meint das
+  // Tuch, nicht den Gruss. Ueber diese Zuordnung stand ueberall dort eine
+  // Flagge, wo jemand ein Winken gemeint hat. Ohne Eintrag faellt 👋 auf das
+  // echte Zeichen zurueck; wer ein Begruessungsbild will, nimmt bewusst einen
+  // Slug (z. B. `fx-teams`).
+  // '👋': 'fx-wave',
   '🎤': 'fx-mic',
   '🎬': 'fx-clapper',
   '📶': 'fx-signal',

@@ -15,6 +15,33 @@
 
 ---
 
+## 🖼️ AVATARSATZ V5 — ein Motiv ist defekt (Wolf 2026-08-26)
+
+- [ ] **`cozy-home--alarm-clock.png` neu ausleiten.** Die Flaeche INNERHALB des
+      Tragegriffs ist nicht durchsichtig, sondern mit deckenden, fast weissen
+      Pixeln gefuellt: ein eingebranntes Transparenz-Karo, 245 und 254 im
+      Wechsel, Kachelbreite rund 24 px, alle mit Alpha 255. Auf jedem farbigen
+      Grund liest sich das als heller Fleck ueber der Uhr.
+      Gegenprobe: `.shots/WECKER-GEGEN-SCHLUESSEL.png` - beim Schluessel
+      scheint das Rot durch die Oese, beim Wecker nicht.
+      ⚠️ Ich fasse die Datei nicht an. Das waere nachtraegliches Freistellen,
+      und genau das schliessen die Asset-Regeln aus. Das ist ein Fall fuer
+      einen neuen Export aus der Quelle.
+      Solange: entweder der Wecker bleibt drin und faellt gelegentlich auf,
+      oder er wird im Code aus dem Pool genommen (eine Zeile, jederzeit
+      rueckgaengig). Wolfs Entscheidung.
+- [ ] **Die uebrigen 47 einmal auf dem Blatt durchsehen.**
+      `node scripts/avatare-auf-grund.mjs` legt alle 48 auf Schwarz, Weiss,
+      Orange, Gruen, Blau und Teamrot - genau die Kontrolle, die in den
+      Asset-Regeln steht und fuer die es bis heute kein Werkzeug gab.
+      ⚠️ Bewusst OHNE automatisches Urteil: ich habe vier Detektoren dafuer
+      gebaut, und jeder hat andere unschuldige Motive gemeldet (weisse Wolke,
+      Spielkarte, Heissluftballon). Ein weisses Objekt IST farblos und hell;
+      numerisch ist das von einer schwachen Kachelung kaum zu trennen. Das
+      Auge trennt es in einer Sekunde.
+
+---
+
 ## 🎨 PREMIUM-DESIGN-GRUNDLAGE (Wolf 2026-08-22, laeuft)
 
 > **Einstieg: `docs/UEBERGABE_DESIGN.md`** — dort steht der komplette Stand,

@@ -202,6 +202,49 @@
 
 ---
 
+## 🎞️ WECHSELNDE FOLIEN: EINHEITLICH UND FEHLERFREI (Wolf 2026-08-27)
+
+- ✅ **Fuenf Ueberschriften ohne eigenes Bild, drei alte und zwei von mir.**
+      Wolf zum „Schnellste Minute"-Bild: „nicht alle wechselnden slides wirken
+      gleich (gut) ... bitte das design einheitlicher und auf fehler pruefen
+      (alte emojis zb oder fehlende)".
+
+      Gefunden mit `node scripts/pausenfolien-pruefen.mjs`:
+
+      ```
+      🗡️  Steal-Master   -> <QQIcon slug="action-steal" />
+      🐺  Underdog       -> <QQIcon slug="brand-wolf" />
+      📅  Heute          -> <QQIcon slug="fx-chart" />
+      🗓️  Heute Abend    -> <QQIcon slug="fx-clapper" />     von HEUTE, von mir
+      🎨  Sucht euch...  -> <QQIcon slug="fx-sparkles" />    von HEUTE, von mir
+      ```
+
+      ⚠️ Die letzten beiden habe ich heute selbst eingebaut, waehrend ich
+      behauptet habe, die Karten auf 2a zu bringen. Ein Zeichen ohne Bild wird
+      auf jedem Rechner anders gezeichnet - auf Wolfs Beamer also anders als
+      hier. Das gehoert genauso in die Liste wie die drei alten.
+
+- ✅ **Das „?" war keine Zeichenfrage, sondern eine Formfrage.**
+      Wolf hat auf das Fragezeichen gezeigt („das sieht komisch aus"). Der
+      Grund ist nicht das Zeichen: seit dem Avatarsatz V5 ist jede Teammarke
+      eine KACHEL, die Notloesung war aber ein KREIS. Neben einem echten
+      Avatar stand damit ein Fremdkoerper.
+      Und sie greift oft: Teams aus der Bestenliste haben keinen gespeicherten
+      Avatar. Jetzt dieselbe Kachel wie ueberall, nur ohne Motiv - dieselbe
+      Sprache wie die neutrale Kachel im Award-Rad.
+
+- ⚠️ **Was das Werkzeug NICHT kann, und warum es trotzdem am Quelltext misst.**
+      Mein erster Anlauf hat die laufende Buehne abgetastet und genau EINE
+      Folie gesehen. Zwei Gruende: die meisten Folien haengen an Verlauf
+      (Bestenliste, Rekorde, Rivalen), den ein frischer Raum nicht hat, und
+      zwanzig Folien a acht Sekunden sind drei Minuten Abtasten fuer eine
+      Frage, die statisch beantwortbar ist.
+      Die Pruefung sagt jetzt, welche Folie ein fremdes Zeichen traegt. Sie
+      sagt NICHT, ob eine Folie schoen ist. Dafuer braucht es weiter das Auge,
+      und zwar an einem Abend mit Verlauf.
+
+---
+
 ## 📐 SCHRIFT PASST SICH EIN (Wolf 2026-08-27)
 
 - ✅ **Gemessen statt gestuft** (2026-08-27, erledigt). Wolf zu zwei Bildern:

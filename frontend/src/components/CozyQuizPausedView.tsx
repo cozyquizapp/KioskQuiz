@@ -498,7 +498,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       panels.push({ key: 'heuteAbend', node: (
         <div style={{ width: 'min(100%, 1100px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🗓️" size="1em" /></span>
+            {/* 2026-08-27: 🗓️ hat im Satz kein Bild und waere ein rohes Systemzeichen
+                geblieben - genau der Fehler, den ich an diesem Tag bei drei
+                anderen Folien gefunden habe und hier selbst gemacht hatte.
+                `fx-clapper` ist die Klappe: heute Abend geht es los. */}
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQIcon slug="fx-clapper" size="1em" /></span>
             {de ? 'Heute Abend' : 'Tonight'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
@@ -617,7 +621,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       panels.push({ key: 'avatare', node: (
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🎨" size="1em" /></span>
+            {/* 2026-08-27: 🎨 hat im Satz kein Bild. `fx-sparkles` statt eines
+                rohen Zeichens - die Karte zeigt ohnehin die Objekte selbst,
+                die Ueberschrift braucht kein zweites Motiv. */}
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQIcon slug="fx-sparkles" size="1em" /></span>
             {de ? 'Sucht euch einen aus' : 'Pick your avatar'}
           </div>
           {/* Eigene Komponente, siehe ihren Kopf: der Takt darf nicht im State
@@ -1207,20 +1214,41 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Avatar wird IMMER gerendert, auch wenn avatarId unbekannt. Fallback ist
   // ein farbiger Kreis mit ❓ Glyph — gleicher visueller Footprint wie ein
   // echtes Avatar, garantiert konsistentes Layout aller Stats-Zeilen.
+  //
+  // 2026-08-27 (Wolf: „das sieht komisch aus und passt nicht zu den anderen").
+  // Er hat auf das Fragezeichen gezeigt, und der Grund ist nicht das Zeichen,
+  // sondern die FORM: seit dem Avatarsatz V5 ist jede Teammarke eine KACHEL
+  // (`qqKachelFlaeche`), die Notloesung war aber ein Kreis. Neben einem echten
+  // Avatar stand damit ein Fremdkoerper - und weil sie bei Teams aus der
+  // Bestenliste haeufig greift (die haben keinen gespeicherten Avatar), sah man
+  // sie oft.
+  // Jetzt dieselbe Kachel wie ueberall, nur ohne Motiv. Das ist dieselbe
+  // Sprache wie die neutrale Kachel im Award-Rad (2026-08-27, „neutrale Kachel
+  // beim Losdrehen").
   const fallbackAvatarCircle = (sizeCss: string, c: string) => {
     const mono = isQuietMotion();
+    if (mono) {
+      // Studio Mono bleibt eckig-editorial, wie der Rest dieses Skins.
+      return (
+        <div style={{
+          width: sizeCss, height: sizeCss, borderRadius: 'var(--qq-card-radius)',
+          background: 'var(--qq-surface)', border: '2px solid var(--qq-card-text)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+          color: 'var(--qq-card-text)', fontSize: `calc(${sizeCss} * 0.42)`, fontWeight: 900,
+        }}>?</div>
+      );
+    }
     return (
-    <div style={{
-      width: sizeCss, height: sizeCss, borderRadius: '50%',
-      background: mono ? 'var(--qq-surface)' : `linear-gradient(135deg, ${c}22, ${c}10)`,
-      border: mono ? '2px solid var(--qq-card-text)' : `2px solid ${c}55`,
-      boxShadow: mono ? 'none' : `0 0 14px ${c}33`,
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      flexShrink: 0,
-      color: mono ? 'var(--qq-card-text)' : `${c}aa`,
-      fontSize: `calc(${sizeCss} * 0.5)`,
-      fontWeight: 900,
-    }}>?</div>
+      <div style={{
+        width: sizeCss, height: sizeCss,
+        ...qqKachelFlaeche({ farbe: c, radius: 'var(--qq-card-radius)' as unknown as number }),
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        flexShrink: 0,
+        color: 'rgba(246,239,230,0.34)',
+        fontSize: `calc(${sizeCss} * 0.42)`,
+        fontWeight: 900,
+        lineHeight: 1,
+      }}>?</div>
     );
   };
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
@@ -1460,7 +1488,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.stealMaster && funStats.stealMaster.total >= 2) {
     panels.push({ key: 'stealMaster', node: (
       <div>
-        {statTitle('🗡️', 'Steal-Master', 'Steal Master', QQ_COLORS.red500)}
+        {statTitle(<QQIcon slug="action-steal" size="1em" />, 'Steal-Master', 'Steal Master', QQ_COLORS.red500)}
         {teamLine(funStats.stealMaster.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
@@ -1475,7 +1503,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.underdog) {
     panels.push({ key: 'underdog', node: (
       <div>
-        {statTitle('🐺', 'Underdog', 'Underdog', '#22D3EE')}
+        {statTitle(<QQIcon slug="brand-wolf" size="1em" />, 'Underdog', 'Underdog', '#22D3EE')}
         {teamLine(funStats.underdog.teamName)}
         {isQuietMotion()
           ? <div style={{ marginTop: 0 }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
@@ -1599,7 +1627,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.todayStats && funStats.todayStats.games >= 1) {
     panels.push({ key: 'today', node: (
       <div>
-        {statTitle('📅', 'Heute', 'Today', QQ_COLORS.blue400)}
+        {statTitle(<QQIcon slug="fx-chart" size="1em" />, 'Heute', 'Today', QQ_COLORS.blue400)}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: isQuietMotion() ? 'center' : undefined }}>
           {statPill(funStats.todayStats.games, de ? 'Spiele heute' : 'games today', QQ_COLORS.blue400)}
           {funStats.todayStats.topScore && (

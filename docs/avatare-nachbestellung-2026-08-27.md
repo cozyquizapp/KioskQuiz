@@ -95,6 +95,50 @@ Aufhaengeoese soll der Hintergrund durchscheinen.
 
 ---
 
+## Zweite Runde: noch zwei (2026-08-27 abends)
+
+Wolf hat das Gaensebluemchen auf einer pinken Kachel gefunden. Aus fuenf
+Blaettern sind Stuecke **herausgebissen**, bei der Wolke oben rechts dasselbe.
+Gleiche Ursache wie bei der alten Discokugel: **weisses Objekt auf weissem
+Grund**, die Hintergrundentfernung kann beides nicht trennen und frisst mit.
+
+⚠️ Mein Werkzeug findet das NICHT, und ich habe zweimal vergeblich versucht,
+einen Messwert dafuer zu bauen:
+* Die Bisse beruehren den Aussenrand, sind also keine Innenloecher.
+* „Harte Kante" trennt auch nicht: gemessen liegen Gaensebluemchen (60 %) und
+  Wolke (57 %) UNTER dem Durchschnitt, weil der ganze Satz freigestellt ist und
+  damit jede Kante hart ist.
+
+Die einzige verlaessliche Kontrolle bleibt das Blatt auf einem gesaettigten
+Grund. Gefaehrdet sind die HELLEN Motive.
+
+### 6. Gaensebluemchen
+
+```
+Gaensebluemchen von vorne. Acht bis neun cremeweisse (#FFF6E8), dicke, runde
+Blaetter um eine gewoelbte gelbe Mitte (#F2B705) mit feiner Koernung. Darunter
+ein gruener Stiel mit zwei ovalen Blaettern.
+
+WICHTIG: Die Blaetter sind VOLLSTAENDIG. In der alten Fassung fehlen aus fuenf
+Blaettern unregelmaessige Stuecke, als waeren sie herausgebissen - dort scheint
+der Hintergrund durch, wo Blatt sein muesste. Die Silhouette darf keine
+Ausbrueche haben.
+```
+
+### 7. Wolke
+
+```
+Wolke von vorne, aus mehreren weichen, runden Ballen zusammengesetzt, cremeweiss
+(#FFF6E8) mit sanfter Schattierung.
+
+WICHTIG: Die Aussenkante ist durchgehend rund und geschlossen. In der alten
+Fassung fehlen oben rechts zwei unregelmaessige Stuecke.
+```
+
+Dateinamen: `nature--daisy.png`, `nature--cloud.png`.
+
+---
+
 ## Danach
 
 ```bash

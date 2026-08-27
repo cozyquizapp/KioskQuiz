@@ -111,6 +111,16 @@ console.log(wechselSchritte > 0
 console.log(mehrfach === 0
   ? '  ✓ Immer nur eine Kachel auf einmal, kein Flackern.'
   : `  ⚠ ${mehrfach} Schritte aendern mehrere Kacheln gleichzeitig.`);
+// Und: steht irgendwann ein Motiv doppelt im Bild? Die alte Garantie („48
+// durch 16 teilbar") gilt nicht mehr, seit Motive aus dem Satz fallen koennen.
+let doppel = 0;
+for (const bild of bilderFolge) {
+  const slugs = bild.map(p => p.split('|')[0]);
+  if (new Set(slugs).size !== slugs.length) doppel++;
+}
+console.log(doppel === 0
+  ? '  ✓ Nie zwei gleiche Motive gleichzeitig im Bild.'
+  : `  ✗ In ${doppel} Bildern steht ein Motiv doppelt.`);
 console.log(mehrfarbig.length > 0
   ? `  ✓ ${mehrfarbig.length} Objekte standen auf mehr als einer Farbe.`
     + '\n    Damit zeigt die Folie, dass die Kombination frei ist.'

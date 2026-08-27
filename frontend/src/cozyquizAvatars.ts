@@ -157,7 +157,24 @@ const ALTLASTEN: Record<string, string> = {
  * wird diese Liste leer.
  */
 export const COZYQUIZ_DEFEKT: readonly string[] = [
-  // 2026-08-27, noch am selben Tag geleert: Wolf hat alle fuenf neu ausgeleitet.
+  // 2026-08-27, zweite Runde. Wolf hat das Gaensebluemchen auf Pink gefunden:
+  // aus fuenf Blaettern sind Stuecke HERAUSGEBISSEN. Bei der Wolke dasselbe,
+  // oben rechts. Beide erst dann sichtbar, wenn sie auf einem gesaettigten
+  // Grund stehen.
+  //
+  // ⚠️ Mein Werkzeug konnte das NICHT finden, und der Grund ist wichtig: die
+  // Bisse beruehren den Aussenrand, sind also keine Innenloecher. Und ein
+  // Messwert fuer „harte Kante" trennt auch nicht - nachgemessen liegen
+  // Gaensebluemchen (60 %) und Wolke (57 %) UNTER dem Schnitt, weil der ganze
+  // Satz freigestellt ist und jede Kante hart ist.
+  //
+  // Was stattdessen gilt, und das ist die eigentliche Erkenntnis: gefaehrdet
+  // sind die HELLEN Motive. Ein weisses Objekt auf weissem Grund kann eine
+  // Hintergrundentfernung nicht sauber trennen, also frisst sie mit. Dieselbe
+  // Ursache wie bei der alten Discokugel. Das ist eine Beobachtungsliste, kein
+  // Pruefwert - und die Kontrolle bleibt das Blatt auf Pink.
+  'daisy', 'cloud',
+  // 2026-08-27, erste Runde: Wolf hat alle fuenf neu ausgeleitet.
   // Gemessen mit `node scripts/avatare-loecher.mjs`, und die Lochzahlen passen
   // diesmal zu den Motiven statt zu Zufall:
   //   backpack 1 (unter dem Griff), hot-air-balloon 3 (die drei Zwischenraeume

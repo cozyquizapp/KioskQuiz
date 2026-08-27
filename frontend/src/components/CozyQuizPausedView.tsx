@@ -165,64 +165,87 @@ function AvatarWand({ de, lang, spalten, zeilen }: {
   const anzahl = spalten * zeilen;
   const gesamt = COZYQUIZ_HEILE.length;
   const farben = QQ_TEAM_PALETTE.length;
-  // Objekt UND Farbe je Kachel. Beide wandern, siehe der Kommentar am Wechsel.
-  const [zeiger, setZeiger] = useState<Array<{ obj: number; farbe: number }>>(
-    () => Array.from({ length: anzahl }, (_, i) => ({
-      obj: i % Math.max(gesamt, 1),
-      farbe: i % farben,
-    })),
+
+  // ── Zwei Uhren, und das ist Absicht ────────────────────────────────────────
+  // 2026-08-27, zweite Runde. Wolf: „was geil waere, wenn auch die farben
+  // wechseln".
+  //
+  // Die Farbe WANDERTE schon, aber gekoppelt an den Objektwechsel: eine Kachel
+  // bekam ihre neue Farbe nur, wenn sie ohnehin gerade ihr Objekt tauschte.
+  // Bei sechzehn Kacheln ist das alle 6,7 Sekunden einmal, und weil im selben
+  // Moment das auffaelligere Objekt sprang, hat es niemand gesehen. Gemessen
+  // war es da (33 Objekte auf mehr als einer Farbe), sichtbar war es nicht.
+  //
+  // Jetzt laufen zwei getrennte Uhren:
+  //   Objekt  alle 420 ms, immer nur EINE Kachel, reihum.
+  //   Farbe   alle 2,2 s, ALLE Kacheln zugleich um eins weiter.
+  //
+  // Dass die Farbe alle zugleich betrifft, widerspricht dem „nur eins auf
+  // einmal" nicht: eine Kreuzblende ueber 900 ms ist ein anderes Ereignis als
+  // ein springendes Objekt. Mit gestaffelter Verzoegerung je Kachel wird daraus
+  // eine Welle, die diagonal ueber die Wand laeuft - und genau die macht den
+  // Punkt sichtbar, um den es geht: Objekt und Farbe sind nicht gepaart.
+  const [objekte, setObjekte] = useState<number[]>(
+    () => Array.from({ length: anzahl }, (_, i) => i % Math.max(gesamt, 1)),
   );
+  const [farbSchritt, setFarbSchritt] = useState(0);
+
   useEffect(() => {
-    // Ruhiger Modus: kein Wechsel. Die Karte bleibt stehen und zeigt sechzehn.
     if (isQuietMotion() || gesamt <= anzahl) return;
     let n = 0;
     const id = setInterval(() => {
       const k = n % anzahl;
-      setZeiger(vorher => {
+      setObjekte(vorher => {
         const nachher = [...vorher];
-        nachher[k] = {
-          obj: (nachher[k].obj + anzahl) % gesamt,
-          // ⚠️ 2026-08-27 (Wolf: „die aktuelle darstellung koennte als
-          // missverstaendnis sagen, dass ein emoji nur mit einer bestimmten
-          // farbe kombiniert werden kann").
-          //
-          // Er hat recht, und die Karte behauptete damit das Gegenteil der
-          // Wahrheit. Der Satz ist genau deshalb farbneutral gebaut: 48 Objekte
-          // MAL 8 Farben, kein Slot-Binding (siehe Kopf von cozyquizAvatars.ts).
-          // Wenn nur das Objekt wechselt und die Farbe klebt, lehrt die Folie
-          // eine Regel, die es nicht gibt.
-          //
-          // Deshalb wandert die Farbe mit, und zwar um EINS, waehrend das Objekt
-          // um sechzehn springt. Dadurch zeigt dieselbe Kachel nacheinander drei
-          // Objekte auf drei verschiedenen Farben, und ein Objekt taucht im Lauf
-          // der Zeit auf verschiedenen Gruenden auf. Die Kombination ist damit
-          // sichtbar frei, nicht nur in der Bildunterschrift behauptet.
-          farbe: (nachher[k].farbe + 1) % farben,
-        };
+        // ⚠️ Frueher stand hier nur „+ anzahl", mit der Begruendung, 48 sei
+        // durch 16 teilbar und damit koenne kein Motiv doppelt im Bild stehen.
+        // Diese Arithmetik ist hinfaellig, sobald ein Motiv aus dem Satz
+        // faellt: seit dem Gaensebluemchen und der Wolke sind es 46, und 46
+        // ist weder durch 16 noch durch 12 teilbar.
+        // Deshalb jetzt geprueft statt gerechnet: weitersuchen, bis der Slug
+        // nirgends sonst im Bild steht. Das haelt bei jeder Satzgroesse.
+        const belegt = new Set(nachher.filter((_, idx) => idx !== k));
+        let kandidat = (nachher[k] + anzahl) % gesamt;
+        for (let versuch = 0; versuch < gesamt && belegt.has(kandidat); versuch++) {
+          kandidat = (kandidat + 1) % gesamt;
+        }
+        nachher[k] = kandidat;
         return nachher;
       });
       n++;
     }, 420);
     return () => clearInterval(id);
-  }, [anzahl, gesamt, farben]);
+  }, [anzahl, gesamt]);
+
+  useEffect(() => {
+    if (isQuietMotion()) return;
+    const id = setInterval(() => setFarbSchritt(f => (f + 1) % farben), 2200);
+    return () => clearInterval(id);
+  }, [farben]);
 
   return (
-    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${spalten}, 1fr)`, gap: 12 }}>
-      {zeiger.map((z, i) => {
-        const slug = COZYQUIZ_HEILE[z.obj % Math.max(gesamt, 1)];
+    <div style={{ display: 'grid', gridTemplateColumns: `repeat(${spalten}, 1fr)`, gap: 14 }}>
+      {objekte.map((z, i) => {
+        const slug = COZYQUIZ_HEILE[z % Math.max(gesamt, 1)];
+        const spalte = i % spalten, zeile = Math.floor(i / spalten);
         return (
           <div key={i} style={{
             aspectRatio: '1 / 1',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             overflow: 'hidden',
             ...qqKachelFlaeche({
-              farbe: QQ_TEAM_PALETTE[z.farbe % farben],
-              radius: 18,
+              farbe: QQ_TEAM_PALETTE[(i + farbSchritt) % farben],
+              radius: 20,
             }),
-            // Die Farbe wechselt weich, das Objekt springt mit seiner eigenen
-            // kurzen Bewegung. Zwei Dinge, ein Takt.
-            transition: 'background 0.42s var(--qq-ease-out-cubic), border-color 0.42s var(--qq-ease-out-cubic)',
-            animation: `panelSlideIn 0.5s var(--qq-ease-out-cubic) ${0.02 * i}s both`,
+            // Die Welle: je weiter rechts und unten, desto spaeter. 70 ms je
+            // Schritt, bei 6x2 also 350 ms von der ersten bis zur letzten
+            // Kachel - langsam genug, dass man ihr folgen kann, kurz genug,
+            // dass sie vor dem naechsten Farbschritt durch ist.
+            transitionProperty: 'background, border-color',
+            transitionDuration: '0.9s',
+            transitionTimingFunction: 'var(--qq-ease-out-cubic)',
+            transitionDelay: `${(spalte + zeile) * 70}ms`,
+            animation: `panelSlideIn 0.5s var(--qq-ease-out-cubic) ${0.03 * i}s both`,
           }}>
             {/* `key` = der Slug: ein neues Motiv ist ein neues Element und
                 bringt seine Einblendung mit. Ohne das wuerde nur die Quelle
@@ -233,7 +256,7 @@ function AvatarWand({ de, lang, spalten, zeilen }: {
               alt={cozyQuizLabel(slug, lang)}
               draggable={false}
               style={{
-                width: '78%', height: '78%', objectFit: 'contain', display: 'block',
+                width: '76%', height: '76%', objectFit: 'contain', display: 'block',
                 animation: isQuietMotion() ? 'none' : 'qqAvatarTausch 0.22s var(--qq-state) both',
               }}
             />
@@ -587,7 +610,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // (Kontaktbogen `.shots/ANKOMMEN-NEU.png`). Der Kartenbereich der Folie
       // ist nicht die ganze Buehne - darueber steht die Wortmarke, darunter
       // „Gleich geht's los" und der Wolf. Zwei Reihen passen.
-      const SPALTEN = 8, ZEILEN = 2;
+      // 2026-08-27 (Wolf: „mach ein paar weniger felder vlt?"): 12 statt 16.
+      // Groessere Kacheln, ruhigere Wand, und die Farbwelle laeuft ueber sechs
+      // Spalten statt acht - dadurch ist sie eher als Welle zu lesen.
+      const SPALTEN = 6, ZEILEN = 2;
       panels.push({ key: 'avatare', node: (
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>

@@ -25,6 +25,10 @@
 > ein google nebenprodukt, falls sie nachschauen". Also KEINE Umpositionierung
 > auf eine Bewerbungsseite - sie bleibt eine Kundenseite.
 
+> **Uebergabe fuer ein neues Fenster: `docs/UEBERGABE_LANDING.md`.** Sie traegt
+> allein - Auftrag, Stack, alle Designwerte, was absichtlich anders bleibt, das
+> Feedback samt Gegenrede, und die Reihenfolge.
+
 - [ ] **Bestandsaufnahme zuerst.** Repo klonen, alle sieben Routen aufnehmen.
       Erst danach entscheiden, ob Anstrich oder Umbau. ⚠️ Nicht blind
       umlackieren: an der Seite haengen SSG-Prerender, Meta/JSON-LD, Sitemap,
@@ -49,6 +53,29 @@
       ich mit" ist fuer einen Barbetreiber ein Kaufgrund, kein Makel. Beides
       vor dem Umbau klaeren, sonst wird ein Startseiten-Problem als
       Positionierungsproblem behandelt.
+
+---
+
+## 🚪 LOBBY: das zweite Gesicht (Wolf 2026-08-26)
+
+- [ ] **Die Folie „Gleich geht's los" taucht im echten Ablauf nie auf.**
+      Wolf: „diese page taucht realistisch nie auf, sie ist zwischen lobby und
+      es wird vorbereitet? ... denke ich an ein event, waere diese page gut zum
+      ankommen etc, das einlogen nach begruessung etc?"
+      Der Moment, den er beschreibt, existiert wirklich und hat heute keinen
+      Bildschirm: Leute kommen an, bestellen, setzen sich. Er braucht dabei
+      ZWEI Dinge gleichzeitig - „wie komme ich rein" (QR, Teamliste) und „was
+      passiert hier gleich" (das Regelkarussell). Die Lobby kann das Erste,
+      diese Folie das Zweite, und beide stehen sich im Weg.
+      **Vorschlag: kein neuer Schritt im Ablauf, sondern ein zweites Gesicht
+      der Lobby.** Solange die Lobby offen ist, wechselt der Beamer zwischen
+      Beitrittsbild und Karussell. Der Inhalt wird endlich gesehen, der
+      Ankommens-Moment ist bespielt, und es kostet keinen zusaetzlichen
+      Tastendruck.
+      ⚠️ Das Letzte ist der Punkt: ein Schritt mehr im Ablauf kostet Wolf einen
+      Tastendruck im hektischsten Moment des Abends. Am 2026-08-26 haben wir
+      aus genau diesem Grund einen leeren Beat aus dem Finale geworfen. Ein
+      Schritt muss sich verdienen.
 
 ---
 

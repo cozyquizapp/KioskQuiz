@@ -410,10 +410,25 @@ export default function QQProgressTree({
     // `gruppenGap`), also wird er beim Rendern der Folgephase zuerst gesetzt -
     // aber mit dem engen Abstand nach links und dem vollen nach rechts.
     if (showCozyGames && pIdx >= 1) {
-      cursor += gruppenGap;
+      // 2026-08-27 (Wolf, Bild vom ganzen Baum: „die spiele gehoeren eigentlich
+      // noch zu den entsprechenden runden wenn sie aktiviert sind").
+      //
+      // Hier stand `gruppenGap` - derselbe grosse Abstand wie nach dem Knoten.
+      // Gemessen sass der CozyGame damit auf BEIDEN Seiten 26 px frei, waehrend
+      // die Kacheln einer Runde 13 px auseinander stehen. Er stand also exakt
+      // in der Mitte zwischen zwei Runden und gehoerte optisch zu keiner.
+      // Der Kommentar darueber sagte seit dem 25.8. das Richtige („mit dem
+      // engen Abstand nach links und dem vollen nach rechts"), der Code tat es
+      // nicht. Jetzt tut er es: eng nach links an seine Runde, weit nach rechts
+      // zur naechsten.
+      cursor += dotGap;
       cozyGameCentersByPi.set(pIdx, cursor + cozyGameDotSize / 2);
       cozyGameGruppe.set(pIdx, pIdx - 1);   // gehoert zur Runde davor
       cursor += cozyGameDotSize;
+      // Die Gesamtbreite bleibt gleich: was links weggenommen wurde, kommt
+      // rechts dazu. Damit verschiebt sich NUR der Knoten, und keine der
+      // Positionen dahinter - die haengen an Mittigkeit und Zoom.
+      cursor += gruppenGap - dotGap;
     }
     // Vor der letzten Phase: Bieten-Dot einfuegen (nur wenn showBidding).
     if (showBidding && pIdx === phases.length - 1 && pIdx > 0) {

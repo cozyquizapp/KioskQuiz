@@ -15,6 +15,43 @@
 
 ---
 
+## 🌐 LANDING cozywolf.de — im neuen Design, plus zweite Ebene (2026-08-26)
+
+> Eigenes Repo: `cozyquizapp/cozywolf-landing`, eigener Deploy (Vercel),
+> eigener Stack. Einstieg: `COZYWOLF_LANDING.md`.
+> Wolfs Rahmen: „es geht nur darum, die landing so anzupassen, dass sie
+> funktioniert und gut aussieht (im neuen design) ich will onilo das nicht
+> verkaufen, nur zeigen was ich erschaffen habe (mit pitch) website ist eher
+> ein google nebenprodukt, falls sie nachschauen". Also KEINE Umpositionierung
+> auf eine Bewerbungsseite - sie bleibt eine Kundenseite.
+
+- [ ] **Bestandsaufnahme zuerst.** Repo klonen, alle sieben Routen aufnehmen.
+      Erst danach entscheiden, ob Anstrich oder Umbau. ⚠️ Nicht blind
+      umlackieren: an der Seite haengen SSG-Prerender, Meta/JSON-LD, Sitemap,
+      Vercel-Rewrites je Route, GoatCounter-Conversion-Events und Formspree.
+      Und die Marke ist dort ABSICHTLICH anders (Marketing-Pink #FA4BA3 gegen
+      App-Pink #EC4899, per Logo-Pixelmessung). Was angeglichen wird und was
+      verschieden bleibt, ist eine Entscheidung, keine Uebertragung.
+- [ ] **„Das Spiel hinter dem Abend"** — der stärkste Punkt aus dem Feedback.
+      Drei Bilder nebeneinander: Beamer, Team-Handy, Moderator. Darunter „Ein
+      System, drei Perspektiven" und zwei Saetze. Kostet wenig, verbiegt nichts
+      am Kundenversprechen, und liefert genau die zweite Ebene.
+      Die Bilder fallen beim Durchlauf sowieso an.
+- [ ] **Vier belegbare Ungereimtheiten** (aus dem Feedback, alle nachpruefbar):
+      „Gründer & Quizmaster" steht zweimal; im FAQ wechselt die Anrede zwischen
+      „ihr/eure" und „du/deine"; „Für Gruppen von 10 bis 100 Personen" gegen
+      „ab sechs Personen" im Geburtstagstext; „Gratis für Test-Teams" steht
+      gleichwertig neben dem Haupt-CTA und nimmt dem Hero Wertigkeit.
+- [ ] **Offen, meine Gegenrede zum Feedback:** „die Seite spricht Firmen,
+      Geburtstage und Bars gleichzeitig an" gilt fuer die STARTSEITE, nicht
+      fuer die Seite - es gibt `/firmen`, `/locations`, `/feiern` als eigene
+      Routen. Die Trennung existiert also schon. Und „Beamer und Sound bringe
+      ich mit" ist fuer einen Barbetreiber ein Kaufgrund, kein Makel. Beides
+      vor dem Umbau klaeren, sonst wird ein Startseiten-Problem als
+      Positionierungsproblem behandelt.
+
+---
+
 ## 🖼️ AVATARSATZ V5 — ein Motiv ist defekt (Wolf 2026-08-26)
 
 - [ ] **`cozy-home--alarm-clock.png` neu ausleiten.** Die Flaeche INNERHALB des

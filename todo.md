@@ -56,6 +56,77 @@
 
 ---
 
+## 📐 SCHRIFT PASST SICH EIN (Wolf 2026-08-27)
+
+- ✅ **Gemessen statt gestuft** (2026-08-27, erledigt). Wolf zu zwei Bildern:
+      „immernoch der bug unten" (Gewinnerkarte abgeschnitten) und „hier auch,
+      das war das font groesser problem" (untere Optionsreihe liegt hinter der
+      Team-Leiste). Dann sein Vorschlag, der die Loesung war:
+
+      > „vlt sollte nur fragefont groesser und nur automatisch so viel wie
+      > aktuelle seite zulaesst also dynamisch? geht das, weil auch im
+      > sprachwechsel kann das wieder anders aussehen"
+
+      Der Grund ist der entscheidende. Bis heute liefen feste Stufen nach
+      ZEICHENZAHL. Eine Zeichenzahl ist aber nur ein Stellvertreter: „Fantasy &
+      Science-Fiction" hat 25 Zeichen und bricht um, „Halbwissen Gold Wert" hat
+      20 und bricht nicht. Und beim Sprachwechsel wird aus 21 deutschen Zeichen
+      schnell 14 englische. Eine Stufe kann also immer nur fuer eine Sprache
+      richtig sein.
+
+      **Ursache**, datierbar: die Optionsschrift trug seit 2026-08-22 keine
+      Laengengrenze mehr (`QQBeamerPage.tsx`, Deckel 44 auf 72, Uebergabe 2a
+      Aenderung 5). Der Deckel war eine Entscheidung und bleibt; was fehlte, war
+      eine Grenze nach unten.
+
+      **Gemessen vorher** (`node scripts/mucho-optionen-hoehe.mjs`):
+
+      ```
+      Antwort-Zustand        Block   Unterkante   Rest
+        bis 16 Zeichen       280 px      789      81 px Luft
+        21 bis 25 Zeichen    439 px      908       2 px      <- Wolfs Bild
+        34 Zeichen           756 px     1223    -233 px UNTER der Buehne
+      ```
+
+      Eine zweite Zeile kostet genau 159 px, und es gibt zwei Reihen.
+
+      **Gebaut**: `frontend/src/qqEinpassen.ts`. Ein Faktor `--qq-fit`, gesucht
+      per Intervallhalbierung, sechs Schritte. EIN Faktor fuer Frage und
+      Optionen zusammen, damit das Groessenverhaeltnis der Uebergabe 2a
+      („entscheidend sind die Antworten") nicht heimlich kippt.
+
+      **Nachher**: alles im Bild, schlimmster Fall 175 px Reserve statt 233 px
+      Ueberstand. Bild: `.shots/EINPASSEN.png`.
+
+      ⚠️ Vier Fallen, alle gemessen und im Kopf der Datei festgehalten:
+      1. Die Team-Leiste ist `position: absolute`, taucht in `scrollHeight`
+         also nicht auf. Der Block konnte bis unter sie laufen, ohne dass etwas
+         „ueberlief". Sie ist jetzt als Sperre angemeldet.
+      2. Eine handgepflegte Kennung (Frage-ID, Sprache, ...) reicht nicht: die
+         Liste ist nie vollstaendig, und der Container ist `flex: 1` in einer
+         festen Buehne, seine eigene Groesse aendert sich also nie. Beobachtet
+         werden die KINDER.
+      3. `revealWinnerIn` startet mit `translateY(30px)`. Eine Messung ueber
+         `getBoundingClientRect` waere waehrend der Animation 30 px zu tief, und
+         weil eine Transform keine Groessenaenderung ist, meldet sich danach kein
+         Beobachter mehr. Gemessen wird ueber Offsets.
+      4. Ein LUFT-Abzug am `scrollHeight` ist nie erfuellbar (Flexbox fuellt den
+         Container exakt aus) und liess alles auf den Mindestfaktor fallen. Die
+         Luft sitzt an der Sperre.
+
+- [ ] **Zwei Reste, beide klein und beide notiert statt still hingenommen.**
+      1. In der Aufloesung steht die Gewinnerkarte bei Optionen um 21 Zeichen
+         **37 px** ueber der Kante. Nicht abgeschnitten, aber auf einem Beamer
+         mit Ueberscan knapp. Das ist keine Einpass-Frage, sondern der eigene
+         Abstand der Karte. Wenn es dir am Livebild auffaellt, sag Bescheid.
+      2. `qRevealFontSize` (die Zeichenzahl-Leiter vom Morgen des 26.8.) macht
+         jetzt dieselbe Arbeit schlechter als der Einpasser. Sie kann raus,
+         dann wird die Frage in der Aufloesung so gross, wie wirklich Platz ist.
+         Bewusst NICHT in diesem Durchgang: eine gepruefte Verbesserung ist mehr
+         wert als zwei, von denen eine ungeprueft ist.
+
+---
+
 ## 🚪 ANKOMMEN: der QR wird freigeschaltet (Wolf 2026-08-26/27)
 
 Die Folie „Gleich geht's los" taucht im echten Ablauf nie auf. Wolf: „diese

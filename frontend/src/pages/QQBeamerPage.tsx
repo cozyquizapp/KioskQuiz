@@ -4406,7 +4406,13 @@ export function MuchoOptionsReveal({
         transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth), margin-bottom 0.9s ease',
       };
   return (
-    <div style={containerStyle}>
+    // 2026-08-27: eigene Kennung, damit die Unterkanten-Messung den
+    // Optionsblock findet, ohne ihn ueber „das groesste Kaestchen" zu raten.
+    // Genau dieser Block ist der Hebel, den die erste Fassung von
+    // `gewinnerkarte-unterkante.mjs` nicht angefasst hat: sie hat die FRAGE
+    // variiert, aber Wolfs Bild vom 27.8. hat eine kurze Frage und Optionen,
+    // die auf zwei Zeilen laufen.
+    <div data-qq-mucho-optionen="" style={containerStyle}>
       {options.map((opt, i) => {
         const optImg = optionImages?.[i];
         const isCorrect = showLock && i === correctOptionIndex;
@@ -4574,7 +4580,14 @@ export function MuchoOptionsReveal({
                 // sind die Antworten, nicht die Frage; leise werden Entwuerfe
                 // bei den Antworten. Der cqw-Anteil steigt mit, damit die
                 // Groesse an der Spaltenbreite haengt und nicht am Deckel.
-                fontSize: 'clamp(26px, 4.4cqw, 72px)', fontWeight: 900,
+                // 2026-08-27 (Wolf: „das war das font groesser problem"): der
+                // Deckel von 72 bleibt, er war eine Entscheidung. Was fehlte,
+                // war eine Grenze nach unten hin - bei „Fantasy &
+                // Science-Fiction" brach die Option auf zwei Zeilen um, und
+                // zwei Reihen mal eine Zeile sind 159 px, die unten fehlen.
+                // `--qq-fit` kommt aus `useEinpassen` und ist gemessen, nicht
+                // gestuft; bei kurzen Optionen ist er 1 und nichts aendert sich.
+                fontSize: `calc(clamp(26px, 4.4cqw, 72px) * var(--qq-fit, 1))`, fontWeight: 900,
                 // Skin: Option-Label lesbar auf hellen Karten (slate100 war fast
                 // weiss -> unsichtbar auf Mono). isWrong bleibt gedimmt.
                 // 2026-08-22: Cozy liest jetzt dieselben Tokens — slate100 war

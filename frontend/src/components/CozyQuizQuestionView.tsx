@@ -66,6 +66,7 @@ import {
 } from './reveals/Bluff';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqFactionBuckets, qqFactionAvatarEmoji } from '../qqShared';
+import { useEinpassen, mitFit, SPERRE_ATTR } from '../qqEinpassen';
 
 // A1 (2026-07-13): Timer sitzt oben rechts (196px breit, ~16px Rand). Auf dem
 // 1760er-Design-Canvas laesst maxWidth 1300 zentriert 230px Rand pro Seite frei
@@ -219,6 +220,23 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
     });
     if (traegt === nurFrage) setNurFrage(!traegt);
   });
+
+  // 2026-08-27 (Wolf: „deswegen waere eine dynamische regelung das beste").
+  // Statt fester Stufen nach Zeichenzahl wird gemessen, wie viel Platz die
+  // Folie WIRKLICH hat, und die Schrift auf den groessten Grad gesetzt, der
+  // noch passt. Der Grund ist Wolfs: beim Sprachwechsel aendert sich der Text,
+  // eine Zeichenzahl-Stufe kann also immer nur fuer eine Sprache stimmen.
+  // Nur auf der Buehne - auf dem Handy und in den Vorschauseiten bleibt alles
+  // wie bisher (`--qq-fit` ist dort nicht gesetzt, Vorgabe 1).
+  useEinpassen(
+    flussRef,
+    // Alles, was den Platzbedarf aendert, gehoert in die Kennung.
+    `${q?.id ?? ''}|${lang}|${revealed ? 1 : 0}|${s.muchoRevealStep ?? 0}|${nurFrage ? 1 : 0}`,
+    // `istBuehne` selbst wird erst weiter unten gebildet; ein Hook darf aber
+    // nicht nach unten wandern, ohne die Aufrufreihenfolge zu riskieren.
+    // Derselbe Ausdruck, hier gelesen.
+    getActiveThemeId() === BUEHNE_THEME_ID,
+  );
   useEffect(() => {
     if ((!isCheese && !useMapPicture) || !img?.url) {
       setIsCheesePortrait(false);
@@ -2258,7 +2276,10 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                       bei qFontSize/hpCompact-Wechsel sichtbar wandern. Key-Remount
                       macht den Wechsel atomic, langFadeIn als saubere Entry-Anim. */}
                   <div key={`${lang}-${cardFontSize}`} data-qq-frage="" style={{
-                    fontSize: cardFontSize,
+                    // 2026-08-27: mal `--qq-fit`. Der Faktor kommt aus
+                    // `useEinpassen` und ist 1, solange alles passt - auf dem
+                    // Handy und in den Vorschauseiten immer.
+                    fontSize: mitFit(cardFontSize),
                     // 2026-08-22 (Uebergabe 2a, Aenderung 3): Laufweite -0.03em
                     // und Zeilenabstand 0.86 statt 1.22. Beides gehoert zum
                     // groesseren Grad: je groesser die Schrift, desto enger
@@ -3918,7 +3939,12 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
 
           {/* Bottom: team answer progress — Hot Potato has its own indicator below */}
           {!revealed && s.teams.length > 0 && !(q.category === 'BUNTE_TUETE' && q.bunteTuete?.kind === 'hotPotato' && !(s as any).largeGroupMode) && (
-            <div style={{
+            // 2026-08-27: als Sperre angemeldet. Sie ist absolut positioniert
+            // und taucht deshalb in `scrollHeight` nicht auf - der Optionsblock
+            // konnte bis unter sie laufen, ohne dass irgendetwas „ueberlief".
+            // Genau das zeigt Wolfs Bild vom 27.8. („3/8 Teams" liegt hinter
+            // „Romance / Liebesroman").
+            <div {...{ [SPERRE_ATTR]: '' }} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
               position: 'absolute', bottom: 16, left: 0, right: 0,
             }}>

@@ -9,16 +9,28 @@ pflegen, deshalb ist die Datei die Vorlage und nicht die Wahrheit.
 
 ---
 
-## ⚠️ Der Befund vorweg: 12 von 15 sind heute rohe Systemzeichen
+## ⚠️ KORREKTUR (2026-08-27, noch am selben Tag)
 
-Nachgemessen gegen die Zuordnungstabelle in `QQIcon.tsx`: nur drei der fuenfzehn
-Zeichen haben ueberhaupt ein Bild im Satz (🪙 → `fx-bet`, 🃏 → `fx-joker`,
-🎯 → `fx-target`), und zwei davon zeigen etwas anderes als das Spiel. Die
-uebrigen zwoelf werden auf jedem Rechner anders gezeichnet - dieselbe Sache, die
-auf den Pausenfolien heute Morgen dran war.
+Hier stand: „12 von 15 sind heute rohe Systemzeichen". **Das war falsch, und der
+Fehler war meiner.** Ich habe gegen die Emoji-Tabelle in `QQIcon.tsx` gemessen -
+und die ist fuer CozyGames gar nicht der Weg. Die Spiele laufen ueber
+`CozyGameIcon` (seit 2026-07-09), und das laedt `/icons/<id>.png` mit dem
+OS-Zeichen nur als Rueckfall. Diese PNG lagen alle fuenfzehn da.
 
-Dazu kommt: **sieben Zeichen passen inhaltlich nicht.** Das ist kein Geschmack,
-das laesst sich Zeile fuer Zeile nachlesen.
+Merksatz fuer das naechste Mal: **erst den Aufloeser suchen, dann messen.** Zwei
+Wege zum selben Zeichen, und ich habe den falschen geprueft.
+
+Der zweite Befund unten stimmt weiter: die `emoji`-Felder im Katalog passen
+inhaltlich oft nicht. Sie sind aber nur der Rueckfall, also weniger dringend.
+
+**Erledigt:** Wolf hat am 2026-08-27 fuenfzehn neue Zeichen geliefert, sie liegen
+unter `/icons/<katalog-id>.png`. Diese Liste bleibt als Nachschlagewerk stehen.
+
+---
+
+## Die `emoji`-Rueckfaelle passen oft nicht
+
+Das ist kein Geschmack, das laesst sich Zeile fuer Zeile nachlesen.
 
 | Zeichen | Spiel | was daran nicht stimmt |
 |---|---|---|
@@ -156,3 +168,29 @@ das Blatt auf mehreren Gruenden ansehen.
 **Dateinamen:** `cg-<id>.png` mit der ID aus der Tabelle oben, also
 `cg-watt-puste.png`, `cg-mm-strohhalm.png` und so weiter. Dann laesst sich die
 Zuordnung ohne eine einzige Tabelle bauen.
+
+---
+
+## Eingebaut am 2026-08-27
+
+Fuenfzehn Zeichen, eins je aktivem Spiel. Originale unveraendert unter
+`design-assets/cozygame-zeichen-original/`, von dort in EINEM Schritt auf 320 px
+(Lanczos, PNG, RGBA) - die groesste Anzeige im Spiel ist `clamp(64px, 9cqw,
+110px)`, auf einem 4K-Beamer also rund 240 echte Bildpunkte.
+
+Kein Code geaendert: `CozyGameIcon` liest ohnehin `/icons/<id>.png`.
+
+⚠️ **Sechs Dateinamen wichen von der Katalog-ID ab** und wurden beim Einbauen
+umbenannt. Wer die Originale sucht, findet sie unter dem linken Namen:
+
+```
+cg-luftballon                -> cg-ballon-puste
+cg-muenz-schnippen           -> cg-muenz-kante
+cg-kartenhaus                -> cg-karten-haus
+cg-becher-pyramide           -> cg-sport-stacking
+cg-bierdeckel-rettungsringe  -> cg-bierdeckel-muenzen
+cg-ringwurf-flaschenhals     -> cg-ringwurf
+```
+
+Die drei archivierten Spiele behalten ihre alten Zeichen. Sie sind nicht
+waehlbar, brauchen also keine neuen.

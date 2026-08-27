@@ -293,6 +293,51 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
       `alarm-clock`. `ALTLASTEN` in `cozyquizAvatars.ts` bildet ihn auf die
       Waermflasche ab, im Picker taucht er nicht auf.
 
+- [ ] **Fuenf weitere Motive haben denselben Fehler** (2026-08-27, Wolf zum
+      Heissluftballon: „hier ist auch noch ein bug... schade ich finde den super
+      schoen"). Gefunden mit dem neuen `node scripts/avatare-loecher.mjs`.
+
+      **Zu wenig Loch** (deckendes Weiss, wo der Grund durchscheinen muesste,
+      teils mit demselben eingebrannten Karo wie beim Wecker):
+
+      ```
+      hot-air-balloon   zwischen den Seilen ueber dem Korb   y 657..710, bis 99 px breit
+      houseplant        zwischen Stiel und Blaettern         y 429..655, bis 59 px
+      backpack          unter dem Tragegriff                 y 128..156, bis 77 px
+      ringed-planet     zwischen Ring und Kugel              y 376..621, bis 41 px
+      ```
+
+      **Zu viel Loch** (durchsichtig mitten in einer geschlossenen Flaeche):
+
+      ```
+      disco-ball        ZWOELF verstreute Loecher, das groesste 11168 px
+                        mitten im Ball bei 256,442
+      ```
+
+      Bilder: `.shots/BALLON-ZOOM.png` und `.shots/BALLON-ZOOM2.png`.
+      Zusammen mit dem Wecker sind das **sechs von 48**.
+
+      Fuer alle gilt dasselbe wie bei der Waermflasche: neu ausleiten mit
+      echtem Alphakanal, ich stelle nichts nachtraeglich frei.
+      Solange: entweder sie bleiben drin und fallen gelegentlich auf, oder sie
+      kommen im Code aus dem Pool (eine Zeile, jederzeit zurueck). Wolfs
+      Entscheidung.
+
+- ✅ **Endlich ein Werkzeug, das die richtige Frage stellt** (2026-08-27):
+      `scripts/avatare-loecher.mjs`.
+      Am 26.8. habe ich vier Detektoren gebaut und alle weggeworfen, weil sie
+      nach „farblos und hell" gesucht haben - und ein weisses Objekt IST farblos
+      und hell. Beim Ballon ist durch HINSEHEN ein besseres Merkmal
+      aufgefallen: der Satz hat genau zwei Fehlerarten, und die zweite ist ohne
+      jede Heuristik pruefbar. Durchsichtige Pixel, die vom Bildrand aus nicht
+      erreichbar sind, sind Innenloecher. Kein Schwellwert, kein Falschalarm.
+      Und es gibt sogar ein Urteil, ohne die Motive zu kennen: **ein
+      absichtliches Loch ist EINS.** Schluessel, Donut, Teekanne und Kompass
+      haben je genau eines. Die Discokugel hat zwoelf. Streuung ist der Fehler,
+      nicht das Loch.
+      Fuer die erste Fehlerart liefert es weiter nur eine Kandidatenliste, das
+      bleibt richtig so.
+
 - [ ] **Die uebrigen 47 einmal auf dem Blatt durchsehen.**
       `node scripts/avatare-auf-grund.mjs` legt alle 48 auf Schwarz, Weiss,
       Orange, Gruen, Blau und Teamrot - genau die Kontrolle, die in den

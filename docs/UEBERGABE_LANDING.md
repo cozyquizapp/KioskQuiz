@@ -154,8 +154,11 @@ ueberschwingen, alles andere kommt ruhig.
 Schatten nur per `filter: drop-shadow(0 4px 5px rgb(0 0 0 / 22%))`, **nie**
 `box-shadow` — der schattet die rechteckige Bildflaeche statt der Silhouette.
 
-⚠️ `cozy-home--alarm-clock.png` ist defekt (eingebranntes Transparenz-Karo im
-Tragegriff). Nicht verwenden, bis ein neuer Export da ist.
+⚠️ Der Wecker ist seit 2026-08-27 **raus**. Sein Original hatte ein
+eingebranntes Transparenz-Karo im Tragegriff, Wolf hat die **Waermflasche**
+(`hot-water-bottle`) als Ersatz geliefert. Die defekte Datei liegt unberuehrt
+unter `design-assets/avatare-v5-original/defekt/`. Der Satz hat weiter 48
+Motive. Wer alte Screenshots wiederverwendet: die Uhr gibt es nicht mehr.
 
 ---
 

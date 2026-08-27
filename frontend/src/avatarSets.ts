@@ -11,7 +11,7 @@ import { COZY3D_SLUGS, isCozy3dSlug, cozy3dSrc, cozy3dLabel } from './cozy3dAvat
 import { COZY_ARENA_CREST_SLUGS, isCrestSlug, crestSrc, crestLabel } from './cozyArenaCrests';
 import { COZY_WOLF_SLUGS, isCozyWolfSlug, cozyWolfSrc, cozyWolfBlinkSrc, cozyWolfLabel } from './cozyWolves';
 import { PARTY_SLUGS, isPartySlug, partySrc, partyLabel } from './partyAvatars';
-import { COZYQUIZ_SET_ID, COZYQUIZ_SLUGS, isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel, COZYQUIZ_FILL, COZYQUIZ_NUDGE } from './cozyquizAvatars';
+import { COZYQUIZ_SET_ID, COZYQUIZ_SLUGS, isCozyQuizSlug, cozyQuizSrc, cozyQuizLabel, heutigerSlug, COZYQUIZ_FILL, COZYQUIZ_NUDGE } from './cozyquizAvatars';
 import { QUIRK2_SET_ID, QUIRK2_SLUGS, isQuirk2Slug, quirk2BySlug, quirk2Label, quirk2Src } from './quirks2Avatars';
 import { BLOCKZ_SET_ID, BLOCKZ_SLUGS, isBlockzSlug, blockzBySlug, blockzLabel, blockzSrc } from './blockzAvatars';
 
@@ -484,11 +484,14 @@ export function getAvatarDisplay(
       // traegt, und er vertraegt sich nicht mit dem Ausgleich: ein
       // einheitlicher Ueberstand fuer alle wuerde die Groessenunterschiede
       // wieder hereinholen, die er gerade beseitigt.
-      discFill: COZYQUIZ_FILL[emoji] ?? 0.9,
+      // `heutigerSlug`, weil beide Tabellen nach Slug schlagen und ein
+      // abgeloester Slug (Wecker -> Waermflasche) sonst still auf den
+      // Standardwert faellt, waehrend das Bild schon das neue ist.
+      discFill: COZYQUIZ_FILL[heutigerSlug(emoji)] ?? 0.9,
       eigenerSchatten: true,
       // Sitz: Verschiebung in Prozent der Kachelkante, nur fuer die Motive,
       // deren Masse deutlich neben der Mitte ihrer Bounding-Box liegt.
-      nudge: COZYQUIZ_NUDGE[emoji],
+      nudge: COZYQUIZ_NUDGE[heutigerSlug(emoji)],
     };
   }
 

@@ -66,7 +66,13 @@ export const COZYQUIZ_AVATARS: CozyQuizAvatar[] = [
   { slug: 'knitted-sock',  label: 'Wollsocke',     labelEn: 'Knitted Sock',  group: 'cozy-home' },
   { slug: 'cushion',       label: 'Kissen',        labelEn: 'Cushion',       group: 'cozy-home' },
   { slug: 'candle',        label: 'Kerze',         labelEn: 'Candle',        group: 'cozy-home' },
-  { slug: 'alarm-clock',   label: 'Wecker',        labelEn: 'Alarm Clock',   group: 'cozy-home' },
+  // 2026-08-27: der Wecker ist raus. In seinem Original war die Flaeche
+  // INNERHALB des Tragegriffs nicht durchsichtig, sondern mit einem
+  // eingebrannten Transparenz-Karo gefuellt (245/254 im Wechsel, Kachelbreite
+  // ~24 px, alle mit Alpha 255) - auf jedem farbigen Grund ein heller Fleck.
+  // Wolf hat die Waermflasche als Ersatz geliefert. Das Original liegt unter
+  // `design-assets/avatare-v5-original/defekt/`, unberuehrt.
+  { slug: 'hot-water-bottle', label: 'Wärmflasche', labelEn: 'Hot Water Bottle', group: 'cozy-home' },
   { slug: 'key',           label: 'Schlüssel',     labelEn: 'Key',           group: 'cozy-home' },
   { slug: 'houseplant',    label: 'Zimmerpflanze', labelEn: 'Houseplant',    group: 'cozy-home' },
   { slug: 'armchair',      label: 'Sessel',        labelEn: 'Armchair',      group: 'cozy-home' },
@@ -113,12 +119,34 @@ export const COZYQUIZ_SLUGS: string[] = COZYQUIZ_AVATARS.map(a => a.slug);
 /** Die acht Default-Slugs für die acht Farb-Slots (vor Spieler-Auswahl). */
 export const COZYQUIZ_DEFAULTS: string[] = COZYQUIZ_SLUGS.slice(0, 8);
 
+/**
+ * Altlasten: Slugs, die es nicht mehr gibt, aber noch irgendwo stehen.
+ *
+ * 2026-08-27. Der Slug wird im freien Feld `team.emoji` gespeichert - also im
+ * `localStorage` jedes Handys, das ihn je gewaehlt hat, UND in der Raumdatei
+ * unter `backend/.qq-rooms/`. Ein Slug einfach zu streichen genuegt deshalb
+ * nicht: `isCozyQuizSlug` saehe ihn nicht mehr, der Zweig faellt auf „echtes
+ * Emoji" durch, und auf der Buehne stuende dann woertlich `alarm-clock`.
+ *
+ * Die Weiche kostet nichts und faengt genau das ab. Alte Wecker-Teams sehen ab
+ * sofort die Waermflasche. Im Picker taucht der alte Slug nicht auf, er steht
+ * bewusst NICHT in COZYQUIZ_SLUGS.
+ */
+const ALTLASTEN: Record<string, string> = {
+  'alarm-clock': 'hot-water-bottle',
+};
+
 const SLUG_SET = new Set(COZYQUIZ_SLUGS);
 const BY_SLUG = new Map(COZYQUIZ_AVATARS.map(a => [a.slug, a]));
 
+/** Alter Slug -> heutiger Slug. Alles andere bleibt, wie es ist. */
+export function heutigerSlug(s: string): string {
+  return ALTLASTEN[s] ?? s;
+}
+
 /** Ist der String ein CozyQuiz-Objekt-Slug (vs. echtes Emoji / cozy3d / Wappen)? */
 export function isCozyQuizSlug(s: string | undefined | null): s is string {
-  return !!s && SLUG_SET.has(s);
+  return !!s && (SLUG_SET.has(s) || s in ALTLASTEN);
 }
 
 /**
@@ -151,7 +179,7 @@ export function isCozyQuizSlug(s: string | undefined | null): s is string {
  * sind das rund 630 echte Bildpunkte.
  */
 export function cozyQuizSrc(slug: string): string {
-  return `/avatars/cozyquiz/${slug}.png`;
+  return `/avatars/cozyquiz/${heutigerSlug(slug)}.png`;
 }
 
 /**
@@ -167,19 +195,19 @@ export function cozyQuizSrc(slug: string): string {
  * und auf dem Beamer faellt das sofort auf.
  */
 export function cozyQuizSrcKlein(slug: string): string {
-  return `/avatars/cozyquiz/klein/${slug}.png`;
+  return `/avatars/cozyquiz/klein/${heutigerSlug(slug)}.png`;
 }
 
 /** Anzeige-Label, Fallback = Slug. */
 export function cozyQuizLabel(slug: string, lang: 'de' | 'en' = 'de'): string {
-  const a = BY_SLUG.get(slug);
+  const a = BY_SLUG.get(heutigerSlug(slug));
   if (!a) return slug;
   return lang === 'en' ? a.labelEn : a.label;
 }
 
 /** Objekt zu einem Slug. */
 export function cozyQuizBySlug(slug: string): CozyQuizAvatar | undefined {
-  return BY_SLUG.get(slug);
+  return BY_SLUG.get(heutigerSlug(slug));
 }
 
 // ── Optischer Ausgleich (erzeugt von scripts/measure-avatar-fill.mjs) ───────
@@ -190,66 +218,70 @@ export function cozyQuizBySlug(slug: string): CozyQuizAvatar | undefined {
 //         liegt. Begruendung und Messverfahren im Kopf des Skripts.
 export const COZYQUIZ_FILL: Record<string, number> = {
   'acorn': 0.92,
-  'alarm-clock': 0.92,
-  'armchair': 0.86,
+  'armchair': 0.83,
   'autumn-leaf': 0.92,
-  'backpack': 0.88,
-  'binoculars': 0.84,
-  'book': 0.91,
-  'camera': 0.80,
+  'backpack': 0.84,
+  'binoculars': 0.81,
+  'book': 0.87,
+  'camera': 0.77,
   'candle': 0.92,
-  'cassette': 0.78,
-  'cheese': 0.84,
-  'cloud': 0.89,
-  'compass': 0.92,
-  'controller': 0.86,
-  'cookie': 0.81,
-  'croissant': 0.89,
-  'crystal-ball': 0.89,
-  'cushion': 0.75,
+  'cassette': 0.80,
+  'cheese': 0.82,
+  'cloud': 0.92,
+  'compass': 0.91,
+  'controller': 0.89,
+  'cookie': 0.77,
+  'croissant': 0.90,
+  'crystal-ball': 0.86,
+  'cushion': 0.72,
   'daisy': 0.92,
-  'disco-ball': 0.82,
-  'donut': 0.79,
-  'game-die': 0.78,
+  'disco-ball': 0.92,
+  'donut': 0.78,
+  'game-die': 0.75,
   'hot-air-balloon': 0.92,
+  'hot-water-bottle': 0.92,
   'houseplant': 0.92,
   'key': 0.92,
   'knitted-sock': 0.92,
   'lemonade': 0.92,
   'light-bulb': 0.92,
   'magnet': 0.92,
-  'mushroom': 0.92,
-  'paint-palette': 0.89,
+  'mushroom': 0.87,
+  'paint-palette': 0.83,
   'paper-boat': 0.92,
-  'playing-card': 0.91,
+  'playing-card': 0.81,
   'popcorn': 0.92,
   'potion': 0.92,
-  'puzzle': 0.89,
+  'puzzle': 0.85,
   'ringed-planet': 0.92,
   'rocket': 0.92,
-  'seashell': 0.87,
+  'seashell': 0.83,
   'snowflake': 0.92,
-  'star': 0.92,
+  'star': 0.91,
   'strawberry': 0.92,
   'sun': 0.92,
   'table-lamp': 0.92,
-  'teapot': 0.91,
+  'teapot': 0.92,
   'tent': 0.92,
-  'treasure-chest': 0.79,
+  'treasure-chest': 0.80,
   'wizard-hat': 0.92,
 };
 
 export const COZYQUIZ_NUDGE: Record<string, [number, number]> = {
-  'binoculars': [-2.0, 0.6],
-  'candle': [0.1, -2.5],
-  'controller': [-0.6, 2.2],
-  'croissant': [2.5, 3.0],
-  'hot-air-balloon': [0.1, 4.0],
-  'key': [1.2, 1.6],
-  'light-bulb': [0.0, 3.5],
-  'mushroom': [-0.2, 2.5],
-  'potion': [-0.1, -2.0],
-  'rocket': [-2.1, -0.5],
-  'tent': [-0.5, -5.3],
-  'wizard-hat': [-0.9, -3.2],
+  'binoculars': [-2.5, -0.7],
+  'candle': [-0.1, -3.9],
+  'cloud': [0.1, -2.4],
+  'compass': [-0.8, -2.6],
+  'croissant': [2.8, 2.1],
+  'disco-ball': [-0.9, -3.3],
+  'hot-air-balloon': [0.1, 3.0],
+  'hot-water-bottle': [-0.3, -2.0],
+  'houseplant': [-0.4, -2.4],
+  'knitted-sock': [-2.3, -1.2],
+  'lemonade': [-0.1, -2.1],
+  'light-bulb': [-0.1, 2.5],
+  'paper-boat': [-0.1, -2.9],
+  'potion': [-0.2, -3.0],
+  'tent': [-0.8, -6.5],
+  'wizard-hat': [-1.2, -4.2],
 };

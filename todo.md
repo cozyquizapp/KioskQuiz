@@ -126,34 +126,41 @@ bestellen, setzen sich.
 
 ---
 
-## 🖼️ AVATARSATZ V5 — ein Motiv ist defekt (Wolf 2026-08-26)
+## 🖼️ AVATARSATZ V5 (Wolf 2026-08-26/27)
 
-- [ ] **`cozy-home--alarm-clock.png` neu ausleiten.** Die Flaeche INNERHALB des
-      Tragegriffs ist nicht durchsichtig, sondern mit deckenden, fast weissen
-      Pixeln gefuellt: ein eingebranntes Transparenz-Karo, 245 und 254 im
-      Wechsel, Kachelbreite rund 24 px, alle mit Alpha 255. Auf jedem farbigen
-      Grund liest sich das als heller Fleck ueber der Uhr.
-      Gegenprobe: `.shots/WECKER-GEGEN-SCHLUESSEL.png` - beim Schluessel
-      scheint das Rot durch die Oese, beim Wecker nicht.
-      ⚠️ Ich fasse die Datei nicht an. Das waere nachtraegliches Freistellen,
-      und genau das schliessen die Asset-Regeln aus. Das ist ein Fall fuer
-      einen neuen Export aus der Quelle.
-      Solange: entweder der Wecker bleibt drin und faellt gelegentlich auf,
-      oder er wird im Code aus dem Pool genommen (eine Zeile, jederzeit
-      rueckgaengig). Wolfs Entscheidung.
-- [ ] **Ersatz Waermflasche: derselbe Fehler, nur vollstaendig** (2026-08-27).
-      Wolf hat eine Waermflasche als Ersatz fuer den Wecker geschickt. Gemessen:
-      **1254 x 1254, RGB, KEIN Alphakanal.** Das Transparenz-Karo ist als echte
-      Pixel gemalt, Kachelbreite rund 26 px, Grauwerte 246 bis 255. Auf jedem
-      Grund bleibt ein weisses Quadrat stehen.
-      Gegenprobe: `.shots/WAERMFLASCHE-PROBE.png` (Waermflasche, Schluessel,
-      Wecker auf Teamrot, Blau, Schwarz).
-      ⚠️ Die Diagnose sagt, wo der Fehler sitzt: das **Karo ist im Quellbild**.
-      Beim Wecker lief danach eine Hintergrundentfernung und hat die Flaeche im
-      Griff uebersehen; bei der Waermflasche lief sie gar nicht. Der Fix liegt
-      also oben, nicht unten: das Bild muss mit echter Transparenz ausgeleitet
-      werden (PNG-Export mit Alphakanal), nicht als Abzug der Vorschau.
-      Ich stelle nicht nachtraeglich frei, das schliessen die Asset-Regeln aus.
+- ✅ **Wecker raus, Waermflasche rein** (2026-08-27, erledigt).
+      Der Wecker (`cozy-home--alarm-clock.png`) hatte INNERHALB des Tragegriffs
+      kein durchsichtiges Loch, sondern ein eingebranntes Transparenz-Karo
+      (245/254 im Wechsel, Kachelbreite ~24 px, Alpha 255). Wolfs erster Ersatz
+      war derselbe Fehler in vollstaendig: 1254x1254, RGB, KEIN Alphakanal, Karo
+      als echte Pixel ueber die ganze Flaeche. Die zweite Lieferung ist sauber
+      und gemessen:
+
+      ```
+      1024 x 1024, RGBA, Alpha vorhanden
+      transparente Pixel        622 840
+      teiltransparente Pixel      7 347   (weiche Kante, wie beim Rest des Satzes)
+      deckende, fast weisse         0     (kein Karo mehr)
+      Alpha-BBox                591 x 891 (Satz-Median 742 x 841, also im Band)
+      ```
+
+      Gegenprobe auf allen sechs Gruenden aus den Asset-Regeln:
+      `.shots/WAERMFLASCHE-CLEAN.png`.
+
+      Eingebaut ohne einen Pixel anzufassen: Original byte-identisch nach
+      `design-assets/avatare-v5-original/cozy-home--hot-water-bottle.png`,
+      abgeleitet mit `scripts/avatare-v5-ableiten.mjs` (640 und 160, Lanczos,
+      ein Schritt je Groesse). Der defekte Wecker liegt unberuehrt unter
+      `design-assets/avatare-v5-original/defekt/`.
+
+      ⚠️ **Eine Weiche war noetig, und der Grund ist wichtig.** Der Slug steht
+      im freien Feld `team.emoji`, also im `localStorage` jedes Handys, das den
+      Wecker je gewaehlt hat, UND in der Raumdatei unter `backend/.qq-rooms/`.
+      Haette ich ihn nur gestrichen, saehe `isCozyQuizSlug` ihn nicht mehr, der
+      Zweig fiele auf „echtes Emoji" durch, und auf der Buehne stuende woertlich
+      `alarm-clock`. `ALTLASTEN` in `cozyquizAvatars.ts` bildet ihn auf die
+      Waermflasche ab, im Picker taucht er nicht auf.
+
 - [ ] **Die uebrigen 47 einmal auf dem Blatt durchsehen.**
       `node scripts/avatare-auf-grund.mjs` legt alle 48 auf Schwarz, Weiss,
       Orange, Gruen, Blau und Teamrot - genau die Kontrolle, die in den

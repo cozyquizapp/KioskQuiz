@@ -100,6 +100,29 @@ const ENTSCHIEDEN = {
    * Wer eine Folie hier eintraegt, ohne dass Wolf sie gesehen hat, hebelt genau
    * das aus. Neue Zeilen also nur mit Datum und Zitat.
    */
+  /**
+   * Die rohe Kurvenpalette bleibt frei benutzbar.
+   *
+   * 2026-08-27. Die sechs Rollen sind Aliasse auf die rohen Kurven, also gilt
+   * der Dauerbereich einer Rolle nur fuer den, der ihr Token auch hinschreibt.
+   * Wer `var(--qq-ease-bounce)` nimmt, nimmt die Kurve ohne den Bereich - die
+   * Regel ist damit eine Selbstverpflichtung, kein Gesetz.
+   *
+   * Zur Wahl standen: so lassen (Rollen als Empfehlung, Ausnahmen werden
+   * ausgewiesen) oder verbindlich machen (rohe Kurven raus aus dem
+   * Anwendungscode, jede Bewegung muss eine Rolle nennen).
+   */
+  rohkurven: {
+    am: '2026-08-27',
+    zitat: 'ja gerne so lassen',
+    grund: 'Die Rollen sind eine Empfehlung fuer die grossen Momente. Kleine Akzente '
+      + 'duerfen sich rausnehmen - 450 ms auf einem Kachel-Chip sind kein Hero-Beat, '
+      + 'und die 900-ms-Blende der Anker-Ebene ist ausdruecklich laenger als jeder '
+      + 'Szenenwechsel gebaut. Verbindlich zu machen hiesse, fuer jeden kleinen Akzent '
+      + 'eine Rolle zu erfinden, die es nicht gibt. Das Werkzeug weist die Faelle aus, '
+      + 'statt sie zu verstecken; das genuegt.',
+  },
+
   overshoot: {
     stationen: ['aufloesungUnten', 'lobby', 'zwischenstand', 'cozygame', 'brett',
       'turmfinale', 'siegerehrung', 'teams'],
@@ -359,10 +382,11 @@ for (const e of liste) {
 }
 if (!danebenGesamt) console.log('  Keine Bewegung, die eine Rolle beansprucht, faellt aus deren Bereich.');
 if (rohGesamt) {
-  console.log(`\n  ⚠️ ${rohGesamt} Dauern laufen auf einer rohen Kurve statt auf dem Rollen-Token.`);
-  console.log('     Das ist erlaubt und oft richtig (ein kleiner Akzent ist kein Hero-Beat),');
-  console.log('     macht den Bereich der Rolle aber unpruefbar. Wer den Bereich meint,');
-  console.log('     schreibt das Rollen-Token.');
+  console.log(`\n  ${rohGesamt} Dauern laufen auf einer rohen Kurve statt auf dem Rollen-Token.`);
+  console.log(`  Bewusst so, entschieden am ${ENTSCHIEDEN.rohkurven.am}:`);
+  console.log(`  Wolf: „${ENTSCHIEDEN.rohkurven.zitat}"`);
+  console.log('  Die Rollen sind eine Empfehlung fuer die grossen Momente; kleine Akzente');
+  console.log('  duerfen sich rausnehmen. Ausgewiesen statt versteckt, das genuegt.');
 }
 
 // ── 3. Ein Hero-Beat je Folie ─────────────────────────────────────────────

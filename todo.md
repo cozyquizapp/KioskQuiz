@@ -615,10 +615,12 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
             „welches Token war gemeint". Ergebnis: 0 echte Verstoesse, 3
             Rohkurven-Faelle, ausgewiesen statt versteckt.
 
-            Offen und bewusst nicht entschieden: wer den Bereich einer Rolle
-            meint, muss das Rollen-Token schreiben. Solange beides erlaubt ist,
-            ist der Bereich umgehbar. Das ist eine Regel-Frage, keine
-            Code-Frage - fuer Wolf, nicht fuer mich.
+            **Entschieden am 2026-08-27, Wolf: „ja gerne so lassen".** Die
+            Rollen bleiben eine Empfehlung fuer die grossen Momente, die rohe
+            Kurvenpalette bleibt frei benutzbar. Verbindlich zu machen hiesse,
+            fuer jeden kleinen Akzent eine Rolle zu erfinden, die es nicht gibt.
+            Das Werkzeug weist die Faelle aus, statt sie zu verstecken; steht
+            als `ENTSCHIEDEN.rohkurven` mit Datum und Zitat im Werkzeug.
 
       - ✅ **B1 + B5 an der Aufloesung: Praemisse widerlegt, nicht gebaut.**
             Im Plan stand „schneidet heute hart". Gemessen mit

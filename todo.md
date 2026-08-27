@@ -56,6 +56,27 @@
 
 ---
 
+## 🚪 ANKOMMEN, Schritt 3 (Wolf 2026-08-27)
+
+- ✅ **„Heute Abend" und die Avatare gebaut.**
+      „Heute Abend" ist die einzige Karte mit echten Zahlen, die es VOR der
+      ersten Frage gibt. Nachgesehen per Socket-Mitschnitt, was die Buehne im
+      Ankommen-Zustand ueberhaupt weiss: `totalPhases`, `timerDurationSec`,
+      `finalWagerEnabled`, `cozyGamesEnabled`. Die **Kategorien sind nicht
+      dabei**, die liegen im Entwurf beim Moderator - deshalb stehen sie nicht
+      auf der Karte. Beide Sprachen gleichzeitig, die Zeilen sind kurz genug.
+
+      Die Avatar-Karte braucht null Daten und ist die reinste Form des
+      2a-Designs. Zwei Reihen a acht, gemessen: bei drei Reihen lief die
+      unterste aus dem Bild.
+
+      Umlauf jetzt: 4 Karten, 8 Bilder, 64 Sekunden.
+
+- [ ] **Schritt 4: „Wie funktioniert's" auf 2a nachziehen.** Die Karte ist die
+      einzige der vier, die noch die alte Panel-Optik traegt.
+
+---
+
 ## 🌳 FORTSCHRITTSBAUM: WO ENDET EINE RUNDE? (Wolf 2026-08-27)
 
 - ✅ **Das Gleis endet jetzt an der Rundengrenze** (2026-08-27, erledigt).
@@ -293,7 +314,26 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
       `alarm-clock`. `ALTLASTEN` in `cozyquizAvatars.ts` bildet ihn auf die
       Waermflasche ab, im Picker taucht er nicht auf.
 
-- [ ] **Fuenf weitere Motive haben denselben Fehler** (2026-08-27, Wolf zum
+- ✅ **Fuenf Ersatz-Motive eingebaut** (2026-08-27, noch am selben Tag).
+      Wolf hat alle fuenf neu ausgeleitet, geprueft mit
+      `node scripts/avatare-loecher.mjs`. Alle 1024x1024 mit Alphakanal, keine
+      deckende weisse Flaeche mehr, und die Lochzahlen passen diesmal zu den
+      Motiven statt zu Zufall: Rucksack 1 (unter dem Griff), Ballon 3 (die drei
+      Zwischenraeume zwischen vier Seilen), Discokugel 1 (die Oese), Ringplanet
+      2 (die beiden Sicheln), Pflanze 0. Bild: `.shots/F5-NEU.png`.
+      Die alten liegen unberuehrt unter `avatare-v5-original/defekt/`.
+      `COZYQUIZ_DEFEKT` ist damit leer, der Satz ist zum ersten Mal komplett
+      heil.
+
+      ⚠️ **Dabei musste ich mein eigenes Urteil korrigieren.** Das Werkzeug sagte
+      „ein absichtliches Loch ist EINS", und das hat die kaputte Discokugel mit
+      zwoelf Loechern zuverlaessig gefunden. Es war trotzdem falsch: der neue
+      Ballon hat drei, der neue Planet zwei, beide einwandfrei. Der richtige
+      Unterschied ist nicht die Anzahl, sondern die Regelmaessigkeit. Zum Motiv
+      gehoerende Loecher sind wenige und aehnlich gross (Spanne 1,13), Schaden
+      ist viel und ungleich (Spanne ueber 4).
+
+- ~~**Fuenf weitere Motive haben denselben Fehler**~~ (2026-08-27, Wolf zum
       Heissluftballon: „hier ist auch noch ein bug... schade ich finde den super
       schoen"). Gefunden mit dem neuen `node scripts/avatare-loecher.mjs`.
 

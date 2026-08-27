@@ -25,11 +25,26 @@
  *      Pixel, die vom Bildrand aus nicht erreichbar sind, sind Innenloecher.
  *      Kein Schwellwert, keine Heuristik, kein Falschalarm.
  *
- * Und fuer B gibt es sogar ein Urteil, ohne dass man die Motive kennen muss:
- * ein absichtliches Loch ist EINS. Der Schluessel hat eine Oese, der Donut ein
- * Loch, die Teekanne einen Henkel, der Kompass einen Ring - jeweils genau ein
- * zusammenhaengendes Loch. Die Discokugel hat ZWOELF, verstreut, das groesste
- * mitten im Ball. Streuung ist der Fehler, nicht das Loch.
+ * ── Und ein Urteil, das ich einmal korrigieren musste ─────────────────────
+ * Der erste Anlauf sagte: „ein absichtliches Loch ist EINS". Das stimmte fuer
+ * Schluessel, Donut, Teekanne und Kompass, und es hat die kaputte Discokugel
+ * mit ihren zwoelf Loechern zuverlaessig gefunden.
+ *
+ * Es war trotzdem falsch. Wolfs neuer Heissluftballon hat DREI Loecher (die
+ * Zwischenraeume zwischen vier Seilen), der neue Ringplanet ZWEI (die beiden
+ * Sicheln zwischen Ring und Kugel). Beide sind einwandfrei, das Werkzeug hat
+ * sie gemeldet.
+ *
+ * Der richtige Unterschied ist nicht die ANZAHL, sondern die REGELMAESSIGKEIT.
+ * Loecher, die zum Motiv gehoeren, sind wenige und aehnlich gross:
+ *     Ballon        7466 / 6942 / 6577   Spanne 1,13
+ *     Ringplanet    3436 / 3044          Spanne 1,13
+ * Schaden ist viel und ungleich:
+ *     alte Discokugel  11168 / 9116 / 8408 / 4543 / 2788 / ...  zwoelf Stueck,
+ *                      Spanne ueber 4
+ *
+ * Auch das bleibt ein Hinweis und kein Beweis - aber ein Hinweis, der die
+ * heilen Motive in Ruhe laesst.
  *
  * ⚠️ Ersetzt NICHT `avatare-auf-grund.mjs`. Das legt alle 48 auf sechs Gruende
  * und ist die Kontrolle, die Wolfs Asset-Regeln verlangen. Dieses Werkzeug
@@ -126,10 +141,15 @@ for (const datei of dateien) {
 
 console.log('\n══ B · Zu viel Loch ════════════════════════════════════════════');
 console.log('   Durchsichtige Pixel mitten in der Flaeche. Exakt gemessen.');
-console.log('   Ein absichtliches Loch ist EINS. Mehrere verstreute sind der Fehler.\n');
+console.log('   Wenige und aehnlich gross = zum Motiv gehoerend.');
+console.log('   Viele und ungleich = Schaden. (Hinweis, kein Beweis - ansehen.)\n');
 for (const m of B) {
-  const marke = m.loecher.length === 1 ? '✓' : '✗';
+  // Spanne zwischen groesstem und kleinstem Loch. Bei einem Loch ist sie 1.
+  const gr = m.loecher[0].n, kl = m.loecher[m.loecher.length - 1].n;
+  const spanne = kl > 0 ? gr / kl : 1;
+  const marke = (m.loecher.length <= 3 && spanne <= 2.5) ? '✓' : '⚠';
   console.log(`  ${marke} ${m.name.padEnd(20)} ${String(m.loecher.length).padStart(2)} Loch/Loecher` +
+    `   Spanne ${spanne.toFixed(2)}` +
     `   groesstes ${String(m.loecher[0].n).padStart(6)} px bei ${m.loecher[0].x0},${m.loecher[0].y0}`);
   if (m.loecher.length > 1) {
     for (const l of m.loecher.slice(1, 4)) console.log(`      auch: ${String(l.n).padStart(6)} px bei ${l.x0},${l.y0}`);

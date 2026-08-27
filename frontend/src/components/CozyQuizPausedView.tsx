@@ -13,9 +13,11 @@
 import { useState, useEffect, useRef, useMemo, cloneElement, isValidElement } from 'react';
 import type { ReactElement } from 'react';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
-import { QQ_AVATARS, QQ_MEGA_FACTIONS, qqIsMega } from '../../../shared/quarterQuizTypes';
+import { QQ_AVATARS, QQ_MEGA_FACTIONS, QQ_TEAM_PALETTE, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { useLangFlip, COZY_CARD_BG, qqPlural } from '../cozyQuizShared';
 import { qqSortedTeams, qqSortedGroups } from '../qqShared';
+import { qqKachelFlaeche } from '../qqKachel';
+import { COZYQUIZ_HEILE, cozyQuizSrcKlein, cozyQuizLabel } from '../cozyquizAvatars';
 import { Fireflies, EurovisionHearts } from './CozyQuizAmbient';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { QQTeamAvatar } from './QQTeamAvatar';
@@ -318,6 +320,79 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       </div>
     )});
 
+    // ── Heute Abend ───────────────────────────────────────────────────────
+    // 2026-08-27. Die einzige Karte mit echten Zahlen, die es VOR der ersten
+    // Frage schon gibt. Nachgesehen, was die Buehne im Ankommen-Zustand
+    // ueberhaupt weiss (Socket-Mitschnitt, nicht geraten):
+    //
+    //   totalPhases        4       -> 4 Runden, 20 Fragen
+    //   timerDurationSec   30      -> 30 Sekunden je Frage
+    //   finalWagerEnabled  true    -> Grosses Finale
+    //   cozyGamesEnabled   an/aus  -> Bunte Tuete
+    //
+    // Die KATEGORIEN sind nicht dabei, die liegen im Entwurf beim Moderator.
+    // Deshalb stehen sie hier nicht - eine Karte, die etwas behauptet, was die
+    // Buehne nicht weiss, waere schlimmer als eine Karte weniger.
+    //
+    // Beide Sprachen gleichzeitig: die Zeilen sind kurz genug, und damit
+    // braucht diese Karte keinen zweiten Takt.
+    {
+      const runden = s.totalPhases ?? 4;
+      const fragen = runden * 5;
+      const zeilen: Array<{ zahl: string; de: string; en: string }> = [
+        { zahl: String(runden), de: 'Runden', en: 'rounds' },
+        { zahl: String(fragen), de: 'Fragen', en: 'questions' },
+        { zahl: `${s.timerDurationSec ?? 30}s`, de: 'je Frage', en: 'per question' },
+      ];
+      const extras: Array<{ de: string; en: string }> = [];
+      if ((s as { cozyGamesEnabled?: boolean }).cozyGamesEnabled) {
+        extras.push({ de: 'Bunte Tüte zwischen den Runden', en: 'Lucky Bag between rounds' });
+      }
+      if (s.finalWagerEnabled === true) {
+        extras.push({ de: 'Großes Finale zum Schluss', en: 'Grand Finale at the end' });
+      }
+      panels.push({ key: 'heuteAbend', node: (
+        <div style={{ width: 'min(100%, 1100px)', margin: '0 auto' }}>
+          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 22, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🗓️</span>
+            {de ? 'Heute Abend' : 'Tonight'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16 }}>
+            {zeilen.map((z, i) => (
+              <div key={z.de} style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+                padding: '26px 14px',
+                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+                background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',
+                border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,235,200,0.10)',
+                boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.04)',
+                animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.08 * i}s both`,
+              }}>
+                <div style={{ fontSize: 'clamp(44px, 5.2cqw, 84px)', fontWeight: 900, lineHeight: 1, color: 'var(--qq-accent)', fontVariantNumeric: 'tabular-nums' }}>{z.zahl}</div>
+                <div style={{ fontSize: 'clamp(18px, 2cqw, 28px)', fontWeight: 900, color: 'var(--qq-card-text)' }}>{z.de}</div>
+                <div style={{ fontSize: 'clamp(14px, 1.5cqw, 20px)', fontWeight: 700, color: 'var(--qq-text-muted)' }}>{z.en}</div>
+              </div>
+            ))}
+          </div>
+          {extras.length > 0 && (
+            <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', gap: 12, marginTop: 18 }}>
+              {extras.map((e, i) => (
+                <span key={e.de} style={{
+                  padding: '10px 18px',
+                  borderRadius: 999,
+                  fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 800,
+                  color: 'var(--qq-text-muted)',
+                  background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',
+                  border: isThemed() ? '1px solid var(--qq-hairline)' : '1px solid rgba(255,235,200,0.10)',
+                  animation: `panelSlideIn 0.6s var(--qq-ease-out-cubic) ${0.26 + 0.08 * i}s both`,
+                }}>{de ? e.de : e.en}</span>
+              ))}
+            </div>
+          )}
+        </div>
+      )});
+    }
+
     // ── Wer schon da ist ──────────────────────────────────────────────────
     // 2026-08-27. Zwei Wuensche von Wolf treffen sich hier:
     //   „bereits eingeloggte teams oder sowas?" (26.8., zum Ankommen)
@@ -363,6 +438,61 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                 <TeamNameLabel name={t.name} maxLines={2} shrinkAfter={16} fontSize={30} color={'var(--qq-card-text)'} fontWeight={900} />
               </div>
             ))}
+          </div>
+        </div>
+      )});
+    }
+
+    // ── Die Avatare ───────────────────────────────────────────────────────
+    // 2026-08-27. Reine Atmosphaere, und genau deshalb richtig: sie braucht
+    // null Daten, sie ist die reinste Form des 2a-Designs (farbneutrales Objekt
+    // auf Farbkachel), und sie pflanzt den Gedanken „ich such mir gleich einen
+    // aus", bevor der QR ueberhaupt kommt.
+    //
+    // ⚠️ Nur die heilen Motive. Fuenf sind defekt (weisse Flaeche statt Loch,
+    // bzw. Loecher mitten in der Kugel) - die Liste steht in
+    // `COZYQUIZ_DEFEKT`. Auf einer Folie, die 20 Minuten laeuft und wo die
+    // Motive GROSS stehen, faellt ein weisser Kasten sofort auf. Sobald die
+    // neuen Exporte da sind, wird die Liste leer und sie sind automatisch
+    // wieder dabei.
+    //
+    // Ein fester Ausschnitt, nicht alle 48: gross genug fuer acht Meter, und
+    // die Auswahl wechselt nicht bei jedem Umlauf (nichts blinkt).
+    {
+      // 2026-08-27 gemessen: bei drei Reihen lief die unterste aus dem Bild
+      // (Kontaktbogen `.shots/ANKOMMEN-NEU.png`). Der Kartenbereich der Folie
+      // ist nicht die ganze Buehne - darueber steht die Wortmarke, darunter
+      // „Gleich geht's los" und der Wolf. Zwei Reihen passen.
+      const SPALTEN = 8, ZEILEN = 2;
+      const gezeigt = COZYQUIZ_HEILE.slice(0, SPALTEN * ZEILEN);
+      panels.push({ key: 'avatare', node: (
+        <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
+          <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🎨</span>
+            {de ? 'Sucht euch einen aus' : 'Pick your avatar'}
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: `repeat(${SPALTEN}, 1fr)`, gap: 12 }}>
+            {gezeigt.map((slug, i) => (
+              <div key={slug} style={{
+                aspectRatio: '1 / 1',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                ...qqKachelFlaeche({
+                  farbe: QQ_TEAM_PALETTE[i % QQ_TEAM_PALETTE.length],
+                  radius: 18,
+                }),
+                animation: `panelSlideIn 0.5s var(--qq-ease-out-cubic) ${0.02 * i}s both`,
+              }}>
+                <img
+                  src={cozyQuizSrcKlein(slug)}
+                  alt={cozyQuizLabel(slug, lang)}
+                  draggable={false}
+                  style={{ width: '78%', height: '78%', objectFit: 'contain', display: 'block' }}
+                />
+              </div>
+            ))}
+          </div>
+          <div style={{ textAlign: 'center', marginTop: 16, fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 800, color: 'var(--qq-text-muted)' }}>
+            {de ? `${COZYQUIZ_HEILE.length} Objekte, 8 Farben` : `${COZYQUIZ_HEILE.length} objects, 8 colours`}
           </div>
         </div>
       )});

@@ -136,6 +136,41 @@ const ALTLASTEN: Record<string, string> = {
   'alarm-clock': 'hot-water-bottle',
 };
 
+/**
+ * Motive, deren Bilddaten defekt sind (Stand 2026-08-27).
+ *
+ * Gefunden mit `node scripts/avatare-loecher.mjs`, jedes einzeln am Kontaktbogen
+ * bestaetigt. Zwei Fehlerarten:
+ *
+ *   zu wenig Loch   deckendes Weiss, wo der Grund durchscheinen muesste
+ *                   hot-air-balloon (zwischen den Seilen), houseplant
+ *                   (zwischen Stiel und Blaettern), backpack (unter dem
+ *                   Tragegriff), ringed-planet (zwischen Ring und Kugel)
+ *   zu viel Loch    disco-ball: ZWOELF verstreute Loecher mitten im Ball
+ *
+ * ⚠️ Das ist KEINE Sperre. Die Motive stehen weiter im Picker - ob sie dort
+ * bleiben, ist Wolfs Entscheidung, und er mag sie („schade ich finde den super
+ * schoen"). Die Liste ist dafuer da, sie aus Flaechen herauszuhalten, auf denen
+ * sie unaufgefordert und gross erscheinen wuerden, etwa der Ankommen-Folie.
+ *
+ * Sobald die neuen Exporte da sind (`docs/avatare-nachbestellung-2026-08-27.md`),
+ * wird diese Liste leer.
+ */
+export const COZYQUIZ_DEFEKT: readonly string[] = [
+  // 2026-08-27, noch am selben Tag geleert: Wolf hat alle fuenf neu ausgeleitet.
+  // Gemessen mit `node scripts/avatare-loecher.mjs`, und die Lochzahlen passen
+  // diesmal zu den Motiven statt zu Zufall:
+  //   backpack 1 (unter dem Griff), hot-air-balloon 3 (die drei Zwischenraeume
+  //   der vier Seile), disco-ball 1 (die Oese), ringed-planet 2 (die beiden
+  //   Sicheln), houseplant 0. Keine deckende weisse Flaeche mehr.
+  // Die alten Dateien liegen unberuehrt unter `avatare-v5-original/defekt/`.
+];
+
+/** Alle Slugs, deren Bild in Ordnung ist. */
+export const COZYQUIZ_HEILE: string[] = COZYQUIZ_AVATARS
+  .map(a => a.slug)
+  .filter(slug => !COZYQUIZ_DEFEKT.includes(slug));
+
 const SLUG_SET = new Set(COZYQUIZ_SLUGS);
 const BY_SLUG = new Map(COZYQUIZ_AVATARS.map(a => [a.slug, a]));
 

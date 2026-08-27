@@ -98,6 +98,26 @@ bestellen, setzen sich.
       einblendet (Zeile 2013). Der Rueckweg existiert also und liegt dort, wo
       er hingehoert: beim Moderator, nicht auf der Leinwand.
 
+- ✅ **Gedruckter QR pro Tisch: geht heute, ohne eine Zeile Code**
+      (Wolf 2026-08-27, „ich koennte auch einen ausgedruckten qr code pro team
+      mitbringen? zb"). Nachgesehen: es gibt genau **einen** Raum,
+      `QQ_ROOM = 'default'` in allen vier Seiten. Der Beitritts-Link im
+      Steuerpult ist `${origin}/team?room=default`
+      (`QQModeratorPage.tsx:2255`), und die Teamseite liest den Parameter gar
+      nicht, sie nimmt die Konstante. Der Link ist also **immer derselbe** und
+      auf Vorrat druckbar, heute und in einem Jahr.
+      ⚠️ Was NICHT geht: dass die Karte das Team schon festlegt. Jede Karte
+      traegt denselben QR, das Team wird danach in der App gewaehlt. „Pro Team"
+      heisst also „eine Karte je Tisch", nicht „diese Karte ist Team 3".
+      Wenn die Karte das Team wirklich mitbringen soll, waere das neue Arbeit an
+      drei Stellen (Parameter im Link, Teamseite liest ihn, Server nimmt ein
+      vorgewaehltes Team an). Fuer den ersten Abend nicht noetig.
+      **Folge fuer den Entwurf oben:** gedruckte Karten machen den Zustand
+      „Ankommen ohne QR" staerker, nicht schwaecher. Wer frueh da ist, kann vom
+      Tisch aus rein, ohne dass die Leinwand etwas dafuer tun muss.
+      „Lobby oeffnen" ist dann der Moment, in dem der Bildschirm zu den Tischen
+      aufschliesst, und der einzige Weg fuer alle, die keine Karte in der Hand
+      haben.
 - [ ] **Beim Bauen beachten: eine Folie nur zeigen, wenn sie heute Inhalt hat.**
       Die Bestenliste meldet „46 Spiele" und Stammteams mit elf Siegen. In der
       Stammkneipe grossartig, bei einem Firmenevent, wo niemand je gespielt
@@ -121,6 +141,19 @@ bestellen, setzen sich.
       Solange: entweder der Wecker bleibt drin und faellt gelegentlich auf,
       oder er wird im Code aus dem Pool genommen (eine Zeile, jederzeit
       rueckgaengig). Wolfs Entscheidung.
+- [ ] **Ersatz Waermflasche: derselbe Fehler, nur vollstaendig** (2026-08-27).
+      Wolf hat eine Waermflasche als Ersatz fuer den Wecker geschickt. Gemessen:
+      **1254 x 1254, RGB, KEIN Alphakanal.** Das Transparenz-Karo ist als echte
+      Pixel gemalt, Kachelbreite rund 26 px, Grauwerte 246 bis 255. Auf jedem
+      Grund bleibt ein weisses Quadrat stehen.
+      Gegenprobe: `.shots/WAERMFLASCHE-PROBE.png` (Waermflasche, Schluessel,
+      Wecker auf Teamrot, Blau, Schwarz).
+      ⚠️ Die Diagnose sagt, wo der Fehler sitzt: das **Karo ist im Quellbild**.
+      Beim Wecker lief danach eine Hintergrundentfernung und hat die Flaeche im
+      Griff uebersehen; bei der Waermflasche lief sie gar nicht. Der Fix liegt
+      also oben, nicht unten: das Bild muss mit echter Transparenz ausgeleitet
+      werden (PNG-Export mit Alphakanal), nicht als Abzug der Vorschau.
+      Ich stelle nicht nachtraeglich frei, das schliessen die Asset-Regeln aus.
 - [ ] **Die uebrigen 47 einmal auf dem Blatt durchsehen.**
       `node scripts/avatare-auf-grund.mjs` legt alle 48 auf Schwarz, Weiss,
       Orange, Gruen, Blau und Teamrot - genau die Kontrolle, die in den

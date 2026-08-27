@@ -84,7 +84,7 @@ function BrandLoopPanel({ slogans, de }: { slogans: string[]; de: boolean }) {
           border: '1px solid var(--qq-hairline)',
           alignSelf: 'flex-start',
         }}>
-          {!istBuehneG() && <span style={{ fontSize: 12, lineHeight: 1 }}>🐺</span>}
+          {!istBuehneG() && <QQIcon slug="brand-wolf" size={12} />}
           <span style={{
             fontSize: 'clamp(10px, 1cqw, 13px)', fontWeight: 900,
             color: 'var(--qq-text-muted)', letterSpacing: '0.18em',
@@ -646,7 +646,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       panels.push({ key: 'megaFactions', node: (
         <div style={{ width: 'min(100%, 1040px)', margin: '0 auto' }}>
           <div style={{ fontSize: 'clamp(28px, 3.2cqw, 46px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 16 }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🛡️</span>
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🛡️"/></span>
             {de ? 'Die Fraktionen' : 'The Factions'}
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 14 }}>
@@ -1251,19 +1251,80 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       }}>?</div>
     );
   };
+  // ── Ein Kasten fuer alles ────────────────────────────────────────────────
+  // 2026-08-27, Wolf an zwei Bildern (Rekorde, Schnellste Minute):
+  //   „die infos haben kaesten, die teamavatare kacheln, kategorie meister hat
+  //    kaesten, aber andere zwischen pages nicht"
+  //
+  // Genau so war es, und zwar gemessen: von dreizehn Statistik-Folien setzten
+  // ZWEI ihren Inhalt in einen getoenten Kasten (Kategorie-Meister, Perfekte
+  // Runden), die uebrigen elf liessen ihn frei im Dunkeln stehen. Bei acht
+  // Sekunden je Folie sieht man den Wechsel der BAUFORM staerker als den
+  // Wechsel des Inhalts - deshalb wirkten sie „nicht gleich (gut)".
+  //
+  // Das hier ist KEINE neue Form. Es ist die Kategorie-Meister-Zeile, die Wolf
+  // selbst als die richtige benannt hat, einmal ausgelagert und danach ueberall
+  // benutzt. Das Design bleibt eingefroren, es verteilt sich nur.
+  //
+  // ⚠️ `color-mix` statt `${accent}12`. Die Akzente sind teils Hex und teils
+  // `var(--qq-accent)`; die Zeichenkettenrechnung ergab bei den Variablen
+  // stillschweigend Unsinn („var(--qq-accent)12"), also gar keinen Grund. Genau
+  // deshalb stand das Fragezeichen auf dem „Schnellste Minute"-Bild ohne Kachel
+  // da, waehrend es auf dem Rekorde-Bild eine hatte.
+  const statKasten = (
+    inhalt: React.ReactNode,
+    accent: string = QQ_COLORS.brandPink,
+    opts?: { weit?: boolean; mitte?: boolean; k?: React.Key },
+  ) => {
+    const mono = isQuietMotion();
+    return (
+      <div key={opts?.k} style={{
+        display: 'flex', alignItems: 'center',
+        justifyContent: opts?.mitte ? 'center' : undefined,
+        gap: opts?.weit ? 22 : 14,
+        padding: opts?.weit ? '18px 26px' : '12px 18px',
+        borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
+        background: mono ? 'var(--qq-card-bg)' : `color-mix(in oklab, ${accent} 12%, transparent)`,
+        border: mono ? '2px solid var(--qq-card-text)' : `1.5px solid color-mix(in oklab, ${accent} 42%, transparent)`,
+        boxShadow: mono ? '4px 4px 0 var(--qq-card-text)' : undefined,
+      }}>{inhalt}</div>
+    );
+  };
+
+  // Kasten-Stapel: der Rahmen, in dem eine Folie ihre Kaesten untereinander
+  // setzt. Damit haben auch die Abstaende zwischen den Kaesten ueberall
+  // denselben Wert.
+  const statStapel = (kinder: React.ReactNode, eng = false) => (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: eng ? 10 : 14 }}>{kinder}</div>
+  );
+
+  // Ersatzfarbe fuer Teams ohne eigene. Vorher stand hier `var(--qq-accent)`,
+  // und das war der Grund fuer das nackte Fragezeichen auf Wolfs „Schnellste
+  // Minute"-Bild: die Kachel rechnet mit der Farbe, eine CSS-Variable liess
+  // sich nicht verrechnen, und uebrig blieb die Glyphe ohne Flaeche. Jetzt aus
+  // dem Namen gezogen, damit dasselbe Team immer dieselbe Kachel bekommt.
+  const farbeAusName = (name: string) => {
+    let h = 0;
+    for (let i = 0; i < name.length; i++) h = (h * 31 + name.charCodeAt(i)) >>> 0;
+    return QQ_TEAM_PALETTE[h % QQ_TEAM_PALETTE.length];
+  };
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
-    const c = color ?? meta.color ?? 'var(--qq-accent)';
+    const c = color ?? meta.color ?? farbeAusName(name);
     const av = avatarId ?? meta.avatarId;
     const mono = isQuietMotion(); // Mono: editorial — kein Glow, schwarzer Name
-    return (
-      // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
+    // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
+    // 2026-08-27: dieselbe Zeile, jetzt im gemeinsamen Kasten. Sieben Folien
+    // haengen an diesem Helfer, die haben damit alle auf einmal die Form der
+    // Kategorie-Meister-Zeile.
+    return statKasten(
+      <>
         {av
           ? <QQTeamAvatar avatarId={av} size={'clamp(64px, 7cqw, 100px)'} style={{ flexShrink: 0, boxShadow: mono ? 'none' : `0 0 28px ${c}55` }} />
           : fallbackAvatarCircle('clamp(64px, 7cqw, 100px)', c)}
         <span style={{ fontWeight: 900, fontSize: 'clamp(36px, 4.2cqw, 64px)', color: mono ? 'var(--qq-card-text)' : c, textShadow: mono ? 'none' : `0 0 22px ${c}44` }}>{name}</span>
-      </div>
+      </>,
+      c, { weit: true, mitte: true },
     );
   };
   // Inline-Variante fuer kompakte Records (Avatar + Name in einer Zeile mit Stat).
@@ -1282,68 +1343,52 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   };
 
   // Records — nur Einträge mit echten Werten zeigen (0-Records sind irreführend)
+  //
+  // 2026-08-27: vier Zeilen, die vorher frei im Dunkeln standen (nur `padding:
+  // 12px 0`). Auf Wolfs Bild war das die Folie, die am staerksten aus der Reihe
+  // fiel: Zeichen, Fettzeile, Kleinzeile - dreimal untereinander, ohne Flaeche.
+  // Jetzt dieselbe Zeile wie ueberall, gebaut aus EINEM Helfer statt viermal
+  // kopiert.
   if (funStats) {
-    const records: React.ReactNode[] = [];
+    // Erst die Daten sammeln, dann EINMAL rendern. Vorher wurde viermal
+    // dieselbe Zeile kopiert; jetzt steht die Form an einer Stelle, und die
+    // Folie selbst zeigt beim Lesen, dass sie Kaesten baut.
+    const records: Array<{ k: string; zeichen: string; titel: string; wert: React.ReactNode; akzent: string }> = [];
     if (funStats.highestScore && funStats.highestScore.score > 0) {
-      records.push(
-        <div key="hs" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Höchster Score' : 'Highest Score'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.highestScore.teamName)} · {funStats.highestScore.score} {de ? 'Punkte' : 'points'}
-            </div>
-          </div>
-        </div>
-      );
+      records.push({ k: 'hs', zeichen: '🔥', titel: de ? 'Höchster Score' : 'Highest Score', akzent: '#F97316',
+        wert: <>{teamInline(funStats.highestScore.teamName)} · {funStats.highestScore.score} {de ? 'Punkte' : 'points'}</> });
     }
     if (funStats.closestGame && funStats.closestGame.gap > 0) {
-      records.push(
-        <div key="cg" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}>⚔️</span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Knappster Sieg' : 'Closest Game'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} · {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}
-            </div>
-          </div>
-        </div>
-      );
+      records.push({ k: 'cg', zeichen: '⚔️', titel: de ? 'Knappster Sieg' : 'Closest Game', akzent: QQ_COLORS.brandPinkMid,
+        wert: <>{teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} · {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}</> });
     }
     if (funStats.winStreak && funStats.winStreak.streak >= 2) {
-      records.push(
-        <div key="ws" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="🔥"/></span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Siegesserie' : 'Win Streak'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.winStreak.teamName)} · {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}
-            </div>
-          </div>
-        </div>
-      );
+      records.push({ k: 'ws', zeichen: '🔥', titel: de ? 'Siegesserie' : 'Win Streak', akzent: '#F97316',
+        wert: <>{teamInline(funStats.winStreak.teamName)} · {funStats.winStreak.streak}x {de ? 'in Folge' : 'in a row'}</> });
     }
     if (funStats.fastestAnswer && funStats.fastestAnswer.ms >= 100) {
       const secs = (funStats.fastestAnswer.ms / 1000).toFixed(1);
-      records.push(
-        <div key="fa" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, padding: '12px 0' }}>
-          <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)' }}><QQEmojiIcon emoji="⚡"/></span>
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{de ? 'Schnellste Antwort' : 'Fastest Answer'}</div>
-            <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              {teamInline(funStats.fastestAnswer.teamName)} · {secs}s {de ? 'Vorsprung' : 'ahead'}
-            </div>
-          </div>
-        </div>
-      );
+      records.push({ k: 'fa', zeichen: '⚡', titel: de ? 'Schnellste Antwort' : 'Fastest Answer', akzent: '#FACC15',
+        wert: <>{teamInline(funStats.fastestAnswer.teamName)} · {secs}s {de ? 'Vorsprung' : 'ahead'}</> });
     }
     if (records.length > 0) {
       panels.push({ key: 'records', node: (
         <div>
           <div style={{ fontSize: 'clamp(32px, 3.6cqw, 52px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 24, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18, textTransform: isQuietMotion() ? 'uppercase' : undefined, letterSpacing: isQuietMotion() ? '-0.01em' : undefined }}>
-            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>🏅</span> {de ? 'Rekorde' : 'Records'}
+            <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="🏅"/></span> {de ? 'Rekorde' : 'Records'}
           </div>
-          {records}
+          {statStapel(records.map(r => statKasten(
+            <>
+              <span style={{ fontSize: 'clamp(32px, 3.6cqw, 48px)', flexShrink: 0 }}><QQEmojiIcon emoji={r.zeichen}/></span>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ fontWeight: 900, fontSize: 'clamp(26px, 3cqw, 40px)', color: 'var(--qq-card-text)' }}>{r.titel}</div>
+                <div style={{ fontSize: 'clamp(22px, 2.4cqw, 32px)', color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-text-muted)', display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                  {r.wert}
+                </div>
+              </div>
+            </>,
+            r.akzent, { k: r.k },
+          )))}
         </div>
       )});
     }
@@ -1528,14 +1573,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: 'var(--qq-accent)', emoji: '🎯', label: cm.category, labelEn: cm.category };
             const team = s.teams.find(t => t.name === cm.teamName);
             const catLabel = de ? catMeta.label : catMeta.labelEn;
-            return (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 14, padding: '12px 18px',
-                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-                background: isQuietMotion() ? 'var(--qq-card-bg)' : `${catMeta.color}12`,
-                border: isQuietMotion() ? '2px solid var(--qq-card-text)' : `1.5px solid ${catMeta.color}44`,
-                boxShadow: isQuietMotion() ? '4px 4px 0 var(--qq-card-text)' : undefined,
-              }}>
+            // 2026-08-27: derselbe Kasten wie ueberall. Die Werte hier waren
+            // die Vorlage - Wolf hat diese Folie als die richtige benannt.
+            return statKasten(
+              <>
                 {(() => {
                   // 2026-07-27 (Wolf-Finding 'falsche emojis fuer kategorien'):
                   // Custom-Kategorie-Medaillon (cat-*.png) statt rohem Emoji —
@@ -1551,7 +1592,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <div style={{ fontSize: 'clamp(13px, 1.4cqw, 18px)', color: isQuietMotion() ? 'var(--qq-text-muted)' : catMeta.color, fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.1em' }}>{catLabel}</div>
                 </div>
                 {statPill(cm.count, de ? 'richtig' : 'correct', catMeta.color)}
-              </div>
+              </>,
+              catMeta.color, { k: i },
             );
           })}
         </div>
@@ -1567,21 +1609,16 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {funStats.perfectRounds.slice(0, 5).map((pr, i) => {
             const team = s.teams.find(t => t.name === pr.teamName);
-            return (
-              <div key={i} style={{
-                display: 'flex', alignItems: 'center', gap: 14, padding: '10px 16px',
-                borderRadius: isThemed() ? 'var(--qq-card-radius)' : 16,
-                background: isQuietMotion() ? 'var(--qq-card-bg)' : 'rgba(34,197,94,0.08)',
-                border: isQuietMotion() ? '2px solid var(--qq-card-text)' : '1px solid rgba(34,197,94,0.3)',
-                boxShadow: isQuietMotion() ? '4px 4px 0 var(--qq-card-text)' : undefined,
-              }}>
+            return statKasten(
+              <>
                 <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="✨"/></span>
                 {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={'clamp(34px, 3.6cqw, 46px)'} />}
                 <span style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (team?.color ?? 'var(--qq-card-text)') }}>{pr.teamName}</span>
                 {pr.draftTitle && (
                   <span style={{ marginLeft: 'auto', color: 'var(--qq-text-muted)', fontSize: 'clamp(13px, 1.5cqw, 18px)', fontStyle: 'italic' }}>„{pr.draftTitle}"</span>
                 )}
-              </div>
+              </>,
+              QQ_COLORS.green500, { k: i },
             );
           })}
         </div>
@@ -1628,11 +1665,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'today', node: (
       <div>
         {statTitle(<QQIcon slug="fx-chart" size="1em" />, 'Heute', 'Today', QQ_COLORS.blue400)}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 14, alignItems: isQuietMotion() ? 'center' : undefined }}>
-          {statPill(funStats.todayStats.games, de ? 'Spiele heute' : 'games today', QQ_COLORS.blue400)}
-          {funStats.todayStats.topScore && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}>🏅</span>
+        {/* 2026-08-27: die Pille stand hier als einziges Element in einem
+            Kasten, die beiden Zeilen darunter frei daneben - drei Formen auf
+            einer Folie. Jetzt drei Kaesten. */}
+        {statStapel(<>
+          {statKasten(
+            <span style={{ margin: '0 auto' }}>{statPill(funStats.todayStats.games, de ? 'Spiele heute' : 'games today', QQ_COLORS.blue400)}</span>,
+            QQ_COLORS.blue400, { k: 'g', mitte: true },
+          )}
+          {funStats.todayStats.topScore && statKasten(
+            <>
+              <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)', flexShrink: 0 }}><QQEmojiIcon emoji="🏅"/></span>
               <div>
                 <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-card-text)' }}>
                   {funStats.todayStats.topScore.teamName}
@@ -1641,11 +1684,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   {funStats.todayStats.topScore.score} {de ? 'Punkte' : 'points'}
                 </div>
               </div>
-            </div>
+            </>,
+            QQ_COLORS.yellow300, { k: 's' },
           )}
-          {funStats.todayStats.topWinner && funStats.todayStats.topWinner.wins >= 2 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-              <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)' }}><QQEmojiIcon emoji="🔥"/></span>
+          {funStats.todayStats.topWinner && funStats.todayStats.topWinner.wins >= 2 && statKasten(
+            <>
+              <span style={{ fontSize: 'clamp(24px, 2.6cqw, 34px)', flexShrink: 0 }}><QQEmojiIcon emoji="🔥"/></span>
               <div>
                 <div style={{ fontWeight: 900, fontSize: 'clamp(18px, 2cqw, 26px)', color: 'var(--qq-card-text)' }}>
                   {funStats.todayStats.topWinner.teamName}
@@ -1654,9 +1698,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   {funStats.todayStats.topWinner.wins}× {de ? 'heute gewonnen' : 'wins today'}
                 </div>
               </div>
-            </div>
+            </>,
+            '#F97316', { k: 'w' },
           )}
-        </div>
+        </>)}
       </div>
     )});
   }
@@ -1672,15 +1717,18 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'rival', node: (
       <div>
         {statTitle('⚔️', 'Offene Rechnung', 'Unfinished Business', QQ_COLORS.brandPinkMid)}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18, flexWrap: 'wrap', justifyContent: isQuietMotion() ? 'center' : undefined }}>
-          {rivalTeam && <QQTeamAvatar avatarId={rivalTeam.avatarId} teamEmoji={rivalTeam?.emoji} size={'clamp(50px, 5.5cqw, 72px)'} />}
-          <div>
-            <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (rivalTeam?.color ?? QQ_COLORS.brandPinkMid) }}>{rivalName}</div>
-            <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: 'var(--qq-text-muted)' }}>
-              {de ? `hat schon ${rival.wins}× gewonnen. Wer dreht heute das Spiel?` : `already won ${rival.wins}×. Who flips the script today?`}
+        {statKasten(
+          <>
+            {rivalTeam && <QQTeamAvatar avatarId={rivalTeam.avatarId} teamEmoji={rivalTeam?.emoji} size={'clamp(50px, 5.5cqw, 72px)'} style={{ flexShrink: 0 }} />}
+            <div>
+              <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (rivalTeam?.color ?? QQ_COLORS.brandPinkMid) }}>{rivalName}</div>
+              <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: 'var(--qq-text-muted)' }}>
+                {de ? `hat schon ${rival.wins}× gewonnen. Wer dreht heute das Spiel?` : `already won ${rival.wins}×. Who flips the script today?`}
+              </div>
             </div>
-          </div>
-        </div>
+          </>,
+          rivalTeam?.color ?? QQ_COLORS.brandPinkMid, { weit: true, mitte: true },
+        )}
       </div>
     )});
   }
@@ -1690,14 +1738,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'funny', node: (
       <div>
         <div style={{ fontSize: 'clamp(24px, 2.8cqw, 36px)', fontWeight: 900, color: 'var(--qq-card-text)', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 14 }}>
-          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}>😂</span> {de ? 'Lustigste Antworten' : 'Funniest Answers'}
+          <span style={{ display: 'inline-block', animation: 'panelIconPop 0.7s var(--qq-ease-bounce) 0.25s both' }}><QQEmojiIcon emoji="😂"/></span> {de ? 'Lustigste Antworten' : 'Funniest Answers'}
         </div>
-        {funStats.funnyAnswers.map((fa, i) => (
-          <div key={i} style={{ padding: '12px 0', borderBottom: i < funStats.funnyAnswers.length - 1 ? '1px solid var(--qq-hairline)' : 'none' }}>
+        {/* 2026-08-27: Haarlinien raus, Kaesten rein - dieselbe Zeile wie in
+            Rekorden und Kategorie-Meistern. */}
+        {statStapel(funStats.funnyAnswers.map((fa, i) => statKasten(
+          <div>
             <div style={{ fontSize: 'clamp(22px, 2.6cqw, 30px)', fontWeight: 700, color: 'var(--qq-accent)' }}>„{fa.text}"</div>
             <div style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', color: 'var(--qq-text-muted)', marginTop: 4 }}>· {fa.teamName}</div>
-          </div>
-        ))}
+          </div>,
+          QQ_COLORS.brandPink, { k: i },
+        )))}
       </div>
     )});
   }
@@ -2039,7 +2090,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             marginBottom: 6,
             animation: 'panelSlideIn 0.6s var(--qq-ease-bounce) 0.1s both',
           }}>
-            🎤 Eurovision Edition
+            <QQEmojiIcon emoji="🎤" size="1em" style={{ marginRight: 6, verticalAlign: '-0.12em' }} />Eurovision Edition
           </div>
         ))}
       </div>

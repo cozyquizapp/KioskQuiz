@@ -397,6 +397,13 @@ export default function QQProgressTree({
   // Pro Phase-Übergang ein eigener CG-Center. Index = Phase-Index VOR dem CG.
   // Z.B. cozyGameCentersByPi[1] = CG zwischen Phase 0 und Phase 1 (= nach Runde 1).
   const cozyGameCentersByPi = new Map<number, number>();
+  /** Zu welcher Runde gehoert jede Kachel? Index parallel zu `dotCenters`. */
+  const dotGruppe: number[] = [];
+  /** Zu welcher Runde gehoert jeder CozyGame-Knoten? Schluessel wie in
+   *  `cozyGameCentersByPi`. Der Knoten haengt an der Runde DAVOR - das ist
+   *  Wolfs Entscheidung vom 2026-08-24 („cozygames ... stehen weg von runde
+   *  obwohl sie zu runde gehoeren"), und sie gilt hier genauso. */
+  const cozyGameGruppe = new Map<number, number>();
   let cursor = 0;
   phases.forEach((p, pIdx) => {
     // 2026-08-25: der CozyGame-Knoten haengt an der Runde DAVOR (siehe
@@ -405,6 +412,7 @@ export default function QQProgressTree({
     if (showCozyGames && pIdx >= 1) {
       cursor += gruppenGap;
       cozyGameCentersByPi.set(pIdx, cursor + cozyGameDotSize / 2);
+      cozyGameGruppe.set(pIdx, pIdx - 1);   // gehoert zur Runde davor
       cursor += cozyGameDotSize;
     }
     // Vor der letzten Phase: Bieten-Dot einfuegen (nur wenn showBidding).
@@ -428,6 +436,9 @@ export default function QQProgressTree({
     // Abend; die Marke sucht danach, statt zu zaehlen.
     const dotPlanIdx = schedule.findIndex(e => e.phase === p);
     for (let i = 0; i < renderCount; i++) {
+      // 2026-08-27: zu welcher Runde gehoert diese Kachel? Wird fuer die
+      // Gleis-Abschnitte gebraucht (siehe `gruppeVon` weiter unten).
+      dotGruppe.push(pIdx);
       dotGlobalIdx.push(dotPlanIdx >= 0 ? dotPlanIdx + i : -1);
       if (i > 0) cursor += dotGap;
       dotCenters.push(cursor + dotSize / 2);
@@ -440,6 +451,7 @@ export default function QQProgressTree({
     if (einzelCozyGame) {
       cursor += gruppenGap;
       cozyGameCentersByPi.set(onlyPhase as number, cursor + cozyGameDotSize / 2);
+      cozyGameGruppe.set(onlyPhase as number, 0);   // die einzige Runde
       cursor += cozyGameDotSize;
       // 2026-08-25 (Wolf: „wenn nur rundenuebersicht sitzt der progress tree
       // oben mit cozygames nicht mittig (6 items)").
@@ -618,14 +630,42 @@ export default function QQProgressTree({
   // Station. Mit drei Pixeln Luft blieben zwischen zwei Kacheln nur sieben
   // Pixel Strich uebrig, und das las sich als Bindestrich statt als Gleis.
   const LUFT = 0;
-  const stationen: Array<{ mitte: number; halb: number }> = [];
-  for (const c of dotCenters) stationen.push({ mitte: c, halb: dotSize / 2 });
-  for (const c of cozyGameCentersByPi.values()) stationen.push({ mitte: c, halb: cozyGameDotSize / 2 });
-  if (showBidding && biddingCenter) stationen.push({ mitte: biddingCenter, halb: biddingDotSize / 2 });
-  if (showFinale && finaleCenter) stationen.push({ mitte: finaleCenter, halb: finaleDotSize / 2 });
+  const stationen: Array<{ mitte: number; halb: number; gruppe: string }> = [];
+  dotCenters.forEach((c, i) => stationen.push({ mitte: c, halb: dotSize / 2, gruppe: `r${dotGruppe[i] ?? 0}` }));
+  for (const [key, c] of cozyGameCentersByPi) {
+    stationen.push({ mitte: c, halb: cozyGameDotSize / 2, gruppe: `r${cozyGameGruppe.get(key) ?? 0}` });
+  }
+  // Bieten und Finale gehoeren zu keiner Runde. Sie bekommen eigene Gruppen und
+  // stehen dadurch frei - was richtig ist, sie sind ja Einschuebe zwischen den
+  // Runden bzw. der Abschluss.
+  if (showBidding && biddingCenter) stationen.push({ mitte: biddingCenter, halb: biddingDotSize / 2, gruppe: 'bieten' });
+  if (showFinale && finaleCenter) stationen.push({ mitte: finaleCenter, halb: finaleDotSize / 2, gruppe: 'finale' });
   stationen.sort((x, y) => x.mitte - y.mitte);
+
+  // ── Das Gleis endet an der Rundengrenze ───────────────────────────────────
+  // 2026-08-27 (Wolf: „bei den symbolen im progress tree wird nicht klar was
+  // runde 1 und runde 2 etc ist, die trennung ist nicht so eindeutig?").
+  //
+  // Meine erste Vermutung war, die Abstaende seien zu klein. Gemessen
+  // (`scripts/baum-runden-trennung.mjs`) ist das Gegenteil der Fall:
+  //
+  //     innerhalb einer Runde   13 px
+  //     zwischen den Runden    138 px im Mittel
+  //     Faktor                  10,6
+  //
+  // An der Naehe liegt es also nicht. Es liegt am Gleis. Es wurde bisher
+  // zwischen JEDEM Paar benachbarter Stationen gezogen, also auch ueber die
+  // Rundengrenze - und weil die Luecke dort am groessten ist, ist der Strich
+  // dort am LAENGSTEN. Die Stelle, die trennen soll, bekam damit die
+  // auffaelligste Verbindung im ganzen Bild. Eine Linie, die verbindet,
+  // schlaegt einen Abstand, der trennt: das Auge folgt der Kontur.
+  //
+  // Jetzt laeuft das Gleis nur noch innerhalb einer Runde (und weiter zu ihrem
+  // CozyGame, denn das gehoert zu ihr). Zwischen den Runden liegen 138 px
+  // Nichts, und Nichts trennt.
   const abschnitte: Array<{ von: number; bis: number }> = [];
   for (let i = 0; i + 1 < stationen.length; i++) {
+    if (stationen[i].gruppe !== stationen[i + 1].gruppe) continue;
     const von = Math.max(trackStart, stationen[i].mitte + stationen[i].halb + LUFT);
     const bis = Math.min(trackEnd, stationen[i + 1].mitte - stationen[i + 1].halb - LUFT);
     if (bis > von) abschnitte.push({ von, bis });
@@ -1100,6 +1140,12 @@ export default function QQProgressTree({
                   return (
                     <div
                       key={i}
+                      // 2026-08-27: Kennung fuer `baum-runden-trennung.mjs`.
+                      // Ohne sie muesste das Messwerkzeug aus Groesse und Lage
+                      // raten, welche Kachel zu welcher Runde gehoert - und
+                      // genau das ist die Frage, die es beantworten soll.
+                      data-qq-baum-punkt={isPlaceholder ? 'leer' : 'kategorie'}
+                      data-qq-baum-phase={String(p)}
                       title={e ? `${phaseLabels[p]} · ${label![lang]}` : `${phaseLabels[p]} · (wird noch geladen)`}
                       style={{
                         width: dotSize,

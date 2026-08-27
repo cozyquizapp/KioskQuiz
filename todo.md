@@ -56,6 +56,56 @@
 
 ---
 
+## 🌳 FORTSCHRITTSBAUM: WO ENDET EINE RUNDE? (Wolf 2026-08-27)
+
+- ✅ **Das Gleis endet jetzt an der Rundengrenze** (2026-08-27, erledigt).
+      Wolf zum Runden-Intro von Runde 2: „bei den symbolen im progress tree wird
+      nicht klar was runde 1 und runde 2 etc ist, die trennung ist nicht so
+      eindeutig?"
+
+      ⚠️ **Meine erste Vermutung war falsch, und das ist der Kern.** Ich hatte
+      auf die Abstaende getippt: im Code steht `gruppenGap = dotGap * 2`, also
+      nur Faktor 2, und unter Faktor 2 bis 3 liest sich eine Gruppierung nicht.
+      Gemessen (`node scripts/baum-runden-trennung.mjs`):
+
+      ```
+      innerhalb einer Runde    13 px
+      zwischen den Runden     138 px im Mittel
+      Faktor                   10,6
+      ```
+
+      An der Naehe lag es also nicht (zwischen den Runden stehen zusaetzlich die
+      CozyGame- und Bieten-Knoten, die bringen eigene Breite mit).
+
+      **Es lag am Gleis.** Der Strich wurde zwischen JEDEM Paar benachbarter
+      Stationen gezogen, auch ueber die Rundengrenze - und weil die Luecke dort
+      am groessten ist, war der Strich dort am LAENGSTEN. Die Stelle, die
+      trennen soll, hatte damit die auffaelligste Verbindung im Bild. Eine
+      Linie, die verbindet, schlaegt einen Abstand, der trennt: das Auge folgt
+      der Kontur, bevor es Luecken zaehlt.
+
+      Jetzt laeuft das Gleis nur innerhalb einer Runde weiter, plus zu ihrem
+      CozyGame (das gehoert zu ihr, Wolfs Entscheidung vom 2026-08-24). Bieten
+      und Finale stehen frei, sie gehoeren zu keiner Runde.
+      Nachher: 0 von 3 Rundengrenzen mit Strich, 16 von 16 Stellen innerhalb.
+      Bild: `.shots/BAUM-TRENNUNG.png`.
+
+- [ ] **Zwei weitere Hebel, beide sind Wolfs eigene Entscheidungen.**
+      Deshalb nicht angefasst, sondern zur Wahl gestellt:
+      1. **Beschriftung unter den Gruppen.** Im Runden-Intro laeuft der Baum als
+         `bare` und hat bewusst keine Phasen-Labels (2026-06-29, Wolfs Idee:
+         „nackter Baum ... keine Phasen-Labels, nur Symbole + Linie + Wolf").
+         Ein kleines „1 2 3 4" unter den Gruppen wuerde die Frage direkt
+         beantworten statt nur die Gruppen sichtbar zu machen. Platz ist da.
+      2. **Farbe je Runde.** `getRoundColor(p, totalPhases)` gibt es noch, aber
+         auf der Buehne ueberschreibt `skinAccentHex` sie - alle vier Runden
+         tragen denselben Akzent (2026-05-09, Wolf: „tree noch bunt").
+         Vier Toene derselben Familie waeren ein zweiter Kanal neben dem
+         Abstand.
+      Erst am Livebild ansehen, ob die Gruppierung allein schon reicht.
+
+---
+
 ## 📐 SCHRIFT PASST SICH EIN (Wolf 2026-08-27)
 
 - ✅ **Gemessen statt gestuft** (2026-08-27, erledigt). Wolf zu zwei Bildern:

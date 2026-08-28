@@ -350,7 +350,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
   // Dynamic status text
   const teamCount = s.teams.length;
   // 2026-07-01: Groß-Modus / viele Teams → dichtes Multi-Spalten-Grid mit
-  // kompakten Chips (25 Teams passen nicht in 2 Spalten; Beamer scrollt nie).
+  // kompakten Chips (40 Teams passen nicht in 2 Spalten; Beamer scrollt nie).
   const veryMany = (s as any).largeGroupMode || teamCount > 12;
   // 2026-07-01 (Wolf Idee 2): Genestet → Sub-Teams teilen sich einen avatarId
   // (= Eltern-Team). In der Lobby als 8 Eltern-Karten mit „X/3 Sub-Teams"
@@ -1060,7 +1060,15 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
                       (Live-Event-Fix 2026-07-10). */}
                   <span style={{
                     position: 'absolute', top: 'clamp(8px, 1cqh, 12px)', right: 'clamp(10px, 1.1cqw, 14px)',
-                    padding: '2px 9px', borderRadius: 999,
+                    // 2026-08-28 (Wolf: „eckig statt rund darfst du anfassen").
+                    // Hier stand hart `999` - die einzige Stelle der Buehne, an
+                    // der noch eine echte Pille sass; gefunden von
+                    // scripts/design-referenz.mjs („Pille/Kreis, 8x lobby",
+                    // acht Fraktionen, acht Zaehler). Der Token daneben macht
+                    // seit dem 26.08. genau das Richtige: 16 % der Hoehe, wie am
+                    // Brettfeld, weich aber nicht rund. Ein reiner Radius-Wert,
+                    // es verschiebt nichts.
+                    padding: '2px 9px', borderRadius: 'var(--qq-pill-radius)',
                     background: `${g.color}22`, border: `1px solid ${g.color}66`,
                     color: g.color, fontWeight: 900, fontSize: 'clamp(11px, 1.1cqw, 15px)',
                     fontVariantNumeric: 'tabular-nums',
@@ -1106,7 +1114,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               gridColumn: 2,
               display: 'grid',
               // Standard 2-spaltig; Groß-Modus/viele Teams → auto-fill dichte
-              // Chips (25 Teams passen so in ~4-5 Spalten ohne Scroll).
+              // Chips (40 Teams passen so in ~4-5 Spalten ohne Scroll).
               // 2026-08-23 (Wolf: „joined teams und all set here we go, wirkt
               // nicht mittig"). Gemessen: die Spalte lief von 591 bis 1637,
               // Mitte 1114 — Kopf- und Fusszeile sassen also exakt mittig auf

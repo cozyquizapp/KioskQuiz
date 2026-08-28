@@ -1,6 +1,6 @@
 // ── QQ Bar-Race Test — Groß-Gruppen-Beamer-Choreografie ──────────────────────
 // Brainstorm-Prototyp 2026-07-01 (Wolf). Beamer-optimierte 3-Akt-Sequenz für den
-// Groß-Gruppen-Modus (bis 100 Personen / 25 Teams):
+// Groß-Gruppen-Modus (bis 40 Teams = 8 Fraktionen a 5):
 //
 //   AKT 1 — FRAGE AKTIV: Frage + Optionen, Abgaben-Zähler steigt (Spannung).
 //   AKT 2 — TOP-5 AUFLÖSUNG: „✓ Richtig", dann 5 Schnellste kaskadiert

@@ -159,8 +159,12 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   gleiche Woerter, andere Saetze.
 
   Was CrowdQuiz allein gehoert und bleiben muss:
-  * **Fraktionen statt Teams.** Bis 25 Teams (im Test 40 Geraete) auf 8
-    Fraktionen gebuendelt (`nestedTeams`). Die Wappen sind fest an Name UND
+  * **Fraktionen statt Teams.** Bis **40 Teams** auf 8 Fraktionen gebuendelt
+    (`nestedTeams`), also 8 x 5. Die Zahl steht als `QQ_MAX_TEAMS_LARGE` in
+    shared/quarterQuizTypes.ts und wird ueberall aus der Konstante gelesen.
+    ⚠️ Bis 2026-08-28 behaupteten neun Kommentare und der Wizard-Text „bis 25
+    Teams" - eine Zahl von vor dem 10.07. Der Code war nie falsch, nur der
+    Text. Wolf hat es beim Nachfragen bemerkt, nicht ich. Die Wappen sind fest an Name UND
     Farbe gebunden (`frontend/src/cozyArenaCrests.ts`) - Bauchgefuehl ist
     orange, Risiko ist rot. Kein freier Avatar-Satz, deshalb haengt auch die
     Avatar-Vorgabe am Format (`qqDefaultAvatarSetId`).

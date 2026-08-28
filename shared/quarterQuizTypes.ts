@@ -70,7 +70,7 @@ export const QQ_BUNTE_TUETE_ACTIVE = [
 ] as const satisfies readonly QQBunteTueteKind[];
 
 /**
- * Nur CozyArena (largeGroupMode, bis 25 Teams, Bar-Race statt Brett).
+ * Nur CozyArena (largeGroupMode, bis 40 Teams, Bar-Race statt Brett).
  * Im normalen Spiel kommen diese beiden nicht vor — wer die Buehne fuer den
  * Standard-Abend gestaltet, kann sie ueberspringen. Ihre Wertung haengt an
  * `CozyQuizLargeGroupView` (Ø-Prozent statt Brettpunkte).
@@ -1613,7 +1613,7 @@ export interface QQStateUpdate {
   cozyGamesPlayedAfterPhases?: number[];
   /** Setup-Toggle: aktiviert Comeback-Mechanik (H/L vor Final). Default true. */
   comebackEnabled?: boolean;
-  /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race-Score statt Grid,
+  /** Setup-Toggle: Groß-Gruppen-Modus (bis 40 Teams). Bar-Race-Score statt Grid,
    *  Top-5-schnellste-Reveal statt Placement. Default false. */
   largeGroupMode?: boolean;
   /** Setup-Sub-Modus (2026-07-01, Wolf Idee 2): Genestete Teams — 8 Eltern-Teams

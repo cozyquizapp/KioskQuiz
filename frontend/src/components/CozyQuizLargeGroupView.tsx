@@ -1,5 +1,6 @@
 // ── CozyQuizLargeGroupView — Groß-Gruppen-Modus Beamer (Akt 2 + Akt 3) ───────
-// Teil des largeGroupMode (bis 25 Teams, Bar-Race statt Grid). Doku:
+// Teil des largeGroupMode (bis 40 Teams = 8 Fraktionen a 5, Bar-Race statt
+// Grid; QQ_MAX_TEAMS_LARGE). Doku:
 // memory project_large_group_mode. Die 3 Akte des Groß-Gruppen-Loops:
 //   Akt 1 = QUESTION_ACTIVE → bestehende QuestionView (unverändert wiederverwendet)
 //   Akt 2 = QUESTION_REVEAL  → ebenfalls die normale QuestionView (LargeGroupRevealView

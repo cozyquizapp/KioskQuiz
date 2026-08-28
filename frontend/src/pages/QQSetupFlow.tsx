@@ -265,7 +265,7 @@ export function QQSetupFlow(props: Props) {
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
                 { ar: false, emoji: '🍺', title: 'CozyQuiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], ac: PINK },
-                { ar: true, emoji: '🏟️', title: 'CrowdQuiz', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], ac: VIOLET },
+                { ar: true, emoji: '🏟️', title: 'CrowdQuiz', sub: 'Event · bis 40 Teams', lines: ['8 Fraktionen à 5 Teams', 'Speed-Wertung', 'Bar-Race'], ac: VIOLET },
               ].map(f => {
                 const active = arena === f.ar && !!(s as any).formatSelected;
                 return (

@@ -9967,8 +9967,11 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
   const room = getQQRoom(roomCode);
   if (!room) return res.status(404).json({ error: 'Raum nicht gefunden' });
   if (room.phase !== 'LOBBY') return res.status(400).json({ error: 'Nur in Lobby möglich' });
-  // 2026-07-01: Groß-Modus erlaubt bis 25 Bots (sonst max 8).
-  // 2026-07-02: Nested → max 24 (8 Eltern × 3 Sub-Teams).
+  // Groß-Modus erlaubt QQ_MAX_TEAMS_LARGE Bots (sonst max 8).
+  // ⚠️ 2026-08-28: hier standen „bis 25 Bots" und „max 24 (8 Eltern × 3
+  // Sub-Teams)". Beide Zahlen sind seit dem 10.07. falsch - der Deckel steht
+  // auf 40 (8 Fraktionen a 5). Der CODE war nie falsch, er liest die
+  // Konstante; nur die Kommentare und der Wizard-Text behaupteten 25.
   const cap = (room.nestedTeams || room.largeGroupMode) ? QQ_MAX_TEAMS_LARGE : 8;
   const count = Math.min(cap, Math.max(1, Number(req.body?.count) || cap));
   const existing = Object.keys(room.teams).length;
@@ -10045,7 +10048,7 @@ app.post('/api/qq/:roomCode/dev/fillTeams', (req, res) => {
       countByAv.set(targetAv, have + 1);
     }
   } else if (room.largeGroupMode) {
-    // Groß-Modus: bis 25 Teams > 8 Avatar-Slots → Slots zyklisch wiederverwenden
+    // Groß-Modus: bis 40 Teams > 8 Avatar-Slots → Slots zyklisch wiederverwenden
     // (qqJoinTeam-Exklusivität ist im Groß-Modus relaxed). Tier/Emoji aus Pool.
     let guard = 0;
     while (added < toAdd && guard < toAdd * 3 + 5) {

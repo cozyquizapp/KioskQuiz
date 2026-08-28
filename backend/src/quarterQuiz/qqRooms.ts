@@ -361,7 +361,7 @@ export interface QQRoomState {
   finalWagerEnabled: boolean;
   /** Setup-Toggle: aktiviert Comeback (H/L-Mini-Game vor Final). Default true. */
   comebackEnabled: boolean;
-  /** Setup-Toggle: Groß-Gruppen-Modus (bis 25 Teams). Bar-Race statt Grid,
+  /** Setup-Toggle: Groß-Gruppen-Modus (bis 40 Teams). Bar-Race statt Grid,
    *  Top-5-schnellste-Reveal statt Placement. Default false. */
   largeGroupMode: boolean;
   /** Setup-Sub-Modus (2026-07-01, Idee 2): Genestete Teams — bis 8 Eltern-Teams
@@ -676,7 +676,7 @@ export function qqJoinTeam(
     }
   }
   // Avatar exclusivity: each avatar (Color-Slot) can only be chosen by one team.
-  // 2026-07-01: Im Groß-Modus (bis 25 Teams > 8 Avatar-Slots) Wiederverwendung
+  // 2026-07-01: Im Groß-Modus (bis 40 Teams > 8 Avatar-Slots) Wiederverwendung
   // erlaubt — Teams unterscheiden sich über Name + Tier, Farb-Kollision egal.
   const avatarTaken = Object.values(room.teams).some(t => t.avatarId === avatarId);
   if (avatarTaken && !room.largeGroupMode) {

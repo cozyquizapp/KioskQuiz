@@ -113,7 +113,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   // die unterste Zeile endete bei y 1034 auf einer 990 hohen Buehne: 44 px
   // unsichtbar, lautlos, weil die Wurzel `overflow: hidden` traegt.
   //
-  // In CozyQuiz (bis 8 Teams) faellt das nicht auf, in CrowdQuiz (bis 25) ab
+  // In CozyQuiz (bis 8 Teams) faellt das nicht auf, in CrowdQuiz (bis 40) ab
   // dem zwoelften Team immer. Statt die Zahl nachzubessern - dieselbe Falle
   // stellt sich sonst beim naechsten Kopfzeilen-Wechsel wieder - wird der
   // Platz gemessen.

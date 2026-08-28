@@ -39,6 +39,22 @@ import {
   playSpecialAwardReveal,
 } from '../utils/sounds';
 
+/**
+ * Ein Clamp, dessen Untergrenze die Obergrenze nie ueberholt.
+ *
+ * 2026-08-28, gemessen: CSS-`clamp(min, wunsch, max)` liefert MIN, sobald
+ * min > max ist - die Untergrenze gewinnt also ausgerechnet dann, wenn gar
+ * kein Platz mehr da ist. In der Zwischenstand-Liste standen bei zwanzig
+ * Teams deshalb 34 px hohe Zahlen in 30 px hohen Zeilen, und weil die Zeile
+ * `contain: paint` traegt, waren sie sauber in der Mitte durchgeschnitten.
+ * Auf dem Bild sah es aus, als fehle die untere Haelfte jedes Namens.
+ *
+ * Die Untergrenze ist als Lesbarkeitsgrenze gedacht, nicht als Anspruch auf
+ * Platz. Fehlt der Platz, gewinnt der Platz.
+ */
+const zeilenSchrift = (unten: number, wunsch: string, oben: number) =>
+  `clamp(${Math.min(unten, oben)}px, ${wunsch}, ${oben}px)`;
+
 export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const de = lang === 'de';
@@ -90,12 +106,49 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   // wuerde rowH*N sonst ueber den Screen laufen. Fuer N<=8 ein No-op (floor(820/8)
   // =102 > 92), darueber schrumpfen Reihen+Avatar proportional statt zu clippen.
   const baseRowH = N >= 7 ? 92 : N >= 5 ? 108 : 130;
-  const rowH = Math.min(baseRowH, Math.floor(820 / Math.max(1, N)));
-  const avatarSize = Math.min(N >= 7 ? 64 : N >= 5 ? 76 : 92, rowH - 24);
+  // 2026-08-28 (CrowdQuiz): die 820 waren geschaetzt, und sie stimmten nicht.
+  // Gemessen auf der Buehne (scripts/recap-mass.mjs): der Kopf (Augenbraue +
+  // Titel + Abstand) nimmt 185 px, Polster 40 oben und unten - der Liste
+  // bleiben 725, nicht 820. Bei zwoelf Teams ergab das 68 px Zeilenhoehe, und
+  // die unterste Zeile endete bei y 1034 auf einer 990 hohen Buehne: 44 px
+  // unsichtbar, lautlos, weil die Wurzel `overflow: hidden` traegt.
+  //
+  // In CozyQuiz (bis 8 Teams) faellt das nicht auf, in CrowdQuiz (bis 25) ab
+  // dem zwoelften Team immer. Statt die Zahl nachzubessern - dieselbe Falle
+  // stellt sich sonst beim naechsten Kopfzeilen-Wechsel wieder - wird der
+  // Platz gemessen.
+  //
+  // ⚠️ Gemessen wird der KOPF, nicht die Position der Liste. Die Liste sitzt
+  // in einer zentrierten Spalte; ihre Oberkante haengt also davon ab, wie hoch
+  // sie selbst ist. Wer sie als Bezug nimmt, baut eine Rueckkopplung: Zeilen
+  // schrumpfen, dadurch rutscht die Liste nach unten, dadurch schrumpfen die
+  // Zeilen weiter. Die Kopfhoehe haengt von nichts davon ab.
+  const kopfRef = useRef<HTMLDivElement>(null);
+  const wurzelRef = useRef<HTMLDivElement>(null);
+  const [platz, setPlatz] = useState(0);
+  useLayoutEffect(() => {
+    const kopf = kopfRef.current, wurzel = wurzelRef.current;
+    if (!kopf || !wurzel) return;
+    const cs = window.getComputedStyle(wurzel);
+    const frei = wurzel.clientHeight
+      - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)
+      - kopf.offsetHeight;
+    const gerundet = Math.floor(frei);
+    if (gerundet > 0 && gerundet !== platz) setPlatz(gerundet);
+  });
+  const rowH = Math.min(baseRowH, Math.floor((platz || 820) / Math.max(1, N)));
+  // `rowH - 24` ist der Abstand zur Zeile, nicht ihr Mass: bei 36 px Zeile
+  // blieben 12 px Kachel uebrig, ein Punkt neben einem Namen. Untergrenze ist
+  // deshalb ein Anteil der Zeile selbst. Fuer bis zu acht Teams unveraendert
+  // (bei 90 px Zeile gewinnt weiterhin die 64).
+  const avatarSize = Math.max(
+    Math.min(N >= 7 ? 64 : N >= 5 ? 76 : 92, rowH - 24),
+    Math.round(rowH * 0.6),
+  );
   const containerH = rowH * N;
 
   return (
-    <div style={{
+    <div ref={wurzelRef} style={{
       // 2026-05-09 v2 (Wolf 'standings sollen eigenständige seite sein, nicht
       // im vordergrund'): kein absolute-overlay mehr, sondern reguläre full-
       // page View — flex 1, full size, padding gibt angenehmen Rand.
@@ -139,6 +192,10 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         }
       `}</style>
 
+      {/* Kopf (Augenbraue + Titel). Die Klammer ist kein Layout, sondern ein
+          Massband: sie macht die Kopfhoehe in einem Zug messbar. Sie erbt
+          Spalte und Zentrierung der Wurzel, das Bild aendert sich nicht. */}
+      <div ref={kopfRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
       {/* Title */}
       <div style={{
         // 2026-08-24 (Wolf: „pinke schrift passt hier nicht mehr so gut ins
@@ -183,6 +240,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
             }}>{ch === ' ' ? ' ' : ch}</span>
           ));
         })()}
+      </div>
       </div>
 
       {/* Team-Reihen — absolute am before-Slot, Tickup + Position-Swap.
@@ -266,7 +324,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={avatarSize - 8} />
               </div>
               <div style={{
-                fontSize: `clamp(20px, 2cqw, ${Math.round(rowH * 0.38)}px)`, fontWeight: 900,
+                fontSize: zeilenSchrift(20, '2cqw', Math.round(rowH * 0.38)), fontWeight: 900,
                 color: t.color,
                 whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
               }}>{t.name}</div>
@@ -280,7 +338,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                   rowH={rowH}
                 />
                 <span style={{
-                  fontSize: `clamp(14px, 1.5cqw, ${Math.round(rowH * 0.32)}px)`,
+                  fontSize: zeilenSchrift(14, '1.5cqw', Math.round(rowH * 0.32)),
                   color: 'var(--qq-text-muted)',
                 }}>🏆</span>
               </div>
@@ -346,12 +404,12 @@ function RecapScoreTickup({ from, to, delayMs, durationMs, rowH }: {
   return (
     <span style={{ display: 'inline-flex', alignItems: 'baseline', gap: 6 }}>
       <span ref={deltaRef} style={{
-        fontSize: `clamp(11px, 1.1cqw, ${Math.round(rowH * 0.22)}px)`,
+        fontSize: zeilenSchrift(11, '1.1cqw', Math.round(rowH * 0.22)),
         color: QQ_COLORS.green500, fontWeight: 900,
         opacity: 0, transition: 'opacity 0.1s linear',
       }}>+{to - from}</span>
       <span ref={valRef} style={{
-        fontSize: `clamp(34px, 4cqw, ${Math.round(rowH * 0.66)}px)`,
+        fontSize: zeilenSchrift(34, '4cqw', Math.round(rowH * 0.66)),
         color: from > 0 ? SIEG_FARBE() : 'var(--qq-text-muted)',
         textShadow: from > 0 ? '0 0 18px rgba(var(--qq-stage-brand-rgb), 0.5)' : 'none',
         fontVariantNumeric: 'tabular-nums',

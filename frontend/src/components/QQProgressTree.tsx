@@ -807,7 +807,16 @@ export default function QQProgressTree({
         maxWidth: isShowcase ? '100%' : variant === 'hero' ? 1200 : variant === 'inline' ? 1600 : isMini ? 720 : 920,
         // Showcase: outer cliped damit gepannte Tree-Teile außerhalb verschwinden.
         overflow: isShowcase ? 'hidden' : undefined,
-        fontFamily: "'Nunito', system-ui, sans-serif",
+        // 2026-08-28: hier stand hart `'Nunito'`. Damit lief der ganze Baum -
+        // und mit ihm „Runde 1" auf der Pausen-Folie - in der alten
+        // Cozy-Schrift, obwohl die Buehne seit dem 26.08. Bricolage faehrt.
+        // Gefunden mit scripts/crowd-abgleich.mjs, nicht mit dem Auge.
+        //
+        // Kein Gate und kein neuer Wert, sondern die Zeile weg: der Baum
+        // behauptet jetzt keine Schrift mehr, sondern erbt sie. Auf der Buehne
+        // kommt sie aus dem Phase-Root (--qq-font), ueberall sonst aus dem
+        // Body. Wer eine Schrift setzt, wo er sie erben koennte, baut genau
+        // diesen Rest.
         backdropFilter: isMini ? 'blur(8px)' : undefined,
       }}
     >

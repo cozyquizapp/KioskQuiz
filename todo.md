@@ -1230,6 +1230,38 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       deckeln soll („…und n weitere"), ist eine Design-Entscheidung und
       gehoert Wolf, nicht mir.
 
+- [ ] **Kategorie „All In" heisst „Ten Chips".** Wolf 2026-08-28: „10 von 10
+      also all in heisst jetzt ten chips als kategorie - das ist wichtig,
+      weil es eine Fraktion gibt die All in heisst, damit es keine
+      missverstaendnisse gibt".
+      Der Konflikt ist echt und liegt im Englischen: die Kategorie
+      `ZEHN_VON_ZEHN` heisst en „All In" (shared/quarterQuizTypes.ts:23), die
+      Fraktion `Risiko` heisst en ebenfalls „All In". Auf Deutsch stossen sie
+      nicht zusammen („10 von 10" gegen „Risiko").
+      ⚠️ Zwei Fragen vorher an Wolf, sie aendern den Umfang:
+      1. Aendert sich NUR der englische Name, oder heisst die Kategorie auch
+         auf Deutsch „Ten Chips" statt „10 von 10"?
+      2. Der Bezeichner `ZEHN_VON_ZEHN` steckt in gespeicherten Fragensaetzen
+         (Drafts, Mongo). Der bleibt so oder so stehen - umbenannt wird
+         sichtbarer Text, wie beim CrowdQuiz-Umbau auch.
+      Betroffen sind rund zehn Stellen (Kategorie-Tafel, Regelfolie,
+      Handy-Karte, Pause-Statistik, Summary, Feedback-Dashboard).
+
+- [ ] **Standarddesign und die neuen Fraktions-Avatare zum Default machen.**
+      Wolf 2026-08-28: „das design, dass du gerade einbaust soll default
+      werden, so wie auch die neuen fraktion team avatare".
+      Teilweise schon da: `themeIdForState` liefert ohne gesetztes Design
+      bereits 'buehne', und seit heute setzen beide Format-Wege es
+      ausdruecklich. Offen ist der Rest der Kette, und der gehoert
+      zusammen geprueft statt einzeln geraten:
+      * Raum-Vorgabe im Backend (`qqRooms.ts`) - was steht dort heute?
+      * Avatar-Set: der Wizard setzt `cozyArena` fuer CrowdQuiz und
+        `cozyquiz` sonst. Sind die neuen Fraktions-Avatare in `cozyArena`
+        oder in einem eigenen Satz?
+      * Testseiten und Entwuerfe, die ihr Design hart setzen.
+      Deckt sich mit dem Langzeit-Punkt „CozyQuiz-Design zum Standard
+      machen" weiter unten - beide zusammen erledigen, nicht nacheinander.
+
 ---
 
 ## Langzeit, nach dem Buehnen-Durchgang (Wolf 2026-08-26)

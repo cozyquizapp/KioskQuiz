@@ -100,21 +100,6 @@ export function useEinpassen(
     /** Passt der Inhalt bei diesem Faktor? Liest beide Grenzen. */
     const passt = (f: number): boolean => {
       el.style.setProperty('--qq-fit', String(f));
-      // Das Lesen von scrollHeight erzwingt den Umbruch. Genau das ist hier
-      // gewollt - ohne den Zwang misst man den Stand von vor dem Setzen.
-      // ⚠️ Hier KEIN LUFT-Abzug. Der Container ist `flex: 1` und wird von
-      // seinem Inhalt exakt ausgefuellt, `scrollHeight === clientHeight` ist
-      // also der Normalfall und nicht der Grenzfall. Ein Abzug von 24 px waere
-      // nie erfuellbar, und alles fiele auf den Mindestfaktor (2026-08-27 genau
-      // so gemessen: fit 0.5 auf jeder Probe, auch auf den kurzen).
-      // Luft gibt es an der Sperre weiter unten, dort ist sie definiert.
-      if (el.scrollHeight > el.clientHeight + TOLERANZ) return false;
-      // Zweite Grenze: absolut positionierte Sperren (Team-Leiste). Sie liegen
-      // ausserhalb des Flusses, also muss ihre Oberkante von Hand geprueft
-      // werden.
-      const buehne = el.closest('[data-qq-buehne]') ?? el.ownerDocument.body;
-      const sperren = buehne.querySelectorAll(`[${SPERRE_ATTR}]`);
-      if (!sperren.length) return true;
       // ⚠️ Die Unterkante wird ueber `offsetTop + offsetHeight` bestimmt, nicht
       // ueber `getBoundingClientRect`. Der Unterschied ist die Auftrittsbewegung:
       // `revealWinnerIn` startet mit `translateY(30px)` (qqShared.ts:1040), und
@@ -123,6 +108,9 @@ export function useEinpassen(
       // eine Transform keine Groessenaenderung ist, meldet sich danach kein
       // Beobachter mehr. Er bliebe auf dem falschen Wert stehen.
       // Offsets kennen keine Transforms, sie messen die Lage im Layout.
+      //
+      // Das Lesen dieser Werte erzwingt den Umbruch. Genau das ist hier
+      // gewollt - ohne den Zwang misst man den Stand von vor dem Setzen.
       const eigen = el.getBoundingClientRect();
       const bezug = el.offsetTop;
       let tiefsteOffset = 0;
@@ -134,6 +122,34 @@ export function useEinpassen(
         const unten = k.offsetTop + k.offsetHeight;
         if (unten > tiefsteOffset) tiefsteOffset = unten;
       }
+      // Erste Grenze: laeuft der Inhalt aus dem Container?
+      //
+      // ⚠️ Hier stand bis zum 2026-08-28 `el.scrollHeight > el.clientHeight`,
+      // und genau das war Wolfs „aendert die groesse". Gemessen an der
+      // MUCHO-Aufloesung: die Gewinnerkarte montiert bei +3,44 s, und im
+      // SELBEN Bild meldet der Container 17 px Ueberlauf - obwohl kein
+      // Element hoeher wird und sich kein Abstand aendert. Der Grund ist
+      // dieselbe Auftrittsbewegung wie oben: `scrollHeight` rechnet
+      // verschobene Kaesten mit. Der Einpasser hat also eine ANIMATION fuer
+      // einen Ueberlauf gehalten und dafuer 14 bis 20 Prozent Schriftgroesse
+      // bezahlt - die Frage fiel von 72 auf 60 px, mitten im Lesen.
+      //
+      // Deshalb dieselbe Rechnung wie fuer die Sperre unten: die Lage im
+      // Layout, nicht die auf dem Schirm.
+      //
+      // ⚠️ Weiter KEIN LUFT-Abzug. Der Container ist `flex: 1` und wird von
+      // seinem Inhalt exakt ausgefuellt, „genau voll" ist also der Normalfall
+      // und nicht der Grenzfall. Ein Abzug von 24 px waere nie erfuellbar, und
+      // alles fiele auf den Mindestfaktor (2026-08-27 genau so gemessen:
+      // fit 0.5 auf jeder Probe, auch auf den kurzen).
+      // Luft gibt es an der Sperre weiter unten, dort ist sie definiert.
+      if (tiefsteOffset - bezug > el.clientHeight + TOLERANZ) return false;
+      // Zweite Grenze: absolut positionierte Sperren (Team-Leiste). Sie liegen
+      // ausserhalb des Flusses, also muss ihre Oberkante von Hand geprueft
+      // werden.
+      const buehne = el.closest('[data-qq-buehne]') ?? el.ownerDocument.body;
+      const sperren = buehne.querySelectorAll(`[${SPERRE_ATTR}]`);
+      if (!sperren.length) return true;
       // Zurueck in Bildschirmkoordinaten: die Offsets der Kinder haengen am
       // selben offsetParent wie der Container, also ist die Differenz gueltig.
       const tiefste = eigen.top + (tiefsteOffset - bezug) * (eigen.height / (el.offsetHeight || 1));

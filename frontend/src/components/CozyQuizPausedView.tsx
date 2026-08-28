@@ -366,7 +366,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // da, waehrend es auf dem Rekorde-Bild eine hatte.
   const statKasten = (
     inhalt: React.ReactNode,
-    accent: string = QQ_COLORS.brandPink,
+    accent: string = QQ_COLORS.slate500,
     opts?: { weit?: boolean; mitte?: boolean; k?: React.Key },
   ) => {
     const mono = isQuietMotion();
@@ -454,7 +454,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   // Stat-Pille. Cozy: warmer Dark-Card-bg + Akzent-Border. Skin (Mono etc.):
   // eckiger Hard-Shadow-Chip mit schwarzem Wert (kein Cyan/Pink-Leak, lesbar
   // auf hellem BG) — passt zum Editorial-Look der Bestenliste.
-  const statPill = (value: string | number, label: string, accent = QQ_COLORS.brandPink) => {
+  const statPill = (value: string | number, label: string, accent = QQ_COLORS.slate500) => {
     const themed = isQuietMotion(); // Editorial-Chip NUR in Mono; Cozy/SoftPop/Neo = Original
     return (
     <span style={{
@@ -1418,7 +1418,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     );
   };
   // Inline-Variante fuer kompakte Records (Avatar + Name in einer Zeile mit Stat).
-  const teamInline = (name: string, accentFallback = QQ_COLORS.brandPink) => {
+  // ⚠️ Der Rueckfall war Brand-Pink, und er greift oft: Teams aus der
+  // Bestenliste haben keine Session-Farbe. Auf Wolfs Rekorde-Bild standen
+  // deshalb zwei Teamnamen in der Markenfarbe, ohne dass das etwas ueber sie
+  // aussagt. Jetzt dieselbe Schriftfarbe wie der Rest der Zeile.
+  const teamInline = (name: string, accentFallback = 'var(--qq-card-text)') => {
     const meta = findTeamMeta(name);
     const c = meta.color ?? accentFallback;
     const mono = isQuietMotion();
@@ -1449,7 +1453,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
         wert: <>{teamInline(funStats.highestScore.teamName)} · {funStats.highestScore.score} {de ? 'Punkte' : 'points'}</> });
     }
     if (funStats.closestGame && funStats.closestGame.gap > 0) {
-      records.push({ k: 'cg', zeichen: '⚔️', titel: de ? 'Knappster Sieg' : 'Closest Game', akzent: QQ_COLORS.brandPinkMid,
+      // 2026-08-27 (Wolf: „mach pink lieber raus"): Brand-Pink war hier der
+      // Kastenton. Ersetzt nach derselben Regel wie die Nachbarzeilen, die
+      // ihre Farbe vom Zeichen nehmen (Flamme orange, Blitz gelb): die
+      // gekreuzten Schwerter sind silbrig-blau.
+      records.push({ k: 'cg', zeichen: '⚔️', titel: de ? 'Knappster Sieg' : 'Closest Game', akzent: QQ_COLORS.blue400,
         wert: <>{teamInline(funStats.closestGame.teams[0])} vs {teamInline(funStats.closestGame.teams[1])} · {de ? `nur ${funStats.closestGame.gap} Pkt.` : `only ${funStats.closestGame.gap} pts apart`}</> });
     }
     if (funStats.winStreak && funStats.winStreak.streak >= 2) {
@@ -1766,18 +1774,22 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     const rivalTeam = s.teams.find(t => t.name === rivalName);
     panels.push({ key: 'rival', node: (
       <div>
-        {statTitle('⚔️', 'Offene Rechnung', 'Unfinished Business', QQ_COLORS.brandPinkMid)}
+        {/* 2026-08-27 (Wolf: „ne mach pink lieber raus"). Dieselbe Ueberlegung
+            wie bei den Kategorie-Meistern: Pink ist die Marke, nicht eine
+            Aussage ueber diese Folie. Der Rivale traegt seine Farbe ohnehin
+            selbst, unten in der Zeile. */}
+        {statTitle('⚔️', 'Offene Rechnung', 'Unfinished Business')}
         {statKasten(
           <>
             {rivalTeam && <QQTeamAvatar avatarId={rivalTeam.avatarId} teamEmoji={rivalTeam?.emoji} size={'clamp(50px, 5.5cqw, 72px)'} style={{ flexShrink: 0 }} />}
             <div>
-              <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (rivalTeam?.color ?? QQ_COLORS.brandPinkMid) }}>{rivalName}</div>
+              <div style={{ fontWeight: 900, fontSize: 'clamp(22px, 2.6cqw, 32px)', color: isQuietMotion() ? 'var(--qq-card-text)' : (rivalTeam?.color ?? 'var(--qq-card-text)') }}>{rivalName}</div>
               <div style={{ fontSize: 'clamp(15px, 1.7cqw, 22px)', color: 'var(--qq-text-muted)' }}>
                 {de ? `hat schon ${rival.wins}× gewonnen. Wer dreht heute das Spiel?` : `already won ${rival.wins}×. Who flips the script today?`}
               </div>
             </div>
           </>,
-          rivalTeam?.color ?? QQ_COLORS.brandPinkMid, { weit: true, mitte: true },
+          rivalTeam?.color ?? QQ_COLORS.slate500, { weit: true, mitte: true },
         )}
       </div>
     )});
@@ -1795,7 +1807,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             <div style={{ fontSize: 'clamp(22px, 2.6cqw, 30px)', fontWeight: 700, color: 'var(--qq-accent)' }}>„{fa.text}"</div>
             <div style={{ fontSize: 'clamp(16px, 1.8cqw, 22px)', color: 'var(--qq-text-muted)', marginTop: 4 }}>· {fa.teamName}</div>
           </div>,
-          QQ_COLORS.brandPink, { k: i },
+          // Dieselbe Regel: das lachende Gesicht ist gelb, nicht pink.
+          QQ_COLORS.yellow300, { k: i },
         )))}
       </div>
     )});

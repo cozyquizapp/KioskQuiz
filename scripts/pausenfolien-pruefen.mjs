@@ -131,13 +131,39 @@ for (const f of folien) f.kasten = [...traeger].some(t => f.koerper.includes(`${
 // bauen ihre Flaeche selbst (Raster, Kacheln) und sind von Wolf so abgenommen.
 const PLAKATE = new Set(['howItWorks', 'heuteAbend', 'schonDa', 'avatare']);
 // Und drei Folien sind ganze Tabellen - der Kasten ist dort die Tabelle selbst.
-const TABELLEN = new Set(['progress', 'currentGrid', 'standings', 'leaderboard', 'megaFactions']);
+// ⚠️ Die BESTENLISTE stand hier bis zum 2026-08-27 mit drin, und genau dadurch
+// ist sie durchgerutscht: Wolf hat sie neben die Kategorie-Meister gelegt und
+// sofort gesehen, dass sie nicht dazu passt. Eine Tabelle mit fuenf Zeilen bei
+// fester Kartenhoehe ist keine Tabelle, das sind fuenf Zeilen mit Luecken. Sie
+// zaehlt jetzt mit.
+const TABELLEN = new Set(['progress', 'currentGrid', 'standings', 'megaFactions']);
 
 const statistik = folien.filter(f => !PLAKATE.has(f.key) && !TABELLEN.has(f.key));
 const ohne = statistik.filter(f => !f.kasten);
 
 console.log(`\n══ Kastenform: ${statistik.length} Statistik-Folien ══════════════════════`);
 for (const f of statistik) console.log(`  ${f.kasten ? '✓' : '✗'} ${f.key}`);
+
+// ── 3. Steht die Markenfarbe auf einer Folie? ────────────────────────────────
+// 2026-08-27, Wolf: „nur pinke schrift noch ersetzen" und danach „ne mach pink
+// lieber raus".
+//
+// Brand-Pink ist die MARKE. Auf dem Beamer traegt sie der Schriftzug ganz oben,
+// und sonst nichts. Als Akzent einer einzelnen Folie sagt sie nichts ueber
+// deren Inhalt - sie sagt nur „CozyQuiz", und das weiss der Saal schon.
+// Die Ersatzfarbe war jedes Mal die Farbe des ZEICHENS (Flamme orange, Blitz
+// gelb, Schwerter blau, lachendes Gesicht gelb). Das ist eine Regel, kein
+// Geschmack, und deshalb laesst sie sich nachlesen.
+//
+// ⚠️ Gesucht wird nur in dieser einen Datei. Anderswo ist Brand-Pink richtig:
+// im Schriftzug, im Steuerpult, in der Marke selbst.
+const pink = [...src.matchAll(/^(.*brandPink.*)$/gm)]
+  .map(m => m[1].trim())
+  .filter(z => !z.startsWith('//') && !z.startsWith('*'));
+
+console.log('\n══ Markenfarbe auf den Folien ══════════════════════════════════');
+if (!pink.length) console.log('  ✓ Kein Brand-Pink. Die Marke steht im Schriftzug, nicht in den Folien.');
+for (const z of pink) console.log(`  ✗ ${z.slice(0, 96)}`);
 
 console.log('\n══ Urteil ══════════════════════════════════════════════════════');
 console.log(roh.length === 0
@@ -147,4 +173,8 @@ console.log(ohne.length === 0
   ? '  ✓ Jede Statistik-Folie setzt ihren Inhalt in denselben Kasten.'
   : `  ✗ ${ohne.length} von ${statistik.length} Folien ohne Kasten: ${ohne.map(f => f.key).join(', ')}`);
 
-process.exit(roh.length === 0 && ohne.length === 0 ? 0 : 1);
+console.log(pink.length === 0
+  ? '  ✓ Die Markenfarbe steht nirgends als Folien-Akzent.'
+  : `  ✗ ${pink.length} Stellen tragen noch Brand-Pink.`);
+
+process.exit(roh.length === 0 && ohne.length === 0 && pink.length === 0 ? 0 : 1);

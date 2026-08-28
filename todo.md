@@ -484,7 +484,7 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
       auf der Buehne kommt es nicht vor - dort sitzt jedes Motiv auf einer
       gesaettigten Teamkachel.
 
-- [ ] **~~Die uebrigen 47 einmal auf dem Blatt durchsehen.~~** (erledigt, siehe oben)
+- [x] ~~Die uebrigen 47 einmal auf dem Blatt durchsehen.~~ (erledigt, siehe oben)
       `node scripts/avatare-auf-grund.mjs` legt alle 48 auf Schwarz, Weiss,
       Orange, Gruen, Blau und Teamrot - genau die Kontrolle, die in den
       Asset-Regeln steht und fuer die es bis heute kein Werkzeug gab.
@@ -1131,6 +1131,34 @@ den Regeln abgeleitet).
 
 - [x] **P1 · Lobby-Avatare winzig.** War der abgekoppelte Klon, nicht das Repo.
       Wolf am 2026-08-28: „alte avatare sind wieder da".
+
+---
+
+## 👀 WARTET AUF WOLF (2026-08-28, nach der Pause)
+
+Wolf: „lass das drinstehen, darum kuemmere ich mich nach meiner pause".
+Beides kann ich nicht fuer ihn tun - es braucht das Livebild und den Saal.
+
+- [ ] **Siegerehrung am Livebild pruefen.** Heute wurde dort einiges bewegt,
+      und zwar so, dass es NUR am Projektor zu beurteilen ist:
+      * Der Trostsatz „Schade, der Tipp ging daneben" war unter der Kante und
+        ist wieder da. Steht er ruhig, oder wirkt die Folie jetzt gedraengt?
+      * Das Tipp-Panel passt sich jetzt ein, statt nach der Teamzahl zu stufen.
+        Bei vielen Tippern werden Avatare und Namen kleiner - reicht das auf
+        acht Meter noch?
+      * Der Auftritt der Sieger-Karte ist entschaerft (Weg 14 statt 30 px,
+        Ueberschwung 1.01 statt 1.03, 0,8 s statt 0,65 s). Feiert das noch
+        genug, oder ist es jetzt zu brav?
+      * Der Sieger-Ton haengt an `WINNER_DELAY_MS` und wurde von 700 auf 120 ms
+        gezogen. Sitzt er noch auf dem Bild?
+      ⚠️ Vorher hart neu laden (Strg+Shift+R), sonst laeuft ein alter Build.
+
+- [ ] **CozyQuiz einmal komplett am Beamer durchspielen.** Steht seit dem
+      2026-07-19 und ist der einzige Punkt, den kein Werkzeug ersetzt.
+      ⚠️ `scripts/anschnitt-suche.mjs` deckt inzwischen 26 Stationen ab und ist
+      sauber - aber es prueft NUR, ob Text abgeschnitten wird. Ob eine Folie
+      zu lang steht, ob eine Ansage fehlt, ob der Rhythmus stimmt: das sieht
+      nur ein Durchlauf.
 
 ---
 

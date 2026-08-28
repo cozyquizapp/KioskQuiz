@@ -29,7 +29,7 @@ const CATEGORY_LABEL: Record<QQCategory, string> = {
   SCHAETZCHEN: 'Schätzchen 🍯',
   MUCHO: 'Mu-cho 🎵',
   BUNTE_TUETE: 'Bunte Tüte 🎁',
-  ZEHN_VON_ZEHN: 'Ten Chips 🔟',
+  ZEHN_VON_ZEHN: '10 von 10 🔟',
   CHEESE: 'Cheese 🧀',
 };
 

@@ -1231,11 +1231,15 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       gehoert Wolf, nicht mir.
 
 - [x] **Kategorie „All In" heisst „Ten Chips".** Erledigt 2026-08-28.
-      In BEIDEN Sprachen derselbe Name, wie bei Mu-Cho eine Zeile darueber:
-      ein Eigenname bleibt ein Eigenname. Wolf hat auf die Rueckfrage „nur
-      englisch oder auch deutsch" mit „go mit ten chips" geantwortet, also
-      beides. Zurueckdrehen auf „10 von 10" waere eine Zeile in
-      QQ_CATEGORY_LABELS.
+      NUR die englische Seite: en „Ten Chips", de bleibt „10 von 10".
+      Ich hatte zuerst beide umgestellt und mich dabei auf Mu-Cho berufen
+      („ein Eigenname bleibt ein Eigenname"). Wolf am Bild: „aber der rest
+      ist deutsch? nur in der englischen version ten chips". Er hat recht,
+      und der Unterschied zu Mu-Cho ist einfach: Mu-Cho war nie ein
+      englisches Wort, „Ten Chips" ist eins. Auf einer Folie mit der
+      Unterzeile „Verteilt 10 Punkte auf 3 Antworten" faellt es raus. Auf
+      Deutsch gibt es den Konflikt ohnehin nicht, die Fraktion heisst dort
+      „Risiko".
       Zwoelf sichtbare Stellen, gegengeprueft auf alle Schreibweisen (beim
       CrowdQuiz-Umbau waren mir vier Grossschreibungen durchgerutscht).
       Bezeichner `ZEHN_VON_ZEHN` und der Asset-Slug `cat-allin` bleiben: der

@@ -26,10 +26,17 @@ export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; em
   // Der Konflikt lag im Englischen: die Fraktion `cat`/`risiko` heisst en
   // ebenfalls „All In" (QQ_MEGA_FACTIONS weiter unten). In CrowdQuiz stand
   // damit dieselbe Beschriftung fuer eine Kategorie und fuer ein Team.
-  // In BEIDEN Sprachen derselbe Name, wie bei Mu-Cho eine Zeile darueber: ein
-  // Eigenname bleibt ein Eigenname. Der Bezeichner ZEHN_VON_ZEHN bleibt, er
-  // steht in gespeicherten Fragensaetzen (qqDrafts.json, Mongo).
-  ZEHN_VON_ZEHN: { de: 'Ten Chips',    en: 'Ten Chips',     emoji: '🎰' },
+  // ⚠️ NUR die englische Seite. Ich hatte zuerst beide umgestellt, mit dem
+  // Mu-Cho-Argument („ein Eigenname bleibt ein Eigenname"). Wolf am Bild:
+  // „aber der rest ist deutsch? nur in der englischen version ten chips".
+  // Er hat recht, und der Unterschied zu Mu-Cho ist einfach: Mu-Cho war nie
+  // ein englisches Wort, „Ten Chips" ist eins. Auf einer Folie, deren
+  // Unterzeile „Verteilt 10 Punkte auf 3 Antworten" lautet, faellt es raus.
+  // Deutsch bleibt „10 von 10" - dort gibt es den Konflikt auch gar nicht,
+  // die Fraktion heisst auf Deutsch „Risiko".
+  // Der Bezeichner ZEHN_VON_ZEHN bleibt, er steht in gespeicherten
+  // Fragensaetzen (qqDrafts.json, Mongo).
+  ZEHN_VON_ZEHN: { de: '10 von 10',    en: 'Ten Chips',     emoji: '🎰' },
   CHEESE:        { de: 'Schau mal!',   en: 'Picture This',  emoji: '📸' },
 };
 

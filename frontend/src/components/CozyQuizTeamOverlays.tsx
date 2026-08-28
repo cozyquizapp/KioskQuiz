@@ -36,7 +36,7 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
   // eigener Regel-Satz (Fraktions-Punkte, Tempo), sonst der klassische Grid-Satz.
   const arenaItems = lang === 'de' ? [
     { icon: '🎯', title: 'Spielziel', body: 'Sammelt als Fraktion die meisten Punkte, je mehr Handys richtig und je schneller, desto mehr.' },
-    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · Ten Chips · Cheese, jede mit eigener Frage-Mechanik.' },
+    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese, jede mit eigener Frage-Mechanik.' },
     { icon: '⚡', title: 'Tempo zählt', body: 'Schnelle richtige Antworten bringen eurer Fraktion mehr Punkte.' },
     { icon: '🏆', title: 'Sieger', body: 'Die Fraktion mit den meisten Punkten am Ende gewinnt.' },
   ] : [
@@ -47,7 +47,7 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
   ];
   const gridItems = lang === 'de' ? [
     { icon: '🎯', title: 'Spielziel', body: 'Beantworte Fragen richtig, pro richtige Antwort darfst du ein Feld auf dem Brett setzen.' },
-    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · Ten Chips · Cheese, jede mit eigener Frage-Mechanik.' },
+    { icon: '🌶️', title: 'Kategorien', body: 'Schätzchen · MUCHO · Bunte Tüte · 10 von 10 · Cheese, jede mit eigener Frage-Mechanik.' },
     { icon: '⭐', title: 'Joker', body: '2 Joker pro Spiel. Verdienst du, wenn du eine bestimmte Reihe-Form auf dem Brett bildest. Setzt ein Bonus-Feld.' },
     { icon: '🔄', title: 'Klauen + Stapeln', body: 'Felder eines Gegners können geklaut werden. Stapel-Felder (★) zählen doppelt im Endscore und sind unklaubar.' },
     { icon: '🏆', title: 'Sieger', body: 'Wer am Ende die meisten Felder + Stapel-Bonusse hat, gewinnt.' },

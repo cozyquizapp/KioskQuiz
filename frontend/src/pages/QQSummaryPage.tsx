@@ -230,7 +230,7 @@ const T = {
   cat_SCHAETZCHEN:   { de: 'Sch\u00E4tzchen', en: 'Close Call' },
   cat_MUCHO:         { de: 'Mu-Cho', en: 'Mu-Cho' },
   cat_BUNTE_TUETE:   { de: 'Bunte T\u00FCte', en: 'Mixed Bag' },
-  cat_ZEHN_VON_ZEHN: { de: 'Ten Chips', en: 'Ten Chips' },
+  cat_ZEHN_VON_ZEHN: { de: '10 von 10', en: 'Ten Chips' },
   cat_CHEESE:        { de: 'Schau mal!', en: 'Picture This' },
 
   // Upcoming events

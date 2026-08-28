@@ -105,7 +105,28 @@ const SUCHE = ({ SCHWELLE, LUFT }) => {
     if ((st.overflow === 'hidden' || st.overflowY === 'hidden') && text) {
       const ueber = el.scrollHeight - el.clientHeight;
       if (ueber > SCHWELLE && el.clientHeight > 20) {
-        verdeckt.push({ ueber: nachBuehne(ueber * s), hoehe: nachBuehne(el.clientHeight * s), text });
+        // ⚠️ WAS verdeckt wird, nicht nur DASS etwas verdeckt wird. Ohne diese
+        // Angabe ist der Befund nicht zu beurteilen: auf der Danke-Folie sah
+        // das Bild einwandfrei aus, gemeldet waren trotzdem 32 px - dann muss
+        // man wissen, ob dort eine Zeile fehlt oder nur ein Innenabstand
+        // beschnitten ist. Das eine ist ein Fehler, das andere nicht.
+        const grenze = el.getBoundingClientRect().bottom;
+        let opfer = '', tiefsteKante = grenze;
+        for (const k of Array.from(el.querySelectorAll('*'))) {
+          if (!(k instanceof HTMLElement)) continue;
+          const kt = k.tagName.toLowerCase();
+          if (kt === 'style' || kt === 'script') continue;
+          const t2 = kurz(k);
+          if (!t2) continue;
+          const eigen = Array.from(k.childNodes).some(x => x.nodeType === 3 && (x.textContent || '').trim());
+          if (!eigen) continue;
+          const kr = k.getBoundingClientRect();
+          if (kr.bottom > tiefsteKante + 1) { tiefsteKante = kr.bottom; opfer = t2; }
+        }
+        verdeckt.push({
+          ueber: nachBuehne(ueber * s), hoehe: nachBuehne(el.clientHeight * s), text,
+          opfer, opferUeber: opfer ? nachBuehne((tiefsteKante - grenze) * s) : 0,
+        });
       }
     }
 
@@ -169,14 +190,33 @@ await b.schliessen?.();
 console.log('');
 
 console.log('\n══ Anschnitt-Suche ueber den CozyQuiz-Abend ════════════════════');
+// ⚠️ Ein Kasten, der nur LEERRAUM beschneidet, ist kein Fehler. Auf der
+// Danke-Folie und beim Team-Auftritt meldete das Werkzeug 32 und 21 px, und
+// beide Bilder waren einwandfrei: beschnitten wurde ein Innenabstand, kein
+// Wort. Wer das als Fehler fuehrt, hat nach drei Laeufen ein Werkzeug, das
+// niemand mehr liest - genau davor warnt der Kopf dieser Datei.
+// Gezaehlt wird deshalb nur, wo TEXT verloren geht.
 let treffer = 0;
 for (const f of befunde) {
   if (f.fehler) { console.log(`\n  ${f.name.padEnd(16)} ? nicht erreichbar: ${f.fehler}`); continue; }
-  if (!f.verdeckt.length && !f.ueberKante.length) continue;
+  const echteVerdeckte = f.verdeckt.filter(v => v.opfer);
+  const nurLeerraum = f.verdeckt.filter(v => !v.opfer);
+  if (!echteVerdeckte.length && !f.ueberKante.length) {
+    if (nurLeerraum.length) {
+      console.log(`\n  ${f.name}`);
+      for (const v of nurLeerraum) {
+        console.log(`    (nur Leerraum)  ${String(v.ueber).padStart(4)} px beschnitten, kein Text betroffen`);
+      }
+    }
+    continue;
+  }
   treffer++;
   console.log(`\n  ${f.name}`);
   for (const v of f.verdeckt) {
     console.log(`    STILL VERDECKT  ${String(v.ueber).padStart(4)} px von ${v.hoehe} px   „${v.text}"`);
+    console.log(v.opfer
+      ? `        davon Text: „${v.opfer}" ragt ${v.opferUeber} px darueber hinaus`
+      : '        KEIN Text darunter - beschnitten wird nur Leerraum oder Abstand.');
   }
   for (const k of f.ueberKante) {
     console.log(`    UEBER DIE KANTE y ${k.oben}..${k.unten}, x ${k.links}..${k.rechts}   „${k.text}"`);

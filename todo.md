@@ -1103,23 +1103,18 @@ den Regeln abgeleitet).
       stehen einzeln im Kopf von `scripts/einpassen-unruhe.mjs`. Wer hier etwas
       aendert, misst DREI Laeufe - ein einzelner gruener Lauf beweist nichts.
 
-- [ ] **P1 · Siegerehrung: eine Zeile steht UNTER der Buehnenkante.**
-      `node scripts/anschnitt-suche.mjs siegerehrung`:
-      ```
-      UEBER DIE KANTE y 1004..1046   „Schade, der Tipp ging daneben 🤞"
-      UEBER DIE KANTE y  910.. 970   „Die Couch-Quizzer"
-      UEBER DIE KANTE y  940.. 970   „Käpt'n Kluk"
-      STILL VERDECKT  76 px          „Tipp 1 von 2 Tipps abgegeben..."
-      ```
-      Die Buehne endet bei 990. Der Trostsatz ist also gar nicht zu sehen, und
-      zwei Teamnamen stehen in der Ueberscan-Zone.
+- [x] **P1 · Siegerehrung: eine Zeile stand UNTER der Buehnenkante.**
+      „Schade, der Tipp ging daneben" bei y 1004..1046, die Buehne endet bei
+      990. Ursache: zwei Wrapper der Folien-Ueberblendung ohne `minHeight: 0`,
+      also `min-height: auto` - ein Flex-Kind kann damit nicht unter seinen
+      Inhalt schrumpfen. Dazu laeuft im Tipp-Panel jetzt derselbe Einpasser wie
+      auf der Fragefolie, statt nach der Teamzahl zu stufen.
 
-- [ ] **P2 · Team-Auftritt („Heute spielen") verdeckt 21 px.**
-      Der Inhalt ist hoeher als die Buehne. Bei acht Teams gemessen; mit
-      laengeren Teamnamen wird es mehr.
-
-- [ ] **P2 · Danke-Folie verdeckt 32 px.**
-      Dasselbe Muster wie oben.
+- [x] **P2 · Team-Auftritt und Danke-Folie: „verdeckt".**
+      Nachgemessen: beide beschneiden nur LEERRAUM, keinen Text. Kein Fehler.
+      Das Werkzeug stuft solche Faelle jetzt als Hinweis ein und nicht mehr als
+      Befund - sonst meldet es dauerhaft zwei Fehler, die keine sind, und wird
+      nach drei Laeufen ignoriert.
 
 - [x] **P1 · Heisse Kartoffel: Antworten wurden abgeschnitten.** Wolf
       2026-08-28: „entweder der teamname oder die antwortmoeglichkeiten,

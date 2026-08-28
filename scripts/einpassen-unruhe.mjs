@@ -27,17 +27,48 @@
  * ⚠️ 3. `Math.abs` auf den Deltas verwischte „waechst weich" und „schwingt
  *       nach". Vorzeichen bleiben jetzt erhalten.
  *
- * ── Zwei Proben, beide am 2026-08-28 gefahren ────────────────────────────
- * ⚠️ PROBE 1, Uebergang auf `height` raus (CozyQuizQuestionView.tsx:3567):
- *    Gesamtweg praktisch UNVERAENDERT (261 statt 260 px). Der Uebergang
- *    verteilt die Bewegung nur auf mehr Bilder, er verursacht sie nicht.
- *    Meine erste Erklaerung war damit widerlegt.
- * ⚠️ PROBE 2, Sieger-Slot von Anfang an auf voller Hoehe reserviert:
- *    Gesamtweg HALBIERT (260 -> 128 px, Antwortkarten 250 -> 74 px). Aber der
- *    Einpasser verkleinert dann waehrend der laufenden FRAGE (MUCHO fit 0.766,
- *    10 von 10 sogar 0.500) und springt bei der Aufloesung wieder auf 1.000 -
- *    also nach OBEN, waehrend der Saal liest. Blosses Reservieren tauscht
- *    einen Fehler gegen einen schlimmeren.
+ * ── Wo der spaete Sprung wirklich herkommt ───────────────────────────────
+ * Bei +3,5 s waechst ein Block im Fluss um ACHT Pixel (die Sieger-Karte,
+ * Akt 3). Das kippt die Folie ueber die Sperre - und weil `--qq-fit` nur
+ * SCHRIFT skaliert und keine Abstaende, kostet dieser eine Schritt 14 bis
+ * 20 Prozent Schriftgroesse. Die MUCHO-Aufloesung steht also haarscharf am
+ * Rand, und alles, was spaet noch dazukommt, wird teuer bezahlt.
+ *
+ * Warum es mal auftritt und mal nicht: die Bots antworten pro Lauf anders,
+ * also ist die Folie mal ein paar Pixel unter und mal ueber der Grenze.
+ * ⚠️ Wer hier etwas aendert, misst DREI Laeufe. Ein einzelner gruener Lauf
+ * beweist nichts - genau darauf bin ich am 28.08. einmal hereingefallen.
+ *
+ * ── Fuenf Sackgassen, alle am 2026-08-28 gemessen und zurueckgenommen ─────
+ * Sie stehen hier, damit sie niemand ein zweites Mal geht.
+ *
+ * ⚠️ 1. Uebergang auf `height` raus (CozyQuizQuestionView.tsx:3567).
+ *       Gesamtweg UNVERAENDERT (261 statt 260 px). Der Uebergang verteilt die
+ *       Bewegung nur auf mehr Bilder, er verursacht sie nicht.
+ * ⚠️ 2. Sieger-Slot von Anfang an voll reserviert.
+ *       Weg halbiert (260 -> 128 px), ABER der Einpasser verkleinert dann
+ *       waehrend der laufenden Frage (10 von 10 auf fit 0.500) und springt bei
+ *       der Aufloesung nach OBEN. Ein Fehler gegen einen schlimmeren getauscht.
+ * ⚠️ 3. Platz fuer die Marken an `revealed` statt an den Kaskadenschritt.
+ *       Wirkungslos: der Schritt steht beim Reveal ohnehin schon auf 1.
+ * ⚠️ 4. `transitionend`-Horcher im Einpasser, damit er Aenderungen an
+ *       `row-gap` ueberhaupt bemerkt (die sieht weder ResizeObserver noch
+ *       MutationObserver, weil weder Container noch Kinder ihre Groesse
+ *       aendern). Ergebnis: er feuert nach jeder eigenen Korrektur erneut und
+ *       vergroessert zurueck - 72 -> 65 -> 62 -> 68 -> 72 px in fuenf Sekunden.
+ *       Schrift, die unter dem Blick wieder waechst, ist das schlechteste
+ *       Ergebnis von allen.
+ * ⚠️ 5. Ratsche (innerhalb einer Folie nur noch kleiner werden).
+ *       Ein kurzer Ueberlauf beim Aufbau friert die Frage dauerhaft kleiner
+ *       ein (105 -> 94 px) und beim Reveal springt sie wieder hoch.
+ * ⚠️ 6. Markenabstand mit `--qq-fit` skalieren und die gemessene Luft (8 px je
+ *       Abstand) herausnehmen. Zu wenig: 2 von 3 Laeufen sprangen weiter.
+ *
+ * ── Was daraus folgt ──────────────────────────────────────────────────────
+ * Am Einpasser laesst sich das nicht reparieren, und mit ein paar Pixeln
+ * Abstand auch nicht. Die Sieger-Karte darf beim Auftauchen SCHLICHT KEINE
+ * Fluss-Hoehe hinzufuegen; ihr Platz muss ab dem ersten Bild der Aufloesung
+ * stehen. Das ist ein Umbau an der Aufloesung, keine Stellschraube.
  *
  * ⚠️ Was diese Messung NICHT sagt: ob die Endgroesse richtig ist. Ein Werkzeug,
  * das nur die Zahl der Spruenge kleiner macht, koennte einfach zu klein

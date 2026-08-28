@@ -229,12 +229,59 @@ for (const [topf, titel] of TOEPFE) {
   zeilen.push(`## ${titel}`, '');
   const sortiert = Array.from(m.entries()).sort((a, b) => b[1].n - a[1].n);
   for (const [wort, v] of sortiert) {
-    zeilen.push(`* \`${wort}\` — ${v.n}x, ${v.wo.size} Station${v.wo.size === 1 ? '' : 'en'}${v.bsp ? ` (z.B. „${v.bsp}")` : ''}`);
+    // ⚠️ markiert Einzelgaenger: ein Wert auf genau EINER Folie ist kein
+    // Hausstil, sondern ein Rest oder eine bewusste Ausnahme. Wer die Bibel
+    // liest, soll den Unterschied sehen, statt beides fuer gesetzt zu halten.
+    const einzeln = v.wo.size === 1 && ABEND.length >= 5;
+    zeilen.push(`* ${einzeln ? '⚠️ ' : ''}\`${wort}\` — ${v.n}x, ${v.wo.size} Station${v.wo.size === 1 ? '' : 'en'}`
+      + `${einzeln ? ` (**nur ${Array.from(v.wo)[0]}**)` : ''}${v.bsp ? ` (z.B. „${v.bsp}")` : ''}`);
   }
   zeilen.push('');
 }
 fs.writeFileSync('docs/DESIGNSPRACHE.md', zeilen.join('\n'));
 console.log('\n  Bibel geschrieben: docs/DESIGNSPRACHE.md');
+
+// ── Einzelgaenger IN der Referenz ─────────────────────────────────────────
+// 2026-08-28, Wolf: „wirklich hat cozyquiz noch keine konsistenten fonts?
+// Dann musst du die tools entsprechend optimieren!"
+//
+// Der Einwand trifft das Werkzeug, nicht nur die Antwort. Bis eben galt alles
+// als erlaubt, was CozyQuiz irgendwo tut. Fredoka steht auf genau EINER von
+// fuenfzehn Stationen (die Schaetzchen-Zahlen, Entscheidung vom 12.07., aelter
+// als die Schrift-Entscheidung vom 26.08.) - und damit haette CrowdQuiz
+// Fredoka benutzen duerfen, ohne dass hier je etwas auffaellt. Die Referenz
+// wuescht ihren eigenen Ausrutscher.
+//
+// Ein Wort, das die Hausschrift ist, steht auf vielen Folien. Eines, das auf
+// genau einer steht, ist entweder ein Rest oder eine bewusste Ausnahme - und
+// beides gehoert vor Augen, nicht in die Referenz hinein.
+//
+// ⚠️ Das ist ein HINWEIS, kein Urteil. Manche Einzelgaenger sind richtig: die
+// Wortmarke steht nur in der Lobby, ein Kategorie-Ton nur auf seiner Folie.
+// Deshalb wird nur gelistet, und nur wenn ueberhaupt genug Stationen gemessen
+// wurden, dass „eine von vielen" etwas heisst.
+if (ABEND.length >= 5) {
+  const einzel = [];
+  for (const [topf, titel] of TOEPFE) {
+    for (const [wort, v] of cozy.gesamt[topf] ?? []) {
+      if (v.wo.size === 1 && !istPalette(wort)) einzel.push({ titel, wort, v });
+    }
+  }
+  console.log(`\n${'─'.repeat(74)}`);
+  console.log(`Einzelgaenger in der Referenz (nur EINE von ${ABEND.length} Stationen)`);
+  console.log('─'.repeat(74));
+  // ⚠️ Je kuerzer der Lauf, desto laenger diese Liste: bei sechs Stationen ist
+  // „nur eine" schwach, bei fuenfzehn ist es ein Befund. Wer sie ernst nimmt,
+  // faehrt den ganzen Abend.
+  if (ABEND.length < GEMEINSAM.length) {
+    console.log(`  (Teillauf ueber ${ABEND.length} von ${GEMEINSAM.length} Stationen - die Liste ist`
+      + '\n   dadurch laenger als sie sein muesste. Aussagekraeftig erst im vollen Lauf.)');
+  }
+  if (!einzel.length) console.log('  ✓ keine - jeder Wert kommt auf mehr als einer Folie vor.');
+  for (const e of einzel.sort((a, b) => b.v.n - a.v.n)) {
+    console.log(`  ${e.titel.padEnd(11)} ${String(e.v.n).padStart(3)}x  ${Array.from(e.v.wo)[0].padEnd(14)} ${e.wort}${e.v.bsp ? `   („${e.v.bsp}")` : ''}`);
+  }
+}
 
 if (nurBibel) {
   if (cozy.fehler.length) console.log(`  ⚠ ${cozy.fehler.length} Stationen UNGEPRUEFT: ${cozy.fehler.join('; ')}`);

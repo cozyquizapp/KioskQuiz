@@ -853,12 +853,19 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
   durchgängig, deaktivierte Landminen (Bluff/OnlyConnect/Final-Wager/Comeback) sind in Arena hart gegated.
 
 **Font & Menü (Wolf 19.7.):**
-- [ ] **Kolosseum-Font Phase 2** — „Schlicht = überall schlicht" (Wolf-Wahl): Siegerehrung/Krönung +
-      Standings sollen dem Schlicht-Schalter folgen (**alte Wappen + alte Font + alter BG**, Motion
-      gleich). ⚠️ Zeremonie hat EIGENE, immer sichtbare Kolosseum-BGs (`award-<slug>.webp`/
-      `epic-moment.webp`) die `arenaBackgrounds` NICHT respektieren → BG **und** Font zusammen gaten
-      (via `qqArenaType`), sonst Nunito auf Kolosseum-BG. **Wolf schaut Siegerehrung-in-Schlicht SELBST
-      an.** Phase 1 (In-Game-Font-Gate) ist durch (`e936fc70`). Details Memory `project_design_motion_elevation`.
+- [x] ~~**Kolosseum-Font Phase 2**~~ **Faellt weg (Wolf 2026-08-28):**
+      „kolosseum font kommt dann raus, weil ja standard font aus cozyquiz
+      standard design kommt".
+      Der Punkt wollte Siegerehrung und Standings dem Schlicht-Schalter folgen
+      lassen. Wenn CrowdQuiz das Standarddesign von CozyQuiz uebernimmt, kommt
+      die Schrift von dort, und es gibt nichts mehr zu gaten. Die Arbeit geht
+      in „CrowdQuiz im Standarddesign" auf, siehe unten.
+      ⚠️ Die Falle von damals bleibt aber gueltig und gehoert dorthin
+      mitgenommen: die Zeremonie hat EIGENE, immer sichtbare Kolosseum-
+      Hintergruende (`award-<slug>.webp`, `epic-moment.webp`), die
+      `arenaBackgrounds` nicht respektieren. Wer nur die Schrift umstellt und
+      den Grund vergisst, bekommt die neue Schrift auf Kolosseum-Grund.
+
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +
 Wappen), bild 10 ✅ (2/3-Ansicht = `QQGemFill`-Diamant füllt in Kategorie-Farbe, Wolfs 3. Variante statt
@@ -1179,21 +1186,14 @@ Blau wirkt es dort, wo die KATEGORIE den Grund einfaerbt - Mu-Cho ist blau.
 Wer „dunkelblau" fest verdrahtet, faerbt alle fuenf Kategorien gleich und
 nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
 
-- [ ] **Umbenennen: CozyArena -> CrowdQuiz.** Gemessen am 2026-08-28:
-      * **23 sichtbare Stellen** (Beschriftungen, `alt`-Texte, Fliesstext).
-        Das ist die eigentliche Aufgabe und in einer Sitzung zu schaffen.
-      * **183 Vorkommen in 41 Dateien** insgesamt, der Rest sind Kommentare
-        und Bezeichner.
-      * ⚠️ **`avatarSetId: 'cozyArena'` ist PERSISTIERT.** Der Wert steht in
-        gespeicherten Raeumen (`backend/.qq-rooms/*.json`) und wird beim
-        Neustart zurueckgelesen. Wer die Id umbenennt, ohne zu migrieren,
-        bricht laufende und gespeicherte Raeume. Es gibt dafuer schon ein
-        Muster: die Id-Migration `'quirks' -> 'buehne'`.
-      * ⚠️ Ebenso die Asset-Pfade `frontend/public/avatars/cozyarena/`. Die
-        koennen bleiben, wo sie sind - ein Ordnername ist keine Beschriftung,
-        und ein Umbenennen kostet nur Risiko.
-      Merksatz: sichtbaren Text umbenennen, Bezeichner und Pfade nur dort, wo
-      es keine gespeicherten Daten beruehrt.
+- [x] **Umbenennen: CozyArena -> CrowdQuiz.** Erledigt 2026-08-28.
+      **17 sichtbare Stellen**, nicht 23 wie zuerst geschaetzt - und vier davon
+      hatte die erste Zaehlung uebersehen, weil die Wortmarken in
+      GROSSBUCHSTABEN stehen (`'COZYARENA'`) und mein Suchmuster auf
+      `CozyArena` lief. Deshalb am Ende nicht gezaehlt, sondern nachgesehen.
+      Geprueft am laufenden Bild: Normalformat COZYQUIZ, Grossformat CROWDQUIZ.
+      Bezeichner, Pfade und die rund 170 Kommentare heissen weiter `cozyArena`
+      (Begruendung in CLAUDE.md).
 
 - [ ] **CrowdQuiz im Standarddesign, und das Standarddesign ersetzt
       „Schlicht".** Heute hat die Arena zwei Looks (`arenaBackgrounds`):

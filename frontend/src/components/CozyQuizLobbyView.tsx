@@ -729,7 +729,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // (customWelcome) gewinnt weiterhin ueber beides.
           const wordmark = customWelcome.length > 0
             ? customWelcome
-            : ((s as any).largeGroupMode ? 'COZYARENA' : 'COZYQUIZ');
+            : ((s as any).largeGroupMode ? 'CROWDQUIZ' : 'COZYQUIZ');
           // Stagger reduziert sich proportional bei langen Texten damit Wave
           // nicht ueber 4s laeuft.
           const stagger = Math.max(0.03, 0.07 * (8 / Math.max(wordmark.length, 8)));
@@ -744,7 +744,7 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               <QQIcon
                 slug="fx-arena"
                 size="clamp(96px, 15cqw, 220px)"
-                alt="CozyArena"
+                alt="CrowdQuiz"
                 style={{
                   display: 'block', margin: '0 auto clamp(2px, 0.8cqh, 12px)',
 

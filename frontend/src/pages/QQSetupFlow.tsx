@@ -256,7 +256,7 @@ export function QQSetupFlow(props: Props) {
             <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
               {[
                 { ar: false, emoji: '🍺', title: 'CozyQuiz', sub: 'Pub · 3–8 Teams', lines: ['Gitter platzieren', 'Klauen & Stapeln', 'Der Klassiker'], ac: PINK },
-                { ar: true, emoji: '🏟️', title: 'CozyArena', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], ac: VIOLET },
+                { ar: true, emoji: '🏟️', title: 'CrowdQuiz', sub: 'Event · bis 25 Teams', lines: ['8 Fraktionen', 'Speed-Wertung', 'Bar-Race'], ac: VIOLET },
               ].map(f => {
                 const active = arena === f.ar && !!(s as any).formatSelected;
                 return (
@@ -393,7 +393,7 @@ export function QQSetupFlow(props: Props) {
                             {draftFit ? `✓ ${phases} Rd.` : `⚠ ${Math.floor(d.questionCount / 5)} Rd.`}
                           </span>
                           {arena && (d.megaWarnCount ?? 0) > 0 && (
-                            <span title={`${d.megaWarnCount} Hot-Potato-Frage(n) werden in CozyArena übersprungen`} style={{ padding: '1px 8px', borderRadius: 999, background: 'rgba(251,146,60,0.14)', border: '1px solid rgba(251,146,60,0.35)', color: '#fdba74', fontWeight: 900 }}>🔥{d.megaWarnCount}</span>
+                            <span title={`${d.megaWarnCount} Hot-Potato-Frage(n) werden in CrowdQuiz übersprungen`} style={{ padding: '1px 8px', borderRadius: 999, background: 'rgba(251,146,60,0.14)', border: '1px solid rgba(251,146,60,0.35)', color: '#fdba74', fontWeight: 900 }}>🔥{d.megaWarnCount}</span>
                           )}
                         </div>
                       </button>
@@ -408,7 +408,7 @@ export function QQSetupFlow(props: Props) {
               )}
               {arena && selectedDraft && (selectedDraft.megaWarnCount ?? 0) > 0 && (
                 <div style={{ marginTop: 10, fontSize: 12, fontWeight: 800, color: '#fdba74', padding: '7px 11px', borderRadius: 9, background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.4)' }}>
-                  ⚠️ {selectedDraft.megaWarnCount} Hot-Potato-{(selectedDraft.megaWarnCount ?? 0) === 1 ? 'Frage wird' : 'Fragen werden'} in CozyArena übersprungen (rundenbasiert)
+                  ⚠️ {selectedDraft.megaWarnCount} Hot-Potato-{(selectedDraft.megaWarnCount ?? 0) === 1 ? 'Frage wird' : 'Fragen werden'} in CrowdQuiz übersprungen (rundenbasiert)
                 </div>
               )}
             </div>
@@ -564,7 +564,7 @@ export function QQSetupFlow(props: Props) {
               <div style={fieldLbl}>✅ Übersicht — bereit für den Abend</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
                 {[
-                  { k: 'Format', v: `${arena ? '🏟️ CozyArena' : '🍺 CozyQuiz'}` },
+                  { k: 'Format', v: `${arena ? '🏟️ CrowdQuiz' : '🍺 CozyQuiz'}` },
                   { k: 'Look', v: lookLabel },
                   { k: 'Fragensatz', v: selectedDraft?.title ?? '— keiner —' },
                   { k: 'Runden', v: `${phases} × 5 Fragen` },

@@ -4967,7 +4967,7 @@ function QuizIntroOverlay({ language, visible, arena, arenaBg, eurovisionMode, l
   // 2026-07-04 (Wolf 'im Arena-Modus konstant CozyArena statt CozyQuiz'):
   // CozyQuiz bleibt Dach-Marke, aber die Willkommens-Wortmarke adaptiert sich
   // an den Modus. „in der/zur Arena" liest sich sauberer als „zum".
-  const title = arena ? 'COZYARENA' : 'COZYQUIZ';
+  const title = arena ? 'CROWDQUIZ' : 'COZYQUIZ';
   const welcome = arena
     ? (lang === 'en' ? 'WELCOME TO THE' : 'HERZLICH WILLKOMMEN IN DER')
     : (lang === 'en' ? 'A WARM WELCOME TO' : 'HERZLICH WILLKOMMEN ZUM');
@@ -6153,7 +6153,7 @@ function NeutralWelcomeView({ state: s }: { state: QQStateUpdate }) {
           // statt strahlend, und bedeuten tut er nichts.
           lineHeight: 0.96, textTransform: 'uppercase', display: 'inline-block',
           animation: 'qqNeutralFloat 4.2s ease-in-out 0.6s infinite',
-        }}>{qqIsMega(s) ? 'COZYARENA' : 'COZYQUIZ'}</span>
+        }}>{qqIsMega(s) ? 'CROWDQUIZ' : 'COZYQUIZ'}</span>
         {/* 2026-08-23: die zwei pulsenden Punkte links und rechts sind raus.
             8 px (Regel 7 verlangt mindestens 12), rund (Regel 4), und sie
             haben nichts bedeutet. Derselbe Befund wie auf der Ablauf-Folie. */}

@@ -648,7 +648,7 @@ const caQs = [
 export const QQ_EXTRA_TEST_DRAFTS: QQTestDraft[] = [
   {
     id: ca,
-    title: '🏛️ CozyArena: Alle Kategorien (Test)',
+    title: '🏛️ CrowdQuiz: Alle Kategorien (Test)',
     phases: 3,
     language: 'both',
     questions: caQs,

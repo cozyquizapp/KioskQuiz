@@ -2462,7 +2462,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                   {arena && (cd?.megaWarnCount ?? 0) > 0 && (
                     <div style={{ marginTop: 8, padding: '7px 11px', borderRadius: 9, fontSize: 12, fontWeight: 800,
                       background: 'rgba(251,146,60,0.12)', border: '1px solid rgba(251,146,60,0.4)', color: '#fdba74' }}>
-                      ⚠️ {cd!.megaWarnCount} Hot-Potato-{cd!.megaWarnCount === 1 ? 'Frage wird' : 'Fragen werden'} in CozyArena übersprungen (rundenbasiert)
+                      ⚠️ {cd!.megaWarnCount} Hot-Potato-{cd!.megaWarnCount === 1 ? 'Frage wird' : 'Fragen werden'} in CrowdQuiz übersprungen (rundenbasiert)
                     </div>
                   )}
                 </div>
@@ -2472,7 +2472,7 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                     „⚙ Ändern" (oeffnet den Wizard). Kein doppeltes Bedienfeld mehr. */}
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                   {[
-                    { k: 'Format', v: arena ? '🏟️ CozyArena' : '🍺 CozyQuiz' },
+                    { k: 'Format', v: arena ? '🏟️ CrowdQuiz' : '🍺 CozyQuiz' },
                     ...(arena ? [{ k: 'Look', v: (s as any).arenaBackgrounds !== false ? '🏛️ Kolosseum' : '🌑 Schlicht' }] : []),
                     { k: 'Runden', v: `🎮 ${phases}×5` },
                     { k: 'Timer', v: `⏱ ${s.timerDurationSec ?? 30}s` },

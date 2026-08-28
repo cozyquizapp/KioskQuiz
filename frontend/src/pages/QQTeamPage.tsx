@@ -814,7 +814,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           {/* 2026-07-29 (Wolf): „cozywolf · live quiz"-Badge oben entfernt —
               die COZYQUIZ-Wortmarke reicht, der Header wird ruhiger. */}
           {/* 2026-07-08 Konsistenz #2: Wordmark = Beamer-Look (League Spartan via
-              --font-brand + Brand-Pink), und 'COZYARENA' im largeGroupMode wie
+              --font-brand + Brand-Pink), und 'CROWDQUIZ' im largeGroupMode wie
               der Beamer (CozyQuizLobbyView). Vorher slate-weiss + Nunito. */}
           <div style={{
             fontSize: 40, fontWeight: 900,
@@ -822,7 +822,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             color: 'var(--qq-accent)', letterSpacing: '0.03em',
             textShadow: '0 2px 12px rgba(var(--qq-accent-rgb),0.3)',
           }}>
-            {largeGroup ? 'COZYARENA' : t.header[lang]}
+            {largeGroup ? 'CROWDQUIZ' : t.header[lang]}
           </div>
           {/* Always show language flag in setup/lobby.
               2026-05-05 (Phase-8 Bucket-1 B-1): minWidth/minHeight 44 fuer

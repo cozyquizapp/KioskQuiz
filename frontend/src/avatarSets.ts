@@ -195,7 +195,7 @@ export const AVATAR_SETS: AvatarSet[] = [
   // ziehen diese Slugs → Wappen erscheinen in Lobby/Reveals unabhängig vom Set.
   {
     id: 'cozyArena',
-    label: 'CozyArena',
+    label: 'CrowdQuiz',
     tint: '#EC4899',
     leadEmoji: '🛡️',
     preview: ['🏆', '🔥', '🍀'],

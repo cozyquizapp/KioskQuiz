@@ -534,7 +534,7 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
               animation: 'qqStingerHover 4.2s ease-in-out 0.6s infinite',
               display: 'inline-block',
               textTransform: 'uppercase',
-            }}>{qqIsMega(s) ? 'COZYARENA' : 'COZYQUIZ'}</span>
+            }}>{qqIsMega(s) ? 'CROWDQUIZ' : 'COZYQUIZ'}</span>
           </div>
         )}
 

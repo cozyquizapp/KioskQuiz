@@ -134,7 +134,18 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   `/api/qq/drafts`-Endpoint). Live liest Mongo. Gate ist
   `npm --prefix backend run check:en:live`.
 * **`qqIsMega(state)` benutzen, nie `largeGroupMode` roh.**
-* **Fraktionen sind keine Tiere.** CozyArena hat 8 Fraktionen mit Wappen,
+* **Das Grossformat heisst CrowdQuiz, nicht mehr CozyArena** (Wolf
+  2026-08-28: „ok cozyarena heisst jetzt CrowdQuiz"). Umbenannt wurde nur der
+  SICHTBARE Text, siebzehn Stellen. Bezeichner, Dateipfade und die rund
+  hundertsiebzig Kommentare heissen weiter `cozyArena` - das ist Absicht:
+  * `avatarSetId: 'cozyArena'` ist **persistiert**. Der Wert steht in
+    gespeicherten Raeumen (`backend/.qq-rooms/*.json`) und wird beim Neustart
+    zurueckgelesen. Umbenennen ohne Migration bricht laufende Raeume.
+  * `frontend/public/avatars/cozyarena/` ist ein Ordnername, keine
+    Beschriftung. Umbenennen kostet dort nur Risiko.
+  Wer in einem Kommentar „CozyArena" liest, liest also den alten Namen
+  desselben Formats.
+* **Fraktionen sind keine Tiere.** CrowdQuiz hat 8 Fraktionen mit Wappen,
   `avatarId` ist nur ein Farb-Slot.
 
 ---

@@ -3247,11 +3247,54 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // geraten: laeuft der Inhalt ueber die eigene Hoehe hinaus?
   const chipsRef = useRef<HTMLDivElement>(null);
   const [chipsUeberlauf, setChipsUeberlauf] = useState(false);
+  // ── Die Groessenleiter misst, statt zu zaehlen ──────────────────────────
+  // 2026-08-28, Wolf: „heisse kartoffel (hier musst du aufpassen, weil
+  // entweder der teamname oder die antwortmoeglichkeiten, mehrere reihen,
+  // abgeschnitten waren) das ist tricky".
+  //
+  // Gemessen war es das (`node scripts/kartoffel-platz.mjs`, 12 Antworten):
+  //
+  //   Spalte gesamt      449 px
+  //     Halbkreis + Name   324 px   flex 0 0 auto, also fest
+  //     Abstand             25 px
+  //     Antworten          101 px   flex 0 1 auto, bekommt was uebrig ist
+  //   Deckel des Antwort-Blocks: 297 px - erreicht wird er NIE.
+  //   Verdeckt: 81 px, also rund drei Reihen.
+  //
+  // Die Leiter unten stuft nach der ANZAHL (n <= 3 xl, <= 7 lg, <= 12 md ...)
+  // und war auf die gedachten 297 px gerechnet. Bei den tatsaechlichen 101 px
+  // ist jede Stufe ein bis zwei zu gross - und der Ueberlauf verschwindet
+  // lautlos hinter `overflow: hidden`.
+  //
+  // Eine Zahl kann das nicht wissen: „Weissrussland" und „Ungarn" sind beide
+  // eine Antwort und brauchen verschieden viel Platz. Also wird gemessen und
+  // heruntergestuft, bis es passt. Dieselbe Lehre wie bei der Schrift auf der
+  // Fragefolie (qqEinpassen.ts) und beim Teamnamen (TeamNameLabel): der
+  // Stellvertreter Zeichenzahl ist nie so gut wie der echte Platz.
+  //
+  // ⚠️ Nur ABWAERTS, und zurueckgesetzt wird erst bei einer neuen Frage. Sonst
+  // pendelt es: kleiner werden schafft Platz, der naechste Durchgang findet
+  // Platz und geht wieder hoch, das Bild zappelt. Waehrend einer Kartoffel
+  // kommen ohnehin nur Antworten dazu, nie welche weg.
+  const [stufenAb, setStufenAb] = useState(0);
+  const letzteFrage = useRef<string>('');
   useLayoutEffect(() => {
     const el = chipsRef.current;
     if (!el) return;
     const ueber = el.scrollHeight > el.clientHeight + 2;
     if (ueber !== chipsUeberlauf) setChipsUeberlauf(ueber);
+    // MAX_AB: von 'xl' bis 'xxs' sind es fuenf Schritte. Mehr gibt die Leiter
+    // nicht her; wer dann immer noch ueberlaeuft, bekommt die weiche Kante
+    // (`chipsUeberlauf`), und das ist die ehrliche Anzeige „da geht es weiter".
+    if (ueber && stufenAb < 5) setStufenAb(a => a + 1);
+  });
+  // Neue Frage, neue Leiter.
+  useLayoutEffect(() => {
+    const kennung = String(s.currentQuestion?.id ?? '');
+    if (kennung !== letzteFrage.current) {
+      letzteFrage.current = kennung;
+      if (stufenAb !== 0) setStufenAb(0);
+    }
   });
   useEffect(() => {
     const cur: string[] = s.hotPotatoEliminated ?? [];
@@ -3304,8 +3347,10 @@ export function HotPotatoBeamerView({ state: s, lang, revealed }: {
   // nach unten, damit auch dreissig und mehr noch eine eigene Groesse haben.
   // Die Heisse Kartoffel sammelt bis zu allen Antworten des Pools ein (bei
   // „Land in Europa" siebenundvierzig), also muss die Leiter so weit reichen.
-  const tier: 'xl' | 'lg' | 'md' | 'sm' | 'xs' | 'xxs' =
-    n <= 3 ? 'xl' : n <= 7 ? 'lg' : n <= 12 ? 'md' : n <= 19 ? 'sm' : n <= 30 ? 'xs' : 'xxs';
+  // Die Anzahl gibt den Startpunkt, die Messung oben schiebt ihn nach unten.
+  const LEITER = ['xl', 'lg', 'md', 'sm', 'xs', 'xxs'] as const;
+  const startStufe = n <= 3 ? 0 : n <= 7 ? 1 : n <= 12 ? 2 : n <= 19 ? 3 : n <= 30 ? 4 : 5;
+  const tier: typeof LEITER[number] = LEITER[Math.min(LEITER.length - 1, startStufe + stufenAb)];
   const chipStyles = {
     xl: { fontSize: 'clamp(24px, 2.6cqw, 38px)', padding: 'clamp(10px, 1.2cqh, 16px) clamp(18px, 1.8cqw, 30px)', gap: 12, border: 2.5, shadowAlpha: 0.22 },
     lg: { fontSize: 'clamp(20px, 2.2cqw, 32px)', padding: 'clamp(8px, 1cqh, 14px) clamp(16px, 1.6cqw, 26px)', gap: 10, border: 2, shadowAlpha: 0.18 },

@@ -383,6 +383,31 @@
      Identitaet, und bleibt rund. Dieser Scope gilt nur fuer die Projektion. */
   --qq-pill-radius: 16%;
 
+  /* ── Die dritte Schrift, die es nicht geben sollte ──────────────────────
+     2026-08-28, Wolf: „in cozyquiz wurde vor kurzem eine Entscheidung bzw
+     einer font getroffen dachte ich?"
+
+     Ja, am 26.08.: Bricolage ist die Buehnenschrift, League Spartan die
+     Wortmarke, Fredoka nur noch Auffangnetz. Der Durchgang damals hat
+     `--qq-font` umgestellt (der Platzhalter dort war Fredoka) und dabei DIESE
+     Variable uebersehen. `--font-display` steht in `:root` weiter hart auf
+     Fredoka und traegt die grossen Zahlen in zwei Aufloesungen (Schaetzchen
+     und Schwarmintelligenz). Auf der Buehne liefen damit drei Schriften statt
+     zwei - gefunden erst, als das Werkzeug seine eigene Referenz gegen sich
+     selbst geprueft hat („Schriften 14x aufloesung Fredoka").
+
+     Das ist kein Geschmack und keine bewusste Ausnahme, sondern eine
+     Entscheidung, die nicht zu Ende ausgefuehrt wurde. Hier wird sie zu Ende
+     gefuehrt, und zwar NUR fuer die Projektion: ausserhalb der Buehne
+     (Testseiten, Showroom) bleibt `--font-display` wie es war.
+
+     ⚠️ Der Grund von damals bleibt gueltig und ist gedeckt: Fredoka war fuer
+     „runde, warme Zahlen" gewaehlt. Bricolage hat eine opsz-Achse und wird bei
+     grossen Graden von selbst straffer - dieselbe Ueberlegung, die die
+     Fragefolie tragen laesst. Wer die Zahlen zurueckdrehen will, aendert diese
+     eine Zeile. */
+  --font-display: var(--qq-font);
+
   /* ── Die Hausfarbe auf der Buehne ────────────────────────────────────────
      2026-08-22 (Wolf: „wir lassen die Farbe und falls es nicht passt, aendern
      wir sie im Nachhinein, nur die Farbe").

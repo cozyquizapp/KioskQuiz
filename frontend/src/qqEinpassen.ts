@@ -87,13 +87,27 @@ export function useEinpassen(
   kennung: string,
   aktiv = true,
 ): void {
-  // Der zuletzt gesetzte Faktor, nur fuer die Messwerte-Ausgabe.
+  // Der zuletzt gesetzte Faktor. Er ueberlebt bewusst den Effekt-Neulauf, denn
+  // er ist die Decke der Ratsche weiter unten.
   const letzter = useRef(1);
+  /** Welche Frage der Faktor gehoert. Wechselt sie, faengt alles wieder bei 1 an. */
+  const letzteFrage = useRef('');
 
   useLayoutEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (!aktiv) { el.style.removeProperty('--qq-fit'); letzter.current = 1; return; }
+
+    // ── Die Ratsche faengt bei jeder neuen Frage wieder bei 1 an ──────────
+    // `kennung` enthaelt Frage-ID, Sprache, Aufloesungsschritt und mehr - sie
+    // wechselt also mehrmals INNERHALB einer Frage. Zurueckgesetzt wird nur am
+    // ersten Feld, der Frage selbst. Sonst waere die Ratsche wirkungslos: sie
+    // wuerde bei jedem Kaskadenschritt die Decke wieder auf 1 heben.
+    const frage = kennung.split('|')[0];
+    if (frage !== letzteFrage.current) {
+      letzteFrage.current = frage;
+      letzter.current = 1;
+    }
 
     let abgebrochen = false;
 
@@ -165,8 +179,26 @@ export function useEinpassen(
 
     const einpassen = () => {
       if (abgebrochen || !ref.current) return;
-      if (passt(1)) { letzter.current = 1; return; }   // passt ohnehin, nichts tun
-      let unten = MIN, oben = 1, bester = MIN;
+      // ── Ratsche: innerhalb EINER Frage nur noch kleiner ─────────────────
+      // 2026-08-28, nach dem Umbau auf ein Band fuer beide Phasen. Uebrig
+      // blieb ein kleines Auf und Ab: bei der Aufloesung 105 -> 99 px, und
+      // eine Sekunde spaeter wieder zurueck auf 105, weil die Kopfzeile
+      // verschwindet und Platz frei wird. Sechs Prozent sind wenig, aber
+      // Schrift, die unter dem Blick wieder WAECHST, ist das schlechteste
+      // Ergebnis von allen - der Saal liest zu diesem Zeitpunkt schon.
+      //
+      // Kleiner werden bleibt erlaubt, sonst schneidet die Folie ab; das war
+      // der Fehler, gegen den der Einpasser gebaut wurde. Groesser werden
+      // bringt nichts, was den Sprung wert waere.
+      //
+      // ⚠️ Ein erster Anlauf am selben Tag ist gescheitert: damals hielt der
+      // Einpasser noch die Auftrittsbewegung fuer einen Ueberlauf, ein kurzer
+      // Fehlalarm beim Aufbau fror die Frage dauerhaft klein ein (105 -> 94).
+      // Seit dieser Fehler behoben ist, misst die Ratsche nur noch echte
+      // Ueberlaeufe.
+      const decke = letzter.current;
+      if (passt(decke)) { return; }                    // passt ohnehin, nichts tun
+      let unten = MIN, oben = decke, bester = MIN;
       for (let i = 0; i < SCHRITTE; i++) {
         const mitte = (unten + oben) / 2;
         if (passt(mitte)) { bester = mitte; unten = mitte; } else { oben = mitte; }

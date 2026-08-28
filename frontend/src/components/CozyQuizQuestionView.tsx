@@ -146,6 +146,21 @@ function QQCorrectViz({ correct, total, color }: { correct: number; total: numbe
  * kommt etwas frueh" - das war der Fall, als der Ton NICHT gewartet hat).
  * Beide Werte stehen deshalb hier und nirgends sonst.
  */
+/**
+ * Die Fusskante der Fragefolie: wie weit Band und Team-Leiste vom unteren
+ * Buehnenrand wegbleiben.
+ *
+ * 2026-08-28 (Wolf: „ja mach den umbau, ein band fuer beide phasen"). Beide
+ * haengen an DERSELBEN Zahl, und das ist der ganze Witz: das Band steht im
+ * Fluss, die Team-Leiste absolut darueber. Laufen die Werte auseinander, sitzt
+ * die Leiste neben ihrem eigenen Platz statt darin.
+ *
+ * ⚠️ 40 px sind gemessen, nicht gewaehlt. Mit 16 px rutschte die Sieger-Karte
+ * auf 30 px Reserve zum Buehnenrand, und `gewinnerkarte-unterkante.mjs` warnt
+ * ab 40 px - ein Projektor zeigt die aeussersten Prozent nicht.
+ */
+const FUSS = 'max(var(--qq-safe-margin), 40px)';
+
 const WINNER_DELAY_MS = 120;
 /** Vorlauf des Tons vor dem sichtbaren Auftritt. */
 const WINNER_SOUND_VORLAUF_MS = 60;
@@ -524,6 +539,18 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   // Recht!". Waehrend der aktiven Frage bleibt der Slot fuer HP aber auf Hoehe 0
   // (siehe unten), damit die Potato-Ansicht nicht nach unten geschoben wird.
   const reservesWinnerSlot = cat !== 'SCHAETZCHEN' && !(s as any).largeGroupMode;
+  // ── Steht waehrend der FRAGE etwas in dem Band unten? ─────────────────────
+  // 2026-08-28. Das Band traegt in beiden Phasen: waehrend der Frage die
+  // Team-Leiste, bei der Aufloesung die Sieger-Karte. Nur dann darf es
+  // dauerhaft stehen.
+  // ⚠️ Bei der Heissen Kartoffel gibt es keine Team-Leiste (die Ansicht hat
+  // ihren eigenen Fuss), dort waere ein dauerhaftes Band der „riesen leere
+  // streifen", den Wolf am 2026-08-23 gemeldet hat. Also faellt es dort
+  // weiter zusammen und faehrt bei der Aufloesung auf, wie bisher.
+  const bandGefuellt = s.teams.length > 0
+    && !(q?.category === 'BUNTE_TUETE' && q?.bunteTuete?.kind === 'hotPotato' && !(s as any).largeGroupMode);
+  /** Das Band steht in beiden Phasen gleich hoch - nur dann bewegt sich nichts. */
+  const bandDauerhaft = reservesWinnerSlot && bandGefuellt;
 
   // 2026-04-30: Sound bei Sieger-Card-Einblendung (false→true Transition).
   // Synchron zur Animation: revealWinnerIn nutzt bannerDelay=0.7s, davor ist
@@ -2113,7 +2140,13 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
           // Konstanten wie die Zeile selbst, statt aus einer festen 16 - sonst
           // driftet das Polster, sobald die Zeile sich aendert (heute genau so
           // passiert: die Zeile wurde von 204 auf 96 gekuerzt).
-          padding: `calc(${istBuehne ? QQ_STAGE_RAND : '16px'} + ${(!revealed || !!kopfTimer) ? kopfH : 'clamp(30px, 4cqh, 48px)'}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))`,
+          // ⚠️ Das untere Polster haengt seit dem 2026-08-28 daran, ob es das
+          // Band unten gibt (der Slot, der Team-Leiste und Sieger-Karte
+          // traegt). Gibt es das Band, ist es SELBST das Polster: es steht in
+          // beiden Phasen im Fluss und haelt den Fuss frei. Beides zusammen
+          // waere doppelt gemoppelt und wuerde die Folie um rund 90 px enger
+          // machen, worauf der Einpasser die Schrift kuerzt.
+          padding: `calc(${istBuehne ? QQ_STAGE_RAND : '16px'} + ${(!revealed || !!kopfTimer) ? kopfH : 'clamp(30px, 4cqh, 48px)'}) max(var(--qq-safe-margin), clamp(28px, 4cqw, 64px)) ${bandDauerhaft ? FUSS : 'max(var(--qq-safe-margin), clamp(70px, 8cqh, 100px))'}`,
           transition: 'padding-top 0.5s var(--qq-ease-smooth)',
           alignItems: 'center', position: 'relative', zIndex: 5,
           // 2026-05-05 (Wolf-Bug 'Scrollbar rechts auf /beamer'): overflow
@@ -3580,8 +3613,26 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // sekunde. Also faellt der Slot waehrend der Frage zusammen und
               // faehrt bei der Aufloesung auf. Bis die richtige Motion kommt,
               // haelt eine schlichte Hoehen-Ueberblendung den Uebergang weich.
-              height: !revealed ? 0 : 'clamp(150px, 16cqh, 210px)',
-              marginBottom: !revealed ? 0 : 12,
+              // ── EIN BAND FUER BEIDE PHASEN ────────────────────────────
+              // 2026-08-28, Wolf: „ja mach den umbau, ein band fuer beide
+              // phasen".
+              //
+              // Bis hierher war dieser Slot waehrend der Frage 0 hoch und fuhr
+              // bei der Aufloesung auf. Genau das war der Sprung: der Fluss
+              // wurde 170 px laenger, und alles darueber rueckte nach.
+              //
+              // Jetzt ist er immer da. Waehrend der Frage steht die Team-Leiste
+              // darin, bei der Aufloesung die Sieger-Karte - dasselbe Band,
+              // zwei Inhalte. Der Fluss aendert sich nie, also bewegt sich
+              // nichts mehr, und der Einpasser misst in beiden Phasen dieselbe
+              // Folie.
+              //
+              // ⚠️ Das Band ERSETZT das untere Polster der Spalte, es kommt
+              // nicht dazu (siehe `padding` weiter oben). Sonst waere die Folie
+              // schlagartig 90 px enger, und der Einpasser wuerde die Schrift
+              // kuerzen - eine Bewegung gegen eine kleinere Schrift getauscht.
+              height: (bandDauerhaft || revealed) ? 'clamp(150px, 16cqh, 210px)' : 0,
+              marginBottom: 0,
               // 2026-08-28 (Wolf: „nach timer springt es kurz"). Die
               // Hoehen-Ueberblendung ist raus, und das ist die Einloesung des
               // Satzes zwei Zeilen darueber: „bis die richtige Motion kommt".
@@ -3997,9 +4048,19 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             // konnte bis unter sie laufen, ohne dass irgendetwas „ueberlief".
             // Genau das zeigt Wolfs Bild vom 27.8. („3/8 Teams" liegt hinter
             // „Romance / Liebesroman").
-            <div {...{ [SPERRE_ATTR]: '' }} style={{
+            // ⚠️ 2026-08-28: Sperre NUR noch, wenn es das Band unten nicht
+            // gibt. Sonst wird zweimal dasselbe reserviert: das Band steht im
+            // Fluss und reicht bis 16 px ueber den Fuss, die Sperre verlangt
+            // zusaetzlich 24 px Luft ueber der Leiste - und weil das Band
+            // selbst tiefer endet als die Leiste beginnt, ist die Bedingung
+            // NIE erfuellbar. Gemessen fiel die Frage dadurch auf den
+            // Mindestfaktor (52 statt 105 px) und sprang bei der Aufloesung
+            // wieder hoch. Wo das Band steht, misst der Fluss ohnehin richtig.
+            <div {...(bandDauerhaft ? {} : { [SPERRE_ATTR]: '' })} style={{
               display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10,
-              position: 'absolute', bottom: 16, left: 0, right: 0,
+              // Dieselbe Fusskante wie das Band, sonst sitzt die Leiste neben
+              // ihrem eigenen Platz statt darin.
+              position: 'absolute', bottom: bandDauerhaft ? FUSS : 16, left: 0, right: 0,
             }}>
               {/* Progress text — verschwindet wenn alle dran sind (Avatare mit ✓ zeigen's eh) */}
               {!s.allAnswered && (

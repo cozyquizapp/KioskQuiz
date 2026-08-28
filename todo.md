@@ -1185,6 +1185,15 @@ den Regeln abgeleitet).
       stehen einzeln im Kopf von `scripts/einpassen-unruhe.mjs`. Wer hier etwas
       aendert, misst DREI Laeufe - ein einzelner gruener Lauf beweist nichts.
 
+- [ ] **P2 · Heisse Kartoffel: der Name unten wird angeschnitten.**
+      Auf dem Bild steht „JETZT DRAN" und darunter der Teamname, dessen
+      Unterlaengen an der Buehnenkante abgeschnitten werden.
+      ⚠️ Bestandsfehler, nicht durch den Band-Umbau vom 2026-08-28 entstanden -
+      am Stand davor genauso nachgestellt (`node scripts/beamer-view.mjs
+      kartoffel --bots=8 --kategorie=hotPotato --stufe=3 --frisch`).
+      Die Kartoffel hat ihren eigenen Fuss und ist deshalb bewusst vom
+      dauerhaften Band ausgenommen; die Loesung gehoert in diese Ansicht.
+
 - [x] **P1 · Lobby-Avatare winzig.** War der abgekoppelte Klon, nicht das Repo.
       Wolf am 2026-08-28: „alte avatare sind wieder da".
 

@@ -1529,7 +1529,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       panels.push({ key: 'hotStreak', node: (
         <div>
           {statTitle('🔥', 'Heiße Phase', 'Hot Streak', '#F97316')}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          {statStapel(<>
             {teamLine(leader.name, leader.color, leader.avatarId)}
             {isQuietMotion()
               ? <div style={{ marginTop: 0 }}>{statHero(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`)}</div>
@@ -1539,7 +1539,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                     {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
                   </span>
                 </>)}
-          </div>
+          </>)}
         </div>
       )});
     }
@@ -1553,12 +1553,14 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           <JokerIcon i={0} size={'1em'} eurovisionMode={!!s.theme?.eurovisionMode} />,
           'Joker-König', 'Joker King', '#A855F7',
         )}
-        {teamLine(funStats.jokerKing.teamName)}
-        {isQuietMotion()
-          ? <div style={{ marginTop: 0 }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
-          : statWertBand('#A855F7', <>
-              {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
-            </>)}
+        {statStapel(<>
+          {teamLine(funStats.jokerKing.teamName)}
+          {isQuietMotion()
+            ? <div style={{ marginTop: 0 }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
+            : statWertBand('#A855F7', <>
+                {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
+              </>)}
+        </>)}
       </div>
     )});
   }
@@ -1568,15 +1570,25 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'comebackKing', node: (
       <div>
         {statTitle('🦅', 'Comeback-King', 'Comeback King', '#38BDF8')}
-        {teamLine(funStats.comebackKing.teamName)}
-        {isQuietMotion()
-          ? <div style={{ marginTop: 0 }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
-          : statWertBand('#38BDF8', <>
-              {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
-              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
-                {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
-              </span>
-            </>)}
+        {/* 2026-08-27 (Wolf: „ich finde den abstand der beiden roten
+            kaesten komisch"). Er hatte recht, und die Ursache ist mein
+            Raster von heute Morgen: Kopf `auto`, Koerper `1fr`, Rest
+            `auto`. Bei DREI Kindern landet die Teamzeile allein im
+            grossen Mittelband und das Wertband ganz unten - gemessen
+            130 px Luft dazwischen, wo sonst 14 stehen.
+            Jetzt sind die beiden Kaesten EIN Koerper. Damit hat die
+            Folie zwei Kinder wie alle anderen. */}
+        {statStapel(<>
+  {teamLine(funStats.comebackKing.teamName)}
+          {isQuietMotion()
+            ? <div style={{ marginTop: 0 }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
+            : statWertBand('#38BDF8', <>
+                {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
+                <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
+                  {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
+                </span>
+              </>)}
+        </>)}
       </div>
     )});
   }
@@ -1586,12 +1598,22 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'stealMaster', node: (
       <div>
         {statTitle(<QQIcon slug="action-steal" size="1em" />, 'Steal-Master', 'Steal Master', QQ_COLORS.red500)}
-        {teamLine(funStats.stealMaster.teamName)}
-        {isQuietMotion()
-          ? <div style={{ marginTop: 0 }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
-          : statWertBand(QQ_COLORS.red500, <>
-              {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
-            </>)}
+        {/* 2026-08-27 (Wolf: „ich finde den abstand der beiden roten
+            kaesten komisch"). Er hatte recht, und die Ursache ist mein
+            Raster von heute Morgen: Kopf `auto`, Koerper `1fr`, Rest
+            `auto`. Bei DREI Kindern landet die Teamzeile allein im
+            grossen Mittelband und das Wertband ganz unten - gemessen
+            130 px Luft dazwischen, wo sonst 14 stehen.
+            Jetzt sind die beiden Kaesten EIN Koerper. Damit hat die
+            Folie zwei Kinder wie alle anderen. */}
+        {statStapel(<>
+  {teamLine(funStats.stealMaster.teamName)}
+          {isQuietMotion()
+            ? <div style={{ marginTop: 0 }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
+            : statWertBand(QQ_COLORS.red500, <>
+                {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
+              </>)}
+        </>)}
       </div>
     )});
   }
@@ -1601,16 +1623,26 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'underdog', node: (
       <div>
         {statTitle(<QQIcon slug="brand-wolf" size="1em" />, 'Underdog', 'Underdog', '#22D3EE')}
-        {teamLine(funStats.underdog.teamName)}
-        {isQuietMotion()
-          ? <div style={{ marginTop: 0 }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
-          : statWertBand('#22D3EE', <>
-              {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
-              {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
-              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
-                {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
-              </span>
-            </>)}
+        {/* 2026-08-27 (Wolf: „ich finde den abstand der beiden roten
+            kaesten komisch"). Er hatte recht, und die Ursache ist mein
+            Raster von heute Morgen: Kopf `auto`, Koerper `1fr`, Rest
+            `auto`. Bei DREI Kindern landet die Teamzeile allein im
+            grossen Mittelband und das Wertband ganz unten - gemessen
+            130 px Luft dazwischen, wo sonst 14 stehen.
+            Jetzt sind die beiden Kaesten EIN Koerper. Damit hat die
+            Folie zwei Kinder wie alle anderen. */}
+        {statStapel(<>
+  {teamLine(funStats.underdog.teamName)}
+          {isQuietMotion()
+            ? <div style={{ marginTop: 0 }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
+            : statWertBand('#22D3EE', <>
+                {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
+                {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
+                <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
+                  {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
+                </span>
+              </>)}
+        </>)}
       </div>
     )});
   }
@@ -1689,15 +1721,25 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'speedDemon', node: (
       <div>
         {statTitle('⚡', 'Schnellste Minute', 'Speed Demon', '#FACC15')}
-        {teamLine(funStats.speedDemon.teamName)}
-        {isQuietMotion()
-          ? <div style={{ marginTop: 0 }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
-          : statWertBand('#FACC15', <>
-              {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
-              <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
-                {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
-              </span>
-            </>)}
+        {/* 2026-08-27 (Wolf: „ich finde den abstand der beiden roten
+            kaesten komisch"). Er hatte recht, und die Ursache ist mein
+            Raster von heute Morgen: Kopf `auto`, Koerper `1fr`, Rest
+            `auto`. Bei DREI Kindern landet die Teamzeile allein im
+            grossen Mittelband und das Wertband ganz unten - gemessen
+            130 px Luft dazwischen, wo sonst 14 stehen.
+            Jetzt sind die beiden Kaesten EIN Koerper. Damit hat die
+            Folie zwei Kinder wie alle anderen. */}
+        {statStapel(<>
+  {teamLine(funStats.speedDemon.teamName)}
+          {isQuietMotion()
+            ? <div style={{ marginTop: 0 }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
+            : statWertBand('#FACC15', <>
+                {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
+                <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
+                  {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
+                </span>
+              </>)}
+        </>)}
       </div>
     )});
   }
@@ -1708,12 +1750,22 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'potatoBoss', node: (
       <div>
         {statTitle('🥔', 'Bunte-Tüte-Boss', 'Lucky Bag Boss', btColor)}
-        {teamLine(funStats.potatoBoss.teamName)}
-        {isQuietMotion()
-          ? <div style={{ marginTop: 0 }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
-          : statWertBand(btColor, <>
-              {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
-            </>)}
+        {/* 2026-08-27 (Wolf: „ich finde den abstand der beiden roten
+            kaesten komisch"). Er hatte recht, und die Ursache ist mein
+            Raster von heute Morgen: Kopf `auto`, Koerper `1fr`, Rest
+            `auto`. Bei DREI Kindern landet die Teamzeile allein im
+            grossen Mittelband und das Wertband ganz unten - gemessen
+            130 px Luft dazwischen, wo sonst 14 stehen.
+            Jetzt sind die beiden Kaesten EIN Koerper. Damit hat die
+            Folie zwei Kinder wie alle anderen. */}
+        {statStapel(<>
+  {teamLine(funStats.potatoBoss.teamName)}
+          {isQuietMotion()
+            ? <div style={{ marginTop: 0 }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
+            : statWertBand(btColor, <>
+                {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
+              </>)}
+        </>)}
       </div>
     )});
   }

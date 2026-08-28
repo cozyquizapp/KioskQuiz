@@ -36,7 +36,7 @@ const CATEGORY_META: Record<string, { emoji: string; label: string }> = {
   SCHAETZCHEN:   { emoji: '🎯', label: 'Schätzchen' },
   MUCHO:         { emoji: '🅰️', label: 'Mu-Cho' },
   BUNTE_TUETE:   { emoji: '🎁', label: 'Bunte Tüte' },
-  ZEHN_VON_ZEHN: { emoji: '🎰', label: 'All In' },
+  ZEHN_VON_ZEHN: { emoji: '🎰', label: 'Ten Chips' },
   CHEESE:        { emoji: '📸', label: 'Picture This' },
 };
 

@@ -215,7 +215,7 @@ export const RULE_TEXT_GROUPS: RuleTextGroup[] = [
       { key: 'cat.SCHAETZCHEN.explain',   label: 'Schätzchen',   defaultDe: 'Wer schätzt am nächsten dran?', defaultEn: 'Who can guess the closest?' },
       { key: 'cat.MUCHO.explain',         label: 'Mucho',        defaultDe: 'Wählt die richtige Antwort', defaultEn: 'Pick the right answer' },
       { key: 'cat.BUNTE_TUETE.explain',   label: 'Bunte Tüte',   defaultDe: 'Immer eine Überraschung. Jedes Mal anders.', defaultEn: 'Always a surprise. Different every time.' },
-      { key: 'cat.ZEHN_VON_ZEHN.explain', label: 'Zehn von Zehn',defaultDe: '3 Antworten, 10 Punkte vergeben', defaultEn: '3 answers, distribute 10 points' },
+      { key: 'cat.ZEHN_VON_ZEHN.explain', label: 'Ten Chips',    defaultDe: '3 Antworten, 10 Punkte vergeben', defaultEn: '3 answers, distribute 10 points' },
       { key: 'cat.CHEESE.explain',        label: 'Cheese',       defaultDe: 'Was ist das?', defaultEn: 'What is this?' },
     ],
   },

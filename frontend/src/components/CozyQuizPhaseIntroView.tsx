@@ -1687,7 +1687,7 @@ export function PhaseIntroView({ state: s }: { state: QQStateUpdate }) {
               },
             },
             ZEHN_VON_ZEHN: {
-              emoji: catEmoji, title: { de: '10 von 10', en: 'All In' },
+              emoji: catEmoji, title: { de: 'Ten Chips', en: 'Ten Chips' },
               lines: {
                 de: ['Verteilt 10 Punkte auf 3 Antworten.'],
                 en: ['Spread 10 points across 3 answers.'],

@@ -1230,22 +1230,21 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       deckeln soll („…und n weitere"), ist eine Design-Entscheidung und
       gehoert Wolf, nicht mir.
 
-- [ ] **Kategorie „All In" heisst „Ten Chips".** Wolf 2026-08-28: „10 von 10
-      also all in heisst jetzt ten chips als kategorie - das ist wichtig,
-      weil es eine Fraktion gibt die All in heisst, damit es keine
-      missverstaendnisse gibt".
-      Der Konflikt ist echt und liegt im Englischen: die Kategorie
-      `ZEHN_VON_ZEHN` heisst en „All In" (shared/quarterQuizTypes.ts:23), die
-      Fraktion `Risiko` heisst en ebenfalls „All In". Auf Deutsch stossen sie
-      nicht zusammen („10 von 10" gegen „Risiko").
-      ⚠️ Zwei Fragen vorher an Wolf, sie aendern den Umfang:
-      1. Aendert sich NUR der englische Name, oder heisst die Kategorie auch
-         auf Deutsch „Ten Chips" statt „10 von 10"?
-      2. Der Bezeichner `ZEHN_VON_ZEHN` steckt in gespeicherten Fragensaetzen
-         (Drafts, Mongo). Der bleibt so oder so stehen - umbenannt wird
-         sichtbarer Text, wie beim CrowdQuiz-Umbau auch.
-      Betroffen sind rund zehn Stellen (Kategorie-Tafel, Regelfolie,
-      Handy-Karte, Pause-Statistik, Summary, Feedback-Dashboard).
+- [x] **Kategorie „All In" heisst „Ten Chips".** Erledigt 2026-08-28.
+      In BEIDEN Sprachen derselbe Name, wie bei Mu-Cho eine Zeile darueber:
+      ein Eigenname bleibt ein Eigenname. Wolf hat auf die Rueckfrage „nur
+      englisch oder auch deutsch" mit „go mit ten chips" geantwortet, also
+      beides. Zurueckdrehen auf „10 von 10" waere eine Zeile in
+      QQ_CATEGORY_LABELS.
+      Zwoelf sichtbare Stellen, gegengeprueft auf alle Schreibweisen (beim
+      CrowdQuiz-Umbau waren mir vier Grossschreibungen durchgerutscht).
+      Bezeichner `ZEHN_VON_ZEHN` und der Asset-Slug `cat-allin` bleiben: der
+      Bezeichner steht in gespeicherten Fragensaetzen. Die Fraktion `Risiko`
+      heisst en weiter „All In", das war ja der Punkt.
+      Am laufenden Bild geprueft: Runden-Intro und Fragefolie zeigen „Ten
+      Chips", der alte Name kommt nirgends mehr vor. Nebenbefund: das Zeichen
+      der Kategorie ist seit jeher ein Stapel Chips - der neue Name passt zum
+      Bild, der alte tat es nicht.
 
 - [ ] **Standarddesign und die neuen Fraktions-Avatare zum Default machen.**
       Wolf 2026-08-28: „das design, dass du gerade einbaust soll default

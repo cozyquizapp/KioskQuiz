@@ -133,7 +133,7 @@ const PAUSE_CAT_ACCENT: Record<string, { color: string; emoji: string; label: st
   SCHAETZCHEN:   { color: QQ_COLORS.yellow500, emoji: '🎯', label: 'Schätzchen',   labelEn: 'Close Call' },
   MUCHO:         { color: QQ_COLORS.blue500, emoji: '🔤', label: 'Mu-Cho', labelEn: 'Mu-Cho' },
   BUNTE_TUETE:   { color: QQ_COLORS.red500, emoji: '🎁', label: 'Bunte Tüte',   labelEn: 'Lucky Bag' },
-  ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: '10 von 10',    labelEn: 'All In' },
+  ZEHN_VON_ZEHN: { color: '#10B981', emoji: '🎲', label: 'Ten Chips',    labelEn: 'Ten Chips' },
   CHEESE:        { color: QQ_COLORS.violet400, emoji: '📸', label: 'Schau mal!',   labelEn: 'Picture This' },
 };
 /**

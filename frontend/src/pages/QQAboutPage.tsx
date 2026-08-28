@@ -34,7 +34,7 @@ const BODY = "'Nunito', 'Inter', system-ui, sans-serif";
 const CATEGORIES = [
   { emoji: '🎯', name: 'Schätzchen', desc: 'Wer schätzt am nächsten dran?' },
   { emoji: '🔤', name: 'Mu-Cho', desc: 'Die richtige Antwort: Tempo entscheidet.' },
-  { emoji: '📊', name: '10 von 10', desc: 'Verteilt 10 Punkte auf 3 Antworten.' },
+  { emoji: '📊', name: 'Ten Chips', desc: 'Verteilt 10 Punkte auf 3 Antworten.' },
   { emoji: '📸', name: 'Schau mal!', desc: 'Erkennt das Bild.' },
   { emoji: '🎁', name: 'Bunte Tüte', desc: 'Jede Runde ein Überraschungs-Format: Bluff, Heiße Kartoffel, CozyGuessr & mehr.' },
 ];

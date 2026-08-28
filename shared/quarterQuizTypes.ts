@@ -20,7 +20,16 @@ export const QQ_CATEGORY_LABELS: Record<QQCategory, { de: string; en: string; em
   SCHAETZCHEN:   { de: 'Schätzchen',   en: 'Close Call',    emoji: '🎯' },
   MUCHO:         { de: 'Mu-Cho',       en: 'Mu-Cho',        emoji: '🅰️' },
   BUNTE_TUETE:   { de: 'Bunte Tüte',   en: 'Lucky Bag',     emoji: '🎁' },
-  ZEHN_VON_ZEHN: { de: '10 von 10',    en: 'All In',        emoji: '🎰' },
+  // 2026-08-28 (Wolf): „10 von 10 also all in heisst jetzt ten chips als
+  // kategorie - das ist wichtig, weil es eine Fraktion gibt die All in heisst,
+  // damit es keine missverstaendnisse gibt".
+  // Der Konflikt lag im Englischen: die Fraktion `cat`/`risiko` heisst en
+  // ebenfalls „All In" (QQ_MEGA_FACTIONS weiter unten). In CrowdQuiz stand
+  // damit dieselbe Beschriftung fuer eine Kategorie und fuer ein Team.
+  // In BEIDEN Sprachen derselbe Name, wie bei Mu-Cho eine Zeile darueber: ein
+  // Eigenname bleibt ein Eigenname. Der Bezeichner ZEHN_VON_ZEHN bleibt, er
+  // steht in gespeicherten Fragensaetzen (qqDrafts.json, Mongo).
+  ZEHN_VON_ZEHN: { de: 'Ten Chips',    en: 'Ten Chips',     emoji: '🎰' },
   CHEESE:        { de: 'Schau mal!',   en: 'Picture This',  emoji: '📸' },
 };
 

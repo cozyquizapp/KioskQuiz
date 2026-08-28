@@ -28,7 +28,7 @@ const TEMPLATE_SPECS: TemplateSpec[] = [
   { type: 'QUESTION_SCHAETZCHEN', label: 'Schätzchen',     icon: '🎯', color: QQ_COLORS.amber500, group: 'Fragen' },
   { type: 'QUESTION_MUCHO',       label: 'Mu-Cho',         icon: '🅰️', color: QQ_COLORS.blue500, group: 'Fragen' },
   { type: 'QUESTION_BUNTE_TUETE', label: 'Bunte Tüte',    icon: '🎁', color: QQ_COLORS.red500, group: 'Fragen' },
-  { type: 'QUESTION_ZEHN',        label: 'All In',         icon: '🎰', color: QQ_COLORS.green500, group: 'Fragen' },
+  { type: 'QUESTION_ZEHN',        label: 'Ten Chips',      icon: '🎰', color: QQ_COLORS.green500, group: 'Fragen' },
   { type: 'QUESTION_CHEESE',      label: 'Picture This',   icon: '📸', color: QQ_COLORS.violet500, group: 'Fragen' },
   { type: 'REVEAL',               label: 'Auflösung',      icon: '✅', color: QQ_COLORS.green500, group: 'Ablauf' },
   { type: 'PLACEMENT',            label: 'Platzierung',    icon: '🗺️',  color: '#6366F1', group: 'Ablauf' },

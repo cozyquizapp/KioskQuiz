@@ -63,7 +63,7 @@ const MINI_GRID = [
 const CATEGORIES = [
   { icon: 'cat-schaetzchen',  name: 'Schätzchen', desc: 'Am nächsten dran' },
   { icon: 'cat-mucho',        name: 'Mu-Cho', desc: 'Tempo entscheidet' },
-  { icon: 'cat-zehn-von-zehn', name: '10 von 10', desc: '10 Punkte, 3 Antworten' },
+  { icon: 'cat-zehn-von-zehn', name: 'Ten Chips', desc: '10 Punkte, 3 Antworten' },
   { icon: 'cat-cheese',       name: 'Schau mal!', desc: 'Erkennt das Bild' },
   { icon: 'cat-bunte-tuete',  name: 'Bunte Tüte', desc: 'Überraschungs-Format' },
 ];

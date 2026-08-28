@@ -737,7 +737,14 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
           // Kolosseum als Hero ueber die Wortmarke (nur ohne Custom-Welcome).
           // 2026-07-13 (Wolf: „arena symbol oben raus"): kein fx-arena-Hero, wenn
           // das Arena-Kolosseum ohnehin als Hintergrund liegt (redundant).
-          const showArenaHero = (s as any).largeGroupMode && customWelcome.length === 0 && !arenaLobbyBg;
+          // 2026-08-28 (Wolf: „auch das logo oben der emoji von der arena soll
+          // in schlicht raus"). Damit ist der Hero in beiden CrowdQuiz-Looks
+          // weg: im Kolosseum, weil das Kolosseum schon im Hintergrund liegt
+          // (Regel von 07-13), und im Standarddesign, weil die neue Lobby ihre
+          // Wortmarke oben stehen hat und darueber nichts mehr kommt - die
+          // CozyQuiz-Lobby hat dort ebenfalls kein Zeichen.
+          const showArenaHero = (s as any).largeGroupMode && customWelcome.length === 0
+            && !arenaLobbyBg && !istBuehne;
           return (
             <>
             {showArenaHero && (
@@ -1023,12 +1030,25 @@ export function LobbyView({ state: s }: { state: QQStateUpdate }) {
               gap: 'clamp(10px, 1.2cqw, 18px)',
             }}>
               {nestedGroups.map((g, i) => (
+                // 2026-08-28 (Wolf: „das design ist ja noch total alt und gar
+                // nicht an die neue lobby angepasst"). Die Fraktionskarte hatte
+                // drei Rahmen um dieselbe Sache: dunkler Kasten, heller Rand und
+                // ein 4 px Farbbalken links - waehrend das Wappen die
+                // Fraktionsfarbe ohnehin traegt. Genau diese Entscheidung ist
+                // fuer die Teamkachel schon am 29.07. gefallen („ausfuellend
+                // machen ohne den bg"): die farbige Kachel traegt die
+                // Identitaet, der Kasten faellt weg. Auf der Buehne gilt sie
+                // jetzt auch hier, damit beide Lobbys dieselbe Sprache
+                // sprechen. Getrennt wird durch Abstand und Wappen.
+                // Ausserhalb der Buehne bleibt alles wie es war.
                 <div key={g.avatarId} style={{
-                  padding: 'clamp(12px, 1.4cqh, 18px) clamp(14px, 1.5cqw, 20px)',
-                  borderRadius: isThemed() ? 'var(--qq-card-radius)' : 20,
-                  background: isThemed() ? cardBg : (arenaCardBg ?? 'rgba(246, 239, 230,0.04)'),
-                  border: isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(246, 239, 230,0.09)',
-                  borderLeft: `4px solid ${g.color}`,
+                  padding: istBuehne
+                    ? 'clamp(6px, 0.8cqh, 10px) 0'
+                    : 'clamp(12px, 1.4cqh, 18px) clamp(14px, 1.5cqw, 20px)',
+                  borderRadius: istBuehne ? 0 : (isThemed() ? 'var(--qq-card-radius)' : 20),
+                  background: istBuehne ? 'transparent' : (isThemed() ? cardBg : (arenaCardBg ?? 'rgba(246, 239, 230,0.04)')),
+                  border: istBuehne ? 'none' : (isThemed() ? 'var(--qq-card-border)' : '1px solid rgba(246, 239, 230,0.09)'),
+                  borderLeft: istBuehne ? 'none' : `4px solid ${g.color}`,
 
                   display: 'flex', alignItems: 'center', gap: 'clamp(12px, 1.3cqw, 18px)',
                   minWidth: 0, position: 'relative', minHeight: 'clamp(76px, 8.2cqh, 104px)',

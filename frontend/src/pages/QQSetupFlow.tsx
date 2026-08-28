@@ -312,6 +312,11 @@ export function QQSetupFlow(props: Props) {
                     return (
                       <button key={o.label} onClick={() => {
                         if (active) return;
+                        // Die Wahl wird gemerkt wie das Format auch. Sie ist das
+                        // einzige Unterscheidungsmerkmal fuer die Nachzieh-Regel
+                        // im Steuerpult: ein 'cozy' OHNE diese Marke stammt aus
+                        // der alten Format-Kopplung, nicht von Wolf.
+                        try { window.localStorage.setItem('qqArenaLook', o.on ? 'kolosseum' : 'standard'); } catch { /* ignore */ }
                         emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: o.on });
                         emit('qq:setTheme', { roomCode, themeId: o.on ? 'cozy' : 'buehne' });
                       }}

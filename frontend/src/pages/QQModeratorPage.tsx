@@ -725,6 +725,35 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, joined, state?.phase]);
 
+  // ── Alte CrowdQuiz-Raeume auf das Standarddesign nachziehen ────────────────
+  // 2026-08-28, Wolf: „ne schaltet nicht automatisch um". Stimmt, und der
+  // Grund ist der Effekt darueber: der greift nur bei einem FRISCHEN Raum ohne
+  // Format. Ein Raum, der schon eingerichtet war, trug `themeId: 'cozy'` von
+  // der alten Kopplung weiter auf der Platte und zeigte dadurch das Kolosseum.
+  //
+  // Umgeschaltet wird nur, wenn der Kolosseum-Look NICHT ausdruecklich gewaehlt
+  // wurde. Woran man das erkennt, ohne ein neues Feld im Raum: der Wizard
+  // schreibt die Wahl in denselben Speicher, in dem schon `qqLastFormat` liegt.
+  // Ist dort nichts oder etwas anderes als 'kolosseum' hinterlegt, kommt das
+  // 'cozy' aus der alten Kopplung und nicht von Wolf.
+  //
+  // Bewusst KEIN neues Raum-Feld: das haette einen Server-Redeploy gebraucht,
+  // und bis der durch ist, wuerde ein frisch gewaehltes Kolosseum bei jedem
+  // Neuladen wieder verschwinden.
+  const arenaDesignRef = useRef(false);
+  useEffect(() => {
+    if (!connected || !joined || arenaDesignRef.current) return;
+    const st = stateRef.current;
+    if (!st) return;
+    if (!(st as any).largeGroupMode || st.themeId !== 'cozy') return;
+    let look: string | null = null;
+    try { look = window.localStorage.getItem('qqArenaLook'); } catch { /* ignore */ }
+    if (look === 'kolosseum') { arenaDesignRef.current = true; return; }
+    arenaDesignRef.current = true;
+    emitRef.current('qq:setTheme', { roomCode, themeId: 'buehne' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [connected, joined, state?.themeId, (state as any)?.largeGroupMode]);
+
   const setupDoneRef = useRef(setupDone);
   setupDoneRef.current = setupDone;
   const setSetupDoneRef = useRef(setSetupDone);

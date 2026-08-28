@@ -89,6 +89,14 @@ const nurBibel = args.includes('--bibel');
 const stationen = args.filter(a => !a.startsWith('--'));
 const ABEND = stationen.length ? stationen : GEMEINSAM;
 
+/** Ein Versprechen mit Frist. Laeuft es ab, wirft es - und die Station gilt
+ *  als UNGEPRUEFT statt den Lauf anzuhalten. */
+function mitFrist(versprechen, ms, was) {
+  let uhr;
+  const frist = new Promise((_, weg) => { uhr = setTimeout(() => weg(new Error(`Frist abgelaufen (${ms / 1000}s) - ${was}`)), ms); });
+  return Promise.race([versprechen, frist]).finally(() => clearTimeout(uhr));
+}
+
 /** Zwei Messungen derselben Folie schneiden: nur was in BEIDEN steht.
  *  Fuer die geprueefte Seite - ein Wort, das nur einen Wimpernschlag lang da
  *  war, ist kein Wort der Sprache, sondern ein Zwischenbild. */
@@ -131,7 +139,18 @@ async function abendMessen(mega) {
     await b.emit('qq:setTheme', { themeId: 'buehne' });
     await sleep(600);
     try {
-      await b.zurStation(st);
+      // ⚠️ Jede Station bekommt eine Reissleine.
+      //
+      // 2026-08-28, Wolf: „wenn das tool lange nichts gemacht hat obwohl es
+      // lief, muss es wohl optimiert werden". Er hat recht, und die Ursache war
+      // nicht Langsamkeit: die Server sind unter dem Lauf weggestorben, und der
+      // Harness hat auf eine Seite gewartet, die nie mehr kommt. Eine Stunde
+      // lang lebte der Prozess und tat nichts.
+      //
+      // Ein Werkzeug, das haengen kann, ist ein Werkzeug, dem man nicht beim
+      // Laufen zusehen kann. Lieber eine Station als UNGEPRUEFT melden - die
+      // zaehlt ohnehin nicht als sauber - als den ganzen Abend blockieren.
+      await mitFrist(b.zurStation(st), 180000, `${st}: Station nicht erreicht`);
       await sleep((b.stationen[st]?.ruhe ?? 2500) + 800);
       // ⚠️ ZWEIMAL messen, mit Abstand.
       //
@@ -147,9 +166,9 @@ async function abendMessen(mega) {
       // das Ablesen. Zwei Messungen im selben Raum, 1,6 s auseinander.
       // CozyQuiz vereinigt beide (die Referenz soll VOLLSTAENDIG sein),
       // CrowdQuiz schneidet sie (gemeldet wird nur, was STEHEN BLEIBT).
-      const w1 = await b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE });
+      const w1 = await mitFrist(b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE }), 30000, `${st}: erste Messung`);
       await sleep(1600);
-      const w2 = await b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE });
+      const w2 = await mitFrist(b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE }), 30000, `${st}: zweite Messung`);
       if (w1.fehler || w2.fehler) { fehler.push(`${st}: ${w1.fehler ?? w2.fehler}`); }
       else {
         const w = mega ? schneiden(w1, w2) : vereinenRoh(w1, w2);

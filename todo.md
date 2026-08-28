@@ -1165,6 +1165,37 @@ Cheese-Mono-Redesign, Summary skin-aware). Offen:
 Trailer-Tempo nach Review. ⚠️ Bei Mechanik-Änderungen **beide Seiten mitziehen** (Inhalt ist aus
 den Regeln abgeleitet).
 
+## Offen aus dem 2026-08-28 (Wolf)
+
+- [ ] **P1 · Aufloesung: die Sieger-Karte darf keine Fluss-Hoehe hinzufuegen.**
+      Wolf: „die motions sind sehr unruhig aktuell, springt viel und aendert
+      die groesse ... vorallem bei 10 v 10 und mucho".
+      Ursache steht im Kopf von `scripts/einpassen-unruhe.mjs` und ist
+      gemessen: bei +3,5 s waechst ein Block um ACHT Pixel (Akt 3), das kippt
+      die Folie ueber die Sperre, und weil `--qq-fit` nur Schrift skaliert und
+      keine Abstaende, kostet dieser eine Schritt 14 bis 20 Prozent
+      Schriftgroesse - die Frage faellt von 72 auf 60 px, mitten im Lesen.
+      Wolfs Entscheidung dazu: „zwei Groessen, aber nur ein Wechsel", also der
+      Wechsel gehoert in den Schnitt der Aufloesung, nicht dahinter.
+      ⚠️ Sechs Stellschrauben sind bereits gemessen und ausgeschlossen, sie
+      stehen einzeln im Kopf des Werkzeugs. Nicht noch einmal probieren.
+      ⚠️ Wer hier etwas aendert, misst DREI Laeufe. Ein einzelner gruener Lauf
+      beweist nichts.
+
+- [ ] **P1 · Lobby: Avatare werden bei Wolf winzig gezeichnet.**
+      Etwa 15 Prozent der Kachel statt 90. Kein Rueckfall - die Motive
+      stimmen (rot in der gruenen Kachel ist die Erdbeere, gelb in der lila
+      der Stern), nur die Groesse nicht.
+      ⚠️ Hier NICHT reproduzierbar: am aktuellen Stand rendert die Lobby
+      korrekt (`node scripts/beamer-view.mjs lobby --bots=4 --frisch`), die
+      48 PNG plus 48 in `klein/` sind vollstaendig, und zwischen Wolfs Stand
+      `6d19b2f` und HEAD hat sich an der Avatar-Anzeige nichts geaendert.
+      Wolfs Klon stand auf einem abgekoppelten HEAD, zehn Commits zurueck -
+      naechster Schritt ist deshalb: Klon geradeziehen, hart neu laden, und
+      wenn es bleibt, `width`/`height` des `<img>` in der Kachel ablesen.
+
+---
+
 ## Langzeit, nach dem Buehnen-Durchgang (Wolf 2026-08-26)
 
 Explizit als „LONGTIME TO DOS fuer spaeter" angesagt, also nicht in diesem

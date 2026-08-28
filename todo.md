@@ -1251,6 +1251,14 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       Bild, der alte tat es nicht.
 
 - [ ] **Standarddesign und die neuen Fraktions-Avatare zum Default machen.**
+      ⚠️ TEIL 1 IST DRIN, BRAUCHT ABER EINEN COOLIFY-REDEPLOY (2026-08-28):
+      der Server hatte zwei Vorgaben fuer dasselbe. Raumanlage setzt 'buehne',
+      die drei State-Builder fielen auf 'cozy' zurueck. Ein gespeicherter Raum
+      ohne `themeId` hat deshalb Pink/Navy gesendet - reproduziert, dann
+      behoben, dann gegengemessen. Jetzt faellt alles auf
+      QQ_DEFAULT_THEME_ID zurueck. Bis zum Redeploy laeuft am Server die alte
+      Fassung.
+      Offen bleibt der Rest:
       Wolf 2026-08-28: „das design, dass du gerade einbaust soll default
       werden, so wie auch die neuen fraktion team avatare".
       Teilweise schon da: `themeIdForState` liefert ohne gesetztes Design

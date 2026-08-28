@@ -161,6 +161,7 @@ import {
 import { COZY_LIBRARY_SEED } from './data/qqCozyLibrarySeed';
 import { QQ_ORDER_LIBRARY_SEED } from './data/qqOrderQuestionsSeed';
 import { COZY_GAME_V1_SEED } from '../../shared/cozyGameTypes';
+import { QQ_DEFAULT_THEME_ID } from '../../shared/qqThemeIds';
 import {
   runTriviaDbImport, getImportStatus, recategorizeTriviaDbItems,
   getTranslationStats, testDeeplConnection,
@@ -9747,7 +9748,7 @@ app.get('/api/qq/summary/:roomCode', async (req, res) => {
       eurovisionMode: !!(hit as any).eurovisionMode,
       // 2026-06-25 (Wolf): Bühnen-Skin durchreichen damit Summary in Mono/etc.
       // dieselbe Lackierung zeigt wie der Beamer (applyThemeVars im Frontend).
-      themeId: (hit as any).themeId ?? 'cozy',
+      themeId: (hit as any).themeId ?? QQ_DEFAULT_THEME_ID,
     });
   } catch (err) {
     console.error('QQ summary error:', err);
@@ -9791,7 +9792,7 @@ app.get('/api/qq/summary/by-id/:gameId', async (req, res) => {
       eurovisionMode: !!(hit as any).eurovisionMode,
       // 2026-06-25 (Wolf): Bühnen-Skin durchreichen damit Summary in Mono/etc.
       // dieselbe Lackierung zeigt wie der Beamer (applyThemeVars im Frontend).
-      themeId: (hit as any).themeId ?? 'cozy',
+      themeId: (hit as any).themeId ?? QQ_DEFAULT_THEME_ID,
     });
   } catch (err) {
     console.error('QQ summary by-id error:', err);

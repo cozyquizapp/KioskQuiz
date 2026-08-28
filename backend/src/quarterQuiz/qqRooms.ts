@@ -29,6 +29,7 @@ import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
 import { qqParseEstimate } from '../../../shared/qqSwarm';
 import { recordQQQuestionUsage } from '../db/schemas';
 import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep, qqTowerAwardCount } from '../../../shared/qqFinalReveal';
+import { QQ_DEFAULT_THEME_ID } from '../../../shared/qqThemeIds';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -4855,7 +4856,14 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     formatSelected:   room.formatSelected,
     rulesSlideEndsAt: room.rulesSlideEndsAt ?? null,
     avatarSetId:      room.avatarSetId ?? 'all',
-    themeId:          room.themeId ?? 'cozy',
+    // 2026-08-28: hier stand `?? 'cozy'`, waehrend die Raum-Vorgabe eine
+    // Bildschirmseite weiter oben 'buehne' setzt. Zwei Vorgaben fuer denselben
+    // Wert, und die falsche gewinnt genau dort, wo es weh tut: bei einem
+    // gespeicherten Raum, dessen Datei das Feld noch nicht hat. Reproduziert am
+    // 28.08. - Datei ohne `themeId`, Server neu gestartet, Broadcast sagte
+    // „cozy", der Beamer haette Pink/Navy gezeigt.
+    // Jetzt EINE Quelle: QQ_DEFAULT_THEME_ID aus shared/qqThemeIds.ts.
+    themeId:          room.themeId ?? QQ_DEFAULT_THEME_ID,
     // Lazy-Init fuer Bestands-Rooms: wenn Set 'all' aber noch keine Emojis
     // gewuerfelt sind (z.B. weil Room vor 2026-05-04 erstellt), jetzt einmal
     // wuerfeln und festhalten. Ohne diesen Schritt wuerden alle Slots auf

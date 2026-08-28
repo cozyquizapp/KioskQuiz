@@ -71,7 +71,7 @@ import {
   QQConnectionsPayload, QQ_COMEBACK_ENABLED,
 } from '../../../shared/quarterQuizTypes';
 import { normalizeText, similarityScore } from '../../../shared/textNormalization';
-import { coerceQQThemeId } from '../../../shared/qqThemeIds';
+import { coerceQQThemeId, QQ_DEFAULT_THEME_ID } from '../../../shared/qqThemeIds';
 import { pickDummyAction, DummyActionChoice, DummyActionKind } from './qqDummyAI';
 import {
   bluffWriteTimeout, bluffVoteTimeout,
@@ -464,7 +464,7 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     venue: (room as any).venue ?? '',   // 2026-07-08 (Wolf): Location/Event-Tag
 
     avatarSetId: room.avatarSetId ?? 'all',   // 2026-05-04: Phase 2 - Set fuer Summary-Render
-    themeId: room.themeId ?? 'cozy',           // 2026-06-24: Buehnen-Skin
+    themeId: room.themeId ?? QQ_DEFAULT_THEME_ID, // 2026-08-28: eine Vorgabe, siehe qqRooms.ts
     // 2026-05-07: Server-gewuerfelte Slot-Emojis fuer 'all'-Set (sonst zeigt
     // die Summary die falschen Slot-Defaults bei reload).
     avatarSetEmojis: (room as any).avatarSetEmojis ?? null,

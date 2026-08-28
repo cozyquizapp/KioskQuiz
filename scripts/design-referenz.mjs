@@ -89,6 +89,34 @@ const nurBibel = args.includes('--bibel');
 const stationen = args.filter(a => !a.startsWith('--'));
 const ABEND = stationen.length ? stationen : GEMEINSAM;
 
+/** Zwei Messungen derselben Folie schneiden: nur was in BEIDEN steht.
+ *  Fuer die geprueefte Seite - ein Wort, das nur einen Wimpernschlag lang da
+ *  war, ist kein Wort der Sprache, sondern ein Zwischenbild. */
+function schneiden(a, b) {
+  const raus = {};
+  for (const [topf] of TOEPFE) {
+    const zweit = new Set((b[topf] ?? []).map(e => e.wort));
+    raus[topf] = (a[topf] ?? []).filter(e => zweit.has(e.wort));
+  }
+  return raus;
+}
+
+/** Zwei Messungen vereinigen. Fuer die REFERENZ - sie soll alles kennen, was
+ *  CozyQuiz irgendwann zeigt, auch mitten in einer Bewegung. */
+function vereinenRoh(a, b) {
+  const raus = {};
+  for (const [topf] of TOEPFE) {
+    const m = new Map();
+    for (const e of [...(a[topf] ?? []), ...(b[topf] ?? [])]) {
+      const bis = m.get(e.wort) ?? { wort: e.wort, n: 0, bsp: e.bsp };
+      bis.n += e.n; if (!bis.bsp) bis.bsp = e.bsp;
+      m.set(e.wort, bis);
+    }
+    raus[topf] = Array.from(m.values());
+  }
+  return raus;
+}
+
 /** Einen ganzen Abend in einem Format messen. Frischer Raum pro Station:
  *  der Zustand haengt am WEG dorthin, nicht nur an der Station. */
 async function abendMessen(mega) {
@@ -105,9 +133,26 @@ async function abendMessen(mega) {
     try {
       await b.zurStation(st);
       await sleep((b.stationen[st]?.ruhe ?? 2500) + 800);
-      const w = await b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE });
-      if (w.fehler) { fehler.push(`${st}: ${w.fehler}`); }
+      // ⚠️ ZWEIMAL messen, mit Abstand.
+      //
+      // 2026-08-28, erster voller Lauf: 19 fremde Woerter, achtzehn davon auf
+      // der Danke-Folie. Beim Nachmessen derselben Station: null. Die Folie
+      // hat die laengste Auftrittsbewegung des Abends und einen variablen Weg
+      // dorthin (der Harness schaltet weiter, BIS die Phase steht, und wie oft
+      // das noetig ist, haengt an den gesetzten Tipps). Beide Seiten wurden
+      // also an verschiedenen Punkten derselben Choreographie erwischt, und
+      // was CozyQuiz gerade nicht zeigte, galt als „kennt CozyQuiz nicht".
+      //
+      // Der Ausweg kostet fast nichts: der teure Teil ist der Raumaufbau, nicht
+      // das Ablesen. Zwei Messungen im selben Raum, 1,6 s auseinander.
+      // CozyQuiz vereinigt beide (die Referenz soll VOLLSTAENDIG sein),
+      // CrowdQuiz schneidet sie (gemeldet wird nur, was STEHEN BLEIBT).
+      const w1 = await b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE });
+      await sleep(1600);
+      const w2 = await b.seite.evaluate(WORTSCHATZ, { minText: MIN_TEXT, minFlaeche: MIN_FLAECHE });
+      if (w1.fehler || w2.fehler) { fehler.push(`${st}: ${w1.fehler ?? w2.fehler}`); }
       else {
+        const w = mega ? schneiden(w1, w2) : vereinenRoh(w1, w2);
         vereinen(gesamt, w);
         for (const [topf] of TOEPFE) for (const e of w[topf] ?? []) gesamt[topf].get(e.wort)?.wo.add(st);
       }

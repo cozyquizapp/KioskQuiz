@@ -45,6 +45,30 @@ const QQ_THEME_ID_ALIAS: Record<string, QQThemeId> = {
 
 export const QQ_DEFAULT_THEME_ID: QQThemeId = 'buehne';
 
+/**
+ * Welcher Avatar-Satz gilt, wenn der Raum keinen gesetzt hat?
+ *
+ * 2026-08-28. Dieselbe Falle wie beim Design, eine Zeile weiter: die
+ * Raumanlage setzt 'cozyquiz' (qqRooms.ts), die beiden Broadcast-Bauer fielen
+ * auf 'all' zurueck - den gewuerfelten Emoji-Mix. Ein gespeicherter Raum ohne
+ * das Feld hat also einen Satz gezeigt, den niemand gewaehlt hat.
+ *
+ * ⚠️ Und die Vorgabe haengt am FORMAT, nicht nur am Raum. Wolf 2026-08-28:
+ * „bei den emojis sollst du aber keine cozyquiz nehmen, crowdquiz hat
+ * spezifische emojis neu fuer die fraktionen die auch fest sind in namen und
+ * farbe". Genau so ist es gebaut: die acht CrowdQuiz-Wappen
+ * (frontend/src/cozyArenaCrests.ts) sind an die acht Farb-Slots gebunden,
+ * Bauchgefuehl ist orange, Risiko ist rot, das ist keine freie Kombination.
+ * Der CozyQuiz-Satz dagegen ist frei kombinierbar. Wer beide Formate auf
+ * denselben Satz stellt, nimmt CrowdQuiz seine Fraktionen weg.
+ *
+ * Dieselbe Zuordnung trifft der Wizard bei der Formatwahl (QQSetupFlow); hier
+ * steht sie fuer den Fall, dass gar nichts gesetzt ist.
+ */
+export function qqDefaultAvatarSetId(grossformat: boolean | undefined): string {
+  return grossformat ? 'cozyArena' : 'cozyquiz';
+}
+
 /** Server-Gate: alte IDs werden umgeleitet, unbekannte fallen auf den Default. */
 export function coerceQQThemeId(id: unknown): QQThemeId {
   const s = String(id ?? '');

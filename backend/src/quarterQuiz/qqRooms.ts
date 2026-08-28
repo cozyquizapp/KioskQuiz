@@ -29,7 +29,7 @@ import { qqCrowdTopBoard } from '../../../shared/qqCrowdTop';
 import { qqParseEstimate } from '../../../shared/qqSwarm';
 import { recordQQQuestionUsage } from '../db/schemas';
 import { qqFinalMaxStep as qqSharedFinalMaxStep, qqDecodeFinalStep as qqSharedDecodeFinalStep, qqTowerAwardCount } from '../../../shared/qqFinalReveal';
-import { QQ_DEFAULT_THEME_ID } from '../../../shared/qqThemeIds';
+import { QQ_DEFAULT_THEME_ID, qqDefaultAvatarSetId } from '../../../shared/qqThemeIds';
 
 // ── Error ─────────────────────────────────────────────────────────────────────
 export class QQError extends Error {
@@ -4855,7 +4855,13 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     lobbyOpen:        room.lobbyOpen === true,
     formatSelected:   room.formatSelected,
     rulesSlideEndsAt: room.rulesSlideEndsAt ?? null,
-    avatarSetId:      room.avatarSetId ?? 'all',
+    // 2026-08-28: hier stand `?? 'all'` - der gewuerfelte Emoji-Mix -, waehrend
+    // die Raumanlage 'cozyquiz' setzt. Dieselbe Doppel-Vorgabe wie beim Design
+    // eine Zeile darueber. Die Vorgabe haengt am FORMAT: CrowdQuiz hat eigene
+    // Fraktions-Wappen, die an Name und Farbe gebunden sind (Wolf: „crowdquiz
+    // hat spezifische emojis neu fuer die fraktionen die auch fest sind in
+    // namen und farbe").
+    avatarSetId:      room.avatarSetId ?? qqDefaultAvatarSetId(room.largeGroupMode),
     // 2026-08-28: hier stand `?? 'cozy'`, waehrend die Raum-Vorgabe eine
     // Bildschirmseite weiter oben 'buehne' setzt. Zwei Vorgaben fuer denselben
     // Wert, und die falsche gewinnt genau dort, wo es weh tut: bei einem
@@ -4869,7 +4875,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     // wuerfeln und festhalten. Ohne diesen Schritt wuerden alle Slots auf
     // den Cozy-Tier-Default zurueckfallen.
     avatarSetEmojis:  (() => {
-      if ((room.avatarSetId ?? 'all') !== 'all') return room.avatarSetEmojis;
+      if ((room.avatarSetId ?? qqDefaultAvatarSetId(room.largeGroupMode)) !== 'all') return room.avatarSetEmojis;
       if (room.avatarSetEmojis && room.avatarSetEmojis.length === 8) return room.avatarSetEmojis;
       room.avatarSetEmojis = getRandomDummyEmojis(8);
       return room.avatarSetEmojis;

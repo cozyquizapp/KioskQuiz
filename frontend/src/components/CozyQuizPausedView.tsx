@@ -1398,9 +1398,15 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       }}>?</div>
     );
   };
+  // 2026-08-27 (Wolf: „ja mach beide in teamfarbe"). Die Farbe der Teamzeile
+  // wird jetzt auch ausserhalb gebraucht, fuer das Wertband darunter. Sie muss
+  // dieselbe sein, sonst stehen zwei Toene fuer dasselbe Team - also EINE
+  // Stelle, die sie bestimmt, und `teamLine` benutzt sie ebenfalls.
+  const teamFarbe = (name: string, color?: string) =>
+    color ?? findTeamMeta(name).color ?? farbeAusName(name);
   const teamLine = (name: string, color?: string, avatarId?: string | null) => {
     const meta = findTeamMeta(name);
-    const c = color ?? meta.color ?? farbeAusName(name);
+    const c = teamFarbe(name, color);
     const av = avatarId ?? meta.avatarId;
     const mono = isQuietMotion(); // Mono: editorial — kein Glow, schwarzer Name
     // 2026-05-07: Avatar 68→100, Name 42→64 — Lobby-Slide-Texte groesser.
@@ -1533,8 +1539,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
             {teamLine(leader.name, leader.color, leader.avatarId)}
             {isQuietMotion()
               ? <div style={{ marginTop: 0 }}>{statHero(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`)}</div>
-              : statWertBand('#F97316', <>
-                  {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', '#F97316')}
+              : statWertBand(teamFarbe(leader.name, leader.color), <>
+                  {statPill(`+${gap}`, de ? 'Felder Vorsprung' : 'cells lead', teamFarbe(leader.name, leader.color))}
                   <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(17px, 1.9cqw, 24px)', fontWeight: 700 }}>
                     {de ? `vor ${runnerUp.name}` : `ahead of ${runnerUp.name}`}
                   </span>
@@ -1557,8 +1563,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
           {teamLine(funStats.jokerKing.teamName)}
           {isQuietMotion()
             ? <div style={{ marginTop: 0 }}>{statHero(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned')}</div>
-            : statWertBand('#A855F7', <>
-                {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', '#A855F7')}
+            : statWertBand(teamFarbe(funStats.jokerKing.teamName), <>
+                {statPill(funStats.jokerKing.total, de ? 'Joker gesichert' : 'jokers earned', teamFarbe(funStats.jokerKing.teamName))}
               </>)}
         </>)}
       </div>
@@ -1582,8 +1588,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   {teamLine(funStats.comebackKing.teamName)}
           {isQuietMotion()
             ? <div style={{ marginTop: 0 }}>{statHero(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', de ? 'vom Letzten zum Gewinner' : 'from last place to winner')}</div>
-            : statWertBand('#38BDF8', <>
-                {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', '#38BDF8')}
+            : statWertBand(teamFarbe(funStats.comebackKing.teamName), <>
+                {statPill(funStats.comebackKing.total, de ? 'Aufholsiege' : 'comeback wins', teamFarbe(funStats.comebackKing.teamName))}
                 <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
                   {de ? 'vom Letzten zum Gewinner' : 'from last place to winner'}
                 </span>
@@ -1610,8 +1616,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   {teamLine(funStats.stealMaster.teamName)}
           {isQuietMotion()
             ? <div style={{ marginTop: 0 }}>{statHero(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen')}</div>
-            : statWertBand(QQ_COLORS.red500, <>
-                {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', QQ_COLORS.red500)}
+            : statWertBand(teamFarbe(funStats.stealMaster.teamName), <>
+                {statPill(funStats.stealMaster.total, de ? 'Felder geklaut' : 'cells stolen', teamFarbe(funStats.stealMaster.teamName))}
               </>)}
         </>)}
       </div>
@@ -1635,8 +1641,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   {teamLine(funStats.underdog.teamName)}
           {isQuietMotion()
             ? <div style={{ marginTop: 0 }}>{statHero(funStats.underdog.wins, de ? 'Siege' : 'wins', de ? `${funStats.underdog.games} Spiele · frisch & gefährlich` : `${funStats.underdog.games} games · fresh & dangerous`)}</div>
-            : statWertBand('#22D3EE', <>
-                {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', '#22D3EE')}
+            : statWertBand(teamFarbe(funStats.underdog.teamName), <>
+                {statPill(funStats.underdog.wins, de ? 'Siege' : 'wins', teamFarbe(funStats.underdog.teamName))}
                 {statPill(funStats.underdog.games, de ? 'Spiele' : 'games', QQ_COLORS.slate500)}
                 <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(14px, 1.6cqw, 18px)', alignSelf: 'center' }}>
                   {de ? 'frisch & gefährlich' : 'fresh & dangerous'}
@@ -1733,8 +1739,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   {teamLine(funStats.speedDemon.teamName)}
           {isQuietMotion()
             ? <div style={{ marginTop: 0 }}>{statHero(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`)}</div>
-            : statWertBand('#FACC15', <>
-                {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', '#FACC15')}
+            : statWertBand(teamFarbe(funStats.speedDemon.teamName), <>
+                {statPill(funStats.speedDemon.avgRank.toFixed(2), de ? 'Ø Rang' : 'avg rank', teamFarbe(funStats.speedDemon.teamName))}
                 <span style={{ color: 'var(--qq-text-muted)', fontSize: 'clamp(15px, 1.7cqw, 20px)' }}>
                   {de ? `bei ${funStats.speedDemon.samples} Treffern` : `over ${funStats.speedDemon.samples} hits`}
                 </span>
@@ -1762,8 +1768,8 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   {teamLine(funStats.potatoBoss.teamName)}
           {isQuietMotion()
             ? <div style={{ marginTop: 0 }}>{statHero(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits')}</div>
-            : statWertBand(btColor, <>
-                {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', btColor)}
+            : statWertBand(teamFarbe(funStats.potatoBoss.teamName), <>
+                {statPill(funStats.potatoBoss.total, de ? 'Heiße-Kartoffel-Treffer' : 'Hot Potato hits', teamFarbe(funStats.potatoBoss.teamName))}
               </>)}
         </>)}
       </div>

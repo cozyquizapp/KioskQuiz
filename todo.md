@@ -15,44 +15,22 @@
 
 ---
 
-## 🌐 LANDING cozywolf.de — im neuen Design, plus zweite Ebene (2026-08-26)
+## ✅ LANDING cozywolf.de — FERTIG (Wolf 2026-08-28)
 
-> Eigenes Repo: `cozyquizapp/cozywolf-landing`, eigener Deploy (Vercel),
-> eigener Stack. Einstieg: `COZYWOLF_LANDING.md`.
-> Wolfs Rahmen: „es geht nur darum, die landing so anzupassen, dass sie
-> funktioniert und gut aussieht (im neuen design) ich will onilo das nicht
-> verkaufen, nur zeigen was ich erschaffen habe (mit pitch) website ist eher
-> ein google nebenprodukt, falls sie nachschauen". Also KEINE Umpositionierung
-> auf eine Bewerbungsseite - sie bleibt eine Kundenseite.
+Wolf: „landing kannst du abhacken ist fertig". Der Umbau lief parallel in
+einem eigenen Fenster, eigenes Repo (`cozyquizapp/cozywolf-landing`), eigener
+Deploy.
 
-> **Uebergabe fuer ein neues Fenster: `docs/UEBERGABE_LANDING.md`.** Sie traegt
-> allein - Auftrag, Stack, alle Designwerte, was absichtlich anders bleibt, das
-> Feedback samt Gegenrede, und die Reihenfolge.
+Was hier stand — Bestandsaufnahme der sieben Routen, „Das Spiel hinter dem
+Abend", die vier Ungereimtheiten aus dem Feedback und meine Gegenrede dazu —
+ist damit erledigt oder ueberholt. Die Einzelheiten stehen in
+`docs/UEBERGABE_LANDING.md` und in der Historie des Landing-Repos, nicht hier:
+das ist ein anderes Repo, und eine Kopie davon waere nach einer Sitzung falsch.
 
-- [ ] **Bestandsaufnahme zuerst.** Repo klonen, alle sieben Routen aufnehmen.
-      Erst danach entscheiden, ob Anstrich oder Umbau. ⚠️ Nicht blind
-      umlackieren: an der Seite haengen SSG-Prerender, Meta/JSON-LD, Sitemap,
-      Vercel-Rewrites je Route, GoatCounter-Conversion-Events und Formspree.
-      Und die Marke ist dort ABSICHTLICH anders (Marketing-Pink #FA4BA3 gegen
-      App-Pink #EC4899, per Logo-Pixelmessung). Was angeglichen wird und was
-      verschieden bleibt, ist eine Entscheidung, keine Uebertragung.
-- [ ] **„Das Spiel hinter dem Abend"** — der stärkste Punkt aus dem Feedback.
-      Drei Bilder nebeneinander: Beamer, Team-Handy, Moderator. Darunter „Ein
-      System, drei Perspektiven" und zwei Saetze. Kostet wenig, verbiegt nichts
-      am Kundenversprechen, und liefert genau die zweite Ebene.
-      Die Bilder fallen beim Durchlauf sowieso an.
-- [ ] **Vier belegbare Ungereimtheiten** (aus dem Feedback, alle nachpruefbar):
-      „Gründer & Quizmaster" steht zweimal; im FAQ wechselt die Anrede zwischen
-      „ihr/eure" und „du/deine"; „Für Gruppen von 10 bis 100 Personen" gegen
-      „ab sechs Personen" im Geburtstagstext; „Gratis für Test-Teams" steht
-      gleichwertig neben dem Haupt-CTA und nimmt dem Hero Wertigkeit.
-- [ ] **Offen, meine Gegenrede zum Feedback:** „die Seite spricht Firmen,
-      Geburtstage und Bars gleichzeitig an" gilt fuer die STARTSEITE, nicht
-      fuer die Seite - es gibt `/firmen`, `/locations`, `/feiern` als eigene
-      Routen. Die Trennung existiert also schon. Und „Beamer und Sound bringe
-      ich mit" ist fuer einen Barbetreiber ein Kaufgrund, kein Makel. Beides
-      vor dem Umbau klaeren, sonst wird ein Startseiten-Problem als
-      Positionierungsproblem behandelt.
+⚠️ Was bleibt, falls die Seite wieder angefasst wird: die Marke ist dort
+ABSICHTLICH anders (Marketing-Pink #FA4BA3 gegen App-Pink #EC4899, per
+Logo-Pixelmessung). Das ist kein Fehler und keine Uebertragung, die noch
+aussteht.
 
 ---
 
@@ -214,19 +192,12 @@
       wird weiter an der Mitte geprueft (dort waere ein durchgehender Strich am
       auffaelligsten), die Bruecke irgendwo in der Luecke.
 
-- [ ] **Zwei weitere Hebel, beide sind Wolfs eigene Entscheidungen.**
-      Deshalb nicht angefasst, sondern zur Wahl gestellt:
-      1. **Beschriftung unter den Gruppen.** Im Runden-Intro laeuft der Baum als
-         `bare` und hat bewusst keine Phasen-Labels (2026-06-29, Wolfs Idee:
-         „nackter Baum ... keine Phasen-Labels, nur Symbole + Linie + Wolf").
-         Ein kleines „1 2 3 4" unter den Gruppen wuerde die Frage direkt
-         beantworten statt nur die Gruppen sichtbar zu machen. Platz ist da.
-      2. **Farbe je Runde.** `getRoundColor(p, totalPhases)` gibt es noch, aber
-         auf der Buehne ueberschreibt `skinAccentHex` sie - alle vier Runden
-         tragen denselben Akzent (2026-05-09, Wolf: „tree noch bunt").
-         Vier Toene derselben Familie waeren ein zweiter Kanal neben dem
-         Abstand.
-      Erst am Livebild ansehen, ob die Gruppierung allein schon reicht.
+- [x] ~~**Zwei weitere Hebel: Beschriftung „1 2 3 4" unter den Gruppen, Farbe
+      je Runde.**~~ **Vom Tisch, Wolf 2026-08-28: „baum ist fertig".**
+      Die Gruppierung allein reicht also. Beide Hebel waeren Umkehrungen
+      frueherer Entscheidungen von Wolf gewesen (2026-06-29 „nackter Baum ...
+      keine Phasen-Labels" und 2026-05-09 „tree noch bunt"), deshalb standen
+      sie hier zur Wahl statt gebaut zu werden. Sie bleiben gueltig.
 
 ---
 
@@ -331,12 +302,9 @@
          Container exakt aus) und liess alles auf den Mindestfaktor fallen. Die
          Luft sitzt an der Sperre.
 
-- [ ] **Zwei Reste, beide klein und beide notiert statt still hingenommen.**
-      1. In der Aufloesung steht die Gewinnerkarte bei Optionen um 21 Zeichen
-         **37 px** ueber der Kante. Nicht abgeschnitten, aber auf einem Beamer
-         mit Ueberscan knapp. Das ist keine Einpass-Frage, sondern der eigene
-         Abstand der Karte. Wenn es dir am Livebild auffaellt, sag Bescheid.
-      2. ~~`qRevealFontSize` kann raus~~ - **ausprobiert und wieder verworfen
+**Ein Beleg bleibt hier stehen, weil er sonst zweimal ausprobiert wird:**
+
+      ~~`qRevealFontSize` kann raus~~ - **ausprobiert und wieder verworfen
          (2026-08-27).** Meine Begruendung („der Einpasser macht dieselbe Arbeit
          besser") klang schluessig und war falsch. Gemessen mit
          `node scripts/gewinnerkarte-unterkante.mjs`, fuenf Fragenlaengen:
@@ -395,47 +363,12 @@ gut zum ankommen etc, das einlogen nach begruessung etc?"
       (`!== false`): es verhaelt sich exakt wie vorher, der QR kommt sofort.
       Kein kaputter Zwischenzustand, nur kein neuer Schritt.
 
-- [ ] **Die Ankommen-Folien selbst.** Wolf: „die slideshow ist noch etwas
-      chaotisch, also die verschiedenen slides passen nicht so gut zu einander
-      und vlt nicht zum neuen design? ausserdem ist die frage wie sinnvoll sie
-      beim ersten oeffentlichen durchlauf sind (keine daten)".
-
-      Gemessen mit `node scripts/ankommen-folien.mjs` (frischer Raum, 8 Teams,
-      keine Historie) → `.shots/ANKOMMEN-FOLIEN.png`:
-
-      ```
-      Karten mit Inhalt        2   „Wie funktioniert's?" und „Aktueller Stand"
-      verschiedene Bilder      6   weil die Sprache DE/EN unabhaengig kippt
-      Umlauf                  48 s
-      Kartentakt               8 s (CozyQuizPausedView.tsx:1345)
-      ```
-
-      Damit sind alle drei Beobachtungen belegt, eine davon anders als vermutet:
-
-      1. **„Chaotisch" ist kein Zuviel, sondern ein Zuwenig.** Es gibt nur zwei
-         Karten. Was nach Unruhe aussieht, ist dieselbe Karte in zwei Sprachen,
-         und die Ueberschrift („Gleich geht's los" / „Starting soon") kippt nicht
-         im selben Takt wie die Karte darunter. Sechs Bilder, zwei Inhalte.
-      2. **„Passt nicht zum neuen Design" stimmt und ist datierbar.** Sternenfeld,
-         Wortmarke und Ueberschrift sind 2a. Die Karten darunter sind es nicht:
-         graue `rgba`-Raender statt `qqKachelFlaeche`, Emoji als Zeichen
-         (📖 📱 🎯 🃏 🎲 📊), eigene Panel-Optik. Der Bruch laeuft quer durchs Bild.
-      3. **„Keine Daten" ist der schaerfste Punkt.** Die zweite von zwei Karten
-         ist „Aktueller Stand" und zeigt vor der ersten Frage acht Teams mit
-         0 · 0. Am ersten oeffentlichen Abend ist also die Haelfte der Schleife
-         eine Tabelle aus Nullen.
-
-      ⚠️ Nichts davon ist gebaut. Erst entscheiden, was die Ankommen-Ansicht
-      ueberhaupt zeigen soll, dann bauen. Die Teamliste, die Wolf sich als
-      eigene Folie gewuenscht hat („bereits eingeloggte teams oder sowas"),
-      steckt uebrigens schon in „Aktueller Stand" drin, nur als Punktetabelle
-      etikettiert.
-
-- [ ] **Beim Bauen beachten: eine Folie nur zeigen, wenn sie heute Inhalt hat.**
-      Die Bestenliste meldet „46 Spiele" und Stammteams mit elf Siegen. In der
-      Stammkneipe grossartig, bei einem Firmenevent, wo niemand je gespielt
-      hat, leer oder verwirrend. Sonst rotiert das Karussell an manchen Abenden
-      durch drei leere Bilder, und das faellt mehr auf als eine kurze Schleife.
+- [x] ~~**Die Ankommen-Folien selbst** und die Regel „eine Folie nur zeigen,
+      wenn sie heute Inhalt hat".~~ **Erledigt am 2026-08-27**, Wolf am
+      2026-08-28: „ankommen folien haben wir gestern gexit kann raus".
+      Was daraus geworden ist, steht in der Git-Historie: einheitliche Kaesten
+      auf allen Statistik-Folien, gleiche Flaeche, gleiche Titelhoehe
+      (`scripts/pausenfolien-pruefen.mjs`, `scripts/pausenfolien-geometrie.mjs`).
 
 ---
 
@@ -957,7 +890,8 @@ Tier 2-4 = gestrichen, nicht bauen.
 - [ ] **Offen/inhaltlich: was heisst „bunt und mystisch" konkret?** Kommt über Farbe/Leuchten/Tiefe, NICHT über
       Icons oder Schrift (beides ist entschieden). Erst nach Wolfs Durchlauf angehen, wenn er sagt wo es flach wirkt.
 - [ ] *(spaeter/optional, nach Freeze)* Progress-Tree Diamanten/Gems statt Kreise (koppelt an Tier-1-Assets).
-- [ ] *(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.
+- [x] ~~*(spaeter/optional, nach Freeze)* Verzierte Rahmen für Windows + Frage-Karten.~~
+      Wolf 2026-08-28: „rahmen hat sich erledigt".
 
 **🐛 Winner-Value-Bugs in Guess-Reveals:** alle gefixt + verifiziert (`3f5e8338`, `f4d84116`,
 `8cf728b5`, `209a83d4`, `a238696c`). Offener Rest = nur ein Asset (unten): das „⚡"-Platzhalter-Icon.
@@ -1214,7 +1148,8 @@ Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
 - [ ] **CozyQuiz-Design zum Standard machen**, explizit umstellen. Heute
       entscheidet `themeIdForState` ueber den Avatarsatz, ob die Buehne
       laeuft. Das ist ein Nebeneffekt, keine Entscheidung.
-- [ ] **cozywolf.de-Landing an das neue Design anpassen.**
+- [x] **cozywolf.de-Landing an das neue Design anpassen.** Erledigt, Wolf am
+      2026-08-28: „landing kannst du abhacken ist fertig".
 
 ---
 

@@ -810,28 +810,12 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
 
 ## 🔴 WARTET AUF WOLF — Entscheidungen
 
-- [ ] **Namensfrage Grossformat** (Wolf 2026-08-23, ausdruecklich VERTAGT:
-      „wir brainstormen spaeter nochmal einen anderen namen, wenn die
-      implementation bei cozyquiz und die motion durch ist... falscher
-      zeitpunkt"). Also erst NACH Design und Motion aufmachen.
-      Stand des Gespraechs, damit man nicht bei null anfaengt:
-      * Wolfs Frage war, ob „cozy" ueberhaupt traegt. Antwort aus dem Produkt:
-        ja. Das Avatarset hat sechs Kategorien, eine heisst `cozy-home`
-        (Teekanne, Strickstrumpf, Nachttischlampe, Sessel, Kissen, Kerze).
-        Keine heisst Buero, Sport oder Wissen. Dazu: warme Tinte statt Weiss
-        als Regel, und im Hauptspiel scheidet niemand aus (Ausscheiden gibt es
-        nur in der Heissen Kartoffel und im abgeschalteten Imposter).
-      * Was das Gefuehl macht, in dieser Reihenfolge: ein Handy pro Team
-        (Leute reden miteinander statt nebeneinander), niemand fliegt raus,
-        Wolfs Moderation, und erst dann der Beamer. Der Beamer ist der
-        schwaechste der vier fuers Gefuehl im Raum, aber der einzige, den ein
-        Kunde vor der Buchung sieht.
-      * Der offene Punkt ist NUR das Grossformat: „CozyQuiz Arena" verlangt
-        von einem Wort zwei Bedeutungen (Kolosseum, Fraktionen, 160 Leute).
-        Vorschlag zum Weiterdenken war, Cozy beim kleinen Format zu lassen und
-        das grosse unter der Dachmarke zu fuehren, also CozyWolf Arena.
-      * Kein eigenes Logo je Format: Cozy und Arena sind Groessen desselben
-        Produkts (32 gegen 160 Spielende), keine zwei Produkte.
+- ✅ **Namensfrage Grossformat ENTSCHIEDEN (Wolf 2026-08-28):**
+      „ok cozyarena heisst jetzt CrowdQuiz".
+      Damit ist die Ueberlegung vom 2026-08-23 erledigt. Sie lief darauf
+      hinaus, dass „CozyQuiz Arena" von einem Wort zwei Bedeutungen verlangt -
+      gemuetlich und Kolosseum mit 160 Leuten. Der Umbau steht als eigener
+      Punkt weiter unten unter „Langzeit".
 
 - ✅ **Backend-Refactor `qqDistanceScore` GEBAUT (2026-07-19):** `qqMegaEventScore`-Distanzzweige
       (SCHAETZCHEN + Schwarm) auf einen `scoreDistanceCat`-Helfer gezogen (Drift-Killer). Selfcheck
@@ -1130,6 +1114,53 @@ den Regeln abgeleitet).
 
 - [x] **P1 · Lobby-Avatare winzig.** War der abgekoppelte Klon, nicht das Repo.
       Wolf am 2026-08-28: „alte avatare sind wieder da".
+
+---
+
+## 🏟️ CROWDQUIZ: neuer Name, neues Standarddesign (Wolf 2026-08-28)
+
+Drei Zurufe, die zusammengehoeren:
+> „ok cozyarena heisst jetzt CrowdQuiz"
+> „cozyarena hat ja andere frage formate, soll aber im standard design so
+>  aussehen wie das neue standarddesign von cozyquiz creme und dunkelblau
+>  (glaube ich)"
+> „standard ersetzt dann schlicht in CrowdQuiz"
+
+⚠️ **Zur Farbe, gemessen statt uebernommen.** Creme stimmt: `#F5ECD8`
+(`qqTheme.ts`, `BUEHNE.accentHex`). Der Grund ist aber kein Dunkelblau,
+sondern ein tiefes Violett:
+`radial-gradient(circle at 50% -5%, #1A1526, #120E1C, #0B0912)`.
+Blau wirkt es dort, wo die KATEGORIE den Grund einfaerbt - Mu-Cho ist blau.
+Wer „dunkelblau" fest verdrahtet, faerbt alle fuenf Kategorien gleich und
+nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
+
+- [ ] **Umbenennen: CozyArena -> CrowdQuiz.** Gemessen am 2026-08-28:
+      * **23 sichtbare Stellen** (Beschriftungen, `alt`-Texte, Fliesstext).
+        Das ist die eigentliche Aufgabe und in einer Sitzung zu schaffen.
+      * **183 Vorkommen in 41 Dateien** insgesamt, der Rest sind Kommentare
+        und Bezeichner.
+      * ⚠️ **`avatarSetId: 'cozyArena'` ist PERSISTIERT.** Der Wert steht in
+        gespeicherten Raeumen (`backend/.qq-rooms/*.json`) und wird beim
+        Neustart zurueckgelesen. Wer die Id umbenennt, ohne zu migrieren,
+        bricht laufende und gespeicherte Raeume. Es gibt dafuer schon ein
+        Muster: die Id-Migration `'quirks' -> 'buehne'`.
+      * ⚠️ Ebenso die Asset-Pfade `frontend/public/avatars/cozyarena/`. Die
+        koennen bleiben, wo sie sind - ein Ordnername ist keine Beschriftung,
+        und ein Umbenennen kostet nur Risiko.
+      Merksatz: sichtbaren Text umbenennen, Bezeichner und Pfade nur dort, wo
+      es keine gespeicherten Daten beruehrt.
+
+- [ ] **CrowdQuiz im Standarddesign, und das Standarddesign ersetzt
+      „Schlicht".** Heute hat die Arena zwei Looks (`arenaBackgrounds`):
+      „🏛️ Kolosseum" mit voller Kulisse und „🌑 Schlicht" als ruhiger dunkler
+      Grund. Kuenftig ist der zweite Look das Buehnen-Design von CozyQuiz.
+      ⚠️ Die Frageformate bleiben anders (Fraktionen, Wappen, 10 von 10 auf
+      Fraktionen gebuendelt). Es geht um den LOOK, nicht um die Mechanik.
+      ⚠️ Beruehrt direkt den offenen Punkt „Kolosseum-Font Phase 2" weiter
+      oben: der wollte Siegerehrung und Standings dem Schlicht-Schalter folgen
+      lassen. Wenn Schlicht durch das Standarddesign ersetzt wird, ist das
+      dieselbe Arbeit unter neuem Vorzeichen - beide zusammen angehen, nicht
+      nacheinander.
 
 ---
 

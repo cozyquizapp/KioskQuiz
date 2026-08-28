@@ -183,21 +183,30 @@ export function QQSetupFlow(props: Props) {
     const cur = (s as any).avatarSetId as string | undefined;
     const nextSet = ar ? 'cozyArena' : 'cozyquiz';
     if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
-    // 2026-08-24: das Format bestimmt jetzt auch das Buehnen-Design mit. Grund:
-    // seit die Raum-Vorgabe 'buehne' ist (CozyQuiz-Design), wuerde CozyArena
-    // dieses Design erben - und das ist ein anderes Produkt mit eigenem Look.
-    // Vorher hat das die Ableitung ueber das Avatar-Set miterledigt, die es
-    // nicht mehr gibt. Wer danach im Wizard bewusst ein anderes Design waehlt,
-    // behaelt es; hier wird nur die Vorwahl zum Format gesetzt.
-    emit('qq:setTheme', { roomCode, themeId: ar ? 'cozy' : 'buehne' });
+    // 2026-08-28 (Wolf: „standard ersetzt dann schlicht in CrowdQuiz"):
+    // BEIDE Formate starten jetzt im CozyQuiz-Standarddesign.
+    //
+    // Hier stand bis eben `ar ? 'cozy' : 'buehne'`, und genau diese eine Zeile
+    // war der Grund, warum CrowdQuiz am Abend das Kolosseum zeigte: nicht der
+    // Look-Schalter, sondern das Format hat das Design gesetzt. Gemessen am
+    // 28.08. mit scripts/crowd-bestand.mjs — ohne diese Zeile lief CrowdQuiz
+    // im Harness bereits vollstaendig im Standarddesign, mit ihr im Kolosseum.
+    // Wer den Kolosseum-Look will, waehlt ihn im Schritt „Look" und bekommt
+    // damit auch das Cozy-Design, an dem er haengt (BG-Bilder und Cinzel
+    // entscheiden am selben Gate, siehe CozyQuizLargeGroupView).
+    emit('qq:setTheme', { roomCode, themeId: 'buehne' });
   };
 
   // ── Look-Vorschau-Bilder (Arena) ──
   const arenaLookBg = (s as any).arenaBackgrounds !== false;
+  // Kolosseum laeuft nur unter dem Cozy-Design: alle Arena-BG-Gates fragen
+  // `!isThemed()` (ArenaBeamerBg.qqArenaBeamerBgSlug, cozyQuizShared.qqArenaType).
+  // Der Schalter allein reicht also nicht, das Design gehoert dazu.
+  const kolosseumAn = (s.themeId ?? 'buehne') === 'cozy' && arenaLookBg;
 
   // ── Summary-Werte für die Bereit-Folie ──
   const langLabel = s.language === 'en' ? 'English' : s.language === 'both' ? 'DE + EN' : 'Deutsch';
-  const lookLabel = arena ? (arenaLookBg ? 'Mit Kolosseum' : 'Schlicht') : (QQ_THEMES[(s.themeId ?? 'buehne') as keyof typeof QQ_THEMES]?.label ?? 'CozyQuiz');
+  const lookLabel = arena ? (kolosseumAn ? 'Mit Kolosseum' : 'CozyQuiz Standard') : (QQ_THEMES[(s.themeId ?? 'buehne') as keyof typeof QQ_THEMES]?.label ?? 'CozyQuiz');
 
   // ── Start-Voraussetzungen ──
   const issues: string[] = [];
@@ -286,15 +295,26 @@ export function QQSetupFlow(props: Props) {
           <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             {arena ? (
               <>
-                <div style={{ textAlign: 'center', color: '#c7d2e8', fontWeight: 800, fontSize: 14 }}>Zwei Arena-Looks — volle Kolosseum-Kulisse oder ruhig & schlicht.</div>
+                {/* 2026-08-28 (Wolf: „standard ersetzt dann schlicht in
+                    CrowdQuiz"). Die zweite Kachel hiess „Schlicht" und war ein
+                    abgeruesteter Kolosseum-Look: dasselbe Cozy-Design, nur ohne
+                    die Bilder. Jetzt ist es das CozyQuiz-Standarddesign, also
+                    ein eigener Look und nicht der Verzicht auf einen.
+                    Die Wahl setzt deshalb BEIDES, Design und BG-Schalter: an
+                    beiden zusammen entscheidet sich, ob das Kolosseum laeuft. */}
+                <div style={{ textAlign: 'center', color: '#c7d2e8', fontWeight: 800, fontSize: 14 }}>Zwei CrowdQuiz-Looks — das CozyQuiz-Standarddesign oder die volle Kolosseum-Kulisse.</div>
                 <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', justifyContent: 'center' }}>
                   {[
+                    { on: false, label: 'CozyQuiz Standard', desc: 'Wie CozyQuiz: dunkler Grund, Creme-Schrift, Farbe nur wo sie etwas bedeutet.', img: '/arena-bg/pre-neutral.webp' },
                     { on: true, label: 'Mit Kolosseum', desc: 'Volle Kulisse: Hintergründe pro Screen, Wappen, Cinzel-Inschriften.', img: '/arena-bg/arena-main.webp' },
-                    { on: false, label: 'Schlicht', desc: 'Ruhiger dunkler Hintergrund ohne Kolosseum-Bilder.', img: '/arena-bg/pre-neutral.webp' },
                   ].map(o => {
-                    const active = arenaLookBg === o.on;
+                    const active = kolosseumAn === o.on;
                     return (
-                      <button key={o.label} onClick={() => { if (!active) emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: o.on }); }}
+                      <button key={o.label} onClick={() => {
+                        if (active) return;
+                        emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: o.on });
+                        emit('qq:setTheme', { roomCode, themeId: o.on ? 'cozy' : 'buehne' });
+                      }}
                         style={{
                           flex: '1 1 300px', maxWidth: 380, cursor: active ? 'default' : 'pointer', fontFamily: 'inherit', textAlign: 'left',
                           borderRadius: 18, overflow: 'hidden', padding: 0, position: 'relative',

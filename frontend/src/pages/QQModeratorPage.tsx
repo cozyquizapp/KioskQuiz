@@ -717,13 +717,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
     if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) {
       emitRef.current('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
     }
-    // 2026-08-24: das Format bestimmt jetzt auch das Buehnen-Design mit. Grund:
-    // seit die Raum-Vorgabe 'buehne' ist (CozyQuiz-Design), wuerde CozyArena
-    // dieses Design erben - und das ist ein anderes Produkt mit eigenem Look.
-    // Vorher hat das die Ableitung ueber das Avatar-Set miterledigt, die es
-    // nicht mehr gibt. Wer danach im Wizard bewusst ein anderes Design waehlt,
-    // behaelt es; hier wird nur die Vorwahl zum Format gesetzt.
-    emitRef.current('qq:setTheme', { roomCode, themeId: arena ? 'cozy' : 'buehne' });
+    // 2026-08-28 (Wolf: „standard ersetzt dann schlicht in CrowdQuiz"): beide
+    // Formate starten im CozyQuiz-Standarddesign. Gegenstueck zu derselben
+    // Stelle in QQSetupFlow.tsx — die Format-Vorwahl aus dem letzten Abend
+    // darf das Design nicht anders setzen als der Wizard.
+    emitRef.current('qq:setTheme', { roomCode, themeId: 'buehne' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [connected, joined, state?.phase]);
 
@@ -2473,7 +2471,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
                   {[
                     { k: 'Format', v: arena ? '🏟️ CrowdQuiz' : '🍺 CozyQuiz' },
-                    ...(arena ? [{ k: 'Look', v: (s as any).arenaBackgrounds !== false ? '🏛️ Kolosseum' : '🌑 Schlicht' }] : []),
+                    // 2026-08-28: die Zeile las nur den BG-Schalter und meldete
+                    // „Kolosseum", auch wenn das Design ihn gar nicht durchlaesst
+                    // (alle Arena-Gates fragen zusaetzlich `!isThemed()`). Sie
+                    // fragt jetzt dasselbe Paar wie der Wizard.
+                    ...(arena ? [{ k: 'Look', v: ((s.themeId ?? 'buehne') === 'cozy' && (s as any).arenaBackgrounds !== false) ? '🏛️ Kolosseum' : '✨ CozyQuiz Standard' }] : []),
                     { k: 'Runden', v: `🎮 ${phases}×5` },
                     { k: 'Timer', v: `⏱ ${s.timerDurationSec ?? 30}s` },
                     { k: 'Sprache', v: s.language === 'en' ? '🇬🇧 EN' : s.language === 'both' ? '🌐 DE+EN' : '🇩🇪 DE' },

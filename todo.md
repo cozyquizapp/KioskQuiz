@@ -860,11 +860,16 @@ Fraktionsnamen-Ellipsis → Wrap (Risiko fürs arena-main-Layout).
       lassen. Wenn CrowdQuiz das Standarddesign von CozyQuiz uebernimmt, kommt
       die Schrift von dort, und es gibt nichts mehr zu gaten. Die Arbeit geht
       in „CrowdQuiz im Standarddesign" auf, siehe unten.
-      ⚠️ Die Falle von damals bleibt aber gueltig und gehoert dorthin
+      ~~⚠️ Die Falle von damals bleibt aber gueltig und gehoert dorthin
       mitgenommen: die Zeremonie hat EIGENE, immer sichtbare Kolosseum-
       Hintergruende (`award-<slug>.webp`, `epic-moment.webp`), die
-      `arenaBackgrounds` nicht respektieren. Wer nur die Schrift umstellt und
-      den Grund vergisst, bekommt die neue Schrift auf Kolosseum-Grund.
+      `arenaBackgrounds` nicht respektieren.~~
+      **Nachgeprueft 2026-08-28: stimmt nicht mehr.** Die Zeremonie liest seit
+      2026-07-20 `qqArenaType` und faellt damit unter dasselbe Gate wie alles
+      andere („Schlicht = ueberall schlicht", Kommentarkopf in
+      CozyQuizLargeGroupView). Am laufenden Bild geprueft: unter 'buehne'
+      zeigt die Station „spielende" keinen award-ceremony-Grund, unter 'cozy'
+      schon.
 
 **Screens-1707-Batch — KOMPLETT durch:** bild 4 ✅, 9 ✅, 11 ✅, 12 ✅, 13 ✅, 14 ✅, 15 ✅,
 16 ✅ (Thanks-Page Arena-Glas, Regel `qqArenaGlass()`), 17 ✅ (Summary Kolosseum-BG Sieger-Fraktion +
@@ -1195,17 +1200,35 @@ nimmt der Buehne genau den Kanal, der heute die Kategorie traegt.
       Bezeichner, Pfade und die rund 170 Kommentare heissen weiter `cozyArena`
       (Begruendung in CLAUDE.md).
 
-- [ ] **CrowdQuiz im Standarddesign, und das Standarddesign ersetzt
-      „Schlicht".** Heute hat die Arena zwei Looks (`arenaBackgrounds`):
-      „🏛️ Kolosseum" mit voller Kulisse und „🌑 Schlicht" als ruhiger dunkler
-      Grund. Kuenftig ist der zweite Look das Buehnen-Design von CozyQuiz.
-      ⚠️ Die Frageformate bleiben anders (Fraktionen, Wappen, 10 von 10 auf
-      Fraktionen gebuendelt). Es geht um den LOOK, nicht um die Mechanik.
-      ⚠️ Beruehrt direkt den offenen Punkt „Kolosseum-Font Phase 2" weiter
-      oben: der wollte Siegerehrung und Standings dem Schlicht-Schalter folgen
-      lassen. Wenn Schlicht durch das Standarddesign ersetzt wird, ist das
-      dieselbe Arbeit unter neuem Vorzeichen - beide zusammen angehen, nicht
-      nacheinander.
+- [x] **CrowdQuiz im Standarddesign, und das Standarddesign ersetzt
+      „Schlicht".** Erledigt 2026-08-28.
+      Der Umbau war eine Zeile, und sie stand nicht dort, wo ich sie gesucht
+      habe. Nicht der Look-Schalter hat das Kolosseum gebracht, sondern die
+      Format-Wahl: `themeId: ar ? 'cozy' : 'buehne'` (QQSetupFlow und die
+      Format-Vorwahl im Steuerpult). Alle Arena-Gates fragen `!isThemed()`,
+      also haengen Kolosseum-Bilder UND Cinzel am DESIGN. „Schlicht" war
+      deshalb nie ein eigener Look, sondern ein abgeruestetes Cozy.
+      Jetzt: beide Formate starten auf 'buehne'. Die Look-Kachel heisst
+      „CozyQuiz Standard", steht vorn und setzt Design und BG-Schalter
+      zusammen. „Mit Kolosseum" bleibt und setzt beides zurueck.
+      Die Warnung aus „Kolosseum-Font Phase 2" hat sich damit erledigt: die
+      Zeremonie folgt dem Gate schon seit 2026-07-20 (`qqArenaType`).
+      Nachgemessen am laufenden Bild: Standard zeigt Kategorie-Grund, Creme
+      und Bricolage; Kolosseum zeigt cat-schaetzchen.webp und Nunito.
+
+      Beim Durchmessen mitgefunden und mitgefixt: die Zwischenstand-Liste
+      („Frage x/5 · noch n Kategorien") rechnete mit 820 px Platz, hatte aber
+      725. Ab zwoelf Teams lief die unterste Zeile 44 px unter die
+      Buehnenkante, ab zwanzig waren zusaetzlich alle Namen und Zahlen
+      waagerecht durchgeschnitten (`clamp` liefert MIN, sobald min > max).
+      Beides gemessen, beides behoben, 8 Teams unveraendert.
+
+- [ ] **Offen aus derselben Messung: CrowdQuiz mit 20+ Teams ist eng, aber
+      nicht mehr kaputt.** Bei zwanzig Teams ist die Zwischenstand-Zeile
+      36 px hoch, der Name 14 px. Nichts wird mehr abgeschnitten, aber auf
+      zehn Meter ist das klein. Die Frage, ob die Liste ab einer Zahl X
+      deckeln soll („…und n weitere"), ist eine Design-Entscheidung und
+      gehoert Wolf, nicht mir.
 
 ---
 

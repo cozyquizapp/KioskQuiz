@@ -1103,6 +1103,24 @@ den Regeln abgeleitet).
       stehen einzeln im Kopf von `scripts/einpassen-unruhe.mjs`. Wer hier etwas
       aendert, misst DREI Laeufe - ein einzelner gruener Lauf beweist nichts.
 
+- [ ] **P1 · Siegerehrung: eine Zeile steht UNTER der Buehnenkante.**
+      `node scripts/anschnitt-suche.mjs siegerehrung`:
+      ```
+      UEBER DIE KANTE y 1004..1046   „Schade, der Tipp ging daneben 🤞"
+      UEBER DIE KANTE y  910.. 970   „Die Couch-Quizzer"
+      UEBER DIE KANTE y  940.. 970   „Käpt'n Kluk"
+      STILL VERDECKT  76 px          „Tipp 1 von 2 Tipps abgegeben..."
+      ```
+      Die Buehne endet bei 990. Der Trostsatz ist also gar nicht zu sehen, und
+      zwei Teamnamen stehen in der Ueberscan-Zone.
+
+- [ ] **P2 · Team-Auftritt („Heute spielen") verdeckt 21 px.**
+      Der Inhalt ist hoeher als die Buehne. Bei acht Teams gemessen; mit
+      laengeren Teamnamen wird es mehr.
+
+- [ ] **P2 · Danke-Folie verdeckt 32 px.**
+      Dasselbe Muster wie oben.
+
 - [x] **P1 · Heisse Kartoffel: Antworten wurden abgeschnitten.** Wolf
       2026-08-28: „entweder der teamname oder die antwortmoeglichkeiten,
       mehrere reihen, abgeschnitten waren, das ist tricky".

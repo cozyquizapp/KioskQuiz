@@ -1702,8 +1702,12 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
     panels.push({ key: 'perfectRounds', node: (
       <div>
         {statTitle('💯', 'Perfekte Runden', 'Perfect Rounds', QQ_COLORS.green500)}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {funStats.perfectRounds.slice(0, 5).map((pr, i) => {
+        {/* 2026-08-27, dieselbe Regel wie bei den sieben Statistik-Folien:
+            Ueberschrift = Thema, Koerper = Team. Der Kasten trug bis eben das
+            Gruen der Folie, obwohl jede Zeile ein Team benennt und der
+            Teamname darin schon in der Teamfarbe stand - genau der Bruch, den
+            Wolf am Steal-Master gesehen hat, nur als Liste. */}
+        {statStapel(funStats.perfectRounds.slice(0, 5).map((pr, i) => {
             const team = s.teams.find(t => t.name === pr.teamName);
             return statKasten(
               <>
@@ -1714,10 +1718,9 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
                   <span style={{ marginLeft: 'auto', color: 'var(--qq-text-muted)', fontSize: 'clamp(13px, 1.5cqw, 18px)', fontStyle: 'italic' }}>„{pr.draftTitle}"</span>
                 )}
               </>,
-              QQ_COLORS.green500, { k: i },
+              teamFarbe(pr.teamName, team?.color), { k: i },
             );
-          })}
-        </div>
+          }), true)}
       </div>
     )});
   }

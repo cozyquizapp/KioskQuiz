@@ -1055,9 +1055,18 @@ export const QQ_BEAMER_CSS = `
     from { opacity: 0; }
     to   { opacity: 1; }
   }
+  /* 2026-08-28, zweiter Durchgang (Wolf: "wenn gewinner feld unten reinkommt
+     noch zu harsch"). Gemessen schoss der Auftritt auf scale 1.03 und 7 px
+     ueber die Zielposition hinaus und fiel zurueck. Bei einer kleinen Marke
+     ist so ein Ueberschwung Charme, bei einer Flaeche von 145 px Hoehe quer
+     ueber die Buehne ist er ein Schlag - je groesser die Flaeche, desto
+     staerker wirkt dieselbe Kurve.
+     Der Weg ist deshalb kuerzer (14 statt 30 px), der Ueberschwung kleiner
+     (1.01 statt 1.02) und die Bewegung laenger. Sie bleibt eine Feier, sie
+     schlaegt nur nicht mehr auf. */
   @keyframes revealWinnerRise {
-    0%   { transform: translateY(30px) scale(0.9); }
-    50%  { transform: translateY(-4px) scale(1.02); }
+    0%   { transform: translateY(14px) scale(0.96); }
+    55%  { transform: translateY(-2px) scale(1.01); }
     100% { transform: translateY(0) scale(1); }
   }
   /* Pin-Reveal für Schätzchen-Zeitstrahl — bewahrt das Wrapper-translate

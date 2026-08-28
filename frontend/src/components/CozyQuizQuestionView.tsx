@@ -3771,7 +3771,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
                   boxShadow: '0 0 60px rgba(34,197,94,0.25)',
-                  animation: `revealWinnerFade 0.5s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
+                  animation: `revealWinnerFade 0.55s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.8s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   {/* Zeile 1: Kartoffel + alle Team-Chips (wrappt bei vielen Teams) */}
                   <div style={{
@@ -3827,7 +3827,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.15), rgba(var(--qq-accent-rgb),0.05))',
                   border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
                   boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.25)',
-                  animation: `revealWinnerFade 0.5s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
+                  animation: `revealWinnerFade 0.55s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.8s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {coWinners.map((tm, i) => (
@@ -3881,7 +3881,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   : `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: istBuehne ? '2px solid var(--qq-hairline)' : `3px solid ${team!.color}88`,
                 boxShadow: istBuehne ? 'none' : `0 0 60px ${team!.color}33`,
-                animation: `revealWinnerFade 0.5s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
+                animation: `revealWinnerFade 0.55s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.8s var(--qq-ease-bounce) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(56px, 7cqw, 92px)'} style={{
                   flexShrink: 0,

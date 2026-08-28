@@ -146,24 +146,29 @@ const AUFZEICHNER = () => {
       const bewegt = [];
       for (const k of Array.from(el.querySelectorAll('*'))) {
         if (k.offsetHeight <= 1 || !k.textContent?.trim()) continue;
-        const jetztLage = { o: k.offsetTop, h: k.offsetHeight };
+        const jetztLage = { o: k.offsetTop, h: k.offsetHeight, l: k.offsetLeft, b: k.offsetWidth };
         const alt = zuletzt.get(k);
         zuletzt.set(k, jetztLage);
         if (!alt) continue;                              // neu: gewollt
         const dy = jetztLage.o - alt.o;
         const dh = jetztLage.h - alt.h;
+        // 2026-08-28, Wolf: „text rueckt ein". Waagerecht war bis dahin gar
+        // nicht gemessen - ein Werkzeug, das nur Hoehen kennt, kann eine
+        // seitliche Verschiebung grundsaetzlich nicht finden.
+        const dx = jetztLage.l - alt.l;
+        const db = jetztLage.b - alt.b;
         // ⚠️ Vorzeichen BEHALTEN. Der erste Anlauf hat `Math.abs` genommen und
         // dadurch eine weiche Bewegung („waechst 700 ms lang") nicht von einem
         // Nachschwingen („waechst und schrumpft") unterscheiden koennen. Das
         // sind zwei ganz verschiedene Fehler mit zwei verschiedenen Ursachen.
-        if (Math.abs(dy) > 2 || Math.abs(dh) > 2) {
+        if (Math.abs(dy) > 2 || Math.abs(dh) > 2 || Math.abs(dx) > 2 || Math.abs(db) > 2) {
           const t = (k.textContent || '').trim().slice(0, 24);
-          bewegt.push({ dy, dh, t });
+          bewegt.push({ dy, dh, dx, db, t });
           // Gesamtweg je Element ueber die ganze Aufloesung. Das ist die Zahl,
           // die zaehlt: nicht wie oft es zuckt, sondern wie weit es wandert.
           const w2 = (window.__weg ??= {});
           const e = (w2[t] ??= { hoch: 0, hoehe: 0, n: 0 });
-          e.hoch += Math.abs(dy); e.hoehe += dh; e.n++;
+          e.hoch += Math.abs(dy); e.hoehe += dh; e.quer = (e.quer ?? 0) + Math.abs(dx); e.n++;
         }
       }
       const jetzt = {
@@ -177,7 +182,8 @@ const AUFZEICHNER = () => {
         const schlimmster = bewegt.sort((a, b) => (b.dy + b.dh) - (a.dy + a.dh))[0];
         w.__log.push({ t: Math.round(performance.now() - start), ...jetzt,
           n: bewegt.length,
-          dy: schlimmster?.dy ?? 0, dh: schlimmster?.dh ?? 0, wer: schlimmster?.t ?? '',
+          dy: schlimmster?.dy ?? 0, dh: schlimmster?.dh ?? 0,
+          dx: schlimmster?.dx ?? 0, wer: schlimmster?.t ?? '',
           was: !vorher ? 'start'
             : [fitAnders ? 'fit' : null, pxAnders ? 'schrift' : null,
                bewegt.length ? 'lage' : null].filter(Boolean).join('+') });
@@ -258,7 +264,9 @@ for (const { fall, log, weg } of ergebnisse) {
     console.log('    Zeitleiste der Bewegung (jedes Bild mit Versatz im Bestand):');
     for (const e of lage) {
       console.log(`      +${String(e.t).padStart(5)} ms   ${String(e.n).padStart(2)} Elemente,`
-        + ` groesster Versatz ${e.dy > 0 ? '+' : ''}${e.dy} px   „${e.wer}"`);
+        + ` groesster Versatz ${e.dy > 0 ? '+' : ''}${e.dy} px hoch/runter`
+        + (e.dx ? `, ${e.dx > 0 ? '+' : ''}${e.dx} px seitlich` : '')
+        + `   „${e.wer}"`);
     }
   }
   const wandert = Object.entries(weg).sort((a, b) => b[1].hoch - a[1].hoch).slice(0, 5);
@@ -267,6 +275,7 @@ for (const { fall, log, weg } of ergebnisse) {
     for (const [t, e] of wandert) {
       console.log(`      ${String(Math.round(e.hoch)).padStart(5)} px gewandert,`
         + ` ${(e.hoehe >= 0 ? '+' : '') + Math.round(e.hoehe)} px Hoehe,`
+        + (e.quer ? `, ${Math.round(e.quer)} px seitlich` : '')
         + ` ueber ${e.n} Bilder   „${t}"`);
     }
   }

@@ -26,6 +26,7 @@ import { useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { GridDisplay } from './CozyQuizGridDisplay';
 import { TeamNameLabel } from './TeamNameLabel';
+import { useEinpassen, mitFit } from '../qqEinpassen';
 import { QQEmojiIcon, QQIcon } from './QQIcon';
 import { AnimatedCozyWolf } from '../pages/QQBeamerPage';
 import {
@@ -517,7 +518,21 @@ function SlotTransition({
 
   return (
     <div style={{
-      position: 'relative', flex: 1, width: '100%', display: 'flex',
+      // ⚠️ 2026-08-28: `minHeight: 0` auf BEIDEN Wrappern der Folien-
+      // Ueberblendung. Ohne den Boden steht hier `min-height: auto`, und ein
+      // Flex-Kind mit diesem Wert kann nicht unter seinen Inhalt schrumpfen.
+      // Die Folie wuchs damit ueber die Buehne hinaus, statt ihren Inhalt
+      // einpassen zu lassen.
+      //
+      // Gemessen mit `node scripts/anschnitt-suche.mjs siegerehrung`: der
+      // Trostsatz „Schade, der Tipp ging daneben" stand bei y 1004 bis 1046,
+      // die Buehne endet bei 990. Er war schlicht nicht zu sehen, und zwei
+      // Teamnamen lagen in der Ueberscan-Zone.
+      //
+      // Dieselbe Falle steht seit dem 2026-08-24 bei der Heissen Kartoffel im
+      // Code („Er schrumpfte damit nicht unter seinen Inhalt"). Sie ist in
+      // Flex-Spalten der Normalfall und nicht die Ausnahme.
+      position: 'relative', flex: 1, width: '100%', display: 'flex', minHeight: 0,
       ...containerStyle,
     }}>
       {exitingNode && (
@@ -532,7 +547,7 @@ function SlotTransition({
         </div>
       )}
       <div key={enterTick} style={{
-        position: 'relative', flex: 1,
+        position: 'relative', flex: 1, minHeight: 0,
         display: 'flex', flexDirection: 'column',
         willChange: 'transform, opacity',
         animation: enterAnimation,
@@ -1808,11 +1823,34 @@ function BetZeroGroupSlide({ teams, lang, eingefroren = false }: {
     : N <= 5
       ? 'clamp(90px, 9cqw, 130px)'
       : 'clamp(70px, 7cqw, 100px)';
+
+  // ── Die Stufen nach Anzahl reichen nicht ────────────────────────────────
+  // 2026-08-28, gefunden mit `node scripts/anschnitt-suche.mjs siegerehrung`:
+  //
+  //   UEBER DIE KANTE y 1004..1046   „Schade, der Tipp ging daneben"
+  //   UEBER DIE KANTE y  910.. 970   „Die Couch-Quizzer"
+  //
+  // Die Buehne endet bei 990. Der Trostsatz war also gar nicht zu sehen.
+  //
+  // Der Grund ist derselbe wie bei der Heissen Kartoffel und bei der Schrift
+  // auf der Fragefolie: gestuft wird nach der ANZAHL, und die Anzahl weiss
+  // nichts ueber die Namen. „Hirnsturm" ist einzeilig, „Die Couch-Quizzer"
+  // bricht um und macht die ganze Reihe hoeher. Sechs Teams mit kurzen Namen
+  // passen, fuenf mit langen nicht.
+  //
+  // Statt einer vierten eigenen Loesung derselbe Einpasser wie auf der
+  // Fragefolie: er misst den Platz und setzt EINEN Faktor, mit dem die
+  // beteiligten Groessen multipliziert werden. Ein Mechanismus fuer
+  // „mach es passend", nicht drei.
+  const einpassRef = useRef<HTMLDivElement>(null);
+  useEinpassen(einpassRef, `${N}|${teams.map(t => t.name).join(',')}`, istBuehne);
+
   return (
-    <div style={{
+    <div ref={einpassRef} style={{
       flex: 1, display: 'flex', flexDirection: 'column', alignItems: 'center',
-      justifyContent: 'center', gap: 'clamp(28px, 3.5cqh, 48px)',
+      justifyContent: 'center', gap: mitFit('clamp(28px, 3.5cqh, 48px)'),
       width: '100%',
+      minHeight: 0,
       padding: 'clamp(20px, 2cqh, 36px) clamp(24px, 3cqw, 48px)',
     }}>
       <div style={{
@@ -1827,7 +1865,7 @@ function BetZeroGroupSlide({ teams, lang, eingefroren = false }: {
         <QQEmojiIcon emoji="🎯" size="1em" /> {de ? 'Tipps abgegeben' : 'Tips placed'}
       </div>
       <div style={{
-        fontSize: 'clamp(30px, 3.6cqw, 56px)', fontWeight: 900,
+        fontSize: mitFit('clamp(30px, 3.6cqw, 56px)'), fontWeight: 900,
         color: 'var(--qq-card-text)', textAlign: 'center', letterSpacing: '-0.02em',
         // 2026-08-23: der weite Schein hinter der Ueberschrift weicht auf
         // Projektionsdistanz die Kante der Schrift auf und sagt nichts.
@@ -1856,7 +1894,7 @@ function BetZeroGroupSlide({ teams, lang, eingefroren = false }: {
             <QQTeamAvatar
               avatarId={t.avatarId}
               teamEmoji={t.emoji}
-              size={avatarSize}
+              size={mitFit(avatarSize)}
               bgColor={t.color}
             />
             {/* 2026-05-25 (Wolf 'teamnamen ausgeschrieben, nicht abgeschnitten'):
@@ -1866,7 +1904,7 @@ function BetZeroGroupSlide({ teams, lang, eingefroren = false }: {
               // 2026-08-23 (Uebergabe 2a): Teamnamen in Creme, wie am Brett und
               // auf allen Siegerbaendern. Die Marke direkt darueber traegt die
               // Teamfarbe bereits als volle Flaeche.
-              fontSize: istBuehne ? 'clamp(17px, 1.7cqw, 26px)' : 'clamp(14px, 1.4cqw, 20px)',
+              fontSize: mitFit(istBuehne ? 'clamp(17px, 1.7cqw, 26px)' : 'clamp(14px, 1.4cqw, 20px)'),
               fontWeight: 900,
               color: istBuehne ? 'var(--qq-text)' : t.color,
               textShadow: istBuehne ? 'none' : `0 0 12px ${t.color}55`,

@@ -1190,7 +1190,7 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               ({de ? qqPlural(totalGames, 'Spiel', 'Spiele') : qqPlural(totalGames, 'game', 'games')})
             </span>
           ) : undefined)}
-        {realLeaderboard.slice(0, 5).map((entry, i) => {
+        {statStapel(realLeaderboard.slice(0, 5).map((entry, i) => {
           const sessionTeam = s.teams.find(t => t.name === entry.name);
           const teamColor = sessionTeam?.color ?? (i === 0 ? 'var(--qq-accent)' : i === 1 ? 'var(--qq-text-muted)' : i === 2 ? '#F97316' : 'var(--qq-text-muted)');
           const shown = Math.min(entry.wins, maxVisibleWins);
@@ -1257,11 +1257,19 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               </div>
             );
           }
-          return (
-          <div key={entry.name} style={{
-            display: 'flex', alignItems: 'center', gap: 16, padding: '12px 0',
-            borderBottom: i < Math.min(realLeaderboard.length, 5) - 1 ? '1px solid var(--qq-hairline)' : 'none',
-          }}>
+          // 2026-08-27 (Wolf mit zwei Bildern nebeneinander: „diese seite passt
+          // finde ich zb gar nicht in die gleich gehts los slides ... so sehen
+          // andere tabellen aus, deutlich staerker").
+          //
+          // Er hat die Bestenliste neben die Kategorie-Meister gelegt, und der
+          // Unterschied ist genau der, den ich heute Morgen ueberall sonst
+          // beseitigt habe: dort Kaesten, hier Haarlinien. Die Zeilen standen
+          // frei im Dunkeln, getrennt nur durch einen Strich - und mit fuenf
+          // Eintraegen bei fester Kartenhoehe reisst das Luecken, die wie ein
+          // Fehler aussehen.
+          // Jetzt derselbe `statKasten` wie ueberall, in der Teamfarbe.
+          return statKasten(
+          <>
             <span style={{ fontSize: 'clamp(26px, 3cqw, 38px)', width: 46, textAlign: 'center', flexShrink: 0 }}>
               {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
             </span>
@@ -1323,9 +1331,10 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               flexShrink: 0,
               boxShadow: `0 0 14px ${teamColor}22, inset 0 1px 0 rgba(246, 239, 230,0.05)`,
             }}>{de ? qqPlural(entry.wins, 'Sieg', 'Siege') : qqPlural(entry.wins, 'win', 'wins')}</span>
-          </div>
+          </>,
+          teamColor, { k: entry.name },
           );
-        })}
+        }), true)}
       </div>
     )});
   }
@@ -1602,7 +1611,13 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
   if (funStats?.categoryMasters && funStats.categoryMasters.length > 0) {
     panels.push({ key: 'catMasters', node: (
       <div>
-        {statTitle('👑', 'Kategorie-Meister', 'Category Masters', QQ_COLORS.brandPink)}
+        {/* 2026-08-27 (Wolf: „nur pinke schrift noch ersetzen"). Brand-Pink war
+            hier die Ueberschriftfarbe, und Brand-Pink ist die MARKE - auf einer
+            Folie, die drei verschiedene Kategorien zeigt, sagt sie nichts ueber
+            den Inhalt. Jetzt dieselbe cremefarbene Ueberschrift wie bei
+            Bestenliste, Rekorde und Aktueller Stand. Die Kategoriefarben stehen
+            weiter in den Zeilen, dort tragen sie eine Aussage. */}
+        {statTitle('👑', 'Kategorie-Meister', 'Category Masters')}
         <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
           {funStats.categoryMasters.map((cm, i) => {
             const catMeta = PAUSE_CAT_ACCENT[cm.category] ?? { color: 'var(--qq-accent)', emoji: '🎯', label: cm.category, labelEn: cm.category };

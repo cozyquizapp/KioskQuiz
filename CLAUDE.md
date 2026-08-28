@@ -147,6 +147,35 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   desselben Formats.
 * **Fraktionen sind keine Tiere.** CrowdQuiz hat 8 Fraktionen mit Wappen,
   `avatarId` ist nur ein Farb-Slot.
+* **⚠️ CrowdQuiz teilt das DESIGN mit CozyQuiz, nicht die MECHANIK.** Wolf
+  2026-08-28: „crowdquiz hat spezifische kategorien und views die cozyquiz
+  nicht hat und das muss bei 40 geraeten auch so sein … das hat mit font und
+  eckige formen und farbe nichts zu tun, aber darf nicht kaputt gemacht
+  werden."
+
+  Seit dem 28.08. laeuft CrowdQuiz im CozyQuiz-Standarddesign. Angeglichen
+  wurde damit die SPRACHE: Schrift, Farbe, Flaechen, Ecken, Schatten. Nicht
+  angeglichen wird, WAS auf der Folie steht. Die Trennlinie ist einfach:
+  gleiche Woerter, andere Saetze.
+
+  Was CrowdQuiz allein gehoert und bleiben muss:
+  * **Fraktionen statt Teams.** Bis 25 Teams (im Test 40 Geraete) auf 8
+    Fraktionen gebuendelt (`nestedTeams`). Die Wappen sind fest an Name UND
+    Farbe gebunden (`frontend/src/cozyArenaCrests.ts`) - Bauchgefuehl ist
+    orange, Risiko ist rot. Kein freier Avatar-Satz, deshalb haengt auch die
+    Avatar-Vorgabe am Format (`qqDefaultAvatarSetId`).
+  * **Zwei eigene Bunte-Tuete-Mechaniken**: Umfrage und Schwarmintelligenz
+    (`QQ_BUNTE_TUETE_ARENA_ONLY` in shared/quarterQuizTypes.ts).
+  * **Kein Spielbrett.** Statt Setzen/Klauen/Stapeln laeuft ein Bar-Race
+    (`CozyQuizLargeGroupView`), gewertet wird der ANTEIL richtiger Antworten,
+    damit eine grosse Fraktion keinen Vorteil hat.
+  * **Ten Chips auf Fraktionen gebuendelt** und eine eigene Siegerehrung mit
+    fuenf Awards.
+
+  ⚠️ Besonders fuer Werkzeuge: `scripts/design-referenz.mjs` vergleicht
+  CrowdQuiz mit CozyQuiz. Es vergleicht den WORTSCHATZ, nicht das Bild, und
+  genau deshalb ist es ungefaehrlich. Wer daraus je ein „mach die Ansichten
+  gleich" macht, nimmt CrowdQuiz sein Format weg.
 
 ---
 

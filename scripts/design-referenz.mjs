@@ -23,6 +23,20 @@
  * Team- und Kategoriefarben kommen in beiden Formaten aus derselben Palette
  * und kuerzen sich deshalb weg. Was uebrig bleibt, ist der Verdacht.
  *
+ * ⚠️ WAS DIESES WERKZEUG AUSDRUECKLICH NICHT VERLANGT ─────────────────────
+ * Wolf 2026-08-28: „crowdquiz hat spezifische kategorien und views die
+ * cozyquiz nicht hat und das muss bei 40 geraeten auch so sein … das hat mit
+ * font und eckige formen und farbe nichts zu tun, aber darf nicht kaputt
+ * gemacht werden."
+ *
+ * Ein leerer Bericht heisst „gleiche Woerter", nicht „gleiche Folien".
+ * CrowdQuiz SOLL andere Ansichten haben: Fraktionen statt Teams, Bar-Race
+ * statt Brett, Umfrage und Schwarmintelligenz als eigene Mechaniken, eine
+ * eigene Siegerehrung. Nichts davon taucht hier je als Befund auf, weil
+ * Layout und Inhalt gar nicht gemessen werden - nur die verwendeten Werte.
+ * Wer aus diesem Werkzeug je ein „mach die Ansichten gleich" macht, nimmt
+ * CrowdQuiz sein Format weg. Die Liste steht in CLAUDE.md.
+ *
  * ── Was das Werkzeug NICHT kann ───────────────────────────────────────────
  * Es findet fremde WOERTER, nicht falsche SAETZE. Der Arena-Emoji ueber der
  * Wortmarke war ein Bild in einer erlaubten Groesse an einer Stelle, an der

@@ -132,6 +132,24 @@ function QQCorrectViz({ correct, total, color }: { correct: number; total: numbe
   );
 }
 
+/**
+ * Wie lange die Sieger-Karte nach ihrem Erscheinen wartet, bevor sie auftritt.
+ *
+ * 2026-08-28 (Wolf: „wenn gewinnerteam unten reinkommt ist es auch eher ein
+ * harter sprung"). Der Wert stand bis dahin bei 700 ms und war tote Zeit: er
+ * sollte die Ueberblendung der Huelle abwarten, aber die Huelle steht schon
+ * auf voller Deckkraft, wenn die Karte montiert. Gemessen sah der Saal also
+ * 768 ms nichts und danach einen Schlag.
+ *
+ * ⚠️ Der Ton haengt an derselben Zahl. Er startet WINNER_SOUND_VORLAUF_MS
+ * frueher, damit er psychoakustisch synchron sitzt (2026-04-30, Wolf: „sound
+ * kommt etwas frueh" - das war der Fall, als der Ton NICHT gewartet hat).
+ * Beide Werte stehen deshalb hier und nirgends sonst.
+ */
+const WINNER_DELAY_MS = 120;
+/** Vorlauf des Tons vor dem sichtbaren Auftritt. */
+const WINNER_SOUND_VORLAUF_MS = 60;
+
 export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQStateUpdate; revealed: boolean; hideCutouts?: boolean }) {
   const q = s.currentQuestion;
   if (!q) return null;
@@ -554,7 +572,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
         } catch {}
         // isCascadeCategory referenziert, eslint-friendly
         void isCascadeCategory;
-      }, 640);
+      }, Math.max(0, WINNER_DELAY_MS - WINNER_SOUND_VORLAUF_MS));
       return () => window.clearTimeout(handle);
     }
   }, [showUnifiedWinner, revealed, s.correctTeamId, s.currentQuestionWinners, s.sfxMuted, s.currentQuestion?.category, s.currentQuestion?.bunteTuete]);
@@ -3564,7 +3582,22 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // haelt eine schlichte Hoehen-Ueberblendung den Uebergang weich.
               height: !revealed ? 0 : 'clamp(150px, 16cqh, 210px)',
               marginBottom: !revealed ? 0 : 12,
-              transition: 'height 0.5s var(--qq-ease-smooth), margin-bottom 0.5s var(--qq-ease-smooth)',
+              // 2026-08-28 (Wolf: „nach timer springt es kurz"). Die
+              // Hoehen-Ueberblendung ist raus, und das ist die Einloesung des
+              // Satzes zwei Zeilen darueber: „bis die richtige Motion kommt".
+              //
+              // Gemessen war sie der letzte Rest eines Musters, das die Folie
+              // unruhig gemacht hat. Im Moment der Aufloesung wechselt die
+              // Fragekarte ihre Schriftleiter hart (Key-Remount, gewollt), und
+              // danach zogen zwei Layout-Bewegungen ueber je eine halbe bis
+              // ganze Sekunde nach: die Markenabstaende und dieser Slot. Ein
+              // Schnitt mit Nachzieher liest sich als Zucken.
+              //
+              // Jetzt faellt alles in dasselbe Bild. Aus 21 Bildern mit
+              // Bewegung wurden erst 8 und mit dieser Zeile 1.
+              // Die Bewegung, die der Gast sehen soll, macht die Sieger-Karte
+              // selbst - die faehrt weiter auf, nur eben als Transform ueber
+              // dem fertigen Platz statt als wachsende Hoehe darunter.
               pointerEvents: 'none',
             }}>
               <div style={{
@@ -3577,8 +3610,28 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               }}>
               {revealed && showUnifiedWinner && (s.correctTeamId || (s.currentQuestionWinners?.length ?? 0) > 0 || isHotPotatoCat) && (() => {
             const isEn = lang === 'en';
-            const bannerDelay = 0.7;
-            const avatarDelay = 1.1;
+            // 2026-08-28 (Wolf: „wenn gewinnerteam unten reinkommt ist es auch
+            // eher ein harter sprung"). Gemessen, Bild fuer Bild:
+            //
+            //   +3451 ms  Karte montiert: opacity 0, scale 0.9, 30 px tiefer
+            //             ... 768 ms passiert NICHTS ...
+            //   +4219 ms  opacity 0 -> 1 in 240 ms
+            //   +4843 ms  steht
+            //
+            // Zwei Fehler in einem. Erstens war die Wartezeit tote Zeit: sie
+            // sollte die Ueberblendung der Huelle abwarten, aber die Huelle
+            // steht laut Messung schon auf voller Deckkraft, wenn die Karte
+            // montiert. Der Saal sieht also drei Viertel Sekunden nichts und
+            // danach einen Schlag.
+            // 0,12 s bleiben als Beat stehen - genug, damit die Karte nicht im
+            // selben Bild wie der Kaskadenschritt erscheint, zu wenig, um als
+            // Pause zu lesen.
+            //
+            // ⚠️ Der Sieger-Sound haengt an dieser Zahl (60 ms Vorlauf, damit
+            // der Ton psychoakustisch synchron sitzt). Beide Werte stehen
+            // deshalb in WINNER_DELAY_MS, nicht doppelt im Code.
+            const bannerDelay = WINNER_DELAY_MS / 1000;
+            const avatarDelay = bannerDelay + 0.4;
 
             // ZEHN_VON_ZEHN: Tie-Info ermitteln, damit Text stimmt, wenn mehrere Teams
             // die gleiche Höchstpunktzahl auf die richtige Antwort gesetzt haben
@@ -3718,7 +3771,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   background: 'linear-gradient(135deg, rgba(34,197,94,0.18), rgba(34,197,94,0.05))',
                   border: '2px solid rgba(34,197,94,0.55)',
                   boxShadow: '0 0 60px rgba(34,197,94,0.25)',
-                  animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
+                  animation: `revealWinnerFade 0.5s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   {/* Zeile 1: Kartoffel + alle Team-Chips (wrappt bei vielen Teams) */}
                   <div style={{
@@ -3774,7 +3827,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.15), rgba(var(--qq-accent-rgb),0.05))',
                   border: '2px solid rgba(var(--qq-accent-rgb),0.55)',
                   boxShadow: '0 0 60px rgba(var(--qq-accent-rgb),0.25)',
-                  animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
+                  animation: `revealWinnerFade 0.5s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
                 }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap', justifyContent: 'center' }}>
                     {coWinners.map((tm, i) => (
@@ -3828,7 +3881,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
                   : `linear-gradient(135deg, ${team!.color}26, ${team!.color}08)`,
                 border: istBuehne ? '2px solid var(--qq-hairline)' : `3px solid ${team!.color}88`,
                 boxShadow: istBuehne ? 'none' : `0 0 60px ${team!.color}33`,
-                animation: `revealWinnerIn 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
+                animation: `revealWinnerFade 0.5s var(--qq-enter) ${bannerDelay}s both, revealWinnerRise 0.65s var(--qq-ease-bounce) ${bannerDelay}s both`,
               }}>
                 <QQTeamAvatar avatarId={team!.avatarId} teamEmoji={team!.emoji} size={'clamp(56px, 7cqw, 92px)'} style={{
                   flexShrink: 0,

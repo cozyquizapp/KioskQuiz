@@ -4430,7 +4430,28 @@ export function MuchoOptionsReveal({
         marginBottom: 'clamp(10px, 1.4cqh, 22px)',
         width: '100%', maxWidth: 1400,
         // 2026-04-30 v2: 0.9s entspanntes Easing (User: 'cards verschieben sich zu hektisch').
-        transition: 'row-gap 0.9s var(--qq-ease-smooth), padding-bottom 0.9s var(--qq-ease-smooth), margin-bottom 0.9s ease',
+        //
+        // 2026-08-28 (Wolf: „nach timer springt es kurz"). Diese Zeile ist
+        // damit weg, und das dreht bewusst die Entscheidung von oben um. Der
+        // Grund ist ein anderer als damals.
+        //
+        // Gemessen, Bild fuer Bild, im Moment der Aufloesung:
+        //   +579 ms   EIN Bild, 119 px Versatz   (die Fragekarte wechselt
+        //             ihre Schriftleiter, per Key-Remount und damit hart)
+        //   danach    -5, -14, -25, -16, -15, -5 px ueber rund 500 ms
+        //             (dieser Uebergang hier)
+        //
+        // Der Saal sieht also einen harten Schnitt und danach ein Nachziehen.
+        // Genau die Kombination liest sich als Zucken: waere nur das eine oder
+        // nur das andere da, waere es entweder ein Schnitt oder eine Bewegung.
+        // 2026-04-30 gab es den Schnitt noch nicht, da war dieser Uebergang die
+        // einzige Bewegung - deshalb war er damals richtig und ist es heute
+        // nicht mehr.
+        //
+        // Jetzt faellt alles in dasselbe Bild: ein Schnitt, wie bei der Frage.
+        // `margin-bottom` behaelt seinen Uebergang, das ist ein Aussenabstand
+        // und schiebt die Antwortkarten nicht auseinander.
+        transition: 'margin-bottom 0.9s ease',
       };
   return (
     // 2026-08-27: eigene Kennung, damit die Unterkanten-Messung den

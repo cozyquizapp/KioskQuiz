@@ -249,6 +249,18 @@ for (const { fall, log, weg } of ergebnisse) {
   console.log(`    ${schrift.length} Schriftwechsel (${hoch.length} nach OBEN)`
     + `, ${lage.length} Bilder mit Bewegung im Bestand`
     + `   Endgroesse ${log[log.length - 1].px} px`);
+  // Zeitleiste: WANN wird bewegt? 2026-08-28, Wolf nach dem ersten Fix:
+  // „nach timer springt es kurz, wenn gewinnerteam unten reinkommt ist es auch
+  // eher ein harter sprung, sonst gut". Die Summe je Element beantwortet das
+  // nicht - zwei Momente von je 20 px lesen sich voellig anders als eine
+  // Bewegung von 40 px am Stueck. Also die Bilder mit Bewegung auflisten.
+  if (lage.length) {
+    console.log('    Zeitleiste der Bewegung (jedes Bild mit Versatz im Bestand):');
+    for (const e of lage) {
+      console.log(`      +${String(e.t).padStart(5)} ms   ${String(e.n).padStart(2)} Elemente,`
+        + ` groesster Versatz ${e.dy > 0 ? '+' : ''}${e.dy} px   „${e.wer}"`);
+    }
+  }
   const wandert = Object.entries(weg).sort((a, b) => b[1].hoch - a[1].hoch).slice(0, 5);
   if (wandert.length) {
     console.log('    Gesamtweg je Element (nur was im Bild BLIEB):');

@@ -1041,6 +1041,25 @@ export const QQ_BEAMER_CSS = `
     50%  { transform: translateY(-4px) scale(1.02); }
     100% { opacity: 1; transform: translateY(0) scale(1); }
   }
+  /* 2026-08-28 (Wolf: "wenn gewinnerteam unten reinkommt ist es auch eher ein
+     harter sprung"). revealWinnerIn traegt Deckkraft UND Bewegung in einer
+     Animation, und die Sieger-Karte faehrt sie mit --qq-ease-bounce. Eine
+     Bounce-Kurve schiesst frueh nach vorn - gemessen war die Karte nach
+     240 ms von 650 ms schon voll sichtbar, waehrend sie noch flog. Das ist
+     das Aufblitzen.
+     Deshalb fuer die Sieger-Karte zwei getrennte Bewegungen: die Deckkraft auf
+     einer ruhigen Kurve, der Weg weiter mit Schwung. Wer beides zusammen
+     braucht, nimmt weiter revealWinnerIn - die anderen fuenf Fundstellen
+     bleiben unveraendert. */
+  @keyframes revealWinnerFade {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  @keyframes revealWinnerRise {
+    0%   { transform: translateY(30px) scale(0.9); }
+    50%  { transform: translateY(-4px) scale(1.02); }
+    100% { transform: translateY(0) scale(1); }
+  }
   /* Pin-Reveal für Schätzchen-Zeitstrahl — bewahrt das Wrapper-translate
      (--pin-x, --pin-y) und animiert nur opacity + scale. Ohne diese Keyframe
      würde revealWinnerIn die Position auf translateY(0) setzen und der

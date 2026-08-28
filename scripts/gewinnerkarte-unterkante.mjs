@@ -20,7 +20,7 @@
  * Gewinnerkarte noch nach unten, und wie viel frisst jede weitere Zeile Frage?
  *
  * Die Karte wird nicht ueber ihren Text gesucht (der wechselt je Kategorie),
- * sondern ueber ihre Auftrittsbewegung `revealWinnerIn` - die hat nur sie.
+ * sondern ueber ihre Auftrittsbewegung `revealWinner*` - die hat nur sie.
  *
  * NUTZUNG:
  *   node scripts/gewinnerkarte-unterkante.mjs
@@ -45,7 +45,7 @@ const FRAGEN = [
  *  ueber „groesste Schrift auf der Folie" - bei kleinen Graden waere sonst
  *  irgendwann eine Antwortkarte die groesste, und das Werkzeug haette
  *  stillschweigend das falsche Element vermessen (2026-08-26 genau passiert).
- *  Die Gewinnerkarte traegt als einzige die Bewegung `revealWinnerIn`. */
+ *  Die Gewinnerkarte traegt als einzige eine `revealWinner*`-Bewegung. */
 const messen = ([text, px]) => {
   const buehne = document.querySelector('[data-qq-buehne]');
   if (!buehne) return { fehler: 'keine Buehne' };
@@ -56,7 +56,13 @@ const messen = ([text, px]) => {
 
   let karte = null;
   for (const el of buehne.querySelectorAll('*')) {
-    if (getComputedStyle(el).animationName.includes('revealWinnerIn')) { karte = el; break; }
+    // ⚠️ Auf das PRAEFIX pruefen, nicht auf den vollen Namen. Seit dem
+    // 2026-08-28 traegt die Sieger-Karte zwei getrennte Bewegungen
+    // (`revealWinnerFade` fuer die Deckkraft, `revealWinnerRise` fuer den Weg,
+    // Begruendung in qqShared.ts). Ein Werkzeug, das auf `revealWinnerIn`
+    // besteht, meldet dann „keine Karte" und sieht aus wie ein Fehler im Code,
+    // obwohl es sein eigener ist - genau so am selben Tag passiert.
+    if (getComputedStyle(el).animationName.includes('revealWinner')) { karte = el; break; }
   }
   const br = buehne.getBoundingClientRect();
   const s = br.width / buehne.offsetWidth || 1;

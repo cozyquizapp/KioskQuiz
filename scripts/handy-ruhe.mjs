@@ -104,7 +104,21 @@ const MESSEN = ({ breite, hoehe }) => {
     }
   }
 
+  /* Der Bereich ZWISCHEN Kopf und Fuss, und was darin liegt.
+   *
+   * 2026-08-29, Wolf: „die hoehe des mittleren bereichs veraendert sich
+   * immernoch stark". Kopf und Fuss stehen seit dem letzten Durchgang still -
+   * der Kasten dazwischen nicht. Ohne diese Zahlen ist „stark" ein Gefuehl;
+   * mit ihnen ist es eine Spanne, ueber die man entscheiden kann. */
+  const mitte = karten.reduce((sum, e) => sum + e.getBoundingClientRect().height, 0);
+  const kartenListe = karten.map(e => ({
+    h: rund(e.getBoundingClientRect().height),
+    top: rund(e.getBoundingClientRect().top),
+  }));
+
   return {
+    mitte: rund(mitte),
+    kartenListe,
     kopf: kopf ? { top: rund(kopf.getBoundingClientRect().top), h: rund(kopf.getBoundingClientRect().height) } : null,
     fuss: fuss ? { top: rund(fuss.getBoundingClientRect().top), h: rund(fuss.getBoundingClientRect().height) } : null,
     ersteKarte: ersteKarte ? rund(ersteKarte.top) : null,
@@ -123,7 +137,7 @@ const messen = async (seite, name) => {
   sichten.push({ name, ...m });
   console.log(`  ✓ ${name.padEnd(16)} Kopf ${String(m.kopf?.top ?? '-').padStart(4)}  `
     + `Karte ${String(m.ersteKarte ?? '-').padStart(4)}  Fuss ${String(m.fuss?.top ?? '-').padStart(4)}  `
-    + `Seite ${String(m.seiteH).padStart(4)}`);
+    + `Mitte ${String(m.mitte).padStart(4)}  (${m.kartenListe.map(k => k.h).join('+')})`);
 };
 await b.abendMitfahren(async (phase) => { await messen(b.handy, phase); });
 await b.schliessen();
@@ -137,6 +151,7 @@ const spanne = (werte) => {
 const kopfS = spanne(sichten.map(v => v.kopf?.top));
 const karteS = spanne(sichten.map(v => v.ersteKarte));
 const fussS = spanne(sichten.map(v => v.fuss?.top));
+const mitteS = spanne(sichten.map(v => v.mitte));
 
 const z = [`# Steht /team still?`, '',
   `Gemessen am ${new Date().toISOString().slice(0, 10)} auf ${HANDY.width}x${HANDY.height}`,
@@ -145,7 +160,8 @@ const z = [`# Steht /team still?`, '',
   'warum Ruhe und Vollstaendigkeit zusammen gemessen werden und nicht einzeln.', '',
   '## Wandern die festen Teile?', '',
   '| | von | bis | Spanne |', '|---|---:|---:|---:|'];
-for (const [name, sp] of [['Kopfzeile', kopfS], ['erste Karte', karteS], ['Fusszeile', fussS]]) {
+for (const [name, sp] of [['Kopfzeile', kopfS], ['erste Karte', karteS], ['Fusszeile', fussS],
+                          ['Inhalt (Summe der Karten)', mitteS]]) {
   z.push(sp ? `| ${name} | ${sp.min} | ${sp.max} | **${sp.spanne} px** |` : `| ${name} | — | — | — |`);
 }
 z.push('', kopfS && kopfS.spanne === 0 && (karteS?.spanne ?? 0) === 0

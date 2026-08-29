@@ -345,6 +345,34 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const buehneRef = useRef<HTMLDivElement | null>(null);
   useRandKorrektur(buehneRef, placed);
 
+  /** Welche Fraktions-Spanne liegt in welcher Zeile?
+   *
+   *  Gierige Vergabe je Bahn: nach dem kleinsten Tipp sortieren und in die
+   *  erste Zeile legen, in der rechts noch Platz ist. Ueberschneiden sich zwei
+   *  Fraktionen wirklich, rutscht die zweite eine Zeile weiter nach aussen -
+   *  sonst bleiben alle auf Reihe 0. Es entsteht also keine Treppe, wo keine
+   *  noetig ist. */
+  const spannenReihe = useMemo(() => {
+    const out = new Map<string, number>();
+    if (!spanneAn) return out;
+    for (const bahn of [true, false]) {
+      const drin = placed
+        .filter(pl => pl.above === bahn && (spannen.get(pl.r.team.avatarId)?.n ?? 0) >= 2)
+        .map(pl => ({ av: pl.r.team.avatarId, sp: spannen.get(pl.r.team.avatarId)! }))
+        .sort((x, y) => x.sp.min - y.sp.min);
+      const enden: number[] = [];
+      for (const d of drin) {
+        const a = axisPct(d.sp.min), b = axisPct(d.sp.max);
+        const links = Math.min(a, b), rechts = Math.max(a, b);
+        let reihe = enden.findIndex(e => links > e + 1.5);
+        if (reihe < 0) { reihe = enden.length; enden.push(rechts); }
+        else enden[reihe] = rechts;
+        out.set(d.av, reihe);
+      }
+    }
+    return out;
+  }, [spanneAn, placed, spannen, axisPct]);
+
   const wx = winner ? axisPct(winner.num) : 50;
 
   // ── Dramaturgie: 0 Chips · 1 Beam+Count-up · 2 Dimmen · 3 Sieger ──
@@ -560,6 +588,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               if (!sp || sp.n < 2) return null;
               const a = axisPct(sp.min), b = axisPct(sp.max);
               const isWin = r.teamId === winner?.teamId;
+              const reihe = spannenReihe.get(r.team.avatarId) ?? 0;
               return (
                 <div key={'sp-' + r.team.avatarId} aria-hidden style={{
                   position: 'absolute', zIndex: 2,
@@ -570,7 +599,14 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   // Farbverlauf statt acht lesbarer Strecken. Jede Bahn bekommt
                   // ihre eigene Hoehe, direkt an der Schiene, auf der Seite, auf
                   // der auch das Wappen steht.
-                  top: `calc(${RAIL}% ${above ? '-' : '+'} ${spanneStufe >= 2 ? 15 : 7}px)`,
+                  // ⚠️ Zwei Fraktionen, deren Tipps sich ueberschneiden, liegen
+                  // sonst auf derselben Linie uebereinander - Wolf 2026-08-29:
+                  // „das einzige was jetzt ueberlappt ist die range des
+                  // gewinners mit team lila". Ueberschneidung ist WAHR und darf
+                  // nicht wegsortiert werden, also bekommt sie eine eigene
+                  // Zeile. `spannenReihe` vergibt sie nur, wenn es wirklich
+                  // klemmt; im Normalfall liegen alle auf Reihe 0.
+                  top: `calc(${RAIL}% ${above ? '-' : '+'} ${(spanneStufe >= 2 ? 15 : 7) + reihe * (spanneStufe >= 2 ? 15 : 7)}px)`,
                   left: `${Math.min(a, b)}%`, width: `${Math.max(0.6, Math.abs(b - a))}%`,
                   transform: `translateY(-50%) scaleX(${lit || !housedark ? 1 : 0.001})`,
                   transformOrigin: 'center',

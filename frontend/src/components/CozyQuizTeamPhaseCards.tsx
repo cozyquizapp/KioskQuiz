@@ -182,7 +182,14 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
         <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--qq-ink)', marginBottom: 8 }}>
           {lang === 'de' ? 'Gut zuhören!' : 'Listen up!'}
         </div>
-        <div style={{ fontSize: 15, color: 'var(--qq-ink-muted)', lineHeight: 1.5 }}>
+        {/* 2026-08-29 (Wolf: „die drei satz-stellen auf 16"): 16 px ist die
+            uebliche Untergrenze fuer Fliesstext am Handy. Umgestellt wurden
+            genau die drei Stellen, an denen SAETZE stehen - die anderen vier
+            15-px-Stellen sind Listenzeilen und Knopfbeschriftungen, also
+            Tabelle und nicht Text. In CrowdQuiz stehen in der Punktestand-
+            Liste bis zu 40 Zeilen untereinander; ein Pixel je Zeile waere dort
+            eine Bildschirmhoehe zum Scrollen. */}
+        <div style={{ fontSize: 16, color: 'var(--qq-ink-muted)', lineHeight: 1.5 }}>
           {lang === 'de'
             ? 'Jetzt erklären wir die Regeln'
             : 'We are explaining the rules now'}
@@ -506,7 +513,8 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                 </div>
                 {info.lines[lang].map((line, i) => (
                   <div key={i} style={{
-                    fontSize: 15, fontWeight: 700, color: i === 0 ? 'var(--qq-ink)' : `${catColor}88`,
+                    // 2026-08-29: Satz-Stelle, siehe RulesCard.
+                    fontSize: 16, fontWeight: 700, color: i === 0 ? 'var(--qq-ink)' : `${catColor}88`,
                     marginTop: i === 0 ? 8 : 2,
                   }}>{line}</div>
                 ))}
@@ -556,7 +564,8 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                   {catInfo[lang]}
                 </div>
                 {cat && CAT_EXPLAIN[cat] && (
-                  <div style={{ fontSize: 15, color: `${catColor}88`, marginTop: 6, fontWeight: 700 }}>
+                  // 2026-08-29: Satz-Stelle, siehe RulesCard.
+                  <div style={{ fontSize: 16, color: `${catColor}88`, marginTop: 6, fontWeight: 700 }}>
                     {CAT_EXPLAIN[cat][lang]}
                   </div>
                 )}

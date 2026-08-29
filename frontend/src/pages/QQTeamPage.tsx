@@ -2131,7 +2131,12 @@ function TeamGameView({
             style={{ width: 18, height: 18, objectFit: 'contain' }}
           />
           <span style={{
-            fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
+            // 2026-08-29 (Wolf: „mach fuss auf 12"): war 10 px und damit die
+            // kleinste Schrift der App. Die Zeile wird davon nicht hoeher - die
+            // Hoehe der Fusszeile haengt am 18-px-Logo daneben, nicht am Text.
+            // Nachgemessen mit `handy-ruhe.mjs --groesser=10:12`: Kopf, erste
+            // Karte, Inhalt und Fuss stehen auf denselben Werten wie vorher.
+            fontSize: 12, fontWeight: 700, letterSpacing: '0.1em',
             color: 'var(--qq-ink-muted)', textTransform: 'uppercase',
           }}>
             CozyWolf · © 2026

@@ -18,8 +18,10 @@
  */
 import { buehneStarten, sleep } from './lib/buehne.mjs';
 
+// ⚠️ `zwischenstand` ist raus: die Station faehrt den Final-Wager an, und den
+// gibt es in CrowdQuiz nicht (2026-08-29, siehe den Kopf von crowd-abgleich.mjs).
 const ABEND = process.argv.slice(2).length ? process.argv.slice(2)
-  : ['lobby', 'regeln', 'teams', 'rundenintro', 'frage', 'aufloesung', 'pause', 'zwischenstand', 'spielende', 'danke'];
+  : ['lobby', 'regeln', 'ablauf', 'teams', 'rundenintro', 'frage', 'aufloesung', 'pause', 'spielende', 'danke'];
 
 const SUCHEN = () => {
   const buehne = document.querySelector('[data-qq-buehne]');
@@ -57,7 +59,12 @@ const SUCHEN = () => {
 for (const mega of [true, false]) {
   console.log(`\n${'─'.repeat(70)}\n${mega ? 'CrowdQuiz' : 'CozyQuiz'}: rohe Unicode-Emojis auf der Buehne\n${'─'.repeat(70)}`);
   for (const st of ABEND) {
-    const b = await buehneStarten({ bots: mega ? 12 : 8, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
+    // ⚠️ `grossformat` MUSS mit: `qq:startGame` setzt das Format aus seinem
+    // eigenen Payload, ein vorher geschicktes `setQuizOptions` ueberlebt den
+    // Spielstart also nicht. Ohne diese Zeile hat dieses Werkzeug beide
+    // Durchgaenge an CozyQuiz gemessen und den CrowdQuiz-Lauf nur so genannt
+    // (2026-08-29, derselbe Fehler stand in drei Werkzeugen).
+    const b = await buehneStarten({ bots: mega ? 12 : 8, frisch: true, takt: () => {}, entwurf: 'qq-vol-1', grossformat: mega });
     await b.emit('qq:setQuizOptions', { largeGroupMode: mega, nestedTeams: mega });
     await b.emit('qq:setTheme', { themeId: 'buehne' });
     await sleep(600);

@@ -138,6 +138,35 @@ const NUR_COZYQUIZ = {
   siegerehrung:    'FINAL_REVEAL, in CrowdQuiz unerreichbar. Die eigene Zeremonie: scripts/crowd-zeremonie.mjs',
 };
 
+/**
+ * Stationen, fuer die CrowdQuiz einen EIGENEN Weg braucht.
+ *
+ * ⚠️ 2026-08-29, dritter Fund derselben Sorte an einem Tag. Die Station
+ * `danke` in lib/buehne.mjs faehrt `springe('final-reveal')` an und drueckt
+ * danach zwanzigmal `qq:nextQuestion`, bis die Phase THANKS ist. In CozyQuiz
+ * fuehrt das durch das Turm-Finale ans Ziel. In CrowdQuiz gibt es kein
+ * Turm-Finale, also haengt die Kette dort - und weil sie haengt, hing sie mal
+ * hier und mal da: einmal kam die richtige Danke-Folie heraus, einmal ein
+ * Standbild aus dem Turm („Nur noch zwei, Platz 2").
+ *
+ * Der Weg, den CrowdQuiz am Abend wirklich geht, ist kurz: GAME_OVER, und von
+ * dort `qq:showThanks`. Der Server laesst das Ereignis ausdruecklich nur aus
+ * GAME_OVER zu (qqSocketHandlers.ts), es kann also gar nicht in einer fremden
+ * Phase landen.
+ *
+ * Merksatz, jetzt zum dritten Mal: eine Station der gemeinsamen Tabelle ist
+ * fuer CozyQuiz gebaut. Bevor sie in einer CrowdQuiz-Liste steht, muss ihr WEG
+ * geprueft werden, nicht nur ihr Ziel.
+ */
+const EIGENER_WEG = {
+  danke: async (b) => {
+    await b.helfer.springe('game-over');
+    await sleep(1200);
+    await b.emit('qq:showThanks');
+    await sleep(1500);
+  },
+};
+
 const ZIEL = '.shots/crowd-abgleich';
 
 /** Erlaubte Schriften auf der Buehne. Alles andere ist ein Rest. */
@@ -270,8 +299,39 @@ for (const st of stationen) {
   await b.emit('qq:setTheme', { themeId: 'buehne' });
   await sleep(600);
   try {
-    await b.zurStation(st);
+    if (EIGENER_WEG[st]) {
+      // Der Aufbau bis zum Spiel bleibt der gemeinsame, nur der letzte Schritt
+      // ist formatabhaengig.
+      await b.aufbauen('spiel');
+      await EIGENER_WEG[st](b);
+    } else {
+      await b.zurStation(st);
+    }
     await sleep((b.stationen[st]?.ruhe ?? 2500) + 800);
+    // ⚠️ Und dann warten, bis die Folie STEHT, nicht nur bis eine Zahl
+    // abgelaufen ist. 2026-08-29 am Kontaktbogen aufgefallen: die Danke-Folie
+    // erschien als „Allwissen - Sieger des Abends", also mitten in ihrer
+    // Uebergabe (der Sieger steht erst gross, faehrt dann nach links und der
+    // Endstand kommt daneben). Die feste `ruhe` traf je nach Lauf mal davor und
+    // mal danach, und das Bild sah dann wie eine andere Folie aus.
+    //
+    // Wie viele Schritte eine Station bis zu ihrem Ziel braucht, haengt an den
+    // Bots und ist nicht konstant - eine groessere feste Zahl waere also nur
+    // eine bessere Wette. Stattdessen: den sichtbaren Text lesen, bis er sich
+    // zweimal hintereinander nicht mehr aendert. Dann ist die Choreographie
+    // durch. Deckel bei acht Sekunden, damit eine Dauerschleife (Konfetti,
+    // Zaehler) den Lauf nicht anhaelt.
+    {
+      const lies = () => b.seite.evaluate(() =>
+        (document.body.innerText || '').replace(/\s+/g, ' ')).catch(() => '');
+      let vorher = await lies();
+      for (let i = 0; i < 16; i++) {
+        await sleep(500);
+        const jetzt = await lies();
+        if (jetzt === vorher) break;
+        vorher = jetzt;
+      }
+    }
     const f = await b.seite.evaluate(MESSEN, { schriften: SCHRIFTEN });
     const datei = `${ZIEL}/${st}.png`;
     await b.seite.screenshot({ path: datei });

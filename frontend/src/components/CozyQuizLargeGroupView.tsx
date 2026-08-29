@@ -747,8 +747,18 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
         <div style={{ position: 'absolute', left: '50%', top: locked ? '62%' : '52%', transform: 'translate(-50%,-50%)', zIndex: 5, maxWidth: '86%', textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
           fontFamily: ceremonyFont,
           fontSize: locked ? 'clamp(30px, 5.2cqw, 96px)' : 'clamp(22px, 3.4cqw, 54px)', fontWeight: 900,
-          color: locked ? wColor : '#f6d98a', letterSpacing: locked ? '-0.01em' : '0.04em',
-          textShadow: locked ? `0 0 40px ${wColor}77` : '0 0 26px rgba(233,196,106,0.4)',
+          // ⚠️ 2026-08-29, Wolf: „in wer kroent sich ist die schrift gold (ich
+          // weiss, dass war mal so) aber bitte auch nachziehen." Das Gold
+          // #f6d98a stammt aus dem Kolosseum-Look. Auf der Buehne ist die
+          // Hero-Farbe das warme Creme aus `--qq-title`. Gleiches Muster wie in
+          // CozyQuizTeamsRevealView („Los geht's"), damit die beiden grossen
+          // Rufe des Abends dieselbe Farbe haben.
+          // Beim Einrasten bleibt die TEAMFARBE: die bedeutet, wer gewonnen hat.
+          color: locked ? wColor : (istBuehneG() ? 'var(--qq-title)' : '#f6d98a'),
+          letterSpacing: locked ? '-0.01em' : '0.04em',
+          textShadow: locked
+            ? `0 0 40px ${wColor}77`
+            : (istBuehneG() ? 'none' : '0 0 26px rgba(233,196,106,0.4)'),
           animation: locked ? 'qqChampSlam 0.6s cubic-bezier(.2,1.28,.35,1) both' : 'qqTensionPulse 1.1s ease-in-out infinite', pointerEvents: 'none',
           transition: 'top .5s var(--qq-ease-smooth)' }}>
           {locked ? qqMegaFactionName(winner.avatarId, de ? 'de' : 'en') : (de ? 'Wer krönt sich?' : 'Who takes the crown?')}
@@ -763,7 +773,7 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
               gesetzt (war 27cqh → traf den Pokal an der Spitze der Sieger-Saeule bei
               ~33cqh). Jetzt 18cqh mit klarem Abstand ueber dem Pokal. */}
           <div style={{ position: 'absolute', left: 0, right: 0, top: '18cqh', zIndex: 7, display: 'flex', justifyContent: 'center', pointerEvents: 'none' }}>
-            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: '#f6d98a', textShadow: '0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
+            <div style={{ animation: 'qqChampSlam 0.7s cubic-bezier(.2,1.28,.35,1) 0.5s both', fontFamily: ceremonyFont, fontSize: 'clamp(24px, 3.2cqw, 56px)', fontWeight: 900, letterSpacing: '0.14em', textTransform: 'uppercase', color: istBuehneG() ? 'var(--qq-title)' : '#f6d98a', textShadow: istBuehneG() ? 'none' : '0 0 26px rgba(233,196,106,0.45)', whiteSpace: 'nowrap' }}>
               {de ? 'Champions der Arena' : 'Arena Champions'}
             </div>
           </div>

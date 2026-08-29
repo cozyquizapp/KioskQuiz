@@ -17,6 +17,7 @@
  * Tick-Position auf dem Zahlenstrahl.
  */
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useRandKorrektur } from './useRandKorrektur';
 import type { QQStateUpdate, QQBunteTueteCrowdEstimate } from '../../../../shared/quarterQuizTypes';
 import { qqSwarm } from '../../../../shared/qqSwarm';
 import { qqDistanceFactionScores, qqParseEstimate } from '../../../../shared/qqDistanceScore';
@@ -104,6 +105,13 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
   const rankOf = useMemo(() => new Map(ranked.map((f, i) => [f.avatarId, i + 1])), [ranked]);
   const winner = ranked[0] ?? null;
 
+  // 2026-08-29: `spread()` klemmt die MITTE der Kachel auf 94 Prozent und kennt
+  // ihre Breite nicht. Bei einem Ausreisser stand die aeusserste Kachel deshalb
+  // bei 1368..1773 auf einer 1760 breiten Buehne (gemessen,
+  // scripts/zahlenstrahl-probe.mjs). Der Haken holt genau die zurueck, die
+  // wirklich anstossen.
+  const buehneRef = useRef<HTMLDivElement | null>(null);
+
   const placed = useMemo(() => {
     const sorted = [...factions].sort((a, b) => a.median - b.median)
       .map((f, i) => ({ f, x: axisPct(f.median), cx: axisPct(f.median), above: i % 2 === 1 }));
@@ -132,6 +140,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
     return sorted;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [factions, axisPct, winner]);
+  useRandKorrektur(buehneRef, placed);
 
   // Beats: 0 Chips · 1 Wahrheit · 2 Band+Schwarm+Punkte · 3 Dimmen · 4 Sieger
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -200,7 +209,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
       </div>
 
       {/* Bühne */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
+      <div ref={buehneRef} style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
         {placed.length === 0 ? (
           <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--qq-text-muted)', fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 700 }}>
             {lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}
@@ -337,7 +346,7 @@ export function CrowdEstimateReveal({ state: s, lang }: { state: QQStateUpdate; 
               const scored = pts > 0;
               const laneW = `${92 / Math.max(3, Math.ceil(N / 2))}cqw`;
               return (
-                <div key={f.avatarId} style={{
+                <div key={f.avatarId} data-qq-rand-kachel={above ? 'oben' : 'unten'} style={{
                   position: 'absolute', left: `${cx}%`,
                   ...(above ? { bottom: '56%' } : { top: '57%' }),
                   width: laneW, minWidth: 'clamp(64px,8cqw,150px)',

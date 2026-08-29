@@ -17,6 +17,7 @@
  */
 
 import { useState, useEffect, useMemo, useRef } from 'react';
+import { useRandKorrektur } from './useRandKorrektur';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
 import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shared/quarterQuizTypes';
 import { qqDistanceFactionScores, qqSchaetzchenParse } from '../../../../shared/qqDistanceScore';
@@ -252,6 +253,13 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rankedFinal, axisPct, winner]);
 
+  // 2026-08-29: dieselbe Falle wie im Schwarm-Strahl. `spread()` klemmt die
+  // MITTE der Kachel auf 95 Prozent und kennt ihre Breite nicht. Hier ist die
+  // Kachel schmaler als drueben (nur Wappen und Wert), deshalb war die Messung
+  // in der Probe gruen - das Loch ist aber dasselbe, es faengt nur spaeter an.
+  const buehneRef = useRef<HTMLDivElement | null>(null);
+  useRandKorrektur(buehneRef, placed);
+
   const wx = winner ? axisPct(winner.num) : 50;
 
   // ── Dramaturgie: 0 Chips · 1 Beam+Count-up · 2 Dimmen · 3 Sieger ──
@@ -356,7 +364,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
 
       {/* Bühne: NUR Strahl (Wolf 2026-07-16 v4). Wappen sitzen in zwei Lanes direkt
           am Strahl an ihrer Tipp-Position, Wert+Delta am Wappen. Keine Liste. */}
-      <div style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
+      <div ref={buehneRef} style={{ flex: 1, position: 'relative', minHeight: 0, zIndex: 1 }}>
         {placed.length === 0 ? (
           <div style={{
             position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -477,7 +485,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               // gewonnen hat (Sieger = Punkte-Sieger, nicht zwingend der naechste Tipp).
               const av = isWin ? 'clamp(68px, 8.2cqw, 134px)' : 'clamp(38px, 4.3cqw, 68px)';
               return (
-                <div key={r.teamId} style={{
+                <div key={r.teamId} data-qq-rand-kachel={above ? 'oben' : 'unten'} style={{
                   position: 'absolute', left: `${cx}%`,
                   ...(above ? { bottom: `${100 - RAIL + 1}%` } : { top: `${RAIL + 1}%` }),
                   transform: 'translateX(-50%)', zIndex: isWin && lit ? 8 : 4,

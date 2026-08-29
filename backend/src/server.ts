@@ -10140,13 +10140,29 @@ app.post('/api/qq/:roomCode/dev/simAnswers', (req, res) => {
   if (!q) return res.status(400).json({ error: 'Keine Frage geladen' });
   const correctRate = Math.min(1, Math.max(0, Number(req.body?.correctRate ?? 0.6)));
   const stagger = req.body?.stagger !== false; // default: staggered
+  // 2026-08-29: `texts` setzt die Abgaben AUSDRUECKLICH, reihum auf die Teams,
+  // die noch nichts abgegeben haben. Grund: eine Layout-Falle hing an den
+  // Tippwerten (Zahlenstrahl, Kacheln am rechten Rand). Mit gewuerfelten
+  // Antworten laesst sie sich nicht reproduzieren, man wiederholt nur den
+  // Zufall - und ein Befund, der nicht auf Ansage rot wird, ist keiner.
+  const texte: string[] = Array.isArray(req.body?.texts)
+    ? req.body.texts.map((x: unknown) => String(x)).filter((x: string) => x.length > 0)
+    : [];
   // Für Dummies vor dem Simulieren sicherstellen, dass sie connected sind (sonst bleibt allAnswered=false)
   for (const t of Object.values(room.teams) as any[]) {
     if (t._dummy) t.connected = true;
   }
+  // ⚠️ Mit `texts` wird ueberschrieben, nicht ergaenzt. Die Bots antworten von
+  // selbst (qqStandardBotAI), also war beim ersten Anlauf ein Teil der Tafel
+  // schon gefuellt, und der Filter „hat noch nicht abgegeben" liess genau die
+  // gewuerfelten Werte stehen, die man loswerden wollte. Ergebnis: ein Lauf
+  // rot, der naechste gruen, mit denselben Vorgaben.
+  if (texte.length) room.answers = [];
   const teams = Object.values(room.teams).filter((t: any) => !room.answers.some((a: any) => a.teamId === t.id));
 
+  let texteIdx = 0;
   function pickAnswer(forTeam: any): string {
+    if (texte.length) return texte[texteIdx++ % texte.length];
     const beCorrect = Math.random() < correctRate;
     if (q!.category === 'MUCHO' && q!.options) {
       const idx = beCorrect && q!.correctOptionIndex != null

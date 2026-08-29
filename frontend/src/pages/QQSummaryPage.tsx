@@ -454,6 +454,26 @@ function ShareButton({ team, place, lang, brand }: {
 // 2026-05-10 (Wolf-Bug 'Link wird beim nächsten Spiel überschrieben'):
 // Beide Routen lesen — `/summary/:roomCode` (legacy, jüngstes Spiel) und
 // `/summary/by-id/:gameId` (stabil per Spiel). gameId hat Vorrang.
+/**
+ * ⚠️ ROHE EMOJIS SIND HIER ERLAUBT, und das ist eine Entscheidung.
+ *
+ * 2026-08-29, Wolf: „ich wuerde alle auf der summary lassen, sonst ist die
+ * haelfte neu die andere nicht." Gemessen standen 14 rohe Unicode-Emojis auf
+ * der Seite - drei mit vorhandenem Zeichen im Satz (🏆 🥇 🏅), fuenf
+ * Bedienzeichen (📲 🔖 📋 ✉ 🌐), sieben Stimmungsknoepfe im Feedback
+ * (💬 🐛 ❤ 😍 👍 😐 💤). Die Haelfte umzustellen haette zwei Bildsprachen
+ * nebeneinander gestellt, und das ist schlechter als eine alte.
+ *
+ * Der Grund der Buehnenregel traegt hier ohnehin nicht: auf 1760 Bildpunkten
+ * rendert jeder Laptop das Systemzeichen anders. Auf dem Handy des Gastes ist
+ * das native Zeichen umgekehrt das konsistente. Ausfuehrlich im Kopf von
+ * scripts/emoji-reste.mjs, das die Handy-Seiten deshalb nicht ansieht.
+ *
+ * Die EINE Ausnahme ist das Instagram-Zeichen (`InstagramMarke`), und die kam
+ * von Wolf selbst am selben Tag: „mach nur ein instagram logo hin". Das ist
+ * eine Marke, kein Emoji - und die Pille, die es ersetzt hat, war mit 2,34:1
+ * ausserdem nicht lesbar.
+ */
 export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary } = {}) {
   const { roomCode: paramRoomCode, gameId: paramGameId } = useParams<{ roomCode?: string; gameId?: string }>();
   const roomCode = mockSummary?.roomCode ?? paramRoomCode;

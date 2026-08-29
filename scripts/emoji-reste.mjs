@@ -14,6 +14,28 @@
  * Symbole), und die Liste ist ein HINWEIS - was davon ein Rest ist,
  * entscheidet das Auge.
  *
+ * ⚠️ DIE HANDY-SEITEN SIND ABSICHTLICH DRAUSSEN, nicht vergessen worden. Der
+ * Suchbereich ist `[data-qq-buehne]`, und das ist eine Entscheidung, keine
+ * Nachlaessigkeit:
+ *
+ *   Der Grund dieser Regel ist die Projektion. Auf 1760 Bildpunkten rendert
+ *   jeder Laptop das Systemzeichen anders, und das sieht man aus zehn Metern.
+ *   Auf dem Handy des Gastes dreht sich der Grund um: dort ist das native
+ *   Zeichen das konsistente, weil jede andere App auf dem Geraet es genauso
+ *   zeigt, und ein eigenes PNG waere der Fremdkoerper.
+ *
+ *   2026-08-29 auf /summary-test gemessen: 14 rohe Emojis. Drei haetten ein
+ *   Zeichen im Satz (🏆 🥇 🏅), fuenf sind Bedienzeichen (📲 🔖 📋 ✉ 🌐),
+ *   sieben sind die Stimmungsknoepfe im Feedback (💬 🐛 ❤ 😍 👍 😐 💤).
+ *   Wolf hat entschieden, ALLE zu lassen: „ich wuerde alle auf der summary
+ *   lassen, sonst ist die haelfte neu die andere nicht." Eine Seite mit zwei
+ *   Bildsprachen nebeneinander waere schlechter als eine mit einer alten.
+ *
+ * Wer diesen Sucher also auf die Summary ausweitet, baut einen Pruefer, der
+ * dauerhaft rot steht - und ein Pruefer, der immer rot ist, wird nicht
+ * gelesen. Wenn die Entscheidung faellt, die Handy-Seiten umzustellen, dann
+ * KOMPLETT und dann darf er mit.
+ *
  * NUTZUNG: node scripts/emoji-reste.mjs [station ...]
  */
 import { buehneStarten, sleep } from './lib/buehne.mjs';

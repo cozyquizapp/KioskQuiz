@@ -453,6 +453,18 @@ export function qqEmojiSlug(emoji: string): QQIconSlug | null {
 
 // Inline-Helper: rendert Emoji als Fluent-PNG, faellt bei unbekanntem Emoji
 // sauber auf Text-Rendering zurueck. Size default '1em' = passt sich Parent-Schrift an.
+//
+// ⚠️ 2026-08-29: dieser Rueckfall ist STILL, und das hat einmal etwas versteckt.
+// Auf der Summary standen sieben Zeichen scheinbar migriert in <QQEmojiIcon>,
+// hatten aber keinen Slug - herausgekommen ist jedes Mal das rohe Zeichen, und
+// nirgends wurde etwas rot. Ein Aufruf, der aussieht wie erledigt.
+//
+// Er bleibt trotzdem still, und zwar durch Entscheidung: auf den Handy-Seiten
+// ist das native Zeichen ausdruecklich erwuenscht (Wolf 2026-08-29, Begruendung
+// im Kopf von scripts/emoji-reste.mjs). „Unbekannt" ist dort also ein gueltiger
+// Zustand, kein Fehler - eine Warnung waere schlicht falsch.
+//
+// Wer das je aendert, aendert es zusammen mit jener Entscheidung, nicht davor.
 export function QQEmojiIcon({ emoji, size = '1em', style, className, title, alt }: {
   emoji: string; size?: number | string;
   style?: CSSProperties; className?: string; title?: string; alt?: string;

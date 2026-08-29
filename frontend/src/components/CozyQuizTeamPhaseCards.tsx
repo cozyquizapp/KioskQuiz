@@ -235,7 +235,7 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
   qqGetAvatar(myTeam.avatarId);
   const color = myTeam.color;
   return (
-    <CozyCard borderColor={`${color}cc`} pulse>
+    <CozyCard>
       <style>{`
         @keyframes tcTeamPop {
           0% { opacity: 0; transform: scale(0.5) rotate(-12deg); }
@@ -624,7 +624,7 @@ export function TieBreakerCard({
       ? (!!myTeam?.avatarId && s.teams.find(t => t.id === tb.winnerId)?.avatarId === myTeam.avatarId)
       : tb.winnerId === myTeamId);
     return (
-      <CozyCard borderColor={iWon ? '#22C55E' : myColor}>
+      <CozyCard borderColor={iWon ? QQ_COLORS.green500 : undefined}>
         {header}
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>{iWon ? '🏆' : '🤝'}</div>
@@ -647,7 +647,7 @@ export function TieBreakerCard({
   // Nicht-Kandidat: nur zuschauen.
   if (!eligible) {
     return (
-      <CozyCard borderColor={myColor}>
+      <CozyCard>
         {header}
         <div style={{ textAlign: 'center', fontSize: 14, color: 'var(--qq-ink-muted)', fontWeight: 700, lineHeight: 1.4 }}>
           {de ? 'Das Stechen läuft zwischen:' : 'The tiebreaker is between:'}
@@ -662,7 +662,7 @@ export function TieBreakerCard({
   // Kandidat, schon getippt: warten.
   if (myAnswer) {
     return (
-      <CozyCard borderColor={myColor}>
+      <CozyCard>
         {header}
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
           <div style={{ fontSize: 34, marginBottom: 8 }}>⏳</div>
@@ -679,7 +679,7 @@ export function TieBreakerCard({
 
   // Kandidat, noch offen: Zahlen-Eingabe.
   return (
-    <CozyCard borderColor={myColor}>
+    <CozyCard>
       {header}
       <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--qq-ink-body)', textAlign: 'center', marginBottom: 14, lineHeight: 1.3 }}>
         {tb.prompt}
@@ -818,7 +818,7 @@ export function FinalBettingCard({
   // Nur auf ===false gaten (undefined defaultet server-seitig auf true).
   if (s.finalBettingIntroDone === false) {
     return (
-      <CozyCard borderColor={myColor} pulse>
+      <CozyCard>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           <div style={{ fontSize: 38, marginBottom: 8 }}>🎲</div>
           <div style={{ fontWeight: 900, fontSize: 19, color: myColor, marginBottom: 6 }}>
@@ -838,7 +838,7 @@ export function FinalBettingCard({
     const myBet = s.finalBets?.[myTeamId];
     const targetTeam = myBet ? s.teams.find(t => t.id === myBet.targetTeamId) : null;
     return (
-      <CozyCard borderColor={myColor}>
+      <CozyCard>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           <div style={{ fontSize: 38, marginBottom: 8 }}>🎲</div>
           <div style={{ fontWeight: 900, fontSize: 19, color: myColor, marginBottom: 6 }}>
@@ -882,7 +882,7 @@ export function FinalBettingCard({
   }
 
   return (
-    <CozyCard borderColor={myColor} pulse>
+    <CozyCard>
       <div style={{ textAlign: 'center', padding: '4px 0 8px' }}>
         <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
           {de ? '🪙 Final-Tipp' : '🪙 Final tip'}
@@ -973,7 +973,7 @@ export function FinalRecapHintCard({
   const myTeam = s.teams.find(t => t.id === myTeamId);
   const myColor = myTeam?.color ?? QQ_COLORS.brandPink;
   return (
-    <CozyCard borderColor={myColor}>
+    <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 36, marginBottom: 6 }}>📊</div>
         <div style={{
@@ -1075,7 +1075,7 @@ export function FinalRevealStackPlacementCard({
   };
 
   return (
-    <CozyCard borderColor={myColor}>
+    <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 36, marginBottom: 6, animation: 'tcwinBounce 0.7s ease both' }}>{nextEmoji}</div>
         <div style={{
@@ -1174,7 +1174,7 @@ export function FinalRevealCard({
   const mutualPartner = myResolution?.mutualWith ? s.teams.find(t => t.id === myResolution.mutualWith) : null;
 
   return (
-    <CozyCard borderColor={myColor}>
+    <CozyCard>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 38, marginBottom: 8 }}>🏆</div>
         <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
@@ -1270,7 +1270,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
   const connectedLabel = largeMode ? (lang === 'de' ? 'Punkte' : 'pts') : (lang === 'de' ? 'verbunden' : 'connected');
 
   return (
-    <CozyCard borderColor={iWon ? QQ_COLORS.brandPink : undefined}>
+    <CozyCard borderColor={iWon ? 'var(--qq-accent)' : undefined}>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         {/* Hero section */}
         <div style={{ animation: 'tcwinBounce 0.7s ease both' }}>

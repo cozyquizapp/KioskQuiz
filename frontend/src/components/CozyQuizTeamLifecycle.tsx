@@ -139,7 +139,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color="#F9A8D444" />
-      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+      <div className="qq-team-column" style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Sprache-Flag oben rechts */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <button
@@ -280,7 +280,7 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
       <style>{TEAM_CSS}</style>
       <div style={grainOverlay} />
       <MobileFireflies color="#F9A8D444" />
-      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+      <div className="qq-team-column" style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Sprache-Flag oben rechts */}
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: 12 }}>
           <button
@@ -397,7 +397,7 @@ export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: 
       `}</style>
       <div style={grainOverlay} />
       <MobileFireflies color="#F9A8D444" />
-      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+      <div className="qq-team-column" style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Header skeleton */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}><QQEmojiIcon emoji="🎮" size={42} /></div>

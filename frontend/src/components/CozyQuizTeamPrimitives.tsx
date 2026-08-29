@@ -22,6 +22,18 @@ import { getServerNow } from '../utils/serverTime';
 /** Frosted-Glass-Surface fuer Team-View Cards. Premium-Mobile-Look (opacity
  *  0.62 + saturate 160%, lesbar). backdrop-filter mit -webkit-Fallback fuer
  *  Safari iOS. */
+/* 2026-08-29, Konturen-Regel (Wolf: „das bitte auch", zum Befund des
+   Kontaktbogens): Farbe an der Kontur nur, wo sie etwas SAGT, das nicht
+   daneben steht.
+
+   * Kategorie  ja  - der Ton ist derselbe wie auf der Wand und steht in
+                      keinem Text.
+   * Richtig / falsch  ja - Gruen und Rot sind das Ergebnis selbst.
+   * Teamfarbe  nein - das Wappen daneben zeigt sie schon. Eine Kontur, die
+                      dasselbe wiederholt, ist Laerm, kein Hinweis.
+   * Marken-Pink nein - es bedeutet auf der Buehne Dringlichkeit (Timer unter
+                      zehn Sekunden). Eine Karte ist nicht dringend.
+*/
 export function CozyCard({
   children, anim, borderColor, pulse,
 }: {

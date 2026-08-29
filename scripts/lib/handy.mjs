@@ -105,6 +105,23 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   }).catch(() => {});
   await sleep(500);
   if (mega) { await emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true }); await sleep(500); }
+
+  /* Raum einrichten und Lobby OEFFNEN.
+   *
+   * ⚠️ Wolf, 2026-08-29: „im moderator erst die lobby freigegeben werden
+   * muesste, sie ist nicht randomly immer offen." Genau daran sind zwei
+   * Anlaeufe gescheitert, die Setup-Ansicht zu messen: der frische Gast kam an,
+   * bekam „Preparing the quiz …" und meldete ein einziges Bedienelement. Ich
+   * hatte den Grund beim Werkzeug gesucht, und er lag im Ablauf des Abends.
+   *
+   * `lobbyOpen` ist seit dem 27.08. ein eigener Schalter, bewusst getrennt von
+   * `setupDone`: das Steuerpult darf ins Cockpit, ohne dass der Saal schon
+   * scannen soll. Ein Harness, der nur `setupDone` setzt, sieht die Lobby also
+   * nie - und ein Harness, der beides nicht setzt, misst den Wartebildschirm. */
+  await emit('qq:setSetupDone', { value: true });
+  await sleep(300);
+  await emit('qq:setLobbyOpen', { value: true });
+  await sleep(600);
   console.log(`Raum ${roomCode} frisch${mega ? ' (CrowdQuiz)' : ''}.`);
 
   const handy = await ctxTeam.newPage();

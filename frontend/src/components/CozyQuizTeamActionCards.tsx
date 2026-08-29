@@ -390,7 +390,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
     const showPendingTeamView = pendingTeam && !showRecentPlaceFlash;
 
     return (
-      <CozyCard borderColor={myTeam?.color}>
+      <CozyCard>
         <div style={{ textAlign: 'center', padding: '8px 0' }}>
           {/* 2026-07-09 (Wolf-Livetest 'Grid springt hoch'): Das Brett bleibt
               IMMER an gleicher Stelle+Größe — auch während ein anderes Team wählt.
@@ -942,7 +942,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
       safeEmit(emit, 'qq:comebackHLAnswer', { roomCode, teamId: myTeamId, choice });
     };
     return (
-      <CozyCard borderColor={isReveal ? (myCorrect ? QQ_COLORS.green500 : QQ_COLORS.red500) : teamColor}>
+      <CozyCard borderColor={isReveal ? (myCorrect ? QQ_COLORS.green500 : QQ_COLORS.red500) : undefined}>
         {/* Header */}
         <div style={{
           fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase',
@@ -1093,7 +1093,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
   // ── H/L-Intro-Phase: Kurze Info für tied-last Team ───────────────────────
   if (hl && hl.phase === 'intro' && isMine) {
     return (
-      <CozyCard borderColor={QQ_COLORS.brandPink}>
+      <CozyCard>
         <div style={{ textAlign: 'center', padding: '6px 0' }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}>⚡</div>
           <div style={{ fontWeight: 900, color: 'var(--qq-ink-muted)', fontSize: 17, marginBottom: 10 }}>
@@ -1168,7 +1168,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
       );
     }
     return (
-      <CozyCard borderColor={QQ_COLORS.brandPink}>
+      <CozyCard>
         <div style={{ fontWeight: 900, color: 'var(--qq-ink-body)', textAlign: 'center', fontSize: 17 }}>
           {s.comebackAction === 'PLACE_2' && t.comeback.activePlace[lang]}
           {s.comebackAction === 'STEAL_1' && t.comeback.activeSteal[lang]}
@@ -1206,7 +1206,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
   const anyAvailable = options.some(o => o.available);
 
   return (
-    <CozyCard borderColor={QQ_COLORS.brandPink}>
+    <CozyCard>
       <div style={{ fontWeight: 900, fontSize: 18, color: 'var(--qq-ink)', marginBottom: 16, textAlign: 'center' }}>
         {t.comeback.title[lang]}
       </div>
@@ -1272,7 +1272,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
 
   if (!c) {
     return (
-      <CozyCard borderColor={QQ_COLORS.brandPink}>
+      <CozyCard>
         <div style={{ padding: 18, textAlign: 'center', color: 'var(--qq-ink-muted)' }}>
           {de ? '4×4 wird vorbereitet…' : 'Loading…'}
         </div>
@@ -1304,7 +1304,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
   // Phase-spezifische Hauptansicht
   if (c.phase === 'intro') {
     return (
-      <CozyCard borderColor={QQ_COLORS.brandPink}>
+      <CozyCard>
         <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
           <QQIcon slug="connect" size={56} />
           {/* Synchron mit Beamer-Header: 'Großes Finale' / 'Grand Finale'. */}

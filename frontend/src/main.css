@@ -2202,15 +2202,32 @@ img {
   button {
     padding: 10px 14px !important;
     font-size: 14px !important;
-    min-height: 40px !important;
+    /* 2026-08-29: war 40. Die WCAG fordert 44 x 44 (2.5.5), und diese Regel
+       traegt `!important` - sie hat also jede sorgfaeltig gesetzte
+       Mindesthoehe im Code ueberstimmt, ausgerechnet auf dem Geraet, fuer das
+       die Regel gilt. Groesser kann nichts kaputt machen. */
+    min-height: 44px !important;
   }
-  
+
   /* Input fields */
   input[type="text"],
   input[type="number"],
   input[placeholder] {
     padding: 10px 12px !important;
-    font-size: 14px !important;
+    /* ⚠️ 2026-08-29: war 14px, und das war ein Fallstrick mit Ansage.
+       iOS Safari zoomt beim Antippen eines Eingabefelds AUTOMATISCH hinein,
+       wenn dessen Schrift kleiner als 16 px ist. Der Spieler steht dann mit
+       verschobenem Bild da, waehrend die Uhr laeuft.
+
+       Die Regel griff unter 640 px, also genau auf dem Handy, und sie traegt
+       `!important` - `cozyInput` in QQTeamPage setzt 17 px und wurde still
+       ueberstimmt. Gefunden von scripts/handy-bedienung.mjs, und zwar erst,
+       nachdem der Harness die Lobby oeffnet und die Beitritts-Strecke
+       ueberhaupt zu sehen ist (Wolf: „im moderator erst die lobby freigegeben
+       werden muesste").
+
+       16 px ist die Schwelle, nicht ein Geschmackswert. */
+    font-size: 16px !important;
   }
   
   /* Flex wrap for cramped spaces */
@@ -4810,10 +4827,52 @@ button:active:not(:disabled),
   opacity: 0.85;
   transition: transform 80ms ease, opacity 80ms ease;
 }
+/* 2026-08-29 (Wolf am Kontaktbogen: „frage laeuft: eingabefeld pink
+   umrandet"). Gemessen an den Bildpunkten: rgb(184,60,124) - das ist
+   Marken-Pink #EC4899 bei 75 Prozent auf dem Grund, also genau dieser
+   Fokus-Ring. Das Antwortfeld bekommt beim Erscheinen den Fokus, deshalb
+   steht er auf jedem Screenshot der Fragefolie.
+
+   Pink ist auf der Buehne die DRINGLICHKEIT (Timer unter zehn Sekunden,
+   docs/UEBERGABE_TEAM.md). Ein Fokus-Ring ist nicht dringend, er zeigt nur,
+   wo man gerade ist. Also Tinte, in derselben Deckkraft.
+
+   ⚠️ Diese vier Regeln sind `.qq-team-*`-benannt und gehoeren damit
+   ausschliesslich dem Handy - sie koennen die Buehne nicht treffen. Sie
+   liegen nur in dieser Datei, weil Klassen hier liegen. */
 .qq-team-page button:focus-visible,
 .qq-team-page [role="button"]:focus-visible {
-  outline: 3px solid rgba(236, 72, 153, 0.75);
+  outline: 3px solid rgba(246, 239, 230, 0.75);
   outline-offset: 2px;
+}
+
+/* ── Der Daumen erreicht das obere Drittel nicht ──────────────────────────
+   2026-08-29, Befund vom Kontaktbogen (Wolf: „1. gehen wir das an"): alle
+   Karten sassen oben, darunter standen zwei Drittel leerer Grund - und in
+   diesem oberen Drittel liegt „Jetzt antworten". Auf einem 844 px hohen
+   Geraet ist das einhaendig nur durch Umgreifen erreichbar, und zwar in genau
+   dem Moment, in dem die Uhr laeuft.
+
+   Die Spalte spannt jetzt die Bildschirmhoehe und zentriert ihren Inhalt.
+   Damit rutscht eine kurze Ansicht in die Mitte, ohne dass sich INNERHALB der
+   Ansicht irgendetwas verschiebt - Abstaende, Reihenfolge und Groessen
+   bleiben, wie sie waren. Das ist der Unterschied zwischen einer Einzelheit
+   und einem Umbau (todo.md zu /team).
+
+   ⚠️ `safe center` statt `center`: bei Inhalt, der HOEHER ist als das Bild,
+   schiebt ein normales `center` den Anfang ueber die obere Kante hinaus, und
+   dorthin kann man nicht scrollen. Mit `safe` faellt es in diesem Fall auf
+   `flex-start` zurueck. Die langen Ansichten - Setzen, Aufloesung mit Liste -
+   sind genau der Fall.
+
+   ⚠️ `100dvh`, nicht `100vh`: auf dem Handy zaehlt `vh` die Adressleiste mit,
+   die beim Scrollen verschwindet. Steht in den Hausregeln unter
+   `viewport-units`. */
+.qq-team-column {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
 }
 
 .qq-team-input {
@@ -4824,7 +4883,8 @@ button:active:not(:disabled),
   font-family: inherit;
   font-size: 18px;
   font-weight: 700;
-  color: #F1F5F9;
+  /* War Slate-100. Fallback bleibt stehen, falls die Leiter einmal fehlt. */
+  color: var(--qq-ink, #F1F5F9);
   /* 2026-05-04 (UI-Audit P0-2): outline:none nur fuer Maus, fuer Keyboard
      bleibt focus-visible-Outline aktiv (Tab-Navigation muss sichtbar sein). */
   outline: none;
@@ -4834,11 +4894,13 @@ button:active:not(:disabled),
   border-width: 2px;
 }
 .qq-team-input:focus-visible {
-  outline: 3px solid rgba(236, 72, 153, 0.75);
+  outline: 3px solid rgba(246, 239, 230, 0.75);
   outline-offset: 2px;
 }
 .qq-team-input::placeholder {
-  color: #94a3b8;
+  /* War Slate-400. Der Platzhalter ist Text, also Tinte - dieselbe Leiter wie
+     alles andere auf dem Handy (frontend/src/qqHandyTinte.ts). */
+  color: var(--qq-ink-muted, #94a3b8);
   font-weight: 600;
 }
 

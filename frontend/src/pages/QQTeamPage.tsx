@@ -835,7 +835,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
       {eurovisionMode && <MobileEurovisionHearts />}
       <div style={grainOverlay} />
       <MobileFireflies color={`${slotColor}66`} />
-      <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
+      <div className="qq-team-column" style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         <div style={{ textAlign: 'center', marginBottom: 32, position: 'relative' }}>
           {/* 2026-07-29 (Wolf): „cozywolf · live quiz"-Badge oben entfernt —
               die COZYQUIZ-Wortmarke reicht, der Header wird ruhiger. */}
@@ -904,7 +904,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     { label: lang === 'de' ? '3. Los'    : '3. Go',     active: false,        past: false      },
                   ];
               return items.map((s, i) => {
-                const color = s.active ? QQ_COLORS.brandPink : (s.past ? QQ_COLORS.violet400 : 'var(--qq-ink-dim)');
+                // 2026-08-29 (Wolf am Kontaktbogen: „beitreten - punkte leicht
+                // pink"). Die drei Schritte Avatar / Name / Los tragen jetzt
+                // die Tinte: der aktuelle hell, die erledigten gedaempft, die
+                // kommenden leise. Der Fortschritt liegt damit in der
+                // Helligkeit statt in drei verschiedenen Farbtoenen - und
+                // Violett hatte an dieser Stelle ohnehin keine Bedeutung.
+                const color = s.active ? 'var(--qq-ink)' : (s.past ? 'var(--qq-ink-muted)' : 'var(--qq-ink-dim)');
                 return (
                   <React.Fragment key={i}>
                     {i > 0 && (
@@ -946,8 +952,13 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
         )}
         {/* 2026-05-04 (Wolf): Stammcode-Block ist nach UNTER den Avatar-Editor
             verschoben (war vorher zu prominent oben). Siehe weiter unten. */}
+        {/* 2026-08-29: die Beitritts-Strecke trug Marken-Pink an jeder Karte.
+            Sie faellt unter dieselbe Regel wie die Spielkarten (siehe CozyCard
+            in CozyQuizTeamPrimitives): Farbe an der Kontur nur, wo sie etwas
+            sagt. Hier sagt sie nichts - der Schritt steht als
+            „1. Avatar / 2. Name / 3. Los" darueber. */}
         {resumeTeam && (
-          <CozyCard anim borderColor={resumeTeam.color || QQ_COLORS.brandPink}>
+          <CozyCard anim>
             <div style={{
               display: 'flex', alignItems: 'center', gap: 14,
               padding: '6px 0 14px',
@@ -974,7 +985,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           </CozyCard>
         )}
         {step === 'COLOR' && (
-          <CozyCard anim borderColor={QQ_COLORS.brandPink}>
+          <CozyCard anim>
             {/* 2026-05-04 (Wolf): Karussell-Avatar-Editor — Slot via Swipe/Pfeile,
                 Emoji via Tap auf Hero (Bottom-Sheet), Lobby-voll-Empty-State. */}
             <AvatarKarussellEditor
@@ -994,7 +1005,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 Mega Event: ganzer Name-Schritt entfällt (Faktion + Nummer). */}
             {!largeGroup && (<>
             <StepLabel>{t.setup.teamName[lang]}</StepLabel>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 6 }}>
+            {/* 2026-08-29: gap 6 -> 8 (WCAG 2.5.8). Dies ist die Namenszeile
+                der ERSTEN Beitritts-Strecke; die zweite steht weiter unten und
+                hatte denselben Wert. Zwei fast gleiche Zeilen an zwei Stellen -
+                der erste Fix hat nur eine davon erwischt, und die Messung hat
+                den Rest gemeldet. */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 6 }}>
               <input
                 value={teamName}
                 aria-label={t.setup.teamName[lang]}
@@ -1127,7 +1143,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           }
           // Wiederkehrer ODER Erstgast hat „expandiert" geklickt → CozyCard rendern
           return (
-          <CozyCard borderColor={QQ_COLORS.brandPink}>
+          <CozyCard>
             {!stammExpanded && !stammResult && (
               <button
                 onClick={() => setStammExpanded(true)}
@@ -1151,7 +1167,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   <QQEmojiIcon emoji="🔖" size={16} style={{ marginRight: 6, verticalAlign: '-2px' }} />
                   {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
                 </div>
-                <div style={{ display: 'flex', gap: 6 }}>
+                <div style={{ display: 'flex', gap: 8 }}>
                   <input
                     type="text"
                     value={stammInput}
@@ -1249,7 +1265,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           if (isPng) {
             // Beim ersten Mount auto-skip
             return (
-              <CozyCard anim borderColor={QQ_COLORS.brandPink}>
+              <CozyCard anim>
                 <StepLabel>{lang === 'de' ? 'Avatar' : 'Avatar'}</StepLabel>
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <QQTeamAvatar avatarId={avatarId} size={120} />
@@ -1265,7 +1281,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             );
           }
           return (
-            <CozyCard anim borderColor={QQ_COLORS.brandPink}>
+            <CozyCard anim>
               <StepLabel>{lang === 'de' ? 'Wähle einen Avatar' : 'Pick an avatar'}</StepLabel>
               <div style={{
                 display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, marginBottom: 16,
@@ -1356,7 +1372,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
           );
         })()}
         {step === 'NAME' && (
-          <CozyCard anim borderColor={QQ_COLORS.brandPink}>
+          <CozyCard anim>
             <div style={{ textAlign: 'center', marginBottom: 16 }}>
               <QQTeamAvatar avatarId={avatarId} teamEmoji={chosenEmoji} size={64} style={{
                 margin: '0 auto',
@@ -1365,7 +1381,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               }} />
             </div>
             <StepLabel>{t.setup.teamName[lang]}</StepLabel>
-            <div style={{ display: 'flex', gap: 6, marginBottom: 8 }}>
+            {/* 2026-08-29: gap 6 -> 8. Die WCAG fordert 8 px zwischen zwei
+                Trefferflaechen (2.5.8); gemessen lagen Namensfeld und
+                Wuerfelknopf 6 px auseinander. Zwei Pixel klingen nach nichts
+                und sind genau der Griff daneben, der am Abend zum falschen
+                Namen fuehrt. */}
+            <div style={{ display: 'flex', gap: 8, marginBottom: 8 }}>
               <input
                 value={teamName}
                 aria-label={t.setup.teamName[lang]}
@@ -1808,7 +1829,7 @@ function TeamGameView({
         </div>
       )}
 
-      <div style={{
+      <div className="qq-team-column" style={{
         width: '100%', maxWidth: 640, margin: '0 auto',
         padding: 'max(14px, env(safe-area-inset-top)) 14px max(28px, calc(env(safe-area-inset-bottom) + 12px)) 14px',
         position: 'relative', zIndex: 5,

@@ -8,6 +8,7 @@ import {
   QQQuestion, QQLanguage, QQ_CATEGORY_LABELS, QQ_CATEGORY_COLORS,
   QQStateUpdate, QQSoundConfig, QQ_AVATARS, qqMegaFactionName, qqMegaFactionSlug,
   QQ_COMEBACK_ENABLED, qqIsMega, qqMegaAwardKeys, QQ_QUESTIONS_PER_PHASE,
+  qqDraftFormat, QQ_DRAFT_FORMAT_LABELS, type QQDraftFormat,
 } from '../../../shared/quarterQuizTypes';
 import { qqCategoryAccent } from '../../../shared/qqCategoryTheme';
 // 2026-07-19 (Turm-Finale V2): Award-Count fürs Final-Reveal-Beat-Modell (siehe
@@ -63,6 +64,7 @@ interface DraftSummary {
   /** Anzahl Fragen, die im Mega Event nicht ideal sind (aktuell: Hot Potato =
       rundenbasiert statt gleichzeitig). Wizard filtert/warnt darüber. */
   megaWarnCount?: number;
+  format?: QQDraftFormat;
 }
 
 // 2026-07-15 (Wolf Siegerehrung): in der Arena schaltet GAME_OVER-Space die
@@ -446,6 +448,11 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               questionCount: qCount,
               phases: phases as 2 | 3 | 4,
               megaWarnCount,
+              // 2026-08-29 (Wolf: „sind die fragesaetze klar gekennzeichnet ...
+              // in moderator?"): zu welchem Format der Satz gehoert, steht in
+              // seinem Inhalt und wird gelesen, nicht gepflegt. Siehe
+              // qqDraftFormat in shared/quarterQuizTypes.ts.
+              format: qqDraftFormat(d.questions),
             };
           })
         : [];

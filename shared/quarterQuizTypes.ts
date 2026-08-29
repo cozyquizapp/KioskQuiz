@@ -113,6 +113,55 @@ export const QQ_BUNTE_TUETE_COZY_ONLY = [
 ] as const satisfies readonly QQBunteTueteKind[];
 
 /**
+ * Zu welchem Format gehoert ein Fragesatz?
+ *
+ * 2026-08-29, Wolf zu den neuen CrowdQuiz-Saetzen: „sind die fragesaetze klar
+ * gekennzeichnet oder unterschiedlich angeordnet in moderator?"
+ *
+ * Waren sie nicht. Neun Saetze standen in EINER flachen Liste, unterschieden
+ * nur durch das Emoji im Titel, das jemand von Hand getippt hat. Das ist
+ * schwach genug fuers Auge - schlimmer ist, dass nichts die falsche Paarung
+ * verhindert hat, und zwar in BEIDE Richtungen:
+ *   * ein CozyQuiz-Satz in CrowdQuiz: die Heisse Kartoffel wird herausgefiltert,
+ *     der Abend hat dann eine Frage weniger als angekuendigt.
+ *   * ein CrowdQuiz-Satz in CozyQuiz: Umfrage und Schwarmintelligenz sind dort
+ *     laut Register gar nicht vorgesehen, und dagegen gibt es KEINEN Riegel -
+ *     `QQ_BUNTE_TUETE_ARENA_ONLY` wird im Backend nirgends gelesen.
+ *
+ * ⚠️ Bewusst ABGELEITET statt gepflegt (Wolf: „aus dem Inhalt lesen"). Ein
+ * Feld am Entwurf waere ein weiterer Wert, der falsch stehen kann und bei
+ * neun bestehenden Saetzen erst einmal gesetzt werden muesste. Der Inhalt
+ * dagegen luegt nie: wer eine Umfrage enthaelt, ist ein CrowdQuiz-Satz.
+ * Dieselbe Regel wie bei den Werkzeugen dieser Woche - lesen, nicht erinnern.
+ *
+ * Rueckgabe:
+ *   'crowd'  enthaelt Umfrage oder Schwarmintelligenz
+ *   'cozy'   enthaelt die Heisse Kartoffel
+ *   'beide'  keins von beidem, laeuft ueberall
+ * Enthaelt ein Satz BEIDES, gewinnt 'crowd': der Kartoffel-Filter greift dort
+ * ohnehin, umgekehrt gaebe es keinen.
+ */
+export type QQDraftFormat = 'crowd' | 'cozy' | 'beide';
+
+export function qqDraftFormat(
+  fragen: Array<{ category?: string; bunteTuete?: { kind?: string } | null }> | null | undefined,
+): QQDraftFormat {
+  const arten = (fragen ?? [])
+    .filter(q => q?.category === 'BUNTE_TUETE')
+    .map(q => q?.bunteTuete?.kind ?? '');
+  if (arten.some(k => (QQ_BUNTE_TUETE_ARENA_ONLY as readonly string[]).includes(k))) return 'crowd';
+  if (arten.some(k => (QQ_BUNTE_TUETE_COZY_ONLY as readonly string[]).includes(k))) return 'cozy';
+  return 'beide';
+}
+
+/** Beschriftung fuer die Formatzuordnung, zweisprachig wie alles. */
+export const QQ_DRAFT_FORMAT_LABELS: Record<QQDraftFormat, { de: string; en: string }> = {
+  crowd: { de: 'CrowdQuiz', en: 'CrowdQuiz' },
+  cozy:  { de: 'CozyQuiz',  en: 'CozyQuiz' },
+  beide: { de: 'Beide',     en: 'Both' },
+};
+
+/**
  * Laeuft dieses Unterspiel in DIESEM Format? Die eine Frage, die vorher
  * niemand stellen konnte, weil es die Unterscheidung nicht gab.
  */

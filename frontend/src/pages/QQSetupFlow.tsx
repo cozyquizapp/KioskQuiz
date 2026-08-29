@@ -8,15 +8,15 @@
 // nicht 7. Danger-/Wartungs-Sachen (Bestenliste leeren, Custom-Sounds, Bulk) sind
 // bewusst in eine „Erweitert"-Klappe verschoben, nicht im Klickpfad.
 import { useState, useEffect } from 'react';
-import type { QQStateUpdate, QQSoundConfig } from '../../../shared/quarterQuizTypes';
-import { QQ_COMEBACK_ENABLED } from '../../../shared/quarterQuizTypes';
+import type { QQStateUpdate, QQSoundConfig, QQDraftFormat } from '../../../shared/quarterQuizTypes';
+import { QQ_COMEBACK_ENABLED, QQ_DRAFT_FORMAT_LABELS } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { AVATAR_SETS } from '../avatarSets';
 import { QQ_THEMES } from '../qqTheme';
 import { QQSchedulePreview } from '../components/QQSchedulePreview';
 import { QQSoundPanel } from '../components/QQSoundPanel';
 
-type SetupDraft = { id: string; title: string; questionCount: number; megaWarnCount?: number };
+type SetupDraft = { id: string; title: string; questionCount: number; megaWarnCount?: number; format?: QQDraftFormat };
 type Emit = (event: string, payload: any) => Promise<{ ok: boolean; error?: string }>;
 
 interface Props {
@@ -397,10 +397,40 @@ export function QQSetupFlow(props: Props) {
               {drafts.length === 0 ? (
                 <div style={{ color: '#94A3B8', fontSize: 14, fontStyle: 'italic', padding: '16px 0' }}>Keine Fragensätze gefunden. Im Builder anlegen oder importieren.</div>
               ) : (
+                (() => {
+                // ⚠️ 2026-08-29, Wolf: „sind die fragesaetze klar gekennzeichnet
+                // oder unterschiedlich angeordnet in moderator? das waere nice".
+                // Waren sie nicht - neun Saetze in EINER flachen Liste, zu
+                // unterscheiden nur am Emoji, das jemand von Hand in den Titel
+                // getippt hat.
+                //
+                // Jetzt zwei Bloecke: was zum gewaehlten Format passt, steht
+                // oben; der Rest darunter unter „Auch moeglich". Bewusst nicht
+                // ausgeblendet - einen CozyQuiz-Satz im Grossformat zu spielen
+                // ist erlaubt, es soll nur nicht mehr aus Versehen passieren.
+                // Die Zuordnung wird aus dem Inhalt GELESEN (`qqDraftFormat`),
+                // nicht gepflegt.
+                const passt = (d: SetupDraft) =>
+                  (d.format ?? 'beide') === 'beide' || (d.format === 'crowd') === !!arena;
+                const bloecke: Array<{ titel: string; liste: SetupDraft[] }> = [
+                  { titel: arena ? 'Passt zu CrowdQuiz' : 'Passt zu CozyQuiz', liste: drafts.filter(passt) },
+                  { titel: 'Auch möglich', liste: drafts.filter(d => !passt(d)) },
+                ].filter(b => b.liste.length > 0);
+                return bloecke.map(block => (
+                <div key={block.titel} style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  {bloecke.length > 1 && (
+                    <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: '0.08em', textTransform: 'uppercase', color: '#94A3B8' }}>
+                      {block.titel}
+                    </div>
+                  )}
                 <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))' }}>
-                  {drafts.map(d => {
+                  {block.liste.map(d => {
                     const sel = d.id === selectedDraftId;
                     const draftFit = d.questionCount >= phases * 5;
+                    // Farbe des Formats: CrowdQuiz orange (die Arena-Waerme),
+                    // CozyQuiz das Marken-Pink, „beide" bleibt neutral.
+                    const fmt = d.format ?? 'beide';
+                    const fmtFarbe = fmt === 'crowd' ? '#FB923C' : fmt === 'cozy' ? '#EC4899' : null;
                     return (
                       <button key={d.id} onClick={() => setSelectedDraftId(d.id)}
                         style={{
@@ -417,6 +447,12 @@ export function QQSetupFlow(props: Props) {
                           <span style={{ padding: '1px 8px', borderRadius: 999, background: draftFit ? 'rgba(34,197,94,0.14)' : 'rgba(236,72,153,0.14)', border: `1px solid ${draftFit ? 'rgba(34,197,94,0.32)' : 'rgba(236,72,153,0.32)'}`, color: draftFit ? '#86efac' : '#fde68a', fontWeight: 900 }}>
                             {draftFit ? `✓ ${phases} Rd.` : `⚠ ${Math.floor(d.questionCount / 5)} Rd.`}
                           </span>
+                          {fmtFarbe && (
+                            <span title={`Dieser Satz enthält Unterspiele, die es nur in ${QQ_DRAFT_FORMAT_LABELS[fmt].de} gibt`}
+                              style={{ padding: '1px 8px', borderRadius: 999, background: `${fmtFarbe}22`, border: `1px solid ${fmtFarbe}66`, color: fmtFarbe, fontWeight: 900 }}>
+                              {QQ_DRAFT_FORMAT_LABELS[fmt].de}
+                            </span>
+                          )}
                           {arena && (d.megaWarnCount ?? 0) > 0 && (
                             <span title={`${d.megaWarnCount} Hot-Potato-Frage(n) werden in CrowdQuiz übersprungen`} style={{ padding: '1px 8px', borderRadius: 999, background: 'rgba(251,146,60,0.14)', border: '1px solid rgba(251,146,60,0.35)', color: '#fdba74', fontWeight: 900 }}>🔥{d.megaWarnCount}</span>
                           )}
@@ -425,6 +461,9 @@ export function QQSetupFlow(props: Props) {
                     );
                   })}
                 </div>
+                </div>
+                ));
+                })()
               )}
               {selectedDraft && fitTruncate && (
                 <div style={{ marginTop: 10, fontSize: 11, fontWeight: 700, color: '#fde68a', padding: '6px 12px', borderRadius: 8, background: `${accent}18`, border: `1px solid ${accent}40` }}>

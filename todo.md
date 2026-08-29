@@ -1290,16 +1290,32 @@ Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
       vermutet: genau ein CrowdQuiz-eigener Rest (`👥` in der Lobby, „Ein
       Handy pro Gruppe"), dazu `🏆` im Zwischenstand - das haben beide
       Formate. Die Folien-Ueberschriften laufen laengst ueber `QQEmojiIcon`.
-      ⚠️ Nur vier von zehn Stationen gemessen. Vor dem Fix den vollen Lauf
-      fahren: `node scripts/emoji-reste.mjs`.
+      ⚠️ Das galt fuer die BUEHNE und ueber nur vier Stationen. Vor dem Fix den
+      vollen Lauf fahren: `node scripts/emoji-reste.mjs`.
 
-- [ ] **Teamview an das Beamerdesign angleichen.** Das Handy folgt noch dem
-      alten Cozy-Look. ⚠️ Nicht blind uebernehmen: die Buehne ist auf zehn
-      Meter gebaut, das Handy auf dreissig Zentimeter. Gleiche Sprache,
-      andere Groessen.
-- [ ] **CozyQuiz-Design zum Standard machen**, explizit umstellen. Heute
-      entscheidet `themeIdForState` ueber den Avatarsatz, ob die Buehne
-      laeuft. Das ist ein Nebeneffekt, keine Entscheidung.
+      Fuer das HANDY ist der volle Lauf durch (2026-08-29, `handy-emoji-reste.mjs
+      --frisch`, neun Ansichten je Format). Es bleibt fast nichts:
+      * CozyQuiz: `🖐` bei 10 px im Beitritt („🖐 tap = change emoji")
+      * CrowdQuiz: `✓` bei 12 px im Beitritt (Haken auf der gewaehlten Kachel)
+
+      Beides sind Schriftzeichen in Beschriftungsgroesse, keine Bildmotive -
+      eine Bestellung lohnt dafuer nicht. Das Ohr (`fx-ear`) war der einzige
+      echte Fund und liegt seit dem 29.08. im Repo.
+
+- [x] **Teamview an das Beamerdesign angleichen.** Erledigt 2026-08-29. Die
+      Tinte wird aus dem aktiven Design ABGELEITET (`qqHandyTinte.ts`), nicht
+      fest gesetzt - das Handy folgt damit jedem Design aus dem Steuerpult,
+      auch einem hellen. Dazu die feste Huelle (Kopf, Inhalt, Fuss stehen ueber
+      alle Ansichten bei 0 px Spanne), Touch-Ziele nach WCAG 2.5.5/2.5.8, und
+      die Fraktions-Welt nur noch im Kolosseum-Look.
+      Nachgemessen mit `handy-ruhe.mjs`, `handy-bedienung.mjs`,
+      `handy-kartengrund.mjs`, `handy-gleichlauf.mjs` - je CozyQuiz und
+      CrowdQuiz, alle ohne Befund.
+- [x] **CozyQuiz-Design zum Standard machen**, explizit umstellen. Erledigt
+      2026-08-28/29. Beide Formate starten auf `themeId: 'buehne'`, und die
+      Look-Wahl steht seit dem 29.08. als `lookSelected` im RAUM statt im
+      localStorage des Browsers. `themeIdForState` leitet nichts mehr aus dem
+      Avatarsatz ab, solange ein Design gesetzt ist.
 - [x] **cozywolf.de-Landing an das neue Design anpassen.** Erledigt, Wolf am
       2026-08-28: „landing kannst du abhacken ist fertig".
 

@@ -126,18 +126,22 @@ const b = await handyStarten({ frisch: FRISCH,
   vorBeitritt: async (seite) => { await messen(seite, 'SETUP'); },
 });
 
-await b.abendMitfahren(async (phase) => {
-  await messen(b.handy, phase);
-  // Die Ueberlagerungen einmal mitnehmen. Sie haengen nicht an der Phase,
-  // aber sie brauchen eine, in der sie ueberhaupt erreichbar sind.
-  for (const was of ['menue', 'regeln']) {
-    if (stationen.includes(`${was.toUpperCase()}`)) continue;
-    if (await b.oeffnen(was)) {
-      await messen(b.handy, was.toUpperCase());
-      await b.schliessen(was);
-    }
+await b.abendMitfahren(async (phase) => { await messen(b.handy, phase); });
+
+/* ⚠️ Die Ueberlagerungen ZUM SCHLUSS, nicht mitten im Abend.
+ *
+ * Hier stand das Oeffnen von Menue und Regeln in der Stationsschleife. Ein
+ * offenes Menue verdeckt alles danach, und der Abend blieb stehen: dieser Lauf
+ * hat am 2026-08-29 drei Ansichten gemessen statt zehn und das nicht gesagt.
+ * Derselbe Fund steckt schon in handy-bedienung.mjs und handy-kontaktbogen.mjs
+ * - dieses Werkzeug hatte ihn als einziges noch. */
+for (const was of ['menue', 'regeln']) {
+  if (stationen.includes(was.toUpperCase())) continue;
+  if (await b.oeffnen(was)) {
+    await messen(b.handy, was.toUpperCase());
+    await b.schliessen(was);
   }
-});
+}
 await b.schliessen();
 
 /* ── Bericht ──────────────────────────────────────────────────────────────── */

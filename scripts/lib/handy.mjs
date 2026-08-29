@@ -435,6 +435,21 @@ export async function handyStarten(opts = {}) {
         }
         await sleep(1500);
       }
+      /* ⚠️ Ein kurzer Abend ist meistens kein kurzer Abend, sondern ein
+       * schlafendes Backend.
+       *
+       * 2026-08-29: derselbe Lauf brachte gegen ein benutztes Backend zwei
+       * Ansichten und gegen ein frisches neun - der Bericht sagte beide Male
+       * nur, wieviele es waren, und das liest sich wie ein Ergebnis. Die
+       * Zeitgeber des vorigen Abends schieben den Raum durch die Phasen,
+       * bevor jemand sie sieht.
+       *
+       * Gewarnt wird ab weniger als vier Stationen und nur, wenn Zeit fuer
+       * mehr da war - ein bewusst kurzer Lauf (--secs=60) soll nicht meckern. */
+      if (gesehen.size < 4 && secs >= 120) {
+        console.log(`\n⚠️  Nur ${gesehen.size} Station(en) in ${secs}s. Das ist fast immer ein`);
+        console.log('   Backend, das schon einen Abend hinter sich hat. Lauf mit --frisch wiederholen.');
+      }
       return Array.from(gesehen);
     },
   };

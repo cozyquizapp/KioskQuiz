@@ -252,6 +252,12 @@ export default function QQTeamPage() {
 
   // Auto-rejoin if we have a stored session — aber nicht wenn wir gerade
   // gekickt wurden (sonst rejoint man sich endlos selbst zurueck).
+  //
+  // Die beiden Abhaengigkeiten stehen hier als eigene Werte statt als Ausdruck
+  // in der Liste - so kann der Lint-Regel sie pruefen, und der Grund fuer
+  // `stateDa` steht am Ende des Effekts.
+  const stateDa = !!state;
+  const grossformat = (state as any)?.largeGroupMode as boolean | undefined;
   useEffect(() => {
     if (joined || !connected || kicked) return;
     // CozyArena: Auto-Rejoin darf NICHT den stale Funny-Namen aus localStorage
@@ -298,7 +304,7 @@ export default function QQTeamPage() {
     // laesst es auf `undefined` stehen, vor und nach dem ersten State. Das
     // Handy wuerde dann nie wieder einsteigen. Mit `!!state` kippt genau
     // einmal etwas, wenn der State da ist.
-  }, [connected, kicked, !!state, (state as any)?.largeGroupMode]);
+  }, [connected, kicked, stateDa, grossformat]);
 
   // 2026-05-04 (Wolf): Kick-Detection — wenn wir 'joined' waren und im
   // Lobby-State plötzlich nicht mehr in s.teams stehen, wurden wir gekickt.

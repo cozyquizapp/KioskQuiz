@@ -101,12 +101,20 @@ StandardInput.displayName = 'StandardInput';
 // Order, Bluff mit 4+ Optionen) konnte der Submit-Button unter den Fold
 // rutschen → Spieler scrollten in den letzten Sekunden, knapp vor Auto-
 // Submit. Jetzt: Button bleibt am unteren Viewport-Rand sichtbar.
-// ⚠️ `lang` ist PFLICHT und hatte bis 2026-08-29 den Vorgabewert 'de'.
-// Acht der elf Aufrufer haben ihn nicht mitgegeben, und dadurch stand auf dem
-// Antwortknopf eines englischen Abends „Jetzt antworten!". Gefunden hat es
+// ⚠️ `lang` ist PFLICHT, und das gilt in der ganzen Team-View.
+//
+// Bis 2026-08-29 stand hier `lang = 'de'`. Acht der elf Aufrufer haben den
+// Wert nicht mitgegeben, und dadurch stand auf dem Antwortknopf eines
+// englischen Abends „Jetzt antworten!". Gefunden hat es
 // scripts/handy-gleichlauf.mjs: die Buehne stand auf EN, das Handy auf DE.
-// Ohne Vorgabewert kann derselbe Fehler nicht wiederkommen - der Typcheck
-// nennt jeden Aufrufer, der ihn vergisst.
+//
+// Am selben Tag sind die uebrigen 14 Vorgabewerte in den Team-Komponenten
+// gefallen (SubmittedBadge, PausedCard, GameOverCard, PreparingScreen,
+// WaitingScreen, HotPotatoInput, PinItInput, MegaScoringCard, PlacementCard,
+// ComebackCard, ConnectionsTeamCard, TextInput, CrowdTopInput, CozyGameCard).
+// Die waren zu dem Zeitpunkt alle korrekt bedient - es ging nicht um einen
+// Fehler, sondern darum, dass ein deutscher Vorgabewert einen vergessenen
+// Parameter LAUTLOS verzeiht. Ohne ihn nennt der Typcheck jede Stelle.
 export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedLabel, lang }: {
   onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string; submittedLabel?: string; lang: 'de' | 'en';
 }) {
@@ -164,8 +172,8 @@ export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, sub
 }
 
 // ── Submitted state ───────────────────────────────────────────────────────────
-export function SubmittedBadge({ text, lang = 'de', answeredCount, totalTeams, pendingTeams, myRank, onRevoke }: {
-  text: string; lang?: 'de' | 'en';
+export function SubmittedBadge({ text, lang, answeredCount, totalTeams, pendingTeams, myRank, onRevoke }: {
+  text: string; lang: 'de' | 'en';
   answeredCount?: number; totalTeams?: number;
   pendingTeams?: Array<{ id: string; name: string; color: string; avatarId: string; emoji?: string }>;
   myRank?: number; // 1-based Reihenfolge des Abschickens

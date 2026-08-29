@@ -22,8 +22,8 @@ import { qqCapOption } from '../cozyQuizShared';
 import { qqOptionColors } from '../../../shared/qqCategoryTheme';
 
 // ── Text input (Schaetzchen + Picture This fallback) ──────────────────────────
-export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnly, lang = 'de', timerEndsAt }: {
-  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; integerOnly?: boolean; lang?: 'de' | 'en'; timerEndsAt?: number | null;
+export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnly, lang, timerEndsAt }: {
+  catColor: string; onSubmit: (v: string) => void; placeholder?: string; numeric?: boolean; integerOnly?: boolean; lang: 'de' | 'en'; timerEndsAt?: number | null;
 }) {
   const [val, setVal] = useState('');
   const ref = useRef<HTMLInputElement>(null);
@@ -92,8 +92,8 @@ export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnl
 // würde die Tastatur ungefragt öffnen + die Frage verdecken, Mobile-Audit P1-3)
 // und mit Autokorrektur AUS + maxLength (P1-1: sonst macht iOS aus „Kohl" →
 // „Kohle", und ohne Limit wird ein ganzer Satz statt eines Wortes abgegeben).
-export function CrowdTopInput({ catColor, onSubmit, lang = 'de', timerEndsAt }: {
-  catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null;
+export function CrowdTopInput({ catColor, onSubmit, lang, timerEndsAt }: {
+  catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null;
 }) {
   const [val, setVal] = useState('');
   const expired = useExpiry(timerEndsAt ?? null);

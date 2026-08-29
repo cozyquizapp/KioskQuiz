@@ -32,8 +32,8 @@ import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqKartenQuelle, QQ_KARTE_HANDY } from '../qqKarte';
 
 // ── Hot Potato team input with countdown ──────────────────────────────────────
-export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang = 'de' }: {
-  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang?: 'de' | 'en';
+export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, lang }: {
+  state: QQStateUpdate; myTeamId: string; emit: any; roomCode: string; catColor: string; lang: 'de' | 'en';
 }) {
   const isMyTurn = s.hotPotatoActiveTeamId === myTeamId;
   const eliminated = s.hotPotatoEliminated.includes(myTeamId);
@@ -665,7 +665,7 @@ export function MapClickHandler({ onPick }: { onPick: (lat: number, lng: number)
   return null;
 }
 
-export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timerEndsAt, myTeam }: { question: any; catColor: string; onSubmit: (v: string) => void; lang?: 'de' | 'en'; timerEndsAt?: number | null; myTeam?: QQTeam | null }) {
+export function PinItInput({ question: q, catColor, onSubmit, lang, timerEndsAt, myTeam }: { question: any; catColor: string; onSubmit: (v: string) => void; lang: 'de' | 'en'; timerEndsAt?: number | null; myTeam?: QQTeam | null }) {
   const bt = q?.bunteTuete;
   // 2026-05-05 (Wolf 'Map zeigt aktuell das Zielgebiet vorgezoomt = Hinweis,
   // bitte neutrale Ansicht'): Default-Center jetzt mittig auf der Welt (0,0)

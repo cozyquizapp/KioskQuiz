@@ -72,8 +72,8 @@ type FreeAction = 'PLACE' | 'STEAL' | 'STAPEL';
  * Frage-Ergebnis seiner Farbe (aus megaQuestionRanking): +Punkte, Platz,
  * wie viele Handys der Farbe richtig lagen. 2026-07-02 (Grid-Audit Mega Event).
  */
-export function MegaScoringCard({ state: s, myTeamId, lang = 'de' }: {
-  state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en';
+export function MegaScoringCard({ state: s, myTeamId, lang }: {
+  state: QQStateUpdate; myTeamId: string; lang: 'de' | 'en';
 }) {
   const de = lang !== 'en';
   const me = s.teams.find(t => t.id === myTeamId);
@@ -114,8 +114,8 @@ export function MegaScoringCard({ state: s, myTeamId, lang = 'de' }: {
   );
 }
 
-export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang = 'de' }: {
-  state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
+export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, lang }: {
+  state: QQStateUpdate; myTeamId: string; isMyTurn: boolean; emit: any; roomCode: string; lang: 'de' | 'en';
 }) {
   const [selecting, setSelecting] = useState(false);
   const [freeMode, setFreeMode] = useState<FreeAction | null>(null);
@@ -909,8 +909,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
   );
 }
 
-export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang = 'de' }: {
-  state: QQStateUpdate; myTeamId: string; isMine: boolean; emit: any; roomCode: string; lang?: 'de' | 'en';
+export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang }: {
+  state: QQStateUpdate; myTeamId: string; isMine: boolean; emit: any; roomCode: string; lang: 'de' | 'en';
 }) {
   const comebackTeam = s.teams.find(t => t.id === s.comebackTeamId);
   const hl = s.comebackHL;
@@ -1258,12 +1258,12 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
 // ═══════════════════════════════════════════════════════════════════════════════
 const CONN_GROUP_COLORS = [QQ_COLORS.brandPink, QQ_COLORS.green500, QQ_COLORS.blue400, QQ_COLORS.violet400];
 
-export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang = 'de' }: {
+export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang }: {
   state: QQStateUpdate;
   myTeamId: string;
   emit: (event: string, payload?: unknown) => Promise<QQAck>;
   roomCode: string;
-  lang?: 'de' | 'en';
+  lang: 'de' | 'en';
 }) {
   const de = lang === 'de';
   const c = s.connections;

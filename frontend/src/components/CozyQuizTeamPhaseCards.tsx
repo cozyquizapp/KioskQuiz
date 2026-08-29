@@ -730,7 +730,7 @@ export function TieBreakerCard({
 }
 
 // ── PausedCard ───────────────────────────────────────────────────────────────
-export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en' }) {
+export function PausedCard({ state: s, myTeamId, lang }: { state: QQStateUpdate; myTeamId: string; lang: 'de' | 'en' }) {
   const de = lang === 'de';
   // 2026-07-03 (Wolf-Audit): CozyArena zeigt Fraktions-Standings nach Punkten,
   // nicht Grid-„Felder". qqSortedGroups summiert Sub-Teams je Fraktion.
@@ -1255,7 +1255,7 @@ export function FinalRevealCard({
 }
 
 // ── GameOverCard ─────────────────────────────────────────────────────────────
-export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { state: QQStateUpdate; myTeamId: string; lang?: 'de' | 'en'; roomCode?: string }) {
+export function GameOverCard({ state: s, myTeamId, lang, roomCode }: { state: QQStateUpdate; myTeamId: string; lang: 'de' | 'en'; roomCode?: string }) {
   // 2026-07-04 (Arena-Audit): CozyArena nach Fraktion gruppieren (qqSortedGroups
   // summiert Sub-Teams je Fraktion) — sonst listet die Endkarte ~25 rohe Sub-Teams
   // mit doppelten Fraktions-Namen + 0-Punkte-Phantomzeilen. Muster wie PausedCard.
@@ -1429,11 +1429,11 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
 // Phone-Card für COZY_GAME-Phase mit Game-Info + Queue-Position bei Sequence-
 // Mode. Lädt das aktive Spiel via /api/cozygames (cached pro Mount).
 export function CozyGameCard({
-  state: s, myTeamId, lang = 'de',
+  state: s, myTeamId, lang,
 }: {
   state: QQStateUpdate;
   myTeamId: string;
-  lang?: 'de' | 'en';
+  lang: 'de' | 'en';
 }) {
   const cg = (s as any).cozyGame;
   const [activeGame, setActiveGame] = useState<{ id: string; emoji: string; name: string; description: string; parallel?: boolean } | null>(null);

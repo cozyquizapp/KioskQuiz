@@ -271,8 +271,8 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
 // (feste Fraktionen/Wappen) wird — deshalb KEIN Avatar-Setup zeigen, sondern
 // „Quiz wird vorbereitet". Sobald der Mod wählt, schaltet /team automatisch
 // auf den passenden Join-Flow um (Re-Render über State-Update).
-export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick, flagFlip }: {
-  roomCode: string; connected: boolean; lang?: 'de' | 'en';
+export function PreparingScreen({ roomCode, connected, lang, onFlagClick, flagFlip }: {
+  roomCode: string; connected: boolean; lang: 'de' | 'en';
   onFlagClick: () => void; flagFlip: boolean;
 }) {
   return (
@@ -381,7 +381,7 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
 // bieten wir einen manuellen Reload-Button + Hinweis. Backend wacht aus dem
 // Schlaf manchmal in 30s+ auf — damit der Spieler sieht 'es passiert was',
 // nicht nur Skelett.
-export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: string; connected: boolean; lang?: 'de' | 'en' }) {
+export function WaitingScreen({ roomCode, connected, lang }: { roomCode: string; connected: boolean; lang: 'de' | 'en' }) {
   const [showStuckHint, setShowStuckHint] = useState(false);
   useEffect(() => {
     const t = window.setTimeout(() => setShowStuckHint(true), 8000);

@@ -34,3 +34,4 @@ frontend/public/avatars/cozyarena/*colloseum.png
 # Dateinamen mit Kommas). Nicht deployen - sprengen den Workbox-Precache.
 frontend/public/icons/*colo*.png
 .shots-quirks/
+backend-neustart.log

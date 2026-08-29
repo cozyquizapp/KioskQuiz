@@ -118,7 +118,10 @@ const messen = async (seite, name) => {
 /* Die SETUP-Ansicht zaehlt mit, und sie ist der wichtigste Ort ueberhaupt:
  * dort waehlt ein Gast sein Team-Emoji. Sie laeuft vor dem Beitritt, sonst ist
  * sie weg. */
-const b = await handyStarten({
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH,
   mega, secs: SECS,
   vorBeitritt: async (seite) => { await messen(seite, 'SETUP'); },
 });

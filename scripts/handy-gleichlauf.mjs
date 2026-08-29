@@ -48,6 +48,7 @@
  * VORAUSSETZUNG: Backend (4000) + Frontend (5173).
  * NUTZUNG:
  *   node scripts/handy-gleichlauf.mjs [--mega] [--look=kolosseum] [--secs=200]
+ *   node scripts/handy-gleichlauf.mjs --frisch      (Backend vorher neu starten)
  *   node scripts/handy-gleichlauf.mjs --selbsttest
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
@@ -66,6 +67,9 @@ const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=
  * --sprache=both und liest die Sprach-Befunde als Beobachtung, nicht als
  * Fehler. */
 const SPRACHE = (process.argv.find(a => a.startsWith('--sprache=')) ?? '--sprache=en').split('=')[1];
+/* --frisch startet das Backend VOR dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird (Sperrseite) - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
 
 const TIMER_TOLERANZ = 2;   // Sekunden; die beiden Aufnahmen liegen nacheinander
 
@@ -334,7 +338,7 @@ const { QQ_CATEGORY_LABELS, QQ_FRAKTIONEN } = await import('./lib/kategorien.mjs
 if (selbsttest) process.exit(selbsttestLaufen(QQ_FRAKTIONEN) ? 0 : 1);
 
 /* ── Der Abend ─────────────────────────────────────────────────────────────── */
-const b = await handyStarten({ mega, secs: SECS, look, sprache: SPRACHE });
+const b = await handyStarten({ mega, secs: SECS, look, sprache: SPRACHE, frisch: FRISCH });
 const alleFunde = [], alleUngelesen = new Map(), stationen = [];
 
 await b.abendMitfahren(async (phase) => {

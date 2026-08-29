@@ -37,7 +37,10 @@ const lum = (r, g, b) => {
 };
 const kontrast = (a, b) => { const [h, l] = a > b ? [a, b] : [b, a]; return (h + 0.05) / (l + 0.05); };
 
-const b = await handyStarten({ mega, secs: SECS, look });
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH, mega, secs: SECS, look });
 const funde = [];
 
 await b.abendMitfahren(async (phase) => {

@@ -41,6 +41,9 @@ import { WORTSCHATZ, TOEPFE, vereinen } from './lib/designsprache.mjs';
 
 const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=200').split('=')[1]);
 const MIN_TEXT = 10, MIN_FLAECHE = 24;
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
 const NUR = (process.argv.find(a => a.startsWith('--nur=')) ?? '--nur=').split('=')[1];
 
 /**
@@ -94,7 +97,7 @@ console.log(`${PALETTE_RGB.size} Palettenfarben gelesen (Teams, Kategorien, Wapp
  * Format abhaengen.
  */
 async function abendMessen(mega) {
-  const b = await handyStarten({ mega, secs: SECS });
+  const b = await handyStarten({ frisch: FRISCH, mega, secs: SECS });
   const proStation = new Map();
   await b.abendMitfahren(async (phase) => {
     const w = await b.handy.evaluate(WORTSCHATZ, {

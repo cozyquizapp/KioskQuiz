@@ -145,7 +145,10 @@ const MESSEN = ({ breite, hoehe }) => {
   };
 };
 
-const b = await handyStarten({ mega, secs: SECS, look });
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH, mega, secs: SECS, look });
 const sichten = [];
 const messen = async (seite, name) => {
   if (UMSTELLUNG.length) {

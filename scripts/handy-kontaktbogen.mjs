@@ -58,7 +58,10 @@ const merke = async (seite, name) => {
   console.log(`  ✓ ${name}`);
 };
 
-const b = await handyStarten({
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH,
   mega, secs: SECS, look,
   vorBeitritt: async (seite) => { await merke(seite, 'SETUP'); },
 });

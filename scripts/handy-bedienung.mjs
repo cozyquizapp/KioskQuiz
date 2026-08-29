@@ -159,7 +159,10 @@ const messen = async (seite, name) => {
 /* Die Setup-Ansicht misst ein FRISCHER Gast, ohne gespeichertes Team und VOR
  * dem Spielstart - sonst springt das Handy in die Lobby oder landet auf der
  * Sperrseite. Siehe `frischerGast` in lib/handy.mjs. */
-const b = await handyStarten({
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH,
   secs: SECS,
   vorBeitritt: async (seite) => { await messen(seite, 'SETUP'); },
 });

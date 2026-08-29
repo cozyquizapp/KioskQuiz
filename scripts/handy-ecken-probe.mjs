@@ -13,7 +13,10 @@ import { handyStarten } from './lib/handy.mjs';
 const NUR = (process.argv.find(a => a.startsWith('--nur=')) ?? '--nur=cozy').split('=')[1];
 const mega = NUR === 'crowd';
 
-const b = await handyStarten({ mega, secs: 150 });
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH, mega, secs: 150 });
 const fund = {};
 await b.abendMitfahren(async (phase) => {
   const l = await b.handy.evaluate(() => {

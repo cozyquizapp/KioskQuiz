@@ -27,6 +27,9 @@
  */
 import { chromium } from 'playwright';
 import { createRequire } from 'node:module';
+import { spawn, execFileSync } from 'node:child_process';
+import { openSync, rmSync, readdirSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 const req = createRequire(new URL('../../backend/package.json', import.meta.url));
 const { io } = req('socket.io-client');
@@ -46,7 +49,68 @@ export const HANDY = { width: 390, height: 844 };
  * Liefert `{ handy, buehne, phase, sperrseite, schliessen }`. Der Aufrufer
  * entscheidet, was er misst - dieses Modul misst nichts.
  */
-export async function handyStarten({ mega = false, secs = 200, vorBeitritt = null, look = 'standard', sprache = null } = {}) {
+/** Wurzel des Repos, aus dem Pfad dieser Datei abgeleitet. */
+const WURZEL = fileURLToPath(new URL('../../', import.meta.url));
+
+/**
+ * Das Backend neu starten und warten, bis es antwortet.
+ *
+ * 2026-08-29, Wolf: „kannst du das mit dem backend-neustart automatisch
+ * machen?"
+ *
+ * ── Warum das ueberhaupt noetig ist ───────────────────────────────────────
+ * Der zweite Lauf gegen dasselbe Backend scheitert zuverlaessig: das Handy
+ * landet auf „Quiz laeuft schon". Der Raum ist dabei nicht das Problem -
+ * `qq:resetRoom` setzt ihn sauber auf LOBBY und quittiert das auch. Es sind
+ * die ZEITGEBER, die der vorige Abend im Server hinterlassen hat. Sie laufen
+ * weiter und schieben den frisch zurueckgesetzten Raum sofort wieder aus der
+ * Lobby. Dagegen hilft kein Reset, nur ein neuer Prozess.
+ *
+ * ── Was hier absichtlich NICHT passiert ──────────────────────────────────
+ * Kein Neustart auf Verdacht. Ein Werkzeug, das jedes Mal das Backend
+ * abschiesst, kostet bei jedem Lauf eine halbe Minute und trifft im
+ * schlimmsten Fall einen laufenden Abend. Gestartet wird nur, wenn die
+ * Sperrseite tatsaechlich da ist - oder wenn der Aufrufer `--frisch` sagt.
+ *
+ * Und nur gegen localhost. Steht die API woanders, ist das ein fremder
+ * Server, und den fasst ein Messwerkzeug nicht an.
+ */
+export async function backendNeustart(grund = '') {
+  if (!/^https?:\/\/(localhost|127\.0\.0\.1)(:|\/|$)/.test(API)) {
+    throw new Error(`Backend-Neustart nur gegen localhost, nicht gegen ${API}.`);
+  }
+  console.log(`↻ Backend neu starten${grund ? ` (${grund})` : ''} ...`);
+  try { execFileSync('pkill', ['-f', '[t]s-node-dev']); } catch { /* lief keins */ }
+  await sleep(1500);
+
+  /* Die Raum-Dateien mit, sonst laedt `qqPersist` den alten Abend wieder ein
+   * (CLAUDE.md: „Der Raum lebt im RAM - aber er wird auch auf Platte
+   * geschrieben"). Der Pfad ist `backend/.qq-rooms/`, NICHT die Repo-Wurzel;
+   * ein `rm` auf den Wurzelpfad loescht stillschweigend nichts. */
+  const raeume = `${WURZEL}backend/.qq-rooms`;
+  try {
+    for (const f of readdirSync(raeume)) if (f.endsWith('.json')) rmSync(`${raeume}/${f}`);
+  } catch { /* Ordner gibt es noch nicht */ }
+
+  const log = openSync(`${WURZEL}backend-neustart.log`, 'a');
+  const kind = spawn('npm', ['run', 'start:backend'], {
+    cwd: WURZEL, detached: true, stdio: ['ignore', log, log],
+  });
+  kind.unref();
+
+  /* ts-node-dev braucht je nach Maschine 15 bis 40 Sekunden. Gewartet wird auf
+   * die Antwort, nicht auf eine geratene Zeitspanne. */
+  for (let i = 0; i < 30; i++) {
+    await sleep(2000);
+    const h = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => null);
+    if (h?.ok) { console.log(`↻ Backend wieder da (build ${h.build ?? '?'}, nach ${(i + 1) * 2}s).`); return true; }
+  }
+  throw new Error('Backend ist nach 60s nicht wieder hochgekommen - siehe backend-neustart.log.');
+}
+
+export async function handyStarten(opts = {}) {
+  const { mega = false, secs = 200, vorBeitritt = null, look = 'standard', sprache = null, frisch = false, _zweiterVersuch = false } = opts;
+  if (frisch && !_zweiterVersuch) await backendNeustart('--frisch');
   const health = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => null);
   if (!health?.ok) throw new Error('Backend nicht erreichbar auf 4000.');
   console.log(`Backend ok (build ${health.build ?? '?'})`);
@@ -245,45 +309,29 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   await mod.goto(`${BASE}/moderator-test?run=1${mega ? '&arena=1&mega=1' : ''}`, { waitUntil: 'domcontentloaded' });
   await sleep(6000);
 
-  /* Sperrseite: EINMAL selbst aufraeumen, erst dann aufgeben.
+  /* Sperrseite: Backend neu starten und den ganzen Aufbau wiederholen.
    *
-   * „Quiz laeuft schon" / „nicht angemeldet" trifft den zweiten Lauf gegen
-   * dasselbe Backend. Der Grund liegt NICHT im Raum-Zustand, den `resetRoom`
-   * sauber auf LOBBY setzt (der Ack sagt ok), sondern in den Zeitgebern, die
-   * der vorige Abend im Server hinterlassen hat: sie laufen weiter und
-   * schieben den frisch zurueckgesetzten Raum sofort wieder aus der Lobby.
-   * Deshalb hilft auch dieser zweite Anlauf oft nicht - er steht hier fuer den
-   * Fall, dass es doch nur Timing war, und weil er beim Scheitern SAGT, was
-   * das Handy zeigt. Das Backend neu zu starten ist die eigentliche Abhilfe;
-   * die Fehlermeldung unten nennt den Befehl. */
+   * Ein Reset im laufenden Prozess hilft hier nicht - der Grund steht bei
+   * `backendNeustart` ausfuehrlich: es sind die Zeitgeber des vorigen Abends.
+   * Ein erster Anlauf hat genau das versucht (zuruecksetzen, neu beitreten)
+   * und ist zweimal gescheitert, bevor die Ursache klar war.
+   *
+   * Wiederholt wird der GANZE Aufbau, nicht nur der Beitritt: nach dem
+   * Neustart ist der Socket tot und der Raum leer, also muessen Format,
+   * Sprache, Look und Lobby noch einmal gesetzt werden. Das macht der
+   * rekursive Aufruf von selbst - und `_zweiterVersuch` sorgt dafuer, dass es
+   * bei EINEM Neustart bleibt. */
   if (await sperrseite()) {
-    console.log('⚠️  Sperrseite - Raum noch einmal zuruecksetzen und neu beitreten.');
-    console.log('   Handy zeigt: ' + (await handy.evaluate(() => (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 200)).catch(() => '?')));
-    await emit('qq:resetRoom', { confirm: true });
-    await sleep(1200);
-    await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/clearBots`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ pin: PIN }),
-    }).catch(() => {});
-    await emit('qq:setSetupDone', { value: true });
-    await emit('qq:setLobbyOpen', { value: true });
-    await sleep(800);
-    await handy.goto(`${BASE}/team`, { waitUntil: 'domcontentloaded' });
-    await sleep(5000);
-    for (let i = 0; i < 12; i++) {
-      const btn = handy.locator('button', { hasText: /Wieder einsteigen|Spiel beitreten|Rejoin|Join game|Los geht|einsteigen|Beitreten/i }).first();
-      if (await btn.count().catch(() => 0)) { await btn.click({ timeout: 2000 }).catch(() => {}); }
-      await sleep(1500);
-      const t = await handy.evaluate(() => document.body.innerText || '').catch(() => '');
-      if (/READY|BEREIT|Waiting for opponents|Warte auf/i.test(t)) break;
-    }
-    await mod.goto(`${BASE}/moderator-test?run=1${mega ? '&arena=1&mega=1' : ''}`, { waitUntil: 'domcontentloaded' });
-    await sleep(6000);
-  }
-  if (await sperrseite()) {
+    const zeigt = await handy.evaluate(() => (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 120)).catch(() => '?');
     await browser.close(); sock.close();
-    throw new Error('Handy haengt auch nach dem zweiten Anlauf auf der Sperrseite.\nDas ist der Normalfall beim ZWEITEN Lauf gegen dasselbe Backend - Zeitgeber des\nvorigen Abends schieben den Raum sofort wieder aus der Lobby. Backend neu starten:\n'
-      + '  pkill -f \'[t]s-node-dev\'; rm -f backend/.qq-rooms/*.json; npm run start:backend');
+    if (_zweiterVersuch) {
+      throw new Error('Handy haengt auch nach dem Backend-Neustart auf der Sperrseite.\n'
+        + `  Es zeigt: ${zeigt}\n`
+        + '  Das ist kein bekannter Fall - siehe backend-neustart.log.');
+    }
+    console.log(`⚠️  Sperrseite („${zeigt.slice(0, 60)}...")`);
+    await backendNeustart('Sperrseite');
+    return handyStarten({ ...opts, _zweiterVersuch: true });
   }
 
   const phase = () => buehne.evaluate(() =>

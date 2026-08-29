@@ -26,7 +26,10 @@ const mega = process.argv.includes('--mega');
 const look = (process.argv.find(a => a.startsWith('--look=')) ?? '--look=standard').split('=')[1];
 const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=150').split('=')[1]);
 
-const b = await handyStarten({ mega, secs: SECS, look });
+/* --frisch startet das Backend vor dem Lauf neu. Ohne die Angabe passiert das
+ * nur, wenn es noetig wird - siehe backendNeustart in lib/handy.mjs. */
+const FRISCH = process.argv.includes('--frisch');
+const b = await handyStarten({ frisch: FRISCH, mega, secs: SECS, look });
 const zeilen = new Map();   // Schluessel: Familie|px|Gewicht
 
 await b.abendMitfahren(async (phase) => {

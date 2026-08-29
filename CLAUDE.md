@@ -22,13 +22,27 @@ CI blockiert bei Typfehlern, roten Tests und Lint-**Fehlern**.
 Lint-**Warnungen** blockieren nicht (Bestand: ~464, siehe STRUKTUR_PLAN.md).
 Push auf `main` deployt **nur das Frontend** automatisch (Vercel).
 
-> ⚠️ **Das Backend deployt sich NICHT von selbst.** Es laeuft auf Coolify
-> (self-hosted) und braucht dort einen **manuellen Redeploy in der UI**
-> (siehe README.md, Abschnitt Architektur). Diese Zeile stand hier bis
-> 2026-08-25 falsch als „deployt automatisch" - und hat genau das gekostet,
-> wovor sie haette schuetzen sollen: einen halben Tag Fehlersuche im Code,
-> waehrend der Server schlicht eine alte Fassung lief. Wolf: „das problem
-> besteht seit 10 pushes".
+> ⚠️ **Beim Backend NICHTS annehmen, sondern die Kennung lesen.** Es laeuft
+> auf Coolify (self-hosted). Ob es sich von selbst deployt, hat sich in beide
+> Richtungen schon geaendert:
+>   * bis 2026-08-25 stand hier „deployt automatisch", und das war falsch -
+>     es kostete einen halben Tag Fehlersuche im Code, waehrend der Server
+>     schlicht eine alte Fassung lief. Wolf: „das problem besteht seit 10
+>     pushes".
+>   * seit 2026-08-27 deployt Coolify offenbar automatisch. Wolf dazu am
+>     29.08.: „coolify sollte automatisch deployen? vercel hatte nur gestern
+>     limis".
+>
+> ⚠️ Am 29.08. habe ich Wolf einen ausstehenden Redeploy als Tatsache gemeldet.
+> Ich hatte ihn nie geprueft, sondern diesen Abschnitt in seiner alten Fassung
+> geglaubt. Genau derselbe Fehler wie beim Bunte-Tuete-Register am selben Tag:
+> einer Notiz vertraut statt gemessen. **Die Ansage „das Backend muss noch
+> deployt werden" ist also nie eine Auskunft, sondern immer eine Messung.**
+>
+> Von einer Sitzung im Container aus laesst sich das NICHT pruefen: der
+> Agent-Proxy weist `backend.cozyquiz.app` mit 403 ab (Richtlinie). Wer den
+> Stand wissen will, liest ihn im Steuerpult ab, siehe naechster Absatz, oder
+> fragt Wolf.
 >
 > Woran man es erkennt, ohne zu raten: das Steuerpult zeigt unter der
 > Step-Anzeige „Buehne <kennung> · Server <kennung>". Meldet der Server keine

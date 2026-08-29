@@ -289,21 +289,30 @@ Cozy-Quiz-Polish). Zuschauer-Emotes + Sentry/Plausible → Longterm verschoben.
 
 > ⚠️ **WICHTIG (2026-05-09)**: Backend ist auf **Coolify** (self-hosted), **NICHT mehr Render**.
 > Bei Backend-Deploy-Fragen also Coolify checken (nicht Render-Dashboard). Render-Doku unten
-> ist Legacy und wird sukzessive ersetzt — TODO: konkrete Coolify-URL + Server-Hostname hier
-> einzutragen.
+> ist Legacy und wird sukzessive ersetzt.
+> Backend-URL: `https://backend.cozyquiz.app` (2026-08-29 nachgetragen, siehe
+> Coolify-Notiz unter der Tabelle).
 
 | Komponente | Stack | Hosting |
 |---|---|---|
 | Frontend | Vite + React + Tailwind + PWA | Vercel (`https://play.cozyquiz.app`) |
-| Backend | Express + Socket.IO + Mongoose | **Coolify** (self-hosted, ersetzte Render) |
+| Backend | Express + Socket.IO + Mongoose | **Coolify** (self-hosted, `https://backend.cozyquiz.app`) |
 | Datenbank | MongoDB Atlas | `cluster0.4xushmp.mongodb.net` |
 | Bilder | Cloudinary | Cloudinary |
 | Error-Tracking | Sentry | Sentry |
 | Übersetzung | DeepL | DeepL API |
 
-> **Coolify-Notiz**: bei Backend-Code-Push manuell Redeploy in Coolify-UI auslösen
-> (oder Auto-Deploy-Hook konfigurieren falls noch nicht aktiv). Kein Free-Tier-Sleep wie
-> bei Render — Container läuft persistent.
+> **Coolify-Notiz**: seit 2026-08-27 deployt Coolify nach einem Push offenbar von
+> selbst (Wolf: „coolify hat automatisch deployt, button ist schon da"). Davor war
+> ein manueller Redeploy in der UI nötig. Beides nicht annehmen, sondern ablesen:
+> das Steuerpult zeigt unter der Step-Anzeige „Bühne ‹kennung› · Server ‹kennung›",
+> und `https://backend.cozyquiz.app/api/health` hat dasselbe als Feld `build`.
+> Stimmen die zwei Kennungen überein, läuft oben der aktuelle Stand.
+> Kein Free-Tier-Sleep wie bei Render — Container läuft persistent.
+>
+> Die Backend-URL ist `https://backend.cozyquiz.app` (aus `frontend/vercel.json`,
+> den Rewrites für `/api` und `/socket.io`). Sie stand bis 2026-08-29 nirgends in
+> der Doku, obwohl drei Zeilen weiter oben ein TODO genau danach fragte.
 
 ---
 

@@ -32,6 +32,7 @@ const FASSUNGEN = [
   { name: 'lesbar', spanne: '2', strahl: null },
   { name: 'tief', spanne: '2', strahl: 'tief' },
   { name: 'luft', spanne: '2', strahl: 'luft' },
+  { name: 'ruhig', spanne: '2', strahl: 'ruhig' },
 ];
 
 const tipps = (ziel) => Array.from({ length: BOTS }, (_, i) =>
@@ -90,9 +91,13 @@ for (const f of FASSUNGEN) {
       oben: Math.round(oben), unten: Math.round(unten),
       antwortUnten: antwort ? Math.round(antwort.bottom) : null,
       groesstesWappen: Math.round(Math.max(...[...document.querySelectorAll('[data-qq-rand-kachel] img')].map(i => i.getBoundingClientRect().height))),
+      // Wie viel steht ueberhaupt auf der Folie? Zahlen und Woerter in den
+      // Kacheln, das ist es, was auf zehn Meter gelesen werden muss.
+      zeichen: [...document.querySelectorAll('[data-qq-rand-kachel]')]
+        .map(el => (el.textContent || '').replace(/\s+/g, '')).join('').length,
     };
   });
-  console.log(`  ${f.name.padEnd(8)} Kacheln ${mass.oben}..${mass.unten} · Luft ueber der obersten Kachel ${mass.antwortUnten != null ? mass.oben - mass.antwortUnten : '?'} · unter der untersten ${990 - mass.unten} · groesstes Wappen ${mass.groesstesWappen}px`);
+  console.log(`  ${f.name.padEnd(8)} Kacheln ${mass.oben}..${mass.unten} · Luft ueber der obersten Kachel ${mass.antwortUnten != null ? mass.oben - mass.antwortUnten : '?'} · unter der untersten ${990 - mass.unten} · groesstes Wappen ${mass.groesstesWappen}px · Zeichen in den Kacheln ${mass.zeichen}`);
 }
 await b.schliessen();
 process.exit(0);

@@ -128,7 +128,12 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // etwas groesser sein um zu atmen, du darfst den raum ja nutzen, sonst wirds
   // zu voll in der mitte". Die Variante „luft" nimmt sich diesen Raum:
   // seitlich, unten, und in der Groesse der Wappen.
-  const strahlLuft = useMemo(() => schalter('qq-strahl') === 'luft', []);
+  // „ruhig" ist „luft" plus zwei Abstriche, die Wolf am Bild verlangt hat
+  // (2026-08-29: „finde es immernoch etwas voll ... irgendwie unuebersichtlich
+  // fuer eine beamerview"): eine Zahl weniger je Fraktion und Luft zwischen dem
+  // Sieger-Kaestchen und der Schiene.
+  const strahlRuhig = useMemo(() => schalter('qq-strahl') === 'ruhig', []);
+  const strahlLuft = useMemo(() => schalter('qq-strahl') === 'luft' || schalter('qq-strahl') === 'ruhig', []);
   const strahlGross = strahlTief || strahlLuft;
   // ⚠️ Die 11 % kommen vom KOLOSSEUM, nicht vom Grossformat. Im Kommentar
   // darueber steht es auch so: hinter der Buehne lag das Kolosseum-Bild, und
@@ -656,7 +661,13 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               return (
                 <div key={r.teamId} data-qq-rand-kachel={above ? 'oben' : 'unten'} style={{
                   position: 'absolute', left: `${cx}%`,
-                  ...(above ? { bottom: `${100 - RAIL + 1}%` } : { top: `${RAIL + 1}%` }),
+                  // Der Sieger traegt ein breiteres Kaestchen unter einem
+                  // groesseren Wappen, und weil die Spalte an der Schiene
+                  // endet, legt sich das Kaestchen genau auf sie. In „ruhig"
+                  // bekommt nur er etwas Abstand - der Rest bleibt, wo er ist.
+                  ...(above
+                    ? { bottom: strahlRuhig && isWin ? `calc(${100 - RAIL + 1}% + clamp(8px,1.4cqh,20px))` : `${100 - RAIL + 1}%` }
+                    : { top: strahlRuhig && isWin ? `calc(${RAIL + 1}% + clamp(8px,1.4cqh,20px))` : `${RAIL + 1}%` }),
                   transform: 'translateX(-50%)', zIndex: isWin && lit ? 8 : 4,
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px,0.4cqh,6px)',
                   filter: dimmed ? `brightness(${DIM}) saturate(0.82)` : 'none',
@@ -742,14 +753,22 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                       fontWeight: 900, whiteSpace: 'nowrap', fontVariantNumeric: 'tabular-nums',
                       color: exact ? MINT : 'var(--qq-text-muted)',
                     }}>
+                      {/* ⚠️ In „ruhig" faellt die ABWEICHUNG weg, nicht die Punkte.
+                          Die Abweichung steht doppelt auf der Folie: als Zahl im
+                          Kaestchen und als Weg zwischen Wappen und Wahrheit -
+                          und der Weg IST diese Kategorie. Bei acht Fraktionen
+                          spart das acht Zahlen von vierundzwanzig. „Getroffen"
+                          bleibt, das ist kein Messwert, sondern ein Ereignis. */}
                       {exact
                         ? (istBuehne
                             ? <><QQEmojiIcon emoji="✨" size="1em" /> {lang === 'en' ? 'spot on' : 'getroffen'}</>
                             : (lang === 'en' ? '✨ spot on' : '✨ getroffen'))
-                        : istBuehne
-                          ? (diff > 0 ? `+${fmt(diff)}` : `−${fmt(Math.abs(diff))}`)
-                          : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
-                      {isMega && <span style={{ color: isWin && lit ? GOLD_BRIGHT : GOLD, marginLeft: 6 }}>· {ptsOfAvatar(r.team.avatarId)}P</span>}
+                        : strahlRuhig && isMega
+                          ? null
+                          : istBuehne
+                            ? (diff > 0 ? `+${fmt(diff)}` : `−${fmt(Math.abs(diff))}`)
+                            : (diff > 0 ? `▲ +${fmt(diff)}` : `▼ −${fmt(Math.abs(diff))}`)}
+                      {isMega && <span style={{ color: isWin && lit ? GOLD_BRIGHT : GOLD, marginLeft: strahlRuhig && !exact ? 0 : 6 }}>{strahlRuhig && !exact ? '' : '· '}{ptsOfAvatar(r.team.avatarId)}P</span>}
                     </span>
                     {/* „am schnellsten": nur beim Sieger, nur wenn der Sieg per
                         Abschick-Zeitpunkt entschieden wurde (Gleichstand). Macht den

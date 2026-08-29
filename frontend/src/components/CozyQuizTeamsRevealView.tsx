@@ -92,9 +92,6 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
   const lang = useLangFlip(s.language);
   const themed = isThemed();
   const istBuehne = istBuehneG();
-  // TEMPORAER, siehe die Notiz an der Startaufstellung weiter unten.
-  let zweiReihen = false;
-  try { zweiReihen = window.localStorage.getItem('qqLineupRaster') === '2x4'; } catch { /* egal */ }
   const de = lang !== 'en';
   // 2026-07-17 (Wolf: Kolosseum-Schriftart -> Cinzel): Arena-Display-Font nur fuer
   // die grossen Hero-Worte (Wortmarke, Fraktionsname, „Los geht's!"). Bei Skin
@@ -310,36 +307,44 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
             <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'min(clamp(40px, 6.2cqw, 104px), 15cqh)', fontWeight: 900, lineHeight: 1, color: themed ? 'var(--qq-title)' : '#f6d98a', textShadow: themed ? 'none' : '0 0 40px rgba(246,217,138,0.35)' }}>
               {de ? 'Los geht’s!' : 'Let’s go!'}
             </div>
-            {/* ⚠️ TEMPORAER, zur Entscheidung. Wolf 2026-08-29: „bei los gehts
-                machen 2x4 wohl mehr sinn als 1x8 kannst du mal den unterschied
-                zeigen?" Beide Fassungen sind hier gebaut, umgeschaltet ueber
-                localStorage `qqLineupRaster` = '2x4'. Sobald die Entscheidung
-                steht, faellt der Schalter raus und nur eine Fassung bleibt -
-                ein Schalter ohne Bediener ist toter Code.
-                Bei zwei Reihen darf jedes Wappen breiter werden, weil vier
-                statt acht nebeneinander stehen: 26cqw statt 16cqw. */}
+            {/* ⚠️ ZWEI REIHEN ZU VIER, nicht eine zu acht. Wolf 2026-08-29:
+                „bei los gehts machen 2x4 wohl mehr sinn als 1x8 kannst du mal
+                den unterschied zeigen?" - beide gerendert und gemessen mit
+                scripts/lineup-vergleich.mjs, danach „safe 2x4".
+                  1x8   Wappen 268px, Rand links -12px / rechts -12px
+                  2x4   Wappen 218px, Rand links 229px / rechts 229px
+                Der Minuswert ist der Grund: in einer Reihe haengen die
+                aeusseren zwei Wappen zwoelf Bildpunkte ueber die Buehnenkante
+                und werden angeschnitten. Ausserdem beruehren sich die acht,
+                das Band liest sich auf Distanz als EINE Flaeche statt als acht
+                Gegenstaende.
+                `flex-basis: 22%` erzwingt genau vier je Reihe: viermal 22 sind
+                88 Prozent, der Rest ist die Luecke. */}
             <div style={{
               display: 'flex', justifyContent: 'center', alignItems: 'flex-end',
-              gap: zweiReihen ? 'clamp(6px, 1.2cqw, 26px)' : 'clamp(0px, 0.4cqw, 12px)',
-              rowGap: zweiReihen ? 'clamp(4px, 1cqh, 18px)' : undefined,
+              gap: 'clamp(6px, 1.2cqw, 26px)',
+              rowGap: 'clamp(4px, 1cqh, 18px)',
               width: '100%',
-              flexWrap: zweiReihen ? 'wrap' : 'nowrap',
+              flexWrap: 'wrap',
               padding: '0 clamp(4px, 1cqw, 22px)', boxSizing: 'border-box',
             }}>
               {factions.map((f, i) => {
                 // Wappen bewusst breiter als der Flex-Slot: die PNGs haben transparenten
                 // Rand (~35%), die Ueberlappung liegt also nur im transparenten Bereich →
                 // die SICHTBAREN Schilde werden deutlich groesser ohne echte Kollision.
-                const cw = zweiReihen
-                  ? 'min(clamp(120px, 22cqw, 300px), 22cqh)'
-                  : 'min(clamp(120px, 16cqw, 268px), 31cqh)';
+                // Die Hoehe ist hier die enge Achse, nicht die Breite: zwei
+                // Reihen plus Namensschilder muessen unter den Ruf passen.
+                // 2026-08-29, Wolf nach der Entscheidung: „und lass sie noch
+                // etwas wachsen". Von 22 auf 26 cqh, also von 218 auf 257 px -
+                // damit sind die Wappen fast so gross wie in der alten einen
+                // Reihe (268 px), stehen aber frei und werden nicht mehr an der
+                // Bildkante angeschnitten.
+                const cw = 'min(clamp(120px, 26cqw, 340px), 26cqh)';
                 return (
                   <div key={f.avatarId} style={{
-                    // Zwei Reihen: `flex-basis: 22%` erzwingt genau vier je Reihe
-                    // (vier mal 22 = 88 Prozent, der Rest ist die Luecke).
-                    flex: zweiReihen ? '0 0 22%' : '1 1 0',
+                    flex: '0 0 22%',
                     minWidth: 0,
-                    maxWidth: zweiReihen ? 'clamp(180px, 24cqw, 340px)' : 'clamp(180px, 17cqw, 300px)',
+                    maxWidth: 'clamp(180px, 24cqw, 340px)',
                     display: 'flex', flexDirection: 'column', alignItems: 'center',
                     gap: 'clamp(6px, 1cqh, 14px)',
                     animation: `qqLineupRise 0.72s var(--qq-ease-bounce-soft) ${(i * 0.07).toFixed(2)}s both`,

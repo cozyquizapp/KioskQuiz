@@ -324,8 +324,20 @@ for (const st of stationen) {
     {
       const lies = () => b.seite.evaluate(() =>
         (document.body.innerText || '').replace(/\s+/g, ' ')).catch(() => '');
+      // ⚠️ KURZ deckeln. Der erste Anlauf wartete bis zu acht Sekunden auf
+      // Stillstand - und lief damit Stationen HINTERHER, die von selbst
+      // weiterschalten. Die Startaufstellung zum Beispiel geht danach in die
+      // erste Frage ueber; das Werkzeug hat brav gewartet, bis auch die stand,
+      // und ein Bild vom Spielbrett geliefert. Ein Wartemechanismus, der das
+      // Ziel verlassen kann, ist schlimmer als gar keiner: er sieht aus wie
+      // Sorgfalt und liefert die falsche Folie.
+      //
+      // Zweieinhalb Sekunden reichen fuer das, wofuer die Wartezeit gedacht
+      // war: eine laufende Uebergabe zu Ende gehen lassen (die Danke-Folie
+      // braucht rund eine Sekunde). Laenger darf sie nicht, denn die
+      // Choreographie einer Station steckt schon in ihrer `ruhe`.
       let vorher = await lies();
-      for (let i = 0; i < 16; i++) {
+      for (let i = 0; i < 5; i++) {
         await sleep(500);
         const jetzt = await lies();
         if (jetzt === vorher) break;

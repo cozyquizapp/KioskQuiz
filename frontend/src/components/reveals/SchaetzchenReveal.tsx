@@ -131,13 +131,26 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   //
   // ⚠️ Nur zum Vergleichen, VORGABE ist weiter der bisherige Stand. Schalter:
   // ?spanne=1 in der Adresse oder localStorage qq-spanne=1.
-  const spanneAn = useMemo(() => {
-    if (typeof window === 'undefined') return false;
+  // 2026-08-29, Wolf am Bild: „spanne ist aus entfernung nicht wirklich
+  // sichtbar". Stimmt - 4 px bei 62 Prozent Deckkraft sind auf zehn Meter
+  // nichts. Deshalb gibt es die Variante jetzt in zwei Staerken, und dazu
+  // einen Schalter fuer die zweite Frage („wie saehe das aus, wenn du das
+  // untere Drittel mehr nutzt").
+  //   qq-spanne = 1      leise (erster Entwurf)
+  //   qq-spanne = 2      lesbar auf Entfernung
+  //   qq-strahl = tief   groessere Wappen, Strahl weiter oben, damit die
+  //                      untere Bahn den leeren Streifen fuellt
+  const schalter = (name: string) => {
+    if (typeof window === 'undefined') return null;
     try {
-      if (/[?&]spanne=1/.test(window.location.search)) return true;
-      return window.localStorage.getItem('qq-spanne') === '1';
-    } catch { return false; }
-  }, []);
+      const ausAdresse = new URLSearchParams(window.location.search).get(name.replace('qq-', ''));
+      if (ausAdresse) return ausAdresse;
+      return window.localStorage.getItem(name);
+    } catch { return null; }
+  };
+  const spanneStufe = useMemo(() => Number(schalter('qq-spanne') ?? 0) || 0, []);
+  const spanneAn = spanneStufe > 0;
+  const strahlTief = useMemo(() => schalter('qq-strahl') === 'tief', []);
 
   /** Je Fraktion: kleinster, groesster und mittlerer Tipp ihrer Handys. */
   const spannen = useMemo(() => {
@@ -427,6 +440,14 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             color: 'var(--qq-text-muted)', fontSize: 'clamp(20px, 2.2cqw, 32px)', fontWeight: 700,
           }}>{lang === 'en' ? 'No valid guesses.' : 'Keine gültigen Schätzungen.'}</div>
         ) : (() => {
+          // ⚠️ 54 % bleibt, auch in der Variante. Der erste Anlauf schob die
+          // Schiene auf 46 %, um „das untere Drittel zu nutzen" - und lieferte
+          // genau das Gegenteil: die obere Bahn wuchs in den Antwort-Kasten
+          // hinein und verdeckte ihn, waehrend der leere Streifen unten blieb.
+          // Ausgemessen ist unten ohnehin kein Drittel frei, sondern rund
+          // 180 px, oben rund 150 - der Block haengt also schon fast mittig.
+          // Was der Hoehe wirklich hilft, ist nicht Verschieben, sondern
+          // Wachsen: gleiche Achse, groessere Wappen.
           const RAIL = 54; // % Höhe: die Mess-Schiene, Wappen darüber/darunter
           const winnerCx = placed.find(p => p.r.teamId === winner?.teamId)?.cx ?? wx;
           return (
@@ -522,19 +543,20 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               const isWin = r.teamId === winner?.teamId;
               return (
                 <div key={'sp-' + r.team.avatarId} aria-hidden style={{
-                  position: 'absolute', zIndex: 2, height: 4, borderRadius: 4,
+                  position: 'absolute', zIndex: 2,
+                  height: spanneStufe >= 2 ? 12 : 4, borderRadius: 12,
                   // ⚠️ NICHT alle acht auf dieselbe Linie. Der erste Anlauf legte
                   // jede Spanne mittig auf die Schiene, und weil sich die
                   // Fraktionen ueberlappen, wurde daraus ein matschiger
                   // Farbverlauf statt acht lesbarer Strecken. Jede Bahn bekommt
                   // ihre eigene Hoehe, direkt an der Schiene, auf der Seite, auf
                   // der auch das Wappen steht.
-                  top: `calc(${RAIL}% ${above ? '-' : '+'} 7px)`,
+                  top: `calc(${RAIL}% ${above ? '-' : '+'} ${spanneStufe >= 2 ? 15 : 7}px)`,
                   left: `${Math.min(a, b)}%`, width: `${Math.max(0.6, Math.abs(b - a))}%`,
                   transform: `translateY(-50%) scaleX(${lit || !housedark ? 1 : 0.001})`,
                   transformOrigin: 'center',
                   background: r.team.color,
-                  opacity: housedark && !isWin ? 0.22 : 0.62,
+                  opacity: housedark && !isWin ? (spanneStufe >= 2 ? 0.34 : 0.22) : (spanneStufe >= 2 ? 0.9 : 0.62),
                   transition: reduce ? 'none' : 'transform 0.5s var(--qq-carry), opacity 0.4s ease',
                 }} />
               );
@@ -570,7 +592,12 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               // Wolf 2026-07-16 (bild 5 'unklar wer Sieger, alle gleich gross'):
               // Sieger deutlich groesser als der Rest → unuebersehbar, welches Wappen
               // gewonnen hat (Sieger = Punkte-Sieger, nicht zwingend der naechste Tipp).
-              const av = isWin ? 'clamp(68px, 8.2cqw, 134px)' : 'clamp(38px, 4.3cqw, 68px)';
+              // In der Variante „tief" wachsen die Wappen mit: die Hoehe wird
+              // ja frei, und ein groesseres Wappen ist der eigentliche Gewinn
+              // auf zehn Meter.
+              const av = strahlTief
+                ? (isWin ? 'clamp(76px, 9cqw, 152px)' : 'clamp(46px, 5.2cqw, 86px)')
+                : (isWin ? 'clamp(68px, 8.2cqw, 134px)' : 'clamp(38px, 4.3cqw, 68px)');
               return (
                 <div key={r.teamId} data-qq-rand-kachel={above ? 'oben' : 'unten'} style={{
                   position: 'absolute', left: `${cx}%`,

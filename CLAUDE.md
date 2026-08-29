@@ -176,10 +176,35 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   * **Ten Chips auf Fraktionen gebuendelt** und eine eigene Siegerehrung mit
     fuenf Awards.
 
+  ⚠️ **Die Siegerehrung von CrowdQuiz ist unantastbar.** Wolf 2026-08-29:
+  „die crowd quiz zeremonie muss bleiben! dort funktioniert die cozyquiz bar
+  race nicht." Sie liegt in `LargeGroupGameOverView` (CozyQuizLargeGroupView.tsx)
+  und laeuft ueber `qq:awardStep`: erst die Awards, einer je Takt, dann die
+  Kroenung („Wer kroent sich?", das Fraktions-Roulette), dann der Endstand.
+  Der Server laesst den Schritt ausdruecklich nur in GAME_OVER und nur im
+  Grossformat zu (`qqAwardStep`). Am Design darf man arbeiten - Ecken, Schrift,
+  Schein. Der ABLAUF und die WERTUNG bleiben, und die CozyQuiz-Siegerehrung
+  (Turm-Finale, `springe('final-reveal')`) gehoert dort nie hin.
+
   ⚠️ Besonders fuer Werkzeuge: `scripts/design-referenz.mjs` vergleicht
   CrowdQuiz mit CozyQuiz. Es vergleicht den WORTSCHATZ, nicht das Bild, und
   genau deshalb ist es ungefaehrlich. Wer daraus je ein „mach die Ansichten
   gleich" macht, nimmt CrowdQuiz sein Format weg.
+
+  ⚠️ **Und die Falle darunter, die zweimal zugeschlagen hat:** ein Werkzeug,
+  das CrowdQuiz misst, misst leicht CozyQuiz mit Wappen. Der Avatarsatz haengt
+  an einem anderen Feld als das Format, das Bild SIEHT also richtig aus.
+  * 2026-08-28: der Harness setzte kein Design, also mass er `buehne`, wo der
+    Abend `cozy` fuhr.
+  * 2026-08-29: der Harness gab `largeGroupMode` nicht an `qq:startGame` mit.
+    `qqStartGame` rechnet `largeGroupMode === true || nestedTeams === true`,
+    beide waren undefined, und damit war JEDE Station mit gestartetem Spiel
+    in Wahrheit CozyQuiz. Aufgefallen an drei Wortresten in einem Bild:
+    „Final-Phase" (gibt es dort nicht), „#11" (bei acht Fraktionen) und
+    „1 Feld" (in einem Format ohne Brett).
+
+    Gegenprobe, die nichts kostet: `qq:awardStep` wirft im falschen Format
+    einen Fehler. Wer die Zeremonie ansteuern kann, hat CrowdQuiz.
 
 ---
 

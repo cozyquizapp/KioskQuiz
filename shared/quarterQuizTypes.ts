@@ -280,7 +280,17 @@ export const QQ_TEAM_PALETTE: string[] = [
 // ── Game constants ────────────────────────────────────────────────────────────
 export const QQ_PHASES_COUNT          = 3;
 export const QQ_QUESTIONS_PER_PHASE   = 5;
-export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE; // 15
+/**
+ * ⚠️ 15 ist die VORGABE, nicht die Wahrheit des Abends. Der Wizard laesst 2, 3
+ * oder 4 Runden zu; die laufende Zahl steht als `totalPhases` im Raum und im
+ * Zustand. Wer die Gesamtzahl der Fragen ANZEIGT, rechnet
+ * `totalPhases * QQ_QUESTIONS_PER_PHASE` - sonst steht bei einem Vier-Runden-
+ * Satz „16 / 15" auf der Buehne (2026-08-29 von Wolf gemeldet, die drei
+ * CrowdQuiz-Saetze fahren vier Runden).
+ *
+ * Die Konstante bleibt fuer alles, was wirklich die Vorgabe meint.
+ */
+export const QQ_TOTAL_QUESTIONS       = QQ_PHASES_COUNT * QQ_QUESTIONS_PER_PHASE; // 15 (Vorgabe)
 export const QQ_MAX_STEALS_PER_PHASE  = 2;
 export const QQ_MAX_JOKERS_PER_GAME   = 2;
 export const QQ_MAX_STAPELS_PER_GAME  = 3;  // Stapel-Cap pro Team pro Spiel (verhindert Snowball-Effekt)

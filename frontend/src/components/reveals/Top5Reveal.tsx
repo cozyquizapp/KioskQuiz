@@ -24,7 +24,7 @@ import { playAvatarCascadeNote, playClimaxFinish, playRevealHighlight } from '..
 import { QQ_COLORS } from '../../../../shared/qqColors';
 import { isThemed, themedWindow, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../../qqTheme';
 import { QQ_CATEGORY_THEME } from '../../../../shared/qqCategoryTheme';
-import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS } from '../../../../shared/quarterQuizTypes';
+import { QQ_CATEGORY_LABELS } from '../../../../shared/quarterQuizTypes';
 
 export function Top5Reveal({ state: s, lang }: { state: QQStateUpdate; lang: 'de' | 'en' }) {
   const q = s.currentQuestion!;

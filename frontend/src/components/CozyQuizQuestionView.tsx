@@ -23,7 +23,7 @@
  */
 import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import type { QQStateUpdate, QQCategory } from '../../../shared/quarterQuizTypes';
-import { QQ_CATEGORY_LABELS, QQ_TOTAL_QUESTIONS, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
+import { QQ_CATEGORY_LABELS, QQ_PHASES_COUNT, QQ_QUESTIONS_PER_PHASE, qqGetAvatar, teamDisplayName, qqMegaFactionSlug, qqMegaFactionName, qqIsMega } from '../../../shared/quarterQuizTypes';
 import { getAvatarDisplay } from '../avatarSets';
 import { isThemed, isQuietMotion, getActiveThemeId, BUEHNE_THEME_ID, QQ_BUEHNE_RAND } from '../qqTheme';
 import { QQ_CATEGORY_THEME } from '../../../shared/qqCategoryTheme';
@@ -197,6 +197,15 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
   const hasImg = img && img.url && (isCheese || img.layout !== 'none');
   const isWindow = hasImg && !isCheese && (img.layout === 'window-left' || img.layout === 'window-right');
   const lang = useLangFlip(s.language);
+
+  // 2026-08-29, Wolf: „01 / 15" bei einem Satz mit 20 Fragen. Hier stand
+  // `QQ_TOTAL_QUESTIONS`, und das ist eine KONSTANTE: 3 Runden x 5 Fragen, aus
+  // einer Zeit, in der es nur diese eine Laenge gab. Der Wizard laesst aber 2,
+  // 3 oder 4 Runden zu (`totalPhases`), und die drei CrowdQuiz-Saetze fahren
+  // vier. Der Zaehler zaehlte also gegen eine Zahl, die der Abend gar nicht
+  // hatte - und bei Frage 16 bis 20 stand da „16 / 15".
+  // Die Rundenzahl steht im Zustand, also wird sie gelesen statt geglaubt.
+  const fragenGesamt = (s.totalPhases ?? QQ_PHASES_COUNT) * QQ_QUESTIONS_PER_PHASE;
 
   // 2026-05-05 (Wolf): CozyGuessr-Active mit Bild = Cheese-Landscape-Layout.
   // Bild fullscreen + Frosted Card unten + Timer + Avatar-Progress.
@@ -944,7 +953,7 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
             whiteSpace: 'nowrap',
           }}>
             {lang === 'en' ? 'QUESTION' : 'FRAGE'}{' '}
-            {String((s.questionIndex ?? 0) + 1).padStart(2, '0')} / {QQ_TOTAL_QUESTIONS}
+            {String((s.questionIndex ?? 0) + 1).padStart(2, '0')} / {fragenGesamt}
           </span>
         </div>
       )}

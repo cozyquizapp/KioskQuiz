@@ -491,6 +491,10 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
   // aktuellen lang uebersetzt — kein Stale-Bug bei Sprach-Switch zur Ladezeit.
   const [errorKey, setErrorKey] = useState<'notFoundMsg' | 'loadError' | 'gameRunningMsg' | null>(null);
   const [selectedTeamId, setSelectedTeamId] = useState<string | null>(null);
+  // Welches Blatt des Registers liegt oben. „Zahlen" zuerst, weil das die
+  // einzige Zahl der Seite ist, die dem Team allein gehoert - alles andere
+  // erzaehlt vom Abend, nicht von ihnen.
+  const [reiter, setReiter] = useState('sum-zahlen');
   const [lang, setLang] = useState<Lang>(detectInitialLang);
   // Mega Event: rohe Summary auf 8 Farben aggregieren (sonst 24 Sub-Teams +
   // Grid-Stats). Im Normal-Modus unverändert durchgereicht.
@@ -679,6 +683,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
                   <button key={t.id} className="qq-sum-pick"
                     onClick={() => {
                       setSelectedTeamId(t.id);
+                      setReiter('sum-zahlen');
                       // ⚠️ Ohne das landet man im Team-Schirm da, wo man in
                       // der Uebersicht gescrollt hatte - also mitten in den
                       // Zahlen, ohne den Kopf gesehen zu haben. Der Wechsel
@@ -740,6 +745,12 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
 
   // Team-Detail-Screen
   const place = ranking.findIndex(t => t.id === selectedTeam.id) + 1;
+  const reiterPunkte = [
+    { id: 'sum-zahlen',   label: lang === 'de' ? 'Zahlen' : 'Numbers' },
+    ...(summary.cellOwners && summary.gridSize ? [{ id: 'sum-brett', label: lang === 'de' ? 'Brett' : 'Board' }] : []),
+    { id: 'sum-ehren',    label: lang === 'de' ? 'Ehrentitel' : 'Honors' },
+    { id: 'sum-endstand', label: lang === 'de' ? 'Endstand' : 'Standings' },
+  ];
   const placeLabel = formatPlaceLabel(place, lang);
   const myFunny = summary.funnyAnswers.find(f => f.teamId === selectedTeam.id);
   const accuracy = selectedTeam.answered > 0 ? Math.round((selectedTeam.correct / selectedTeam.answered) * 100) : null;
@@ -785,20 +796,30 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
       {/* Mega Event: kein Stamm-Code pro Farb-Gruppe (Gruppe ≠ echtes Team). */}
       {!summary.nested && <SummaryStammCode teamId={selectedTeam.id} lang={lang} brand={brand} />}
 
-      {/* 2026-08-29 (Wolf: „mach untermenues"). Gemessen war der Team-Schirm
-          4,0 Bildschirme hoch, mit sechs gleich schweren Abschnitten und ohne
-          jede Uebersicht. Die Leiste steht ABSICHTLICH unter dem Kopf und
-          nicht darueber: der erste Blick soll auf dem Team liegen, nicht auf
-          einer Navigation. */}
-      <AbschnittsLeiste punkte={[
-        { id: 'sum-zahlen',   label: lang === 'de' ? 'Zahlen' : 'Numbers' },
-        ...(summary.cellOwners && summary.gridSize ? [{ id: 'sum-brett', label: lang === 'de' ? 'Brett' : 'Board' }] : []),
-        { id: 'sum-ehren',    label: lang === 'de' ? 'Ehrentitel' : 'Honors' },
-        { id: 'sum-endstand', label: lang === 'de' ? 'Endstand' : 'Standings' },
-        { id: 'sum-feedback', label: 'Feedback' },
-      ]} />
+      {/* ⚠️ 2026-08-29, ZWEITER Anlauf (Wolf: „aber man scrollt immernoch viel,
+          ist das maximal optimiert?"). Nein, war es nicht - und der erste
+          Anlauf hat die Frage sogar schwerer gemacht: eine Leiste, die nur
+          SPRINGT, verspricht Uebersicht und liefert trotzdem eine Rolle.
 
-      <Section id="sum-zahlen" title={tr('yourNumbers', lang)}>
+          Gemessen, wo die 3088 px herkamen: Kopf 54, Sieger 368, Stammcode 123,
+          Leiste 65, Zahlen 244, Brett 424, Ehrentitel 439, Endstand 288,
+          Feedback 497, Werbung 254, Fusszeile 84. Die vier Abschnitte, auf die
+          die Leiste zeigt, sind zusammen 1395 px - also 45 Prozent der Seite
+          und genau die Haelfte, die man ohnehin nur einzeln ansieht.
+
+          Deshalb blaettert die Leiste jetzt, statt zu springen. Sichtbar ist
+          immer nur ein Blatt, und aus 1395 px werden die 439 des groessten.
+          Verloren geht nichts: alles ist eine Geste entfernt.
+
+          Das Feedback bleibt ABSICHTLICH draussen und steht immer unter dem
+          Blatt. Es ist der Grund, warum es diese Seite gibt - es darf nicht
+          hinter einem Reiter liegen, den niemand antippt. */}
+      <AbschnittsLeiste aktiv={reiter} setzen={setReiter} punkte={reiterPunkte} />
+
+      <div id="sum-blatt" role="tabpanel" key={reiter} className="qq-sum-blatt">
+
+      {reiter === 'sum-zahlen' && (
+      <Section id="sum-zahlen" versteckterTitel title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
           {summary.nested ? (
             // Mega Event: keine Grid-Stats (Felder/Joker/Klau) — nur Punkte + Treffer.
@@ -819,12 +840,13 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           )}
         </div>
       </Section>
+      )}
 
       {/* 2026-05-09 (Wolf): Final-Brett anzeigen — wer hat welche Felder am
           Ende. Cells nach team.color gefärbt, Top-Team-Cluster pulsiert. */}
-      {summary.cellOwners && summary.gridSize && summary.gridSize > 0 && (
+      {reiter === 'sum-brett' && summary.cellOwners && summary.gridSize && summary.gridSize > 0 && (
         <SummaryBoard
-          id="sum-brett"
+          id="sum-brett" versteckterTitel
           gridSize={summary.gridSize}
           cellOwners={summary.cellOwners}
           teams={summary.teams}
@@ -834,15 +856,15 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
 
       {/* H3 Superlatives: narrative End-Game-Titel. Mega Event: stattdessen die
           3 Faktions-Awards (schnellstes/treffsicherstes/Aufholjagd). */}
-      {summary.nested && summary.megaAwards ? (
-        <Section id="sum-ehren" title={lang === 'de' ? 'Fraktions-Awards' : 'Faction awards'}>
+      {reiter === 'sum-ehren' && (summary.nested && summary.megaAwards ? (
+        <Section id="sum-ehren" versteckterTitel title={lang === 'de' ? 'Fraktions-Awards' : 'Faction awards'}>
           <MegaAwardsStrip awards={summary.megaAwards} de={lang === 'de'} />
         </Section>
       ) : (
-        <Superlatives id="sum-ehren" teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
-      )}
+        <Superlatives id="sum-ehren" versteckterTitel teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
+      ))}
 
-      {myFunny && (
+      {reiter === 'sum-ehren' && myFunny && (
         <Section title={tr('yourMoment', lang)}>
           <div style={{
             background: `rgba(${brand.pinkRgb},0.08)`,
@@ -862,7 +884,8 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         </Section>
       )}
 
-      <Section id="sum-endstand" title={tr('finalStandings', lang)}>
+      {reiter === 'sum-endstand' && (
+      <Section id="sum-endstand" versteckterTitel title={tr('finalStandings', lang)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {ranking.map((t, i) => {
             const isMe = t.id === selectedTeam.id;
@@ -888,6 +911,9 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           })}
         </div>
       </Section>
+      )}
+
+      </div>{/* /sum-blatt */}
 
       <FeedbackForm id="sum-feedback" roomCode={summary.roomCode} teamName={selectedTeam.name} lang={lang} brand={brand} />
       <PartnerCTA lang={lang} brand={brand} />
@@ -1045,6 +1071,36 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
                   mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
         }
         .qq-sum-leiste::-webkit-scrollbar { display: none; }
+        /* ⚠️ Zweite Falle aus main.css, gleiche Bauart wie die erste: in der
+           Handy-Breite steht dort
+
+               button { padding: 10px 14px !important; font-size: 14px
+                        !important; min-height: 40px !important; }
+
+           Das gilt fuer JEDEN Knopf der App, also auch fuer jeden auf dieser
+           Seite. Meine 7px/10px/12px an den Reitern waren damit wirkungslos -
+           gemessen blieben die vier Reiter 371 breit, obwohl gerechnet 347
+           herauskam. Zweimal gemessen, bis klar war, dass nicht mein Wert
+           falsch ist, sondern ein fremder gewinnt.
+
+           Ueberschrieben wird hier NUR die seitliche Polsterung, und nur in
+           der Leiste. Schriftgroesse und Mindesthoehe aus main.css bleiben
+           stehen: die sind gute Politik (Lesbarkeit und Tippziel auf dem
+           Handy), sie kosten hier nur Breite an einer Stelle, an der Breite
+           knapp ist. 14 -> 10 px spart 32 px, und damit stehen alle vier
+           Reiter ohne Schieben da. */
+        .qq-sum-leiste button {
+          padding-left: 10px !important;
+          padding-right: 10px !important;
+        }
+        /* Blattwechsel: der neue Inhalt kommt von unten herein. Kurz (240 ms) -
+           es ist ein Wechsel, kein Auftritt, und wer durch vier Reiter tippt,
+           will nicht viermal warten. */
+        .qq-sum-blatt { animation: qqSumBlatt 0.24s cubic-bezier(.23,1,.32,1) both; }
+        @keyframes qqSumBlatt {
+          from { opacity: 0; transform: translateY(8px); }
+          to   { opacity: 1; transform: none; }
+        }
         /* Kachel im Endbrett: eine Welle von links oben, 18 ms je Feld. */
         @keyframes qqSumZelle {
           from { opacity: 0; transform: scale(0.72); }
@@ -1057,6 +1113,7 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
           .qq-sum-auf, .qq-sum-auf[data-da] { opacity: 1; transform: none; transition: none; }
           .qq-sum-flaeche button, .qq-sum-flaeche a[href] { transition: none; }
           .qq-sum-flaeche button:active, .qq-sum-flaeche a[href]:active { transform: none; }
+          .qq-sum-blatt { animation: none; }
           .qq-sum-flaeche [style*="qqSum"], .qq-sum-flaeche * { animation: none !important; }
         }
       `}</style>
@@ -1290,8 +1347,8 @@ function Hero({ draftTitle, winner, playedAt, lang, brand }: {
 // 2026-05-09 (Wolf): Final-Brett-Renderer für die Summary-Seite. Zeigt das
 // Endbrett mit Team-Color-Cells. Top-Team (höchster largestConnected) hat
 // zusätzlichen Pulse. Klein genug damit's auf dem Phone scrollbar bleibt.
-function SummaryBoard({ gridSize, cellOwners, teams, lang, id }: {
-  id?: string;
+function SummaryBoard({ gridSize, cellOwners, teams, lang, id, versteckterTitel }: {
+  id?: string; versteckterTitel?: boolean;
   gridSize: number;
   cellOwners: Array<Array<string | null>>;
   teams: SummaryTeam[];
@@ -1308,7 +1365,7 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang, id }: {
   const reduziert = typeof window !== 'undefined'
     && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   return (
-    <Section id={id} title={lang === 'de' ? 'Endbrett' : 'Final board'}>
+    <Section id={id} versteckterTitel={versteckterTitel} title={lang === 'de' ? 'Endbrett' : 'Final board'}>
       <style>{`
         @keyframes summaryBoardPulse {
           0%, 100% { box-shadow: inset 0 0 0 1px var(--sum-line-2); }
@@ -1424,13 +1481,23 @@ function useAufdecken<T extends HTMLElement>() {
   return ref;
 }
 
-function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
+function Section({ title, children, id, versteckterTitel }: {
+  title: string; children: React.ReactNode; id?: string;
+  /** Im Reiter steht der Name schon in der Leiste. Die Ueberschrift bleibt
+   *  trotzdem im Dokument - nur unsichtbar. Wer die Seite vorlesen laesst
+   *  oder ueber Ueberschriften navigiert, braucht sie; wer sie sieht, liest
+   *  sie sonst zweimal untereinander. Loeschen waere das Bequeme und das
+   *  Falsche. */
+  versteckterTitel?: boolean;
+}) {
   const ref = useAufdecken<HTMLElement>();
   return (
-    // ⚠️ `scrollMarginTop` gehoert zum Untermenue: ohne den Wert springt die
-    // Leiste beim Antippen genau ueber die Ueberschrift, zu der sie fuehrt.
+    // ⚠️ `scrollMarginTop` gehoert zur Leiste: ohne den Wert springt sie beim
+    // Antippen genau ueber die Ueberschrift, zu der sie fuehrt.
     <section id={id} ref={ref} className="qq-sum-auf" style={{ marginBottom: 20, scrollMarginTop: 62 }}>
-      <h3 style={{ fontSize: 13, color: 'var(--sum-muted)', textTransform: 'uppercase', letterSpacing: 0.3, margin: '0 0 10px', fontWeight: 900 }}>
+      <h3 style={versteckterTitel
+        ? { position: 'absolute', width: 1, height: 1, overflow: 'hidden', clip: 'rect(0 0 0 0)', clipPath: 'inset(50%)', whiteSpace: 'nowrap', margin: 0 }
+        : { fontSize: 13, color: 'var(--sum-muted)', textTransform: 'uppercase', letterSpacing: 0.3, margin: '0 0 10px', fontWeight: 900 }}>
         {title}
       </h3>
       {children}
@@ -1450,56 +1517,24 @@ function Section({ title, children, id }: { title: string; children: React.React
  * „stimmt". Ausgewaehlt wird der oberste Abschnitt, der gerade im oberen
  * Drittel steht.
  */
-function AbschnittsLeiste({ punkte }: { punkte: Array<{ id: string; label: string }> }) {
-  const [aktiv, setAktiv] = useState<string | null>(punkte[0]?.id ?? null);
+function AbschnittsLeiste({ punkte, aktiv, setzen }: {
+  punkte: Array<{ id: string; label: string }>;
+  aktiv: string;
+  setzen: (id: string) => void;
+}) {
   const leiste = useRef<HTMLDivElement | null>(null);
 
-  // ⚠️ Bewusst NICHT ueber einen IntersectionObserver, obwohl das der
-  // naheliegende Weg ist. Erster Anlauf genau so: „welcher Abschnitt ist im
-  // oberen Band sichtbar". Wenn zwei gleichzeitig hineinragen - und das ist an
-  // jeder Abschnittsgrenze der Fall - muss man einen waehlen, und beide
-  // Antworten sind falsch. Gemessen: die Leiste sagte „Brett", waehrend die
-  // Ehrentitel schon die halbe Seite fuellten.
-  //
-  // Die Frage ist auch nicht „was ist sichtbar", sondern „worin stehe ich".
-  // Das ist der LETZTE Abschnitt, dessen Oberkante die Leiste passiert hat.
-  useEffect(() => {
-    let angefordert = false;
-    const aktualisieren = () => {
-      angefordert = false;
-      const grenze = 96;   // Unterkante der klebenden Leiste plus etwas Luft
-      let treffer = punkte[0]?.id ?? null;
-      for (const p of punkte) {
-        const el = document.getElementById(p.id);
-        if (el && el.getBoundingClientRect().top <= grenze) treffer = p.id;
-      }
-      setAktiv(treffer);
-    };
-    const beiScroll = () => {
-      if (angefordert) return;
-      angefordert = true;
-      window.requestAnimationFrame(aktualisieren);
-    };
-    aktualisieren();
-    window.addEventListener('scroll', beiScroll, { passive: true });
-    window.addEventListener('resize', beiScroll, { passive: true });
-    return () => {
-      window.removeEventListener('scroll', beiScroll);
-      window.removeEventListener('resize', beiScroll);
-    };
-  }, [punkte]);
-
-  // ⚠️ Der aktive Punkt muss auch IN der Leiste sichtbar sein. Bei fuenf
+  // ⚠️ Der aktive Punkt muss auch IN der Leiste sichtbar sein. Bei vier
   // Punkten auf 390 px passt nicht alles nebeneinander, und ohne diesen Teil
-  // wandert die Markierung aus dem Bild, waehrend man scrollt.
+  // wandert die Markierung aus dem Bild.
   useEffect(() => {
     const el = leiste.current?.querySelector<HTMLElement>(`[data-punkt="${aktiv}"]`);
     el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
   }, [aktiv]);
 
-  if (punkte.length < 3) return null;
+  if (punkte.length < 2) return null;
   return (
-    <div style={{
+    <div id="sum-reiter" style={{
       position: 'sticky', top: 0, zIndex: 30,
       margin: '0 -16px 14px', padding: '8px 16px',
       background: 'var(--sum-leiste)', backdropFilter: 'blur(14px)',
@@ -1510,17 +1545,30 @@ function AbschnittsLeiste({ punkte }: { punkte: Array<{ id: string; label: strin
           Begruendung steht bei der Regel im Stilblock der Shell. Gemessen:
           fuenf Punkte sind zusammen 475 breit, die Spalte ist 358. Es MUSS
           also schieben, und der Verlauf am rechten Rand sagt das. */}
-      <div ref={leiste} className="qq-sum-leiste">
+      <div ref={leiste} className="qq-sum-leiste" role="tablist" aria-label="Abschnitte">
         {punkte.map(p => {
           const an = aktiv === p.id;
           return (
             <button key={p.id} type="button" data-punkt={p.id}
-              aria-current={an ? 'true' : undefined}
+              role="tab" aria-selected={an} aria-controls="sum-blatt"
               onClick={() => {
-                document.getElementById(p.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                setzen(p.id);
+                // ⚠️ Beim Wechsel von einem hohen auf ein niedriges Blatt
+                // stuende man sonst unter dem Inhalt und saehe eine leere
+                // Seite. Also: wenn die Leiste nach oben aus dem Bild
+                // gewandert ist, zurueck an ihren Anfang.
+                const kopf = document.getElementById('sum-reiter');
+                if (kopf && kopf.getBoundingClientRect().top < 0) {
+                  kopf.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }
               }}
               style={{
-                flexShrink: 0, minHeight: 36, padding: '7px 13px', borderRadius: sumPill(999),
+                // ⚠️ 10 statt 13 px Polsterung. Gemessen: mit 13 sind die vier
+                // Reiter zusammen 371 breit und die Spalte 358 - es fehlten
+                // dreizehn Bildpunkte, und dafuer haette man schieben muessen.
+                // Mit 10 passen sie, und ein Register, das ganz dasteht, ist
+                // ein Register; eines, das schiebt, ist eine Ahnung davon.
+                flexShrink: 0, minHeight: 36, padding: '7px 10px', borderRadius: sumPill(999),
                 background: an ? 'var(--qq-accent, #F5ECD8)' : 'var(--sum-card)',
                 color: an ? 'var(--sum-on-accent)' : 'var(--sum-muted)',
                 border: `1px solid ${an ? 'transparent' : 'var(--sum-line)'}`,
@@ -1637,8 +1685,8 @@ function Stat({ label, value, suffix, accent, staggerIdx = 0 }: { label: string;
 // Thanks-Page. Backend übergibt endAwards (mit Team-IDs + Bonus-Daten).
 // Vorher: 4 abgeleitete Titel (Meister-Klauer, Trefferkönig, Joker-Jäger,
 // Territorium-König) — durch die 3 neuen ersetzt.
-function Superlatives({ teams, selectedId, lang, endAwards, brand, id }: {
-  id?: string;
+function Superlatives({ teams, selectedId, lang, endAwards, brand, id, versteckterTitel }: {
+  id?: string; versteckterTitel?: boolean;
   teams: SummaryTeam[]; selectedId: string; lang: Lang;
   endAwards: Summary['endAwards'];
   brand: ReturnType<typeof summaryBrand>;
@@ -1718,7 +1766,7 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand, id }: {
 
   const sectionTitle = lang === 'de' ? 'Ehrentitel' : 'Honors';
   return (
-    <Section id={id} title={sectionTitle}>
+    <Section id={id} versteckterTitel={versteckterTitel} title={sectionTitle}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
         {titles.map((title, i) => {
           const isMe = title.winner.id === selectedId;

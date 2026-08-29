@@ -35,7 +35,13 @@ export function engeMessung(grenzen) {
   const sperren = sperrEls.map(el => el.getBoundingClientRect()).filter(r => r.height > 4 && r.width > 4);
 
   /** Sieht man das Element ueberhaupt? Text oder Bild, sichtbar, gross genug. */
+  /** ⚠️ `style` und `script` tragen Text, aber niemand sieht sie. Der erste
+   *  volle Lauf meldete drei Zeilen „unter Schweber @keyframes qqTreePulse" -
+   *  ein Stilblock, der zufaellig absolut positioniert im Baum stand. */
+  const UNSICHTBAR = new Set(['STYLE', 'SCRIPT', 'HEAD', 'META', 'LINK', 'TITLE']);
+
   const zaehlt = (el) => {
+    if (UNSICHTBAR.has(el.tagName)) return false;
     const st = getComputedStyle(el);
     if (st.visibility === 'hidden' || st.display === 'none') return false;
     if (Number(st.opacity) < 0.05) return false;
@@ -67,6 +73,7 @@ export function engeMessung(grenzen) {
   // Fliesstext darunter schieben. Liegt sichtbarer Text unter einem Schweber,
   // der ihn nicht enthaelt, ist das die Fehlerart aus beiden Vorfaellen.
   const schweber = [...document.querySelectorAll('*')].filter(el => {
+    if (UNSICHTBAR.has(el.tagName)) return false;
     const st = getComputedStyle(el);
     if (st.position !== 'absolute' && st.position !== 'fixed') return false;
     if (st.visibility === 'hidden' || Number(st.opacity) < 0.05) return false;

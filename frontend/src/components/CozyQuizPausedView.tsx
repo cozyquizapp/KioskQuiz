@@ -749,7 +749,17 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
       // dreht alle acht Farben durch alle acht Objekte, also sieht man auch
       // weiter, dass die Paarung frei ist.
       const SPALTEN = 4, ZEILEN = 2;
-      panels.push({ key: 'avatare', node: (
+      // ⚠️ NUR CozyQuiz. Wolf 2026-08-28 am Livebild: „das ist schon mal falsch
+      // leider, hier muessten die fraktionen vorgestellt werden, das waere
+      // wichtig beim angleichen des designs an cozyquiz, dass nicht blind
+      // alles uebernommen wird".
+      // In CrowdQuiz sucht sich niemand ein Emoji aus - jedes Team gehoert zu
+      // einer der acht Fraktionen, und deren Wappen sind an Name und Farbe
+      // gebunden. Die Folie stand dort also nicht nur unpassend, sie sagte
+      // etwas Falsches ueber die Spielregeln. Die richtige Folie gibt es
+      // laengst: `megaFactions`, ein paar Zeilen weiter unten, und die laeuft
+      // nur im Grossformat. Bis heute liefen BEIDE.
+      if (!largeGroup) panels.push({ key: 'avatare', node: (
         <div style={{ width: 'min(100%, 1280px)', margin: '0 auto' }}>
           {/* 2026-08-27: hier stand erst ein rohes 🎨, dann `fx-sparkles`.
               Wolf: „ohne den stern er passt nicht zu unserem set (oder ist er

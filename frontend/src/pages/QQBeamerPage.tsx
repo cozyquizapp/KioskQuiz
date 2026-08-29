@@ -2433,7 +2433,7 @@ function BeamerView({ state: s, slideTemplates, roomCode }: { state: QQStateUpda
           Übergang zum Regel-Intro. 2026-05-11: zurückgebracht nach Wolf-
           Klarstellung — vorher fälschlich unter „L1 Welcome doppelt"
           entfernt. */}
-      <QuizIntroOverlay language={s.language} visible={welcomeActive} arena={qqIsMega(s)} arenaBg={qqIsMega(s) && (s as any).arenaBackgrounds !== false} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
+      <QuizIntroOverlay language={s.language} visible={welcomeActive} arena={qqIsMega(s)} arenaBg={qqIsMega(s) && (s as any).arenaBackgrounds !== false && !isThemed()} eurovisionMode={s.theme?.eurovisionMode} logoUrl={s.theme?.logoUrl} welcomeVideoUrl={s.theme?.welcomeVideoUrl} />
       {/* Arena-Meister-Splash (nur Arena+Kolosseum, rulesSlideIndex === -2):
           zwischen Willkommen und Regel-Intro. Stellt den Magier-Host vor. */}
       <ArenaMasterSplash language={s.language} visible={masterActive} />

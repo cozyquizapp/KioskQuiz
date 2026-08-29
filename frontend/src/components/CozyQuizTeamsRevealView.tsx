@@ -271,7 +271,7 @@ function ArenaEntranceView({ state: s }: { state: QQStateUpdate }) {
           {done ? (de ? 'Startaufstellung' : 'Starting lineup') : (de ? 'Die Fraktionen treten an' : 'The factions enter')}
         </div>
         <div style={{ fontFamily: arenaFont, letterSpacing: themed ? undefined : '0.02em', fontSize: 'clamp(38px, 6.5cqw, 100px)', fontWeight: 900, lineHeight: 1.02, color: themed ? 'var(--qq-title)' : 'var(--qq-text)', textShadow: themed ? 'none' : 'none' }}>
-          CozyArena
+          CrowdQuiz
         </div>
       </div>
 

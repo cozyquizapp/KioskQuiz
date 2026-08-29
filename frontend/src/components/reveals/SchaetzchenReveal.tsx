@@ -395,19 +395,31 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   /** Vorlauf, in dem NUR die Spannen liegen. Ohne Spanne gibt es ihn nicht -
    *  dann laeuft die Folie wie bisher. */
   const VORLAUF = spanneAn && !reduce ? 1400 : 0;
+  /** Ab hier loesen sich die Spannen auf - eine je Wappen, im selben Takt.
+   *  Wolf 2026-08-29: „pro wappen das erscheint, verschwindet ein balken
+   *  range". Der Balken wird also vom Wappen ABGELOEST, nicht bloss
+   *  irgendwann ausgeblendet: die Fraktion hat gesucht, jetzt steht sie. */
+  const [spannenLoesenSich, setSpannenLoesenSich] = useState(false);
+  /** Takt zwischen zwei Wappen. ⚠️ Mit Spanne LANGSAMER als sonst: der Tausch
+   *  Balken gegen Wappen ist der Punkt der Sache, und bei 80 ms war er nach
+   *  640 ms vorbei - gemessen im Harness sah man auf drei Bildern nie beides
+   *  nebeneinander. 140 ms machen daraus gut eine Sekunde, in der man dem
+   *  Aufdecken zusehen kann. Ohne Spanne bleibt es bei 80 ms. */
+  const TAKT = spanneAn && !reduce ? 140 : 80;
   useEffect(() => {
     if (reduce) return;
     const sfx = !s.sfxMuted;
-    const tBeam = VORLAUF + 400 + N * 90 + 350;
+    const tBeam = VORLAUF + 400 + N * (TAKT + 10) + 350;
     const tDark = tBeam + 1200;
     const tWin = tDark + 550;
     const ts: ReturnType<typeof setTimeout>[] = [
+      setTimeout(() => setSpannenLoesenSich(true), VORLAUF + 350),
       setTimeout(() => setBeat(1), tBeam),
       setTimeout(() => setBeat(2), tDark),
       setTimeout(() => setBeat(3), tWin),
     ];
     if (sfx) {
-      placed.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, VORLAUF + 400 + i * 90)); });
+      placed.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, VORLAUF + 400 + i * (TAKT + 10))); });
       ts.push(setTimeout(() => { try { playClimaxFinish(); } catch {} }, tWin));
     }
     return () => ts.forEach(clearTimeout);
@@ -599,7 +611,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 neues Objekt, sondern dieselbe Schiene, nur eingefaerbt: gleiche
                 Hoehe, gleiche Rundung, halbe Deckkraft. Es kommt kein Element
                 dazu, das man einzeln lesen muesste. */}
-            {spanneAn && placed.map(({ r, above }) => {
+            {spanneAn && placed.map(({ r, above }, i) => {
               const sp = spannen.get(r.team.avatarId);
               if (!sp || sp.n < 2) return null;
               const a = axisPct(sp.min), b = axisPct(sp.max);
@@ -627,10 +639,15 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   transform: `translateY(-50%) scaleX(${lit || !housedark ? 1 : 0.001})`,
                   transformOrigin: 'center',
                   background: r.team.color,
-                  // Ab dem Wahrheits-Strahl (beat 1) sind die Strecken weg -
-                  // sie haben ihre Arbeit getan, und das Endbild bleibt ruhig.
-                  opacity: beat >= 1 ? 0 : (spanneStufe >= 2 ? 0.9 : 0.62),
-                  transition: reduce ? 'none' : 'transform 0.5s var(--qq-carry), opacity 0.55s var(--qq-enter)',
+                  // ⚠️ Die Verzoegerung ist DIESELBE wie bei der Kachel mit
+                  // demselben Index (0,08 s je Schritt). Balken und Wappen
+                  // tauschen dadurch die Plaetze, statt dass alles gemeinsam
+                  // ausblendet. Wer den Takt hier aendert, muss die
+                  // Kachel-Animation weiter unten mitaendern.
+                  opacity: (spannenLoesenSich || beat >= 1) ? 0 : (spanneStufe >= 2 ? 0.9 : 0.62),
+                  transition: reduce
+                    ? 'none'
+                    : `transform 0.5s var(--qq-carry), opacity 0.45s var(--qq-enter) ${(i * TAKT) / 1000}s`,
                 }} />
               );
             })}
@@ -688,7 +705,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   // `both` heisst: vor der Verzoegerung gilt der 0%-Zustand,
                   // die Kachel ist also unsichtbar, bis sie an der Reihe ist.
                   // Genau das traegt den Vorlauf.
-                  animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${(VORLAUF / 1000) + 0.35 + i * 0.08}s both` : 'none',
+                  animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${(VORLAUF / 1000) + 0.35 + (i * TAKT) / 1000}s both` : 'none',
                 }}>
                   {/* untere Lane: kurzer Stiel NACH OBEN zur Schiene steht vor dem Wappen;
                       obere Lane: Wert zuerst, dann Wappen, dann Stiel nach unten. Reihenfolge

@@ -14,7 +14,15 @@ import { buehneStarten, sleep, API, PIN } from './lib/buehne.mjs';
 const ZIEL = '.shots/ablauf';
 fs.mkdirSync(ZIEL, { recursive: true });
 const BOTS = 24;
-const TAKTE = [700, 2100, 4600];   // ms nach `qq:revealAnswer`
+// ⚠️ Engere Takte als beim ersten Anlauf. Seit die Balken EINZELN weichen
+// (einer je Wappen), entscheidet sich alles zwischen 1,4 s und 2,4 s - mit drei
+// weit auseinanderliegenden Bildern sieht man den Tausch gar nicht.
+// ⚠️ Der Tausch liegt zwischen 1,75 s und 2,5 s: das erste Wappen faengt bei
+// 1750 an und braucht 500 ms, sein Balken blendet im selben Fenster aus. Bilder
+// bei 1,6 oder 1,9 s zeigen deshalb NICHTS von beidem - der Balken steht noch,
+// das Wappen ist erst bei 30 Prozent. Genau so ist der erste Anlauf leer
+// ausgegangen, obwohl die Zaehlung „6 Wappen sichtbar" meldete.
+const TAKTE = [700, 2100, 2250, 2500, 5200];   // ms nach `qq:revealAnswer`
 
 const tipps = (ziel) => Array.from({ length: BOTS }, (_, i) =>
   String(Math.round(ziel * (1 + ((i % 8) - 4) * 0.035 + (Math.floor(i / 8) - 1) * 0.018))));

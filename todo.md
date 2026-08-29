@@ -1293,10 +1293,10 @@ Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
       ⚠️ Nur vier von zehn Stationen gemessen. Vor dem Fix den vollen Lauf
       fahren: `node scripts/emoji-reste.mjs`.
 
-- [ ] **Teamview an das Beamerdesign angleichen.** Das Handy folgt noch dem
-      alten Cozy-Look. ⚠️ Nicht blind uebernehmen: die Buehne ist auf zehn
-      Meter gebaut, das Handy auf dreissig Zentimeter. Gleiche Sprache,
-      andere Groessen.
+- [x] **Teamview an das Beamerdesign angleichen.** Erledigt, Wolf am
+      2026-08-29: „teamview und cozywolf.de kannst du abhaken". Gebaut hat es
+      die parallele Handy-Sitzung auf ihrem eigenen Branch, nicht diese hier.
+      Die Abmachung dazu steht in `docs/UEBERGABE_TEAM.md`.
 - [ ] **CozyQuiz-Design zum Standard machen**, explizit umstellen. Heute
       entscheidet `themeIdForState` ueber den Avatarsatz, ob die Buehne
       laeuft. Das ist ein Nebeneffekt, keine Entscheidung.

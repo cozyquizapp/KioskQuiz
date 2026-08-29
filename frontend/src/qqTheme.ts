@@ -31,6 +31,23 @@ export type ThemeBrand = {
   accentWarm: string;
   magenta: string;
   gradientPill: string;
+  /**
+   * Schriftfarbe AUF einer deckenden Akzentflaeche (`--qq-accent-ink`).
+   *
+   * 2026-08-29. Bis heute gab es dieses Feld nicht, und ueberall, wo der
+   * Akzent als Flaeche diente, stand `#fff` fest im Code. Das ging gut,
+   * solange jeder Akzent dunkel genug war - Cozy-Pink, Mono-Schwarz,
+   * Neo-Blau. Die Buehne fuehrt seit 2a ein helles Creme, und damit stand
+   * Weiss auf Creme: gemessen 1,18:1 (WCAG-Mindestwert 4,5:1). Betroffen
+   * waren die Punkte-Pillen der Summary, die Sprachumschaltung und der
+   * Mail-Knopf - alles auf der Seite, die Wolf ans Publikum gibt.
+   *
+   * ⚠️ Das war kein Fehler der Buehne, sondern eine Annahme, die niemand
+   * aufgeschrieben hatte: „der Akzent ist dunkel". Deshalb steht die Farbe
+   * jetzt als eigenes Feld hier, wo jedes Design sie beantworten MUSS.
+   * Geprueft wird sie von scripts/summary-kontrast.mjs.
+   */
+  accentInk: string;
 };
 
 /** Flächen-/Oberflächen-Stil (für den graduellen Rollout). */
@@ -71,6 +88,9 @@ const COZY: ResolvedTheme = {
     accentWarm: '#F9A8D4',
     magenta:    '#A21247',
     gradientPill: 'linear-gradient(135deg, #F472B6 0%, #EC4899 50%, #A21247 100%)',
+    // Weiss auf Cozy-Pink waere 3,5:1, Tinte 5,5:1. Derselbe Wert, den die
+    // Summary im Cozy-Zweig schon von Hand fuehrt (`--sum-on-accent`).
+    accentInk: '#0A0814',
   },
   surface: {
     pageBg: 'radial-gradient(circle at 50% 0%, #1E2A5A 0%, #0F1530 60%, #0A0E22 100%)',
@@ -95,6 +115,7 @@ const STUDIO_MONO: ResolvedTheme = {
     accentHex: '#111111', accentRgb: '17,17,17', accentSoft: '#E9E7DD',
     accentWarm: '#C9F227', magenta: '#111111',
     gradientPill: 'linear-gradient(135deg, #111 0%, #111 100%)',
+    accentInk: '#FFFFFF',   // Akzent ist Schwarz, 18:1
   },
   surface: {
     pageBg: '#F3F2EC', text: '#0B0B0B', textMuted: '#6B6B66', cardText: '#0B0B0B',
@@ -112,6 +133,7 @@ const SOFT_POP: ResolvedTheme = {
     accentHex: '#F472A0', accentRgb: '244,114,160', accentSoft: '#FFE3EF',
     accentWarm: '#FBBF24', magenta: '#3B2E7E',
     gradientPill: 'linear-gradient(135deg, #FBBF24 0%, #F472A0 50%, #60A5FA 100%)',
+    accentInk: '#1B1226',   // Weiss waere 2,7:1 auf dem hellen Rosa
   },
   surface: {
     pageBg: 'radial-gradient(120% 90% at 50% -10%, #FFFBF4 0%, #FFF1E6 55%, #FFE6D3 100%)',
@@ -130,6 +152,7 @@ const NEO_BRUTAL: ResolvedTheme = {
     accentHex: '#2D4BFF', accentRgb: '45,75,255', accentSoft: '#DCE3FF',
     accentWarm: '#FDE047', magenta: '#FB7185',
     gradientPill: 'linear-gradient(135deg, #2D4BFF 0%, #6D28D9 100%)',
+    accentInk: '#FFFFFF',   // 5,9:1
   },
   surface: {
     pageBg: 'linear-gradient(155deg, #9B6DFF 0%, #7C3AED 55%, #6D28D9 100%)',
@@ -186,6 +209,10 @@ const BUEHNE: ResolvedTheme = {
     accentWarm: '#FBF3E2',          // accent-light: helles Creme (NICHT Gold → kein Leak)
     magenta: '#C9B78A',             // tiefes Sand als Sekundär/Gradient-Ende
     gradientPill: 'linear-gradient(135deg, #FBF3E2 0%, #F5ECD8 50%, #E3D2A8 100%)',
+    // ⚠️ Das Creme ist der hellste Akzent der Bibliothek. Weiss darauf sind
+    // 1,18:1 - genau der Befund vom 29.08. auf der Summary. Die Tinte ist der
+    // dunkelste Ton des Buehnengrunds, damit 16,7:1.
+    accentInk: '#0B0912',
   },
   surface: {
     pageBg: 'radial-gradient(circle at 50% -5%, #1A1526 0%, #120E1C 58%, #0B0912 100%)',
@@ -319,6 +346,7 @@ export function applyThemeVars(theme: ResolvedTheme = getActiveTheme()): void {
   r.setProperty('--qq-accent', b.accentHex);
   r.setProperty('--qq-accent-rgb', b.accentRgb);
   r.setProperty('--qq-accent-soft', b.accentSoft);
+  r.setProperty('--qq-accent-ink', b.accentInk);
   r.setProperty('--qq-accent-light', b.accentWarm);
   r.setProperty('--qq-accent-magenta', b.magenta);
   r.setProperty('--qq-accent-magenta-rgb', hexToRgbTriple(b.magenta));

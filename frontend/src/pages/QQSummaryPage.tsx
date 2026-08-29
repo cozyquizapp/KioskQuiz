@@ -15,7 +15,7 @@ import { TeamNameLabel } from '../components/TeamNameLabel';
 import { AvatarSetProvider, useAvatarSet } from '../avatarSetContext';
 import { isQuirkTileSet } from '../quirks2Avatars';
 import { QQ_COLORS } from '../../../shared/qqColors';
-import { setActiveThemeId, isThemed, themeIdForState } from '../qqTheme';
+import { setActiveThemeId, isThemed, themeIdForState, useActiveThemeId } from '../qqTheme';
 
 type Lang = 'de' | 'en';
 
@@ -433,7 +433,7 @@ function ShareButton({ team, place, lang, brand }: {
         marginTop: 8,
         padding: '10px 18px', borderRadius: sumPill(999),
         background: `linear-gradient(135deg, ${brand.pink}, ${brand.magenta})`,
-        color: '#fff',
+        color: brand.themed ? 'var(--sum-on-accent)' : '#fff',
         border: '1.5px solid var(--sum-line-2)',
         boxShadow: `0 6px 18px rgba(${brand.pinkRgb},0.45), inset 0 1px 0 var(--sum-line-2)`,
         fontFamily: 'inherit', fontWeight: 900, fontSize: 13,
@@ -549,8 +549,24 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
     return () => { cancelled = true; };
   }, [roomCode, gameId, mockSummary]);
 
-  // Eurovision-Mode-aware Brand-Tokens (Audit-P2). Default null bei Loading.
-  const brand = useMemo(() => summaryBrand(summary?.eurovisionMode), [summary?.eurovisionMode, summary?.themeId]);
+  // ⚠️ 2026-08-29, Wolf: „kannst du die summary page auch im neuen design
+  // erstellen? die sieht oll aus". Sie KANN es laengst - die ganze
+  // `--sum-*`-Rampe zieht bei aktivem Design auf die `--qq-*`-Tokens (siehe
+  // weiter unten). Sie hat nur nie umgeschaltet, und der Grund steht in dieser
+  // Zeile: `summaryBrand()` fragt `isThemed()` ab, aber die Merkliste kannte
+  // nur `eurovisionMode` und `themeId`. Das Design wird jedoch ERST gesetzt,
+  // wenn die Daten da sind (`setActiveThemeId(themeIdForState(...))` im Effekt
+  // darueber) - zu diesem Zeitpunkt war der Wert also laengst berechnet, mit
+  // dem Stand „kein Design", und nichts hat ihn je neu berechnet.
+  //
+  // `useActiveThemeId` ist genau dafuer da: es abonniert den Design-Wechsel
+  // und rendert neu. Damit haengt die Rampe endlich am richtigen Ereignis.
+  const aktivesDesign = useActiveThemeId();
+  const brand = useMemo(
+    () => summaryBrand(summary?.eurovisionMode),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [summary?.eurovisionMode, summary?.themeId, aktivesDesign],
+  );
   const error = errorKey ? tr(errorKey, lang) : null;
 
   const selectedTeam = useMemo(
@@ -637,8 +653,18 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
                     style={{
                       position: 'relative',
                       padding: '18px 14px 16px', borderRadius: sumR(18),
-                      background: `linear-gradient(165deg, ${t.color}30, ${t.color}12)`,
-                      border: `2px solid ${t.color}`,
+                      // 2026-08-29: die Karte trug einen 2px-Rand in Teamfarbe
+                      // UND eine Flaeche in derselben Farbe - fuenf Teams
+                      // ergaben fuenf verschieden gerahmte Kaesten nebeneinander.
+                      // Dieselbe Stelle ist auf der Buehne schon entschieden
+                      // (CozyQuizTowerFinaleV2, 2026-08-25 „rand um gewinnendes
+                      // team ist komisch"): Teamfarbe lebt auf der KACHEL, nicht
+                      // auf der Kontur - und die Kachel sitzt hier direkt
+                      // darueber, das ist der Avatar. Eine Kachel, eine Kante.
+                      background: brand.themed
+                        ? 'var(--sum-card)'
+                        : `linear-gradient(165deg, ${t.color}30, ${t.color}12)`,
+                      border: brand.themed ? '1px solid var(--sum-line)' : `2px solid ${t.color}`,
                       boxShadow: sumSh(`0 8px 24px ${t.color}22, inset 0 1px 0 rgba(255,255,255,0.06)`),
                       cursor: 'pointer', color: '#fff', fontFamily: 'inherit',
                       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
@@ -655,7 +681,8 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden',
                     }}>{t.name}</div>
                     <div style={{
-                      fontSize: 12, fontWeight: 900, color: '#fff',
+                      fontSize: 12, fontWeight: 900,
+                      color: brand.themed ? 'var(--sum-on-accent)' : '#fff',
                       background: brand.pink, borderRadius: sumPill(999),
                       padding: '3px 12px', letterSpacing: '0.02em',
                     }}>
@@ -686,15 +713,20 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
     <AvatarSetProvider value={summary.avatarSetId} emojis={summary.avatarSetEmojis ?? undefined}>
     <Shell lang={lang} onLang={changeLang} brand={brand} arena={arenaSummary} arenaBgSlug={arenaBgSlug}>
       <div style={{
-        background: `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
+        // Wie im Team-Picker: die Farbe sitzt auf der Marke darunter, nicht
+        // auf der Kontur. Ein leiser Schimmer in Teamfarbe bleibt - der ist
+        // Atmosphaere, keine Kante.
+        background: brand.themed
+          ? `radial-gradient(ellipse at top, ${selectedTeam.color}1F 0%, transparent 65%), var(--sum-card)`
+          : `linear-gradient(135deg, ${selectedTeam.color}33 0%, rgba(15,23,42,0) 60%)`,
         padding: '28px 20px 22px', borderRadius: sumR(20), marginBottom: 18,
-        border: `1px solid ${selectedTeam.color}55`,
+        border: brand.themed ? '1px solid var(--sum-line)' : `1px solid ${selectedTeam.color}55`,
         boxShadow: isThemed() ? 'var(--qq-card-shadow)' : undefined,
         display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8, textAlign: 'center',
       }}>
         <div style={{
           width: 112, height: 112,
-          boxShadow: `0 10px 30px ${selectedTeam.color}55`,
+          boxShadow: brand.themed ? '0 12px 30px rgba(0,0,0,0.45)' : `0 10px 30px ${selectedTeam.color}55`,
           borderRadius: '50%',
         }}>
           <QQTeamAvatar avatarId={selectedTeam.avatarId} teamEmoji={selectedTeam.emoji} size={112} />
@@ -856,7 +888,11 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
     '--sum-soft':    themed ? 'var(--qq-surface)'     : arenaOn ? 'rgba(14,10,22,0.50)' : 'rgba(255,255,255,0.03)',
     '--sum-line':    themed ? 'var(--qq-hairline)'    : arenaOn ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.10)',
     '--sum-line-2':  themed ? 'var(--qq-hairline)'    : 'rgba(255,255,255,0.18)',
-    '--sum-on-accent': themed ? '#ffffff'             : '#0A0814',
+    // 2026-08-29: hier stand `themed ? '#ffffff'`, aus einer Zeit, in der jedes
+    // Design einen DUNKLEN Akzent hatte. Die Buehne fuehrt Creme, und damit
+    // stand Weiss auf Creme - gemessen 1,18:1. Die Farbe kommt jetzt aus dem
+    // Design selbst (`accentInk`), also kann sie nicht mehr danebenliegen.
+    '--sum-on-accent': themed ? 'var(--qq-accent-ink)' : '#0A0814',
   };
   // Kolosseum-BG (Portrait-Fraktions-Szene des Siegers) als fixe Ebene hinter
   // dem Inhalt — bleibt viewport-gross waehrend die lange Summary drueber
@@ -1010,9 +1046,16 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
           ['--wg' as string]: `${winner.color}99`,
           width: 120, height: 120, borderRadius: quirkSet ? '18%' : '50%',
           background: `radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 46%), ${winner.color}`,
-          border: quirkSet ? 'none' : `5px solid rgba(255,255,255,0.30)`,
+          // 2026-08-29: im Design liegt hier weder ein weisser Ring noch ein
+          // pulsender Schein in Teamfarbe. Das ist wortwoertlich der Befund,
+          // den Wolf am 25.08. am Award-Rad gemeldet hat („ausgefranster Hof um
+          // eine gelbe Kachel"): Flaeche und Schein tragen dieselbe Farbe, also
+          // sieht man keinen Rand, sondern eine unscharfe Kante. Statt Puls ein
+          // ruhiger Schlagschatten - die Muenze bleibt scharf.
+          border: (quirkSet || brand.themed) ? 'none' : `5px solid rgba(255,255,255,0.30)`,
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          animation: 'qqWinnerGlow 3.2s ease-in-out infinite',
+          boxShadow: brand.themed ? '0 14px 34px rgba(0,0,0,0.45)' : undefined,
+          animation: brand.themed ? 'none' : 'qqWinnerGlow 3.2s ease-in-out infinite',
         } as React.CSSProperties}>
           <QQTeamAvatar avatarId={winner.avatarId} teamEmoji={winner.emoji} size={100} flat />
         </div>
@@ -1020,15 +1063,22 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
 
       <div style={{
         marginTop: 14, fontSize: 12, fontWeight: 900,
-        color: QQ_COLORS.amber400, letterSpacing: '0.18em', textTransform: 'uppercase',
-        textShadow: '0 0 12px rgba(251,191,36,0.6)',
+        // Gold ist auf der Buehne ausdruecklich ausgeschlossen (qqTheme.ts,
+        // „helles Creme, NICHT Gold -> kein Leak"). Hier stand es weiter, samt
+        // Schein.
+        color: brand.themed ? 'var(--qq-accent)' : QQ_COLORS.amber400,
+        letterSpacing: '0.18em', textTransform: 'uppercase',
+        textShadow: brand.themed ? 'none' : '0 0 12px rgba(251,191,36,0.6)',
       }}>
         🏆 {tr('champion', lang)}
       </div>
       <div style={{
-        marginTop: 4, fontSize: 26, fontWeight: 900, color: winner.color,
+        marginTop: 4, fontSize: 26, fontWeight: 900,
+        // „Teamfarbe lebt auf der Kachel, nicht in der Schrift" (2a, Turmfinale
+        // 2026-08-23). Die Kachel steht hier direkt darueber.
+        color: brand.themed ? 'var(--sum-text)' : winner.color,
         letterSpacing: '-0.01em',
-        textShadow: `0 0 20px ${winner.color}55, 0 2px 6px rgba(0,0,0,0.5)`,
+        textShadow: brand.themed ? 'none' : `0 0 20px ${winner.color}55, 0 2px 6px rgba(0,0,0,0.5)`,
         wordBreak: 'break-word',
       }}>
         {winner.name}
@@ -1352,8 +1402,13 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
           return (
             <div key={`${title.titleDe}-${i}`} style={{
               padding: '12px 14px', borderRadius: sumR(14),
-              background: `linear-gradient(135deg, ${title.accent}22, ${title.accent}08)`,
-              border: `1.5px solid ${title.accent}66`,
+              // 2026-08-29, wie im Team-Picker: drei Ehrentitel nebeneinander
+              // ergaben drei verschieden gerahmte Kaesten. Der Titel sagt sich
+              // ueber sein ZEICHEN und seine Ueberschrift, nicht ueber die
+              // Kontur - genau die Entscheidung aus dem Turmfinale
+              // (2026-08-23: „der Award sagt sich ueber sein ZEICHEN").
+              background: brand.themed ? 'var(--sum-card)' : `linear-gradient(135deg, ${title.accent}22, ${title.accent}08)`,
+              border: brand.themed ? '1px solid var(--sum-line)' : `1.5px solid ${title.accent}66`,
               boxShadow: sumSh(`0 4px 14px ${title.accent}22`),
               display: 'flex', flexDirection: 'column', gap: 8,
               position: 'relative',
@@ -1364,7 +1419,9 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
                   padding: '2px 8px', borderRadius: sumPill(999),
                   background: brand.pink, color: 'var(--sum-on-accent)',
                   fontSize: 10, fontWeight: 900, letterSpacing: 0.3,
-                  boxShadow: `0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(${brand.pinkRgb},0.6)`,
+                  boxShadow: brand.themed
+                    ? '0 2px 6px rgba(0,0,0,0.4)'
+                    : `0 2px 6px rgba(0,0,0,0.4), 0 0 12px rgba(${brand.pinkRgb},0.6)`,
                 }}>{lang === 'de' ? 'DAS SEID IHR' : "THAT'S YOU"}</span>
               )}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
@@ -1469,8 +1526,8 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
   roomCode: string; teamName?: string; lang: Lang;
   brand: ReturnType<typeof summaryBrand>;
 }) {
-  void brand; // 2026-05-10: brand-prop fuer zukuenftige FeedbackForm-Akzent-Tweaks
-            // (Submit-Button etc.). Aktuell rein neutral.
+  // 2026-08-29: die brand-prop lag seit dem 10.05. als `void` da. Jetzt traegt
+  // der Absenden-Knopf den Akzent des Designs.
   const [type, setType] = useState<FeedbackType>('feedback');
   const [playAgain, setPlayAgain] = useState<PlayAgain | null>(null);
   const [favoriteCategory, setFavoriteCategory] = useState<string | null>(null);
@@ -1797,8 +1854,14 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
         <button type="button" onClick={submit} disabled={sending}
           style={{
             width: '100%', padding: '12px',
-            background: type === 'bug' ? QQ_COLORS.red500 : QQ_COLORS.green500,
-            color: type === 'bug' ? '#fff' : QQ_COLORS.slate900, fontWeight: 900,
+            // Das Gruen ist die Cozy-Bestaetigungsfarbe. Im Design traegt der
+            // groesste Knopf der Seite den Akzent, sonst steht ein Signalton
+            // mitten in einer sonst farblosen Seite.
+            background: type === 'bug'
+              ? QQ_COLORS.red500
+              : (brand.themed ? 'var(--qq-accent)' : QQ_COLORS.green500),
+            color: type === 'bug' ? '#fff' : (brand.themed ? 'var(--sum-on-accent)' : QQ_COLORS.slate900),
+            fontWeight: 900,
             border: 'none', borderRadius: sumPill(10), fontSize: 15, fontFamily: 'inherit',
             cursor: sending ? 'default' : 'pointer', opacity: sending ? 0.6 : 1,
           }}>

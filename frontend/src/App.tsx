@@ -21,6 +21,7 @@ const QQHostSheetsPage    = React.lazy(() => import('./pages/QQHostSheetsPage'))
 // Der echte /beamer rendert gespeicherte Custom-Templates unveraendert weiter.
 const CozyGamesEditorPage = React.lazy(() => import('./pages/CozyGamesEditorPage'));
 const QQSummaryPage       = React.lazy(() => import('./pages/QQSummaryPage'));
+const QQSummaryTestPage   = React.lazy(() => import('./pages/QQSummaryTestPage'));
 const QQRecapPage         = React.lazy(() => import('./pages/QQRecapPage'));
 const QQShowroomPage      = React.lazy(() => import('./pages/QQShowroomPage'));
 const QQSkinsPage         = React.lazy(() => import('./pages/QQSkinsPage'));
@@ -204,7 +205,16 @@ function App() {
           <Route path="/thanks-test" element={<Navigate to="/moderator-test" replace />} />
           <Route path="/finalreveal-test" element={<Navigate to="/moderator-test" replace />} />
           <Route path="/bet-test" element={<Navigate to="/moderator-test" replace />} />
-          <Route path="/summary-test" element={<Navigate to="/moderator-test" replace />} />
+          {/* 2026-08-29 (Wolf: „kannst du die summary page auch im neuen design
+              erstellen? die sieht oll aus"): diese eine Vorschau kommt zurueck.
+              Die uebrigen *-test-Routen bleiben stillgelegt, denn fuer sie ist
+              /moderator-test wirklich der bessere Weg - man spielt die Folie im
+              echten Ablauf an. Fuer die Zusammenfassung geht das NICHT: sie
+              liest ihr Ergebnis aus Mongo, und Ergebnisse gibt es lokal keine
+              (getQQGameResults -> QQGameResultModel, ohne Datenbank leer). Ohne
+              diese Route ist die Seite in der Entwicklung unsichtbar - und
+              genau deshalb ist sie so alt geworden. */}
+          <Route path="/summary-test" element={<PinGate><QQSummaryTestPage /></PinGate>} />
           <Route path="/hl-test" element={<Navigate to="/moderator-test" replace />} />
           <Route path="/cozygame-test" element={<Navigate to="/moderator-test" replace />} />
           <Route path="/barrace-test" element={<Navigate to="/moderator-test" replace />} />

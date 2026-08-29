@@ -114,7 +114,7 @@ const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
 /** Vorgaben fuer alles, was die Stationen brauchen. Ein Werkzeug ueberschreibt
  *  nur, was seine Aufrufzeile hergibt. */
 export const VORGABE = {
-  bots: 8, sprache: 'de', kategorie: null, entwurf: null, bild: null,
+  bots: 8, sprache: 'de', kategorie: null, entwurf: null, bild: null, optionen: null,
   stufe: 1, antworten: 0.6, nurReihum: false, frisch: false,
   // CrowdQuiz statt CozyQuiz. Gehoert in die VORGABE und nicht in ein
   // `emit` des aufrufenden Werkzeugs, weil das Format den Spielstart
@@ -797,6 +797,21 @@ export async function buehneStarten(teilCfg = {}) {
           return { ...q, image: { ...(q.image ?? {}), url: quelle, layout: 'fullscreen', cheeseLayout: cfg.bild === 'hoch' ? 'portrait' : 'landscape' } };
         });
         console.log(`  ${n} Schau-mal-Fragen auf ${quelle} gesetzt (${cfg.bild})`);
+      }
+      if (cfg.optionen) {
+        // 2026-08-29 (Wolf, MUCHO-Bug): der Fehler haengt an der LAENGE der
+        // Antworten, nicht an der Frage. In den Test-Entwuerfen sind die
+        // Optionen kurz, also laesst er sich mit ihnen gar nicht ausloesen.
+        // `optionen` legt fuer jede MUCHO-Frage denselben langen Satz unter -
+        // hier die vier aus Wolfs Bild, damit der Fall reproduzierbar ist und
+        // nicht vom gewuerfelten Entwurf abhaengt.
+        let n = 0;
+        fragen = fragen.map(q => {
+          if (q.category !== 'MUCHO') return q;
+          n++;
+          return { ...q, options: [...cfg.optionen], optionsEn: [...cfg.optionen] };
+        });
+        console.log(`  ${n} MUCHO-Fragen auf die langen Optionen gesetzt`);
       }
       await emit('qq:setTestMode', { value: true });
       cfg.takt('  Testmodus');

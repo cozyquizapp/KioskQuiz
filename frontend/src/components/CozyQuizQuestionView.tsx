@@ -3641,6 +3641,30 @@ export function QuestionView({ state: s, revealed, hideCutouts }: { state: QQSta
               // schlagartig 90 px enger, und der Einpasser wuerde die Schrift
               // kuerzen - eine Bewegung gegen eine kleinere Schrift getauscht.
               height: (bandDauerhaft || revealed) ? 'clamp(150px, 16cqh, 210px)' : 0,
+              // ⚠️ 2026-08-29, Wolf: „die mucho seite ist an zwei stellen buggy
+              // ... es wurde schon 5x versucht zu fixen". Das hier ist der
+              // Grund, und er ist eine Zeile lang.
+              //
+              // Das Band SOLL den Platz unten reservieren, in dem die
+              // Team-Leiste und spaeter die Sieger-Karte stehen. Es ist aber ein
+              // Flex-Kind ohne `flex-shrink: 0` - und der Optionsblock darueber
+              // nimmt sich den Platz. Gemessen mit den vier langen Optionen aus
+              // Wolfs Bild: das Band steht auf 150 px im Stil und ist im Bild
+              // 43 px hoch. Die Team-Leiste haengt aber an der Buehnenkante und
+              // ist 96 px hoch, beginnt also 53 px WEITER OBEN als das Band -
+              // mitten in der letzten Antwortzeile.
+              //
+              // Fuer den Einpasser war damit alles in Ordnung: der Fluss endet
+              // exakt an der Unterkante (826 von 826 px), und die Leiste ist
+              // seit dem 28.08. keine Sperre mehr, weil das Band ihren Platz
+              // ja angeblich schon haelt. Beide Messungen stimmten, nur hielt
+              // das Band den Platz nicht.
+              //
+              // Mit `flexShrink: 0` behaelt es seine 150 px, der Optionsblock
+              // bekommt entsprechend weniger, und der Einpasser sieht den
+              // Ueberlauf, gegen den er gebaut wurde. Die Schrift passt sich
+              // dann an, statt dass sich Kacheln ueberdecken.
+              flexShrink: 0,
               marginBottom: 0,
               // 2026-08-28 (Wolf: „nach timer springt es kurz"). Die
               // Hoehen-Ueberblendung ist raus, und das ist die Einloesung des

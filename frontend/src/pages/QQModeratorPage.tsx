@@ -168,6 +168,12 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
 
   const { state, connected, emit, reconnect } = useQQSocket(roomCode);
   const dummyBotCount = (state?.teams ?? []).filter((team: any) => team._dummy).length;
+  // 2026-08-29 (#69). Der Testmodus hat zwei Monate lang still verhindert, dass
+  // echte Abende gespeichert werden - und niemand konnte es sehen, weil der
+  // Schalter nur „Test-Modus · 0 Bots" sagte. Das liest sich harmlos.
+  // Seit heute entscheidet der Inhalt (persistGameResult), und der Schalter
+  // sagt die FOLGE dazu. Dieselbe Rechnung wie im Server: alles ohne `_dummy`.
+  const echteTeams = (state?.teams ?? []).filter((team: any) => !team._dummy).length;
 
   // 2026-07-08 (Wolf): /moderator?draft=id&plan=1 oeffnet direkt den Show-Prep-
   // Wizard (Schritt aus dem „Quiz vorbereiten"-Fahrplan). Wartet bis der Socket-
@@ -2109,6 +2115,20 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
               animation: showTestTools ? 'pulse 2.4s ease-in-out infinite' : undefined,
             }}
           >🧪 Test-Modus {showTestTools ? `· ${dummyBotCount} Bots` : 'aus'}</button>
+          {/* Die Folge steht neben dem Schalter, nicht in einer Hilfe. Wolf
+              2026-08-29: „ich glaube der testmodus war immer an ehrlich
+              gesagt" - ein Schalter, der einen Abend ueberlebt, muss sagen,
+              was er anrichtet. */}
+          {showTestTools && (
+            <span style={{
+              fontSize: 11, fontWeight: 800, letterSpacing: '0.02em',
+              color: echteTeams > 0 ? '#86EFAC' : '#FCA5A5',
+            }}>
+              {echteTeams > 0
+                ? `Abend wird gespeichert (${echteTeams} echte${echteTeams === 1 ? 's' : ''} Team${echteTeams === 1 ? '' : 's'})`
+                : 'Abend wird NICHT gespeichert (nur Bots)'}
+            </span>
+          )}
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {/* 2026-05-25 (Wolf 'mod-test-modus skip-buttons'): nur im Test-Modus

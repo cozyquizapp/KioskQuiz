@@ -360,22 +360,6 @@ const ALLOWED_REACTION_EMOJIS = new Set(['👏', '🔥', '😱', '😢', '🎉',
 
 function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   if (!room) return;
-  // 2026-05-25 (Wolf 'mod-test-modus, kein db-save'): Test-Modus-Bypass.
-  // Frontend setzt (room as any)._testMode = true ueber qq:setTestMode, damit
-  // Test-Spiele nicht im Recap landen.
-  if ((room as any)._testMode) {
-    // ⚠️ 2026-08-29, Wolf: „aber ich habe gerade mit einem team durchgespielt,
-    // das kam nicht an". Genau hier verschwand der Abend, und zwar STILL. Das
-    // Ueberspringen war richtig gedacht (Test-Spiele gehoeren nicht in den
-    // Recap), aber es hat nie jemand erfahren. Der letzte gespeicherte Abend
-    // ist vom 04.07., vier Tage vor der Aenderung, die den Testmodus pro
-    // Geraet dauerhaft anlaesst (QQModeratorPage:118). Zwei Monate lang hat
-    // niemand etwas gemerkt, weil es nichts zu merken gab.
-    // Ein Satz im Log kostet nichts und macht denselben Fall beim naechsten
-    // Mal in Sekunden sichtbar.
-    console.log(`[QQGameResult] UEBERSPRUNGEN (Testmodus an) fuer Raum ${room.roomCode} - dieser Abend wird NICHT gespeichert.`);
-    return;
-  }
   // 2026-05-12 (Wolf 'summary zeigt falsche teams + falsche avatare'):
   // Idempotenz-Guard. Vorher fired persistGameResult auf JEDEN broadcast
   // mit phase=GAME_OVER → mehrere DB-Eintraege pro Spiel, jeder mit eigener
@@ -392,12 +376,48 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
     console.log(`[QQGameResult] schon gespeichert fuer Raum ${room.roomCode} (${(room as any).lastGameResultId ?? 'ohne Id'}).`);
     return;
   }
-  (room as any)._gameResultPersisted = true;
   // 2026-05-23 (Live-Test-Bug #C): Bot/Dummy-Teams aus Summary-Persistierung
   // filtern. Vorher landeten _dummy-Teams in der Summary-Page neben den echten
   // Teams → verwirrend nach echtem Quiz. Die Dummies bleiben im Room-State
   // (z.B. fuer Beamer-Render), nur beim DB-Save fuer Summary werden sie raus.
   const teamList = Object.values(room.teams).filter((t: any) => !t._dummy);
+
+  // ── Testmodus: der Schalter entscheidet nicht mehr allein ─────────────────
+  //
+  // 2026-05-25 (Wolf 'mod-test-modus, kein db-save') stand hier ein Bypass
+  // ganz oben in der Funktion: Testmodus an, also gar nicht erst speichern.
+  // Richtig gedacht, Test-Spiele gehoeren nicht in den Recap.
+  //
+  // ⚠️ Was daran falsch war, zeigte sich am 2026-08-29. Wolf: „aber ich habe
+  // gerade mit einem team durchgespielt, das kam nicht an", und kurz darauf
+  // „ich glaube der testmodus war immer an ehrlich gesagt" sowie „ah bot war
+  // an auch ohne bots im game". Genau so ist es: seit dem 08.07. merkt sich
+  // der Testmodus sich pro GERAET (localStorage, QQModeratorPage), also bleibt
+  // er an, bis jemand ihn ausschaltet - und niemand schaltet einen Schalter
+  // aus, von dem er nicht weiss, dass er noch an ist. Der letzte gespeicherte
+  // Abend war vom 04.07., vier Tage davor. Zwei Monate ohne einen einzigen
+  // echten Abend in der Datenbank, ohne Fehler, ohne Meldung.
+  //
+  // Die Lehre ist nicht „besser aufpassen". Ein Schalter, der still Daten
+  // wegwirft und dessen Zustand einen Abend ueberlebt, ist die falsche
+  // Bauform. Deshalb entscheidet jetzt der INHALT:
+  //
+  //   Uebersprungen wird nur, wenn nach dem Dummy-Filter NICHTS uebrig ist.
+  //   Ein Lauf mit Bots hat genau das - Bots tragen `_dummy`. Ein Abend mit
+  //   echten Teams hat es nicht, und dann wird gespeichert, egal wie der
+  //   Schalter steht.
+  //
+  // Der schlimmere Fehler ist damit der unwahrscheinlichere: ein Testeintrag
+  // zu viel laesst sich loeschen, ein verlorener Abend nicht.
+  if ((room as any)._testMode && teamList.length === 0) {
+    (room as any)._gameResultPersisted = true;
+    console.log(`[QQGameResult] UEBERSPRUNGEN fuer Raum ${room.roomCode}: Testmodus an und kein einziges echtes Team (nur Dummies/Bots).`);
+    return;
+  }
+  if ((room as any)._testMode) {
+    console.log(`[QQGameResult] Testmodus ist AN, aber ${teamList.length} echte(s) Team(s) haben gespielt - dieser Abend wird gespeichert. (Wenn das ein Test war: Eintrag im Steuerpult loeschen.)`);
+  }
+  (room as any)._gameResultPersisted = true;
   // QQ-Score = largestConnected (verbundene Felder). teamPhaseStats hat KEIN
   // totalScore-Feld — die alte Variante hat deshalb immer 0 gespeichert und
   // damit Highscore/ClosestGame/Leaderboard kaputt gemacht (Winner war oft

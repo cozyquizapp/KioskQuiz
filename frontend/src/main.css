@@ -4882,9 +4882,53 @@ button:active:not(:disabled),
   flex-direction: column;
 }
 
-/* ⚠️ Die automatische Obermarge steht INLINE in QQTeamPage, nicht hier - ein
-   Inline-Stil schlaegt jede Klasse, und der Fuss hatte einen. Diese Klasse
+/* Die Fusszeile braucht keine eigene Regel mehr: der Inhalts-Container
+   darueber fuellt den Raum und schiebt sie an die Untergrenze. Die Klasse
    bleibt als Haken zum Messen (scripts/handy-ruhe.mjs sucht sie). */
+
+/* ── Der Kasten in der Mitte ─────────────────────────────────────────────
+   2026-08-29, Wolf: „die hoehe des mittleren bereichs veraendert sich
+   immernoch stark … wie wuerdest du damit umgehen?" - und danach „dann nimm
+   den ersten weg".
+
+   Gemessen ueber sieben Ansichten (scripts/handy-ruhe.mjs) schwankte der
+   Inhalt zwischen 215 px (Runden-Intro) und 588 px (Fragefolie), also um
+   373 px. Kopf und Fuss standen still, der Kasten dazwischen atmete.
+
+   Die Zahl, die die Loesung erlaubt: zwischen erster Karte (106) und Fuss
+   (758) liegen 652 px, und die groesste Ansicht braucht 588. ALLES passt in
+   den Platz. Deshalb darf der Container ihn fuellen, ohne dass irgendwo
+   geschnitten oder geschachtelt gescrollt werden muss. Waere die groesste
+   Ansicht groesser als der Platz, waere das hier die falsche Loesung - die
+   Messung stand also vor der Entscheidung, nicht danach.
+
+   ⚠️ `flex: 1 0 auto`, nicht `1 1 auto`. Der Container darf WACHSEN und
+   niemals unter seinen Inhalt schrumpfen. Das ist Wolfs Bedingung „nichts
+   gequetscht", und sie ist nicht theoretisch: im zweiten Anlauf stand hier
+   `1 1 auto`, und die Fragefolie fiel von 632 auf 339 px - der Inhalt wurde
+   zusammengedrueckt statt der Kasten gedehnt.
+
+   ⚠️ `justify-content: safe center`, nicht `center`. Bei Inhalt, der hoeher
+   ist als der Platz, schiebt ein normales `center` den Anfang ueber die obere
+   Kante, und dorthin kann man nicht scrollen. `safe` faellt in diesem Fall auf
+   `flex-start` zurueck.
+
+   ⚠️ Und nicht verwechseln mit dem Zentrieren, das hier vorher stand und
+   wieder raus musste: DAS zentrierte die ganze Spalte, weshalb Kopf und Fuss
+   mitwanderten. Hier steht der Kasten fest und nur sein Inhalt sitzt mittig. */
+.qq-team-inhalt {
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+}
+
+/* Die Kinder behalten ihre natuerliche Hoehe. Ohne diese Zeile duerfen sie in
+   einer Flex-Spalte schrumpfen (`flex-shrink: 1` ist die Voreinstellung), und
+   genau das war der Fund aus dem zweiten Anlauf. */
+.qq-team-inhalt > * {
+  flex-shrink: 0;
+}
 
 .qq-team-input {
   width: 100%;

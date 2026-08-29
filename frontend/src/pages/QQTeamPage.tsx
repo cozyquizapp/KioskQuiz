@@ -1891,6 +1891,27 @@ function TeamGameView({
           </header>
         )}
 
+        {/* ── Inhalt ────────────────────────────────────────────────────────
+            2026-08-29 (Wolf: „die hoehe des mittleren bereichs veraendert sich
+            immernoch stark", dann „dann nimm den ersten weg").
+
+            Der Container ist der Kasten fester Hoehe zwischen Kopfzeile und
+            Fusszeile. Er ist die einzige STRUKTURELLE Aenderung an /team in
+            diesem Durchgang, und sie war noetig: drei Anlaeufe ueber reine
+            CSS-Selektoren sind gescheitert, weil die Karten je nach Ansicht
+            unterschiedlich tief verschachtelt sind. Ein benannter Container
+            loest das an einer Stelle statt mit Selektor-Akrobatik an sieben.
+
+            Die Zahl, die das rechtfertigt: zwischen erster Karte und Fuss
+            liegen 652 px, die groesste Ansicht braucht 588. Alles passt
+            hinein, es muss also nichts geschnitten und nichts geschachtelt
+            gescrollt werden (scripts/handy-ruhe.mjs).
+
+            Die Hoehe und das Zentrieren stehen in main.css unter
+            `.qq-team-inhalt` - inklusive der Zeile, die verhindert, dass der
+            Inhalt statt der Karte gedehnt wird. */}
+        <div className="qq-team-inhalt">
+
         {/* Joker-Earned-Toast — top-center, ~3s, dann weg. Ersetzt den permanenten
             Joker-Counter im Header (Wolf-Wunsch 2026-05-09: „Joker nerven mich"). */}
         {myTeam && jokerFlashIdx !== null && s.teamPhaseStats[myTeamId] && (
@@ -2061,25 +2082,25 @@ function TeamGameView({
           </div>
         )}
 
+        </div>{/* qq-team-inhalt */}
+
         {/* CozyWolf brand footer
             2026-05-05 (Wolf): borderTop entfernt — wirkte wie unsichtbare
             Linie ueber dem Copyright. Footer braucht kein Trenner, das
             margin reicht. */}
         <div className="qq-team-fuss" style={{
-          // 2026-08-29: `marginTop: 'auto'` statt 24, und das ist kein
-          // Schoenheitswert. In einer Spalte auf Bildschirmhoehe schiebt eine
-          // automatische Obermarge den Fuss an die Untergrenze, solange Platz
-          // ist - er steht dann in jeder kurzen Ansicht an derselben Stelle.
+          // 2026-08-29, drei Anlaeufe an dieser einen Marge:
           //
-          // ⚠️ Es MUSS hier stehen und nicht in main.css: dort hatte ich
-          // `.qq-team-fuss { margin-top: auto }` eingetragen, und der
-          // Inline-Stil mit `marginTop: 24` hat es still ueberstimmt. Gemessen
-          // wanderte der Fuss danach immer noch ueber 342 px (scripts/handy-ruhe.mjs).
-          // Inline schlaegt Klasse, immer.
-          //
-          // Die 24 sind in `paddingTop` aufgegangen, damit der Abstand nach
-          // oben derselbe bleibt, wenn die Ansicht laenger ist als das Bild.
-          marginTop: 'auto', paddingTop: 40,
+          // 1. `marginTop: 24` inline, dazu `.qq-team-fuss { margin-top: auto }`
+          //    in main.css. Wirkungslos - inline schlaegt Klasse, immer. Der
+          //    Fuss wanderte weiter ueber 342 px.
+          // 2. `marginTop: 'auto'` inline. Der Fuss stand still, aber jetzt
+          //    wuchs der Inhalt nicht mehr: eine automatische Marge nimmt sich
+          //    den freien Platz, BEVOR `flex-grow` zum Zug kommt.
+          // 3. Wieder fest. Der Inhalts-Container darueber fuellt den Raum und
+          //    schiebt den Fuss von selbst an die Untergrenze. Ein Mittel,
+          //    nicht zwei.
+          marginTop: 24, paddingTop: 16,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           opacity: 0.4, userSelect: 'none',
         }}>

@@ -121,9 +121,26 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       return window.localStorage.getItem(name);
     } catch { return null; }
   };
-  const spanneStufe = useMemo(() => Number(schalter('qq-spanne') ?? 0) || 0, []);
+  // ── Vorgabe seit 2026-08-29 (Wolf: „wir nehmen 3. ruhig") ─────────────────
+  // In CrowdQuiz laeuft „ruhig" plus die laute Spanne AB WERK. Die Schalter
+  // bleiben trotzdem, denn geprueft ist das bisher nur im Harness, nicht am
+  // Beamer: `?strahl=alt` schaltet die ganze Sache zurueck auf den Stand von
+  // vorher, `?spanne=0` nur die Streuung. Beides geht auch ueber localStorage
+  // (qq-strahl / qq-spanne), damit man am Abend nichts in die Adresse tippen
+  // muss.
+  // In CozyQuiz aendert sich NICHTS: dort ist ein Tipp ein Tipp, es gibt weder
+  // Fraktion noch Streuung noch Punkte-Pille.
+  const strahlWahl = useMemo(() => schalter('qq-strahl'), []);
+  const altModus = strahlWahl === 'alt';
+  const spanneStufe = useMemo(() => {
+    if (altModus) return 0;
+    const gewaehlt = schalter('qq-spanne');
+    if (gewaehlt != null) return Number(gewaehlt) || 0;
+    return isMega ? 2 : 0;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [altModus, isMega]);
   const spanneAn = spanneStufe > 0;
-  const strahlTief = useMemo(() => schalter('qq-strahl') === 'tief', []);
+  const strahlTief = strahlWahl === 'tief';
   // 2026-08-29, Wolf: „rechts und links waere ja noch platz, alles koennte
   // etwas groesser sein um zu atmen, du darfst den raum ja nutzen, sonst wirds
   // zu voll in der mitte". Die Variante „luft" nimmt sich diesen Raum:
@@ -132,8 +149,8 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // (2026-08-29: „finde es immernoch etwas voll ... irgendwie unuebersichtlich
   // fuer eine beamerview"): eine Zahl weniger je Fraktion und Luft zwischen dem
   // Sieger-Kaestchen und der Schiene.
-  const strahlRuhig = useMemo(() => schalter('qq-strahl') === 'ruhig', []);
-  const strahlLuft = useMemo(() => schalter('qq-strahl') === 'luft' || schalter('qq-strahl') === 'ruhig', []);
+  const strahlRuhig = strahlWahl ? strahlWahl === 'ruhig' : isMega;
+  const strahlLuft = strahlWahl ? (strahlWahl === 'luft' || strahlWahl === 'ruhig') : isMega;
   const strahlGross = strahlTief || strahlLuft;
   // ⚠️ Die 11 % kommen vom KOLOSSEUM, nicht vom Grossformat. Im Kommentar
   // darueber steht es auch so: hinter der Buehne lag das Kolosseum-Bild, und

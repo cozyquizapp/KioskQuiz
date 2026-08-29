@@ -28,9 +28,9 @@ fs.mkdirSync(ZIEL, { recursive: true });
 const BOTS = 24;
 const FASSUNGEN = (process.env.QQ_NUR ? process.env.QQ_NUR.split(',') : null)
   ? [
-      { name: 'bestand', spanne: null, strahl: null },
+      { name: 'bestand', spanne: null, strahl: 'alt' },
       { name: 'luft', spanne: '2', strahl: 'luft' },
-      { name: 'ruhig', spanne: '2', strahl: 'ruhig' },
+      { name: 'ruhig', spanne: null, strahl: null },
     ].filter(f => process.env.QQ_NUR.split(',').includes(f.name))
   : [
       { name: 'bestand', spanne: null, strahl: null },

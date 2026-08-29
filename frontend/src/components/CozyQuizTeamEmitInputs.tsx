@@ -163,7 +163,7 @@ export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, l
         disabled={expired}
         urgency={urgency}
       />
-      <SubmitBtn onSubmit={submit} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
+      <SubmitBtn lang={lang} onSubmit={submit} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -850,7 +850,7 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
         ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 900 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
         : <div style={{ fontSize: 11, color: 'var(--qq-ink-muted)', textAlign: 'center' }}>{noPinLabel}</div>
       }
-      <SubmitBtn onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
+      <SubmitBtn lang={lang} onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
     </div>
   );
 }

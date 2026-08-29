@@ -27,7 +27,7 @@ import { COZY_ARENA_CREST_SLUGS } from '../cozyArenaCrests';
 // sie malte ihre eigenen BGs (epic-moment / award-*) UEBER den schlichten
 // Beamer-Root und setzte Cinzel hart. BG und Font haengen zusammen und werden
 // deshalb am selben Gate entschieden.
-import { qqArenaType } from '../cozyQuizShared';
+import { qqArenaType, useLangFlip } from '../cozyQuizShared';
 import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { prefersReducedMotion } from '../utils/reducedMotion';
 
@@ -160,7 +160,17 @@ function qqScoreSub(sc: QQScoreCat, e: QQMegaRankEntry, finaleMult: number, de: 
 
 // ── Akt 3: per-Frage-Wertung (Beat A) → Bar-Race-Gesamtwertung (Beat B) ───────
 export function LargeGroupStandingsView({ state }: { state: QQStateUpdate }) {
-  const de = state.language !== 'en';
+  // 2026-08-29: hier stand `state.language !== 'en'`. Bei einem zweisprachigen
+  // Raum ('both', der Alltagsfall) ist das immer wahr - diese Folie blieb also
+  // deutsch, waehrend die uebrige Buehne englisch lief. Auf dem Handy stand
+  // dann „Gut Feeling" und auf der Wand „Bauchgefühl": dieselbe Fraktion mit
+  // zwei Namen im selben Moment. Gefunden von scripts/handy-gleichlauf.mjs.
+  //
+  // Genau dieser Fehler wurde am 2026-07-08 schon einmal repariert, in
+  // CozyQuizTieBreakerView („'both'-Modus flippt jetzt DE/EN wie alle anderen
+  // Beamer-Screens"). Die beiden Ansichten hier hat er damals nicht erwischt.
+  // useLangFlip erzwingt im Arena-Modus ausserdem EN, siehe setBeamerMega.
+  const de = useLangFlip(state.language) === 'de';
   const ranking = state.megaQuestionRanking ?? [];
   const hasRanking = !!state.nestedTeams && ranking.length > 0;
 
@@ -784,7 +794,9 @@ function MegaCrownCeremony({ state, sorted, winner, wColor, de }: {
 // (state.awardCeremonyStep, Backend qqAwardStep): 0..(n-1) = Special-Award-Beats
 // (n = qqMegaAwardKeys), n = Krönung, n+1 = Endstand. Nur largeGroupMode.
 export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
-  const de = state.language !== 'en';
+  // 2026-08-29: dieselbe Umstellung wie in LargeGroupStandingsView darueber,
+  // aus demselben Grund - die Siegerehrung blieb bei 'both' deutsch.
+  const de = useLangFlip(state.language) === 'de';
   // Kolosseum-Look? Steuert Award-BG UND Cinzel gemeinsam (s. Import-Kommentar).
   const arenaLook = qqArenaType(state);
   const ceremonyFont = arenaLook ? 'var(--font-arena)' : 'var(--font-game)';

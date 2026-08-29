@@ -46,7 +46,7 @@ export const HANDY = { width: 390, height: 844 };
  * Liefert `{ handy, buehne, phase, sperrseite, schliessen }`. Der Aufrufer
  * entscheidet, was er misst - dieses Modul misst nichts.
  */
-export async function handyStarten({ mega = false, secs = 200, vorBeitritt = null, look = 'standard' } = {}) {
+export async function handyStarten({ mega = false, secs = 200, vorBeitritt = null, look = 'standard', sprache = null } = {}) {
   const health = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => null);
   if (!health?.ok) throw new Error('Backend nicht erreichbar auf 4000.');
   console.log(`Backend ok (build ${health.build ?? '?'})`);
@@ -116,7 +116,26 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
     body: JSON.stringify({ pin: PIN }),
   }).catch(() => {});
   await sleep(500);
-  if (mega) { await emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true }); await sleep(500); }
+  /* ⚠️ IMMER setzen, auch fuer CozyQuiz - genau wie beim Design darunter.
+   *
+   * `qq:resetRoom` setzt das Format nicht zurueck: es steht im Raum und
+   * ueberlebt den Reset. Ein CozyQuiz-Lauf nach einem CrowdQuiz-Lauf hat
+   * deshalb weiter CrowdQuiz gemessen - am 2026-08-29 aufgefallen, weil auf
+   * der Buehne „CROWDQUIZ" stand und die Teams Fraktionsnamen trugen, obwohl
+   * das Werkzeug ohne --mega lief. Dieselbe Falle wie beim Look, zweite
+   * Auflage; deshalb steht sie jetzt an beiden Stellen ausgeschrieben. */
+  await emit('qq:setQuizOptions', { largeGroupMode: mega, nestedTeams: mega });
+  await sleep(500);
+
+  /* Sprache festlegen, wenn der Aufrufer eine braucht.
+   *
+   * Der Raum steht im Alltag auf 'both'. Dann flippt die Buehne alle 12 s
+   * zwischen DE und EN, und das Handy folgt seinem eigenen Fahnen-Schalter -
+   * die beiden Seiten stehen also mit Absicht zeitweise in verschiedenen
+   * Sprachen. Wer PRUEFEN will, ob sie dasselbe sagen, muss das vorher
+   * abstellen, sonst misst er die Zweisprachigkeit und nennt sie einen Fehler
+   * (2026-08-29 genau so passiert, vier Befunde, keiner echt). */
+  if (sprache) { await emit('qq:setLanguage', { language: sprache }); await sleep(400); }
 
   /* Look wie im Wizard-Schritt „Look" (QQSetupFlow.tsx, Kachel-Paar).
    *
@@ -226,9 +245,44 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   await mod.goto(`${BASE}/moderator-test?run=1${mega ? '&arena=1&mega=1' : ''}`, { waitUntil: 'domcontentloaded' });
   await sleep(6000);
 
+  /* Sperrseite: EINMAL selbst aufraeumen, erst dann aufgeben.
+   *
+   * „Quiz laeuft schon" / „nicht angemeldet" trifft den zweiten Lauf gegen
+   * dasselbe Backend. Der Grund liegt NICHT im Raum-Zustand, den `resetRoom`
+   * sauber auf LOBBY setzt (der Ack sagt ok), sondern in den Zeitgebern, die
+   * der vorige Abend im Server hinterlassen hat: sie laufen weiter und
+   * schieben den frisch zurueckgesetzten Raum sofort wieder aus der Lobby.
+   * Deshalb hilft auch dieser zweite Anlauf oft nicht - er steht hier fuer den
+   * Fall, dass es doch nur Timing war, und weil er beim Scheitern SAGT, was
+   * das Handy zeigt. Das Backend neu zu starten ist die eigentliche Abhilfe;
+   * die Fehlermeldung unten nennt den Befehl. */
+  if (await sperrseite()) {
+    console.log('⚠️  Sperrseite - Raum noch einmal zuruecksetzen und neu beitreten.');
+    console.log('   Handy zeigt: ' + (await handy.evaluate(() => (document.body.innerText || '').replace(/\s+/g, ' ').slice(0, 200)).catch(() => '?')));
+    await emit('qq:resetRoom', { confirm: true });
+    await sleep(1200);
+    await fetch(`${API}/api/qq/${encodeURIComponent(roomCode)}/dev/clearBots`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ pin: PIN }),
+    }).catch(() => {});
+    await emit('qq:setSetupDone', { value: true });
+    await emit('qq:setLobbyOpen', { value: true });
+    await sleep(800);
+    await handy.goto(`${BASE}/team`, { waitUntil: 'domcontentloaded' });
+    await sleep(5000);
+    for (let i = 0; i < 12; i++) {
+      const btn = handy.locator('button', { hasText: /Wieder einsteigen|Spiel beitreten|Rejoin|Join game|Los geht|einsteigen|Beitreten/i }).first();
+      if (await btn.count().catch(() => 0)) { await btn.click({ timeout: 2000 }).catch(() => {}); }
+      await sleep(1500);
+      const t = await handy.evaluate(() => document.body.innerText || '').catch(() => '');
+      if (/READY|BEREIT|Waiting for opponents|Warte auf/i.test(t)) break;
+    }
+    await mod.goto(`${BASE}/moderator-test?run=1${mega ? '&arena=1&mega=1' : ''}`, { waitUntil: 'domcontentloaded' });
+    await sleep(6000);
+  }
   if (await sperrseite()) {
     await browser.close(); sock.close();
-    throw new Error('Handy haengt auf der Sperrseite. Backend frisch starten:\n'
+    throw new Error('Handy haengt auch nach dem zweiten Anlauf auf der Sperrseite.\nDas ist der Normalfall beim ZWEITEN Lauf gegen dasselbe Backend - Zeitgeber des\nvorigen Abends schieben den Raum sofort wieder aus der Lobby. Backend neu starten:\n'
       + '  pkill -f \'[t]s-node-dev\'; rm -f backend/.qq-rooms/*.json; npm run start:backend');
   }
 

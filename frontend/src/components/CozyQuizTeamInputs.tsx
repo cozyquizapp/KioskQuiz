@@ -101,8 +101,14 @@ StandardInput.displayName = 'StandardInput';
 // Order, Bluff mit 4+ Optionen) konnte der Submit-Button unter den Fold
 // rutschen → Spieler scrollten in den letzten Sekunden, knapp vor Auto-
 // Submit. Jetzt: Button bleibt am unteren Viewport-Rand sichtbar.
-export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedLabel, lang = 'de' }: {
-  onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string; submittedLabel?: string; lang?: 'de' | 'en';
+// ⚠️ `lang` ist PFLICHT und hatte bis 2026-08-29 den Vorgabewert 'de'.
+// Acht der elf Aufrufer haben ihn nicht mitgegeben, und dadurch stand auf dem
+// Antwortknopf eines englischen Abends „Jetzt antworten!". Gefunden hat es
+// scripts/handy-gleichlauf.mjs: die Buehne stand auf EN, das Handy auf DE.
+// Ohne Vorgabewert kann derselbe Fehler nicht wiederkommen - der Typcheck
+// nennt jeden Aufrufer, der ihn vergisst.
+export function SubmitBtn({ onSubmit, canSubmit, submitted, catColor, label, submittedLabel, lang }: {
+  onSubmit: () => void; canSubmit: boolean; submitted: boolean; catColor: string; label?: string; submittedLabel?: string; lang: 'de' | 'en';
 }) {
   const defaultLabel = lang === 'de' ? 'Jetzt antworten!' : 'Answer now!';
   const defaultSubmittedLabel = lang === 'de' ? 'Abgegeben' : 'Submitted';

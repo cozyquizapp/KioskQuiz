@@ -81,7 +81,7 @@ export function TextInput({ catColor, onSubmit, placeholder, numeric, integerOnl
         ariaLabel={placeholder ?? (lang === 'de' ? 'Antwort eingeben' : 'Enter your answer')}
         disabled={expired}
       />
-      <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
+      <SubmitBtn lang={lang} onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -124,7 +124,7 @@ export function CrowdTopInput({ catColor, onSubmit, lang = 'de', timerEndsAt }: 
         spellCheck={false}
         disabled={expired}
       />
-      <SubmitBtn onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
+      <SubmitBtn lang={lang} onSubmit={() => onSubmit(val)} canSubmit={!expired && !!val.trim()} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -219,7 +219,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
           </button>
         );
       })}
-      <SubmitBtn
+      <SubmitBtn lang={lang}
         onSubmit={() => selected !== null && onSubmit(String(selected))}
         canSubmit={!expired && selected !== null}
         submitted={false}
@@ -332,7 +332,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
           </div>
         );
       })}
-      <SubmitBtn
+      <SubmitBtn lang={lang}
         onSubmit={() => onSubmit(bets.join(','))}
         canSubmit={!expired && remaining === 0}
         submitted={false}
@@ -383,7 +383,7 @@ export function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor:
           </div>
         </div>
       ))}
-      <SubmitBtn onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={!expired && filled >= 1} submitted={false} catColor={catColor} />
+      <SubmitBtn lang={lang} onSubmit={() => onSubmit(vals.filter(v=>v.trim()).join('|'))} canSubmit={!expired && filled >= 1} submitted={false} catColor={catColor} />
     </div>
   );
 }
@@ -447,7 +447,7 @@ export function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
           </div>
         </div>
       ))}
-      <SubmitBtn onSubmit={() => onSubmit(items.join('|'))} canSubmit={!expired && items.length > 0} submitted={false} catColor={catColor} />
+      <SubmitBtn lang={lang} onSubmit={() => onSubmit(items.join('|'))} canSubmit={!expired && items.length > 0} submitted={false} catColor={catColor} />
     </div>
   );
 }

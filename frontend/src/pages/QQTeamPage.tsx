@@ -2065,8 +2065,21 @@ function TeamGameView({
             2026-05-05 (Wolf): borderTop entfernt — wirkte wie unsichtbare
             Linie ueber dem Copyright. Footer braucht kein Trenner, das
             margin reicht. */}
-        <div style={{
-          marginTop: 24, paddingTop: 16,
+        <div className="qq-team-fuss" style={{
+          // 2026-08-29: `marginTop: 'auto'` statt 24, und das ist kein
+          // Schoenheitswert. In einer Spalte auf Bildschirmhoehe schiebt eine
+          // automatische Obermarge den Fuss an die Untergrenze, solange Platz
+          // ist - er steht dann in jeder kurzen Ansicht an derselben Stelle.
+          //
+          // ⚠️ Es MUSS hier stehen und nicht in main.css: dort hatte ich
+          // `.qq-team-fuss { margin-top: auto }` eingetragen, und der
+          // Inline-Stil mit `marginTop: 24` hat es still ueberstimmt. Gemessen
+          // wanderte der Fuss danach immer noch ueber 342 px (scripts/handy-ruhe.mjs).
+          // Inline schlaegt Klasse, immer.
+          //
+          // Die 24 sind in `paddingTop` aufgegangen, damit der Abstand nach
+          // oben derselbe bleibt, wenn die Ansicht laenger ist als das Bild.
+          marginTop: 'auto', paddingTop: 40,
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           opacity: 0.4, userSelect: 'none',
         }}>

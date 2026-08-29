@@ -4846,34 +4846,45 @@ button:active:not(:disabled),
   outline-offset: 2px;
 }
 
-/* ── Der Daumen erreicht das obere Drittel nicht ──────────────────────────
-   2026-08-29, Befund vom Kontaktbogen (Wolf: „1. gehen wir das an"): alle
-   Karten sassen oben, darunter standen zwei Drittel leerer Grund - und in
-   diesem oberen Drittel liegt „Jetzt antworten". Auf einem 844 px hohen
-   Geraet ist das einhaendig nur durch Umgreifen erreichbar, und zwar in genau
-   dem Moment, in dem die Uhr laeuft.
+/* ── Eine Huelle, die stillsteht ─────────────────────────────────────────
+   2026-08-29, zweiter Anlauf. Wolf am Kontaktbogen: „das layout ist sehr
+   unruhig, die fenstergroesse aendert sich permanent, der footer und der
+   header rutschen hoch und runter … ich haette gerne eine einheitliche
+   grosse ui/ux."
 
-   Die Spalte spannt jetzt die Bildschirmhoehe und zentriert ihren Inhalt.
-   Damit rutscht eine kurze Ansicht in die Mitte, ohne dass sich INNERHALB der
-   Ansicht irgendetwas verschiebt - Abstaende, Reihenfolge und Groessen
-   bleiben, wie sie waren. Das ist der Unterschied zwischen einer Einzelheit
-   und einem Umbau (todo.md zu /team).
+   ⚠️ Das war MEINE Aenderung von zwei Stunden vorher. Hier stand
+   `justify-content: safe center`, um die Karten aus dem oberen Drittel zu
+   holen - und damit haengt die Lage von Kopf und Fuss an der Inhaltshoehe.
+   Die ist in jeder Ansicht anders, also wandert beides bei jedem
+   Ansichtswechsel. Aus einem Befund wurde ein groesserer.
 
-   ⚠️ `safe center` statt `center`: bei Inhalt, der HOEHER ist als das Bild,
-   schiebt ein normales `center` den Anfang ueber die obere Kante hinaus, und
-   dorthin kann man nicht scrollen. Mit `safe` faellt es in diesem Fall auf
-   `flex-start` zurueck. Die langen Ansichten - Setzen, Aufloesung mit Liste -
-   sind genau der Fall.
+   Und der Grund, aus dem ich zentriert hatte, trug ohnehin nicht: der
+   Absende-Knopf ist seit langem `position: sticky` am unteren Rand
+   (CozyQuizTeamInputs, SubmitBtn). Die Haupt-Aktion lag also nie im oberen
+   Drittel; ich hatte den Rest der Karte mit ihr verwechselt.
 
-   ⚠️ `100dvh`, nicht `100vh`: auf dem Handy zaehlt `vh` die Adressleiste mit,
-   die beim Scrollen verschwindet. Steht in den Hausregeln unter
-   `viewport-units`. */
+   Jetzt die uebliche App-Huelle, und zwar ohne den Aufbau anzufassen:
+   Spalte auf Bildschirmhoehe, Kopf oben, Fuss unten, Inhalt dazwischen und
+   IMMER auf derselben Hoehe beginnend. Kein Zentrieren, nichts, was von der
+   Inhaltsmenge abhaengt.
+
+   `margin-top: auto` am Fuss schiebt ihn an die Untergrenze, wenn Platz
+   uebrig ist, und laesst ihn mitwandern, wenn nicht. Damit kann nichts
+   abgeschnitten werden: die Spalte darf ueber 100dvh hinauswachsen, die
+   Seite scrollt dann normal nach unten - was auf dem Handy richtig ist
+   („Der Beamer bekommt nie eine Scrollbar" ist eine Buehnenregel).
+
+   `100dvh`, nicht `100vh`: `vh` zaehlt die Adressleiste mit, die beim
+   Scrollen verschwindet. */
 .qq-team-column {
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
-  justify-content: safe center;
 }
+
+/* ⚠️ Die automatische Obermarge steht INLINE in QQTeamPage, nicht hier - ein
+   Inline-Stil schlaegt jede Klasse, und der Fuss hatte einen. Diese Klasse
+   bleibt als Haken zum Messen (scripts/handy-ruhe.mjs sucht sie). */
 
 .qq-team-input {
   width: 100%;

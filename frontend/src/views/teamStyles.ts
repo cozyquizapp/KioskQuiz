@@ -47,7 +47,7 @@ export const gridOverlay: CSSProperties = {
   position: 'absolute',
   inset: 0,
   backgroundImage:
-    'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
+    'linear-gradient(rgba(var(--qq-ink-rgb), 0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(var(--qq-ink-rgb), 0.03) 1px, transparent 1px)',
   backgroundSize: '48px 48px',
   opacity: 0,
   pointerEvents: 'none'
@@ -91,7 +91,7 @@ export const headerBarTeam: CSSProperties = {
   background: 'var(--ui-panel-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255, 255, 255, 0.1)'
+  borderColor: 'rgba(var(--qq-ink-rgb), 0.1)'
 };
 
 export const pillSmall: CSSProperties = {
@@ -100,7 +100,7 @@ export const pillSmall: CSSProperties = {
   background: 'var(--ui-chip-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'rgba(255, 255, 255, 0.1)',
+  borderColor: 'rgba(var(--qq-ink-rgb), 0.1)',
   fontSize: 'clamp(14px, 3vw, 16px)',
   fontWeight: 700,
   color: 'var(--ui-chip-text)'
@@ -110,7 +110,7 @@ export const logoBadge: CSSProperties = {
   padding: 'clamp(8px, 1.5vw, 10px) clamp(10px, 2vw, 12px)',
   borderRadius: 16,
   background: 'var(--ui-chip-bg)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
   color: 'var(--text)',
   fontWeight: 900,
   letterSpacing: '0.04em',
@@ -121,7 +121,7 @@ export const heroCard: CSSProperties = {
   padding: 'clamp(12px, 4vw, 18px)',
   borderRadius: 24,
   background: 'var(--ui-card-bg)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
   boxShadow: 'var(--ui-card-shadow)'
 };
 
@@ -150,7 +150,7 @@ export const metaRow: CSSProperties = {
 export const metaChip: CSSProperties = {
   ...pillSmall,
   background: 'var(--ui-chip-bg)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
   textTransform: 'capitalize'
 };
 
@@ -159,7 +159,7 @@ export const glassCard: CSSProperties = {
   backdropFilter: 'blur(12px)',
   padding: 'clamp(20px, 6vw, 28px) clamp(16px, 5vw, 24px)',
   borderRadius: 24,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
   width: '100%',
   maxWidth: 'clamp(320px, 90vw, 760px)',
   margin: '0 auto',
@@ -177,7 +177,7 @@ export const pillLabel: CSSProperties = {
   background: 'var(--ui-chip-bg)',
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--team-color, rgba(255,255,255,0.1))',
+  borderColor: 'var(--team-color, rgba(var(--qq-ink-rgb), 0.1))',
   fontSize: 'clamp(15px, 3.5vw, 17px)',
   letterSpacing: '0.1em',
   textTransform: 'uppercase',
@@ -211,7 +211,7 @@ export const mutedText: CSSProperties = {
 export const softDivider: CSSProperties = {
   height: 1,
   width: '100%',
-  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent)',
+  background: 'linear-gradient(90deg, transparent, rgba(var(--qq-ink-rgb), 0.1), transparent)',
   margin: '10px 0'
 };
 
@@ -222,7 +222,7 @@ export const inputStyle: CSSProperties = {
   borderRadius: 16,
   borderWidth: 1,
   borderStyle: 'solid',
-  borderColor: 'var(--team-color, rgba(255,255,255,0.1))',
+  borderColor: 'var(--team-color, rgba(var(--qq-ink-rgb), 0.1))',
   background: 'var(--ui-input-bg)',
   color: 'var(--ui-input-text)',
   marginTop: 10,
@@ -238,7 +238,7 @@ export const inputStyle: CSSProperties = {
 export const primaryButton: CSSProperties = {
   marginTop: 16,
   background: 'var(--ui-button-primary)',
-  color: '#ffffff',
+  color: 'var(--qq-ink)',
   border: '2px solid transparent',
   padding: 'clamp(16px, 4vw, 20px) clamp(20px, 5vw, 28px)',
   minHeight: 'clamp(56px, 14vw, 68px)',
@@ -262,8 +262,8 @@ export const primaryButton: CSSProperties = {
 export const choiceButton: CSSProperties = {
   flex: 1,
   background: 'var(--ui-card-bg)',
-  border: '1px solid rgba(255, 255, 255, 0.1)',
-  borderBottom: '1px solid rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
+  borderBottom: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
   color: 'var(--text)',
   borderRadius: 16,
   padding: 'clamp(20px, 5vw, 24px) clamp(16px, 4.5vw, 20px)',
@@ -319,7 +319,7 @@ export const questionShell: CSSProperties = {
   padding: 'clamp(8px, 3vw, 14px) clamp(16px, 4vw, 24px) clamp(12px, 3vw, 16px)',
   margin: '0 auto',
   borderRadius: 24,
-  border: '1px solid rgba(255, 255, 255, 0.1)',
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.1)',
   background: 'var(--ui-card-bg)',
   overflow: 'visible',
   width: '100%',

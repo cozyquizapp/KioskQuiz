@@ -67,7 +67,8 @@ import { formatStammCode, parseStammCodeToTeamId } from '../utils/qqStammCode';
 import type { QQAck } from '../../../shared/quarterQuizTypes';
 import { QQ_COLORS } from '../../../shared/qqColors';
 import { qqCategoryStageBg } from '../../../shared/qqCategoryTheme';
-import { setActiveThemeId, isThemed, themeIdForState } from '../qqTheme';
+import { setActiveThemeId, isThemed, themeIdForState, getActiveTheme, useActiveThemeId } from '../qqTheme';
+import { handyTinteVars } from '../qqHandyTinte';
 
 // safeEmit + ACK_ERROR_MESSAGES_* + broadcastAckError jetzt in '../utils/qqTeamAckBus'.
 
@@ -191,6 +192,31 @@ export default function QQTeamPage() {
     document.body.classList.add('qq-active');
     return () => { document.body.classList.remove('qq-active'); };
   }, []);
+
+  // 2026-08-29 (Wolf: „natuerlich soll das handydesign auch je nachdem welche
+  // design in /moderation gewaehlt wird"): die Tintenleiter des Handys.
+  //
+  // Sie wird aus den zwei Tinten des AKTIVEN Designs abgeleitet, nicht
+  // eingetragen - der Grund und die Rechnung stehen in qqHandyTinte.ts. Damit
+  // zieht /team mit, wenn im Steuerpult zwischen Standard und Kolosseum
+  // gewechselt wird, und funktioniert auch auf den hellen Designs.
+  //
+  // ⚠️ Warum `document.body` und nicht der Wurzel-Knoten einer Ansicht: /team
+  // hat VIER Wuerzeln (SetupFlow, WaitingScreen, PreparingScreen,
+  // TeamGameView), und nur zwei davon tragen `qq-team-page`. Wer die
+  // Variablen an eine Ansicht haengt, laesst die anderen drei ohne Tinte -
+  // sichtbar genau dort, wo ein Gast zuerst landet.
+  //
+  // Und warum nicht `documentElement`: dort schreibt `applyThemeVars` die
+  // gemeinsamen Token. Diese Leiter gehoert dem Handy; auf dem Wurzelelement
+  // faerbte sie Steuerpult und Buehne mit.
+  const aktivesDesign = useActiveThemeId();
+  useEffect(() => {
+    const vars = handyTinteVars();
+    const stil = document.body.style;
+    for (const [k, v] of Object.entries(vars)) stil.setProperty(k, String(v));
+    return () => { for (const k of Object.keys(vars)) stil.removeProperty(k); };
+  }, [aktivesDesign]);
 
   // Skin/Theme: room.themeId vom Beamer-Setup uebernehmen (Default cozy →
   // byte-identisch). Tokens landen auf documentElement, /team-Komponenten
@@ -878,11 +904,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     { label: lang === 'de' ? '3. Los'    : '3. Go',     active: false,        past: false      },
                   ];
               return items.map((s, i) => {
-                const color = s.active ? QQ_COLORS.brandPink : (s.past ? QQ_COLORS.violet400 : QQ_COLORS.slate600);
+                const color = s.active ? QQ_COLORS.brandPink : (s.past ? QQ_COLORS.violet400 : 'var(--qq-ink-dim)');
                 return (
                   <React.Fragment key={i}>
                     {i > 0 && (
-                      <div style={{ width: 18, height: 2, background: QQ_COLORS.slate700, borderRadius: 1 }} />
+                      <div style={{ width: 18, height: 2, background: 'var(--qq-ink-edge)', borderRadius: 1 }} />
                     )}
                     <span style={{ color, transition: 'color 200ms ease' }}>{s.label}</span>
                   </React.Fragment>
@@ -931,10 +957,10 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 filter: `drop-shadow(0 0 12px ${resumeTeam.color}55)`,
               }} />
               <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)', letterSpacing: '0.5px', textTransform: 'uppercase', marginBottom: 2 }}>
                   {lang === 'de' ? 'Du warst dabei' : 'You were here'}
                 </div>
-                <div style={{ fontSize: 22, fontWeight: 900, color: resumeTeam.color || QQ_COLORS.slate100, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                <div style={{ fontSize: 22, fontWeight: 900, color: resumeTeam.color || 'var(--qq-ink)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   {resumeTeam.name}
                 </div>
               </div>
@@ -942,7 +968,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             <CozyBtn color={resumeTeam.color || QQ_COLORS.brandPink} onClick={onResume}>
               {lang === 'de' ? `Wieder dabei als ${resumeTeam.name}` : `Resume as ${resumeTeam.name}`}
             </CozyBtn>
-            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: QQ_COLORS.slate400 }}>
+            <div style={{ textAlign: 'center', marginTop: 10, fontSize: 12, color: 'var(--qq-ink-muted)' }}>
               {lang === 'de' ? 'oder unten neues Team anlegen' : 'or set up a new team below'}
             </div>
           </CozyCard>
@@ -1023,7 +1049,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               ><QQEmojiIcon emoji="🎲" size={22} alt={lang === 'de' ? 'Zufalls-Name' : 'Random name'} /></button>
             </div>
             <div style={{
-              fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700,
+              fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700,
               marginBottom: 12, letterSpacing: '0.02em',
             }}>
               {lang === 'de'
@@ -1086,7 +1112,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   onClick={() => setStammExpanded(true)}
                   style={{
                     background: 'transparent', border: 'none',
-                    color: QQ_COLORS.slate400, fontSize: 12, fontWeight: 700,
+                    color: 'var(--qq-ink-muted)', fontSize: 12, fontWeight: 700,
                     textDecoration: 'underline', textDecorationStyle: 'dotted',
                     textDecorationColor: 'rgba(var(--qq-accent-rgb),0.4)',
                     cursor: 'pointer', fontFamily: 'inherit',
@@ -1156,7 +1182,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     style={{
                       padding: '10px 16px', minHeight: 44, borderRadius: 8,
                       border: 'none',
-                      background: stammStatus === 'searching' ? QQ_COLORS.slate600 : QQ_COLORS.brandPink,
+                      background: stammStatus === 'searching' ? 'var(--qq-ink-dim)' : QQ_COLORS.brandPink,
                       color: '#0A0814', fontWeight: 900, fontSize: 13,
                       cursor: stammStatus === 'searching' ? 'wait' : 'pointer',
                       fontFamily: 'inherit',
@@ -1174,7 +1200,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 <button
                   onClick={() => { setStammExpanded(false); setStammInput(''); }}
                   style={{
-                    background: 'none', border: 'none', color: QQ_COLORS.slate300,
+                    background: 'none', border: 'none', color: 'var(--qq-ink-soft)',
                     fontSize: 13, fontWeight: 700, cursor: 'pointer',
                     fontFamily: 'inherit', alignSelf: 'flex-start',
                     minHeight: 44, padding: '8px 6px',
@@ -1195,14 +1221,14 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     <div style={{ fontSize: 18, fontWeight: 900, color: QQ_COLORS.brandPinkSoft }}>
                       {stammResult.teamName || '–'}
                     </div>
-                    <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                    <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
                       {lang === 'de'
                         ? `${stammResult.wins} Sieg${stammResult.wins === 1 ? '' : 'e'} · ${stammResult.gamesPlayed} Spiel${stammResult.gamesPlayed === 1 ? '' : 'e'}`
                         : `${stammResult.wins} win${stammResult.wins === 1 ? '' : 's'} · ${stammResult.gamesPlayed} game${stammResult.gamesPlayed === 1 ? '' : 's'}`}
                     </div>
                   </div>
                 </div>
-                <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>
+                <div style={{ fontSize: 11, color: 'var(--qq-ink-muted)' }}>
                   {lang === 'de' ? 'Avatar + Name sind eingestellt. Klick auf "Weiter".' : 'Avatar + name set. Click "Next".'}
                 </div>
               </div>
@@ -1227,12 +1253,12 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 <StepLabel>{lang === 'de' ? 'Avatar' : 'Avatar'}</StepLabel>
                 <div style={{ textAlign: 'center', padding: '20px 0' }}>
                   <QQTeamAvatar avatarId={avatarId} size={120} />
-                  <div style={{ marginTop: 14, fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                  <div style={{ marginTop: 14, fontSize: 14, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
                     {lang === 'de' ? 'CozyCast-Avatar, fix zur Farbe' : 'CozyCast avatar, fixed to color'}
                   </div>
                 </div>
                 <div style={{ display: 'flex', gap: 8 }}>
-                  <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+                  <CozyBtn color={'var(--qq-ink-muted)'} onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
                   <CozyBtn color={QQ_COLORS.brandPink} onClick={() => setStep('NAME')}>{t.setup.next[lang]}</CozyBtn>
                 </div>
               </CozyCard>
@@ -1297,11 +1323,11 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                         padding: '14px 4px', borderRadius: 16,
                         cursor: taken ? 'not-allowed' : 'pointer',
                         background: taken
-                          ? 'rgba(255,255,255,0.02)'
+                          ? 'rgba(var(--qq-ink-rgb), 0.02)'
                           : sel
                             ? `linear-gradient(135deg, ${myColor}33, ${myColor}14)`
-                            : 'rgba(255,255,255,0.04)',
-                        border: `2px solid ${taken ? 'rgba(255,255,255,0.04)' : sel ? myColor : 'rgba(255,255,255,0.10)'}`,
+                            : 'rgba(var(--qq-ink-rgb), 0.04)',
+                        border: `2px solid ${taken ? 'rgba(var(--qq-ink-rgb), 0.04)' : sel ? myColor : 'rgba(var(--qq-ink-rgb), 0.10)'}`,
                         opacity: taken ? 0.32 : 1,
                         fontSize: 36, lineHeight: 1,
                         fontFamily: 'inherit',
@@ -1317,7 +1343,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 })}
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
-                <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+                <CozyBtn color={'var(--qq-ink-muted)'} onClick={() => setStep('COLOR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
                 <CozyBtn
                   color={QQ_COLORS.brandPink}
                   onClick={() => setStep('NAME')}
@@ -1383,7 +1409,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
               ><QQEmojiIcon emoji="🎲" size={22} alt={lang === 'de' ? 'Zufalls-Name' : 'Random name'} /></button>
             </div>
             <div style={{ display: 'flex', gap: 8, marginBottom: 14 }}>
-              <CozyBtn color={QQ_COLORS.slate400} onClick={() => setStep('AVATAR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
+              <CozyBtn color={'var(--qq-ink-muted)'} onClick={() => setStep('AVATAR')}>{lang === 'de' ? '← Zurück' : '← Back'}</CozyBtn>
             </div>
             {nameTaken && (
               <div style={{ color: '#F87171', fontSize: 13, marginBottom: 8, marginTop: 4, fontWeight: 700 }}>
@@ -1596,14 +1622,31 @@ function TeamGameView({
 
   // Dynamic phase/category accent for glows — match beamer accent colors
   const cat = s.currentQuestion?.category;
-  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? '#F9A8D4') : '#F9A8D4';
-  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? '#F9A8D4') : '#F9A8D4';
-  // Gold for lobby/rules/intro (matches beamer's warm gold fireflies), category accent during questions
-  const LOBBY_PINK = '#F9A8D4';
+  // 2026-08-29: Der Rueckfall fuer Folien OHNE Kategorie kam aus dem aktiven
+  // Design, statt fest zu stehen.
+  //
+  // Hier stand `#F9A8D4` an vier Stellen - ein Pink-300, das in KEINER Palette
+  // des Repos vorkommt: nicht in QQ_TEAM_PALETTE, nicht in
+  // QQ_CATEGORY_COLORS, nicht als Marken-Pink (#EC4899) und nicht als dessen
+  // weiche Variante (#FBCFE8). Gefunden hat es scripts/handy-referenz.mjs:
+  // `249,168,212` stand auf zwei Stationen und auf der Buehne nirgends.
+  //
+  // Die Zeile darunter behauptete ausserdem „Gold for lobby/rules/intro
+  // (matches beamer's warm gold fireflies)" und setzte dann Pink. Der
+  // Kommentar stammt aus einer Zeit, in der die Buehne dort Gold hatte; das
+  // Standarddesign setzt seit dem 24.08. Creme (`brand.accentHex` = #F5ECD8).
+  //
+  // Statt den einen festen Wert gegen den naechsten festen Wert zu tauschen,
+  // liest die Zeile jetzt das aktive Design. Damit zieht das Handy mit, wenn
+  // ein Raum auf Kolosseum steht - dort ist der Akzent ein anderer, und ein
+  // fest eingetragenes Creme waere derselbe Fehler mit neuer Farbe.
+  const themeAccent = getActiveTheme().brand.accentHex;
+  const catAccent = cat ? (QQ_CAT_ACCENT[cat] ?? QQ_CATEGORY_COLORS[cat] ?? themeAccent) : themeAccent;
+  const catColor = cat ? (QQ_CATEGORY_COLORS[cat] ?? themeAccent) : themeAccent;
   const phaseAccent = (s.phase === 'QUESTION_ACTIVE' || s.phase === 'QUESTION_REVEAL') ? catAccent
     : s.phase === 'PLACEMENT' ? catAccent
     : s.phase === 'GAME_OVER' ? QQ_COLORS.brandPink
-    : LOBBY_PINK;
+    : themeAccent;   // Lobby, Regeln, Intro, Team-Reveal: das Design gibt den Ton
 
   // Firefly color — uses accent for vibrant glow matching beamer
   const ffColor = `${phaseAccent}55`;
@@ -1805,18 +1848,18 @@ function TeamGameView({
               style={{
                 flexShrink: 0,
                 width: 44, height: 44, borderRadius: 14,
-                border: '1px solid rgba(255,255,255,0.10)',
-                background: 'rgba(255,255,255,0.04)',
-                color: QQ_COLORS.slate200, cursor: 'pointer',
+                border: '1px solid rgba(var(--qq-ink-rgb), 0.10)',
+                background: 'rgba(var(--qq-ink-rgb), 0.04)',
+                color: 'var(--qq-ink-body)', cursor: 'pointer',
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 transition: 'background 0.15s, transform 0.15s',
                 fontFamily: 'inherit',
               }}
               onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.94)'; }}
               onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-              onMouseDown={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.10)'; }}
-              onMouseUp={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; }}
-              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(255,255,255,0.04)'; e.currentTarget.style.transform = 'scale(1)'; }}
+              onMouseDown={(e) => { e.currentTarget.style.background = 'rgba(var(--qq-ink-rgb), 0.10)'; }}
+              onMouseUp={(e) => { e.currentTarget.style.background = 'rgba(var(--qq-ink-rgb), 0.04)'; }}
+              onMouseLeave={(e) => { e.currentTarget.style.background = 'rgba(var(--qq-ink-rgb), 0.04)'; e.currentTarget.style.transform = 'scale(1)'; }}
             >
               <svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" aria-hidden>
                 <line x1="3" y1="6.5" x2="19" y2="6.5" />
@@ -1966,10 +2009,10 @@ function TeamGameView({
           }}>
             <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14 }}>
               <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcfloat 3s ease-in-out infinite' }}>⏸️</div>
-              <div style={{ fontSize: 30, fontWeight: 900, color: '#fff', letterSpacing: '0.02em' }}>
+              <div style={{ fontSize: 30, fontWeight: 900, color: 'var(--qq-ink)', letterSpacing: '0.02em' }}>
                 {lang === 'en' ? 'Short break' : 'Kurze Pause'}
               </div>
-              <div style={{ fontSize: 16, fontWeight: 700, color: 'rgba(255,255,255,0.72)', maxWidth: 320 }}>
+              <div style={{ fontSize: 16, fontWeight: 700, color: 'rgba(var(--qq-ink-rgb), 0.72)', maxWidth: 320 }}>
                 {lang === 'en' ? 'The quiz continues in a moment …' : 'Gleich geht’s weiter …'}
               </div>
             </div>
@@ -2013,7 +2056,7 @@ function TeamGameView({
           />
           <span style={{
             fontSize: 10, fontWeight: 700, letterSpacing: '0.1em',
-            color: QQ_COLORS.slate400, textTransform: 'uppercase',
+            color: 'var(--qq-ink-muted)', textTransform: 'uppercase',
           }}>
             CozyWolf · © 2026
           </span>
@@ -2095,8 +2138,8 @@ function TeamGameView({
 // darkPage + grainOverlay jetzt in '../components/qqTeamStyles'.
 const cozyInput: React.CSSProperties = {
   width: '100%', padding: '14px 16px', borderRadius: 16, marginBottom: 12,
-  border: '1px solid rgba(255,255,255,0.15)', background: 'rgba(255,255,255,0.08)',
-  color: QQ_COLORS.slate100, fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
+  border: '1px solid rgba(var(--qq-ink-rgb), 0.15)', background: 'rgba(var(--qq-ink-rgb), 0.08)',
+  color: 'var(--qq-ink)', fontFamily: 'inherit', fontSize: 17, fontWeight: 700,
   boxSizing: 'border-box',
   // 2026-08-26, gemessen mit scripts/design-audit-cozyquiz.mjs auf einem
   // iPhone-14-Fenster: das Namensfeld kam auf 248 x 43. Die WCAG fordert

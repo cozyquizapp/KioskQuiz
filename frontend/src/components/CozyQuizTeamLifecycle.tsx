@@ -60,7 +60,7 @@ export function IdentityBanner({ team, lang }: { team: QQTeam; lang: 'de' | 'en'
           animation: 'tcfloat 2.6s ease-in-out infinite',
         }} />
         <div style={{
-          fontSize: 14, fontWeight: 700, color: '#cbd5e1', letterSpacing: '0.04em',
+          fontSize: 14, fontWeight: 700, color: 'var(--qq-ink-soft)', letterSpacing: '0.04em',
         }}>
           {lang === 'de' ? 'Ihr seid' : 'You are'}
         </div>
@@ -105,7 +105,7 @@ export function YourTurnAlert({ kind, team, lang }: { kind: 'hotPotato' | 'impos
       }}>
         <div style={{ fontSize: 72, lineHeight: 1, animation: 'tcwobble 0.35s ease-in-out infinite' }}><QQEmojiIcon emoji={emoji}/></div>
         <div style={{
-          fontSize: 26, fontWeight: 900, color: '#fff', letterSpacing: '0.04em',
+          fontSize: 26, fontWeight: 900, color: 'var(--qq-ink)', letterSpacing: '0.04em',
           textShadow: `0 0 16px ${team.color}`,
           textAlign: 'center',
         }}>
@@ -165,12 +165,12 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
           <div style={{ fontSize: 52, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
           <div style={{
-            fontSize: 28, fontWeight: 900, color: '#F1F5F9',
+            fontSize: 28, fontWeight: 900, color: 'var(--qq-ink)',
             marginBottom: 4,
           }}>
             {lang === 'de' ? 'Quiz läuft schon!' : 'Quiz already running!'}
           </div>
-          <div style={{ fontFamily: 'inherit', fontSize: 16, color: '#94a3b8' }}>
+          <div style={{ fontFamily: 'inherit', fontSize: 16, color: 'var(--qq-ink-muted)' }}>
             {lang === 'de' ? 'Raum' : 'Room'}: {roomCode}
           </div>
         </div>
@@ -201,7 +201,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
             boxShadow: `0 0 32px ${existingTeam.color}33, 0 8px 24px rgba(0,0,0,0.4)`,
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16,
           }}>
-            <div style={{ fontSize: 13, color: '#94a3b8', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+            <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)', fontWeight: 700, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
               {lang === 'de' ? 'Du warst dabei als' : 'You were playing as'}
             </div>
             <QQTeamAvatar
@@ -226,7 +226,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
                 background: connected
                   ? `linear-gradient(135deg, ${existingTeam.color}, ${existingTeam.color}dd)`
                   : 'rgba(100,116,139,0.4)',
-                color: '#fff', fontSize: 17, fontWeight: 900,
+                color: 'var(--qq-ink)', fontSize: 17, fontWeight: 900,
                 letterSpacing: '0.05em',
                 cursor: connected ? 'pointer' : 'not-allowed',
                 boxShadow: connected ? `0 4px 14px ${existingTeam.color}66` : 'none',
@@ -240,19 +240,19 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
           // ── Team NICHT im Room: nicht teilnahmeberechtigt ───────────────
           <div style={{
             background: COZY_CARD_BG, borderRadius: 24, padding: '28px 20px',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12,
           }}>
             <div style={{ fontSize: 36 }}>⏳</div>
             <div style={{
-              fontSize: 18, fontWeight: 800, color: '#F1F5F9', textAlign: 'center',
+              fontSize: 18, fontWeight: 800, color: 'var(--qq-ink)', textAlign: 'center',
             }}>
               {lang === 'de'
                 ? 'Du bist nicht angemeldet'
                 : 'You are not registered'}
             </div>
             <div style={{
-              fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 1.5,
+              fontSize: 14, color: 'var(--qq-ink-muted)', textAlign: 'center', lineHeight: 1.5,
             }}>
               {lang === 'de'
                 ? 'Das Quiz hat schon angefangen. Warte auf eine Pause oder die nächste Lobby, dann kannst du als neues Team einsteigen.'
@@ -331,7 +331,7 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
         {/* „Wird vorbereitet"-Card */}
         <div style={{
           background: COZY_CARD_BG, borderRadius: 24, padding: '30px 22px',
-          border: '1px solid rgba(255,255,255,0.08)',
+          border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
           boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
           display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
         }}>
@@ -344,10 +344,10 @@ export function PreparingScreen({ roomCode, connected, lang = 'de', onFlagClick,
               }} />
             ))}
           </div>
-          <div style={{ fontSize: 20, fontWeight: 900, color: '#F1F5F9', textAlign: 'center', lineHeight: 1.2 }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: 'var(--qq-ink)', textAlign: 'center', lineHeight: 1.2 }}>
             {lang === 'de' ? 'Quiz wird vorbereitet …' : 'Preparing the quiz …'}
           </div>
-          <div style={{ fontSize: 14, color: '#94a3b8', textAlign: 'center', lineHeight: 1.5 }}>
+          <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', textAlign: 'center', lineHeight: 1.5 }}>
             {lang === 'de'
               ? 'Gleich geht’s los! Sobald alles startklar ist, kannst du hier deinem Team beitreten. Bitte kurz warten.'
               : 'Almost there! As soon as everything’s ready, you can join your team here. Please wait a moment.'}
@@ -401,22 +401,22 @@ export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: 
         {/* Header skeleton */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
           <div style={{ fontSize: 42, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
-          <div style={{ fontSize: 22, fontWeight: 900, color: '#F1F5F9', letterSpacing: '0.04em' }}>COZYQUIZ</div>
-          <div style={{ fontFamily: 'inherit', fontSize: 15, color: '#94a3b8', margin: '8px 0' }}>
+          <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--qq-ink)', letterSpacing: '0.04em' }}>COZYQUIZ</div>
+          <div style={{ fontFamily: 'inherit', fontSize: 15, color: 'var(--qq-ink-muted)', margin: '8px 0' }}>
             {lang === 'de' ? 'Raum' : 'Room'}: {roomCode}
           </div>
         </div>
         {/* Skeleton card */}
         <div style={{
           background: COZY_CARD_BG, borderRadius: 24, padding: '24px 18px',
-          border: '1px solid rgba(255,255,255,0.06)',
+          border: '1px solid rgba(var(--qq-ink-rgb), 0.06)',
         }}>
           {[1, 2, 3].map(i => (
             <div key={i} style={{
               height: i === 1 ? 18 : 14, borderRadius: 8,
               marginBottom: i < 3 ? 12 : 0,
               width: i === 1 ? '70%' : i === 2 ? '100%' : '55%',
-              background: 'linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0.04) 75%)',
+              background: 'linear-gradient(90deg, rgba(var(--qq-ink-rgb), 0.04) 25%, rgba(var(--qq-ink-rgb), 0.08) 50%, rgba(var(--qq-ink-rgb), 0.04) 75%)',
               backgroundSize: '200% 100%',
               animation: `tcShimmer 1.8s ease-in-out ${i * 0.15}s infinite`,
             }} />

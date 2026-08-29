@@ -40,9 +40,18 @@
  * Node-Konstanten; die erste Fassung von anschnitt-suche.mjs ist daran an
  * jeder Station gestorben und hat trotzdem „alles gut" gemeldet.
  */
-export const WORTSCHATZ = ({ minText, minFlaeche }) => {
-  const buehne = document.querySelector('[data-qq-buehne]');
-  if (!buehne) return { fehler: 'keine Buehne' };
+export const WORTSCHATZ = ({ minText, minFlaeche, wurzel = '[data-qq-buehne]', bezug = 990 }) => {
+  /* `wurzel` und `bezug` sind 2026-08-29 dazugekommen, fuer das Handy.
+   *
+   * Die Buehne ist eine feste 1760x990-Flaeche, die als Ganzes skaliert wird -
+   * deshalb rechnet alles hier unten in Buehnen-Pixel zurueck. Das Handy hat
+   * keine solche Flaeche: es rendert in echten CSS-Pixeln, die Wurzel ist der
+   * Seiten-Body und der Bezug ist die Fensterhoehe. Ohne beides als Argument
+   * haette ein zweites Werkzeug diese Funktion kopieren muessen - und zwei
+   * Kopien einer Messung laufen nach einer Sitzung auseinander. Dann misst man
+   * zwei verschiedene Sprachen und glaubt, man vergleiche eine. */
+  const buehne = document.querySelector(wurzel);
+  if (!buehne) return { fehler: `keine Wurzel (${wurzel})` };
 
   const raus = (el) => {
     const t = el.tagName.toLowerCase();
@@ -90,7 +99,7 @@ export const WORTSCHATZ = ({ minText, minFlaeche }) => {
   };
 
   const br = buehne.getBoundingClientRect();
-  const s = br.height / 990;
+  const s = bezug ? br.height / bezug : 1;
 
   for (const el of Array.from(buehne.querySelectorAll('*'))) {
     if (!(el instanceof HTMLElement) || raus(el)) continue;

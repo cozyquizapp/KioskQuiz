@@ -358,7 +358,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Question text */}
       <div style={{
         fontSize: 'clamp(18px, 5vw, 24px)', fontWeight: 900, lineHeight: 1.3,
-        color: isThemed() ? 'var(--qq-card-text)' : '#F8FAFC', marginBottom: 14,
+        color: isThemed() ? 'var(--qq-card-text)' : 'var(--qq-ink)', marginBottom: 14,
       }}>
         {lang === 'en' && q.textEn ? q.textEn : q.text}
       </div>
@@ -378,8 +378,8 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {!isRevealed && s.hotPotatoActiveTeamId && s.hotPotatoActiveTeamId !== myTeamId && (
         <div style={{
           padding: '8px 14px', borderRadius: 16, textAlign: 'center',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)',
-          fontSize: 14, color: QQ_COLORS.slate400, marginBottom: 8,
+          background: 'rgba(var(--qq-ink-rgb), 0.04)', border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
+          fontSize: 14, color: 'var(--qq-ink-muted)', marginBottom: 8,
         }}>
           <QQEmojiIcon emoji="🥔"/> {s.teams.find(tm => tm.id === s.hotPotatoActiveTeamId)?.name ?? '?'} {lang === 'en' ? 'is up' : 'ist dran'}
         </div>
@@ -404,7 +404,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
       {/* Team answer progress (shown when not yet submitted & others answering) */}
       {!isRevealed && !s.answers.find(a => a.teamId === myTeamId) && s.answers.length > 0 && s.teams.length > 1 && (
         <div style={{
-          marginTop: 6, textAlign: 'center', fontSize: 13, color: QQ_COLORS.slate400, fontWeight: 700,
+          marginTop: 6, textAlign: 'center', fontSize: 13, color: 'var(--qq-ink-muted)', fontWeight: 700,
           animation: 'tcreveal 0.3s ease both',
         }}>
           {s.answers.length}/{s.teams.length} Teams {lang === 'de' ? 'haben schon geantwortet' : 'already answered'}
@@ -487,9 +487,9 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
           return (
             <div style={{
               marginTop: 8, padding: '10px 14px', borderRadius: 16,
-              background: iWasAlsoCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-              border: `1px solid ${iWasAlsoCorrect ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
-              fontSize: 14, fontWeight: 900, color: iWasAlsoCorrect ? QQ_COLORS.green400 : QQ_COLORS.slate400, textAlign: 'center',
+              background: iWasAlsoCorrect ? 'rgba(34,197,94,0.12)' : 'rgba(var(--qq-ink-rgb), 0.04)',
+              border: `1px solid ${iWasAlsoCorrect ? 'rgba(34,197,94,0.35)' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
+              fontSize: 14, fontWeight: 900, color: iWasAlsoCorrect ? QQ_COLORS.green400 : 'var(--qq-ink-muted)', textAlign: 'center',
               animation: 'tcreveal 0.4s ease 0.2s both',
             }}>
               {loseMsg}
@@ -570,17 +570,17 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             marginTop: 10,
             padding: '10px 14px', borderRadius: 16,
             background: isCorrect === true ? 'rgba(34,197,94,0.10)'
-              : isCorrect === false ? 'rgba(255,255,255,0.04)'
-              : 'rgba(255,255,255,0.04)',
-            border: `1px solid ${isCorrect === true ? 'rgba(34,197,94,0.35)' : 'rgba(255,255,255,0.08)'}`,
+              : isCorrect === false ? 'rgba(var(--qq-ink-rgb), 0.04)'
+              : 'rgba(var(--qq-ink-rgb), 0.04)',
+            border: `1px solid ${isCorrect === true ? 'rgba(34,197,94,0.35)' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
             animation: 'tcreveal 0.35s ease 0.15s both',
             display: 'flex', flexDirection: 'column', gap: 6,
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400, letterSpacing: 0.4, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', letterSpacing: 0.4, textTransform: 'uppercase', whiteSpace: 'nowrap' }}>
                 {lang === 'en' ? 'Your answer' : 'Eure Antwort'}
               </span>
-              <span style={{ flex: 1, fontSize: 15, fontWeight: 900, color: isCorrect === true ? QQ_COLORS.green400 : QQ_COLORS.slate200, wordBreak: 'break-word' }}>
+              <span style={{ flex: 1, fontSize: 15, fontWeight: 900, color: isCorrect === true ? QQ_COLORS.green400 : 'var(--qq-ink-body)', wordBreak: 'break-word' }}>
                 {displayText || '–'}
               </span>
               {isCorrect !== null && (
@@ -592,7 +592,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             {statusText && (
               <div style={{
                 fontSize: 12, fontWeight: 700,
-                color: isCorrect ? QQ_COLORS.green300 : QQ_COLORS.slate400,
+                color: isCorrect ? QQ_COLORS.green300 : 'var(--qq-ink-muted)',
                 paddingLeft: 2,
               }}>
                 {statusText}
@@ -617,7 +617,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         if (scored.length === 0) return null;
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)', marginBottom: 2, letterSpacing: 0.3 }}>
               <QQEmojiIcon emoji="🎯"/> {lang === 'en' ? 'Closest to the value' : 'Am nächsten dran'}
             </div>
             {scored.map((a, i) => {
@@ -629,13 +629,13 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '8px 10px', borderRadius: 8,
-                  background: isMe ? `${team?.color ?? QQ_COLORS.blue500}22` : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${isMe ? (team?.color ?? QQ_COLORS.blue500) + '88' : 'rgba(255,255,255,0.08)'}`,
+                  background: isMe ? `${team?.color ?? QQ_COLORS.blue500}22` : 'rgba(var(--qq-ink-rgb), 0.04)',
+                  border: `1px solid ${isMe ? (team?.color ?? QQ_COLORS.blue500) + '88' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
-                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? QQ_COLORS.slate200, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? 'var(--qq-ink-body)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {team?.name ?? a.teamId}{isMe ? (lang === 'en' ? ' (you)' : ' (ihr)') : ''}
                   </span>
                   {inRange && (
@@ -643,7 +643,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                       +1
                     </span>
                   )}
-                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate300, flexShrink: 0 }}>{a.text || '–'}</span>
+                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : 'var(--qq-ink-soft)', flexShrink: 0 }}>{a.text || '–'}</span>
                 </div>
               );
             })}
@@ -662,9 +662,9 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const maxPts = Math.max(...parts, 1);
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
               <span>💰 {lang === 'en' ? 'Your bets' : 'Eure Punkte'}</span>
-              <span style={{ color: earned > 0 ? QQ_COLORS.green400 : QQ_COLORS.slate400 }}>
+              <span style={{ color: earned > 0 ? QQ_COLORS.green400 : 'var(--qq-ink-muted)' }}>
                 {lang === 'en' ? `+${earned} pts` : `+${earned} Pkt`}
               </span>
             </div>
@@ -678,8 +678,8 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                 <div key={i} style={{
                   position: 'relative', overflow: 'hidden',
                   padding: '8px 10px', borderRadius: 8,
-                  background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(255,255,255,0.03)',
-                  border: `1px solid ${isCorrect ? 'rgba(34,197,94,0.45)' : 'rgba(255,255,255,0.08)'}`,
+                  background: isCorrect ? 'rgba(34,197,94,0.10)' : 'rgba(var(--qq-ink-rgb), 0.03)',
+                  border: `1px solid ${isCorrect ? 'rgba(34,197,94,0.45)' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   {/* Bar */}
@@ -692,12 +692,12 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                     <span style={{ fontSize: 15, width: 22, textAlign: 'center' }}>
                       {isCorrect ? '✓' : ''}
                     </span>
-                    <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: isCorrect ? QQ_COLORS.green400 : QQ_COLORS.slate200 }}>
+                    <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: isCorrect ? QQ_COLORS.green400 : 'var(--qq-ink-body)' }}>
                       {qqCapOption(opt)}
                     </span>
                     <span style={{
                       fontWeight: 900, fontSize: 14,
-                      color: pts === 0 ? QQ_COLORS.slate400 : isCorrect ? QQ_COLORS.green400 : color,
+                      color: pts === 0 ? 'var(--qq-ink-muted)' : isCorrect ? QQ_COLORS.green400 : color,
                       minWidth: 28, textAlign: 'right',
                     }}>
                       {pts}
@@ -723,9 +723,9 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         const hits = myHits.filter(Boolean).length;
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
               <span><QQEmojiIcon emoji="📊"/> {lang === 'en' ? 'Your order' : 'Eure Reihenfolge'}</span>
-              <span style={{ color: hits === correctSeq.length ? QQ_COLORS.green400 : QQ_COLORS.slate400 }}>
+              <span style={{ color: hits === correctSeq.length ? QQ_COLORS.green400 : 'var(--qq-ink-muted)' }}>
                 {hits}/{correctSeq.length} {lang === 'en' ? 'correct' : 'richtig'}
               </span>
             </div>
@@ -740,11 +740,11 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                   border: `1px solid ${ok ? 'rgba(34,197,94,0.35)' : 'rgba(239,68,68,0.25)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
-                  <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: QQ_COLORS.slate400 }}>#{i+1}</span>
+                  <span style={{ fontSize: 12, width: 22, textAlign: 'center', fontWeight: 900, color: 'var(--qq-ink-muted)' }}>#{i+1}</span>
                   <span style={{ fontSize: 15, width: 18, textAlign: 'center' }}>{ok ? '✓' : '✗'}</span>
                   <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: ok ? QQ_COLORS.green400 : '#f87171' }}>{g}</span>
                   {!ok && correct && (
-                    <span style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                    <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
                       → {correct}
                     </span>
                   )}
@@ -776,9 +776,9 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         };
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)', marginBottom: 2, letterSpacing: 0.3, display: 'flex', justifyContent: 'space-between' }}>
               <span>📝 {lang === 'en' ? 'Your answers' : 'Eure Tipps'}</span>
-              <span style={{ color: myHits.length > 0 ? QQ_COLORS.green400 : QQ_COLORS.slate400 }}>
+              <span style={{ color: myHits.length > 0 ? QQ_COLORS.green400 : 'var(--qq-ink-muted)' }}>
                 {myHits.length}/{mine.length} {lang === 'en' ? 'hit' : 'Treffer'}
               </span>
             </div>
@@ -827,7 +827,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
         if (scored.length === 0) return null;
         return (
           <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 5 }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: QQ_COLORS.slate400, marginBottom: 2, letterSpacing: 0.3 }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)', marginBottom: 2, letterSpacing: 0.3 }}>
               <QQEmojiIcon emoji="🏆"/> {lang === 'en' ? 'Closest to target' : 'Am nächsten dran'}
             </div>
             {scored.map((a, i) => {
@@ -839,14 +839,14 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
                 <div key={a.teamId} style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '8px 10px', borderRadius: 8,
-                  background: isMe ? `${team?.color ?? QQ_COLORS.blue500}22` : 'rgba(255,255,255,0.04)',
-                  border: `1px solid ${isMe ? (team?.color ?? QQ_COLORS.blue500) + '88' : 'rgba(255,255,255,0.08)'}`,
+                  background: isMe ? `${team?.color ?? QQ_COLORS.blue500}22` : 'rgba(var(--qq-ink-rgb), 0.04)',
+                  border: `1px solid ${isMe ? (team?.color ?? QQ_COLORS.blue500) + '88' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
                   animation: `tcreveal 0.35s ease ${0.1 + i * 0.06}s both`,
                 }}>
                   <span style={{ fontSize: 14, width: 28, textAlign: 'center', fontWeight: 900 }}>{medal}</span>
                   {team && <QQTeamAvatar avatarId={team.avatarId} teamEmoji={team.emoji} size={18} />}
-                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? QQ_COLORS.slate200 }}>{team?.name ?? a.teamId}</span>
-                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : QQ_COLORS.slate400, fontFamily: 'inherit' }}><QQEmojiIcon emoji="📍"/> {dist}</span>
+                  <span style={{ flex: 1, fontWeight: 900, fontSize: 13, color: team?.color ?? 'var(--qq-ink-body)' }}>{team?.name ?? a.teamId}</span>
+                  <span style={{ fontWeight: 900, fontSize: 13, color: i === 0 ? QQ_COLORS.green400 : 'var(--qq-ink-muted)', fontFamily: 'inherit' }}><QQEmojiIcon emoji="📍"/> {dist}</span>
                 </div>
               );
             })}
@@ -937,7 +937,7 @@ export function QuestionCard({ state: s, myTeamId, emit, roomCode, lang }: {
             <div style={{ fontSize: 15, fontWeight: 900, color: QQ_COLORS.red300 }}>
               {headline}
             </div>
-            <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate300 }}>
+            <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qq-ink-soft)' }}>
               <QQEmojiIcon emoji="✨"/> {pick}
             </div>
           </div>

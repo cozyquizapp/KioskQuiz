@@ -127,13 +127,13 @@ export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, l
         <div style={{
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
           marginBottom: 8, padding: '6px 12px', borderRadius: 8,
-          background: urgency ? 'rgba(239,68,68,0.15)' : 'rgba(255,255,255,0.05)',
-          border: `1px solid ${urgency ? 'rgba(239,68,68,0.4)' : 'rgba(255,255,255,0.1)'}`,
+          background: urgency ? 'rgba(239,68,68,0.15)' : 'rgba(var(--qq-ink-rgb), 0.05)',
+          border: `1px solid ${urgency ? 'rgba(239,68,68,0.4)' : 'rgba(var(--qq-ink-rgb), 0.1)'}`,
           transition: 'all 0.3s',
         }}>
           <span style={{
             fontSize: 22, fontWeight: 900, fontVariantNumeric: 'tabular-nums',
-            color: urgency ? '#f87171' : QQ_COLORS.slate400,
+            color: urgency ? '#f87171' : 'var(--qq-ink-muted)',
             animation: urgency ? 'tcpulse 0.6s ease-in-out infinite' : 'none',
           }}>
             {secondsLeft}s
@@ -249,7 +249,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
           lang={lang}
         />
         {submitted && (
-          <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center', fontWeight: 700, lineHeight: 1.4 }}>
             {lang === 'de' ? 'Sobald alle eingereicht haben, geht\'s zum Voting.' : 'Once everyone\'s in, voting starts.'}
           </div>
         )}
@@ -299,11 +299,11 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
                 padding: '14px 16px', borderRadius: 16, border: 'none',
                 textAlign: 'left',
                 background: chosen ? `${catColor}30`
-                  : isOwn ? 'rgba(255,255,255,0.02)'
-                  : 'rgba(255,255,255,0.05)',
+                  : isOwn ? 'rgba(var(--qq-ink-rgb), 0.02)'
+                  : 'rgba(var(--qq-ink-rgb), 0.05)',
                 border_: undefined,
-                outline: chosen ? `2px solid ${catColor}` : `1px solid ${isOwn ? 'rgba(255,255,255,0.05)' : 'rgba(255,255,255,0.10)'}`,
-                color: isOwn ? QQ_COLORS.slate600 : QQ_COLORS.slate100,
+                outline: chosen ? `2px solid ${catColor}` : `1px solid ${isOwn ? 'rgba(var(--qq-ink-rgb), 0.05)' : 'rgba(var(--qq-ink-rgb), 0.10)'}`,
+                color: isOwn ? 'var(--qq-ink-dim)' : 'var(--qq-ink)',
                 fontFamily: 'inherit', fontSize: 16, fontWeight: 900,
                 cursor: disabled ? 'default' : 'pointer',
                 opacity: isOwn ? 0.5 : 1,
@@ -314,15 +314,15 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
             >
               <span style={{
                 width: 26, height: 26, borderRadius: '50%',
-                background: chosen ? catColor : 'rgba(255,255,255,0.08)',
-                color: chosen ? '#fff' : QQ_COLORS.slate400,
+                background: chosen ? catColor : 'rgba(var(--qq-ink-rgb), 0.08)',
+                color: chosen ? 'var(--qq-ink)' : 'var(--qq-ink-muted)',
                 fontSize: 13, fontWeight: 900,
                 display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
                 flexShrink: 0,
               }}>{String.fromCharCode(65 + i)}</span>
               <span style={{ flex: 1, wordBreak: 'break-word' }}>{opt.text}</span>
               {isOwn && (
-                <span style={{ fontSize: 10, color: QQ_COLORS.slate600, fontWeight: 900 }}>
+                <span style={{ fontSize: 10, color: 'var(--qq-ink-dim)', fontWeight: 900 }}>
                   {lang === 'de' ? 'dein Bluff' : 'your bluff'}
                 </span>
               )}
@@ -330,7 +330,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
           );
         })}
         {myVote && (
-          <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700 }}>
+          <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center', fontWeight: 700 }}>
             {lang === 'de' ? 'Stimme abgegeben, wartet auf den Rest.' : 'Voted, waiting on others.'}
           </div>
         )}
@@ -348,23 +348,23 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
     return (
       <div style={{
         padding: '16px 18px', borderRadius: 16,
-        background: total > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(255,255,255,0.04)',
-        border: total > 0 ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(255,255,255,0.10)',
+        background: total > 0 ? 'rgba(34,197,94,0.12)' : 'rgba(var(--qq-ink-rgb), 0.04)',
+        border: total > 0 ? '1px solid rgba(34,197,94,0.45)' : '1px solid rgba(var(--qq-ink-rgb), 0.10)',
         display: 'flex', flexDirection: 'column', gap: 8, textAlign: 'center',
       }}>
-        <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
+        <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase' }}>
           {lang === 'de' ? 'Eure Teilpunkte' : 'Your points'}
         </div>
         <div style={{
           fontSize: 32, fontWeight: 900,
-          color: total > 0 ? QQ_COLORS.green300 : QQ_COLORS.slate400,
+          color: total > 0 ? QQ_COLORS.green300 : 'var(--qq-ink-muted)',
         }}>{total}</div>
         {breakdown.length > 0 && (
-          <div style={{ fontSize: 12, color: QQ_COLORS.slate300, lineHeight: 1.5 }}>
+          <div style={{ fontSize: 12, color: 'var(--qq-ink-soft)', lineHeight: 1.5 }}>
             {breakdown.join(' · ')}
           </div>
         )}
-        <div style={{ fontSize: 11, color: QQ_COLORS.slate500, marginTop: 4 }}>
+        <div style={{ fontSize: 11, color: 'var(--qq-ink-quiet)', marginTop: 4 }}>
           {lang === 'de' ? 'Schau auf den Beamer, Auflösung läuft.' : 'Check the beamer, reveal in progress.'}
         </div>
       </div>
@@ -418,7 +418,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
     <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
       {!alreadyAnswered && (
         <div style={{
-          fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700,
+          fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center', fontWeight: 700,
           lineHeight: 1.4, padding: '0 4px',
         }}>
           {lang === 'de'
@@ -448,7 +448,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
                 width: 32, textAlign: 'center', flexShrink: 0,
               }}>{lang === 'de' ? `H${i+1}` : `C${i+1}`}</span>
               <span style={{
-                fontSize: 16, fontWeight: 900, color: QQ_COLORS.slate100, flex: 1,
+                fontSize: 16, fontWeight: 900, color: 'var(--qq-ink)', flex: 1,
               }}>{hintsAll[i]}</span>
             </div>
           );
@@ -458,8 +458,8 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
       {isMyWin && (
         <div style={{
           padding: '10px 14px', borderRadius: 8, textAlign: 'center',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
-          fontSize: 14, fontWeight: 900, color: QQ_COLORS.slate300,
+          background: 'rgba(var(--qq-ink-rgb), 0.04)', border: '1px solid rgba(var(--qq-ink-rgb), 0.10)',
+          fontSize: 14, fontWeight: 900, color: 'var(--qq-ink-soft)',
         }}>
           {lang === 'de' ? '✓ Tipp eingegangen, wartest auf Auflösung' : '✓ Tip submitted, waiting for reveal'}
         </div>
@@ -467,8 +467,8 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
       {isLocked && (
         <div style={{
           padding: '10px 14px', borderRadius: 8, textAlign: 'center',
-          background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.10)',
-          fontSize: 13, fontWeight: 900, color: QQ_COLORS.slate400,
+          background: 'rgba(var(--qq-ink-rgb), 0.04)', border: '1px solid rgba(var(--qq-ink-rgb), 0.10)',
+          fontSize: 13, fontWeight: 900, color: 'var(--qq-ink-muted)',
         }}>
           {lang === 'de' ? 'Tipp abgegeben, wartest auf Auflösung' : 'Tip submitted, waiting for reveal'}
         </div>
@@ -493,7 +493,7 @@ export function OnlyConnectInput({ state: s, myTeamId, emit, roomCode, catColor,
             label={lang === 'de' ? '✓ Tipp abgeben' : '✓ Submit guess'}
             lang={lang}
           />
-          <div style={{ fontSize: 11, color: QQ_COLORS.slate500, textAlign: 'center', fontWeight: 700 }}>
+          <div style={{ fontSize: 11, color: 'var(--qq-ink-quiet)', textAlign: 'center', fontWeight: 700 }}>
             {lang === 'de' ? '1 Versuch, schnellste richtige Antwort gewinnt zuerst' : '1 try, fastest correct answer wins first'}
           </div>
         </>
@@ -556,7 +556,7 @@ export function ImposterInput({ question: q, catColor, state: s, myTeamId, emit,
   // Not yet started
   if (!s.imposterActiveTeamId && !isEliminated) {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(255,255,255,0.04)', color: QQ_COLORS.slate500, fontSize: 14, fontWeight: 700 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(var(--qq-ink-rgb), 0.04)', color: 'var(--qq-ink-quiet)', fontSize: 14, fontWeight: 700 }}>
         {waitingLabel}
       </div>
     );
@@ -572,9 +572,9 @@ export function ImposterInput({ question: q, catColor, state: s, myTeamId, emit,
   // Waiting for other team
   if (!isMyTurn) {
     return (
-      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)', color: QQ_COLORS.slate500, fontSize: 14, fontWeight: 700 }}>
+      <div style={{ padding: '12px 16px', borderRadius: 16, textAlign: 'center', background: 'rgba(var(--qq-ink-rgb), 0.04)', border: '1px solid rgba(var(--qq-ink-rgb), 0.08)', color: 'var(--qq-ink-quiet)', fontSize: 14, fontWeight: 700 }}>
         <QQEmojiIcon emoji="🕵️"/> {activeTeam?.name ?? '?'} {lang === 'en' ? 'is choosing' : 'wählt gerade'}<AnimatedDots />
-        <div style={{ fontSize: 13, color: QQ_COLORS.slate500, marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
+        <div style={{ fontSize: 13, color: 'var(--qq-ink-quiet)', marginTop: 4 }}>{available.length} {lang === 'en' ? `statement${available.length !== 1 ? 's' : ''} left` : `Aussage${available.length !== 1 ? 'n' : ''} übrig`}</div>
       </div>
     );
   }
@@ -587,11 +587,11 @@ export function ImposterInput({ question: q, catColor, state: s, myTeamId, emit,
     );
   }
 
-  if (!available.length) return <div style={{ color: QQ_COLORS.slate500, fontSize: 14, textAlign: 'center', padding: 12 }}>{allChosenLabel}</div>;
+  if (!available.length) return <div style={{ color: 'var(--qq-ink-quiet)', fontSize: 14, textAlign: 'center', padding: 12 }}>{allChosenLabel}</div>;
 
   return (
     <div style={{ marginTop: 8 }}>
-      <div style={{ fontSize: 12, color: QQ_COLORS.slate500, fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
+      <div style={{ fontSize: 12, color: 'var(--qq-ink-quiet)', fontWeight: 700, textAlign: 'center', marginBottom: 8 }}>
         <QQEmojiIcon emoji="🕵️"/> {lang === 'en' ? 'Your turn — which is false?' : 'Du bist dran — welche ist falsch?'}
       </div>
 
@@ -612,7 +612,7 @@ export function ImposterInput({ question: q, catColor, state: s, myTeamId, emit,
           style={{
             height: SLOT_H, padding: '0 40px 0 16px', display: '-webkit-box', alignItems: 'center',
             filter: 'blur(2px)', opacity: 0.3, cursor: canUp ? 'pointer' : 'default',
-            fontSize: 14, color: QQ_COLORS.slate400, overflow: 'hidden',
+            fontSize: 14, color: 'var(--qq-ink-muted)', overflow: 'hidden',
             WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
           } as any}
         >
@@ -638,19 +638,19 @@ export function ImposterInput({ question: q, catColor, state: s, myTeamId, emit,
           style={{
             height: SLOT_H, padding: '0 40px 0 16px', display: 'flex', alignItems: 'center',
             filter: 'blur(2px)', opacity: 0.3, cursor: canDown ? 'pointer' : 'default',
-            fontSize: 14, color: QQ_COLORS.slate400, overflow: 'hidden',
+            fontSize: 14, color: 'var(--qq-ink-muted)', overflow: 'hidden',
           }}
         >
           {canDown ? available[clamped + 1]?.text : ''}
         </div>
 
         {/* Arrow buttons */}
-        {canUp && <div onClick={() => setIdx(i => i - 1)} style={{ position: 'absolute', top: 8, right: 12, color: QQ_COLORS.slate500, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>▲</div>}
-        {canDown && <div onClick={() => setIdx(i => i + 1)} style={{ position: 'absolute', bottom: 8, right: 12, color: QQ_COLORS.slate500, fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>▼</div>}
+        {canUp && <div onClick={() => setIdx(i => i - 1)} style={{ position: 'absolute', top: 8, right: 12, color: 'var(--qq-ink-quiet)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>▲</div>}
+        {canDown && <div onClick={() => setIdx(i => i + 1)} style={{ position: 'absolute', bottom: 8, right: 12, color: 'var(--qq-ink-quiet)', fontSize: 18, cursor: 'pointer', lineHeight: 1 }}>▼</div>}
       </div>
 
       {/* Counter */}
-      <div style={{ textAlign: 'center', fontSize: 13, color: QQ_COLORS.slate500, fontWeight: 700, marginTop: 6 }}>
+      <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--qq-ink-quiet)', fontWeight: 700, marginTop: 6 }}>
         {clamped + 1} / {available.length}
       </div>
 
@@ -805,12 +805,12 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
-      <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center', fontWeight: 700 }}>
+      <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center', fontWeight: 700 }}>
         {tapLabel}
       </div>
       <div style={{
         borderRadius: 18, overflow: 'hidden',
-        border: `2px solid ${pin ? catColor : 'rgba(255,255,255,0.12)'}`,
+        border: `2px solid ${pin ? catColor : 'rgba(var(--qq-ink-rgb), 0.12)'}`,
         height: 'clamp(280px, 48vh, 480px)',
         position: 'relative',
         boxShadow: pin
@@ -848,7 +848,7 @@ export function PinItInput({ question: q, catColor, onSubmit, lang = 'de', timer
       </div>
       {pin
         ? <div style={{ fontSize: 12, color: catColor, textAlign: 'center', fontWeight: 900 }}><QQEmojiIcon emoji="📍"/> {pin[0].toFixed(4)}, {pin[1].toFixed(4)}</div>
-        : <div style={{ fontSize: 11, color: QQ_COLORS.slate400, textAlign: 'center' }}>{noPinLabel}</div>
+        : <div style={{ fontSize: 11, color: 'var(--qq-ink-muted)', textAlign: 'center' }}>{noPinLabel}</div>
       }
       <SubmitBtn onSubmit={handleSubmit} canSubmit={!expired && !!pin} submitted={submitted} catColor={catColor} />
     </div>

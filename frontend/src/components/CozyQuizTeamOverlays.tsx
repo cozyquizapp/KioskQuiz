@@ -103,7 +103,7 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
           }}
         >
           <div style={{
-            fontSize: 12, fontWeight: 900, color: '#94A3B8',
+            fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)',
             textTransform: 'uppercase', letterSpacing: '0.12em',
             marginBottom: 14,
           }}>
@@ -115,13 +115,13 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
                 display: 'flex', alignItems: 'flex-start', gap: 12,
                 padding: '12px 14px',
                 borderRadius: 14,
-                background: 'rgba(255,255,255,0.04)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(var(--qq-ink-rgb), 0.04)',
+                border: '1px solid rgba(var(--qq-ink-rgb), 0.06)',
               }}>
                 <span style={{ fontSize: 22, lineHeight: 1.1, flexShrink: 0 }}>{it.icon}</span>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: '#F1F5F9', marginBottom: 3 }}>{it.title}</div>
-                  <div style={{ fontSize: 13, color: '#CBD5E1', lineHeight: 1.45 }}>{it.body}</div>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: 'var(--qq-ink)', marginBottom: 3 }}>{it.title}</div>
+                  <div style={{ fontSize: 13, color: 'var(--qq-ink-soft)', lineHeight: 1.45 }}>{it.body}</div>
                 </div>
               </div>
             ))}
@@ -195,13 +195,13 @@ export function LeaveQuizConfirm({
       >
         <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 8 }}>🚪</div>
         <div style={{
-          fontSize: 19, fontWeight: 900, textAlign: 'center', color: '#F1F5F9',
+          fontSize: 19, fontWeight: 900, textAlign: 'center', color: 'var(--qq-ink)',
           marginBottom: 8, letterSpacing: '-0.01em',
         }}>
           {lang === 'de' ? 'Quiz wirklich verlassen?' : 'Really leave the quiz?'}
         </div>
         <div style={{
-          fontSize: 14, fontWeight: 600, textAlign: 'center', color: '#94A3B8',
+          fontSize: 14, fontWeight: 600, textAlign: 'center', color: 'var(--qq-ink-muted)',
           marginBottom: 22, lineHeight: 1.4,
         }}>
           {lang === 'de'
@@ -213,9 +213,9 @@ export function LeaveQuizConfirm({
             onClick={onCancel}
             style={{
               flex: 1, padding: '14px', borderRadius: 14,
-              border: '1px solid rgba(255,255,255,0.14)',
-              background: 'rgba(255,255,255,0.04)',
-              color: '#E2E8F0', fontFamily: 'inherit', fontWeight: 800, fontSize: 15,
+              border: '1px solid rgba(var(--qq-ink-rgb), 0.14)',
+              background: 'rgba(var(--qq-ink-rgb), 0.04)',
+              color: 'var(--qq-ink-body)', fontFamily: 'inherit', fontWeight: 800, fontSize: 15,
               cursor: 'pointer',
             }}
           >
@@ -274,11 +274,11 @@ export function ReactionPad({
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
       marginTop: 8, padding: '10px 12px',
       borderRadius: 16,
-      background: 'rgba(255,255,255,0.04)',
+      background: 'rgba(var(--qq-ink-rgb), 0.04)',
       border: `1px solid ${accent}22`,
     }}>
       <div style={{
-        fontSize: 11, fontWeight: 900, color: '#94a3b8',
+        fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)',
         letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.75,
       }}>
         {lang === 'de' ? 'Reaktion senden' : 'Send a reaction'}
@@ -290,8 +290,8 @@ export function ReactionPad({
             onClick={() => tap(e, i)}
             style={{
               width: 48, height: 48, borderRadius: 16,
-              background: tappedIdx === i ? `${accent}33` : 'rgba(255,255,255,0.06)',
-              border: `1px solid ${tappedIdx === i ? accent : 'rgba(255,255,255,0.10)'}`,
+              background: tappedIdx === i ? `${accent}33` : 'rgba(var(--qq-ink-rgb), 0.06)',
+              border: `1px solid ${tappedIdx === i ? accent : 'rgba(var(--qq-ink-rgb), 0.10)'}`,
               fontSize: 26, lineHeight: 1, cursor: 'pointer',
               transition: 'all 0.18s',
               transform: tappedIdx === i ? 'scale(1.18)' : 'scale(1)',
@@ -398,11 +398,11 @@ export function AckErrorToast() {
       padding: '12px 18px',
       borderRadius: 14,
       background: 'linear-gradient(135deg, rgba(var(--qq-accent-rgb),0.95), rgba(var(--qq-accent-magenta-rgb),0.95))',
-      color: '#fff',
+      color: 'var(--qq-ink)',
       fontSize: 14, fontWeight: 800,
       fontFamily: 'inherit',
       boxShadow: '0 12px 32px rgba(0,0,0,0.45), 0 0 24px rgba(var(--qq-accent-rgb),0.5)',
-      border: '1.5px solid rgba(255,255,255,0.22)',
+      border: '1.5px solid rgba(var(--qq-ink-rgb), 0.22)',
       maxWidth: 'calc(100vw - 32px)',
       textAlign: 'center',
       animation: 'tcAckToastIn 0.25s ease both',

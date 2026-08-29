@@ -185,7 +185,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
             style={{
               display: 'flex', alignItems: 'center', gap: 0,
               borderRadius: 16, overflow: 'hidden', border: 'none', cursor: 'pointer',
-              background: isSelected ? `${color}30` : 'rgba(255,255,255,0.04)',
+              background: isSelected ? `${color}30` : 'rgba(var(--qq-ink-rgb), 0.04)',
               // 2026-07-13 (A11y): Selected-Ring als inset boxShadow statt inline
               // `outline` — inline outline ueberschrieb den CSS :focus-visible-Ring,
               // Keyboard-Fokus war unsichtbar. So bleibt outline fuer den Fokus frei.
@@ -202,7 +202,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
               width: 48, height: 52, flexShrink: 0,
               background: isSelected ? color : `${color}22`,
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 16, fontWeight: 900, color: isSelected ? '#fff' : color,
+              fontSize: 16, fontWeight: 900, color: isSelected ? 'var(--qq-ink)' : color,
               borderRight: `1px solid ${color}44`,
               transition: 'all 0.15s',
             }}>
@@ -212,7 +212,7 @@ export function MuchoInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
             <div style={{
               flex: 1, padding: '14px 16px', textAlign: 'left',
               fontSize: 'clamp(15px,4vw,18px)', fontWeight: 700,
-              color: isSelected ? '#fff' : '#CBD5E1', fontFamily: 'inherit',
+              color: isSelected ? 'var(--qq-ink)' : 'var(--qq-ink-soft)', fontFamily: 'inherit',
             }}>
               {label}
             </div>
@@ -267,9 +267,9 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
     });
   }
 
-  // Start-Zustand (voller Pool) nutzte #475569 (~2.4:1 auf dunkler Card) -> hellere
+  // Start-Zustand (voller Pool) nutzte var(--qq-ink-dim) (~2.4:1 auf dunkler Card) -> hellere
   // Neutralfarbe fuer lesbare Budget-Anzeige von Anfang an.
-  const pillColor = remaining === 0 ? '#22C55E' : remaining < ALLIN_POOL ? '#EC4899' : '#CBD5E1';
+  const pillColor = remaining === 0 ? '#22C55E' : remaining < ALLIN_POOL ? '#EC4899' : 'var(--qq-ink-soft)';
   const distributeLabel = lang === 'de' ? 'Punkte verteilen' : 'Distribute points';
   const submitLabel = lang === 'de' ? 'Abgeben' : 'Submit';
   const leftLabel = lang === 'de' ? `Noch {n} Punkte verteilen` : `{n} points left to distribute`;
@@ -278,7 +278,7 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
     <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 4 }}>
       {/* Remaining */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 2 }}>
-        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>{distributeLabel}</span>
+        <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>{distributeLabel}</span>
         <div style={{
           padding: '3px 12px', borderRadius: 999, fontSize: 13, fontWeight: 900,
           background: `${pillColor}22`, border: `1px solid ${pillColor}55`, color: pillColor,
@@ -298,13 +298,13 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
             display: 'grid', gridTemplateColumns: '1fr auto auto auto',
             alignItems: 'center', gap: 8,
             padding: '10px 14px', borderRadius: 16,
-            background: pts > 0 ? `${color}12` : 'rgba(255,255,255,0.04)',
-            border: `2px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.08)'}`,
+            background: pts > 0 ? `${color}12` : 'rgba(var(--qq-ink-rgb), 0.04)',
+            border: `2px solid ${pts > 0 ? color + '55' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
             transition: 'all 0.15s',
             borderLeft: `4px solid ${color}`,
             animation: `tcoptIn 0.4s var(--qq-ease-bounce) ${i * 0.07}s both`,
           }}>
-            <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? '#F1F5F9' : '#94a3b8' }}>
+            <div style={{ fontSize: 'clamp(14px,3.5vw,17px)', fontWeight: 700, color: pts > 0 ? 'var(--qq-ink)' : 'var(--qq-ink-muted)' }}>
               {/* 2026-05-09 v2 (Wolf): zurueck auf Plain Number — Keycap-
                   Emojis 1️⃣2️⃣3️⃣ wurden als blaue OS-Squares gerendert. */}
               <span style={{ fontSize: 13, fontWeight: 900, color, marginRight: 6 }}>{i + 1}</span>
@@ -313,20 +313,20 @@ export function AllInInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
             {/* − */}
             <button onClick={() => updateBet(i, -1)} disabled={pts <= 0}
               aria-label={lang === 'en' ? 'Remove point' : 'Punkt abziehen'} style={{
-              width: 48, height: 48, borderRadius: 16, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
-              background: pts > 0 ? `${color}18` : 'transparent', color: pts > 0 ? color : '#334155',
+              width: 48, height: 48, borderRadius: 16, border: `1px solid ${pts > 0 ? color + '55' : 'rgba(var(--qq-ink-rgb), 0.1)'}`,
+              background: pts > 0 ? `${color}18` : 'transparent', color: pts > 0 ? color : 'var(--qq-ink-edge)',
               cursor: pts > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
             }}><span aria-hidden="true">−</span></button>
             {/* Points */}
             <div aria-live="polite" aria-label={`${pts} ${lang === 'en' ? 'points' : 'Punkte'}`}
-              style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : '#94a3b8', fontVariantNumeric: 'tabular-nums' }}>
+              style={{ width: 32, textAlign: 'center', fontWeight: 900, fontSize: 18, color: pts > 0 ? color : 'var(--qq-ink-muted)', fontVariantNumeric: 'tabular-nums' }}>
               {pts}
             </div>
             {/* + */}
             <button onClick={() => updateBet(i, 1)} disabled={remaining <= 0}
               aria-label={lang === 'en' ? 'Add point' : 'Punkt hinzufügen'} style={{
-              width: 48, height: 48, borderRadius: 16, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(255,255,255,0.1)'}`,
-              background: remaining > 0 ? `${color}18` : 'transparent', color: remaining > 0 ? color : '#334155',
+              width: 48, height: 48, borderRadius: 16, border: `1px solid ${remaining > 0 ? color + '55' : 'rgba(var(--qq-ink-rgb), 0.1)'}`,
+              background: remaining > 0 ? `${color}18` : 'transparent', color: remaining > 0 ? color : 'var(--qq-ink-edge)',
               cursor: remaining > 0 ? 'pointer' : 'default', fontFamily: 'inherit', fontSize: 22, fontWeight: 900,
             }}><span aria-hidden="true">+</span></button>
           </div>
@@ -362,7 +362,7 @@ export function Top5Input({ catColor, onSubmit, lang, timerEndsAt }: { catColor:
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 7, marginTop: 4 }}>
-      <div style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700, marginBottom: 2 }}>
+      <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700, marginBottom: 2 }}>
         {lang === 'en' ? 'Enter up to 5 answers (order doesn\'t matter)' : 'Bis zu 5 Antworten eingeben (Reihenfolge egal)'}
       </div>
       {vals.map((v, i) => (
@@ -424,7 +424,7 @@ export function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
           🔀 {criteria}
         </div>
       )}
-      <div style={{ fontSize: 12, color: '#94a3b8', textAlign: 'center' }}>
+      <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center' }}>
         {lang === 'en' ? 'Tap ▲▼ to reorder' : '▲▼ zum Sortieren tippen'}
       </div>
       {items.map((item, i) => (
@@ -437,13 +437,13 @@ export function FixItInput({ question: q, catColor, onSubmit, lang, timerEndsAt 
           <div style={{ width: 24, height: 24, borderRadius: 7, flexShrink: 0, background: `${catColor}22`, border: `1px solid ${catColor}44`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 900, color: catColor }}>
             {i + 1}
           </div>
-          <div style={{ flex: 1, fontSize: 'clamp(13px,3.4vw,15px)', fontWeight: 700, color: '#F1F5F9', lineHeight: 1.25 }}>{item}</div>
+          <div style={{ flex: 1, fontSize: 'clamp(13px,3.4vw,15px)', fontWeight: 700, color: 'var(--qq-ink)', lineHeight: 1.25 }}>{item}</div>
           {/* 2026-05-02 (App-Designer-Audit P1): Touch-Targets unter 44px sind
               fuer Daumen-Bedienung zu klein — Sortier-Pfeile auf 44x40, mit
               klarem Gap, damit der Trefferbereich nicht ueberlappt. */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            <button onClick={() => move(i, -1)} disabled={i === 0} aria-label={lang === 'en' ? `Move ${item} up` : `${item} nach oben`} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i > 0 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i > 0 ? `${catColor}10` : 'transparent', color: i > 0 ? catColor : '#334155', cursor: i > 0 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 900 }}><span aria-hidden="true">▲</span></button>
-            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={lang === 'en' ? `Move ${item} down` : `${item} nach unten`} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i < items.length-1 ? catColor+'66' : 'rgba(255,255,255,0.06)'}`, background: i < items.length-1 ? `${catColor}10` : 'transparent', color: i < items.length-1 ? catColor : '#334155', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 900 }}><span aria-hidden="true">▼</span></button>
+            <button onClick={() => move(i, -1)} disabled={i === 0} aria-label={lang === 'en' ? `Move ${item} up` : `${item} nach oben`} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i > 0 ? catColor+'66' : 'rgba(var(--qq-ink-rgb), 0.06)'}`, background: i > 0 ? `${catColor}10` : 'transparent', color: i > 0 ? catColor : 'var(--qq-ink-edge)', cursor: i > 0 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 900 }}><span aria-hidden="true">▲</span></button>
+            <button onClick={() => move(i, 1)} disabled={i === items.length - 1} aria-label={lang === 'en' ? `Move ${item} down` : `${item} nach unten`} style={{ width: 44, height: 40, borderRadius: 8, border: `1.5px solid ${i < items.length-1 ? catColor+'66' : 'rgba(var(--qq-ink-rgb), 0.06)'}`, background: i < items.length-1 ? `${catColor}10` : 'transparent', color: i < items.length-1 ? catColor : 'var(--qq-ink-edge)', cursor: i < items.length-1 ? 'pointer' : 'default', fontSize: 16, lineHeight: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', fontFamily: 'inherit', fontWeight: 900 }}><span aria-hidden="true">▼</span></button>
           </div>
         </div>
       ))}

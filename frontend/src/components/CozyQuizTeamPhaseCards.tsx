@@ -66,10 +66,10 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
       <CozyCard>
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
           <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}>🎮</div>
-          <div style={{ fontWeight: 900, fontSize: 22, color: QQ_COLORS.slate100, marginBottom: 6 }}>
+          <div style={{ fontWeight: 900, fontSize: 22, color: 'var(--qq-ink)', marginBottom: 6 }}>
             {de ? 'Warteraum' : 'Waiting room'}
           </div>
-          <div style={{ fontSize: 14, color: QQ_COLORS.slate300 }}>
+          <div style={{ fontSize: 14, color: 'var(--qq-ink-soft)' }}>
             {s.teams.length === 0 ? (de ? 'Noch keine Teams' : 'No teams yet') : `${s.teams.length} ${largeMode ? 'Handys' : 'Teams'}`}
           </div>
         </div>
@@ -115,13 +115,13 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
           <div style={{
             display: 'flex', alignItems: 'center', gap: 10, margin: '10px 0',
           }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(var(--qq-ink-rgb), 0.08)' }} />
             <div style={{
               fontWeight: 900, fontSize: 20, color: QQ_COLORS.red500,
               textShadow: '0 0 14px rgba(239,68,68,0.4)',
               letterSpacing: '0.15em',
             }}>VS</div>
-            <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.08)' }} />
+            <div style={{ flex: 1, height: 1, background: 'rgba(var(--qq-ink-rgb), 0.08)' }} />
           </div>
         )}
 
@@ -139,7 +139,7 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
             </div>
           ))}
           {opponents.length === 0 && (
-            <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontStyle: 'italic', padding: '8px 0' }}>
+            <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', fontStyle: 'italic', padding: '8px 0' }}>
               {de ? 'Warte auf Gegner…' : 'Waiting for opponents…'}
             </div>
           )}
@@ -172,10 +172,10 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
     <CozyCard>
       <div style={{ textAlign: 'center', padding: '12px 4px', animation: 'tcreveal 0.5s ease both' }}>
         <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcwobble 1.4s ease-in-out infinite' }}>👂</div>
-        <div style={{ fontWeight: 900, fontSize: 20, color: QQ_COLORS.slate100, marginBottom: 8 }}>
+        <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--qq-ink)', marginBottom: 8 }}>
           {lang === 'de' ? 'Gut zuhören!' : 'Listen up!'}
         </div>
-        <div style={{ fontSize: 15, color: QQ_COLORS.slate400, lineHeight: 1.5 }}>
+        <div style={{ fontSize: 15, color: 'var(--qq-ink-muted)', lineHeight: 1.5 }}>
           {lang === 'de'
             ? 'Jetzt erklären wir die Regeln'
             : 'We are explaining the rules now'}
@@ -185,7 +185,7 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
           <div style={{ marginTop: 14, display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
             <div style={{
               fontSize: 13, fontWeight: 800, letterSpacing: '0.06em',
-              color: QQ_COLORS.slate400, fontVariantNumeric: 'tabular-nums',
+              color: 'var(--qq-ink-muted)', fontVariantNumeric: 'tabular-nums',
             }}>
               {lang === 'de' ? `Regel ${step} von ${total}` : `Rule ${step} of ${total}`}
             </div>
@@ -193,7 +193,7 @@ export function RulesCard({ lang, state }: { lang: 'de' | 'en'; state?: QQStateU
               {Array.from({ length: total }, (_, i) => (
                 <span key={i} style={{
                   width: 7, height: 7, borderRadius: '50%',
-                  background: i < step ? QQ_COLORS.brandPink : 'rgba(255,255,255,0.14)',
+                  background: i < step ? QQ_COLORS.brandPink : 'rgba(var(--qq-ink-rgb), 0.14)',
                   transition: 'background 0.4s ease',
                 }} />
               ))}
@@ -265,7 +265,7 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
         {/* Team name banner */}
         <div style={{
           padding: '10px 22px', borderRadius: 16,
-          background: color, color: '#fff',
+          background: color, color: 'var(--qq-ink)',
           fontSize: 26, fontWeight: 900, letterSpacing: '0.04em',
           textTransform: 'uppercase',
           boxShadow: `0 6px 20px ${color}88`,
@@ -287,7 +287,7 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
 
         {/* Tagline */}
         <div style={{
-          fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate400, textAlign: 'center',
+          fontSize: 14, fontWeight: 700, color: 'var(--qq-ink-muted)', textAlign: 'center',
           fontStyle: 'italic', lineHeight: 1.5, maxWidth: 280,
           animation: 'tcreveal 0.5s ease 0.55s both',
         }}>
@@ -361,7 +361,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
         {!showCategory && !showRules ? (
           /* Round announcement */
           <>
-            <div style={{ fontSize: 14, color: QQ_COLORS.slate400, marginBottom: 6 }}>
+            <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', marginBottom: 6 }}>
               {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
             </div>
             <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
@@ -411,7 +411,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                 {(lang === 'en' ? r.en : r.de).map((line, i) => (
                   <div key={i} style={{
                     fontSize: i === 0 ? 22 : 16, fontWeight: i === 0 ? 900 : 700,
-                    color: i === 0 ? QQ_COLORS.slate100 : `${color}aa`,
+                    color: i === 0 ? 'var(--qq-ink)' : `${color}aa`,
                     marginTop: i === 0 ? 4 : 2,
                   }}>{line}</div>
                 ))}
@@ -459,7 +459,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                 </div>
                 {info.lines[lang].map((line, i) => (
                   <div key={i} style={{
-                    fontSize: 15, fontWeight: 700, color: i === 0 ? QQ_COLORS.slate100 : `${catColor}88`,
+                    fontSize: 15, fontWeight: 700, color: i === 0 ? 'var(--qq-ink)' : `${catColor}88`,
                     marginTop: i === 0 ? 8 : 2,
                   }}>{line}</div>
                 ))}
@@ -480,7 +480,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
                 <div key={n} style={{
                   width: n === questionInPhase ? 18 : 8,
                   height: 8, borderRadius: 4,
-                  background: n < questionInPhase ? `${catColor}55` : n === questionInPhase ? catColor : 'rgba(255,255,255,0.1)',
+                  background: n < questionInPhase ? `${catColor}55` : n === questionInPhase ? catColor : 'rgba(var(--qq-ink-rgb), 0.1)',
                   transition: 'all 0.3s ease',
                 }} />
               ))}
@@ -565,7 +565,7 @@ export function TieBreakerCard({
       <div style={{ fontWeight: 900, fontSize: 20, color: QQ_COLORS.brandPink, letterSpacing: '0.02em' }}>
         {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
-      <div style={{ fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+      <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
         {de ? 'Gleichstand, am nächsten dran gewinnt!' : 'Tie, closest guess wins!'}
       </div>
     </div>
@@ -581,15 +581,15 @@ export function TieBreakerCard({
         {header}
         <div style={{ textAlign: 'center', padding: '4px 0' }}>
           <div style={{ fontSize: 40, marginBottom: 8 }}>{iWon ? '🏆' : '🤝'}</div>
-          <div style={{ fontSize: 13, color: QQ_COLORS.slate400, marginBottom: 4 }}>
-            {de ? 'Richtige Antwort' : 'Correct answer'}: <b style={{ color: QQ_COLORS.slate100 }}>{tb.target}{unit}</b>
+          <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)', marginBottom: 4 }}>
+            {de ? 'Richtige Antwort' : 'Correct answer'}: <b style={{ color: 'var(--qq-ink)' }}>{tb.target}{unit}</b>
           </div>
-          <div style={{ fontWeight: 900, fontSize: 18, color: iWon ? '#22C55E' : QQ_COLORS.slate300, marginBottom: 6 }}>
+          <div style={{ fontWeight: 900, fontSize: 18, color: iWon ? '#22C55E' : 'var(--qq-ink-soft)', marginBottom: 6 }}>
             {iWon ? (de ? 'Ihr wart am nächsten dran!' : 'You were closest!')
                   : tb.winnerId ? (de ? `${label(tb.winnerId)} war am nächsten dran.` : `${label(tb.winnerId)} was closest.`)
                   : (de ? 'Keine Schätzung abgegeben.' : 'No guess submitted.')}
           </div>
-          <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>
+          <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)' }}>
             {de ? 'Schau auf den Beamer für die Siegerehrung.' : 'Watch the beamer for the crowning.'}
           </div>
         </div>
@@ -602,9 +602,9 @@ export function TieBreakerCard({
     return (
       <CozyCard borderColor={myColor}>
         {header}
-        <div style={{ textAlign: 'center', fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 700, lineHeight: 1.4 }}>
+        <div style={{ textAlign: 'center', fontSize: 14, color: 'var(--qq-ink-muted)', fontWeight: 700, lineHeight: 1.4 }}>
           {de ? 'Das Stechen läuft zwischen:' : 'The tiebreaker is between:'}
-          <div style={{ marginTop: 8, fontWeight: 900, color: QQ_COLORS.slate300 }}>
+          <div style={{ marginTop: 8, fontWeight: 900, color: 'var(--qq-ink-soft)' }}>
             {tb.candidateIds.map(label).join(' · ')}
           </div>
         </div>
@@ -622,7 +622,7 @@ export function TieBreakerCard({
           <div style={{ fontWeight: 900, fontSize: 17, color: myColor, marginBottom: 6 }}>
             {de ? 'Schätzung abgegeben' : 'Guess submitted'}: {myAnswer.guess}{unit}
           </div>
-          <div style={{ fontSize: 13, color: QQ_COLORS.slate400 }}>
+          <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)' }}>
             {de ? 'Warte auf die Auflösung…' : 'Waiting for the result…'}
           </div>
         </div>
@@ -634,7 +634,7 @@ export function TieBreakerCard({
   return (
     <CozyCard borderColor={myColor}>
       {header}
-      <div style={{ fontWeight: 900, fontSize: 16, color: QQ_COLORS.slate200, textAlign: 'center', marginBottom: 14, lineHeight: 1.3 }}>
+      <div style={{ fontWeight: 900, fontSize: 16, color: 'var(--qq-ink-body)', textAlign: 'center', marginBottom: 14, lineHeight: 1.3 }}>
         {tb.prompt}
       </div>
       <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
@@ -649,7 +649,7 @@ export function TieBreakerCard({
           style={{
             flex: 1, minWidth: 0, padding: '16px 14px', borderRadius: 14,
             border: `2px solid ${myColor}66`, background: `${myColor}10`,
-            color: QQ_COLORS.slate100, fontFamily: 'inherit', fontWeight: 900, fontSize: 22,
+            color: 'var(--qq-ink)', fontFamily: 'inherit', fontWeight: 900, fontSize: 22,
             textAlign: 'center', outline: 'none',
           }}
         />
@@ -659,14 +659,14 @@ export function TieBreakerCard({
           style={{
             padding: '0 20px', borderRadius: 14, border: 'none',
             background: isFinite(parseFloat(val.replace(',', '.'))) ? myColor : `${myColor}44`,
-            color: '#fff', fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
+            color: 'var(--qq-ink)', fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
             cursor: 'pointer',
           }}
         >
           {de ? 'Los' : 'Go'}
         </button>
       </div>
-      <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+      <div style={{ marginTop: 12, textAlign: 'center', fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
         {de ? '⚡ Ein Versuch, am nächsten dran gewinnt.' : '⚡ One guess, closest wins.'}
       </div>
     </CozyCard>
@@ -695,22 +695,22 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
   return (
     <CozyCard>
       <div style={{ textAlign: 'center', display: 'flex', flexDirection: 'column', gap: 16 }}>
-        <div style={{ fontSize: 28, fontWeight: 900, color: QQ_COLORS.slate400 }}>
+        <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--qq-ink-muted)' }}>
           ⏸ {de ? 'Kurze Pause' : 'Short Break'}
         </div>
 
         {myTeam && (
           <div style={{
-            background: 'rgba(255,255,255,0.04)', borderRadius: 16, padding: '14px 18px',
+            background: 'rgba(var(--qq-ink-rgb), 0.04)', borderRadius: 16, padding: '14px 18px',
             border: `2px solid ${myTeam.color}44`,
           }}>
-            <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontWeight: 700, marginBottom: 6 }}>
+            <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', fontWeight: 700, marginBottom: 6 }}>
               {de ? 'Dein Stand' : 'Your Position'}
             </div>
             <div style={{ fontSize: 36, fontWeight: 900, color: myTeam.color }}>
               #{myRank}
             </div>
-            <div style={{ fontSize: 16, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+            <div style={{ fontSize: 16, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
               {scoreOf(myTeam)} {unitLabel(scoreOf(myTeam))}
             </div>
           </div>
@@ -721,9 +721,9 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
             <div key={t.id} style={{
               display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px',
               borderRadius: 8,
-              background: t.id === myTeamId ? 'rgba(255,255,255,0.06)' : 'transparent',
+              background: t.id === myTeamId ? 'rgba(var(--qq-ink-rgb), 0.06)' : 'transparent',
             }}>
-              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: QQ_COLORS.slate400, fontWeight: 900 }}>
+              <span style={{ fontSize: 16, width: 24, textAlign: 'center', color: 'var(--qq-ink-muted)', fontWeight: 900 }}>
                 {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
               </span>
               <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: t.color }}>{t.name}</span>
@@ -732,7 +732,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
           ))}
         </div>
 
-        <div style={{ fontSize: 14, color: QQ_COLORS.slate300, fontWeight: 700 }}>
+        <div style={{ fontSize: 14, color: 'var(--qq-ink-soft)', fontWeight: 700 }}>
           {de ? 'Gleich geht\'s weiter…' : 'Continuing soon…'}
         </div>
       </div>
@@ -777,7 +777,7 @@ export function FinalBettingCard({
           <div style={{ fontWeight: 900, fontSize: 19, color: myColor, marginBottom: 6 }}>
             {de ? 'Final-Tipp startet gleich…' : 'Final tip starts soon…'}
           </div>
-          <div style={{ fontSize: 14, color: QQ_COLORS.slate400, lineHeight: 1.45 }}>
+          <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', lineHeight: 1.45 }}>
             {de
               ? 'Schau auf den Beamer, gleich kannst du deinen Tipp abgeben.'
               : 'Watch the beamer, you can place your tip in a moment.'}
@@ -805,17 +805,17 @@ export function FinalBettingCard({
               border: `1.5px solid ${targetTeam.color}66`,
               marginBottom: 12,
             }}>
-              <span style={{ fontSize: 12, color: QQ_COLORS.slate400 }}>{de ? 'Du tippst auf' : 'You tip'}</span>
+              <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)' }}>{de ? 'Du tippst auf' : 'You tip'}</span>
               <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={24} />
               <span style={{ fontWeight: 900, color: targetTeam.color }}>{targetTeam.name}</span>
             </div>
           )}
           {!targetTeam && (
-            <div style={{ fontSize: 13, color: QQ_COLORS.slate400, marginBottom: 12, fontStyle: 'italic' }}>
+            <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)', marginBottom: 12, fontStyle: 'italic' }}>
               {de ? 'Kein Tipp abgegeben (0 Bonus möglich)' : 'No tip placed (0 bonus possible)'}
             </div>
           )}
-          <div style={{ fontSize: 14, color: QQ_COLORS.slate400, marginBottom: 12 }}>
+          <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', marginBottom: 12 }}>
             {de
               ? `${totalSubmitted} von ${totalTeams} Teams haben getippt`
               : `${totalSubmitted} of ${totalTeams} teams tipped`}
@@ -823,7 +823,7 @@ export function FinalBettingCard({
           <div style={{
             padding: '12px 14px', borderRadius: 12,
             background: `${myColor}14`, border: `1px solid ${myColor}33`,
-            fontSize: 13, color: QQ_COLORS.slate300, lineHeight: 1.4,
+            fontSize: 13, color: 'var(--qq-ink-soft)', lineHeight: 1.4,
           }}>
             {de
               ? 'Schau jetzt auf den Beamer, die Final-Runde startet gleich.'
@@ -837,13 +837,13 @@ export function FinalBettingCard({
   return (
     <CozyCard borderColor={myColor} pulse>
       <div style={{ textAlign: 'center', padding: '4px 0 8px' }}>
-        <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
           {de ? '🪙 Final-Tipp' : '🪙 Final tip'}
         </div>
-        <div style={{ fontWeight: 900, fontSize: 22, color: QQ_COLORS.slate100, marginBottom: 4, letterSpacing: '-0.01em' }}>
+        <div style={{ fontWeight: 900, fontSize: 22, color: 'var(--qq-ink)', marginBottom: 4, letterSpacing: '-0.01em' }}>
           {de ? 'Auf wen tippst du?' : 'Who do you bet on?'}
         </div>
-        <div style={{ fontSize: 13, color: QQ_COLORS.slate300, marginBottom: 14, lineHeight: 1.45 }}>
+        <div style={{ fontSize: 13, color: 'var(--qq-ink-soft)', marginBottom: 14, lineHeight: 1.45 }}>
           {/* 2026-05-09 (Wolf): Sympathie-Bonus bewusst nicht erwaehnt — bleibt
               Ueberraschung beim End-Reveal. */}
           {de
@@ -870,7 +870,7 @@ export function FinalBettingCard({
                 borderRadius: 14,
                 background: isPicked ? `${t.color}33` : `${t.color}14`,
                 border: isPicked ? `2.5px solid ${t.color}` : `1.5px solid ${t.color}55`,
-                color: QQ_COLORS.slate100, cursor: 'pointer',
+                color: 'var(--qq-ink)', cursor: 'pointer',
                 fontFamily: 'inherit',
                 fontSize: 15, fontWeight: 800,
                 textAlign: 'left',
@@ -887,7 +887,7 @@ export function FinalBettingCard({
                 <span style={{
                   fontSize: 10, fontWeight: 900,
                   padding: '3px 8px', borderRadius: 999,
-                  background: 'rgba(255,255,255,0.10)', color: QQ_COLORS.slate100,
+                  background: 'rgba(var(--qq-ink-rgb), 0.10)', color: 'var(--qq-ink)',
                   letterSpacing: 0.4,
                 }}>{de ? 'ICH' : 'ME'}</span>
               )}
@@ -902,7 +902,7 @@ export function FinalBettingCard({
       </div>
 
       {/* Submit-Btn */}
-      <CozyBtn color={pickedTargetId ? myColor : QQ_COLORS.slate400} onClick={handleSubmit}>
+      <CozyBtn color={pickedTargetId ? myColor : 'var(--qq-ink-muted)'} onClick={handleSubmit}>
         {pickedTargetId
           ? (de ? 'Tipp bestätigen' : 'Confirm tip')
           : (de ? 'Ohne Tipp abgeben (0 Bonus)' : 'Submit no tip (0 bonus)')}
@@ -930,12 +930,12 @@ export function FinalRecapHintCard({
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 36, marginBottom: 6 }}>📊</div>
         <div style={{
-          fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400,
+          fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)',
           textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 8,
         }}>
           {de ? '🪙 Zwischenstand' : '🪙 Standings'}
         </div>
-        <div style={{ fontSize: 17, fontWeight: 800, color: QQ_COLORS.slate100, lineHeight: 1.4, marginBottom: 14 }}>
+        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--qq-ink)', lineHeight: 1.4, marginBottom: 14 }}>
           {de ? 'Schau auf den Beamer, wie steht dein Tipp?' : 'Check the screen, how\'s your tip doing?'}
         </div>
         {targetTeam ? (
@@ -945,7 +945,7 @@ export function FinalRecapHintCard({
             background: `${targetTeam.color}1a`,
             border: `1.5px solid ${targetTeam.color}66`,
           }}>
-            <span style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.1em' }}>
+            <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.1em' }}>
               {de ? 'Dein Tipp' : 'Your tip'}
             </span>
             <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={36} />
@@ -960,9 +960,9 @@ export function FinalRecapHintCard({
           </div>
         ) : (
           <div style={{
-            fontSize: 13, color: QQ_COLORS.slate400, fontStyle: 'italic',
+            fontSize: 13, color: 'var(--qq-ink-muted)', fontStyle: 'italic',
             padding: '10px 14px', borderRadius: 12,
-            background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(var(--qq-ink-rgb), 0.03)', border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
           }}>
             {de ? 'Du hattest keinen Tipp abgegeben.' : 'You placed no tip.'}
           </div>
@@ -1032,7 +1032,7 @@ export function FinalRevealStackPlacementCard({
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 36, marginBottom: 6, animation: 'tcwinBounce 0.7s ease both' }}>{nextEmoji}</div>
         <div style={{
-          fontSize: 11, fontWeight: 900, color: '#94A3B8',
+          fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)',
           textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 4,
         }}>
           {de ? 'Bonus verteilen' : 'Place bonus'}
@@ -1040,7 +1040,7 @@ export function FinalRevealStackPlacementCard({
         <div style={{ fontSize: 19, fontWeight: 900, color: myColor, marginBottom: 4 }}>
           {de ? titleDe : titleEn}
         </div>
-        <div style={{ fontSize: 13, color: '#CBD5E1', marginBottom: 12 }}>
+        <div style={{ fontSize: 13, color: 'var(--qq-ink-soft)', marginBottom: 12 }}>
           {de
             ? `Tippe ein eigenes Feld, ${remaining} ${remaining === 1 ? 'Stempel' : 'Stempel'} übrig`
             : `Tap an own cell, ${remaining} ${remaining === 1 ? 'stamp' : 'stamps'} left`}
@@ -1052,8 +1052,8 @@ export function FinalRevealStackPlacementCard({
               <span key={i} style={{
                 fontSize: 18, padding: '4px 8px',
                 borderRadius: 10,
-                background: i === 0 ? `${myColor}33` : 'rgba(255,255,255,0.06)',
-                border: i === 0 ? `1.5px solid ${myColor}` : '1px solid rgba(255,255,255,0.10)',
+                background: i === 0 ? `${myColor}33` : 'rgba(var(--qq-ink-rgb), 0.06)',
+                border: i === 0 ? `1.5px solid ${myColor}` : '1px solid rgba(var(--qq-ink-rgb), 0.10)',
                 opacity: i === 0 ? 1 : 0.55,
               }}>{STAMP_EMOJI[k]}</span>
             ))}
@@ -1064,7 +1064,7 @@ export function FinalRevealStackPlacementCard({
           display: 'grid', gridTemplateColumns: `repeat(${N}, 1fr)`,
           gap: 4, padding: 8, borderRadius: 12,
           background: 'rgba(0,0,0,0.30)',
-          border: '1px solid rgba(255,255,255,0.06)',
+          border: '1px solid rgba(var(--qq-ink-rgb), 0.06)',
         }}>
           {s.grid.flatMap((row, r) => row.map((cell, c) => {
             const isOwn = cell.ownerId === myTeamId;
@@ -1077,10 +1077,10 @@ export function FinalRevealStackPlacementCard({
                 disabled={!isOwn}
                 style={{
                   aspectRatio: '1 / 1',
-                  border: isOwn ? `1.5px solid ${myColor}` : '1px solid rgba(255,255,255,0.08)',
+                  border: isOwn ? `1.5px solid ${myColor}` : '1px solid rgba(var(--qq-ink-rgb), 0.08)',
                   borderRadius: 6,
-                  background: isOwn ? `${myColor}26` : owner ? `${owner.color}14` : 'rgba(255,255,255,0.04)',
-                  color: '#F1F5F9',
+                  background: isOwn ? `${myColor}26` : owner ? `${owner.color}14` : 'rgba(var(--qq-ink-rgb), 0.04)',
+                  color: 'var(--qq-ink)',
                   fontSize: 10, fontWeight: 800,
                   cursor: isOwn ? 'pointer' : 'default',
                   opacity: isOwn ? 1 : 0.55,
@@ -1103,7 +1103,7 @@ export function FinalRevealStackPlacementCard({
             );
           }))}
         </div>
-        <div style={{ marginTop: 10, fontSize: 11, color: '#94A3B8' }}>
+        <div style={{ marginTop: 10, fontSize: 11, color: 'var(--qq-ink-muted)' }}>
           {de ? 'Eigene Felder leuchten in deiner Farbe.' : 'Your own cells glow in your color.'}
         </div>
       </div>
@@ -1130,11 +1130,11 @@ export function FinalRevealCard({
     <CozyCard borderColor={myColor}>
       <div style={{ textAlign: 'center', padding: '8px 0' }}>
         <div style={{ fontSize: 38, marginBottom: 8 }}>🏆</div>
-        <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400, textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
+        <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', textTransform: 'uppercase', letterSpacing: '0.12em', marginBottom: 6 }}>
           {de ? 'Final-Auflösung' : 'Final reveal'}
         </div>
         {!myResolution || !targetTeam ? (
-          <div style={{ fontSize: 14, color: QQ_COLORS.slate400, fontStyle: 'italic', padding: '14px 0' }}>
+          <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', fontStyle: 'italic', padding: '14px 0' }}>
             {de ? 'Du hattest keinen Tipp abgegeben, kein Bonus.' : 'You placed no tip, no bonus.'}
           </div>
         ) : (
@@ -1146,7 +1146,7 @@ export function FinalRevealCard({
               background: `${targetTeam.color}1a`,
               border: `1.5px solid ${targetTeam.color}66`,
             }}>
-              <span style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.slate400, textTransform: 'uppercase' }}>
+              <span style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', textTransform: 'uppercase' }}>
                 {de ? 'Tipp' : 'Tip'}
               </span>
               <QQTeamAvatar avatarId={targetTeam.avatarId} teamEmoji={targetTeam.emoji} size={32} />
@@ -1190,7 +1190,7 @@ export function FinalRevealCard({
             </div>
           </div>
         )}
-        <div style={{ marginTop: 14, fontSize: 13, color: QQ_COLORS.slate400, lineHeight: 1.4 }}>
+        <div style={{ marginTop: 14, fontSize: 13, color: 'var(--qq-ink-muted)', lineHeight: 1.4 }}>
           {de ? 'Schau auf den Beamer für die End-Awards!' : 'Watch the beamer for the end-awards!'}
         </div>
       </div>
@@ -1243,9 +1243,9 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
               </div>
               <div style={{
                 display: 'inline-block', padding: '4px 14px', borderRadius: 999,
-                background: `${myTeam?.color ?? QQ_COLORS.slate500}18`,
-                border: `1px solid ${myTeam?.color ?? QQ_COLORS.slate500}44`,
-                fontSize: 14, fontWeight: 900, color: myTeam?.color ?? QQ_COLORS.slate400,
+                background: `${myTeam?.color ?? 'var(--qq-ink-quiet)'}18`,
+                border: `1px solid ${myTeam?.color ?? 'var(--qq-ink-quiet)'}44`,
+                fontSize: 14, fontWeight: 900, color: myTeam?.color ?? 'var(--qq-ink-muted)',
               }}>
                 {lang === 'de' ? `Ihr: Platz ${myRank}` : `You: #${myRank}`}
               </div>
@@ -1265,20 +1265,20 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             return (
               <div key={tm.id} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '10px 14px', borderRadius: 16,
-                background: isMine ? `${tmColor}18` : 'rgba(255,255,255,0.03)',
-                border: isMine ? `2px solid ${tmColor}44` : '1px solid rgba(255,255,255,0.06)',
+                background: isMine ? `${tmColor}18` : 'rgba(var(--qq-ink-rgb), 0.03)',
+                border: isMine ? `2px solid ${tmColor}44` : '1px solid rgba(var(--qq-ink-rgb), 0.06)',
                 animation: `tcreveal 0.5s ease ${0.3 + i * 0.12}s both`,
               }}>
                 <span style={{ fontSize: 16, width: 24, fontWeight: 900,
-                  color: i === 0 ? QQ_COLORS.yellow500 : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : QQ_COLORS.slate400,
+                  color: i === 0 ? QQ_COLORS.yellow500 : i === 1 ? '#C0C0C0' : i === 2 ? '#CD7F32' : 'var(--qq-ink-muted)',
                 }}>{i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `#${i + 1}`}</span>
                 <QQTeamAvatar avatarId={tm.avatarId} teamEmoji={tm.emoji} size={24} />
                 <span style={{ fontWeight: 900, color: tmColor, flex: 1, fontSize: 15 }}>{tm.name}</span>
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.brandPink : QQ_COLORS.slate400 }}>
+                  <div style={{ fontSize: 14, fontWeight: 900, color: i === 0 ? QQ_COLORS.brandPink : 'var(--qq-ink-muted)' }}>
                     {largeMode ? tm.largestConnected : qqFinalTotal(s, tm.id)} {connectedLabel}
                   </div>
-                  {!largeMode && <div style={{ fontSize: 11, color: QQ_COLORS.slate400 }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}
+                  {!largeMode && <div style={{ fontSize: 11, color: 'var(--qq-ink-muted)' }}>{cellCount} {lang === 'de' ? 'gesamt' : 'total'}</div>}
                 </div>
               </div>
             );
@@ -1314,7 +1314,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             <CopyButton text={stammCode} lang={lang} />
           </div>
           <div style={{
-            fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700,
+            fontSize: 11, color: 'var(--qq-ink-muted)', fontWeight: 700,
             marginTop: 4, lineHeight: 1.35,
           }}>
             {lang === 'de'
@@ -1338,7 +1338,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
               {lang === 'en' ? '✨ Thanks for Playing! ✨' : '✨ Danke fürs Spielen! ✨'}
             </div>
             <div style={{
-              fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate400,
+              fontSize: 14, fontWeight: 700, color: 'var(--qq-ink-muted)',
               textAlign: 'center', marginBottom: 14,
             }}>
               {lang === 'en' ? 'We hope you had fun, see you next time!' : 'Wir hoffen, ihr hattet Spaß, bis zum nächsten Mal!'}
@@ -1403,7 +1403,7 @@ export function CozyGameCard({
   if (!cg) {
     return (
       <CozyCard>
-        <div style={{ padding: 32, textAlign: 'center', color: QQ_COLORS.slate400 }}>
+        <div style={{ padding: 32, textAlign: 'center', color: 'var(--qq-ink-muted)' }}>
           {de ? 'CozyGame lädt …' : 'CozyGame loading …'}
         </div>
       </CozyCard>
@@ -1478,7 +1478,7 @@ export function CozyGameCard({
         {/* Subline (Sub-Phase / Queue-Status) */}
         <div style={{
           fontSize: 'clamp(15px, 3vw, 20px)',
-          color: isMyTurn ? QQ_COLORS.green500 : iAmCompleted ? QQ_COLORS.slate400 : QQ_COLORS.slate200,
+          color: isMyTurn ? QQ_COLORS.green500 : iAmCompleted ? 'var(--qq-ink-muted)' : 'var(--qq-ink-body)',
           fontWeight: isMyTurn ? 900 : 600,
           lineHeight: 1.35,
           maxWidth: 460,
@@ -1490,12 +1490,12 @@ export function CozyGameCard({
         {activeGame && (sub === 'WHEEL_RESULT' || sub === 'GAME_ACTIVE' || sub === 'WINNER_SELECT') && (
           <div style={{
             fontSize: 'clamp(13px, 2.4vw, 17px)',
-            color: QQ_COLORS.slate300,
+            color: 'var(--qq-ink-soft)',
             lineHeight: 1.4,
             maxWidth: 480,
             padding: '12px 14px',
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(var(--qq-ink-rgb), 0.04)',
+            border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
             borderRadius: 12,
           }}>
             {activeGame.description}

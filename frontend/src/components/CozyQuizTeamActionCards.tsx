@@ -82,7 +82,7 @@ export function MegaScoringCard({ state: s, myTeamId, lang = 'de' }: {
   return (
     <div style={{
       background: COZY_CARD_BG, borderRadius: 24, padding: '30px 22px',
-      border: '1px solid rgba(255,255,255,0.1)', textAlign: 'center',
+      border: '1px solid rgba(var(--qq-ink-rgb), 0.1)', textAlign: 'center',
       display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14,
     }}>
       {me && <QQTeamAvatar avatarId={me.avatarId} teamEmoji={me.emoji} size={96} />}
@@ -401,7 +401,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8 }}>
                 <QQTeamAvatar avatarId={pendingTeam.avatarId} teamEmoji={pendingTeam.emoji} size={28} style={{ animation: 'tcfloat 2s ease-in-out infinite' }} />
                 <span style={{ fontWeight: 900, color: pendingTeam.color, fontSize: 15, maxWidth: 140, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pendingTeam.name}</span>
-                <span style={{ fontSize: 13, color: QQ_COLORS.slate400, fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
+                <span style={{ fontSize: 13, color: 'var(--qq-ink-muted)', fontWeight: 700, display: 'inline-flex', alignItems: 'center' }}>
                   {isComebackStealPause
                     ? (pendingTeam.id === myTeamId
                         ? (lang === 'de' ? '✓ Geklaut' : '✓ Stolen')
@@ -413,7 +413,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
             ) : (
               <div style={{
                 fontSize: 14, fontWeight: 900,
-                color: showRecentPlaceFlash ? (myTeam?.color ?? QQ_COLORS.green500) : QQ_COLORS.slate400,
+                color: showRecentPlaceFlash ? (myTeam?.color ?? QQ_COLORS.green500) : 'var(--qq-ink-muted)',
                 textTransform: 'uppercase', letterSpacing: '0.1em',
                 animation: showRecentPlaceFlash ? 'tcCellClaim 0.5s var(--qq-ease-bounce) both' : undefined,
               }}>
@@ -432,8 +432,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                 aspectRatio: '1 / 1',
                 gap: 3, width: '100%', marginBottom: 6,
                 padding: 6, borderRadius: 8,
-                background: 'rgba(255,255,255,0.02)',
-                border: '1px solid rgba(255,255,255,0.06)',
+                background: 'rgba(var(--qq-ink-rgb), 0.02)',
+                border: '1px solid rgba(var(--qq-ink-rgb), 0.06)',
                 boxSizing: 'border-box',
               }}>
                 {s.grid.flatMap((row, r) =>
@@ -450,12 +450,12 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                         // Kreis-Eindruck mehr durch diagonalen Verlauf.
                         // aspectRatio raus — Grid garantiert square via 1fr rows.
                         minWidth: 0, minHeight: 0, borderRadius: 4,
-                        background: cellTeam ? cellTeam.color : 'rgba(255,255,255,0.04)',
+                        background: cellTeam ? cellTeam.color : 'rgba(var(--qq-ink-rgb), 0.04)',
                         border: cellTeam
                           ? (isStuckCell
                               ? `1.5px solid rgba(var(--qq-accent-rgb),0.9)`
                               : `1px solid ${cellTeam.color}`)
-                          : '1px solid rgba(255,255,255,0.06)',
+                          : '1px solid rgba(var(--qq-ink-rgb), 0.06)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         fontSize: Math.max(10, miniCellSize * 0.45),
                         ['--cell-color' as string]: cellTeam?.color ?? 'transparent',
@@ -682,7 +682,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           kein Layout-Shift mehr beim Wechsel zwischen den beiden Modi. */}
       {selecting && (
         <>
-          <div style={{ fontSize: 13, color: QQ_COLORS.slate400, textAlign: 'center', marginBottom: 12 }}>
+          <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)', textAlign: 'center', marginBottom: 12 }}>
             {instructionText}
           </div>
           <div style={{
@@ -699,8 +699,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
             aspectRatio: '1 / 1',
             gap: 3, width: '100%',
             padding: 6, borderRadius: 8,
-            background: 'rgba(255,255,255,0.02)',
-            border: '1px solid rgba(255,255,255,0.06)',
+            background: 'rgba(var(--qq-ink-rgb), 0.02)',
+            border: '1px solid rgba(var(--qq-ink-rgb), 0.06)',
             boxSizing: 'border-box',
           }}>
             {s.grid.flatMap((row, r) =>
@@ -739,7 +739,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                     minWidth: 0, minHeight: 0, borderRadius: 4,
                     background: isPending ? `${actionColor}88`
                       : isSwapSelected ? `${actionColor}55`
-                      : tColor ? tColor : 'rgba(255,255,255,0.04)',
+                      : tColor ? tColor : 'rgba(var(--qq-ink-rgb), 0.04)',
                     border: isPending ? `2px dashed ${actionColor}`
                       : isSwapSelected ? `2px solid ${actionColor}`
                       : isStuckCell ? `1.5px solid rgba(var(--qq-accent-rgb),0.9)`
@@ -747,7 +747,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                       : isStuckCandidate ? `1.5px solid #EC4899`
                       : clickable ? `1.5px solid ${actionColor}`
                       : tColor ? `1px solid ${tColor}`
-                      : '1px solid rgba(255,255,255,0.06)',
+                      : '1px solid rgba(var(--qq-ink-rgb), 0.06)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     fontSize: Math.max(10, cellSize * 0.38),
                     cursor: clickable || isSwapSelected ? 'pointer' : 'default',
@@ -830,7 +830,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               marginTop: 12, padding: '10px 14px', borderRadius: 16,
               background: `linear-gradient(135deg, ${actionColor}1a, ${actionColor}08)`,
               border: `1px solid ${actionColor}55`,
-              fontSize: 14, fontWeight: 900, color: QQ_COLORS.slate200, textAlign: 'center',
+              fontSize: 14, fontWeight: 900, color: 'var(--qq-ink-body)', textAlign: 'center',
               lineHeight: 1.4,
               animation: 'tcfloat 1.6s ease-in-out infinite',
             }}>
@@ -839,7 +839,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                 : pendingPick.kind === 'steal' ? (lang === 'de' ? '👉 Dieses Feld klauen?' : '👉 Steal this cell?')
                 :                                (lang === 'de' ? '👉 Dieses Feld stapeln?' : '👉 Stack this cell?')}
               </div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: QQ_COLORS.slate400 }}>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--qq-ink-muted)' }}>
                 {lang === 'de'
                   ? 'Tippe nochmal zum Bestätigen, oder ein anderes Feld zum Wechseln.'
                   : 'Tap again to confirm, or another cell to switch.'}
@@ -849,8 +849,8 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
 
           <button onClick={() => { setSelecting(false); setSwapFirst(null); setFreeMode(null); setPendingPick(null); }} style={{
             marginTop: 12, width: '100%', padding: '10px', minHeight: 44, borderRadius: 8,
-            border: '1px solid rgba(255,255,255,0.1)', background: 'transparent',
-            color: QQ_COLORS.slate300, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
+            border: '1px solid rgba(var(--qq-ink-rgb), 0.1)', background: 'transparent',
+            color: 'var(--qq-ink-soft)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13,
           }}>
             {t.placement.cancel[lang]}
           </button>
@@ -863,7 +863,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           style={{
             marginTop: 14, width: '100%', padding: '10px 12px', minHeight: 44, borderRadius: 8,
             border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
-            color: QQ_COLORS.slate300, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+            color: 'var(--qq-ink-soft)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
           🔙 {lang === 'de' ? 'Andere Comeback-Aktion wählen' : 'Choose different comeback action'}
         </button>
@@ -879,7 +879,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           style={{
             marginTop: 12, width: '100%', padding: '10px 12px', minHeight: 44, borderRadius: 8,
             border: '1px solid rgba(148,163,184,0.35)', background: 'rgba(148,163,184,0.08)',
-            color: QQ_COLORS.slate300, cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
+            color: 'var(--qq-ink-soft)', cursor: 'pointer', fontFamily: 'inherit', fontSize: 13, fontWeight: 700,
           }}>
           🔙 {lang === 'de' ? 'Andere Aktion wählen' : 'Choose different action'}
         </button>
@@ -935,7 +935,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
             *En-Felder wenn lang='en'. */}
         {(() => null)()}
         <div style={{
-          fontSize: 14, fontWeight: 700, color: QQ_COLORS.slate300, textAlign: 'center',
+          fontSize: 14, fontWeight: 700, color: 'var(--qq-ink-soft)', textAlign: 'center',
           marginBottom: 12, lineHeight: 1.4,
         }}>
           {(() => {
@@ -964,7 +964,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           <div style={{ fontSize: 28, fontWeight: 900, color: QQ_COLORS.green300, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
             {fmtHL(pair.anchorValue)}
           </div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: QQ_COLORS.slate300, opacity: 0.7, marginTop: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qq-ink-soft)', opacity: 0.7, marginTop: 2 }}>
             {lang === 'en' ? (pair.unitEn ?? pair.unit) : pair.unit}
           </div>
         </div>
@@ -983,7 +983,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
             {isReveal ? fmtHL(pair.subjectValue) : '???'}
           </div>
           {!isReveal && (
-            <div style={{ fontSize: 11, fontWeight: 700, color: QQ_COLORS.slate300, opacity: 0.7, marginTop: 2 }}>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--qq-ink-soft)', opacity: 0.7, marginTop: 2 }}>
               {lang === 'en' ? 'Higher or lower?' : 'Mehr oder weniger?'}
             </div>
           )}
@@ -992,7 +992,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
               marginTop: 6, padding: '4px 12px', borderRadius: 999,
               background: correctChoice === 'higher' ? 'rgba(34,197,94,0.22)' : 'rgba(239,68,68,0.22)',
               border: `1px solid ${correctChoice === 'higher' ? QQ_COLORS.green500 : QQ_COLORS.red500}`,
-              fontSize: 12, fontWeight: 900, color: '#fff',
+              fontSize: 12, fontWeight: 900, color: 'var(--qq-ink)',
               display: 'inline-block',
             }}>
               {correctChoice === 'higher'
@@ -1012,7 +1012,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 padding: '16px 10px', borderRadius: 16,
                 background: myAnswer === 'higher' ? QQ_COLORS.green500 : 'rgba(34,197,94,0.15)',
                 border: `2px solid ${myAnswer === 'higher' ? QQ_COLORS.green500 : 'rgba(34,197,94,0.5)'}`,
-                color: myAnswer === 'higher' ? '#fff' : QQ_COLORS.green300,
+                color: myAnswer === 'higher' ? 'var(--qq-ink)' : QQ_COLORS.green300,
                 fontSize: 20, fontWeight: 900, fontFamily: 'inherit',
                 cursor: answered ? 'default' : 'pointer',
                 opacity: answered && myAnswer !== 'higher' ? 0.35 : 1,
@@ -1026,7 +1026,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 padding: '16px 10px', borderRadius: 16,
                 background: myAnswer === 'lower' ? QQ_COLORS.red500 : 'rgba(239,68,68,0.15)',
                 border: `2px solid ${myAnswer === 'lower' ? QQ_COLORS.red500 : 'rgba(239,68,68,0.5)'}`,
-                color: myAnswer === 'lower' ? '#fff' : QQ_COLORS.red300,
+                color: myAnswer === 'lower' ? 'var(--qq-ink)' : QQ_COLORS.red300,
                 fontSize: 20, fontWeight: 900, fontFamily: 'inherit',
                 cursor: answered ? 'default' : 'pointer',
                 opacity: answered && myAnswer !== 'lower' ? 0.35 : 1,
@@ -1096,7 +1096,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 : (lang === 'en' ? 'Rounds' : 'Runden')}
             </span>
           </div>
-          <div style={{ fontSize: 13, fontWeight: 700, color: QQ_COLORS.slate300, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--qq-ink-soft)', lineHeight: 1.4 }}>
             {lang === 'en'
               ? `"Higher/Lower": each correct = 1 cell stolen from the leader.`
               : `„Mehr oder Weniger": pro Richtig = 1 Feld vom 1. Platz.`}
@@ -1122,7 +1122,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           )}
           <div style={{ fontSize: 14, color: QQ_COLORS.brandPink, fontWeight: 700, marginTop: 8 }}>{t.comeback.otherTeam[lang]}</div>
           {hl && hl.teamIds.length > 1 && (
-            <div style={{ fontSize: 12, color: QQ_COLORS.slate400, marginTop: 4 }}>
+            <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', marginTop: 4 }}>
               {lang === 'en'
                 ? `${hl.teamIds.length} teams play "Higher/Lower"`
                 : `${hl.teamIds.length} Teams spielen „Mehr oder Weniger"`}
@@ -1140,7 +1140,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
     if (s.comebackAction === 'SWAP_2' && s.phase === 'COMEBACK_CHOICE') {
       return (
         <CozyCard borderColor={QQ_COLORS.violet500}>
-          <div style={{ fontWeight: 900, color: QQ_COLORS.slate200, textAlign: 'center', fontSize: 17 }}>
+          <div style={{ fontWeight: 900, color: 'var(--qq-ink-body)', textAlign: 'center', fontSize: 17 }}>
             {lang === 'de' ? '🔄 Tausch wird vorbereitet…' : '🔄 Preparing swap…'}
           </div>
         </CozyCard>
@@ -1148,7 +1148,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
     }
     return (
       <CozyCard borderColor={QQ_COLORS.brandPink}>
-        <div style={{ fontWeight: 900, color: QQ_COLORS.slate200, textAlign: 'center', fontSize: 17 }}>
+        <div style={{ fontWeight: 900, color: 'var(--qq-ink-body)', textAlign: 'center', fontSize: 17 }}>
           {s.comebackAction === 'PLACE_2' && t.comeback.activePlace[lang]}
           {s.comebackAction === 'STEAL_1' && t.comeback.activeSteal[lang]}
           {s.comebackAction === 'SWAP_2'  && t.comeback.activeSwap[lang]}
@@ -1190,7 +1190,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
         {t.comeback.title[lang]}
       </div>
       {!anyAvailable && (
-        <div style={{ fontSize: 13, color: QQ_COLORS.slate400, textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
+        <div style={{ fontSize: 13, color: 'var(--qq-ink-muted)', textAlign: 'center', marginBottom: 12, fontStyle: 'italic' }}>
           {lang === 'de' ? 'Keine Aktion möglich, warte auf Moderator.' : 'No action possible, wait for moderator.'}
         </div>
       )}
@@ -1208,7 +1208,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 padding: '14px 16px', borderRadius: 16,
                 cursor: disabled ? 'not-allowed' : 'pointer',
                 background: COZY_CARD_BG,
-                border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : opt.color + '44'}`,
+                border: `2px solid ${disabled ? 'rgba(var(--qq-ink-rgb), 0.08)' : opt.color + '44'}`,
                 textAlign: 'left', fontFamily: 'inherit',
                 display: 'flex', gap: 12, alignItems: 'center',
                 transition: 'all 0.15s',
@@ -1219,8 +1219,8 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
                 ? <QQIcon slug={opt.iconSlug} size={32} alt={opt.label} />
                 : <span style={{ fontSize: 28, lineHeight: 1 }}><QQEmojiIcon emoji={opt.icon}/></span>}
               <div style={{ flex: 1 }}>
-                <div style={{ fontWeight: 900, color: disabled ? QQ_COLORS.slate500 : opt.color, fontSize: 15 }}>{opt.label}</div>
-                <div style={{ fontFamily: 'inherit', fontSize: 13, color: disabled ? QQ_COLORS.slate500 : QQ_COLORS.slate400, marginTop: 2 }}>
+                <div style={{ fontWeight: 900, color: disabled ? 'var(--qq-ink-quiet)' : opt.color, fontSize: 15 }}>{opt.label}</div>
+                <div style={{ fontFamily: 'inherit', fontSize: 13, color: disabled ? 'var(--qq-ink-quiet)' : 'var(--qq-ink-muted)', marginTop: 2 }}>
                   {disabled ? `🚫 ${opt.reason}` : opt.desc}
                 </div>
               </div>
@@ -1252,7 +1252,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
   if (!c) {
     return (
       <CozyCard borderColor={QQ_COLORS.brandPink}>
-        <div style={{ padding: 18, textAlign: 'center', color: QQ_COLORS.slate400 }}>
+        <div style={{ padding: 18, textAlign: 'center', color: 'var(--qq-ink-muted)' }}>
           {de ? '4×4 wird vorbereitet…' : 'Loading…'}
         </div>
       </CozyCard>
@@ -1290,20 +1290,20 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
           <div style={{ fontSize: 26, fontWeight: 900, color: QQ_COLORS.brandPinkSoft, textShadow: '0 0 20px rgba(236,72,153,0.4)' }}>
             {de ? 'Großes Finale' : 'Grand Finale'}
           </div>
-          <div style={{ fontSize: 15, fontWeight: 700, color: QQ_COLORS.slate200, lineHeight: 1.4 }}>
+          <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qq-ink-body)', lineHeight: 1.4 }}>
             {de
               ? 'Findet 4 Gruppen, gewinnt Felder fürs Spielfeld.'
               : 'Find 4 groups, earn cells on the board.'}
           </div>
           <div style={{
             display: 'flex', flexDirection: 'column', gap: 6,
-            fontSize: 13, color: QQ_COLORS.slate300, lineHeight: 1.4,
+            fontSize: 13, color: 'var(--qq-ink-soft)', lineHeight: 1.4,
           }}>
             <div>🎯 {de ? '4 Begriffe wählen → abgeben' : 'Pick 4 → submit'}</div>
             <div>🏯 {de ? '1 Gruppe = 1 Stapel-Bonus (+1 Pkt)' : '1 group = 1 stack-bonus (+1 pt)'}</div>
             <div>❌ {de ? `${c.maxFailedAttempts} Fehler erlaubt` : `${c.maxFailedAttempts} fails allowed`}</div>
           </div>
-          <div style={{ fontSize: 12, color: QQ_COLORS.slate400, marginTop: 4 }}>
+          <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', marginTop: 4 }}>
             {de ? 'Wartet aufs Startsignal…' : 'Waiting for moderator…'}
           </div>
         </div>
@@ -1339,7 +1339,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
             const placingTeam = s.teams.find(t => t.id === s.pendingFor);
             if (!placingTeam) {
               return (
-                <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center' }}>
+                <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center' }}>
                   {de ? 'Schaut auf den Beamer, Setzen läuft.' : 'Watch the beamer, placement in progress.'}
                 </div>
               );
@@ -1358,7 +1358,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
                 <div style={{ fontSize: 14, fontWeight: 900, color: placingTeam.color }}>
                   {isMine ? (de ? 'Du bist dran!' : 'Your turn!') : placingTeam.name}
                 </div>
-                <div style={{ fontSize: 11, color: QQ_COLORS.slate400, fontWeight: 700 }}>
+                <div style={{ fontSize: 11, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
                   {isMine
                     ? (de ? 'Stapel-Feld waehlen' : 'Pick a stack cell')
                     : (de ? 'stapelt gerade' : 'is stacking')}
@@ -1368,12 +1368,12 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
             );
           })()}
           {c.phase === 'reveal' && (
-            <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center' }}>
               {de ? 'Auflösung läuft…' : 'Reveal in progress…'}
             </div>
           )}
           {c.phase === 'done' && (
-            <div style={{ fontSize: 12, color: QQ_COLORS.slate400, textAlign: 'center' }}>
+            <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', textAlign: 'center' }}>
               {de ? 'Finale beendet, Punkte werden vergeben' : 'Finale done, scoring'}
             </div>
           )}
@@ -1392,18 +1392,18 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
             {[0,1,2,3].map(i => (
               <span key={i} style={{
                 width: 14, height: 14, borderRadius: 4,
-                background: i < found ? QQ_COLORS.green500 : 'rgba(255,255,255,0.10)',
-                border: i < found ? '1px solid #16A34A' : '1px solid rgba(255,255,255,0.18)',
+                background: i < found ? QQ_COLORS.green500 : 'rgba(var(--qq-ink-rgb), 0.10)',
+                border: i < found ? '1px solid #16A34A' : '1px solid rgba(var(--qq-ink-rgb), 0.18)',
               }} />
             ))}
           </div>
           <ConnectionsTeamTimer endsAt={c.endsAt} />
           <span style={{
             padding: '3px 10px', borderRadius: 999,
-            background: fails > 0 ? 'rgba(239,68,68,0.18)' : 'rgba(255,255,255,0.05)',
-            border: `1px solid ${fails > 0 ? QQ_COLORS.red500 : 'rgba(255,255,255,0.12)'}`,
+            background: fails > 0 ? 'rgba(239,68,68,0.18)' : 'rgba(var(--qq-ink-rgb), 0.05)',
+            border: `1px solid ${fails > 0 ? QQ_COLORS.red500 : 'rgba(var(--qq-ink-rgb), 0.12)'}`,
             fontSize: 11, fontWeight: 900,
-            color: fails > 0 ? QQ_COLORS.red300 : QQ_COLORS.slate400,
+            color: fails > 0 ? QQ_COLORS.red300 : 'var(--qq-ink-muted)',
           }}>
             {de ? 'Fehler' : 'Fails'} {fails}/{c.maxFailedAttempts}
           </span>
@@ -1444,13 +1444,13 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
                         ? `linear-gradient(135deg, ${myGroupColor}38, ${myGroupColor}15)`
                         : isSelected
                           ? `${teamColor}30`
-                          : 'rgba(255,255,255,0.04)',
+                          : 'rgba(var(--qq-ink-rgb), 0.04)',
                       border: isMyFound && myGroupColor
                         ? `2px solid ${myGroupColor}`
                         : isSelected
                           ? `2px solid ${teamColor}`
-                          : '2px solid rgba(255,255,255,0.10)',
-                      color: isMyFound ? '#fff' : isSelected ? '#fff' : QQ_COLORS.slate200,
+                          : '2px solid rgba(var(--qq-ink-rgb), 0.10)',
+                      color: isMyFound ? 'var(--qq-ink)' : isSelected ? 'var(--qq-ink)' : 'var(--qq-ink-body)',
                       fontSize: 'clamp(10px, 3vw, 13px)',
                       fontWeight: 900, lineHeight: 1.1,
                       cursor: disabled ? 'default' : 'pointer',
@@ -1479,8 +1479,8 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
                 border: 'none',
                 background: selected.length === 4
                   ? 'linear-gradient(135deg, #22C55E, #16A34A)'
-                  : 'rgba(255,255,255,0.06)',
-                color: selected.length === 4 ? '#0a1f0d' : QQ_COLORS.slate500,
+                  : 'rgba(var(--qq-ink-rgb), 0.06)',
+                color: selected.length === 4 ? '#0a1f0d' : 'var(--qq-ink-quiet)',
                 fontSize: 16, fontWeight: 900,
                 cursor: selected.length === 4 ? 'pointer' : 'not-allowed',
                 boxShadow: selected.length === 4 ? '0 4px 14px rgba(34,197,94,0.4)' : 'none',

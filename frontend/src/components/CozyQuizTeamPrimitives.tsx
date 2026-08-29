@@ -41,7 +41,7 @@ export function CozyCard({
       color: themed ? 'var(--qq-card-text)' : undefined,
       border: themed
         ? (borderColor ? `2px solid ${borderColor}` : 'var(--qq-card-border)')
-        : `1px solid ${borderColor ? borderColor + '55' : 'rgba(255,255,255,0.08)'}`,
+        : `1px solid ${borderColor ? borderColor + '55' : 'rgba(var(--qq-ink-rgb), 0.08)'}`,
       borderRadius: themed ? 'var(--qq-card-radius)' : 22, padding: '22px 20px', marginBottom: 14,
       boxShadow: themed
         ? `var(--qq-card-shadow)${borderColor ? `, 0 0 24px ${borderColor}22` : ''}`
@@ -73,9 +73,9 @@ export function CozyBtn({
       onPointerDown={() => { if (!disabled && typeof navigator !== 'undefined' && navigator.vibrate) navigator.vibrate(8); }}
       style={{
         width: '100%', padding: '16px', borderRadius: 16, fontFamily: 'inherit', fontWeight: 900, fontSize: 17,
-        border: `2px solid ${disabled ? 'rgba(255,255,255,0.08)' : color}`,
-        background: disabled ? 'rgba(255,255,255,0.04)' : `${color}22`,
-        color: disabled ? '#334155' : color,
+        border: `2px solid ${disabled ? 'rgba(var(--qq-ink-rgb), 0.08)' : color}`,
+        background: disabled ? 'rgba(var(--qq-ink-rgb), 0.04)' : `${color}22`,
+        color: disabled ? 'var(--qq-ink-edge)' : color,
         cursor: disabled ? 'default' : 'pointer',
         boxShadow: disabled ? 'none' : `0 0 20px ${color}22`,
       }}>
@@ -88,7 +88,7 @@ export function CozyBtn({
 export function StepLabel({ children }: { children: ReactNode }) {
   return (
     <div style={{
-      fontSize: 13, fontWeight: 900, color: '#94a3b8',
+      fontSize: 13, fontWeight: 900, color: 'var(--qq-ink-muted)',
       textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 10,
     }}>
       {children}
@@ -230,7 +230,7 @@ export function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: num
   return (
     <div style={{ marginBottom: 14 }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 5 }}>
-        <span style={{ fontSize: 12, color: '#94a3b8', fontWeight: 700 }}>Timer</span>
+        <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>Timer</span>
         <span style={{
           fontSize: timerFontSize, fontWeight: 900, color,
           textShadow: isCritical ? '0 0 14px rgba(239,68,68,0.7)' : isWarning ? '0 0 10px rgba(249,115,22,0.5)' : 'none',
@@ -242,7 +242,7 @@ export function TeamTimerBar({ endsAt, durationSec, accentColor }: { endsAt: num
       </div>
       <div style={{
         height: isCritical ? 10 : 8, borderRadius: 5,
-        background: 'rgba(255,255,255,0.07)', overflow: 'hidden',
+        background: 'rgba(var(--qq-ink-rgb), 0.07)', overflow: 'hidden',
         transition: 'height 0.3s',
       }}>
         <div style={{

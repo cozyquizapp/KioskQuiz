@@ -117,9 +117,9 @@ export function TeamBottomSheetMenu({
     display: 'flex', alignItems: 'center', gap: 14,
     padding: '14px 16px',
     borderRadius: 16,
-    background: 'rgba(255,255,255,0.04)',
-    border: '1px solid rgba(255,255,255,0.08)',
-    color: '#F1F5F9',
+    background: 'rgba(var(--qq-ink-rgb), 0.04)',
+    border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
+    color: 'var(--qq-ink)',
     cursor: 'pointer',
     fontFamily: 'inherit',
     fontSize: 15, fontWeight: 700,
@@ -194,7 +194,7 @@ export function TeamBottomSheetMenu({
             style={{
               display: 'inline-block',
               width: 44, height: 5,
-              background: dragY > 0 ? 'rgba(var(--qq-accent-rgb),0.85)' : 'rgba(255,255,255,0.32)',
+              background: dragY > 0 ? 'rgba(var(--qq-accent-rgb),0.85)' : 'rgba(var(--qq-ink-rgb), 0.32)',
               borderRadius: 999,
               transition: 'background 0.15s',
             }} />
@@ -211,13 +211,13 @@ export function TeamBottomSheetMenu({
           }}
         >
           <div style={{
-            fontSize: 12, fontWeight: 900, color: '#94A3B8',
+            fontSize: 12, fontWeight: 900, color: 'var(--qq-ink-muted)',
             textTransform: 'uppercase', letterSpacing: '0.12em',
           }}>
             {lang === 'de' ? 'Menü' : 'Menu'}
           </div>
           <div style={{
-            fontSize: 10, fontWeight: 700, color: '#94a3b8',
+            fontSize: 10, fontWeight: 700, color: 'var(--qq-ink-muted)',
             letterSpacing: '0.08em',
           }}>
             {lang === 'de' ? '↓ runterziehen zum schließen' : '↓ swipe down to close'}
@@ -256,12 +256,12 @@ export function TeamBottomSheetMenu({
           ].map((stat) => (
             <div key={stat.label} style={{
               padding: '10px 8px', borderRadius: 14,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
+              background: 'rgba(var(--qq-ink-rgb), 0.04)',
+              border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
               textAlign: 'center',
             }}>
               <div style={{
-                fontSize: 10, fontWeight: 900, color: '#94A3B8',
+                fontSize: 10, fontWeight: 900, color: 'var(--qq-ink-muted)',
                 textTransform: 'uppercase', letterSpacing: '0.08em',
                 marginBottom: 4,
               }}>{stat.label}</div>
@@ -280,12 +280,12 @@ export function TeamBottomSheetMenu({
           <div style={{
             padding: '12px 12px 14px',
             borderRadius: 14,
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(255,255,255,0.08)',
+            background: 'rgba(var(--qq-ink-rgb), 0.03)',
+            border: '1px solid rgba(var(--qq-ink-rgb), 0.08)',
             marginBottom: 12,
           }}>
             <div style={{
-              fontSize: 11, fontWeight: 900, color: '#94A3B8',
+              fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)',
               textTransform: 'uppercase', letterSpacing: '0.08em',
               marginBottom: 8, display: 'flex', justifyContent: 'space-between',
             }}>
@@ -322,7 +322,7 @@ export function TeamBottomSheetMenu({
                           ? `1.5px solid ${myColor}`
                           : ownerColor
                             ? `1px solid ${ownerColor}`
-                            : '1px solid rgba(255,255,255,0.10)',
+                            : '1px solid rgba(var(--qq-ink-rgb), 0.10)',
                         boxShadow: isMine ? `0 0 6px ${myColor}88` : 'none',
                         position: 'relative',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -348,7 +348,7 @@ export function TeamBottomSheetMenu({
                       {isMine && isStacked && (
                         <span style={{
                           position: 'absolute', top: 0, right: 1,
-                          fontSize: 8, color: '#fff', lineHeight: 1,
+                          fontSize: 8, color: 'var(--qq-ink)', lineHeight: 1,
                           textShadow: '0 0 3px rgba(0,0,0,0.8)',
                         }}>★</span>
                       )}
@@ -375,7 +375,7 @@ export function TeamBottomSheetMenu({
             <span style={{ fontSize: 15, fontWeight: 800 }}>
               {lang === 'de' ? 'Sprache · Deutsch' : 'Language · English'}
             </span>
-            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 600 }}>
               {lang === 'de' ? 'Tippen zum Wechseln auf Englisch' : 'Tap to switch to German'}
             </span>
           </span>
@@ -398,7 +398,7 @@ export function TeamBottomSheetMenu({
           ...itemBase,
           cursor: 'default',
           marginBottom: 10,
-          background: 'rgba(255,255,255,0.02)',
+          background: 'rgba(var(--qq-ink-rgb), 0.02)',
         }}>
           <span style={{ display: 'inline-flex', gap: 4 }}>
             {Array.from({ length: jokersTotal }).map((_, i) => {
@@ -423,7 +423,7 @@ export function TeamBottomSheetMenu({
             <span style={{ fontSize: 15, fontWeight: 800 }}>
               {lang === 'de' ? 'Joker' : 'Jokers'}
             </span>
-            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 600 }}>
               {lang === 'de'
                 ? `${jokersAvailable} von ${jokersTotal} verfügbar`
                 : `${jokersAvailable} of ${jokersTotal} available`}
@@ -444,7 +444,7 @@ export function TeamBottomSheetMenu({
             <span style={{ fontSize: 15, fontWeight: 800 }}>
               {lang === 'de' ? 'Hilfe · Kurz-Regeln' : 'Help · Quick rules'}
             </span>
-            <span style={{ fontSize: 12, color: '#94A3B8', fontWeight: 600 }}>
+            <span style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 600 }}>
               {lang === 'de' ? 'Wie spielt man CozyQuiz?' : 'How to play CozyQuiz'}
             </span>
           </span>
@@ -484,7 +484,7 @@ export function TeamBottomSheetMenu({
             justifyContent: 'center',
             background: 'transparent',
             border: 'none',
-            color: '#94A3B8',
+            color: 'var(--qq-ink-muted)',
             fontSize: 14,
             fontWeight: 800,
             padding: '12px 16px',

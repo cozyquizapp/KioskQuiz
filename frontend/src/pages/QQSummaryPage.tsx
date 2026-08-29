@@ -244,7 +244,9 @@ const T = {
                    en: 'Pub, event, birthday or company party, I come with projector, voice and good vibes. Drop me a line, I\u2019ll send an offer.' },
   partnerMail:   { de: '\u2709\uFE0F Mail', en: '\u2709\uFE0F Mail' },
   partnerWeb:    { de: '\uD83C\uDF10 cozywolf.de', en: '\uD83C\uDF10 cozywolf.de' },
-  partnerInsta:  { de: '\uD83D\uDCF8 @cozywolf.events', en: '\uD83D\uDCF8 @cozywolf.events' },
+  // 2026-08-29: das Fotoapparat-Emoji ist raus, davor steht jetzt dasselbe
+  // Instagram-Zeichen wie oben in der Leiste (siehe `InstagramMarke`).
+  partnerInsta:  { de: '@cozywolf.events', en: '@cozywolf.events' },
 
   // Footer
   footerBy:      { de: 'COZYQUIZ von', en: 'COZYQUIZ by' },
@@ -826,7 +828,11 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
               }}>
                 <span style={{ fontSize: 12, fontWeight: 900, color: 'var(--sum-muted)', width: 22 }}>{i + 1}.</span>
                 <QQTeamAvatar avatarId={t.avatarId} teamEmoji={t.emoji} size={28} />
-                <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: isMe ? t.color : 'var(--sum-text)' }}>{teamDisplayName(t.name, true)}</span>
+                {/* 2026-08-29: die eigene Zeile stand im Teamton auf einem
+                    Grund im selben Ton - je nach Farbe gemessen 4,14:1 (noetig
+                    4,5:1). Die Zeile sagt „ihr" schon ueber Rahmen und Flaeche,
+                    der Name muss es nicht ein drittes Mal sagen. */}
+                <span style={{ flex: 1, fontSize: 14, fontWeight: 800, color: (isMe && !brand.themed) ? t.color : 'var(--sum-text)' }}>{teamDisplayName(t.name, true)}</span>
                 <span style={{ fontSize: 12, color: 'var(--sum-muted)' }}>
                   {t.largestConnected} <span style={{ fontSize: 10 }}>{lang === 'de' ? 'Pkt' : 'pts'}</span>
                 </span>
@@ -867,6 +873,8 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
   arena?: boolean;
   arenaBgSlug?: string | null;
 }) {
+  // Shell steht INNERHALB des AvatarSetProvider, kennt den Satz also.
+  const aktiverSatz = useAvatarSet();
   // 2026-06-25 (Wolf): Skin-Migration. Lokale --sum-*-Rampe — Cozy-Default ist
   // exakt der bisherige Wert (byte-identisch), bei aktivem Skin ziehen sie auf
   // die --qq-Tokens. So flippen Text/Flächen/Linien überall ohne `brand` in
@@ -879,6 +887,7 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
   // translucent-dunkel statt fast-transparent, damit Text ueber dem Kolosseum
   // lesbar bleibt (color-contrast) und der BG in den Zwischenraeumen durchscheint.
   const arenaOn = !!arena && !themed;
+  const kachelSatz = isQuirkTileSet(aktiverSatz);
   const sumVars: Record<string, string> = {
     '--sum-text':    themed ? 'var(--qq-text)'        : '#e2e8f0',
     '--sum-muted':   themed ? 'var(--qq-text-muted)'  : '#94a3b8',
@@ -893,6 +902,19 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
     // stand Weiss auf Creme - gemessen 1,18:1. Die Farbe kommt jetzt aus dem
     // Design selbst (`accentInk`), also kann sie nicht mehr danebenliegen.
     '--sum-on-accent': themed ? 'var(--qq-accent-ink)' : '#0A0814',
+    // ⚠️ 2026-08-29 (Wolf: „die avatare sind noch falsch?"). Auf EINER Seite
+    // standen zwei Formen derselben Sache: die Siegermuenze als Kachel (der
+    // Hero hat einen eigenen `quirkSet ? '18%'`-Zweig), alle anderen
+    // Teammarken als Kreis (`--qq-team-mark-radius`, Default 50%).
+    //
+    // Entschieden wird es hier einmal fuer die ganze Seite, und zwar am SATZ,
+    // nicht am Geraet: die Kachel-Saetze (cozyquiz, Quirks 2.0, Blockz) liefern
+    // ein farbneutrales Objekt, das auf einer Farbkachel sitzt - Wolfs README
+    // zum V5-Satz sagt „use the UI tile as a separate layer". Ein runder
+    // Beschnitt nimmt der Kachel die Ecken. Die cozy3d-Portraits sind
+    // umgekehrt fuer die runde Scheibe komponiert (Wolf-Entscheid 2026-06-25)
+    // und bleiben rund.
+    ...(kachelSatz ? { '--qq-team-mark-radius': '18%' } : {}),
   };
   // Kolosseum-BG (Portrait-Fraktions-Szene des Siegers) als fixe Ebene hinter
   // dem Inhalt — bleibt viewport-gross waehrend die lange Summary drueber
@@ -935,9 +957,22 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
   );
 }
 
-// 2026-05-09 v2 (Wolf): klickbarer Instagram-Pill oben links + LangToggle
-// rechts in einer Top-Bar. Brand-Gradient (Pink → Lila → Orange) wie das
-// Instagram-Logo, kompakt mit 📸 + @cozywolf.events Handle.
+// 2026-05-09 v2 (Wolf): klickbarer Instagram-Knopf oben links + LangToggle
+// rechts in einer Top-Bar.
+// 2026-08-29 (Wolf: „mach nur ein instagram logo hin"): aus der Pille im
+// Markenverlauf wurde ein einfarbiges Zeichen, Begruendung unten am Element.
+/** Instagram-Wortzeichen, einfarbig - erbt die Farbe vom Elternteil. */
+function InstagramMarke({ size = 22 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none" aria-hidden focusable="false"
+      stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="3" width="18" height="18" rx="5.2" />
+      <circle cx="12" cy="12" r="4.1" />
+      <circle cx="17.4" cy="6.6" r="1.15" fill="currentColor" stroke="none" />
+    </svg>
+  );
+}
+
 function TopBar({ lang, onLang, brand }: {
   lang: Lang;
   onLang: (l: Lang) => void;
@@ -948,24 +983,28 @@ function TopBar({ lang, onLang, brand }: {
       display: 'flex', justifyContent: 'space-between', alignItems: 'center',
       marginBottom: 12, gap: 12, flexWrap: 'wrap',
     }}>
+      {/* 2026-08-29 (Wolf: „mach nur ein instagram logo hin"). Vorher: eine
+          Pille im Instagram-Markenverlauf mit 📸 und dem Handle in Weiss.
+          Gemessen 2,34:1 am hellen Ende des Verlaufs (WCAG: 4,5:1) - und
+          gleichzeitig das lauteste Element ueber der Falz, auf einer Seite,
+          deren erste Aufgabe der Rueckblick auf den Abend ist.
+          Jetzt die Wortmarke als Zeichen: einfarbig, in der Textfarbe, also
+          gar kein Kontrastproblem mehr. Der Handle steht weiter im title und
+          im aria-label, damit Vorlese-Programme ihn ansagen. */}
       <a
         href="https://instagram.com/cozywolf.events"
         target="_blank"
         rel="noreferrer"
-        style={{
-          display: 'inline-flex', alignItems: 'center', gap: 8,
-          padding: '6px 14px', borderRadius: sumPill(999),
-          background: 'linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)',
-          color: '#fff', textDecoration: 'none',
-          fontSize: 12, fontWeight: 900, fontFamily: 'inherit',
-          letterSpacing: 0.3,
-          boxShadow: '0 4px 14px rgba(220,39,67,0.45), 0 0 18px rgba(188,24,136,0.4)',
-          border: '1px solid var(--sum-line-2)',
-        }}
+        aria-label="@cozywolf.events auf Instagram"
         title="@cozywolf.events auf Instagram"
+        style={{
+          display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
+          width: 40, height: 40, borderRadius: sumPill(999),
+          background: 'var(--sum-card)', border: '1px solid var(--sum-line)',
+          color: 'var(--sum-text)', textDecoration: 'none', flexShrink: 0,
+        }}
       >
-        <span style={{ fontSize: 16, lineHeight: 1 }}>📸</span>
-        @cozywolf.events
+        <InstagramMarke />
       </a>
       <div style={{
         display: 'inline-flex', borderRadius: sumPill(999),
@@ -1044,7 +1083,10 @@ function WinnerCelebrationHero({ winner, draftTitle, playedAt, lang, brand, nest
             zerfließen. Glow zurückgenommen (siehe qqWinnerGlow). */}
         <div style={{
           ['--wg' as string]: `${winner.color}99`,
-          width: 120, height: 120, borderRadius: quirkSet ? '18%' : '50%',
+          // Nicht mehr selbst entschieden - die Seite legt die Form einmal
+          // fest (`--qq-team-mark-radius` in Shell), damit Siegermuenze und
+          // Team-Kacheln nicht auseinanderlaufen.
+          width: 120, height: 120, borderRadius: 'var(--qq-team-mark-radius, 50%)',
           background: `radial-gradient(circle at 50% 60%, rgba(0,0,0,0.30) 0%, rgba(0,0,0,0) 60%), radial-gradient(circle at 32% 28%, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0) 46%), ${winner.color}`,
           // 2026-08-29: im Design liegt hier weder ein weisser Ring noch ein
           // pulsender Schein in Teamfarbe. Das ist wortwoertlich der Befund,
@@ -1181,8 +1223,19 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
                 opacity: isTop ? 1 : 0.7,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
-                {owner.emoji && cellSize >= 24 && (
-                  <span style={{ fontSize: cellSize * 0.5, lineHeight: 1 }}>{owner.emoji}</span>
+                {/* 2026-08-29 (Wolf: „die avatare sind noch falsch?"). Hier
+                    stand `{owner.emoji}` als Text. Das Feld heisst zwar
+                    „emoji", traegt seit den Kachel-Saetzen aber einen SLUG:
+                    im Endbrett stand deshalb wortwoertlich „teapot",
+                    „crystal-ball", „strawberry" - und weil der Text breiter
+                    ist als die Zelle, lief die Seite auf dem Handy 10 px quer.
+                    Seit dem 22.08. ist `cozyquiz` die Vorgabe, das Brett war
+                    also an JEDEM Abend seitdem so.
+                    `flat`, weil die Zelle die Teamfarbe schon traegt - sonst
+                    liegen zwei Kacheln uebereinander. */}
+                {cellSize >= 24 && (
+                  <QQTeamAvatar avatarId={owner.avatarId} teamEmoji={owner.emoji}
+                    size={Math.round(cellSize * 0.72)} flat />
                 )}
               </div>
             );
@@ -1949,6 +2002,7 @@ function PartnerCTA({ lang, brand }: {
             {tr('partnerWeb', lang)}
           </a>
           <a href="https://instagram.com/cozywolf.events" target="_blank" rel="noreferrer" style={{ ...ctaButton(`rgba(${brand.pinkRgb},0.15)`, brand.pinkSoft, `rgba(${brand.pinkRgb},0.40)`), gridColumn: '1 / -1' }}>
+            <InstagramMarke size={16} />
             {tr('partnerInsta', lang)}
           </a>
         </div>

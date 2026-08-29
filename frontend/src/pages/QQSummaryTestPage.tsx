@@ -15,20 +15,38 @@ import QQSummaryPage from './QQSummaryPage';
  * Erreichbar via /summary-test (PinGate).
  */
 
+// ⚠️ 2026-08-29 (Wolf: „die avatare sind noch falsch?"). Hier standen bis
+// heute Tiere: `avatarId: 'koala'` mit `emoji: '🦝'` und dem Satz `'all'`.
+// Beides gibt es an keinem Abend. Seit dem 22.08. laeuft CozyQuiz mit dem
+// Objekt-Satz V5 (`cozyquiz`) und CrowdQuiz mit den Wappen (`cozyArena`) -
+// die Vorgabe steht in `qqDefaultAvatarSetId`.
+//
+// Damit hat die Vorschau die Seite nicht geprueft, sondern eine Seite gezeigt,
+// die es nicht gibt: falsche Motive, falsche Form, falsche Farben. Genau
+// deshalb sind die ersten Vorher/Nachher-Bilder von heute wertlos gewesen.
+//
+// Wie es an einem Abend zusammengeht, und warum es hier genauso stehen muss:
+//   * `avatarId` ist der FARB-SLOT (QQ_AVATARS in shared/quarterQuizTypes.ts).
+//     Daraus zieht `qqTeamColor` die Teamfarbe - `color` ist nur die Kopie
+//     vom Beitritt und kann veralten.
+//   * `emoji` ist das freie Feld, in dem der Objekt-Slug steckt
+//     (cozyquizAvatars.ts). Kein Backend-Schema-Change, siehe dort.
+//   * Das Objekt ist farbneutral, die Kachel traegt die Farbe. Deshalb sind
+//     Slot und Motiv frei kombinierbar.
 const TEAMS_5 = [
-  { id: 't1', name: "Käpt'n Kluk",  color: '#22C55E', avatarId: 'koala', emoji: '🦝',
+  { id: 't1', name: "Käpt'n Kluk",  color: '#3B82F6', avatarId: 'raccoon', emoji: 'teapot',
     score: 13, totalCells: 9, largestConnected: 9, correct: 18, answered: 24,
     jokersEarned: 2, stealsUsed: 1 },
-  { id: 't2', name: 'Wolfsrudel',    color: '#EC4899', avatarId: 'wolf',  emoji: '🐺',
+  { id: 't2', name: 'Wolfsrudel',    color: '#F97316', avatarId: 'fox',     emoji: 'rocket',
     score: 11, totalCells: 7, largestConnected: 7, correct: 16, answered: 24,
     jokersEarned: 1, stealsUsed: 4 },
-  { id: 't3', name: 'Eulen-Crew',    color: '#A855F7', avatarId: 'owl',   emoji: '🦉',
+  { id: 't3', name: 'Eulen-Crew',    color: '#A855F7', avatarId: 'rabbit',  emoji: 'crystal-ball',
     score:  8, totalCells: 5, largestConnected: 5, correct: 12, answered: 24,
     jokersEarned: 0, stealsUsed: 2 },
-  { id: 't4', name: 'Polarfuchs',    color: '#06B6D4', avatarId: 'fox',   emoji: '🦊',
+  { id: 't4', name: 'Polarfuchs',    color: '#22C55E', avatarId: 'frog',    emoji: 'mushroom',
     score:  5, totalCells: 3, largestConnected: 3, correct:  8, answered: 24,
     jokersEarned: 0, stealsUsed: 0 },
-  { id: 't5', name: 'Honig-Bären',   color: '#F59E0B', avatarId: 'bear',  emoji: '🐻',
+  { id: 't5', name: 'Honig-Bären',   color: '#FACC15', avatarId: 'unicorn', emoji: 'strawberry',
     score:  3, totalCells: 1, largestConnected: 1, correct:  5, answered: 24,
     jokersEarned: 0, stealsUsed: 0 },
 ];
@@ -36,13 +54,13 @@ const TEAMS_5 = [
 const TEAMS_3 = TEAMS_5.slice(0, 3);
 const TEAMS_8 = [
   ...TEAMS_5,
-  { id: 't6', name: 'Tiger-Team',   color: '#EF4444', avatarId: 'tiger',   emoji: '🐯',
+  { id: 't6', name: 'Tiger-Team',   color: '#EF4444', avatarId: 'cat',   emoji: 'game-die',
     score: 1, totalCells: 0, largestConnected: 0, correct: 4, answered: 24,
     jokersEarned: 0, stealsUsed: 0 },
-  { id: 't7', name: 'Pinguine',     color: '#3B82F6', avatarId: 'penguin', emoji: '🐧',
+  { id: 't7', name: 'Pinguine',     color: '#14B8A6', avatarId: 'panda', emoji: 'table-lamp',
     score: 1, totalCells: 0, largestConnected: 0, correct: 3, answered: 24,
     jokersEarned: 0, stealsUsed: 0 },
-  { id: 't8', name: 'Drachen-Brut', color: '#FB923C', avatarId: 'dragon',  emoji: '🐉',
+  { id: 't8', name: 'Drachen-Brut', color: '#EC4899', avatarId: 'cow',   emoji: 'compass',
     score: 0, totalCells: 0, largestConnected: 0, correct: 2, answered: 24,
     jokersEarned: 0, stealsUsed: 0 },
 ];
@@ -107,7 +125,9 @@ export default function QQSummaryTestPage() {
     draftTitle: eurovisionMode ? 'Eurovision Test-Quiz' : 'Test-Quiz Demo',
     winner: teams[0].name,
     phases: 4,
-    avatarSetId: 'all',
+    // Der Satz gehoert zum FORMAT, nicht zum Geschmack: `qqDefaultAvatarSetId`
+    // gibt CozyQuiz die Objekte und CrowdQuiz die Wappen. Hier stand 'all'.
+    avatarSetId: arena ? 'cozyArena' : 'cozyquiz',
     avatarSetEmojis: null,
     teams,
     funnyAnswers: [

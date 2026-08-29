@@ -363,7 +363,19 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   // 2026-05-25 (Wolf 'mod-test-modus, kein db-save'): Test-Modus-Bypass.
   // Frontend setzt (room as any)._testMode = true ueber qq:setTestMode, damit
   // Test-Spiele nicht im Recap landen.
-  if ((room as any)._testMode) return;
+  if ((room as any)._testMode) {
+    // ⚠️ 2026-08-29, Wolf: „aber ich habe gerade mit einem team durchgespielt,
+    // das kam nicht an". Genau hier verschwand der Abend, und zwar STILL. Das
+    // Ueberspringen war richtig gedacht (Test-Spiele gehoeren nicht in den
+    // Recap), aber es hat nie jemand erfahren. Der letzte gespeicherte Abend
+    // ist vom 04.07., vier Tage vor der Aenderung, die den Testmodus pro
+    // Geraet dauerhaft anlaesst (QQModeratorPage:118). Zwei Monate lang hat
+    // niemand etwas gemerkt, weil es nichts zu merken gab.
+    // Ein Satz im Log kostet nichts und macht denselben Fall beim naechsten
+    // Mal in Sekunden sichtbar.
+    console.log(`[QQGameResult] UEBERSPRUNGEN (Testmodus an) fuer Raum ${room.roomCode} - dieser Abend wird NICHT gespeichert.`);
+    return;
+  }
   // 2026-05-12 (Wolf 'summary zeigt falsche teams + falsche avatare'):
   // Idempotenz-Guard. Vorher fired persistGameResult auf JEDEN broadcast
   // mit phase=GAME_OVER → mehrere DB-Eintraege pro Spiel, jeder mit eigener
@@ -373,7 +385,13 @@ function persistGameResult(room: ReturnType<typeof getQQRoom>): void {
   // schlechtere Daten enthalten — der QR-Link zeigte dann auf eine
   // schlechtere Version. Jetzt: pro Spiel-Cycle nur EIN Save. Guard wird
   // bei qqStartGame zurueckgesetzt damit das naechste Spiel sauber laeuft.
-  if ((room as any)._gameResultPersisted) return;
+  if ((room as any)._gameResultPersisted) {
+    // Kein Fehler, nur der Idempotenz-Guard: pro Spiel-Cycle wird einmal
+    // gespeichert. Trotzdem sichtbar, damit „nichts kam an" nicht wieder eine
+    // Rateaufgabe wird.
+    console.log(`[QQGameResult] schon gespeichert fuer Raum ${room.roomCode} (${(room as any).lastGameResultId ?? 'ohne Id'}).`);
+    return;
+  }
   (room as any)._gameResultPersisted = true;
   // 2026-05-23 (Live-Test-Bug #C): Bot/Dummy-Teams aus Summary-Persistierung
   // filtern. Vorher landeten _dummy-Teams in der Summary-Page neben den echten

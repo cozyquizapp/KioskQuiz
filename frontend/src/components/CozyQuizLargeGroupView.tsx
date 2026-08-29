@@ -28,7 +28,16 @@ import { COZY_ARENA_CREST_SLUGS } from '../cozyArenaCrests';
 // Beamer-Root und setzte Cinzel hart. BG und Font haengen zusammen und werden
 // deshalb am selben Gate entschieden.
 import { qqArenaType } from '../cozyQuizShared';
+import { getActiveThemeId, BUEHNE_THEME_ID } from '../qqTheme';
 import { prefersReducedMotion } from '../utils/reducedMotion';
+
+// Die Buehne ausdruecklich benennen. `isThemed()` heisst nur „nicht Cozy" und
+// wuerde jeden Skin mitnehmen; hier ist genau EIN Design gemeint.
+// ⚠️ Nicht mit `qqArenaType` verwechseln, das ein paar Zeilen weiter unten
+// benutzt wird: das beantwortet „laeuft der Kolosseum-Look?" und ist damit
+// die Gegenfrage. Beide sind hier noetig - Schrift und Bilder haengen am
+// Kolosseum, Formen und Schein am Design.
+const istBuehneG = () => getActiveThemeId() === BUEHNE_THEME_ID;
 import { ConfettiOverlay } from './CozyQuizConfettiOverlay';
 
 const MEDALS = ['🥇', '🥈', '🥉'];
@@ -401,7 +410,7 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
       {leadFlash && (
         <>
           <span aria-hidden style={{
-            position: 'absolute', inset: '-4px -8px', borderRadius: 18,
+            position: 'absolute', inset: '-4px -8px', borderRadius: 'var(--qq-card-radius)',
             boxShadow: `0 0 26px 6px ${team.color}, inset 0 0 20px ${team.color}88`,
             pointerEvents: 'none', animation: 'qqLeadFlash 1.2s ease-out both',
           }} />
@@ -447,10 +456,17 @@ function StandingsRow({ team, rank, seedRank, maxVal, de, qEntry, rowH, sc, fm }
           // Edelstein statt Neon-Fill: horizontaler Farbverlauf traegt die Farbe,
           // der vertikale Anteil gibt Rundung (heller Grat oben, satter Fuss unten).
           background: `linear-gradient(180deg, ${team.color} 0%, ${team.color} 42%, ${team.color}c8 100%)`,
-          borderRadius: 999,
+          borderRadius: 'var(--qq-card-radius)',
           // Facetten-Tiefe: heller Grat oben, dunkle Schattenkante unten + weicher
           // Farbschein nach aussen (im Kanal gehalten, kein greller Web-Glow).
-          boxShadow: `inset 0 1.5px 0 rgba(246, 239, 230,0.4), 0 0 12px ${team.color}55`,
+          // „Ein Schein, der etwas bedeutet, bleibt. Ein Schein, der nur schmueckt,
+          // geht" (BUEHNE_2A.md). Der Balken traegt die Teamfarbe schon als
+          // Flaeche und die Aussage schon als Laenge - der Aussenschein sagt
+          // nichts Drittes, er weicht auf Projektionsdistanz nur die Kante auf.
+          // Der INNERE Grat bleibt: der ist die Form des Balkens, nicht Schmuck.
+          boxShadow: istBuehneG()
+            ? 'inset 0 1.5px 0 rgba(246, 239, 230,0.4)'
+            : `inset 0 1.5px 0 rgba(246, 239, 230,0.4), 0 0 12px ${team.color}55`,
           transition: 'width 0.8s cubic-bezier(0.34,1.05,0.5,1)',
         }} />
       </div>
@@ -480,7 +496,7 @@ export function MegaAwardsStrip({ awards, de }: { awards: QQMegaAwards; de: bool
         const color = ava?.color ?? 'var(--qq-stage-brand)';
         const name = qqMegaFactionName(it.av!, de ? 'de' : 'en');
         return (
-          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 16, background: 'rgba(246, 239, 230,0.05)', border: `1px solid ${color}44` }}>
+          <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px 18px', borderRadius: 'var(--qq-card-radius)', background: 'rgba(246, 239, 230,0.05)', border: `1px solid ${color}44` }}>
             <QQIcon slug={it.slug} size={40} />
             <div style={{ minWidth: 0 }}>
               <div style={{ fontSize: 12, fontWeight: 800, opacity: 0.6, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{it.label}</div>
@@ -872,12 +888,12 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           </div>
           <div style={{ display: 'flex', gap: 7 }}>
             {awardKeys.map((_, i) => (
-              <span key={i} aria-hidden style={{ width: i === step ? 24 : 9, height: 9, borderRadius: 999, background: i === step ? color : (i < step ? `${color}99` : 'rgba(246, 239, 230,0.18)'), transition: 'width .3s ease, background .3s ease' }} />
+              <span key={i} aria-hidden style={{ width: i === step ? 24 : 9, height: 9, borderRadius: 'var(--qq-pill-radius)', background: i === step ? color : (i < step ? `${color}99` : 'rgba(246, 239, 230,0.18)'), transition: 'width .3s ease, background .3s ease' }} />
             ))}
           </div>
         </div>
         <div style={{ position: 'relative', zIndex: 5, animation: 'qqAwardIconPop 0.6s cubic-bezier(0.2,1.3,0.4,1) both' }}>
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 28, display: 'inline-flex' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 'var(--qq-card-radius)', display: 'inline-flex' }}>
             <QQIcon slug={beat.slug} size={'clamp(72px, 8.8cqw, 138px)'} />
             <span aria-hidden style={{ position: 'absolute', inset: 0, background: 'linear-gradient(115deg, transparent 34%, rgba(246, 239, 230,0.5) 50%, transparent 66%)', transform: 'translateX(-130%)', animation: 'qqAwardShine 1.1s ease 0.5s both' }} />
           </div>
@@ -903,7 +919,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
             (zaehlen zum Endstand + zur Kroenung). Pille in Fraktionsfarbe (Gold bleibt
             der Champion-Kroenung vorbehalten), erscheint nach der Enthuellung. */}
         <div style={{ position: 'relative', zIndex: 5, animation: 'qqCrownFadeUp 0.5s ease 1.5s both' }}>
-          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: 'clamp(4px,0.6cqh,9px) clamp(14px,1.5cqw,24px)', borderRadius: 999, background: `${color}26`, border: `2px solid ${color}99`, color: 'var(--qq-text)', fontWeight: 900, fontSize: 'clamp(17px, 2.1cqw, 32px)', boxShadow: `0 0 24px ${color}44`, fontVariantNumeric: 'tabular-nums' }}>
+          <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: 'clamp(4px,0.6cqh,9px) clamp(14px,1.5cqw,24px)', borderRadius: 'var(--qq-pill-radius)', background: `${color}26`, border: `2px solid ${color}99`, color: 'var(--qq-text)', fontWeight: 900, fontSize: 'clamp(17px, 2.1cqw, 32px)', boxShadow: istBuehneG() ? 'none' : `0 0 24px ${color}44`, fontVariantNumeric: 'tabular-nums' }}>
             +{QQ_MEGA_AWARD_BONUS} {de ? 'Punkte' : 'points'}
           </span>
         </div>
@@ -944,7 +960,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
           Zeilen sitzen auf konsistentem dunklem Grund statt ueber der busy Halle. */}
       <div style={{
         position: 'relative', zIndex: 5, width: '100%', maxWidth: 1080, marginTop: 6,
-        background: 'rgba(10,8,22,0.60)', borderRadius: 26, border: '1px solid rgba(246, 239, 230,0.10)',
+        background: 'rgba(10,8,22,0.60)', borderRadius: 'var(--qq-card-radius)', border: '1px solid rgba(246, 239, 230,0.10)',
         boxShadow: 'inset 0 1px 0 rgba(246, 239, 230,0.06)',
         backdropFilter: 'blur(4px)', WebkitBackdropFilter: 'blur(4px)' as any,
         padding: 'clamp(12px,1.6cqh,22px) clamp(18px,2.2cqw,38px)',
@@ -963,7 +979,7 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
                 <TeamNameLabel name={t.name} fontSize={24} color={t.color} fontWeight={900} maxLines={1} shrinkAfter={16} />
               </div>
               <div style={S.goBarTrack}>
-                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${t.color}, ${t.color}dd)`, borderRadius: 999 }} />
+                <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: `${pct}%`, background: `linear-gradient(90deg, ${t.color}, ${t.color}dd)`, borderRadius: 'var(--qq-card-radius)' }} />
               </div>
               <span style={{ ...S.goVal, color: t.color }}>{t.largestConnected}</span>
               <span style={S.goUnit}>{medal ? <QQEmojiIcon emoji={medal} /> : (de ? 'Pkt' : 'pts')}</span>
@@ -981,6 +997,28 @@ export function LargeGroupGameOverView({ state }: { state: QQStateUpdate }) {
 }
 
 // ── Styles ───────────────────────────────────────────────────────────────────
+// ── Formen: warum hier keine Zahlen mehr stehen ───────────────────────────
+// 2026-08-29, Umbau von CrowdQuiz auf das Standarddesign. Das Bar-Race war die
+// groesste Ansicht, die den Durchgang noch nie gesehen hatte: 1031 Zeilen ohne
+// eine einzige Abfrage auf das Design. Schriften und Kolosseum-Bilder haengen
+// hier korrekt an `qqArenaType` (das `!isThemed()` mitprueft) - die FORMEN
+// hingen an nichts und standen als 999 / 14 / 16 / 18 / 26 / 28 fest im Code.
+//
+// Aufgeloest ueber die zwei Token, nach der Trennung aus main.css:
+//   * `--qq-card-radius`  (Cozy 20px, Buehne 5px) fuer Reihen, Felder, Tafeln
+//     UND fuer die Balkengleise.
+//   * `--qq-pill-radius`  (Cozy 999px, Buehne 16 %) fuer Chips und Schritt-
+//     punkte, also niedrige Elemente, an denen 5 px wie ein Versehen aussaehe.
+//
+// ⚠️ Warum die Balken NICHT die Pille bekommen, obwohl sie wie eine aussehen:
+// `--qq-pill-radius` ist auf der Buehne ein PROZENTWERT, und ein einzelner
+// Prozentwert in `border-radius` rechnet waagerecht gegen die BREITE. An einem
+// 800 px breiten Gleis waeren das 128 px Ecke - eine Sichel statt eines
+// Balkens. Die Kartenform ist der richtige Griff, und sie kostet in Cozy
+// nichts: bei einem 22 px hohen Gleis kuerzt der Browser sowohl 999 px als
+// auch 20 px auf dieselben 11 px, also exakt die halbe Hoehe. In Cozy sieht
+// der Balken damit aus wie vorher, auf der Buehne wird er eckig. Geprueft an
+// allen drei Gleisen (26, 22 und 32 px hoch), bei allen faellt es zusammen.
 const S: Record<string, React.CSSProperties> = {
   wrap: { width: '100%', height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 28, padding: '0 64px', color: 'var(--qq-text)' },
   correctBanner: { display: 'flex', alignItems: 'baseline', fontSize: 40, fontWeight: 800 },
@@ -990,7 +1028,7 @@ const S: Record<string, React.CSSProperties> = {
   // Akt 2 nested „Auflösung"
   megaReveal: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 22, padding: '30px 0 10px' },
   megaRevealBig: { fontSize: 46, fontWeight: 900, textAlign: 'center' },
-  megaRevealTrack: { width: 'min(720px, 80%)', height: 26, background: 'rgba(246, 239, 230,0.08)', borderRadius: 999, overflow: 'hidden' },
+  megaRevealTrack: { width: 'min(720px, 80%)', height: 26, background: 'rgba(246, 239, 230,0.08)', borderRadius: 'var(--qq-card-radius)', overflow: 'hidden' },
   megaRevealHint: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
 
   // Akt 3 Beat A „Wertung dieser Frage" — sitzt IN der gemalten Tafel (MEGA_BOARD).
@@ -998,11 +1036,11 @@ const S: Record<string, React.CSSProperties> = {
   // die Ueberschrift; der Inhalt fuellt sie jetzt exakt statt ungefaehr.
   qrWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', color: 'var(--qq-text)', animation: 'brFadeIn 0.4s ease both', overflow: 'hidden' },
   qrList: { display: 'flex', flexDirection: 'column', gap: 10, width: '100%' },
-  qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
+  qrRow: { display: 'flex', alignItems: 'center', gap: 20, padding: '10px 22px', borderRadius: 'var(--qq-card-radius)', background: 'rgba(10,8,24,0.55)' },
   qrRank: { width: 52, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   qrPts: { fontWeight: 900, fontSize: 42, minWidth: 116, textAlign: 'right', fontVariantNumeric: 'tabular-nums' },
   podium: { display: 'flex', flexDirection: 'column', gap: 14 },
-  podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 18, background: 'rgba(246, 239, 230,0.05)' },
+  podRow: { display: 'flex', alignItems: 'center', gap: 22, padding: '10px 22px', borderRadius: 'var(--qq-card-radius)', background: 'rgba(246, 239, 230,0.05)' },
   podMedal: { fontSize: 44, width: 56, textAlign: 'center', fontWeight: 900, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
   podPts: { fontWeight: 900, fontSize: 46, minWidth: 90, textAlign: 'right' },
   alsoWrap: { marginTop: 10 },
@@ -1014,18 +1052,18 @@ const S: Record<string, React.CSSProperties> = {
   goLabel: { fontSize: 20, textTransform: 'uppercase', letterSpacing: 2, opacity: 0.9, fontWeight: 900, color: '#e7e2f4', position: 'relative', zIndex: 5 },
   goHero: { display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6, position: 'relative', zIndex: 5 },
   goWinPts: { fontWeight: 900, fontSize: 'clamp(16px, 1.7cqw, 24px)' },
-  goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 14, background: 'rgba(246, 239, 230,0.045)' },
+  goRow: { position: 'absolute', left: 0, right: 0, height: 54, display: 'flex', alignItems: 'center', gap: 16, padding: '0 20px', borderRadius: 'var(--qq-card-radius)', background: 'rgba(246, 239, 230,0.045)' },
   goRank: { width: 48, textAlign: 'center', fontWeight: 900, fontSize: 26, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  goBarTrack: { flex: 1, height: 22, background: 'rgba(246, 239, 230,0.06)', borderRadius: 999, position: 'relative', overflow: 'hidden' },
+  goBarTrack: { flex: 1, height: 22, background: 'rgba(246, 239, 230,0.06)', borderRadius: 'var(--qq-card-radius)', position: 'relative', overflow: 'hidden' },
   goVal: { width: 74, textAlign: 'right', fontWeight: 900, fontSize: 32, fontVariantNumeric: 'tabular-nums' },
   goUnit: { width: 52, textAlign: 'left', fontSize: 18, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
   goRest: { fontSize: 20, fontWeight: 700, opacity: 0.5, position: 'relative', zIndex: 5 },
   // Gesamtstand: exakt dieselbe Tafel-Box wie qrWrap (ein Muster, zwei Beats).
   standWrap: { position: 'absolute', left: MEGA_BOARD.insetX, right: MEGA_BOARD.insetX, top: MEGA_BOARD.top, bottom: MEGA_BOARD.bottom, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12, color: 'var(--qq-text)', overflow: 'hidden' },
   standRest: { fontSize: 22, fontWeight: 700, opacity: 0.5 },
-  standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 16, background: 'rgba(10,8,24,0.55)' },
+  standRow: { position: 'absolute', left: 0, right: 0, height: STANDINGS_ROW_H - 12, display: 'flex', alignItems: 'center', gap: 20, padding: '0 22px', borderRadius: 'var(--qq-card-radius)', background: 'rgba(10,8,24,0.55)' },
   standRank: { width: 60, textAlign: 'center', fontWeight: 900, fontSize: 34, display: 'inline-flex', alignItems: 'center', justifyContent: 'center' },
-  standBarTrack: { flex: 1, height: 32, background: 'rgba(246, 239, 230,0.06)', borderRadius: 999, position: 'relative', overflow: 'visible' },
+  standBarTrack: { flex: 1, height: 32, background: 'rgba(246, 239, 230,0.06)', borderRadius: 'var(--qq-card-radius)', position: 'relative', overflow: 'visible' },
   standVal: { width: 132, textAlign: 'right', fontWeight: 900, fontSize: 40, fontVariantNumeric: 'tabular-nums' },
   standUnit: { width: 60, textAlign: 'left', fontSize: 22, fontWeight: 700, opacity: 0.55, display: 'inline-flex', alignItems: 'center' },
 };

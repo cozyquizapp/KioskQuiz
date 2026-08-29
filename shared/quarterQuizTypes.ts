@@ -82,6 +82,53 @@ export const QQ_BUNTE_TUETE_ARENA_ONLY = [
 ] as const satisfies readonly QQBunteTueteKind[];
 
 /**
+ * Nur CozyQuiz. Laeuft im Grossformat NICHT.
+ *
+ * 2026-08-29, Wolf: „zb heisse kartoffel ist auch keine crowdquiz kategorie".
+ *
+ * Der Grund ist mechanisch, nicht geschmacklich: die Heisse Kartoffel laeuft
+ * REIHUM mit Ausscheiden (`hotPotatoActiveTeamId`, `hotPotatoEliminated`).
+ * Bei drei bis acht Teams ist das ein Spiel, bei vierzig Geraeten ist es
+ * neununddreissigmal Warten. Top 5, Fix It und Pin It bleiben, weil dort alle
+ * gleichzeitig tippen und die Wertung mit der Teamzahl mitwaechst (Wolf
+ * 2026-08-29 auf Nachfrage).
+ *
+ * ⚠️ Diese Konstante aendert NICHTS am Verhalten - das war schon richtig.
+ * `qqStartGame` wirft HP-Fragen im Grossformat seit 2026-07-07 hart aus dem
+ * Satz (Wolf damals: „HP darf NIEMALS in Arena"), und Wizard wie Steuerpult
+ * warnen ueber `megaWarnCount`. Was fehlte, war der EINTRAG: das Register hier
+ * hatte nur zwei Faecher, und „ACTIVE" hiess dabei stillschweigend „in beiden
+ * Formaten". Wer also die Datei las, auf die CLAUDE.md als Single Source of
+ * Truth zeigt, bekam eine falsche Auskunft, obwohl der Code das Richtige tat.
+ * Ich bin darauf am 29.08. selbst hereingefallen und habe Wolf zuerst eine
+ * Luecke gemeldet, die es nicht gab. Deshalb liest der Filter im Backend seine
+ * Liste jetzt von hier, statt `'hotPotato'` ein zweites Mal hinzuschreiben.
+ *
+ * Die uebrigen Grossformat-Riegel sitzen im Backend und schalten beim
+ * Spielstart hart ab (qqRooms.ts, `if (room.largeGroupMode)`): Final-Wager,
+ * Connections, Comeback und CozyGames.
+ */
+export const QQ_BUNTE_TUETE_COZY_ONLY = [
+  'hotPotato',
+] as const satisfies readonly QQBunteTueteKind[];
+
+/**
+ * Laeuft dieses Unterspiel in DIESEM Format? Die eine Frage, die vorher
+ * niemand stellen konnte, weil es die Unterscheidung nicht gab.
+ */
+export function qqBunteTueteRunsIn(
+  kind: QQBunteTueteKind | undefined | null,
+  grossformat: boolean | undefined,
+): boolean {
+  if (!kind) return false;
+  if (grossformat) {
+    return qqBunteTueteIsPlayable(kind)
+      && !(QQ_BUNTE_TUETE_COZY_ONLY as readonly string[]).includes(kind);
+  }
+  return qqBunteTueteIsActive(kind);
+}
+
+/**
  * Deaktiviert — Wolf 2026-07-03 fuer onlyConnect und bluff, Imposter laut
  * docs/UEBERGABE_DESIGN.md Abschnitt 5. Views und Server-Logik liegen
  * weiterhin im Repo und funktionieren; sie werden nur nicht ausgespielt, und

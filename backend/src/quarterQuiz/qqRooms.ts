@@ -16,6 +16,7 @@ import {
   QQ_TIEBREAKER_POOL, QQTieBreakerState,
   qqIsMega, qqMegaAwardKeys,
   QQ_RULES_SLIDE_SEC,
+  QQ_BUNTE_TUETE_COZY_ONLY,
 } from '../../../shared/quarterQuizTypes';
 import {
   buildEmptyGrid, computeTerritories, detectNewJokers,
@@ -860,14 +861,23 @@ export function qqStartGame(
   // qqIsMega statt nur der Flags: faengt auch den Fall, dass largeGroupMode/
   // nestedTeams beim (Bot-)Start noch nicht gesetzt sind, die Teams aber schon
   // die 8 Fraktions-Slots (avatarId) teilen (Wolf: 'HP darf NIEMALS in Arena').
+  //
+  // 2026-08-29: die Liste stand hier als Literal `'hotPotato'` und im Register
+  // in shared/quarterQuizTypes.ts GAR NICHT - dort lag sie unter „ACTIVE",
+  // ohne Formatunterschied. Verhalten richtig, Auskunft falsch. Jetzt liest der
+  // Filter das Register, damit beide nicht wieder auseinanderlaufen koennen:
+  // wer ein Unterspiel aus CrowdQuiz nehmen will, traegt es an genau einer
+  // Stelle ein, und die ist die, auf die CLAUDE.md zeigt.
   const isArenaStart = qqIsMega({ teams: room.teams, largeGroupMode, nestedTeams } as any);
   if (isArenaStart) {
     const before = processedQuestions.length;
     processedQuestions = processedQuestions.filter(
-      q => !(q.category === 'BUNTE_TUETE' && (q as any).bunteTuete?.kind === 'hotPotato'),
+      q => !(q.category === 'BUNTE_TUETE'
+        && (QQ_BUNTE_TUETE_COZY_ONLY as readonly string[]).includes(
+          (q as any).bunteTuete?.kind ?? '')),
     );
     const removed = before - processedQuestions.length;
-    if (removed > 0) console.log(`[arena] ${removed} Hot-Potato-Frage(n) im Gross-Modus herausgefiltert.`);
+    if (removed > 0) console.log(`[arena] ${removed} Frage(n) nur-CozyQuiz-Mechanik im Gross-Modus herausgefiltert.`);
   }
   if (room.shuffleQuestionsInRound) {
     const byPhase: Record<number, QQQuestion[]> = {};

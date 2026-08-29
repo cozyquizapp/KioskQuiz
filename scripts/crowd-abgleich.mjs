@@ -61,14 +61,51 @@ import { buehneStarten, sleep } from './lib/buehne.mjs';
 const req = createRequire(new URL('../frontend/package.json', import.meta.url));
 const sharp = req('sharp');
 
-/** Der CrowdQuiz-Abend. Kein `brett`: im Grossformat gibt es kein Gitter,
- *  die Wertung laeuft als Bar-Race (`zwischenstand`). */
+/**
+ * Der CrowdQuiz-Abend.
+ *
+ * ⚠️ 2026-08-29, Wolf beim Mitlesen eines Messbildes: „warte finalphase? es
+ * gibt kein wager in crowd quiz?" Er hatte recht, und der Fehler stand HIER.
+ * Vier der siebzehn Stationen sind CozyQuiz-Mechanik und in CrowdQuiz
+ * unerreichbar:
+ *
+ *   zwischenstand    faehrt `final-bet` von Hand an und schaltet die Wette
+ *                    durch (`finishFinalBettingIntro`, `finishFinalBetting`).
+ *   finalwette       dasselbe, nur frueher angehalten.
+ *   finalaufloesung  die Aufloesung ebendieser Wette.
+ *   kartoffel        Heisse Kartoffel, laeuft reihum mit Ausscheiden.
+ *
+ * Alle vier sind im Grossformat abgeschaltet, und zwar hart: der Final-Wager
+ * samt Connections und Comeback in qqRooms.ts (`if (room.largeGroupMode)`),
+ * die Heisse Kartoffel als Filter auf dem Fragensatz beim Spielstart
+ * (QQ_BUNTE_TUETE_COZY_ONLY). Der Harness hat diese Riegel umgangen, weil er
+ * per `springe` mitten in die Phase faehrt, statt sie sich ergeben zu lassen.
+ *
+ * Ergebnis: das Werkzeug hat CrowdQuiz durch Ansichten geschickt, die es an
+ * keinem Abend zeigt, und ich habe die Bilder fuer bare Muenze genommen.
+ * Dieselbe Falle wie am 28.08., als der erste Abgleich ein CrowdQuiz mass,
+ * das es nicht gab. Merksatz fuer das naechste Mal: eine Station ist kein
+ * Beweis, dass es die Ansicht gibt - `springe` glaubt alles.
+ *
+ * Kein `brett`: im Grossformat gibt es kein Gitter, die Wertung laeuft als
+ * Bar-Race. Dessen Ansichten haengen an `spielende` und `siegerehrung`.
+ */
 const ABEND = [
   'lobby', 'willkommen', 'regeln', 'ablauf', 'teams',
   'rundenintro', 'frage', 'frage2', 'aufloesung',
-  'kartoffel', 'pause', 'zwischenstand',
-  'finalwette', 'finalaufloesung', 'siegerehrung', 'spielende', 'danke',
+  'pause', 'siegerehrung', 'spielende', 'danke',
 ];
+
+/** Was hier steht, gibt es in CrowdQuiz nicht. Wer es trotzdem auf der
+ *  Aufrufzeile mitgibt, bekommt eine Warnung statt eines stillen Bildes. */
+const NUR_COZYQUIZ = {
+  zwischenstand:   'Final-Wager, in CrowdQuiz aus (qqRooms.ts, largeGroupMode)',
+  finalwette:      'Final-Wager, in CrowdQuiz aus (qqRooms.ts, largeGroupMode)',
+  finalaufloesung: 'Final-Wager, in CrowdQuiz aus (qqRooms.ts, largeGroupMode)',
+  kartoffel:       'Heisse Kartoffel, in CrowdQuiz herausgefiltert (QQ_BUNTE_TUETE_COZY_ONLY)',
+  turmbau:         'Turm-Finale, CrowdQuiz hat eine eigene Siegerehrung',
+  brett:           'Spielbrett, CrowdQuiz hat keins',
+};
 
 const ZIEL = '.shots/crowd-abgleich';
 
@@ -162,7 +199,13 @@ const MESSEN = ({ schriften }) => {
 };
 
 // ── Lauf ──────────────────────────────────────────────────────────────────
-const stationen = process.argv.slice(2).length ? process.argv.slice(2) : ABEND;
+const gewuenscht = process.argv.slice(2).length ? process.argv.slice(2) : ABEND;
+const verboten = gewuenscht.filter(s => s in NUR_COZYQUIZ);
+for (const s of verboten) {
+  console.log(`  ⚠️ ${s}: gibt es in CrowdQuiz nicht (${NUR_COZYQUIZ[s]}). Uebersprungen.`);
+}
+const stationen = gewuenscht.filter(s => !(s in NUR_COZYQUIZ));
+if (!stationen.length) { console.log('  Keine gueltige CrowdQuiz-Station uebrig.'); process.exit(1); }
 fs.mkdirSync(ZIEL, { recursive: true });
 
 const bericht = [];
@@ -171,7 +214,7 @@ for (const st of stationen) {
   // ⚠️ Pro Station ein frischer Raum. Der Zustand des Abends haengt am WEG
   // dorthin, und eine Station, die auf einer halb gespielten Runde sitzt,
   // zeigt etwas anderes als dieselbe Station frisch (2026-08-28 gemessen).
-  const b = await buehneStarten({ bots: 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
+  const b = await buehneStarten({ bots: 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1', grossformat: true });
   // Grossformat VOR dem Aufbau: `largeGroupMode` baut die Teams um und leert
   // den Raum. Wer es danach schickt, misst eine leere Lobby.
   await b.emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true });

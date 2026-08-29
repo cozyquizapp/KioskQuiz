@@ -653,7 +653,11 @@ export function PausedView({ state: s, mode = 'pause' }: { state: QQStateUpdate;
               {extras.map((e, i) => (
                 <span key={e.de} style={{
                   padding: '10px 18px',
-                  borderRadius: 999,
+                  // 2026-08-29, an .shots/ankommen-crowd/02-3.png gefunden: diese
+                  // beiden Chips waren auf der Buehne noch vollrund, waehrend die
+                  // Schrittpunkte drei Zentimeter darunter im selben Bild schon
+                  // eckig sind. Zwei Formensprachen in einem Blick.
+                  borderRadius: 'var(--qq-pill-radius)',
                   fontSize: 'clamp(16px, 1.8cqw, 24px)', fontWeight: 800,
                   color: 'var(--qq-text-muted)',
                   background: isThemed() ? 'var(--qq-surface)' : 'rgba(255,235,200,0.04)',

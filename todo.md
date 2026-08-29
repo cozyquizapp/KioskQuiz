@@ -1283,6 +1283,16 @@ Durchgang anfangen. Reihenfolge ist Wolfs Reihenfolge.
 - [ ] **Summary anschauen und anpassen.** Die Seite hinter dem QR-Code der
       Danke-Folie. Sie ist das einzige Stueck CozyQuiz, das die Gaeste am
       naechsten Tag noch sehen, und war beim Buehnen-Durchgang nicht dabei.
+- [ ] **Rohe Unicode-Emojis auf der Buehne.** Wolf 2026-08-28: „einige der
+      emojis in crowdquiz sind alt, die kompletten emojis in cozyquiz wurden
+      auf ein neues design umgestellt". Gemessen mit dem neuen
+      `scripts/emoji-reste.mjs` ueber vier Stationen, und es ist WENIGER als
+      vermutet: genau ein CrowdQuiz-eigener Rest (`👥` in der Lobby, „Ein
+      Handy pro Gruppe"), dazu `🏆` im Zwischenstand - das haben beide
+      Formate. Die Folien-Ueberschriften laufen laengst ueber `QQEmojiIcon`.
+      ⚠️ Nur vier von zehn Stationen gemessen. Vor dem Fix den vollen Lauf
+      fahren: `node scripts/emoji-reste.mjs`.
+
 - [ ] **Teamview an das Beamerdesign angleichen.** Das Handy folgt noch dem
       alten Cozy-Look. ⚠️ Nicht blind uebernehmen: die Buehne ist auf zehn
       Meter gebaut, das Handy auf dreissig Zentimeter. Gleiche Sprache,

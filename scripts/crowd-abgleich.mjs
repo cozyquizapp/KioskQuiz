@@ -298,7 +298,17 @@ if (bilder.length) {
       left: (i % SP) * BREIT, top: Math.floor(i / SP) * HOCH,
     });
   }
-  const bogen = `${ZIEL}/kontaktbogen.png`;
+  // ⚠️ Ein TEILLAUF darf den Bogen des ganzen Abends nicht ueberschreiben.
+  // 2026-08-29 genau so passiert: nach dem Volldurchlauf lief ein Nachtest
+  // ueber zwei Stationen, und danach lagen unter demselben Namen zwei Kacheln
+  // statt dreizehn. Ich habe die Datei anschliessend als „der Abend" an Wolf
+  // geschickt. Ein Bild traegt sein Zustandekommen nicht mit sich, also muss
+  // der Dateiname es tun.
+  const vollstaendig = stationen.length === ABEND.length
+    && ABEND.every(s => stationen.includes(s));
+  const bogen = vollstaendig
+    ? `${ZIEL}/kontaktbogen.png`
+    : `${ZIEL}/kontaktbogen-teil-${stationen.length}.png`;
   await sharp({ create: { width: BREIT * SP, height: HOCH * reihen, channels: 3, background: '#0B0912' } })
     .composite(kacheln).png().toFile(bogen);
   console.log(`\n  Kontaktbogen: ${bogen}  (${bilder.map(b2 => b2.st).join(', ')})`);

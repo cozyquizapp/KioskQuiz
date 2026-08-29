@@ -33,12 +33,14 @@
  * Buehnenregel.
  *
  * VORAUSSETZUNG: Backend (4000, frisch) + Frontend (5173).
- * NUTZUNG: node scripts/handy-ruhe.mjs [--mega] [--secs=210]
+ * NUTZUNG: node scripts/handy-ruhe.mjs [--mega] [--look=kolosseum] [--secs=210]
  */
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { handyStarten, HANDY } from './lib/handy.mjs';
 
 const mega = process.argv.includes('--mega');
+/* siehe handy-kontaktbogen.mjs: 'standard' oder 'kolosseum'. */
+const look = (process.argv.find(a => a.startsWith('--look=')) ?? '--look=standard').split('=')[1];
 const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=210').split('=')[1]);
 
 /** Laeuft IM Browser. */
@@ -129,7 +131,7 @@ const MESSEN = ({ breite, hoehe }) => {
   };
 };
 
-const b = await handyStarten({ mega, secs: SECS });
+const b = await handyStarten({ mega, secs: SECS, look });
 const sichten = [];
 const messen = async (seite, name) => {
   const m = await seite.evaluate(MESSEN, { breite: HANDY.width, hoehe: HANDY.height }).catch(() => null);
@@ -197,6 +199,8 @@ for (const [feld, titel, regel, zeile] of [
 }
 
 const text = z.join('\n');
-writeFileSync(`.shots/ruhe/BERICHT${mega ? '-CROWD' : ''}.md`, text);
+/* Der Look gehoert in den Dateinamen: sonst ueberschreibt ein Kolosseum-Lauf
+ * die Messung des Standarddesigns, und der Bericht sagt nicht, welcher er ist. */
+writeFileSync(`.shots/ruhe/BERICHT${mega ? '-CROWD' : ''}${look === 'kolosseum' ? '-KOLOSSEUM' : ''}.md`, text);
 console.log('\n' + text);
 console.log(`${fehler} Befunde.`);

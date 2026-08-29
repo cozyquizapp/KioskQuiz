@@ -46,7 +46,7 @@ export const HANDY = { width: 390, height: 844 };
  * Liefert `{ handy, buehne, phase, sperrseite, schliessen }`. Der Aufrufer
  * entscheidet, was er misst - dieses Modul misst nichts.
  */
-export async function handyStarten({ mega = false, secs = 200, vorBeitritt = null } = {}) {
+export async function handyStarten({ mega = false, secs = 200, vorBeitritt = null, look = 'standard' } = {}) {
   const health = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => null);
   if (!health?.ok) throw new Error('Backend nicht erreichbar auf 4000.');
   console.log(`Backend ok (build ${health.build ?? '?'})`);
@@ -106,6 +106,19 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   await sleep(500);
   if (mega) { await emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true }); await sleep(500); }
 
+  /* Look wie im Wizard-Schritt „Look" (QQSetupFlow.tsx, Kachel-Paar).
+   *
+   * Seit 2026-08-28 startet AUCH CrowdQuiz im CozyQuiz-Standarddesign
+   * (themeId 'buehne'); das Kolosseum ist die waehlbare Alternative. Beide
+   * Kacheln setzen ZWEI Dinge, und wer nur eines setzt, misst einen Zustand,
+   * den kein Abend je zeigt: die BG-Gates fragen `!isThemed()`, das Design
+   * allein schaltet die Bilder also nicht ein. Deshalb hier dasselbe Paar. */
+  if (look === 'kolosseum') {
+    await emit('qq:setQuizOptions', { arenaBackgrounds: true });
+    await emit('qq:setTheme', { themeId: 'cozy' });
+    await sleep(600);
+  }
+
   /* Raum einrichten und Lobby OEFFNEN.
    *
    * ⚠️ Wolf, 2026-08-29: „im moderator erst die lobby freigegeben werden
@@ -122,7 +135,7 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   await sleep(300);
   await emit('qq:setLobbyOpen', { value: true });
   await sleep(600);
-  console.log(`Raum ${roomCode} frisch${mega ? ' (CrowdQuiz)' : ''}.`);
+  console.log(`Raum ${roomCode} frisch${mega ? ' (CrowdQuiz)' : ''}${look === 'kolosseum' ? ' · Look: Kolosseum' : ''}.`);
 
   const handy = await ctxTeam.newPage();
   handy.on('dialog', async (d) => { await d.dismiss(); });

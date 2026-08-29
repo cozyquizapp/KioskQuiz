@@ -15,7 +15,7 @@
  * steht und ob eine Ansicht ueber die Kante laeuft.
  *
  * Gefahren wird das STANDARDDESIGN (`buehne`), also das, was am Abend laeuft.
- * Fuer CrowdQuiz `--mega`.
+ * Fuer CrowdQuiz `--mega`, fuer die Kolosseum-Kulisse `--look=kolosseum`.
  *
  * VORAUSSETZUNG: Backend (4000, frisch) + Frontend (5173).
  * NUTZUNG:
@@ -27,8 +27,11 @@ import { createRequire } from 'node:module';
 import { handyStarten, sleep, HANDY } from './lib/handy.mjs';
 
 const mega = process.argv.includes('--mega');
+/* Look wie im Wizard: 'standard' (CozyQuiz-Standarddesign, der Default seit
+ * 2026-08-28) oder 'kolosseum' (die waehlbare CrowdQuiz-Kulisse). */
+const look = (process.argv.find(a => a.startsWith('--look=')) ?? '--look=standard').split('=')[1];
 const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=210').split('=')[1]);
-const OUT = `.shots/kontaktbogen${mega ? '-crowd' : ''}`;
+const OUT = `.shots/kontaktbogen${mega ? '-crowd' : ''}${look === 'kolosseum' ? '-kolosseum' : ''}`;
 
 const req = createRequire(new URL('../frontend/package.json', import.meta.url));
 const sharp = req('sharp');
@@ -51,7 +54,7 @@ const merke = async (seite, name) => {
 };
 
 const b = await handyStarten({
-  mega, secs: SECS,
+  mega, secs: SECS, look,
   vorBeitritt: async (seite) => { await merke(seite, 'SETUP'); },
 });
 await b.abendMitfahren(async (phase) => { await merke(b.handy, phase); });
@@ -91,7 +94,7 @@ const beschriftung = bilder.map((bi, i) => {
 
 const kopf = `
   <text x="${RAND}" y="${RAND + 26}" fill="${TINTE}" font-family="sans-serif" font-size="24" font-weight="800">
-    /team &#183; ${mega ? 'CrowdQuiz' : 'CozyQuiz'} im Standarddesign
+    /team &#183; ${mega ? 'CrowdQuiz' : 'CozyQuiz'} ${look === 'kolosseum' ? 'im Kolosseum-Look' : 'im Standarddesign'}
   </text>
   <text x="${RAND}" y="${RAND + 50}" fill="${LEISE}" font-family="sans-serif" font-size="14">
     ${bilder.length} Ansichten &#183; ${HANDY.width}x${HANDY.height} &#183; ${new Date().toISOString().slice(0, 10)}

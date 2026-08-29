@@ -1043,7 +1043,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   padding: '0 14px', borderRadius: 8,
                   background: 'rgba(234,179,8,0.18)',
                   border: '1px solid rgba(234,179,8,0.4)',
-                  color: QQ_COLORS.brandPinkSoft, fontSize: 18,
+                  color: 'var(--qq-ink-muted)', fontSize: 18,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
               ><QQEmojiIcon emoji="🎲" size={22} alt={lang === 'de' ? 'Zufalls-Name' : 'Random name'} /></button>
@@ -1135,7 +1135,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   width: '100%', padding: '10px 14px', borderRadius: 8,
                   border: '1px dashed rgba(var(--qq-accent-rgb),0.45)',
                   background: 'rgba(var(--qq-accent-rgb),0.06)',
-                  color: QQ_COLORS.brandPinkSoft, fontWeight: 900, fontSize: 13,
+                  color: 'var(--qq-ink-muted)', fontWeight: 900, fontSize: 13,
                   cursor: 'pointer', fontFamily: 'inherit',
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
                 }}
@@ -1147,7 +1147,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
             )}
             {stammExpanded && !stammResult && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.brandPink, letterSpacing: '0.04em', textTransform: 'uppercase' }}>
+                <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink)', letterSpacing: '0.04em', textTransform: 'uppercase' }}>
                   <QQEmojiIcon emoji="🔖" size={16} style={{ marginRight: 6, verticalAlign: '-2px' }} />
                   {lang === 'de' ? 'Stamm-Code eingeben' : 'Enter regular code'}
                 </div>
@@ -1161,7 +1161,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                     style={{
                       flex: 1, padding: '10px 12px', borderRadius: 8,
                       border: '1px solid rgba(var(--qq-accent-rgb),0.4)',
-                      background: 'rgba(0,0,0,0.3)', color: QQ_COLORS.brandPinkSoft,
+                      background: 'rgba(0,0,0,0.3)', color: 'var(--qq-ink-muted)',
                       fontFamily: 'monospace', fontSize: 16, fontWeight: 700,
                       letterSpacing: '0.04em',
                       // 2026-08-26, gleiche Regel wie bei cozyInput (WCAG 2.5.5).
@@ -1218,7 +1218,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                   <QQTeamAvatar avatarId={stammResult.avatarId} size={48} />
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 18, fontWeight: 900, color: QQ_COLORS.brandPinkSoft }}>
+                    <div style={{ fontSize: 18, fontWeight: 900, color: 'var(--qq-ink-muted)' }}>
                       {stammResult.teamName || '–'}
                     </div>
                     <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
@@ -1403,7 +1403,7 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
                   padding: '0 14px', borderRadius: 8,
                   background: 'rgba(234,179,8,0.18)',
                   border: '1px solid rgba(234,179,8,0.4)',
-                  color: QQ_COLORS.brandPinkSoft, fontSize: 18,
+                  color: 'var(--qq-ink-muted)', fontSize: 18,
                   cursor: 'pointer', fontFamily: 'inherit',
                 }}
               ><QQEmojiIcon emoji="🎲" size={22} alt={lang === 'de' ? 'Zufalls-Name' : 'Random name'} /></button>

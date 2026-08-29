@@ -419,7 +419,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
               }}>
                 {showRecentPlaceFlash
                   ? (lang === 'de' ? '✓ Gesetzt!' : '✓ Placed!')
-                  : (lang === 'de' ? '🎮 Spielfeld' : '🎮 Game Board')}
+                  : (<><QQEmojiIcon emoji="🎮" size={16} /> {lang === 'de' ? 'Spielfeld' : 'Game Board'}</>)}
               </div>
             )}
           </div>
@@ -478,18 +478,39 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
                             🔒-Schloss statt Avatar — klarer „nicht klaubar"-
                             Eindruck. BG-Teamfarbe bleibt (Eigentum erkennbar).
                             Vorher: Avatar + Pink-Ring (semi-gut erkennbar). */}
+                        {/* 2026-08-29 (Wolf: „im grid haben die emojis eine runde
+                            umrandung und dann die kachel, das sieht komisch aus").
+                            Zwei Formen fuer eine Sache, und beide in derselben
+                            Teamfarbe: die Zelle oben traegt `background:
+                            cellTeam.color` als Quadrat mit 4 px Ecke, und der
+                            Avatar legte seine eigene RUNDE Platte darauf.
+                            Gemessen im laufenden DOM: Zelle Radius 4 px, Marke
+                            Radius 50 %, beide `rgb(34,197,94)`.
+
+                            ⚠️ Genau diese Entscheidung ist am 2026-05-05 schon
+                            einmal gefallen - Wolfs Wort damals war „runde felder",
+                            und der Fix war `flat`. Sie hat nur das GROSSE Gitter
+                            erreicht (weiter unten in dieser Datei), nicht dieses
+                            Mini-Gitter. Das Mini-Gitter ist die Ansicht, die ein
+                            Team sieht, waehrend ein ANDERES setzt - also die, in
+                            der man am laengsten sitzt und am genauesten hinsieht.
+
+                            `flat` heisst: der Behaelter traegt die Farbe schon,
+                            die Marke bringt nur das Motiv. Der Avatar bleibt auf
+                            dem Handy rund, wo er Avatar ist (Kopfzeile, Lobby);
+                            hier ist er Spielstein in einer Zelle. */}
                         {cellTeam ? (
                           isStuckCell ? (
-                            <div style={{
-                              fontSize: Math.max(12, Math.floor(miniCellSize * 0.7)),
-                              lineHeight: 1,
-                              filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.6))',
-                            }}>🔒</div>
+                            <QQEmojiIcon
+                              emoji="🔒"
+                              size={Math.max(12, Math.floor(miniCellSize * 0.7))}
+                            />
                           ) : (
                             <QQTeamAvatar
                               avatarId={cellTeam.avatarId}
                               teamEmoji={cellTeam.emoji}
                               size={Math.max(16, Math.floor(miniCellSize * 0.85))}
+                              flat
                             />
                           )
                         ) : null}
@@ -591,7 +612,7 @@ export function PlacementCard({ state: s, myTeamId, isMyTurn, emit, roomCode, la
           marginBottom: 12,
           fontSize: 13,
           lineHeight: 1.4,
-          color: QQ_COLORS.brandPinkSoft,
+          color: 'var(--qq-ink-muted)',
           textAlign: 'center',
         }}>
           {lang === 'de'
@@ -925,7 +946,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
         {/* Header */}
         <div style={{
           fontSize: 11, fontWeight: 900, letterSpacing: '0.1em', textTransform: 'uppercase',
-          color: QQ_COLORS.brandPinkSoft, textAlign: 'center', marginBottom: 10,
+          color: 'var(--qq-ink-muted)', textAlign: 'center', marginBottom: 10,
         }}>
           ⚡ {lang === 'en' ? 'Higher/Lower' : 'Mehr oder Weniger'} · {lang === 'en' ? 'Round' : 'Runde'} {hl.round + 1}/{hl.rounds}
         </div>
@@ -976,10 +997,10 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           border: isReveal ? '2px solid #EC4899' : '1px dashed rgba(236,72,153,0.5)',
           textAlign: 'center', marginBottom: 14,
         }}>
-          <div style={{ fontSize: 11, fontWeight: 900, color: QQ_COLORS.brandPinkSoft, letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
+          <div style={{ fontSize: 11, fontWeight: 900, color: 'var(--qq-ink-muted)', letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 2 }}>
             {lang === 'en' ? (pair.subjectLabelEn ?? pair.subjectLabel) : pair.subjectLabel}
           </div>
-          <div style={{ fontSize: 28, fontWeight: 900, color: QQ_COLORS.brandPink, fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
+          <div style={{ fontSize: 28, fontWeight: 900, color: 'var(--qq-ink)', fontVariantNumeric: 'tabular-nums', lineHeight: 1 }}>
             {isReveal ? fmtHL(pair.subjectValue) : '???'}
           </div>
           {!isReveal && (
@@ -1039,7 +1060,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
           <div style={{
             marginTop: 12, padding: '8px 12px', borderRadius: 8,
             background: 'rgba(236,72,153,0.12)', border: '1px solid rgba(236,72,153,0.4)',
-            fontSize: 13, fontWeight: 900, color: QQ_COLORS.brandPinkSoft, textAlign: 'center',
+            fontSize: 13, fontWeight: 900, color: 'var(--qq-ink-muted)', textAlign: 'center',
           }}>
             ⏳ {lang === 'en' ? 'Waiting for other teams…' : 'Warte auf andere Teams…'}
           </div>
@@ -1075,7 +1096,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
       <CozyCard borderColor={QQ_COLORS.brandPink}>
         <div style={{ textAlign: 'center', padding: '6px 0' }}>
           <div style={{ fontSize: 32, marginBottom: 6 }}>⚡</div>
-          <div style={{ fontWeight: 900, color: QQ_COLORS.brandPinkSoft, fontSize: 17, marginBottom: 10 }}>
+          <div style={{ fontWeight: 900, color: 'var(--qq-ink-muted)', fontSize: 17, marginBottom: 10 }}>
             {lang === 'en' ? 'Comeback!' : 'Comeback!'}
           </div>
           {/* Prominenter Rundenzaehler fuer das Team */}
@@ -1084,12 +1105,12 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
             marginBottom: 8,
           }}>
             <span style={{
-              fontSize: 44, fontWeight: 900, color: QQ_COLORS.brandPink, lineHeight: 1,
+              fontSize: 44, fontWeight: 900, color: 'var(--qq-ink)', lineHeight: 1,
               textShadow: '0 0 20px rgba(236,72,153,0.55)',
               fontVariantNumeric: 'tabular-nums',
             }}>{hl.rounds}</span>
             <span style={{
-              fontSize: 15, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
+              fontSize: 15, fontWeight: 900, color: 'var(--qq-ink-muted)',
             }}>
               {hl.rounds === 1
                 ? (lang === 'en' ? 'Round' : 'Runde')
@@ -1120,7 +1141,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
               <div style={{ fontWeight: 900, color: comebackTeam.color, marginTop: 6 }}>{comebackTeam.name}</div>
             </>
           )}
-          <div style={{ fontSize: 14, color: QQ_COLORS.brandPink, fontWeight: 700, marginTop: 8 }}>{t.comeback.otherTeam[lang]}</div>
+          <div style={{ fontSize: 14, color: 'var(--qq-ink)', fontWeight: 700, marginTop: 8 }}>{t.comeback.otherTeam[lang]}</div>
           {hl && hl.teamIds.length > 1 && (
             <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', marginTop: 4 }}>
               {lang === 'en'
@@ -1186,7 +1207,7 @@ export function ComebackCard({ state: s, myTeamId, isMine, emit, roomCode, lang 
 
   return (
     <CozyCard borderColor={QQ_COLORS.brandPink}>
-      <div style={{ fontWeight: 900, fontSize: 18, color: QQ_COLORS.brandPink, marginBottom: 16, textAlign: 'center' }}>
+      <div style={{ fontWeight: 900, fontSize: 18, color: 'var(--qq-ink)', marginBottom: 16, textAlign: 'center' }}>
         {t.comeback.title[lang]}
       </div>
       {!anyAvailable && (
@@ -1287,7 +1308,7 @@ export function ConnectionsTeamCard({ state: s, myTeamId, emit, roomCode, lang =
         <div style={{ padding: '20px 18px', display: 'flex', flexDirection: 'column', gap: 14, alignItems: 'center', textAlign: 'center' }}>
           <QQIcon slug="connect" size={56} />
           {/* Synchron mit Beamer-Header: 'Großes Finale' / 'Grand Finale'. */}
-          <div style={{ fontSize: 26, fontWeight: 900, color: QQ_COLORS.brandPinkSoft, textShadow: '0 0 20px rgba(236,72,153,0.4)' }}>
+          <div style={{ fontSize: 26, fontWeight: 900, color: 'var(--qq-ink-muted)', textShadow: '0 0 20px rgba(236,72,153,0.4)' }}>
             {de ? 'Großes Finale' : 'Grand Finale'}
           </div>
           <div style={{ fontSize: 15, fontWeight: 700, color: 'var(--qq-ink-body)', lineHeight: 1.4 }}>

@@ -15,7 +15,7 @@
 import { useEffect, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import { haptic } from '../utils/haptics';
-import { QQReactionIcon } from './QQIcon';
+import { QQReactionIcon, QQEmojiIcon } from './QQIcon';
 import { ACK_ERROR_EVENT, type AckErrorEventDetail } from '../utils/qqTeamAckBus';
 
 // ─────────────────────────────────────────────────────────────────────────
@@ -133,7 +133,7 @@ export function HelpModal({ lang, onClose, largeMode }: { lang: 'de' | 'en'; onC
               padding: '14px', borderRadius: 14,
               border: '1px solid rgba(var(--qq-accent-rgb),0.4)',
               background: 'rgba(var(--qq-accent-rgb),0.12)',
-              color: '#F9A8D4', fontFamily: 'inherit', fontWeight: 900, fontSize: 15,
+              color: 'var(--qq-ink-muted)', fontFamily: 'inherit', fontWeight: 900, fontSize: 15,
               cursor: 'pointer',
             }}
           >
@@ -193,7 +193,7 @@ export function LeaveQuizConfirm({
           animation: 'tcoptIn 0.28s cubic-bezier(0.32,1.4,0.5,1) both',
         }}
       >
-        <div style={{ fontSize: 32, textAlign: 'center', marginBottom: 8 }}>🚪</div>
+        <div style={{ textAlign: 'center', marginBottom: 8 }}><QQEmojiIcon emoji="🚪" size={32} /></div>
         <div style={{
           fontSize: 19, fontWeight: 900, textAlign: 'center', color: 'var(--qq-ink)',
           marginBottom: 8, letterSpacing: '-0.01em',

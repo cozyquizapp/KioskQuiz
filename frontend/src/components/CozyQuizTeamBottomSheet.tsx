@@ -11,6 +11,7 @@
  * Extrahiert aus QQTeamPage.tsx 2026-05-13 (Refactor Phase 3.4).
  */
 import React from 'react';
+import { QQEmojiIcon } from './QQIcon';
 import type { QQStateUpdate } from '../../../shared/quarterQuizTypes';
 import { JokerIcon } from './JokerIcon';
 import { HelpModal } from './CozyQuizTeamOverlays';
@@ -439,7 +440,7 @@ export function TeamBottomSheetMenu({
           onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
           onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          <span style={{ fontSize: 22, lineHeight: 1 }}>❓</span>
+          <QQEmojiIcon emoji="❓" size={22} />
           <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ fontSize: 15, fontWeight: 800 }}>
               {lang === 'de' ? 'Hilfe · Kurz-Regeln' : 'Help · Quick rules'}
@@ -463,7 +464,7 @@ export function TeamBottomSheetMenu({
           onTouchStart={(e) => { e.currentTarget.style.transform = 'scale(0.98)'; }}
           onTouchEnd={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
         >
-          <span style={{ fontSize: 22, lineHeight: 1 }}>🚪</span>
+          <QQEmojiIcon emoji="🚪" size={22} />
           <span style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ fontSize: 15, fontWeight: 800 }}>
               {lang === 'de' ? 'Quiz verlassen' : 'Leave quiz'}

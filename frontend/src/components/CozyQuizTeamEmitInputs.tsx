@@ -101,7 +101,7 @@ export function HotPotatoInput({ state: s, myTeamId, emit, roomCode, catColor, l
         marginTop: 4, padding: '14px 16px', borderRadius: 12,
         background: 'rgba(236,72,153,0.10)',
         border: `1.5px dashed ${catColor}`,
-        textAlign: 'center', color: QQ_COLORS.brandPinkSoft, fontSize: 14, fontWeight: 800,
+        textAlign: 'center', color: 'var(--qq-ink-muted)', fontSize: 14, fontWeight: 800,
         animation: 'tcpulse 1.5s ease-in-out infinite',
       }}>
         🎰 {lang === 'de' ? 'Slot dreht, gleich geht es los!' : 'Slot is spinning, get ready!'}
@@ -223,7 +223,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
         <div style={{
           padding: '10px 14px', borderRadius: 16,
           background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
-          fontSize: 13, color: QQ_COLORS.brandPinkSoft, fontWeight: 700, lineHeight: 1.4,
+          fontSize: 13, color: 'var(--qq-ink-muted)', fontWeight: 700, lineHeight: 1.4,
         }}>
           {lang === 'de'
             ? '🎭 Erfindet eine plausibel klingende Falsch-Antwort. Andere Teams werden dafür stimmen — wer reinfällt, bringt euch Punkte!'
@@ -263,7 +263,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
       <div style={{
         padding: '14px 16px', borderRadius: 16,
         background: 'rgba(244,114,182,0.10)', border: '1px solid rgba(244,114,182,0.3)',
-        textAlign: 'center', fontSize: 14, color: QQ_COLORS.brandPinkSoft, fontWeight: 700,
+        textAlign: 'center', fontSize: 14, color: 'var(--qq-ink-muted)', fontWeight: 700,
       }}>
         {lang === 'de' ? '👮 Moderator prüft die Bluffs… gleich geht\'s weiter.' : '👮 Moderator reviewing bluffs… one moment.'}
       </div>
@@ -280,7 +280,7 @@ export function BluffInput({ state: s, myTeamId, emit, roomCode, catColor, lang 
         <div style={{
           padding: '10px 14px', borderRadius: 16,
           background: 'rgba(244,114,182,0.12)', border: '1px solid rgba(244,114,182,0.3)',
-          fontSize: 13, color: QQ_COLORS.brandPinkSoft, fontWeight: 700, lineHeight: 1.4,
+          fontSize: 13, color: 'var(--qq-ink-muted)', fontWeight: 700, lineHeight: 1.4,
         }}>
           {lang === 'de'
             ? `🗳 Welche Antwort ist die ECHTE? (${myVote ? '✓ Gewählt' : 'Bitte wählen'})`

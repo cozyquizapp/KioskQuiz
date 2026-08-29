@@ -163,7 +163,7 @@ export function MidGameRejoinView({ roomCode, connected, lang, existingTeam, onR
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: 20 }}>
-          <div style={{ fontSize: 52, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
+          <div style={{ marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}><QQEmojiIcon emoji="🎮" size={52} /></div>
           <div style={{
             fontSize: 28, fontWeight: 900, color: 'var(--qq-ink)',
             marginBottom: 4,
@@ -400,7 +400,7 @@ export function WaitingScreen({ roomCode, connected, lang = 'de' }: { roomCode: 
       <div style={{ width: '100%', maxWidth: 440, margin: '0 auto', padding: '32px 20px', position: 'relative', zIndex: 5 }}>
         {/* Header skeleton */}
         <div style={{ textAlign: 'center', marginBottom: 28 }}>
-          <div style={{ fontSize: 42, marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}>🎮</div>
+          <div style={{ marginBottom: 8, animation: 'tcfloat 3s ease-in-out infinite', display: 'inline-block' }}><QQEmojiIcon emoji="🎮" size={42} /></div>
           <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--qq-ink)', letterSpacing: '0.04em' }}>COZYQUIZ</div>
           <div style={{ fontFamily: 'inherit', fontSize: 15, color: 'var(--qq-ink-muted)', margin: '8px 0' }}>
             {lang === 'de' ? 'Raum' : 'Room'}: {roomCode}

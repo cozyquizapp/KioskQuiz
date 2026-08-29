@@ -65,7 +65,7 @@ export function LobbyCard({ state: s, myTeam, lang }: { state: QQStateUpdate; my
     return (
       <CozyCard>
         <div style={{ textAlign: 'center', padding: '12px 0' }}>
-          <div style={{ fontSize: 48, marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}>🎮</div>
+          <div style={{ marginBottom: 10, animation: 'tcfloat 2.5s ease-in-out infinite' }}><QQEmojiIcon emoji="🎮" size={48} /></div>
           <div style={{ fontWeight: 900, fontSize: 22, color: 'var(--qq-ink)', marginBottom: 6 }}>
             {de ? 'Warteraum' : 'Waiting room'}
           </div>
@@ -250,10 +250,10 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
         {/* Top label */}
         <div style={{
           fontSize: 12, fontWeight: 900, letterSpacing: '0.1em',
-          textTransform: 'uppercase', color: '#F9A8D4',
+          textTransform: 'uppercase', color: 'var(--qq-ink-muted)',
           animation: 'tcreveal 0.4s ease both',
         }}>
-          🎬 {lang === 'en' ? "Tonight's teams" : 'Heute spielen'}
+          <QQEmojiIcon emoji="🎬" size={14} /> {lang === 'en' ? "Tonight's teams" : 'Heute spielen'}
         </div>
 
         {/* Big avatar disc — Wolf-Badge hat eigenen Inner-BG + Ring */}
@@ -277,7 +277,7 @@ export function TeamsRevealCard({ myTeam, lang }: { myTeam: QQTeam | null; lang:
         {/* Motivational line */}
         <div style={{
           fontSize: 22, fontWeight: 900,
-          color: QQ_COLORS.brandPink, textAlign: 'center',
+          color: 'var(--qq-ink)', textAlign: 'center',
           letterSpacing: '0.04em',
           textShadow: '0 2px 14px rgba(var(--qq-accent-rgb),0.4)',
           animation: 'tcreveal 0.5s ease 0.4s both',
@@ -352,6 +352,29 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
     ZEHN_VON_ZEHN: { de: '3 Antworten, 10 Punkte vergeben', en: '3 answers, distribute 10 points' },
     CHEESE:        { de: 'Was ist das?', en: 'What is this?' },
   };
+  // 2026-08-29 (Wolf: „round 1 in pink wurde ueberarbeitet … schau mal im
+  // cozyquiz nach", und danach „generell alle rundentexte und generell die
+  // texte haben jetzt eine feste creme farbe").
+  //
+  // `getRoundColor` faehrt eine Pink-Eskalation ueber die Runden
+  // (#F9A8D4 → #F472B6 → #EC4899 → #A21247, qqDesignTokens.ts). Die Buehne hat
+  // sie fuer den Rundentitel am 26.08. verlassen: `CozyQuizPhaseIntroView`
+  // schreibt dort `titleColor = isThemed() ? 'var(--qq-title)' :
+  // 'var(--qq-text)'`, also Tinte statt Rundenfarbe. Auf dem Handy stand die
+  // Eskalation noch - „Round 1" war rosa, waehrend auf der Wand daneben
+  // „Runde 1" in Creme stand.
+  //
+  // ⚠️ Die Rundenfarbe wird nicht geloescht, nur aus dem TEXT genommen. Sie
+  // traegt weiter die Kontur der Karte, solange keine Kategorie laeuft - dort
+  // ist sie das einzige Mittel, das „welche Runde" ueberhaupt zeigt. Auf der
+  // Buehne uebernimmt das der Fortschrittsbaum, den es auf dem Handy nicht
+  // gibt.
+  //
+  // Und Pink bleibt der Buehne als DRINGLICHKEIT vorbehalten (Timer unter zehn
+  // Sekunden, docs/UEBERGABE_TEAM.md Abschnitt 1). Eine Runde ist nicht
+  // dringend, sie faengt nur an.
+  const titelTinte = 'var(--qq-ink)';
+
   // Card border — round color for round intro, category color for category steps
   const introBorder = showCategory ? catColor : color;
 
@@ -364,11 +387,11 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
             <div style={{ fontSize: 14, color: 'var(--qq-ink-muted)', marginBottom: 6 }}>
               {lang === 'de' ? 'Nächste Phase' : 'Next phase'}
             </div>
-            <div style={{ fontSize: 52, fontWeight: 900, color, textShadow: `0 0 30px ${color}44`,
+            <div style={{ fontSize: 52, fontWeight: 900, color: titelTinte,
               animation: 'tcfloat 3s ease-in-out infinite' }}>
               {phaseName ?? `${lang === 'de' ? 'Runde' : 'Round'} ${s.gamePhaseIndex}`}
             </div>
-            <div style={{ fontSize: 17, color: `${color}cc`, marginTop: 8 }}>
+            <div style={{ fontSize: 17, color: 'var(--qq-ink-muted)', marginTop: 8 }}>
               {phaseDesc ?? ''}
             </div>
           </>
@@ -388,7 +411,7 @@ export function PhaseIntroCard({ state: s, lang }: { state: QQStateUpdate; lang:
               : (RULES[s.gamePhaseIndex] ?? RULES[3]);
             return (
               <>
-                <div style={{ fontSize: 13, fontWeight: 900, color, letterSpacing: '0.04em', marginBottom: 6 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: 'var(--qq-ink-muted)', letterSpacing: '0.04em', marginBottom: 6 }}>
                   {phaseName}
                 </div>
                 {/* 2026-07-08 (Wolf-Livetest 'Runden-Emojis inkonsistent zum
@@ -562,7 +585,7 @@ export function TieBreakerCard({
   const header = (
     <div style={{ textAlign: 'center', marginBottom: 12 }}>
       <div style={{ fontSize: 34, marginBottom: 4 }}>⚔️</div>
-      <div style={{ fontWeight: 900, fontSize: 20, color: QQ_COLORS.brandPink, letterSpacing: '0.02em' }}>
+      <div style={{ fontWeight: 900, fontSize: 20, color: 'var(--qq-ink)', letterSpacing: '0.02em' }}>
         {de ? 'STECHEN' : 'SUDDEN DEATH'}
       </div>
       <div style={{ fontSize: 12, color: 'var(--qq-ink-muted)', fontWeight: 700 }}>
@@ -727,7 +750,7 @@ export function PausedCard({ state: s, myTeamId, lang = 'de' }: { state: QQState
                 {i === 0 ? <QQEmojiIcon emoji="🥇"/> : i === 1 ? <QQEmojiIcon emoji="🥈"/> : i === 2 ? <QQEmojiIcon emoji="🥉"/> : `${i + 1}.`}
               </span>
               <span style={{ flex: 1, fontWeight: 900, fontSize: 15, color: t.color }}>{t.name}</span>
-              <span style={{ fontSize: 15, fontWeight: 700, color: QQ_COLORS.brandPink }}>{scoreOf(t)}</span>
+              <span style={{ fontSize: 15, fontWeight: 700, color: 'var(--qq-ink)' }}>{scoreOf(t)}</span>
             </div>
           ))}
         </div>
@@ -953,7 +976,7 @@ export function FinalRecapHintCard({
               {targetTeam.name}
             </span>
             <span style={{
-              fontSize: 22, fontWeight: 900, color: QQ_COLORS.brandPink,
+              fontSize: 22, fontWeight: 900, color: 'var(--qq-ink)',
               fontVariantNumeric: 'tabular-nums',
               textShadow: '0 0 12px rgba(var(--qq-accent-rgb),0.5)',
             }}>{targetWins} 🏆</span>
@@ -1165,12 +1188,12 @@ export function FinalRevealCard({
                 boxShadow: '0 0 18px rgba(244,114,182,0.35)',
               }}>
                 <span style={{ fontSize: 22 }}>💞</span>
-                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: QQ_COLORS.brandPinkSoft, textAlign: 'left' }}>
+                <span style={{ flex: 1, fontSize: 13, fontWeight: 700, color: 'var(--qq-ink-muted)', textAlign: 'left' }}>
                   {de
                     ? `Sympathie-Bonus mit ${mutualPartner.name}`
                     : `Sympathy bonus with ${mutualPartner.name}`}
                 </span>
-                <span style={{ fontSize: 18, fontWeight: 900, color: QQ_COLORS.brandPinkSoft }}>+1</span>
+                <span style={{ fontSize: 18, fontWeight: 900, color: 'var(--qq-ink-muted)' }}>+1</span>
               </div>
             )}
             {/* Total */}
@@ -1295,7 +1318,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
           animation: 'tcreveal 0.5s ease 0.4s both',
         }}>
           <div style={{
-            fontSize: 10, fontWeight: 900, color: QQ_COLORS.brandPink,
+            fontSize: 10, fontWeight: 900, color: 'var(--qq-ink)',
             letterSpacing: '0.1em', textTransform: 'uppercase', marginBottom: 4,
           }}>
             {lang === 'de' ? '🔖 Dein Stamm-Code' : '🔖 Your regular code'}
@@ -1305,7 +1328,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             marginTop: 2, marginBottom: 4,
           }}>
             <div style={{
-              fontSize: 22, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
+              fontSize: 22, fontWeight: 900, color: 'var(--qq-ink-muted)',
               fontFamily: 'monospace', letterSpacing: '0.04em',
               userSelect: 'all',
             }}>
@@ -1330,7 +1353,7 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             animation: 'tcreveal 0.5s ease 0.5s both',
           }}>
             <div style={{
-              fontSize: 17, fontWeight: 900, color: QQ_COLORS.brandPinkSoft,
+              fontSize: 17, fontWeight: 900, color: 'var(--qq-ink-muted)',
               textAlign: 'center', marginBottom: 4, lineHeight: 1.35,
             }}>
               {/* 2026-07-08 Konsistenz #14: Wording exakt wie Beamer-ThanksView

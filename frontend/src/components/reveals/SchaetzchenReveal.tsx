@@ -381,13 +381,24 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   const wx = winner ? axisPct(winner.num) : 50;
 
   // ── Dramaturgie: 0 Chips · 1 Beam+Count-up · 2 Dimmen · 3 Sieger ──
+  //
+  // 2026-08-29, Wolf: „zeigst erst die range und dann deckst du spannend auf?
+  // ... und die range verschwindet wieder". Damit loest sich auch die Enge, um
+  // die es vorher ging: die Spannen und die Wappen stehen nie GLEICHZEITIG auf
+  // der Folie. Erst liegen nur die acht Farbstrecken da - man sieht, wo die
+  // Fraktionen ungefaehr suchen, aber noch nicht, wer wo steht. Dann kommen die
+  // Wappen, und mit dem Wahrheits-Strahl verschwinden die Strecken wieder.
+  // Das Endbild ist danach exakt so ruhig wie ohne die Variante.
   const reduce = typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches;
   const [beat, setBeat] = useState<number>(reduce ? 3 : 0);
   const N = Math.max(1, placed.length);
+  /** Vorlauf, in dem NUR die Spannen liegen. Ohne Spanne gibt es ihn nicht -
+   *  dann laeuft die Folie wie bisher. */
+  const VORLAUF = spanneAn && !reduce ? 1400 : 0;
   useEffect(() => {
     if (reduce) return;
     const sfx = !s.sfxMuted;
-    const tBeam = 400 + N * 90 + 350;
+    const tBeam = VORLAUF + 400 + N * 90 + 350;
     const tDark = tBeam + 1200;
     const tWin = tDark + 550;
     const ts: ReturnType<typeof setTimeout>[] = [
@@ -396,7 +407,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       setTimeout(() => setBeat(3), tWin),
     ];
     if (sfx) {
-      placed.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, 400 + i * 90)); });
+      placed.forEach((_, i) => { ts.push(setTimeout(() => { try { playAvatarCascadeNote(i, N + 2); } catch {} }, VORLAUF + 400 + i * 90)); });
       ts.push(setTimeout(() => { try { playClimaxFinish(); } catch {} }, tWin));
     }
     return () => ts.forEach(clearTimeout);
@@ -616,8 +627,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   transform: `translateY(-50%) scaleX(${lit || !housedark ? 1 : 0.001})`,
                   transformOrigin: 'center',
                   background: r.team.color,
-                  opacity: housedark && !isWin ? (spanneStufe >= 2 ? 0.34 : 0.22) : (spanneStufe >= 2 ? 0.9 : 0.62),
-                  transition: reduce ? 'none' : 'transform 0.5s var(--qq-carry), opacity 0.4s ease',
+                  // Ab dem Wahrheits-Strahl (beat 1) sind die Strecken weg -
+                  // sie haben ihre Arbeit getan, und das Endbild bleibt ruhig.
+                  opacity: beat >= 1 ? 0 : (spanneStufe >= 2 ? 0.9 : 0.62),
+                  transition: reduce ? 'none' : 'transform 0.5s var(--qq-carry), opacity 0.55s var(--qq-enter)',
                 }} />
               );
             })}
@@ -672,7 +685,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                   display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 'clamp(2px,0.4cqh,6px)',
                   filter: dimmed ? `brightness(${DIM}) saturate(0.82)` : 'none',
                   transition: 'filter 0.5s var(--qq-enter)',
-                  animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${0.35 + i * 0.08}s both` : 'none',
+                  // `both` heisst: vor der Verzoegerung gilt der 0%-Zustand,
+                  // die Kachel ist also unsichtbar, bis sie an der Reihe ist.
+                  // Genau das traegt den Vorlauf.
+                  animation: !reduce ? `qqStr2Rise 0.5s var(--qq-enter) ${(VORLAUF / 1000) + 0.35 + i * 0.08}s both` : 'none',
                 }}>
                   {/* untere Lane: kurzer Stiel NACH OBEN zur Schiene steht vor dem Wappen;
                       obere Lane: Wert zuerst, dann Wappen, dann Stiel nach unten. Reihenfolge

@@ -24,7 +24,10 @@
  * * abgeschnitten: ein Behaelter mit `overflow: hidden`, dessen Inhalt breiter
  *   oder hoeher ist als er selbst.
  * * gequetscht:    ein Textknoten, dessen Zeilen nicht in seine Hoehe passen
- *   (`scrollHeight` groesser als `clientHeight`), ohne dass er scrollbar ist.
+ *   (`scrollHeight` groesser als `clientHeight`), ohne dass er scrollbar ist -
+ *   aber nur, wenn es MEHRERE Zeilen sind oder ein Vorfahr den Ueberstand
+ *   wegschneidet. Eine einzelne Zeile mit `line-height: 1` ragt fast immer ein
+ *   paar Pixel hinaus, und sichtbar ist davon nichts.
  * * unsichtbar:    ein Element mit Text, das keine Flaeche hat oder ganz
  *   ausserhalb des Bildes liegt.
  *
@@ -114,9 +117,36 @@ const MESSEN = ({ breite, hoehe }) => {
       }
     }
 
-    // Gequetscht: eigener Text, der nicht in die Hoehe passt, ohne Scrollweg.
+    /* Gequetscht: eigener Text, der nicht in die Hoehe passt, ohne Scrollweg.
+     *
+     * ⚠️ Nur bei MEHR ALS EINER Zeile oder wenn wirklich beschnitten wird.
+     *
+     * Eine einzelne Zeile mit `line-height: 1` ragt fast immer ein paar Pixel
+     * ueber ihren Kasten hinaus - die Schrift hat Ober- und Unterlaengen, der
+     * Kasten hat nur die Schriftgroesse. Sichtbar ist davon nichts, solange
+     * niemand beschneidet. 2026-08-29 meldete die Regel genau so die grosse
+     * Punktzahl der CrowdQuiz-Wertung („+50", 56 px, line-height 1) mit
+     * „5 px fehlen" - ein Wert, der nichts bedeutet.
+     *
+     * Ein Problem sind zwei Faelle: mehrere Zeilen, die sich dann ueberlagern,
+     * und ein Vorfahr mit `overflow: hidden`, der den Ueberstand wegschneidet.
+     */
     if (eigen && !scrollbar && el.scrollHeight - el.clientHeight > 2 && el.children.length === 0) {
-      gequetscht.push({ t, txt: eigen.slice(0, 28), fehlt: el.scrollHeight - el.clientHeight });
+      const zeilenhoehe = parseFloat(cs.lineHeight) || parseFloat(cs.fontSize) * 1.2;
+      const zeilen = Math.round(el.scrollHeight / Math.max(zeilenhoehe, 1));
+      let beschnitten = false;
+      for (let v = el.parentElement; v && !beschnitten; v = v.parentElement) {
+        const vs = getComputedStyle(v);
+        if (/hidden|clip/.test(vs.overflowY)) {
+          beschnitten = v.getBoundingClientRect().bottom < el.getBoundingClientRect().bottom - 1;
+        }
+      }
+      if (zeilen > 1 || beschnitten) {
+        gequetscht.push({
+          t, txt: eigen.slice(0, 28), fehlt: el.scrollHeight - el.clientHeight,
+          grund: beschnitten ? 'wird beschnitten' : `${zeilen} Zeilen`,
+        });
+      }
     }
   }
 
@@ -214,7 +244,7 @@ for (const [feld, titel, regel, zeile] of [
   ['abgeschnitten', 'Abgeschnitten', 'Behaelter mit `overflow: hidden`, deren Inhalt nicht hineinpasst.',
     (v) => v.abgeschnitten.map(a => `* ${v.name}: \`<${a.t}>\` „${a.txt}" — ${a.dx > 2 ? `${a.dx} px zu breit` : ''}${a.dx > 2 && a.dy > 2 ? ', ' : ''}${a.dy > 2 ? `${a.dy} px zu hoch` : ''}`)],
   ['gequetscht', 'Gequetscht', 'Text, dessen Zeilen nicht in die Hoehe des Elements passen.',
-    (v) => v.gequetscht.map(a => `* ${v.name}: „${a.txt}" — ${a.fehlt} px fehlen`)],
+    (v) => v.gequetscht.map(a => `* ${v.name}: „${a.txt}" — ${a.fehlt} px fehlen (${a.grund})`)],
   ['unsichtbar', 'Unsichtbar', 'Elemente mit Text, die keine Flaeche haben oder ausserhalb des Bildes liegen.',
     (v) => v.unsichtbar.map(a => `* ${v.name}: \`<${a.t}>\` „${a.txt}" bei ${a.wo}`)],
 ]) {

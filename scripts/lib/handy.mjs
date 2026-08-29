@@ -112,8 +112,18 @@ export async function handyStarten(opts = {}) {
   const { mega = false, secs = 200, vorBeitritt = null, look = 'standard', sprache = null, frisch = false, _zweiterVersuch = false } = opts;
   if (frisch && !_zweiterVersuch) await backendNeustart('--frisch');
   const health = await fetch(`${API}/api/health`).then(r => r.json()).catch(() => null);
-  if (!health?.ok) throw new Error('Backend nicht erreichbar auf 4000.');
+  if (!health?.ok) throw new Error(`Backend nicht erreichbar auf ${API}.\n  npm run start:backend`);
   console.log(`Backend ok (build ${health.build ?? '?'})`);
+
+  /* Das Frontend genauso pruefen, und zwar HIER.
+   *
+   * 2026-08-29: ohne diese Zeile stirbt der Lauf erst beim ersten `goto` mit
+   * „net::ERR_CONNECTION_REFUSED at http://localhost:5173/beamer" und einem
+   * Playwright-Aufrufprotokoll - das liest sich wie ein Fehler des Werkzeugs,
+   * und dabei laeuft schlicht der Entwicklungsserver nicht. Eine Zeile frueher
+   * gefragt, steht da, was zu tun ist. */
+  const vorne = await fetch(BASE).then(r => r.ok).catch(() => false);
+  if (!vorne) throw new Error(`Frontend nicht erreichbar auf ${BASE}.\n  npm run start:frontend`);
 
   const browser = await chromium.launch({
     headless: true,

@@ -258,9 +258,21 @@ export default function QQTeamPage() {
     // nehmen (Push „Willkommen Hirnsturm"). Name + Emoji sind an die Fraktion
     // gebunden → erzwingen. Erst joinen wenn State da ist, damit largeGroupMode
     // sicher bekannt ist (sonst Race: State noch null → Funny-Name).
-    const largeGroup = !!(state as any)?.largeGroupMode;
+    // 2026-08-29 (Haertung, kein bewiesener Fix): die Wache stand eine Ebene
+    // tiefer, naemlich IM largeGroup-Zweig - und dort ist sie wirkungslos.
+    // `largeGroup` wird aus `state` abgeleitet, ist bei `state === null` also
+    // false, und der Fall faellt am Fraktions-Zweig vorbei in den unteren, der
+    // den gespeicherten Namen schickt. Genau davor warnt der Kommentar
+    // darueber seit Monaten („sonst Race: State noch null → Funny-Name").
+    //
+    // Anlass war ein CrowdQuiz-Lauf, in dem das Handy „Testtrupp" hiess statt
+    // „Gut Feeling". ⚠️ Nachstellen liess es sich NICHT: sieben Versuche mit
+    // scripts/handy-namensrennen.mjs, alle sauber. Die Zeile steht hier also,
+    // weil sie tut, was der Kommentar ankuendigt - nicht, weil ein roter Test
+    // gruen geworden waere.
+    if (!state) return;
+    const largeGroup = !!(state as any).largeGroupMode;
     if (largeGroup) {
-      if (!state) return; // auf State warten
       const storedName = localStorage.getItem('qq_teamName');
       if (!storedName) return; // kein Rejoin-Kandidat → Fraktions-Grid zeigen
       emit('qq:joinTeam', {
@@ -280,7 +292,13 @@ export default function QQTeamPage() {
         if (ack.ok) setJoined(true);
       });
     }
-  }, [connected, kicked, (state as any)?.largeGroupMode]);
+    // ⚠️ `!!state` gehoert in die Abhaengigkeiten, sonst kostet die Wache oben
+    // den Wiedereinstieg ganz. Ohne sie wacht der Effekt nur auf, wenn sich
+    // `largeGroupMode` AENDERT - und ein Server, der das Feld nicht schickt,
+    // laesst es auf `undefined` stehen, vor und nach dem ersten State. Das
+    // Handy wuerde dann nie wieder einsteigen. Mit `!!state` kippt genau
+    // einmal etwas, wenn der State da ist.
+  }, [connected, kicked, !!state, (state as any)?.largeGroupMode]);
 
   // 2026-05-04 (Wolf): Kick-Detection — wenn wir 'joined' waren und im
   // Lobby-State plötzlich nicht mehr in s.teams stehen, wurden wir gekickt.

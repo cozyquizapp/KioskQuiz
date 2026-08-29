@@ -47,15 +47,15 @@ export function CozyCard({
     <div style={{
       // Skin: opake Karten-Flaeche/Rand/Schatten + card-text. Cozy behaelt
       // das dunkle Frosted-Glass (borderColor-Tint = Team-Farbe bleibt sichtbar).
-      // 2026-08-29: `--qq-karte-grund` ist die Ausnahme fuer Karten, hinter denen
-      // ein FOTO liegt (CrowdQuiz im Kolosseum-Look, Fraktions-Welt). 0.62
-      // Deckung reichen ueber dem ruhigen Seitengrund, ueber einem Bild nicht:
-      // scripts/handy-kartengrund.mjs mass 11 von 16 Textzeilen unter WCAG
-      // 1.4.3, die Regeln-Zeile bei 3.07:1. Gesetzt wird die Variable dort, wo
-      // das Bild eingeschaltet wird (QQTeamPage), nicht hier - sonst wuerde das
-      // dunkle Frosted-Glass auch im normalen CozyQuiz dichter, und das ist
-      // eine bewusste Entscheidung und kein Fehler.
-      background: themed ? 'var(--qq-card-bg)' : 'var(--qq-karte-grund, rgba(31, 26, 46, 0.62))',
+      // 2026-08-29: hier stand kurzzeitig eine dichtere Flaeche fuer Karten ueber
+      // der Fraktions-Welt. Zurueckgenommen, weil die Messung, auf die sie sich
+      // stuetzte, falsch war: im Harness hat das Steuerpult den Raum mitten im
+      // Lauf vom Kolosseum auf das Standarddesign zurueckgezogen, gemessen wurde
+      // also die duenne Buehnen-Karte ueber dem Foto. Mit gehaltenem Look haelt
+      // dieses Frosted-Glass seine Textzeilen bei 4,8 bis 5,0:1 - ueber WCAG
+      // 1.4.3, ohne dass die Welt dahinter zugedeckt wird (Wolf 2026-08-29: „in
+      // kolosseum soll das bild immer im bg sein").
+      background: themed ? 'var(--qq-card-bg)' : 'rgba(31, 26, 46, 0.62)',
       backdropFilter: themed ? undefined : 'blur(20px) saturate(160%)',
       WebkitBackdropFilter: themed ? undefined : 'blur(20px) saturate(160%)',
       color: themed ? 'var(--qq-card-text)' : undefined,

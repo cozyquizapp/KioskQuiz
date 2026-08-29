@@ -94,7 +94,7 @@ gemeinsam.forEach((n, i) => {
 const kopf = `
   <text x="${RAND}" y="${RAND + 26}" fill="${TINTE}" font-family="sans-serif" font-size="24" font-weight="800">/team &#183; die beiden CrowdQuiz-Looks</text>
   <text x="${RAND}" y="${RAND + 50}" fill="${LEISE}" font-family="sans-serif" font-size="14">links CozyQuiz Standard &#183; rechts Mit Kolosseum &#183; ${gemeinsam.length} Stationen &#183; 390x844 &#183; ${new Date().toISOString().slice(0, 10)}</text>
-  ${nurEine.length ? `<text x="${RAND}" y="${RAND + 70}" fill="${LEISE}" font-family="sans-serif" font-size="12">nicht gezeigt, weil nur eine Seite sie hatte: ${schutz(nurEine.join(', '))}</text>` : ''}`;
+  <text x="${RAND}" y="${RAND + 70}" fill="${LEISE}" font-family="sans-serif" font-size="12">Die Fraktion wird pro Lauf neu gezogen &#8211; unterschiedliche Wappen und Farben sind kein Look-Unterschied.${nurEine.length ? ` &#183; nicht gezeigt, weil nur eine Seite sie hatte: ${schutz(nurEine.join(', '))}` : ''}</text>`;
 
 const svg = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${blattB}" height="${blattH}">${kopf}${text.join('')}</svg>`);
 

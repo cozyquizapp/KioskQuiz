@@ -57,13 +57,25 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   });
 
   const ctxMain = await browser.newContext({ viewport: { width: 1760, height: 990 } });
-  await ctxMain.addInitScript(({ pin }) => {
+  /* ⚠️ `qqArenaLook` gehoert hier hin, nicht zum Handy.
+   *
+   * Das Steuerpult zieht alte CrowdQuiz-Raeume auf das Standarddesign nach
+   * (QQModeratorPage, „Alte CrowdQuiz-Raeume nachziehen"): sieht es einen Raum
+   * mit themeId 'cozy', OHNE dass im Speicher 'kolosseum' steht, schaltet es
+   * einmalig auf 'buehne'. Ein Harness ohne diesen Eintrag setzt das Kolosseum
+   * also, und ein paar Sekunden spaeter nimmt das Steuerpult es wieder weg.
+   *
+   * 2026-08-29 genau so passiert: die Beitritts-Ansicht trug noch die
+   * Fraktions-Welt, alle spaeteren nicht mehr - der Umschwung lag zwischen den
+   * beiden Aufnahmen. */
+  await ctxMain.addInitScript(({ pin, look }) => {
     try {
       sessionStorage.setItem('qq_admin_unlocked', '1');
       sessionStorage.setItem('qq_admin_pin', pin);
       localStorage.setItem('qq-admin-pin', pin);
+      localStorage.setItem('qqArenaLook', look === 'kolosseum' ? 'kolosseum' : 'standard');
     } catch { /* ignore */ }
-  }, { pin: PIN });
+  }, { pin: PIN, look });
 
   const ctxTeam = await browser.newContext({
     viewport: HANDY, deviceScaleFactor: 2, isMobile: true, hasTouch: true,

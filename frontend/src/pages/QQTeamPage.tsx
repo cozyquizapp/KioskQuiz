@@ -814,12 +814,6 @@ function SetupFlow({ step, setStep, avatarId, setAvatarId,
       // Team-Tint-Personalisierung. ESC bleibt immer ESC.
       background: isThemed() && !eurovisionMode ? 'var(--qq-bg)' : setupPageBg,
       color: isThemed() ? 'var(--qq-text)' : darkPage.color,
-      // 2026-08-29: Karten, hinter denen die Fraktions-Welt liegt, bekommen
-      // einen dichteren Grund. 0.62 Deckung sind ueber dem ruhigen Seitengrund
-      // richtig und ueber einem Foto zu wenig - gemessen mit
-      // scripts/handy-kartengrund.mjs. Der Wert steht hier und nicht in
-      // CozyCard, damit das normale CozyQuiz sein Frosted-Glass behaelt.
-      ['--qq-karte-grund' as string]: arenaFactionBg ? 'rgba(31, 26, 46, 0.88)' : undefined,
       transition: 'background 800ms ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>
@@ -1763,12 +1757,6 @@ function TeamGameView({
       ...darkPage,
       background: isThemed() && !isEsc ? 'var(--qq-bg)' : finalPageBg,
       color: isThemed() ? 'var(--qq-text)' : darkPage.color,
-      // 2026-08-29: Karten, hinter denen die Fraktions-Welt liegt, bekommen
-      // einen dichteren Grund. 0.62 Deckung sind ueber dem ruhigen Seitengrund
-      // richtig und ueber einem Foto zu wenig - gemessen mit
-      // scripts/handy-kartengrund.mjs. Der Wert steht hier und nicht in
-      // CozyCard, damit das normale CozyQuiz sein Frosted-Glass behaelt.
-      ['--qq-karte-grund' as string]: arenaFactionBg ? 'rgba(31, 26, 46, 0.88)' : undefined,
       transition: 'background 0.8s ease',
     }} className="qq-team-page">
       <style>{TEAM_CSS}</style>

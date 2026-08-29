@@ -1343,9 +1343,30 @@ export function GameOverCard({ state: s, myTeamId, lang = 'de', roomCode }: { st
             }}>
               {lang === 'en' ? 'We hope you had fun, see you next time!' : 'Wir hoffen, ihr hattet Spaß, bis zum nächsten Mal!'}
             </div>
-            {roomCode && (
+            {/* ⚠️ 2026-08-29: hier stand nur `/summary/{roomCode}`, und das ist
+                die Route „juengstes Spiel in diesem Raum". Auf dem Beamer wurde
+                genau das am 2026-05-10 repariert (Wolf: „geteilter Spieler-Link
+                wird beim naechsten Spiel ueberschrieben") - der QR zeigt seither
+                auf `/summary/by-id/{id}`. Der Knopf auf dem HANDY hat die
+                Reparatur nie bekommen, obwohl `lastGameResultId` im selben
+                Zustand liegt.
+
+                Folge: wer sich seinen Link merkt oder ihn weiterschickt, sieht
+                den naechsten Abend desselben Raums, sobald der gespielt ist.
+                Ausgerechnet auf der Seite, die zum Teilen gedacht ist.
+
+                Dieselbe Rueckfallebene wie im Beamer: solange die Id noch nicht
+                angekommen ist (kurzes Fenster beim Phasenwechsel), der alte Weg.
+
+                ⚠️ Nur GELESEN, nicht gesehen: `lastGameResultId` wird erst beim
+                Speichern gesetzt, und im Testmodus wird nicht gespeichert
+                (siehe #69). Geprueft ist die Zeile gegen die identische Stelle
+                in CozyQuizThanksView, die seit Mai laeuft. */}
+            {(s.lastGameResultId || roomCode) && (
               <a
-                href={`/summary/${encodeURIComponent(roomCode)}`}
+                href={s.lastGameResultId
+                  ? `/summary/by-id/${encodeURIComponent(s.lastGameResultId)}`
+                  : `/summary/${encodeURIComponent(roomCode!)}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 style={{

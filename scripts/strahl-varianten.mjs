@@ -31,6 +31,7 @@ const FASSUNGEN = [
   { name: 'leise', spanne: '1', strahl: null },
   { name: 'lesbar', spanne: '2', strahl: null },
   { name: 'tief', spanne: '2', strahl: 'tief' },
+  { name: 'luft', spanne: '2', strahl: 'luft' },
 ];
 
 const tipps = (ziel) => Array.from({ length: BOTS }, (_, i) =>

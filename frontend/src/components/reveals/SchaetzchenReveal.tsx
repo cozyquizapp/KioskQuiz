@@ -20,6 +20,7 @@ import { useState, useEffect, useMemo, useRef } from 'react';
 import { useRandKorrektur } from './useRandKorrektur';
 import type { QQStateUpdate } from '../../../../shared/quarterQuizTypes';
 import { qqMegaFactionName, qqMegaFactionSlug, qqIsMega } from '../../../../shared/quarterQuizTypes';
+import { qqArenaType } from '../../cozyQuizShared';
 import { qqDistanceFactionScores, qqSchaetzchenParse } from '../../../../shared/qqDistanceScore';
 import { QQTeamAvatar } from '../QQTeamAvatar';
 import { QQEmojiIcon, QQIcon } from '../QQIcon';
@@ -103,7 +104,42 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   // Wert-Kaestchen darunter breiter, und beides ist mittig ueber der Position.
   // Also lief die rechte Haelfte aus dem Bild. Auf der Buehne bekommt die
   // Flaeche 4% Rand je Seite, damit die Klemmung Platz zum Klemmen hat.
-  const CONTENT_INSET = isMega ? 11 : (istBuehne ? 4 : 0); // % Rand je Seite
+  // 2026-08-29, Wolf am Bild: „spanne ist aus entfernung nicht wirklich
+  // sichtbar". Stimmt - 4 px bei 62 Prozent Deckkraft sind auf zehn Meter
+  // nichts. Deshalb gibt es die Variante jetzt in zwei Staerken, und dazu
+  // einen Schalter fuer die zweite Frage („wie saehe das aus, wenn du das
+  // untere Drittel mehr nutzt").
+  //   qq-spanne = 1      leise (erster Entwurf)
+  //   qq-spanne = 2      lesbar auf Entfernung
+  //   qq-strahl = tief   groessere Wappen, Strahl weiter oben, damit die
+  //                      untere Bahn den leeren Streifen fuellt
+  const schalter = (name: string) => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const ausAdresse = new URLSearchParams(window.location.search).get(name.replace('qq-', ''));
+      if (ausAdresse) return ausAdresse;
+      return window.localStorage.getItem(name);
+    } catch { return null; }
+  };
+  const spanneStufe = useMemo(() => Number(schalter('qq-spanne') ?? 0) || 0, []);
+  const spanneAn = spanneStufe > 0;
+  const strahlTief = useMemo(() => schalter('qq-strahl') === 'tief', []);
+  // 2026-08-29, Wolf: „rechts und links waere ja noch platz, alles koennte
+  // etwas groesser sein um zu atmen, du darfst den raum ja nutzen, sonst wirds
+  // zu voll in der mitte". Die Variante „luft" nimmt sich diesen Raum:
+  // seitlich, unten, und in der Groesse der Wappen.
+  const strahlLuft = useMemo(() => schalter('qq-strahl') === 'luft', []);
+  const strahlGross = strahlTief || strahlLuft;
+  // ⚠️ Die 11 % kommen vom KOLOSSEUM, nicht vom Grossformat. Im Kommentar
+  // darueber steht es auch so: hinter der Buehne lag das Kolosseum-Bild, und
+  // dessen Schale endet vor dem Bildrand. Seit dem 28.08. laeuft CrowdQuiz aber
+  // im Standarddesign, das Bild ist per Vorgabe AUS - der Rand blieb trotzdem
+  // und verschenkt links und rechts je 194 px auf einer 1760er Buehne.
+  // In der Variante „luft" haengt er deshalb am Kolosseum statt am Format.
+  const kolosseum = qqArenaType(s);
+  const CONTENT_INSET = strahlLuft
+    ? (kolosseum ? 11 : 4)
+    : (isMega ? 11 : (istBuehne ? 4 : 0)); // % Rand je Seite
   // Arena-Wertung EXAKT wie Backend (per Handy, Ø über verbundene Handys) — nur
   // mega. Marker bleibt der beste Tipp (Visual), aber Ranking/Sieger = Punkte, so
   // matcht der Sieger 1:1 das Standing (Wolf 2026-07-14). qqSchaetzchenParse =
@@ -131,26 +167,6 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
   //
   // ⚠️ Nur zum Vergleichen, VORGABE ist weiter der bisherige Stand. Schalter:
   // ?spanne=1 in der Adresse oder localStorage qq-spanne=1.
-  // 2026-08-29, Wolf am Bild: „spanne ist aus entfernung nicht wirklich
-  // sichtbar". Stimmt - 4 px bei 62 Prozent Deckkraft sind auf zehn Meter
-  // nichts. Deshalb gibt es die Variante jetzt in zwei Staerken, und dazu
-  // einen Schalter fuer die zweite Frage („wie saehe das aus, wenn du das
-  // untere Drittel mehr nutzt").
-  //   qq-spanne = 1      leise (erster Entwurf)
-  //   qq-spanne = 2      lesbar auf Entfernung
-  //   qq-strahl = tief   groessere Wappen, Strahl weiter oben, damit die
-  //                      untere Bahn den leeren Streifen fuellt
-  const schalter = (name: string) => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const ausAdresse = new URLSearchParams(window.location.search).get(name.replace('qq-', ''));
-      if (ausAdresse) return ausAdresse;
-      return window.localStorage.getItem(name);
-    } catch { return null; }
-  };
-  const spanneStufe = useMemo(() => Number(schalter('qq-spanne') ?? 0) || 0, []);
-  const spanneAn = spanneStufe > 0;
-  const strahlTief = useMemo(() => schalter('qq-strahl') === 'tief', []);
 
   /** Je Fraktion: kleinster, groesster und mittlerer Tipp ihrer Handys. */
   const spannen = useMemo(() => {
@@ -507,7 +523,10 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
                 Platz. Kollision damit baulich ausgeschlossen statt weggerueckt. */}
             <div aria-hidden style={{
               position: 'absolute', left: 0,
-              ...(istBuehne ? { bottom: 0 } : { top: `${RAIL - 6}%` }),
+              // In „luft" wandern sie aus der Bildecke an die Unterkante des
+              // Blocks: sie beschriften die Achse und sollen bei ihr stehen,
+              // nicht 230 px darunter allein im Dunkeln.
+              ...(strahlLuft ? { top: '82%' } : istBuehne ? { bottom: 0 } : { top: `${RAIL - 6}%` }),
               zIndex: 2,
               fontSize: istBuehne ? 'clamp(15px, 1.6cqw, 26px)' : 'clamp(10px, 1.05cqw, 17px)',
               fontWeight: 900, color: 'var(--qq-text-muted)',
@@ -515,7 +534,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
             }}>← {lang === 'en' ? 'too low' : 'zu niedrig'}</div>
             <div aria-hidden style={{
               position: 'absolute', right: 0,
-              ...(istBuehne ? { bottom: 0 } : { top: `${RAIL - 6}%` }),
+              ...(strahlLuft ? { top: '82%' } : istBuehne ? { bottom: 0 } : { top: `${RAIL - 6}%` }),
               zIndex: 2,
               fontSize: istBuehne ? 'clamp(15px, 1.6cqw, 26px)' : 'clamp(10px, 1.05cqw, 17px)',
               fontWeight: 900, color: 'var(--qq-text-muted)',
@@ -595,7 +614,7 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               // In der Variante „tief" wachsen die Wappen mit: die Hoehe wird
               // ja frei, und ein groesseres Wappen ist der eigentliche Gewinn
               // auf zehn Meter.
-              const av = strahlTief
+              const av = strahlGross
                 ? (isWin ? 'clamp(76px, 9cqw, 152px)' : 'clamp(46px, 5.2cqw, 86px)')
                 : (isWin ? 'clamp(68px, 8.2cqw, 134px)' : 'clamp(38px, 4.3cqw, 68px)');
               return (

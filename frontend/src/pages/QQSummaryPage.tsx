@@ -199,6 +199,11 @@ const T = {
 
   fbSurprise:    { de: 'Was hat euch am meisten \u00FCberrascht?', en: 'What surprised you most?' },
   fbOptional:    { de: '(optional)', en: '(optional)' },
+  // 2026-08-29: der kurze Weg. Gemessen waren es acht Fragen und drei
+  // Textfelder - fuer einen Gast um halb zwoelf in einer Bar ein Fragebogen.
+  fbMehr:        { de: 'Noch mehr sagen?', en: 'Want to say more?' },
+  fbWeniger:     { de: 'Weniger anzeigen', en: 'Show less' },
+  fbMehrSub:     { de: 'Vier kurze Fragen, freiwillig', en: 'Four quick questions, optional' },
   fbSurprisePh:  { de: 'z.B. eine Antwort, eine Kategorie, ein Moment\u2026',
                    en: 'e.g. an answer, a category, a moment\u2026' },
 
@@ -671,7 +676,15 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
               {ranking.map((t, i) => {
                 const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : null;
                 return (
-                  <button key={t.id} onClick={() => setSelectedTeamId(t.id)} className="qq-sum-pick"
+                  <button key={t.id} className="qq-sum-pick"
+                    onClick={() => {
+                      setSelectedTeamId(t.id);
+                      // ⚠️ Ohne das landet man im Team-Schirm da, wo man in
+                      // der Uebersicht gescrollt hatte - also mitten in den
+                      // Zahlen, ohne den Kopf gesehen zu haben. Der Wechsel
+                      // ist ein Ortswechsel, kein Weiterlesen.
+                      try { window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior }); } catch { window.scrollTo(0, 0); }
+                    }}
                     style={{
                       position: 'relative',
                       padding: '18px 14px 16px', borderRadius: sumR(18),
@@ -772,7 +785,20 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
       {/* Mega Event: kein Stamm-Code pro Farb-Gruppe (Gruppe ≠ echtes Team). */}
       {!summary.nested && <SummaryStammCode teamId={selectedTeam.id} lang={lang} brand={brand} />}
 
-      <Section title={tr('yourNumbers', lang)}>
+      {/* 2026-08-29 (Wolf: „mach untermenues"). Gemessen war der Team-Schirm
+          4,0 Bildschirme hoch, mit sechs gleich schweren Abschnitten und ohne
+          jede Uebersicht. Die Leiste steht ABSICHTLICH unter dem Kopf und
+          nicht darueber: der erste Blick soll auf dem Team liegen, nicht auf
+          einer Navigation. */}
+      <AbschnittsLeiste punkte={[
+        { id: 'sum-zahlen',   label: lang === 'de' ? 'Zahlen' : 'Numbers' },
+        ...(summary.cellOwners && summary.gridSize ? [{ id: 'sum-brett', label: lang === 'de' ? 'Brett' : 'Board' }] : []),
+        { id: 'sum-ehren',    label: lang === 'de' ? 'Ehrentitel' : 'Honors' },
+        { id: 'sum-endstand', label: lang === 'de' ? 'Endstand' : 'Standings' },
+        { id: 'sum-feedback', label: 'Feedback' },
+      ]} />
+
+      <Section id="sum-zahlen" title={tr('yourNumbers', lang)}>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
           {summary.nested ? (
             // Mega Event: keine Grid-Stats (Felder/Joker/Klau) — nur Punkte + Treffer.
@@ -798,6 +824,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
           Ende. Cells nach team.color gefärbt, Top-Team-Cluster pulsiert. */}
       {summary.cellOwners && summary.gridSize && summary.gridSize > 0 && (
         <SummaryBoard
+          id="sum-brett"
           gridSize={summary.gridSize}
           cellOwners={summary.cellOwners}
           teams={summary.teams}
@@ -808,11 +835,11 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
       {/* H3 Superlatives: narrative End-Game-Titel. Mega Event: stattdessen die
           3 Faktions-Awards (schnellstes/treffsicherstes/Aufholjagd). */}
       {summary.nested && summary.megaAwards ? (
-        <Section title={lang === 'de' ? 'Fraktions-Awards' : 'Faction awards'}>
+        <Section id="sum-ehren" title={lang === 'de' ? 'Fraktions-Awards' : 'Faction awards'}>
           <MegaAwardsStrip awards={summary.megaAwards} de={lang === 'de'} />
         </Section>
       ) : (
-        <Superlatives teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
+        <Superlatives id="sum-ehren" teams={summary.teams} selectedId={selectedTeam.id} lang={lang} endAwards={summary.endAwards ?? null} brand={brand} />
       )}
 
       {myFunny && (
@@ -835,7 +862,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         </Section>
       )}
 
-      <Section title={tr('finalStandings', lang)}>
+      <Section id="sum-endstand" title={tr('finalStandings', lang)}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
           {ranking.map((t, i) => {
             const isMe = t.id === selectedTeam.id;
@@ -862,7 +889,7 @@ export default function QQSummaryPage({ mockSummary }: { mockSummary?: Summary }
         </div>
       </Section>
 
-      <FeedbackForm roomCode={summary.roomCode} teamName={selectedTeam.name} lang={lang} brand={brand} />
+      <FeedbackForm id="sum-feedback" roomCode={summary.roomCode} teamName={selectedTeam.name} lang={lang} brand={brand} />
       <PartnerCTA lang={lang} brand={brand} />
       <UpcomingEvents events={upcoming} lang={lang} brand={brand} />
       <Footer />
@@ -935,6 +962,10 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
     // umgekehrt fuer die runde Scheibe komponiert (Wolf-Entscheid 2026-06-25)
     // und bleiben rund.
     ...(kachelSatz ? { '--qq-team-mark-radius': '18%' } : {}),
+    // Grund der klebenden Untermenue-Leiste. Muss dicht genug sein, dass
+    // durchlaufender Text darunter nicht mitliest, und darf trotzdem nicht
+    // als zweiter Kasten wirken.
+    '--sum-leiste': themed ? 'rgba(12,9,20,0.82)' : 'rgba(10,8,20,0.86)',
   };
   // Kolosseum-BG (Portrait-Fraktions-Szene des Siegers) als fixe Ebene hinter
   // dem Inhalt — bleibt viewport-gross waehrend die lange Summary drueber
@@ -943,7 +974,7 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
   const arenaScrim =
     'linear-gradient(180deg, rgba(8,6,16,0.60) 0%, rgba(8,6,16,0.70) 26%, rgba(8,6,16,0.82) 60%, rgba(8,6,16,0.90) 100%)';
   return (
-    <div style={{
+    <div className="qq-sum-flaeche" style={{
       minHeight: '100vh',
       position: 'relative',
       ...sumVars,
@@ -962,6 +993,73 @@ function Shell({ children, lang, onLang, brand, arena, arenaBgSlug }: {
       fontFamily: themed ? 'var(--qq-font)' : "'Bricolage Grotesque', 'Inter', 'Nunito', system-ui, sans-serif",
       padding: '20px 16px 40px',
     } as React.CSSProperties}>
+      {/*
+        Bewegungssprache der Seite, an EINER Stelle.
+
+        2026-08-29, Wolf: „mach die seite satisfying". Drei Regeln, mehr nicht:
+          1. Nur `transform` und `opacity`. Alles andere kostet Layout, und auf
+             einem Handy sieht man das sofort.
+          2. Auftritte weich raus (ease-out), Abgaenge kuerzer als Auftritte.
+          3. Ein Abschnitt deckt EINMAL auf. Wer zurueckscrollt, sieht keine
+             Wiederholung - sonst wird aus einer Geste ein Zucken.
+
+        ⚠️ `prefers-reduced-motion` schaltet alles ab, nicht nur ab. Wer die
+        Einstellung setzt, hat oft einen Grund, der mit Schwindel zu tun hat.
+      */}
+      <style>{`
+        .qq-sum-auf { opacity: 0; transform: translateY(16px); }
+        .qq-sum-auf[data-da] {
+          opacity: 1; transform: none;
+          transition: opacity 0.42s cubic-bezier(.23,1,.32,1), transform 0.42s cubic-bezier(.23,1,.32,1);
+        }
+        .qq-sum-flaeche button, .qq-sum-flaeche a[href] {
+          transition: transform 0.14s cubic-bezier(.33,1,.68,1),
+                      background-color 0.18s ease, border-color 0.18s ease, color 0.18s ease;
+        }
+        .qq-sum-flaeche button:active { transform: scale(0.965); }
+        .qq-sum-flaeche a[href]:active { transform: scale(0.985); }
+        .qq-sum-flaeche :focus-visible {
+          outline: 2px solid var(--qq-accent, #F5ECD8);
+          outline-offset: 2px; border-radius: 6px;
+        }
+        /* ⚠️ Die Leiste bekommt ihr display:flex aus DIESER Regel und nicht aus
+           einem Inline-Style, und das ist kein Geschmack. main.css setzt in der
+           Handy-Breite auf jedes Element mit Inline-display:flex ein
+           flex-wrap:wrap mit !important - und ein !important im Stilblatt
+           schlaegt selbst einen Inline-Style. Das Untermenue brach deshalb in
+           zwei Zeilen um, obwohl direkt daneben flexWrap nowrap stand; zweimal
+           gemessen, bevor die Ursache klar war. Ohne Inline-display:flex greift
+           der Selektor gar nicht erst.
+
+           main.css gehoert der Team-Sitzung (docs/UEBERGABE_TEAM.md), deshalb
+           wird dort nichts geaendert, sondern hier ausgewichen.
+
+           ⚠️ Und noch eine Falle in derselben Zeile: dieser Block ist ein
+           JS-Template-Literal. Ein Gegenstrich-Anfuehrungszeichen im Kommentar
+           beendet es mitten im CSS - der erste Anlauf hat genau so 31
+           Syntaxfehler erzeugt. Hier stehen deshalb keine. */
+        .qq-sum-leiste {
+          display: flex; flex-wrap: nowrap; gap: 6px;
+          overflow-x: auto; scrollbar-width: none;
+          -webkit-mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+                  mask-image: linear-gradient(90deg, #000 0, #000 calc(100% - 26px), transparent 100%);
+        }
+        .qq-sum-leiste::-webkit-scrollbar { display: none; }
+        /* Kachel im Endbrett: eine Welle von links oben, 18 ms je Feld. */
+        @keyframes qqSumZelle {
+          from { opacity: 0; transform: scale(0.72); }
+          to   { opacity: 1; transform: none; }
+        }
+        /* ⚠️ Ohne diese Zeile druckt die Seite leer: beim Drucken laeuft kein
+           Beobachter, also bleibt jeder Abschnitt auf Deckkraft 0. */
+        @media print { .qq-sum-auf { opacity: 1 !important; transform: none !important; } }
+        @media (prefers-reduced-motion: reduce) {
+          .qq-sum-auf, .qq-sum-auf[data-da] { opacity: 1; transform: none; transition: none; }
+          .qq-sum-flaeche button, .qq-sum-flaeche a[href] { transition: none; }
+          .qq-sum-flaeche button:active, .qq-sum-flaeche a[href]:active { transform: none; }
+          .qq-sum-flaeche [style*="qqSum"], .qq-sum-flaeche * { animation: none !important; }
+        }
+      `}</style>
       {arenaBgUrl && (
         <div aria-hidden style={{
           position: 'fixed', inset: 0, zIndex: 0, pointerEvents: 'none',
@@ -1192,7 +1290,8 @@ function Hero({ draftTitle, winner, playedAt, lang, brand }: {
 // 2026-05-09 (Wolf): Final-Brett-Renderer für die Summary-Seite. Zeigt das
 // Endbrett mit Team-Color-Cells. Top-Team (höchster largestConnected) hat
 // zusätzlichen Pulse. Klein genug damit's auf dem Phone scrollbar bleibt.
-function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
+function SummaryBoard({ gridSize, cellOwners, teams, lang, id }: {
+  id?: string;
   gridSize: number;
   cellOwners: Array<Array<string | null>>;
   teams: SummaryTeam[];
@@ -1200,10 +1299,16 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
 }) {
   const topTeam = [...teams].sort(compareTeamsForRanking)[0];
   // Cell-Größe für Mobile-First (kompakt)
-  const maxBoardWidth = 320; // px
+  // 2026-08-29: 320 -> 344. Das Endbrett ist das Souvenir des Abends und stand
+  // schmaler als jede andere Karte darueber. Die Textspalte ist auf einem
+  // 390er Handy 358 breit, 344 laesst die Karte atmen und macht das Brett zum
+  // Anker des Schirms, ohne dass etwas quer laeuft (gemessen: Querlauf 0).
+  const maxBoardWidth = 344; // px
   const cellSize = Math.floor(maxBoardWidth / gridSize) - 4;
+  const reduziert = typeof window !== 'undefined'
+    && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
   return (
-    <Section title={lang === 'de' ? 'Endbrett' : 'Final board'}>
+    <Section id={id} title={lang === 'de' ? 'Endbrett' : 'Final board'}>
       <style>{`
         @keyframes summaryBoardPulse {
           0%, 100% { box-shadow: inset 0 0 0 1px var(--sum-line-2); }
@@ -1221,12 +1326,18 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
           gap: 4,
         }}>
           {cellOwners.map((row, r) => row.map((ownerId, c) => {
+            // ⚠️ Die Welle laeuft ueber die DIAGONALE (r + c), nicht ueber den
+            // Zaehler: bei einem Raster liest sich das als Licht, das von oben
+            // links darueberstreicht. Ein Zaehler laeuft zeilenweise und sieht
+            // aus wie ein Ladebalken.
+            const welle = reduziert ? undefined : `qqSumZelle 0.34s cubic-bezier(.23,1,.32,1) ${(r + c) * 0.045}s both`;
             if (!ownerId) {
               return (
                 <div key={`${r}-${c}`} style={{
                   width: cellSize, height: cellSize, borderRadius: 4,
                   background: 'var(--sum-card)',
                   border: '1px solid var(--sum-line)',
+                  animation: welle,
                 }} />
               );
             }
@@ -1239,7 +1350,8 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
                 background: `linear-gradient(135deg, ${owner.color}, ${owner.color}cc)`,
                 border: `1.5px solid ${owner.color}`,
                 ['--c-color' as any]: `${owner.color}88`,
-                animation: isTop ? 'summaryBoardPulse 2.4s ease-in-out infinite' : undefined,
+                animation: [welle, isTop && !reduziert ? 'summaryBoardPulse 2.4s ease-in-out 1.2s infinite' : null]
+                  .filter(Boolean).join(', ') || undefined,
                 opacity: isTop ? 1 : 0.7,
                 display: 'flex', alignItems: 'center', justifyContent: 'center',
               }}>
@@ -1279,14 +1391,146 @@ function SummaryBoard({ gridSize, cellOwners, teams, lang }: {
   );
 }
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
+/**
+ * Deckt ein Element auf, sobald es ins Bild kommt - einmal, nie wieder.
+ *
+ * 2026-08-29 (Wolf: „mach die seite satisfying"). Bewusst ueber eine Klasse
+ * und CSS, nicht ueber State: der Beobachter setzt genau ein Attribut, alles
+ * andere macht der Kompositor. `transform` und `opacity` sind die zwei
+ * Eigenschaften, die ohne Layout auskommen.
+ *
+ * ⚠️ `rootMargin` mit negativem Unterrand: sonst gilt ein Abschnitt schon als
+ * sichtbar, wenn seine erste Zeile am unteren Bildrand kratzt, und die
+ * Bewegung ist vorbei, bevor jemand hinsieht.
+ */
+function useAufdecken<T extends HTMLElement>() {
+  const ref = useRef<T>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    if (typeof IntersectionObserver === 'undefined'
+      || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches) {
+      el.dataset.da = '1';
+      return;
+    }
+    const beob = new IntersectionObserver((eintraege) => {
+      for (const e of eintraege) {
+        if (e.isIntersecting) { (e.target as HTMLElement).dataset.da = '1'; beob.unobserve(e.target); }
+      }
+    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.06 });
+    beob.observe(el);
+    return () => beob.disconnect();
+  }, []);
+  return ref;
+}
+
+function Section({ title, children, id }: { title: string; children: React.ReactNode; id?: string }) {
+  const ref = useAufdecken<HTMLElement>();
   return (
-    <section style={{ marginBottom: 20 }}>
+    // ⚠️ `scrollMarginTop` gehoert zum Untermenue: ohne den Wert springt die
+    // Leiste beim Antippen genau ueber die Ueberschrift, zu der sie fuehrt.
+    <section id={id} ref={ref} className="qq-sum-auf" style={{ marginBottom: 20, scrollMarginTop: 62 }}>
       <h3 style={{ fontSize: 13, color: 'var(--sum-muted)', textTransform: 'uppercase', letterSpacing: 0.3, margin: '0 0 10px', fontWeight: 900 }}>
         {title}
       </h3>
       {children}
     </section>
+  );
+}
+
+/**
+ * Untermenue: eine klebende Leiste mit den Abschnitten dieser Seite.
+ *
+ * 2026-08-29, Wolf: „mach untermenues". Der Anlass steht in der Messung: der
+ * Team-Schirm ist auf einem 390er Handy 4,0 Bildschirme hoch und hat sechs
+ * gleich schwere Abschnitte. Ohne Uebersicht scrollt man blind.
+ *
+ * Der aktive Punkt wird nicht aus der Scrollposition GERECHNET, sondern
+ * beobachtet - das ist der Unterschied zwischen „stimmt meistens" und
+ * „stimmt". Ausgewaehlt wird der oberste Abschnitt, der gerade im oberen
+ * Drittel steht.
+ */
+function AbschnittsLeiste({ punkte }: { punkte: Array<{ id: string; label: string }> }) {
+  const [aktiv, setAktiv] = useState<string | null>(punkte[0]?.id ?? null);
+  const leiste = useRef<HTMLDivElement | null>(null);
+
+  // ⚠️ Bewusst NICHT ueber einen IntersectionObserver, obwohl das der
+  // naheliegende Weg ist. Erster Anlauf genau so: „welcher Abschnitt ist im
+  // oberen Band sichtbar". Wenn zwei gleichzeitig hineinragen - und das ist an
+  // jeder Abschnittsgrenze der Fall - muss man einen waehlen, und beide
+  // Antworten sind falsch. Gemessen: die Leiste sagte „Brett", waehrend die
+  // Ehrentitel schon die halbe Seite fuellten.
+  //
+  // Die Frage ist auch nicht „was ist sichtbar", sondern „worin stehe ich".
+  // Das ist der LETZTE Abschnitt, dessen Oberkante die Leiste passiert hat.
+  useEffect(() => {
+    let angefordert = false;
+    const aktualisieren = () => {
+      angefordert = false;
+      const grenze = 96;   // Unterkante der klebenden Leiste plus etwas Luft
+      let treffer = punkte[0]?.id ?? null;
+      for (const p of punkte) {
+        const el = document.getElementById(p.id);
+        if (el && el.getBoundingClientRect().top <= grenze) treffer = p.id;
+      }
+      setAktiv(treffer);
+    };
+    const beiScroll = () => {
+      if (angefordert) return;
+      angefordert = true;
+      window.requestAnimationFrame(aktualisieren);
+    };
+    aktualisieren();
+    window.addEventListener('scroll', beiScroll, { passive: true });
+    window.addEventListener('resize', beiScroll, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', beiScroll);
+      window.removeEventListener('resize', beiScroll);
+    };
+  }, [punkte]);
+
+  // ⚠️ Der aktive Punkt muss auch IN der Leiste sichtbar sein. Bei fuenf
+  // Punkten auf 390 px passt nicht alles nebeneinander, und ohne diesen Teil
+  // wandert die Markierung aus dem Bild, waehrend man scrollt.
+  useEffect(() => {
+    const el = leiste.current?.querySelector<HTMLElement>(`[data-punkt="${aktiv}"]`);
+    el?.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+  }, [aktiv]);
+
+  if (punkte.length < 3) return null;
+  return (
+    <div style={{
+      position: 'sticky', top: 0, zIndex: 30,
+      margin: '0 -16px 14px', padding: '8px 16px',
+      background: 'var(--sum-leiste)', backdropFilter: 'blur(14px)',
+      WebkitBackdropFilter: 'blur(14px)',
+      borderBottom: '1px solid var(--sum-line)',
+    }}>
+      {/* Flex, Umbruch und Maske stehen in der Klasse, nicht hier - die
+          Begruendung steht bei der Regel im Stilblock der Shell. Gemessen:
+          fuenf Punkte sind zusammen 475 breit, die Spalte ist 358. Es MUSS
+          also schieben, und der Verlauf am rechten Rand sagt das. */}
+      <div ref={leiste} className="qq-sum-leiste">
+        {punkte.map(p => {
+          const an = aktiv === p.id;
+          return (
+            <button key={p.id} type="button" data-punkt={p.id}
+              aria-current={an ? 'true' : undefined}
+              onClick={() => {
+                document.getElementById(p.id)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+              style={{
+                flexShrink: 0, minHeight: 36, padding: '7px 13px', borderRadius: sumPill(999),
+                background: an ? 'var(--qq-accent, #F5ECD8)' : 'var(--sum-card)',
+                color: an ? 'var(--sum-on-accent)' : 'var(--sum-muted)',
+                border: `1px solid ${an ? 'transparent' : 'var(--sum-line)'}`,
+                fontFamily: 'inherit', fontWeight: 900, fontSize: 12,
+                letterSpacing: 0.2, cursor: 'pointer', whiteSpace: 'nowrap',
+              }}>{p.label}</button>
+          );
+        })}
+      </div>
+    </div>
   );
 }
 
@@ -1376,7 +1620,12 @@ function Stat({ label, value, suffix, accent, staggerIdx = 0 }: { label: string;
       borderRadius: sumR(12), padding: '10px 12px',
     }}>
       <div style={{ fontSize: 10, fontWeight: 800, color: 'var(--sum-dim)', textTransform: 'uppercase', letterSpacing: 0.3 }}>{label}</div>
-      <div style={{ fontSize: 22, fontWeight: 900, color: accent, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
+      {/* 2026-08-29: die sechs Werte standen in vier Gruen, einem Creme und
+          einem Rot - ohne Regel dahinter. Gruen hiess dort nichts, es war
+          einfach die Farbe, die da stand. Im Design traegt die Zahl die
+          Textfarbe und der Akzent bleibt dem Team. Cozy behaelt seine
+          Farben. */}
+      <div style={{ fontSize: 22, fontWeight: 900, color: isThemed() ? 'var(--sum-text)' : accent, lineHeight: 1.1, marginTop: 2, fontVariantNumeric: 'tabular-nums' }}>
         {animated} {suffix && <span style={{ fontSize: 11, color: 'var(--sum-muted)', fontWeight: 700 }}>{suffix}</span>}
       </div>
     </div>
@@ -1388,7 +1637,8 @@ function Stat({ label, value, suffix, accent, staggerIdx = 0 }: { label: string;
 // Thanks-Page. Backend übergibt endAwards (mit Team-IDs + Bonus-Daten).
 // Vorher: 4 abgeleitete Titel (Meister-Klauer, Trefferkönig, Joker-Jäger,
 // Territorium-König) — durch die 3 neuen ersetzt.
-function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
+function Superlatives({ teams, selectedId, lang, endAwards, brand, id }: {
+  id?: string;
   teams: SummaryTeam[]; selectedId: string; lang: Lang;
   endAwards: Summary['endAwards'];
   brand: ReturnType<typeof summaryBrand>;
@@ -1468,7 +1718,7 @@ function Superlatives({ teams, selectedId, lang, endAwards, brand }: {
 
   const sectionTitle = lang === 'de' ? 'Ehrentitel' : 'Honors';
   return (
-    <Section title={sectionTitle}>
+    <Section id={id} title={sectionTitle}>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10 }}>
         {titles.map((title, i) => {
           const isMe = title.winner.id === selectedId;
@@ -1595,7 +1845,8 @@ const CATEGORY_OPTIONS: Array<{ id: string; emoji: string; labelKey: keyof typeo
   { id: 'CHEESE',        emoji: '📸', labelKey: 'cat_CHEESE' },
 ];
 
-function FeedbackForm({ roomCode, teamName, lang, brand }: {
+function FeedbackForm({ roomCode, teamName, lang, brand, id }: {
+  id?: string;
   roomCode: string; teamName?: string; lang: Lang;
   brand: ReturnType<typeof summaryBrand>;
 }) {
@@ -1610,6 +1861,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
   const [text, setText] = useState('');
   const [contact, setContact] = useState('');
   const [contactIntent, setContactIntent] = useState<ContactIntent[]>([]);
+  const [mehr, setMehr] = useState(false);
   const [sending, setSending] = useState(false);
   const [sent, setSent] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -1691,7 +1943,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
 
   if (sent) {
     return (
-      <Section title={tr('feedbackTitle', lang)}>
+      <Section id={id} title={tr('feedbackTitle', lang)}>
         <div style={{
           background: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)',
           borderRadius: sumR(12), padding: '16px', textAlign: 'center',
@@ -1709,13 +1961,13 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
   }
 
   return (
-    <Section title={tr('feedbackTitle', lang)}>
+    <Section id={id} title={tr('feedbackTitle', lang)}>
       <div style={{
         background: 'var(--sum-soft)', border: '1px solid var(--sum-card-2)',
         borderRadius: sumR(14), padding: 14, display: 'flex', flexDirection: 'column', gap: 14,
       }}>
 
-        {/* 1. Typ-Chips */}
+{/* 1. Typ-Chips */}
         <div>
           <Caption>{tr('fbWhatType', lang)}</Caption>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 6 }}>
@@ -1740,101 +1992,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           </div>
         </div>
 
-        {/* 2. Nochmal spielen? (nicht bei Bug) */}
-        {type !== 'bug' && (
-          <div>
-            <Caption>{tr('fbPlayAgain', lang)}</Caption>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-              {([
-                { id: 'yes',   emoji: '😍', labelKey: 'fbPA_yes' as const },
-                { id: 'maybe', emoji: '👍', labelKey: 'fbPA_maybe' as const },
-                { id: 'no',    emoji: '😐', labelKey: 'fbPA_no' as const },
-              ] as Array<{ id: PlayAgain; emoji: string; labelKey: keyof typeof T }>).map(opt => {
-                const active = playAgain === opt.id;
-                return (
-                  <button key={opt.id} type="button"
-                    onClick={() => setPlayAgain(active ? null : opt.id)} aria-pressed={active}
-                    style={{
-                      padding: '8px 4px', borderRadius: sumPill(10),
-                      background: active ? 'rgba(251,191,36,0.15)' : 'var(--sum-card)',
-                      border: `1.5px solid ${active ? 'rgba(251,191,36,0.5)' : 'var(--sum-line)'}`,
-                      color: active ? QQ_COLORS.amber400 : 'var(--sum-muted)',
-                      fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
-                      cursor: 'pointer',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                    }}>
-                    <span style={{ fontSize: 18, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
-                    <span>{tr(opt.labelKey, lang)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 3. Kategorie-Favorit (nicht bei Bug) */}
-        {type !== 'bug' && (
-          <div>
-            <Caption>{tr('fbFavCat', lang)}</Caption>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {CATEGORY_OPTIONS.map(opt => {
-                const active = favoriteCategory === opt.id;
-                return (
-                  <button key={opt.id} type="button"
-                    onClick={() => setFavoriteCategory(active ? null : opt.id)} aria-pressed={active}
-                    style={{
-                      flex: '1 1 calc(33% - 4px)', minWidth: 0,
-                      padding: '8px 6px', borderRadius: sumPill(999),
-                      background: active ? 'rgba(99,102,241,0.18)' : 'var(--sum-card)',
-                      border: `1.5px solid ${active ? 'rgba(99,102,241,0.55)' : 'var(--sum-line)'}`,
-                      color: active ? '#a5b4fc' : 'var(--sum-muted)',
-                      fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
-                      cursor: 'pointer',
-                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
-                      whiteSpace: 'nowrap',
-                    }}>
-                    <span><QQEmojiIcon emoji={opt.emoji}/></span>
-                    <span>{tr(opt.labelKey, lang)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 4. Spiel-Länge (nicht bei Bug) */}
-        {type !== 'bug' && (
-          <div>
-            <Caption>{tr('fbLength', lang)}</Caption>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
-              {([
-                { id: 'short', emoji: '⏱️', labelKey: 'fbLen_short' as const },
-                { id: 'ok',    emoji: '✅', labelKey: 'fbLen_ok' as const },
-                { id: 'long',  emoji: '💤', labelKey: 'fbLen_long' as const },
-              ] as Array<{ id: LengthFeel; emoji: string; labelKey: keyof typeof T }>).map(opt => {
-                const active = lengthFeel === opt.id;
-                return (
-                  <button key={opt.id} type="button"
-                    onClick={() => setLengthFeel(active ? null : opt.id)} aria-pressed={active}
-                    style={{
-                      padding: '8px 4px', borderRadius: sumPill(10),
-                      background: active ? 'rgba(34,197,94,0.12)' : 'var(--sum-card)',
-                      border: `1.5px solid ${active ? 'rgba(34,197,94,0.45)' : 'var(--sum-line)'}`,
-                      color: active ? QQ_COLORS.green300 : 'var(--sum-muted)',
-                      fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
-                      cursor: 'pointer',
-                      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
-                    }}>
-                    <span style={{ fontSize: 16, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
-                    <span>{tr(opt.labelKey, lang)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* 5. Rating (nicht bei Bug/Idea — bei reinem Feature-Wunsch wenig sinnvoll) */}
+{/* 5. Rating (nicht bei Bug/Idea — bei reinem Feature-Wunsch wenig sinnvoll) */}
         {(type === 'feedback' || type === 'praise') && (
           <div>
             <Caption>{tr('fbStars', lang)}</Caption>
@@ -1854,23 +2012,7 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
           </div>
         )}
 
-        {/* 6. Überraschung (nicht bei Bug) */}
-        {type !== 'bug' && (
-          <div>
-            <Caption>{tr('fbSurprise', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
-            <input value={surprise} onChange={e => setSurprise(e.target.value)} maxLength={500}
-              aria-label={tr('fbSurprise', lang)}
-              placeholder={tr('fbSurprisePh', lang)}
-              style={{
-                width: '100%', boxSizing: 'border-box',
-                background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
-                borderRadius: sumPill(8), padding: '8px 10px', color: 'var(--sum-text)',
-                fontSize: 13, fontFamily: 'inherit',
-              }} />
-          </div>
-        )}
-
-        {/* 7. Haupttext — Pflicht */}
+{/* 7. Haupttext — Pflicht */}
         <div>
           <Caption>{type === 'bug' ? tr('fbMainBug', lang) : type === 'idea' ? tr('fbMainIdea', lang) : tr('fbMainGen', lang)}</Caption>
           <textarea value={text} onChange={e => setText(e.target.value)} rows={3} maxLength={2000}
@@ -1884,42 +2026,205 @@ function FeedbackForm({ roomCode, teamName, lang, brand }: {
             }} />
         </div>
 
-        {/* 8. Kontakt + Intent */}
+
+        {/* ── Der kurze Weg endet hier ──────────────────────────────────────
+            2026-08-29, Wolf: „mach die seite satisfying" und „optimiere die
+            seite". Der Anlass ist eine Zahl: acht Fragen und drei Textfelder
+            standen hintereinander, und das Formular beginnt auf dem
+            Team-Schirm erst bei 2,4 von 4,0 Bildschirmen. Wer bis dahin
+            gescrollt ist, soll nicht auf einen Fragebogen treffen.
+
+            Oben stehen jetzt die drei, die wirklich tragen: Art, Sterne,
+            Text. Wer hier absendet, hat das Wertvollste schon geliefert.
+            Alles andere ist freiwillig und liegt eine Geste entfernt.
+
+            ⚠️ Die Hoehe wird ueber `grid-template-rows: 0fr -> 1fr`
+            animiert, nicht ueber `height: auto`. `auto` ist kein
+            animierbarer Wert; der uebliche Ausweg (feste max-height) rechnet
+            entweder zu knapp und schneidet ab, oder zu grosszuegig und dann
+            haengt das Oeffnen sichtbar nach. */}
         <div>
-          <Caption>{tr('fbContact', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
-          <input value={contact} onChange={e => setContact(e.target.value)} maxLength={200}
-            aria-label={tr('fbContact', lang)}
-            placeholder={tr('fbContactPh', lang)}
+          <button type="button" onClick={() => setMehr(m => !m)} aria-expanded={mehr}
             style={{
-              width: '100%', boxSizing: 'border-box',
-              background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
-              borderRadius: sumPill(8), padding: '8px 10px', color: 'var(--sum-text)',
-              fontSize: 13, fontFamily: 'inherit',
-            }} />
-          {contact.trim() && (
-            <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-              {([
-                { id: 'response', labelKey: 'fbIntent_response' as const },
-                { id: 'date',     labelKey: 'fbIntent_date' as const },
-                { id: 'booking',  labelKey: 'fbIntent_booking' as const },
-              ] as Array<{ id: ContactIntent; labelKey: keyof typeof T }>).map(opt => {
-                const active = contactIntent.includes(opt.id);
-                return (
-                  <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)} aria-pressed={active}
-                    style={{
-                      padding: '5px 10px', borderRadius: sumPill(999),
-                      background: active ? 'rgba(236,72,153,0.18)' : 'var(--sum-card)',
-                      border: `1px solid ${active ? 'rgba(236,72,153,0.5)' : 'var(--sum-line-2)'}`,
-                      color: active ? '#f0abfc' : 'var(--sum-muted)',
-                      fontFamily: 'inherit', fontWeight: 700, fontSize: 11,
-                      cursor: 'pointer',
-                    }}>
-                    {tr(opt.labelKey, lang)}
-                  </button>
-                );
-              })}
+              width: '100%', minHeight: 44, padding: '10px 14px',
+              borderRadius: sumPill(10),
+              background: 'var(--sum-card)', border: '1px dashed var(--sum-line-2)',
+              color: 'var(--sum-muted)', fontFamily: 'inherit', fontWeight: 800,
+              fontSize: 12, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+            }}>
+            <span>{mehr ? tr('fbWeniger', lang) : tr('fbMehr', lang)}</span>
+            {!mehr && (
+              <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbMehrSub', lang)}</span>
+            )}
+            <span aria-hidden style={{
+              display: 'inline-block', transition: 'transform 0.24s cubic-bezier(.23,1,.32,1)',
+              transform: mehr ? 'rotate(180deg)' : 'none', lineHeight: 1,
+            }}>⌄</span>
+          </button>
+          <div style={{
+            display: 'grid',
+            gridTemplateRows: mehr ? '1fr' : '0fr',
+            transition: 'grid-template-rows 0.34s cubic-bezier(.23,1,.32,1)',
+          }}>
+            <div style={{ overflow: 'hidden' }}>
+              <div style={{
+                display: 'flex', flexDirection: 'column', gap: 14,
+                paddingTop: mehr ? 14 : 0,
+                opacity: mehr ? 1 : 0,
+                transition: 'opacity 0.24s ease' + (mehr ? ' 0.12s' : ''),
+              }}>
+    {/* 2. Nochmal spielen? (nicht bei Bug) */}
+            {type !== 'bug' && (
+              <div>
+                <Caption>{tr('fbPlayAgain', lang)}</Caption>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                  {([
+                    { id: 'yes',   emoji: '😍', labelKey: 'fbPA_yes' as const },
+                    { id: 'maybe', emoji: '👍', labelKey: 'fbPA_maybe' as const },
+                    { id: 'no',    emoji: '😐', labelKey: 'fbPA_no' as const },
+                  ] as Array<{ id: PlayAgain; emoji: string; labelKey: keyof typeof T }>).map(opt => {
+                    const active = playAgain === opt.id;
+                    return (
+                      <button key={opt.id} type="button"
+                        onClick={() => setPlayAgain(active ? null : opt.id)} aria-pressed={active}
+                        style={{
+                          padding: '8px 4px', borderRadius: sumPill(10),
+                          background: active ? 'rgba(251,191,36,0.15)' : 'var(--sum-card)',
+                          border: `1.5px solid ${active ? 'rgba(251,191,36,0.5)' : 'var(--sum-line)'}`,
+                          color: active ? QQ_COLORS.amber400 : 'var(--sum-muted)',
+                          fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
+                          cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        }}>
+                        <span style={{ fontSize: 18, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
+                        <span>{tr(opt.labelKey, lang)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+    {/* 3. Kategorie-Favorit (nicht bei Bug) */}
+            {type !== 'bug' && (
+              <div>
+                <Caption>{tr('fbFavCat', lang)}</Caption>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {CATEGORY_OPTIONS.map(opt => {
+                    const active = favoriteCategory === opt.id;
+                    return (
+                      <button key={opt.id} type="button"
+                        onClick={() => setFavoriteCategory(active ? null : opt.id)} aria-pressed={active}
+                        style={{
+                          flex: '1 1 calc(33% - 4px)', minWidth: 0,
+                          padding: '8px 6px', borderRadius: sumPill(999),
+                          background: active ? 'rgba(99,102,241,0.18)' : 'var(--sum-card)',
+                          border: `1.5px solid ${active ? 'rgba(99,102,241,0.55)' : 'var(--sum-line)'}`,
+                          color: active ? '#a5b4fc' : 'var(--sum-muted)',
+                          fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
+                          cursor: 'pointer',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4,
+                          whiteSpace: 'nowrap',
+                        }}>
+                        <span><QQEmojiIcon emoji={opt.emoji}/></span>
+                        <span>{tr(opt.labelKey, lang)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+    {/* 4. Spiel-Länge (nicht bei Bug) */}
+            {type !== 'bug' && (
+              <div>
+                <Caption>{tr('fbLength', lang)}</Caption>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 6 }}>
+                  {([
+                    { id: 'short', emoji: '⏱️', labelKey: 'fbLen_short' as const },
+                    { id: 'ok',    emoji: '✅', labelKey: 'fbLen_ok' as const },
+                    { id: 'long',  emoji: '💤', labelKey: 'fbLen_long' as const },
+                  ] as Array<{ id: LengthFeel; emoji: string; labelKey: keyof typeof T }>).map(opt => {
+                    const active = lengthFeel === opt.id;
+                    return (
+                      <button key={opt.id} type="button"
+                        onClick={() => setLengthFeel(active ? null : opt.id)} aria-pressed={active}
+                        style={{
+                          padding: '8px 4px', borderRadius: sumPill(10),
+                          background: active ? 'rgba(34,197,94,0.12)' : 'var(--sum-card)',
+                          border: `1.5px solid ${active ? 'rgba(34,197,94,0.45)' : 'var(--sum-line)'}`,
+                          color: active ? QQ_COLORS.green300 : 'var(--sum-muted)',
+                          fontFamily: 'inherit', fontWeight: 800, fontSize: 11,
+                          cursor: 'pointer',
+                          display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2,
+                        }}>
+                        <span style={{ fontSize: 16, lineHeight: 1 }}><QQEmojiIcon emoji={opt.emoji}/></span>
+                        <span>{tr(opt.labelKey, lang)}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+    {/* 6. Überraschung (nicht bei Bug) */}
+            {type !== 'bug' && (
+              <div>
+                <Caption>{tr('fbSurprise', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
+                <input value={surprise} onChange={e => setSurprise(e.target.value)} maxLength={500}
+                  aria-label={tr('fbSurprise', lang)}
+                  placeholder={tr('fbSurprisePh', lang)}
+                  style={{
+                    width: '100%', boxSizing: 'border-box',
+                    background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
+                    borderRadius: sumPill(8), padding: '8px 10px', color: 'var(--sum-text)',
+                    fontSize: 13, fontFamily: 'inherit',
+                  }} />
+              </div>
+            )}
+
+    {/* 8. Kontakt + Intent */}
+            <div>
+              <Caption>{tr('fbContact', lang)} <span style={{ color: 'var(--sum-dim)', fontWeight: 700 }}>{tr('fbOptional', lang)}</span></Caption>
+              <input value={contact} onChange={e => setContact(e.target.value)} maxLength={200}
+                aria-label={tr('fbContact', lang)}
+                placeholder={tr('fbContactPh', lang)}
+                style={{
+                  width: '100%', boxSizing: 'border-box',
+                  background: 'rgba(0,0,0,0.25)', border: '1px solid var(--sum-line-2)',
+                  borderRadius: sumPill(8), padding: '8px 10px', color: 'var(--sum-text)',
+                  fontSize: 13, fontFamily: 'inherit',
+                }} />
+              {contact.trim() && (
+                <div style={{ marginTop: 6, display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                  {([
+                    { id: 'response', labelKey: 'fbIntent_response' as const },
+                    { id: 'date',     labelKey: 'fbIntent_date' as const },
+                    { id: 'booking',  labelKey: 'fbIntent_booking' as const },
+                  ] as Array<{ id: ContactIntent; labelKey: keyof typeof T }>).map(opt => {
+                    const active = contactIntent.includes(opt.id);
+                    return (
+                      <button key={opt.id} type="button" onClick={() => toggleIntent(opt.id)} aria-pressed={active}
+                        style={{
+                          padding: '5px 10px', borderRadius: sumPill(999),
+                          background: active ? 'rgba(236,72,153,0.18)' : 'var(--sum-card)',
+                          border: `1px solid ${active ? 'rgba(236,72,153,0.5)' : 'var(--sum-line-2)'}`,
+                          color: active ? '#f0abfc' : 'var(--sum-muted)',
+                          fontFamily: 'inherit', fontWeight: 700, fontSize: 11,
+                          cursor: 'pointer',
+                        }}>
+                        {tr(opt.labelKey, lang)}
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
             </div>
-          )}
+
+              </div>
+            </div>
+          </div>
         </div>
 
         {err && <div data-fb-error role="alert" style={{ fontSize: 13, color: QQ_COLORS.red300, fontWeight: 700, padding: '8px 12px', background: 'rgba(239,68,68,0.10)', border: '1px solid rgba(239,68,68,0.35)', borderRadius: sumPill(8) }}>⚠️ {err}</div>}
@@ -2043,7 +2348,14 @@ function ctaButton(bg: string, color: string, border?: string): React.CSSPropert
 }
 
 function Footer() {
-  const linkStyle: React.CSSProperties = { color: 'var(--sum-muted)', textDecoration: 'none' };
+  // ⚠️ 2026-08-29 gemessen: diese Links waren 17 px hoch. Mindestmass fuer ein
+  // Tippziel sind 44 (Apple HIG, Material 48). Impressum und Datenschutz sind
+  // Pflichtlinks - die MUESSEN treffbar sein, nicht nur vorhanden.
+  // Die Flaeche waechst ueber Polsterung, die Schrift bleibt wie sie war.
+  const linkStyle: React.CSSProperties = {
+    color: 'var(--sum-muted)', textDecoration: 'none',
+    display: 'inline-flex', alignItems: 'center', minHeight: 44, padding: '0 6px',
+  };
   return (
     <div style={{
       marginTop: 28, paddingTop: 18,
@@ -2051,7 +2363,7 @@ function Footer() {
       textAlign: 'center', fontSize: 11, color: 'var(--sum-dim)',
     }}>
       <div>CozyQuiz by <b style={{ color: 'var(--sum-muted)' }}>cozywolf</b></div>
-      <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <div style={{ marginTop: 4, display: 'flex', justifyContent: 'center', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
         <a href="https://play.cozyquiz.app" style={linkStyle}>play.cozyquiz.app</a>
         <span style={{ opacity: 0.4 }}>·</span>
         <a href="https://cozywolf.de" target="_blank" rel="noreferrer" style={linkStyle}>cozywolf.de</a>

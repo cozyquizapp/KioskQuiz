@@ -49,6 +49,26 @@ for (const [name, breite, hoehe] of [['handy', 390, 844], ['laptop', 1280, 900]]
     }
   });
   await sleep(200);
+  // ⚠️ Seit die Abschnitte beim Hereinscrollen aufdecken, ist ein
+  // fullPage-Bild ohne Scrollen WERTLOS: der Beobachter meldet nur, was im
+  // Sichtfenster war, alles darunter bleibt auf Deckkraft 0. Der erste Satz
+  // Bilder nach dem Umbau zeigte eine leere Seite mit Kopf und Fusszeile.
+  //
+  // ⚠️ Und dann NOCH EINMAL, nach dem Antippen eines Teams. Der zweite Anlauf
+  // scrollte nur die Uebersicht, und der Team-Schirm blieb leer - der Fehler
+  // sah genauso aus wie vorher, hatte aber eine andere Ursache. Deshalb steht
+  // das Durchscrollen jetzt in einer Funktion, die JEDES Bild benutzt.
+  const durchscrollen = () => seite.evaluate(async () => {
+    const schritt = Math.round(window.innerHeight * 0.7);
+    for (let y = 0; y < document.documentElement.scrollHeight; y += schritt) {
+      window.scrollTo(0, y);
+      await new Promise(r => setTimeout(r, 120));
+    }
+    window.scrollTo(0, 0);
+    await new Promise(r => setTimeout(r, 400));
+  });
+  await durchscrollen();
+  await sleep(500);
   await seite.screenshot({ path: `${ZIEL}/${name}.png`, fullPage: true });
 
   // ⚠️ Die Seite hat ZWEI Ansichten, und die zweite sieht niemand, der nur die
@@ -59,6 +79,8 @@ for (const [name, breite, hoehe] of [['handy', 390, 844], ['laptop', 1280, 900]]
   if (await teamKnopf.count()) {
     await teamKnopf.click();
     await sleep(1200);
+    await durchscrollen();
+    await sleep(500);
     await seite.screenshot({ path: `${ZIEL}/${name}-team.png`, fullPage: true });
   }
   const mass = await seite.evaluate(() => ({

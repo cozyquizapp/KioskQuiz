@@ -116,6 +116,48 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
     [isMega, s.answers, s.teams, target, q.unit],
   );
   const ptsOfAvatar = (av: string) => Math.round((factionScores.get(av) as any)?.points ?? 0);
+
+  // ── Variante „Spanne" (2026-08-29, Wolf: „bau die spanne als variante") ────
+  // Heute sitzt das Wappen am BESTEN Tipp der Fraktion, die Punkte kommen aber
+  // aus dem Durchschnitt ueber alle ihre Handys (deine Entscheidung vom
+  // 14.07.: „Marker bleibt der beste Tipp (Visual), aber Ranking = Punkte").
+  // Bild und Zahl erzaehlen damit leicht verschiedene Geschichten.
+  //
+  // Die Variante legt das Wappen auf den DURCHSCHNITT - also genau dorthin, wo
+  // die Punkte herkommen - und zeichnet dahinter die Spanne der Fraktion vom
+  // schlechtesten bis zum besten Tipp. Das ist das, was CozyQuiz baulich nicht
+  // haben kann: bei acht Teams ist ein Tipp ein Tipp, bei fuenf Handys je
+  // Fraktion ist die Streuung die eigentliche Geschichte.
+  //
+  // ⚠️ Nur zum Vergleichen, VORGABE ist weiter der bisherige Stand. Schalter:
+  // ?spanne=1 in der Adresse oder localStorage qq-spanne=1.
+  const spanneAn = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      if (/[?&]spanne=1/.test(window.location.search)) return true;
+      return window.localStorage.getItem('qq-spanne') === '1';
+    } catch { return false; }
+  }, []);
+
+  /** Je Fraktion: kleinster, groesster und mittlerer Tipp ihrer Handys. */
+  const spannen = useMemo(() => {
+    const m = new Map<string, { min: number; max: number; avg: number; n: number }>();
+    if (!isMega || !spanneAn) return m;
+    const werte = new Map<string, number[]>();
+    for (const r of ranked) {
+      const l = werte.get(r.team.avatarId) ?? [];
+      l.push(r.num);
+      werte.set(r.team.avatarId, l);
+    }
+    for (const [av, l] of werte) {
+      m.set(av, {
+        min: Math.min(...l), max: Math.max(...l),
+        avg: l.reduce((a, b) => a + b, 0) / l.length, n: l.length,
+      });
+    }
+    return m;
+  }, [isMega, spanneAn, ranked]);
+
   const rankedFinal = useMemo(() => {
     if (!isMega) return ranked;
     const bestByAvatar = new Map<string, typeof ranked[number]>();
@@ -123,12 +165,26 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
       const prev = bestByAvatar.get(r.team.avatarId);
       if (!prev || r.delta < prev.delta) bestByAvatar.set(r.team.avatarId, r);
     }
+    // In der Variante steht die Fraktion an ihrem Durchschnitt, nicht am besten
+    // Tipp. Nur `num` und `delta` wechseln - Rangfolge und Sieger kommen
+    // unveraendert aus den Backend-Punkten, daran aendert die Variante nichts.
+    if (spanneAn) {
+      for (const [av, r] of bestByAvatar) {
+        const sp = spannen.get(av);
+        // Der Durchschnitt bekommt die Genauigkeit der ANTWORT. Bei „88 Tasten"
+        // stand sonst „75.7" am Wappen, und eine Dreiviertel-Taste gibt es nicht.
+        if (sp) {
+          const mittel = Number.isInteger(target) ? Math.round(sp.avg) : sp.avg;
+          bestByAvatar.set(av, { ...r, num: mittel, delta: Math.abs(mittel - target) });
+        }
+      }
+    }
     return [...bestByAvatar.values()]
       .map(r => ({ ...r, team: { ...r.team, name: qqMegaFactionName(r.team.avatarId, lang), emoji: qqMegaFactionSlug(r.team.avatarId) ?? r.team.emoji } }))
       // Ranking nach Backend-Punkten (nicht bester Tipp) → Sieger = Standing-Sieger.
       .sort((a, b) => (ptsOfAvatar(b.team.avatarId) - ptsOfAvatar(a.team.avatarId)) || a.delta - b.delta || a.submittedAt - b.submittedAt);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [ranked, isMega, lang, factionScores]);
+  }, [ranked, isMega, lang, factionScores, spanneAn, spannen, target]);
 
   const winner = rankedFinal[0] ?? null;
   // 2026-07-18 (Wolf „warum gewinnt jetzt das team? das wird hier nicht
@@ -452,6 +508,37 @@ export function SchaetzchenReveal({ state: s, lang }: { state: QQStateUpdate; la
               background: `linear-gradient(90deg, transparent, ${GOLD}4d 10%, rgba(255,244,214,0.55) 50%, ${GOLD}4d 90%, transparent)`,
               boxShadow: `0 0 22px ${GOLD}40`,
             }} />
+
+            {/* Variante „Spanne": je Fraktion ein Stueck Schiene vom schlechtesten
+                bis zum besten Tipp ihrer Handys. Bewusst LEISE gehalten - Wolf
+                2026-08-29: „wird dann die view nicht etwas voll?". Deshalb kein
+                neues Objekt, sondern dieselbe Schiene, nur eingefaerbt: gleiche
+                Hoehe, gleiche Rundung, halbe Deckkraft. Es kommt kein Element
+                dazu, das man einzeln lesen muesste. */}
+            {spanneAn && placed.map(({ r, above }) => {
+              const sp = spannen.get(r.team.avatarId);
+              if (!sp || sp.n < 2) return null;
+              const a = axisPct(sp.min), b = axisPct(sp.max);
+              const isWin = r.teamId === winner?.teamId;
+              return (
+                <div key={'sp-' + r.team.avatarId} aria-hidden style={{
+                  position: 'absolute', zIndex: 2, height: 4, borderRadius: 4,
+                  // ⚠️ NICHT alle acht auf dieselbe Linie. Der erste Anlauf legte
+                  // jede Spanne mittig auf die Schiene, und weil sich die
+                  // Fraktionen ueberlappen, wurde daraus ein matschiger
+                  // Farbverlauf statt acht lesbarer Strecken. Jede Bahn bekommt
+                  // ihre eigene Hoehe, direkt an der Schiene, auf der Seite, auf
+                  // der auch das Wappen steht.
+                  top: `calc(${RAIL}% ${above ? '-' : '+'} 7px)`,
+                  left: `${Math.min(a, b)}%`, width: `${Math.max(0.6, Math.abs(b - a))}%`,
+                  transform: `translateY(-50%) scaleX(${lit || !housedark ? 1 : 0.001})`,
+                  transformOrigin: 'center',
+                  background: r.team.color,
+                  opacity: housedark && !isWin ? 0.22 : 0.62,
+                  transition: reduce ? 'none' : 'transform 0.5s var(--qq-carry), opacity 0.4s ease',
+                }} />
+              );
+            })}
 
             {/* Gold-Messstrecke Sieger → Wahrheit (Schätzchen-Identität = Gold) */}
             {winner && winner.delta > 0 && (

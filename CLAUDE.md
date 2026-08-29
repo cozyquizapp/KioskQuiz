@@ -186,6 +186,23 @@ backend/src/server.ts                    Express, Uploads, Drafts, Legacy-Engine
   Schein. Der ABLAUF und die WERTUNG bleiben, und die CozyQuiz-Siegerehrung
   (Turm-Finale, `springe('final-reveal')`) gehoert dort nie hin.
 
+  📄 **Die vollstaendige Liste der Unterschiede steht in `docs/FORMATE.md`**
+  und wird erzeugt, nicht gepflegt: `node scripts/formate-vergleich.mjs`. Sie
+  liest jede Stelle im Code, an der sich das Verhalten nach Format gabelt, samt
+  dem Kommentar darueber. Teil 1 sind die Regeln, die CrowdQuiz zu CrowdQuiz
+  machen (Server und Register, rund vierzig, entscheidbar), Teil 2 die Folgen
+  in den Ansichten (rund dreihundertsechzig, zum Nachschlagen).
+  Wolf 2026-08-29: „wichtig waere vlt einmal die UNTERSCHIEDE zwischen
+  cozyquiz und crowdquiz zu identifizieren, anhandessen kann entschieden
+  werden, was gewollt und was nicht ist."
+
+  ⚠️ Was dort NICHT steht, und das ist die wichtigere Haelfte: Unterschiede
+  ohne Weiche im Code. Dieselbe Ansicht mit vierzig statt acht Teams, etwas
+  das in CrowdQuiz fehlt, ohne dass es jemand abgeschaltet hat, und Text, der
+  dort schlicht falsch ist, weil er von CozyQuiz erzaehlt. Dafuer die
+  Bild-Werkzeuge: `crowd-abgleich.mjs`, `crowd-ankommen.mjs`,
+  `crowd-zeremonie.mjs`.
+
   ⚠️ Besonders fuer Werkzeuge: `scripts/design-referenz.mjs` vergleicht
   CrowdQuiz mit CozyQuiz. Es vergleicht den WORTSCHATZ, nicht das Bild, und
   genau deshalb ist es ungefaehrlich. Wer daraus je ein „mach die Ansichten

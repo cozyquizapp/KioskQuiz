@@ -3377,7 +3377,7 @@ export function registerQQHandlers(io: SocketIOServer): void {
 
     /** Setup-Toggles: Finale spielen ja/nein, Reihenfolge zufällig ja/nein. */
     socket.on('qq:setQuizOptions', async (
-      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean; arenaBackgrounds?: boolean; formatSelected?: boolean },
+      payload: { roomCode: string; connectionsEnabled?: boolean; shuffleQuestionsInRound?: boolean; cozyGamesEnabled?: boolean; cozyGamesPool?: string[]; comebackEnabled?: boolean; largeGroupMode?: boolean; nestedTeams?: boolean; arenaBackgrounds?: boolean; formatSelected?: boolean; lookSelected?: boolean },
       ack?: unknown
     ) => {
       try {
@@ -3391,6 +3391,11 @@ export function registerQQHandlers(io: SocketIOServer): void {
         // 2026-07-14 (Wolf): Arena-Backgrounds an/aus (schlichter Default-BG).
         if (typeof payload.arenaBackgrounds === 'boolean') {
           room.arenaBackgrounds = payload.arenaBackgrounds;
+        }
+        // 2026-08-29 (Wolf: „ja mach das raum-feld"): der Wizard meldet, DASS
+        // ein Look ausgesucht wurde. Welcher, steht in themeId/arenaBackgrounds.
+        if (typeof payload.lookSelected === 'boolean') {
+          room.lookSelected = payload.lookSelected;
         }
         // 2026-07-07 (Wolf): Comeback global via QQ_COMEBACK_ENABLED deaktiviert —
         // ein durchrutschender Toggle darf es nicht doch wieder anschalten.

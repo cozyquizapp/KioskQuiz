@@ -57,25 +57,25 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   });
 
   const ctxMain = await browser.newContext({ viewport: { width: 1760, height: 990 } });
-  /* ⚠️ `qqArenaLook` gehoert hier hin, nicht zum Handy.
+  /* ⚠️ Hier stand kurz ein `qqArenaLook`-Eintrag im Browser-Speicher.
    *
-   * Das Steuerpult zieht alte CrowdQuiz-Raeume auf das Standarddesign nach
-   * (QQModeratorPage, „Alte CrowdQuiz-Raeume nachziehen"): sieht es einen Raum
-   * mit themeId 'cozy', OHNE dass im Speicher 'kolosseum' steht, schaltet es
-   * einmalig auf 'buehne'. Ein Harness ohne diesen Eintrag setzt das Kolosseum
-   * also, und ein paar Sekunden spaeter nimmt das Steuerpult es wieder weg.
+   * Grund war: das Steuerpult zieht alte CrowdQuiz-Raeume einmalig auf das
+   * Standarddesign nach, und woran es „ausgesucht" erkannte, lag im
+   * localStorage. Ein Harness ohne diesen Eintrag setzte das Kolosseum, und ein
+   * paar Sekunden spaeter nahm das Steuerpult es wieder weg - am 2026-08-29
+   * genau so passiert: die Beitritts-Ansicht trug noch die Fraktions-Welt, alle
+   * spaeteren nicht mehr.
    *
-   * 2026-08-29 genau so passiert: die Beitritts-Ansicht trug noch die
-   * Fraktions-Welt, alle spaeteren nicht mehr - der Umschwung lag zwischen den
-   * beiden Aufnahmen. */
-  await ctxMain.addInitScript(({ pin, look }) => {
+   * Seit dem Raum-Feld `lookSelected` ist der Eintrag nicht mehr noetig, und er
+   * bleibt bewusst WEG: mit ihm wuerde das Harness den Rueckfall messen statt
+   * das Feld, und ein Rueckschritt beim Feld fiele nicht auf. */
+  await ctxMain.addInitScript(({ pin }) => {
     try {
       sessionStorage.setItem('qq_admin_unlocked', '1');
       sessionStorage.setItem('qq_admin_pin', pin);
       localStorage.setItem('qq-admin-pin', pin);
-      localStorage.setItem('qqArenaLook', look === 'kolosseum' ? 'kolosseum' : 'standard');
     } catch { /* ignore */ }
-  }, { pin: PIN, look });
+  }, { pin: PIN });
 
   const ctxTeam = await browser.newContext({
     viewport: HANDY, deviceScaleFactor: 2, isMobile: true, hasTouch: true,
@@ -131,7 +131,8 @@ export async function handyStarten({ mega = false, secs = 200, vorBeitritt = nul
   // Standard-Lauf direkt nach einem Kolosseum-Lauf hat deshalb weiter das
   // Kolosseum gemessen - aufgefallen am 2026-08-29 daran, dass sieben
   // Kontrastwerte auf die zweite Nachkommastelle genau gleich waren.
-  await emit('qq:setQuizOptions', { arenaBackgrounds: look === 'kolosseum' });
+  // `lookSelected` wie der Wizard, sonst zieht das Steuerpult den Raum zurueck.
+  await emit('qq:setQuizOptions', { arenaBackgrounds: look === 'kolosseum', lookSelected: true });
   await emit('qq:setTheme', { themeId: look === 'kolosseum' ? 'cozy' : 'buehne' });
   await sleep(600);
 

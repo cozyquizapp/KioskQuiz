@@ -732,23 +732,37 @@ export default function QQModeratorPage({ testMode = false }: { testMode?: boole
   // der alten Kopplung weiter auf der Platte und zeigte dadurch das Kolosseum.
   //
   // Umgeschaltet wird nur, wenn der Kolosseum-Look NICHT ausdruecklich gewaehlt
-  // wurde. Woran man das erkennt, ohne ein neues Feld im Raum: der Wizard
-  // schreibt die Wahl in denselben Speicher, in dem schon `qqLastFormat` liegt.
-  // Ist dort nichts oder etwas anderes als 'kolosseum' hinterlegt, kommt das
-  // 'cozy' aus der alten Kopplung und nicht von Wolf.
+  // wurde. Woran man das erkennt: `lookSelected` im Raum. Der Wizard setzt es,
+  // sobald jemand eine der beiden Look-Kacheln drueckt.
   //
-  // Bewusst KEIN neues Raum-Feld: das haette einen Server-Redeploy gebraucht,
-  // und bis der durch ist, wuerde ein frisch gewaehltes Kolosseum bei jedem
-  // Neuladen wieder verschwinden.
+  // 2026-08-29, Wolf: „ja mach das raum-feld". Hier stand bis eben „bewusst
+  // KEIN neues Raum-Feld: das haette einen Server-Redeploy gebraucht". Der
+  // Merker lag deshalb im localStorage DIESES Browsers - Wolf waehlt Kolosseum
+  // am Laptop, oeffnet das Steuerpult am Tablet, und diese Regel nimmt ihm die
+  // Wahl wieder weg. Seit dem 27.08. deployt Coolify von selbst, damit ist der
+  // Grund fuer die Abkuerzung weg. Der Browser-Speicher bleibt als Rueckfall
+  // fuer den Fall, dass das Frontend vor dem Backend draussen ist.
   const arenaDesignRef = useRef(false);
   useEffect(() => {
     if (!connected || !joined || arenaDesignRef.current) return;
     const st = stateRef.current;
     if (!st) return;
     if (!(st as any).largeGroupMode || st.themeId !== 'cozy') return;
-    let look: string | null = null;
-    try { look = window.localStorage.getItem('qqArenaLook'); } catch { /* ignore */ }
-    if (look === 'kolosseum') { arenaDesignRef.current = true; return; }
+    // 2026-08-29 (Wolf: „ja mach das raum-feld"): die Wahl steht jetzt im Raum.
+    // Der Kommentar darueber sagte bis heute „bewusst KEIN neues Raum-Feld: das
+    // haette einen Server-Redeploy gebraucht" - inzwischen deployt Coolify von
+    // selbst, und der Preis der Abkuerzung war sichtbar: der Merker lag im
+    // localStorage DIESES Browsers. Wolf waehlt Kolosseum am Laptop, oeffnet das
+    // Steuerpult am Tablet, und diese Regel nimmt ihm die Wahl wieder weg.
+    const gewaehlt = (st as any).lookSelected as boolean | undefined;
+    if (gewaehlt === true) { arenaDesignRef.current = true; return; }
+    if (gewaehlt === undefined) {
+      // Altes Backend (Feld fehlt im State): zurueck auf den Browser-Speicher.
+      // Der Wizard schreibt ihn weiter mit, genau fuer diesen Fall.
+      let look: string | null = null;
+      try { look = window.localStorage.getItem('qqArenaLook'); } catch { /* ignore */ }
+      if (look === 'kolosseum') { arenaDesignRef.current = true; return; }
+    }
     arenaDesignRef.current = true;
     emitRef.current('qq:setTheme', { roomCode, themeId: 'buehne' });
     // eslint-disable-next-line react-hooks/exhaustive-deps

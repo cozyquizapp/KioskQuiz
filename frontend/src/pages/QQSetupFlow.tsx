@@ -179,7 +179,10 @@ export function QQSetupFlow(props: Props) {
     }
     if (s.teams.length > 0 && !window.confirm('Format wechseln? Beigetretene Teams/Bots werden zurückgesetzt.')) return;
     try { window.localStorage.setItem('qqLastFormat', ar ? 'arena' : 'quiz'); } catch { /* ignore */ }
-    emit('qq:setQuizOptions', { roomCode, largeGroupMode: ar, nestedTeams: ar, formatSelected: true });
+    // 2026-08-29: mit dem Format faellt auch die Look-Wahl. Wer das Format
+    // wechselt, hat den Look des anderen Formats nicht ausgesucht - und die
+    // Zeile darunter setzt ihn ohnehin auf den Standard zurueck.
+    emit('qq:setQuizOptions', { roomCode, largeGroupMode: ar, nestedTeams: ar, formatSelected: true, lookSelected: false });
     const cur = (s as any).avatarSetId as string | undefined;
     const nextSet = ar ? 'cozyArena' : 'cozyquiz';
     if ((!cur || ['cozyquiz', 'cozy3d', 'cozyArena', 'cozyAnimals', 'all'].includes(cur)) && cur !== nextSet) emit('qq:setAvatarSet', { roomCode, avatarSetId: nextSet });
@@ -206,7 +209,13 @@ export function QQSetupFlow(props: Props) {
 
   // ── Summary-Werte für die Bereit-Folie ──
   const langLabel = s.language === 'en' ? 'English' : s.language === 'both' ? 'DE + EN' : 'Deutsch';
-  const lookLabel = arena ? (kolosseumAn ? 'Mit Kolosseum' : 'CozyQuiz Standard') : (QQ_THEMES[(s.themeId ?? 'buehne') as keyof typeof QQ_THEMES]?.label ?? 'CozyQuiz');
+  // 2026-08-29: „(gemerkt)" haengt an `lookSelected` und ist damit gleichzeitig
+  // die Deploy-Anzeige fuer dieses Feld - genau die Probe, die CLAUDE.md
+  // empfiehlt: ein neues Feld an EINER Stelle sichtbar machen. Ein Server ohne
+  // den Stand schickt undefined, dann steht dort nichts.
+  const lookGemerkt = (s as { lookSelected?: boolean }).lookSelected === true;
+  const lookLabel = (arena ? (kolosseumAn ? 'Mit Kolosseum' : 'CozyQuiz Standard') : (QQ_THEMES[(s.themeId ?? 'buehne') as keyof typeof QQ_THEMES]?.label ?? 'CozyQuiz'))
+    + (lookGemerkt ? ' (gemerkt)' : '');
 
   // ── Start-Voraussetzungen ──
   const issues: string[] = [];
@@ -316,8 +325,14 @@ export function QQSetupFlow(props: Props) {
                         // einzige Unterscheidungsmerkmal fuer die Nachzieh-Regel
                         // im Steuerpult: ein 'cozy' OHNE diese Marke stammt aus
                         // der alten Format-Kopplung, nicht von Wolf.
+                        // 2026-08-29 (Wolf: „ja mach das raum-feld"): die Wahl
+                        // steht jetzt im RAUM (`lookSelected`) und nicht mehr nur
+                        // im Speicher dieses Browsers. Der Eintrag bleibt als
+                        // Rueckfall fuer den Fall, dass das Frontend vor dem
+                        // Backend ausgeliefert ist - dann sieht das Steuerpult
+                        // `lookSelected: undefined` und liest wieder hier.
                         try { window.localStorage.setItem('qqArenaLook', o.on ? 'kolosseum' : 'standard'); } catch { /* ignore */ }
-                        emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: o.on });
+                        emit('qq:setQuizOptions', { roomCode, arenaBackgrounds: o.on, lookSelected: true });
                         emit('qq:setTheme', { roomCode, themeId: o.on ? 'cozy' : 'buehne' });
                       }}
                         style={{

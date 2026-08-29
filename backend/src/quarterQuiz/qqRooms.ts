@@ -279,6 +279,11 @@ export interface QQRoomState {
   // 2026-07-02 (Wolf): Format-Wahl im Wizard-Schritt 0 (Cozy vs. Mega). Solange
   // false → Beamer zeigt neutralen Welcome (kein Grid/keine Faktion).
   formatSelected: boolean;
+  /** 2026-08-29 (Wolf: „ja mach das raum-feld"): Look im Wizard ausgesucht?
+   *  Siehe shared/quarterQuizTypes.ts fuer die Begruendung - kurz: das
+   *  Steuerpult muss „aus der alten Format-Kopplung" von „ausgesucht"
+   *  unterscheiden, und das lag bis heute im localStorage des Browsers. */
+  lookSelected: boolean;
   // Mod-Setup: gewaehltes Avatar-Theme fuer dieses Quiz. Optional, default 'cozyAnimals'.
   // Phase 1: nur State-Propagation, Renderer respektiert es noch nicht.
   avatarSetId?: string;
@@ -549,6 +554,7 @@ export function ensureQQRoom(roomCode: string): QQRoomState {
       showJoinLink: false,
       lobbyOpen: false,
       formatSelected: false,   // 2026-07-02: Format (Cozy/Mega) erst im Wizard-Schritt 0 gewählt
+      lookSelected: false,     // 2026-08-29: Look erst im Wizard-Schritt „Look" gewählt
       // 2026-08-22 (Wolf): CozyQuiz-Objektset zum Buehnen-Design 2a. Vorher
       // 'cozy3d' (3D-Tiere, seit 2026-06-23). Muss mit DEFAULT_SET_ID in
       // frontend/src/avatarSets.ts uebereinstimmen.
@@ -4864,6 +4870,7 @@ export function buildQQStateUpdate(room: QQRoomState): QQStateUpdate {
     showJoinLink:     room.showJoinLink === true,
     lobbyOpen:        room.lobbyOpen === true,
     formatSelected:   room.formatSelected,
+    lookSelected:     room.lookSelected ?? false,
     rulesSlideEndsAt: room.rulesSlideEndsAt ?? null,
     // 2026-08-28: hier stand `?? 'all'` - der gewuerfelte Emoji-Mix -, waehrend
     // die Raumanlage 'cozyquiz' setzt. Dieselbe Doppel-Vorgabe wie beim Design
@@ -5328,6 +5335,7 @@ export function qqResetRoom(room: QQRoomState): void {
   room.showJoinLink    = false;
   room.lobbyOpen       = false;
   room.formatSelected  = false;  // 2026-07-02: nach Restart wieder Format wählen (neutraler Welcome)
+  room.lookSelected    = false;  // 2026-08-29: mit dem Format faellt auch die Look-Wahl
   room.gamePhaseIndex  = 1;
   room.questionIndex   = 0;
   room.grid            = buildEmptyGrid(gs);

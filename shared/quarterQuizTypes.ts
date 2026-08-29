@@ -1517,6 +1517,21 @@ export interface QQStateUpdate {
   // false, zeigt der Beamer den neutralen Welcome (Brand, kein Grid/keine Faktion) —
   // erst nach der Wahl kippt er auf die format-spezifische Pre-Game-Ansicht.
   formatSelected?: boolean;
+  // 2026-08-29 (Wolf: „ja mach das raum-feld"): Look-Wahl im Wizard-Schritt
+  // „Look" (CrowdQuiz: CozyQuiz Standard vs. Mit Kolosseum). true heisst „das
+  // hat jemand ausgesucht", nicht „welcher" - welcher steht in themeId und
+  // arenaBackgrounds.
+  //
+  // Warum ueberhaupt ein eigenes Feld: das Steuerpult zieht alte CrowdQuiz-
+  // Raeume einmalig auf das Standarddesign nach (die Kopplung Format→Design ist
+  // am 28.08. gefallen, gespeicherte Raeume tragen ihr 'cozy' aber weiter).
+  // Dazu muss es „aus der alten Kopplung" von „ausgesucht" unterscheiden
+  // koennen. Bis heute lag diese Unterscheidung im localStorage des Browsers -
+  // und war damit weg, sobald das Steuerpult auf einem anderen Geraet aufging.
+  //
+  // ⚠️ Optional wie lobbyOpen und formatSelected: ein Frontend vor dem
+  // Backend-Redeploy sieht undefined und faellt auf den alten Speicher zurueck.
+  lookSelected?: boolean;
   // Mod waehlt im Setup ein Avatar-Theme fuer dieses Quiz. Default 'all'
   // (Emoji-Standard, freie Auswahl). 'cozyCast' = klassische PNG-Avatare.
   // Werte: 'all' | 'cozyAnimals' | 'cozyCast' | 'halloween' | 'christmas' |

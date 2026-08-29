@@ -210,7 +210,7 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         opacity: 0.92, marginBottom: 10,
         animation: 'qqRecapTitleLetter 0.6s cubic-bezier(0.16, 1.2, 0.3, 1) 0.05s both',
       }}>
-        🏆 {de ? 'Zwischenstand · Final-Phase' : 'Standings · Final phase'}
+        <QQEmojiIcon emoji="🏆" size="1em" /> {de ? 'Zwischenstand · Final-Phase' : 'Standings · Final phase'}
       </div>
       <div style={{
         fontSize: 'clamp(32px, 4.2cqw, 72px)', fontWeight: 900,
@@ -337,10 +337,17 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
                   durationMs={TICKUP_MS}
                   rowH={rowH}
                 />
-                <span style={{
-                  fontSize: zeilenSchrift(14, '1.5cqw', Math.round(rowH * 0.32)),
-                  color: 'var(--qq-text-muted)',
-                }}>🏆</span>
+                {/* 2026-08-29, gefunden am Bild .shots/crowd-abgleich/
+                    zwischenstand.png: hier stand ein rohes 🏆, und bei zwoelf
+                    Zeilen zwoelfmal. Die Systemglyphe ist flach und in einem
+                    anderen Ton als alles daneben - auf der Buehne die
+                    auffaelligste Fremdsprache im ganzen Bild. Bibel: „Keine
+                    rohen Systemzeichen." `color:` daran war ausserdem
+                    wirkungslos, der gedaempfte Ton hat nie gegriffen. */}
+                <QQEmojiIcon
+                  emoji="🏆"
+                  size={zeilenSchrift(14, '1.5cqw', Math.round(rowH * 0.32))}
+                />
               </div>
             </div>
           );

@@ -63,7 +63,14 @@ const KARTENTEXT = () => {
 };
 
 const b = await buehneStarten({ bots: cozy ? 8 : 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
-if (!cozy) await b.emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true });
+// ⚠️ IMMER beide Richtungen setzen, nie nur eine. `qq:resetRoom` setzt das
+// SPIEL zurueck, nicht das FORMAT - `largeGroupMode` ueberlebt einen Reset und
+// steht ausserdem auf Platte. Ein Lauf mit --cozy erbte dadurch stillschweigend
+// das Grossformat eines vorigen Laufs und meldete am 29.08. dreimal
+// hintereinander „Fraktionen-Folie da: JA" fuer CozyQuiz. Wieder dieselbe
+// Klasse Fehler wie beim Design und beim Avatarsatz: ein Wert, den nur eine
+// Seite setzt, hat in Wahrheit zwei Vorgaben.
+await b.emit('qq:setQuizOptions', { largeGroupMode: !cozy, nestedTeams: !cozy });
 await b.emit('qq:setTheme', { themeId: 'buehne' });
 await sleep(600);
 // ⚠️ Die Diaschau ist NICHT die Station `willkommen`. Zweiter Fehlgriff an

@@ -70,6 +70,12 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
   const completed = inPhaseIdx + 1;
   const remaining = Math.max(0, 5 - completed);
   const isLastFinalQuestion = remaining === 0;
+  // ⚠️ 2026-08-29, Wolf: „diese seite kommt, obwohl wager ausgestellt sind".
+  // Der Satz darunter kuendigt die Tipp-Aufloesung an, und die gibt es nur,
+  // wenn der Final-Tipp im Wizard eingeschaltet ist. Hier stand aber allein
+  // `remaining === 0` - die Folie hat also etwas versprochen, was danach nie
+  // kam. Der Schalter liegt im Zustand und wird jetzt gelesen.
+  const tippFolgt = isLastFinalQuestion && s.finalWagerEnabled === true;
 
   // 2026-05-09 v2 (Wolf '/animations 0B 8-Team Score-Cascade + Position-Swap'):
   // Vorher Sort-im-JSX → Tabelle springt instant um. Jetzt: 2 Rankings (before/
@@ -223,12 +229,19 @@ export function FinalRoundRecapSlide({ state: s }: { state: QQStateUpdate }) {
         textShadow: istBuehneG() ? 'none' : '0 0 36px rgba(var(--qq-accent-rgb),0.45)',
       }}>
         {(() => {
-          const t = isLastFinalQuestion
+          const t = tippFolgt
             // 2026-08-25 (Wolf: „name muss in deutsch geaendert werden"). Hier
             // stand „Wager-Reveal" mitten in einem deutschen Satz. Der Rest der
             // Mechanik heisst im Produkt „Final-Tipp" (so steht es auf der
             // Titelkarte der Wett-Phase), also heisst auch dieser Hinweis so.
             ? (de ? `Frage ${completed}/5 · gleich kommt die Tipp-Auflösung!` : `Question ${completed}/5 · tip reveal next!`)
+            : isLastFinalQuestion
+            // Ohne Final-Tipp folgt der Schluss - je nach Abend das Turm-Finale
+            // oder die Siegerehrung. Beide Namen waeren an dieser Stelle eine
+            // Wette, denn ob die CozyGames laufen, entscheidet der Wizard.
+            // „Die Entscheidung" stimmt in jedem Fall und verspricht nichts,
+            // was danach nicht kommt.
+            ? (de ? `Frage ${completed}/5 · gleich fällt die Entscheidung!` : `Question ${completed}/5 · the decision is next!`)
             : (de
                 ? `Frage ${completed}/5 · noch ${remaining} ${remaining === 1 ? 'Kategorie' : 'Kategorien'}`
                 : `Question ${completed}/5 · ${remaining} ${remaining === 1 ? 'category' : 'categories'} left`);

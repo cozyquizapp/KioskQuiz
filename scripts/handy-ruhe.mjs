@@ -41,6 +41,20 @@ import { handyStarten, HANDY } from './lib/handy.mjs';
 const mega = process.argv.includes('--mega');
 /* siehe handy-kontaktbogen.mjs: 'standard' oder 'kolosseum'. */
 const look = (process.argv.find(a => a.startsWith('--look=')) ?? '--look=standard').split('=')[1];
+/* --groesser=15:16,10:12 - Schriftgroessen VOR dem Messen umstellen.
+ *
+ * 2026-08-29, Wolf: „ist platz fuer 12 px im fuss? und wenn text von 15 auf 16
+ * steigt, verschiebt sich dann was?" Beides sind Fragen an das Layout, nicht an
+ * den Geschmack, und beide lassen sich nur beantworten, indem man es tut.
+ *
+ * Es hier zu tun statt im Code hat einen Grund: die Groessen stehen inline
+ * (`style={{ fontSize: 15 }}`), ein Stylesheet kaeme nicht dagegen an, und ein
+ * Codeumbau nur zum Ausprobieren waere ein Umbau, den man wieder zuruecknehmen
+ * muss. Hier laeuft er als Versuch, mit derselben Messung wie sonst - fuehrt er
+ * zu nichts, ist nichts angefasst worden. */
+const GROESSER = (process.argv.find(a => a.startsWith('--groesser=')) ?? '').split('=')[1] ?? '';
+const UMSTELLUNG = GROESSER ? GROESSER.split(',').map(p => p.split(':').map(Number)) : [];
+if (UMSTELLUNG.length) console.log(`Versuch: ${UMSTELLUNG.map(([a, b]) => `${a}px -> ${b}px`).join(', ')}`);
 const SECS = Number((process.argv.find(a => a.startsWith('--secs=')) ?? '--secs=210').split('=')[1]);
 
 /** Laeuft IM Browser. */
@@ -134,6 +148,16 @@ const MESSEN = ({ breite, hoehe }) => {
 const b = await handyStarten({ mega, secs: SECS, look });
 const sichten = [];
 const messen = async (seite, name) => {
+  if (UMSTELLUNG.length) {
+    await seite.evaluate((paare) => {
+      for (const el of document.querySelectorAll('*')) {
+        const px = Math.round(parseFloat(getComputedStyle(el).fontSize));
+        const treffer = paare.find(([von]) => von === px);
+        if (treffer) el.style.setProperty('font-size', `${treffer[1]}px`, 'important');
+      }
+    }, UMSTELLUNG).catch(() => {});
+    await seite.waitForTimeout(120);   // Umbruch abwarten, sonst misst man den alten
+  }
   const m = await seite.evaluate(MESSEN, { breite: HANDY.width, hoehe: HANDY.height }).catch(() => null);
   if (!m) return;
   sichten.push({ name, ...m });
@@ -201,6 +225,6 @@ for (const [feld, titel, regel, zeile] of [
 const text = z.join('\n');
 /* Der Look gehoert in den Dateinamen: sonst ueberschreibt ein Kolosseum-Lauf
  * die Messung des Standarddesigns, und der Bericht sagt nicht, welcher er ist. */
-writeFileSync(`.shots/ruhe/BERICHT${mega ? '-CROWD' : ''}${look === 'kolosseum' ? '-KOLOSSEUM' : ''}.md`, text);
+writeFileSync(`.shots/ruhe/BERICHT${mega ? '-CROWD' : ''}${look === 'kolosseum' ? '-KOLOSSEUM' : ''}${GROESSER ? '-VERSUCH' : ''}.md`, text);
 console.log('\n' + text);
 console.log(`${fehler} Befunde.`);

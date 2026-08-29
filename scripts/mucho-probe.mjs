@@ -112,7 +112,10 @@ const b = await buehneStarten({
   // der NORMALE Abend mit kurzen Antworten darf sich nicht veraendern, der
   // Einpassfaktor muss dort 1 bleiben.
   optionen: process.env.QQ_KURZ === '1' ? null : LANGE_OPTIONEN,
-  frisch: true, bots: GROSS ? 24 : 3, antworten: 0.6,
+  // ⚠️ Die Teamzahl gehoert zum Fall. Wolfs Bild zeigt drei Handys, ein
+  // voller Abend hat bis zu acht - und bei der Aufloesung haengen die
+  // Waehler-Marken unter den Karten, dort kostet jede zusaetzliche Reihe Hoehe.
+  frisch: true, bots: Number(process.env.QQ_BOTS) || (GROSS ? 24 : 3), antworten: 0.6,
 });
 await b.aufbauen('spiel');
 await b.helfer.zurFrage();

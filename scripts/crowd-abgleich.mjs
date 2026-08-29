@@ -214,7 +214,7 @@ for (const st of stationen) {
   // ⚠️ Pro Station ein frischer Raum. Der Zustand des Abends haengt am WEG
   // dorthin, und eine Station, die auf einer halb gespielten Runde sitzt,
   // zeigt etwas anderes als dieselbe Station frisch (2026-08-28 gemessen).
-  const b = await buehneStarten({ bots: 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
+  const b = await buehneStarten({ bots: 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1', grossformat: true });
   // Grossformat VOR dem Aufbau: `largeGroupMode` baut die Teams um und leert
   // den Raum. Wer es danach schickt, misst eine leere Lobby.
   await b.emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true });

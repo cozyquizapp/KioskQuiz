@@ -116,6 +116,10 @@ const QUELLE_QUER = '/images/quiz-lounge-host-bg.png';
 export const VORGABE = {
   bots: 8, sprache: 'de', kategorie: null, entwurf: null, bild: null,
   stufe: 1, antworten: 0.6, nurReihum: false, frisch: false,
+  // CrowdQuiz statt CozyQuiz. Gehoert in die VORGABE und nicht in ein
+  // `emit` des aufrufenden Werkzeugs, weil das Format den Spielstart
+  // ueberstehen muss (siehe die Warnung an `qq:startGame` weiter unten).
+  grossformat: false,
   fenster: { width: 1760, height: 990 }, profil: '.shots/.browser-profil',
   takt: () => {},
 };
@@ -796,9 +800,30 @@ export async function buehneStarten(teilCfg = {}) {
       }
       await emit('qq:setTestMode', { value: true });
       cfg.takt('  Testmodus');
+      // ⚠️ 2026-08-29, der teuerste Fund dieser Sitzung: `largeGroupMode` und
+      // `nestedTeams` MUESSEN hier mit. Ohne sie hat `qq:startGame` das Format
+      // stillschweigend auf CozyQuiz zurueckgesetzt, denn qqRooms.ts rechnet
+      //   room.largeGroupMode = largeGroupMode === true || nestedTeams === true;
+      // und beide waren undefined. Der Kommentar zwei Absaetze weiter unten
+      // sagt es sogar selbst („startGame schreibt die Optionen aus seinem
+      // eigenen Payload und wuerde ein vorher gesetztes Flag wieder
+      // ueberschreiben") - nur galt das eben auch fuer das Format.
+      //
+      // Folge: JEDE Station mit `aufbau: 'spiel'` hat CrowdQuiz als CozyQuiz
+      // gemessen. Die Fraktionswappen waren trotzdem da, weil der Avatarsatz
+      // an einem anderen Feld haengt, also SAH es nach CrowdQuiz aus. Erkannt
+      // habe ich es erst an zwei Wortresten in einem Bild: „#11" bei acht
+      // Fraktionen, und „1 Feld" in einem Format ohne Brett. Wolf hat an
+      // derselben Aufnahme unabhaengig die Final-Phase bemerkt.
+      //
+      // Dieselbe Klasse Fehler wie am 28.08. (da fehlte das Design), nur eine
+      // Ebene tiefer. Merksatz: was `qq:setQuizOptions` vor dem Spielstart
+      // setzt, ueberlebt den Spielstart nicht.
+      const gross = !!cfg.grossformat;
       await emit('qq:startGame', {
         questions: fragen, language: cfg.sprache, phases: d.phases ?? 4,
         draftId: d.id, draftTitle: d.title,
+        largeGroupMode: gross, nestedTeams: gross,
       });
       // 2026-08-23: CozyGame und das 4x4-Finale sind pro Raum schaltbar und im
       // Testentwurf aus - `qq:cozyGameStart` lief deshalb in einen Fehler

@@ -62,7 +62,7 @@ const KARTENTEXT = () => {
   return { signatur: teile.join('|').slice(0, 400), titel: best };
 };
 
-const b = await buehneStarten({ bots: cozy ? 8 : 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
+const b = await buehneStarten({ bots: cozy ? 8 : 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1', grossformat: !cozy });
 // ⚠️ IMMER beide Richtungen setzen, nie nur eine. `qq:resetRoom` setzt das
 // SPIEL zurueck, nicht das FORMAT - `largeGroupMode` ueberlebt einen Reset und
 // steht ausserdem auf Platte. Ein Lauf mit --cozy erbte dadurch stillschweigend

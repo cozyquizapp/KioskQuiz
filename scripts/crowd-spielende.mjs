@@ -13,7 +13,7 @@
  */
 import { buehneStarten, sleep } from './lib/buehne.mjs';
 
-const b = await buehneStarten({ bots: 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1' });
+const b = await buehneStarten({ bots: 12, frisch: true, takt: () => {}, entwurf: 'qq-vol-1', grossformat: true });
 await b.emit('qq:setQuizOptions', { largeGroupMode: true, nestedTeams: true });
 await b.emit('qq:setTheme', { themeId: 'buehne' });
 await sleep(600);

@@ -359,7 +359,22 @@ function buildMegaRulesSlidesDe(totalPhases: 3 | 4): RulesSlide[] {
       treeShowcase: true,
     },
     {
+      // ⚠️ 2026-08-29, Wolf am Kontaktbogen: „so gibt es punkte nutzt
+      // schaetzchen emoji (neuen oder anderen bestehenden nehmen?)". Stimmt:
+      // 🎯 ist das Kategoriezeichen von Schaetzchen (shared/quarterQuizTypes.ts,
+      // QQ_CATEGORY_LABELS). Auf einer Regelfolie, die von der Wertung ALLER
+      // Kategorien handelt, sagt es also etwas Falsches - es kuendigt eine
+      // Kategorie an.
+      //
+      // Genommen: `fx-hundred`, eine Skala von wenig zu viel. Sie ist die
+      // Aussage der Folie selbst („0-100 Punkte, je besser, desto mehr"), und
+      // sie traegt Creme und Bernstein, bleibt also in der Buehnenpalette.
+      // Verworfen: `fx-chart` (Balken mit gruenem Pfeil) - vier Fremdfarben,
+      // und „Wachstum" ist die falsche Aussage, das Bar-Race wertet den
+      // ANTEIL. Ueber `iconSlug` wie bei Fair Play, damit kein Emoji-Mapper
+      // dazwischenliegt.
       icon: '🎯',
+      iconSlug: 'fx-hundred',
       title: t('rules.mega.slide3.title', 'So gibt es Punkte'),
       color: 'var(--qq-stage-brand)',
       lines: [
@@ -404,7 +419,9 @@ function buildMegaRulesSlidesEn(totalPhases: 3 | 4): RulesSlide[] {
       treeShowcase: true,
     },
     {
+      // Siehe die Begruendung an der deutschen Fassung weiter oben.
       icon: '🎯',
+      iconSlug: 'fx-hundred',
       title: t('rules.mega.slide3.title', 'How to score'),
       color: 'var(--qq-stage-brand)',
       lines: [

@@ -105,14 +105,30 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
   // fallen. Eine eigene Endabrechnung an dieser Stelle hat schon einmal drei
   // verschiedene Sieger innerhalb von zehn Sekunden erzeugt (siehe oben).
   //
-  // In CozyArena bleibt es beim alten Bild: dort gewinnt eine FRAKTION, und
-  // `qqFinalTotal` rechnet je Team. Eine Fraktionstabelle waere eine zweite
-  // Rechnung, und das ist genau der Fehler, den der Absatz darueber beschreibt.
+  // ⚠️ 2026-08-29, Wolf zur CrowdQuiz-Danke-Folie: „die danke fuers spielen
+  // seite wirkt etwas leer und der avatar deplaziert? ... was zeigt couchquiz
+  // da noch?" Nebeneinandergelegt (scripts/danke-vergleich.mjs): CozyQuiz zeigt
+  // links den Sieger, in der MITTE den Endstand aller acht, rechts den QR - drei
+  // Spalten. CrowdQuiz zeigte nur die Siegerkachel in einem Layout, das fuer
+  // drei Spalten gebaut ist. Daher „leer" und daher „deplaziert".
+  //
+  // Hier stand bis heute, eine Fraktionstabelle waere „eine zweite Rechnung".
+  // Das war einmal richtig und ist es nicht mehr: `qqSortedGroups` IST die eine
+  // Aggregation (ihr Kommentar in qqShared.ts sagt es selbst - „eine
+  // Aggregation, alle Views lesen sie", genannt sind Standings, Kroenung und
+  // Endstand). Der SIEGER auf genau dieser Folie faellt seit dem 03.07. schon
+  // daraus. Die Liste kann dem Sieger darueber also gar nicht widersprechen,
+  // sie kommt aus derselben Funktion.
+  //
+  // Und die Laenge passt: acht Fraktionen sind genauso viele Zeilen wie acht
+  // Teams in CozyQuiz. Die vierzig Sub-Teams tauchen nie einzeln auf.
   const rangliste = useMemo(
-    () => (nested ? [] : qqFinalSortedTeams(s).map(t => ({ team: t, punkte: qqFinalTotal(s, t.id) }))),
+    () => (nested
+      ? qqSortedGroups(s).map(g => ({ team: g, punkte: g.largestConnected ?? 0 }))
+      : qqFinalSortedTeams(s).map(t => ({ team: t, punkte: qqFinalTotal(s, t.id) }))),
     [s, nested],
   );
-  const zeigeTabelle = !nested && rangliste.length >= 2;
+  const zeigeTabelle = rangliste.length >= 2;
   // Funktions-Invariante: wer Bewegung reduziert haben will, bekommt die Liste
   // fertig statt gestaffelt. Beide Schalter, der System-Wunsch und der eigene
   // Ruhe-Modus des Quiz.
@@ -726,7 +742,15 @@ export function ThanksView({ state: s, roomCode }: { state: QQStateUpdate; roomC
                   <div style={{
                     ['--wg' as string]: `${winner.color}99`,
                     width: 'clamp(180px, 20cqw, 290px)', height: 'clamp(180px, 20cqw, 290px)',
-                    borderRadius: quirkSet ? '18%' : '50%',
+                    // ⚠️ 2026-08-29, Wolf am Kontaktbogen zur Danke-Folie:
+                    // „ausserdem ist es eine runde kachel". Stimmt, und sie war
+                    // die letzte runde Marke auf der ganzen Buehne. Diese Kachel
+                    // ist von Hand gebaut (eigener Verlauf, eigener Innenschatten)
+                    // statt ueber QQTeamAvatar - beim Durchgang „Kachel ohne
+                    // 3D-Effekt" am 26.08. wurde deshalb der Verlauf angefasst
+                    // und der Radius uebersehen. Jetzt derselbe Token wie jede
+                    // andere Marke: eckig auf der Buehne, rund auf dem Handy.
+                    borderRadius: quirkSet ? '18%' : 'var(--qq-team-mark-radius, 50%)',
                     background: istBuehne
                       ? `linear-gradient(180deg, rgba(255,255,255,0.26) 0%, rgba(255,255,255,0.07) 16%, rgba(255,255,255,0) 48%, rgba(0,0,0,0.14) 76%, rgba(0,0,0,0.34) 100%), ${winner.color}`
                       : `
